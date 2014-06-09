@@ -1,73 +1,26 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 09 Jun 2014 02:09:44 +0000
-Subject: [PATCH] ARM: shmobile: lager: Remove duplicate i2c3 nodes
-Message-Id: <1402279784-5587-1-git-send-email-horms+renesas@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Mon, 09 Jun 2014 09:32:57 +0000
+Subject: Re: [PATCH] ARM: shmobile: lager: Remove duplicate i2c3 nodes
+Message-Id: <53957F49.40905@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1402279784-5587-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1402279784-5587-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Due to an error when merging df40f256b18300e1 ("ARM: shmobile:
-lager: add i2c1, i2c2 pins") a duplicate i2c3 node.
+On 09/06/14 03:09, Simon Horman wrote:
+> Due to an error when merging df40f256b18300e1 ("ARM: shmobile:
+> lager: add i2c1, i2c2 pins") a duplicate i2c3 node.
+> 
+> This patch moves the duplicate and moves to old node to
+> be closer to the other new i2c nodes.
+> 
+> Cc: Ben Dooks <ben.dooks@codethink.co.uk>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Reviewed-by: Ben Dooks <ben.dooks@codethink.co.uk>
 
-This patch moves the duplicate and moves to old node to
-be closer to the other new i2c nodes.
-
-Cc: Ben Dooks <ben.dooks@codethink.co.uk>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7790-lager.dts | 32 ++++++++++++++------------------
- 1 file changed, 14 insertions(+), 18 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 295a60e..850dff8 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -333,22 +333,6 @@
- 	status = "okay";
- };
- 
--&i2c3 {
--	pinctrl-names = "default";
--	pinctrl-0 = <&i2c3_pins>;
--	status = "okay";
--
--	vdd_dvfs: regulator@68 {
--		compatible = "diasemi,da9210";
--		reg = <0x68>;
--
--		regulator-min-microvolt = <1000000>;
--		regulator-max-microvolt = <1000000>;
--		regulator-boot-on;
--		regulator-always-on;
--	};
--};
--
- &cpu0 {
- 	cpu0-supply = <&vdd_dvfs>;
- };
-@@ -369,6 +353,18 @@
- 	pinctrl-names = "default";
- };
- 
--&i2c3	{
--	status = "ok";
-+&i2c3 {
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&i2c3_pins>;
-+	status = "okay";
-+
-+	vdd_dvfs: regulator@68 {
-+		compatible = "diasemi,da9210";
-+		reg = <0x68>;
-+
-+		regulator-min-microvolt = <1000000>;
-+		regulator-max-microvolt = <1000000>;
-+		regulator-boot-on;
-+		regulator-always-on;
-+	};
- };
 -- 
-2.0.0.rc2
-
+Ben Dooks				http://www.codethink.co.uk/
+Senior Engineer				Codethink - Providing Genius
