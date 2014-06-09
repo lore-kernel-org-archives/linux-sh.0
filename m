@@ -1,52 +1,59 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 09 Jun 2014 19:49:17 +0000
+From: "Rafael J. Wysocki" <rjw@rjwysocki.net>
+Date: Mon, 09 Jun 2014 22:22:07 +0000
 Subject: Re: [PATCH] PM / OPP: Remove ARCH_HAS_OPP
-Message-Id: <20140609194917.GH5099@sirena.org.uk>
+Message-Id: <1976508.Da0u8DZI5B@vostro.rjw.lan>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="ZZc4RZLlj7DA0l+0"
+Content-Type: multipart/mixed; boundary="nextPart3402537.ZIBVb2cVVr"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1402051016-28853-1-git-send-email-broonie@kernel.org>
- <20140606125003.GA13332@verge.net.au>
- <20140606130850.GO2520@sirena.org.uk>
- <3122018.iBNBjMKNbN@vostro.rjw.lan>
-In-Reply-To: <3122018.iBNBjMKNbN@vostro.rjw.lan>
+ <3122018.iBNBjMKNbN@vostro.rjw.lan> <20140609194917.GH5099@sirena.org.uk>
+In-Reply-To: <20140609194917.GH5099@sirena.org.uk>
 To: linux-arm-kernel@lists.infradead.org
 
 
---ZZc4RZLlj7DA0l+0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+--nextPart3402537.ZIBVb2cVVr
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="utf-8"
 
-On Fri, Jun 06, 2014 at 11:15:06PM +0200, Rafael J. Wysocki wrote:
-> On Friday, June 06, 2014 02:08:50 PM Mark Brown wrote:
+On Monday, June 09, 2014 08:49:17 PM Mark Brown wrote:
+> On Fri, Jun 06, 2014 at 11:15:06PM +0200, Rafael J. Wysocki wrote:
+> > On Friday, June 06, 2014 02:08:50 PM Mark Brown wrote:
+> 
+> > > Yes, the conversion to make ARCH_HAS_OPP unused is in Raphael's tree for
+> > > the merge window.
+> 
+> > Perhaps already merged?
+> 
+> Yes, looks like it is.
 
-> > Yes, the conversion to make ARCH_HAS_OPP unused is in Raphael's tree for
-> > the merge window.
+But it doesn't apply for me on top of the current Linus' tree.
 
-> Perhaps already merged?
+Can you please rebase?
 
-Yes, looks like it is.
+Rafael
 
---ZZc4RZLlj7DA0l+0
+--nextPart3402537.ZIBVb2cVVr
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.22 (GNU/Linux)
 
-iQIcBAEBAgAGBQJTlg+5AAoJELSic+t+oim9gPQQAJl+gVZkOImjKju67ucY3fZG
-AiQKQy/CtAMigWQ00llUxF2NBEJdQ5zRCzNKsVG3W0UYQYmyQMG6fNrUGsBRrsgK
-5t5koeipaq9aKha55tUkhs6eucv8yEL8dIRe6cQtfQjoZmQi9O2+KhaCwFBH+P/k
-S+3K2p4uwJyx5NI97Le4Wtqb/uu3Y17DQWhg+nFsxS9MeURaI8X39uanK/GQOW2o
-PSmWCRWcqOmGzf/pJ35R5RnhYHRk0bkZzoZ9h51BsM8r7Oc7RvO1XUi6YAllwrL9
-h1MbBb1aBC6lgnsiIC02UIVVuB23kzjRorbSrUVwvY7VSKM+P7IkqMo12wE41y24
-EGj+cGICmkAnmS2JzZlDTvFwvQoLsCkT51iql3+G2y4Wfj8m/1CErIO9umpOZcbW
-n9L6teTFKYl2lND7IT75C0CRACPJ/c2pkRBYqjIsMeV17hohVIJVgsBezVRGroZd
-vFyVq3sRaxba7uP93Z16Dp0+WeWjuDRfvH5KXZBQG/ECayFN32w3cTqCvBs7z6fr
-6XUW/eu3vOQlNLdR25efrkrJ6yxom+zsbVbXo1kbiYJ/a4O0efWFKz55F7009s2B
-pYGsC/D8ZMrbTmNyoblwxnfqhUWZCLR7HwdvUZC/wBzPMGxO5LVrWb4WzASKUhpU
-kz8BmH+8msYUA2PL806Q
-=wNKN
+iQIcBAABCAAGBQJTljOUAAoJEILEb/54YlRx3egQAIcwfBZuvaR4Lbm3WoV8U81e
+GaDglyvAtI/HKqYMC6y7L47i01D3+tHw2MXvOcHfcWZ7oLtEryDbTW7K/CqBZmnB
+rPUPEW/91hMtWk/AtT0I25wa0ajMHvHgDtnrrEphmN+a6IaC0RyNtXOMLEzwzOqN
+U40H6qFTp2wJlcSMvL/Rqi5Itev9sx0F3UiKQwGIpusBPgeR0aIg7Nl7p2c2JNmj
+9kk2n30FyoHqlBADqXwb4NaCe0GYMtLdyD+CVBKYHUebpwtIwADelRSjjT8HXo1/
+D/VIs84oVy5NFNUqtls9LSQG7KOHVwxOMuXaIWcEddhD6PYPh2GUScmX5n+yu9bQ
+fIARP+VmkDm94KrUUCPq5y1eJaBaKK+g6uQb0zwKUpCzHgjZckMa663usTe5vzVO
+4Bm67E1FJb0OophqmEHBLzolK+C5RJf+YMSjo9B1Kelbv34lYrwA5PwadlgUtEos
+l0Q4YLTX2BgTHkJ6ESTdtitMpMd7l6oWMF8gcqOC4BXOx4/DbBdxvSQfd3SPfCI8
+UTG3jtjUZabTQjwOLaoBs4N2G9UYa1k44fnFR6yV2k87Dg3PcJtmPUe6Tq/ne0AF
+nE07/hYw1L60lqUfpDKHeOovbJHGtPpHLXStD29+ghAs/Ar907c/V8sH/7yJvWIL
+fAxsIpLz+X+BCGYMds7c
+=z8ED
 -----END PGP SIGNATURE-----
 
---ZZc4RZLlj7DA0l+0--
+--nextPart3402537.ZIBVb2cVVr--
+
