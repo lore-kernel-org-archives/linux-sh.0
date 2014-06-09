@@ -1,89 +1,73 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 10 Jun 2014 02:33:54 +0000
-Subject: [PATCH 2/3] ARM: shmobile: r8a7790: add R-Car sound support on DTSI
-Message-Id: <87tx7tcx2f.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 09 Jun 2014 02:09:44 +0000
+Subject: [PATCH] ARM: shmobile: lager: Remove duplicate i2c3 nodes
+Message-Id: <1402279784-5587-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387548804-20829-3-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1387548804-20829-3-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Due to an error when merging df40f256b18300e1 ("ARM: shmobile:
+lager: add i2c1, i2c2 pins") a duplicate i2c3 node.
 
-This patch support PIO transfer only at this point
+This patch moves the duplicate and moves to old node to
+be closer to the other new i2c nodes.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi |   56 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 56 insertions(+)
+ arch/arm/boot/dts/r8a7790-lager.dts | 32 ++++++++++++++------------------
+ 1 file changed, 14 insertions(+), 18 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index cb8a68d..d28b5e8 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -919,4 +919,60 @@
- 		#size-cells = <0>;
- 		status = "disabled";
- 	};
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 295a60e..850dff8 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -333,22 +333,6 @@
+ 	status = "okay";
+ };
+ 
+-&i2c3 {
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&i2c3_pins>;
+-	status = "okay";
+-
+-	vdd_dvfs: regulator@68 {
+-		compatible = "diasemi,da9210";
+-		reg = <0x68>;
+-
+-		regulator-min-microvolt = <1000000>;
+-		regulator-max-microvolt = <1000000>;
+-		regulator-boot-on;
+-		regulator-always-on;
+-	};
+-};
+-
+ &cpu0 {
+ 	cpu0-supply = <&vdd_dvfs>;
+ };
+@@ -369,6 +353,18 @@
+ 	pinctrl-names = "default";
+ };
+ 
+-&i2c3	{
+-	status = "ok";
++&i2c3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c3_pins>;
++	status = "okay";
 +
-+	rcar_sound: rcar_sound@0xec500000 {
-+		#sound-dai-cells = <1>;
-+		compatible =  "renesas,rcar_sound-r8a7790", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
-+		interrupt-parent = <&gic>;
-+		reg =	<0 0xec500000 0 0x1000>, /* SCU */
-+			<0 0xec5a0000 0 0x100>,  /* ADG */
-+			<0 0xec540000 0 0x1000>, /* SSIU */
-+			<0 0xec541000 0 0x1280>; /* SSI */
-+		clocks = <&mstp10_clks R8A7790_CLK_SSI>,
-+			<&mstp10_clks R8A7790_CLK_SSI9>, <&mstp10_clks R8A7790_CLK_SSI8>,
-+			<&mstp10_clks R8A7790_CLK_SSI7>, <&mstp10_clks R8A7790_CLK_SSI6>,
-+			<&mstp10_clks R8A7790_CLK_SSI5>, <&mstp10_clks R8A7790_CLK_SSI4>,
-+			<&mstp10_clks R8A7790_CLK_SSI3>, <&mstp10_clks R8A7790_CLK_SSI2>,
-+			<&mstp10_clks R8A7790_CLK_SSI1>, <&mstp10_clks R8A7790_CLK_SSI0>,
-+			<&mstp10_clks R8A7790_CLK_SRC9>, <&mstp10_clks R8A7790_CLK_SRC8>,
-+			<&mstp10_clks R8A7790_CLK_SRC7>, <&mstp10_clks R8A7790_CLK_SRC6>,
-+			<&mstp10_clks R8A7790_CLK_SRC5>, <&mstp10_clks R8A7790_CLK_SRC4>,
-+			<&mstp10_clks R8A7790_CLK_SRC3>, <&mstp10_clks R8A7790_CLK_SRC2>,
-+			<&mstp10_clks R8A7790_CLK_SRC1>, <&mstp10_clks R8A7790_CLK_SRC0>,
-+			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
-+		clock-names = "ssi",
-+				"ssi.9", "ssi.8", "ssi.7", "ssi.6", "ssi.5",
-+				"ssi.4", "ssi.3", "ssi.2", "ssi.1", "ssi.0",
-+				"src.9", "src.8", "src.7", "src.6", "src.5",
-+				"src.4", "src.3", "src.2", "src.1", "src.0",
-+				"clk_a", "clk_b", "clk_c", "clk_i";
++	vdd_dvfs: regulator@68 {
++		compatible = "diasemi,da9210";
++		reg = <0x68>;
 +
-+		status = "disabled";
-+
-+		rcar_sound,src {
-+			src0: src@0 { };
-+			src1: src@1 { };
-+			src2: src@2 { };
-+			src3: src@3 { };
-+			src4: src@4 { };
-+			src5: src@5 { };
-+			src6: src@6 { };
-+			src7: src@7 { };
-+			src8: src@8 { };
-+			src9: src@9 { };
-+		};
-+
-+		rcar_sound,ssi {
-+			ssi0: ssi@0 { interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>; };
-+			ssi1: ssi@1 { interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>; };
-+			ssi2: ssi@2 { interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>; };
-+			ssi3: ssi@3 { interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>; };
-+			ssi4: ssi@4 { interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>; };
-+			ssi5: ssi@5 { interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>; };
-+			ssi6: ssi@6 { interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>; };
-+			ssi7: ssi@7 { interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>; };
-+			ssi8: ssi@8 { interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>; };
-+			ssi9: ssi@9 { interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>; };
-+		};
++		regulator-min-microvolt = <1000000>;
++		regulator-max-microvolt = <1000000>;
++		regulator-boot-on;
++		regulator-always-on;
 +	};
  };
 -- 
-1.7.9.5
+2.0.0.rc2
 
