@@ -1,40 +1,59 @@
-From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Date: Thu, 29 May 2014 07:49:45 +0000
-Subject: [PATCH 7/7] ARM: shmobile: Enable CPUFREQ configuration
-Message-Id: <5386E699.2000107@bp.renesas.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 09 Jun 2014 10:39:17 +0000
+Subject: [PATCH 1/2] net: sh_eth: Fix receive packet "exceeded" condition in sh_eth_rx()
+Message-Id: <53958ED5.8070108@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "netdev@vger.kernel.org" <netdev@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-This changes of configuration is multiplatform build only for r8a7790/r8a7791.
+This patch fixes the packet "exceeded" condition in sh_eth_rx() when
+RACT in an RX descriptor is not set and the "quota" is 0.
+Otherwise, kernel panic happens because the "&n->poll_list" is deleted
+twice in sh_eth_poll() which calls napi_complete() and net_rx_action().
 
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/configs/shmobile_defconfig |   12 ++++++++++++
- 1 file changed, 12 insertions(+)
+ drivers/net/ethernet/renesas/sh_eth.c |    8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index 94d7736..5360c2a 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -147,3 +147,15 @@ CONFIG_NLS_ISO8859_1=y
- # CONFIG_ENABLE_WARN_DEPRECATED is not set
- # CONFIG_ENABLE_MUST_CHECK is not set
- # CONFIG_ARM_UNWIND is not set
-+CONFIG_CPU_FREQ=y
-+CONFIG_CPU_FREQ_GOV_COMMON=y
-+CONFIG_CPU_FREQ_STAT=y
-+CONFIG_CPU_FREQ_STAT_DETAILS=y
-+CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE=y
-+CONFIG_CPU_FREQ_GOV_PERFORMANCE=y
-+CONFIG_CPU_FREQ_GOV_POWERSAVE=y
-+CONFIG_CPU_FREQ_GOV_USERSPACE=y
-+CONFIG_CPU_FREQ_GOV_ONDEMAND=y
-+CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y
-+CONFIG_CPU_THERMAL=y
-+CONFIG_GENERIC_CPUFREQ_CPU0=y
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 08ed9a3..ad0b5bd 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1399,7 +1399,6 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
+ 	int entry = mdp->cur_rx % mdp->num_rx_ring;
+ 	int boguscnt = (mdp->dirty_rx + mdp->num_rx_ring) - mdp->cur_rx;
+ 	struct sk_buff *skb;
+-	int exceeded = 0;
+ 	u16 pkt_len = 0;
+ 	u32 desc_status;
+
+@@ -1411,10 +1410,9 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
+ 		if (--boguscnt < 0)
+ 			break;
+
+-		if (*quota <= 0) {
+-			exceeded = 1;
++		if (*quota <= 0)
+ 			break;
+-		}
++
+ 		(*quota)--;
+
+ 		if (!(desc_status & RDFEND))
+@@ -1508,7 +1506,7 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
+ 		sh_eth_write(ndev, EDRRR_R, EDRRR);
+ 	}
+
+-	return exceeded;
++	return (*quota <= 0);
+ }
+
+ static void sh_eth_rcv_snd_disable(struct net_device *ndev)
 -- 
 1.7.9.5
 
