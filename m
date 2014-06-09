@@ -1,67 +1,27 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 09 Jun 2014 10:32:37 +0000
-Subject: Re: [PATCH 3/8] ARM: shmobile: r8a7790: Add PCIe device nodes
-Message-Id: <1735665.3QTcJMYUcT@avalon>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 09 Jun 2014 10:39:07 +0000
+Subject: [PATCH 0/2] net: sh_eth: Fix two issues in sh_eth_rx()
+Message-Id: <53958ECB.6080203@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "netdev@vger.kernel.org" <netdev@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Hi Phil,
+I used the latest net.git repository.
+ commit id = 87757a917b0b3c0787e0563c679762152be81312
+ (net: force a list_del() in unregister_netdevice_many())
 
-Thank you for the patch.
+I tested these patches on r8a7790.
 
-On Wednesday 28 May 2014 08:23:58 Phil Edworthy wrote:
-> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-> ---
->  arch/arm/boot/dts/r8a7790.dtsi | 25 +++++++++++++++++++++++++
->  1 file changed, 25 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-> index ae7d3da..7c2b66c 100644
-> --- a/arch/arm/boot/dts/r8a7790.dtsi
-> +++ b/arch/arm/boot/dts/r8a7790.dtsi
-> @@ -876,4 +876,29 @@
->  		#size-cells = <0>;
->  		status = "disabled";
->  	};
-> +
-> +	pcie: pcie@fe000000 {
-> +		compatible = "renesas,pcie-r8a7790";
-> +		reg = <0 0xfe000000 0 0x80000>;
-> +		#address-cells = <3>;
-> +		#size-cells = <2>;
-> +		bus-range = <0x00 0xff>;
-> +		device_type = "pci";
-> +		ranges = <0x01000000 0 0x00000000 0 0xfe100000 0 0x00100000
-> +			  0x02000000 0 0xfe200000 0 0xfe200000 0 0x00200000
-> +			  0x02000000 0 0x30000000 0 0x30000000 0 0x08000000
-> +			  0x42000000 0 0x38000000 0 0x38000000 0 0x08000000>;
-> +		/* Map all possible DDR as inbound ranges */
-> +		dma-ranges = <0x42000000 0 0x40000000 0 0x40000000 0 0x80000000
-> +			      0x43000000 1 0x80000000 1 0x80000000 0 0x80000000>;
-> +		interrupts = <0 116 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 117 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 118 IRQ_TYPE_LEVEL_HIGH>;
-> +		#interrupt-cells = <1>;
-> +		interrupt-map-mask = <0 0 0 0>;
-> +		interrupt-map = <0 0 0 0 &gic 0 116 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp3_clks R8A7790_CLK_PCIE>, <&pcie_bus_clk>;
-> +		clock-names = "pcie", "pcie_bus";
+Yoshihiro Shimoda (2):
+  net: sh_eth: Fix receive packet "exceeded" condition in sh_eth_rx()
+  net: sh_eth: Fix timing of RACT setting in sh_eth_rx()
 
-I would have removed the "pcie" prefix from the clock names, as it's clear 
-that the clocks are related to the PCIe controller, and used names such as 
-"fck" (for functional clock) and "bus" instead. I've missed that when the DT 
-bindings were submitted for review (actually I've missed the patches 
-completely).
-
-> +		status = "disabled";
-> +	};
->  };
+ drivers/net/ethernet/renesas/sh_eth.c |    9 +++------
+ 1 file changed, 3 insertions(+), 6 deletions(-)
 
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
