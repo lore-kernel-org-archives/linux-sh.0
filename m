@@ -1,36 +1,100 @@
-From: David Miller <davem@davemloft.net>
-Date: Wed, 11 Jun 2014 22:37:33 +0000
-Subject: Re: [PATCH v2 0/2] net: sh_eth: Fix two issues in sh_eth_rx()
-Message-Id: <20140611.153733.758226399072849408.davem@davemloft.net>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 10 Jun 2014 02:33:42 +0000
+Subject: [PATCH 1/3] ARM: shmobile: r8a7790: add MSTP10 support on DTSI
+Message-Id: <87vbs9cx2q.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <539653E4.9080808@renesas.com>
-	<20140611.151555.814836065790733997.davem@davemloft.net>
-	<5398D658.2090100@cogentembedded.com>
-In-Reply-To: <5398D658.2090100@cogentembedded.com>
+References: <1383060193-1505-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383060193-1505-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: yoshihiro.shimoda.uh@renesas.com, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 12 Jun 2014 02:21:12 +0400
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-> Hello.
-> 
-> On 06/12/2014 02:15 AM, David Miller wrote:
-> 
->>> I used the latest net.git repository.
->>>   commit id = 87757a917b0b3c0787e0563c679762152be81312
->>>   (net: force a list_del() in unregister_netdevice_many())
-> 
->>> I tested these patches on r8a7790.
-> 
->>> Changes from v1:
->>>   - Remove unnecessary parens in patch 1.
-> 
->> Applied, thanks.
-> 
->    Eh, haven't had time to look at these patches in detail... :-/
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi            |   32 +++++++++++++++++++++++++++++
+ include/dt-bindings/clock/r8a7790-clock.h |   26 +++++++++++++++++++++++
+ 2 files changed, 58 insertions(+)
 
-Sorry, we can do follow-up changes or a flat-out revert if you want.
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index e990d3c..cb8a68d 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -835,6 +835,38 @@
+ 				"rcan1", "rcan0", "qspi_mod", "iic3",
+ 				"i2c3", "i2c2", "i2c1", "i2c0";
+ 		};
++		mstp10_clks: mstp10_clks@e6150998 {
++			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150998 0 4>, <0 0xe61509a8 0 4>;
++			clocks = <&p_clk>, /* parent of SCU */
++				<&p_clk>,
++				<&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
++				<&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
++				<&mstp10_clks R8A7790_CLK_SCU>, <&mstp10_clks R8A7790_CLK_SCU>,
++				<&mstp10_clks R8A7790_CLK_SCU>, <&mstp10_clks R8A7790_CLK_SCU>,
++				<&mstp10_clks R8A7790_CLK_SCU>, <&mstp10_clks R8A7790_CLK_SCU>,
++				<&mstp10_clks R8A7790_CLK_SCU>, <&mstp10_clks R8A7790_CLK_SCU>,
++				<&mstp10_clks R8A7790_CLK_SCU>, <&mstp10_clks R8A7790_CLK_SCU>,
++				<&mstp10_clks R8A7790_CLK_SCU>, <&mstp10_clks R8A7790_CLK_SCU>;
++
++			#clock-cells = <1>;
++			clock-indices = <
++				R8A7790_CLK_SCU
++				R8A7790_CLK_SSI
++				R8A7790_CLK_SSI9 R8A7790_CLK_SSI8 R8A7790_CLK_SSI7 R8A7790_CLK_SSI6 R8A7790_CLK_SSI5
++				R8A7790_CLK_SSI4 R8A7790_CLK_SSI3 R8A7790_CLK_SSI2 R8A7790_CLK_SSI1 R8A7790_CLK_SSI0
++				R8A7790_CLK_DVC1 R8A7790_CLK_DVC0
++				R8A7790_CLK_SRC9 R8A7790_CLK_SRC8 R8A7790_CLK_SRC7 R8A7790_CLK_SRC6 R8A7790_CLK_SRC5
++				R8A7790_CLK_SRC4 R8A7790_CLK_SRC3 R8A7790_CLK_SRC2 R8A7790_CLK_SRC1 R8A7790_CLK_SRC0
++			>;
++			clock-output-names +				"scu", "ssi",
++				"ssi9", "ssi8", "ssi7", "ssi6", "ssi5",
++				"ssi4", "ssi3", "ssi2", "ssi1", "ssi0",
++				"dvc1", "dvc0",
++				"src9", "src8", "src7", "src6", "src5",
++				"src4", "src3", "src2", "src1", "src0";
++		};
+ 	};
+ 
+ 	qspi: spi@e6b10000 {
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index 1118f7a..b4430b0 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -107,4 +107,30 @@
+ #define R8A7790_CLK_I2C1		30
+ #define R8A7790_CLK_I2C0		31
+ 
++/* MSTP10 */
++#define R8A7790_CLK_SSI			5
++#define R8A7790_CLK_SSI9		6
++#define R8A7790_CLK_SSI8		7
++#define R8A7790_CLK_SSI7		8
++#define R8A7790_CLK_SSI6		9
++#define R8A7790_CLK_SSI5		10
++#define R8A7790_CLK_SSI4		11
++#define R8A7790_CLK_SSI3		12
++#define R8A7790_CLK_SSI2		13
++#define R8A7790_CLK_SSI1		14
++#define R8A7790_CLK_SSI0		15
++#define R8A7790_CLK_SCU			17
++#define R8A7790_CLK_DVC1		18
++#define R8A7790_CLK_DVC0		19
++#define R8A7790_CLK_SRC9		22
++#define R8A7790_CLK_SRC8		23
++#define R8A7790_CLK_SRC7		24
++#define R8A7790_CLK_SRC6		25
++#define R8A7790_CLK_SRC5		26
++#define R8A7790_CLK_SRC4		27
++#define R8A7790_CLK_SRC3		28
++#define R8A7790_CLK_SRC2		29
++#define R8A7790_CLK_SRC1		30
++#define R8A7790_CLK_SRC0		31
++
+ #endif /* __DT_BINDINGS_CLOCK_R8A7790_H__ */
+-- 
+1.7.9.5
+
