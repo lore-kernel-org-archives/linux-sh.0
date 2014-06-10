@@ -1,93 +1,153 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Tue, 10 Jun 2014 08:01:05 +0000
-Subject: RE: [PATCH 1/8] ARM: shmobile: r8a7790: Add PCIe clock device tree nodes
-Message-Id: <72a129b202bf4016a5acf99a77a3ae62@HKXPR06MB168.apcprd06.prod.outlook.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 10 Jun 2014 23:03:29 +0000
+Subject: [PATCH 02/07] DMA: shdma: 40-bit address prototype
+Message-Id: <20140610230329.13594.85113.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401261843-6964-2-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1401261843-6964-2-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Laurent,
+From: Magnus Damm <damm+renesas@opensource.se>
 
-On 09 June 2014 11:29, Laurent wrote:
-> On Wednesday 28 May 2014 08:23:56 Phil Edworthy wrote:
-> > This patch adds the device tree clock nodes for PCIe
-> >
-> > Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-> > ---
-> >  arch/arm/boot/dts/r8a7790.dtsi            | 6 +++---
-> >  include/dt-bindings/clock/r8a7790-clock.h | 1 +
-> >  2 files changed, 4 insertions(+), 3 deletions(-)
-> >
-> > diff --git a/arch/arm/boot/dts/r8a7790.dtsi
-> b/arch/arm/boot/dts/r8a7790.dtsi
-> > index 7ff2960..ae7d3da 100644
-> > --- a/arch/arm/boot/dts/r8a7790.dtsi
-> > +++ b/arch/arm/boot/dts/r8a7790.dtsi
-> > @@ -754,17 +754,17 @@
-> >  			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
-> >  			clocks = <&hp_clk>, <&cp_clk>, <&mmc1_clk>,
-> <&sd3_clk>,
-> >  				 <&sd2_clk>, <&cpg_clocks
-> R8A7790_CLK_SD1>, <&cpg_clocks
-> > R8A7790_CLK_SD0>, <&mmc0_clk>,
-> > -				 <&hp_clk>, <&hp_clk>, <&rclk_clk>;
-> > +				 <&hp_clk>, <&hp_clk>, <&rclk_clk>,
-> <&mp_clk>;
-> >  			#clock-cells = <1>;
-> >  			renesas,clock-indices = <
-> >  				R8A7790_CLK_IIC2 R8A7790_CLK_TPU0
-> R8A7790_CLK_MMCIF1
-> > R8A7790_CLK_SDHI3
-> >  				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1
-> R8A7790_CLK_SDHI0
-> > R8A7790_CLK_MMCIF0
-> > -				R8A7790_CLK_IIC0 R8A7790_CLK_IIC1
-> R8A7790_CLK_CMT1
-> > +				R8A7790_CLK_IIC0 R8A7790_CLK_IIC1
-> R8A7790_CLK_CMT1
-> > R8A7790_CLK_PCIE
-> 
-> We try to keep the entries sorted by bit number. Could you this please insert
-> the PCIE clock at the right position (between IIC0 and IIC1) ? Don't forget to
-> update the clocks and clock-output-names properties accordingly.
-No problem, will do.
+Hack up 40-bit address support via the FIXSAR and FIXDAR
+addresses provided by the SYS-DMAC hardware in R-Car Gen2.
 
-> >  			>;
-> >
-> >  			clock-output-names > >  				"iic2", "tpu0", "mmcif1", "sdhi3",
-> >  				"sdhi2", "sdhi1", "sdhi0", "mmcif0",
-> > -				"iic0", "iic1", "cmt1";
-> > +				"iic0", "iic1", "cmt1", "pcie";
-> >  		};
-> >  		mstp5_clks: mstp5_clks@e6150144 {
-> >  			compatible = "renesas,r8a7790-mstp-clocks",
-> "renesas,cpg-mstp-
-> clocks";
-> > diff --git a/include/dt-bindings/clock/r8a7790-clock.h
-> > b/include/dt-bindings/clock/r8a7790-clock.h index 1118f7a..e0a6e38
-> 100644
-> > --- a/include/dt-bindings/clock/r8a7790-clock.h
-> > +++ b/include/dt-bindings/clock/r8a7790-clock.h
-> > @@ -59,6 +59,7 @@
-> >  #define R8A7790_CLK_SDHI0		14
-> >  #define R8A7790_CLK_MMCIF0		15
-> >  #define R8A7790_CLK_IIC0		18
-> > +#define R8A7790_CLK_PCIE		19
-> 
-> The datasheet documents the MSTP bit as "PCIEC". Would it make sense to
-> use
-> the same name here, and in the clock-output-names property ?
-> 
-> The same comments apply to patch 2/8.
-Sure.
+The data sheet says that auto increment overflow from SAR
+to FIXSAR and DAR to FIXDAR does not happen, so based on
+that limit size of DMA transactions that try to cross the
+32-bit boundary.
 
-> >  #define R8A7790_CLK_IIC1		23
-> >  #define R8A7790_CLK_SSUSB		28
-> >  #define R8A7790_CLK_CMT1		29
+Not for upstream merge.
 
-Thanks
-Phil
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ drivers/dma/sh/shdma.h  |    4 +--
+ drivers/dma/sh/shdmac.c |   48 +++++++++++++++++++++++++++++++++++++++++------
+ include/linux/sh_dma.h  |    2 +
+ 3 files changed, 46 insertions(+), 8 deletions(-)
+
+--- 0001/drivers/dma/sh/shdma.h
++++ work/drivers/dma/sh/shdma.h	2014-06-10 22:42:47.000000000 +0900
+@@ -46,8 +46,8 @@ struct sh_dmae_device {
+ };
+ 
+ struct sh_dmae_regs {
+-	u32 sar; /* SAR / source address */
+-	u32 dar; /* DAR / destination address */
++	dma_addr_t sar; /* SAR / source address */
++	dma_addr_t dar; /* DAR / destination address */
+ 	u32 tcr; /* TCR / transfer count */
+ };
+ 
+--- 0001/drivers/dma/sh/shdmac.c
++++ work/drivers/dma/sh/shdmac.c	2014-06-10 23:08:46.000000000 +0900
+@@ -42,6 +42,8 @@
+ #define DAR	0x04
+ #define TCR	0x08
+ #define CHCR	0x0C
++#define FIXSAR  0x10
++#define FIXDAR  0x14
+ #define DMAOR	0x40
+ 
+ #define TEND	0x18 /* USB-DMAC */
+@@ -217,8 +219,16 @@ static u32 log2size_to_chcr(struct sh_dm
+ 
+ static void dmae_set_reg(struct sh_dmae_chan *sh_chan, struct sh_dmae_regs *hw)
+ {
+-	sh_dmae_writel(sh_chan, hw->sar, SAR);
+-	sh_dmae_writel(sh_chan, hw->dar, DAR);
++	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
++
++#ifdef CONFIG_ARCH_DMA_ADDR_T_64BIT
++	if (shdev->pdata->fourty_bits_addr) {
++		sh_dmae_writel(sh_chan, hw->sar >> 32, FIXSAR);
++		sh_dmae_writel(sh_chan, hw->dar >> 32, FIXDAR);
++	}
++#endif
++	sh_dmae_writel(sh_chan, hw->sar & 0xffffffff, SAR);
++	sh_dmae_writel(sh_chan, hw->dar & 0xffffffff, DAR);
+ 	sh_dmae_writel(sh_chan, hw->tcr >> sh_chan->xmit_shift, TCR);
+ }
+ 
+@@ -290,9 +300,9 @@ static void sh_dmae_start_xfer(struct sh
+ 						    shdma_chan);
+ 	struct sh_dmae_desc *sh_desc = container_of(sdesc,
+ 					struct sh_dmae_desc, shdma_desc);
+-	dev_dbg(sh_chan->shdma_chan.dev, "Queue #%d to %d: %u@%x -> %x\n",
++	dev_dbg(sh_chan->shdma_chan.dev, "Queue #%d to %d: %u@%pad-> %pad\n",
+ 		sdesc->async_tx.cookie, sh_chan->shdma_chan.id,
+-		sh_desc->hw.tcr, sh_desc->hw.sar, sh_desc->hw.dar);
++		sh_desc->hw.tcr, &sh_desc->hw.sar, &sh_desc->hw.dar);
+ 	/* Get the ld start address from ld_queue */
+ 	dmae_set_reg(sh_chan, &sh_desc->hw);
+ 	dmae_start(sh_chan);
+@@ -382,12 +392,30 @@ static int sh_dmae_desc_setup(struct shd
+ 			      struct shdma_desc *sdesc,
+ 			      dma_addr_t src, dma_addr_t dst, size_t *len)
+ {
++	struct sh_dmae_chan *sh_chan = container_of(schan,
++					struct sh_dmae_chan, shdma_chan);
+ 	struct sh_dmae_desc *sh_desc = container_of(sdesc,
+ 					struct sh_dmae_desc, shdma_desc);
++	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
+ 
+ 	if (*len > schan->max_xfer_len)
+ 		*len = schan->max_xfer_len;
+ 
++#ifdef CONFIG_ARCH_DMA_ADDR_T_64BIT
++	/* unsure if crossing 32-bit boundary really works, disable for now */
++	if (shdev->pdata->fourty_bits_addr) {
++		dma_addr_t limit = 0xffffffff;
++		dma_addr_t src_masked = src & limit;
++		dma_addr_t dst_masked = dst & limit;
++
++		if ((src_masked < limit) && ((src_masked + *len) > limit))
++			*len = limit - src_masked;
++
++		if ((dst_masked < limit) && ((dst_masked + *len) > limit))
++			*len = limit - dst_masked;
++	}
++#endif
++
+ 	sh_desc->hw.sar = src;
+ 	sh_desc->hw.dar = dst;
+ 	sh_desc->hw.tcr = *len;
+@@ -463,8 +491,16 @@ static bool sh_dmae_desc_completed(struc
+ 					struct sh_dmae_chan, shdma_chan);
+ 	struct sh_dmae_desc *sh_desc = container_of(sdesc,
+ 					struct sh_dmae_desc, shdma_desc);
+-	u32 sar_buf = sh_dmae_readl(sh_chan, SAR);
+-	u32 dar_buf = sh_dmae_readl(sh_chan, DAR);
++	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
++	dma_addr_t sar_buf = sh_dmae_readl(sh_chan, SAR);
++	dma_addr_t dar_buf = sh_dmae_readl(sh_chan, DAR);
++
++#ifdef CONFIG_ARCH_DMA_ADDR_T_64BIT
++	if (shdev->pdata->fourty_bits_addr) {
++		sar_buf |= (dma_addr_t)sh_dmae_readl(sh_chan, FIXSAR) << 32;
++		dar_buf |= (dma_addr_t)sh_dmae_readl(sh_chan, FIXDAR) << 32;
++	}
++#endif
+ 
+ 	return	(sdesc->direction = DMA_DEV_TO_MEM &&
+ 		 (sh_desc->hw.dar + sh_desc->hw.tcr) = dar_buf) ||
+--- 0001/include/linux/sh_dma.h
++++ work/include/linux/sh_dma.h	2014-06-10 22:45:11.000000000 +0900
+@@ -70,6 +70,7 @@ struct sh_dmae_channel {
+  * @chclr_present:	DMAC has one or several CHCLR registers
+  * @chclr_bitwise:	channel CHCLR registers are bitwise
+  * @slave_only:		DMAC cannot be used for MEMCPY
++ * @fourty_bits_addr:	Hardware support dealing with 40 bit addresses
+  */
+ struct sh_dmae_pdata {
+ 	const struct sh_dmae_slave_config *slave;
+@@ -92,6 +93,7 @@ struct sh_dmae_pdata {
+ 	unsigned int chclr_present:1;
+ 	unsigned int chclr_bitwise:1;
+ 	unsigned int slave_only:1;
++	unsigned int fourty_bits_addr:1;
+ };
+ 
+ /* DMAOR definitions */
