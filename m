@@ -1,90 +1,85 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:28:38 +0000
-Subject: [PATCH 29/29] ARM: shmobile: r8a7791: add R-Car sound support on DTSI
-Message-Id: <09abd1fd11f98d6abde9c23244234170e7e36c2f.1403487225.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 10 Jun 2014 23:03:45 +0000
+Subject: [PATCH 04/07] ARM: shmobile: Lager SYS-DMAC and MMCIF prototype
+Message-Id: <20140610230345.13594.68069.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-This patch support PIO transfer only at this point
+Hook up SYS-DMAC prototype support for MMCIF1 on Lager.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Local platform device version of SYS-DMAC and local slave IDs
+are used together with AUXDATA.
+
+Only the DT reference case is covered. Not for upstream merge.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 56 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 56 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 43d2130..1997f16 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -985,4 +985,60 @@
- 		clock-names = "pcie", "pcie_bus";
- 		status = "disabled";
- 	};
-+
-+	rcar_sound: rcar_sound@0xec500000 {
-+		#sound-dai-cells = <1>;
-+		compatible =  "renesas,rcar_sound-r8a7791", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
-+		interrupt-parent = <&gic>;
-+		reg =	<0 0xec500000 0 0x1000>, /* SCU */
-+			<0 0xec5a0000 0 0x100>,  /* ADG */
-+			<0 0xec540000 0 0x1000>, /* SSIU */
-+			<0 0xec541000 0 0x1280>; /* SSI */
-+		clocks = <&mstp10_clks R8A7791_CLK_SSI_ALL>,
-+			<&mstp10_clks R8A7791_CLK_SSI9>, <&mstp10_clks R8A7791_CLK_SSI8>,
-+			<&mstp10_clks R8A7791_CLK_SSI7>, <&mstp10_clks R8A7791_CLK_SSI6>,
-+			<&mstp10_clks R8A7791_CLK_SSI5>, <&mstp10_clks R8A7791_CLK_SSI4>,
-+			<&mstp10_clks R8A7791_CLK_SSI3>, <&mstp10_clks R8A7791_CLK_SSI2>,
-+			<&mstp10_clks R8A7791_CLK_SSI1>, <&mstp10_clks R8A7791_CLK_SSI0>,
-+			<&mstp10_clks R8A7791_CLK_SCU_SRC9>, <&mstp10_clks R8A7791_CLK_SCU_SRC8>,
-+			<&mstp10_clks R8A7791_CLK_SCU_SRC7>, <&mstp10_clks R8A7791_CLK_SCU_SRC6>,
-+			<&mstp10_clks R8A7791_CLK_SCU_SRC5>, <&mstp10_clks R8A7791_CLK_SCU_SRC4>,
-+			<&mstp10_clks R8A7791_CLK_SCU_SRC3>, <&mstp10_clks R8A7791_CLK_SCU_SRC2>,
-+			<&mstp10_clks R8A7791_CLK_SCU_SRC1>, <&mstp10_clks R8A7791_CLK_SCU_SRC0>,
-+			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
-+		clock-names = "ssi-all",
-+				"ssi.9", "ssi.8", "ssi.7", "ssi.6", "ssi.5",
-+				"ssi.4", "ssi.3", "ssi.2", "ssi.1", "ssi.0",
-+				"src.9", "src.8", "src.7", "src.6", "src.5",
-+				"src.4", "src.3", "src.2", "src.1", "src.0",
-+				"clk_a", "clk_b", "clk_c", "clk_i";
-+
-+		status = "disabled";
-+
-+		rcar_sound,src {
-+			src0: src@0 { };
-+			src1: src@1 { };
-+			src2: src@2 { };
-+			src3: src@3 { };
-+			src4: src@4 { };
-+			src5: src@5 { };
-+			src6: src@6 { };
-+			src7: src@7 { };
-+			src8: src@8 { };
-+			src9: src@9 { };
-+		};
-+
-+		rcar_sound,ssi {
-+			ssi0: ssi@0 { interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>; };
-+			ssi1: ssi@1 { interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>; };
-+			ssi2: ssi@2 { interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>; };
-+			ssi3: ssi@3 { interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>; };
-+			ssi4: ssi@4 { interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>; };
-+			ssi5: ssi@5 { interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>; };
-+			ssi6: ssi@6 { interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>; };
-+			ssi7: ssi@7 { interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>; };
-+			ssi8: ssi@8 { interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>; };
-+			ssi9: ssi@9 { interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>; };
-+		};
-+	};
+ arch/arm/mach-shmobile/board-lager-reference.c |   26 +++++++++++++++++++++++-
+ 1 file changed, 25 insertions(+), 1 deletion(-)
+
+--- 0006/arch/arm/mach-shmobile/board-lager-reference.c
++++ work/arch/arm/mach-shmobile/board-lager-reference.c	2014-06-10 22:29:39.000000000 +0900
+@@ -72,10 +72,16 @@ static const struct resource du_resource
+ 
+ #include <linux/sh_dma.h>
+ #include <mach/dma-register.h>
++#include <linux/mmc/host.h>
++#include <linux/mmc/sh_mmcif.h>
+ 
+ /* Local DMA slave IDs */
+ enum {
+ 	RCAR_DMA_SLAVE_LAGER_INVALID = 0,
++	SYS_DMAC_SLAVE_MMCIF0_TX = 64,
++	SYS_DMAC_SLAVE_MMCIF0_RX,
++	SYS_DMAC_SLAVE_MMCIF1_TX,
++	SYS_DMAC_SLAVE_MMCIF1_RX,
  };
--- 
-2.0.0.rc2
-
+ 
+ #define DMAE_CHANNEL(a, b)			\
+@@ -101,6 +107,8 @@ enum {
+ }
+ 
+ static const struct sh_dmae_slave_config r8a7790_sys_dmac_slaves[] = {
++	SYS_DMAC_SLAVE(MMCIF0, 32, 0xee200000, 0x34, 0x34, 0xd1, 0xd2),
++	SYS_DMAC_SLAVE(MMCIF1, 32, 0xee220000, 0x34, 0x34, 0xe1, 0xe2),
+ };
+ 
+ static const struct sh_dmae_channel r8a7790_sys_dmac_channels[] = {
+@@ -161,6 +169,21 @@ static void __init lager_add_dmac_protot
+ 	r8a7790_register_sys_dmac(0);
+ }
+ 
++static struct sh_mmcif_plat_data mmcif1_pdata = {
++	.caps		= MMC_CAP_4_BIT_DATA |
++			  MMC_CAP_8_BIT_DATA |
++			  MMC_CAP_NONREMOVABLE,
++	.ccs_unsupported = true,
++	.slave_id_tx	= SYS_DMAC_SLAVE_MMCIF1_TX,
++	.slave_id_rx	= SYS_DMAC_SLAVE_MMCIF1_RX,
++};
++
++static struct of_dev_auxdata lager_auxdata_lookup[] __initdata = {
++	OF_DEV_AUXDATA("renesas,mmcif-r8a7790", 0xee220000, "sh_mmcif",
++			&mmcif1_pdata),
++	{},
++};
++
+ static void __init lager_add_du_device(void)
+ {
+ 	struct platform_device_info info = {
+@@ -194,7 +217,8 @@ static void __init lager_add_standard_de
+ 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+ 	r8a7790_add_dt_devices();
+ 	lager_add_dmac_prototype();
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++	of_platform_populate(NULL, of_default_bus_match_table,
++			     lager_auxdata_lookup, NULL);
+ 
+ 	lager_add_du_device();
+ }
