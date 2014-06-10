@@ -1,66 +1,78 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:28:21 +0000
-Subject: [PATCH 12/29] ARM: shmobile: lager: Move i2c[12]_pins nodes to pfc node
-Message-Id: <d90bf60ceaf453b59c8cd5dbfa59538e27255706.1403487225.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 10 Jun 2014 23:07:34 +0000
+Subject: [PATCH 2/2] ARM: shmobile: henninger: add VIN0/ADV7180 DT support
+Message-Id: <201406110307.35534.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
+References: <201406110304.18976.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201406110304.18976.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Due to an error when resolving conflicts df40f256b18300e1 ("ARM: shmobile:
-lager: add i2c1, i2c2 pins") added the i2c[12]_pins nodes to the wrong
-node.
+Define the Henninger board dependent part of the VIN0 device node. Add the
+device node for Analog Devices ADV7180 video decoder to I2C2  bus. Add the
+necessary subnodes to interconnect VIN0 and ADV7180 devices.
 
-This patch moves them to their correct location in the pfc node.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Cc: Ben Dooks <ben.dooks@codethink.co.uk>
-Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 20 ++++++++++----------
- 1 file changed, 10 insertions(+), 10 deletions(-)
+ arch/arm/boot/dts/r8a7791-henninger.dts |   35 ++++++++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 3297b86a..b68ff56 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -144,16 +144,6 @@
- 		states = <3300000 1
- 			  1800000 0>;
+Index: renesas/arch/arm/boot/dts/r8a7791-henninger.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-henninger.dts
++++ renesas/arch/arm/boot/dts/r8a7791-henninger.dts
+@@ -125,6 +125,11 @@
+ 				 "msiof0_tx";
+ 		renesas,function = "msiof0";
  	};
--
--	i2c1_pins: i2c1 {
--		renesas,groups = "i2c1";
--		renesas,function = "i2c1";
--	};
--
--	i2c2_pins: i2c2 {
--		renesas,groups = "i2c2";
--		renesas,function = "i2c2";
--	};
++
++	vin0_pins: vin0 {
++		renesas,groups = "vin0_data8", "vin0_clk";
++		renesas,function = "vin0";
++	};
  };
  
- &extal_clk {
-@@ -215,6 +205,16 @@
- 		renesas,function = "msiof1";
- 	};
+ &scif0 {
+@@ -181,6 +186,19 @@
  
-+	i2c1_pins: i2c1 {
-+		renesas,groups = "i2c1";
-+		renesas,function = "i2c1";
-+	};
+ 	status = "okay";
+ 	clock-frequency = <400000>;
 +
-+	i2c2_pins: i2c2 {
-+		renesas,groups = "i2c2";
-+		renesas,function = "i2c2";
-+	};
++	composite-in@20 {
++		compatible = "adi,adv7180";
++		reg = <0x20>;
++		remote = <&vin0>;
 +
- 	i2c3_pins: i2c3 {
- 		renesas,groups = "i2c3";
- 		renesas,function = "i2c3";
--- 
-2.0.0.rc2
-
++		port {
++			adv7180: endpoint {
++				bus-width = <8>;
++				remote-endpoint = <&vin0ep>;
++			};
++		};
++	};
+ };
+ 
+ &qspi {
+@@ -230,3 +248,20 @@
+ 		spi-cpha;
+ 	};
+ };
++
++/* composite video input */
++&vin0 {
++	status = "ok";
++	pinctrl-0 = <&vin0_pins>;
++	pinctrl-names = "default";
++
++	port {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		vin0ep: endpoint {
++			remote-endpoint = <&adv7180>;
++			bus-width = <8>;
++		};
++	};
++};
