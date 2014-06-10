@@ -1,32 +1,59 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Sun, 15 Jun 2014 19:59:33 +0000
-Subject: Re: [Linux-kernel] RFC: new soc_camera/rcar_vin patch series
-Message-Id: <539DFB25.9000406@codethink.co.uk>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 10 Jun 2014 00:40:14 +0000
+Subject: [PATCH v2 1/2] net: sh_eth: Fix receive packet "exceeded" condition in sh_eth_rx()
+Message-Id: <539653EE.1000700@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402862194-17743-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1402862194-17743-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@lists.codethink.co.uk, linux-sh@vger.kernel.org, linux-media@vger.kernel.org
-Cc: horms@verge.net.au, magnus.damm@opensource.se, robert.jarzmik@free.fr, g.liakhovetski@gmx.de
+To: "netdev@vger.kernel.org" <netdev@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-On 15/06/14 20:56, Ben Dooks wrote:
-> This is a new series for the rcar_vin and soc_camera layer
-> to support using OF.
-> 
-> It should incorporate most of the feedback from the previous
-> series, but please let me know if there's anything missed. As
-> a note, we have skipped over multiple eps for this release as
-> there are few scenarios for the driver.
-> 
-> Testing/feedback welcome.
+This patch fixes the packet "exceeded" condition in sh_eth_rx() when
+RACT in an RX descriptor is not set and the "quota" is 0.
+Otherwise, kernel panic happens because the "&n->poll_list" is deleted
+twice in sh_eth_poll() which calls napi_complete() and net_rx_action().
 
-Forgot, pushed to:
+Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ drivers/net/ethernet/renesas/sh_eth.c |    8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
 
-	http://git.codethink.co.uk/linux.git bjdooks/v315/vin-of
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 08ed9a3..5761f8c 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1399,7 +1399,6 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
+ 	int entry = mdp->cur_rx % mdp->num_rx_ring;
+ 	int boguscnt = (mdp->dirty_rx + mdp->num_rx_ring) - mdp->cur_rx;
+ 	struct sk_buff *skb;
+-	int exceeded = 0;
+ 	u16 pkt_len = 0;
+ 	u32 desc_status;
 
+@@ -1411,10 +1410,9 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
+ 		if (--boguscnt < 0)
+ 			break;
 
+-		if (*quota <= 0) {
+-			exceeded = 1;
++		if (*quota <= 0)
+ 			break;
+-		}
++
+ 		(*quota)--;
+
+ 		if (!(desc_status & RDFEND))
+@@ -1508,7 +1506,7 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
+ 		sh_eth_write(ndev, EDRRR_R, EDRRR);
+ 	}
+
+-	return exceeded;
++	return *quota <= 0;
+ }
+
+ static void sh_eth_rcv_snd_disable(struct net_device *ndev)
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.7.9.5
+
