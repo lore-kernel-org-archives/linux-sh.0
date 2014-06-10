@@ -1,59 +1,65 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Fri, 27 Jun 2014 09:34:20 +0000
-Subject: Re: [PATCH v2 02/23] DocBook: media: Document ALPHA_COMPONENT control usage on output devices
-Message-Id: <53AD3A9C.3070404@xs4all.nl>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 10 Jun 2014 23:06:07 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7791: add VIN DT support
+Message-Id: <201406110306.08759.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1403567669-18539-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1403567669-18539-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <201406110304.18976.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201406110304.18976.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
+Define the generic R8A7791 parts of the VIN[0-2] device nodes. Add aliases for
+the VIN[0-2] device nodes. 
 
-Regards,
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-	Hans
+---
+ arch/arm/boot/dts/r8a7791.dtsi |   27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
 
-On 06/24/2014 01:54 AM, Laurent Pinchart wrote:
-> Extend the V4L2_CID_ALPHA_COMPONENT control for use on output devices,
-> to set the alpha component value when the output format doesn't have an
-> alpha channel.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->   Documentation/DocBook/media/v4l/controls.xml | 17 ++++++++++-------
->   1 file changed, 10 insertions(+), 7 deletions(-)
->
-> diff --git a/Documentation/DocBook/media/v4l/controls.xml b/Documentation/DocBook/media/v4l/controls.xml
-> index 47198ee..4dfea27 100644
-> --- a/Documentation/DocBook/media/v4l/controls.xml
-> +++ b/Documentation/DocBook/media/v4l/controls.xml
-> @@ -398,14 +398,17 @@ to work.</entry>
->   	  <row id="v4l2-alpha-component">
->   	    <entry><constant>V4L2_CID_ALPHA_COMPONENT</constant></entry>
->   	    <entry>integer</entry>
-> -	    <entry> Sets the alpha color component on the capture device or on
-> -	    the capture buffer queue of a mem-to-mem device. When a mem-to-mem
-> -	    device produces frame format that includes an alpha component
-> +	    <entry>Sets the alpha color component. When a capture device (or
-> +	    capture queue of a mem-to-mem device) produces a frame format that
-> +	    includes an alpha component
->   	    (e.g. <link linkend="rgb-formats">packed RGB image formats</link>)
-> -	    and the alpha value is not defined by the mem-to-mem input data
-> -	    this control lets you select the alpha component value of all
-> -	    pixels. It is applicable to any pixel format that contains an alpha
-> -	    component.
-> +	    and the alpha value is not defined by the device or the mem-to-mem
-> +	    input data this control lets you select the alpha component value of
-> +	    all pixels. When an output device (or output queue of a mem-to-mem
-> +	    device) consumes a frame format that doesn't include an alpha
-> +	    component and the device supports alpha channel processing this
-> +	    control lets you set the alpha component value of all pixels for
-> +	    further processing in the device.
->   	    </entry>
->   	  </row>
->   	  <row>
->
+Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
++++ renesas/arch/arm/boot/dts/r8a7791.dtsi
+@@ -34,6 +34,9 @@
+ 		spi1 = &msiof0;
+ 		spi2 = &msiof1;
+ 		spi3 = &msiof2;
++		vin0 = &vin0;
++		vin1 = &vin1;
++		vin2 = &vin2;
+ 	};
+ 
+ 	cpus {
+@@ -518,6 +521,30 @@
+ 		status = "disabled";
+ 	};
+ 
++	vin0: video@e6ef0000 {
++		compatible = "renesas,vin-r8a7790";
++		clocks = <&mstp8_clks R8A7791_CLK_VIN0>;
++		reg = <0 0xe6ef0000 0 0x1000>;
++		interrupts = <0 188 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	vin1: video@e6ef1000 {
++		compatible = "renesas,vin-r8a7790";
++		clocks = <&mstp8_clks R8A7791_CLK_VIN1>;
++		reg = <0 0xe6ef1000 0 0x1000>;
++		interrupts = <0 189 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	vin2: video@e6ef2000 {
++		compatible = "renesas,vin-r8a7790";
++		clocks = <&mstp8_clks R8A7791_CLK_VIN2>;
++		reg = <0 0xe6ef2000 0 0x1000>;
++		interrupts = <0 190 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
