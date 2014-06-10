@@ -1,64 +1,140 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Fri, 13 Jun 2014 09:37:18 +0000
-Subject: [PATCH v3 4/8] ARM: shmobile: r8a7791: Add PCIEC clock device tree node
-Message-Id: <1402652242-16604-5-git-send-email-phil.edworthy@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 10 Jun 2014 23:03:37 +0000
+Subject: [PATCH 03/07] ARM: shmobile: Lager SYS-DMAC prototype
+Message-Id: <20140610230337.13594.53552.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This patch adds the device tree clock node for the PCIe Controller
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Prototype code to enable part of the SYS-DMAC on Lager.
+Written to exercise the SYS-DMAC - Not for upstream merge.
+
+Based on the following patch by Kuninori Morimoto-san:
+"Local: ARM: shmobile: r8a7790: add SYS-DMAC support"
+
+This patch enables SYS-DMAC0 (= Low), it doesn't support
+SYS-DMAC1 (= HI) today.
+Because, SYS-DMAC HI/Low interrupt mapping is not
+good match to SH-DMAC driver.
+
+Thanks to Morimoto-san for his sample code!
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
-v3:
- - No change
 
-v2:
- - Changed PCIe controller names,etc from pcie to pciec
- - Corrected MTSP bit ordering
+ arch/arm/mach-shmobile/board-lager-reference.c |   93 ++++++++++++++++++++++++
+ 1 file changed, 93 insertions(+)
 
- arch/arm/boot/dts/r8a7791.dtsi            | 7 ++++---
- include/dt-bindings/clock/r8a7791-clock.h | 1 +
- 2 files changed, 5 insertions(+), 3 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index b639006..1e644eb 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -772,15 +772,16 @@
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
- 			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7791_CLK_SD0>,
--				 <&mmc0_clk>, <&hp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
-+				 <&mmc0_clk>, <&hp_clk>, <&mp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
- 				R8A7791_CLK_TPU0 R8A7791_CLK_SDHI2 R8A7791_CLK_SDHI1 R8A7791_CLK_SDHI0
--				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_IIC1 R8A7791_CLK_SSUSB R8A7791_CLK_CMT1
-+				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_PCIEC R8A7791_CLK_IIC1
-+				R8A7791_CLK_SSUSB R8A7791_CLK_CMT1
- 			>;
- 			clock-output-names  				"tpu0", "sdhi2", "sdhi1", "sdhi0",
--				"mmcif0", "i2c7", "i2c8", "ssusb", "cmt1";
-+				"mmcif0", "i2c7", "pciec", "i2c8", "ssusb", "cmt1";
- 		};
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index b050d18..1101e64 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -53,6 +53,7 @@
- #define R8A7791_CLK_SDHI0		14
- #define R8A7791_CLK_MMCIF0		15
- #define R8A7791_CLK_IIC0		18
-+#define R8A7791_CLK_PCIEC		19
- #define R8A7791_CLK_IIC1		23
- #define R8A7791_CLK_SSUSB		28
- #define R8A7791_CLK_CMT1		29
--- 
-2.0.0
-
+--- 0001/arch/arm/mach-shmobile/board-lager-reference.c
++++ work/arch/arm/mach-shmobile/board-lager-reference.c	2014-06-10 23:11:20.000000000 +0900
+@@ -70,6 +70,98 @@ static const struct resource du_resource
+ 	DEFINE_RES_IRQ(gic_spi(269)),
+ };
+ 
++#include <linux/sh_dma.h>
++#include <mach/dma-register.h>
++
++/* Local DMA slave IDs */
++enum {
++	RCAR_DMA_SLAVE_LAGER_INVALID = 0,
++};
++
++#define DMAE_CHANNEL(a, b)			\
++{						\
++	.offset		= (a) - 0x20,		\
++	.dmars		= (a) - 0x20 + 0x40,	\
++	.chclr_bit	= (b),			\
++	.chclr_offset	= 0x80 - 0x20,		\
++}
++
++/* Sys-DMAC */
++#define SYS_DMAC_SLAVE(_id, _bit, _addr, toffset, roffset, t, r)	\
++{								\
++	.slave_id	= SYS_DMAC_SLAVE_## _id ##_TX,		\
++	.addr		= _addr + toffset,			\
++	.chcr		= CHCR_TX(XMIT_SZ_## _bit ##BIT),	\
++	.mid_rid	= t,					\
++}, {								\
++	.slave_id	= SYS_DMAC_SLAVE_## _id ##_RX,		\
++	.addr		= _addr + roffset,			\
++	.chcr		= CHCR_RX(XMIT_SZ_## _bit ##BIT),	\
++	.mid_rid	= r,					\
++}
++
++static const struct sh_dmae_slave_config r8a7790_sys_dmac_slaves[] = {
++};
++
++static const struct sh_dmae_channel r8a7790_sys_dmac_channels[] = {
++	DMAE_CHANNEL(0x8000, 0),
++	DMAE_CHANNEL(0x8080, 1),
++	DMAE_CHANNEL(0x8100, 2),
++	DMAE_CHANNEL(0x8180, 3),
++	DMAE_CHANNEL(0x8200, 4),
++	DMAE_CHANNEL(0x8280, 5),
++	DMAE_CHANNEL(0x8300, 6),
++	DMAE_CHANNEL(0x8380, 7),
++	DMAE_CHANNEL(0x8400, 8),
++	DMAE_CHANNEL(0x8480, 9),
++	DMAE_CHANNEL(0x8500, 10),
++	DMAE_CHANNEL(0x8580, 11),
++	DMAE_CHANNEL(0x8600, 12),
++	DMAE_CHANNEL(0x8680, 13),
++	DMAE_CHANNEL(0x8700, 14),
++};
++
++static struct sh_dmae_pdata r8a7790_sys_dmac_platform_data = {
++	.slave		= r8a7790_sys_dmac_slaves,
++	.slave_num	= ARRAY_SIZE(r8a7790_sys_dmac_slaves),
++	.channel	= r8a7790_sys_dmac_channels,
++	.channel_num	= ARRAY_SIZE(r8a7790_sys_dmac_channels),
++	.ts_low_shift	= TS_LOW_SHIFT,
++	.ts_low_mask	= TS_LOW_BIT << TS_LOW_SHIFT,
++	.ts_high_shift	= TS_HI_SHIFT,
++	.ts_high_mask	= TS_HI_BIT << TS_HI_SHIFT,
++	.ts_shift	= dma_ts_shift,
++	.ts_shift_num	= ARRAY_SIZE(dma_ts_shift),
++	.dmaor_init	= DMAOR_DME,
++	.chclr_present	= 1,
++	.chclr_bitwise	= 1,
++	.fourty_bits_addr = 1,
++};
++
++static struct resource r8a7790_sys_dmac_resources[] = {
++	/* Channel registers and DMAOR for low */
++	DEFINE_RES_MEM(0xe6700020, 0x8763 - 0x20),
++	DEFINE_RES_IRQ(gic_spi(197)),
++	DEFINE_RES_NAMED(gic_spi(200), 15, NULL, IORESOURCE_IRQ),
++
++	/*
++	 * HI is not supported
++	 * since IRQ has strange mapping
++	 */
++};
++
++#define r8a7790_register_sys_dmac(id)				\
++	platform_device_register_resndata(			\
++		&platform_bus, "sh-dma-engine", 2 + id,		\
++		&r8a7790_sys_dmac_resources[id * 3],	3,	\
++		&r8a7790_sys_dmac_platform_data,		\
++		sizeof(r8a7790_sys_dmac_platform_data))
++
++static void __init lager_add_dmac_prototype(void)
++{
++	r8a7790_register_sys_dmac(0);
++}
++
+ static void __init lager_add_du_device(void)
+ {
+ 	struct platform_device_info info = {
+@@ -102,6 +194,7 @@ static void __init lager_add_standard_de
+ {
+ 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+ 	r8a7790_add_dt_devices();
++	lager_add_dmac_prototype();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 
+ 	lager_add_du_device();
