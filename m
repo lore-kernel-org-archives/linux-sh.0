@@ -1,114 +1,48 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 06 Jun 2014 07:21:11 +0000
-Subject: [PATCH v2 06/07] ARM: shmobile: Move r8a7791 reset code to pm-r8a7791.c
-Message-Id: <20140606072111.14868.23305.sendpatchset@w520>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 10 Jun 2014 08:09:14 +0000
+Subject: Re: [PATCH 0/3 v2][RFC] ARM: shmobile: r8a7790/lager sound support on DT
+Message-Id: <87egyxchjj.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
 
-Move r8a7791 specific reset vector setup code from the
-SMP glue code to PM code. This makes the code one step
-closer to allow PM operations such as Suspend-to-RAM
-in the case when SMP is disabled in the kernel config.
+Hi Simon, Geert
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
+These are v2 patches for R-Car H2 MSTP10,
+and sound support
 
- arch/arm/mach-shmobile/pm-r8a7791.c  |   28 ++++++++++++++++++++++++++--
- arch/arm/mach-shmobile/smp-r8a7791.c |   24 ------------------------
- 2 files changed, 26 insertions(+), 26 deletions(-)
+#1, #2 can be applied immediately ?
+#3 is up to Simon's backport work
 
---- 0001/arch/arm/mach-shmobile/pm-r8a7791.c
-+++ work/arch/arm/mach-shmobile/pm-r8a7791.c	2014-06-06 14:58:04.000000000 +0900
-@@ -9,12 +9,18 @@
-  * License.  See the file "COPYING" in the main directory of this archive
-  * for more details.
-  */
--
--#include <asm/io.h>
- #include <linux/kernel.h>
-+#include <linux/smp.h>
-+#include <asm/io.h>
-+#include <mach/common.h>
- #include <mach/pm-rcar.h>
- #include <mach/r8a7791.h>
- 
-+#define RST		0xe6160000
-+#define CA15BAR		0x0020
-+#define CA15RESCNT	0x0040
-+#define RAM		0xe6300000
-+
- /* SYSC */
- #define SYSCIER 0x0c
- #define SYSCIMR 0x10
-@@ -38,10 +44,28 @@ static inline void r8a7791_sysc_init(voi
- 
- void __init r8a7791_pm_init(void)
- {
-+	void __iomem *p;
-+	u32 bar;
- 	static int once;
- 
- 	if (once++)
- 		return;
- 
-+	/* RAM for jump stub, because BAR requires 256KB aligned address */
-+	p = ioremap_nocache(RAM, shmobile_boot_size);
-+	memcpy_toio(p, shmobile_boot_vector, shmobile_boot_size);
-+	iounmap(p);
-+
-+	/* setup reset vectors */
-+	p = ioremap_nocache(RST, 0x63);
-+	bar = (RAM >> 8) & 0xfffffc00;
-+	writel_relaxed(bar, p + CA15BAR);
-+	writel_relaxed(bar | 0x10, p + CA15BAR);
-+
-+	/* enable clocks to all CPUs */
-+	writel_relaxed((readl_relaxed(p + CA15RESCNT) & ~0x0f) | 0xa5a50000,
-+		       p + CA15RESCNT);
-+	iounmap(p);
-+
- 	r8a7791_sysc_init();
- }
---- 0001/arch/arm/mach-shmobile/smp-r8a7791.c
-+++ work/arch/arm/mach-shmobile/smp-r8a7791.c	2014-06-06 14:58:20.000000000 +0900
-@@ -22,35 +22,11 @@
- #include <mach/r8a7791.h>
- #include <mach/rcar-gen2.h>
- 
--#define RST		0xe6160000
--#define CA15BAR		0x0020
--#define CA15RESCNT	0x0040
--#define RAM		0xe6300000
--
- static void __init r8a7791_smp_prepare_cpus(unsigned int max_cpus)
- {
--	void __iomem *p;
--	u32 bar;
--
- 	/* let APMU code install data related to shmobile_boot_vector */
- 	shmobile_smp_apmu_prepare_cpus(max_cpus);
- 
--	/* RAM for jump stub, because BAR requires 256KB aligned address */
--	p = ioremap_nocache(RAM, shmobile_boot_size);
--	memcpy_toio(p, shmobile_boot_vector, shmobile_boot_size);
--	iounmap(p);
--
--	/* setup reset vectors */
--	p = ioremap_nocache(RST, 0x63);
--	bar = (RAM >> 8) & 0xfffffc00;
--	writel_relaxed(bar, p + CA15BAR);
--	writel_relaxed(bar | 0x10, p + CA15BAR);
--
--	/* enable clocks to all CPUs */
--	writel_relaxed((readl_relaxed(p + CA15RESCNT) & ~0x0f) | 0xa5a50000,
--		       p + CA15RESCNT);
--	iounmap(p);
--
- 	r8a7791_pm_init();
- 	shmobile_smp_apmu_suspend_init();
- }
+> These are r8a7790/lager sound patches on DT.
+> These add PIO transfer mode only at this poinnt,
+> since DMA DT is not supported yet.
+> 
+> I add [RFC] for these patches, 
+> because this "PIO transfer" only will be new confusion
+> for some reasons.
+> I (or Ben ?) will send full patches if DMA DT was supported.
+> 
+> The purpose of these patches is sharing information for sound DT
+> 
+> But, I guess #1 (#2 too ?)
+> can be applied immediately ?
+> 
+> Kuninori Morimoto (3):
+>       ARM: shmobile: r8a7790: add MSTP10 support on DTSI
+>       ARM: shmobile: r8a7790: add R-Car sound support on DTSI
+>       ARM: shmobile: lager: add sound support on DT
+> 
+>  arch/arm/boot/dts/r8a7790-lager.dts       |   70 +++++++++++++++++++++++
+>  arch/arm/boot/dts/r8a7790.dtsi            |   88 +++++++++++++++++++++++++++++
+>  arch/arm/mach-shmobile/Kconfig            |    1 +
+>  include/dt-bindings/clock/r8a7790-clock.h |   26 +++++++++
+>  4 files changed, 185 insertions(+)
+> 
+> 
+> Best regards
+> ---
+> Kuninori Morimoto
