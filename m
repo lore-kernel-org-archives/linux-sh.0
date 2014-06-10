@@ -1,32 +1,42 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 03 Jun 2014 22:32:55 +0000
-Subject: [PATCH 00/03] ARM: shmobile: Lager SYS-DMAC and MMCIF prototype
-Message-Id: <20140603223255.2193.42153.sendpatchset@w520>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 10 Jun 2014 00:40:24 +0000
+Subject: [PATCH v2 2/2] net: sh_eth: Fix timing of RACT setting in sh_eth_rx()
+Message-Id: <539653F8.6020603@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "netdev@vger.kernel.org" <netdev@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-ARM: shmobile: Lager SYS-DMAC and MMCIF prototype
+This patch fixes an issue that we cannot use nfs rootfs correctly
+on r8a7790 when the command below runs on a host PC.
 
-[PATCH 01/03] ARM: shmobile: r8a7790: SYS-DMAC prototype
-[PATCH 02/03] ARM: shmobile: r8a7790: SYS-DMAC and MMCIF prototype
-[PATCH 03/03] ARM: shmobile: Lager DT reference MMCIF DMAC prototype
+ $ sudo ping -f -l 8 $BOARD_IP_ADDR
 
-These patches add DMAC prototype support for the MMCIF on Lager.
-Written to show how to make use of platform devices for DMA support
-until the DT bindings for the DMA hardware have been stabilized.
+Since the driver sets the RACT to 1 in the first while loop of
+sh_eth_rx(), the controller accepts a next frame into the next RX
+descriptor during the while loop. But, in the first while loop
+doesn't allocate a next skb. So, this patch removes the RACT setting
+in the first while loop of sh_eth_rx().
 
-Not for upstream merge. More-than-32-bit physical addresses are not
-handled by this code - LPAE is not supported.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
+ drivers/net/ethernet/renesas/sh_eth.c |    1 -
+ 1 file changed, 1 deletion(-)
 
- Written on top of renesas-devel-v3.15-rc7-20140530
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 5761f8c..621c581 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1460,7 +1460,6 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
+ 			ndev->stats.rx_packets++;
+ 			ndev->stats.rx_bytes += pkt_len;
+ 		}
+-		rxdesc->status |= cpu_to_edmac(mdp, RD_RACT);
+ 		entry = (++mdp->cur_rx) % mdp->num_rx_ring;
+ 		rxdesc = &mdp->rx_ring[entry];
+ 	}
+-- 
+1.7.9.5
 
- arch/arm/mach-shmobile/board-lager-reference.c |   20 +++++
- arch/arm/mach-shmobile/include/mach/r8a7790.h  |    4 +
- arch/arm/mach-shmobile/setup-r8a7790.c         |   91 +++++++++++++++++++++---
- 3 files changed, 105 insertions(+), 10 deletions(-)
