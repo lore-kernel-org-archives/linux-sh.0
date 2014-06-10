@@ -1,35 +1,23 @@
-From: "Rafael J. Wysocki" <rjw@rjwysocki.net>
-Date: Mon, 09 Jun 2014 23:57:55 +0000
-Subject: Re: [PATCH] PM / OPP: Remove ARCH_HAS_OPP
-Message-Id: <1857766.e38RV3V2OT@vostro.rjw.lan>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 10 Jun 2014 23:04:18 +0000
+Subject: [PATCH 0/2] Add VIN and ADV7180 DT support for R8A7791/Henninger board
+Message-Id: <201406110304.18976.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402051016-28853-1-git-send-email-broonie@kernel.org>
- <1976508.Da0u8DZI5B@vostro.rjw.lan> <20140609225142.GA5099@sirena.org.uk>
-In-Reply-To: <20140609225142.GA5099@sirena.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Monday, June 09, 2014 11:51:42 PM Mark Brown wrote:
-> 
-> --fYgRtaZIy+F1uhp1
-> Content-Type: text/plain; charset=us-ascii
-> Content-Disposition: inline
-> 
-> On Tue, Jun 10, 2014 at 12:22:07AM +0200, Rafael J. Wysocki wrote:
-> > On Monday, June 09, 2014 08:49:17 PM Mark Brown wrote:
-> 
-> > > Yes, looks like it is.
-> 
-> > But it doesn't apply for me on top of the current Linus' tree.
-> 
-> > Can you please rebase?
-> 
-> It probably depends on other people's trees too, I just killed all the
-> usages in -next - I gather the SH trees added some new ones for example.
-> I'd expect it'll apply after the merge window, if not that's the time to
-> look at it.
+Hello.
 
-OK
+   Here's the set of 2 patches against Simon Horman's 'renesas.git' repo,
+'renesas-devel-v3.15-20140610' tag plus the Henninger I2C2 DT support patch
+that I posted earlier. Here we add the VIN and ADV7180 video decoder device
+tree support on the R8A7791/Henninger board. The patchset requires Ben Dooks'
+adv7180, rcar_vin, and soc_camera DT support patches posted back in April in
+order to work.
 
+[1/2] ARM: shmobile: r8a7791: add VIN DT support
+[2/2] ARM: shmobile: henninger: add VIN0/ADV7180 DT support
+
+WBR, Sergei
