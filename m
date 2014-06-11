@@ -1,83 +1,56 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:28:24 +0000
-Subject: [PATCH 15/29] ARM: shmobile: koelsch: Remove duplicate i2c6 nodes
-Message-Id: <897dfdbc14603d764637dea92696fef4fc66ea3e.1403487225.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 11 Jun 2014 13:01:57 +0000
+Subject: Re: [PATCH 8/8] DT: Add vendor prefix for Dialog Semiconductor Ltd.
+Message-Id: <CAMuHMdVD1Rui6NL6AS2iAaw+bmXbU6juA9ugO1rFSw_5W-49tA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
+References: <cover.1402484954.git.Adam.Thomson.Opensource@diasemi.com>
+	<bf4b6d7b061e66d3ca7f3dd44319b9e26ae7103f.1402484954.git.Adam.Thomson.Opensource@diasemi.com>
+	<CAMuHMdWirVk+jrz40yw4=zAOFH6VTX9CXcpO01e0rK8S8VGGHw@mail.gmail.com>
+	<CAL_JsqK0RqYuZ8YB1sBZK7hMXvp6oEPfAu11m95F61_kGV3Ptg@mail.gmail.com>
+In-Reply-To: <CAL_JsqK0RqYuZ8YB1sBZK7hMXvp6oEPfAu11m95F61_kGV3Ptg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Rob Herring <robherring2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Adam Thomson <Adam.Thomson.Opensource-WBD+wuPFNBhBDgjK7y7TUQ@public.gmane.org>, Lee Jones <lee.jones-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Samuel Ortiz <sameo-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, Jonathan Cameron <jic23-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-iio-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dmitry Eremin-Solenikov <dbaryshkov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, David Woodhouse <dwmw2-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Pawel Moll <pawel.moll-5wv7dgnIgG8@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Ian Campbell <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, Kumar Gala <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, support.opensource-WBD+wuPFNBhBDgjK7y7TUQ@public.gmane.org, Guennadi Liakhovetski <g.liakhovetski-Mmb7MZpHnFY@public.gmane.org>, Benoit Cousson <bcousson-rdvid1DuHRBWk0Htik3J/w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-A second i2c6 node was a added by
-05e234a187058ee ("ARM: shmobile: koelsch dts: Add VDD MPU regulator for
-DVFS"). Merge this into the existing node.
+On Wed, Jun 11, 2014 at 2:43 PM, Rob Herring <robherring2@gmail.com> wrote:
+> On Wed, Jun 11, 2014 at 7:09 AM, Geert Uytterhoeven
+> <geert@linux-m68k.org> wrote:
+>> On Wed, Jun 11, 2014 at 1:11 PM, Adam Thomson
+>> <Adam.Thomson.Opensource@diasemi.com> wrote:
+>>> --- a/Documentation/devicetree/bindings/vendor-prefixes.txt
+>>> +++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
+>>> @@ -36,6 +36,7 @@ dallas        Maxim Integrated Products (formerly Dallas Semiconductor)
+>>>  davicom        DAVICOM Semiconductor, Inc.
+>>>  denx   Denx Software Engineering
+>>>  digi   Digi International Inc.
+>>> +dlg    Dialog Semiconductor Ltd.
+>>
+>> "diasemi" has been proposed before
+>> https://groups.google.com/forum/#!msg/linux.kernel/htUxLpV_Ng0/ClJVAxgK4e4J
+>>
+>> "dialog", "diasemi", and "dlg" all seem to be already in use...
+>
+> dlg is the correct one and seems to be the most widely used, so we
+> should go with that and mark the others deprecated.
+>
+> diasemi is documented for the da9210, but not used anywhere.
 
-Also shuffle i2c nodes so they are all together.
+It users are queued in Simon's tree, for two Renesas boards.
 
-Cc: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7791-koelsch.dts | 34 +++++++++++++++-------------------
- 1 file changed, 15 insertions(+), 19 deletions(-)
+> There appears to be 2 different da9053 bindings. I'd guess the dialog
+> variant used on 2 i.MX boards is not used. Other i.MX boards use the
+> dlg version. I'm not sure what is going on with da9055. Please sort
+> these out.
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index b2e6616..b0cfbd4 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -215,25 +215,6 @@
- 	clock-frequency = <20000000>;
- };
- 
--&i2c2 {
--	pinctrl-0 = <&i2c2_pins>;
--	pinctrl-names = "default";
--
--	status = "okay";
--	clock-frequency = <400000>;
--
--	eeprom@50 {
--		compatible = "renesas,24c02";
--		reg = <0x50>;
--		pagesize = <16>;
--	};
--};
--
--&i2c6 {
--	status = "okay";
--	clock-frequency = <100000>;
--};
--
- &pfc {
- 	pinctrl-0 = <&du_pins>;
- 	pinctrl-names = "default";
-@@ -414,10 +395,25 @@
- 	};
- };
- 
-+&i2c2 {
-+	pinctrl-0 = <&i2c2_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+	clock-frequency = <400000>;
-+
-+	eeprom@50 {
-+		compatible = "renesas,24c02";
-+		reg = <0x50>;
-+		pagesize = <16>;
-+	};
-+};
-+
- &i2c6 {
- 	pinctrl-names = "default";
- 	pinctrl-0 = <&i2c6_pins>;
- 	status = "okay";
-+	clock-frequency = <100000>;
- 
- 	vdd_dvfs: regulator@68 {
- 		compatible = "diasemi,da9210";
--- 
-2.0.0.rc2
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
