@@ -1,76 +1,91 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 10 Jun 2014 23:40:17 +0000
-Subject: Re: [PATCH 01/02] ARM: shmobile: Add shared R-Car Gen2 CMA reservation code
-Message-Id: <20140610234012.GA20738@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 11 Jun 2014 06:53:54 +0000
+Subject: [PATCH 2/3 v3] ARM: shmobile: r8a7790: add R-Car sound support on DTSI
+Message-Id: <87bnu0j5rn.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140306032824.10814.21953.sendpatchset@w520>
-In-Reply-To: <20140306032824.10814.21953.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Jun 10, 2014 at 07:51:38PM +0900, Magnus Damm wrote:
-> Hi Geert,
-> 
-> Thanks for your feedback!
-> 
-> On Tue, Jun 10, 2014 at 4:19 PM, Geert Uytterhoeven
-> <geert@linux-m68k.org> wrote:
-> > Hi Magnus,
-> >
-> > On Mon, Jun 9, 2014 at 2:38 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> >> --- 0001/arch/arm/mach-shmobile/setup-rcar-gen2.c
-> >> +++ work/arch/arm/mach-shmobile/setup-rcar-gen2.c       2014-06-09 21:01:33.000000000 +0900
-> >
-> >> +static int __init rcar_gen2_scan_mem(unsigned long node, const char *uname,
-> >> +                                    int depth, void *data)
-> >> +{
-> >
-> >> +       u64 lpae_start = (u64)1 << 32;
-> >
-> > Casts are evil:
-> >
-> > 1ULL << 32
-> >
-> > (I hope one day gcc will gain a "-Wcast" option, so we can easily find and
-> >  inspect all casts, as C-style casts are much more difficult to grep for than
-> >  C++-style casts).
-> 
-> Oh, right, I totally forgot I added that one. =)
-> 
-> >> +       /* We are scanning "memory" nodes only */
-> >> +       if (type = NULL) {
-> >> +               /*
-> >> +                * The longtrail doesn't have a device_type on the
-> >> +                * /memory node, so look for the node called /memory@0.
-> >> +                */
-> >> +               if (depth != 1 || strcmp(uname, "memory@0") != 0)
-> >> +                       return 0;
-> >
-> > AFAIK Open Firmware in the LongTrail does not support plugging in ARM CPUs
-> > in its PPC 603e/604e-compatible CPU socket ;-)
-> 
-> You never know - anything is possible with DT. =)
-> 
-> But yes, I get your point - will clean up.
-> 
-> >> +struct cma *rcar_gen2_dma_contiguous;
-> >> +
-> >> +void __init rcar_gen2_reserve(void)
-> >> +{
-> >
-> >> +#ifdef CONFIG_DMA_CMA
-> >> +       if (mrc.size)
-> >> +               dma_contiguous_reserve_area(mrc.size, mrc.base, 0,
-> >> +                                           &rcar_gen2_dma_contiguous);
-> >> +#endif
-> >
-> > I assume one day rcar_gen2_dma_contiguous will become used?
-> 
-> That's the idea, yes!
-> 
-> Since Simon kindly queued this up already I will submit an incremental
-> fix to deal with the issues that you pointed out.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks. FWIW I quite dislike casts.
+This patch support PIO transfer only at this point
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v2 -> v3
+
+ - no change
+
+ arch/arm/boot/dts/r8a7790.dtsi |   56 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 56 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 2e67414..5d09dc3 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1060,4 +1060,60 @@
+ 		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
++
++	rcar_sound: rcar_sound@0xec500000 {
++		#sound-dai-cells = <1>;
++		compatible =  "renesas,rcar_sound-r8a7790", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
++		interrupt-parent = <&gic>;
++		reg =	<0 0xec500000 0 0x1000>, /* SCU */
++			<0 0xec5a0000 0 0x100>,  /* ADG */
++			<0 0xec540000 0 0x1000>, /* SSIU */
++			<0 0xec541000 0 0x1280>; /* SSI */
++		clocks = <&mstp10_clks R8A7790_CLK_SSI_ALL>,
++			<&mstp10_clks R8A7790_CLK_SSI9>, <&mstp10_clks R8A7790_CLK_SSI8>,
++			<&mstp10_clks R8A7790_CLK_SSI7>, <&mstp10_clks R8A7790_CLK_SSI6>,
++			<&mstp10_clks R8A7790_CLK_SSI5>, <&mstp10_clks R8A7790_CLK_SSI4>,
++			<&mstp10_clks R8A7790_CLK_SSI3>, <&mstp10_clks R8A7790_CLK_SSI2>,
++			<&mstp10_clks R8A7790_CLK_SSI1>, <&mstp10_clks R8A7790_CLK_SSI0>,
++			<&mstp10_clks R8A7790_CLK_SCU_SRC9>, <&mstp10_clks R8A7790_CLK_SCU_SRC8>,
++			<&mstp10_clks R8A7790_CLK_SCU_SRC7>, <&mstp10_clks R8A7790_CLK_SCU_SRC6>,
++			<&mstp10_clks R8A7790_CLK_SCU_SRC5>, <&mstp10_clks R8A7790_CLK_SCU_SRC4>,
++			<&mstp10_clks R8A7790_CLK_SCU_SRC3>, <&mstp10_clks R8A7790_CLK_SCU_SRC2>,
++			<&mstp10_clks R8A7790_CLK_SCU_SRC1>, <&mstp10_clks R8A7790_CLK_SCU_SRC0>,
++			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
++		clock-names = "ssi-all",
++				"ssi.9", "ssi.8", "ssi.7", "ssi.6", "ssi.5",
++				"ssi.4", "ssi.3", "ssi.2", "ssi.1", "ssi.0",
++				"src.9", "src.8", "src.7", "src.6", "src.5",
++				"src.4", "src.3", "src.2", "src.1", "src.0",
++				"clk_a", "clk_b", "clk_c", "clk_i";
++
++		status = "disabled";
++
++		rcar_sound,src {
++			src0: src@0 { };
++			src1: src@1 { };
++			src2: src@2 { };
++			src3: src@3 { };
++			src4: src@4 { };
++			src5: src@5 { };
++			src6: src@6 { };
++			src7: src@7 { };
++			src8: src@8 { };
++			src9: src@9 { };
++		};
++
++		rcar_sound,ssi {
++			ssi0: ssi@0 { interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi1: ssi@1 { interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi2: ssi@2 { interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi3: ssi@3 { interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi4: ssi@4 { interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi5: ssi@5 { interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi6: ssi@6 { interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi7: ssi@7 { interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi8: ssi@8 { interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi9: ssi@9 { interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>; };
++		};
++	};
+ };
+-- 
+1.7.9.5
+
