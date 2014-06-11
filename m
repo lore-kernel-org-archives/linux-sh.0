@@ -1,56 +1,141 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Mon, 30 Jun 2014 13:51:13 +0000
-Subject: Re: [PATCH] dma: sh: inherit debug options from the subsystem for sh
-Message-Id: <20140630135013.GC2296@intel.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 11 Jun 2014 06:54:52 +0000
+Subject: [PATCH 3/3 v3] ARM: shmobile: lager: add sound support on DT
+Message-Id: <87a99kj5q2.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404033022-3014-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1404033022-3014-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Sun, Jun 29, 2014 at 09:56:43PM +0200, Laurent Pinchart wrote:
-> Hi Wolfram,
-> 
-> Thank you for the patch.
-> 
-> On Sunday 29 June 2014 11:10:05 Wolfram Sang wrote:
-> > From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> > 
-> > Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> > ---
-> >  drivers/dma/sh/Makefile | 3 +++
-> >  1 file changed, 3 insertions(+)
-> > 
-> > diff --git a/drivers/dma/sh/Makefile b/drivers/dma/sh/Makefile
-> > index 1ce88b28cfc6..275297a89bd5 100644
-> > --- a/drivers/dma/sh/Makefile
-> > +++ b/drivers/dma/sh/Makefile
-> > @@ -1,3 +1,6 @@
-> > +ccflags-$(CONFIG_DMADEVICES_DEBUG)  := -DDEBUG
-> 
-> Isn't this discouraged in favour of using dynamic printk ? I've recently 
-> submitted a similar patch for the OMAP4 ISS driver and it got nacked.
-With dynamic debug, these flags dont make much sense unless you want something
-to be printed *always* during boot.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-unforuntely, this patch doesnt provide reason why we should do this here!
+It supports PIO transfer at this point
 
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v2 -> v3
+
+ - rename ak4643 -> snd_codec
+ - used existing i2c2
+
+ arch/arm/boot/dts/r8a7790-lager.dts |   67 +++++++++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig      |    1 +
+ 2 files changed, 68 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 295a60e..e6bb303 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -9,6 +9,18 @@
+  * kind, whether express or implied.
+  */
+ 
++/*
++ * SSI-AK4643
++ *
++ * SW1: 1: AK4643
++ *      2: CN22
++ *      3: ADV7511
++ *
++ * this command is required when playback.
++ *
++ * # amixer set "LINEOUT Mixer DACL" on
++ */
++
+ /dts-v1/;
+ #include "r8a7790.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
+@@ -144,6 +156,22 @@
+ 		states = <3300000 1
+ 			  1800000 0>;
+ 	};
++
++	sound {
++		compatible = "simple-audio-card";
++
++		simple-audio-card,format = "left_j";
++		simple-audio-card,cpu {
++			sound-dai = <&rcar_sound 0>;
++		};
++
++		simple-audio-card,codec {
++			bitclock-master;
++			frame-master;
++			sound-dai = <&snd_codec>;
++			system-clock-frequency = <11289600>;
++		};
++	};
+ };
+ 
+ &extal_clk {
+@@ -219,6 +247,16 @@
+ 		renesas,groups = "i2c3";
+ 		renesas,function = "i2c3";
+ 	};
++
++	sound_pins: sound {
++		renesas,groups = "ssi0129_ctrl", "ssi0_data", "ssi1_data";
++		renesas,function = "ssi";
++	};
++
++	sound_clk_pins: sound_clk {
++		renesas,groups = "audio_clk_a";
++		renesas,function = "audio_clk";
++	};
+ };
+ 
+ &ether {
+@@ -367,8 +405,37 @@
+ 	status = "ok";
+ 	pinctrl-0 = <&i2c2_pins>;
+ 	pinctrl-names = "default";
++
++	snd_codec: snd_codec {
++		compatible = "asahi-kasei,ak4643";
++		#sound-dai-cells = <0>;
++		reg = <0x12>;
++	};
+ };
+ 
+ &i2c3	{
+ 	status = "ok";
+ };
++
++&rcar_sound {
++	pinctrl-0 = <&sound_pins &sound_clk_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++
++	rcar_sound,dai {
++		dai0 {
++			playback = <&ssi0>;
++			capture  = <&ssi1>;
++		};
++	};
++};
++
++&ssi0 {
++	pio-transfer;
++};
++
++&ssi1 {
++	pio-transfer;
++	shared-pin;
++};
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 3b28bd8..6fc352a 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -58,6 +58,7 @@ config MACH_LAGER
+ 	bool "Lager board"
+ 	depends on ARCH_R8A7790
+ 	select MICREL_PHY if SH_ETH
++	select SND_SOC_AK4642 if SND_SIMPLE_CARD
+ 
+ config MACH_MARZEN
+ 	bool "MARZEN board"
 -- 
-~Vinod
+1.7.9.5
 
-> 
-> > +ccflags-$(CONFIG_DMADEVICES_VDEBUG) += -DVERBOSE_DEBUG
-> > +
-> >  obj-$(CONFIG_SH_DMAE_BASE) += shdma-base.o shdma-of.o
-> >  obj-$(CONFIG_SH_DMAE) += shdma.o
-> >  shdma-y := shdmac.o
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-
--- 
