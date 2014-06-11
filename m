@@ -1,42 +1,33 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 10 Jun 2014 00:40:24 +0000
-Subject: [PATCH v2 2/2] net: sh_eth: Fix timing of RACT setting in sh_eth_rx()
-Message-Id: <539653F8.6020603@renesas.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Wed, 11 Jun 2014 11:05:53 +0000
+Subject: [PATCH v2 7/7] ARM: shmobile: koelsch: Enable PCIe Controller
+Message-Id: <1402484753-7471-8-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "netdev@vger.kernel.org" <netdev@vger.kernel.org>
-Cc: SH-Linux <linux-sh@vger.kernel.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+To: linux-sh@vger.kernel.org
 
-This patch fixes an issue that we cannot use nfs rootfs correctly
-on r8a7790 when the command below runs on a host PC.
-
- $ sudo ping -f -l 8 $BOARD_IP_ADDR
-
-Since the driver sets the RACT to 1 in the first while loop of
-sh_eth_rx(), the controller accepts a next frame into the next RX
-descriptor during the while loop. But, in the first while loop
-doesn't allocate a next skb. So, this patch removes the RACT setting
-in the first while loop of sh_eth_rx().
-
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
- drivers/net/ethernet/renesas/sh_eth.c |    1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index 5761f8c..621c581 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -1460,7 +1460,6 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
- 			ndev->stats.rx_packets++;
- 			ndev->stats.rx_bytes += pkt_len;
- 		}
--		rxdesc->status |= cpu_to_edmac(mdp, RD_RACT);
- 		entry = (++mdp->cur_rx) % mdp->num_rx_ring;
- 		rxdesc = &mdp->rx_ring[entry];
- 	}
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index b2e6616..5acb01f 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -430,6 +430,10 @@
+ 	};
+ };
+ 
++&pciec {
++	status = "okay";
++};
++
+ &cpu0 {
+ 	cpu0-supply = <&vdd_dvfs>;
+ };
 -- 
-1.7.9.5
+2.0.0
 
