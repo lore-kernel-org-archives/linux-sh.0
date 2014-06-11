@@ -1,54 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:26:52 +0000
-Subject: [PATCH 5/9] ARM: shmobile: Use shmobile_init_delay() on Genmai boards
-Message-Id: <4387ac5282616ff14edc733aca79fe046ddb45f5.1403487831.git.horms+renesas@verge.net.au>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Wed, 11 Jun 2014 11:05:46 +0000
+Subject: [PATCH v2 0/7] ARM: shmobile: R-Car: Add PCIe clocks and DT nodes
+Message-Id: <1402484753-7471-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487831.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487831.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+These patches add PCIe support to the R-Car H2/M2 devices and enable it on the
+Koelsch board. They depend on the following commits in Linus's master branch:
+	c25da4778803b41e11fd82dd5576c35c09b5f0e0
+	290c1fb35860540223bef1be021944d02232889d
+	7869fc6e295cbb1f80e30555bebbc795abb5b9a7
 
-Adjust Genmai board support to use shmobile_init_delay() together
-with r7s72100 CPU Frequency settings from the DTS.
+v2:
+ - Changed PCIe controller names,etc from pcie to pciec
+ - Corrected MTSP bit ordering
+ - Use a default PCIe bus clock in the device's dtsi
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-genmai-reference.c | 2 +-
- arch/arm/mach-shmobile/board-genmai.c           | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+Phil Edworthy (7):
+  ARM: shmobile: r8a7790: Add PCIEC clock device tree node
+  ARM: shmobile: r8a7790: Add default PCIe bus clock
+  ARM: shmobile: r8a7790: Add PCIe Controller device node
+  ARM: shmobile: r8a7791: Add PCIEC clock device tree node
+  ARM: shmobile: r8a7791: Add default PCIe bus clock
+  ARM: shmobile: r8a7791: Add PCIe Controller device node
+  ARM: shmobile: koelsch: Enable PCIe Controller
 
-diff --git a/arch/arm/mach-shmobile/board-genmai-reference.c b/arch/arm/mach-shmobile/board-genmai-reference.c
-index d341ef0..c06dc5c 100644
---- a/arch/arm/mach-shmobile/board-genmai-reference.c
-+++ b/arch/arm/mach-shmobile/board-genmai-reference.c
-@@ -47,7 +47,7 @@ static const char * const genmai_boards_compat_dt[] __initconst = {
- };
- 
- DT_MACHINE_START(GENMAI_DT, "genmai")
--	.init_early	= r7s72100_init_early,
-+	.init_early	= shmobile_init_delay,
- 	.init_machine	= genmai_add_standard_devices,
- 	.dt_compat	= genmai_boards_compat_dt,
- MACHINE_END
-diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
-index f0a8eca..a0994f3 100644
---- a/arch/arm/mach-shmobile/board-genmai.c
-+++ b/arch/arm/mach-shmobile/board-genmai.c
-@@ -154,7 +154,7 @@ static const char * const genmai_boards_compat_dt[] __initconst = {
- };
- 
- DT_MACHINE_START(GENMAI_DT, "genmai")
--	.init_early	= r7s72100_init_early,
-+	.init_early	= shmobile_init_delay,
- 	.init_machine	= genmai_add_standard_devices,
- 	.dt_compat	= genmai_boards_compat_dt,
- MACHINE_END
+ arch/arm/boot/dts/r8a7790.dtsi            | 39 +++++++++++++++++++++++++++---
+ arch/arm/boot/dts/r8a7791-koelsch.dts     |  4 ++++
+ arch/arm/boot/dts/r8a7791.dtsi            | 40 ++++++++++++++++++++++++++++---
+ include/dt-bindings/clock/r8a7790-clock.h |  1 +
+ include/dt-bindings/clock/r8a7791-clock.h |  1 +
+ 5 files changed, 79 insertions(+), 6 deletions(-)
+
 -- 
-2.0.0.rc2
+2.0.0
 
