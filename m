@@ -1,51 +1,62 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 04 Jun 2014 11:53:35 +0000
-Subject: Re: [PATCH v2 4/7] ARM: shmobile: r8a7791: Add SYS-DMAC channel definitions for bindings
-Message-Id: <1917207.MSyb5W7vbK@avalon>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Wed, 11 Jun 2014 11:05:50 +0000
+Subject: [PATCH v2 4/7] ARM: shmobile: r8a7791: Add PCIEC clock device tree node
+Message-Id: <1402484753-7471-5-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401716531-29794-1-git-send-email-geert+renesas@glider.be>
- <3770565.HiyLmu1184@avalon> <538F06CF.5090406@codethink.co.uk>
-In-Reply-To: <538F06CF.5090406@codethink.co.uk>
+References: <1401716531-29794-5-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1401716531-29794-5-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Ben,
+This patch adds the device tree clock node for the PCIe Controller
 
-On Wednesday 04 June 2014 12:45:19 Ben Dooks wrote:
-> On 04/06/14 12:30, Laurent Pinchart wrote:
-> > On Tuesday 03 June 2014 09:53:17 Geert Uytterhoeven wrote:
-> >> On Mon, Jun 2, 2014 at 3:52 PM, Ben Dooks wrote:
-> >>>> +// FIXME
-> >>>> +#define CHCR_RX_8BIT SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_8BIT)
-> >>>> +#define CHCR_TX_8BIT SHDMA_ARM_CHCR_TX(SHDMA_ARM_SZ_8BIT)
-> >>>> +#define CHCR_RX_16BIT        SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_16BIT)
-> >>>> +#define CHCR_TX_16BIT        SHDMA_ARM_CHCR_TX(SHDMA_ARM_SZ_16BIT)
-> >>>> +#define CHCR_RX_32BIT        SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_32BIT)
-> >>>> +#define CHCR_TX_32BIT        SHDMA_ARM_CHCR_TX(SHDMA_ARM_SZ_32BIT)
-> >>>> +#define CHCR_RX_256BIT       SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_256BIT)
-> >>>> +#define CHCR_TX_256BIT       SHDMA_ARM_CHCR_TX(SHDMA_ARM_SZ_256BIT)
-> >>> 
-> >>> I am pretty sure for round-2 we can remove these in favour of a
-> >>> table in the driver. The only device that has a non-standard setting
-> >>> is the SDHI and that will support 32bit and 256bit transfers.
-> >> 
-> >> Thanks, I'm eagerly awaiting your next version...
-> > 
-> > Speaking of that, Ben, do you have a git tree with your latest patches ?
-> 
-> Not yet, as currently working on sorting out the soc_camera before
-> moving back to the DMA. I have a plan, just not had the time to sort
-> it out.
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+v2:
+ - Changed PCIe controller names,etc from pcie to pciec
+ - Corrected MTSP bit ordering
 
-I need to start implementing LPAE support for the DMAC using descriptors, and 
-I have to decide whether I'll go for a new driver of fix the existing one(s). 
-Having access to your code, even if it's work in progress, would be helpful, 
-otherwise there will be a high chance of conflicts.
+ arch/arm/boot/dts/r8a7791.dtsi            | 7 ++++---
+ include/dt-bindings/clock/r8a7791-clock.h | 1 +
+ 2 files changed, 5 insertions(+), 3 deletions(-)
 
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index b639006..1e644eb 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -772,15 +772,16 @@
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+ 			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7791_CLK_SD0>,
+-				 <&mmc0_clk>, <&hp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
++				 <&mmc0_clk>, <&hp_clk>, <&mp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7791_CLK_TPU0 R8A7791_CLK_SDHI2 R8A7791_CLK_SDHI1 R8A7791_CLK_SDHI0
+-				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_IIC1 R8A7791_CLK_SSUSB R8A7791_CLK_CMT1
++				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_PCIEC R8A7791_CLK_IIC1
++				R8A7791_CLK_SSUSB R8A7791_CLK_CMT1
+ 			>;
+ 			clock-output-names  				"tpu0", "sdhi2", "sdhi1", "sdhi0",
+-				"mmcif0", "i2c7", "i2c8", "ssusb", "cmt1";
++				"mmcif0", "i2c7", "pciec", "i2c8", "ssusb", "cmt1";
+ 		};
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
+index b050d18..1101e64 100644
+--- a/include/dt-bindings/clock/r8a7791-clock.h
++++ b/include/dt-bindings/clock/r8a7791-clock.h
+@@ -53,6 +53,7 @@
+ #define R8A7791_CLK_SDHI0		14
+ #define R8A7791_CLK_MMCIF0		15
+ #define R8A7791_CLK_IIC0		18
++#define R8A7791_CLK_PCIEC		19
+ #define R8A7791_CLK_IIC1		23
+ #define R8A7791_CLK_SSUSB		28
+ #define R8A7791_CLK_CMT1		29
 -- 
-Regards,
-
-Laurent Pinchart
+2.0.0
 
