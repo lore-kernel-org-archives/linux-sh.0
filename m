@@ -1,133 +1,61 @@
-From: Grant Likely <grant.likely@linaro.org>
-Date: Tue, 17 Jun 2014 12:40:16 +0000
-Subject: Re: BUG: Bad page state in process swapper pfn:00000
-Message-Id: <CACxGe6vkcfeEf0TNE5gstFs0jCm+GUT7RuJt+D8Ngq2e9Lf_fg@mail.gmail.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Wed, 11 Jun 2014 11:05:47 +0000
+Subject: [PATCH v2 1/7] ARM: shmobile: r8a7790: Add PCIEC clock device tree node
+Message-Id: <1402484753-7471-2-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMuHMdXm_fT251+ih2cJS+hRkrPuVQi3sMFgYe+k18xe-Wd21w@mail.gmail.com>
- <539892BD.8020403@codeaurora.org>
- <CAMuHMdWZutiNpGScEhCzgM70jJ+MZ1ErmKtNfMHVLDB+d5Lyzw@mail.gmail.com>
- <539915B3.9050904@codeaurora.org>
-In-Reply-To: <539915B3.9050904@codeaurora.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Jun 12, 2014 at 3:51 AM, Laura Abbott <lauraa@codeaurora.org> wrote:
-> On 6/11/2014 12:19 PM, Geert Uytterhoeven wrote:
->> Hi Laura,
->>
->> On Wed, Jun 11, 2014 at 7:32 PM, Laura Abbott <lauraa@codeaurora.org> wrote:
->>> On 6/11/2014 4:40 AM, Geert Uytterhoeven wrote:
->>>> With current mainline, I get an early crash on r8a7791/koelsch:
->>>>
->>>> BUG: Bad page state in process swapper  pfn:00000
->>>> page:ee20b000 count:0 mapcount:0 mapping:66756200 index:0x65726566
->>>> page flags: 0x74656b63(locked|error|lru|active|owner_priv_1|arch_1|private|writeback|head|swapcache
->>>> |reclaim|mlocked)
->>>> page dumped because: PAGE_FLAGS_CHECK_AT_FREE flag(s) set
->>>> bad because of flags:
->>>> page flags: 0x212861(locked|lru|active|private|writeback|swapcache|mlocked)
->>>>
->>>> I bisected it to
->>>>
->>>> commit 1c2f87c22566cd057bc8cde10c37ae9da1a1bb76
->>>> Author: Laura Abbott <lauraa@codeaurora.org>
->>>> Date:   Sun Apr 13 22:54:58 2014 +0100
->>>>
->>>>     ARM: 8025/1: Get rid of meminfo
->>
->>>> -Truncating RAM at 40000000-bfffffff to -6f7fffff (vmalloc region overlap).
->>>> +Truncating RAM at 0x00000000-0xc0000000 to -0x6f800000
->>>
->>> I'm guessing this is the issue right there.
->>>
->>>         memory@40000000 {
->>>                 device_type = "memory";
->>>                 reg = <0 0x40000000 0 0x40000000>;
->>>         };
->>>
->>>         memory@200000000 {
->>>                 device_type = "memory";
->>>                 reg = <2 0x00000000 0 0x40000000>;
->>>         };
->>>
->>> Those are the memory nodes from r8a7791-koelsch.dts. It looks like the memory
->>> outside 32-bit address range is not being dropped. It was suggested to drop
->>> early_init_dt_add_memory_arch which called arm_add_memory and just use the
->>> generic of code directly but the problem is arm_add_memory does additional
->>> bounds checking. It looks like early_init_dt_add_memory_arch in
->>> drivers/of/fdt.c checks for overflow on u64 types but not for overflow
->>> on phys_addr_t (32 bits) which is what memblock_add actually uses.
->>>
->>> For a quick test, can you try bringing back early_init_dt_add_memory_arch
->>> and see if that fixes the problem:
->>>
->>> diff --git a/arch/arm/kernel/devtree.c b/arch/arm/kernel/devtree.c
->>> index e94a157..ea9ce92 100644
->>> --- a/arch/arm/kernel/devtree.c
->>> +++ b/arch/arm/kernel/devtree.c
->>> @@ -27,6 +27,10 @@
->>>  #include <asm/mach/arch.h>
->>>  #include <asm/mach-types.h>
->>>
->>> +void __init early_init_dt_add_memory_arch(u64 base, u64 size)
->>> +{
->>> +       arm_add_memory(base, size);
->>> +}
->>>
->>>  #ifdef CONFIG_SMP
->>>  extern struct of_cpu_method __cpu_method_of_table[];
->>
->> Thanks, my board boots again after applying this quick hack.
->>
->
-> Great! Russell are you okay with taking the above as a fix or would you prefer
-> I fixup drivers/of/fdt.c right now?
+This patch adds the device tree clock node for the PCIe Controller
 
-I would rather see the fix directly in fdt.c.
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+v2:
+ - Changed PCIe controller names,etc from pcie to pciec
+ - Corrected MTSP bit ordering
 
-g.
+ arch/arm/boot/dts/r8a7790.dtsi            | 6 +++---
+ include/dt-bindings/clock/r8a7790-clock.h | 1 +
+ 2 files changed, 4 insertions(+), 3 deletions(-)
 
->
->
-> Thanks,
-> Laura
->
-> ----8<----
-> From 14bda557a108ad197e7c5f040f50ca024b45cc17 Mon Sep 17 00:00:00 2001
-> From: Laura Abbott <lauraa@codeaurora.org>
-> Date: Wed, 11 Jun 2014 19:39:29 -0700
-> Subject: [PATCH] arm: Bring back early_init_dt_add_memory_arch
->
-> Commit 1c2f87c (ARM: 8025/1: Get rid of meminfo) removed
-> early_init_dt_add_memory_arch in favor of using the common method.
-> The common method does not currently check for memory outside of
-> 32-bit bounds which may lead to memory being incorrectly added to
-> the system. Bring back early_init_dt_add_memory_arch for now until
-> the generic function can be fixed up.
->
-> Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
-> Signed-off-by: Laura Abbott <lauraa@codeaurora.org>
-> ---
->  arch/arm/kernel/devtree.c | 4 ++++
->  1 file changed, 4 insertions(+)
->
-> diff --git a/arch/arm/kernel/devtree.c b/arch/arm/kernel/devtree.c
-> index e94a157..ea9ce92 100644
-> --- a/arch/arm/kernel/devtree.c
-> +++ b/arch/arm/kernel/devtree.c
-> @@ -27,6 +27,10 @@
->  #include <asm/mach/arch.h>
->  #include <asm/mach-types.h>
->
-> +void __init early_init_dt_add_memory_arch(u64 base, u64 size)
-> +{
-> +       arm_add_memory(base, size);
-> +}
->
->  #ifdef CONFIG_SMP
->  extern struct of_cpu_method __cpu_method_of_table[];
-> --
-> The Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum,
-> hosted by The Linux Foundation
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index e990d3c..7eb882c 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -765,17 +765,17 @@
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+ 			clocks = <&hp_clk>, <&cp_clk>, <&mmc1_clk>, <&sd3_clk>,
+ 				 <&sd2_clk>, <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks R8A7790_CLK_SD0>, <&mmc0_clk>,
+-				 <&hp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
++				 <&hp_clk>, <&mp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7790_CLK_IIC2 R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
+ 				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0 R8A7790_CLK_MMCIF0
+-				R8A7790_CLK_IIC0 R8A7790_CLK_IIC1 R8A7790_CLK_SSUSB R8A7790_CLK_CMT1
++				R8A7790_CLK_IIC0 R8A7790_CLK_PCIEC R8A7790_CLK_IIC1 R8A7790_CLK_SSUSB R8A7790_CLK_CMT1
+ 			>;
+ 			clock-output-names  				"iic2", "tpu0", "mmcif1", "sdhi3",
+ 				"sdhi2", "sdhi1", "sdhi0", "mmcif0",
+-				"iic0", "iic1", "ssusb", "cmt1";
++				"iic0", "pciec", "iic1", "ssusb", "cmt1";
+ 		};
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index 1118f7a..84dc7e6 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -59,6 +59,7 @@
+ #define R8A7790_CLK_SDHI0		14
+ #define R8A7790_CLK_MMCIF0		15
+ #define R8A7790_CLK_IIC0		18
++#define R8A7790_CLK_PCIEC		19
+ #define R8A7790_CLK_IIC1		23
+ #define R8A7790_CLK_SSUSB		28
+ #define R8A7790_CLK_CMT1		29
+-- 
+2.0.0
+
