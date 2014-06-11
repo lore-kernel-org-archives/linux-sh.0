@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 10 Jun 2014 07:27:26 +0000
+From: keita kobayashi <keita.kobayashi.ym@renesas.com>
+Date: Wed, 11 Jun 2014 04:57:32 +0000
 Subject: Re: [PATCH v2 00/07] ARM: shmobile: Suspend on non-SMP for r8a7790/r8a7791
-Message-Id: <20140610072723.GA10908@verge.net.au>
+Message-Id: <5397E1BC.7070109@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20140606071749.14853.90558.sendpatchset@w520>
 In-Reply-To: <20140606071749.14853.90558.sendpatchset@w520>
@@ -10,7 +10,29 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Jun 06, 2014 at 04:17:49PM +0900, Magnus Damm wrote:
+Hi Magnus
+
+I tested these patches. Test result is below:
+
+[Test environment]
+ -lager / koelsch
+ -tag:renesas-devel-v3.15-rc8-20140605v3
+
+[Test command]
+Suspend to RAM command
+ #echo enabled > /sys/class/tty/ttySC6/power/wakeup
+ #echo mem > /sys/power/state
+
+[Test results]
+ -lager(SMP)		:OK
+ -lager(non-SMP)	:OK
+ -koelsch(SMP)		:OK
+ -koelsch(non-SMP)	:OK
+
+Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+
+(2014/06/06 16:17), Magnus Damm wrote:
+
 > ARM: shmobile: Suspend on non-SMP for r8a7790/r8a7791 (V2)
 > 
 > [PATCH v2 01/07] ARM: shmobile: Allow use of boot code for non-SMP case
@@ -31,11 +53,6 @@ On Fri, Jun 06, 2014 at 04:17:49PM +0900, Magnus Damm wrote:
 > setting the user decides.
 > 
 > Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-
-Hi Magnus,
-
-could you let me know what the status of this series is?
-
 > ---
 > 
 >  Written on top of renesas-devel-v3.15-rc8-20140605v3
@@ -53,8 +70,4 @@ could you let me know what the status of this series is?
 >  arch/arm/mach-shmobile/smp-r8a7790.c  |   31 ------------------------
 >  arch/arm/mach-shmobile/smp-r8a7791.c  |   25 --------------------
 >  7 files changed, 95 insertions(+), 78 deletions(-)
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+
