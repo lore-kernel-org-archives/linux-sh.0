@@ -1,61 +1,82 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Wed, 11 Jun 2014 11:05:47 +0000
-Subject: [PATCH v2 1/7] ARM: shmobile: r8a7790: Add PCIEC clock device tree node
-Message-Id: <1402484753-7471-2-git-send-email-phil.edworthy@renesas.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 12 Jun 2014 15:33:11 +0000
+Subject: Re: [PATCH v2 1/7] ARM: shmobile: r8a7790: Add PCIEC clock device tree node
+Message-Id: <12637809.lefD1kp5dL@avalon>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1402484753-7471-2-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1402484753-7471-2-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This patch adds the device tree clock node for the PCIe Controller
+Hi Phil,
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
----
-v2:
- - Changed PCIe controller names,etc from pcie to pciec
- - Corrected MTSP bit ordering
+Thank you for the patch.
 
- arch/arm/boot/dts/r8a7790.dtsi            | 6 +++---
- include/dt-bindings/clock/r8a7790-clock.h | 1 +
- 2 files changed, 4 insertions(+), 3 deletions(-)
+On Wednesday 11 June 2014 12:05:47 Phil Edworthy wrote:
+> This patch adds the device tree clock node for the PCIe Controller
+> 
+> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index e990d3c..7eb882c 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -765,17 +765,17 @@
- 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
- 			clocks = <&hp_clk>, <&cp_clk>, <&mmc1_clk>, <&sd3_clk>,
- 				 <&sd2_clk>, <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks R8A7790_CLK_SD0>, <&mmc0_clk>,
--				 <&hp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
-+				 <&hp_clk>, <&mp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
- 				R8A7790_CLK_IIC2 R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
- 				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0 R8A7790_CLK_MMCIF0
--				R8A7790_CLK_IIC0 R8A7790_CLK_IIC1 R8A7790_CLK_SSUSB R8A7790_CLK_CMT1
-+				R8A7790_CLK_IIC0 R8A7790_CLK_PCIEC R8A7790_CLK_IIC1 R8A7790_CLK_SSUSB R8A7790_CLK_CMT1
- 			>;
- 			clock-output-names  				"iic2", "tpu0", "mmcif1", "sdhi3",
- 				"sdhi2", "sdhi1", "sdhi0", "mmcif0",
--				"iic0", "iic1", "ssusb", "cmt1";
-+				"iic0", "pciec", "iic1", "ssusb", "cmt1";
- 		};
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-index 1118f7a..84dc7e6 100644
---- a/include/dt-bindings/clock/r8a7790-clock.h
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -59,6 +59,7 @@
- #define R8A7790_CLK_SDHI0		14
- #define R8A7790_CLK_MMCIF0		15
- #define R8A7790_CLK_IIC0		18
-+#define R8A7790_CLK_PCIEC		19
- #define R8A7790_CLK_IIC1		23
- #define R8A7790_CLK_SSUSB		28
- #define R8A7790_CLK_CMT1		29
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+
+> ---
+> v2:
+>  - Changed PCIe controller names,etc from pcie to pciec
+>  - Corrected MTSP bit ordering
+> 
+>  arch/arm/boot/dts/r8a7790.dtsi            | 6 +++---
+>  include/dt-bindings/clock/r8a7790-clock.h | 1 +
+>  2 files changed, 4 insertions(+), 3 deletions(-)
+> 
+> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+> index e990d3c..7eb882c 100644
+> --- a/arch/arm/boot/dts/r8a7790.dtsi
+> +++ b/arch/arm/boot/dts/r8a7790.dtsi
+> @@ -765,17 +765,17 @@
+>  			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+>  			clocks = <&hp_clk>, <&cp_clk>, <&mmc1_clk>, <&sd3_clk>,
+>  				 <&sd2_clk>, <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks
+> R8A7790_CLK_SD0>, <&mmc0_clk>, -				 <&hp_clk>, <&hp_clk>, 
+<&mp_clk>,
+> <&rclk_clk>;
+> +				 <&hp_clk>, <&mp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
+>  			#clock-cells = <1>;
+>  			renesas,clock-indices = <
+>  				R8A7790_CLK_IIC2 R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 
+R8A7790_CLK_SDHI3
+>  				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0
+> R8A7790_CLK_MMCIF0 -				R8A7790_CLK_IIC0 R8A7790_CLK_IIC1 
+R8A7790_CLK_SSUSB
+> R8A7790_CLK_CMT1 +				R8A7790_CLK_IIC0 R8A7790_CLK_PCIEC 
+R8A7790_CLK_IIC1
+> R8A7790_CLK_SSUSB R8A7790_CLK_CMT1
+>  			>;
+> 
+>  			clock-output-names >  				"iic2", "tpu0", "mmcif1", "sdhi3",
+>  				"sdhi2", "sdhi1", "sdhi0", "mmcif0",
+> -				"iic0", "iic1", "ssusb", "cmt1";
+> +				"iic0", "pciec", "iic1", "ssusb", "cmt1";
+>  		};
+>  		mstp5_clks: mstp5_clks@e6150144 {
+>  			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-
+clocks";
+> diff --git a/include/dt-bindings/clock/r8a7790-clock.h
+> b/include/dt-bindings/clock/r8a7790-clock.h index 1118f7a..84dc7e6 100644
+> --- a/include/dt-bindings/clock/r8a7790-clock.h
+> +++ b/include/dt-bindings/clock/r8a7790-clock.h
+> @@ -59,6 +59,7 @@
+>  #define R8A7790_CLK_SDHI0		14
+>  #define R8A7790_CLK_MMCIF0		15
+>  #define R8A7790_CLK_IIC0		18
+> +#define R8A7790_CLK_PCIEC		19
+>  #define R8A7790_CLK_IIC1		23
+>  #define R8A7790_CLK_SSUSB		28
+>  #define R8A7790_CLK_CMT1		29
+
 -- 
-2.0.0
+Regards,
+
+Laurent Pinchart
 
