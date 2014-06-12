@@ -1,26 +1,17 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 12 Jun 2014 00:59:24 +0000
+From: Stephen Warren <swarren@wwwdotorg.org>
+Date: Thu, 12 Jun 2014 15:33:04 +0000
 Subject: Re: [PATCH] of: Add vendor 2nd prefix for Asahi Kasei Corp
-Message-Id: <20140612005922.GE11549@verge.net.au>
+Message-Id: <5399C830.8070607@wwwdotorg.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMuHMdWTVBjFzA9L9Eqpq_2Xi9_NHkOCLrb_UjK611SBfwnc=Q@mail.gmail.com>
- <87ioo7c0g5.wl%kuninori.morimoto.gx@renesas.com>
- <539815E6.2050304@codethink.co.uk>
- <20140611165410.GK5099@sirena.org.uk>
- <CAMuHMdUT0hEBGbN+W-Oz5zJ0N8S2VDMndqtDO=EtWF3jG2MEew@mail.gmail.com>
- <20140611170233.GL5099@sirena.org.uk>
- <5398A53D.3020706@wwwdotorg.org>
- <20140611190444.GN5099@sirena.org.uk>
- <5398AB07.4040304@wwwdotorg.org>
- <87sinbdk44.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87sinbdk44.wl%kuninori.morimoto.gx@renesas.com>
+References: <CAMuHMdWTVBjFzA9L9Eqpq_2Xi9_NHkOCLrb_UjK611SBfwnc=Q@mail.gmail.com>	<87ioo7c0g5.wl%kuninori.morimoto.gx@renesas.com>	<539815E6.2050304@codethink.co.uk>	<20140611165410.GK5099@sirena.org.uk>	<CAMuHMdUT0hEBGbN+W-Oz5zJ0N8S2VDMndqtDO=EtWF3jG2MEew@mail.gmail.com>	<20140611170233.GL5099@sirena.org.uk>	<5398A53D.3020706@wwwdotorg.org>	<20140611190444.GN5099@sirena.org.uk>	<5398AB07.4040304@wwwdotorg.org> <87sinbdk44.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87sinbdk44.wl%kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Rob Herring <robh@kernel.org>, linux-kernel@vger.kernel.org, Mark Brown <broonie@kernel.org>, Stephen Warren <swarren@wwwdotorg.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, ALSA Development Mailing List <alsa-devel@alsa-project.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Ben Dooks <ben.dooks@codethink.co.uk>
+To: Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Rob Herring <robh-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, ALSA Development Mailing List <alsa-devel-K7yf7f+aM1XWsZ/bQMPhNw@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Ben Dooks <ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>
 
-On Wed, Jun 11, 2014 at 05:53:02PM -0700, Kuninori Morimoto wrote:
+On 06/11/2014 06:53 PM, Kuninori Morimoto wrote:
 > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 > 
 > Current vendor-prefixes.txt already has
@@ -32,39 +23,19 @@ On Wed, Jun 11, 2014 at 05:53:02PM -0700, Kuninori Morimoto wrote:
 > and is already in use.
 > But, almost all Asahi Kasei chip driver is
 > using "asahi-kasei" prefix today.
-> 
-> Due to ABIness, this patch adds
-> "asahi-kasei" to vendor-prefixes.txt.
-> checkpatch.pl will report WARNING without this patch.
-> (DT compatible string vendor "asahi-kasei" appears un-documented)
-> 
-> OTOH, Asahi Kasei is usually referred as "AKM",
-> but this patch doesn't care about it.
-> Because no DT is using it today.
-> 
-> Cc: Stephen Warren <swarren@wwwdotorg.org>
-> Cc: Mark Brown <broonie@kernel.org>
-> Cc: Geert Uytterhoeven <geert@linux-m68k.org>,
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+I'm fine with this patch, but just wanted to comment on this part of the
+commit description:
 
-> ---
->  .../devicetree/bindings/vendor-prefixes.txt        |    1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
-> index abc3080..7e4bb83 100644
-> --- a/Documentation/devicetree/bindings/vendor-prefixes.txt
-> +++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
-> @@ -17,6 +17,7 @@ amstaos	AMS-Taos Inc.
->  apm	Applied Micro Circuits Corporation (APM)
->  arm	ARM Ltd.
->  armadeus	ARMadeus Systems SARL
-> +asahi-kasei	Asahi Kasei Corp.
->  atmel	Atmel Corporation
->  auo	AU Optronics Corporation
->  avago	Avago Technologies
-> -- 
-> 1.7.9.5
-> 
+What is in the drivers isn't relevant; that's not what drives the ABI.
+The issue is that some *DTs* use ak and some use asahi-kasei, so both
+those need to be supported.
+
+That said, we should document which one of the two prefixes is
+preferred, and use this for any new AK binding.
+
+It would also be nice to ensure the preferred prefix is in all drivers'
+of_match_tables, and remove the deprecated prefix from all drivers'
+of_match_tables *except* where there's already a DT file that references
+the deprecated vendor prefix.
+
