@@ -1,47 +1,33 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:25:35 +0000
-Subject: [PATCH 4/4] ARM: shmobile: Enable CPUFREQ configuration
-Message-Id: <468c570ed078f0326745bfe85868adb925659502.1403487196.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 12 Jun 2014 08:42:23 +0000
+Subject: [PATCH 2/3] ARM: shmobile: rcar-gen2: Use "1ULL" instead of "(u64)1"
+Message-Id: <1402562544-4527-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487196.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487196.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Casts are evil
 
-This changes of configuration is multiplatform build only for r8a7790/r8a7791.
-
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/configs/shmobile_defconfig | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index 94d7736..c4b72aa 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -147,3 +147,16 @@ CONFIG_NLS_ISO8859_1=y
- # CONFIG_ENABLE_WARN_DEPRECATED is not set
- # CONFIG_ENABLE_MUST_CHECK is not set
- # CONFIG_ARM_UNWIND is not set
-+CONFIG_CPU_FREQ=y
-+CONFIG_CPU_FREQ_GOV_COMMON=y
-+CONFIG_CPU_FREQ_STAT=y
-+CONFIG_CPU_FREQ_STAT_DETAILS=y
-+CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE=y
-+CONFIG_CPU_FREQ_GOV_PERFORMANCE=y
-+CONFIG_CPU_FREQ_GOV_POWERSAVE=y
-+CONFIG_CPU_FREQ_GOV_USERSPACE=y
-+CONFIG_CPU_FREQ_GOV_ONDEMAND=y
-+CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y
-+CONFIG_CPU_THERMAL=y
-+CONFIG_GENERIC_CPUFREQ_CPU0=y
-+CONFIG_REGULATOR_DA9210=y
+diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+index 1c09789393cd..e308bdb9ae4d 100644
+--- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+@@ -126,7 +126,7 @@ static int __init rcar_gen2_scan_mem(unsigned long node, const char *uname,
+ 	const __be32 *reg, *endp;
+ 	int l;
+ 	struct memory_reserve_config *mrc = data;
+-	u64 lpae_start = (u64)1 << 32;
++	u64 lpae_start = 1ULL << 32;
+ 
+ 	/* We are scanning "memory" nodes only */
+ 	if (type = NULL) {
 -- 
-2.0.0.rc2
+1.9.1
 
