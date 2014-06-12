@@ -1,204 +1,66 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 30 Jun 2014 22:11:22 +0000
-Subject: [PATCH] sh-pfc: r8a7791: add CAN pin groups
-Message-Id: <201407010211.23665.sergei.shtylyov@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 12 Jun 2014 11:26:36 +0000
+Subject: [-next] Regression: ssh log in slowdown
+Message-Id: <CAMuHMdU6rrpx6xFw71HKexDJUZtfFtL+um6dxZ=EaycgVO312A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Tom Herbert <therbert@google.com>, "David S. Miller" <davem@davemloft.net>
+Cc: Linux-Next <linux-next@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Add CAN0/1 data/clock pin groups to R8A7791 PFC driver.
+When logging in remotely using ssh, there's now a 10 second delay,
+cfr. the "ssh -v" output below:
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+debug1: ssh_ecdsa_verify: signature correct
+debug1: SSH2_MSG_NEWKEYS sent
+debug1: expecting SSH2_MSG_NEWKEYS
+debug1: SSH2_MSG_NEWKEYS received
+debug1: Roaming not allowed by server
+debug1: SSH2_MSG_SERVICE_REQUEST sent
+debug1: SSH2_MSG_SERVICE_ACCEPT received
 
----
-The patch is against the 'devel' branch of Linus W.'s 'linux-pinctrl.git' repo.
+----- 10 s delay ---
 
- drivers/pinctrl/sh-pfc/pfc-r8a7791.c |  153 +++++++++++++++++++++++++++++++++++
- 1 file changed, 153 insertions(+)
+debug1: Authentications that can continue: publickey,password
+debug1: Next authentication method: publickey
 
-Index: linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
-=================================--- linux-pinctrl.orig/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
-+++ linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
-@@ -1726,6 +1726,119 @@ static const unsigned int audio_clkout_m
- 	AUDIO_CLKOUT_MARK,
- };
- 
-+/* - CAN -------------------------------------------------------------------- */
-+
-+static const unsigned int can0_data_a_pins[] = {
-+	RCAR_GP_PIN(3, 26), RCAR_GP_PIN(3, 29),
-+};
-+
-+static const unsigned int can0_data_a_mux[] = {
-+	CAN0_TX_MARK, CAN0_RX_MARK,
-+};
-+
-+static const unsigned int can0_data_b_pins[] = {
-+	RCAR_GP_PIN(7, 4), RCAR_GP_PIN(7, 3),
-+};
-+
-+static const unsigned int can0_data_b_mux[] = {
-+	CAN0_TX_B_MARK, CAN0_RX_B_MARK,
-+};
-+
-+static const unsigned int can0_data_c_pins[] = {
-+	RCAR_GP_PIN(5, 17), RCAR_GP_PIN(5, 18),
-+};
-+
-+static const unsigned int can0_data_c_mux[] = {
-+	CAN0_TX_C_MARK,	CAN0_RX_C_MARK,
-+};
-+
-+static const unsigned int can0_data_d_pins[] = {
-+	RCAR_GP_PIN(2, 26), RCAR_GP_PIN(2, 27),
-+};
-+
-+static const unsigned int can0_data_d_mux[] = {
-+	CAN0_TX_D_MARK, CAN0_RX_D_MARK,
-+};
-+
-+static const unsigned int can0_data_e_pins[] = {
-+	RCAR_GP_PIN(4, 18), RCAR_GP_PIN(4, 28),
-+};
-+
-+static const unsigned int can0_data_e_mux[] = {
-+	CAN0_TX_E_MARK, CAN0_RX_E_MARK,
-+};
-+
-+static const unsigned int can0_data_f_pins[] = {
-+	RCAR_GP_PIN(6, 7), RCAR_GP_PIN(6, 6),
-+};
-+
-+static const unsigned int can0_data_f_mux[] = {
-+	CAN0_TX_F_MARK, CAN0_RX_F_MARK,
-+};
-+
-+static const unsigned int can1_data_a_pins[] = {
-+	 RCAR_GP_PIN(3, 21), RCAR_GP_PIN(3, 20),
-+};
-+
-+static const unsigned int can1_data_a_mux[] = {
-+	CAN1_TX_MARK, CAN1_RX_MARK,
-+};
-+
-+static const unsigned int can1_data_b_pins[] = {
-+	RCAR_GP_PIN(7, 8), RCAR_GP_PIN(7, 9),
-+};
-+
-+static const unsigned int can1_data_b_mux[] = {
-+	CAN1_TX_B_MARK, CAN1_RX_B_MARK,
-+};
-+
-+static const unsigned int can1_data_c_pins[] = {
-+	RCAR_GP_PIN(5, 20), RCAR_GP_PIN(5, 19),
-+};
-+
-+static const unsigned int can1_data_c_mux[] = {
-+	CAN1_TX_C_MARK, CAN1_RX_C_MARK,
-+};
-+
-+static const unsigned int can1_data_d_pins[] = {
-+	 RCAR_GP_PIN(4, 29), RCAR_GP_PIN(4, 31),
-+};
-+
-+static const unsigned int can1_data_d_mux[] = {
-+	CAN1_TX_D_MARK, CAN1_RX_D_MARK,
-+};
-+
-+static const unsigned int can_clk_a_pins[] = {
-+	RCAR_GP_PIN(7, 2),
-+};
-+
-+static const unsigned int can_clk_a_mux[] = {
-+	CAN_CLK_MARK,
-+};
-+
-+static const unsigned int can_clk_b_pins[] = {
-+	RCAR_GP_PIN(5, 21),
-+};
-+
-+static const unsigned int can_clk_b_mux[] = {
-+	CAN_CLK_B_MARK,
-+};
-+
-+static const unsigned int can_clk_c_pins[] = {
-+	RCAR_GP_PIN(4, 31),
-+};
-+
-+static const unsigned int can_clk_c_mux[] = {
-+	CAN_CLK_C_MARK,
-+};
-+
-+static const unsigned int can_clk_d_pins[] = {
-+	RCAR_GP_PIN(7, 19),
-+};
-+
-+static const unsigned int can_clk_d_mux[] = {
-+	CAN_CLK_D_MARK,
-+};
- 
- /* - DU --------------------------------------------------------------------- */
- static const unsigned int du_rgb666_pins[] = {
-@@ -4055,6 +4168,20 @@ static const struct sh_pfc_pin_group pin
- 	SH_PFC_PIN_GROUP(audio_clk_b_b),
- 	SH_PFC_PIN_GROUP(audio_clk_c),
- 	SH_PFC_PIN_GROUP(audio_clkout),
-+	SH_PFC_PIN_GROUP(can0_data_a),
-+	SH_PFC_PIN_GROUP(can0_data_b),
-+	SH_PFC_PIN_GROUP(can0_data_c),
-+	SH_PFC_PIN_GROUP(can0_data_d),
-+	SH_PFC_PIN_GROUP(can0_data_e),
-+	SH_PFC_PIN_GROUP(can0_data_f),
-+	SH_PFC_PIN_GROUP(can1_data_a),
-+	SH_PFC_PIN_GROUP(can1_data_b),
-+	SH_PFC_PIN_GROUP(can1_data_c),
-+	SH_PFC_PIN_GROUP(can1_data_d),
-+	SH_PFC_PIN_GROUP(can_clk_a),
-+	SH_PFC_PIN_GROUP(can_clk_b),
-+	SH_PFC_PIN_GROUP(can_clk_c),
-+	SH_PFC_PIN_GROUP(can_clk_d),
- 	SH_PFC_PIN_GROUP(du_rgb666),
- 	SH_PFC_PIN_GROUP(du_rgb888),
- 	SH_PFC_PIN_GROUP(du_clk_out_0),
-@@ -4367,6 +4494,30 @@ static const char * const audio_clk_grou
- 	"audio_clkout",
- };
- 
-+static const char * const can0_groups[] = {
-+	"can0_data_a",
-+	"can0_data_b",
-+	"can0_data_c",
-+	"can0_data_d",
-+	"can0_data_e",
-+	"can0_data_f",
-+	"can_clk_a",
-+	"can_clk_b",
-+	"can_clk_c",
-+	"can_clk_d",
-+};
-+
-+static const char * const can1_groups[] = {
-+	"can1_data_a",
-+	"can1_data_b",
-+	"can1_data_c",
-+	"can1_data_d",
-+	"can_clk_a",
-+	"can_clk_b",
-+	"can_clk_c",
-+	"can_clk_d",
-+};
-+
- static const char * const du_groups[] = {
- 	"du_rgb666",
- 	"du_rgb888",
-@@ -4790,6 +4941,8 @@ static const char * const vin2_groups[] 
- 
- static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(audio_clk),
-+	SH_PFC_FUNCTION(can0),
-+	SH_PFC_FUNCTION(can1),
- 	SH_PFC_FUNCTION(du),
- 	SH_PFC_FUNCTION(du0),
- 	SH_PFC_FUNCTION(du1),
+Wireshark doesn't show anything suspicious, just that there's a 10 s gap
+before I receive an "encrypted response packet" on the client.
+
+Hardware is r8a7791/koelsch, using sh_eth.
+
+I bisected this to
+commit 7e3cead5172927732f51fde77fef6f521e22f209
+Author: Tom Herbert <therbert@google.com>
+Date:   Tue Jun 10 18:54:19 2014 -0700
+
+    net: Save software checksum complete
+
+    In skb_checksum complete, if we need to compute the checksum for the
+    packet (via skb_checksum) save the result as CHECKSUM_COMPLETE.
+    Subsequent checksum verification can use this.
+
+    Also, added csum_complete_sw flag to distinguish between software and
+    hardware generated checksum complete, we should always be able to trust
+    the software computation.
+
+    Signed-off-by: Tom Herbert <therbert@google.com>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+Reverting this commit fixes the issue.
+
+Anyone with a clue?
+
+Thanks!
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
