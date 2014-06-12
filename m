@@ -1,97 +1,41 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:26:24 +0000
-Subject: [PATCH 11/24] ARM: shmobile: Remove non-multiplatform Marzen reference support
-Message-Id: <1ece7f7bb014485b13faf9504b238ff891a9088a.1403487423.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 12 Jun 2014 08:42:24 +0000
+Subject: [PATCH 3/3] ARM: shmobile: rcar-gen2: Remove useless copied section for LongTrail
+Message-Id: <1402562544-4527-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487423.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487423.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Now that r8a7779 has CCF support remove the legacy Marzen reference
-Kconfig bits CONFIG_MACH_MARZEN_REFERENCE for the non-multiplatform
-case.
+Open Firmware in the CHRP LongTrail does not support plugging in ARM CPUs
+in its PPC 603e/604e-compatible CPU socket ;-)
 
-Starting from this commit Marzen board support is always enabled via
-CONFIG_MACH_MARZEN, and CONFIG_ARCH_MULTIPLATFORM is used to select
-between board-marzen.c and board-marzen-reference.c
-
-The file board-marzen-reference.c can no longer be used together with
-the legacy sh-clk clock framework, instead CCF is used.
-
-Based on work for the Koelsch board by Laurent Pinchart.
-
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/Makefile           |  1 -
- arch/arm/mach-shmobile/Kconfig       | 13 -------------
- arch/arm/mach-shmobile/Makefile      |  1 -
- arch/arm/mach-shmobile/Makefile.boot |  1 -
- 4 files changed, 16 deletions(-)
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 9 +--------
+ 1 file changed, 1 insertion(+), 8 deletions(-)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index f44df11..e666d13 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -327,7 +327,6 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += r7s72100-genmai.dtb \
- 	r8a7778-bockw-reference.dtb \
- 	r8a7740-armadillo800eva-reference.dtb \
- 	r8a7779-marzen.dtb \
--	r8a7779-marzen-reference.dtb \
- 	r8a7791-koelsch.dtb \
- 	r8a7790-lager.dtb \
- 	sh73a0-kzm9g.dtb \
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index d7f8285..8a054dd 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -245,19 +245,6 @@ config MACH_MARZEN
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 	select USE_OF
+diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+index e308bdb9ae4d..3223ccd21f00 100644
+--- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+@@ -129,14 +129,7 @@ static int __init rcar_gen2_scan_mem(unsigned long node, const char *uname,
+ 	u64 lpae_start = 1ULL << 32;
  
--config MACH_MARZEN_REFERENCE
--	bool "MARZEN board - Reference Device Tree Implementation"
--	depends on ARCH_R8A7779
--	select ARCH_REQUIRE_GPIOLIB
--	select REGULATOR_FIXED_VOLTAGE if REGULATOR
--	select USE_OF
--	---help---
--	   Use reference implementation of Marzen board support
--	   which makes use of device tree at the expense
--	   of not supporting a number of devices.
--
--	   This is intended to aid developers
--
- config MACH_LAGER
- 	bool "Lager board"
- 	depends on ARCH_R8A7790
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 2309906..0d6a04c 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -68,7 +68,6 @@ obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
- obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
- obj-$(CONFIG_MACH_GENMAI)	+= board-genmai.o
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
--obj-$(CONFIG_MACH_MARZEN_REFERENCE)	+= board-marzen-reference.o
- obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE)	+= board-armadillo800eva-reference.o
-diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
-index 918fccf..ebf97d4 100644
---- a/arch/arm/mach-shmobile/Makefile.boot
-+++ b/arch/arm/mach-shmobile/Makefile.boot
-@@ -13,7 +13,6 @@ loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
- loadaddr-$(CONFIG_MACH_LAGER) += 0x40008000
- loadaddr-$(CONFIG_MACH_MACKEREL) += 0x40008000
- loadaddr-$(CONFIG_MACH_MARZEN) += 0x60008000
--loadaddr-$(CONFIG_MACH_MARZEN_REFERENCE) += 0x60008000
+ 	/* We are scanning "memory" nodes only */
+-	if (type = NULL) {
+-		/*
+-		 * The longtrail doesn't have a device_type on the
+-		 * /memory node, so look for the node called /memory@0.
+-		 */
+-		if (depth != 1 || strcmp(uname, "memory@0") != 0)
+-			return 0;
+-	} else if (strcmp(type, "memory") != 0)
++	if (type = NULL || strcmp(type, "memory"))
+ 		return 0;
  
- __ZRELADDR	:= $(sort $(loadaddr-y))
-    zreladdr-y   += $(__ZRELADDR)
+ 	reg = of_get_flat_dt_prop(node, "linux,usable-memory", &l);
 -- 
-2.0.0.rc2
+1.9.1
 
