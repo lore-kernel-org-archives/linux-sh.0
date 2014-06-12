@@ -1,7 +1,7 @@
 From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Thu, 12 Jun 2014 08:36:20 +0000
+Date: Thu, 12 Jun 2014 15:41:36 +0000
 Subject: RE: [PATCH 8/8] ARM: shmobile: henninger: Add dummy PCIe bus clock
-Message-Id: <ef3166366ea4412eb3ba28b1aa48165a@HKXPR06MB168.apcprd06.prod.outlook.com>
+Message-Id: <2950f8d6e3da42fc8664f9f769aaff36@HKXPR06MB168.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1401261843-6964-9-git-send-email-phil.edworthy@renesas.com>
 In-Reply-To: <1401261843-6964-9-git-send-email-phil.edworthy@renesas.com>
@@ -26,9 +26,9 @@ On 12 June 2014 00:25, Sergei wrote:
 >     In fact, we're in process of verifying PCIe on Henninger (soldered the
 > connector); at least the configuration space accesses work OK...
 
-At the time of writing those patches, I had no idea if the Henninger board had a PCIe slot or not.
+Do you mean the internal Root-Complex config accesses work ok, or card ones?
 
-Also, please see v2 of the patches. You no longer need to specify the PCIe bus clock if it's always on.
+One thing we noticed on the Koelsch board is that some cards need Aux 3.3V to be supplied before they will work. By default on the Koelsch board, this is not supplied - you have to add link R719.
 
 Regards
 Phil
