@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 05 Jun 2014 05:15:20 +0000
-Subject: [PATCH 02/08] ARM: shmobile: Adjust APMU code to build for non-SMP
-Message-Id: <20140605051520.18075.77930.sendpatchset@w520>
+Date: Thu, 12 Jun 2014 09:42:40 +0000
+Subject: [PATCH v2 04/07] ARM: shmobile: Lager SYS-DMAC and MMCIF prototype
+Message-Id: <20140612094240.4132.99846.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,71 +10,79 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm+renesas@opensource.se>
 
-Adjust the APMU code to allow build when CONFIG_SMP=n.
+Hook up SYS-DMAC prototype support for MMCIF1 on Lager.
+
+Local platform device version of SYS-DMAC and local slave IDs
+are used together with AUXDATA.
+
+Only the DT reference case is covered. Not for upstream merge.
 
 Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
 
- arch/arm/mach-shmobile/platsmp-apmu.c |   11 +++++++----
- 1 file changed, 7 insertions(+), 4 deletions(-)
+ Changes since V1:
+ - None
 
---- 0001/arch/arm/mach-shmobile/platsmp-apmu.c
-+++ work/arch/arm/mach-shmobile/platsmp-apmu.c	2014-06-05 11:20:35.000000000 +0900
-@@ -15,6 +15,7 @@
- #include <linux/of_address.h>
- #include <linux/smp.h>
- #include <linux/suspend.h>
-+#include <linux/threads.h>
- #include <asm/cacheflush.h>
- #include <asm/cp15.h>
- #include <asm/proc-fns.h>
-@@ -25,13 +26,13 @@
- static struct {
- 	void __iomem *iomem;
- 	int bit;
--} apmu_cpus[CONFIG_NR_CPUS];
-+} apmu_cpus[NR_CPUS];
+ arch/arm/mach-shmobile/board-lager-reference.c |   26 +++++++++++++++++++++++-
+ 1 file changed, 25 insertions(+), 1 deletion(-)
+
+--- 0006/arch/arm/mach-shmobile/board-lager-reference.c
++++ work/arch/arm/mach-shmobile/board-lager-reference.c	2014-06-10 22:29:39.000000000 +0900
+@@ -72,10 +72,16 @@ static const struct resource du_resource
  
- #define WUPCR_OFFS 0x10
- #define PSTR_OFFS 0x40
- #define CPUNCR_OFFS(n) (0x100 + (0x10 * (n)))
+ #include <linux/sh_dma.h>
+ #include <mach/dma-register.h>
++#include <linux/mmc/host.h>
++#include <linux/mmc/sh_mmcif.h>
  
--static int apmu_power_on(void __iomem *p, int bit)
-+static int __maybe_unused apmu_power_on(void __iomem *p, int bit)
- {
- 	/* request power on */
- 	writel_relaxed(BIT(bit), p + WUPCR_OFFS);
-@@ -50,7 +51,7 @@ static int apmu_power_off(void __iomem *
- 	return 0;
+ /* Local DMA slave IDs */
+ enum {
+ 	RCAR_DMA_SLAVE_LAGER_INVALID = 0,
++	SYS_DMAC_SLAVE_MMCIF0_TX = 64,
++	SYS_DMAC_SLAVE_MMCIF0_RX,
++	SYS_DMAC_SLAVE_MMCIF1_TX,
++	SYS_DMAC_SLAVE_MMCIF1_RX,
+ };
+ 
+ #define DMAE_CHANNEL(a, b)			\
+@@ -101,6 +107,8 @@ enum {
  }
  
--static int apmu_power_off_poll(void __iomem *p, int bit)
-+static int __maybe_unused apmu_power_off_poll(void __iomem *p, int bit)
- {
- 	int k;
+ static const struct sh_dmae_slave_config r8a7790_sys_dmac_slaves[] = {
++	SYS_DMAC_SLAVE(MMCIF0, 32, 0xee200000, 0x34, 0x34, 0xd1, 0xd2),
++	SYS_DMAC_SLAVE(MMCIF1, 32, 0xee220000, 0x34, 0x34, 0xe1, 0xe2),
+ };
  
-@@ -73,7 +74,7 @@ static int apmu_wrap(int cpu, int (*fn)(
- 
- static void apmu_init_cpu(struct resource *res, int cpu, int bit)
- {
--	if (apmu_cpus[cpu].iomem)
-+	if ((cpu >= ARRAY_SIZE(apmu_cpus)) || apmu_cpus[cpu].iomem)
- 		return;
- 
- 	apmu_cpus[cpu].iomem = ioremap_nocache(res->start, resource_size(res));
-@@ -137,6 +138,7 @@ void __init shmobile_smp_apmu_prepare_cp
- 	apmu_parse_cfg(apmu_init_cpu);
+ static const struct sh_dmae_channel r8a7790_sys_dmac_channels[] = {
+@@ -161,6 +169,21 @@ static void __init lager_add_dmac_protot
+ 	r8a7790_register_sys_dmac(0);
  }
  
-+#ifdef CONFIG_SMP
- int shmobile_smp_apmu_boot_secondary(unsigned int cpu, struct task_struct *idle)
++static struct sh_mmcif_plat_data mmcif1_pdata = {
++	.caps		= MMC_CAP_4_BIT_DATA |
++			  MMC_CAP_8_BIT_DATA |
++			  MMC_CAP_NONREMOVABLE,
++	.ccs_unsupported = true,
++	.slave_id_tx	= SYS_DMAC_SLAVE_MMCIF1_TX,
++	.slave_id_rx	= SYS_DMAC_SLAVE_MMCIF1_RX,
++};
++
++static struct of_dev_auxdata lager_auxdata_lookup[] __initdata = {
++	OF_DEV_AUXDATA("renesas,mmcif-r8a7790", 0xee220000, "sh_mmcif",
++			&mmcif1_pdata),
++	{},
++};
++
+ static void __init lager_add_du_device(void)
  {
- 	/* For this particular CPU register boot vector */
-@@ -144,6 +146,7 @@ int shmobile_smp_apmu_boot_secondary(uns
+ 	struct platform_device_info info = {
+@@ -194,7 +217,8 @@ static void __init lager_add_standard_de
+ 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+ 	r8a7790_add_dt_devices();
+ 	lager_add_dmac_prototype();
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++	of_platform_populate(NULL, of_default_bus_match_table,
++			     lager_auxdata_lookup, NULL);
  
- 	return apmu_wrap(cpu, apmu_power_on);
+ 	lager_add_du_device();
  }
-+#endif
- 
- #if defined(CONFIG_HOTPLUG_CPU) || defined(CONFIG_SUSPEND)
- /* nicked from arch/arm/mach-exynos/hotplug.c */
