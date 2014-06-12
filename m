@@ -1,73 +1,87 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 20 Jun 2014 20:48:31 +0000
-Subject: [PATCH v3 1/3] ARM: shmobile: r8a7791: add internal PCI bridge nodes
-Message-Id: <201406210048.31877.sergei.shtylyov@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 12 Jun 2014 04:44:26 +0000
+Subject: [PATCH 3/3] ARM: shmobile: r8a7791: add R-Car sound support on DTSI
+Message-Id: <87k38menyv.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201406210044.51620.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201406210044.51620.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add device nodes for the R8A7791 internal PCI bridge devices.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+This patch support PIO transfer only at this point
 
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Changes in version 3:
-- refreshed the patch.
+ arch/arm/boot/dts/r8a7791.dtsi |   56 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 56 insertions(+)
 
-Changes in version 2:
-- added interrupt-related properties to the PCI device nodes;
-- refreshed the patch.
-
- arch/arm/boot/dts/r8a7791.dtsi |   36 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
-
-Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7791.dtsi
-@@ -961,6 +961,42 @@
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 380d058..bd91a44 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -950,4 +950,60 @@
+ 		#size-cells = <0>;
  		status = "disabled";
  	};
- 
-+	pci0: pci@ee090000 {
-+		compatible = "renesas,pci-r8a7791";
-+		clocks = <&mstp7_clks R8A7791_CLK_EHCI>;
-+		reg = <0x0 0xee090000 0x0 0xc00>,
-+		      <0x0 0xee080000 0x0 0x1100>;
-+		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
++
++	rcar_sound: rcar_sound@0xec500000 {
++		#sound-dai-cells = <1>;
++		compatible =  "renesas,rcar_sound-r8a7791", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
++		interrupt-parent = <&gic>;
++		reg =	<0 0xec500000 0 0x1000>, /* SCU */
++			<0 0xec5a0000 0 0x100>,  /* ADG */
++			<0 0xec540000 0 0x1000>, /* SSIU */
++			<0 0xec541000 0 0x1280>; /* SSI */
++		clocks = <&mstp10_clks R8A7791_CLK_SSI_ALL>,
++			<&mstp10_clks R8A7791_CLK_SSI9>, <&mstp10_clks R8A7791_CLK_SSI8>,
++			<&mstp10_clks R8A7791_CLK_SSI7>, <&mstp10_clks R8A7791_CLK_SSI6>,
++			<&mstp10_clks R8A7791_CLK_SSI5>, <&mstp10_clks R8A7791_CLK_SSI4>,
++			<&mstp10_clks R8A7791_CLK_SSI3>, <&mstp10_clks R8A7791_CLK_SSI2>,
++			<&mstp10_clks R8A7791_CLK_SSI1>, <&mstp10_clks R8A7791_CLK_SSI0>,
++			<&mstp10_clks R8A7791_CLK_SCU_SRC9>, <&mstp10_clks R8A7791_CLK_SCU_SRC8>,
++			<&mstp10_clks R8A7791_CLK_SCU_SRC7>, <&mstp10_clks R8A7791_CLK_SCU_SRC6>,
++			<&mstp10_clks R8A7791_CLK_SCU_SRC5>, <&mstp10_clks R8A7791_CLK_SCU_SRC4>,
++			<&mstp10_clks R8A7791_CLK_SCU_SRC3>, <&mstp10_clks R8A7791_CLK_SCU_SRC2>,
++			<&mstp10_clks R8A7791_CLK_SCU_SRC1>, <&mstp10_clks R8A7791_CLK_SCU_SRC0>,
++			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
++		clock-names = "ssi-all",
++				"ssi.9", "ssi.8", "ssi.7", "ssi.6", "ssi.5",
++				"ssi.4", "ssi.3", "ssi.2", "ssi.1", "ssi.0",
++				"src.9", "src.8", "src.7", "src.6", "src.5",
++				"src.4", "src.3", "src.2", "src.1", "src.0",
++				"clk_a", "clk_b", "clk_c", "clk_i";
++
 +		status = "disabled";
 +
-+		bus-range = <0 0>;
-+		#address-cells = <3>;
-+		#size-cells = <2>;
-+		#interrupt-cells = <1>;
-+		interrupt-map-mask = <0xff00 0 0 0x7>;
-+		interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
++		rcar_sound,src {
++			src0: src@0 { };
++			src1: src@1 { };
++			src2: src@2 { };
++			src3: src@3 { };
++			src4: src@4 { };
++			src5: src@5 { };
++			src6: src@6 { };
++			src7: src@7 { };
++			src8: src@8 { };
++			src9: src@9 { };
++		};
++
++		rcar_sound,ssi {
++			ssi0: ssi@0 { interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi1: ssi@1 { interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi2: ssi@2 { interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi3: ssi@3 { interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi4: ssi@4 { interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi5: ssi@5 { interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi6: ssi@6 { interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi7: ssi@7 { interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi8: ssi@8 { interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi9: ssi@9 { interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>; };
++		};
 +	};
-+
-+	pci1: pci@ee0d0000 {
-+		compatible = "renesas,pci-r8a7791";
-+		clocks = <&mstp7_clks R8A7791_CLK_EHCI>;
-+		reg = <0x0 0xee0d0000 0x0 0xc00>,
-+		      <0x0 0xee0c0000 0x0 0x1100>;
-+		interrupts = <0 113 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+
-+		bus-range = <1 1>;
-+		#address-cells = <3>;
-+		#size-cells = <2>;
-+		#interrupt-cells = <1>;
-+		interrupt-map-mask = <0xff00 0 0 0x7>;
-+		interrupt-map = <0x0000 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x0800 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
-+	};
-+
- 	pciec: pcie@fe000000 {
- 		compatible = "renesas,pcie-r8a7791";
- 		reg = <0 0xfe000000 0 0x80000>;
+ };
+-- 
+1.7.9.5
+
