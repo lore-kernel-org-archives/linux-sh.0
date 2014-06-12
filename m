@@ -1,432 +1,143 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 23 Jun 2014 00:56:23 +0000
-Subject: [PATCH 04/10 v2] ASoC: rsnd: SSI + DMA can select BUSIF
-Message-Id: <87zjh4satf.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 12 Jun 2014 09:42:32 +0000
+Subject: [PATCH v2 03/07] ARM: shmobile: Lager SYS-DMAC prototype
+Message-Id: <20140612094232.4132.85319.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
-	<8761jstphc.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <8761jstphc.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Sound data needs to be sent to R-Car sound SSI when playback.
-But, there are 2 interfaces for it.
-1st is SSITDR/SSIRDR which are mapped on SSI.
-2nd is SSIn_BUSIF which are mapped on SSIU.
+Prototype code to enable part of the SYS-DMAC on Lager.
+Written to exercise the SYS-DMAC - Not for upstream merge.
 
-2nd SSIn_BUSIF is used when DMA transfer,
-and it is always used if sound data came from via SRC.
-But, we can use it when SSI+DMA case too.
-(Current driver is assuming 1st SSITDR/SSIRDR for it)
+Based on the following patch by Kuninori Morimoto-san:
+"Local: ARM: shmobile: r8a7790: add SYS-DMAC support"
 
-2nd SSIn_BUSIF can be used as FIFO.
-This is very helpful/useful for SSI+DMA.
+This patch enables SYS-DMAC0 (= Low), it doesn't support
+SYS-DMAC1 (= HI) today.
+Because, SYS-DMAC HI/Low interrupt mapping is not
+good match to SH-DMAC driver.
 
-But DMA address / DMA ID are not same between 1st/2nd cases.
-This patch care about these settings.
+Thanks to Morimoto-san for his sample code!
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
-v1 -> v2
 
- - no change
+ Changes since V1:
+ - None
 
- .../devicetree/bindings/sound/renesas,rsnd.txt     |    1 +
- include/sound/rcar_snd.h                           |    1 +
- sound/soc/sh/rcar/core.c                           |   22 ++++---
- sound/soc/sh/rcar/gen.c                            |   64 +++++++++++++-------
- sound/soc/sh/rcar/rsnd.h                           |   10 ++-
- sound/soc/sh/rcar/src.c                            |   37 ++++++++---
- sound/soc/sh/rcar/ssi.c                            |   33 +++++++++-
- 7 files changed, 123 insertions(+), 45 deletions(-)
+ arch/arm/mach-shmobile/board-lager-reference.c |   93 ++++++++++++++++++++++++
+ 1 file changed, 93 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-index 8346cab..41a120c 100644
---- a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-+++ b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-@@ -21,6 +21,7 @@ SSI subnode properties:
- - interrupts			: Should contain SSI interrupt for PIO transfer
- - shared-pin			: if shared clock pin
- - pio-transfer			: use PIO transfer mode
-+- no-busif			: BUSIF is not ussed when [mem -> SSI] via DMA case
+--- 0001/arch/arm/mach-shmobile/board-lager-reference.c
++++ work/arch/arm/mach-shmobile/board-lager-reference.c	2014-06-10 23:11:20.000000000 +0900
+@@ -70,6 +70,98 @@ static const struct resource du_resource
+ 	DEFINE_RES_IRQ(gic_spi(269)),
+ };
  
- SRC subnode properties:
- no properties at this point
-diff --git a/include/sound/rcar_snd.h b/include/sound/rcar_snd.h
-index f4a706f..d76412b 100644
---- a/include/sound/rcar_snd.h
-+++ b/include/sound/rcar_snd.h
-@@ -34,6 +34,7 @@
-  * B : SSI direction
-  */
- #define RSND_SSI_CLK_PIN_SHARE		(1 << 31)
-+#define RSND_SSI_NO_BUSIF		(1 << 30) /* SSI+DMA without BUSIF */
- 
- #define RSND_SSI(_dma_id, _pio_irq, _flags)		\
- { .dma_id = _dma_id, .pio_irq = _pio_irq, .flags = _flags }
-diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
-index 7f68b33..8c3707a 100644
---- a/sound/soc/sh/rcar/core.c
-+++ b/sound/soc/sh/rcar/core.c
-@@ -138,6 +138,17 @@ char *rsnd_mod_name(struct rsnd_mod *mod)
- 	return mod->ops->name;
- }
- 
-+char *rsnd_mod_dma_name(struct rsnd_mod *mod)
-+{
-+	if (!mod || !mod->ops)
-+		return "unknown";
++#include <linux/sh_dma.h>
++#include <mach/dma-register.h>
 +
-+	if (!mod->ops->dma_name)
-+		return mod->ops->name;
++/* Local DMA slave IDs */
++enum {
++	RCAR_DMA_SLAVE_LAGER_INVALID = 0,
++};
 +
-+	return mod->ops->dma_name(mod);
++#define DMAE_CHANNEL(a, b)			\
++{						\
++	.offset		= (a) - 0x20,		\
++	.dmars		= (a) - 0x20 + 0x40,	\
++	.chclr_bit	= (b),			\
++	.chclr_offset	= 0x80 - 0x20,		\
 +}
 +
- void rsnd_mod_init(struct rsnd_priv *priv,
- 		   struct rsnd_mod *mod,
- 		   struct rsnd_mod_ops *ops,
-@@ -261,7 +272,7 @@ static int _rsnd_dma_of_name(char *dma_name, struct rsnd_mod *mod)
- {
- 	if (mod)
- 		return snprintf(dma_name, DMA_NAME_SIZE / 2, "%s%d",
--			 rsnd_mod_name(mod), rsnd_mod_id(mod));
-+			 rsnd_mod_dma_name(mod), rsnd_mod_id(mod));
- 	else
- 		return snprintf(dma_name, DMA_NAME_SIZE / 2, "mem");
- 
-@@ -343,11 +354,8 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma,
- 	dma_cap_zero(mask);
- 	dma_cap_set(DMA_SLAVE, mask);
- 
--	if (dev->of_node)
--		rsnd_dma_of_name(dma, is_play, dma_name);
--	else
--		snprintf(dma_name, DMA_NAME_SIZE,
--			 is_play ? "tx" : "rx");
-+	rsnd_dma_of_name(dma, is_play, dma_name);
-+	rsnd_gen_dma_addr(priv, dma, &cfg, is_play, id);
- 
- 	dev_dbg(dev, "dma name : %s\n", dma_name);
- 
-@@ -359,8 +367,6 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma,
- 		return -EIO;
- 	}
- 
--	rsnd_gen_dma_addr(priv, dma, &cfg, is_play, id);
--
- 	ret = dmaengine_slave_config(dma->chan, &cfg);
- 	if (ret < 0)
- 		goto rsnd_dma_init_err;
-diff --git a/sound/soc/sh/rcar/gen.c b/sound/soc/sh/rcar/gen.c
-index 0280a11..46677af 100644
---- a/sound/soc/sh/rcar/gen.c
-+++ b/sound/soc/sh/rcar/gen.c
-@@ -165,15 +165,19 @@ static int rsnd_gen_regmap_init(struct rsnd_priv *priv,
-  *
-  *	ex) R-Car H2 case
-  *	      mod        / DMAC in    / DMAC out   / DMAC PP in / DMAC pp out
-- *	SSI : 0xec541000 / 0xec241008 / 0xec24100c / 0xec400000 / 0xec400000
-+ *	SSI : 0xec541000 / 0xec241008 / 0xec24100c
-+ *	SSIU: 0xec541000 / 0xec100000 / 0xec100000 / 0xec400000 / 0xec400000
-  *	SCU : 0xec500000 / 0xec000000 / 0xec004000 / 0xec300000 / 0xec304000
-  *	CMD : 0xec500000 / 0xec008000                             0xec308000
-  */
- #define RDMA_SSI_I_N(addr, i)	(addr ##_reg - 0x00300000 + (0x40 * i) + 0x8)
- #define RDMA_SSI_O_N(addr, i)	(addr ##_reg - 0x00300000 + (0x40 * i) + 0xc)
- 
--#define RDMA_SSI_I_P(addr, i)	(addr ##_reg - 0x00141000 + (0x1000 * i))
--#define RDMA_SSI_O_P(addr, i)	(addr ##_reg - 0x00141000 + (0x1000 * i))
-+#define RDMA_SSIU_I_N(addr, i)	(addr ##_reg - 0x00441000 + (0x1000 * i))
-+#define RDMA_SSIU_O_N(addr, i)	(addr ##_reg - 0x00441000 + (0x1000 * i))
++/* Sys-DMAC */
++#define SYS_DMAC_SLAVE(_id, _bit, _addr, toffset, roffset, t, r)	\
++{								\
++	.slave_id	= SYS_DMAC_SLAVE_## _id ##_TX,		\
++	.addr		= _addr + toffset,			\
++	.chcr		= CHCR_TX(XMIT_SZ_## _bit ##BIT),	\
++	.mid_rid	= t,					\
++}, {								\
++	.slave_id	= SYS_DMAC_SLAVE_## _id ##_RX,		\
++	.addr		= _addr + roffset,			\
++	.chcr		= CHCR_RX(XMIT_SZ_## _bit ##BIT),	\
++	.mid_rid	= r,					\
++}
 +
-+#define RDMA_SSIU_I_P(addr, i)	(addr ##_reg - 0x00141000 + (0x1000 * i))
-+#define RDMA_SSIU_O_P(addr, i)	(addr ##_reg - 0x00141000 + (0x1000 * i))
- 
- #define RDMA_SRC_I_N(addr, i)	(addr ##_reg - 0x00500000 + (0x400 * i))
- #define RDMA_SRC_O_N(addr, i)	(addr ##_reg - 0x004fc000 + (0x400 * i))
-@@ -204,26 +208,36 @@ static void rsnd_gen2_dma_addr(struct rsnd_priv *priv,
- 	struct dma_addr {
- 		dma_addr_t src_addr;
- 		dma_addr_t dst_addr;
--	} dma_addrs[2][2][3] = {
--		{ /* SRC */
--			/* Capture */
--			{{ 0,				0 },
--			 { RDMA_SRC_O_N(src, id),	0 },
--			 { RDMA_CMD_O_N(src, id),	0 }},
--			/* Playback */
--			{{ 0,				0, },
--			 { 0,				RDMA_SRC_I_N(src, id) },
--			 { 0,				RDMA_SRC_I_N(src, id) }}
--		}, { /* SSI */
--			/* Capture */
--			{{ RDMA_SSI_O_N(ssi, id),	0 },
--			 { RDMA_SSI_O_P(ssi, id),	RDMA_SRC_I_P(src, id) },
--			 { RDMA_SSI_O_P(ssi, id),	RDMA_SRC_I_P(src, id) }},
--			/* Playback */
--			{{ 0,				RDMA_SSI_I_N(ssi, id) },
--			 { RDMA_SRC_O_P(src, id),	RDMA_SSI_I_P(ssi, id) },
--			 { RDMA_CMD_O_P(src, id),	RDMA_SSI_I_P(ssi, id) }}
--		}
-+	} dma_addrs[3][2][3] = {
-+		/* SRC */
-+		{{{ 0,				0 },
-+		/* Capture */
-+		  { RDMA_SRC_O_N(src, id),	0 },
-+		  { RDMA_CMD_O_N(src, id),	0 } },
-+		 /* Playback */
-+		 {{ 0,				0, },
-+		  { 0,				RDMA_SRC_I_N(src, id) },
-+		  { 0,				RDMA_SRC_I_N(src, id) } }
-+		},
-+		/* SSI */
-+		/* Capture */
-+		{{{ RDMA_SSI_O_N(ssi, id),	0 },
-+		  { 0,				0 },
-+		  { 0,				0 } },
-+		 /* Playback */
-+		 {{ 0,				RDMA_SSI_I_N(ssi, id) },
-+		  { 0,				0 },
-+		  { 0,				0 } }
-+		},
-+		/* SSIU */
-+		/* Capture */
-+		{{{ RDMA_SSIU_O_N(ssi, id),	0 },
-+		  { RDMA_SSIU_O_P(ssi, id),	RDMA_SRC_I_P(src, id) },
-+		  { RDMA_SSIU_O_P(ssi, id),	RDMA_SRC_I_P(src, id) } },
-+		 /* Playback */
-+		 {{ 0,				RDMA_SSIU_I_N(ssi, id) },
-+		  { RDMA_SRC_O_P(src, id),	RDMA_SSIU_I_P(ssi, id) },
-+		  { RDMA_CMD_O_P(src, id),	RDMA_SSIU_I_P(ssi, id) } } },
- 	};
- 
- 	/* it shouldn't happen */
-@@ -232,6 +246,10 @@ static void rsnd_gen2_dma_addr(struct rsnd_priv *priv,
- 		return;
- 	}
- 
-+	/* use SSIU or SSI ? */
-+	if (is_ssi && (0 = strcmp(rsnd_mod_dma_name(mod), "ssiu")))
-+		is_ssi++;
++static const struct sh_dmae_slave_config r8a7790_sys_dmac_slaves[] = {
++};
 +
- 	cfg->src_addr = dma_addrs[is_ssi][is_play][use_src + use_dvc].src_addr;
- 	cfg->dst_addr = dma_addrs[is_ssi][is_play][use_src + use_dvc].dst_addr;
- 
-diff --git a/sound/soc/sh/rcar/rsnd.h b/sound/soc/sh/rcar/rsnd.h
-index 067a89e..a1466c1 100644
---- a/sound/soc/sh/rcar/rsnd.h
-+++ b/sound/soc/sh/rcar/rsnd.h
-@@ -185,6 +185,7 @@ enum rsnd_mod_type {
- 
- struct rsnd_mod_ops {
- 	char *name;
-+	char* (*dma_name)(struct rsnd_mod *mod);
- 	int (*probe)(struct rsnd_mod *mod,
- 		     struct rsnd_dai *rdai);
- 	int (*remove)(struct rsnd_mod *mod,
-@@ -224,6 +225,7 @@ void rsnd_mod_init(struct rsnd_priv *priv,
- 		   enum rsnd_mod_type type,
- 		   int id);
- char *rsnd_mod_name(struct rsnd_mod *mod);
-+char *rsnd_mod_dma_name(struct rsnd_mod *mod);
- 
- /*
-  *	R-Car sound DAI
-@@ -391,8 +393,12 @@ struct rsnd_mod *rsnd_src_mod_get(struct rsnd_priv *priv, int id);
- unsigned int rsnd_src_get_ssi_rate(struct rsnd_priv *priv,
- 				   struct rsnd_dai_stream *io,
- 				   struct snd_pcm_runtime *runtime);
--int rsnd_src_ssi_mode_init(struct rsnd_mod *ssi_mod,
--			   struct rsnd_dai *rdai);
-+int rsnd_src_ssiu_start(struct rsnd_mod *ssi_mod,
-+			struct rsnd_dai *rdai,
-+			int use_busif);
-+int rsnd_src_ssiu_stop(struct rsnd_mod *ssi_mod,
-+		       struct rsnd_dai *rdai,
-+		       int use_busif);
- int rsnd_src_enable_ssi_irq(struct rsnd_mod *ssi_mod,
- 			    struct rsnd_dai *rdai);
- 
-diff --git a/sound/soc/sh/rcar/src.c b/sound/soc/sh/rcar/src.c
-index 200eda0..4d39505 100644
---- a/sound/soc/sh/rcar/src.c
-+++ b/sound/soc/sh/rcar/src.c
-@@ -106,18 +106,17 @@ struct rsnd_src {
- /*
-  *		Gen1/Gen2 common functions
-  */
--int rsnd_src_ssi_mode_init(struct rsnd_mod *ssi_mod,
--			   struct rsnd_dai *rdai)
-+int rsnd_src_ssiu_start(struct rsnd_mod *ssi_mod,
-+			struct rsnd_dai *rdai,
-+			int use_busif)
- {
--	struct rsnd_dai_stream *io = rsnd_mod_to_io(ssi_mod);
--	struct rsnd_mod *src_mod = rsnd_io_to_mod_src(io);
- 	int ssi_id = rsnd_mod_id(ssi_mod);
- 
- 	/*
- 	 * SSI_MODE0
- 	 */
- 	rsnd_mod_bset(ssi_mod, SSI_MODE0, (1 << ssi_id),
--		      src_mod ? 0 : (1 << ssi_id));
-+		      !use_busif << ssi_id);
- 
- 	/*
- 	 * SSI_MODE1
-@@ -143,6 +142,29 @@ int rsnd_src_ssi_mode_init(struct rsnd_mod *ssi_mod,
- 				      0x2 << shift : 0x1 << shift);
- 	}
- 
++static const struct sh_dmae_channel r8a7790_sys_dmac_channels[] = {
++	DMAE_CHANNEL(0x8000, 0),
++	DMAE_CHANNEL(0x8080, 1),
++	DMAE_CHANNEL(0x8100, 2),
++	DMAE_CHANNEL(0x8180, 3),
++	DMAE_CHANNEL(0x8200, 4),
++	DMAE_CHANNEL(0x8280, 5),
++	DMAE_CHANNEL(0x8300, 6),
++	DMAE_CHANNEL(0x8380, 7),
++	DMAE_CHANNEL(0x8400, 8),
++	DMAE_CHANNEL(0x8480, 9),
++	DMAE_CHANNEL(0x8500, 10),
++	DMAE_CHANNEL(0x8580, 11),
++	DMAE_CHANNEL(0x8600, 12),
++	DMAE_CHANNEL(0x8680, 13),
++	DMAE_CHANNEL(0x8700, 14),
++};
++
++static struct sh_dmae_pdata r8a7790_sys_dmac_platform_data = {
++	.slave		= r8a7790_sys_dmac_slaves,
++	.slave_num	= ARRAY_SIZE(r8a7790_sys_dmac_slaves),
++	.channel	= r8a7790_sys_dmac_channels,
++	.channel_num	= ARRAY_SIZE(r8a7790_sys_dmac_channels),
++	.ts_low_shift	= TS_LOW_SHIFT,
++	.ts_low_mask	= TS_LOW_BIT << TS_LOW_SHIFT,
++	.ts_high_shift	= TS_HI_SHIFT,
++	.ts_high_mask	= TS_HI_BIT << TS_HI_SHIFT,
++	.ts_shift	= dma_ts_shift,
++	.ts_shift_num	= ARRAY_SIZE(dma_ts_shift),
++	.dmaor_init	= DMAOR_DME,
++	.chclr_present	= 1,
++	.chclr_bitwise	= 1,
++	.fourty_bits_addr = 1,
++};
++
++static struct resource r8a7790_sys_dmac_resources[] = {
++	/* Channel registers and DMAOR for low */
++	DEFINE_RES_MEM(0xe6700020, 0x8763 - 0x20),
++	DEFINE_RES_IRQ(gic_spi(197)),
++	DEFINE_RES_NAMED(gic_spi(200), 15, NULL, IORESOURCE_IRQ),
++
 +	/*
-+	 * DMA settings for SSIU
++	 * HI is not supported
++	 * since IRQ has strange mapping
 +	 */
-+	if (use_busif) {
-+		rsnd_mod_write(ssi_mod, SSI_BUSIF_ADINR,
-+			       rsnd_get_adinr(ssi_mod));
-+		rsnd_mod_write(ssi_mod, SSI_BUSIF_MODE,  1);
-+		rsnd_mod_write(ssi_mod, SSI_CTRL, 0x1);
-+	}
++};
 +
-+	return 0;
++#define r8a7790_register_sys_dmac(id)				\
++	platform_device_register_resndata(			\
++		&platform_bus, "sh-dma-engine", 2 + id,		\
++		&r8a7790_sys_dmac_resources[id * 3],	3,	\
++		&r8a7790_sys_dmac_platform_data,		\
++		sizeof(r8a7790_sys_dmac_platform_data))
++
++static void __init lager_add_dmac_prototype(void)
++{
++	r8a7790_register_sys_dmac(0);
 +}
 +
-+int rsnd_src_ssiu_stop(struct rsnd_mod *ssi_mod,
-+			struct rsnd_dai *rdai,
-+			int use_busif)
-+{
-+	/*
-+	 * DMA settings for SSIU
-+	 */
-+	if (use_busif)
-+		rsnd_mod_write(ssi_mod, SSI_CTRL, 0);
-+
- 	return 0;
- }
- 
-@@ -467,9 +489,6 @@ static int rsnd_src_set_convert_rate_gen2(struct rsnd_mod *mod,
- 	if (ret < 0)
- 		return ret;
- 
--	rsnd_mod_write(mod, SSI_BUSIF_ADINR, rsnd_get_adinr(mod));
--	rsnd_mod_write(mod, SSI_BUSIF_MODE,  1);
--
- 	rsnd_mod_write(mod, SRC_SRCCR, 0x00011110);
- 
- 	rsnd_mod_write(mod, SRC_BSDSR, 0x01800000);
-@@ -554,7 +573,6 @@ static int rsnd_src_start_gen2(struct rsnd_mod *mod,
- 
- 	rsnd_dma_start(rsnd_mod_to_dma(&src->mod));
- 
--	rsnd_mod_write(mod, SSI_CTRL, 0x1);
- 	rsnd_mod_write(mod, SRC_CTRL, val);
- 
- 	return rsnd_src_start(mod, rdai);
-@@ -565,7 +583,6 @@ static int rsnd_src_stop_gen2(struct rsnd_mod *mod,
+ static void __init lager_add_du_device(void)
  {
- 	struct rsnd_src *src = rsnd_mod_to_src(mod);
- 
--	rsnd_mod_write(mod, SSI_CTRL, 0);
- 	rsnd_mod_write(mod, SRC_CTRL, 0);
- 
- 	rsnd_dma_stop(rsnd_mod_to_dma(&src->mod));
-diff --git a/sound/soc/sh/rcar/ssi.c b/sound/soc/sh/rcar/ssi.c
-index 2df723d..34e8400 100644
---- a/sound/soc/sh/rcar/ssi.c
-+++ b/sound/soc/sh/rcar/ssi.c
-@@ -90,6 +90,20 @@ struct rsnd_ssi {
- #define rsnd_ssi_mode_flags(p) ((p)->info->flags)
- #define rsnd_ssi_dai_id(ssi) ((ssi)->info->dai_id)
- 
-+static int rsnd_ssi_use_busif(struct rsnd_mod *mod)
-+{
-+	struct rsnd_ssi *ssi = rsnd_mod_to_ssi(mod);
-+	struct rsnd_dai_stream *io = rsnd_mod_to_io(mod);
-+	int use_busif = 0;
-+
-+	if (!(rsnd_ssi_mode_flags(ssi) & RSND_SSI_NO_BUSIF))
-+		use_busif = 1;
-+	if (rsnd_io_to_mod_src(io))
-+		use_busif = 1;
-+
-+	return use_busif;
-+}
-+
- static void rsnd_ssi_status_check(struct rsnd_mod *mod,
- 				  u32 bit)
+ 	struct platform_device_info info = {
+@@ -102,6 +194,7 @@ static void __init lager_add_standard_de
  {
-@@ -289,8 +303,6 @@ static int rsnd_ssi_init(struct rsnd_mod *mod,
- 	ssi->cr_own	= cr;
- 	ssi->err	= -1; /* ignore 1st error */
+ 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+ 	r8a7790_add_dt_devices();
++	lager_add_dmac_prototype();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
  
--	rsnd_src_ssi_mode_init(mod, rdai);
--
- 	return 0;
- }
- 
-@@ -389,6 +401,8 @@ static int rsnd_ssi_pio_start(struct rsnd_mod *mod,
- 	/* enable PIO IRQ */
- 	ssi->cr_etc = UIEN | OIEN | DIEN;
- 
-+	rsnd_src_ssiu_start(mod, rdai, 0);
-+
- 	rsnd_src_enable_ssi_irq(mod, rdai);
- 
- 	rsnd_ssi_hw_start(ssi, rdai, io);
-@@ -405,6 +419,8 @@ static int rsnd_ssi_pio_stop(struct rsnd_mod *mod,
- 
- 	rsnd_ssi_hw_stop(ssi, rdai);
- 
-+	rsnd_src_ssiu_stop(mod, rdai, 0);
-+
- 	return 0;
- }
- 
-@@ -457,6 +473,8 @@ static int rsnd_ssi_dma_start(struct rsnd_mod *mod,
- 	/* enable DMA transfer */
- 	ssi->cr_etc = DMEN;
- 
-+	rsnd_src_ssiu_start(mod, rdai, rsnd_ssi_use_busif(mod));
-+
- 	rsnd_dma_start(dma);
- 
- 	rsnd_ssi_hw_start(ssi, ssi->rdai, io);
-@@ -482,11 +500,19 @@ static int rsnd_ssi_dma_stop(struct rsnd_mod *mod,
- 
- 	rsnd_dma_stop(dma);
- 
-+	rsnd_src_ssiu_stop(mod, rdai, 1);
-+
- 	return 0;
- }
- 
-+static char *rsnd_ssi_dma_name(struct rsnd_mod *mod)
-+{
-+	return rsnd_ssi_use_busif(mod) ? "ssiu" : SSI_NAME;
-+}
-+
- static struct rsnd_mod_ops rsnd_ssi_dma_ops = {
- 	.name	= SSI_NAME,
-+	.dma_name = rsnd_ssi_dma_name,
- 	.probe	= rsnd_ssi_dma_probe,
- 	.remove	= rsnd_ssi_dma_remove,
- 	.init	= rsnd_ssi_init,
-@@ -595,6 +621,9 @@ static void rsnd_of_parse_ssi(struct platform_device *pdev,
- 		 */
- 		ssi_info->dma_id = of_get_property(np, "pio-transfer", NULL) ?
- 			0 : 1;
-+
-+		if (of_get_property(np, "no-busif", NULL))
-+			ssi_info->flags |= RSND_SSI_NO_BUSIF;
- 	}
- 
- rsnd_of_parse_ssi_end:
--- 
-1.7.9.5
-
+ 	lager_add_du_device();
