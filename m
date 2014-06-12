@@ -1,36 +1,44 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Wed, 04 Jun 2014 16:04:45 +0000
-Subject: Re: [PATCH v2 3/9] ARM: shmobile: r8a7790: add dmac0 dmac1 nodes
-Message-Id: <538F439D.1000001@codethink.co.uk>
+From: Grygorii Strashko <grygorii.strashko@ti.com>
+Date: Thu, 12 Jun 2014 16:06:42 +0000
+Subject: [RFC PATCH 2/2] of/clk: use "clkops-clocks" to specify clocks handled by clock_ops domain
+Message-Id: <1402592023-13416-3-git-send-email-grygorii.strashko@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397511312-4845-1-git-send-email-ben.dooks@codethink.co.uk>	<1397511312-4845-4-git-send-email-ben.dooks@codethink.co.uk> <CAMuHMdUNAFJEFWYe5cpKaZqoZFhRA1s0YBntT5ZVJaieSj8ovQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdUNAFJEFWYe5cpKaZqoZFhRA1s0YBntT5ZVJaieSj8ovQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+References: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
+ <1402592023-13416-1-git-send-email-grygorii.strashko@ti.com>
+In-Reply-To: <1402592023-13416-1-git-send-email-grygorii.strashko@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: linux-kernel-81qHHgoATdFT9dQujB1mzip2UmYkHbXO@public.gmane.org, dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Vinod Koul <vinod.koul-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Dan Williams <dan.j.williams-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, magnus.damm-yzvPICuk2ACczHhG9Qg4qA@public.gmane.org, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Guennadi Liakhovetski <g.liakhovetski-Mmb7MZpHnFY@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On 13/05/14 13:00, Geert Uytterhoeven wrote:
-> Hi Ben,
-> 
-> On Mon, Apr 14, 2014 at 11:35 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
->> --- a/arch/arm/boot/dts/r8a7790.dtsi
->> +++ b/arch/arm/boot/dts/r8a7790.dtsi
->> @@ -86,6 +88,76 @@
->>                 };
->>         };
->>
->> +       dma0: dma-mux@0 {
->> +               compatible = "renesas,shdma-mux";
->> +               #dma-cells = <2>;
->> +               dma-channels = <20>;
-> 
-> Shouldn't this be 30, i.e. the sum of the properties in the child nodes?
+Use "clkops-clocks" property to specify clocks handled by
+clock_ops domain PM domain. Only clocks defined in "clkops-clocks"
+set of clocks will be handled by Runtime PM through clock_ops
+Pm domain.
 
-Thanks, fixed.
+Signed-off-by: Grygorii Strashko <grygorii.strashko@ti.com>
+---
+ drivers/of/of_clk.c |    7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
 
-
+diff --git a/drivers/of/of_clk.c b/drivers/of/of_clk.c
+index 35f5e9f..5f9b90e 100644
+--- a/drivers/of/of_clk.c
++++ b/drivers/of/of_clk.c
+@@ -86,11 +86,8 @@ int of_clk_register_runtime_pm_clocks(struct device_node *np,
+ 	struct clk *clk;
+ 	int error;
+ 
+-	for (i = 0; (clk = of_clk_get(np, i)) && !IS_ERR(clk); i++) {
+-		if (!clk_may_runtime_pm(clk)) {
+-			clk_put(clk);
+-			continue;
+-		}
++	for (i = 0; (clk = of_clk_get_from_set(np, "clkops", i)) &&
++		     !IS_ERR(clk); i++) {
+ 
+ 		error = of_clk_register(dev, clk);
+ 		if (error) {
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.7.9.5
+
