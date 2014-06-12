@@ -1,181 +1,121 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 02 Jun 2014 13:38:05 +0000
-Subject: [PATCH 03/18] [RFC] spi: rspi: Remove unused 16-bit DMA support
-Message-Id: <1401716301-29612-4-git-send-email-geert+renesas@glider.be>
+From: Grygorii Strashko <grygorii.strashko@ti.com>
+Date: Thu, 12 Jun 2014 16:07:53 +0000
+Subject: [RFC PATCH 1/2] clk: of: introduce of_clk_get_from_set()
+Message-Id: <1402592023-13416-2-git-send-email-grygorii.strashko@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
+References: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
+ <1402592023-13416-1-git-send-email-grygorii.strashko@ti.com>
+In-Reply-To: <1402592023-13416-1-git-send-email-grygorii.strashko@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-The 16-bit DMA support doesn't fit well within the SPI core DMA framework,
-as it needs to manage its own double-sized temporary buffers, for handling
-the interleaved data.
-Remove it, as there is no in-tree board code that sets
-rspi_plat_data.dma_width_16bit.
+In many case it's useful to divide device's clocks into
+few sets according to their designation.
+- some clocks can be optional for the device
+- some clocks can be managed by PM frameworks (like clock_ops for example)
+  while some need to be managed by driver directly.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+This patch introduces new API of_clk_get_from_set() which allows
+the callers to specify additional prefix to be used together with
+generic DT clocks list property name "clocks".
+
+In the example bellow, the caller asks CLK framework to retrieve
+clock from the clocks list "clkops-clocks" and not from "clocks":
+DT:
+	usb: usb@2680000 {
+		compatible = "ti,keystone-dwc3";
+		[...]
+		clkops-clocks = <&clkusb>;
+
+Code:
+	clk = of_clk_get_from_set(np, "clkops", 0);
+
+This changes will not affect on already existed code.
+
+Signed-off-by: Grygorii Strashko <grygorii.strashko@ti.com>
 ---
- drivers/spi/spi-rspi.c   | 84 ++++--------------------------------------------
- include/linux/spi/rspi.h |  2 --
- 2 files changed, 6 insertions(+), 80 deletions(-)
+ drivers/clk/clkdev.c |   24 ++++++++++++++++++++++--
+ include/linux/clk.h  |    7 +++++++
+ 2 files changed, 29 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 57beda209599..3bd06fd9af47 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -201,7 +201,6 @@ struct rspi_data {
- 	struct dma_chan *chan_tx;
- 	struct dma_chan *chan_rx;
- 
--	unsigned dma_width_16bit:1;
- 	unsigned dma_callbacked:1;
- 	unsigned byte_access:1;
- };
-@@ -475,60 +474,17 @@ static void rspi_dma_unmap_sg(struct scatterlist *sg, struct dma_chan *chan,
- 	dma_unmap_sg(chan->device->dev, sg, 1, dir);
+diff --git a/drivers/clk/clkdev.c b/drivers/clk/clkdev.c
+index f890b90..2308518 100644
+--- a/drivers/clk/clkdev.c
++++ b/drivers/clk/clkdev.c
+@@ -53,7 +53,8 @@ struct clk *of_clk_get_by_clkspec(struct of_phandle_args *clkspec)
+ 	return clk;
  }
  
--static void rspi_memory_to_8bit(void *buf, const void *data, unsigned len)
--{
--	u16 *dst = buf;
--	const u8 *src = data;
--
--	while (len) {
--		*dst++ = (u16)(*src++);
--		len--;
--	}
--}
--
--static void rspi_memory_from_8bit(void *buf, const void *data, unsigned len)
--{
--	u8 *dst = buf;
--	const u16 *src = data;
--
--	while (len) {
--		*dst++ = (u8)*src++;
--		len--;
--	}
--}
--
- static int rspi_send_dma(struct rspi_data *rspi, struct spi_transfer *t)
+-struct clk *of_clk_get(struct device_node *np, int index)
++static struct clk *of_clk_get_named(struct device_node *np,
++		const char *propname, int index)
  {
- 	struct scatterlist sg;
--	const void *buf = NULL;
-+	const void *buf = t->tx_buf;
- 	struct dma_async_tx_descriptor *desc;
--	unsigned int len;
-+	unsigned int len = t->len;
- 	int ret = 0;
+ 	struct of_phandle_args clkspec;
+ 	struct clk *clk;
+@@ -62,7 +63,7 @@ struct clk *of_clk_get(struct device_node *np, int index)
+ 	if (index < 0)
+ 		return ERR_PTR(-EINVAL);
  
--	if (rspi->dma_width_16bit) {
--		void *tmp;
--		/*
--		 * If DMAC bus width is 16-bit, the driver allocates a dummy
--		 * buffer. And, the driver converts original data into the
--		 * DMAC data as the following format:
--		 *  original data: 1st byte, 2nd byte ...
--		 *  DMAC data:     1st byte, dummy, 2nd byte, dummy ...
--		 */
--		len = t->len * 2;
--		tmp = kmalloc(len, GFP_KERNEL);
--		if (!tmp)
--			return -ENOMEM;
--		rspi_memory_to_8bit(tmp, t->tx_buf, t->len);
--		buf = tmp;
--	} else {
--		len = t->len;
--		buf = t->tx_buf;
--	}
-+	if (!rspi_dma_map_sg(&sg, buf, len, rspi->chan_tx, DMA_TO_DEVICE))
-+		return -EFAULT;
- 
--	if (!rspi_dma_map_sg(&sg, buf, len, rspi->chan_tx, DMA_TO_DEVICE)) {
--		ret = -EFAULT;
--		goto end_nomap;
--	}
- 	desc = dmaengine_prep_slave_sg(rspi->chan_tx, &sg, 1, DMA_TO_DEVICE,
- 				       DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
- 	if (!desc) {
-@@ -563,10 +519,6 @@ static int rspi_send_dma(struct rspi_data *rspi, struct spi_transfer *t)
- 
- end:
- 	rspi_dma_unmap_sg(&sg, rspi->chan_tx, DMA_TO_DEVICE);
--end_nomap:
--	if (rspi->dma_width_16bit)
--		kfree(buf);
--
- 	return ret;
+-	rc = of_parse_phandle_with_args(np, "clocks", "#clock-cells", index,
++	rc = of_parse_phandle_with_args(np, propname, "#clock-cells", index,
+ 					&clkspec);
+ 	if (rc)
+ 		return ERR_PTR(rc);
+@@ -71,8 +72,27 @@ struct clk *of_clk_get(struct device_node *np, int index)
+ 	of_node_put(clkspec.np);
+ 	return clk;
  }
++
++struct clk *of_clk_get(struct device_node *np, int index)
++{
++	return of_clk_get_named(np, "clocks", index);
++}
+ EXPORT_SYMBOL(of_clk_get);
  
-@@ -603,28 +555,11 @@ static void qspi_receive_init(const struct rspi_data *rspi)
- static int rspi_receive_dma(struct rspi_data *rspi, struct spi_transfer *t)
++struct clk *of_clk_get_from_set(struct device_node *np,
++		const char *set_id, int index)
++{
++	char prop_name[32]; /* 32 is max size of property name */
++
++	if (set_id)
++		snprintf(prop_name, 32, "%s-clocks", set_id);
++	else
++		snprintf(prop_name, 32, "clocks");
++
++	return of_clk_get_named(np, prop_name, index);
++}
++EXPORT_SYMBOL(of_clk_get_from_set);
++
+ /**
+  * of_clk_get_by_name() - Parse and lookup a clock referenced by a device node
+  * @np: pointer to clock consumer node
+diff --git a/include/linux/clk.h b/include/linux/clk.h
+index fb5e097..fc8865a 100644
+--- a/include/linux/clk.h
++++ b/include/linux/clk.h
+@@ -397,6 +397,8 @@ struct of_phandle_args;
+ 
+ #if defined(CONFIG_OF) && defined(CONFIG_COMMON_CLK)
+ struct clk *of_clk_get(struct device_node *np, int index);
++struct clk *of_clk_get_from_set(struct device_node *np,
++		const char *set_id, int index);
+ struct clk *of_clk_get_by_name(struct device_node *np, const char *name);
+ struct clk *of_clk_get_from_provider(struct of_phandle_args *clkspec);
+ #else
+@@ -409,6 +411,11 @@ static inline struct clk *of_clk_get_by_name(struct device_node *np,
  {
- 	struct scatterlist sg, sg_dummy;
--	void *dummy = NULL, *rx_buf = NULL;
-+	void *dummy = NULL, *rx_buf = t->rx_buf;
- 	struct dma_async_tx_descriptor *desc, *desc_dummy;
--	unsigned int len;
-+	unsigned int len = t->len;
- 	int ret = 0;
+ 	return ERR_PTR(-ENOENT);
+ }
++static inline struct clk *of_clk_get_from_set(struct device_node *np,
++					const char *set_id, int index)
++{
++	return ERR_PTR(-ENOENT);
++}
+ #endif
  
--	if (rspi->dma_width_16bit) {
--		/*
--		 * If DMAC bus width is 16-bit, the driver allocates a dummy
--		 * buffer. And, finally the driver converts the DMAC data into
--		 * actual data as the following format:
--		 *  DMAC data:   1st byte, dummy, 2nd byte, dummy ...
--		 *  actual data: 1st byte, 2nd byte ...
--		 */
--		len = t->len * 2;
--		rx_buf = kmalloc(len, GFP_KERNEL);
--		if (!rx_buf)
--			return -ENOMEM;
--	 } else {
--		len = t->len;
--		rx_buf = t->rx_buf;
--	}
--
- 	/* prepare dummy transfer to generate SPI clocks */
- 	dummy = kzalloc(len, GFP_KERNEL);
- 	if (!dummy) {
-@@ -697,11 +632,6 @@ end:
- end_dummy_mapped:
- 	rspi_dma_unmap_sg(&sg_dummy, rspi->chan_tx, DMA_TO_DEVICE);
- end_nomap:
--	if (rspi->dma_width_16bit) {
--		if (!ret)
--			rspi_memory_from_8bit(t->rx_buf, rx_buf, t->len);
--		kfree(rx_buf);
--	}
- 	kfree(dummy);
- 
- 	return ret;
-@@ -1073,8 +1003,6 @@ static int rspi_request_dma(struct rspi_data *rspi,
- 	if (!res || !rspi_pd)
- 		return 0;	/* The driver assumes no error. */
- 
--	rspi->dma_width_16bit = rspi_pd->dma_width_16bit;
--
- 	/* If the module receives data by DMAC, it also needs TX DMAC */
- 	if (rspi_pd->dma_rx_id && rspi_pd->dma_tx_id) {
- 		dma_cap_zero(mask);
-diff --git a/include/linux/spi/rspi.h b/include/linux/spi/rspi.h
-index a25bd6f65e7f..e546b2ceb623 100644
---- a/include/linux/spi/rspi.h
-+++ b/include/linux/spi/rspi.h
-@@ -25,8 +25,6 @@ struct rspi_plat_data {
- 	unsigned int dma_tx_id;
- 	unsigned int dma_rx_id;
- 
--	unsigned dma_width_16bit:1;	/* DMAC read/write width = 16-bit */
--
- 	u16 num_chipselect;
- };
- 
+ #endif
 -- 
-1.9.1
+1.7.9.5
 
