@@ -1,7 +1,7 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 12 Jun 2014 04:44:16 +0000
-Subject: [PATCH 2/3] ARM: shmobile: r8a7791: add MSTP10 support on DTSI
-Message-Id: <87lht2enz5.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 12 Jun 2014 06:46:45 +0000
+Subject: Re: [PATCH 2/3] ARM: shmobile: r8a7791: add MSTP10 support on DTSI
+Message-Id: <CAMuHMdXHqwLfa+_hg_F03ExtW2H=xFfY_JB5psxc91PPhKjGbA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1387998730-6012-3-git-send-email-valentine.barshak@cogentembedded.com>
 In-Reply-To: <1387998730-6012-3-git-send-email-valentine.barshak@cogentembedded.com>
@@ -10,94 +10,21 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Thu, Jun 12, 2014 at 6:44 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/boot/dts/r8a7791.dtsi            |   33 +++++++++++++++++++++++++++++
- include/dt-bindings/clock/r8a7791-clock.h |   26 +++++++++++++++++++++++
- 2 files changed, 59 insertions(+)
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index f3b6219..380d058 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -865,6 +865,39 @@
- 				"rcan1", "rcan0", "qspi_mod", "i2c5", "i2c6", "i2c4", "i2c3", "i2c2",
- 				"i2c1", "i2c0";
- 		};
-+		mstp10_clks: mstp10_clks@e6150998 {
-+			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0 0xe6150998 0 4>, <0 0xe61509a8 0 4>;
-+			clocks = <&p_clk>,
-+				<&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
-+				<&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
-+				<&p_clk>,
-+				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>,
-+				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>,
-+				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>,
-+				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>,
-+				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>,
-+				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>;
-+
-+			#clock-cells = <1>;
-+			clock-indices = <
-+				R8A7791_CLK_SSI_ALL
-+				R8A7791_CLK_SSI9 R8A7791_CLK_SSI8 R8A7791_CLK_SSI7 R8A7791_CLK_SSI6 R8A7791_CLK_SSI5
-+				R8A7791_CLK_SSI4 R8A7791_CLK_SSI3 R8A7791_CLK_SSI2 R8A7791_CLK_SSI1 R8A7791_CLK_SSI0
-+				R8A7791_CLK_SCU_ALL
-+				R8A7791_CLK_SCU_DVC1 R8A7791_CLK_SCU_DVC0
-+				R8A7791_CLK_SCU_SRC9 R8A7791_CLK_SCU_SRC8 R8A7791_CLK_SCU_SRC7 R8A7791_CLK_SCU_SRC6 R8A7791_CLK_SCU_SRC5
-+				R8A7791_CLK_SCU_SRC4 R8A7791_CLK_SCU_SRC3 R8A7791_CLK_SCU_SRC2 R8A7791_CLK_SCU_SRC1 R8A7791_CLK_SCU_SRC0
-+			>;
-+			clock-output-names +				"ssi-all",
-+				"ssi9", "ssi8", "ssi7", "ssi6", "ssi5",
-+				"ssi4", "ssi3", "ssi2", "ssi1", "ssi0",
-+				"scu-all",
-+				"scu-dvc1", "scu-dvc0",
-+				"scu-src9", "scu-src8", "scu-src7", "scu-src6", "scu-src5",
-+				"scu-src4", "scu-src3", "scu-src2", "scu-src1", "scu-src0";
-+		};
- 		mstp11_clks: mstp11_clks@e615099c {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe615099c 0 4>, <0 0xe61509ac 0 4>;
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index b050d18..0410bea 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -107,6 +107,32 @@
- #define R8A7791_CLK_I2C1		30
- #define R8A7791_CLK_I2C0		31
- 
-+/* MSTP10 */
-+#define R8A7791_CLK_SSI_ALL		5
-+#define R8A7791_CLK_SSI9		6
-+#define R8A7791_CLK_SSI8		7
-+#define R8A7791_CLK_SSI7		8
-+#define R8A7791_CLK_SSI6		9
-+#define R8A7791_CLK_SSI5		10
-+#define R8A7791_CLK_SSI4		11
-+#define R8A7791_CLK_SSI3		12
-+#define R8A7791_CLK_SSI2		13
-+#define R8A7791_CLK_SSI1		14
-+#define R8A7791_CLK_SSI0		15
-+#define R8A7791_CLK_SCU_ALL		17
-+#define R8A7791_CLK_SCU_DVC1		18
-+#define R8A7791_CLK_SCU_DVC0		19
-+#define R8A7791_CLK_SCU_SRC9		22
-+#define R8A7791_CLK_SCU_SRC8		23
-+#define R8A7791_CLK_SCU_SRC7		24
-+#define R8A7791_CLK_SCU_SRC6		25
-+#define R8A7791_CLK_SCU_SRC5		26
-+#define R8A7791_CLK_SCU_SRC4		27
-+#define R8A7791_CLK_SCU_SRC3		28
-+#define R8A7791_CLK_SCU_SRC2		29
-+#define R8A7791_CLK_SCU_SRC1		30
-+#define R8A7791_CLK_SCU_SRC0		31
-+
- /* MSTP11 */
- #define R8A7791_CLK_SCIFA3		6
- #define R8A7791_CLK_SCIFA4		7
--- 
-1.7.9.5
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
