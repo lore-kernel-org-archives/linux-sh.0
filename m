@@ -1,41 +1,54 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 06 Jun 2014 12:44:33 +0000
-Subject: [PATCH 2/4] drivers: sh: Restrict INTC_USERIMASK to SH4A
-Message-Id: <39c5abbc54179998bf04368a11c561e19220d7d4.1402058435.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 12 Jun 2014 09:42:09 +0000
+Subject: [PATCH v2 00/07] ARM: shmobile: Lager/Koelsch MMCIF/SDHI LPAE DMA prototype V2
+Message-Id: <20140612094209.4132.78270.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1402058435.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1402058435.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Simon Horman <horms+renesas@verge.net.au>
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+ARM: shmobile: Lager/Koelsch MMCIF/SDHI LPAE DMA prototype V2
 
-register_intc_userimask() is called from sh4a code only.
+[PATCH v2 01/07] mmc: sdhi: enable .dma_rx_offset for platform prototype
+[PATCH v2 02/07] DMA: shdma: 40-bit address prototype
+[PATCH v2 03/07] ARM: shmobile: Lager SYS-DMAC prototype
+[PATCH v2 04/07] ARM: shmobile: Lager SYS-DMAC and MMCIF prototype
+[PATCH v2 05/07] ARM: shmobile: Lager SYS-DMAC and SDHI prototype
+[PATCH v2 06/07] ARM: shmobile: Koelsch SYS-DMAC prototype
+[PATCH v2 07/07] ARM: shmobile: Koelsch SYS-DMAC and SDHI prototype
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Tested-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com> [r8a7779 legacy]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+These patches add DMAC prototype support for MMCIF and SDHI on Lager
+and SDHI on Koelsch. 40-bit physical address support in the DMAC
+has been hacked in as a prototype. DMA support for the SDHI
+driver has also been modified on a prototype level.
+
+Written to show how to make use of platform devices for DMA support
+until the DT bindings for the DMA hardware have been stabilized.
+
+Not for upstream merge.
+
+Changes since V1:
+ - Updated patch 02/07 to correctly calculate the transfer length
+ - Updated patch 07/07 to allow use together with Audio DMAC
+
+Thanks to Geert for his constructive review and feedback!
+
+Depends on the following public SDHI patches by Morimoto-san:
+[PATCH] mmc: block: add block number limitation flag for lultiple block read
+[PATCH] mmc: sdhi: tidyup mmc_data setting for R-Car SDHI
+[PATCH] mmc: tmio: care about DMA tx/rx addr offset
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- drivers/sh/intc/Kconfig | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/sh/intc/Kconfig b/drivers/sh/intc/Kconfig
-index f7d9061..60228fa 100644
---- a/drivers/sh/intc/Kconfig
-+++ b/drivers/sh/intc/Kconfig
-@@ -6,7 +6,7 @@ comment "Interrupt controller options"
- 
- config INTC_USERIMASK
- 	bool "Userspace interrupt masking support"
--	depends on ARCH_SHMOBILE || (SUPERH && CPU_SH4A) || COMPILE_TEST
-+	depends on (SUPERH && CPU_SH4A) || COMPILE_TEST
- 	help
- 	  This enables support for hardware-assisted userspace hardirq
- 	  masking.
--- 
-1.8.4
+ Written on top of renesas-devel-v3.15-20140611
 
+ arch/arm/mach-shmobile/board-koelsch-reference.c |  154 +++++++++++++++++++++
+ arch/arm/mach-shmobile/board-lager-reference.c   |  155 +++++++++++++++++++++-
+ drivers/dma/sh/shdma.h                           |    4 
+ drivers/dma/sh/shdmac.c                          |   46 +++++-
+ drivers/mmc/host/sh_mobile_sdhi.c                |    1 
+ include/linux/mmc/sh_mobile_sdhi.h               |    1 
+ include/linux/sh_dma.h                           |    2 
+ 7 files changed, 353 insertions(+), 10 deletions(-)
