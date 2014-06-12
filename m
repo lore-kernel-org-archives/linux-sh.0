@@ -1,78 +1,79 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 20 Jun 2014 10:20:38 +0000
-Subject: [PATCH/RFC 2/2] ARM: shmobile: r8a7791 dtsi: Enable DMA for MSIOF
-Message-Id: <1403259638-13774-3-git-send-email-geert+renesas@glider.be>
+From: Grygorii Strashko <grygorii.strashko@ti.com>
+Date: Thu, 12 Jun 2014 16:07:50 +0000
+Subject: [RFC PATCH 0/2] use named clocks list to register clocks for PM clock domain
+Message-Id: <1402592023-13416-1-git-send-email-grygorii.strashko@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1403259638-13774-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1403259638-13774-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+References: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Ben Dooks <ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Add register sets used for access by the DMA engine, and DMA properties to
-the MSIOF nodes.
+Hi Geert,
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-The format of the DMA specifiers depends on the DT bindings for SHDMA,
-which are still under development.
+I've spent some time testing your patches on Keystone 2 SoC as I am interested 
+in these patches.
 
-This patch has been sent before as part of the series "[PATCH/RFC 0/7] ARM:
-shmobile: r8a7791: Add preliminary DMA support". Changes:
-  - Add register sets for DMA,
-  - Reorder: TX first, RX second.
+The Keystone 2 is pure DT platform, but we reuse some Drivers from Davinci SoC.
+Now I have to dial with following problem:
+- Some modules on Keystone need more then one clock to be managed by PM clock.
+  As result, I can solve this by filling cond_id list in  structure
+  pm_clk_notifier_block.
+  For example:
+  static struct pm_clk_notifier_block platform_domain_notifier = {
+	.pm_domain = &keystone_pm_domain,
+	.con_ids = { "fck", "master", "slave", NULL },
+	};
+  But, in this case I'll need to add names for all clocks or rename existed
+  clock's names in DT to be compatible with above list, like: 
+	clock-names = "gpio"; -> clock-names = "fck";
+    - or -
+    clocks = <&clkspi>;
+	+ clock-names = "fck";
 
- arch/arm/boot/dts/r8a7791.dtsi | 15 ++++++++++++---
- 1 file changed, 12 insertions(+), 3 deletions(-)
+Your series gracefully solves this problem for me, but I'd like to avoid
+to use new CLK flag CLK_RUNTIME_PM, because:
+ - The same driver is used for all gated clocks for Keystone (and probably for
+   other SoCs)
+ - Some gated clocks can be optional.
+Taking into account above, driver for gated clock will need to maintain additional
+information internally about clocks which are suitable for Runtime PM - 
+it is too hard to support :(.
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 98fdd88462e2..1f8a4605e1e3 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1005,9 +1005,12 @@
- 
- 	msiof0: spi@e6e20000 {
- 		compatible = "renesas,msiof-r8a7791";
--		reg = <0 0xe6e20000 0 0x0064>;
-+		reg = <0 0xe6e20000 0 0x0064>, <0 0xe7e20000 0 0x0064>;
- 		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7791_CLK_MSIOF0>;
-+		dmas = <&dma0 R8A7791_DMA_MSIOF0_TX CHCR_TX_32BIT>,
-+		       <&dma0 R8A7791_DMA_MSIOF0_RX CHCR_RX_32BIT>;
-+		dma-names = "tx", "rx";
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		status = "disabled";
-@@ -1015,9 +1018,12 @@
- 
- 	msiof1: spi@e6e10000 {
- 		compatible = "renesas,msiof-r8a7791";
--		reg = <0 0xe6e10000 0 0x0064>;
-+		reg = <0 0xe6e10000 0 0x0064>, <0 0xe7e10000 0 0x0064>;
- 		interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7791_CLK_MSIOF1>;
-+		dmas = <&dma0 R8A7791_DMA_MSIOF1_TX CHCR_TX_32BIT>,
-+		       <&dma0 R8A7791_DMA_MSIOF1_RX CHCR_RX_32BIT>;
-+		dma-names = "tx", "rx";
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		status = "disabled";
-@@ -1025,9 +1031,12 @@
- 
- 	msiof2: spi@e6e00000 {
- 		compatible = "renesas,msiof-r8a7791";
--		reg = <0 0xe6e00000 0 0x0064>;
-+		reg = <0 0xe6e00000 0 0x0064>, <0 0xe7e00000 0 0x0064>;
- 		interrupts = <0 158 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7791_CLK_MSIOF2>;
-+		dmas = <&dma0 R8A7791_DMA_MSIOF2_TX CHCR_TX_32BIT>,
-+		       <&dma0 R8A7791_DMA_MSIOF2_RX CHCR_RX_32BIT>;
-+		dma-names = "tx", "rx";
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		status = "disabled";
+Therefore, I propose a solution which allows to specify clocks suitable for
+Runtime PM in DT using special property "clkops-clocks" (name can be changed:).
+
+Another possible option is to use DT definition like this:
+	spi2: spi@21000800 {
+		compatible = "ti,dm6441-spi";
+		reg = <0x21000800 0x200>;
+		num-cs = <4>;
+		ti,davinci-spi-intr-line = <0>;
+		interrupts = <GIC_SPI 300 IRQ_TYPE_EDGE_RISING>;
+->		clkops-clocks {
+->			clocks = <&clkspi>;
+->		}
+	}
+
+Regarding supporting of EPROBE_DEFER, in my opinion simplest solution would be to
+call of_clk_register_runtime_pm_clocks() directly from drivers.
+Another option 1, call of_clk_register_runtime_pm_clocks() before driver's probing 
+seems will be banned by Greg and Rafael.
+Another option 2, continue to use Bus notifiers, but then error path need to be
+handled somehow. Now BUS_NOTIFY_BIND_DRIVER even is sent before probing, but 
+it seems that nothing is sent in case if probe was failed.
+
+Grygorii Strashko (2):
+  clk: of: introduce of_clk_get_from_set()
+  of/clk: use "clkops-clocks" to specify clocks handled by clock_ops
+    domain
+
+ drivers/clk/clkdev.c |   24 ++++++++++++++++++++++--
+ drivers/of/of_clk.c  |    7 ++-----
+ include/linux/clk.h  |    7 +++++++
+ 3 files changed, 31 insertions(+), 7 deletions(-)
+
 -- 
-1.9.1
+1.7.9.5
 
