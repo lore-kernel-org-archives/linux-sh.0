@@ -1,133 +1,56 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 16 Jun 2014 14:32:24 +0000
-Subject: Re: [PATCH v3 10/19] clocksource: sh_tmu: Add DT support
-Message-Id: <3012797.FyNqyP1CPJ@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 12 Jun 2014 04:44:04 +0000
+Subject: [PATCH 1/3] ARM: shmobile: r8a7791: add audio clock on DTSI
+Message-Id: <87mwdienzg.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1402763021-4067-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20140616083423.GE11582@verge.net.au>
-In-Reply-To: <20140616083423.GE11582@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Simon,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Monday 16 June 2014 17:34:23 Simon Horman wrote:
-> On Sat, Jun 14, 2014 at 06:23:32PM +0200, Laurent Pinchart wrote:
-> > Document DT bindings and parse them in the TMU driver.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> [snip]
-> 
-> > diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-> > index ef8fb0b..2ece4ab 100644
-> > --- a/drivers/clocksource/sh_tmu.c
-> > +++ b/drivers/clocksource/sh_tmu.c
+audio_clk_a/b/c are required from sound driver
 
-[snip]
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7791.dtsi |   23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
 
-> > @@ -509,23 +510,46 @@ static int sh_tmu_map_memory(struct sh_tmu_device
-> > *tmu)
-> >  	return 0;
-> >  }
-> > 
-> > +static int sh_tmu_parse_dt(struct sh_tmu_device *tmu)
-> > +{
-> > +	struct device_node *np = tmu->pdev->dev.of_node;
-> > +
-> > +	tmu->num_channels = 3;
-> > +	of_property_read_u32(np, "#renesas,channels", &tmu->num_channels);
-> > +
-> > +	if (tmu->num_channels != 2 && tmu->num_channels != 3) {
-> > +		dev_err(&tmu->pdev->dev, "invalid number of channels %u\n",
-> > +			tmu->num_channels);
-> > +		return -EINVAL;
-> > +	}
-> > +
-> > +	return 0;
-> > +}
-> > +
-> >  static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device
-> >  *pdev) {
-> > -	struct sh_timer_config *cfg = pdev->dev.platform_data;
-> >  	const struct platform_device_id *id = pdev->id_entry;
-> >  	unsigned int i;
-> >  	int ret;
-> > 
-> > -	if (!cfg) {
-> > -		dev_err(&tmu->pdev->dev, "missing platform data\n");
-> > -		return -ENXIO;
-> > -	}
-> > -
-> >  	tmu->pdev = pdev;
-> >  	tmu->model = id->driver_data;
-> >  	
-> >  	raw_spin_lock_init(&tmu->lock);
-> > 
-> > +	if (IS_ENABLED(CONFIG_OF) && pdev->dev.of_node) {
-> > +		ret = sh_tmu_parse_dt(tmu);
-> > +		if (ret < 0)
-> > +			return ret;
-> > +	} else if (pdev->dev.platform_data) {
-> > +		struct sh_timer_config *cfg = pdev->dev.platform_data;
-> > +
-> > +		tmu->num_channels = hweight8(cfg->channels_mask);
-> > +	} else {
-> > +		dev_err(&tmu->pdev->dev, "missing platform data\n");
-> > +		return -ENXIO;
-> > +	}
-> > +
-> > 
-> >  	/* Get hold of clock. */
-> >  	tmu->clk = clk_get(&tmu->pdev->dev, "fck");
-> >  	if (IS_ERR(tmu->clk)) {
-> 
-> [snip]
-> 
-> I had a bit of trouble running this code and after some investigation
-> it seems to me that in the case of using DT id will be NULL and
-> thus things do not go well when id->driver_data is accessed.
-
-Indeed. I wonder how I've missed that :-/ Anyway, I'll fix it and resubmit.
-
-> The following incremental patch resolved the problem for me.
-> 
-> diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-> index 2ece4ab..3f90927 100644
-> --- a/drivers/clocksource/sh_tmu.c
-> +++ b/drivers/clocksource/sh_tmu.c
-> @@ -523,6 +523,8 @@ static int sh_tmu_parse_dt(struct sh_tmu_device *tmu)
->  		return -EINVAL;
->  	}
-> 
-> +	tmu->model = SH_TMU;
-> +
->  	return 0;
->  }
-> 
-> @@ -533,7 +535,6 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu,
-> struct platform_device *pdev) int ret;
-> 
->  	tmu->pdev = pdev;
-> -	tmu->model = id->driver_data;
-> 
->  	raw_spin_lock_init(&tmu->lock);
-> 
-> @@ -545,6 +546,7 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu,
-> struct platform_device *pdev) struct sh_timer_config *cfg > pdev->dev.platform_data;
-> 
->  		tmu->num_channels = hweight8(cfg->channels_mask);
-> +		tmu->model = id->driver_data;
->  	} else {
->  		dev_err(&tmu->pdev->dev, "missing platform data\n");
->  		return -ENXIO;
-
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index b639006..f3b6219 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -532,6 +532,29 @@
+ 			clock-output-names = "extal";
+ 		};
+ 
++		/*
++		 * The external audio clocks are configured as 0 Hz fixed frequency clocks by
++		 * default. Boards that provide audio clocks should override them.
++		 */
++		audio_clk_a: audio_clk_a {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "audio_clk_a";
++		};
++		audio_clk_b: audio_clk_b {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "audio_clk_b";
++		};
++		audio_clk_c: audio_clk_c {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "audio_clk_c";
++		};
++
+ 		/* Special CPG clocks */
+ 		cpg_clocks: cpg_clocks@e6150000 {
+ 			compatible = "renesas,r8a7791-cpg-clocks",
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
