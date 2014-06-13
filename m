@@ -1,60 +1,67 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:28:32 +0000
-Subject: [PATCH 23/29] ARM: shmobile: r8a7790: Add PCIe Controller device node
-Message-Id: <745329d280c8c73f00724745693658f3d4113ea8.1403487225.git.horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 13 Jun 2014 12:20:23 +0000
+Subject: [PATCH v6 0/1] add support for the R-Car H2 and M2 xHCI controllers
+Message-Id: <539AEC87.2080601@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: "mathias.nyman@intel.com" <mathias.nyman@intel.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-From: Phil Edworthy <phil.edworthy@renesas.com>
+This patch adds the USB xHCI support for the R-Car H2 and M2 SoCs.
+These SoCs use an xHCI but still need specific initialization, mainly
+to setup the firmware downloading and the specific registers.
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-[horms+renesas@verge.net.au: resolved conflict]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7790.dtsi | 25 +++++++++++++++++++++++++
- 1 file changed, 25 insertions(+)
+This patch set is based on the usb-next branch of Greg usb.git tree.
+(commit id = 4a95b1fce97756d0333f8232eb7ed6974e93b054)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 2c55c4b..994330e 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -930,6 +930,31 @@
- 		status = "disabled";
- 	};
- 
-+	pciec: pcie@fe000000 {
-+		compatible = "renesas,pcie-r8a7790";
-+		reg = <0 0xfe000000 0 0x80000>;
-+		#address-cells = <3>;
-+		#size-cells = <2>;
-+		bus-range = <0x00 0xff>;
-+		device_type = "pci";
-+		ranges = <0x01000000 0 0x00000000 0 0xfe100000 0 0x00100000
-+			  0x02000000 0 0xfe200000 0 0xfe200000 0 0x00200000
-+			  0x02000000 0 0x30000000 0 0x30000000 0 0x08000000
-+			  0x42000000 0 0x38000000 0 0x38000000 0 0x08000000>;
-+		/* Map all possible DDR as inbound ranges */
-+		dma-ranges = <0x42000000 0 0x40000000 0 0x40000000 0 0x80000000
-+			      0x43000000 1 0x80000000 1 0x80000000 0 0x80000000>;
-+		interrupts = <0 116 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 117 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 118 IRQ_TYPE_LEVEL_HIGH>;
-+		#interrupt-cells = <1>;
-+		interrupt-map-mask = <0 0 0 0>;
-+		interrupt-map = <0 0 0 0 &gic 0 116 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_PCIEC>, <&pcie_bus_clk>;
-+		clock-names = "pcie", "pcie_bus";
-+		status = "disabled";
-+	};
-+
- 	rcar_sound: rcar_sound@0xec500000 {
- 		#sound-dai-cells = <1>;
- 		compatible =  "renesas,rcar_sound-r8a7790", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
+Changes since v5:
+ - Fix the RCAR_USB3_RX_POL_VAL value in patch 1.
+ - Also modify the RCAR_USB3_TX_POL_VAL value using the BIT macro.
+
+Changes since v4:
+ - Rebase the latest usb-next branch
+
+Changes since v3:
+ - Remove a general phy driver calling in xhci-plat.c
+ - Change xhci_rcar_init_quirk() calling into xhci_plat_setup(). Because of
+   usb_add_hcd() will call a generic phy driver calling.
+ - Modify xhci_rcar_init_quirk()
+
+Changes since v2:
+ - Fix goto direction in patch 1.
+ - Remove some unnecessary checks in patch 1.
+ - Add MODULE_FIRMWARE() in patch 2.
+ - Add a comment about xhci_rcar_init_quirk() in patch 2.
+
+Changes since v1 (about patch 2 only because patch 1 and 3 ware applied):
+ - Fix some typos in patch 2.
+ - Remove duplicated #define in patch 2.
+ - Remove usb_phy framework calling in patch 2.
+ - Change prototype of xhci_rcar_start() in patch 2.
+ - Change compatible strings from "renesas,r8a779[01]-xhci" to
+   "renesas,xhci-r8a779[01]" in patch 2. Because of Renesas SoC
+   maintainer's comment:
+    http://marc.info/?l=linux-sh&m0109049002958&w=2
+
+ - Rewrite the custom get_unaligned_le32() and add comment about it in patch 2.
+
+*** BLURB HERE ***
+
+Yoshihiro Shimoda (1):
+  usb: host: xhci-plat: add support for the R-Car H2 and M2 xHCI
+    controllers
+
+ drivers/usb/host/Kconfig     |    8 +++
+ drivers/usb/host/Makefile    |    3 +
+ drivers/usb/host/xhci-plat.c |   19 ++++++
+ drivers/usb/host/xhci-rcar.c |  148 ++++++++++++++++++++++++++++++++++++++++++
+ drivers/usb/host/xhci-rcar.h |   27 ++++++++
+ 5 files changed, 205 insertions(+)
+ create mode 100644 drivers/usb/host/xhci-rcar.c
+ create mode 100644 drivers/usb/host/xhci-rcar.h
+
 -- 
-2.0.0.rc2
+1.7.9.5
 
