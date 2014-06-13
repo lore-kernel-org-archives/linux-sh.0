@@ -1,138 +1,40 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 18 Jun 2014 08:59:28 +0000
-Subject: [PATCH 1/3] dma: rcar-audmapp: enable .set_slave
-Message-Id: <87sin2y4ni.wl%kuninori.morimoto.gx@renesas.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Fri, 13 Jun 2014 09:37:21 +0000
+Subject: [PATCH v3 7/8] ARM: shmobile: koelsch: Enable PCIe Controller & PCIe bus clock
+Message-Id: <1402652242-16604-8-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87tx7iy4ot.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87tx7iy4ot.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, kuninori.morimoto.gx@gmail.com
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-Current .set_slave callback did nothing,
-since it assumed src/dst address come from platform settings.
-But, it isn't good match to DT probing.
-This patch enables .set_slave callback to this issue.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
- drivers/dma/sh/rcar-audmapp.c |   34 +++++++++++++++++++++++++---------
- 1 file changed, 25 insertions(+), 9 deletions(-)
+v3:
+ - Enable the PCIe bus clock
 
-diff --git a/drivers/dma/sh/rcar-audmapp.c b/drivers/dma/sh/rcar-audmapp.c
-index 2de7728..858483b 100644
---- a/drivers/dma/sh/rcar-audmapp.c
-+++ b/drivers/dma/sh/rcar-audmapp.c
-@@ -47,6 +47,7 @@ struct audmapp_chan {
- 	struct shdma_chan shdma_chan;
- 	struct audmapp_slave_config *config;
- 	void __iomem *base;
-+	dma_addr_t slave_addr;
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index b2e6616..022f0cf 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -430,6 +430,14 @@
+ 	};
  };
  
- struct audmapp_device {
-@@ -56,7 +57,14 @@ struct audmapp_device {
- 	void __iomem *chan_reg;
- };
- 
-+struct audmapp_desc {
-+	struct shdma_desc shdma_desc;
-+	dma_addr_t src;
-+	dma_addr_t dst;
++&pcie_bus_clk {
++	status = "okay";
 +};
 +
- #define to_chan(chan) container_of(chan, struct audmapp_chan, shdma_chan)
-+#define to_desc(sdesc) container_of(sdesc, struct audmapp_desc, shdma_desc)
- #define to_dev(chan) container_of(chan->shdma_chan.dma_chan.device,	\
- 				  struct audmapp_device, shdma_dev.dma_dev)
- 
-@@ -90,19 +98,20 @@ static void audmapp_halt(struct shdma_chan *schan)
- }
- 
- static void audmapp_start_xfer(struct shdma_chan *schan,
--			       struct shdma_desc *sdecs)
-+			       struct shdma_desc *sdesc)
- {
- 	struct audmapp_chan *auchan = to_chan(schan);
- 	struct audmapp_device *audev = to_dev(auchan);
-+	struct audmapp_desc *desc = to_desc(sdesc);
- 	struct audmapp_slave_config *cfg = auchan->config;
- 	struct device *dev = audev->dev;
- 	u32 chcr = cfg->chcr | PDMACHCR_DE;
- 
--	dev_dbg(dev, "src/dst/chcr = %pad/%pad/%x\n",
--		&cfg->src, &cfg->dst, cfg->chcr);
-+	dev_dbg(dev, "src/dst/chcr = %pad/%pad/%08x\n",
-+		&desc->src, &desc->dst, chcr);
- 
--	audmapp_write(auchan, cfg->src,	PDMASAR);
--	audmapp_write(auchan, cfg->dst,	PDMADAR);
-+	audmapp_write(auchan, desc->src,	PDMASAR);
-+	audmapp_write(auchan, desc->dst,	PDMADAR);
- 	audmapp_write(auchan, chcr,	PDMACHCR);
- }
- 
-@@ -137,14 +146,16 @@ static int audmapp_set_slave(struct shdma_chan *schan, int slave_id,
- 		return 0;
- 
- 	auchan->config	= cfg;
-+	auchan->slave_addr = slave_addr ? : cfg->dst;
- 
- 	return 0;
- }
- 
- static int audmapp_desc_setup(struct shdma_chan *schan,
--			      struct shdma_desc *sdecs,
-+			      struct shdma_desc *sdesc,
- 			      dma_addr_t src, dma_addr_t dst, size_t *len)
- {
-+	struct audmapp_desc *desc = to_desc(sdesc);
- 	struct audmapp_chan *auchan = to_chan(schan);
- 	struct audmapp_slave_config *cfg = auchan->config;
- 
-@@ -154,6 +165,9 @@ static int audmapp_desc_setup(struct shdma_chan *schan,
- 	if (*len > (size_t)AUDMAPP_LEN_MAX)
- 		*len = (size_t)AUDMAPP_LEN_MAX;
- 
-+	desc->src = src;
-+	desc->dst = dst;
++&pciec {
++	status = "okay";
++};
 +
- 	return 0;
- }
- 
-@@ -164,7 +178,9 @@ static void audmapp_setup_xfer(struct shdma_chan *schan,
- 
- static dma_addr_t audmapp_slave_addr(struct shdma_chan *schan)
- {
--	return 0; /* always fixed address */
-+	struct audmapp_chan *auchan = to_chan(schan);
-+
-+	return auchan->slave_addr;
- }
- 
- static bool audmapp_channel_busy(struct shdma_chan *schan)
-@@ -183,7 +199,7 @@ static bool audmapp_desc_completed(struct shdma_chan *schan,
- 
- static struct shdma_desc *audmapp_embedded_desc(void *buf, int i)
- {
--	return &((struct shdma_desc *)buf)[i];
-+	return &((struct audmapp_desc *)buf)[i].shdma_desc;
- }
- 
- static const struct shdma_ops audmapp_shdma_ops = {
-@@ -260,7 +276,7 @@ static int audmapp_probe(struct platform_device *pdev)
- 
- 	sdev		= &audev->shdma_dev;
- 	sdev->ops	= &audmapp_shdma_ops;
--	sdev->desc_size	= sizeof(struct shdma_desc);
-+	sdev->desc_size	= sizeof(struct audmapp_desc);
- 
- 	dma_dev			= &sdev->dma_dev;
- 	dma_dev->copy_align	= LOG2_DEFAULT_XFER_SIZE;
+ &cpu0 {
+ 	cpu0-supply = <&vdd_dvfs>;
+ };
 -- 
-1.7.9.5
+2.0.0
 
