@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 12 Jun 2014 06:46:45 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 13 Jun 2014 07:47:37 +0000
 Subject: Re: [PATCH 2/3] ARM: shmobile: r8a7791: add MSTP10 support on DTSI
-Message-Id: <CAMuHMdXHqwLfa+_hg_F03ExtW2H=xFfY_JB5psxc91PPhKjGbA@mail.gmail.com>
+Message-Id: <20140613074736.GC15286@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1387998730-6012-3-git-send-email-valentine.barshak@cogentembedded.com>
 In-Reply-To: <1387998730-6012-3-git-send-email-valentine.barshak@cogentembedded.com>
@@ -10,21 +10,13 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Jun 12, 2014 at 6:44 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Thu, Jun 12, 2014 at 08:46:45AM +0200, Geert Uytterhoeven wrote:
+> On Thu, Jun 12, 2014 at 6:44 AM, Kuninori Morimoto
+> <kuninori.morimoto.gx@renesas.com> wrote:
+> > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> >
+> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> 
+> Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Thanks, I will queue this up.
