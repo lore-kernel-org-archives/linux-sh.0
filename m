@@ -1,37 +1,78 @@
-From: David Laight <David.Laight@ACULAB.COM>
-Date: Fri, 13 Jun 2014 10:05:42 +0000
-Subject: RE: [-next] Regression: ssh log in slowdown
-Message-Id: <063D6719AE5E284EB5DD2968C1650D6D1725C2C3@AcuExch.aculab.com>
+From: Tom Herbert <therbert@google.com>
+Date: Fri, 13 Jun 2014 15:37:51 +0000
+Subject: [-next] Regression: ssh log in slowdown
+Message-Id: <alpine.DEB.2.02.1406130829370.23090@tomh.mtv.corp.google.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <alpine.DEB.2.02.1406130111280.1551@tomh.mtv.corp.google.com>
-	<CAMuHMdW4kYeqEby3iABzdbjyAkPKq=x4dyopokFbHWT0Q4fjcw@mail.gmail.com>
-	<063D6719AE5E284EB5DD2968C1650D6D1725C134@AcuExch.aculab.com>
- <CAMuHMdXOY8NF78gnpqHdNueDKDs5kTZ+xqV+dVXCYCu8MkSFng@mail.gmail.com>
-In-Reply-To: <CAMuHMdXOY8NF78gnpqHdNueDKDs5kTZ+xqV+dVXCYCu8MkSFng@mail.gmail.com>
+References: <CAMuHMdU6rrpx6xFw71HKexDJUZtfFtL+um6dxZ=EaycgVO312A@mail.gmail.com>
+In-Reply-To: <CAMuHMdU6rrpx6xFw71HKexDJUZtfFtL+um6dxZ=EaycgVO312A@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: 'Geert Uytterhoeven' <geert@linux-m68k.org>
-Cc: Tom Herbert <therbert@google.com>, "David S. Miller" <davem@davemloft.net>, Linux-Next <linux-next@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "netdev@vger.kernel.org" <netdev@vger.kernel.org>
+To: geert@linux-m68k.org
+Cc: davem@davemloft.net, linux-next@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, netdev@vger.kernel.org
 
-RnJvbTogR2VlcnQgVXl0dGVyaG9ldmVuDQo+IEhpIERhdmlkLA0KPiANCj4gT24gRnJpLCBKdW4g
-MTMsIDIwMTQgYXQgMTA6NDkgQU0sIERhdmlkIExhaWdodCA8RGF2aWQuTGFpZ2h0QGFjdWxhYi5j
-b20+IHdyb3RlOg0KPiA+IEZyb206IE9mIEdlZXJ0IFV5dHRlcmhvZXZlbg0KPiA+IC4uLg0KPiA+
-PiBOb3RlIHRoYXQgSSdtIGFsc28gdXNpbmcgTkZTIHJvb3QsIHdoaWNoIGRvZXNuJ3Qgc2VlbSB0
-byBiZSBhZmZlY3RlZC4NCj4gPj4gSSBjYW4gaGFwcGlseSBydW4gImxzIC1SIC8iIG9uIHRoZSBz
-ZXJpYWwgY29uc29sZSBkdXJpbmcgdGhlIDEwIHMgZGVsYXkgaW4gc3NoLg0KPiA+DQo+ID4gQXJl
-IHlvdSBzdXJlIHRoYXQgdGhlIGRlbGF5IGR1cmluZyBzc2ggbG9naW4gaXNuJ3QganVzdA0KPiA+
-IGEgcmV2ZXJzZSBETlMgdGltZW91dD8NCj4gDQo+IEluZGVlZCwgdGhlIHNzaCBzZXJ2ZXIgc2Vu
-ZHMgYSByZXZlcnNlIEROUyByZXF1ZXN0IHR3aWNlLCB3aXRoIDVzIGluIGJldHdlZW46DQouLi4g
-DQo+IEludGVyZXN0aW5nbHksIEkgZG9uJ3Qgc2VlIHRoZSBmb3J3YXJkIEROUyByZXF1ZXN0IGFm
-dGVyIHRoYXQsIHdoaWNoDQo+IGRvZXMgaGFwcGVuIGluIHRoZSBnb29kIGNhc2UuDQoNClRoZSBm
-b3J3YXJkcyByZXF1ZXN0IGlzIHByb2JhYmx5IGp1c3QgY29weWluZyBzb21lIHN0cmFuZ2UgY29k
-ZSBmcm9tICdyc2hkJw0KdGhhdCB0cmllZCB0byB2ZXJpZnkgdGhlIHJldmVyc2UgbG9va3VwIGJ5
-IGRvaW5nIGEgZm9yd2FyZHMgbG9va3VwIG9uIHRoZQ0KcmVzdWx0Lg0KVGhhdCBpbiBpdHNlbGYg
-dXNlZCB0byBjYXVzZSB1cyBncmllZi4NClRoZSBSRE5TIHdvdWxkIChjb3JyZWN0bHkpIGdlbmVy
-YXRlIGhvc3QuYmFyLmJhei5jby51aywgc2luY2UgdGhlICdkb21haW4nDQppbiBldGMvcmVzb2x2
-LmNvbmYgd2FzIGJhci5iYXouY28udWsgdGhlIGZvcndhcmRzIGxvb2t1cCBmaXJzdCB0cmllZA0K
-aG9zdC5iYXIuYmF6LmNvLnVrLmJhci5iYXouY28udWsgdGhlbiBob3N0LmJhci5iYXouY28udWsu
-YmF6LmNvLnVrDQpvbmUgb2Ygd2hpY2ggYWx3YXlzIHRpbWVkIG91dCA6LSgNCihXaGVuIHRoZSAn
-c2VhcmNoJyBjb21tYW5kIHdhcyBhZGRlZCB3ZSBjb3VsZCBhdm9pZCB0aGUgcmVxdWVzdCB0aGF0
-DQp0aW1lZCBvdXQuKQ0KDQoJRGF2aWQNCg0K
+> Thanks, I applied the series "[PATCH 0/4] Checksum fixes", and the fix
+> above, but it doesn't help.
+>
+> Note that I'm also using NFS root, which doesn't seem to be affected.
+> I can happily run "ls -R /" on the serial console during the 10 s delay 
+in ssh.
+>
+Geert,
+
+Thanks for your patience!
+
+Can you try one more patch below with the series applied? Also, can you 
+look at 'netstat -s' to see if UDP checksum errors are being reported.
+
+Thanks,
+Tom 
+
+diff --git a/include/linux/skbuff.h b/include/linux/skbuff.h
+index fdb510c..4b722bc 100644
+--- a/include/linux/skbuff.h
++++ b/include/linux/skbuff.h
+@@ -2820,8 +2820,8 @@ static inline __sum16 __skb_checksum_validate_complete(struct sk_buff *skb,
+ 	if (complete || skb->len <= CHECKSUM_BREAK) {
+ 		__sum16 csum;
+ 
++		/* skb->csum valid set in __skb_checksum_complete */
+ 		csum = __skb_checksum_complete(skb);
+-		skb->csum_valid = !csum;
+ 		return csum;
+ 	}
+ 
+diff --git a/net/core/datagram.c b/net/core/datagram.c
+index cf6cc4e..488dd1a 100644
+--- a/net/core/datagram.c
++++ b/net/core/datagram.c
+@@ -744,6 +744,7 @@ __sum16 __skb_checksum_complete_head(struct sk_buff *skb, int len)
+ 		    !skb->csum_complete_sw)
+ 			netdev_rx_csum_fault(skb->dev);
+ 	}
++	skb->csum_valid = !sum;
+ 	return sum;
+ }
+ EXPORT_SYMBOL(__skb_checksum_complete_head);
+@@ -767,6 +768,7 @@ __sum16 __skb_checksum_complete(struct sk_buff *skb)
+ 	skb->csum = csum;
+ 	skb->ip_summed = CHECKSUM_COMPLETE;
+ 	skb->csum_complete_sw = 1;
++	skb->csum_valid = !sum;
+ 
+ 	return sum;
+ }
+diff --git a/net/core/skbuff.c b/net/core/skbuff.c
+index bf92824..9cd5344 100644
+--- a/net/core/skbuff.c
++++ b/net/core/skbuff.c
+@@ -689,6 +689,9 @@ static void __copy_skb_header(struct sk_buff *new, const struct sk_buff *old)
+ 	new->ooo_okay		= old->ooo_okay;
+ 	new->no_fcs		= old->no_fcs;
+ 	new->encapsulation	= old->encapsulation;
++	new->encap_hdr_csum	= old->encap_hdr_csum;
++	new->csum_valid		= old->csum_valid;
++	new->csum_complete_sw	= old->csum_complete_sw;
+ #ifdef CONFIG_XFRM
+ 	new->sp			= secpath_get(old->sp);
+ #endif
