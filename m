@@ -1,114 +1,73 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 20 Jun 2014 16:53:03 +0000
-Subject: [PATCH 3/9] ARM: shmobile: Move r8a7740.h
-Message-Id: <1403283189-21688-4-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 14 Jun 2014 16:23:27 +0000
+Subject: [PATCH v3 05/19] clocksource: sh_tmu: Replace global spinlock with a per-device spinlock
+Message-Id: <1402763021-4067-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1403283189-21688-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1403283189-21688-1-git-send-email-geert+renesas@glider.be>
+References: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Change location of r8a7740.h so it can be included as "r8a7740.h"
-instead of the old style <mach/r8a7740.h>
+The global spinlock is used to protect the shared start/stop register.
+Now that all TMU channels are handled by a single device instance, use a
+per-device spinlock.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 4 +++-
- arch/arm/mach-shmobile/board-armadillo800eva.c           | 4 +++-
- arch/arm/mach-shmobile/clock-r8a7740.c                   | 3 ++-
- arch/arm/mach-shmobile/{include/mach => }/r8a7740.h      | 0
- arch/arm/mach-shmobile/setup-r8a7740.c                   | 4 +++-
- 5 files changed, 11 insertions(+), 4 deletions(-)
- rename arch/arm/mach-shmobile/{include/mach => }/r8a7740.h (100%)
+ drivers/clocksource/sh_tmu.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index 0ae49823e67f..84bc6cb6d5aa 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -24,10 +24,12 @@
- #include <linux/kernel.h>
- #include <linux/gpio.h>
- #include <linux/io.h>
--#include <mach/r8a7740.h>
-+
- #include <asm/mach/arch.h>
- #include <asm/hardware/cache-l2x0.h>
-+
- #include "common.h"
-+#include "r8a7740.h"
+diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
+index 4363eb7..ef8fb0b 100644
+--- a/drivers/clocksource/sh_tmu.c
++++ b/drivers/clocksource/sh_tmu.c
+@@ -61,6 +61,8 @@ struct sh_tmu_device {
  
- /*
-  * CON1		Camera Module
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 395638da837c..fc73246ca104 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -45,7 +45,7 @@
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/i2c-gpio.h>
- #include <linux/reboot.h>
--#include <mach/r8a7740.h>
-+
- #include <media/mt9t112.h>
- #include <media/sh_mobile_ceu.h>
- #include <media/soc_camera.h>
-@@ -59,9 +59,11 @@
- #include <video/sh_mobile_hdmi.h>
- #include <sound/sh_fsi.h>
- #include <sound/simple_card.h>
-+
- #include "common.h"
- #include "irqs.h"
- #include "pm-rmobile.h"
-+#include "r8a7740.h"
- #include "sh-gpio.h"
+ 	enum sh_tmu_model model;
  
- /*
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index ffefec53b058..789091cfa37a 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -22,9 +22,10 @@
- #include <linux/io.h>
- #include <linux/sh_clk.h>
- #include <linux/clkdev.h>
--#include <mach/r8a7740.h>
++	raw_spinlock_t lock; /* Protect the shared start/stop register */
 +
- #include "clock.h"
- #include "common.h"
-+#include "r8a7740.h"
+ 	struct sh_tmu_channel *channels;
+ 	unsigned int num_channels;
  
- /*
-  *        |  MDx  |  XTAL1/EXTAL1   |  System   | EXTALR |
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/r8a7740.h
-similarity index 100%
-rename from arch/arm/mach-shmobile/include/mach/r8a7740.h
-rename to arch/arm/mach-shmobile/r8a7740.h
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 10170b3560c2..348af358a239 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -31,15 +31,17 @@
- #include <linux/sh_dma.h>
- #include <linux/sh_timer.h>
- #include <linux/platform_data/sh_ipmmu.h>
--#include <mach/r8a7740.h>
-+
- #include <asm/mach-types.h>
- #include <asm/mach/map.h>
- #include <asm/mach/arch.h>
- #include <asm/mach/time.h>
-+
- #include "common.h"
- #include "dma-register.h"
- #include "irqs.h"
- #include "pm-rmobile.h"
-+#include "r8a7740.h"
+@@ -68,8 +70,6 @@ struct sh_tmu_device {
+ 	bool has_clocksource;
+ };
  
- static struct map_desc r8a7740_io_desc[] __initdata = {
- 	 /*
+-static DEFINE_RAW_SPINLOCK(sh_tmu_lock);
+-
+ #define TSTR -1 /* shared register */
+ #define TCOR  0 /* channel register */
+ #define TCNT 1 /* channel register */
+@@ -132,7 +132,7 @@ static void sh_tmu_start_stop_ch(struct sh_tmu_channel *ch, int start)
+ 	unsigned long flags, value;
+ 
+ 	/* start stop register shared by multiple timer channels */
+-	raw_spin_lock_irqsave(&sh_tmu_lock, flags);
++	raw_spin_lock_irqsave(&ch->tmu->lock, flags);
+ 	value = sh_tmu_read(ch, TSTR);
+ 
+ 	if (start)
+@@ -141,7 +141,7 @@ static void sh_tmu_start_stop_ch(struct sh_tmu_channel *ch, int start)
+ 		value &= ~(1 << ch->index);
+ 
+ 	sh_tmu_write(ch, TSTR, value);
+-	raw_spin_unlock_irqrestore(&sh_tmu_lock, flags);
++	raw_spin_unlock_irqrestore(&ch->tmu->lock, flags);
+ }
+ 
+ static int __sh_tmu_enable(struct sh_tmu_channel *ch)
+@@ -524,6 +524,8 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
+ 	tmu->pdev = pdev;
+ 	tmu->model = id->driver_data;
+ 
++	raw_spin_lock_init(&tmu->lock);
++
+ 	/* Get hold of clock. */
+ 	tmu->clk = clk_get(&tmu->pdev->dev, "fck");
+ 	if (IS_ERR(tmu->clk)) {
 -- 
-1.9.1
+1.8.5.5
 
