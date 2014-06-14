@@ -1,140 +1,266 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 23 Jun 2014 23:54:16 +0000
-Subject: [PATCH v2 10/23] v4l: vsp1: Cleanup video nodes at removal time
-Message-Id: <1403567669-18539-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 14 Jun 2014 16:23:28 +0000
+Subject: [PATCH v3 06/19] clocksource: sh_mtu2: Drop support for legacy platform data
+Message-Id: <1402763021-4067-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Video nodes created and initialized in the RPF and WPF init code paths
-are never unregistered, and the related resources (videobuf alloc
-context and media entity) never released.
-
-Fix this by storing a pointer to the vsp1_video object in vsp1_entity
-and calling vsp1_video_cleanup() from vsp1_entity_destroy(). This also
-allows simplifying the init error code paths.
+Now that all platforms have switched to the new-style platform data,
+drop support for the legacy version.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Wolfram Sang <wsa@sang-engineering.com>
 ---
- drivers/media/platform/vsp1/vsp1_entity.c |  3 +++
- drivers/media/platform/vsp1/vsp1_entity.h |  3 +++
- drivers/media/platform/vsp1/vsp1_rpf.c    | 12 ++++++------
- drivers/media/platform/vsp1/vsp1_wpf.c    | 12 ++++++------
- 4 files changed, 18 insertions(+), 12 deletions(-)
+ drivers/clocksource/sh_mtu2.c | 130 ++++++++++--------------------------------
+ 1 file changed, 31 insertions(+), 99 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_entity.c b/drivers/media/platform/vsp1/vsp1_entity.c
-index 4416783..ceac0d7 100644
---- a/drivers/media/platform/vsp1/vsp1_entity.c
-+++ b/drivers/media/platform/vsp1/vsp1_entity.c
-@@ -20,6 +20,7 @@
+diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
+index f2c1c36..2931fea 100644
+--- a/drivers/clocksource/sh_mtu2.c
++++ b/drivers/clocksource/sh_mtu2.c
+@@ -37,7 +37,6 @@ struct sh_mtu2_channel {
+ 	unsigned int index;
  
- #include "vsp1.h"
- #include "vsp1_entity.h"
-+#include "vsp1_video.h"
+ 	void __iomem *base;
+-	int irq;
  
- /* -----------------------------------------------------------------------------
-  * V4L2 Subdevice Operations
-@@ -185,6 +186,8 @@ int vsp1_entity_init(struct vsp1_device *vsp1, struct vsp1_entity *entity,
+ 	struct clock_event_device ced;
+ };
+@@ -51,7 +50,6 @@ struct sh_mtu2_device {
+ 	struct sh_mtu2_channel *channels;
+ 	unsigned int num_channels;
  
- void vsp1_entity_destroy(struct vsp1_entity *entity)
- {
-+	if (entity->video)
-+		vsp1_video_cleanup(entity->video);
- 	if (entity->subdev.ctrl_handler)
- 		v4l2_ctrl_handler_free(entity->subdev.ctrl_handler);
- 	media_entity_cleanup(&entity->subdev.entity);
-diff --git a/drivers/media/platform/vsp1/vsp1_entity.h b/drivers/media/platform/vsp1/vsp1_entity.h
-index 7afbd8a..f0257f6 100644
---- a/drivers/media/platform/vsp1/vsp1_entity.h
-+++ b/drivers/media/platform/vsp1/vsp1_entity.h
-@@ -18,6 +18,7 @@
- #include <media/v4l2-subdev.h>
- 
- struct vsp1_device;
-+struct vsp1_video;
- 
- enum vsp1_entity_type {
- 	VSP1_ENTITY_BRU,
-@@ -68,6 +69,8 @@ struct vsp1_entity {
- 
- 	struct v4l2_subdev subdev;
- 	struct v4l2_mbus_framefmt *formats;
-+
-+	struct vsp1_video *video;
+-	bool legacy;
+ 	bool has_clockevent;
  };
  
- static inline struct vsp1_entity *to_vsp1_entity(struct v4l2_subdev *subdev)
-diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
-index c3d9864..9b3fc70 100644
---- a/drivers/media/platform/vsp1/vsp1_rpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_rpf.c
-@@ -205,7 +205,9 @@ struct vsp1_rwpf *vsp1_rpf_create(struct vsp1_device *vsp1, unsigned int index)
+@@ -162,12 +160,8 @@ static inline unsigned long sh_mtu2_read(struct sh_mtu2_channel *ch, int reg_nr)
+ {
+ 	unsigned long offs;
  
- 	ret = vsp1_video_init(video, &rpf->entity);
- 	if (ret < 0)
--		goto error_video;
-+		goto error;
-+
-+	rpf->entity.video = video;
+-	if (reg_nr = TSTR) {
+-		if (ch->mtu->legacy)
+-			return ioread8(ch->mtu->mapbase);
+-		else
+-			return ioread8(ch->mtu->mapbase + 0x280);
+-	}
++	if (reg_nr = TSTR)
++		return ioread8(ch->mtu->mapbase + 0x280);
  
- 	/* Connect the video device to the RPF. */
- 	ret = media_entity_create_link(&rpf->video.video.entity, 0,
-@@ -214,13 +216,11 @@ struct vsp1_rwpf *vsp1_rpf_create(struct vsp1_device *vsp1, unsigned int index)
- 				       MEDIA_LNK_FL_ENABLED |
- 				       MEDIA_LNK_FL_IMMUTABLE);
- 	if (ret < 0)
--		goto error_link;
-+		goto error;
+ 	offs = mtu2_reg_offs[reg_nr];
  
- 	return rpf;
+@@ -182,12 +176,8 @@ static inline void sh_mtu2_write(struct sh_mtu2_channel *ch, int reg_nr,
+ {
+ 	unsigned long offs;
  
--error_link:
--	vsp1_video_cleanup(video);
--error_video:
--	media_entity_cleanup(&rpf->entity.subdev.entity);
-+error:
-+	vsp1_entity_destroy(&rpf->entity);
- 	return ERR_PTR(ret);
+-	if (reg_nr = TSTR) {
+-		if (ch->mtu->legacy)
+-			return iowrite8(value, ch->mtu->mapbase);
+-		else
+-			return iowrite8(value, ch->mtu->mapbase + 0x280);
+-	}
++	if (reg_nr = TSTR)
++		return iowrite8(value, ch->mtu->mapbase + 0x280);
+ 
+ 	offs = mtu2_reg_offs[reg_nr];
+ 
+@@ -331,7 +321,6 @@ static void sh_mtu2_register_clockevent(struct sh_mtu2_channel *ch,
+ 					const char *name)
+ {
+ 	struct clock_event_device *ced = &ch->ced;
+-	int ret;
+ 
+ 	ced->name = name;
+ 	ced->features = CLOCK_EVT_FEAT_PERIODIC;
+@@ -344,24 +333,12 @@ static void sh_mtu2_register_clockevent(struct sh_mtu2_channel *ch,
+ 	dev_info(&ch->mtu->pdev->dev, "ch%u: used for clock events\n",
+ 		 ch->index);
+ 	clockevents_register_device(ced);
+-
+-	ret = request_irq(ch->irq, sh_mtu2_interrupt,
+-			  IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
+-			  dev_name(&ch->mtu->pdev->dev), ch);
+-	if (ret) {
+-		dev_err(&ch->mtu->pdev->dev, "ch%u: failed to request irq %d\n",
+-			ch->index, ch->irq);
+-		return;
+-	}
  }
-diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
-index 1294340..36c4793 100644
---- a/drivers/media/platform/vsp1/vsp1_wpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_wpf.c
-@@ -216,7 +216,9 @@ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index)
  
- 	ret = vsp1_video_init(video, &wpf->entity);
- 	if (ret < 0)
--		goto error_video;
-+		goto error;
-+
-+	wpf->entity.video = video;
+-static int sh_mtu2_register(struct sh_mtu2_channel *ch, const char *name,
+-			    bool clockevent)
++static int sh_mtu2_register(struct sh_mtu2_channel *ch, const char *name)
+ {
+-	if (clockevent) {
+-		ch->mtu->has_clockevent = true;
+-		sh_mtu2_register_clockevent(ch, name);
+-	}
++	ch->mtu->has_clockevent = true;
++	sh_mtu2_register_clockevent(ch, name);
  
- 	/* Connect the video device to the WPF. All connections are immutable
- 	 * except for the WPF0 source link if a LIF is present.
-@@ -229,15 +231,13 @@ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index)
- 				       RWPF_PAD_SOURCE,
- 				       &wpf->video.video.entity, 0, flags);
- 	if (ret < 0)
--		goto error_link;
-+		goto error;
- 
- 	wpf->entity.sink = &wpf->video.video.entity;
- 
- 	return wpf;
- 
--error_link:
--	vsp1_video_cleanup(video);
--error_video:
--	media_entity_cleanup(&wpf->entity.subdev.entity);
-+error:
-+	vsp1_entity_destroy(&wpf->entity);
- 	return ERR_PTR(ret);
+ 	return 0;
  }
+@@ -372,40 +349,32 @@ static int sh_mtu2_setup_channel(struct sh_mtu2_channel *ch, unsigned int index,
+ 	static const unsigned int channel_offsets[] = {
+ 		0x300, 0x380, 0x000,
+ 	};
+-	bool clockevent;
++	char name[6];
++	int irq;
++	int ret;
+ 
+ 	ch->mtu = mtu;
+ 
+-	if (mtu->legacy) {
+-		struct sh_timer_config *cfg = mtu->pdev->dev.platform_data;
+-
+-		clockevent = cfg->clockevent_rating != 0;
+-
+-		ch->irq = platform_get_irq(mtu->pdev, 0);
+-		ch->base = mtu->mapbase - cfg->channel_offset;
+-		ch->index = cfg->timer_bit;
+-	} else {
+-		char name[6];
+-
+-		clockevent = true;
+-
+-		sprintf(name, "tgi%ua", index);
+-		ch->irq = platform_get_irq_byname(mtu->pdev, name);
+-		ch->base = mtu->mapbase + channel_offsets[index];
+-		ch->index = index;
+-	}
+-
+-	if (ch->irq < 0) {
++	sprintf(name, "tgi%ua", index);
++	irq = platform_get_irq_byname(mtu->pdev, name);
++	if (irq < 0) {
+ 		/* Skip channels with no declared interrupt. */
+-		if (!mtu->legacy)
+-			return 0;
++		return 0;
++	}
+ 
+-		dev_err(&mtu->pdev->dev, "ch%u: failed to get irq\n",
+-			ch->index);
+-		return ch->irq;
++	ret = request_irq(irq, sh_mtu2_interrupt,
++			  IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
++			  dev_name(&ch->mtu->pdev->dev), ch);
++	if (ret) {
++		dev_err(&ch->mtu->pdev->dev, "ch%u: failed to request irq %d\n",
++			index, irq);
++		return ret;
+ 	}
+ 
+-	return sh_mtu2_register(ch, dev_name(&mtu->pdev->dev), clockevent);
++	ch->base = mtu->mapbase + channel_offsets[index];
++	ch->index = index;
++
++	return sh_mtu2_register(ch, dev_name(&mtu->pdev->dev));
+ }
+ 
+ static int sh_mtu2_map_memory(struct sh_mtu2_device *mtu)
+@@ -422,46 +391,19 @@ static int sh_mtu2_map_memory(struct sh_mtu2_device *mtu)
+ 	if (mtu->mapbase = NULL)
+ 		return -ENXIO;
+ 
+-	/*
+-	 * In legacy platform device configuration (with one device per channel)
+-	 * the resource points to the channel base address.
+-	 */
+-	if (mtu->legacy) {
+-		struct sh_timer_config *cfg = mtu->pdev->dev.platform_data;
+-		mtu->mapbase += cfg->channel_offset;
+-	}
+-
+ 	return 0;
+ }
+ 
+-static void sh_mtu2_unmap_memory(struct sh_mtu2_device *mtu)
+-{
+-	if (mtu->legacy) {
+-		struct sh_timer_config *cfg = mtu->pdev->dev.platform_data;
+-		mtu->mapbase -= cfg->channel_offset;
+-	}
+-
+-	iounmap(mtu->mapbase);
+-}
+-
+ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
+ 			 struct platform_device *pdev)
+ {
+-	struct sh_timer_config *cfg = pdev->dev.platform_data;
+-	const struct platform_device_id *id = pdev->id_entry;
+ 	unsigned int i;
+ 	int ret;
+ 
+ 	mtu->pdev = pdev;
+-	mtu->legacy = id->driver_data;
+-
+-	if (mtu->legacy && !cfg) {
+-		dev_err(&mtu->pdev->dev, "missing platform data\n");
+-		return -ENXIO;
+-	}
+ 
+ 	/* Get hold of clock. */
+-	mtu->clk = clk_get(&mtu->pdev->dev, mtu->legacy ? "mtu2_fck" : "fck");
++	mtu->clk = clk_get(&mtu->pdev->dev, "fck");
+ 	if (IS_ERR(mtu->clk)) {
+ 		dev_err(&mtu->pdev->dev, "cannot get clock\n");
+ 		return PTR_ERR(mtu->clk);
+@@ -479,10 +421,7 @@ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
+ 	}
+ 
+ 	/* Allocate and setup the channels. */
+-	if (mtu->legacy)
+-		mtu->num_channels = 1;
+-	else
+-		mtu->num_channels = 3;
++	mtu->num_channels = 3;
+ 
+ 	mtu->channels = kzalloc(sizeof(*mtu->channels) * mtu->num_channels,
+ 				GFP_KERNEL);
+@@ -491,16 +430,10 @@ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
+ 		goto err_unmap;
+ 	}
+ 
+-	if (mtu->legacy) {
+-		ret = sh_mtu2_setup_channel(&mtu->channels[0], 0, mtu);
++	for (i = 0; i < mtu->num_channels; ++i) {
++		ret = sh_mtu2_setup_channel(&mtu->channels[i], i, mtu);
+ 		if (ret < 0)
+ 			goto err_unmap;
+-	} else {
+-		for (i = 0; i < mtu->num_channels; ++i) {
+-			ret = sh_mtu2_setup_channel(&mtu->channels[i], i, mtu);
+-			if (ret < 0)
+-				goto err_unmap;
+-		}
+ 	}
+ 
+ 	platform_set_drvdata(pdev, mtu);
+@@ -509,7 +442,7 @@ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
+ 
+ err_unmap:
+ 	kfree(mtu->channels);
+-	sh_mtu2_unmap_memory(mtu);
++	iounmap(mtu->mapbase);
+ err_clk_unprepare:
+ 	clk_unprepare(mtu->clk);
+ err_clk_put:
+@@ -562,7 +495,6 @@ static int sh_mtu2_remove(struct platform_device *pdev)
+ }
+ 
+ static const struct platform_device_id sh_mtu2_id_table[] = {
+-	{ "sh_mtu2", 1 },
+ 	{ "sh-mtu2", 0 },
+ 	{ },
+ };
 -- 
 1.8.5.5
 
