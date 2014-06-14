@@ -1,24 +1,68 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 18 Jun 2014 08:58:41 +0000
-Subject: [PATCH 0/3] dma: rcar-audmapp: add DT support
-Message-Id: <87tx7iy4ot.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 14 Jun 2014 16:23:35 +0000
+Subject: [PATCH v3 13/19] ARM: shmobile: r8a7791: Add CMT devices to DT
+Message-Id: <1402763021-4067-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>
-Cc: Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+Add the CMT0 and CMT1 counters to the r8a7791 device tree and make them
+disabled by default.
 
-Hi Vinod
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 34 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 34 insertions(+)
 
-These patches add DT support to Renesas Audio DMAC peri peri driver.
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 380d058..b56a995 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -189,6 +189,40 @@
+ 			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
+ 	};
+ 
++	cmt0: timer@ffca0000 {
++		compatible = "renesas,cmt-48-gen2";
++		reg = <0 0xffca0000 0 0x1004>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7791_CLK_CMT0>;
++		clock-names = "fck";
++
++		renesas,channels-mask = <0x60>;
++
++		status = "disabled";
++	};
++
++	cmt1: timer@e6130000 {
++		compatible = "renesas,cmt-48-gen2";
++		reg = <0 0xe6130000 0 0x1004>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 122 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 123 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 124 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 125 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 126 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 127 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7791_CLK_CMT1>;
++		clock-names = "fck";
++
++		renesas,channels-mask = <0xff>;
++
++		status = "disabled";
++	};
++
+ 	irqc0: interrupt-controller@e61c0000 {
+ 		compatible = "renesas,irqc-r8a7791", "renesas,irqc";
+ 		#interrupt-cells = <2>;
+-- 
+1.8.5.5
 
-Kuninori Morimoto (3):
-      dma: rcar-audmapp: enable .set_slave
-      dma: rcar-audmapp: don't keep audmapp_slave_config for each channeles
-      dma: rcar-audmapp: add DT support
-
- .../devicetree/bindings/dma/rcar-audmapp.txt       |   30 ++++++
- drivers/dma/sh/rcar-audmapp.c                      |  113 ++++++++++++++------
- 2 files changed, 113 insertions(+), 30 deletions(-)
