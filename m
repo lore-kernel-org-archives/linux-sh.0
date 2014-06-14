@@ -1,39 +1,76 @@
-From: Ingo Molnar <mingo@kernel.org>
-Date: Sun, 15 Jun 2014 06:54:23 +0000
-Subject: Re: [PATCH 0/6] perf: Use common PMU interrupt disabled code on all architectures
-Message-Id: <20140615065423.GA20028@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 14 Jun 2014 16:23:36 +0000
+Subject: [PATCH v3 14/19] ARM: shmobile: r8a7779: Add TMU devices to DT
+Message-Id: <1402763021-4067-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <alpine.DEB.2.10.1406150156510.16738@vincent-weaver-1.umelst.maine.edu>
-In-Reply-To: <alpine.DEB.2.10.1406150156510.16738@vincent-weaver-1.umelst.maine.edu>
+References: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vince Weaver <vincent.weaver@maine.edu>
-Cc: linux-kernel@vger.kernel.org, Peter Zijlstra <a.p.zijlstra@chello.nl>, Ingo Molnar <mingo@redhat.com>, Vineet Gupta <vgupta@synopsys.com>, Steven Miao <realmz6@gmail.com>, James Hogan <james.hogan@imgtec.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Cody P Schafer <cody@linux.vnet.ibm.com>, linux-sh@vger.kernel.org, Hendrik Brueckner <brueckner@linux.vnet.ibm.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>
+To: linux-arm-kernel@lists.infradead.org
 
+Add the TMU0, TMU1 and TMU2 counters to the r8a7779 device tree and make
+them disabled by default.
 
-* Vince Weaver <vincent.weaver@maine.edu> wrote:
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7779.dtsi | 42 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 42 insertions(+)
 
-> 
-> Now that "perf/x86: Use common PMU interrupt disabled code"
-> (c184c980de30dc) was merged, I went and audited all of the
-> architectures.  The following patchset attempts to move
-> all of the ones that have code disabling sampled events
-> due to lack of overflow interrupt to the new common code.
-> 
-> ARM and x86 were already updated with the original changeset.
-> 
-> Note that this is an ABI change in some cases, as many
-> architectures returned EINVAL previously rather than
-> EOPNOTSUPP.
-> 
-> Unfortunately these patches are not tested at all, as I don't have
-> access to the hardware.
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 94e2fc8..bf716ce 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -266,6 +266,48 @@
+ 		reg = <0xffc48000 0x38>;
+ 	};
+ 
++	tmu0: timer@ffd80000 {
++		compatible = "renesas,tmu";
++		reg = <0xffd80000 0x30>;
++		interrupts = <0 40 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 41 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 42 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7779_CLK_TMU0>;
++		clock-names = "fck";
++
++		#renesas,channels = <3>;
++
++		status = "disabled";
++	};
++
++	tmu1: timer@ffd81000 {
++		compatible = "renesas,tmu";
++		reg = <0xffd81000 0x30>;
++		interrupts = <0 44 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 45 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 46 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7779_CLK_TMU1>;
++		clock-names = "fck";
++
++		#renesas,channels = <3>;
++
++		status = "disabled";
++	};
++
++	tmu2: timer@ffd82000 {
++		compatible = "renesas,tmu";
++		reg = <0xffd82000 0x30>;
++		interrupts = <0 48 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 49 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 50 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7779_CLK_TMU2>;
++		clock-names = "fck";
++
++		#renesas,channels = <3>;
++
++		status = "disabled";
++	};
++
+ 	sata: sata@fc600000 {
+ 		compatible = "renesas,rcar-sata";
+ 		reg = <0xfc600000 0x2000>;
+-- 
+1.8.5.5
 
-Looks good to me, for v3.17. Peter, what do you think?
-
-Reviewed-by: Ingo Molnar <mingo@kernel.org>
-
-Thanks,
-
-	Ingo
