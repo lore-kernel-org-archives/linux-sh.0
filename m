@@ -1,350 +1,99 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 23 Jun 2014 23:54:29 +0000
-Subject: [PATCH v2 23/23] v4l: vsp1: uds: Fix scaling of alpha layer
-Message-Id: <1403567669-18539-24-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 14 Jun 2014 16:23:39 +0000
+Subject: [PATCH v3 17/19] ARM: shmobile: koelsch-reference: Enable CMT0 in device tree
+Message-Id: <1402763021-4067-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Pixel color components can be scaled using either bilinear interpolation
-or a multitap filter. The multitap filter provides better results, but
-can't be selected when the alpha layer need to be scaled down by more
-than 1/2.
-
-Disable alpha scaling when the input has a fixed alpha value, and
-program the UDS to output a fixed alpha value in that case. This ensures
-the multitap filter will be used whenever possible.
+No more device needs to be added from platform code when booting the
+reference platform, remove the now empty r8a7791_add_dt_devices()
+function completely.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/media/platform/vsp1/vsp1_rpf.c   |  4 ++
- drivers/media/platform/vsp1/vsp1_uds.c   | 65 +++++++++++++++-----------
- drivers/media/platform/vsp1/vsp1_uds.h   |  6 +--
- drivers/media/platform/vsp1/vsp1_video.c | 78 ++++++++++++++++++++++++++++++--
- drivers/media/platform/vsp1/vsp1_video.h |  6 +++
- 5 files changed, 124 insertions(+), 35 deletions(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts            | 4 ++++
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 2 --
+ arch/arm/mach-shmobile/include/mach/r8a7791.h    | 1 -
+ arch/arm/mach-shmobile/setup-r8a7791.c           | 7 +------
+ 4 files changed, 5 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
-index 576779f..d14d26b 100644
---- a/drivers/media/platform/vsp1/vsp1_rpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_rpf.c
-@@ -46,6 +46,7 @@ static int rpf_s_ctrl(struct v4l2_ctrl *ctrl)
- {
- 	struct vsp1_rwpf *rpf  		container_of(ctrl->handler, struct vsp1_rwpf, ctrls);
-+	struct vsp1_pipeline *pipe;
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 3fe7a7f..1f88332 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -303,6 +303,10 @@
+ 	};
+ };
  
- 	if (!vsp1_entity_is_streaming(&rpf->entity))
- 		return 0;
-@@ -54,6 +55,9 @@ static int rpf_s_ctrl(struct v4l2_ctrl *ctrl)
- 	case V4L2_CID_ALPHA_COMPONENT:
- 		vsp1_rpf_write(rpf, VI6_RPF_VRTCOL_SET,
- 			       ctrl->val << VI6_RPF_VRTCOL_SET_LAYA_SHIFT);
++&cmt0 {
++	status = "ok";
++};
 +
-+		pipe = to_vsp1_pipeline(&rpf->entity.subdev.entity);
-+		vsp1_pipeline_propagate_alpha(pipe, &rpf->entity, ctrl->val);
- 		break;
- 	}
- 
-diff --git a/drivers/media/platform/vsp1/vsp1_uds.c b/drivers/media/platform/vsp1/vsp1_uds.c
-index 0293bdb..1622a6a 100644
---- a/drivers/media/platform/vsp1/vsp1_uds.c
-+++ b/drivers/media/platform/vsp1/vsp1_uds.c
-@@ -45,6 +45,11 @@ static inline void vsp1_uds_write(struct vsp1_uds *uds, u32 reg, u32 data)
-  * Scaling Computation
+ &sata0 {
+ 	status = "okay";
+ };
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index 26189e2..1a73200 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -86,7 +86,6 @@ static void __init koelsch_add_du_device(void)
+  * devices until they get moved to DT.
   */
+ static const struct clk_name clk_names[] __initconst = {
+-	{ "cmt0", "fck", "sh-cmt-48-gen2.0" },
+ 	{ "du0", "du.0", "rcar-du-r8a7791" },
+ 	{ "du1", "du.1", "rcar-du-r8a7791" },
+ 	{ "lvds0", "lvds.0", "rcar-du-r8a7791" },
+@@ -95,7 +94,6 @@ static const struct clk_name clk_names[] __initconst = {
+ static void __init koelsch_add_standard_devices(void)
+ {
+ 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+-	r8a7791_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
  
-+void vsp1_uds_set_alpha(struct vsp1_uds *uds, unsigned int alpha)
-+{
-+	vsp1_uds_write(uds, VI6_UDS_ALPVAL, alpha << VI6_UDS_ALPVAL_VAL0_SHIFT);
-+}
-+
- /*
-  * uds_output_size - Return the output size for an input size and scaling ratio
-  * @input: input size in pixels
-@@ -105,49 +110,58 @@ static unsigned int uds_compute_ratio(unsigned int input, unsigned int output)
- 	return (input - 1) * 4096 / (output - 1);
- }
+ 	koelsch_add_du_device();
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7791.h b/arch/arm/mach-shmobile/include/mach/r8a7791.h
+index 86eae7b..c1bf7ab 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7791.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7791.h
+@@ -2,7 +2,6 @@
+ #define __ASM_R8A7791_H__
  
--static void uds_compute_ratios(struct vsp1_uds *uds)
+ void r8a7791_add_standard_devices(void);
+-void r8a7791_add_dt_devices(void);
+ void r8a7791_clock_init(void);
+ void r8a7791_pinmux_init(void);
+ void r8a7791_pm_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index ddd2fca..a66727e 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -180,11 +180,6 @@ static const struct resource thermal_resources[] __initconst = {
+ 					thermal_resources,		\
+ 					ARRAY_SIZE(thermal_resources))
+ 
+-void __init r8a7791_add_dt_devices(void)
 -{
--	struct v4l2_mbus_framefmt *input = &uds->entity.formats[UDS_PAD_SINK];
--	struct v4l2_mbus_framefmt *output -		&uds->entity.formats[UDS_PAD_SOURCE];
--
--	uds->hscale = uds_compute_ratio(input->width, output->width);
--	uds->vscale = uds_compute_ratio(input->height, output->height);
--
--	dev_dbg(uds->entity.vsp1->dev, "hscale %u vscale %u\n",
--		uds->hscale, uds->vscale);
+-	r8a7791_register_cmt(0);
 -}
 -
- /* -----------------------------------------------------------------------------
-  * V4L2 Subdevice Core Operations
-  */
- 
- static int uds_s_stream(struct v4l2_subdev *subdev, int enable)
+ void __init r8a7791_add_standard_devices(void)
  {
--	const struct v4l2_mbus_framefmt *format;
- 	struct vsp1_uds *uds = to_uds(subdev);
-+	const struct v4l2_mbus_framefmt *output;
-+	const struct v4l2_mbus_framefmt *input;
-+	unsigned int hscale;
-+	unsigned int vscale;
-+	bool multitap;
- 
- 	if (!enable)
- 		return 0;
- 
--	/* Enable multi-tap scaling. */
--	vsp1_uds_write(uds, VI6_UDS_CTRL, VI6_UDS_CTRL_AON | VI6_UDS_CTRL_BC);
-+	input = &uds->entity.formats[UDS_PAD_SINK];
-+	output = &uds->entity.formats[UDS_PAD_SOURCE];
-+
-+	hscale = uds_compute_ratio(input->width, output->width);
-+	vscale = uds_compute_ratio(input->height, output->height);
-+
-+	dev_dbg(uds->entity.vsp1->dev, "hscale %u vscale %u\n", hscale, vscale);
-+
-+	/* Multi-tap scaling can only be enabled along with alpha scaling if the
-+	 * scaling factor is 2/1, 1/1 or 1/2.
-+	 */
-+	if (!uds->scale_alpha)
-+		multitap = true;
-+	else if ((hscale = 2048 && hscale = 4096 && hscale = 8192) &&
-+		 (vscale = 2048 && vscale = 4096 && vscale = 8192))
-+		multitap = true;
-+	else
-+		multitap = false;
-+
-+	vsp1_uds_write(uds, VI6_UDS_CTRL,
-+		       (uds->scale_alpha ? VI6_UDS_CTRL_AON : 0) |
-+		       (multitap ? VI6_UDS_CTRL_BC : 0));
- 
- 	vsp1_uds_write(uds, VI6_UDS_PASS_BWIDTH,
--		       (uds_passband_width(uds->hscale)
-+		       (uds_passband_width(hscale)
- 				<< VI6_UDS_PASS_BWIDTH_H_SHIFT) |
--		       (uds_passband_width(uds->vscale)
-+		       (uds_passband_width(vscale)
- 				<< VI6_UDS_PASS_BWIDTH_V_SHIFT));
- 
- 	/* Set the scaling ratios and the output size. */
--	format = &uds->entity.formats[UDS_PAD_SOURCE];
--
- 	vsp1_uds_write(uds, VI6_UDS_SCALE,
--		       (uds->hscale << VI6_UDS_SCALE_HFRAC_SHIFT) |
--		       (uds->vscale << VI6_UDS_SCALE_VFRAC_SHIFT));
-+		       (hscale << VI6_UDS_SCALE_HFRAC_SHIFT) |
-+		       (vscale << VI6_UDS_SCALE_VFRAC_SHIFT));
- 	vsp1_uds_write(uds, VI6_UDS_CLIP_SIZE,
--		       (format->width << VI6_UDS_CLIP_SIZE_HSIZE_SHIFT) |
--		       (format->height << VI6_UDS_CLIP_SIZE_VSIZE_SHIFT));
-+		       (output->width << VI6_UDS_CLIP_SIZE_HSIZE_SHIFT) |
-+		       (output->height << VI6_UDS_CLIP_SIZE_VSIZE_SHIFT));
- 
- 	return 0;
+ 	r8a7791_register_scif(0);
+@@ -202,7 +197,7 @@ void __init r8a7791_add_standard_devices(void)
+ 	r8a7791_register_scif(12);
+ 	r8a7791_register_scif(13);
+ 	r8a7791_register_scif(14);
+-	r8a7791_add_dt_devices();
++	r8a7791_register_cmt(0);
+ 	r8a7791_register_irqc(0);
+ 	r8a7791_register_thermal();
  }
-@@ -280,9 +294,6 @@ static int uds_set_format(struct v4l2_subdev *subdev, struct v4l2_subdev_fh *fh,
- 		uds_try_format(uds, fh, UDS_PAD_SOURCE, format, fmt->which);
- 	}
- 
--	if (fmt->which = V4L2_SUBDEV_FORMAT_ACTIVE)
--		uds_compute_ratios(uds);
--
- 	return 0;
- }
- 
-diff --git a/drivers/media/platform/vsp1/vsp1_uds.h b/drivers/media/platform/vsp1/vsp1_uds.h
-index 479d12d..031ac0d 100644
---- a/drivers/media/platform/vsp1/vsp1_uds.h
-+++ b/drivers/media/platform/vsp1/vsp1_uds.h
-@@ -25,9 +25,7 @@ struct vsp1_device;
- 
- struct vsp1_uds {
- 	struct vsp1_entity entity;
--
--	unsigned int hscale;
--	unsigned int vscale;
-+	bool scale_alpha;
- };
- 
- static inline struct vsp1_uds *to_uds(struct v4l2_subdev *subdev)
-@@ -37,4 +35,6 @@ static inline struct vsp1_uds *to_uds(struct v4l2_subdev *subdev)
- 
- struct vsp1_uds *vsp1_uds_create(struct vsp1_device *vsp1, unsigned int index);
- 
-+void vsp1_uds_set_alpha(struct vsp1_uds *uds, unsigned int alpha);
-+
- #endif /* __VSP1_UDS_H__ */
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index 58fc076..915a20e 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -31,6 +31,7 @@
- #include "vsp1_bru.h"
- #include "vsp1_entity.h"
- #include "vsp1_rwpf.h"
-+#include "vsp1_uds.h"
- #include "vsp1_video.h"
- 
- #define VSP1_VIDEO_DEF_FORMAT		V4L2_PIX_FMT_YUYV
-@@ -306,13 +307,14 @@ vsp1_video_format_adjust(struct vsp1_video *video,
-  * Pipeline Management
-  */
- 
--static int vsp1_pipeline_validate_branch(struct vsp1_rwpf *input,
-+static int vsp1_pipeline_validate_branch(struct vsp1_pipeline *pipe,
-+					 struct vsp1_rwpf *input,
- 					 struct vsp1_rwpf *output)
- {
- 	struct vsp1_entity *entity;
- 	unsigned int entities = 0;
- 	struct media_pad *pad;
--	bool uds_found = false;
-+	bool bru_found = false;
- 
- 	input->location.left = 0;
- 	input->location.top = 0;
-@@ -341,6 +343,8 @@ static int vsp1_pipeline_validate_branch(struct vsp1_rwpf *input,
- 
- 			input->location.left = rect->left;
- 			input->location.top = rect->top;
-+
-+			bru_found = true;
- 		}
- 
- 		/* We've reached the WPF, we're done. */
-@@ -355,9 +359,12 @@ static int vsp1_pipeline_validate_branch(struct vsp1_rwpf *input,
- 
- 		/* UDS can't be chained. */
- 		if (entity->type = VSP1_ENTITY_UDS) {
--			if (uds_found)
-+			if (pipe->uds)
- 				return -EPIPE;
--			uds_found = true;
-+
-+			pipe->uds = entity;
-+			pipe->uds_input = bru_found ? pipe->bru
-+					: &input->entity;
- 		}
- 
- 		/* Follow the source link. The link setup operations ensure
-@@ -394,6 +401,7 @@ static void __vsp1_pipeline_cleanup(struct vsp1_pipeline *pipe)
- 	pipe->output = NULL;
- 	pipe->bru = NULL;
- 	pipe->lif = NULL;
-+	pipe->uds = NULL;
- }
- 
- static int vsp1_pipeline_validate(struct vsp1_pipeline *pipe,
-@@ -451,7 +459,7 @@ static int vsp1_pipeline_validate(struct vsp1_pipeline *pipe,
- 	 * contains no loop and that all branches end at the output WPF.
- 	 */
- 	for (i = 0; i < pipe->num_inputs; ++i) {
--		ret = vsp1_pipeline_validate_branch(pipe->inputs[i],
-+		ret = vsp1_pipeline_validate_branch(pipe, pipe->inputs[i],
- 						    pipe->output);
- 		if (ret < 0)
- 			goto error;
-@@ -654,6 +662,47 @@ done:
- 	spin_unlock_irqrestore(&pipe->irqlock, flags);
- }
- 
-+/*
-+ * Propagate the alpha value through the pipeline.
-+ *
-+ * As the UDS has restricted scaling capabilities when the alpha component needs
-+ * to be scaled, we disable alpha scaling when the UDS input has a fixed alpha
-+ * value. The UDS then outputs a fixed alpha value which needs to be programmed
-+ * from the input RPF alpha.
-+ */
-+void vsp1_pipeline_propagate_alpha(struct vsp1_pipeline *pipe,
-+				   struct vsp1_entity *input,
-+				   unsigned int alpha)
-+{
-+	struct vsp1_entity *entity;
-+	struct media_pad *pad;
-+
-+	pad = media_entity_remote_pad(&input->pads[RWPF_PAD_SOURCE]);
-+
-+	while (pad) {
-+		if (media_entity_type(pad->entity) != MEDIA_ENT_T_V4L2_SUBDEV)
-+			break;
-+
-+		entity = to_vsp1_entity(media_entity_to_v4l2_subdev(pad->entity));
-+
-+		/* The BRU background color has a fixed alpha value set to 255,
-+		 * the output alpha value is thus always equal to 255.
-+		 */
-+		if (entity->type = VSP1_ENTITY_BRU)
-+			alpha = 255;
-+
-+		if (entity->type = VSP1_ENTITY_UDS) {
-+			struct vsp1_uds *uds = to_uds(&entity->subdev);
-+
-+			vsp1_uds_set_alpha(uds, alpha);
-+			break;
-+		}
-+
-+		pad = &entity->pads[entity->source_pad];
-+		pad = media_entity_remote_pad(pad);
-+	}
-+}
-+
- /* -----------------------------------------------------------------------------
-  * videobuf2 Queue Operations
-  */
-@@ -761,6 +810,25 @@ static int vsp1_video_start_streaming(struct vb2_queue *vq, unsigned int count)
- 
- 	mutex_lock(&pipe->lock);
- 	if (pipe->stream_count = pipe->num_video - 1) {
-+		if (pipe->uds) {
-+			struct vsp1_uds *uds = to_uds(&pipe->uds->subdev);
-+
-+			/* If a BRU is present in the pipeline before the UDS,
-+			 * the alpha component doesn't need to be scaled as the
-+			 * BRU output alpha value is fixed to 255. Otherwise we
-+			 * need to scale the alpha component only when available
-+			 * at the input RPF.
-+			 */
-+			if (pipe->uds_input->type = VSP1_ENTITY_BRU) {
-+				uds->scale_alpha = false;
-+			} else {
-+				struct vsp1_rwpf *rpf +					to_rwpf(&pipe->uds_input->subdev);
-+
-+				uds->scale_alpha = rpf->video.fmtinfo->alpha;
-+			}
-+		}
-+
- 		list_for_each_entry(entity, &pipe->entities, list_pipe) {
- 			vsp1_entity_route_setup(entity);
- 
-diff --git a/drivers/media/platform/vsp1/vsp1_video.h b/drivers/media/platform/vsp1/vsp1_video.h
-index 4dad110..fd2851a 100644
---- a/drivers/media/platform/vsp1/vsp1_video.h
-+++ b/drivers/media/platform/vsp1/vsp1_video.h
-@@ -79,6 +79,8 @@ struct vsp1_pipeline {
- 	struct vsp1_rwpf *output;
- 	struct vsp1_entity *bru;
- 	struct vsp1_entity *lif;
-+	struct vsp1_entity *uds;
-+	struct vsp1_entity *uds_input;
- 
- 	struct list_head entities;
- };
-@@ -143,4 +145,8 @@ void vsp1_video_cleanup(struct vsp1_video *video);
- 
- void vsp1_pipeline_frame_end(struct vsp1_pipeline *pipe);
- 
-+void vsp1_pipeline_propagate_alpha(struct vsp1_pipeline *pipe,
-+				   struct vsp1_entity *input,
-+				   unsigned int alpha);
-+
- #endif /* __VSP1_VIDEO_H__ */
 -- 
 1.8.5.5
 
