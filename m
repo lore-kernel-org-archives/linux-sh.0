@@ -1,45 +1,73 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 25 Jun 2014 07:35:34 +0000
-Subject: [PATCH 4/5] ARM: shmobile: armadillo800eva reference: Spelling s/ED/LED/
-Message-Id: <8a0d1a2fcfd019adf9893076f6c65a9a05712853.1403681531.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 14 Jun 2014 16:23:29 +0000
+Subject: [PATCH v3 07/19] clocksource: sh_mtu2: Replace global spinlock with a per-device spinlock
+Message-Id: <1402763021-4067-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403681531.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403681531.git.horms+renesas@verge.net.au>
+References: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+The global spinlock is used to protect the shared start/stop register.
+Now that all MTU2 channels are handled by a single device instance, use
+a per-device spinlock.
 
-And add missing spaces before opening parentheses
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Wolfram Sang <wsa@sang-engineering.com>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ drivers/clocksource/sh_mtu2.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index 368518b..0ae4982 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -53,11 +53,11 @@
-  * CON22	Serial
-  * CON23	LAN
-  * CON24	USB3
-- * LED1		Camera LED(Yellow)
-+ * LED1		Camera LED (Yellow)
-  * LED2		Power LED (Green)
-- * ED3-LED6	User LED(Yellow)
-- * LED7		LAN link LED(Green)
-- * LED8		LAN activity LED(Yellow)
-+ * LED3-LED6	User LED (Yellow)
-+ * LED7		LAN link LED (Green)
-+ * LED8		LAN activity LED (Yellow)
-  */
+diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
+index 2931fea..ebdf9d1 100644
+--- a/drivers/clocksource/sh_mtu2.c
++++ b/drivers/clocksource/sh_mtu2.c
+@@ -47,14 +47,14 @@ struct sh_mtu2_device {
+ 	void __iomem *mapbase;
+ 	struct clk *clk;
  
- /*
++	raw_spinlock_t lock; /* Protect the shared registers */
++
+ 	struct sh_mtu2_channel *channels;
+ 	unsigned int num_channels;
+ 
+ 	bool has_clockevent;
+ };
+ 
+-static DEFINE_RAW_SPINLOCK(sh_mtu2_lock);
+-
+ #define TSTR -1 /* shared register */
+ #define TCR  0 /* channel register */
+ #define TMDR 1 /* channel register */
+@@ -192,7 +192,7 @@ static void sh_mtu2_start_stop_ch(struct sh_mtu2_channel *ch, int start)
+ 	unsigned long flags, value;
+ 
+ 	/* start stop register shared by multiple timer channels */
+-	raw_spin_lock_irqsave(&sh_mtu2_lock, flags);
++	raw_spin_lock_irqsave(&ch->mtu->lock, flags);
+ 	value = sh_mtu2_read(ch, TSTR);
+ 
+ 	if (start)
+@@ -201,7 +201,7 @@ static void sh_mtu2_start_stop_ch(struct sh_mtu2_channel *ch, int start)
+ 		value &= ~(1 << ch->index);
+ 
+ 	sh_mtu2_write(ch, TSTR, value);
+-	raw_spin_unlock_irqrestore(&sh_mtu2_lock, flags);
++	raw_spin_unlock_irqrestore(&ch->mtu->lock, flags);
+ }
+ 
+ static int sh_mtu2_enable(struct sh_mtu2_channel *ch)
+@@ -402,6 +402,8 @@ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
+ 
+ 	mtu->pdev = pdev;
+ 
++	raw_spin_lock_init(&mtu->lock);
++
+ 	/* Get hold of clock. */
+ 	mtu->clk = clk_get(&mtu->pdev->dev, "fck");
+ 	if (IS_ERR(mtu->clk)) {
 -- 
-2.0.0.rc2
+1.8.5.5
 
