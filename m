@@ -1,286 +1,209 @@
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
-Date: Mon, 02 Jun 2014 14:54:58 +0000
-Subject: [PATCH v2] clk: shmobile: sh73a0 common clock framework implementation
-Message-Id: <1401720898-12939-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 14 Jun 2014 16:23:31 +0000
+Subject: [PATCH v3 09/19] clocksource: sh_cmt: Add DT support
+Message-Id: <1402763021-4067-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Driver for the SH73A0's clocks that are too specific to be supported by a
-generic driver.
+Document DT bindings and parse them in the CMT driver.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ .../devicetree/bindings/timer/renesas,cmt.txt      | 49 ++++++++++++++++
+ drivers/clocksource/sh_cmt.c                       | 66 ++++++++++++++++------
+ 2 files changed, 97 insertions(+), 18 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/timer/renesas,cmt.txt
 
-Changes since v1:
-- reshuffled to include DT bindings and Makefile changes
-- reformatted register addresses and divider masks
-- marked bindings as experimental
-- use div4_clk::parent instead of hardcoding them
-
- .../bindings/clock/renesas,sh73a0-cpg-clocks.txt   |  31 ++++
- drivers/clk/shmobile/Makefile                      |   1 +
- drivers/clk/shmobile/clk-sh73a0.c                  | 199 +++++++++++++++++++++
- 3 files changed, 231 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/clock/renesas,sh73a0-cpg-clocks.txt
- create mode 100644 drivers/clk/shmobile/clk-sh73a0.c
-
-diff --git a/Documentation/devicetree/bindings/clock/renesas,sh73a0-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,sh73a0-cpg-clocks.txt
+diff --git a/Documentation/devicetree/bindings/timer/renesas,cmt.txt b/Documentation/devicetree/bindings/timer/renesas,cmt.txt
 new file mode 100644
-index 0000000..6b8dece
+index 0000000..d6a82cd
 --- /dev/null
-+++ b/Documentation/devicetree/bindings/clock/renesas,sh73a0-cpg-clocks.txt
-@@ -0,0 +1,31 @@
-+These bindings should be considered EXPERIMENTAL for now.
++++ b/Documentation/devicetree/bindings/timer/renesas,cmt.txt
+@@ -0,0 +1,49 @@
++* Renesas R-Car Compare Match Timer (CMT)
 +
-+* Renesas SH73A0 Clock Pulse Generator (CPG)
++The CMT is a multi-channel 16/32/48-bit timer/counter with configurable clock
++inputs and programmable compare match.
 +
-+The CPG generates core clocks for the SH73A0 SoC. It includes four PLLs
-+and several fixed ratio dividers.
++Channels share hardware resources but their counter and compare match value
++are independent. A particular CMT instance can implement only a subset of the
++channels supported by the CMT model. Channel indices represent the hardware
++position of the channel in the CMT and don't match the channel numbers in the
++datasheets.
 +
 +Required Properties:
 +
-+  - compatible: Must be "renesas,sh73a0-cpg-clocks"
++  - compatible: must contain one of the following.
++    - "renesas,cmt-32" for the 32-bit CMT
++		(CMT0 on sh7372, sh73a0 and r8a7740)
++    - "renesas,cmt-32-fast" for the 32-bit CMT with fast clock support
++		(CMT[234] on sh7372, sh73a0 and r8a7740)
++    - "renasas,cmt-48" for the 48-bit CMT
++		(CMT1 on sh7372, sh73a0 and r8a7740)
++    - "renesas,cmt-48-gen2" for the second generation 48-bit CMT
++		(CMT[01] on r8a73a4, r8a7790 and r8a7791)
 +
-+  - reg: Base address and length of the memory resource used by the CPG
++  - reg: base address and length of the registers block for the timer module.
++  - interrupt-parent, interrupts: interrupt-specifier for the timer, one per
++    channel.
++  - clocks: a list of phandle + clock-specifier pairs, one for each entry
++    in clock-names.
++  - clock-names: must contain "fck" for the functional clock.
 +
-+  - clocks: Reference to the parent clocks
-+  - #clock-cells: Must be 1
-+  - clock-output-names: The names of the clocks. Supported clocks are "main",
-+    "pll0", "pll1", "pll2", "pll3", "z", "dsi0phy", "dsi1phy", and "twd"
++  - renesas,channels-mask: bitmask of the available channels.
 +
 +
-+Example
-+-------
++Example: R8A7790 (R-Car H2) CMT0 node
 +
-+        cpg_clocks: cpg_clocks@e6150000 {
-+                compatible = "renesas,sh73a0-cpg-clocks";
-+                reg = <0 0xe6150000 0 0x10000>;
-+                clocks = <&extal1_clk>, <&extal2_clk>;
-+                #clock-cells = <1>;
-+                clock-output-names = "main", "pll0", "pll1", "pll2",
-+                                     "pll3", "z", "dsi0phy", "dsi1phy",
-+                                     "twd";
-+        };
-diff --git a/drivers/clk/shmobile/Makefile b/drivers/clk/shmobile/Makefile
-index bdf342d..6a54e73 100644
---- a/drivers/clk/shmobile/Makefile
-+++ b/drivers/clk/shmobile/Makefile
-@@ -3,6 +3,7 @@ obj-$(CONFIG_ARCH_R7S72100)		+= clk-rz.o
- obj-$(CONFIG_ARCH_R8A7779)		+= clk-r8a7779.o
- obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o
- obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o
-+obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o
- obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-div6.o
- obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-mstp.o
- # for emply built-in.o
-diff --git a/drivers/clk/shmobile/clk-sh73a0.c b/drivers/clk/shmobile/clk-sh73a0.c
-new file mode 100644
-index 0000000..0310de2
---- /dev/null
-+++ b/drivers/clk/shmobile/clk-sh73a0.c
-@@ -0,0 +1,199 @@
-+/*
-+ * sh73a0 Core CPG Clocks
-+ *
-+ * Copyright (C) 2014  Ulrich Hecht
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ */
++	CMT0 on R8A7790 implements hardware channels 5 and 6 only and names
++	them channels 0 and 1 in the documentation.
 +
-+#include <linux/clk-provider.h>
-+#include <linux/clkdev.h>
-+#include <linux/clk/shmobile.h>
-+#include <linux/init.h>
-+#include <linux/kernel.h>
++	cmt0: timer@ffca0000 {
++		compatible = "renesas,cmt-48-gen2";
++		reg = <0 0xffca0000 0 0x1004>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 142 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7790_CLK_CMT0>;
++		clock-names = "fck";
++
++		renesas,channels-mask = <0x60>;
++	};
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index 4d00e4b..3a27ce3 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -24,6 +24,7 @@
+ #include <linux/ioport.h>
+ #include <linux/irq.h>
+ #include <linux/module.h>
 +#include <linux/of.h>
-+#include <linux/of_address.h>
-+#include <linux/spinlock.h>
-+
-+struct sh73a0_cpg {
-+	struct clk_onecell_data data;
-+	spinlock_t lock;
-+	void __iomem *reg;
+ #include <linux/platform_device.h>
+ #include <linux/pm_domain.h>
+ #include <linux/pm_runtime.h>
+@@ -122,6 +123,7 @@ struct sh_cmt_device {
+ 
+ 	struct sh_cmt_channel *channels;
+ 	unsigned int num_channels;
++	unsigned int hw_channels;
+ 
+ 	bool has_clockevent;
+ 	bool has_clocksource;
+@@ -924,10 +926,35 @@ static int sh_cmt_map_memory(struct sh_cmt_device *cmt)
+ 	return 0;
+ }
+ 
++static const struct platform_device_id sh_cmt_id_table[] = {
++	{ "sh-cmt-16", (kernel_ulong_t)&sh_cmt_info[SH_CMT_16BIT] },
++	{ "sh-cmt-32", (kernel_ulong_t)&sh_cmt_info[SH_CMT_32BIT] },
++	{ "sh-cmt-32-fast", (kernel_ulong_t)&sh_cmt_info[SH_CMT_32BIT_FAST] },
++	{ "sh-cmt-48", (kernel_ulong_t)&sh_cmt_info[SH_CMT_48BIT] },
++	{ "sh-cmt-48-gen2", (kernel_ulong_t)&sh_cmt_info[SH_CMT_48BIT_GEN2] },
++	{ }
 +};
++MODULE_DEVICE_TABLE(platform, sh_cmt_id_table);
 +
-+#define CPG_FRQCRA	0x00
-+#define CPG_FRQCRB	0x04
-+#define CPG_SD0CKCR	0x74
-+#define CPG_SD1CKCR	0x78
-+#define CPG_SD2CKCR	0x7c
-+#define CPG_PLLECR	0xd0
-+#define CPG_PLL0CR	0xd8
-+#define CPG_PLL1CR	0x28
-+#define CPG_PLL2CR	0x2c
-+#define CPG_PLL3CR	0xdc
-+#define CPG_CKSCR	0xc0
-+#define CPG_DSI0PHYCR	0x6c
-+#define CPG_DSI1PHYCR	0x70
-+
-+#define CLK_ENABLE_ON_INIT BIT(0)
-+
-+struct div4_clk {
-+	const char *name;
-+	const char *parent;
-+	unsigned int reg;
-+	unsigned int shift;
-+	unsigned int mask;
-+	int flags;
++static const struct of_device_id sh_cmt_of_table[] = {
++	{ .compatible = "renesas,cmt-32", .data = &sh_cmt_info[SH_CMT_32BIT] },
++	{ .compatible = "renesas,cmt-32-fast", .data = &sh_cmt_info[SH_CMT_32BIT_FAST] },
++	{ .compatible = "renasas,cmt-48", .data = &sh_cmt_info[SH_CMT_48BIT] },
++	{ .compatible = "renesas,cmt-48-gen2", .data = &sh_cmt_info[SH_CMT_48BIT_GEN2] },
++	{ }
 +};
++MODULE_DEVICE_TABLE(of, sh_cmt_of_table);
 +
-+static struct div4_clk div4_clks[] = {
-+	{ "zg", "pll0", CPG_FRQCRA, 16, 0x0d7f, CLK_ENABLE_ON_INIT },
-+	{ "m3", "pll1", CPG_FRQCRA, 12, 0x1dff, CLK_ENABLE_ON_INIT },
-+	{ "b",  "pll1", CPG_FRQCRA,  8, 0x0dff, CLK_ENABLE_ON_INIT },
-+	{ "m1", "pll1", CPG_FRQCRA,  4, 0x1dff, 0 },
-+	{ "m2", "pll1", CPG_FRQCRA,  0, 0x1dff, 0 },
-+	{ "z",  "pll0", CPG_FRQCRB, 24, 0x097f, 0 },
-+	{ "zx", "pll1", CPG_FRQCRB, 12, 0x0dff, 0 },
-+	{ "hp", "pll1", CPG_FRQCRB,  4, 0x0dff, 0 },
-+	{ NULL, 0, 0, 0, 0 },
-+};
-+
-+static const struct clk_div_table div4_div_table[] = {
-+	{ 0, 2 }, { 1, 3 }, { 2, 4 }, { 3, 6 }, { 4, 8 }, { 5, 12 },
-+	{ 6, 16 }, { 7, 18 }, { 8, 24 }, { 10, 36 }, { 11, 48 },
-+	{ 12, 7 }, { 0, 0 }
-+};
-+
-+static struct clk * __init
-+sh73a0_cpg_register_clock(struct device_node *np, struct sh73a0_cpg *cpg,
-+			     const char *name)
++static int sh_cmt_parse_dt(struct sh_cmt_device *cmt)
 +{
-+	const struct clk_div_table *table = NULL;
-+	const char *parent_name;
-+	unsigned int shift, reg;
-+	unsigned int mult = 1;
-+	unsigned int div = 1;
++	struct device_node *np = cmt->pdev->dev.of_node;
 +
-+	if (!strcmp(name, "main")) {
-+		/* extal1, extal1_div2, extal2, extal2_div2 */
-+		parent_name = of_clk_get_parent_name(np,
-+			(clk_readl(cpg->reg + CPG_CKSCR) >> 28) & 3);
-+	} else if (!strncmp(name, "pll", 3)) {
-+		void __iomem *enable_reg = cpg->reg;
-+		u32 enable_bit = name[3] - '0';
-+		parent_name = "main";
-+		switch (enable_bit) {
-+		case 0:
-+			enable_reg += CPG_PLL0CR;
-+			break;
-+		case 1:
-+			enable_reg += CPG_PLL1CR;
-+			break;
-+		case 2:
-+			enable_reg += CPG_PLL2CR;
-+			break;
-+		case 3:
-+			enable_reg += CPG_PLL3CR;
-+			break;
-+		default:
-+			return ERR_PTR(-EINVAL);
-+		}
-+		if (clk_readl(cpg->reg + CPG_PLLECR) & BIT(enable_bit)) {
-+			mult = ((clk_readl(enable_reg) >> 24) & 0x3f) + 1;
-+			/* handle CFG bit for PLL1 and PLL2 */
-+			if (enable_bit = 1 || enable_bit = 2)
-+				if (clk_readl(enable_reg) & BIT(20))
-+					mult *= 2;
-+		}
-+	} else if (!strcmp(name, "dsi0phy") || !strcmp(name, "dsi1phy")) {
-+		u32 phy_no = name[3] - '0';
-+		void __iomem *dsi_reg = cpg->reg +
-+			(phy_no ? CPG_DSI1PHYCR : CPG_DSI0PHYCR);
-+		parent_name = phy_no ? "dsi1pck" : "dsi0pck";
-+		div = __raw_readl(dsi_reg);
-+		if (!(div & 0xb8000))
-+			div = 1;
-+		else
-+			div = (div & 0x3f) + 1;
-+	} else {
-+		struct div4_clk *c;
-+		for (c = div4_clks; c->name; c++) {
-+			if (!strcmp(name, c->name)) {
-+				parent_name = c->parent;
-+				table = div4_div_table;
-+				reg = c->reg;
-+				shift = c->shift;
-+				break;
-+			}
-+		}
-+		if (!c->name)
-+			return ERR_PTR(-EINVAL);
-+	}
-+
-+	if (!table) {
-+		return clk_register_fixed_factor(NULL, name, parent_name, 0,
-+						 mult, div);
-+	} else {
-+		return clk_register_divider_table(NULL, name, parent_name, 0,
-+						  cpg->reg + reg, shift, 4, 0,
-+						  table, &cpg->lock);
-+	}
++	return of_property_read_u32(np, "renesas,channels-mask",
++				    &cmt->hw_channels);
 +}
 +
-+static void __init sh73a0_cpg_clocks_init(struct device_node *np)
-+{
-+	struct sh73a0_cpg *cpg;
-+	struct clk **clks;
-+	unsigned int i;
-+	int num_clks;
+ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ {
+-	struct sh_timer_config *cfg = pdev->dev.platform_data;
+-	const struct platform_device_id *id = pdev->id_entry;
+ 	unsigned int mask;
+ 	unsigned int i;
+ 	int ret;
+@@ -936,13 +963,26 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ 	cmt->pdev = pdev;
+ 	raw_spin_lock_init(&cmt->lock);
+ 
+-	if (!cfg) {
++	if (IS_ENABLED(CONFIG_OF) && pdev->dev.of_node) {
++		const struct of_device_id *id;
 +
-+	num_clks = of_property_count_strings(np, "clock-output-names");
-+	if (num_clks < 0) {
-+		pr_err("%s: failed to count clocks\n", __func__);
-+		return;
-+	}
++		id = of_match_node(sh_cmt_of_table, pdev->dev.of_node);
++		cmt->info = id->data;
 +
-+	cpg = kzalloc(sizeof(*cpg), GFP_KERNEL);
-+	clks = kzalloc(num_clks * sizeof(*clks), GFP_KERNEL);
-+	if (cpg = NULL || clks = NULL) {
-+		/* We're leaking memory on purpose, there's no point in cleaning
-+		 * up as the system won't boot anyway.
-+		 */
-+		return;
-+	}
++		ret = sh_cmt_parse_dt(cmt);
++		if (ret < 0)
++			return ret;
++	} else if (pdev->dev.platform_data) {
++		struct sh_timer_config *cfg = pdev->dev.platform_data;
++		const struct platform_device_id *id = pdev->id_entry;
 +
-+	spin_lock_init(&cpg->lock);
-+
-+	cpg->data.clks = clks;
-+	cpg->data.clk_num = num_clks;
-+
-+	cpg->reg = of_iomap(np, 0);
-+	if (WARN_ON(cpg->reg = NULL))
-+		return;
-+
-+	/* Set SDHI clocks to a known state */
-+	clk_writel(0x108, cpg->reg + CPG_SD0CKCR);
-+	clk_writel(0x108, cpg->reg + CPG_SD1CKCR);
-+	clk_writel(0x108, cpg->reg + CPG_SD2CKCR);
-+
-+	for (i = 0; i < num_clks; ++i) {
-+		const char *name;
-+		struct clk *clk;
-+
-+		of_property_read_string_index(np, "clock-output-names", i,
-+					      &name);
-+
-+		clk = sh73a0_cpg_register_clock(np, cpg, name);
-+		if (IS_ERR(clk))
-+			pr_err("%s: failed to register %s %s clock (%ld)\n",
-+			       __func__, np->name, name, PTR_ERR(clk));
-+		else
-+			cpg->data.clks[i] = clk;
-+	}
-+
-+	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
-+}
-+CLK_OF_DECLARE(sh73a0_cpg_clks, "renesas,sh73a0-cpg-clocks",
-+	       sh73a0_cpg_clocks_init);
++		cmt->info = (const struct sh_cmt_info *)id->driver_data;
++		cmt->hw_channels = cfg->channels_mask;
++	} else {
+ 		dev_err(&cmt->pdev->dev, "missing platform data\n");
+ 		return -ENXIO;
+ 	}
+ 
+-	cmt->info = (const struct sh_cmt_info *)id->driver_data;
+-
+ 	/* Get hold of clock. */
+ 	cmt->clk = clk_get(&cmt->pdev->dev, "fck");
+ 	if (IS_ERR(cmt->clk)) {
+@@ -960,8 +1000,7 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ 		goto err_clk_unprepare;
+ 
+ 	/* Allocate and setup the channels. */
+-	cmt->num_channels = hweight8(cfg->channels_mask);
+-
++	cmt->num_channels = hweight8(cmt->hw_channels);
+ 	cmt->channels = kzalloc(cmt->num_channels * sizeof(*cmt->channels),
+ 				GFP_KERNEL);
+ 	if (cmt->channels = NULL) {
+@@ -973,7 +1012,7 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ 	 * Use the first channel as a clock event device and the second channel
+ 	 * as a clock source. If only one channel is available use it for both.
+ 	 */
+-	for (i = 0, mask = cfg->channels_mask; i < cmt->num_channels; ++i) {
++	for (i = 0, mask = cmt->hw_channels; i < cmt->num_channels; ++i) {
+ 		unsigned int hwidx = ffs(mask) - 1;
+ 		bool clocksource = i = 1 || cmt->num_channels = 1;
+ 		bool clockevent = i = 0;
+@@ -1044,21 +1083,12 @@ static int sh_cmt_remove(struct platform_device *pdev)
+ 	return -EBUSY; /* cannot unregister clockevent and clocksource */
+ }
+ 
+-static const struct platform_device_id sh_cmt_id_table[] = {
+-	{ "sh-cmt-16", (kernel_ulong_t)&sh_cmt_info[SH_CMT_16BIT] },
+-	{ "sh-cmt-32", (kernel_ulong_t)&sh_cmt_info[SH_CMT_32BIT] },
+-	{ "sh-cmt-32-fast", (kernel_ulong_t)&sh_cmt_info[SH_CMT_32BIT_FAST] },
+-	{ "sh-cmt-48", (kernel_ulong_t)&sh_cmt_info[SH_CMT_48BIT] },
+-	{ "sh-cmt-48-gen2", (kernel_ulong_t)&sh_cmt_info[SH_CMT_48BIT_GEN2] },
+-	{ }
+-};
+-MODULE_DEVICE_TABLE(platform, sh_cmt_id_table);
+-
+ static struct platform_driver sh_cmt_device_driver = {
+ 	.probe		= sh_cmt_probe,
+ 	.remove		= sh_cmt_remove,
+ 	.driver		= {
+ 		.name	= "sh_cmt",
++		.of_match_table = of_match_ptr(sh_cmt_of_table),
+ 	},
+ 	.id_table	= sh_cmt_id_table,
+ };
 -- 
-1.8.4.5
+1.8.5.5
 
