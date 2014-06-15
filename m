@@ -1,22 +1,27 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 13 Jun 2014 07:47:37 +0000
-Subject: Re: [PATCH 2/3] ARM: shmobile: r8a7791: add MSTP10 support on DTSI
-Message-Id: <20140613074736.GC15286@verge.net.au>
+From: Vince Weaver <vincent.weaver@maine.edu>
+Date: Sun, 15 Jun 2014 05:59:10 +0000
+Subject: [PATCH 0/6] perf: Use common PMU interrupt disabled code on all architectures
+Message-Id: <alpine.DEB.2.10.1406150156510.16738@vincent-weaver-1.umelst.maine.edu>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387998730-6012-3-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1387998730-6012-3-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Peter Zijlstra <a.p.zijlstra@chello.nl>, Ingo Molnar <mingo@redhat.com>, Vineet Gupta <vgupta@synopsys.com>, Steven Miao <realmz6@gmail.com>, James Hogan <james.hogan@imgtec.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Cody P Schafer <cody@linux.vnet.ibm.com>, linux-sh@vger.kernel.org, Hendrik Brueckner <brueckner@linux.vnet.ibm.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>
 
-On Thu, Jun 12, 2014 at 08:46:45AM +0200, Geert Uytterhoeven wrote:
-> On Thu, Jun 12, 2014 at 6:44 AM, Kuninori Morimoto
-> <kuninori.morimoto.gx@renesas.com> wrote:
-> > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> >
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 
-Thanks, I will queue this up.
+Now that "perf/x86: Use common PMU interrupt disabled code"
+(c184c980de30dc) was merged, I went and audited all of the
+architectures.  The following patchset attempts to move
+all of the ones that have code disabling sampled events
+due to lack of overflow interrupt to the new common code.
+
+ARM and x86 were already updated with the original changeset.
+
+Note that this is an ABI change in some cases, as many
+architectures returned EINVAL previously rather than
+EOPNOTSUPP.
+
+Unfortunately these patches are not tested at all, as I don't have
+access to the hardware.
+
