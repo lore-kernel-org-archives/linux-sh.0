@@ -1,37 +1,49 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sun, 29 Jun 2014 00:06:24 +0000
-Subject: Re: [PATCH v2 01/07] ARM: shmobile: Allow use of boot code for non-SMP case
-Message-Id: <20140629000621.GD9487@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Sun, 15 Jun 2014 19:56:26 +0000
+Subject: [PATCH 1/9] ARM: lager: enable i2c devices
+Message-Id: <1402862194-17743-2-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140606072010.14868.5474.sendpatchset@w520>
-In-Reply-To: <20140606072010.14868.5474.sendpatchset@w520>
+References: <1402862194-17743-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1402862194-17743-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@lists.codethink.co.uk, linux-sh@vger.kernel.org, linux-media@vger.kernel.org
+Cc: robert.jarzmik@free.fr, g.liakhovetski@gmx.de, magnus.damm@opensource.se, horms@verge.net.au, ian.molton@codethink.co.uk, william.towle@codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
 
-On Wed, Jun 25, 2014 at 06:32:47PM +0900, Magnus Damm wrote:
-> Hi Simon,
-> 
-> On Wed, Jun 25, 2014 at 5:04 PM, Simon Horman <horms@verge.net.au> wrote:
-> > On Fri, Jun 06, 2014 at 04:20:10PM +0900, Magnus Damm wrote:
-> >> From: Magnus Damm <damm+renesas@opensource.se>
-> >>
-> >> Allow build of platsmp.c and headsmp.S even though
-> >> SMP is disabled in the kernel configuration. With
-> >> this in place it is possible to share the reset
-> >> vector setup code with power management code that
-> >> needs to be built even though SMP is disabled.
-> >>
-> >> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> >
-> > Hi Magnus,
-> >
-> > could you let me know what the status of this series is.
-> > Should I queue it up?
-> 
-> I think Komayashi-san did some testing earlier (thanks), and in my
-> mind the series is a step in the right direction. So please queue it
-> up!
+Add i2c0, i2c1, i2c2 and i2c3 nodes to the Lager reference device tree as
+these busses all have devices on them that can be probed even if they
+are no drivers yet.
 
-Thanks, I have done so.
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index dd2fe46..8617755 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -317,3 +317,19 @@
+ 	cd-gpios = <&gpio3 22 GPIO_ACTIVE_LOW>;
+ 	status = "okay";
+ };
++
++&i2c0	{
++	status = "ok";
++};
++
++&i2c1	{
++	status = "ok";
++};
++
++&i2c2	{
++	status = "ok";
++};
++
++&i2c3	{
++	status = "ok";
++};
+-- 
+2.0.0
+
