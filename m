@@ -1,81 +1,77 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 09 Jun 2014 08:57:12 +0000
-Subject: [PATCH] ARM: shmobile: koelsch: Remove duplicate i2c6 nodes
-Message-Id: <1402304232-24709-1-git-send-email-horms+renesas@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Sun, 15 Jun 2014 19:56:33 +0000
+Subject: [PATCH 8/9] r8a7790.dtsi: add vin[0-3] nodes
+Message-Id: <1402862194-17743-9-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1402862194-17743-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1402862194-17743-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@lists.codethink.co.uk, linux-sh@vger.kernel.org, linux-media@vger.kernel.org
+Cc: robert.jarzmik@free.fr, g.liakhovetski@gmx.de, magnus.damm@opensource.se, horms@verge.net.au, ian.molton@codethink.co.uk, william.towle@codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
 
-A second i2c6 node was a added by
-05e234a187058ee ("ARM: shmobile: koelsch dts: Add VDD MPU regulator for
-DVFS"). Merge this into the existing node.
+Add nodes for the four video input channels on the R8A7790.
 
-Also shuffle i2c nodes so they are all together.
-
-Cc: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 34 +++++++++++++++-------------------
- 1 file changed, 15 insertions(+), 19 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index d3a914c..82ae120 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -210,25 +210,6 @@
- 	clock-frequency = <20000000>;
- };
- 
--&i2c2 {
--	pinctrl-0 = <&i2c2_pins>;
--	pinctrl-names = "default";
--
--	status = "okay";
--	clock-frequency = <400000>;
--
--	eeprom@50 {
--		compatible = "renesas,24c02";
--		reg = <0x50>;
--		pagesize = <16>;
--	};
--};
--
--&i2c6 {
--	status = "okay";
--	clock-frequency = <100000>;
--};
--
- &pfc {
- 	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins>;
- 	pinctrl-names = "default";
-@@ -395,10 +376,25 @@
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 7ff2960..a6f083d 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -33,6 +33,10 @@
+ 		spi2 = &msiof1;
+ 		spi3 = &msiof2;
+ 		spi4 = &msiof3;
++		vin0 = &vin0;
++		vin1 = &vin1;
++		vin2 = &vin2;
++		vin3 = &vin3;
  	};
- };
  
-+&i2c2 {
-+	pinctrl-0 = <&i2c2_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+	clock-frequency = <400000>;
-+
-+	eeprom@50 {
-+		compatible = "renesas,24c02";
-+		reg = <0x50>;
-+		pagesize = <16>;
+ 	cpus {
+@@ -462,6 +466,38 @@
+ 		status = "disabled";
+ 	};
+ 
++	vin0: vin@e6ef0000 {
++		compatible = "renesas,vin-r8a7790";
++		clocks = <&mstp8_clks R8A7790_CLK_VIN0>;
++		reg = <0 0xe6ef0000 0 0x1000>;
++		interrupts = <0 188 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
 +	};
-+};
 +
- &i2c6 {
- 	pinctrl-names = "default";
- 	pinctrl-0 = <&i2c6_pins>;
- 	status = "okay";
-+	clock-frequency = <100000>;
- 
- 	vdd_dvfs: regulator@68 {
- 		compatible = "diasemi,da9210";
++	vin1: vin@e6ef1000 {
++		compatible = "renesas,vin-r8a7790";
++		clocks = <&mstp8_clks R8A7790_CLK_VIN1>;
++		reg = <0 0xe6ef1000 0 0x1000>;
++		interrupts = <0 189 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	vin2: vin@e6ef2000 {
++		compatible = "renesas,vin-r8a7790";
++		clocks = <&mstp8_clks R8A7790_CLK_VIN2>;
++		reg = <0 0xe6ef2000 0 0x1000>;
++		interrupts = <0 190 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	vin3: vin@e6ef3000 {
++		compatible = "renesas,vin-r8a7790";
++		clocks = <&mstp8_clks R8A7790_CLK_VIN3>;
++		reg = <0 0xe6ef3000 0 0x1000>;
++		interrupts = <0 191 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 -- 
-2.0.0.rc2
+2.0.0
 
