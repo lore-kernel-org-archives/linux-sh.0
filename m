@@ -1,78 +1,44 @@
-From: Tom Herbert <therbert@google.com>
-Date: Fri, 13 Jun 2014 15:37:51 +0000
-Subject: [-next] Regression: ssh log in slowdown
-Message-Id: <alpine.DEB.2.02.1406130829370.23090@tomh.mtv.corp.google.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 15 Jun 2014 08:42:57 +0000
+Subject: Re: [-next] Regression: ssh log in slowdown
+Message-Id: <CAMuHMdV+wjdEqKANwu4b=LX1t6X8dhfZKdyCkWB-9KXztPmNhg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMuHMdU6rrpx6xFw71HKexDJUZtfFtL+um6dxZ=EaycgVO312A@mail.gmail.com>
-In-Reply-To: <CAMuHMdU6rrpx6xFw71HKexDJUZtfFtL+um6dxZ=EaycgVO312A@mail.gmail.com>
+References: <alpine.DEB.2.02.1406130829370.23090@tomh.mtv.corp.google.com>
+In-Reply-To: <alpine.DEB.2.02.1406130829370.23090@tomh.mtv.corp.google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: geert@linux-m68k.org
-Cc: davem@davemloft.net, linux-next@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, netdev@vger.kernel.org
+To: Tom Herbert <therbert@google.com>
+Cc: "David S. Miller" <davem@davemloft.net>, Linux-Next <linux-next@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "netdev@vger.kernel.org" <netdev@vger.kernel.org>
 
-> Thanks, I applied the series "[PATCH 0/4] Checksum fixes", and the fix
-> above, but it doesn't help.
+Hi Tom,
+
+On Fri, Jun 13, 2014 at 5:37 PM, Tom Herbert <therbert@google.com> wrote:
+>> Thanks, I applied the series "[PATCH 0/4] Checksum fixes", and the fix
+>> above, but it doesn't help.
+>>
+>> Note that I'm also using NFS root, which doesn't seem to be affected.
+>> I can happily run "ls -R /" on the serial console during the 10 s delay
+> in ssh.
 >
-> Note that I'm also using NFS root, which doesn't seem to be affected.
-> I can happily run "ls -R /" on the serial console during the 10 s delay 
-in ssh.
->
-Geert,
+> Can you try one more patch below with the series applied? Also, can you
 
-Thanks for your patience!
+This patch fixes the issue. Thanks!
 
-Can you try one more patch below with the series applied? Also, can you 
-look at 'netstat -s' to see if UDP checksum errors are being reported.
+> look at 'netstat -s' to see if UDP checksum errors are being reported.
 
-Thanks,
-Tom 
+Indeed, errors are reported under Udp/InCsumErrors.
+With this new patch, no errors are reported.
 
-diff --git a/include/linux/skbuff.h b/include/linux/skbuff.h
-index fdb510c..4b722bc 100644
---- a/include/linux/skbuff.h
-+++ b/include/linux/skbuff.h
-@@ -2820,8 +2820,8 @@ static inline __sum16 __skb_checksum_validate_complete(struct sk_buff *skb,
- 	if (complete || skb->len <= CHECKSUM_BREAK) {
- 		__sum16 csum;
- 
-+		/* skb->csum valid set in __skb_checksum_complete */
- 		csum = __skb_checksum_complete(skb);
--		skb->csum_valid = !csum;
- 		return csum;
- 	}
- 
-diff --git a/net/core/datagram.c b/net/core/datagram.c
-index cf6cc4e..488dd1a 100644
---- a/net/core/datagram.c
-+++ b/net/core/datagram.c
-@@ -744,6 +744,7 @@ __sum16 __skb_checksum_complete_head(struct sk_buff *skb, int len)
- 		    !skb->csum_complete_sw)
- 			netdev_rx_csum_fault(skb->dev);
- 	}
-+	skb->csum_valid = !sum;
- 	return sum;
- }
- EXPORT_SYMBOL(__skb_checksum_complete_head);
-@@ -767,6 +768,7 @@ __sum16 __skb_checksum_complete(struct sk_buff *skb)
- 	skb->csum = csum;
- 	skb->ip_summed = CHECKSUM_COMPLETE;
- 	skb->csum_complete_sw = 1;
-+	skb->csum_valid = !sum;
- 
- 	return sum;
- }
-diff --git a/net/core/skbuff.c b/net/core/skbuff.c
-index bf92824..9cd5344 100644
---- a/net/core/skbuff.c
-+++ b/net/core/skbuff.c
-@@ -689,6 +689,9 @@ static void __copy_skb_header(struct sk_buff *new, const struct sk_buff *old)
- 	new->ooo_okay		= old->ooo_okay;
- 	new->no_fcs		= old->no_fcs;
- 	new->encapsulation	= old->encapsulation;
-+	new->encap_hdr_csum	= old->encap_hdr_csum;
-+	new->csum_valid		= old->csum_valid;
-+	new->csum_complete_sw	= old->csum_complete_sw;
- #ifdef CONFIG_XFRM
- 	new->sp			= secpath_get(old->sp);
- #endif
+Thanks!
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
