@@ -1,28 +1,61 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 03 Jun 2014 06:56:55 +0000
-Subject: [PATCH v2 0/2] arm: shmobile: add USB 3.0 DT for r8a7791
-Message-Id: <538D71B7.603@renesas.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Sun, 15 Jun 2014 19:56:27 +0000
+Subject: [PATCH 2/9] ARM: lager: add i2c1, i2c2 pins
+Message-Id: <1402862194-17743-3-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <538D7110.3090201@renesas.com>
-In-Reply-To: <538D7110.3090201@renesas.com>
+References: <1402862194-17743-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1402862194-17743-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@lists.codethink.co.uk, linux-sh@vger.kernel.org, linux-media@vger.kernel.org
+Cc: robert.jarzmik@free.fr, g.liakhovetski@gmx.de, magnus.damm@opensource.se, horms@verge.net.au, ian.molton@codethink.co.uk, william.towle@codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
 
-This patch series is based on the renesas-devel-v3.15-rc7-20140530
-in renesas.git.
+Add pinctrl definitions for i2c1 and i2c2 busses on the Lager board
+to ensure these are setup correctly at initialisation time. The i2c0
+and i2c3 busses are connected to single function pins.
 
-Changes from v1:
- - Change node name to "usb@ee000000" in patch 2.
- - Add comment in the change log of patch 2 about a generic phy.
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
-Yoshihiro Shimoda (2):
-  arm: shmobile: r8a7791: add USB3.0 clocks to device tree
-  arm: shmobile: r8a7791: add USB3.0 node to r8a7791.dtsi
-
- arch/arm/boot/dts/r8a7791.dtsi |   16 +++++++++++++---
- 1 file changed, 13 insertions(+), 3 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 8617755..4805c9f 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -204,6 +204,16 @@
+ 				 "msiof1_tx";
+ 		renesas,function = "msiof1";
+ 	};
++
++	i2c1_pins: i2c1 {
++		renesas,groups = "i2c1";
++		renesas,function = "i2c1";
++	};
++
++	i2c2_pins: i2c2 {
++		renesas,groups = "i2c2";
++		renesas,function = "i2c2";
++	};
+ };
+ 
+ &ether {
+@@ -324,10 +334,14 @@
+ 
+ &i2c1	{
+ 	status = "ok";
++	pinctrl-0 = <&i2c1_pins>;
++	pinctrl-names = "default";
+ };
+ 
+ &i2c2	{
+ 	status = "ok";
++	pinctrl-0 = <&i2c2_pins>;
++	pinctrl-names = "default";
+ };
+ 
+ &i2c3	{
 -- 
-1.7.9.5
+2.0.0
+
