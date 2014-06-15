@@ -1,101 +1,244 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 23 Jun 2014 23:54:17 +0000
-Subject: [PATCH v2 11/23] v4l: vsp1: Propagate vsp1_device_get errors to the callers
-Message-Id: <1403567669-18539-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Sun, 15 Jun 2014 19:56:31 +0000
+Subject: [PATCH 6/9] rcar_vin: add devicetree support
+Message-Id: <1402862194-17743-7-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1402862194-17743-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1402862194-17743-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-kernel@lists.codethink.co.uk, linux-sh@vger.kernel.org, linux-media@vger.kernel.org
+Cc: robert.jarzmik@free.fr, g.liakhovetski@gmx.de, magnus.damm@opensource.se, horms@verge.net.au, ian.molton@codethink.co.uk, william.towle@codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
 
-Modify the vsp1_device_get() function to return an error code instead of
-a pointer to the VSP1 device, and use the return value in the callers.
+Add support for devicetree probe for the rcar-vin
+driver.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 ---
- drivers/media/platform/vsp1/vsp1.h       |  2 +-
- drivers/media/platform/vsp1/vsp1_drv.c   | 16 ++++++----------
- drivers/media/platform/vsp1/vsp1_video.c |  4 ++--
- 3 files changed, 9 insertions(+), 13 deletions(-)
+ .../devicetree/bindings/media/rcar_vin.txt         | 86 ++++++++++++++++++++++
+ drivers/media/platform/soc_camera/rcar_vin.c       | 72 ++++++++++++++++--
+ 2 files changed, 151 insertions(+), 7 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/media/rcar_vin.txt
 
-diff --git a/drivers/media/platform/vsp1/vsp1.h b/drivers/media/platform/vsp1/vsp1.h
-index 3cfa393..1246719 100644
---- a/drivers/media/platform/vsp1/vsp1.h
-+++ b/drivers/media/platform/vsp1/vsp1.h
-@@ -66,7 +66,7 @@ struct vsp1_device {
- 	struct media_device media_dev;
+diff --git a/Documentation/devicetree/bindings/media/rcar_vin.txt b/Documentation/devicetree/bindings/media/rcar_vin.txt
+new file mode 100644
+index 0000000..10fefa9
+--- /dev/null
++++ b/Documentation/devicetree/bindings/media/rcar_vin.txt
+@@ -0,0 +1,86 @@
++Renesas RCar Video Input driver (rcar_vin)
++------------------------------------------
++
++The rcar_vin device provides video input capabilities for the Renesas R-Car
++family of devices. The current blocks are always slaves and suppot one input
++channel which can be either RGB, YUYV or BT656.
++
++ - compatible: Must be one of the following
++   - "renesas,vin-r8a7791" for the R8A7791 device
++   - "renesas,vin-r8a7790" for the R8A7790 device
++   - "renesas,vin-r8a7779" for the R8A7779 device
++   - "renesas,vin-r8a7778" for the R8A7778 device
++ - reg: the register base and size for the device registers
++ - interrupts: the interrupt for the device
++ - clocks: Reference to the parent clock
++
++Additionally, an alias named vinX will need to be created to specify
++which video input device this is.
++
++The per-board settings:
++ - port sub-node describing a single endpoint connected to the vin
++   as described in video-interfaces.txt[1]. Only the first one will
++   be considered as each vin interface has one input port.
++
++   These settings are used to work out video input format and widths
++   into the system.
++
++
++Device node example
++-------------------
++
++	aliases {
++	       vin0 = &vin0;
++	};
++
++        vin0: vin@0xe6ef0000 {
++                compatible = "renesas,vin-r8a7790";
++                clocks = <&mstp8_clks R8A7790_CLK_VIN0>;
++                reg = <0 0xe6ef0000 0 0x1000>;
++                interrupts = <0 188 IRQ_TYPE_LEVEL_HIGH>;
++                status = "disabled";
++        };
++
++Board setup example (vin1 composite video input)
++------------------------------------------------
++
++&i2c2   {
++        status = "ok";
++        pinctrl-0 = <&i2c2_pins>;
++        pinctrl-names = "default";
++
++        adv7180@020 {
++                compatible = "adi,adv7180";
++                reg = <0x20>;
++                remote = <&vin1>;
++
++                port {
++                        adv7180: endpoint {
++                                bus-width = <8>;
++                                remote-endpoint = <&vin1ep0>;
++                        };
++                };
++        };
++};
++
++/* composite video input */
++&vin1 {
++        pinctrl-0 = <&vin1_pins>;
++        pinctrl-names = "default";
++
++        status = "ok";
++
++        port {
++                #address-cells = <1>;
++                #size-cells = <0>;
++
++                vin1ep0: endpoint {
++                        remote-endpoint = <&adv7180>;
++                        bus-width = <8>;
++                };
++        };
++};
++
++
++
++[1] video-interfaces.txt common video media interface
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index 7c4299d..eb196ef 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -24,6 +24,8 @@
+ #include <linux/pm_runtime.h>
+ #include <linux/slab.h>
+ #include <linux/videodev2.h>
++#include <linux/of.h>
++#include <linux/of_device.h>
+ 
+ #include <media/soc_camera.h>
+ #include <media/soc_mediabus.h>
+@@ -32,6 +34,7 @@
+ #include <media/v4l2-device.h>
+ #include <media/v4l2-mediabus.h>
+ #include <media/v4l2-subdev.h>
++#include <media/v4l2-of.h>
+ #include <media/videobuf2-dma-contig.h>
+ 
+ #include "soc_scale_crop.h"
+@@ -1390,6 +1393,17 @@ static struct soc_camera_host_ops rcar_vin_host_ops = {
+ 	.init_videobuf2	= rcar_vin_init_videobuf2,
  };
  
--struct vsp1_device *vsp1_device_get(struct vsp1_device *vsp1);
-+int vsp1_device_get(struct vsp1_device *vsp1);
- void vsp1_device_put(struct vsp1_device *vsp1);
++#ifdef CONFIG_OF
++static struct of_device_id rcar_vin_of_table[] = {
++	{ .compatible = "renesas,vin-r8a7791", .data = (void *)RCAR_GEN2 },
++	{ .compatible = "renesas,vin-r8a7790", .data = (void *)RCAR_GEN2 },
++	{ .compatible = "renesas,vin-r8a7779", .data = (void *)RCAR_H1 },
++	{ .compatible = "renesas,vin-r8a7778", .data = (void *)RCAR_M1 },
++	{ },
++};
++MODULE_DEVICE_TABLE(of, rcar_vin_of_table);
++#endif
++
+ static struct platform_device_id rcar_vin_id_table[] = {
+ 	{ "r8a7791-vin",  RCAR_GEN2 },
+ 	{ "r8a7790-vin",  RCAR_GEN2 },
+@@ -1402,15 +1416,52 @@ MODULE_DEVICE_TABLE(platform, rcar_vin_id_table);
  
- static inline u32 vsp1_read(struct vsp1_device *vsp1, u32 reg)
-diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
-index 0c5e74c..3e6601b 100644
---- a/drivers/media/platform/vsp1/vsp1_drv.c
-+++ b/drivers/media/platform/vsp1/vsp1_drv.c
-@@ -345,36 +345,32 @@ static int vsp1_device_init(struct vsp1_device *vsp1)
-  * Increment the VSP1 reference count and initialize the device if the first
-  * reference is taken.
-  *
-- * Return a pointer to the VSP1 device or NULL if an error occurred.
-+ * Return 0 on success or a negative error code otherwise.
-  */
--struct vsp1_device *vsp1_device_get(struct vsp1_device *vsp1)
-+int vsp1_device_get(struct vsp1_device *vsp1)
+ static int rcar_vin_probe(struct platform_device *pdev)
  {
--	struct vsp1_device *__vsp1 = vsp1;
--	int ret;
-+	int ret = 0;
++	const struct of_device_id *match = NULL;
+ 	struct rcar_vin_priv *priv;
+ 	struct resource *mem;
+ 	struct rcar_vin_platform_data *pdata;
++	unsigned int pdata_flags;
+ 	int irq, ret;
  
- 	mutex_lock(&vsp1->lock);
- 	if (vsp1->ref_count > 0)
- 		goto done;
- 
- 	ret = clk_prepare_enable(vsp1->clock);
--	if (ret < 0) {
--		__vsp1 = NULL;
-+	if (ret < 0)
- 		goto done;
--	}
- 
- 	ret = vsp1_device_init(vsp1);
- 	if (ret < 0) {
- 		clk_disable_unprepare(vsp1->clock);
--		__vsp1 = NULL;
- 		goto done;
+-	pdata = pdev->dev.platform_data;
+-	if (!pdata || !pdata->flags) {
+-		dev_err(&pdev->dev, "platform data not set\n");
+-		return -EINVAL;
++	if (pdev->dev.of_node) {
++		struct v4l2_of_endpoint ep;
++		struct device_node *np;
++
++		match = of_match_device(of_match_ptr(rcar_vin_of_table),
++					&pdev->dev);
++
++		np = of_graph_get_next_endpoint(pdev->dev.of_node, NULL);
++		if (!np) {
++			dev_err(&pdev->dev, "could not find endpoint\n");
++			return -EINVAL;
++		}
++
++		ret = v4l2_of_parse_endpoint(np, &ep);
++		if (ret) {
++			dev_err(&pdev->dev, "could not parse endpoint\n");
++			return ret;
++		}
++
++		if (ep.bus_type = V4L2_MBUS_BT656)
++			pdata_flags = RCAR_VIN_BT656;
++		else {
++			pdata_flags = 0;
++			if (ep.bus.parallel.flags & V4L2_MBUS_HSYNC_ACTIVE_LOW)
++				pdata_flags |= RCAR_VIN_HSYNC_ACTIVE_LOW;
++			if (ep.bus.parallel.flags & V4L2_MBUS_VSYNC_ACTIVE_LOW)
++				pdata_flags |= RCAR_VIN_VSYNC_ACTIVE_LOW;
++		}
++
++		of_node_put(np);
++
++		dev_dbg(&pdev->dev, "pdata_flags = %08x\n", pdata_flags);
++	} else {
++		pdata = pdev->dev.platform_data;
++		if (!pdata || !pdata->flags) {
++			dev_err(&pdev->dev, "platform data not set\n");
++			return -EINVAL;
++		}
++		pdata_flags = pdata->flags;
  	}
  
- done:
--	if (__vsp1)
-+	if (!ret)
- 		vsp1->ref_count++;
+ 	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+@@ -1441,12 +1492,18 @@ static int rcar_vin_probe(struct platform_device *pdev)
  
- 	mutex_unlock(&vsp1->lock);
--	return __vsp1;
-+	return ret;
- }
+ 	priv->ici.priv = priv;
+ 	priv->ici.v4l2_dev.dev = &pdev->dev;
+-	priv->ici.nr = pdev->id;
+ 	priv->ici.drv_name = dev_name(&pdev->dev);
+ 	priv->ici.ops = &rcar_vin_host_ops;
  
- /*
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index a60332e..885ec01 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -955,8 +955,8 @@ static int vsp1_video_open(struct file *file)
+-	priv->pdata_flags = pdata->flags;
+-	priv->chip = pdev->id_entry->driver_data;
++	priv->pdata_flags = pdata_flags;
++	if (!match) {
++		priv->ici.nr = pdev->id;
++		priv->chip = pdev->id_entry->driver_data;
++	} else {
++		priv->ici.nr = of_alias_get_id(pdev->dev.of_node, "vin");
++		priv->chip = (enum chip_id)match->data;
++	};
++
+ 	spin_lock_init(&priv->lock);
+ 	INIT_LIST_HEAD(&priv->capture);
  
- 	file->private_data = vfh;
- 
--	if (!vsp1_device_get(video->vsp1)) {
--		ret = -EBUSY;
-+	ret = vsp1_device_get(video->vsp1);
-+	if (ret < 0) {
- 		v4l2_fh_del(vfh);
- 		kfree(vfh);
- 	}
+@@ -1487,6 +1544,7 @@ static struct platform_driver rcar_vin_driver = {
+ 	.driver		= {
+ 		.name		= DRV_NAME,
+ 		.owner		= THIS_MODULE,
++		.of_match_table	= of_match_ptr(rcar_vin_of_table),
+ 	},
+ 	.id_table	= rcar_vin_id_table,
+ };
 -- 
-1.8.5.5
+2.0.0
 
