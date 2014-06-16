@@ -1,84 +1,39 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 20 Jun 2014 20:38:48 +0000
-Subject: [PATCH v4 2/2] ARM: shmobile: lager: enable internal PCI
-Message-Id: <201406210038.49541.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 16 Jun 2014 15:07:13 +0000
+Subject: [PATCH v4 01/19] clocksource: sh_tmu: Fix channel IRQ retrieval in legacy case
+Message-Id: <1402931251-22581-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201406210034.57784.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201406210034.57784.sergei.shtylyov@cogentembedded.com>
+References: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+In the legacy platform data case each TMU platform device handles a
+single channel with a single IRQ for the platform device. Retrieve the
+IRQ using the logical channel number instead of the hardware channel
+number.
 
-Enable internal AHB-PCI bridges for the USB EHCI/OHCI controllers attached to
-them.
-
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
-[Sergei: enabled PCI0]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes in version 4:
-- refreshed the patch.
+ drivers/clocksource/sh_tmu.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Changes in version 3:
-- refreshed the patch.
-
-Changes in version 2:
-- enabled PCI0 device;
-- reworded summary and changelog;
-- refreshed the patch.
-
- arch/arm/boot/dts/r8a7790-lager.dts |   33 +++++++++++++++++++++++++++++++++
- 1 file changed, 33 insertions(+)
-
-Index: renesas/arch/arm/boot/dts/r8a7790-lager.dts
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7790-lager.dts
-+++ renesas/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -219,6 +219,21 @@
- 		renesas,groups = "i2c3";
- 		renesas,function = "i2c3";
- 	};
-+
-+	usb0_pins: usb0 {
-+		renesas,groups = "usb0";
-+		renesas,function = "usb0";
-+	};
-+
-+	usb1_pins: usb1 {
-+		renesas,groups = "usb1";
-+		renesas,function = "usb1";
-+	};
-+
-+	usb2_pins: usb2 {
-+		renesas,groups = "usb2";
-+		renesas,function = "usb2";
-+	};
- };
+diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
+index 4ba2c0f..ec34095 100644
+--- a/drivers/clocksource/sh_tmu.c
++++ b/drivers/clocksource/sh_tmu.c
+@@ -498,7 +498,7 @@ static int sh_tmu_channel_setup(struct sh_tmu_channel *ch, unsigned int index,
+ 			ch->base = tmu->mapbase + 8 + ch->index * 12;
+ 	}
  
- &ether {
-@@ -368,3 +383,21 @@
- 		regulator-always-on;
- 	};
- };
-+
-+&pci0 {
-+	status = "okay";
-+	pinctrl-0 = <&usb0_pins>;
-+	pinctrl-names = "default";
-+};
-+
-+&pci1 {
-+	status = "okay";
-+	pinctrl-0 = <&usb1_pins>;
-+	pinctrl-names = "default";
-+};
-+
-+&pci2 {
-+	status = "okay";
-+	pinctrl-0 = <&usb2_pins>;
-+	pinctrl-names = "default";
-+};
+-	ch->irq = platform_get_irq(tmu->pdev, ch->index);
++	ch->irq = platform_get_irq(tmu->pdev, index);
+ 	if (ch->irq < 0) {
+ 		dev_err(&tmu->pdev->dev, "ch%u: failed to get irq\n",
+ 			ch->index);
+-- 
+1.8.5.5
+
