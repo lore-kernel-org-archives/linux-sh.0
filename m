@@ -1,159 +1,67 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 18 Jun 2014 08:57:11 +0000
-Subject: [PATCH 12/12] ASoC: rsnd: add DT support to DVC
-Message-Id: <87vbryy4rb.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 16 Jun 2014 15:07:25 +0000
+Subject: [PATCH v4 13/19] ARM: shmobile: r8a7791: Add CMT devices to DT
+Message-Id: <1402931251-22581-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
+References: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Add the CMT0 and CMT1 counters to the r8a7791 device tree and make them
+disabled by default.
 
-Now, DVC can use DT
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- .../devicetree/bindings/sound/renesas,rsnd.txt     |    8 +++++
- sound/soc/sh/rcar/core.c                           |   13 +++++--
- sound/soc/sh/rcar/dvc.c                            |   38 ++++++++++++++++++++
- 3 files changed, 57 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7791.dtsi | 32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-index 1d88d42..652573e 100644
---- a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-+++ b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-@@ -13,6 +13,9 @@ Required properties:
- - rcar_sound,src		: Should contain SRC feature.
- 				  The number of SRC subnode should be same as HW.
- 				  see below for detail.
-+- rcar_sound,dvc		: Should contain DVC feature.
-+				  The number of DVC subnode should be same as HW.
-+				  see below for detail.
- - rcar_sound,dai		: DAI contents.
- 				  The number of DAI subnode should be same as HW.
- 				  see below for detail.
-@@ -40,6 +43,11 @@ rcar_sound: rcar_sound@0xffd90000 {
- 		<0 0xec540000 0 0x1000>, /* SSIU */
- 		<0 0xec541000 0 0x1280>; /* SSI */
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 43d2130..cb8ae40 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -189,6 +189,38 @@
+ 			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
+ 	};
  
-+	rcar_sound,dvc {
-+		dvc0: dvc@0 { };
-+		dvc1: dvc@1 { };
++	cmt0: timer@ffca0000 {
++		compatible = "renesas,cmt-48-gen2";
++		reg = <0 0xffca0000 0 0x1004>;
++		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7791_CLK_CMT0>;
++		clock-names = "fck";
++
++		renesas,channels-mask = <0x60>;
++
++		status = "disabled";
 +	};
 +
- 	rcar_sound,src {
- 		src0: src@0 { };
- 		src1: src@1 { };
-diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
-index 6fb89fc..f8076c9 100644
---- a/sound/soc/sh/rcar/core.c
-+++ b/sound/soc/sh/rcar/core.c
-@@ -286,7 +286,13 @@ static void rsnd_dma_of_path(struct rsnd_dma *dma,
- 			mod[i] = src;
- 			src = NULL;
- 		} else {
--			mod[i] = dvc;
-+			if ((!is_play) && (this = src))
-+				this = dvc;
++	cmt1: timer@e6130000 {
++		compatible = "renesas,cmt-48-gen2";
++		reg = <0 0xe6130000 0 0x1004>;
++		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 122 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 123 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 124 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 125 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 126 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 127 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7791_CLK_CMT1>;
++		clock-names = "fck";
 +
-+			mod[i] = (is_play) ? src : dvc;
-+			i++;
-+			mod[i] = (is_play) ? dvc : src;
-+			src = NULL;
- 			dvc = NULL;
- 		}
- 
-@@ -719,12 +725,13 @@ static void rsnd_of_parse_dai(struct platform_device *pdev,
- 	struct device_node *dai_node,	*dai_np;
- 	struct device_node *ssi_node,	*ssi_np;
- 	struct device_node *src_node,	*src_np;
-+	struct device_node *dvc_node,	*dvc_np;
- 	struct device_node *playback, *capture;
- 	struct rsnd_dai_platform_info *dai_info;
- 	struct rcar_snd_info *info = rsnd_priv_to_info(priv);
- 	struct device *dev = &pdev->dev;
- 	int nr, i;
--	int dai_i, ssi_i, src_i;
-+	int dai_i, ssi_i, src_i, dvc_i;
- 
- 	if (!of_data)
- 		return;
-@@ -750,6 +757,7 @@ static void rsnd_of_parse_dai(struct platform_device *pdev,
- 
- 	ssi_node = of_get_child_by_name(dev->of_node, "rcar_sound,ssi");
- 	src_node = of_get_child_by_name(dev->of_node, "rcar_sound,src");
-+	dvc_node = of_get_child_by_name(dev->of_node, "rcar_sound,dvc");
- 
- #define mod_parse(name)							\
- if (name##_node) {							\
-@@ -785,6 +793,7 @@ if (name##_node) {							\
- 
- 			mod_parse(ssi);
- 			mod_parse(src);
-+			mod_parse(dvc);
- 
- 			if (playback)
- 				of_node_put(playback);
-diff --git a/sound/soc/sh/rcar/dvc.c b/sound/soc/sh/rcar/dvc.c
-index deef310..9096fb0 100644
---- a/sound/soc/sh/rcar/dvc.c
-+++ b/sound/soc/sh/rcar/dvc.c
-@@ -235,6 +235,42 @@ struct rsnd_mod *rsnd_dvc_mod_get(struct rsnd_priv *priv, int id)
- 	return &((struct rsnd_dvc *)(priv->dvc) + id)->mod;
- }
- 
-+static void rsnd_of_parse_dvc(struct platform_device *pdev,
-+			      const struct rsnd_of_data *of_data,
-+			      struct rsnd_priv *priv)
-+{
-+	struct device_node *node;
-+	struct rsnd_dvc_platform_info *dvc_info;
-+	struct rcar_snd_info *info = rsnd_priv_to_info(priv);
-+	struct device *dev = &pdev->dev;
-+	int nr;
++		renesas,channels-mask = <0xff>;
 +
-+	if (!of_data)
-+		return;
++		status = "disabled";
++	};
 +
-+	node = of_get_child_by_name(dev->of_node, "rcar_sound,dvc");
-+	if (!node)
-+		return;
-+
-+	nr = of_get_child_count(node);
-+	if (!nr)
-+		goto rsnd_of_parse_dvc_end;
-+
-+	dvc_info = devm_kzalloc(dev,
-+				sizeof(struct rsnd_dvc_platform_info) * nr,
-+				GFP_KERNEL);
-+	if (!dvc_info) {
-+		dev_err(dev, "dvc info allocation error\n");
-+		goto rsnd_of_parse_dvc_end;
-+	}
-+
-+	info->dvc_info		= dvc_info;
-+	info->dvc_info_nr	= nr;
-+
-+rsnd_of_parse_dvc_end:
-+	of_node_put(node);
-+}
-+
- int rsnd_dvc_probe(struct platform_device *pdev,
- 		   const struct rsnd_of_data *of_data,
- 		   struct rsnd_priv *priv)
-@@ -246,6 +282,8 @@ int rsnd_dvc_probe(struct platform_device *pdev,
- 	char name[RSND_DVC_NAME_SIZE];
- 	int i, nr;
- 
-+	rsnd_of_parse_dvc(pdev, of_data, priv);
-+
- 	nr = info->dvc_info_nr;
- 	if (!nr)
- 		return 0;
+ 	irqc0: interrupt-controller@e61c0000 {
+ 		compatible = "renesas,irqc-r8a7791", "renesas,irqc";
+ 		#interrupt-cells = <2>;
 -- 
-1.7.9.5
+1.8.5.5
 
