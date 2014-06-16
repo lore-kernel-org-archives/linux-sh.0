@@ -1,7 +1,7 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Fri, 13 Jun 2014 09:37:17 +0000
-Subject: [PATCH v3 3/8] ARM: shmobile: r8a7790: Add PCIe Controller device node
-Message-Id: <1402652242-16604-4-git-send-email-phil.edworthy@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 16 Jun 2014 00:54:41 +0000
+Subject: Re: [PATCH v3 3/8] ARM: shmobile: r8a7790: Add PCIe Controller device node
+Message-Id: <20140616005441.GB11582@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1375963414-31096-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1375963414-31096-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -10,26 +10,42 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+On Fri, Jun 13, 2014 at 10:37:17AM +0100, Phil Edworthy wrote:
+> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+> ---
+> v3: 
+>  - No change
+> 
+> v2:
+>  - Changed PCIe controller names,etc from pcie to pciec
+> 
+>  arch/arm/boot/dts/r8a7790.dtsi | 25 +++++++++++++++++++++++++
+>  1 file changed, 25 insertions(+)
+
+Hi Phil,
+
+I encountered a minor conflict when applying this patch.
+The version that I have queued-up is below, please check that it is correct.
+
+From: Phil Edworthy <phil.edworthy@renesas.com>
+
+ARM: shmobile: r8a7790: Add PCIe Controller device node
+
 Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+[horms+renesas@verge.net.au: resolved conflict]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v3: 
- - No change
-
-v2:
- - Changed PCIe controller names,etc from pcie to pciec
-
  arch/arm/boot/dts/r8a7790.dtsi | 25 +++++++++++++++++++++++++
  1 file changed, 25 insertions(+)
 
 diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index d0520f1..2f5bd9e 100644
+index 2c55c4b..994330e 100644
 --- a/arch/arm/boot/dts/r8a7790.dtsi
 +++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -896,4 +896,29 @@
- 		#size-cells = <0>;
+@@ -930,6 +930,31 @@
  		status = "disabled";
  	};
-+
+ 
 +	pciec: pcie@fe000000 {
 +		compatible = "renesas,pcie-r8a7790";
 +		reg = <0 0xfe000000 0 0x80000>;
@@ -54,7 +70,12 @@ index d0520f1..2f5bd9e 100644
 +		clock-names = "pcie", "pcie_bus";
 +		status = "disabled";
 +	};
- };
++
+ 	rcar_sound: rcar_sound@0xec500000 {
+ 		#sound-dai-cells = <1>;
+ 		compatible =  "renesas,rcar_sound-r8a7790", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
 -- 
-2.0.0
+2.0.0.rc2
+
+
 
