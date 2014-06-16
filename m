@@ -1,32 +1,60 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 18 Jun 2014 10:14:38 +0000
-Subject: Re: [PROTOTYPE 5/8] ARM: shmobile: add Audio DMAC clocks on DTSI
-Message-Id: <CAMuHMdVQnf6_XLCqXhT6dkP7Cw6s12OKTB5vFj_o0u+a+bmsNQ@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 16 Jun 2014 11:27:24 +0000
+Subject: [PATCH] ARM: shmobile: rcar-gen2: correct return value of shmobile_smp_apmu_suspend_init
+Message-Id: <1402918044-29961-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87fvj2y449.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87fvj2y449.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jun 18, 2014 at 11:11 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
-> From: Ben Dooks <ben.dooks@codethink.co.uk>
->
-> Add MSTP5 clock definitions for Audio DMAC
->
-> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+The dummy shmobile_smp_apmu_suspend_init() function provided when
+CPU_IDLE is not set should not return a value as per the signature
+of the function.
 
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+This problem appears to have been introduced by
+867ba81f728f1daa ("ARM: shmobile: APMU: Add Core-Standby-state for Suspend
+to RAM").
 
-Gr{oetje,eeting}s,
+Cc: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-                        Geert
+---
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+This patch resolves the following build warnings:
+In file included from arch/arm/mach-shmobile/clock.c:53:0:
+arch/arm/mach-shmobile/include/mach/common.h: In function 'shmobile_smp_apmu_suspend_init':
+arch/arm/mach-shmobile/include/mach/common.h:41:130: warning: 'return' with a value, in function returning void [enabled by default]
+In file included from arch/arm/mach-shmobile/console.c:22:0:
+arch/arm/mach-shmobile/include/mach/common.h: In function 'shmobile_smp_apmu_suspend_init':
+arch/arm/mach-shmobile/include/mach/common.h:41:130: warning: 'return' with a value, in function returning void [enabled by default]
+  CC      arch/arm/mach-shmobile/board-bockw-reference.o
+In file included from arch/arm/mach-shmobile/clock-r8a7778.c:43:0:
+arch/arm/mach-shmobile/include/mach/common.h: In function 'shmobile_smp_apmu_suspend_init':
+arch/arm/mach-shmobile/include/mach/common.h:41:130: warning: 'return' with a value, in function returning void [enabled by default]
+In file included from arch/arm/mach-shmobile/board-bockw-reference.c:22:0:
+arch/arm/mach-shmobile/include/mach/common.h: In function 'shmobile_smp_apmu_suspend_init':
+arch/arm/mach-shmobile/include/mach/common.h:41:130: warning: 'return' with a value, in function returning void [enabled by default]
+In file included from arch/arm/mach-shmobile/setup-r8a7778.c:42:0:
+arch/arm/mach-shmobile/include/mach/common.h: In function 'shmobile_smp_apmu_suspend_init':
+arch/arm/mach-shmobile/include/mach/common.h:41:130: warning: 'return' with a value, in function returning void [enabled by default]
+---
+ arch/arm/mach-shmobile/include/mach/common.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 8f0cd57..46766fc 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -38,7 +38,7 @@ int shmobile_suspend_init(void);
+ void shmobile_smp_apmu_suspend_init(void);
+ #else
+ static inline int shmobile_suspend_init(void) { return 0; }
+-static inline void shmobile_smp_apmu_suspend_init(void) { return 0; }
++static inline void shmobile_smp_apmu_suspend_init(void) { return; }
+ #endif
+ 
+ #ifdef CONFIG_CPU_IDLE
+-- 
+2.0.0.rc2
+
