@@ -1,49 +1,34 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Mon, 30 Jun 2014 08:37:01 +0000
-Subject: [PATCH v2 3/3] PCI: host: pcie-rcar: Replace arg passed into a func with local var
-Message-Id: <1404117421-17557-1-git-send-email-phil.edworthy@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 16 Jun 2014 10:49:43 +0000
+Subject: [PATCH] ARM: shmobile: Enable genmai board in multiplatform defconfig
+Message-Id: <1402915783-25444-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404114864-17330-4-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1404114864-17330-4-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-pci@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Simon Horman <horms@verge.net.au>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Phil Edworthy <phil.edworthy@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-With SoB this time...
+ arch/arm/configs/shmobile_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
- drivers/pci/host/pcie-rcar.c | 7 ++++---
- 1 file changed, 4 insertions(+), 3 deletions(-)
-
-diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
-index 758e2b4..efdea07 100644
---- a/drivers/pci/host/pcie-rcar.c
-+++ b/drivers/pci/host/pcie-rcar.c
-@@ -319,9 +319,10 @@ static struct pci_ops rcar_pcie_ops = {
- 	.write	= rcar_pcie_write_conf,
- };
- 
--static void rcar_pcie_setup_window(int win, struct resource *res,
--				   struct rcar_pcie *pcie)
-+static void rcar_pcie_setup_window(int win, struct rcar_pcie *pcie)
- {
-+	struct resource *res = &pcie->res[win];
-+
- 	/* Setup PCIe address space mappings for each resource */
- 	resource_size_t size;
- 	u32 mask;
-@@ -362,7 +363,7 @@ static int rcar_pcie_setup(int nr, struct pci_sys_data *sys)
- 		if (!res->flags)
- 			continue;
- 
--		rcar_pcie_setup_window(i, res, pcie);
-+		rcar_pcie_setup_window(i, pcie);
- 
- 		if (res->flags & IORESOURCE_IO)
- 			pci_ioremap_io(nr * SZ_64K, res->start);
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 291b1c2..afe8f46 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -10,9 +10,11 @@ CONFIG_PERF_EVENTS=y
+ CONFIG_SLAB=y
+ CONFIG_ARCH_SHMOBILE_MULTI=y
+ CONFIG_ARCH_EMEV2=y
++CONFIG_ARCH_R7S72100=y
+ CONFIG_ARCH_R8A7779=y
+ CONFIG_ARCH_R8A7790=y
+ CONFIG_ARCH_R8A7791=y
++CONFIG_MACH_GENMAI=y
+ CONFIG_MACH_KOELSCH=y
+ CONFIG_MACH_LAGER=y
+ CONFIG_MACH_MARZEN=y
 -- 
-2.0.0
+2.0.0.rc2
 
