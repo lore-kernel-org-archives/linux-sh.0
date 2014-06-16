@@ -1,51 +1,74 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 03 Jun 2014 22:33:14 +0000
-Subject: [PATCH 02/03] ARM: shmobile: r8a7790: SYS-DMAC and MMCIF prototype
-Message-Id: <20140603223314.2193.24640.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 16 Jun 2014 15:07:17 +0000
+Subject: [PATCH v4 05/19] clocksource: sh_tmu: Replace global spinlock with a per-device spinlock
+Message-Id: <1402931251-22581-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+The global spinlock is used to protect the shared start/stop register.
+Now that all TMU channels are handled by a single device instance, use a
+per-device spinlock.
 
-Add r8a7790 MMCIF entries to the SYS-DMAC prototype
-code to allow board specific use of DMA with MMCIF.
-
-Not for upstream merge.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ drivers/clocksource/sh_tmu.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
 
- Written on top of renesas-devel-v3.15-rc7-20140530 and
- [PATCH 01/03] ARM: shmobile: r8a7790: SYS-DMAC prototype
-
- arch/arm/mach-shmobile/include/mach/r8a7790.h |    4 ++++
- arch/arm/mach-shmobile/setup-r8a7790.c        |    2 ++
- 2 files changed, 6 insertions(+)
-
---- 0001/arch/arm/mach-shmobile/include/mach/r8a7790.h
-+++ work/arch/arm/mach-shmobile/include/mach/r8a7790.h	2014-06-03 21:54:19.000000000 +0900
-@@ -26,6 +26,10 @@ enum {
- 	AUDIO_DMAC_SLAVE_SSI8_RX,
- 	AUDIO_DMAC_SLAVE_SSI9_TX,
- 	AUDIO_DMAC_SLAVE_SSI9_RX,
-+	SYS_DMAC_SLAVE_MMCIF0_TX,
-+	SYS_DMAC_SLAVE_MMCIF0_RX,
-+	SYS_DMAC_SLAVE_MMCIF1_TX,
-+	SYS_DMAC_SLAVE_MMCIF1_RX,
+diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
+index 4363eb7..ef8fb0b 100644
+--- a/drivers/clocksource/sh_tmu.c
++++ b/drivers/clocksource/sh_tmu.c
+@@ -61,6 +61,8 @@ struct sh_tmu_device {
+ 
+ 	enum sh_tmu_model model;
+ 
++	raw_spinlock_t lock; /* Protect the shared start/stop register */
++
+ 	struct sh_tmu_channel *channels;
+ 	unsigned int num_channels;
+ 
+@@ -68,8 +70,6 @@ struct sh_tmu_device {
+ 	bool has_clocksource;
  };
  
- void r8a7790_add_standard_devices(void);
---- 0002/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2014-06-03 21:53:31.000000000 +0900
-@@ -55,6 +55,8 @@
+-static DEFINE_RAW_SPINLOCK(sh_tmu_lock);
+-
+ #define TSTR -1 /* shared register */
+ #define TCOR  0 /* channel register */
+ #define TCNT 1 /* channel register */
+@@ -132,7 +132,7 @@ static void sh_tmu_start_stop_ch(struct sh_tmu_channel *ch, int start)
+ 	unsigned long flags, value;
+ 
+ 	/* start stop register shared by multiple timer channels */
+-	raw_spin_lock_irqsave(&sh_tmu_lock, flags);
++	raw_spin_lock_irqsave(&ch->tmu->lock, flags);
+ 	value = sh_tmu_read(ch, TSTR);
+ 
+ 	if (start)
+@@ -141,7 +141,7 @@ static void sh_tmu_start_stop_ch(struct sh_tmu_channel *ch, int start)
+ 		value &= ~(1 << ch->index);
+ 
+ 	sh_tmu_write(ch, TSTR, value);
+-	raw_spin_unlock_irqrestore(&sh_tmu_lock, flags);
++	raw_spin_unlock_irqrestore(&ch->tmu->lock, flags);
  }
  
- static const struct sh_dmae_slave_config r8a7790_sys_dmac_slaves[] = {
-+	SYS_DMAC_SLAVE(MMCIF0, 32, 0xee200000, 0x34, 0x34, 0xd1, 0xd2),
-+	SYS_DMAC_SLAVE(MMCIF1, 32, 0xee220000, 0x34, 0x34, 0xe1, 0xe2),
- };
+ static int __sh_tmu_enable(struct sh_tmu_channel *ch)
+@@ -524,6 +524,8 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
+ 	tmu->pdev = pdev;
+ 	tmu->model = id->driver_data;
  
- static const struct sh_dmae_channel r8a7790_sys_dmac_channels[] = {
++	raw_spin_lock_init(&tmu->lock);
++
+ 	/* Get hold of clock. */
+ 	tmu->clk = clk_get(&tmu->pdev->dev, "fck");
+ 	if (IS_ERR(tmu->clk)) {
+-- 
+1.8.5.5
+
