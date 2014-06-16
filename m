@@ -1,122 +1,102 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 02 Jun 2014 13:38:19 +0000
-Subject: [PATCH 17/18] spi: rspi: Extract rspi_common_transfer()
-Message-Id: <1401716301-29612-18-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 16 Jun 2014 15:07:23 +0000
+Subject: [PATCH v4 11/19] clocksource: sh_mtu2: Add DT support
+Message-Id: <1402931251-22581-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
+References: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-Extract the common parts of rspi_transfer_one(), rspi_rz_transfer_one(),
-and qspi_transfer_out_in() into the new function rspi_common_transfer().
+Document DT bindings and parse them in the MTU2 driver.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: devicetree@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Wolfram Sang <wsa@sang-engineering.com>
 ---
- drivers/spi/spi-rspi.c | 61 ++++++++++++++++++++------------------------------
- 1 file changed, 24 insertions(+), 37 deletions(-)
+ .../devicetree/bindings/timer/renesas,mtu2.txt     | 39 ++++++++++++++++++++++
+ drivers/clocksource/sh_mtu2.c                      |  8 +++++
+ 2 files changed, 47 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/timer/renesas,mtu2.txt
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 4bc4138e002b..10112745bb17 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -586,12 +586,32 @@ static bool rspi_can_dma(struct spi_master *master, struct spi_device *spi,
- 	return __rspi_can_dma(rspi, xfer);
- }
- 
-+static int rspi_common_transfer(struct rspi_data *rspi,
-+				struct spi_transfer *xfer)
-+{
-+	int ret;
+diff --git a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
+new file mode 100644
+index 0000000..917453f
+--- /dev/null
++++ b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
+@@ -0,0 +1,39 @@
++* Renesas R-Car Multi-Function Timer Pulse Unit 2 (MTU2)
 +
-+	if (rspi->master->can_dma && __rspi_can_dma(rspi, xfer)) {
-+		/* rx_buf can be NULL on RSPI on SH in TX-only Mode */
-+		return rspi_dma_transfer(rspi, &xfer->tx_sg,
-+					 xfer->rx_buf ? &xfer->rx_sg : NULL);
-+	}
++The MTU2 is a multi-purpose, multi-channel timer/counter with configurable
++clock inputs and programmable compare match.
 +
-+	ret = rspi_pio_transfer(rspi, xfer->tx_buf, xfer->rx_buf, xfer->len);
-+	if (ret < 0)
-+		return ret;
++Channels share hardware resources but their counter and compare match value
++are independent. The MTU2 hardware supports five channels indexed from 0 to 4.
 +
-+	/* Wait for the last transmission */
-+	rspi_wait_for_tx_empty(rspi);
++Required Properties:
 +
-+	return 0;
-+}
++  - compatible: must contain "renesas,mtu2"
 +
- static int rspi_transfer_one(struct spi_master *master, struct spi_device *spi,
- 			     struct spi_transfer *xfer)
- {
- 	struct rspi_data *rspi = spi_master_get_devdata(master);
- 	u8 spcr;
--	int ret;
++  - reg: base address and length of the registers block for the timer module.
++
++  - interrupts: interrupt specifiers for the timer, one for each entry in
++    interrupt-names.
++  - interrupt-names: must contain one entry named "tgi?a" for each enabled
++    channel, where "?" is the channel index expressed as one digit from "0" to
++    "4".
++
++  - clocks: a list of phandle + clock-specifier pairs, one for each entry
++    in clock-names.
++  - clock-names: must contain "fck" for the functional clock.
++
++
++Example: R7S72100 (RZ/A1H) MTU2 node
++
++	mtu2: timer@fcff0000 {
++		compatible = "renesas,mtu2";
++		reg = <0xfcff0000 0x400>;
++		interrupts = <0 139 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 146 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 150 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 154 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 159 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "tgi0a", "tgi1a", "tgi2a", "tgi3a", "tgi4a";
++		clocks = <&mstp3_clks R7S72100_CLK_MTU2>;
++		clock-names = "fck";
++	};
+diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
+index ebdf9d1..05ae3d9 100644
+--- a/drivers/clocksource/sh_mtu2.c
++++ b/drivers/clocksource/sh_mtu2.c
+@@ -23,6 +23,7 @@
+ #include <linux/ioport.h>
+ #include <linux/irq.h>
+ #include <linux/module.h>
++#include <linux/of.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_domain.h>
+ #include <linux/pm_runtime.h>
+@@ -502,11 +503,18 @@ static const struct platform_device_id sh_mtu2_id_table[] = {
+ };
+ MODULE_DEVICE_TABLE(platform, sh_mtu2_id_table);
  
- 	spcr = rspi_read8(rspi, RSPI_SPCR);
- 	if (xfer->rx_buf) {
-@@ -602,18 +622,7 @@ static int rspi_transfer_one(struct spi_master *master, struct spi_device *spi,
- 	}
- 	rspi_write8(rspi, spcr, RSPI_SPCR);
- 
--	if (master->can_dma && __rspi_can_dma(rspi, xfer))
--		return rspi_dma_transfer(rspi, &xfer->tx_sg,
--					 xfer->rx_buf ? &xfer->rx_sg : NULL);
--
--	ret = rspi_pio_transfer(rspi, xfer->tx_buf, xfer->rx_buf, xfer->len);
--	if (ret < 0)
--		return ret;
--
--	/* Wait for the last transmission */
--	rspi_wait_for_tx_empty(rspi);
--
--	return 0;
-+	return rspi_common_transfer(rspi, xfer);
- }
- 
- static int rspi_rz_transfer_one(struct spi_master *master,
-@@ -625,37 +634,15 @@ static int rspi_rz_transfer_one(struct spi_master *master,
- 
- 	rspi_rz_receive_init(rspi);
- 
--	if (master->can_dma && __rspi_can_dma(rspi, xfer))
--		return rspi_dma_transfer(rspi, &xfer->tx_sg, &xfer->rx_sg);
--
--	ret = rspi_pio_transfer(rspi, xfer->tx_buf, xfer->rx_buf, xfer->len);
--	if (ret < 0)
--		return ret;
--
--	/* Wait for the last transmission */
--	rspi_wait_for_tx_empty(rspi);
--
--	return 0;
-+	return rspi_common_transfer(rspi, xfer);
- }
- 
- static int qspi_transfer_out_in(struct rspi_data *rspi,
- 				struct spi_transfer *xfer)
- {
--	int ret;
--
- 	qspi_receive_init(rspi);
- 
--	if (rspi->master->can_dma && __rspi_can_dma(rspi, xfer))
--		return rspi_dma_transfer(rspi, &xfer->tx_sg, &xfer->rx_sg);
--
--	ret = rspi_pio_transfer(rspi, xfer->tx_buf, xfer->rx_buf, xfer->len);
--	if (ret < 0)
--		return ret;
--
--	/* Wait for the last transmission */
--	rspi_wait_for_tx_empty(rspi);
--
--	return 0;
-+	return rspi_common_transfer(rspi, xfer);
- }
- 
- static int qspi_transfer_out(struct rspi_data *rspi, struct spi_transfer *xfer)
++static const struct of_device_id sh_mtu2_of_table[] __maybe_unused = {
++	{ .compatible = "renesas,mtu2" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, sh_mtu2_of_table);
++
+ static struct platform_driver sh_mtu2_device_driver = {
+ 	.probe		= sh_mtu2_probe,
+ 	.remove		= sh_mtu2_remove,
+ 	.driver		= {
+ 		.name	= "sh_mtu2",
++		.of_match_table = of_match_ptr(sh_mtu2_of_table),
+ 	},
+ 	.id_table	= sh_mtu2_id_table,
+ };
 -- 
-1.9.1
+1.8.5.5
 
