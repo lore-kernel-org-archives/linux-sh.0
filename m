@@ -1,39 +1,76 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 05 Jun 2014 10:09:46 +0000
-Subject: Re: [PATCH 5/8] shdmac: fdt: wire r8a7790 for device tree usage.
-Message-Id: <87bnu7is5y.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 16 Jun 2014 15:07:26 +0000
+Subject: [PATCH v4 14/19] ARM: shmobile: r8a7779: Add TMU devices to DT
+Message-Id: <1402931251-22581-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401898455-31064-6-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1401898455-31064-6-git-send-email-ben.dooks@codethink.co.uk>
+References: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+Add the TMU0, TMU1 and TMU2 counters to the r8a7779 device tree and make
+them disabled by default.
 
-Hi Ben
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7779.dtsi | 42 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 42 insertions(+)
 
-> >>  static const struct of_device_id sh_dmae_of_match[] = {
-> >> -	{.compatible = "renesas,shdma-r8a73a4", .data = r8a73a4_shdma_devid,},
-> >> +	{ .compatible = "renesas,shdma-r8a73a4", .data = r8a73a4_shdma_devid },
-> >> +	{ .compatible = "renesas,dma-r8a7790", .data = &shdma_arm_info },
-> >>  	{}
-> >>  };
-> > 
-> > renesas,shdma-r8a7790 ?
-> > renesas,dma-r8a7790 ?
-> > 
-> > Is this typo ? or on  purpose ?
-> 
-> Thanks for the feedback.
-> 
-> I thought dma was a pretty good description. Do we need to call this
-> shdma-r8a7790?
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 94e2fc8..671d8e4 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -266,6 +266,48 @@
+ 		reg = <0xffc48000 0x38>;
+ 	};
+ 
++	tmu0: timer@ffd80000 {
++		compatible = "renesas,tmu";
++		reg = <0xffd80000 0x30>;
++		interrupts = <0 32 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 33 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 34 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7779_CLK_TMU0>;
++		clock-names = "fck";
++
++		#renesas,channels = <3>;
++
++		status = "disabled";
++	};
++
++	tmu1: timer@ffd81000 {
++		compatible = "renesas,tmu";
++		reg = <0xffd81000 0x30>;
++		interrupts = <0 36 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 37 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 38 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7779_CLK_TMU1>;
++		clock-names = "fck";
++
++		#renesas,channels = <3>;
++
++		status = "disabled";
++	};
++
++	tmu2: timer@ffd82000 {
++		compatible = "renesas,tmu";
++		reg = <0xffd82000 0x30>;
++		interrupts = <0 40 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 41 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 42 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7779_CLK_TMU2>;
++		clock-names = "fck";
++
++		#renesas,channels = <3>;
++
++		status = "disabled";
++	};
++
+ 	sata: sata@fc600000 {
+ 		compatible = "renesas,rcar-sata";
+ 		reg = <0xfc600000 0x2000>;
+-- 
+1.8.5.5
 
-I'm not sure, but historically we called it as "shdma".
-Renesas SoC has many DMACs, not only SYS-DMAC.
-Maybe, this is natural ?
-       SYS-DMAC -> shdma
-       USB-DMAC -> usbdma
-       SU-DMAC  -> sudma
-       ...
