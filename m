@@ -1,66 +1,100 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 28 Jun 2014 00:10:00 +0000
-Subject: [PATCH] sh_eth: remove checks around dev_kfree_skb() calls
-Message-Id: <201406280410.01146.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 16 Jun 2014 15:07:29 +0000
+Subject: [PATCH v4 17/19] ARM: shmobile: koelsch-reference: Enable CMT0 in device tree
+Message-Id: <1402931251-22581-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Since consume_skb() (and hence dev_kfree_skb() macro) checks the passed pointer
-for NULL, there's no need to check for NULL before invoking dev_kfree_skb().
+No more device needs to be added from platform code when booting the
+reference platform, remove the now empty r8a7791_add_dt_devices()
+function completely.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-The patch is against Dave Miller's 'net-next.git' repo.
+ arch/arm/boot/dts/r8a7791-koelsch.dts            | 4 ++++
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 2 --
+ arch/arm/mach-shmobile/include/mach/r8a7791.h    | 1 -
+ arch/arm/mach-shmobile/setup-r8a7791.c           | 7 +------
+ 4 files changed, 5 insertions(+), 9 deletions(-)
 
- drivers/net/ethernet/renesas/sh_eth.c |   18 ++++++------------
- 1 file changed, 6 insertions(+), 12 deletions(-)
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 5dac673..7817ca8 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -297,6 +297,10 @@
+ 	};
+ };
+ 
++&cmt0 {
++	status = "ok";
++};
++
+ &sata0 {
+ 	status = "okay";
+ };
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index 26189e2..1a73200 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -86,7 +86,6 @@ static void __init koelsch_add_du_device(void)
+  * devices until they get moved to DT.
+  */
+ static const struct clk_name clk_names[] __initconst = {
+-	{ "cmt0", "fck", "sh-cmt-48-gen2.0" },
+ 	{ "du0", "du.0", "rcar-du-r8a7791" },
+ 	{ "du1", "du.1", "rcar-du-r8a7791" },
+ 	{ "lvds0", "lvds.0", "rcar-du-r8a7791" },
+@@ -95,7 +94,6 @@ static const struct clk_name clk_names[] __initconst = {
+ static void __init koelsch_add_standard_devices(void)
+ {
+ 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+-	r8a7791_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 
+ 	koelsch_add_du_device();
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7791.h b/arch/arm/mach-shmobile/include/mach/r8a7791.h
+index 86eae7b..c1bf7ab 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7791.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7791.h
+@@ -2,7 +2,6 @@
+ #define __ASM_R8A7791_H__
+ 
+ void r8a7791_add_standard_devices(void);
+-void r8a7791_add_dt_devices(void);
+ void r8a7791_clock_init(void);
+ void r8a7791_pinmux_init(void);
+ void r8a7791_pm_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index ddd2fca..a66727e 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -180,11 +180,6 @@ static const struct resource thermal_resources[] __initconst = {
+ 					thermal_resources,		\
+ 					ARRAY_SIZE(thermal_resources))
+ 
+-void __init r8a7791_add_dt_devices(void)
+-{
+-	r8a7791_register_cmt(0);
+-}
+-
+ void __init r8a7791_add_standard_devices(void)
+ {
+ 	r8a7791_register_scif(0);
+@@ -202,7 +197,7 @@ void __init r8a7791_add_standard_devices(void)
+ 	r8a7791_register_scif(12);
+ 	r8a7791_register_scif(13);
+ 	r8a7791_register_scif(14);
+-	r8a7791_add_dt_devices();
++	r8a7791_register_cmt(0);
+ 	r8a7791_register_irqc(0);
+ 	r8a7791_register_thermal();
+ }
+-- 
+1.8.5.5
 
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -1094,20 +1094,16 @@ static void sh_eth_ring_free(struct net_
- 
- 	/* Free Rx skb ringbuffer */
- 	if (mdp->rx_skbuff) {
--		for (i = 0; i < mdp->num_rx_ring; i++) {
--			if (mdp->rx_skbuff[i])
--				dev_kfree_skb(mdp->rx_skbuff[i]);
--		}
-+		for (i = 0; i < mdp->num_rx_ring; i++)
-+			dev_kfree_skb(mdp->rx_skbuff[i]);
- 	}
- 	kfree(mdp->rx_skbuff);
- 	mdp->rx_skbuff = NULL;
- 
- 	/* Free Tx skb ringbuffer */
- 	if (mdp->tx_skbuff) {
--		for (i = 0; i < mdp->num_tx_ring; i++) {
--			if (mdp->tx_skbuff[i])
--				dev_kfree_skb(mdp->tx_skbuff[i]);
--		}
-+		for (i = 0; i < mdp->num_tx_ring; i++)
-+			dev_kfree_skb(mdp->tx_skbuff[i]);
- 	}
- 	kfree(mdp->tx_skbuff);
- 	mdp->tx_skbuff = NULL;
-@@ -2077,13 +2073,11 @@ static void sh_eth_tx_timeout(struct net
- 		rxdesc = &mdp->rx_ring[i];
- 		rxdesc->status = 0;
- 		rxdesc->addr = 0xBADF00D0;
--		if (mdp->rx_skbuff[i])
--			dev_kfree_skb(mdp->rx_skbuff[i]);
-+		dev_kfree_skb(mdp->rx_skbuff[i]);
- 		mdp->rx_skbuff[i] = NULL;
- 	}
- 	for (i = 0; i < mdp->num_tx_ring; i++) {
--		if (mdp->tx_skbuff[i])
--			dev_kfree_skb(mdp->tx_skbuff[i]);
-+		dev_kfree_skb(mdp->tx_skbuff[i]);
- 		mdp->tx_skbuff[i] = NULL;
- 	}
- 
