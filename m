@@ -1,59 +1,111 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Tue, 17 Jun 2014 15:14:59 +0000
-Subject: [PATCH 6/8] r8a66597-udc: use devm_clk_get() to get clock
-Message-Id: <1403018101-11062-7-git-send-email-ben.dooks@codethink.co.uk>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 16 Jun 2014 15:07:12 +0000
+Subject: [PATCH v4 00/19] Renesas CMT, MTU2 and TMU timers DT support
+Message-Id: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Change to using the devm_clk_get() to get the clock and
-have it automatically freed on exit.
+Hello,
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
----
- drivers/usb/gadget/r8a66597-udc.c | 10 +++-------
- 1 file changed, 3 insertions(+), 7 deletions(-)
+This patch set adds DT bindings to the Renesas CMT, MTU2 and TMU timers.
+Patches 02/19 to 13/19, 16/19 and 17/19 have already been posted in the
+previous version of this series. Patches 14/19, 15/19, 18/19 and 19/19 are
+new.
 
-diff --git a/drivers/usb/gadget/r8a66597-udc.c b/drivers/usb/gadget/r8a66597-udc.c
-index 9ebe2c0..51eaedd 100644
---- a/drivers/usb/gadget/r8a66597-udc.c
-+++ b/drivers/usb/gadget/r8a66597-udc.c
-@@ -1831,7 +1831,6 @@ static int __exit r8a66597_remove(struct platform_device *pdev)
- 
- 	if (r8a66597->pdata->on_chip) {
- 		clk_disable_unprepare(r8a66597->clk);
--		clk_put(r8a66597->clk);
- 	}
- 
- 	return 0;
-@@ -1903,11 +1902,10 @@ static int __init r8a66597_probe(struct platform_device *pdev)
- 
- 	if (r8a66597->pdata->on_chip) {
- 		snprintf(clk_name, sizeof(clk_name), "usb%d", pdev->id);
--		r8a66597->clk = clk_get(dev, clk_name);
-+		r8a66597->clk = devm_clk_get(dev, clk_name);
- 		if (IS_ERR(r8a66597->clk)) {
- 			dev_err(dev, "cannot get clock \"%s\"\n", clk_name);
--			ret = PTR_ERR(r8a66597->clk);
--			goto clean_up;
-+			return PTR_ERR(r8a66597->clk);
- 		}
- 		clk_prepare_enable(r8a66597->clk);
- 	}
-@@ -1973,10 +1971,8 @@ err_add_udc:
- clean_up3:
- 	free_irq(irq, r8a66597);
- clean_up2:
--	if (r8a66597->pdata->on_chip) {
-+	if (r8a66597->pdata->on_chip)
- 		clk_disable_unprepare(r8a66597->clk);
--		clk_put(r8a66597->clk);
--	}
- clean_up:
- 	if (r8a66597->ep0_req)
- 		r8a66597_free_request(&r8a66597->ep[0].ep, r8a66597->ep0_req);
+The first 11 patches should go through the timers tree while the last 8
+patches should go through the Renesas SoC tree. Patches 12/19 to 15/19 have
+no build time or run time dependency on the drivers changes. Patches 16/19 to
+19/19 may have a run time dependency on the drivers changes depending on the
+kernel configuration. Patches 16/19 and 17/19, for instance, require the
+driver changes only when architected timer support isn't enabled in the
+kernel.
+
+Changes since v3:
+
+- Fixed TMU interrupt numbers
+- Fixed NULL platform device ID dereference in TMU driver
+- Removed interrupt-parent property from documentation
+- Add missing of_match_ptr() and __maybe_unused() annotations
+
+Changes since v2:
+
+- Rebased on top of Simon's latest devel branch
+
+Changes since v1:
+
+- Dropped the channel subnodes from the CMT DT bindings and just use a
+  channels mask, as we don't need to specify per-channel properties.
+
+(I'm slightly uncertain about this change though, as I can't easily predict
+whether per-channel properties would be needed later for new hardware. It
+won't be difficult to reintroduce channel subnodes then, so I'd rather not
+clutter the DT bindings with channel subnodes now. Please feel free to
+disagree.)
+
+Cc: devicetree@vger.kernel.org
+
+Laurent Pinchart (19):
+  clocksource: sh_tmu: Fix channel IRQ retrieval in legacy case
+  clocksource: sh_cmt: Drop support for legacy platform data
+  clocksource: sh_cmt: Replace global spinlock with a per-device
+    spinlock
+  clocksource: sh_tmu: Drop support for legacy platform data
+  clocksource: sh_tmu: Replace global spinlock with a per-device
+    spinlock
+  clocksource: sh_mtu2: Drop support for legacy platform data
+  clocksource: sh_mtu2: Replace global spinlock with a per-device
+    spinlock
+  clocksource: shmobile: Remove unused sh_timer_config members
+  clocksource: sh_cmt: Add DT support
+  clocksource: sh_tmu: Add DT support
+  clocksource: sh_mtu2: Add DT support
+  ARM: shmobile: r8a7790: Add CMT devices to DT
+  ARM: shmobile: r8a7791: Add CMT devices to DT
+  ARM: shmobile: r8a7779: Add TMU devices to DT
+  ARM: shmobile: r7s72100: Add MTU2 device to DT
+  ARM: shmobile: lager-reference: Enable CMT0 in device tree
+  ARM: shmobile: koelsch-reference: Enable CMT0 in device tree
+  ARM: shmobile: marzen-reference: Enable TMU0 in device tree
+  ARM: shmobile: genmai-reference: Enable MTU2 in device tree
+
+ .../devicetree/bindings/timer/renesas,cmt.txt      |  47 +++++
+ .../devicetree/bindings/timer/renesas,mtu2.txt     |  39 ++++
+ .../devicetree/bindings/timer/renesas,tmu.txt      |  39 ++++
+ arch/arm/boot/dts/r7s72100-genmai.dts              |   4 +
+ arch/arm/boot/dts/r7s72100.dtsi                    |  10 +
+ arch/arm/boot/dts/r8a7779-marzen.dts               |   4 +
+ arch/arm/boot/dts/r8a7779.dtsi                     |  42 ++++
+ arch/arm/boot/dts/r8a7790-lager.dts                |   4 +
+ arch/arm/boot/dts/r8a7790.dtsi                     |  32 +++
+ arch/arm/boot/dts/r8a7791-koelsch.dts              |   4 +
+ arch/arm/boot/dts/r8a7791.dtsi                     |  32 +++
+ arch/arm/mach-shmobile/board-genmai-reference.c    |  16 --
+ arch/arm/mach-shmobile/board-genmai.c              |  14 +-
+ arch/arm/mach-shmobile/board-koelsch-reference.c   |   2 -
+ arch/arm/mach-shmobile/board-lager-reference.c     |   2 -
+ arch/arm/mach-shmobile/board-marzen-reference.c    |  10 -
+ arch/arm/mach-shmobile/include/mach/r7s72100.h     |   1 -
+ arch/arm/mach-shmobile/include/mach/r8a7779.h      |   1 -
+ arch/arm/mach-shmobile/include/mach/r8a7790.h      |   1 -
+ arch/arm/mach-shmobile/include/mach/r8a7791.h      |   1 -
+ arch/arm/mach-shmobile/setup-r7s72100.c            |  21 --
+ arch/arm/mach-shmobile/setup-r8a7779.c             |  17 +-
+ arch/arm/mach-shmobile/setup-r8a7790.c             |   7 +-
+ arch/arm/mach-shmobile/setup-r8a7791.c             |   7 +-
+ drivers/clocksource/sh_cmt.c                       | 233 ++++++++-------------
+ drivers/clocksource/sh_mtu2.c                      | 146 ++++---------
+ drivers/clocksource/sh_tmu.c                       | 129 +++++-------
+ include/linux/sh_timer.h                           |   5 -
+ 28 files changed, 462 insertions(+), 408 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/timer/renesas,cmt.txt
+ create mode 100644 Documentation/devicetree/bindings/timer/renesas,mtu2.txt
+ create mode 100644 Documentation/devicetree/bindings/timer/renesas,tmu.txt
+
 -- 
-2.0.0
+Regards,
+
+Laurent Pinchart
 
