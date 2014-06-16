@@ -1,44 +1,40 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 06 Jun 2014 05:28:56 +0000
-Subject: [PATCH v2 02/03] ARM: shmobile: Use shmobile_init_delay() on Genmai boards
-Message-Id: <20140606052856.17594.84193.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 16 Jun 2014 15:07:20 +0000
+Subject: [PATCH v4 08/19] clocksource: shmobile: Remove unused sh_timer_config members
+Message-Id: <1402931251-22581-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+The name, channel_offset, timer_bit, clockevent_rating and
+clocksource_rating members are unused. Remove them.
 
-Adjust Genmai board support to use shmobile_init_delay() together
-with r7s72100 CPU Frequency settings from the DTS.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ include/linux/sh_timer.h | 5 -----
+ 1 file changed, 5 deletions(-)
 
- arch/arm/mach-shmobile/board-genmai-reference.c |    2 +-
- arch/arm/mach-shmobile/board-genmai.c           |    2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/board-genmai-reference.c
-+++ work/arch/arm/mach-shmobile/board-genmai-reference.c	2014-05-29 17:50:54.000000000 +0900
-@@ -47,7 +47,7 @@ static const char * const genmai_boards_
+diff --git a/include/linux/sh_timer.h b/include/linux/sh_timer.h
+index 8e1e036..64638b0 100644
+--- a/include/linux/sh_timer.h
++++ b/include/linux/sh_timer.h
+@@ -2,11 +2,6 @@
+ #define __SH_TIMER_H__
+ 
+ struct sh_timer_config {
+-	char *name;
+-	long channel_offset;
+-	int timer_bit;
+-	unsigned long clockevent_rating;
+-	unsigned long clocksource_rating;
+ 	unsigned int channels_mask;
  };
  
- DT_MACHINE_START(GENMAI_DT, "genmai")
--	.init_early	= r7s72100_init_early,
-+	.init_early	= shmobile_init_delay,
- 	.init_machine	= genmai_add_standard_devices,
- 	.dt_compat	= genmai_boards_compat_dt,
- MACHINE_END
---- 0001/arch/arm/mach-shmobile/board-genmai.c
-+++ work/arch/arm/mach-shmobile/board-genmai.c	2014-05-29 17:50:39.000000000 +0900
-@@ -154,7 +154,7 @@ static const char * const genmai_boards_
- };
- 
- DT_MACHINE_START(GENMAI_DT, "genmai")
--	.init_early	= r7s72100_init_early,
-+	.init_early	= shmobile_init_delay,
- 	.init_machine	= genmai_add_standard_devices,
- 	.dt_compat	= genmai_boards_compat_dt,
- MACHINE_END
+-- 
+1.8.5.5
+
