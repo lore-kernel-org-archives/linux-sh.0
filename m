@@ -1,67 +1,73 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 13 Jun 2014 12:20:23 +0000
-Subject: [PATCH v6 0/1] add support for the R-Car H2 and M2 xHCI controllers
-Message-Id: <539AEC87.2080601@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 16 Jun 2014 15:07:19 +0000
+Subject: [PATCH v4 07/19] clocksource: sh_mtu2: Replace global spinlock with a per-device spinlock
+Message-Id: <1402931251-22581-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "mathias.nyman@intel.com" <mathias.nyman@intel.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>
-Cc: SH-Linux <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-This patch adds the USB xHCI support for the R-Car H2 and M2 SoCs.
-These SoCs use an xHCI but still need specific initialization, mainly
-to setup the firmware downloading and the specific registers.
+The global spinlock is used to protect the shared start/stop register.
+Now that all MTU2 channels are handled by a single device instance, use
+a per-device spinlock.
 
-This patch set is based on the usb-next branch of Greg usb.git tree.
-(commit id = 4a95b1fce97756d0333f8232eb7ed6974e93b054)
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Wolfram Sang <wsa@sang-engineering.com>
+---
+ drivers/clocksource/sh_mtu2.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
 
-Changes since v5:
- - Fix the RCAR_USB3_RX_POL_VAL value in patch 1.
- - Also modify the RCAR_USB3_TX_POL_VAL value using the BIT macro.
-
-Changes since v4:
- - Rebase the latest usb-next branch
-
-Changes since v3:
- - Remove a general phy driver calling in xhci-plat.c
- - Change xhci_rcar_init_quirk() calling into xhci_plat_setup(). Because of
-   usb_add_hcd() will call a generic phy driver calling.
- - Modify xhci_rcar_init_quirk()
-
-Changes since v2:
- - Fix goto direction in patch 1.
- - Remove some unnecessary checks in patch 1.
- - Add MODULE_FIRMWARE() in patch 2.
- - Add a comment about xhci_rcar_init_quirk() in patch 2.
-
-Changes since v1 (about patch 2 only because patch 1 and 3 ware applied):
- - Fix some typos in patch 2.
- - Remove duplicated #define in patch 2.
- - Remove usb_phy framework calling in patch 2.
- - Change prototype of xhci_rcar_start() in patch 2.
- - Change compatible strings from "renesas,r8a779[01]-xhci" to
-   "renesas,xhci-r8a779[01]" in patch 2. Because of Renesas SoC
-   maintainer's comment:
-    http://marc.info/?l=linux-sh&m0109049002958&w=2
-
- - Rewrite the custom get_unaligned_le32() and add comment about it in patch 2.
-
-*** BLURB HERE ***
-
-Yoshihiro Shimoda (1):
-  usb: host: xhci-plat: add support for the R-Car H2 and M2 xHCI
-    controllers
-
- drivers/usb/host/Kconfig     |    8 +++
- drivers/usb/host/Makefile    |    3 +
- drivers/usb/host/xhci-plat.c |   19 ++++++
- drivers/usb/host/xhci-rcar.c |  148 ++++++++++++++++++++++++++++++++++++++++++
- drivers/usb/host/xhci-rcar.h |   27 ++++++++
- 5 files changed, 205 insertions(+)
- create mode 100644 drivers/usb/host/xhci-rcar.c
- create mode 100644 drivers/usb/host/xhci-rcar.h
-
+diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
+index 2931fea..ebdf9d1 100644
+--- a/drivers/clocksource/sh_mtu2.c
++++ b/drivers/clocksource/sh_mtu2.c
+@@ -47,14 +47,14 @@ struct sh_mtu2_device {
+ 	void __iomem *mapbase;
+ 	struct clk *clk;
+ 
++	raw_spinlock_t lock; /* Protect the shared registers */
++
+ 	struct sh_mtu2_channel *channels;
+ 	unsigned int num_channels;
+ 
+ 	bool has_clockevent;
+ };
+ 
+-static DEFINE_RAW_SPINLOCK(sh_mtu2_lock);
+-
+ #define TSTR -1 /* shared register */
+ #define TCR  0 /* channel register */
+ #define TMDR 1 /* channel register */
+@@ -192,7 +192,7 @@ static void sh_mtu2_start_stop_ch(struct sh_mtu2_channel *ch, int start)
+ 	unsigned long flags, value;
+ 
+ 	/* start stop register shared by multiple timer channels */
+-	raw_spin_lock_irqsave(&sh_mtu2_lock, flags);
++	raw_spin_lock_irqsave(&ch->mtu->lock, flags);
+ 	value = sh_mtu2_read(ch, TSTR);
+ 
+ 	if (start)
+@@ -201,7 +201,7 @@ static void sh_mtu2_start_stop_ch(struct sh_mtu2_channel *ch, int start)
+ 		value &= ~(1 << ch->index);
+ 
+ 	sh_mtu2_write(ch, TSTR, value);
+-	raw_spin_unlock_irqrestore(&sh_mtu2_lock, flags);
++	raw_spin_unlock_irqrestore(&ch->mtu->lock, flags);
+ }
+ 
+ static int sh_mtu2_enable(struct sh_mtu2_channel *ch)
+@@ -402,6 +402,8 @@ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
+ 
+ 	mtu->pdev = pdev;
+ 
++	raw_spin_lock_init(&mtu->lock);
++
+ 	/* Get hold of clock. */
+ 	mtu->clk = clk_get(&mtu->pdev->dev, "fck");
+ 	if (IS_ERR(mtu->clk)) {
 -- 
-1.7.9.5
+1.8.5.5
 
