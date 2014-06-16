@@ -1,33 +1,71 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 05 Jun 2014 05:15:44 +0000
-Subject: [PATCH 05/08] ARM: shmobile: Use __init for APMU suspend init function
-Message-Id: <20140605051544.18075.12659.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 16 Jun 2014 15:07:15 +0000
+Subject: [PATCH v4 03/19] clocksource: sh_cmt: Replace global spinlock with a per-device spinlock
+Message-Id: <1402931251-22581-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+The global spinlock is used to protect the shared start/stop register.
+Now that all CMT channels are handled by a single device instance, use a
+per-device spinlock.
 
-The function shmobile_smp_apmu_suspend_init() should
-be put into the init section to not trigger section
-mismatch warnings.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ drivers/clocksource/sh_cmt.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
- arch/arm/mach-shmobile/platsmp-apmu.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
---- 0003/arch/arm/mach-shmobile/platsmp-apmu.c
-+++ work/arch/arm/mach-shmobile/platsmp-apmu.c	2014-06-05 12:51:33.000000000 +0900
-@@ -240,7 +240,7 @@ static int shmobile_smp_apmu_enter_suspe
- 	return 0;
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index ff1a059..4d00e4b 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -118,6 +118,8 @@ struct sh_cmt_device {
+ 	void __iomem *mapbase;
+ 	struct clk *clk;
+ 
++	raw_spinlock_t lock; /* Protect the shared start/stop register */
++
+ 	struct sh_cmt_channel *channels;
+ 	unsigned int num_channels;
+ 
+@@ -299,14 +301,12 @@ static unsigned long sh_cmt_get_counter(struct sh_cmt_channel *ch,
+ 	return v2;
  }
  
--void shmobile_smp_apmu_suspend_init(void)
-+void __init shmobile_smp_apmu_suspend_init(void)
+-static DEFINE_RAW_SPINLOCK(sh_cmt_lock);
+-
+ static void sh_cmt_start_stop_ch(struct sh_cmt_channel *ch, int start)
  {
- 	shmobile_suspend_ops.enter = shmobile_smp_apmu_enter_suspend;
+ 	unsigned long flags, value;
+ 
+ 	/* start stop register shared by multiple timer channels */
+-	raw_spin_lock_irqsave(&sh_cmt_lock, flags);
++	raw_spin_lock_irqsave(&ch->cmt->lock, flags);
+ 	value = sh_cmt_read_cmstr(ch);
+ 
+ 	if (start)
+@@ -315,7 +315,7 @@ static void sh_cmt_start_stop_ch(struct sh_cmt_channel *ch, int start)
+ 		value &= ~(1 << ch->timer_bit);
+ 
+ 	sh_cmt_write_cmstr(ch, value);
+-	raw_spin_unlock_irqrestore(&sh_cmt_lock, flags);
++	raw_spin_unlock_irqrestore(&ch->cmt->lock, flags);
  }
+ 
+ static int sh_cmt_enable(struct sh_cmt_channel *ch, unsigned long *rate)
+@@ -934,6 +934,7 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ 
+ 	memset(cmt, 0, sizeof(*cmt));
+ 	cmt->pdev = pdev;
++	raw_spin_lock_init(&cmt->lock);
+ 
+ 	if (!cfg) {
+ 		dev_err(&cmt->pdev->dev, "missing platform data\n");
+-- 
+1.8.5.5
+
