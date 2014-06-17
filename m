@@ -1,102 +1,203 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 16 Jun 2014 15:07:23 +0000
-Subject: [PATCH v4 11/19] clocksource: sh_mtu2: Add DT support
-Message-Id: <1402931251-22581-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 17 Jun 2014 07:48:01 +0000
+Subject: [PATCH v2 08/08] ARM: shmobile: Move rcar-gen2.h, cleanup r8a7790 case
+Message-Id: <20140617074801.30008.11376.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20140617074658.30008.53021.sendpatchset@w520>
+In-Reply-To: <20140617074658.30008.53021.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Document DT bindings and parse them in the MTU2 driver.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Cc: devicetree@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Wolfram Sang <wsa@sang-engineering.com>
+Change location of rcar-gen2.h so it can be used as #include "rcar-gen2.h"
+instead of the old style #include <mach/rcar-gen2.h>. Also clean up
+the r8a7790 case to follow the same style as r8a7791.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
 ---
- .../devicetree/bindings/timer/renesas,mtu2.txt     | 39 ++++++++++++++++++++++
- drivers/clocksource/sh_mtu2.c                      |  8 +++++
- 2 files changed, 47 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/timer/renesas,mtu2.txt
 
-diff --git a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-new file mode 100644
-index 0000000..917453f
---- /dev/null
-+++ b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-@@ -0,0 +1,39 @@
-+* Renesas R-Car Multi-Function Timer Pulse Unit 2 (MTU2)
-+
-+The MTU2 is a multi-purpose, multi-channel timer/counter with configurable
-+clock inputs and programmable compare match.
-+
-+Channels share hardware resources but their counter and compare match value
-+are independent. The MTU2 hardware supports five channels indexed from 0 to 4.
-+
-+Required Properties:
-+
-+  - compatible: must contain "renesas,mtu2"
-+
-+  - reg: base address and length of the registers block for the timer module.
-+
-+  - interrupts: interrupt specifiers for the timer, one for each entry in
-+    interrupt-names.
-+  - interrupt-names: must contain one entry named "tgi?a" for each enabled
-+    channel, where "?" is the channel index expressed as one digit from "0" to
-+    "4".
-+
-+  - clocks: a list of phandle + clock-specifier pairs, one for each entry
-+    in clock-names.
-+  - clock-names: must contain "fck" for the functional clock.
-+
-+
-+Example: R7S72100 (RZ/A1H) MTU2 node
-+
-+	mtu2: timer@fcff0000 {
-+		compatible = "renesas,mtu2";
-+		reg = <0xfcff0000 0x400>;
-+		interrupts = <0 139 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 146 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 150 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 154 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 159 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "tgi0a", "tgi1a", "tgi2a", "tgi3a", "tgi4a";
-+		clocks = <&mstp3_clks R7S72100_CLK_MTU2>;
-+		clock-names = "fck";
-+	};
-diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
-index ebdf9d1..05ae3d9 100644
---- a/drivers/clocksource/sh_mtu2.c
-+++ b/drivers/clocksource/sh_mtu2.c
-@@ -23,6 +23,7 @@
- #include <linux/ioport.h>
- #include <linux/irq.h>
- #include <linux/module.h>
-+#include <linux/of.h>
- #include <linux/platform_device.h>
- #include <linux/pm_domain.h>
- #include <linux/pm_runtime.h>
-@@ -502,11 +503,18 @@ static const struct platform_device_id sh_mtu2_id_table[] = {
- };
- MODULE_DEVICE_TABLE(platform, sh_mtu2_id_table);
+ Changes since V1:
+ - rebased to v3.16-rc1
+
+ arch/arm/mach-shmobile/board-koelsch-reference.c |    2 +-
+ arch/arm/mach-shmobile/board-koelsch.c           |    2 +-
+ arch/arm/mach-shmobile/board-lager-reference.c   |    2 +-
+ arch/arm/mach-shmobile/board-lager.c             |    1 +
+ arch/arm/mach-shmobile/clock-r8a7790.c           |    1 +
+ arch/arm/mach-shmobile/clock-r8a7791.c           |    2 +-
+ arch/arm/mach-shmobile/include/mach/r8a7790.h    |    2 --
+ arch/arm/mach-shmobile/include/mach/rcar-gen2.h  |    8 --------
+ arch/arm/mach-shmobile/rcar-gen2.h               |    8 ++++++++
+ arch/arm/mach-shmobile/setup-r8a7790.c           |    1 +
+ arch/arm/mach-shmobile/setup-r8a7791.c           |    2 +-
+ arch/arm/mach-shmobile/setup-rcar-gen2.c         |    2 +-
+ arch/arm/mach-shmobile/smp-r8a7791.c             |    2 +-
+ 13 files changed, 18 insertions(+), 17 deletions(-)
+
+--- 0006/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ work/arch/arm/mach-shmobile/board-koelsch-reference.c	2014-06-17 16:15:58.000000000 +0900
+@@ -23,12 +23,12 @@
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+ #include <linux/platform_data/rcar-du.h>
+-#include <mach/rcar-gen2.h>
+ #include <mach/r8a7791.h>
+ #include <asm/mach/arch.h>
+ #include "clock.h"
+ #include "common.h"
+ #include "irqs.h"
++#include "rcar-gen2.h"
  
-+static const struct of_device_id sh_mtu2_of_table[] __maybe_unused = {
-+	{ .compatible = "renesas,mtu2" },
-+	{ }
-+};
-+MODULE_DEVICE_TABLE(of, sh_mtu2_of_table);
+ /* DU */
+ static struct rcar_du_encoder_data koelsch_du_encoders[] = {
+--- 0006/arch/arm/mach-shmobile/board-koelsch.c
++++ work/arch/arm/mach-shmobile/board-koelsch.c	2014-06-17 16:15:58.000000000 +0900
+@@ -46,11 +46,11 @@
+ #include <linux/spi/rspi.h>
+ #include <linux/spi/spi.h>
+ #include <mach/r8a7791.h>
+-#include <mach/rcar-gen2.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include "common.h"
+ #include "irqs.h"
++#include "rcar-gen2.h"
+ 
+ /* DU */
+ static struct rcar_du_encoder_data koelsch_du_encoders[] = {
+--- 0006/arch/arm/mach-shmobile/board-lager-reference.c
++++ work/arch/arm/mach-shmobile/board-lager-reference.c	2014-06-17 16:15:58.000000000 +0900
+@@ -22,12 +22,12 @@
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
+ #include <linux/platform_data/rcar-du.h>
+-#include <mach/rcar-gen2.h>
+ #include <mach/r8a7790.h>
+ #include <asm/mach/arch.h>
+ #include "clock.h"
+ #include "common.h"
+ #include "irqs.h"
++#include "rcar-gen2.h"
+ 
+ /* DU */
+ static struct rcar_du_encoder_data lager_du_encoders[] = {
+--- 0006/arch/arm/mach-shmobile/board-lager.c
++++ work/arch/arm/mach-shmobile/board-lager.c	2014-06-17 16:15:58.000000000 +0900
+@@ -58,6 +58,7 @@
+ #include <sound/simple_card.h>
+ #include "common.h"
+ #include "irqs.h"
++#include "rcar-gen2.h"
+ 
+ /*
+  * SSI-AK4643
+--- 0006/arch/arm/mach-shmobile/clock-r8a7790.c
++++ work/arch/arm/mach-shmobile/clock-r8a7790.c	2014-06-17 16:15:58.000000000 +0900
+@@ -25,6 +25,7 @@
+ #include <mach/r8a7790.h>
+ #include "clock.h"
+ #include "common.h"
++#include "rcar-gen2.h"
+ 
+ /*
+  *   MD		EXTAL		PLL0	PLL1	PLL3
+--- 0006/arch/arm/mach-shmobile/clock-r8a7791.c
++++ work/arch/arm/mach-shmobile/clock-r8a7791.c	2014-06-17 16:15:58.000000000 +0900
+@@ -23,9 +23,9 @@
+ #include <linux/kernel.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
+-#include <mach/rcar-gen2.h>
+ #include "clock.h"
+ #include "common.h"
++#include "rcar-gen2.h"
+ 
+ /*
+  *   MD		EXTAL		PLL0	PLL1	PLL3
+--- 0001/arch/arm/mach-shmobile/include/mach/r8a7790.h
++++ work/arch/arm/mach-shmobile/include/mach/r8a7790.h	2014-06-17 16:15:58.000000000 +0900
+@@ -1,8 +1,6 @@
+ #ifndef __ASM_R8A7790_H__
+ #define __ASM_R8A7790_H__
+ 
+-#include <mach/rcar-gen2.h>
+-
+ /* DMA slave IDs */
+ enum {
+ 	RCAR_DMA_SLAVE_INVALID,
+--- 0001/arch/arm/mach-shmobile/include/mach/rcar-gen2.h
++++ /dev/null	2013-06-03 21:41:10.638032047 +0900
+@@ -1,8 +0,0 @@
+-#ifndef __ASM_RCAR_GEN2_H__
+-#define __ASM_RCAR_GEN2_H__
+-
+-void rcar_gen2_timer_init(void);
+-#define MD(nr) BIT(nr)
+-u32 rcar_gen2_read_mode_pins(void);
+-
+-#endif /* __ASM_RCAR_GEN2_H__ */
+--- /dev/null
++++ work/arch/arm/mach-shmobile/rcar-gen2.h	2014-06-17 16:15:59.000000000 +0900
+@@ -0,0 +1,8 @@
++#ifndef __ASM_RCAR_GEN2_H__
++#define __ASM_RCAR_GEN2_H__
 +
- static struct platform_driver sh_mtu2_device_driver = {
- 	.probe		= sh_mtu2_probe,
- 	.remove		= sh_mtu2_remove,
- 	.driver		= {
- 		.name	= "sh_mtu2",
-+		.of_match_table = of_match_ptr(sh_mtu2_of_table),
- 	},
- 	.id_table	= sh_mtu2_id_table,
- };
--- 
-1.8.5.5
-
++void rcar_gen2_timer_init(void);
++#define MD(nr) BIT(nr)
++u32 rcar_gen2_read_mode_pins(void);
++
++#endif /* __ASM_RCAR_GEN2_H__ */
+--- 0006/arch/arm/mach-shmobile/setup-r8a7790.c
++++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2014-06-17 16:15:58.000000000 +0900
+@@ -31,6 +31,7 @@
+ #include "common.h"
+ #include "dma-register.h"
+ #include "irqs.h"
++#include "rcar-gen2.h"
+ 
+ /* Audio-DMAC */
+ #define AUDIO_DMAC_SLAVE(_id, _addr, t, r)			\
+--- 0006/arch/arm/mach-shmobile/setup-r8a7791.c
++++ work/arch/arm/mach-shmobile/setup-r8a7791.c	2014-06-17 16:15:58.000000000 +0900
+@@ -27,10 +27,10 @@
+ #include <linux/serial_sci.h>
+ #include <linux/sh_timer.h>
+ #include <mach/r8a7791.h>
+-#include <mach/rcar-gen2.h>
+ #include <asm/mach/arch.h>
+ #include "common.h"
+ #include "irqs.h"
++#include "rcar-gen2.h"
+ 
+ static const struct resource pfc_resources[] __initconst = {
+ 	DEFINE_RES_MEM(0xe6060000, 0x250),
+--- 0006/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ work/arch/arm/mach-shmobile/setup-rcar-gen2.c	2014-06-17 16:15:58.000000000 +0900
+@@ -22,9 +22,9 @@
+ #include <linux/clocksource.h>
+ #include <linux/io.h>
+ #include <linux/kernel.h>
+-#include <mach/rcar-gen2.h>
+ #include <asm/mach/arch.h>
+ #include "common.h"
++#include "rcar-gen2.h"
+ 
+ #define MODEMR 0xe6160060
+ 
+--- 0006/arch/arm/mach-shmobile/smp-r8a7791.c
++++ work/arch/arm/mach-shmobile/smp-r8a7791.c	2014-06-17 16:15:58.000000000 +0900
+@@ -19,8 +19,8 @@
+ #include <linux/io.h>
+ #include <asm/smp_plat.h>
+ #include <mach/r8a7791.h>
+-#include <mach/rcar-gen2.h>
+ #include "common.h"
++#include "rcar-gen2.h"
+ 
+ #define RST		0xe6160000
+ #define CA15BAR		0x0020
