@@ -1,7 +1,7 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 17 Jun 2014 11:05:11 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 17 Jun 2014 12:21:41 +0000
 Subject: Re: [PATCH v2 00/08] ARM: shmobile: Rework include path V2
-Message-Id: <201406171305.12186.arnd@arndb.de>
+Message-Id: <20140617122138.GA20368@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20140617074658.30008.53021.sendpatchset@w520>
 In-Reply-To: <20140617074658.30008.53021.sendpatchset@w520>
@@ -10,7 +10,25 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tuesday 17 June 2014, Magnus Damm wrote:
+On Tue, Jun 17, 2014 at 04:46:58PM +0900, Magnus Damm wrote:
+> ARM: shmobile: Rework include path V2
+> 
+> [PATCH v2 01/08] ARM: shmobile: Move intc.h, cleanup sh_intc.h usage
+> [PATCH v2 02/08] ARM: shmobile: Move dma-register.h
+> [PATCH v2 03/08] ARM: shmobile: Move clock.h
+> [PATCH v2 04/08] ARM: shmobile: Move most of irqs.h, keep some for pinctl
+> [PATCH v2 05/08] ARM: shmobile: Move common.h
+> [PATCH v2 06/08] ARM: shmobile: Move pm-rmobile.h, cleanup sh73xx.h
+> [PATCH v2 07/08] ARM: shmobile: Move pm-rcar.h, cleanup r8a7779 case
+> [PATCH v2 08/08] ARM: shmobile: Move rcar-gen2.h, cleanup r8a7790 case
+> 
+> Olof, here my latest take on the header move that you requested earlier.
+> 
+> This particular series hopefully follows your proposed way and moves the
+> most common shared header files for mach-shmobile from <mach/foobar.h>
+> to "foobar.h" without any workaround. Left are still per-SoC header files
+> that will be moved once I know you are comformatble with this format.
+> 
 > Please note that these are only lightly compile tested with a handful
 > of defconfigs, but any potential issue should be trivial to fix.
 > 
@@ -20,19 +38,12 @@ On Tuesday 17 June 2014, Magnus Damm wrote:
 > legacy code under drivers/pinctrl. My proposal is to keep those users
 > as-is until we phase out legacy board support (2-3 kernels?), let me
 > know if you would like to get rid of "include/mach" sooner!
+> 
+> Simon, can you please this pick up and include in your rebase to v3.16-rc1?
+> 
+> Changes since V1:
+> - rebased to v3.16-rc1
+> 
+> Thanks to Geert and Arnd for review support!
 
-If it's only about arch/arm/boot/compressed, you can just move the
-header files to the same directory, as nothing else includes them.
-
-I've played with a full multiplatform conversion of a few platforms
-including shmobile in the past, and all I needed for the legacy pinctrl
-drivers was to duplicate the irq_pin() definition, which is probably
-a reasonable hack for code that we know is going away anyway, just
-add a comment for both definitions explaining that they have to be
-kept in sync. This one is less obvious than the boot header.
-
-One general comment: please use 'git format-patch -M' or set the
-'diff.renames' git option for sending patches for reviews that
-rename files. No need to send this patch set again.
-
-	Arnd
+Thanks Magnus, I have queued this up.
