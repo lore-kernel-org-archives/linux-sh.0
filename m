@@ -1,44 +1,127 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 02 Jun 2014 14:57:00 +0000
-Subject: Re: [PATCH 18/18] [RFC] spi: rspi: Add DT support to DMA setup
-Message-Id: <CAMuHMdXhduVy_xxTnUzhkQDd5pah8svpTyB1jahSCb1szR75kg@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 17 Jun 2014 07:46:58 +0000
+Subject: [PATCH v2 00/08] ARM: shmobile: Rework include path V2
+Message-Id: <20140617074658.30008.53021.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
-	<1401716301-29612-19-git-send-email-geert+renesas@glider.be>
-	<20140602145447.GJ31751@sirena.org.uk>
-In-Reply-To: <20140602145447.GJ31751-GFdadSzt00ze9xe1eoZjHA@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Mark,
+ARM: shmobile: Rework include path V2
 
-On Mon, Jun 2, 2014 at 4:54 PM, Mark Brown <broonie@kernel.org> wrote:
-> On Mon, Jun 02, 2014 at 03:38:20PM +0200, Geert Uytterhoeven wrote:
->> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->> Cc: devicetree@vger.kernel.org
->> ---
->> The format of the DMA specifiers depends on the DT bindings for SHDMA,
->> which are still under development.
->
-> This looks fine to me, can you resend when the DMA specifiers for the
-> controller are resolved?  I've applied everything up to here, it all
+[PATCH v2 01/08] ARM: shmobile: Move intc.h, cleanup sh_intc.h usage
+[PATCH v2 02/08] ARM: shmobile: Move dma-register.h
+[PATCH v2 03/08] ARM: shmobile: Move clock.h
+[PATCH v2 04/08] ARM: shmobile: Move most of irqs.h, keep some for pinctl
+[PATCH v2 05/08] ARM: shmobile: Move common.h
+[PATCH v2 06/08] ARM: shmobile: Move pm-rmobile.h, cleanup sh73xx.h
+[PATCH v2 07/08] ARM: shmobile: Move pm-rcar.h, cleanup r8a7779 case
+[PATCH v2 08/08] ARM: shmobile: Move rcar-gen2.h, cleanup r8a7790 case
 
-Sure.
+Olof, here my latest take on the header move that you requested earlier.
 
-> looks good especially the performance improvement.
+This particular series hopefully follows your proposed way and moves the
+most common shared header files for mach-shmobile from <mach/foobar.h>
+to "foobar.h" without any workaround. Left are still per-SoC header files
+that will be moved once I know you are comformatble with this format.
 
-That was quick, thanks a lot!
+Please note that these are only lightly compile tested with a handful
+of defconfigs, but any potential issue should be trivial to fix.
 
-Gr{oetje,eeting}s,
+Also, there are certain bits of arch/arm/mach-shmobile/include/mach/
+get included from places like arch/arm/boot/compressed/ (booting
+legacy kernel directly from reset vector) and also from SoC specific
+legacy code under drivers/pinctrl. My proposal is to keep those users
+as-is until we phase out legacy board support (2-3 kernels?), let me
+know if you would like to get rid of "include/mach" sooner!
 
-                        Geert
+Simon, can you please this pick up and include in your rebase to v3.16-rc1?
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+Changes since V1:
+- rebased to v3.16-rc1
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Thanks to Geert and Arnd for review support!
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+---
+
+ arch/arm/mach-shmobile/board-ape6evm-reference.c         |    2 
+ arch/arm/mach-shmobile/board-ape6evm.c                   |    4 
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c |    2 
+ arch/arm/mach-shmobile/board-armadillo800eva.c           |    6 
+ arch/arm/mach-shmobile/board-bockw-reference.c           |    2 
+ arch/arm/mach-shmobile/board-bockw.c                     |    4 
+ arch/arm/mach-shmobile/board-genmai-reference.c          |    4 
+ arch/arm/mach-shmobile/board-genmai.c                    |    4 
+ arch/arm/mach-shmobile/board-koelsch-reference.c         |    8 
+ arch/arm/mach-shmobile/board-koelsch.c                   |    6 
+ arch/arm/mach-shmobile/board-kzm9g-reference.c           |    2 
+ arch/arm/mach-shmobile/board-kzm9g.c                     |    4 
+ arch/arm/mach-shmobile/board-lager-reference.c           |    8 
+ arch/arm/mach-shmobile/board-lager.c                     |    5 
+ arch/arm/mach-shmobile/board-mackerel.c                  |   10 
+ arch/arm/mach-shmobile/board-marzen-reference.c          |    4 
+ arch/arm/mach-shmobile/board-marzen.c                    |    4 
+ arch/arm/mach-shmobile/clock-r7s72100.c                  |    2 
+ arch/arm/mach-shmobile/clock-r8a73a4.c                   |    4 
+ arch/arm/mach-shmobile/clock-r8a7740.c                   |    4 
+ arch/arm/mach-shmobile/clock-r8a7778.c                   |    4 
+ arch/arm/mach-shmobile/clock-r8a7779.c                   |    4 
+ arch/arm/mach-shmobile/clock-r8a7790.c                   |    5 
+ arch/arm/mach-shmobile/clock-r8a7791.c                   |    6 
+ arch/arm/mach-shmobile/clock-sh7372.c                    |    4 
+ arch/arm/mach-shmobile/clock-sh73a0.c                    |    4 
+ arch/arm/mach-shmobile/clock.c                           |    6 
+ arch/arm/mach-shmobile/clock.h                           |   56 ++
+ arch/arm/mach-shmobile/common.h                          |   56 ++
+ arch/arm/mach-shmobile/console.c                         |    2 
+ arch/arm/mach-shmobile/dma-register.h                    |   84 ++++
+ arch/arm/mach-shmobile/include/mach/clock.h              |   56 --
+ arch/arm/mach-shmobile/include/mach/common.h             |   56 --
+ arch/arm/mach-shmobile/include/mach/dma-register.h       |   84 ----
+ arch/arm/mach-shmobile/include/mach/intc.h               |  290 --------------
+ arch/arm/mach-shmobile/include/mach/irqs.h               |   17 
+ arch/arm/mach-shmobile/include/mach/pm-rcar.h            |   15 
+ arch/arm/mach-shmobile/include/mach/pm-rmobile.h         |   63 ---
+ arch/arm/mach-shmobile/include/mach/r8a7740.h            |    2 
+ arch/arm/mach-shmobile/include/mach/r8a7779.h            |   12 
+ arch/arm/mach-shmobile/include/mach/r8a7790.h            |    2 
+ arch/arm/mach-shmobile/include/mach/rcar-gen2.h          |    8 
+ arch/arm/mach-shmobile/include/mach/sh7372.h             |    4 
+ arch/arm/mach-shmobile/intc-sh7372.c                     |    5 
+ arch/arm/mach-shmobile/intc-sh73a0.c                     |    5 
+ arch/arm/mach-shmobile/intc.h                            |  290 ++++++++++++++
+ arch/arm/mach-shmobile/irqs.h                            |   21 +
+ arch/arm/mach-shmobile/platsmp-apmu.c                    |    2 
+ arch/arm/mach-shmobile/platsmp-scu.c                     |    2 
+ arch/arm/mach-shmobile/platsmp.c                         |    2 
+ arch/arm/mach-shmobile/pm-r8a7740.c                      |    4 
+ arch/arm/mach-shmobile/pm-r8a7779.c                      |   15 
+ arch/arm/mach-shmobile/pm-r8a7790.c                      |    2 
+ arch/arm/mach-shmobile/pm-rcar.c                         |    2 
+ arch/arm/mach-shmobile/pm-rcar.h                         |   15 
+ arch/arm/mach-shmobile/pm-rmobile.c                      |    2 
+ arch/arm/mach-shmobile/pm-rmobile.h                      |   63 +++
+ arch/arm/mach-shmobile/pm-sh7372.c                       |    4 
+ arch/arm/mach-shmobile/pm-sh73a0.c                       |    2 
+ arch/arm/mach-shmobile/rcar-gen2.h                       |    8 
+ arch/arm/mach-shmobile/setup-emev2.c                     |    2 
+ arch/arm/mach-shmobile/setup-r7s72100.c                  |    4 
+ arch/arm/mach-shmobile/setup-r8a73a4.c                   |    6 
+ arch/arm/mach-shmobile/setup-r8a7740.c                   |    8 
+ arch/arm/mach-shmobile/setup-r8a7778.c                   |    4 
+ arch/arm/mach-shmobile/setup-r8a7779.c                   |    4 
+ arch/arm/mach-shmobile/setup-r8a7790.c                   |    7 
+ arch/arm/mach-shmobile/setup-r8a7791.c                   |    6 
+ arch/arm/mach-shmobile/setup-rcar-gen2.c                 |    4 
+ arch/arm/mach-shmobile/setup-sh7372.c                    |    8 
+ arch/arm/mach-shmobile/setup-sh73a0.c                    |    7 
+ arch/arm/mach-shmobile/smp-emev2.c                       |    2 
+ arch/arm/mach-shmobile/smp-r8a7779.c                     |    4 
+ arch/arm/mach-shmobile/smp-r8a7790.c                     |    4 
+ arch/arm/mach-shmobile/smp-r8a7791.c                     |    4 
+ arch/arm/mach-shmobile/smp-sh73a0.c                      |    2 
+ 76 files changed, 723 insertions(+), 726 deletions(-)
