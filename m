@@ -1,29 +1,39 @@
-From: Joerg Roedel <joro@8bytes.org>
-Date: Mon, 16 Jun 2014 15:11:42 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 17 Jun 2014 23:20:37 +0000
 Subject: Re: [PATCH v2 02/10] iommu/ipmmu-vmsa: Cleanup failures of ARM mapping creation or attachment
-Message-Id: <20140616151142.GE18986@8bytes.org>
+Message-Id: <5430380.Ocpv7sA44O@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1400150451-13469-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1400150451-13469-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20140526092310.GA11299@8bytes.org> <9405311.lnqBdrCsyu@avalon>
-In-Reply-To: <9405311.lnqBdrCsyu@avalon>
+ <9405311.lnqBdrCsyu@avalon> <20140616151142.GE18986@8bytes.org>
+In-Reply-To: <20140616151142.GE18986@8bytes.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Laurent,
+Hi Joerg,
 
-On Mon, May 26, 2014 at 12:08:37PM +0200, Laurent Pinchart wrote:
-> > Skipped this one because it didn't apply. The others are applied.
+On Monday 16 June 2014 17:11:42 Joerg Roedel wrote:
+> On Mon, May 26, 2014 at 12:08:37PM +0200, Laurent Pinchart wrote:
+> > > Skipped this one because it didn't apply. The others are applied.
+> > 
+> > Thank you. I'll rebase the patch on top of your tree as soon as you
+> > publish the related branch and resubmit.
 > 
-> Thank you. I'll rebase the patch on top of your tree as soon as you publish 
-> the related branch and resubmit.
+> What happened to this patch?
 
-What happened to this patch? And how about the other iommu_domain
-changes requested. Will you submit them for 3.17?
+It looks like it slipped through the cracks :-/ Should I submit it as a fix 
+for v3.16 or wait until v3.17 ?
 
+> And how about the other iommu_domain changes requested. Will you submit them
+> for 3.17?
 
-	Joerg
+I plan to work on that, but I'm not sure whether I'll be able to finish the 
+work for v3.17, as I need to concentrate on a DMA engine driver right now, and 
+will then need to finish the DT bindings for the IPMMU driver (which may 
+result in fixes for some of the iommu_domain-related problems).
 
+-- 
+Regards,
 
+Laurent Pinchart
