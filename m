@@ -1,80 +1,59 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:28:16 +0000
-Subject: [PATCH 07/29] ARM: shmobile: r8a7790/lager dts: Add DVFS parameters into cpu0 node for r8a7790
-Message-Id: <b989e1386385466761f703b8a91e00468bb5ca2a.1403487225.git.horms+renesas@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Tue, 17 Jun 2014 15:14:59 +0000
+Subject: [PATCH 6/8] r8a66597-udc: use devm_clk_get() to get clock
+Message-Id: <1403018101-11062-7-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Benoit Cousson <bcousson@baylibre.com>
+Change to using the devm_clk_get() to get the clock and
+have it automatically freed on exit.
 
-Add needed information inside CPU0 for the generic cpufreq-cpu0 driver.
-
-- voltage-tolerance = 1%
-  It reflects the tolerance for the CPU voltage defined inside the OPP
-  table. Due to the lack of proper OPP definition, use an arbitrary safe
-  value.
-- clock-latency = 300 us
-  Approximate worst-case latency to do a full DVFS transition for every
-  OPPs. Due to the lack of HW information, use an arbitrary safe value.
-  Note: The term transition-latency will be more accurate to define this
-  value since the clock transition latency is not the only parameter that
-  will define the overall DVFS transition.
-- operating-points = < kHz - uV >
-  List of 6 operating points. All of them are using the same voltage
-  since the valid Vmin voltage is not documented in the HW spec.
-- clocks
-  phandle to the CPU clock source. This clock source is used for all the
-  4 CortexA15 located inside the same cluster.
-
-Signed-off-by: Benoit Cousson <bcousson+renesas@baylibre.com>
-[gaku.inami.xw@bp.renesas.com: Change the setting of OPPs for ES2.0]
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts |  4 ++++
- arch/arm/boot/dts/r8a7790.dtsi      | 11 +++++++++++
- 2 files changed, 15 insertions(+)
+ drivers/usb/gadget/r8a66597-udc.c | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 6472cf0..cc65e3f 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -338,3 +338,7 @@
- 		regulator-always-on;
- 	};
- };
-+
-+&cpu0 {
-+	cpu0-supply = <&vdd_dvfs>;
-+};
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index e2c7d6d..e990d3c 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -44,6 +44,17 @@
- 			compatible = "arm,cortex-a15";
- 			reg = <0>;
- 			clock-frequency = <1300000000>;
-+			voltage-tolerance = <1>; /* 1% */
-+			clocks = <&cpg_clocks R8A7790_CLK_Z>;
-+			clock-latency = <300000>; /* 300 us */
-+
-+			/* kHz - uV - OPPs unknown yet */
-+			operating-points = <1400000 1000000>,
-+					   <1225000 1000000>,
-+					   <1050000 1000000>,
-+					   < 875000 1000000>,
-+					   < 700000 1000000>,
-+					   < 350000 1000000>;
- 		};
+diff --git a/drivers/usb/gadget/r8a66597-udc.c b/drivers/usb/gadget/r8a66597-udc.c
+index 9ebe2c0..51eaedd 100644
+--- a/drivers/usb/gadget/r8a66597-udc.c
++++ b/drivers/usb/gadget/r8a66597-udc.c
+@@ -1831,7 +1831,6 @@ static int __exit r8a66597_remove(struct platform_device *pdev)
  
- 		cpu1: cpu@1 {
+ 	if (r8a66597->pdata->on_chip) {
+ 		clk_disable_unprepare(r8a66597->clk);
+-		clk_put(r8a66597->clk);
+ 	}
+ 
+ 	return 0;
+@@ -1903,11 +1902,10 @@ static int __init r8a66597_probe(struct platform_device *pdev)
+ 
+ 	if (r8a66597->pdata->on_chip) {
+ 		snprintf(clk_name, sizeof(clk_name), "usb%d", pdev->id);
+-		r8a66597->clk = clk_get(dev, clk_name);
++		r8a66597->clk = devm_clk_get(dev, clk_name);
+ 		if (IS_ERR(r8a66597->clk)) {
+ 			dev_err(dev, "cannot get clock \"%s\"\n", clk_name);
+-			ret = PTR_ERR(r8a66597->clk);
+-			goto clean_up;
++			return PTR_ERR(r8a66597->clk);
+ 		}
+ 		clk_prepare_enable(r8a66597->clk);
+ 	}
+@@ -1973,10 +1971,8 @@ err_add_udc:
+ clean_up3:
+ 	free_irq(irq, r8a66597);
+ clean_up2:
+-	if (r8a66597->pdata->on_chip) {
++	if (r8a66597->pdata->on_chip)
+ 		clk_disable_unprepare(r8a66597->clk);
+-		clk_put(r8a66597->clk);
+-	}
+ clean_up:
+ 	if (r8a66597->ep0_req)
+ 		r8a66597_free_request(&r8a66597->ep[0].ep, r8a66597->ep0_req);
 -- 
-2.0.0.rc2
+2.0.0
 
