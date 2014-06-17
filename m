@@ -1,197 +1,189 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 01 Jun 2014 03:39:29 +0000
-Subject: [PATCH 10/18] v4l: vsp1: sru: Make the intensity controllable during streaming
-Message-Id: <1401593977-30660-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 17 Jun 2014 07:47:53 +0000
+Subject: [PATCH v2 07/08] ARM: shmobile: Move pm-rcar.h, cleanup r8a7779 case
+Message-Id: <20140617074753.30008.57290.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20140617074658.30008.53021.sendpatchset@w520>
+In-Reply-To: <20140617074658.30008.53021.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The control value is currently stored in the SRU structure by the
-control set handler and written to the hardware at stream on time,
-making control set during streaming ineffective. Fix it by writing to
-the registers from within the control set handler.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Change location of pm-rcar.h so it can be used as #include "pm-rcar.h"
+instead of the old style #include <mach/pm-rcar.h>. Also clean up
+the r8a7779 case to move some unused header file cruft into a C
+file.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
 ---
- drivers/media/platform/vsp1/vsp1_regs.h |   2 +
- drivers/media/platform/vsp1/vsp1_sru.c  | 101 +++++++++++++++++++-------------
- drivers/media/platform/vsp1/vsp1_sru.h  |   1 -
- 3 files changed, 61 insertions(+), 43 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_regs.h b/drivers/media/platform/vsp1/vsp1_regs.h
-index 3e74b44..55f163d 100644
---- a/drivers/media/platform/vsp1/vsp1_regs.h
-+++ b/drivers/media/platform/vsp1/vsp1_regs.h
-@@ -336,7 +336,9 @@
-  */
+ Changes since V1:
+ - rebased to v3.16-rc1
+
+ arch/arm/mach-shmobile/include/mach/pm-rcar.h |   15 ---------------
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |   12 ------------
+ arch/arm/mach-shmobile/pm-r8a7779.c           |   13 ++++++++++++-
+ arch/arm/mach-shmobile/pm-r8a7790.c           |    2 +-
+ arch/arm/mach-shmobile/pm-rcar.c              |    2 +-
+ arch/arm/mach-shmobile/pm-rcar.h              |   15 +++++++++++++++
+ arch/arm/mach-shmobile/smp-r8a7779.c          |    2 +-
+ arch/arm/mach-shmobile/smp-r8a7790.c          |    2 +-
+ 8 files changed, 31 insertions(+), 32 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/include/mach/pm-rcar.h
++++ /dev/null	2013-06-03 21:41:10.638032047 +0900
+@@ -1,15 +0,0 @@
+-#ifndef PM_RCAR_H
+-#define PM_RCAR_H
+-
+-struct rcar_sysc_ch {
+-	unsigned long chan_offs;
+-	unsigned int chan_bit;
+-	unsigned int isr_bit;
+-};
+-
+-int rcar_sysc_power_down(struct rcar_sysc_ch *sysc_ch);
+-int rcar_sysc_power_up(struct rcar_sysc_ch *sysc_ch);
+-bool rcar_sysc_power_is_off(struct rcar_sysc_ch *sysc_ch);
+-void __iomem *rcar_sysc_init(phys_addr_t base);
+-
+-#endif /* PM_RCAR_H */
+--- 0001/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ work/arch/arm/mach-shmobile/include/mach/r8a7779.h	2014-06-17 16:13:54.000000000 +0900
+@@ -2,8 +2,6 @@
+ #define __ASM_R8A7779_H__
  
- #define VI6_SRU_CTRL0			0x2200
-+#define VI6_SRU_CTRL0_PARAM0_MASK	(0x1ff << 16)
- #define VI6_SRU_CTRL0_PARAM0_SHIFT	16
-+#define VI6_SRU_CTRL0_PARAM1_MASK	(0x1f << 8)
- #define VI6_SRU_CTRL0_PARAM1_SHIFT	8
- #define VI6_SRU_CTRL0_MODE_UPSCALE	(4 << 4)
- #define VI6_SRU_CTRL0_PARAM2		(1 << 3)
-diff --git a/drivers/media/platform/vsp1/vsp1_sru.c b/drivers/media/platform/vsp1/vsp1_sru.c
-index 18e127a..b7d3c8b 100644
---- a/drivers/media/platform/vsp1/vsp1_sru.c
-+++ b/drivers/media/platform/vsp1/vsp1_sru.c
-@@ -42,39 +42,6 @@ static inline void vsp1_sru_write(struct vsp1_sru *sru, u32 reg, u32 data)
+ #include <linux/sh_clk.h>
+-#include <linux/pm_domain.h>
+-#include <mach/pm-rcar.h>
  
- #define V4L2_CID_VSP1_SRU_INTENSITY		(V4L2_CID_USER_BASE + 1)
+ /* HPB-DMA slave IDs */
+ enum {
+@@ -12,16 +10,6 @@ enum {
+ 	HPBDMA_SLAVE_SDHI0_RX,
+ };
  
--static int sru_s_ctrl(struct v4l2_ctrl *ctrl)
+-struct r8a7779_pm_domain {
+-	struct generic_pm_domain genpd;
+-	struct rcar_sysc_ch ch;
+-};
+-
+-static inline struct rcar_sysc_ch *to_r8a7779_ch(struct generic_pm_domain *d)
 -{
--	struct vsp1_sru *sru -		container_of(ctrl->handler, struct vsp1_sru, ctrls);
--
--	switch (ctrl->id) {
--	case V4L2_CID_VSP1_SRU_INTENSITY:
--		sru->intensity = ctrl->val;
--		break;
--	}
--
--	return 0;
+-	return &container_of(d, struct r8a7779_pm_domain, genpd)->ch;
 -}
 -
--static const struct v4l2_ctrl_ops sru_ctrl_ops = {
--	.s_ctrl = sru_s_ctrl,
--};
--
--static const struct v4l2_ctrl_config sru_intensity_control = {
--	.ops = &sru_ctrl_ops,
--	.id = V4L2_CID_VSP1_SRU_INTENSITY,
--	.name = "Intensity",
--	.type = V4L2_CTRL_TYPE_INTEGER,
--	.min = 1,
--	.max = 6,
--	.def = 1,
--	.step = 1,
--};
--
--/* -----------------------------------------------------------------------------
-- * V4L2 Subdevice Core Operations
-- */
--
- struct vsp1_sru_param {
- 	u32 ctrl0;
- 	u32 ctrl2;
-@@ -111,22 +78,66 @@ static const struct vsp1_sru_param vsp1_sru_params[] = {
- 	},
- };
+ extern void r8a7779_init_delay(void);
+ extern void r8a7779_init_irq_extpin(int irlm);
+ extern void r8a7779_init_irq_extpin_dt(int irlm);
+--- 0006/arch/arm/mach-shmobile/pm-r8a7779.c
++++ work/arch/arm/mach-shmobile/pm-r8a7779.c	2014-06-17 16:10:26.000000000 +0900
+@@ -13,20 +13,31 @@
+ #include <linux/suspend.h>
+ #include <linux/err.h>
+ #include <linux/pm_clock.h>
++#include <linux/pm_domain.h>
+ #include <linux/platform_device.h>
+ #include <linux/delay.h>
+ #include <linux/irq.h>
+ #include <linux/interrupt.h>
+ #include <linux/console.h>
+ #include <asm/io.h>
+-#include <mach/pm-rcar.h>
+ #include <mach/r8a7779.h>
+ #include "common.h"
++#include "pm-rcar.h"
  
-+static int sru_s_ctrl(struct v4l2_ctrl *ctrl)
+ /* SYSC */
+ #define SYSCIER 0x0c
+ #define SYSCIMR 0x10
+ 
++struct r8a7779_pm_domain {
++	struct generic_pm_domain genpd;
++	struct rcar_sysc_ch ch;
++};
++
++static inline struct rcar_sysc_ch *to_r8a7779_ch(struct generic_pm_domain *d)
 +{
-+	struct vsp1_sru *sru +		container_of(ctrl->handler, struct vsp1_sru, ctrls);
-+	const struct vsp1_sru_param *param;
-+	u32 value;
-+
-+	switch (ctrl->id) {
-+	case V4L2_CID_VSP1_SRU_INTENSITY:
-+		param = &vsp1_sru_params[ctrl->val - 1];
-+
-+		value = vsp1_sru_read(sru, VI6_SRU_CTRL0);
-+		value &= ~(VI6_SRU_CTRL0_PARAM0_MASK |
-+			   VI6_SRU_CTRL0_PARAM1_MASK);
-+		value |= param->ctrl0;
-+		vsp1_sru_write(sru, VI6_SRU_CTRL0, value);
-+
-+		vsp1_sru_write(sru, VI6_SRU_CTRL2, param->ctrl2);
-+		break;
-+	}
-+
-+	return 0;
++	return &container_of(d, struct r8a7779_pm_domain, genpd)->ch;
 +}
 +
-+static const struct v4l2_ctrl_ops sru_ctrl_ops = {
-+	.s_ctrl = sru_s_ctrl,
+ #if defined(CONFIG_PM) || defined(CONFIG_SMP)
+ 
+ static void __init r8a7779_sysc_init(void)
+--- 0001/arch/arm/mach-shmobile/pm-r8a7790.c
++++ work/arch/arm/mach-shmobile/pm-r8a7790.c	2014-06-17 16:10:26.000000000 +0900
+@@ -12,8 +12,8 @@
+ 
+ #include <linux/kernel.h>
+ #include <asm/io.h>
+-#include <mach/pm-rcar.h>
+ #include <mach/r8a7790.h>
++#include "pm-rcar.h"
+ 
+ /* SYSC */
+ #define SYSCIER 0x0c
+--- 0001/arch/arm/mach-shmobile/pm-rcar.c
++++ work/arch/arm/mach-shmobile/pm-rcar.c	2014-06-17 16:10:26.000000000 +0900
+@@ -13,7 +13,7 @@
+ #include <linux/mm.h>
+ #include <linux/spinlock.h>
+ #include <asm/io.h>
+-#include <mach/pm-rcar.h>
++#include "pm-rcar.h"
+ 
+ /* SYSC */
+ #define SYSCSR 0x00
+--- /dev/null
++++ work/arch/arm/mach-shmobile/pm-rcar.h	2014-06-17 16:10:26.000000000 +0900
+@@ -0,0 +1,15 @@
++#ifndef PM_RCAR_H
++#define PM_RCAR_H
++
++struct rcar_sysc_ch {
++	unsigned long chan_offs;
++	unsigned int chan_bit;
++	unsigned int isr_bit;
 +};
 +
-+static const struct v4l2_ctrl_config sru_intensity_control = {
-+	.ops = &sru_ctrl_ops,
-+	.id = V4L2_CID_VSP1_SRU_INTENSITY,
-+	.name = "Intensity",
-+	.type = V4L2_CTRL_TYPE_INTEGER,
-+	.min = 1,
-+	.max = 6,
-+	.def = 1,
-+	.step = 1,
-+};
++int rcar_sysc_power_down(struct rcar_sysc_ch *sysc_ch);
++int rcar_sysc_power_up(struct rcar_sysc_ch *sysc_ch);
++bool rcar_sysc_power_is_off(struct rcar_sysc_ch *sysc_ch);
++void __iomem *rcar_sysc_init(phys_addr_t base);
 +
-+/* -----------------------------------------------------------------------------
-+ * V4L2 Subdevice Core Operations
-+ */
-+
- static int sru_s_stream(struct v4l2_subdev *subdev, int enable)
- {
- 	struct vsp1_sru *sru = to_sru(subdev);
--	const struct vsp1_sru_param *param;
- 	struct v4l2_mbus_framefmt *input;
- 	struct v4l2_mbus_framefmt *output;
--	bool upscale;
- 	u32 ctrl0;
-+	int ret;
-+
-+	ret = vsp1_entity_set_streaming(&sru->entity, enable);
-+	if (ret < 0)
-+		return ret;
++#endif /* PM_RCAR_H */
+--- 0006/arch/arm/mach-shmobile/smp-r8a7779.c
++++ work/arch/arm/mach-shmobile/smp-r8a7779.c	2014-06-17 16:10:26.000000000 +0900
+@@ -23,13 +23,13 @@
+ #include <linux/spinlock.h>
+ #include <linux/io.h>
+ #include <linux/delay.h>
+-#include <mach/pm-rcar.h>
+ #include <mach/r8a7779.h>
+ #include <asm/cacheflush.h>
+ #include <asm/smp_plat.h>
+ #include <asm/smp_scu.h>
+ #include <asm/smp_twd.h>
+ #include "common.h"
++#include "pm-rcar.h"
  
- 	if (!enable)
- 		return 0;
+ #define AVECR IOMEM(0xfe700040)
+ #define R8A7779_SCU_BASE 0xf0000000
+--- 0006/arch/arm/mach-shmobile/smp-r8a7790.c
++++ work/arch/arm/mach-shmobile/smp-r8a7790.c	2014-06-17 16:10:26.000000000 +0900
+@@ -18,9 +18,9 @@
+ #include <linux/smp.h>
+ #include <linux/io.h>
+ #include <asm/smp_plat.h>
+-#include <mach/pm-rcar.h>
+ #include <mach/r8a7790.h>
+ #include "common.h"
++#include "pm-rcar.h"
  
- 	input = &sru->entity.formats[SRU_PAD_SINK];
- 	output = &sru->entity.formats[SRU_PAD_SOURCE];
--	upscale = input->width != output->width;
--	param = &vsp1_sru_params[sru->intensity];
- 
- 	if (input->code = V4L2_MBUS_FMT_ARGB8888_1X32)
- 		ctrl0 = VI6_SRU_CTRL0_PARAM2 | VI6_SRU_CTRL0_PARAM3
-@@ -134,10 +145,18 @@ static int sru_s_stream(struct v4l2_subdev *subdev, int enable)
- 	else
- 		ctrl0 = VI6_SRU_CTRL0_PARAM3;
- 
--	vsp1_sru_write(sru, VI6_SRU_CTRL0, param->ctrl0 | ctrl0 |
--		       (upscale ? VI6_SRU_CTRL0_MODE_UPSCALE : 0));
-+	if (input->width != output->width)
-+		ctrl0 |= VI6_SRU_CTRL0_MODE_UPSCALE;
-+
-+	/* Take the control handler lock to ensure that the CTRL0 value won't be
-+	 * changed behind our back by a set control operation.
-+	 */
-+	mutex_lock(sru->ctrls.lock);
-+	ctrl0 |= vsp1_sru_read(sru, VI6_SRU_CTRL0)
-+	       & (VI6_SRU_CTRL0_PARAM0_MASK | VI6_SRU_CTRL0_PARAM1_MASK);
-+	mutex_unlock(sru->ctrls.lock);
-+
- 	vsp1_sru_write(sru, VI6_SRU_CTRL1, VI6_SRU_CTRL1_PARAM5);
--	vsp1_sru_write(sru, VI6_SRU_CTRL2, param->ctrl2);
- 
- 	return 0;
- }
-@@ -359,7 +378,5 @@ struct vsp1_sru *vsp1_sru_create(struct vsp1_device *vsp1)
- 		return ERR_PTR(ret);
- 	}
- 
--	v4l2_ctrl_handler_setup(&sru->ctrls);
--
- 	return sru;
- }
-diff --git a/drivers/media/platform/vsp1/vsp1_sru.h b/drivers/media/platform/vsp1/vsp1_sru.h
-index 381870b..b6768bf 100644
---- a/drivers/media/platform/vsp1/vsp1_sru.h
-+++ b/drivers/media/platform/vsp1/vsp1_sru.h
-@@ -28,7 +28,6 @@ struct vsp1_sru {
- 	struct vsp1_entity entity;
- 
- 	struct v4l2_ctrl_handler ctrls;
--	unsigned int intensity;
- };
- 
- static inline struct vsp1_sru *to_sru(struct v4l2_subdev *subdev)
--- 
-1.8.5.5
-
+ #define RST		0xe6160000
+ #define CA15BAR		0x0020
