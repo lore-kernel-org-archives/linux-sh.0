@@ -1,163 +1,290 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 14 Jun 2014 16:23:41 +0000
-Subject: [PATCH v3 19/19] ARM: shmobile: genmai-reference: Enable MTU2 in device tree
-Message-Id: <1402763021-4067-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 17 Jun 2014 07:47:13 +0000
+Subject: [PATCH v2 02/08] ARM: shmobile: Move dma-register.h
+Message-Id: <20140617074713.30008.70741.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20140617074658.30008.53021.sendpatchset@w520>
+In-Reply-To: <20140617074658.30008.53021.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-No more device needs to be added from platform code when booting the
-reference platform, move MTU2 registration from setup-r7s72100.c to
-board-genmai.c and remove the now empty r7s72100_add_dt_devices()
-function.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-As the genmai_add_standard_devices() function is now identical to the
-default init_machine implementation, remove it as well.
+Change location of dma-register.h so it can be used as #include
+"dma-register.h" instead of the old style #include <mach/dma-register.h>.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
 ---
- arch/arm/boot/dts/r7s72100-genmai.dts           |  4 ++++
- arch/arm/mach-shmobile/board-genmai-reference.c | 16 ----------------
- arch/arm/mach-shmobile/board-genmai.c           | 14 +++++++++++++-
- arch/arm/mach-shmobile/include/mach/r7s72100.h  |  1 -
- arch/arm/mach-shmobile/setup-r7s72100.c         | 21 ---------------------
- 5 files changed, 17 insertions(+), 39 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r7s72100-genmai.dts b/arch/arm/boot/dts/r7s72100-genmai.dts
-index 56849b5..a352734 100644
---- a/arch/arm/boot/dts/r7s72100-genmai.dts
-+++ b/arch/arm/boot/dts/r7s72100-genmai.dts
-@@ -43,6 +43,10 @@
- 	clock-frequency = <48000000>;
- };
- 
-+&mtu2 {
-+	status = "ok";
+ Changes since V1:
+ - rebased to v3.16-rc1
+
+ arch/arm/mach-shmobile/dma-register.h              |   84 ++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/dma-register.h |   84 --------------------
+ arch/arm/mach-shmobile/setup-r8a73a4.c             |    2 
+ arch/arm/mach-shmobile/setup-r8a7740.c             |    2 
+ arch/arm/mach-shmobile/setup-r8a7790.c             |    2 
+ arch/arm/mach-shmobile/setup-sh7372.c              |    2 
+ arch/arm/mach-shmobile/setup-sh73a0.c              |    2 
+ 7 files changed, 89 insertions(+), 89 deletions(-)
+
+--- /dev/null
++++ work/arch/arm/mach-shmobile/dma-register.h	2014-06-17 16:00:26.000000000 +0900
+@@ -0,0 +1,84 @@
++/*
++ * SH-ARM CPU-specific DMA definitions, used by both DMA drivers
++ *
++ * Copyright (C) 2012 Renesas Solutions Corp
++ *
++ * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ *
++ * Based on arch/sh/include/cpu-sh4/cpu/dma-register.h
++ * Copyright (C) 2010 Guennadi Liakhovetski <g.liakhovetski@gmx.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#ifndef DMA_REGISTER_H
++#define DMA_REGISTER_H
++
++/*
++ *		Direct Memory Access Controller
++ */
++
++/* Transmit sizes and respective CHCR register values */
++enum {
++	XMIT_SZ_8BIT		= 0,
++	XMIT_SZ_16BIT		= 1,
++	XMIT_SZ_32BIT		= 2,
++	XMIT_SZ_64BIT		= 7,
++	XMIT_SZ_128BIT		= 3,
++	XMIT_SZ_256BIT		= 4,
++	XMIT_SZ_512BIT		= 5,
 +};
 +
- &i2c2 {
- 	status = "okay";
- 	clock-frequency = <400000>;
-diff --git a/arch/arm/mach-shmobile/board-genmai-reference.c b/arch/arm/mach-shmobile/board-genmai-reference.c
-index 627539e..a80df03 100644
---- a/arch/arm/mach-shmobile/board-genmai-reference.c
-+++ b/arch/arm/mach-shmobile/board-genmai-reference.c
-@@ -26,21 +26,6 @@
++/* log2(size / 8) - used to calculate number of transfers */
++static const unsigned int dma_ts_shift[] = {
++	[XMIT_SZ_8BIT]		= 0,
++	[XMIT_SZ_16BIT]		= 1,
++	[XMIT_SZ_32BIT]		= 2,
++	[XMIT_SZ_64BIT]		= 3,
++	[XMIT_SZ_128BIT]	= 4,
++	[XMIT_SZ_256BIT]	= 5,
++	[XMIT_SZ_512BIT]	= 6,
++};
++
++#define TS_LOW_BIT	0x3 /* --xx */
++#define TS_HI_BIT	0xc /* xx-- */
++
++#define TS_LOW_SHIFT	(3)
++#define TS_HI_SHIFT	(20 - 2)	/* 2 bits for shifted low TS */
++
++#define TS_INDEX2VAL(i) \
++	((((i) & TS_LOW_BIT) << TS_LOW_SHIFT) |\
++	 (((i) & TS_HI_BIT)  << TS_HI_SHIFT))
++
++#define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL((xmit_sz)))
++#define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL((xmit_sz)))
++
++
++/*
++ *		USB High-Speed DMAC
++ */
++/* Transmit sizes and respective CHCR register values */
++enum {
++	USBTS_XMIT_SZ_8BYTE		= 0,
++	USBTS_XMIT_SZ_16BYTE		= 1,
++	USBTS_XMIT_SZ_32BYTE		= 2,
++};
++
++/* log2(size / 8) - used to calculate number of transfers */
++static const unsigned int dma_usbts_shift[] = {
++	[USBTS_XMIT_SZ_8BYTE]	= 3,
++	[USBTS_XMIT_SZ_16BYTE]	= 4,
++	[USBTS_XMIT_SZ_32BYTE]	= 5,
++};
++
++#define USBTS_LOW_BIT	0x3 /* --xx */
++#define USBTS_HI_BIT	0x0 /* ---- */
++
++#define USBTS_LOW_SHIFT	6
++#define USBTS_HI_SHIFT	0
++
++#define USBTS_INDEX2VAL(i) (((i) & 3) << 6)
++
++#endif /* DMA_REGISTER_H */
+--- 0001/arch/arm/mach-shmobile/include/mach/dma-register.h
++++ /dev/null	2013-06-03 21:41:10.638032047 +0900
+@@ -1,84 +0,0 @@
+-/*
+- * SH-ARM CPU-specific DMA definitions, used by both DMA drivers
+- *
+- * Copyright (C) 2012 Renesas Solutions Corp
+- *
+- * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+- *
+- * Based on arch/sh/include/cpu-sh4/cpu/dma-register.h
+- * Copyright (C) 2010 Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+- */
+-
+-#ifndef DMA_REGISTER_H
+-#define DMA_REGISTER_H
+-
+-/*
+- *		Direct Memory Access Controller
+- */
+-
+-/* Transmit sizes and respective CHCR register values */
+-enum {
+-	XMIT_SZ_8BIT		= 0,
+-	XMIT_SZ_16BIT		= 1,
+-	XMIT_SZ_32BIT		= 2,
+-	XMIT_SZ_64BIT		= 7,
+-	XMIT_SZ_128BIT		= 3,
+-	XMIT_SZ_256BIT		= 4,
+-	XMIT_SZ_512BIT		= 5,
+-};
+-
+-/* log2(size / 8) - used to calculate number of transfers */
+-static const unsigned int dma_ts_shift[] = {
+-	[XMIT_SZ_8BIT]		= 0,
+-	[XMIT_SZ_16BIT]		= 1,
+-	[XMIT_SZ_32BIT]		= 2,
+-	[XMIT_SZ_64BIT]		= 3,
+-	[XMIT_SZ_128BIT]	= 4,
+-	[XMIT_SZ_256BIT]	= 5,
+-	[XMIT_SZ_512BIT]	= 6,
+-};
+-
+-#define TS_LOW_BIT	0x3 /* --xx */
+-#define TS_HI_BIT	0xc /* xx-- */
+-
+-#define TS_LOW_SHIFT	(3)
+-#define TS_HI_SHIFT	(20 - 2)	/* 2 bits for shifted low TS */
+-
+-#define TS_INDEX2VAL(i) \
+-	((((i) & TS_LOW_BIT) << TS_LOW_SHIFT) |\
+-	 (((i) & TS_HI_BIT)  << TS_HI_SHIFT))
+-
+-#define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL((xmit_sz)))
+-#define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL((xmit_sz)))
+-
+-
+-/*
+- *		USB High-Speed DMAC
+- */
+-/* Transmit sizes and respective CHCR register values */
+-enum {
+-	USBTS_XMIT_SZ_8BYTE		= 0,
+-	USBTS_XMIT_SZ_16BYTE		= 1,
+-	USBTS_XMIT_SZ_32BYTE		= 2,
+-};
+-
+-/* log2(size / 8) - used to calculate number of transfers */
+-static const unsigned int dma_usbts_shift[] = {
+-	[USBTS_XMIT_SZ_8BYTE]	= 3,
+-	[USBTS_XMIT_SZ_16BYTE]	= 4,
+-	[USBTS_XMIT_SZ_32BYTE]	= 5,
+-};
+-
+-#define USBTS_LOW_BIT	0x3 /* --xx */
+-#define USBTS_HI_BIT	0x0 /* ---- */
+-
+-#define USBTS_LOW_SHIFT	6
+-#define USBTS_HI_SHIFT	0
+-
+-#define USBTS_INDEX2VAL(i) (((i) & 3) << 6)
+-
+-#endif /* DMA_REGISTER_H */
+--- 0001/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ work/arch/arm/mach-shmobile/setup-r8a73a4.c	2014-06-17 16:00:25.000000000 +0900
+@@ -25,10 +25,10 @@
+ #include <linux/sh_dma.h>
+ #include <linux/sh_timer.h>
+ #include <mach/common.h>
+-#include <mach/dma-register.h>
+ #include <mach/irqs.h>
+ #include <mach/r8a73a4.h>
+ #include <asm/mach/arch.h>
++#include "dma-register.h"
+ 
+ static const struct resource pfc_resources[] = {
+ 	DEFINE_RES_MEM(0xe6050000, 0x9000),
+--- 0001/arch/arm/mach-shmobile/setup-r8a7740.c
++++ work/arch/arm/mach-shmobile/setup-r8a7740.c	2014-06-17 16:00:25.000000000 +0900
+@@ -31,7 +31,6 @@
+ #include <linux/sh_dma.h>
+ #include <linux/sh_timer.h>
+ #include <linux/platform_data/sh_ipmmu.h>
+-#include <mach/dma-register.h>
+ #include <mach/r8a7740.h>
+ #include <mach/pm-rmobile.h>
+ #include <mach/common.h>
+@@ -40,6 +39,7 @@
+ #include <asm/mach/map.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/time.h>
++#include "dma-register.h"
+ 
+ static struct map_desc r8a7740_io_desc[] __initdata = {
+ 	 /*
+--- 0001/arch/arm/mach-shmobile/setup-r8a7790.c
++++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2014-06-17 16:00:25.000000000 +0900
+@@ -27,10 +27,10 @@
+ #include <linux/sh_dma.h>
+ #include <linux/sh_timer.h>
+ #include <mach/common.h>
+-#include <mach/dma-register.h>
+ #include <mach/irqs.h>
+ #include <mach/r8a7790.h>
+ #include <asm/mach/arch.h>
++#include "dma-register.h"
+ 
+ /* Audio-DMAC */
+ #define AUDIO_DMAC_SLAVE(_id, _addr, t, r)			\
+--- 0002/arch/arm/mach-shmobile/setup-sh7372.c
++++ work/arch/arm/mach-shmobile/setup-sh7372.c	2014-06-17 16:00:25.000000000 +0900
+@@ -33,7 +33,6 @@
+ #include <linux/pm_domain.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/platform_data/sh_ipmmu.h>
+-#include <mach/dma-register.h>
+ #include <mach/irqs.h>
+ #include <mach/sh7372.h>
+ #include <mach/common.h>
+@@ -41,6 +40,7 @@
  #include <asm/mach-types.h>
  #include <asm/mach/arch.h>
+ #include <asm/mach/time.h>
++#include "dma-register.h"
  
--/*
-- * This is a really crude hack to provide clkdev support to platform
-- * devices until they get moved to DT.
-- */
--static const struct clk_name clk_names[] = {
--	{ "mtu2", "fck", "sh-mtu2" },
--};
--
--static void __init genmai_add_standard_devices(void)
--{
--	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), true);
--	r7s72100_add_dt_devices();
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
--}
--
- static const char * const genmai_boards_compat_dt[] __initconst = {
- 	"renesas,genmai",
- 	NULL,
-@@ -48,6 +33,5 @@ static const char * const genmai_boards_compat_dt[] __initconst = {
- 
- DT_MACHINE_START(GENMAI_DT, "genmai")
- 	.init_early	= shmobile_init_delay,
--	.init_machine	= genmai_add_standard_devices,
- 	.dt_compat	= genmai_boards_compat_dt,
- MACHINE_END
-diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
-index 11f3cd1..bd0785f 100644
---- a/arch/arm/mach-shmobile/board-genmai.c
-+++ b/arch/arm/mach-shmobile/board-genmai.c
-@@ -23,6 +23,7 @@
- #include <linux/platform_device.h>
- #include <linux/serial_sci.h>
- #include <linux/sh_eth.h>
-+#include <linux/sh_timer.h>
- #include <linux/spi/rspi.h>
- #include <linux/spi/spi.h>
+ static struct map_desc sh7372_io_desc[] __initdata = {
+ 	/* create a 1:1 entity map for 0xe6xxxxxx
+--- 0002/arch/arm/mach-shmobile/setup-sh73a0.c
++++ work/arch/arm/mach-shmobile/setup-sh73a0.c	2014-06-17 16:00:25.000000000 +0900
+@@ -32,7 +32,6 @@
+ #include <linux/sh_timer.h>
+ #include <linux/platform_data/sh_ipmmu.h>
+ #include <linux/platform_data/irq-renesas-intc-irqpin.h>
+-#include <mach/dma-register.h>
+ #include <mach/irqs.h>
+ #include <mach/sh73a0.h>
  #include <mach/common.h>
-@@ -124,10 +125,21 @@ R7S72100_SCIF(7, 0xe800a800, gic_iid(249));
- 					  &scif##index##_platform_data,	       \
- 					  sizeof(scif##index##_platform_data))
- 
-+static struct resource mtu2_resources[] __initdata = {
-+	DEFINE_RES_MEM(0xfcff0000, 0x400),
-+	DEFINE_RES_IRQ_NAMED(gic_iid(139), "tgi0a"),
-+};
-+
-+#define r7s72100_register_mtu2()					\
-+	platform_device_register_resndata(&platform_bus, "sh-mtu2",	\
-+					  -1, mtu2_resources,		\
-+					  ARRAY_SIZE(mtu2_resources),	\
-+					  NULL, 0)
-+
- static void __init genmai_add_standard_devices(void)
- {
- 	r7s72100_clock_init();
--	r7s72100_add_dt_devices();
-+	r7s72100_register_mtu2();
- 
- 	platform_device_register_full(&ether_info);
- 
-diff --git a/arch/arm/mach-shmobile/include/mach/r7s72100.h b/arch/arm/mach-shmobile/include/mach/r7s72100.h
-index efb723c..321ae4e 100644
---- a/arch/arm/mach-shmobile/include/mach/r7s72100.h
-+++ b/arch/arm/mach-shmobile/include/mach/r7s72100.h
-@@ -1,7 +1,6 @@
- #ifndef __ASM_R7S72100_H__
- #define __ASM_R7S72100_H__
- 
--void r7s72100_add_dt_devices(void);
- void r7s72100_clock_init(void);
- 
- #endif /* __ASM_R7S72100_H__ */
-diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
-index 427ae1c..a55c13b 100644
---- a/arch/arm/mach-shmobile/setup-r7s72100.c
-+++ b/arch/arm/mach-shmobile/setup-r7s72100.c
-@@ -18,31 +18,10 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
--#include <linux/irq.h>
--#include <linux/kernel.h>
- #include <linux/of_platform.h>
--#include <linux/sh_timer.h>
- #include <mach/common.h>
--#include <mach/irqs.h>
--#include <mach/r7s72100.h>
+@@ -40,6 +39,7 @@
+ #include <asm/mach/map.h>
  #include <asm/mach/arch.h>
+ #include <asm/mach/time.h>
++#include "dma-register.h"
  
--static struct resource mtu2_resources[] __initdata = {
--	DEFINE_RES_MEM(0xfcff0000, 0x400),
--	DEFINE_RES_IRQ_NAMED(gic_iid(139), "tgi0a"),
--};
--
--#define r7s72100_register_mtu2()					\
--	platform_device_register_resndata(&platform_bus, "sh-mtu2",	\
--					  -1, mtu2_resources,		\
--					  ARRAY_SIZE(mtu2_resources),	\
--					  NULL, 0)
--
--void __init r7s72100_add_dt_devices(void)
--{
--	r7s72100_register_mtu2();
--}
--
- #ifdef CONFIG_USE_OF
- static const char *r7s72100_boards_compat_dt[] __initdata = {
- 	"renesas,r7s72100",
--- 
-1.8.5.5
-
+ static struct map_desc sh73a0_io_desc[] __initdata = {
+ 	/* create a 1:1 entity map for 0xe6xxxxxx
