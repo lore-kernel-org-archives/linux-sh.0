@@ -1,88 +1,53 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 20 Jun 2014 16:53:04 +0000
-Subject: [PATCH 4/9] ARM: shmobile: Move r8a7778.h
-Message-Id: <1403283189-21688-5-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 18 Jun 2014 09:14:47 +0000
+Subject: [PROTOTYPE 06/10] ARM: shmobile: lager: Sound DMA support on DTS
+Message-Id: <871tumy3xz.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1403283189-21688-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1403283189-21688-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Change location of r8a7778.h so it can be included as "r8a7778.h"
-instead of the old style <mach/r8a7778.h>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+DMA transfer to/from SSI
+
+      DMA
+ [MEM] -> [SSI]
+
+      DMA
+ [MEM] <- [SSI]
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-bockw-reference.c      | 4 +++-
- arch/arm/mach-shmobile/board-bockw.c                | 4 +++-
- arch/arm/mach-shmobile/{include/mach => }/r8a7778.h | 0
- arch/arm/mach-shmobile/setup-r8a7778.c              | 4 +++-
- 4 files changed, 9 insertions(+), 3 deletions(-)
- rename arch/arm/mach-shmobile/{include/mach => }/r8a7778.h (100%)
+ arch/arm/boot/dts/r8a7790-lager.dts |   12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw-reference.c b/arch/arm/mach-shmobile/board-bockw-reference.c
-index 91ff3a27ccc7..ba840cd333b9 100644
---- a/arch/arm/mach-shmobile/board-bockw-reference.c
-+++ b/arch/arm/mach-shmobile/board-bockw-reference.c
-@@ -19,9 +19,11 @@
-  */
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 7d97ae7..c37f820 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -428,10 +428,18 @@
+ };
  
- #include <linux/of_platform.h>
--#include <mach/r8a7778.h>
-+
- #include <asm/mach/arch.h>
-+
- #include "common.h"
-+#include "r8a7778.h"
+ &ssi0 {
+-	pio-transfer;
++	no-busif;
+ };
  
- /*
-  *	see board-bock.c for checking detail of dip-switch
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index 8cb057f95c44..b4e4789017bc 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -34,13 +34,15 @@
- #include <linux/spi/spi.h>
- #include <linux/spi/flash.h>
- #include <linux/usb/renesas_usbhs.h>
+ &ssi1 {
+-	pio-transfer;
++	no-busif;
+ 	shared-pin;
+ };
 +
- #include <media/soc_camera.h>
--#include <mach/r8a7778.h>
- #include <asm/mach/arch.h>
- #include <sound/rcar_snd.h>
- #include <sound/simple_card.h>
++&audiodma0 {
++	status = "okay";
++};
 +
- #include "common.h"
- #include "irqs.h"
-+#include "r8a7778.h"
- 
- #define FPGA	0x18200000
- #define IRQ0MR	0x30
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/r8a7778.h
-similarity index 100%
-rename from arch/arm/mach-shmobile/include/mach/r8a7778.h
-rename to arch/arm/mach-shmobile/r8a7778.h
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index d9f4529d8e40..2ccc0128b469 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -37,11 +37,13 @@
- #include <linux/usb/ehci_pdriver.h>
- #include <linux/usb/ohci_pdriver.h>
- #include <linux/dma-mapping.h>
--#include <mach/r8a7778.h>
-+
- #include <asm/mach/arch.h>
- #include <asm/hardware/cache-l2x0.h>
-+
- #include "common.h"
- #include "irqs.h"
-+#include "r8a7778.h"
- 
- /* SCIF */
- #define R8A7778_SCIF(index, baseaddr, irq)			\
++&audiodma1 {
++	status = "okay";
++};
 -- 
-1.9.1
+1.7.9.5
 
