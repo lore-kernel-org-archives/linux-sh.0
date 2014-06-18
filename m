@@ -1,208 +1,99 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 01 Jun 2014 03:39:35 +0000
-Subject: [PATCH 16/18] v4l: vsp1: bru: Support premultiplied alpha at the BRU inputs
-Message-Id: <1401593977-30660-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 18 Jun 2014 09:11:09 +0000
+Subject: [PROTOTYPE 6/8] ARM: shmobile: r8a7790: add audio dmac node
+Message-Id: <87egymy441.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Adjust the BRU blending formula to avoid the multiplication by alpha
-when the corresponding input format is premultiplied. As this requires
-access to the RPFs connected to the BRU inputs from the BRU module,
-store pointers to the RPFs in the BRU structure when validating the
-pipeline.
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add initial audio dmac node and resources.
+
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 ---
- drivers/media/platform/vsp1/vsp1_bru.c   | 27 ++++++++++++-------
- drivers/media/platform/vsp1/vsp1_bru.h   |  6 ++++-
- drivers/media/platform/vsp1/vsp1_video.c | 45 +++++++++++++++++++-------------
- 3 files changed, 50 insertions(+), 28 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi |   66 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 66 insertions(+)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_bru.c b/drivers/media/platform/vsp1/vsp1_bru.c
-index f806954..d8d49fb 100644
---- a/drivers/media/platform/vsp1/vsp1_bru.c
-+++ b/drivers/media/platform/vsp1/vsp1_bru.c
-@@ -18,6 +18,7 @@
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index d681c84..df59707 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -179,6 +179,72 @@
+ 		};
+ 	};
  
- #include "vsp1.h"
- #include "vsp1_bru.h"
-+#include "vsp1_rwpf.h"
- 
- #define BRU_MIN_SIZE				4U
- #define BRU_MAX_SIZE				8190U
-@@ -40,11 +41,6 @@ static inline void vsp1_bru_write(struct vsp1_bru *bru, u32 reg, u32 data)
-  * V4L2 Subdevice Core Operations
-  */
- 
--static bool bru_is_input_enabled(struct vsp1_bru *bru, unsigned int input)
--{
--	return media_entity_remote_pad(&bru->entity.pads[input]) != NULL;
--}
--
- static int bru_s_stream(struct v4l2_subdev *subdev, int enable)
- {
- 	struct vsp1_bru *bru = to_bru(subdev);
-@@ -84,6 +80,7 @@ static int bru_s_stream(struct v4l2_subdev *subdev, int enable)
- 		       VI6_BRU_ROP_AROP(VI6_ROP_NOP));
- 
- 	for (i = 0; i < 4; ++i) {
-+		bool premultiplied = false;
- 		u32 ctrl = 0;
- 
- 		/* Configure all Blend/ROP units corresponding to an enabled BRU
-@@ -91,11 +88,15 @@ static int bru_s_stream(struct v4l2_subdev *subdev, int enable)
- 		 * disabled BRU inputs are used in ROP NOP mode to ignore the
- 		 * SRC input.
- 		 */
--		if (bru_is_input_enabled(bru, i))
-+		if (bru->inputs[i].rpf) {
- 			ctrl |= VI6_BRU_CTRL_RBC;
--		else
++	dma1: dma-mux@1 {
++		compatible = "renesas,shdma-mux";
++		#dma-cells = <2>;
++		dma-channels = <20>;
++		dma-requests = <256>;
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
 +
-+			premultiplied = bru->inputs[i].rpf->video.format.flags
-+				      & V4L2_PIX_FMT_FLAG_PREMUL_ALPHA;
-+		} else {
- 			ctrl |= VI6_BRU_CTRL_CROP(VI6_ROP_NOP)
- 			     |  VI6_BRU_CTRL_AROP(VI6_ROP_NOP);
-+		}
- 
- 		/* Select the virtual RPF as the Blend/ROP unit A DST input to
- 		 * serve as a background color.
-@@ -117,10 +118,18 @@ static int bru_s_stream(struct v4l2_subdev *subdev, int enable)
- 		 *
- 		 *	DSTc = DSTc * (1 - SRCa) + SRCc * SRCa
- 		 *	DSTa = DSTa * (1 - SRCa) + SRCa
-+		 *
-+		 * when the SRC input isn't premultiplied, and to
-+		 *
-+		 *	DSTc = DSTc * (1 - SRCa) + SRCc
-+		 *	DSTa = DSTa * (1 - SRCa) + SRCa
-+		 *
-+		 * otherwise.
- 		 */
- 		vsp1_bru_write(bru, VI6_BRU_BLD(i),
- 			       VI6_BRU_BLD_CCMDX_255_SRC_A |
--			       VI6_BRU_BLD_CCMDY_SRC_A |
-+			       (premultiplied ? VI6_BRU_BLD_CCMDY_COEFY :
-+						VI6_BRU_BLD_CCMDY_SRC_A) |
- 			       VI6_BRU_BLD_ACMDX_255_SRC_A |
- 			       VI6_BRU_BLD_ACMDY_COEFY |
- 			       (0xff << VI6_BRU_BLD_COEFY_SHIFT));
-@@ -192,7 +201,7 @@ static struct v4l2_rect *bru_get_compose(struct vsp1_bru *bru,
- 	case V4L2_SUBDEV_FORMAT_TRY:
- 		return v4l2_subdev_get_try_crop(fh, pad);
- 	case V4L2_SUBDEV_FORMAT_ACTIVE:
--		return &bru->compose[pad];
-+		return &bru->inputs[pad].compose;
- 	default:
- 		return NULL;
- 	}
-diff --git a/drivers/media/platform/vsp1/vsp1_bru.h b/drivers/media/platform/vsp1/vsp1_bru.h
-index 3706270..5b03479 100644
---- a/drivers/media/platform/vsp1/vsp1_bru.h
-+++ b/drivers/media/platform/vsp1/vsp1_bru.h
-@@ -19,6 +19,7 @@
- #include "vsp1_entity.h"
- 
- struct vsp1_device;
-+struct vsp1_rwpf;
- 
- #define BRU_PAD_SINK(n)				(n)
- #define BRU_PAD_SOURCE				4
-@@ -26,7 +27,10 @@ struct vsp1_device;
- struct vsp1_bru {
- 	struct vsp1_entity entity;
- 
--	struct v4l2_rect compose[4];
-+	struct {
-+		struct vsp1_rwpf *rpf;
-+		struct v4l2_rect compose;
-+	} inputs[4];
- };
- 
- static inline struct vsp1_bru *to_bru(struct v4l2_subdev *subdev)
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index cc22264..f08b63b 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -334,7 +334,10 @@ static int vsp1_pipeline_validate_branch(struct vsp1_rwpf *input,
- 		 */
- 		if (entity->type = VSP1_ENTITY_BRU) {
- 			struct vsp1_bru *bru = to_bru(&entity->subdev);
--			struct v4l2_rect *rect = &bru->compose[pad->index];
-+			struct v4l2_rect *rect +				&bru->inputs[pad->index].compose;
++		audiodma0: dma-contorller@ec700000 {
++			compatible = "renesas,shdma-r8a7790";
++			clocks = <&mstp5_clks R8A7790_CLK_AUDIO_DMAC0>;
++			dma-channels = <13>;
++			status = "disabled";
++			reg = <0 0xec700020 0 0xffc0>;
 +
-+			bru->inputs[pad->index].rpf = input;
- 
- 			input->location.left = rect->left;
- 			input->location.top = rect->top;
-@@ -373,6 +376,26 @@ static int vsp1_pipeline_validate_branch(struct vsp1_rwpf *input,
- 	return 0;
- }
- 
-+static void __vsp1_pipeline_cleanup(struct vsp1_pipeline *pipe)
-+{
-+	if (pipe->bru) {
-+		struct vsp1_bru *bru = to_bru(&pipe->bru->subdev);
-+		unsigned int i;
++			interrupts =	<0 346 IRQ_TYPE_LEVEL_HIGH>, /* error */
++					<0 320 IRQ_TYPE_LEVEL_HIGH>, /* ch0 */
++					<0 321 IRQ_TYPE_LEVEL_HIGH>,
++					<0 322 IRQ_TYPE_LEVEL_HIGH>,
++					<0 323 IRQ_TYPE_LEVEL_HIGH>,
++					<0 324 IRQ_TYPE_LEVEL_HIGH>,
++					<0 325 IRQ_TYPE_LEVEL_HIGH>,
++					<0 326 IRQ_TYPE_LEVEL_HIGH>,
++					<0 327 IRQ_TYPE_LEVEL_HIGH>,
++					<0 328 IRQ_TYPE_LEVEL_HIGH>,
++					<0 329 IRQ_TYPE_LEVEL_HIGH>,
++					<0 330 IRQ_TYPE_LEVEL_HIGH>,
++					<0 331 IRQ_TYPE_LEVEL_HIGH>,
++					<0 332 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "error",
++					"ch0", "ch1", "ch2", "ch3",
++					"ch4", "ch5", "ch6", "ch7",
++					"ch8", "ch9", "ch10", "ch11",
++					"ch12";
++		};
 +
-+		for (i = 0; i < ARRAY_SIZE(bru->inputs); ++i)
-+			bru->inputs[i].rpf = NULL;
-+	}
++		audiodma1: dma-controller@ec720000 {
++			compatible = "renesas,shdma-r8a7790";
++			clocks = <&mstp5_clks R8A7790_CLK_AUDIO_DMAC1>;
++			dma-channels = <13>;
++			status = "disabled";
++			reg = <0 0xec720020 0 0xffc0>;
 +
-+	INIT_LIST_HEAD(&pipe->entities);
-+	pipe->state = VSP1_PIPELINE_STOPPED;
-+	pipe->buffers_ready = 0;
-+	pipe->num_video = 0;
-+	pipe->num_inputs = 0;
-+	pipe->output = NULL;
-+	pipe->bru = NULL;
-+	pipe->lif = NULL;
-+}
++			interrupts =	<0 347 IRQ_TYPE_LEVEL_HIGH>, /* error */
++					<0 333 IRQ_TYPE_LEVEL_HIGH>, /* ch0 */
++					<0 334 IRQ_TYPE_LEVEL_HIGH>,
++					<0 335 IRQ_TYPE_LEVEL_HIGH>,
++					<0 336 IRQ_TYPE_LEVEL_HIGH>,
++					<0 337 IRQ_TYPE_LEVEL_HIGH>,
++					<0 338 IRQ_TYPE_LEVEL_HIGH>,
++					<0 339 IRQ_TYPE_LEVEL_HIGH>,
++					<0 340 IRQ_TYPE_LEVEL_HIGH>,
++					<0 341 IRQ_TYPE_LEVEL_HIGH>,
++					<0 342 IRQ_TYPE_LEVEL_HIGH>,
++					<0 343 IRQ_TYPE_LEVEL_HIGH>,
++					<0 344 IRQ_TYPE_LEVEL_HIGH>,
++					<0 345 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "error",
++					"ch0", "ch1", "ch2", "ch3",
++					"ch4", "ch5", "ch6", "ch7",
++					"ch8", "ch9", "ch10", "ch11",
++					"ch12";
++		};
++	};
 +
- static int vsp1_pipeline_validate(struct vsp1_pipeline *pipe,
- 				  struct vsp1_video *video)
- {
-@@ -437,13 +460,7 @@ static int vsp1_pipeline_validate(struct vsp1_pipeline *pipe,
- 	return 0;
- 
- error:
--	INIT_LIST_HEAD(&pipe->entities);
--	pipe->buffers_ready = 0;
--	pipe->num_video = 0;
--	pipe->num_inputs = 0;
--	pipe->output = NULL;
--	pipe->bru = NULL;
--	pipe->lif = NULL;
-+	__vsp1_pipeline_cleanup(pipe);
- 	return ret;
- }
- 
-@@ -474,16 +491,8 @@ static void vsp1_pipeline_cleanup(struct vsp1_pipeline *pipe)
- 	mutex_lock(&pipe->lock);
- 
- 	/* If we're the last user clean up the pipeline. */
--	if (--pipe->use_count = 0) {
--		INIT_LIST_HEAD(&pipe->entities);
--		pipe->state = VSP1_PIPELINE_STOPPED;
--		pipe->buffers_ready = 0;
--		pipe->num_video = 0;
--		pipe->num_inputs = 0;
--		pipe->output = NULL;
--		pipe->bru = NULL;
--		pipe->lif = NULL;
--	}
-+	if (--pipe->use_count = 0)
-+		__vsp1_pipeline_cleanup(pipe);
- 
- 	mutex_unlock(&pipe->lock);
- }
+ 	gic: interrupt-controller@f1001000 {
+ 		compatible = "arm,cortex-a15-gic";
+ 		#interrupt-cells = <3>;
 -- 
-1.8.5.5
+1.7.9.5
 
