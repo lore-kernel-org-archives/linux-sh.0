@@ -1,46 +1,48 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 04 Jun 2014 01:06:47 +0000
-Subject: Re: [PATCH v2 2/2] arm: shmobile: r8a7790: add USB3.0 node to r8a7790.dtsi
-Message-Id: <20140604010646.GC25936@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 18 Jun 2014 09:13:49 +0000
+Subject: [PATCH 01/10] ARM: shmobile: r8a7790: add DVC support on DTSI
+Message-Id: <878uouy3zl.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <538D7124.60709@renesas.com>
-In-Reply-To: <538D7124.60709@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Jun 03, 2014 at 03:54:28PM +0900, Yoshihiro Shimoda wrote:
-> This node depends on a generic phy driver of usb.
-> 
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-I think it would be best if you resubmitted this patch once the
-driver has been accepted. Likewise for the r8a7791 variant of this patch.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi |    7 +++++++
+ 1 file changed, 7 insertions(+)
 
-> ---
->  arch/arm/boot/dts/r8a7790.dtsi |   10 ++++++++++
->  1 file changed, 10 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-> index e06c486..985c253 100644
-> --- a/arch/arm/boot/dts/r8a7790.dtsi
-> +++ b/arch/arm/boot/dts/r8a7790.dtsi
-> @@ -902,4 +902,14 @@
->  		#size-cells = <0>;
->  		status = "disabled";
->  	};
-> +
-> +	xhci: usb@ee000000 {
-> +		compatible = "renesas,xhci-r8a7790";
-> +		reg = <0 0xee000000 0 0xc00>;
-> +		interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp3_clks R8A7790_CLK_SSUSB>;
-> +		phys = <&usbphy 1 1>;
-> +		phy-names = "usb";
-> +		status = "disabled";
-> +	};
->  };
-> -- 
-> 1.7.9.5
-> 
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index df59707..493762d 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1114,16 +1114,23 @@
+ 			<&mstp10_clks R8A7790_CLK_SCU_SRC5>, <&mstp10_clks R8A7790_CLK_SCU_SRC4>,
+ 			<&mstp10_clks R8A7790_CLK_SCU_SRC3>, <&mstp10_clks R8A7790_CLK_SCU_SRC2>,
+ 			<&mstp10_clks R8A7790_CLK_SCU_SRC1>, <&mstp10_clks R8A7790_CLK_SCU_SRC0>,
++			<&mstp10_clks R8A7790_CLK_SCU_DVC0>, <&mstp10_clks R8A7790_CLK_SCU_DVC1>,
+ 			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
+ 		clock-names = "ssi-all",
+ 				"ssi.9", "ssi.8", "ssi.7", "ssi.6", "ssi.5",
+ 				"ssi.4", "ssi.3", "ssi.2", "ssi.1", "ssi.0",
+ 				"src.9", "src.8", "src.7", "src.6", "src.5",
+ 				"src.4", "src.3", "src.2", "src.1", "src.0",
++				"dvc.0", "dvc.1",
+ 				"clk_a", "clk_b", "clk_c", "clk_i";
+ 
+ 		status = "disabled";
+ 
++		rcar_sound,dvc {
++			dvc0: dvc@0 { };
++			dvc1: dvc@1 { };
++		};
++
+ 		rcar_sound,src {
+ 			src0: src@0 { };
+ 			src1: src@1 { };
+-- 
+1.7.9.5
+
