@@ -1,53 +1,90 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 30 Jun 2014 18:55:48 +0000
-Subject: Re: [PATCH resend 2/2] spi: sh-msiof: Add DMA support
-Message-Id: <20140630185548.GH23300@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="DdFXZVhPRLAAj7qC"
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 18 Jun 2014 09:02:45 +0000
+Subject: [PROTOTYPE 0/18]: ARM: shmobile: lager: sound support via DT
+Message-Id: <87oaxqy4i1.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404123024-12004-1-git-send-email-geert+renesas@glider.be>
- <1404123024-12004-3-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1404123024-12004-3-git-send-email-geert+renesas@glider.be>
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
 
---DdFXZVhPRLAAj7qC
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Hi all
 
-On Mon, Jun 30, 2014 at 12:10:24PM +0200, Geert Uytterhoeven wrote:
-> Add DMA support to the MSIOF driver using platform data.
->=20
-> As MSIOF DMA is limited to 32-bit words (requiring byte/wordswapping for
-> smaller wordsizes), and the group length is limited to 256 words, DMA is
-> performed on two fixed pages, allocated and mapped at driver initializati=
-on
-> time.
+These patches are still under PROTOTYPE,
+because DMA DT is still prototype.
+But, these are add sound DMA support via DT.
+Please test these patches. some comments are welcome.
 
-Applied, thanks.
+These patches are based on Ben's 1st DMA DT support
+patch-set. (I konw Ben sent v2 patches, but...)
 
---DdFXZVhPRLAAj7qC
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+>> Simon
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
+Almost all are PROTOTYPE, but, #1 #2 are not PROTOTYPE.
+Please consider these patches.
 
-iQIcBAEBAgAGBQJTsbKxAAoJELSic+t+oim9c+UP/A0SxYbSUHbjhdAfuvF1fi51
-Mn0QIavWHpF4OTnkS9R5ruf5ITATUjF6Zf+6u5MJxuCeziB+OuQdLBV7nghTeL9o
-2ZzTU/rO5Ouw0tJCZTYxz4ic0LRzzEsh69fyKKo7SWg/Ia2Ka3ZHA2d2ef72qiQi
-Oo16SGZRvYUl+FSHl1xHf2Vgp2V7qB2Wl/ykch5K+FFeuLm2N20xOFps/9p0qtNw
-5TZ4gG7v+hu00/Dl7Uv9rtTPAXJxJrFyHHyO/KMStM/w239gwbWzU79OiB/Ki6LF
-RTveHMkKR5tZsXZTSFBPLBLDPtPTRREYEEsCwmGyVTCgfRVRYC1fZcMBKCe5RscK
-314qY4wfBgAn4eeG2+VmVmQEGauY0tS9H+v9SvCag1yopswg8SiqjQ3UmvtOlqg/
-4aSEPXTNot0mPvGX7ytt2TspFu0ntVAslZrPjZDks5fCDn8m8dYnXEo3IxTReGjA
-X6Ns6otUGcDoDzq4EJSTU564vEj9P2ST0c0jF/tJuj4I5pTHZJSRLnqvuqHpUH2R
-YYdFAQfC5nqzG8bLuUZGa3KjYDUfrIjy4yJMORm9S6ecAmc8ElXgkjQz95kC+WuH
-bkBSedQb2tgRf8bcYe30jCiw/88z30xDCLFXpXWS2kVECAMrBOSLA9Cx2SNYq64C
-Qbf6RC/z3ii8OilVdQyU
-=ku8o
------END PGP SIGNATURE-----
+You can use these patches by...
 
---DdFXZVhPRLAAj7qC--
+  git checkout renesas-devel-v3.16-rc1-20140617
+  git merge asoc/fix/rcar
+       # asoc : git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git
+  git am ${ASOC-PATCHES}
+  git am ${AUDMAPP-PATCHES}
+  git am ${THESE-PATCHES}
+
+ASOC-PATCHES
+      ASoC: rsnd: fixup rsnd_gen_dma_addr() for Gen1
+      ASoC: rsnd: fixup loop exit timing of dma name search
+      ASoC: rsnd: SSI + DMA can select BUSIF
+      ASoC: fsi: use SNDRV_DMA_TYPE_DEV for sound buffer
+      ASoC: fsi: add fsi_pointer_update() for common pointer method
+      ASoC: fsi: use dmaengine_prep_dma_cyclic() for DMA transfer
+      ASoC: rsnd: use dmaengine_prep_dma_cyclic() instead of original method
+      ASoC: rsnd: enable DVC when capture
+      ASoC: rsnd: enable SRC setting via DT
+      ASoC: rsnd: DMA cleanup for flexible SSI/SRC selection
+      ASoC: rsnd: DMA start address is properly used for each DMAC
+      ASoC: rsnd: add DT support to DVC
+
+AUDMAPP-PATCHES
+      dma: rcar-audmapp: enable .set_slave
+      dma: audmapp: don't keep audmapp_slave_config for each channeles
+      dma: rcar-audmapp: add DT support
+
+THESE-PATCHES
+Ben Dooks (7):
+      DMA: shdma: initial of common code
+      DMA: shdma: wire r8a7790
+      ARM: shmobile: r8a7790: add dmac0,dmac1 clocks
+      ARM: shmobile: r8a7790: add dmac0 dmac1 nodes
+      ARM: shmobile: add Audio DMAC clocks on DTSI
+      ARM: shmobile: r8a7790: add audio dmac node
+      ARM: shmobile: r8a7790: add dma defines for sys and audio dmacs
+
+Kuninori Morimoto (11):
+      Ben's bug fix
+      ARM: shmobile: r8a7790: add DVC support on DTSI
+      ARM: shmobile: r8a7791: add DVC support on DTSI
+      ARM: shmobile: r8a7790: add Audio DMAC entry for sound on DTSI
+      ARM: shmobile: r8a7790: add Audio DMAC peri peri support on DTSI
+      ARM: shmobile: lager: Sound PIO support on DTS
+      ARM: shmobile: lager: Sound DMA support on DTS
+      ARM: shmobile: lager: Sound DMA support via BUSIF on DTS
+      ARM: shmobile: lager: Sound DMA support via SRC on DTS
+      ARM: shmobile: lager: Sound DMA support via DVC on DTS
+      ARM: shmobile: multiplatform: add Audo DMAC peri peri support on defconfig
+
+ Documentation/devicetree/bindings/dma/shdma.txt |   23 +-
+ arch/arm/boot/dts/r8a7790-lager.dts             |   73 ++++++
+ arch/arm/boot/dts/r8a7790.dtsi                  |  297 ++++++++++++++++++++++-
+ arch/arm/boot/dts/r8a7791.dtsi                  |    7 +
+ arch/arm/configs/shmobile_defconfig             |    1 +
+ arch/arm/mach-shmobile/Kconfig                  |    1 +
+ drivers/dma/sh/shdma-of.c                       |  175 ++++++++++++-
+ drivers/dma/sh/shdma.h                          |   29 +++
+ drivers/dma/sh/shdmac.c                         |   32 ++-
+ include/dt-bindings/clock/r8a7790-clock.h       |    2 +
+ include/dt-bindings/dma/r8a7790-dma.h           |  230 ++++++++++++++++++
+ include/dt-bindings/dma/shdma.h                 |   45 ++++
+ 12 files changed, 900 insertions(+), 15 deletions(-)
