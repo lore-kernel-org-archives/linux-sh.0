@@ -1,42 +1,122 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 09 Jun 2014 10:39:24 +0000
-Subject: [PATCH 2/2] net: sh_eth: Fix timing of RACT setting in sh_eth_rx()
-Message-Id: <53958EDC.1070307@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 18 Jun 2014 08:56:02 +0000
+Subject: [PATCH 05/12] ASoC: fsi: add fsi_pointer_update() for common pointer method
+Message-Id: <8761jyzjdp.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "netdev@vger.kernel.org" <netdev@vger.kernel.org>
-Cc: SH-Linux <linux-sh@vger.kernel.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+To: Mark Brown <broonie@kernel.org>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
 
-This patch fixes an issue that we cannot use nfs rootfs correctly
-on r8a7790 when the command below runs on a host PC.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
- $ sudo ping -f -l 8 $BOARD_IP_ADDR
+fsi PIO/DMA handler are using each own pointer update method,
+but these can be share.
 
-Since the driver sets the RACT to 1 in the first while loop of
-sh_eth_rx(), the controller accepts a next frame into the next RX
-descriptor during the while loop. But, in the first while loop
-doesn't allocate a next skb. So, this patch removes the RACT setting
-in the first while loop of sh_eth_rx().
-
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/net/ethernet/renesas/sh_eth.c |    1 -
- 1 file changed, 1 deletion(-)
+ sound/soc/sh/fsi.c |   57 ++++++++++++++++++++--------------------------------
+ 1 file changed, 22 insertions(+), 35 deletions(-)
 
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index ad0b5bd..2e1835f 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -1460,7 +1460,6 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
- 			ndev->stats.rx_packets++;
- 			ndev->stats.rx_bytes += pkt_len;
- 		}
--		rxdesc->status |= cpu_to_edmac(mdp, RD_RACT);
- 		entry = (++mdp->cur_rx) % mdp->num_rx_ring;
- 		rxdesc = &mdp->rx_ring[entry];
+diff --git a/sound/soc/sh/fsi.c b/sound/soc/sh/fsi.c
+index 7a6b632..820a408 100644
+--- a/sound/soc/sh/fsi.c
++++ b/sound/soc/sh/fsi.c
+@@ -1041,6 +1041,26 @@ static int fsi_clk_set_rate_cpg(struct device *dev,
+ 	return ret;
+ }
+ 
++static void fsi_pointer_update(struct fsi_stream *io, int size)
++{
++	io->buff_sample_pos += size;
++
++	if (io->buff_sample_pos >+	    io->period_samples * (io->period_pos + 1)) {
++		struct snd_pcm_substream *substream = io->substream;
++		struct snd_pcm_runtime *runtime = substream->runtime;
++
++		io->period_pos++;
++
++		if (io->period_pos >= runtime->periods) {
++			io->buff_sample_pos = 0;
++			io->period_pos = 0;
++		}
++
++		snd_pcm_period_elapsed(substream);
++	}
++}
++
+ /*
+  *		pio data transfer handler
+  */
+@@ -1107,31 +1127,11 @@ static int fsi_pio_transfer(struct fsi_priv *fsi, struct fsi_stream *io,
+ 		void (*run32)(struct fsi_priv *fsi, u8 *buf, int samples),
+ 		int samples)
+ {
+-	struct snd_pcm_runtime *runtime;
+-	struct snd_pcm_substream *substream;
+ 	u8 *buf;
+-	int over_period;
+ 
+ 	if (!fsi_stream_is_working(fsi, io))
+ 		return -EINVAL;
+ 
+-	over_period	= 0;
+-	substream	= io->substream;
+-	runtime		= substream->runtime;
+-
+-	/* FSI FIFO has limit.
+-	 * So, this driver can not send periods data at a time
+-	 */
+-	if (io->buff_sample_pos >-	    io->period_samples * (io->period_pos + 1)) {
+-
+-		over_period = 1;
+-		io->period_pos = (io->period_pos + 1) % runtime->periods;
+-
+-		if (0 = io->period_pos)
+-			io->buff_sample_pos = 0;
+-	}
+-
+ 	buf = fsi_pio_get_area(fsi, io);
+ 
+ 	switch (io->sample_width) {
+@@ -1145,11 +1145,7 @@ static int fsi_pio_transfer(struct fsi_priv *fsi, struct fsi_stream *io,
+ 		return -EINVAL;
  	}
+ 
+-	/* update buff_sample_pos */
+-	io->buff_sample_pos += samples;
+-
+-	if (over_period)
+-		snd_pcm_period_elapsed(substream);
++	fsi_pointer_update(io, samples);
+ 
+ 	return 0;
+ }
+@@ -1307,20 +1303,11 @@ static void fsi_dma_complete(void *data)
+ {
+ 	struct fsi_stream *io = (struct fsi_stream *)data;
+ 	struct fsi_priv *fsi = fsi_stream_to_priv(io);
+-	struct snd_pcm_runtime *runtime = io->substream->runtime;
+ 
+-	io->buff_sample_pos += io->period_samples;
+-	io->period_pos++;
+-
+-	if (io->period_pos >= runtime->periods) {
+-		io->period_pos = 0;
+-		io->buff_sample_pos = 0;
+-	}
++	fsi_pointer_update(io, io->period_samples);
+ 
+ 	fsi_count_fifo_err(fsi);
+ 	fsi_stream_transfer(io);
+-
+-	snd_pcm_period_elapsed(io->substream);
+ }
+ 
+ static void fsi_dma_do_work(struct work_struct *work)
 -- 
 1.7.9.5
 
