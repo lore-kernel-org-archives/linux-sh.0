@@ -1,54 +1,45 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:26:55 +0000
-Subject: [PATCH 8/9] ARM: shmobile: Use r8a7790 DT CPU Frequency for Lager
-Message-Id: <a5d626813fc13f80b6ab80de1fe303ce5cdd8c54.1403487831.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 18 Jun 2014 09:14:59 +0000
+Subject: [PROTOTYPE 07/10] ARM: shmobile: lager: Sound DMA support via BUSIF on DTS
+Message-Id: <87zjhawpd7.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487831.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487831.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Convert the Lager board support to use shmobile_init_delay()
-to be able to migrate away from per-SoC delay setup functions.
+DMA transfer to/from SSIU
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+     DMA
+[MEM] -> [SSIU] -> [SSI]
+
+     DMA
+[MEM] <- [SSIU] <- [SSI]
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-lager-reference.c | 2 +-
- arch/arm/mach-shmobile/board-lager.c           | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7790-lager.dts |    5 -----
+ 1 file changed, 5 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 4f0af91..e30017b 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -129,7 +129,7 @@ static const char *lager_boards_compat_dt[] __initdata = {
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index c37f820..8968060 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -427,12 +427,7 @@
+ 	};
+ };
  
- DT_MACHINE_START(LAGER_DT, "lager")
- 	.smp		= smp_ops(r8a7790_smp_ops),
--	.init_early	= r8a7790_init_early,
-+	.init_early	= shmobile_init_delay,
- 	.init_time	= rcar_gen2_timer_init,
- 	.init_machine	= lager_add_standard_devices,
- 	.init_late	= shmobile_init_late,
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 83bbb5c..72785cc 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -887,7 +887,7 @@ static const char * const lager_boards_compat_dt[] __initconst = {
+-&ssi0 {
+-	no-busif;
+-};
+-
+ &ssi1 {
+-	no-busif;
+ 	shared-pin;
+ };
  
- DT_MACHINE_START(LAGER_DT, "lager")
- 	.smp		= smp_ops(r8a7790_smp_ops),
--	.init_early	= r8a7790_init_early,
-+	.init_early	= shmobile_init_delay,
- 	.init_time	= rcar_gen2_timer_init,
- 	.init_machine	= lager_init,
- 	.init_late	= shmobile_init_late,
 -- 
-2.0.0.rc2
+1.7.9.5
 
