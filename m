@@ -1,65 +1,159 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Fri, 13 Jun 2014 09:37:15 +0000
-Subject: [PATCH v3 1/8] ARM: shmobile: r8a7790: Add PCIEC clock device tree node
-Message-Id: <1402652242-16604-2-git-send-email-phil.edworthy@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 18 Jun 2014 08:57:11 +0000
+Subject: [PATCH 12/12] ASoC: rsnd: add DT support to DVC
+Message-Id: <87vbryy4rb.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
 
-This patch adds the device tree clock node for the PCIe Controller
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Now, DVC can use DT
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v3:
- - No change
+ .../devicetree/bindings/sound/renesas,rsnd.txt     |    8 +++++
+ sound/soc/sh/rcar/core.c                           |   13 +++++--
+ sound/soc/sh/rcar/dvc.c                            |   38 ++++++++++++++++++++
+ 3 files changed, 57 insertions(+), 2 deletions(-)
 
-v2:
- - Changed PCIe controller names,etc from pcie to pciec
- - Corrected MTSP bit ordering
-
- arch/arm/boot/dts/r8a7790.dtsi            | 6 +++---
- include/dt-bindings/clock/r8a7790-clock.h | 1 +
- 2 files changed, 4 insertions(+), 3 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index e990d3c..7eb882c 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -765,17 +765,17 @@
- 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
- 			clocks = <&hp_clk>, <&cp_clk>, <&mmc1_clk>, <&sd3_clk>,
- 				 <&sd2_clk>, <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks R8A7790_CLK_SD0>, <&mmc0_clk>,
--				 <&hp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
-+				 <&hp_clk>, <&mp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
- 				R8A7790_CLK_IIC2 R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
- 				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0 R8A7790_CLK_MMCIF0
--				R8A7790_CLK_IIC0 R8A7790_CLK_IIC1 R8A7790_CLK_SSUSB R8A7790_CLK_CMT1
-+				R8A7790_CLK_IIC0 R8A7790_CLK_PCIEC R8A7790_CLK_IIC1 R8A7790_CLK_SSUSB R8A7790_CLK_CMT1
- 			>;
- 			clock-output-names  				"iic2", "tpu0", "mmcif1", "sdhi3",
- 				"sdhi2", "sdhi1", "sdhi0", "mmcif0",
--				"iic0", "iic1", "ssusb", "cmt1";
-+				"iic0", "pciec", "iic1", "ssusb", "cmt1";
- 		};
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-index 1118f7a..84dc7e6 100644
---- a/include/dt-bindings/clock/r8a7790-clock.h
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -59,6 +59,7 @@
- #define R8A7790_CLK_SDHI0		14
- #define R8A7790_CLK_MMCIF0		15
- #define R8A7790_CLK_IIC0		18
-+#define R8A7790_CLK_PCIEC		19
- #define R8A7790_CLK_IIC1		23
- #define R8A7790_CLK_SSUSB		28
- #define R8A7790_CLK_CMT1		29
+diff --git a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
+index 1d88d42..652573e 100644
+--- a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
++++ b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
+@@ -13,6 +13,9 @@ Required properties:
+ - rcar_sound,src		: Should contain SRC feature.
+ 				  The number of SRC subnode should be same as HW.
+ 				  see below for detail.
++- rcar_sound,dvc		: Should contain DVC feature.
++				  The number of DVC subnode should be same as HW.
++				  see below for detail.
+ - rcar_sound,dai		: DAI contents.
+ 				  The number of DAI subnode should be same as HW.
+ 				  see below for detail.
+@@ -40,6 +43,11 @@ rcar_sound: rcar_sound@0xffd90000 {
+ 		<0 0xec540000 0 0x1000>, /* SSIU */
+ 		<0 0xec541000 0 0x1280>; /* SSI */
+ 
++	rcar_sound,dvc {
++		dvc0: dvc@0 { };
++		dvc1: dvc@1 { };
++	};
++
+ 	rcar_sound,src {
+ 		src0: src@0 { };
+ 		src1: src@1 { };
+diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
+index 6fb89fc..f8076c9 100644
+--- a/sound/soc/sh/rcar/core.c
++++ b/sound/soc/sh/rcar/core.c
+@@ -286,7 +286,13 @@ static void rsnd_dma_of_path(struct rsnd_dma *dma,
+ 			mod[i] = src;
+ 			src = NULL;
+ 		} else {
+-			mod[i] = dvc;
++			if ((!is_play) && (this = src))
++				this = dvc;
++
++			mod[i] = (is_play) ? src : dvc;
++			i++;
++			mod[i] = (is_play) ? dvc : src;
++			src = NULL;
+ 			dvc = NULL;
+ 		}
+ 
+@@ -719,12 +725,13 @@ static void rsnd_of_parse_dai(struct platform_device *pdev,
+ 	struct device_node *dai_node,	*dai_np;
+ 	struct device_node *ssi_node,	*ssi_np;
+ 	struct device_node *src_node,	*src_np;
++	struct device_node *dvc_node,	*dvc_np;
+ 	struct device_node *playback, *capture;
+ 	struct rsnd_dai_platform_info *dai_info;
+ 	struct rcar_snd_info *info = rsnd_priv_to_info(priv);
+ 	struct device *dev = &pdev->dev;
+ 	int nr, i;
+-	int dai_i, ssi_i, src_i;
++	int dai_i, ssi_i, src_i, dvc_i;
+ 
+ 	if (!of_data)
+ 		return;
+@@ -750,6 +757,7 @@ static void rsnd_of_parse_dai(struct platform_device *pdev,
+ 
+ 	ssi_node = of_get_child_by_name(dev->of_node, "rcar_sound,ssi");
+ 	src_node = of_get_child_by_name(dev->of_node, "rcar_sound,src");
++	dvc_node = of_get_child_by_name(dev->of_node, "rcar_sound,dvc");
+ 
+ #define mod_parse(name)							\
+ if (name##_node) {							\
+@@ -785,6 +793,7 @@ if (name##_node) {							\
+ 
+ 			mod_parse(ssi);
+ 			mod_parse(src);
++			mod_parse(dvc);
+ 
+ 			if (playback)
+ 				of_node_put(playback);
+diff --git a/sound/soc/sh/rcar/dvc.c b/sound/soc/sh/rcar/dvc.c
+index deef310..9096fb0 100644
+--- a/sound/soc/sh/rcar/dvc.c
++++ b/sound/soc/sh/rcar/dvc.c
+@@ -235,6 +235,42 @@ struct rsnd_mod *rsnd_dvc_mod_get(struct rsnd_priv *priv, int id)
+ 	return &((struct rsnd_dvc *)(priv->dvc) + id)->mod;
+ }
+ 
++static void rsnd_of_parse_dvc(struct platform_device *pdev,
++			      const struct rsnd_of_data *of_data,
++			      struct rsnd_priv *priv)
++{
++	struct device_node *node;
++	struct rsnd_dvc_platform_info *dvc_info;
++	struct rcar_snd_info *info = rsnd_priv_to_info(priv);
++	struct device *dev = &pdev->dev;
++	int nr;
++
++	if (!of_data)
++		return;
++
++	node = of_get_child_by_name(dev->of_node, "rcar_sound,dvc");
++	if (!node)
++		return;
++
++	nr = of_get_child_count(node);
++	if (!nr)
++		goto rsnd_of_parse_dvc_end;
++
++	dvc_info = devm_kzalloc(dev,
++				sizeof(struct rsnd_dvc_platform_info) * nr,
++				GFP_KERNEL);
++	if (!dvc_info) {
++		dev_err(dev, "dvc info allocation error\n");
++		goto rsnd_of_parse_dvc_end;
++	}
++
++	info->dvc_info		= dvc_info;
++	info->dvc_info_nr	= nr;
++
++rsnd_of_parse_dvc_end:
++	of_node_put(node);
++}
++
+ int rsnd_dvc_probe(struct platform_device *pdev,
+ 		   const struct rsnd_of_data *of_data,
+ 		   struct rsnd_priv *priv)
+@@ -246,6 +282,8 @@ int rsnd_dvc_probe(struct platform_device *pdev,
+ 	char name[RSND_DVC_NAME_SIZE];
+ 	int i, nr;
+ 
++	rsnd_of_parse_dvc(pdev, of_data, priv);
++
+ 	nr = info->dvc_info_nr;
+ 	if (!nr)
+ 		return 0;
 -- 
-2.0.0
+1.7.9.5
 
