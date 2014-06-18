@@ -1,258 +1,178 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 18 Jun 2014 09:11:16 +0000
-Subject: [PROTOTYPE 7/8] ARM: shmobile: r8a7790: add dma defines for sys and audio dmacs
-Message-Id: <87d2e6y43u.wl%kuninori.morimoto.gx@renesas.com>
+Date: Wed, 18 Jun 2014 08:56:19 +0000
+Subject: [PATCH 07/12] ASoC: rsnd: use dmaengine_prep_dma_cyclic() instead of original method
+Message-Id: <8738f2zjd7.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Add the DMA resource IDs for the R8A7790 Audio and SYS DMA controllers
-for use when specifying DMA handles.
+Current R-Car sound driver is using DMAEngine directly,
+but, ASoC is requesting to use common DMA transfer method,
+like snd_dmaengine_pcm_trigger() or dmaengine_pcm_ops.
+It is difficult to switch at this point, since Renesas
+driver is also supporting PIO transfer.
+This patch uses dmaengine_prep_dma_cyclic() instead
+of dmaengine_prep_slave_single().
+It is used in requested method,
+and is good first step to switch over.
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- include/dt-bindings/dma/r8a7790-dma.h |  228 +++++++++++++++++++++++++++++++++
- 1 file changed, 228 insertions(+)
- create mode 100644 include/dt-bindings/dma/r8a7790-dma.h
+ sound/soc/sh/rcar/core.c |   76 +++++++++++-----------------------------------
+ sound/soc/sh/rcar/rsnd.h |    4 ---
+ 2 files changed, 18 insertions(+), 62 deletions(-)
 
-diff --git a/include/dt-bindings/dma/r8a7790-dma.h b/include/dt-bindings/dma/r8a7790-dma.h
-new file mode 100644
-index 0000000..732422a
---- /dev/null
-+++ b/include/dt-bindings/dma/r8a7790-dma.h
-@@ -0,0 +1,228 @@
-+/*
-+ * R8A7790 System and Audio DMA channel resource identifiers
-+ *
-+ * Copyirght (c) 2014 Codethink Ltd.
-+ *	Ben Dooks <ben.dooks@codethink.co.uk>
-+ *
-+ * Licensed under GPLv2
-+*/
-+
-+/* System DMAC */
-+
-+#define R8A7790_DMA_SCIFA0_TX	(0x21)
-+#define R8A7790_DMA_SCIFA0_RX	(0x22)
-+#define R8A7790_DMA_SCIFA1_TX	(0x25)
-+#define R8A7790_DMA_SCIFA1_RX	(0x26)
-+#define R8A7790_DMA_SCIFA2_TX	(0x27)
-+#define R8A7790_DMA_SCIFA2_RX	(0x28)
-+
-+#define R8A7790_DMA_SCIFB0_TX	(0x3D)
-+#define R8A7790_DMA_SCIFB0_RX	(0x3E)
-+#define R8A7790_DMA_SCIFB1_TX	(0x19)
-+#define R8A7790_DMA_SCIFB1_RX	(0x1A)
-+#define R8A7790_DMA_SCIFB2_TX	(0x1D)
-+#define R8A7790_DMA_SCIFB2_RX	(0x1E)
-+
-+#define R8A7790_DMA_HSCIF0_TX	(0x39)
-+#define R8A7790_DMA_HSCIF0_RX	(0x3A)
-+#define R8A7790_DMA_HSCIF1_TX	(0x4D)
-+#define R8A7790_DMA_HSCIF1_RX	(0x4E)
-+
-+#define R8A7790_DMA_SCIF0_TX	(0x29)
-+#define R8A7790_DMA_SCIF0_RX	(0x2A)
-+#define R8A7790_DMA_SCIF1_TX	(0x2D)
-+#define R8A7790_DMA_SCIF1_RX	(0x2E)
-+
-+#define R8A7790_DMA_MSIOF0_TX	(0x81)
-+#define R8A7790_DMA_MSIOF0_RX	(0x82)
-+#define R8A7790_DMA_MSIOF1_TX	(0x85)
-+#define R8A7790_DMA_MSIOF1_RX	(0x86)
-+#define R8A7790_DMA_MSIOF2_TX	(0x41)
-+#define R8A7790_DMA_MSIOF2_RX	(0x42)
-+#define R8A7790_DMA_MSIOF3_TX	(0x45)
-+#define R8A7790_DMA_MSIOF3_RX	(0x46)
-+
-+#define R8A7790_DMA_QSPI_TX	(0x17)
-+#define R8A7790_DMA_QSPI_RX	(0x18)
-+
-+#define R8A7790_DMA_SIM_TX	(0xA1)
-+#define R8A7790_DMA_SIM_RX	(0xA2)
-+
-+#define R8A7790_DMA_IIC0_TX	(0x61)
-+#define R8A7790_DMA_IIC0_RX	(0x62)
-+#define R8A7790_DMA_IIC1_TX	(0x65)
-+#define R8A7790_DMA_IIC1_RX	(0x66)
-+#define R8A7790_DMA_IIC2_TX	(0x69)
-+#define R8A7790_DMA_IIC2_RX	(0x6A)
-+#define R8A7790_DMA_IIC3_TX	(0x77)
-+#define R8A7790_DMA_IIC3_RX	(0x78)
-+
-+#define R8A7790_DMA_SDHI0_TX	(0xCD)
-+#define R8A7790_DMA_SDHI0_RX	(0xCE)
-+#define R8A7790_DMA_SDHI1_TX	(0xC9)
-+#define R8A7790_DMA_SDHI1_RX	(0xCA)
-+#define R8A7790_DMA_SDHI2_TX	(0xC1)
-+#define R8A7790_DMA_SDHI2_RX	(0xC2)
-+#define R8A7790_DMA_SDHI2C2_TX	(0xC5)
-+#define R8A7790_DMA_SDHI2C2_RX	(0xC6)
-+#define R8A7790_DMA_SDHI3_TX	(0xD3)
-+#define R8A7790_DMA_SDHI3_RX	(0xD4)
-+#define R8A7790_DMA_SDHI3C2_TX	(0xDF)
-+#define R8A7790_DMA_SDHI3C2_RX	(0xDE)
-+
-+#define R8A7790_DMA_TPU0	(0xF1)
-+#define R8A7790_DMA_TSIF0	(0xEA)
-+#define R8A7790_DMA_TSIF1	(0xF0)
-+
-+#define R8A7790_DMA_AXISTATR	(0xA6)
-+#define R8A7790_DMA_AXISTATS0	(0xAC)
-+#define R8A7790_DMA_AXISTATS1	(0xAA)
-+#define R8A7790_DMA_AXISTATS2	(0xA8)
-+#define R8A7790_DMA_AXISTATS3	(0xA4)
-+
-+#define R8A7790_DMA_MMCIF0_TX	(0xD1)
-+#define R8A7790_DMA_MMCIF0_RX	(0xD2)
-+#define R8A7790_DMA_MMCIF1_TX	(0xE1)
-+#define R8A7790_DMA_MMCIF1_RX	(0xE2)
-+
-+/* Audio DMAC */
-+
-+#define R8A7790_DMA_DTCPC0_TX	(0xD7)
-+#define R8A7790_DMA_DTCPC0_RX	(0xD8)
-+#define R8A7790_DMA_DTCPC1_TX	(0xD9)
-+#define R8A7790_DMA_DTCPC1_RX	(0xDA)
-+#define R8A7790_DMA_DTCPP0_TX	(0xBF)
-+#define R8A7790_DMA_DTCPP0_RX	(0xC0)
-+#define R8A7790_DMA_DTCPP1_TX	(0xD5)
-+#define R8A7790_DMA_DTCPP1_RX	(0xD6)
-+
-+#define R8A7790_DMA_MLM0_TX	(0xDB)
-+#define R8A7790_DMA_MLM0_RX	(0xDC)
-+#define R8A7790_DMA_MLM1_TX	(0xE3)
-+#define R8A7790_DMA_MLM1_RX	(0xE4)
-+#define R8A7790_DMA_MLM2_TX	(0xE5)
-+#define R8A7790_DMA_MLM2_RX	(0xE6)
-+#define R8A7790_DMA_MLM3_TX	(0xE7)
-+#define R8A7790_DMA_MLM3_RX	(0xE8)
-+#define R8A7790_DMA_MLM4_TX	(0xF3)
-+#define R8A7790_DMA_MLM4_RX	(0xF4)
-+#define R8A7790_DMA_MLM5_TX	(0xF5)
-+#define R8A7790_DMA_MLM5_RX	(0xF6)
-+#define R8A7790_DMA_MLM6_TX	(0xF7)
-+#define R8A7790_DMA_MLM6_RX	(0xF8)
-+#define R8A7790_DMA_MLM7_TX	(0xF9)
-+#define R8A7790_DMA_MLM7_RX	(0xFA)
-+
-+#define R8A7790_DMA_SCU0	(0x85)
-+#define R8A7790_DMA_SCU1	(0x87)
-+#define R8A7790_DMA_SCU2	(0x89)
-+#define R8A7790_DMA_SCU3	(0x8B)
-+#define R8A7790_DMA_SCU4	(0x8D)
-+#define R8A7790_DMA_SCU5	(0x8F)
-+#define R8A7790_DMA_SCU6	(0x91)
-+#define R8A7790_DMA_SCU7	(0x93)
-+#define R8A7790_DMA_SCU8	(0x95)
-+#define R8A7790_DMA_SCU9	(0x97)
-+
-+#define R8A7790_DMA_SCUCMD0	(0xBC)
-+#define R8A7790_DMA_SCUCMD1	(0xBE)
-+
-+#define R8A7790_DMA_SCUOUT0	(0x9A)
-+#define R8A7790_DMA_SCUOUT1	(0x9C)
-+#define R8A7790_DMA_SCUOUT2	(0x9E)
-+#define R8A7790_DMA_SCUOUT3	(0xA0)
-+#define R8A7790_DMA_SCUOUT4	(0xB0)
-+#define R8A7790_DMA_SCUOUT5	(0xB2)
-+#define R8A7790_DMA_SCUOUT6	(0xB4)
-+#define R8A7790_DMA_SCUOUT7	(0xB6)
-+#define R8A7790_DMA_SCUOUT8	(0xB8)
-+#define R8A7790_DMA_SCUOUT9	(0xBA)
-+
-+#define R8A7790_DMA_SSCI00_TX	(0x15)
-+#define R8A7790_DMA_SSCI00_RX	(0x16)
-+#define R8A7790_DMA_SSCI01_TX	(0x35)
-+#define R8A7790_DMA_SSCI01_RX	(0x36)
-+#define R8A7790_DMA_SSCI02_TX	(0x37)
-+#define R8A7790_DMA_SSCI02_RX	(0x38)
-+#define R8A7790_DMA_SSCI03_TX	(0x47)
-+#define R8A7790_DMA_SSCI03_RX	(0x48)
-+
-+#define R8A7790_DMA_SSCI10_TX	(0x49)
-+#define R8A7790_DMA_SSCI10_RX	(0x4A)
-+#define R8A7790_DMA_SSCI11_TX	(0x4B)
-+#define R8A7790_DMA_SSCI11_RX	(0x4C)
-+#define R8A7790_DMA_SSCI12_TX	(0x57)
-+#define R8A7790_DMA_SSCI12_RX	(0x58)
-+#define R8A7790_DMA_SSCI13_TX	(0x59)
-+#define R8A7790_DMA_SSCI13_RX	(0x5A)
-+
-+#define R8A7790_DMA_SSCI20_TX	(0x63)
-+#define R8A7790_DMA_SSCI20_RX	(0x64)
-+#define R8A7790_DMA_SSCI21_TX	(0x67)
-+#define R8A7790_DMA_SSCI21_RX	(0x68)
-+#define R8A7790_DMA_SSCI22_TX	(0x6B)
-+#define R8A7790_DMA_SSCI22_RX	(0x6C)
-+#define R8A7790_DMA_SSCI23_TX	(0x6D)
-+#define R8A7790_DMA_SSCI23_RX	(0x6E)
-+
-+#define R8A7790_DMA_SSCI20_TX	(0x63)
-+#define R8A7790_DMA_SSCI20_RX	(0x64)
-+#define R8A7790_DMA_SSCI21_TX	(0x67)
-+#define R8A7790_DMA_SSCI21_RX	(0x68)
-+#define R8A7790_DMA_SSCI22_TX	(0x6B)
-+#define R8A7790_DMA_SSCI22_RX	(0x6C)
-+#define R8A7790_DMA_SSCI23_TX	(0x6D)
-+#define R8A7790_DMA_SSCI23_RX	(0x6E)
-+
-+#define R8A7790_DMA_SSCI3_TX	(0x6F)
-+#define R8A7790_DMA_SSCI3_RX	(0x70)
-+
-+#define R8A7790_DMA_SSCI4_TX	(0x71)
-+#define R8A7790_DMA_SSCI4_RX	(0x72)
-+
-+#define R8A7790_DMA_SSCI5_TX	(0x73)
-+#define R8A7790_DMA_SSCI5_RX	(0x74)
-+
-+#define R8A7790_DMA_SSCI6_TX	(0x75)
-+#define R8A7790_DMA_SSCI6_RX	(0x76)
-+
-+#define R8A7790_DMA_SSCI7_TX	(0x79)
-+#define R8A7790_DMA_SSCI7_RX	(0x7A)
-+
-+#define R8A7790_DMA_SSCI8_TX	(0x7B)
-+#define R8A7790_DMA_SSCI8_RX	(0x7C)
-+
-+#define R8A7790_DMA_SSCI90_TX	(0x7D)
-+#define R8A7790_DMA_SSCI90_RX	(0x7E)
-+#define R8A7790_DMA_SSCI91_TX	(0x7F)
-+#define R8A7790_DMA_SSCI91_RX	(0x80)
-+#define R8A7790_DMA_SSCI92_TX	(0x81)
-+#define R8A7790_DMA_SSCI92_RX	(0x82)
-+#define R8A7790_DMA_SSCI93_TX	(0x83)
-+#define R8A7790_DMA_SSCI93_RX	(0x84)
-+
-+#define R8A7790_DMA_SSIND0_TX	(0x01)
-+#define R8A7790_DMA_SSIND0_RX	(0x02)
-+#define R8A7790_DMA_SSIND1_TX	(0x03)
-+#define R8A7790_DMA_SSIND1_RX	(0x04)
-+#define R8A7790_DMA_SSIND2_TX	(0x05)
-+#define R8A7790_DMA_SSIND2_RX	(0x06)
-+#define R8A7790_DMA_SSIND3_TX	(0x07)
-+#define R8A7790_DMA_SSIND3_RX	(0x08)
-+#define R8A7790_DMA_SSIND4_TX	(0x09)
-+#define R8A7790_DMA_SSIND4_RX	(0x0A)
-+#define R8A7790_DMA_SSIND5_TX	(0x0B)
-+#define R8A7790_DMA_SSIND5_RX	(0x0C)
-+#define R8A7790_DMA_SSIND6_TX	(0x0D)
-+#define R8A7790_DMA_SSIND6_RX	(0x0E)
-+#define R8A7790_DMA_SSIND7_TX	(0x0F)
-+#define R8A7790_DMA_SSIND7_RX	(0x10)
-+#define R8A7790_DMA_SSIND8_TX	(0x11)
-+#define R8A7790_DMA_SSIND8_RX	(0x12)
-+#define R8A7790_DMA_SSIND9_TX	(0x13)
-+#define R8A7790_DMA_SSIND9_RX	(0x14)
-+
-+#define CHCR_RX_32BIT	SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_32BIT)
-+#define CHCR_TX_32BIT	SHDMA_ARM_CHCR_TX(SHDMA_ARM_SZ_32BIT)
-+#define CHCR_RX_256BIT	SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_256BIT)
-+#define CHCR_TX_256BIT	SHDMA_ARM_CHCR_TX(SHDMA_ARM_SZ_256BIT)
+diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
+index 1a59602..5a4d7e0 100644
+--- a/sound/soc/sh/rcar/core.c
++++ b/sound/soc/sh/rcar/core.c
+@@ -164,26 +164,8 @@ void rsnd_mod_init(struct rsnd_priv *priv,
+ /*
+  *	rsnd_dma functions
+  */
+-static void __rsnd_dma_start(struct rsnd_dma *dma);
+-static void rsnd_dma_continue(struct rsnd_dma *dma)
+-{
+-	/* push next A or B plane */
+-	dma->submit_loop = 1;
+-	schedule_work(&dma->work);
+-}
+-
+-void rsnd_dma_start(struct rsnd_dma *dma)
+-{
+-	/* push both A and B plane*/
+-	dma->offset = 0;
+-	dma->submit_loop = 2;
+-	__rsnd_dma_start(dma);
+-}
+-
+ void rsnd_dma_stop(struct rsnd_dma *dma)
+ {
+-	dma->submit_loop = 0;
+-	cancel_work_sync(&dma->work);
+ 	dmaengine_terminate_all(dma->chan);
+ }
+ 
+@@ -191,11 +173,7 @@ static void rsnd_dma_complete(void *data)
+ {
+ 	struct rsnd_dma *dma = (struct rsnd_dma *)data;
+ 	struct rsnd_mod *mod = rsnd_dma_to_mod(dma);
+-	struct rsnd_priv *priv = rsnd_mod_to_priv(rsnd_dma_to_mod(dma));
+ 	struct rsnd_dai_stream *io = rsnd_mod_to_io(mod);
+-	unsigned long flags;
+-
+-	rsnd_lock(priv, flags);
+ 
+ 	/*
+ 	 * Renesas sound Gen1 needs 1 DMAC,
+@@ -208,57 +186,40 @@ static void rsnd_dma_complete(void *data)
+ 	 * rsnd_dai_pointer_update() will be called twice,
+ 	 * ant it will breaks io->byte_pos
+ 	 */
+-	if (dma->submit_loop)
+-		rsnd_dma_continue(dma);
+-
+-	rsnd_unlock(priv, flags);
+ 
+ 	rsnd_dai_pointer_update(io, io->byte_per_period);
+ }
+ 
+-static void __rsnd_dma_start(struct rsnd_dma *dma)
++void rsnd_dma_start(struct rsnd_dma *dma)
+ {
+ 	struct rsnd_mod *mod = rsnd_dma_to_mod(dma);
+ 	struct rsnd_priv *priv = rsnd_mod_to_priv(mod);
+ 	struct rsnd_dai_stream *io = rsnd_mod_to_io(mod);
+-	struct snd_pcm_runtime *runtime = rsnd_io_to_runtime(io);
++	struct snd_pcm_substream *substream = io->substream;
+ 	struct device *dev = rsnd_priv_to_dev(priv);
+ 	struct dma_async_tx_descriptor *desc;
+-	dma_addr_t buf;
+-	size_t len = io->byte_per_period;
+-	int i;
+-
+-	for (i = 0; i < dma->submit_loop; i++) {
+ 
+-		buf = runtime->dma_addr +
+-			rsnd_dai_pointer_offset(io, dma->offset + len);
+-		dma->offset = len;
++	desc = dmaengine_prep_dma_cyclic(dma->chan,
++					 substream->runtime->dma_addr,
++					 snd_pcm_lib_buffer_bytes(substream),
++					 snd_pcm_lib_period_bytes(substream),
++					 dma->dir,
++					 DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+ 
+-		desc = dmaengine_prep_slave_single(
+-			dma->chan, buf, len, dma->dir,
+-			DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+-		if (!desc) {
+-			dev_err(dev, "dmaengine_prep_slave_sg() fail\n");
+-			return;
+-		}
+-
+-		desc->callback		= rsnd_dma_complete;
+-		desc->callback_param	= dma;
++	if (!desc) {
++		dev_err(dev, "dmaengine_prep_slave_sg() fail\n");
++		return;
++	}
+ 
+-		if (dmaengine_submit(desc) < 0) {
+-			dev_err(dev, "dmaengine_submit() fail\n");
+-			return;
+-		}
++	desc->callback		= rsnd_dma_complete;
++	desc->callback_param	= dma;
+ 
+-		dma_async_issue_pending(dma->chan);
++	if (dmaengine_submit(desc) < 0) {
++		dev_err(dev, "dmaengine_submit() fail\n");
++		return;
+ 	}
+-}
+-
+-static void rsnd_dma_do_work(struct work_struct *work)
+-{
+-	struct rsnd_dma *dma = container_of(work, struct rsnd_dma, work);
+ 
+-	__rsnd_dma_start(dma);
++	dma_async_issue_pending(dma->chan);
+ }
+ 
+ int rsnd_dma_available(struct rsnd_dma *dma)
+@@ -372,7 +333,6 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma,
+ 		goto rsnd_dma_init_err;
+ 
+ 	dma->dir = is_play ? DMA_TO_DEVICE : DMA_FROM_DEVICE;
+-	INIT_WORK(&dma->work, rsnd_dma_do_work);
+ 
+ 	return 0;
+ 
+diff --git a/sound/soc/sh/rcar/rsnd.h b/sound/soc/sh/rcar/rsnd.h
+index e492c13..be17136 100644
+--- a/sound/soc/sh/rcar/rsnd.h
++++ b/sound/soc/sh/rcar/rsnd.h
+@@ -156,12 +156,8 @@ u32 rsnd_get_adinr(struct rsnd_mod *mod);
+  */
+ struct rsnd_dma {
+ 	struct sh_dmae_slave	slave;
+-	struct work_struct	work;
+ 	struct dma_chan		*chan;
+ 	enum dma_data_direction dir;
+-
+-	int submit_loop;
+-	int offset; /* it cares A/B plane */
+ };
+ 
+ void rsnd_dma_start(struct rsnd_dma *dma);
 -- 
 1.7.9.5
 
