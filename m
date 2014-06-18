@@ -1,45 +1,71 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 16 Jun 2014 12:25:48 +0000
-Subject: Re: [PATCH] ARM: shmobile: rcar-gen2: correct return value of shmobile_smp_apmu_suspend_init
-Message-Id: <20140616122548.GA30357@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 18 Jun 2014 08:57:01 +0000
+Subject: [PATCH 11/12] ASoC: rsnd: DMA start address is properly used for each DMAC
+Message-Id: <87wqcey4rl.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402918044-29961-1-git-send-email-horms+renesas@verge.net.au>
- <539EDF72.7080305@cogentembedded.com>
-In-Reply-To: <539EDF72.7080305@cogentembedded.com>
+References: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
 
-On Mon, Jun 16, 2014 at 04:13:38PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 06/16/2014 03:27 PM, Simon Horman wrote:
-> 
-> >The dummy shmobile_smp_apmu_suspend_init() function provided when
-> >CPU_IDLE is not set should not return a value as per the signature
-> >of the function.
-> 
-> >This problem appears to have been introduced by
-> >867ba81f728f1daa ("ARM: shmobile: APMU: Add Core-Standby-state for Suspend
-> >to RAM").
-> 
-> >Cc: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
-> >Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> [...]
-> 
-> >diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-> >index 8f0cd57..46766fc 100644
-> >--- a/arch/arm/mach-shmobile/include/mach/common.h
-> >+++ b/arch/arm/mach-shmobile/include/mach/common.h
-> >@@ -38,7 +38,7 @@ int shmobile_suspend_init(void);
-> >  void shmobile_smp_apmu_suspend_init(void);
-> >  #else
-> >  static inline int shmobile_suspend_init(void) { return 0; }
-> >-static inline void shmobile_smp_apmu_suspend_init(void) { return 0; }
-> >+static inline void shmobile_smp_apmu_suspend_init(void) { return; }
-> 
->    I wonder why you kept *return* at all?
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, I will remove it.
+R-Car sound uses Audio DMAC and Audio DMAC peri peri.
+Audio DMAC peri peri transfers data inside circuit.
+
+DMA transfer needs source / destination address,
+and destination address can be set via dmaengine_slave_config().
+The source address can be set when starting DMAEngine.
+Because Audio DMAC peri peri always ignores its value,
+current driver always used same source address for
+Audio DMAC / Audio DMAC peri peri
+(Audio DMAC peri peri source / destination address
+is always fixed value)
+But, This is not good match for DT booting.
+This patch properly uses DMA start address
+for Audio DMAC / Audio DMAC peri peri.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ sound/soc/sh/rcar/core.c |    2 ++
+ sound/soc/sh/rcar/rsnd.h |    1 +
+ 2 files changed, 3 insertions(+)
+
+diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
+index 36895eb..6fb89fc 100644
+--- a/sound/soc/sh/rcar/core.c
++++ b/sound/soc/sh/rcar/core.c
+@@ -200,6 +200,7 @@ void rsnd_dma_start(struct rsnd_dma *dma)
+ 	struct dma_async_tx_descriptor *desc;
+ 
+ 	desc = dmaengine_prep_dma_cyclic(dma->chan,
++					 (dma->addr) ? dma->addr :
+ 					 substream->runtime->dma_addr,
+ 					 snd_pcm_lib_buffer_bytes(substream),
+ 					 snd_pcm_lib_period_bytes(substream),
+@@ -347,6 +348,7 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma,
+ 	if (ret < 0)
+ 		goto rsnd_dma_init_err;
+ 
++	dma->addr = is_play ? cfg.src_addr : cfg.dst_addr;
+ 	dma->dir = is_play ? DMA_TO_DEVICE : DMA_FROM_DEVICE;
+ 
+ 	return 0;
+diff --git a/sound/soc/sh/rcar/rsnd.h b/sound/soc/sh/rcar/rsnd.h
+index 70a91b0..f75c535 100644
+--- a/sound/soc/sh/rcar/rsnd.h
++++ b/sound/soc/sh/rcar/rsnd.h
+@@ -158,6 +158,7 @@ struct rsnd_dma {
+ 	struct sh_dmae_slave	slave;
+ 	struct dma_chan		*chan;
+ 	enum dma_data_direction dir;
++	dma_addr_t		addr;
+ };
+ 
+ void rsnd_dma_start(struct rsnd_dma *dma);
+-- 
+1.7.9.5
+
