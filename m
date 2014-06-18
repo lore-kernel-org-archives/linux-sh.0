@@ -1,90 +1,51 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 18 Jun 2014 08:54:43 +0000
-Subject: [PATCH 01/12] ASoC: rsnd: fixup rsnd_gen_dma_addr() for Gen1
-Message-Id: <87bntqzjfw.wl%kuninori.morimoto.gx@renesas.com>
+From: Mark Brown <broonie@kernel.org>
+Date: Wed, 18 Jun 2014 10:06:54 +0000
+Subject: Re: [PATCH 01/12] ASoC: rsnd: fixup rsnd_gen_dma_addr() for Gen1
+Message-Id: <20140618100654.GF5099@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="GYqJbI5S9WdFHCas"
 List-Id: <linux-sh.vger.kernel.org>
 References: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
+ <87bntqzjfw.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87bntqzjfw.wl%kuninori.morimoto.gx@renesas.com>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-ad32d0c7b0e993433df152ae747652647eb65a27
-(ASoC: rsnd: add rsnd_gen_dma_addr() for DMAC addr)
-added rsnd_gen_dma_addr() to calculate DMA addr,
-but, it is necessary only for Gen2.
-This patch ignores Gen1 case.
-Kernel will be panic without this patch.
-Special thanks to Simon
+--GYqJbI5S9WdFHCas
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Reported-by: Simon Horman <horms@verge.net.au>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- sound/soc/sh/rcar/gen.c |   33 +++++++++++++++++++++------------
- 1 file changed, 21 insertions(+), 12 deletions(-)
+On Wed, Jun 18, 2014 at 05:54:43PM +0900, Kuninori Morimoto wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>=20
+> ad32d0c7b0e993433df152ae747652647eb65a27
+> (ASoC: rsnd: add rsnd_gen_dma_addr() for DMAC addr)
+> added rsnd_gen_dma_addr() to calculate DMA addr,
 
-diff --git a/sound/soc/sh/rcar/gen.c b/sound/soc/sh/rcar/gen.c
-index 1dd2b7d..0280a11 100644
---- a/sound/soc/sh/rcar/gen.c
-+++ b/sound/soc/sh/rcar/gen.c
-@@ -184,7 +184,7 @@ static int rsnd_gen_regmap_init(struct rsnd_priv *priv,
- #define RDMA_CMD_O_N(addr, i)	(addr ##_reg - 0x004f8000 + (0x400 * i))
- #define RDMA_CMD_O_P(addr, i)	(addr ##_reg - 0x001f8000 + (0x400 * i))
- 
--void rsnd_gen_dma_addr(struct rsnd_priv *priv,
-+static void rsnd_gen2_dma_addr(struct rsnd_priv *priv,
- 		       struct rsnd_dma *dma,
- 		       struct dma_slave_config *cfg,
- 		       int is_play, int slave_id)
-@@ -226,17 +226,6 @@ void rsnd_gen_dma_addr(struct rsnd_priv *priv,
- 		}
- 	};
- 
--	cfg->slave_id	= slave_id;
--	cfg->src_addr	= 0;
--	cfg->dst_addr	= 0;
--	cfg->direction	= is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
--
--	/*
--	 * gen1 uses default DMA addr
--	 */
--	if (rsnd_is_gen1(priv))
--		return;
--
- 	/* it shouldn't happen */
- 	if (use_dvc & !use_src) {
- 		dev_err(dev, "DVC is selected without SRC\n");
-@@ -250,6 +239,26 @@ void rsnd_gen_dma_addr(struct rsnd_priv *priv,
- 		id, cfg->src_addr, cfg->dst_addr);
- }
- 
-+void rsnd_gen_dma_addr(struct rsnd_priv *priv,
-+		       struct rsnd_dma *dma,
-+		       struct dma_slave_config *cfg,
-+		       int is_play, int slave_id)
-+{
-+	cfg->slave_id   = slave_id;
-+	cfg->src_addr   = 0;
-+	cfg->dst_addr   = 0;
-+	cfg->direction  = is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
-+
-+	/*
-+	 * gen1 uses default DMA addr
-+	 */
-+	if (rsnd_is_gen1(priv))
-+		return;
-+
-+	rsnd_gen2_dma_addr(priv, dma, cfg, is_play, slave_id);
-+}
-+
-+
- /*
-  *		Gen2
-  */
--- 
-1.7.9.5
+Applied, thanks.
 
+--GYqJbI5S9WdFHCas
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBAgAGBQJToWS7AAoJELSic+t+oim995MP/1ks2cBxm6aws6qw1QySglXJ
++lHkuHHkVTgxoWbcRN7OdO4RQT6FchF1Q7q41rMPppDiBHv/Euz/Qj0SNLFcyT/d
+dxpoy+3kxqRTUc4vUUl1NUMTn/6crxTS8V5I6RWdU0/2V12jxLzKvXZtJIWlNg6J
+uHirW8pjzzBz/kjbgV1msnP0DV6vAhKRvdT9ZJbzSeJJMqKBo+ND8fY8+3K91Hjj
+d24GzxVenMHpjgdvrUhgWFmDr4SFrGvPzO05l5qDuUo4acgvUYg9OMo/Js9olcFK
+OhE6u8sm04koSrpKe7x2PVMtHQZnziBeKD6TursHLSKO0wquivY5eiAr8MP6N5Hx
+xey01nVeZ3pGI2DDgyPFMFgh1lg4Iagngp4BbKbUcKtvUzg719MxKGMB/0V1TR1U
+nb3uMscORxwLb/e2pUbKziciCBjLplHCWuvmXOOEV/Hy66M1XhgDEL8O6UOEl/J1
+qtPECnjk0GofNnx20LnmE8J4ndKzW7AtPhnhjwiDST1V1ENJ/03h7rMIqI7DtR6C
+cz89z4vBD4KESiDeqZpzERkxF3IL0KquNMnK/XJux7XkhihrWxSNHkmdVLku42Q7
+DPRtp4k9N04dnFbTttWAEq4fZJszzUxgBizAJESjsQVHdVvXqgKUvSkRBWwKnuQn
+2kDlGYpwhPTP2JxK7fuy
+=osA3
+-----END PGP SIGNATURE-----
+
+--GYqJbI5S9WdFHCas--
