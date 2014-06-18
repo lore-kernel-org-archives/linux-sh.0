@@ -1,73 +1,67 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 16 Jun 2014 15:07:19 +0000
-Subject: [PATCH v4 07/19] clocksource: sh_mtu2: Replace global spinlock with a per-device spinlock
-Message-Id: <1402931251-22581-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 18 Jun 2014 08:56:28 +0000
+Subject: [PATCH 08/12] ASoC: rsnd: enable DVC when capture
+Message-Id: <871tumzjcy.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
 
-The global spinlock is used to protect the shared start/stop register.
-Now that all MTU2 channels are handled by a single device instance, use
-a per-device spinlock.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Wolfram Sang <wsa@sang-engineering.com>
+Current DVC can be enabled only when playback,
+but, this came from misunderstanding.
+It is not correct.
+
+DVC <-> DMA relationship is...
+
+Playback: MEM -> DMAC  -> SRC -> DVC -> DMACp -> SSI
+Capture:  SSI -> DMACp -> SRC -> DVC -> DMAC  -> MEM
+
+DVC can be used for both Playback/Capture
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/clocksource/sh_mtu2.c | 10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
+ sound/soc/sh/rcar/dvc.c |   12 ++++--------
+ 1 file changed, 4 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
-index 2931fea..ebdf9d1 100644
---- a/drivers/clocksource/sh_mtu2.c
-+++ b/drivers/clocksource/sh_mtu2.c
-@@ -47,14 +47,14 @@ struct sh_mtu2_device {
- 	void __iomem *mapbase;
- 	struct clk *clk;
+diff --git a/sound/soc/sh/rcar/dvc.c b/sound/soc/sh/rcar/dvc.c
+index ed00070..deef310 100644
+--- a/sound/soc/sh/rcar/dvc.c
++++ b/sound/soc/sh/rcar/dvc.c
+@@ -191,24 +191,20 @@ static int rsnd_dvc_pcm_new(struct rsnd_mod *mod,
+ 			    struct snd_soc_pcm_runtime *rtd)
+ {
+ 	struct rsnd_dai_stream *io = rsnd_mod_to_io(mod);
+-	struct rsnd_priv *priv = rsnd_mod_to_priv(mod);
+-	struct device *dev = rsnd_priv_to_dev(priv);
+ 	struct snd_card *card = rtd->card->snd_card;
+ 	struct snd_kcontrol *kctrl;
+ 	static struct snd_kcontrol_new knew = {
+ 		.iface		= SNDRV_CTL_ELEM_IFACE_MIXER,
+-		.name		= "Playback Volume",
+ 		.info		= rsnd_dvc_volume_info,
+ 		.get		= rsnd_dvc_volume_get,
+ 		.put		= rsnd_dvc_volume_put,
+ 	};
+ 	int ret;
  
-+	raw_spinlock_t lock; /* Protect the shared registers */
-+
- 	struct sh_mtu2_channel *channels;
- 	unsigned int num_channels;
+-	if (!rsnd_dai_is_play(rdai, io)) {
+-		dev_err(dev, "DVC%d is connected to Capture DAI\n",
+-			rsnd_mod_id(mod));
+-		return -EINVAL;
+-	}
++	if (rsnd_dai_is_play(rdai, io))
++		knew.name = "Playback Volume";
++	else
++		knew.name = "Capture Volume";
  
- 	bool has_clockevent;
- };
- 
--static DEFINE_RAW_SPINLOCK(sh_mtu2_lock);
--
- #define TSTR -1 /* shared register */
- #define TCR  0 /* channel register */
- #define TMDR 1 /* channel register */
-@@ -192,7 +192,7 @@ static void sh_mtu2_start_stop_ch(struct sh_mtu2_channel *ch, int start)
- 	unsigned long flags, value;
- 
- 	/* start stop register shared by multiple timer channels */
--	raw_spin_lock_irqsave(&sh_mtu2_lock, flags);
-+	raw_spin_lock_irqsave(&ch->mtu->lock, flags);
- 	value = sh_mtu2_read(ch, TSTR);
- 
- 	if (start)
-@@ -201,7 +201,7 @@ static void sh_mtu2_start_stop_ch(struct sh_mtu2_channel *ch, int start)
- 		value &= ~(1 << ch->index);
- 
- 	sh_mtu2_write(ch, TSTR, value);
--	raw_spin_unlock_irqrestore(&sh_mtu2_lock, flags);
-+	raw_spin_unlock_irqrestore(&ch->mtu->lock, flags);
- }
- 
- static int sh_mtu2_enable(struct sh_mtu2_channel *ch)
-@@ -402,6 +402,8 @@ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
- 
- 	mtu->pdev = pdev;
- 
-+	raw_spin_lock_init(&mtu->lock);
-+
- 	/* Get hold of clock. */
- 	mtu->clk = clk_get(&mtu->pdev->dev, "fck");
- 	if (IS_ERR(mtu->clk)) {
+ 	kctrl = snd_ctl_new1(&knew, mod);
+ 	if (!kctrl)
 -- 
-1.8.5.5
+1.7.9.5
 
