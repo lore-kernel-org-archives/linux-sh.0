@@ -1,187 +1,194 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 23 Jun 2014 23:54:24 +0000
-Subject: [PATCH v2 18/23] v4l: vsp1: Add alpha channel support to the memory ports
-Message-Id: <1403567669-18539-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 18 Jun 2014 08:56:11 +0000
+Subject: [PATCH 06/12] ASoC: fsi: use dmaengine_prep_dma_cyclic() for DMA transfer
+Message-Id: <874mzizjdf.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
 
-Support ARGB formats on the RPF side by reading the alpha component from
-memory and on the WPF side by writing it to memory.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Current FSI driver is using DMAEngine directly,
+but, ASoC is requesting to use common DMA transfer method,
+like snd_dmaengine_pcm_trigger() or dmaengine_pcm_ops.
+It is difficult to switch at this point, since Renesas
+driver is also supporting PIO transfer.
+This patch uses dmaengine_prep_dma_cyclic() instead
+of dmaengine_prep_slave_single().
+It is used in requested method,
+and is good first step to switch over.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/media/platform/vsp1/vsp1_rpf.c   |  8 ++++--
- drivers/media/platform/vsp1/vsp1_video.c | 49 +++++++++++++++++++++-----------
- drivers/media/platform/vsp1/vsp1_video.h |  2 ++
- drivers/media/platform/vsp1/vsp1_wpf.c   |  2 ++
- 4 files changed, 41 insertions(+), 20 deletions(-)
+ sound/soc/sh/fsi.c |   94 +++++++++++++++-------------------------------------
+ 1 file changed, 27 insertions(+), 67 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
-index 9b3fc70..2824f53 100644
---- a/drivers/media/platform/vsp1/vsp1_rpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_rpf.c
-@@ -101,10 +101,12 @@ static int rpf_s_stream(struct v4l2_subdev *subdev, int enable)
- 		       (rpf->location.left << VI6_RPF_LOC_HCOORD_SHIFT) |
- 		       (rpf->location.top << VI6_RPF_LOC_VCOORD_SHIFT));
- 
--	/* Disable alpha, mask and color key. Set the alpha channel to a fixed
--	 * value of 255.
-+	/* Use the alpha channel (extended to 8 bits) when available or a
-+	 * hardcoded 255 value otherwise. Disable color keying.
+diff --git a/sound/soc/sh/fsi.c b/sound/soc/sh/fsi.c
+index 820a408..a57eb96 100644
+--- a/sound/soc/sh/fsi.c
++++ b/sound/soc/sh/fsi.c
+@@ -232,10 +232,7 @@ struct fsi_stream {
+ 	 * these are for DMAEngine
  	 */
--	vsp1_rpf_write(rpf, VI6_RPF_ALPH_SEL, VI6_RPF_ALPH_SEL_ASEL_FIXED);
-+	vsp1_rpf_write(rpf, VI6_RPF_ALPH_SEL, VI6_RPF_ALPH_SEL_AEXT_EXT |
-+		       (fmtinfo->alpha ? VI6_RPF_ALPH_SEL_ASEL_PACKED
-+				       : VI6_RPF_ALPH_SEL_ASEL_FIXED));
- 	vsp1_rpf_write(rpf, VI6_RPF_VRTCOL_SET,
- 		       255 << VI6_RPF_VRTCOL_SET_LAYA_SHIFT);
- 	vsp1_rpf_write(rpf, VI6_RPF_MSK_CTRL, 0);
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index 3dc7d84..4dd4d61 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -50,70 +50,85 @@ static const struct vsp1_format_info vsp1_video_formats[] = {
- 	{ V4L2_PIX_FMT_RGB332, V4L2_MBUS_FMT_ARGB8888_1X32,
- 	  VI6_FMT_RGB_332, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
- 	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  1, { 8, 0, 0 }, false, false, 1, 1 },
-+	  1, { 8, 0, 0 }, false, false, 1, 1, false },
-+	{ V4L2_PIX_FMT_ARGB444, V4L2_MBUS_FMT_ARGB8888_1X32,
-+	  VI6_FMT_ARGB_4444, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS,
-+	  1, { 16, 0, 0 }, false, false, 1, 1, true },
- 	{ V4L2_PIX_FMT_XRGB444, V4L2_MBUS_FMT_ARGB8888_1X32,
- 	  VI6_FMT_XRGB_4444, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
- 	  VI6_RPF_DSWAP_P_WDS,
--	  1, { 16, 0, 0 }, false, false, 1, 1 },
-+	  1, { 16, 0, 0 }, false, false, 1, 1, true },
-+	{ V4L2_PIX_FMT_ARGB555, V4L2_MBUS_FMT_ARGB8888_1X32,
-+	  VI6_FMT_ARGB_1555, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS,
-+	  1, { 16, 0, 0 }, false, false, 1, 1, true },
- 	{ V4L2_PIX_FMT_XRGB555, V4L2_MBUS_FMT_ARGB8888_1X32,
- 	  VI6_FMT_XRGB_1555, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
- 	  VI6_RPF_DSWAP_P_WDS,
--	  1, { 16, 0, 0 }, false, false, 1, 1 },
-+	  1, { 16, 0, 0 }, false, false, 1, 1, false },
- 	{ V4L2_PIX_FMT_RGB565, V4L2_MBUS_FMT_ARGB8888_1X32,
- 	  VI6_FMT_RGB_565, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
- 	  VI6_RPF_DSWAP_P_WDS,
--	  1, { 16, 0, 0 }, false, false, 1, 1 },
-+	  1, { 16, 0, 0 }, false, false, 1, 1, false },
- 	{ V4L2_PIX_FMT_BGR24, V4L2_MBUS_FMT_ARGB8888_1X32,
- 	  VI6_FMT_BGR_888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
- 	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  1, { 24, 0, 0 }, false, false, 1, 1 },
-+	  1, { 24, 0, 0 }, false, false, 1, 1, false },
- 	{ V4L2_PIX_FMT_RGB24, V4L2_MBUS_FMT_ARGB8888_1X32,
- 	  VI6_FMT_RGB_888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
- 	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  1, { 24, 0, 0 }, false, false, 1, 1 },
-+	  1, { 24, 0, 0 }, false, false, 1, 1, false },
-+	{ V4L2_PIX_FMT_ABGR32, V4L2_MBUS_FMT_ARGB8888_1X32,
-+	  VI6_FMT_ARGB_8888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS,
-+	  1, { 32, 0, 0 }, false, false, 1, 1, true },
- 	{ V4L2_PIX_FMT_XBGR32, V4L2_MBUS_FMT_ARGB8888_1X32,
- 	  VI6_FMT_ARGB_8888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS,
--	  1, { 32, 0, 0 }, false, false, 1, 1 },
-+	  1, { 32, 0, 0 }, false, false, 1, 1, false },
-+	{ V4L2_PIX_FMT_ARGB32, V4L2_MBUS_FMT_ARGB8888_1X32,
-+	  VI6_FMT_ARGB_8888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
-+	  1, { 32, 0, 0 }, false, false, 1, 1, true },
- 	{ V4L2_PIX_FMT_XRGB32, V4L2_MBUS_FMT_ARGB8888_1X32,
- 	  VI6_FMT_ARGB_8888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
- 	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  1, { 32, 0, 0 }, false, false, 1, 1 },
-+	  1, { 32, 0, 0 }, false, false, 1, 1, false },
- 	{ V4L2_PIX_FMT_UYVY, V4L2_MBUS_FMT_AYUV8_1X32,
- 	  VI6_FMT_YUYV_422, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
- 	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  1, { 16, 0, 0 }, false, false, 2, 1 },
-+	  1, { 16, 0, 0 }, false, false, 2, 1, false },
- 	{ V4L2_PIX_FMT_VYUY, V4L2_MBUS_FMT_AYUV8_1X32,
- 	  VI6_FMT_YUYV_422, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
- 	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  1, { 16, 0, 0 }, false, true, 2, 1 },
-+	  1, { 16, 0, 0 }, false, true, 2, 1, false },
- 	{ V4L2_PIX_FMT_YUYV, V4L2_MBUS_FMT_AYUV8_1X32,
- 	  VI6_FMT_YUYV_422, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
- 	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  1, { 16, 0, 0 }, true, false, 2, 1 },
-+	  1, { 16, 0, 0 }, true, false, 2, 1, false },
- 	{ V4L2_PIX_FMT_YVYU, V4L2_MBUS_FMT_AYUV8_1X32,
- 	  VI6_FMT_YUYV_422, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
- 	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  1, { 16, 0, 0 }, true, true, 2, 1 },
-+	  1, { 16, 0, 0 }, true, true, 2, 1, false },
- 	{ V4L2_PIX_FMT_NV12M, V4L2_MBUS_FMT_AYUV8_1X32,
- 	  VI6_FMT_Y_UV_420, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
- 	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  2, { 8, 16, 0 }, false, false, 2, 2 },
-+	  2, { 8, 16, 0 }, false, false, 2, 2, false },
- 	{ V4L2_PIX_FMT_NV21M, V4L2_MBUS_FMT_AYUV8_1X32,
- 	  VI6_FMT_Y_UV_420, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
- 	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  2, { 8, 16, 0 }, false, true, 2, 2 },
-+	  2, { 8, 16, 0 }, false, true, 2, 2, false },
- 	{ V4L2_PIX_FMT_NV16M, V4L2_MBUS_FMT_AYUV8_1X32,
- 	  VI6_FMT_Y_UV_422, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
- 	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  2, { 8, 16, 0 }, false, false, 2, 1 },
-+	  2, { 8, 16, 0 }, false, false, 2, 1, false },
- 	{ V4L2_PIX_FMT_NV61M, V4L2_MBUS_FMT_AYUV8_1X32,
- 	  VI6_FMT_Y_UV_422, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
- 	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  2, { 8, 16, 0 }, false, true, 2, 1 },
-+	  2, { 8, 16, 0 }, false, true, 2, 1, false },
- 	{ V4L2_PIX_FMT_YUV420M, V4L2_MBUS_FMT_AYUV8_1X32,
- 	  VI6_FMT_Y_U_V_420, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
- 	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  3, { 8, 8, 8 }, false, false, 2, 2 },
-+	  3, { 8, 8, 8 }, false, false, 2, 2, false },
+ 	struct dma_chan		*chan;
+-	struct work_struct	work;
+ 	int			dma_id;
+-	int			loop_cnt;
+-	int			additional_pos;
  };
  
- /*
-diff --git a/drivers/media/platform/vsp1/vsp1_video.h b/drivers/media/platform/vsp1/vsp1_video.h
-index cb5d9ef..4dad110 100644
---- a/drivers/media/platform/vsp1/vsp1_video.h
-+++ b/drivers/media/platform/vsp1/vsp1_video.h
-@@ -33,6 +33,7 @@ struct vsp1_video;
-  * @swap_uv: the U and V components are swapped (V comes before U)
-  * @hsub: horizontal subsampling factor
-  * @vsub: vertical subsampling factor
-+ * @alpha: has an alpha channel
-  */
- struct vsp1_format_info {
- 	u32 fourcc;
-@@ -45,6 +46,7 @@ struct vsp1_format_info {
- 	bool swap_uv;
- 	unsigned int hsub;
- 	unsigned int vsub;
-+	bool alpha;
- };
+ struct fsi_clk {
+@@ -1281,24 +1278,9 @@ static int fsi_dma_init(struct fsi_priv *fsi, struct fsi_stream *io)
+ 	io->bus_option = BUSOP_SET(24, PACKAGE_24BITBUS_BACK) |
+ 			 BUSOP_SET(16, PACKAGE_16BITBUS_STREAM);
  
- enum vsp1_pipeline_state {
-diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
-index d330865..a2ba107 100644
---- a/drivers/media/platform/vsp1/vsp1_wpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_wpf.c
-@@ -99,6 +99,8 @@ static int wpf_s_stream(struct v4l2_subdev *subdev, int enable)
+-	io->loop_cnt = 2; /* push 1st, 2nd period first, then 3rd, 4th... */
+-	io->additional_pos = 0;
+-
+ 	return 0;
+ }
  
- 		outfmt = fmtinfo->hwfmt << VI6_WPF_OUTFMT_WRFMT_SHIFT;
+-static dma_addr_t fsi_dma_get_area(struct fsi_stream *io, int additional)
+-{
+-	struct snd_pcm_runtime *runtime = io->substream->runtime;
+-	int period = io->period_pos + additional;
+-
+-	if (period >= runtime->periods)
+-		period = 0;
+-
+-	return runtime->dma_addr +
+-		samples_to_bytes(runtime, period * io->period_samples);
+-}
+-
+ static void fsi_dma_complete(void *data)
+ {
+ 	struct fsi_stream *io = (struct fsi_stream *)data;
+@@ -1307,53 +1289,37 @@ static void fsi_dma_complete(void *data)
+ 	fsi_pointer_update(io, io->period_samples);
  
-+		if (fmtinfo->alpha)
-+			outfmt |= VI6_WPF_OUTFMT_PXA;
- 		if (fmtinfo->swap_yc)
- 			outfmt |= VI6_WPF_OUTFMT_SPYCS;
- 		if (fmtinfo->swap_uv)
+ 	fsi_count_fifo_err(fsi);
+-	fsi_stream_transfer(io);
+ }
+ 
+-static void fsi_dma_do_work(struct work_struct *work)
++static int fsi_dma_transfer(struct fsi_priv *fsi, struct fsi_stream *io)
+ {
+-	struct fsi_stream *io = container_of(work, struct fsi_stream, work);
+-	struct fsi_priv *fsi = fsi_stream_to_priv(io);
+-	struct snd_soc_dai *dai;
++	struct snd_soc_dai *dai = fsi_get_dai(io->substream);
++	struct snd_pcm_substream *substream = io->substream;
+ 	struct dma_async_tx_descriptor *desc;
+-	struct snd_pcm_runtime *runtime;
+-	enum dma_data_direction dir;
+ 	int is_play = fsi_stream_is_play(fsi, io);
+-	int len, i;
+-	dma_addr_t buf;
+-
+-	if (!fsi_stream_is_working(fsi, io))
+-		return;
+-
+-	dai	= fsi_get_dai(io->substream);
+-	runtime	= io->substream->runtime;
+-	dir	= is_play ? DMA_TO_DEVICE : DMA_FROM_DEVICE;
+-	len	= samples_to_bytes(runtime, io->period_samples);
+-
+-	for (i = 0; i < io->loop_cnt; i++) {
+-		buf	= fsi_dma_get_area(io, io->additional_pos);
+-
+-		desc = dmaengine_prep_slave_single(io->chan, buf, len, dir,
+-					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+-		if (!desc) {
+-			dev_err(dai->dev, "dmaengine_prep_slave_sg() fail\n");
+-			return;
+-		}
+-
+-		desc->callback		= fsi_dma_complete;
+-		desc->callback_param	= io;
+-
+-		if (dmaengine_submit(desc) < 0) {
+-			dev_err(dai->dev, "tx_submit() fail\n");
+-			return;
+-		}
++	enum dma_data_direction dir = is_play ? DMA_TO_DEVICE : DMA_FROM_DEVICE;
++	int ret = -EIO;
++
++	desc = dmaengine_prep_dma_cyclic(io->chan,
++					 substream->runtime->dma_addr,
++					 snd_pcm_lib_buffer_bytes(substream),
++					 snd_pcm_lib_period_bytes(substream),
++					 dir,
++					 DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
++	if (!desc) {
++		dev_err(dai->dev, "dmaengine_prep_dma_cyclic() fail\n");
++		goto fsi_dma_transfer_err;
++	}
+ 
+-		dma_async_issue_pending(io->chan);
++	desc->callback		= fsi_dma_complete;
++	desc->callback_param	= io;
+ 
+-		io->additional_pos = 1;
++	if (dmaengine_submit(desc) < 0) {
++		dev_err(dai->dev, "tx_submit() fail\n");
++		goto fsi_dma_transfer_err;
+ 	}
+ 
+-	io->loop_cnt = 1;
++	dma_async_issue_pending(io->chan);
+ 
+ 	/*
+ 	 * FIXME
+@@ -1370,13 +1336,11 @@ static void fsi_dma_do_work(struct work_struct *work)
+ 			fsi_reg_write(fsi, DIFF_ST, 0);
+ 		}
+ 	}
+-}
+ 
+-static int fsi_dma_transfer(struct fsi_priv *fsi, struct fsi_stream *io)
+-{
+-	schedule_work(&io->work);
++	ret = 0;
+ 
+-	return 0;
++fsi_dma_transfer_err:
++	return ret;
+ }
+ 
+ static int fsi_dma_push_start_stop(struct fsi_priv *fsi, struct fsi_stream *io,
+@@ -1437,15 +1401,11 @@ static int fsi_dma_probe(struct fsi_priv *fsi, struct fsi_stream *io, struct dev
+ 		return fsi_stream_probe(fsi, dev);
+ 	}
+ 
+-	INIT_WORK(&io->work, fsi_dma_do_work);
+-
+ 	return 0;
+ }
+ 
+ static int fsi_dma_remove(struct fsi_priv *fsi, struct fsi_stream *io)
+ {
+-	cancel_work_sync(&io->work);
+-
+ 	fsi_stream_stop(fsi, io);
+ 
+ 	if (io->chan)
+@@ -1618,9 +1578,9 @@ static int fsi_dai_trigger(struct snd_pcm_substream *substream, int cmd,
+ 		if (!ret)
+ 			ret = fsi_hw_startup(fsi, io, dai->dev);
+ 		if (!ret)
+-			ret = fsi_stream_transfer(io);
++			ret = fsi_stream_start(fsi, io);
+ 		if (!ret)
+-			fsi_stream_start(fsi, io);
++			ret = fsi_stream_transfer(io);
+ 		break;
+ 	case SNDRV_PCM_TRIGGER_STOP:
+ 		if (!ret)
 -- 
-1.8.5.5
+1.7.9.5
 
