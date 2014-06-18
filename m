@@ -1,90 +1,90 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 17 Jun 2014 01:12:34 +0000
-Subject: Re: [PATCH v4 14/19] ARM: shmobile: r8a7779: Add TMU devices to DT
-Message-Id: <20140617011234.GB32454@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 18 Jun 2014 08:54:43 +0000
+Subject: [PATCH 01/12] ASoC: rsnd: fixup rsnd_gen_dma_addr() for Gen1
+Message-Id: <87bntqzjfw.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1402931251-22581-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1402931251-22581-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
 
-Thanks Laurent,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-this version seems good to me.
+ad32d0c7b0e993433df152ae747652647eb65a27
+(ASoC: rsnd: add rsnd_gen_dma_addr() for DMAC addr)
+added rsnd_gen_dma_addr() to calculate DMA addr,
+but, it is necessary only for Gen2.
+This patch ignores Gen1 case.
+Kernel will be panic without this patch.
+Special thanks to Simon
 
-On Mon, Jun 16, 2014 at 05:07:26PM +0200, Laurent Pinchart wrote:
-> Add the TMU0, TMU1 and TMU2 counters to the r8a7779 device tree and make
-> them disabled by default.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Reported-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ sound/soc/sh/rcar/gen.c |   33 +++++++++++++++++++++------------
+ 1 file changed, 21 insertions(+), 12 deletions(-)
 
-Tested-by: Simon Horman <horms+renesas@verge.net.au>
+diff --git a/sound/soc/sh/rcar/gen.c b/sound/soc/sh/rcar/gen.c
+index 1dd2b7d..0280a11 100644
+--- a/sound/soc/sh/rcar/gen.c
++++ b/sound/soc/sh/rcar/gen.c
+@@ -184,7 +184,7 @@ static int rsnd_gen_regmap_init(struct rsnd_priv *priv,
+ #define RDMA_CMD_O_N(addr, i)	(addr ##_reg - 0x004f8000 + (0x400 * i))
+ #define RDMA_CMD_O_P(addr, i)	(addr ##_reg - 0x001f8000 + (0x400 * i))
+ 
+-void rsnd_gen_dma_addr(struct rsnd_priv *priv,
++static void rsnd_gen2_dma_addr(struct rsnd_priv *priv,
+ 		       struct rsnd_dma *dma,
+ 		       struct dma_slave_config *cfg,
+ 		       int is_play, int slave_id)
+@@ -226,17 +226,6 @@ void rsnd_gen_dma_addr(struct rsnd_priv *priv,
+ 		}
+ 	};
+ 
+-	cfg->slave_id	= slave_id;
+-	cfg->src_addr	= 0;
+-	cfg->dst_addr	= 0;
+-	cfg->direction	= is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
+-
+-	/*
+-	 * gen1 uses default DMA addr
+-	 */
+-	if (rsnd_is_gen1(priv))
+-		return;
+-
+ 	/* it shouldn't happen */
+ 	if (use_dvc & !use_src) {
+ 		dev_err(dev, "DVC is selected without SRC\n");
+@@ -250,6 +239,26 @@ void rsnd_gen_dma_addr(struct rsnd_priv *priv,
+ 		id, cfg->src_addr, cfg->dst_addr);
+ }
+ 
++void rsnd_gen_dma_addr(struct rsnd_priv *priv,
++		       struct rsnd_dma *dma,
++		       struct dma_slave_config *cfg,
++		       int is_play, int slave_id)
++{
++	cfg->slave_id   = slave_id;
++	cfg->src_addr   = 0;
++	cfg->dst_addr   = 0;
++	cfg->direction  = is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
++
++	/*
++	 * gen1 uses default DMA addr
++	 */
++	if (rsnd_is_gen1(priv))
++		return;
++
++	rsnd_gen2_dma_addr(priv, dma, cfg, is_play, slave_id);
++}
++
++
+ /*
+  *		Gen2
+  */
+-- 
+1.7.9.5
 
-> ---
->  arch/arm/boot/dts/r8a7779.dtsi | 42 ++++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 42 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-> index 94e2fc8..671d8e4 100644
-> --- a/arch/arm/boot/dts/r8a7779.dtsi
-> +++ b/arch/arm/boot/dts/r8a7779.dtsi
-> @@ -266,6 +266,48 @@
->  		reg = <0xffc48000 0x38>;
->  	};
->  
-> +	tmu0: timer@ffd80000 {
-> +		compatible = "renesas,tmu";
-> +		reg = <0xffd80000 0x30>;
-> +		interrupts = <0 32 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 33 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 34 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp0_clks R8A7779_CLK_TMU0>;
-> +		clock-names = "fck";
-> +
-> +		#renesas,channels = <3>;
-> +
-> +		status = "disabled";
-> +	};
-> +
-> +	tmu1: timer@ffd81000 {
-> +		compatible = "renesas,tmu";
-> +		reg = <0xffd81000 0x30>;
-> +		interrupts = <0 36 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 37 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 38 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp0_clks R8A7779_CLK_TMU1>;
-> +		clock-names = "fck";
-> +
-> +		#renesas,channels = <3>;
-> +
-> +		status = "disabled";
-> +	};
-> +
-> +	tmu2: timer@ffd82000 {
-> +		compatible = "renesas,tmu";
-> +		reg = <0xffd82000 0x30>;
-> +		interrupts = <0 40 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 41 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 42 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp0_clks R8A7779_CLK_TMU2>;
-> +		clock-names = "fck";
-> +
-> +		#renesas,channels = <3>;
-> +
-> +		status = "disabled";
-> +	};
-> +
->  	sata: sata@fc600000 {
->  		compatible = "renesas,rcar-sata";
->  		reg = <0xfc600000 0x2000>;
-> -- 
-> 1.8.5.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
