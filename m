@@ -1,90 +1,138 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 18 Jun 2014 09:10:03 +0000
-Subject: [PROTOTYPE 2/8] DMA: shdma: wire r8a7790
-Message-Id: <87k38ey45w.wl%kuninori.morimoto.gx@renesas.com>
+Date: Wed, 18 Jun 2014 08:59:28 +0000
+Subject: [PATCH 1/3] dma: rcar-audmapp: enable .set_slave
+Message-Id: <87sin2y4ni.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87tx7iy4ot.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87tx7iy4ot.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Vinod Koul <vinod.koul@intel.com>
+Cc: Linux-SH <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, kuninori.morimoto.gx@gmail.com
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Add support for R8A7790 with new device tree code.
+Current .set_slave callback did nothing,
+since it assumed src/dst address come from platform settings.
+But, it isn't good match to DT probing.
+This patch enables .set_slave callback to this issue.
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/dma/sh/shdmac.c |   32 +++++++++++++++++++++++++-------
- 1 file changed, 25 insertions(+), 7 deletions(-)
+ drivers/dma/sh/rcar-audmapp.c |   34 +++++++++++++++++++++++++---------
+ 1 file changed, 25 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
-index 146d5df..f2ecec8 100644
---- a/drivers/dma/sh/shdmac.c
-+++ b/drivers/dma/sh/shdmac.c
-@@ -343,11 +343,21 @@ static const struct sh_dmae_slave_config *dmae_find_slave(
- 			if (cfg->slave_id = match)
- 				return cfg;
- 	} else {
--		for (i = 0, cfg = pdata->slave; i < pdata->slave_num; i++, cfg++)
--			if (cfg->mid_rid = match) {
-+		if (!pdata->slave) {
-+			cfg = shdma_find_slave_of(shdev, match, &i);
-+			if (cfg) {
- 				sh_chan->shdma_chan.slave_id = i;
- 				return cfg;
- 			}
-+
-+			return NULL;
-+		} else
-+			for (i = 0, cfg = pdata->slave; i < pdata->slave_num;
-+			     i++, cfg++)
-+				if (cfg->mid_rid = match) {
-+					sh_chan->shdma_chan.slave_id = i;
-+					return cfg;
-+				}
- 	}
- 
- 	return NULL;
-@@ -680,7 +690,8 @@ static const struct shdma_ops sh_dmae_shdma_ops = {
+diff --git a/drivers/dma/sh/rcar-audmapp.c b/drivers/dma/sh/rcar-audmapp.c
+index 2de7728..858483b 100644
+--- a/drivers/dma/sh/rcar-audmapp.c
++++ b/drivers/dma/sh/rcar-audmapp.c
+@@ -47,6 +47,7 @@ struct audmapp_chan {
+ 	struct shdma_chan shdma_chan;
+ 	struct audmapp_slave_config *config;
+ 	void __iomem *base;
++	dma_addr_t slave_addr;
  };
  
- static const struct of_device_id sh_dmae_of_match[] = {
--	{.compatible = "renesas,shdma-r8a73a4", .data = r8a73a4_shdma_devid,},
-+	{ .compatible = "renesas,shdma-r8a73a4", .data = r8a73a4_shdma_devid },
-+	{ .compatible = "renesas,dma-r8a7790", .data = &shdma_arm_info },
- 	{}
+ struct audmapp_device {
+@@ -56,7 +57,14 @@ struct audmapp_device {
+ 	void __iomem *chan_reg;
  };
- MODULE_DEVICE_TABLE(of, sh_dmae_of_match);
-@@ -699,10 +710,17 @@ static int sh_dmae_probe(struct platform_device *pdev)
- 	struct dma_device *dma_dev;
- 	struct resource *chan, *dmars, *errirq_res, *chanirq_res;
  
--	if (pdev->dev.of_node)
--		pdata = of_match_device(sh_dmae_of_match, &pdev->dev)->data;
--	else
-+	if (pdev->dev.of_node) {
-+		const struct of_device_id *match;
++struct audmapp_desc {
++	struct shdma_desc shdma_desc;
++	dma_addr_t src;
++	dma_addr_t dst;
++};
 +
-+		match = of_match_device(sh_dmae_of_match, &pdev->dev);
-+		if (match->data = r8a73a4_shdma_devid)
-+			pdata = match->data;
-+		else
-+			pdata = sh_dma_probe_of(pdev, match);
-+	} else {
- 		pdata = dev_get_platdata(&pdev->dev);
-+	}
+ #define to_chan(chan) container_of(chan, struct audmapp_chan, shdma_chan)
++#define to_desc(sdesc) container_of(sdesc, struct audmapp_desc, shdma_desc)
+ #define to_dev(chan) container_of(chan->shdma_chan.dma_chan.device,	\
+ 				  struct audmapp_device, shdma_dev.dma_dev)
  
- 	/* get platform data */
- 	if (!pdata || !pdata->channel_num)
-@@ -751,7 +769,7 @@ static int sh_dmae_probe(struct platform_device *pdev)
+@@ -90,19 +98,20 @@ static void audmapp_halt(struct shdma_chan *schan)
+ }
  
- 	if (!pdata->slave_only)
- 		dma_cap_set(DMA_MEMCPY, dma_dev->cap_mask);
--	if (pdata->slave && pdata->slave_num)
-+	if ((pdata->slave && pdata->slave_num) || pdev->dev.of_node)
- 		dma_cap_set(DMA_SLAVE, dma_dev->cap_mask);
+ static void audmapp_start_xfer(struct shdma_chan *schan,
+-			       struct shdma_desc *sdecs)
++			       struct shdma_desc *sdesc)
+ {
+ 	struct audmapp_chan *auchan = to_chan(schan);
+ 	struct audmapp_device *audev = to_dev(auchan);
++	struct audmapp_desc *desc = to_desc(sdesc);
+ 	struct audmapp_slave_config *cfg = auchan->config;
+ 	struct device *dev = audev->dev;
+ 	u32 chcr = cfg->chcr | PDMACHCR_DE;
  
- 	/* Default transfer size of 32 bytes requires 32-byte alignment */
+-	dev_dbg(dev, "src/dst/chcr = %pad/%pad/%x\n",
+-		&cfg->src, &cfg->dst, cfg->chcr);
++	dev_dbg(dev, "src/dst/chcr = %pad/%pad/%08x\n",
++		&desc->src, &desc->dst, chcr);
+ 
+-	audmapp_write(auchan, cfg->src,	PDMASAR);
+-	audmapp_write(auchan, cfg->dst,	PDMADAR);
++	audmapp_write(auchan, desc->src,	PDMASAR);
++	audmapp_write(auchan, desc->dst,	PDMADAR);
+ 	audmapp_write(auchan, chcr,	PDMACHCR);
+ }
+ 
+@@ -137,14 +146,16 @@ static int audmapp_set_slave(struct shdma_chan *schan, int slave_id,
+ 		return 0;
+ 
+ 	auchan->config	= cfg;
++	auchan->slave_addr = slave_addr ? : cfg->dst;
+ 
+ 	return 0;
+ }
+ 
+ static int audmapp_desc_setup(struct shdma_chan *schan,
+-			      struct shdma_desc *sdecs,
++			      struct shdma_desc *sdesc,
+ 			      dma_addr_t src, dma_addr_t dst, size_t *len)
+ {
++	struct audmapp_desc *desc = to_desc(sdesc);
+ 	struct audmapp_chan *auchan = to_chan(schan);
+ 	struct audmapp_slave_config *cfg = auchan->config;
+ 
+@@ -154,6 +165,9 @@ static int audmapp_desc_setup(struct shdma_chan *schan,
+ 	if (*len > (size_t)AUDMAPP_LEN_MAX)
+ 		*len = (size_t)AUDMAPP_LEN_MAX;
+ 
++	desc->src = src;
++	desc->dst = dst;
++
+ 	return 0;
+ }
+ 
+@@ -164,7 +178,9 @@ static void audmapp_setup_xfer(struct shdma_chan *schan,
+ 
+ static dma_addr_t audmapp_slave_addr(struct shdma_chan *schan)
+ {
+-	return 0; /* always fixed address */
++	struct audmapp_chan *auchan = to_chan(schan);
++
++	return auchan->slave_addr;
+ }
+ 
+ static bool audmapp_channel_busy(struct shdma_chan *schan)
+@@ -183,7 +199,7 @@ static bool audmapp_desc_completed(struct shdma_chan *schan,
+ 
+ static struct shdma_desc *audmapp_embedded_desc(void *buf, int i)
+ {
+-	return &((struct shdma_desc *)buf)[i];
++	return &((struct audmapp_desc *)buf)[i].shdma_desc;
+ }
+ 
+ static const struct shdma_ops audmapp_shdma_ops = {
+@@ -260,7 +276,7 @@ static int audmapp_probe(struct platform_device *pdev)
+ 
+ 	sdev		= &audev->shdma_dev;
+ 	sdev->ops	= &audmapp_shdma_ops;
+-	sdev->desc_size	= sizeof(struct shdma_desc);
++	sdev->desc_size	= sizeof(struct audmapp_desc);
+ 
+ 	dma_dev			= &sdev->dma_dev;
+ 	dma_dev->copy_align	= LOG2_DEFAULT_XFER_SIZE;
 -- 
 1.7.9.5
 
