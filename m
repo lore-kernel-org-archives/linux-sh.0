@@ -1,128 +1,48 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 23 Jun 2014 23:54:18 +0000
-Subject: [PATCH v2 12/23] v4l: vsp1: Setup control handler automatically at stream on time
-Message-Id: <1403567669-18539-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 18 Jun 2014 09:13:58 +0000
+Subject: [PATCH 02/10] ARM: shmobile: r8a7791: add DVC support on DTSI
+Message-Id: <877g4ey3zc.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-When setting a control directly on a subdev node the VSP1 driver doesn't
-guarantee that the device is powered on. This leads to crashes when the
-control handlers writes to hardware registers. One easy way to fix this
-is to ensure that the device gets powered on when a subdev node is
-opened. However, this consumes power unnecessarily, as there's no need
-to power the device on when setting formats on the pipeline.
-Furthermore, control handler setup at entity init time suffers from the
-same problem as the device isn't powered on easier.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Fix this by extend the entity base object to setup the control handler
-automatically when starting the stream. Entities must then skip writing
-to registers in the set control handler when not streaming, which can be
-tested with the new vsp1_entity_is_streaming() helper function.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/media/platform/vsp1/vsp1_entity.c | 39 +++++++++++++++++++++++++++++++
- drivers/media/platform/vsp1/vsp1_entity.h |  7 ++++++
- 2 files changed, 46 insertions(+)
+ arch/arm/boot/dts/r8a7791.dtsi |    7 +++++++
+ 1 file changed, 7 insertions(+)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_entity.c b/drivers/media/platform/vsp1/vsp1_entity.c
-index ceac0d7..79af71d 100644
---- a/drivers/media/platform/vsp1/vsp1_entity.c
-+++ b/drivers/media/platform/vsp1/vsp1_entity.c
-@@ -22,6 +22,41 @@
- #include "vsp1_entity.h"
- #include "vsp1_video.h"
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 1997f16..336a6c0 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1005,16 +1005,23 @@
+ 			<&mstp10_clks R8A7791_CLK_SCU_SRC5>, <&mstp10_clks R8A7791_CLK_SCU_SRC4>,
+ 			<&mstp10_clks R8A7791_CLK_SCU_SRC3>, <&mstp10_clks R8A7791_CLK_SCU_SRC2>,
+ 			<&mstp10_clks R8A7791_CLK_SCU_SRC1>, <&mstp10_clks R8A7791_CLK_SCU_SRC0>,
++			<&mstp10_clks R8A7791_CLK_SCU_DVC0>, <&mstp10_clks R8A7791_CLK_SCU_DVC1>,
+ 			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
+ 		clock-names = "ssi-all",
+ 				"ssi.9", "ssi.8", "ssi.7", "ssi.6", "ssi.5",
+ 				"ssi.4", "ssi.3", "ssi.2", "ssi.1", "ssi.0",
+ 				"src.9", "src.8", "src.7", "src.6", "src.5",
+ 				"src.4", "src.3", "src.2", "src.1", "src.0",
++				"dvc.0", "dvc.1",
+ 				"clk_a", "clk_b", "clk_c", "clk_i";
  
-+bool vsp1_entity_is_streaming(struct vsp1_entity *entity)
-+{
-+	bool streaming;
-+
-+	mutex_lock(&entity->lock);
-+	streaming = entity->streaming;
-+	mutex_unlock(&entity->lock);
-+
-+	return streaming;
-+}
-+
-+int vsp1_entity_set_streaming(struct vsp1_entity *entity, bool streaming)
-+{
-+	int ret;
-+
-+	mutex_lock(&entity->lock);
-+	entity->streaming = streaming;
-+	mutex_unlock(&entity->lock);
-+
-+	if (!streaming)
-+		return 0;
-+
-+	if (!entity->subdev.ctrl_handler)
-+		return 0;
-+
-+	ret = v4l2_ctrl_handler_setup(entity->subdev.ctrl_handler);
-+	if (ret < 0) {
-+		mutex_lock(&entity->lock);
-+		entity->streaming = false;
-+		mutex_unlock(&entity->lock);
-+	}
-+
-+	return ret;
-+}
-+
- /* -----------------------------------------------------------------------------
-  * V4L2 Subdevice Operations
-  */
-@@ -158,6 +193,8 @@ int vsp1_entity_init(struct vsp1_device *vsp1, struct vsp1_entity *entity,
- 	if (i = ARRAY_SIZE(vsp1_routes))
- 		return -EINVAL;
+ 		status = "disabled";
  
-+	mutex_init(&entity->lock);
++		rcar_sound,dvc {
++			dvc0: dvc@0 { };
++			dvc1: dvc@1 { };
++		};
 +
- 	entity->vsp1 = vsp1;
- 	entity->source_pad = num_pads - 1;
- 
-@@ -191,4 +228,6 @@ void vsp1_entity_destroy(struct vsp1_entity *entity)
- 	if (entity->subdev.ctrl_handler)
- 		v4l2_ctrl_handler_free(entity->subdev.ctrl_handler);
- 	media_entity_cleanup(&entity->subdev.entity);
-+
-+	mutex_destroy(&entity->lock);
- }
-diff --git a/drivers/media/platform/vsp1/vsp1_entity.h b/drivers/media/platform/vsp1/vsp1_entity.h
-index f0257f6..aa20aaa 100644
---- a/drivers/media/platform/vsp1/vsp1_entity.h
-+++ b/drivers/media/platform/vsp1/vsp1_entity.h
-@@ -14,6 +14,7 @@
- #define __VSP1_ENTITY_H__
- 
- #include <linux/list.h>
-+#include <linux/mutex.h>
- 
- #include <media/v4l2-subdev.h>
- 
-@@ -71,6 +72,9 @@ struct vsp1_entity {
- 	struct v4l2_mbus_framefmt *formats;
- 
- 	struct vsp1_video *video;
-+
-+	struct mutex lock;		/* Protects the streaming field */
-+	bool streaming;
- };
- 
- static inline struct vsp1_entity *to_vsp1_entity(struct v4l2_subdev *subdev)
-@@ -92,4 +96,7 @@ vsp1_entity_get_pad_format(struct vsp1_entity *entity,
- void vsp1_entity_init_formats(struct v4l2_subdev *subdev,
- 			      struct v4l2_subdev_fh *fh);
- 
-+bool vsp1_entity_is_streaming(struct vsp1_entity *entity);
-+int vsp1_entity_set_streaming(struct vsp1_entity *entity, bool streaming);
-+
- #endif /* __VSP1_ENTITY_H__ */
+ 		rcar_sound,src {
+ 			src0: src@0 { };
+ 			src1: src@1 { };
 -- 
-1.8.5.5
+1.7.9.5
 
