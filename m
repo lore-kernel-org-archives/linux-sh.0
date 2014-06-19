@@ -1,113 +1,59 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Wed, 04 Jun 2014 16:14:14 +0000
-Subject: [PATCH 7/8] ARM: shmobile: r8a7790: add dmac0 dmac1 nodes
-Message-Id: <1401898455-31064-8-git-send-email-ben.dooks@codethink.co.uk>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 19 Jun 2014 10:15:03 +0000
+Subject: Re: [PATCH 7/8] ARM: shmobile: r8a7790: add dmac0 dmac1 nodes
+Message-Id: <CAMuHMdX4hZZqAjxmDjfcCTuBTjFG=-zivbB5X8BTzSOsJD0rDQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1401898455-31064-8-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1401898455-31064-8-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add nodes for the SYS-DMA controllers, SYS-DMAC0 and SYS-DMAC1. These
-both share the same device sources, so are wrapped in the shdma-mux
-node to allow both to be used.
+Hi Ben,
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+On Wed, Jun 4, 2014 at 6:14 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
+> Add nodes for the SYS-DMA controllers, SYS-DMAC0 and SYS-DMAC1. These
+> both share the same device sources, so are wrapped in the shdma-mux
+> node to allow both to be used.
+>
+> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 
----
-v2:
-	- fix indentation
-	- remove extra channel on dmac1
-v3:
-	- fix issues with naming in dt
-	- remove mapping of chcr data, will be in driver
----
- arch/arm/boot/dts/r8a7790.dtsi | 72 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 72 insertions(+)
+> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+> index e8ca55d..c63d915 100644
+> --- a/arch/arm/boot/dts/r8a7790.dtsi
+> +++ b/arch/arm/boot/dts/r8a7790.dtsi
+> @@ -87,6 +87,78 @@
+>                 };
+>         };
+>
+> +       dma0: dma-mux@0 {
+> +               compatible = "renesas,shdma-mux";
+> +               #dma-cells = <1>;
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index e8ca55d..c63d915 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -87,6 +87,78 @@
- 		};
- 	};
- 
-+	dma0: dma-mux@0 {
-+		compatible = "renesas,shdma-mux";
-+		#dma-cells = <1>;
-+		dma-channels = <30>;
-+		dma-requests = <256>;
-+		#address-cells = <2>;
-+		#size-cells = <2>;
-+		ranges;
-+
-+		sysdma0: dma-controller@e6700020 {
-+			compatible = "renesas,dma-r8a7790", "renesas,dma-arm";
-+			clocks = <&mstp2_clks R8A7790_CLK_SYS_DMAC0>;
-+			dma-channels = <15>;
-+			status = "disabled";
-+			reg = <0 0xe6700020 0 0xffc0>;
-+			interrupt-parent = <&gic>;
-+
-+			interrupts =	<0 197 IRQ_TYPE_LEVEL_HIGH>, /* error */
-+					<0 200 IRQ_TYPE_LEVEL_HIGH>, /* ch0 */
-+					<0 201 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 202 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 203 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 204 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 205 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 206 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 207 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 208 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 209 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 210 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 211 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 212 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 213 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 214 IRQ_TYPE_LEVEL_HIGH>;
-+			interrupt-names = "error",
-+					"ch0", "ch1", "ch2", "ch3",
-+					"ch4", "ch5", "ch6", "ch7",
-+					"ch8", "ch9", "ch10", "ch11",
-+					"ch12", "ch13", "ch14";
-+		};
-+
-+		sysdma1: dma-controller@e6720020 {
-+			compatible = "renesas,dma-r8a7790";
-+			clocks = <&mstp2_clks R8A7790_CLK_SYS_DMAC1>;
-+			dma-channels = <15>;
-+			reg = <0 0xe6720020 0 0xffc0>;
-+			status = "disabled";
-+
-+			interrupt-parent = <&gic>;
-+			interrupts =  <0 220 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 216 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 217 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 218 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 219 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 308 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 309 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 310 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 311 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 312 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 313 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 314 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 315 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 316 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 317 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 318 IRQ_TYPE_LEVEL_HIGH>;
-+			interrupt-names = "error",
-+					"ch0", "ch1", "ch2", "ch3",
-+					"ch4", "ch5", "ch6", "ch7",
-+					"ch8", "ch9", "ch10", "ch11",
-+					"ch12", "ch13", "ch14";
-+		};
-+	};
-+
- 	gic: interrupt-controller@f1001000 {
- 		compatible = "arm,cortex-a15-gic";
- 		#interrupt-cells = <3>;
--- 
-2.0.0.rc2
+Shouldn't this be "#dma-cells = <2>"? The second value holds the mid/rid value,
+cfr. "[PATCH 8/8] ARM: shmobile: r8a7790: Add DMA for MMCIF1":
 
++ dmas = <&dma0 0xe2>, <&dma0 0xe1>;
++ dma-names = "rx", "tx";
+
+However, the actual code in shdma_of_xlate() doesn't handle the 2nd value:
+
+        if (dma_spec->args_count != 1)
+                return NULL;
+
+BTW, I'm also looking at
+http://git.codethink.co.uk/linux.git#bjdooks/shdma-dev4.
+
+Thanks!
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
