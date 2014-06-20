@@ -1,125 +1,114 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:26:17 +0000
-Subject: [PATCH 04/24] ARM: shmobile: r8a7779: Reference clocks
-Message-Id: <3325cbe8ab74731c88e70d172ffef74cbca13f18.1403487423.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 20 Jun 2014 16:53:03 +0000
+Subject: [PATCH 3/9] ARM: shmobile: Move r8a7740.h
+Message-Id: <1403283189-21688-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487423.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487423.git.horms+renesas@verge.net.au>
+References: <1403283189-21688-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1403283189-21688-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Reference clocks using a "clocks" property in all nodes corresponding to
-devices that require a clock.
+Change location of r8a7740.h so it can be included as "r8a7740.h"
+instead of the old style <mach/r8a7740.h>
 
-Based on work by Laurent Pinchart for the r8a7790 and r8a7791 SoC.
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7779.dtsi | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 4 +++-
+ arch/arm/mach-shmobile/board-armadillo800eva.c           | 4 +++-
+ arch/arm/mach-shmobile/clock-r8a7740.c                   | 3 ++-
+ arch/arm/mach-shmobile/{include/mach => }/r8a7740.h      | 0
+ arch/arm/mach-shmobile/setup-r8a7740.c                   | 4 +++-
+ 5 files changed, 11 insertions(+), 4 deletions(-)
+ rename arch/arm/mach-shmobile/{include/mach => }/r8a7740.h (100%)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 5a62970..bdaaadc 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -158,6 +158,7 @@
- 		compatible = "renesas,i2c-r8a7779";
- 		reg = <0xffc70000 0x1000>;
- 		interrupts = <0 79 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_I2C0>;
- 		status = "disabled";
- 	};
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index 0ae49823e67f..84bc6cb6d5aa 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -24,10 +24,12 @@
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
+ #include <linux/io.h>
+-#include <mach/r8a7740.h>
++
+ #include <asm/mach/arch.h>
+ #include <asm/hardware/cache-l2x0.h>
++
+ #include "common.h"
++#include "r8a7740.h"
  
-@@ -167,6 +168,7 @@
- 		compatible = "renesas,i2c-r8a7779";
- 		reg = <0xffc71000 0x1000>;
- 		interrupts = <0 82 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_I2C1>;
- 		status = "disabled";
- 	};
+ /*
+  * CON1		Camera Module
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 395638da837c..fc73246ca104 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -45,7 +45,7 @@
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/i2c-gpio.h>
+ #include <linux/reboot.h>
+-#include <mach/r8a7740.h>
++
+ #include <media/mt9t112.h>
+ #include <media/sh_mobile_ceu.h>
+ #include <media/soc_camera.h>
+@@ -59,9 +59,11 @@
+ #include <video/sh_mobile_hdmi.h>
+ #include <sound/sh_fsi.h>
+ #include <sound/simple_card.h>
++
+ #include "common.h"
+ #include "irqs.h"
+ #include "pm-rmobile.h"
++#include "r8a7740.h"
+ #include "sh-gpio.h"
  
-@@ -176,6 +178,7 @@
- 		compatible = "renesas,i2c-r8a7779";
- 		reg = <0xffc72000 0x1000>;
- 		interrupts = <0 80 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_I2C2>;
- 		status = "disabled";
- 	};
+ /*
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index ffefec53b058..789091cfa37a 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -22,9 +22,10 @@
+ #include <linux/io.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
+-#include <mach/r8a7740.h>
++
+ #include "clock.h"
+ #include "common.h"
++#include "r8a7740.h"
  
-@@ -185,6 +188,7 @@
- 		compatible = "renesas,i2c-r8a7779";
- 		reg = <0xffc73000 0x1000>;
- 		interrupts = <0 81 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_I2C3>;
- 		status = "disabled";
- 	};
+ /*
+  *        |  MDx  |  XTAL1/EXTAL1   |  System   | EXTALR |
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/r8a7740.h
+similarity index 100%
+rename from arch/arm/mach-shmobile/include/mach/r8a7740.h
+rename to arch/arm/mach-shmobile/r8a7740.h
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 10170b3560c2..348af358a239 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -31,15 +31,17 @@
+ #include <linux/sh_dma.h>
+ #include <linux/sh_timer.h>
+ #include <linux/platform_data/sh_ipmmu.h>
+-#include <mach/r8a7740.h>
++
+ #include <asm/mach-types.h>
+ #include <asm/mach/map.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/time.h>
++
+ #include "common.h"
+ #include "dma-register.h"
+ #include "irqs.h"
+ #include "pm-rmobile.h"
++#include "r8a7740.h"
  
-@@ -202,12 +206,14 @@
- 		compatible = "renesas,rcar-sata";
- 		reg = <0xfc600000 0x2000>;
- 		interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7779_CLK_SATA>;
- 	};
- 
- 	sdhi0: sd@ffe4c000 {
- 		compatible = "renesas,sdhi-r8a7779";
- 		reg = <0xffe4c000 0x100>;
- 		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7779_CLK_SDHI0>;
- 		cap-sd-highspeed;
- 		cap-sdio-irq;
- 		status = "disabled";
-@@ -217,6 +223,7 @@
- 		compatible = "renesas,sdhi-r8a7779";
- 		reg = <0xffe4d000 0x100>;
- 		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7779_CLK_SDHI1>;
- 		cap-sd-highspeed;
- 		cap-sdio-irq;
- 		status = "disabled";
-@@ -226,6 +233,7 @@
- 		compatible = "renesas,sdhi-r8a7779";
- 		reg = <0xffe4e000 0x100>;
- 		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7779_CLK_SDHI2>;
- 		cap-sd-highspeed;
- 		cap-sdio-irq;
- 		status = "disabled";
-@@ -235,6 +243,7 @@
- 		compatible = "renesas,sdhi-r8a7779";
- 		reg = <0xffe4f000 0x100>;
- 		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7779_CLK_SDHI3>;
- 		cap-sd-highspeed;
- 		cap-sdio-irq;
- 		status = "disabled";
-@@ -246,6 +255,7 @@
- 		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		clocks = <&mstp0_clks R8A7779_CLK_HSPI>;
- 		status = "disabled";
- 	};
- 
-@@ -255,6 +265,7 @@
- 		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		clocks = <&mstp0_clks R8A7779_CLK_HSPI>;
- 		status = "disabled";
- 	};
- 
-@@ -264,6 +275,7 @@
- 		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		clocks = <&mstp0_clks R8A7779_CLK_HSPI>;
- 		status = "disabled";
- 	};
- 
+ static struct map_desc r8a7740_io_desc[] __initdata = {
+ 	 /*
 -- 
-2.0.0.rc2
+1.9.1
 
