@@ -1,54 +1,145 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Wed, 04 Jun 2014 15:54:41 +0000
-Subject: Re: [PATCH v2 1/9] ARM: shmobile: r8a7790: add dmac0,dmac1 clocks
-Message-Id: <538F4141.2020007@codethink.co.uk>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 20 Jun 2014 12:37:38 +0000
+Subject: [PATCH 1/4] dmaengine: shdma: Add more register documentation
+Message-Id: <1403267861-15609-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397511312-4845-1-git-send-email-ben.dooks@codethink.co.uk>	<1397511312-4845-2-git-send-email-ben.dooks@codethink.co.uk> <CAMuHMdVn84FcQCpn6k8caPJGV9wDAi3m0_jwUARDem-Y05+NnQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdVn84FcQCpn6k8caPJGV9wDAi3m0_jwUARDem-Y05+NnQ@mail.gmail.com>
+References: <1403267861-15609-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1403267861-15609-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: linux-kernel@lists.codethink.co.uk, dmaengine@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Dan Williams <dan.j.williams@intel.com>, Linux-sh list <linux-sh@vger.kernel.org>, magnus.damm@opensource.se, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Vinod Koul <vinod.koul@intel.com>
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-sh@vger.kernel.org, dmaengine@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On 13/05/14 10:23, Geert Uytterhoeven wrote:
-> Hi Ben,
-> 
-> On Mon, Apr 14, 2014 at 11:35 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
->> --- a/arch/arm/boot/dts/r8a7790.dtsi
->> +++ b/arch/arm/boot/dts/r8a7790.dtsi
->> @@ -671,16 +671,17 @@
->>                         compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
->>                         reg = <0 0xe6150138 0 4>, <0 0xe6150040 0 4>;
->>                         clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
->> -                                <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>;
->> +                                <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&hp_clk>, <&hp_clk>;
-> 
-> According to the docs, the parent clock of SYS-DMAC[01] is the ZS clock
-> (at 260 MHz), not the HP clock (at 130 MHz).
-> 
->>                         #clock-cells = <1>;
->>                         renesas,clock-indices = <
->>                                 R8A7790_CLK_SCIFA2 R8A7790_CLK_SCIFA1 R8A7790_CLK_SCIFA0
->>                                 R8A7790_CLK_MSIOF2 R8A7790_CLK_SCIFB0 R8A7790_CLK_SCIFB1
->>                                 R8A7790_CLK_MSIOF1 R8A7790_CLK_MSIOF3 R8A7790_CLK_SCIFB2
->> +                               R8A7790_CLK_SYS_DMAC0 R8A7790_CLK_SYS_DMAC1
-> 
-> I know order doesn't really matter, but all other members are sorted by
-> value, so R8A7790_CLK_SYS_DMAC1 should come before
-> R8A7790_CLK_SYS_DMAC0.
-> 
->>                         >;
->>                         clock-output-names >>                                 "scifa2", "scifa1", "scifa0", "msiof2", "scifb0",
->> -                               "scifb1", "msiof1", "msiof3", "scifb2";
->> +                               "scifb1", "msiof1", "msiof3", "scifb2", "dmac0", "dmac1";
-> 
-> "sys-dmac0", "sys-dmac1" (and order changes, cfr. my comment above),
-> to match the documentation?
+Also add a few definitions that were missing.
 
-ok, thanks.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/sh/include/asm/dma-register.h | 36 +++++++++++++++++++-----------------
+ drivers/dma/sh/shdmac.c            | 12 ++++++------
+ include/linux/sh_dma.h             | 24 +++++++++++++-----------
+ 3 files changed, 38 insertions(+), 34 deletions(-)
 
-
+diff --git a/arch/sh/include/asm/dma-register.h b/arch/sh/include/asm/dma-register.h
+index 51cd78feacff..c757b47e6b64 100644
+--- a/arch/sh/include/asm/dma-register.h
++++ b/arch/sh/include/asm/dma-register.h
+@@ -13,17 +13,17 @@
+ #ifndef DMA_REGISTER_H
+ #define DMA_REGISTER_H
+ 
+-/* DMA register */
+-#define SAR	0x00
+-#define DAR	0x04
+-#define TCR	0x08
+-#define CHCR	0x0C
+-#define DMAOR	0x40
++/* DMA registers */
++#define SAR	0x00	/* Source Address Register */
++#define DAR	0x04	/* Destination Address Register */
++#define TCR	0x08	/* Transfer Count Register */
++#define CHCR	0x0C	/* Channel Control Register */
++#define DMAOR	0x40	/* DMA Operation Register */
+ 
+ /* DMAOR definitions */
+-#define DMAOR_AE	0x00000004
++#define DMAOR_AE	0x00000004	/* Address Error Flag */
+ #define DMAOR_NMIF	0x00000002
+-#define DMAOR_DME	0x00000001
++#define DMAOR_DME	0x00000001	/* DMA Master Enable */
+ 
+ /* Definitions for the SuperH DMAC */
+ #define REQ_L	0x00000000
+@@ -34,18 +34,20 @@
+ #define ACK_W	0x00020000
+ #define ACK_H	0x00000000
+ #define ACK_L	0x00010000
+-#define DM_INC	0x00004000
+-#define DM_DEC	0x00008000
+-#define DM_FIX	0x0000c000
+-#define SM_INC	0x00001000
+-#define SM_DEC	0x00002000
+-#define SM_FIX	0x00003000
++#define DM_INC	0x00004000	/* Destination addresses are incremented */
++#define DM_DEC	0x00008000	/* Destination addresses are decremented */
++#define DM_FIX	0x0000c000	/* Destination address is fixed */
++#define SM_INC	0x00001000	/* Source addresses are incremented */
++#define SM_DEC	0x00002000	/* Source addresses are decremented */
++#define SM_FIX	0x00003000	/* Source address is fixed */
+ #define RS_IN	0x00000200
+ #define RS_OUT	0x00000300
++#define RS_AUTO	0x00000400	/* Auto Request */
++#define RS_ERS	0x00000800	/* DMA extended resource selector */
+ #define TS_BLK	0x00000040
+ #define TM_BUR	0x00000020
+-#define CHCR_DE	0x00000001
+-#define CHCR_TE	0x00000002
+-#define CHCR_IE	0x00000004
++#define CHCR_DE	0x00000001	/* DMA Enable */
++#define CHCR_TE	0x00000002	/* Transfer End Flag */
++#define CHCR_IE	0x00000004	/* Interrupt Enable */
+ 
+ #endif
+diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
+index 146d5df926db..1a6f6595c6c1 100644
+--- a/drivers/dma/sh/shdmac.c
++++ b/drivers/dma/sh/shdmac.c
+@@ -38,12 +38,12 @@
+ #include "../dmaengine.h"
+ #include "shdma.h"
+ 
+-/* DMA register */
+-#define SAR	0x00
+-#define DAR	0x04
+-#define TCR	0x08
+-#define CHCR	0x0C
+-#define DMAOR	0x40
++/* DMA registers */
++#define SAR	0x00	/* Source Address Register */
++#define DAR	0x04	/* Destination Address Register */
++#define TCR	0x08	/* Transfer Count Register */
++#define CHCR	0x0C	/* Channel Control Register */
++#define DMAOR	0x40	/* DMA Operation Register */
+ 
+ #define TEND	0x18 /* USB-DMAC */
+ 
+diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
+index b7b43b82231e..56b97eed28a4 100644
+--- a/include/linux/sh_dma.h
++++ b/include/linux/sh_dma.h
+@@ -95,19 +95,21 @@ struct sh_dmae_pdata {
+ };
+ 
+ /* DMAOR definitions */
+-#define DMAOR_AE	0x00000004
++#define DMAOR_AE	0x00000004	/* Address Error Flag */
+ #define DMAOR_NMIF	0x00000002
+-#define DMAOR_DME	0x00000001
++#define DMAOR_DME	0x00000001	/* DMA Master Enable */
+ 
+ /* Definitions for the SuperH DMAC */
+-#define DM_INC	0x00004000
+-#define DM_DEC	0x00008000
+-#define DM_FIX	0x0000c000
+-#define SM_INC	0x00001000
+-#define SM_DEC	0x00002000
+-#define SM_FIX	0x00003000
+-#define CHCR_DE	0x00000001
+-#define CHCR_TE	0x00000002
+-#define CHCR_IE	0x00000004
++#define DM_INC	0x00004000	/* Destination addresses are incremented */
++#define DM_DEC	0x00008000	/* Destination addresses are decremented */
++#define DM_FIX	0x0000c000	/* Destination address is fixed */
++#define SM_INC	0x00001000	/* Source addresses are incremented */
++#define SM_DEC	0x00002000	/* Source addresses are decremented */
++#define SM_FIX	0x00003000	/* Source address is fixed */
++#define RS_AUTO	0x00000400	/* Auto Request */
++#define RS_ERS	0x00000800	/* DMA extended resource selector */
++#define CHCR_DE	0x00000001	/* DMA Enable */
++#define CHCR_TE	0x00000002	/* Transfer End Flag */
++#define CHCR_IE	0x00000004	/* Interrupt Enable */
+ 
+ #endif
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.9.1
+
