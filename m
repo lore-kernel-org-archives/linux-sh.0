@@ -1,211 +1,53 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 02 Jun 2014 13:38:15 +0000
-Subject: [PATCH 13/18] spi: rspi: Merge rspi_*_dma() into rspi_dma_transfer()
-Message-Id: <1401716301-29612-14-git-send-email-geert+renesas@glider.be>
+Date: Fri, 20 Jun 2014 10:17:26 +0000
+Subject: [PATCH/POC 2/2] ARM: shmobile: koelsch legacy: Enable DMA for MSIOF
+Message-Id: <1403259446-13696-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-rspi_send_dma() and rspi_send_receive_dma() are very similar. Consolidate
-into a single function rspi_dma_transfer(), and add missing checks for
-dmaengine_submit() failures.
-
-Both sg_table pointer parameters can be NULL, as RSPI supports TX-only
-mode, and unidirectional DMA transfers will also be needed later for
-Dual/Quad DMA support.
+Add the register set used by the DMA engine to access the MSIOF registers,
+and DMA slave IDs.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/spi/spi-rspi.c | 139 ++++++++++++++++++++++---------------------------
- 1 file changed, 61 insertions(+), 78 deletions(-)
+ arch/arm/mach-shmobile/board-koelsch.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index bfa5e7e5df5a..c77cfe654b0e 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -463,30 +463,67 @@ static void rspi_dma_complete(void *arg)
- 	wake_up_interruptible(&rspi->wait);
- }
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index f04fc3745a05..7a824f034113 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -190,12 +190,15 @@ static const struct rspi_plat_data qspi_pdata __initconst = {
+ /* MSIOF0 */
+ static const struct resource sh_msiof0_resources[] __initconst = {
+ 	DEFINE_RES_MEM(0xe6e20000, 0x0064),
++	DEFINE_RES_MEM(0xe7e20000, 0x0064),
+ 	DEFINE_RES_IRQ(gic_spi(156)),
+ };
  
--static int rspi_send_dma(struct rspi_data *rspi, struct sg_table *tx)
-+static int rspi_dma_transfer(struct rspi_data *rspi, struct sg_table *tx,
-+			     struct sg_table *rx)
- {
--	struct dma_async_tx_descriptor *desc;
-+	struct dma_async_tx_descriptor *desc_tx = NULL, *desc_rx = NULL;
-+	u8 irq_mask = 0;
-+	unsigned int other_irq = 0;
-+	dma_cookie_t cookie;
- 	int ret;
+-static const struct sh_msiof_spi_info sh_msiof_info __initconst = {
++static const struct sh_msiof_spi_info sh_msiof0_info __initconst = {
+ 	.rx_fifo_override	= 256,
+ 	.num_chipselect		= 1,
++	.dma_tx_id		= SYS_DMAC_SLAVE_MSIOF0_TX,
++	.dma_rx_id		= SYS_DMAC_SLAVE_MSIOF0_RX,
+ };
  
--	desc = dmaengine_prep_slave_sg(rspi->master->dma_tx, tx->sgl,
--				       tx->nents, DMA_TO_DEVICE,
--				       DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
--	if (!desc)
--		return -EIO;
-+	if (tx) {
-+		desc_tx = dmaengine_prep_slave_sg(rspi->master->dma_tx,
-+					tx->sgl, tx->nents, DMA_TO_DEVICE,
-+					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
-+		if (!desc_tx)
-+			return -EIO;
-+
-+		irq_mask |= SPCR_SPTIE;
-+	}
-+	if (rx) {
-+		desc_rx = dmaengine_prep_slave_sg(rspi->master->dma_rx,
-+					rx->sgl, rx->nents, DMA_FROM_DEVICE,
-+					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
-+		if (!desc_rx)
-+			return -EIO;
-+
-+		irq_mask |= SPCR_SPRIE;
-+	}
+ /* SPI Flash memory (Spansion S25FL512SAGMFIG11 64 MiB) */
+@@ -482,8 +485,8 @@ static void __init koelsch_add_standard_devices(void)
+ 	platform_device_register_resndata(&platform_bus, "spi_r8a7791_msiof",
+ 					  1 + 0, sh_msiof0_resources,
+ 					  ARRAY_SIZE(sh_msiof0_resources),
+-					  &sh_msiof_info,
+-					  sizeof(struct sh_msiof_spi_info));
++					  &sh_msiof0_info,
++					  sizeof(sh_msiof0_info));
  
- 	/*
--	 * DMAC needs SPTIE, but if SPTIE is set, this IRQ routine will be
-+	 * DMAC needs SPxIE, but if SPxIE is set, the IRQ routine will be
- 	 * called. So, this driver disables the IRQ while DMA transfer.
- 	 */
--	disable_irq(rspi->tx_irq);
-+	if (tx)
-+		disable_irq(other_irq = rspi->tx_irq);
-+	if (rx && rspi->rx_irq != other_irq)
-+		disable_irq(rspi->rx_irq);
+ 	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
  
--	rspi_enable_irq(rspi, SPCR_SPTIE);
-+	rspi_enable_irq(rspi, irq_mask);
- 	rspi->dma_callbacked = 0;
- 
--	desc->callback = rspi_dma_complete;
--	desc->callback_param = rspi;
--	dmaengine_submit(desc);
--	dma_async_issue_pending(rspi->master->dma_tx);
-+	if (rx) {
-+		desc_rx->callback = rspi_dma_complete;
-+		desc_rx->callback_param = rspi;
-+		cookie = dmaengine_submit(desc_rx);
-+		if (dma_submit_error(cookie))
-+			return cookie;
-+		dma_async_issue_pending(rspi->master->dma_rx);
-+	}
-+	if (tx) {
-+		if (rx) {
-+			/* No callback */
-+			desc_tx->callback = NULL;
-+		} else {
-+			desc_tx->callback = rspi_dma_complete;
-+			desc_tx->callback_param = rspi;
-+		}
-+		cookie = dmaengine_submit(desc_tx);
-+		if (dma_submit_error(cookie))
-+			return cookie;
-+		dma_async_issue_pending(rspi->master->dma_tx);
-+	}
- 
- 	ret = wait_event_interruptible_timeout(rspi->wait,
- 					       rspi->dma_callbacked, HZ);
-@@ -494,9 +531,14 @@ static int rspi_send_dma(struct rspi_data *rspi, struct sg_table *tx)
- 		ret = 0;
- 	else if (!ret)
- 		ret = -ETIMEDOUT;
--	rspi_disable_irq(rspi, SPCR_SPTIE);
- 
--	enable_irq(rspi->tx_irq);
-+	rspi_disable_irq(rspi, irq_mask);
-+
-+	if (tx)
-+		enable_irq(rspi->tx_irq);
-+	if (rx && rspi->rx_irq != other_irq)
-+		enable_irq(rspi->rx_irq);
-+
- 	return ret;
- }
- 
-@@ -530,61 +572,6 @@ static void qspi_receive_init(const struct rspi_data *rspi)
- 	rspi_write8(rspi, 0, QSPI_SPBFCR);
- }
- 
--static int rspi_send_receive_dma(struct rspi_data *rspi, struct sg_table *tx,
--				 struct sg_table *rx)
--{
--	struct dma_async_tx_descriptor *desc_tx, *desc_rx;
--	int ret;
--
--	/* prepare transmit transfer */
--	desc_tx = dmaengine_prep_slave_sg(rspi->master->dma_tx, tx->sgl,
--					  tx->nents, DMA_TO_DEVICE,
--					  DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
--	if (!desc_tx)
--		return -EIO;
--
--	/* prepare receive transfer */
--	desc_rx = dmaengine_prep_slave_sg(rspi->master->dma_rx, rx->sgl,
--					  rx->nents, DMA_FROM_DEVICE,
--					  DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
--	if (!desc_rx)
--		return -EIO;
--
--	/*
--	 * DMAC needs SPTIE, but if SPTIE is set, this IRQ routine will be
--	 * called. So, this driver disables the IRQ while DMA transfer.
--	 */
--	disable_irq(rspi->tx_irq);
--	if (rspi->rx_irq != rspi->tx_irq)
--		disable_irq(rspi->rx_irq);
--
--	rspi_enable_irq(rspi, SPCR_SPTIE | SPCR_SPRIE);
--	rspi->dma_callbacked = 0;
--
--	desc_rx->callback = rspi_dma_complete;
--	desc_rx->callback_param = rspi;
--	dmaengine_submit(desc_rx);
--	dma_async_issue_pending(rspi->master->dma_rx);
--
--	desc_tx->callback = NULL;	/* No callback */
--	dmaengine_submit(desc_tx);
--	dma_async_issue_pending(rspi->master->dma_tx);
--
--	ret = wait_event_interruptible_timeout(rspi->wait,
--					       rspi->dma_callbacked, HZ);
--	if (ret > 0 && rspi->dma_callbacked)
--		ret = 0;
--	else if (!ret)
--		ret = -ETIMEDOUT;
--	rspi_disable_irq(rspi, SPCR_SPTIE | SPCR_SPRIE);
--
--	enable_irq(rspi->tx_irq);
--	if (rspi->rx_irq != rspi->tx_irq)
--		enable_irq(rspi->rx_irq);
--
--	return ret;
--}
--
- static bool __rspi_can_dma(const struct rspi_data *rspi,
- 			   const struct spi_transfer *xfer)
- {
-@@ -615,13 +602,9 @@ static int rspi_transfer_one(struct spi_master *master, struct spi_device *spi,
- 	}
- 	rspi_write8(rspi, spcr, RSPI_SPCR);
- 
--	if (master->can_dma && __rspi_can_dma(rspi, xfer)) {
--		if (xfer->rx_buf)
--			return rspi_send_receive_dma(rspi, &xfer->tx_sg,
--						     &xfer->rx_sg);
--		else
--			return rspi_send_dma(rspi, &xfer->tx_sg);
--	}
-+	if (master->can_dma && __rspi_can_dma(rspi, xfer))
-+		return rspi_dma_transfer(rspi, &xfer->tx_sg,
-+					 xfer->rx_buf ? &xfer->rx_sg : NULL);
- 
- 	ret = rspi_pio_transfer(rspi, xfer->tx_buf, xfer->rx_buf, xfer->len);
- 	if (ret < 0)
 -- 
 1.9.1
 
