@@ -1,52 +1,36 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Tue, 17 Jun 2014 15:15:00 +0000
-Subject: [PATCH 7/8] r8a66597-udc: use devm_request_irq() to get device irq
-Message-Id: <1403018101-11062-8-git-send-email-ben.dooks@codethink.co.uk>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 20 Jun 2014 12:37:39 +0000
+Subject: [PATCH 2/4] ARM: shmobile: dma: Use defines instead of hardcoded numbers
+Message-Id: <1403267861-15609-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1403267861-15609-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1403267861-15609-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Vinod Koul <vinod.koul@intel.com>
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-sh@vger.kernel.org, dmaengine@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Use the devm_request_irq() call to get the interrupt for the
-device and have it automatically free on exit.
-
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/usb/gadget/r8a66597-udc.c | 6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/dma-register.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/usb/gadget/r8a66597-udc.c b/drivers/usb/gadget/r8a66597-udc.c
-index 51eaedd..8414ba5 100644
---- a/drivers/usb/gadget/r8a66597-udc.c
-+++ b/drivers/usb/gadget/r8a66597-udc.c
-@@ -1826,7 +1826,6 @@ static int __exit r8a66597_remove(struct platform_device *pdev)
+diff --git a/arch/arm/mach-shmobile/dma-register.h b/arch/arm/mach-shmobile/dma-register.h
+index 97c40bd9b94f..52a2f66e600f 100644
+--- a/arch/arm/mach-shmobile/dma-register.h
++++ b/arch/arm/mach-shmobile/dma-register.h
+@@ -52,8 +52,8 @@ static const unsigned int dma_ts_shift[] = {
+ 	((((i) & TS_LOW_BIT) << TS_LOW_SHIFT) |\
+ 	 (((i) & TS_HI_BIT)  << TS_HI_SHIFT))
  
- 	usb_del_gadget_udc(&r8a66597->gadget);
- 	del_timer_sync(&r8a66597->timer);
--	free_irq(platform_get_irq(pdev, 0), r8a66597);
- 	r8a66597_free_request(&r8a66597->ep[0].ep, r8a66597->ep0_req);
+-#define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL((xmit_sz)))
+-#define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL((xmit_sz)))
++#define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL((xmit_sz)))
++#define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL((xmit_sz)))
  
- 	if (r8a66597->pdata->on_chip) {
-@@ -1918,8 +1917,8 @@ static int __init r8a66597_probe(struct platform_device *pdev)
  
- 	disable_controller(r8a66597); /* make sure controller is disabled */
- 
--	ret = request_irq(irq, r8a66597_irq, IRQF_SHARED,
--			udc_name, r8a66597);
-+	ret = devm_request_irq(dev, irq, r8a66597_irq, IRQF_SHARED,
-+			       udc_name, r8a66597);
- 	if (ret < 0) {
- 		dev_err(dev, "request_irq error (%d)\n", ret);
- 		goto clean_up2;
-@@ -1969,7 +1968,6 @@ static int __init r8a66597_probe(struct platform_device *pdev)
- err_add_udc:
- 	r8a66597_free_request(&r8a66597->ep[0].ep, r8a66597->ep0_req);
- clean_up3:
--	free_irq(irq, r8a66597);
- clean_up2:
- 	if (r8a66597->pdata->on_chip)
- 		clk_disable_unprepare(r8a66597->clk);
+ /*
 -- 
-2.0.0
+1.9.1
 
