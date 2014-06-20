@@ -1,43 +1,88 @@
-From: Joe Perches <joe@perches.com>
-Date: Sun, 15 Jun 2014 20:37:31 +0000
-Subject: [PATCH -next 02/26] sh: Use dma_zalloc_coherent
-Message-Id: <a2cbba7f6f113ab867a42069ada3d30faeb5e12a.1402863905.git.joe@perches.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 20 Jun 2014 16:53:04 +0000
+Subject: [PATCH 4/9] ARM: shmobile: Move r8a7778.h
+Message-Id: <1403283189-21688-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1402863904.git.joe@perches.com>
-In-Reply-To: <cover.1402863904.git.joe@perches.com>
+References: <1403283189-21688-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1403283189-21688-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Use the zeroing function instead of dma_alloc_coherent & memset(,0,)
+Change location of r8a7778.h so it can be included as "r8a7778.h"
+instead of the old style <mach/r8a7778.h>
 
-Signed-off-by: Joe Perches <joe@perches.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/sh/mm/consistent.c | 4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
+ arch/arm/mach-shmobile/board-bockw-reference.c      | 4 +++-
+ arch/arm/mach-shmobile/board-bockw.c                | 4 +++-
+ arch/arm/mach-shmobile/{include/mach => }/r8a7778.h | 0
+ arch/arm/mach-shmobile/setup-r8a7778.c              | 4 +++-
+ 4 files changed, 9 insertions(+), 3 deletions(-)
+ rename arch/arm/mach-shmobile/{include/mach => }/r8a7778.h (100%)
 
-diff --git a/arch/sh/mm/consistent.c b/arch/sh/mm/consistent.c
-index b81d9db..3d710da 100644
---- a/arch/sh/mm/consistent.c
-+++ b/arch/sh/mm/consistent.c
-@@ -143,14 +143,12 @@ int __init platform_resource_setup_memory(struct platform_device *pdev,
- 	if (!memsize)
- 		return 0;
+diff --git a/arch/arm/mach-shmobile/board-bockw-reference.c b/arch/arm/mach-shmobile/board-bockw-reference.c
+index 91ff3a27ccc7..ba840cd333b9 100644
+--- a/arch/arm/mach-shmobile/board-bockw-reference.c
++++ b/arch/arm/mach-shmobile/board-bockw-reference.c
+@@ -19,9 +19,11 @@
+  */
  
--	buf = dma_alloc_coherent(NULL, memsize, &dma_handle, GFP_KERNEL);
-+	buf = dma_zalloc_coherent(NULL, memsize, &dma_handle, GFP_KERNEL);
- 	if (!buf) {
- 		pr_warning("%s: unable to allocate memory\n", name);
- 		return -ENOMEM;
- 	}
+ #include <linux/of_platform.h>
+-#include <mach/r8a7778.h>
++
+ #include <asm/mach/arch.h>
++
+ #include "common.h"
++#include "r8a7778.h"
  
--	memset(buf, 0, memsize);
--
- 	r->flags = IORESOURCE_MEM;
- 	r->start = dma_handle;
- 	r->end = r->start + memsize - 1;
+ /*
+  *	see board-bock.c for checking detail of dip-switch
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 8cb057f95c44..b4e4789017bc 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -34,13 +34,15 @@
+ #include <linux/spi/spi.h>
+ #include <linux/spi/flash.h>
+ #include <linux/usb/renesas_usbhs.h>
++
+ #include <media/soc_camera.h>
+-#include <mach/r8a7778.h>
+ #include <asm/mach/arch.h>
+ #include <sound/rcar_snd.h>
+ #include <sound/simple_card.h>
++
+ #include "common.h"
+ #include "irqs.h"
++#include "r8a7778.h"
+ 
+ #define FPGA	0x18200000
+ #define IRQ0MR	0x30
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/r8a7778.h
+similarity index 100%
+rename from arch/arm/mach-shmobile/include/mach/r8a7778.h
+rename to arch/arm/mach-shmobile/r8a7778.h
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index d9f4529d8e40..2ccc0128b469 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -37,11 +37,13 @@
+ #include <linux/usb/ehci_pdriver.h>
+ #include <linux/usb/ohci_pdriver.h>
+ #include <linux/dma-mapping.h>
+-#include <mach/r8a7778.h>
++
+ #include <asm/mach/arch.h>
+ #include <asm/hardware/cache-l2x0.h>
++
+ #include "common.h"
+ #include "irqs.h"
++#include "r8a7778.h"
+ 
+ /* SCIF */
+ #define R8A7778_SCIF(index, baseaddr, irq)			\
 -- 
-1.8.1.2.459.gbcd45b4.dirty
+1.9.1
 
