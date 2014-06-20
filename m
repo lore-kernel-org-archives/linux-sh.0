@@ -1,105 +1,21 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:26:18 +0000
-Subject: [PATCH 05/24] ARM: shmobile: r8a7779: Add helper to read mode pins
-Message-Id: <3e05f24aa95bb043f1103b41392b61ce83d2675e.1403487423.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 20 Jun 2014 20:34:57 +0000
+Subject: [PATCH v4 0/2] Add R8A7790/Lager board PCI USB DT support
+Message-Id: <201406210034.57784.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487423.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487423.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add and use helper to read mode pins.
-This will be re-used when moving marzen-reference to
-the common clock framework.
+Hello.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/clock-r8a7779.c        | 11 ++---------
- arch/arm/mach-shmobile/include/mach/r8a7779.h |  1 +
- arch/arm/mach-shmobile/setup-r8a7779.c        | 18 ++++++++++++++++++
- 3 files changed, 21 insertions(+), 9 deletions(-)
+   Here's the set of 2 patches against Simon Horman's 'renesas.git' repo's
+'renesas-devel-v3.16-rc1-20140618' tag. Here we add PCI USB device tree support
+for the R8A7790-based Lager board. As the 'pci-rcar-gen2' driver device tree
+support has been merged for 3.16, this patchset can now be merged too...
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index d81539a..5dd66a2 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -23,6 +23,7 @@
- #include <linux/io.h>
- #include <linux/sh_clk.h>
- #include <linux/clkdev.h>
-+#include <mach/r8a7779.h>
- #include "clock.h"
- #include "common.h"
- 
-@@ -52,9 +53,6 @@
- #define MSTPCR3		IOMEM(0xffc8003c)
- #define MSTPSR1		IOMEM(0xffc80044)
- 
--#define MODEMR		0xffcc0020
--
--
- /* ioremap() through clock mapping mandatory to avoid
-  * collision with ARM coherent DMA virtual memory range.
-  */
-@@ -207,14 +205,9 @@ static struct clk_lookup lookups[] = {
- 
- void __init r8a7779_clock_init(void)
- {
--	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
--	u32 mode;
-+	u32 mode = r8a7779_read_mode_pins();
- 	int k, ret = 0;
- 
--	BUG_ON(!modemr);
--	mode = ioread32(modemr);
--	iounmap(modemr);
--
- 	if (mode & MD(1)) {
- 		plla_clk.rate = 1500000000;
- 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index def10a2..5ef0bad 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -20,6 +20,7 @@ extern void r8a7779_add_early_devices(void);
- extern void r8a7779_add_standard_devices(void);
- extern void r8a7779_add_standard_devices_dt(void);
- extern void r8a7779_init_late(void);
-+extern u32 r8a7779_read_mode_pins(void);
- extern void r8a7779_clock_init(void);
- extern void r8a7779_pinmux_init(void);
- extern void r8a7779_pm_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 86ec4b6..25e1d0b 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -762,6 +762,24 @@ void __init r8a7779_add_standard_devices_dt(void)
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
- 
-+#define MODEMR		0xffcc0020
-+
-+u32 __init r8a7779_read_mode_pins(void)
-+{
-+	static u32 mode;
-+	static bool mode_valid;
-+
-+	if (!mode_valid) {
-+		void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
-+		BUG_ON(!modemr);
-+		mode = ioread32(modemr);
-+		iounmap(modemr);
-+		mode_valid = true;
-+	}
-+
-+	return mode;
-+}
-+
- static const char *r8a7779_compat_dt[] __initdata = {
- 	"renesas,r8a7779",
- 	NULL,
--- 
-2.0.0.rc2
+[1/2] ARM: shmobile: r8a7790: add internal PCI bridge nodes
+[2/2] ARM: shmobile: lager: enable internal PCI
 
+WBR, Sergei
