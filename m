@@ -1,36 +1,60 @@
-From: Jason Gunthorpe <jgunthorpe@obsidianresearch.com>
-Date: Mon, 23 Jun 2014 20:40:36 +0000
-Subject: Re: [PATCH v4 1/2] ARM: shmobile: r8a7790: add internal PCI bridge nodes
-Message-Id: <20140623204036.GA12793@obsidianresearch.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 20 Jun 2014 20:51:27 +0000
+Subject: [PATCH v3 3/3] ARM: shmobile: henninger: enable internal PCI
+Message-Id: <201406210051.28040.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201406210034.57784.sergei.shtylyov@cogentembedded.com>
- <4637423.jWRbL1GbCK@wuerfel> <53A4A0E5.50904@cogentembedded.com>
- <4490558.0d3xbrzEgW@wuerfel> <53A4A6C6.9000703@cogentembedded.com>
-In-Reply-To: <53A4A6C6.9000703@cogentembedded.com>
+References: <201406210044.51620.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201406210044.51620.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+Enable internal AHB-PCI bridges for the USB EHCI/OHCI controllers attached to
+them.
 
-> >>     Hm, are you sure about that? I thought only PCI devices should have it...
-> 
-> >Yes, pretty sure it's needed in both the host controller and the
-> >devices.
-> 
->     I don't understand the case of the PCI devices, honestly.
-> Shouldn't the "device_type" prop reflect the device's functionality
-> rather than the bus where it's located?
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-It is confusingly named, but it is required on the host bridge OF node.
+---
+Changes in version 3:
+- refreshed the patch.
 
-The spec says ' .. corresponding to a device that implements a PCI bus',
-which includes the host bridge.
+ arch/arm/boot/dts/r8a7791-henninger.dts |   22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
-The key element is that it must be present on the node that introduces
-the PCI 3 dword address encoding scheme, and then on all nodes below
-it that use the 3 dword scheme.
-
-Otherwise Linux common OF PCI code does not work properly.
-
-Jason
+Index: renesas/arch/arm/boot/dts/r8a7791-henninger.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-henninger.dts
++++ renesas/arch/arm/boot/dts/r8a7791-henninger.dts
+@@ -120,6 +120,16 @@
+ 				 "msiof0_tx";
+ 		renesas,function = "msiof0";
+ 	};
++
++	usb0_pins: usb0 {
++		renesas,groups = "usb0";
++		renesas,function = "usb0";
++	};
++
++	usb1_pins: usb1 {
++		renesas,groups = "usb1";
++		renesas,function = "usb1";
++	};
+ };
+ 
+ &scif0 {
+@@ -217,3 +227,15 @@
+ 		spi-cpha;
+ 	};
+ };
++
++&pci0 {
++	status = "okay";
++	pinctrl-0 = <&usb0_pins>;
++	pinctrl-names = "default";
++};
++
++&pci1 {
++	status = "okay";
++	pinctrl-0 = <&usb1_pins>;
++	pinctrl-names = "default";
++};
