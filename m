@@ -1,40 +1,57 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 20 Jun 2014 20:51:45 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 20 Jun 2014 21:00:21 +0000
 Subject: Re: [PATCH v4 1/2] ARM: shmobile: r8a7790: add internal PCI bridge nodes
-Message-Id: <4637423.jWRbL1GbCK@wuerfel>
+Message-Id: <53A4A0E5.50904@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201406210034.57784.sergei.shtylyov@cogentembedded.com>
  <201406210036.59693.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201406210036.59693.sergei.shtylyov@cogentembedded.com>
+ <4637423.jWRbL1GbCK@wuerfel>
+In-Reply-To: <4637423.jWRbL1GbCK@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Saturday 21 June 2014 00:36:58 Sergei Shtylyov wrote:
-> +       pci0: pci@ee090000 {
-> +               compatible = "renesas,pci-r8a7790";
-> +               clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-> +               reg = <0x0 0xee090000 0x0 0xc00>,
-> +                     <0x0 0xee080000 0x0 0x1100>;
-> +               interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
-> +               status = "disabled";
-> +
-> +               bus-range = <0 0>;
-> +               #address-cells = >;
-> +               #size-cells = <2>;
-> +               #interrupt-cells = <1>;
-> +               interrupt-map-mask = <0xff00 0 0 0x7>;
-> +               interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
-> +                                0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
-> +                                0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
-> +       };
+Hello.
 
-Hmm, this device node is not actually compliant to the PCI binding,
-it needs a "ranges" property that can be used to look up the memory
-and I/O space windows. It also needs a device_type property.
+On 06/21/2014 12:51 AM, Arnd Bergmann wrote:
 
-I realize that the driver doesn't currently use them, but you should
-adhere to the binding anyway, so we can fix the driver at some point.
+>> +       pci0: pci@ee090000 {
+>> +               compatible = "renesas,pci-r8a7790";
+>> +               clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
+>> +               reg = <0x0 0xee090000 0x0 0xc00>,
+>> +                     <0x0 0xee080000 0x0 0x1100>;
+>> +               interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
+>> +               status = "disabled";
+>> +
+>> +               bus-range = <0 0>;
+>> +               #address-cells = >;
+>> +               #size-cells = <2>;
+>> +               #interrupt-cells = <1>;
+>> +               interrupt-map-mask = <0xff00 0 0 0x7>;
+>> +               interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
+>> +                                0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
+>> +                                0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
+>> +       };
 
-	Arnd
+> Hmm, this device node is not actually compliant to the PCI binding,
+> it needs a "ranges" property that can be used to look up the memory
+> and I/O space windows.
+
+    The PCI driver doesn't support I/O space.
+
+> It also needs a device_type property.
+
+    Hm, are you sure about that? I thought only PCI devices should have it...
+
+> I realize that the driver doesn't currently use them, but you should
+> adhere to the binding anyway, so we can fix the driver at some point.
+
+    Sigh, agreed about the need to fix the driver. Too bad you've spoken up 
+only now though. And you've ACKed the DT bindings without those properties 
+documented or even present in an example... :-(
+
+> 	Arnd
+
+WBR, Sergei
+
