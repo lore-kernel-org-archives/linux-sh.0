@@ -1,54 +1,42 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 12 Jun 2014 09:42:09 +0000
-Subject: [PATCH v2 00/07] ARM: shmobile: Lager/Koelsch MMCIF/SDHI LPAE DMA prototype V2
-Message-Id: <20140612094209.4132.78270.sendpatchset@w520>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 20 Jun 2014 12:37:37 +0000
+Subject: [PATCH 0/4] dmaengine: shdma: Register documentation
+Message-Id: <1403267861-15609-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Vinod Koul <vinod.koul@intel.com>
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-sh@vger.kernel.org, dmaengine@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-ARM: shmobile: Lager/Koelsch MMCIF/SDHI LPAE DMA prototype V2
+This patch series adds more register documentation for shdma, and replaces
+some hardcoded numbers by defines.
 
-[PATCH v2 01/07] mmc: sdhi: enable .dma_rx_offset for platform prototype
-[PATCH v2 02/07] DMA: shdma: 40-bit address prototype
-[PATCH v2 03/07] ARM: shmobile: Lager SYS-DMAC prototype
-[PATCH v2 04/07] ARM: shmobile: Lager SYS-DMAC and MMCIF prototype
-[PATCH v2 05/07] ARM: shmobile: Lager SYS-DMAC and SDHI prototype
-[PATCH v2 06/07] ARM: shmobile: Koelsch SYS-DMAC prototype
-[PATCH v2 07/07] ARM: shmobile: Koelsch SYS-DMAC and SDHI prototype
+  [1/4] dmaengine: shdma: Add more register documentation
+  [2/4] ARM: shmobile: dma: Use defines instead of hardcoded numbers
+  [3/4] sh: dma: Use defines instead of hardcoded numbers
+  [4/4] dmaengine: shdma: Use defines instead of hardcoded numbers
 
-These patches add DMAC prototype support for MMCIF and SDHI on Lager
-and SDHI on Koelsch. 40-bit physical address support in the DMAC
-has been hacked in as a prototype. DMA support for the SDHI
-driver has also been modified on a prototype level.
+ arch/arm/mach-shmobile/dma-register.h  |  4 +--
+ arch/sh/drivers/dma/dma-sh.c           |  2 +-
+ arch/sh/include/asm/dma-register.h     | 36 ++++++++++---------
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c | 24 ++++++-------
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c | 48 ++++++++++++-------------
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c | 64 +++++++++++++++++-----------------
+ drivers/dma/sh/shdma-arm.h             |  4 +--
+ drivers/dma/sh/shdmac.c                | 15 ++++----
+ include/linux/sh_dma.h                 | 24 +++++++------
+ 9 files changed, 112 insertions(+), 109 deletions(-)
 
-Written to show how to make use of platform devices for DMA support
-until the DT bindings for the DMA hardware have been stabilized.
+Thanks!
 
-Not for upstream merge.
+Gr{oetje,eeting}s,
 
-Changes since V1:
- - Updated patch 02/07 to correctly calculate the transfer length
- - Updated patch 07/07 to allow use together with Audio DMAC
+						Geert
 
-Thanks to Geert for his constructive review and feedback!
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-Depends on the following public SDHI patches by Morimoto-san:
-[PATCH] mmc: block: add block number limitation flag for lultiple block read
-[PATCH] mmc: sdhi: tidyup mmc_data setting for R-Car SDHI
-[PATCH] mmc: tmio: care about DMA tx/rx addr offset
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
-
- Written on top of renesas-devel-v3.15-20140611
-
- arch/arm/mach-shmobile/board-koelsch-reference.c |  154 +++++++++++++++++++++
- arch/arm/mach-shmobile/board-lager-reference.c   |  155 +++++++++++++++++++++-
- drivers/dma/sh/shdma.h                           |    4 
- drivers/dma/sh/shdmac.c                          |   46 +++++-
- drivers/mmc/host/sh_mobile_sdhi.c                |    1 
- include/linux/mmc/sh_mobile_sdhi.h               |    1 
- include/linux/sh_dma.h                           |    2 
- 7 files changed, 353 insertions(+), 10 deletions(-)
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
