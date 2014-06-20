@@ -1,51 +1,134 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 20 Jun 2014 12:37:41 +0000
-Subject: [PATCH 4/4] dmaengine: shdma: Use defines instead of hardcoded numbers
-Message-Id: <1403267861-15609-5-git-send-email-geert+renesas@glider.be>
+Date: Fri, 20 Jun 2014 16:53:09 +0000
+Subject: [PATCH 9/9] ARM: shmobile: Move sh73a0.h
+Message-Id: <1403283189-21688-10-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1403267861-15609-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1403267861-15609-1-git-send-email-geert+renesas@glider.be>
+References: <1403283189-21688-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1403283189-21688-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Vinod Koul <vinod.koul@intel.com>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-sh@vger.kernel.org, dmaengine@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
+
+Change location of sh73a0.h so it can be included as "sh73a0.h"
+instead of the old style <mach/sh73a0.h>
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/dma/sh/shdma-arm.h | 4 ++--
- drivers/dma/sh/shdmac.c    | 3 +--
- 2 files changed, 3 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/board-kzm9g-reference.c     | 4 +++-
+ arch/arm/mach-shmobile/board-kzm9g.c               | 4 +++-
+ arch/arm/mach-shmobile/intc-sh73a0.c               | 4 +++-
+ arch/arm/mach-shmobile/setup-sh73a0.c              | 4 +++-
+ arch/arm/mach-shmobile/{include/mach => }/sh73a0.h | 0
+ arch/arm/mach-shmobile/smp-sh73a0.c                | 4 +++-
+ 6 files changed, 15 insertions(+), 5 deletions(-)
+ rename arch/arm/mach-shmobile/{include/mach => }/sh73a0.h (100%)
 
-diff --git a/drivers/dma/sh/shdma-arm.h b/drivers/dma/sh/shdma-arm.h
-index a2b8258426c9..a1b0ef45d6a2 100644
---- a/drivers/dma/sh/shdma-arm.h
-+++ b/drivers/dma/sh/shdma-arm.h
-@@ -45,7 +45,7 @@ enum {
- 	((((i) & TS_LOW_BIT) << TS_LOW_SHIFT) |\
- 	 (((i) & TS_HI_BIT)  << TS_HI_SHIFT))
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index e6285de6bc87..5d2621f202d1 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -25,11 +25,13 @@
+ #include <linux/irq.h>
+ #include <linux/input.h>
+ #include <linux/of_platform.h>
+-#include <mach/sh73a0.h>
++
+ #include <asm/hardware/cache-l2x0.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
++
+ #include "common.h"
++#include "sh73a0.h"
  
--#define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL((xmit_sz)))
--#define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL((xmit_sz)))
-+#define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL((xmit_sz)))
-+#define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL((xmit_sz)))
- 
- #endif
-diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
-index 1a6f6595c6c1..58eb85770eba 100644
---- a/drivers/dma/sh/shdmac.c
-+++ b/drivers/dma/sh/shdmac.c
-@@ -239,9 +239,8 @@ static void dmae_init(struct sh_dmae_chan *sh_chan)
+ static void __init kzm_init(void)
  {
- 	/*
- 	 * Default configuration for dual address memory-memory transfer.
--	 * 0x400 represents auto-request.
- 	 */
--	u32 chcr = DM_INC | SM_INC | 0x400 | log2size_to_chcr(sh_chan,
-+	u32 chcr = DM_INC | SM_INC | RS_AUTO | log2size_to_chcr(sh_chan,
- 						   LOG2_DEFAULT_XFER_SIZE);
- 	sh_chan->xmit_shift = calc_xmit_shift(sh_chan, chcr);
- 	chcr_write(sh_chan, chcr);
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index fff330f74925..1320e9d063b1 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -41,15 +41,17 @@
+ #include <linux/usb/r8a66597.h>
+ #include <linux/usb/renesas_usbhs.h>
+ #include <linux/videodev2.h>
++
+ #include <sound/sh_fsi.h>
+ #include <sound/simple_card.h>
+-#include <mach/sh73a0.h>
+ #include <asm/hardware/cache-l2x0.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <video/sh_mobile_lcdc.h>
++
+ #include "common.h"
+ #include "irqs.h"
++#include "sh73a0.h"
+ 
+ /*
+  * external GPIO
+diff --git a/arch/arm/mach-shmobile/intc-sh73a0.c b/arch/arm/mach-shmobile/intc-sh73a0.c
+index 1a8f9a7af983..44457a94897b 100644
+--- a/arch/arm/mach-shmobile/intc-sh73a0.c
++++ b/arch/arm/mach-shmobile/intc-sh73a0.c
+@@ -24,11 +24,13 @@
+ #include <linux/io.h>
+ #include <linux/irqchip.h>
+ #include <linux/irqchip/arm-gic.h>
+-#include <mach/sh73a0.h>
++
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
++
+ #include "intc.h"
+ #include "irqs.h"
++#include "sh73a0.h"
+ 
+ enum {
+ 	UNUSED = 0,
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index b30bbee6dc65..224882151667 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -32,14 +32,16 @@
+ #include <linux/sh_timer.h>
+ #include <linux/platform_data/sh_ipmmu.h>
+ #include <linux/platform_data/irq-renesas-intc-irqpin.h>
+-#include <mach/sh73a0.h>
++
+ #include <asm/mach-types.h>
+ #include <asm/mach/map.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/time.h>
++
+ #include "common.h"
+ #include "dma-register.h"
+ #include "irqs.h"
++#include "sh73a0.h"
+ 
+ static struct map_desc sh73a0_io_desc[] __initdata = {
+ 	/* create a 1:1 entity map for 0xe6xxxxxx
+diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/sh73a0.h
+similarity index 100%
+rename from arch/arm/mach-shmobile/include/mach/sh73a0.h
+rename to arch/arm/mach-shmobile/sh73a0.h
+diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
+index bf4aff99ed1c..22d8f87b23e9 100644
+--- a/arch/arm/mach-shmobile/smp-sh73a0.c
++++ b/arch/arm/mach-shmobile/smp-sh73a0.c
+@@ -22,10 +22,12 @@
+ #include <linux/smp.h>
+ #include <linux/io.h>
+ #include <linux/delay.h>
+-#include <mach/sh73a0.h>
++
+ #include <asm/smp_plat.h>
+ #include <asm/smp_twd.h>
++
+ #include "common.h"
++#include "sh73a0.h"
+ 
+ #define WUPCR		IOMEM(0xe6151010)
+ #define SRESCR		IOMEM(0xe6151018)
 -- 
 1.9.1
 
