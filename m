@@ -1,53 +1,103 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 18 Jun 2014 09:14:47 +0000
-Subject: [PROTOTYPE 06/10] ARM: shmobile: lager: Sound DMA support on DTS
-Message-Id: <871tumy3xz.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 20 Jun 2014 16:53:08 +0000
+Subject: [PATCH 8/9] ARM: shmobile: Move sh7372.h
+Message-Id: <1403283189-21688-9-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1403283189-21688-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1403283189-21688-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Change location of sh7372.h so it can be included as "sh7372.h"
+instead of the old style <mach/sh7372.h>
 
-DMA transfer to/from SSI
-
-      DMA
- [MEM] -> [SSI]
-
-      DMA
- [MEM] <- [SSI]
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts |   12 ++++++++++--
- 1 file changed, 10 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/board-mackerel.c            | 4 +++-
+ arch/arm/mach-shmobile/pm-sh7372.c                 | 4 +++-
+ arch/arm/mach-shmobile/setup-sh7372.c              | 4 +++-
+ arch/arm/mach-shmobile/{include/mach => }/sh7372.h | 0
+ 4 files changed, 9 insertions(+), 3 deletions(-)
+ rename arch/arm/mach-shmobile/{include/mach => }/sh7372.h (100%)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 7d97ae7..c37f820 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -428,10 +428,18 @@
- };
- 
- &ssi0 {
--	pio-transfer;
-+	no-busif;
- };
- 
- &ssi1 {
--	pio-transfer;
-+	no-busif;
- 	shared-pin;
- };
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 0ece865cbc4d..304b76f3bf4a 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -51,6 +51,7 @@
+ #include <linux/tca6416_keypad.h>
+ #include <linux/usb/renesas_usbhs.h>
+ #include <linux/dma-mapping.h>
 +
-+&audiodma0 {
-+	status = "okay";
-+};
+ #include <video/sh_mobile_hdmi.h>
+ #include <video/sh_mobile_lcdc.h>
+ #include <media/sh_mobile_ceu.h>
+@@ -58,13 +59,14 @@
+ #include <media/soc_camera_platform.h>
+ #include <sound/sh_fsi.h>
+ #include <sound/simple_card.h>
+-#include <mach/sh7372.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach-types.h>
 +
-+&audiodma1 {
-+	status = "okay";
-+};
+ #include "common.h"
+ #include "irqs.h"
+ #include "pm-rmobile.h"
+ #include "sh-gpio.h"
++#include "sh7372.h"
+ 
+ /*
+  * Address	Interface		BusWidth	note
+diff --git a/arch/arm/mach-shmobile/pm-sh7372.c b/arch/arm/mach-shmobile/pm-sh7372.c
+index 7ef9a0126780..7e5c2676c489 100644
+--- a/arch/arm/mach-shmobile/pm-sh7372.c
++++ b/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -21,13 +21,15 @@
+ #include <linux/irq.h>
+ #include <linux/bitrev.h>
+ #include <linux/console.h>
++
+ #include <asm/cpuidle.h>
+ #include <asm/io.h>
+ #include <asm/tlbflush.h>
+ #include <asm/suspend.h>
+-#include <mach/sh7372.h>
++
+ #include "common.h"
+ #include "pm-rmobile.h"
++#include "sh7372.h"
+ 
+ /* DBG */
+ #define DBGREG1 IOMEM(0xe6100020)
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 5571f867c611..9cdfcdfd38fc 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -33,15 +33,17 @@
+ #include <linux/pm_domain.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/platform_data/sh_ipmmu.h>
+-#include <mach/sh7372.h>
++
+ #include <asm/mach/map.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/time.h>
++
+ #include "common.h"
+ #include "dma-register.h"
+ #include "irqs.h"
+ #include "pm-rmobile.h"
++#include "sh7372.h"
+ 
+ static struct map_desc sh7372_io_desc[] __initdata = {
+ 	/* create a 1:1 entity map for 0xe6xxxxxx
+diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/sh7372.h
+similarity index 100%
+rename from arch/arm/mach-shmobile/include/mach/sh7372.h
+rename to arch/arm/mach-shmobile/sh7372.h
 -- 
-1.7.9.5
+1.9.1
 
