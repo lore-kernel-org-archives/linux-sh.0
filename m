@@ -1,61 +1,52 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Tue, 17 Jun 2014 15:14:56 +0000
-Subject: [PATCH 3/8] r8a66597-udc: use devm_kzalloc() to allocate driver state
-Message-Id: <1403018101-11062-4-git-send-email-ben.dooks@codethink.co.uk>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 20 Jun 2014 10:17:25 +0000
+Subject: [PATCH/POC 1/2] ARM: shmobile: r8a7791: Add MSIOF DMA support
+Message-Id: <1403259446-13696-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Update driver to use devm_kzalloc() to make tracking of resources
-easier. Also remove the exit point via cleanup as there's no
-cleanup necessary from this point now.
-
-As a note, also removes the error print as the allocation calls
-produce errors if they do not return memory.
-
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/usb/gadget/r8a66597-udc.c | 11 +++--------
- 1 file changed, 3 insertions(+), 8 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7791.h | 6 ++++++
+ arch/arm/mach-shmobile/setup-r8a7791.c        | 5 ++++-
+ 2 files changed, 10 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/usb/gadget/r8a66597-udc.c b/drivers/usb/gadget/r8a66597-udc.c
-index 1721e44..48a9e0b 100644
---- a/drivers/usb/gadget/r8a66597-udc.c
-+++ b/drivers/usb/gadget/r8a66597-udc.c
-@@ -1836,7 +1836,6 @@ static int __exit r8a66597_remove(struct platform_device *pdev)
- 		clk_put(r8a66597->clk);
- 	}
- 
--	kfree(r8a66597);
- 	return 0;
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7791.h b/arch/arm/mach-shmobile/include/mach/r8a7791.h
+index c4582df76139..cfde0f61580e 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7791.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7791.h
+@@ -4,6 +4,12 @@
+ /* DMA slave IDs */
+ enum {
+ 	RCAR_DMA_SLAVE_INVALID,
++	SYS_DMAC_SLAVE_MSIOF0_TX,
++	SYS_DMAC_SLAVE_MSIOF0_RX,
++	SYS_DMAC_SLAVE_MSIOF1_TX,
++	SYS_DMAC_SLAVE_MSIOF1_RX,
++	SYS_DMAC_SLAVE_MSIOF2_TX,
++	SYS_DMAC_SLAVE_MSIOF2_RX,
+ 	SYS_DMAC_SLAVE_QSPI_TX,
+ 	SYS_DMAC_SLAVE_QSPI_RX,
+ };
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index 0b7252902e1d..a3efc1f85ec4 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -57,7 +57,10 @@
  }
  
-@@ -1892,12 +1891,9 @@ static int __init r8a66597_probe(struct platform_device *pdev)
- 	}
+ static const struct sh_dmae_slave_config r8a7791_sys_dmac_slaves[] = {
+-	SYS_DMAC_SLAVE(QSPI,   8, 0xe6b10000, 0x04, 0x04,   0x17, 0x18),
++	SYS_DMAC_SLAVE(MSIOF0, 32, 0xe7e20000, 0x50, 0x60, 0x51, 0x52),
++	SYS_DMAC_SLAVE(MSIOF1, 32, 0xe7e10000, 0x50, 0x60, 0x55, 0x56),
++	SYS_DMAC_SLAVE(MSIOF2, 32, 0xe7e00000, 0x50, 0x60, 0x41, 0x42),
++	SYS_DMAC_SLAVE(QSPI,    8, 0xe6b10000, 0x04, 0x04, 0x17, 0x18),
+ };
  
- 	/* initialize ucd */
--	r8a66597 = kzalloc(sizeof(struct r8a66597), GFP_KERNEL);
--	if (r8a66597 = NULL) {
--		ret = -ENOMEM;
--		dev_err(dev, "kzalloc error\n");
--		goto clean_up;
--	}
-+	r8a66597 = devm_kzalloc(dev, sizeof(struct r8a66597), GFP_KERNEL);
-+	if (r8a66597 = NULL)
-+		return -ENOMEM;
- 
- 	spin_lock_init(&r8a66597->lock);
- 	platform_set_drvdata(pdev, r8a66597);
-@@ -1996,7 +1992,6 @@ clean_up:
- 		if (r8a66597->ep0_req)
- 			r8a66597_free_request(&r8a66597->ep[0].ep,
- 						r8a66597->ep0_req);
--		kfree(r8a66597);
- 	}
- 
- 	return ret;
+ static const struct sh_dmae_channel r8a7791_sys_dmac_channels[] = {
 -- 
-2.0.0
+1.9.1
 
