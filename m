@@ -1,32 +1,124 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Tue, 03 Jun 2014 08:14:30 +0000
-Subject: Re: [PATCH 0/6] DMA: shdma: Increase build test coverage with COMPILE_TEST
-Message-Id: <20140603080230.GY21128@intel.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 20 Jun 2014 10:16:19 +0000
+Subject: [PATCH 4/5] spi: sh-msiof: Refactor sh_msiof_transfer_one()
+Message-Id: <1403259380-13634-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1399935736-16854-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1399935736-16854-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1403259380-13634-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1403259380-13634-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Mon, Jun 02, 2014 at 03:00:04PM +0100, Ben Dooks wrote:
-> On 01/06/14 18:28, Vinod Koul wrote:
-> > On Tue, May 13, 2014 at 01:02:10AM +0200, Laurent Pinchart wrote:
-> >> Hello,
-> >>
-> >> This patch series increases build test coverage for the Renesas shdma driver
-> >> by enabling driver compilation with COMPILE_TEST. To avoid introducing new
-> >> warnings during bisection the series starts with fixes for warnings produced
-> >> when compiling the driver on non-Renesas platforms.
-> > 
-> > Applied all after changing subsystem to "dmaengine" manually, thanks
-> 
-> Which branch should I use for continuing work on the shdma/dt code?
+  - Move buffer pointer and length setup to the top,
+  - Make unsigned values unsigned,
+  - Loop over words and increment pointers instead of recalculating them,
+    which allows to kill bytes_done.
 
-Now that merge window has opened, pls use for-linus. I will send to Linus later
-this week. It contains the fixes reported by kbuild robot
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/spi/spi-sh-msiof.c | 43 +++++++++++++++++++++----------------------
+ 1 file changed, 21 insertions(+), 22 deletions(-)
 
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index 29dee0436a9a..ef831f1c1803 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -616,16 +616,17 @@ static int sh_msiof_transfer_one(struct spi_master *master,
+ 	struct sh_msiof_spi_priv *p = spi_master_get_devdata(master);
+ 	void (*tx_fifo)(struct sh_msiof_spi_priv *, const void *, int, int);
+ 	void (*rx_fifo)(struct sh_msiof_spi_priv *, void *, int, int);
+-	int bits;
+-	int bytes_per_word;
+-	int bytes_done;
+-	int words;
++	const void *tx_buf = t->tx_buf;
++	void *rx_buf = t->rx_buf;
++	unsigned int len = t->len;
++	unsigned int bits = t->bits_per_word;
++	unsigned int bytes_per_word;
++	unsigned int words;
+ 	int n;
+ 	bool swab;
+ 
+-	bits = t->bits_per_word;
+ 
+-	if (bits <= 8 && t->len > 15 && !(t->len & 3)) {
++	if (bits <= 8 && len > 15 && !(len & 3)) {
+ 		bits = 32;
+ 		swab = true;
+ 	} else {
+@@ -639,34 +640,34 @@ static int sh_msiof_transfer_one(struct spi_master *master,
+ 		rx_fifo = sh_msiof_spi_read_fifo_8;
+ 	} else if (bits <= 16) {
+ 		bytes_per_word = 2;
+-		if ((unsigned long)t->tx_buf & 0x01)
++		if ((unsigned long)tx_buf & 0x01)
+ 			tx_fifo = sh_msiof_spi_write_fifo_16u;
+ 		else
+ 			tx_fifo = sh_msiof_spi_write_fifo_16;
+ 
+-		if ((unsigned long)t->rx_buf & 0x01)
++		if ((unsigned long)rx_buf & 0x01)
+ 			rx_fifo = sh_msiof_spi_read_fifo_16u;
+ 		else
+ 			rx_fifo = sh_msiof_spi_read_fifo_16;
+ 	} else if (swab) {
+ 		bytes_per_word = 4;
+-		if ((unsigned long)t->tx_buf & 0x03)
++		if ((unsigned long)tx_buf & 0x03)
+ 			tx_fifo = sh_msiof_spi_write_fifo_s32u;
+ 		else
+ 			tx_fifo = sh_msiof_spi_write_fifo_s32;
+ 
+-		if ((unsigned long)t->rx_buf & 0x03)
++		if ((unsigned long)rx_buf & 0x03)
+ 			rx_fifo = sh_msiof_spi_read_fifo_s32u;
+ 		else
+ 			rx_fifo = sh_msiof_spi_read_fifo_s32;
+ 	} else {
+ 		bytes_per_word = 4;
+-		if ((unsigned long)t->tx_buf & 0x03)
++		if ((unsigned long)tx_buf & 0x03)
+ 			tx_fifo = sh_msiof_spi_write_fifo_32u;
+ 		else
+ 			tx_fifo = sh_msiof_spi_write_fifo_32;
+ 
+-		if ((unsigned long)t->rx_buf & 0x03)
++		if ((unsigned long)rx_buf & 0x03)
+ 			rx_fifo = sh_msiof_spi_read_fifo_32u;
+ 		else
+ 			rx_fifo = sh_msiof_spi_read_fifo_32;
+@@ -676,20 +677,18 @@ static int sh_msiof_transfer_one(struct spi_master *master,
+ 	sh_msiof_spi_set_clk_regs(p, clk_get_rate(p->clk), t->speed_hz);
+ 
+ 	/* transfer in fifo sized chunks */
+-	words = t->len / bytes_per_word;
+-	bytes_done = 0;
+-
+-	while (bytes_done < t->len) {
+-		void *rx_buf = t->rx_buf ? t->rx_buf + bytes_done : NULL;
+-		const void *tx_buf = t->tx_buf ? t->tx_buf + bytes_done : NULL;
+-		n = sh_msiof_spi_txrx_once(p, tx_fifo, rx_fifo,
+-					   tx_buf,
+-					   rx_buf,
++	words = len / bytes_per_word;
++
++	while (words > 0) {
++		n = sh_msiof_spi_txrx_once(p, tx_fifo, rx_fifo, tx_buf, rx_buf,
+ 					   words, bits);
+ 		if (n < 0)
+ 			return n;
+ 
+-		bytes_done += n * bytes_per_word;
++		if (tx_buf)
++			tx_buf += n * bytes_per_word;
++		if (rx_buf)
++			rx_buf += n * bytes_per_word;
+ 		words -= n;
+ 	}
+ 
 -- 
-~Vinod
+1.9.1
 
