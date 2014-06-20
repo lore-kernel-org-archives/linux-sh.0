@@ -1,76 +1,84 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 23 Jun 2014 00:59:02 +0000
-Subject: [PATCH 09/10 v2] ASoC: rsnd: DMA start address is properly used for each DMAC
-Message-Id: <87simwsap0.wl%kuninori.morimoto.gx@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 20 Jun 2014 20:38:48 +0000
+Subject: [PATCH v4 2/2] ARM: shmobile: lager: enable internal PCI
+Message-Id: <201406210038.49541.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
-	<8761jstphc.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <8761jstphc.wl%kuninori.morimoto.gx@gmail.com>
+References: <201406210034.57784.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201406210034.57784.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-R-Car sound uses Audio DMAC and Audio DMAC peri peri.
-Audio DMAC peri peri transfers data inside circuit.
+Enable internal AHB-PCI bridges for the USB EHCI/OHCI controllers attached to
+them.
 
-DMA transfer needs source / destination address,
-and destination address can be set via dmaengine_slave_config().
-The source address can be set when starting DMAEngine.
-Because Audio DMAC peri peri always ignores its value,
-current driver always used same source address for
-Audio DMAC / Audio DMAC peri peri
-(Audio DMAC peri peri source / destination address
-is always fixed value)
-But, This is not good match for DT booting.
-This patch properly uses DMA start address
-for Audio DMAC / Audio DMAC peri peri.
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
+[Sergei: enabled PCI0]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v1 -> v2
+Changes in version 4:
+- refreshed the patch.
 
- - based on latest mark/topic/rcar
+Changes in version 3:
+- refreshed the patch.
 
- sound/soc/sh/rcar/core.c |    2 ++
- sound/soc/sh/rcar/rsnd.h |    1 +
- 2 files changed, 3 insertions(+)
+Changes in version 2:
+- enabled PCI0 device;
+- reworded summary and changelog;
+- refreshed the patch.
 
-diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
-index 4435a31e..49d9b31 100644
---- a/sound/soc/sh/rcar/core.c
-+++ b/sound/soc/sh/rcar/core.c
-@@ -200,6 +200,7 @@ void rsnd_dma_start(struct rsnd_dma *dma)
- 	struct dma_async_tx_descriptor *desc;
- 
- 	desc = dmaengine_prep_dma_cyclic(dma->chan,
-+					 (dma->addr) ? dma->addr :
- 					 substream->runtime->dma_addr,
- 					 snd_pcm_lib_buffer_bytes(substream),
- 					 snd_pcm_lib_period_bytes(substream),
-@@ -347,6 +348,7 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma,
- 	if (ret < 0)
- 		goto rsnd_dma_init_err;
- 
-+	dma->addr = is_play ? cfg.src_addr : cfg.dst_addr;
- 	dma->dir = is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
- 
- 	return 0;
-diff --git a/sound/soc/sh/rcar/rsnd.h b/sound/soc/sh/rcar/rsnd.h
-index 425b22e..631b149 100644
---- a/sound/soc/sh/rcar/rsnd.h
-+++ b/sound/soc/sh/rcar/rsnd.h
-@@ -158,6 +158,7 @@ struct rsnd_dma {
- 	struct sh_dmae_slave	slave;
- 	struct dma_chan		*chan;
- 	enum dma_transfer_direction dir;
-+	dma_addr_t		addr;
+ arch/arm/boot/dts/r8a7790-lager.dts |   33 +++++++++++++++++++++++++++++++++
+ 1 file changed, 33 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7790-lager.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790-lager.dts
++++ renesas/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -219,6 +219,21 @@
+ 		renesas,groups = "i2c3";
+ 		renesas,function = "i2c3";
+ 	};
++
++	usb0_pins: usb0 {
++		renesas,groups = "usb0";
++		renesas,function = "usb0";
++	};
++
++	usb1_pins: usb1 {
++		renesas,groups = "usb1";
++		renesas,function = "usb1";
++	};
++
++	usb2_pins: usb2 {
++		renesas,groups = "usb2";
++		renesas,function = "usb2";
++	};
  };
  
- void rsnd_dma_start(struct rsnd_dma *dma);
--- 
-1.7.9.5
-
+ &ether {
+@@ -368,3 +383,21 @@
+ 		regulator-always-on;
+ 	};
+ };
++
++&pci0 {
++	status = "okay";
++	pinctrl-0 = <&usb0_pins>;
++	pinctrl-names = "default";
++};
++
++&pci1 {
++	status = "okay";
++	pinctrl-0 = <&usb1_pins>;
++	pinctrl-names = "default";
++};
++
++&pci2 {
++	status = "okay";
++	pinctrl-0 = <&usb2_pins>;
++	pinctrl-names = "default";
++};
