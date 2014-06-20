@@ -1,47 +1,164 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:28:34 +0000
-Subject: [PATCH 25/29] ARM: shmobile: r8a7791: Add default PCIe bus clock
-Message-Id: <66c405e72bf332e59ab29461e33a4e94cb8bdd7a.1403487225.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 20 Jun 2014 16:53:06 +0000
+Subject: [PATCH 6/9] ARM: shmobile: Move r8a7790.h
+Message-Id: <1403283189-21688-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
+References: <1403283189-21688-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1403283189-21688-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Phil Edworthy <phil.edworthy@renesas.com>
+Change location of r8a7790.h so it can be included as "r8a7790.h"
+instead of the old style <mach/r8a7790.h>
 
-This patch adds a default PCIe bus clock node.
-
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-[horms+renesas@verge.net.au: resolved conflict]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ arch/arm/mach-shmobile/board-lager-reference.c      |  4 +++-
+ arch/arm/mach-shmobile/board-lager.c                | 14 ++++++++------
+ arch/arm/mach-shmobile/clock-r8a7790.c              |  3 ++-
+ arch/arm/mach-shmobile/pm-r8a7790.c                 |  4 +++-
+ arch/arm/mach-shmobile/{include/mach => }/r8a7790.h |  0
+ arch/arm/mach-shmobile/setup-r8a7790.c              |  4 +++-
+ arch/arm/mach-shmobile/smp-r8a7790.c                |  4 +++-
+ 7 files changed, 22 insertions(+), 11 deletions(-)
+ rename arch/arm/mach-shmobile/{include/mach => }/r8a7790.h (100%)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index a15bf7a..7f7eda7 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -555,6 +555,15 @@
- 			clock-output-names = "audio_clk_c";
- 		};
- 
-+		/* External PCIe clock - can be overridden by the board */
-+		pcie_bus_clk: pcie_bus_clk {
-+			compatible = "fixed-clock";
-+			#clock-cells = <0>;
-+			clock-frequency = <100000000>;
-+			clock-output-names = "pcie_bus";
-+			status = "disabled";
-+		};
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index c2175c8e1ce7..41c808e56005 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -22,11 +22,13 @@
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
+ #include <linux/platform_data/rcar-du.h>
+-#include <mach/r8a7790.h>
 +
- 		/* Special CPG clocks */
- 		cpg_clocks: cpg_clocks@e6150000 {
- 			compatible = "renesas,r8a7791-cpg-clocks",
+ #include <asm/mach/arch.h>
++
+ #include "clock.h"
+ #include "common.h"
+ #include "irqs.h"
++#include "r8a7790.h"
+ #include "rcar-gen2.h"
+ 
+ /* DU */
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 6fb08dbc953c..b8b2b44970ce 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -31,6 +31,8 @@
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mmcif.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
++#include <linux/mtd/partitions.h>
++#include <linux/mtd/mtd.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/camera-rcar.h>
+ #include <linux/platform_data/gpio-rcar.h>
+@@ -43,21 +45,21 @@
+ #include <linux/regulator/gpio-regulator.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/sh_eth.h>
++#include <linux/spi/flash.h>
++#include <linux/spi/rspi.h>
++#include <linux/spi/spi.h>
+ #include <linux/usb/phy.h>
+ #include <linux/usb/renesas_usbhs.h>
+-#include <mach/r8a7790.h>
++
+ #include <media/soc_camera.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+-#include <linux/mtd/partitions.h>
+-#include <linux/mtd/mtd.h>
+-#include <linux/spi/flash.h>
+-#include <linux/spi/rspi.h>
+-#include <linux/spi/spi.h>
+ #include <sound/rcar_snd.h>
+ #include <sound/simple_card.h>
++
+ #include "common.h"
+ #include "irqs.h"
++#include "r8a7790.h"
+ #include "rcar-gen2.h"
+ 
+ /*
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index ca980669806f..17435c1aa2fe 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -22,9 +22,10 @@
+ #include <linux/kernel.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
+-#include <mach/r8a7790.h>
++
+ #include "clock.h"
+ #include "common.h"
++#include "r8a7790.h"
+ #include "rcar-gen2.h"
+ 
+ /*
+diff --git a/arch/arm/mach-shmobile/pm-r8a7790.c b/arch/arm/mach-shmobile/pm-r8a7790.c
+index 0f1090d851e7..8845433a00b3 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7790.c
++++ b/arch/arm/mach-shmobile/pm-r8a7790.c
+@@ -11,9 +11,11 @@
+  */
+ 
+ #include <linux/kernel.h>
++
+ #include <asm/io.h>
+-#include <mach/r8a7790.h>
++
+ #include "pm-rcar.h"
++#include "r8a7790.h"
+ 
+ /* SYSC */
+ #define SYSCIER 0x0c
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/r8a7790.h
+similarity index 100%
+rename from arch/arm/mach-shmobile/include/mach/r8a7790.h
+rename to arch/arm/mach-shmobile/r8a7790.h
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index a34229d5da41..c37d82d38617 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -26,11 +26,13 @@
+ #include <linux/serial_sci.h>
+ #include <linux/sh_dma.h>
+ #include <linux/sh_timer.h>
+-#include <mach/r8a7790.h>
++
+ #include <asm/mach/arch.h>
++
+ #include "common.h"
+ #include "dma-register.h"
+ #include "irqs.h"
++#include "r8a7790.h"
+ #include "rcar-gen2.h"
+ 
+ /* Audio-DMAC */
+diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
+index 7590e2b6e2fa..ad66beab2ea6 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7790.c
++++ b/arch/arm/mach-shmobile/smp-r8a7790.c
+@@ -17,10 +17,12 @@
+ #include <linux/init.h>
+ #include <linux/smp.h>
+ #include <linux/io.h>
++
+ #include <asm/smp_plat.h>
+-#include <mach/r8a7790.h>
++
+ #include "common.h"
+ #include "pm-rcar.h"
++#include "r8a7790.h"
+ 
+ #define RST		0xe6160000
+ #define CA15BAR		0x0020
 -- 
-2.0.0.rc2
+1.9.1
 
