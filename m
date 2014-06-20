@@ -1,101 +1,40 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 20 Jun 2014 20:36:58 +0000
-Subject: [PATCH v4 1/2] ARM: shmobile: r8a7790: add internal PCI bridge nodes
-Message-Id: <201406210036.59693.sergei.shtylyov@cogentembedded.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 20 Jun 2014 20:51:45 +0000
+Subject: Re: [PATCH v4 1/2] ARM: shmobile: r8a7790: add internal PCI bridge nodes
+Message-Id: <4637423.jWRbL1GbCK@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201406210034.57784.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201406210034.57784.sergei.shtylyov@cogentembedded.com>
+ <201406210036.59693.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201406210036.59693.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+On Saturday 21 June 2014 00:36:58 Sergei Shtylyov wrote:
+> +       pci0: pci@ee090000 {
+> +               compatible = "renesas,pci-r8a7790";
+> +               clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
+> +               reg = <0x0 0xee090000 0x0 0xc00>,
+> +                     <0x0 0xee080000 0x0 0x1100>;
+> +               interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
+> +               status = "disabled";
+> +
+> +               bus-range = <0 0>;
+> +               #address-cells = >;
+> +               #size-cells = <2>;
+> +               #interrupt-cells = <1>;
+> +               interrupt-map-mask = <0xff00 0 0 0x7>;
+> +               interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
+> +                                0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
+> +                                0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
+> +       };
 
-Add device nodes for the R8A7790 internal PCI bridge devices.
+Hmm, this device node is not actually compliant to the PCI binding,
+it needs a "ranges" property that can be used to look up the memory
+and I/O space windows. It also needs a device_type property.
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
-[Sergei: added interrupt-related properties to the PCI bridge nodes]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+I realize that the driver doesn't currently use them, but you should
+adhere to the binding anyway, so we can fix the driver at some point.
 
----
-Changes in version 4:
-- refreshed the patch.
-
-Changes in version 3:
-- added interrupt-related properties to the PCI bridge nodes;
-- refreshed the patch.
-
-Changes in version 2:
-- reworded summary (fixing typo) and changelog;
-- removed extra spaces before {;
-- refreshed the patch.
-
- arch/arm/boot/dts/r8a7790.dtsi |   54 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 54 insertions(+)
-
-Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7790.dtsi
-@@ -930,6 +930,60 @@
- 		status = "disabled";
- 	};
- 
-+	pci0: pci@ee090000 {
-+		compatible = "renesas,pci-r8a7790";
-+		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-+		reg = <0x0 0xee090000 0x0 0xc00>,
-+		      <0x0 0xee080000 0x0 0x1100>;
-+		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+
-+		bus-range = <0 0>;
-+		#address-cells = <3>;
-+		#size-cells = <2>;
-+		#interrupt-cells = <1>;
-+		interrupt-map-mask = <0xff00 0 0 0x7>;
-+		interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
-+	};
-+
-+	pci1: pci@ee0b0000 {
-+		compatible = "renesas,pci-r8a7790";
-+		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-+		reg = <0x0 0xee0b0000 0x0 0xc00>,
-+		      <0x0 0xee0a0000 0x0 0x1100>;
-+		interrupts = <0 112 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+
-+		bus-range = <1 1>;
-+		#address-cells = <3>;
-+		#size-cells = <2>;
-+		#interrupt-cells = <1>;
-+		interrupt-map-mask = <0xff00 0 0 0x7>;
-+		interrupt-map = <0x0000 0 0 1 &gic 0 112 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x0800 0 0 1 &gic 0 112 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x1000 0 0 2 &gic 0 112 IRQ_TYPE_LEVEL_HIGH>;
-+	};
-+
-+	pci2: pci@ee0d0000 {
-+		compatible = "renesas,pci-r8a7790";
-+		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-+		reg = <0x0 0xee0d0000 0x0 0xc00>,
-+		      <0x0 0xee0c0000 0x0 0x1100>;
-+		interrupts = <0 113 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+
-+		bus-range = <2 2>;
-+		#address-cells = <3>;
-+		#size-cells = <2>;
-+		#interrupt-cells = <1>;
-+		interrupt-map-mask = <0xff00 0 0 0x7>;
-+		interrupt-map = <0x0000 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x0800 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
-+	};
-+
- 	pciec: pcie@fe000000 {
- 		compatible = "renesas,pcie-r8a7790";
- 		reg = <0 0xfe000000 0 0x80000>;
+	Arnd
