@@ -1,50 +1,66 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 11 Jun 2014 17:08:34 +0000
-Subject: Re: [alsa-devel] "ak" vs "asahi-kasei" (was: Re: [PATCH 3/3 v3] ARM: shmobile: lager: add sound supp
-Message-Id: <CAMuHMdUYFdbOxyqZnPAUxfY1vkqDr-7RUJmqgivuMQugyMme7g@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 20 Jun 2014 20:50:07 +0000
+Subject: [PATCH v3 2/3] ARM: shmobile: koelsch: enable internal PCI
+Message-Id: <201406210050.08413.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMuHMdWTVBjFzA9L9Eqpq_2Xi9_NHkOCLrb_UjK611SBfwnc=Q@mail.gmail.com>
-	<87ioo7c0g5.wl%kuninori.morimoto.gx@renesas.com>
-	<539815E6.2050304@codethink.co.uk>
-	<20140611165410.GK5099@sirena.org.uk>
-	<CAMuHMdUT0hEBGbN+W-Oz5zJ0N8S2VDMndqtDO=EtWF3jG2MEew@mail.gmail.com>
-	<20140611170233.GL5099@sirena.org.uk>
-In-Reply-To: <20140611170233.GL5099@sirena.org.uk>
+References: <201406210044.51620.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201406210044.51620.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Ben Dooks <ben.dooks@codethink.co.uk>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, ALSA Development Mailing List <alsa-devel@alsa-project.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jun 11, 2014 at 7:02 PM, Mark Brown <broonie@kernel.org> wrote:
-> On Wed, Jun 11, 2014 at 06:57:44PM +0200, Geert Uytterhoeven wrote:
->> On Wed, Jun 11, 2014 at 6:54 PM, Mark Brown <broonie@kernel.org> wrote:
->> > They're usually referred to as AKM when abbreviated and their web site
->> > is http://www.akm.com/ - don't know what the stock ticker symbol is.  In
->> > any case there's no real cost to adding both abbreviated and
->> > non-abbreviated forms if we want to transition.
->
->>     of: Add vendor prefix for Asahi Kasei Corp.
->
->>     Their stock ticker is 3407.T which wouldn't make a good DT vendor
->>     prefix. Use the company name initials instead.
->
-> Sounds like akm, is a better bet then, especially as ak, has no real
-> adoption.
+Enable internal AHB-PCI bridges for the USB EHCI/OHCI controllers attached to
+them.
 
-Except for Автомат Калашникова...
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-> I think the bikeshed would be much better painted pink with yellow spots :)
+---
+Changes in version 3:
+- refreshed the patch.
 
-Definitely.
+Changes in version 2:
+- refreshed the patch.
 
-Gr{oetje,eeting}s,
+ arch/arm/boot/dts/r8a7791-koelsch.dts |   22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Index: renesas/arch/arm/boot/dts/r8a7791-koelsch.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ renesas/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -279,6 +279,16 @@
+ 		renesas,groups = "i2c6";
+ 		renesas,function = "i2c6";
+ 	};
++
++	usb0_pins: usb0 {
++		renesas,groups = "usb0";
++		renesas,function = "usb0";
++	};
++
++	usb1_pins: usb1 {
++		renesas,groups = "usb1";
++		renesas,function = "usb1";
++	};
+ };
+ 
+ &ether {
+@@ -426,6 +436,18 @@
+ 	};
+ };
+ 
++&pci0 {
++	status = "okay";
++	pinctrl-0 = <&usb0_pins>;
++	pinctrl-names = "default";
++};
++
++&pci1 {
++	status = "okay";
++	pinctrl-0 = <&usb1_pins>;
++	pinctrl-names = "default";
++};
++
+ &pcie_bus_clk {
+ 	status = "okay";
+ };
