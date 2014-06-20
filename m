@@ -1,125 +1,88 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Fri, 27 Jun 2014 16:40:49 +0000
-Subject: RE: [PATCH v8 1/3] PCI: host: rcar: Add Renesas R-Car PCIe driver
-Message-Id: <fd0ab49699dd40b7b44db0108944d20f@HKXPR06MB168.apcprd06.prod.outlook.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 20 Jun 2014 10:16:16 +0000
+Subject: [PATCH 1/5] spi: sh-msiof: Add more register documentation
+Message-Id: <1403259380-13634-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1399892270-25021-1-git-send-email-phil.edworthy@renesas.com>
- <1399892270-25021-2-git-send-email-phil.edworthy@renesas.com>
- <53A209DA.9000000@cogentembedded.com>
- <20a0a16226d54b0e8d6f68e41046bbf2@HKXPR06MB168.apcprd06.prod.outlook.com>
- <53A897EF.2020804@cogentembedded.com>
- <666f39dbf0f149c6946d4c2665d3d85d@HKXPR06MB168.apcprd06.prod.outlook.com>
- <53A9EB5F.4050708@cogentembedded.com>
-In-Reply-To: <53A9EB5F.4050708@cogentembedded.com>
+References: <1403259380-13634-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1403259380-13634-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Sergei,
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/spi/spi-sh-msiof.c | 54 +++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 53 insertions(+), 1 deletion(-)
 
-On 24 June 2014 22:19, Sergei wrote:
-> On 06/24/2014 02:01 PM, Phil Edworthy wrote:
-> 
-> >>>>       I'm investigating an imprecise external abort occurring once userland
-> is
-> >>>> started when I have NetMos
-> 
-> >>      Or is it MosChip now? Can't remember all their renames. :-)
-> 
-> > Do you know of somewhere I can buy a card with this chipset in the EU? I
-> had a
-> > quick search but couldn't find anything.
-> 
->     No. But we probably can send such card to you.
-That would be handy!
-
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index 83c43707f093..7e5b15b48c04 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -113,9 +113,61 @@ struct sh_msiof_spi_priv {
+ #define CTR_TXE		0x00000200 /* Transmit Enable */
+ #define CTR_RXE		0x00000100 /* Receive Enable */
  
-> [...]
-> 
-> >>>>> +
-> >>>>> +	/* First resource is for IO */
-> >>>>> +	mask = PAR_ENABLE;
-> >>>>> +	if (res->flags & IORESOURCE_IO)
-> >>>>> +		mask |= IO_SPACE;
-> 
-> >>>>       For the memory space this works OK as you're identity-mapping the
-> >>>> memory
-> >>>> ranges in your device trees. However, for the I/O space this means that
-> it
-> >>>> won't work as the BARs in the PCIe devices get programmed with the
-> PCI bus
-> >>>> addresses but the PCIe window translation register is programmed
-> with a
-> >>>> CPU
-> >>>> address which don't at all match (given your device trees) and hence
-> one
-> >>>> can't
-> >>>> access the card's I/O mapped registers at all...
-> 
-> >>> Hmm, I couldn't find any cards that supported I/O, so I wasn't able to
-> test
-> >>> this. Clearly this is an issue that needs looking into.
-> 
-> >>      Will you look into it then, or should I?
-> 
-> > I'll look at it.
-> 
->     Thanks.
-> 
-> [...]
-> 
-> >>>>> +
-> >>>>> +		if (win > PCI_MAX_RESOURCES)
-> >>>>> +			break;
-> >>>>> +	}
-> >>>>> +
-> >>>>> +	 err = rcar_pcie_parse_map_dma_ranges(pcie, pdev-
-> >dev.of_node);
-> >>>>> +	 if (err)
-> >>>>> +		return err;
-> >>>>> +
-> >>>>> +	of_id = of_match_device(rcar_pcie_of_match, pcie->dev);
-> >>>>> +	if (!of_id || !of_id->data)
-> >>>>> +		return -EINVAL;
-> >>>>> +	hw_init_fn = of_id->data;
-> >>>>> +
-> >>>>> +	/* Failure to get a link might just be that no cards are inserted
-> */
-> >>>>> +	err = hw_init_fn(pcie);
-> >>>>> +	if (err) {
-> >>>>> +		dev_info(&pdev->dev, "PCIe link down\n");
-> >>>>> +		return 0;
-> 
-> >>>>       Not quite sure why you exit normally here without enabling the
-> >>>> hardware.
-> >>>> I think the internal bridge should be visible regardless of whether link is
-> >>>> detected or not...
-> 
-> >>> Why would you want to see the bridge when you can do nothing with it?
-> >> Aren't
-> 
-> >>      Because it's the way PCI works. You have the built-in devices always
-> >> present and seen on a PCI bus. :-)
-> 
-> >>> you are just wasting resources?
-> 
-> >>      I think it's rather you who are wasting resources. ;-) Why not just fail
-> >> the probe when you have no link?
-> 
-> > Ah, so we currently have a half-way house... not failing the probe, but not
-> > enabling the HW. Either all or nothing would be preferable.
-> 
->     Actually, I tried ignoring the link test and the kernel died horrible
-> death without any console output. :-/ Having enabled the earlyprintk
-> support,
-> I was able to see the reason: panic("PCI: unable to scan bus!") in
-> arch/arm/kernel/bios32.c...
-> 
-> > Thanks
-> > Phil
-> 
-> WBR, Sergei
+-/* STR and IER */
++/* FCTR */
++#define FCTR_TFWM_MASK	0xe0000000 /* Transmit FIFO Watermark */
++#define FCTR_TFWM_64	0x00000000 /*  Transfer Request when 64 empty stages */
++#define FCTR_TFWM_32	0x20000000 /*  Transfer Request when 32 empty stages */
++#define FCTR_TFWM_24	0x40000000 /*  Transfer Request when 24 empty stages */
++#define FCTR_TFWM_16	0x60000000 /*  Transfer Request when 16 empty stages */
++#define FCTR_TFWM_12	0x80000000 /*  Transfer Request when 12 empty stages */
++#define FCTR_TFWM_8	0xa0000000 /*  Transfer Request when 8 empty stages */
++#define FCTR_TFWM_4	0xc0000000 /*  Transfer Request when 4 empty stages */
++#define FCTR_TFWM_1	0xe0000000 /*  Transfer Request when 1 empty stage */
++#define FCTR_TFUA_MASK	0x07f00000 /* Transmit FIFO Usable Area */
++#define FCTR_TFUA_SHIFT		20
++#define FCTR_TFUA(i)	((i) << FCTR_TFUA_SHIFT)
++#define FCTR_RFWM_MASK	0x0000e000 /* Receive FIFO Watermark */
++#define FCTR_RFWM_1	0x00000000 /*  Transfer Request when 1 valid stages */
++#define FCTR_RFWM_4	0x00002000 /*  Transfer Request when 4 valid stages */
++#define FCTR_RFWM_8	0x00004000 /*  Transfer Request when 8 valid stages */
++#define FCTR_RFWM_16	0x00006000 /*  Transfer Request when 16 valid stages */
++#define FCTR_RFWM_32	0x00008000 /*  Transfer Request when 32 valid stages */
++#define FCTR_RFWM_64	0x0000a000 /*  Transfer Request when 64 valid stages */
++#define FCTR_RFWM_128	0x0000c000 /*  Transfer Request when 128 valid stages */
++#define FCTR_RFWM_256	0x0000e000 /*  Transfer Request when 256 valid stages */
++#define FCTR_RFUA_MASK	0x00001ff0 /* Receive FIFO Usable Area (0x40 = full) */
++#define FCTR_RFUA_SHIFT		 4
++#define FCTR_RFUA(i)	((i) << FCTR_RFUA_SHIFT)
++
++/* STR */
++#define STR_TFEMP	0x20000000 /* Transmit FIFO Empty */
++#define STR_TDREQ	0x10000000 /* Transmit Data Transfer Request */
+ #define STR_TEOF	0x00800000 /* Frame Transmission End */
++#define STR_TFSERR	0x00200000 /* Transmit Frame Synchronization Error */
++#define STR_TFOVF	0x00100000 /* Transmit FIFO Overflow */
++#define STR_TFUDF	0x00080000 /* Transmit FIFO Underflow */
++#define STR_RFFUL	0x00002000 /* Receive FIFO Full */
++#define STR_RDREQ	0x00001000 /* Receive Data Transfer Request */
+ #define STR_REOF	0x00000080 /* Frame Reception End */
++#define STR_RFSERR	0x00000020 /* Receive Frame Synchronization Error */
++#define STR_RFUDF	0x00000010 /* Receive FIFO Underflow */
++#define STR_RFOVF	0x00000008 /* Receive FIFO Overflow */
++
++/* IER */
++#define IER_TDMAE	0x80000000 /* Transmit Data DMA Transfer Req. Enable */
++#define IER_TFEMPE	0x20000000 /* Transmit FIFO Empty Enable */
++#define IER_TDREQE	0x10000000 /* Transmit Data Transfer Request Enable */
++#define IER_TEOFE	0x00800000 /* Frame Transmission End Enable */
++#define IER_TFSERRE	0x00200000 /* Transmit Frame Sync Error Enable */
++#define IER_TFOVFE	0x00100000 /* Transmit FIFO Overflow Enable */
++#define IER_TFUDFE	0x00080000 /* Transmit FIFO Underflow Enable */
++#define IER_RDMAE	0x00008000 /* Receive Data DMA Transfer Req. Enable */
++#define IER_RFFULE	0x00002000 /* Receive FIFO Full Enable */
++#define IER_RDREQE	0x00001000 /* Receive Data Transfer Request Enable */
++#define IER_REOFE	0x00000080 /* Frame Reception End Enable */
++#define IER_RFSERRE	0x00000020 /* Receive Frame Sync Error Enable */
++#define IER_RFUDFE	0x00000010 /* Receive FIFO Underflow Enable */
++#define IER_RFOVFE	0x00000008 /* Receive FIFO Overflow Enable */
+ 
+ 
+ static u32 sh_msiof_read(struct sh_msiof_spi_priv *p, int reg_offs)
+-- 
+1.9.1
 
-Thanks
-Phil
