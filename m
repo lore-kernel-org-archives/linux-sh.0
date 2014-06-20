@@ -1,46 +1,43 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:28:13 +0000
-Subject: [PATCH 04/29] ARM: shmobile: r8a7791: add USB3.0 clocks to device tree
-Message-Id: <308f306283894a0d3eeee7d1030289e4e668d49d.1403487225.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 20 Jun 2014 10:17:24 +0000
+Subject: [PATCH/POC 0/2] ARM: shmobile: koelsch legacy: Enable DMA for MSIOF
+Message-Id: <1403259446-13696-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+This proof-of-concept patch series enables DMA support for MSIOF on
+r8a7791/koelsch legacy.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7791.dtsi | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+It's independent from the series "[PATCH/RFC 0/2] spi: sh-msiof: Add DT DMA
+support on r8a7791", but it depends on my series "[PATCH v3 0/5] ARM:
+shmobile: MSIOF integration on koelsch/lager legacy" and "[PATCH 0/4] ARM:
+shmobile: koelsch legacy: Enable DMA for QSPI".
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 8d7ffae..2c27e36 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -758,15 +758,15 @@
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
- 			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7791_CLK_SD0>,
--				 <&mmc0_clk>, <&hp_clk>, <&hp_clk>, <&rclk_clk>;
-+				 <&mmc0_clk>, <&hp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
- 				R8A7791_CLK_TPU0 R8A7791_CLK_SDHI2 R8A7791_CLK_SDHI1 R8A7791_CLK_SDHI0
--				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_IIC1 R8A7791_CLK_CMT1
-+				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_IIC1 R8A7791_CLK_SSUSB R8A7791_CLK_CMT1
- 			>;
- 			clock-output-names  				"tpu0", "sdhi2", "sdhi1", "sdhi0",
--				"mmcif0", "i2c7", "i2c8", "cmt1";
-+				"mmcif0", "i2c7", "i2c8", "ssusb", "cmt1";
- 		};
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
--- 
-2.0.0.rc2
+This was tested on r8a7791/koelsch.
 
+  [1/2] ARM: shmobile: r8a7791: Add MSIOF DMA support
+  [1/2] ARM: shmobile: koelsch legacy: Enable DMA for MSIOF
+
+ arch/arm/mach-shmobile/board-koelsch.c        | 9 ++++++---
+ arch/arm/mach-shmobile/include/mach/r8a7791.h | 6 ++++++
+ arch/arm/mach-shmobile/setup-r8a7791.c        | 5 ++++-
+ 3 files changed, 16 insertions(+), 4 deletions(-)
+
+As non-DT board support is no longer developed, I don't expect this to be
+applied.
+
+Thanks!
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
