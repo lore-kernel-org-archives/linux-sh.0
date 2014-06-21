@@ -1,88 +1,46 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 20 Jun 2014 10:16:16 +0000
-Subject: [PATCH 1/5] spi: sh-msiof: Add more register documentation
-Message-Id: <1403259380-13634-2-git-send-email-geert+renesas@glider.be>
+From: Mark Brown <broonie@kernel.org>
+Date: Sat, 21 Jun 2014 10:18:17 +0000
+Subject: Re: [PATCH 1/5] spi: sh-msiof: Add more register documentation
+Message-Id: <20140621101817.GI5099@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="oAYeEd6efxi1xfCT"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1403259380-13634-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1403259380-13634-1-git-send-email-geert+renesas@glider.be>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+ <1403259380-13634-2-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1403259380-13634-2-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+To: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+Cc: Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Guennadi Liakhovetski <g.liakhovetski-Mmb7MZpHnFY@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- drivers/spi/spi-sh-msiof.c | 54 +++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 53 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 83c43707f093..7e5b15b48c04 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -113,9 +113,61 @@ struct sh_msiof_spi_priv {
- #define CTR_TXE		0x00000200 /* Transmit Enable */
- #define CTR_RXE		0x00000100 /* Receive Enable */
- 
--/* STR and IER */
-+/* FCTR */
-+#define FCTR_TFWM_MASK	0xe0000000 /* Transmit FIFO Watermark */
-+#define FCTR_TFWM_64	0x00000000 /*  Transfer Request when 64 empty stages */
-+#define FCTR_TFWM_32	0x20000000 /*  Transfer Request when 32 empty stages */
-+#define FCTR_TFWM_24	0x40000000 /*  Transfer Request when 24 empty stages */
-+#define FCTR_TFWM_16	0x60000000 /*  Transfer Request when 16 empty stages */
-+#define FCTR_TFWM_12	0x80000000 /*  Transfer Request when 12 empty stages */
-+#define FCTR_TFWM_8	0xa0000000 /*  Transfer Request when 8 empty stages */
-+#define FCTR_TFWM_4	0xc0000000 /*  Transfer Request when 4 empty stages */
-+#define FCTR_TFWM_1	0xe0000000 /*  Transfer Request when 1 empty stage */
-+#define FCTR_TFUA_MASK	0x07f00000 /* Transmit FIFO Usable Area */
-+#define FCTR_TFUA_SHIFT		20
-+#define FCTR_TFUA(i)	((i) << FCTR_TFUA_SHIFT)
-+#define FCTR_RFWM_MASK	0x0000e000 /* Receive FIFO Watermark */
-+#define FCTR_RFWM_1	0x00000000 /*  Transfer Request when 1 valid stages */
-+#define FCTR_RFWM_4	0x00002000 /*  Transfer Request when 4 valid stages */
-+#define FCTR_RFWM_8	0x00004000 /*  Transfer Request when 8 valid stages */
-+#define FCTR_RFWM_16	0x00006000 /*  Transfer Request when 16 valid stages */
-+#define FCTR_RFWM_32	0x00008000 /*  Transfer Request when 32 valid stages */
-+#define FCTR_RFWM_64	0x0000a000 /*  Transfer Request when 64 valid stages */
-+#define FCTR_RFWM_128	0x0000c000 /*  Transfer Request when 128 valid stages */
-+#define FCTR_RFWM_256	0x0000e000 /*  Transfer Request when 256 valid stages */
-+#define FCTR_RFUA_MASK	0x00001ff0 /* Receive FIFO Usable Area (0x40 = full) */
-+#define FCTR_RFUA_SHIFT		 4
-+#define FCTR_RFUA(i)	((i) << FCTR_RFUA_SHIFT)
-+
-+/* STR */
-+#define STR_TFEMP	0x20000000 /* Transmit FIFO Empty */
-+#define STR_TDREQ	0x10000000 /* Transmit Data Transfer Request */
- #define STR_TEOF	0x00800000 /* Frame Transmission End */
-+#define STR_TFSERR	0x00200000 /* Transmit Frame Synchronization Error */
-+#define STR_TFOVF	0x00100000 /* Transmit FIFO Overflow */
-+#define STR_TFUDF	0x00080000 /* Transmit FIFO Underflow */
-+#define STR_RFFUL	0x00002000 /* Receive FIFO Full */
-+#define STR_RDREQ	0x00001000 /* Receive Data Transfer Request */
- #define STR_REOF	0x00000080 /* Frame Reception End */
-+#define STR_RFSERR	0x00000020 /* Receive Frame Synchronization Error */
-+#define STR_RFUDF	0x00000010 /* Receive FIFO Underflow */
-+#define STR_RFOVF	0x00000008 /* Receive FIFO Overflow */
-+
-+/* IER */
-+#define IER_TDMAE	0x80000000 /* Transmit Data DMA Transfer Req. Enable */
-+#define IER_TFEMPE	0x20000000 /* Transmit FIFO Empty Enable */
-+#define IER_TDREQE	0x10000000 /* Transmit Data Transfer Request Enable */
-+#define IER_TEOFE	0x00800000 /* Frame Transmission End Enable */
-+#define IER_TFSERRE	0x00200000 /* Transmit Frame Sync Error Enable */
-+#define IER_TFOVFE	0x00100000 /* Transmit FIFO Overflow Enable */
-+#define IER_TFUDFE	0x00080000 /* Transmit FIFO Underflow Enable */
-+#define IER_RDMAE	0x00008000 /* Receive Data DMA Transfer Req. Enable */
-+#define IER_RFFULE	0x00002000 /* Receive FIFO Full Enable */
-+#define IER_RDREQE	0x00001000 /* Receive Data Transfer Request Enable */
-+#define IER_REOFE	0x00000080 /* Frame Reception End Enable */
-+#define IER_RFSERRE	0x00000020 /* Receive Frame Sync Error Enable */
-+#define IER_RFUDFE	0x00000010 /* Receive FIFO Underflow Enable */
-+#define IER_RFOVFE	0x00000008 /* Receive FIFO Overflow Enable */
- 
- 
- static u32 sh_msiof_read(struct sh_msiof_spi_priv *p, int reg_offs)
--- 
-1.9.1
+--oAYeEd6efxi1xfCT
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
+On Fri, Jun 20, 2014 at 12:16:16PM +0200, Geert Uytterhoeven wrote:
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Applied, thanks.
+
+--oAYeEd6efxi1xfCT
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBAgAGBQJTpVvmAAoJELSic+t+oim9DRIP/jg6J+XKvbAPSQm7ujwCyn9i
+WGuZMdosMHkOBmwpjJsSr0pgje9k+j+1FpuknHKWYtgDr0txHTUkR/ut/845fbfH
+9BTLFWR7ktMvsUUkSAEwtHZpEdcQXgbtP1K2YP6z9i7LqQvn0Liy4feQdl3SWrqz
+4xTYGms8LzLTAOoOG71x22ZtJjBo9PmugrGZFQ6kwpyF/ZjxKBXtNEQls40aMY88
+LX85EhrNg7VGG0hA8Te6BNJMYkYKB7+9TVZrHQeWeGfgL3EglcWEvMFbYBSQwhgi
+dQ4dsk8k2lDpbty6+0KmYQW9OEv01mDBhdfn7MMBgv4HQL+aomORYesxdtE9oaZe
+PiRv7MSEwjk3tsdxhY2Iz5jVWjs/q50qZYTt2m8VENpczhbh9ggKEk7tCFRGTFka
+u8+uTd83ewMX5It+DmorK2eHKszkz8Q+fsePjFnS1SGVDkBMXmvLjd+7ePVEM76y
+Pwb1dzB90wfuSdk7iKbFANwvFN02P6BgcQL2u7x4DCPXgCIh9lHEnUSKE6sZLuel
+KQcEjLYMqV1zlW644Qju+etlV4nLEttgQSNmfufPuZMYfSfeeeBb8PiVVOu1aoNU
+4ywYF1Cek4aO8a4hr/OoG/DLqW88iD/wWbSWcDztaUIbp0y3khkPONcH5+wIZ6oD
+KQEue5eocX1YuEKM5gh3
+=bdIU
+-----END PGP SIGNATURE-----
+
+--oAYeEd6efxi1xfCT--
