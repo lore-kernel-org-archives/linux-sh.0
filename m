@@ -1,100 +1,46 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 20 Jun 2014 10:16:17 +0000
-Subject: [PATCH 2/5] spi: sh-msiof: Extract sh_msiof_spi_{start,stop}() helpers
-Message-Id: <1403259380-13634-3-git-send-email-geert+renesas@glider.be>
+From: Mark Brown <broonie@kernel.org>
+Date: Sat, 21 Jun 2014 10:18:29 +0000
+Subject: Re: [PATCH 2/5] spi: sh-msiof: Extract sh_msiof_spi_{start,stop}() helpers
+Message-Id: <20140621101829.GJ5099@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="A3zTz7JN1/RJCpqO"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1403259380-13634-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1403259380-13634-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Guennadi Liakhovetski <g.liakhovetski-Mmb7MZpHnFY@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+ <1403259380-13634-3-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1403259380-13634-3-git-send-email-geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Based on an old patch by Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- drivers/spi/spi-sh-msiof.c | 51 +++++++++++++++++++++++++++++++++-------------
- 1 file changed, 37 insertions(+), 14 deletions(-)
+--A3zTz7JN1/RJCpqO
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 7e5b15b48c04..8bfa97e03502 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -509,6 +509,40 @@ static int sh_msiof_prepare_message(struct spi_master *master,
- 	return 0;
- }
- 
-+static int sh_msiof_spi_start(struct sh_msiof_spi_priv *p, void *rx_buf)
-+{
-+	int ret;
-+
-+	/* setup clock and rx/tx signals */
-+	ret = sh_msiof_modify_ctr_wait(p, 0, CTR_TSCKE);
-+	if (rx_buf && !ret)
-+		ret = sh_msiof_modify_ctr_wait(p, 0, CTR_RXE);
-+	if (!ret)
-+		ret = sh_msiof_modify_ctr_wait(p, 0, CTR_TXE);
-+
-+	/* start by setting frame bit */
-+	if (!ret)
-+		ret = sh_msiof_modify_ctr_wait(p, 0, CTR_TFSE);
-+
-+	return ret;
-+}
-+
-+static int sh_msiof_spi_stop(struct sh_msiof_spi_priv *p, void *rx_buf)
-+{
-+	int ret;
-+
-+	/* shut down frame, rx/tx and clock signals */
-+	ret = sh_msiof_modify_ctr_wait(p, CTR_TFSE, 0);
-+	if (!ret)
-+		ret = sh_msiof_modify_ctr_wait(p, CTR_TXE, 0);
-+	if (rx_buf && !ret)
-+		ret = sh_msiof_modify_ctr_wait(p, CTR_RXE, 0);
-+	if (!ret)
-+		ret = sh_msiof_modify_ctr_wait(p, CTR_TSCKE, 0);
-+
-+	return ret;
-+}
-+
- static int sh_msiof_spi_txrx_once(struct sh_msiof_spi_priv *p,
- 				  void (*tx_fifo)(struct sh_msiof_spi_priv *,
- 						  const void *, int, int),
-@@ -536,15 +570,9 @@ static int sh_msiof_spi_txrx_once(struct sh_msiof_spi_priv *p,
- 	if (tx_buf)
- 		tx_fifo(p, tx_buf, words, fifo_shift);
- 
--	/* setup clock and rx/tx signals */
--	ret = sh_msiof_modify_ctr_wait(p, 0, CTR_TSCKE);
--	if (rx_buf)
--		ret = ret ? ret : sh_msiof_modify_ctr_wait(p, 0, CTR_RXE);
--	ret = ret ? ret : sh_msiof_modify_ctr_wait(p, 0, CTR_TXE);
--
--	/* start by setting frame bit */
- 	reinit_completion(&p->done);
--	ret = ret ? ret : sh_msiof_modify_ctr_wait(p, 0, CTR_TFSE);
-+
-+	ret = sh_msiof_spi_start(p, rx_buf);
- 	if (ret) {
- 		dev_err(&p->pdev->dev, "failed to start hardware\n");
- 		goto err;
-@@ -560,12 +588,7 @@ static int sh_msiof_spi_txrx_once(struct sh_msiof_spi_priv *p,
- 	/* clear status bits */
- 	sh_msiof_reset_str(p);
- 
--	/* shut down frame, rx/tx and clock signals */
--	ret = sh_msiof_modify_ctr_wait(p, CTR_TFSE, 0);
--	ret = ret ? ret : sh_msiof_modify_ctr_wait(p, CTR_TXE, 0);
--	if (rx_buf)
--		ret = ret ? ret : sh_msiof_modify_ctr_wait(p, CTR_RXE, 0);
--	ret = ret ? ret : sh_msiof_modify_ctr_wait(p, CTR_TSCKE, 0);
-+	ret = sh_msiof_spi_stop(p, rx_buf);
- 	if (ret) {
- 		dev_err(&p->pdev->dev, "failed to shut down hardware\n");
- 		goto err;
--- 
-1.9.1
+On Fri, Jun 20, 2014 at 12:16:17PM +0200, Geert Uytterhoeven wrote:
+> Based on an old patch by Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
+Applied, thanks.
+
+--A3zTz7JN1/RJCpqO
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBAgAGBQJTpVvyAAoJELSic+t+oim9cnkP/RVgepV88BWoG+9TCoebGhFQ
+XGtRgGuj81UrXL1Y7WIWdGYP68nA27J0OfIi4XnA7jIktLoaynj+a2OoP7vR/V5z
+yAMdFsG0N6vqkBAYW/W67gMalsN+I4QZX1wyVXnqccCVYK5Ki45l1aLxzavwAiVn
+i+Dalze6Hh8QWqmaAIi1UOUI/uYxn8oEF+ZN4cPBfBeAzdSatf4pnsG+vPra/NWG
+2nznX7AVqsvhkbCpVJ46017+5Llo5uWPP0CyViGZT/pqq9cECw7xxw8pDe81/8zS
++xL/ap/ff1z6JkQnYEaR5vPthESXUgZnHsjar197TvYGOuQHpjipsxzkvu+S1b8c
+rZfViDLL17ADzNqhGeQuaPXn1T9ggiZVGtxoauUxR2VD+QDqb3vc880CFw6oBbes
+RF8cOdBbMtKvqWyFn4iyOurJDM/S0LmpaHeJ0wsi4wT7cilAt19H8pI9qcwa5opZ
+zvxVZzcp0eWTM4F5bNN1CZAFMSFS4TtQWSt0EAonYg7iHpkk0AHvds79GoVRbmLL
+H7JlnyA+lf83vKgOyD+9WlMcaAsr7P7j0u9dU9xFsiwT0t7CgQAXk4Lk6OqtJNtd
+hMA/uvMtFUg8fNSAv/MREM+rfVWRuPNm8ihkWBgMCxsXhHQMBLV60oP9oCphefLs
+2RLIx/WZumC2DcyTOQKJ
+=RFlm
+-----END PGP SIGNATURE-----
+
+--A3zTz7JN1/RJCpqO--
