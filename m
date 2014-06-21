@@ -1,76 +1,49 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 20 Jun 2014 10:16:18 +0000
-Subject: [PATCH 3/5] spi: sh-msiof: Improve transfer error handling
-Message-Id: <1403259380-13634-4-git-send-email-geert+renesas@glider.be>
+From: Mark Brown <broonie@kernel.org>
+Date: Sat, 21 Jun 2014 10:18:41 +0000
+Subject: Re: [PATCH 3/5] spi: sh-msiof: Improve transfer error handling
+Message-Id: <20140621101841.GK5099@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="RY9YeianT1w0Sep/"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1403259380-13634-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1403259380-13634-1-git-send-email-geert+renesas@glider.be>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+ <1403259380-13634-4-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1403259380-13634-4-git-send-email-geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-  - Add a timeout when waiting for the transfer complete interrupt,
-  - If sh_msiof_spi_stop() fails, there's no need to clear IER, as the
-    interrupt handler has already done that,
-  - Propagate transfer failures in sh_msiof_transfer_one().
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- drivers/spi/spi-sh-msiof.c | 18 +++++++++++++-----
- 1 file changed, 13 insertions(+), 5 deletions(-)
+--RY9YeianT1w0Sep/
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 8bfa97e03502..29dee0436a9a 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -575,11 +575,16 @@ static int sh_msiof_spi_txrx_once(struct sh_msiof_spi_priv *p,
- 	ret = sh_msiof_spi_start(p, rx_buf);
- 	if (ret) {
- 		dev_err(&p->pdev->dev, "failed to start hardware\n");
--		goto err;
-+		goto stop_ier;
- 	}
- 
- 	/* wait for tx fifo to be emptied / rx fifo to be filled */
--	wait_for_completion(&p->done);
-+	ret = wait_for_completion_timeout(&p->done, HZ);
-+	if (!ret) {
-+		dev_err(&p->pdev->dev, "PIO timeout\n");
-+		ret = -ETIMEDOUT;
-+		goto stop_reset;
-+	}
- 
- 	/* read rx fifo */
- 	if (rx_buf)
-@@ -591,12 +596,15 @@ static int sh_msiof_spi_txrx_once(struct sh_msiof_spi_priv *p,
- 	ret = sh_msiof_spi_stop(p, rx_buf);
- 	if (ret) {
- 		dev_err(&p->pdev->dev, "failed to shut down hardware\n");
--		goto err;
-+		return ret;
- 	}
- 
- 	return words;
- 
-- err:
-+stop_reset:
-+	sh_msiof_reset_str(p);
-+	sh_msiof_spi_stop(p, rx_buf);
-+stop_ier:
- 	sh_msiof_write(p, IER, 0);
- 	return ret;
- }
-@@ -679,7 +687,7 @@ static int sh_msiof_transfer_one(struct spi_master *master,
- 					   rx_buf,
- 					   words, bits);
- 		if (n < 0)
--			break;
-+			return n;
- 
- 		bytes_done += n * bytes_per_word;
- 		words -= n;
--- 
-1.9.1
+On Fri, Jun 20, 2014 at 12:16:18PM +0200, Geert Uytterhoeven wrote:
+>   - Add a timeout when waiting for the transfer complete interrupt,
+>   - If sh_msiof_spi_stop() fails, there's no need to clear IER, as the
+>     interrupt handler has already done that,
+>   - Propagate transfer failures in sh_msiof_transfer_one().
 
+Applied, thanks.
+
+--RY9YeianT1w0Sep/
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBAgAGBQJTpVv+AAoJELSic+t+oim9HT8P/iS0uUbOhlYormuxVepE9+2t
+24hXixtRoj6frqBFGS7O9RwooSpYQkTYBpzHuQ2OZ5jYh1EaT/F/X5JT+W0W9rdb
+LAHqXe1pTdGgAkJlDj2DrkCFN7I+6iD0kHkiftT2mjb6O6hhE+HfwOCbawuEpyng
+EZzvqpAuTF7np0evUW1ZJXtcPCdK+zy3Po1fkvPL2qG+9FumDvZ9ltqYI1qIuQxf
+q3tH9QHk6cWZix3xM3zfYlNUZlxKD+0SyXNlLWjIAfgLj3zsmEnveiicmk2vYQTL
+JpySlcWdwGDf+MeIgL6fbROeYD0fhYXHh10Etb8y3NHYOgJ9KKYefWqxwQSzuijx
+bhbj4KcKh3RKqYCd4lRV/pZ301+wBPAIm1rUPP/NcQjZ8URDccB912fOHrt95EYL
+EwLlojsWe/te8XEwXKfW1xuKK6gsA4K9n2eYsHMxApHhOmBR/HHQm4Lvg0F9vETl
+n9Hult6D9u/hDAJMyWsD0T9yNxxmC6J4GXLNcCNAt4fN3N3Ql7RtNZvwyE0qd9cf
+I8BlL7/iWXyG+yULSuqG1tN4eLPtzOk+gRWHDoglTEETeN/DwGkaEaiD/+kEuaFh
+mdqqQhCGEeNTa5aPxzXuuZWLyVrVnga+pVGALZ7NgmVrksuodrMa4DmzjSpfl4iW
+g3rMADt70ECe/R4U8Jh6
+=EQ8w
+-----END PGP SIGNATURE-----
+
+--RY9YeianT1w0Sep/--
