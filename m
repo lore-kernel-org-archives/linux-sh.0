@@ -1,46 +1,42 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Sat, 21 Jun 2014 10:19:59 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 22 Jun 2014 08:06:08 +0000
 Subject: Re: [PATCH 5/5] spi: sh-msiof: Add DMA support
-Message-Id: <20140621101959.GM5099@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="YLnPAZt6hMJRJaYl"
+Message-Id: <CAMuHMdXB4U=tkGgV=UE5KRBgP7jqyB8Wpjn1x6ei-wq-MYkLqQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1403259380-13634-6-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1403259380-13634-6-git-send-email-geert+renesas@glider.be>
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+	<20140621101959.GM5099@sirena.org.uk>
+In-Reply-To: <20140621101959.GM5099-GFdadSzt00ze9xe1eoZjHA@public.gmane.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Guennadi Liakhovetski <g.liakhovetski-Mmb7MZpHnFY@public.gmane.org>, linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
+Hi Mark,
 
---YLnPAZt6hMJRJaYl
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+On Sat, Jun 21, 2014 at 12:19 PM, Mark Brown <broonie@kernel.org> wrote:
+> On Fri, Jun 20, 2014 at 12:16:20PM +0200, Geert Uytterhoeven wrote:
+>> Add DMA support to the MSIOF driver using platform data.
+>
+> This doesn't apply against current code, can you please check and
+> resend?
 
-On Fri, Jun 20, 2014 at 12:16:20PM +0200, Geert Uytterhoeven wrote:
-> Add DMA support to the MSIOF driver using platform data.
+My patches were based on your for-next branch, which has
+commit 1e8231b79ccbb3e6e7b3f6af9f998dca16b00efe
+Author: Jingoo Han <jg1.han@samsung.com>
+Date:   Tue Apr 29 17:21:25 2014 +0900
 
-This doesn't apply against current code, can you please check and
-resend?
+    spi: sh-msiof: remove unnecessary OOM messages
 
---YLnPAZt6hMJRJaYl
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+(from topic/cleanup), but topic/sh-msiof hasn't.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
+Gr{oetje,eeting}s,
 
-iQIcBAEBAgAGBQJTpVxLAAoJELSic+t+oim9ghYQAIjz6RIL2o+b5ycDBzuFSm8+
-lr0YgH8kRPynR05UemER43yVHV88rjWhVjyumHvf0vxRtrofb1t4iw5sqH/ig83E
-RXaqgb1XriXwywQcNb0+Is3oFVtDZPCEOju0iCUSI28bfE8NKKLgDqVv8VI7rB9F
-2B5TRsJEfiqdLekyiTnYNDcUjDlCjUurEr7fhbDZ20ompuvWMP6ejBrbRdsZL+LS
-MVvXlygqrIXalBEo//TAifoKsdKG86fu+3ax8M9S5QL2uIlGNFpy5mwgAu7SvBZz
-rKCR2zB4sNYY5KEMr32aORXr5js+REWWffMrVJ5YWvqZNcvboehixTNrRhKcSb8C
-2yFMqSFJ6csZ7kR3Woo22IG1ja20ulzrrc+mnrATctdwYbcCC5jZrEMwoc64rpzA
-9B/H0/WG4hxhro2eMzhOX4gopA7b+elwQRRuGDIQ6O7rmLh1BW5Sqq4SYjPTTU8I
-lzy6exRwWvfypPEsN53Xkx6eOI0Idm3l4lP/ByZPTVqYsKCeG6gjqagkjwVo+Sed
-+Mn9CorKat0XquJeru1i1KKUvXGKyKKJXWLQ/mkHAS/SzS31DTvRG1npNMqoUEOP
-4SQdxwjBB6lHKg2aw3Meq2bg+Y8HjfO+vqRQoOwBY5vI4s7MpG1fzAM++3ZbJL6E
-U9BZqWnThZFXds3vxG5b
-=jy/x
------END PGP SIGNATURE-----
+                        Geert
 
---YLnPAZt6hMJRJaYl--
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
