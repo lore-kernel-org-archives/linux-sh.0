@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:28:10 +0000
-Subject: [PATCH 01/29] ARM: shmobile: armadillo800eva reference dts: Add matching LED labels
-Message-Id: <0ba06992e8919128d0547066247de9e54a8bb992.1403487225.git.horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:28:22 +0000
+Subject: [PATCH 13/29] ARM: shmobile: Lager memory map update
+Message-Id: <7b16c61a86ce41edd5c42a87f22a0a146968b62f.1403487225.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1403487225.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
@@ -10,47 +10,50 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-And make the node name numbering match the label numbering.
+Update the Lager DTS to make use of the new unified legacy
+memory map where the legacy window on Lager and Koelsch
+have the same size.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: devicetree@vger.kernel.org
+With this change in place the code gets aligned with the
+documentation.
+
+After update the Lager board has the following map:
+Bank0: 1GiB RAM (Legacy 32-bit: 0x40000000->0x7fffffff)
+Bank1: 3GiB RAM (LPAE area: 0x140000000->0x1ffffffff)
+
+Before the update the old map looked like this:
+Bank0: 2GiB RAM (Legacy 32-bit: 0x40000000->0xbfffffff)
+Bank1: 2GiB RAM (LPAE area: 0x180000000->0x1ffffffff)
+
+Tested with and without LPAE on r8a7790 Lager.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 12 ++++++++----
- 1 file changed, 8 insertions(+), 4 deletions(-)
+ arch/arm/boot/dts/r8a7790-lager.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 486007d..f6ef73f 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -104,17 +104,21 @@
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index b68ff56..b04d257 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -29,12 +29,12 @@
  
- 	leds {
- 		compatible = "gpio-leds";
--		led1 {
-+		led3 {
- 			gpios = <&pfc 102 GPIO_ACTIVE_HIGH>;
-+			label = "LED3";
- 		};
--		led2 {
-+		led4 {
- 			gpios = <&pfc 111 GPIO_ACTIVE_HIGH>;
-+			label = "LED4";
- 		};
--		led3 {
-+		led5 {
- 			gpios = <&pfc 110 GPIO_ACTIVE_HIGH>;
-+			label = "LED5";
- 		};
--		led4 {
-+		led6 {
- 			gpios = <&pfc 177 GPIO_ACTIVE_HIGH>;
-+			label = "LED6";
- 		};
+ 	memory@40000000 {
+ 		device_type = "memory";
+-		reg = <0 0x40000000 0 0x80000000>;
++		reg = <0 0x40000000 0 0x40000000>;
  	};
  
+ 	memory@180000000 {
+ 		device_type = "memory";
+-		reg = <1 0x80000000 0 0x80000000>;
++		reg = <1 0x40000000 0 0xc0000000>;
+ 	};
+ 
+ 	lbsc {
 -- 
 2.0.0.rc2
 
