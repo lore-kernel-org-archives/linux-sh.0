@@ -1,73 +1,67 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 14 Jun 2014 16:23:29 +0000
-Subject: [PATCH v3 07/19] clocksource: sh_mtu2: Replace global spinlock with a per-device spinlock
-Message-Id: <1402763021-4067-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:26:50 +0000
+Subject: [PATCH 3/9] ARM: shmobile: Get rid of redundant EMEV2 mach callbacks
+Message-Id: <af164ca33dcb3c1e6a2e723f24542d1278a8bef8.1403487831.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1403487831.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487831.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The global spinlock is used to protect the shared start/stop register.
-Now that all MTU2 channels are handled by a single device instance, use
-a per-device spinlock.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Wolfram Sang <wsa@sang-engineering.com>
+Update the EMEV2 specific SoC callbacks to get rid
+of the calls to of_clk_init() and of_platform_populate().
+Those calls are by default executed by the functions in
+the shared ARM code in case the SoC specific mach
+callbacks are NULL.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/clocksource/sh_mtu2.c | 10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/setup-emev2.c | 10 +---------
+ 1 file changed, 1 insertion(+), 9 deletions(-)
 
-diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
-index 2931fea..ebdf9d1 100644
---- a/drivers/clocksource/sh_mtu2.c
-+++ b/drivers/clocksource/sh_mtu2.c
-@@ -47,14 +47,14 @@ struct sh_mtu2_device {
- 	void __iomem *mapbase;
- 	struct clk *clk;
- 
-+	raw_spinlock_t lock; /* Protect the shared registers */
-+
- 	struct sh_mtu2_channel *channels;
- 	unsigned int num_channels;
- 
- 	bool has_clockevent;
- };
- 
--static DEFINE_RAW_SPINLOCK(sh_mtu2_lock);
--
- #define TSTR -1 /* shared register */
- #define TCR  0 /* channel register */
- #define TMDR 1 /* channel register */
-@@ -192,7 +192,7 @@ static void sh_mtu2_start_stop_ch(struct sh_mtu2_channel *ch, int start)
- 	unsigned long flags, value;
- 
- 	/* start stop register shared by multiple timer channels */
--	raw_spin_lock_irqsave(&sh_mtu2_lock, flags);
-+	raw_spin_lock_irqsave(&ch->mtu->lock, flags);
- 	value = sh_mtu2_read(ch, TSTR);
- 
- 	if (start)
-@@ -201,7 +201,7 @@ static void sh_mtu2_start_stop_ch(struct sh_mtu2_channel *ch, int start)
- 		value &= ~(1 << ch->index);
- 
- 	sh_mtu2_write(ch, TSTR, value);
--	raw_spin_unlock_irqrestore(&sh_mtu2_lock, flags);
-+	raw_spin_unlock_irqrestore(&ch->mtu->lock, flags);
+diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
+index e10d34e..b06a9e8 100644
+--- a/arch/arm/mach-shmobile/setup-emev2.c
++++ b/arch/arm/mach-shmobile/setup-emev2.c
+@@ -16,10 +16,9 @@
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+-#include <linux/clk-provider.h>
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+-#include <linux/of_platform.h>
++#include <linux/mm.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
+@@ -42,12 +41,6 @@ static void __init emev2_map_io(void)
+ 	iotable_init(emev2_io_desc, ARRAY_SIZE(emev2_io_desc));
  }
  
- static int sh_mtu2_enable(struct sh_mtu2_channel *ch)
-@@ -402,6 +402,8 @@ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
- 
- 	mtu->pdev = pdev;
- 
-+	raw_spin_lock_init(&mtu->lock);
-+
- 	/* Get hold of clock. */
- 	mtu->clk = clk_get(&mtu->pdev->dev, "fck");
- 	if (IS_ERR(mtu->clk)) {
+-static void __init emev2_add_standard_devices_dt(void)
+-{
+-	of_clk_init(NULL);
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-}
+-
+ static const char *emev2_boards_compat_dt[] __initconst = {
+ 	"renesas,emev2",
+ 	NULL,
+@@ -59,7 +52,6 @@ DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
+ 	.smp		= smp_ops(emev2_smp_ops),
+ 	.map_io		= emev2_map_io,
+ 	.init_early	= shmobile_init_delay,
+-	.init_machine	= emev2_add_standard_devices_dt,
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= emev2_boards_compat_dt,
+ MACHINE_END
 -- 
-1.8.5.5
+2.0.0.rc2
 
