@@ -1,70 +1,59 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:26:22 +0000
-Subject: [PATCH 09/24] ARM: shmobile: marzen-reference: Initialize CPG device
-Message-Id: <a92fbd077bbfbe98e4dee84081d84c44ae99538b.1403487423.git.horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:28:28 +0000
+Subject: [PATCH 19/29] ARM: shmobile: r8a7791: add audio clock on DTSI
+Message-Id: <0d3dbde84a45977cdd7d85115cd5ea1b4ede312e.1403487225.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487423.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487423.git.horms+renesas@verge.net.au>
+References: <cover.1403487225.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On multiplatform kernels clocks are handled by the CCF CPG driver. It
-must be explicitly initialized by a call to r8a7779_clocks_init() with
-the value of the boot mode pins.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Based on similar work for the Koelsch board by Laurent Pinchart.
+audio_clk_a/b/c are required from sound driver
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-marzen-reference.c | 16 ++++++++++++----
- 1 file changed, 12 insertions(+), 4 deletions(-)
+ arch/arm/boot/dts/r8a7791.dtsi | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index d90843b..f642819 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -19,7 +19,8 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index b639006..f3b6219 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -532,6 +532,29 @@
+ 			clock-output-names = "extal";
+ 		};
  
--#include <linux/clk-provider.h>
-+#include <linux/clk/shmobile.h>
-+#include <linux/clocksource.h>
- #include <linux/of_platform.h>
- #include <mach/r8a7779.h>
- #include <asm/irq.h>
-@@ -27,11 +28,17 @@
- #include "common.h"
- #include "irqs.h"
- 
--static void __init marzen_init(void)
-+static void __init marzen_init_timer(void)
- {
- #ifdef CONFIG_COMMON_CLK
--	of_clk_init(NULL);
--#else
-+	r8a7779_clocks_init(r8a7779_read_mode_pins());
-+#endif
-+	clocksource_of_init();
-+}
++		/*
++		 * The external audio clocks are configured as 0 Hz fixed frequency clocks by
++		 * default. Boards that provide audio clocks should override them.
++		 */
++		audio_clk_a: audio_clk_a {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "audio_clk_a";
++		};
++		audio_clk_b: audio_clk_b {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "audio_clk_b";
++		};
++		audio_clk_c: audio_clk_c {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "audio_clk_c";
++		};
 +
-+static void __init marzen_init(void)
-+{
-+#ifndef CONFIG_COMMON_CLK
- 	r8a7779_clock_init();
- #endif
- 	r8a7779_add_standard_devices_dt();
-@@ -48,6 +55,7 @@ DT_MACHINE_START(MARZEN, "marzen")
- 	.smp		= smp_ops(r8a7779_smp_ops),
- 	.map_io		= r8a7779_map_io,
- 	.init_early	= r8a7779_init_delay,
-+	.init_time	= marzen_init_timer,
- 	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= r8a7779_init_irq_dt,
- 	.init_machine	= marzen_init,
+ 		/* Special CPG clocks */
+ 		cpg_clocks: cpg_clocks@e6150000 {
+ 			compatible = "renesas,r8a7791-cpg-clocks",
 -- 
 2.0.0.rc2
 
