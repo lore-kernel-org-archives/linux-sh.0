@@ -1,65 +1,155 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 11 Jun 2014 12:34:50 +0000
-Subject: Re: [PATCH v8 1/8] ftrace: make CALLER_ADDRx macros more generic
-Message-Id: <CAMuHMdWs9i4pBNbn-RTpv_-K5W7YGED=KtEtFSci=7YHdNKpfw@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:26:26 +0000
+Subject: [PATCH 13/24] ARM: shmobile: Remove Marzen reference DTS
+Message-Id: <47ad265dd443802ead3d7e1aa3ef60ff1a8da952.1403487423.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394862048-28758-1-git-send-email-takahiro.akashi@linaro.org>
- <1398851676-16389-1-git-send-email-takahiro.akashi@linaro.org>
- <1398851676-16389-2-git-send-email-takahiro.akashi@linaro.org>
-In-Reply-To: <1398851676-16389-2-git-send-email-takahiro.akashi@linaro.org>
+References: <cover.1403487423.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487423.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Apr 30, 2014 at 11:54 AM, AKASHI Takahiro
-<takahiro.akashi@linaro.org> wrote:
-> Most archs with HAVE_ARCH_CALLER_ADDR have the almost same definitions
-> of CALLER_ADDRx(n), and so put them into linux/ftrace.h.
->
-> Signed-off-by: AKASHI Takahiro <takahiro.akashi@linaro.org>
+Now that the DTS file r8a7779-marzen.dts can be used with
+board-marzen.c and board-marzen-reference.c, proceed with removing
+r8a7779-marzen-reference.dts.
 
-On arm (at least shmobile_defconfig and versatile_defconfig) with gcc 4.6.3:
+Based on work for the Koelsch board by Laurent Pinchart.
 
-kernel/sched/core.c: In function 'get_parent_ip':
-kernel/sched/core.c:2520:10: warning: unsupported argument to
-'__builtin_return_address' [enabled by default]
-kernel/sched/core.c:2522:11: warning: unsupported argument to
-'__builtin_return_address' [enabled by default]
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts | 121 -------------------------
+ 1 file changed, 121 deletions(-)
+ delete mode 100644 arch/arm/boot/dts/r8a7779-marzen-reference.dts
 
-With gcc 4.9.0:
+diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+deleted file mode 100644
+index b27c637..0000000
+--- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
++++ /dev/null
+@@ -1,121 +0,0 @@
+-/*
+- * Reference Device Tree Source for the Marzen board
+- *
+- * Copyright (C) 2013 Renesas Solutions Corp.
+- * Copyright (C) 2013 Simon Horman
+- *
+- * This file is licensed under the terms of the GNU General Public License
+- * version 2.  This program is licensed "as is" without any warranty of any
+- * kind, whether express or implied.
+- */
+-
+-/dts-v1/;
+-#include "r8a7779.dtsi"
+-#include <dt-bindings/gpio/gpio.h>
+-#include <dt-bindings/interrupt-controller/irq.h>
+-
+-/ {
+-	model = "marzen";
+-	compatible = "renesas,marzen-reference", "renesas,r8a7779";
+-
+-	chosen {
+-		bootargs = "console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on rw";
+-	};
+-
+-	memory {
+-		device_type = "memory";
+-		reg = <0x60000000 0x40000000>;
+-	};
+-
+-	fixedregulator3v3: fixedregulator@0 {
+-		compatible = "regulator-fixed";
+-		regulator-name = "fixed-3.3V";
+-		regulator-min-microvolt = <3300000>;
+-		regulator-max-microvolt = <3300000>;
+-		regulator-boot-on;
+-		regulator-always-on;
+-	};
+-
+-	lan0@18000000 {
+-		compatible = "smsc,lan9220", "smsc,lan9115";
+-		reg = <0x18000000 0x100>;
+-		pinctrl-0 = <&lan0_pins>;
+-		pinctrl-names = "default";
+-
+-		phy-mode = "mii";
+-		interrupt-parent = <&irqpin0>;
+-		interrupts = <1 IRQ_TYPE_EDGE_FALLING>;
+-		smsc,irq-push-pull;
+-		reg-io-width = <4>;
+-		vddvario-supply = <&fixedregulator3v3>;
+-		vdd33a-supply = <&fixedregulator3v3>;
+-	};
+-
+-	leds {
+-		compatible = "gpio-leds";
+-		led2 {
+-			gpios = <&gpio4 29 GPIO_ACTIVE_HIGH>;
+-		};
+-		led3 {
+-			gpios = <&gpio4 30 GPIO_ACTIVE_HIGH>;
+-		};
+-		led4 {
+-			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
+-		};
+-	};
+-};
+-
+-&irqpin0 {
+-	status = "okay";
+-};
+-
+-&pfc {
+-	pinctrl-0 = <&scif2_pins &scif4_pins>;
+-	pinctrl-names = "default";
+-
+-	lan0_pins: lan0 {
+-		intc {
+-			renesas,groups = "intc_irq1_b";
+-			renesas,function = "intc";
+-		};
+-		lbsc {
+-			renesas,groups = "lbsc_ex_cs0";
+-			renesas,function = "lbsc";
+-		};
+-	};
+-
+-	scif2_pins: serial2 {
+-		renesas,groups = "scif2_data_c";
+-		renesas,function = "scif2";
+-	};
+-
+-	scif4_pins: serial4 {
+-		renesas,groups = "scif4_data";
+-		renesas,function = "scif4";
+-	};
+-
+-	sdhi0_pins: sd0 {
+-		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
+-		renesas,function = "sdhi0";
+-	};
+-
+-	hspi0_pins: hspi0 {
+-		renesas,groups = "hspi0";
+-		renesas,function = "hspi0";
+-	};
+-};
+-
+-&sdhi0 {
+-	pinctrl-0 = <&sdhi0_pins>;
+-	pinctrl-names = "default";
+-
+-	vmmc-supply = <&fixedregulator3v3>;
+-	bus-width = <4>;
+-	status = "okay";
+-};
+-
+-&hspi0 {
+-	pinctrl-0 = <&hspi0_pins>;
+-	pinctrl-names = "default";
+-	status = "okay";
+-};
+-- 
+2.0.0.rc2
 
-kernel/sched/core.c: In function 'get_parent_ip':
-include/linux/ftrace.h:627:36: warning: unsupported argument to
-'__builtin_return_address'
- #  define ftrace_return_address(n) __builtin_return_address(n)
-                                    ^
-include/linux/ftrace.h:635:38: note: in expansion of macro
-'ftrace_return_address'
- #define CALLER_ADDR2 ((unsigned long)ftrace_return_address(2))
-                                      ^
-kernel/sched/core.c:2520:10: note: in expansion of macro 'CALLER_ADDR2'
-   addr = CALLER_ADDR2;
-          ^
-include/linux/ftrace.h:627:36: warning: unsupported argument to
-'__builtin_return_address'
- #  define ftrace_return_address(n) __builtin_return_address(n)
-                                    ^
-include/linux/ftrace.h:636:38: note: in expansion of macro
-'ftrace_return_address'
- #define CALLER_ADDR3 ((unsigned long)ftrace_return_address(3))
-                                      ^
-kernel/sched/core.c:2522:11: note: in expansion of macro 'CALLER_ADDR3'
-    addr = CALLER_ADDR3;
-           ^
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
