@@ -1,266 +1,39 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 14 Jun 2014 16:23:28 +0000
-Subject: [PATCH v3 06/19] clocksource: sh_mtu2: Drop support for legacy platform data
-Message-Id: <1402763021-4067-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:26:30 +0000
+Subject: [PATCH 17/24] ARM: shmobile: marzen-reference: Use DT CPU Frequency
+Message-Id: <17ed9efd8afdd8c38f19ff72f08e71c1fd2376e3.1403487423.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1403487423.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487423.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Now that all platforms have switched to the new-style platform data,
-drop support for the legacy version.
+Convert the Marzen DT reference board support to use shmobile_init_delay()
+to be able to migrate away from per-SoC delay setup functions.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Wolfram Sang <wsa@sang-engineering.com>
+Based on work for the Armadillo800 EVA board by Magnus Damm.
+
+Cc: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/clocksource/sh_mtu2.c | 130 ++++++++++--------------------------------
- 1 file changed, 31 insertions(+), 99 deletions(-)
+ arch/arm/mach-shmobile/board-marzen-reference.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
-index f2c1c36..2931fea 100644
---- a/drivers/clocksource/sh_mtu2.c
-+++ b/drivers/clocksource/sh_mtu2.c
-@@ -37,7 +37,6 @@ struct sh_mtu2_channel {
- 	unsigned int index;
- 
- 	void __iomem *base;
--	int irq;
- 
- 	struct clock_event_device ced;
- };
-@@ -51,7 +50,6 @@ struct sh_mtu2_device {
- 	struct sh_mtu2_channel *channels;
- 	unsigned int num_channels;
- 
--	bool legacy;
- 	bool has_clockevent;
- };
- 
-@@ -162,12 +160,8 @@ static inline unsigned long sh_mtu2_read(struct sh_mtu2_channel *ch, int reg_nr)
- {
- 	unsigned long offs;
- 
--	if (reg_nr = TSTR) {
--		if (ch->mtu->legacy)
--			return ioread8(ch->mtu->mapbase);
--		else
--			return ioread8(ch->mtu->mapbase + 0x280);
--	}
-+	if (reg_nr = TSTR)
-+		return ioread8(ch->mtu->mapbase + 0x280);
- 
- 	offs = mtu2_reg_offs[reg_nr];
- 
-@@ -182,12 +176,8 @@ static inline void sh_mtu2_write(struct sh_mtu2_channel *ch, int reg_nr,
- {
- 	unsigned long offs;
- 
--	if (reg_nr = TSTR) {
--		if (ch->mtu->legacy)
--			return iowrite8(value, ch->mtu->mapbase);
--		else
--			return iowrite8(value, ch->mtu->mapbase + 0x280);
--	}
-+	if (reg_nr = TSTR)
-+		return iowrite8(value, ch->mtu->mapbase + 0x280);
- 
- 	offs = mtu2_reg_offs[reg_nr];
- 
-@@ -331,7 +321,6 @@ static void sh_mtu2_register_clockevent(struct sh_mtu2_channel *ch,
- 					const char *name)
- {
- 	struct clock_event_device *ced = &ch->ced;
--	int ret;
- 
- 	ced->name = name;
- 	ced->features = CLOCK_EVT_FEAT_PERIODIC;
-@@ -344,24 +333,12 @@ static void sh_mtu2_register_clockevent(struct sh_mtu2_channel *ch,
- 	dev_info(&ch->mtu->pdev->dev, "ch%u: used for clock events\n",
- 		 ch->index);
- 	clockevents_register_device(ced);
--
--	ret = request_irq(ch->irq, sh_mtu2_interrupt,
--			  IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
--			  dev_name(&ch->mtu->pdev->dev), ch);
--	if (ret) {
--		dev_err(&ch->mtu->pdev->dev, "ch%u: failed to request irq %d\n",
--			ch->index, ch->irq);
--		return;
--	}
- }
- 
--static int sh_mtu2_register(struct sh_mtu2_channel *ch, const char *name,
--			    bool clockevent)
-+static int sh_mtu2_register(struct sh_mtu2_channel *ch, const char *name)
- {
--	if (clockevent) {
--		ch->mtu->has_clockevent = true;
--		sh_mtu2_register_clockevent(ch, name);
--	}
-+	ch->mtu->has_clockevent = true;
-+	sh_mtu2_register_clockevent(ch, name);
- 
- 	return 0;
- }
-@@ -372,40 +349,32 @@ static int sh_mtu2_setup_channel(struct sh_mtu2_channel *ch, unsigned int index,
- 	static const unsigned int channel_offsets[] = {
- 		0x300, 0x380, 0x000,
- 	};
--	bool clockevent;
-+	char name[6];
-+	int irq;
-+	int ret;
- 
- 	ch->mtu = mtu;
- 
--	if (mtu->legacy) {
--		struct sh_timer_config *cfg = mtu->pdev->dev.platform_data;
--
--		clockevent = cfg->clockevent_rating != 0;
--
--		ch->irq = platform_get_irq(mtu->pdev, 0);
--		ch->base = mtu->mapbase - cfg->channel_offset;
--		ch->index = cfg->timer_bit;
--	} else {
--		char name[6];
--
--		clockevent = true;
--
--		sprintf(name, "tgi%ua", index);
--		ch->irq = platform_get_irq_byname(mtu->pdev, name);
--		ch->base = mtu->mapbase + channel_offsets[index];
--		ch->index = index;
--	}
--
--	if (ch->irq < 0) {
-+	sprintf(name, "tgi%ua", index);
-+	irq = platform_get_irq_byname(mtu->pdev, name);
-+	if (irq < 0) {
- 		/* Skip channels with no declared interrupt. */
--		if (!mtu->legacy)
--			return 0;
-+		return 0;
-+	}
- 
--		dev_err(&mtu->pdev->dev, "ch%u: failed to get irq\n",
--			ch->index);
--		return ch->irq;
-+	ret = request_irq(irq, sh_mtu2_interrupt,
-+			  IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
-+			  dev_name(&ch->mtu->pdev->dev), ch);
-+	if (ret) {
-+		dev_err(&ch->mtu->pdev->dev, "ch%u: failed to request irq %d\n",
-+			index, irq);
-+		return ret;
- 	}
- 
--	return sh_mtu2_register(ch, dev_name(&mtu->pdev->dev), clockevent);
-+	ch->base = mtu->mapbase + channel_offsets[index];
-+	ch->index = index;
-+
-+	return sh_mtu2_register(ch, dev_name(&mtu->pdev->dev));
- }
- 
- static int sh_mtu2_map_memory(struct sh_mtu2_device *mtu)
-@@ -422,46 +391,19 @@ static int sh_mtu2_map_memory(struct sh_mtu2_device *mtu)
- 	if (mtu->mapbase = NULL)
- 		return -ENXIO;
- 
--	/*
--	 * In legacy platform device configuration (with one device per channel)
--	 * the resource points to the channel base address.
--	 */
--	if (mtu->legacy) {
--		struct sh_timer_config *cfg = mtu->pdev->dev.platform_data;
--		mtu->mapbase += cfg->channel_offset;
--	}
--
- 	return 0;
- }
- 
--static void sh_mtu2_unmap_memory(struct sh_mtu2_device *mtu)
--{
--	if (mtu->legacy) {
--		struct sh_timer_config *cfg = mtu->pdev->dev.platform_data;
--		mtu->mapbase -= cfg->channel_offset;
--	}
--
--	iounmap(mtu->mapbase);
--}
--
- static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
- 			 struct platform_device *pdev)
- {
--	struct sh_timer_config *cfg = pdev->dev.platform_data;
--	const struct platform_device_id *id = pdev->id_entry;
- 	unsigned int i;
- 	int ret;
- 
- 	mtu->pdev = pdev;
--	mtu->legacy = id->driver_data;
--
--	if (mtu->legacy && !cfg) {
--		dev_err(&mtu->pdev->dev, "missing platform data\n");
--		return -ENXIO;
--	}
- 
- 	/* Get hold of clock. */
--	mtu->clk = clk_get(&mtu->pdev->dev, mtu->legacy ? "mtu2_fck" : "fck");
-+	mtu->clk = clk_get(&mtu->pdev->dev, "fck");
- 	if (IS_ERR(mtu->clk)) {
- 		dev_err(&mtu->pdev->dev, "cannot get clock\n");
- 		return PTR_ERR(mtu->clk);
-@@ -479,10 +421,7 @@ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
- 	}
- 
- 	/* Allocate and setup the channels. */
--	if (mtu->legacy)
--		mtu->num_channels = 1;
--	else
--		mtu->num_channels = 3;
-+	mtu->num_channels = 3;
- 
- 	mtu->channels = kzalloc(sizeof(*mtu->channels) * mtu->num_channels,
- 				GFP_KERNEL);
-@@ -491,16 +430,10 @@ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
- 		goto err_unmap;
- 	}
- 
--	if (mtu->legacy) {
--		ret = sh_mtu2_setup_channel(&mtu->channels[0], 0, mtu);
-+	for (i = 0; i < mtu->num_channels; ++i) {
-+		ret = sh_mtu2_setup_channel(&mtu->channels[i], i, mtu);
- 		if (ret < 0)
- 			goto err_unmap;
--	} else {
--		for (i = 0; i < mtu->num_channels; ++i) {
--			ret = sh_mtu2_setup_channel(&mtu->channels[i], i, mtu);
--			if (ret < 0)
--				goto err_unmap;
--		}
- 	}
- 
- 	platform_set_drvdata(pdev, mtu);
-@@ -509,7 +442,7 @@ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
- 
- err_unmap:
- 	kfree(mtu->channels);
--	sh_mtu2_unmap_memory(mtu);
-+	iounmap(mtu->mapbase);
- err_clk_unprepare:
- 	clk_unprepare(mtu->clk);
- err_clk_put:
-@@ -562,7 +495,6 @@ static int sh_mtu2_remove(struct platform_device *pdev)
- }
- 
- static const struct platform_device_id sh_mtu2_id_table[] = {
--	{ "sh_mtu2", 1 },
- 	{ "sh-mtu2", 0 },
- 	{ },
- };
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 1b63686..bb2df32 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -66,7 +66,7 @@ static const char *marzen_boards_compat_dt[] __initdata = {
+ DT_MACHINE_START(MARZEN, "marzen")
+ 	.smp		= smp_ops(r8a7779_smp_ops),
+ 	.map_io		= r8a7779_map_io,
+-	.init_early	= r8a7779_init_delay,
++	.init_early	= shmobile_init_delay,
+ 	.init_time	= marzen_init_timer,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= r8a7779_init_irq_dt,
 -- 
-1.8.5.5
+2.0.0.rc2
 
