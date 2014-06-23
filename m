@@ -1,56 +1,70 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 23 Jun 2014 23:54:27 +0000
-Subject: [PATCH v2 21/23] v4l: vsp1: bru: Support non-premultiplied colors at the BRU output
-Message-Id: <1403567669-18539-22-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:26:22 +0000
+Subject: [PATCH 09/24] ARM: shmobile: marzen-reference: Initialize CPG device
+Message-Id: <a92fbd077bbfbe98e4dee84081d84c44ae99538b.1403487423.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1403487423.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487423.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The BRU outputs premultiplied colors, enable color data normalization
-when the format configured at the output of the pipeline isn't
-premultiplied.
+On multiplatform kernels clocks are handled by the CCF CPG driver. It
+must be explicitly initialized by a call to r8a7779_clocks_init() with
+the value of the boot mode pins.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Based on similar work for the Koelsch board by Laurent Pinchart.
+
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/media/platform/vsp1/vsp1_bru.c | 11 +++++++++--
- 1 file changed, 9 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/board-marzen-reference.c | 16 ++++++++++++----
+ 1 file changed, 12 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_bru.c b/drivers/media/platform/vsp1/vsp1_bru.c
-index d8d49fb..86b32bc 100644
---- a/drivers/media/platform/vsp1/vsp1_bru.c
-+++ b/drivers/media/platform/vsp1/vsp1_bru.c
-@@ -43,8 +43,10 @@ static inline void vsp1_bru_write(struct vsp1_bru *bru, u32 reg, u32 data)
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index d90843b..f642819 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -19,7 +19,8 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
  
- static int bru_s_stream(struct v4l2_subdev *subdev, int enable)
+-#include <linux/clk-provider.h>
++#include <linux/clk/shmobile.h>
++#include <linux/clocksource.h>
+ #include <linux/of_platform.h>
+ #include <mach/r8a7779.h>
+ #include <asm/irq.h>
+@@ -27,11 +28,17 @@
+ #include "common.h"
+ #include "irqs.h"
+ 
+-static void __init marzen_init(void)
++static void __init marzen_init_timer(void)
  {
-+	struct vsp1_pipeline *pipe = to_vsp1_pipeline(&subdev->entity);
- 	struct vsp1_bru *bru = to_bru(subdev);
- 	struct v4l2_mbus_framefmt *format;
-+	unsigned int flags;
- 	unsigned int i;
- 
- 	if (!enable)
-@@ -58,8 +60,13 @@ static int bru_s_stream(struct v4l2_subdev *subdev, int enable)
- 	 * to sane default values for now.
- 	 */
- 
--	/* Disable both color data normalization and dithering. */
--	vsp1_bru_write(bru, VI6_BRU_INCTRL, 0);
-+	/* Disable dithering and enable color data normalization unless the
-+	 * format at the pipeline output is premultiplied.
-+	 */
-+	flags = pipe->output ? pipe->output->video.format.flags : 0;
-+	vsp1_bru_write(bru, VI6_BRU_INCTRL,
-+		       flags & V4L2_PIX_FMT_FLAG_PREMUL_ALPHA ?
-+		       0 : VI6_BRU_INCTRL_NRM);
- 
- 	/* Set the background position to cover the whole output image and
- 	 * set its color to opaque black.
+ #ifdef CONFIG_COMMON_CLK
+-	of_clk_init(NULL);
+-#else
++	r8a7779_clocks_init(r8a7779_read_mode_pins());
++#endif
++	clocksource_of_init();
++}
++
++static void __init marzen_init(void)
++{
++#ifndef CONFIG_COMMON_CLK
+ 	r8a7779_clock_init();
+ #endif
+ 	r8a7779_add_standard_devices_dt();
+@@ -48,6 +55,7 @@ DT_MACHINE_START(MARZEN, "marzen")
+ 	.smp		= smp_ops(r8a7779_smp_ops),
+ 	.map_io		= r8a7779_map_io,
+ 	.init_early	= r8a7779_init_delay,
++	.init_time	= marzen_init_timer,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= r8a7779_init_irq_dt,
+ 	.init_machine	= marzen_init,
 -- 
-1.8.5.5
+2.0.0.rc2
 
