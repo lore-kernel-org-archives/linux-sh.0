@@ -1,33 +1,78 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 05 Jun 2014 06:47:38 +0000
-Subject: [PATCH 01/03] ARM: shmobile: Update r7s72100 DTS to include CPU frequency
-Message-Id: <20140605064738.14469.26627.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:28:18 +0000
+Subject: [PATCH 09/29] ARM: shmobile: r8a7791/koelsch dts: Add DVFS parameters into cpu0 node for r8a7791
+Message-Id: <a57004eca542428a444025847098b2af4e52a81c.1403487225.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1403487225.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-Add CPU Frequency information to the r7s72100 DTS file. This
-will allow us to use the shared C code on r7s72100 and Genmai
-which reads out the clock frequency from DT and calculates the
-delay settings from there.
+Add needed information inside CPU0 for the generic cpufreq-cpu0 driver.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+- voltage-tolerance = 1%
+  It reflects the tolerance for the CPU voltage defined inside the OPP
+  table. Due to the lack of proper OPP definition, use an arbitrary safe
+  value.
+- clock-latency = 300 us
+  Approximate worst-case latency to do a full DVFS transition for every
+  OPPs. Due to the lack of HW information, use an arbitrary safe value.
+  Note: The term transition-latency will be more accurate to define this
+  value since the clock transition latency is not the only parameter that
+  will define the overall DVFS transition.
+- operating-points = < kHz - uV >
+  List of 6 operating points. All of them are using the same voltage
+  since DVS is not supported in R-CAR Gen2.
+- clocks
+  phandle to the CPU clock source. This clock source is used for all the
+  2 CortexA15 located inside the same cluster.
+
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a7791-koelsch.dts |  4 ++++
+ arch/arm/boot/dts/r8a7791.dtsi        | 11 +++++++++++
+ 2 files changed, 15 insertions(+)
 
- arch/arm/boot/dts/r7s72100.dtsi |    1 +
- 1 file changed, 1 insertion(+)
-
---- 0001/arch/arm/boot/dts/r7s72100.dtsi
-+++ work/arch/arm/boot/dts/r7s72100.dtsi	2014-05-29 17:47:45.000000000 +0900
-@@ -144,6 +144,7 @@
- 			device_type = "cpu";
- 			compatible = "arm,cortex-a9";
- 			reg = <0>;
-+			clock-frequency = <400000000>;
- 		};
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 95331d7..b2e6616 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -429,3 +429,7 @@
+ 		regulator-always-on;
  	};
+ };
++
++&cpu0 {
++	cpu0-supply = <&vdd_dvfs>;
++};
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index d683982..b639006 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -45,6 +45,17 @@
+ 			compatible = "arm,cortex-a15";
+ 			reg = <0>;
+ 			clock-frequency = <1500000000>;
++			voltage-tolerance = <1>; /* 1% */
++			clocks = <&cpg_clocks R8A7791_CLK_Z>;
++			clock-latency = <300000>; /* 300 us */
++
++			/* kHz - uV - OPPs unknown yet */
++			operating-points = <1500000 1000000>,
++					   <1312500 1000000>,
++					   <1125000 1000000>,
++					   < 937500 1000000>,
++					   < 750000 1000000>,
++					   < 375000 1000000>;
+ 		};
  
+ 		cpu1: cpu@1 {
+-- 
+2.0.0.rc2
+
