@@ -1,70 +1,101 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 14 Jun 2014 16:23:25 +0000
-Subject: [PATCH v3 03/19] clocksource: sh_cmt: Replace global spinlock with a per-device spinlock
-Message-Id: <1402763021-4067-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 23 Jun 2014 23:54:17 +0000
+Subject: [PATCH v2 11/23] v4l: vsp1: Propagate vsp1_device_get errors to the callers
+Message-Id: <1403567669-18539-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-The global spinlock is used to protect the shared start/stop register.
-Now that all CMT channels are handled by a single device instance, use a
-per-device spinlock.
+Modify the vsp1_device_get() function to return an error code instead of
+a pointer to the VSP1 device, and use the return value in the callers.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/clocksource/sh_cmt.c | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
+ drivers/media/platform/vsp1/vsp1.h       |  2 +-
+ drivers/media/platform/vsp1/vsp1_drv.c   | 16 ++++++----------
+ drivers/media/platform/vsp1/vsp1_video.c |  4 ++--
+ 3 files changed, 9 insertions(+), 13 deletions(-)
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index ff1a059..4d00e4b 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -118,6 +118,8 @@ struct sh_cmt_device {
- 	void __iomem *mapbase;
- 	struct clk *clk;
+diff --git a/drivers/media/platform/vsp1/vsp1.h b/drivers/media/platform/vsp1/vsp1.h
+index 3cfa393..1246719 100644
+--- a/drivers/media/platform/vsp1/vsp1.h
++++ b/drivers/media/platform/vsp1/vsp1.h
+@@ -66,7 +66,7 @@ struct vsp1_device {
+ 	struct media_device media_dev;
+ };
  
-+	raw_spinlock_t lock; /* Protect the shared start/stop register */
-+
- 	struct sh_cmt_channel *channels;
- 	unsigned int num_channels;
+-struct vsp1_device *vsp1_device_get(struct vsp1_device *vsp1);
++int vsp1_device_get(struct vsp1_device *vsp1);
+ void vsp1_device_put(struct vsp1_device *vsp1);
  
-@@ -299,14 +301,12 @@ static unsigned long sh_cmt_get_counter(struct sh_cmt_channel *ch,
- 	return v2;
- }
- 
--static DEFINE_RAW_SPINLOCK(sh_cmt_lock);
--
- static void sh_cmt_start_stop_ch(struct sh_cmt_channel *ch, int start)
+ static inline u32 vsp1_read(struct vsp1_device *vsp1, u32 reg)
+diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
+index 0c5e74c..3e6601b 100644
+--- a/drivers/media/platform/vsp1/vsp1_drv.c
++++ b/drivers/media/platform/vsp1/vsp1_drv.c
+@@ -345,36 +345,32 @@ static int vsp1_device_init(struct vsp1_device *vsp1)
+  * Increment the VSP1 reference count and initialize the device if the first
+  * reference is taken.
+  *
+- * Return a pointer to the VSP1 device or NULL if an error occurred.
++ * Return 0 on success or a negative error code otherwise.
+  */
+-struct vsp1_device *vsp1_device_get(struct vsp1_device *vsp1)
++int vsp1_device_get(struct vsp1_device *vsp1)
  {
- 	unsigned long flags, value;
+-	struct vsp1_device *__vsp1 = vsp1;
+-	int ret;
++	int ret = 0;
  
- 	/* start stop register shared by multiple timer channels */
--	raw_spin_lock_irqsave(&sh_cmt_lock, flags);
-+	raw_spin_lock_irqsave(&ch->cmt->lock, flags);
- 	value = sh_cmt_read_cmstr(ch);
+ 	mutex_lock(&vsp1->lock);
+ 	if (vsp1->ref_count > 0)
+ 		goto done;
  
- 	if (start)
-@@ -315,7 +315,7 @@ static void sh_cmt_start_stop_ch(struct sh_cmt_channel *ch, int start)
- 		value &= ~(1 << ch->timer_bit);
+ 	ret = clk_prepare_enable(vsp1->clock);
+-	if (ret < 0) {
+-		__vsp1 = NULL;
++	if (ret < 0)
+ 		goto done;
+-	}
  
- 	sh_cmt_write_cmstr(ch, value);
--	raw_spin_unlock_irqrestore(&sh_cmt_lock, flags);
-+	raw_spin_unlock_irqrestore(&ch->cmt->lock, flags);
+ 	ret = vsp1_device_init(vsp1);
+ 	if (ret < 0) {
+ 		clk_disable_unprepare(vsp1->clock);
+-		__vsp1 = NULL;
+ 		goto done;
+ 	}
+ 
+ done:
+-	if (__vsp1)
++	if (!ret)
+ 		vsp1->ref_count++;
+ 
+ 	mutex_unlock(&vsp1->lock);
+-	return __vsp1;
++	return ret;
  }
  
- static int sh_cmt_enable(struct sh_cmt_channel *ch, unsigned long *rate)
-@@ -934,6 +934,7 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ /*
+diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
+index a60332e..885ec01 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.c
++++ b/drivers/media/platform/vsp1/vsp1_video.c
+@@ -955,8 +955,8 @@ static int vsp1_video_open(struct file *file)
  
- 	memset(cmt, 0, sizeof(*cmt));
- 	cmt->pdev = pdev;
-+	raw_spin_lock_init(&cmt->lock);
+ 	file->private_data = vfh;
  
- 	if (!cfg) {
- 		dev_err(&cmt->pdev->dev, "missing platform data\n");
+-	if (!vsp1_device_get(video->vsp1)) {
+-		ret = -EBUSY;
++	ret = vsp1_device_get(video->vsp1);
++	if (ret < 0) {
+ 		v4l2_fh_del(vfh);
+ 		kfree(vfh);
+ 	}
 -- 
 1.8.5.5
 
