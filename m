@@ -1,40 +1,105 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 03 Jun 2014 06:57:16 +0000
-Subject: [PATCH v2 2/2] arm: shmobile: r8a7791: add USB3.0 node to r8a7791.dtsi
-Message-Id: <538D71CC.1090306@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:25:26 +0000
+Subject: [PATCH] ARM: shmobile: add cpufreq-cpu0 driver for common SH-Mobile
+Message-Id: <06e32c91dbce3c24ccbe84e3af2a35199662bca0.1403487159.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1388003675-26554-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1388003675-26554-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1403487159.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487159.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This node depends on a generic phy driver of usb.
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+I add a new file(cpufreq.c) for the following reasons.
+- Registration of platform_device must be unified in SH-Mobile.
+- We can't create a node of cpufreq drivers into device tree.
+  (Because cpufreq driver is virtual device.)
+
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791.dtsi |   10 ++++++++++
- 1 file changed, 10 insertions(+)
+ arch/arm/mach-shmobile/Makefile              |  1 +
+ arch/arm/mach-shmobile/cpufreq.c             | 31 ++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/common.h |  7 +++++++
+ 3 files changed, 39 insertions(+)
+ create mode 100644 arch/arm/mach-shmobile/cpufreq.c
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index c2b5b38..5d6f4d6 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -906,4 +906,14 @@
- 		#size-cells = <0>;
- 		status = "disabled";
- 	};
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 38d5fe8..1b966da 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -48,6 +48,7 @@ obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
+ # PM objects
+ obj-$(CONFIG_SUSPEND)		+= suspend.o
+ obj-$(CONFIG_CPU_IDLE)		+= cpuidle.o
++obj-$(CONFIG_CPU_FREQ)		+= cpufreq.o
+ obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o pm-rmobile.o
+ obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
+diff --git a/arch/arm/mach-shmobile/cpufreq.c b/arch/arm/mach-shmobile/cpufreq.c
+new file mode 100644
+index 0000000..e2c868f
+--- /dev/null
++++ b/arch/arm/mach-shmobile/cpufreq.c
+@@ -0,0 +1,31 @@
++/*
++ * CPUFreq support code for SH-Mobile ARM
++ *
++ *  Copyright (C) 2014 Gaku Inami
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
 +
-+	xhci: usb@ee000000 {
-+		compatible = "renesas,xhci-r8a7791";
-+		reg = <0 0xee000000 0 0xc00>;
-+		interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7791_CLK_SSUSB>;
-+		phys = <&usbphy 1 1>;
-+		phy-names = "usb";
-+		status = "disabled";
-+	};
- };
++#include <linux/of.h>
++#include <linux/of_device.h>
++#include <linux/platform_device.h>
++
++int __init shmobile_cpufreq_init(void)
++{
++	struct device_node *np;
++
++	np = of_cpu_device_node_get(0);
++	if (np = NULL) {
++		pr_err("failed to find cpu0 node\n");
++		return 0;
++	}
++
++	if (of_get_property(np, "operating-points", NULL))
++		platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
++
++	of_node_put(np);
++
++	return 0;
++}
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index f7a360e..921a18e 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -45,12 +45,19 @@ int shmobile_cpuidle_init(void);
+ static inline int shmobile_cpuidle_init(void) { return 0; }
+ #endif
+ 
++#ifdef CONFIG_CPU_FREQ
++int shmobile_cpufreq_init(void);
++#else
++static inline int shmobile_cpufreq_init(void) { return 0; }
++#endif
++
+ extern void __iomem *shmobile_scu_base;
+ 
+ static inline void __init shmobile_init_late(void)
+ {
+ 	shmobile_suspend_init();
+ 	shmobile_cpuidle_init();
++	shmobile_cpufreq_init();
+ }
+ 
+ #endif /* __ARCH_MACH_COMMON_H */
 -- 
-1.7.9.5
+2.0.0.rc2
+
