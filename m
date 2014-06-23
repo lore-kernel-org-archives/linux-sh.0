@@ -1,76 +1,62 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 18 Jun 2014 09:11:26 +0000
-Subject: [PROTOTYPE 8/8] shdmac-of: fixup for test
-Message-Id: <87bntqy43k.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:28:33 +0000
+Subject: [PATCH 24/29] ARM: shmobile: r8a7791: Add PCIEC clock device tree node
+Message-Id: <4bfb37675b5343798f5260adad92a67444a9fd47.1403487225.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1403487225.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+From: Phil Edworthy <phil.edworthy@renesas.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This patch adds the device tree clock node for the PCIe Controller
+
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/dma/sh/shdma-of.c             |    9 +++++----
- drivers/dma/sh/shdmac.c               |    2 +-
- include/dt-bindings/dma/r8a7790-dma.h |    2 ++
- 3 files changed, 8 insertions(+), 5 deletions(-)
+ arch/arm/boot/dts/r8a7791.dtsi            | 7 ++++---
+ include/dt-bindings/clock/r8a7791-clock.h | 1 +
+ 2 files changed, 5 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/dma/sh/shdma-of.c b/drivers/dma/sh/shdma-of.c
-index 696716b..6296f19 100644
---- a/drivers/dma/sh/shdma-of.c
-+++ b/drivers/dma/sh/shdma-of.c
-@@ -43,11 +43,11 @@ static struct sh_dmae_pdata arm_dmae_info = {
- 
- struct sh_dmae_of_info shdma_arm_info = {
- 	.pdata_template	= &arm_dmae_info,
--	.channel_offset	= 0x8000-0x20,
-+	.channel_offset	= 0x8000,
- 	.channel_stride	= 0x80,
--	.offset		= 0x0,
--	.dmars		= 0x40,
--	.chclr_offset	= 0x80,
-+	.offset		= 0x00 - 0x20,
-+	.dmars		= 0x40 - 0x20,
-+	.chclr_offset	= 0x80 - 0x20,
- };
- 
- /* Need global index due to shdma_slave_used being global */
-@@ -123,6 +123,7 @@ static struct dma_chan *shdma_of_xlate(struct of_phandle_args *dma_spec,
- 			client->cfg.slave_id = id;
- 			client->cfg.mid_rid = id;
- 			client->cfg.chcr = dma_spec->args[1];
-+			INIT_LIST_HEAD(&client->node);
- 
- 			dev_dbg(&pdev->dev, "new client %d, %02x\n",
- 				client->index, id);
-diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
-index f2ecec8..7d2d086 100644
---- a/drivers/dma/sh/shdmac.c
-+++ b/drivers/dma/sh/shdmac.c
-@@ -691,7 +691,7 @@ static const struct shdma_ops sh_dmae_shdma_ops = {
- 
- static const struct of_device_id sh_dmae_of_match[] = {
- 	{ .compatible = "renesas,shdma-r8a73a4", .data = r8a73a4_shdma_devid },
--	{ .compatible = "renesas,dma-r8a7790", .data = &shdma_arm_info },
-+	{ .compatible = "renesas,shdma-r8a7790", .data = &shdma_arm_info },
- 	{}
- };
- MODULE_DEVICE_TABLE(of, sh_dmae_of_match);
-diff --git a/include/dt-bindings/dma/r8a7790-dma.h b/include/dt-bindings/dma/r8a7790-dma.h
-index 732422a..6b90206 100644
---- a/include/dt-bindings/dma/r8a7790-dma.h
-+++ b/include/dt-bindings/dma/r8a7790-dma.h
-@@ -222,6 +222,8 @@
- #define R8A7790_DMA_SSIND9_TX	(0x13)
- #define R8A7790_DMA_SSIND9_RX	(0x14)
- 
-+#define CHCR_RX_16BIT	SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_16BIT)
-+#define CHCR_TX_16BIT	SHDMA_ARM_CHCR_TX(SHDMA_ARM_SZ_16BIT)
- #define CHCR_RX_32BIT	SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_32BIT)
- #define CHCR_TX_32BIT	SHDMA_ARM_CHCR_TX(SHDMA_ARM_SZ_32BIT)
- #define CHCR_RX_256BIT	SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_256BIT)
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 380d058..a15bf7a 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -795,15 +795,16 @@
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+ 			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7791_CLK_SD0>,
+-				 <&mmc0_clk>, <&hp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
++				 <&mmc0_clk>, <&hp_clk>, <&mp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7791_CLK_TPU0 R8A7791_CLK_SDHI2 R8A7791_CLK_SDHI1 R8A7791_CLK_SDHI0
+-				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_IIC1 R8A7791_CLK_SSUSB R8A7791_CLK_CMT1
++				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_PCIEC R8A7791_CLK_IIC1
++				R8A7791_CLK_SSUSB R8A7791_CLK_CMT1
+ 			>;
+ 			clock-output-names  				"tpu0", "sdhi2", "sdhi1", "sdhi0",
+-				"mmcif0", "i2c7", "i2c8", "ssusb", "cmt1";
++				"mmcif0", "i2c7", "pciec", "i2c8", "ssusb", "cmt1";
+ 		};
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
+index 0410bea..f0d4d10 100644
+--- a/include/dt-bindings/clock/r8a7791-clock.h
++++ b/include/dt-bindings/clock/r8a7791-clock.h
+@@ -53,6 +53,7 @@
+ #define R8A7791_CLK_SDHI0		14
+ #define R8A7791_CLK_MMCIF0		15
+ #define R8A7791_CLK_IIC0		18
++#define R8A7791_CLK_PCIEC		19
+ #define R8A7791_CLK_IIC1		23
+ #define R8A7791_CLK_SSUSB		28
+ #define R8A7791_CLK_CMT1		29
 -- 
-1.7.9.5
+2.0.0.rc2
 
