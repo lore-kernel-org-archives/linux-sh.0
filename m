@@ -1,75 +1,62 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 25 Jun 2014 00:40:27 +0000
-Subject: [PATCH 00/05] ARM: shmobile: Lager/Koelsch SCIF/MSIOF DMA prototype
-Message-Id: <20140625004027.18295.39707.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:26:27 +0000
+Subject: [PATCH 14/24] ARM: shmobile: marzen-reference: Remove legacy clock support
+Message-Id: <f0b78f8b63fe92242232b7a3e4aa951983ee1f45.1403487423.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1403487423.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487423.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-ARM: shmobile: Lager/Koelsch SCIF/MSIOF DMA prototype
+Marzen DT reference is now only built for multiplatform
+which means that CCF comes with the package. Remove unused legacy
+code ifdefs to clean up the code.
 
-[PATCH 01/05] serial: sh-sci: Allow AUXDATA DMAC parameters 
-[PATCH 02/05] ARM: shmobile: Lager SYS-DMAC and SCIF prototype
-[PATCH 03/05] ARM: shmobile: Lager SYS-DMAC and MSIOF prototype
-[PATCH 04/05] ARM: shmobile: Koelsch SYS-DMAC and SCIF prototype
-[PATCH 05/05] ARM: shmobile: Koelsch SYS-DMAC and MSIOF prototype
+Based on similar work for the Koelsch board by Magnus Damm.
 
-These patches add DMAC prototype support for SCIF and MSIOF on Lager
-and SDHI on Koelsch. It is built on top of an earlier series that
-added MMCIF/SDHI DMAC prototype support together with 40-bit physical
-address support in the DMAC controller.
-
-To use DMA with the SCIF driver the following kconfig bits are needed:
-CONFIG_SERIAL_SH_SCI_DMA=y
-
-DMA support in the SCIF driver is in pretty poor state. To be able to
-pass platform data DMA parameters the driver needs slight adjustment,
-moreover, at this point only TX DMA is enabled due to RX driver issues.
-
-Regarding MSIOF, additional dependencies are needed for DMA support
-(see below) but once that is applied enabling MSIOF DMA is simple.
-As for testing, there is no driver support for the chip connected to
-the MSIOF port on lager and koelsch, so this is untested by me apart
-from the boot message:
-# dmesg | grep -i msiof                                                         
-<6>spi_sh_msiof spi_r8a7791_msiof.0: DMA available
-
-Written to show how to make use of platform devices for DMA support
-until the DT bindings for the DMA hardware have been stabilized.
-
-Not for upstream merge.
-
-Thanks to Geert for his MSIOF work together with review and feedback!
-
-Depends on the following patches:
-[PATCH] mmc: block: add block number limitation flag for lultiple block read
-[PATCH] mmc: sdhi: tidyup mmc_data setting for R-Car SDHI
-[PATCH] mmc: tmio: care about DMA tx/rx addr offset
-[PATCH v2 00/07] ARM: shmobile: Lager/Koelsch MMCIF/SDHI LPAE DMA prototype V2
-[PATCH v2 01/07] mmc: sdhi: enable .dma_rx_offset for platform prototype
-[PATCH v2 02/07] DMA: shdma: 40-bit address prototype
-[PATCH v2 03/07] ARM: shmobile: Lager SYS-DMAC prototype
-[PATCH v2 04/07] ARM: shmobile: Lager SYS-DMAC and MMCIF prototype
-[PATCH v2 05/07] ARM: shmobile: Lager SYS-DMAC and SDHI prototype
-[PATCH v2 06/07] ARM: shmobile: Koelsch SYS-DMAC prototype
-[PATCH v2 07/07] ARM: shmobile: Koelsch SYS-DMAC and SDHI prototype
-[PATCH 0/5] spi: sh-msiof: Add DMA support
-[PATCH 1/5] spi: sh-msiof: Add more register documentation
-[PATCH 2/5] spi: sh-msiof: Extract sh_msiof_spi_{start,stop}() helpers
-[PATCH 3/5] spi: sh-msiof: Improve transfer error handling
-[PATCH 4/5] spi: sh-msiof: Refactor sh_msiof_transfer_one()
-[PATCH 5/5] spi: sh-msiof: Add DMA support
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Cc: Magnus Damm <damm@opensource.se>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/board-marzen-reference.c | 8 --------
+ 1 file changed, 8 deletions(-)
 
- Written on top of renesas-devel-v3.16-rc2-20140623 + above + header clash fixes
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 46936ff..1b63686 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -31,13 +31,10 @@
+ 
+ static void __init marzen_init_timer(void)
+ {
+-#ifdef CONFIG_COMMON_CLK
+ 	r8a7779_clocks_init(r8a7779_read_mode_pins());
+-#endif
+ 	clocksource_of_init();
+ }
+ 
+-#ifdef CONFIG_COMMON_CLK
+ /*
+  * This is a really crude hack to provide clkdev support to platform
+  * devices until they get moved to DT.
+@@ -51,15 +48,10 @@ static const struct clk_name clk_names[] __initconst = {
+ 	{ "scif5", NULL, "sh-sci.5" },
+ 	{ "tmu0", "fck", "sh-tmu.0" },
+ };
+-#endif
+ 
+ static void __init marzen_init(void)
+ {
+-#ifdef CONFIG_COMMON_CLK
+ 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+-#else
+-	r8a7779_clock_init();
+-#endif
+ 	r8a7779_add_standard_devices_dt();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
+-- 
+2.0.0.rc2
 
- arch/arm/boot/dts/r8a7790.dtsi                   |    8 -
- arch/arm/boot/dts/r8a7791.dtsi                   |    6 
- arch/arm/mach-shmobile/board-koelsch-reference.c |  143 ++++++++++++++++++++++
- arch/arm/mach-shmobile/board-lager-reference.c   |  105 ++++++++++++++++
- drivers/tty/serial/sh-sci.c                      |    8 -
- 5 files changed, 261 insertions(+), 9 deletions(-)
