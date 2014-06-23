@@ -1,62 +1,52 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:28:33 +0000
-Subject: [PATCH 24/29] ARM: shmobile: r8a7791: Add PCIEC clock device tree node
-Message-Id: <4bfb37675b5343798f5260adad92a67444a9fd47.1403487225.git.horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:26:49 +0000
+Subject: [PATCH 2/9] ARM: shmobile: Use shmobile_init_delay() on EMEV2
+Message-Id: <ef9026e6879da358376b58fc63fe7a82f07404ad.1403487831.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
+References: <cover.1403487831.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487831.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Phil Edworthy <phil.edworthy@renesas.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-This patch adds the device tree clock node for the PCIe Controller
+Adjust EMEV2 to use shmobile_init_delay() together with
+CPU Frequency settings from the DTS.
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791.dtsi            | 7 ++++---
- include/dt-bindings/clock/r8a7791-clock.h | 1 +
- 2 files changed, 5 insertions(+), 3 deletions(-)
+ arch/arm/mach-shmobile/setup-emev2.c | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 380d058..a15bf7a 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -795,15 +795,16 @@
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
- 			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7791_CLK_SD0>,
--				 <&mmc0_clk>, <&hp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
-+				 <&mmc0_clk>, <&hp_clk>, <&mp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
- 				R8A7791_CLK_TPU0 R8A7791_CLK_SDHI2 R8A7791_CLK_SDHI1 R8A7791_CLK_SDHI0
--				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_IIC1 R8A7791_CLK_SSUSB R8A7791_CLK_CMT1
-+				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_PCIEC R8A7791_CLK_IIC1
-+				R8A7791_CLK_SSUSB R8A7791_CLK_CMT1
- 			>;
- 			clock-output-names  				"tpu0", "sdhi2", "sdhi1", "sdhi0",
--				"mmcif0", "i2c7", "i2c8", "ssusb", "cmt1";
-+				"mmcif0", "i2c7", "pciec", "i2c8", "ssusb", "cmt1";
- 		};
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index 0410bea..f0d4d10 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -53,6 +53,7 @@
- #define R8A7791_CLK_SDHI0		14
- #define R8A7791_CLK_MMCIF0		15
- #define R8A7791_CLK_IIC0		18
-+#define R8A7791_CLK_PCIEC		19
- #define R8A7791_CLK_IIC1		23
- #define R8A7791_CLK_SSUSB		28
- #define R8A7791_CLK_CMT1		29
+diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
+index 6e4ffa7..e10d34e 100644
+--- a/arch/arm/mach-shmobile/setup-emev2.c
++++ b/arch/arm/mach-shmobile/setup-emev2.c
+@@ -42,11 +42,6 @@ static void __init emev2_map_io(void)
+ 	iotable_init(emev2_io_desc, ARRAY_SIZE(emev2_io_desc));
+ }
+ 
+-static void __init emev2_init_delay(void)
+-{
+-	shmobile_setup_delay(533, 1, 3); /* Cortex-A9 @ 533MHz */
+-}
+-
+ static void __init emev2_add_standard_devices_dt(void)
+ {
+ 	of_clk_init(NULL);
+@@ -63,7 +58,7 @@ extern struct smp_operations emev2_smp_ops;
+ DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
+ 	.smp		= smp_ops(emev2_smp_ops),
+ 	.map_io		= emev2_map_io,
+-	.init_early	= emev2_init_delay,
++	.init_early	= shmobile_init_delay,
+ 	.init_machine	= emev2_add_standard_devices_dt,
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= emev2_boards_compat_dt,
 -- 
 2.0.0.rc2
 
