@@ -1,39 +1,46 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:26:37 +0000
-Subject: [PATCH 24/24] ARM: shmobile: marzen: Do not use workaround for scif devices
-Message-Id: <c1a0f9932b66b2298163c31f8ac3f2844476e1c2.1403487423.git.horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:26:48 +0000
+Subject: [PATCH 1/9] ARM: shmobile: Update EMEV2 DTS to include CPU frequency
+Message-Id: <11f1ca10b668995a031aade5c2728f0a251aaec7.1403487831.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487423.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487423.git.horms+renesas@verge.net.au>
+References: <cover.1403487831.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487831.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Now that SCIF devices are initialised using DT it should
-not be necessary to use the work around to provide clocks any more.
+From: Magnus Damm <damm+renesas@opensource.se>
 
+Add CPU Frequency information to the EMEV2 DTS file. This
+will allow us to use the shared C code to on EMEV2 which
+reads out the clock frequency from DT and calculates the
+delay settings from there.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-marzen-reference.c | 6 ------
- 1 file changed, 6 deletions(-)
+ arch/arm/boot/dts/emev2.dtsi | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index bb2df32..0a000b7 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -40,12 +40,6 @@ static void __init marzen_init_timer(void)
-  * devices until they get moved to DT.
-  */
- static const struct clk_name clk_names[] __initconst = {
--	{ "scif0", NULL, "sh-sci.0" },
--	{ "scif1", NULL, "sh-sci.1" },
--	{ "scif2", NULL, "sh-sci.2" },
--	{ "scif3", NULL, "sh-sci.3" },
--	{ "scif4", NULL, "sh-sci.4" },
--	{ "scif5", NULL, "sh-sci.5" },
- 	{ "tmu0", "fck", "sh-tmu.0" },
- };
+diff --git a/arch/arm/boot/dts/emev2.dtsi b/arch/arm/boot/dts/emev2.dtsi
+index e37985f..00eeed3 100644
+--- a/arch/arm/boot/dts/emev2.dtsi
++++ b/arch/arm/boot/dts/emev2.dtsi
+@@ -31,11 +31,13 @@
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a9";
+ 			reg = <0>;
++			clock-frequency = <533000000>;
+ 		};
+ 		cpu@1 {
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a9";
+ 			reg = <1>;
++			clock-frequency = <533000000>;
+ 		};
+ 	};
  
 -- 
 2.0.0.rc2
