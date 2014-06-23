@@ -1,55 +1,63 @@
-From: Julia Lawall <Julia.Lawall@lip6.fr>
-Date: Wed, 04 Jun 2014 09:07:51 +0000
-Subject: [PATCH 1/10] sh: use safer test on the result of find_first_zero_bit
-Message-Id: <1401872880-23685-2-git-send-email-Julia.Lawall@lip6.fr>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:28:30 +0000
+Subject: [PATCH 21/29] ARM: shmobile: r8a7790: Add PCIEC clock device tree node
+Message-Id: <ecafea8cd261833d7bb857aad76cf2e721821e88.1403487225.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401872880-23685-1-git-send-email-Julia.Lawall@lip6.fr>
-In-Reply-To: <1401872880-23685-1-git-send-email-Julia.Lawall@lip6.fr>
+References: <cover.1403487225.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Peter Zijlstra <a.p.zijlstra@chello.nl>
-Cc: kernel-janitors@vger.kernel.org, Paul Mackerras <paulus@samba.org>, Ingo Molnar <mingo@redhat.com>, Arnaldo Carvalho de Melo <acme@kernel.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Julia Lawall <Julia.Lawall@lip6.fr>
+From: Phil Edworthy <phil.edworthy@renesas.com>
 
-Find_first_zero_bit considers BITS_PER_LONG bits at a time, and thus may
-return a larger number than the maximum position argument if that position
-is not a multiple of BITS_PER_LONG.
+This patch adds the device tree clock node for the PCIe Controller
 
-The semantic match that finds this problem is as follows:
-(http://coccinelle.lip6.fr/)
-
-// <smpl>
-@@
-expression e1,e2,e3;
-statement S1,S2;
-@@
-
-e1 = find_first_zero_bit(e2,e3)
-...
-if (e1 
-- =
-+ >  e3)
-S1 else S2
-// </smpl>
-
-Signed-off-by: Julia Lawall <Julia.Lawall@lip6.fr>
-
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/sh/kernel/perf_event.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7790.dtsi            | 6 +++---
+ include/dt-bindings/clock/r8a7790-clock.h | 1 +
+ 2 files changed, 4 insertions(+), 3 deletions(-)
 
-diff -u -p a/arch/sh/kernel/perf_event.c b/arch/sh/kernel/perf_event.c
---- a/arch/sh/kernel/perf_event.c
-+++ b/arch/sh/kernel/perf_event.c
-@@ -281,7 +281,7 @@ static int sh_pmu_add(struct perf_event
- 
- 	if (__test_and_set_bit(idx, cpuc->used_mask)) {
- 		idx = find_first_zero_bit(cpuc->used_mask, sh_pmu->num_events);
--		if (idx = sh_pmu->num_events)
-+		if (idx >= sh_pmu->num_events)
- 			goto out;
- 
- 		__set_bit(idx, cpuc->used_mask);
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 29907c9..9df5712 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -765,17 +765,17 @@
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+ 			clocks = <&hp_clk>, <&cp_clk>, <&mmc1_clk>, <&sd3_clk>,
+ 				 <&sd2_clk>, <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks R8A7790_CLK_SD0>, <&mmc0_clk>,
+-				 <&hp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
++				 <&hp_clk>, <&mp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7790_CLK_IIC2 R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
+ 				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0 R8A7790_CLK_MMCIF0
+-				R8A7790_CLK_IIC0 R8A7790_CLK_IIC1 R8A7790_CLK_SSUSB R8A7790_CLK_CMT1
++				R8A7790_CLK_IIC0 R8A7790_CLK_PCIEC R8A7790_CLK_IIC1 R8A7790_CLK_SSUSB R8A7790_CLK_CMT1
+ 			>;
+ 			clock-output-names  				"iic2", "tpu0", "mmcif1", "sdhi3",
+ 				"sdhi2", "sdhi1", "sdhi0", "mmcif0",
+-				"iic0", "iic1", "ssusb", "cmt1";
++				"iic0", "pciec", "iic1", "ssusb", "cmt1";
+ 		};
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index a16df68..f929a79e 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -59,6 +59,7 @@
+ #define R8A7790_CLK_SDHI0		14
+ #define R8A7790_CLK_MMCIF0		15
+ #define R8A7790_CLK_IIC0		18
++#define R8A7790_CLK_PCIEC		19
+ #define R8A7790_CLK_IIC1		23
+ #define R8A7790_CLK_SSUSB		28
+ #define R8A7790_CLK_CMT1		29
+-- 
+2.0.0.rc2
 
