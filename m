@@ -1,58 +1,44 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Fri, 13 Jun 2014 09:37:20 +0000
-Subject: [PATCH v3 6/8] ARM: shmobile: r8a7791: Add PCIe Controller device node
-Message-Id: <1402652242-16604-7-git-send-email-phil.edworthy@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 23 Jun 2014 23:54:22 +0000
+Subject: [PATCH v2 16/23] v4l: vsp1: wpf: Clear RPF to WPF association at stream off time
+Message-Id: <1403567669-18539-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+The VSP1 stores the video pipelines' input (RPF) to output (WPF)
+mappings in a WPF register. An RPF must never be associated with
+multiple WPFs, even if all of those WPFs but one are unused, otherwise
+the hardware won't function properly.
+
+The driver doesn't ensure this correctly as it never clears the
+mappings. An RPF used with one WPF and later with a different WPF will
+lead to malfunction, as it will be associated with two WPFs. Clear the
+mappings at stream off time to fix this.
+
+Reported-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v3: 
- - No change
+ drivers/media/platform/vsp1/vsp1_wpf.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-v2:
- - Changed PCIe controller names,etc from pcie to pciec
-
- arch/arm/boot/dts/r8a7791.dtsi | 25 +++++++++++++++++++++++++
- 1 file changed, 25 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 7c4f7c7..c0b3ed9 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -904,4 +904,29 @@
- 		#size-cells = <0>;
- 		status = "disabled";
- 	};
-+
-+	pciec: pcie@fe000000 {
-+		compatible = "renesas,pcie-r8a7791";
-+		reg = <0 0xfe000000 0 0x80000>;
-+		#address-cells = <3>;
-+		#size-cells = <2>;
-+		bus-range = <0x00 0xff>;
-+		device_type = "pci";
-+		ranges = <0x01000000 0 0x00000000 0 0xfe100000 0 0x00100000
-+			  0x02000000 0 0xfe200000 0 0xfe200000 0 0x00200000
-+			  0x02000000 0 0x30000000 0 0x30000000 0 0x08000000
-+			  0x42000000 0 0x38000000 0 0x38000000 0 0x08000000>;
-+		/* Map all possible DDR as inbound ranges */
-+		dma-ranges = <0x42000000 0 0x40000000 0 0x40000000 0 0x80000000
-+			      0x43000000 2 0x00000000 2 0x00000000 1 0x00000000>;
-+		interrupts = <0 116 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 117 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 118 IRQ_TYPE_LEVEL_HIGH>;
-+		#interrupt-cells = <1>;
-+		interrupt-map-mask = <0 0 0 0>;
-+		interrupt-map = <0 0 0 0 &gic 0 116 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7791_CLK_PCIEC>, <&pcie_bus_clk>;
-+		clock-names = "pcie", "pcie_bus";
-+		status = "disabled";
-+	};
- };
+diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
+index 591f09c..d330865 100644
+--- a/drivers/media/platform/vsp1/vsp1_wpf.c
++++ b/drivers/media/platform/vsp1/vsp1_wpf.c
+@@ -54,6 +54,7 @@ static int wpf_s_stream(struct v4l2_subdev *subdev, int enable)
+ 
+ 	if (!enable) {
+ 		vsp1_write(vsp1, VI6_WPF_IRQ_ENB(wpf->entity.index), 0);
++		vsp1_wpf_write(wpf, VI6_WPF_SRCRPF, 0);
+ 		return 0;
+ 	}
+ 
 -- 
-2.0.0
+1.8.5.5
 
