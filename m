@@ -1,276 +1,312 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 23 Jun 2014 00:58:26 +0000
-Subject: [PATCH 08/10 v2] ASoC: rsnd: DMA cleanup for flexible SSI/SRC selection
-Message-Id: <87tx7csaq0.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:25:02 +0000
+Subject: [PATCH 6/8] ARM: shmobile: Move pm-rmobile.h, cleanup sh73xx.h
+Message-Id: <6b8b0cb477b3e77721982effae3415f3c5f58fee.1403487267.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
-	<8761jstphc.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <8761jstphc.wl%kuninori.morimoto.gx@gmail.com>
+References: <cover.1403487267.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487267.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Current R-Car sound SSI/SRC/DVC selection has feature limit.
-(It is assuming that SSI/SRC are using same index number)
+Change location of pm-rmobile.h so it can be used as #include "pm-rmobile.h"
+instead of the old style #include <mach/pm-rmobile.h>. Also clean up
+the sh7372 and sh73a0 header files to get rid of unused include files.
 
-So that enabling SSI/SRC flexible selection,
-this patch modifies DMA settings.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v1 -> v2
+ arch/arm/mach-shmobile/board-armadillo800eva.c   |  1 +
+ arch/arm/mach-shmobile/board-mackerel.c          |  2 +
+ arch/arm/mach-shmobile/include/mach/pm-rmobile.h | 63 ------------------------
+ arch/arm/mach-shmobile/include/mach/r8a7740.h    |  2 -
+ arch/arm/mach-shmobile/include/mach/sh7372.h     |  4 --
+ arch/arm/mach-shmobile/pm-r8a7740.c              |  2 +-
+ arch/arm/mach-shmobile/pm-rmobile.c              |  2 +-
+ arch/arm/mach-shmobile/pm-rmobile.h              | 63 ++++++++++++++++++++++++
+ arch/arm/mach-shmobile/pm-sh7372.c               |  2 +-
+ arch/arm/mach-shmobile/setup-r8a7740.c           |  2 +-
+ arch/arm/mach-shmobile/setup-sh7372.c            |  1 +
+ 11 files changed, 71 insertions(+), 73 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/pm-rmobile.h
+ create mode 100644 arch/arm/mach-shmobile/pm-rmobile.h
 
- - based on latest mark/topic/rcar
-
- sound/soc/sh/rcar/core.c |   45 +++++++++++++++++++----------
- sound/soc/sh/rcar/gen.c  |   71 ++++++++++++++++++++--------------------------
- sound/soc/sh/rcar/rsnd.h |    7 ++---
- 3 files changed, 64 insertions(+), 59 deletions(-)
-
-diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
-index 5149fe2d..4435a31e 100644
---- a/sound/soc/sh/rcar/core.c
-+++ b/sound/soc/sh/rcar/core.c
-@@ -239,8 +239,21 @@ static int _rsnd_dma_of_name(char *dma_name, struct rsnd_mod *mod)
- 
- }
- 
--static void rsnd_dma_of_name(struct rsnd_dma *dma,
--			     int is_play, char *dma_name)
-+static void rsnd_dma_of_name(struct rsnd_mod *mod_from,
-+			     struct rsnd_mod *mod_to,
-+			     char *dma_name)
-+{
-+	int index = 0;
-+
-+	index = _rsnd_dma_of_name(dma_name + index, mod_from);
-+	*(dma_name + index++) = '_';
-+	index = _rsnd_dma_of_name(dma_name + index, mod_to);
-+}
-+
-+static void rsnd_dma_of_path(struct rsnd_dma *dma,
-+			     int is_play,
-+			     struct rsnd_mod **mod_from,
-+			     struct rsnd_mod **mod_to)
- {
- 	struct rsnd_mod *this = rsnd_dma_to_mod(dma);
- 	struct rsnd_dai_stream *io = rsnd_mod_to_io(this);
-@@ -248,7 +261,6 @@ static void rsnd_dma_of_name(struct rsnd_dma *dma,
- 	struct rsnd_mod *src = rsnd_io_to_mod_src(io);
- 	struct rsnd_mod *dvc = rsnd_io_to_mod_dvc(io);
- 	struct rsnd_mod *mod[MOD_MAX];
--	struct rsnd_mod *src_mod, *dst_mod;
- 	int i, index;
- 
- 
-@@ -285,17 +297,12 @@ static void rsnd_dma_of_name(struct rsnd_dma *dma,
- 	}
- 
- 	if (is_play) {
--		src_mod = mod[index - 1];
--		dst_mod = mod[index];
-+		*mod_from = mod[index - 1];
-+		*mod_to   = mod[index];
- 	} else {
--		src_mod = mod[index];
--		dst_mod = mod[index - 1];
-+		*mod_from = mod[index];
-+		*mod_to   = mod[index - 1];
- 	}
--
--	index = 0;
--	index = _rsnd_dma_of_name(dma_name + index, src_mod);
--	*(dma_name + index++) = '_';
--	index = _rsnd_dma_of_name(dma_name + index, dst_mod);
- }
- 
- int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma,
-@@ -303,6 +310,8 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma,
- {
- 	struct device *dev = rsnd_priv_to_dev(priv);
- 	struct dma_slave_config cfg;
-+	struct rsnd_mod *mod_from;
-+	struct rsnd_mod *mod_to;
- 	char dma_name[DMA_NAME_SIZE];
- 	dma_cap_mask_t mask;
- 	int ret;
-@@ -315,10 +324,16 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma,
- 	dma_cap_zero(mask);
- 	dma_cap_set(DMA_SLAVE, mask);
- 
--	rsnd_dma_of_name(dma, is_play, dma_name);
--	rsnd_gen_dma_addr(priv, dma, &cfg, is_play, id);
-+	rsnd_dma_of_path(dma, is_play, &mod_from, &mod_to);
-+	rsnd_dma_of_name(mod_from, mod_to, dma_name);
-+
-+	cfg.slave_id	= id;
-+	cfg.direction	= is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
-+	cfg.src_addr	= rsnd_gen_dma_addr(priv, mod_from, is_play, 1);
-+	cfg.dst_addr	= rsnd_gen_dma_addr(priv, mod_to,   is_play, 0);
- 
--	dev_dbg(dev, "dma name : %s\n", dma_name);
-+	dev_dbg(dev, "dma : %s %pad -> %pad\n",
-+		dma_name, &cfg.src_addr, &cfg.dst_addr);
- 
- 	dma->chan = dma_request_slave_channel_compat(mask, shdma_chan_filter,
- 						     (void *)id, dev,
-diff --git a/sound/soc/sh/rcar/gen.c b/sound/soc/sh/rcar/gen.c
-index 46677af..73ce4c9 100644
---- a/sound/soc/sh/rcar/gen.c
-+++ b/sound/soc/sh/rcar/gen.c
-@@ -168,7 +168,7 @@ static int rsnd_gen_regmap_init(struct rsnd_priv *priv,
-  *	SSI : 0xec541000 / 0xec241008 / 0xec24100c
-  *	SSIU: 0xec541000 / 0xec100000 / 0xec100000 / 0xec400000 / 0xec400000
-  *	SCU : 0xec500000 / 0xec000000 / 0xec004000 / 0xec300000 / 0xec304000
-- *	CMD : 0xec500000 / 0xec008000                             0xec308000
-+ *	CMD : 0xec500000 /            / 0xec008000                0xec308000
-  */
- #define RDMA_SSI_I_N(addr, i)	(addr ##_reg - 0x00300000 + (0x40 * i) + 0x8)
- #define RDMA_SSI_O_N(addr, i)	(addr ##_reg - 0x00300000 + (0x40 * i) + 0xc)
-@@ -188,14 +188,13 @@ static int rsnd_gen_regmap_init(struct rsnd_priv *priv,
- #define RDMA_CMD_O_N(addr, i)	(addr ##_reg - 0x004f8000 + (0x400 * i))
- #define RDMA_CMD_O_P(addr, i)	(addr ##_reg - 0x001f8000 + (0x400 * i))
- 
--static void rsnd_gen2_dma_addr(struct rsnd_priv *priv,
--		       struct rsnd_dma *dma,
--		       struct dma_slave_config *cfg,
--		       int is_play, int slave_id)
-+static dma_addr_t
-+rsnd_gen2_dma_addr(struct rsnd_priv *priv,
-+		   struct rsnd_mod *mod,
-+		   int is_play, int is_from)
- {
- 	struct platform_device *pdev = rsnd_priv_to_pdev(priv);
- 	struct device *dev = rsnd_priv_to_dev(priv);
--	struct rsnd_mod *mod = rsnd_dma_to_mod(dma);
- 	struct rsnd_dai_stream *io = rsnd_mod_to_io(mod);
- 	dma_addr_t ssi_reg = platform_get_resource(pdev,
- 				IORESOURCE_MEM, RSND_GEN2_SSI)->start;
-@@ -206,76 +205,68 @@ static void rsnd_gen2_dma_addr(struct rsnd_priv *priv,
- 	int use_dvc = !!rsnd_io_to_mod_dvc(io);
- 	int id = rsnd_mod_id(mod);
- 	struct dma_addr {
--		dma_addr_t src_addr;
--		dma_addr_t dst_addr;
-+		dma_addr_t out_addr;
-+		dma_addr_t in_addr;
- 	} dma_addrs[3][2][3] = {
- 		/* SRC */
- 		{{{ 0,				0 },
- 		/* Capture */
--		  { RDMA_SRC_O_N(src, id),	0 },
--		  { RDMA_CMD_O_N(src, id),	0 } },
-+		  { RDMA_SRC_O_N(src, id),	RDMA_SRC_I_P(src, id) },
-+		  { RDMA_CMD_O_N(src, id),	RDMA_SRC_I_P(src, id) } },
- 		 /* Playback */
- 		 {{ 0,				0, },
--		  { 0,				RDMA_SRC_I_N(src, id) },
--		  { 0,				RDMA_SRC_I_N(src, id) } }
-+		  { RDMA_SRC_O_P(src, id),	RDMA_SRC_I_N(src, id) },
-+		  { RDMA_CMD_O_P(src, id),	RDMA_SRC_I_N(src, id) } }
- 		},
- 		/* SSI */
- 		/* Capture */
- 		{{{ RDMA_SSI_O_N(ssi, id),	0 },
--		  { 0,				0 },
--		  { 0,				0 } },
-+		  { RDMA_SSIU_O_P(ssi, id),	0 },
-+		  { RDMA_SSIU_O_P(ssi, id),	0 } },
- 		 /* Playback */
- 		 {{ 0,				RDMA_SSI_I_N(ssi, id) },
--		  { 0,				0 },
--		  { 0,				0 } }
-+		  { 0,				RDMA_SSIU_I_P(ssi, id) },
-+		  { 0,				RDMA_SSIU_I_P(ssi, id) } }
- 		},
- 		/* SSIU */
- 		/* Capture */
- 		{{{ RDMA_SSIU_O_N(ssi, id),	0 },
--		  { RDMA_SSIU_O_P(ssi, id),	RDMA_SRC_I_P(src, id) },
--		  { RDMA_SSIU_O_P(ssi, id),	RDMA_SRC_I_P(src, id) } },
-+		  { RDMA_SSIU_O_P(ssi, id),	0 },
-+		  { RDMA_SSIU_O_P(ssi, id),	0 } },
- 		 /* Playback */
- 		 {{ 0,				RDMA_SSIU_I_N(ssi, id) },
--		  { RDMA_SRC_O_P(src, id),	RDMA_SSIU_I_P(ssi, id) },
--		  { RDMA_CMD_O_P(src, id),	RDMA_SSIU_I_P(ssi, id) } } },
-+		  { 0,				RDMA_SSIU_I_P(ssi, id) },
-+		  { 0,				RDMA_SSIU_I_P(ssi, id) } } },
- 	};
- 
- 	/* it shouldn't happen */
--	if (use_dvc & !use_src) {
-+	if (use_dvc & !use_src)
- 		dev_err(dev, "DVC is selected without SRC\n");
--		return;
--	}
- 
- 	/* use SSIU or SSI ? */
- 	if (is_ssi && (0 = strcmp(rsnd_mod_dma_name(mod), "ssiu")))
- 		is_ssi++;
- 
--	cfg->src_addr = dma_addrs[is_ssi][is_play][use_src + use_dvc].src_addr;
--	cfg->dst_addr = dma_addrs[is_ssi][is_play][use_src + use_dvc].dst_addr;
--
--	dev_dbg(dev, "dma%d addr - src : %x / dst : %x\n",
--		id, cfg->src_addr, cfg->dst_addr);
-+	return (is_from) ?
-+		dma_addrs[is_ssi][is_play][use_src + use_dvc].out_addr :
-+		dma_addrs[is_ssi][is_play][use_src + use_dvc].in_addr;
- }
- 
--void rsnd_gen_dma_addr(struct rsnd_priv *priv,
--		       struct rsnd_dma *dma,
--		       struct dma_slave_config *cfg,
--		       int is_play, int slave_id)
-+dma_addr_t rsnd_gen_dma_addr(struct rsnd_priv *priv,
-+			     struct rsnd_mod *mod,
-+			     int is_play, int is_from)
- {
--	cfg->slave_id   = slave_id;
--	cfg->src_addr   = 0;
--	cfg->dst_addr   = 0;
--	cfg->direction  = is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
--
- 	/*
- 	 * gen1 uses default DMA addr
- 	 */
- 	if (rsnd_is_gen1(priv))
--		return;
-+		return 0;
- 
--	rsnd_gen2_dma_addr(priv, dma, cfg, is_play, slave_id);
--}
-+	if (!mod)
-+		return 0;
- 
-+	return rsnd_gen2_dma_addr(priv, mod, is_play, is_from);
-+}
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 12b01df..53d03e8 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -61,6 +61,7 @@
+ #include <sound/simple_card.h>
+ #include "common.h"
+ #include "irqs.h"
++#include "pm-rmobile.h"
+ #include "sh-gpio.h"
  
  /*
-  *		Gen2
-diff --git a/sound/soc/sh/rcar/rsnd.h b/sound/soc/sh/rcar/rsnd.h
-index 60b5e92..425b22e 100644
---- a/sound/soc/sh/rcar/rsnd.h
-+++ b/sound/soc/sh/rcar/rsnd.h
-@@ -279,10 +279,9 @@ int rsnd_gen_probe(struct platform_device *pdev,
- void __iomem *rsnd_gen_reg_get(struct rsnd_priv *priv,
- 			       struct rsnd_mod *mod,
- 			       enum rsnd_reg reg);
--void rsnd_gen_dma_addr(struct rsnd_priv *priv,
--		       struct rsnd_dma *dma,
--		       struct dma_slave_config *cfg,
--		       int is_play,  int slave_id);
-+dma_addr_t rsnd_gen_dma_addr(struct rsnd_priv *priv,
-+		       struct rsnd_mod *mod,
-+		       int is_play,  int is_from);
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 3558ff0..0ece865 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -47,6 +47,7 @@
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
++#include <linux/sh_clk.h>
+ #include <linux/tca6416_keypad.h>
+ #include <linux/usb/renesas_usbhs.h>
+ #include <linux/dma-mapping.h>
+@@ -62,6 +63,7 @@
+ #include <asm/mach-types.h>
+ #include "common.h"
+ #include "irqs.h"
++#include "pm-rmobile.h"
+ #include "sh-gpio.h"
  
- #define rsnd_is_gen1(s)		(((s)->info->flags & RSND_GEN_MASK) = RSND_GEN1)
- #define rsnd_is_gen2(s)		(((s)->info->flags & RSND_GEN_MASK) = RSND_GEN2)
+ /*
+diff --git a/arch/arm/mach-shmobile/include/mach/pm-rmobile.h b/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
+deleted file mode 100644
+index 690553a..0000000
+--- a/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
++++ /dev/null
+@@ -1,63 +0,0 @@
+-/*
+- * Copyright (C) 2012 Renesas Solutions Corp.
+- *
+- * Kuninori Morimoto <morimoto.kuninori@renesas.com>
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+- */
+-#ifndef PM_RMOBILE_H
+-#define PM_RMOBILE_H
+-
+-#include <linux/pm_domain.h>
+-
+-#define DEFAULT_DEV_LATENCY_NS	250000
+-
+-struct platform_device;
+-
+-struct rmobile_pm_domain {
+-	struct generic_pm_domain genpd;
+-	struct dev_power_governor *gov;
+-	int (*suspend)(void);
+-	void (*resume)(void);
+-	unsigned int bit_shift;
+-	bool no_debug;
+-};
+-
+-static inline
+-struct rmobile_pm_domain *to_rmobile_pd(struct generic_pm_domain *d)
+-{
+-	return container_of(d, struct rmobile_pm_domain, genpd);
+-}
+-
+-struct pm_domain_device {
+-	const char *domain_name;
+-	struct platform_device *pdev;
+-};
+-
+-#ifdef CONFIG_PM
+-extern void rmobile_init_domains(struct rmobile_pm_domain domains[], int num);
+-extern void rmobile_add_device_to_domain_td(const char *domain_name,
+-					    struct platform_device *pdev,
+-					    struct gpd_timing_data *td);
+-
+-static inline void rmobile_add_device_to_domain(const char *domain_name,
+-						struct platform_device *pdev)
+-{
+-	rmobile_add_device_to_domain_td(domain_name, pdev, NULL);
+-}
+-
+-extern void rmobile_add_devices_to_domains(struct pm_domain_device data[],
+-					   int size);
+-#else
+-
+-#define rmobile_init_domains(domains, num) do { } while (0)
+-#define rmobile_add_device_to_domain_td(name, pdev, td) do { } while (0)
+-#define rmobile_add_device_to_domain(name, pdev) do { } while (0)
+-
+-static inline void rmobile_add_devices_to_domains(struct pm_domain_device d[],
+-						  int size) {}
+-#endif /* CONFIG_PM */
+-
+-#endif /* PM_RMOBILE_H */
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index 5e3c9ec..1d1a5fd 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -19,8 +19,6 @@
+ #ifndef __ASM_R8A7740_H__
+ #define __ASM_R8A7740_H__
+ 
+-#include <mach/pm-rmobile.h>
+-
+ /*
+  * MD_CKx pin
+  */
+diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
+index 854a9f0..4ad960d 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -11,10 +11,6 @@
+ #ifndef __ASM_SH7372_H__
+ #define __ASM_SH7372_H__
+ 
+-#include <linux/sh_clk.h>
+-#include <linux/pm_domain.h>
+-#include <mach/pm-rmobile.h>
+-
+ /* DMA slave IDs */
+ enum {
+ 	SHDMA_SLAVE_INVALID,
+diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
+index a8a0d05..a0d44d5 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7740.c
++++ b/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -10,8 +10,8 @@
+  */
+ #include <linux/console.h>
+ #include <linux/suspend.h>
+-#include <mach/pm-rmobile.h>
+ #include "common.h"
++#include "pm-rmobile.h"
+ 
+ #ifdef CONFIG_PM
+ static int r8a7740_pd_a4s_suspend(void)
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index f710235..ebdd16e 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -17,7 +17,7 @@
+ #include <linux/pm.h>
+ #include <linux/pm_clock.h>
+ #include <asm/io.h>
+-#include <mach/pm-rmobile.h>
++#include "pm-rmobile.h"
+ 
+ /* SYSC */
+ #define SPDCR		IOMEM(0xe6180008)
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.h b/arch/arm/mach-shmobile/pm-rmobile.h
+new file mode 100644
+index 0000000..690553a
+--- /dev/null
++++ b/arch/arm/mach-shmobile/pm-rmobile.h
+@@ -0,0 +1,63 @@
++/*
++ * Copyright (C) 2012 Renesas Solutions Corp.
++ *
++ * Kuninori Morimoto <morimoto.kuninori@renesas.com>
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++#ifndef PM_RMOBILE_H
++#define PM_RMOBILE_H
++
++#include <linux/pm_domain.h>
++
++#define DEFAULT_DEV_LATENCY_NS	250000
++
++struct platform_device;
++
++struct rmobile_pm_domain {
++	struct generic_pm_domain genpd;
++	struct dev_power_governor *gov;
++	int (*suspend)(void);
++	void (*resume)(void);
++	unsigned int bit_shift;
++	bool no_debug;
++};
++
++static inline
++struct rmobile_pm_domain *to_rmobile_pd(struct generic_pm_domain *d)
++{
++	return container_of(d, struct rmobile_pm_domain, genpd);
++}
++
++struct pm_domain_device {
++	const char *domain_name;
++	struct platform_device *pdev;
++};
++
++#ifdef CONFIG_PM
++extern void rmobile_init_domains(struct rmobile_pm_domain domains[], int num);
++extern void rmobile_add_device_to_domain_td(const char *domain_name,
++					    struct platform_device *pdev,
++					    struct gpd_timing_data *td);
++
++static inline void rmobile_add_device_to_domain(const char *domain_name,
++						struct platform_device *pdev)
++{
++	rmobile_add_device_to_domain_td(domain_name, pdev, NULL);
++}
++
++extern void rmobile_add_devices_to_domains(struct pm_domain_device data[],
++					   int size);
++#else
++
++#define rmobile_init_domains(domains, num) do { } while (0)
++#define rmobile_add_device_to_domain_td(name, pdev, td) do { } while (0)
++#define rmobile_add_device_to_domain(name, pdev) do { } while (0)
++
++static inline void rmobile_add_devices_to_domains(struct pm_domain_device d[],
++						  int size) {}
++#endif /* CONFIG_PM */
++
++#endif /* PM_RMOBILE_H */
+diff --git a/arch/arm/mach-shmobile/pm-sh7372.c b/arch/arm/mach-shmobile/pm-sh7372.c
+index 0b1b4de..7ef9a01 100644
+--- a/arch/arm/mach-shmobile/pm-sh7372.c
++++ b/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -26,8 +26,8 @@
+ #include <asm/tlbflush.h>
+ #include <asm/suspend.h>
+ #include <mach/sh7372.h>
+-#include <mach/pm-rmobile.h>
+ #include "common.h"
++#include "pm-rmobile.h"
+ 
+ /* DBG */
+ #define DBGREG1 IOMEM(0xe6100020)
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index d86a128..10170b3 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -32,7 +32,6 @@
+ #include <linux/sh_timer.h>
+ #include <linux/platform_data/sh_ipmmu.h>
+ #include <mach/r8a7740.h>
+-#include <mach/pm-rmobile.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/map.h>
+ #include <asm/mach/arch.h>
+@@ -40,6 +39,7 @@
+ #include "common.h"
+ #include "dma-register.h"
+ #include "irqs.h"
++#include "pm-rmobile.h"
+ 
+ static struct map_desc r8a7740_io_desc[] __initdata = {
+ 	 /*
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 8da836a..5571f86 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -41,6 +41,7 @@
+ #include "common.h"
+ #include "dma-register.h"
+ #include "irqs.h"
++#include "pm-rmobile.h"
+ 
+ static struct map_desc sh7372_io_desc[] __initdata = {
+ 	/* create a 1:1 entity map for 0xe6xxxxxx
 -- 
-1.7.9.5
+2.0.0.rc2
 
