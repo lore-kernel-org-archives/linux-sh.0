@@ -1,26 +1,44 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Fri, 27 Jun 2014 16:55:53 +0000
-Subject: [PATCH 0/2] PCI: host: pcie-rcar: minor clean ups
-Message-Id: <1403888155-9709-1-git-send-email-phil.edworthy@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 23 Jun 2014 23:54:12 +0000
+Subject: [PATCH v2 06/23] v4l: vsp1: Fix routing cleanup when stopping the stream
+Message-Id: <1403567669-18539-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-pci@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Simon Horman <horms@verge.net.au>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Phil Edworthy <phil.edworthy@renesas.com>
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-A couple of relatively minor clean up patches for the pcie-rcar driver. These
-are on top of Sergei's recent patch "pcie-rcar: kill duplicate checks".
+Commit d9b45ed3d8b75e8cf38c8cd1563c29217eecba27 ("v4l: vsp1: Support
+multi-input entities") reworked pipeline routing configuration and
+introduced a bug by writing to the entities routing registers without
+first checking whether the entity had a routing register. This results
+in overwriting the value at offset 0 of the device register space when
+stopping the stream.
 
-Thanks to Sergei for point these out.
+Fix this by skipping routing register write for entities without a
+routing register.
 
-Phil Edworthy (2):
-  PCI: host: pcie-rcar: Use correct initial HW settings
-  PCI: host: pcie-rcar: Style and formatting changes.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/media/platform/vsp1/vsp1_video.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- drivers/pci/host/pcie-rcar.c | 146 +++++++++++++++++++++----------------------
- 1 file changed, 71 insertions(+), 75 deletions(-)
-
+diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
+index 677e3aa..c717e28 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.c
++++ b/drivers/media/platform/vsp1/vsp1_video.c
+@@ -479,7 +479,7 @@ static int vsp1_pipeline_stop(struct vsp1_pipeline *pipe)
+ 	ret = ret = 0 ? -ETIMEDOUT : 0;
+ 
+ 	list_for_each_entry(entity, &pipe->entities, list_pipe) {
+-		if (entity->route)
++		if (entity->route && entity->route->reg)
+ 			vsp1_write(entity->vsp1, entity->route->reg,
+ 				   VI6_DPR_NODE_UNUSED);
+ 
 -- 
-2.0.0
+1.8.5.5
 
