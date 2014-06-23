@@ -1,49 +1,64 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:25:32 +0000
-Subject: [PATCH 1/4] ARM: shmobile: armadillo800eva defconfig: Enable REGULATOR_GPIO and LEDS_GPIO
-Message-Id: <65b590adb672cbe91624f9bd7a80d5ef8919db48.1403487196.git.horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:26:54 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Cleanup for v3.17
+Message-Id: <cover.1403487831.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487196.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487196.git.horms+renesas@verge.net.au>
+References: <cover.1398216284.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398216284.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Enable missing options for devices in platform data and/or DT:
-  - REGULATOR_GPIO
-  - LEDS_GPIO (and its dependencies)
+Please consider these Renesas ARM based SoC Cleanup for v3.17.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/configs/armadillo800eva_defconfig | 4 ++++
- 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
-index 065addd..d9675c6 100644
---- a/arch/arm/configs/armadillo800eva_defconfig
-+++ b/arch/arm/configs/armadillo800eva_defconfig
-@@ -96,6 +96,7 @@ CONFIG_I2C_GPIO=y
- CONFIG_I2C_SH_MOBILE=y
- # CONFIG_HWMON is not set
- CONFIG_REGULATOR=y
-+CONFIG_REGULATOR_GPIO=y
- CONFIG_MEDIA_SUPPORT=y
- CONFIG_VIDEO_DEV=y
- CONFIG_MEDIA_CAMERA_SUPPORT=y
-@@ -127,6 +128,9 @@ CONFIG_USB_ETH=m
- CONFIG_MMC=y
- CONFIG_MMC_SDHI=y
- CONFIG_MMC_SH_MMCIF=y
-+CONFIG_NEW_LEDS=y
-+CONFIG_LEDS_CLASS=y
-+CONFIG_LEDS_GPIO=y
- CONFIG_RTC_CLASS=y
- CONFIG_RTC_DRV_S35390A=y
- CONFIG_DMADEVICES=y
--- 
-2.0.0.rc2
+This pull request is based on 'Renesas ARM Based SoC Header Cleanup for v3.17',
+tagged as header-cleanup-for-v3.17, which I have already sent a
+pull-request for.
 
+
+The following changes since commit 62872989bdbf1245d7239b9f4c05a8ee7c775ed5:
+
+  ARM: shmobile: Move rcar-gen2.h, cleanup r8a7790 case (2014-06-17 17:09:40 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-soc-cleanup-for-v3.17
+
+for you to fetch changes up to d83fa4c9c27c4d8612e39e99506b5420fa05b58b:
+
+  ARM: shmobile: Remove unused r8a7790_init_early() (2014-06-17 19:50:35 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC Cleanup for v3.17
+
+* Use shmobile_init_delay on r8a7790, r7s72100 and EMEV2 SoCs
+* Remove unused redundant callbacks on EMEV2 SoC
+
+----------------------------------------------------------------
+Magnus Damm (9):
+      ARM: shmobile: Update EMEV2 DTS to include CPU frequency
+      ARM: shmobile: Use shmobile_init_delay() on EMEV2
+      ARM: shmobile: Get rid of redundant EMEV2 mach callbacks
+      ARM: shmobile: Update r7s72100 DTS to include CPU frequency
+      ARM: shmobile: Use shmobile_init_delay() on Genmai boards
+      ARM: shmobile: Use shmobile_init_delay() on r7s72100
+      ARM: shmobile: Use r8a7790 DT CPU Frequency in common case
+      ARM: shmobile: Use r8a7790 DT CPU Frequency for Lager
+      ARM: shmobile: Remove unused r8a7790_init_early()
+
+ arch/arm/boot/dts/emev2.dtsi                    |  2 ++
+ arch/arm/boot/dts/r7s72100.dtsi                 |  1 +
+ arch/arm/mach-shmobile/board-genmai-reference.c |  2 +-
+ arch/arm/mach-shmobile/board-genmai.c           |  2 +-
+ arch/arm/mach-shmobile/board-lager-reference.c  |  2 +-
+ arch/arm/mach-shmobile/board-lager.c            |  2 +-
+ arch/arm/mach-shmobile/include/mach/r7s72100.h  |  1 -
+ arch/arm/mach-shmobile/include/mach/r8a7790.h   |  1 -
+ arch/arm/mach-shmobile/setup-emev2.c            | 17 ++---------------
+ arch/arm/mach-shmobile/setup-r7s72100.c         |  7 +------
+ arch/arm/mach-shmobile/setup-r8a7790.c          |  9 +--------
+ 11 files changed, 11 insertions(+), 35 deletions(-)
