@@ -1,55 +1,52 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 06 Jun 2014 12:44:32 +0000
-Subject: [PATCH 1/4] drivers: sh: pm_runtime does not need idle callback
-Message-Id: <fe95c932a31e7f12bcb6a4e07434462da2ac6e1d.1402058435.git.horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:28:19 +0000
+Subject: [PATCH 10/29] ARM: shmobile: lager: enable i2c devices
+Message-Id: <e489c2a9bc82713167d9f721ca764f4b0d37e543.1403487225.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1402058435.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1402058435.git.horms+renesas@verge.net.au>
+References: <cover.1403487225.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Ben Dooks <ben.dooks@codethink.co.uk>, Geert Uytterhoeven <geert+renesas@glider.be>, Simon Horman <horms+renesas@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
 From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-In the runtime_pm idle callback the code assumes that a NULL .runtime_idle
-entry is the same as a .runtime_idle entry that returns 0 as a result. This
-means the entry in drivers/sh/pm_runtime can be removed in favour of just
-leaving the entry NULL.
+Add i2c0, i2c1, i2c2 and i2c3 nodes to the Lager reference device tree as
+these busses all have devices on them that can be probed even if they
+are no drivers yet.
 
 Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Tested-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com> [r8a7779 legacy]
+[horms+renesas@verge.net.au: Added shmobile to title]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/sh/pm_runtime.c | 8 --------
- 1 file changed, 8 deletions(-)
+ arch/arm/boot/dts/r8a7790-lager.dts | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index 10c65eb..00b82ec 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -21,18 +21,10 @@
- #include <linux/slab.h>
- 
- #ifdef CONFIG_PM_RUNTIME
--
--static int default_platform_runtime_idle(struct device *dev)
--{
--	/* suspend synchronously to disable clocks immediately */
--	return 0;
--}
--
- static struct dev_pm_domain default_pm_domain = {
- 	.ops = {
- 		.runtime_suspend = pm_clk_suspend,
- 		.runtime_resume = pm_clk_resume,
--		.runtime_idle = default_platform_runtime_idle,
- 		USE_PLATFORM_PM_SLEEP_OPS
- 	},
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index cc65e3f..bd92dcf 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -342,3 +342,19 @@
+ &cpu0 {
+ 	cpu0-supply = <&vdd_dvfs>;
  };
++
++&i2c0	{
++	status = "ok";
++};
++
++&i2c1	{
++	status = "ok";
++};
++
++&i2c2	{
++	status = "ok";
++};
++
++&i2c3	{
++	status = "ok";
++};
 -- 
-1.8.4
+2.0.0.rc2
 
