@@ -1,70 +1,197 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 06 Jun 2014 07:21:19 +0000
-Subject: [PATCH v2 07/07] ARM: shmobile: Allow r8a7791 to build non-SMP APMU code
-Message-Id: <20140606072119.14868.66441.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 23 Jun 2014 23:54:20 +0000
+Subject: [PATCH v2 14/23] v4l: vsp1: sru: Make the intensity controllable during streaming
+Message-Id: <1403567669-18539-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+The control value is currently stored in the SRU structure by the
+control set handler and written to the hardware at stream on time,
+making control set during streaming ineffective. Fix it by writing to
+the registers from within the control set handler.
 
-Build the APMU for r8a7791 even though SMP is
-disabled in the kernel config. Also initialize
-Suspend-to-RAM from pm-r8a7791.c to in the future
-cover both UP and SMP use cases of the APMU.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/media/platform/vsp1/vsp1_regs.h |   2 +
+ drivers/media/platform/vsp1/vsp1_sru.c  | 101 +++++++++++++++++++-------------
+ drivers/media/platform/vsp1/vsp1_sru.h  |   1 -
+ 3 files changed, 61 insertions(+), 43 deletions(-)
 
- arch/arm/mach-shmobile/Makefile      |    5 +++--
- arch/arm/mach-shmobile/pm-r8a7791.c  |    1 +
- arch/arm/mach-shmobile/smp-r8a7791.c |    1 -
- 3 files changed, 4 insertions(+), 3 deletions(-)
+diff --git a/drivers/media/platform/vsp1/vsp1_regs.h b/drivers/media/platform/vsp1/vsp1_regs.h
+index 3e74b44..55f163d 100644
+--- a/drivers/media/platform/vsp1/vsp1_regs.h
++++ b/drivers/media/platform/vsp1/vsp1_regs.h
+@@ -336,7 +336,9 @@
+  */
+ 
+ #define VI6_SRU_CTRL0			0x2200
++#define VI6_SRU_CTRL0_PARAM0_MASK	(0x1ff << 16)
+ #define VI6_SRU_CTRL0_PARAM0_SHIFT	16
++#define VI6_SRU_CTRL0_PARAM1_MASK	(0x1f << 8)
+ #define VI6_SRU_CTRL0_PARAM1_SHIFT	8
+ #define VI6_SRU_CTRL0_MODE_UPSCALE	(4 << 4)
+ #define VI6_SRU_CTRL0_PARAM2		(1 << 3)
+diff --git a/drivers/media/platform/vsp1/vsp1_sru.c b/drivers/media/platform/vsp1/vsp1_sru.c
+index 18e127a..b7d3c8b 100644
+--- a/drivers/media/platform/vsp1/vsp1_sru.c
++++ b/drivers/media/platform/vsp1/vsp1_sru.c
+@@ -42,39 +42,6 @@ static inline void vsp1_sru_write(struct vsp1_sru *sru, u32 reg, u32 data)
+ 
+ #define V4L2_CID_VSP1_SRU_INTENSITY		(V4L2_CID_USER_BASE + 1)
+ 
+-static int sru_s_ctrl(struct v4l2_ctrl *ctrl)
+-{
+-	struct vsp1_sru *sru -		container_of(ctrl->handler, struct vsp1_sru, ctrls);
+-
+-	switch (ctrl->id) {
+-	case V4L2_CID_VSP1_SRU_INTENSITY:
+-		sru->intensity = ctrl->val;
+-		break;
+-	}
+-
+-	return 0;
+-}
+-
+-static const struct v4l2_ctrl_ops sru_ctrl_ops = {
+-	.s_ctrl = sru_s_ctrl,
+-};
+-
+-static const struct v4l2_ctrl_config sru_intensity_control = {
+-	.ops = &sru_ctrl_ops,
+-	.id = V4L2_CID_VSP1_SRU_INTENSITY,
+-	.name = "Intensity",
+-	.type = V4L2_CTRL_TYPE_INTEGER,
+-	.min = 1,
+-	.max = 6,
+-	.def = 1,
+-	.step = 1,
+-};
+-
+-/* -----------------------------------------------------------------------------
+- * V4L2 Subdevice Core Operations
+- */
+-
+ struct vsp1_sru_param {
+ 	u32 ctrl0;
+ 	u32 ctrl2;
+@@ -111,22 +78,66 @@ static const struct vsp1_sru_param vsp1_sru_params[] = {
+ 	},
+ };
+ 
++static int sru_s_ctrl(struct v4l2_ctrl *ctrl)
++{
++	struct vsp1_sru *sru +		container_of(ctrl->handler, struct vsp1_sru, ctrls);
++	const struct vsp1_sru_param *param;
++	u32 value;
++
++	switch (ctrl->id) {
++	case V4L2_CID_VSP1_SRU_INTENSITY:
++		param = &vsp1_sru_params[ctrl->val - 1];
++
++		value = vsp1_sru_read(sru, VI6_SRU_CTRL0);
++		value &= ~(VI6_SRU_CTRL0_PARAM0_MASK |
++			   VI6_SRU_CTRL0_PARAM1_MASK);
++		value |= param->ctrl0;
++		vsp1_sru_write(sru, VI6_SRU_CTRL0, value);
++
++		vsp1_sru_write(sru, VI6_SRU_CTRL2, param->ctrl2);
++		break;
++	}
++
++	return 0;
++}
++
++static const struct v4l2_ctrl_ops sru_ctrl_ops = {
++	.s_ctrl = sru_s_ctrl,
++};
++
++static const struct v4l2_ctrl_config sru_intensity_control = {
++	.ops = &sru_ctrl_ops,
++	.id = V4L2_CID_VSP1_SRU_INTENSITY,
++	.name = "Intensity",
++	.type = V4L2_CTRL_TYPE_INTEGER,
++	.min = 1,
++	.max = 6,
++	.def = 1,
++	.step = 1,
++};
++
++/* -----------------------------------------------------------------------------
++ * V4L2 Subdevice Core Operations
++ */
++
+ static int sru_s_stream(struct v4l2_subdev *subdev, int enable)
+ {
+ 	struct vsp1_sru *sru = to_sru(subdev);
+-	const struct vsp1_sru_param *param;
+ 	struct v4l2_mbus_framefmt *input;
+ 	struct v4l2_mbus_framefmt *output;
+-	bool upscale;
+ 	u32 ctrl0;
++	int ret;
++
++	ret = vsp1_entity_set_streaming(&sru->entity, enable);
++	if (ret < 0)
++		return ret;
+ 
+ 	if (!enable)
+ 		return 0;
+ 
+ 	input = &sru->entity.formats[SRU_PAD_SINK];
+ 	output = &sru->entity.formats[SRU_PAD_SOURCE];
+-	upscale = input->width != output->width;
+-	param = &vsp1_sru_params[sru->intensity];
+ 
+ 	if (input->code = V4L2_MBUS_FMT_ARGB8888_1X32)
+ 		ctrl0 = VI6_SRU_CTRL0_PARAM2 | VI6_SRU_CTRL0_PARAM3
+@@ -134,10 +145,18 @@ static int sru_s_stream(struct v4l2_subdev *subdev, int enable)
+ 	else
+ 		ctrl0 = VI6_SRU_CTRL0_PARAM3;
+ 
+-	vsp1_sru_write(sru, VI6_SRU_CTRL0, param->ctrl0 | ctrl0 |
+-		       (upscale ? VI6_SRU_CTRL0_MODE_UPSCALE : 0));
++	if (input->width != output->width)
++		ctrl0 |= VI6_SRU_CTRL0_MODE_UPSCALE;
++
++	/* Take the control handler lock to ensure that the CTRL0 value won't be
++	 * changed behind our back by a set control operation.
++	 */
++	mutex_lock(sru->ctrls.lock);
++	ctrl0 |= vsp1_sru_read(sru, VI6_SRU_CTRL0)
++	       & (VI6_SRU_CTRL0_PARAM0_MASK | VI6_SRU_CTRL0_PARAM1_MASK);
++	mutex_unlock(sru->ctrls.lock);
++
+ 	vsp1_sru_write(sru, VI6_SRU_CTRL1, VI6_SRU_CTRL1_PARAM5);
+-	vsp1_sru_write(sru, VI6_SRU_CTRL2, param->ctrl2);
+ 
+ 	return 0;
+ }
+@@ -359,7 +378,5 @@ struct vsp1_sru *vsp1_sru_create(struct vsp1_device *vsp1)
+ 		return ERR_PTR(ret);
+ 	}
+ 
+-	v4l2_ctrl_handler_setup(&sru->ctrls);
+-
+ 	return sru;
+ }
+diff --git a/drivers/media/platform/vsp1/vsp1_sru.h b/drivers/media/platform/vsp1/vsp1_sru.h
+index 381870b..b6768bf 100644
+--- a/drivers/media/platform/vsp1/vsp1_sru.h
++++ b/drivers/media/platform/vsp1/vsp1_sru.h
+@@ -28,7 +28,6 @@ struct vsp1_sru {
+ 	struct vsp1_entity entity;
+ 
+ 	struct v4l2_ctrl_handler ctrls;
+-	unsigned int intensity;
+ };
+ 
+ static inline struct vsp1_sru *to_sru(struct v4l2_subdev *subdev)
+-- 
+1.8.5.5
 
---- 0014/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2014-06-06 15:00:42.000000000 +0900
-@@ -37,13 +37,14 @@ endif
- # CPU reset vector handling objects
- cpu-y				:= platsmp.o headsmp.o
- cpu-$(CONFIG_ARCH_R8A7790)	+= platsmp-apmu.o
-+cpu-$(CONFIG_ARCH_R8A7791)	+= platsmp-apmu.o
- 
- # SMP objects
- smp-y				:= $(cpu-y)
- smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o platsmp-scu.o
- smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o platsmp-scu.o
- smp-$(CONFIG_ARCH_R8A7790)	+= smp-r8a7790.o
--smp-$(CONFIG_ARCH_R8A7791)	+= smp-r8a7791.o platsmp-apmu.o
-+smp-$(CONFIG_ARCH_R8A7791)	+= smp-r8a7791.o
- smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o platsmp-scu.o
- 
- # PM objects
-@@ -55,7 +56,7 @@ obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
- obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
- obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o pm-rcar.o
- obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o $(cpu-y)
--obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o
-+obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o $(cpu-y)
- 
- # IRQ objects
- obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
---- 0015/arch/arm/mach-shmobile/pm-r8a7791.c
-+++ work/arch/arm/mach-shmobile/pm-r8a7791.c	2014-06-06 15:01:29.000000000 +0900
-@@ -68,4 +68,5 @@ void __init r8a7791_pm_init(void)
- 	iounmap(p);
- 
- 	r8a7791_sysc_init();
-+	shmobile_smp_apmu_suspend_init();
- }
---- 0015/arch/arm/mach-shmobile/smp-r8a7791.c
-+++ work/arch/arm/mach-shmobile/smp-r8a7791.c	2014-06-06 15:01:05.000000000 +0900
-@@ -28,7 +28,6 @@ static void __init r8a7791_smp_prepare_c
- 	shmobile_smp_apmu_prepare_cpus(max_cpus);
- 
- 	r8a7791_pm_init();
--	shmobile_smp_apmu_suspend_init();
- }
- 
- static int r8a7791_smp_boot_secondary(unsigned int cpu,
