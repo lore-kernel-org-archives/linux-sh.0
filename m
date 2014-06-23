@@ -1,39 +1,81 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:26:26 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC Maintainers Updates for v3.17
-Message-Id: <cover.1403487346.git.horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:26:33 +0000
+Subject: [PATCH 20/24] ARM: shmobile: r8a7779 dtsi: Correct #address-cells/#size-cells for clocks
+Message-Id: <5cc8afcbc47c5f33732fb1a4b37a35841e7494e8.1403487423.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1403487423.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487423.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Please consider these Renesas ARM based SoC maintainers updates for v3.17.
+Warning (ranges_format): /clocks has empty "ranges" property but its #address-cells (2) differs from / (1)
+Warning (ranges_format): /clocks has empty "ranges" property but its #size-cells (2) differs from / (1)
 
+As r8a7779 doesn't support LPAE, change #address-cells and #size-cells from
+"<2>" to "<1>", and update the affected "reg" properties to fix this.
 
-The following changes since commit 7171511eaec5bf23fb06078f59784a3a0626b38f:
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7779.dtsi | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-  Linux 3.16-rc1 (2014-06-15 17:45:28 -1000)
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 27bf227..61d08f4 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -284,8 +284,8 @@
+ 	};
+ 
+ 	clocks {
+-		#address-cells = <2>;
+-		#size-cells = <2>;
++		#address-cells = <1>;
++		#size-cells = <1>;
+ 		ranges;
+ 
+ 		/* External root clock */
+@@ -300,7 +300,7 @@
+ 		/* Special CPG clocks */
+ 		cpg_clocks: clocks@ffc80000 {
+ 			compatible = "renesas,r8a7779-cpg-clocks";
+-			reg = <0 0xffc80000 0 0x30>;
++			reg = <0xffc80000 0x30>;
+ 			clocks = <&extal_clk>;
+ 			#clock-cells = <1>;
+ 			clock-output-names = "plla", "z", "zs", "s",
+@@ -345,7 +345,7 @@
+ 		mstp0_clks: clocks@ffc80030 {
+ 			compatible = "renesas,r8a7779-mstp-clocks",
+ 			             "renesas,cpg-mstp-clocks";
+-			reg = <0 0xffc80030 0 4>;
++			reg = <0xffc80030 4>;
+ 			clocks = <&cpg_clocks R8A7779_CLK_S>,
+ 			         <&cpg_clocks R8A7779_CLK_P>,
+ 				 <&cpg_clocks R8A7779_CLK_P>,
+@@ -382,7 +382,7 @@
+ 		mstp1_clks: clocks@ffc80034 {
+ 			compatible = "renesas,r8a7779-mstp-clocks",
+ 			             "renesas,cpg-mstp-clocks";
+-			reg = <0 0xffc80034 0 4>, <0 0xffc80044 0 4>;
++			reg = <0xffc80034 4>, <0xffc80044 4>;
+ 			clocks = <&cpg_clocks R8A7779_CLK_P>,
+ 				 <&cpg_clocks R8A7779_CLK_P>,
+ 				 <&cpg_clocks R8A7779_CLK_S>,
+@@ -411,7 +411,7 @@
+ 		mstp3_clks: clocks@ffc8003c {
+ 			compatible = "renesas,r8a7779-mstp-clocks",
+ 			             "renesas,cpg-mstp-clocks";
+-			reg = <0 0xffc8003c 0 4>;
++			reg = <0xffc8003c 4>;
+ 			clocks = <&s4_clk>, <&s4_clk>, <&s4_clk>, <&s4_clk>,
+ 				 <&s4_clk>, <&s4_clk>;
+ 			#clock-cells = <1>;
+-- 
+2.0.0.rc2
 
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-maintainers-for-v3.17
-
-for you to fetch changes up to 0b514fdb52073e348ade842355f37f6976768e44:
-
-  ARM: shmobile: Add DT and defconfigs to MAINTAINERS (2014-06-16 19:40:12 +0900)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC Maintainers Updates for v3.17
-
-* Expand ARM/SHMOBILE maintainers entry to cover
-  DT and defconfig files.
-
-----------------------------------------------------------------
-Simon Horman (1):
-      ARM: shmobile: Add DT and defconfigs to MAINTAINERS
-
- MAINTAINERS | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
