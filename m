@@ -1,158 +1,40 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 06 Jun 2014 10:44:43 +0000
-Subject: [PATCH v3 04/05] staging: board: Initial board staging support
-Message-Id: <20140606104443.4423.6161.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:26:37 +0000
+Subject: [PATCH 24/24] ARM: shmobile: marzen: Do not use workaround for scif devices
+Message-Id: <c1a0f9932b66b2298163c31f8ac3f2844476e1c2.1403487423.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140606104408.4423.36098.sendpatchset@w520>
-In-Reply-To: <20140606104408.4423.36098.sendpatchset@w520>
+References: <cover.1403487423.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487423.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: devel@driverdev.osuosl.org, pebolle@tiscali.nl, linux-sh@vger.kernel.org, gregkh@linuxfoundation.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, dan.carpenter@oracle.com
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Now that SCIF devices are initialised using DT it should
+not be necessary to use the work around to provide clocks any more.
 
-Add staging board base support to allow continuous upstream
-in-tree development and integration of platform devices.
-
-Helps developers integrate devices as platform devices for
-device drivers that only provide platform device bindings.
-This in turn allows for incremental development of both
-hardware feature support and DT binding work in parallel.
-
-Two separate pieces of board staging functionality is
-provided to ease per-board staging board support:
- - The board_staging() macro allows easy per-board callbacks
- - The board_staging_dt_node_available() provides DT node checking
-
-Tested on the KZM9D board with the emxx_udc staging driver.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/board-marzen-reference.c | 6 ------
+ 1 file changed, 6 deletions(-)
 
- Changes since V2:
- - Added CONFIG_OF_ADDRESS dependency
-
- Changes since V1:
- - New broken out staging board base support
- - Added the function board_staging_dt_node_available()
- - Added a TODO file
-
- drivers/staging/Kconfig        |    2 +
- drivers/staging/Makefile       |    1 
- drivers/staging/board/Kconfig  |    8 +++++++
- drivers/staging/board/Makefile |    1 
- drivers/staging/board/TODO     |    2 +
- drivers/staging/board/board.c  |   41 ++++++++++++++++++++++++++++++++++++++++
- drivers/staging/board/board.h  |   20 +++++++++++++++++++
- 7 files changed, 75 insertions(+)
-
---- 0001/drivers/staging/Kconfig
-+++ work/drivers/staging/Kconfig	2014-06-06 18:50:38.000000000 +0900
-@@ -110,6 +110,8 @@ source "drivers/staging/media/Kconfig"
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index bb2df32..0a000b7 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -40,12 +40,6 @@ static void __init marzen_init_timer(void)
+  * devices until they get moved to DT.
+  */
+ static const struct clk_name clk_names[] __initconst = {
+-	{ "scif0", NULL, "sh-sci.0" },
+-	{ "scif1", NULL, "sh-sci.1" },
+-	{ "scif2", NULL, "sh-sci.2" },
+-	{ "scif3", NULL, "sh-sci.3" },
+-	{ "scif4", NULL, "sh-sci.4" },
+-	{ "scif5", NULL, "sh-sci.5" },
+ 	{ "tmu0", "fck", "sh-tmu.0" },
+ };
  
- source "drivers/staging/android/Kconfig"
- 
-+source "drivers/staging/board/Kconfig"
-+
- source "drivers/staging/ozwpan/Kconfig"
- 
- source "drivers/staging/gdm72xx/Kconfig"
---- 0001/drivers/staging/Makefile
-+++ work/drivers/staging/Makefile	2014-06-06 18:50:38.000000000 +0900
-@@ -48,6 +48,7 @@ obj-$(CONFIG_TOUCHSCREEN_CLEARPAD_TM1217
- obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_I2C_RMI4)	+= ste_rmi4/
- obj-$(CONFIG_MFD_NVEC)		+= nvec/
- obj-$(CONFIG_ANDROID)		+= android/
-+obj-$(CONFIG_STAGING_BOARD)	+= board/
- obj-$(CONFIG_USB_WPAN_HCD)	+= ozwpan/
- obj-$(CONFIG_WIMAX_GDM72XX)	+= gdm72xx/
- obj-$(CONFIG_LTE_GDM724X)	+= gdm724x/
---- /dev/null
-+++ work/drivers/staging/board/Kconfig	2014-06-06 19:25:24.000000000 +0900
-@@ -0,0 +1,8 @@
-+config STAGING_BOARD
-+	boolean "Staging Board Support"
-+	depends on OF_ADDRESS
-+	help
-+	  Select to enable per-board staging support code.
-+
-+	  If in doubt, say N here.
-+
---- /dev/null
-+++ work/drivers/staging/board/Makefile	2014-06-06 18:50:39.000000000 +0900
-@@ -0,0 +1 @@
-+obj-y	:= board.o
---- /dev/null
-+++ work/drivers/staging/board/TODO	2014-06-06 18:50:39.000000000 +0900
-@@ -0,0 +1,2 @@
-+* replace platform device code with DT nodes once the driver supports DT
-+* remove staging board code when no more platform devices are needed
---- /dev/null
-+++ work/drivers/staging/board/board.c	2014-06-06 18:50:39.000000000 +0900
-@@ -0,0 +1,41 @@
-+#include <linux/init.h>
-+#include <linux/device.h>
-+#include <linux/kernel.h>
-+#include <linux/of.h>
-+#include <linux/of_address.h>
-+#include "board.h"
-+
-+static bool find_by_address(u64 base_address)
-+{
-+	struct device_node *dn = of_find_all_nodes(NULL);
-+	struct resource res;
-+
-+	while (dn) {
-+		if (of_can_translate_address(dn)
-+		    && !of_address_to_resource(dn, 0, &res)) {
-+			if (res.start = base_address) {
-+				of_node_put(dn);
-+				return true;
-+			}
-+		}
-+		dn = of_find_all_nodes(dn);
-+	}
-+
-+	return false;
-+}
-+
-+bool __init board_staging_dt_node_available(const struct resource *resource,
-+					    unsigned int num_resources)
-+{
-+	unsigned int i;
-+
-+	for (i = 0; i < num_resources; i++) {
-+		const struct resource *r = resource + i;
-+
-+		if (resource_type(r) = IORESOURCE_MEM)
-+			if (find_by_address(r->start))
-+				return true; /* DT node available */
-+	}
-+
-+	return false; /* Nothing found */
-+}
---- /dev/null
-+++ work/drivers/staging/board/board.h	2014-06-06 18:50:39.000000000 +0900
-@@ -0,0 +1,20 @@
-+#ifndef __BOARD_H__
-+#define __BOARD_H__
-+#include <linux/init.h>
-+#include <linux/of.h>
-+
-+bool board_staging_dt_node_available(const struct resource *resource,
-+				     unsigned int num_resources);
-+
-+#define board_staging(str, fn)			\
-+static int __init runtime_board_check(void)	\
-+{						\
-+	if (of_machine_is_compatible(str))	\
-+		fn();				\
-+						\
-+	return 0;				\
-+}						\
-+						\
-+late_initcall(runtime_board_check)
-+
-+#endif /* __BOARD_H__ */
+-- 
+2.0.0.rc2
+
