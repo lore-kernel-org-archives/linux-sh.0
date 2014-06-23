@@ -1,81 +1,51 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 24 Jun 2014 18:10:05 +0000
-Subject: [PATCH v4 1/3] ARM: shmobile: r8a7791: add internal PCI bridge nodes
-Message-Id: <201406242210.06194.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 23 Jun 2014 23:54:11 +0000
+Subject: [PATCH v2 05/23] v4l: vb2: Fix stream start and buffer completion race
+Message-Id: <1403567669-18539-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201406242207.32790.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201406242207.32790.sergei.shtylyov@cogentembedded.com>
+References: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Add device nodes for the R8A7791 internal PCI bridge devices.
+videobuf2 stores the driver streaming state internally in the queue in
+the start_streaming_called variable. The state is set right after the
+driver start_stream operation returns, and checked in the
+vb2_buffer_done() function, typically called from the frame completion
+interrupt handler. A race condition exists if the hardware finishes
+processing the first frame before the start_stream operation returns.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Fix this by setting start_streaming_called to 1 before calling the
+start_stream operation, and resetting it to 0 if the operation fails.
 
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Changes in version 4:
-- added "device_type" and "ranges" properties to the PCI bridge nodes;
-- removed "0x" prefix from zero values in the "reg" properties.
+ drivers/media/v4l2-core/videobuf2-core.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-Changes in version 3:
-- refreshed the patch.
-
-Changes in version 2:
-- added interrupt-related properties to the PCI device nodes;
-- refreshed the patch.
-
- arch/arm/boot/dts/r8a7791.dtsi |   40 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 40 insertions(+)
-
-Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7791.dtsi
-@@ -961,6 +961,46 @@
- 		status = "disabled";
- 	};
+diff --git a/drivers/media/v4l2-core/videobuf2-core.c b/drivers/media/v4l2-core/videobuf2-core.c
+index 7c4489c..1d67e95 100644
+--- a/drivers/media/v4l2-core/videobuf2-core.c
++++ b/drivers/media/v4l2-core/videobuf2-core.c
+@@ -1750,12 +1750,14 @@ static int vb2_start_streaming(struct vb2_queue *q)
+ 		__enqueue_in_driver(vb);
  
-+	pci0: pci@ee090000 {
-+		compatible = "renesas,pci-r8a7791";
-+		device_type = "pci";
-+		clocks = <&mstp7_clks R8A7791_CLK_EHCI>;
-+		reg = <0 0xee090000 0 0xc00>,
-+		      <0 0xee080000 0 0x1100>;
-+		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
+ 	/* Tell the driver to start streaming */
++	q->start_streaming_called = 1;
+ 	ret = call_qop(q, start_streaming, q,
+ 		       atomic_read(&q->owned_by_drv_count));
+-	q->start_streaming_called = ret = 0;
+ 	if (!ret)
+ 		return 0;
+ 
++	q->start_streaming_called = 0;
 +
-+		bus-range = <0 0>;
-+		#address-cells = <3>;
-+		#size-cells = <2>;
-+		#interrupt-cells = <1>;
-+		ranges = <0x02000000 0 0xee080000 0 0xee080000 0 0x00010000>;
-+		interrupt-map-mask = <0xff00 0 0 0x7>;
-+		interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
-+	};
-+
-+	pci1: pci@ee0d0000 {
-+		compatible = "renesas,pci-r8a7791";
-+		device_type = "pci";
-+		clocks = <&mstp7_clks R8A7791_CLK_EHCI>;
-+		reg = <0 0xee0d0000 0 0xc00>,
-+		      <0 0xee0c0000 0 0x1100>;
-+		interrupts = <0 113 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+
-+		bus-range = <1 1>;
-+		#address-cells = <3>;
-+		#size-cells = <2>;
-+		#interrupt-cells = <1>;
-+		ranges = <0x02000000 0 0xee0c0000 0 0xee0c0000 0 0x00010000>;
-+		interrupt-map-mask = <0xff00 0 0 0x7>;
-+		interrupt-map = <0x0000 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x0800 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
-+	};
-+
- 	pciec: pcie@fe000000 {
- 		compatible = "renesas,pcie-r8a7791";
- 		reg = <0 0xfe000000 0 0x80000>;
+ 	dprintk(1, "driver refused to start streaming\n");
+ 	if (WARN_ON(atomic_read(&q->owned_by_drv_count))) {
+ 		unsigned i;
+-- 
+1.8.5.5
+
