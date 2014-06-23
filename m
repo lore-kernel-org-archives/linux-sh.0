@@ -1,62 +1,65 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:26:27 +0000
-Subject: [PATCH 14/24] ARM: shmobile: marzen-reference: Remove legacy clock support
-Message-Id: <f0b78f8b63fe92242232b7a3e4aa951983ee1f45.1403487423.git.horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:26:53 +0000
+Subject: [PATCH 6/9] ARM: shmobile: Use shmobile_init_delay() on r7s72100
+Message-Id: <b42a6f7e8f22552aad0d8e595cd83f36316e312b.1403487831.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487423.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487423.git.horms+renesas@verge.net.au>
+References: <cover.1403487831.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487831.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Marzen DT reference is now only built for multiplatform
-which means that CCF comes with the package. Remove unused legacy
-code ifdefs to clean up the code.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Based on similar work for the Koelsch board by Magnus Damm.
+Adjust the r7s72100 SoC support code to use shmobile_init_delay()
+together with CPU Frequency settings from the DTS. Get rid of the
+C code version.
 
-Cc: Magnus Damm <damm@opensource.se>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-marzen-reference.c | 8 --------
- 1 file changed, 8 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r7s72100.h | 1 -
+ arch/arm/mach-shmobile/setup-r7s72100.c        | 7 +------
+ 2 files changed, 1 insertion(+), 7 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index 46936ff..1b63686 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -31,13 +31,10 @@
+diff --git a/arch/arm/mach-shmobile/include/mach/r7s72100.h b/arch/arm/mach-shmobile/include/mach/r7s72100.h
+index 5f34b20..efb723c 100644
+--- a/arch/arm/mach-shmobile/include/mach/r7s72100.h
++++ b/arch/arm/mach-shmobile/include/mach/r7s72100.h
+@@ -3,6 +3,5 @@
  
- static void __init marzen_init_timer(void)
- {
--#ifdef CONFIG_COMMON_CLK
- 	r8a7779_clocks_init(r8a7779_read_mode_pins());
--#endif
- 	clocksource_of_init();
+ void r7s72100_add_dt_devices(void);
+ void r7s72100_clock_init(void);
+-void r7s72100_init_early(void);
+ 
+ #endif /* __ASM_R7S72100_H__ */
+diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
+index 17a74d3..a55d68d 100644
+--- a/arch/arm/mach-shmobile/setup-r7s72100.c
++++ b/arch/arm/mach-shmobile/setup-r7s72100.c
+@@ -43,11 +43,6 @@ void __init r7s72100_add_dt_devices(void)
+ 	r7s72100_register_mtu2();
  }
  
--#ifdef CONFIG_COMMON_CLK
- /*
-  * This is a really crude hack to provide clkdev support to platform
-  * devices until they get moved to DT.
-@@ -51,15 +48,10 @@ static const struct clk_name clk_names[] __initconst = {
- 	{ "scif5", NULL, "sh-sci.5" },
- 	{ "tmu0", "fck", "sh-tmu.0" },
+-void __init r7s72100_init_early(void)
+-{
+-	shmobile_setup_delay(400, 1, 3); /* Cortex-A9 @ 400MHz */
+-}
+-
+ #ifdef CONFIG_USE_OF
+ static const char *r7s72100_boards_compat_dt[] __initdata = {
+ 	"renesas,r7s72100",
+@@ -55,7 +50,7 @@ static const char *r7s72100_boards_compat_dt[] __initdata = {
  };
--#endif
  
- static void __init marzen_init(void)
- {
--#ifdef CONFIG_COMMON_CLK
- 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
--#else
--	r8a7779_clock_init();
--#endif
- 	r8a7779_add_standard_devices_dt();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
+ DT_MACHINE_START(R7S72100_DT, "Generic R7S72100 (Flattened Device Tree)")
+-	.init_early	= r7s72100_init_early,
++	.init_early	= shmobile_init_delay,
+ 	.dt_compat	= r7s72100_boards_compat_dt,
+ MACHINE_END
+ #endif /* CONFIG_USE_OF */
 -- 
 2.0.0.rc2
 
