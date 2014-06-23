@@ -1,35 +1,93 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 01 Jun 2014 10:31:34 +0000
-Subject: Re: [PATCH 00/18] Renesas VSP1: alpha support
-Message-Id: <1409168.f26fuVjbja@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:25:19 +0000
+Subject: [PATCH] ARM: shmobile: Fix device node reference leakage in shmobile_init_delay
+Message-Id: <edc8fb1d6ebdfc4efa009073586d3567c3368475.1403487071.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <CAMuHMdX4nG942paYrZ1Nqm2scK8k_3YphbqeFqn8hksdfF9ivg@mail.gmail.com> <CAMuHMdURhVeY_PCgiJREzwqjdTfpqfm8O+N-oR0M2hA7v5TuAg@mail.gmail.com>
-In-Reply-To: <CAMuHMdURhVeY_PCgiJREzwqjdTfpqfm8O+N-oR0M2hA7v5TuAg@mail.gmail.com>
+References: <cover.1403487071.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487071.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Linux Media Mailing List <linux-media@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-On Sunday 01 June 2014 10:56:27 Geert Uytterhoeven wrote:
-> On Sun, Jun 1, 2014 at 10:51 AM, Geert Uytterhoeven wrote:
-> > On Sun, Jun 1, 2014 at 5:39 AM, Laurent Pinchart wrote:
-> >> The first two patch add new pixel formats for alpha and non-alpha RGB,
-> >> and extend usage of the ALPHA_COMPONENT control to output devices. They
-> >> have already been posted separately, for the rationale please see
-> >> https://www.mail-archive.com/linux-media@vger.kernel.org/msg75449.html.
-> > 
-> > mail-archive.com seems to be down.
-> > Do you have a link to another archiver?
-> 
-> I assume www.spinics.net/lists/linux-media/msg76846.html ?
+The of_find_compatible_node() function returns a new reference to the
+found node. Instead of just adding of_node_put() calls, simplify the
+code by moving the CPU identification logic inside the loop over cpu
+nodes, in order to lower complexity from O(n) to O(1) by replacing
+of_find_compatible_node() calls with of_device_is_compatible().
 
-That's correct.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/timer.c | 50 ++++++++++++++++++++++++------------------
+ 1 file changed, 29 insertions(+), 21 deletions(-)
 
+diff --git a/arch/arm/mach-shmobile/timer.c b/arch/arm/mach-shmobile/timer.c
+index 68bc0b8..942efdc 100644
+--- a/arch/arm/mach-shmobile/timer.c
++++ b/arch/arm/mach-shmobile/timer.c
+@@ -59,29 +59,37 @@ void __init shmobile_setup_delay(unsigned int max_cpu_core_mhz,
+ 
+ void __init shmobile_init_delay(void)
+ {
+-	struct device_node *np, *parent;
+-	u32 max_freq, freq;
+-
+-	max_freq = 0;
+-
+-	parent = of_find_node_by_path("/cpus");
+-	if (parent) {
+-		for_each_child_of_node(parent, np) {
+-			if (!of_property_read_u32(np, "clock-frequency", &freq))
+-				max_freq = max(max_freq, freq);
+-		}
+-		of_node_put(parent);
+-	}
++	struct device_node *np, *cpus;
++	bool is_a8_a9 = false;
++	bool is_a15 = false;
++	u32 max_freq = 0;
++
++	cpus = of_find_node_by_path("/cpus");
++	if (!cpus)
++		return;
++
++	for_each_child_of_node(cpus, np) {
++		u32 freq;
++
++		if (!of_property_read_u32(np, "clock-frequency", &freq))
++			max_freq = max(max_freq, freq);
+ 
+-	if (max_freq) {
+-		if (of_find_compatible_node(NULL, NULL, "arm,cortex-a8"))
+-			shmobile_setup_delay_hz(max_freq, 1, 3);
+-		else if (of_find_compatible_node(NULL, NULL, "arm,cortex-a9"))
+-			shmobile_setup_delay_hz(max_freq, 1, 3);
+-		else if (of_find_compatible_node(NULL, NULL, "arm,cortex-a15"))
+-			if (!IS_ENABLED(CONFIG_ARM_ARCH_TIMER))
+-				shmobile_setup_delay_hz(max_freq, 2, 4);
++		if (of_device_is_compatible(np, "arm,cortex-a8") ||
++		    of_device_is_compatible(np, "arm,cortex-a9"))
++			is_a8_a9 = true;
++		else if (of_device_is_compatible(np, "arm,cortex-a15"))
++			is_a15 = true;
+ 	}
++
++	of_node_put(cpus);
++
++	if (!max_freq)
++		return;
++
++	if (is_a8_a9)
++		shmobile_setup_delay_hz(max_freq, 1, 3);
++	else if (is_a15 && !IS_ENABLED(CONFIG_ARM_ARCH_TIMER))
++		shmobile_setup_delay_hz(max_freq, 2, 4);
+ }
+ 
+ static void __init shmobile_late_time_init(void)
 -- 
-Regards,
-
-Laurent Pinchart
+2.0.0.rc2
 
