@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 23 Jun 2014 23:54:15 +0000
-Subject: [PATCH v2 09/23] v4l: vsp1: Fix typos
-Message-Id: <1403567669-18539-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 23 Jun 2014 23:54:18 +0000
+Subject: [PATCH v2 12/23] v4l: vsp1: Setup control handler automatically at stream on time
+Message-Id: <1403567669-18539-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -11,87 +11,118 @@ Content-Transfer-Encoding: 7bit
 To: linux-media@vger.kernel.org
 Cc: linux-sh@vger.kernel.org
 
-Several macros were mistakenly prefixed with VPS1 instead of VSP1. Fix
-them.
+When setting a control directly on a subdev node the VSP1 driver doesn't
+guarantee that the device is powered on. This leads to crashes when the
+control handlers writes to hardware registers. One easy way to fix this
+is to ensure that the device gets powered on when a subdev node is
+opened. However, this consumes power unnecessarily, as there's no need
+to power the device on when setting formats on the pipeline.
+Furthermore, control handler setup at entity init time suffers from the
+same problem as the device isn't powered on easier.
+
+Fix this by extend the entity base object to setup the control handler
+automatically when starting the stream. Entities must then skip writing
+to registers in the set control handler when not streaming, which can be
+tested with the new vsp1_entity_is_streaming() helper function.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/media/platform/vsp1/vsp1.h       | 12 ++++++------
- drivers/media/platform/vsp1/vsp1_drv.c   |  6 +++---
- drivers/media/platform/vsp1/vsp1_video.h |  2 +-
- 3 files changed, 10 insertions(+), 10 deletions(-)
+ drivers/media/platform/vsp1/vsp1_entity.c | 39 +++++++++++++++++++++++++++++++
+ drivers/media/platform/vsp1/vsp1_entity.h |  7 ++++++
+ 2 files changed, 46 insertions(+)
 
-diff --git a/drivers/media/platform/vsp1/vsp1.h b/drivers/media/platform/vsp1/vsp1.h
-index 6ca2cf2..3cfa393 100644
---- a/drivers/media/platform/vsp1/vsp1.h
-+++ b/drivers/media/platform/vsp1/vsp1.h
-@@ -36,9 +36,9 @@ struct vsp1_rwpf;
- struct vsp1_sru;
- struct vsp1_uds;
+diff --git a/drivers/media/platform/vsp1/vsp1_entity.c b/drivers/media/platform/vsp1/vsp1_entity.c
+index ceac0d7..79af71d 100644
+--- a/drivers/media/platform/vsp1/vsp1_entity.c
++++ b/drivers/media/platform/vsp1/vsp1_entity.c
+@@ -22,6 +22,41 @@
+ #include "vsp1_entity.h"
+ #include "vsp1_video.h"
  
--#define VPS1_MAX_RPF		5
--#define VPS1_MAX_UDS		3
--#define VPS1_MAX_WPF		4
-+#define VSP1_MAX_RPF		5
-+#define VSP1_MAX_UDS		3
-+#define VSP1_MAX_WPF		4
- 
- struct vsp1_device {
- 	struct device *dev;
-@@ -55,10 +55,10 @@ struct vsp1_device {
- 	struct vsp1_hsit *hst;
- 	struct vsp1_lif *lif;
- 	struct vsp1_lut *lut;
--	struct vsp1_rwpf *rpf[VPS1_MAX_RPF];
-+	struct vsp1_rwpf *rpf[VSP1_MAX_RPF];
- 	struct vsp1_sru *sru;
--	struct vsp1_uds *uds[VPS1_MAX_UDS];
--	struct vsp1_rwpf *wpf[VPS1_MAX_WPF];
-+	struct vsp1_uds *uds[VSP1_MAX_UDS];
-+	struct vsp1_rwpf *wpf[VSP1_MAX_WPF];
- 
- 	struct list_head entities;
- 
-diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
-index c69ee06..0c5e74c 100644
---- a/drivers/media/platform/vsp1/vsp1_drv.c
-+++ b/drivers/media/platform/vsp1/vsp1_drv.c
-@@ -440,19 +440,19 @@ static int vsp1_validate_platform_data(struct platform_device *pdev,
++bool vsp1_entity_is_streaming(struct vsp1_entity *entity)
++{
++	bool streaming;
++
++	mutex_lock(&entity->lock);
++	streaming = entity->streaming;
++	mutex_unlock(&entity->lock);
++
++	return streaming;
++}
++
++int vsp1_entity_set_streaming(struct vsp1_entity *entity, bool streaming)
++{
++	int ret;
++
++	mutex_lock(&entity->lock);
++	entity->streaming = streaming;
++	mutex_unlock(&entity->lock);
++
++	if (!streaming)
++		return 0;
++
++	if (!entity->subdev.ctrl_handler)
++		return 0;
++
++	ret = v4l2_ctrl_handler_setup(entity->subdev.ctrl_handler);
++	if (ret < 0) {
++		mutex_lock(&entity->lock);
++		entity->streaming = false;
++		mutex_unlock(&entity->lock);
++	}
++
++	return ret;
++}
++
+ /* -----------------------------------------------------------------------------
+  * V4L2 Subdevice Operations
+  */
+@@ -158,6 +193,8 @@ int vsp1_entity_init(struct vsp1_device *vsp1, struct vsp1_entity *entity,
+ 	if (i = ARRAY_SIZE(vsp1_routes))
  		return -EINVAL;
- 	}
  
--	if (pdata->rpf_count <= 0 || pdata->rpf_count > VPS1_MAX_RPF) {
-+	if (pdata->rpf_count <= 0 || pdata->rpf_count > VSP1_MAX_RPF) {
- 		dev_err(&pdev->dev, "invalid number of RPF (%u)\n",
- 			pdata->rpf_count);
- 		return -EINVAL;
- 	}
++	mutex_init(&entity->lock);
++
+ 	entity->vsp1 = vsp1;
+ 	entity->source_pad = num_pads - 1;
  
--	if (pdata->uds_count <= 0 || pdata->uds_count > VPS1_MAX_UDS) {
-+	if (pdata->uds_count <= 0 || pdata->uds_count > VSP1_MAX_UDS) {
- 		dev_err(&pdev->dev, "invalid number of UDS (%u)\n",
- 			pdata->uds_count);
- 		return -EINVAL;
- 	}
+@@ -191,4 +228,6 @@ void vsp1_entity_destroy(struct vsp1_entity *entity)
+ 	if (entity->subdev.ctrl_handler)
+ 		v4l2_ctrl_handler_free(entity->subdev.ctrl_handler);
+ 	media_entity_cleanup(&entity->subdev.entity);
++
++	mutex_destroy(&entity->lock);
+ }
+diff --git a/drivers/media/platform/vsp1/vsp1_entity.h b/drivers/media/platform/vsp1/vsp1_entity.h
+index f0257f6..aa20aaa 100644
+--- a/drivers/media/platform/vsp1/vsp1_entity.h
++++ b/drivers/media/platform/vsp1/vsp1_entity.h
+@@ -14,6 +14,7 @@
+ #define __VSP1_ENTITY_H__
  
--	if (pdata->wpf_count <= 0 || pdata->wpf_count > VPS1_MAX_WPF) {
-+	if (pdata->wpf_count <= 0 || pdata->wpf_count > VSP1_MAX_WPF) {
- 		dev_err(&pdev->dev, "invalid number of WPF (%u)\n",
- 			pdata->wpf_count);
- 		return -EINVAL;
-diff --git a/drivers/media/platform/vsp1/vsp1_video.h b/drivers/media/platform/vsp1/vsp1_video.h
-index 7284320..cb5d9ef 100644
---- a/drivers/media/platform/vsp1/vsp1_video.h
-+++ b/drivers/media/platform/vsp1/vsp1_video.h
-@@ -73,7 +73,7 @@ struct vsp1_pipeline {
+ #include <linux/list.h>
++#include <linux/mutex.h>
  
- 	unsigned int num_video;
- 	unsigned int num_inputs;
--	struct vsp1_rwpf *inputs[VPS1_MAX_RPF];
-+	struct vsp1_rwpf *inputs[VSP1_MAX_RPF];
- 	struct vsp1_rwpf *output;
- 	struct vsp1_entity *bru;
- 	struct vsp1_entity *lif;
+ #include <media/v4l2-subdev.h>
+ 
+@@ -71,6 +72,9 @@ struct vsp1_entity {
+ 	struct v4l2_mbus_framefmt *formats;
+ 
+ 	struct vsp1_video *video;
++
++	struct mutex lock;		/* Protects the streaming field */
++	bool streaming;
+ };
+ 
+ static inline struct vsp1_entity *to_vsp1_entity(struct v4l2_subdev *subdev)
+@@ -92,4 +96,7 @@ vsp1_entity_get_pad_format(struct vsp1_entity *entity,
+ void vsp1_entity_init_formats(struct v4l2_subdev *subdev,
+ 			      struct v4l2_subdev_fh *fh);
+ 
++bool vsp1_entity_is_streaming(struct vsp1_entity *entity);
++int vsp1_entity_set_streaming(struct vsp1_entity *entity, bool streaming);
++
+ #endif /* __VSP1_ENTITY_H__ */
 -- 
 1.8.5.5
 
