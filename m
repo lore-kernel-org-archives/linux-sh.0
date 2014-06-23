@@ -1,61 +1,80 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 25 Jun 2014 07:35:32 +0000
-Subject: [PATCH 2/5] ARM: shmobile: lager-reference: Remove workarounds for core clock issues
-Message-Id: <f47b9e1ec3a1d694f07fcc0d5ba0c2582acce099.1403681531.git.horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:26:36 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC r8a7779-multiplatform Updates for v3.17
+Message-Id: <cover.1403487423.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403681531.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403681531.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Now the core clock issues have been fixed by commit
-3c90c55dcde745bed81f6447f24ba96bda43d984 ("drivers: sh: compile
-drivers/sh/pm_runtime.c if ARCH_SHMOBILE_MULTI"), revert the following
-2 commits:
-  - f98b55d730492e664fb2649bd7054fec0fe81acd ("ARM: shmobile: Add Lager
-    clock workarounds for SDHI and MMCIF"),
-  - aa5de826afe747c353162bbc116c63ab5335f91c ("ARM: shmobile:
-    lager-reference: Work around core clock issues").
+Please consider these Renesas ARM based SoC r8a7779-multiplatform updates
+for v3.17.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-lager-reference.c | 14 --------------
- 1 file changed, 14 deletions(-)
+This pull request is based on 'Renesas ARM Based SoC Header Cleanup for v3.17',
+tagged as header-cleanup-for-v3.17, which I have already sent a
+pull-request for.
 
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 4f0af91..9e0624e 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -98,23 +98,9 @@ static const struct clk_name clk_names[] __initconst = {
- 	{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
- };
- 
--/*
-- * This is a really crude hack to work around core platform clock issues
-- */
--static const struct clk_name clk_enables[] __initconst = {
--	{ "ether", NULL, "ee700000.ethernet" },
--	{ "msiof1", NULL, "e6e10000.spi" },
--	{ "mmcif1", NULL, "ee220000.mmc" },
--	{ "qspi_mod", NULL, "e6b10000.spi" },
--	{ "sdhi0", NULL, "ee100000.sd" },
--	{ "sdhi2", NULL, "ee140000.sd" },
--	{ "thermal", NULL, "e61f0000.thermal" },
--};
--
- static void __init lager_add_standard_devices(void)
- {
- 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
--	shmobile_clk_workaround(clk_enables, ARRAY_SIZE(clk_enables), true);
- 	r8a7790_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 
--- 
-2.0.0.rc2
 
+The following changes since commit 62872989bdbf1245d7239b9f4c05a8ee7c775ed5:
+
+  ARM: shmobile: Move rcar-gen2.h, cleanup r8a7790 case (2014-06-17 17:09:40 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-r8a7779-multiplatform-for-v3.17
+
+for you to fetch changes up to c1a0f9932b66b2298163c31f8ac3f2844476e1c2:
+
+  ARM: shmobile: marzen: Do not use workaround for scif devices (2014-06-17 19:56:37 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC r8a7779-multiplatform Updates for v3.17
+
+Move r8a7779 SoC and its Marzen board to use common clocks,
+multiplatform and initialise SCIF (serial) devices using DT.
+
+----------------------------------------------------------------
+Geert Uytterhoeven (2):
+      ARM: shmobile: r8a7779 dtsi: Update unit-addresses for clocks
+      ARM: shmobile: r8a7779 dtsi: Correct #address-cells/#size-cells for clocks
+
+Simon Horman (22):
+      ARM: shmobile: r8a7779: Add clocks
+      ARM: shmobile: Sync Marzen DTS with Marzen reference DTS
+      ARM: shmobile: marzen: Specify external clock frequency in DT
+      ARM: shmobile: r8a7779: Reference clocks
+      ARM: shmobile: r8a7779: Add helper to read mode pins
+      ARM: shmobile: r8a7779: Move r8a7779_earlytimer_init to clock-r8a7779.c
+      ARM: shmobile: marzen-reference: Move clock and OF device initialisation into board code
+      ARM: shmobile: r8a7779: Initial multiplatform support
+      ARM: shmobile: marzen-reference: Initialize CPG device
+      ARM: shmobile: marzen-reference: Instantiate clkdevs for SCIF and TMU
+      ARM: shmobile: Remove non-multiplatform Marzen reference support
+      ARM: shmobile: Let Marzen multiplatform boot with Marzen DTB
+      ARM: shmobile: Remove Marzen reference DTS
+      ARM: shmobile: marzen-reference: Remove legacy clock support
+      ARM: shmobile: r8a7779: Add Maximum CPU Frequency to DTS
+      ARM: shmobile: r8a7779: Use DT CPU Frequency in common case
+      ARM: shmobile: marzen-reference: Use DT CPU Frequency
+      ARM: shmobile: r8a7779: Remove unused r8a7779_init_delay()
+      ARM: shmobile: r8a7779: Add scif nodes to dtsi
+      ARM: shmobile: marzen: Remove early_printk from command line
+      ARM: shmobile: marzen: Initialise SCIF devices using DT
+      ARM: shmobile: marzen: Do not use workaround for scif devices
+
+ arch/arm/boot/dts/Makefile                      |   4 +-
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts  | 121 -------------
+ arch/arm/boot/dts/r8a7779-marzen.dts            | 116 ++++++++++++-
+ arch/arm/boot/dts/r8a7779.dtsi                  | 220 ++++++++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                  |  23 ++-
+ arch/arm/mach-shmobile/Makefile                 |   2 +-
+ arch/arm/mach-shmobile/Makefile.boot            |   1 -
+ arch/arm/mach-shmobile/board-marzen-reference.c |  24 ++-
+ arch/arm/mach-shmobile/clock-r8a7779.c          |  22 ++-
+ arch/arm/mach-shmobile/include/mach/r8a7779.h   |   2 +-
+ arch/arm/mach-shmobile/setup-r8a7779.c          |  45 +++--
+ 11 files changed, 407 insertions(+), 173 deletions(-)
+ delete mode 100644 arch/arm/boot/dts/r8a7779-marzen-reference.dts
