@@ -1,134 +1,91 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 20 Jun 2014 16:53:09 +0000
-Subject: [PATCH 9/9] ARM: shmobile: Move sh73a0.h
-Message-Id: <1403283189-21688-10-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:26:34 +0000
+Subject: [PATCH 21/24] ARM: shmobile: r8a7779: Add scif nodes to dtsi
+Message-Id: <fd953b89f44e541bc584a65ba046d1b4cf77840f.1403487423.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1403283189-21688-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1403283189-21688-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1403487423.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487423.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Change location of sh73a0.h so it can be included as "sh73a0.h"
-instead of the old style <mach/sh73a0.h>
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-kzm9g-reference.c     | 4 +++-
- arch/arm/mach-shmobile/board-kzm9g.c               | 4 +++-
- arch/arm/mach-shmobile/intc-sh73a0.c               | 4 +++-
- arch/arm/mach-shmobile/setup-sh73a0.c              | 4 +++-
- arch/arm/mach-shmobile/{include/mach => }/sh73a0.h | 0
- arch/arm/mach-shmobile/smp-sh73a0.c                | 4 +++-
- 6 files changed, 15 insertions(+), 5 deletions(-)
- rename arch/arm/mach-shmobile/{include/mach => }/sh73a0.h (100%)
+ arch/arm/boot/dts/r8a7779.dtsi | 60 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 60 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-index e6285de6bc87..5d2621f202d1 100644
---- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-@@ -25,11 +25,13 @@
- #include <linux/irq.h>
- #include <linux/input.h>
- #include <linux/of_platform.h>
--#include <mach/sh73a0.h>
-+
- #include <asm/hardware/cache-l2x0.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
-+
- #include "common.h"
-+#include "sh73a0.h"
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 61d08f4..94e2fc8 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -196,6 +196,66 @@
+ 		status = "disabled";
+ 	};
  
- static void __init kzm_init(void)
- {
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index fff330f74925..1320e9d063b1 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -41,15 +41,17 @@
- #include <linux/usb/r8a66597.h>
- #include <linux/usb/renesas_usbhs.h>
- #include <linux/videodev2.h>
++	scif0: serial@ffe40000 {
++		compatible = "renesas,scif-r8a7779", "renesas,scif";
++		reg = <0xffe40000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cpg_clocks R8A7779_CLK_P>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
 +
- #include <sound/sh_fsi.h>
- #include <sound/simple_card.h>
--#include <mach/sh73a0.h>
- #include <asm/hardware/cache-l2x0.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- #include <video/sh_mobile_lcdc.h>
++	scif1: serial@ffe41000 {
++		compatible = "renesas,scif-r8a7779", "renesas,scif";
++		reg = <0xffe41000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 89 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cpg_clocks R8A7779_CLK_P>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
 +
- #include "common.h"
- #include "irqs.h"
-+#include "sh73a0.h"
- 
- /*
-  * external GPIO
-diff --git a/arch/arm/mach-shmobile/intc-sh73a0.c b/arch/arm/mach-shmobile/intc-sh73a0.c
-index 1a8f9a7af983..44457a94897b 100644
---- a/arch/arm/mach-shmobile/intc-sh73a0.c
-+++ b/arch/arm/mach-shmobile/intc-sh73a0.c
-@@ -24,11 +24,13 @@
- #include <linux/io.h>
- #include <linux/irqchip.h>
- #include <linux/irqchip/arm-gic.h>
--#include <mach/sh73a0.h>
++	scif2: serial@ffe42000 {
++		compatible = "renesas,scif-r8a7779", "renesas,scif";
++		reg = <0xffe42000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 90 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cpg_clocks R8A7779_CLK_P>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
 +
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
++	scif3: serial@ffe43000 {
++		compatible = "renesas,scif-r8a7779", "renesas,scif";
++		reg = <0xffe43000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 91 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cpg_clocks R8A7779_CLK_P>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
 +
- #include "intc.h"
- #include "irqs.h"
-+#include "sh73a0.h"
- 
- enum {
- 	UNUSED = 0,
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index b30bbee6dc65..224882151667 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -32,14 +32,16 @@
- #include <linux/sh_timer.h>
- #include <linux/platform_data/sh_ipmmu.h>
- #include <linux/platform_data/irq-renesas-intc-irqpin.h>
--#include <mach/sh73a0.h>
++	scif4: serial@ffe44000 {
++		compatible = "renesas,scif-r8a7779", "renesas,scif";
++		reg = <0xffe44000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 92 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cpg_clocks R8A7779_CLK_P>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
 +
- #include <asm/mach-types.h>
- #include <asm/mach/map.h>
- #include <asm/mach/arch.h>
- #include <asm/mach/time.h>
++	scif5: serial@ffe45000 {
++		compatible = "renesas,scif-r8a7779", "renesas,scif";
++		reg = <0xffe45000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 93 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cpg_clocks R8A7779_CLK_P>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
 +
- #include "common.h"
- #include "dma-register.h"
- #include "irqs.h"
-+#include "sh73a0.h"
- 
- static struct map_desc sh73a0_io_desc[] __initdata = {
- 	/* create a 1:1 entity map for 0xe6xxxxxx
-diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/sh73a0.h
-similarity index 100%
-rename from arch/arm/mach-shmobile/include/mach/sh73a0.h
-rename to arch/arm/mach-shmobile/sh73a0.h
-diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
-index bf4aff99ed1c..22d8f87b23e9 100644
---- a/arch/arm/mach-shmobile/smp-sh73a0.c
-+++ b/arch/arm/mach-shmobile/smp-sh73a0.c
-@@ -22,10 +22,12 @@
- #include <linux/smp.h>
- #include <linux/io.h>
- #include <linux/delay.h>
--#include <mach/sh73a0.h>
-+
- #include <asm/smp_plat.h>
- #include <asm/smp_twd.h>
-+
- #include "common.h"
-+#include "sh73a0.h"
- 
- #define WUPCR		IOMEM(0xe6151010)
- #define SRESCR		IOMEM(0xe6151018)
+ 	pfc: pfc@fffc0000 {
+ 		compatible = "renesas,pfc-r8a7779";
+ 		reg = <0xfffc0000 0x23c>;
 -- 
-1.9.1
+2.0.0.rc2
 
