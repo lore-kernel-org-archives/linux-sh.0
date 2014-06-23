@@ -1,95 +1,47 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 10 Jun 2014 23:03:52 +0000
-Subject: [PATCH 05/07] ARM: shmobile: Lager SYS-DMAC and SDHI prototype
-Message-Id: <20140610230352.13594.34731.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:25:35 +0000
+Subject: [PATCH 4/4] ARM: shmobile: Enable CPUFREQ configuration
+Message-Id: <468c570ed078f0326745bfe85868adb925659502.1403487196.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1403487196.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487196.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-Hook up SYS-DMAC prototype support for SDHI on Lager.
+This changes of configuration is multiplatform build only for r8a7790/r8a7791.
 
-Local platform device version of SYS-DMAC and local slave IDs
-are used together with AUXDATA. CD and WP pins, regulators
-and clocks are provided via DT.
-
-Only the DT reference case is covered. Not for upstream merge.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/configs/shmobile_defconfig | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
- arch/arm/mach-shmobile/board-lager-reference.c |   36 ++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 94d7736..c4b72aa 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -147,3 +147,16 @@ CONFIG_NLS_ISO8859_1=y
+ # CONFIG_ENABLE_WARN_DEPRECATED is not set
+ # CONFIG_ENABLE_MUST_CHECK is not set
+ # CONFIG_ARM_UNWIND is not set
++CONFIG_CPU_FREQ=y
++CONFIG_CPU_FREQ_GOV_COMMON=y
++CONFIG_CPU_FREQ_STAT=y
++CONFIG_CPU_FREQ_STAT_DETAILS=y
++CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE=y
++CONFIG_CPU_FREQ_GOV_PERFORMANCE=y
++CONFIG_CPU_FREQ_GOV_POWERSAVE=y
++CONFIG_CPU_FREQ_GOV_USERSPACE=y
++CONFIG_CPU_FREQ_GOV_ONDEMAND=y
++CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y
++CONFIG_CPU_THERMAL=y
++CONFIG_GENERIC_CPUFREQ_CPU0=y
++CONFIG_REGULATOR_DA9210=y
+-- 
+2.0.0.rc2
 
---- 0006/arch/arm/mach-shmobile/board-lager-reference.c
-+++ work/arch/arm/mach-shmobile/board-lager-reference.c	2014-06-10 22:00:10.000000000 +0900
-@@ -74,6 +74,8 @@ static const struct resource du_resource
- #include <mach/dma-register.h>
- #include <linux/mmc/host.h>
- #include <linux/mmc/sh_mmcif.h>
-+#include <linux/mfd/tmio.h>
-+#include <linux/mmc/sh_mobile_sdhi.h>
- 
- /* Local DMA slave IDs */
- enum {
-@@ -82,6 +84,10 @@ enum {
- 	SYS_DMAC_SLAVE_MMCIF0_RX,
- 	SYS_DMAC_SLAVE_MMCIF1_TX,
- 	SYS_DMAC_SLAVE_MMCIF1_RX,
-+	SYS_DMAC_SLAVE_SDHI0_TX,
-+	SYS_DMAC_SLAVE_SDHI0_RX,
-+	SYS_DMAC_SLAVE_SDHI2_TX,
-+	SYS_DMAC_SLAVE_SDHI2_RX,
- };
- 
- #define DMAE_CHANNEL(a, b)			\
-@@ -109,6 +115,8 @@ enum {
- static const struct sh_dmae_slave_config r8a7790_sys_dmac_slaves[] = {
- 	SYS_DMAC_SLAVE(MMCIF0, 32, 0xee200000, 0x34, 0x34, 0xd1, 0xd2),
- 	SYS_DMAC_SLAVE(MMCIF1, 32, 0xee220000, 0x34, 0x34, 0xe1, 0xe2),
-+	SYS_DMAC_SLAVE(SDHI0, 16, 0xee100000, 0x60, 0x2060, 0xcd, 0xce),
-+	SYS_DMAC_SLAVE(SDHI2, 16, 0xee140000, 0x30, 0x2030, 0xc1, 0xc2),
- };
- 
- static const struct sh_dmae_channel r8a7790_sys_dmac_channels[] = {
-@@ -178,9 +186,37 @@ static struct sh_mmcif_plat_data mmcif1_
- 	.slave_id_rx	= SYS_DMAC_SLAVE_MMCIF1_RX,
- };
- 
-+static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
-+	.dma_slave_tx   = SYS_DMAC_SLAVE_SDHI0_TX,
-+	.dma_slave_rx   = SYS_DMAC_SLAVE_SDHI0_RX,
-+	.dma_rx_offset  = 0x2000,
-+
-+	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
-+			  MMC_CAP_POWER_OFF_CARD,
-+	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
-+	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
-+			  TMIO_MMC_WRPROTECT_DISABLE,
-+};
-+
-+static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
-+	.dma_slave_tx   = SYS_DMAC_SLAVE_SDHI2_TX,
-+	.dma_slave_rx   = SYS_DMAC_SLAVE_SDHI2_RX,
-+	.dma_rx_offset  = 0x2000,
-+
-+	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
-+			  MMC_CAP_POWER_OFF_CARD,
-+	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
-+	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
-+			  TMIO_MMC_WRPROTECT_DISABLE,
-+};
-+
- static struct of_dev_auxdata lager_auxdata_lookup[] __initdata = {
- 	OF_DEV_AUXDATA("renesas,mmcif-r8a7790", 0xee220000, "sh_mmcif",
- 			&mmcif1_pdata),
-+	OF_DEV_AUXDATA("renesas,sdhi-r8a7790", 0xee100000, "sdhi0",
-+			&sdhi0_info),
-+	OF_DEV_AUXDATA("renesas,sdhi-r8a7790", 0xee140000, "sdhi2",
-+			&sdhi2_info),
- 	{},
- };
- 
