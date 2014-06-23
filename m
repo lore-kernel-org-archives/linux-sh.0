@@ -1,36 +1,50 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 20 Jun 2014 10:16:15 +0000
-Subject: [PATCH 0/5] spi: sh-msiof: Add DMA support
-Message-Id: <1403259380-13634-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:26:28 +0000
+Subject: [PATCH] ARM: shmobile: Add DT and defconfigs to MAINTAINERS
+Message-Id: <0b514fdb52073e348ade842355f37f6976768e44.1403487346.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1403487346.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487346.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-This patch series refactors the Renesas MSIOF SPI driver and adds DMA
-support.
+There are a number of DT and defconfig files which
+are maintained as part of shmobile but have not been
+listed as such in the MAINTAINERS file. This creates
+confusion from time to time.
 
-  [1/5] spi: sh-msiof: Add more register documentation
-  [2/5] spi: sh-msiof: Extract sh_msiof_spi_{start,stop}() helpers
-  [3/5] spi: sh-msiof: Improve transfer error handling
-  [4/5] spi: sh-msiof: Refactor sh_msiof_transfer_one()
-  [5/5] spi: sh-msiof: Add DMA support
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ MAINTAINERS | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
- drivers/spi/spi-sh-msiof.c   | 516 +++++++++++++++++++++++++++++++++++++++----
- include/linux/spi/sh_msiof.h |   2 +
- 2 files changed, 469 insertions(+), 49 deletions(-)
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 134483f..32e8a20 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -1296,6 +1296,20 @@ W:	http://oss.renesas.com
+ Q:	http://patchwork.kernel.org/project/linux-sh/list/
+ T:	git git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git next
+ S:	Supported
++F:	arch/arm/boot/dts/emev2*
++F:	arch/arm/boot/dts/r7s*
++F:	arch/arm/boot/dts/r8a*
++F:	arch/arm/boot/dts/sh*
++F:	arch/arm/configs/ape6evm_defconfig
++F:	arch/arm/configs/armadillo800eva_defconfig
++F:	arch/arm/configs/bockw_defconfig
++F:	arch/arm/configs/genmai_defconfig
++F:	arch/arm/configs/koelsch_defconfig
++F:	arch/arm/configs/kzm9g_defconfig
++F:	arch/arm/configs/lager_defconfig
++F:	arch/arm/configs/mackerel_defconfig
++F:	arch/arm/configs/marzen_defconfig
++F:	arch/arm/configs/shmobile_defconfig
+ F:	arch/arm/mach-shmobile/
+ F:	drivers/sh/
+ 
+-- 
+2.0.0.rc2
 
-Thanks!
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
