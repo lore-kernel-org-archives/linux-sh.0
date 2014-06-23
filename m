@@ -1,62 +1,54 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 10 Jun 2014 01:57:39 +0000
-Subject: Re: [PATCH v3 00/05] staging: Emma Mobile USB driver and KZM9D board code V3
-Message-Id: <20140610015736.GH30874@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 23 Jun 2014 23:54:08 +0000
+Subject: [PATCH v2 02/23] DocBook: media: Document ALPHA_COMPONENT control usage on output devices
+Message-Id: <1403567669-18539-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140606104408.4423.36098.sendpatchset@w520>
- <20140606153949.GB13961@kroah.com>
- <CANqRtoSiYGjkR=sXvGcx1JrT6gx37ZcxDHY+ixkK_=e1GPB-DA@mail.gmail.com>
-In-Reply-To: <CANqRtoSiYGjkR=sXvGcx1JrT6gx37ZcxDHY+ixkK_=e1GPB-DA@mail.gmail.com>
+References: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Greg KH <gregkh@linuxfoundation.org>, linux-kernel <linux-kernel@vger.kernel.org>, driverdevel <devel@driverdev.osuosl.org>, Paul Bolle <pebolle@tiscali.nl>, SH-Linux <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Olof Johansson <olof@lixom.net>, Dan Carpenter <dan.carpenter@oracle.com>
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-On Mon, Jun 09, 2014 at 02:14:38PM +0900, Magnus Damm wrote:
-> On Sat, Jun 7, 2014 at 12:39 AM, Greg KH <gregkh@linuxfoundation.org> wrote:
-> > On Fri, Jun 06, 2014 at 07:44:08PM +0900, Magnus Damm wrote:
-> >> staging: Emma Mobile USB driver and KZM9D board code V3
-> >>
-> >> [PATCH v3 01/05] staging: emxx_udc: Add Emma Mobile USB Gadget driver
-> >> [PATCH v3 02/05] staging: emxx_udc: I/O memory and IRQ resource support
-> >> [PATCH v3 03/05] staging: emxx_udc: Add TODO file
-> >> [PATCH v3 04/05] staging: board: Initial board staging support
-> >> [PATCH v3 05/05] staging: board: kzm9d: Board staging support for emxx_udc
-> >>
-> >> This patch series is V3 of the old USB Gadget driver for Emma Mobile
-> >> that gets slightly adjusted to make use of the platform device interface
-> >> which in turn is used to add USB Gadget support to the KZM9D board.
-> >>
-> >> Two separate staging components are included in this series:
-> >> 1) the emxx_udc driver - from out-of-tree Android 2.6.35.7
-> >> 2) board staging support for KZM9D - platform device for DT-only KZM9D
-> >>
-> >> The two components above will be used to continously improve the driver
-> >> and board integration code until the driver can be moved out of staging
-> >> and/or DT bindings are available so the board staging platform device code
-> >> can be replaced with a DT node.
-> >>
-> >> Changes since V2:
-> >> - Added CONFIG_OF_ADDRESS dependency for the board staging bits
-> >>
-> >> Changes since V1:
-> >> - Added TODO file for emxx_udc
-> >> - Broke out board staging base support, included TODO file
-> >> - Added code to avoid registering platform device if DT node exists
-> >> - Modified KZM9D board code build condition to use SoC Kconfig entry
-> >>
-> >> Many thanks to Dan Carpenter, Geert Uytterhoeven, Greg KH and
-> >> Paul Bolle for feedback!
-> >>
-> >> Please let me know if you would like me to rebase this code somehow.
-> >
-> > At quick glance, this looks good.  I'll queue it up after 3.16-rc1 is
-> > out as it's too late for this merge window.
-> 
-> Thanks, Greg! This sounds perfect to me!
+Extend the V4L2_CID_ALPHA_COMPONENT control for use on output devices,
+to set the alpha component value when the output format doesn't have an
+alpha channel.
 
-FWIW,
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ Documentation/DocBook/media/v4l/controls.xml | 17 ++++++++++-------
+ 1 file changed, 10 insertions(+), 7 deletions(-)
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+diff --git a/Documentation/DocBook/media/v4l/controls.xml b/Documentation/DocBook/media/v4l/controls.xml
+index 47198ee..4dfea27 100644
+--- a/Documentation/DocBook/media/v4l/controls.xml
++++ b/Documentation/DocBook/media/v4l/controls.xml
+@@ -398,14 +398,17 @@ to work.</entry>
+ 	  <row id="v4l2-alpha-component">
+ 	    <entry><constant>V4L2_CID_ALPHA_COMPONENT</constant></entry>
+ 	    <entry>integer</entry>
+-	    <entry> Sets the alpha color component on the capture device or on
+-	    the capture buffer queue of a mem-to-mem device. When a mem-to-mem
+-	    device produces frame format that includes an alpha component
++	    <entry>Sets the alpha color component. When a capture device (or
++	    capture queue of a mem-to-mem device) produces a frame format that
++	    includes an alpha component
+ 	    (e.g. <link linkend="rgb-formats">packed RGB image formats</link>)
+-	    and the alpha value is not defined by the mem-to-mem input data
+-	    this control lets you select the alpha component value of all
+-	    pixels. It is applicable to any pixel format that contains an alpha
+-	    component.
++	    and the alpha value is not defined by the device or the mem-to-mem
++	    input data this control lets you select the alpha component value of
++	    all pixels. When an output device (or output queue of a mem-to-mem
++	    device) consumes a frame format that doesn't include an alpha
++	    component and the device supports alpha channel processing this
++	    control lets you set the alpha component value of all pixels for
++	    further processing in the device.
+ 	    </entry>
+ 	  </row>
+ 	  <row>
+-- 
+1.8.5.5
 
