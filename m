@@ -1,58 +1,80 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 01 Jun 2014 03:39:28 +0000
-Subject: [PATCH 09/18] v4l: vsp1: sru: Fix the intensity control default value
-Message-Id: <1401593977-30660-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:28:16 +0000
+Subject: [PATCH 07/29] ARM: shmobile: r8a7790/lager dts: Add DVFS parameters into cpu0 node for r8a7790
+Message-Id: <b989e1386385466761f703b8a91e00468bb5ca2a.1403487225.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1403487225.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The default value isn't set and defaults to 0, which isn't in the 1-6
-min-max range. Fix it by setting the default value to 1.
+From: Benoit Cousson <bcousson@baylibre.com>
 
-This shoud have been caught when checking the control handler error
-field at initialization time, but the check was missing. Add it.
+Add needed information inside CPU0 for the generic cpufreq-cpu0 driver.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+- voltage-tolerance = 1%
+  It reflects the tolerance for the CPU voltage defined inside the OPP
+  table. Due to the lack of proper OPP definition, use an arbitrary safe
+  value.
+- clock-latency = 300 us
+  Approximate worst-case latency to do a full DVFS transition for every
+  OPPs. Due to the lack of HW information, use an arbitrary safe value.
+  Note: The term transition-latency will be more accurate to define this
+  value since the clock transition latency is not the only parameter that
+  will define the overall DVFS transition.
+- operating-points = < kHz - uV >
+  List of 6 operating points. All of them are using the same voltage
+  since the valid Vmin voltage is not documented in the HW spec.
+- clocks
+  phandle to the CPU clock source. This clock source is used for all the
+  4 CortexA15 located inside the same cluster.
+
+Signed-off-by: Benoit Cousson <bcousson+renesas@baylibre.com>
+[gaku.inami.xw@bp.renesas.com: Change the setting of OPPs for ES2.0]
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/media/platform/vsp1/vsp1_sru.c | 12 +++++++++++-
- 1 file changed, 11 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7790-lager.dts |  4 ++++
+ arch/arm/boot/dts/r8a7790.dtsi      | 11 +++++++++++
+ 2 files changed, 15 insertions(+)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_sru.c b/drivers/media/platform/vsp1/vsp1_sru.c
-index aa0e04c..18e127a 100644
---- a/drivers/media/platform/vsp1/vsp1_sru.c
-+++ b/drivers/media/platform/vsp1/vsp1_sru.c
-@@ -67,6 +67,7 @@ static const struct v4l2_ctrl_config sru_intensity_control = {
- 	.type = V4L2_CTRL_TYPE_INTEGER,
- 	.min = 1,
- 	.max = 6,
-+	.def = 1,
- 	.step = 1,
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 6472cf0..cc65e3f 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -338,3 +338,7 @@
+ 		regulator-always-on;
+ 	};
  };
++
++&cpu0 {
++	cpu0-supply = <&vdd_dvfs>;
++};
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index e2c7d6d..e990d3c 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -44,6 +44,17 @@
+ 			compatible = "arm,cortex-a15";
+ 			reg = <0>;
+ 			clock-frequency = <1300000000>;
++			voltage-tolerance = <1>; /* 1% */
++			clocks = <&cpg_clocks R8A7790_CLK_Z>;
++			clock-latency = <300000>; /* 300 us */
++
++			/* kHz - uV - OPPs unknown yet */
++			operating-points = <1400000 1000000>,
++					   <1225000 1000000>,
++					   <1050000 1000000>,
++					   < 875000 1000000>,
++					   < 700000 1000000>,
++					   < 350000 1000000>;
+ 		};
  
-@@ -348,8 +349,17 @@ struct vsp1_sru *vsp1_sru_create(struct vsp1_device *vsp1)
- 	/* Initialize the control handler. */
- 	v4l2_ctrl_handler_init(&sru->ctrls, 1);
- 	v4l2_ctrl_new_custom(&sru->ctrls, &sru_intensity_control, NULL);
--	v4l2_ctrl_handler_setup(&sru->ctrls);
-+
- 	sru->entity.subdev.ctrl_handler = &sru->ctrls;
- 
-+	if (sru->ctrls.error) {
-+		dev_err(vsp1->dev, "sru: failed to initialize controls\n");
-+		ret = sru->ctrls.error;
-+		vsp1_entity_destroy(&sru->entity);
-+		return ERR_PTR(ret);
-+	}
-+
-+	v4l2_ctrl_handler_setup(&sru->ctrls);
-+
- 	return sru;
- }
+ 		cpu1: cpu@1 {
 -- 
-1.8.5.5
+2.0.0.rc2
 
