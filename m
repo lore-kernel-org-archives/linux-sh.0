@@ -1,89 +1,48 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 01 Jun 2014 03:39:32 +0000
-Subject: [PATCH 13/18] v4l: vsp1: Switch to XRGB formats
-Message-Id: <1401593977-30660-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:28:12 +0000
+Subject: [PATCH 03/29] ARM: shmobile: r8a7790: add USB3.0 clocks to device tree
+Message-Id: <35b5da7b0abfda695924bef011995031f4f3dcfe.1403487225.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1403487225.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The driver ignores the alpha component on output video nodes and
-hardcodes the alpha component to 0 on capture video nodes. Make this
-explicit by exposing XRGB formats.
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Compatibility with existing userspace applications is handled by
-selecting the XRGB format corresponding to the requested old RGB format.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/media/platform/vsp1/vsp1_video.c | 26 ++++++++++++++++++++++----
- 1 file changed, 22 insertions(+), 4 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index b5bce10..415989c 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -51,11 +51,11 @@ static const struct vsp1_format_info vsp1_video_formats[] = {
- 	  VI6_FMT_RGB_332, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
- 	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
- 	  1, { 8, 0, 0 }, false, false, 1, 1 },
--	{ V4L2_PIX_FMT_RGB444, V4L2_MBUS_FMT_ARGB8888_1X32,
-+	{ V4L2_PIX_FMT_XRGB444, V4L2_MBUS_FMT_ARGB8888_1X32,
- 	  VI6_FMT_XRGB_4444, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
- 	  VI6_RPF_DSWAP_P_WDS,
- 	  1, { 16, 0, 0 }, false, false, 1, 1 },
--	{ V4L2_PIX_FMT_RGB555, V4L2_MBUS_FMT_ARGB8888_1X32,
-+	{ V4L2_PIX_FMT_XRGB555, V4L2_MBUS_FMT_ARGB8888_1X32,
- 	  VI6_FMT_XRGB_1555, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
- 	  VI6_RPF_DSWAP_P_WDS,
- 	  1, { 16, 0, 0 }, false, false, 1, 1 },
-@@ -71,10 +71,10 @@ static const struct vsp1_format_info vsp1_video_formats[] = {
- 	  VI6_FMT_RGB_888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
- 	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
- 	  1, { 24, 0, 0 }, false, false, 1, 1 },
--	{ V4L2_PIX_FMT_BGR32, V4L2_MBUS_FMT_ARGB8888_1X32,
-+	{ V4L2_PIX_FMT_XBGR32, V4L2_MBUS_FMT_ARGB8888_1X32,
- 	  VI6_FMT_ARGB_8888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS,
- 	  1, { 32, 0, 0 }, false, false, 1, 1 },
--	{ V4L2_PIX_FMT_RGB32, V4L2_MBUS_FMT_ARGB8888_1X32,
-+	{ V4L2_PIX_FMT_XRGB32, V4L2_MBUS_FMT_ARGB8888_1X32,
- 	  VI6_FMT_ARGB_8888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
- 	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
- 	  1, { 32, 0, 0 }, false, false, 1, 1 },
-@@ -181,11 +181,29 @@ static int __vsp1_video_try_format(struct vsp1_video *video,
- 				   struct v4l2_pix_format_mplane *pix,
- 				   const struct vsp1_format_info **fmtinfo)
- {
-+	static const u32 xrgb_formats[][2] = {
-+		{ V4L2_PIX_FMT_RGB444, V4L2_PIX_FMT_XRGB444 },
-+		{ V4L2_PIX_FMT_RGB555, V4L2_PIX_FMT_XRGB555 },
-+		{ V4L2_PIX_FMT_BGR32, V4L2_PIX_FMT_XBGR32 },
-+		{ V4L2_PIX_FMT_RGB32, V4L2_PIX_FMT_XRGB32 },
-+	};
-+
- 	const struct vsp1_format_info *info;
- 	unsigned int width = pix->width;
- 	unsigned int height = pix->height;
- 	unsigned int i;
- 
-+	/* Backward compatibility: replace deprecated RGB formats by their XRGB
-+	 * equivalent. This selects the format older userspace applications want
-+	 * while still exposing the new format.
-+	 */
-+	for (i = 0; i < ARRAY_SIZE(xrgb_formats); ++i) {
-+		if (xrgb_formats[i][0] = pix->pixelformat) {
-+			pix->pixelformat = xrgb_formats[i][1];
-+			break;
-+		}
-+	}
-+
- 	/* Retrieve format information and select the default format if the
- 	 * requested format isn't supported.
- 	 */
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 7ff2960..e2c7d6d 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -754,17 +754,17 @@
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+ 			clocks = <&hp_clk>, <&cp_clk>, <&mmc1_clk>, <&sd3_clk>,
+ 				 <&sd2_clk>, <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks R8A7790_CLK_SD0>, <&mmc0_clk>,
+-				 <&hp_clk>, <&hp_clk>, <&rclk_clk>;
++				 <&hp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7790_CLK_IIC2 R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
+ 				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0 R8A7790_CLK_MMCIF0
+-				R8A7790_CLK_IIC0 R8A7790_CLK_IIC1 R8A7790_CLK_CMT1
++				R8A7790_CLK_IIC0 R8A7790_CLK_IIC1 R8A7790_CLK_SSUSB R8A7790_CLK_CMT1
+ 			>;
+ 			clock-output-names  				"iic2", "tpu0", "mmcif1", "sdhi3",
+ 				"sdhi2", "sdhi1", "sdhi0", "mmcif0",
+-				"iic0", "iic1", "cmt1";
++				"iic0", "iic1", "ssusb", "cmt1";
+ 		};
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
 -- 
-1.8.5.5
+2.0.0.rc2
 
