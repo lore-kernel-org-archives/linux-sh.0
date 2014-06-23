@@ -1,145 +1,58 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 20 Jun 2014 12:37:38 +0000
-Subject: [PATCH 1/4] dmaengine: shdma: Add more register documentation
-Message-Id: <1403267861-15609-2-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 23 Jun 2014 23:54:19 +0000
+Subject: [PATCH v2 13/23] v4l: vsp1: sru: Fix the intensity control default value
+Message-Id: <1403567669-18539-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1403267861-15609-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1403267861-15609-1-git-send-email-geert+renesas@glider.be>
+References: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Vinod Koul <vinod.koul@intel.com>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-sh@vger.kernel.org, dmaengine@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Also add a few definitions that were missing.
+The default value isn't set and defaults to 0, which isn't in the 1-6
+min-max range. Fix it by setting the default value to 1.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+This shoud have been caught when checking the control handler error
+field at initialization time, but the check was missing. Add it.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/sh/include/asm/dma-register.h | 36 +++++++++++++++++++-----------------
- drivers/dma/sh/shdmac.c            | 12 ++++++------
- include/linux/sh_dma.h             | 24 +++++++++++++-----------
- 3 files changed, 38 insertions(+), 34 deletions(-)
+ drivers/media/platform/vsp1/vsp1_sru.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
 
-diff --git a/arch/sh/include/asm/dma-register.h b/arch/sh/include/asm/dma-register.h
-index 51cd78feacff..c757b47e6b64 100644
---- a/arch/sh/include/asm/dma-register.h
-+++ b/arch/sh/include/asm/dma-register.h
-@@ -13,17 +13,17 @@
- #ifndef DMA_REGISTER_H
- #define DMA_REGISTER_H
- 
--/* DMA register */
--#define SAR	0x00
--#define DAR	0x04
--#define TCR	0x08
--#define CHCR	0x0C
--#define DMAOR	0x40
-+/* DMA registers */
-+#define SAR	0x00	/* Source Address Register */
-+#define DAR	0x04	/* Destination Address Register */
-+#define TCR	0x08	/* Transfer Count Register */
-+#define CHCR	0x0C	/* Channel Control Register */
-+#define DMAOR	0x40	/* DMA Operation Register */
- 
- /* DMAOR definitions */
--#define DMAOR_AE	0x00000004
-+#define DMAOR_AE	0x00000004	/* Address Error Flag */
- #define DMAOR_NMIF	0x00000002
--#define DMAOR_DME	0x00000001
-+#define DMAOR_DME	0x00000001	/* DMA Master Enable */
- 
- /* Definitions for the SuperH DMAC */
- #define REQ_L	0x00000000
-@@ -34,18 +34,20 @@
- #define ACK_W	0x00020000
- #define ACK_H	0x00000000
- #define ACK_L	0x00010000
--#define DM_INC	0x00004000
--#define DM_DEC	0x00008000
--#define DM_FIX	0x0000c000
--#define SM_INC	0x00001000
--#define SM_DEC	0x00002000
--#define SM_FIX	0x00003000
-+#define DM_INC	0x00004000	/* Destination addresses are incremented */
-+#define DM_DEC	0x00008000	/* Destination addresses are decremented */
-+#define DM_FIX	0x0000c000	/* Destination address is fixed */
-+#define SM_INC	0x00001000	/* Source addresses are incremented */
-+#define SM_DEC	0x00002000	/* Source addresses are decremented */
-+#define SM_FIX	0x00003000	/* Source address is fixed */
- #define RS_IN	0x00000200
- #define RS_OUT	0x00000300
-+#define RS_AUTO	0x00000400	/* Auto Request */
-+#define RS_ERS	0x00000800	/* DMA extended resource selector */
- #define TS_BLK	0x00000040
- #define TM_BUR	0x00000020
--#define CHCR_DE	0x00000001
--#define CHCR_TE	0x00000002
--#define CHCR_IE	0x00000004
-+#define CHCR_DE	0x00000001	/* DMA Enable */
-+#define CHCR_TE	0x00000002	/* Transfer End Flag */
-+#define CHCR_IE	0x00000004	/* Interrupt Enable */
- 
- #endif
-diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
-index 146d5df926db..1a6f6595c6c1 100644
---- a/drivers/dma/sh/shdmac.c
-+++ b/drivers/dma/sh/shdmac.c
-@@ -38,12 +38,12 @@
- #include "../dmaengine.h"
- #include "shdma.h"
- 
--/* DMA register */
--#define SAR	0x00
--#define DAR	0x04
--#define TCR	0x08
--#define CHCR	0x0C
--#define DMAOR	0x40
-+/* DMA registers */
-+#define SAR	0x00	/* Source Address Register */
-+#define DAR	0x04	/* Destination Address Register */
-+#define TCR	0x08	/* Transfer Count Register */
-+#define CHCR	0x0C	/* Channel Control Register */
-+#define DMAOR	0x40	/* DMA Operation Register */
- 
- #define TEND	0x18 /* USB-DMAC */
- 
-diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
-index b7b43b82231e..56b97eed28a4 100644
---- a/include/linux/sh_dma.h
-+++ b/include/linux/sh_dma.h
-@@ -95,19 +95,21 @@ struct sh_dmae_pdata {
+diff --git a/drivers/media/platform/vsp1/vsp1_sru.c b/drivers/media/platform/vsp1/vsp1_sru.c
+index aa0e04c..18e127a 100644
+--- a/drivers/media/platform/vsp1/vsp1_sru.c
++++ b/drivers/media/platform/vsp1/vsp1_sru.c
+@@ -67,6 +67,7 @@ static const struct v4l2_ctrl_config sru_intensity_control = {
+ 	.type = V4L2_CTRL_TYPE_INTEGER,
+ 	.min = 1,
+ 	.max = 6,
++	.def = 1,
+ 	.step = 1,
  };
  
- /* DMAOR definitions */
--#define DMAOR_AE	0x00000004
-+#define DMAOR_AE	0x00000004	/* Address Error Flag */
- #define DMAOR_NMIF	0x00000002
--#define DMAOR_DME	0x00000001
-+#define DMAOR_DME	0x00000001	/* DMA Master Enable */
+@@ -348,8 +349,17 @@ struct vsp1_sru *vsp1_sru_create(struct vsp1_device *vsp1)
+ 	/* Initialize the control handler. */
+ 	v4l2_ctrl_handler_init(&sru->ctrls, 1);
+ 	v4l2_ctrl_new_custom(&sru->ctrls, &sru_intensity_control, NULL);
+-	v4l2_ctrl_handler_setup(&sru->ctrls);
++
+ 	sru->entity.subdev.ctrl_handler = &sru->ctrls;
  
- /* Definitions for the SuperH DMAC */
--#define DM_INC	0x00004000
--#define DM_DEC	0x00008000
--#define DM_FIX	0x0000c000
--#define SM_INC	0x00001000
--#define SM_DEC	0x00002000
--#define SM_FIX	0x00003000
--#define CHCR_DE	0x00000001
--#define CHCR_TE	0x00000002
--#define CHCR_IE	0x00000004
-+#define DM_INC	0x00004000	/* Destination addresses are incremented */
-+#define DM_DEC	0x00008000	/* Destination addresses are decremented */
-+#define DM_FIX	0x0000c000	/* Destination address is fixed */
-+#define SM_INC	0x00001000	/* Source addresses are incremented */
-+#define SM_DEC	0x00002000	/* Source addresses are decremented */
-+#define SM_FIX	0x00003000	/* Source address is fixed */
-+#define RS_AUTO	0x00000400	/* Auto Request */
-+#define RS_ERS	0x00000800	/* DMA extended resource selector */
-+#define CHCR_DE	0x00000001	/* DMA Enable */
-+#define CHCR_TE	0x00000002	/* Transfer End Flag */
-+#define CHCR_IE	0x00000004	/* Interrupt Enable */
- 
- #endif
++	if (sru->ctrls.error) {
++		dev_err(vsp1->dev, "sru: failed to initialize controls\n");
++		ret = sru->ctrls.error;
++		vsp1_entity_destroy(&sru->entity);
++		return ERR_PTR(ret);
++	}
++
++	v4l2_ctrl_handler_setup(&sru->ctrls);
++
+ 	return sru;
+ }
 -- 
-1.9.1
+1.8.5.5
 
