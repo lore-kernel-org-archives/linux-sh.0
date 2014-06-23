@@ -1,57 +1,70 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 12 Jun 2014 09:42:17 +0000
-Subject: [PATCH v2 01/07] mmc: sdhi: enable .dma_rx_offset for platform prototype
-Message-Id: <20140612094217.4132.43070.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:28:17 +0000
+Subject: [PATCH 08/29] ARM: shmobile: koelsch dts: Add VDD MPU regulator for DVFS
+Message-Id: <1d41f36a68c0f4e9b01d563ce33bab5201858b54.1403487225.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1403487225.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-.dma_rx_offset is caring only DT today.
-THis patch cares it via platform
+The CA15 cluster is capable of voltage scaling. Add the regulator
+in the i2c6 node, to allow the generic CPUFreq driver to use it.
 
-Not for upstream merge.
+Enable the i2c6 pin mux and the device node as well since the
+da9210 is connected to that bus.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-[damm+renesas@opensource.se: Extracted from tarball, adjusted patch
-title to remove "Local" and added "Not for upstream merge" comment]
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Note: In R-CAR Gen2, each frequency is using the same voltage,
+and DVS control is not used. Therefore, this patch set the
+voltage(Vmin/Vmax) to 1000mv.
+
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
 
- Changes since V1:
- - None
-
- drivers/mmc/host/sh_mobile_sdhi.c  |    1 +
- include/linux/mmc/sh_mobile_sdhi.h |    1 +
- 2 files changed, 2 insertions(+)
-
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 91c6399..d65b3ca 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -195,6 +195,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		mmc_data->capabilities |= p->tmio_caps;
- 		mmc_data->capabilities2 |= p->tmio_caps2;
- 		mmc_data->cd_gpio = p->cd_gpio;
-+		dma_priv->dma_rx_offset = p->dma_rx_offset;
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 05d44f9..95331d7 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -293,6 +293,11 @@
+ 				 "msiof0_tx";
+ 		renesas,function = "msiof0";
+ 	};
++
++	i2c6_pins: i2c6 {
++		renesas,groups = "i2c6";
++		renesas,function = "i2c6";
++	};
+ };
  
- 		if (p->dma_slave_tx > 0 && p->dma_slave_rx > 0) {
- 			/*
-diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
-index 68927ae..5f11afc 100644
---- a/include/linux/mmc/sh_mobile_sdhi.h
-+++ b/include/linux/mmc/sh_mobile_sdhi.h
-@@ -25,6 +25,7 @@ struct sh_mobile_sdhi_info {
- 	unsigned long tmio_caps2;
- 	u32 tmio_ocr_mask;	/* available MMC voltages */
- 	unsigned int cd_gpio;
-+	dma_addr_t dma_rx_offset;
- 
- 	/* callbacks for board specific setup code */
- 	int (*init)(struct platform_device *pdev,
+ &ether {
+@@ -408,3 +413,19 @@
+ 		spi-cpha;
+ 	};
+ };
++
++&i2c6 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c6_pins>;
++	status = "okay";
++
++	vdd_dvfs: regulator@68 {
++		compatible = "diasemi,da9210";
++		reg = <0x68>;
++
++		regulator-min-microvolt = <1000000>;
++		regulator-max-microvolt = <1000000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++};
 -- 
-1.7.9.5
+2.0.0.rc2
 
