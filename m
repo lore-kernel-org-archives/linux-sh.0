@@ -1,7 +1,7 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 20 Jun 2014 11:11:42 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 23 Jun 2014 00:15:37 +0000
 Subject: Re: [PATCH linux-next] ARM: shmobile: rcar-gen2: update call to dma_contiguous_reserve_area
-Message-Id: <5123262.2QjNse2sTm@avalon>
+Message-Id: <20140623001537.GA8798@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1403170270-17877-1-git-send-email-vincent.stehle@laposte.net>
 In-Reply-To: <1403170270-17877-1-git-send-email-vincent.stehle@laposte.net>
@@ -10,35 +10,30 @@ Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Vincent,
-
-Thank you for the patch.
-
-On Thursday 19 June 2014 11:31:10 Vincent Stehlé wrote:
-> Commit 5ea3b1b2f8ad 'cma: add placement specifier for "cma=" kernel
-> parameter' adds a new 'fixed' parameter to dma_contiguous_reserve_area().
-> Update rcar_gen2_reserve() accordingly.
+On Thu, Jun 19, 2014 at 11:31:10AM +0200, Vincent Stehlé wrote:
+> Commit 5ea3b1b2f8ad 'cma: add placement specifier for "cma=" kernel parameter'
+> adds a new 'fixed' parameter to dma_contiguous_reserve_area(). Update
+> rcar_gen2_reserve() accordingly.
 > 
 > This fixes the following compilation error:
 > 
 >   arch/arm/mach-shmobile/setup-rcar-gen2.c: In function ‘rcar_gen2_reserve’:
-> arch/arm/mach-shmobile/setup-rcar-gen2.c:182:10: error: too few arguments
-> to function ‘dma_contiguous_reserve_area’
+>   arch/arm/mach-shmobile/setup-rcar-gen2.c:182:10: error: too few arguments to function ‘dma_contiguous_reserve_area’
 > 
 > Signed-off-by: Vincent Stehlé <vincent.stehle@laposte.net>
 > Cc: Simon Horman <horms@verge.net.au>
 > Cc: Magnus Damm <magnus.damm@gmail.com>
 > Cc: Russell King <linux@arm.linux.org.uk>
 > Cc: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
 > ---
 > 
 > Hi,
 > 
 > This can be seen with linux next-20140619 and e.g. arm allmodconfig.
-> 
+
+Thanks, I will queue this up in the branch where the patch
+that adds this problem lies.
+
 > Best regards,
 > 
 > V.
@@ -46,8 +41,8 @@ Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 >  arch/arm/mach-shmobile/setup-rcar-gen2.c | 2 +-
 >  1 file changed, 1 insertion(+), 1 deletion(-)
 > 
-> diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c
-> b/arch/arm/mach-shmobile/setup-rcar-gen2.c index 73fb2a6..42d5b43 100644
+> diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+> index 73fb2a6..42d5b43 100644
 > --- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
 > +++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
 > @@ -179,6 +179,6 @@ void __init rcar_gen2_reserve(void)
@@ -58,9 +53,11 @@ Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 > +					    &rcar_gen2_dma_contiguous, true);
 >  #endif
 >  }
-
--- 
-Regards,
-
-Laurent Pinchart
-
+> -- 
+> 2.0.0
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
