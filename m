@@ -1,188 +1,77 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 02 Jun 2014 13:38:07 +0000
-Subject: [PATCH 05/18] spi: rspi: Extract rspi_pio_transfer()
-Message-Id: <1401716301-29612-6-git-send-email-geert+renesas@glider.be>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Mon, 23 Jun 2014 21:10:31 +0000
+Subject: [PATCH 1/2] r8a7790.dtsi: add vin[0-3] nodes
+Message-Id: <1403557832-32225-2-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
+References: <1403557832-32225-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1403557832-32225-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-media@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: magnus.damm@opensource.se, horms@verge.net.au, linux-kernel@lists.codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
 
-The various PIO loops are very similar. Consolidate into a single
-function rspi_pio_transfer().
+Add nodes for the four video input channels on the R8A7790.
 
-Both buffer pointers can be NULL, as RSPI supports TX-only mode, and
-Dual/Quad SPI Transfers are unidirectional.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 ---
- drivers/spi/spi-rspi.c | 95 ++++++++++++++++++--------------------------------
- 1 file changed, 33 insertions(+), 62 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index ece8f6037943..fdbd46d0c570 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -438,15 +438,24 @@ static int rspi_data_in(struct rspi_data *rspi)
- 	return data;
- }
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 7ff2960..a6f083d 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -33,6 +33,10 @@
+ 		spi2 = &msiof1;
+ 		spi3 = &msiof2;
+ 		spi4 = &msiof3;
++		vin0 = &vin0;
++		vin1 = &vin1;
++		vin2 = &vin2;
++		vin3 = &vin3;
+ 	};
  
--static int rspi_data_out_in(struct rspi_data *rspi, u8 data)
-+static int rspi_pio_transfer(struct rspi_data *rspi, const u8 *tx, u8 *rx,
-+			     unsigned int n)
- {
--	int ret;
--
--	ret = rspi_data_out(rspi, data);
--	if (ret < 0)
--		return ret;
-+	while (n-- > 0) {
-+		if (tx) {
-+			int ret = rspi_data_out(rspi, *tx++);
-+			if (ret < 0)
-+				return ret;
-+		}
-+		if (rx) {
-+			int ret = rspi_data_in(rspi);
-+			if (ret < 0)
-+				return ret;
-+			*rx++ = ret;
-+		}
-+	}
+ 	cpus {
+@@ -462,6 +466,38 @@
+ 		status = "disabled";
+ 	};
  
--	return rspi_data_in(rspi);
-+	return 0;
- }
- 
- static void rspi_dma_complete(void *arg)
-@@ -644,13 +653,11 @@ static int rspi_is_dma(const struct rspi_data *rspi, struct spi_transfer *t)
- static int rspi_transfer_out_in(struct rspi_data *rspi,
- 				struct spi_transfer *xfer)
- {
--	int remain = xfer->len, ret;
--	const u8 *tx_buf = xfer->tx_buf;
--	u8 *rx_buf = xfer->rx_buf;
- 	u8 spcr;
-+	int ret;
- 
- 	spcr = rspi_read8(rspi, RSPI_SPCR);
--	if (rx_buf) {
-+	if (xfer->rx_buf) {
- 		rspi_receive_init(rspi);
- 		spcr &= ~SPCR_TXMD;
- 	} else {
-@@ -658,18 +665,9 @@ static int rspi_transfer_out_in(struct rspi_data *rspi,
- 	}
- 	rspi_write8(rspi, spcr, RSPI_SPCR);
- 
--	while (remain > 0) {
--		ret = rspi_data_out(rspi, *tx_buf++);
--		if (ret < 0)
--			return ret;
--		if (rx_buf) {
--			ret = rspi_data_in(rspi);
--			if (ret < 0)
--				return ret;
--			*rx_buf++ = ret;
--		}
--		remain--;
--	}
-+	ret = rspi_pio_transfer(rspi, xfer->tx_buf, xfer->rx_buf, xfer->len);
-+	if (ret < 0)
-+		return ret;
- 
- 	/* Wait for the last transmission */
- 	rspi_wait_for_tx_empty(rspi);
-@@ -694,19 +692,13 @@ static int rspi_transfer_one(struct spi_master *master, struct spi_device *spi,
- static int rspi_rz_transfer_out_in(struct rspi_data *rspi,
- 				   struct spi_transfer *xfer)
- {
--	int remain = xfer->len, ret;
--	const u8 *tx_buf = xfer->tx_buf;
--	u8 *rx_buf = xfer->rx_buf;
-+	int ret;
- 
- 	rspi_rz_receive_init(rspi);
- 
--	while (remain > 0) {
--		ret = rspi_data_out_in(rspi, *tx_buf++);
--		if (ret < 0)
--			return ret;
--		*rx_buf++ = ret;
--		remain--;
--	}
-+	ret = rspi_pio_transfer(rspi, xfer->tx_buf, xfer->rx_buf, xfer->len);
-+	if (ret < 0)
-+		return ret;
- 
- 	/* Wait for the last transmission */
- 	rspi_wait_for_tx_empty(rspi);
-@@ -726,19 +718,13 @@ static int rspi_rz_transfer_one(struct spi_master *master,
- static int qspi_transfer_out_in(struct rspi_data *rspi,
- 				struct spi_transfer *xfer)
- {
--	int remain = xfer->len, ret;
--	const u8 *tx_buf = xfer->tx_buf;
--	u8 *rx_buf = xfer->rx_buf;
-+	int ret;
- 
- 	qspi_receive_init(rspi);
- 
--	while (remain > 0) {
--		ret = rspi_data_out_in(rspi, *tx_buf++);
--		if (ret < 0)
--			return ret;
--		*rx_buf++ = ret;
--		remain--;
--	}
-+	ret = rspi_pio_transfer(rspi, xfer->tx_buf, xfer->rx_buf, xfer->len);
-+	if (ret < 0)
-+		return ret;
- 
- 	/* Wait for the last transmission */
- 	rspi_wait_for_tx_empty(rspi);
-@@ -748,15 +734,11 @@ static int qspi_transfer_out_in(struct rspi_data *rspi,
- 
- static int qspi_transfer_out(struct rspi_data *rspi, struct spi_transfer *xfer)
- {
--	const u8 *buf = xfer->tx_buf;
--	unsigned int i;
- 	int ret;
- 
--	for (i = 0; i < xfer->len; i++) {
--		ret = rspi_data_out(rspi, *buf++);
--		if (ret < 0)
--			return ret;
--	}
-+	ret = rspi_pio_transfer(rspi, xfer->tx_buf, NULL, xfer->len);
-+	if (ret < 0)
-+		return ret;
- 
- 	/* Wait for the last transmission */
- 	rspi_wait_for_tx_empty(rspi);
-@@ -766,18 +748,7 @@ static int qspi_transfer_out(struct rspi_data *rspi, struct spi_transfer *xfer)
- 
- static int qspi_transfer_in(struct rspi_data *rspi, struct spi_transfer *xfer)
- {
--	u8 *buf = xfer->rx_buf;
--	unsigned int i;
--	int ret;
--
--	for (i = 0; i < xfer->len; i++) {
--		ret = rspi_data_in(rspi);
--		if (ret < 0)
--			return ret;
--		*buf++ = ret;
--	}
--
--	return 0;
-+	return rspi_pio_transfer(rspi, NULL, xfer->rx_buf, xfer->len);
- }
- 
- static int qspi_transfer_one(struct spi_master *master, struct spi_device *spi,
++	vin0: vin@e6ef0000 {
++		compatible = "renesas,vin-r8a7790";
++		clocks = <&mstp8_clks R8A7790_CLK_VIN0>;
++		reg = <0 0xe6ef0000 0 0x1000>;
++		interrupts = <0 188 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	vin1: vin@e6ef1000 {
++		compatible = "renesas,vin-r8a7790";
++		clocks = <&mstp8_clks R8A7790_CLK_VIN1>;
++		reg = <0 0xe6ef1000 0 0x1000>;
++		interrupts = <0 189 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	vin2: vin@e6ef2000 {
++		compatible = "renesas,vin-r8a7790";
++		clocks = <&mstp8_clks R8A7790_CLK_VIN2>;
++		reg = <0 0xe6ef2000 0 0x1000>;
++		interrupts = <0 190 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	vin3: vin@e6ef3000 {
++		compatible = "renesas,vin-r8a7790";
++		clocks = <&mstp8_clks R8A7790_CLK_VIN3>;
++		reg = <0 0xe6ef3000 0 0x1000>;
++		interrupts = <0 191 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 -- 
-1.9.1
+2.0.0
 
