@@ -1,73 +1,49 @@
-From: keita kobayashi <keita.kobayashi.ym@renesas.com>
-Date: Wed, 11 Jun 2014 04:57:32 +0000
-Subject: Re: [PATCH v2 00/07] ARM: shmobile: Suspend on non-SMP for r8a7790/r8a7791
-Message-Id: <5397E1BC.7070109@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 23 Jun 2014 23:54:13 +0000
+Subject: [PATCH v2 07/23] v4l: vsp1: Release buffers at stream stop
+Message-Id: <1403567669-18539-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140606071749.14853.90558.sendpatchset@w520>
-In-Reply-To: <20140606071749.14853.90558.sendpatchset@w520>
+References: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Hi Magnus
+videobuf2 expects no buffer to be owned by the driver when the
+stop_stream queue operation returns. As the vsp1 driver fails to do so,
+a warning is generated at stream top time.
 
-I tested these patches. Test result is below:
+Fix this by mark releasing all buffers queued on the IRQ queue in the
+stop_stream operation handler and marking them as erroneous.
 
-[Test environment]
- -lager / koelsch
- -tag:renesas-devel-v3.15-rc8-20140605v3
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/media/platform/vsp1/vsp1_video.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-[Test command]
-Suspend to RAM command
- #echo enabled > /sys/class/tty/ttySC6/power/wakeup
- #echo mem > /sys/power/state
-
-[Test results]
- -lager(SMP)		:OK
- -lager(non-SMP)	:OK
- -koelsch(SMP)		:OK
- -koelsch(non-SMP)	:OK
-
-Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
-
-(2014/06/06 16:17), Magnus Damm wrote:
-
-> ARM: shmobile: Suspend on non-SMP for r8a7790/r8a7791 (V2)
-> 
-> [PATCH v2 01/07] ARM: shmobile: Allow use of boot code for non-SMP case
-> [PATCH v2 02/07] ARM: shmobile: Adjust APMU code to build for non-SMP
-> [PATCH v2 03/07] ARM: shmobile: Use __init for APMU suspend init function
-> [PATCH v2 04/07] ARM: shmobile: Move r8a7790 reset code to pm-r8a7790.c
-> [PATCH v2 05/07] ARM: shmobile: Allow r8a7790 to build non-SMP APMU code
-> [PATCH v2 06/07] ARM: shmobile: Move r8a7791 reset code to pm-r8a7791.c
-> [PATCH v2 07/07] ARM: shmobile: Allow r8a7791 to build non-SMP APMU code
-> 
-> These patches update mach-shmobile and r8a7790/r8a7791 to allow build of
-> early boot code and APMU power management code in case of CONFIG_SMP=n.
-> 
-> The reason for this change is to allow use of Suspend-to-RAM for recent
-> SoCs like R-Car Gen2 with simplified kernel configuration such as when
-> SMP is disabled. Power management code like CPUFreq, CPUIdle and
-> Suspend-to-RAM should work regardless of what kind of CONFIG_SMP
-> setting the user decides.
-> 
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> ---
-> 
->  Written on top of renesas-devel-v3.15-rc8-20140605v3
-> 
->  Changes since V1:
->  - Dropped V1 patch 6, 7, 8 - needs more discussions how to tie in UP case
->  - Moved V1 patch 5 to V2 patch 3
->  - Added r8a7791 code at end of series
-> 
->  arch/arm/mach-shmobile/Makefile       |   21 ++++++++++------
->  arch/arm/mach-shmobile/headsmp.S      |   13 ++++++----
->  arch/arm/mach-shmobile/platsmp-apmu.c |   13 ++++++----
->  arch/arm/mach-shmobile/pm-r8a7790.c   |   41 +++++++++++++++++++++++++++++++--
->  arch/arm/mach-shmobile/pm-r8a7791.c   |   29 +++++++++++++++++++++--
->  arch/arm/mach-shmobile/smp-r8a7790.c  |   31 ------------------------
->  arch/arm/mach-shmobile/smp-r8a7791.c  |   25 --------------------
->  7 files changed, 95 insertions(+), 78 deletions(-)
+diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
+index c717e28..9bb156c 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.c
++++ b/drivers/media/platform/vsp1/vsp1_video.c
+@@ -742,6 +742,7 @@ static void vsp1_video_stop_streaming(struct vb2_queue *vq)
+ {
+ 	struct vsp1_video *video = vb2_get_drv_priv(vq);
+ 	struct vsp1_pipeline *pipe = to_vsp1_pipeline(&video->video.entity);
++	struct vsp1_video_buffer *buffer;
+ 	unsigned long flags;
+ 	int ret;
+ 
+@@ -759,6 +760,8 @@ static void vsp1_video_stop_streaming(struct vb2_queue *vq)
+ 
+ 	/* Remove all buffers from the IRQ queue. */
+ 	spin_lock_irqsave(&video->irqlock, flags);
++	list_for_each_entry(buffer, &video->irqqueue, queue)
++		vb2_buffer_done(&buffer->buf, VB2_BUF_STATE_ERROR);
+ 	INIT_LIST_HEAD(&video->irqqueue);
+ 	spin_unlock_irqrestore(&video->irqlock, flags);
+ }
+-- 
+1.8.5.5
 
