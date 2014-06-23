@@ -1,40 +1,40 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 04 Jun 2014 22:45:30 +0000
-Subject: Re: [PATCH v3 3/7] r8a7790.dtsi: add vin[0-3] nodes
-Message-Id: <538FA18A.4040505@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:26:29 +0000
+Subject: [PATCH 16/24] ARM: shmobile: r8a7779: Use DT CPU Frequency in common case
+Message-Id: <0157b62674aa3db1fc574bb65e6b0e30bb0683d7.1403487423.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1403487423.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487423.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Convert the common C-code-less r8a7779 DT board support
+to use shmobile_init_delay() to be able to migrate away
+from per-SoC delay setup functions.
 
-On 04/14/2014 02:36 PM, Ben Dooks wrote:
+Based on work by Magnus dam for the r8a7740 SoC.
 
-> Add nodes for the four video input channels on the R8A7790.
+Cc: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-r8a7779.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-> ---
->   arch/arm/boot/dts/r8a7790.dtsi | 36 ++++++++++++++++++++++++++++++++++++
->   1 file changed, 36 insertions(+)
-
-    It looks like I've overlooked something while reviewing this patch back in 
-April...
-
-> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-> index a1e7c39..de0e53e 100644
-> --- a/arch/arm/boot/dts/r8a7790.dtsi
-> +++ b/arch/arm/boot/dts/r8a7790.dtsi
-[...]
-> @@ -395,6 +399,38 @@
->   		status = "disabled";
->   	};
->
-> +	vin0: vin@0xe6ef0000 {
-
-    Drop "0x" form the unit-address please. Also, name should probably be 
-"video", more in line with the ePAPR standard...
-
-WBR, Sergei
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 15f533b..706832f 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -773,7 +773,7 @@ static const char *r8a7779_compat_dt[] __initdata = {
+ 
+ DT_MACHINE_START(R8A7779_DT, "Generic R8A7779 (Flattened Device Tree)")
+ 	.map_io		= r8a7779_map_io,
+-	.init_early	= r8a7779_init_delay,
++	.init_early	= shmobile_init_delay,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= r8a7779_init_irq_dt,
+ 	.init_machine	= r8a7779_add_standard_devices_dt,
+-- 
+2.0.0.rc2
 
