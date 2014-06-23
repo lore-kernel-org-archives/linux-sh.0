@@ -1,103 +1,97 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 20 Jun 2014 16:53:08 +0000
-Subject: [PATCH 8/9] ARM: shmobile: Move sh7372.h
-Message-Id: <1403283189-21688-9-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:26:24 +0000
+Subject: [PATCH 11/24] ARM: shmobile: Remove non-multiplatform Marzen reference support
+Message-Id: <1ece7f7bb014485b13faf9504b238ff891a9088a.1403487423.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1403283189-21688-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1403283189-21688-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1403487423.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487423.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Change location of sh7372.h so it can be included as "sh7372.h"
-instead of the old style <mach/sh7372.h>
+Now that r8a7779 has CCF support remove the legacy Marzen reference
+Kconfig bits CONFIG_MACH_MARZEN_REFERENCE for the non-multiplatform
+case.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Starting from this commit Marzen board support is always enabled via
+CONFIG_MACH_MARZEN, and CONFIG_ARCH_MULTIPLATFORM is used to select
+between board-marzen.c and board-marzen-reference.c
+
+The file board-marzen-reference.c can no longer be used together with
+the legacy sh-clk clock framework, instead CCF is used.
+
+Based on work for the Koelsch board by Laurent Pinchart.
+
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-mackerel.c            | 4 +++-
- arch/arm/mach-shmobile/pm-sh7372.c                 | 4 +++-
- arch/arm/mach-shmobile/setup-sh7372.c              | 4 +++-
- arch/arm/mach-shmobile/{include/mach => }/sh7372.h | 0
- 4 files changed, 9 insertions(+), 3 deletions(-)
- rename arch/arm/mach-shmobile/{include/mach => }/sh7372.h (100%)
+ arch/arm/boot/dts/Makefile           |  1 -
+ arch/arm/mach-shmobile/Kconfig       | 13 -------------
+ arch/arm/mach-shmobile/Makefile      |  1 -
+ arch/arm/mach-shmobile/Makefile.boot |  1 -
+ 4 files changed, 16 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 0ece865cbc4d..304b76f3bf4a 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -51,6 +51,7 @@
- #include <linux/tca6416_keypad.h>
- #include <linux/usb/renesas_usbhs.h>
- #include <linux/dma-mapping.h>
-+
- #include <video/sh_mobile_hdmi.h>
- #include <video/sh_mobile_lcdc.h>
- #include <media/sh_mobile_ceu.h>
-@@ -58,13 +59,14 @@
- #include <media/soc_camera_platform.h>
- #include <sound/sh_fsi.h>
- #include <sound/simple_card.h>
--#include <mach/sh7372.h>
- #include <asm/mach/arch.h>
- #include <asm/mach-types.h>
-+
- #include "common.h"
- #include "irqs.h"
- #include "pm-rmobile.h"
- #include "sh-gpio.h"
-+#include "sh7372.h"
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index f44df11..e666d13 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -327,7 +327,6 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += r7s72100-genmai.dtb \
+ 	r8a7778-bockw-reference.dtb \
+ 	r8a7740-armadillo800eva-reference.dtb \
+ 	r8a7779-marzen.dtb \
+-	r8a7779-marzen-reference.dtb \
+ 	r8a7791-koelsch.dtb \
+ 	r8a7790-lager.dtb \
+ 	sh73a0-kzm9g.dtb \
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index d7f8285..8a054dd 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -245,19 +245,6 @@ config MACH_MARZEN
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	select USE_OF
  
- /*
-  * Address	Interface		BusWidth	note
-diff --git a/arch/arm/mach-shmobile/pm-sh7372.c b/arch/arm/mach-shmobile/pm-sh7372.c
-index 7ef9a0126780..7e5c2676c489 100644
---- a/arch/arm/mach-shmobile/pm-sh7372.c
-+++ b/arch/arm/mach-shmobile/pm-sh7372.c
-@@ -21,13 +21,15 @@
- #include <linux/irq.h>
- #include <linux/bitrev.h>
- #include <linux/console.h>
-+
- #include <asm/cpuidle.h>
- #include <asm/io.h>
- #include <asm/tlbflush.h>
- #include <asm/suspend.h>
--#include <mach/sh7372.h>
-+
- #include "common.h"
- #include "pm-rmobile.h"
-+#include "sh7372.h"
+-config MACH_MARZEN_REFERENCE
+-	bool "MARZEN board - Reference Device Tree Implementation"
+-	depends on ARCH_R8A7779
+-	select ARCH_REQUIRE_GPIOLIB
+-	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+-	select USE_OF
+-	---help---
+-	   Use reference implementation of Marzen board support
+-	   which makes use of device tree at the expense
+-	   of not supporting a number of devices.
+-
+-	   This is intended to aid developers
+-
+ config MACH_LAGER
+ 	bool "Lager board"
+ 	depends on ARCH_R8A7790
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 2309906..0d6a04c 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -68,7 +68,6 @@ obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
+ obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
+ obj-$(CONFIG_MACH_GENMAI)	+= board-genmai.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
+-obj-$(CONFIG_MACH_MARZEN_REFERENCE)	+= board-marzen-reference.o
+ obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
+ obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
+ obj-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE)	+= board-armadillo800eva-reference.o
+diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
+index 918fccf..ebf97d4 100644
+--- a/arch/arm/mach-shmobile/Makefile.boot
++++ b/arch/arm/mach-shmobile/Makefile.boot
+@@ -13,7 +13,6 @@ loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
+ loadaddr-$(CONFIG_MACH_LAGER) += 0x40008000
+ loadaddr-$(CONFIG_MACH_MACKEREL) += 0x40008000
+ loadaddr-$(CONFIG_MACH_MARZEN) += 0x60008000
+-loadaddr-$(CONFIG_MACH_MARZEN_REFERENCE) += 0x60008000
  
- /* DBG */
- #define DBGREG1 IOMEM(0xe6100020)
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 5571f867c611..9cdfcdfd38fc 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -33,15 +33,17 @@
- #include <linux/pm_domain.h>
- #include <linux/dma-mapping.h>
- #include <linux/platform_data/sh_ipmmu.h>
--#include <mach/sh7372.h>
-+
- #include <asm/mach/map.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- #include <asm/mach/time.h>
-+
- #include "common.h"
- #include "dma-register.h"
- #include "irqs.h"
- #include "pm-rmobile.h"
-+#include "sh7372.h"
- 
- static struct map_desc sh7372_io_desc[] __initdata = {
- 	/* create a 1:1 entity map for 0xe6xxxxxx
-diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/sh7372.h
-similarity index 100%
-rename from arch/arm/mach-shmobile/include/mach/sh7372.h
-rename to arch/arm/mach-shmobile/sh7372.h
+ __ZRELADDR	:= $(sort $(loadaddr-y))
+    zreladdr-y   += $(__ZRELADDR)
 -- 
-1.9.1
+2.0.0.rc2
 
