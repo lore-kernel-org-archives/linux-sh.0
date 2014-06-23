@@ -1,43 +1,118 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 20 Jun 2014 10:17:24 +0000
-Subject: [PATCH/POC 0/2] ARM: shmobile: koelsch legacy: Enable DMA for MSIOF
-Message-Id: <1403259446-13696-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:26:21 +0000
+Subject: [PATCH 08/24] ARM: shmobile: r8a7779: Initial multiplatform support
+Message-Id: <5016c81bf92eb01741fc71ce7fb8380183a6f66a.1403487423.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1403487423.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487423.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This proof-of-concept patch series enables DMA support for MSIOF on
-r8a7791/koelsch legacy.
+Add Marzen and r8a7779 to CONFIG_SHMOBILE_MULTI. At this
+point CCF is not yet supported so you cannot run this code
+yet. For CCF support to happen several different components
+are needed, and this is one simple portion that moves us
+forward. Other patches need to build on top of this one.
 
-It's independent from the series "[PATCH/RFC 0/2] spi: sh-msiof: Add DT DMA
-support on r8a7791", but it depends on my series "[PATCH v3 0/5] ARM:
-shmobile: MSIOF integration on koelsch/lager legacy" and "[PATCH 0/4] ARM:
-shmobile: koelsch legacy: Enable DMA for QSPI".
+Marzen board support exists in 3 flavours:
+1) SHMOBILE_MULTI, MACH_MARZEN - board-marzen-reference.c (CCF + DT)
+2) SHMOBILE, MACH_MARZEN_REFERENCE - board-marzen-reference.c (DT)
+3) SHMOBILE, MACH_MARZEN - board-marzen.c (legacy C code)
 
-This was tested on r8a7791/koelsch.
+When CCF is done then 2) will be removed. When 1) includes same features
+as 3) then 3) will be removed.
 
-  [1/2] ARM: shmobile: r8a7791: Add MSIOF DMA support
-  [1/2] ARM: shmobile: koelsch legacy: Enable DMA for MSIOF
+Based on work for the Koelsch and r8a7791 by Magnus Damm.
 
- arch/arm/mach-shmobile/board-koelsch.c        | 9 ++++++---
- arch/arm/mach-shmobile/include/mach/r8a7791.h | 6 ++++++
- arch/arm/mach-shmobile/setup-r8a7791.c        | 5 ++++-
- 3 files changed, 16 insertions(+), 4 deletions(-)
+Cc: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/Makefile                      |  3 ++-
+ arch/arm/mach-shmobile/Kconfig                  | 10 ++++++++++
+ arch/arm/mach-shmobile/Makefile                 |  1 +
+ arch/arm/mach-shmobile/board-marzen-reference.c |  5 +++++
+ 4 files changed, 18 insertions(+), 1 deletion(-)
 
-As non-DT board support is no longer developed, I don't expect this to be
-applied.
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 5986ff6..f44df11 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -339,7 +339,8 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
+ 	r7s72100-genmai.dtb \
+ 	r8a7791-henninger.dtb \
+ 	r8a7791-koelsch.dtb \
+-	r8a7790-lager.dtb
++	r8a7790-lager.dtb \
++	r8a7779-marzen-reference.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
+ 	socfpga_cyclone5_socdk.dtb \
+ 	socfpga_cyclone5_sockit.dtb \
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index dbd954e..d7f8285 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -25,6 +25,11 @@ config ARCH_R7S72100
+ 	bool "RZ/A1H (R7S72100)"
+ 	select SYS_SUPPORTS_SH_MTU2
+ 
++config ARCH_R8A7779
++	bool "R-Car H1 (R8A77790)"
++	select RENESAS_INTC_IRQPIN
++	select SYS_SUPPORTS_SH_TMU
++
+ config ARCH_R8A7790
+ 	bool "R-Car H2 (R8A77900)"
+ 	select RENESAS_IRQC
+@@ -51,6 +56,11 @@ config MACH_LAGER
+ 	depends on ARCH_R8A7790
+ 	select MICREL_PHY if SH_ETH
+ 
++config MACH_MARZEN
++	bool "MARZEN board"
++	depends on ARCH_R8A7779
++	select REGULATOR_FIXED_VOLTAGE if REGULATOR
++
+ comment "Renesas ARM SoCs System Configuration"
+ endif
+ 
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 38d5fe8..2309906 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -59,6 +59,7 @@ ifdef CONFIG_ARCH_SHMOBILE_MULTI
+ obj-$(CONFIG_MACH_GENMAI)	+= board-genmai-reference.o
+ obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch-reference.o
+ obj-$(CONFIG_MACH_LAGER)	+= board-lager-reference.o
++obj-$(CONFIG_MACH_MARZEN)	+= board-marzen-reference.o
+ else
+ obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
+ obj-$(CONFIG_MACH_APE6EVM_REFERENCE)	+= board-ape6evm-reference.o
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 46ed17a..d90843b 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -19,6 +19,7 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
++#include <linux/clk-provider.h>
+ #include <linux/of_platform.h>
+ #include <mach/r8a7779.h>
+ #include <asm/irq.h>
+@@ -28,7 +29,11 @@
+ 
+ static void __init marzen_init(void)
+ {
++#ifdef CONFIG_COMMON_CLK
++	of_clk_init(NULL);
++#else
+ 	r8a7779_clock_init();
++#endif
+ 	r8a7779_add_standard_devices_dt();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
+-- 
+2.0.0.rc2
 
-Thanks!
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
