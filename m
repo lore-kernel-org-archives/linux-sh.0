@@ -1,203 +1,83 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 17 Jun 2014 07:48:01 +0000
-Subject: [PATCH v2 08/08] ARM: shmobile: Move rcar-gen2.h, cleanup r8a7790 case
-Message-Id: <20140617074801.30008.11376.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:28:24 +0000
+Subject: [PATCH 15/29] ARM: shmobile: koelsch: Remove duplicate i2c6 nodes
+Message-Id: <897dfdbc14603d764637dea92696fef4fc66ea3e.1403487225.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140617074658.30008.53021.sendpatchset@w520>
-In-Reply-To: <20140617074658.30008.53021.sendpatchset@w520>
+References: <cover.1403487225.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+A second i2c6 node was a added by
+05e234a187058ee ("ARM: shmobile: koelsch dts: Add VDD MPU regulator for
+DVFS"). Merge this into the existing node.
 
-Change location of rcar-gen2.h so it can be used as #include "rcar-gen2.h"
-instead of the old style #include <mach/rcar-gen2.h>. Also clean up
-the r8a7790 case to follow the same style as r8a7791.
+Also shuffle i2c nodes so they are all together.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
+Cc: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 34 +++++++++++++++-------------------
+ 1 file changed, 15 insertions(+), 19 deletions(-)
 
- Changes since V1:
- - rebased to v3.16-rc1
-
- arch/arm/mach-shmobile/board-koelsch-reference.c |    2 +-
- arch/arm/mach-shmobile/board-koelsch.c           |    2 +-
- arch/arm/mach-shmobile/board-lager-reference.c   |    2 +-
- arch/arm/mach-shmobile/board-lager.c             |    1 +
- arch/arm/mach-shmobile/clock-r8a7790.c           |    1 +
- arch/arm/mach-shmobile/clock-r8a7791.c           |    2 +-
- arch/arm/mach-shmobile/include/mach/r8a7790.h    |    2 --
- arch/arm/mach-shmobile/include/mach/rcar-gen2.h  |    8 --------
- arch/arm/mach-shmobile/rcar-gen2.h               |    8 ++++++++
- arch/arm/mach-shmobile/setup-r8a7790.c           |    1 +
- arch/arm/mach-shmobile/setup-r8a7791.c           |    2 +-
- arch/arm/mach-shmobile/setup-rcar-gen2.c         |    2 +-
- arch/arm/mach-shmobile/smp-r8a7791.c             |    2 +-
- 13 files changed, 18 insertions(+), 17 deletions(-)
-
---- 0006/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ work/arch/arm/mach-shmobile/board-koelsch-reference.c	2014-06-17 16:15:58.000000000 +0900
-@@ -23,12 +23,12 @@
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
- #include <linux/platform_data/rcar-du.h>
--#include <mach/rcar-gen2.h>
- #include <mach/r8a7791.h>
- #include <asm/mach/arch.h>
- #include "clock.h"
- #include "common.h"
- #include "irqs.h"
-+#include "rcar-gen2.h"
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index b2e6616..b0cfbd4 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -215,25 +215,6 @@
+ 	clock-frequency = <20000000>;
+ };
  
- /* DU */
- static struct rcar_du_encoder_data koelsch_du_encoders[] = {
---- 0006/arch/arm/mach-shmobile/board-koelsch.c
-+++ work/arch/arm/mach-shmobile/board-koelsch.c	2014-06-17 16:15:58.000000000 +0900
-@@ -46,11 +46,11 @@
- #include <linux/spi/rspi.h>
- #include <linux/spi/spi.h>
- #include <mach/r8a7791.h>
--#include <mach/rcar-gen2.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- #include "common.h"
- #include "irqs.h"
-+#include "rcar-gen2.h"
- 
- /* DU */
- static struct rcar_du_encoder_data koelsch_du_encoders[] = {
---- 0006/arch/arm/mach-shmobile/board-lager-reference.c
-+++ work/arch/arm/mach-shmobile/board-lager-reference.c	2014-06-17 16:15:58.000000000 +0900
-@@ -22,12 +22,12 @@
- #include <linux/init.h>
- #include <linux/of_platform.h>
- #include <linux/platform_data/rcar-du.h>
--#include <mach/rcar-gen2.h>
- #include <mach/r8a7790.h>
- #include <asm/mach/arch.h>
- #include "clock.h"
- #include "common.h"
- #include "irqs.h"
-+#include "rcar-gen2.h"
- 
- /* DU */
- static struct rcar_du_encoder_data lager_du_encoders[] = {
---- 0006/arch/arm/mach-shmobile/board-lager.c
-+++ work/arch/arm/mach-shmobile/board-lager.c	2014-06-17 16:15:58.000000000 +0900
-@@ -58,6 +58,7 @@
- #include <sound/simple_card.h>
- #include "common.h"
- #include "irqs.h"
-+#include "rcar-gen2.h"
- 
- /*
-  * SSI-AK4643
---- 0006/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ work/arch/arm/mach-shmobile/clock-r8a7790.c	2014-06-17 16:15:58.000000000 +0900
-@@ -25,6 +25,7 @@
- #include <mach/r8a7790.h>
- #include "clock.h"
- #include "common.h"
-+#include "rcar-gen2.h"
- 
- /*
-  *   MD		EXTAL		PLL0	PLL1	PLL3
---- 0006/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ work/arch/arm/mach-shmobile/clock-r8a7791.c	2014-06-17 16:15:58.000000000 +0900
-@@ -23,9 +23,9 @@
- #include <linux/kernel.h>
- #include <linux/sh_clk.h>
- #include <linux/clkdev.h>
--#include <mach/rcar-gen2.h>
- #include "clock.h"
- #include "common.h"
-+#include "rcar-gen2.h"
- 
- /*
-  *   MD		EXTAL		PLL0	PLL1	PLL3
---- 0001/arch/arm/mach-shmobile/include/mach/r8a7790.h
-+++ work/arch/arm/mach-shmobile/include/mach/r8a7790.h	2014-06-17 16:15:58.000000000 +0900
-@@ -1,8 +1,6 @@
- #ifndef __ASM_R8A7790_H__
- #define __ASM_R8A7790_H__
- 
--#include <mach/rcar-gen2.h>
+-&i2c2 {
+-	pinctrl-0 = <&i2c2_pins>;
+-	pinctrl-names = "default";
 -
- /* DMA slave IDs */
- enum {
- 	RCAR_DMA_SLAVE_INVALID,
---- 0001/arch/arm/mach-shmobile/include/mach/rcar-gen2.h
-+++ /dev/null	2013-06-03 21:41:10.638032047 +0900
-@@ -1,8 +0,0 @@
--#ifndef __ASM_RCAR_GEN2_H__
--#define __ASM_RCAR_GEN2_H__
+-	status = "okay";
+-	clock-frequency = <400000>;
 -
--void rcar_gen2_timer_init(void);
--#define MD(nr) BIT(nr)
--u32 rcar_gen2_read_mode_pins(void);
+-	eeprom@50 {
+-		compatible = "renesas,24c02";
+-		reg = <0x50>;
+-		pagesize = <16>;
+-	};
+-};
 -
--#endif /* __ASM_RCAR_GEN2_H__ */
---- /dev/null
-+++ work/arch/arm/mach-shmobile/rcar-gen2.h	2014-06-17 16:15:59.000000000 +0900
-@@ -0,0 +1,8 @@
-+#ifndef __ASM_RCAR_GEN2_H__
-+#define __ASM_RCAR_GEN2_H__
+-&i2c6 {
+-	status = "okay";
+-	clock-frequency = <100000>;
+-};
+-
+ &pfc {
+ 	pinctrl-0 = <&du_pins>;
+ 	pinctrl-names = "default";
+@@ -414,10 +395,25 @@
+ 	};
+ };
+ 
++&i2c2 {
++	pinctrl-0 = <&i2c2_pins>;
++	pinctrl-names = "default";
 +
-+void rcar_gen2_timer_init(void);
-+#define MD(nr) BIT(nr)
-+u32 rcar_gen2_read_mode_pins(void);
++	status = "okay";
++	clock-frequency = <400000>;
 +
-+#endif /* __ASM_RCAR_GEN2_H__ */
---- 0006/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2014-06-17 16:15:58.000000000 +0900
-@@ -31,6 +31,7 @@
- #include "common.h"
- #include "dma-register.h"
- #include "irqs.h"
-+#include "rcar-gen2.h"
++	eeprom@50 {
++		compatible = "renesas,24c02";
++		reg = <0x50>;
++		pagesize = <16>;
++	};
++};
++
+ &i2c6 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&i2c6_pins>;
+ 	status = "okay";
++	clock-frequency = <100000>;
  
- /* Audio-DMAC */
- #define AUDIO_DMAC_SLAVE(_id, _addr, t, r)			\
---- 0006/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7791.c	2014-06-17 16:15:58.000000000 +0900
-@@ -27,10 +27,10 @@
- #include <linux/serial_sci.h>
- #include <linux/sh_timer.h>
- #include <mach/r8a7791.h>
--#include <mach/rcar-gen2.h>
- #include <asm/mach/arch.h>
- #include "common.h"
- #include "irqs.h"
-+#include "rcar-gen2.h"
- 
- static const struct resource pfc_resources[] __initconst = {
- 	DEFINE_RES_MEM(0xe6060000, 0x250),
---- 0006/arch/arm/mach-shmobile/setup-rcar-gen2.c
-+++ work/arch/arm/mach-shmobile/setup-rcar-gen2.c	2014-06-17 16:15:58.000000000 +0900
-@@ -22,9 +22,9 @@
- #include <linux/clocksource.h>
- #include <linux/io.h>
- #include <linux/kernel.h>
--#include <mach/rcar-gen2.h>
- #include <asm/mach/arch.h>
- #include "common.h"
-+#include "rcar-gen2.h"
- 
- #define MODEMR 0xe6160060
- 
---- 0006/arch/arm/mach-shmobile/smp-r8a7791.c
-+++ work/arch/arm/mach-shmobile/smp-r8a7791.c	2014-06-17 16:15:58.000000000 +0900
-@@ -19,8 +19,8 @@
- #include <linux/io.h>
- #include <asm/smp_plat.h>
- #include <mach/r8a7791.h>
--#include <mach/rcar-gen2.h>
- #include "common.h"
-+#include "rcar-gen2.h"
- 
- #define RST		0xe6160000
- #define CA15BAR		0x0020
+ 	vdd_dvfs: regulator@68 {
+ 		compatible = "diasemi,da9210";
+-- 
+2.0.0.rc2
+
