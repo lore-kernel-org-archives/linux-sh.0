@@ -1,103 +1,208 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:28:26 +0000
-Subject: [PATCH 17/29] ARM: shmobile: r8a7790: add MSTP10 support on DTSI
-Message-Id: <bcde37225438687231bb9510c07e60dcb8db1988.1403487225.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 23 Jun 2014 23:54:26 +0000
+Subject: [PATCH v2 20/23] v4l: vsp1: bru: Support premultiplied alpha at the BRU inputs
+Message-Id: <1403567669-18539-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
+References: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Adjust the BRU blending formula to avoid the multiplication by alpha
+when the corresponding input format is premultiplied. As this requires
+access to the RPFs connected to the BRU inputs from the BRU module,
+store pointers to the RPFs in the BRU structure when validating the
+pipeline.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi            | 33 +++++++++++++++++++++++++++++++
- include/dt-bindings/clock/r8a7790-clock.h | 26 ++++++++++++++++++++++++
- 2 files changed, 59 insertions(+)
+ drivers/media/platform/vsp1/vsp1_bru.c   | 27 ++++++++++++-------
+ drivers/media/platform/vsp1/vsp1_bru.h   |  6 ++++-
+ drivers/media/platform/vsp1/vsp1_video.c | 45 +++++++++++++++++++-------------
+ 3 files changed, 50 insertions(+), 28 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index e990d3c..0f83bd7 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -835,6 +835,39 @@
- 				"rcan1", "rcan0", "qspi_mod", "iic3",
- 				"i2c3", "i2c2", "i2c1", "i2c0";
- 		};
-+		mstp10_clks: mstp10_clks@e6150998 {
-+			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0 0xe6150998 0 4>, <0 0xe61509a8 0 4>;
-+			clocks = <&p_clk>,
-+				<&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
-+				<&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
-+				<&p_clk>,
-+				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>,
-+				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>,
-+				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>,
-+				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>,
-+				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>,
-+				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>;
-+
-+			#clock-cells = <1>;
-+			clock-indices = <
-+				R8A7790_CLK_SSI_ALL
-+				R8A7790_CLK_SSI9 R8A7790_CLK_SSI8 R8A7790_CLK_SSI7 R8A7790_CLK_SSI6 R8A7790_CLK_SSI5
-+				R8A7790_CLK_SSI4 R8A7790_CLK_SSI3 R8A7790_CLK_SSI2 R8A7790_CLK_SSI1 R8A7790_CLK_SSI0
-+				R8A7790_CLK_SCU_ALL
-+				R8A7790_CLK_SCU_DVC1 R8A7790_CLK_SCU_DVC0
-+				R8A7790_CLK_SCU_SRC9 R8A7790_CLK_SCU_SRC8 R8A7790_CLK_SCU_SRC7 R8A7790_CLK_SCU_SRC6 R8A7790_CLK_SCU_SRC5
-+				R8A7790_CLK_SCU_SRC4 R8A7790_CLK_SCU_SRC3 R8A7790_CLK_SCU_SRC2 R8A7790_CLK_SCU_SRC1 R8A7790_CLK_SCU_SRC0
-+			>;
-+			clock-output-names +				"ssi-all",
-+				"ssi9", "ssi8", "ssi7", "ssi6", "ssi5",
-+				"ssi4", "ssi3", "ssi2", "ssi1", "ssi0",
-+				"scu-all",
-+				"scu-dvc1", "scu-dvc0",
-+				"scu-src9", "scu-src8", "scu-src7", "scu-src6", "scu-src5",
-+				"scu-src4", "scu-src3", "scu-src2", "scu-src1", "scu-src0";
-+		};
- 	};
+diff --git a/drivers/media/platform/vsp1/vsp1_bru.c b/drivers/media/platform/vsp1/vsp1_bru.c
+index f806954..d8d49fb 100644
+--- a/drivers/media/platform/vsp1/vsp1_bru.c
++++ b/drivers/media/platform/vsp1/vsp1_bru.c
+@@ -18,6 +18,7 @@
  
- 	qspi: spi@e6b10000 {
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-index 1118f7a..a16df68 100644
---- a/include/dt-bindings/clock/r8a7790-clock.h
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -107,4 +107,30 @@
- #define R8A7790_CLK_I2C1		30
- #define R8A7790_CLK_I2C0		31
+ #include "vsp1.h"
+ #include "vsp1_bru.h"
++#include "vsp1_rwpf.h"
  
-+/* MSTP10 */
-+#define R8A7790_CLK_SSI_ALL		5
-+#define R8A7790_CLK_SSI9		6
-+#define R8A7790_CLK_SSI8		7
-+#define R8A7790_CLK_SSI7		8
-+#define R8A7790_CLK_SSI6		9
-+#define R8A7790_CLK_SSI5		10
-+#define R8A7790_CLK_SSI4		11
-+#define R8A7790_CLK_SSI3		12
-+#define R8A7790_CLK_SSI2		13
-+#define R8A7790_CLK_SSI1		14
-+#define R8A7790_CLK_SSI0		15
-+#define R8A7790_CLK_SCU_ALL		17
-+#define R8A7790_CLK_SCU_DVC1		18
-+#define R8A7790_CLK_SCU_DVC0		19
-+#define R8A7790_CLK_SCU_SRC9		22
-+#define R8A7790_CLK_SCU_SRC8		23
-+#define R8A7790_CLK_SCU_SRC7		24
-+#define R8A7790_CLK_SCU_SRC6		25
-+#define R8A7790_CLK_SCU_SRC5		26
-+#define R8A7790_CLK_SCU_SRC4		27
-+#define R8A7790_CLK_SCU_SRC3		28
-+#define R8A7790_CLK_SCU_SRC2		29
-+#define R8A7790_CLK_SCU_SRC1		30
-+#define R8A7790_CLK_SCU_SRC0		31
+ #define BRU_MIN_SIZE				4U
+ #define BRU_MAX_SIZE				8190U
+@@ -40,11 +41,6 @@ static inline void vsp1_bru_write(struct vsp1_bru *bru, u32 reg, u32 data)
+  * V4L2 Subdevice Core Operations
+  */
+ 
+-static bool bru_is_input_enabled(struct vsp1_bru *bru, unsigned int input)
+-{
+-	return media_entity_remote_pad(&bru->entity.pads[input]) != NULL;
+-}
+-
+ static int bru_s_stream(struct v4l2_subdev *subdev, int enable)
+ {
+ 	struct vsp1_bru *bru = to_bru(subdev);
+@@ -84,6 +80,7 @@ static int bru_s_stream(struct v4l2_subdev *subdev, int enable)
+ 		       VI6_BRU_ROP_AROP(VI6_ROP_NOP));
+ 
+ 	for (i = 0; i < 4; ++i) {
++		bool premultiplied = false;
+ 		u32 ctrl = 0;
+ 
+ 		/* Configure all Blend/ROP units corresponding to an enabled BRU
+@@ -91,11 +88,15 @@ static int bru_s_stream(struct v4l2_subdev *subdev, int enable)
+ 		 * disabled BRU inputs are used in ROP NOP mode to ignore the
+ 		 * SRC input.
+ 		 */
+-		if (bru_is_input_enabled(bru, i))
++		if (bru->inputs[i].rpf) {
+ 			ctrl |= VI6_BRU_CTRL_RBC;
+-		else
 +
- #endif /* __DT_BINDINGS_CLOCK_R8A7790_H__ */
++			premultiplied = bru->inputs[i].rpf->video.format.flags
++				      & V4L2_PIX_FMT_FLAG_PREMUL_ALPHA;
++		} else {
+ 			ctrl |= VI6_BRU_CTRL_CROP(VI6_ROP_NOP)
+ 			     |  VI6_BRU_CTRL_AROP(VI6_ROP_NOP);
++		}
+ 
+ 		/* Select the virtual RPF as the Blend/ROP unit A DST input to
+ 		 * serve as a background color.
+@@ -117,10 +118,18 @@ static int bru_s_stream(struct v4l2_subdev *subdev, int enable)
+ 		 *
+ 		 *	DSTc = DSTc * (1 - SRCa) + SRCc * SRCa
+ 		 *	DSTa = DSTa * (1 - SRCa) + SRCa
++		 *
++		 * when the SRC input isn't premultiplied, and to
++		 *
++		 *	DSTc = DSTc * (1 - SRCa) + SRCc
++		 *	DSTa = DSTa * (1 - SRCa) + SRCa
++		 *
++		 * otherwise.
+ 		 */
+ 		vsp1_bru_write(bru, VI6_BRU_BLD(i),
+ 			       VI6_BRU_BLD_CCMDX_255_SRC_A |
+-			       VI6_BRU_BLD_CCMDY_SRC_A |
++			       (premultiplied ? VI6_BRU_BLD_CCMDY_COEFY :
++						VI6_BRU_BLD_CCMDY_SRC_A) |
+ 			       VI6_BRU_BLD_ACMDX_255_SRC_A |
+ 			       VI6_BRU_BLD_ACMDY_COEFY |
+ 			       (0xff << VI6_BRU_BLD_COEFY_SHIFT));
+@@ -192,7 +201,7 @@ static struct v4l2_rect *bru_get_compose(struct vsp1_bru *bru,
+ 	case V4L2_SUBDEV_FORMAT_TRY:
+ 		return v4l2_subdev_get_try_crop(fh, pad);
+ 	case V4L2_SUBDEV_FORMAT_ACTIVE:
+-		return &bru->compose[pad];
++		return &bru->inputs[pad].compose;
+ 	default:
+ 		return NULL;
+ 	}
+diff --git a/drivers/media/platform/vsp1/vsp1_bru.h b/drivers/media/platform/vsp1/vsp1_bru.h
+index 3706270..5b03479 100644
+--- a/drivers/media/platform/vsp1/vsp1_bru.h
++++ b/drivers/media/platform/vsp1/vsp1_bru.h
+@@ -19,6 +19,7 @@
+ #include "vsp1_entity.h"
+ 
+ struct vsp1_device;
++struct vsp1_rwpf;
+ 
+ #define BRU_PAD_SINK(n)				(n)
+ #define BRU_PAD_SOURCE				4
+@@ -26,7 +27,10 @@ struct vsp1_device;
+ struct vsp1_bru {
+ 	struct vsp1_entity entity;
+ 
+-	struct v4l2_rect compose[4];
++	struct {
++		struct vsp1_rwpf *rpf;
++		struct v4l2_rect compose;
++	} inputs[4];
+ };
+ 
+ static inline struct vsp1_bru *to_bru(struct v4l2_subdev *subdev)
+diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
+index 4dd4d61..58fc076 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.c
++++ b/drivers/media/platform/vsp1/vsp1_video.c
+@@ -334,7 +334,10 @@ static int vsp1_pipeline_validate_branch(struct vsp1_rwpf *input,
+ 		 */
+ 		if (entity->type = VSP1_ENTITY_BRU) {
+ 			struct vsp1_bru *bru = to_bru(&entity->subdev);
+-			struct v4l2_rect *rect = &bru->compose[pad->index];
++			struct v4l2_rect *rect +				&bru->inputs[pad->index].compose;
++
++			bru->inputs[pad->index].rpf = input;
+ 
+ 			input->location.left = rect->left;
+ 			input->location.top = rect->top;
+@@ -373,6 +376,26 @@ static int vsp1_pipeline_validate_branch(struct vsp1_rwpf *input,
+ 	return 0;
+ }
+ 
++static void __vsp1_pipeline_cleanup(struct vsp1_pipeline *pipe)
++{
++	if (pipe->bru) {
++		struct vsp1_bru *bru = to_bru(&pipe->bru->subdev);
++		unsigned int i;
++
++		for (i = 0; i < ARRAY_SIZE(bru->inputs); ++i)
++			bru->inputs[i].rpf = NULL;
++	}
++
++	INIT_LIST_HEAD(&pipe->entities);
++	pipe->state = VSP1_PIPELINE_STOPPED;
++	pipe->buffers_ready = 0;
++	pipe->num_video = 0;
++	pipe->num_inputs = 0;
++	pipe->output = NULL;
++	pipe->bru = NULL;
++	pipe->lif = NULL;
++}
++
+ static int vsp1_pipeline_validate(struct vsp1_pipeline *pipe,
+ 				  struct vsp1_video *video)
+ {
+@@ -437,13 +460,7 @@ static int vsp1_pipeline_validate(struct vsp1_pipeline *pipe,
+ 	return 0;
+ 
+ error:
+-	INIT_LIST_HEAD(&pipe->entities);
+-	pipe->buffers_ready = 0;
+-	pipe->num_video = 0;
+-	pipe->num_inputs = 0;
+-	pipe->output = NULL;
+-	pipe->bru = NULL;
+-	pipe->lif = NULL;
++	__vsp1_pipeline_cleanup(pipe);
+ 	return ret;
+ }
+ 
+@@ -474,16 +491,8 @@ static void vsp1_pipeline_cleanup(struct vsp1_pipeline *pipe)
+ 	mutex_lock(&pipe->lock);
+ 
+ 	/* If we're the last user clean up the pipeline. */
+-	if (--pipe->use_count = 0) {
+-		INIT_LIST_HEAD(&pipe->entities);
+-		pipe->state = VSP1_PIPELINE_STOPPED;
+-		pipe->buffers_ready = 0;
+-		pipe->num_video = 0;
+-		pipe->num_inputs = 0;
+-		pipe->output = NULL;
+-		pipe->bru = NULL;
+-		pipe->lif = NULL;
+-	}
++	if (--pipe->use_count = 0)
++		__vsp1_pipeline_cleanup(pipe);
+ 
+ 	mutex_unlock(&pipe->lock);
+ }
 -- 
-2.0.0.rc2
+1.8.5.5
 
