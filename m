@@ -1,69 +1,41 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 06 Jun 2014 07:21:03 +0000
-Subject: [PATCH v2 05/07] ARM: shmobile: Allow r8a7790 to build non-SMP APMU code
-Message-Id: <20140606072103.14868.14329.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:25:25 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Cpufreq Updates for v3.17
+Message-Id: <cover.1403487159.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Build the APMU for r8a7790 even though SMP is
-disabled in the kernel config. Also initialize
-Suspend-to-RAM from pm-r8a7790.c to in the future
-cover both UP and SMP use cases of the APMU.
+Please consider this Renesas ARM based SoC cpufreq update for v3.17.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
 
- arch/arm/mach-shmobile/Makefile      |    5 +++--
- arch/arm/mach-shmobile/pm-r8a7790.c  |    1 +
- arch/arm/mach-shmobile/smp-r8a7790.c |    1 -
- 3 files changed, 4 insertions(+), 3 deletions(-)
+The following changes since commit 7171511eaec5bf23fb06078f59784a3a0626b38f:
 
---- 0002/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2014-06-05 11:59:50.000000000 +0900
-@@ -36,12 +36,13 @@ endif
- 
- # CPU reset vector handling objects
- cpu-y				:= platsmp.o headsmp.o
-+cpu-$(CONFIG_ARCH_R8A7790)	+= platsmp-apmu.o
- 
- # SMP objects
- smp-y				:= $(cpu-y)
- smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o platsmp-scu.o
- smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o platsmp-scu.o
--smp-$(CONFIG_ARCH_R8A7790)	+= smp-r8a7790.o platsmp-apmu.o
-+smp-$(CONFIG_ARCH_R8A7790)	+= smp-r8a7790.o
- smp-$(CONFIG_ARCH_R8A7791)	+= smp-r8a7791.o platsmp-apmu.o
- smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o platsmp-scu.o
- 
-@@ -53,7 +54,7 @@ obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o
- obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
- obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
- obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o pm-rcar.o
--obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o
-+obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o $(cpu-y)
- obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o
- 
- # IRQ objects
---- 0004/arch/arm/mach-shmobile/pm-r8a7790.c
-+++ work/arch/arm/mach-shmobile/pm-r8a7790.c	2014-06-05 11:43:02.000000000 +0900
-@@ -78,4 +78,5 @@ void __init r8a7790_pm_init(void)
- 	iounmap(p);
- 
- 	r8a7790_sysc_init();
-+	shmobile_smp_apmu_suspend_init();
- }
---- 0004/arch/arm/mach-shmobile/smp-r8a7790.c
-+++ work/arch/arm/mach-shmobile/smp-r8a7790.c	2014-06-05 11:42:49.000000000 +0900
-@@ -39,7 +39,6 @@ static void __init r8a7790_smp_prepare_c
- 
- 	/* turn on power to SCU */
- 	r8a7790_pm_init();
--	shmobile_smp_apmu_suspend_init();
- 	rcar_sysc_power_up(&r8a7790_ca15_scu);
- 	rcar_sysc_power_up(&r8a7790_ca7_scu);
- }
+  Linux 3.16-rc1 (2014-06-15 17:45:28 -1000)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-cpufreq-for-v3.17
+
+for you to fetch changes up to 06e32c91dbce3c24ccbe84e3af2a35199662bca0:
+
+  ARM: shmobile: add cpufreq-cpu0 driver for common SH-Mobile (2014-06-16 19:50:54 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC Cpufreq Updates for v3.17
+
+* Add cpufreq-cpu0 driver
+
+----------------------------------------------------------------
+Gaku Inami (1):
+      ARM: shmobile: add cpufreq-cpu0 driver for common SH-Mobile
+
+ arch/arm/mach-shmobile/Makefile              |  1 +
+ arch/arm/mach-shmobile/cpufreq.c             | 31 ++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/common.h |  7 +++++++
+ 3 files changed, 39 insertions(+)
+ create mode 100644 arch/arm/mach-shmobile/cpufreq.c
