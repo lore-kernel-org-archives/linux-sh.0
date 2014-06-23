@@ -1,99 +1,276 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 14 Jun 2014 16:23:39 +0000
-Subject: [PATCH v3 17/19] ARM: shmobile: koelsch-reference: Enable CMT0 in device tree
-Message-Id: <1402763021-4067-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 23 Jun 2014 00:58:26 +0000
+Subject: [PATCH 08/10 v2] ASoC: rsnd: DMA cleanup for flexible SSI/SRC selection
+Message-Id: <87tx7csaq0.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
+	<8761jstphc.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <8761jstphc.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
 
-No more device needs to be added from platform code when booting the
-reference platform, remove the now empty r8a7791_add_dt_devices()
-function completely.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Current R-Car sound SSI/SRC/DVC selection has feature limit.
+(It is assuming that SSI/SRC are using same index number)
+
+So that enabling SSI/SRC flexible selection,
+this patch modifies DMA settings.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts            | 4 ++++
- arch/arm/mach-shmobile/board-koelsch-reference.c | 2 --
- arch/arm/mach-shmobile/include/mach/r8a7791.h    | 1 -
- arch/arm/mach-shmobile/setup-r8a7791.c           | 7 +------
- 4 files changed, 5 insertions(+), 9 deletions(-)
+v1 -> v2
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 3fe7a7f..1f88332 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -303,6 +303,10 @@
- 	};
- };
+ - based on latest mark/topic/rcar
+
+ sound/soc/sh/rcar/core.c |   45 +++++++++++++++++++----------
+ sound/soc/sh/rcar/gen.c  |   71 ++++++++++++++++++++--------------------------
+ sound/soc/sh/rcar/rsnd.h |    7 ++---
+ 3 files changed, 64 insertions(+), 59 deletions(-)
+
+diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
+index 5149fe2d..4435a31e 100644
+--- a/sound/soc/sh/rcar/core.c
++++ b/sound/soc/sh/rcar/core.c
+@@ -239,8 +239,21 @@ static int _rsnd_dma_of_name(char *dma_name, struct rsnd_mod *mod)
  
-+&cmt0 {
-+	status = "ok";
-+};
-+
- &sata0 {
- 	status = "okay";
- };
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index 26189e2..1a73200 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -86,7 +86,6 @@ static void __init koelsch_add_du_device(void)
-  * devices until they get moved to DT.
-  */
- static const struct clk_name clk_names[] __initconst = {
--	{ "cmt0", "fck", "sh-cmt-48-gen2.0" },
- 	{ "du0", "du.0", "rcar-du-r8a7791" },
- 	{ "du1", "du.1", "rcar-du-r8a7791" },
- 	{ "lvds0", "lvds.0", "rcar-du-r8a7791" },
-@@ -95,7 +94,6 @@ static const struct clk_name clk_names[] __initconst = {
- static void __init koelsch_add_standard_devices(void)
- {
- 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
--	r8a7791_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 
- 	koelsch_add_du_device();
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7791.h b/arch/arm/mach-shmobile/include/mach/r8a7791.h
-index 86eae7b..c1bf7ab 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7791.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7791.h
-@@ -2,7 +2,6 @@
- #define __ASM_R8A7791_H__
- 
- void r8a7791_add_standard_devices(void);
--void r8a7791_add_dt_devices(void);
- void r8a7791_clock_init(void);
- void r8a7791_pinmux_init(void);
- void r8a7791_pm_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index ddd2fca..a66727e 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -180,11 +180,6 @@ static const struct resource thermal_resources[] __initconst = {
- 					thermal_resources,		\
- 					ARRAY_SIZE(thermal_resources))
- 
--void __init r8a7791_add_dt_devices(void)
--{
--	r8a7791_register_cmt(0);
--}
--
- void __init r8a7791_add_standard_devices(void)
- {
- 	r8a7791_register_scif(0);
-@@ -202,7 +197,7 @@ void __init r8a7791_add_standard_devices(void)
- 	r8a7791_register_scif(12);
- 	r8a7791_register_scif(13);
- 	r8a7791_register_scif(14);
--	r8a7791_add_dt_devices();
-+	r8a7791_register_cmt(0);
- 	r8a7791_register_irqc(0);
- 	r8a7791_register_thermal();
  }
+ 
+-static void rsnd_dma_of_name(struct rsnd_dma *dma,
+-			     int is_play, char *dma_name)
++static void rsnd_dma_of_name(struct rsnd_mod *mod_from,
++			     struct rsnd_mod *mod_to,
++			     char *dma_name)
++{
++	int index = 0;
++
++	index = _rsnd_dma_of_name(dma_name + index, mod_from);
++	*(dma_name + index++) = '_';
++	index = _rsnd_dma_of_name(dma_name + index, mod_to);
++}
++
++static void rsnd_dma_of_path(struct rsnd_dma *dma,
++			     int is_play,
++			     struct rsnd_mod **mod_from,
++			     struct rsnd_mod **mod_to)
+ {
+ 	struct rsnd_mod *this = rsnd_dma_to_mod(dma);
+ 	struct rsnd_dai_stream *io = rsnd_mod_to_io(this);
+@@ -248,7 +261,6 @@ static void rsnd_dma_of_name(struct rsnd_dma *dma,
+ 	struct rsnd_mod *src = rsnd_io_to_mod_src(io);
+ 	struct rsnd_mod *dvc = rsnd_io_to_mod_dvc(io);
+ 	struct rsnd_mod *mod[MOD_MAX];
+-	struct rsnd_mod *src_mod, *dst_mod;
+ 	int i, index;
+ 
+ 
+@@ -285,17 +297,12 @@ static void rsnd_dma_of_name(struct rsnd_dma *dma,
+ 	}
+ 
+ 	if (is_play) {
+-		src_mod = mod[index - 1];
+-		dst_mod = mod[index];
++		*mod_from = mod[index - 1];
++		*mod_to   = mod[index];
+ 	} else {
+-		src_mod = mod[index];
+-		dst_mod = mod[index - 1];
++		*mod_from = mod[index];
++		*mod_to   = mod[index - 1];
+ 	}
+-
+-	index = 0;
+-	index = _rsnd_dma_of_name(dma_name + index, src_mod);
+-	*(dma_name + index++) = '_';
+-	index = _rsnd_dma_of_name(dma_name + index, dst_mod);
+ }
+ 
+ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma,
+@@ -303,6 +310,8 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma,
+ {
+ 	struct device *dev = rsnd_priv_to_dev(priv);
+ 	struct dma_slave_config cfg;
++	struct rsnd_mod *mod_from;
++	struct rsnd_mod *mod_to;
+ 	char dma_name[DMA_NAME_SIZE];
+ 	dma_cap_mask_t mask;
+ 	int ret;
+@@ -315,10 +324,16 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma,
+ 	dma_cap_zero(mask);
+ 	dma_cap_set(DMA_SLAVE, mask);
+ 
+-	rsnd_dma_of_name(dma, is_play, dma_name);
+-	rsnd_gen_dma_addr(priv, dma, &cfg, is_play, id);
++	rsnd_dma_of_path(dma, is_play, &mod_from, &mod_to);
++	rsnd_dma_of_name(mod_from, mod_to, dma_name);
++
++	cfg.slave_id	= id;
++	cfg.direction	= is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
++	cfg.src_addr	= rsnd_gen_dma_addr(priv, mod_from, is_play, 1);
++	cfg.dst_addr	= rsnd_gen_dma_addr(priv, mod_to,   is_play, 0);
+ 
+-	dev_dbg(dev, "dma name : %s\n", dma_name);
++	dev_dbg(dev, "dma : %s %pad -> %pad\n",
++		dma_name, &cfg.src_addr, &cfg.dst_addr);
+ 
+ 	dma->chan = dma_request_slave_channel_compat(mask, shdma_chan_filter,
+ 						     (void *)id, dev,
+diff --git a/sound/soc/sh/rcar/gen.c b/sound/soc/sh/rcar/gen.c
+index 46677af..73ce4c9 100644
+--- a/sound/soc/sh/rcar/gen.c
++++ b/sound/soc/sh/rcar/gen.c
+@@ -168,7 +168,7 @@ static int rsnd_gen_regmap_init(struct rsnd_priv *priv,
+  *	SSI : 0xec541000 / 0xec241008 / 0xec24100c
+  *	SSIU: 0xec541000 / 0xec100000 / 0xec100000 / 0xec400000 / 0xec400000
+  *	SCU : 0xec500000 / 0xec000000 / 0xec004000 / 0xec300000 / 0xec304000
+- *	CMD : 0xec500000 / 0xec008000                             0xec308000
++ *	CMD : 0xec500000 /            / 0xec008000                0xec308000
+  */
+ #define RDMA_SSI_I_N(addr, i)	(addr ##_reg - 0x00300000 + (0x40 * i) + 0x8)
+ #define RDMA_SSI_O_N(addr, i)	(addr ##_reg - 0x00300000 + (0x40 * i) + 0xc)
+@@ -188,14 +188,13 @@ static int rsnd_gen_regmap_init(struct rsnd_priv *priv,
+ #define RDMA_CMD_O_N(addr, i)	(addr ##_reg - 0x004f8000 + (0x400 * i))
+ #define RDMA_CMD_O_P(addr, i)	(addr ##_reg - 0x001f8000 + (0x400 * i))
+ 
+-static void rsnd_gen2_dma_addr(struct rsnd_priv *priv,
+-		       struct rsnd_dma *dma,
+-		       struct dma_slave_config *cfg,
+-		       int is_play, int slave_id)
++static dma_addr_t
++rsnd_gen2_dma_addr(struct rsnd_priv *priv,
++		   struct rsnd_mod *mod,
++		   int is_play, int is_from)
+ {
+ 	struct platform_device *pdev = rsnd_priv_to_pdev(priv);
+ 	struct device *dev = rsnd_priv_to_dev(priv);
+-	struct rsnd_mod *mod = rsnd_dma_to_mod(dma);
+ 	struct rsnd_dai_stream *io = rsnd_mod_to_io(mod);
+ 	dma_addr_t ssi_reg = platform_get_resource(pdev,
+ 				IORESOURCE_MEM, RSND_GEN2_SSI)->start;
+@@ -206,76 +205,68 @@ static void rsnd_gen2_dma_addr(struct rsnd_priv *priv,
+ 	int use_dvc = !!rsnd_io_to_mod_dvc(io);
+ 	int id = rsnd_mod_id(mod);
+ 	struct dma_addr {
+-		dma_addr_t src_addr;
+-		dma_addr_t dst_addr;
++		dma_addr_t out_addr;
++		dma_addr_t in_addr;
+ 	} dma_addrs[3][2][3] = {
+ 		/* SRC */
+ 		{{{ 0,				0 },
+ 		/* Capture */
+-		  { RDMA_SRC_O_N(src, id),	0 },
+-		  { RDMA_CMD_O_N(src, id),	0 } },
++		  { RDMA_SRC_O_N(src, id),	RDMA_SRC_I_P(src, id) },
++		  { RDMA_CMD_O_N(src, id),	RDMA_SRC_I_P(src, id) } },
+ 		 /* Playback */
+ 		 {{ 0,				0, },
+-		  { 0,				RDMA_SRC_I_N(src, id) },
+-		  { 0,				RDMA_SRC_I_N(src, id) } }
++		  { RDMA_SRC_O_P(src, id),	RDMA_SRC_I_N(src, id) },
++		  { RDMA_CMD_O_P(src, id),	RDMA_SRC_I_N(src, id) } }
+ 		},
+ 		/* SSI */
+ 		/* Capture */
+ 		{{{ RDMA_SSI_O_N(ssi, id),	0 },
+-		  { 0,				0 },
+-		  { 0,				0 } },
++		  { RDMA_SSIU_O_P(ssi, id),	0 },
++		  { RDMA_SSIU_O_P(ssi, id),	0 } },
+ 		 /* Playback */
+ 		 {{ 0,				RDMA_SSI_I_N(ssi, id) },
+-		  { 0,				0 },
+-		  { 0,				0 } }
++		  { 0,				RDMA_SSIU_I_P(ssi, id) },
++		  { 0,				RDMA_SSIU_I_P(ssi, id) } }
+ 		},
+ 		/* SSIU */
+ 		/* Capture */
+ 		{{{ RDMA_SSIU_O_N(ssi, id),	0 },
+-		  { RDMA_SSIU_O_P(ssi, id),	RDMA_SRC_I_P(src, id) },
+-		  { RDMA_SSIU_O_P(ssi, id),	RDMA_SRC_I_P(src, id) } },
++		  { RDMA_SSIU_O_P(ssi, id),	0 },
++		  { RDMA_SSIU_O_P(ssi, id),	0 } },
+ 		 /* Playback */
+ 		 {{ 0,				RDMA_SSIU_I_N(ssi, id) },
+-		  { RDMA_SRC_O_P(src, id),	RDMA_SSIU_I_P(ssi, id) },
+-		  { RDMA_CMD_O_P(src, id),	RDMA_SSIU_I_P(ssi, id) } } },
++		  { 0,				RDMA_SSIU_I_P(ssi, id) },
++		  { 0,				RDMA_SSIU_I_P(ssi, id) } } },
+ 	};
+ 
+ 	/* it shouldn't happen */
+-	if (use_dvc & !use_src) {
++	if (use_dvc & !use_src)
+ 		dev_err(dev, "DVC is selected without SRC\n");
+-		return;
+-	}
+ 
+ 	/* use SSIU or SSI ? */
+ 	if (is_ssi && (0 = strcmp(rsnd_mod_dma_name(mod), "ssiu")))
+ 		is_ssi++;
+ 
+-	cfg->src_addr = dma_addrs[is_ssi][is_play][use_src + use_dvc].src_addr;
+-	cfg->dst_addr = dma_addrs[is_ssi][is_play][use_src + use_dvc].dst_addr;
+-
+-	dev_dbg(dev, "dma%d addr - src : %x / dst : %x\n",
+-		id, cfg->src_addr, cfg->dst_addr);
++	return (is_from) ?
++		dma_addrs[is_ssi][is_play][use_src + use_dvc].out_addr :
++		dma_addrs[is_ssi][is_play][use_src + use_dvc].in_addr;
+ }
+ 
+-void rsnd_gen_dma_addr(struct rsnd_priv *priv,
+-		       struct rsnd_dma *dma,
+-		       struct dma_slave_config *cfg,
+-		       int is_play, int slave_id)
++dma_addr_t rsnd_gen_dma_addr(struct rsnd_priv *priv,
++			     struct rsnd_mod *mod,
++			     int is_play, int is_from)
+ {
+-	cfg->slave_id   = slave_id;
+-	cfg->src_addr   = 0;
+-	cfg->dst_addr   = 0;
+-	cfg->direction  = is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
+-
+ 	/*
+ 	 * gen1 uses default DMA addr
+ 	 */
+ 	if (rsnd_is_gen1(priv))
+-		return;
++		return 0;
+ 
+-	rsnd_gen2_dma_addr(priv, dma, cfg, is_play, slave_id);
+-}
++	if (!mod)
++		return 0;
+ 
++	return rsnd_gen2_dma_addr(priv, mod, is_play, is_from);
++}
+ 
+ /*
+  *		Gen2
+diff --git a/sound/soc/sh/rcar/rsnd.h b/sound/soc/sh/rcar/rsnd.h
+index 60b5e92..425b22e 100644
+--- a/sound/soc/sh/rcar/rsnd.h
++++ b/sound/soc/sh/rcar/rsnd.h
+@@ -279,10 +279,9 @@ int rsnd_gen_probe(struct platform_device *pdev,
+ void __iomem *rsnd_gen_reg_get(struct rsnd_priv *priv,
+ 			       struct rsnd_mod *mod,
+ 			       enum rsnd_reg reg);
+-void rsnd_gen_dma_addr(struct rsnd_priv *priv,
+-		       struct rsnd_dma *dma,
+-		       struct dma_slave_config *cfg,
+-		       int is_play,  int slave_id);
++dma_addr_t rsnd_gen_dma_addr(struct rsnd_priv *priv,
++		       struct rsnd_mod *mod,
++		       int is_play,  int is_from);
+ 
+ #define rsnd_is_gen1(s)		(((s)->info->flags & RSND_GEN_MASK) = RSND_GEN1)
+ #define rsnd_is_gen2(s)		(((s)->info->flags & RSND_GEN_MASK) = RSND_GEN2)
 -- 
-1.8.5.5
+1.7.9.5
 
