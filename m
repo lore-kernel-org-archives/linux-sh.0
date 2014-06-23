@@ -1,36 +1,42 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 06 Jun 2014 11:38:42 +0000
-Subject: [PATCH 1/2] spi: rspi: Remove unused variable in rspi_rz_transfer_one()
-Message-Id: <1402054723-30682-2-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:28:36 +0000
+Subject: [PATCH 27/29] ARM: shmobile: koelsch: Enable PCIe Controller & PCIe bus clock
+Message-Id: <998d7d64e1aeede4e03b6c67adb78fe55a278db7.1403487225.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402054723-30682-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1402054723-30682-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1403487225.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-Introduced by commit 8b983e90ea1a3dd82070f96c062ad521a06b7cc0 ("spi: rspi:
-Extract rspi_common_transfer()"), which removed its users.
+From: Phil Edworthy <phil.edworthy@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/spi/spi-rspi.c | 1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 10112745bb17..ddee9df1547d 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -630,7 +630,6 @@ static int rspi_rz_transfer_one(struct spi_master *master,
- 				struct spi_transfer *xfer)
- {
- 	struct rspi_data *rspi = spi_master_get_devdata(master);
--	int ret;
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index b0cfbd4..5dac673 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -426,6 +426,14 @@
+ 	};
+ };
  
- 	rspi_rz_receive_init(rspi);
- 
++&pcie_bus_clk {
++	status = "okay";
++};
++
++&pciec {
++	status = "okay";
++};
++
+ &cpu0 {
+ 	cpu0-supply = <&vdd_dvfs>;
+ };
 -- 
-1.9.1
+2.0.0.rc2
 
