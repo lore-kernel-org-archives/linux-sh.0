@@ -1,83 +1,84 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 02 Jun 2014 13:38:10 +0000
-Subject: [PATCH 08/18] spi: rspi: Remove unneeded resource test in DMA setup
-Message-Id: <1401716301-29612-9-git-send-email-geert+renesas@glider.be>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Mon, 23 Jun 2014 21:10:32 +0000
+Subject: [PATCH 2/2] [PATCH v2] ARM: lager: add vin1 node
+Message-Id: <1403557832-32225-3-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1401716301-29612-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+References: <1403557832-32225-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1403557832-32225-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+To: linux-media@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: magnus.damm@opensource.se, horms@verge.net.au, linux-kernel@lists.codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
 
-The resource is know to exist, as rspi_probe() already mapped it.
-Remove the test, and just pass the resource.
-Pass the device pointer instead of the platform device pointer, as the
-latter is no longer needed.
+Add device-tree for vin1 (composite video in) on the
+lager board.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 ---
- drivers/spi/spi-rspi.c | 21 +++++++++------------
- 1 file changed, 9 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 0a7a2d618f0f..1ec51cb00203 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -980,35 +980,32 @@ static struct dma_chan *rspi_request_dma_chan(struct device *dev,
- 	return chan;
- }
+Fixes since v1:
+	- Whitespace fixes as suggested by Sergei
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 4805c9f..e00543b 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -214,6 +214,11 @@
+ 		renesas,groups = "i2c2";
+ 		renesas,function = "i2c2";
+ 	};
++
++	vin1_pins: vin {
++		renesas,groups = "vin1_data8", "vin1_clk";
++		renesas,function = "vin1";
++	};
+ };
  
--static int rspi_request_dma(struct rspi_data *rspi,
--			    struct platform_device *pdev)
-+static int rspi_request_dma(struct device *dev, struct rspi_data *rspi,
-+			    const struct resource *res)
- {
--	const struct rspi_plat_data *rspi_pd = dev_get_platdata(&pdev->dev);
--	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	const struct rspi_plat_data *rspi_pd = dev_get_platdata(dev);
+ &ether {
+@@ -342,8 +347,39 @@
+ 	status = "ok";
+ 	pinctrl-0 = <&i2c2_pins>;
+ 	pinctrl-names = "default";
++
++	composite-in@20 {
++		compatible = "adi,adv7180";
++		reg = <0x20>;
++		remote = <&vin1>;
++
++		port {
++			adv7180: endpoint {
++				bus-width = <8>;
++				remote-endpoint = <&vin1ep0>;
++			};
++		};
++	};
+ };
  
--	if (!res || !rspi_pd)
-+	if (!rspi_pd)
- 		return 0;	/* The driver assumes no error. */
- 
- 	/* If the module receives data by DMAC, it also needs TX DMAC */
- 	if (rspi_pd->dma_rx_id && rspi_pd->dma_tx_id) {
--		rspi->chan_rx = rspi_request_dma_chan(&pdev->dev,
--						      DMA_DEV_TO_MEM,
-+		rspi->chan_rx = rspi_request_dma_chan(dev, DMA_DEV_TO_MEM,
- 						      rspi_pd->dma_rx_id,
- 						      res->start + RSPI_SPDR);
- 		if (!rspi->chan_rx)
- 			return -ENODEV;
- 
--		dev_info(&pdev->dev, "Use DMA when rx.\n");
-+		dev_info(dev, "Use DMA when rx.\n");
- 	}
- 	if (rspi_pd->dma_tx_id) {
--		rspi->chan_tx = rspi_request_dma_chan(&pdev->dev,
--						      DMA_MEM_TO_DEV,
-+		rspi->chan_tx = rspi_request_dma_chan(dev, DMA_MEM_TO_DEV,
- 						      rspi_pd->dma_tx_id,
- 						      res->start + RSPI_SPDR);
- 		if (!rspi->chan_tx)
- 			return -ENODEV;
- 
--		dev_info(&pdev->dev, "Use DMA when tx\n");
-+		dev_info(dev, "Use DMA when tx\n");
- 	}
- 
- 	return 0;
-@@ -1210,7 +1207,7 @@ static int rspi_probe(struct platform_device *pdev)
- 		goto error2;
- 	}
- 
--	ret = rspi_request_dma(rspi, pdev);
-+	ret = rspi_request_dma(&pdev->dev, rspi, res);
- 	if (ret < 0)
- 		dev_warn(&pdev->dev, "DMA not available, using PIO\n");
- 
+ &i2c3	{
+ 	status = "ok";
+ };
++
++/* composite video input */
++&vin1 {
++	pinctrl-0 = <&vin1_pins>;
++	pinctrl-names = "default";
++
++	status = "ok";
++
++	port {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		vin1ep0: endpoint {
++			remote-endpoint = <&adv7180>;
++			bus-width = <8>;
++		};
++	};
++};
 -- 
-1.9.1
+2.0.0
 
