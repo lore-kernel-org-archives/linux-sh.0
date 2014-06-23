@@ -1,55 +1,90 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 06 Jun 2014 05:29:04 +0000
-Subject: [PATCH v2 03/03] ARM: shmobile: Use shmobile_init_delay() on r7s72100
-Message-Id: <20140606052904.17594.43724.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:28:38 +0000
+Subject: [PATCH 29/29] ARM: shmobile: r8a7791: add R-Car sound support on DTSI
+Message-Id: <09abd1fd11f98d6abde9c23244234170e7e36c2f.1403487225.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1403487225.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Adjust the r7s72100 SoC support code to use shmobile_init_delay()
-together with CPU Frequency settings from the DTS. Get rid of the
-C code version.
+This patch support PIO transfer only at this point
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a7791.dtsi | 56 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 56 insertions(+)
 
- arch/arm/mach-shmobile/include/mach/r7s72100.h |    1 -
- arch/arm/mach-shmobile/setup-r7s72100.c        |    7 +------
- 2 files changed, 1 insertion(+), 7 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/include/mach/r7s72100.h
-+++ work/arch/arm/mach-shmobile/include/mach/r7s72100.h	2014-05-29 17:53:06.000000000 +0900
-@@ -3,6 +3,5 @@
- 
- void r7s72100_add_dt_devices(void);
- void r7s72100_clock_init(void);
--void r7s72100_init_early(void);
- 
- #endif /* __ASM_R7S72100_H__ */
---- 0001/arch/arm/mach-shmobile/setup-r7s72100.c
-+++ work/arch/arm/mach-shmobile/setup-r7s72100.c	2014-05-29 17:53:00.000000000 +0900
-@@ -43,11 +43,6 @@ void __init r7s72100_add_dt_devices(void
- 	r7s72100_register_mtu2();
- }
- 
--void __init r7s72100_init_early(void)
--{
--	shmobile_setup_delay(400, 1, 3); /* Cortex-A9 @ 400MHz */
--}
--
- #ifdef CONFIG_USE_OF
- static const char *r7s72100_boards_compat_dt[] __initdata = {
- 	"renesas,r7s72100",
-@@ -55,7 +50,7 @@ static const char *r7s72100_boards_compa
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 43d2130..1997f16 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -985,4 +985,60 @@
+ 		clock-names = "pcie", "pcie_bus";
+ 		status = "disabled";
+ 	};
++
++	rcar_sound: rcar_sound@0xec500000 {
++		#sound-dai-cells = <1>;
++		compatible =  "renesas,rcar_sound-r8a7791", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
++		interrupt-parent = <&gic>;
++		reg =	<0 0xec500000 0 0x1000>, /* SCU */
++			<0 0xec5a0000 0 0x100>,  /* ADG */
++			<0 0xec540000 0 0x1000>, /* SSIU */
++			<0 0xec541000 0 0x1280>; /* SSI */
++		clocks = <&mstp10_clks R8A7791_CLK_SSI_ALL>,
++			<&mstp10_clks R8A7791_CLK_SSI9>, <&mstp10_clks R8A7791_CLK_SSI8>,
++			<&mstp10_clks R8A7791_CLK_SSI7>, <&mstp10_clks R8A7791_CLK_SSI6>,
++			<&mstp10_clks R8A7791_CLK_SSI5>, <&mstp10_clks R8A7791_CLK_SSI4>,
++			<&mstp10_clks R8A7791_CLK_SSI3>, <&mstp10_clks R8A7791_CLK_SSI2>,
++			<&mstp10_clks R8A7791_CLK_SSI1>, <&mstp10_clks R8A7791_CLK_SSI0>,
++			<&mstp10_clks R8A7791_CLK_SCU_SRC9>, <&mstp10_clks R8A7791_CLK_SCU_SRC8>,
++			<&mstp10_clks R8A7791_CLK_SCU_SRC7>, <&mstp10_clks R8A7791_CLK_SCU_SRC6>,
++			<&mstp10_clks R8A7791_CLK_SCU_SRC5>, <&mstp10_clks R8A7791_CLK_SCU_SRC4>,
++			<&mstp10_clks R8A7791_CLK_SCU_SRC3>, <&mstp10_clks R8A7791_CLK_SCU_SRC2>,
++			<&mstp10_clks R8A7791_CLK_SCU_SRC1>, <&mstp10_clks R8A7791_CLK_SCU_SRC0>,
++			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
++		clock-names = "ssi-all",
++				"ssi.9", "ssi.8", "ssi.7", "ssi.6", "ssi.5",
++				"ssi.4", "ssi.3", "ssi.2", "ssi.1", "ssi.0",
++				"src.9", "src.8", "src.7", "src.6", "src.5",
++				"src.4", "src.3", "src.2", "src.1", "src.0",
++				"clk_a", "clk_b", "clk_c", "clk_i";
++
++		status = "disabled";
++
++		rcar_sound,src {
++			src0: src@0 { };
++			src1: src@1 { };
++			src2: src@2 { };
++			src3: src@3 { };
++			src4: src@4 { };
++			src5: src@5 { };
++			src6: src@6 { };
++			src7: src@7 { };
++			src8: src@8 { };
++			src9: src@9 { };
++		};
++
++		rcar_sound,ssi {
++			ssi0: ssi@0 { interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi1: ssi@1 { interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi2: ssi@2 { interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi3: ssi@3 { interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi4: ssi@4 { interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi5: ssi@5 { interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi6: ssi@6 { interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi7: ssi@7 { interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi8: ssi@8 { interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi9: ssi@9 { interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>; };
++		};
++	};
  };
- 
- DT_MACHINE_START(R7S72100_DT, "Generic R7S72100 (Flattened Device Tree)")
--	.init_early	= r7s72100_init_early,
-+	.init_early	= shmobile_init_delay,
- 	.dt_compat	= r7s72100_boards_compat_dt,
- MACHINE_END
- #endif /* CONFIG_USE_OF */
+-- 
+2.0.0.rc2
+
