@@ -1,72 +1,80 @@
-From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Date: Wed, 25 Jun 2014 09:01:32 +0000
-Subject: Re: [PATCH] ARM: shmobile: Remove opps table check for cpufreq
-Message-Id: <53AA8FEC.6050808@bp.renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 23 Jun 2014 00:57:42 +0000
+Subject: [PATCH 07/10 v2] ASoC: rsnd: enable SRC setting via DT
+Message-Id: <87vbrssar8.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <53AA8130.2020304@bp.renesas.com>
- <CAKohpo=vEJ0chenDiPQiAMHUTmuRArQPAbG1ym94-9FN32z+DA@mail.gmail.com>
-In-Reply-To: <CAKohpo=vEJ0chenDiPQiAMHUTmuRArQPAbG1ym94-9FN32z+DA@mail.gmail.com>
+References: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
+	<8761jstphc.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <8761jstphc.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
 
-(2014/06/25 17:04), Viresh Kumar wrote:
-> On 25 June 2014 13:28, Gaku Inami <gaku.inami.xw@bp.renesas.com> wrote:
->> This patch is based on feedback from Viresh Kumar.
->> Since cpufreq-cpu0 driver has already check opp table, there is no
->> need to same check in mach-shmobile.
->>
->> Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
->> ---
->>
->> Based on : renesas-devel-v3.16-rc2-20140623
-> I hope you have tested that this doesn't break it :)
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-I have already tested this patch.
-There was no problem to verify the following cases.
-  case1 : Normal case
-  case2 : Opps table is not exist
-  case3 : CONFIG_GENERIC_CPUFREQ_CPU0 is disabled
+some special board wants to exchange sampling rate by using SRC.
+This patch enables its settings.
 
->>  arch/arm/mach-shmobile/cpufreq.c |   16 +---------------
->>  1 file changed, 1 insertion(+), 15 deletions(-)
->>
->> diff --git a/arch/arm/mach-shmobile/cpufreq.c b/arch/arm/mach-shmobile/cpufreq.c
->> index e2c868f..8a24b2b 100644
->> --- a/arch/arm/mach-shmobile/cpufreq.c
->> +++ b/arch/arm/mach-shmobile/cpufreq.c
->> @@ -8,24 +8,10 @@
->>   * for more details.
->>   */
->>
->> -#include <linux/of.h>
->> -#include <linux/of_device.h>
->>  #include <linux/platform_device.h>
->>
->>  int __init shmobile_cpufreq_init(void)
->>  {
->> -       struct device_node *np;
->> -
->> -       np = of_cpu_device_node_get(0);
->> -       if (np = NULL) {
->> -               pr_err("failed to find cpu0 node\n");
->> -               return 0;
->> -       }
->> -
->> -       if (of_get_property(np, "operating-points", NULL))
->> -               platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
->> -
->> -       of_node_put(np);
->> -
->> +       platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
->>         return 0;
->>  }
-> Now that there is nothing else in this file, do you really need a separate
-> file for cpufreq?
->
-> Acked-by: Viresh Kumar <viresh.kumar@linaro.org>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-Thank you for your ack. I hope to leave this file.
-In the future, I will add a fix that depends on Renesas-SoC to this file.
+ - src_node -> np on of_property_read_u32()
+
+ .../devicetree/bindings/sound/renesas,rsnd.txt     |    2 +-
+ sound/soc/sh/rcar/src.c                            |   14 ++++++++++++--
+ 2 files changed, 13 insertions(+), 3 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
+index 41a120c..1d88d42 100644
+--- a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
++++ b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
+@@ -24,7 +24,7 @@ SSI subnode properties:
+ - no-busif			: BUSIF is not ussed when [mem -> SSI] via DMA case
+ 
+ SRC subnode properties:
+-no properties at this point
++- convert-rate			: SRC convert rate if needed
+ 
+ DAI subnode properties:
+ - playback			: list of playback modules
+diff --git a/sound/soc/sh/rcar/src.c b/sound/soc/sh/rcar/src.c
+index 4d39505..7f3c7d7 100644
+--- a/sound/soc/sh/rcar/src.c
++++ b/sound/soc/sh/rcar/src.c
+@@ -612,11 +612,11 @@ static void rsnd_of_parse_src(struct platform_device *pdev,
+ 			      const struct rsnd_of_data *of_data,
+ 			      struct rsnd_priv *priv)
+ {
+-	struct device_node *src_node;
++	struct device_node *src_node, *np;
+ 	struct rcar_snd_info *info = rsnd_priv_to_info(priv);
+ 	struct rsnd_src_platform_info *src_info;
+ 	struct device *dev = &pdev->dev;
+-	int nr;
++	int nr, i;
+ 
+ 	if (!of_data)
+ 		return;
+@@ -640,6 +640,16 @@ static void rsnd_of_parse_src(struct platform_device *pdev,
+ 	info->src_info		= src_info;
+ 	info->src_info_nr	= nr;
+ 
++	i = 0;
++	for_each_child_of_node(src_node, np) {
++		src_info = info->src_info + i;
++
++		of_property_read_u32(np, "convert-rate",
++				     &src_info->convert_rate);
++
++		i++;
++	}
++
+ rsnd_of_parse_src_end:
+ 	of_node_put(src_node);
+ }
+-- 
+1.7.9.5
 
