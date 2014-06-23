@@ -1,80 +1,46 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Mon, 30 Jun 2014 07:54:22 +0000
-Subject: [PATCH v2 1/3] PCI: host: pcie-rcar: Use correct initial HW settings
-Message-Id: <1404114864-17330-2-git-send-email-phil.edworthy@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Jun 2014 02:28:13 +0000
+Subject: [PATCH 04/29] ARM: shmobile: r8a7791: add USB3.0 clocks to device tree
+Message-Id: <308f306283894a0d3eeee7d1030289e4e668d49d.1403487225.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404114864-17330-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1404114864-17330-1-git-send-email-phil.edworthy@renesas.com>
+References: <cover.1403487225.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-pci@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Simon Horman <horms@verge.net.au>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Phil Edworthy <phil.edworthy@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Although the R-Car PCIe driver works as it is, there are a number of
-incorrect settings that this patch corrects. It corrects:
- - enabling the PCI Express Extended Cap ID.
- - setting Data Link Layer Link Active Reporting Capable.
- - terminating list of capabilities.
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-It also removes enabling the MAC data scrambling as this is the
-default HW setting, and removes incorrect code to enable slave bus
-mastering as this is done by the PCI core.
-
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2:
- - No change
+ arch/arm/boot/dts/r8a7791.dtsi | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
- drivers/pci/host/pcie-rcar.c | 15 ++++-----------
- 1 file changed, 4 insertions(+), 11 deletions(-)
-
-diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
-index c06b888..680a8cc 100644
---- a/drivers/pci/host/pcie-rcar.c
-+++ b/drivers/pci/host/pcie-rcar.c
-@@ -483,14 +483,15 @@ static int rcar_pcie_hw_init(struct rcar_pcie *pcie)
- 	rcar_rmw32(pcie, RCONF(PCI_SUBORDINATE_BUS), 0xff, 1);
- 
- 	/* Initialize default capabilities. */
--	rcar_rmw32(pcie, REXPCAP(0), 0, PCI_CAP_ID_EXP);
-+	rcar_rmw32(pcie, REXPCAP(0), 0xff, PCI_CAP_ID_EXP);
- 	rcar_rmw32(pcie, REXPCAP(PCI_EXP_FLAGS),
- 		PCI_EXP_FLAGS_TYPE, PCI_EXP_TYPE_ROOT_PORT << 4);
- 	rcar_rmw32(pcie, RCONF(PCI_HEADER_TYPE), 0x7f,
- 		PCI_HEADER_TYPE_BRIDGE);
- 
- 	/* Enable data link layer active state reporting */
--	rcar_rmw32(pcie, REXPCAP(PCI_EXP_LNKCAP), 0, PCI_EXP_LNKCAP_DLLLARC);
-+	rcar_rmw32(pcie, REXPCAP(PCI_EXP_LNKCAP), PCI_EXP_LNKCAP_DLLLARC,
-+		PCI_EXP_LNKCAP_DLLLARC);
- 
- 	/* Write out the physical slot number = 0 */
- 	rcar_rmw32(pcie, REXPCAP(PCI_EXP_SLTCAP), PCI_EXP_SLTCAP_PSN, 0);
-@@ -499,10 +500,7 @@ static int rcar_pcie_hw_init(struct rcar_pcie *pcie)
- 	rcar_rmw32(pcie, TLCTLR+1, 0x3f, 50);
- 
- 	/* Terminate list of capabilities (Next Capability Offset=0) */
--	rcar_rmw32(pcie, RVCCAP(0), 0xfff0, 0);
--
--	/* Enable MAC data scrambling. */
--	rcar_rmw32(pcie, MACCTLR, SCRAMBLE_DISABLE, 0);
-+	rcar_rmw32(pcie, RVCCAP(0), 0xfff00000, 0);
- 
- 	/* Enable MSI */
- 	if (IS_ENABLED(CONFIG_PCI_MSI))
-@@ -519,11 +517,6 @@ static int rcar_pcie_hw_init(struct rcar_pcie *pcie)
- 	/* Enable INTx interrupts */
- 	rcar_rmw32(pcie, PCIEINTXR, 0, 0xF << 8);
- 
--	/* Enable slave Bus Mastering */
--	rcar_rmw32(pcie, RCONF(PCI_STATUS), PCI_STATUS_DEVSEL_MASK,
--		PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER |
--		PCI_STATUS_CAP_LIST | PCI_STATUS_DEVSEL_FAST);
--
- 	wmb();
- 
- 	return 0;
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 8d7ffae..2c27e36 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -758,15 +758,15 @@
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+ 			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7791_CLK_SD0>,
+-				 <&mmc0_clk>, <&hp_clk>, <&hp_clk>, <&rclk_clk>;
++				 <&mmc0_clk>, <&hp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7791_CLK_TPU0 R8A7791_CLK_SDHI2 R8A7791_CLK_SDHI1 R8A7791_CLK_SDHI0
+-				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_IIC1 R8A7791_CLK_CMT1
++				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_IIC1 R8A7791_CLK_SSUSB R8A7791_CLK_CMT1
+ 			>;
+ 			clock-output-names  				"tpu0", "sdhi2", "sdhi1", "sdhi0",
+-				"mmcif0", "i2c7", "i2c8", "cmt1";
++				"mmcif0", "i2c7", "i2c8", "ssusb", "cmt1";
+ 		};
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
 -- 
-2.0.0
+2.0.0.rc2
 
