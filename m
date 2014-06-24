@@ -1,22 +1,84 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 12 Jun 2014 02:45:45 +0000
-Subject: Re: [PATCH 1/3 v3] ARM: shmobile: r8a7790: add MSTP10 support on DTSI
-Message-Id: <20140612024545.GE22273@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 24 Jun 2014 18:02:21 +0000
+Subject: [PATCH v5 2/2] ARM: shmobile: lager: enable internal PCI
+Message-Id: <201406242202.22807.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d2egj5se.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87d2egj5se.wl%kuninori.morimoto.gx@renesas.com>
+References: <201406242157.05973.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201406242157.05973.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jun 11, 2014 at 09:27:42AM +0200, Geert Uytterhoeven wrote:
-> On Wed, Jun 11, 2014 at 8:53 AM, Kuninori Morimoto
-> <kuninori.morimoto.gx@renesas.com> wrote:
-> > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> >
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-Thanks, I will queue this up.
+Enable internal AHB-PCI bridges for the USB EHCI/OHCI controllers attached to
+them.
+
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
+[Sergei: enabled PCI0]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+Changes in version 4:
+- refreshed the patch.
+
+Changes in version 3:
+- refreshed the patch.
+
+Changes in version 2:
+- enabled PCI0 device;
+- reworded summary and changelog;
+- refreshed the patch.
+
+ arch/arm/boot/dts/r8a7790-lager.dts |   33 +++++++++++++++++++++++++++++++++
+ 1 file changed, 33 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7790-lager.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790-lager.dts
++++ renesas/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -219,6 +219,21 @@
+ 		renesas,groups = "i2c3";
+ 		renesas,function = "i2c3";
+ 	};
++
++	usb0_pins: usb0 {
++		renesas,groups = "usb0";
++		renesas,function = "usb0";
++	};
++
++	usb1_pins: usb1 {
++		renesas,groups = "usb1";
++		renesas,function = "usb1";
++	};
++
++	usb2_pins: usb2 {
++		renesas,groups = "usb2";
++		renesas,function = "usb2";
++	};
+ };
+ 
+ &ether {
+@@ -368,3 +383,21 @@
+ 		regulator-always-on;
+ 	};
+ };
++
++&pci0 {
++	status = "okay";
++	pinctrl-0 = <&usb0_pins>;
++	pinctrl-names = "default";
++};
++
++&pci1 {
++	status = "okay";
++	pinctrl-0 = <&usb1_pins>;
++	pinctrl-names = "default";
++};
++
++&pci2 {
++	status = "okay";
++	pinctrl-0 = <&usb2_pins>;
++	pinctrl-names = "default";
++};
