@@ -1,53 +1,66 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:28:14 +0000
-Subject: [PATCH 05/29] ARM: shmobile: r8a7791 dtsi: add SYS-DMAC clocks
-Message-Id: <4e074bc8114f0ba8a2e0a69fb459564814c9e966.1403487225.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 24 Jun 2014 18:13:38 +0000
+Subject: [PATCH v4 3/3] ARM: shmobile: henninger: enable internal PCI
+Message-Id: <201406242213.39873.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
+References: <201406242207.32790.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201406242207.32790.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Enable internal AHB-PCI bridges for the USB EHCI/OHCI controllers attached to
+them.
 
-Add clocks for the SYS-DMAC0 and SYS-DMAC1 hardware blocks.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Cfr. the r8a7790 version by Ben Dooks.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+Changes in version 4:
+- moved the PCI bridge nodes before PCIe clock/bridge nodes.
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 2c27e36..d683982 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -743,16 +743,19 @@
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150138 0 4>, <0 0xe6150040 0 4>;
- 			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
--				 <&mp_clk>, <&mp_clk>, <&mp_clk>;
-+				 <&mp_clk>, <&mp_clk>, <&mp_clk>,
-+				 <&zs_clk>, <&zs_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
- 				R8A7791_CLK_SCIFA2 R8A7791_CLK_SCIFA1 R8A7791_CLK_SCIFA0
- 				R8A7791_CLK_MSIOF2 R8A7791_CLK_SCIFB0 R8A7791_CLK_SCIFB1
- 				R8A7791_CLK_MSIOF1 R8A7791_CLK_SCIFB2
-+				R8A7791_CLK_SYS_DMAC1 R8A7791_CLK_SYS_DMAC0
- 			>;
- 			clock-output-names  				"scifa2", "scifa1", "scifa0", "msiof2", "scifb0",
--				"scifb1", "msiof1", "scifb2";
-+				"scifb1", "msiof1", "scifb2",
-+				"sys-dmac1", "sys-dmac0";
- 		};
- 		mstp3_clks: mstp3_clks@e615013c {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
--- 
-2.0.0.rc2
+Changes in version 3:
+- refreshed the patch.
 
+ arch/arm/boot/dts/r8a7791-henninger.dts |   22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7791-henninger.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-henninger.dts
++++ renesas/arch/arm/boot/dts/r8a7791-henninger.dts
+@@ -125,6 +125,16 @@
+ 				 "msiof0_tx";
+ 		renesas,function = "msiof0";
+ 	};
++
++	usb0_pins: usb0 {
++		renesas,groups = "usb0";
++		renesas,function = "usb0";
++	};
++
++	usb1_pins: usb1 {
++		renesas,groups = "usb1";
++		renesas,function = "usb1";
++	};
+ };
+ 
+ &scif0 {
+@@ -231,6 +241,18 @@
+ 	};
+ };
+ 
++&pci0 {
++	status = "okay";
++	pinctrl-0 = <&usb0_pins>;
++	pinctrl-names = "default";
++};
++
++&pci1 {
++	status = "okay";
++	pinctrl-0 = <&usb1_pins>;
++	pinctrl-names = "default";
++};
++
+ &pcie_bus_clk {
+ 	status = "okay";
+ };
