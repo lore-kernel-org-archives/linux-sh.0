@@ -1,143 +1,66 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 12 Jun 2014 09:42:32 +0000
-Subject: [PATCH v2 03/07] ARM: shmobile: Lager SYS-DMAC prototype
-Message-Id: <20140612094232.4132.85319.sendpatchset@w520>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 24 Jun 2014 18:11:44 +0000
+Subject: [PATCH v4 2/3] ARM: shmobile: koelsch: enable internal PCI
+Message-Id: <201406242211.45729.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201406242207.32790.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201406242207.32790.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Enable internal AHB-PCI bridges for the USB EHCI/OHCI controllers attached to
+them.
 
-Prototype code to enable part of the SYS-DMAC on Lager.
-Written to exercise the SYS-DMAC - Not for upstream merge.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Based on the following patch by Kuninori Morimoto-san:
-"Local: ARM: shmobile: r8a7790: add SYS-DMAC support"
-
-This patch enables SYS-DMAC0 (= Low), it doesn't support
-SYS-DMAC1 (= HI) today.
-Because, SYS-DMAC HI/Low interrupt mapping is not
-good match to SH-DMAC driver.
-
-Thanks to Morimoto-san for his sample code!
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
+Changes in version 3:
+- refreshed the patch.
 
- Changes since V1:
- - None
+Changes in version 2:
+- refreshed the patch.
 
- arch/arm/mach-shmobile/board-lager-reference.c |   93 ++++++++++++++++++++++++
- 1 file changed, 93 insertions(+)
+ arch/arm/boot/dts/r8a7791-koelsch.dts |   22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
---- 0001/arch/arm/mach-shmobile/board-lager-reference.c
-+++ work/arch/arm/mach-shmobile/board-lager-reference.c	2014-06-10 23:11:20.000000000 +0900
-@@ -70,6 +70,98 @@ static const struct resource du_resource
- 	DEFINE_RES_IRQ(gic_spi(269)),
+Index: renesas/arch/arm/boot/dts/r8a7791-koelsch.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ renesas/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -279,6 +279,16 @@
+ 		renesas,groups = "i2c6";
+ 		renesas,function = "i2c6";
+ 	};
++
++	usb0_pins: usb0 {
++		renesas,groups = "usb0";
++		renesas,function = "usb0";
++	};
++
++	usb1_pins: usb1 {
++		renesas,groups = "usb1";
++		renesas,function = "usb1";
++	};
  };
  
-+#include <linux/sh_dma.h>
-+#include <mach/dma-register.h>
-+
-+/* Local DMA slave IDs */
-+enum {
-+	RCAR_DMA_SLAVE_LAGER_INVALID = 0,
-+};
-+
-+#define DMAE_CHANNEL(a, b)			\
-+{						\
-+	.offset		= (a) - 0x20,		\
-+	.dmars		= (a) - 0x20 + 0x40,	\
-+	.chclr_bit	= (b),			\
-+	.chclr_offset	= 0x80 - 0x20,		\
-+}
-+
-+/* Sys-DMAC */
-+#define SYS_DMAC_SLAVE(_id, _bit, _addr, toffset, roffset, t, r)	\
-+{								\
-+	.slave_id	= SYS_DMAC_SLAVE_## _id ##_TX,		\
-+	.addr		= _addr + toffset,			\
-+	.chcr		= CHCR_TX(XMIT_SZ_## _bit ##BIT),	\
-+	.mid_rid	= t,					\
-+}, {								\
-+	.slave_id	= SYS_DMAC_SLAVE_## _id ##_RX,		\
-+	.addr		= _addr + roffset,			\
-+	.chcr		= CHCR_RX(XMIT_SZ_## _bit ##BIT),	\
-+	.mid_rid	= r,					\
-+}
-+
-+static const struct sh_dmae_slave_config r8a7790_sys_dmac_slaves[] = {
-+};
-+
-+static const struct sh_dmae_channel r8a7790_sys_dmac_channels[] = {
-+	DMAE_CHANNEL(0x8000, 0),
-+	DMAE_CHANNEL(0x8080, 1),
-+	DMAE_CHANNEL(0x8100, 2),
-+	DMAE_CHANNEL(0x8180, 3),
-+	DMAE_CHANNEL(0x8200, 4),
-+	DMAE_CHANNEL(0x8280, 5),
-+	DMAE_CHANNEL(0x8300, 6),
-+	DMAE_CHANNEL(0x8380, 7),
-+	DMAE_CHANNEL(0x8400, 8),
-+	DMAE_CHANNEL(0x8480, 9),
-+	DMAE_CHANNEL(0x8500, 10),
-+	DMAE_CHANNEL(0x8580, 11),
-+	DMAE_CHANNEL(0x8600, 12),
-+	DMAE_CHANNEL(0x8680, 13),
-+	DMAE_CHANNEL(0x8700, 14),
-+};
-+
-+static struct sh_dmae_pdata r8a7790_sys_dmac_platform_data = {
-+	.slave		= r8a7790_sys_dmac_slaves,
-+	.slave_num	= ARRAY_SIZE(r8a7790_sys_dmac_slaves),
-+	.channel	= r8a7790_sys_dmac_channels,
-+	.channel_num	= ARRAY_SIZE(r8a7790_sys_dmac_channels),
-+	.ts_low_shift	= TS_LOW_SHIFT,
-+	.ts_low_mask	= TS_LOW_BIT << TS_LOW_SHIFT,
-+	.ts_high_shift	= TS_HI_SHIFT,
-+	.ts_high_mask	= TS_HI_BIT << TS_HI_SHIFT,
-+	.ts_shift	= dma_ts_shift,
-+	.ts_shift_num	= ARRAY_SIZE(dma_ts_shift),
-+	.dmaor_init	= DMAOR_DME,
-+	.chclr_present	= 1,
-+	.chclr_bitwise	= 1,
-+	.fourty_bits_addr = 1,
-+};
-+
-+static struct resource r8a7790_sys_dmac_resources[] = {
-+	/* Channel registers and DMAOR for low */
-+	DEFINE_RES_MEM(0xe6700020, 0x8763 - 0x20),
-+	DEFINE_RES_IRQ(gic_spi(197)),
-+	DEFINE_RES_NAMED(gic_spi(200), 15, NULL, IORESOURCE_IRQ),
-+
-+	/*
-+	 * HI is not supported
-+	 * since IRQ has strange mapping
-+	 */
-+};
-+
-+#define r8a7790_register_sys_dmac(id)				\
-+	platform_device_register_resndata(			\
-+		&platform_bus, "sh-dma-engine", 2 + id,		\
-+		&r8a7790_sys_dmac_resources[id * 3],	3,	\
-+		&r8a7790_sys_dmac_platform_data,		\
-+		sizeof(r8a7790_sys_dmac_platform_data))
-+
-+static void __init lager_add_dmac_prototype(void)
-+{
-+	r8a7790_register_sys_dmac(0);
-+}
-+
- static void __init lager_add_du_device(void)
- {
- 	struct platform_device_info info = {
-@@ -102,6 +194,7 @@ static void __init lager_add_standard_de
- {
- 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
- 	r8a7790_add_dt_devices();
-+	lager_add_dmac_prototype();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ &ether {
+@@ -426,6 +436,18 @@
+ 	};
+ };
  
- 	lager_add_du_device();
++&pci0 {
++	status = "okay";
++	pinctrl-0 = <&usb0_pins>;
++	pinctrl-names = "default";
++};
++
++&pci1 {
++	status = "okay";
++	pinctrl-0 = <&usb1_pins>;
++	pinctrl-names = "default";
++};
++
+ &pcie_bus_clk {
+ 	status = "okay";
+ };
