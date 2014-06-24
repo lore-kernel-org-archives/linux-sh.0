@@ -1,29 +1,81 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 04 Jun 2014 23:29:02 +0000
-Subject: Re: [PATCH v2 3/7] ARM: shmobile: r8a7791 dtsi: add SYS-DMAC clocks
-Message-Id: <20140604232901.GA25614@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 24 Jun 2014 18:10:05 +0000
+Subject: [PATCH v4 1/3] ARM: shmobile: r8a7791: add internal PCI bridge nodes
+Message-Id: <201406242210.06194.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401716531-29794-1-git-send-email-geert+renesas@glider.be>
- <1401716531-29794-4-git-send-email-geert+renesas@glider.be>
- <1507846.mqylbqQs2V@avalon>
-In-Reply-To: <1507846.mqylbqQs2V@avalon>
+References: <201406242207.32790.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201406242207.32790.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jun 04, 2014 at 01:24:57PM +0200, Laurent Pinchart wrote:
-> Hi Geert,
-> 
-> Thank you for the patch.
-> 
-> On Monday 02 June 2014 15:42:07 Geert Uytterhoeven wrote:
-> > Add clocks for the SYS-DMAC0 and SYS-DMAC1 hardware blocks.
-> > 
-> > Cfr. the r8a7790 version by Ben Dooks.
-> > 
-> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Add device nodes for the R8A7791 internal PCI bridge devices.
 
-Thanks, I have queued this up.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+Changes in version 4:
+- added "device_type" and "ranges" properties to the PCI bridge nodes;
+- removed "0x" prefix from zero values in the "reg" properties.
+
+Changes in version 3:
+- refreshed the patch.
+
+Changes in version 2:
+- added interrupt-related properties to the PCI device nodes;
+- refreshed the patch.
+
+ arch/arm/boot/dts/r8a7791.dtsi |   40 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
++++ renesas/arch/arm/boot/dts/r8a7791.dtsi
+@@ -961,6 +961,46 @@
+ 		status = "disabled";
+ 	};
+ 
++	pci0: pci@ee090000 {
++		compatible = "renesas,pci-r8a7791";
++		device_type = "pci";
++		clocks = <&mstp7_clks R8A7791_CLK_EHCI>;
++		reg = <0 0xee090000 0 0xc00>,
++		      <0 0xee080000 0 0x1100>;
++		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++
++		bus-range = <0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		#interrupt-cells = <1>;
++		ranges = <0x02000000 0 0xee080000 0 0xee080000 0 0x00010000>;
++		interrupt-map-mask = <0xff00 0 0 0x7>;
++		interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
++			      	 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
++			      	 0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
++	};
++
++	pci1: pci@ee0d0000 {
++		compatible = "renesas,pci-r8a7791";
++		device_type = "pci";
++		clocks = <&mstp7_clks R8A7791_CLK_EHCI>;
++		reg = <0 0xee0d0000 0 0xc00>,
++		      <0 0xee0c0000 0 0x1100>;
++		interrupts = <0 113 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++
++		bus-range = <1 1>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		#interrupt-cells = <1>;
++		ranges = <0x02000000 0 0xee0c0000 0 0xee0c0000 0 0x00010000>;
++		interrupt-map-mask = <0xff00 0 0 0x7>;
++		interrupt-map = <0x0000 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
++			      	 0x0800 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
++			      	 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
++	};
++
+ 	pciec: pcie@fe000000 {
+ 		compatible = "renesas,pcie-r8a7791";
+ 		reg = <0 0xfe000000 0 0x80000>;
