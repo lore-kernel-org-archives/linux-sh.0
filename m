@@ -1,62 +1,111 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 13 Jun 2014 07:47:06 +0000
-Subject: Re: [PATCH 1/3] ARM: shmobile: r8a7791: add audio clock on DTSI
-Message-Id: <20140613074703.GB15286@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 24 Jun 2014 17:59:54 +0000
+Subject: [PATCH v5 1/2] ARM: shmobile: r8a7790: add internal PCI bridge nodes
+Message-Id: <201406242159.55373.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87mwdienzg.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87mwdienzg.wl%kuninori.morimoto.gx@renesas.com>
+References: <201406242157.05973.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201406242157.05973.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jun 11, 2014 at 09:44:04PM -0700, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> audio_clk_a/b/c are required from sound driver
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-Thanks, I will queue this up.
+Add device nodes for the R8A7790 internal PCI bridge devices.
 
-> ---
->  arch/arm/boot/dts/r8a7791.dtsi |   23 +++++++++++++++++++++++
->  1 file changed, 23 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-> index b639006..f3b6219 100644
-> --- a/arch/arm/boot/dts/r8a7791.dtsi
-> +++ b/arch/arm/boot/dts/r8a7791.dtsi
-> @@ -532,6 +532,29 @@
->  			clock-output-names = "extal";
->  		};
->  
-> +		/*
-> +		 * The external audio clocks are configured as 0 Hz fixed frequency clocks by
-> +		 * default. Boards that provide audio clocks should override them.
-> +		 */
-> +		audio_clk_a: audio_clk_a {
-> +			compatible = "fixed-clock";
-> +			#clock-cells = <0>;
-> +			clock-frequency = <0>;
-> +			clock-output-names = "audio_clk_a";
-> +		};
-> +		audio_clk_b: audio_clk_b {
-> +			compatible = "fixed-clock";
-> +			#clock-cells = <0>;
-> +			clock-frequency = <0>;
-> +			clock-output-names = "audio_clk_b";
-> +		};
-> +		audio_clk_c: audio_clk_c {
-> +			compatible = "fixed-clock";
-> +			#clock-cells = <0>;
-> +			clock-frequency = <0>;
-> +			clock-output-names = "audio_clk_c";
-> +		};
-> +
->  		/* Special CPG clocks */
->  		cpg_clocks: cpg_clocks@e6150000 {
->  			compatible = "renesas,r8a7791-cpg-clocks",
-> -- 
-> 1.7.9.5
-> 
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
+[Sergei: added several properties to the PCI bridge nodes]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+Changes in version 5:
+- added "device_type" and "ranges" properties to the PCI bridge nodes;
+- removed "0x" prefix from zero values in the "reg" properties.
+
+Changes in version 4:
+- refreshed the patch.
+
+Changes in version 3:
+- added interrupt-related properties to the PCI bridge nodes;
+- refreshed the patch.
+
+Changes in version 2:
+- reworded summary (fixing typo) and changelog;
+- removed extra spaces before {;
+- refreshed the patch.
+
+ arch/arm/boot/dts/r8a7790.dtsi |   60 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 60 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
++++ renesas/arch/arm/boot/dts/r8a7790.dtsi
+@@ -930,6 +930,66 @@
+ 		status = "disabled";
+ 	};
+ 
++	pci0: pci@ee090000 {
++		compatible = "renesas,pci-r8a7790";
++		device_type = "pci";
++		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
++		reg = <0 0xee090000 0 0xc00>,
++		      <0 0xee080000 0 0x1100>;
++		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++
++		bus-range = <0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		#interrupt-cells = <1>;
++		ranges = <0x02000000 0 0xee080000 0 0xee080000 0 0x00010000>;
++		interrupt-map-mask = <0xff00 0 0 0x7>;
++		interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
++			      	 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
++			      	 0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
++	};
++
++	pci1: pci@ee0b0000 {
++		compatible = "renesas,pci-r8a7790";
++		device_type = "pci";
++		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
++		reg = <0 0xee0b0000 0 0xc00>,
++		      <0 0xee0a0000 0 0x1100>;
++		interrupts = <0 112 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++
++		bus-range = <1 1>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		#interrupt-cells = <1>;
++		ranges = <0x02000000 0 0xee0a0000 0 0xee0a0000 0 0x00010000>;
++		interrupt-map-mask = <0xff00 0 0 0x7>;
++		interrupt-map = <0x0000 0 0 1 &gic 0 112 IRQ_TYPE_LEVEL_HIGH
++			      	 0x0800 0 0 1 &gic 0 112 IRQ_TYPE_LEVEL_HIGH
++			      	 0x1000 0 0 2 &gic 0 112 IRQ_TYPE_LEVEL_HIGH>;
++	};
++
++	pci2: pci@ee0d0000 {
++		compatible = "renesas,pci-r8a7790";
++		device_type = "pci";
++		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
++		reg = <0 0xee0d0000 0 0xc00>,
++		      <0 0xee0c0000 0 0x1100>;
++		interrupts = <0 113 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++
++		bus-range = <2 2>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		#interrupt-cells = <1>;
++		ranges = <0x02000000 0 0xee0c0000 0 0xee0c0000 0 0x00010000>;
++		interrupt-map-mask = <0xff00 0 0 0x7>;
++		interrupt-map = <0x0000 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
++			      	 0x0800 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
++			      	 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
++	};
++
+ 	pciec: pcie@fe000000 {
+ 		compatible = "renesas,pcie-r8a7790";
+ 		reg = <0 0xfe000000 0 0x80000>;
