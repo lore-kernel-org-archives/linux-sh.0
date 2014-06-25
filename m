@@ -1,86 +1,61 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 02 Jun 2014 13:38:14 +0000
-Subject: [PATCH 12/18] spi: rspi: Pass sg_tables instead of spi_tranfer to rspi_*_dma()
-Message-Id: <1401716301-29612-13-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 25 Jun 2014 07:35:32 +0000
+Subject: [PATCH 2/5] ARM: shmobile: lager-reference: Remove workarounds for core clock issues
+Message-Id: <f47b9e1ec3a1d694f07fcc0d5ba0c2582acce099.1403681531.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1403681531.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403681531.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-The DMA routines only need access to the scatter-gather tables inside the
-spi_transfer structures, hence just pass those.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Now the core clock issues have been fixed by commit
+3c90c55dcde745bed81f6447f24ba96bda43d984 ("drivers: sh: compile
+drivers/sh/pm_runtime.c if ARCH_SHMOBILE_MULTI"), revert the following
+2 commits:
+  - f98b55d730492e664fb2649bd7054fec0fe81acd ("ARM: shmobile: Add Lager
+    clock workarounds for SDHI and MMCIF"),
+  - aa5de826afe747c353162bbc116c63ab5335f91c ("ARM: shmobile:
+    lager-reference: Work around core clock issues").
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/spi/spi-rspi.c | 22 ++++++++++++----------
- 1 file changed, 12 insertions(+), 10 deletions(-)
+ arch/arm/mach-shmobile/board-lager-reference.c | 14 --------------
+ 1 file changed, 14 deletions(-)
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 3dea8adfdcf3..bfa5e7e5df5a 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -463,13 +463,13 @@ static void rspi_dma_complete(void *arg)
- 	wake_up_interruptible(&rspi->wait);
- }
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index 4f0af91..9e0624e 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -98,23 +98,9 @@ static const struct clk_name clk_names[] __initconst = {
+ 	{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
+ };
  
--static int rspi_send_dma(struct rspi_data *rspi, struct spi_transfer *t)
-+static int rspi_send_dma(struct rspi_data *rspi, struct sg_table *tx)
+-/*
+- * This is a really crude hack to work around core platform clock issues
+- */
+-static const struct clk_name clk_enables[] __initconst = {
+-	{ "ether", NULL, "ee700000.ethernet" },
+-	{ "msiof1", NULL, "e6e10000.spi" },
+-	{ "mmcif1", NULL, "ee220000.mmc" },
+-	{ "qspi_mod", NULL, "e6b10000.spi" },
+-	{ "sdhi0", NULL, "ee100000.sd" },
+-	{ "sdhi2", NULL, "ee140000.sd" },
+-	{ "thermal", NULL, "e61f0000.thermal" },
+-};
+-
+ static void __init lager_add_standard_devices(void)
  {
- 	struct dma_async_tx_descriptor *desc;
- 	int ret;
+ 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+-	shmobile_clk_workaround(clk_enables, ARRAY_SIZE(clk_enables), true);
+ 	r8a7790_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
  
--	desc = dmaengine_prep_slave_sg(rspi->master->dma_tx, t->tx_sg.sgl,
--				       t->tx_sg.nents, DMA_TO_DEVICE,
-+	desc = dmaengine_prep_slave_sg(rspi->master->dma_tx, tx->sgl,
-+				       tx->nents, DMA_TO_DEVICE,
- 				       DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
- 	if (!desc)
- 		return -EIO;
-@@ -530,21 +530,22 @@ static void qspi_receive_init(const struct rspi_data *rspi)
- 	rspi_write8(rspi, 0, QSPI_SPBFCR);
- }
- 
--static int rspi_send_receive_dma(struct rspi_data *rspi, struct spi_transfer *t)
-+static int rspi_send_receive_dma(struct rspi_data *rspi, struct sg_table *tx,
-+				 struct sg_table *rx)
- {
- 	struct dma_async_tx_descriptor *desc_tx, *desc_rx;
- 	int ret;
- 
- 	/* prepare transmit transfer */
--	desc_tx = dmaengine_prep_slave_sg(rspi->master->dma_tx, t->tx_sg.sgl,
--					  t->tx_sg.nents, DMA_TO_DEVICE,
-+	desc_tx = dmaengine_prep_slave_sg(rspi->master->dma_tx, tx->sgl,
-+					  tx->nents, DMA_TO_DEVICE,
- 					  DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
- 	if (!desc_tx)
- 		return -EIO;
- 
- 	/* prepare receive transfer */
--	desc_rx = dmaengine_prep_slave_sg(rspi->master->dma_rx, t->rx_sg.sgl,
--					  t->rx_sg.nents, DMA_FROM_DEVICE,
-+	desc_rx = dmaengine_prep_slave_sg(rspi->master->dma_rx, rx->sgl,
-+					  rx->nents, DMA_FROM_DEVICE,
- 					  DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
- 	if (!desc_rx)
- 		return -EIO;
-@@ -616,9 +617,10 @@ static int rspi_transfer_one(struct spi_master *master, struct spi_device *spi,
- 
- 	if (master->can_dma && __rspi_can_dma(rspi, xfer)) {
- 		if (xfer->rx_buf)
--			return rspi_send_receive_dma(rspi, xfer);
-+			return rspi_send_receive_dma(rspi, &xfer->tx_sg,
-+						     &xfer->rx_sg);
- 		else
--			return rspi_send_dma(rspi, xfer);
-+			return rspi_send_dma(rspi, &xfer->tx_sg);
- 	}
- 
- 	ret = rspi_pio_transfer(rspi, xfer->tx_buf, xfer->rx_buf, xfer->len);
 -- 
-1.9.1
+2.0.0.rc2
 
