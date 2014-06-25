@@ -1,38 +1,148 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 04 Jun 2014 11:54:45 +0000
-Subject: shdma: DM_FIX and SM_FIX?
-Message-Id: <CAMuHMdVrP2FJiuS2qZsFFsGdB1pNBqobakLLdPR68wtznizOiA@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 25 Jun 2014 07:35:14 +0000
+Subject: [PATCH 02/14] ARM: shmobile: APMU: Add Core-Standby-state for Suspend to RAM
+Message-Id: <d6d757c9a4e06e118fa5158fa74e03c514d862d2.1403681315.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1403681315.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403681315.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-It seems the current values for the Destination/Source Address Mode (SM/DM)
-fields in the SHDMA DMA Channel Control Register:
+From: keita kobayashi <keita.kobayashi.ym@renesas.com>
 
-#define DM_FIX   0x0000c000
-#define SM_FIX   0x00003000
+This patch add Core-Standby-state for Suspend to RAM.
 
-are not correct for all parts, according to the documentation.
+Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Acked-by: Magnus Damm <damm+renesas@opensource.se>
+[horms+renesas@verge.net.au: rebase]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/common.h       |  2 ++
+ arch/arm/mach-shmobile/platsmp-apmu.c | 60 ++++++++++++++++++++++++++++++++---
+ 2 files changed, 58 insertions(+), 4 deletions(-)
 
-While on sh7724, A1 (r8a7740), AG5 (sh73a0/r8a73a0), and APE6 (r8a73a4)
-both the '00' and '11' bit combinations indicate a fixed destination or source
-address, '11' is marked as "Setting Prohibited" on sh7750, sh7753, sh7760,
-and R-Car Gen2.
+diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
+index f7a360e..8f0cd57 100644
+--- a/arch/arm/mach-shmobile/common.h
++++ b/arch/arm/mach-shmobile/common.h
+@@ -35,8 +35,10 @@ extern void shmobile_cpuidle_set_driver(struct cpuidle_driver *drv);
+ 
+ #ifdef CONFIG_SUSPEND
+ int shmobile_suspend_init(void);
++void shmobile_smp_apmu_suspend_init(void);
+ #else
+ static inline int shmobile_suspend_init(void) { return 0; }
++static inline void shmobile_smp_apmu_suspend_init(void) { return 0; }
+ #endif
+ 
+ #ifdef CONFIG_CPU_IDLE
+diff --git a/arch/arm/mach-shmobile/platsmp-apmu.c b/arch/arm/mach-shmobile/platsmp-apmu.c
+index fe648f5..590e35c 100644
+--- a/arch/arm/mach-shmobile/platsmp-apmu.c
++++ b/arch/arm/mach-shmobile/platsmp-apmu.c
+@@ -7,15 +7,19 @@
+  * it under the terms of the GNU General Public License version 2 as
+  * published by the Free Software Foundation.
+  */
++#include <linux/cpu_pm.h>
+ #include <linux/delay.h>
+ #include <linux/init.h>
+ #include <linux/io.h>
+ #include <linux/ioport.h>
+ #include <linux/of_address.h>
+ #include <linux/smp.h>
++#include <linux/suspend.h>
+ #include <asm/cacheflush.h>
+ #include <asm/cp15.h>
++#include <asm/proc-fns.h>
+ #include <asm/smp_plat.h>
++#include <asm/suspend.h>
+ #include "common.h"
+ 
+ static struct {
+@@ -141,7 +145,7 @@ int shmobile_smp_apmu_boot_secondary(unsigned int cpu, struct task_struct *idle)
+ 	return apmu_wrap(cpu, apmu_power_on);
+ }
+ 
+-#ifdef CONFIG_HOTPLUG_CPU
++#if defined(CONFIG_HOTPLUG_CPU) || defined(CONFIG_SUSPEND)
+ /* nicked from arch/arm/mach-exynos/hotplug.c */
+ static inline void cpu_enter_lowpower_a15(void)
+ {
+@@ -172,16 +176,40 @@ static inline void cpu_enter_lowpower_a15(void)
+ 	dsb();
+ }
+ 
+-void shmobile_smp_apmu_cpu_die(unsigned int cpu)
++void shmobile_smp_apmu_cpu_shutdown(unsigned int cpu)
+ {
+-	/* For this particular CPU deregister boot vector */
+-	shmobile_smp_hook(cpu, 0, 0);
+ 
+ 	/* Select next sleep mode using the APMU */
+ 	apmu_wrap(cpu, apmu_power_off);
+ 
+ 	/* Do ARM specific CPU shutdown */
+ 	cpu_enter_lowpower_a15();
++}
++
++static inline void cpu_leave_lowpower(void)
++{
++	unsigned int v;
++
++	asm volatile("mrc    p15, 0, %0, c1, c0, 0\n"
++		     "       orr     %0, %0, %1\n"
++		     "       mcr     p15, 0, %0, c1, c0, 0\n"
++		     "       mrc     p15, 0, %0, c1, c0, 1\n"
++		     "       orr     %0, %0, %2\n"
++		     "       mcr     p15, 0, %0, c1, c0, 1\n"
++		     : "=&r" (v)
++		     : "Ir" (CR_C), "Ir" (0x40)
++		     : "cc");
++}
++#endif
++
++#if defined(CONFIG_HOTPLUG_CPU)
++void shmobile_smp_apmu_cpu_die(unsigned int cpu)
++{
++	/* For this particular CPU deregister boot vector */
++	shmobile_smp_hook(cpu, 0, 0);
++
++	/* Shutdown CPU core */
++	shmobile_smp_apmu_cpu_shutdown(cpu);
+ 
+ 	/* jump to shared mach-shmobile sleep / reset code */
+ 	shmobile_smp_sleep();
+@@ -192,3 +220,27 @@ int shmobile_smp_apmu_cpu_kill(unsigned int cpu)
+ 	return apmu_wrap(cpu, apmu_power_off_poll);
+ }
+ #endif
++
++#if defined(CONFIG_SUSPEND)
++static int shmobile_smp_apmu_do_suspend(unsigned long cpu)
++{
++	shmobile_smp_hook(cpu, virt_to_phys(cpu_resume), 0);
++	shmobile_smp_apmu_cpu_shutdown(cpu);
++	cpu_do_idle(); /* WFI selects Core Standby */
++	return 1;
++}
++
++static int shmobile_smp_apmu_enter_suspend(suspend_state_t state)
++{
++	cpu_suspend(smp_processor_id(), shmobile_smp_apmu_do_suspend);
++	cpu_leave_lowpower();
++	return 0;
++}
++
++void shmobile_smp_apmu_suspend_init(void)
++{
++	shmobile_suspend_ops.enter = shmobile_smp_apmu_enter_suspend;
++}
++#else
++void shmobile_smp_apmu_suspend_init(void) {}
++#endif
+-- 
+2.0.0.rc2
 
-I don't know about other parts.
-RZ/A1H and R-Car Gen1 use different DMA controller blocks.
-
-At least with QSPI on R-Car M2, '11' does seem to work, though.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
