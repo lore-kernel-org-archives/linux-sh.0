@@ -1,42 +1,47 @@
-From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Date: Tue, 03 Jun 2014 12:02:35 +0000
-Subject: [PATCH v2 3/8] ARM: shmobile: Make r8a7790 CPUFreq capable
-Message-Id: <538DB95B.9030407@bp.renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 25 Jun 2014 07:35:23 +0000
+Subject: [PATCH 11/14] ARM: shmobile: rcar-gen2: Remove useless copied section for LongTrail
+Message-Id: <ea2a0d581a3e742c2fb2bc520c8c8887fe1dafa6.1403681315.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1403681315.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403681315.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Benoit Cousson <bcousson@baylibre.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Mark r8a7790 platform as CPUFreq capable
-on multiplatform build only.
+Open Firmware in the CHRP LongTrail does not support plugging in ARM CPUs
+in its PPC 603e/604e-compatible CPU socket ;-)
 
-Signed-off-by: Benoit Cousson <bcousson@baylibre.com>
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 9 +--------
+ 1 file changed, 1 insertion(+), 8 deletions(-)
 
-Changes since version 1:
-- changed "Signed-off-by" and "From" correctly.
-- fixed typo.
-
- arch/arm/mach-shmobile/Kconfig |    2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 2a7712b..a0b2b7f 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -35,6 +35,8 @@ config ARCH_R8A7790
- 	bool "R-Car H2 (R8A77900)"
- 	select RENESAS_IRQC
- 	select SYS_SUPPORTS_SH_CMT
-+	select ARCH_HAS_CPUFREQ
-+	select ARCH_HAS_OPP
+diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+index 51d5723..73fb2a6 100644
+--- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+@@ -129,14 +129,7 @@ static int __init rcar_gen2_scan_mem(unsigned long node, const char *uname,
+ 	u64 lpae_start = 1ULL << 32;
  
- config ARCH_R8A7791
- 	bool "R-Car M2 (R8A77910)"
+ 	/* We are scanning "memory" nodes only */
+-	if (type = NULL) {
+-		/*
+-		 * The longtrail doesn't have a device_type on the
+-		 * /memory node, so look for the node called /memory@0.
+-		 */
+-		if (depth != 1 || strcmp(uname, "memory@0") != 0)
+-			return 0;
+-	} else if (strcmp(type, "memory") != 0)
++	if (type = NULL || strcmp(type, "memory"))
+ 		return 0;
+ 
+ 	reg = of_get_flat_dt_prop(node, "linux,usable-memory", &l);
 -- 
-1.7.9.5
+2.0.0.rc2
 
