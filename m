@@ -1,34 +1,41 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 06 Jun 2014 06:15:23 +0000
-Subject: [PATCH] ARM: shmobile: Use shmobile_init_late() on r8a7791 DT-only
-Message-Id: <20140606061523.13394.1268.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 25 Jun 2014 07:35:17 +0000
+Subject: [PATCH 05/14] ARM: shmobile: Mark all SoCs in shmobile as CPUFreq, capable
+Message-Id: <6596e97e054647fecb016ecb7e1935aa2b7db954.1403681315.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140511231050.19908.86623.sendpatchset@w520>
-In-Reply-To: <20140511231050.19908.86623.sendpatchset@w520>
+References: <cover.1403681315.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403681315.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Benoit Cousson <bcousson@baylibre.com>
 
-Tie in shmobile_init_late for the DT-only r8a7791 SoC
-Multiplatform support code. This will make sure that
-Suspend-to-RAM, CPUIdle and CPUFreq get initialized.
+Mark all SoCs in shmobile as CPUFreq capable
+on multiplatform build only.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Benoit Cousson <bcousson@baylibre.com>
+[gaku.inami.xw@bp.renesas.com: Move the definition of cpufreq capable]
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/Kconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
- arch/arm/mach-shmobile/setup-r8a7791.c |    1 +
- 1 file changed, 1 insertion(+)
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index dbd954e..c32fa7c 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -12,6 +12,8 @@ config ARCH_SHMOBILE_MULTI
+ 	select NO_IOPORT_MAP
+ 	select PINCTRL
+ 	select ARCH_REQUIRE_GPIOLIB
++	select ARCH_HAS_CPUFREQ
++	select ARCH_HAS_OPP
+ 
+ if ARCH_SHMOBILE_MULTI
+ 
+-- 
+2.0.0.rc2
 
---- 0001/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7791.c	2014-06-06 14:41:04.000000000 +0900
-@@ -217,6 +217,7 @@ DT_MACHINE_START(R8A7791_DT, "Generic R8
- 	.smp		= smp_ops(r8a7791_smp_ops),
- 	.init_early	= shmobile_init_delay,
- 	.init_time	= rcar_gen2_timer_init,
-+	.init_late	= shmobile_init_late,
- 	.dt_compat	= r8a7791_boards_compat_dt,
- MACHINE_END
- #endif /* CONFIG_USE_OF */
