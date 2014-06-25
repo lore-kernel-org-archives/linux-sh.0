@@ -1,140 +1,121 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 10 Jun 2014 23:04:00 +0000
-Subject: [PATCH 06/07] ARM: shmobile: Koelsch SYS-DMAC prototype
-Message-Id: <20140610230400.13594.28145.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 25 Jun 2014 07:35:13 +0000
+Subject: [PATCH 01/14] ARM: shmobile: r8a7791 SYSC setup code
+Message-Id: <5f6108bb9643949bf5ec0bc9f5cbde588c542c7f.1403681315.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1403681315.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403681315.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: keita kobayashi <keita.kobayashi.ym@renesas.com>
 
-Prototype code to enable part of the SYS-DMAC on Koelsch.
-Written to exercise the SYS-DMAC - Not for upstream merge.
+Add r8a7791 SYSC power management support.
 
-Based on the following patch by Kuninori Morimoto-san:
-"Local: ARM: shmobile: r8a7791: add SYS-DMAC support"
-
-This patch enables SYS-DMAC0 (= Low), it doesn't support
-SYS-DMAC1 (= HI) today.
-Because, SYS-DMAC HI/Low interrupt mapping is not
-good match to SH-DMAC driver.
-
-Thanks to Morimoto-san for his sample code!
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Acked-by: Magnus Damm <damm+renesas@opensource.se>
+[horms+renesas@verge.net.au: rebased]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/Makefile               |  1 +
+ arch/arm/mach-shmobile/include/mach/r8a7791.h |  1 +
+ arch/arm/mach-shmobile/pm-r8a7791.c           | 47 +++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/smp-r8a7791.c          |  2 ++
+ 4 files changed, 51 insertions(+)
+ create mode 100644 arch/arm/mach-shmobile/pm-r8a7791.c
 
- arch/arm/mach-shmobile/board-koelsch-reference.c |   93 ++++++++++++++++++++++
- 1 file changed, 93 insertions(+)
-
---- 0001/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ work/arch/arm/mach-shmobile/board-koelsch-reference.c	2014-06-11 06:47:39.000000000 +0900
-@@ -66,6 +66,98 @@ static const struct resource du_resource
- 	DEFINE_RES_IRQ(gic_spi(268)),
- };
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 38d5fe8..9c0ad3e 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -53,6 +53,7 @@ obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o pm-rcar.o
+ obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o
++obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o
  
-+#include <linux/sh_dma.h>
-+#include <mach/dma-register.h>
+ # Board objects
+ ifdef CONFIG_ARCH_SHMOBILE_MULTI
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7791.h b/arch/arm/mach-shmobile/include/mach/r8a7791.h
+index 664274c..86eae7b 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7791.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7791.h
+@@ -5,6 +5,7 @@ void r8a7791_add_standard_devices(void);
+ void r8a7791_add_dt_devices(void);
+ void r8a7791_clock_init(void);
+ void r8a7791_pinmux_init(void);
++void r8a7791_pm_init(void);
+ extern struct smp_operations r8a7791_smp_ops;
+ 
+ #endif /* __ASM_R8A7791_H__ */
+diff --git a/arch/arm/mach-shmobile/pm-r8a7791.c b/arch/arm/mach-shmobile/pm-r8a7791.c
+new file mode 100644
+index 0000000..1519087
+--- /dev/null
++++ b/arch/arm/mach-shmobile/pm-r8a7791.c
+@@ -0,0 +1,47 @@
++/*
++ * r8a7791 Power management support
++ *
++ * Copyright (C) 2014  Renesas Electronics Corporation
++ * Copyright (C) 2011  Renesas Solutions Corp.
++ * Copyright (C) 2011  Magnus Damm
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
 +
-+/* Local DMA slave IDs */
-+enum {
-+	RCAR_DMA_SLAVE_KOELSCH_INVALID = 0,
-+};
++#include <asm/io.h>
++#include <linux/kernel.h>
++#include <mach/r8a7791.h>
++#include "pm-rcar.h"
 +
-+#define DMAE_CHANNEL(a, b)			\
-+{						\
-+	.offset		= (a) - 0x20,		\
-+	.dmars		= (a) - 0x20 + 0x40,	\
-+	.chclr_bit	= (b),			\
-+	.chclr_offset	= 0x80 - 0x20,		\
-+}
++/* SYSC */
++#define SYSCIER 0x0c
++#define SYSCIMR 0x10
 +
-+/* Sys-DMAC */
-+#define SYS_DMAC_SLAVE(_id, _bit, _addr, toffset, roffset, t, r)	\
-+{								\
-+	.slave_id	= SYS_DMAC_SLAVE_## _id ##_TX,		\
-+	.addr		= _addr + toffset,			\
-+	.chcr		= CHCR_TX(XMIT_SZ_## _bit ##BIT),	\
-+	.mid_rid	= t,					\
-+}, {								\
-+	.slave_id	= SYS_DMAC_SLAVE_## _id ##_RX,		\
-+	.addr		= _addr + roffset,			\
-+	.chcr		= CHCR_RX(XMIT_SZ_## _bit ##BIT),	\
-+	.mid_rid	= r,					\
-+}
++#if defined(CONFIG_SMP)
 +
-+static const struct sh_dmae_slave_config r8a7791_sys_dmac_slaves[] = {
-+};
-+
-+static const struct sh_dmae_channel r8a7791_sys_dmac_channels[] = {
-+	DMAE_CHANNEL(0x8000, 0),
-+	DMAE_CHANNEL(0x8080, 1),
-+	DMAE_CHANNEL(0x8100, 2),
-+	DMAE_CHANNEL(0x8180, 3),
-+	DMAE_CHANNEL(0x8200, 4),
-+	DMAE_CHANNEL(0x8280, 5),
-+	DMAE_CHANNEL(0x8300, 6),
-+	DMAE_CHANNEL(0x8380, 7),
-+	DMAE_CHANNEL(0x8400, 8),
-+	DMAE_CHANNEL(0x8480, 9),
-+	DMAE_CHANNEL(0x8500, 10),
-+	DMAE_CHANNEL(0x8580, 11),
-+	DMAE_CHANNEL(0x8600, 12),
-+	DMAE_CHANNEL(0x8680, 13),
-+	DMAE_CHANNEL(0x8700, 14),
-+};
-+
-+static struct sh_dmae_pdata r8a7791_sys_dmac_platform_data = {
-+	.slave		= r8a7791_sys_dmac_slaves,
-+	.slave_num	= ARRAY_SIZE(r8a7791_sys_dmac_slaves),
-+	.channel	= r8a7791_sys_dmac_channels,
-+	.channel_num	= ARRAY_SIZE(r8a7791_sys_dmac_channels),
-+	.ts_low_shift	= TS_LOW_SHIFT,
-+	.ts_low_mask	= TS_LOW_BIT << TS_LOW_SHIFT,
-+	.ts_high_shift	= TS_HI_SHIFT,
-+	.ts_high_mask	= TS_HI_BIT << TS_HI_SHIFT,
-+	.ts_shift	= dma_ts_shift,
-+	.ts_shift_num	= ARRAY_SIZE(dma_ts_shift),
-+	.dmaor_init	= DMAOR_DME,
-+	.chclr_present	= 1,
-+	.chclr_bitwise	= 1,
-+	.fourty_bits_addr = 1,
-+};
-+
-+static struct resource r8a7791_sys_dmac_resources[] = {
-+	/* Channel registers and DMAOR for low */
-+	DEFINE_RES_MEM(0xe6700020, 0x8763 - 0x20),
-+	DEFINE_RES_IRQ(gic_spi(197)),
-+	DEFINE_RES_NAMED(gic_spi(200), 15, NULL, IORESOURCE_IRQ),
-+
-+	/*
-+	 * HI is not supported
-+	 * since IRQ has strange mapping
-+	 */
-+};
-+
-+#define r8a7791_register_sys_dmac(id)				\
-+	platform_device_register_resndata(			\
-+		&platform_bus, "sh-dma-engine", 2 + id,		\
-+		&r8a7791_sys_dmac_resources[id * 3],	3,	\
-+		&r8a7791_sys_dmac_platform_data,		\
-+		sizeof(r8a7791_sys_dmac_platform_data))
-+
-+static void __init koelsch_add_dmac_prototype(void)
++static void __init r8a7791_sysc_init(void)
 +{
-+	r8a7791_register_sys_dmac(0);
++	void __iomem *base = rcar_sysc_init(0xe6180000);
++
++	/* enable all interrupt sources, but do not use interrupt handler */
++	iowrite32(0x0131000e, base + SYSCIER);
++	iowrite32(0, base + SYSCIMR);
 +}
 +
- static void __init koelsch_add_du_device(void)
- {
- 	struct platform_device_info info = {
-@@ -96,6 +188,7 @@ static void __init koelsch_add_standard_
- {
- 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
- 	r8a7791_add_dt_devices();
-+	koelsch_add_dmac_prototype();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++#else /* CONFIG_SMP */
++
++static inline void r8a7791_sysc_init(void) {}
++
++#endif /* CONFIG_SMP */
++
++void __init r8a7791_pm_init(void)
++{
++	static int once;
++
++	if (once++)
++		return;
++
++	r8a7791_sysc_init();
++}
+diff --git a/arch/arm/mach-shmobile/smp-r8a7791.c b/arch/arm/mach-shmobile/smp-r8a7791.c
+index 2648d68..1772086 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7791.c
++++ b/arch/arm/mach-shmobile/smp-r8a7791.c
+@@ -50,6 +50,8 @@ static void __init r8a7791_smp_prepare_cpus(unsigned int max_cpus)
+ 	writel_relaxed((readl_relaxed(p + CA15RESCNT) & ~0x0f) | 0xa5a50000,
+ 		       p + CA15RESCNT);
+ 	iounmap(p);
++
++	r8a7791_pm_init();
+ }
  
- 	koelsch_add_du_device();
+ static int r8a7791_smp_boot_secondary(unsigned int cpu,
+-- 
+2.0.0.rc2
+
