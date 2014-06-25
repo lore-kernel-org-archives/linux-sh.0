@@ -1,38 +1,39 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:26:35 +0000
-Subject: [PATCH 22/24] ARM: shmobile: marzen: Remove early_printk from command line
-Message-Id: <33b9966db3024b3b739cf8031a28ad9ee5919f36.1403487423.git.horms+renesas@verge.net.au>
+Date: Wed, 25 Jun 2014 07:35:22 +0000
+Subject: [PATCH 10/14] ARM: shmobile: rcar-gen2: Use "1ULL" instead of "(u64)1"
+Message-Id: <b69f47c00f2eff19b532cf0142d81b993e587bf0.1403681315.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487423.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487423.git.horms+renesas@verge.net.au>
+References: <cover.1403681315.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403681315.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-As early printk support is not enabled in the kernel in the
-shmobile defconfig it does not make much sense to provide for
-it in the default command line.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Casts are evil
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Magnus Damm <damm+renesas@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7779-marzen.dts | 2 +-
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
-index 363f693..3212908 100644
---- a/arch/arm/boot/dts/r8a7779-marzen.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-@@ -19,7 +19,7 @@
- 	compatible = "renesas,marzen", "renesas,r8a7779";
+diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+index b0626f8..51d5723 100644
+--- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+@@ -126,7 +126,7 @@ static int __init rcar_gen2_scan_mem(unsigned long node, const char *uname,
+ 	const __be32 *reg, *endp;
+ 	int l;
+ 	struct memory_reserve_config *mrc = data;
+-	u64 lpae_start = (u64)1 << 32;
++	u64 lpae_start = 1ULL << 32;
  
- 	chosen {
--		bootargs = "console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on";
-+		bootargs = "console=ttySC2,115200 ignore_loglevel root=/dev/nfs ip=on";
- 	};
- 
- 	memory {
+ 	/* We are scanning "memory" nodes only */
+ 	if (type = NULL) {
 -- 
 2.0.0.rc2
 
