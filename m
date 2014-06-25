@@ -1,48 +1,64 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 10 Jun 2014 23:03:14 +0000
-Subject: [PATCH 00/07] ARM: shmobile: Lager/Koelsch MMCIF/SDHI LPAE DMA prototype
-Message-Id: <20140610230314.13594.91830.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 25 Jun 2014 07:35:31 +0000
+Subject: [PATCH 1/5] ARM: shmobile: koelsch-reference: Remove workarounds for core clock issues
+Message-Id: <d37e9b0b20dd7670946ad6034b4aa93b7e7048aa.1403681531.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1403681531.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403681531.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-ARM: shmobile: Lager/Koelsch MMCIF/SDHI LPAE DMA prototype
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-[PATCH 01/07] mmc: sdhi: enable .dma_rx_offset for platform prototype
-[PATCH 02/07] DMA: shdma: 40-bit address prototype
-[PATCH 03/07] ARM: shmobile: Lager SYS-DMAC prototype
-[PATCH 04/07] ARM: shmobile: Lager SYS-DMAC and MMCIF prototype
-[PATCH 05/07] ARM: shmobile: Lager SYS-DMAC and SDHI prototype
-[PATCH 06/07] ARM: shmobile: Koelsch SYS-DMAC prototype
-[PATCH 07/07] ARM: shmobile: Koelsch SYS-DMAC and SDHI prototype
+Now the core clock issues have been fixed by commit
+3c90c55dcde745bed81f6447f24ba96bda43d984 ("drivers: sh: compile
+drivers/sh/pm_runtime.c if ARCH_SHMOBILE_MULTI"), revert the following
+3 commits:
+  - 4dcb4c80380dfa482874b931e308fd382597feab ("ARM: shmobile: Add Koelsch
+    clock workarounds for SDHI"),
+  - 8e4f394b20a0fe474dd88204d76978191566decf ("ARM: shmobile:
+    koelsch-reference: Annotate clk_enables as __initconst"),
+  - 3d75d9ea74fee6f5a4bdcbbdf2d577661d047eef ("ARM: shmobile:
+    koelsch-reference: Work around core clock issues").
 
-These patches add DMAC prototype support for MMCIF and SDHI on Lager
-and SDHI on Koelsch. 40-bit physical address support in the DMAC
-has been hacked in as a prototype. DMA support for the SDHI
-driver has also been modified on a prototype level.
-
-Written to show how to make use of platform devices for DMA support
-until the DT bindings for the DMA hardware have been stabilized.
-
-Not for upstream merge.
-
-Depends on the following public SDHI patches by Morimoto-san:
-[PATCH] mmc: block: add block number limitation flag for lultiple block read
-[PATCH] mmc: sdhi: tidyup mmc_data setting for R-Car SDHI
-[PATCH] mmc: tmio: care about DMA tx/rx addr offset
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 15 ---------------
+ 1 file changed, 15 deletions(-)
 
- Written on top of renesas-devel-v3.15-20140609v3
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index 1d3f67d..28e3c45 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -92,24 +92,9 @@ static const struct clk_name clk_names[] __initconst = {
+ 	{ "lvds0", "lvds.0", "rcar-du-r8a7791" },
+ };
+ 
+-/*
+- * This is a really crude hack to work around core platform clock issues
+- */
+-static const struct clk_name clk_enables[] __initconst = {
+-	{ "ether", NULL, "ee700000.ethernet" },
+-	{ "i2c2", NULL, "e6530000.i2c" },
+-	{ "msiof0", NULL, "e6e20000.spi" },
+-	{ "qspi_mod", NULL, "e6b10000.spi" },
+-	{ "sdhi0", NULL, "ee100000.sd" },
+-	{ "sdhi1", NULL, "ee140000.sd" },
+-	{ "sdhi2", NULL, "ee160000.sd" },
+-	{ "thermal", NULL, "e61f0000.thermal" },
+-};
+-
+ static void __init koelsch_add_standard_devices(void)
+ {
+ 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+-	shmobile_clk_workaround(clk_enables, ARRAY_SIZE(clk_enables), true);
+ 	r8a7791_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 
+-- 
+2.0.0.rc2
 
- arch/arm/mach-shmobile/board-koelsch-reference.c |  154 +++++++++++++++++++++
- arch/arm/mach-shmobile/board-lager-reference.c   |  155 +++++++++++++++++++++-
- drivers/dma/sh/shdma.h                           |    4 
- drivers/dma/sh/shdmac.c                          |   48 +++++-
- drivers/mmc/host/sh_mobile_sdhi.c                |    1 
- include/linux/mmc/sh_mobile_sdhi.h               |    1 
- include/linux/sh_dma.h                           |    2 
- 7 files changed, 355 insertions(+), 10 deletions(-)
