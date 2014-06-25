@@ -1,83 +1,55 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 12 Jun 2014 15:34:03 +0000
-Subject: Re: [PATCH v2 4/7] ARM: shmobile: r8a7791: Add PCIEC clock device tree node
-Message-Id: <18955770.HtJEDO8MTC@avalon>
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Date: Wed, 25 Jun 2014 07:58:40 +0000
+Subject: [PATCH] ARM: shmobile: Remove opps table check for cpufreq
+Message-Id: <53AA8130.2020304@bp.renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401716531-29794-5-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1401716531-29794-5-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Phil,
+This patch is based on feedback from Viresh Kumar.
+Since cpufreq-cpu0 driver has already check opp table, there is no
+need to same check in mach-shmobile.
 
-Thank you for the patch.
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+---
 
-On Wednesday 11 June 2014 12:05:50 Phil Edworthy wrote:
-> This patch adds the device tree clock node for the PCIe Controller
-> 
-> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Based on : renesas-devel-v3.16-rc2-20140623
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+ arch/arm/mach-shmobile/cpufreq.c |   16 +---------------
+ 1 file changed, 1 insertion(+), 15 deletions(-)
 
-> ---
-> v2:
->  - Changed PCIe controller names,etc from pcie to pciec
->  - Corrected MTSP bit ordering
-> 
->  arch/arm/boot/dts/r8a7791.dtsi            | 7 ++++---
->  include/dt-bindings/clock/r8a7791-clock.h | 1 +
->  2 files changed, 5 insertions(+), 3 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-> index b639006..1e644eb 100644
-> --- a/arch/arm/boot/dts/r8a7791.dtsi
-> +++ b/arch/arm/boot/dts/r8a7791.dtsi
-> @@ -772,15 +772,16 @@
->  			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-
-clocks";
->  			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
->  			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>, <&cpg_clocks
-> R8A7791_CLK_SD0>, -				 <&mmc0_clk>, <&hp_clk>, <&hp_clk>, 
-<&mp_clk>,
-> <&rclk_clk>;
-> +				 <&mmc0_clk>, <&hp_clk>, <&mp_clk>, <&hp_clk>, <&mp_clk>, 
-<&rclk_clk>;
->  			#clock-cells = <1>;
->  			renesas,clock-indices = <
->  				R8A7791_CLK_TPU0 R8A7791_CLK_SDHI2 R8A7791_CLK_SDHI1 
-R8A7791_CLK_SDHI0
-> -				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_IIC1 
-R8A7791_CLK_SSUSB
-> R8A7791_CLK_CMT1 +				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 
-R8A7791_CLK_PCIEC
-> R8A7791_CLK_IIC1 +				R8A7791_CLK_SSUSB R8A7791_CLK_CMT1
-> 
->  			>;
-> 
->  			clock-output-names >  				"tpu0", "sdhi2", "sdhi1", "sdhi0",
-> -				"mmcif0", "i2c7", "i2c8", "ssusb", "cmt1";
-> +				"mmcif0", "i2c7", "pciec", "i2c8", "ssusb", "cmt1";
->  		};
->  		mstp5_clks: mstp5_clks@e6150144 {
->  			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-
-clocks";
-> diff --git a/include/dt-bindings/clock/r8a7791-clock.h
-> b/include/dt-bindings/clock/r8a7791-clock.h index b050d18..1101e64 100644
-> --- a/include/dt-bindings/clock/r8a7791-clock.h
-> +++ b/include/dt-bindings/clock/r8a7791-clock.h
-> @@ -53,6 +53,7 @@
->  #define R8A7791_CLK_SDHI0		14
->  #define R8A7791_CLK_MMCIF0		15
->  #define R8A7791_CLK_IIC0		18
-> +#define R8A7791_CLK_PCIEC		19
->  #define R8A7791_CLK_IIC1		23
->  #define R8A7791_CLK_SSUSB		28
->  #define R8A7791_CLK_CMT1		29
-
+diff --git a/arch/arm/mach-shmobile/cpufreq.c b/arch/arm/mach-shmobile/cpufreq.c
+index e2c868f..8a24b2b 100644
+--- a/arch/arm/mach-shmobile/cpufreq.c
++++ b/arch/arm/mach-shmobile/cpufreq.c
+@@ -8,24 +8,10 @@
+  * for more details.
+  */
+ 
+-#include <linux/of.h>
+-#include <linux/of_device.h>
+ #include <linux/platform_device.h>
+ 
+ int __init shmobile_cpufreq_init(void)
+ {
+-	struct device_node *np;
+-
+-	np = of_cpu_device_node_get(0);
+-	if (np = NULL) {
+-		pr_err("failed to find cpu0 node\n");
+-		return 0;
+-	}
+-
+-	if (of_get_property(np, "operating-points", NULL))
+-		platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
+-
+-	of_node_put(np);
+-
++	platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
+ 	return 0;
+ }
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
