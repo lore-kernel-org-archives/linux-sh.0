@@ -1,78 +1,45 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 10 Jun 2014 23:07:34 +0000
-Subject: [PATCH 2/2] ARM: shmobile: henninger: add VIN0/ADV7180 DT support
-Message-Id: <201406110307.35534.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 25 Jun 2014 07:35:34 +0000
+Subject: [PATCH 4/5] ARM: shmobile: armadillo800eva reference: Spelling s/ED/LED/
+Message-Id: <8a0d1a2fcfd019adf9893076f6c65a9a05712853.1403681531.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201406110304.18976.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201406110304.18976.sergei.shtylyov@cogentembedded.com>
+References: <cover.1403681531.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403681531.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Define the Henninger board dependent part of the VIN0 device node. Add the
-device node for Analog Devices ADV7180 video decoder to I2C2  bus. Add the
-necessary subnodes to interconnect VIN0 and ADV7180 devices.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+And add missing spaces before opening parentheses
 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791-henninger.dts |   35 ++++++++++++++++++++++++++++++++
- 1 file changed, 35 insertions(+)
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-Index: renesas/arch/arm/boot/dts/r8a7791-henninger.dts
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-henninger.dts
-+++ renesas/arch/arm/boot/dts/r8a7791-henninger.dts
-@@ -125,6 +125,11 @@
- 				 "msiof0_tx";
- 		renesas,function = "msiof0";
- 	};
-+
-+	vin0_pins: vin0 {
-+		renesas,groups = "vin0_data8", "vin0_clk";
-+		renesas,function = "vin0";
-+	};
- };
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index 368518b..0ae4982 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -53,11 +53,11 @@
+  * CON22	Serial
+  * CON23	LAN
+  * CON24	USB3
+- * LED1		Camera LED(Yellow)
++ * LED1		Camera LED (Yellow)
+  * LED2		Power LED (Green)
+- * ED3-LED6	User LED(Yellow)
+- * LED7		LAN link LED(Green)
+- * LED8		LAN activity LED(Yellow)
++ * LED3-LED6	User LED (Yellow)
++ * LED7		LAN link LED (Green)
++ * LED8		LAN activity LED (Yellow)
+  */
  
- &scif0 {
-@@ -181,6 +186,19 @@
- 
- 	status = "okay";
- 	clock-frequency = <400000>;
-+
-+	composite-in@20 {
-+		compatible = "adi,adv7180";
-+		reg = <0x20>;
-+		remote = <&vin0>;
-+
-+		port {
-+			adv7180: endpoint {
-+				bus-width = <8>;
-+				remote-endpoint = <&vin0ep>;
-+			};
-+		};
-+	};
- };
- 
- &qspi {
-@@ -230,3 +248,20 @@
- 		spi-cpha;
- 	};
- };
-+
-+/* composite video input */
-+&vin0 {
-+	status = "ok";
-+	pinctrl-0 = <&vin0_pins>;
-+	pinctrl-names = "default";
-+
-+	port {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		vin0ep: endpoint {
-+			remote-endpoint = <&adv7180>;
-+			bus-width = <8>;
-+		};
-+	};
-+};
+ /*
+-- 
+2.0.0.rc2
+
