@@ -1,45 +1,42 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 25 Jun 2014 07:35:25 +0000
-Subject: [PATCH 13/14] ARM: shmobile: rcar-gen2: update call to dma_contiguous_reserve_area
-Message-Id: <14a5e926141f9c37bdaa0220169489e782220ee1.1403681315.git.horms+renesas@verge.net.au>
+Date: Wed, 25 Jun 2014 07:35:24 +0000
+Subject: [PATCH 12/14] ARM: shmobile: rcar-gen2: correct return value of shmobile_smp_apmu_suspend_init
+Message-Id: <ecdaca48629bd99609fdc612685363330967dce2.1403681315.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1403681315.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1403681315.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Vincent Stehlé <vincent.stehle@laposte.net>
+The dummy shmobile_smp_apmu_suspend_init() function provided when
+CPU_IDLE is not set should not return a value as per the signature
+of the function.
 
-Commit 5ea3b1b2f8ad 'cma: add placement specifier for "cma=" kernel parameter'
-adds a new 'fixed' parameter to dma_contiguous_reserve_area(). Update
-rcar_gen2_reserve() accordingly.
+This problem appears to have been introduced by
+867ba81f728f1daa ("ARM: shmobile: APMU: Add Core-Standby-state for Suspend
+to RAM").
 
-This fixes the following compilation error:
-
-  arch/arm/mach-shmobile/setup-rcar-gen2.c: In function ‘rcar_gen2_reserve’:
-  arch/arm/mach-shmobile/setup-rcar-gen2.c:182:10: error: too few arguments to function ‘dma_contiguous_reserve_area’
-
-Signed-off-by: Vincent Stehlé <vincent.stehle@laposte.net>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-rcar-gen2.c | 2 +-
+ arch/arm/mach-shmobile/common.h | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-index 73fb2a6..42d5b43 100644
---- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
-+++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-@@ -179,6 +179,6 @@ void __init rcar_gen2_reserve(void)
- #ifdef CONFIG_DMA_CMA
- 	if (mrc.size)
- 		dma_contiguous_reserve_area(mrc.size, mrc.base, 0,
--					    &rcar_gen2_dma_contiguous);
-+					    &rcar_gen2_dma_contiguous, true);
+diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
+index 8f0cd57..1e81199 100644
+--- a/arch/arm/mach-shmobile/common.h
++++ b/arch/arm/mach-shmobile/common.h
+@@ -38,7 +38,7 @@ int shmobile_suspend_init(void);
+ void shmobile_smp_apmu_suspend_init(void);
+ #else
+ static inline int shmobile_suspend_init(void) { return 0; }
+-static inline void shmobile_smp_apmu_suspend_init(void) { return 0; }
++static inline void shmobile_smp_apmu_suspend_init(void) { }
  #endif
- }
+ 
+ #ifdef CONFIG_CPU_IDLE
 -- 
 2.0.0.rc2
 
