@@ -1,140 +1,75 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 01 Jun 2014 03:39:25 +0000
-Subject: [PATCH 06/18] v4l: vsp1: Cleanup video nodes at removal time
-Message-Id: <1401593977-30660-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 25 Jun 2014 00:40:27 +0000
+Subject: [PATCH 00/05] ARM: shmobile: Lager/Koelsch SCIF/MSIOF DMA prototype
+Message-Id: <20140625004027.18295.39707.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Video nodes created and initialized in the RPF and WPF init code paths
-are never unregistered, and the related resources (videobuf alloc
-context and media entity) never released.
+ARM: shmobile: Lager/Koelsch SCIF/MSIOF DMA prototype
 
-Fix this by storing a pointer to the vsp1_video object in vsp1_entity
-and calling vsp1_video_cleanup() from vsp1_entity_destroy(). This also
-allows simplifying the init error code paths.
+[PATCH 01/05] serial: sh-sci: Allow AUXDATA DMAC parameters 
+[PATCH 02/05] ARM: shmobile: Lager SYS-DMAC and SCIF prototype
+[PATCH 03/05] ARM: shmobile: Lager SYS-DMAC and MSIOF prototype
+[PATCH 04/05] ARM: shmobile: Koelsch SYS-DMAC and SCIF prototype
+[PATCH 05/05] ARM: shmobile: Koelsch SYS-DMAC and MSIOF prototype
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+These patches add DMAC prototype support for SCIF and MSIOF on Lager
+and SDHI on Koelsch. It is built on top of an earlier series that
+added MMCIF/SDHI DMAC prototype support together with 40-bit physical
+address support in the DMAC controller.
+
+To use DMA with the SCIF driver the following kconfig bits are needed:
+CONFIG_SERIAL_SH_SCI_DMA=y
+
+DMA support in the SCIF driver is in pretty poor state. To be able to
+pass platform data DMA parameters the driver needs slight adjustment,
+moreover, at this point only TX DMA is enabled due to RX driver issues.
+
+Regarding MSIOF, additional dependencies are needed for DMA support
+(see below) but once that is applied enabling MSIOF DMA is simple.
+As for testing, there is no driver support for the chip connected to
+the MSIOF port on lager and koelsch, so this is untested by me apart
+from the boot message:
+# dmesg | grep -i msiof                                                         
+<6>spi_sh_msiof spi_r8a7791_msiof.0: DMA available
+
+Written to show how to make use of platform devices for DMA support
+until the DT bindings for the DMA hardware have been stabilized.
+
+Not for upstream merge.
+
+Thanks to Geert for his MSIOF work together with review and feedback!
+
+Depends on the following patches:
+[PATCH] mmc: block: add block number limitation flag for lultiple block read
+[PATCH] mmc: sdhi: tidyup mmc_data setting for R-Car SDHI
+[PATCH] mmc: tmio: care about DMA tx/rx addr offset
+[PATCH v2 00/07] ARM: shmobile: Lager/Koelsch MMCIF/SDHI LPAE DMA prototype V2
+[PATCH v2 01/07] mmc: sdhi: enable .dma_rx_offset for platform prototype
+[PATCH v2 02/07] DMA: shdma: 40-bit address prototype
+[PATCH v2 03/07] ARM: shmobile: Lager SYS-DMAC prototype
+[PATCH v2 04/07] ARM: shmobile: Lager SYS-DMAC and MMCIF prototype
+[PATCH v2 05/07] ARM: shmobile: Lager SYS-DMAC and SDHI prototype
+[PATCH v2 06/07] ARM: shmobile: Koelsch SYS-DMAC prototype
+[PATCH v2 07/07] ARM: shmobile: Koelsch SYS-DMAC and SDHI prototype
+[PATCH 0/5] spi: sh-msiof: Add DMA support
+[PATCH 1/5] spi: sh-msiof: Add more register documentation
+[PATCH 2/5] spi: sh-msiof: Extract sh_msiof_spi_{start,stop}() helpers
+[PATCH 3/5] spi: sh-msiof: Improve transfer error handling
+[PATCH 4/5] spi: sh-msiof: Refactor sh_msiof_transfer_one()
+[PATCH 5/5] spi: sh-msiof: Add DMA support
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- drivers/media/platform/vsp1/vsp1_entity.c |  3 +++
- drivers/media/platform/vsp1/vsp1_entity.h |  3 +++
- drivers/media/platform/vsp1/vsp1_rpf.c    | 12 ++++++------
- drivers/media/platform/vsp1/vsp1_wpf.c    | 12 ++++++------
- 4 files changed, 18 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_entity.c b/drivers/media/platform/vsp1/vsp1_entity.c
-index 4416783..ceac0d7 100644
---- a/drivers/media/platform/vsp1/vsp1_entity.c
-+++ b/drivers/media/platform/vsp1/vsp1_entity.c
-@@ -20,6 +20,7 @@
- 
- #include "vsp1.h"
- #include "vsp1_entity.h"
-+#include "vsp1_video.h"
- 
- /* -----------------------------------------------------------------------------
-  * V4L2 Subdevice Operations
-@@ -185,6 +186,8 @@ int vsp1_entity_init(struct vsp1_device *vsp1, struct vsp1_entity *entity,
- 
- void vsp1_entity_destroy(struct vsp1_entity *entity)
- {
-+	if (entity->video)
-+		vsp1_video_cleanup(entity->video);
- 	if (entity->subdev.ctrl_handler)
- 		v4l2_ctrl_handler_free(entity->subdev.ctrl_handler);
- 	media_entity_cleanup(&entity->subdev.entity);
-diff --git a/drivers/media/platform/vsp1/vsp1_entity.h b/drivers/media/platform/vsp1/vsp1_entity.h
-index 7afbd8a..f0257f6 100644
---- a/drivers/media/platform/vsp1/vsp1_entity.h
-+++ b/drivers/media/platform/vsp1/vsp1_entity.h
-@@ -18,6 +18,7 @@
- #include <media/v4l2-subdev.h>
- 
- struct vsp1_device;
-+struct vsp1_video;
- 
- enum vsp1_entity_type {
- 	VSP1_ENTITY_BRU,
-@@ -68,6 +69,8 @@ struct vsp1_entity {
- 
- 	struct v4l2_subdev subdev;
- 	struct v4l2_mbus_framefmt *formats;
-+
-+	struct vsp1_video *video;
- };
- 
- static inline struct vsp1_entity *to_vsp1_entity(struct v4l2_subdev *subdev)
-diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
-index c3d9864..9b3fc70 100644
---- a/drivers/media/platform/vsp1/vsp1_rpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_rpf.c
-@@ -205,7 +205,9 @@ struct vsp1_rwpf *vsp1_rpf_create(struct vsp1_device *vsp1, unsigned int index)
- 
- 	ret = vsp1_video_init(video, &rpf->entity);
- 	if (ret < 0)
--		goto error_video;
-+		goto error;
-+
-+	rpf->entity.video = video;
- 
- 	/* Connect the video device to the RPF. */
- 	ret = media_entity_create_link(&rpf->video.video.entity, 0,
-@@ -214,13 +216,11 @@ struct vsp1_rwpf *vsp1_rpf_create(struct vsp1_device *vsp1, unsigned int index)
- 				       MEDIA_LNK_FL_ENABLED |
- 				       MEDIA_LNK_FL_IMMUTABLE);
- 	if (ret < 0)
--		goto error_link;
-+		goto error;
- 
- 	return rpf;
- 
--error_link:
--	vsp1_video_cleanup(video);
--error_video:
--	media_entity_cleanup(&rpf->entity.subdev.entity);
-+error:
-+	vsp1_entity_destroy(&rpf->entity);
- 	return ERR_PTR(ret);
- }
-diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
-index 1294340..36c4793 100644
---- a/drivers/media/platform/vsp1/vsp1_wpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_wpf.c
-@@ -216,7 +216,9 @@ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index)
- 
- 	ret = vsp1_video_init(video, &wpf->entity);
- 	if (ret < 0)
--		goto error_video;
-+		goto error;
-+
-+	wpf->entity.video = video;
- 
- 	/* Connect the video device to the WPF. All connections are immutable
- 	 * except for the WPF0 source link if a LIF is present.
-@@ -229,15 +231,13 @@ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index)
- 				       RWPF_PAD_SOURCE,
- 				       &wpf->video.video.entity, 0, flags);
- 	if (ret < 0)
--		goto error_link;
-+		goto error;
- 
- 	wpf->entity.sink = &wpf->video.video.entity;
- 
- 	return wpf;
- 
--error_link:
--	vsp1_video_cleanup(video);
--error_video:
--	media_entity_cleanup(&wpf->entity.subdev.entity);
-+error:
-+	vsp1_entity_destroy(&wpf->entity);
- 	return ERR_PTR(ret);
- }
--- 
-1.8.5.5
+ Written on top of renesas-devel-v3.16-rc2-20140623 + above + header clash fixes
 
+ arch/arm/boot/dts/r8a7790.dtsi                   |    8 -
+ arch/arm/boot/dts/r8a7791.dtsi                   |    6 
+ arch/arm/mach-shmobile/board-koelsch-reference.c |  143 ++++++++++++++++++++++
+ arch/arm/mach-shmobile/board-lager-reference.c   |  105 ++++++++++++++++
+ drivers/tty/serial/sh-sci.c                      |    8 -
+ 5 files changed, 261 insertions(+), 9 deletions(-)
