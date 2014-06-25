@@ -1,214 +1,134 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 23 Jun 2014 00:55:18 +0000
-Subject: [PATCH 01/10 v2] ASoC: fsi: use SNDRV_DMA_TYPE_DEV for sound buffer
-Message-Id: <874mzctpfo.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 25 Jun 2014 07:35:21 +0000
+Subject: [PATCH 09/14] ARM: shmobile: rcar-gen2: Update for of_get_flat_dt_prop() update
+Message-Id: <83850b04ae7744f51681533fb7afb645e66ce8fe.1403681315.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
-	<8761jstphc.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <8761jstphc.wl%kuninori.morimoto.gx@gmail.com>
+References: <cover.1403681315.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403681315.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Current fsi driver is using SNDRV_DMA_TYPE_CONTINUOUS
-for snd_pcm_lib_preallocate_pages_for_all().
-But, it came from original dma-sh7760.c,
-and no longer needed.
-This patch exchange its parameter, and removed
-original dma mapping and un-needed
-dma_sync_single_xxx() from driver.
+Commit 9d0c4dfedd96ee54fc075b16d02f82499c8cc3a6 ("of/fdt: update
+of_get_flat_dt_prop in prep for libfdt") changed the function prototypes
+of of_get_flat_dt_prop():
+  - The return type was made const,
+  - The last parameter was changed from "unsigned long *" to "int *".
+and dt_mem_next_cell():
+  - The second parameter was made const.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This causes the following compiler warnings:
+
+arch/arm/mach-shmobile/setup-rcar-gen2.c: In function 'rcar_gen2_scan_mem':
+arch/arm/mach-shmobile/setup-rcar-gen2.c:125:15: warning: initialization discards 'const' qualifier from pointer target type [enabled by default]
+arch/arm/mach-shmobile/setup-rcar-gen2.c:142:2: warning: passing argument 3 of 'of_get_flat_dt_prop' from incompatible pointer type [enabled by default]
+include/linux/of_fdt.h:53:20: note: expected 'int *' but argument is of type 'long unsigned int *'
+arch/arm/mach-shmobile/setup-rcar-gen2.c:142:6: warning: assignment discards 'const' qualifier from pointer target type [enabled by default]
+arch/arm/mach-shmobile/setup-rcar-gen2.c:144:3: warning: passing argument 3 of 'of_get_flat_dt_prop' from incompatible pointer type [enabled by default]
+include/linux/of_fdt.h:53:20: note: expected 'int *' but argument is of type 'long unsigned int *'
+arch/arm/mach-shmobile/setup-rcar-gen2.c:144:7: warning: assignment discards 'const' qualifier from pointer target type [enabled by default]
+arch/arm/mach-shmobile/setup-rcar-gen2.c:152:3: warning: passing argument 2 of 'dt_mem_next_cell' from incompatible pointer type [enabled by default]
+include/linux/of_fdt.h:69:12: note: expected 'const __be32 **' but argument is of type '__be32 **'
+arch/arm/mach-shmobile/setup-rcar-gen2.c:153:3: warning: passing argument 2 of 'dt_mem_next_cell' from incompatible pointer type [enabled by default]
+include/linux/of_fdt.h:69:12: note: expected 'const __be32 **' but argument is of type '__be32 **'
+
+Update the variable types in rcar_gen2_scan_mem() to fix this.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Magnus Damm <damm+renesas@opensource.se>
+[horms+renesas@verge.net.au: rebased]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v1 -> v2
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 76 ++++++++++++++++++++++++++++++++
+ 1 file changed, 76 insertions(+)
 
-- no change
-
- arch/arm/mach-shmobile/board-armadillo800eva.c |    4 +++
- arch/arm/mach-shmobile/board-kzm9g.c           |    2 ++
- arch/arm/mach-shmobile/board-mackerel.c        |    4 +++
- arch/sh/boards/mach-ecovec24/setup.c           |    2 ++
- sound/soc/sh/fsi.c                             |   42 +++---------------------
- 5 files changed, 17 insertions(+), 37 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 395638d..4afe6ae 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1032,6 +1032,8 @@ static struct platform_device fsi_wm8978_device = {
- 	.id	= 0,
- 	.dev	= {
- 		.platform_data	= &fsi_wm8978_info,
-+		.coherent_dma_mask = DMA_BIT_MASK(32),
-+		.dma_mask = &fsi_wm8978_device.dev.coherent_dma_mask,
- 	},
- };
- 
-@@ -1055,6 +1057,8 @@ static struct platform_device fsi_hdmi_device = {
- 	.id	= 1,
- 	.dev	= {
- 		.platform_data	= &fsi2_hdmi_info,
-+		.coherent_dma_mask = DMA_BIT_MASK(32),
-+		.dma_mask = &fsi_hdmi_device.dev.coherent_dma_mask,
- 	},
- };
- 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index fff330f..bd60fba 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -603,6 +603,8 @@ static struct platform_device fsi_ak4648_device = {
- 	.name	= "asoc-simple-card",
- 	.dev	= {
- 		.platform_data	= &fsi2_ak4648_info,
-+		.coherent_dma_mask = DMA_BIT_MASK(32),
-+		.dma_mask = &fsi_ak4648_device.dev.coherent_dma_mask,
- 	},
- };
- 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 0ece865..fa5e3eb 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -521,6 +521,8 @@ static struct platform_device fsi_hdmi_device = {
- 	.id	= 1,
- 	.dev	= {
- 		.platform_data	= &fsi2_hdmi_info,
-+		.coherent_dma_mask = DMA_BIT_MASK(32),
-+		.dma_mask = &fsi_hdmi_device.dev.coherent_dma_mask,
- 	},
- };
- 
-@@ -917,6 +919,8 @@ static struct platform_device fsi_ak4643_device = {
- 	.name	= "asoc-simple-card",
- 	.dev	= {
- 		.platform_data	= &fsi2_ak4643_info,
-+		.coherent_dma_mask = DMA_BIT_MASK(32),
-+		.dma_mask = &fsi_ak4643_device.dev.coherent_dma_mask,
- 	},
- };
- 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index 85d5255..0d30492 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -874,6 +874,8 @@ static struct platform_device fsi_da7210_device = {
- 	.name	= "asoc-simple-card",
- 	.dev	= {
- 		.platform_data	= &fsi_da7210_info,
-+		.coherent_dma_mask = DMA_BIT_MASK(32),
-+		.dma_mask = &fsi_da7210_device.dev.coherent_dma_mask,
- 	},
- };
- 
-diff --git a/sound/soc/sh/fsi.c b/sound/soc/sh/fsi.c
-index 710a079..7a6b632 100644
---- a/sound/soc/sh/fsi.c
-+++ b/sound/soc/sh/fsi.c
-@@ -233,7 +233,6 @@ struct fsi_stream {
- 	 */
- 	struct dma_chan		*chan;
- 	struct work_struct	work;
--	dma_addr_t		dma;
- 	int			dma_id;
- 	int			loop_cnt;
- 	int			additional_pos;
-@@ -1279,11 +1278,6 @@ static irqreturn_t fsi_interrupt(int irq, void *data)
-  */
- static int fsi_dma_init(struct fsi_priv *fsi, struct fsi_stream *io)
- {
--	struct snd_pcm_runtime *runtime = io->substream->runtime;
--	struct snd_soc_dai *dai = fsi_get_dai(io->substream);
--	enum dma_data_direction dir = fsi_stream_is_play(fsi, io) ?
--				DMA_TO_DEVICE : DMA_FROM_DEVICE;
--
- 	/*
- 	 * 24bit data : 24bit bus / package in back
- 	 * 16bit data : 16bit bus / stream mode
-@@ -1293,19 +1287,7 @@ static int fsi_dma_init(struct fsi_priv *fsi, struct fsi_stream *io)
- 
- 	io->loop_cnt = 2; /* push 1st, 2nd period first, then 3rd, 4th... */
- 	io->additional_pos = 0;
--	io->dma = dma_map_single(dai->dev, runtime->dma_area,
--				 snd_pcm_lib_buffer_bytes(io->substream), dir);
--	return 0;
--}
--
--static int fsi_dma_quit(struct fsi_priv *fsi, struct fsi_stream *io)
--{
--	struct snd_soc_dai *dai = fsi_get_dai(io->substream);
--	enum dma_data_direction dir = fsi_stream_is_play(fsi, io) ?
--		DMA_TO_DEVICE : DMA_FROM_DEVICE;
- 
--	dma_unmap_single(dai->dev, io->dma,
--			 snd_pcm_lib_buffer_bytes(io->substream), dir);
- 	return 0;
+diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+index 544b9bf..b0626f8 100644
+--- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+@@ -113,3 +113,79 @@ void __init rcar_gen2_timer_init(void)
+ #endif
+ 	clocksource_of_init();
  }
- 
-@@ -1317,7 +1299,8 @@ static dma_addr_t fsi_dma_get_area(struct fsi_stream *io, int additional)
- 	if (period >= runtime->periods)
- 		period = 0;
- 
--	return io->dma + samples_to_bytes(runtime, period * io->period_samples);
-+	return runtime->dma_addr +
-+		samples_to_bytes(runtime, period * io->period_samples);
- }
- 
- static void fsi_dma_complete(void *data)
-@@ -1325,12 +1308,6 @@ static void fsi_dma_complete(void *data)
- 	struct fsi_stream *io = (struct fsi_stream *)data;
- 	struct fsi_priv *fsi = fsi_stream_to_priv(io);
- 	struct snd_pcm_runtime *runtime = io->substream->runtime;
--	struct snd_soc_dai *dai = fsi_get_dai(io->substream);
--	enum dma_data_direction dir = fsi_stream_is_play(fsi, io) ?
--		DMA_TO_DEVICE : DMA_FROM_DEVICE;
--
--	dma_sync_single_for_cpu(dai->dev, fsi_dma_get_area(io, 0),
--			samples_to_bytes(runtime, io->period_samples), dir);
- 
- 	io->buff_sample_pos += io->period_samples;
- 	io->period_pos++;
-@@ -1369,8 +1346,6 @@ static void fsi_dma_do_work(struct work_struct *work)
- 	for (i = 0; i < io->loop_cnt; i++) {
- 		buf	= fsi_dma_get_area(io, io->additional_pos);
- 
--		dma_sync_single_for_device(dai->dev, buf, len, dir);
--
- 		desc = dmaengine_prep_slave_single(io->chan, buf, len, dir,
- 					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
- 		if (!desc) {
-@@ -1495,7 +1470,6 @@ static int fsi_dma_remove(struct fsi_priv *fsi, struct fsi_stream *io)
- 
- static struct fsi_stream_handler fsi_dma_push_handler = {
- 	.init		= fsi_dma_init,
--	.quit		= fsi_dma_quit,
- 	.probe		= fsi_dma_probe,
- 	.transfer	= fsi_dma_transfer,
- 	.remove		= fsi_dma_remove,
-@@ -1850,16 +1824,10 @@ static void fsi_pcm_free(struct snd_pcm *pcm)
- 
- static int fsi_pcm_new(struct snd_soc_pcm_runtime *rtd)
- {
--	struct snd_pcm *pcm = rtd->pcm;
--
--	/*
--	 * dont use SNDRV_DMA_TYPE_DEV, since it will oops the SH kernel
--	 * in MMAP mode (i.e. aplay -M)
--	 */
- 	return snd_pcm_lib_preallocate_pages_for_all(
--		pcm,
--		SNDRV_DMA_TYPE_CONTINUOUS,
--		snd_dma_continuous_data(GFP_KERNEL),
-+		rtd->pcm,
-+		SNDRV_DMA_TYPE_DEV,
-+		rtd->card->snd_card->dev,
- 		PREALLOC_BUFFER, PREALLOC_BUFFER_MAX);
- }
- 
++
++struct memory_reserve_config {
++	u64 reserved;
++	u64 base, size;
++};
++
++static int __init rcar_gen2_scan_mem(unsigned long node, const char *uname,
++				     int depth, void *data)
++{
++	const char *type = of_get_flat_dt_prop(node, "device_type", NULL);
++	const __be32 *reg, *endp;
++	int l;
++	struct memory_reserve_config *mrc = data;
++	u64 lpae_start = (u64)1 << 32;
++
++	/* We are scanning "memory" nodes only */
++	if (type = NULL) {
++		/*
++		 * The longtrail doesn't have a device_type on the
++		 * /memory node, so look for the node called /memory@0.
++		 */
++		if (depth != 1 || strcmp(uname, "memory@0") != 0)
++			return 0;
++	} else if (strcmp(type, "memory") != 0)
++		return 0;
++
++	reg = of_get_flat_dt_prop(node, "linux,usable-memory", &l);
++	if (reg = NULL)
++		reg = of_get_flat_dt_prop(node, "reg", &l);
++	if (reg = NULL)
++		return 0;
++
++	endp = reg + (l / sizeof(__be32));
++	while ((endp - reg) >= (dt_root_addr_cells + dt_root_size_cells)) {
++		u64 base, size;
++
++		base = dt_mem_next_cell(dt_root_addr_cells, &reg);
++		size = dt_mem_next_cell(dt_root_size_cells, &reg);
++
++		if (base >= lpae_start)
++			continue;
++
++		if ((base + size) >= lpae_start)
++			size = lpae_start - base;
++
++		if (size < mrc->reserved)
++			continue;
++
++		if (base < mrc->base)
++			continue;
++
++		/* keep the area at top near the 32-bit legacy limit */
++		mrc->base = base + size - mrc->reserved;
++		mrc->size = mrc->reserved;
++	}
++
++	return 0;
++}
++
++struct cma *rcar_gen2_dma_contiguous;
++
++void __init rcar_gen2_reserve(void)
++{
++	struct memory_reserve_config mrc;
++
++	/* reserve 256 MiB at the top of the physical legacy 32-bit space */
++	memset(&mrc, 0, sizeof(mrc));
++	mrc.reserved = SZ_256M;
++
++	of_scan_flat_dt(rcar_gen2_scan_mem, &mrc);
++#ifdef CONFIG_DMA_CMA
++	if (mrc.size)
++		dma_contiguous_reserve_area(mrc.size, mrc.base, 0,
++					    &rcar_gen2_dma_contiguous);
++#endif
++}
 -- 
-1.7.9.5
+2.0.0.rc2
 
