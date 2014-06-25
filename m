@@ -1,73 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 14 Jun 2014 16:23:27 +0000
-Subject: [PATCH v3 05/19] clocksource: sh_tmu: Replace global spinlock with a per-device spinlock
-Message-Id: <1402763021-4067-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 25 Jun 2014 07:35:16 +0000
+Subject: [PATCH 04/14] ARM: shmobile: r8a7791: Support Core-Standby for Suspend to RAM
+Message-Id: <7f6234013a835476f1503be2c9287f1fe3497457.1403681315.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1403681315.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403681315.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The global spinlock is used to protect the shared start/stop register.
-Now that all TMU channels are handled by a single device instance, use a
-per-device spinlock.
+From: keita kobayashi <keita.kobayashi.ym@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add r8a7791 Core-Standby state for Suspend to RAM support.
+
+Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/clocksource/sh_tmu.c | 10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/smp-r8a7791.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-index 4363eb7..ef8fb0b 100644
---- a/drivers/clocksource/sh_tmu.c
-+++ b/drivers/clocksource/sh_tmu.c
-@@ -61,6 +61,8 @@ struct sh_tmu_device {
+diff --git a/arch/arm/mach-shmobile/smp-r8a7791.c b/arch/arm/mach-shmobile/smp-r8a7791.c
+index 1772086..c6543b6 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7791.c
++++ b/arch/arm/mach-shmobile/smp-r8a7791.c
+@@ -52,6 +52,7 @@ static void __init r8a7791_smp_prepare_cpus(unsigned int max_cpus)
+ 	iounmap(p);
  
- 	enum sh_tmu_model model;
- 
-+	raw_spinlock_t lock; /* Protect the shared start/stop register */
-+
- 	struct sh_tmu_channel *channels;
- 	unsigned int num_channels;
- 
-@@ -68,8 +70,6 @@ struct sh_tmu_device {
- 	bool has_clocksource;
- };
- 
--static DEFINE_RAW_SPINLOCK(sh_tmu_lock);
--
- #define TSTR -1 /* shared register */
- #define TCOR  0 /* channel register */
- #define TCNT 1 /* channel register */
-@@ -132,7 +132,7 @@ static void sh_tmu_start_stop_ch(struct sh_tmu_channel *ch, int start)
- 	unsigned long flags, value;
- 
- 	/* start stop register shared by multiple timer channels */
--	raw_spin_lock_irqsave(&sh_tmu_lock, flags);
-+	raw_spin_lock_irqsave(&ch->tmu->lock, flags);
- 	value = sh_tmu_read(ch, TSTR);
- 
- 	if (start)
-@@ -141,7 +141,7 @@ static void sh_tmu_start_stop_ch(struct sh_tmu_channel *ch, int start)
- 		value &= ~(1 << ch->index);
- 
- 	sh_tmu_write(ch, TSTR, value);
--	raw_spin_unlock_irqrestore(&sh_tmu_lock, flags);
-+	raw_spin_unlock_irqrestore(&ch->tmu->lock, flags);
+ 	r8a7791_pm_init();
++	shmobile_smp_apmu_suspend_init();
  }
  
- static int __sh_tmu_enable(struct sh_tmu_channel *ch)
-@@ -524,6 +524,8 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 	tmu->pdev = pdev;
- 	tmu->model = id->driver_data;
- 
-+	raw_spin_lock_init(&tmu->lock);
-+
- 	/* Get hold of clock. */
- 	tmu->clk = clk_get(&tmu->pdev->dev, "fck");
- 	if (IS_ERR(tmu->clk)) {
+ static int r8a7791_smp_boot_secondary(unsigned int cpu,
 -- 
-1.8.5.5
+2.0.0.rc2
 
