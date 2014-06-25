@@ -1,114 +1,74 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 18 Jun 2014 09:10:53 +0000
-Subject: [PROTOTYPE 4/8] ARM: shmobile: r8a7790: add dmac0 dmac1 nodes
-Message-Id: <87ha3iy44h.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 25 Jun 2014 07:35:35 +0000
+Subject: [PATCH 5/5] ARM: shmobile: Enable R-Car Gen2 CMA code in board files
+Message-Id: <5f65c5bd58bf027eb2bacc2294a98e7aea81c630.1403681531.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1403681531.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403681531.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Add nodes for the SYS-DMA controllers, SYS-DMAC0 and SYS-DMAC1. These
-both share the same device sources, so are wrapped in the shdma-mux
-node to allow both to be used.
+Hook in the R-Car Gen2 CMA reservation code in the board
+files for Lager and Koelsch. Both the DT-reference code
+and the legacy code is modified.
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi |   72 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 72 insertions(+)
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 1 +
+ arch/arm/mach-shmobile/board-koelsch.c           | 1 +
+ arch/arm/mach-shmobile/board-lager-reference.c   | 1 +
+ arch/arm/mach-shmobile/board-lager.c             | 1 +
+ 4 files changed, 4 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index c9eb5e4..7a165be 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -9,6 +9,8 @@
-  * kind, whether express or implied.
-  */
- 
-+#include <dt-bindings/dma/shdma.h>
-+#include <dt-bindings/dma/r8a7790-dma.h>
- #include <dt-bindings/clock/r8a7790-clock.h>
- #include <dt-bindings/interrupt-controller/arm-gic.h>
- #include <dt-bindings/interrupt-controller/irq.h>
-@@ -107,6 +109,76 @@
- 		};
- 	};
- 
-+	dma0: dma-mux@0 {
-+		compatible = "renesas,shdma-mux";
-+		#dma-cells = <2>;
-+		dma-channels = <20>;
-+		dma-requests = <256>;
-+		#address-cells = <2>;
-+		#size-cells = <2>;
-+		ranges;
-+
-+		sysdma0: dma-controller@e6700000 {
-+			compatible = "renesas,shdma-r8a7790";
-+			clocks = <&mstp2_clks R8A7790_CLK_SYS_DMAC0>;
-+			dma-channels = <15>;
-+			status = "disabled";
-+			reg = <0 0xe6700020 0 0xffc0>;
-+
-+			interrupts =	<0 197 IRQ_TYPE_LEVEL_HIGH>, /* error */
-+					<0 200 IRQ_TYPE_LEVEL_HIGH>, /* ch0 */
-+					<0 201 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 202 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 203 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 204 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 205 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 206 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 207 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 208 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 209 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 210 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 211 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 212 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 213 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 214 IRQ_TYPE_LEVEL_HIGH>;
-+			interrupt-names = "error",
-+					"ch0", "ch1", "ch2", "ch3",
-+					"ch4", "ch5", "ch6", "ch7",
-+					"ch8", "ch9", "ch10", "ch11",
-+					"ch12", "ch13", "ch14";
-+		};
-+
-+		sysdma1: dma-controller@e6720000 {
-+			compatible = "renesas,shdma-r8a7790";
-+			clocks = <&mstp2_clks R8A7790_CLK_SYS_DMAC1>;
-+			dma-channels = <15>;
-+			reg = <0 0xe6720020 0 0xffc0>;
-+			status = "disabled";
-+
-+			interrupts =  <0 220 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 216 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 217 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 218 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 219 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 308 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 309 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 310 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 311 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 312 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 313 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 314 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 315 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 316 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 317 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 318 IRQ_TYPE_LEVEL_HIGH>;
-+			interrupt-names = "error",
-+					"ch0", "ch1", "ch2", "ch3",
-+					"ch4", "ch5", "ch6", "ch7",
-+					"ch8", "ch9", "ch10", "ch11",
-+					"ch12", "ch13", "ch14";
-+		};
-+	};
-+
- 	gic: interrupt-controller@f1001000 {
- 		compatible = "arm,cortex-a15-gic";
- 		#interrupt-cells = <3>;
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index 28e3c45..5e0375f 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -113,5 +113,6 @@ DT_MACHINE_START(KOELSCH_DT, "koelsch")
+ 	.init_time	= rcar_gen2_timer_init,
+ 	.init_machine	= koelsch_add_standard_devices,
+ 	.init_late	= shmobile_init_late,
++	.reserve	= rcar_gen2_reserve,
+ 	.dt_compat	= koelsch_boards_compat_dt,
+ MACHINE_END
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index 0d44e7eb..db4b8a3 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -526,5 +526,6 @@ DT_MACHINE_START(KOELSCH_DT, "koelsch")
+ 	.init_time	= rcar_gen2_timer_init,
+ 	.init_machine	= koelsch_init,
+ 	.init_late	= shmobile_init_late,
++	.reserve	= rcar_gen2_reserve,
+ 	.dt_compat	= koelsch_boards_compat_dt,
+ MACHINE_END
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index 9e0624e..c5e656e 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -119,5 +119,6 @@ DT_MACHINE_START(LAGER_DT, "lager")
+ 	.init_time	= rcar_gen2_timer_init,
+ 	.init_machine	= lager_add_standard_devices,
+ 	.init_late	= shmobile_init_late,
++	.reserve	= rcar_gen2_reserve,
+ 	.dt_compat	= lager_boards_compat_dt,
+ MACHINE_END
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 83bbb5c..a51d202 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -891,5 +891,6 @@ DT_MACHINE_START(LAGER_DT, "lager")
+ 	.init_time	= rcar_gen2_timer_init,
+ 	.init_machine	= lager_init,
+ 	.init_late	= shmobile_init_late,
++	.reserve	= rcar_gen2_reserve,
+ 	.dt_compat	= lager_boards_compat_dt,
+ MACHINE_END
 -- 
-1.7.9.5
+2.0.0.rc2
 
