@@ -1,128 +1,44 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 26 Jun 2014 02:47:15 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 26 Jun 2014 03:01:07 +0000
 Subject: Re: [PATCH v5 1/2] ARM: shmobile: r8a7790: add internal PCI bridge nodes
-Message-Id: <53AB89B3.9020207@renesas.com>
+Message-Id: <CANqRtoSsx+NAz2W_utN-A2fx+=e_Ywt5eD=Tf9uGnEDvk3w-PQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201406242157.05973.sergei.shtylyov@cogentembedded.com>
  <201406242159.55373.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201406242159.55373.sergei.shtylyov@cogentembedded.com>
+ <53AB89B3.9020207@renesas.com>
+In-Reply-To: <53AB89B3.9020207@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Sergei,
+Hi Shimoda-san,
 
-(2014/06/25 2:59), Sergei Shtylyov wrote:
-> From: Ben Dooks <ben.dooks@codethink.co.uk>
-> 
-> Add device nodes for the R8A7790 internal PCI bridge devices.
-> 
-> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-> Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
-> [Sergei: added several properties to the PCI bridge nodes]
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+On Thu, Jun 26, 2014 at 11:47 AM, Yoshihiro Shimoda
+<yoshihiro.shimoda.uh@renesas.com> wrote:
+> Hi Sergei,
+>
+> (2014/06/25 2:59), Sergei Shtylyov wrote:
+>> From: Ben Dooks <ben.dooks@codethink.co.uk>
+>>
+>> Add device nodes for the R8A7790 internal PCI bridge devices.
+>>
+>> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+>> Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
+>> [Sergei: added several properties to the PCI bridge nodes]
+>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+>
+> Thank you for the patch!
+> I tested this patch on my lager board and a usb memory, and it works.
+>
+> Tested-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Thank you for the patch!
-I tested this patch on my lager board and a usb memory, and it works.
+Thanks for testing. Just one quick question from my side: Which USB
+port did you test?
 
-Tested-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+I somehow assumed that at least the majority of the USB ports on R-Car
+Gen2 require a USB PHY device driver to work?
 
-Best regards,
-Yoshihiro Shimoda
+Cheers,
 
-> ---
-> Changes in version 5:
-> - added "device_type" and "ranges" properties to the PCI bridge nodes;
-> - removed "0x" prefix from zero values in the "reg" properties.
-> 
-> Changes in version 4:
-> - refreshed the patch.
-> 
-> Changes in version 3:
-> - added interrupt-related properties to the PCI bridge nodes;
-> - refreshed the patch.
-> 
-> Changes in version 2:
-> - reworded summary (fixing typo) and changelog;
-> - removed extra spaces before {;
-> - refreshed the patch.
-> 
->  arch/arm/boot/dts/r8a7790.dtsi |   60 +++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 60 insertions(+)
-> 
-> Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
-> =================================> --- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
-> +++ renesas/arch/arm/boot/dts/r8a7790.dtsi
-> @@ -930,6 +930,66 @@
->  		status = "disabled";
->  	};
->  
-> +	pci0: pci@ee090000 {
-> +		compatible = "renesas,pci-r8a7790";
-> +		device_type = "pci";
-> +		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-> +		reg = <0 0xee090000 0 0xc00>,
-> +		      <0 0xee080000 0 0x1100>;
-> +		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
-> +		status = "disabled";
-> +
-> +		bus-range = <0 0>;
-> +		#address-cells = <3>;
-> +		#size-cells = <2>;
-> +		#interrupt-cells = <1>;
-> +		ranges = <0x02000000 0 0xee080000 0 0xee080000 0 0x00010000>;
-> +		interrupt-map-mask = <0xff00 0 0 0x7>;
-> +		interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
-> +			      	 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
-> +			      	 0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
-> +	};
-> +
-> +	pci1: pci@ee0b0000 {
-> +		compatible = "renesas,pci-r8a7790";
-> +		device_type = "pci";
-> +		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-> +		reg = <0 0xee0b0000 0 0xc00>,
-> +		      <0 0xee0a0000 0 0x1100>;
-> +		interrupts = <0 112 IRQ_TYPE_LEVEL_HIGH>;
-> +		status = "disabled";
-> +
-> +		bus-range = <1 1>;
-> +		#address-cells = <3>;
-> +		#size-cells = <2>;
-> +		#interrupt-cells = <1>;
-> +		ranges = <0x02000000 0 0xee0a0000 0 0xee0a0000 0 0x00010000>;
-> +		interrupt-map-mask = <0xff00 0 0 0x7>;
-> +		interrupt-map = <0x0000 0 0 1 &gic 0 112 IRQ_TYPE_LEVEL_HIGH
-> +			      	 0x0800 0 0 1 &gic 0 112 IRQ_TYPE_LEVEL_HIGH
-> +			      	 0x1000 0 0 2 &gic 0 112 IRQ_TYPE_LEVEL_HIGH>;
-> +	};
-> +
-> +	pci2: pci@ee0d0000 {
-> +		compatible = "renesas,pci-r8a7790";
-> +		device_type = "pci";
-> +		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-> +		reg = <0 0xee0d0000 0 0xc00>,
-> +		      <0 0xee0c0000 0 0x1100>;
-> +		interrupts = <0 113 IRQ_TYPE_LEVEL_HIGH>;
-> +		status = "disabled";
-> +
-> +		bus-range = <2 2>;
-> +		#address-cells = <3>;
-> +		#size-cells = <2>;
-> +		#interrupt-cells = <1>;
-> +		ranges = <0x02000000 0 0xee0c0000 0 0xee0c0000 0 0x00010000>;
-> +		interrupt-map-mask = <0xff00 0 0 0x7>;
-> +		interrupt-map = <0x0000 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
-> +			      	 0x0800 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
-> +			      	 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
-> +	};
-> +
->  	pciec: pcie@fe000000 {
->  		compatible = "renesas,pcie-r8a7790";
->  		reg = <0 0xfe000000 0 0x80000>;
-> --
-> To unsubscribe from this list: send the line "unsubscribe devicetree" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+/ magnus
