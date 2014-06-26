@@ -1,61 +1,45 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 26 Jun 2014 03:53:14 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 26 Jun 2014 12:28:58 +0000
 Subject: Re: [PATCH v5 1/2] ARM: shmobile: r8a7790: add internal PCI bridge nodes
-Message-Id: <CANqRtoQnmmxN7TOjx7SN9VknkiDPNG0VO2Q2mjwjLcAa5pb1uw@mail.gmail.com>
+Message-Id: <53AC120A.8000905@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201406242157.05973.sergei.shtylyov@cogentembedded.com>
- <201406242159.55373.sergei.shtylyov@cogentembedded.com>
- <53AB89B3.9020207@renesas.com>
+References: <201406242157.05973.sergei.shtylyov@cogentembedded.com>	<201406242159.55373.sergei.shtylyov@cogentembedded.com>	<53AB89B3.9020207@renesas.com>
  <CANqRtoSsx+NAz2W_utN-A2fx+=e_Ywt5eD=Tf9uGnEDvk3w-PQ@mail.gmail.com>
- <53AB9581.7090806@renesas.com>
-In-Reply-To: <53AB9581.7090806@renesas.com>
+In-Reply-To: <CANqRtoSsx+NAz2W_utN-A2fx+=e_Ywt5eD=Tf9uGnEDvk3w-PQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Shimoda-san,
+Hello.
 
-On Thu, Jun 26, 2014 at 12:37 PM, Yoshihiro Shimoda
-<yoshihiro.shimoda.uh@renesas.com> wrote:
-> Hi Magnus-san,
->
-> (2014/06/26 12:01), Magnus Damm wrote:
->> Hi Shimoda-san,
->>
->> On Thu, Jun 26, 2014 at 11:47 AM, Yoshihiro Shimoda
->> <yoshihiro.shimoda.uh@renesas.com> wrote:
->>> Hi Sergei,
->>>
->>> (2014/06/25 2:59), Sergei Shtylyov wrote:
->>>> From: Ben Dooks <ben.dooks@codethink.co.uk>
->>>>
->>>> Add device nodes for the R8A7790 internal PCI bridge devices.
->>>>
->>>> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
->>>> Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
->>>> [Sergei: added several properties to the PCI bridge nodes]
->>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->>>
->>> Thank you for the patch!
->>> I tested this patch on my lager board and a usb memory, and it works.
->>>
->>> Tested-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
->>
->> Thanks for testing. Just one quick question from my side: Which USB
->> port did you test?
->
-> I tested usb ch1 only...
->
->> I somehow assumed that at least the majority of the USB ports on R-Car
->> Gen2 require a USB PHY device driver to work?
->
-> Thank you for the point.
-> About usb ch1, a USB PHY device driver doesn't need, I think.
-> But, about ch0 and ch2, I think that they should require a USB PHY device driver.
+On 06/26/2014 07:01 AM, Magnus Damm wrote:
 
-Thanks for your clarification. It all makes sense now!
+>>> From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-Cheers,
+>>> Add device nodes for the R8A7790 internal PCI bridge devices.
 
-/ magnus
+>>> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+>>> Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
+>>> [Sergei: added several properties to the PCI bridge nodes]
+>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+>> Thank you for the patch!
+>> I tested this patch on my lager board and a usb memory, and it works.
+
+>> Tested-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+
+> Thanks for testing. Just one quick question from my side: Which USB
+> port did you test?
+
+> I somehow assumed that at least the majority of the USB ports on R-Car
+> Gen2 require a USB PHY device driver to work?
+
+    In fact, channel #2 also works without the PHY driver as the default 
+UGCTRL2 setting route USB2 pins to OHCI/EHCI.
+
+> Cheers,
+> / magnus
+
+WBR, Sergei
+
