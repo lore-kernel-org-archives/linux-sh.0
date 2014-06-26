@@ -1,40 +1,33 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Wed, 11 Jun 2014 11:05:46 +0000
-Subject: [PATCH v2 0/7] ARM: shmobile: R-Car: Add PCIe clocks and DT nodes
-Message-Id: <1402484753-7471-1-git-send-email-phil.edworthy@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 26 Jun 2014 09:31:55 +0000
+Subject: Re: [PATCH RFC 2/3] spi: sh-msiof: Add support for new R-Car Gen2 SoCs
+Message-Id: <CAMuHMdXX_ZBUXd=x+z1Fq2RocmzJBXyreATzUiDn=Z7JhYTS5A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-These patches add PCIe support to the R-Car H2/M2 devices and enable it on the
-Koelsch board. They depend on the following commits in Linus's master branch:
-	c25da4778803b41e11fd82dd5576c35c09b5f0e0
-	290c1fb35860540223bef1be021944d02232889d
-	7869fc6e295cbb1f80e30555bebbc795abb5b9a7
+On Tue, May 27, 2014 at 3:45 PM, Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
+> Add support for MSIOF in:
+>   - r8a7792 (R-Car V2H)
+>   - r8a7793 (R-Car M2-N)
+>   - r8a7794 (R-Car E2)
+>
+> r8a7791 is now called "R-Car M2-W".
 
-v2:
- - Changed PCIe controller names,etc from pcie to pciec
- - Corrected MTSP bit ordering
- - Use a default PCIe bus clock in the device's dtsi
+Has anyone tried this on one of the new SoCs?
 
-Phil Edworthy (7):
-  ARM: shmobile: r8a7790: Add PCIEC clock device tree node
-  ARM: shmobile: r8a7790: Add default PCIe bus clock
-  ARM: shmobile: r8a7790: Add PCIe Controller device node
-  ARM: shmobile: r8a7791: Add PCIEC clock device tree node
-  ARM: shmobile: r8a7791: Add default PCIe bus clock
-  ARM: shmobile: r8a7791: Add PCIe Controller device node
-  ARM: shmobile: koelsch: Enable PCIe Controller
+Thanks!
 
- arch/arm/boot/dts/r8a7790.dtsi            | 39 +++++++++++++++++++++++++++---
- arch/arm/boot/dts/r8a7791-koelsch.dts     |  4 ++++
- arch/arm/boot/dts/r8a7791.dtsi            | 40 ++++++++++++++++++++++++++++---
- include/dt-bindings/clock/r8a7790-clock.h |  1 +
- include/dt-bindings/clock/r8a7791-clock.h |  1 +
- 5 files changed, 79 insertions(+), 6 deletions(-)
+Gr{oetje,eeting}s,
 
--- 
-2.0.0
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
