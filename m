@@ -1,66 +1,49 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 20 Jun 2014 20:50:07 +0000
-Subject: [PATCH v3 2/3] ARM: shmobile: koelsch: enable internal PCI
-Message-Id: <201406210050.08413.sergei.shtylyov@cogentembedded.com>
+Date: Fri, 27 Jun 2014 14:59:13 +0000
+Subject: [PATCH] pcie-rcar: kill duplicate checks
+Message-Id: <201406271859.13626.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201406210044.51620.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201406210044.51620.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: horms@verge.net.au, bhelgaas@google.com, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: phil.edworthy@renesas.com
 
-Enable internal AHB-PCI bridges for the USB EHCI/OHCI controllers attached to
-them.
+The PCI core will have already checked the configuration register address before
+calling the {read|write}() methods, no need to check it again in these methods.
 
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
 ---
-Changes in version 3:
-- refreshed the patch.
+The patch is against the 'next' branch of Bjorn Helgaas' 'pci.git' repo.
 
-Changes in version 2:
-- refreshed the patch.
+ drivers/pci/host/pcie-rcar.c |   10 ----------
+ 1 file changed, 10 deletions(-)
 
- arch/arm/boot/dts/r8a7791-koelsch.dts |   22 ++++++++++++++++++++++
- 1 file changed, 22 insertions(+)
-
-Index: renesas/arch/arm/boot/dts/r8a7791-koelsch.dts
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ renesas/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -279,6 +279,16 @@
- 		renesas,groups = "i2c6";
- 		renesas,function = "i2c6";
- 	};
-+
-+	usb0_pins: usb0 {
-+		renesas,groups = "usb0";
-+		renesas,function = "usb0";
-+	};
-+
-+	usb1_pins: usb1 {
-+		renesas,groups = "usb1";
-+		renesas,function = "usb1";
-+	};
- };
+Index: pci/drivers/pci/host/pcie-rcar.c
+=================================--- pci.orig/drivers/pci/host/pcie-rcar.c
++++ pci/drivers/pci/host/pcie-rcar.c
+@@ -260,11 +260,6 @@ static int rcar_pcie_read_conf(struct pc
+ 	struct rcar_pcie *pcie = sys_to_pcie(bus->sysdata);
+ 	int ret;
  
- &ether {
-@@ -426,6 +436,18 @@
- 	};
- };
+-	if ((size = 2) && (where & 1))
+-		return PCIBIOS_BAD_REGISTER_NUMBER;
+-	else if ((size = 4) && (where & 3))
+-		return PCIBIOS_BAD_REGISTER_NUMBER;
+-
+ 	ret = rcar_pcie_config_access(pcie, PCI_ACCESS_READ,
+ 				      bus, devfn, where, val);
+ 	if (ret != PCIBIOS_SUCCESSFUL) {
+@@ -291,11 +286,6 @@ static int rcar_pcie_write_conf(struct p
+ 	int shift, ret;
+ 	u32 data;
  
-+&pci0 {
-+	status = "okay";
-+	pinctrl-0 = <&usb0_pins>;
-+	pinctrl-names = "default";
-+};
-+
-+&pci1 {
-+	status = "okay";
-+	pinctrl-0 = <&usb1_pins>;
-+	pinctrl-names = "default";
-+};
-+
- &pcie_bus_clk {
- 	status = "okay";
- };
+-	if ((size = 2) && (where & 1))
+-		return PCIBIOS_BAD_REGISTER_NUMBER;
+-	else if ((size = 4) && (where & 3))
+-		return PCIBIOS_BAD_REGISTER_NUMBER;
+-
+ 	ret = rcar_pcie_config_access(pcie, PCI_ACCESS_READ,
+ 				      bus, devfn, where, &data);
+ 	if (ret != PCIBIOS_SUCCESSFUL)
