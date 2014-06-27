@@ -1,76 +1,77 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Fri, 06 Jun 2014 11:22:13 +0000
-Subject: Re: [PATCH v2 5/7] ARM: shmobile: r8a7791 dtsi: Add SYS-DMAC0 and SYS-DMAC1 nodes
-Message-Id: <5391A465.5080403@codethink.co.uk>
+From: Brian W Hart <hartb@linux.vnet.ibm.com>
+Date: Fri, 27 Jun 2014 21:09:39 +0000
+Subject: [PATCH] cpufreq: make table sentinal macros unsigned to match use
+Message-Id: <20140627210939.GB24604@oc3347516403.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401716531-29794-1-git-send-email-geert+renesas@glider.be>
- <1401716531-29794-6-git-send-email-geert+renesas@glider.be>
- <2440127.sDc7m91LPu@avalon>
-In-Reply-To: <2440127.sDc7m91LPu@avalon>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Viresh Kumar <viresh.kumar@linaro.org>
+Cc: linux-kernel@vger.kernel.org, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, Stratos Karafotis <stratosk@semaphore.gr>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
 
-On 04/06/14 13:25, Laurent Pinchart wrote:
-> Hi Geert,
-> 
-> Thank you for the patch.
-> 
-> On Monday 02 June 2014 15:42:09 Geert Uytterhoeven wrote:
->> Add nodes for the SYS-DMA controllers, SYS-DMAC0 and SYS-DMAC1. These
->> both share the same device sources, so are wrapped in the shdma-mux
->> node to allow both to be used.
->>
->> Cfr. the r8a7790 version by Ben Dooks.
->>
->> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->> ---
->> v2:
->>   - No changes
->>
->>  arch/arm/boot/dts/r8a7791.dtsi | 69 +++++++++++++++++++++++++++++++++++++++
->>  1 file changed, 69 insertions(+)
->>
->> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
->> index e5c35d784ec8..37685ef32ea0 100644
->> --- a/arch/arm/boot/dts/r8a7791.dtsi
->> +++ b/arch/arm/boot/dts/r8a7791.dtsi
->> @@ -11,6 +11,7 @@
->>   */
->>
->>  #include <dt-bindings/clock/r8a7791-clock.h>
->> +#include <dt-bindings/dma/r8a7791-dma.h>
->>  #include <dt-bindings/interrupt-controller/arm-gic.h>
->>  #include <dt-bindings/interrupt-controller/irq.h>
->>
->> @@ -55,6 +56,74 @@
->>  		};
->>  	};
->>
->> +	dma0: dma-mux@0 {
->> +		compatible = "renesas,shdma-mux";
->> +		#dma-cells = <2>;
->> +		dma-channels = <30>;
->> +		dma-requests = <256>;
->> +		#address-cells = <2>;
->> +		#size-cells = <2>;
->> +		ranges;
->> +
->> +		sysdma0: dma-controller@e6700020 {
->> +			compatible = "renesas,shdma-r8a7791";
->> +			reg = <0 0xe6700020 0 0xffc0>;
-> 
-> Even though the registered defined in the datasheet start at 0xe6700020, the 
-> documentation clearly states that "The base address of registers for the 
-> lower-numbered channels  (0 to 14) is H'E670 0000". I'm also wondering where 
-> the size comes from, if you want to span the 0xe6700000 to 0xe670ffff range, 
-> the size should be 0xffe0, not 0xffc0.
+Commit 5eeaf1f18973 (cpufreq: Fix build error on some platforms that
+use cpufreq_for_each_*) moved function cpufreq_next_valid() to a public
+header.  Warnings are now generated when objects including that header
+are built with -Wsign-compare (as an out-of-tree module might be):
 
-There seems to be no registers below the 0x20 point and therefore all
-current implementations assume that the first register is the point
-for the start. 0xffc0 is wrong, should be 0xffe0.
+.../include/linux/cpufreq.h: In function ‘cpufreq_next_valid’:
+.../include/linux/cpufreq.h:519:27: warning: comparison between signed
+and unsigned integer expressions [-Wsign-compare]
+  while ((*pos)->frequency != CPUFREQ_TABLE_END)
+                           ^
+.../include/linux/cpufreq.h:520:25: warning: comparison between signed
+and unsigned integer expressions [-Wsign-compare]
+   if ((*pos)->frequency != CPUFREQ_ENTRY_INVALID)
+                         ^
 
+Constants CPUFREQ_ENTRY_INVALID and CPUFREQ_TABLE_END are signed, but
+are used with unsigned member 'frequency' of cpufreq_frequency_table.
+Update the macro definitions to be explicitly unsigned to match their
+use.
+
+This also corrects potentially wrong behavior of clk_rate_table_iter()
+if unsigned long is wider than usigned int.
+
+Signed-off-by: Brian W Hart <hartb@linux.vnet.ibm.com>
+---
+These macros are fairly broadly used in the kernel so I was bit leery
+of changing them, but after inspection I think it's fine.  I found 102
+uses of the macros, of which:
+
+99 are uses with cpufreq_frequency_table.frequency (95) or with local
+   variables of the same type as frequency (4).  These should be just
+   fine with this change--we're just making explicit a conversion that
+   was previously implicit.
+
+ 2 are uses with a local variable of different type (unsigned long) than
+   'frequency' (in drivers/sh/clk/core.c).  One of these uses is safe;
+   the other (in clk_rate_table_iter()) is broken if unsigned long
+   is wider than unsigned int.  As a side-effect, this patch corrects
+   the potential misbehavior there.
+
+ 1 is a use in macro cpufreq_for_each_entry() with what _should_ be the
+   frequency member of a cpufreq_frequency_table, provided the caller it
+   well-behaved.  There are 18 callers of this macro; all are well-behaved.
+   So these should also be safe.
+
+ include/linux/cpufreq.h |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/include/linux/cpufreq.h b/include/linux/cpufreq.h
+index ec4112d..8f8ae95 100644
+--- a/include/linux/cpufreq.h
++++ b/include/linux/cpufreq.h
+@@ -482,8 +482,8 @@ extern struct cpufreq_governor cpufreq_gov_conservative;
+  *********************************************************************/
+ 
+ /* Special Values of .frequency field */
+-#define CPUFREQ_ENTRY_INVALID	~0
+-#define CPUFREQ_TABLE_END	~1
++#define CPUFREQ_ENTRY_INVALID	~0u
++#define CPUFREQ_TABLE_END	~1u
+ /* Special Values of .flags field */
+ #define CPUFREQ_BOOST_FREQ	(1 << 0)
+ 
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.7.1
+
