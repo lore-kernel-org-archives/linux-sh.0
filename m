@@ -1,40 +1,77 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 02 Jun 2014 13:38:08 +0000
-Subject: [PATCH 06/18] spi: rspi: Don't consider DMA configuration failures fatal
-Message-Id: <1401716301-29612-7-git-send-email-geert+renesas@glider.be>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Fri, 27 Jun 2014 16:55:54 +0000
+Subject: [PATCH 1/2] PCI: host: pcie-rcar: Use correct initial HW settings
+Message-Id: <1403888155-9709-2-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
+References: <1403888155-9709-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1403888155-9709-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-pci@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Simon Horman <horms@verge.net.au>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Phil Edworthy <phil.edworthy@renesas.com>
 
-Fall back to PIO if DMA configuration failed.
+Although the R-Car PCIe driver works as it is, there are a number of
+incorrect settings that this patch corrects. It corrects:
+ - enabling the PCI Express Extended Cap ID.
+ - setting Data Link Layer Link Active Reporting Capable.
+ - terminating list of capabilities.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+It also removes enabling the MAC data scrambling as this is the
+default HW setting, and removes incorrect code to enable slave bus
+mastering as this is done by the PCI core.
+
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
- drivers/spi/spi-rspi.c | 6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
+ drivers/pci/host/pcie-rcar.c | 15 ++++-----------
+ 1 file changed, 4 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index fdbd46d0c570..94a99ec7d989 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -1190,10 +1190,8 @@ static int rspi_probe(struct platform_device *pdev)
- 	}
+diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
+index c06b888..680a8cc 100644
+--- a/drivers/pci/host/pcie-rcar.c
++++ b/drivers/pci/host/pcie-rcar.c
+@@ -483,14 +483,15 @@ static int rcar_pcie_hw_init(struct rcar_pcie *pcie)
+ 	rcar_rmw32(pcie, RCONF(PCI_SUBORDINATE_BUS), 0xff, 1);
  
- 	ret = rspi_request_dma(rspi, pdev);
--	if (ret < 0) {
--		dev_err(&pdev->dev, "rspi_request_dma failed.\n");
--		goto error3;
--	}
-+	if (ret < 0)
-+		dev_warn(&pdev->dev, "DMA not available, using PIO\n");
+ 	/* Initialize default capabilities. */
+-	rcar_rmw32(pcie, REXPCAP(0), 0, PCI_CAP_ID_EXP);
++	rcar_rmw32(pcie, REXPCAP(0), 0xff, PCI_CAP_ID_EXP);
+ 	rcar_rmw32(pcie, REXPCAP(PCI_EXP_FLAGS),
+ 		PCI_EXP_FLAGS_TYPE, PCI_EXP_TYPE_ROOT_PORT << 4);
+ 	rcar_rmw32(pcie, RCONF(PCI_HEADER_TYPE), 0x7f,
+ 		PCI_HEADER_TYPE_BRIDGE);
  
- 	ret = devm_spi_register_master(&pdev->dev, master);
- 	if (ret < 0) {
+ 	/* Enable data link layer active state reporting */
+-	rcar_rmw32(pcie, REXPCAP(PCI_EXP_LNKCAP), 0, PCI_EXP_LNKCAP_DLLLARC);
++	rcar_rmw32(pcie, REXPCAP(PCI_EXP_LNKCAP), PCI_EXP_LNKCAP_DLLLARC,
++		PCI_EXP_LNKCAP_DLLLARC);
+ 
+ 	/* Write out the physical slot number = 0 */
+ 	rcar_rmw32(pcie, REXPCAP(PCI_EXP_SLTCAP), PCI_EXP_SLTCAP_PSN, 0);
+@@ -499,10 +500,7 @@ static int rcar_pcie_hw_init(struct rcar_pcie *pcie)
+ 	rcar_rmw32(pcie, TLCTLR+1, 0x3f, 50);
+ 
+ 	/* Terminate list of capabilities (Next Capability Offset=0) */
+-	rcar_rmw32(pcie, RVCCAP(0), 0xfff0, 0);
+-
+-	/* Enable MAC data scrambling. */
+-	rcar_rmw32(pcie, MACCTLR, SCRAMBLE_DISABLE, 0);
++	rcar_rmw32(pcie, RVCCAP(0), 0xfff00000, 0);
+ 
+ 	/* Enable MSI */
+ 	if (IS_ENABLED(CONFIG_PCI_MSI))
+@@ -519,11 +517,6 @@ static int rcar_pcie_hw_init(struct rcar_pcie *pcie)
+ 	/* Enable INTx interrupts */
+ 	rcar_rmw32(pcie, PCIEINTXR, 0, 0xF << 8);
+ 
+-	/* Enable slave Bus Mastering */
+-	rcar_rmw32(pcie, RCONF(PCI_STATUS), PCI_STATUS_DEVSEL_MASK,
+-		PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER |
+-		PCI_STATUS_CAP_LIST | PCI_STATUS_DEVSEL_FAST);
+-
+ 	wmb();
+ 
+ 	return 0;
 -- 
-1.9.1
+2.0.0
 
