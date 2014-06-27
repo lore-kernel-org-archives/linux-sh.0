@@ -1,86 +1,31 @@
-From: Paul Bolle <pebolle@tiscali.nl>
-Date: Wed, 18 Jun 2014 19:08:45 +0000
-Subject: Re: [PATCH] Remove CPU_SUBTYPE_SH7764
-Message-Id: <1403118525.23136.2.camel@x220>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 27 Jun 2014 23:59:39 +0000
+Subject: Re: [PATCH v2 0/3] Add R8A7791/Koelsch/Henninger board PCI DT support
+Message-Id: <20140627235939.GC27128@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1391971686-9517-1-git-send-email-richard@nod.at>
-	 <1391971686-9517-22-git-send-email-richard@nod.at>
-	 <1391981761.25855.58.camel@x220> <1397554747.1985.35.camel@x220>
-	 <CAMuHMdXawwgr7x=TFumDUh+c+-KZteHdp+NrnXTFcFcwT6gjRQ@mail.gmail.com>
-	 <1403083935.1984.74.camel@x220>
-In-Reply-To: <1403083935.1984.74.camel@x220>
+References: <201405200148.28683.sergei.shtylyov@cogentembedded.com>
+ <537B9CF0.8020000@cogentembedded.com>
+In-Reply-To: <537B9CF0.8020000@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Richard Weinberger <richard@nod.at>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, 2014-06-18 at 11:32 +0200, Paul Bolle wrote:
-> The symbol is an orphan, get rid of it.
+On Tue, May 20, 2014 at 10:20:32PM +0400, Sergei Shtylyov wrote:
+> Hello.
 > 
-> Signed-off-by: Richard Weinberger <richard@nod.at>
-> [pebolle@tiscali.nl: re-added dropped ||]
-> Signed-off-by: Paul Bolle <pebolle@tiscali.nl>
-> ---
-> Submitted by Richard a few months ago as "[PATCH 21/28] Remove
-> CPU_SUBTYPE_SH7764".
-
-So I should have sent this with a
-    From: Richard Weinberger <richard@nod.at>
- 
-first line. Let's hope Andrew notices it. 
-
-
-Paul Bolle
-
-> Untested.
+> On 05/20/2014 01:48 AM, Sergei Shtylyov wrote:
 > 
->  arch/sh/drivers/dma/Kconfig                | 5 ++---
->  arch/sh/include/cpu-sh4/cpu/dma-register.h | 1 -
->  arch/sh/include/cpu-sh4a/cpu/dma.h         | 3 +--
->  3 files changed, 3 insertions(+), 6 deletions(-)
+> >    Here's the set of 3 patches against Simon Horman's 'renesas.git' repo,
+> >'renesas-devel-v3.15-rc5-20140517' tag. Here we add internal PCI support for
+> >the R8A7791-based Koelsch and Henninger boards for the sake of getting USB
+> >EHCI/OHCI working...
 > 
-> diff --git a/arch/sh/drivers/dma/Kconfig b/arch/sh/drivers/dma/Kconfig
-> index cfd5b90a8628..78bc97b1d027 100644
-> --- a/arch/sh/drivers/dma/Kconfig
-> +++ b/arch/sh/drivers/dma/Kconfig
-> @@ -12,9 +12,8 @@ config SH_DMA_IRQ_MULTI
->  	default y if CPU_SUBTYPE_SH7750  || CPU_SUBTYPE_SH7751  || \
->  		     CPU_SUBTYPE_SH7750S || CPU_SUBTYPE_SH7750R || \
->  		     CPU_SUBTYPE_SH7751R || CPU_SUBTYPE_SH7091  || \
-> -		     CPU_SUBTYPE_SH7763  || CPU_SUBTYPE_SH7764  || \
-> -		     CPU_SUBTYPE_SH7780  || CPU_SUBTYPE_SH7785  || \
-> -		     CPU_SUBTYPE_SH7760
-> +		     CPU_SUBTYPE_SH7763  || CPU_SUBTYPE_SH7780  || \
-> +		     CPU_SUBTYPE_SH7785  || CPU_SUBTYPE_SH7760
->  
->  config SH_DMA_API
->  	depends on SH_DMA
-> diff --git a/arch/sh/include/cpu-sh4/cpu/dma-register.h b/arch/sh/include/cpu-sh4/cpu/dma-register.h
-> index 02788b6a03b7..9cd81e54056a 100644
-> --- a/arch/sh/include/cpu-sh4/cpu/dma-register.h
-> +++ b/arch/sh/include/cpu-sh4/cpu/dma-register.h
-> @@ -32,7 +32,6 @@
->  #define CHCR_TS_HIGH_SHIFT	(20 - 2)	/* 2 bits for shifted low TS */
->  #elif defined(CONFIG_CPU_SUBTYPE_SH7757) || \
->  	defined(CONFIG_CPU_SUBTYPE_SH7763) || \
-> -	defined(CONFIG_CPU_SUBTYPE_SH7764) || \
->  	defined(CONFIG_CPU_SUBTYPE_SH7780) || \
->  	defined(CONFIG_CPU_SUBTYPE_SH7785)
->  #define CHCR_TS_LOW_MASK	0x00000018
-> diff --git a/arch/sh/include/cpu-sh4a/cpu/dma.h b/arch/sh/include/cpu-sh4a/cpu/dma.h
-> index 89afb650ce25..8ceccceae844 100644
-> --- a/arch/sh/include/cpu-sh4a/cpu/dma.h
-> +++ b/arch/sh/include/cpu-sh4a/cpu/dma.h
-> @@ -14,8 +14,7 @@
->  #define DMTE4_IRQ	evt2irq(0xb80)
->  #define DMAE0_IRQ	evt2irq(0xbc0)	/* DMA Error IRQ*/
->  #define SH_DMAC_BASE0	0xFE008020
-> -#elif defined(CONFIG_CPU_SUBTYPE_SH7763) || \
-> -	defined(CONFIG_CPU_SUBTYPE_SH7764)
-> +#elif defined(CONFIG_CPU_SUBTYPE_SH7763)
->  #define DMTE0_IRQ	evt2irq(0x640)
->  #define DMTE4_IRQ	evt2irq(0x780)
->  #define DMAE0_IRQ	evt2irq(0x6c0)
+>    Forgot to mention that it depends on the internal PCI bridge device tree
+> support reposted just before these patches...
+> 
+> >[1/3] ARM: shmobile: r8a7791: add internal PCI bridge nodes
+> >[2/3] ARM: shmobile: koelsch: enable internal PCI
+> >[3/3] ARM: shmobile: henninger: enable internal PCI
 
-
+Thanks, please repost these patches when the device tree support
