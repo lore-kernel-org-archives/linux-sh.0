@@ -1,31 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 27 Jun 2014 23:59:39 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 28 Jun 2014 00:17:09 +0000
 Subject: Re: [PATCH v2 0/3] Add R8A7791/Koelsch/Henninger board PCI DT support
-Message-Id: <20140627235939.GC27128@verge.net.au>
+Message-Id: <53AE0985.9020604@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201405200148.28683.sergei.shtylyov@cogentembedded.com>
- <537B9CF0.8020000@cogentembedded.com>
-In-Reply-To: <537B9CF0.8020000@cogentembedded.com>
+ <537B9CF0.8020000@cogentembedded.com> <20140627235939.GC27128@verge.net.au>
+In-Reply-To: <20140627235939.GC27128@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, May 20, 2014 at 10:20:32PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 05/20/2014 01:48 AM, Sergei Shtylyov wrote:
-> 
-> >    Here's the set of 3 patches against Simon Horman's 'renesas.git' repo,
-> >'renesas-devel-v3.15-rc5-20140517' tag. Here we add internal PCI support for
-> >the R8A7791-based Koelsch and Henninger boards for the sake of getting USB
-> >EHCI/OHCI working...
-> 
->    Forgot to mention that it depends on the internal PCI bridge device tree
-> support reposted just before these patches...
-> 
-> >[1/3] ARM: shmobile: r8a7791: add internal PCI bridge nodes
-> >[2/3] ARM: shmobile: koelsch: enable internal PCI
-> >[3/3] ARM: shmobile: henninger: enable internal PCI
+Hello.
 
-Thanks, please repost these patches when the device tree support
+On 06/28/2014 03:59 AM, Simon Horman wrote:
+
+>>>     Here's the set of 3 patches against Simon Horman's 'renesas.git' repo,
+>>> 'renesas-devel-v3.15-rc5-20140517' tag. Here we add internal PCI support for
+>>> the R8A7791-based Koelsch and Henninger boards for the sake of getting USB
+>>> EHCI/OHCI working...
+
+>>     Forgot to mention that it depends on the internal PCI bridge device tree
+>> support reposted just before these patches...
+
+>>> [1/3] ARM: shmobile: r8a7791: add internal PCI bridge nodes
+>>> [2/3] ARM: shmobile: koelsch: enable internal PCI
+>>> [3/3] ARM: shmobile: henninger: enable internal PCI
+
+> Thanks, please repost these patches when the device tree support
+
+    Where did you get that old stuff? The current version of this patchset is 
+4, not 2!
+
+WBR, Sergei
+
