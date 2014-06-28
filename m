@@ -1,80 +1,53 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 23 Jun 2014 00:57:42 +0000
-Subject: [PATCH 07/10 v2] ASoC: rsnd: enable SRC setting via DT
-Message-Id: <87vbrssar8.wl%kuninori.morimoto.gx@renesas.com>
+From: Mark Brown <broonie@kernel.org>
+Date: Sat, 28 Jun 2014 13:40:46 +0000
+Subject: Re: [PATCH 07/10 v2] ASoC: rsnd: enable SRC setting via DT
+Message-Id: <20140628134046.GW2520@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="FclElvQKoGCylS3A"
 List-Id: <linux-sh.vger.kernel.org>
 References: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
-	<8761jstphc.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <8761jstphc.wl%kuninori.morimoto.gx@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
+ <8761jstphc.wl%kuninori.morimoto.gx@gmail.com>
+ <87vbrssar8.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87vbrssar8.wl%kuninori.morimoto.gx@renesas.com>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-some special board wants to exchange sampling rate by using SRC.
-This patch enables its settings.
+--FclElvQKoGCylS3A
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v1 -> v2
+On Sun, Jun 22, 2014 at 05:57:42PM -0700, Kuninori Morimoto wrote:
 
- - src_node -> np on of_property_read_u32()
+>  SRC subnode properties:
+> -no properties at this point
+> +- convert-rate			: SRC convert rate if needed
 
- .../devicetree/bindings/sound/renesas,rsnd.txt     |    2 +-
- sound/soc/sh/rcar/src.c                            |   14 ++++++++++++--
- 2 files changed, 13 insertions(+), 3 deletions(-)
+It's not clear to me why this is something that we'd control in the
+device tree.  Are there some systems which can't support this, if the
+hardware can do it it's hard to see why someone wouldn't want to use it
+(and why it wouldn't be a runtime decision anyway).
 
-diff --git a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-index 41a120c..1d88d42 100644
---- a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-+++ b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-@@ -24,7 +24,7 @@ SSI subnode properties:
- - no-busif			: BUSIF is not ussed when [mem -> SSI] via DMA case
- 
- SRC subnode properties:
--no properties at this point
-+- convert-rate			: SRC convert rate if needed
- 
- DAI subnode properties:
- - playback			: list of playback modules
-diff --git a/sound/soc/sh/rcar/src.c b/sound/soc/sh/rcar/src.c
-index 4d39505..7f3c7d7 100644
---- a/sound/soc/sh/rcar/src.c
-+++ b/sound/soc/sh/rcar/src.c
-@@ -612,11 +612,11 @@ static void rsnd_of_parse_src(struct platform_device *pdev,
- 			      const struct rsnd_of_data *of_data,
- 			      struct rsnd_priv *priv)
- {
--	struct device_node *src_node;
-+	struct device_node *src_node, *np;
- 	struct rcar_snd_info *info = rsnd_priv_to_info(priv);
- 	struct rsnd_src_platform_info *src_info;
- 	struct device *dev = &pdev->dev;
--	int nr;
-+	int nr, i;
- 
- 	if (!of_data)
- 		return;
-@@ -640,6 +640,16 @@ static void rsnd_of_parse_src(struct platform_device *pdev,
- 	info->src_info		= src_info;
- 	info->src_info_nr	= nr;
- 
-+	i = 0;
-+	for_each_child_of_node(src_node, np) {
-+		src_info = info->src_info + i;
-+
-+		of_property_read_u32(np, "convert-rate",
-+				     &src_info->convert_rate);
-+
-+		i++;
-+	}
-+
- rsnd_of_parse_src_end:
- 	of_node_put(src_node);
- }
--- 
-1.7.9.5
+--FclElvQKoGCylS3A
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJTrsXbAAoJELSic+t+oim9je4P/3xoI/WUlQsITk3mdzSB/OyL
+ezrq1kfEhIyoqozvE7cuZCzItcxnk5paWvQ6DRp2gBwEIGiIhPOona9ktXiehjob
+aFEw8AhASjNeti9TF54tNpc5KyEpXDa7NOH/3wgbWelAFDnjJhZr1WbQkYD5v4VD
+XR13+iGAmHSTZfsyvWnPTtmHu/qtquV4ILe7/PWrvkyFAB2imXZ6BbpdrHToMj/L
+HoQOXvYlG2SDQoRtexeFDB2t2GAS2TlKnkWcyVtm5K6xLBAgmTng4K9EFnZVXLxx
+Q/ix1aHL5DscPBwbAOn5/GDPa9x8+N6y2nLVRoHZEnowDw4d4WKvqC8YXMFZUzea
+yVVtw3WqHwspgZqDq7NjgSZ3YsLnqHwNAVpitGkR0cOYC7apncwqgSAaSJv4c/1r
+GIxE+8X2vQPfvNVjfQErbph7w603Yhej9pDPNfU+VJyouppJkQXye+8m8HS5Uyv6
+sxhuGZYutD8g2Gtk45kdgjBUgWsXNUp/sBw6Z+hTzUglFHK5PJzW4zWh51JHHrE+
+jkZ9C4G+q6vcZOAp62B8kvCG+fOOE6IFX9FdrJP8CooWjb/QxbgnVPIqcShU3YzN
+g/gbTnXOrjVun5zCNpbE9SjPrirjfzBZGU2IICKzr+Ve1wUgdv7+45QnrDWFLE9P
+P00PsauilS6WlBNjsw3F
+=2QJu
+-----END PGP SIGNATURE-----
+
+--FclElvQKoGCylS3A--
