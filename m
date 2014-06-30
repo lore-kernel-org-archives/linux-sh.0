@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 28 Jun 2014 00:18:50 +0000
+From: Viresh Kumar <viresh.kumar@linaro.org>
+Date: Mon, 30 Jun 2014 04:55:22 +0000
 Subject: Re: [PATCH] cpufreq: make table sentinal macros unsigned to match use
-Message-Id: <20140628001850.GF27128@verge.net.au>
+Message-Id: <CAKohpo=qB3nB+ZNKE4Y94m6gPWZZ4YZEU_WOA=s5DB8apxUQGQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20140627210939.GB24604@oc3347516403.ibm.com>
 In-Reply-To: <20140627210939.GB24604@oc3347516403.ibm.com>
@@ -9,14 +9,14 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
 To: Brian W Hart <hartb@linux.vnet.ibm.com>
-Cc: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Viresh Kumar <viresh.kumar@linaro.org>, linux-kernel@vger.kernel.org, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, Stratos Karafotis <stratosk@semaphore.gr>, Magnus Damm <magnus.damm@gmail.com>
+Cc: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, Stratos Karafotis <stratosk@semaphore.gr>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
 
-On Fri, Jun 27, 2014 at 04:09:39PM -0500, Brian W Hart wrote:
+On 28 June 2014 02:39, Brian W Hart <hartb@linux.vnet.ibm.com> wrote:
 > Commit 5eeaf1f18973 (cpufreq: Fix build error on some platforms that
 > use cpufreq_for_each_*) moved function cpufreq_next_valid() to a public
 > header.  Warnings are now generated when objects including that header
 > are built with -Wsign-compare (as an out-of-tree module might be):
-> 
+>
 > .../include/linux/cpufreq.h: In function ‘cpufreq_next_valid’:
 > .../include/linux/cpufreq.h:519:27: warning: comparison between signed
 > and unsigned integer expressions [-Wsign-compare]
@@ -26,58 +26,57 @@ On Fri, Jun 27, 2014 at 04:09:39PM -0500, Brian W Hart wrote:
 > and unsigned integer expressions [-Wsign-compare]
 >    if ((*pos)->frequency != CPUFREQ_ENTRY_INVALID)
 >                          ^
-> 
+>
 > Constants CPUFREQ_ENTRY_INVALID and CPUFREQ_TABLE_END are signed, but
 > are used with unsigned member 'frequency' of cpufreq_frequency_table.
 > Update the macro definitions to be explicitly unsigned to match their
 > use.
-> 
+>
 > This also corrects potentially wrong behavior of clk_rate_table_iter()
 > if unsigned long is wider than usigned int.
-> 
+>
 > Signed-off-by: Brian W Hart <hartb@linux.vnet.ibm.com>
-
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
-
 > ---
 > These macros are fairly broadly used in the kernel so I was bit leery
 > of changing them, but after inspection I think it's fine.  I found 102
 > uses of the macros, of which:
-> 
+>
 > 99 are uses with cpufreq_frequency_table.frequency (95) or with local
 >    variables of the same type as frequency (4).  These should be just
 >    fine with this change--we're just making explicit a conversion that
 >    was previously implicit.
-> 
+>
 >  2 are uses with a local variable of different type (unsigned long) than
 >    'frequency' (in drivers/sh/clk/core.c).  One of these uses is safe;
 >    the other (in clk_rate_table_iter()) is broken if unsigned long
 >    is wider than unsigned int.  As a side-effect, this patch corrects
 >    the potential misbehavior there.
-> 
+>
 >  1 is a use in macro cpufreq_for_each_entry() with what _should_ be the
 >    frequency member of a cpufreq_frequency_table, provided the caller it
 >    well-behaved.  There are 18 callers of this macro; all are well-behaved.
 >    So these should also be safe.
-> 
+
+I would have moved some of it to logs, they look good.
+
 >  include/linux/cpufreq.h |    4 ++--
 >  1 files changed, 2 insertions(+), 2 deletions(-)
-> 
+>
 > diff --git a/include/linux/cpufreq.h b/include/linux/cpufreq.h
 > index ec4112d..8f8ae95 100644
 > --- a/include/linux/cpufreq.h
 > +++ b/include/linux/cpufreq.h
 > @@ -482,8 +482,8 @@ extern struct cpufreq_governor cpufreq_gov_conservative;
 >   *********************************************************************/
->  
+>
 >  /* Special Values of .frequency field */
-> -#define CPUFREQ_ENTRY_INVALID	~0
-> -#define CPUFREQ_TABLE_END	~1
-> +#define CPUFREQ_ENTRY_INVALID	~0u
-> +#define CPUFREQ_TABLE_END	~1u
+> -#define CPUFREQ_ENTRY_INVALID  ~0
+> -#define CPUFREQ_TABLE_END      ~1
+> +#define CPUFREQ_ENTRY_INVALID  ~0u
+> +#define CPUFREQ_TABLE_END      ~1u
 >  /* Special Values of .flags field */
->  #define CPUFREQ_BOOST_FREQ	(1 << 0)
->  
-> -- 
-> 1.7.1
-> 
+>  #define CPUFREQ_BOOST_FREQ     (1 << 0)
+
+Thanks.
+
+Acked-by: Viresh Kumar <viresh.kumar@linaro.org>
