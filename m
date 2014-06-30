@@ -1,75 +1,46 @@
-From: Steven Rostedt <rostedt@goodmis.org>
-Date: Wed, 11 Jun 2014 13:44:08 +0000
-Subject: Re: [PATCH] arm/ftrace: Fix function_return_addr() to function_return_address()
-Message-Id: <20140611094408.0a6dedc3@gandalf.local.home>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Mon, 30 Jun 2014 07:54:24 +0000
+Subject: [PATCH v2 3/3] PCI: host: pcie-rcar: Replace arg passed into a func with local var
+Message-Id: <1404114864-17330-4-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394862048-28758-1-git-send-email-takahiro.akashi@linaro.org>
- <1398851676-16389-1-git-send-email-takahiro.akashi@linaro.org>
- <1398851676-16389-2-git-send-email-takahiro.akashi@linaro.org>
- <CAMuHMdWs9i4pBNbn-RTpv_-K5W7YGED=KtEtFSci=7YHdNKpfw@mail.gmail.com>
- <20140611092330.7930eff2@gandalf.local.home>
- <CAMuHMdWm+hpumykRG2FudDPYSVODv1WoU6_tPv5D3HCPDQtDSw@mail.gmail.com>
-In-Reply-To: <CAMuHMdWm+hpumykRG2FudDPYSVODv1WoU6_tPv5D3HCPDQtDSw@mail.gmail.com>
+References: <1404114864-17330-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1404114864-17330-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-pci@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Simon Horman <horms@verge.net.au>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Phil Edworthy <phil.edworthy@renesas.com>
 
-On Wed, 11 Jun 2014 15:38:49 +0200
-Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+---
+ drivers/pci/host/pcie-rcar.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
-> Hi Steven,
-> 
-> On Wed, Jun 11, 2014 at 3:23 PM, Steven Rostedt <rostedt@goodmis.org> wrote:
-> > The clean up of CALLER_ADDR*() functions required the archs to either
-> > use the default __builtin_return_address(X) (where X > 0) or override
-> > it with something the arch can use. To override it, the arch would
-> > define function_return_address(x).
-> 
-> ftrace_return_address(x)
-> 
-> > The arm architecture requires this to be redefined but instead of
-> > defining function_return_address(x) it defined function_return_addr(x).
-> 
-> ftrace_return_address(x) ... ftrace_return_address(x)
-
-As long as I got the patch part right ;-)
-
-Will, please update the change log with the correct name. Including the
-subject. Thanks!
-
--- Steve
-
-> 
-> > Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
-> > Signed-off-by: Steven Rostedt <rostedt@goodmis.org>
-> 
-> Nevertheless, your patch kills the warnings. Thanks!
-> 
-> Tested-by: Geert Uytterhoeven <geert@linux-m68k.org>
-> 
-> > ----
-> > diff --git a/arch/arm/include/asm/ftrace.h b/arch/arm/include/asm/ftrace.h
-> > index eb577f4..39eb16b 100644
-> > --- a/arch/arm/include/asm/ftrace.h
-> > +++ b/arch/arm/include/asm/ftrace.h
-> > @@ -52,7 +52,7 @@ extern inline void *return_address(unsigned int level)
-> >
-> >  #endif
-> >
-> > -#define ftrace_return_addr(n) return_address(n)
-> > +#define ftrace_return_address(n) return_address(n)
-> >
-> >  #endif /* ifndef __ASSEMBLY__ */
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
+diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
+index 758e2b4..efdea07 100644
+--- a/drivers/pci/host/pcie-rcar.c
++++ b/drivers/pci/host/pcie-rcar.c
+@@ -319,9 +319,10 @@ static struct pci_ops rcar_pcie_ops = {
+ 	.write	= rcar_pcie_write_conf,
+ };
+ 
+-static void rcar_pcie_setup_window(int win, struct resource *res,
+-				   struct rcar_pcie *pcie)
++static void rcar_pcie_setup_window(int win, struct rcar_pcie *pcie)
+ {
++	struct resource *res = &pcie->res[win];
++
+ 	/* Setup PCIe address space mappings for each resource */
+ 	resource_size_t size;
+ 	u32 mask;
+@@ -362,7 +363,7 @@ static int rcar_pcie_setup(int nr, struct pci_sys_data *sys)
+ 		if (!res->flags)
+ 			continue;
+ 
+-		rcar_pcie_setup_window(i, res, pcie);
++		rcar_pcie_setup_window(i, pcie);
+ 
+ 		if (res->flags & IORESOURCE_IO)
+ 			pci_ioremap_io(nr * SZ_64K, res->start);
+-- 
+2.0.0
 
