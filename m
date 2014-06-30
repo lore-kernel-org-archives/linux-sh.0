@@ -1,164 +1,61 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 20 Jun 2014 16:53:06 +0000
-Subject: [PATCH 6/9] ARM: shmobile: Move r8a7790.h
-Message-Id: <1403283189-21688-7-git-send-email-geert+renesas@glider.be>
+Date: Mon, 30 Jun 2014 09:49:53 +0000
+Subject: [PATCH] ARM: shmobile: r8a7790: Fix whitespace errors in pci nodes
+Message-Id: <1404121793-11182-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1403283189-21688-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1403283189-21688-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-arm-kernel@lists.infradead.or, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Change location of r8a7790.h so it can be included as "r8a7790.h"
-instead of the old style <mach/r8a7790.h>
+Remove spaces in between tabs.
+
+Introduced by commit ff4f3eb8b3386208944fe60b85e6cba4d338198e ("ARM:
+shmobile: r8a7790: add internal PCI bridge nodes").
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/board-lager-reference.c      |  4 +++-
- arch/arm/mach-shmobile/board-lager.c                | 14 ++++++++------
- arch/arm/mach-shmobile/clock-r8a7790.c              |  3 ++-
- arch/arm/mach-shmobile/pm-r8a7790.c                 |  4 +++-
- arch/arm/mach-shmobile/{include/mach => }/r8a7790.h |  0
- arch/arm/mach-shmobile/setup-r8a7790.c              |  4 +++-
- arch/arm/mach-shmobile/smp-r8a7790.c                |  4 +++-
- 7 files changed, 22 insertions(+), 11 deletions(-)
- rename arch/arm/mach-shmobile/{include/mach => }/r8a7790.h (100%)
+ arch/arm/boot/dts/r8a7790.dtsi | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index c2175c8e1ce7..41c808e56005 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -22,11 +22,13 @@
- #include <linux/init.h>
- #include <linux/of_platform.h>
- #include <linux/platform_data/rcar-du.h>
--#include <mach/r8a7790.h>
-+
- #include <asm/mach/arch.h>
-+
- #include "clock.h"
- #include "common.h"
- #include "irqs.h"
-+#include "r8a7790.h"
- #include "rcar-gen2.h"
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index bdcb7f08fcc5..d9ddecbb859c 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -946,8 +946,8 @@
+ 		ranges = <0x02000000 0 0xee080000 0 0xee080000 0 0x00010000>;
+ 		interrupt-map-mask = <0xff00 0 0 0x7>;
+ 		interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
+-			      	 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
+-			      	 0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
++				 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
++				 0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
+ 	};
  
- /* DU */
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 6fb08dbc953c..b8b2b44970ce 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -31,6 +31,8 @@
- #include <linux/mmc/host.h>
- #include <linux/mmc/sh_mmcif.h>
- #include <linux/mmc/sh_mobile_sdhi.h>
-+#include <linux/mtd/partitions.h>
-+#include <linux/mtd/mtd.h>
- #include <linux/pinctrl/machine.h>
- #include <linux/platform_data/camera-rcar.h>
- #include <linux/platform_data/gpio-rcar.h>
-@@ -43,21 +45,21 @@
- #include <linux/regulator/gpio-regulator.h>
- #include <linux/regulator/machine.h>
- #include <linux/sh_eth.h>
-+#include <linux/spi/flash.h>
-+#include <linux/spi/rspi.h>
-+#include <linux/spi/spi.h>
- #include <linux/usb/phy.h>
- #include <linux/usb/renesas_usbhs.h>
--#include <mach/r8a7790.h>
-+
- #include <media/soc_camera.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
--#include <linux/mtd/partitions.h>
--#include <linux/mtd/mtd.h>
--#include <linux/spi/flash.h>
--#include <linux/spi/rspi.h>
--#include <linux/spi/spi.h>
- #include <sound/rcar_snd.h>
- #include <sound/simple_card.h>
-+
- #include "common.h"
- #include "irqs.h"
-+#include "r8a7790.h"
- #include "rcar-gen2.h"
+ 	pci1: pci@ee0b0000 {
+@@ -966,8 +966,8 @@
+ 		ranges = <0x02000000 0 0xee0a0000 0 0xee0a0000 0 0x00010000>;
+ 		interrupt-map-mask = <0xff00 0 0 0x7>;
+ 		interrupt-map = <0x0000 0 0 1 &gic 0 112 IRQ_TYPE_LEVEL_HIGH
+-			      	 0x0800 0 0 1 &gic 0 112 IRQ_TYPE_LEVEL_HIGH
+-			      	 0x1000 0 0 2 &gic 0 112 IRQ_TYPE_LEVEL_HIGH>;
++				 0x0800 0 0 1 &gic 0 112 IRQ_TYPE_LEVEL_HIGH
++				 0x1000 0 0 2 &gic 0 112 IRQ_TYPE_LEVEL_HIGH>;
+ 	};
  
- /*
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index ca980669806f..17435c1aa2fe 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -22,9 +22,10 @@
- #include <linux/kernel.h>
- #include <linux/sh_clk.h>
- #include <linux/clkdev.h>
--#include <mach/r8a7790.h>
-+
- #include "clock.h"
- #include "common.h"
-+#include "r8a7790.h"
- #include "rcar-gen2.h"
+ 	pci2: pci@ee0d0000 {
+@@ -986,8 +986,8 @@
+ 		ranges = <0x02000000 0 0xee0c0000 0 0xee0c0000 0 0x00010000>;
+ 		interrupt-map-mask = <0xff00 0 0 0x7>;
+ 		interrupt-map = <0x0000 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
+-			      	 0x0800 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
+-			      	 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
++				 0x0800 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
++				 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
+ 	};
  
- /*
-diff --git a/arch/arm/mach-shmobile/pm-r8a7790.c b/arch/arm/mach-shmobile/pm-r8a7790.c
-index 0f1090d851e7..8845433a00b3 100644
---- a/arch/arm/mach-shmobile/pm-r8a7790.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7790.c
-@@ -11,9 +11,11 @@
-  */
- 
- #include <linux/kernel.h>
-+
- #include <asm/io.h>
--#include <mach/r8a7790.h>
-+
- #include "pm-rcar.h"
-+#include "r8a7790.h"
- 
- /* SYSC */
- #define SYSCIER 0x0c
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/r8a7790.h
-similarity index 100%
-rename from arch/arm/mach-shmobile/include/mach/r8a7790.h
-rename to arch/arm/mach-shmobile/r8a7790.h
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index a34229d5da41..c37d82d38617 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -26,11 +26,13 @@
- #include <linux/serial_sci.h>
- #include <linux/sh_dma.h>
- #include <linux/sh_timer.h>
--#include <mach/r8a7790.h>
-+
- #include <asm/mach/arch.h>
-+
- #include "common.h"
- #include "dma-register.h"
- #include "irqs.h"
-+#include "r8a7790.h"
- #include "rcar-gen2.h"
- 
- /* Audio-DMAC */
-diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
-index 7590e2b6e2fa..ad66beab2ea6 100644
---- a/arch/arm/mach-shmobile/smp-r8a7790.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7790.c
-@@ -17,10 +17,12 @@
- #include <linux/init.h>
- #include <linux/smp.h>
- #include <linux/io.h>
-+
- #include <asm/smp_plat.h>
--#include <mach/r8a7790.h>
-+
- #include "common.h"
- #include "pm-rcar.h"
-+#include "r8a7790.h"
- 
- #define RST		0xe6160000
- #define CA15BAR		0x0020
+ 	pciec: pcie@fe000000 {
 -- 
 1.9.1
 
