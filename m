@@ -1,17 +1,20 @@
 From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Mon, 30 Jun 2014 07:54:24 +0000
+Date: Mon, 30 Jun 2014 08:37:01 +0000
 Subject: [PATCH v2 3/3] PCI: host: pcie-rcar: Replace arg passed into a func with local var
-Message-Id: <1404114864-17330-4-git-send-email-phil.edworthy@renesas.com>
+Message-Id: <1404117421-17557-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404114864-17330-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1404114864-17330-1-git-send-email-phil.edworthy@renesas.com>
+References: <1404114864-17330-4-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1404114864-17330-4-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-pci@vger.kernel.org
 Cc: linux-sh@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Simon Horman <horms@verge.net.au>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Phil Edworthy <phil.edworthy@renesas.com>
 
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
+With SoB this time...
+
  drivers/pci/host/pcie-rcar.c | 7 ++++---
  1 file changed, 4 insertions(+), 3 deletions(-)
 
