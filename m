@@ -1,59 +1,33 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:28:22 +0000
-Subject: [PATCH 13/29] ARM: shmobile: Lager memory map update
-Message-Id: <7b16c61a86ce41edd5c42a87f22a0a146968b62f.1403487225.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 30 Jun 2014 10:10:22 +0000
+Subject: [PATCH resend 0/2] spi: sh-msiof: Add DMA support
+Message-Id: <1404123024-12004-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+	Hi Mark,
 
-Update the Lager DTS to make use of the new unified legacy
-memory map where the legacy window on Lager and Koelsch
-have the same size.
+This patch series adds DMA support to the MSIOF SPI driver:
+  - [1/2] spi: sh-msiof: Add DMA support
+  - [2/2] spi: sh-msiof: Add DMA support
 
-With this change in place the code gets aligned with the
-documentation.
+Both patches provide identical functionality, but one is against the
+spi/for-next branch (identical to the previous submission), while the other
+one is against the spi/topic/sh-msiof branch (rebased).
 
-After update the Lager board has the following map:
-Bank0: 1GiB RAM (Legacy 32-bit: 0x40000000->0x7fffffff)
-Bank1: 3GiB RAM (LPAE area: 0x140000000->0x1ffffffff)
+Thanks for applying!
 
-Before the update the old map looked like this:
-Bank0: 2GiB RAM (Legacy 32-bit: 0x40000000->0xbfffffff)
-Bank1: 2GiB RAM (LPAE area: 0x180000000->0x1ffffffff)
+Gr{oetje,eeting}s,
 
-Tested with and without LPAE on r8a7790 Lager.
+						Geert
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7790-lager.dts | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index b68ff56..b04d257 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -29,12 +29,12 @@
- 
- 	memory@40000000 {
- 		device_type = "memory";
--		reg = <0 0x40000000 0 0x80000000>;
-+		reg = <0 0x40000000 0 0x40000000>;
- 	};
- 
- 	memory@180000000 {
- 		device_type = "memory";
--		reg = <1 0x80000000 0 0x80000000>;
-+		reg = <1 0x40000000 0 0xc0000000>;
- 	};
- 
- 	lbsc {
--- 
-2.0.0.rc2
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
