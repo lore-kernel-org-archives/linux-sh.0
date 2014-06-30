@@ -1,194 +1,80 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 18 Jun 2014 08:56:11 +0000
-Subject: [PATCH 06/12] ASoC: fsi: use dmaengine_prep_dma_cyclic() for DMA transfer
-Message-Id: <874mzizjdf.wl%kuninori.morimoto.gx@renesas.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Mon, 30 Jun 2014 07:54:22 +0000
+Subject: [PATCH v2 1/3] PCI: host: pcie-rcar: Use correct initial HW settings
+Message-Id: <1404114864-17330-2-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
+References: <1404114864-17330-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1404114864-17330-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
+To: linux-pci@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Simon Horman <horms@verge.net.au>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Phil Edworthy <phil.edworthy@renesas.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Although the R-Car PCIe driver works as it is, there are a number of
+incorrect settings that this patch corrects. It corrects:
+ - enabling the PCI Express Extended Cap ID.
+ - setting Data Link Layer Link Active Reporting Capable.
+ - terminating list of capabilities.
 
-Current FSI driver is using DMAEngine directly,
-but, ASoC is requesting to use common DMA transfer method,
-like snd_dmaengine_pcm_trigger() or dmaengine_pcm_ops.
-It is difficult to switch at this point, since Renesas
-driver is also supporting PIO transfer.
-This patch uses dmaengine_prep_dma_cyclic() instead
-of dmaengine_prep_slave_single().
-It is used in requested method,
-and is good first step to switch over.
+It also removes enabling the MAC data scrambling as this is the
+default HW setting, and removes incorrect code to enable slave bus
+mastering as this is done by the PCI core.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
- sound/soc/sh/fsi.c |   94 +++++++++++++++-------------------------------------
- 1 file changed, 27 insertions(+), 67 deletions(-)
+v2:
+ - No change
 
-diff --git a/sound/soc/sh/fsi.c b/sound/soc/sh/fsi.c
-index 820a408..a57eb96 100644
---- a/sound/soc/sh/fsi.c
-+++ b/sound/soc/sh/fsi.c
-@@ -232,10 +232,7 @@ struct fsi_stream {
- 	 * these are for DMAEngine
- 	 */
- 	struct dma_chan		*chan;
--	struct work_struct	work;
- 	int			dma_id;
--	int			loop_cnt;
--	int			additional_pos;
- };
+ drivers/pci/host/pcie-rcar.c | 15 ++++-----------
+ 1 file changed, 4 insertions(+), 11 deletions(-)
+
+diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
+index c06b888..680a8cc 100644
+--- a/drivers/pci/host/pcie-rcar.c
++++ b/drivers/pci/host/pcie-rcar.c
+@@ -483,14 +483,15 @@ static int rcar_pcie_hw_init(struct rcar_pcie *pcie)
+ 	rcar_rmw32(pcie, RCONF(PCI_SUBORDINATE_BUS), 0xff, 1);
  
- struct fsi_clk {
-@@ -1281,24 +1278,9 @@ static int fsi_dma_init(struct fsi_priv *fsi, struct fsi_stream *io)
- 	io->bus_option = BUSOP_SET(24, PACKAGE_24BITBUS_BACK) |
- 			 BUSOP_SET(16, PACKAGE_16BITBUS_STREAM);
+ 	/* Initialize default capabilities. */
+-	rcar_rmw32(pcie, REXPCAP(0), 0, PCI_CAP_ID_EXP);
++	rcar_rmw32(pcie, REXPCAP(0), 0xff, PCI_CAP_ID_EXP);
+ 	rcar_rmw32(pcie, REXPCAP(PCI_EXP_FLAGS),
+ 		PCI_EXP_FLAGS_TYPE, PCI_EXP_TYPE_ROOT_PORT << 4);
+ 	rcar_rmw32(pcie, RCONF(PCI_HEADER_TYPE), 0x7f,
+ 		PCI_HEADER_TYPE_BRIDGE);
  
--	io->loop_cnt = 2; /* push 1st, 2nd period first, then 3rd, 4th... */
--	io->additional_pos = 0;
+ 	/* Enable data link layer active state reporting */
+-	rcar_rmw32(pcie, REXPCAP(PCI_EXP_LNKCAP), 0, PCI_EXP_LNKCAP_DLLLARC);
++	rcar_rmw32(pcie, REXPCAP(PCI_EXP_LNKCAP), PCI_EXP_LNKCAP_DLLLARC,
++		PCI_EXP_LNKCAP_DLLLARC);
+ 
+ 	/* Write out the physical slot number = 0 */
+ 	rcar_rmw32(pcie, REXPCAP(PCI_EXP_SLTCAP), PCI_EXP_SLTCAP_PSN, 0);
+@@ -499,10 +500,7 @@ static int rcar_pcie_hw_init(struct rcar_pcie *pcie)
+ 	rcar_rmw32(pcie, TLCTLR+1, 0x3f, 50);
+ 
+ 	/* Terminate list of capabilities (Next Capability Offset=0) */
+-	rcar_rmw32(pcie, RVCCAP(0), 0xfff0, 0);
 -
+-	/* Enable MAC data scrambling. */
+-	rcar_rmw32(pcie, MACCTLR, SCRAMBLE_DISABLE, 0);
++	rcar_rmw32(pcie, RVCCAP(0), 0xfff00000, 0);
+ 
+ 	/* Enable MSI */
+ 	if (IS_ENABLED(CONFIG_PCI_MSI))
+@@ -519,11 +517,6 @@ static int rcar_pcie_hw_init(struct rcar_pcie *pcie)
+ 	/* Enable INTx interrupts */
+ 	rcar_rmw32(pcie, PCIEINTXR, 0, 0xF << 8);
+ 
+-	/* Enable slave Bus Mastering */
+-	rcar_rmw32(pcie, RCONF(PCI_STATUS), PCI_STATUS_DEVSEL_MASK,
+-		PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER |
+-		PCI_STATUS_CAP_LIST | PCI_STATUS_DEVSEL_FAST);
+-
+ 	wmb();
+ 
  	return 0;
- }
- 
--static dma_addr_t fsi_dma_get_area(struct fsi_stream *io, int additional)
--{
--	struct snd_pcm_runtime *runtime = io->substream->runtime;
--	int period = io->period_pos + additional;
--
--	if (period >= runtime->periods)
--		period = 0;
--
--	return runtime->dma_addr +
--		samples_to_bytes(runtime, period * io->period_samples);
--}
--
- static void fsi_dma_complete(void *data)
- {
- 	struct fsi_stream *io = (struct fsi_stream *)data;
-@@ -1307,53 +1289,37 @@ static void fsi_dma_complete(void *data)
- 	fsi_pointer_update(io, io->period_samples);
- 
- 	fsi_count_fifo_err(fsi);
--	fsi_stream_transfer(io);
- }
- 
--static void fsi_dma_do_work(struct work_struct *work)
-+static int fsi_dma_transfer(struct fsi_priv *fsi, struct fsi_stream *io)
- {
--	struct fsi_stream *io = container_of(work, struct fsi_stream, work);
--	struct fsi_priv *fsi = fsi_stream_to_priv(io);
--	struct snd_soc_dai *dai;
-+	struct snd_soc_dai *dai = fsi_get_dai(io->substream);
-+	struct snd_pcm_substream *substream = io->substream;
- 	struct dma_async_tx_descriptor *desc;
--	struct snd_pcm_runtime *runtime;
--	enum dma_data_direction dir;
- 	int is_play = fsi_stream_is_play(fsi, io);
--	int len, i;
--	dma_addr_t buf;
--
--	if (!fsi_stream_is_working(fsi, io))
--		return;
--
--	dai	= fsi_get_dai(io->substream);
--	runtime	= io->substream->runtime;
--	dir	= is_play ? DMA_TO_DEVICE : DMA_FROM_DEVICE;
--	len	= samples_to_bytes(runtime, io->period_samples);
--
--	for (i = 0; i < io->loop_cnt; i++) {
--		buf	= fsi_dma_get_area(io, io->additional_pos);
--
--		desc = dmaengine_prep_slave_single(io->chan, buf, len, dir,
--					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
--		if (!desc) {
--			dev_err(dai->dev, "dmaengine_prep_slave_sg() fail\n");
--			return;
--		}
--
--		desc->callback		= fsi_dma_complete;
--		desc->callback_param	= io;
--
--		if (dmaengine_submit(desc) < 0) {
--			dev_err(dai->dev, "tx_submit() fail\n");
--			return;
--		}
-+	enum dma_data_direction dir = is_play ? DMA_TO_DEVICE : DMA_FROM_DEVICE;
-+	int ret = -EIO;
-+
-+	desc = dmaengine_prep_dma_cyclic(io->chan,
-+					 substream->runtime->dma_addr,
-+					 snd_pcm_lib_buffer_bytes(substream),
-+					 snd_pcm_lib_period_bytes(substream),
-+					 dir,
-+					 DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
-+	if (!desc) {
-+		dev_err(dai->dev, "dmaengine_prep_dma_cyclic() fail\n");
-+		goto fsi_dma_transfer_err;
-+	}
- 
--		dma_async_issue_pending(io->chan);
-+	desc->callback		= fsi_dma_complete;
-+	desc->callback_param	= io;
- 
--		io->additional_pos = 1;
-+	if (dmaengine_submit(desc) < 0) {
-+		dev_err(dai->dev, "tx_submit() fail\n");
-+		goto fsi_dma_transfer_err;
- 	}
- 
--	io->loop_cnt = 1;
-+	dma_async_issue_pending(io->chan);
- 
- 	/*
- 	 * FIXME
-@@ -1370,13 +1336,11 @@ static void fsi_dma_do_work(struct work_struct *work)
- 			fsi_reg_write(fsi, DIFF_ST, 0);
- 		}
- 	}
--}
- 
--static int fsi_dma_transfer(struct fsi_priv *fsi, struct fsi_stream *io)
--{
--	schedule_work(&io->work);
-+	ret = 0;
- 
--	return 0;
-+fsi_dma_transfer_err:
-+	return ret;
- }
- 
- static int fsi_dma_push_start_stop(struct fsi_priv *fsi, struct fsi_stream *io,
-@@ -1437,15 +1401,11 @@ static int fsi_dma_probe(struct fsi_priv *fsi, struct fsi_stream *io, struct dev
- 		return fsi_stream_probe(fsi, dev);
- 	}
- 
--	INIT_WORK(&io->work, fsi_dma_do_work);
--
- 	return 0;
- }
- 
- static int fsi_dma_remove(struct fsi_priv *fsi, struct fsi_stream *io)
- {
--	cancel_work_sync(&io->work);
--
- 	fsi_stream_stop(fsi, io);
- 
- 	if (io->chan)
-@@ -1618,9 +1578,9 @@ static int fsi_dai_trigger(struct snd_pcm_substream *substream, int cmd,
- 		if (!ret)
- 			ret = fsi_hw_startup(fsi, io, dai->dev);
- 		if (!ret)
--			ret = fsi_stream_transfer(io);
-+			ret = fsi_stream_start(fsi, io);
- 		if (!ret)
--			fsi_stream_start(fsi, io);
-+			ret = fsi_stream_transfer(io);
- 		break;
- 	case SNDRV_PCM_TRIGGER_STOP:
- 		if (!ret)
 -- 
-1.7.9.5
+2.0.0
 
