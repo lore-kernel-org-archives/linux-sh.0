@@ -1,154 +1,160 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Jul 2014 23:55:48 +0000
-Subject: [PATCH 1/2] ARM: shmobile: genmai: remove defconfig
-Message-Id: <3ed27bd90d6d0c8b4d686a2468b6d50cc1ef74e4.1405640905.git.horms+renesas@verge.net.au>
+Date: Tue, 01 Jul 2014 00:28:41 +0000
+Subject: [PATCH 1/8] ARM: shmobile: Move r8a7791.h
+Message-Id: <5201b5a792e95e3ecebe74cd3553413a67da09db.1404174157.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1405640905.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1405640905.git.horms+renesas@verge.net.au>
+References: <cover.1404174157.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1404174157.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The genmai board code is scheduled for removal and once
-that occurs the defconfig will be of no use. Remove it.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Acked-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Change location of r8a7791.h so it can be included as "r8a7791.h"
+instead of the old style <mach/r8a7791.h>
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/genmai_defconfig | 122 --------------------------------------
- 1 file changed, 122 deletions(-)
- delete mode 100644 arch/arm/configs/genmai_defconfig
+ arch/arm/mach-shmobile/board-koelsch-reference.c |  4 +++-
+ arch/arm/mach-shmobile/board-koelsch.c           |  4 +++-
+ arch/arm/mach-shmobile/include/mach/r8a7791.h    | 11 -----------
+ arch/arm/mach-shmobile/pm-r8a7791.c              |  6 ++++--
+ arch/arm/mach-shmobile/r8a7791.h                 | 11 +++++++++++
+ arch/arm/mach-shmobile/setup-r8a7791.c           |  4 +++-
+ arch/arm/mach-shmobile/smp-r8a7791.c             |  4 +++-
+ 7 files changed, 27 insertions(+), 17 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/r8a7791.h
+ create mode 100644 arch/arm/mach-shmobile/r8a7791.h
 
-diff --git a/arch/arm/configs/genmai_defconfig b/arch/arm/configs/genmai_defconfig
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index 1d3f67d..0b1fb23 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -23,11 +23,13 @@
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+ #include <linux/platform_data/rcar-du.h>
+-#include <mach/r8a7791.h>
++
+ #include <asm/mach/arch.h>
++
+ #include "clock.h"
+ #include "common.h"
+ #include "irqs.h"
++#include "r8a7791.h"
+ #include "rcar-gen2.h"
+ 
+ /* DU */
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index 0d44e7eb..e698b90 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -45,11 +45,13 @@
+ #include <linux/spi/flash.h>
+ #include <linux/spi/rspi.h>
+ #include <linux/spi/spi.h>
+-#include <mach/r8a7791.h>
++
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
++
+ #include "common.h"
+ #include "irqs.h"
++#include "r8a7791.h"
+ #include "rcar-gen2.h"
+ 
+ /* DU */
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7791.h b/arch/arm/mach-shmobile/include/mach/r8a7791.h
 deleted file mode 100644
-index d238faf..0000000
---- a/arch/arm/configs/genmai_defconfig
+index 86eae7b..0000000
+--- a/arch/arm/mach-shmobile/include/mach/r8a7791.h
 +++ /dev/null
-@@ -1,122 +0,0 @@
--CONFIG_SYSVIPC=y
--CONFIG_NO_HZ=y
--CONFIG_IKCONFIG=y
--CONFIG_IKCONFIG_PROC=y
--CONFIG_LOG_BUF_SHIFT
--CONFIG_CC_OPTIMIZE_FOR_SIZE=y
--CONFIG_SYSCTL_SYSCALL=y
--CONFIG_EMBEDDED=y
--CONFIG_PERF_EVENTS=y
--CONFIG_SLAB=y
--# CONFIG_LBDAF is not set
--# CONFIG_BLK_DEV_BSG is not set
--# CONFIG_IOSCHED_DEADLINE is not set
--# CONFIG_IOSCHED_CFQ is not set
--CONFIG_ARCH_SHMOBILE_LEGACY=y
--CONFIG_ARCH_R7S72100=y
--CONFIG_MACH_GENMAI=y
--# CONFIG_SH_TIMER_CMT is not set
--# CONFIG_SH_TIMER_MTU2 is not set
--# CONFIG_SH_TIMER_TMU is not set
--# CONFIG_EM_TIMER_STI is not set
--CONFIG_ARM_ERRATA_430973=y
--CONFIG_ARM_ERRATA_458693=y
--CONFIG_ARM_ERRATA_460075=y
--CONFIG_ARM_ERRATA_743622=y
--CONFIG_ARM_ERRATA_754322=y
--CONFIG_AEABI=y
--# CONFIG_OABI_COMPAT is not set
--CONFIG_FORCE_MAX_ZONEORDER
--CONFIG_ZBOOT_ROM_TEXT=0x0
--CONFIG_ZBOOT_ROM_BSS=0x0
--CONFIG_ARM_APPENDED_DTB=y
--CONFIG_KEXEC=y
--CONFIG_AUTO_ZRELADDR=y
--CONFIG_VFP=y
--CONFIG_NEON=y
--# CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
--CONFIG_PM_RUNTIME=y
--CONFIG_NET=y
--CONFIG_PACKET=y
--CONFIG_UNIX=y
--CONFIG_INET=y
--CONFIG_IP_PNP=y
--CONFIG_IP_PNP_DHCP=y
--# CONFIG_INET_XFRM_MODE_TRANSPORT is not set
--# CONFIG_INET_XFRM_MODE_TUNNEL is not set
--# CONFIG_INET_XFRM_MODE_BEET is not set
--# CONFIG_INET_LRO is not set
--# CONFIG_INET_DIAG is not set
--# CONFIG_IPV6 is not set
--# CONFIG_WIRELESS is not set
--CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
--CONFIG_DEVTMPFS=y
--CONFIG_DEVTMPFS_MOUNT=y
--CONFIG_EEPROM_AT24=y
--CONFIG_NETDEVICES=y
--# CONFIG_NET_CORE is not set
--# CONFIG_NET_VENDOR_ARC is not set
--# CONFIG_NET_CADENCE is not set
--# CONFIG_NET_VENDOR_BROADCOM is not set
--# CONFIG_NET_VENDOR_CIRRUS is not set
--# CONFIG_NET_VENDOR_FARADAY is not set
--# CONFIG_NET_VENDOR_INTEL is not set
--# CONFIG_NET_VENDOR_MARVELL is not set
--# CONFIG_NET_VENDOR_MICREL is not set
--# CONFIG_NET_VENDOR_NATSEMI is not set
--CONFIG_SH_ETH=y
--# CONFIG_NET_VENDOR_SEEQ is not set
--# CONFIG_NET_VENDOR_SMSC is not set
--# CONFIG_NET_VENDOR_STMICRO is not set
--# CONFIG_NET_VENDOR_VIA is not set
--# CONFIG_NET_VENDOR_WIZNET is not set
--# CONFIG_WLAN is not set
--# CONFIG_INPUT_MOUSEDEV_PSAUX is not set
--CONFIG_INPUT_EVDEV=y
--# CONFIG_KEYBOARD_ATKBD is not set
--# CONFIG_INPUT_MOUSE is not set
--# CONFIG_SERIO is not set
--# CONFIG_LEGACY_PTYS is not set
--CONFIG_SERIAL_SH_SCI=y
--CONFIG_SERIAL_SH_SCI_NR_UARTS
--CONFIG_SERIAL_SH_SCI_CONSOLE=y
--# CONFIG_HW_RANDOM is not set
--CONFIG_I2C_CHARDEV=y
--CONFIG_I2C_RIIC=y
--CONFIG_SPI=y
--CONFIG_SPI_RSPI=y
--# CONFIG_HWMON is not set
--CONFIG_THERMAL=y
--CONFIG_RCAR_THERMAL=y
--CONFIG_REGULATOR=y
--CONFIG_REGULATOR_FIXED_VOLTAGE=y
--CONFIG_DRM=y
--CONFIG_DRM_RCAR_DU=y
--# CONFIG_USB_SUPPORT is not set
--CONFIG_MMC=y
--CONFIG_MMC_SDHI=y
--CONFIG_MMC_SH_MMCIF=y
--CONFIG_NEW_LEDS=y
--CONFIG_LEDS_CLASS=y
--CONFIG_RTC_CLASS=y
--CONFIG_DMADEVICES=y
--CONFIG_SH_DMAE=y
--# CONFIG_IOMMU_SUPPORT is not set
--# CONFIG_DNOTIFY is not set
--CONFIG_MSDOS_FS=y
--CONFIG_VFAT_FS=y
--CONFIG_TMPFS=y
--CONFIG_CONFIGFS_FS=y
--# CONFIG_MISC_FILESYSTEMS is not set
--CONFIG_NFS_FS=y
--CONFIG_NFS_V3_ACL=y
--CONFIG_NFS_V4=y
--CONFIG_NFS_V4_1=y
--CONFIG_ROOT_NFS=y
--CONFIG_NLS_CODEPAGE_437=y
--CONFIG_NLS_ISO8859_1=y
--# CONFIG_ENABLE_WARN_DEPRECATED is not set
--# CONFIG_ENABLE_MUST_CHECK is not set
--# CONFIG_ARM_UNWIND is not set
--# CONFIG_CRYPTO_ANSI_CPRNG is not set
--# CONFIG_CRYPTO_HW is not set
+@@ -1,11 +0,0 @@
+-#ifndef __ASM_R8A7791_H__
+-#define __ASM_R8A7791_H__
+-
+-void r8a7791_add_standard_devices(void);
+-void r8a7791_add_dt_devices(void);
+-void r8a7791_clock_init(void);
+-void r8a7791_pinmux_init(void);
+-void r8a7791_pm_init(void);
+-extern struct smp_operations r8a7791_smp_ops;
+-
+-#endif /* __ASM_R8A7791_H__ */
+diff --git a/arch/arm/mach-shmobile/pm-r8a7791.c b/arch/arm/mach-shmobile/pm-r8a7791.c
+index 1519087..b7e6513 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7791.c
++++ b/arch/arm/mach-shmobile/pm-r8a7791.c
+@@ -10,10 +10,12 @@
+  * for more details.
+  */
+ 
+-#include <asm/io.h>
+ #include <linux/kernel.h>
+-#include <mach/r8a7791.h>
++
++#include <asm/io.h>
++
+ #include "pm-rcar.h"
++#include "r8a7791.h"
+ 
+ /* SYSC */
+ #define SYSCIER 0x0c
+diff --git a/arch/arm/mach-shmobile/r8a7791.h b/arch/arm/mach-shmobile/r8a7791.h
+new file mode 100644
+index 0000000..86eae7b
+--- /dev/null
++++ b/arch/arm/mach-shmobile/r8a7791.h
+@@ -0,0 +1,11 @@
++#ifndef __ASM_R8A7791_H__
++#define __ASM_R8A7791_H__
++
++void r8a7791_add_standard_devices(void);
++void r8a7791_add_dt_devices(void);
++void r8a7791_clock_init(void);
++void r8a7791_pinmux_init(void);
++void r8a7791_pm_init(void);
++extern struct smp_operations r8a7791_smp_ops;
++
++#endif /* __ASM_R8A7791_H__ */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index 7e970d0..8823324 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -26,10 +26,12 @@
+ #include <linux/platform_data/irq-renesas-irqc.h>
+ #include <linux/serial_sci.h>
+ #include <linux/sh_timer.h>
+-#include <mach/r8a7791.h>
++
+ #include <asm/mach/arch.h>
++
+ #include "common.h"
+ #include "irqs.h"
++#include "r8a7791.h"
+ #include "rcar-gen2.h"
+ 
+ static const struct resource pfc_resources[] __initconst = {
+diff --git a/arch/arm/mach-shmobile/smp-r8a7791.c b/arch/arm/mach-shmobile/smp-r8a7791.c
+index c6543b6..2482555 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7791.c
++++ b/arch/arm/mach-shmobile/smp-r8a7791.c
+@@ -17,9 +17,11 @@
+ #include <linux/init.h>
+ #include <linux/smp.h>
+ #include <linux/io.h>
++
+ #include <asm/smp_plat.h>
+-#include <mach/r8a7791.h>
++
+ #include "common.h"
++#include "r8a7791.h"
+ #include "rcar-gen2.h"
+ 
+ #define RST		0xe6160000
 -- 
-2.0.1
+2.0.0.rc2
 
