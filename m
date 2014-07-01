@@ -1,62 +1,112 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 30 Jul 2014 22:27:14 +0000
-Subject: [PATCH 01/02] ARM: shmobile: Lager SYS-DMAC and SCIF RX prototype
-Message-Id: <20140730222714.4799.81166.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 01 Jul 2014 00:28:42 +0000
+Subject: [PATCH 2/8] ARM: shmobile: Allow use of boot code for non-SMP case
+Message-Id: <8b438bcb9009609a15e5480ab1947acff6fb9005.1404174157.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1404174157.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1404174157.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm+renesas@opensource.se>
 
-Enable RX DMA for r8a7790 / Lager SCIF devices.
+Allow build of platsmp.c and headsmp.S even though
+SMP is disabled in the kernel configuration. With
+this in place it is possible to share the reset
+vector setup code with power management code that
+needs to be built even though SMP is disabled.
 
 Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/Makefile  | 11 +++++++----
+ arch/arm/mach-shmobile/headsmp.S | 13 ++++++++-----
+ 2 files changed, 15 insertions(+), 9 deletions(-)
 
- arch/arm/mach-shmobile/board-lager-reference.c |   28 ++++++++----------------
- 1 file changed, 10 insertions(+), 18 deletions(-)
-
---- 0021/arch/arm/mach-shmobile/board-lager-reference.c
-+++ work/arch/arm/mach-shmobile/board-lager-reference.c	2014-07-31 07:09:30.000000000 +0900
-@@ -144,29 +144,21 @@ enum {
- 	.mid_rid	= r,					\
- }
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 9c0ad3e..279d3f3 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -34,17 +34,17 @@ obj-$(CONFIG_ARCH_R8A7791)	+= clock-r8a7791.o
+ obj-$(CONFIG_ARCH_R7S72100)	+= clock-r7s72100.o
+ endif
  
--#define SYS_DMAC_SLAVE_TX(_id, _bit, _addr, toffset, roffset, t, r)	\
--{								\
--	.slave_id	= SYS_DMAC_SLAVE_## _id ##_TX,		\
--	.addr		= _addr + toffset,			\
--	.chcr		= CHCR_TX(XMIT_SZ_## _bit ##BIT),	\
--	.mid_rid	= t,					\
--}
++# CPU reset vector handling objects
++cpu-y				:= platsmp.o headsmp.o
++
+ # SMP objects
+-smp-y				:= platsmp.o headsmp.o
++smp-y				:= $(cpu-y)
+ smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o platsmp-scu.o
+ smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o platsmp-scu.o
+ smp-$(CONFIG_ARCH_R8A7790)	+= smp-r8a7790.o platsmp-apmu.o
+ smp-$(CONFIG_ARCH_R8A7791)	+= smp-r8a7791.o platsmp-apmu.o
+ smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o platsmp-scu.o
+ 
+-# IRQ objects
+-obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
 -
- static const struct sh_dmae_slave_config r8a7790_sys_dmac_slaves[] = {
- 	SYS_DMAC_SLAVE(MMCIF0, 32, 0xee200000, 0x34, 0x34, 0xd1, 0xd2),
- 	SYS_DMAC_SLAVE(MMCIF1, 32, 0xee220000, 0x34, 0x34, 0xe1, 0xe2),
- 	SYS_DMAC_SLAVE(SDHI0, 16, 0xee100000, 0x60, 0x2060, 0xcd, 0xce),
- 	SYS_DMAC_SLAVE(SDHI2, 16, 0xee140000, 0x30, 0x2030, 0xc1, 0xc2),
--	SYS_DMAC_SLAVE_TX(SCIF0, 8, 0xe6e60000, 0xc, 0x14, 0x29, 0x2a),
--	SYS_DMAC_SLAVE_TX(SCIF1, 8, 0xe6e68000, 0xc, 0x14, 0x2d, 0x2e),
--	SYS_DMAC_SLAVE_TX(SCIFA0, 8, 0xe6c40000, 0x20, 0x24, 0x21, 0x22),
--	SYS_DMAC_SLAVE_TX(SCIFA1, 8, 0xe6c50000, 0x20, 0x24, 0x25, 0x26),
--	SYS_DMAC_SLAVE_TX(SCIFA2, 8, 0xe6c60000, 0x20, 0x24, 0x27, 0x28),
--	SYS_DMAC_SLAVE_TX(SCIFB0, 8, 0xe6c20000, 0x40, 0x60, 0x3d, 0x3e),
--	SYS_DMAC_SLAVE_TX(SCIFB1, 8, 0xe6c30000, 0x40, 0x60, 0x19, 0x1a),
--	SYS_DMAC_SLAVE_TX(SCIFB2, 8, 0xe6ce0000, 0x40, 0x60, 0x1d, 0x1e),
--	SYS_DMAC_SLAVE_TX(HSCIF0, 8, 0xe62c0000, 0xc, 0x14, 0x39, 0x3a),
--	SYS_DMAC_SLAVE_TX(HSCIF1, 8, 0xe62c8000, 0xc, 0x14, 0x4d, 0x4e),
-+	SYS_DMAC_SLAVE(SCIF0, 8, 0xe6e60000, 0xc, 0x14, 0x29, 0x2a),
-+	SYS_DMAC_SLAVE(SCIF1, 8, 0xe6e68000, 0xc, 0x14, 0x2d, 0x2e),
-+	SYS_DMAC_SLAVE(SCIFA0, 8, 0xe6c40000, 0x20, 0x24, 0x21, 0x22),
-+	SYS_DMAC_SLAVE(SCIFA1, 8, 0xe6c50000, 0x20, 0x24, 0x25, 0x26),
-+	SYS_DMAC_SLAVE(SCIFA2, 8, 0xe6c60000, 0x20, 0x24, 0x27, 0x28),
-+	SYS_DMAC_SLAVE(SCIFB0, 8, 0xe6c20000, 0x40, 0x60, 0x3d, 0x3e),
-+	SYS_DMAC_SLAVE(SCIFB1, 8, 0xe6c30000, 0x40, 0x60, 0x19, 0x1a),
-+	SYS_DMAC_SLAVE(SCIFB2, 8, 0xe6ce0000, 0x40, 0x60, 0x1d, 0x1e),
-+	SYS_DMAC_SLAVE(HSCIF0, 8, 0xe62c0000, 0xc, 0x14, 0x39, 0x3a),
-+	SYS_DMAC_SLAVE(HSCIF1, 8, 0xe62c8000, 0xc, 0x14, 0x4d, 0x4e),
- 	SYS_DMAC_SLAVE(MSIOF0, 32, 0xe7e20000, 0x50, 0x60, 0x51, 0x52),
- 	SYS_DMAC_SLAVE(MSIOF1, 32, 0xe7e10000, 0x50, 0x60, 0x55, 0x56),
- 	SYS_DMAC_SLAVE(MSIOF2, 32, 0xe7e00000, 0x50, 0x60, 0x41, 0x42),
+ # PM objects
+ obj-$(CONFIG_SUSPEND)		+= suspend.o
+ obj-$(CONFIG_CPU_IDLE)		+= cpuidle.o
+@@ -55,6 +55,9 @@ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o pm-rcar.o
+ obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o
+ obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o
+ 
++# IRQ objects
++obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
++
+ # Board objects
+ ifdef CONFIG_ARCH_SHMOBILE_MULTI
+ obj-$(CONFIG_MACH_GENMAI)	+= board-genmai-reference.o
+diff --git a/arch/arm/mach-shmobile/headsmp.S b/arch/arm/mach-shmobile/headsmp.S
+index e5be5c8..faf8214 100644
+--- a/arch/arm/mach-shmobile/headsmp.S
++++ b/arch/arm/mach-shmobile/headsmp.S
+@@ -10,14 +10,17 @@
+  * it under the terms of the GNU General Public License version 2 as
+  * published by the Free Software Foundation.
+  */
+-#include <linux/linkage.h>
+ #include <linux/init.h>
++#include <linux/linkage.h>
++#include <linux/threads.h>
+ #include <asm/memory.h>
+ 
++#ifdef CONFIG_SMP
+ ENTRY(shmobile_invalidate_start)
+ 	bl	v7_invalidate_l1
+ 	b	secondary_startup
+ ENDPROC(shmobile_invalidate_start)
++#endif
+ 
+ /*
+  * Reset vector for secondary CPUs.
+@@ -68,7 +71,7 @@ shmobile_smp_boot_find_mpidr:
+ 
+ shmobile_smp_boot_next:
+ 	add	r1, r1, #1
+-	cmp	r1, #CONFIG_NR_CPUS
++	cmp	r1, #NR_CPUS
+ 	blo	shmobile_smp_boot_find_mpidr
+ 
+ 	b	shmobile_smp_sleep
+@@ -85,10 +88,10 @@ ENDPROC(shmobile_smp_sleep)
+ 
+ 	.globl	shmobile_smp_mpidr
+ shmobile_smp_mpidr:
+-1:	.space	CONFIG_NR_CPUS * 4
++1:	.space	NR_CPUS * 4
+ 	.globl	shmobile_smp_fn
+ shmobile_smp_fn:
+-2:	.space	CONFIG_NR_CPUS * 4
++2:	.space	NR_CPUS * 4
+ 	.globl	shmobile_smp_arg
+ shmobile_smp_arg:
+-3:	.space	CONFIG_NR_CPUS * 4
++3:	.space	NR_CPUS * 4
+-- 
+2.0.0.rc2
+
