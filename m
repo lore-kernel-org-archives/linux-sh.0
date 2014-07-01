@@ -1,46 +1,36 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Thu, 17 Jul 2014 07:37:02 +0000
-Subject: Re: [PATCH 1/6] adv7180: Remove duplicate unregister call
-Message-Id: <53C77D1E.3000901@xs4all.nl>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 01 Jul 2014 00:28:09 +0000
+Subject: [PATCH] ARM: shmobile: Enable genmai board in multiplatform defconfig
+Message-Id: <c61010050d3baa3e1a3964bec7e62437d21107c6.1404172763.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404599185-12353-1-git-send-email-ben.dooks@codethink.co.uk> <1404599185-12353-2-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1404599185-12353-2-git-send-email-ben.dooks@codethink.co.uk>
+References: <cover.1404172763.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1404172763.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben.dooks@codethink.co.uk>, linux-media@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: magnus.damm@opensource.se, horms@verge.net.au, g.liakhovetski@gmx.de, linux-kernel@lists.codethink.co.uk, Ian Molton <ian.molton@codethink.co.uk>
+To: linux-arm-kernel@lists.infradead.org
 
-On 07/06/2014 12:26 AM, Ben Dooks wrote:
-> From: Ian Molton <ian.molton@codethink.co.uk>
-> 
-> This driver moved over to v4l2_async_unregister_subdev()
-> but still retained a call to v4l2_unregister_subdev(). Remove.
-> 
-> Signed-off-by: Ian Molton <ian.molton@codethink.co.uk>
-> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/configs/shmobile_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
-Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
-
-Thanks,
-
-	Hans
-
-> ---
->  drivers/media/i2c/adv7180.c | 1 -
->  1 file changed, 1 deletion(-)
-> 
-> diff --git a/drivers/media/i2c/adv7180.c b/drivers/media/i2c/adv7180.c
-> index ac1cdbe..821178d 100644
-> --- a/drivers/media/i2c/adv7180.c
-> +++ b/drivers/media/i2c/adv7180.c
-> @@ -663,7 +663,6 @@ static int adv7180_remove(struct i2c_client *client)
->  	if (state->irq > 0)
->  		free_irq(client->irq, state);
->  
-> -	v4l2_device_unregister_subdev(sd);
->  	adv7180_exit_controls(state);
->  	mutex_destroy(&state->mutex);
->  	return 0;
-> 
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index c4b72aa..5f05e98 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -10,9 +10,11 @@ CONFIG_PERF_EVENTS=y
+ CONFIG_SLAB=y
+ CONFIG_ARCH_SHMOBILE_MULTI=y
+ CONFIG_ARCH_EMEV2=y
++CONFIG_ARCH_R7S72100=y
+ CONFIG_ARCH_R8A7779=y
+ CONFIG_ARCH_R8A7790=y
+ CONFIG_ARCH_R8A7791=y
++CONFIG_MACH_GENMAI=y
+ CONFIG_MACH_KOELSCH=y
+ CONFIG_MACH_LAGER=y
+ CONFIG_MACH_MARZEN=y
+-- 
+2.0.0.rc2
 
