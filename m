@@ -1,51 +1,34 @@
-From: Will Deacon <will.deacon@arm.com>
-Date: Tue, 01 Jul 2014 17:35:47 +0000
+From: Stephen Warren <swarren@wwwdotorg.org>
+Date: Tue, 01 Jul 2014 19:26:18 +0000
 Subject: Re: [PATCH] ARM: convert all "mov.* pc, reg" to "bx reg" for ARMv6+ (part1)
-Message-Id: <20140701173547.GW28164@arm.com>
+Message-Id: <53B30B5A.5030600@wwwdotorg.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <E1X20mL-00083I-Sv@rmk-PC.arm.linux.org.uk>
- <yw1x4mz1f2t9.fsf@unicorn.mansr.com>
- <20140701171346.GP3705@n2100.arm.linux.org.uk>
- <yw1xzjgtdmas.fsf@unicorn.mansr.com>
-In-Reply-To: <yw1xzjgtdmas.fsf@unicorn.mansr.com>
+In-Reply-To: <E1X20mL-00083I-Sv-eh5Bv4kxaXIANfyc6IWni62ZND6+EDdj@public.gmane.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: =?iso-8859-1?Q?M=E5ns_Rullg=E5rd?= <mans@mansr.com>
-Cc: Russell King - ARM Linux <linux@arm.linux.org.uk>, "davinci-linux-open-source@linux.davincidsp.com" <davinci-linux-open-source@linux.davincidsp.com>, "linux-samsung-soc@vger.kernel.org" <linux-samsung-soc@vger.kernel.org>, "kvm@vger.kernel.org" <kvm@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-crypto@vger.kernel.org" <linux-crypto@vger.kernel.org>, "linux-tegra@vger.kernel.org" <linux-tegra@vger.kernel.org>, "xen-devel@lists.xenproject.org" <xen-devel@lists.xenproject.org>, "linux-omap@vger.kernel.org" <linux-omap@vger.kernel.org>, "kvmarm@lists.cs.columbia.edu" <kvmarm@lists.cs.columbia.edu>, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Russell King <rmk+kernel-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org>, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org
+Cc: linux-crypto-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, kvmarm-FPEHb7Xf0XXUo1n7N8X6UoWGPAHP3yOg@public.gmane.org, kvm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, davinci-linux-open-source-VycZQUHpC/PFrsHnngEfi1aTQe2KTcn/@public.gmane.org, linux-omap-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-samsung-soc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-tegra-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, xen-devel-GuqFBffKawtpuQazS67q72D2FQJk+8+b@public.gmane.org
 
-Hi Mans,
+On 07/01/2014 10:19 AM, Russell King wrote:
+> ARMv6 and greater introduced a new instruction ("bx") which can be used
+> to return from function calls.  Recent CPUs perform better when the
+> "bx lr" instruction is used rather than the "mov pc, lr" instruction,
+> and this sequence is strongly recommended to be used by the ARM
+> architecture manual (section A.4.1.1).
+> 
+> We provide a new macro "ret" with all its variants for the condition
+> code which will resolve to the appropriate instruction.
+> 
+> Rather than doing this piecemeal, and miss some instances, change all
+> the "mov pc" instances to use the new macro, with the exception of
+> the "movs" instruction and the kprobes code.  This allows us to detect
+> the "mov pc, lr" case and fix it up - and also gives us the possibility
+> of deploying this for other registers depending on the CPU selection.
 
-On Tue, Jul 01, 2014 at 06:24:43PM +0100, M=E5ns Rullg=E5rd wrote:
-> Russell King - ARM Linux <linux@arm.linux.org.uk> writes:
-> > As you point out, "bx lr" /may/ be treated specially (I've actually been
->=20
-> Most, if not all, Cortex-A cores do this according the public TRMs.
-> They also do the same thing for "mov pc, lr" so there will probably be
-> no performance gain from this change.  It's still a good idea though,
-> since we don't know what future cores will do.
+Tested-by: Stephen Warren <swarren@nvidia.com>
 
-Funnily enough, that's not actually true (and is more or less what prompted
-this patch after discussion with Russell). There are cores out there that
-don't predict mov pc, lr at all (let alone do anything with the return
-stack).
-
-> > discussing this with Will Deacon over the last couple of days, who has
-> > also been talking to the hardware people in ARM, and Will is happy with
-> > this patch as in its current form.)  This is why I've changed all
-> > "mov pc, reg" instructions which return in some way to use this macro,
-> > and left others (those which are used to call some function and return
-> > back to the same point) alone.
->=20
-> In that case the patch should be fine.  Your patch description didn't
-> make it clear that only actual returns were being changed.
-
-I'm led to believe that some predictors require lr in order to update the
-return stack, whilst others don't. That part is all horribly
-micro-architectural, so the current patch is doing the right thing by
-sticking to the ARM ARM but enabling us to hook into other registers later
-on if we choose.
-
-Cheers,
-
-Will
+(On an NVIDIA Tegra Jetson TK1 board, both CPU hotplug and system sleep
+were tested, which are the use-cases that actually use the edited
+assembly files)
