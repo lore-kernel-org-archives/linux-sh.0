@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Jul 2014 00:28:37 +0000
-Subject: [GIT PULL] Second Round of Renesas ARM Based SoC soc-cleanup Updates for v3.17
-Message-Id: <cover.1404173049.git.horms+renesas@verge.net.au>
+Date: Tue, 01 Jul 2014 00:28:47 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Updates for v3.17
+Message-Id: <cover.1404174157.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1381222967.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
@@ -12,10 +12,10 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hi Olof, Hi Kevin, Hi Arnd,
 
-Please consider these Second Round of Renesas ARM Based SoC soc-cleanup Updates for v3.17.
+Please consider these Second Round of Renesas ARM Based SoC Updates for v3.17.
 
 This pull request is based on the previous round of
-such requests, tagged as renesas-soc-cleanup-for-v3.17,
+such requests, tagged as renesas-soc-for-v3.17,
 which I have already sent a pull-request for.
 
 This conflicts with other changes made to pm-r8a7790.c in the soc branch
@@ -32,75 +32,49 @@ In short, the resulting includes should be:
 #include "r8a7790.h"
 
 
-The following changes since commit d83fa4c9c27c4d8612e39e99506b5420fa05b58b:
+The following changes since commit 3ed66ec5ced8b801cb851b2b8548301df94f8f54:
 
-  ARM: shmobile: Remove unused r8a7790_init_early() (2014-06-17 19:50:35 +0900)
+  ARM: shmobile: Remove ARCH_HAS_CPUFREQ config for shmobile (2014-06-23 09:53:55 +0900)
 
 are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-soc-cleanup2-for-v3.17
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-soc2-for-v3.17
 
-for you to fetch changes up to 113522ee3034427472bcb4b8665833719809b31a:
+for you to fetch changes up to bfe4cfa8ae21628267f2b879b4396ee17ea4fd3a:
 
-  ARM: shmobile: Move sh7372.h (2014-06-25 16:50:00 +0900)
+  ARM: shmobile: Allow r8a7791 to build non-SMP APMU code (2014-06-26 16:01:34 +0900)
 
 ----------------------------------------------------------------
-Second Round of Renesas ARM Based SoC soc-cleanup Updates for v3.17
+Second Round of Renesas ARM Based SoC Updates for v3.17
 
-* Move SOC-specific headers out of mach directory.
+* Suspend on non-SMP update for r8a7790
+* Move r8a7791.h out of mach directory.
   This is part of a multi-stage effort to move headers
   out of that directory.
 
 ----------------------------------------------------------------
-Geert Uytterhoeven (7):
-      ARM: shmobile: Move r7s72100.h
-      ARM: shmobile: Move r8a73a4.h
-      ARM: shmobile: Move r8a7740.h
-      ARM: shmobile: Move r8a7778.h
-      ARM: shmobile: Move r8a7790.h
-      ARM: shmobile: Move sh73a0.h
-      ARM: shmobile: Move sh7372.h
+Geert Uytterhoeven (1):
+      ARM: shmobile: Move r8a7791.h
 
- arch/arm/mach-shmobile/board-ape6evm-reference.c         |  4 +++-
- arch/arm/mach-shmobile/board-ape6evm.c                   |  4 +++-
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c |  4 +++-
- arch/arm/mach-shmobile/board-armadillo800eva.c           |  4 +++-
- arch/arm/mach-shmobile/board-bockw-reference.c           |  4 +++-
- arch/arm/mach-shmobile/board-bockw.c                     |  4 +++-
- arch/arm/mach-shmobile/board-genmai-reference.c          |  4 +++-
- arch/arm/mach-shmobile/board-genmai.c                    |  4 +++-
- arch/arm/mach-shmobile/board-kzm9g-reference.c           |  4 +++-
- arch/arm/mach-shmobile/board-kzm9g.c                     |  4 +++-
- arch/arm/mach-shmobile/board-lager-reference.c           |  4 +++-
- arch/arm/mach-shmobile/board-lager.c                     | 14 ++++++++------
- arch/arm/mach-shmobile/board-mackerel.c                  |  4 +++-
- arch/arm/mach-shmobile/clock-r7s72100.c                  |  3 ++-
- arch/arm/mach-shmobile/clock-r8a7740.c                   |  3 ++-
- arch/arm/mach-shmobile/clock-r8a7790.c                   |  3 ++-
- arch/arm/mach-shmobile/intc-sh73a0.c                     |  4 +++-
- arch/arm/mach-shmobile/pm-r8a7790.c                      |  4 +++-
- arch/arm/mach-shmobile/pm-sh7372.c                       |  4 +++-
- arch/arm/mach-shmobile/{include/mach => }/r7s72100.h     |  0
- arch/arm/mach-shmobile/{include/mach => }/r8a73a4.h      |  0
- arch/arm/mach-shmobile/{include/mach => }/r8a7740.h      |  0
- arch/arm/mach-shmobile/{include/mach => }/r8a7778.h      |  0
- arch/arm/mach-shmobile/{include/mach => }/r8a7790.h      |  0
- arch/arm/mach-shmobile/setup-r7s72100.c                  |  4 +++-
- arch/arm/mach-shmobile/setup-r8a73a4.c                   |  4 +++-
- arch/arm/mach-shmobile/setup-r8a7740.c                   |  4 +++-
- arch/arm/mach-shmobile/setup-r8a7778.c                   |  4 +++-
- arch/arm/mach-shmobile/setup-r8a7790.c                   |  4 +++-
- arch/arm/mach-shmobile/setup-sh7372.c                    |  4 +++-
- arch/arm/mach-shmobile/setup-sh73a0.c                    |  4 +++-
- arch/arm/mach-shmobile/{include/mach => }/sh7372.h       |  0
- arch/arm/mach-shmobile/{include/mach => }/sh73a0.h       |  0
- arch/arm/mach-shmobile/smp-r8a7790.c                     |  4 +++-
- arch/arm/mach-shmobile/smp-sh73a0.c                      |  4 +++-
- 35 files changed, 86 insertions(+), 33 deletions(-)
- rename arch/arm/mach-shmobile/{include/mach => }/r7s72100.h (100%)
- rename arch/arm/mach-shmobile/{include/mach => }/r8a73a4.h (100%)
- rename arch/arm/mach-shmobile/{include/mach => }/r8a7740.h (100%)
- rename arch/arm/mach-shmobile/{include/mach => }/r8a7778.h (100%)
- rename arch/arm/mach-shmobile/{include/mach => }/r8a7790.h (100%)
- rename arch/arm/mach-shmobile/{include/mach => }/sh7372.h (100%)
- rename arch/arm/mach-shmobile/{include/mach => }/sh73a0.h (100%)
+Magnus Damm (7):
+      ARM: shmobile: Allow use of boot code for non-SMP case
+      ARM: shmobile: Adjust APMU code to build for non-SMP
+      ARM: shmobile: Use __init for APMU suspend init function
+      ARM: shmobile: Move r8a7790 reset code to pm-r8a7790.c
+      ARM: shmobile: Allow r8a7790 to build non-SMP APMU code
+      ARM: shmobile: Move r8a7791 reset code to pm-r8a7791.c
+      ARM: shmobile: Allow r8a7791 to build non-SMP APMU code
+
+ arch/arm/mach-shmobile/Makefile                    | 21 ++++++-----
+ arch/arm/mach-shmobile/board-koelsch-reference.c   |  4 ++-
+ arch/arm/mach-shmobile/board-koelsch.c             |  4 ++-
+ arch/arm/mach-shmobile/headsmp.S                   | 13 ++++---
+ arch/arm/mach-shmobile/platsmp-apmu.c              | 13 ++++---
+ arch/arm/mach-shmobile/pm-r8a7790.c                | 41 ++++++++++++++++++++--
+ arch/arm/mach-shmobile/pm-r8a7791.c                | 30 ++++++++++++++--
+ .../arm/mach-shmobile/{include/mach => }/r8a7791.h |  0
+ arch/arm/mach-shmobile/setup-r8a7791.c             |  4 ++-
+ arch/arm/mach-shmobile/smp-r8a7790.c               | 31 ----------------
+ arch/arm/mach-shmobile/smp-r8a7791.c               | 29 ++-------------
+ 11 files changed, 108 insertions(+), 82 deletions(-)
+ rename arch/arm/mach-shmobile/{include/mach => }/r8a7791.h (100%)
