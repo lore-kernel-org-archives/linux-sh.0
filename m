@@ -1,49 +1,51 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 03 Jul 2014 19:38:42 +0000
-Subject: [PATCH v2 1/2] ARM: shmobile: r8a7791: add CAN DT support
-Message-Id: <201407032338.43409.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 01 Jul 2014 00:28:21 +0000
+Subject: [PATCH 4/4] ARM: shmobile: r8a7791: add DVC support for sound node on DTSI
+Message-Id: <150c8ad40808189423002ea9fc6a858a3a59e6dc.1404174433.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201407032337.03509.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201407032337.03509.sergei.shtylyov@cogentembedded.com>
+References: <cover.1404174433.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1404174433.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Define the generic R8A7791 parts of the CAN0/1 device nodes.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes in version 2:
-- fixed the "compatible" property in the CAN device nodes.
+ arch/arm/boot/dts/r8a7791.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
- arch/arm/boot/dts/r8a7791.dtsi |   16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
-
-Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7791.dtsi
-@@ -518,6 +518,22 @@
- 		status = "disabled";
- 	};
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 1997f16..336a6c0 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1005,16 +1005,23 @@
+ 			<&mstp10_clks R8A7791_CLK_SCU_SRC5>, <&mstp10_clks R8A7791_CLK_SCU_SRC4>,
+ 			<&mstp10_clks R8A7791_CLK_SCU_SRC3>, <&mstp10_clks R8A7791_CLK_SCU_SRC2>,
+ 			<&mstp10_clks R8A7791_CLK_SCU_SRC1>, <&mstp10_clks R8A7791_CLK_SCU_SRC0>,
++			<&mstp10_clks R8A7791_CLK_SCU_DVC0>, <&mstp10_clks R8A7791_CLK_SCU_DVC1>,
+ 			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
+ 		clock-names = "ssi-all",
+ 				"ssi.9", "ssi.8", "ssi.7", "ssi.6", "ssi.5",
+ 				"ssi.4", "ssi.3", "ssi.2", "ssi.1", "ssi.0",
+ 				"src.9", "src.8", "src.7", "src.6", "src.5",
+ 				"src.4", "src.3", "src.2", "src.1", "src.0",
++				"dvc.0", "dvc.1",
+ 				"clk_a", "clk_b", "clk_c", "clk_i";
  
-+	can0: can@e6e80000 {
-+		compatible = "renesas,can-r8a7791";
-+		reg = <0 0xe6e80000 0 0x1000>;
-+		interrupts = <0 186 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7791_CLK_RCAN0>;
-+		status = "disabled";
-+	};
+ 		status = "disabled";
+ 
++		rcar_sound,dvc {
++			dvc0: dvc@0 { };
++			dvc1: dvc@1 { };
++		};
 +
-+	can1: can@e6e88000 {
-+		compatible = "renesas,can-r8a7791";
-+		reg = <0 0xe6e88000 0 0x1000>;
-+		interrupts = <0 187 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7791_CLK_RCAN1>;
-+		status = "disabled";
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
+ 		rcar_sound,src {
+ 			src0: src@0 { };
+ 			src1: src@1 { };
+-- 
+2.0.0.rc2
+
