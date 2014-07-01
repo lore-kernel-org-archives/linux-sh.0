@@ -1,50 +1,81 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 24 Jul 2014 15:27:03 +0000
-Subject: [PATCH 1/3] iommu/ipmmu-vmsa: Cleanup failures of ARM mapping creation or attachment
-Message-Id: <1406215625-13982-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 01 Jul 2014 00:28:48 +0000
+Subject: [PATCH 8/8] ARM: shmobile: Allow r8a7791 to build non-SMP APMU code
+Message-Id: <bfe4cfa8ae21628267f2b879b4396ee17ea4fd3a.1404174157.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1406215625-13982-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1406215625-13982-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1404174157.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1404174157.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The ARM IOMMU mapping needs to be released when attaching the device
-fails. Add arm_iommu_release_mapping() to the error code path. This is
-safe to call with a NULL mapping, so no specific check is needed.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Cleanup is also missing when failing to create a mapping. Jump to the
-error code path in that case instead of returning immediately.
+Build the APMU for r8a7791 even though SMP is
+disabled in the kernel config. Also initialize
+Suspend-to-RAM from pm-r8a7791.c to in the future
+cover both UP and SMP use cases of the APMU.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/iommu/ipmmu-vmsa.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/Makefile      | 5 +++--
+ arch/arm/mach-shmobile/pm-r8a7791.c  | 1 +
+ arch/arm/mach-shmobile/smp-r8a7791.c | 1 -
+ 3 files changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
-index 53cde08..7dc77a6 100644
---- a/drivers/iommu/ipmmu-vmsa.c
-+++ b/drivers/iommu/ipmmu-vmsa.c
-@@ -1090,7 +1090,8 @@ static int ipmmu_add_device(struct device *dev)
- 						   SZ_1G, SZ_2G);
- 		if (IS_ERR(mapping)) {
- 			dev_err(mmu->dev, "failed to create ARM IOMMU mapping\n");
--			return PTR_ERR(mapping);
-+			ret = PTR_ERR(mapping);
-+			goto error;
- 		}
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 08f5952..cc0224e 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -37,13 +37,14 @@ endif
+ # CPU reset vector handling objects
+ cpu-y				:= platsmp.o headsmp.o
+ cpu-$(CONFIG_ARCH_R8A7790)	+= platsmp-apmu.o
++cpu-$(CONFIG_ARCH_R8A7791)	+= platsmp-apmu.o
  
- 		mmu->mapping = mapping;
-@@ -1106,6 +1107,7 @@ static int ipmmu_add_device(struct device *dev)
- 	return 0;
+ # SMP objects
+ smp-y				:= $(cpu-y)
+ smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o platsmp-scu.o
+ smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o platsmp-scu.o
+ smp-$(CONFIG_ARCH_R8A7790)	+= smp-r8a7790.o
+-smp-$(CONFIG_ARCH_R8A7791)	+= smp-r8a7791.o platsmp-apmu.o
++smp-$(CONFIG_ARCH_R8A7791)	+= smp-r8a7791.o
+ smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o platsmp-scu.o
  
- error:
-+	arm_iommu_release_mapping(mmu->mapping);
- 	kfree(dev->archdata.iommu);
- 	dev->archdata.iommu = NULL;
- 	iommu_group_remove_device(dev);
+ # PM objects
+@@ -54,7 +55,7 @@ obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o pm-rcar.o
+ obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o $(cpu-y)
+-obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o
++obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o $(cpu-y)
+ 
+ # IRQ objects
+ obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
+diff --git a/arch/arm/mach-shmobile/pm-r8a7791.c b/arch/arm/mach-shmobile/pm-r8a7791.c
+index c44304c..25f107b 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7791.c
++++ b/arch/arm/mach-shmobile/pm-r8a7791.c
+@@ -69,4 +69,5 @@ void __init r8a7791_pm_init(void)
+ 	iounmap(p);
+ 
+ 	r8a7791_sysc_init();
++	shmobile_smp_apmu_suspend_init();
+ }
+diff --git a/arch/arm/mach-shmobile/smp-r8a7791.c b/arch/arm/mach-shmobile/smp-r8a7791.c
+index df086aa..f743386 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7791.c
++++ b/arch/arm/mach-shmobile/smp-r8a7791.c
+@@ -30,7 +30,6 @@ static void __init r8a7791_smp_prepare_cpus(unsigned int max_cpus)
+ 	shmobile_smp_apmu_prepare_cpus(max_cpus);
+ 
+ 	r8a7791_pm_init();
+-	shmobile_smp_apmu_suspend_init();
+ }
+ 
+ static int r8a7791_smp_boot_secondary(unsigned int cpu,
 -- 
-1.8.5.5
+2.0.0.rc2
 
