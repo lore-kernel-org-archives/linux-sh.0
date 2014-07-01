@@ -1,57 +1,223 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 02 Jul 2014 08:06:39 +0000
-Subject: Re: [PATCH/RFC 1/6] ARM: shmobile: r8a7778: add SCI clock support for DT
-Message-Id: <3035210.jDL17MeFr8@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 01 Jul 2014 20:58:16 +0000
+Subject: [PATCH v2] sh-pfc: r8a7791: add CAN pin groups
+Message-Id: <201407020058.17369.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404275322-26514-1-git-send-email-horms+renesas@verge.net.au>
- <1404275322-26514-2-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1404275322-26514-2-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Simon,
+Add CAN0/1 data/clock pin groups to R8A7791 PFC driver.
 
-Thank you for the patch.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-On Wednesday 02 July 2014 06:28:37 Simon Horman wrote:
-> This will be used when initialising SCI devices using DT
-> until common clock framework support is added.
-> 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+The patch is against the 'devel' branch of Linus W.'s 'linux-pinctrl.git' repo.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Changes in version 2:
+- fixed CAN_CLK_C pin mapping;
+- renamed can[01]_{clk|data}_a_*[] to can[01]_{clk|data}_*[];
+- added pin name comments to can*_pins[] initializers.
 
-> ---
->  arch/arm/mach-shmobile/clock-r8a7778.c | 6 ++++++
->  1 file changed, 6 insertions(+)
-> 
-> diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c
-> b/arch/arm/mach-shmobile/clock-r8a7778.c index 16bbc94..9557907 100644
-> --- a/arch/arm/mach-shmobile/clock-r8a7778.c
-> +++ b/arch/arm/mach-shmobile/clock-r8a7778.c
-> @@ -202,11 +202,17 @@ static struct clk_lookup lookups[] = {
->  	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP027]), /* I2C3 */
->  	CLKDEV_DEV_ID("ffc73000.i2c", &mstp_clks[MSTP027]), /* I2C3 */
->  	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
-> +	CLKDEV_DEV_ID("ffe40000.serial", &mstp_clks[MSTP026]), /* SCIF0 */
->  	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
-> +	CLKDEV_DEV_ID("ffe41000.serial", &mstp_clks[MSTP025]), /* SCIF1 */
->  	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
-> +	CLKDEV_DEV_ID("ffe42000.serial", &mstp_clks[MSTP024]), /* SCIF2 */
->  	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP023]), /* SCIF3 */
-> +	CLKDEV_DEV_ID("ffe43000.serial", &mstp_clks[MSTP023]), /* SCIF3 */
->  	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP022]), /* SCIF4 */
-> +	CLKDEV_DEV_ID("ffe44000.serial", &mstp_clks[MSTP022]), /* SCIF4 */
->  	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
-> +	CLKDEV_DEV_ID("ffe45000.serial", &mstp_clks[MSTP021]), /* SCIF5 */
->  	CLKDEV_DEV_ID("sh-hspi.0", &mstp_clks[MSTP007]), /* HSPI0 */
->  	CLKDEV_DEV_ID("fffc7000.spi", &mstp_clks[MSTP007]), /* HSPI0 */
->  	CLKDEV_DEV_ID("sh-hspi.1", &mstp_clks[MSTP007]), /* HSPI1 */
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c |  167 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 167 insertions(+)
 
--- 
-Regards,
-
-Laurent Pinchart
-
+Index: linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+=================================--- linux-pinctrl.orig/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
++++ linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+@@ -1726,6 +1726,133 @@ static const unsigned int audio_clkout_m
+ 	AUDIO_CLKOUT_MARK,
+ };
+ 
++/* - CAN -------------------------------------------------------------------- */
++
++static const unsigned int can0_data_pins[] = {
++	/* TX, RX */
++	RCAR_GP_PIN(3, 26), RCAR_GP_PIN(3, 29),
++};
++
++static const unsigned int can0_data_mux[] = {
++	CAN0_TX_MARK, CAN0_RX_MARK,
++};
++
++static const unsigned int can0_data_b_pins[] = {
++	/* TX, RX */
++	RCAR_GP_PIN(7, 4), RCAR_GP_PIN(7, 3),
++};
++
++static const unsigned int can0_data_b_mux[] = {
++	CAN0_TX_B_MARK, CAN0_RX_B_MARK,
++};
++
++static const unsigned int can0_data_c_pins[] = {
++	/* TX, RX */
++	RCAR_GP_PIN(5, 17), RCAR_GP_PIN(5, 18),
++};
++
++static const unsigned int can0_data_c_mux[] = {
++	CAN0_TX_C_MARK,	CAN0_RX_C_MARK,
++};
++
++static const unsigned int can0_data_d_pins[] = {
++	/* TX, RX */
++	RCAR_GP_PIN(2, 26), RCAR_GP_PIN(2, 27),
++};
++
++static const unsigned int can0_data_d_mux[] = {
++	CAN0_TX_D_MARK, CAN0_RX_D_MARK,
++};
++
++static const unsigned int can0_data_e_pins[] = {
++	/* TX, RX */
++	RCAR_GP_PIN(4, 18), RCAR_GP_PIN(4, 28),
++};
++
++static const unsigned int can0_data_e_mux[] = {
++	CAN0_TX_E_MARK, CAN0_RX_E_MARK,
++};
++
++static const unsigned int can0_data_f_pins[] = {
++	/* TX, RX */
++	RCAR_GP_PIN(6, 7), RCAR_GP_PIN(6, 6),
++};
++
++static const unsigned int can0_data_f_mux[] = {
++	CAN0_TX_F_MARK, CAN0_RX_F_MARK,
++};
++
++static const unsigned int can1_data_pins[] = {
++	/* TX, RX */
++	 RCAR_GP_PIN(3, 21), RCAR_GP_PIN(3, 20),
++};
++
++static const unsigned int can1_data_mux[] = {
++	CAN1_TX_MARK, CAN1_RX_MARK,
++};
++
++static const unsigned int can1_data_b_pins[] = {
++	/* TX, RX */
++	RCAR_GP_PIN(7, 8), RCAR_GP_PIN(7, 9),
++};
++
++static const unsigned int can1_data_b_mux[] = {
++	CAN1_TX_B_MARK, CAN1_RX_B_MARK,
++};
++
++static const unsigned int can1_data_c_pins[] = {
++	/* TX, RX */
++	RCAR_GP_PIN(5, 20), RCAR_GP_PIN(5, 19),
++};
++
++static const unsigned int can1_data_c_mux[] = {
++	CAN1_TX_C_MARK, CAN1_RX_C_MARK,
++};
++
++static const unsigned int can1_data_d_pins[] = {
++	/* TX, RX */
++	 RCAR_GP_PIN(4, 29), RCAR_GP_PIN(4, 31),
++};
++
++static const unsigned int can1_data_d_mux[] = {
++	CAN1_TX_D_MARK, CAN1_RX_D_MARK,
++};
++
++static const unsigned int can_clk_pins[] = {
++	/* CLK */
++	RCAR_GP_PIN(7, 2),
++};
++
++static const unsigned int can_clk_mux[] = {
++	CAN_CLK_MARK,
++};
++
++static const unsigned int can_clk_b_pins[] = {
++	/* CLK */
++	RCAR_GP_PIN(5, 21),
++};
++
++static const unsigned int can_clk_b_mux[] = {
++	CAN_CLK_B_MARK,
++};
++
++static const unsigned int can_clk_c_pins[] = {
++	/* CLK */
++	RCAR_GP_PIN(4, 30),
++};
++
++static const unsigned int can_clk_c_mux[] = {
++	CAN_CLK_C_MARK,
++};
++
++static const unsigned int can_clk_d_pins[] = {
++	/* CLK */
++	RCAR_GP_PIN(7, 19),
++};
++
++static const unsigned int can_clk_d_mux[] = {
++	CAN_CLK_D_MARK,
++};
+ 
+ /* - DU --------------------------------------------------------------------- */
+ static const unsigned int du_rgb666_pins[] = {
+@@ -4055,6 +4182,20 @@ static const struct sh_pfc_pin_group pin
+ 	SH_PFC_PIN_GROUP(audio_clk_b_b),
+ 	SH_PFC_PIN_GROUP(audio_clk_c),
+ 	SH_PFC_PIN_GROUP(audio_clkout),
++	SH_PFC_PIN_GROUP(can0_data),
++	SH_PFC_PIN_GROUP(can0_data_b),
++	SH_PFC_PIN_GROUP(can0_data_c),
++	SH_PFC_PIN_GROUP(can0_data_d),
++	SH_PFC_PIN_GROUP(can0_data_e),
++	SH_PFC_PIN_GROUP(can0_data_f),
++	SH_PFC_PIN_GROUP(can1_data),
++	SH_PFC_PIN_GROUP(can1_data_b),
++	SH_PFC_PIN_GROUP(can1_data_c),
++	SH_PFC_PIN_GROUP(can1_data_d),
++	SH_PFC_PIN_GROUP(can_clk),
++	SH_PFC_PIN_GROUP(can_clk_b),
++	SH_PFC_PIN_GROUP(can_clk_c),
++	SH_PFC_PIN_GROUP(can_clk_d),
+ 	SH_PFC_PIN_GROUP(du_rgb666),
+ 	SH_PFC_PIN_GROUP(du_rgb888),
+ 	SH_PFC_PIN_GROUP(du_clk_out_0),
+@@ -4367,6 +4508,30 @@ static const char * const audio_clk_grou
+ 	"audio_clkout",
+ };
+ 
++static const char * const can0_groups[] = {
++	"can0_data_a",
++	"can0_data_b",
++	"can0_data_c",
++	"can0_data_d",
++	"can0_data_e",
++	"can0_data_f",
++	"can_clk_a",
++	"can_clk_b",
++	"can_clk_c",
++	"can_clk_d",
++};
++
++static const char * const can1_groups[] = {
++	"can1_data_a",
++	"can1_data_b",
++	"can1_data_c",
++	"can1_data_d",
++	"can_clk_a",
++	"can_clk_b",
++	"can_clk_c",
++	"can_clk_d",
++};
++
+ static const char * const du_groups[] = {
+ 	"du_rgb666",
+ 	"du_rgb888",
+@@ -4790,6 +4955,8 @@ static const char * const vin2_groups[] 
+ 
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(audio_clk),
++	SH_PFC_FUNCTION(can0),
++	SH_PFC_FUNCTION(can1),
+ 	SH_PFC_FUNCTION(du),
+ 	SH_PFC_FUNCTION(du0),
+ 	SH_PFC_FUNCTION(du1),
