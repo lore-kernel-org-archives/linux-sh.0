@@ -1,41 +1,101 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 31 Jul 2014 00:33:06 +0000
-Subject: [PATCH] ARM: shmobile: sh73a0: Remove spurious 0x from SCIFB clock name
-Message-Id: <2c3758b01aa6f11382d2b018614b5d48ecf30350.1406766463.git.horms+renesas@verge.net.au>
+Date: Tue, 01 Jul 2014 00:28:18 +0000
+Subject: [PATCH 1/4] ARM: shmobile: r8a7790: add internal PCI bridge nodes
+Message-Id: <ff4f3eb8b3386208944fe60b85e6cba4d338198e.1404174433.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1406766463.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1406766463.git.horms+renesas@verge.net.au>
+References: <cover.1404174433.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1404174433.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-A stray '0x' crept into a0f7e7496d56ac2d ("ARM: shmobile: sh73a0: add CMT1
-clock support for DT"). This  patch removes it.
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-This change should not have any run-time affect at this time as
-the clock in question is used by a SCIF device that is not enabled by
-default.
+Add device nodes for the R8A7790 internal PCI bridge devices.
 
-Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
+[Sergei: added several properties to the PCI bridge nodes]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+Tested-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-sh73a0.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 60 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 60 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index 0d77f65..b0993a5 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -644,7 +644,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP207]), /* SCIFA5 */
- 	CLKDEV_DEV_ID("e6cb0000.serial", &mstp_clks[MSTP207]), /* SCIFA5 */
- 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP206]), /* SCIFB */
--	CLKDEV_DEV_ID("0xe6c3000.serial", &mstp_clks[MSTP206]), /* SCIFB */
-+	CLKDEV_DEV_ID("e6c3000.serial", &mstp_clks[MSTP206]), /* SCIFB */
- 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]), /* SCIFA0 */
- 	CLKDEV_DEV_ID("e6c40000.serial", &mstp_clks[MSTP204]), /* SCIFA0 */
- 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]), /* SCIFA1 */
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 994330e..373d9a21 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -930,6 +930,66 @@
+ 		status = "disabled";
+ 	};
+ 
++	pci0: pci@ee090000 {
++		compatible = "renesas,pci-r8a7790";
++		device_type = "pci";
++		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
++		reg = <0 0xee090000 0 0xc00>,
++		      <0 0xee080000 0 0x1100>;
++		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++
++		bus-range = <0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		#interrupt-cells = <1>;
++		ranges = <0x02000000 0 0xee080000 0 0xee080000 0 0x00010000>;
++		interrupt-map-mask = <0xff00 0 0 0x7>;
++		interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
++			      	 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
++			      	 0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
++	};
++
++	pci1: pci@ee0b0000 {
++		compatible = "renesas,pci-r8a7790";
++		device_type = "pci";
++		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
++		reg = <0 0xee0b0000 0 0xc00>,
++		      <0 0xee0a0000 0 0x1100>;
++		interrupts = <0 112 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++
++		bus-range = <1 1>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		#interrupt-cells = <1>;
++		ranges = <0x02000000 0 0xee0a0000 0 0xee0a0000 0 0x00010000>;
++		interrupt-map-mask = <0xff00 0 0 0x7>;
++		interrupt-map = <0x0000 0 0 1 &gic 0 112 IRQ_TYPE_LEVEL_HIGH
++			      	 0x0800 0 0 1 &gic 0 112 IRQ_TYPE_LEVEL_HIGH
++			      	 0x1000 0 0 2 &gic 0 112 IRQ_TYPE_LEVEL_HIGH>;
++	};
++
++	pci2: pci@ee0d0000 {
++		compatible = "renesas,pci-r8a7790";
++		device_type = "pci";
++		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
++		reg = <0 0xee0d0000 0 0xc00>,
++		      <0 0xee0c0000 0 0x1100>;
++		interrupts = <0 113 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++
++		bus-range = <2 2>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		#interrupt-cells = <1>;
++		ranges = <0x02000000 0 0xee0c0000 0 0xee0c0000 0 0x00010000>;
++		interrupt-map-mask = <0xff00 0 0 0x7>;
++		interrupt-map = <0x0000 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
++			      	 0x0800 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
++			      	 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
++	};
++
+ 	pciec: pcie@fe000000 {
+ 		compatible = "renesas,pcie-r8a7790";
+ 		reg = <0 0xfe000000 0 0x80000>;
 -- 
-2.0.1
+2.0.0.rc2
 
