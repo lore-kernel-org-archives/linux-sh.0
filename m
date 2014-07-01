@@ -1,61 +1,30 @@
-From: =?iso-8859-1?Q?M=E5ns_Rullg=E5rd?= <mans@mansr.com>
-Date: Tue, 01 Jul 2014 20:04:15 +0000
+From: Robert Jarzmik <robert.jarzmik@free.fr>
+Date: Tue, 01 Jul 2014 22:42:06 +0000
 Subject: Re: [PATCH] ARM: convert all "mov.* pc, reg" to "bx reg" for ARMv6+ (part1)
-Message-Id: <yw1xvbrgethc.fsf@unicorn.mansr.com>
+Message-Id: <87y4wcog5d.fsf@free.fr>
 List-Id: <linux-sh.vger.kernel.org>
 References: <E1X20mL-00083I-Sv@rmk-PC.arm.linux.org.uk>
-	<yw1x4mz1f2t9.fsf@unicorn.mansr.com>
-	<20140701171346.GP3705@n2100.arm.linux.org.uk>
-	<yw1xzjgtdmas.fsf@unicorn.mansr.com> <20140701173547.GW28164@arm.com>
-In-Reply-To: <20140701173547.GW28164@arm.com> (Will Deacon's message of "Tue,
-	1 Jul 2014 18:35:47 +0100")
+In-Reply-To: <E1X20mL-00083I-Sv@rmk-PC.arm.linux.org.uk> (Russell King's
+	message of "Tue, 01 Jul 2014 17:19:33 +0100")
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Will Deacon <will.deacon@arm.com>
-Cc: Russell King - ARM Linux <linux@arm.linux.org.uk>, "davinci-linux-open-source@linux.davincidsp.com" <davinci-linux-open-source@linux.davincidsp.com>, "linux-samsung-soc@vger.kernel.org" <linux-samsung-soc@vger.kernel.org>, "kvm@vger.kernel.org" <kvm@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-crypto@vger.kernel.org" <linux-crypto@vger.kernel.org>, "linux-tegra@vger.kernel.org" <linux-tegra@vger.kernel.org>, "xen-devel@lists.xenproject.org" <xen-devel@lists.xenproject.org>, "linux-omap@vger.kernel.org" <linux-omap@vger.kernel.org>, "kvmarm@lists.cs.columbia.edu" <kvmarm@lists.cs.columbia.edu>, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Russell King <rmk+kernel@arm.linux.org.uk>
+Cc: linux-arm-kernel@lists.infradead.org, davinci-linux-open-source@linux.davincidsp.com, linux-samsung-soc@vger.kernel.org, kvm@vger.kernel.org, linux-sh@vger.kernel.org, linux-crypto@vger.kernel.org, linux-tegra@vger.kernel.org, xen-devel@lists.xenproject.org, linux-omap@vger.kernel.org, kvmarm@lists.cs.columbia.edu
 
-Will Deacon <will.deacon@arm.com> writes:
+Russell King <rmk+kernel@arm.linux.org.uk> writes:
 
-> Hi Mans,
->
-> On Tue, Jul 01, 2014 at 06:24:43PM +0100, M=E5ns Rullg=E5rd wrote:
->> Russell King - ARM Linux <linux@arm.linux.org.uk> writes:
->> > As you point out, "bx lr" /may/ be treated specially (I've actually be=
-en
->>=20
->> Most, if not all, Cortex-A cores do this according the public TRMs.
->> They also do the same thing for "mov pc, lr" so there will probably be
->> no performance gain from this change.  It's still a good idea though,
->> since we don't know what future cores will do.
->
-> Funnily enough, that's not actually true (and is more or less what prompt=
-ed
-> this patch after discussion with Russell). There are cores out there that
-> don't predict mov pc, lr at all (let alone do anything with the return
-> stack).
+> ARMv6 and greater introduced a new instruction ("bx") which can be used
+> to return from function calls.  Recent CPUs perform better when the
+> "bx lr" instruction is used rather than the "mov pc, lr" instruction,
+> and this sequence is strongly recommended to be used by the ARM
+> architecture manual (section A.4.1.1).
 
-Even ones where the TRM says they do?  I suppose the only way to know
-for sure is to measure it.
+For ARMv5 - XScale, and more specificaly the mioa701_bootresume.S path (suspend
+to RAM) :
+Tested-by: Robert Jarzmik <robert.jarzmik@free.fr>
 
->> > discussing this with Will Deacon over the last couple of days, who has
->> > also been talking to the hardware people in ARM, and Will is happy with
->> > this patch as in its current form.)  This is why I've changed all
->> > "mov pc, reg" instructions which return in some way to use this macro,
->> > and left others (those which are used to call some function and return
->> > back to the same point) alone.
->>=20
->> In that case the patch should be fine.  Your patch description didn't
->> make it clear that only actual returns were being changed.
->
-> I'm led to believe that some predictors require lr in order to update the
-> return stack, whilst others don't. That part is all horribly
-> micro-architectural, so the current patch is doing the right thing by
-> sticking to the ARM ARM but enabling us to hook into other registers later
-> on if we choose.
+Cheers.
 
-Agreed.
-
---=20
-M=E5ns Rullg=E5rd
-mans@mansr.com
+--
+Robert
