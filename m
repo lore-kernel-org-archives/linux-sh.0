@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Jul 2014 00:28:19 +0000
-Subject: [GIT PULL] Second Round of Renesas ARM Based SoC DT Updates for v3.17
-Message-Id: <cover.1404174433.git.horms+renesas@verge.net.au>
+Date: Tue, 01 Jul 2014 00:28:28 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM Based SoC r8a7779 Multiplatform Updates for v3.17
+Message-Id: <cover.1404173506.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1381222967.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
@@ -12,43 +12,47 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hi Olof, Hi Kevin, Hi Arnd,
 
-Please consider these Second Round of Renesas ARM Based SoC DT Updates
-for v3.17.
+Please consider these Second Round of Renesas ARM Based SoC r8a7779
+Multiplatform Updates for v3.17o.
 
 This pull request is based on the previous round of
-such requests, tagged as renesas-dt-for-v3.17,
+such requests, tagged as renesas-r8a7779-multiplatform-for-v3.17,
 which I have already sent a pull-request for.
 
+I have applied this clean-up change to a non-cleanup branch
+to avoid adding conflicts that were known (to me) at the
+time of queuing up this change.
 
-The following changes since commit 09abd1fd11f98d6abde9c23244234170e7e36c2f:
 
-  ARM: shmobile: r8a7791: add R-Car sound support on DTSI (2014-06-17 19:58:32 +0900)
+The following changes since commit c1a0f9932b66b2298163c31f8ac3f2844476e1c2:
+
+  ARM: shmobile: marzen: Do not use workaround for scif devices (2014-06-17 19:56:37 +0900)
 
 are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-dt2-for-v3.17
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-r8a7779-multiplatform2-for-v3.17
 
-for you to fetch changes up to 150c8ad40808189423002ea9fc6a858a3a59e6dc:
+for you to fetch changes up to 1b55353c9214788b0d0797a5fd4585af1557a12c:
 
-  ARM: shmobile: r8a7791: add DVC support for sound node on DTSI (2014-06-28 09:02:19 +0900)
-
-----------------------------------------------------------------
-Second Round of Renesas ARM Based SoC DT Updates for v3.17
-
-* Extend hardware coverage
-  - Add DVC support for sound nodes on r8a7791 and r8a7790
-  - Enable internal PCI on r8a7790/lager
+  ARM: shmobile: Move r8a7779.h (2014-06-25 16:52:39 +0900)
 
 ----------------------------------------------------------------
-Ben Dooks (2):
-      ARM: shmobile: r8a7790: add internal PCI bridge nodes
-      ARM: shmobile: lager: enable internal PCI
+Second Round of Renesas ARM Based SoC r8a7779-multiplatform Updates for v3.17
 
-Kuninori Morimoto (2):
-      ARM: shmobile: r8a7790: add DVC support for sound node on DTSI
-      ARM: shmobile: r8a7791: add DVC support for sound node on DTSI
+* Move r8a7779.h out of mach directory.
+  This is part of a multi-stage effort to move headers
+  out of that directory.
 
- arch/arm/boot/dts/r8a7790-lager.dts | 33 ++++++++++++++++++
- arch/arm/boot/dts/r8a7790.dtsi      | 67 +++++++++++++++++++++++++++++++++++++
- arch/arm/boot/dts/r8a7791.dtsi      |  7 ++++
- 3 files changed, 107 insertions(+)
+----------------------------------------------------------------
+Geert Uytterhoeven (1):
+      ARM: shmobile: Move r8a7779.h
+
+ arch/arm/mach-shmobile/board-marzen-reference.c     | 4 +++-
+ arch/arm/mach-shmobile/board-marzen.c               | 4 +++-
+ arch/arm/mach-shmobile/clock-r8a7779.c              | 3 ++-
+ arch/arm/mach-shmobile/pm-r8a7779.c                 | 4 +++-
+ arch/arm/mach-shmobile/{include/mach => }/r8a7779.h | 0
+ arch/arm/mach-shmobile/setup-r8a7779.c              | 4 +++-
+ arch/arm/mach-shmobile/smp-r8a7779.c                | 4 +++-
+ 7 files changed, 17 insertions(+), 6 deletions(-)
+ rename arch/arm/mach-shmobile/{include/mach => }/r8a7779.h (100%)
