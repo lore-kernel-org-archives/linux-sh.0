@@ -1,10 +1,10 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 15 Jul 2014 22:50:36 +0000
-Subject: Re: [PATCH 1/7] dmaengine: sh: Rework Kconfig and Makefile
-Message-Id: <1613941.6uN1RdcV7Y@avalon>
+Date: Tue, 01 Jul 2014 07:11:04 +0000
+Subject: Re: [PATCH] sh-pfc: r8a7791: add CAN pin groups
+Message-Id: <1960550.2TAjlAm9xj@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405455522-20676-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1405455522-20676-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <201407010211.23665.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201407010211.23665.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,80 +12,104 @@ To: linux-sh@vger.kernel.org
 
 Hi Sergei,
 
-Thank you for the review.
+Thank you for the patch.
 
-On Wednesday 16 July 2014 01:36:21 Sergei Shtylyov wrote:
-> On 07/16/2014 12:18 AM, Laurent Pinchart wrote:
-> > Separate helpers and drivers in the Kconfig and Makefile to improve
-> > readability and move the CONFIG_OF dependency from the Makefile to
-> > Kconfig.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> > 
-> >   drivers/dma/sh/Kconfig  | 24 +++++++++++++++++++-----
-> >   drivers/dma/sh/Makefile | 14 +++++++++++---
-> >   2 files changed, 30 insertions(+), 8 deletions(-)
-> > 
-> > diff --git a/drivers/dma/sh/Kconfig b/drivers/dma/sh/Kconfig
-> > index 0f71981..383b21f 100644
-> > --- a/drivers/dma/sh/Kconfig
-> > +++ b/drivers/dma/sh/Kconfig
-> > @@ -2,21 +2,39 @@
-> >   # DMA engine configuration for sh
-> >   #
-> > 
-> > +#
-> > +# DMA Engine Helpers
-> > +#
-> > +
-> >   config SH_DMAE_BASE
-> >   	bool "Renesas SuperH DMA Engine support"
-> > -	depends on (SUPERH && SH_DMA) || ARCH_SHMOBILE || COMPILE_TEST
-> > +	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
-> > +	depends on !SUPERH || SH_DMA
+On Tuesday 01 July 2014 02:11:22 Sergei Shtylyov wrote:
+> Add CAN0/1 data/clock pin groups to R8A7791 PFC driver.
 > 
-> s/||/&&/?
-
-No. The driver can be used on SUPERH only when SH_DMA is enabled, and can be 
-used on other architectures regardless of SH_DMA. This could have been 
-expressed as (SUPERH && SH_DMA) || !SUPERH as well.
-
-> >   	depends on !SH_DMA_API
-> >   	default y
-> >   	select DMA_ENGINE
-> >   	help
-> >   	  Enable support for the Renesas SuperH DMA controllers.
-> > +#
-> > +# DMA Controllers
-> > +#
-> > +
-> >   config SH_DMAE
-> >   	tristate "Renesas SuperH DMAC support"
-> >   	depends on SH_DMAE_BASE
-> >   	help
-> >   	  Enable support for the Renesas SuperH DMA controllers.
-> > 
-> > +if SH_DMAE
-> > +
-> > +config SH_DMAE_R8A73A4
-> > +	def_bool y
-> > +	depends on ARCH_R8A73A4
-> > +	depends on CONFIG_OF
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 > 
-> s/CONFIG_//.
-
-My bad, will fix.
-
-> > +
-> > +endif
-> > +
-> >   config SUDMAC
-> >   	tristate "Renesas SUDMAC support"
-> >   	depends on SH_DMAE_BASE
+> ---
+> The patch is against the 'devel' branch of Linus W.'s 'linux-pinctrl.git'
+> repo.
 > 
-> [...]
+>  drivers/pinctrl/sh-pfc/pfc-r8a7791.c |  153 +++++++++++++++++++++++++++++++
+>  1 file changed, 153 insertions(+)
+> 
+> Index: linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+> =================================> --- linux-pinctrl.orig/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+> +++ linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+> @@ -1726,6 +1726,119 @@ static const unsigned int audio_clkout_m
+>  	AUDIO_CLKOUT_MARK,
+>  };
+> 
+> +/* - CAN --------------------------------------------------------------- */
+
+[snip]
+
+> +static const unsigned int can_clk_c_pins[] = {
+> +	RCAR_GP_PIN(4, 31),
+
+Shouldn't this be (4, 30) ?
+
+> +};
+> 
+>  /* - DU ---------------------------------------------------------------- */
+> static const unsigned int du_rgb666_pins[] = {
+> @@ -4055,6 +4168,20 @@ static const struct sh_pfc_pin_group pin
+>  	SH_PFC_PIN_GROUP(audio_clk_b_b),
+>  	SH_PFC_PIN_GROUP(audio_clk_c),
+>  	SH_PFC_PIN_GROUP(audio_clkout),
+> +	SH_PFC_PIN_GROUP(can0_data_a),
+> +	SH_PFC_PIN_GROUP(can0_data_b),
+> +	SH_PFC_PIN_GROUP(can0_data_c),
+> +	SH_PFC_PIN_GROUP(can0_data_d),
+> +	SH_PFC_PIN_GROUP(can0_data_e),
+> +	SH_PFC_PIN_GROUP(can0_data_f),
+> +	SH_PFC_PIN_GROUP(can1_data_a),
+> +	SH_PFC_PIN_GROUP(can1_data_b),
+> +	SH_PFC_PIN_GROUP(can1_data_c),
+> +	SH_PFC_PIN_GROUP(can1_data_d),
+> +	SH_PFC_PIN_GROUP(can_clk_a),
+> +	SH_PFC_PIN_GROUP(can_clk_b),
+> +	SH_PFC_PIN_GROUP(can_clk_c),
+> +	SH_PFC_PIN_GROUP(can_clk_d),
+>  	SH_PFC_PIN_GROUP(du_rgb666),
+>  	SH_PFC_PIN_GROUP(du_rgb888),
+>  	SH_PFC_PIN_GROUP(du_clk_out_0),
+> @@ -4367,6 +4494,30 @@ static const char * const audio_clk_grou
+>  	"audio_clkout",
+>  };
+> 
+> +static const char * const can0_groups[] = {
+> +	"can0_data_a",
+> +	"can0_data_b",
+> +	"can0_data_c",
+> +	"can0_data_d",
+> +	"can0_data_e",
+> +	"can0_data_f",
+> +	"can_clk_a",
+> +	"can_clk_b",
+> +	"can_clk_c",
+> +	"can_clk_d",
+> +};
+> +
+> +static const char * const can1_groups[] = {
+> +	"can1_data_a",
+> +	"can1_data_b",
+> +	"can1_data_c",
+> +	"can1_data_d",
+> +	"can_clk_a",
+> +	"can_clk_b",
+> +	"can_clk_c",
+> +	"can_clk_d",
+
+Linus, can a group be listed as part of two different functions ?
+
+> +};
+> +
+>  static const char * const du_groups[] = {
+>  	"du_rgb666",
+>  	"du_rgb888",
+> @@ -4790,6 +4941,8 @@ static const char * const vin2_groups[]
+> 
+>  static const struct sh_pfc_function pinmux_functions[] = {
+>  	SH_PFC_FUNCTION(audio_clk),
+> +	SH_PFC_FUNCTION(can0),
+> +	SH_PFC_FUNCTION(can1),
+>  	SH_PFC_FUNCTION(du),
+>  	SH_PFC_FUNCTION(du0),
+>  	SH_PFC_FUNCTION(du1),
 
 -- 
 Regards,
