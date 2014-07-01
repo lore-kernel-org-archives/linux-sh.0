@@ -1,60 +1,123 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 09 Jul 2014 09:56:44 +0000
-Subject: renesas-drivers-2014-07-09-v3.16-rc4
-Message-Id: <CAMuHMdWkY-21cBJrPiT0fEBWPyALLSasHP2Rv0rMBswyHfMiQQ@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 01 Jul 2014 00:28:47 +0000
+Subject: [PATCH 7/8] ARM: shmobile: Move r8a7791 reset code to pm-r8a7791.c
+Message-Id: <8e26118d44c4877fa52dc8117692f3cc9af3c769.1404174157.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1404174157.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1404174157.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi all,
+From: Magnus Damm <damm+renesas@opensource.se>
 
-I've pushed renesas-drivers-2014-07-09-v3.16-rc4 to
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
-This tree is meant to ease development of platform support and drivers for
-Renesas ARM ("shmobile") SoCs. It's created by merging the for-next branches
-of various subsystem trees into the development branch of Simon Horman's
-renesas.git tree.
+Move r8a7791 specific reset vector setup code from the
+SMP glue code to PM code. This makes the code one step
+closer to allow PM operations such as Suspend-to-RAM
+in the case when SMP is disabled in the kernel config.
 
-Today's version is based on renesas-devel-v3.16-rc4-20140708, and contains
-the following for-next branches:
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+[horms+renesas@verge.net.au: updated for recent header file changes]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/pm-r8a7791.c  | 27 +++++++++++++++++++++++++--
+ arch/arm/mach-shmobile/smp-r8a7791.c | 24 ------------------------
+ 2 files changed, 25 insertions(+), 26 deletions(-)
 
-git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
-git://git.linaro.org/people/mturquette/linux.git#clk-next
-git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
-git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
-git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
-git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
-git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
-git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
-git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
-git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#asoc/for-next
-git://gitorious.org/linux-can/linux-can-next.git#master
-git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
-git://people.freedesktop.org/~airlied/linux#drm-next
-git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
-git://linuxtv.org/mchehab/media-next.git#master
-git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
-git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
-git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
-git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
-git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
-git://git.infradead.org/users/vkoul/slave-dma.git#next
-git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
-git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
+diff --git a/arch/arm/mach-shmobile/pm-r8a7791.c b/arch/arm/mach-shmobile/pm-r8a7791.c
+index b7e6513..c44304c 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7791.c
++++ b/arch/arm/mach-shmobile/pm-r8a7791.c
+@@ -11,12 +11,17 @@
+  */
+ 
+ #include <linux/kernel.h>
+-
++#include <linux/smp.h>
+ #include <asm/io.h>
+-
++#include "common.h"
+ #include "pm-rcar.h"
+ #include "r8a7791.h"
+ 
++#define RST		0xe6160000
++#define CA15BAR		0x0020
++#define CA15RESCNT	0x0040
++#define RAM		0xe6300000
++
+ /* SYSC */
+ #define SYSCIER 0x0c
+ #define SYSCIMR 0x10
+@@ -40,10 +45,28 @@ static inline void r8a7791_sysc_init(void) {}
+ 
+ void __init r8a7791_pm_init(void)
+ {
++	void __iomem *p;
++	u32 bar;
+ 	static int once;
+ 
+ 	if (once++)
+ 		return;
+ 
++	/* RAM for jump stub, because BAR requires 256KB aligned address */
++	p = ioremap_nocache(RAM, shmobile_boot_size);
++	memcpy_toio(p, shmobile_boot_vector, shmobile_boot_size);
++	iounmap(p);
++
++	/* setup reset vectors */
++	p = ioremap_nocache(RST, 0x63);
++	bar = (RAM >> 8) & 0xfffffc00;
++	writel_relaxed(bar, p + CA15BAR);
++	writel_relaxed(bar | 0x10, p + CA15BAR);
++
++	/* enable clocks to all CPUs */
++	writel_relaxed((readl_relaxed(p + CA15RESCNT) & ~0x0f) | 0xa5a50000,
++		       p + CA15RESCNT);
++	iounmap(p);
++
+ 	r8a7791_sysc_init();
+ }
+diff --git a/arch/arm/mach-shmobile/smp-r8a7791.c b/arch/arm/mach-shmobile/smp-r8a7791.c
+index 2482555..df086aa 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7791.c
++++ b/arch/arm/mach-shmobile/smp-r8a7791.c
+@@ -24,35 +24,11 @@
+ #include "r8a7791.h"
+ #include "rcar-gen2.h"
+ 
+-#define RST		0xe6160000
+-#define CA15BAR		0x0020
+-#define CA15RESCNT	0x0040
+-#define RAM		0xe6300000
+-
+ static void __init r8a7791_smp_prepare_cpus(unsigned int max_cpus)
+ {
+-	void __iomem *p;
+-	u32 bar;
+-
+ 	/* let APMU code install data related to shmobile_boot_vector */
+ 	shmobile_smp_apmu_prepare_cpus(max_cpus);
+ 
+-	/* RAM for jump stub, because BAR requires 256KB aligned address */
+-	p = ioremap_nocache(RAM, shmobile_boot_size);
+-	memcpy_toio(p, shmobile_boot_vector, shmobile_boot_size);
+-	iounmap(p);
+-
+-	/* setup reset vectors */
+-	p = ioremap_nocache(RST, 0x63);
+-	bar = (RAM >> 8) & 0xfffffc00;
+-	writel_relaxed(bar, p + CA15BAR);
+-	writel_relaxed(bar | 0x10, p + CA15BAR);
+-
+-	/* enable clocks to all CPUs */
+-	writel_relaxed((readl_relaxed(p + CA15RESCNT) & ~0x0f) | 0xa5a50000,
+-		       p + CA15RESCNT);
+-	iounmap(p);
+-
+ 	r8a7791_pm_init();
+ 	shmobile_smp_apmu_suspend_init();
+ }
+-- 
+2.0.0.rc2
 
-If anything is missing, please tell me.
-
-Thanks for your comments!
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
