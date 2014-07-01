@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Jul 2014 00:28:08 +0000
-Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Defconfig Updates for v3.17
-Message-Id: <cover.1404172763.git.horms+renesas@verge.net.au>
+Date: Tue, 01 Jul 2014 00:28:19 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM Based SoC DT Updates for v3.17
+Message-Id: <cover.1404174433.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1381222967.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
@@ -12,34 +12,43 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hi Olof, Hi Kevin, Hi Arnd,
 
-Please consider these Second Round of Renesas ARM Based SoC Defconfig
-Updates for v3.17.
+Please consider these Second Round of Renesas ARM Based SoC DT Updates
+for v3.17.
 
 This pull request is based on the previous round of
-such requests, tagged as renesas-defconfig-for-v3.17,
+such requests, tagged as renesas-dt-for-v3.17,
 which I have already sent a pull-request for.
 
 
-The following changes since commit 468c570ed078f0326745bfe85868adb925659502:
+The following changes since commit 09abd1fd11f98d6abde9c23244234170e7e36c2f:
 
-  ARM: shmobile: Enable CPUFREQ configuration (2014-06-16 19:44:34 +0900)
+  ARM: shmobile: r8a7791: add R-Car sound support on DTSI (2014-06-17 19:58:32 +0900)
 
 are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-defconfig2-for-v3.17
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-dt2-for-v3.17
 
-for you to fetch changes up to c61010050d3baa3e1a3964bec7e62437d21107c6:
+for you to fetch changes up to 150c8ad40808189423002ea9fc6a858a3a59e6dc:
 
-  ARM: shmobile: Enable genmai board in multiplatform defconfig (2014-06-25 16:46:31 +0900)
-
-----------------------------------------------------------------
-Second Round of Renesas ARM Based SoC Defconfig Updates for v3.17
-
-* Enable genmai board in multiplatform defconfig
+  ARM: shmobile: r8a7791: add DVC support for sound node on DTSI (2014-06-28 09:02:19 +0900)
 
 ----------------------------------------------------------------
-Simon Horman (1):
-      ARM: shmobile: Enable genmai board in multiplatform defconfig
+Second Round of Renesas ARM Based SoC DT Updates for v3.17
 
- arch/arm/configs/shmobile_defconfig | 2 ++
- 1 file changed, 2 insertions(+)
+* Extend hardware coverage
+  - Add DVC support for sound nodes on r8a7791 and r8a7790
+  - Enable internal PCI on r8a7790/lager
+
+----------------------------------------------------------------
+Ben Dooks (2):
+      ARM: shmobile: r8a7790: add internal PCI bridge nodes
+      ARM: shmobile: lager: enable internal PCI
+
+Kuninori Morimoto (2):
+      ARM: shmobile: r8a7790: add DVC support for sound node on DTSI
+      ARM: shmobile: r8a7791: add DVC support for sound node on DTSI
+
+ arch/arm/boot/dts/r8a7790-lager.dts | 33 ++++++++++++++++++
+ arch/arm/boot/dts/r8a7790.dtsi      | 67 +++++++++++++++++++++++++++++++++++++
+ arch/arm/boot/dts/r8a7791.dtsi      |  7 ++++
+ 3 files changed, 107 insertions(+)
