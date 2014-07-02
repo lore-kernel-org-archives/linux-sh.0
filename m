@@ -1,74 +1,65 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 29 Jul 2014 08:46:02 +0000
-Subject: [PATCH 06/10 v2] mmc: tmio: check ILL_FUNC instead of CBSY
-Message-Id: <87egx4o8mw.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 02 Jul 2014 14:23:35 +0000
+Subject: [GIT PULL FOR v3.17] Renesas CMT, MTU2 and TMU timers DT support
+Message-Id: <2296815.Nb0BXfBtnT@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
-	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
-	<53AD638C.5060907@renesas.com>
-	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
-	<87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
+References: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
-Cc: Ian Molton <ian@mnementh.co.uk>, TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, ryo.kataoka.wt@renesas.com, shinobu.uehara.xc@renesas.com, kouei.abe.cp@renesas.com, cm-hiep@jinso.co.jp, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Hi Daniel,
 
-Some controllers need to check SD bus status when writing data.
-Then, it checks ILL_FUNC bit on SD_INFO2 register,
-and this method is controlled via TMIO_MMC_HAS_IDLE_WAIT flags.
-Same method is required on tmio_mmc_data_irq() which will
-be called after writing data.
+Could you please merge pull the following changes for v3.17 ? They have 
+previously been posted as "[PATCH v4] Renesas CMT, MTU2 and TMU timers DT 
+support". The only change compared to that version is a rebase on top of 
+v3.16-rc3.
 
-Current driver is checking CBSY bit for this purpose,
-but, some controllers doesn't have CBSY bit.
-This patch checks ILL_FUNC bit instead of CBSY bit
-if it has TMIO_MMC_HAS_IDLE_WAIT flags
+As last time I have board and SoC changes that depend on the driver changes 
+and that will need to go through Simon's tree. Could you thus please provide a 
+stable branch based on one of the v3.16-rc tags ?
 
-[Kuninori Morimoto: tidyuped for upstreaming]
+The following changes since commit 4c834452aad01531db949414f94f817a86348d59:
 
-Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- drivers/mmc/host/tmio_mmc_pio.c |   13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
+  Linux 3.16-rc3 (2014-06-29 14:11:36 -0700)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index e51a993..b19d0cd 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -475,6 +475,9 @@ static void tmio_mmc_data_irq(struct tmio_mmc_host *host)
- 		goto out;
- 
- 	if (host->chan_tx && (data->flags & MMC_DATA_WRITE) && !host->force_pio) {
-+		u32 status = sd_ctrl_read32(host, CTL_STATUS);
-+		bool done = false;
-+
- 		/*
- 		 * Has all data been written out yet? Testing on SuperH showed,
- 		 * that in most cases the first interrupt comes already with the
-@@ -483,7 +486,15 @@ static void tmio_mmc_data_irq(struct tmio_mmc_host *host)
- 		 * DATAEND interrupt with the BUSY bit set, in this cases
- 		 * waiting for one more interrupt fixes the problem.
- 		 */
--		if (!(sd_ctrl_read32(host, CTL_STATUS) & TMIO_STAT_CMD_BUSY)) {
-+		if (host->pdata->flags & TMIO_MMC_HAS_IDLE_WAIT) {
-+			if (status & TMIO_STAT_ILL_FUNC)
-+				done = true;
-+		} else {
-+			if (!(status & TMIO_STAT_CMD_BUSY))
-+				done = true;
-+		}
-+
-+		if (done) {
- 			tmio_mmc_disable_mmc_irqs(host, TMIO_STAT_DATAEND);
- 			tasklet_schedule(&host->dma_complete);
- 		}
+are available in the git repository at:
+
+  git://linuxtv.org/pinchartl/fbdev.git timers/upstream/drivers
+
+for you to fetch changes up to 64a653a02e47e3cfdab45d0b52c4522a09bed590:
+
+  clocksource: sh_mtu2: Add DT support (2014-07-02 16:01:53 +0200)
+
+----------------------------------------------------------------
+Laurent Pinchart (10):
+      clocksource: sh_cmt: Drop support for legacy platform data
+      clocksource: sh_cmt: Replace global spinlock with a per-device spinlock
+      clocksource: sh_tmu: Drop support for legacy platform data
+      clocksource: sh_tmu: Replace global spinlock with a per-device spinlock
+      clocksource: sh_mtu2: Drop support for legacy platform data
+      clocksource: sh_mtu2: Replace global spinlock with a per-device spinlock
+      clocksource: shmobile: Remove unused sh_timer_config members
+      clocksource: sh_cmt: Add DT support
+      clocksource: sh_tmu: Add DT support
+      clocksource: sh_mtu2: Add DT support
+
+ Documentation/devicetree/bindings/timer/renesas,cmt.txt |  47 +++++
+ .../devicetree/bindings/timer/renesas,mtu2.txt          |  39 ++++
+ Documentation/devicetree/bindings/timer/renesas,tmu.txt |  39 ++++
+ drivers/clocksource/sh_cmt.c                            | 233 ++++++---------
+ drivers/clocksource/sh_mtu2.c                           | 146 +++++----------
+ drivers/clocksource/sh_tmu.c                            | 127 ++++++-------
+ include/linux/sh_timer.h                                |   5 -
+ 7 files changed, 309 insertions(+), 327 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/timer/renesas,cmt.txt
+ create mode 100644 Documentation/devicetree/bindings/timer/renesas,mtu2.txt
+ create mode 100644 Documentation/devicetree/bindings/timer/renesas,tmu.txt
+
 -- 
-1.7.9.5
+Regards,
+
+Laurent Pinchart
 
