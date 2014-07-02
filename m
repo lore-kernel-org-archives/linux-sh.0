@@ -1,83 +1,41 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 29 Jul 2014 08:46:17 +0000
-Subject: [PATCH 07/10 v2] mmc: tmio: remove Renesas specific #ifdef
-Message-Id: <87d2coo8mh.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 02 Jul 2014 04:28:36 +0000
+Subject: [PATCH/RFC 0/6] ARM: shmobile: bockw: Enable SCI and TMU using DT
+Message-Id: <1404275322-26514-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
-	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
-	<53AD638C.5060907@renesas.com>
-	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
-	<87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
-Cc: Ian Molton <ian@mnementh.co.uk>, TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, ryo.kataoka.wt@renesas.com, shinobu.uehara.xc@renesas.com, kouei.abe.cp@renesas.com, cm-hiep@jinso.co.jp, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The purpose of this series is to enable SCI and TMU using DT
+on the r8a7778 (R-Car M1) based bockw when booting using DT reference.
 
-This patch adds new TMIO_MMC_HAVE_CTL_DMA_REG flag,
-and remove Renesas specific #ifdef from tmio driver
+This is the first batck of work by myself to convert DT reference
+board support to initialsie SCI and TMU devices using DT.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- drivers/mmc/host/sh_mobile_sdhi.c |    5 +++++
- drivers/mmc/host/tmio_mmc_dma.c   |    6 ++----
- include/linux/mfd/tmio.h          |    5 +++++
- 3 files changed, 12 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index ad00fb8..b6f94c8 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -235,6 +235,11 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	 */
- 	mmc_data->flags |= TMIO_MMC_SDIO_STATUS_QUIRK;
- 
-+	/*
-+	 * All SDHI have DMA control register
-+	 */
-+	mmc_data->flags |= TMIO_MMC_HAVE_CTL_DMA_REG;
-+
- 	if (of_id && of_id->data) {
- 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
- 		mmc_data->flags |= of_data->tmio_flags;
-diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
-index 1925170..8b1121e 100644
---- a/drivers/mmc/host/tmio_mmc_dma.c
-+++ b/drivers/mmc/host/tmio_mmc_dma.c
-@@ -28,10 +28,8 @@ void tmio_mmc_enable_dma(struct tmio_mmc_host *host, bool enable)
- 	if (!host->chan_tx || !host->chan_rx)
- 		return;
- 
--#if defined(CONFIG_SUPERH) || defined(CONFIG_ARCH_SHMOBILE)
--	/* Switch DMA mode on or off - SuperH specific? */
--	sd_ctrl_write16(host, CTL_DMA_ENABLE, enable ? 2 : 0);
--#endif
-+	if (host->pdata->flags & TMIO_MMC_HAVE_CTL_DMA_REG)
-+		sd_ctrl_write16(host, CTL_DMA_ENABLE, enable ? 2 : 0);
- }
- 
- void tmio_mmc_abort_dma(struct tmio_mmc_host *host)
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index a7493ae..adcb0cd 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -94,6 +94,11 @@
-  */
- #define TMIO_MMC_SDIO_STATUS_QUIRK	(1 << 8)
- 
-+/*
-+ * Some controllers have DMA enable/disable register
-+ */
-+#define TMIO_MMC_HAVE_CTL_DMA_REG	(1 << 9)
-+
- int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
- int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
- void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
+This series is depends on patches included in
+"[PATCH v4 00/19] Renesas CMT, MTU2 and TMU timers DT support" which
+applies on top of renesas-devel-v3.16-rc2-20140628.
+
+The patch "bockw: Initialise SCIF device using DT"
+depends on "serial: sh-sci: Add device tree support for r8a7778".
+
+Simon Horman (6):
+  ARM: shmobile: r8a7778: add SCI clock support for DT
+  ARM: shmobile: r8a7778: Add SCIF nodes
+  ARM: shmobile: bockw: Initialise SCIF device using DT
+  ARM: shmobile: r8a7778: add TMU clock support for DT
+  ARM: shmobile: r8a7778: Add TMU nodes
+  ARM: shmobile: bockw: Initialise TMU device using DT
+
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts | 18 +++++-
+ arch/arm/boot/dts/r8a7778.dtsi                | 84 +++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/clock-r8a7778.c        |  8 +++
+ arch/arm/mach-shmobile/setup-r8a7778.c        | 15 +++--
+ 4 files changed, 114 insertions(+), 11 deletions(-)
+
 -- 
-1.7.9.5
+2.0.0.rc2
 
