@@ -1,54 +1,79 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 30 Jul 2014 23:39:29 +0000
-Subject: Re: [GIT PULL v2] Renesas ARM Based SoC Boards Cleanups for v3.17
-Message-Id: <20140730233929.GA24845@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 02 Jul 2014 04:28:38 +0000
+Subject: [PATCH/RFC 2/6] ARM: shmobile: r8a7778: Add SCIF nodes
+Message-Id: <1404275322-26514-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1406166426.git.horms+renesas@verge.net.au>
- <20140730194521.GC18384@quad.lixom.net>
-In-Reply-To: <20140730194521.GC18384@quad.lixom.net>
+References: <1404275322-26514-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1404275322-26514-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jul 30, 2014 at 12:45:21PM -0700, Olof Johansson wrote:
-> On Thu, Jul 24, 2014 at 10:57:54AM +0900, Simon Horman wrote:
-> > Hi Olof, Hi Kevin, Hi Arnd,
-> > 
-> > Please consider these Renesas ARM based SoC boards cleanups for v3.17.
-> > 
-> > 
-> > This pull request is based on
-> > "Renesas ARM Based SoC DT Timers Updates for v3.17",
-> > tagged as renesas-dt-timers-for-v3.17,
-> > which I have sent a pull request for.
-> > 
-> > In this pull-request cleanups are added on top of new development
-> > due to the order in which the code was developed. In general
-> > we prefer the reverse ordering.
-> > 
-> > 
-> > v2 of this pull request is a rebase of v1 removing
-> > a merge of defconfig changes at the base of the pull-request.
-> > The motivation for that was to avoid attempts to use
-> > genmai_defconfig after the board code it relies on has been removed.
-> > Olof indicated he would prefer not to add that dependency.
-> > 
-> > 
-> > The following changes since commit 9394af4314554d15762585a3464cefaa2e6d0420:
-> > 
-> >   ARM: shmobile: genmai-reference: Enable MTU2 in device tree (2014-07-15 21:26:42 +0900)
-> > 
-> > are available in the git repository at:
-> > 
-> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup-boards-for-v3.17
-> > 
-> > for you to fetch changes up to d2904bb7cd21844ff5e720083b59a344487fcc9b:
-> > 
-> >   ARM: shmobile: r7s72100: Remove legacy board support (2014-07-24 10:32:53 +0900)
-> 
-> Given timing and dependencies here, please resend this for 3.18 instead as
-> a base cleanup branch. It doesn't do any harm to leave this in there until
-> then.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7778.dtsi | 48 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 48 insertions(+)
 
-Sure, will do.
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 3af0a21..55357dc 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -156,6 +156,54 @@
+ 		status = "disabled";
+ 	};
+ 
++	scif0: serial@ffe40000 {
++		compatible = "renesas,scif-r8a7778", "renesas,scif";
++		reg = <0xffe40000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 70 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	scif1: serial@ffe41000 {
++		compatible = "renesas,scif-r8a7778", "renesas,scif";
++		reg = <0xffe41000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 71 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	scif2: serial@ffe42000 {
++		compatible = "renesas,scif-r8a7778", "renesas,scif";
++		reg = <0xffe42000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 72 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	scif3: serial@ffe43000 {
++		compatible = "renesas,scif-r8a7778", "renesas,scif";
++		reg = <0xffe43000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	scif4: serial@ffe44000 {
++		compatible = "renesas,scif-r8a7778", "renesas,scif";
++		reg = <0xffe44000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	scif5: serial@ffe45000 {
++		compatible = "renesas,scif-r8a7778", "renesas,scif";
++		reg = <0xffe45000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
+ 	mmcif: mmc@ffe4e000 {
+ 		compatible = "renesas,sh-mmcif";
+ 		reg = <0xffe4e000 0x100>;
+-- 
+2.0.0.rc2
+
