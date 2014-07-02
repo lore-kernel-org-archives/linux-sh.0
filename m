@@ -1,98 +1,50 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 15 Jul 2014 09:16:35 +0000
-Subject: [PATCH 5/8] ARM: shmobile: r8a7740: Add SCIF nodes
-Message-Id: <fa12355b24a430729f34c349473b9c0a3d125679.1405398515.git.horms+renesas@verge.net.au>
+From: Mark Brown <broonie@kernel.org>
+Date: Wed, 02 Jul 2014 11:36:21 +0000
+Subject: Re: [PATCH 10/10 v2] ASoC: rsnd: add DT support to DVC
+Message-Id: <20140702113621.GG410@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="m0vRWufqUC70IDnR"
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1405398515.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1405398515.git.horms+renesas@verge.net.au>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+References: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
+ <8761jstphc.wl%kuninori.morimoto.gx@gmail.com>
+ <87r42gsaoa.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87r42gsaoa.wl%kuninori.morimoto.gx@renesas.com>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
 
-This describes all of the SCIF hardware of the r8a7740.
-Each node is disabled and may be enabled as necessary
-by board DTS files.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7740.dtsi | 63 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 63 insertions(+)
+--m0vRWufqUC70IDnR
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 55d29f4..bda18fb 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -156,6 +156,69 @@
- 		status = "disabled";
- 	};
- 
-+	scifa0: serial@e6c40000 {
-+		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
-+		reg = <0xe6c40000 0x100>;
-+		interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scifa1: serial@e6c50000 {
-+		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
-+		reg = <0xe6c50000 0x100>;
-+		interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scifa2: serial@e6c60000 {
-+		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
-+		reg = <0xe6c60000 0x100>;
-+		interrupts = <0 102 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scifa3: serial@e6c70000 {
-+		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
-+		reg = <0xe6c70000 0x100>;
-+		interrupts = <0 103 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scifa4: serial@e6c80000 {
-+		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
-+		reg = <0xe6c80000 0x100>;
-+		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scifa5: serial@e6cb0000 {
-+		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
-+		reg = <0xe6cb0000 0x100>;
-+		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scifa6: serial@e6cc0000 {
-+		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
-+		reg = <0xe6cc0000 0x100>;
-+		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scifa7: serial@e6cd0000 {
-+		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
-+		reg = <0xe6cd0000 0x100>;
-+		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scifb8: serial@e6c30000 {
-+		compatible = "renesas,scifb-r8a7740", "renesas,scifb";
-+		reg = <0xe6c30000 0x100>;
-+		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
- 	pfc: pfc@e6050000 {
- 		compatible = "renesas,pfc-r8a7740";
- 		reg = <0xe6050000 0x8000>,
--- 
-2.0.0
+On Sun, Jun 22, 2014 at 05:59:28PM -0700, Kuninori Morimoto wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>=20
+> Now, DVC can use DT
 
+Applied, thanks.
+
+--m0vRWufqUC70IDnR
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBAgAGBQJTs+6xAAoJELSic+t+oim9cPYP/R1LCF6BhubsCOQp+iQQbhF9
+9+/gZIg+MbxrgR6AUYWcHWL1M/3JV2IqxgYywPyaGTcueY/c7DVaRzfGDViwS2sL
+Ikuoa7gR2781zkCWQfLfZzsQuEBLxKswPFgqsQ3TyK+bKSuk23abv6Quok+ExNS7
+/UoKDFOpodtePUz724XR/8BS9M9sro7gKx4WH18zZc5HbAMofAAAr7ePnI5yLwiJ
+qKUztJDW2cRyGK/6S8Cc08ASXBQ8k8I1xqFMSxHvLa6U/dlbChPRF2sVOsykbZQm
+IEJsk3Cv5fIGdJ6EHvNt1AvkdiALfHx8mtwQUsILJVfT01yMPrrIVPQ8JiF6a08i
+Rauc2GzODw9p9p/9kzNFBv+sKdbPhM5NaMuUAw0exhcT309O3uUxK5dThadSkDLD
+4GO6Tn6dgFaOZ6Yr/SHvg/AmB8AfU4VFIV2/z6FNhWiOqv4PB2ZJxpIOFgqr8Lu/
+476WXAVBbVNUd7BWxhEx5qF47lWWbwKfLVX/JKjZ+7eTHRU0LnIIb54vEN+VqAED
+75+gBc71iq+3CifBFch9lJE6lm6CI3j4GIyiyetBjqfcD+wW2tKQEeUM59/l2Bds
+ZWH62f2vp2zE+ChrP5MBT/kGSLp6iu5z2sigdrWHGOubkAm+g+XHAHhS8bKztyQw
+LB8JVw11dger0zTIFTUo
+=BQSi
+-----END PGP SIGNATURE-----
+
+--m0vRWufqUC70IDnR--
