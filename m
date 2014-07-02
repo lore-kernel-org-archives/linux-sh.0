@@ -1,67 +1,21 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 15 Jul 2014 09:16:27 +0000
-Subject: [PATCH 3/4] ARM: shmobile: r8a7740: correct SCI clock support for DT
-Message-Id: <d1ec90f2875471df2c954f7cbd45b2389ff86aa2.1405398284.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 02 Jul 2014 22:39:14 +0000
+Subject: [PATCH 0/2] Add R8A7791/Henninger board CAN DT support
+Message-Id: <201407030239.15921.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1405398284.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1405398284.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-When initialising SCI devices their names will be .serial
-not .sci.
+Hello.
 
-This will be used when initialising SCI devices using DT
-until common clock framework support is added.
+   Here's the set of 2 patches against Simon Horman's 'renesas.git' repo,
+'renesas-devel-v3.16-rc3-20140701' tag. Here we add the CAN device tree support
+for the R8A7791-based Henninger board. It depends on the PFC CAN support and
+R-Car CAN device tree support patches posted yesterday in order to work.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/clock-r8a7740.c | 18 +++++++++---------
- 1 file changed, 9 insertions(+), 9 deletions(-)
+[1/2] ARM: shmobile: r8a7791: add CAN DT support
+[2/2] ARM: shmobile: henninger: add CAN0 DT support
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index 50931e3..68592b7 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -555,27 +555,27 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_ceu.1",	&mstp_clks[MSTP128]),
- 
- 	CLKDEV_DEV_ID("sh-sci.4",		&mstp_clks[MSTP200]),
--	CLKDEV_DEV_ID("e6c80000.sci",		&mstp_clks[MSTP200]),
-+	CLKDEV_DEV_ID("e6c80000.serial",	&mstp_clks[MSTP200]),
- 	CLKDEV_DEV_ID("sh-sci.3",		&mstp_clks[MSTP201]),
--	CLKDEV_DEV_ID("e6c70000.sci",		&mstp_clks[MSTP201]),
-+	CLKDEV_DEV_ID("e6c70000.serial",	&mstp_clks[MSTP201]),
- 	CLKDEV_DEV_ID("sh-sci.2",		&mstp_clks[MSTP202]),
--	CLKDEV_DEV_ID("e6c60000.sci",		&mstp_clks[MSTP202]),
-+	CLKDEV_DEV_ID("e6c60000.serial",	&mstp_clks[MSTP202]),
- 	CLKDEV_DEV_ID("sh-sci.1",		&mstp_clks[MSTP203]),
--	CLKDEV_DEV_ID("e6c50000.sci",		&mstp_clks[MSTP203]),
-+	CLKDEV_DEV_ID("e6c50000.serial",	&mstp_clks[MSTP203]),
- 	CLKDEV_DEV_ID("sh-sci.0",		&mstp_clks[MSTP204]),
--	CLKDEV_DEV_ID("e6c40000.sci",		&mstp_clks[MSTP204]),
-+	CLKDEV_DEV_ID("e6c40000.serial",	&mstp_clks[MSTP204]),
- 	CLKDEV_DEV_ID("sh-sci.8",		&mstp_clks[MSTP206]),
--	CLKDEV_DEV_ID("e6c30000.sci",		&mstp_clks[MSTP206]),
-+	CLKDEV_DEV_ID("e6c30000.serial",	&mstp_clks[MSTP206]),
- 	CLKDEV_DEV_ID("sh-sci.5",		&mstp_clks[MSTP207]),
--	CLKDEV_DEV_ID("e6cb0000.sci",		&mstp_clks[MSTP207]),
-+	CLKDEV_DEV_ID("e6cb0000.serial",	&mstp_clks[MSTP207]),
- 	CLKDEV_DEV_ID("sh-dma-engine.3",	&mstp_clks[MSTP214]),
- 	CLKDEV_DEV_ID("sh-dma-engine.2",	&mstp_clks[MSTP216]),
- 	CLKDEV_DEV_ID("sh-dma-engine.1",	&mstp_clks[MSTP217]),
- 	CLKDEV_DEV_ID("sh-dma-engine.0",	&mstp_clks[MSTP218]),
- 	CLKDEV_DEV_ID("sh-sci.7",		&mstp_clks[MSTP222]),
--	CLKDEV_DEV_ID("e6cd0000.sci",		&mstp_clks[MSTP222]),
-+	CLKDEV_DEV_ID("e6cd0000.serial",	&mstp_clks[MSTP222]),
- 	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
--	CLKDEV_DEV_ID("e6cc0000.sci",		&mstp_clks[MSTP230]),
-+	CLKDEV_DEV_ID("e6cc0000.serial",	&mstp_clks[MSTP230]),
- 
- 	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
- 	CLKDEV_DEV_ID("fe1f0000.sound",		&mstp_clks[MSTP328]),
--- 
-2.0.0
-
+WBR, Sergei
