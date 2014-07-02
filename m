@@ -1,46 +1,66 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 23 Jul 2014 12:33:24 +0000
-Subject: Re: [PATCH 02/11][RFC] ARM: shmobile: r8a7790: Add Audio DMAC peri peri devices to DT
-Message-Id: <53CFAB94.20508@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 02 Jul 2014 04:28:42 +0000
+Subject: [PATCH/RFC 6/6] ARM: shmobile: bockw: Initialise TMU device using DT
+Message-Id: <1404275322-26514-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <871ttcvlpl.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <871ttcvlpl.wl%kuninori.morimoto.gx@renesas.com>
+References: <1404275322-26514-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1404275322-26514-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Initialise TMU device using DT when booting bockw
+using DT-reference.
 
-On 07/23/2014 06:43 AM, Kuninori Morimoto wrote:
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-> Instantiate the Audio DMAC peri peri controllers
-> in the r8a7790 device tree.
+---
+N.B: This only enables the production serial port (scif0) and not the
+debug serial port. It is unclear to me if the debug port is scif1 or scif5.
+And if the required PFC support is in place. At the very least the
+latter appears to be missing from r8a7778-bockw-reference.dts.
+---
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts | 4 ++++
+ arch/arm/mach-shmobile/setup-r8a7778.c        | 3 +--
+ 2 files changed, 5 insertions(+), 2 deletions(-)
 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->   arch/arm/boot/dts/r8a7790.dtsi |    7 +++++++
->   1 file changed, 7 insertions(+)
-
-> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-> index 9f4fb9c..853a5d1 100644
-> --- a/arch/arm/boot/dts/r8a7790.dtsi
-> +++ b/arch/arm/boot/dts/r8a7790.dtsi
-> @@ -333,6 +333,13 @@
->   		dma-channels = <13>;
->   	};
->
-> +	audmapp: audio-dma-pp@0xec740000 {
-
-    As per the ePAPR standard, the node name must be "dma-controller". Also, 
-please drop "0x" from the unit-address part of the name.
-
-> +		compatible = "renesas,rcar-audmapp";
-> +		#dma-cells = <1>;
-> +
-> +		reg = <0 0xec740000 0 0x200>;
-> +	};
-> +
-
-WBR, Sergei
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index 5d14688..b70ef30 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -73,6 +73,10 @@
+ 	status = "okay";
+ };
+ 
++&tmu0 {
++	status = "okay";
++};
++
+ &pfc {
+ 	scif0_pins: serial0 {
+ 		renesas,groups = "scif0_data_a", "scif0_ctrl";
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index e218c46..575148d 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -293,8 +293,6 @@ void __init r8a7778_add_dt_devices(void)
+ 		l2x0_init(base, 0x00400000, 0xc20f0fff);
+ 	}
+ #endif
+-
+-	r8a7778_register_tmu(0);
+ }
+ 
+ /* HPB-DMA */
+@@ -502,6 +500,7 @@ static void __init r8a7778_register_hpb_dmae(void)
+ void __init r8a7778_add_standard_devices(void)
+ {
+ 	r8a7778_add_dt_devices();
++	r8a7778_register_tmu(0);
+ 	r8a7778_register_scif(0);
+ 	r8a7778_register_scif(1);
+ 	r8a7778_register_scif(2);
+-- 
+2.0.0.rc2
 
