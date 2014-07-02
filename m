@@ -1,39 +1,46 @@
-From: Tomasz Figa <tomasz.figa@gmail.com>
-Date: Sat, 05 Jul 2014 01:06:39 +0000
-Subject: Re: [PATCH] ARM: convert all "mov.* pc, reg" to "bx reg" for ARMv6+ (part1)
-Message-Id: <53B74F9F.8030604@gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 02 Jul 2014 22:43:23 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7791: add CAN DT support
+Message-Id: <201407030243.25237.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <E1X20mL-00083I-Sv@rmk-PC.arm.linux.org.uk>
-In-Reply-To: <E1X20mL-00083I-Sv@rmk-PC.arm.linux.org.uk>
+References: <201407030239.15921.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201407030239.15921.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Russell King <rmk+kernel@arm.linux.org.uk>, linux-arm-kernel@lists.infradead.org
-Cc: davinci-linux-open-source@linux.davincidsp.com, linux-samsung-soc@vger.kernel.org, kvm@vger.kernel.org, linux-sh@vger.kernel.org, linux-crypto@vger.kernel.org, linux-tegra@vger.kernel.org, xen-devel@lists.xenproject.org, linux-omap@vger.kernel.org, kvmarm@lists.cs.columbia.edu
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Russell,
+Define the generic R8A7791 parts of the CAN0/1 device nodes.
 
-On 01.07.2014 18:19, Russell King wrote:
-> ARMv6 and greater introduced a new instruction ("bx") which can be used
-> to return from function calls.  Recent CPUs perform better when the
-> "bx lr" instruction is used rather than the "mov pc, lr" instruction,
-> and this sequence is strongly recommended to be used by the ARM
-> architecture manual (section A.4.1.1).
-> 
-> We provide a new macro "ret" with all its variants for the condition
-> code which will resolve to the appropriate instruction.
-> 
-> Rather than doing this piecemeal, and miss some instances, change all
-> the "mov pc" instances to use the new macro, with the exception of
-> the "movs" instruction and the kprobes code.  This allows us to detect
-> the "mov pc, lr" case and fix it up - and also gives us the possibility
-> of deploying this for other registers depending on the CPU selection.
-> 
-> Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Build- and boot-tested on mach-s3c64xx.
+---
+ arch/arm/boot/dts/r8a7791.dtsi |   16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-Tested-by: Tomasz Figa <tomasz.figa@gmail.com>
-
-Best regards,
-Tomasz
+Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
++++ renesas/arch/arm/boot/dts/r8a7791.dtsi
+@@ -518,6 +518,22 @@
+ 		status = "disabled";
+ 	};
+ 
++	can0: can@e6e80000 {
++		compatible = "renesas,rcar-can";
++		reg = <0 0xe6e80000 0 0x1000>;
++		interrupts = <0 186 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7791_CLK_RCAN0>;
++		status = "disabled";
++	};
++
++	can1: can@e6e88000 {
++		compatible = "renesas,rcar-can";
++		reg = <0 0xe6e88000 0 0x1000>;
++		interrupts = <0 187 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7791_CLK_RCAN1>;
++		status = "disabled";
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
