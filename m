@@ -1,108 +1,54 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 18 Jul 2014 23:50:18 +0000
-Subject: [PATCH v2 1/8] dmaengine: sh: Rework Kconfig and Makefile
-Message-Id: <1405727425-6237-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 03 Jul 2014 12:02:45 +0000
+Subject: [PATCH v6] ARM: shmobile: genmai reference dts: Add RSPI node
+Message-Id: <1404388965-4853-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Separate helpers and drivers in the Kconfig and Makefile to improve
-readability and move the CONFIG_OF dependency from the Makefile to
-Kconfig.
+Add SPI device for RSPI on Genmai.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+On this board, only rspi4 is in use. Its bus contains a single device
+(a wm8978 audio codec), for which no bindings are defined yet.
 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-
-Changes since v1:
-
-- Replace CONFIG_OF with OF in Kconfig
+v6:
+  - Rebased on top of renesas-devel-v3.16-rc3-20140701,
+  - Dropped pinctrl settings, as the pinctrl driver is not yet integrated.
+v5:
+  - Rebased on top of renesas-devel-v3.14-rc1-20140204
+v4:
+  - No changes
+v3:
+  - No changes
+v2:
+  - Use generic "codec" instead of specific "wm8978" node name.
 ---
- drivers/dma/sh/Kconfig  | 24 +++++++++++++++++++-----
- drivers/dma/sh/Makefile | 14 +++++++++++---
- 2 files changed, 30 insertions(+), 8 deletions(-)
+ arch/arm/boot/dts/r7s72100-genmai.dts |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/drivers/dma/sh/Kconfig b/drivers/dma/sh/Kconfig
-index 0f71981..0349125 100644
---- a/drivers/dma/sh/Kconfig
-+++ b/drivers/dma/sh/Kconfig
-@@ -2,21 +2,39 @@
- # DMA engine configuration for sh
- #
- 
-+#
-+# DMA Engine Helpers
-+#
+diff --git a/arch/arm/boot/dts/r7s72100-genmai.dts b/arch/arm/boot/dts/r7s72100-genmai.dts
+index 56849b55e1c2..20705467f4c9 100644
+--- a/arch/arm/boot/dts/r7s72100-genmai.dts
++++ b/arch/arm/boot/dts/r7s72100-genmai.dts
+@@ -57,3 +57,13 @@
+ &scif2 {
+ 	status = "okay";
+ };
 +
- config SH_DMAE_BASE
- 	bool "Renesas SuperH DMA Engine support"
--	depends on (SUPERH && SH_DMA) || ARCH_SHMOBILE || COMPILE_TEST
-+	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
-+	depends on !SUPERH || SH_DMA
- 	depends on !SH_DMA_API
- 	default y
- 	select DMA_ENGINE
- 	help
- 	  Enable support for the Renesas SuperH DMA controllers.
- 
-+#
-+# DMA Controllers
-+#
++&spi4 {
++	status = "okay";
 +
- config SH_DMAE
- 	tristate "Renesas SuperH DMAC support"
- 	depends on SH_DMAE_BASE
- 	help
- 	  Enable support for the Renesas SuperH DMA controllers.
- 
-+if SH_DMAE
-+
-+config SH_DMAE_R8A73A4
-+	def_bool y
-+	depends on ARCH_R8A73A4
-+	depends on OF
-+
-+endif
-+
- config SUDMAC
- 	tristate "Renesas SUDMAC support"
- 	depends on SH_DMAE_BASE
-@@ -34,7 +52,3 @@ config RCAR_AUDMAC_PP
- 	depends on SH_DMAE_BASE
- 	help
- 	  Enable support for the Renesas R-Car Audio DMAC Peripheral Peripheral controllers.
--
--config SHDMA_R8A73A4
--	def_bool y
--	depends on ARCH_R8A73A4 && SH_DMAE != n
-diff --git a/drivers/dma/sh/Makefile b/drivers/dma/sh/Makefile
-index 1ce88b2..0b13b8e 100644
---- a/drivers/dma/sh/Makefile
-+++ b/drivers/dma/sh/Makefile
-@@ -1,10 +1,18 @@
-+#
-+# DMA Engine Helpers
-+#
-+
- obj-$(CONFIG_SH_DMAE_BASE) += shdma-base.o shdma-of.o
--obj-$(CONFIG_SH_DMAE) += shdma.o
-+
-+#
-+# DMA Controllers
-+#
-+
- shdma-y := shdmac.o
--ifeq ($(CONFIG_OF),y)
- shdma-$(CONFIG_SHDMA_R8A73A4) += shdma-r8a73a4.o
--endif
- shdma-objs := $(shdma-y)
-+obj-$(CONFIG_SH_DMAE) += shdma.o
-+
- obj-$(CONFIG_SUDMAC) += sudmac.o
- obj-$(CONFIG_RCAR_HPB_DMAE) += rcar-hpbdma.o
- obj-$(CONFIG_RCAR_AUDMAC_PP) += rcar-audmapp.o
++	codec: codec@0 {
++		compatible = "wlf,wm8978";
++		reg = <0>;
++		spi-max-frequency = <5000000>;
++	};
++};
 -- 
-1.8.5.5
+1.7.9.5
 
