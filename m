@@ -1,84 +1,21 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Fri, 18 Jul 2014 09:11:26 +0000
-Subject: Re: [PATCH 05/13] thermal: rcar: Document SoC-specific bindings
-Message-Id: <877g3bghfn.wl%kuninori.morimoto.gx@gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 03 Jul 2014 19:37:02 +0000
+Subject: [PATCH v2 0/2] Add R8A7791/Henninger board CAN DT support
+Message-Id: <201407032337.03509.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404908623-909-1-git-send-email-geert+renesas@glider.be>
-	<1404908623-909-6-git-send-email-geert+renesas@glider.be>
-	<20140711091358.GK12420@verge.net.au>
-	<1405435735.28592.50.camel@rzhang1-toshiba>
-	<87mwcakpzw.wl%kuninori.morimoto.gx@renesas.com>
-	<20140718074619.GA12613@verge.net.au>
-In-Reply-To: <20140718074619.GA12613@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Zhang Rui <rui.zhang@intel.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Magnus Damm <magnus.damm@gmail.com>, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Eduardo Valentin <eduardo.valentin@ti.com>, linux-pm@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+Hello.
 
-Hi Simon
+   Here's the set of 2 patches against Simon Horman's 'renesas.git' repo,
+'renesas-devel-v3.16-rc3-20140701' tag. Here we add the CAN device tree support
+for the R8A7791-based Henninger board. It depends on the PFC CAN support and
+R-Car CAN device tree support patches posted recently in order to work.
 
-> 1. That the (in this case thermal) IP on the SoC's listed is known
->    to work with the driver using the generic (in this case
->    renesas,rcar-thermal) compatibility string.
-> 
-> 2. That if some incompatibility is subsequently found such that the
->    IP on SoC does function correctly using the generic compatibility
->    string or some new feature is to be enabled which is not generic
->    then it the driver should be updated with code that is triggered
->    by the SoC-specific compat string.
-> 3. That Soc dts(i) files should list the more specific SoC compat string
->    followed bu the generic compat string. In this way so long as the
->    driver only matches on the generic compat string it will be used. But
->    if the driver is updated match on the SoC-specific compat string
->    then it will be used instead. In this way dtbs should be forwards
->    compatible with driver updates.
-> 
->    I believe that this series includes patches to update the relevant
->    dtsi files accordingly.
-> 
-> In relation to verification, I believe all the SoCs listed in this patch
-> are known to work with the generic compat string. And they should continue
-> to work with this change because its only an documentation change. In the
-> future, if a SoC specific compat string is added to the driver code then
-> verification would need to occur.
-> 
-> From my point of view the documentation in rcar-thermal.txt is consistent
-> with the documentation for other drivers that use this binding scheme
-> (at least the ones that are documented :). I would not have any problems
-> examples but I don't think its entirely necessary.
+[1/2] ARM: shmobile: r8a7791: add CAN DT support
+[2/2] ARM: shmobile: henninger: add CAN0 DT support
 
-From my point of view,
-I have no object to adding SoC-specific compatible
-string on dts(i) file.
-It can be insurance for future (above 1, 2, 3).
-
-My concern is to add "known working SoC" to documentation.
-I have no objection if this listed "known working SoC" 
-was matched to "SoC-specific" compatible name.
-Because driver cares it specially.
-And, this case, documentation should list it.
-
-But this case, listed SoC are matched to "generic name".
-
-> +- compatible		: "renesas,thermal-<soctype>", "renesas,rcar-thermal"
-> +			  as fallback.
-> +			  Examples with soctypes are:
-> +			    - "renesas,thermal-r8a73a4" (R-Mobile AP6)
-> +			    - "renesas,thermal-r8a7779" (R-Car H1)
-> +			    - "renesas,thermal-r8a7790" (R-Car H2)
-> +			    - "renesas,thermal-r8a7791" (R-Car M2)
-
-From my (general?) point of view,
-it seems that these listed SoC doesn't match to "generic name".
-I mean that driver will do something special for these SoC.
-And, we will confuse if driver supports "SoC-specific" compatible name.
-(which one is special ? which one is generic ?)
-
-And, I don't want to keep updating
-"generic name matched SoC" on document.
-
-Best regards
----
-Kuninori Morimoto
+WBR, Sergei
