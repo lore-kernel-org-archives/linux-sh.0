@@ -1,156 +1,49 @@
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
-Date: Tue, 08 Jul 2014 14:59:31 +0000
-Subject: [PATCH 2/2] ARM: shmobile: lager: remove USBHS callbacks
-Message-Id: <1404831571-19817-2-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 03 Jul 2014 19:40:15 +0000
+Subject: [PATCH v2 2/2] ARM: shmobile: henninger: add CAN0 DT support
+Message-Id: <201407032340.16445.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404831571-19817-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1404831571-19817-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <201407032337.03509.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201407032337.03509.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Let the driver handle initialization and power control.
+Define the Henninger board dependent part of the CAN0 device node.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/mach-shmobile/board-lager.c | 109 +++++------------------------------
- 1 file changed, 15 insertions(+), 94 deletions(-)
+ arch/arm/boot/dts/r8a7791-henninger.dts |   11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index b8b2b44..0138bc5 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -420,84 +420,6 @@ static const struct resource usbhs_resources[] __initconst = {
- 	DEFINE_RES_IRQ(gic_spi(107)),
+Index: renesas/arch/arm/boot/dts/r8a7791-henninger.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-henninger.dts
++++ renesas/arch/arm/boot/dts/r8a7791-henninger.dts
+@@ -125,6 +125,11 @@
+ 				 "msiof0_tx";
+ 		renesas,function = "msiof0";
+ 	};
++
++	can0_pins: can0 {
++		renesas,groups = "can0_data_a", "can_clk_d";
++		renesas,function = "can0";
++	};
  };
  
--struct usbhs_private {
--	struct renesas_usbhs_platform_info info;
--	struct usb_phy *phy;
--};
--
--#define usbhs_get_priv(pdev) \
--	container_of(renesas_usbhs_get_info(pdev), struct usbhs_private, info)
--
--static int usbhs_power_ctrl(struct platform_device *pdev,
--				void __iomem *base, int enable)
--{
--	struct usbhs_private *priv = usbhs_get_priv(pdev);
--
--	if (!priv->phy)
--		return -ENODEV;
--
--	if (enable) {
--		int retval = usb_phy_init(priv->phy);
--
--		if (!retval)
--			retval = usb_phy_set_suspend(priv->phy, 0);
--		return retval;
--	}
--
--	usb_phy_set_suspend(priv->phy, 1);
--	usb_phy_shutdown(priv->phy);
--	return 0;
--}
--
--static int usbhs_hardware_init(struct platform_device *pdev)
--{
--	struct usbhs_private *priv = usbhs_get_priv(pdev);
--	struct usb_phy *phy;
--	int ret;
--
--	/* USB0 Function - use PWEN as GPIO input to detect DIP Switch SW5
--	 * setting to avoid VBUS short circuit due to wrong cable.
--	 * PWEN should be pulled up high if USB Function is selected by SW5
--	 */
--	gpio_request_one(RCAR_GP_PIN(5, 18), GPIOF_IN, NULL); /* USB0_PWEN */
--	if (!gpio_get_value(RCAR_GP_PIN(5, 18))) {
--		pr_warn("Error: USB Function not selected - check SW5 + SW6\n");
--		ret = -ENOTSUPP;
--		goto error;
--	}
--
--	phy = usb_get_phy_dev(&pdev->dev, 0);
--	if (IS_ERR(phy)) {
--		ret = PTR_ERR(phy);
--		goto error;
--	}
--
--	priv->phy = phy;
--	return 0;
-- error:
--	gpio_free(RCAR_GP_PIN(5, 18));
--	return ret;
--}
--
--static int usbhs_hardware_exit(struct platform_device *pdev)
--{
--	struct usbhs_private *priv = usbhs_get_priv(pdev);
--
--	if (!priv->phy)
--		return 0;
--
--	usb_put_phy(priv->phy);
--	priv->phy = NULL;
--
--	gpio_free(RCAR_GP_PIN(5, 18));
--	return 0;
--}
--
--static int usbhs_get_id(struct platform_device *pdev)
--{
--	return USBHS_GADGET;
--}
--
- static u32 lager_usbhs_pipe_type[] = {
- 	USB_ENDPOINT_XFER_CONTROL,
- 	USB_ENDPOINT_XFER_ISOC,
-@@ -517,20 +439,19 @@ static u32 lager_usbhs_pipe_type[] = {
- 	USB_ENDPOINT_XFER_BULK,
+ &scif0 {
+@@ -175,6 +180,12 @@
+ 	status = "okay";
  };
  
--static struct usbhs_private usbhs_priv __initdata = {
--	.info = {
--		.platform_callback = {
--			.power_ctrl	= usbhs_power_ctrl,
--			.hardware_init	= usbhs_hardware_init,
--			.hardware_exit	= usbhs_hardware_exit,
--			.get_id		= usbhs_get_id,
--		},
--		.driver_param = {
--			.buswait_bwait	= 4,
--			.pipe_type = lager_usbhs_pipe_type,
--			.pipe_size = ARRAY_SIZE(lager_usbhs_pipe_type),
--		},
--	}
-+static struct renesas_usbhs_platform_info usbhs_info __initdata = {
-+	.driver_param = {
-+		.buswait_bwait	= 4,
-+		.type = USBHS_TYPE_R8A7790,
-+		.pipe_type = lager_usbhs_pipe_type,
-+		.pipe_size = ARRAY_SIZE(lager_usbhs_pipe_type),
-+		/* USB0 Function - use PWEN as GPIO input to detect DIP
-+		 * Switch SW5 setting to avoid VBUS short circuit due to
-+		 * wrong cable.  PWEN should be pulled up high if USB
-+		 * Function is selected by SW5.
-+		 */
-+		.enable_gpio = RCAR_GP_PIN(5, 18),
-+	},
- };
- 
- static void __init lager_register_usbhs(void)
-@@ -540,8 +461,8 @@ static void __init lager_register_usbhs(void)
- 					  "renesas_usbhs", -1,
- 					  usbhs_resources,
- 					  ARRAY_SIZE(usbhs_resources),
--					  &usbhs_priv.info,
--					  sizeof(usbhs_priv.info));
-+					  &usbhs_info,
-+					  sizeof(usbhs_info));
- }
- 
- /* USBHS PHY */
--- 
-1.8.4.5
++&can0 {
++	pinctrl-0 = <&can0_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++};
++
+ &i2c2 {
+ 	pinctrl-0 = <&i2c2_pins>;
+ 	pinctrl-names = "default";
 
