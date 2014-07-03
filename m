@@ -1,34 +1,53 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 22 Jul 2014 08:36:55 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Shdma Updates for v3.17
-Message-Id: <20140722083655.GA1487@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 03 Jul 2014 08:48:34 +0000
+Subject: Re: [PATCH] dma: sh: inherit debug options from the subsystem for sh
+Message-Id: <20140703084834.GB3012@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="EuxKj2iCbKjpUGkD"
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1405557829.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1405557829.git.horms+renesas@verge.net.au>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <1404033022-3014-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1404033022-3014-1-git-send-email-wsa@the-dreams.de>
 To: linux-sh@vger.kernel.org
 
-On Mon, Jul 21, 2014 at 09:13:05PM +0530, Vinod Koul wrote:
-> On Thu, Jul 17, 2014 at 09:45:31AM +0900, Simon Horman wrote:
-> > Hi Vinod,
-> > 
-> > Please consider these Renesas shdma updates for v3.17.
-> > 
-> > 
-> > The following changes since commit 7171511eaec5bf23fb06078f59784a3a0626b38f:
-> > 
-> >   Linux 3.16-rc1 (2014-06-15 17:45:28 -1000)
-> > 
-> > are available in the git repository at:
-> > 
-> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-shdma-for-v3.17
-> > 
-> > for you to fetch changes up to 0cdbee33ea42bfd5f61f824e258a1a0944dd2a27:
-> > 
-> >   dmaengine: shdma: Use defines instead of hardcoded numbers (2014-07-15 18:02:29 +0900)
-> 
-> Merged, thanks
 
-Thanks
+--EuxKj2iCbKjpUGkD
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+Hi,
+
+> With dynamic debug, these flags dont make much sense unless you want something
+> to be printed *always* during boot.
+
+Yes, this was exactly what I wanted. So, for consistency reasons I
+copied the existing mechanism over to sh. If it turns out that the
+desired default is something different, I'll send patches for that.
+
+Thanks,
+
+   Wolfram
+
+
+--EuxKj2iCbKjpUGkD
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJTtRjiAAoJEBQN5MwUoCm27f8QALC0MlQ1PfQgRVtV/kbDeT3M
+DcN/AgeyzsDlnUIE+JHqxoQPit+kcElonjdtngtjBJLfOs9r7NSQNJZVy4i2GxOL
+LtMqd98fEUe9+OqyJ7cygZknsqBTlwBeDhBVGyjvgr+BMbSwZ1EwSkA3K1YyVaQe
+dn4iua2bdjpkp1U+01lOWyf2hJF/vvUg3Ej3oaUwvSwnfximKOqRBF+CmyrQzDQZ
+622E0ys24JxqsVJnVa0+MmhwS3ucFUKBGYXiHb5pdgm8Csvl7tv84D+mm04ZpcPy
+NO2LTNYCIuNzleGjbKNm/6dLwQFPf6A1ImPBQqVVSTMPkjLzAzQuSdy/Qve1HkiB
+0TT59w8j9Xv9l2eb1oCfMcwJnltB2uI+Ze9SN6EEfrUHbukUQ7MgSafRT1d9vWyz
+npCeQBT4s+JKuLDpmk8bGe9VhdeVyfP1DXyGsdYwBYtq+qjOceUfbxeKTRPQ0MUZ
+aAb8lQtSK+G/S0vRzTXsJtmbQZ+jd+QuIJ+bIjZseSsHT2uuYw+63NV7zCC4tXqf
+VC0gx41GZhUN1fmcCMxdNo8Ij2u1JMGienIs+Nx0J+KBw8POwJ0VDMWfx8qUMy8Z
+qczyhH5xEEGo9BUa2M3I7oSr4RgZbUShIQn1R02fvgSJJE+rlBk2LHNff5TTOaeY
+UDxmQhBRTGH+Hp3GSpU7
+=i6Lr
+-----END PGP SIGNATURE-----
+
+--EuxKj2iCbKjpUGkD--
