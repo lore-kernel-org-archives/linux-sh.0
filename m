@@ -1,35 +1,22 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 24 Jul 2014 01:57:41 +0000
-Subject: [PATCH 4/5] ARM: shmobile: r8a7740: add CMT1 clock support for DT
-Message-Id: <2e11179da78a56c2a44fc3fe097f2af8dc18f9d6.1406164563.git.horms+renesas@verge.net.au>
+From: David Miller <davem@davemloft.net>
+Date: Thu, 03 Jul 2014 00:38:03 +0000
+Subject: Re: [PATCH] sh_eth: remove checks around dev_kfree_skb() calls
+Message-Id: <20140702.173803.1384383650865317087.davem@davemloft.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1406164563.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1406164563.git.horms+renesas@verge.net.au>
+References: <201406280410.01146.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201406280410.01146.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: sergei.shtylyov@cogentembedded.com
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
 
-This will be used when initialising CMT1 device using DT
-until common clock framework support is added.
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 28 Jun 2014 04:10:00 +0400
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/clock-r8a7740.c | 1 +
- 1 file changed, 1 insertion(+)
+> Since consume_skb() (and hence dev_kfree_skb() macro) checks the passed pointer
+> for NULL, there's no need to check for NULL before invoking dev_kfree_skb().
+> 
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index 3f34b3f..2ffb560 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -602,6 +602,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("fck",	"sh-tmu.0",		&mstp_clks[MSTP125]),
- 	CLKDEV_ICK_ID("fck",	"fff80000.timer",	&mstp_clks[MSTP125]),
- 	CLKDEV_ICK_ID("fck",	"sh-cmt-48.1",		&mstp_clks[MSTP329]),
-+	CLKDEV_ICK_ID("fck",	"e6138000.timer",	&mstp_clks[MSTP329]),
- 	CLKDEV_ICK_ID("host",	"renesas_usbhs",	&mstp_clks[MSTP416]),
- 	CLKDEV_ICK_ID("func",	"renesas_usbhs",	&mstp_clks[MSTP407]),
- 	CLKDEV_ICK_ID("phy",	"renesas_usbhs",	&mstp_clks[MSTP406]),
--- 
-2.0.1
-
+Applied, thanks.
