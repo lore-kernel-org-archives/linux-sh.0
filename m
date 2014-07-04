@@ -1,37 +1,52 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 10 Jul 2014 00:16:17 +0000
-Subject: Re: [PATCH 0/2] usb: renesas_usbhs: gadget: fix for g_zero
-Message-Id: <874myq6pbl.wl%kuninori.morimoto.gx@renesas.com>
+From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+Date: Fri, 04 Jul 2014 00:19:51 +0000
+Subject: [PATCH v2] ARM: shmobile: Lager: Correct I2C bus for VDD MPU regulator
+Message-Id: <53B5F327.5040301@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <53BD27B0.9000304@renesas.com>
-In-Reply-To: <53BD27B0.9000304@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi
+I2C bus for VDD MPU regulator is IIC3, not I2C3.
 
-> From a5aea0fe3afcdfea82f08806856747e426ba8064 Mon Sep 17 00:00:00 2001
-> From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> Date: Wed, 9 Jul 2014 20:18:56 +0900
-> Subject: [PATCH 0/2] usb: renesas_usbhs: gadget: fix for g_zero
-> 
-> This patch fixes an issue that the renesas_usbhs driver in gadget mode
-> cannot work correctly even if I disabled DMAC of the driver when I used
-> the g_zero driver and the testusb tool.
-> 
-> Yoshihiro Shimoda (2):
->   usb: renesas_usbhs: fix usbhs_pipe_malloc() to re-enable a pipe.
->   usb: renesas_usbhs: gadget: fix re-enabling pipe without
->     re-connecting
-> 
->  drivers/usb/renesas_usbhs/mod_gadget.c |    2 ++
->  drivers/usb/renesas_usbhs/pipe.c       |   11 +++++++++++
->  drivers/usb/renesas_usbhs/pipe.h       |    1 +
->  3 files changed, 14 insertions(+)
+Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+---
+v2:
+  - re-based on top of tag renesas-devel-v3.16-rc3-20140701.
+  - removed redundant spaces.
 
-For all patches
+ arch/arm/boot/dts/r8a7790-lager.dts |   10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 544202b..ffe0523 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -215,9 +215,9 @@
+ 		renesas,function = "i2c2";
+ 	};
+ 
+-	i2c3_pins: i2c3 {
+-		renesas,groups = "i2c3";
+-		renesas,function = "i2c3";
++	iic3_pins: iic3 {
++		renesas,groups = "iic3";
++		renesas,function = "iic3";
+ 	};
+ 
+ 	usb0_pins: usb0 {
+@@ -368,9 +368,9 @@
+ 	pinctrl-names = "default";
+ };
+ 
+-&i2c3 {
++&iic3 {
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&i2c3_pins>;
++	pinctrl-0 = <&iic3_pins>;
+ 	status = "okay";
+ 
+ 	vdd_dvfs: regulator@68 {
+-- 
+1.7.9.5
