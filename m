@@ -1,80 +1,15 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Jul 2014 00:40:30 +0000
-Subject: [PATCH 3/8] ARM: shmobile: r8a7779: Add TMU devices to DT
-Message-Id: <0838e16e9115c7837d98acc19929dd8c537432ea.1405556312.git.horms+renesas@verge.net.au>
+From: Nick Krause <xerofoify@gmail.com>
+Date: Fri, 04 Jul 2014 04:34:58 +0000
+Subject: mach-shmobile: FIXME message in file pm-sh732.c
+Message-Id: <CAPDOMViqzoX_VAJKFB34LXLBVUBTbs4hWq-K_8+bC-m2NmahCQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1405556312.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1405556312.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-Add the TMU0, TMU1 and TMU2 counters to the r8a7779 device tree and make
-them disabled by default.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Simon Horman <horms+renesas@verge.net.au>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7779.dtsi | 42 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 42 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 58d0d95..463e3fd 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -266,6 +266,48 @@
- 		reg = <0xffc48000 0x38>;
- 	};
- 
-+	tmu0: timer@ffd80000 {
-+		compatible = "renesas,tmu";
-+		reg = <0xffd80000 0x30>;
-+		interrupts = <0 32 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 33 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 34 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_TMU0>;
-+		clock-names = "fck";
-+
-+		#renesas,channels = <3>;
-+
-+		status = "disabled";
-+	};
-+
-+	tmu1: timer@ffd81000 {
-+		compatible = "renesas,tmu";
-+		reg = <0xffd81000 0x30>;
-+		interrupts = <0 36 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 37 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 38 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_TMU1>;
-+		clock-names = "fck";
-+
-+		#renesas,channels = <3>;
-+
-+		status = "disabled";
-+	};
-+
-+	tmu2: timer@ffd82000 {
-+		compatible = "renesas,tmu";
-+		reg = <0xffd82000 0x30>;
-+		interrupts = <0 40 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 41 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 42 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_TMU2>;
-+		clock-names = "fck";
-+
-+		#renesas,channels = <3>;
-+
-+		status = "disabled";
-+	};
-+
- 	sata: sata@fc600000 {
- 		compatible = "renesas,rcar-sata";
- 		reg = <0xfc600000 0x2000>;
--- 
-2.0.0
-
+While searching for FIX ME messages when using cscope on the latest kernels I
+get a message on 68 of this file and was wondering what I need to define SMFRAM
+as in order for it to point to things needed to support this portion
+of the  hardware.
+Cheers Nick
