@@ -1,92 +1,42 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 29 Jul 2014 08:47:41 +0000
-Subject: [PATCH 10/10 v2] mmc: tmio: add actual clock support as option
-Message-Id: <878unco8k4.wl%kuninori.morimoto.gx@renesas.com>
+From: Fabian Frederick <fabf@skynet.be>
+Date: Fri, 04 Jul 2014 18:47:28 +0000
+Subject: [PATCH 1/1] arch/sh/kernel/time.c: use PTR_ERR_OR_ZERO
+Message-Id: <1404499648-14414-1-git-send-email-fabf@skynet.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
-	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
-	<53AD638C.5060907@renesas.com>
-	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
-	<87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
-Cc: Ian Molton <ian@mnementh.co.uk>, TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, ryo.kataoka.wt@renesas.com, shinobu.uehara.xc@renesas.com, kouei.abe.cp@renesas.com, cm-hiep@jinso.co.jp, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+To: linux-kernel@vger.kernel.org
+Cc: Fabian Frederick <fabf@skynet.be>, Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org
 
-From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+replace IS_ERR/PTR_ERR
 
-Some controller is supporting actual clock on SD_CLK_CTRL :: DIV[7:0].
-Renesas SH-Mobile SDHI doesn't support,
-but, Renesas R-Car SDHI supports it.
-This patch adds new TMIO_MMC_CLK_ACTUAL flag for it.
-
-[Kuninori Morimoto: tidyuped for upstreaming]
-
-Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Fabian Frederick <fabf@skynet.be>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |    6 ++++--
- drivers/mmc/host/tmio_mmc_pio.c   |    5 +++++
- include/linux/mfd/tmio.h          |    5 +++++
- 3 files changed, 14 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index b6f94c8..a6bdb83 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -49,12 +49,14 @@ static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
- };
+This is untested.
+
+ arch/sh/kernel/time.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/arch/sh/kernel/time.c b/arch/sh/kernel/time.c
+index 552c8fc..d6d0a98 100644
+--- a/arch/sh/kernel/time.c
++++ b/arch/sh/kernel/time.c
+@@ -80,10 +80,8 @@ static int __init rtc_generic_init(void)
+ 		return -ENODEV;
  
- static const struct sh_mobile_sdhi_of_data of_rcar_gen1_compatible = {
--	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
-+	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE |
-+			  TMIO_MMC_CLK_ACTUAL,
- 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
- };
+ 	pdev = platform_device_register_simple("rtc-generic", -1, NULL, 0);
+-	if (IS_ERR(pdev))
+-		return PTR_ERR(pdev);
  
- static const struct sh_mobile_sdhi_of_data of_rcar_gen2_compatible = {
--	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
-+	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE |
-+			  TMIO_MMC_CLK_ACTUAL,
- 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
- 	.capabilities2	= MMC_CAP2_NO_2BLKS_READ,
- 	.dma_rx_offset	= 0x2000,
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 1c5a631..895e713 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -150,6 +150,11 @@ static void tmio_mmc_set_clock(struct tmio_mmc_host *host, int new_clock)
- 		for (clock = host->mmc->f_min, clk = 0x80000080;
- 			new_clock >= (clock<<1); clk >>= 1)
- 			clock <<= 1;
-+
-+		/* 1/1 clock is option */
-+		if ((host->pdata->flags & TMIO_MMC_CLK_ACTUAL) &&
-+		    ((clk >> 22) & 0x1))
-+			clk |= 0xff;
- 	}
+-	return 0;
++	return PTR_ERR_OR_ZERO(pdev);
+ }
+ module_init(rtc_generic_init);
  
- 	if (host->set_clk_div)
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index adcb0cd..90436d5 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -99,6 +99,11 @@
-  */
- #define TMIO_MMC_HAVE_CTL_DMA_REG	(1 << 9)
- 
-+/*
-+ * Some controllers allows to set SDx actual clock
-+ */
-+#define TMIO_MMC_CLK_ACTUAL		(1 << 10)
-+
- int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
- int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
- void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
 -- 
-1.7.9.5
+1.9.1
 
