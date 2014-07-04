@@ -1,172 +1,64 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 29 Jul 2014 01:26:22 +0000
-Subject: Re: [PATCH] dmaengine: sh: Rename CONFIG_SHDMA_R8A73A4 to CONFIG_SH_DMAE_R8A73A4
-Message-Id: <20140729012622.GI19235@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 04 Jul 2014 13:53:32 +0000
+Subject: [GIT PULL v2 FOR v3.17] Renesas CMT, MTU2 and TMU timers DT support
+Message-Id: <1688088.sd0hOOj9CE@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1406575006-21319-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1406575006-21319-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <2296815.Nb0BXfBtnT@avalon>
+In-Reply-To: <2296815.Nb0BXfBtnT@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Jul 28, 2014 at 09:16:46PM +0200, Laurent Pinchart wrote:
-> Commit b1aad1586867 ("dmaengine: sh: Rework Kconfig and Makefile")
-> renamed the Kconfig symbol SHDMA_R8A73A4 to SH_DMAE_R8A73A4 but forgot
-> to rename two instances of CONFIG_SHDMA_R8A73A4. Rename them.
-> 
-> Reported-by: Paul Bolle <pebolle@tiscali.nl>
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->  drivers/dma/sh/Makefile | 2 +-
->  drivers/dma/sh/shdma.h  | 2 +-
->  2 files changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/drivers/dma/sh/Makefile b/drivers/dma/sh/Makefile
-> index cfc8268..2852f9d 100644
-> --- a/drivers/dma/sh/Makefile
-> +++ b/drivers/dma/sh/Makefile
-> @@ -9,7 +9,7 @@ obj-$(CONFIG_SH_DMAE_BASE) += shdma-base.o shdma-of.o
->  #
->  
->  shdma-y := shdmac.o
-> -shdma-$(CONFIG_SHDMA_R8A73A4) += shdma-r8a73a4.o
-> +shdma-$(CONFIG_SH_DMAE_R8A73A4) += shdma-r8a73a4.o
->  shdma-objs := $(shdma-y)
->  obj-$(CONFIG_SH_DMAE) += shdma.o
->  
-> diff --git a/drivers/dma/sh/shdma.h b/drivers/dma/sh/shdma.h
-> index 758a57b..2c0a969 100644
-> --- a/drivers/dma/sh/shdma.h
-> +++ b/drivers/dma/sh/shdma.h
-> @@ -62,7 +62,7 @@ struct sh_dmae_desc {
->  #define to_sh_dev(chan) container_of(chan->shdma_chan.dma_chan.device,\
->  				     struct sh_dmae_device, shdma_dev.dma_dev)
->  
-> -#ifdef CONFIG_SHDMA_R8A73A4
-> +#ifdef CONFIG_SH_DMAE_R8A73A4
->  extern const struct sh_dmae_pdata r8a73a4_dma_pdata;
->  #define r8a73a4_shdma_devid (&r8a73a4_dma_pdata)
->  #else
+Hi Daniel,
 
-Thanks Laurent,
+Could you please pull the following changes and drop the first version of this 
+pull request ? I've fixed one last typo noticed by Simon in patch 09/19.
 
-I have decided to squash this into "dmaengine: sh: Rework Kconfig and
-Makefile". I will push the following shortly:
+As last time I have board and SoC changes that depend on the driver changes
+and that will need to go through Simon's tree. Could you thus please provide
+a stable branch based on one of the v3.16-rc tags ?
 
+The following changes since commit 4c834452aad01531db949414f94f817a86348d59:
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+  Linux 3.16-rc3 (2014-06-29 14:11:36 -0700)
 
-[PATCH] dmaengine: sh: Rework Kconfig and Makefile
+are available in the git repository at:
 
-Separate helpers and drivers in the Kconfig and Makefile to improve
-readability and move the CONFIG_OF dependency from the Makefile to
-Kconfig.
+  git://linuxtv.org/pinchartl/fbdev.git timers/upstream/drivers
 
-[pebolle@tiscali.nl: reported need to rename SHDMA_R8A73A4 instances]
-Reported-by: Paul Bolle <pebolle@tiscali.nl>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-[horms+renesas@verge.net.au: squashed rename of SHDMA_R8A73A4 instances]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- drivers/dma/sh/Kconfig  | 24 +++++++++++++++++++-----
- drivers/dma/sh/Makefile | 16 ++++++++++++----
- drivers/dma/sh/shdma.h  |  2 +-
- 3 files changed, 32 insertions(+), 10 deletions(-)
+for you to fetch changes up to cca8d0596c4c7acb371ea1bc5eee9b404b30516a:
 
-diff --git a/drivers/dma/sh/Kconfig b/drivers/dma/sh/Kconfig
-index 0f71981..0349125 100644
---- a/drivers/dma/sh/Kconfig
-+++ b/drivers/dma/sh/Kconfig
-@@ -2,21 +2,39 @@
- # DMA engine configuration for sh
- #
- 
-+#
-+# DMA Engine Helpers
-+#
-+
- config SH_DMAE_BASE
- 	bool "Renesas SuperH DMA Engine support"
--	depends on (SUPERH && SH_DMA) || ARCH_SHMOBILE || COMPILE_TEST
-+	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
-+	depends on !SUPERH || SH_DMA
- 	depends on !SH_DMA_API
- 	default y
- 	select DMA_ENGINE
- 	help
- 	  Enable support for the Renesas SuperH DMA controllers.
- 
-+#
-+# DMA Controllers
-+#
-+
- config SH_DMAE
- 	tristate "Renesas SuperH DMAC support"
- 	depends on SH_DMAE_BASE
- 	help
- 	  Enable support for the Renesas SuperH DMA controllers.
- 
-+if SH_DMAE
-+
-+config SH_DMAE_R8A73A4
-+	def_bool y
-+	depends on ARCH_R8A73A4
-+	depends on OF
-+
-+endif
-+
- config SUDMAC
- 	tristate "Renesas SUDMAC support"
- 	depends on SH_DMAE_BASE
-@@ -34,7 +52,3 @@ config RCAR_AUDMAC_PP
- 	depends on SH_DMAE_BASE
- 	help
- 	  Enable support for the Renesas R-Car Audio DMAC Peripheral Peripheral controllers.
--
--config SHDMA_R8A73A4
--	def_bool y
--	depends on ARCH_R8A73A4 && SH_DMAE != n
-diff --git a/drivers/dma/sh/Makefile b/drivers/dma/sh/Makefile
-index 1ce88b2..0a5cfdb 100644
---- a/drivers/dma/sh/Makefile
-+++ b/drivers/dma/sh/Makefile
-@@ -1,10 +1,18 @@
-+#
-+# DMA Engine Helpers
-+#
-+
- obj-$(CONFIG_SH_DMAE_BASE) += shdma-base.o shdma-of.o
--obj-$(CONFIG_SH_DMAE) += shdma.o
-+
-+#
-+# DMA Controllers
-+#
-+
- shdma-y := shdmac.o
--ifeq ($(CONFIG_OF),y)
--shdma-$(CONFIG_SHDMA_R8A73A4) += shdma-r8a73a4.o
--endif
-+shdma-$(CONFIG_SH_DMAE_R8A73A4) += shdma-r8a73a4.o
- shdma-objs := $(shdma-y)
-+obj-$(CONFIG_SH_DMAE) += shdma.o
-+
- obj-$(CONFIG_SUDMAC) += sudmac.o
- obj-$(CONFIG_RCAR_HPB_DMAE) += rcar-hpbdma.o
- obj-$(CONFIG_RCAR_AUDMAC_PP) += rcar-audmapp.o
-diff --git a/drivers/dma/sh/shdma.h b/drivers/dma/sh/shdma.h
-index 758a57b..2c0a969 100644
---- a/drivers/dma/sh/shdma.h
-+++ b/drivers/dma/sh/shdma.h
-@@ -62,7 +62,7 @@ struct sh_dmae_desc {
- #define to_sh_dev(chan) container_of(chan->shdma_chan.dma_chan.device,\
- 				     struct sh_dmae_device, shdma_dev.dma_dev)
- 
--#ifdef CONFIG_SHDMA_R8A73A4
-+#ifdef CONFIG_SH_DMAE_R8A73A4
- extern const struct sh_dmae_pdata r8a73a4_dma_pdata;
- #define r8a73a4_shdma_devid (&r8a73a4_dma_pdata)
- #else
+  clocksource: sh_mtu2: Add DT support (2014-07-04 15:50:29 +0200)
+
+----------------------------------------------------------------
+Laurent Pinchart (10):
+      clocksource: sh_cmt: Drop support for legacy platform data
+      clocksource: sh_cmt: Replace global spinlock with a per-device spinlock
+      clocksource: sh_tmu: Drop support for legacy platform data
+      clocksource: sh_tmu: Replace global spinlock with a per-device spinlock
+      clocksource: sh_mtu2: Drop support for legacy platform data
+      clocksource: sh_mtu2: Replace global spinlock with a per-device spinlock
+      clocksource: shmobile: Remove unused sh_timer_config members
+      clocksource: sh_cmt: Add DT support
+      clocksource: sh_tmu: Add DT support
+      clocksource: sh_mtu2: Add DT support
+
+ Documentation/devicetree/bindings/timer/renesas,cmt.txt |  47 +++++
+ .../devicetree/bindings/timer/renesas,mtu2.txt          |  39 ++++
+ Documentation/devicetree/bindings/timer/renesas,tmu.txt |  39 ++++
+ drivers/clocksource/sh_cmt.c                            | 233 ++++++---------
+ drivers/clocksource/sh_mtu2.c                           | 146 +++++----------
+ drivers/clocksource/sh_tmu.c                            | 127 ++++++-------
+ include/linux/sh_timer.h                                |   5 -
+ 7 files changed, 309 insertions(+), 327 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/timer/renesas,cmt.txt
+ create mode 100644 Documentation/devicetree/bindings/timer/renesas,mtu2.txt
+ create mode 100644 Documentation/devicetree/bindings/timer/renesas,tmu.txt
+
 -- 
-2.0.1
+Regards,
+
+Laurent Pinchart
 
