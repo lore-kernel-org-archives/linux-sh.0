@@ -1,67 +1,42 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 09 Jul 2014 13:12:37 +0000
-Subject: [PATCH v5 1/8] ARM: shmobile: r8a7790: Add CMT devices to DT
-Message-Id: <1404911564-17380-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Fabian Frederick <fabf@skynet.be>
+Date: Fri, 04 Jul 2014 20:07:09 +0000
+Subject: [PATCH 1/1] arch/sh/mm/asids-debugfs.c: use PTR_ERR_OR_ZERO
+Message-Id: <1404504429-602-1-git-send-email-fabf@skynet.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404911564-17380-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1404911564-17380-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: Fabian Frederick <fabf@skynet.be>, Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org
 
-Add the CMT0 and CMT1 counters to the r8a7790 device tree and make them
-disabled by default.
+replace IS_ERR/PTR_ERR
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Fabian Frederick <fabf@skynet.be>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 32 ++++++++++++++++++++++++++++++++
- 1 file changed, 32 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index bdcb7f0..2e65c30 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -206,6 +206,38 @@
- 			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
- 	};
+This is untested.
+
+ arch/sh/mm/asids-debugfs.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/arch/sh/mm/asids-debugfs.c b/arch/sh/mm/asids-debugfs.c
+index 74c03ec..ecfc6b0 100644
+--- a/arch/sh/mm/asids-debugfs.c
++++ b/arch/sh/mm/asids-debugfs.c
+@@ -67,10 +67,8 @@ static int __init asids_debugfs_init(void)
+ 					   NULL, &asids_debugfs_fops);
+ 	if (!asids_dentry)
+ 		return -ENOMEM;
+-	if (IS_ERR(asids_dentry))
+-		return PTR_ERR(asids_dentry);
  
-+	cmt0: timer@ffca0000 {
-+		compatible = "renesas,cmt-48-gen2";
-+		reg = <0 0xffca0000 0 0x1004>;
-+		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7790_CLK_CMT0>;
-+		clock-names = "fck";
-+
-+		renesas,channels-mask = <0x60>;
-+
-+		status = "disabled";
-+	};
-+
-+	cmt1: timer@e6130000 {
-+		compatible = "renesas,cmt-48-gen2";
-+		reg = <0 0xe6130000 0 0x1004>;
-+		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 122 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 123 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 124 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 125 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 126 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 127 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_CMT1>;
-+		clock-names = "fck";
-+
-+		renesas,channels-mask = <0xff>;
-+
-+		status = "disabled";
-+	};
-+
- 	irqc0: interrupt-controller@e61c0000 {
- 		compatible = "renesas,irqc-r8a7790", "renesas,irqc";
- 		#interrupt-cells = <2>;
+-	return 0;
++	return PTR_ERR_OR_ZERO(asids_dentry);
+ }
+ module_init(asids_debugfs_init);
+ 
 -- 
-1.8.5.5
+1.9.1
 
