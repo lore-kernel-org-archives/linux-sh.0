@@ -1,49 +1,36 @@
-From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
-Date: Thu, 03 Jul 2014 01:05:01 +0000
-Subject: [PATCH] ARM: shmobile: Lager: Correct I2C bus for VDD MPU regulator
-Message-Id: <53B4AC3D.30801@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sat, 05 Jul 2014 20:57:22 +0000
+Subject: Re: [PATCH] ARM: shmobile: Lager: Correct I2C bus for VDD MPU regulator
+Message-Id: <CANqRtoTbvz9FGyVNwRimE1kDt2G2YX1MwSY37OFL=AtN5Dy3wg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <53B4AC3D.30801@renesas.com>
+In-Reply-To: <53B4AC3D.30801@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-I2C bus for VDD MPU regulator is IIC3, not I2C3.
+On Thu, Jul 3, 2014 at 3:05 AM, Khiem Nguyen
+<khiem.nguyen.xt@renesas.com> wrote:
+> I2C bus for VDD MPU regulator is IIC3, not I2C3.
+>
+> Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+> ---
+>  arch/arm/boot/dts/r8a7790-lager.dts |   10 +++++-----
+>  1 file changed, 5 insertions(+), 5 deletions(-)
 
-Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
----
-  arch/arm/boot/dts/r8a7790-lager.dts |   10 +++++-----
-  1 file changed, 5 insertions(+), 5 deletions(-)
+Hi Khiem-san,
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts 
-b/arch/arm/boot/dts/r8a7790-lager.dts
-index 0890d47..a8f32d7 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -215,9 +215,9 @@
-          renesas,function = "i2c2";
-      };
+Thanks for your patch. Can you please extend the commit message to
+include the reason behind this patch?
 
--    i2c3_pins: i2c3 {
--        renesas,groups = "i2c3";
--        renesas,function = "i2c3";
-+    iic3_pins: iic3 {
-+        renesas,groups = "iic3";
-+        renesas,function = "iic3";
-      };
-  };
+From my side this looks like a software policy change. Unless I'm
+mistaken both I2C3 and IIC3 share the same pins on the SoC, and
+because of that it should be possible to access that particular I2C
+bus already without any modification.
 
-@@ -353,9 +353,9 @@
-      pinctrl-names = "default";
-  };
+So please explain why you want to change this.
 
--&i2c3 {
-+&iic3 {
-      pinctrl-names = "default";
--    pinctrl-0 = <&i2c3_pins>;
-+    pinctrl-0 = <&iic3_pins>;
-      status = "okay";
+Cheers,
 
-      vdd_dvfs: regulator@68 {
--- 
-1.7.9.5
+/ magnus
