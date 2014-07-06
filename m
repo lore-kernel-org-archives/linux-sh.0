@@ -1,11 +1,9 @@
 From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Sun, 06 Jul 2014 17:28:57 +0000
+Date: Sun, 06 Jul 2014 18:42:55 +0000
 Subject: Re: [PATCH] machine_power_off: not only local_irq_disable but also do disable preemption
-Message-Id: <20140706172857.GV21766@n2100.arm.linux.org.uk>
+Message-Id: <20140706184255.GW21766@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAA-nRyoO_NmrD8aRa3OyVXz4b133Fxi0=biGXTzSPDuSuNJJxQ@mail.gmail.com>
- <20140705181015.GQ21766@n2100.arm.linux.org.uk>
- <CAA-nRyp5pPC2qZs7RhAXJdXaK_k4fKNZuq=yRTSTPLQsgPxqxQ@mail.gmail.com>
+References: <CAA-nRyp5pPC2qZs7RhAXJdXaK_k4fKNZuq=yRTSTPLQsgPxqxQ@mail.gmail.com>
  <20140705190105.GR21766@n2100.arm.linux.org.uk>
  <CAA-nRyo2Ts3o_B1jMS8vvLJanf13u=u2WyoqnL8bCF5svOOCew@mail.gmail.com>
  <20140705192634.GT21766@n2100.arm.linux.org.uk>
@@ -13,106 +11,91 @@ References: <CAA-nRyoO_NmrD8aRa3OyVXz4b133Fxi0=biGXTzSPDuSuNJJxQ@mail.gmail.com>
  <CAA-nRyo3T+JLpfE6M260Ws+Ddu4z3TS2fQy5sv_dETMTcYFscQ@mail.gmail.com>
  <20140706153542.GU21766@n2100.arm.linux.org.uk>
  <CAA-nRyppv-LruJK0NySQ_VGORP1+M1w++=k5rqeiC15Wc6Ks9g@mail.gmail.com>
-In-Reply-To: <CAA-nRyppv-LruJK0NySQ_VGORP1+M1w++=k5rqeiC15Wc6Ks9g@mail.gmail.com>
+ <20140706172857.GV21766@n2100.arm.linux.org.uk>
+ <CAA-nRyqaOoXKs9OfaLGObDAG3=Gey+7UoOYdjLUfv45kprqdFg@mail.gmail.com>
+In-Reply-To: <CAA-nRyqaOoXKs9OfaLGObDAG3=Gey+7UoOYdjLUfv45kprqdFg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Jul 06, 2014 at 09:22:56PM +0530, pawandeep oza wrote:
-> this is the stack trace I was analyzing...please find it below.
+On Sun, Jul 06, 2014 at 11:59:31PM +0530, pawandeep oza wrote:
+> Hi,
 > 
->  #0 [<c072df48>] (__schedule) from [<c072e3a0>]
+> thanks for your elaborate inputs.
 > 
->  #1 [<c072e3a0>] (preempt_schedule) from [<c072f244>]
->  #2 [<c072f244>] (_raw_spin_unlock_irq) from [<c0394468>]
->  #3 [<c0394468>] (__rpm_callback) from [<c03944b0>]
->  #4 [<c03944b0>] (rpm_callback) from [<c03957bc>]
+> So, the above code path has at least _three_ potentially very serious
+> bugs in it:
 > 
->  #5 [<c03957bc>] (rpm_resume) from [<c0395d18>]
->  #6 [<c0395d18>] (__pm_runtime_resume) from [<c04675b4>]
->  #7 [<c04675b4>] (sh_mobile_i2c_xfer) from [<c0460390>]
->  #8 [<c0460390>] (__i2c_transfer) from [<c0462094>]
+> 1. calling i2c_transfer() beneath pm_power_off() due to scheduling
+>    possibility
 > 
->  #9 [<c0462094>] (i2c_transfer) from [<c03b2738>]
->  #10 [<c03b2738>] (d2153_i2c_write_device) from [<c03b08b0>]
->  #11 [<c03b08b0>] (d2153_write) from [<c03b1574>]
->  #12 [<c03b1574>] (d2153_reg_write) from [<c03b2490>]
+> oza: this I have already fixed in the code by making i2c in poll mode in
+> shutdown case.
+> so it doesnt do schedule_timeout(.....) and it doesnt sleep anymore.
+> so bug 1 is no more there.
+> I have a patch, Can I submit that ?
 > 
->  #13 [<c03b2490>] (d2153_system_poweroff) from [<c0011278>]
->  #14 [<c0011278>] (machine_power_off) from [<c0047d58>]
->  #15 [<c0047d58>] (kernel_power_off) from [<c0048420>]
->  #16 [<c0048420>] (sys_reboot) from [<c0010240>]
+> 2. calling i2c_transfer() beneath pm_power_off() due to deadlock on
+>    bus access
+> 
+> 3. calling the runtime PM callbacks beneath pm_power_off() which result
+>    in interrupts being unexpectedly re-enabled.
+> 
+> if I understood right, you are suggesting to register driver shutdown
+> method ?
+> where syscore_shutdown will call them in order to solve 2 and 3 ?
+> if thats the case, I believe it is too early to trigger poweroff
+> at syscore_shutdown, because kernel_power_off calls it very early.
 
-Thanks.
+You didn't understand right.
 
-Right, so from the above, we can see that d2153_system_poweroff() is
-hooked into pm_power_off hook, which is called with IRQs disabled.
-So, the context which d2153_system_poweroff() is called from is
-_fundamentally_ one where scheduling and preemption are _not_
-permitted.
+Firstly, there's no need to get involved with the syscore stuff at all.
+All drivers in the system are notified of a clean system shutdown via
+a function in their driver structure.
 
-d2153_system_poweroff calls into the I2C code, which then calls the
-shmobile I2C driver.  The shmobile I2C driver then calls into the
-PM runtime stuff, which ends up re-enabling interrupts.  This is the
-first bug with the code, and is the one that you're hitting.  However,
-this is not the only bug.
+For example, struct platform_driver has a "shutdown" function pointer
+in it.  This is called fairly early in the shutdown sequence where it
+is still permitted to sleep, where preemption is possible, interrupts
+are still enabled etc.
 
-The second bug here is that i2c_transfer() is permitted to sleep,
-waiting for the transaction to complete.  As I've already stated, and
-as I've said above, scheduling is not allowed with interrupts disabled.
-What this means is that calling i2c_transfer() beneath pm_power_off()
-is not permitted.
+This is where you need to ensure that (2) and (3) are solved in the
+I2C driver.
 
-However, there's more problems here: what if one of the secondary CPUs
-which received the IPI was in the middle of using that very same I2C
-bus.  This _can_ deadlock no matter how you try and sort out that
-preemption and/or scheduling problem - because the I2C bus may already
-be in use but the CPU which was using it has been halted off via a STOP
-IPI, preventing it from ever completing the transaction.
+What I'm *not* saying is to use the driver shutdown function pointer
+as a replacement for pm_power_off(), as it would be too early, before
+the system has finished quiescing.  You still need to do stuff in
+pm_power_off().
 
-So, the above code path has at least _three_ potentially very serious
-bugs in it:
+What you need to do is to _prepare_ the system for pm_power_off() so
+that it is in a sane state where you _can_ safely access the I2C bus.
 
-1. calling i2c_transfer() beneath pm_power_off() due to scheduling
-   possibility
-2. calling i2c_transfer() beneath pm_power_off() due to deadlock on
-   bus access
-3. calling the runtime PM callbacks beneath pm_power_off() which result
-   in interrupts being unexpectedly re-enabled.
+> what I would still think is: even if we make the things right in driver,
+> still the solution would not be generic until make changes in uppermost
+> layer which is machine_power_off.
 
-I suspect that part of the problem here is that this "d2153" thing is a
-PMIC, and you need to write to it via I2C to tell it to turn the power
-off.
+No changes are needed there.
 
-Some of these problems can be mitigated:
+> if we cut the preemption from there, the things will be taken care at the
+> highest generic kernel layer rather then individual driver taking care of
+> the same.
 
-(2) can be worked around - the I2C driver receives a shutdown callback
-when the system is being rebooted or powered off.  The I2C driver can
-ensure that the bus is idle (if not, wait for the bus to become idle)
-before _safely_ disabling the I2C interface against further transactions.
-
-(3) can also be solved by the mechanism given above - the shutdown
-callback /can/ safely call the runtime PM helpers there, and, therefore,
-can lock the I2C interfaces into an active state for the shutdown or
-reboot operation.
-
-That means that when we hit pm_power_off(), we can be _sure_ that, firstly,
-no one else is using the I2C bus, and secondly, it is not in a runtime
-suspended state.
-
-However, that also means that /we/ can't use i2c_transfer() either - and
-in fact, that's a /good/ thing because i2c_transfer() may sleep on us,
-causing bug (1).
-
-So what we need is an out-of-band method for this - we don't have that
-though.  This is a problem which would need to be solved to the I2C
-maintainers satisfaction to make this kind of thing operate reliably.
+Please, get this idea of disabling preemption out of you head.  It is
+a /complete/ fallicy that the bug(s) you are seeing are caused by it.
+It's merely a symptom of an incorrectly thought out process.
 
 
-PS, it would've been nice had the email addresses not had typos.  I
-finally remembered to fix them and delete the one which bounces.  I've
-also added the shmobile people.
+The steps required to power off may have been correctly identified,
+but what has been totally missed by whoever started hitting that
+keyboard is to think about the _context_ which the code gets run.
+
+The answer is *not* to change the context in which the code is run.
+
+As I've already said, disabling preemption does NOT fix the problems.
+It papers over the problem you have found, but leaves other problems.
+
+Fix code properly.  Never paper over problems.  Papering over problems
+is not an acceptable bug fixing strategy.
 
 -- 
 FTTC broadband for 0.8mile line: now at 9.7Mbps down 460kbps up... slowly
