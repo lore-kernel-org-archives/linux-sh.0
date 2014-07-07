@@ -1,33 +1,97 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 09 Jul 2014 11:30:03 +0000
-Subject: [PATCH 1/2] usb: renesas_usbhs: fix usbhs_pipe_malloc() to re-enable a pipe.
-Message-Id: <53BD27BB.5050606@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 07 Jul 2014 07:54:34 +0000
+Subject: [PATCH v2 09/30] ARM: shmobile: ape6evm-reference: Initialise SCIF device using DT
+Message-Id: <1404719695-1634-10-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This patch fixes an issue that the driver cannot push a new data when
-a pipe is re-enabled after the pipe is queued.
+Initialise SCIF device using DT when booting ape6evm
+using DT reference.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- drivers/usb/renesas_usbhs/pipe.c |    1 +
- 1 file changed, 1 insertion(+)
+v2
+* First post
+---
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts | 14 +++++++++++---
+ arch/arm/mach-shmobile/setup-r8a73a4.c          | 12 ++++++------
+ 2 files changed, 17 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/usb/renesas_usbhs/pipe.c b/drivers/usb/renesas_usbhs/pipe.c
-index 7926e1c..239b889 100644
---- a/drivers/usb/renesas_usbhs/pipe.c
-+++ b/drivers/usb/renesas_usbhs/pipe.c
-@@ -710,6 +710,7 @@ struct usbhs_pipe *usbhs_pipe_malloc(struct usbhs_priv *priv,
- 	usbhsp_pipe_select(pipe);
- 	usbhsp_pipe_cfg_set(pipe, 0xFFFF, pipecfg);
- 	usbhsp_pipe_buf_set(pipe, 0xFFFF, pipebuf);
-+	usbhs_pipe_clear(pipe);
-
- 	usbhs_pipe_sequence_data0(pipe);
-
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+index 70b1fff..a860f32 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+@@ -16,6 +16,10 @@
+ 	model = "APE6EVM";
+ 	compatible = "renesas,ape6evm-reference", "renesas,r8a73a4";
+ 
++	aliases {
++		serial0 = &scifa0;
++	};
++
+ 	chosen {
+ 		bootargs = "console=ttySC0,115200 ignore_loglevel rw";
+ 	};
+@@ -90,9 +94,6 @@
+ };
+ 
+ &pfc {
+-	pinctrl-0 = <&scifa0_pins>;
+-	pinctrl-names = "default";
+-
+ 	scifa0_pins: serial0 {
+ 		renesas,groups = "scifa0_data";
+ 		renesas,function = "scifa0";
+@@ -123,6 +124,13 @@
+ 	status = "okay";
+ };
+ 
++&scifa0 {
++	pinctrl-0 = <&scifa0_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
+ &sdhi0 {
+ 	vmmc-supply = <&vcc_sdhi0>;
+ 	bus-width = <4>;
+diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
+index f470b3c..2e1ec5e 100644
+--- a/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
+@@ -189,12 +189,6 @@ static struct resource cmt1_resources[] = {
+ 
+ void __init r8a73a4_add_dt_devices(void)
+ {
+-	r8a73a4_register_scif(0);
+-	r8a73a4_register_scif(1);
+-	r8a73a4_register_scif(2);
+-	r8a73a4_register_scif(3);
+-	r8a73a4_register_scif(4);
+-	r8a73a4_register_scif(5);
+ 	r8a7790_register_cmt(1);
+ }
+ 
+@@ -289,6 +283,12 @@ static struct resource dma_resources[] = {
+ void __init r8a73a4_add_standard_devices(void)
+ {
+ 	r8a73a4_add_dt_devices();
++	r8a73a4_register_scif(0);
++	r8a73a4_register_scif(1);
++	r8a73a4_register_scif(2);
++	r8a73a4_register_scif(3);
++	r8a73a4_register_scif(4);
++	r8a73a4_register_scif(5);
+ 	r8a73a4_register_irqc(0);
+ 	r8a73a4_register_irqc(1);
+ 	r8a73a4_register_thermal();
 -- 
-1.7.9.5
+2.0.0.rc2
 
