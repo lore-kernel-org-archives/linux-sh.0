@@ -1,103 +1,49 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Jul 2014 00:40:32 +0000
-Subject: [PATCH 5/8] ARM: shmobile: koelsch-reference: Enable CMT0 in device tree
-Message-Id: <313a57857da567732cfb7f99947b96590e807461.1405556312.git.horms+renesas@verge.net.au>
+Date: Mon, 07 Jul 2014 07:54:32 +0000
+Subject: [PATCH v2 07/30] ARM: shmobile: r8a73a4: add SCI clock support for DT
+Message-Id: <1404719695-1634-8-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1405556312.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1405556312.git.horms+renesas@verge.net.au>
+References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This will be used when initialising SCI devices using DT
+until common clock framework support is added.
 
-No more device needs to be added from platform code when booting the
-reference platform, remove the now empty r8a7791_add_dt_devices()
-function completely.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Simon Horman <horms+renesas@verge.net.au>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7791-koelsch.dts            | 4 ++++
- arch/arm/mach-shmobile/board-koelsch-reference.c | 2 --
- arch/arm/mach-shmobile/r8a7791.h                 | 1 -
- arch/arm/mach-shmobile/setup-r8a7791.c           | 7 +------
- 4 files changed, 5 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 23486c0..8f36d4f 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -307,6 +307,10 @@
- 	};
- };
+---
+v2
+* First post
+---
+ arch/arm/mach-shmobile/clock-r8a73a4.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
+index 0f43149..49d1397 100644
+--- a/arch/arm/mach-shmobile/clock-r8a73a4.c
++++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
+@@ -574,11 +574,17 @@ static struct clk_lookup lookups[] = {
  
-+&cmt0 {
-+	status = "ok";
-+};
-+
- &sata0 {
- 	status = "okay";
- };
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index 3ff88c1..9db5e67 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -88,7 +88,6 @@ static void __init koelsch_add_du_device(void)
-  * devices until they get moved to DT.
-  */
- static const struct clk_name clk_names[] __initconst = {
--	{ "cmt0", "fck", "sh-cmt-48-gen2.0" },
- 	{ "du0", "du.0", "rcar-du-r8a7791" },
- 	{ "du1", "du.1", "rcar-du-r8a7791" },
- 	{ "lvds0", "lvds.0", "rcar-du-r8a7791" },
-@@ -97,7 +96,6 @@ static const struct clk_name clk_names[] __initconst = {
- static void __init koelsch_add_standard_devices(void)
- {
- 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
--	r8a7791_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 
- 	koelsch_add_du_device();
-diff --git a/arch/arm/mach-shmobile/r8a7791.h b/arch/arm/mach-shmobile/r8a7791.h
-index 86eae7b..c1bf7ab 100644
---- a/arch/arm/mach-shmobile/r8a7791.h
-+++ b/arch/arm/mach-shmobile/r8a7791.h
-@@ -2,7 +2,6 @@
- #define __ASM_R8A7791_H__
- 
- void r8a7791_add_standard_devices(void);
--void r8a7791_add_dt_devices(void);
- void r8a7791_clock_init(void);
- void r8a7791_pinmux_init(void);
- void r8a7791_pm_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index 8823324..64cb1d7 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -182,11 +182,6 @@ static const struct resource thermal_resources[] __initconst = {
- 					thermal_resources,		\
- 					ARRAY_SIZE(thermal_resources))
- 
--void __init r8a7791_add_dt_devices(void)
--{
--	r8a7791_register_cmt(0);
--}
--
- void __init r8a7791_add_standard_devices(void)
- {
- 	r8a7791_register_scif(0);
-@@ -204,7 +199,7 @@ void __init r8a7791_add_standard_devices(void)
- 	r8a7791_register_scif(12);
- 	r8a7791_register_scif(13);
- 	r8a7791_register_scif(14);
--	r8a7791_add_dt_devices();
-+	r8a7791_register_cmt(0);
- 	r8a7791_register_irqc(0);
- 	r8a7791_register_thermal();
- }
+ 	/* MSTP */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
++	CLKDEV_DEV_ID("e6c40000.serial", &mstp_clks[MSTP204]),
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
++	CLKDEV_DEV_ID("e6c50000.serial", &mstp_clks[MSTP203]),
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]),
++	CLKDEV_DEV_ID("e6c20000.serial", &mstp_clks[MSTP206]),
+ 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP207]),
++	CLKDEV_DEV_ID("e6c30000.serial", &mstp_clks[MSTP207]),
+ 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP216]),
++	CLKDEV_DEV_ID("e6ce0000.serial", &mstp_clks[MSTP216]),
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP217]),
++	CLKDEV_DEV_ID("e6cf0000.serial", &mstp_clks[MSTP217]),
+ 	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP218]),
+ 	CLKDEV_DEV_ID("e6700020.dma-controller", &mstp_clks[MSTP218]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
 -- 
-2.0.0
+2.0.0.rc2
 
