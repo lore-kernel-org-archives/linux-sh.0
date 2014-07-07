@@ -1,71 +1,41 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 28 Jul 2014 22:18:16 +0000
-Subject: Re: [PATCH] sh-pfc: r8a7791: fix CAN pin groups
-Message-Id: <1626639.i7sCJokkLX@avalon>
+From: Olof Johansson <olof@lixom.net>
+Date: Mon, 07 Jul 2014 00:10:54 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC Defconfig Updates for v3.17
+Message-Id: <20140707001054.GH5539@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201407290212.55656.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201407290212.55656.sergei.shtylyov@cogentembedded.com>
+References: <cover.1403487196.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487196.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Sergei,
-
-Thank you for the patch.
-
-On Tuesday 29 July 2014 02:12:55 Sergei Shtylyov wrote:
-> I had made last-minute changes before submitting the patch "sh-pfc: r8a7791:
-> add CAN pin groups"; now I'm seeing that they weren't complete: I had
-> missed update to the pin group names in pin[01]_groups[]. Drop the "_a"
-> suffixes there.
+On Mon, Jun 23, 2014 at 11:25:34AM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
 > 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
-> The patch is against the 'devel' branch of Linus W.'s 'linux-pinctrl.git'
-> repo.
+> Please consider these Renesas ARM based SoC defconfig updates for v3.17.
 > 
->  drivers/pinctrl/sh-pfc/pfc-r8a7791.c |    8 ++++----
->  1 file changed, 4 insertions(+), 4 deletions(-)
 > 
-> Index: linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
-> =================================> --- linux-pinctrl.orig/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
-> +++ linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
-> @@ -4509,24 +4509,24 @@ static const char * const audio_clk_grou
->  };
+> The following changes since commit 7171511eaec5bf23fb06078f59784a3a0626b38f:
 > 
->  static const char * const can0_groups[] = {
-> -	"can0_data_a",
-> +	"can0_data",
->  	"can0_data_b",
->  	"can0_data_c",
->  	"can0_data_d",
->  	"can0_data_e",
->  	"can0_data_f",
-> -	"can_clk_a",
-> +	"can_clk",
->  	"can_clk_b",
->  	"can_clk_c",
->  	"can_clk_d",
->  };
+>   Linux 3.16-rc1 (2014-06-15 17:45:28 -1000)
 > 
->  static const char * const can1_groups[] = {
-> -	"can1_data_a",
-> +	"can1_data",
->  	"can1_data_b",
->  	"can1_data_c",
->  	"can1_data_d",
-> -	"can_clk_a",
-> +	"can_clk",
->  	"can_clk_b",
->  	"can_clk_c",
->  	"can_clk_d",
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-defconfig-for-v3.17
+> 
+> for you to fetch changes up to 468c570ed078f0326745bfe85868adb925659502:
+> 
+>   ARM: shmobile: Enable CPUFREQ configuration (2014-06-16 19:44:34 +0900)
+> 
+> ----------------------------------------------------------------
+> Renesas ARM Based SoC Defconfig Updates for v3.17
+> 
+> * Enable Marzen board and r8a7779 SoC, CPUFREQ and PM_RUNTIME in
+>   shmobile (multiplatform) defconfig
+> * Enable LED support in armadillo800eva defconfig
 
--- 
-Regards,
+Merged into next/defconfig. Thanks.
 
-Laurent Pinchart
 
+-Olof
