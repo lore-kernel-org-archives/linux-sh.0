@@ -1,84 +1,50 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Sat, 12 Jul 2014 11:49:28 +0000
-Subject: [PATCH 2/5] i2c: eg20t: Remove suspension check
-Message-Id: <1405165771-8732-2-git-send-email-hechtb@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 07 Jul 2014 06:47:37 +0000
+Subject: [PATCH 2/3] ARM: shmobile: marzen: Consistently use tabs for indentation
+Message-Id: <1404715658-31050-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405165771-8732-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1405165771-8732-1-git-send-email-hechtb-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+References: <1404715658-31050-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1404715658-31050-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
-Cc: Linux-SH <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tomoya MORINAGA <tomoya.rohm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Naveen Krishna Chatradhi <ch.naveen-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, Taekgyun Ko <taeggyun.ko-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, Ben Dooks <ben-Y5A6D6n0/KfQXOPxS62xeg@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-We now take care of suspension in the i2c core code. So we can remove this
-check here.
+Unify white space usage by consistently using tabs for indentation.
 
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/i2c/busses/i2c-eg20t.c | 15 ---------------
- 1 file changed, 15 deletions(-)
+ arch/arm/boot/dts/r8a7779-marzen.dts | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-eg20t.c b/drivers/i2c/busses/i2c-eg20t.c
-index a44ea13..aae0413 100644
---- a/drivers/i2c/busses/i2c-eg20t.c
-+++ b/drivers/i2c/busses/i2c-eg20t.c
-@@ -162,15 +162,12 @@ struct i2c_algo_pch_data {
-  * struct adapter_info - This structure holds the adapter information for the
- 			 PCH i2c controller
-  * @pch_data:		stores a list of i2c_algo_pch_data
-- * @pch_i2c_suspended:	specifies whether the system is suspended or not
-- *			perhaps with more lines and words.
-  * @ch_num:		specifies the number of i2c instance
-  *
-  * pch_data has as many elements as maximum I2C channels
-  */
- struct adapter_info {
- 	struct i2c_algo_pch_data pch_data[PCH_I2C_MAX_DEV];
--	bool pch_i2c_suspended;
- 	int ch_num;
+diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
+index 20b1768..5745555 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen.dts
+@@ -112,17 +112,17 @@
  };
  
-@@ -677,13 +674,6 @@ static s32 pch_i2c_xfer(struct i2c_adapter *i2c_adap,
- 	if (ret)
- 		return ret;
+ &scif2 {
+-       pinctrl-0 = <&scif2_pins>;
+-       pinctrl-names = "default";
++	pinctrl-0 = <&scif2_pins>;
++	pinctrl-names = "default";
  
--	if (adap->p_adapter_info->pch_i2c_suspended) {
--		mutex_unlock(&pch_mutex);
--		return -EBUSY;
--	}
--
--	pch_dbg(adap, "adap->p_adapter_info->pch_i2c_suspended is %d\n",
--		adap->p_adapter_info->pch_i2c_suspended);
- 	/* transfer not completed */
- 	adap->pch_i2c_xfer_in_progress = true;
+-       status = "okay";
++	status = "okay";
+ };
  
-@@ -786,7 +776,6 @@ static int pch_i2c_probe(struct pci_dev *pdev,
+ &scif4 {
+-       pinctrl-0 = <&scif4_pins>;
+-       pinctrl-names = "default";
++	pinctrl-0 = <&scif4_pins>;
++	pinctrl-names = "default";
  
- 	for (i = 0; i < adap_info->ch_num; i++) {
- 		pch_adap = &adap_info->pch_data[i].pch_adapter;
--		adap_info->pch_i2c_suspended = false;
+-       status = "okay";
++	status = "okay";
+ };
  
- 		adap_info->pch_data[i].p_adapter_info = adap_info;
- 
-@@ -862,8 +851,6 @@ static int pch_i2c_suspend(struct pci_dev *pdev, pm_message_t state)
- 	struct adapter_info *adap_info = pci_get_drvdata(pdev);
- 	void __iomem *p = adap_info->pch_data[0].pch_base_address;
- 
--	adap_info->pch_i2c_suspended = true;
--
- 	for (i = 0; i < adap_info->ch_num; i++) {
- 		while ((adap_info->pch_data[i].pch_i2c_xfer_in_progress)) {
- 			/* Wait until all channel transfers are completed */
-@@ -912,8 +899,6 @@ static int pch_i2c_resume(struct pci_dev *pdev)
- 	for (i = 0; i < adap_info->ch_num; i++)
- 		pch_i2c_init(&adap_info->pch_data[i]);
- 
--	adap_info->pch_i2c_suspended = false;
--
- 	return 0;
- }
- #else
+ &sdhi0 {
 -- 
-1.9.1
+2.0.0.rc2
 
