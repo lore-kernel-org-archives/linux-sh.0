@@ -1,35 +1,93 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 24 Jul 2014 01:57:42 +0000
-Subject: [PATCH 5/5] ARM: shmobile: sh73a0: add CMT1 clock support for DT
-Message-Id: <a0f7e7496d56ac2da7c684e2035815318c17973a.1406164563.git.horms+renesas@verge.net.au>
+Date: Mon, 07 Jul 2014 07:54:42 +0000
+Subject: [PATCH v2 17/30] ARM: shmobile: armadillo800eva-reference: Initialise SCIF device using DT
+Message-Id: <1404719695-1634-18-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1406164563.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1406164563.git.horms+renesas@verge.net.au>
+References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This will be used when initialising CMT1 device using DT
-until common clock framework support is added.
+Initialise SCIF device using DT when booting armadillo800eva
+using DT reference.
 
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/clock-sh73a0.c | 1 +
- 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index 4990e03..0d77f65 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -690,6 +690,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.0", &dsi0phy_clk),
- 	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.1", &dsi1phy_clk),
- 	CLKDEV_ICK_ID("fck", "sh-cmt-48.1", &mstp_clks[MSTP329]), /* CMT1 */
-+	CLKDEV_ICK_ID("fck", "e6138000.timer", &mstp_clks[MSTP329]), /* CMT1 */
- 	CLKDEV_ICK_ID("fck", "sh-tmu.0", &mstp_clks[MSTP125]), /* TMU0 */
+---
+v2
+* First post
+---
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 14 +++++++++++---
+ arch/arm/mach-shmobile/setup-r8a7740.c                  |  8 ++++----
+ 2 files changed, 15 insertions(+), 7 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index f6ef73f..f47ab76 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -19,6 +19,10 @@
+ 	model = "armadillo 800 eva reference";
+ 	compatible = "renesas,armadillo800eva-reference", "renesas,r8a7740";
+ 
++	aliases {
++		serial1 = &scifa1;
++	};
++
+ 	chosen {
+ 		bootargs = "console=tty0 console=ttySC1,115200 earlyprintk=sh-sci.1,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
+ 	};
+@@ -202,9 +206,6 @@
  };
  
+ &pfc {
+-	pinctrl-0 = <&scifa1_pins>;
+-	pinctrl-names = "default";
+-
+ 	ether_pins: ether {
+ 		renesas,groups = "gether_mii", "gether_int";
+ 		renesas,function = "gether";
+@@ -256,6 +257,13 @@
+ 	status = "okay";
+ };
+ 
++&scifa1 {
++	pinctrl-0 = <&scifa1_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
+ &sdhi0 {
+ 	pinctrl-0 = <&sdhi0_pins>;
+ 	pinctrl-names = "default";
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 348af35..3d5eaca 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -312,6 +312,10 @@ static struct platform_device ipmmu_device = {
+ };
+ 
+ static struct platform_device *r8a7740_devices_dt[] __initdata = {
++	&cmt1_device,
++};
++
++static struct platform_device *r8a7740_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+ 	&scif2_device,
+@@ -321,10 +325,6 @@ static struct platform_device *r8a7740_devices_dt[] __initdata = {
+ 	&scif6_device,
+ 	&scif7_device,
+ 	&scif8_device,
+-	&cmt1_device,
+-};
+-
+-static struct platform_device *r8a7740_early_devices[] __initdata = {
+ 	&irqpin0_device,
+ 	&irqpin1_device,
+ 	&irqpin2_device,
 -- 
-2.0.1
+2.0.0.rc2
 
