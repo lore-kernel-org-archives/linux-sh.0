@@ -1,153 +1,50 @@
-From: Wang Nan <wangnan0@huawei.com>
-Date: Mon, 21 Jul 2014 03:46:35 +0000
-Subject: [PATCH v2 0/7] memory-hotplug: suitable memory should go to ZONE_MOVABLE
-Message-Id: <1405914402-66212-1-git-send-email-wangnan0@huawei.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 07 Jul 2014 07:54:36 +0000
+Subject: [PATCH v2 11/30] ARM: shmobile: r8a73a4: Add CMT1 node
+Message-Id: <1404719695-1634-12-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ingo Molnar <mingo@redhat.com>, Yinghai Lu <yinghai@kernel.org>, Mel Gorman <mgorman@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Dave Hansen <dave.hansen@intel.com>, Zhang Yanfei <zhangyanfei@cn.fujitsu.com>
-Cc: peifeiyue@huawei.com, linux-mm@kvack.org, x86@kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, wangnan0@huawei.com
+To: linux-arm-kernel@lists.infradead.org
 
-This series of patches fix a problem when adding memory in bad manner.
-For example: for a x86_64 machine booted with "mem@0M" and with 2GiB
-memory installed, following commands cause problem:
+This describes all of the CMT1 hardware of the r8a73a4.
+The node is disabled and may be enabled as necessary by board DTS files.
 
-  # echo 0x40000000 > /sys/devices/system/memory/probe
- [   28.613895] init_memory_mapping: [mem 0x40000000-0x47ffffff]
-  # echo 0x48000000 > /sys/devices/system/memory/probe
- [   28.693675] init_memory_mapping: [mem 0x48000000-0x4fffffff]
-  # echo online_movable > /sys/devices/system/memory/memory9/state
-  # echo 0x50000000 > /sys/devices/system/memory/probe 
- [   29.084090] init_memory_mapping: [mem 0x50000000-0x57ffffff]
-  # echo 0x58000000 > /sys/devices/system/memory/probe 
- [   29.151880] init_memory_mapping: [mem 0x58000000-0x5fffffff]
-  # echo online_movable > /sys/devices/system/memory/memory11/state
-  # echo online> /sys/devices/system/memory/memory8/state
-  # echo online> /sys/devices/system/memory/memory10/state
-  # echo offline> /sys/devices/system/memory/memory9/state
- [   30.558819] Offlined Pages 32768
-  # free
-              total       used       free     shared    buffers     cached
- Mem:        780588 18014398509432020     830552          0          0      51180
- -/+ buffers/cache: 18014398509380840     881732
- Swap:            0          0          0
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-This is because the above commands probe higher memory after online a
-section with online_movable, which causes ZONE_HIGHMEM (or ZONE_NORMAL
-for systems without ZONE_HIGHMEM) overlaps ZONE_MOVABLE.
+---
+N.B: This only adds cmt1, as per the legacy C code
 
-After the second online_movable, the problem can be observed from
-zoneinfo:
+v2
+* First post
+---
+ arch/arm/boot/dts/r8a73a4.dtsi | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
- # cat /proc/zoneinfo
-...
-Node 0, zone  Movable
-  pages free     65491
-        min      250
-        low      312
-        high     375
-        scanned  0
-        spanned  18446744073709518848
-        present  65536
-        managed  65536
-...
-
-This series of patches solve the problem by checking ZONE_MOVABLE when
-choosing zone for new memory. If new memory is inside or higher than
-ZONE_MOVABLE, makes it go there instead.
-
-After applying this series of patches, following are free and zoneinfo
-result (after offlining memory9):
-
-bash-4.2# free
-              total       used       free     shared    buffers     cached
- Mem:        780956      80112     700844          0          0      51180
- -/+ buffers/cache:      28932     752024
- Swap:            0          0          0
-
-bash-4.2# cat /proc/zoneinfo
-
-Node 0, zone      DMA
-  pages free     3389
-        min      14
-        low      17
-        high     21
-        scanned  0
-        spanned  4095
-        present  3998
-        managed  3977
-    nr_free_pages 3389
-...
-  start_pfn:         1
-  inactive_ratio:    1
-Node 0, zone    DMA32
-  pages free     73724
-        min      341
-        low      426
-        high     511
-        scanned  0
-        spanned  98304
-        present  98304
-        managed  92958
-    nr_free_pages 73724
-...
-  start_pfn:         4096
-  inactive_ratio:    1
-Node 0, zone   Normal
-  pages free     32630
-        min      120
-        low      150
-        high     180
-        scanned  0
-        spanned  32768
-        present  32768
-        managed  32768
-    nr_free_pages 32630
-...
-  start_pfn:         262144
-  inactive_ratio:    1
-Node 0, zone  Movable
-  pages free     65476
-        min      241
-        low      301
-        high     361
-        scanned  0
-        spanned  98304
-        present  65536
-        managed  65536
-    nr_free_pages 65476
-...
-  start_pfn:         294912
-  inactive_ratio:    1
-
-v1 -> v2:
- - introduce zone_for_memory() to arch independent code to make arch
-   dependent code simpler, following Dave Hansen's comments.
- - Paste free and zoneinfo result in patch 0 as a response to
-   Zhang Yanfei.
- - Fix a problem in tile to add memory into ZONE_HIGHMEM by default.
-
-Wang Nan (7):
-  memory-hotplug: add zone_for_memory() for selecting zone for new
-    memory
-  memory-hotplug: x86_64: suitable memory should go to ZONE_MOVABLE
-  memory-hotplug: x86_32: suitable memory should go to ZONE_MOVABLE
-  memory-hotplug: ia64: suitable memory should go to ZONE_MOVABLE
-  memory-hotplug: ppc: suitable memory should go to ZONE_MOVABLE
-  memory-hotplug: sh: suitable memory should go to ZONE_MOVABLE
-  memory-hotplug: tile: suitable memory should go to ZONE_MOVABLE
-
- arch/ia64/mm/init.c            |  3 ++-
- arch/powerpc/mm/mem.c          |  3 ++-
- arch/sh/mm/init.c              |  5 +++--
- arch/tile/mm/init.c            |  3 ++-
- arch/x86/mm/init_32.c          |  3 ++-
- arch/x86/mm/init_64.c          |  3 ++-
- include/linux/memory_hotplug.h |  1 +
- mm/memory_hotplug.c            | 28 ++++++++++++++++++++++++++++
- 8 files changed, 42 insertions(+), 7 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index d8ec505..9bf3386 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -50,6 +50,16 @@
+ 			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
+ 	};
+ 
++	cmt1: timer@e6130000 {
++		compatible = "renesas,cmt-48-gen2";
++		reg = <0 0xe6130000 0 0x1004>;
++		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>;
++
++		renesas,channels-mask = <0xff>;
++
++		status = "disabled";
++	};
++
+ 	irqc0: interrupt-controller@e61c0000 {
+ 		compatible = "renesas,irqc";
+ 		#interrupt-cells = <2>;
 -- 
-1.8.4
+2.0.0.rc2
 
