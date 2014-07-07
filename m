@@ -1,42 +1,39 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 23 Jul 2014 02:44:32 +0000
-Subject: [PATCH 07/11][RFC] ARM: shmobile: lager: Sound DMA support via BUSIF on DTS
-Message-Id: <87tx68u73l.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 07 Jul 2014 07:54:46 +0000
+Subject: [PATCH v2 21/30] ARM: shmobile: r8a7740: add CMT1 clock support for DT
+Message-Id: <1404719695-1634-22-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-DMA transfer to/from SSIU
+This will be used when initialising CMT1 device using DT
+until common clock framework support is added.
 
-     DMA
-[MEM] -> [SSIU] -> [SSI]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-     DMA
-[MEM] <- [SSIU] <- [SSI]
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts |    5 -----
- 1 file changed, 5 deletions(-)
+v2
+* First post
+---
+ arch/arm/mach-shmobile/clock-r8a7740.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 38cd5ad..f455935 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -461,11 +461,6 @@
- 	};
- };
- 
--&ssi0 {
--	no-busif;
--};
--
- &ssi1 {
--	no-busif;
- 	shared-pin;
- };
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index b4ecbd6..0794f04 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -603,6 +603,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("fck",	"sh-tmu.0",		&mstp_clks[MSTP125]),
+ 	CLKDEV_ICK_ID("fck",	"fff80000.timer",	&mstp_clks[MSTP125]),
+ 	CLKDEV_ICK_ID("fck",	"sh-cmt-48.1",		&mstp_clks[MSTP329]),
++	CLKDEV_ICK_ID("fck",	"e6138000.timer",	&mstp_clks[MSTP329]),
+ 	CLKDEV_ICK_ID("host",	"renesas_usbhs",	&mstp_clks[MSTP416]),
+ 	CLKDEV_ICK_ID("func",	"renesas_usbhs",	&mstp_clks[MSTP407]),
+ 	CLKDEV_ICK_ID("phy",	"renesas_usbhs",	&mstp_clks[MSTP406]),
 -- 
-1.7.9.5
+2.0.0.rc2
 
