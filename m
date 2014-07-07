@@ -1,35 +1,41 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 07 Jul 2014 13:23:52 +0000
-Subject: [PATCH] ARM: shmobile: Enable R-Car Gen 2 PCIe in shmobile_defconfig
-Message-Id: <1404739432-1408-1-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 07 Jul 2014 13:54:21 +0000
+Subject: Re: [PATCH] ARM: shmobile: Enable R-Car Gen 2 PCIe in shmobile_defconfig
+Message-Id: <53BAA68D.609@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1404739432-1408-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1404739432-1408-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The R-Car Gen 2 PCIe driver provides PCIe host support for
-Renesas R-Car Gen2 platforms. To increase hardware support enable
-the driver in the shmobile_defconfig multiplatform configuration.
+Hello.
 
-Cc: Phil Edworthy <phil.edworthy@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/configs/shmobile_defconfig | 1 +
- 1 file changed, 1 insertion(+)
+On 07/07/2014 05:23 PM, Simon Horman wrote:
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index 5f05e98..6bc85a5 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -24,6 +24,7 @@ CONFIG_PL310_ERRATA_588369=y
- CONFIG_ARM_ERRATA_754322=y
- CONFIG_PCI=y
- CONFIG_PCI_RCAR_GEN2=y
-+CONFIG_PCI_RCAR_GEN2_PCIE=y
- CONFIG_SMP=y
- CONFIG_SCHED_MC=y
- CONFIG_HAVE_ARM_ARCH_TIMER=y
--- 
-2.0.0.rc2
+> The R-Car Gen 2 PCIe driver provides PCIe host support for
+> Renesas R-Car Gen2 platforms. To increase hardware support enable
+> the driver in the shmobile_defconfig multiplatform configuration.
+
+> Cc: Phil Edworthy <phil.edworthy@renesas.com>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> ---
+>   arch/arm/configs/shmobile_defconfig | 1 +
+>   1 file changed, 1 insertion(+)
+
+> diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+> index 5f05e98..6bc85a5 100644
+> --- a/arch/arm/configs/shmobile_defconfig
+> +++ b/arch/arm/configs/shmobile_defconfig
+> @@ -24,6 +24,7 @@ CONFIG_PL310_ERRATA_588369=y
+>   CONFIG_ARM_ERRATA_754322=y
+>   CONFIG_PCI=y
+>   CONFIG_PCI_RCAR_GEN2=y
+> +CONFIG_PCI_RCAR_GEN2_PCIE=y
+
+    Hmm, I'm not sure why the option has GEN2 -- the driver claims support for 
+R8A7779 as well as R8A779x. Probably the option should be renamed.
+
+WBR, Sergei
 
