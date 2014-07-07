@@ -1,127 +1,88 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 18 Jul 2014 23:50:19 +0000
-Subject: [PATCH v2 2/8] dmaengine: shdma: Make channel filter ignore unrelated devices
-Message-Id: <1405727425-6237-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 07 Jul 2014 07:54:49 +0000
+Subject: [PATCH v2 24/30] ARM: shmobile: r8a7740: Remove unnecessary r8a7740_add_standard_devices_dt()
+Message-Id: <1404719695-1634-25-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The shdma_chan_filter() function relies on the DMA channel being
-embedded in an shdma_chan structure. If this assumption isn't true, for
-instance when the system contains DMA channels supported by an unrelated
-driver, the function will crash.
+r8a7740_add_standard_devices_dt() now only calls
+of_platform_populate() so call it directly and remove
+r8a7740_add_standard_devices_dt().
 
-Avoid this by returning false directly when the channel belongs to an
-unrelated device.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/dma/sh/shdma-base.c | 84 ++++++++++++++++++++++++---------------------
- 1 file changed, 45 insertions(+), 39 deletions(-)
+v2
+* First post
+---
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 3 ++-
+ arch/arm/mach-shmobile/r8a7740.h                         | 1 -
+ arch/arm/mach-shmobile/setup-r8a7740.c                   | 7 +------
+ 3 files changed, 3 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
-index b35007e..94b6bde 100644
---- a/drivers/dma/sh/shdma-base.c
-+++ b/drivers/dma/sh/shdma-base.c
-@@ -206,45 +206,6 @@ static int shdma_setup_slave(struct shdma_chan *schan, int slave_id,
- 	return 0;
- }
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index 84bc6cb..f06e1f3 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -24,6 +24,7 @@
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
+ #include <linux/io.h>
++#include <linux/of_platform.h>
  
--/*
-- * This is the standard shdma filter function to be used as a replacement to the
-- * "old" method, using the .private pointer. If for some reason you allocate a
-- * channel without slave data, use something like ERR_PTR(-EINVAL) as a filter
-- * parameter. If this filter is used, the slave driver, after calling
-- * dma_request_channel(), will also have to call dmaengine_slave_config() with
-- * .slave_id, .direction, and either .src_addr or .dst_addr set.
-- * NOTE: this filter doesn't support multiple DMAC drivers with the DMA_SLAVE
-- * capability! If this becomes a requirement, hardware glue drivers, using this
-- * services would have to provide their own filters, which first would check
-- * the device driver, similar to how other DMAC drivers, e.g., sa11x0-dma.c, do
-- * this, and only then, in case of a match, call this common filter.
-- * NOTE 2: This filter function is also used in the DT case by shdma_of_xlate().
-- * In that case the MID-RID value is used for slave channel filtering and is
-- * passed to this function in the "arg" parameter.
-- */
--bool shdma_chan_filter(struct dma_chan *chan, void *arg)
+ #include <asm/mach/arch.h>
+ #include <asm/hardware/cache-l2x0.h>
+@@ -170,7 +171,7 @@ static void __init eva_init(void)
+ 	l2x0_init(IOMEM(0xf0002000), 0x00400000, 0xc20f0fff);
+ #endif
+ 
+-	r8a7740_add_standard_devices_dt();
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 
+ 	r8a7740_pm_init();
+ }
+diff --git a/arch/arm/mach-shmobile/r8a7740.h b/arch/arm/mach-shmobile/r8a7740.h
+index 1d1a5fd..3352fb8 100644
+--- a/arch/arm/mach-shmobile/r8a7740.h
++++ b/arch/arm/mach-shmobile/r8a7740.h
+@@ -49,7 +49,6 @@ extern void r8a7740_init_irq_of(void);
+ extern void r8a7740_map_io(void);
+ extern void r8a7740_add_early_devices(void);
+ extern void r8a7740_add_standard_devices(void);
+-extern void r8a7740_add_standard_devices_dt(void);
+ extern void r8a7740_clock_init(u8 md_ck);
+ extern void r8a7740_pinmux_init(void);
+ extern void r8a7740_pm_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 3dcdc8d..fbfc49a 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -781,11 +781,6 @@ void __init r8a7740_add_early_devices(void)
+ 
+ #ifdef CONFIG_USE_OF
+ 
+-void __init r8a7740_add_standard_devices_dt(void)
 -{
--	struct shdma_chan *schan = to_shdma_chan(chan);
--	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
--	const struct shdma_ops *ops = sdev->ops;
--	int match = (long)arg;
--	int ret;
--
--	if (match < 0)
--		/* No slave requested - arbitrary channel */
--		return true;
--
--	if (!schan->dev->of_node && match >= slave_num)
--		return false;
--
--	ret = ops->set_slave(schan, match, 0, true);
--	if (ret < 0)
--		return false;
--
--	return true;
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
 -}
--EXPORT_SYMBOL(shdma_chan_filter);
 -
- static int shdma_alloc_chan_resources(struct dma_chan *chan)
+ void __init r8a7740_init_irq_of(void)
  {
- 	struct shdma_chan *schan = to_shdma_chan(chan);
-@@ -295,6 +256,51 @@ esetslave:
- 	return ret;
+ 	void __iomem *intc_prio_base = ioremap_nocache(0xe6900010, 0x10);
+@@ -819,7 +814,7 @@ void __init r8a7740_init_irq_of(void)
+ static void __init r8a7740_generic_init(void)
+ {
+ 	r8a7740_clock_init(0);
+-	r8a7740_add_standard_devices_dt();
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
  }
  
-+/*
-+ * This is the standard shdma filter function to be used as a replacement to the
-+ * "old" method, using the .private pointer. If for some reason you allocate a
-+ * channel without slave data, use something like ERR_PTR(-EINVAL) as a filter
-+ * parameter. If this filter is used, the slave driver, after calling
-+ * dma_request_channel(), will also have to call dmaengine_slave_config() with
-+ * .slave_id, .direction, and either .src_addr or .dst_addr set.
-+ * NOTE: this filter doesn't support multiple DMAC drivers with the DMA_SLAVE
-+ * capability! If this becomes a requirement, hardware glue drivers, using this
-+ * services would have to provide their own filters, which first would check
-+ * the device driver, similar to how other DMAC drivers, e.g., sa11x0-dma.c, do
-+ * this, and only then, in case of a match, call this common filter.
-+ * NOTE 2: This filter function is also used in the DT case by shdma_of_xlate().
-+ * In that case the MID-RID value is used for slave channel filtering and is
-+ * passed to this function in the "arg" parameter.
-+ */
-+bool shdma_chan_filter(struct dma_chan *chan, void *arg)
-+{
-+	struct shdma_chan *schan;
-+	struct shdma_dev *sdev;
-+	int match = (long)arg;
-+	int ret;
-+
-+	/* Only support channels handled by this driver. */
-+	if (chan->device->device_alloc_chan_resources !+	    shdma_alloc_chan_resources)
-+		return false;
-+
-+	if (match < 0)
-+		/* No slave requested - arbitrary channel */
-+		return true;
-+
-+	schan = to_shdma_chan(chan);
-+	if (!schan->dev->of_node && match >= slave_num)
-+		return false;
-+
-+	sdev = to_shdma_dev(schan->dma_chan.device);
-+	ret = sdev->ops->set_slave(schan, match, 0, true);
-+	if (ret < 0)
-+		return false;
-+
-+	return true;
-+}
-+EXPORT_SYMBOL(shdma_chan_filter);
-+
- static dma_async_tx_callback __ld_cleanup(struct shdma_chan *schan, bool all)
- {
- 	struct shdma_desc *desc, *_desc;
+ static const char *r8a7740_boards_compat_dt[] __initdata = {
 -- 
-1.8.5.5
+2.0.0.rc2
 
