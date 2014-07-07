@@ -1,82 +1,35 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 22 Jul 2014 05:34:58 +0000
-Subject: [PATCH 08/10] mmc: tmio: remove Renesas specific #ifdef
-Message-Id: <8738duhs74.wl%kuninori.morimoto.gx@renesas.com>
+From: Olof Johansson <olof@lixom.net>
+Date: Mon, 07 Jul 2014 00:20:03 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC r8a7779-multiplatform Updates for v3.17
+Message-Id: <20140707002003.GA8469@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
-	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
-	<53AD638C.5060907@renesas.com>
-	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+References: <cover.1403487423.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487423.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Ian Molton <ian@mnementh.co.uk>, Chris Ball <cjb@laptop.org>
-Cc: TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, ryo.kataoka.wt@renesas.com, shinobu.uehara.xc@renesas.com, kouei.abe.cp@renesas.com
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Mon, Jun 23, 2014 at 11:26:36AM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
+> 
+> Please consider these Renesas ARM based SoC r8a7779-multiplatform updates
+> for v3.17.
+> 
+> This pull request is based on 'Renesas ARM Based SoC Header Cleanup for v3.17',
+> tagged as header-cleanup-for-v3.17, which I have already sent a
+> pull-request for.
+> 
+> 
+> The following changes since commit 62872989bdbf1245d7239b9f4c05a8ee7c775ed5:
+> 
+>   ARM: shmobile: Move rcar-gen2.h, cleanup r8a7790 case (2014-06-17 17:09:40 +0900)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-r8a7779-multiplatform-for-v3.17
 
-This patch adds new TMIO_MMC_HAVE_CTL_DMA_REG flag,
-and remove Renesas specific #ifdef from tmio driver
+Merged into next/soc. Thanks!
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- drivers/mmc/host/sh_mobile_sdhi.c |    5 +++++
- drivers/mmc/host/tmio_mmc_dma.c   |    6 ++----
- include/linux/mfd/tmio.h          |    5 +++++
- 3 files changed, 12 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 8b3c6cd..b16f1bb 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -236,6 +236,11 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	 */
- 	mmc_data->flags |= TMIO_MMC_SDIO_STATUS_QUIRK;
- 
-+	/*
-+	 * All SDHI have DMA control register
-+	 */
-+	mmc_data->flags |= TMIO_MMC_HAVE_CTL_DMA_REG;
-+
- 	if (of_id && of_id->data) {
- 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
- 		mmc_data->flags |= of_data->tmio_flags;
-diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
-index 1925170..8b1121e 100644
---- a/drivers/mmc/host/tmio_mmc_dma.c
-+++ b/drivers/mmc/host/tmio_mmc_dma.c
-@@ -28,10 +28,8 @@ void tmio_mmc_enable_dma(struct tmio_mmc_host *host, bool enable)
- 	if (!host->chan_tx || !host->chan_rx)
- 		return;
- 
--#if defined(CONFIG_SUPERH) || defined(CONFIG_ARCH_SHMOBILE)
--	/* Switch DMA mode on or off - SuperH specific? */
--	sd_ctrl_write16(host, CTL_DMA_ENABLE, enable ? 2 : 0);
--#endif
-+	if (host->pdata->flags & TMIO_MMC_HAVE_CTL_DMA_REG)
-+		sd_ctrl_write16(host, CTL_DMA_ENABLE, enable ? 2 : 0);
- }
- 
- void tmio_mmc_abort_dma(struct tmio_mmc_host *host)
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index a7493ae..adcb0cd 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -94,6 +94,11 @@
-  */
- #define TMIO_MMC_SDIO_STATUS_QUIRK	(1 << 8)
- 
-+/*
-+ * Some controllers have DMA enable/disable register
-+ */
-+#define TMIO_MMC_HAVE_CTL_DMA_REG	(1 << 9)
-+
- int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
- int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
- void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
--- 
-1.7.9.5
-
+-Olof
