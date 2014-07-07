@@ -1,47 +1,93 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 24 Jul 2014 15:27:05 +0000
-Subject: [PATCH 3/3] iommu/ipmmu-vmsa: Invalidate TLB after unmapping
-Message-Id: <1406215625-13982-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 07 Jul 2014 07:54:55 +0000
+Subject: [PATCH v2 30/30] ARM: shmobile: kzm9g-reference: Initialise CMT1 device using DT
+Message-Id: <1404719695-1634-31-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1406215625-13982-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1406215625-13982-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The TLB must be invalidated after unmapping memory to remove stale TLB
-entries. this was supposed to be performed already, but a bug in the
-driver prevented the TLB invalidate function from being called. Fix it.
+Initialise CMT1 device using DT when booting kzm9g
+using DT-reference.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- drivers/iommu/ipmmu-vmsa.c | 4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
+v2
+* First post
+---
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |  4 ++++
+ arch/arm/mach-shmobile/setup-sh73a0.c        | 11 +----------
+ 2 files changed, 5 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
-index eb605e5..a010e47 100644
---- a/drivers/iommu/ipmmu-vmsa.c
-+++ b/drivers/iommu/ipmmu-vmsa.c
-@@ -784,7 +784,6 @@ static int ipmmu_clear_mapping(struct ipmmu_vmsa_domain *domain,
- 	pud_t *pud;
- 	pmd_t *pmd;
- 	pte_t *pte;
--	int ret = 0;
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index df2ae46..4cd9949 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -279,6 +279,10 @@
+ 	status = "okay";
+ };
  
- 	if (!pgd)
- 		return -EINVAL;
-@@ -846,8 +845,7 @@ static int ipmmu_clear_mapping(struct ipmmu_vmsa_domain *domain,
- done:
- 	spin_unlock_irqrestore(&domain->lock, flags);
++&cmt1 {
++	status = "okay";
++};
++
+ &pfc {
+ 	i2c3_pins: i2c3 {
+ 		renesas,groups = "i2c3_1";
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 2c802ae..5d3f1d8 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -696,10 +696,6 @@ static struct platform_device irqpin3_device = {
+ 	},
+ };
  
--	if (ret)
--		ipmmu_tlb_invalidate(domain);
-+	ipmmu_tlb_invalidate(domain);
+-static struct platform_device *sh73a0_devices_dt[] __initdata = {
+-	&cmt1_device,
+-};
+-
+ static struct platform_device *sh73a0_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -710,6 +706,7 @@ static struct platform_device *sh73a0_early_devices[] __initdata = {
+ 	&scif6_device,
+ 	&scif7_device,
+ 	&scif8_device,
++	&cmt1_device,
+ 	&tmu0_device,
+ 	&ipmmu_device,
+ };
+@@ -736,8 +733,6 @@ void __init sh73a0_add_standard_devices(void)
+ 	/* Clear software reset bit on SY-DMAC module */
+ 	__raw_writel(__raw_readl(SRCR2) & ~(1 << 18), SRCR2);
  
- 	return 0;
- }
+-	platform_add_devices(sh73a0_devices_dt,
+-			    ARRAY_SIZE(sh73a0_devices_dt));
+ 	platform_add_devices(sh73a0_early_devices,
+ 			    ARRAY_SIZE(sh73a0_early_devices));
+ 	platform_add_devices(sh73a0_late_devices,
+@@ -762,8 +757,6 @@ void __init sh73a0_earlytimer_init(void)
+ 
+ void __init sh73a0_add_early_devices(void)
+ {
+-	early_platform_add_devices(sh73a0_devices_dt,
+-				   ARRAY_SIZE(sh73a0_devices_dt));
+ 	early_platform_add_devices(sh73a0_early_devices,
+ 				   ARRAY_SIZE(sh73a0_early_devices));
+ 
+@@ -780,8 +773,6 @@ void __init sh73a0_add_standard_devices_dt(void)
+ 	/* clocks are setup late during boot in the case of DT */
+ 	sh73a0_clock_init();
+ 
+-	platform_add_devices(sh73a0_devices_dt,
+-			     ARRAY_SIZE(sh73a0_devices_dt));
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 
+ 	/* Instantiate cpufreq-cpu0 */
 -- 
-1.8.5.5
+2.0.0.rc2
 
