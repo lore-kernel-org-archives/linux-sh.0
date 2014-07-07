@@ -1,34 +1,65 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 24 Jul 2014 15:27:02 +0000
-Subject: [PATCH 0/3] Renesas IPMMU-VMSA fixes
-Message-Id: <1406215625-13982-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 07 Jul 2014 07:54:31 +0000
+Subject: [PATCH v2 06/30] ARM: shmobile: bockw-reference: Initialise TMU device using DT
+Message-Id: <1404719695-1634-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+Initialise TMU device using DT when booting bockw
+using DT-reference.
 
-This series fixes small issues with the ipmmu-vmsa driver. Please see
-individual patches for details.
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-If not too late, I'd like these fixes to be merged in v3.17 (after proper
-review of course, or, in the worst case, after lack of review).
+---
+v2
+* Added Ack from Laurent Pinchart
+---
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts | 4 ++++
+ arch/arm/mach-shmobile/setup-r8a7778.c        | 3 +--
+ 2 files changed, 5 insertions(+), 2 deletions(-)
 
-Laurent Pinchart (3):
-  iommu/ipmmu-vmsa: Cleanup failures of ARM mapping creation or
-    attachment
-  iommu/ipmmu-vmsa: Flush P[UM]D entry before freeing the child page
-    table
-  iommu/ipmmu-vmsa: Invalidate TLB after unmapping
-
- drivers/iommu/ipmmu-vmsa.c | 26 ++++++++++++++------------
- 1 file changed, 14 insertions(+), 12 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index 3342c74..970237c 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -73,6 +73,10 @@
+ 	status = "okay";
+ };
+ 
++&tmu0 {
++	status = "okay";
++};
++
+ &pfc {
+ 	scif0_pins: serial0 {
+ 		renesas,groups = "scif0_data_a", "scif0_ctrl";
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index e218c46..575148d 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -293,8 +293,6 @@ void __init r8a7778_add_dt_devices(void)
+ 		l2x0_init(base, 0x00400000, 0xc20f0fff);
+ 	}
+ #endif
+-
+-	r8a7778_register_tmu(0);
+ }
+ 
+ /* HPB-DMA */
+@@ -502,6 +500,7 @@ static void __init r8a7778_register_hpb_dmae(void)
+ void __init r8a7778_add_standard_devices(void)
+ {
+ 	r8a7778_add_dt_devices();
++	r8a7778_register_tmu(0);
+ 	r8a7778_register_scif(0);
+ 	r8a7778_register_scif(1);
+ 	r8a7778_register_scif(2);
 -- 
-Regards,
-
-Laurent Pinchart
+2.0.0.rc2
 
