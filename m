@@ -1,22 +1,47 @@
-From: David Miller <davem@davemloft.net>
-Date: Thu, 03 Jul 2014 00:38:03 +0000
-Subject: Re: [PATCH] sh_eth: remove checks around dev_kfree_skb() calls
-Message-Id: <20140702.173803.1384383650865317087.davem@davemloft.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 07 Jul 2014 06:47:38 +0000
+Subject: [PATCH 3/3] ARM: shmobile: r8a7779: Consistently use tabs for indentation
+Message-Id: <1404715658-31050-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201406280410.01146.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201406280410.01146.sergei.shtylyov@cogentembedded.com>
+References: <1404715658-31050-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1404715658-31050-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 28 Jun 2014 04:10:00 +0400
+Unify white space usage by consistently using tabs for indentation.
 
-> Since consume_skb() (and hence dev_kfree_skb() macro) checks the passed pointer
-> for NULL, there's no need to check for NULL before invoking dev_kfree_skb().
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7779.dtsi | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
 
-Applied, thanks.
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 94e2fc8..58d0d95 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -54,13 +54,13 @@
+ 		spi2 = &hspi2;
+ 	};
+ 
+-        gic: interrupt-controller@f0001000 {
+-                compatible = "arm,cortex-a9-gic";
+-                #interrupt-cells = <3>;
+-                interrupt-controller;
+-                reg = <0xf0001000 0x1000>,
+-                      <0xf0000100 0x100>;
+-        };
++	gic: interrupt-controller@f0001000 {
++		compatible = "arm,cortex-a9-gic";
++		#interrupt-cells = <3>;
++		interrupt-controller;
++		reg = <0xf0001000 0x1000>,
++		      <0xf0000100 0x100>;
++	};
+ 
+ 	gpio0: gpio@ffc40000 {
+ 		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
+-- 
+2.0.0.rc2
+
