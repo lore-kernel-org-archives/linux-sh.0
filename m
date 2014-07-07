@@ -1,71 +1,39 @@
-From: Andrey Utkin <andrey.krieger.utkin@gmail.com>
-Date: Thu, 17 Jul 2014 13:28:25 +0000
-Subject: [PATCH 3/3] arch/sh/kernel/ptrace_{32,64}.c: drop negativity checks for unsigned long addr
-Message-Id: <1405603705-12625-1-git-send-email-andrey.krieger.utkin@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 07 Jul 2014 07:54:53 +0000
+Subject: [PATCH v2 28/30] ARM: shmobile: sh73a0: add CMT1 clock support for DT
+Message-Id: <1404719695-1634-29-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: eparis@redhat.com, Andrey Utkin <andrey.krieger.utkin@gmail.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=80381
-Reported-by: David Binderman <dcb314@hotmail.com>
-Signed-off-by: Andrey Utkin <andrey.krieger.utkin@gmail.com>
+This will be used when initialising CMT1 device using DT
+until common clock framework support is added.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- arch/sh/kernel/ptrace_32.c | 4 ++--
- arch/sh/kernel/ptrace_64.c | 4 ++--
- 2 files changed, 4 insertions(+), 4 deletions(-)
+v2
+* First post
+---
+ arch/arm/mach-shmobile/clock-sh73a0.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/sh/kernel/ptrace_32.c b/arch/sh/kernel/ptrace_32.c
-index c1a6b89..78effcb 100644
---- a/arch/sh/kernel/ptrace_32.c
-+++ b/arch/sh/kernel/ptrace_32.c
-@@ -379,7 +379,7 @@ long arch_ptrace(struct task_struct *child, long reques=
-t,
- 		unsigned long tmp;
-=20
- 		ret =3D -EIO;
--		if ((addr & 3) || addr < 0 ||
-+		if ((addr & 3) ||
- 		    addr > sizeof(struct user) - 3)
- 			break;
-=20
-@@ -419,7 +419,7 @@ long arch_ptrace(struct task_struct *child, long reques=
-t,
-=20
- 	case PTRACE_POKEUSR: /* write the word at location addr in the USER area =
-*/
- 		ret =3D -EIO;
--		if ((addr & 3) || addr < 0 ||
-+		if ((addr & 3) ||
- 		    addr > sizeof(struct user) - 3)
- 			break;
-=20
-diff --git a/arch/sh/kernel/ptrace_64.c b/arch/sh/kernel/ptrace_64.c
-index 5cea973..138b2b1 100644
---- a/arch/sh/kernel/ptrace_64.c
-+++ b/arch/sh/kernel/ptrace_64.c
-@@ -395,7 +395,7 @@ long arch_ptrace(struct task_struct *child, long reques=
-t,
- 		unsigned long tmp;
-=20
- 		ret =3D -EIO;
--		if ((addr & 3) || addr < 0)
-+		if (addr & 3)
- 			break;
-=20
- 		if (addr < sizeof(struct pt_regs))
-@@ -423,7 +423,7 @@ long arch_ptrace(struct task_struct *child, long reques=
-t,
-                    this could crash the kernel or result in a security
-                    loophole. */
- 		ret =3D -EIO;
--		if ((addr & 3) || addr < 0)
-+		if (addr & 3)
- 			break;
-=20
- 		if (addr < sizeof(struct pt_regs)) {
---=20
-1.8.5.5
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 9433a4e..d8c4048 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -690,6 +690,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.0", &dsi0phy_clk),
+ 	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.1", &dsi1phy_clk),
+ 	CLKDEV_ICK_ID("fck", "sh-cmt-48.1", &mstp_clks[MSTP329]), /* CMT1 */
++	CLKDEV_ICK_ID("fck", "e6138000.timer", &mstp_clks[MSTP329]), /* CMT1 */
+ 	CLKDEV_ICK_ID("fck", "sh-tmu.0", &mstp_clks[MSTP125]), /* TMU0 */
+ };
+ 
+-- 
+2.0.0.rc2
 
