@@ -1,77 +1,64 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 09 Jul 2014 13:12:39 +0000
-Subject: [PATCH v5 3/8] ARM: shmobile: r8a7779: Add TMU devices to DT
-Message-Id: <1404911564-17380-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 07 Jul 2014 07:54:38 +0000
+Subject: [PATCH v2 13/30] ARM: shmobile: ape6evm-reference: Initialise CMT1 device using DT
+Message-Id: <1404719695-1634-14-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404911564-17380-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1404911564-17380-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add the TMU0, TMU1 and TMU2 counters to the r8a7779 device tree and make
-them disabled by default.
+Initialise CMT1 device using DT when booting ape6evm
+using DT-reference.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- arch/arm/boot/dts/r8a7779.dtsi | 42 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 42 insertions(+)
+v2
+* First post
+---
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts | 4 ++++
+ arch/arm/mach-shmobile/setup-r8a73a4.c          | 3 +--
+ 2 files changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 94e2fc8..671d8e4 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -266,6 +266,48 @@
- 		reg = <0xffc48000 0x38>;
- 	};
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+index a860f32..a42ba09 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+@@ -93,6 +93,10 @@
+ 	voltage-tolerance = <1>; /* 1% */
+ };
  
-+	tmu0: timer@ffd80000 {
-+		compatible = "renesas,tmu";
-+		reg = <0xffd80000 0x30>;
-+		interrupts = <0 32 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 33 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 34 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_TMU0>;
-+		clock-names = "fck";
++&cmt1 {
++	status = "okay";
++};
 +
-+		#renesas,channels = <3>;
-+
-+		status = "disabled";
-+	};
-+
-+	tmu1: timer@ffd81000 {
-+		compatible = "renesas,tmu";
-+		reg = <0xffd81000 0x30>;
-+		interrupts = <0 36 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 37 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 38 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_TMU1>;
-+		clock-names = "fck";
-+
-+		#renesas,channels = <3>;
-+
-+		status = "disabled";
-+	};
-+
-+	tmu2: timer@ffd82000 {
-+		compatible = "renesas,tmu";
-+		reg = <0xffd82000 0x30>;
-+		interrupts = <0 40 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 41 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 42 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_TMU2>;
-+		clock-names = "fck";
-+
-+		#renesas,channels = <3>;
-+
-+		status = "disabled";
-+	};
-+
- 	sata: sata@fc600000 {
- 		compatible = "renesas,rcar-sata";
- 		reg = <0xfc600000 0x2000>;
+ &pfc {
+ 	scifa0_pins: serial0 {
+ 		renesas,groups = "scifa0_data";
+diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
+index 496ecf3..10e3f14 100644
+--- a/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
+@@ -189,7 +189,6 @@ static struct resource cmt1_resources[] = {
+ 
+ void __init r8a73a4_add_dt_devices(void)
+ {
+-	r8a73a4_register_cmt(1);
+ }
+ 
+ /* DMA */
+@@ -282,7 +281,7 @@ static struct resource dma_resources[] = {
+ 
+ void __init r8a73a4_add_standard_devices(void)
+ {
+-	r8a73a4_add_dt_devices();
++	r8a73a4_register_cmt(1);
+ 	r8a73a4_register_scif(0);
+ 	r8a73a4_register_scif(1);
+ 	r8a73a4_register_scif(2);
 -- 
-1.8.5.5
+2.0.0.rc2
 
