@@ -1,43 +1,63 @@
-From: Wang Nan <wangnan0@huawei.com>
-Date: Mon, 21 Jul 2014 03:46:41 +0000
-Subject: [PATCH v2 6/7] memory-hotplug: sh: suitable memory should go to ZONE_MOVABLE
-Message-Id: <1405914402-66212-7-git-send-email-wangnan0@huawei.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 07 Jul 2014 07:54:44 +0000
+Subject: [PATCH v2 19/30] ARM: shmobile: r8a7740: Add TMU nodes
+Message-Id: <1404719695-1634-20-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405914402-66212-1-git-send-email-wangnan0@huawei.com>
-In-Reply-To: <1405914402-66212-1-git-send-email-wangnan0@huawei.com>
+References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ingo Molnar <mingo@redhat.com>, Yinghai Lu <yinghai@kernel.org>, Mel Gorman <mgorman@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Dave Hansen <dave.hansen@intel.com>, Zhang Yanfei <zhangyanfei@cn.fujitsu.com>
-Cc: peifeiyue@huawei.com, linux-mm@kvack.org, x86@kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, wangnan0@huawei.com
+To: linux-arm-kernel@lists.infradead.org
 
-This patch introduces zone_for_memory() to arch_add_memory() on sh to
-ensure new, higher memory added into ZONE_MOVABLE if movable zone has
-already setup.
+This describes all of the TMU hardware of the r8a7740.
+Each node is disabled and may be enabled as necessary
+by board DTS files.
 
-Signed-off-by: Wang Nan <wangnan0@huawei.com>
-Cc: Zhang Yanfei <zhangyanfei@cn.fujitsu.com>
-Cc: Dave Hansen <dave.hansen@intel.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- arch/sh/mm/init.c | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+v2
+* First post
+---
+ arch/arm/boot/dts/r8a7740.dtsi | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
 
-diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-index 2d089fe..2790b6a 100644
---- a/arch/sh/mm/init.c
-+++ b/arch/sh/mm/init.c
-@@ -495,8 +495,9 @@ int arch_add_memory(int nid, u64 start, u64 size)
- 	pgdat = NODE_DATA(nid);
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index bda18fb..3156afd 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -236,6 +236,30 @@
+ 			<&irqpin3 4 0>, <&irqpin3 5 0>, <&irqpin3 6 0>, <&irqpin3 7 0>;
+ 	};
  
- 	/* We only have ZONE_NORMAL, so this is easy.. */
--	ret = __add_pages(nid, pgdat->node_zones + ZONE_NORMAL,
--				start_pfn, nr_pages);
-+	ret = __add_pages(nid, pgdat->node_zones +
-+			zone_for_memory(nid, start, size, ZONE_NORMAL),
-+			start_pfn, nr_pages);
- 	if (unlikely(ret))
- 		printk("%s: Failed, __add_pages() = %d\n", __func__, ret);
- 
++	tmu0: timer@fff80000 {
++		compatible = "renesas,tmu";
++		reg = <0xfff80000 0x2c>;
++		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 199 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 200 IRQ_TYPE_LEVEL_HIGH>;
++
++		#renesas,channels = <3>;
++
++		status = "disabled";
++	};
++
++	tmu1: timer@fff90000 {
++		compatible = "renesas,tmu";
++		reg = <0xfff90000 0x2c>;
++		interrupts = <0 170 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 171 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 172 IRQ_TYPE_LEVEL_HIGH>;
++
++		#renesas,channels = <3>;
++
++		status = "disabled";
++	};
++
+ 	tpu: pwm@e6600000 {
+ 		compatible = "renesas,tpu-r8a7740", "renesas,tpu";
+ 		reg = <0xe6600000 0x100>;
 -- 
-1.8.4
+2.0.0.rc2
 
