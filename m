@@ -1,71 +1,101 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 08 Jul 2014 07:50:36 +0000
-Subject: Re: [PATCH] sh-pfc: sh73a0: Introduce the use of devm_regulator_register
-Message-Id: <CAMuHMdULhp2kmJU-OnNzJL8g_sYi9RKGVqkAsgmG1jA7q1kPAw@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 07 Jul 2014 07:54:28 +0000
+Subject: [PATCH v2 03/30] ARM: shmobile: bockw-reference: Initialise SCIF device using DT
+Message-Id: <1404719695-1634-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140707160916.GA9238@himangi-Dell>
-In-Reply-To: <20140707160916.GA9238@himangi-Dell>
+References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Himangi Saraogi <himangi774@gmail.com>
-Cc: Linus Walleij <linus.walleij@linaro.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Julia Lawall <julia.lawall@lip6.fr>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-CC linux-sh
+Initialise SCIF device using DT when booting bockw
+using DT reference.
 
-On Mon, Jul 7, 2014 at 6:09 PM, Himangi Saraogi <himangi774@gmail.com> wrote:
-> This patch moves data allocated using regulator_register to
-> devm_regulator_register and does away the calls to regulator_unregister.
-> The sh73a0_pinmux_soc_exit function is no longer needed and is removed.
->
-> Signed-off-by: Himangi Saraogi <himangi774@gmail.com>
-> Acked-by: Julia Lawall <julia.lawall@lip6.fr>
-> ---
-> To send to: Linus Walleij <linus.walleij@linaro.org>,linux-kernel@vger.kernel.org
->  drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 11 ++---------
->  1 file changed, 2 insertions(+), 9 deletions(-)
->
-> diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-> index ee370de..0bd8f44 100644
-> --- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-> +++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-> @@ -3842,7 +3842,8 @@ static int sh73a0_pinmux_soc_init(struct sh_pfc *pfc)
->         cfg.init_data = &sh73a0_vccq_mc0_init_data;
->         cfg.driver_data = pfc;
->
-> -       data->vccq_mc0 = regulator_register(&sh73a0_vccq_mc0_desc, &cfg);
-> +       data->vccq_mc0 = devm_regulator_register(pfc->dev,
-> +                                                &sh73a0_vccq_mc0_desc, &cfg);
->         if (IS_ERR(data->vccq_mc0)) {
->                 ret = PTR_ERR(data->vccq_mc0);
->                 dev_err(pfc->dev, "Failed to register VCCQ MC0 regulator: %d\n",
-> @@ -3855,16 +3856,8 @@ static int sh73a0_pinmux_soc_init(struct sh_pfc *pfc)
->         return 0;
->  }
->
-> -static void sh73a0_pinmux_soc_exit(struct sh_pfc *pfc)
-> -{
-> -       struct sh73a0_pinmux_data *data = pfc->soc_data;
-> -
-> -       regulator_unregister(data->vccq_mc0);
-> -}
-> -
->  static const struct sh_pfc_soc_operations sh73a0_pinmux_ops = {
->         .init = sh73a0_pinmux_soc_init,
-> -       .exit = sh73a0_pinmux_soc_exit,
->         .get_bias = sh73a0_pinmux_get_bias,
->         .set_bias = sh73a0_pinmux_set_bias,
->  };
-> --
-> 1.9.1
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Gr{oetje,eeting}s,
+---
+v2
+* Correct whitespace
+* Added Ack from Laurent Pinchart
 
-                        Geert
+N.B: This only enables the production serial port (scif0) and not the
+debug serial port. It is unclear to me if the debug port is scif1 or scif5.
+And if the required PFC support is in place. At the very least the
+latter appears to be missing from r8a7778-bockw-reference.dts.
+---
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts | 14 +++++++++++---
+ arch/arm/mach-shmobile/setup-r8a7778.c        | 12 ++++++------
+ 2 files changed, 17 insertions(+), 9 deletions(-)
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index f76f6ec..3342c74 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -23,6 +23,10 @@
+ 	model = "bockw";
+ 	compatible = "renesas,bockw-reference", "renesas,r8a7778";
+ 
++	aliases {
++		serial0 = &scif0;
++	};
++
+ 	chosen {
+ 		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
+ 	};
+@@ -70,9 +74,6 @@
+ };
+ 
+ &pfc {
+-	pinctrl-0 = <&scif0_pins>;
+-	pinctrl-names = "default";
+-
+ 	scif0_pins: serial0 {
+ 		renesas,groups = "scif0_data_a", "scif0_ctrl";
+ 		renesas,function = "scif0";
+@@ -124,3 +125,10 @@
+ 		};
+ 	};
+ };
++
++&scif0 {
++	pinctrl-0 = <&scif0_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 2ccc012..e218c46 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -294,12 +294,6 @@ void __init r8a7778_add_dt_devices(void)
+ 	}
+ #endif
+ 
+-	r8a7778_register_scif(0);
+-	r8a7778_register_scif(1);
+-	r8a7778_register_scif(2);
+-	r8a7778_register_scif(3);
+-	r8a7778_register_scif(4);
+-	r8a7778_register_scif(5);
+ 	r8a7778_register_tmu(0);
+ }
+ 
+@@ -508,6 +502,12 @@ static void __init r8a7778_register_hpb_dmae(void)
+ void __init r8a7778_add_standard_devices(void)
+ {
+ 	r8a7778_add_dt_devices();
++	r8a7778_register_scif(0);
++	r8a7778_register_scif(1);
++	r8a7778_register_scif(2);
++	r8a7778_register_scif(3);
++	r8a7778_register_scif(4);
++	r8a7778_register_scif(5);
+ 	r8a7778_register_i2c(0);
+ 	r8a7778_register_i2c(1);
+ 	r8a7778_register_i2c(2);
+-- 
+2.0.0.rc2
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
