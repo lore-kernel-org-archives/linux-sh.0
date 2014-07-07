@@ -1,92 +1,30 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 23 Jul 2014 08:11:03 +0000
-Subject: Re: [PATCH 6/6] [PATCH v2] ARM: lager: add vin1 node
-Message-Id: <Pine.LNX.4.64.1407231010350.30243@axis700.grange>
+From: Olof Johansson <olof@lixom.net>
+Date: Mon, 07 Jul 2014 00:23:16 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC DT Updates for v3.17
+Message-Id: <20140707002316.GC8469@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404599185-12353-1-git-send-email-ben.dooks@codethink.co.uk>
- <1404599185-12353-7-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1404599185-12353-7-git-send-email-ben.dooks@codethink.co.uk>
+References: <cover.1403487225.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben.dooks@codethink.co.uk>
-Cc: linux-media@vger.kernel.org, linux-sh@vger.kernel.org, magnus.damm@opensource.se, horms@verge.net.au, linux-kernel@lists.codethink.co.uk
+To: linux-arm-kernel@lists.infradead.org
 
-Same for this one - who takes it and is CC sufficient?
+On Mon, Jun 23, 2014 at 11:28:34AM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
+> 
+> Please consider these Renesas ARM based SoC DT updates for v3.17.
+> 
+> 
+> The following changes since commit 7171511eaec5bf23fb06078f59784a3a0626b38f:
+> 
+>   Linux 3.16-rc1 (2014-06-15 17:45:28 -1000)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-dt-for-v3.17
 
-Thanks
-Guennadi
+Merged into next/dt. Thanks.
 
-On Sat, 5 Jul 2014, Ben Dooks wrote:
 
-> Add device-tree for vin1 (composite video in) on the
-> lager board.
-> 
-> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-> ---
-> 
-> Fixes since v1:
-> 	- Whitespace fixes as suggested by Sergei
-> ---
->  arch/arm/boot/dts/r8a7790-lager.dts | 36 ++++++++++++++++++++++++++++++++++++
->  1 file changed, 36 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-> index 4805c9f..e00543b 100644
-> --- a/arch/arm/boot/dts/r8a7790-lager.dts
-> +++ b/arch/arm/boot/dts/r8a7790-lager.dts
-> @@ -214,6 +214,11 @@
->  		renesas,groups = "i2c2";
->  		renesas,function = "i2c2";
->  	};
-> +
-> +	vin1_pins: vin {
-> +		renesas,groups = "vin1_data8", "vin1_clk";
-> +		renesas,function = "vin1";
-> +	};
->  };
->  
->  &ether {
-> @@ -342,8 +347,39 @@
->  	status = "ok";
->  	pinctrl-0 = <&i2c2_pins>;
->  	pinctrl-names = "default";
-> +
-> +	composite-in@20 {
-> +		compatible = "adi,adv7180";
-> +		reg = <0x20>;
-> +		remote = <&vin1>;
-> +
-> +		port {
-> +			adv7180: endpoint {
-> +				bus-width = <8>;
-> +				remote-endpoint = <&vin1ep0>;
-> +			};
-> +		};
-> +	};
->  };
->  
->  &i2c3	{
->  	status = "ok";
->  };
-> +
-> +/* composite video input */
-> +&vin1 {
-> +	pinctrl-0 = <&vin1_pins>;
-> +	pinctrl-names = "default";
-> +
-> +	status = "ok";
-> +
-> +	port {
-> +		#address-cells = <1>;
-> +		#size-cells = <0>;
-> +
-> +		vin1ep0: endpoint {
-> +			remote-endpoint = <&adv7180>;
-> +			bus-width = <8>;
-> +		};
-> +	};
-> +};
-> -- 
-> 2.0.0
-> 
+-Olof
