@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 15 Jul 2014 09:16:36 +0000
-Subject: [PATCH 6/8] ARM: shmobile: armadillo800eva-reference: Initialise SCIF device using DT
-Message-Id: <c4fac6f2f92331fa5788811357f8b8c3352e5ad8.1405398515.git.horms+renesas@verge.net.au>
+Date: Mon, 07 Jul 2014 07:54:52 +0000
+Subject: [PATCH v2 27/30] ARM: shmobile: kzm9g-reference: Initialise SCIF device using DT
+Message-Id: <1404719695-1634-28-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1405398515.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1405398515.git.horms+renesas@verge.net.au>
+References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -14,42 +14,46 @@ Initialise SCIF device using DT when booting armadillo800eva
 using DT reference.
 
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 14 +++++++++++---
- arch/arm/mach-shmobile/setup-r8a7740.c                  |  8 ++++----
+v2
+* First post
+---
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 14 +++++++++++---
+ arch/arm/mach-shmobile/setup-sh73a0.c        |  8 ++++----
  2 files changed, 15 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index ba2e180..ee9e7d5 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -19,6 +19,10 @@
- 	model = "armadillo 800 eva reference";
- 	compatible = "renesas,armadillo800eva-reference", "renesas,r8a7740";
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index a99171c..df2ae46 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -21,6 +21,10 @@
+ 	model = "KZM-A9-GT";
+ 	compatible = "renesas,kzm9g-reference", "renesas,sh73a0";
  
 +	aliases {
-+		serial1 = &scifa1;
++		serial4 = &scifa4;
 +	};
 +
- 	chosen {
- 		bootargs = "console=tty0 console=ttySC1,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
- 	};
-@@ -202,9 +206,6 @@
+ 	cpus {
+ 		cpu@0 {
+ 			cpu0-supply = <&vdd_dvfs>;
+@@ -276,9 +280,6 @@
  };
  
  &pfc {
--	pinctrl-0 = <&scifa1_pins>;
+-	pinctrl-0 = <&scifa4_pins>;
 -	pinctrl-names = "default";
 -
- 	ether_pins: ether {
- 		renesas,groups = "gether_mii", "gether_int";
- 		renesas,function = "gether";
-@@ -256,6 +257,13 @@
- 	status = "okay";
+ 	i2c3_pins: i2c3 {
+ 		renesas,groups = "i2c3_1";
+ 		renesas,function = "i2c3";
+@@ -318,6 +319,13 @@
+ 	};
  };
  
-+&scifa1 {
-+	pinctrl-0 = <&scifa1_pins>;
++&scifa4 {
++	pinctrl-0 = <&scifa4_pins>;
 +	pinctrl-names = "default";
 +
 +	status = "okay";
@@ -58,32 +62,32 @@ index ba2e180..ee9e7d5 100644
  &sdhi0 {
  	pinctrl-0 = <&sdhi0_pins>;
  	pinctrl-names = "default";
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 35dec23..d0f51f1 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -310,6 +310,10 @@ static struct platform_device ipmmu_device = {
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 2248821..2c802ae 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -697,6 +697,10 @@ static struct platform_device irqpin3_device = {
  };
  
- static struct platform_device *r8a7740_devices_dt[] __initdata = {
+ static struct platform_device *sh73a0_devices_dt[] __initdata = {
 +	&cmt1_device,
 +};
 +
-+static struct platform_device *r8a7740_early_devices[] __initdata = {
++static struct platform_device *sh73a0_early_devices[] __initdata = {
  	&scif0_device,
  	&scif1_device,
  	&scif2_device,
-@@ -319,10 +323,6 @@ static struct platform_device *r8a7740_devices_dt[] __initdata = {
+@@ -706,10 +710,6 @@ static struct platform_device *sh73a0_devices_dt[] __initdata = {
  	&scif6_device,
  	&scif7_device,
  	&scif8_device,
 -	&cmt1_device,
 -};
 -
--static struct platform_device *r8a7740_early_devices[] __initdata = {
- 	&irqpin0_device,
- 	&irqpin1_device,
- 	&irqpin2_device,
+-static struct platform_device *sh73a0_early_devices[] __initdata = {
+ 	&tmu0_device,
+ 	&ipmmu_device,
+ };
 -- 
-2.0.0
+2.0.0.rc2
 
