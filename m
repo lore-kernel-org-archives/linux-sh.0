@@ -1,30 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 08 Jul 2014 08:20:07 +0000
-Subject: Re: [PATCH] clocksource: tidyup Kconfig typo for MTU2
-Message-Id: <20140708082007.GB23642@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 07 Jul 2014 06:50:09 +0000
+Subject: [PATCH 2/2] ARM: shmobile: kzm9g-reference: Remove early_printk from command line
+Message-Id: <1404715809-31331-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87lhs4s3xw.wl%kuninori.morimoto.gx@renesas.com>
- <20140708074318.GB3649@katana>
-In-Reply-To: <20140708074318.GB3649@katana>
+References: <1404715809-31331-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1404715809-31331-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-Kernel <linux-kernel@vger.kernel.org>, Magnus Damm <damm@opensource.se>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, olof@lixom.net, john.stultz@linaro.org, daniel.lezcano@linaro.org, arnd@arndb.de, khilman@linaro.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jul 08, 2014 at 09:43:18AM +0200, Wolfram Sang wrote:
-> On Tue, Jul 08, 2014 at 12:30:02AM -0700, Kuninori Morimoto wrote:
-> > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > 
-> > It should be "MTU2" instead of "TMU2"
-> > 
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > ---
-> 
-> Obviously:
-> 
-> Acked-by: Wolfram Sang <wsa@sang-engineering.com>
+As early printk is not supported when devices are initialised
+using DT, so remove it from the command line.
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index a99171c..838f93e4 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -35,7 +35,7 @@
+ 	};
+ 
+ 	chosen {
+-		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200 rw";
++		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel rw";
+ 	};
+ 
+ 	memory {
+-- 
+2.0.0.rc2
 
