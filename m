@@ -1,55 +1,85 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 15 Jul 2014 22:45:21 +0000
-Subject: [PATCH 11/11] ARM: shmobile: r8a7791: Reference DMA channels in SDHI DT nodes
-Message-Id: <1405464321-4723-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 07 Jul 2014 07:54:27 +0000
+Subject: [PATCH v2 02/30] ARM: shmobile: r8a7778: Add SCIF nodes
+Message-Id: <1404719695-1634-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Ian Molton <ian.molton@codethink.co.uk>
+To: linux-arm-kernel@lists.infradead.org
 
-Add references to the transmit and receive DMA channels in the three
-SDHI nodes.
+This describes all of the SCIF hardware of the r8a7778.
+Each node is disabled and may be enabled as necessary
+by board DTS files.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 6 ++++++
- 1 file changed, 6 insertions(+)
+v2
+* Added ack from Laurent Pinchart
+* Removed interrupt-parent property from each new node
+  as it is inherited from the top-level.
+* Expanded changelog
+---
+ arch/arm/boot/dts/r8a7778.dtsi | 42 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 42 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index ff0d415..88be0cc 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -381,6 +381,8 @@
- 		reg = <0 0xee100000 0 0x200>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7791_CLK_SDHI0>;
-+		dmas = <&dmac0 0xcd>, <&dmac0 0xce>;
-+		dma-names = "tx", "rx";
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 3af0a21..ecfdf4b 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -156,6 +156,48 @@
  		status = "disabled";
  	};
  
-@@ -389,6 +391,8 @@
- 		reg = <0 0xee140000 0 0x100>;
- 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7791_CLK_SDHI1>;
-+		dmas = <&dmac0 0xc1>, <&dmac0 0xc2>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -397,6 +401,8 @@
- 		reg = <0 0xee160000 0 0x100>;
- 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7791_CLK_SDHI2>;
-+		dmas = <&dmac0 0xd3>, <&dmac0 0xd4>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
++	scif0: serial@ffe40000 {
++		compatible = "renesas,scif-r8a7778", "renesas,scif";
++		reg = <0xffe40000 0x100>;
++		interrupts = <0 70 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	scif1: serial@ffe41000 {
++		compatible = "renesas,scif-r8a7778", "renesas,scif";
++		reg = <0xffe41000 0x100>;
++		interrupts = <0 71 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	scif2: serial@ffe42000 {
++		compatible = "renesas,scif-r8a7778", "renesas,scif";
++		reg = <0xffe42000 0x100>;
++		interrupts = <0 72 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	scif3: serial@ffe43000 {
++		compatible = "renesas,scif-r8a7778", "renesas,scif";
++		reg = <0xffe43000 0x100>;
++		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	scif4: serial@ffe44000 {
++		compatible = "renesas,scif-r8a7778", "renesas,scif";
++		reg = <0xffe44000 0x100>;
++		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	scif5: serial@ffe45000 {
++		compatible = "renesas,scif-r8a7778", "renesas,scif";
++		reg = <0xffe45000 0x100>;
++		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
+ 	mmcif: mmc@ffe4e000 {
+ 		compatible = "renesas,sh-mmcif";
+ 		reg = <0xffe4e000 0x100>;
 -- 
-1.8.5.5
+2.0.0.rc2
 
