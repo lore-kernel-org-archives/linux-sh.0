@@ -1,51 +1,68 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 31 Jul 2014 00:25:15 +0000
-Subject: [PATCH] ARM: shmobile: Rework multiplatform include workaround
-Message-Id: <20140731002515.30680.1397.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 07 Jul 2014 07:54:39 +0000
+Subject: [PATCH v2 14/30] ARM: shmobile: r8a73a4: Remove empty r8a73a4_add_dt_devices
+Message-Id: <1404719695-1634-15-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+r8a73a4_add_dt_devices() no longer enables any devices
+so remove it.
 
-Now when the majority of the include files have moved from
-arch/arm/mach-shmobile/include/mach/ to arch/arm/mach-shmobile/
-remove the header include file workaround in the Makefile...
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-... and add another workaround in irqs.h to cope with the fact
-that <mach/irqs.h> needs to be where it is until the PFC code
-has been updated to remove legacy non-DT interfaces.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
+v2
+* First post
+---
+ arch/arm/mach-shmobile/board-ape6evm-reference.c | 1 -
+ arch/arm/mach-shmobile/r8a73a4.h                 | 1 -
+ arch/arm/mach-shmobile/setup-r8a73a4.c           | 4 ----
+ 3 files changed, 6 deletions(-)
 
- Written against renesas-devel-v3.16-rc7-20140729
-
- arch/arm/mach-shmobile/Makefile |    2 --
- arch/arm/mach-shmobile/irqs.h   |    2 +-
- 2 files changed, 1 insertion(+), 3 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2014-07-31 09:11:18.000000000 +0900
-@@ -2,8 +2,6 @@
- # Makefile for the linux kernel.
- #
+diff --git a/arch/arm/mach-shmobile/board-ape6evm-reference.c b/arch/arm/mach-shmobile/board-ape6evm-reference.c
+index 2f7723e..f0aef6dc 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm-reference.c
++++ b/arch/arm/mach-shmobile/board-ape6evm-reference.c
+@@ -48,7 +48,6 @@ static void __init ape6evm_add_standard_devices(void)
+ 	clk_put(parent);
+ 	clk_put(mp);
  
--ccflags-$(CONFIG_ARCH_MULTIPLATFORM) := -I$(srctree)/arch/arm/mach-shmobile/include
+-	r8a73a4_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 	platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
+ }
+diff --git a/arch/arm/mach-shmobile/r8a73a4.h b/arch/arm/mach-shmobile/r8a73a4.h
+index ce8bdd1..7ced9ab 100644
+--- a/arch/arm/mach-shmobile/r8a73a4.h
++++ b/arch/arm/mach-shmobile/r8a73a4.h
+@@ -11,7 +11,6 @@ enum {
+ };
+ 
+ void r8a73a4_add_standard_devices(void);
+-void r8a73a4_add_dt_devices(void);
+ void r8a73a4_clock_init(void);
+ void r8a73a4_pinmux_init(void);
+ void r8a73a4_init_early(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
+index 10e3f14..372cce4 100644
+--- a/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
+@@ -187,10 +187,6 @@ static struct resource cmt1_resources[] = {
+ 					  &cmt##idx##_platform_data,	\
+ 					  sizeof(struct sh_timer_config))
+ 
+-void __init r8a73a4_add_dt_devices(void)
+-{
+-}
 -
- # Common objects
- obj-y				:= timer.o console.o
- 
---- 0001/arch/arm/mach-shmobile/irqs.h
-+++ work/arch/arm/mach-shmobile/irqs.h	2014-07-31 09:12:56.000000000 +0900
-@@ -2,7 +2,7 @@
- #define __SHMOBILE_IRQS_H
- 
- #include <linux/sh_intc.h>
--#include <mach/irqs.h>
-+#include "include/mach/irqs.h"
- 
- /* GIC */
- #define gic_spi(nr)		((nr) + 32)
+ /* DMA */
+ static const struct sh_dmae_slave_config dma_slaves[] = {
+ 	{
+-- 
+2.0.0.rc2
+
