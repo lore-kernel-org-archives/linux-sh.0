@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 07 Jul 2014 07:54:38 +0000
-Subject: [PATCH v2 13/30] ARM: shmobile: ape6evm-reference: Initialise CMT1 device using DT
-Message-Id: <1404719695-1634-14-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 07 Jul 2014 07:54:50 +0000
+Subject: [PATCH v2 25/30] ARM: shmobile: sh73a0: add SCI clock support for DT
+Message-Id: <1404719695-1634-26-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
@@ -10,8 +10,8 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Initialise CMT1 device using DT when booting ape6evm
-using DT-reference.
+This will be used when initialising SCI devices using DT
+until common clock framework support is added.
 
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
@@ -19,46 +19,39 @@ Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 v2
 * First post
 ---
- arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts | 4 ++++
- arch/arm/mach-shmobile/setup-r8a73a4.c          | 3 +--
- 2 files changed, 5 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/clock-sh73a0.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-index a860f32..a42ba09 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-@@ -93,6 +93,10 @@
- 	voltage-tolerance = <1>; /* 1% */
- };
- 
-+&cmt1 {
-+	status = "okay";
-+};
-+
- &pfc {
- 	scifa0_pins: serial0 {
- 		renesas,groups = "scifa0_data";
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index 496ecf3..10e3f14 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -189,7 +189,6 @@ static struct resource cmt1_resources[] = {
- 
- void __init r8a73a4_add_dt_devices(void)
- {
--	r8a73a4_register_cmt(1);
- }
- 
- /* DMA */
-@@ -282,7 +281,7 @@ static struct resource dma_resources[] = {
- 
- void __init r8a73a4_add_standard_devices(void)
- {
--	r8a73a4_add_dt_devices();
-+	r8a73a4_register_cmt(1);
- 	r8a73a4_register_scif(0);
- 	r8a73a4_register_scif(1);
- 	r8a73a4_register_scif(2);
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 37f4838..9433a4e 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -638,16 +638,25 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6820000.i2c", &mstp_clks[MSTP116]), /* I2C0 */
+ 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.0", &mstp_clks[MSTP100]), /* LCDC0 */
+ 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP219]), /* SCIFA7 */
++	CLKDEV_DEV_ID("e6cd0000.serial", &mstp_clks[MSTP219]), /* SCIFA7 */
+ 	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP218]), /* SY-DMAC */
+ 	CLKDEV_DEV_ID("sh-dma-engine.1", &mstp_clks[MSTP217]), /* MP-DMAC */
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP207]), /* SCIFA5 */
++	CLKDEV_DEV_ID("e6cb0000.serial", &mstp_clks[MSTP207]), /* SCIFA5 */
+ 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP206]), /* SCIFB */
++	CLKDEV_DEV_ID("0xe6c3000.serial", &mstp_clks[MSTP206]), /* SCIFB */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]), /* SCIFA0 */
++	CLKDEV_DEV_ID("e6c40000.serial", &mstp_clks[MSTP204]), /* SCIFA0 */
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]), /* SCIFA1 */
++	CLKDEV_DEV_ID("e6c50000.serial", &mstp_clks[MSTP203]), /* SCIFA1 */
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP202]), /* SCIFA2 */
++	CLKDEV_DEV_ID("e6c60000.serial", &mstp_clks[MSTP202]), /* SCIFA2 */
+ 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP201]), /* SCIFA3 */
++	CLKDEV_DEV_ID("e6c70000.serial", &mstp_clks[MSTP201]), /* SCIFA3 */
+ 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP200]), /* SCIFA4 */
++	CLKDEV_DEV_ID("e6c80000.serial", &mstp_clks[MSTP200]), /* SCIFA4 */
+ 	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP331]), /* SCIFA6 */
++	CLKDEV_DEV_ID("e6cc0000.serial", &mstp_clks[MSTP331]), /* SCIFA6 */
+ 	CLKDEV_DEV_ID("sh_fsi2", &mstp_clks[MSTP328]), /* FSI */
+ 	CLKDEV_DEV_ID("ec230000.sound", &mstp_clks[MSTP328]), /* FSI */
+ 	CLKDEV_DEV_ID("sh_irda.0", &mstp_clks[MSTP325]), /* IrDA */
 -- 
 2.0.0.rc2
 
