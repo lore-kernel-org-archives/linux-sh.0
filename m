@@ -1,85 +1,51 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 07 Jul 2014 07:54:27 +0000
-Subject: [PATCH v2 02/30] ARM: shmobile: r8a7778: Add SCIF nodes
-Message-Id: <1404719695-1634-3-git-send-email-horms+renesas@verge.net.au>
+From: Ian Molton <ian.molton@codethink.co.uk>
+Date: Tue, 08 Jul 2014 09:41:11 +0000
+Subject: [PATCH 1/4] media: rcar_vin: Dont aggressively retire buffers
+Message-Id: <1404812474-7627-2-git-send-email-ian.molton@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+References: <1404812474-7627-1-git-send-email-ian.molton@codethink.co.uk>
+In-Reply-To: <1404812474-7627-1-git-send-email-ian.molton@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-kernel@lists.codethink.co.uk, ian.molton@codethink.co.uk, g.liakhovetski@gmx.de, m.chehab@samsung.com, vladimir.barinov@cogentembedded.com, magnus.damm@gmail.com, horms@verge.net.au, linux-sh@vger.kernel.org
 
-This describes all of the SCIF hardware of the r8a7778.
-Each node is disabled and may be enabled as necessary
-by board DTS files.
+rcar_vin_videobuf_release() is called once per buffer from the buf_cleanup hook.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+There is no need to look up the queue and free all buffers at this point.
 
+Signed-off-by: Ian Molton <ian.molton@codethink.co.uk>
+Signed-off-by: William Towle <william.towle@codethink.co.uk>
 ---
-v2
-* Added ack from Laurent Pinchart
-* Removed interrupt-parent property from each new node
-  as it is inherited from the top-level.
-* Expanded changelog
----
- arch/arm/boot/dts/r8a7778.dtsi | 42 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 42 insertions(+)
+ drivers/media/platform/soc_camera/rcar_vin.c | 12 +++---------
+ 1 file changed, 3 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 3af0a21..ecfdf4b 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -156,6 +156,48 @@
- 		status = "disabled";
- 	};
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index e594230..7154500 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -493,17 +493,11 @@ static void rcar_vin_videobuf_release(struct vb2_buffer *vb)
+ 		 * to release could be any of the current buffers in use, so
+ 		 * release all buffers that are in use by HW
+ 		 */
+-		for (i = 0; i < MAX_BUFFER_NUM; i++) {
+-			if (priv->queue_buf[i]) {
+-				vb2_buffer_done(priv->queue_buf[i],
+-					VB2_BUF_STATE_ERROR);
+-				priv->queue_buf[i] = NULL;
+-			}
+-		}
+-	} else {
+-		list_del_init(to_buf_list(vb));
++		priv->queue_buf[i] = NULL;
+ 	}
  
-+	scif0: serial@ffe40000 {
-+		compatible = "renesas,scif-r8a7778", "renesas,scif";
-+		reg = <0xffe40000 0x100>;
-+		interrupts = <0 70 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
++	list_del_init(to_buf_list(vb));
 +
-+	scif1: serial@ffe41000 {
-+		compatible = "renesas,scif-r8a7778", "renesas,scif";
-+		reg = <0xffe41000 0x100>;
-+		interrupts = <0 71 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scif2: serial@ffe42000 {
-+		compatible = "renesas,scif-r8a7778", "renesas,scif";
-+		reg = <0xffe42000 0x100>;
-+		interrupts = <0 72 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scif3: serial@ffe43000 {
-+		compatible = "renesas,scif-r8a7778", "renesas,scif";
-+		reg = <0xffe43000 0x100>;
-+		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scif4: serial@ffe44000 {
-+		compatible = "renesas,scif-r8a7778", "renesas,scif";
-+		reg = <0xffe44000 0x100>;
-+		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scif5: serial@ffe45000 {
-+		compatible = "renesas,scif-r8a7778", "renesas,scif";
-+		reg = <0xffe45000 0x100>;
-+		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
- 	mmcif: mmc@ffe4e000 {
- 		compatible = "renesas,sh-mmcif";
- 		reg = <0xffe4e000 0x100>;
+ 	spin_unlock_irq(&priv->lock);
+ }
+ 
 -- 
-2.0.0.rc2
+1.9.1
 
