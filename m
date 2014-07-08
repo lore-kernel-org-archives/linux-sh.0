@@ -1,77 +1,47 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 15 Jul 2014 09:16:33 +0000
-Subject: [PATCH 3/8] ARM: shmobile: r8a73a4: Add SCIF nodes
-Message-Id: <94f1a03db6988c64601dc84eaf6c8ef1b956d9e7.1405398515.git.horms+renesas@verge.net.au>
+From: Ian Molton <ian.molton@codethink.co.uk>
+Date: Tue, 08 Jul 2014 09:41:12 +0000
+Subject: [PATCH 2/4] media: rcar_vin: Ensure all in-flight buffers are returned to error state before stoppin
+Message-Id: <1404812474-7627-3-git-send-email-ian.molton@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1405398515.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1405398515.git.horms+renesas@verge.net.au>
+References: <1404812474-7627-1-git-send-email-ian.molton@codethink.co.uk>
+In-Reply-To: <1404812474-7627-1-git-send-email-ian.molton@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-kernel@lists.codethink.co.uk, ian.molton@codethink.co.uk, g.liakhovetski@gmx.de, m.chehab@samsung.com, vladimir.barinov@cogentembedded.com, magnus.damm@gmail.com, horms@verge.net.au, linux-sh@vger.kernel.org
 
-This describes all of the SCIF hardware of the r8a73a4.
-Each node is disabled and may be enabled as necessary
-by board DTS files.
+Videobuf2 complains about buffers that are still marked ACTIVE (in use by the driver) following a call to stop_streaming().
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+This patch returns all active buffers to state ERROR prior to stopping.
+
+Note: this introduces a (non fatal) race condition as the stream is not guaranteed to be stopped at this point.
+
+Signed-off-by: Ian Molton <ian.molton@codethink.co.uk>
+Signed-off-by: William Towle <william.towle@codethink.co.uk>
 ---
- arch/arm/boot/dts/r8a73a4.dtsi | 42 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 42 insertions(+)
+ drivers/media/platform/soc_camera/rcar_vin.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index 82c5ac8..d8ec505 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -252,6 +252,48 @@
- 		status = "disabled";
- 	};
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index 7154500..06ce705 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -513,8 +513,14 @@ static void rcar_vin_stop_streaming(struct vb2_queue *vq)
+ 	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct rcar_vin_priv *priv = ici->priv;
+ 	struct list_head *buf_head, *tmp;
++	int i;
  
-+	scifa0: serial@e6c40000 {
-+		compatible = "renesas,scifa-r8a73a4", "renesas,scifa";
-+		reg = <0 0xe6c40000 0 0x100>;
-+		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
+ 	spin_lock_irq(&priv->lock);
 +
-+	scifa1: serial@e6c50000 {
-+		compatible = "renesas,scifa-r8a73a4", "renesas,scifa";
-+		reg = <0 0xe6c50000 0 0x100>;
-+		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
++	for (i = 0; i < vq->num_buffers; ++i)
++		if (vq->bufs[i]->state = VB2_BUF_STATE_ACTIVE)
++			vb2_buffer_done(vq->bufs[i], VB2_BUF_STATE_ERROR);
 +
-+	scifb2: serial@e6c20000 {
-+		compatible = "renesas,scifb-r8a73a4", "renesas,scifb";
-+		reg = <0 0xe6c20000 0 0x100>;
-+		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scifb3: serial@e6c30000 {
-+		compatible = "renesas,scifb-r8a73a4", "renesas,scifb";
-+		reg = <0 0xe6c30000 0 0x100>;
-+		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scifb4: serial@e6ce0000 {
-+		compatible = "renesas,scifb-r8a73a4", "renesas,scifb";
-+		reg = <0 0xe6ce0000 0 0x100>;
-+		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scifb5: serial@e6cf0000 {
-+		compatible = "renesas,scifb-r8a73a4", "renesas,scifb";
-+		reg = <0 0xe6cf0000 0 0x100>;
-+		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
- 	mmcif0: mmc@ee200000 {
- 		compatible = "renesas,sh-mmcif";
- 		reg = <0 0xee200000 0 0x80>;
+ 	list_for_each_safe(buf_head, tmp, &priv->capture)
+ 		list_del_init(buf_head);
+ 	spin_unlock_irq(&priv->lock);
 -- 
-2.0.0
+1.9.1
 
