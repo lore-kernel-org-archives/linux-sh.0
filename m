@@ -1,59 +1,44 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 11 Jul 2014 09:23:08 +0000
-Subject: Re: [PATCH 12/13] [RFC] thermal: rcar: Add binding docs for new R-Car Gen2 SoCs
-Message-Id: <20140711092308.GC22753@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 08 Jul 2014 09:34:14 +0000
+Subject: [GIT PULL] Third Round of Renesas ARM Based SoC Updates for v3.17
+Message-Id: <cover.1404811926.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404908623-909-1-git-send-email-geert+renesas@glider.be>
- <1404908623-909-13-git-send-email-geert+renesas@glider.be>
- <20140711092112.GQ12420@verge.net.au>
-In-Reply-To: <20140711092112.GQ12420@verge.net.au>
+References: <cover.1378362045.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1378362045.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Magnus Damm <magnus.damm@gmail.com>, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jul 11, 2014 at 11:21:12AM +0200, Simon Horman wrote:
-> On Wed, Jul 09, 2014 at 02:23:42PM +0200, Geert Uytterhoeven wrote:
-> >   - r8a7792 (R-Car V2H)
-> >   - r8a7793 (R-Car M2-N)
-> >   - r8a7794 (R-Car E2)
-> > 
-> > r8a7791 is now called "R-Car M2-W".
-> 
-> I don't feel strongly about this either way.  But it seems to me that if we
-> want to start using "M2-W" then we should make some effort, though not
-> necessarily immediately, to update all instances of "M2" that already exist
-> in the tree.
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Also, as per my comment on tmio-mmc:
+Please consider these third round of Renesas ARM based SoC updates for v3.17.
 
-	This seems to be in keeping with the approach we ave taken for
-	these SoCs for other drivers. And from that point of view it is
-	fine by me.  But I wonder how sure are we that the hardware on the
-	SoCs will work with this approach.
+This pull request is based on the previous round of
+such requests, tagged as renesas-soc2-for-v3.17,
+which I have already sent a pull-request for.
 
-> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> > ---
-> >  Documentation/devicetree/bindings/thermal/rcar-thermal.txt | 5 ++++-
-> >  1 file changed, 4 insertions(+), 1 deletion(-)
-> > 
-> > diff --git a/Documentation/devicetree/bindings/thermal/rcar-thermal.txt b/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
-> > index 0ef00be44b01..43404b197933 100644
-> > --- a/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
-> > +++ b/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
-> > @@ -7,7 +7,10 @@ Required properties:
-> >  			    - "renesas,thermal-r8a73a4" (R-Mobile AP6)
-> >  			    - "renesas,thermal-r8a7779" (R-Car H1)
-> >  			    - "renesas,thermal-r8a7790" (R-Car H2)
-> > -			    - "renesas,thermal-r8a7791" (R-Car M2)
-> > +			    - "renesas,thermal-r8a7791" (R-Car M2-W)
-> > +			    - "renesas,thermal-r8a7792" (R-Car V2H)
-> > +			    - "renesas,thermal-r8a7793" (R-Car M2-N)
-> > +			    - "renesas,thermal-r8a7794" (R-Car E2)
-> >  - reg			: Address range of the thermal registers.
-> >  			  The 1st reg will be recognized as common register
-> >  			  if it has "interrupts".
-> > -- 
-> > 1.9.1
-> > 
+
+The following changes since commit bfe4cfa8ae21628267f2b879b4396ee17ea4fd3a:
+
+  ARM: shmobile: Allow r8a7791 to build non-SMP APMU code (2014-06-26 16:01:34 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-soc3-for-v3.17
+
+for you to fetch changes up to d358c99838f3cf63ad7536124be4318cc84b11fa:
+
+  ARM: shmobile: fix shmobile_smp_apmu_suspend_init build failure for !SUSPEND (2014-07-06 16:31:56 +0200)
+
+----------------------------------------------------------------
+Third Round of Renesas ARM Based SoC Updates for v3.17
+
+* Correct build failure in APMU code in the case of !SUSPEND
+
+----------------------------------------------------------------
+Arnd Bergmann (1):
+      ARM: shmobile: fix shmobile_smp_apmu_suspend_init build failure for !SUSPEND
+
+ arch/arm/mach-shmobile/platsmp-apmu.c | 2 --
+ 1 file changed, 2 deletions(-)
