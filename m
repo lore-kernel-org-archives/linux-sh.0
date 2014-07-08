@@ -1,65 +1,40 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 02 Jul 2014 14:23:35 +0000
-Subject: [GIT PULL FOR v3.17] Renesas CMT, MTU2 and TMU timers DT support
-Message-Id: <2296815.Nb0BXfBtnT@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 08 Jul 2014 09:34:16 +0000
+Subject: [PATCH] ARM: shmobile: fix shmobile_smp_apmu_suspend_init build failure for !SUSPEND
+Message-Id: <d358c99838f3cf63ad7536124be4318cc84b11fa.1404811926.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1404811926.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1404811926.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Daniel,
+From: Arnd Bergmann <arnd@arndb.de>
 
-Could you please merge pull the following changes for v3.17 ? They have 
-previously been posted as "[PATCH v4] Renesas CMT, MTU2 and TMU timers DT 
-support". The only change compared to that version is a rebase on top of 
-v3.16-rc3.
+Patch d6d757c9a4e ("ARM: shmobile: APMU: Add Core-Standby-state for
+Suspend to RAM") added both an inline wrapper for shmobile_smp_apmu_suspend_init
+and an empty function in arch/arm/mach-shmobile/platsmp-apmu.c. We get a
+build failure when both are present, so this patch removes the one in the .c
+file and keeps the inline version.
 
-As last time I have board and SoC changes that depend on the driver changes 
-and that will need to go through Simon's tree. Could you thus please provide a 
-stable branch based on one of the v3.16-rc tags ?
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/platsmp-apmu.c | 2 --
+ 1 file changed, 2 deletions(-)
 
-The following changes since commit 4c834452aad01531db949414f94f817a86348d59:
-
-  Linux 3.16-rc3 (2014-06-29 14:11:36 -0700)
-
-are available in the git repository at:
-
-  git://linuxtv.org/pinchartl/fbdev.git timers/upstream/drivers
-
-for you to fetch changes up to 64a653a02e47e3cfdab45d0b52c4522a09bed590:
-
-  clocksource: sh_mtu2: Add DT support (2014-07-02 16:01:53 +0200)
-
-----------------------------------------------------------------
-Laurent Pinchart (10):
-      clocksource: sh_cmt: Drop support for legacy platform data
-      clocksource: sh_cmt: Replace global spinlock with a per-device spinlock
-      clocksource: sh_tmu: Drop support for legacy platform data
-      clocksource: sh_tmu: Replace global spinlock with a per-device spinlock
-      clocksource: sh_mtu2: Drop support for legacy platform data
-      clocksource: sh_mtu2: Replace global spinlock with a per-device spinlock
-      clocksource: shmobile: Remove unused sh_timer_config members
-      clocksource: sh_cmt: Add DT support
-      clocksource: sh_tmu: Add DT support
-      clocksource: sh_mtu2: Add DT support
-
- Documentation/devicetree/bindings/timer/renesas,cmt.txt |  47 +++++
- .../devicetree/bindings/timer/renesas,mtu2.txt          |  39 ++++
- Documentation/devicetree/bindings/timer/renesas,tmu.txt |  39 ++++
- drivers/clocksource/sh_cmt.c                            | 233 ++++++---------
- drivers/clocksource/sh_mtu2.c                           | 146 +++++----------
- drivers/clocksource/sh_tmu.c                            | 127 ++++++-------
- include/linux/sh_timer.h                                |   5 -
- 7 files changed, 309 insertions(+), 327 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/timer/renesas,cmt.txt
- create mode 100644 Documentation/devicetree/bindings/timer/renesas,mtu2.txt
- create mode 100644 Documentation/devicetree/bindings/timer/renesas,tmu.txt
-
+diff --git a/arch/arm/mach-shmobile/platsmp-apmu.c b/arch/arm/mach-shmobile/platsmp-apmu.c
+index a05b16d..2c06810 100644
+--- a/arch/arm/mach-shmobile/platsmp-apmu.c
++++ b/arch/arm/mach-shmobile/platsmp-apmu.c
+@@ -244,6 +244,4 @@ void __init shmobile_smp_apmu_suspend_init(void)
+ {
+ 	shmobile_suspend_ops.enter = shmobile_smp_apmu_enter_suspend;
+ }
+-#else
+-void shmobile_smp_apmu_suspend_init(void) {}
+ #endif
 -- 
-Regards,
-
-Laurent Pinchart
+2.0.0.rc2
 
