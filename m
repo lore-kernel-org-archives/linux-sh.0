@@ -1,7 +1,7 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 01 Jul 2014 18:55:42 +0000
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Tue, 08 Jul 2014 08:43:08 +0000
 Subject: Re: [PATCH] sh-pfc: r8a7791: add CAN pin groups
-Message-Id: <53B3042E.1060606@cogentembedded.com>
+Message-Id: <CACRpkdYpsSEjuaDiEHjjmtEaJRhj9MiJ218SGf2c3jEJoqAXJA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201407010211.23665.sergei.shtylyov@cogentembedded.com>
 In-Reply-To: <201407010211.23665.sergei.shtylyov@cogentembedded.com>
@@ -10,38 +10,37 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello.
+On Tue, Jul 1, 2014 at 9:11 AM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
 
-On 07/01/2014 11:11 AM, Laurent Pinchart wrote:
+>> +static const char * const can0_groups[] = {
+>> +     "can0_data_a",
+>> +     "can0_data_b",
+>> +     "can0_data_c",
+>> +     "can0_data_d",
+>> +     "can0_data_e",
+>> +     "can0_data_f",
+>> +     "can_clk_a",
+>> +     "can_clk_b",
+>> +     "can_clk_c",
+>> +     "can_clk_d",
+>> +};
+>> +
+>> +static const char * const can1_groups[] = {
+>> +     "can1_data_a",
+>> +     "can1_data_b",
+>> +     "can1_data_c",
+>> +     "can1_data_d",
+>> +     "can_clk_a",
+>> +     "can_clk_b",
+>> +     "can_clk_c",
+>> +     "can_clk_d",
+>
+> Linus, can a group be listed as part of two different functions ?
 
->> Add CAN0/1 data/clock pin groups to R8A7791 PFC driver.
+Yeah sure, it's just an indication that this group can be mapped
+onto this function. If you try to use both at the same time at runtime,
+the subsystem will complain (hopefully).
 
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
->> ---
->> The patch is against the 'devel' branch of Linus W.'s 'linux-pinctrl.git'
->> repo.
-
->>   drivers/pinctrl/sh-pfc/pfc-r8a7791.c |  153 +++++++++++++++++++++++++++++++
->>   1 file changed, 153 insertions(+)
-
->> Index: linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
->> =================================>> --- linux-pinctrl.orig/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
->> +++ linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
->> @@ -1726,6 +1726,119 @@ static const unsigned int audio_clkout_m
->>   	AUDIO_CLKOUT_MARK,
->>   };
->>
->> +/* - CAN --------------------------------------------------------------- */
-
-> [snip]
-
->> +static const unsigned int can_clk_c_pins[] = {
->> +	RCAR_GP_PIN(4, 31),
-
-> Shouldn't this be (4, 30) ?
-
-    Indeed, thank you for checking!
-
-WBR, Sergei
-
+Yours,
+Linus Walleij
