@@ -1,123 +1,70 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 31 Jul 2014 00:34:04 +0000
-Subject: [PATCH 1/6] dmaengine: sh: Rework Kconfig and Makefile
-Message-Id: <ee2c6c7ca3288a078aa299c37144f1d4a08616c8.1406766014.git.horms+renesas@verge.net.au>
+From: Ian Molton <ian.molton@codethink.co.uk>
+Date: Tue, 08 Jul 2014 09:41:14 +0000
+Subject: [PATCH 4/4] media: rcar_vin: Clean up rcar_vin_irq
+Message-Id: <1404812474-7627-5-git-send-email-ian.molton@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1404812474-7627-1-git-send-email-ian.molton@codethink.co.uk>
+In-Reply-To: <1404812474-7627-1-git-send-email-ian.molton@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-kernel@lists.codethink.co.uk, ian.molton@codethink.co.uk, g.liakhovetski@gmx.de, m.chehab@samsung.com, vladimir.barinov@cogentembedded.com, magnus.damm@gmail.com, horms@verge.net.au, linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This patch makes the rcar_vin IRQ handler a little more readable.
 
-Separate helpers and drivers in the Kconfig and Makefile to improve
-readability and move the CONFIG_OF dependency from the Makefile to
-Kconfig.
+Removes an else clause, and simplifies the buffer handling.
 
-[pebolle@tiscali.nl: reported need to rename SHDMA_R8A73A4 instances]
-Reported-by: Paul Bolle <pebolle@tiscali.nl>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-[horms+renesas@verge.net.au: squashed rename of SHDMA_R8A73A4 instances]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ian Molton <ian.molton@codethink.co.uk>
+Reviewed-by: William Towle <william.towle@codethink.co.uk>
 ---
- drivers/dma/sh/Kconfig  | 24 +++++++++++++++++++-----
- drivers/dma/sh/Makefile | 16 ++++++++++++----
- drivers/dma/sh/shdma.h  |  2 +-
- 3 files changed, 32 insertions(+), 10 deletions(-)
+ drivers/media/platform/soc_camera/rcar_vin.c | 24 ++++++++++++++----------
+ 1 file changed, 14 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/dma/sh/Kconfig b/drivers/dma/sh/Kconfig
-index 0f71981..0349125 100644
---- a/drivers/dma/sh/Kconfig
-+++ b/drivers/dma/sh/Kconfig
-@@ -2,21 +2,39 @@
- # DMA engine configuration for sh
- #
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index aeda4e2..a8d2785 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -554,7 +554,6 @@ static irqreturn_t rcar_vin_irq(int irq, void *data)
+ 	struct rcar_vin_priv *priv = data;
+ 	u32 int_status;
+ 	bool can_run = false, hw_stopped;
+-	int slot;
+ 	unsigned int handled = 0;
  
-+#
-+# DMA Engine Helpers
-+#
-+
- config SH_DMAE_BASE
- 	bool "Renesas SuperH DMA Engine support"
--	depends on (SUPERH && SH_DMA) || ARCH_SHMOBILE || COMPILE_TEST
-+	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
-+	depends on !SUPERH || SH_DMA
- 	depends on !SH_DMA_API
- 	default y
- 	select DMA_ENGINE
- 	help
- 	  Enable support for the Renesas SuperH DMA controllers.
+ 	spin_lock(&priv->lock);
+@@ -573,17 +572,22 @@ static irqreturn_t rcar_vin_irq(int irq, void *data)
+ 	hw_stopped = !(ioread32(priv->base + VNMS_REG) & VNMS_CA);
  
-+#
-+# DMA Controllers
-+#
+ 	if (!priv->request_to_stop) {
++		struct vb2_buffer **q_entry = priv->queue_buf;
++		struct vb2_buffer *vb;
 +
- config SH_DMAE
- 	tristate "Renesas SuperH DMAC support"
- 	depends on SH_DMAE_BASE
- 	help
- 	  Enable support for the Renesas SuperH DMA controllers.
+ 		if (is_continuous_transfer(priv))
+-			slot = (ioread32(priv->base + VNMS_REG) &
+-				VNMS_FBS_MASK) >> VNMS_FBS_SHIFT;
+-		else
+-			slot = 0;
++			q_entry += (ioread32(priv->base + VNMS_REG) &
++					VNMS_FBS_MASK) >> VNMS_FBS_SHIFT;
++
++		vb = *q_entry;
++
++		vb->v4l2_buf.field = priv->field;
++		vb->v4l2_buf.sequence = priv->sequence++;
++		do_gettimeofday(&vb->v4l2_buf.timestamp);
++
++		vb2_buffer_done(vb, VB2_BUF_STATE_DONE);
  
-+if SH_DMAE
-+
-+config SH_DMAE_R8A73A4
-+	def_bool y
-+	depends on ARCH_R8A73A4
-+	depends on OF
-+
-+endif
-+
- config SUDMAC
- 	tristate "Renesas SUDMAC support"
- 	depends on SH_DMAE_BASE
-@@ -34,7 +52,3 @@ config RCAR_AUDMAC_PP
- 	depends on SH_DMAE_BASE
- 	help
- 	  Enable support for the Renesas R-Car Audio DMAC Peripheral Peripheral controllers.
--
--config SHDMA_R8A73A4
--	def_bool y
--	depends on ARCH_R8A73A4 && SH_DMAE != n
-diff --git a/drivers/dma/sh/Makefile b/drivers/dma/sh/Makefile
-index 1ce88b2..0a5cfdb 100644
---- a/drivers/dma/sh/Makefile
-+++ b/drivers/dma/sh/Makefile
-@@ -1,10 +1,18 @@
-+#
-+# DMA Engine Helpers
-+#
-+
- obj-$(CONFIG_SH_DMAE_BASE) += shdma-base.o shdma-of.o
--obj-$(CONFIG_SH_DMAE) += shdma.o
-+
-+#
-+# DMA Controllers
-+#
-+
- shdma-y := shdmac.o
--ifeq ($(CONFIG_OF),y)
--shdma-$(CONFIG_SHDMA_R8A73A4) += shdma-r8a73a4.o
--endif
-+shdma-$(CONFIG_SH_DMAE_R8A73A4) += shdma-r8a73a4.o
- shdma-objs := $(shdma-y)
-+obj-$(CONFIG_SH_DMAE) += shdma.o
-+
- obj-$(CONFIG_SUDMAC) += sudmac.o
- obj-$(CONFIG_RCAR_HPB_DMAE) += rcar-hpbdma.o
- obj-$(CONFIG_RCAR_AUDMAC_PP) += rcar-audmapp.o
-diff --git a/drivers/dma/sh/shdma.h b/drivers/dma/sh/shdma.h
-index 758a57b..2c0a969 100644
---- a/drivers/dma/sh/shdma.h
-+++ b/drivers/dma/sh/shdma.h
-@@ -62,7 +62,7 @@ struct sh_dmae_desc {
- #define to_sh_dev(chan) container_of(chan->shdma_chan.dma_chan.device,\
- 				     struct sh_dmae_device, shdma_dev.dma_dev)
+-		priv->queue_buf[slot]->v4l2_buf.field = priv->field;
+-		priv->queue_buf[slot]->v4l2_buf.sequence = priv->sequence++;
+-		do_gettimeofday(&priv->queue_buf[slot]->v4l2_buf.timestamp);
+-		vb2_buffer_done(priv->queue_buf[slot], VB2_BUF_STATE_DONE);
+-		priv->queue_buf[slot] = NULL;
++		*q_entry = NULL;
  
--#ifdef CONFIG_SHDMA_R8A73A4
-+#ifdef CONFIG_SH_DMAE_R8A73A4
- extern const struct sh_dmae_pdata r8a73a4_dma_pdata;
- #define r8a73a4_shdma_devid (&r8a73a4_dma_pdata)
- #else
+ 		if (priv->state != STOPPING)
+ 			can_run = rcar_vin_fill_hw_slot(priv);
 -- 
-2.0.1
+1.9.1
 
