@@ -1,77 +1,246 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 28 Jul 2014 20:19:37 +0000
-Subject: Re: [PATCH v2] sh-pfc: r8a7791: add CAN pin groups
-Message-Id: <53D6B059.6050300@cogentembedded.com>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Tue, 08 Jul 2014 14:59:30 +0000
+Subject: [PATCH 1/2] usb: renesas_usbhs: add R-Car Gen. 2 init and power control
+Message-Id: <1404831571-19817-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201407020058.17369.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201407020058.17369.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+In preparation for DT conversion to reduce reliance on platform device
+callbacks.
 
-On 07/02/2014 12:58 AM, Sergei Shtylyov wrote:
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ drivers/usb/renesas_usbhs/Makefile |  2 +-
+ drivers/usb/renesas_usbhs/common.c | 39 ++++++++++++++++---
+ drivers/usb/renesas_usbhs/rcar2.c  | 76 ++++++++++++++++++++++++++++++++++++++
+ drivers/usb/renesas_usbhs/rcar2.h  |  4 ++
+ include/linux/usb/renesas_usbhs.h  |  8 ++++
+ 5 files changed, 123 insertions(+), 6 deletions(-)
+ create mode 100644 drivers/usb/renesas_usbhs/rcar2.c
+ create mode 100644 drivers/usb/renesas_usbhs/rcar2.h
 
-> Add CAN0/1 data/clock pin groups to R8A7791 PFC driver.
-
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
-> ---
-> The patch is against the 'devel' branch of Linus W.'s 'linux-pinctrl.git' repo.
-
-> Changes in version 2:
-> - fixed CAN_CLK_C pin mapping;
-> - renamed can[01]_{clk|data}_a_*[] to can[01]_{clk|data}_*[];
-
-    As it turned out, this rename wasn't enough...
-
-> - added pin name comments to can*_pins[] initializers.
-
->   drivers/pinctrl/sh-pfc/pfc-r8a7791.c |  167 +++++++++++++++++++++++++++++++++++
->   1 file changed, 167 insertions(+)
-
-> Index: linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
-> =================================> --- linux-pinctrl.orig/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
-> +++ linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
-[...]
-> @@ -4367,6 +4508,30 @@ static const char * const audio_clk_grou
->   	"audio_clkout",
->   };
->
-> +static const char * const can0_groups[] = {
-> +	"can0_data_a",
-
-    Crap, forgot to fix this to "can0_data"... :-(
-
-> +	"can0_data_b",
-> +	"can0_data_c",
-> +	"can0_data_d",
-> +	"can0_data_e",
-> +	"can0_data_f",
-> +	"can_clk_a",
-> +	"can_clk_b",
-> +	"can_clk_c",
-> +	"can_clk_d",
-> +};
-> +
-> +static const char * const can1_groups[] = {
-> +	"can1_data_a",
-
-    And this one too... :-(
-
-> +	"can1_data_b",
-> +	"can1_data_c",
-> +	"can1_data_d",
-> +	"can_clk_a",
-> +	"can_clk_b",
-> +	"can_clk_c",
-> +	"can_clk_d",
-> +};
-> +
-
-    Now that the patch is merged, I assume I'll have to send a fix...
-
-WBR, Sergei
+diff --git a/drivers/usb/renesas_usbhs/Makefile b/drivers/usb/renesas_usbhs/Makefile
+index bc8aef4..9e47f47 100644
+--- a/drivers/usb/renesas_usbhs/Makefile
++++ b/drivers/usb/renesas_usbhs/Makefile
+@@ -4,7 +4,7 @@
+ 
+ obj-$(CONFIG_USB_RENESAS_USBHS)	+= renesas_usbhs.o
+ 
+-renesas_usbhs-y			:= common.o mod.o pipe.o fifo.o
++renesas_usbhs-y			:= common.o mod.o pipe.o fifo.o rcar2.o
+ 
+ ifneq ($(CONFIG_USB_RENESAS_USBHS_HCD),)
+ 	renesas_usbhs-y		+= mod_host.o
+diff --git a/drivers/usb/renesas_usbhs/common.c b/drivers/usb/renesas_usbhs/common.c
+index 17267b0..619a3bb 100644
+--- a/drivers/usb/renesas_usbhs/common.c
++++ b/drivers/usb/renesas_usbhs/common.c
+@@ -15,12 +15,14 @@
+  *
+  */
+ #include <linux/err.h>
++#include <linux/gpio.h>
+ #include <linux/io.h>
+ #include <linux/module.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/slab.h>
+ #include <linux/sysfs.h>
+ #include "common.h"
++#include "rcar2.h"
+ 
+ /*
+  *		image of renesas_usbhs
+@@ -423,8 +425,7 @@ static int usbhs_probe(struct platform_device *pdev)
+ 	int ret;
+ 
+ 	/* check platform information */
+-	if (!info ||
+-	    !info->platform_callback.get_id) {
++	if (!info) {
+ 		dev_err(&pdev->dev, "no platform information\n");
+ 		return -EINVAL;
+ 	}
+@@ -451,13 +452,27 @@ static int usbhs_probe(struct platform_device *pdev)
+ 	/*
+ 	 * care platform info
+ 	 */
+-	memcpy(&priv->pfunc,
+-	       &info->platform_callback,
+-	       sizeof(struct renesas_usbhs_platform_callback));
++
+ 	memcpy(&priv->dparam,
+ 	       &info->driver_param,
+ 	       sizeof(struct renesas_usbhs_driver_param));
+ 
++	switch (priv->dparam.type) {
++	case USBHS_TYPE_R8A7790:
++	case USBHS_TYPE_R8A7791:
++		priv->pfunc = usbhs_rcar2_ops;
++		break;
++	default:
++		if (!info->platform_callback.get_id) {
++			dev_err(&pdev->dev, "no platform callbacks");
++			return -EINVAL;
++		}
++		memcpy(&priv->pfunc,
++		       &info->platform_callback,
++		       sizeof(struct renesas_usbhs_platform_callback));
++		break;
++	}
++
+ 	/* set driver callback functions for platform */
+ 	dfunc			= &info->driver_callback;
+ 	dfunc->notify_hotplug	= usbhsc_drvcllbck_notify_hotplug;
+@@ -507,6 +522,20 @@ static int usbhs_probe(struct platform_device *pdev)
+ 	 */
+ 	usbhs_sys_clock_ctrl(priv, 0);
+ 
++	/* check GPIO determining if USB function should be enabled */
++	if (priv->dparam.enable_gpio) {
++		gpio_request_one(priv->dparam.enable_gpio, GPIOF_IN, NULL);
++		ret = !gpio_get_value(priv->dparam.enable_gpio);
++		gpio_free(priv->dparam.enable_gpio);
++		if (ret) {
++			dev_warn(&pdev->dev,
++				 "USB function not selected (GPIO %d)\n",
++				 priv->dparam.enable_gpio);
++			ret = -ENOTSUPP;
++			goto probe_end_mod_exit;
++		}
++	}
++
+ 	/*
+ 	 * platform call
+ 	 *
+diff --git a/drivers/usb/renesas_usbhs/rcar2.c b/drivers/usb/renesas_usbhs/rcar2.c
+new file mode 100644
+index 0000000..069704c
+--- /dev/null
++++ b/drivers/usb/renesas_usbhs/rcar2.c
+@@ -0,0 +1,76 @@
++/*
++ * Renesas USB driver R-Car Gen. 2 initialization and power control
++ *
++ * Copyright (C) 2014 Ulrich Hecht
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++
++#include <linux/gpio.h>
++#include <linux/of_gpio.h>
++#include <linux/platform_data/gpio-rcar.h>
++#include <linux/usb/phy.h>
++#include "common.h"
++
++static int usbhs_rcar2_hardware_init(struct platform_device *pdev)
++{
++	struct renesas_usbhs_platform_info *info = dev_get_platdata(&pdev->dev);
++	struct usb_phy *phy;
++
++	phy = usb_get_phy_dev(&pdev->dev, 0);
++	if (IS_ERR(phy))
++		return PTR_ERR(phy);
++
++	info->phy = phy;
++	return 0;
++}
++
++static int usbhs_rcar2_hardware_exit(struct platform_device *pdev)
++{
++	struct renesas_usbhs_platform_info *info = dev_get_platdata(&pdev->dev);
++
++	if (!info->phy)
++		return 0;
++
++	usb_put_phy(info->phy);
++	info->phy = NULL;
++
++	return 0;
++}
++
++static int usbhs_rcar2_power_ctrl(struct platform_device *pdev,
++				void __iomem *base, int enable)
++{
++	struct renesas_usbhs_platform_info *info = dev_get_platdata(&pdev->dev);
++
++	if (!info->phy)
++		return -ENODEV;
++
++	if (enable) {
++		int retval = usb_phy_init(info->phy);
++
++		if (!retval)
++			retval = usb_phy_set_suspend(info->phy, 0);
++		return retval;
++	}
++
++	usb_phy_set_suspend(info->phy, 1);
++	usb_phy_shutdown(info->phy);
++	return 0;
++}
++
++static int usbhs_rcar2_get_id(struct platform_device *pdev)
++{
++	return USBHS_GADGET;
++}
++
++const struct renesas_usbhs_platform_callback usbhs_rcar2_ops = {
++	.hardware_init = usbhs_rcar2_hardware_init,
++	.hardware_exit = usbhs_rcar2_hardware_exit,
++	.power_ctrl = usbhs_rcar2_power_ctrl,
++	.get_id = usbhs_rcar2_get_id,
++};
+diff --git a/drivers/usb/renesas_usbhs/rcar2.h b/drivers/usb/renesas_usbhs/rcar2.h
+new file mode 100644
+index 0000000..f07f10d
+--- /dev/null
++++ b/drivers/usb/renesas_usbhs/rcar2.h
+@@ -0,0 +1,4 @@
++#include "common.h"
++
++extern const struct renesas_usbhs_platform_callback
++	usbhs_rcar2_ops;
+diff --git a/include/linux/usb/renesas_usbhs.h b/include/linux/usb/renesas_usbhs.h
+index e452ba6..750f0cd 100644
+--- a/include/linux/usb/renesas_usbhs.h
++++ b/include/linux/usb/renesas_usbhs.h
+@@ -153,6 +153,9 @@ struct renesas_usbhs_driver_param {
+ 	 */
+ 	int pio_dma_border; /* default is 64byte */
+ 
++	u32 type;
++	u32 enable_gpio;
++
+ 	/*
+ 	 * option:
+ 	 */
+@@ -160,6 +163,9 @@ struct renesas_usbhs_driver_param {
+ 	u32 has_sudmac:1; /* for SUDMAC */
+ };
+ 
++#define USBHS_TYPE_R8A7790 1
++#define USBHS_TYPE_R8A7791 2
++
+ /*
+  * option:
+  *
+@@ -186,6 +192,8 @@ struct renesas_usbhs_platform_info {
+ 	 * driver use these param for some register
+ 	 */
+ 	struct renesas_usbhs_driver_param	driver_param;
++
++	struct usb_phy *phy;
+ };
+ 
+ /*
+-- 
+1.8.4.5
 
