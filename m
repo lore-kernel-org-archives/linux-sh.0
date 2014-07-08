@@ -1,108 +1,111 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Tue, 15 Jul 2014 22:46:18 +0000
-Subject: Re: [PATCH 7/7] ARM: shmobile: r8a7791: Add DMAC devices to DT
-Message-Id: <CABMQnVJttOWXfowK9eJvdAtK7uBwQkcPz+LfAB=Mhq6RY-aSDg@mail.gmail.com>
+From: Ian Molton <ian.molton@codethink.co.uk>
+Date: Tue, 08 Jul 2014 09:41:13 +0000
+Subject: [PATCH 3/4] media: rcar_vin: Fix race condition terminating stream
+Message-Id: <1404812474-7627-4-git-send-email-ian.molton@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405455522-20676-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1405455522-20676-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1404812474-7627-1-git-send-email-ian.molton@codethink.co.uk>
+In-Reply-To: <1404812474-7627-1-git-send-email-ian.molton@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-kernel@lists.codethink.co.uk, ian.molton@codethink.co.uk, g.liakhovetski@gmx.de, m.chehab@samsung.com, vladimir.barinov@cogentembedded.com, magnus.damm@gmail.com, horms@verge.net.au, linux-sh@vger.kernel.org
 
-Hi,
+This patch fixes a race condition whereby a frame being captured may generate an
+ interrupt between requesting capture to halt and freeing buffers.
 
-2014-07-16 5:18 GMT+09:00 Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com>:
-> Instantiate the two system DMA controllers in the r8a7791 device tree.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->  arch/arm/boot/dts/r8a7791.dtsi | 60 ++++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 60 insertions(+)
->
-> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-> index 6e9a556..c23e72f 100644
-> --- a/arch/arm/boot/dts/r8a7791.dtsi
-> +++ b/arch/arm/boot/dts/r8a7791.dtsi
-> @@ -206,6 +206,66 @@
->                              <0 17 IRQ_TYPE_LEVEL_HIGH>;
->         };
->
-> +       dmac0: dma-controller@e6700000 {
-> +               compatible = "renesas,rcar-dmac";
-> +               reg = <0 0xe6700000 0 0x20000>;
-> +               interrupts = <0 197 IRQ_TYPE_LEVEL_HIGH
-> +                             0 200 IRQ_TYPE_LEVEL_HIGH
-> +                             0 201 IRQ_TYPE_LEVEL_HIGH
-> +                             0 202 IRQ_TYPE_LEVEL_HIGH
-> +                             0 203 IRQ_TYPE_LEVEL_HIGH
-> +                             0 204 IRQ_TYPE_LEVEL_HIGH
-> +                             0 205 IRQ_TYPE_LEVEL_HIGH
-> +                             0 206 IRQ_TYPE_LEVEL_HIGH
-> +                             0 207 IRQ_TYPE_LEVEL_HIGH
-> +                             0 208 IRQ_TYPE_LEVEL_HIGH
-> +                             0 209 IRQ_TYPE_LEVEL_HIGH
-> +                             0 210 IRQ_TYPE_LEVEL_HIGH
-> +                             0 211 IRQ_TYPE_LEVEL_HIGH
-> +                             0 212 IRQ_TYPE_LEVEL_HIGH
-> +                             0 213 IRQ_TYPE_LEVEL_HIGH
-> +                             0 214 IRQ_TYPE_LEVEL_HIGH>;
-> +               interrupt-names = "error",
-> +                               "ch0", "ch1", "ch2", "ch3",
-> +                               "ch4", "ch5", "ch6", "ch7",
-> +                               "ch8", "ch9", "ch10", "ch11",
-> +                               "ch12", "ch13", "ch14", "ch15";
-> +               clocks = <&mstp2_clks R8A7791_CLK_SYS_DMAC0>;
-> +               clock-names = "fck";
-> +               #dma-cells = <1>;
-> +               dma-channels = <15>;
+This condition is exposed by the earlier patch that explicitly calls
+vb2_buffer_done() during stop streaming.
 
-I think  that  dma-channels should be set to 16.
+The solution is to wait for capture to finish prior to finalising these buffers.
 
-> +       };
-> +
-> +       dmac1: dma-controller@e6720000 {
-> +               compatible = "renesas,rcar-dmac";
-> +               reg = <0 0xe6720000 0 0x20000>;
-> +               interrupts = <0 220 IRQ_TYPE_LEVEL_HIGH
-> +                             0 216 IRQ_TYPE_LEVEL_HIGH
-> +                             0 217 IRQ_TYPE_LEVEL_HIGH
-> +                             0 218 IRQ_TYPE_LEVEL_HIGH
-> +                             0 219 IRQ_TYPE_LEVEL_HIGH
-> +                             0 308 IRQ_TYPE_LEVEL_HIGH
-> +                             0 309 IRQ_TYPE_LEVEL_HIGH
-> +                             0 310 IRQ_TYPE_LEVEL_HIGH
-> +                             0 311 IRQ_TYPE_LEVEL_HIGH
-> +                             0 312 IRQ_TYPE_LEVEL_HIGH
-> +                             0 313 IRQ_TYPE_LEVEL_HIGH
-> +                             0 314 IRQ_TYPE_LEVEL_HIGH
-> +                             0 315 IRQ_TYPE_LEVEL_HIGH
-> +                             0 316 IRQ_TYPE_LEVEL_HIGH
-> +                             0 317 IRQ_TYPE_LEVEL_HIGH
-> +                             0 318 IRQ_TYPE_LEVEL_HIGH>;
-> +               interrupt-names = "error",
-> +                               "ch0", "ch1", "ch2", "ch3",
-> +                               "ch4", "ch5", "ch6", "ch7",
-> +                               "ch8", "ch9", "ch10", "ch11",
-> +                               "ch12", "ch13", "ch14", "ch15";
-> +               clocks = <&mstp2_clks R8A7791_CLK_SYS_DMAC1>;
-> +               clock-names = "fck";
-> +               #dma-cells = <1>;
-> +               dma-channels = <15>;
+Signed-off-by: Ian Molton <ian.molton@codethink.co.uk>
+Signed-off-by: William Towle <william.towle@codethink.co.uk>
+---
+ drivers/media/platform/soc_camera/rcar_vin.c | 43 ++++++++++++++++++----------
+ 1 file changed, 28 insertions(+), 15 deletions(-)
 
-likewise.
-
-> +       };
-> +
->         /* The memory map in the User's Manual maps the cores to bus numbers */
->         i2c0: i2c@e6508000 {
->                 #address-cells = <1>;
-> --
-> 1.8.5.5
-
-Best regards,
-  Nobuhiro
-
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index 06ce705..aeda4e2 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -455,6 +455,29 @@ error:
+ 	vb2_buffer_done(vb, VB2_BUF_STATE_ERROR);
+ }
+ 
++/*
++ * Wait for capture to stop and all in-flight buffers to be finished with by
++ * the video hardware. This must be called under &priv->lock
++ *
++ */
++static void rcar_vin_wait_stop_streaming(struct rcar_vin_priv *priv)
++{
++	while (priv->state != STOPPED) {
++
++		/* issue stop if running */
++		if (priv->state = RUNNING)
++			rcar_vin_request_capture_stop(priv);
++
++		/* wait until capturing has been stopped */
++		if (priv->state = STOPPING) {
++			priv->request_to_stop = true;
++			spin_unlock_irq(&priv->lock);
++			wait_for_completion(&priv->capture_stop);
++			spin_lock_irq(&priv->lock);
++		}
++	}
++}
++
+ static void rcar_vin_videobuf_release(struct vb2_buffer *vb)
+ {
+ 	struct soc_camera_device *icd = soc_camera_from_vb2q(vb->vb2_queue);
+@@ -462,7 +485,6 @@ static void rcar_vin_videobuf_release(struct vb2_buffer *vb)
+ 	struct rcar_vin_priv *priv = ici->priv;
+ 	unsigned int i;
+ 	int buf_in_use = 0;
+-
+ 	spin_lock_irq(&priv->lock);
+ 
+ 	/* Is the buffer in use by the VIN hardware? */
+@@ -474,20 +496,8 @@ static void rcar_vin_videobuf_release(struct vb2_buffer *vb)
+ 	}
+ 
+ 	if (buf_in_use) {
+-		while (priv->state != STOPPED) {
+-
+-			/* issue stop if running */
+-			if (priv->state = RUNNING)
+-				rcar_vin_request_capture_stop(priv);
+-
+-			/* wait until capturing has been stopped */
+-			if (priv->state = STOPPING) {
+-				priv->request_to_stop = true;
+-				spin_unlock_irq(&priv->lock);
+-				wait_for_completion(&priv->capture_stop);
+-				spin_lock_irq(&priv->lock);
+-			}
+-		}
++		rcar_vin_wait_stop_streaming(priv);
++
+ 		/*
+ 		 * Capturing has now stopped. The buffer we have been asked
+ 		 * to release could be any of the current buffers in use, so
+@@ -517,12 +527,15 @@ static void rcar_vin_stop_streaming(struct vb2_queue *vq)
+ 
+ 	spin_lock_irq(&priv->lock);
+ 
++	rcar_vin_wait_stop_streaming(priv);
++
+ 	for (i = 0; i < vq->num_buffers; ++i)
+ 		if (vq->bufs[i]->state = VB2_BUF_STATE_ACTIVE)
+ 			vb2_buffer_done(vq->bufs[i], VB2_BUF_STATE_ERROR);
+ 
+ 	list_for_each_safe(buf_head, tmp, &priv->capture)
+ 		list_del_init(buf_head);
++
+ 	spin_unlock_irq(&priv->lock);
+ }
+ 
 -- 
-Nobuhiro Iwamatsu
+1.9.1
+
