@@ -1,45 +1,27 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 18 Jul 2014 11:39:44 +0000
-Subject: Re: [PATCH 0/2] Add VSP1 devices to R8A779[01] DT
-Message-Id: <1612188.DpaA8uQ5sT@avalon>
+From: Ian Molton <ian.molton@codethink.co.uk>
+Date: Tue, 08 Jul 2014 09:41:10 +0000
+Subject: Resend: [PATCH 0/4] rcar_vin: fix soc_camera WARN_ON() issues.
+Message-Id: <1404812474-7627-1-git-send-email-ian.molton@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-kernel@lists.codethink.co.uk, ian.molton@codethink.co.uk, g.liakhovetski@gmx.de, m.chehab@samsung.com, vladimir.barinov@cogentembedded.com, magnus.damm@gmail.com, horms@verge.net.au, linux-sh@vger.kernel.org
 
-Hi Simon,
+Resent to include the author and a couple of other interested parties :)
 
-On Friday 09 May 2014 13:50:00 Laurent Pinchart wrote:
-> On Tuesday 08 April 2014 18:35:55 Laurent Pinchart wrote:
-> > Hello,
-> > 
-> > This patch series adds VSP1 nodes to the R8A7790 and R8A7791 .dtsi files.
-> > It is based on top of the "[PATCH 0/2] Fix VSP1 clock names in r8a779[01]
-> > .dtsi" series that has been sent to the linux-sh mailing list, as well as
-> > the "[PATCH] v4l: vsp1: Remove unexisting rt clocks" patch and "[PATCH
-> > 0/6] VSP1 Blend/ROP Unit and DT support" series sent to the linux-media
-> > mailing list.
-> > 
-> > The VSP1 DT bindings are still pending an ack, please don't apply this
-> > series yet.
-> 
-> The DT bindings have been pulled into the media tree and will be merged in
-> v3.16. Could you please merge these two patches in your tree ?
+This patch series provides fixes that allow the rcar_vin driver to function
+without triggering dozens of warnings from the videobuf2 and soc_camera layers.
 
-Ping ?
+Patches 2/3 should probably be merged into a single, atomic change, although
+patch 2 does not make the existing situation /worse/ in and of itself.
 
-> > Laurent Pinchart (2):
-> >   ARM: shmobile: r8a7790: Add VSP1 devices to DT
-> >   ARM: shmobile: r8a7791: Add VSP1 devices to DT
-> >  
-> >  arch/arm/boot/dts/r8a7790.dtsi | 51 +++++++++++++++++++++++++++++++++++++
-> >  arch/arm/boot/dts/r8a7791.dtsi | 39 ++++++++++++++++++++++++++++++++
-> > 
-> > 2 files changed, 90 insertions(+)
+Patch 4 does not change the code logic, but is cleaner and less prone to
+breakage caused by furtutre modification. Also, more consistent with the use of
+vb pointers elsewhere in the driver.
 
--- 
-Regards,
+Comments welcome!
 
-Laurent Pinchart
+-Ian
 
