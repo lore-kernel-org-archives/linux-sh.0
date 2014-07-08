@@ -1,78 +1,71 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 15 Jul 2014 09:16:31 +0000
-Subject: [PATCH 1/8] ARM: shmobile: r8a7778: Add SCIF nodes
-Message-Id: <9930dc8ee1f59271a54ed4b4922c9c944625a8d6.1405398515.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 08 Jul 2014 07:50:36 +0000
+Subject: Re: [PATCH] sh-pfc: sh73a0: Introduce the use of devm_regulator_register
+Message-Id: <CAMuHMdULhp2kmJU-OnNzJL8g_sYi9RKGVqkAsgmG1jA7q1kPAw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1405398515.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1405398515.git.horms+renesas@verge.net.au>
+References: <20140707160916.GA9238@himangi-Dell>
+In-Reply-To: <20140707160916.GA9238@himangi-Dell>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Himangi Saraogi <himangi774@gmail.com>
+Cc: Linus Walleij <linus.walleij@linaro.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Julia Lawall <julia.lawall@lip6.fr>, Linux-sh list <linux-sh@vger.kernel.org>
 
-This describes all of the SCIF hardware of the r8a7778.
-Each node is disabled and may be enabled as necessary
-by board DTS files.
+CC linux-sh
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7778.dtsi | 42 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 42 insertions(+)
+On Mon, Jul 7, 2014 at 6:09 PM, Himangi Saraogi <himangi774@gmail.com> wrote:
+> This patch moves data allocated using regulator_register to
+> devm_regulator_register and does away the calls to regulator_unregister.
+> The sh73a0_pinmux_soc_exit function is no longer needed and is removed.
+>
+> Signed-off-by: Himangi Saraogi <himangi774@gmail.com>
+> Acked-by: Julia Lawall <julia.lawall@lip6.fr>
+> ---
+> To send to: Linus Walleij <linus.walleij@linaro.org>,linux-kernel@vger.kernel.org
+>  drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 11 ++---------
+>  1 file changed, 2 insertions(+), 9 deletions(-)
+>
+> diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+> index ee370de..0bd8f44 100644
+> --- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+> +++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+> @@ -3842,7 +3842,8 @@ static int sh73a0_pinmux_soc_init(struct sh_pfc *pfc)
+>         cfg.init_data = &sh73a0_vccq_mc0_init_data;
+>         cfg.driver_data = pfc;
+>
+> -       data->vccq_mc0 = regulator_register(&sh73a0_vccq_mc0_desc, &cfg);
+> +       data->vccq_mc0 = devm_regulator_register(pfc->dev,
+> +                                                &sh73a0_vccq_mc0_desc, &cfg);
+>         if (IS_ERR(data->vccq_mc0)) {
+>                 ret = PTR_ERR(data->vccq_mc0);
+>                 dev_err(pfc->dev, "Failed to register VCCQ MC0 regulator: %d\n",
+> @@ -3855,16 +3856,8 @@ static int sh73a0_pinmux_soc_init(struct sh_pfc *pfc)
+>         return 0;
+>  }
+>
+> -static void sh73a0_pinmux_soc_exit(struct sh_pfc *pfc)
+> -{
+> -       struct sh73a0_pinmux_data *data = pfc->soc_data;
+> -
+> -       regulator_unregister(data->vccq_mc0);
+> -}
+> -
+>  static const struct sh_pfc_soc_operations sh73a0_pinmux_ops = {
+>         .init = sh73a0_pinmux_soc_init,
+> -       .exit = sh73a0_pinmux_soc_exit,
+>         .get_bias = sh73a0_pinmux_get_bias,
+>         .set_bias = sh73a0_pinmux_set_bias,
+>  };
+> --
+> 1.9.1
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 3af0a21..ecfdf4b 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -156,6 +156,48 @@
- 		status = "disabled";
- 	};
- 
-+	scif0: serial@ffe40000 {
-+		compatible = "renesas,scif-r8a7778", "renesas,scif";
-+		reg = <0xffe40000 0x100>;
-+		interrupts = <0 70 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scif1: serial@ffe41000 {
-+		compatible = "renesas,scif-r8a7778", "renesas,scif";
-+		reg = <0xffe41000 0x100>;
-+		interrupts = <0 71 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scif2: serial@ffe42000 {
-+		compatible = "renesas,scif-r8a7778", "renesas,scif";
-+		reg = <0xffe42000 0x100>;
-+		interrupts = <0 72 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scif3: serial@ffe43000 {
-+		compatible = "renesas,scif-r8a7778", "renesas,scif";
-+		reg = <0xffe43000 0x100>;
-+		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scif4: serial@ffe44000 {
-+		compatible = "renesas,scif-r8a7778", "renesas,scif";
-+		reg = <0xffe44000 0x100>;
-+		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scif5: serial@ffe45000 {
-+		compatible = "renesas,scif-r8a7778", "renesas,scif";
-+		reg = <0xffe45000 0x100>;
-+		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
- 	mmcif: mmc@ffe4e000 {
- 		compatible = "renesas,sh-mmcif";
- 		reg = <0xffe4e000 0x100>;
--- 
-2.0.0
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
