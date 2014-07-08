@@ -1,39 +1,39 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 28 Jul 2014 08:33:43 +0000
-Subject: Re: [alsa-devel] [PATCH] ASoC: rsnd: Protect register accesses with a	spinlock instead of a mutex
-Message-Id: <87tx619927.wl%kuninori.morimoto.gx@renesas.com>
+From: Olof Johansson <olof@lixom.net>
+Date: Tue, 08 Jul 2014 05:09:35 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC Boards Updates for v3.17
+Message-Id: <20140708050935.GD28931@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1406150366-10169-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-	<87y4vja9xq.wl%kuninori.morimoto.gx@renesas.com>
-	<87tx67a4cf.wl%kuninori.morimoto.gx@gmail.com>
-	<53D5E6C2.3060607@metafoo.de>
-	<87vbqi7wy1.wl%kuninori.morimoto.gx@renesas.com>
-	<53D603C6.5070408@metafoo.de>
-In-Reply-To: <53D603C6.5070408@metafoo.de>
+References: <cover.1403681531.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1403681531.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Lars-Peter Clausen <lars@metafoo.de>
-Cc: Mark Brown <broonie@kernel.org>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-
-Hi Lars
-
-> > But it (= base address mapping was not fixed between Gen1 and Gen2)
-> > was the reason why I was asked to use regmap_fields
-> >
+On Wed, Jun 25, 2014 at 04:35:34PM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
 > 
-> I think that is fine. But you are only using a single regmap instance even 
-> though there are multiple unrelated register maps used and then you specify 
-> the offset in the regmap_fields as a absolute address. This is supposed to 
-> be a relative offset to the base address.
+> Please consider these Renesas ARM based SoC boards updates for v3.17.
 > 
-> So basically use: ".reg = offset" instead of ".reg = (unsigned 
-> int)gen->base[reg_id] + offset" and when creating the field instead of 
-> passing a global regmap instance pass the regmap instance for the register 
-> map in who's range the register falls.
+> This pull request is based on commits included in 'Renesas ARM Based SoC
+> Updates for v3.17", which is tagged as renesas-soc-for-v3.17 and I have
+> sent a pull-request for.  That pull requests includes a few extra commits
+> which were added after the board code was added on top.
+> 
+> 
+> The following changes since commit ecdaca48629bd99609fdc612685363330967dce2:
+> 
+>   ARM: shmobile: rcar-gen2: correct return value of shmobile_smp_apmu_suspend_init (2014-06-17 19:33:22 +0900)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-boards-for-v3.17
+> 
+> for you to fetch changes up to 5f65c5bd58bf027eb2bacc2294a98e7aea81c630:
+> 
+>   ARM: shmobile: Enable R-Car Gen2 CMA code in board files (2014-06-17 19:35:59 +0900)
 
-Hmm... I re-checked it, and I could understand.
-And, indeed it was hackish.
-OK, I try to modify it, then, it seems can use regmap-mmio.
+Merged, thanks.
 
+
+-Olof
