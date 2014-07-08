@@ -1,36 +1,54 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 08 Jul 2014 07:30:02 +0000
-Subject: [PATCH] clocksource: tidyup Kconfig typo for MTU2
-Message-Id: <87lhs4s3xw.wl%kuninori.morimoto.gx@renesas.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 08 Jul 2014 07:43:18 +0000
+Subject: Re: [PATCH] clocksource: tidyup Kconfig typo for MTU2
+Message-Id: <20140708074318.GB3649@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="tjCHc7DPkfUGtrlw"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Linux-Kernel <linux-kernel@vger.kernel.org>
-Cc: Wolfram Sang <wsa@the-dreams.de>, Simon <horms@verge.net.au>, Magnus Damm <damm@opensource.se>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, olof@lixom.net, john.stultz@linaro.org, daniel.lezcano@linaro.org, arnd@arndb.de, khilman@linaro.org
+References: <87lhs4s3xw.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87lhs4s3xw.wl%kuninori.morimoto.gx@renesas.com>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Linux-Kernel <linux-kernel@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus Damm <damm@opensource.se>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, olof@lixom.net, john.stultz@linaro.org, daniel.lezcano@linaro.org, arnd@arndb.de, khilman@linaro.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-It should be "MTU2" instead of "TMU2"
+--tjCHc7DPkfUGtrlw
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- drivers/clocksource/Kconfig |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+On Tue, Jul 08, 2014 at 12:30:02AM -0700, Kuninori Morimoto wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>=20
+> It should be "MTU2" instead of "TMU2"
+>=20
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> ---
 
-diff --git a/drivers/clocksource/Kconfig b/drivers/clocksource/Kconfig
-index 065131c..84f8902 100644
---- a/drivers/clocksource/Kconfig
-+++ b/drivers/clocksource/Kconfig
-@@ -173,7 +173,7 @@ config SH_TIMER_MTU2
- 	default SYS_SUPPORTS_SH_MTU2
- 	help
- 	  This enables build of a clockevent driver for the Multi-Function
--	  Timer Pulse Unit 2 (TMU2) hardware available on SoCs from Renesas.
-+	  Timer Pulse Unit 2 (MTU2) hardware available on SoCs from Renesas.
- 	  This hardware comes with 16 bit-timer registers.
- 
- config SH_TIMER_TMU
--- 
-1.7.9.5
+Obviously:
 
+Acked-by: Wolfram Sang <wsa@sang-engineering.com>
+
+
+--tjCHc7DPkfUGtrlw
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJTu6EWAAoJEBQN5MwUoCm2RNsP/1nIDHIM0+ILrtxuL7Uzuttn
+5Y31JoF9HVS66/SRhMit/Je4/OT76GtaDi3vkXvpyW6p/TRq1R1uuG96TjxMvSaU
+TenRdFhY5GmrGITaPhkocTCV3o7xw7GwqVmoOmPaf5xxhz+nkWAp3IMuW4BVQS50
+X+weNvNkHhg0qXYuaZX4x66hTbu90Px+6qk1/iEklgCwJCKSw0gTJ7MAC4D023Bl
+sIYctm4W4WYuHjrKp0Sgg5Avz2tZFdxGRH1Us2i+qpPfhQtQsaCVDa/BVc7F3rgo
+MePwgfbpLZu/Rfmg6q08hYzIVLHjgSpH3I0FN8kDhHBwMdnl6fsUadFURMyV2Lmx
+Ar7JkGfrX2k1ZHmejS4O3N22ODh3YmleCT/jhGe+lZnMUmf3TELHKXsvJaulTp1B
+NYrGnCabMcq8qGMPzyS7ybm7IytPVJsJ5LANqnnVejsH5caxwl7iq1hp57pAoHfC
+l7OkTW1tD/SKECL6z7f/tGAEXH/bEmv1FLR4iGD7X79weU+pG3W04/MF80jfY4V0
+NAQLqBek/PEcimQZ/vTCpggRN5qfo4g2xVNPzgw8djbffIyqeAD808gIakGJjF/Y
+zVvf0yZjx5+BgefzGtiSeYxif+Iyv7dDAlQ1Sp2OHXl1VYP6G1fOjdyfyro5uo5U
+IRtq49QSb6oLDirwZdlQ
+=xmi6
+-----END PGP SIGNATURE-----
+
+--tjCHc7DPkfUGtrlw--
