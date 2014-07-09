@@ -1,51 +1,38 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 14 Jul 2014 18:21:52 +0000
-Subject: Re: [PATCH v2 1/2] spi: rspi: Handle dmaengine_prep_slave_sg() failures gracefully
-Message-Id: <20140714182152.GU6800@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="ULJ2Z7kCM1hyNsWd"
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 09 Jul 2014 12:23:36 +0000
+Subject: [PATCH 06/13] sh-pfc: Add renesas,pfc-r8a7791 to binding documentation
+Message-Id: <1404908623-909-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405094477-14192-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1405094477-14192-1-git-send-email-geert+renesas@glider.be>
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Laurent Pinchart <Laurent.pinchart@ideasonboard.com>, linux-spi@vger.kernel.org, dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+References: <1404908623-909-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1404908623-909-1-git-send-email-geert+renesas@glider.be>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
+The driver already supports the r8a7791 SoC, and "renesas,pfc-r8a7791"
+is already in use.
 
---ULJ2Z7kCM1hyNsWd
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Linus Walleij <linus.walleij@linaro.org>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-On Fri, Jul 11, 2014 at 06:01:16PM +0200, Geert Uytterhoeven wrote:
+diff --git a/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt b/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
+index 35d2e1f186f0..daef6fad6a5f 100644
+--- a/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
++++ b/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
+@@ -15,6 +15,7 @@ Required Properties:
+     - "renesas,pfc-r8a7778": for R8A7778 (R-Mobile M1) compatible pin-controller.
+     - "renesas,pfc-r8a7779": for R8A7779 (R-Car H1) compatible pin-controller.
+     - "renesas,pfc-r8a7790": for R8A7790 (R-Car H2) compatible pin-controller.
++    - "renesas,pfc-r8a7791": for R8A7791 (R-Car M2) compatible pin-controller.
+     - "renesas,pfc-sh7372": for SH7372 (SH-Mobile AP4) compatible pin-controller.
+     - "renesas,pfc-sh73a0": for SH73A0 (SH-Mobile AG5) compatible pin-controller.
+ 
+-- 
+1.9.1
 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> ---
-> v2:
->   - Add Acked-by
-
-Please don't ever resend things to add Acked-by - this just adds to
-noise and mail volume.
-
---ULJ2Z7kCM1hyNsWd
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAEBAgAGBQJTxB+9AAoJELSic+t+oim9DWcP/iof3Dva3BaAM1RrRrR2eWsA
-UpUQOzYi8xUXoPT/w3z+JzEnSTiAVi0942sgWpPOZ5YOtY2D61NECI1BO+YO2MHe
-r2dXEoT57TtLLBwHOwncsyXNwGCYgIcUPeQG3m3ibcIkRpwUfJWDFxZkZG2VBPTD
-I8usfje3Iops3RGm2MQWQ5I4bj/RhYLJjmZ4KXBeRU/XMuiXWjJ6ldq2c561GvZd
-2YtN4le0DI5pEu8k9pL9pb3FZKvQCLzxeHW/niSPdwW1v3mClHClSbNZboyCr9dS
-Mxn9I/1R5a3Fr+MoUmVVBkmTXc76T1i6irzr9OWtOCh4txfQWnljosKfZ7/jS54s
-1kLUBklkO2PuV/EaTCqj/hctebkDCKHBTK+iScmLqS7RTfJQ6t6BLE1xO+sldRSQ
-BcpU5TYjDV3YLDyBRW9Q7u0lrfmqYbfTzNbTwPZ5die+Xj9ssrIDbqd/DYcyXynn
-CzMvP0sZ7FmZs+O2PdFzN9ooTS+wLj/nMKk1aXxZPAzNaepjqNvaEJwcbEcbNNmc
-5glXVN9WdMuvItGRfMZhiNVcwIhWekjznYlAyEeGfBr9c5xz8IJ3l+OvxF+EDMWM
-/oV9L0qMFp03dA76NP49P3Cj1K7/6+VHDPZGt2TmRenGYOQbNdrFPGjj2UpD/QZX
-teVHJTa1scrWYRGG+gxj
-=PFeY
------END PGP SIGNATURE-----
-
---ULJ2Z7kCM1hyNsWd--
