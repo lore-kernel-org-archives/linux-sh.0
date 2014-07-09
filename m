@@ -1,171 +1,105 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Thu, 17 Jul 2014 14:34:39 +0000
-Subject: Re: [PATCH 1/5] i2c: Don't start transfers when suspended
-Message-Id: <CABYn4swzWs3MvADjJChO701Mao3biFemcSm-3FuB-syt91ng+A@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 09 Jul 2014 12:23:40 +0000
+Subject: [PATCH 10/13] [RFC] ARM: dts: Add shmobile platform device tree bindings documentation
+Message-Id: <1404908623-909-11-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405165771-8732-1-git-send-email-hechtb@gmail.com>
-	<20140717130047.GF2740@katana>
-In-Reply-To: <20140717130047.GF2740@katana>
+References: <1404908623-909-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1404908623-909-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
-Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux-SH <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tomoya MORINAGA <tomoya.rohm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Naveen Krishna Chatradhi <ch.naveen-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, Taekgyun Ko <taeggyun.ko-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, Ben Dooks <ben-Y5A6D6n0/KfQXOPxS62xeg@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Wolfram,
+Add Renesas SH-Mobile, R-Mobile, and R-Car Platform Device Tree Bindings
+Documentation, listing supported SoCs and boards.
 
-thanks for the review.
+This allows to use checkpatch to validate DTSes referring to Renesas
+shmobile SoCs, and boards containing those SoCs.
 
-2014-07-17 15:00 GMT+02:00 Wolfram Sang <wsa@the-dreams.de>:
-> Hi Bastian,
->
-> On Sat, Jul 12, 2014 at 01:49:27PM +0200, Bastian Hecht wrote:
->> i2c transfer requests come in very uncontrolled, like from interrupt routines.
->> We might be suspended when this happens. To avoid i2c timeouts caused by
->> powered down busses we check for suspension.
->>
->> Signed-off-by: Bastian Hecht <hechtb@gmail.com>
->
-> Thanks for doing this! I add linux-pm to CC because of two questions.
->
-> And in case of resending, please add at least alkml to the CC list. Or
-> better: use 'get_maintainer.pl' as cc-cmd with git-send-email.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: linux-arm-kernel@lists.infradead.org
+---
+ Documentation/devicetree/bindings/arm/shmobile.txt | 71 ++++++++++++++++++++++
+ 1 file changed, 71 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/arm/shmobile.txt
 
-Wow these scripts! So useful - thanks for the hint. I looked up the
-few people I added manually in the drivers.
+diff --git a/Documentation/devicetree/bindings/arm/shmobile.txt b/Documentation/devicetree/bindings/arm/shmobile.txt
+new file mode 100644
+index 000000000000..baa25c92597d
+--- /dev/null
++++ b/Documentation/devicetree/bindings/arm/shmobile.txt
+@@ -0,0 +1,71 @@
++Renesas SH-Mobile, R-Mobile, and R-Car Platform Device Tree Bindings
++--------------------------------------------------------------------
++
++SoCs:
++
++  - Emma Mobile EV2
++    compatible = "renesas,emev2"
++  - RZ/A1H (R7S72100)
++    compatible = "renesas,r7s72100"
++  - R-Mobile APE6 (R8A73A40)
++    compatible = "renesas,r8a73a4"
++  - R-Mobile A1 (R8A77400)
++    compatible = "renesas,r8a7740"
++  - R-Car M1A (R8A77781)
++    compatible = "renesas,r8a7778"
++  - R-Car H1 (R8A77790)
++    compatible = "renesas,r8a7779"
++  - R-Car H2 (R8A77900)
++    compatible = "renesas,r8a7790"
++  - R-Car M2-W (R8A77910)
++    compatible = "renesas,r8a7791"
++  - R-Car V2H (R8A77920)
++    compatible = "renesas,r8a7792"
++  - R-Car M2-N (R8A77930)
++    compatible = "renesas,r8a7793"
++  - R-Car E2 (R8A77940)
++    compatible = "renesas,r8a7794"
++  - SH-Mobile AP4 (R8A73720/SH7372)
++    compatible = "renesas,sh7372"
++  - SH-Mobile AG5 (R8A73A00/SH73A0)
++    compatible = "renesas,sh73a0"
++
++
++Boards:
++
++  - Alt
++    compatible = "renesas,alt", "renesas,r8a7794"
++  - APE6-EVM
++    compatible = "renesas,ape6evm", "renesas,r8a73a4"
++  - APE6-EVM - Reference Device Tree Implementation
++    compatible = "renesas,ape6evm-reference", "renesas,r8a73a4"
++  - Atmark Techno Armadillo-800 EVA
++    compatible = "renesas,armadillo800eva"
++  - Atmark Techno Armadillo-800 EVA - Reference Device Tree Implementation
++    compatible = "renesas,armadillo800eva-reference", "renesas,r8a7740"
++  - BOCK-W
++    compatible = "renesas,bockw", "renesas,r8a7778"
++  - BOCK-W - Reference Device Tree Implementation
++    compatible = "renesas,bockw-reference", "renesas,r8a7778"
++  - Genmai (RTK772100BC00000BR)
++    compatible = "renesas,genmai", "renesas,r7s72100"
++  - Henninger
++    compatible = "renesas,henninger", "renesas,r8a7791"
++  - Koelsch (RTP0RC7791SEB00010S)
++    compatible = "renesas,koelsch", "renesas,r8a7791"
++  - EMEV2 KZM9D
++    compatible = "renesas,kzm9d", "renesas,emev2"
++  - KZM-A9-GT
++    compatible = "renesas,kzm9g", "renesas,sh73a0"
++  - KZM-A9-GT - Reference Device Tree Implementation
++    compatible = "renesas,kzm9g-reference", "renesas,sh73a0"
++  - Lager (RTP0RC7790SEB00010S)
++    compatible = "renesas,lager", "renesas,r8a7790"
++  - Mackerel (R0P7372LC0016RL, AP4 EVM 2nd)
++    compatible = "renesas,mackerel"
++  - Marzen
++    compatible = "renesas,marzen", "renesas,r8a7779"
++
++Note: Reference Device Tree Implementations are temporary implementations
++      to ease the migration from platform devices to Device Tree, and are
++      intended to be removed in the future.
+-- 
+1.9.1
 
->> ---
->> I ended up getting i2c timeouts when suspending and provoking touchscreen
->> IRQs on an Armadillo board with an sh_mobile i2c bus. Instead of copying
->> again the protection mechanism from other bus drivers, we can clean things
->> up and move this into the core.
->
-> This could be part of the commit message IMO.
-
-Ok I added it partly. I didn't include the Armadillo specific part,
-but added the general
-idea to move existing protection schemes to the core.
-
->>
->> I assume that all bus drivers use kzalloc or equivalent for the
->> struct i2c_adapter. So adap->suspended can't end up uninitialized,
->> right?
->
-> Better safe than sorry, I'd say. Please add the initialization.
-
-Ok done.
-
->> We could consider using this scheme for freeze/restore too.
->
-> linux-pm: opinions?
->
->>
->>
->>  drivers/i2c/i2c-core.c | 24 +++++++++++++++++++++++-
->>  include/linux/i2c.h    |  1 +
->>  2 files changed, 24 insertions(+), 1 deletion(-)
->>
->> diff --git a/drivers/i2c/i2c-core.c b/drivers/i2c/i2c-core.c
->> index 7c7f4b8..9fe9581 100644
->> --- a/drivers/i2c/i2c-core.c
->> +++ b/drivers/i2c/i2c-core.c
->> @@ -343,6 +343,13 @@ static int i2c_legacy_resume(struct device *dev)
->>  static int i2c_device_pm_suspend(struct device *dev)
->>  {
->>       const struct dev_pm_ops *pm = dev->driver ? dev->driver->pm : NULL;
->> +     struct i2c_adapter *adap = i2c_verify_adapter(dev);
->> +
->> +     if (adap) {
->> +             i2c_lock_adapter(adap);
->> +             adap->suspended = true;
->> +             i2c_unlock_adapter(adap);
->> +     }
->>
->>       if (pm)
->>               return pm_generic_suspend(dev);
->> @@ -353,6 +360,13 @@ static int i2c_device_pm_suspend(struct device *dev)
->>  static int i2c_device_pm_resume(struct device *dev)
->>  {
->>       const struct dev_pm_ops *pm = dev->driver ? dev->driver->pm : NULL;
->> +     struct i2c_adapter *adap = i2c_verify_adapter(dev);
->> +
->> +     if (adap) {
->> +             i2c_lock_adapter(adap);
->> +             adap->suspended = false;
->> +             i2c_unlock_adapter(adap);
->> +     }
->>
->>       if (pm)
->>               return pm_generic_resume(dev);
->> @@ -1819,7 +1833,10 @@ int i2c_transfer(struct i2c_adapter *adap, struct i2c_msg *msgs, int num)
->>                       i2c_lock_adapter(adap);
->>               }
->>
->> -             ret = __i2c_transfer(adap, msgs, num);
->> +             if (adap->suspended)
->> +                     ret = -EIO;
->> +             else
->> +                     ret = __i2c_transfer(adap, msgs, num);
->
-> a) Minor: I'd swap the branches and invert the condition, so that the
-> more expected code path comes first
-
-Oh yes, well seen. I swapped it.
-
-> b) linux-pm: I wonder about the return code. Currently, some drivers
-> return -EIO, some -EBUSY. Do you care which? Since we try to have
-> designated fault codes in the i2c subsystem, I wonder about -ESHUTDOWN?
-> Or is this too much of hijacking fault codes?
-
-I looked up Documentation/i2c/fault-codes and -EIO currently is the
-closest blurrily defined fault code to our problem. I agree that
--ESHUTDOWN would look clearer, but as well agree that I'm unsure about
-getting too pedantic. I left -EIO for the v2 series for now. If we opt
-for -ESHUTDOWN we shouldn't forget to update the docs too.
-
-I will post v2 now but be on the road for probably a month and can't
-participate further here. If needed feel free to completely modify
-these patches - it's a very basic patchset anyway.
-
-Cheers,
-
- Bastian
-
-
->>               i2c_unlock_adapter(adap);
->>
->>               return ret;
->> @@ -2577,6 +2594,10 @@ s32 i2c_smbus_xfer(struct i2c_adapter *adapter, u16 addr, unsigned short flags,
->>
->>       if (adapter->algo->smbus_xfer) {
->>               i2c_lock_adapter(adapter);
->> +             if (adapter->suspended) {
->> +                     res = -EIO;
->> +                     goto unlock;
->> +             }
->>
->>               /* Retry automatically on arbitration loss */
->>               orig_jiffies = jiffies;
->> @@ -2590,6 +2611,7 @@ s32 i2c_smbus_xfer(struct i2c_adapter *adapter, u16 addr, unsigned short flags,
->>                                      orig_jiffies + adapter->timeout))
->>                               break;
->>               }
->> +unlock:
->>               i2c_unlock_adapter(adapter);
->>
->>               if (res != -EOPNOTSUPP || !adapter->algo->master_xfer)
->> diff --git a/include/linux/i2c.h b/include/linux/i2c.h
->> index b556e0a..af08c75 100644
->> --- a/include/linux/i2c.h
->> +++ b/include/linux/i2c.h
->> @@ -434,6 +434,7 @@ struct i2c_adapter {
->>       int timeout;                    /* in jiffies */
->>       int retries;
->>       struct device dev;              /* the adapter device */
->> +     unsigned int suspended:1;
->>
->>       int nr;
->>       char name[48];
->> --
->> 1.9.1
->>
