@@ -1,22 +1,40 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 15 Jul 2014 04:17:23 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7790: lager: use iic cores instead of i2c
-Message-Id: <20140715041723.GE5277@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 09 Jul 2014 00:59:07 +0000
+Subject: [PATCH] dma: rcar-audmapp: add NULL terminater on audmapp_of_match
+Message-Id: <87simbuz3a.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404989456-2716-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1404989456-2716-1-git-send-email-wsa@the-dreams.de>
+References: <53bc1736.wQxo84tuhA7/j+O2%fengguang.wu@intel.com>
+	<alpine.DEB.2.02.1407082242560.2069@localhost6.localdomain6>
+In-Reply-To: <alpine.DEB.2.02.1407082242560.2069@localhost6.localdomain6>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux-SH <linux-sh@vger.kernel.org>, Julia Lawall <julia.lawall@lip6.fr>, Vinod Koul <vinod.koul@intel.com>
+Cc: kbuild test robot <fengguang.wu@intel.com>, Simon Horman <horms+renesas@verge.net.au>, Linux-Kernel <linux-kernel@vger.kernel.org>, sboyd@codeaurora.org, kbuild@01.org
 
-On Sun, Jul 13, 2014 at 03:43:57PM +0200, Wolfram Sang wrote:
-> > I have queued this up for v3.17 rather than v3.16 as I do not believe
-> > there are any i2c (or iic) nodes present or scheduled for inclusion in
-> > this file in v3.16: I checked v3.16-rc4.
-> 
-> In case the i2c char driver is activated, the nodes in /dev will change
-> from i2c-{0-3} to i2c-{4-7}, too. I'll let you decide about the
-> importance of it :)
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, I think I am comfortable with that.
+This patch solve this issue
+
+drivers/dma/sh/rcar-audmapp.c:357:41-42: audmapp_of_match is not NULL terminated at line 357
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/dma/sh/rcar-audmapp.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/dma/sh/rcar-audmapp.c b/drivers/dma/sh/rcar-audmapp.c
+index 0774c36..dabbf0a 100644
+--- a/drivers/dma/sh/rcar-audmapp.c
++++ b/drivers/dma/sh/rcar-audmapp.c
+@@ -355,6 +355,7 @@ static int audmapp_remove(struct platform_device *pdev)
+ 
+ static const struct of_device_id audmapp_of_match[] = {
+ 	{ .compatible = "renesas,rcar-audmapp", },
++	{},
+ };
+ 
+ static struct platform_driver audmapp_driver = {
+-- 
+1.7.9.5
+
