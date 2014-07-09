@@ -1,52 +1,60 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 08 Jul 2014 21:32:24 +0000
-Subject: [PATCH] sh: Also try passing -m4-nofpu for SH2A builds
-Message-Id: <1404855144-24439-1-git-send-email-geert+renesas@glider.be>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 09 Jul 2014 09:56:44 +0000
+Subject: renesas-drivers-2014-07-09-v3.16-rc4
+Message-Id: <CAMuHMdWkY-21cBJrPiT0fEBWPyALLSasHP2Rv0rMBswyHfMiQQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Guenter Roeck <linux@roeck-us.net>, Tony Breeds <tony@bakeyournoodle.com>, Alexei Starovoitov <ast@plumgrid.com>, Fengguang Wu <fengguang.wu@intel.com>, Daniel Borkmann <dborkman@redhat.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-When compiling a SH2A kernel (e.g. se7206_defconfig or rsk7203_defconfig)
-using sh4-linux-gcc, linking fails with:
+Hi all,
 
-net/built-in.o: In function `__sk_run_filter':
-net/core/filter.c:566: undefined reference to `__fpscr_values'
-net/core/filter.c:269: undefined reference to `__fpscr_values'
-net/core/filter.c:269: undefined reference to `__fpscr_values'
-net/core/filter.c:269: undefined reference to `__fpscr_values'
-net/core/filter.c:269: undefined reference to `__fpscr_values'
-net/built-in.o:net/core/filter.c:580: more undefined references to `__fpscr_values' follow
+I've pushed renesas-drivers-2014-07-09-v3.16-rc4 to
+https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+This tree is meant to ease development of platform support and drivers for
+Renesas ARM ("shmobile") SoCs. It's created by merging the for-next branches
+of various subsystem trees into the development branch of Simon Horman's
+renesas.git tree.
 
-This happens because sh4-linux-gcc doesn't support the "-m2a-nofpu", which
-is thus filtered out by "$(call cc-option, ...)".
+Today's version is based on renesas-devel-v3.16-rc4-20140708, and contains
+the following for-next branches:
 
-As compiling using sh4-linux-gcc is useful for compile coverage, also try
-passing "-m4-nofpu" (which is presumably filtered out when using a real
-sh2a-linux toolchain) to disable the generation of FPU instructions and
-references to __fpscr_values[].
+git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
+git://git.linaro.org/people/mturquette/linux.git#clk-next
+git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
+git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
+git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
+git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
+git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
+git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
+git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
+git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#asoc/for-next
+git://gitorious.org/linux-can/linux-can-next.git#master
+git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
+git://people.freedesktop.org/~airlied/linux#drm-next
+git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
+git://linuxtv.org/mchehab/media-next.git#master
+git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
+git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
+git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
+git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
+git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
+git://git.infradead.org/users/vkoul/slave-dma.git#next
+git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
+git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/sh/Makefile | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+If anything is missing, please tell me.
 
-diff --git a/arch/sh/Makefile b/arch/sh/Makefile
-index d4d16e4be07c..bf5b3f5f4962 100644
---- a/arch/sh/Makefile
-+++ b/arch/sh/Makefile
-@@ -32,7 +32,8 @@ endif
- 
- cflags-$(CONFIG_CPU_SH2)		:= $(call cc-option,-m2,)
- cflags-$(CONFIG_CPU_SH2A)		+= $(call cc-option,-m2a,) \
--					   $(call cc-option,-m2a-nofpu,)
-+					   $(call cc-option,-m2a-nofpu,) \
-+					   $(call cc-option,-m4-nofpu,)
- cflags-$(CONFIG_CPU_SH3)		:= $(call cc-option,-m3,)
- cflags-$(CONFIG_CPU_SH4)		:= $(call cc-option,-m4,) \
- 	$(call cc-option,-mno-implicit-fp,-m4-nofpu)
--- 
-1.9.1
+Thanks for your comments!
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
