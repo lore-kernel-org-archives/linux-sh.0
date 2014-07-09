@@ -1,39 +1,86 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 01 Jul 2014 07:16:53 +0000
-Subject: Re: [PATCH v2 07/23] v4l: vsp1: Release buffers at stream stop
-Message-Id: <1952390.dyG8uLsand@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 09 Jul 2014 10:26:23 +0000
+Subject: [PATCH 2/2] [RFC] spi: sh-msiof: Handle dmaengine_prep_slave_single() failures gracefully
+Message-Id: <1404901583-31366-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1403567669-18539-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <53A9686D.5040508@cogentembedded.com>
-In-Reply-To: <53A9686D.5040508@cogentembedded.com>
+References: <1404901583-31366-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1404901583-31366-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-media@vger.kernel.org, linux-sh@vger.kernel.org
+To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Laurent Pinchart <Laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-Hi Sergei,
+As typically a shmobile SoC has less DMA channels than devices that can use
+DMA, we may want to prioritize access to the DMA channels in the future.
+This means that dmaengine_prep_slave_single() may start failing
+arbitrarily.
 
-On Tuesday 24 June 2014 16:00:45 Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 06/24/2014 03:54 AM, Laurent Pinchart wrote:
-> > videobuf2 expects no buffer to be owned by the driver when the
-> > stop_stream queue operation returns. As the vsp1 driver fails to do so,
-> > a warning is generated at stream top time.
-> > 
-> > Fix this by mark releasing all buffers queued on the IRQ queue in the
-> 
-> Mark releasing?
+Handle dmaengine_prep_slave_single() failures gracefully by falling back to
+PIO. This requires moving DMA-specific configuration of the MSIOF device
+after the call(s) to dmaengine_prep_slave_single().
 
-I'll fix that, thank you.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/spi/spi-sh-msiof.c | 23 +++++++++++++++--------
+ 1 file changed, 15 insertions(+), 8 deletions(-)
 
-> > stop_stream operation handler and marking them as erroneous.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index 4f0f1cbc92ef..2d7c45bbb6f3 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -636,12 +636,6 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv *p, const void *tx,
+ 	dma_cookie_t cookie;
+ 	int ret;
+ 
+-	/* 1 stage FIFO watermarks for DMA */
+-	sh_msiof_write(p, FCTR, FCTR_TFWM_1 | FCTR_RFWM_1);
+-
+-	/* setup msiof transfer mode registers (32-bit words) */
+-	sh_msiof_spi_set_mode_regs(p, tx, rx, 32, len / 4);
+-
+ 	if (tx) {
+ 		ier_bits |= IER_TDREQE | IER_TDMAE;
+ 		dma_sync_single_for_device(&p->pdev->dev, p->tx_dma_addr, len,
+@@ -650,7 +644,7 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv *p, const void *tx,
+ 					p->tx_dma_addr, len, DMA_TO_DEVICE,
+ 					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+ 		if (!desc_tx)
+-			return -EIO;
++			return -EAGAIN;
+ 	}
+ 
+ 	if (rx) {
+@@ -659,8 +653,15 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv *p, const void *tx,
+ 					p->rx_dma_addr, len, DMA_FROM_DEVICE,
+ 					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+ 		if (!desc_rx)
+-			return -EIO;
++			return -EAGAIN;
+ 	}
++
++	/* 1 stage FIFO watermarks for DMA */
++	sh_msiof_write(p, FCTR, FCTR_TFWM_1 | FCTR_RFWM_1);
++
++	/* setup msiof transfer mode registers (32-bit words) */
++	sh_msiof_spi_set_mode_regs(p, tx, rx, 32, len / 4);
++
+ 	sh_msiof_write(p, IER, ier_bits);
+ 
+ 	reinit_completion(&p->done);
+@@ -822,6 +823,12 @@ static int sh_msiof_transfer_one(struct spi_master *master,
+ 			copy32(p->tx_dma_page, tx_buf, l / 4);
+ 
+ 		ret = sh_msiof_dma_once(p, tx_buf, rx_buf, l);
++		if (ret = -EAGAIN) {
++			pr_warn_once("%s %s: DMA not available, falling back to PIO\n",
++				     dev_driver_string(&p->pdev->dev),
++				     dev_name(&p->pdev->dev));
++			break;
++		}
+ 		if (ret)
+ 			return ret;
+ 
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
