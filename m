@@ -1,30 +1,77 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 30 Jul 2014 23:32:24 +0000
-Subject: [PATCH 02/09] ARM: shmobile: Add shmobile_init_late() to KZM9G
-Message-Id: <20140730233224.5969.39070.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 09 Jul 2014 13:12:39 +0000
+Subject: [PATCH v5 3/8] ARM: shmobile: r8a7779: Add TMU devices to DT
+Message-Id: <1404911564-17380-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1404911564-17380-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1404911564-17380-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Add the TMU0, TMU1 and TMU2 counters to the r8a7779 device tree and make
+them disabled by default.
 
-Extend board specific KZM9D DT reference machine vector to include
-shmobile_init_late() so Suspend-to-RAM and CPUIdle are setup as expected.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a7779.dtsi | 42 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 42 insertions(+)
 
- arch/arm/mach-shmobile/board-kzm9g-reference.c |    1 +
- 1 file changed, 1 insertion(+)
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 94e2fc8..671d8e4 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -266,6 +266,48 @@
+ 		reg = <0xffc48000 0x38>;
+ 	};
+ 
++	tmu0: timer@ffd80000 {
++		compatible = "renesas,tmu";
++		reg = <0xffd80000 0x30>;
++		interrupts = <0 32 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 33 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 34 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7779_CLK_TMU0>;
++		clock-names = "fck";
++
++		#renesas,channels = <3>;
++
++		status = "disabled";
++	};
++
++	tmu1: timer@ffd81000 {
++		compatible = "renesas,tmu";
++		reg = <0xffd81000 0x30>;
++		interrupts = <0 36 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 37 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 38 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7779_CLK_TMU1>;
++		clock-names = "fck";
++
++		#renesas,channels = <3>;
++
++		status = "disabled";
++	};
++
++	tmu2: timer@ffd82000 {
++		compatible = "renesas,tmu";
++		reg = <0xffd82000 0x30>;
++		interrupts = <0 40 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 41 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 42 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7779_CLK_TMU2>;
++		clock-names = "fck";
++
++		#renesas,channels = <3>;
++
++		status = "disabled";
++	};
++
+ 	sata: sata@fc600000 {
+ 		compatible = "renesas,rcar-sata";
+ 		reg = <0xfc600000 0x2000>;
+-- 
+1.8.5.5
 
---- 0001/arch/arm/mach-shmobile/board-kzm9g-reference.c
-+++ work/arch/arm/mach-shmobile/board-kzm9g-reference.c	2014-07-31 07:41:03.000000000 +0900
-@@ -54,5 +54,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-refere
- 	.init_early	= sh73a0_init_delay,
- 	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_machine	= kzm_init,
-+	.init_late	= shmobile_init_late,
- 	.dt_compat	= kzm9g_boards_compat_dt,
- MACHINE_END
