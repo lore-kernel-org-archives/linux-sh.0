@@ -1,43 +1,58 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 31 Jul 2014 00:42:45 +0000
-Subject: Re: [GIT PULL] Fourth Round of Renesas ARM Based SoC Clock Updates for v3.17
-Message-Id: <20140731004244.GA31873@verge.net.au>
+From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+Date: Wed, 09 Jul 2014 23:20:25 +0000
+Subject: Re: [PATCH v3] iommu: Add driver for Renesas VMSA-compatible IPMMU
+Message-Id: <53BDCE39.1070306@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1406766463.git.horms+renesas@verge.net.au>
- <CAOesGMi--0HO3Ae6mDfSrK=U+sFC201vb3UhfSPy_QisJN7FDg@mail.gmail.com>
-In-Reply-To: <CAOesGMi--0HO3Ae6mDfSrK=U+sFC201vb3UhfSPy_QisJN7FDg@mail.gmail.com>
+References: <1396435657-3922-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <538D55C2.3090209@renesas.com> <1837932.hUVa08Puz4@avalon>
+In-Reply-To: <1837932.hUVa08Puz4@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: khiem.nguyen.xt@renesas.com, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, iommu@lists.linux-foundation.org, linux-sh@vger.kernel.org, Joerg Roedel <joro@8bytes.org>
 
-On Wed, Jul 30, 2014 at 05:35:51PM -0700, Olof Johansson wrote:
-> On Wed, Jul 30, 2014 at 5:33 PM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > Hi Olof, Hi Kevin, Hi Arnd,
-> >
-> > Please consider these fourth round of Renesas ARM based SoC clock
-> > updates for v3.17.
-> >
-> > I am sending this even though v3.16-rc6 has long since been released
-> > as this pull-request only includes a single one line fix for a problem
-> > introduced in patches you have already queued up for v3.16.
-> >
-> > At it turns out the problem should not manifest at run time
-> > as it is an error in an clock that is not used without DT modifications.
-> > As such I am happy for you to ask me to defer this to v3.18 if you like.
-> >
-> > This pull request is based on the previous round of
-> > such requests, tagged as renesas-clock3-for-v3.17,
-> > which you have already merged.
+Hi Laurent,
+
+Thanks for your explanation.
+
+I'm fine with current situation. 
+I have also checked other drivers and they did the same.
+As you said, let's improve this driver when the time comes.
+
+Thanks.
+
+Best regards,
+KHIEM Nguyen
+
+On 6/4/2014 2:39 AM, Laurent Pinchart wrote:
+> Hi,
 > 
-> It is less work to just apply a patch when there's a single one like
-> this. Please just send it and ask us to apply it on top of the
-> previous branch.
-
-Thanks, I wasn't aware of that.
-
-The patch was sent as a reply to this email, though you were not CCed
-on the patch email. I will repost it with you CCed.
-
-
+> On Tuesday 03 June 2014 13:57:38 Khiem Nguyen wrote:
+>> Hi Laurent,
+>>
+>> Thanks for the patch.
+>>
+>>> +	if (!iommu_present(&platform_bus_type))
+>>> +		bus_set_iommu(&platform_bus_type, &ipmmu_ops);
+>>
+>> With this code, if error occurs, it's hidden.
+>>
+>> I think it should be like below,
+>>
+>>> +	ret = bus_set_iommu(&platform_bus_type, &ipmmu_ops);
+>>> +	if (ret < 0)
+>>> +		return ret;
+>>
+>> In this case, if error occurs, -EBUSY is returned.
+>> It's easier for troubleshooting the issue.
+>>
+>> How do you think ?
+> 
+> I agree that we have a problem, but the problem is broader than this. Only one 
+> IOMMU type can be associated with a given bus, so things will break as soon as 
+> we will compile multiple IOMMU drivers in a multiplatform kernel. I'd like to 
+> fix this properly, but it requires IOMMU framework changes, and thus time. In 
+> the meantime we could apply your proposed modification, but it needs an 
+> additional platform_driver_unregister() call in the bus_set_iommu() error 
+> path.
+> 
