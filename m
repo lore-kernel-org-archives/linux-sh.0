@@ -1,77 +1,71 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Sat, 26 Jul 2014 09:39:35 +0000
-Subject: Re: [PATCH 01/11] mmc: sh_mmcif: Document DT bindings
-Message-Id: <CAPDyKFrsYdQqtiw02WONgZpFDdjfPSuNkm8AAp8VEJmvyjF3xQ@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 09 Jul 2014 12:23:35 +0000
+Subject: [PATCH 05/13] thermal: rcar: Document SoC-specific bindings
+Message-Id: <1404908623-909-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-	<1405464321-4723-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1405464321-4723-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1404908623-909-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1404908623-909-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Ian Molton <ian.molton@codethink.co.uk>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <eduardo.valentin@ti.com>, linux-pm@vger.kernel.org
 
-On 16 July 2014 00:45, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
-> The sh-mmcif driver implements DT support but the bindings are not
-> documented. Document them.
->
-> Cc: devicetree@vger.kernel.org
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The documentation only mentioned the generic fallback compatible property.
+Add the missing SoC-specific compatible properties, some of which are
+already in use.
 
-Thanks! Applied for next.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Zhang Rui <rui.zhang@intel.com>
+Cc: Eduardo Valentin <eduardo.valentin@ti.com>
+Cc: linux-pm@vger.kernel.org
+---
+ .../devicetree/bindings/thermal/rcar-thermal.txt       | 18 ++++++++++++------
+ 1 file changed, 12 insertions(+), 6 deletions(-)
 
-Kind regards
-Uffe
+diff --git a/Documentation/devicetree/bindings/thermal/rcar-thermal.txt b/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
+index 28ef498a66e5..0ef00be44b01 100644
+--- a/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
++++ b/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
+@@ -1,7 +1,13 @@
+ * Renesas R-Car Thermal
+ 
+ Required properties:
+-- compatible		: "renesas,rcar-thermal"
++- compatible		: "renesas,thermal-<soctype>", "renesas,rcar-thermal"
++			  as fallback.
++			  Examples with soctypes are:
++			    - "renesas,thermal-r8a73a4" (R-Mobile AP6)
++			    - "renesas,thermal-r8a7779" (R-Car H1)
++			    - "renesas,thermal-r8a7790" (R-Car H2)
++			    - "renesas,thermal-r8a7791" (R-Car M2)
+ - reg			: Address range of the thermal registers.
+ 			  The 1st reg will be recognized as common register
+ 			  if it has "interrupts".
+@@ -12,18 +18,18 @@ Option properties:
+ 
+ Example (non interrupt support):
+ 
+-thermal@e61f0100 {
+-	compatible = "renesas,rcar-thermal";
+-	reg = <0xe61f0100 0x38>;
++thermal@ffc48000 {
++	compatible = "renesas,thermal-r8a7779", "renesas,rcar-thermal";
++	reg = <0xffc48000 0x38>;
+ };
+ 
+ Example (interrupt support):
+ 
+ thermal@e61f0000 {
+-	compatible = "renesas,rcar-thermal";
++	compatible = "renesas,thermal-r8a73a4", "renesas,rcar-thermal";
+ 	reg = <0xe61f0000 0x14
+ 		0xe61f0100 0x38
+ 		0xe61f0200 0x38
+ 		0xe61f0300 0x38>;
+-	interrupts = <0 69 4>;
++	interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
+ };
+-- 
+1.9.1
 
-> ---
->  .../devicetree/bindings/mmc/renesas,mmcif.txt      | 32 ++++++++++++++++++++++
->  1 file changed, 32 insertions(+)
->  create mode 100644 Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
->
-> diff --git a/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt b/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-> new file mode 100644
-> index 0000000..299081f
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-> @@ -0,0 +1,32 @@
-> +* Renesas Multi Media Card Interface (MMCIF) Controller
-> +
-> +This file documents differences between the core properties in mmc.txt
-> +and the properties used by the MMCIF device.
-> +
-> +
-> +Required properties:
-> +
-> +- compatible: must contain one of the following
-> +       - "renesas,mmcif-r8a7740" for the MMCIF found in r8a7740 SoCs
-> +       - "renesas,mmcif-r8a7790" for the MMCIF found in r8a7790 SoCs
-> +       - "renesas,mmcif-r8a7791" for the MMCIF found in r8a7791 SoCs
-> +       - "renesas,sh-mmcif" for the generic MMCIF
-> +
-> +- clocks: reference to the functional clock
-> +
-> +- dmas: reference to the DMA channels, one per channel name listed in the
-> +  dma-names property.
-> +- dma-names: must contain "tx" for the transmit DMA channel and "rx" for the
-> +  receive DMA channel.
-> +
-> +
-> +Example: R8A7790 (R-Car H2) MMCIF0
-> +
-> +       mmcif0: mmc@ee200000 {
-> +               compatible = "renesas,mmcif-r8a7790", "renesas,sh-mmcif";
-> +               reg = <0 0xee200000 0 0x80>;
-> +               interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
-> +               clocks = <&mstp3_clks R8A7790_CLK_MMCIF0>;
-> +               dmas = <&dmac0 0xd1>, <&dmac0 0xd2>;
-> +               dma-names = "tx", "rx";
-> +       };
-> --
-> 1.8.5.5
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
