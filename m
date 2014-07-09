@@ -1,70 +1,54 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Jul 2014 00:40:28 +0000
-Subject: [PATCH 1/8] ARM: shmobile: r8a7790: Add CMT devices to DT
-Message-Id: <99ecea23cc4209549a8e5c3efd0f123a2b8f8138.1405556312.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 09 Jul 2014 12:23:41 +0000
+Subject: [PATCH 11/13] [RFC] mmc: tmio-mmc: Add support for SDHI on new R-Car Gen2 SoCs
+Message-Id: <1404908623-909-12-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1405556312.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1405556312.git.horms+renesas@verge.net.au>
+References: <1404908623-909-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1404908623-909-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+  - r8a7792 (R-Car V2H)
+  - r8a7793 (R-Car M2-N)
+  - r8a7794 (R-Car E2)
 
-Add the CMT0 and CMT1 counters to the r8a7790 device tree and make them
-disabled by default.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Simon Horman <horms+renesas@verge.net.au>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 32 ++++++++++++++++++++++++++++++++
- 1 file changed, 32 insertions(+)
+ Documentation/devicetree/bindings/mmc/tmio_mmc.txt | 3 +++
+ drivers/mmc/host/sh_mobile_sdhi.c                  | 3 +++
+ 2 files changed, 6 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index d9ddecb..7218bff 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -206,6 +206,38 @@
- 			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
- 	};
+diff --git a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
+index fa0f327cde01..400b640fabc7 100644
+--- a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
++++ b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
+@@ -19,6 +19,9 @@ Required properties:
+ 		"renesas,sdhi-r8a7779" - SDHI IP on R8A7779 SoC
+ 		"renesas,sdhi-r8a7790" - SDHI IP on R8A7790 SoC
+ 		"renesas,sdhi-r8a7791" - SDHI IP on R8A7791 SoC
++		"renesas,sdhi-r8a7792" - SDHI IP on R8A7792 SoC
++		"renesas,sdhi-r8a7793" - SDHI IP on R8A7793 SoC
++		"renesas,sdhi-r8a7794" - SDHI IP on R8A7794 SoC
  
-+	cmt0: timer@ffca0000 {
-+		compatible = "renesas,cmt-48-gen2";
-+		reg = <0 0xffca0000 0 0x1004>;
-+		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7790_CLK_CMT0>;
-+		clock-names = "fck";
-+
-+		renesas,channels-mask = <0x60>;
-+
-+		status = "disabled";
-+	};
-+
-+	cmt1: timer@e6130000 {
-+		compatible = "renesas,cmt-48-gen2";
-+		reg = <0 0xe6130000 0 0x1004>;
-+		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 122 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 123 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 124 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 125 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 126 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 127 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_CMT1>;
-+		clock-names = "fck";
-+
-+		renesas,channels-mask = <0xff>;
-+
-+		status = "disabled";
-+	};
-+
- 	irqc0: interrupt-controller@e61c0000 {
- 		compatible = "renesas,irqc-r8a7790", "renesas,irqc";
- 		#interrupt-cells = <2>;
+ Optional properties:
+ - toshiba,mmc-wrprotect-disable: write-protect detection is unavailable
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 91058dabd11a..443c20969bd7 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -68,6 +68,9 @@ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
+ 	{ .compatible = "renesas,sdhi-r8a7779", .data = &of_rcar_gen1_compatible, },
+ 	{ .compatible = "renesas,sdhi-r8a7790", .data = &of_rcar_gen2_compatible, },
+ 	{ .compatible = "renesas,sdhi-r8a7791", .data = &of_rcar_gen2_compatible, },
++	{ .compatible = "renesas,sdhi-r8a7792", .data = &of_rcar_gen2_compatible, },
++	{ .compatible = "renesas,sdhi-r8a7793", .data = &of_rcar_gen2_compatible, },
++	{ .compatible = "renesas,sdhi-r8a7794", .data = &of_rcar_gen2_compatible, },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, sh_mobile_sdhi_of_match);
 -- 
-2.0.0
+1.9.1
 
