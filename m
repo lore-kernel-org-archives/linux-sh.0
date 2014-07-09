@@ -1,24 +1,45 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 09 Jul 2014 08:30:18 +0000
-Subject: Re: [PATCH 0/2] ARM: shmobile: Remove early_printk from command line
-Message-Id: <20140709083018.GG5656@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 09 Jul 2014 12:23:32 +0000
+Subject: [PATCH 02/13] irqchip: renesas-intc-irqpin: Document SoC-specific bindings
+Message-Id: <1404908623-909-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404715809-31331-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1404715809-31331-1-git-send-email-horms+renesas@verge.net.au>
+References: <1404908623-909-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1404908623-909-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
 
-On Mon, Jul 07, 2014 at 08:50:07AM +0200, Simon Horman wrote:
-> As early printk is not supported when devices are initialised
-> using DT, so remove it from the command line.
-> 
-> Based on renesas-devel-v3.16-rc3-20140706.
-> 
-> Simon Horman (2):
->   ARM: shmobile: armadillo800eva-reference: Remove early_printk from
->     command line
->   ARM: shmobile: kzm9g-reference: Remove early_printk from command line
+The documentation only mentioned the generic fallback compatible property.
+Add the missing SoC-specific compatible properties, which are already in
+use.
 
-I have queued these up.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+---
+ .../bindings/interrupt-controller/renesas,intc-irqpin.txt         | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
+index 1f8b0c507c26..c73acd060093 100644
+--- a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
++++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
+@@ -2,7 +2,13 @@ DT bindings for the R-/SH-Mobile irqpin controller
+ 
+ Required properties:
+ 
+-- compatible: has to be "renesas,intc-irqpin"
++- compatible: has to be "renesas,intc-irqpin-<soctype>", "renesas,intc-irqpin"
++  as fallback.
++  Examples with soctypes are:
++    - "renesas,intc-irqpin-r8a7740" (R-Mobile A1)
++    - "renesas,intc-irqpin-r8a7778" (R-Car M1A)
++    - "renesas,intc-irqpin-r8a7779" (R-Car H1)
++    - "renesas,intc-irqpin-sh73a0" (SH-Mobile AG5)
+ - #interrupt-cells: has to be <2>: an interrupt index and flags, as defined in
+   interrupts.txt in this directory
+ 
+-- 
+1.9.1
+
