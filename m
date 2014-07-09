@@ -1,50 +1,64 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 07 Jul 2014 07:54:47 +0000
-Subject: [PATCH v2 22/30] ARM: shmobile: r8a7740: Add CMT1 node
-Message-Id: <1404719695-1634-23-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 09 Jul 2014 12:23:30 +0000
+Subject: [PATCH 00/13] ARM: shmobile: DT bindings and DTS updates
+Message-Id: <1404908623-909-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-This describes all of the CMT1 hardware of the r8a7740.
-The node is disabled and may be enabled as necessary by board DTS files.
+This patch series aims to improvide the shmobile DT bindings, DT binding
+documentation, and the actual device trees.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+It reduces the number of checkpatch warnings about un-documented compatible
+strings in the DTSes by 50%.
 
----
-N.B: This only adds cmt1, as per the legacy C code
+The last 4 patches contain compatible strings for new R-Car Gen2 SoCs,
+which are not yet in active use, hence the RFC status.
 
-v2
-* First post
----
- arch/arm/boot/dts/r8a7740.dtsi | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+  [01/13] of: Add vendor prefix for Sitronix
+  [02/13] irqchip: renesas-intc-irqpin: Document SoC-specific bindings
+  [03/13] irqchip: renesas-irqc: Add DT binding documentation
+  [04/13] mmc: tmio-mmc: Add renesas,sdhi-r8a7791 to binding documentation
+  [05/13] thermal: rcar: Document SoC-specific bindings
+  [06/13] sh-pfc: Add renesas,pfc-r8a7791 to binding documentation
+  [07/13] ARM: shmobile: r8a73a4 dtsi: Add SoC-specific irqc compatible
+          property
+  [08/13] ARM: shmobile: r8a73a4 dtsi: Add SoC-specific thermal compatible
+	  property
+  [09/13] ARM: shmobile: r8a7779 dtsi: Add SoC-specific thermal compatible
+	  property
+  [10/13] [RFC] ARM: dts: Add shmobile platform device tree bindings
+	  documentation
+  [11/13] [RFC] mmc: tmio-mmc: Add support for SDHI on new R-Car Gen2 SoCs
+  [12/13] [RFC] thermal: rcar: Add binding docs for new R-Car Gen2 SoCs
+  [13/13] [RFC] irqchip: renesas-irqc: Add binding docs for new R-Car Gen2 SoCs
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 3156afd..ea728e1 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -260,6 +260,16 @@
- 		status = "disabled";
- 	};
- 
-+	cmt1: timer@e6138000 {
-+		compatible = "renesas,cmt-48";
-+		reg = <0xe6138000 0x170>;
-+		interrupts = <0 58 IRQ_TYPE_LEVEL_HIGH>;
-+
-+		renesas,channels-mask = <0x3f>;
-+
-+		status = "disabled";
-+	};
-+
- 	tpu: pwm@e6600000 {
- 		compatible = "renesas,tpu-r8a7740", "renesas,tpu";
- 		reg = <0xe6600000 0x100>;
--- 
-2.0.0.rc2
+ Documentation/devicetree/bindings/arm/shmobile.txt | 71 ++++++++++++++++++++++
+ .../interrupt-controller/renesas,intc-irqpin.txt   |  8 ++-
+ .../bindings/interrupt-controller/renesas,irqc.txt | 33 ++++++++++
+ Documentation/devicetree/bindings/mmc/tmio_mmc.txt |  4 ++
+ .../bindings/pinctrl/renesas,pfc-pinctrl.txt       |  1 +
+ .../devicetree/bindings/thermal/rcar-thermal.txt   | 21 +++++--
+ .../devicetree/bindings/vendor-prefixes.txt        |  1 +
+ arch/arm/boot/dts/r8a73a4.dtsi                     |  6 +-
+ arch/arm/boot/dts/r8a7779.dtsi                     |  2 +-
+ drivers/mmc/host/sh_mobile_sdhi.c                  |  3 +
+ 10 files changed, 139 insertions(+), 11 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/arm/shmobile.txt
+ create mode 100644 Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt
 
+Thanks for your comments!
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
