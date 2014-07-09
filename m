@@ -1,39 +1,62 @@
-From: Nick Krause <xerofoify@gmail.com>
-Date: Fri, 11 Jul 2014 15:56:00 +0000
-Subject: Re: mach-shmobile: FIXME message in file pm-sh732.c
-Message-Id: <CAPDOMVjEmj50rHAPDNN39ok0szLTfxTfZdetVYCJ7fgA2tj20A@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 09 Jul 2014 12:23:33 +0000
+Subject: [PATCH 03/13] irqchip: renesas-irqc: Add DT binding documentation
+Message-Id: <1404908623-909-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAPDOMViqzoX_VAJKFB34LXLBVUBTbs4hWq-K_8+bC-m2NmahCQ@mail.gmail.com>
- <20140711093450.GA26660@verge.net.au>
- <CAPDOMVgi-GMQp101eZewVBOK_nFD8UJ04UydQ6bxa6Y5FP_VgQ@mail.gmail.com>
- <20140711154443.GD1777@verge.net.au>
-In-Reply-To: <20140711154443.GD1777@verge.net.au>
+References: <1404908623-909-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1404908623-909-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, Thomas Gleixner <tglx@linutronix.de>
 
-On Fri, Jul 11, 2014 at 11:44 AM, Simon Horman <horms@verge.net.au> wrote:
-> On Fri, Jul 11, 2014 at 11:24:12AM -0400, Nick Krause wrote:
->> On Fri, Jul 11, 2014 at 5:34 AM, Simon Horman <horms@verge.net.au> wrote:
->> > On Fri, Jul 04, 2014 at 12:34:58AM -0400, Nick Krause wrote:
->> >> While searching for FIX ME messages when using cscope on the latest kernels I
->> >> get a message on 68 of this file and was wondering what I need to define SMFRAM
->> >> as in order for it to point to things needed to support this portion
->> >> of the  hardware.
->> >
->> > Hi Nick,
->> >
->> > while I don't have a technical answer to your question I do believe
->> > that the code in question will be removed in the not too distant future
->> > along with support for the sh7372 SoC.
->>
->> Why are we removing support for this SoC? Is there any reason?
->
-> Because it is rather old hardware which is most likely not used against
-> mainline by anyone other than those maintaining the code and moving it over
-> to use multiplatform, CCF, and the like appears to be more work thank it is
-> worth.
+The renesas-irqc driver supports DT, but the DT binding documentation was
+missing.
 
-That's fine, you can remove it then. I was just curious.
-Cheers Nick
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+---
+ .../bindings/interrupt-controller/renesas,irqc.txt | 30 ++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt
+
+diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt
+new file mode 100644
+index 000000000000..f819e2a5907c
+--- /dev/null
++++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt
+@@ -0,0 +1,30 @@
++DT bindings for the R-Mobile/R-Car interrupt controller
++
++Required properties:
++
++- compatible: has to be "renesas,irqc-<soctype>", "renesas,irqc" as fallback.
++  Examples with soctypes are:
++    - "renesas,irqc-r8a73a4" (R-Mobile AP6)
++    - "renesas,irqc-r8a7790" (R-Car H2)
++    - "renesas,irqc-r8a7791" (R-Car M2)
++- #interrupt-cells: has to be <2>: an interrupt index and flags, as defined in
++  interrupts.txt in this directory
++
++Optional properties:
++
++- any properties, listed in interrupts.txt, and any standard resource allocation
++  properties
++
++Example:
++
++	irqc0: interrupt-controller@e61c0000 {
++		compatible = "renesas,irqc-r8a7790", "renesas,irqc";
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		reg = <0 0xe61c0000 0 0x200>;
++		interrupts = <0 0 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 1 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 2 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 3 IRQ_TYPE_LEVEL_HIGH>;
++	};
++
+-- 
+1.9.1
+
