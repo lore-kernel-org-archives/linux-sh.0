@@ -1,48 +1,44 @@
-From: Wang Nan <wangnan0@huawei.com>
-Date: Fri, 18 Jul 2014 09:52:12 +0000
-Subject: Re: [PATCH 2/5] memory-hotplug: x86_32: suitable memory should go to ZONE_MOVABLE
-Message-Id: <53C8EE4C.1000204@huawei.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 09 Jul 2014 13:12:40 +0000
+Subject: [PATCH v5 4/8] ARM: shmobile: r7s72100: Add MTU2 device to DT
+Message-Id: <1404911564-17380-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405670163-53747-1-git-send-email-wangnan0@huawei.com> <1405670163-53747-3-git-send-email-wangnan0@huawei.com>
-In-Reply-To: <1405670163-53747-3-git-send-email-wangnan0@huawei.com>
+References: <1404911564-17380-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1404911564-17380-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ingo Molnar <mingo@redhat.com>, Yinghai Lu <yinghai@kernel.org>, Mel Gorman <mgorman@suse.de>, Andrew Morton <akpm@linux-foundation.org>
-Cc: Pei Feiyue <peifeiyue@huawei.com>, linux-mm@kvack.org, x86@kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 2014/7/18 15:56, Wang Nan wrote:
-> This patch add new memory to ZONE_MOVABLE if movable zone is setup
-> and lower than newly added memory for x86_32.
-> 
-> Signed-off-by: Wang Nan <wangnan0@huawei.com>
-> ---
->  arch/x86/mm/init_32.c | 6 ++++++
->  1 file changed, 6 insertions(+)
-> 
-> diff --git a/arch/x86/mm/init_32.c b/arch/x86/mm/init_32.c
-> index e395048..dd69833 100644
-> --- a/arch/x86/mm/init_32.c
-> +++ b/arch/x86/mm/init_32.c
-> @@ -826,9 +826,15 @@ int arch_add_memory(int nid, u64 start, u64 size)
->  {
->  	struct pglist_data *pgdata = NODE_DATA(nid);
->  	struct zone *zone = pgdata->node_zones + ZONE_HIGHMEM;
-> +	struct zone *movable_zone = pgdat->node_zones + ZONE_MOVABLE;
+Add the MTU2 counter to the r7s72100 device tree and make it disabled by
+default.
 
-Sorry. pgdat should be pgdata.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r7s72100.dtsi | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
->  	unsigned long start_pfn = start >> PAGE_SHIFT;
->  	unsigned long nr_pages = size >> PAGE_SHIFT;
->  
-> +	if (!zone_is_empty(movable_zone))
-> +		if (zone_spans_pfn(movable_zone, start_pfn) ||
-> +				(zone_end_pfn(movable_zone) <= start_pfn))
-> +			zone = movable_zone;
-> +
->  	return __add_pages(nid, zone, start_pfn, nr_pages);
->  }
->  
-> 
-
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index bdee225..c902b0b 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -229,6 +229,16 @@
+ 		status = "disabled";
+ 	};
+ 
++	mtu2: timer@fcff0000 {
++		compatible = "renesas,mtu2";
++		reg = <0xfcff0000 0x400>;
++		interrupts = <0 139 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "tgi0a";
++		clocks = <&mstp3_clks R7S72100_CLK_MTU2>;
++		clock-names = "fck";
++		status = "disabled";
++	};
++
+ 	scif0: serial@e8007000 {
+ 		compatible = "renesas,scif-r7s72100", "renesas,scif";
+ 		reg = <0xe8007000 64>;
+-- 
+1.8.5.5
 
