@@ -1,44 +1,46 @@
-From: Mike Turquette <mturquette@linaro.org>
-Date: Fri, 25 Jul 2014 19:44:44 +0000
-Subject: Re: [PATCH 3/6] clk: shmobile: Add r8a7794 support
-Message-Id: <20140725194444.22930.72591@quantum>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 09 Jul 2014 12:23:37 +0000
+Subject: [PATCH 07/13] ARM: shmobile: r8a73a4 dtsi: Add SoC-specific irqc compatible property
+Message-Id: <1404908623-909-8-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1406299250-23975-4-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1406299250-23975-4-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1404908623-909-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1404908623-909-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-Quoting Ulrich Hecht (2014-07-25 07:40:47)
-> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-> 
-> Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-> Cc: Mike Turquette <mturquette@linaro.org>
+The interrupt controller used the generic compatible property only.
+Add the SoC-specific one, to make it future proof.
 
-Acked-by: Mike Turquette <mturquette@linaro.org>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a73a4.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-Are you taking this through arm-soc?
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index 82c5ac825386..f3bd3d4603d7 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -51,7 +51,7 @@
+ 	};
+ 
+ 	irqc0: interrupt-controller@e61c0000 {
+-		compatible = "renesas,irqc";
++		compatible = "renesas,irqc-r8a73a4", "renesas,irqc";
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
+ 		reg = <0 0xe61c0000 0 0x200>;
+@@ -90,7 +90,7 @@
+ 	};
+ 
+ 	irqc1: interrupt-controller@e61c0200 {
+-		compatible = "renesas,irqc";
++		compatible = "renesas,irqc-r8a73a4", "renesas,irqc";
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
+ 		reg = <0 0xe61c0200 0 0x200>;
+-- 
+1.9.1
 
-Regards,
-Mike
-
-> ---
->  drivers/clk/shmobile/Makefile | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/drivers/clk/shmobile/Makefile b/drivers/clk/shmobile/Makefile
-> index e002923..531d4f6 100644
-> --- a/drivers/clk/shmobile/Makefile
-> +++ b/drivers/clk/shmobile/Makefile
-> @@ -4,6 +4,7 @@ obj-$(CONFIG_ARCH_R8A7740)              += clk-r8a7740.o
->  obj-$(CONFIG_ARCH_R8A7779)             += clk-r8a7779.o
->  obj-$(CONFIG_ARCH_R8A7790)             += clk-rcar-gen2.o
->  obj-$(CONFIG_ARCH_R8A7791)             += clk-rcar-gen2.o
-> +obj-$(CONFIG_ARCH_R8A7794)             += clk-rcar-gen2.o
->  obj-$(CONFIG_ARCH_SHMOBILE_MULTI)      += clk-div6.o
->  obj-$(CONFIG_ARCH_SHMOBILE_MULTI)      += clk-mstp.o
->  # for emply built-in.o
-> -- 
-> 1.8.4.5
-> 
