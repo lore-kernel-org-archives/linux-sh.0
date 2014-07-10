@@ -1,80 +1,293 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Sat, 12 Jul 2014 11:49:31 +0000
-Subject: [PATCH 5/5] i2c: tegra: Remove suspension check
-Message-Id: <1405165771-8732-5-git-send-email-hechtb@gmail.com>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Thu, 10 Jul 2014 07:53:59 +0000
+Subject: [PATCH v2 1/2] usb: renesas_usbhs: add R-Car Gen. 2 init and power control
+Message-Id: <1404978840-31917-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405165771-8732-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1405165771-8732-1-git-send-email-hechtb-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+References: <1404978840-31917-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1404978840-31917-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
-Cc: Linux-SH <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tomoya MORINAGA <tomoya.rohm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Naveen Krishna Chatradhi <ch.naveen-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, Taekgyun Ko <taeggyun.ko-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, Ben Dooks <ben-Y5A6D6n0/KfQXOPxS62xeg@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-We now take care of suspension in the i2c core code. So we can remove this
-check here.
+In preparation for DT conversion to reduce reliance on platform device
+callbacks.
 
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
- drivers/i2c/busses/i2c-tegra.c | 19 +------------------
- 1 file changed, 1 insertion(+), 18 deletions(-)
+ drivers/usb/renesas_usbhs/Makefile |  2 +-
+ drivers/usb/renesas_usbhs/common.c | 66 ++++++++++++++++++++++++++++++---
+ drivers/usb/renesas_usbhs/common.h |  2 +
+ drivers/usb/renesas_usbhs/rcar2.c  | 76 ++++++++++++++++++++++++++++++++++++++
+ drivers/usb/renesas_usbhs/rcar2.h  |  4 ++
+ include/linux/usb/renesas_usbhs.h  |  6 +++
+ 6 files changed, 150 insertions(+), 6 deletions(-)
+ create mode 100644 drivers/usb/renesas_usbhs/rcar2.c
+ create mode 100644 drivers/usb/renesas_usbhs/rcar2.h
 
-diff --git a/drivers/i2c/busses/i2c-tegra.c b/drivers/i2c/busses/i2c-tegra.c
-index f1bb2fc..c279d85 100644
---- a/drivers/i2c/busses/i2c-tegra.c
-+++ b/drivers/i2c/busses/i2c-tegra.c
-@@ -172,7 +172,6 @@ struct tegra_i2c_dev {
- 	size_t msg_buf_remaining;
- 	int msg_read;
- 	u32 bus_clk_rate;
--	bool is_suspended;
+diff --git a/drivers/usb/renesas_usbhs/Makefile b/drivers/usb/renesas_usbhs/Makefile
+index bc8aef4..9e47f47 100644
+--- a/drivers/usb/renesas_usbhs/Makefile
++++ b/drivers/usb/renesas_usbhs/Makefile
+@@ -4,7 +4,7 @@
+ 
+ obj-$(CONFIG_USB_RENESAS_USBHS)	+= renesas_usbhs.o
+ 
+-renesas_usbhs-y			:= common.o mod.o pipe.o fifo.o
++renesas_usbhs-y			:= common.o mod.o pipe.o fifo.o rcar2.o
+ 
+ ifneq ($(CONFIG_USB_RENESAS_USBHS_HCD),)
+ 	renesas_usbhs-y		+= mod_host.o
+diff --git a/drivers/usb/renesas_usbhs/common.c b/drivers/usb/renesas_usbhs/common.c
+index 17267b0..1b9bf8d 100644
+--- a/drivers/usb/renesas_usbhs/common.c
++++ b/drivers/usb/renesas_usbhs/common.c
+@@ -15,12 +15,14 @@
+  *
+  */
+ #include <linux/err.h>
++#include <linux/gpio.h>
+ #include <linux/io.h>
+ #include <linux/module.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/slab.h>
+ #include <linux/sysfs.h>
+ #include "common.h"
++#include "rcar2.h"
+ 
+ /*
+  *		image of renesas_usbhs
+@@ -284,6 +286,8 @@ static void usbhsc_set_buswait(struct usbhs_priv *priv)
+ /*
+  *		platform default param
+  */
++
++/* commonly used on old SH-Mobile SoCs */
+ static u32 usbhsc_default_pipe_type[] = {
+ 		USB_ENDPOINT_XFER_CONTROL,
+ 		USB_ENDPOINT_XFER_ISOC,
+@@ -297,6 +301,26 @@ static u32 usbhsc_default_pipe_type[] = {
+ 		USB_ENDPOINT_XFER_INT,
  };
  
- static void dvc_writel(struct tegra_i2c_dev *i2c_dev, u32 val, unsigned long reg)
-@@ -628,9 +627,6 @@ static int tegra_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[],
- 	int i;
- 	int ret = 0;
++/* commonly used on newer SH-Mobile and R-Car SoCs */
++static u32 usbhsc_new_pipe_type[] = {
++		USB_ENDPOINT_XFER_CONTROL,
++		USB_ENDPOINT_XFER_ISOC,
++		USB_ENDPOINT_XFER_ISOC,
++		USB_ENDPOINT_XFER_BULK,
++		USB_ENDPOINT_XFER_BULK,
++		USB_ENDPOINT_XFER_BULK,
++		USB_ENDPOINT_XFER_INT,
++		USB_ENDPOINT_XFER_INT,
++		USB_ENDPOINT_XFER_INT,
++		USB_ENDPOINT_XFER_BULK,
++		USB_ENDPOINT_XFER_BULK,
++		USB_ENDPOINT_XFER_BULK,
++		USB_ENDPOINT_XFER_BULK,
++		USB_ENDPOINT_XFER_BULK,
++		USB_ENDPOINT_XFER_BULK,
++		USB_ENDPOINT_XFER_BULK,
++};
++
+ /*
+  *		power control
+  */
+@@ -423,8 +447,7 @@ static int usbhs_probe(struct platform_device *pdev)
+ 	int ret;
  
--	if (i2c_dev->is_suspended)
--		return -EBUSY;
--
- 	ret = tegra_i2c_clock_enable(i2c_dev);
- 	if (ret < 0) {
- 		dev_err(i2c_dev->dev, "Clock enable failed %d\n", ret);
-@@ -817,17 +813,6 @@ static int tegra_i2c_remove(struct platform_device *pdev)
- }
- 
- #ifdef CONFIG_PM_SLEEP
--static int tegra_i2c_suspend(struct device *dev)
--{
--	struct tegra_i2c_dev *i2c_dev = dev_get_drvdata(dev);
--
--	i2c_lock_adapter(&i2c_dev->adapter);
--	i2c_dev->is_suspended = true;
--	i2c_unlock_adapter(&i2c_dev->adapter);
--
--	return 0;
--}
--
- static int tegra_i2c_resume(struct device *dev)
- {
- 	struct tegra_i2c_dev *i2c_dev = dev_get_drvdata(dev);
-@@ -842,14 +827,12 @@ static int tegra_i2c_resume(struct device *dev)
- 		return ret;
+ 	/* check platform information */
+-	if (!info ||
+-	    !info->platform_callback.get_id) {
++	if (!info) {
+ 		dev_err(&pdev->dev, "no platform information\n");
+ 		return -EINVAL;
  	}
+@@ -451,13 +474,32 @@ static int usbhs_probe(struct platform_device *pdev)
+ 	/*
+ 	 * care platform info
+ 	 */
+-	memcpy(&priv->pfunc,
+-	       &info->platform_callback,
+-	       sizeof(struct renesas_usbhs_platform_callback));
++
+ 	memcpy(&priv->dparam,
+ 	       &info->driver_param,
+ 	       sizeof(struct renesas_usbhs_driver_param));
  
--	i2c_dev->is_suspended = false;
--
- 	i2c_unlock_adapter(&i2c_dev->adapter);
++	switch (priv->dparam.type) {
++	case USBHS_TYPE_R8A7790:
++	case USBHS_TYPE_R8A7791:
++		priv->pfunc = usbhs_rcar2_ops;
++		if (!priv->dparam.pipe_type) {
++			priv->dparam.pipe_type = usbhsc_new_pipe_type;
++			priv->dparam.pipe_size +				ARRAY_SIZE(usbhsc_new_pipe_type);
++		}
++		break;
++	default:
++		if (!info->platform_callback.get_id) {
++			dev_err(&pdev->dev, "no platform callbacks");
++			return -EINVAL;
++		}
++		memcpy(&priv->pfunc,
++		       &info->platform_callback,
++		       sizeof(struct renesas_usbhs_platform_callback));
++		break;
++	}
++
+ 	/* set driver callback functions for platform */
+ 	dfunc			= &info->driver_callback;
+ 	dfunc->notify_hotplug	= usbhsc_drvcllbck_notify_hotplug;
+@@ -507,6 +549,20 @@ static int usbhs_probe(struct platform_device *pdev)
+ 	 */
+ 	usbhs_sys_clock_ctrl(priv, 0);
  
- 	return 0;
- }
++	/* check GPIO determining if USB function should be enabled */
++	if (priv->dparam.enable_gpio) {
++		gpio_request_one(priv->dparam.enable_gpio, GPIOF_IN, NULL);
++		ret = !gpio_get_value(priv->dparam.enable_gpio);
++		gpio_free(priv->dparam.enable_gpio);
++		if (ret) {
++			dev_warn(&pdev->dev,
++				 "USB function not selected (GPIO %d)\n",
++				 priv->dparam.enable_gpio);
++			ret = -ENOTSUPP;
++			goto probe_end_mod_exit;
++		}
++	}
++
+ 	/*
+ 	 * platform call
+ 	 *
+diff --git a/drivers/usb/renesas_usbhs/common.h b/drivers/usb/renesas_usbhs/common.h
+index c69dd2f..a7996da 100644
+--- a/drivers/usb/renesas_usbhs/common.h
++++ b/drivers/usb/renesas_usbhs/common.h
+@@ -268,6 +268,8 @@ struct usbhs_priv {
+ 	 * fifo control
+ 	 */
+ 	struct usbhs_fifo_info fifo_info;
++
++	struct usb_phy *phy;
+ };
  
--static SIMPLE_DEV_PM_OPS(tegra_i2c_pm, tegra_i2c_suspend, tegra_i2c_resume);
-+static SIMPLE_DEV_PM_OPS(tegra_i2c_pm, tegra_i2c_resume);
- #define TEGRA_I2C_PM	(&tegra_i2c_pm)
- #else
- #define TEGRA_I2C_PM	NULL
+ /*
+diff --git a/drivers/usb/renesas_usbhs/rcar2.c b/drivers/usb/renesas_usbhs/rcar2.c
+new file mode 100644
+index 0000000..4e22a0b
+--- /dev/null
++++ b/drivers/usb/renesas_usbhs/rcar2.c
+@@ -0,0 +1,76 @@
++/*
++ * Renesas USB driver R-Car Gen. 2 initialization and power control
++ *
++ * Copyright (C) 2014 Ulrich Hecht
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++
++#include <linux/gpio.h>
++#include <linux/of_gpio.h>
++#include <linux/platform_data/gpio-rcar.h>
++#include <linux/usb/phy.h>
++#include "common.h"
++
++static int usbhs_rcar2_hardware_init(struct platform_device *pdev)
++{
++	struct usbhs_priv *priv = usbhs_pdev_to_priv(pdev);
++	struct usb_phy *phy;
++
++	phy = usb_get_phy_dev(&pdev->dev, 0);
++	if (IS_ERR(phy))
++		return PTR_ERR(phy);
++
++	priv->phy = phy;
++	return 0;
++}
++
++static int usbhs_rcar2_hardware_exit(struct platform_device *pdev)
++{
++	struct usbhs_priv *priv = usbhs_pdev_to_priv(pdev);
++
++	if (!priv->phy)
++		return 0;
++
++	usb_put_phy(priv->phy);
++	priv->phy = NULL;
++
++	return 0;
++}
++
++static int usbhs_rcar2_power_ctrl(struct platform_device *pdev,
++				void __iomem *base, int enable)
++{
++	struct usbhs_priv *priv = usbhs_pdev_to_priv(pdev);
++
++	if (!priv->phy)
++		return -ENODEV;
++
++	if (enable) {
++		int retval = usb_phy_init(priv->phy);
++
++		if (!retval)
++			retval = usb_phy_set_suspend(priv->phy, 0);
++		return retval;
++	}
++
++	usb_phy_set_suspend(priv->phy, 1);
++	usb_phy_shutdown(priv->phy);
++	return 0;
++}
++
++static int usbhs_rcar2_get_id(struct platform_device *pdev)
++{
++	return USBHS_GADGET;
++}
++
++const struct renesas_usbhs_platform_callback usbhs_rcar2_ops = {
++	.hardware_init = usbhs_rcar2_hardware_init,
++	.hardware_exit = usbhs_rcar2_hardware_exit,
++	.power_ctrl = usbhs_rcar2_power_ctrl,
++	.get_id = usbhs_rcar2_get_id,
++};
+diff --git a/drivers/usb/renesas_usbhs/rcar2.h b/drivers/usb/renesas_usbhs/rcar2.h
+new file mode 100644
+index 0000000..f07f10d
+--- /dev/null
++++ b/drivers/usb/renesas_usbhs/rcar2.h
+@@ -0,0 +1,4 @@
++#include "common.h"
++
++extern const struct renesas_usbhs_platform_callback
++	usbhs_rcar2_ops;
+diff --git a/include/linux/usb/renesas_usbhs.h b/include/linux/usb/renesas_usbhs.h
+index e452ba6..d5952bb 100644
+--- a/include/linux/usb/renesas_usbhs.h
++++ b/include/linux/usb/renesas_usbhs.h
+@@ -153,6 +153,9 @@ struct renesas_usbhs_driver_param {
+ 	 */
+ 	int pio_dma_border; /* default is 64byte */
+ 
++	u32 type;
++	u32 enable_gpio;
++
+ 	/*
+ 	 * option:
+ 	 */
+@@ -160,6 +163,9 @@ struct renesas_usbhs_driver_param {
+ 	u32 has_sudmac:1; /* for SUDMAC */
+ };
+ 
++#define USBHS_TYPE_R8A7790 1
++#define USBHS_TYPE_R8A7791 2
++
+ /*
+  * option:
+  *
 -- 
-1.9.1
+1.8.4.5
 
