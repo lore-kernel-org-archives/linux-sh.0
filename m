@@ -1,52 +1,63 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 10 Jul 2014 11:36:30 +0000
+Date: Thu, 10 Jul 2014 11:55:43 +0000
 Subject: Re: [PATCH 1/2] [RFC] spi: rspi: Handle dmaengine_prep_slave_sg() failures gracefully
-Message-Id: <CAMuHMdU38zJWe-fVWcSpDBFo0QJ9GsGC3Mveey64P3VE=8ggPw@mail.gmail.com>
+Message-Id: <CAMuHMdXj=Y0w39iyY9GPjUJPXC7UgPyeqk7+G+zZeAvGoE1fGg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1404901583-31366-1-git-send-email-geert+renesas@glider.be>
-	<6218596.RTFxRvYFXy@avalon>
-In-Reply-To: <6218596.RTFxRvYFXy@avalon>
+	<1498087.H5vJvgGuNO@avalon>
+In-Reply-To: <1498087.H5vJvgGuNO@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
-Cc: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Mark Brown <broonie@kernel.org>, linux-spi <linux-spi@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, dmaengine@vger.kernel.org
 
 Hi Laurent,
 
-On Thu, Jul 10, 2014 at 1:05 PM, Laurent Pinchart
+(cc dmaengine)
+
+On Thu, Jul 10, 2014 at 1:08 PM, Laurent Pinchart
 <laurent.pinchart@ideasonboard.com> wrote:
-> On Wednesday 09 July 2014 12:26:22 Geert Uytterhoeven wrote:
->> As typically a shmobile SoC has less DMA channels than devices that can use
->> DMA, we may want to prioritize access to the DMA channels in the future.
->> This means that dmaengine_prep_slave_sg() may start failing arbitrarily.
+>> --- a/drivers/spi/spi-rspi.c
+>> +++ b/drivers/spi/spi-rspi.c
+>> @@ -477,7 +477,7 @@ static int rspi_dma_transfer(struct rspi_data *rspi,
+>> struct sg_table *tx, tx->sgl, tx->nents, DMA_TO_DEVICE,
+>>                                       DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+>>               if (!desc_tx)
+>> -                     return -EIO;
+>> +                     goto no_dma;
 >>
->> Handle dmaengine_prep_slave_sg() failures gracefully by falling back to
->> PIO.
+>>               irq_mask |= SPCR_SPTIE;
+>>       }
+>> @@ -486,7 +486,7 @@ static int rspi_dma_transfer(struct rspi_data *rspi,
+>> struct sg_table *tx, rx->sgl, rx->nents, DMA_FROM_DEVICE,
+>>                                       DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+>>               if (!desc_rx)
+>> -                     return -EIO;
+>> +                     goto no_dma;
 >
-> Just a random thought, do you think there would be performance-sensitive cases
-> where failing the transfer completely would be better than using PIO ?
+> This is not a new issue introduced by this patch, but aren't you leaking
+> desc_tx here ?
 
-QSPI Flash reads gain most from DMA.
+AFAIK, descriptors are cleaned up automatically after use, and the only
+function that takes a dma_async_tx_descriptor is dmaengine_submit().
 
-However, failing transfers (and thus the whole SPI message, which typically
-consists of multiple transfers) means we'll have to retry the message later.
-This could be done by the SPI driver, the SPI subsystem, or the upper layer.
-E.g. m25p80 and mtd do not retry SPI FLASH reads and writes.
+But indeed, if you don't use them, that doesn't happen.
+So calling dmaengine_terminate_all() seems appropriate to fix this.
 
->> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->
-> -EAGAIN might not be the best error code to return in this case, as it would
-> imply that the caller should just call rspi_dma_transfer() again. On the other
-> hand I don't see another error code that would be a perfect match, so
+But, Documentation/dmaengine.txt says:
 
-I followed the exact same reasoning to arrive at -EAGAIN...
+        desc = dmaengine_prep_slave_sg(chan, sgl, nr_sg, direction, flags);
 
-BTW, calling rspi_dma_transfer() again is an option ;-)
+   Once a descriptor has been obtained, the callback information can be
+   added and the descriptor must then be submitted.  Some DMA engine
+   drivers may hold a spinlock between a successful preparation and
+   submission so it is important that these two operations are closely
+   paired.
 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-Thanks!
+W.r.t. the spinlock, is it safe to call dmaengine_terminate_all() for a prepared
+but not submitted transfer?
+Is there another/better way?
 
 Gr{oetje,eeting}s,
 
