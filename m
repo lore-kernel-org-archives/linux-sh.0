@@ -1,35 +1,32 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Mon, 07 Jul 2014 00:20:03 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC r8a7779-multiplatform Updates for v3.17
-Message-Id: <20140707002003.GA8469@quad.lixom.net>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 10 Jul 2014 16:08:39 +0000
+Subject: renesas-drivers-2014-07-10-v3.16-rc4
+Message-Id: <CAMuHMdU9gLeJLbHtic9bsN7iZgT3VZV81q=3K3cVt_jmODPROQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487423.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487423.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Jun 23, 2014 at 11:26:36AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these Renesas ARM based SoC r8a7779-multiplatform updates
-> for v3.17.
-> 
-> This pull request is based on 'Renesas ARM Based SoC Header Cleanup for v3.17',
-> tagged as header-cleanup-for-v3.17, which I have already sent a
-> pull-request for.
-> 
-> 
-> The following changes since commit 62872989bdbf1245d7239b9f4c05a8ee7c775ed5:
-> 
->   ARM: shmobile: Move rcar-gen2.h, cleanup r8a7790 case (2014-06-17 17:09:40 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-r8a7779-multiplatform-for-v3.17
+I've pushed renesas-drivers-2014-07-10-v3.16-rc4 to
+https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+This tree is meant to ease development of platform support and drivers for
+Renesas ARM ("shmobile") SoCs. It's created by merging the for-next branches
+of various subsystem trees into the development branch of Simon Horman's
+renesas.git tree.
 
-Merged into next/soc. Thanks!
+Today's version is based on renesas-devel-v3.16-rc4-20140709.
 
+New incorporated for-next branch:
+    git://git.linaro.org/people/ulf.hansson/mmc.git#next
 
--Olof
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
