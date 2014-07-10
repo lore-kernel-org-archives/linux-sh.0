@@ -1,7 +1,7 @@
-From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
-Date: Sun, 06 Jul 2014 22:39:24 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 10 Jul 2014 08:23:55 +0000
 Subject: Re: [PATCH v2] ARM: shmobile: Lager: Correct I2C bus for VDD MPU regulator
-Message-Id: <53B9D01C.4030303@renesas.com>
+Message-Id: <CANqRtoQF9bQmpz6wo9KPDC+raDnuYT-B+d4edAPE0gxsDav5wQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <53B5F327.5040301@renesas.com>
 In-Reply-To: <53B5F327.5040301@renesas.com>
@@ -10,65 +10,31 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Dear Simon-san, Magnus-san,
-cc Inami-san,
+Hi Khiem-san, Wolfram, everyone,
 
->> 	Thanks for your patch. Can you please extend the commit message to
->> 	include the reason behind this patch?
+[CC Wolfram]
 
->> In particular I think you still need to address his feedback:
+On Fri, Jul 4, 2014 at 2:19 AM, Khiem Nguyen
+<khiem.nguyen.xt@renesas.com> wrote:
+> I2C bus for VDD MPU regulator is IIC3, not I2C3.
+>
+> Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+> ---
+> v2:
+>   - re-based on top of tag renesas-devel-v3.16-rc3-20140701.
+>   - removed redundant spaces.
 
-I'd like to explain it here. After all parties agree,
-I will send new version of my patch.
+This patch is changing I2C master controller device for the I2C bus
+where the power chip is located. I've heard that all of our different
+I2C controllers come with a range of features and issues, so I think
+we should check with the I2C maintainer Wolfram Sang about this
+matter.
 
-The reason of this patch is simply to align with information
-in datasheet of R-Car H2.
-With this change, CPUFreq implementation for Lager board is aligned 
-with implementation for Koelsch board.
+Wolfram, can you give us your opinion about this patch? Does it
+improve our I2C software support on Lager?
 
-Is it reasonable enough ?
+Khiem-san, in the future please CC Wolfram about issues related to I2C.
 
-Thanks.
+Thanks,
 
-Best regards,
-KHIEM Nguyen
-
-On 7/6/2014 11:58 PM, Simon Horman wrote:
-> On Sun, Jul 06, 2014 at 04:37:28PM +0200, Simon Horman wrote:
->> On Fri, Jul 04, 2014 at 03:41:21PM +0900, Khiem Nguyen wrote:
->>> Hi Inami-san,
->>>
->>> On 7/4/2014 2:40 PM, Gaku Inami wrote:
->>>>> I2C bus for VDD MPU regulator is IIC3, not I2C3.
->>> [...]
->>>>> Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
->>> [...]
->>>> Thank you for updating patch. 
->>>> I tested your patch. Test reult is good.
->>> Thanks for your testing.
->>>
->>> [...]
->>>> Tested-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
->>> [...]
->>>> This is a bug fix of my cpufreq patch. Thank you for your fix.
->>> OK. 
->>> Let's wait for final comment from Magnus-san.
->>
->> Thanks, I have decided to queue this up.
-> 
-> On second thoughts I will wait for Magnus.
-> 
-> In particular I think you still need to address his feedback:
-> 
-> 	Hi Khiem-san,
-> 
-> 	Thanks for your patch. Can you please extend the commit message to
-> 	include the reason behind this patch?
-> 
-> 	From my side this looks like a software policy change. Unless I'm
-> 	mistaken both I2C3 and IIC3 share the same pins on the SoC, and
-> 	because of that it should be possible to access that particular I2C
-> 	bus already without any modification.
-> 
-> 	So please explain why you want to change this.
-> 
+/ magnus
