@@ -1,21 +1,26 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 10 Jul 2014 12:48:19 +0000
+From: Vinod Koul <vinod.koul@intel.com>
+Date: Thu, 10 Jul 2014 15:21:29 +0000
 Subject: Re: [PATCH] dma: sh: inherit debug options from the subsystem for sh
-Message-Id: <20140710124819.GH2728@katana>
+Message-Id: <20140710150929.GF2296@intel.com>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="6cMF9JLEeZkfJjkP"
+Content-Type: multipart/mixed; boundary="LZFKeWUZP29EKQNE"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1404033022-3014-1-git-send-email-wsa@the-dreams.de>
 In-Reply-To: <1404033022-3014-1-git-send-email-wsa@the-dreams.de>
 To: linux-sh@vger.kernel.org
 
 
---6cMF9JLEeZkfJjkP
+--LZFKeWUZP29EKQNE
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
-
+On Thu, Jul 10, 2014 at 02:25:58PM +0200, Laurent Pinchart wrote:
+> Hi Wolfram,
+>=20
+> On Thursday 03 July 2014 10:48:34 Wolfram Sang wrote:
+> > Hi,
+> >=20
 > > > With dynamic debug, these flags dont make much sense unless you want
 > > > something to be printed *always* during boot.
 > >=20
@@ -27,33 +32,37 @@ Content-Transfer-Encoding: quoted-printable
 > it requires recompiling the kernel, wouldn't dynamic printk be a better=
 =20
 > alternative ?
+No it wont. Pls see the discussion.
 
-I didn't mind recompiling once for the prize of a smaller kernel image
-(only the debug strings I wanted are included).
+Lots of dmanegine device gets used at boot, so for testing those scenarios =
+it
+will help to enable debug!
 
-But let's just drop this patch, it is not worth all this discussion.
+--=20
+~Vinod
 
 
---6cMF9JLEeZkfJjkP
+--LZFKeWUZP29EKQNE
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
+Content-Disposition: inline
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+Version: GnuPG v1.4.10 (GNU/Linux)
 
-iQIcBAEBAgAGBQJTvouTAAoJEBQN5MwUoCm2QYQQAJY/EQeVtcXDhaWJ+MIqZLHX
-BQFO70rFl33x0vgF20sYROtWhwIAczcK8051yyxswc2A2ZxdJ7fPR8Zc3uguFj1k
-qQR+4heFDtYz4c+YIJ63L4cQiCH/YOHKtJsReDP3J4Ew4hUXy0kcrSUT7e2fb7/r
-qoptJN1Ucu7xpdaIHtgu/8KL8zw7ykWUsWVypC65Oid9O3A7sVGz9/9WTTRPOraZ
-/ipPhn6jVHsb35sOhAoVII4DB0ffcIhZv9vHEjV+IFLvjHI5k/m4FzBFUBp0Rtn0
-GSeWkZl6quESmOFIZbQx/E2XP2TdUXLpcFhclDy0zlEADolvG+MxLgihf7HKl0bO
-/H0wz5luyxSRro189FO6cDqnk7j3b1q8kJRydUbHTh3un7icpHjGbmJlUEg7F9U7
-qRLF+Qn4JcIhzVTKXkJSGXxgJ5IWlvBhoieE06TvnexsMZNy6Cs0Aw2aSwxaF0uh
-HszrTJ6utIQvh2Ds/t71jOWsul7E88TOr+uXp5d9IqqzAlQ478sVrkOoDrDoQIlf
-B9e1tqcBXJXlPGPdaCVmVKtjSg5Wvoe5D0HjCl4TyfhQKaB90WnonwduvVYHDa9m
-KQBv2lP4idb5FelM7VaVFPFFfV9Oe+GgL54lYpd6BIowtthO4ZDMdFhYhWWB3hKb
-dhvICcFTUbNLWqZxNkXW
-=d2TS
+iQIcBAEBAgAGBQJTvqypAAoJEHwUBw8lI4NHbekP/j6tvBNQTgP93VQI8hsBZ/0c
+Tdl3VfSQgZkHr1LVJojrePHacci+In2JgiufrYBwAN5FV9nXTdCeqtJD44uUuTsT
+ZMWCRckuQbnvSpT64IXua7qFVAdA8/OA/7ZiGPlakdRvVXbxrMsr23KjOVSGGJO1
+A2DDWSbahc3QTCBXPpYL/IUE1YAziOpwVtOSSe/iFgr54Q/b2zzIUz/oshYhRytq
+nJQGcm/dnVccSkjJA0Tzfjjih9rky5AsOs2HEt5MsyQicd62LsjY5A12kMROd3pz
+ZsuS35QPVu0ldowWfPAVb31cq31DocBa3VY1KzJ/CPkzikWoEY8LA41CsenOdVdY
+yXigi/LDWupl9sOwBB3ZrG5GNbkS8R1QeVd0fRg+Fl4yNqroMNqzvWc8+p8Ozkwp
+GyCl7Rv4kdpHsSVJYRhp51faYVwSlIKUBvE39mc/Au7Wjn9KBYCMzYIu1hKw0Vt/
+Rl98MRaG2nfQc3jlNwuIJL4cITl8fP4SFmH2jeCEjn5UG7+QVOK4P6Duc1MC5O+X
+Qc/R0jjG3aEi42w98LyuQB0EdOTlJqLfp+1Ff8rr2h+sPn6lEaHcsW3VUWA8rhuc
+H7FdIHpK6cV+fbjHjWC0acOT067kLZjr2Bcxc6o/UbpWR84Moyvb5dZdXZuGUGxM
+dU/P/H/yXQFQjJyGxc3F
+=RsQc
 -----END PGP SIGNATURE-----
 
---6cMF9JLEeZkfJjkP--
+--LZFKeWUZP29EKQNE--
