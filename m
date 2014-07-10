@@ -1,64 +1,59 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 10 Jul 2014 12:25:58 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 10 Jul 2014 12:48:19 +0000
 Subject: Re: [PATCH] dma: sh: inherit debug options from the subsystem for sh
-Message-Id: <9184799.0kesuWAK5g@avalon>
+Message-Id: <20140710124819.GH2728@katana>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart1994725.boiimcIMQd"
+Content-Type: multipart/mixed; boundary="6cMF9JLEeZkfJjkP"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1404033022-3014-1-git-send-email-wsa@the-dreams.de>
 In-Reply-To: <1404033022-3014-1-git-send-email-wsa@the-dreams.de>
 To: linux-sh@vger.kernel.org
 
 
---nextPart1994725.boiimcIMQd
+--6cMF9JLEeZkfJjkP
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="us-ascii"
 
-Hi Wolfram,
 
-On Thursday 03 July 2014 10:48:34 Wolfram Sang wrote:
-> Hi,
+> > > With dynamic debug, these flags dont make much sense unless you want
+> > > something to be printed *always* during boot.
+> >=20
+> > Yes, this was exactly what I wanted.
 >=20
-> > With dynamic debug, these flags dont make much sense unless you wan=
-t
-> > something to be printed *always* during boot.
->=20
-> Yes, this was exactly what I wanted.
-
-Why is that ? My understanding is that the purpose of the=20
-CONFIG_DMADEVICES_DEBUG option is to enable debug messages for debuggin=
-g. As=20
-it requires recompiling the kernel, wouldn't dynamic printk be a better=
+> Why is that ? My understanding is that the purpose of the=20
+> CONFIG_DMADEVICES_DEBUG option is to enable debug messages for debugging.=
+ As=20
+> it requires recompiling the kernel, wouldn't dynamic printk be a better=
 =20
-alternative ?
+> alternative ?
 
-> So, for consistency reasons I copied the existing mechanism over to s=
-h. If
-> it turns out that the desired default is something different, I'll se=
-nd
-> patches for that.
+I didn't mind recompiling once for the prize of a smaller kernel image
+(only the debug strings I wanted are included).
 
-=2D-=20
-Regards,
+But let's just drop this patch, it is not worth all this discussion.
 
-Laurent Pinchart
 
---nextPart1994725.boiimcIMQd
+--6cMF9JLEeZkfJjkP
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
+Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
+Version: GnuPG v1
 
-iQEcBAABAgAGBQJTvoZmAAoJEIkPb2GL7hl1GHoH+QEnhs6AwShgfYXe08dqRw3f
-IXRggP4zzyBEXonawG8g8staW1gTk0UXA3pqQR4YYAVow00itQoxtX8lQ5YkWx+6
-mEMLGpeE6tmUMLLRpXaVZAbkHPnfLUnqTydFu/xf3oyfDvjX99Tt6tEq2mOoXq/d
-e0iuTFboL/S2sSZr4PsiZv18cojQusKmdoY1oXCpOJ6J5SHYvocURmRV2/xJmXFT
-ZXylZhLswMRGEWpoBfPGoM/434oqtJzrgkLrqSRK+mk6EavCQlH6m6ppIqvzp72L
-MvsmwiFhNDDpDQkOcocED2grhQgZpKdKjqAdJJ6xMV7N/k1Yqc3wzmHH3qfQah0=
-=Y2Xr
+iQIcBAEBAgAGBQJTvouTAAoJEBQN5MwUoCm2QYQQAJY/EQeVtcXDhaWJ+MIqZLHX
+BQFO70rFl33x0vgF20sYROtWhwIAczcK8051yyxswc2A2ZxdJ7fPR8Zc3uguFj1k
+qQR+4heFDtYz4c+YIJ63L4cQiCH/YOHKtJsReDP3J4Ew4hUXy0kcrSUT7e2fb7/r
+qoptJN1Ucu7xpdaIHtgu/8KL8zw7ykWUsWVypC65Oid9O3A7sVGz9/9WTTRPOraZ
+/ipPhn6jVHsb35sOhAoVII4DB0ffcIhZv9vHEjV+IFLvjHI5k/m4FzBFUBp0Rtn0
+GSeWkZl6quESmOFIZbQx/E2XP2TdUXLpcFhclDy0zlEADolvG+MxLgihf7HKl0bO
+/H0wz5luyxSRro189FO6cDqnk7j3b1q8kJRydUbHTh3un7icpHjGbmJlUEg7F9U7
+qRLF+Qn4JcIhzVTKXkJSGXxgJ5IWlvBhoieE06TvnexsMZNy6Cs0Aw2aSwxaF0uh
+HszrTJ6utIQvh2Ds/t71jOWsul7E88TOr+uXp5d9IqqzAlQ478sVrkOoDrDoQIlf
+B9e1tqcBXJXlPGPdaCVmVKtjSg5Wvoe5D0HjCl4TyfhQKaB90WnonwduvVYHDa9m
+KQBv2lP4idb5FelM7VaVFPFFfV9Oe+GgL54lYpd6BIowtthO4ZDMdFhYhWWB3hKb
+dhvICcFTUbNLWqZxNkXW
+=d2TS
 -----END PGP SIGNATURE-----
 
---nextPart1994725.boiimcIMQd--
-
+--6cMF9JLEeZkfJjkP--
