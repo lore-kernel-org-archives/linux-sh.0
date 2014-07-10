@@ -1,76 +1,68 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 12 Jul 2014 13:37:34 +0000
-Subject: Re: [PATCH v2 0/2] ARM: shmobile: lager: USBHS callback elimination
-Message-Id: <20140712133734.GA23843@verge.net.au>
+From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+Date: Thu, 10 Jul 2014 00:03:26 +0000
+Subject: Re: [PATCH v2 01/10] iommu/ipmmu-vmsa: Refactor micro-TLB lookup
+Message-Id: <53BDD84E.4090206@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <53BF35B7.9000105@renesas.com>
- <87oawxy69b.wl%kuninori.morimoto.gx@renesas.com>
- <20140711090005.GH12420@verge.net.au>
- <20140711151236.GG27864@saruman.home>
- <20140711154152.GC1777@verge.net.au>
- <20140711162348.GF22572@saruman.home>
-In-Reply-To: <20140711162348.GF22572@saruman.home>
+References: <1400150451-13469-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1400150451-13469-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1400150451-13469-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jul 11, 2014 at 11:23:48AM -0500, Felipe Balbi wrote:
-> On Fri, Jul 11, 2014 at 05:41:52PM +0200, Simon Horman wrote:
-> > On Fri, Jul 11, 2014 at 10:12:37AM -0500, Felipe Balbi wrote:
-> > > On Fri, Jul 11, 2014 at 11:00:07AM +0200, Simon Horman wrote:
-> > > > [Cc Felipe Balbi]
-> > > > 
-> > > > On Thu, Jul 10, 2014 at 01:20:34AM -0700, Kuninori Morimoto wrote:
-> > > > > 
-> > > > > Hi
-> > > > > 
-> > > > > > Changes in v2:
-> > > > > > - move phy handle to struct usbhs_priv
-> > > > > > - add new default pipe type to driver
-> > > > > > - remove pipe type from Lager board code
-> > > > > > 
-> > > > > > Ulrich Hecht (2):
-> > > > > >   usb: renesas_usbhs: add R-Car Gen. 2 init and power control
-> > > > > >   ARM: shmobile: lager: remove USBHS callbacks
-> > > > > > 
-> > > > > >  arch/arm/mach-shmobile/board-lager.c | 126 ++++-------------------------------
-> > > > > >  drivers/usb/renesas_usbhs/Makefile   |   2 +-
-> > > > > >  drivers/usb/renesas_usbhs/common.c   |  66 ++++++++++++++++--
-> > > > > >  drivers/usb/renesas_usbhs/common.h   |   2 +
-> > > > > >  drivers/usb/renesas_usbhs/rcar2.c    |  76 +++++++++++++++++++++
-> > > > > >  drivers/usb/renesas_usbhs/rcar2.h    |   4 ++
-> > > > > >  include/linux/usb/renesas_usbhs.h    |   6 ++
-> > > > > >  7 files changed, 163 insertions(+), 119 deletions(-)
-> > > > > >  create mode 100644 drivers/usb/renesas_usbhs/rcar2.c
-> > > > > >  create mode 100644 drivers/usb/renesas_usbhs/rcar2.h
-> > > > > 
-> > > > > For all patches
-> > > > > 
-> > > > > Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > > > 
-> > > > [snip]
-> > > > 
-> > > > > I tested these patches on Lager legacy, and these patches worked correctly.
-> > > > > 
-> > > > > Tested-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> > > > 
-> > > > Hi,
-> > > > 
-> > > > it seems that the 2nd patch should go through my renesas tree
-> > > > but it depends on the first patch which should be taken by 
-> > > > Felipe Balbi (Cced).
-> > > > 
-> > > > Felipe, is there any chance that you could take this for v3.16?
-> > > > I am quite happy to make a branch for you to pull for renesas_usbhs
-> > > > if this would make your life easier.
-> > > 
-> > > you need to take both patches or just patch 1 ?
-> > 
-> > Please just take patch 1.
-> 
-> will do.
+On 5/15/2014 7:40 PM, Laurent Pinchart wrote:
+> Cache the micro-TLB number in archdata allocated in the .add_device
+> handler instead of looking it up when the deviced is attached and
+> detached. This simplifies the .attach_dev and .detach_dev operations and
+> prepares for DT support.
+[snip]
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+[snip]
+> +static int ipmmu_find_utlb(struct ipmmu_vmsa_device *mmu, struct device *dev)
+> +{
+> +	const struct ipmmu_vmsa_master *master = mmu->pdata->masters;
+> +	const char *devname = dev_name(dev);
+> +	unsigned int i;
+> +
+> +	for (i = 0; i < mmu->pdata->num_masters; ++i, ++master) {
+> +		if (strcmp(master->name, devname) = 0)
+> +			return master->utlb;
+> +	}
+> +
+> +	return -1;
+> +}
+[snip]
+>  static int ipmmu_add_device(struct device *dev)
+[snip]
+>  	list_for_each_entry(mmu, &ipmmu_devices, list) {
+> -		master = ipmmu_find_master(mmu, dev);
+> -		if (master) {
+> +		utlb = ipmmu_find_utlb(mmu, dev);
+> +		if (utlb >= 0) {
+>  			/*
+> -			 * TODO Take a reference to the master to protect
+> +			 * TODO Take a reference to the MMU to protect
+>  			 * against device removal.
+>  			 */
+>  			break;
+[snip]
+> +	archdata->mmu = mmu;
+> +	archdata->utlb = utlb;
+[snip]
+
+I have one question for ipmmu_add_device().
+
+In my understanding, your code will find utlb for device
+base on device name.
+For any device, it will /only/ return utlb number of first match.
+
+How about the case that a device name connected with more than 1 utlb ?
+e.g DU device (rcar-du-r8a7790) in Lager
+
+Was that case already covered in your code ?
 
 Thanks.
 
-Ulrich, please repost patch #2 once patch #1 hits an rc release.
+Best regards,
+KHIEM Nguyen
