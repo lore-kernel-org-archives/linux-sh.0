@@ -1,19 +1,17 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 10 Jul 2014 11:05:35 +0000
+Date: Thu, 10 Jul 2014 11:08:35 +0000
 Subject: Re: [PATCH 1/2] [RFC] spi: rspi: Handle dmaengine_prep_slave_sg() failures gracefully
-Message-Id: <6218596.RTFxRvYFXy@avalon>
+Message-Id: <1498087.H5vJvgGuNO@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1404901583-31366-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1404901583-31366-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+In-Reply-To: <1404901583-31366-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
-Cc: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Mark Brown <broonie@kernel.org>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org
 
 Hi Geert,
-
-Thank you for the patch.
 
 On Wednesday 09 July 2014 12:26:22 Geert Uytterhoeven wrote:
 > As typically a shmobile SoC has less DMA channels than devices that can use
@@ -22,18 +20,8 @@ On Wednesday 09 July 2014 12:26:22 Geert Uytterhoeven wrote:
 > 
 > Handle dmaengine_prep_slave_sg() failures gracefully by falling back to
 > PIO.
-
-Just a random thought, do you think there would be performance-sensitive cases 
-where failing the transfer completely would be better than using PIO ?
-
+> 
 > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
--EAGAIN might not be the best error code to return in this case, as it would 
-imply that the caller should just call rspi_dma_transfer() again. On the other 
-hand I don't see another error code that would be a perfect match, so
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
 > ---
 >  drivers/spi/spi-rspi.c | 30 ++++++++++++++++++++++--------
 >  1 file changed, 22 insertions(+), 8 deletions(-)
@@ -57,7 +45,10 @@ Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 >  		if (!desc_rx)
 > -			return -EIO;
 > +			goto no_dma;
-> 
+
+This is not a new issue introduced by this patch, but aren't you leaking 
+desc_tx here ?
+
 >  		irq_mask |= SPCR_SPRIE;
 >  	}
 > @@ -540,6 +540,12 @@ static int rspi_dma_transfer(struct rspi_data *rspi,
