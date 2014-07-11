@@ -1,109 +1,90 @@
-From: Nick Krause <xerofoify@gmail.com>
-Date: Fri, 18 Jul 2014 03:53:50 +0000
-Subject: Build Failures for Sh architecture
-Message-Id: <CAPDOMViWdf1Uw_a76bn3U8H_FE+AGAQV6Zx2AydM0-8ZuerfRA@mail.gmail.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="001a11c3e09e8bffac04fe6fb499"
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 11 Jul 2014 16:01:17 +0000
+Subject: [PATCH v2 2/2] spi: sh-msiof: Handle dmaengine_prep_slave_single() failures gracefully
+Message-Id: <1405094477-14192-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: laurent.pinchart+renesas@ideasonboard.com, Ingo Molnar <mingo@kernel.org>, Peter Zijlstra <peterz@infradead.org>, horms+renesas@verge.net.au, geert+renesas@glider.be, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-sh@vger.kernel.org, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+References: <1405094477-14192-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1405094477-14192-1-git-send-email-geert+renesas@glider.be>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Mark Brown <broonie@kernel.org>
+Cc: Laurent Pinchart <Laurent.pinchart@ideasonboard.com>, linux-spi@vger.kernel.org, dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
---001a11c3e09e8bffac04fe6fb499
-Content-Type: text/plain; charset=UTF-8
+As typically a shmobile SoC has less DMA channels than devices that can use
+DMA, we may want to prioritize access to the DMA channels in the future.
+This means that dmaengine_prep_slave_single() may start failing
+arbitrarily.
 
-Hey Andrew and other maintainers of this architecture ,
-I seem to be hitting a few build errors with default configurations
-for this architecture.
-I am attached my logs of these failing builds , naming each file after
-the build that is
-logged in each file.
-Cheers Nick
+Handle dmaengine_prep_slave_single() failures gracefully by falling back to
+PIO. This requires moving DMA-specific configuration of the MSIOF device
+after the call(s) to dmaengine_prep_slave_single().
 
---001a11c3e09e8bffac04fe6fb499
-Content-Type: application/octet-stream; name=allmodconfig
-Content-Disposition: attachment; filename=allmodconfig
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_hxqyshlu0
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+v2:
+  - Add Acked-by
+---
+ drivers/spi/spi-sh-msiof.c | 23 +++++++++++++++--------
+ 1 file changed, 15 insertions(+), 8 deletions(-)
 
-PHN0ZGluPjoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGlu
-IHVzZXIgbW9kZQo8c3RkaW4+OjE6MDogZXJyb3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNv
-ZnQtaW1hc2sgaW4gdXNlciBtb2RlCi4vc2NyaXB0cy9nY2MtdmVyc2lvbi5zaDogbGluZSAzMTog
-cHJpbnRmOiAjOiBpbnZhbGlkIG51bWJlcgouL3NjcmlwdHMvZ2NjLXZlcnNpb24uc2g6IGxpbmUg
-MzE6IHByaW50ZjogIzogaW52YWxpZCBudW1iZXIKPHN0ZGluPjoxOjA6IGVycm9yOiBjYW5ub3Qg
-dXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGluIHVzZXIgbW9kZQo8c3RkaW4+OjE6MDogZXJy
-b3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNvZnQtaW1hc2sgaW4gdXNlciBtb2RlCi4vc2Ny
-aXB0cy9nY2MtdmVyc2lvbi5zaDogbGluZSAzMTogcHJpbnRmOiAjOiBpbnZhbGlkIG51bWJlcgou
-L3NjcmlwdHMvZ2NjLXZlcnNpb24uc2g6IGxpbmUgMzE6IHByaW50ZjogIzogaW52YWxpZCBudW1i
-ZXIKL2Jpbi9zaDogbGluZSAwOiBbOiB0b28gbWFueSBhcmd1bWVudHMKc2NyaXB0cy9tb2QvZW1w
-dHkuYzoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGluIHVz
-ZXIgbW9kZQogLyogZW1wdHkgZmlsZSB0byBmaWd1cmUgb3V0IGVuZGlhbm5lc3MgLyB3b3JkIHNp
-emUgKi8KIF4KbWFrZVsyXTogKioqIFtzY3JpcHRzL21vZC9lbXB0eS5vXSBFcnJvciAxCm1ha2Vb
-MV06ICoqKiBbc2NyaXB0cy9tb2RdIEVycm9yIDIKbWFrZVsxXTogKioqIFdhaXRpbmcgZm9yIHVu
-ZmluaXNoZWQgam9icy4uLi4Ka2VybmVsL2JvdW5kcy5jOjE6MDogZXJyb3I6IGNhbm5vdCB1c2Ug
-YXRvbWljIG1vZGVsIHNvZnQtaW1hc2sgaW4gdXNlciBtb2RlCiAvKgogXgptYWtlWzFdOiAqKiog
-W2tlcm5lbC9ib3VuZHMuc10gRXJyb3IgMQptYWtlOiAqKiogW3ByZXBhcmUwXSBFcnJvciAyCm1h
-a2U6ICoqKiBXYWl0aW5nIGZvciB1bmZpbmlzaGVkIGpvYnMuLi4uCm1ha2U6ICoqKiBbc2NyaXB0
-c10gRXJyb3IgMgo=
---001a11c3e09e8bffac04fe6fb499
-Content-Type: application/octet-stream; name=allyesconfig
-Content-Disposition: attachment; filename=allyesconfig
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_hxqyskyq1
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index 6f449b24704a..2a4354dcd661 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -636,12 +636,6 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv *p, const void *tx,
+ 	dma_cookie_t cookie;
+ 	int ret;
+ 
+-	/* 1 stage FIFO watermarks for DMA */
+-	sh_msiof_write(p, FCTR, FCTR_TFWM_1 | FCTR_RFWM_1);
+-
+-	/* setup msiof transfer mode registers (32-bit words) */
+-	sh_msiof_spi_set_mode_regs(p, tx, rx, 32, len / 4);
+-
+ 	if (tx) {
+ 		ier_bits |= IER_TDREQE | IER_TDMAE;
+ 		dma_sync_single_for_device(p->master->dma_tx->device->dev,
+@@ -650,7 +644,7 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv *p, const void *tx,
+ 					p->tx_dma_addr, len, DMA_TO_DEVICE,
+ 					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+ 		if (!desc_tx)
+-			return -EIO;
++			return -EAGAIN;
+ 	}
+ 
+ 	if (rx) {
+@@ -659,8 +653,15 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv *p, const void *tx,
+ 					p->rx_dma_addr, len, DMA_FROM_DEVICE,
+ 					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+ 		if (!desc_rx)
+-			return -EIO;
++			return -EAGAIN;
+ 	}
++
++	/* 1 stage FIFO watermarks for DMA */
++	sh_msiof_write(p, FCTR, FCTR_TFWM_1 | FCTR_RFWM_1);
++
++	/* setup msiof transfer mode registers (32-bit words) */
++	sh_msiof_spi_set_mode_regs(p, tx, rx, 32, len / 4);
++
+ 	sh_msiof_write(p, IER, ier_bits);
+ 
+ 	reinit_completion(&p->done);
+@@ -823,6 +824,12 @@ static int sh_msiof_transfer_one(struct spi_master *master,
+ 			copy32(p->tx_dma_page, tx_buf, l / 4);
+ 
+ 		ret = sh_msiof_dma_once(p, tx_buf, rx_buf, l);
++		if (ret = -EAGAIN) {
++			pr_warn_once("%s %s: DMA not available, falling back to PIO\n",
++				     dev_driver_string(&p->pdev->dev),
++				     dev_name(&p->pdev->dev));
++			break;
++		}
+ 		if (ret)
+ 			return ret;
+ 
+-- 
+1.9.1
 
-PHN0ZGluPjoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGlu
-IHVzZXIgbW9kZQo8c3RkaW4+OjE6MDogZXJyb3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNv
-ZnQtaW1hc2sgaW4gdXNlciBtb2RlCi4vc2NyaXB0cy9nY2MtdmVyc2lvbi5zaDogbGluZSAzMTog
-cHJpbnRmOiAjOiBpbnZhbGlkIG51bWJlcgouL3NjcmlwdHMvZ2NjLXZlcnNpb24uc2g6IGxpbmUg
-MzE6IHByaW50ZjogIzogaW52YWxpZCBudW1iZXIKPHN0ZGluPjoxOjA6IGVycm9yOiBjYW5ub3Qg
-dXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGluIHVzZXIgbW9kZQo8c3RkaW4+OjE6MDogZXJy
-b3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNvZnQtaW1hc2sgaW4gdXNlciBtb2RlCi4vc2Ny
-aXB0cy9nY2MtdmVyc2lvbi5zaDogbGluZSAzMTogcHJpbnRmOiAjOiBpbnZhbGlkIG51bWJlcgou
-L3NjcmlwdHMvZ2NjLXZlcnNpb24uc2g6IGxpbmUgMzE6IHByaW50ZjogIzogaW52YWxpZCBudW1i
-ZXIKL2Jpbi9zaDogbGluZSAwOiBbOiB0b28gbWFueSBhcmd1bWVudHMKPHN0ZGluPjoxOjA6IGVy
-cm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGluIHVzZXIgbW9kZQo8c3Rk
-aW4+OjE6MDogZXJyb3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNvZnQtaW1hc2sgaW4gdXNl
-ciBtb2RlCi4vc2NyaXB0cy9nY2MtdmVyc2lvbi5zaDogbGluZSAzMTogcHJpbnRmOiAjOiBpbnZh
-bGlkIG51bWJlcgouL3NjcmlwdHMvZ2NjLXZlcnNpb24uc2g6IGxpbmUgMzE6IHByaW50ZjogIzog
-aW52YWxpZCBudW1iZXIKL2Jpbi9zaDogbGluZSAwOiBbOiB0b28gbWFueSBhcmd1bWVudHMKc2Ny
-aXB0cy9tb2QvZW1wdHkuYzoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBzb2Z0
-LWltYXNrIGluIHVzZXIgbW9kZQogLyogZW1wdHkgZmlsZSB0byBmaWd1cmUgb3V0IGVuZGlhbm5l
-c3MgLyB3b3JkIHNpemUgKi8KIF4KbWFrZVsyXTogKioqIFtzY3JpcHRzL21vZC9lbXB0eS5vXSBF
-cnJvciAxCm1ha2VbMl06ICoqKiBXYWl0aW5nIGZvciB1bmZpbmlzaGVkIGpvYnMuLi4uCm1ha2Vb
-MV06ICoqKiBbc2NyaXB0cy9tb2RdIEVycm9yIDIKbWFrZVsxXTogKioqIFdhaXRpbmcgZm9yIHVu
-ZmluaXNoZWQgam9icy4uLi4KbWFrZTogKioqIFtzY3JpcHRzXSBFcnJvciAyCm1ha2U6ICoqKiBX
-YWl0aW5nIGZvciB1bmZpbmlzaGVkIGpvYnMuLi4uCg==
---001a11c3e09e8bffac04fe6fb499
-Content-Type: application/octet-stream; name=rsk7203_defconfig
-Content-Disposition: attachment; filename=rsk7203_defconfig
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_hxqyyl8k2
-
-c2NyaXB0cy9tb2QvZW1wdHkuYzoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBz
-b2Z0LWltYXNrIGluIHVzZXIgbW9kZQogLyogZW1wdHkgZmlsZSB0byBmaWd1cmUgb3V0IGVuZGlh
-bm5lc3MgLyB3b3JkIHNpemUgKi8KIF4Kc2NyaXB0cy9tb2QvZGV2aWNldGFibGUtb2Zmc2V0cy5j
-OjE6MDogZXJyb3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNvZnQtaW1hc2sgaW4gdXNlciBt
-b2RlCiAjaW5jbHVkZSA8bGludXgva2J1aWxkLmg+CiBeCm1ha2VbMl06ICoqKiBbc2NyaXB0cy9t
-b2QvZGV2aWNldGFibGUtb2Zmc2V0cy5zXSBFcnJvciAxCm1ha2VbMl06ICoqKiBXYWl0aW5nIGZv
-ciB1bmZpbmlzaGVkIGpvYnMuLi4uCm1ha2VbMl06ICoqKiBbc2NyaXB0cy9tb2QvZW1wdHkub10g
-RXJyb3IgMQptYWtlWzFdOiAqKiogW3NjcmlwdHMvbW9kXSBFcnJvciAyCm1ha2VbMV06ICoqKiBX
-YWl0aW5nIGZvciB1bmZpbmlzaGVkIGpvYnMuLi4uCm1ha2U6ICoqKiBbc2NyaXB0c10gRXJyb3Ig
-MgptYWtlOiAqKiogV2FpdGluZyBmb3IgdW5maW5pc2hlZCBqb2JzLi4uLgprZXJuZWwvYm91bmRz
-LmM6MTowOiBlcnJvcjogY2Fubm90IHVzZSBhdG9taWMgbW9kZWwgc29mdC1pbWFzayBpbiB1c2Vy
-IG1vZGUKIC8qCiBeCm1ha2VbMV06ICoqKiBba2VybmVsL2JvdW5kcy5zXSBFcnJvciAxCm1ha2U6
-ICoqKiBbcHJlcGFyZTBdIEVycm9yIDIK
---001a11c3e09e8bffac04fe6fb499
-Content-Type: application/octet-stream; name=se7206_defconfig
-Content-Disposition: attachment; filename=se7206_defconfig
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_hxqz1qaa3
-
-c2NyaXB0cy9tb2QvZW1wdHkuYzoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBz
-b2Z0LWltYXNrIGluIHVzZXIgbW9kZQogLyogZW1wdHkgZmlsZSB0byBmaWd1cmUgb3V0IGVuZGlh
-bm5lc3MgLyB3b3JkIHNpemUgKi8KIF4Kc2NyaXB0cy9tb2QvZGV2aWNldGFibGUtb2Zmc2V0cy5j
-OjE6MDogZXJyb3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNvZnQtaW1hc2sgaW4gdXNlciBt
-b2RlCiAjaW5jbHVkZSA8bGludXgva2J1aWxkLmg+CiBeCm1ha2VbMl06ICoqKiBbc2NyaXB0cy9t
-b2QvZW1wdHkub10gRXJyb3IgMQptYWtlWzJdOiAqKiogV2FpdGluZyBmb3IgdW5maW5pc2hlZCBq
-b2JzLi4uLgptYWtlWzJdOiAqKiogW3NjcmlwdHMvbW9kL2RldmljZXRhYmxlLW9mZnNldHMuc10g
-RXJyb3IgMQptYWtlWzFdOiAqKiogW3NjcmlwdHMvbW9kXSBFcnJvciAyCm1ha2U6ICoqKiBbc2Ny
-aXB0c10gRXJyb3IgMgo=
---001a11c3e09e8bffac04fe6fb499--
