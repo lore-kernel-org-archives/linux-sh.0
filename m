@@ -1,72 +1,106 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Thu, 31 Jul 2014 11:59:47 +0000
-Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC Shdma Updates for v3.17
-Message-Id: <20140731114747.GP8181@intel.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 11 Jul 2014 16:01:16 +0000
+Subject: [PATCH v2 1/2] spi: rspi: Handle dmaengine_prep_slave_sg() failures gracefully
+Message-Id: <1405094477-14192-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381222967.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Laurent Pinchart <Laurent.pinchart@ideasonboard.com>, linux-spi@vger.kernel.org, dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Thu, Jul 31, 2014 at 09:34:03AM +0900, Simon Horman wrote:
-> Hi Vinod,
-> 
-> Please consider these second round of Renesas ARM based SoC shdma updates
-> for v3.17.
-> 
-> This pull request is based on the previous round of
-> such requests, tagged as renesas-shdma-for-v3.17,
-> which you have already pulled.
+As typically a shmobile SoC has less DMA channels than devices that can use
+DMA, we may want to prioritize access to the DMA channels in the future.
+This means that dmaengine_prep_slave_sg() may start failing arbitrarily.
 
-Thanks for collating all the sh- patches.
+Handle dmaengine_prep_slave_sg() failures gracefully by falling back to
+PIO.
 
-I didnt merge this one as I have some questions about the new driver. I have
-applied the rest of 4 patches.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+v2:
+  - Add Acked-by
+---
+ drivers/spi/spi-rspi.c | 30 ++++++++++++++++++++++--------
+ 1 file changed, 22 insertions(+), 8 deletions(-)
 
-Btw are there any more pending patches for sh-, if so please do let me know.
-
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 38fd938d6360..c850dfdfa9e3 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -477,7 +477,7 @@ static int rspi_dma_transfer(struct rspi_data *rspi, struct sg_table *tx,
+ 					tx->sgl, tx->nents, DMA_TO_DEVICE,
+ 					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+ 		if (!desc_tx)
+-			return -EIO;
++			goto no_dma;
+ 
+ 		irq_mask |= SPCR_SPTIE;
+ 	}
+@@ -486,7 +486,7 @@ static int rspi_dma_transfer(struct rspi_data *rspi, struct sg_table *tx,
+ 					rx->sgl, rx->nents, DMA_FROM_DEVICE,
+ 					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+ 		if (!desc_rx)
+-			return -EIO;
++			goto no_dma;
+ 
+ 		irq_mask |= SPCR_SPRIE;
+ 	}
+@@ -540,6 +540,12 @@ static int rspi_dma_transfer(struct rspi_data *rspi, struct sg_table *tx,
+ 		enable_irq(rspi->rx_irq);
+ 
+ 	return ret;
++
++no_dma:
++	pr_warn_once("%s %s: DMA not available, falling back to PIO\n",
++		     dev_driver_string(&rspi->master->dev),
++		     dev_name(&rspi->master->dev));
++	return -EAGAIN;
+ }
+ 
+ static void rspi_receive_init(const struct rspi_data *rspi)
+@@ -593,8 +599,10 @@ static int rspi_common_transfer(struct rspi_data *rspi,
+ 
+ 	if (rspi->master->can_dma && __rspi_can_dma(rspi, xfer)) {
+ 		/* rx_buf can be NULL on RSPI on SH in TX-only Mode */
+-		return rspi_dma_transfer(rspi, &xfer->tx_sg,
+-					 xfer->rx_buf ? &xfer->rx_sg : NULL);
++		ret = rspi_dma_transfer(rspi, &xfer->tx_sg,
++					xfer->rx_buf ? &xfer->rx_sg : NULL);
++		if (ret != -EAGAIN)
++			return ret;
+ 	}
+ 
+ 	ret = rspi_pio_transfer(rspi, xfer->tx_buf, xfer->rx_buf, xfer->len);
+@@ -648,8 +656,11 @@ static int qspi_transfer_out(struct rspi_data *rspi, struct spi_transfer *xfer)
+ {
+ 	int ret;
+ 
+-	if (rspi->master->can_dma && __rspi_can_dma(rspi, xfer))
+-		return rspi_dma_transfer(rspi, &xfer->tx_sg, NULL);
++	if (rspi->master->can_dma && __rspi_can_dma(rspi, xfer)) {
++		ret = rspi_dma_transfer(rspi, &xfer->tx_sg, NULL);
++		if (ret != -EAGAIN)
++			return ret;
++	}
+ 
+ 	ret = rspi_pio_transfer(rspi, xfer->tx_buf, NULL, xfer->len);
+ 	if (ret < 0)
+@@ -663,8 +674,11 @@ static int qspi_transfer_out(struct rspi_data *rspi, struct spi_transfer *xfer)
+ 
+ static int qspi_transfer_in(struct rspi_data *rspi, struct spi_transfer *xfer)
+ {
+-	if (rspi->master->can_dma && __rspi_can_dma(rspi, xfer))
+-		return rspi_dma_transfer(rspi, NULL, &xfer->rx_sg);
++	if (rspi->master->can_dma && __rspi_can_dma(rspi, xfer)) {
++		int ret = rspi_dma_transfer(rspi, NULL, &xfer->rx_sg);
++		if (ret != -EAGAIN)
++			return ret;
++	}
+ 
+ 	return rspi_pio_transfer(rspi, NULL, xfer->rx_buf, xfer->len);
+ }
 -- 
-~Vinod
-> 
-> 
-> The following changes since commit 0cdbee33ea42bfd5f61f824e258a1a0944dd2a27:
-> 
->   dmaengine: shdma: Use defines instead of hardcoded numbers (2014-07-15 18:02:29 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-shdma2-for-v3.17
-> 
-> for you to fetch changes up to dff5450f372ee87b5e0b5762b3ca8944dae8bf7e:
-> 
->   dma/sh: fix rcar-dma.c printk format warnings (2014-07-29 10:24:52 +0900)
-> 
-> ----------------------------------------------------------------
-> Second Round of Renesas ARM Based SoC Shdma Updates for v3.17
-> 
-> * R-Car Gen2 DMA Controller driver
-> 
-> ----------------------------------------------------------------
-> Laurent Pinchart (5):
->       dmaengine: sh: Rework Kconfig and Makefile
->       dmaengine: shdma: Make channel filter ignore unrelated devices
->       dmaengine: shdma: Allocate cyclic sg list dynamically
->       dmaengine: rcar-dmac: Add device tree bindings documentation
->       dmaengine: rcar-dmac: Add Renesas R-Car Gen2 DMA Controller (DMAC) driver
-> 
-> Randy Dunlap (1):
->       dma/sh: fix rcar-dma.c printk format warnings
-> 
->  .../devicetree/bindings/dma/renesas,rcar-dmac.txt  |   98 ++
->  drivers/dma/sh/Kconfig                             |   30 +-
->  drivers/dma/sh/Makefile                            |   17 +-
->  drivers/dma/sh/rcar-dmac.c                         | 1525 ++++++++++++++++++++
->  drivers/dma/sh/shdma-base.c                        |  101 +-
->  drivers/dma/sh/shdma.h                             |    2 +-
->  6 files changed, 1723 insertions(+), 50 deletions(-)
->  create mode 100644 Documentation/devicetree/bindings/dma/renesas,rcar-dmac.txt
->  create mode 100644 drivers/dma/sh/rcar-dmac.c
+1.9.1
 
--- 
