@@ -1,27 +1,39 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 15 Jul 2014 12:29:30 +0000
-Subject: Re: [PATCH 0/3] ARM: shmobile: r7s72100: Remove legacy board support
-Message-Id: <20140715122930.GH25333@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 11 Jul 2014 15:56:21 +0000
+Subject: [PATCH v2 1/2] dmaengine: Clarify device parameter for dma_sync_*_for_*()
+Message-Id: <1405094182-13962-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404318218-4732-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1404318218-4732-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie@kernel.org>, Vinod Koul <vinod.koul@intel.com>, Dan Williams <dan.j.williams@intel.com>
+Cc: dmaengine@vger.kernel.org, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Tue, Jul 15, 2014 at 08:35:11PM +0900, Simon Horman wrote:
-> On Wed, Jul 02, 2014 at 06:23:35PM +0200, Laurent Pinchart wrote:
-> > Hello,
-> > 
-> > Now that all features supported by the Genmai legacy and reference board files
-> > are supported using DT boot on a multiplatform kernel, remove support for the
-> > Genmai board code and legacy (non multiplatform) r7s72100 code.
-> > 
-> > This patch set is based on top of and depends on the Genmai MTU2 DT patch
-> > ("ARM: shmobile: genmai-reference: Enable MTU2 in device tree").
-> 
-> As reported elsewhere I am having a bit of trouble with the dependencies
-> for this series so I have dropped it for now.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2:
+  - New
+---
+ Documentation/dmaengine.txt | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-Now that problem has been resolved I have re-queued up this series.
+diff --git a/Documentation/dmaengine.txt b/Documentation/dmaengine.txt
+index 879b6e31e2da..87d3f192e160 100644
+--- a/Documentation/dmaengine.txt
++++ b/Documentation/dmaengine.txt
+@@ -100,8 +100,10 @@ The slave DMA usage consists of following steps:
+    The peripheral driver is expected to have mapped the scatterlist for
+    the DMA operation prior to calling device_prep_slave_sg, and must
+    keep the scatterlist mapped until the DMA operation has completed.
+-   The scatterlist must be mapped using the DMA struct device.  So,
+-   normal setup should look like this:
++   The scatterlist must be mapped using the DMA struct device.
++   If a mapping needs to be synchronized later, dma_sync_*_for_*() must be
++   called using the DMA struct device, too.
++   So, normal setup should look like this:
+ 
+ 	nr_sg = dma_map_sg(chan->device->dev, sgl, sg_len);
+ 	if (nr_sg = 0)
+-- 
+1.9.1
+
