@@ -1,81 +1,166 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 02 Jul 2014 09:06:47 +0000
-Subject: Re: [PATCH/RFC 6/6] ARM: shmobile: bockw: Initialise TMU device using DT
-Message-Id: <2964831.rTbpWqUrsN@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 11 Jul 2014 16:06:41 +0000
+Subject: [PATCH 1/2] spi: rspi: Fix leaking of unused DMA descriptors
+Message-Id: <1405094802-14401-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404275322-26514-1-git-send-email-horms+renesas@verge.net.au>
- <1404275322-26514-7-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1404275322-26514-7-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Laurent Pinchart <Laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-Hi Simon,
+If dmaengine_prep_slave_sg() or dmaengine_submit() fail, we may leak
+unused DMA descriptors.
 
-Thank you for the patch.
+As per Documentation/dmaengine.txt, once a DMA descriptor has been
+obtained, it must be submitted. Hence:
+  - First prepare and submit all DMA descriptors,
+  - Prepare the SPI controller for DMA,
+  - Start DMA by calling dma_async_issue_pending(),
+  - Make sure to call dmaengine_terminate_all() on all descriptors that
+    haven't completed.
 
-On Wednesday 02 July 2014 06:28:42 Simon Horman wrote:
-> Initialise TMU device using DT when booting bockw
-> using DT-reference.
-> 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Reported-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/spi/spi-rspi.c | 94 +++++++++++++++++++++++++++++++-------------------
+ 1 file changed, 58 insertions(+), 36 deletions(-)
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> 
-> ---
-> N.B: This only enables the production serial port (scif0) and not the
-> debug serial port. It is unclear to me if the debug port is scif1 or scif5.
-> And if the required PFC support is in place. At the very least the
-> latter appears to be missing from r8a7778-bockw-reference.dts.
-
-I don't think this comment applies.
-
-> ---
->  arch/arm/boot/dts/r8a7778-bockw-reference.dts | 4 ++++
->  arch/arm/mach-shmobile/setup-r8a7778.c        | 3 +--
->  2 files changed, 5 insertions(+), 2 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-> b/arch/arm/boot/dts/r8a7778-bockw-reference.dts index 5d14688..b70ef30
-> 100644
-> --- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-> +++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-> @@ -73,6 +73,10 @@
->  	status = "okay";
->  };
-> 
-> +&tmu0 {
-> +	status = "okay";
-> +};
-> +
->  &pfc {
->  	scif0_pins: serial0 {
->  		renesas,groups = "scif0_data_a", "scif0_ctrl";
-> diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c
-> b/arch/arm/mach-shmobile/setup-r8a7778.c index e218c46..575148d 100644
-> --- a/arch/arm/mach-shmobile/setup-r8a7778.c
-> +++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-> @@ -293,8 +293,6 @@ void __init r8a7778_add_dt_devices(void)
->  		l2x0_init(base, 0x00400000, 0xc20f0fff);
->  	}
->  #endif
-> -
-> -	r8a7778_register_tmu(0);
->  }
-> 
->  /* HPB-DMA */
-> @@ -502,6 +500,7 @@ static void __init r8a7778_register_hpb_dmae(void)
->  void __init r8a7778_add_standard_devices(void)
->  {
->  	r8a7778_add_dt_devices();
-> +	r8a7778_register_tmu(0);
->  	r8a7778_register_scif(0);
->  	r8a7778_register_scif(1);
->  	r8a7778_register_scif(2);
-
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index c850dfdfa9e3..ad87a98f8f68 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -472,25 +472,52 @@ static int rspi_dma_transfer(struct rspi_data *rspi, struct sg_table *tx,
+ 	dma_cookie_t cookie;
+ 	int ret;
+ 
+-	if (tx) {
+-		desc_tx = dmaengine_prep_slave_sg(rspi->master->dma_tx,
+-					tx->sgl, tx->nents, DMA_TO_DEVICE,
+-					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+-		if (!desc_tx)
+-			goto no_dma;
+-
+-		irq_mask |= SPCR_SPTIE;
+-	}
++	/* First prepare and submit the DMA request(s), as this may fail */
+ 	if (rx) {
+ 		desc_rx = dmaengine_prep_slave_sg(rspi->master->dma_rx,
+ 					rx->sgl, rx->nents, DMA_FROM_DEVICE,
+ 					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+-		if (!desc_rx)
+-			goto no_dma;
++		if (!desc_rx) {
++			ret = -EAGAIN;
++			goto no_dma_rx;
++		}
++
++		desc_rx->callback = rspi_dma_complete;
++		desc_rx->callback_param = rspi;
++		cookie = dmaengine_submit(desc_rx);
++		if (dma_submit_error(cookie)) {
++			ret = cookie;
++			goto no_dma_rx;
++		}
+ 
+ 		irq_mask |= SPCR_SPRIE;
+ 	}
+ 
++	if (tx) {
++		desc_tx = dmaengine_prep_slave_sg(rspi->master->dma_tx,
++					tx->sgl, tx->nents, DMA_TO_DEVICE,
++					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
++		if (!desc_tx) {
++			ret = -EAGAIN;
++			goto no_dma_tx;
++		}
++
++		if (rx) {
++			/* No callback */
++			desc_tx->callback = NULL;
++		} else {
++			desc_tx->callback = rspi_dma_complete;
++			desc_tx->callback_param = rspi;
++		}
++		cookie = dmaengine_submit(desc_tx);
++		if (dma_submit_error(cookie)) {
++			ret = cookie;
++			goto no_dma_tx;
++		}
++
++		irq_mask |= SPCR_SPTIE;
++	}
++
+ 	/*
+ 	 * DMAC needs SPxIE, but if SPxIE is set, the IRQ routine will be
+ 	 * called. So, this driver disables the IRQ while DMA transfer.
+@@ -503,34 +530,24 @@ static int rspi_dma_transfer(struct rspi_data *rspi, struct sg_table *tx,
+ 	rspi_enable_irq(rspi, irq_mask);
+ 	rspi->dma_callbacked = 0;
+ 
+-	if (rx) {
+-		desc_rx->callback = rspi_dma_complete;
+-		desc_rx->callback_param = rspi;
+-		cookie = dmaengine_submit(desc_rx);
+-		if (dma_submit_error(cookie))
+-			return cookie;
++	/* Now start DMA */
++	if (rx)
+ 		dma_async_issue_pending(rspi->master->dma_rx);
+-	}
+-	if (tx) {
+-		if (rx) {
+-			/* No callback */
+-			desc_tx->callback = NULL;
+-		} else {
+-			desc_tx->callback = rspi_dma_complete;
+-			desc_tx->callback_param = rspi;
+-		}
+-		cookie = dmaengine_submit(desc_tx);
+-		if (dma_submit_error(cookie))
+-			return cookie;
++	if (tx)
+ 		dma_async_issue_pending(rspi->master->dma_tx);
+-	}
+ 
+ 	ret = wait_event_interruptible_timeout(rspi->wait,
+ 					       rspi->dma_callbacked, HZ);
+ 	if (ret > 0 && rspi->dma_callbacked)
+ 		ret = 0;
+-	else if (!ret)
++	else if (!ret) {
++		dev_err(&rspi->master->dev, "DMA timeout\n");
+ 		ret = -ETIMEDOUT;
++		if (tx)
++			dmaengine_terminate_all(rspi->master->dma_tx);
++		if (rx)
++			dmaengine_terminate_all(rspi->master->dma_rx);
++	}
+ 
+ 	rspi_disable_irq(rspi, irq_mask);
+ 
+@@ -541,11 +558,16 @@ static int rspi_dma_transfer(struct rspi_data *rspi, struct sg_table *tx,
+ 
+ 	return ret;
+ 
+-no_dma:
+-	pr_warn_once("%s %s: DMA not available, falling back to PIO\n",
+-		     dev_driver_string(&rspi->master->dev),
+-		     dev_name(&rspi->master->dev));
+-	return -EAGAIN;
++no_dma_tx:
++	if (rx)
++		dmaengine_terminate_all(rspi->master->dma_rx);
++no_dma_rx:
++	if (ret = -EAGAIN) {
++		pr_warn_once("%s %s: DMA not available, falling back to PIO\n",
++			     dev_driver_string(&rspi->master->dev),
++			     dev_name(&rspi->master->dev));
++	}
++	return ret;
+ }
+ 
+ static void rspi_receive_init(const struct rspi_data *rspi)
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
