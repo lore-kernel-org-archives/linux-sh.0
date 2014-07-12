@@ -1,87 +1,81 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Jul 2014 00:28:43 +0000
-Subject: [PATCH 3/8] ARM: shmobile: Adjust APMU code to build for non-SMP
-Message-Id: <784500be40a0eabcee1e48c70927aea9c9accb1e.1404174157.git.horms+renesas@verge.net.au>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Sat, 12 Jul 2014 11:49:29 +0000
+Subject: [PATCH 3/5] i2c: exynos5: Remove suspension check
+Message-Id: <1405165771-8732-3-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1404174157.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1404174157.git.horms+renesas@verge.net.au>
+References: <1405165771-8732-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1405165771-8732-1-git-send-email-hechtb-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
+Cc: Linux-SH <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tomoya MORINAGA <tomoya.rohm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Naveen Krishna Chatradhi <ch.naveen-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, Taekgyun Ko <taeggyun.ko-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, Ben Dooks <ben-Y5A6D6n0/KfQXOPxS62xeg@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+We now take care of suspension in the i2c core code. So we can remove this
+check here.
 
-Adjust the APMU code to allow build when CONFIG_SMP=n.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
 ---
- arch/arm/mach-shmobile/platsmp-apmu.c | 11 +++++++----
- 1 file changed, 7 insertions(+), 4 deletions(-)
+ drivers/i2c/busses/i2c-exynos5.c | 20 +-------------------
+ 1 file changed, 1 insertion(+), 19 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/platsmp-apmu.c b/arch/arm/mach-shmobile/platsmp-apmu.c
-index 590e35c..ce07eb9 100644
---- a/arch/arm/mach-shmobile/platsmp-apmu.c
-+++ b/arch/arm/mach-shmobile/platsmp-apmu.c
-@@ -15,6 +15,7 @@
- #include <linux/of_address.h>
- #include <linux/smp.h>
- #include <linux/suspend.h>
-+#include <linux/threads.h>
- #include <asm/cacheflush.h>
- #include <asm/cp15.h>
- #include <asm/proc-fns.h>
-@@ -25,13 +26,13 @@
- static struct {
- 	void __iomem *iomem;
- 	int bit;
--} apmu_cpus[CONFIG_NR_CPUS];
-+} apmu_cpus[NR_CPUS];
+diff --git a/drivers/i2c/busses/i2c-exynos5.c b/drivers/i2c/busses/i2c-exynos5.c
+index 63d2292..a80cf28 100644
+--- a/drivers/i2c/busses/i2c-exynos5.c
++++ b/drivers/i2c/busses/i2c-exynos5.c
+@@ -145,7 +145,6 @@
  
- #define WUPCR_OFFS 0x10
- #define PSTR_OFFS 0x40
- #define CPUNCR_OFFS(n) (0x100 + (0x10 * (n)))
+ struct exynos5_i2c {
+ 	struct i2c_adapter	adap;
+-	unsigned int		suspended:1;
  
--static int apmu_power_on(void __iomem *p, int bit)
-+static int __maybe_unused apmu_power_on(void __iomem *p, int bit)
+ 	struct i2c_msg		*msg;
+ 	struct completion	msg_complete;
+@@ -610,11 +609,6 @@ static int exynos5_i2c_xfer(struct i2c_adapter *adap,
+ 	struct exynos5_i2c *i2c = adap->algo_data;
+ 	int i = 0, ret = 0, stop = 0;
+ 
+-	if (i2c->suspended) {
+-		dev_err(i2c->dev, "HS-I2C is not initialized.\n");
+-		return -EIO;
+-	}
+-
+ 	clk_prepare_enable(i2c->clk);
+ 
+ 	for (i = 0; i < num; i++, msgs++) {
+@@ -757,16 +751,6 @@ static int exynos5_i2c_remove(struct platform_device *pdev)
+ }
+ 
+ #ifdef CONFIG_PM_SLEEP
+-static int exynos5_i2c_suspend_noirq(struct device *dev)
+-{
+-	struct platform_device *pdev = to_platform_device(dev);
+-	struct exynos5_i2c *i2c = platform_get_drvdata(pdev);
+-
+-	i2c->suspended = 1;
+-
+-	return 0;
+-}
+-
+ static int exynos5_i2c_resume_noirq(struct device *dev)
  {
- 	/* request power on */
- 	writel_relaxed(BIT(bit), p + WUPCR_OFFS);
-@@ -50,7 +51,7 @@ static int apmu_power_off(void __iomem *p, int bit)
+ 	struct platform_device *pdev = to_platform_device(dev);
+@@ -783,14 +767,12 @@ static int exynos5_i2c_resume_noirq(struct device *dev)
+ 
+ 	exynos5_i2c_init(i2c);
+ 	clk_disable_unprepare(i2c->clk);
+-	i2c->suspended = 0;
+ 
  	return 0;
  }
+ #endif
  
--static int apmu_power_off_poll(void __iomem *p, int bit)
-+static int __maybe_unused apmu_power_off_poll(void __iomem *p, int bit)
- {
- 	int k;
+-static SIMPLE_DEV_PM_OPS(exynos5_i2c_dev_pm_ops, exynos5_i2c_suspend_noirq,
+-			 exynos5_i2c_resume_noirq);
++static SIMPLE_DEV_PM_OPS(exynos5_i2c_dev_pm_ops, exynos5_i2c_resume_noirq);
  
-@@ -73,7 +74,7 @@ static int apmu_wrap(int cpu, int (*fn)(void __iomem *p, int cpu))
- 
- static void apmu_init_cpu(struct resource *res, int cpu, int bit)
- {
--	if (apmu_cpus[cpu].iomem)
-+	if ((cpu >= ARRAY_SIZE(apmu_cpus)) || apmu_cpus[cpu].iomem)
- 		return;
- 
- 	apmu_cpus[cpu].iomem = ioremap_nocache(res->start, resource_size(res));
-@@ -137,6 +138,7 @@ void __init shmobile_smp_apmu_prepare_cpus(unsigned int max_cpus)
- 	apmu_parse_cfg(apmu_init_cpu);
- }
- 
-+#ifdef CONFIG_SMP
- int shmobile_smp_apmu_boot_secondary(unsigned int cpu, struct task_struct *idle)
- {
- 	/* For this particular CPU register boot vector */
-@@ -144,6 +146,7 @@ int shmobile_smp_apmu_boot_secondary(unsigned int cpu, struct task_struct *idle)
- 
- 	return apmu_wrap(cpu, apmu_power_on);
- }
-+#endif
- 
- #if defined(CONFIG_HOTPLUG_CPU) || defined(CONFIG_SUSPEND)
- /* nicked from arch/arm/mach-exynos/hotplug.c */
+ static struct platform_driver exynos5_i2c_driver = {
+ 	.probe		= exynos5_i2c_probe,
 -- 
-2.0.0.rc2
+1.9.1
 
