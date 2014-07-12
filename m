@@ -1,41 +1,111 @@
-From: Wang Nan <wangnan0@huawei.com>
-Date: Mon, 21 Jul 2014 03:46:38 +0000
-Subject: [PATCH v2 3/7] memory-hotplug: x86_32: suitable memory should go to ZONE_MOVABLE
-Message-Id: <1405914402-66212-4-git-send-email-wangnan0@huawei.com>
+From: Nick Krause <xerofoify@gmail.com>
+Date: Sat, 12 Jul 2014 03:38:46 +0000
+Subject: Sh Builds that are failing
+Message-Id: <CAPDOMVguAmVdTE1N++KaoZ7D8pZg7WU=u_AwdZs4Rg-qO=drgQ@mail.gmail.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="e89a8f921a3e9dcdb004fdf6cb9d"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405914402-66212-1-git-send-email-wangnan0@huawei.com>
-In-Reply-To: <1405914402-66212-1-git-send-email-wangnan0@huawei.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Ingo Molnar <mingo@redhat.com>, Yinghai Lu <yinghai@kernel.org>, Mel Gorman <mgorman@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Dave Hansen <dave.hansen@intel.com>, Zhang Yanfei <zhangyanfei@cn.fujitsu.com>
-Cc: peifeiyue@huawei.com, linux-mm@kvack.org, x86@kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, wangnan0@huawei.com
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: laurent.pinchart+renesas@ideasonboard.com, horms+renesas@verge.net.au, peterz@infradead.org, mingo@kernel.org, geert+renesas@glider.be, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-sh@vger.kernel.org, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-This patch introduces zone_for_memory() to arch_add_memory() on x86_32
-to ensure new, higher memory added into ZONE_MOVABLE if movable zone has
-already setup.
+--e89a8f921a3e9dcdb004fdf6cb9d
+Content-Type: text/plain; charset=UTF-8
 
-Signed-off-by: Wang Nan <wangnan0@huawei.com>
-Cc: Zhang Yanfei <zhangyanfei@cn.fujitsu.com>
-Cc: Dave Hansen <dave.hansen@intel.com>
----
- arch/x86/mm/init_32.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+Hey Andrew and other maintainers ,
+There seem to be a few failing def config builds with the sh architecture.
+I will post the failing builds and the log of errors leading up to these builds.
+Cheers Nick
+Still failing Builds for sh
+1.  rsk7203_defconfig
+2.  se7206_defconfig
+3. allmodconfig for sh
+4. allyesconfig for sh
 
-diff --git a/arch/x86/mm/init_32.c b/arch/x86/mm/init_32.c
-index e395048..7d05565 100644
---- a/arch/x86/mm/init_32.c
-+++ b/arch/x86/mm/init_32.c
-@@ -825,7 +825,8 @@ void __init mem_init(void)
- int arch_add_memory(int nid, u64 start, u64 size)
- {
- 	struct pglist_data *pgdata = NODE_DATA(nid);
--	struct zone *zone = pgdata->node_zones + ZONE_HIGHMEM;
-+	struct zone *zone = pgdata->node_zones +
-+		zone_for_memory(nid, start, size, ZONE_HIGHMEM);
- 	unsigned long start_pfn = start >> PAGE_SHIFT;
- 	unsigned long nr_pages = size >> PAGE_SHIFT;
- 
--- 
-1.8.4
+--e89a8f921a3e9dcdb004fdf6cb9d
+Content-Type: application/octet-stream; name=rsk7203_defconfig
+Content-Disposition: attachment; filename=rsk7203_defconfig
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_hxidvngx0
 
+c2NyaXB0cy9tb2QvZW1wdHkuYzoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBz
+b2Z0LWltYXNrIGluIHVzZXIgbW9kZQogLyogZW1wdHkgZmlsZSB0byBmaWd1cmUgb3V0IGVuZGlh
+bm5lc3MgLyB3b3JkIHNpemUgKi8KIF4KbWFrZVsyXTogKioqIFtzY3JpcHRzL21vZC9lbXB0eS5v
+XSBFcnJvciAxCm1ha2VbMl06ICoqKiBXYWl0aW5nIGZvciB1bmZpbmlzaGVkIGpvYnMuLi4uCnNj
+cmlwdHMvbW9kL2RldmljZXRhYmxlLW9mZnNldHMuYzoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0
+b21pYyBtb2RlbCBzb2Z0LWltYXNrIGluIHVzZXIgbW9kZQogI2luY2x1ZGUgPGxpbnV4L2tidWls
+ZC5oPgogXgptYWtlWzJdOiAqKiogW3NjcmlwdHMvbW9kL2RldmljZXRhYmxlLW9mZnNldHMuc10g
+RXJyb3IgMQptYWtlWzFdOiAqKiogW3NjcmlwdHMvbW9kXSBFcnJvciAyCm1ha2VbMV06ICoqKiBX
+YWl0aW5nIGZvciB1bmZpbmlzaGVkIGpvYnMuLi4uCmtlcm5lbC9ib3VuZHMuYzoxOjA6IGVycm9y
+OiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGluIHVzZXIgbW9kZQogLyoKIF4K
+bWFrZVsxXTogKioqIFtrZXJuZWwvYm91bmRzLnNdIEVycm9yIDEKbWFrZTogKioqIFtwcmVwYXJl
+MF0gRXJyb3IgMgptYWtlOiAqKiogV2FpdGluZyBmb3IgdW5maW5pc2hlZCBqb2JzLi4uLgptYWtl
+OiAqKiogW3NjcmlwdHNdIEVycm9yIDIK
+--e89a8f921a3e9dcdb004fdf6cb9d
+Content-Type: application/octet-stream; name=se7206_defconfig
+Content-Disposition: attachment; filename=se7206_defconfig
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_hxidvnhg1
+
+c2NyaXB0cy9tb2QvZW1wdHkuYzoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBz
+b2Z0LWltYXNrIGluIHVzZXIgbW9kZQogLyogZW1wdHkgZmlsZSB0byBmaWd1cmUgb3V0IGVuZGlh
+bm5lc3MgLyB3b3JkIHNpemUgKi8KIF4Kc2NyaXB0cy9tb2QvZGV2aWNldGFibGUtb2Zmc2V0cy5j
+OjE6MDogZXJyb3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNvZnQtaW1hc2sgaW4gdXNlciBt
+b2RlCiAjaW5jbHVkZSA8bGludXgva2J1aWxkLmg+CiBeCm1ha2VbMl06ICoqKiBbc2NyaXB0cy9t
+b2QvZW1wdHkub10gRXJyb3IgMQptYWtlWzJdOiAqKiogV2FpdGluZyBmb3IgdW5maW5pc2hlZCBq
+b2JzLi4uLgptYWtlWzJdOiAqKiogW3NjcmlwdHMvbW9kL2RldmljZXRhYmxlLW9mZnNldHMuc10g
+RXJyb3IgMQptYWtlWzFdOiAqKiogW3NjcmlwdHMvbW9kXSBFcnJvciAyCm1ha2U6ICoqKiBbc2Ny
+aXB0c10gRXJyb3IgMgptYWtlOiBJTlRFUk5BTDogRXhpdGluZyB3aXRoIDkgam9ic2VydmVyIHRv
+a2VucyBhdmFpbGFibGU7IHNob3VsZCBiZSA4IQo=
+--e89a8f921a3e9dcdb004fdf6cb9d
+Content-Type: application/octet-stream; name=allmodconfig
+Content-Disposition: attachment; filename=allmodconfig
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_hxidvv4w2
+
+PHN0ZGluPjoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGlu
+IHVzZXIgbW9kZQo8c3RkaW4+OjE6MDogZXJyb3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNv
+ZnQtaW1hc2sgaW4gdXNlciBtb2RlCi4vc2NyaXB0cy9nY2MtdmVyc2lvbi5zaDogbGluZSAzMTog
+cHJpbnRmOiAjOiBpbnZhbGlkIG51bWJlcgouL3NjcmlwdHMvZ2NjLXZlcnNpb24uc2g6IGxpbmUg
+MzE6IHByaW50ZjogIzogaW52YWxpZCBudW1iZXIKPHN0ZGluPjoxOjA6IGVycm9yOiBjYW5ub3Qg
+dXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGluIHVzZXIgbW9kZQo8c3RkaW4+OjE6MDogZXJy
+b3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNvZnQtaW1hc2sgaW4gdXNlciBtb2RlCi4vc2Ny
+aXB0cy9nY2MtdmVyc2lvbi5zaDogbGluZSAzMTogcHJpbnRmOiAjOiBpbnZhbGlkIG51bWJlcgou
+L3NjcmlwdHMvZ2NjLXZlcnNpb24uc2g6IGxpbmUgMzE6IHByaW50ZjogIzogaW52YWxpZCBudW1i
+ZXIKL2Jpbi9zaDogbGluZSAwOiBbOiB0b28gbWFueSBhcmd1bWVudHMKc2NyaXB0cy9tb2QvZW1w
+dHkuYzoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGluIHVz
+ZXIgbW9kZQogLyogZW1wdHkgZmlsZSB0byBmaWd1cmUgb3V0IGVuZGlhbm5lc3MgLyB3b3JkIHNp
+emUgKi8KIF4KbWFrZVsyXTogKioqIFtzY3JpcHRzL21vZC9lbXB0eS5vXSBFcnJvciAxCm1ha2Vb
+MV06ICoqKiBbc2NyaXB0cy9tb2RdIEVycm9yIDIKbWFrZVsxXTogKioqIFdhaXRpbmcgZm9yIHVu
+ZmluaXNoZWQgam9icy4uLi4Ka2VybmVsL2JvdW5kcy5jOjE6MDogZXJyb3I6IGNhbm5vdCB1c2Ug
+YXRvbWljIG1vZGVsIHNvZnQtaW1hc2sgaW4gdXNlciBtb2RlCiAvKgogXgptYWtlWzFdOiAqKiog
+W2tlcm5lbC9ib3VuZHMuc10gRXJyb3IgMQptYWtlOiAqKiogW3ByZXBhcmUwXSBFcnJvciAyCm1h
+a2U6ICoqKiBXYWl0aW5nIGZvciB1bmZpbmlzaGVkIGpvYnMuLi4uCm1ha2U6ICoqKiBbc2NyaXB0
+c10gRXJyb3IgMgo=
+--e89a8f921a3e9dcdb004fdf6cb9d
+Content-Type: application/octet-stream; name=allyesconfig
+Content-Disposition: attachment; filename=allyesconfig
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_hxidvv5f3
+
+PHN0ZGluPjoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGlu
+IHVzZXIgbW9kZQo8c3RkaW4+OjE6MDogZXJyb3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNv
+ZnQtaW1hc2sgaW4gdXNlciBtb2RlCi4vc2NyaXB0cy9nY2MtdmVyc2lvbi5zaDogbGluZSAzMTog
+cHJpbnRmOiAjOiBpbnZhbGlkIG51bWJlcgouL3NjcmlwdHMvZ2NjLXZlcnNpb24uc2g6IGxpbmUg
+MzE6IHByaW50ZjogIzogaW52YWxpZCBudW1iZXIKPHN0ZGluPjoxOjA6IGVycm9yOiBjYW5ub3Qg
+dXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGluIHVzZXIgbW9kZQo8c3RkaW4+OjE6MDogZXJy
+b3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNvZnQtaW1hc2sgaW4gdXNlciBtb2RlCi4vc2Ny
+aXB0cy9nY2MtdmVyc2lvbi5zaDogbGluZSAzMTogcHJpbnRmOiAjOiBpbnZhbGlkIG51bWJlcgou
+L3NjcmlwdHMvZ2NjLXZlcnNpb24uc2g6IGxpbmUgMzE6IHByaW50ZjogIzogaW52YWxpZCBudW1i
+ZXIKL2Jpbi9zaDogbGluZSAwOiBbOiB0b28gbWFueSBhcmd1bWVudHMKPHN0ZGluPjoxOjA6IGVy
+cm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGluIHVzZXIgbW9kZQo8c3Rk
+aW4+OjE6MDogZXJyb3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNvZnQtaW1hc2sgaW4gdXNl
+ciBtb2RlCi4vc2NyaXB0cy9nY2MtdmVyc2lvbi5zaDogbGluZSAzMTogcHJpbnRmOiAjOiBpbnZh
+bGlkIG51bWJlcgouL3NjcmlwdHMvZ2NjLXZlcnNpb24uc2g6IGxpbmUgMzE6IHByaW50ZjogIzog
+aW52YWxpZCBudW1iZXIKL2Jpbi9zaDogbGluZSAwOiBbOiB0b28gbWFueSBhcmd1bWVudHMKc2Ny
+aXB0cy9tb2QvZW1wdHkuYzoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBzb2Z0
+LWltYXNrIGluIHVzZXIgbW9kZQogLyogZW1wdHkgZmlsZSB0byBmaWd1cmUgb3V0IGVuZGlhbm5l
+c3MgLyB3b3JkIHNpemUgKi8KIF4KbWFrZVsyXTogKioqIFtzY3JpcHRzL21vZC9lbXB0eS5vXSBF
+cnJvciAxCm1ha2VbMV06ICoqKiBbc2NyaXB0cy9tb2RdIEVycm9yIDIKbWFrZVsxXTogKioqIFdh
+aXRpbmcgZm9yIHVuZmluaXNoZWQgam9icy4uLi4KbWFrZTogKioqIFtzY3JpcHRzXSBFcnJvciAy
+Cm1ha2U6ICoqKiBXYWl0aW5nIGZvciB1bmZpbmlzaGVkIGpvYnMuLi4uCg==
+--e89a8f921a3e9dcdb004fdf6cb9d--
