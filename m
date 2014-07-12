@@ -1,123 +1,50 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Jul 2014 00:28:47 +0000
-Subject: [PATCH 7/8] ARM: shmobile: Move r8a7791 reset code to pm-r8a7791.c
-Message-Id: <8e26118d44c4877fa52dc8117692f3cc9af3c769.1404174157.git.horms+renesas@verge.net.au>
+Date: Sat, 12 Jul 2014 13:53:34 +0000
+Subject: [PATCH] ARM: shmobile: marzen: Consistently use tabs for indentation
+Message-Id: <08af64097d4c5cb17f9df4dadf80ed5f508db743.1405173109.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1404174157.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1404174157.git.horms+renesas@verge.net.au>
+References: <cover.1405173109.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1405173109.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Unify white space usage by consistently using tabs for indentation.
 
-Move r8a7791 specific reset vector setup code from the
-SMP glue code to PM code. This makes the code one step
-closer to allow PM operations such as Suspend-to-RAM
-in the case when SMP is disabled in the kernel config.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-[horms+renesas@verge.net.au: updated for recent header file changes]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/pm-r8a7791.c  | 27 +++++++++++++++++++++++++--
- arch/arm/mach-shmobile/smp-r8a7791.c | 24 ------------------------
- 2 files changed, 25 insertions(+), 26 deletions(-)
+ arch/arm/boot/dts/r8a7779-marzen.dts | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/pm-r8a7791.c b/arch/arm/mach-shmobile/pm-r8a7791.c
-index b7e6513..c44304c 100644
---- a/arch/arm/mach-shmobile/pm-r8a7791.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7791.c
-@@ -11,12 +11,17 @@
-  */
+diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
+index 20b1768..5745555 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen.dts
+@@ -112,17 +112,17 @@
+ };
  
- #include <linux/kernel.h>
--
-+#include <linux/smp.h>
- #include <asm/io.h>
--
-+#include "common.h"
- #include "pm-rcar.h"
- #include "r8a7791.h"
+ &scif2 {
+-       pinctrl-0 = <&scif2_pins>;
+-       pinctrl-names = "default";
++	pinctrl-0 = <&scif2_pins>;
++	pinctrl-names = "default";
  
-+#define RST		0xe6160000
-+#define CA15BAR		0x0020
-+#define CA15RESCNT	0x0040
-+#define RAM		0xe6300000
-+
- /* SYSC */
- #define SYSCIER 0x0c
- #define SYSCIMR 0x10
-@@ -40,10 +45,28 @@ static inline void r8a7791_sysc_init(void) {}
+-       status = "okay";
++	status = "okay";
+ };
  
- void __init r8a7791_pm_init(void)
- {
-+	void __iomem *p;
-+	u32 bar;
- 	static int once;
+ &scif4 {
+-       pinctrl-0 = <&scif4_pins>;
+-       pinctrl-names = "default";
++	pinctrl-0 = <&scif4_pins>;
++	pinctrl-names = "default";
  
- 	if (once++)
- 		return;
+-       status = "okay";
++	status = "okay";
+ };
  
-+	/* RAM for jump stub, because BAR requires 256KB aligned address */
-+	p = ioremap_nocache(RAM, shmobile_boot_size);
-+	memcpy_toio(p, shmobile_boot_vector, shmobile_boot_size);
-+	iounmap(p);
-+
-+	/* setup reset vectors */
-+	p = ioremap_nocache(RST, 0x63);
-+	bar = (RAM >> 8) & 0xfffffc00;
-+	writel_relaxed(bar, p + CA15BAR);
-+	writel_relaxed(bar | 0x10, p + CA15BAR);
-+
-+	/* enable clocks to all CPUs */
-+	writel_relaxed((readl_relaxed(p + CA15RESCNT) & ~0x0f) | 0xa5a50000,
-+		       p + CA15RESCNT);
-+	iounmap(p);
-+
- 	r8a7791_sysc_init();
- }
-diff --git a/arch/arm/mach-shmobile/smp-r8a7791.c b/arch/arm/mach-shmobile/smp-r8a7791.c
-index 2482555..df086aa 100644
---- a/arch/arm/mach-shmobile/smp-r8a7791.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7791.c
-@@ -24,35 +24,11 @@
- #include "r8a7791.h"
- #include "rcar-gen2.h"
- 
--#define RST		0xe6160000
--#define CA15BAR		0x0020
--#define CA15RESCNT	0x0040
--#define RAM		0xe6300000
--
- static void __init r8a7791_smp_prepare_cpus(unsigned int max_cpus)
- {
--	void __iomem *p;
--	u32 bar;
--
- 	/* let APMU code install data related to shmobile_boot_vector */
- 	shmobile_smp_apmu_prepare_cpus(max_cpus);
- 
--	/* RAM for jump stub, because BAR requires 256KB aligned address */
--	p = ioremap_nocache(RAM, shmobile_boot_size);
--	memcpy_toio(p, shmobile_boot_vector, shmobile_boot_size);
--	iounmap(p);
--
--	/* setup reset vectors */
--	p = ioremap_nocache(RST, 0x63);
--	bar = (RAM >> 8) & 0xfffffc00;
--	writel_relaxed(bar, p + CA15BAR);
--	writel_relaxed(bar | 0x10, p + CA15BAR);
--
--	/* enable clocks to all CPUs */
--	writel_relaxed((readl_relaxed(p + CA15RESCNT) & ~0x0f) | 0xa5a50000,
--		       p + CA15RESCNT);
--	iounmap(p);
--
- 	r8a7791_pm_init();
- 	shmobile_smp_apmu_suspend_init();
- }
+ &sdhi0 {
 -- 
 2.0.0.rc2
 
