@@ -1,42 +1,80 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Fri, 25 Jul 2014 14:40:44 +0000
-Subject: [PATCH 0/6] r8a7794 driver enablement
-Message-Id: <1406299250-23975-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Sat, 12 Jul 2014 11:49:31 +0000
+Subject: [PATCH 5/5] i2c: tegra: Remove suspension check
+Message-Id: <1405165771-8732-5-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1405165771-8732-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1405165771-8732-1-git-send-email-hechtb-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
+Cc: Linux-SH <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tomoya MORINAGA <tomoya.rohm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Naveen Krishna Chatradhi <ch.naveen-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, Taekgyun Ko <taeggyun.ko-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, Ben Dooks <ben-Y5A6D6n0/KfQXOPxS62xeg@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-This is a bunch of slightly brushed up driver enablements for the r8a7794
-from the BSP.
+We now take care of suspension in the i2c core code. So we can remove this
+check here.
 
-CU
-Uli
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+---
+ drivers/i2c/busses/i2c-tegra.c | 19 +------------------
+ 1 file changed, 1 insertion(+), 18 deletions(-)
 
-Hisashi Nakamura (3):
-  net: sh_eth: Add r8a7794 support
-  gpio: rcar: Add r8a7794 support
-  clk: shmobile: Add r8a7794 support
-
-Koji Matsuoka (1):
-  media: soc_camera: rcar_vin: Add r8a7794 device support
-
-Shinobu Uehara (2):
-  mmc: sh_mobile_sdhi: Update sh_mobile_sdhi_of_data for r8a7794
-  usb: phy: Add Renesas R-Car Gen2 USB PHY support for r8a7794
-
- Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt | 1 +
- Documentation/devicetree/bindings/mmc/tmio_mmc.txt           | 2 ++
- Documentation/devicetree/bindings/net/sh_eth.txt             | 1 +
- drivers/clk/shmobile/Makefile                                | 1 +
- drivers/gpio/gpio-rcar.c                                     | 6 ++++++
- drivers/media/platform/soc_camera/rcar_vin.c                 | 1 +
- drivers/mmc/host/sh_mobile_sdhi.c                            | 1 +
- drivers/net/ethernet/renesas/sh_eth.c                        | 2 ++
- drivers/usb/phy/Kconfig                                      | 4 ++--
- 9 files changed, 17 insertions(+), 2 deletions(-)
-
+diff --git a/drivers/i2c/busses/i2c-tegra.c b/drivers/i2c/busses/i2c-tegra.c
+index f1bb2fc..c279d85 100644
+--- a/drivers/i2c/busses/i2c-tegra.c
++++ b/drivers/i2c/busses/i2c-tegra.c
+@@ -172,7 +172,6 @@ struct tegra_i2c_dev {
+ 	size_t msg_buf_remaining;
+ 	int msg_read;
+ 	u32 bus_clk_rate;
+-	bool is_suspended;
+ };
+ 
+ static void dvc_writel(struct tegra_i2c_dev *i2c_dev, u32 val, unsigned long reg)
+@@ -628,9 +627,6 @@ static int tegra_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[],
+ 	int i;
+ 	int ret = 0;
+ 
+-	if (i2c_dev->is_suspended)
+-		return -EBUSY;
+-
+ 	ret = tegra_i2c_clock_enable(i2c_dev);
+ 	if (ret < 0) {
+ 		dev_err(i2c_dev->dev, "Clock enable failed %d\n", ret);
+@@ -817,17 +813,6 @@ static int tegra_i2c_remove(struct platform_device *pdev)
+ }
+ 
+ #ifdef CONFIG_PM_SLEEP
+-static int tegra_i2c_suspend(struct device *dev)
+-{
+-	struct tegra_i2c_dev *i2c_dev = dev_get_drvdata(dev);
+-
+-	i2c_lock_adapter(&i2c_dev->adapter);
+-	i2c_dev->is_suspended = true;
+-	i2c_unlock_adapter(&i2c_dev->adapter);
+-
+-	return 0;
+-}
+-
+ static int tegra_i2c_resume(struct device *dev)
+ {
+ 	struct tegra_i2c_dev *i2c_dev = dev_get_drvdata(dev);
+@@ -842,14 +827,12 @@ static int tegra_i2c_resume(struct device *dev)
+ 		return ret;
+ 	}
+ 
+-	i2c_dev->is_suspended = false;
+-
+ 	i2c_unlock_adapter(&i2c_dev->adapter);
+ 
+ 	return 0;
+ }
+ 
+-static SIMPLE_DEV_PM_OPS(tegra_i2c_pm, tegra_i2c_suspend, tegra_i2c_resume);
++static SIMPLE_DEV_PM_OPS(tegra_i2c_pm, tegra_i2c_resume);
+ #define TEGRA_I2C_PM	(&tegra_i2c_pm)
+ #else
+ #define TEGRA_I2C_PM	NULL
 -- 
-1.8.4.5
+1.9.1
 
