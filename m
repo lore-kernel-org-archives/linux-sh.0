@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Jul 2014 00:28:47 +0000
-Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Updates for v3.17
-Message-Id: <cover.1404174157.git.horms+renesas@verge.net.au>
+Date: Sat, 12 Jul 2014 13:53:15 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM Based SoC CPUFreq Updates for v3.17
+Message-Id: <cover.1405172884.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1381222967.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
@@ -12,69 +12,35 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hi Olof, Hi Kevin, Hi Arnd,
 
-Please consider these Second Round of Renesas ARM Based SoC Updates for v3.17.
+Please consider these second round of Renesas ARM based SoC CPUFreq
+updates for v3.17.
 
 This pull request is based on the previous round of
-such requests, tagged as renesas-soc-for-v3.17,
+such requests, tagged as renesas-cpufreq-for-v3.17,
 which I have already sent a pull-request for.
 
-This conflicts with other changes made to pm-r8a7790.c in the soc branch
-of the renesas tree. A resolution can be found in the
-renesas-next-v3.16-rc1-20140628 tag of the next branch of that tree.
 
-In short, the resulting includes should be:
+The following changes since commit 06e32c91dbce3c24ccbe84e3af2a35199662bca0:
 
-#include <linux/kernel.h>
-#include <linux/smp.h>
-#include <asm/io.h>
-#include "common.h"
-#include "pm-rcar.h"
-#include "r8a7790.h"
-
-
-The following changes since commit 3ed66ec5ced8b801cb851b2b8548301df94f8f54:
-
-  ARM: shmobile: Remove ARCH_HAS_CPUFREQ config for shmobile (2014-06-23 09:53:55 +0900)
+  ARM: shmobile: add cpufreq-cpu0 driver for common SH-Mobile (2014-06-16 19:50:54 +0900)
 
 are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-soc2-for-v3.17
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-cpufreq2-for-v3.17
 
-for you to fetch changes up to bfe4cfa8ae21628267f2b879b4396ee17ea4fd3a:
+for you to fetch changes up to e423d12cbcb9576785e891617888f627f1f57bf4:
 
-  ARM: shmobile: Allow r8a7791 to build non-SMP APMU code (2014-06-26 16:01:34 +0900)
-
-----------------------------------------------------------------
-Second Round of Renesas ARM Based SoC Updates for v3.17
-
-* Suspend on non-SMP update for r8a7790
-* Move r8a7791.h out of mach directory.
-  This is part of a multi-stage effort to move headers
-  out of that directory.
+  ARM: shmobile: Remove opps table check for cpufreq (2014-07-09 10:48:58 +0200)
 
 ----------------------------------------------------------------
-Geert Uytterhoeven (1):
-      ARM: shmobile: Move r8a7791.h
+Second Round of Renesas ARM Based SoC CPUFreq Updates for v3.17
 
-Magnus Damm (7):
-      ARM: shmobile: Allow use of boot code for non-SMP case
-      ARM: shmobile: Adjust APMU code to build for non-SMP
-      ARM: shmobile: Use __init for APMU suspend init function
-      ARM: shmobile: Move r8a7790 reset code to pm-r8a7790.c
-      ARM: shmobile: Allow r8a7790 to build non-SMP APMU code
-      ARM: shmobile: Move r8a7791 reset code to pm-r8a7791.c
-      ARM: shmobile: Allow r8a7791 to build non-SMP APMU code
+* Remove opps table check for cpufreq as this is already handled
+  by the driver
 
- arch/arm/mach-shmobile/Makefile                    | 21 ++++++-----
- arch/arm/mach-shmobile/board-koelsch-reference.c   |  4 ++-
- arch/arm/mach-shmobile/board-koelsch.c             |  4 ++-
- arch/arm/mach-shmobile/headsmp.S                   | 13 ++++---
- arch/arm/mach-shmobile/platsmp-apmu.c              | 13 ++++---
- arch/arm/mach-shmobile/pm-r8a7790.c                | 41 ++++++++++++++++++++--
- arch/arm/mach-shmobile/pm-r8a7791.c                | 30 ++++++++++++++--
- .../arm/mach-shmobile/{include/mach => }/r8a7791.h |  0
- arch/arm/mach-shmobile/setup-r8a7791.c             |  4 ++-
- arch/arm/mach-shmobile/smp-r8a7790.c               | 31 ----------------
- arch/arm/mach-shmobile/smp-r8a7791.c               | 29 ++-------------
- 11 files changed, 108 insertions(+), 82 deletions(-)
- rename arch/arm/mach-shmobile/{include/mach => }/r8a7791.h (100%)
+----------------------------------------------------------------
+Gaku Inami (1):
+      ARM: shmobile: Remove opps table check for cpufreq
+
+ arch/arm/mach-shmobile/cpufreq.c | 16 +---------------
+ 1 file changed, 1 insertion(+), 15 deletions(-)
