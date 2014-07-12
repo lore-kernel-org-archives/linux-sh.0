@@ -1,78 +1,79 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 18 Jul 2014 23:50:20 +0000
-Subject: [PATCH v2 3/8] dmaengine: shdma: Allocate cyclic sg list dynamically
-Message-Id: <1405727425-6237-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Sat, 12 Jul 2014 11:49:30 +0000
+Subject: [PATCH 4/5] i2c: sc3c2410: Remove suspension check
+Message-Id: <1405165771-8732-4-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1405165771-8732-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1405165771-8732-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-i2c@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>
+Cc: Linux-SH <linux-sh@vger.kernel.org>, Tomoya MORINAGA <tomoya.rohm@gmail.com>, Naveen Krishna Chatradhi <ch.naveen@samsung.com>, Taekgyun Ko <taeggyun.ko@samsung.com>, Ben Dooks <ben@simtec.co.uk>, Magnus Damm <magnus.damm@gmail.com>
 
-The sg list used to prepare cyclic DMA descriptors is currently
-allocated statically on the stack as an array of 32 elements. This makes
-the shdma_prep_dma_cyclic() function consume a lot of stack space, as
-reported by the compiler:
+We now take care of suspension in the i2c core code. So we can remove this
+check here.
 
-drivers/dma/sh/shdma-base.c: In function ‘shdma_prep_dma_cyclic’:
-drivers/dma/sh/shdma-base.c:715:1: warning: the frame size of 1056 bytes
-is larger than 1024 bytes [-Wframe-larger-than=]
-
-Given the limited Linux kernel stack size, this could lead to stack
-overflows. Fix the problem by allocating the sg list dynamically.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
 ---
- drivers/dma/sh/shdma-base.c | 17 +++++++++++++++--
- 1 file changed, 15 insertions(+), 2 deletions(-)
+ drivers/i2c/busses/i2c-s3c2410.c | 16 ----------------
+ 1 file changed, 16 deletions(-)
 
-diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
-index 94b6bde..e427a03 100644
---- a/drivers/dma/sh/shdma-base.c
-+++ b/drivers/dma/sh/shdma-base.c
-@@ -672,11 +672,12 @@ static struct dma_async_tx_descriptor *shdma_prep_dma_cyclic(
- {
- 	struct shdma_chan *schan = to_shdma_chan(chan);
- 	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
-+	struct dma_async_tx_descriptor *desc;
- 	const struct shdma_ops *ops = sdev->ops;
- 	unsigned int sg_len = buf_len / period_len;
- 	int slave_id = schan->slave_id;
- 	dma_addr_t slave_addr;
--	struct scatterlist sgl[SHDMA_MAX_SG_LEN];
-+	struct scatterlist *sgl;
- 	int i;
+diff --git a/drivers/i2c/busses/i2c-s3c2410.c b/drivers/i2c/busses/i2c-s3c2410.c
+index e828a1d..568b993 100644
+--- a/drivers/i2c/busses/i2c-s3c2410.c
++++ b/drivers/i2c/busses/i2c-s3c2410.c
+@@ -103,7 +103,6 @@ enum s3c24xx_i2c_state {
+ struct s3c24xx_i2c {
+ 	wait_queue_head_t	wait;
+ 	kernel_ulong_t		quirks;
+-	unsigned int		suspended:1;
  
- 	if (!chan)
-@@ -700,7 +701,16 @@ static struct dma_async_tx_descriptor *shdma_prep_dma_cyclic(
+ 	struct i2c_msg		*msg;
+ 	unsigned int		msg_num;
+@@ -714,9 +713,6 @@ static int s3c24xx_i2c_doxfer(struct s3c24xx_i2c *i2c,
+ 	unsigned long timeout;
+ 	int ret;
  
- 	slave_addr = ops->slave_addr(schan);
- 
-+	/*
-+	 * Allocate the sg list dynamically as it would consumer too much stack
-+	 * space.
-+	 */
-+	sgl = kcalloc(sg_len, sizeof(*sgl), GFP_KERNEL);
-+	if (!sgl)
-+		return NULL;
-+
- 	sg_init_table(sgl, sg_len);
-+
- 	for (i = 0; i < sg_len; i++) {
- 		dma_addr_t src = buf_addr + (period_len * i);
- 
-@@ -710,8 +720,11 @@ static struct dma_async_tx_descriptor *shdma_prep_dma_cyclic(
- 		sg_dma_len(&sgl[i]) = period_len;
- 	}
- 
--	return shdma_prep_sg(schan, sgl, sg_len, &slave_addr,
-+	desc = shdma_prep_sg(schan, sgl, sg_len, &slave_addr,
- 			     direction, flags, true);
-+
-+	kfree(sgl);
-+	return desc;
+-	if (i2c->suspended)
+-		return -EIO;
+-
+ 	ret = s3c24xx_i2c_set_master(i2c);
+ 	if (ret != 0) {
+ 		dev_err(i2c->dev, "cannot get bus (error %d)\n", ret);
+@@ -1257,16 +1253,6 @@ static int s3c24xx_i2c_remove(struct platform_device *pdev)
  }
  
- static int shdma_control(struct dma_chan *chan, enum dma_ctrl_cmd cmd,
+ #ifdef CONFIG_PM_SLEEP
+-static int s3c24xx_i2c_suspend_noirq(struct device *dev)
+-{
+-	struct platform_device *pdev = to_platform_device(dev);
+-	struct s3c24xx_i2c *i2c = platform_get_drvdata(pdev);
+-
+-	i2c->suspended = 1;
+-
+-	return 0;
+-}
+-
+ static int s3c24xx_i2c_resume(struct device *dev)
+ {
+ 	struct platform_device *pdev = to_platform_device(dev);
+@@ -1275,7 +1261,6 @@ static int s3c24xx_i2c_resume(struct device *dev)
+ 	clk_prepare_enable(i2c->clk);
+ 	s3c24xx_i2c_init(i2c);
+ 	clk_disable_unprepare(i2c->clk);
+-	i2c->suspended = 0;
+ 
+ 	return 0;
+ }
+@@ -1284,7 +1269,6 @@ static int s3c24xx_i2c_resume(struct device *dev)
+ #ifdef CONFIG_PM
+ static const struct dev_pm_ops s3c24xx_i2c_dev_pm_ops = {
+ #ifdef CONFIG_PM_SLEEP
+-	.suspend_noirq = s3c24xx_i2c_suspend_noirq,
+ 	.resume = s3c24xx_i2c_resume,
+ #endif
+ };
 -- 
-1.8.5.5
+1.9.1
 
