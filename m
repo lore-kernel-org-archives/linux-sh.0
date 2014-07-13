@@ -1,99 +1,49 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 11 Jul 2014 08:50:11 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sun, 13 Jul 2014 13:43:57 +0000
 Subject: Re: [PATCH] ARM: shmobile: r8a7790: lager: use iic cores instead of i2c
-Message-Id: <20140711085011.GE12420@verge.net.au>
+Message-Id: <20140713134357.GB2729@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="qcHopEYAB45HaUaB"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1404989456-2716-1-git-send-email-wsa@the-dreams.de>
 In-Reply-To: <1404989456-2716-1-git-send-email-wsa@the-dreams.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Jul 10, 2014 at 12:50:56PM +0200, Wolfram Sang wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> 
-> On Lager board, i2c and iic cores can be interchanged since they can be
-> muxed to the same wires. Commit e489c2a9bc82713167d9f721ca764f4b0d37e543
-> ("ARM: shmobile: lager: enable i2c devices") activated the i2c cores,
-> yet the iic cores should be default since they have the more interesting
-> features for generic use cases, i.e. SMBUS_QUICK and DMA (yet to be
-> supported).
-> 
-> Reported-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> ---
-> 
-> This applies on top of renesas-devel-v3.16-rc4-20140709 with "[PATCH v2] ARM:
-> shmobile: Lager: Correct I2C bus for VDD MPU regulator" applied. Both patches
-> should go into v3.16 IMO, otherwise the bus numbering change will be visible
-> for end users (i2c busses are 0-3, iic are 4-7 as mentioned in the hardware
-> manuals).
 
-Thanks.
+--qcHopEYAB45HaUaB
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-I have queued this up for v3.17 rather than v3.16 as I do not believe
-there are any i2c (or iic) nodes present or scheduled for inclusion in
-this file in v3.16: I checked v3.16-rc4.
+> I have queued this up for v3.17 rather than v3.16 as I do not believe
+> there are any i2c (or iic) nodes present or scheduled for inclusion in
+> this file in v3.16: I checked v3.16-rc4.
 
->  arch/arm/boot/dts/r8a7790-lager.dts | 22 +++++++++++-----------
->  1 file changed, 11 insertions(+), 11 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-> index ffe0523ff16f..856b4236b674 100644
-> --- a/arch/arm/boot/dts/r8a7790-lager.dts
-> +++ b/arch/arm/boot/dts/r8a7790-lager.dts
-> @@ -205,14 +205,14 @@
->  		renesas,function = "msiof1";
->  	};
->  
-> -	i2c1_pins: i2c1 {
-> -		renesas,groups = "i2c1";
-> -		renesas,function = "i2c1";
-> +	iic1_pins: iic1 {
-> +		renesas,groups = "iic1";
-> +		renesas,function = "iic1";
->  	};
->  
-> -	i2c2_pins: i2c2 {
-> -		renesas,groups = "i2c2";
-> -		renesas,function = "i2c2";
-> +	iic2_pins: iic2 {
-> +		renesas,groups = "iic2";
-> +		renesas,function = "iic2";
->  	};
->  
->  	iic3_pins: iic3 {
-> @@ -352,19 +352,19 @@
->  	cpu0-supply = <&vdd_dvfs>;
->  };
->  
-> -&i2c0	{
-> +&iic0	{
->  	status = "ok";
->  };
->  
-> -&i2c1	{
-> +&iic1	{
->  	status = "ok";
-> -	pinctrl-0 = <&i2c1_pins>;
-> +	pinctrl-0 = <&iic1_pins>;
->  	pinctrl-names = "default";
->  };
->  
-> -&i2c2	{
-> +&iic2	{
->  	status = "ok";
-> -	pinctrl-0 = <&i2c2_pins>;
-> +	pinctrl-0 = <&iic2_pins>;
->  	pinctrl-names = "default";
->  };
->  
-> -- 
-> 2.0.0
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+In case the i2c char driver is activated, the nodes in /dev will change
+=66rom i2c-{0-3} to i2c-{4-7}, too. I'll let you decide about the
+importance of it :)
+
+
+--qcHopEYAB45HaUaB
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJTwo0dAAoJEBQN5MwUoCm2UaoQAJSFymII49EJfZxOnTeoA7Fu
+bHweTHLFyk6AkYQMMcodZOM7QQbYTnNDBnn9e3tRNUxEAqkKiHavBjwGYhbLUqY8
+7u/RKXTm6y8KQSlHTty/jpTXEoiLiJWCrqe0A9eypc/wbQEXJQVfdxjB0KtLKMAw
+uTOOH176+G2QRljAsfaIr+pcoOIuskhtg5LnQxzYWBRTUOQqS/0k2Q0p2PlXEKuV
+8q9r+n6bKAtX2BtHc9rIGjYkoFVJuwBOqYe/FYtP2fY4fxCAKkVUIB38T9j+lwzK
+KHjaln2ldy+8DqR6D2zyv0to0VeI8L1gN9DaMH9XTV2Rrz0ICF4/vxGLmcnxvxGm
+X6YElEPDgeYr3R2rSaKlrwqS7uR9rR5JChVUU6sDi8g/sWGjNEDC3W+GeRjfloIx
+H99+I8b/F4m3ROCDtjPbDdd4HLGiJ+qZWBolhb79/+H+LGl2d836GtCDWv3hj5Nw
+cz+LHAR28Qh+ucl+hhxcc48NyTKIO802X9vUoBjrWX14lNKF1OKooDuoA5BaGppZ
+0H2ow9WgE6Do+XZjlMzn/Yyf+xoW/YEFKeguseL18n8+QzFUFaFqJl7ky5aNa08P
+pe6lPWmUeYDHWpGfeNmreFNUBSAOvXrXACY+3OzR2zy75Qc6hPpFrxu5qmIJKj8g
+NW0MUUs8OBBw1u1ikwOR
+=KHgT
+-----END PGP SIGNATURE-----
+
+--qcHopEYAB45HaUaB--
