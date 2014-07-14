@@ -1,39 +1,31 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 07 Jul 2014 07:54:46 +0000
-Subject: [PATCH v2 21/30] ARM: shmobile: r8a7740: add CMT1 clock support for DT
-Message-Id: <1404719695-1634-22-git-send-email-horms+renesas@verge.net.au>
+From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+Date: Mon, 14 Jul 2014 09:55:09 +0000
+Subject: A question about L2$ initialization for Lager/Koelsch board
+Message-Id: <53C3A8FD.1010801@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This will be used when initialising CMT1 device using DT
-until common clock framework support is added.
+Hi Magnus-san, 
+cc Simon-san,
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+I have a question about L2$ initialization for Lager/Koelsch board.
 
----
-v2
-* First post
----
- arch/arm/mach-shmobile/clock-r8a7740.c | 1 +
- 1 file changed, 1 insertion(+)
+In my understanding, there are 2 methods to initialize L2$:
+1. Call l2x0_init() explicitly during platform setup.
+   Like H1/Armadillo800eva or RZ/kzm9g
+2. Declare in DTSI file and l2x0_of_init() will be called.
+   Like some other platforms, e.g omap4, tegra20
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index b4ecbd6..0794f04 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -603,6 +603,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("fck",	"sh-tmu.0",		&mstp_clks[MSTP125]),
- 	CLKDEV_ICK_ID("fck",	"fff80000.timer",	&mstp_clks[MSTP125]),
- 	CLKDEV_ICK_ID("fck",	"sh-cmt-48.1",		&mstp_clks[MSTP329]),
-+	CLKDEV_ICK_ID("fck",	"e6138000.timer",	&mstp_clks[MSTP329]),
- 	CLKDEV_ICK_ID("host",	"renesas_usbhs",	&mstp_clks[MSTP416]),
- 	CLKDEV_ICK_ID("func",	"renesas_usbhs",	&mstp_clks[MSTP407]),
- 	CLKDEV_ICK_ID("phy",	"renesas_usbhs",	&mstp_clks[MSTP406]),
+I'm checking L2$ initialization for Lager/Koelsch, 
+but I still cannot find the code.
+
+Could you tell me current method to initialize L2$ ?
+(or we rely on L2$ initialization of bootloader)
+
+Thanks.
 -- 
-2.0.0.rc2
-
+Best regards,
+KHIEM Nguyen
