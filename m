@@ -1,106 +1,51 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 11 Jul 2014 16:01:16 +0000
-Subject: [PATCH v2 1/2] spi: rspi: Handle dmaengine_prep_slave_sg() failures gracefully
-Message-Id: <1405094477-14192-1-git-send-email-geert+renesas@glider.be>
+From: Mark Brown <broonie@kernel.org>
+Date: Mon, 14 Jul 2014 18:21:52 +0000
+Subject: Re: [PATCH v2 1/2] spi: rspi: Handle dmaengine_prep_slave_sg() failures gracefully
+Message-Id: <20140714182152.GU6800@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="ULJ2Z7kCM1hyNsWd"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Laurent Pinchart <Laurent.pinchart@ideasonboard.com>, linux-spi@vger.kernel.org, dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+References: <1405094477-14192-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1405094477-14192-1-git-send-email-geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Laurent Pinchart <Laurent.pinchart@ideasonboard.com>, linux-spi@vger.kernel.org, dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-As typically a shmobile SoC has less DMA channels than devices that can use
-DMA, we may want to prioritize access to the DMA channels in the future.
-This means that dmaengine_prep_slave_sg() may start failing arbitrarily.
 
-Handle dmaengine_prep_slave_sg() failures gracefully by falling back to
-PIO.
+--ULJ2Z7kCM1hyNsWd
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
----
-v2:
-  - Add Acked-by
----
- drivers/spi/spi-rspi.c | 30 ++++++++++++++++++++++--------
- 1 file changed, 22 insertions(+), 8 deletions(-)
+On Fri, Jul 11, 2014 at 06:01:16PM +0200, Geert Uytterhoeven wrote:
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 38fd938d6360..c850dfdfa9e3 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -477,7 +477,7 @@ static int rspi_dma_transfer(struct rspi_data *rspi, struct sg_table *tx,
- 					tx->sgl, tx->nents, DMA_TO_DEVICE,
- 					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
- 		if (!desc_tx)
--			return -EIO;
-+			goto no_dma;
- 
- 		irq_mask |= SPCR_SPTIE;
- 	}
-@@ -486,7 +486,7 @@ static int rspi_dma_transfer(struct rspi_data *rspi, struct sg_table *tx,
- 					rx->sgl, rx->nents, DMA_FROM_DEVICE,
- 					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
- 		if (!desc_rx)
--			return -EIO;
-+			goto no_dma;
- 
- 		irq_mask |= SPCR_SPRIE;
- 	}
-@@ -540,6 +540,12 @@ static int rspi_dma_transfer(struct rspi_data *rspi, struct sg_table *tx,
- 		enable_irq(rspi->rx_irq);
- 
- 	return ret;
-+
-+no_dma:
-+	pr_warn_once("%s %s: DMA not available, falling back to PIO\n",
-+		     dev_driver_string(&rspi->master->dev),
-+		     dev_name(&rspi->master->dev));
-+	return -EAGAIN;
- }
- 
- static void rspi_receive_init(const struct rspi_data *rspi)
-@@ -593,8 +599,10 @@ static int rspi_common_transfer(struct rspi_data *rspi,
- 
- 	if (rspi->master->can_dma && __rspi_can_dma(rspi, xfer)) {
- 		/* rx_buf can be NULL on RSPI on SH in TX-only Mode */
--		return rspi_dma_transfer(rspi, &xfer->tx_sg,
--					 xfer->rx_buf ? &xfer->rx_sg : NULL);
-+		ret = rspi_dma_transfer(rspi, &xfer->tx_sg,
-+					xfer->rx_buf ? &xfer->rx_sg : NULL);
-+		if (ret != -EAGAIN)
-+			return ret;
- 	}
- 
- 	ret = rspi_pio_transfer(rspi, xfer->tx_buf, xfer->rx_buf, xfer->len);
-@@ -648,8 +656,11 @@ static int qspi_transfer_out(struct rspi_data *rspi, struct spi_transfer *xfer)
- {
- 	int ret;
- 
--	if (rspi->master->can_dma && __rspi_can_dma(rspi, xfer))
--		return rspi_dma_transfer(rspi, &xfer->tx_sg, NULL);
-+	if (rspi->master->can_dma && __rspi_can_dma(rspi, xfer)) {
-+		ret = rspi_dma_transfer(rspi, &xfer->tx_sg, NULL);
-+		if (ret != -EAGAIN)
-+			return ret;
-+	}
- 
- 	ret = rspi_pio_transfer(rspi, xfer->tx_buf, NULL, xfer->len);
- 	if (ret < 0)
-@@ -663,8 +674,11 @@ static int qspi_transfer_out(struct rspi_data *rspi, struct spi_transfer *xfer)
- 
- static int qspi_transfer_in(struct rspi_data *rspi, struct spi_transfer *xfer)
- {
--	if (rspi->master->can_dma && __rspi_can_dma(rspi, xfer))
--		return rspi_dma_transfer(rspi, NULL, &xfer->rx_sg);
-+	if (rspi->master->can_dma && __rspi_can_dma(rspi, xfer)) {
-+		int ret = rspi_dma_transfer(rspi, NULL, &xfer->rx_sg);
-+		if (ret != -EAGAIN)
-+			return ret;
-+	}
- 
- 	return rspi_pio_transfer(rspi, NULL, xfer->rx_buf, xfer->len);
- }
--- 
-1.9.1
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> ---
+> v2:
+>   - Add Acked-by
 
+Please don't ever resend things to add Acked-by - this just adds to
+noise and mail volume.
+
+--ULJ2Z7kCM1hyNsWd
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBAgAGBQJTxB+9AAoJELSic+t+oim9DWcP/iof3Dva3BaAM1RrRrR2eWsA
+UpUQOzYi8xUXoPT/w3z+JzEnSTiAVi0942sgWpPOZ5YOtY2D61NECI1BO+YO2MHe
+r2dXEoT57TtLLBwHOwncsyXNwGCYgIcUPeQG3m3ibcIkRpwUfJWDFxZkZG2VBPTD
+I8usfje3Iops3RGm2MQWQ5I4bj/RhYLJjmZ4KXBeRU/XMuiXWjJ6ldq2c561GvZd
+2YtN4le0DI5pEu8k9pL9pb3FZKvQCLzxeHW/niSPdwW1v3mClHClSbNZboyCr9dS
+Mxn9I/1R5a3Fr+MoUmVVBkmTXc76T1i6irzr9OWtOCh4txfQWnljosKfZ7/jS54s
+1kLUBklkO2PuV/EaTCqj/hctebkDCKHBTK+iScmLqS7RTfJQ6t6BLE1xO+sldRSQ
+BcpU5TYjDV3YLDyBRW9Q7u0lrfmqYbfTzNbTwPZ5die+Xj9ssrIDbqd/DYcyXynn
+CzMvP0sZ7FmZs+O2PdFzN9ooTS+wLj/nMKk1aXxZPAzNaepjqNvaEJwcbEcbNNmc
+5glXVN9WdMuvItGRfMZhiNVcwIhWekjznYlAyEeGfBr9c5xz8IJ3l+OvxF+EDMWM
+/oV9L0qMFp03dA76NP49P3Cj1K7/6+VHDPZGt2TmRenGYOQbNdrFPGjj2UpD/QZX
+teVHJTa1scrWYRGG+gxj
+=PFeY
+-----END PGP SIGNATURE-----
+
+--ULJ2Z7kCM1hyNsWd--
