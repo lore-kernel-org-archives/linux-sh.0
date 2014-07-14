@@ -1,155 +1,47 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 11 Jul 2014 16:06:42 +0000
-Subject: [PATCH 2/2] spi: sh-msiof: Fix leaking of unused DMA descriptors
-Message-Id: <1405094802-14401-2-git-send-email-geert+renesas@glider.be>
+From: Mark Brown <broonie@kernel.org>
+Date: Mon, 14 Jul 2014 18:59:05 +0000
+Subject: Re: [PATCH 2/2] spi: sh-msiof: Fix leaking of unused DMA descriptors
+Message-Id: <20140714185905.GF6800@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="f6nK9RR+X1IX2pXa"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1405094802-14401-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1405094802-14401-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Laurent Pinchart <Laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+ <1405094802-14401-2-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1405094802-14401-2-git-send-email-geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Laurent Pinchart <Laurent.pinchart@ideasonboard.com>, linux-spi@vger.kernel.org, dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-If dmaengine_prep_slave_sg() or dmaengine_submit() fail, we may leak
-unused DMA descriptors.
 
-As per Documentation/dmaengine.txt, once a DMA descriptor has been
-obtained, it must be submitted. Hence:
-  - First prepare and submit all DMA descriptors,
-  - Prepare the SPI controller for DMA,
-  - Start DMA by calling dma_async_issue_pending(),
-  - Make sure to call dmaengine_terminate_all() on all descriptors that
-    haven't completed.
+--f6nK9RR+X1IX2pXa
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Reported-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- drivers/spi/spi-sh-msiof.c | 71 +++++++++++++++++++++++++---------------------
- 1 file changed, 38 insertions(+), 33 deletions(-)
+On Fri, Jul 11, 2014 at 06:06:42PM +0200, Geert Uytterhoeven wrote:
+> If dmaengine_prep_slave_sg() or dmaengine_submit() fail, we may leak
+> unused DMA descriptors.
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 2a4354dcd661..887c2084130f 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -636,48 +636,38 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv *p, const void *tx,
- 	dma_cookie_t cookie;
- 	int ret;
- 
--	if (tx) {
--		ier_bits |= IER_TDREQE | IER_TDMAE;
--		dma_sync_single_for_device(p->master->dma_tx->device->dev,
--					   p->tx_dma_addr, len, DMA_TO_DEVICE);
--		desc_tx = dmaengine_prep_slave_single(p->master->dma_tx,
--					p->tx_dma_addr, len, DMA_TO_DEVICE,
--					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
--		if (!desc_tx)
--			return -EAGAIN;
--	}
--
-+	/* First prepare and submit the DMA request(s), as this may fail */
- 	if (rx) {
- 		ier_bits |= IER_RDREQE | IER_RDMAE;
- 		desc_rx = dmaengine_prep_slave_single(p->master->dma_rx,
- 					p->rx_dma_addr, len, DMA_FROM_DEVICE,
- 					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
--		if (!desc_rx)
--			return -EAGAIN;
--	}
--
--	/* 1 stage FIFO watermarks for DMA */
--	sh_msiof_write(p, FCTR, FCTR_TFWM_1 | FCTR_RFWM_1);
--
--	/* setup msiof transfer mode registers (32-bit words) */
--	sh_msiof_spi_set_mode_regs(p, tx, rx, 32, len / 4);
--
--	sh_msiof_write(p, IER, ier_bits);
--
--	reinit_completion(&p->done);
-+		if (!desc_rx) {
-+			ret = -EAGAIN;
-+			goto no_dma_rx;
-+		}
- 
--	if (rx) {
- 		desc_rx->callback = sh_msiof_dma_complete;
- 		desc_rx->callback_param = p;
- 		cookie = dmaengine_submit(desc_rx);
- 		if (dma_submit_error(cookie)) {
- 			ret = cookie;
--			goto stop_ier;
-+			goto no_dma_rx;
- 		}
--		dma_async_issue_pending(p->master->dma_rx);
- 	}
- 
- 	if (tx) {
-+		ier_bits |= IER_TDREQE | IER_TDMAE;
-+		dma_sync_single_for_device(p->master->dma_tx->device->dev,
-+					   p->tx_dma_addr, len, DMA_TO_DEVICE);
-+		desc_tx = dmaengine_prep_slave_single(p->master->dma_tx,
-+					p->tx_dma_addr, len, DMA_TO_DEVICE,
-+					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
-+		if (!desc_tx) {
-+			ret = -EAGAIN;
-+			goto no_dma_tx;
-+		}
-+
- 		if (rx) {
- 			/* No callback */
- 			desc_tx->callback = NULL;
-@@ -688,15 +678,30 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv *p, const void *tx,
- 		cookie = dmaengine_submit(desc_tx);
- 		if (dma_submit_error(cookie)) {
- 			ret = cookie;
--			goto stop_rx;
-+			goto no_dma_tx;
- 		}
--		dma_async_issue_pending(p->master->dma_tx);
- 	}
- 
-+	/* 1 stage FIFO watermarks for DMA */
-+	sh_msiof_write(p, FCTR, FCTR_TFWM_1 | FCTR_RFWM_1);
-+
-+	/* setup msiof transfer mode registers (32-bit words) */
-+	sh_msiof_spi_set_mode_regs(p, tx, rx, 32, len / 4);
-+
-+	sh_msiof_write(p, IER, ier_bits);
-+
-+	reinit_completion(&p->done);
-+
-+	/* Now start DMA */
-+	if (tx)
-+		dma_async_issue_pending(p->master->dma_rx);
-+	if (rx)
-+		dma_async_issue_pending(p->master->dma_tx);
-+
- 	ret = sh_msiof_spi_start(p, rx);
- 	if (ret) {
- 		dev_err(&p->pdev->dev, "failed to start hardware\n");
--		goto stop_tx;
-+		goto stop_dma;
- 	}
- 
- 	/* wait for tx fifo to be emptied / rx fifo to be filled */
-@@ -726,14 +731,14 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv *p, const void *tx,
- stop_reset:
- 	sh_msiof_reset_str(p);
- 	sh_msiof_spi_stop(p, rx);
--stop_tx:
-+stop_dma:
- 	if (tx)
- 		dmaengine_terminate_all(p->master->dma_tx);
--stop_rx:
-+no_dma_tx:
- 	if (rx)
- 		dmaengine_terminate_all(p->master->dma_rx);
--stop_ier:
- 	sh_msiof_write(p, IER, 0);
-+no_dma_rx:
- 	return ret;
- }
- 
--- 
-1.9.1
+Same here, this doesn't apply either.
 
+--f6nK9RR+X1IX2pXa
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBAgAGBQJTxCh1AAoJELSic+t+oim9pzUP/ivBi4h7u2tDtwgePJRXxXCd
+WhYf7fViJXEWoy23nO8AbXOMy8y+TW1R+tSk3UMN+uBhuv4Rscul68HnEUXr36PN
+Qyx7m6PEY0tphQPdLdxf7oqAbJJgeIMvp+tQP4AkoTAVlRWzztO8Qtql29mowHP7
+YvakqGTcIZC7N24q5GKvNKpVeuuS2gBXDE9v1a/LDaY6bE6GJp32cwo5sYd/cd3W
+CBmLzD+oyeA/fS5JiI0JbQb5nl+Za+Y62niPZH2YbBdsJCe2rmURyePII++o3r0w
+dSbUx2uPPVwCm4yqnhWv3ML+zcVMR3Dd19uqlGh9WS0JSLRS4T1T0FzdLpl4F4jJ
+2DVKqsgcr9tT1ocG2zOVPqWw1ilACWET4ZRFhZNeLEjekKaT/BjpCZYmiXYfvi90
+l38Z6GGdbEqVcGGmwWmjLrk5wmoEvRf5K8f+6++EpKok6RW7GRG4gdHuud2gIV3q
+Va+5WAFN+7YqRc4OeHxUPF+c94qJ7ei6yYWmBvxo008/9ZtiblCdYfJEPo0sBBDW
+eWyrVimJcFOZDhKfVDFvNH/7A2eoghrlGriKKilMbwj6KtxLHnrPsKaTQTbtHTQN
+GONM10c9qqKh2undyxSCFWe/+9sJqYz3lJlL/VRE9Pf2iSvNNeOoWTNitRn76svZ
+QgjVmffGcd7VAtnRVJHW
+=a9Uk
+-----END PGP SIGNATURE-----
+
+--f6nK9RR+X1IX2pXa--
