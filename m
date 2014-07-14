@@ -1,25 +1,152 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sun, 13 Jul 2014 10:10:01 +0000
-Subject: [ANNOUNCE] renesas tree closing for v3.17 soon
-Message-Id: <20140713101001.GB21080@verge.net.au>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Mon, 14 Jul 2014 07:10:00 +0000
+Subject: [PATCH 3/3] serial: sh-sci: Add calculation recive margin for HSCIF
+Message-Id: <1405321800-18114-3-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1405321800-18114-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+In-Reply-To: <1405321800-18114-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: gregkh@linuxfoundation.org, linux-serial@vger.kernel.org, horms+renesas@verge.net.au, magnus.damm@gmail.com, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-Hi,
+When the error of the same bit rate is detected, we will need to select
+the recive margin is large. Current code holds the minimum error, it does
+not have to check the recive margin. This adds this calculation.
 
-I would like to wind down accepting patches for v3.17 and get the last pull
-requests posted over the course of the next week. This is in order for them
-to be sent before the release of v3.16-rc6.  As patches should ideally
-progress from the renesas tree into linux-next before sending pull requests
-there is a few days lead time involved.
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+---
+ drivers/tty/serial/sh-sci.c | 77 ++++++++++++++++++++++++++++++++++-----------
+ 1 file changed, 59 insertions(+), 18 deletions(-)
 
-If you have any changes that you would like to go via the renesas tree into
-the arm-soc tree[*] for v2.17 please send them in the next few days
-otherwise they will most likely be deferred until v3.18.
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 7f571a8..d879c0c 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1783,13 +1783,30 @@ static unsigned int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
+ 	return ((freq + 16 * bps) / (32 * bps) - 1);
+ }
+ 
++/* calculate frame length from SMR */
++static int sci_baud_calc_frame_len(unsigned int smr_val)
++{
++	int len = 10;
++
++	if (smr_val & SCSMR_CHR)
++		len--;
++	if (smr_val & SCSMR_PE)
++		len++;
++	if (smr_val & SCSMR_STOP)
++		len++;
++
++	return len;
++}
++
++
+ /* calculate sample rate, BRR, and clock select for HSCIF */
+ static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq,
+ 				int *brr, unsigned int *srr,
+-				unsigned int *cks)
++				unsigned int *cks, int frame_len)
+ {
+-	int sr, c, br, err;
++	int sr, c, br, err, recv_margin;
+ 	int min_err = 1000; /* 100% */
++	int recv_max_margin = 0;
+ 
+ 	/* Find the combination of sample rate and clock select with the
+ 	   smallest deviation from the desired baud rate. */
+@@ -1802,12 +1819,35 @@ static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq,
+ 			err = DIV_ROUND_CLOSEST(freq, ((br + 1) * bps * sr *
+ 					       (1 << (2 * c + 1)) / 1000)) -
+ 					       1000;
++			if (err < 0)
++				continue;
++
++			/* Calc recv margin
++			 * M: Receive margin (%)
++			 * N: Ratio of bit rate to clock (N = sampling rate)
++			 * D: Clock duty (D = 0 to 1.0)
++			 * L: Frame length (L = 9 to 12)
++			 * F: Absolute value of clock frequency deviation
++			 *
++			 *  M = |(0.5 - 1 / 2 * N) - ((L - 0.5) * F) -
++			 *      (|D - 0.5| / N * (1 + F))|
++			 *  NOTE: Usually, treat D for 0.5, F is 0 by this
++			 *        calculation.
++			 */
++			recv_margin = abs((500 -
++					DIV_ROUND_CLOSEST(1000, sr << 1)) / 10);
+ 			if (min_err > err) {
+ 				min_err = err;
+-				*brr = br;
+-				*srr = sr - 1;
+-				*cks = c;
+-			}
++				recv_max_margin = recv_margin;
++			} else if ((min_err = err) &&
++				   (recv_margin > recv_max_margin))
++				recv_max_margin = recv_margin;
++			else
++				continue;
++
++			*brr = br;
++			*srr = sr - 1;
++			*cks = c;
+ 		}
+ 	}
+ 
+@@ -1841,10 +1881,19 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ {
+ 	struct sci_port *s = to_sci_port(port);
+ 	struct plat_sci_reg *reg;
+-	unsigned int baud, smr_val, max_baud, cks = 0;
++	unsigned int baud, smr_val = 0, max_baud, cks = 0;
+ 	int t = -1;
+ 	unsigned int srr = 15;
+ 
++	if ((termios->c_cflag & CSIZE) = CS7)
++		smr_val |= SCSMR_CHR;
++	if (termios->c_cflag & PARENB)
++		smr_val |= SCSMR_PE;
++	if (termios->c_cflag & PARODD)
++		smr_val |= SCSMR_PE | SCSMR_ODD;
++	if (termios->c_cflag & CSTOPB)
++		smr_val |= SCSMR_STOP;
++
+ 	/*
+ 	 * earlyprintk comes here early on with port->uartclk set to zero.
+ 	 * the clock framework is not up and running at this point so here
+@@ -1858,8 +1907,9 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ 	baud = uart_get_baud_rate(port, termios, old, 0, max_baud);
+ 	if (likely(baud && port->uartclk)) {
+ 		if (s->cfg->type = PORT_HSCIF) {
++			int frame_len = sci_baud_calc_frame_len(smr_val);
+ 			sci_baud_calc_hscif(baud, port->uartclk, &t, &srr,
+-					    &cks);
++					    &cks, frame_len);
+ 		} else {
+ 			t = sci_scbrr_calc(s, baud, port->uartclk);
+ 			for (cks = 0; t >= 256 && cks <= 3; cks++)
+@@ -1871,16 +1921,7 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ 
+ 	sci_reset(port);
+ 
+-	smr_val = serial_port_in(port, SCSMR) & 3;
+-
+-	if ((termios->c_cflag & CSIZE) = CS7)
+-		smr_val |= SCSMR_CHR;
+-	if (termios->c_cflag & PARENB)
+-		smr_val |= SCSMR_PE;
+-	if (termios->c_cflag & PARODD)
+-		smr_val |= SCSMR_PE | SCSMR_ODD;
+-	if (termios->c_cflag & CSTOPB)
+-		smr_val |= SCSMR_STOP;
++	smr_val |= serial_port_in(port, SCSMR) & 3;
+ 
+ 	uart_update_timeout(port, termios->c_cflag, baud);
+ 
+-- 
+2.0.0
 
-Also, please note that I will be in transit to Japan for about 3/4 of
-a day starting on Monday morning UTC +0200. I apologise in advance
-for any inconvenience this may cause.
