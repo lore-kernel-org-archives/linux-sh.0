@@ -1,27 +1,35 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 02 Jul 2014 07:56:33 +0000
-Subject: Re: [PATCH v7] media: vb2: Take queue or device lock in mmap-related vb2 ioctl handlers
-Message-Id: <10104979.PzNG1tgbGn@avalon>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 14 Jul 2014 20:47:26 +0000
+Subject: [PATCH v3] dmaengine: inherit debug settings from the subsystem for subdirectories
+Message-Id: <1405370846-13986-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201308061239.27188.hverkuil@xs4all.nl> <2051293.PjTd9YAWz0@avalon> <53B3A7CB.8020901@xs4all.nl>
-In-Reply-To: <53B3A7CB.8020901@xs4all.nl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Hans Verkuil <hverkuil@xs4all.nl>
-Cc: Sasha Levin <sasha.levin@oracle.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-media@vger.kernel.org, Sakari Ailus <sakari.ailus@iki.fi>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-sh@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>, Dave Jones <davej@redhat.com>
+To: linux-sh@vger.kernel.org
 
-Hi Hans,
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-On Wednesday 02 July 2014 08:33:47 Hans Verkuil wrote:
-> For now it is -ENOTIME for me. It's on my TODO list, but there are a number
-> of other things I want to finish first.
+To be able to see debug messages during boot, enable the debug settings
+from Kconfig also for drivers in subdirectories.
 
-No worries, I know how it feels. I just wanted to make sure you hadn't missed 
-my e-mail.
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/dma/Makefile | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
+diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
+index c779e1eb2db2..aca5eb577d44 100644
+--- a/drivers/dma/Makefile
++++ b/drivers/dma/Makefile
+@@ -1,5 +1,5 @@
+-ccflags-$(CONFIG_DMADEVICES_DEBUG)  := -DDEBUG
+-ccflags-$(CONFIG_DMADEVICES_VDEBUG) += -DVERBOSE_DEBUG
++subdir-ccflags-$(CONFIG_DMADEVICES_DEBUG)  := -DDEBUG
++subdir-ccflags-$(CONFIG_DMADEVICES_VDEBUG) += -DVERBOSE_DEBUG
+ 
+ obj-$(CONFIG_DMA_ENGINE) += dmaengine.o
+ obj-$(CONFIG_DMA_VIRTUAL_CHANNELS) += virt-dma.o
 -- 
-Regards,
-
-Laurent Pinchart
+2.0.0
 
