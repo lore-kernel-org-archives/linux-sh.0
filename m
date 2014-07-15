@@ -1,47 +1,64 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 14 Jul 2014 18:59:05 +0000
-Subject: Re: [PATCH 2/2] spi: sh-msiof: Fix leaking of unused DMA descriptors
-Message-Id: <20140714185905.GF6800@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="f6nK9RR+X1IX2pXa"
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 15 Jul 2014 22:45:20 +0000
+Subject: [PATCH 10/11] ARM: shmobile: r8a7790: Reference DMA channels in SDHI DT nodes
+Message-Id: <1405464321-4723-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405094802-14401-1-git-send-email-geert+renesas@glider.be>
- <1405094802-14401-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1405094802-14401-2-git-send-email-geert+renesas@glider.be>
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Laurent Pinchart <Laurent.pinchart@ideasonboard.com>, linux-spi@vger.kernel.org, dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+References: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Ian Molton <ian.molton@codethink.co.uk>
 
+Add references to the transmit and receive DMA channels in the four
+SDHI nodes.
 
---f6nK9RR+X1IX2pXa
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-On Fri, Jul 11, 2014 at 06:06:42PM +0200, Geert Uytterhoeven wrote:
-> If dmaengine_prep_slave_sg() or dmaengine_submit() fail, we may leak
-> unused DMA descriptors.
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 465008a..2ea3b2a 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -388,6 +388,8 @@
+ 		reg = <0 0xee100000 0 0x200>;
+ 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
++		dmas = <&dmac0 0xcd>, <&dmac0 0xce>;
++		dma-names = "tx", "rx";
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+@@ -397,6 +399,8 @@
+ 		reg = <0 0xee120000 0 0x200>;
+ 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
++		dmas = <&dmac0 0xc9>, <&dmac0 0xca>;
++		dma-names = "tx", "rx";
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+@@ -406,6 +410,8 @@
+ 		reg = <0 0xee140000 0 0x100>;
+ 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
++		dmas = <&dmac0 0xc1>, <&dmac0 0xc2>;
++		dma-names = "tx", "rx";
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+@@ -415,6 +421,8 @@
+ 		reg = <0 0xee160000 0 0x100>;
+ 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_SDHI3>;
++		dmas = <&dmac0 0xd3>, <&dmac0 0xd4>;
++		dma-names = "tx", "rx";
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+-- 
+1.8.5.5
 
-Same here, this doesn't apply either.
-
---f6nK9RR+X1IX2pXa
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAEBAgAGBQJTxCh1AAoJELSic+t+oim9pzUP/ivBi4h7u2tDtwgePJRXxXCd
-WhYf7fViJXEWoy23nO8AbXOMy8y+TW1R+tSk3UMN+uBhuv4Rscul68HnEUXr36PN
-Qyx7m6PEY0tphQPdLdxf7oqAbJJgeIMvp+tQP4AkoTAVlRWzztO8Qtql29mowHP7
-YvakqGTcIZC7N24q5GKvNKpVeuuS2gBXDE9v1a/LDaY6bE6GJp32cwo5sYd/cd3W
-CBmLzD+oyeA/fS5JiI0JbQb5nl+Za+Y62niPZH2YbBdsJCe2rmURyePII++o3r0w
-dSbUx2uPPVwCm4yqnhWv3ML+zcVMR3Dd19uqlGh9WS0JSLRS4T1T0FzdLpl4F4jJ
-2DVKqsgcr9tT1ocG2zOVPqWw1ilACWET4ZRFhZNeLEjekKaT/BjpCZYmiXYfvi90
-l38Z6GGdbEqVcGGmwWmjLrk5wmoEvRf5K8f+6++EpKok6RW7GRG4gdHuud2gIV3q
-Va+5WAFN+7YqRc4OeHxUPF+c94qJ7ei6yYWmBvxo008/9ZtiblCdYfJEPo0sBBDW
-eWyrVimJcFOZDhKfVDFvNH/7A2eoghrlGriKKilMbwj6KtxLHnrPsKaTQTbtHTQN
-GONM10c9qqKh2undyxSCFWe/+9sJqYz3lJlL/VRE9Pf2iSvNNeOoWTNitRn76svZ
-QgjVmffGcd7VAtnRVJHW
-=a9Uk
------END PGP SIGNATURE-----
-
---f6nK9RR+X1IX2pXa--
