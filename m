@@ -1,100 +1,89 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 09 Jul 2014 13:12:41 +0000
-Subject: [PATCH v5 5/8] ARM: shmobile: lager-reference: Enable CMT0 in device tree
-Message-Id: <1404911564-17380-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 15 Jul 2014 09:16:36 +0000
+Subject: [PATCH 6/8] ARM: shmobile: armadillo800eva-reference: Initialise SCIF device using DT
+Message-Id: <c4fac6f2f92331fa5788811357f8b8c3352e5ad8.1405398515.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404911564-17380-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1404911564-17380-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1405398515.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1405398515.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-No more device needs to be added from platform code when booting the
-reference platform, remove the now empty r8a7790_add_dt_devices()
-function completely.
+Initialise SCIF device using DT when booting armadillo800eva
+using DT reference.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts            | 4 ++++
- arch/arm/mach-shmobile/board-lager-reference.c | 2 --
- arch/arm/mach-shmobile/r8a7790.h               | 1 -
- arch/arm/mach-shmobile/setup-r8a7790.c         | 7 +------
- 4 files changed, 5 insertions(+), 9 deletions(-)
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 14 +++++++++++---
+ arch/arm/mach-shmobile/setup-r8a7740.c                  |  8 ++++----
+ 2 files changed, 15 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 544202b..d22cee4 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -252,6 +252,10 @@
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index ba2e180..ee9e7d5 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -19,6 +19,10 @@
+ 	model = "armadillo 800 eva reference";
+ 	compatible = "renesas,armadillo800eva-reference", "renesas,r8a7740";
+ 
++	aliases {
++		serial1 = &scifa1;
++	};
++
+ 	chosen {
+ 		bootargs = "console=tty0 console=ttySC1,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
  	};
+@@ -202,9 +206,6 @@
  };
  
-+&cmt0 {
-+	status = "ok";
+ &pfc {
+-	pinctrl-0 = <&scifa1_pins>;
+-	pinctrl-names = "default";
+-
+ 	ether_pins: ether {
+ 		renesas,groups = "gether_mii", "gether_int";
+ 		renesas,function = "gether";
+@@ -256,6 +257,13 @@
+ 	status = "okay";
+ };
+ 
++&scifa1 {
++	pinctrl-0 = <&scifa1_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
 +};
 +
- &mmcif1 {
- 	pinctrl-0 = <&mmc1_pins>;
+ &sdhi0 {
+ 	pinctrl-0 = <&sdhi0_pins>;
  	pinctrl-names = "default";
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 41c808e..2a05c02 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -92,7 +92,6 @@ static void __init lager_add_du_device(void)
-  * devices until they get moved to DT.
-  */
- static const struct clk_name clk_names[] __initconst = {
--	{ "cmt0", "fck", "sh-cmt-48-gen2.0" },
- 	{ "du0", "du.0", "rcar-du-r8a7790" },
- 	{ "du1", "du.1", "rcar-du-r8a7790" },
- 	{ "du2", "du.2", "rcar-du-r8a7790" },
-@@ -103,7 +102,6 @@ static const struct clk_name clk_names[] __initconst = {
- static void __init lager_add_standard_devices(void)
- {
- 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
--	r8a7790_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 
- 	lager_add_du_device();
-diff --git a/arch/arm/mach-shmobile/r8a7790.h b/arch/arm/mach-shmobile/r8a7790.h
-index 459827f..388f051 100644
---- a/arch/arm/mach-shmobile/r8a7790.h
-+++ b/arch/arm/mach-shmobile/r8a7790.h
-@@ -27,7 +27,6 @@ enum {
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 35dec23..d0f51f1 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -310,6 +310,10 @@ static struct platform_device ipmmu_device = {
  };
  
- void r8a7790_add_standard_devices(void);
--void r8a7790_add_dt_devices(void);
- void r8a7790_clock_init(void);
- void r8a7790_pinmux_init(void);
- void r8a7790_pm_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index c37d82d..4795c98 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -282,11 +282,6 @@ static struct resource cmt0_resources[] = {
- 					  &cmt##idx##_platform_data,	\
- 					  sizeof(struct sh_timer_config))
- 
--void __init r8a7790_add_dt_devices(void)
--{
--	r8a7790_register_cmt(0);
--}
+ static struct platform_device *r8a7740_devices_dt[] __initdata = {
++	&cmt1_device,
++};
++
++static struct platform_device *r8a7740_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+ 	&scif2_device,
+@@ -319,10 +323,6 @@ static struct platform_device *r8a7740_devices_dt[] __initdata = {
+ 	&scif6_device,
+ 	&scif7_device,
+ 	&scif8_device,
+-	&cmt1_device,
+-};
 -
- void __init r8a7790_add_standard_devices(void)
- {
- 	r8a7790_register_scif(0);
-@@ -299,7 +294,7 @@ void __init r8a7790_add_standard_devices(void)
- 	r8a7790_register_scif(7);
- 	r8a7790_register_scif(8);
- 	r8a7790_register_scif(9);
--	r8a7790_add_dt_devices();
-+	r8a7790_register_cmt(0);
- 	r8a7790_register_irqc(0);
- 	r8a7790_register_thermal();
- 	r8a7790_register_i2c(0);
+-static struct platform_device *r8a7740_early_devices[] __initdata = {
+ 	&irqpin0_device,
+ 	&irqpin1_device,
+ 	&irqpin2_device,
 -- 
-1.8.5.5
+2.0.0
 
