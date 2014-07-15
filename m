@@ -1,129 +1,54 @@
-From: Vivek Gautam <gautam.vivek@samsung.com>
-Date: Mon, 07 Jul 2014 04:57:49 +0000
-Subject: Re: [PATCH v3] usb: hcd: add generic PHY support
-Message-Id: <CAFp+6iGt60wCXOV-1aH8fVg023KPaaZL4dgDocTpv5XJngLqmw@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 15 Jul 2014 22:45:12 +0000
+Subject: [PATCH 02/11] mmc: sh_mmcif: Fix DMA slave address configuration
+Message-Id: <1405464321-4723-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <538891DC.605@renesas.com>
-In-Reply-To: <538891DC.605@renesas.com>
+References: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Ian Molton <ian.molton@codethink.co.uk>
 
-Hi,
+Commit e5a233cb647d749de2f188477c9a54b94d90477f ("mmc: sh_mmcif:
+Factorize DMA channel request and configuration code") incorrectly
+set the destination address for both slave channels instead of setting
+the source address for the receive channel. Fix that.
 
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/mmc/host/sh_mmcif.c | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
 
-On Sat, Jul 5, 2014 at 4:56 AM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> Hello.
->
->
-> On 06/25/2014 02:32 PM, Vivek Gautam wrote:
->
->>>  From Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->
->
->>> Add the generic PHY support, analogous to the USB PHY support. Intended
->>> it to be
->>> used with the PCI EHCI/OHCI drivers and the xHCI platform driver.
->
->
->>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->>> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
->>> ---
->>> This patch is against the 'usb-next' branch of Greg KH's 'usb.git' repo.
->>> (commit id = 70d2f61fc7559df3d5be32a9d01efdb9ee1b11d8)
->
->
->>> Changes in version 3:
->>>   - rebased the current usb-next.
->>>   - I tested this patch on my R-Car H2 USB 3.0 driver (not merged yet)
->
->
->>>   drivers/usb/core/hcd.c  |   42
->>> ++++++++++++++++++++++++++++++++++++++++--
->>>   include/linux/usb/hcd.h |    3 ++-
->>>   2 files changed, 42 insertions(+), 3 deletions(-)
->
->
->>> diff --git a/drivers/usb/core/hcd.c b/drivers/usb/core/hcd.c
->>> index bec31e2..2841149 100644
->>> --- a/drivers/usb/core/hcd.c
->>> +++ b/drivers/usb/core/hcd.c
->
-> [...]
->
->>> @@ -2649,6 +2650,29 @@ int usb_add_hcd(struct usb_hcd *hcd,
->>>                  }
->>>          }
->>>
->>> +       if (IS_ENABLED(CONFIG_GENERIC_PHY)) {
->>> +               struct phy *phy = phy_get(hcd->self.controller, "usb");
->
->
->> The xHCI host controller is going to have two controllers (main and
->> shared) USB2 controller and
->> USB3 controller. So they will have two different PHYs.
->
->
->    Not necessarily -- in my case there's going be one PHY, even for xHCI.
-
-ok.
-
->
->
->> For example, the DWC3, which has a xHCI controller, has to have 2
->> different phys -- usb2-phy and usb3-phy.
->
->
->    Yes, I understood that.
->
->
->> So, how the two 'hcd's' will be able to differentiate and get two separate
->> PHYs.
->
->
->    Apparently, by name? I don't see any other way...
-
-true, by name string only.
-
->
->
->> Unfortunately, the xHCI with DWC3 doesn't have a device node too, so
->> it needs to have
->> a way out to look up the PHYs (in a way suggested by Heikki :
->>      usb: dwc3: host: convey the PHYs to xhci
->>      (https://lkml.org/lkml/2014/6/5/585) and related patch series.
->> But this also has an issue, since we need to have two separate
->> constant strings to distinguish between the two PHYs,
->> while creating the lookup table.
->
->
->    I'm sorry, where's the issue?
-
-i actually thought of the phy_get() in core/hcd.c, where we would need
-more than one
-name string for different PHYs. But now things are clear after your explanation.
-
->
->
->> So how do you suggest me to get link the two PHYs in DWC3 with the
->> XHCI host controller, the issue which i am
->> facing currently while working with the patch:
->> usb: host: xhci-plat: Add support to get PHYs    and the related patch
->> series, since we need to handle PHY from the hcd.
->
->
->    Well, I've already spoke out in another thread: you'll have to carry on
-> with your approach, ignoring the patch starting this thread. I'm sorry for
-> side-tracking you...
-
-Thanks Sergei for clearing my doubts and the confusion.
-
-
-
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 656fbba..436d663 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -386,7 +386,7 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
+ 			 struct sh_mmcif_plat_data *pdata,
+ 			 enum dma_transfer_direction direction)
+ {
+-	struct dma_slave_config cfg;
++	struct dma_slave_config cfg = { 0, };
+ 	struct dma_chan *chan;
+ 	unsigned int slave_id;
+ 	struct resource *res;
+@@ -417,8 +417,12 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
+ 	/* In the OF case the driver will get the slave ID from the DT */
+ 	cfg.slave_id = slave_id;
+ 	cfg.direction = direction;
+-	cfg.dst_addr = res->start + MMCIF_CE_DATA;
+-	cfg.src_addr = 0;
++
++	if (direction = DMA_DEV_TO_MEM)
++		cfg.src_addr = res->start + MMCIF_CE_DATA;
++	else
++		cfg.dst_addr = res->start + MMCIF_CE_DATA;
++
+ 	ret = dmaengine_slave_config(chan, &cfg);
+ 	if (ret < 0) {
+ 		dma_release_channel(chan);
 -- 
-Best Regards
-Vivek Gautam
-Samsung R&D Institute, Bangalore
-India
+1.8.5.5
+
