@@ -1,46 +1,74 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 22 Jul 2014 05:35:07 +0000
-Subject: [PATCH 09/10] mmc: tmio: remove SCLKEN bit setting from tmio_mmc_set_clock()
-Message-Id: <871ttehs6v.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 15 Jul 2014 10:51:07 +0000
+Subject: [PATCH 2/3] dma: rcar-audmapp: don't keep audmapp_slave_config for each channeles
+Message-Id: <75bfa5f60a368b1ccacaf71bfc0376b8d9eb2e9f.1405401560.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
-	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
-	<53AD638C.5060907@renesas.com>
-	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Ian Molton <ian@mnementh.co.uk>, Chris Ball <cjb@laptop.org>
-Cc: TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, ryo.kataoka.wt@renesas.com, shinobu.uehara.xc@renesas.com, kouei.abe.cp@renesas.com
+To: linux-sh@vger.kernel.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-TMIO clock is set via tmio_mmc_set_clock() -> tmio_mmc_clk_start(),
-and SCLKEN bit will be set on tmio_mmc_clk_start().
-It is not needed on tmio_mmc_set_clock() function.
-The required clock setting will not be able to set
-in some clocks without this patch.
+Current audmapp driver is keeping audmapp_slave_config
+for each channeles, but, nessasary information is only "chcr".
+Current style (= keeping audmapp_slave_config) is
+not good match for DT support.
+Keep "chcr" instead of audmapp_slave_config
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |    1 -
- 1 file changed, 1 deletion(-)
+ drivers/dma/sh/rcar-audmapp.c | 12 +++---------
+ 1 file changed, 3 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index b19d0cd..da3c74d 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -150,7 +150,6 @@ static void tmio_mmc_set_clock(struct tmio_mmc_host *host, int new_clock)
- 		for (clock = host->mmc->f_min, clk = 0x80000080;
- 			new_clock >= (clock<<1); clk >>= 1)
- 			clock <<= 1;
--		clk |= 0x100;
- 	}
+diff --git a/drivers/dma/sh/rcar-audmapp.c b/drivers/dma/sh/rcar-audmapp.c
+index 858483b..dd00775 100644
+--- a/drivers/dma/sh/rcar-audmapp.c
++++ b/drivers/dma/sh/rcar-audmapp.c
+@@ -45,9 +45,9 @@
  
- 	if (host->set_clk_div)
+ struct audmapp_chan {
+ 	struct shdma_chan shdma_chan;
+-	struct audmapp_slave_config *config;
+ 	void __iomem *base;
+ 	dma_addr_t slave_addr;
++	u32 chcr;
+ };
+ 
+ struct audmapp_device {
+@@ -103,9 +103,8 @@ static void audmapp_start_xfer(struct shdma_chan *schan,
+ 	struct audmapp_chan *auchan = to_chan(schan);
+ 	struct audmapp_device *audev = to_dev(auchan);
+ 	struct audmapp_desc *desc = to_desc(sdesc);
+-	struct audmapp_slave_config *cfg = auchan->config;
+ 	struct device *dev = audev->dev;
+-	u32 chcr = cfg->chcr | PDMACHCR_DE;
++	u32 chcr = auchan->chcr | PDMACHCR_DE;
+ 
+ 	dev_dbg(dev, "src/dst/chcr = %pad/%pad/%08x\n",
+ 		&desc->src, &desc->dst, chcr);
+@@ -145,7 +144,7 @@ static int audmapp_set_slave(struct shdma_chan *schan, int slave_id,
+ 	if (try)
+ 		return 0;
+ 
+-	auchan->config	= cfg;
++	auchan->chcr	= cfg->chcr;
+ 	auchan->slave_addr = slave_addr ? : cfg->dst;
+ 
+ 	return 0;
+@@ -156,11 +155,6 @@ static int audmapp_desc_setup(struct shdma_chan *schan,
+ 			      dma_addr_t src, dma_addr_t dst, size_t *len)
+ {
+ 	struct audmapp_desc *desc = to_desc(sdesc);
+-	struct audmapp_chan *auchan = to_chan(schan);
+-	struct audmapp_slave_config *cfg = auchan->config;
+-
+-	if (!cfg)
+-		return -ENODEV;
+ 
+ 	if (*len > (size_t)AUDMAPP_LEN_MAX)
+ 		*len = (size_t)AUDMAPP_LEN_MAX;
 -- 
-1.7.9.5
+2.0.0
 
