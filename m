@@ -1,40 +1,38 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 30 Jul 2014 23:33:17 +0000
-Subject: [PATCH 08/09] ARM: shmobile: Add shmobile_init_late() to APE6EVM
-Message-Id: <20140730233317.5969.91454.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 15 Jul 2014 22:45:16 +0000
+Subject: [PATCH 06/11] ARM: shmobile: r8a7790: Rename mmcif node to mmc
+Message-Id: <1405464321-4723-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Ian Molton <ian.molton@codethink.co.uk>, devicetree@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Node names should describe the function of the device, not its IP core
+name.
 
-Extend board specific APE6EVM reference machine vectors to include
-shmobile_init_late() so Suspend-to-RAM and CPUIdle are setup as expected.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Cc: devicetree@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ arch/arm/boot/dts/r8a7790.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- arch/arm/mach-shmobile/board-ape6evm-reference.c |    1 +
- arch/arm/mach-shmobile/board-ape6evm.c           |    1 +
- 2 files changed, 2 insertions(+)
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 0f15f7c..4fae298 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -356,7 +356,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	mmcif0: mmcif@ee200000 {
++	mmcif0: mmc@ee200000 {
+ 		compatible = "renesas,mmcif-r8a7790", "renesas,sh-mmcif";
+ 		reg = <0 0xee200000 0 0x80>;
+ 		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
+-- 
+1.8.5.5
 
---- 0001/arch/arm/mach-shmobile/board-ape6evm-reference.c
-+++ work/arch/arm/mach-shmobile/board-ape6evm-reference.c	2014-07-31 07:59:04.000000000 +0900
-@@ -61,5 +61,6 @@ static const char *ape6evm_boards_compat
- DT_MACHINE_START(APE6EVM_DT, "ape6evm")
- 	.init_early	= r8a73a4_init_early,
- 	.init_machine	= ape6evm_add_standard_devices,
-+	.init_late	= shmobile_init_late,
- 	.dt_compat	= ape6evm_boards_compat_dt,
- MACHINE_END
---- 0001/arch/arm/mach-shmobile/board-ape6evm.c
-+++ work/arch/arm/mach-shmobile/board-ape6evm.c	2014-07-31 08:01:40.000000000 +0900
-@@ -285,5 +285,6 @@ static const char *ape6evm_boards_compat
- DT_MACHINE_START(APE6EVM_DT, "ape6evm")
- 	.init_early	= r8a73a4_init_early,
- 	.init_machine	= ape6evm_add_standard_devices,
-+	.init_late	= shmobile_init_late,
- 	.dt_compat	= ape6evm_boards_compat_dt,
- MACHINE_END
