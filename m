@@ -1,68 +1,46 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 07 Jul 2014 07:54:39 +0000
-Subject: [PATCH v2 14/30] ARM: shmobile: r8a73a4: Remove empty r8a73a4_add_dt_devices
-Message-Id: <1404719695-1634-15-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 15 Jul 2014 22:45:18 +0000
+Subject: [PATCH 08/11] ARM: shmobile: r8a7790: Reference DMA channels in MMCIF DT nodes
+Message-Id: <1405464321-4723-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+References: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Ian Molton <ian.molton@codethink.co.uk>
 
-r8a73a4_add_dt_devices() no longer enables any devices
-so remove it.
+Add references to the transmit and receive DMA channels in the two
+MMCIF nodes.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v2
-* First post
----
- arch/arm/mach-shmobile/board-ape6evm-reference.c | 1 -
- arch/arm/mach-shmobile/r8a73a4.h                 | 1 -
- arch/arm/mach-shmobile/setup-r8a73a4.c           | 4 ----
- 3 files changed, 6 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-ape6evm-reference.c b/arch/arm/mach-shmobile/board-ape6evm-reference.c
-index 2f7723e..f0aef6dc 100644
---- a/arch/arm/mach-shmobile/board-ape6evm-reference.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm-reference.c
-@@ -48,7 +48,6 @@ static void __init ape6evm_add_standard_devices(void)
- 	clk_put(parent);
- 	clk_put(mp);
- 
--	r8a73a4_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 	platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
- }
-diff --git a/arch/arm/mach-shmobile/r8a73a4.h b/arch/arm/mach-shmobile/r8a73a4.h
-index ce8bdd1..7ced9ab 100644
---- a/arch/arm/mach-shmobile/r8a73a4.h
-+++ b/arch/arm/mach-shmobile/r8a73a4.h
-@@ -11,7 +11,6 @@ enum {
- };
- 
- void r8a73a4_add_standard_devices(void);
--void r8a73a4_add_dt_devices(void);
- void r8a73a4_clock_init(void);
- void r8a73a4_pinmux_init(void);
- void r8a73a4_init_early(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index 10e3f14..372cce4 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -187,10 +187,6 @@ static struct resource cmt1_resources[] = {
- 					  &cmt##idx##_platform_data,	\
- 					  sizeof(struct sh_timer_config))
- 
--void __init r8a73a4_add_dt_devices(void)
--{
--}
--
- /* DMA */
- static const struct sh_dmae_slave_config dma_slaves[] = {
- 	{
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 4fae298..465008a 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -361,6 +361,8 @@
+ 		reg = <0 0xee200000 0 0x80>;
+ 		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_MMCIF0>;
++		dmas = <&dmac0 0xd1>, <&dmac0 0xd2>;
++		dma-names = "tx", "rx";
+ 		reg-io-width = <4>;
+ 		status = "disabled";
+ 	};
+@@ -370,6 +372,8 @@
+ 		reg = <0 0xee220000 0 0x80>;
+ 		interrupts = <0 170 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_MMCIF1>;
++		dmas = <&dmac0 0xe1>, <&dmac0 0xe2>;
++		dma-names = "tx", "rx";
+ 		reg-io-width = <4>;
+ 		status = "disabled";
+ 	};
 -- 
-2.0.0.rc2
+1.8.5.5
 
