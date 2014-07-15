@@ -1,81 +1,89 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 22 Jul 2014 22:24:23 +0000
-Subject: [PATCH v3] ARM: shmobile: r8a7790: link PCI USB devices to USB PHY
-Message-Id: <201407230224.24152.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 15 Jul 2014 09:16:38 +0000
+Subject: [PATCH 8/8] ARM: shmobile: kzm9g-reference: Initialise SCIF device using DT
+Message-Id: <700ce7c2bb2a4963472d95eba1436d6b0945918e.1405398515.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1405398515.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1405398515.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Describe the PCI USB devices that are behind the PCI bridges, adding necessary
-links to the USB PHY device.
+Initialise SCIF device using DT when booting armadillo800eva
+using DT reference.
 
-Based on the original work by Ben Dooks <ben.dooks@codethink.co.uk>.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-This patch is against 'renesas-devel-v3.16-rc5-20140722' tag of Simon Horman's
-'renesas.git' repo plus R8A7790/Lager USB PHY support patches posted before.
-The patch requires the USB PHY driver, and USB HCD generic PHY support (also
-already posted) in order to work.
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 14 +++++++++++---
+ arch/arm/mach-shmobile/setup-sh73a0.c        |  8 ++++----
+ 2 files changed, 15 insertions(+), 7 deletions(-)
 
-Changes in version 3:
-- adjusted "phys" properties in the PCI OHCI/EHCI device nodes;
-- resolved rejects.
-
-Changes in version 2:
-- renamed the PCI OHCI/EHCI device nodes to comply with the PCI binding;
-- changed the PHY specifier in the PCI#2 node to reflect that channel #1 support
-  was dropped;
-- resolved rejects, refreshed the patch.
-
- arch/arm/boot/dts/r8a7790.dtsi |   28 ++++++++++++++++++++++++++++
- 1 file changed, 28 insertions(+)
-
-Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7790.dtsi
-@@ -999,6 +999,20 @@
- 		interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
- 				 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
- 				 0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
-+
-+		usb@0,1 {
-+			reg = <0x800 0 0 0 0>;
-+			device_type = "pci";
-+			phys = <&usb0 0>;
-+			phy-names = "usb";
-+		};
-+
-+		usb@0,2 {
-+			reg = <0x1000 0 0 0 0>;
-+			device_type = "pci";
-+			phys = <&usb0 0>;
-+			phy-names = "usb";
-+		};
- 	};
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 838f93e4..18662ae 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -21,6 +21,10 @@
+ 	model = "KZM-A9-GT";
+ 	compatible = "renesas,kzm9g-reference", "renesas,sh73a0";
  
- 	pci1: pci@ee0b0000 {
-@@ -1039,6 +1053,20 @@
- 		interrupt-map = <0x0000 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
- 				 0x0800 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
- 				 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
++	aliases {
++		serial4 = &scifa4;
++	};
 +
-+		usb@0,1 {
-+			reg = <0x800 0 0 0 0>;
-+			device_type = "pci";
-+			phys = <&usb2 0>;
-+			phy-names = "usb";
-+		};
-+
-+		usb@0,2 {
-+			reg = <0x1000 0 0 0 0>;
-+			device_type = "pci";
-+			phys = <&usb2 0>;
-+			phy-names = "usb";
-+		};
- 	};
+ 	cpus {
+ 		cpu@0 {
+ 			cpu0-supply = <&vdd_dvfs>;
+@@ -276,9 +280,6 @@
+ };
  
- 	pciec: pcie@fe000000 {
+ &pfc {
+-	pinctrl-0 = <&scifa4_pins>;
+-	pinctrl-names = "default";
+-
+ 	i2c3_pins: i2c3 {
+ 		renesas,groups = "i2c3_1";
+ 		renesas,function = "i2c3";
+@@ -318,6 +319,13 @@
+ 	};
+ };
+ 
++&scifa4 {
++	pinctrl-0 = <&scifa4_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
+ &sdhi0 {
+ 	pinctrl-0 = <&sdhi0_pins>;
+ 	pinctrl-names = "default";
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index ad00724..2e1e289 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -696,6 +696,10 @@ static struct platform_device irqpin3_device = {
+ };
+ 
+ static struct platform_device *sh73a0_devices_dt[] __initdata = {
++	&cmt1_device,
++};
++
++static struct platform_device *sh73a0_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+ 	&scif2_device,
+@@ -705,10 +709,6 @@ static struct platform_device *sh73a0_devices_dt[] __initdata = {
+ 	&scif6_device,
+ 	&scif7_device,
+ 	&scif8_device,
+-	&cmt1_device,
+-};
+-
+-static struct platform_device *sh73a0_early_devices[] __initdata = {
+ 	&tmu0_device,
+ 	&ipmmu_device,
+ };
+-- 
+2.0.0
+
