@@ -1,58 +1,67 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 30 Jul 2014 22:04:16 +0000
-Subject: [PATCH v3 2/3] ARM: shmobile: r8a7791: add CAN DT support
-Message-Id: <201407310204.17423.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 15 Jul 2014 09:16:27 +0000
+Subject: [PATCH 3/4] ARM: shmobile: r8a7740: correct SCI clock support for DT
+Message-Id: <d1ec90f2875471df2c954f7cbd45b2389ff86aa2.1405398284.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201407310158.15446.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201407310158.15446.sergei.shtylyov@cogentembedded.com>
+References: <cover.1405398284.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1405398284.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Define the generic R8A7791 parts of the CAN0/1 device nodes.
+When initialising SCI devices their names will be .serial
+not .sci.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+This will be used when initialising SCI devices using DT
+until common clock framework support is added.
 
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes in version 3:
-- added 2 more CAN clocks along with "clock-names" property in the CAN0/1 device
-  nodes;
-- refreshed the patch.
+ arch/arm/mach-shmobile/clock-r8a7740.c | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
 
-Changes in version 2:
-- fixed the "compatible" property in the CAN device nodes.
-
- arch/arm/boot/dts/r8a7791.dtsi |   20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
-
-Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7791.dtsi
-@@ -550,6 +550,26 @@
- 		status = "disabled";
- 	};
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 50931e3..68592b7 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -555,27 +555,27 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_ceu.1",	&mstp_clks[MSTP128]),
  
-+	can0: can@e6e80000 {
-+		compatible = "renesas,can-r8a7791";
-+		reg = <0 0xe6e80000 0 0x1000>;
-+		interrupts = <0 186 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7791_CLK_RCAN0>,
-+		       	 <&cpg_clocks R8A7791_CLK_RCAN>, <&can_clk>;
-+		clock-names = "clkp1", "clkp2", "can_clk";
-+		status = "disabled";
-+	};
-+
-+	can1: can@e6e88000 {
-+		compatible = "renesas,can-r8a7791";
-+		reg = <0 0xe6e88000 0 0x1000>;
-+		interrupts = <0 187 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7791_CLK_RCAN1>,
-+		       	 <&cpg_clocks R8A7791_CLK_RCAN>, <&can_clk>;
-+		clock-names = "clkp1", "clkp2", "can_clk";
-+		status = "disabled";
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
+ 	CLKDEV_DEV_ID("sh-sci.4",		&mstp_clks[MSTP200]),
+-	CLKDEV_DEV_ID("e6c80000.sci",		&mstp_clks[MSTP200]),
++	CLKDEV_DEV_ID("e6c80000.serial",	&mstp_clks[MSTP200]),
+ 	CLKDEV_DEV_ID("sh-sci.3",		&mstp_clks[MSTP201]),
+-	CLKDEV_DEV_ID("e6c70000.sci",		&mstp_clks[MSTP201]),
++	CLKDEV_DEV_ID("e6c70000.serial",	&mstp_clks[MSTP201]),
+ 	CLKDEV_DEV_ID("sh-sci.2",		&mstp_clks[MSTP202]),
+-	CLKDEV_DEV_ID("e6c60000.sci",		&mstp_clks[MSTP202]),
++	CLKDEV_DEV_ID("e6c60000.serial",	&mstp_clks[MSTP202]),
+ 	CLKDEV_DEV_ID("sh-sci.1",		&mstp_clks[MSTP203]),
+-	CLKDEV_DEV_ID("e6c50000.sci",		&mstp_clks[MSTP203]),
++	CLKDEV_DEV_ID("e6c50000.serial",	&mstp_clks[MSTP203]),
+ 	CLKDEV_DEV_ID("sh-sci.0",		&mstp_clks[MSTP204]),
+-	CLKDEV_DEV_ID("e6c40000.sci",		&mstp_clks[MSTP204]),
++	CLKDEV_DEV_ID("e6c40000.serial",	&mstp_clks[MSTP204]),
+ 	CLKDEV_DEV_ID("sh-sci.8",		&mstp_clks[MSTP206]),
+-	CLKDEV_DEV_ID("e6c30000.sci",		&mstp_clks[MSTP206]),
++	CLKDEV_DEV_ID("e6c30000.serial",	&mstp_clks[MSTP206]),
+ 	CLKDEV_DEV_ID("sh-sci.5",		&mstp_clks[MSTP207]),
+-	CLKDEV_DEV_ID("e6cb0000.sci",		&mstp_clks[MSTP207]),
++	CLKDEV_DEV_ID("e6cb0000.serial",	&mstp_clks[MSTP207]),
+ 	CLKDEV_DEV_ID("sh-dma-engine.3",	&mstp_clks[MSTP214]),
+ 	CLKDEV_DEV_ID("sh-dma-engine.2",	&mstp_clks[MSTP216]),
+ 	CLKDEV_DEV_ID("sh-dma-engine.1",	&mstp_clks[MSTP217]),
+ 	CLKDEV_DEV_ID("sh-dma-engine.0",	&mstp_clks[MSTP218]),
+ 	CLKDEV_DEV_ID("sh-sci.7",		&mstp_clks[MSTP222]),
+-	CLKDEV_DEV_ID("e6cd0000.sci",		&mstp_clks[MSTP222]),
++	CLKDEV_DEV_ID("e6cd0000.serial",	&mstp_clks[MSTP222]),
+ 	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
+-	CLKDEV_DEV_ID("e6cc0000.sci",		&mstp_clks[MSTP230]),
++	CLKDEV_DEV_ID("e6cc0000.serial",	&mstp_clks[MSTP230]),
+ 
+ 	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
+ 	CLKDEV_DEV_ID("fe1f0000.sound",		&mstp_clks[MSTP328]),
+-- 
+2.0.0
+
