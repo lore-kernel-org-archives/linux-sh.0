@@ -1,80 +1,91 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Jul 2014 00:28:46 +0000
-Subject: [PATCH 6/8] ARM: shmobile: Allow r8a7790 to build non-SMP APMU code
-Message-Id: <06f2c5dcc24b026872bfc9b50b47c384638d2111.1404174157.git.horms+renesas@verge.net.au>
+Date: Tue, 15 Jul 2014 09:16:32 +0000
+Subject: [PATCH 2/8] ARM: shmobile: bockw-reference: Initialise SCIF device using DT
+Message-Id: <5be97ca4a4f6e11c4a839ec3c08dea25589dfeb4.1405398515.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1404174157.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1404174157.git.horms+renesas@verge.net.au>
+References: <cover.1405398515.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1405398515.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Initialise SCIF device using DT when booting bockw
+using DT reference.
 
-Build the APMU for r8a7790 even though SMP is
-disabled in the kernel config. Also initialize
-Suspend-to-RAM from pm-r8a7790.c to in the future
-cover both UP and SMP use cases of the APMU.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Makefile      | 5 +++--
- arch/arm/mach-shmobile/pm-r8a7790.c  | 1 +
- arch/arm/mach-shmobile/smp-r8a7790.c | 1 -
- 3 files changed, 4 insertions(+), 3 deletions(-)
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts | 14 +++++++++++---
+ arch/arm/mach-shmobile/setup-r8a7778.c        | 12 ++++++------
+ 2 files changed, 17 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 279d3f3..08f5952 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -36,12 +36,13 @@ endif
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index f76f6ec..3342c74 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -23,6 +23,10 @@
+ 	model = "bockw";
+ 	compatible = "renesas,bockw-reference", "renesas,r8a7778";
  
- # CPU reset vector handling objects
- cpu-y				:= platsmp.o headsmp.o
-+cpu-$(CONFIG_ARCH_R8A7790)	+= platsmp-apmu.o
++	aliases {
++		serial0 = &scif0;
++	};
++
+ 	chosen {
+ 		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
+ 	};
+@@ -70,9 +74,6 @@
+ };
  
- # SMP objects
- smp-y				:= $(cpu-y)
- smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o platsmp-scu.o
- smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o platsmp-scu.o
--smp-$(CONFIG_ARCH_R8A7790)	+= smp-r8a7790.o platsmp-apmu.o
-+smp-$(CONFIG_ARCH_R8A7790)	+= smp-r8a7790.o
- smp-$(CONFIG_ARCH_R8A7791)	+= smp-r8a7791.o platsmp-apmu.o
- smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o platsmp-scu.o
+ &pfc {
+-	pinctrl-0 = <&scif0_pins>;
+-	pinctrl-names = "default";
+-
+ 	scif0_pins: serial0 {
+ 		renesas,groups = "scif0_data_a", "scif0_ctrl";
+ 		renesas,function = "scif0";
+@@ -124,3 +125,10 @@
+ 		};
+ 	};
+ };
++
++&scif0 {
++	pinctrl-0 = <&scif0_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index d311ef9..3d5a5ae 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -292,12 +292,6 @@ void __init r8a7778_add_dt_devices(void)
+ 	}
+ #endif
  
-@@ -52,7 +53,7 @@ obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o pm-rmobile.o
- obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
- obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
- obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o pm-rcar.o
--obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o
-+obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o $(cpu-y)
- obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o
- 
- # IRQ objects
-diff --git a/arch/arm/mach-shmobile/pm-r8a7790.c b/arch/arm/mach-shmobile/pm-r8a7790.c
-index 4289b38..2f3c250 100644
---- a/arch/arm/mach-shmobile/pm-r8a7790.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7790.c
-@@ -78,4 +78,5 @@ void __init r8a7790_pm_init(void)
- 	iounmap(p);
- 
- 	r8a7790_sysc_init();
-+	shmobile_smp_apmu_suspend_init();
+-	r8a7778_register_scif(0);
+-	r8a7778_register_scif(1);
+-	r8a7778_register_scif(2);
+-	r8a7778_register_scif(3);
+-	r8a7778_register_scif(4);
+-	r8a7778_register_scif(5);
+ 	r8a7778_register_tmu(0);
  }
-diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
-index 81ba906..1e254f9 100644
---- a/arch/arm/mach-shmobile/smp-r8a7790.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7790.c
-@@ -39,7 +39,6 @@ static void __init r8a7790_smp_prepare_cpus(unsigned int max_cpus)
  
- 	/* turn on power to SCU */
- 	r8a7790_pm_init();
--	shmobile_smp_apmu_suspend_init();
- 	rcar_sysc_power_up(&r8a7790_ca15_scu);
- 	rcar_sysc_power_up(&r8a7790_ca7_scu);
- }
+@@ -506,6 +500,12 @@ static void __init r8a7778_register_hpb_dmae(void)
+ void __init r8a7778_add_standard_devices(void)
+ {
+ 	r8a7778_add_dt_devices();
++	r8a7778_register_scif(0);
++	r8a7778_register_scif(1);
++	r8a7778_register_scif(2);
++	r8a7778_register_scif(3);
++	r8a7778_register_scif(4);
++	r8a7778_register_scif(5);
+ 	r8a7778_register_i2c(0);
+ 	r8a7778_register_i2c(1);
+ 	r8a7778_register_i2c(2);
 -- 
-2.0.0.rc2
+2.0.0
 
