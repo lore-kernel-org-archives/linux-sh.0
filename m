@@ -1,28 +1,45 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 10 Jul 2014 09:25:00 +0000
-Subject: Re: [PATCH 06/13] sh-pfc: Add renesas,pfc-r8a7791 to binding documentation
-Message-Id: <CACRpkdahKzxttYMUgy0mXY_TtKdupPAi+52wc95JkET8+um2WQ@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 15 Jul 2014 09:16:26 +0000
+Subject: [PATCH 2/4] ARM: shmobile: r8a73a4: add SCI clock support for DT
+Message-Id: <9947efaac0545fd833b0ff5147578aba79d297bc.1405398284.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404908623-909-1-git-send-email-geert+renesas@glider.be>
-	<1404908623-909-7-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1404908623-909-7-git-send-email-geert+renesas@glider.be>
+References: <cover.1405398284.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1405398284.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jul 9, 2014 at 2:23 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
+This will be used when initialising SCI devices using DT
+until common clock framework support is added.
 
-> The driver already supports the r8a7791 SoC, and "renesas,pfc-r8a7791"
-> is already in use.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Cc: Linus Walleij <linus.walleij@linaro.org>
-> Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a73a4.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-Patch applied with Laurent's ACK.
+diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
+index b5bc22c..1d2fe05 100644
+--- a/arch/arm/mach-shmobile/clock-r8a73a4.c
++++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
+@@ -574,11 +574,17 @@ static struct clk_lookup lookups[] = {
+ 
+ 	/* MSTP */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
++	CLKDEV_DEV_ID("e6c40000.serial", &mstp_clks[MSTP204]),
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
++	CLKDEV_DEV_ID("e6c50000.serial", &mstp_clks[MSTP203]),
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]),
++	CLKDEV_DEV_ID("e6c20000.serial", &mstp_clks[MSTP206]),
+ 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP207]),
++	CLKDEV_DEV_ID("e6c30000.serial", &mstp_clks[MSTP207]),
+ 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP216]),
++	CLKDEV_DEV_ID("e6ce0000.serial", &mstp_clks[MSTP216]),
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP217]),
++	CLKDEV_DEV_ID("e6cf0000.serial", &mstp_clks[MSTP217]),
+ 	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP218]),
+ 	CLKDEV_DEV_ID("e6700020.dma-controller", &mstp_clks[MSTP218]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+-- 
+2.0.0
 
-Yours,
-Linus Walleij
