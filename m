@@ -1,152 +1,51 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 15 Jul 2014 07:29:24 +0000
-Subject: [PATCH] ARM: shmobile: genmai: remove defconfig
-Message-Id: <1405409364-23378-1-git-send-email-horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 15 Jul 2014 07:54:40 +0000
+Subject: Re: [PATCH] ARM: shmobile: genmai: remove defconfig
+Message-Id: <20140715075440.GA2764@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="cNdxnHkX5QqsyA0e"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <1405409364-23378-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1405409364-23378-1-git-send-email-horms+renesas@verge.net.au>
 To: linux-arm-kernel@lists.infradead.org
 
-The genmai board code is scheduled for removal and once
-that occurs the defconfig will be of no use. Remove it.
 
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/configs/genmai_defconfig | 122 --------------------------------------
- 1 file changed, 122 deletions(-)
- delete mode 100644 arch/arm/configs/genmai_defconfig
+--cNdxnHkX5QqsyA0e
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-diff --git a/arch/arm/configs/genmai_defconfig b/arch/arm/configs/genmai_defconfig
-deleted file mode 100644
-index d238faf..0000000
---- a/arch/arm/configs/genmai_defconfig
-+++ /dev/null
-@@ -1,122 +0,0 @@
--CONFIG_SYSVIPC=y
--CONFIG_NO_HZ=y
--CONFIG_IKCONFIG=y
--CONFIG_IKCONFIG_PROC=y
--CONFIG_LOG_BUF_SHIFT
--CONFIG_CC_OPTIMIZE_FOR_SIZE=y
--CONFIG_SYSCTL_SYSCALL=y
--CONFIG_EMBEDDED=y
--CONFIG_PERF_EVENTS=y
--CONFIG_SLAB=y
--# CONFIG_LBDAF is not set
--# CONFIG_BLK_DEV_BSG is not set
--# CONFIG_IOSCHED_DEADLINE is not set
--# CONFIG_IOSCHED_CFQ is not set
--CONFIG_ARCH_SHMOBILE_LEGACY=y
--CONFIG_ARCH_R7S72100=y
--CONFIG_MACH_GENMAI=y
--# CONFIG_SH_TIMER_CMT is not set
--# CONFIG_SH_TIMER_MTU2 is not set
--# CONFIG_SH_TIMER_TMU is not set
--# CONFIG_EM_TIMER_STI is not set
--CONFIG_ARM_ERRATA_430973=y
--CONFIG_ARM_ERRATA_458693=y
--CONFIG_ARM_ERRATA_460075=y
--CONFIG_ARM_ERRATA_743622=y
--CONFIG_ARM_ERRATA_754322=y
--CONFIG_AEABI=y
--# CONFIG_OABI_COMPAT is not set
--CONFIG_FORCE_MAX_ZONEORDER
--CONFIG_ZBOOT_ROM_TEXT=0x0
--CONFIG_ZBOOT_ROM_BSS=0x0
--CONFIG_ARM_APPENDED_DTB=y
--CONFIG_KEXEC=y
--CONFIG_AUTO_ZRELADDR=y
--CONFIG_VFP=y
--CONFIG_NEON=y
--# CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
--CONFIG_PM_RUNTIME=y
--CONFIG_NET=y
--CONFIG_PACKET=y
--CONFIG_UNIX=y
--CONFIG_INET=y
--CONFIG_IP_PNP=y
--CONFIG_IP_PNP_DHCP=y
--# CONFIG_INET_XFRM_MODE_TRANSPORT is not set
--# CONFIG_INET_XFRM_MODE_TUNNEL is not set
--# CONFIG_INET_XFRM_MODE_BEET is not set
--# CONFIG_INET_LRO is not set
--# CONFIG_INET_DIAG is not set
--# CONFIG_IPV6 is not set
--# CONFIG_WIRELESS is not set
--CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
--CONFIG_DEVTMPFS=y
--CONFIG_DEVTMPFS_MOUNT=y
--CONFIG_EEPROM_AT24=y
--CONFIG_NETDEVICES=y
--# CONFIG_NET_CORE is not set
--# CONFIG_NET_VENDOR_ARC is not set
--# CONFIG_NET_CADENCE is not set
--# CONFIG_NET_VENDOR_BROADCOM is not set
--# CONFIG_NET_VENDOR_CIRRUS is not set
--# CONFIG_NET_VENDOR_FARADAY is not set
--# CONFIG_NET_VENDOR_INTEL is not set
--# CONFIG_NET_VENDOR_MARVELL is not set
--# CONFIG_NET_VENDOR_MICREL is not set
--# CONFIG_NET_VENDOR_NATSEMI is not set
--CONFIG_SH_ETH=y
--# CONFIG_NET_VENDOR_SEEQ is not set
--# CONFIG_NET_VENDOR_SMSC is not set
--# CONFIG_NET_VENDOR_STMICRO is not set
--# CONFIG_NET_VENDOR_VIA is not set
--# CONFIG_NET_VENDOR_WIZNET is not set
--# CONFIG_WLAN is not set
--# CONFIG_INPUT_MOUSEDEV_PSAUX is not set
--CONFIG_INPUT_EVDEV=y
--# CONFIG_KEYBOARD_ATKBD is not set
--# CONFIG_INPUT_MOUSE is not set
--# CONFIG_SERIO is not set
--# CONFIG_LEGACY_PTYS is not set
--CONFIG_SERIAL_SH_SCI=y
--CONFIG_SERIAL_SH_SCI_NR_UARTS
--CONFIG_SERIAL_SH_SCI_CONSOLE=y
--# CONFIG_HW_RANDOM is not set
--CONFIG_I2C_CHARDEV=y
--CONFIG_I2C_RIIC=y
--CONFIG_SPI=y
--CONFIG_SPI_RSPI=y
--# CONFIG_HWMON is not set
--CONFIG_THERMAL=y
--CONFIG_RCAR_THERMAL=y
--CONFIG_REGULATOR=y
--CONFIG_REGULATOR_FIXED_VOLTAGE=y
--CONFIG_DRM=y
--CONFIG_DRM_RCAR_DU=y
--# CONFIG_USB_SUPPORT is not set
--CONFIG_MMC=y
--CONFIG_MMC_SDHI=y
--CONFIG_MMC_SH_MMCIF=y
--CONFIG_NEW_LEDS=y
--CONFIG_LEDS_CLASS=y
--CONFIG_RTC_CLASS=y
--CONFIG_DMADEVICES=y
--CONFIG_SH_DMAE=y
--# CONFIG_IOMMU_SUPPORT is not set
--# CONFIG_DNOTIFY is not set
--CONFIG_MSDOS_FS=y
--CONFIG_VFAT_FS=y
--CONFIG_TMPFS=y
--CONFIG_CONFIGFS_FS=y
--# CONFIG_MISC_FILESYSTEMS is not set
--CONFIG_NFS_FS=y
--CONFIG_NFS_V3_ACL=y
--CONFIG_NFS_V4=y
--CONFIG_NFS_V4_1=y
--CONFIG_ROOT_NFS=y
--CONFIG_NLS_CODEPAGE_437=y
--CONFIG_NLS_ISO8859_1=y
--# CONFIG_ENABLE_WARN_DEPRECATED is not set
--# CONFIG_ENABLE_MUST_CHECK is not set
--# CONFIG_ARM_UNWIND is not set
--# CONFIG_CRYPTO_ANSI_CPRNG is not set
--# CONFIG_CRYPTO_HW is not set
--- 
-2.0.0
+On Tue, Jul 15, 2014 at 04:29:24PM +0900, Simon Horman wrote:
+> The genmai board code is scheduled for removal and once
+> that occurs the defconfig will be of no use. Remove it.
+>=20
+> Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> Cc: Wolfram Sang <wsa+renesas@sang-engineering.com>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
+Acked-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+
+
+--cNdxnHkX5QqsyA0e
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJTxN5AAAoJEBQN5MwUoCm2yIcQAIeLKGbR4ziZQwet/SlEYm7B
+pAWqVFSHyfnAHQp7WcyU+FovEBoOBqrX4d1sQDagnpjxZZq+KSLCS8bvKKg/j8o/
+nf4bN5adBuTZwS9DUHg/L2TRWSCZHVc34776hSt2zx7cMhHrO61VkkxbpUvSBBW7
+ZSeNmMsvnVDBr5ko43HBwXnxKSMz7sZHO70qGZ2gbX/4N0N+UG2Qv7RP6KtwH+nu
+J7lbN8gIpljUEh1CHr8GxRRCQPcqMwtsYqwD0buVSaZq3AmV+AKVk5PeM6LDQzyq
+Wb0vLtcyHf6JxsHDPhcwBuN7JMomuoCwZAh378ipxhTE26FF0Eq0UZHGhGa+S+Yr
+vGYx7PHR9x/TdKDTXq10UJzQnTQAbGymj4tj0VrrA0RYB02v33XqbabJN5SkkF0Q
+QvYWbaR3ngrVCiUbWb5Uf7lvwIUSk0PVWEfBwG+uexA9K9X6HskVMUNEYOF77BI0
+GN2guAeLLh8teHRA40YWf06KLGXzqw1cJ/CY/WVaW+I7JsiM29/px0zX/knOpLAr
+dyP8fMFDqzR0Xid8EpLnC7uDBBy0P7UMH5RaX2P0/EBpAHp+JKnJB6nfNxQGOZ+M
+5LWE01zIZ/A/XJj0OqKlesEJclIRmxlW0QssSEqzW2rTvhBZimvbih9GAitn5pBp
+O2NTq0qEt1oUG/x2UKkY
+=gfrN
+-----END PGP SIGNATURE-----
+
+--cNdxnHkX5QqsyA0e--
