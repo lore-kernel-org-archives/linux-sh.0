@@ -1,79 +1,64 @@
-From: Grygorii Strashko <grygorii.strashko@ti.com>
-Date: Fri, 25 Jul 2014 17:47:48 +0000
-Subject: [RFC PATCH 0/3] PM / clock_ops: allow to specify custom pm_clk_notifier callback
-Message-Id: <1406313096-29761-1-git-send-email-grygorii.strashko@ti.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 15 Jul 2014 22:45:11 +0000
+Subject: [PATCH 01/11] mmc: sh_mmcif: Document DT bindings
+Message-Id: <1405464321-4723-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Ian Molton <ian.molton@codethink.co.uk>, devicetree@vger.kernel.org
 
-Hi,
+The sh-mmcif driver implements DT support but the bindings are not
+documented. Document them.
 
-The CLK PM domain (clock_ops.c) assumes that platform code should always provide
-list of Connection IDs of the clock (con_id) in pm_clk_notifier_block structure.
-Then CLK PM domain uses these con_ids to setup list of clocks per device.
+Cc: devicetree@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ .../devicetree/bindings/mmc/renesas,mmcif.txt      | 32 ++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
 
-Such approach is inconvenient when devices can have different number
-of clocks. For example, if maximum number of clocks used by
-devices is 4 the pm_clk_notifier_block structure will look like:
-
-static struct pm_clk_notifier_block platform_domain_notifier = {
-	.pm_domain = &keystone_pm_domain,
-	.con_ids = { "fck", "opt1", "opt2", "opt3", NULL },
-};
-
-More over, clocks in DT have to be named using only above con_ids:
-	clocks = <&paclk13>, <&clkcpgmac>, <&chipclk12>;
-	clock-names = "fck", "opt1", "opt2";
-
-It makes hard to enable/support Runtime PM in case when some HW modules are used
-by different SoCs or there are few version of the same SoC, because clock trees
-can be changed significantly in all such cases.
-
-This patch set allows to specify custom pm_clk_notifier callback from
-platform code and in such way makes CLK PM domain initialization
-more flexible. Also, It updates Keystone 2 platform code to provide custom
-callback which fills list of clocks for Device with all clocks assigned to this
-Device in DT.
-More over, It's safe for Keystone 2 to perform CLK PM domain initialization
-at device's binding time instead of device's creation time.
-
-I've posted these patches because I need fully enable Runtime PM on Keystone 2
-where all HW modules are controlled using clocks only. That's why CLK PM domain 
-fits our needs perfectly. Also, on Keystone 2 clocks are initialized early and
-they are available at device creation time. The main problems from my side are:
- - every time when support for new HW modules is added the ".con_ids" array 
-   need to be checked and updated;
- - restriction for clock's names in DT - to be named using only above con_ids
-   It's ugly.
-
-I hope, this approach to be accepted at least as temporal solution until 
-the generic solution is not found.
-
-Thanks for your comments!
-
-PS: patch 1 was reused from [1].
-
-Regards,
--grygorii
-
-[1] Previously, same problem was discussed in, but no final solution was accepted:
- "[PATCH/RFC 0/4] of: Register clocks for Runtime PM with PM core"
- https://lkml.org/lkml/2014/4/24/1118
-
-Geert Uytterhoeven (1):
-  PM / clock_ops: Add pm_clk_add_clk()
-
-Grygorii Strashko (2):
-  PM / clock_ops: allow to specify custom pm_clk_notifier callback
-  ARM: keystone: pm_domain: setup clk pm domain clocks from DT
-
- arch/arm/mach-keystone/pm_domain.c |   46 ++++++++++++++++++++++++++++++++++++
- drivers/base/power/clock_ops.c     |   43 ++++++++++++++++++++++++---------
- include/linux/pm_clock.h           |    3 +++
- 3 files changed, 81 insertions(+), 11 deletions(-)
-
+diff --git a/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt b/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
+new file mode 100644
+index 0000000..299081f
+--- /dev/null
++++ b/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
+@@ -0,0 +1,32 @@
++* Renesas Multi Media Card Interface (MMCIF) Controller
++
++This file documents differences between the core properties in mmc.txt
++and the properties used by the MMCIF device.
++
++
++Required properties:
++
++- compatible: must contain one of the following
++	- "renesas,mmcif-r8a7740" for the MMCIF found in r8a7740 SoCs
++	- "renesas,mmcif-r8a7790" for the MMCIF found in r8a7790 SoCs
++	- "renesas,mmcif-r8a7791" for the MMCIF found in r8a7791 SoCs
++	- "renesas,sh-mmcif" for the generic MMCIF
++
++- clocks: reference to the functional clock
++
++- dmas: reference to the DMA channels, one per channel name listed in the
++  dma-names property.
++- dma-names: must contain "tx" for the transmit DMA channel and "rx" for the
++  receive DMA channel.
++
++
++Example: R8A7790 (R-Car H2) MMCIF0
++
++	mmcif0: mmc@ee200000 {
++		compatible = "renesas,mmcif-r8a7790", "renesas,sh-mmcif";
++		reg = <0 0xee200000 0 0x80>;
++		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_MMCIF0>;
++		dmas = <&dmac0 0xd1>, <&dmac0 0xd2>;
++		dma-names = "tx", "rx";
++	};
 -- 
-1.7.9.5
+1.8.5.5
 
