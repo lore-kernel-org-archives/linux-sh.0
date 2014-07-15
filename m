@@ -1,7 +1,7 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Tue, 15 Jul 2014 05:43:46 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 15 Jul 2014 07:44:06 +0000
 Subject: Re: [PATCH v3] dmaengine: inherit debug settings from the subsystem for subdirectories
-Message-Id: <20140715053146.GF4387@intel.com>
+Message-Id: <20140715074400.GA17806@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1405370846-13986-1-git-send-email-wsa@the-dreams.de>
 In-Reply-To: <1405370846-13986-1-git-send-email-wsa@the-dreams.de>
@@ -10,39 +10,43 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Jul 15, 2014 at 01:15:45PM +0900, Simon Horman wrote:
-> On Mon, Jul 14, 2014 at 10:47:26PM +0200, Wolfram Sang wrote:
-> > From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+On Tue, Jul 15, 2014 at 11:01:46AM +0530, Vinod Koul wrote:
+> On Tue, Jul 15, 2014 at 01:15:45PM +0900, Simon Horman wrote:
+> > On Mon, Jul 14, 2014 at 10:47:26PM +0200, Wolfram Sang wrote:
+> > > From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+> > > 
+> > > To be able to see debug messages during boot, enable the debug settings
+> > > from Kconfig also for drivers in subdirectories.
 > > 
-> > To be able to see debug messages during boot, enable the debug settings
-> > from Kconfig also for drivers in subdirectories.
+> > Thanks, I have added this to the shdma-for-v3.17 branch.
+> Sorry, but this belong to dmaengine tree!
+
+Thanks, I will drop it.
+
+> -- 
+> ~Vinod
 > 
-> Thanks, I have added this to the shdma-for-v3.17 branch.
-Sorry, but this belong to dmaengine tree!
-
--- 
-~Vinod
-
+> > 
+> > > Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+> > > ---
+> > >  drivers/dma/Makefile | 4 ++--
+> > >  1 file changed, 2 insertions(+), 2 deletions(-)
+> > > 
+> > > diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
+> > > index c779e1eb2db2..aca5eb577d44 100644
+> > > --- a/drivers/dma/Makefile
+> > > +++ b/drivers/dma/Makefile
+> > > @@ -1,5 +1,5 @@
+> > > -ccflags-$(CONFIG_DMADEVICES_DEBUG)  := -DDEBUG
+> > > -ccflags-$(CONFIG_DMADEVICES_VDEBUG) += -DVERBOSE_DEBUG
+> > > +subdir-ccflags-$(CONFIG_DMADEVICES_DEBUG)  := -DDEBUG
+> > > +subdir-ccflags-$(CONFIG_DMADEVICES_VDEBUG) += -DVERBOSE_DEBUG
+> > >  
+> > >  obj-$(CONFIG_DMA_ENGINE) += dmaengine.o
+> > >  obj-$(CONFIG_DMA_VIRTUAL_CHANNELS) += virt-dma.o
+> > > -- 
+> > > 2.0.0
+> > > 
 > 
-> > Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> > ---
-> >  drivers/dma/Makefile | 4 ++--
-> >  1 file changed, 2 insertions(+), 2 deletions(-)
-> > 
-> > diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
-> > index c779e1eb2db2..aca5eb577d44 100644
-> > --- a/drivers/dma/Makefile
-> > +++ b/drivers/dma/Makefile
-> > @@ -1,5 +1,5 @@
-> > -ccflags-$(CONFIG_DMADEVICES_DEBUG)  := -DDEBUG
-> > -ccflags-$(CONFIG_DMADEVICES_VDEBUG) += -DVERBOSE_DEBUG
-> > +subdir-ccflags-$(CONFIG_DMADEVICES_DEBUG)  := -DDEBUG
-> > +subdir-ccflags-$(CONFIG_DMADEVICES_VDEBUG) += -DVERBOSE_DEBUG
-> >  
-> >  obj-$(CONFIG_DMA_ENGINE) += dmaengine.o
-> >  obj-$(CONFIG_DMA_VIRTUAL_CHANNELS) += virt-dma.o
-> > -- 
-> > 2.0.0
-> > 
-
--- 
+> -- 
+> 
