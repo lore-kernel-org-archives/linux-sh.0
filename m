@@ -1,39 +1,93 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 07 Jul 2014 07:54:53 +0000
-Subject: [PATCH v2 28/30] ARM: shmobile: sh73a0: add CMT1 clock support for DT
-Message-Id: <1404719695-1634-29-git-send-email-horms+renesas@verge.net.au>
+Date: Tue, 15 Jul 2014 09:16:34 +0000
+Subject: [PATCH 4/8] ARM: shmobile: ape6evm-reference: Initialise SCIF device using DT
+Message-Id: <27bc82353a3f214a383d7f3b1ccaefdb70d6c94f.1405398515.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1405398515.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1405398515.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This will be used when initialising CMT1 device using DT
-until common clock framework support is added.
+Initialise SCIF device using DT when booting ape6evm
+using DT reference.
 
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
 ---
-v2
-* First post
----
- arch/arm/mach-shmobile/clock-sh73a0.c | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts | 14 +++++++++++---
+ arch/arm/mach-shmobile/setup-r8a73a4.c          | 12 ++++++------
+ 2 files changed, 17 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index 9433a4e..d8c4048 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -690,6 +690,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.0", &dsi0phy_clk),
- 	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.1", &dsi1phy_clk),
- 	CLKDEV_ICK_ID("fck", "sh-cmt-48.1", &mstp_clks[MSTP329]), /* CMT1 */
-+	CLKDEV_ICK_ID("fck", "e6138000.timer", &mstp_clks[MSTP329]), /* CMT1 */
- 	CLKDEV_ICK_ID("fck", "sh-tmu.0", &mstp_clks[MSTP125]), /* TMU0 */
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+index 70b1fff..a860f32 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+@@ -16,6 +16,10 @@
+ 	model = "APE6EVM";
+ 	compatible = "renesas,ape6evm-reference", "renesas,r8a73a4";
+ 
++	aliases {
++		serial0 = &scifa0;
++	};
++
+ 	chosen {
+ 		bootargs = "console=ttySC0,115200 ignore_loglevel rw";
+ 	};
+@@ -90,9 +94,6 @@
  };
  
+ &pfc {
+-	pinctrl-0 = <&scifa0_pins>;
+-	pinctrl-names = "default";
+-
+ 	scifa0_pins: serial0 {
+ 		renesas,groups = "scifa0_data";
+ 		renesas,function = "scifa0";
+@@ -123,6 +124,13 @@
+ 	status = "okay";
+ };
+ 
++&scifa0 {
++	pinctrl-0 = <&scifa0_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
+ &sdhi0 {
+ 	vmmc-supply = <&vcc_sdhi0>;
+ 	bus-width = <4>;
+diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
+index 9333770..e84b6a5 100644
+--- a/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
+@@ -187,12 +187,6 @@ static struct resource cmt1_resources[] = {
+ 
+ void __init r8a73a4_add_dt_devices(void)
+ {
+-	r8a73a4_register_scif(0);
+-	r8a73a4_register_scif(1);
+-	r8a73a4_register_scif(2);
+-	r8a73a4_register_scif(3);
+-	r8a73a4_register_scif(4);
+-	r8a73a4_register_scif(5);
+ 	r8a7790_register_cmt(1);
+ }
+ 
+@@ -287,6 +281,12 @@ static struct resource dma_resources[] = {
+ void __init r8a73a4_add_standard_devices(void)
+ {
+ 	r8a73a4_add_dt_devices();
++	r8a73a4_register_scif(0);
++	r8a73a4_register_scif(1);
++	r8a73a4_register_scif(2);
++	r8a73a4_register_scif(3);
++	r8a73a4_register_scif(4);
++	r8a73a4_register_scif(5);
+ 	r8a73a4_register_irqc(0);
+ 	r8a73a4_register_irqc(1);
+ 	r8a73a4_register_thermal();
 -- 
-2.0.0.rc2
+2.0.0
 
