@@ -1,36 +1,31 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 07 Jul 2014 06:50:08 +0000
-Subject: [PATCH 1/2] ARM: shmobile: armadillo800eva-reference: Remove early_printk from command line
-Message-Id: <1404715809-31331-2-git-send-email-horms+renesas@verge.net.au>
+From: Bjorn Helgaas <bhelgaas@google.com>
+Date: Tue, 15 Jul 2014 22:56:45 +0000
+Subject: [PATCH 1/2] PCI: generic: Fix GPL v2 license string typo
+Message-Id: <20140715225645.22578.64865.stgit@bhelgaas-glaptop.roam.corp.google.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404715809-31331-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1404715809-31331-1-git-send-email-horms+renesas@verge.net.au>
+References: <20140715225503.22578.32174.stgit@bhelgaas-glaptop.roam.corp.google.com>
+In-Reply-To: <20140715225503.22578.32174.stgit@bhelgaas-glaptop.roam.corp.google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-As early printk is not supported when devices are initialised
-using DT, so remove it from the command line.
+The proper MODULE_LICENSE() string for the GPL v2 is "GPL v2", not "GPLv2".
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Based-on-work-by: Thierry Reding <treding@nvidia.com>
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 2 +-
+ drivers/pci/host/pci-host-generic.c |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index f6ef73f..ba2e180 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -20,7 +20,7 @@
- 	compatible = "renesas,armadillo800eva-reference", "renesas,r8a7740";
+diff --git a/drivers/pci/host/pci-host-generic.c b/drivers/pci/host/pci-host-generic.c
+index 44fe6aa6a43f..3d2076f59911 100644
+--- a/drivers/pci/host/pci-host-generic.c
++++ b/drivers/pci/host/pci-host-generic.c
+@@ -385,4 +385,4 @@ module_platform_driver(gen_pci_driver);
  
- 	chosen {
--		bootargs = "console=tty0 console=ttySC1,115200 earlyprintk=sh-sci.1,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
-+		bootargs = "console=tty0 console=ttySC1,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
- 	};
- 
- 	memory {
--- 
-2.0.0.rc2
+ MODULE_DESCRIPTION("Generic PCI host driver");
+ MODULE_AUTHOR("Will Deacon <will.deacon@arm.com>");
+-MODULE_LICENSE("GPLv2");
++MODULE_LICENSE("GPL v2");
 
