@@ -1,46 +1,46 @@
-From: Grant Likely <grant.likely@secretlab.ca>
-Date: Mon, 28 Jul 2014 14:05:33 +0000
-Subject: Re: [RFC PATCH 2/2] of/clk: use "clkops-clocks" to specify clocks handled by clock_ops domain
-Message-Id: <20140728140533.6E916C4116F@trevor.secretlab.ca>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 15 Jul 2014 20:18:40 +0000
+Subject: [PATCH 5/7] ARM: shmobile: r8a7790: Add DMAC clocks to DT
+Message-Id: <1405455522-20676-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
- <1402592023-13416-1-git-send-email-grygorii.strashko@ti.com>
- <1402592023-13416-3-git-send-email-grygorii.strashko@ti.com>
-In-Reply-To: <1402592023-13416-3-git-send-email-grygorii.strashko@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, 12 Jun 2014 19:53:43 +0300, Grygorii Strashko <grygorii.strashko@ti.com> wrote:
-> Use "clkops-clocks" property to specify clocks handled by
-> clock_ops domain PM domain. Only clocks defined in "clkops-clocks"
-> set of clocks will be handled by Runtime PM through clock_ops
-> Pm domain.
-> 
-> Signed-off-by: Grygorii Strashko <grygorii.strashko@ti.com>
-> ---
->  drivers/of/of_clk.c |    7 ++-----
->  1 file changed, 2 insertions(+), 5 deletions(-)
-> 
-> diff --git a/drivers/of/of_clk.c b/drivers/of/of_clk.c
-> index 35f5e9f..5f9b90e 100644
-> --- a/drivers/of/of_clk.c
-> +++ b/drivers/of/of_clk.c
-> @@ -86,11 +86,8 @@ int of_clk_register_runtime_pm_clocks(struct device_node *np,
->  	struct clk *clk;
->  	int error;
->  
-> -	for (i = 0; (clk = of_clk_get(np, i)) && !IS_ERR(clk); i++) {
-> -		if (!clk_may_runtime_pm(clk)) {
-> -			clk_put(clk);
-> -			continue;
-> -		}
-> +	for (i = 0; (clk = of_clk_get_from_set(np, "clkops", i)) &&
-> +		     !IS_ERR(clk); i++) {
+Add the SYS-DMAC0 and SYS-DMAC1 clocks to the MSTP2 clock node. They
+will be used by the upcoming DMAC DT nodes.
 
-This really looks like an ABI break to me. What happens to all the
-existing platforms who don't have this new clkops-clocks in their device
-tree?
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
-g.
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index d9ddecb..220662f 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -758,16 +758,19 @@
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150138 0 4>, <0 0xe6150040 0 4>;
+ 			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
+-				 <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>;
++				 <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&zs_clk>,
++				 <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7790_CLK_SCIFA2 R8A7790_CLK_SCIFA1 R8A7790_CLK_SCIFA0
+ 				R8A7790_CLK_MSIOF2 R8A7790_CLK_SCIFB0 R8A7790_CLK_SCIFB1
+ 				R8A7790_CLK_MSIOF1 R8A7790_CLK_MSIOF3 R8A7790_CLK_SCIFB2
++				R8A7790_CLK_SYS_DMAC1 R8A7790_CLK_SYS_DMAC0
+ 			>;
+ 			clock-output-names  				"scifa2", "scifa1", "scifa0", "msiof2", "scifb0",
+-				"scifb1", "msiof1", "msiof3", "scifb2";
++				"scifb1", "msiof1", "msiof3", "scifb2",
++				"sys-dmac1", "sys-dmac0";
+ 		};
+ 		mstp3_clks: mstp3_clks@e615013c {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+-- 
+1.8.5.5
+
