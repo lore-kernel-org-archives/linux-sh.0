@@ -1,47 +1,37 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 11 Jul 2014 08:32:09 +0000
-Subject: Re: [PATCH] dma: sh: inherit debug options from the subsystem for sh
-Message-Id: <20140711083208.GA12420@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 15 Jul 2014 22:45:15 +0000
+Subject: [PATCH 05/11] mmc: tmio: Fix DMA source address
+Message-Id: <1405464321-4723-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404033022-3014-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1404033022-3014-1-git-send-email-wsa@the-dreams.de>
+References: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Ian Molton <ian.molton@codethink.co.uk>
 
-On Thu, Jul 10, 2014 at 05:42:13PM +0200, Laurent Pinchart wrote:
-> Hi Vinod,
-> 
-> On Thursday 10 July 2014 20:39:29 Vinod Koul wrote:
-> > On Thu, Jul 10, 2014 at 02:25:58PM +0200, Laurent Pinchart wrote:
-> > > On Thursday 03 July 2014 10:48:34 Wolfram Sang wrote:
-> > > > Hi,
-> > > > 
-> > > > > With dynamic debug, these flags dont make much sense unless you want
-> > > > > something to be printed *always* during boot.
-> > > > 
-> > > > Yes, this was exactly what I wanted.
-> > > 
-> > > Why is that ? My understanding is that the purpose of the
-> > > CONFIG_DMADEVICES_DEBUG option is to enable debug messages for debugging.
-> > > As it requires recompiling the kernel, wouldn't dynamic printk be a
-> > > better alternative ?
-> > 
-> > No it wont. Pls see the discussion.
-> > 
-> > Lots of dmanegine device gets used at boot, so for testing those scenarios
-> > it will help to enable debug!
-> 
-> OK, that's the point I've missed. I agree with the patch then.
+DMA reads from the data buffer register must be offset by 0x2000
+according to the hardware documentation.
 
-Hi,
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/mmc/host/tmio_mmc_dma.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-in order to try and create a smoother path for changes in this area to land
-I have pushed them to the shdma-for-v3.17 branch of my renesas tree
-on kernel.org. It is merged into the devel and next branches of that tree
-and should appear in linux-next in the near future.
-
-My intention is to send a pull-request for this branch once it has sat
-in next for a short time. I hope that this approach is useful to all parties.
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index eb8f1d5..4da7be1 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -312,7 +312,7 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 		if (pdata->dma->chan_priv_rx)
+ 			cfg.slave_id = pdata->dma->slave_id_rx;
+ 		cfg.direction = DMA_DEV_TO_MEM;
+-		cfg.src_addr = cfg.dst_addr;
++		cfg.src_addr = cfg.dst_addr + 0x2000;
+ 		cfg.src_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
+ 		cfg.dst_addr = 0;
+ 		ret = dmaengine_slave_config(host->chan_rx, &cfg);
+-- 
+1.8.5.5
 
