@@ -1,35 +1,55 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Sun, 13 Jul 2014 04:47:30 +0000
-Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC CPUFreq Updates for v3.17
-Message-Id: <20140713044730.GG14206@quad.lixom.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 15 Jul 2014 09:16:22 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Clock Updates for v3.17
+Message-Id: <cover.1405398284.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1405172884.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1405172884.git.horms+renesas@verge.net.au>
+References: <cover.1381222967.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Jul 12, 2014 at 03:53:15PM +0200, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these second round of Renesas ARM based SoC CPUFreq
-> updates for v3.17.
-> 
-> This pull request is based on the previous round of
-> such requests, tagged as renesas-cpufreq-for-v3.17,
-> which I have already sent a pull-request for.
-> 
-> 
-> The following changes since commit 06e32c91dbce3c24ccbe84e3af2a35199662bca0:
-> 
->   ARM: shmobile: add cpufreq-cpu0 driver for common SH-Mobile (2014-06-16 19:50:54 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-cpufreq2-for-v3.17
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Merged, thanks.
+Please consider these second round of Renesas ARM based SoC clock updates for v3.17.
+
+This pull request is based on the previous round of
+such requests, tagged as renesas-clock-for-v3.17,
+which you have already pulled into next/soc.
+
+CCF support for the SoCs in question is being worked on,
+so I expect this code to be a temporary measure.
 
 
--Olof
+The following changes since commit edc8fb1d6ebdfc4efa009073586d3567c3368475:
+
+  ARM: shmobile: Fix device node reference leakage in shmobile_init_delay (2014-06-16 19:52:00 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clock2-for-v3.17
+
+for you to fetch changes up to ff4ce48e1f163d945c037c1c90ce12950961d91d:
+
+  ARM: shmobile: sh73a0: add SCI clock support for DT (2014-07-12 15:15:39 +0200)
+
+----------------------------------------------------------------
+Second Round of Renesas ARM Based SoC Clock Updates for v3.17
+
+* Add legacy clocks for SCI for SoCs that do not yet have CCF support.
+  This is to allow SCI (serial) devices to be enabled using DT and
+  will be removed after CCF support is added for each SoC.
+
+----------------------------------------------------------------
+Simon Horman (4):
+      ARM: shmobile: r8a7778: add SCI clock support for DT
+      ARM: shmobile: r8a73a4: add SCI clock support for DT
+      ARM: shmobile: r8a7740: correct SCI clock support for DT
+      ARM: shmobile: sh73a0: add SCI clock support for DT
+
+ arch/arm/mach-shmobile/clock-r8a73a4.c |  6 ++++++
+ arch/arm/mach-shmobile/clock-r8a7740.c | 18 +++++++++---------
+ arch/arm/mach-shmobile/clock-r8a7778.c |  6 ++++++
+ arch/arm/mach-shmobile/clock-sh73a0.c  |  9 +++++++++
+ 4 files changed, 30 insertions(+), 9 deletions(-)
