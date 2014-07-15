@@ -1,43 +1,26 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 11 Jul 2014 09:16:16 +0000
-Subject: Re: [PATCH 09/13] ARM: shmobile: r8a7779 dtsi: Add SoC-specific thermal compatible property
-Message-Id: <20140711091615.GN12420@verge.net.au>
+From: Bjorn Helgaas <bhelgaas@google.com>
+Date: Tue, 15 Jul 2014 22:56:38 +0000
+Subject: [PATCH 0/2] Fix GPL v2 license string typos
+Message-Id: <20140715225503.22578.32174.stgit@bhelgaas-glaptop.roam.corp.google.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404908623-909-1-git-send-email-geert+renesas@glider.be>
- <1404908623-909-10-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1404908623-909-10-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Magnus Damm <magnus.damm@gmail.com>, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jul 09, 2014 at 02:23:39PM +0200, Geert Uytterhoeven wrote:
-> The thermal node used the generic compatible property only.
-> Add the SoC-specific one, to make it future proof.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Thierry posted similar patches for tegra and mvebu.  These change the rest
+of the occurrences in drivers/pci from:
 
-Thanks, please repost this once the binding has been
-accepted by the maintainer.
+  -MODULE_LICENSE("GPLv2");
+  +MODULE_LICENSE("GPL v2");
 
-> ---
->  arch/arm/boot/dts/r8a7779.dtsi | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-> index 94e2fc836492..aca1f9bd714e 100644
-> --- a/arch/arm/boot/dts/r8a7779.dtsi
-> +++ b/arch/arm/boot/dts/r8a7779.dtsi
-> @@ -262,7 +262,7 @@
->  	};
->  
->  	thermal@ffc48000 {
-> -		compatible = "renesas,rcar-thermal";
-> +		compatible = "renesas,thermal-r8a7779", "renesas,rcar-thermal";
->  		reg = <0xffc48000 0x38>;
->  	};
->  
-> -- 
-> 1.9.1
-> 
+---
+
+Bjorn Helgaas (2):
+      PCI: generic: Fix GPL v2 license string typo
+      PCI: rcar: Fix GPL v2 license string typo
+
+
+ drivers/pci/host/pci-host-generic.c |    2 +-
+ drivers/pci/host/pcie-rcar.c        |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
