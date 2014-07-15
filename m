@@ -1,249 +1,107 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Jul 2014 00:28:36 +0000
-Subject: [PATCH 5/7] ARM: shmobile: Move r8a7790.h
-Message-Id: <fccae89318fda71012f96042dd971a6f9bf0904e.1404173049.git.horms+renesas@verge.net.au>
+Date: Tue, 15 Jul 2014 09:16:37 +0000
+Subject: [PATCH 7/8] ARM: shmobile: sh73a0: Add SCIF nodes
+Message-Id: <2131421b85c9f25082a2b0ec371c7ad0c47cc943.1405398515.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1404173049.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1404173049.git.horms+renesas@verge.net.au>
+References: <cover.1405398515.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1405398515.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+This describes all of the SCIF hardware of the sh73a0.
+Each node is disabled and may be enabled as necessary
+by board DTS files.
 
-Change location of r8a7790.h so it can be included as "r8a7790.h"
-instead of the old style <mach/r8a7790.h>
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-lager-reference.c |  4 ++-
- arch/arm/mach-shmobile/board-lager.c           | 14 +++++-----
- arch/arm/mach-shmobile/clock-r8a7790.c         |  3 ++-
- arch/arm/mach-shmobile/include/mach/r8a7790.h  | 36 --------------------------
- arch/arm/mach-shmobile/pm-r8a7790.c            |  4 ++-
- arch/arm/mach-shmobile/r8a7790.h               | 36 ++++++++++++++++++++++++++
- arch/arm/mach-shmobile/setup-r8a7790.c         |  4 ++-
- arch/arm/mach-shmobile/smp-r8a7790.c           |  4 ++-
- 8 files changed, 58 insertions(+), 47 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/include/mach/r8a7790.h
- create mode 100644 arch/arm/mach-shmobile/r8a7790.h
+ arch/arm/boot/dts/sh73a0.dtsi | 72 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 72 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index e30017b..8dcff51 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -22,11 +22,13 @@
- #include <linux/init.h>
- #include <linux/of_platform.h>
- #include <linux/platform_data/rcar-du.h>
--#include <mach/r8a7790.h>
-+
- #include <asm/mach/arch.h>
-+
- #include "clock.h"
- #include "common.h"
- #include "irqs.h"
-+#include "r8a7790.h"
- #include "rcar-gen2.h"
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 5ecf552..910b790 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -235,6 +235,78 @@
+ 		status = "disabled";
+ 	};
  
- /* DU */
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 72785cc..bfd9e48 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -31,6 +31,8 @@
- #include <linux/mmc/host.h>
- #include <linux/mmc/sh_mmcif.h>
- #include <linux/mmc/sh_mobile_sdhi.h>
-+#include <linux/mtd/partitions.h>
-+#include <linux/mtd/mtd.h>
- #include <linux/pinctrl/machine.h>
- #include <linux/platform_data/camera-rcar.h>
- #include <linux/platform_data/gpio-rcar.h>
-@@ -43,21 +45,21 @@
- #include <linux/regulator/gpio-regulator.h>
- #include <linux/regulator/machine.h>
- #include <linux/sh_eth.h>
-+#include <linux/spi/flash.h>
-+#include <linux/spi/rspi.h>
-+#include <linux/spi/spi.h>
- #include <linux/usb/phy.h>
- #include <linux/usb/renesas_usbhs.h>
--#include <mach/r8a7790.h>
++	scifa0: serial@e6c40000 {
++		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
++		reg = <0xe6c40000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 72 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
 +
- #include <media/soc_camera.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
--#include <linux/mtd/partitions.h>
--#include <linux/mtd/mtd.h>
--#include <linux/spi/flash.h>
--#include <linux/spi/rspi.h>
--#include <linux/spi/spi.h>
- #include <sound/rcar_snd.h>
- #include <sound/simple_card.h>
++	scifa1: serial@e6c50000 {
++		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
++		reg = <0xe6c50000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
 +
- #include "common.h"
- #include "irqs.h"
-+#include "r8a7790.h"
- #include "rcar-gen2.h"
- 
- /*
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index ca98066..17435c1 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -22,9 +22,10 @@
- #include <linux/kernel.h>
- #include <linux/sh_clk.h>
- #include <linux/clkdev.h>
--#include <mach/r8a7790.h>
++	scifa2: serial@e6c60000 {
++		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
++		reg = <0xe6c60000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
 +
- #include "clock.h"
- #include "common.h"
-+#include "r8a7790.h"
- #include "rcar-gen2.h"
- 
- /*
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-deleted file mode 100644
-index 459827f..0000000
---- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
-+++ /dev/null
-@@ -1,36 +0,0 @@
--#ifndef __ASM_R8A7790_H__
--#define __ASM_R8A7790_H__
--
--/* DMA slave IDs */
--enum {
--	RCAR_DMA_SLAVE_INVALID,
--	AUDIO_DMAC_SLAVE_SSI0_TX,
--	AUDIO_DMAC_SLAVE_SSI0_RX,
--	AUDIO_DMAC_SLAVE_SSI1_TX,
--	AUDIO_DMAC_SLAVE_SSI1_RX,
--	AUDIO_DMAC_SLAVE_SSI2_TX,
--	AUDIO_DMAC_SLAVE_SSI2_RX,
--	AUDIO_DMAC_SLAVE_SSI3_TX,
--	AUDIO_DMAC_SLAVE_SSI3_RX,
--	AUDIO_DMAC_SLAVE_SSI4_TX,
--	AUDIO_DMAC_SLAVE_SSI4_RX,
--	AUDIO_DMAC_SLAVE_SSI5_TX,
--	AUDIO_DMAC_SLAVE_SSI5_RX,
--	AUDIO_DMAC_SLAVE_SSI6_TX,
--	AUDIO_DMAC_SLAVE_SSI6_RX,
--	AUDIO_DMAC_SLAVE_SSI7_TX,
--	AUDIO_DMAC_SLAVE_SSI7_RX,
--	AUDIO_DMAC_SLAVE_SSI8_TX,
--	AUDIO_DMAC_SLAVE_SSI8_RX,
--	AUDIO_DMAC_SLAVE_SSI9_TX,
--	AUDIO_DMAC_SLAVE_SSI9_RX,
--};
--
--void r8a7790_add_standard_devices(void);
--void r8a7790_add_dt_devices(void);
--void r8a7790_clock_init(void);
--void r8a7790_pinmux_init(void);
--void r8a7790_pm_init(void);
--extern struct smp_operations r8a7790_smp_ops;
--
--#endif /* __ASM_R8A7790_H__ */
-diff --git a/arch/arm/mach-shmobile/pm-r8a7790.c b/arch/arm/mach-shmobile/pm-r8a7790.c
-index 0f1090d8..8845433 100644
---- a/arch/arm/mach-shmobile/pm-r8a7790.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7790.c
-@@ -11,9 +11,11 @@
-  */
- 
- #include <linux/kernel.h>
++	scifa3: serial@e6c70000 {
++		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
++		reg = <0xe6c70000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
 +
- #include <asm/io.h>
--#include <mach/r8a7790.h>
++	scifa4: serial@e6c80000 {
++		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
++		reg = <0xe6c80000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 78 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
 +
- #include "pm-rcar.h"
-+#include "r8a7790.h"
- 
- /* SYSC */
- #define SYSCIER 0x0c
-diff --git a/arch/arm/mach-shmobile/r8a7790.h b/arch/arm/mach-shmobile/r8a7790.h
-new file mode 100644
-index 0000000..459827f
---- /dev/null
-+++ b/arch/arm/mach-shmobile/r8a7790.h
-@@ -0,0 +1,36 @@
-+#ifndef __ASM_R8A7790_H__
-+#define __ASM_R8A7790_H__
++	scifa5: serial@e6cb0000 {
++		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
++		reg = <0xe6cb0000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 79 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
 +
-+/* DMA slave IDs */
-+enum {
-+	RCAR_DMA_SLAVE_INVALID,
-+	AUDIO_DMAC_SLAVE_SSI0_TX,
-+	AUDIO_DMAC_SLAVE_SSI0_RX,
-+	AUDIO_DMAC_SLAVE_SSI1_TX,
-+	AUDIO_DMAC_SLAVE_SSI1_RX,
-+	AUDIO_DMAC_SLAVE_SSI2_TX,
-+	AUDIO_DMAC_SLAVE_SSI2_RX,
-+	AUDIO_DMAC_SLAVE_SSI3_TX,
-+	AUDIO_DMAC_SLAVE_SSI3_RX,
-+	AUDIO_DMAC_SLAVE_SSI4_TX,
-+	AUDIO_DMAC_SLAVE_SSI4_RX,
-+	AUDIO_DMAC_SLAVE_SSI5_TX,
-+	AUDIO_DMAC_SLAVE_SSI5_RX,
-+	AUDIO_DMAC_SLAVE_SSI6_TX,
-+	AUDIO_DMAC_SLAVE_SSI6_RX,
-+	AUDIO_DMAC_SLAVE_SSI7_TX,
-+	AUDIO_DMAC_SLAVE_SSI7_RX,
-+	AUDIO_DMAC_SLAVE_SSI8_TX,
-+	AUDIO_DMAC_SLAVE_SSI8_RX,
-+	AUDIO_DMAC_SLAVE_SSI9_TX,
-+	AUDIO_DMAC_SLAVE_SSI9_RX,
-+};
++	scifa6: serial@e6cc0000 {
++		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
++		reg = <0xe6cc0000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
 +
-+void r8a7790_add_standard_devices(void);
-+void r8a7790_add_dt_devices(void);
-+void r8a7790_clock_init(void);
-+void r8a7790_pinmux_init(void);
-+void r8a7790_pm_init(void);
-+extern struct smp_operations r8a7790_smp_ops;
++	scifa7: serial@e6cd0000 {
++		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
++		reg = <0xe6cd0000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 143 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
 +
-+#endif /* __ASM_R8A7790_H__ */
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index ee5daccf3..6bf84ec 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -26,11 +26,13 @@
- #include <linux/serial_sci.h>
- #include <linux/sh_dma.h>
- #include <linux/sh_timer.h>
--#include <mach/r8a7790.h>
++	scifb8: serial@e6c30000 {
++		compatible = "renesas,scifb-sh73a0", "renesas,scifb";
++		reg = <0xe6c30000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 80 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
 +
- #include <asm/mach/arch.h>
-+
- #include "common.h"
- #include "dma-register.h"
- #include "irqs.h"
-+#include "r8a7790.h"
- #include "rcar-gen2.h"
- 
- /* Audio-DMAC */
-diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
-index a8ace58..c256fdf 100644
---- a/arch/arm/mach-shmobile/smp-r8a7790.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7790.c
-@@ -17,10 +17,12 @@
- #include <linux/init.h>
- #include <linux/smp.h>
- #include <linux/io.h>
-+
- #include <asm/smp_plat.h>
--#include <mach/r8a7790.h>
-+
- #include "common.h"
- #include "pm-rcar.h"
-+#include "r8a7790.h"
- 
- #define RST		0xe6160000
- #define CA15BAR		0x0020
+ 	pfc: pfc@e6050000 {
+ 		compatible = "renesas,pfc-sh73a0";
+ 		reg = <0xe6050000 0x8000>,
 -- 
-2.0.0.rc2
+2.0.0
 
