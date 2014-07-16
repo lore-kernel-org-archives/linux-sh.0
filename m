@@ -1,93 +1,39 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 02 Jul 2014 21:43:17 +0000
-Subject: Re: [PATCH] rcar_can: add device tree support
-Message-Id: <53B47CF5.4010105@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 16 Jul 2014 00:20:40 +0000
+Subject: [PATCH] ARM: shmobile: sh73a0: Remove spurious 0x from SCIFB clock name
+Message-Id: <1405470040-8328-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201407020227.04235.sergei.shtylyov@cogentembedded.com> <53B33B45.1060205@pengutronix.de>
-In-Reply-To: <53B33B45.1060205@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Marc Kleine-Budde <mkl@pengutronix.de>, netdev@vger.kernel.org, wg@grandegger.com, linux-can@vger.kernel.org, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, grant.likely@linaro.org, devicetree@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, vksavl@gmail.com, rdunlap@infradead.org, linux-doc@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+A stray '0x' crept into a0f7e7496d56ac2d ("ARM: shmobile: sh73a0: add CMT1
+clock support for DT"). This  patch removes it.
 
-On 07/02/2014 02:50 AM, Marc Kleine-Budde wrote:
+This change should not have any run-time affect at this time as
+the clock in question is used by a SCIF device that is not enabled by
+default.
 
->> Add support of the device tree probing for the Renesas R-Car CAN controllers
->> documenting the device tree bindings as necessary.
+Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-sh73a0.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> Please put the DT documentation into a separate patch, make it the first
-
-    OK.
-
-> one. When reposting, please put the device tree mailing list on Cc.
-
-    It was among the To: recipients in this posting; I'm using 
-scripts/get_maintainer.pl to find out the people/lists I should send the 
-patches to.
-
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
->> ---
->> The patch is against the Dave Miller's 'net-next.git' repo ('linux-can-next.git'
->> repo still doesn't have the R-Car CAN driver for some reason).
-
-> Should be fixed now :)
-
-    Indeed, thanks.
-
->>   Documentation/devicetree/bindings/net/can/rcar_can.txt |   40 +++++++++++++++++
->>   drivers/net/can/rcar_can.c                             |   28 +++++++++--
->>   2 files changed, 63 insertions(+), 5 deletions(-)
-
->> Index: net-next/Documentation/devicetree/bindings/net/can/rcar_can.txt
->> =================================>> --- /dev/null
->> +++ net-next/Documentation/devicetree/bindings/net/can/rcar_can.txt
->> @@ -0,0 +1,40 @@
->> +Renesas R-Car CAN controller Device Tree Bindings
->> +-------------------------------------------------
->> +
->> +Required properties:
->> +- compatible: "renesas,can-r8a7778" if CAN controller is a part of R8A7778 SoC.
->> +	      "renesas,can-r8a7779" if CAN controller is a part of R8A7779 SoC.
->> +	      "renesas,can-r8a7790" if CAN controller is a part of R8A7790 SoC.
->> +	      "renesas,can-r8a7791" if CAN controller is a part of R8A7791 SoC.
-
-> AFAIK we usually specify the first SoC with this core as the only
-> compatible.
-
-    The reason we've chosen several SoC specific "compatible" props is that in 
-the SH-Mobile community the maintainers want it this way. There's no version 
-register in the IP blocks and the SoC manuals we have are not considered 
-reliable enough sources of information, so that the compatibility between the 
-different SoCs cannot be reliably established...
-
-[...]
->> Index: net-next/drivers/net/can/rcar_can.c
->> =================================>> --- net-next.orig/drivers/net/can/rcar_can.c
->> +++ net-next/drivers/net/can/rcar_can.c
-[...]
->> @@ -722,13 +723,20 @@ static int rcar_can_probe(struct platfor
->>   	struct net_device *ndev;
->>   	struct resource *mem;
->>   	void __iomem *addr;
->> +	u32 clock_select = 0;
->>   	int err = -ENODEV;
->>   	int irq;
->>
->> -	pdata = dev_get_platdata(&pdev->dev);
->> -	if (!pdata) {
->> -		dev_err(&pdev->dev, "No platform data provided!\n");
->> -		goto fail;
->> +	if (!pdev->dev.of_node) {
-
-> nitpick: please make it positive logic.
-
-    OK, will do.
-
-> Marc
-
-WBR, Sergei
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index d8c4048..02a6f45 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -644,7 +644,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP207]), /* SCIFA5 */
+ 	CLKDEV_DEV_ID("e6cb0000.serial", &mstp_clks[MSTP207]), /* SCIFA5 */
+ 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP206]), /* SCIFB */
+-	CLKDEV_DEV_ID("0xe6c3000.serial", &mstp_clks[MSTP206]), /* SCIFB */
++	CLKDEV_DEV_ID("e6c3000.serial", &mstp_clks[MSTP206]), /* SCIFB */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]), /* SCIFA0 */
+ 	CLKDEV_DEV_ID("e6c40000.serial", &mstp_clks[MSTP204]), /* SCIFA0 */
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]), /* SCIFA1 */
+-- 
+2.0.0
 
