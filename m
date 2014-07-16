@@ -1,33 +1,40 @@
-From: =?ISO-8859-1?Q?Andreas_F=E4rber?= <afaerber@suse.de>
-Date: Thu, 31 Jul 2014 04:07:01 +0000
-Subject: Re: [PATCH repost] ARM: shmobile: sh73a0: Remove spurious 0x from SCIFB clock name
-Message-Id: <53D9C0E5.7040301@suse.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 16 Jul 2014 11:58:56 +0000
+Subject: [PATCH] ARM: shmobile: Remove MACH_GENMAI from Makefile.boot
+Message-Id: <1405511936-6079-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1406766463.git.horms+renesas@verge.net.au>
- <20140731004246.GA31860@verge.net.au>
-In-Reply-To: <20140731004246.GA31860@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-Am 31.07.2014 02:42, schrieb Simon Horman:
-> A stray '0x' crept into a0f7e7496d56ac2d ("ARM: shmobile: sh73a0: add CMT1
-> clock support for DT"). This  patch removes it.
->=20
-> This change should not have any run-time affect at this time as
+The CONFIG_MACH_GENMAI option has been removed in commit bec652e2fbfe
+("ARM: shmobile: r7s72100: genmai: Remove legacy board file"). Remove
+the leftovers from Makefile.boot.
 
-"effect", in case Olof wants to fix it up.
+Reported-by: Paul Bolle <pebolle@tiscali.nl>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/Makefile.boot | 1 -
+ 1 file changed, 1 deletion(-)
 
-> the clock in question is used by a SCIF device that is not enabled by
-> default.
->=20
-> Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Simon, could you please queue this on top of your MACH_GENMAI removal
+branch ?
 
-Cheers,
-Andreas
+diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
+index ebf97d4..a23e155 100644
+--- a/arch/arm/mach-shmobile/Makefile.boot
++++ b/arch/arm/mach-shmobile/Makefile.boot
+@@ -6,7 +6,6 @@ loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
+ loadaddr-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE) += 0x40008000
+ loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
+ loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
+-loadaddr-$(CONFIG_MACH_GENMAI) += 0x08008000
+ loadaddr-$(CONFIG_MACH_KOELSCH) += 0x40008000
+ loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
+ loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
+-- 
+Regards,
 
---=20
-SUSE LINUX Products GmbH, Maxfeldstr. 5, 90409 N=FCrnberg, Germany
-GF: Jeff Hawn, Jennifer Guild, Felix Imend=F6rffer; HRB 16746 AG N=FCrnberg
+Laurent Pinchart
+
