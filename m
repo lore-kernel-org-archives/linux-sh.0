@@ -1,24 +1,36 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 02 Jul 2014 16:23:38 +0000
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Jul 2014 23:59:27 +0000
 Subject: [PATCH 3/3] ARM: shmobile: r7s72100: Remove legacy board support
-Message-Id: <1404318218-4732-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Message-Id: <53b04e7fb3b28517ff86a7ac9fcff86101fe6d5a.1405641497.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1405641497.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1405641497.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
+
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
 There's no legacy board anymore, genmai now boots with multiplatform
 support only. Remove the leftovers.
 
+Makefile.boot portion pointed out by Paul Bolle.
+
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Wolfram Sang <wsa@sang-engineering.com>
+Cc: Paul Bolle <pebolle@tiscali.nl>
+[horms+renesas@verge.net.au: squashed in patch containing
+ Makefile.boot change]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
  arch/arm/mach-shmobile/Kconfig          |   8 --
  arch/arm/mach-shmobile/Makefile         |   1 -
+ arch/arm/mach-shmobile/Makefile.boot    |   1 -
  arch/arm/mach-shmobile/clock-r7s72100.c | 231 --------------------------------
  arch/arm/mach-shmobile/r7s72100.h       |   6 -
  arch/arm/mach-shmobile/setup-r7s72100.c |   2 -
- 5 files changed, 248 deletions(-)
+ 6 files changed, 249 deletions(-)
  delete mode 100644 arch/arm/mach-shmobile/clock-r7s72100.c
  delete mode 100644 arch/arm/mach-shmobile/r7s72100.h
 
@@ -42,7 +54,7 @@ index 85f55e8..384221d 100644
  
  config MACH_APE6EVM
 diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index be5fed2..c7e2ad8 100644
+index 411e236..dc9446f 100644
 --- a/arch/arm/mach-shmobile/Makefile
 +++ b/arch/arm/mach-shmobile/Makefile
 @@ -31,7 +31,6 @@ obj-$(CONFIG_ARCH_R8A7778)	+= clock-r8a7778.o
@@ -53,6 +65,18 @@ index be5fed2..c7e2ad8 100644
  endif
  
  # CPU reset vector handling objects
+diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
+index ebf97d4..a23e155 100644
+--- a/arch/arm/mach-shmobile/Makefile.boot
++++ b/arch/arm/mach-shmobile/Makefile.boot
+@@ -6,7 +6,6 @@ loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
+ loadaddr-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE) += 0x40008000
+ loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
+ loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
+-loadaddr-$(CONFIG_MACH_GENMAI) += 0x08008000
+ loadaddr-$(CONFIG_MACH_KOELSCH) += 0x40008000
+ loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
+ loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
 diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
 deleted file mode 100644
 index 3eb2ec4..0000000
@@ -320,5 +344,5 @@ index d898cef..111437d 100644
  MACHINE_END
 -#endif /* CONFIG_USE_OF */
 -- 
-1.8.5.5
+2.0.1
 
