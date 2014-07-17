@@ -1,17 +1,23 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 02 Jul 2014 16:23:36 +0000
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Jul 2014 23:59:25 +0000
 Subject: [PATCH 1/3] ARM: shmobile: r7s72100: genmai: Remove reference board file
-Message-Id: <1404318218-4732-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Message-Id: <629204c35f50b2c3741579002711441dea6d8617.1405641497.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1405641497.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1405641497.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
+
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
 The genmai board now boots using the generic R7S72100 DT machine with
 the same feature set as the board file. Remove the board file.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Wolfram Sang <wsa@sang-engineering.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
  arch/arm/mach-shmobile/Makefile                 |  1 -
  arch/arm/mach-shmobile/board-genmai-reference.c | 35 -------------------------
@@ -19,10 +25,10 @@ Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
  delete mode 100644 arch/arm/mach-shmobile/board-genmai-reference.c
 
 diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index fe3878a..a058ec3 100644
+index dd542e7..18b05a8 100644
 --- a/arch/arm/mach-shmobile/Makefile
 +++ b/arch/arm/mach-shmobile/Makefile
-@@ -63,7 +63,6 @@ obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
+@@ -62,7 +62,6 @@ obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
  
  # Board objects
  ifdef CONFIG_ARCH_SHMOBILE_MULTI
@@ -72,5 +78,5 @@ index bc52677..0000000
 -	.dt_compat	= genmai_boards_compat_dt,
 -MACHINE_END
 -- 
-1.8.5.5
+2.0.1
 
