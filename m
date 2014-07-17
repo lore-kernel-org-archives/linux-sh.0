@@ -1,64 +1,31 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 16 Jul 2014 09:41:38 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 17 Jul 2014 01:00:57 +0000
 Subject: Re: [PATCH 05/11] mmc: tmio: Fix DMA source address
-Message-Id: <3064066.cLMrQSJucc@avalon>
+Message-Id: <8738e0g5o8.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1405464321-4723-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <87r41mkrpl.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87r41mkrpl.wl%kuninori.morimoto.gx@renesas.com>
+References: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+	<1405464321-4723-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+	<87r41mkrpl.wl%kuninori.morimoto.gx@renesas.com>
+	<3064066.cLMrQSJucc@avalon>
+In-Reply-To: <3064066.cLMrQSJucc@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Ian Molton <ian.molton@codethink.co.uk>
 
-Hi Morimoto-san,
 
-Thank you for the review.
+Hi Laurent
 
-On Tuesday 15 July 2014 18:39:04 Kuninori Morimoto wrote:
-> Hi Laurent
+> > Unfortunately, this patch breaks compatibility.
+> > This "+ 0x2000" is required only from Renesas R-Car.
+> > I alreay sent this fixup patch before (not accepted yet, and I will re-send
+> > v2 patch soon)
+> > 
+> > https://www.mail-archive.com/linux-mmc@vger.kernel.org/msg26776.html
 > 
-> > DMA reads from the data buffer register must be offset by 0x2000
-> > according to the hardware documentation.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> > 
-> >  drivers/mmc/host/tmio_mmc_dma.c | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > 
-> > diff --git a/drivers/mmc/host/tmio_mmc_dma.c
-> > b/drivers/mmc/host/tmio_mmc_dma.c index eb8f1d5..4da7be1 100644
-> > --- a/drivers/mmc/host/tmio_mmc_dma.c
-> > +++ b/drivers/mmc/host/tmio_mmc_dma.c
-> > @@ -312,7 +312,7 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host,
-> > struct tmio_mmc_data *pdat> 
-> >  		if (pdata->dma->chan_priv_rx)
-> >  		
-> >  			cfg.slave_id = pdata->dma->slave_id_rx;
-> >  		
-> >  		cfg.direction = DMA_DEV_TO_MEM;
-> > 
-> > -		cfg.src_addr = cfg.dst_addr;
-> > +		cfg.src_addr = cfg.dst_addr + 0x2000;
-> > 
-> >  		cfg.src_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
-> >  		cfg.dst_addr = 0;
-> >  		ret = dmaengine_slave_config(host->chan_rx, &cfg);
-> 
-> Unfortunately, this patch breaks compatibility.
-> This "+ 0x2000" is required only from Renesas R-Car.
-> I alreay sent this fixup patch before (not accepted yet, and I will re-send
-> v2 patch soon)
-> 
-> https://www.mail-archive.com/linux-mmc@vger.kernel.org/msg26776.html
+> I've applied your patch locally, thank you. You can add my Acked-by line to 
+> v2. When do you plan to push it to mainline ?
 
-I've applied your patch locally, thank you. You can add my Acked-by line to 
-v2. When do you plan to push it to mainline ?
-
--- 
-Regards,
-
-Laurent Pinchart
-
+Thank you.
+I think v2 will be posted in next week.
