@@ -1,37 +1,103 @@
-From: Fabian Frederick <fabf@skynet.be>
-Date: Thu, 31 Jul 2014 21:21:40 +0000
-Subject: SH 7619 CHCR values
-Message-Id: <760230076.57448.1406841700324.open-xchange@webmail.nmp.skynet.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Jul 2014 00:40:32 +0000
+Subject: [PATCH 5/8] ARM: shmobile: koelsch-reference: Enable CMT0 in device tree
+Message-Id: <313a57857da567732cfb7f99947b96590e807461.1405556312.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1405556312.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1405556312.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: richard@nod.at, pebolle@tiscali.nl
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
- Could you tell me where I could find SH 7619 CHCR values in order to solve the
-following errors ?     
+No more device needs to be added from platform code when booting the
+reference platform, remove the now empty r8a7791_add_dt_devices()
+function completely.
 
-arch/sh/drivers/dma/dma-sh.c: In function 'calc_xmit_shift':
-arch/sh/drivers/dma/dma-sh.c:97:21: error: 'CHCR_TS_LOW_MASK' undeclared (first
-use in this function)
-arch/sh/drivers/dma/dma-sh.c:97:21: note: each undeclared identifier is reported
-only once for each function it appears in
-arch/sh/drivers/dma/dma-sh.c:97:42: error: 'CHCR_TS_LOW_SHIFT' undeclared (first
-use in this function)
-arch/sh/drivers/dma/dma-sh.c:98:12: error: 'CHCR_TS_HIGH_MASK' undeclared (first
-use in this function)
-arch/sh/drivers/dma/dma-sh.c:98:34: error: 'CHCR_TS_HIGH_SHIFT' undeclared
-(first use in this function)
-arch/sh/drivers/dma/dma-sh.c: In function 'sh_dmac_configure_channel':
-arch/sh/drivers/dma/dma-sh.c:145:10: error: 'CHCR_TS_LOW_SHIFT' undeclared
-(first use in this function)
-arch/sh/drivers/dma/dma-sh.c:145:10: error: 'CHCR_TS_HIGH_SHIFT' undeclared
-(first use in this function)
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7791-koelsch.dts            | 4 ++++
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 2 --
+ arch/arm/mach-shmobile/r8a7791.h                 | 1 -
+ arch/arm/mach-shmobile/setup-r8a7791.c           | 7 +------
+ 4 files changed, 5 insertions(+), 9 deletions(-)
 
-I guess it should be added in a new dma-register.h in arch/sh/include/cpu-sh2 ?
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 23486c0..8f36d4f 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -307,6 +307,10 @@
+ 	};
+ };
+ 
++&cmt0 {
++	status = "ok";
++};
++
+ &sata0 {
+ 	status = "okay";
+ };
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index 3ff88c1..9db5e67 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -88,7 +88,6 @@ static void __init koelsch_add_du_device(void)
+  * devices until they get moved to DT.
+  */
+ static const struct clk_name clk_names[] __initconst = {
+-	{ "cmt0", "fck", "sh-cmt-48-gen2.0" },
+ 	{ "du0", "du.0", "rcar-du-r8a7791" },
+ 	{ "du1", "du.1", "rcar-du-r8a7791" },
+ 	{ "lvds0", "lvds.0", "rcar-du-r8a7791" },
+@@ -97,7 +96,6 @@ static const struct clk_name clk_names[] __initconst = {
+ static void __init koelsch_add_standard_devices(void)
+ {
+ 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+-	r8a7791_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 
+ 	koelsch_add_du_device();
+diff --git a/arch/arm/mach-shmobile/r8a7791.h b/arch/arm/mach-shmobile/r8a7791.h
+index 86eae7b..c1bf7ab 100644
+--- a/arch/arm/mach-shmobile/r8a7791.h
++++ b/arch/arm/mach-shmobile/r8a7791.h
+@@ -2,7 +2,6 @@
+ #define __ASM_R8A7791_H__
+ 
+ void r8a7791_add_standard_devices(void);
+-void r8a7791_add_dt_devices(void);
+ void r8a7791_clock_init(void);
+ void r8a7791_pinmux_init(void);
+ void r8a7791_pm_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index 8823324..64cb1d7 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -182,11 +182,6 @@ static const struct resource thermal_resources[] __initconst = {
+ 					thermal_resources,		\
+ 					ARRAY_SIZE(thermal_resources))
+ 
+-void __init r8a7791_add_dt_devices(void)
+-{
+-	r8a7791_register_cmt(0);
+-}
+-
+ void __init r8a7791_add_standard_devices(void)
+ {
+ 	r8a7791_register_scif(0);
+@@ -204,7 +199,7 @@ void __init r8a7791_add_standard_devices(void)
+ 	r8a7791_register_scif(12);
+ 	r8a7791_register_scif(13);
+ 	r8a7791_register_scif(14);
+-	r8a7791_add_dt_devices();
++	r8a7791_register_cmt(0);
+ 	r8a7791_register_irqc(0);
+ 	r8a7791_register_thermal();
+ }
+-- 
+2.0.0
 
-Regards,
-Fabian
