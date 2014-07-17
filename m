@@ -1,74 +1,137 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 15 Jul 2014 10:51:07 +0000
-Subject: [PATCH 2/3] dma: rcar-audmapp: don't keep audmapp_slave_config for each channeles
-Message-Id: <75bfa5f60a368b1ccacaf71bfc0376b8d9eb2e9f.1405401560.git.horms+renesas@verge.net.au>
+Date: Thu, 17 Jul 2014 00:40:33 +0000
+Subject: [PATCH 6/8] ARM: shmobile: marzen-reference: Enable TMU0 in device tree
+Message-Id: <b0937ce4400d37690de7ec7520527d09de3c92b9.1405556312.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1405556312.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1405556312.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Current audmapp driver is keeping audmapp_slave_config
-for each channeles, but, nessasary information is only "chcr".
-Current style (= keeping audmapp_slave_config) is
-not good match for DT support.
-Keep "chcr" instead of audmapp_slave_config
+No more device needs to be added from platform code when booting the
+reference platform, remove the now empty
+r8a7779_add_standard_devices_dt() function completely.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Simon Horman <horms+renesas@verge.net.au>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/dma/sh/rcar-audmapp.c | 12 +++---------
- 1 file changed, 3 insertions(+), 9 deletions(-)
+ arch/arm/boot/dts/r8a7779-marzen.dts            |  4 ++++
+ arch/arm/mach-shmobile/board-marzen-reference.c | 10 ----------
+ arch/arm/mach-shmobile/r8a7779.h                |  1 -
+ arch/arm/mach-shmobile/setup-r8a7779.c          | 17 +++++------------
+ 4 files changed, 9 insertions(+), 23 deletions(-)
 
-diff --git a/drivers/dma/sh/rcar-audmapp.c b/drivers/dma/sh/rcar-audmapp.c
-index 858483b..dd00775 100644
---- a/drivers/dma/sh/rcar-audmapp.c
-+++ b/drivers/dma/sh/rcar-audmapp.c
-@@ -45,9 +45,9 @@
- 
- struct audmapp_chan {
- 	struct shdma_chan shdma_chan;
--	struct audmapp_slave_config *config;
- 	void __iomem *base;
- 	dma_addr_t slave_addr;
-+	u32 chcr;
+diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
+index 5745555..c160404 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen.dts
+@@ -78,6 +78,10 @@
+ 	clock-frequency = <31250000>;
  };
  
- struct audmapp_device {
-@@ -103,9 +103,8 @@ static void audmapp_start_xfer(struct shdma_chan *schan,
- 	struct audmapp_chan *auchan = to_chan(schan);
- 	struct audmapp_device *audev = to_dev(auchan);
- 	struct audmapp_desc *desc = to_desc(sdesc);
--	struct audmapp_slave_config *cfg = auchan->config;
- 	struct device *dev = audev->dev;
--	u32 chcr = cfg->chcr | PDMACHCR_DE;
-+	u32 chcr = auchan->chcr | PDMACHCR_DE;
++&tmu0 {
++	status = "okay";
++};
++
+ &pfc {
+ 	lan0_pins: lan0 {
+ 		intc {
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 21b3e1c..f671003 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -37,18 +37,8 @@ static void __init marzen_init_timer(void)
+ 	clocksource_of_init();
+ }
  
- 	dev_dbg(dev, "src/dst/chcr = %pad/%pad/%08x\n",
- 		&desc->src, &desc->dst, chcr);
-@@ -145,7 +144,7 @@ static int audmapp_set_slave(struct shdma_chan *schan, int slave_id,
- 	if (try)
- 		return 0;
- 
--	auchan->config	= cfg;
-+	auchan->chcr	= cfg->chcr;
- 	auchan->slave_addr = slave_addr ? : cfg->dst;
- 
- 	return 0;
-@@ -156,11 +155,6 @@ static int audmapp_desc_setup(struct shdma_chan *schan,
- 			      dma_addr_t src, dma_addr_t dst, size_t *len)
- {
- 	struct audmapp_desc *desc = to_desc(sdesc);
--	struct audmapp_chan *auchan = to_chan(schan);
--	struct audmapp_slave_config *cfg = auchan->config;
+-/*
+- * This is a really crude hack to provide clkdev support to platform
+- * devices until they get moved to DT.
+- */
+-static const struct clk_name clk_names[] __initconst = {
+-	{ "tmu0", "fck", "sh-tmu.0" },
+-};
 -
--	if (!cfg)
--		return -ENODEV;
+ static void __init marzen_init(void)
+ {
+-	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+-	r8a7779_add_standard_devices_dt();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
+ }
+diff --git a/arch/arm/mach-shmobile/r8a7779.h b/arch/arm/mach-shmobile/r8a7779.h
+index 5415c71..19f9704 100644
+--- a/arch/arm/mach-shmobile/r8a7779.h
++++ b/arch/arm/mach-shmobile/r8a7779.h
+@@ -17,7 +17,6 @@ extern void r8a7779_map_io(void);
+ extern void r8a7779_earlytimer_init(void);
+ extern void r8a7779_add_early_devices(void);
+ extern void r8a7779_add_standard_devices(void);
+-extern void r8a7779_add_standard_devices_dt(void);
+ extern void r8a7779_init_late(void);
+ extern u32 r8a7779_read_mode_pins(void);
+ extern void r8a7779_clock_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 8dbc407..8c0530d 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -641,7 +641,7 @@ static void __init r8a7779_register_hpb_dmae(void)
+ 					  sizeof(dma_platform_data));
+ }
  
- 	if (*len > (size_t)AUDMAPP_LEN_MAX)
- 		*len = (size_t)AUDMAPP_LEN_MAX;
+-static struct platform_device *r8a7779_devices_dt[] __initdata = {
++static struct platform_device *r8a7779_early_devices[] __initdata = {
+ 	&tmu0_device,
+ };
+ 
+@@ -669,8 +669,8 @@ void __init r8a7779_add_standard_devices(void)
+ 
+ 	r8a7779_init_pm_domains();
+ 
+-	platform_add_devices(r8a7779_devices_dt,
+-			    ARRAY_SIZE(r8a7779_devices_dt));
++	platform_add_devices(r8a7779_early_devices,
++			    ARRAY_SIZE(r8a7779_early_devices));
+ 	platform_add_devices(r8a7779_standard_devices,
+ 			    ARRAY_SIZE(r8a7779_standard_devices));
+ 	r8a7779_register_hpb_dmae();
+@@ -678,8 +678,8 @@ void __init r8a7779_add_standard_devices(void)
+ 
+ void __init r8a7779_add_early_devices(void)
+ {
+-	early_platform_add_devices(r8a7779_devices_dt,
+-				   ARRAY_SIZE(r8a7779_devices_dt));
++	early_platform_add_devices(r8a7779_early_devices,
++				   ARRAY_SIZE(r8a7779_early_devices));
+ 
+ 	/* Early serial console setup is not included here due to
+ 	 * memory map collisions. The SCIF serial ports in r8a7779
+@@ -739,12 +739,6 @@ void __init r8a7779_init_irq_dt(void)
+ 	__raw_writel(0x003fee3f, INT2SMSKCR4);
+ }
+ 
+-void __init r8a7779_add_standard_devices_dt(void)
+-{
+-	platform_add_devices(r8a7779_devices_dt,
+-			     ARRAY_SIZE(r8a7779_devices_dt));
+-}
+-
+ #define MODEMR		0xffcc0020
+ 
+ u32 __init r8a7779_read_mode_pins(void)
+@@ -773,7 +767,6 @@ DT_MACHINE_START(R8A7779_DT, "Generic R8A7779 (Flattened Device Tree)")
+ 	.init_early	= shmobile_init_delay,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= r8a7779_init_irq_dt,
+-	.init_machine	= r8a7779_add_standard_devices_dt,
+ 	.init_late	= r8a7779_init_late,
+ 	.dt_compat	= r8a7779_compat_dt,
+ MACHINE_END
 -- 
 2.0.0
 
