@@ -1,134 +1,80 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 09 Jul 2014 13:12:43 +0000
-Subject: [PATCH v5 7/8] ARM: shmobile: marzen-reference: Enable TMU0 in device tree
-Message-Id: <1404911564-17380-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Thu, 17 Jul 2014 14:48:39 +0000
+Subject: [PATCH v2 4/5] i2c: sc3c2410: Remove suspension check
+Message-Id: <1405608520-5644-4-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404911564-17380-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1404911564-17380-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1405608520-5644-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1405608520-5644-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-No more device needs to be added from platform code when booting the
-reference platform, remove the now empty
-r8a7779_add_standard_devices_dt() function completely.
+We now take care of suspension in the i2c core code. So we can remove this
+check here.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
 ---
- arch/arm/boot/dts/r8a7779-marzen.dts            |  4 ++++
- arch/arm/mach-shmobile/board-marzen-reference.c | 10 ----------
- arch/arm/mach-shmobile/r8a7779.h                |  1 -
- arch/arm/mach-shmobile/setup-r8a7779.c          | 17 +++++------------
- 4 files changed, 9 insertions(+), 23 deletions(-)
+same as v1
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
-index 20b1768..6025822 100644
---- a/arch/arm/boot/dts/r8a7779-marzen.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-@@ -78,6 +78,10 @@
- 	clock-frequency = <31250000>;
- };
+ drivers/i2c/busses/i2c-s3c2410.c | 16 ----------------
+ 1 file changed, 16 deletions(-)
+
+diff --git a/drivers/i2c/busses/i2c-s3c2410.c b/drivers/i2c/busses/i2c-s3c2410.c
+index e828a1d..568b993 100644
+--- a/drivers/i2c/busses/i2c-s3c2410.c
++++ b/drivers/i2c/busses/i2c-s3c2410.c
+@@ -103,7 +103,6 @@ enum s3c24xx_i2c_state {
+ struct s3c24xx_i2c {
+ 	wait_queue_head_t	wait;
+ 	kernel_ulong_t		quirks;
+-	unsigned int		suspended:1;
  
-+&tmu0 {
-+	status = "okay";
-+};
-+
- &pfc {
- 	lan0_pins: lan0 {
- 		intc {
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index 21b3e1c..f671003 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -37,18 +37,8 @@ static void __init marzen_init_timer(void)
- 	clocksource_of_init();
- }
+ 	struct i2c_msg		*msg;
+ 	unsigned int		msg_num;
+@@ -714,9 +713,6 @@ static int s3c24xx_i2c_doxfer(struct s3c24xx_i2c *i2c,
+ 	unsigned long timeout;
+ 	int ret;
  
--/*
-- * This is a really crude hack to provide clkdev support to platform
-- * devices until they get moved to DT.
-- */
--static const struct clk_name clk_names[] __initconst = {
--	{ "tmu0", "fck", "sh-tmu.0" },
--};
+-	if (i2c->suspended)
+-		return -EIO;
 -
- static void __init marzen_init(void)
- {
--	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
--	r8a7779_add_standard_devices_dt();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
- }
-diff --git a/arch/arm/mach-shmobile/r8a7779.h b/arch/arm/mach-shmobile/r8a7779.h
-index 5415c71..19f9704 100644
---- a/arch/arm/mach-shmobile/r8a7779.h
-+++ b/arch/arm/mach-shmobile/r8a7779.h
-@@ -17,7 +17,6 @@ extern void r8a7779_map_io(void);
- extern void r8a7779_earlytimer_init(void);
- extern void r8a7779_add_early_devices(void);
- extern void r8a7779_add_standard_devices(void);
--extern void r8a7779_add_standard_devices_dt(void);
- extern void r8a7779_init_late(void);
- extern u32 r8a7779_read_mode_pins(void);
- extern void r8a7779_clock_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 8dbc407..8c0530d 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -641,7 +641,7 @@ static void __init r8a7779_register_hpb_dmae(void)
- 					  sizeof(dma_platform_data));
+ 	ret = s3c24xx_i2c_set_master(i2c);
+ 	if (ret != 0) {
+ 		dev_err(i2c->dev, "cannot get bus (error %d)\n", ret);
+@@ -1257,16 +1253,6 @@ static int s3c24xx_i2c_remove(struct platform_device *pdev)
  }
  
--static struct platform_device *r8a7779_devices_dt[] __initdata = {
-+static struct platform_device *r8a7779_early_devices[] __initdata = {
- 	&tmu0_device,
- };
- 
-@@ -669,8 +669,8 @@ void __init r8a7779_add_standard_devices(void)
- 
- 	r8a7779_init_pm_domains();
- 
--	platform_add_devices(r8a7779_devices_dt,
--			    ARRAY_SIZE(r8a7779_devices_dt));
-+	platform_add_devices(r8a7779_early_devices,
-+			    ARRAY_SIZE(r8a7779_early_devices));
- 	platform_add_devices(r8a7779_standard_devices,
- 			    ARRAY_SIZE(r8a7779_standard_devices));
- 	r8a7779_register_hpb_dmae();
-@@ -678,8 +678,8 @@ void __init r8a7779_add_standard_devices(void)
- 
- void __init r8a7779_add_early_devices(void)
- {
--	early_platform_add_devices(r8a7779_devices_dt,
--				   ARRAY_SIZE(r8a7779_devices_dt));
-+	early_platform_add_devices(r8a7779_early_devices,
-+				   ARRAY_SIZE(r8a7779_early_devices));
- 
- 	/* Early serial console setup is not included here due to
- 	 * memory map collisions. The SCIF serial ports in r8a7779
-@@ -739,12 +739,6 @@ void __init r8a7779_init_irq_dt(void)
- 	__raw_writel(0x003fee3f, INT2SMSKCR4);
- }
- 
--void __init r8a7779_add_standard_devices_dt(void)
+ #ifdef CONFIG_PM_SLEEP
+-static int s3c24xx_i2c_suspend_noirq(struct device *dev)
 -{
--	platform_add_devices(r8a7779_devices_dt,
--			     ARRAY_SIZE(r8a7779_devices_dt));
+-	struct platform_device *pdev = to_platform_device(dev);
+-	struct s3c24xx_i2c *i2c = platform_get_drvdata(pdev);
+-
+-	i2c->suspended = 1;
+-
+-	return 0;
 -}
 -
- #define MODEMR		0xffcc0020
+ static int s3c24xx_i2c_resume(struct device *dev)
+ {
+ 	struct platform_device *pdev = to_platform_device(dev);
+@@ -1275,7 +1261,6 @@ static int s3c24xx_i2c_resume(struct device *dev)
+ 	clk_prepare_enable(i2c->clk);
+ 	s3c24xx_i2c_init(i2c);
+ 	clk_disable_unprepare(i2c->clk);
+-	i2c->suspended = 0;
  
- u32 __init r8a7779_read_mode_pins(void)
-@@ -773,7 +767,6 @@ DT_MACHINE_START(R8A7779_DT, "Generic R8A7779 (Flattened Device Tree)")
- 	.init_early	= shmobile_init_delay,
- 	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= r8a7779_init_irq_dt,
--	.init_machine	= r8a7779_add_standard_devices_dt,
- 	.init_late	= r8a7779_init_late,
- 	.dt_compat	= r8a7779_compat_dt,
- MACHINE_END
+ 	return 0;
+ }
+@@ -1284,7 +1269,6 @@ static int s3c24xx_i2c_resume(struct device *dev)
+ #ifdef CONFIG_PM
+ static const struct dev_pm_ops s3c24xx_i2c_dev_pm_ops = {
+ #ifdef CONFIG_PM_SLEEP
+-	.suspend_noirq = s3c24xx_i2c_suspend_noirq,
+ 	.resume = s3c24xx_i2c_resume,
+ #endif
+ };
 -- 
-1.8.5.5
+1.9.1
 
