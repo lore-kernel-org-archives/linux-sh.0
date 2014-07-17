@@ -1,66 +1,48 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Sat, 26 Jul 2014 08:49:29 +0000
-Subject: Re: [PATCH 4/6] mmc: sh_mobile_sdhi: Update sh_mobile_sdhi_of_data for r8a7794
-Message-Id: <CAPDyKFpRsrJ7ba5SSK=3RC5ET206e=JptO2oco-q9_uPUrCRcg@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Jul 2014 00:45:31 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Shdma Updates for v3.17
+Message-Id: <cover.1405557829.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1406299250-23975-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-	<1406299250-23975-5-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1406299250-23975-5-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Shinobu Uehara <shinobu.uehara.xc@renesas.com>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On 25 July 2014 16:40, Ulrich Hecht <ulrich.hecht+renesas@gmail.com> wrote:
-> From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
->
-> This patch adds DT support for r8a7794.
->
-> Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-> [uli: added bindings documentation]
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> Cc: linux-mmc@vger.kernel.org
+Hi Vinod,
 
-I guess you prefer this goes together with the rest of the patches in
-this set, please go ahead.
+Please consider these Renesas shdma updates for v3.17.
 
-Acked-by: Ulf Hansson <ulf.hansson@linaro.org>
 
-> ---
->  Documentation/devicetree/bindings/mmc/tmio_mmc.txt | 2 ++
->  drivers/mmc/host/sh_mobile_sdhi.c                  | 1 +
->  2 files changed, 3 insertions(+)
->
-> diff --git a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-> index 6a2a116..924e516 100644
-> --- a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-> +++ b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-> @@ -18,6 +18,8 @@ Required properties:
->                 "renesas,sdhi-r8a7778" - SDHI IP on R8A7778 SoC
->                 "renesas,sdhi-r8a7779" - SDHI IP on R8A7779 SoC
->                 "renesas,sdhi-r8a7790" - SDHI IP on R8A7790 SoC
-> +               "renesas,sdhi-r8a7791" - SDHI IP on R8A7791 SoC
-> +               "renesas,sdhi-r8a7794" - SDHI IP on R8A7794 SoC
->
->  Optional properties:
->  - toshiba,mmc-wrprotect-disable: write-protect detection is unavailable
-> diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-> index 91058da..7591447 100644
-> --- a/drivers/mmc/host/sh_mobile_sdhi.c
-> +++ b/drivers/mmc/host/sh_mobile_sdhi.c
-> @@ -68,6 +68,7 @@ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
->         { .compatible = "renesas,sdhi-r8a7779", .data = &of_rcar_gen1_compatible, },
->         { .compatible = "renesas,sdhi-r8a7790", .data = &of_rcar_gen2_compatible, },
->         { .compatible = "renesas,sdhi-r8a7791", .data = &of_rcar_gen2_compatible, },
-> +       { .compatible = "renesas,sdhi-r8a7794", .data = &of_rcar_gen2_compatible, },
->         {},
->  };
->  MODULE_DEVICE_TABLE(of, sh_mobile_sdhi_of_match);
-> --
-> 1.8.4.5
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+The following changes since commit 7171511eaec5bf23fb06078f59784a3a0626b38f:
+
+  Linux 3.16-rc1 (2014-06-15 17:45:28 -1000)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-shdma-for-v3.17
+
+for you to fetch changes up to 0cdbee33ea42bfd5f61f824e258a1a0944dd2a27:
+
+  dmaengine: shdma: Use defines instead of hardcoded numbers (2014-07-15 18:02:29 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC Shdma Updates for v3.17
+
+* Add more register documentation and;
+* Replace some hardcoded numbers by defines
+
+----------------------------------------------------------------
+Geert Uytterhoeven (3):
+      dmaengine: shdma: Add more register documentation
+      sh: dma: Use defines instead of hardcoded numbers
+      dmaengine: shdma: Use defines instead of hardcoded numbers
+
+ arch/sh/drivers/dma/dma-sh.c           |  2 +-
+ arch/sh/include/asm/dma-register.h     | 36 ++++++++++---------
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c | 24 ++++++-------
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c | 48 ++++++++++++-------------
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c | 64 +++++++++++++++++-----------------
+ drivers/dma/sh/shdma-arm.h             |  4 +--
+ drivers/dma/sh/shdmac.c                | 15 ++++----
+ include/linux/sh_dma.h                 | 24 +++++++------
+ 8 files changed, 110 insertions(+), 107 deletions(-)
