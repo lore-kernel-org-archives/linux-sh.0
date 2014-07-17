@@ -1,101 +1,81 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Jul 2014 00:28:18 +0000
-Subject: [PATCH 1/4] ARM: shmobile: r8a7790: add internal PCI bridge nodes
-Message-Id: <ff4f3eb8b3386208944fe60b85e6cba4d338198e.1404174433.git.horms+renesas@verge.net.au>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Thu, 17 Jul 2014 14:48:40 +0000
+Subject: [PATCH v2 5/5] i2c: tegra: Remove suspension check
+Message-Id: <1405608520-5644-5-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1404174433.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1404174433.git.horms+renesas@verge.net.au>
+References: <1405608520-5644-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1405608520-5644-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+We now take care of suspension in the i2c core code. So we can remove this
+check here.
 
-Add device nodes for the R8A7790 internal PCI bridge devices.
-
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
-[Sergei: added several properties to the PCI bridge nodes]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
-Tested-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 60 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 60 insertions(+)
+same as v1
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 994330e..373d9a21 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -930,6 +930,66 @@
- 		status = "disabled";
- 	};
+ drivers/i2c/busses/i2c-tegra.c | 19 +------------------
+ 1 file changed, 1 insertion(+), 18 deletions(-)
+
+diff --git a/drivers/i2c/busses/i2c-tegra.c b/drivers/i2c/busses/i2c-tegra.c
+index f1bb2fc..c279d85 100644
+--- a/drivers/i2c/busses/i2c-tegra.c
++++ b/drivers/i2c/busses/i2c-tegra.c
+@@ -172,7 +172,6 @@ struct tegra_i2c_dev {
+ 	size_t msg_buf_remaining;
+ 	int msg_read;
+ 	u32 bus_clk_rate;
+-	bool is_suspended;
+ };
  
-+	pci0: pci@ee090000 {
-+		compatible = "renesas,pci-r8a7790";
-+		device_type = "pci";
-+		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-+		reg = <0 0xee090000 0 0xc00>,
-+		      <0 0xee080000 0 0x1100>;
-+		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+
-+		bus-range = <0 0>;
-+		#address-cells = <3>;
-+		#size-cells = <2>;
-+		#interrupt-cells = <1>;
-+		ranges = <0x02000000 0 0xee080000 0 0xee080000 0 0x00010000>;
-+		interrupt-map-mask = <0xff00 0 0 0x7>;
-+		interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
-+	};
-+
-+	pci1: pci@ee0b0000 {
-+		compatible = "renesas,pci-r8a7790";
-+		device_type = "pci";
-+		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-+		reg = <0 0xee0b0000 0 0xc00>,
-+		      <0 0xee0a0000 0 0x1100>;
-+		interrupts = <0 112 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+
-+		bus-range = <1 1>;
-+		#address-cells = <3>;
-+		#size-cells = <2>;
-+		#interrupt-cells = <1>;
-+		ranges = <0x02000000 0 0xee0a0000 0 0xee0a0000 0 0x00010000>;
-+		interrupt-map-mask = <0xff00 0 0 0x7>;
-+		interrupt-map = <0x0000 0 0 1 &gic 0 112 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x0800 0 0 1 &gic 0 112 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x1000 0 0 2 &gic 0 112 IRQ_TYPE_LEVEL_HIGH>;
-+	};
-+
-+	pci2: pci@ee0d0000 {
-+		compatible = "renesas,pci-r8a7790";
-+		device_type = "pci";
-+		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-+		reg = <0 0xee0d0000 0 0xc00>,
-+		      <0 0xee0c0000 0 0x1100>;
-+		interrupts = <0 113 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+
-+		bus-range = <2 2>;
-+		#address-cells = <3>;
-+		#size-cells = <2>;
-+		#interrupt-cells = <1>;
-+		ranges = <0x02000000 0 0xee0c0000 0 0xee0c0000 0 0x00010000>;
-+		interrupt-map-mask = <0xff00 0 0 0x7>;
-+		interrupt-map = <0x0000 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x0800 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
-+	};
-+
- 	pciec: pcie@fe000000 {
- 		compatible = "renesas,pcie-r8a7790";
- 		reg = <0 0xfe000000 0 0x80000>;
+ static void dvc_writel(struct tegra_i2c_dev *i2c_dev, u32 val, unsigned long reg)
+@@ -628,9 +627,6 @@ static int tegra_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[],
+ 	int i;
+ 	int ret = 0;
+ 
+-	if (i2c_dev->is_suspended)
+-		return -EBUSY;
+-
+ 	ret = tegra_i2c_clock_enable(i2c_dev);
+ 	if (ret < 0) {
+ 		dev_err(i2c_dev->dev, "Clock enable failed %d\n", ret);
+@@ -817,17 +813,6 @@ static int tegra_i2c_remove(struct platform_device *pdev)
+ }
+ 
+ #ifdef CONFIG_PM_SLEEP
+-static int tegra_i2c_suspend(struct device *dev)
+-{
+-	struct tegra_i2c_dev *i2c_dev = dev_get_drvdata(dev);
+-
+-	i2c_lock_adapter(&i2c_dev->adapter);
+-	i2c_dev->is_suspended = true;
+-	i2c_unlock_adapter(&i2c_dev->adapter);
+-
+-	return 0;
+-}
+-
+ static int tegra_i2c_resume(struct device *dev)
+ {
+ 	struct tegra_i2c_dev *i2c_dev = dev_get_drvdata(dev);
+@@ -842,14 +827,12 @@ static int tegra_i2c_resume(struct device *dev)
+ 		return ret;
+ 	}
+ 
+-	i2c_dev->is_suspended = false;
+-
+ 	i2c_unlock_adapter(&i2c_dev->adapter);
+ 
+ 	return 0;
+ }
+ 
+-static SIMPLE_DEV_PM_OPS(tegra_i2c_pm, tegra_i2c_suspend, tegra_i2c_resume);
++static SIMPLE_DEV_PM_OPS(tegra_i2c_pm, tegra_i2c_resume);
+ #define TEGRA_I2C_PM	(&tegra_i2c_pm)
+ #else
+ #define TEGRA_I2C_PM	NULL
 -- 
-2.0.0.rc2
+1.9.1
 
