@@ -1,7 +1,7 @@
 From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Thu, 17 Jul 2014 21:04:09 +0000
+Date: Thu, 17 Jul 2014 21:22:40 +0000
 Subject: Re: [PATCH v2 03/23] v4l: Support extending the v4l2_pix_format structure
-Message-Id: <53C83A49.7060501@xs4all.nl>
+Message-Id: <53C83EA0.2010706@xs4all.nl>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1403567669-18539-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1403567669-18539-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -11,9 +11,7 @@ Content-Transfer-Encoding: 7bit
 To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-media@vger.kernel.org
 Cc: linux-sh@vger.kernel.org
 
-Hi Laurent,
-
-Something that just caught my eye:
+And another thing that I found while implementing this in v4l2-ctl:
 
 On 06/24/2014 01:54 AM, Laurent Pinchart wrote:
 > The v4l2_pix_format structure has no reserved field. It is embedded in
@@ -37,59 +35,61 @@ On 06/24/2014 01:54 AM, Laurent Pinchart wrote:
 > the extensions.
 > 
 > Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
-> 
-> diff --git a/Documentation/DocBook/media/v4l/pixfmt.xml b/Documentation/DocBook/media/v4l/pixfmt.xml
-> index 91dcbc8..8c56cacd 100644
-> --- a/Documentation/DocBook/media/v4l/pixfmt.xml
-> +++ b/Documentation/DocBook/media/v4l/pixfmt.xml
-> @@ -112,9 +112,28 @@ see <xref linkend="colorspaces" />.</entry>
->  	<row>
->  	  <entry>__u32</entry>
->  	  <entry><structfield>priv</structfield></entry>
-> -	  <entry>Reserved for custom (driver defined) additional
-> -information about formats. When not used drivers and applications must
-> -set this field to zero.</entry>
-> +	  <entry><para>This field indicates whether the remaining fields of the
-> +<structname>v4l2_pix_format</structname> structure, also called the extended
-> +fields, are valid. When set to <constant>V4L2_PIX_FMT_PRIV_MAGIC</constant>, it
-> +indicates that the extended fields have been correctly initialized. When set to
-> +any other value it indicates that the extended fields contain undefined values.
-> +</para>
-> +<para>Applications that wish to use the pixel format extended fields must first
-> +ensure that the feature is supported by querying the device for the
-> +<link linkend="querycap"><constant>V4L2_CAP_EXT_PIX_FORMAT</constant></link>
-> +capability. If the capability isn't set the pixel format extended fields are not
-> +supported and using the extended fields will lead to undefined results.</para>
-> +<para>To use the extended fields, applications must set the
-> +<structfield>priv</structfield> field to
-> +<constant>V4L2_PIX_FMT_PRIV_MAGIC</constant>, initialize all the extended fields
-> +and zero the unused bytes of the <structname>v4l2_format</structname>
-> +<structfield>raw_data</structfield> field.</para>
 
-Easy to write, much harder to implement. You would end up with something like:
+> diff --git a/drivers/media/v4l2-core/v4l2-ioctl.c b/drivers/media/v4l2-core/v4l2-ioctl.c
+> index 16bffd8..01b4588 100644
+> --- a/drivers/media/v4l2-core/v4l2-ioctl.c
+> +++ b/drivers/media/v4l2-core/v4l2-ioctl.c
+> @@ -959,13 +959,48 @@ static int check_fmt(struct file *file, enum v4l2_buf_type type)
+>  	return -EINVAL;
+>  }
+>  
+> +static void v4l_sanitize_format(struct v4l2_format *fmt)
+> +{
+> +	unsigned int offset;
+> +
+> +	/*
+> +	 * The v4l2_pix_format structure has been extended with fields that were
+> +	 * not previously required to be set to zero by applications. The priv
+> +	 * field, when set to a magic value, indicates the the extended fields
+> +	 * are valid. Otherwise they will contain undefined values. To simplify
+> +	 * the API towards drivers zero the extended fields and set the priv
+> +	 * field to the magic value when the extended pixel format structure
+> +	 * isn't used by applications.
+> +	 */
+> +
+> +	if (fmt->type != V4L2_BUF_TYPE_VIDEO_CAPTURE &&
+> +	    fmt->type != V4L2_BUF_TYPE_VIDEO_OUTPUT)
+> +		return;
+> +
+> +	if (fmt->fmt.pix.priv = V4L2_PIX_FMT_PRIV_MAGIC)
+> +		return;
+> +
+> +	fmt->fmt.pix.priv = V4L2_PIX_FMT_PRIV_MAGIC;
+> +
+> +	offset = offsetof(struct v4l2_pix_format, priv)
+> +	       + sizeof(fmt->fmt.pix.priv);
+> +	memset(((void *)&fmt->fmt.pix) + offset, 0,
+> +	       sizeof(fmt->fmt.pix) - offset);
+> +}
+> +
+>  static int v4l_querycap(const struct v4l2_ioctl_ops *ops,
+>  				struct file *file, void *fh, void *arg)
+>  {
+>  	struct v4l2_capability *cap = (struct v4l2_capability *)arg;
+> +	int ret;
+>  
+>  	cap->version = LINUX_VERSION_CODE;
+> -	return ops->vidioc_querycap(file, fh, cap);
+> +
+> +	ret = ops->vidioc_querycap(file, fh, cap);
+> +
+> +	cap->capabilities |= V4L2_CAP_EXT_PIX_FORMAT;
 
-memset(&fmt.fmt.pix.flags + sizeof(fmt.fmt.pix.flags), 0,
-	sizeof(fmt.fmt.raw_data) - sizeof(fmt.fmt.pix));
+It should be ORed to cap->device_caps as well.
 
-Not user-friendly and error-prone.
-
-I would suggest adding a reserved array to pix_format instead, of at least
-size (10 + 2 * 7) / 4 = 6 __u32. So: __u32 reserved[6]. Better would be to go
-with 10 + 17 = 27 elements (same as the number of reserved elements in
-v4l2_pix_format_mplane and one struct v4l2_plane_pix_format).
-
-That will allow you to just say that the app should zero the reserved array.
-
-> +<para>When the <structfield>priv</structfield> field isn't set to
-> +<constant>V4L2_PIX_FMT_PRIV_MAGIC</constant> drivers must act as if all the
-> +extended fields were set to zero. On return drivers must set the
-> +<structfield>priv</structfield> field to
-> +<constant>V4L2_PIX_FMT_PRIV_MAGIC</constant> and all the extended field to
-> +applicable values.</para></entry>
->  	</row>
->        </tbody>
->      </tgroup>
+> +
+> +	return ret;
 
 Regards,
 
