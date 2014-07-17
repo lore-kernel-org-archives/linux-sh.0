@@ -1,45 +1,71 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 29 Jul 2014 08:47:30 +0000
-Subject: [PATCH 09/10 v2] mmc: tmio: ensure that the clock has been stopped before set_clock
-Message-Id: <87a97so8kf.wl%kuninori.morimoto.gx@renesas.com>
+From: Andrey Utkin <andrey.krieger.utkin@gmail.com>
+Date: Thu, 17 Jul 2014 13:28:25 +0000
+Subject: [PATCH 3/3] arch/sh/kernel/ptrace_{32,64}.c: drop negativity checks for unsigned long addr
+Message-Id: <1405603705-12625-1-git-send-email-andrey.krieger.utkin@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
-	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
-	<53AD638C.5060907@renesas.com>
-	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
-	<87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
-Cc: Ian Molton <ian@mnementh.co.uk>, TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, ryo.kataoka.wt@renesas.com, shinobu.uehara.xc@renesas.com, kouei.abe.cp@renesas.com, cm-hiep@jinso.co.jp, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: eparis@redhat.com, Andrey Utkin <andrey.krieger.utkin@gmail.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-This patch ensures that the clock has been stopped before
-it calls tmio_mmc_set_clock().
-The clock settings might be failed without this patch
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=80381
+Reported-by: David Binderman <dcb314@hotmail.com>
+Signed-off-by: Andrey Utkin <andrey.krieger.utkin@gmail.com>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |    1 +
- 1 file changed, 1 insertion(+)
+ arch/sh/kernel/ptrace_32.c | 4 ++--
+ arch/sh/kernel/ptrace_64.c | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index da3c74d..1c5a631 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -895,6 +895,7 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 		}
- 		if (host->power = TMIO_MMC_OFF_STOP)
- 			tmio_mmc_reset(host);
-+		tmio_mmc_clk_stop(host);
- 		tmio_mmc_set_clock(host, ios->clock);
- 		if (host->power = TMIO_MMC_OFF_STOP)
- 			/* power up SD card and the bus */
--- 
-1.7.9.5
+diff --git a/arch/sh/kernel/ptrace_32.c b/arch/sh/kernel/ptrace_32.c
+index c1a6b89..78effcb 100644
+--- a/arch/sh/kernel/ptrace_32.c
++++ b/arch/sh/kernel/ptrace_32.c
+@@ -379,7 +379,7 @@ long arch_ptrace(struct task_struct *child, long reques=
+t,
+ 		unsigned long tmp;
+=20
+ 		ret =3D -EIO;
+-		if ((addr & 3) || addr < 0 ||
++		if ((addr & 3) ||
+ 		    addr > sizeof(struct user) - 3)
+ 			break;
+=20
+@@ -419,7 +419,7 @@ long arch_ptrace(struct task_struct *child, long reques=
+t,
+=20
+ 	case PTRACE_POKEUSR: /* write the word at location addr in the USER area =
+*/
+ 		ret =3D -EIO;
+-		if ((addr & 3) || addr < 0 ||
++		if ((addr & 3) ||
+ 		    addr > sizeof(struct user) - 3)
+ 			break;
+=20
+diff --git a/arch/sh/kernel/ptrace_64.c b/arch/sh/kernel/ptrace_64.c
+index 5cea973..138b2b1 100644
+--- a/arch/sh/kernel/ptrace_64.c
++++ b/arch/sh/kernel/ptrace_64.c
+@@ -395,7 +395,7 @@ long arch_ptrace(struct task_struct *child, long reques=
+t,
+ 		unsigned long tmp;
+=20
+ 		ret =3D -EIO;
+-		if ((addr & 3) || addr < 0)
++		if (addr & 3)
+ 			break;
+=20
+ 		if (addr < sizeof(struct pt_regs))
+@@ -423,7 +423,7 @@ long arch_ptrace(struct task_struct *child, long reques=
+t,
+                    this could crash the kernel or result in a security
+                    loophole. */
+ 		ret =3D -EIO;
+-		if ((addr & 3) || addr < 0)
++		if (addr & 3)
+ 			break;
+=20
+ 		if (addr < sizeof(struct pt_regs)) {
+--=20
+1.8.5.5
 
