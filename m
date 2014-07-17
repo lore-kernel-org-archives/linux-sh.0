@@ -1,79 +1,531 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 22 Jul 2014 22:25:25 +0000
-Subject: [PATCH v3] ARM: shmobile: r8a7791: link PCI USB devices to USB PHY
-Message-Id: <201407230225.26798.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Jul 2014 00:45:33 +0000
+Subject: [PATCH 2/3] sh: dma: Use defines instead of hardcoded numbers
+Message-Id: <28564f0893750f52085744d5d5728fc7631eefb6.1405557829.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Describe the PCI USB devices that are behind the PCI bridges, adding necessary
-links to the USB PHY device.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-This patch is against 'renesas-devel-v3.16-rc5-20140722' tag of Simon Horman's
-'renesas.git' repo plus R8A7791/Koelsch/Henninger USB PHY support patches posted
-before.  The patch requires the USB PHY driver, and USB HCD generic PHY support
-(also already posted) in order to work.
+ arch/sh/drivers/dma/dma-sh.c           |  2 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c | 24 ++++++-------
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c | 48 ++++++++++++-------------
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c | 64 +++++++++++++++++-----------------
+ 4 files changed, 69 insertions(+), 69 deletions(-)
 
-Changes in version 3:
-- adjusted "phys" properties in the PCI OHCI/EHCI device nodes;
-- resolved rejects.
-
-Changes in version 2:
-- renamed the PCI OHCI/EHCI device nodes to comply with the PCI binding;
-- changed the PHY specifier in the PCI#1 node to reflect that channel #1 support
-  was dropped;
-- resolved rejects.
-
- arch/arm/boot/dts/r8a7791.dtsi |   28 ++++++++++++++++++++++++++++
- 1 file changed, 28 insertions(+)
-
-Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1030,6 +1030,20 @@
- 		interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
- 				 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
- 				 0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
-+
-+		usb@0,1 {
-+			reg = <0x800 0 0 0 0>;
-+			device_type = "pci";
-+			phys = <&usb0 0>;
-+			phy-names = "usb";
-+		};
-+
-+		usb@0,2 {
-+			reg = <0x1000 0 0 0 0>;
-+			device_type = "pci";
-+			phys = <&usb0 0>;
-+			phy-names = "usb";
-+		};
- 	};
+diff --git a/arch/sh/drivers/dma/dma-sh.c b/arch/sh/drivers/dma/dma-sh.c
+index b225656..afde2a7 100644
+--- a/arch/sh/drivers/dma/dma-sh.c
++++ b/arch/sh/drivers/dma/dma-sh.c
+@@ -25,7 +25,7 @@
+  * Define the default configuration for dual address memory-memory transfer.
+  * The 0x400 value represents auto-request, external->external.
+  */
+-#define RS_DUAL	(DM_INC | SM_INC | 0x400 | TS_INDEX2VAL(XMIT_SZ_32BIT))
++#define RS_DUAL	(DM_INC | SM_INC | RS_AUTO | TS_INDEX2VAL(XMIT_SZ_32BIT))
  
- 	pci1: pci@ee0d0000 {
-@@ -1050,6 +1064,20 @@
- 		interrupt-map = <0x0000 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
- 				 0x0800 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
- 				 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
-+
-+		usb@0,1 {
-+			reg = <0x800 0 0 0 0>;
-+			device_type = "pci";
-+			phys = <&usb2 0>;
-+			phy-names = "usb";
-+		};
-+
-+		usb@0,2 {
-+			reg = <0x1000 0 0 0 0>;
-+			device_type = "pci";
-+			phys = <&usb2 0>;
-+			phy-names = "usb";
-+		};
- 	};
- 
- 	pciec: pcie@fe000000 {
+ static unsigned long dma_find_base(unsigned int chan)
+ {
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
+index 57f83a9..7aa7333 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
+@@ -30,62 +30,62 @@ static const struct sh_dmae_slave_config sh7722_dmae_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_SCIF0_TX,
+ 		.addr		= 0xffe0000c,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x21,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF0_RX,
+ 		.addr		= 0xffe00014,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x22,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF1_TX,
+ 		.addr		= 0xffe1000c,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x25,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF1_RX,
+ 		.addr		= 0xffe10014,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x26,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF2_TX,
+ 		.addr		= 0xffe2000c,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x29,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF2_RX,
+ 		.addr		= 0xffe20014,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x2a,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SIUA_TX,
+ 		.addr		= 0xa454c098,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
++		.chcr		= DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL(XMIT_SZ_32BIT),
+ 		.mid_rid	= 0xb1,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SIUA_RX,
+ 		.addr		= 0xa454c090,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
++		.chcr		= DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL(XMIT_SZ_32BIT),
+ 		.mid_rid	= 0xb2,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SIUB_TX,
+ 		.addr		= 0xa454c09c,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
++		.chcr		= DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL(XMIT_SZ_32BIT),
+ 		.mid_rid	= 0xb5,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SIUB_RX,
+ 		.addr		= 0xa454c094,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
++		.chcr		= DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL(XMIT_SZ_32BIT),
+ 		.mid_rid	= 0xb6,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
+ 		.addr		= 0x04ce0030,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.chcr		= DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL(XMIT_SZ_16BIT),
+ 		.mid_rid	= 0xc1,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SDHI0_RX,
+ 		.addr		= 0x04ce0030,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.chcr		= DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL(XMIT_SZ_16BIT),
+ 		.mid_rid	= 0xc2,
+ 	},
+ };
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+index b9e84b1..ea5780b3 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+@@ -36,122 +36,122 @@ static const struct sh_dmae_slave_config sh7724_dmae_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_SCIF0_TX,
+ 		.addr		= 0xffe0000c,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x21,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF0_RX,
+ 		.addr		= 0xffe00014,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x22,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF1_TX,
+ 		.addr		= 0xffe1000c,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x25,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF1_RX,
+ 		.addr		= 0xffe10014,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x26,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF2_TX,
+ 		.addr		= 0xffe2000c,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x29,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF2_RX,
+ 		.addr		= 0xffe20014,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x2a,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF3_TX,
+ 		.addr		= 0xa4e30020,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x2d,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF3_RX,
+ 		.addr		= 0xa4e30024,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x2e,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF4_TX,
+ 		.addr		= 0xa4e40020,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x31,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF4_RX,
+ 		.addr		= 0xa4e40024,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x32,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF5_TX,
+ 		.addr		= 0xa4e50020,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x35,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF5_RX,
+ 		.addr		= 0xa4e50024,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x36,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_USB0D0_TX,
+ 		.addr		= 0xA4D80100,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
++		.chcr		= DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL(XMIT_SZ_32BIT),
+ 		.mid_rid	= 0x73,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_USB0D0_RX,
+ 		.addr		= 0xA4D80100,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
++		.chcr		= DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL(XMIT_SZ_32BIT),
+ 		.mid_rid	= 0x73,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_USB0D1_TX,
+ 		.addr		= 0xA4D80120,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
++		.chcr		= DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL(XMIT_SZ_32BIT),
+ 		.mid_rid	= 0x77,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_USB0D1_RX,
+ 		.addr		= 0xA4D80120,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
++		.chcr		= DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL(XMIT_SZ_32BIT),
+ 		.mid_rid	= 0x77,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_USB1D0_TX,
+ 		.addr		= 0xA4D90100,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
++		.chcr		= DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL(XMIT_SZ_32BIT),
+ 		.mid_rid	= 0xab,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_USB1D0_RX,
+ 		.addr		= 0xA4D90100,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
++		.chcr		= DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL(XMIT_SZ_32BIT),
+ 		.mid_rid	= 0xab,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_USB1D1_TX,
+ 		.addr		= 0xA4D90120,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
++		.chcr		= DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL(XMIT_SZ_32BIT),
+ 		.mid_rid	= 0xaf,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_USB1D1_RX,
+ 		.addr		= 0xA4D90120,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
++		.chcr		= DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL(XMIT_SZ_32BIT),
+ 		.mid_rid	= 0xaf,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
+ 		.addr		= 0x04ce0030,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.chcr		= DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL(XMIT_SZ_16BIT),
+ 		.mid_rid	= 0xc1,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SDHI0_RX,
+ 		.addr		= 0x04ce0030,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.chcr		= DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL(XMIT_SZ_16BIT),
+ 		.mid_rid	= 0xc2,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SDHI1_TX,
+ 		.addr		= 0x04cf0030,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.chcr		= DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL(XMIT_SZ_16BIT),
+ 		.mid_rid	= 0xc9,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SDHI1_RX,
+ 		.addr		= 0x04cf0030,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.chcr		= DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL(XMIT_SZ_16BIT),
+ 		.mid_rid	= 0xca,
+ 	},
+ };
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+index 7b24ec4..18bcd70 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+@@ -123,28 +123,28 @@ static const struct sh_dmae_slave_config sh7757_dmae0_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_SDHI_TX,
+ 		.addr		= 0x1fe50030,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= SM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_16BIT),
+ 		.mid_rid	= 0xc5,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_SDHI_RX,
+ 		.addr		= 0x1fe50030,
+-		.chcr		= DM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_16BIT),
+ 		.mid_rid	= 0xc6,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_MMCIF_TX,
+ 		.addr		= 0x1fcb0034,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= SM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_32BIT),
+ 		.mid_rid	= 0xd3,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_MMCIF_RX,
+ 		.addr		= 0x1fcb0034,
+-		.chcr		= DM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_32BIT),
+ 		.mid_rid	= 0xd7,
+ 	},
+@@ -154,56 +154,56 @@ static const struct sh_dmae_slave_config sh7757_dmae1_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_SCIF2_TX,
+ 		.addr		= 0x1f4b000c,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= SM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x21,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_SCIF2_RX,
+ 		.addr		= 0x1f4b0014,
+-		.chcr		= DM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x22,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_SCIF3_TX,
+ 		.addr		= 0x1f4c000c,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= SM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x29,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_SCIF3_RX,
+ 		.addr		= 0x1f4c0014,
+-		.chcr		= DM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x2a,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_SCIF4_TX,
+ 		.addr		= 0x1f4d000c,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= SM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x41,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_SCIF4_RX,
+ 		.addr		= 0x1f4d0014,
+-		.chcr		= DM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x42,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RSPI_TX,
+ 		.addr		= 0xfe480004,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= SM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_16BIT),
+ 		.mid_rid	= 0xc1,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RSPI_RX,
+ 		.addr		= 0xfe480004,
+-		.chcr		= DM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_16BIT),
+ 		.mid_rid	= 0xc2,
+ 	},
+@@ -213,70 +213,70 @@ static const struct sh_dmae_slave_config sh7757_dmae2_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC0_TX,
+ 		.addr		= 0x1e500012,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= SM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x21,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC0_RX,
+ 		.addr		= 0x1e500013,
+-		.chcr		= DM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x22,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC1_TX,
+ 		.addr		= 0x1e510012,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= SM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x29,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC1_RX,
+ 		.addr		= 0x1e510013,
+-		.chcr		= DM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x2a,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC2_TX,
+ 		.addr		= 0x1e520012,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= SM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0xa1,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC2_RX,
+ 		.addr		= 0x1e520013,
+-		.chcr		= DM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0xa2,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC3_TX,
+ 		.addr		= 0x1e530012,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= SM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0xa9,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC3_RX,
+ 		.addr		= 0x1e530013,
+-		.chcr		= DM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0xaf,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC4_TX,
+ 		.addr		= 0x1e540012,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= SM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0xc5,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC4_RX,
+ 		.addr		= 0x1e540013,
+-		.chcr		= DM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0xc6,
+ 	},
+@@ -286,70 +286,70 @@ static const struct sh_dmae_slave_config sh7757_dmae3_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC5_TX,
+ 		.addr		= 0x1e550012,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= SM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x21,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC5_RX,
+ 		.addr		= 0x1e550013,
+-		.chcr		= DM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x22,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC6_TX,
+ 		.addr		= 0x1e560012,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= SM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x29,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC6_RX,
+ 		.addr		= 0x1e560013,
+-		.chcr		= DM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x2a,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC7_TX,
+ 		.addr		= 0x1e570012,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= SM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x41,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC7_RX,
+ 		.addr		= 0x1e570013,
+-		.chcr		= DM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x42,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC8_TX,
+ 		.addr		= 0x1e580012,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= SM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x45,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC8_RX,
+ 		.addr		= 0x1e580013,
+-		.chcr		= DM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x46,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC9_TX,
+ 		.addr		= 0x1e590012,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= SM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x51,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC9_RX,
+ 		.addr		= 0x1e590013,
+-		.chcr		= DM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | RS_ERS | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x52,
+ 	},
+-- 
+2.0.0
+
