@@ -1,38 +1,71 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 08 Jul 2014 09:04:07 +0000
-Subject: Re: [PATCH v4 0/3] Add R8A7791/Koelsch/Henninger board PCI DT support
-Message-Id: <20140708090239.GA3244@verge.net.au>
+From: Hans Verkuil <hverkuil@xs4all.nl>
+Date: Thu, 17 Jul 2014 21:53:52 +0000
+Subject: Re: [PATCH v2 01/23] v4l: Add ARGB and XRGB pixel formats
+Message-Id: <53C845F0.2010409@xs4all.nl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201406242207.32790.sergei.shtylyov@cogentembedded.com>
- <9076479.78BOG4SjZ9@wuerfel> <53BB0F6E.5080600@cogentembedded.com>
-In-Reply-To: <53BB0F6E.5080600@cogentembedded.com>
+References: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1403567669-18539-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1403567669-18539-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-On Tue, Jul 08, 2014 at 01:21:50AM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 06/24/2014 10:22 PM, Arnd Bergmann wrote:
-> 
-> >>    Here's the set of 3 patches against Simon Horman's 'renesas.git' repo,
-> >>'renesas-devel-v3.16-rc2-20140623' tag. Here we add PCI USB device tree support
-> >>for the R8A7791-based Koelsch and Henninger boards. As the 'pci-rcar-gen2'
-> >>driver device tree support has been merged for 3.16, this patchset can now be
-> >>merged too...
-> 
-> >>[1/3] ARM: shmobile: r8a7791: add internal PCI bridge nodes
-> >>[2/3] ARM: shmobile: koelsch: enable internal PCI
-> >>[3/3] ARM: shmobile: henninger: enable internal PCI
-> 
-> >Acked-by: Arnd Bergmann <arnd@arndb.de>
-> 
->    Simon, what's up with this series? You've merged analogous series for
-> R8A7790 but not this one. You followed up to an older version of it, asking
-> me to re-post when the driver patch gets merged but it already had been
-> merged already (and this version posted), and I got no reply from you
-> then...
+Hi Laurent,
 
-Sorry about that and thanks for the reminder.
-I have now queued up this series.
+While implementing support for this in v4l-utils I discovered you missed one:
+
+On 06/24/2014 01:54 AM, Laurent Pinchart wrote:
+> From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> 
+> The existing RGB pixel formats are ill-defined in respect to their alpha
+> bits and their meaning is driver dependent. Create new standard ARGB and
+> XRGB variants with clearly defined meanings and make the existing
+> variants deprecated.
+> 
+> The new pixel formats 4CC values have been selected to match the DRM
+> 4CCs for the same in-memory formats.
+> 
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> ---
+>  .../DocBook/media/v4l/pixfmt-packed-rgb.xml        | 415 ++++++++++++++++++++-
+>  include/uapi/linux/videodev2.h                     |   8 +
+>  2 files changed, 403 insertions(+), 20 deletions(-)
+> 
+> diff --git a/include/uapi/linux/videodev2.h b/include/uapi/linux/videodev2.h
+> index 168ff50..0125f4d 100644
+> --- a/include/uapi/linux/videodev2.h
+> +++ b/include/uapi/linux/videodev2.h
+> @@ -294,7 +294,11 @@ struct v4l2_pix_format {
+>  /* RGB formats */
+>  #define V4L2_PIX_FMT_RGB332  v4l2_fourcc('R', 'G', 'B', '1') /*  8  RGB-3-3-2     */
+>  #define V4L2_PIX_FMT_RGB444  v4l2_fourcc('R', '4', '4', '4') /* 16  xxxxrrrr ggggbbbb */
+> +#define V4L2_PIX_FMT_ARGB444 v4l2_fourcc('A', 'R', '1', '2') /* 16  aaaarrrr ggggbbbb */
+> +#define V4L2_PIX_FMT_XRGB444 v4l2_fourcc('X', 'R', '1', '2') /* 16  xxxxrrrr ggggbbbb */
+>  #define V4L2_PIX_FMT_RGB555  v4l2_fourcc('R', 'G', 'B', 'O') /* 16  RGB-5-5-5     */
+> +#define V4L2_PIX_FMT_ARGB555 v4l2_fourcc('A', 'R', '1', '5') /* 16  ARGB-1-5-5-5  */
+> +#define V4L2_PIX_FMT_XRGB555 v4l2_fourcc('X', 'R', '1', '5') /* 16  XRGB-1-5-5-5  */
+>  #define V4L2_PIX_FMT_RGB565  v4l2_fourcc('R', 'G', 'B', 'P') /* 16  RGB-5-6-5     */
+>  #define V4L2_PIX_FMT_RGB555X v4l2_fourcc('R', 'G', 'B', 'Q') /* 16  RGB-5-5-5 BE  */
+
+A+X variants should also be added for this RGB555X pix format.
+
+Regards,
+
+	Hans
+
+>  #define V4L2_PIX_FMT_RGB565X v4l2_fourcc('R', 'G', 'B', 'R') /* 16  RGB-5-6-5 BE  */
+> @@ -302,7 +306,11 @@ struct v4l2_pix_format {
+>  #define V4L2_PIX_FMT_BGR24   v4l2_fourcc('B', 'G', 'R', '3') /* 24  BGR-8-8-8     */
+>  #define V4L2_PIX_FMT_RGB24   v4l2_fourcc('R', 'G', 'B', '3') /* 24  RGB-8-8-8     */
+>  #define V4L2_PIX_FMT_BGR32   v4l2_fourcc('B', 'G', 'R', '4') /* 32  BGR-8-8-8-8   */
+> +#define V4L2_PIX_FMT_ABGR32  v4l2_fourcc('A', 'R', '2', '4') /* 32  BGRA-8-8-8-8  */
+> +#define V4L2_PIX_FMT_XBGR32  v4l2_fourcc('X', 'R', '2', '4') /* 32  BGRX-8-8-8-8  */
+>  #define V4L2_PIX_FMT_RGB32   v4l2_fourcc('R', 'G', 'B', '4') /* 32  RGB-8-8-8-8   */
+> +#define V4L2_PIX_FMT_ARGB32  v4l2_fourcc('B', 'A', '2', '4') /* 32  ARGB-8-8-8-8  */
+> +#define V4L2_PIX_FMT_XRGB32  v4l2_fourcc('B', 'X', '2', '4') /* 32  XRGB-8-8-8-8  */
+>  
+>  /* Grey formats */
+>  #define V4L2_PIX_FMT_GREY    v4l2_fourcc('G', 'R', 'E', 'Y') /*  8  Greyscale     */
+> 
+
