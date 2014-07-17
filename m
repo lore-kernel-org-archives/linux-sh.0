@@ -1,41 +1,145 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 02 Jul 2014 04:28:36 +0000
-Subject: [PATCH/RFC 0/6] ARM: shmobile: bockw: Enable SCI and TMU using DT
-Message-Id: <1404275322-26514-1-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 17 Jul 2014 00:45:32 +0000
+Subject: [PATCH 1/3] dmaengine: shdma: Add more register documentation
+Message-Id: <6b32fafee2bb5fcf0b3d3d04a9762d3a0212089e.1405557829.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The purpose of this series is to enable SCI and TMU using DT
-on the r8a7778 (R-Car M1) based bockw when booting using DT reference.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-This is the first batck of work by myself to convert DT reference
-board support to initialsie SCI and TMU devices using DT.
+Also add a few definitions that were missing.
 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/sh/include/asm/dma-register.h | 36 +++++++++++++++++++-----------------
+ drivers/dma/sh/shdmac.c            | 12 ++++++------
+ include/linux/sh_dma.h             | 24 +++++++++++++-----------
+ 3 files changed, 38 insertions(+), 34 deletions(-)
 
-This series is depends on patches included in
-"[PATCH v4 00/19] Renesas CMT, MTU2 and TMU timers DT support" which
-applies on top of renesas-devel-v3.16-rc2-20140628.
-
-The patch "bockw: Initialise SCIF device using DT"
-depends on "serial: sh-sci: Add device tree support for r8a7778".
-
-Simon Horman (6):
-  ARM: shmobile: r8a7778: add SCI clock support for DT
-  ARM: shmobile: r8a7778: Add SCIF nodes
-  ARM: shmobile: bockw: Initialise SCIF device using DT
-  ARM: shmobile: r8a7778: add TMU clock support for DT
-  ARM: shmobile: r8a7778: Add TMU nodes
-  ARM: shmobile: bockw: Initialise TMU device using DT
-
- arch/arm/boot/dts/r8a7778-bockw-reference.dts | 18 +++++-
- arch/arm/boot/dts/r8a7778.dtsi                | 84 +++++++++++++++++++++++++++
- arch/arm/mach-shmobile/clock-r8a7778.c        |  8 +++
- arch/arm/mach-shmobile/setup-r8a7778.c        | 15 +++--
- 4 files changed, 114 insertions(+), 11 deletions(-)
-
+diff --git a/arch/sh/include/asm/dma-register.h b/arch/sh/include/asm/dma-register.h
+index 51cd78f..c757b47 100644
+--- a/arch/sh/include/asm/dma-register.h
++++ b/arch/sh/include/asm/dma-register.h
+@@ -13,17 +13,17 @@
+ #ifndef DMA_REGISTER_H
+ #define DMA_REGISTER_H
+ 
+-/* DMA register */
+-#define SAR	0x00
+-#define DAR	0x04
+-#define TCR	0x08
+-#define CHCR	0x0C
+-#define DMAOR	0x40
++/* DMA registers */
++#define SAR	0x00	/* Source Address Register */
++#define DAR	0x04	/* Destination Address Register */
++#define TCR	0x08	/* Transfer Count Register */
++#define CHCR	0x0C	/* Channel Control Register */
++#define DMAOR	0x40	/* DMA Operation Register */
+ 
+ /* DMAOR definitions */
+-#define DMAOR_AE	0x00000004
++#define DMAOR_AE	0x00000004	/* Address Error Flag */
+ #define DMAOR_NMIF	0x00000002
+-#define DMAOR_DME	0x00000001
++#define DMAOR_DME	0x00000001	/* DMA Master Enable */
+ 
+ /* Definitions for the SuperH DMAC */
+ #define REQ_L	0x00000000
+@@ -34,18 +34,20 @@
+ #define ACK_W	0x00020000
+ #define ACK_H	0x00000000
+ #define ACK_L	0x00010000
+-#define DM_INC	0x00004000
+-#define DM_DEC	0x00008000
+-#define DM_FIX	0x0000c000
+-#define SM_INC	0x00001000
+-#define SM_DEC	0x00002000
+-#define SM_FIX	0x00003000
++#define DM_INC	0x00004000	/* Destination addresses are incremented */
++#define DM_DEC	0x00008000	/* Destination addresses are decremented */
++#define DM_FIX	0x0000c000	/* Destination address is fixed */
++#define SM_INC	0x00001000	/* Source addresses are incremented */
++#define SM_DEC	0x00002000	/* Source addresses are decremented */
++#define SM_FIX	0x00003000	/* Source address is fixed */
+ #define RS_IN	0x00000200
+ #define RS_OUT	0x00000300
++#define RS_AUTO	0x00000400	/* Auto Request */
++#define RS_ERS	0x00000800	/* DMA extended resource selector */
+ #define TS_BLK	0x00000040
+ #define TM_BUR	0x00000020
+-#define CHCR_DE	0x00000001
+-#define CHCR_TE	0x00000002
+-#define CHCR_IE	0x00000004
++#define CHCR_DE	0x00000001	/* DMA Enable */
++#define CHCR_TE	0x00000002	/* Transfer End Flag */
++#define CHCR_IE	0x00000004	/* Interrupt Enable */
+ 
+ #endif
+diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
+index 146d5df..1a6f659 100644
+--- a/drivers/dma/sh/shdmac.c
++++ b/drivers/dma/sh/shdmac.c
+@@ -38,12 +38,12 @@
+ #include "../dmaengine.h"
+ #include "shdma.h"
+ 
+-/* DMA register */
+-#define SAR	0x00
+-#define DAR	0x04
+-#define TCR	0x08
+-#define CHCR	0x0C
+-#define DMAOR	0x40
++/* DMA registers */
++#define SAR	0x00	/* Source Address Register */
++#define DAR	0x04	/* Destination Address Register */
++#define TCR	0x08	/* Transfer Count Register */
++#define CHCR	0x0C	/* Channel Control Register */
++#define DMAOR	0x40	/* DMA Operation Register */
+ 
+ #define TEND	0x18 /* USB-DMAC */
+ 
+diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
+index b7b43b8..56b97ee 100644
+--- a/include/linux/sh_dma.h
++++ b/include/linux/sh_dma.h
+@@ -95,19 +95,21 @@ struct sh_dmae_pdata {
+ };
+ 
+ /* DMAOR definitions */
+-#define DMAOR_AE	0x00000004
++#define DMAOR_AE	0x00000004	/* Address Error Flag */
+ #define DMAOR_NMIF	0x00000002
+-#define DMAOR_DME	0x00000001
++#define DMAOR_DME	0x00000001	/* DMA Master Enable */
+ 
+ /* Definitions for the SuperH DMAC */
+-#define DM_INC	0x00004000
+-#define DM_DEC	0x00008000
+-#define DM_FIX	0x0000c000
+-#define SM_INC	0x00001000
+-#define SM_DEC	0x00002000
+-#define SM_FIX	0x00003000
+-#define CHCR_DE	0x00000001
+-#define CHCR_TE	0x00000002
+-#define CHCR_IE	0x00000004
++#define DM_INC	0x00004000	/* Destination addresses are incremented */
++#define DM_DEC	0x00008000	/* Destination addresses are decremented */
++#define DM_FIX	0x0000c000	/* Destination address is fixed */
++#define SM_INC	0x00001000	/* Source addresses are incremented */
++#define SM_DEC	0x00002000	/* Source addresses are decremented */
++#define SM_FIX	0x00003000	/* Source address is fixed */
++#define RS_AUTO	0x00000400	/* Auto Request */
++#define RS_ERS	0x00000800	/* DMA extended resource selector */
++#define CHCR_DE	0x00000001	/* DMA Enable */
++#define CHCR_TE	0x00000002	/* Transfer End Flag */
++#define CHCR_IE	0x00000004	/* Interrupt Enable */
+ 
+ #endif
 -- 
-2.0.0.rc2
+2.0.0
 
