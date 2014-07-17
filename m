@@ -1,43 +1,85 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 07 Jul 2014 07:54:45 +0000
-Subject: [PATCH v2 20/30] ARM: shmobile: armadillo800eva-reference: Initialise TMU device using DT
-Message-Id: <1404719695-1634-21-git-send-email-horms+renesas@verge.net.au>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Thu, 17 Jul 2014 14:48:37 +0000
+Subject: [PATCH v2 2/5] i2c: eg20t: Remove suspension check
+Message-Id: <1405608520-5644-2-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+References: <1405608520-5644-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1405608520-5644-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Initialise TMU device using DT when booting armadillo800eva
-using DT-reference. This device was previously enabled when
-booting with legacy-C but not with DT-reference.
+We now take care of suspension in the i2c core code. So we can remove this
+check here.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
 ---
-v2
-* First post
----
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 4 ++++
- 1 file changed, 4 insertions(+)
+same as v1
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index f47ab76..c430197 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -205,6 +205,10 @@
- 	};
+ drivers/i2c/busses/i2c-eg20t.c | 15 ---------------
+ 1 file changed, 15 deletions(-)
+
+diff --git a/drivers/i2c/busses/i2c-eg20t.c b/drivers/i2c/busses/i2c-eg20t.c
+index a44ea13..aae0413 100644
+--- a/drivers/i2c/busses/i2c-eg20t.c
++++ b/drivers/i2c/busses/i2c-eg20t.c
+@@ -162,15 +162,12 @@ struct i2c_algo_pch_data {
+  * struct adapter_info - This structure holds the adapter information for the
+ 			 PCH i2c controller
+  * @pch_data:		stores a list of i2c_algo_pch_data
+- * @pch_i2c_suspended:	specifies whether the system is suspended or not
+- *			perhaps with more lines and words.
+  * @ch_num:		specifies the number of i2c instance
+  *
+  * pch_data has as many elements as maximum I2C channels
+  */
+ struct adapter_info {
+ 	struct i2c_algo_pch_data pch_data[PCH_I2C_MAX_DEV];
+-	bool pch_i2c_suspended;
+ 	int ch_num;
  };
  
-+&tmu0 {
-+	status = "okay";
-+};
-+
- &pfc {
- 	ether_pins: ether {
- 		renesas,groups = "gether_mii", "gether_int";
+@@ -677,13 +674,6 @@ static s32 pch_i2c_xfer(struct i2c_adapter *i2c_adap,
+ 	if (ret)
+ 		return ret;
+ 
+-	if (adap->p_adapter_info->pch_i2c_suspended) {
+-		mutex_unlock(&pch_mutex);
+-		return -EBUSY;
+-	}
+-
+-	pch_dbg(adap, "adap->p_adapter_info->pch_i2c_suspended is %d\n",
+-		adap->p_adapter_info->pch_i2c_suspended);
+ 	/* transfer not completed */
+ 	adap->pch_i2c_xfer_in_progress = true;
+ 
+@@ -786,7 +776,6 @@ static int pch_i2c_probe(struct pci_dev *pdev,
+ 
+ 	for (i = 0; i < adap_info->ch_num; i++) {
+ 		pch_adap = &adap_info->pch_data[i].pch_adapter;
+-		adap_info->pch_i2c_suspended = false;
+ 
+ 		adap_info->pch_data[i].p_adapter_info = adap_info;
+ 
+@@ -862,8 +851,6 @@ static int pch_i2c_suspend(struct pci_dev *pdev, pm_message_t state)
+ 	struct adapter_info *adap_info = pci_get_drvdata(pdev);
+ 	void __iomem *p = adap_info->pch_data[0].pch_base_address;
+ 
+-	adap_info->pch_i2c_suspended = true;
+-
+ 	for (i = 0; i < adap_info->ch_num; i++) {
+ 		while ((adap_info->pch_data[i].pch_i2c_xfer_in_progress)) {
+ 			/* Wait until all channel transfers are completed */
+@@ -912,8 +899,6 @@ static int pch_i2c_resume(struct pci_dev *pdev)
+ 	for (i = 0; i < adap_info->ch_num; i++)
+ 		pch_i2c_init(&adap_info->pch_data[i]);
+ 
+-	adap_info->pch_i2c_suspended = false;
+-
+ 	return 0;
+ }
+ #else
 -- 
-2.0.0.rc2
+1.9.1
 
