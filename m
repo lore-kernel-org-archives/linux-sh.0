@@ -1,93 +1,49 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 07 Jul 2014 07:54:55 +0000
-Subject: [PATCH v2 30/30] ARM: shmobile: kzm9g-reference: Initialise CMT1 device using DT
-Message-Id: <1404719695-1634-31-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 17 Jul 2014 00:40:34 +0000
+Subject: [PATCH 7/8] ARM: shmobile: r7s72100: Add MTU2 device to DT
+Message-Id: <221cd28d419064d517e62ac6f3c64c1df9aa4c5c.1405556312.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1405556312.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1405556312.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Initialise CMT1 device using DT when booting kzm9g
-using DT-reference.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
+Add the MTU2 counter to the r7s72100 device tree and make it disabled by
+default.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+[horms+renesas@verge.net.au correct irq number]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
 ---
-v2
-* First post
----
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |  4 ++++
- arch/arm/mach-shmobile/setup-sh73a0.c        | 11 +----------
- 2 files changed, 5 insertions(+), 10 deletions(-)
+ arch/arm/boot/dts/r7s72100.dtsi | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index df2ae46..4cd9949 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -279,6 +279,10 @@
- 	status = "okay";
- };
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index bdee225..1d28d01 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -229,6 +229,16 @@
+ 		status = "disabled";
+ 	};
  
-+&cmt1 {
-+	status = "okay";
-+};
++	mtu2: timer@fcff0000 {
++		compatible = "renesas,mtu2";
++		reg = <0xfcff0000 0x400>;
++		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "tgi0a";
++		clocks = <&mstp3_clks R7S72100_CLK_MTU2>;
++		clock-names = "fck";
++		status = "disabled";
++	};
 +
- &pfc {
- 	i2c3_pins: i2c3 {
- 		renesas,groups = "i2c3_1";
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 2c802ae..5d3f1d8 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -696,10 +696,6 @@ static struct platform_device irqpin3_device = {
- 	},
- };
- 
--static struct platform_device *sh73a0_devices_dt[] __initdata = {
--	&cmt1_device,
--};
--
- static struct platform_device *sh73a0_early_devices[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
-@@ -710,6 +706,7 @@ static struct platform_device *sh73a0_early_devices[] __initdata = {
- 	&scif6_device,
- 	&scif7_device,
- 	&scif8_device,
-+	&cmt1_device,
- 	&tmu0_device,
- 	&ipmmu_device,
- };
-@@ -736,8 +733,6 @@ void __init sh73a0_add_standard_devices(void)
- 	/* Clear software reset bit on SY-DMAC module */
- 	__raw_writel(__raw_readl(SRCR2) & ~(1 << 18), SRCR2);
- 
--	platform_add_devices(sh73a0_devices_dt,
--			    ARRAY_SIZE(sh73a0_devices_dt));
- 	platform_add_devices(sh73a0_early_devices,
- 			    ARRAY_SIZE(sh73a0_early_devices));
- 	platform_add_devices(sh73a0_late_devices,
-@@ -762,8 +757,6 @@ void __init sh73a0_earlytimer_init(void)
- 
- void __init sh73a0_add_early_devices(void)
- {
--	early_platform_add_devices(sh73a0_devices_dt,
--				   ARRAY_SIZE(sh73a0_devices_dt));
- 	early_platform_add_devices(sh73a0_early_devices,
- 				   ARRAY_SIZE(sh73a0_early_devices));
- 
-@@ -780,8 +773,6 @@ void __init sh73a0_add_standard_devices_dt(void)
- 	/* clocks are setup late during boot in the case of DT */
- 	sh73a0_clock_init();
- 
--	platform_add_devices(sh73a0_devices_dt,
--			     ARRAY_SIZE(sh73a0_devices_dt));
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 
- 	/* Instantiate cpufreq-cpu0 */
+ 	scif0: serial@e8007000 {
+ 		compatible = "renesas,scif-r7s72100", "renesas,scif";
+ 		reg = <0xe8007000 64>;
 -- 
-2.0.0.rc2
+2.0.0
 
