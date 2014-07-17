@@ -1,88 +1,154 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 07 Jul 2014 07:54:49 +0000
-Subject: [PATCH v2 24/30] ARM: shmobile: r8a7740: Remove unnecessary r8a7740_add_standard_devices_dt()
-Message-Id: <1404719695-1634-25-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 17 Jul 2014 23:55:48 +0000
+Subject: [PATCH 1/2] ARM: shmobile: genmai: remove defconfig
+Message-Id: <3ed27bd90d6d0c8b4d686a2468b6d50cc1ef74e4.1405640905.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1405640905.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1405640905.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-r8a7740_add_standard_devices_dt() now only calls
-of_platform_populate() so call it directly and remove
-r8a7740_add_standard_devices_dt().
+The genmai board code is scheduled for removal and once
+that occurs the defconfig will be of no use. Remove it.
 
+Acked-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
 ---
-v2
-* First post
----
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 3 ++-
- arch/arm/mach-shmobile/r8a7740.h                         | 1 -
- arch/arm/mach-shmobile/setup-r8a7740.c                   | 7 +------
- 3 files changed, 3 insertions(+), 8 deletions(-)
+ arch/arm/configs/genmai_defconfig | 122 --------------------------------------
+ 1 file changed, 122 deletions(-)
+ delete mode 100644 arch/arm/configs/genmai_defconfig
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index 84bc6cb..f06e1f3 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -24,6 +24,7 @@
- #include <linux/kernel.h>
- #include <linux/gpio.h>
- #include <linux/io.h>
-+#include <linux/of_platform.h>
- 
- #include <asm/mach/arch.h>
- #include <asm/hardware/cache-l2x0.h>
-@@ -170,7 +171,7 @@ static void __init eva_init(void)
- 	l2x0_init(IOMEM(0xf0002000), 0x00400000, 0xc20f0fff);
- #endif
- 
--	r8a7740_add_standard_devices_dt();
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 
- 	r8a7740_pm_init();
- }
-diff --git a/arch/arm/mach-shmobile/r8a7740.h b/arch/arm/mach-shmobile/r8a7740.h
-index 1d1a5fd..3352fb8 100644
---- a/arch/arm/mach-shmobile/r8a7740.h
-+++ b/arch/arm/mach-shmobile/r8a7740.h
-@@ -49,7 +49,6 @@ extern void r8a7740_init_irq_of(void);
- extern void r8a7740_map_io(void);
- extern void r8a7740_add_early_devices(void);
- extern void r8a7740_add_standard_devices(void);
--extern void r8a7740_add_standard_devices_dt(void);
- extern void r8a7740_clock_init(u8 md_ck);
- extern void r8a7740_pinmux_init(void);
- extern void r8a7740_pm_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 3dcdc8d..fbfc49a 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -781,11 +781,6 @@ void __init r8a7740_add_early_devices(void)
- 
- #ifdef CONFIG_USE_OF
- 
--void __init r8a7740_add_standard_devices_dt(void)
--{
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
--}
--
- void __init r8a7740_init_irq_of(void)
- {
- 	void __iomem *intc_prio_base = ioremap_nocache(0xe6900010, 0x10);
-@@ -819,7 +814,7 @@ void __init r8a7740_init_irq_of(void)
- static void __init r8a7740_generic_init(void)
- {
- 	r8a7740_clock_init(0);
--	r8a7740_add_standard_devices_dt();
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
- 
- static const char *r8a7740_boards_compat_dt[] __initdata = {
+diff --git a/arch/arm/configs/genmai_defconfig b/arch/arm/configs/genmai_defconfig
+deleted file mode 100644
+index d238faf..0000000
+--- a/arch/arm/configs/genmai_defconfig
++++ /dev/null
+@@ -1,122 +0,0 @@
+-CONFIG_SYSVIPC=y
+-CONFIG_NO_HZ=y
+-CONFIG_IKCONFIG=y
+-CONFIG_IKCONFIG_PROC=y
+-CONFIG_LOG_BUF_SHIFT
+-CONFIG_CC_OPTIMIZE_FOR_SIZE=y
+-CONFIG_SYSCTL_SYSCALL=y
+-CONFIG_EMBEDDED=y
+-CONFIG_PERF_EVENTS=y
+-CONFIG_SLAB=y
+-# CONFIG_LBDAF is not set
+-# CONFIG_BLK_DEV_BSG is not set
+-# CONFIG_IOSCHED_DEADLINE is not set
+-# CONFIG_IOSCHED_CFQ is not set
+-CONFIG_ARCH_SHMOBILE_LEGACY=y
+-CONFIG_ARCH_R7S72100=y
+-CONFIG_MACH_GENMAI=y
+-# CONFIG_SH_TIMER_CMT is not set
+-# CONFIG_SH_TIMER_MTU2 is not set
+-# CONFIG_SH_TIMER_TMU is not set
+-# CONFIG_EM_TIMER_STI is not set
+-CONFIG_ARM_ERRATA_430973=y
+-CONFIG_ARM_ERRATA_458693=y
+-CONFIG_ARM_ERRATA_460075=y
+-CONFIG_ARM_ERRATA_743622=y
+-CONFIG_ARM_ERRATA_754322=y
+-CONFIG_AEABI=y
+-# CONFIG_OABI_COMPAT is not set
+-CONFIG_FORCE_MAX_ZONEORDER
+-CONFIG_ZBOOT_ROM_TEXT=0x0
+-CONFIG_ZBOOT_ROM_BSS=0x0
+-CONFIG_ARM_APPENDED_DTB=y
+-CONFIG_KEXEC=y
+-CONFIG_AUTO_ZRELADDR=y
+-CONFIG_VFP=y
+-CONFIG_NEON=y
+-# CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+-CONFIG_PM_RUNTIME=y
+-CONFIG_NET=y
+-CONFIG_PACKET=y
+-CONFIG_UNIX=y
+-CONFIG_INET=y
+-CONFIG_IP_PNP=y
+-CONFIG_IP_PNP_DHCP=y
+-# CONFIG_INET_XFRM_MODE_TRANSPORT is not set
+-# CONFIG_INET_XFRM_MODE_TUNNEL is not set
+-# CONFIG_INET_XFRM_MODE_BEET is not set
+-# CONFIG_INET_LRO is not set
+-# CONFIG_INET_DIAG is not set
+-# CONFIG_IPV6 is not set
+-# CONFIG_WIRELESS is not set
+-CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+-CONFIG_DEVTMPFS=y
+-CONFIG_DEVTMPFS_MOUNT=y
+-CONFIG_EEPROM_AT24=y
+-CONFIG_NETDEVICES=y
+-# CONFIG_NET_CORE is not set
+-# CONFIG_NET_VENDOR_ARC is not set
+-# CONFIG_NET_CADENCE is not set
+-# CONFIG_NET_VENDOR_BROADCOM is not set
+-# CONFIG_NET_VENDOR_CIRRUS is not set
+-# CONFIG_NET_VENDOR_FARADAY is not set
+-# CONFIG_NET_VENDOR_INTEL is not set
+-# CONFIG_NET_VENDOR_MARVELL is not set
+-# CONFIG_NET_VENDOR_MICREL is not set
+-# CONFIG_NET_VENDOR_NATSEMI is not set
+-CONFIG_SH_ETH=y
+-# CONFIG_NET_VENDOR_SEEQ is not set
+-# CONFIG_NET_VENDOR_SMSC is not set
+-# CONFIG_NET_VENDOR_STMICRO is not set
+-# CONFIG_NET_VENDOR_VIA is not set
+-# CONFIG_NET_VENDOR_WIZNET is not set
+-# CONFIG_WLAN is not set
+-# CONFIG_INPUT_MOUSEDEV_PSAUX is not set
+-CONFIG_INPUT_EVDEV=y
+-# CONFIG_KEYBOARD_ATKBD is not set
+-# CONFIG_INPUT_MOUSE is not set
+-# CONFIG_SERIO is not set
+-# CONFIG_LEGACY_PTYS is not set
+-CONFIG_SERIAL_SH_SCI=y
+-CONFIG_SERIAL_SH_SCI_NR_UARTS
+-CONFIG_SERIAL_SH_SCI_CONSOLE=y
+-# CONFIG_HW_RANDOM is not set
+-CONFIG_I2C_CHARDEV=y
+-CONFIG_I2C_RIIC=y
+-CONFIG_SPI=y
+-CONFIG_SPI_RSPI=y
+-# CONFIG_HWMON is not set
+-CONFIG_THERMAL=y
+-CONFIG_RCAR_THERMAL=y
+-CONFIG_REGULATOR=y
+-CONFIG_REGULATOR_FIXED_VOLTAGE=y
+-CONFIG_DRM=y
+-CONFIG_DRM_RCAR_DU=y
+-# CONFIG_USB_SUPPORT is not set
+-CONFIG_MMC=y
+-CONFIG_MMC_SDHI=y
+-CONFIG_MMC_SH_MMCIF=y
+-CONFIG_NEW_LEDS=y
+-CONFIG_LEDS_CLASS=y
+-CONFIG_RTC_CLASS=y
+-CONFIG_DMADEVICES=y
+-CONFIG_SH_DMAE=y
+-# CONFIG_IOMMU_SUPPORT is not set
+-# CONFIG_DNOTIFY is not set
+-CONFIG_MSDOS_FS=y
+-CONFIG_VFAT_FS=y
+-CONFIG_TMPFS=y
+-CONFIG_CONFIGFS_FS=y
+-# CONFIG_MISC_FILESYSTEMS is not set
+-CONFIG_NFS_FS=y
+-CONFIG_NFS_V3_ACL=y
+-CONFIG_NFS_V4=y
+-CONFIG_NFS_V4_1=y
+-CONFIG_ROOT_NFS=y
+-CONFIG_NLS_CODEPAGE_437=y
+-CONFIG_NLS_ISO8859_1=y
+-# CONFIG_ENABLE_WARN_DEPRECATED is not set
+-# CONFIG_ENABLE_MUST_CHECK is not set
+-# CONFIG_ARM_UNWIND is not set
+-# CONFIG_CRYPTO_ANSI_CPRNG is not set
+-# CONFIG_CRYPTO_HW is not set
 -- 
-2.0.0.rc2
+2.0.1
 
