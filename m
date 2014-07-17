@@ -1,18 +1,24 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 02 Jul 2014 16:23:37 +0000
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Jul 2014 23:59:26 +0000
 Subject: [PATCH 2/3] ARM: shmobile: r7s72100: genmai: Remove legacy board file
-Message-Id: <1404318218-4732-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Message-Id: <efcbac6c2b2d5cc218f96a7d7673842c01bf8929.1405641497.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1405641497.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1405641497.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
+
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
 The genmai board now boots using DT and multiplatform kernel with the
 same feature set as the legacy board. Remove the legacy board file and
 the board Kconfig option.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Wolfram Sang <wsa@sang-engineering.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
  arch/arm/mach-shmobile/Kconfig        |   9 --
  arch/arm/mach-shmobile/Makefile       |   1 -
@@ -48,10 +54,10 @@ index 4508643..85f55e8 100644
  	bool "MARZEN board"
  	depends on ARCH_R8A7779
 diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index a058ec3..be5fed2 100644
+index 18b05a8..411e236 100644
 --- a/arch/arm/mach-shmobile/Makefile
 +++ b/arch/arm/mach-shmobile/Makefile
-@@ -72,7 +72,6 @@ obj-$(CONFIG_MACH_APE6EVM_REFERENCE)	+= board-ape6evm-reference.o
+@@ -71,7 +71,6 @@ obj-$(CONFIG_MACH_APE6EVM_REFERENCE)	+= board-ape6evm-reference.o
  obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
  obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
  obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
@@ -240,5 +246,5 @@ index b5dee53..0000000
 -	.dt_compat	= genmai_boards_compat_dt,
 -MACHINE_END
 -- 
-1.8.5.5
+2.0.1
 
