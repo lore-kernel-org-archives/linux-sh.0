@@ -1,56 +1,55 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 08 Jul 2014 10:36:06 +0000
-Subject: Re: [PATCH 0/3] dma: rcar-audmapp: add DT support
-Message-Id: <87egxwrvbr.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Jul 2014 23:55:47 +0000
+Subject: [GIT PULL] Fourth Round of Renesas ARM Based SoC Defconfig Updates for v3.17
+Message-Id: <cover.1405640905.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87tx7iy4ot.wl%kuninori.morimoto.gx@renesas.com>
-	<20140708101048.GA7924@verge.net.au>
-In-Reply-To: <20140708101048.GA7924@verge.net.au>
+References: <cover.1394080829.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1394080829.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Vinod Koul <vinod.koul@intel.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
+
+Hi Olof, Hi Kevin, Hi Arnd,
+
+Please consider these fourth round of Renesas ARM based SoC defconfig
+updates for v3.17.
+
+This pull request is based on the previous round of
+such requests, tagged as renesas-defconfig3-for-v3.17,
+which you have merged into renesas/defconfig3.
+
+I will follow-up with a pull request that removes
+the Genmai board code.
 
 
-Hi Simon
+The following changes since commit 8cbf869a0a278c4d39e50daa4f4101b394a72a93:
 
-Thank you for your hard work.
-It is very helpful for me/us !
+  ARM: shmobile: Enable R-Car Gen 2 PCIe in shmobile_defconfig (2014-07-09 10:44:12 +0200)
 
-> in order to try and create a smoother path for changes in this area to land
-> I have pushed them to the rcar-audmapp-for-v3.17 branch of my renesas tree
-> on kernel.org. It is merged into the devel and next branches of that tree
-> and should appear in linux-next in the near future.
-> 
-> My intention is to send a pull-request for this branch once it has sat
-> in next for a short time. I hope that this approach is useful to all parties.
-> 
-> On Wed, Jun 18, 2014 at 01:58:41AM -0700, Kuninori Morimoto wrote:
-> > 
-> > Hi Vinod
-> > 
-> > These patches add DT support to Renesas Audio DMAC peri peri driver.
-> > 
-> > Kuninori Morimoto (3):
-> >       dma: rcar-audmapp: enable .set_slave
-> >       dma: rcar-audmapp: don't keep audmapp_slave_config for each channeles
-> >       dma: rcar-audmapp: add DT support
-> > 
-> >  .../devicetree/bindings/dma/rcar-audmapp.txt       |   30 ++++++
-> >  drivers/dma/sh/rcar-audmapp.c                      |  113 ++++++++++++++------
-> >  2 files changed, 113 insertions(+), 30 deletions(-)
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+are available in the git repository at:
 
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig4-for-v3.17
 
-Best regards
----
-Kuninori Morimoto
+for you to fetch changes up to 92db2b7af591d3c3212183a34856b4cb190b6999:
+
+  ARM: shmobile: defconfig: Remove MACH_GENMAI (2014-07-17 00:02:34 +0900)
+
+----------------------------------------------------------------
+Fourth Round of Renesas ARM Based SoC Defconfig Updates for v3.17
+
+The genmai board code is going away so remove:
+* The genmai defconfig
+* MACH_GENMAI from shmobile defconfig
+
+----------------------------------------------------------------
+Laurent Pinchart (1):
+      ARM: shmobile: defconfig: Remove MACH_GENMAI
+
+Simon Horman (1):
+      ARM: shmobile: genmai: remove defconfig
+
+ arch/arm/configs/genmai_defconfig   | 122 ------------------------------------
+ arch/arm/configs/shmobile_defconfig |   1 -
+ 2 files changed, 123 deletions(-)
+ delete mode 100644 arch/arm/configs/genmai_defconfig
