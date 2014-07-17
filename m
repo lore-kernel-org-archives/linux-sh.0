@@ -1,35 +1,70 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 16 Jul 2014 11:59:42 +0000
-Subject: Re: ARM: shmobile: r7s72100: genmai: CONFIG_MACH_GENMAI
-Message-Id: <1741462.gsq1khyh60@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Jul 2014 00:40:28 +0000
+Subject: [PATCH 1/8] ARM: shmobile: r8a7790: Add CMT devices to DT
+Message-Id: <99ecea23cc4209549a8e5c3efd0f123a2b8f8138.1405556312.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405509309.4408.36.camel@x220>
-In-Reply-To: <1405509309.4408.36.camel@x220>
+References: <cover.1405556312.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1405556312.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Paul,
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-On Wednesday 16 July 2014 13:15:09 Paul Bolle wrote:
-> Commit bec652e2fbfe ("ARM: shmobile: r7s72100: genmai: Remove legacy
-> board file") is included in linux-next as of next-20140716.
-> 
-> It removed the Kconfig symbol MACH_GENMAI (twice!). It also removed its
-> macro from a Makefile. It did not touch its macro from
-> arch/arm/mach-shmobile/Makefile.boot.
+Add the CMT0 and CMT1 counters to the r8a7790 device tree and make them
+disabled by default.
 
-That was a mistake, sorry.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
 
-> Is the trivial patch to remove CONFIG_MACH_GENMAI from that Makefile
-> queued somewhere?
-
-Not yet. I've just sent "[PATCH] ARM: shmobile: Remove MACH_GENMAI from 
-Makefile.boot" to the linux-sh mailing list.
-
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index d9ddecb..7218bff 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -206,6 +206,38 @@
+ 			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
+ 	};
+ 
++	cmt0: timer@ffca0000 {
++		compatible = "renesas,cmt-48-gen2";
++		reg = <0 0xffca0000 0 0x1004>;
++		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7790_CLK_CMT0>;
++		clock-names = "fck";
++
++		renesas,channels-mask = <0x60>;
++
++		status = "disabled";
++	};
++
++	cmt1: timer@e6130000 {
++		compatible = "renesas,cmt-48-gen2";
++		reg = <0 0xe6130000 0 0x1004>;
++		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 122 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 123 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 124 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 125 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 126 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 127 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_CMT1>;
++		clock-names = "fck";
++
++		renesas,channels-mask = <0xff>;
++
++		status = "disabled";
++	};
++
+ 	irqc0: interrupt-controller@e61c0000 {
+ 		compatible = "renesas,irqc-r8a7790", "renesas,irqc";
+ 		#interrupt-cells = <2>;
 -- 
-Regards,
-
-Laurent Pinchart
+2.0.0
 
