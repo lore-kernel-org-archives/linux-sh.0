@@ -1,31 +1,108 @@
-From: Bjorn Helgaas <bhelgaas@google.com>
-Date: Sat, 05 Jul 2014 18:03:59 +0000
-Subject: Re: [PATCH v2 0/3] PCI: host: pcie-rcar: minor clean ups
-Message-Id: <20140705180359.GA28871@google.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 18 Jul 2014 23:50:18 +0000
+Subject: [PATCH v2 1/8] dmaengine: sh: Rework Kconfig and Makefile
+Message-Id: <1405727425-6237-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404114864-17330-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1404114864-17330-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Phil Edworthy <phil.edworthy@renesas.com>
-Cc: linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, Simon Horman <horms@verge.net.au>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+To: linux-sh@vger.kernel.org
 
-On Mon, Jun 30, 2014 at 08:54:21AM +0100, Phil Edworthy wrote:
-> Relatively minor clean up patches for the pcie-rcar driver. These
-> are on top of Sergei's recent patch "pcie-rcar: kill duplicate checks".
-> 
-> Thanks to Sergei for point these out.
-> 
-> v2:
->  - break out replacing function arg with local var into separate patch
-> 
-> Phil Edworthy (3):
->   PCI: host: pcie-rcar: Use correct initial HW settings
->   PCI: host: pcie-rcar: Style and formatting changes.
->   PCI: host: pcie-rcar: Replace arg passed into a func with local var
-> 
->  drivers/pci/host/pcie-rcar.c | 146 +++++++++++++++++++++----------------------
->  1 file changed, 71 insertions(+), 75 deletions(-)
+Separate helpers and drivers in the Kconfig and Makefile to improve
+readability and move the CONFIG_OF dependency from the Makefile to
+Kconfig.
 
-Applied with Simon's acks to pci/host-rcar for v3.17 thanks!
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+---
+
+Changes since v1:
+
+- Replace CONFIG_OF with OF in Kconfig
+---
+ drivers/dma/sh/Kconfig  | 24 +++++++++++++++++++-----
+ drivers/dma/sh/Makefile | 14 +++++++++++---
+ 2 files changed, 30 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/dma/sh/Kconfig b/drivers/dma/sh/Kconfig
+index 0f71981..0349125 100644
+--- a/drivers/dma/sh/Kconfig
++++ b/drivers/dma/sh/Kconfig
+@@ -2,21 +2,39 @@
+ # DMA engine configuration for sh
+ #
+ 
++#
++# DMA Engine Helpers
++#
++
+ config SH_DMAE_BASE
+ 	bool "Renesas SuperH DMA Engine support"
+-	depends on (SUPERH && SH_DMA) || ARCH_SHMOBILE || COMPILE_TEST
++	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
++	depends on !SUPERH || SH_DMA
+ 	depends on !SH_DMA_API
+ 	default y
+ 	select DMA_ENGINE
+ 	help
+ 	  Enable support for the Renesas SuperH DMA controllers.
+ 
++#
++# DMA Controllers
++#
++
+ config SH_DMAE
+ 	tristate "Renesas SuperH DMAC support"
+ 	depends on SH_DMAE_BASE
+ 	help
+ 	  Enable support for the Renesas SuperH DMA controllers.
+ 
++if SH_DMAE
++
++config SH_DMAE_R8A73A4
++	def_bool y
++	depends on ARCH_R8A73A4
++	depends on OF
++
++endif
++
+ config SUDMAC
+ 	tristate "Renesas SUDMAC support"
+ 	depends on SH_DMAE_BASE
+@@ -34,7 +52,3 @@ config RCAR_AUDMAC_PP
+ 	depends on SH_DMAE_BASE
+ 	help
+ 	  Enable support for the Renesas R-Car Audio DMAC Peripheral Peripheral controllers.
+-
+-config SHDMA_R8A73A4
+-	def_bool y
+-	depends on ARCH_R8A73A4 && SH_DMAE != n
+diff --git a/drivers/dma/sh/Makefile b/drivers/dma/sh/Makefile
+index 1ce88b2..0b13b8e 100644
+--- a/drivers/dma/sh/Makefile
++++ b/drivers/dma/sh/Makefile
+@@ -1,10 +1,18 @@
++#
++# DMA Engine Helpers
++#
++
+ obj-$(CONFIG_SH_DMAE_BASE) += shdma-base.o shdma-of.o
+-obj-$(CONFIG_SH_DMAE) += shdma.o
++
++#
++# DMA Controllers
++#
++
+ shdma-y := shdmac.o
+-ifeq ($(CONFIG_OF),y)
+ shdma-$(CONFIG_SHDMA_R8A73A4) += shdma-r8a73a4.o
+-endif
+ shdma-objs := $(shdma-y)
++obj-$(CONFIG_SH_DMAE) += shdma.o
++
+ obj-$(CONFIG_SUDMAC) += sudmac.o
+ obj-$(CONFIG_RCAR_HPB_DMAE) += rcar-hpbdma.o
+ obj-$(CONFIG_RCAR_AUDMAC_PP) += rcar-audmapp.o
+-- 
+1.8.5.5
+
