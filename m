@@ -1,41 +1,97 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 15 Jul 2014 09:02:07 +0000
-Subject: Re: [PATCH 2/4] ARM: shmobile: dma: Use defines instead of hardcoded numbers
-Message-Id: <20140715090207.GE17806@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 18 Jul 2014 23:50:25 +0000
+Subject: [PATCH v2 8/8] ARM: shmobile: r8a7791: Add DMAC devices to DT
+Message-Id: <1405727425-6237-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1403267861-15609-1-git-send-email-geert+renesas@glider.be>
- <1403267861-15609-3-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1403267861-15609-3-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Vinod Koul <vinod.koul@intel.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-sh@vger.kernel.org, dmaengine@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Jun 20, 2014 at 02:37:39PM +0200, Geert Uytterhoeven wrote:
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
->  arch/arm/mach-shmobile/dma-register.h | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/dma-register.h b/arch/arm/mach-shmobile/dma-register.h
-> index 97c40bd9b94f..52a2f66e600f 100644
-> --- a/arch/arm/mach-shmobile/dma-register.h
-> +++ b/arch/arm/mach-shmobile/dma-register.h
-> @@ -52,8 +52,8 @@ static const unsigned int dma_ts_shift[] = {
->  	((((i) & TS_LOW_BIT) << TS_LOW_SHIFT) |\
->  	 (((i) & TS_HI_BIT)  << TS_HI_SHIFT))
->  
-> -#define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL((xmit_sz)))
-> -#define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL((xmit_sz)))
-> +#define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL((xmit_sz)))
-> +#define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL((xmit_sz)))
+Instantiate the two system DMA controllers in the r8a7791 device tree.
 
-I am dropping this patch from the shdma-for-v3.17 branch (which I am
-preparing for Vinod) as it depends on a patch in another branch of my tree
-(which I am preparing for arm-SoC).
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Could you please repost this patch once the other patches
-in this tree have been accepted by Vinod.
+---
 
-Thanks
+Changes since v1:
+
+- Remove ch15 from interrupt names
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 60 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 60 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 56841d3..9cbe5f8 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -238,6 +238,66 @@
+ 			     <0 17 IRQ_TYPE_LEVEL_HIGH>;
+ 	};
+ 
++	dmac0: dma-controller@e6700000 {
++		compatible = "renesas,rcar-dmac";
++		reg = <0 0xe6700000 0 0x20000>;
++		interrupts = <0 197 IRQ_TYPE_LEVEL_HIGH
++			      0 200 IRQ_TYPE_LEVEL_HIGH
++			      0 201 IRQ_TYPE_LEVEL_HIGH
++			      0 202 IRQ_TYPE_LEVEL_HIGH
++			      0 203 IRQ_TYPE_LEVEL_HIGH
++			      0 204 IRQ_TYPE_LEVEL_HIGH
++			      0 205 IRQ_TYPE_LEVEL_HIGH
++			      0 206 IRQ_TYPE_LEVEL_HIGH
++			      0 207 IRQ_TYPE_LEVEL_HIGH
++			      0 208 IRQ_TYPE_LEVEL_HIGH
++			      0 209 IRQ_TYPE_LEVEL_HIGH
++			      0 210 IRQ_TYPE_LEVEL_HIGH
++			      0 211 IRQ_TYPE_LEVEL_HIGH
++			      0 212 IRQ_TYPE_LEVEL_HIGH
++			      0 213 IRQ_TYPE_LEVEL_HIGH
++			      0 214 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error",
++				"ch0", "ch1", "ch2", "ch3",
++				"ch4", "ch5", "ch6", "ch7",
++				"ch8", "ch9", "ch10", "ch11",
++				"ch12", "ch13", "ch14";
++		clocks = <&mstp2_clks R8A7791_CLK_SYS_DMAC0>;
++		clock-names = "fck";
++		#dma-cells = <1>;
++		dma-channels = <15>;
++	};
++
++	dmac1: dma-controller@e6720000 {
++		compatible = "renesas,rcar-dmac";
++		reg = <0 0xe6720000 0 0x20000>;
++		interrupts = <0 220 IRQ_TYPE_LEVEL_HIGH
++			      0 216 IRQ_TYPE_LEVEL_HIGH
++			      0 217 IRQ_TYPE_LEVEL_HIGH
++			      0 218 IRQ_TYPE_LEVEL_HIGH
++			      0 219 IRQ_TYPE_LEVEL_HIGH
++			      0 308 IRQ_TYPE_LEVEL_HIGH
++			      0 309 IRQ_TYPE_LEVEL_HIGH
++			      0 310 IRQ_TYPE_LEVEL_HIGH
++			      0 311 IRQ_TYPE_LEVEL_HIGH
++			      0 312 IRQ_TYPE_LEVEL_HIGH
++			      0 313 IRQ_TYPE_LEVEL_HIGH
++			      0 314 IRQ_TYPE_LEVEL_HIGH
++			      0 315 IRQ_TYPE_LEVEL_HIGH
++			      0 316 IRQ_TYPE_LEVEL_HIGH
++			      0 317 IRQ_TYPE_LEVEL_HIGH
++			      0 318 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error",
++				"ch0", "ch1", "ch2", "ch3",
++				"ch4", "ch5", "ch6", "ch7",
++				"ch8", "ch9", "ch10", "ch11",
++				"ch12", "ch13", "ch14";
++		clocks = <&mstp2_clks R8A7791_CLK_SYS_DMAC1>;
++		clock-names = "fck";
++		#dma-cells = <1>;
++		dma-channels = <15>;
++	};
++
+ 	/* The memory map in the User's Manual maps the cores to bus numbers */
+ 	i2c0: i2c@e6508000 {
+ 		#address-cells = <1>;
+-- 
+1.8.5.5
+
