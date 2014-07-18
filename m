@@ -1,58 +1,83 @@
-From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
-Date: Wed, 09 Jul 2014 23:20:25 +0000
-Subject: Re: [PATCH v3] iommu: Add driver for Renesas VMSA-compatible IPMMU
-Message-Id: <53BDCE39.1070306@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 18 Jul 2014 13:43:30 +0000
+Subject: [PATCH] dmaengine: shdma: Allocate cyclic sg list dynamically
+Message-Id: <1405691010-24995-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396435657-3922-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <538D55C2.3090209@renesas.com> <1837932.hUVa08Puz4@avalon>
-In-Reply-To: <1837932.hUVa08Puz4@avalon>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: khiem.nguyen.xt@renesas.com, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, iommu@lists.linux-foundation.org, linux-sh@vger.kernel.org, Joerg Roedel <joro@8bytes.org>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-sh@vger.kernel.org
 
-Hi Laurent,
+The sg list used to prepare cyclic DMA descriptors is currently
+allocated statically on the stack as an array of 32 elements. This makes
+the shdma_prep_dma_cyclic() function consume a lot of stack space, as
+reported by the compiler:
 
-Thanks for your explanation.
+drivers/dma/sh/shdma-base.c: In function ‘shdma_prep_dma_cyclic’:
+drivers/dma/sh/shdma-base.c:715:1: warning: the frame size of 1056 bytes
+is larger than 1024 bytes [-Wframe-larger-than=]
 
-I'm fine with current situation. 
-I have also checked other drivers and they did the same.
-As you said, let's improve this driver when the time comes.
+Given the limited Linux kernel stack size, this could lead to stack
+overflows. Fix the problem by allocating the sg list dynamically.
 
-Thanks.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/dma/sh/shdma-base.c | 17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
 
-Best regards,
-KHIEM Nguyen
+Morimoto-san, would you be able to test this change with the audio driver ? I
+believe it's our only user of cyclic transfers.
 
-On 6/4/2014 2:39 AM, Laurent Pinchart wrote:
-> Hi,
-> 
-> On Tuesday 03 June 2014 13:57:38 Khiem Nguyen wrote:
->> Hi Laurent,
->>
->> Thanks for the patch.
->>
->>> +	if (!iommu_present(&platform_bus_type))
->>> +		bus_set_iommu(&platform_bus_type, &ipmmu_ops);
->>
->> With this code, if error occurs, it's hidden.
->>
->> I think it should be like below,
->>
->>> +	ret = bus_set_iommu(&platform_bus_type, &ipmmu_ops);
->>> +	if (ret < 0)
->>> +		return ret;
->>
->> In this case, if error occurs, -EBUSY is returned.
->> It's easier for troubleshooting the issue.
->>
->> How do you think ?
-> 
-> I agree that we have a problem, but the problem is broader than this. Only one 
-> IOMMU type can be associated with a given bus, so things will break as soon as 
-> we will compile multiple IOMMU drivers in a multiplatform kernel. I'd like to 
-> fix this properly, but it requires IOMMU framework changes, and thus time. In 
-> the meantime we could apply your proposed modification, but it needs an 
-> additional platform_driver_unregister() call in the bus_set_iommu() error 
-> path.
-> 
+diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
+index 94b6bde..e427a03 100644
+--- a/drivers/dma/sh/shdma-base.c
++++ b/drivers/dma/sh/shdma-base.c
+@@ -672,11 +672,12 @@ static struct dma_async_tx_descriptor *shdma_prep_dma_cyclic(
+ {
+ 	struct shdma_chan *schan = to_shdma_chan(chan);
+ 	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
++	struct dma_async_tx_descriptor *desc;
+ 	const struct shdma_ops *ops = sdev->ops;
+ 	unsigned int sg_len = buf_len / period_len;
+ 	int slave_id = schan->slave_id;
+ 	dma_addr_t slave_addr;
+-	struct scatterlist sgl[SHDMA_MAX_SG_LEN];
++	struct scatterlist *sgl;
+ 	int i;
+ 
+ 	if (!chan)
+@@ -700,7 +701,16 @@ static struct dma_async_tx_descriptor *shdma_prep_dma_cyclic(
+ 
+ 	slave_addr = ops->slave_addr(schan);
+ 
++	/*
++	 * Allocate the sg list dynamically as it would consumer too much stack
++	 * space.
++	 */
++	sgl = kcalloc(sg_len, sizeof(*sgl), GFP_KERNEL);
++	if (!sgl)
++		return NULL;
++
+ 	sg_init_table(sgl, sg_len);
++
+ 	for (i = 0; i < sg_len; i++) {
+ 		dma_addr_t src = buf_addr + (period_len * i);
+ 
+@@ -710,8 +720,11 @@ static struct dma_async_tx_descriptor *shdma_prep_dma_cyclic(
+ 		sg_dma_len(&sgl[i]) = period_len;
+ 	}
+ 
+-	return shdma_prep_sg(schan, sgl, sg_len, &slave_addr,
++	desc = shdma_prep_sg(schan, sgl, sg_len, &slave_addr,
+ 			     direction, flags, true);
++
++	kfree(sgl);
++	return desc;
+ }
+ 
+ static int shdma_control(struct dma_chan *chan, enum dma_ctrl_cmd cmd,
+-- 
+Regards,
+
+Laurent Pinchart
+
