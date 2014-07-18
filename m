@@ -1,52 +1,54 @@
-From: Daniel Palmer <danieruru@gmail.com>
-Date: Tue, 15 Jul 2014 02:08:48 +0000
-Subject: Re: USB doesn't work on ecovec24
-Message-Id: <CAO64nm4Y+=38AJ3hQ+p_LU3um9octsw3G3BMc8fGRRFh1DZK=Q@mail.gmail.com>
+From: Wang Nan <wangnan0@huawei.com>
+Date: Fri, 18 Jul 2014 07:55:59 +0000
+Subject: [PATCH 1/5] memory-hotplug: x86_64: suitable memory should go to ZONE_MOVABLE
+Message-Id: <1405670163-53747-2-git-send-email-wangnan0@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAO64nm4gSsfoCTW5m5W=UTQcLYzCFdTE+paD_S3t_wP2Qsn1YA@mail.gmail.com>
-In-Reply-To: <CAO64nm4gSsfoCTW5m5W=UTQcLYzCFdTE+paD_S3t_wP2Qsn1YA@mail.gmail.com>
+References: <1405670163-53747-1-git-send-email-wangnan0@huawei.com>
+In-Reply-To: <1405670163-53747-1-git-send-email-wangnan0@huawei.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ingo Molnar <mingo@redhat.com>, Yinghai Lu <yinghai@kernel.org>, Mel Gorman <mgorman@suse.de>, Andrew Morton <akpm@linux-foundation.org>
+Cc: Pei Feiyue <peifeiyue@huawei.com>, linux-mm@kvack.org, x86@kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hi,
+This patch add new memory to ZONE_MOVABLE if movable zone is setup
+and lower than newly added memory for x86_64.
 
-Changing:
+Signed-off-by: Wang Nan <wangnan0@huawei.com>
+---
+ arch/x86/mm/init_64.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
 
-CLKDEV_ICK_ID("fck", "sh-cmt-16.0", &mstp_clks[HWBLK_CMT]),
-to
-CLKDEV_ICK_ID("fck", "sh-cmt-32.0", &mstp_clks[HWBLK_CMT]),
+diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
+index df1a992..825915e 100644
+--- a/arch/x86/mm/init_64.c
++++ b/arch/x86/mm/init_64.c
+@@ -685,17 +685,23 @@ static void  update_end_of_memory_vars(u64 start, u64 size)
+ }
+ 
+ /*
+- * Memory is added always to NORMAL zone. This means you will never get
+- * additional DMA/DMA32 memory.
++ * Memory is added always to NORMAL or MOVABLE zone. This means you
++ * will never get additional DMA/DMA32 memory.
+  */
+ int arch_add_memory(int nid, u64 start, u64 size)
+ {
+ 	struct pglist_data *pgdat = NODE_DATA(nid);
+ 	struct zone *zone = pgdat->node_zones + ZONE_NORMAL;
++	struct zone *movable_zone = pgdat->node_zones + ZONE_MOVABLE;
+ 	unsigned long start_pfn = start >> PAGE_SHIFT;
+ 	unsigned long nr_pages = size >> PAGE_SHIFT;
+ 	int ret;
+ 
++	if (!zone_is_empty(movable_zone))
++		if (zone_spans_pfn(movable_zone, start_pfn) ||
++				(zone_end_pfn(movable_zone) <= start_pfn))
++			zone = movable_zone;
++
+ 	init_memory_mapping(start, start + size);
+ 
+ 	ret = __add_pages(nid, zone, start_pfn, nr_pages);
+-- 
+1.8.4
 
-Makes that error go away. Doesn't seem actually change anything though. ;)
-I have noticed a few other issues with the defconfig. Like it should
-enable fixed regulators etc.
-I'll probably put together a patch set that fixes these small issues
-and updates the defconfig.
-There are some problems with the SD card slots too.
-The card mounts but resets itself after any activity.
-
-
-
-On Mon, Jul 14, 2014 at 5:57 PM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
->
-> Hi Daniel
->
->> sh_cmt on the ecovec24 is also currently broken because of a similar
->> issue it seems:
->>
->> sh_cmt sh-cmt-32.0: cannot get clock
->> sh_cmt: probe of sh-cmt-32.0 failed with error -2
->
-> Hmm...
->
-> latest patch which exchanges cmt is
-> 9b17e48cd4df4e129976c37660cf9ec644c66059
-> (sh: Switch to new style CMT device)
->
-> Anyway, as 1st step, can you please send USB clock fixup patches ?
-> There is no SH maintainer today.
-> So, you can use "To:"
->
->     Andrew Morton <akpm@linux-foundation.org>
