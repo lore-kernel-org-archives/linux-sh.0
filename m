@@ -1,102 +1,42 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 10 Jul 2014 11:09:39 +0000
-Subject: Re: [PATCH 2/2] [RFC] spi: sh-msiof: Handle dmaengine_prep_slave_single() failures gracefully
-Message-Id: <1734242.62HjzRdAPV@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Fri, 18 Jul 2014 05:28:39 +0000
+Subject: [PATCH] ARM: shmobile: r8a7791: fixup SD2CKCR register address
+Message-Id: <87a987grqy.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404901583-31366-1-git-send-email-geert+renesas@glider.be> <1404901583-31366-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1404901583-31366-2-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
-Cc: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-sh@vger.kernel.org
 
-Hi Geert,
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-Thank you for the patch.
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+>> Hi Geert, Simon
 
-On Wednesday 09 July 2014 12:26:23 Geert Uytterhoeven wrote:
-> As typically a shmobile SoC has less DMA channels than devices that can use
-> DMA, we may want to prioritize access to the DMA channels in the future.
-> This means that dmaengine_prep_slave_single() may start failing
-> arbitrarily.
-> 
-> Handle dmaengine_prep_slave_single() failures gracefully by falling back to
-> PIO. This requires moving DMA-specific configuration of the MSIOF device
-> after the call(s) to dmaengine_prep_slave_single().
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Can you please test this patch ?
+I don't have M2 board
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+ arch/arm/boot/dts/r8a7791.dtsi |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-Please see below for a small comment.
-
-> ---
->  drivers/spi/spi-sh-msiof.c | 23 +++++++++++++++--------
->  1 file changed, 15 insertions(+), 8 deletions(-)
-> 
-> diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-> index 4f0f1cbc92ef..2d7c45bbb6f3 100644
-> --- a/drivers/spi/spi-sh-msiof.c
-> +++ b/drivers/spi/spi-sh-msiof.c
-> @@ -636,12 +636,6 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv
-> *p, const void *tx, dma_cookie_t cookie;
->  	int ret;
-> 
-> -	/* 1 stage FIFO watermarks for DMA */
-> -	sh_msiof_write(p, FCTR, FCTR_TFWM_1 | FCTR_RFWM_1);
-> -
-> -	/* setup msiof transfer mode registers (32-bit words) */
-> -	sh_msiof_spi_set_mode_regs(p, tx, rx, 32, len / 4);
-> -
->  	if (tx) {
->  		ier_bits |= IER_TDREQE | IER_TDMAE;
->  		dma_sync_single_for_device(&p->pdev->dev, p->tx_dma_addr, len,
-> @@ -650,7 +644,7 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv
-> *p, const void *tx, p->tx_dma_addr, len, DMA_TO_DEVICE,
->  					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
->  		if (!desc_tx)
-> -			return -EIO;
-> +			return -EAGAIN;
->  	}
-> 
->  	if (rx) {
-> @@ -659,8 +653,15 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv
-> *p, const void *tx, p->rx_dma_addr, len, DMA_FROM_DEVICE,
->  					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
->  		if (!desc_rx)
-> -			return -EIO;
-> +			return -EAGAIN;
-
-This isn't a new issue introduced by this patch, but aren't you leaking 
-desc_tx here ?
-
->  	}
-> +
-> +	/* 1 stage FIFO watermarks for DMA */
-> +	sh_msiof_write(p, FCTR, FCTR_TFWM_1 | FCTR_RFWM_1);
-> +
-> +	/* setup msiof transfer mode registers (32-bit words) */
-> +	sh_msiof_spi_set_mode_regs(p, tx, rx, 32, len / 4);
-> +
->  	sh_msiof_write(p, IER, ier_bits);
-> 
->  	reinit_completion(&p->done);
-> @@ -822,6 +823,12 @@ static int sh_msiof_transfer_one(struct spi_master
-> *master, copy32(p->tx_dma_page, tx_buf, l / 4);
-> 
->  		ret = sh_msiof_dma_once(p, tx_buf, rx_buf, l);
-> +		if (ret = -EAGAIN) {
-> +			pr_warn_once("%s %s: DMA not available, falling back to PIO\n",
-> +				     dev_driver_string(&p->pdev->dev),
-> +				     dev_name(&p->pdev->dev));
-> +			break;
-> +		}
->  		if (ret)
->  			return ret;
-
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 6e9a556..0d82a4b 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -583,9 +583,9 @@
+ 			#clock-cells = <0>;
+ 			clock-output-names = "sd1";
+ 		};
+-		sd2_clk: sd3_clk@e615007c {
++		sd2_clk: sd3_clk@e615026c {
+ 			compatible = "renesas,r8a7791-div6-clock", "renesas,cpg-div6-clock";
+-			reg = <0 0xe615007c 0 4>;
++			reg = <0 0xe615026c 0 4>;
+ 			clocks = <&pll1_div2_clk>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "sd2";
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
