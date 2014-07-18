@@ -1,57 +1,80 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 22 Jul 2014 02:35:11 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7791: fixup SD2CKCR register address
-Message-Id: <87k376i0iq.wl%kuninori.morimoto.gx@renesas.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 18 Jul 2014 15:45:49 +0000
+Subject: Re: [PATCH 1/2] I2C: EMMA Mobile I2C master driver
+Message-Id: <20140718154549.GC2731@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="JgQwtEuHJzHdouWu"
 List-Id: <linux-sh.vger.kernel.org>
-References: <87a987grqy.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87a987grqy.wl%kuninori.morimoto.gx@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+References: <1377688911-10911-1-git-send-email-ian.molton@codethink.co.uk>
+ <1378226969-18722-1-git-send-email-ian.molton@codethink.co.uk>
+ <1378226969-18722-2-git-send-email-ian.molton@codethink.co.uk>
+ <20140218173843.GB18768@katana>
+ <20140617095724.GJ2638@katana>
+In-Reply-To: <20140617095724.GJ2638@katana>
+To: Ian Molton <ian.molton@codethink.co.uk>
+Cc: magnus.damm@gmail.com, grant.likely@linaro.org, rob.herring@calxeda.com, devicetree@vger.kernel.org, linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, ben.dooks@codethink.co.uk
 
 
-Hi Simon
+--JgQwtEuHJzHdouWu
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-> > > > > From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-> > > > > 
-> > > > > Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-> > > > > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > > > > ---
-> > > (snip)
-> > > > The main difference I have noticed with this patch is:
-> > > > sh_mobile_sdhi ee160000.sd: mmc2 base at 0xee160000 clock rate 12 MHz
-> > > > 
-> > > > Whereas without I see:
-> > > > sh_mobile_sdhi ee160000.sd: mmc2 base at 0xee160000 clock rate 48 MHz
-> > > 
-> > > Thank you for testing !
-> > > Hmm... it seems that we are under Document trap again ?
-> > > I ask it to HW team again.
-> > > Thank you
-> > 
-> > We guess,
-> > "without this patch" is 12 MHz,
-> > "with    this patch" is 48 MHz.
-> > 
-> > And, 48 MHz is correct clock
-> 
-> Yes, sorry for the mix-up. Your guess is correct.
-> 
-> It seems that this problem was introduced in v3.14 by
-> 59e79895b9589286 ("ARM: shmobile: r8a7791: Add clocks").
-> 
-> That it is not manifesting in run-time difficulties when only using using
-> mainline code until SDHI devices were enabled on the Koelsch board in v3.15 by
-> 2c60a7df72711fb8 ("ARM: shmobile: Add SDHI devices for Koelsch DTS")
-> 
-> And that it should not manifest as a problem on the Henninger board
-> SDHI devices were enabled on that board in v3.16-rc1 by
-> 1299df03d7191ab4 ("ARM: shmobile: henninger: add SDHI0/2 DT support")
-> 
-> If the above is correct could you update the changelog accordingly and
-> repost? If not could you collate the correct information regarding
-> when the bug was introduced, update the changelog accordingly and repost?
+On Tue, Jun 17, 2014 at 11:57:24AM +0200, Wolfram Sang wrote:
+> On Tue, Feb 18, 2014 at 06:38:43PM +0100, Wolfram Sang wrote:
+> > On Tue, Sep 03, 2013 at 05:49:29PM +0100, Ian Molton wrote:
+> > > Add a driver for the EMMA mobile I2C block.
+> > >=20
+> > > The driver supports low and high-speed interrupt driven PIO transfers.
+> > >=20
+> > > Signed-off-by: Ian Molton <ian.molton@codethink.co.uk>
+> >=20
+> > > --- a/drivers/i2c/busses/Kconfig
+> > > +++ b/drivers/i2c/busses/Kconfig
+> > > @@ -777,6 +777,16 @@ config I2C_RCAR
+> > >  	  This driver can also be built as a module.  If so, the module
+> > >  	  will be called i2c-rcar.
+> > > =20
+> > > +config I2C_EM
+> > > +	tristate "EMMA Mobile series I2C adapter"
+> > > +	depends on I2C && HAVE_CLK
+> > > +	help
+> > > +	  If you say yes to this option, support will be included for the
+> > > +	  I2C interface on the Renesas Electronics EM/EV family of processo=
+rs.
+> > > +
+> > > +	  This driver can also be built as a module.  If so, the module
+> > > +	  will be called i2c-em
+> > > +
+> >=20
+> > Please keep it sorted.
+>=20
+> Ping. Still any interest in this one?
 
-Thank you
-OK, I will re-post this patch
+I happen to have access to a kzm9d board meanwhile. Do you have the
+board enablement patches still somewhere?
+
+
+--JgQwtEuHJzHdouWu
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJTyUEtAAoJEBQN5MwUoCm2tUUP/R5A5+IsddqxMWW3ejsNpDrS
+zz96FOKdwp3GU3NaszaY185hXxYGppyvflPXG2xNPtD21D/V1eqnvIUrRdcbTQ0q
+fIhngks5NAxoyq6IksfWXGL6dphn17TVa9gieo6a++8lH1h4CAhx5Cmph8PG50zO
+Ioy97ORHPHv2qAGlmM/LukaH+ud8F6mtnBeWI2prjtVEPxWL4zRTVx0wJxA+OZMV
+R0YwrLdcodYzJyRRVxSsHWMTfPFrL3QPl6xHvQ7/N/bnMcQqld9EfUWYshDo5El9
+VzjhZhoh4oB2CN8dRhJ9gV0gqPiYFc7IIUHjK9gj3i+ossG+Uf15aK4F3Z+QnCpD
+8S7IZVxttaWWsn1O9ByCzSt5bsp0xFdfFqV0/6DifHKVgF82d72JkanbPEtAXsq1
+S8J7prPxqU2zlF446+LA/YFPC+IWQeGKLHkPahAn/sfvbOGcjxk4+ns0678To9gd
+Jb/4EtUzxt2ph5knUK/XzJtAWCTW7Jcu5nEwaWuULqbej81Cmol65VhMFE1r/Pyb
+twfXKXdOoTXX7AG7oFerKYpw4FrmOigmzEaBWTvus/EA+OjtzySc9vN0N+A2r1I/
+ndhxUeoqQyYkJMdrxsMIeXn3hIgYsw3U1JnzsUhYJ+8AWDWPH25MhmbiWFKZacxw
+yHgC24JX/RKk6xvDLWbh
+=7Rfj
+-----END PGP SIGNATURE-----
+
+--JgQwtEuHJzHdouWu--
