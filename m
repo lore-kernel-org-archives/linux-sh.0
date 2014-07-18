@@ -1,93 +1,45 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 15 Jul 2014 09:16:34 +0000
-Subject: [PATCH 4/8] ARM: shmobile: ape6evm-reference: Initialise SCIF device using DT
-Message-Id: <27bc82353a3f214a383d7f3b1ccaefdb70d6c94f.1405398515.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 18 Jul 2014 11:39:44 +0000
+Subject: Re: [PATCH 0/2] Add VSP1 devices to R8A779[01] DT
+Message-Id: <1612188.DpaA8uQ5sT@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1405398515.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1405398515.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Initialise SCIF device using DT when booting ape6evm
-using DT reference.
+Hi Simon,
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts | 14 +++++++++++---
- arch/arm/mach-shmobile/setup-r8a73a4.c          | 12 ++++++------
- 2 files changed, 17 insertions(+), 9 deletions(-)
+On Friday 09 May 2014 13:50:00 Laurent Pinchart wrote:
+> On Tuesday 08 April 2014 18:35:55 Laurent Pinchart wrote:
+> > Hello,
+> > 
+> > This patch series adds VSP1 nodes to the R8A7790 and R8A7791 .dtsi files.
+> > It is based on top of the "[PATCH 0/2] Fix VSP1 clock names in r8a779[01]
+> > .dtsi" series that has been sent to the linux-sh mailing list, as well as
+> > the "[PATCH] v4l: vsp1: Remove unexisting rt clocks" patch and "[PATCH
+> > 0/6] VSP1 Blend/ROP Unit and DT support" series sent to the linux-media
+> > mailing list.
+> > 
+> > The VSP1 DT bindings are still pending an ack, please don't apply this
+> > series yet.
+> 
+> The DT bindings have been pulled into the media tree and will be merged in
+> v3.16. Could you please merge these two patches in your tree ?
 
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-index 70b1fff..a860f32 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-@@ -16,6 +16,10 @@
- 	model = "APE6EVM";
- 	compatible = "renesas,ape6evm-reference", "renesas,r8a73a4";
- 
-+	aliases {
-+		serial0 = &scifa0;
-+	};
-+
- 	chosen {
- 		bootargs = "console=ttySC0,115200 ignore_loglevel rw";
- 	};
-@@ -90,9 +94,6 @@
- };
- 
- &pfc {
--	pinctrl-0 = <&scifa0_pins>;
--	pinctrl-names = "default";
--
- 	scifa0_pins: serial0 {
- 		renesas,groups = "scifa0_data";
- 		renesas,function = "scifa0";
-@@ -123,6 +124,13 @@
- 	status = "okay";
- };
- 
-+&scifa0 {
-+	pinctrl-0 = <&scifa0_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+};
-+
- &sdhi0 {
- 	vmmc-supply = <&vcc_sdhi0>;
- 	bus-width = <4>;
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index 9333770..e84b6a5 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -187,12 +187,6 @@ static struct resource cmt1_resources[] = {
- 
- void __init r8a73a4_add_dt_devices(void)
- {
--	r8a73a4_register_scif(0);
--	r8a73a4_register_scif(1);
--	r8a73a4_register_scif(2);
--	r8a73a4_register_scif(3);
--	r8a73a4_register_scif(4);
--	r8a73a4_register_scif(5);
- 	r8a7790_register_cmt(1);
- }
- 
-@@ -287,6 +281,12 @@ static struct resource dma_resources[] = {
- void __init r8a73a4_add_standard_devices(void)
- {
- 	r8a73a4_add_dt_devices();
-+	r8a73a4_register_scif(0);
-+	r8a73a4_register_scif(1);
-+	r8a73a4_register_scif(2);
-+	r8a73a4_register_scif(3);
-+	r8a73a4_register_scif(4);
-+	r8a73a4_register_scif(5);
- 	r8a73a4_register_irqc(0);
- 	r8a73a4_register_irqc(1);
- 	r8a73a4_register_thermal();
+Ping ?
+
+> > Laurent Pinchart (2):
+> >   ARM: shmobile: r8a7790: Add VSP1 devices to DT
+> >   ARM: shmobile: r8a7791: Add VSP1 devices to DT
+> >  
+> >  arch/arm/boot/dts/r8a7790.dtsi | 51 +++++++++++++++++++++++++++++++++++++
+> >  arch/arm/boot/dts/r8a7791.dtsi | 39 ++++++++++++++++++++++++++++++++
+> > 
+> > 2 files changed, 90 insertions(+)
+
 -- 
-2.0.0
+Regards,
+
+Laurent Pinchart
 
