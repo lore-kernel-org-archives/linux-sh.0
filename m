@@ -1,60 +1,77 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 07 Jul 2014 06:30:06 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Header Cleanup for v3.17
-Message-Id: <20140707063006.GA28697@verge.net.au>
+From: Wang Nan <wangnan0@huawei.com>
+Date: Fri, 18 Jul 2014 07:55:58 +0000
+Subject: [PATCH 0/5] memory-hotplug: suitable memory should go to ZONE_MOVABLE
+Message-Id: <1405670163-53747-1-git-send-email-wangnan0@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487267.git.horms+renesas@verge.net.au>
- <20140707000307.GE5539@quad.lixom.net>
-In-Reply-To: <20140707000307.GE5539@quad.lixom.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ingo Molnar <mingo@redhat.com>, Yinghai Lu <yinghai@kernel.org>, Mel Gorman <mgorman@suse.de>, Andrew Morton <akpm@linux-foundation.org>
+Cc: Pei Feiyue <peifeiyue@huawei.com>, linux-mm@kvack.org, x86@kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Sun, Jul 06, 2014 at 05:03:07PM -0700, Olof Johansson wrote:
-> On Mon, Jun 23, 2014 at 11:24:52AM +0900, Simon Horman wrote:
-> > Hi Olof, Hi Kevin, Hi Arnd,
-> > 
-> > Please consider these Renesas ARM based SoC header cleanup for v3.17.
-> > 
-> > 
-> > The following changes since commit 7171511eaec5bf23fb06078f59784a3a0626b38f:
-> > 
-> >   Linux 3.16-rc1 (2014-06-15 17:45:28 -1000)
-> > 
-> > are available in the git repository at:
-> > 
-> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-header-cleanup-for-v3.17
-> > 
-> > for you to fetch changes up to 62872989bdbf1245d7239b9f4c05a8ee7c775ed5:
-> > 
-> >   ARM: shmobile: Move rcar-gen2.h, cleanup r8a7790 case (2014-06-17 17:09:40 +0900)
-> > 
-> > ----------------------------------------------------------------
-> > Renesas ARM Based SoC Header Cleanup for v3.17
-> > 
-> > Move the most common shared header files for mach-shmobile
-> > from <mach/foobar.h> to "foobar.h"
-> > 
-> > 6287298 ARM: shmobile: Move rcar-gen2.h, cleanup r8a7790 case
-> > 585c09d ARM: shmobile: Move pm-rcar.h, cleanup r8a7779 case
-> > 6b8b0cb ARM: shmobile: Move pm-rmobile.h, cleanup sh73xx.h
-> > fd44aa5 ARM: shmobile: Move common.h
-> > b6bab12 ARM: shmobile: Move most of irqs.h, keep some for pinctl
-> > ad6ffa0 ARM: shmobile: Move clock.h
-> > 74ac0de ARM: shmobile: Move dma-register.h
-> > 6200e2c ARM: shmobile: Move intc.h, cleanup sh_intc.h usage
-> 
-> Listing the patches and the SHAs in the tag description makes no sense.
+This series of patches fix a problem when adding memory in bad manner.
+For example: for a x86_64 machine booted with "mem@0M" and with 2GiB
+memory installed, following commands cause problem:
 
-Thanks, sorry for letting that slip in.
+ # echo 0x40000000 > /sys/devices/system/memory/probe
+[   28.613895] init_memory_mapping: [mem 0x40000000-0x47ffffff]
+ # echo 0x48000000 > /sys/devices/system/memory/probe
+[   28.693675] init_memory_mapping: [mem 0x48000000-0x4fffffff]
+ # echo online_movable > /sys/devices/system/memory/memory9/state
+ # echo 0x50000000 > /sys/devices/system/memory/probe 
+[   29.084090] init_memory_mapping: [mem 0x50000000-0x57ffffff]
+ # echo 0x58000000 > /sys/devices/system/memory/probe 
+[   29.151880] init_memory_mapping: [mem 0x58000000-0x5fffffff]
+ # echo online_movable > /sys/devices/system/memory/memory11/state
+ # echo online> /sys/devices/system/memory/memory8/state
+ # echo online> /sys/devices/system/memory/memory10/state
+ # echo offline> /sys/devices/system/memory/memory9/state
+[   30.558819] Offlined Pages 32768
+ # free
+             total       used       free     shared    buffers     cached
+Mem:        780588 18014398509432020     830552          0          0      51180
+-/+ buffers/cache: 18014398509380840     881732
+Swap:            0          0          0
 
-> (Merged into next/cleanup after taking out the above).
-> 
-> 
-> -Olof
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+This is because the above commands probe higher memory after online a
+section with online_movable, which causes ZONE_HIGHMEM (or ZONE_NORMAL
+for systems without ZONE_HIGHMEM) overlaps ZONE_MOVABLE.
+
+After the second online_movable, the problem can be observed from
+zoneinfo:
+
+ # cat /proc/zoneinfo
+...
+Node 0, zone  Movable
+  pages free     65491
+        min      250
+        low      312
+        high     375
+        scanned  0
+        spanned  18446744073709518848
+        present  65536
+        managed  65536
+...
+
+This series of patches solve the problem by checking ZONE_MOVABLE when
+choosing zone for new memory. If new memory is inside or higher than
+ZONE_MOVABLE, makes it go there instead.
+
+
+Wang Nan (5):
+  memory-hotplug: x86_64: suitable memory should go to ZONE_MOVABLE
+  memory-hotplug: x86_32: suitable memory should go to ZONE_MOVABLE
+  memory-hotplug: ia64: suitable memory should go to ZONE_MOVABLE
+  memory-hotplug: sh: suitable memory should go to ZONE_MOVABLE
+  memory-hotplug: powerpc: suitable memory should go to ZONE_MOVABLE
+
+ arch/ia64/mm/init.c   |  7 +++++++
+ arch/powerpc/mm/mem.c |  6 ++++++
+ arch/sh/mm/init.c     | 13 ++++++++-----
+ arch/x86/mm/init_32.c |  6 ++++++
+ arch/x86/mm/init_64.c | 10 ++++++++--
+ 5 files changed, 35 insertions(+), 7 deletions(-)
+
+-- 
+1.8.4
+
