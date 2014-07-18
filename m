@@ -1,41 +1,53 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Mon, 14 Jul 2014 07:09:59 +0000
-Subject: [PATCH 2/3] serial: sh-sci: Fix range check of bit-rate for HSCIF
-Message-Id: <1405321800-18114-2-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+From: Wang Nan <wangnan0@huawei.com>
+Date: Fri, 18 Jul 2014 07:56:02 +0000
+Subject: [PATCH 4/5] memory-hotplug: sh: suitable memory should go to ZONE_MOVABLE
+Message-Id: <1405670163-53747-5-git-send-email-wangnan0@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405321800-18114-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
-In-Reply-To: <1405321800-18114-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+References: <1405670163-53747-1-git-send-email-wangnan0@huawei.com>
+In-Reply-To: <1405670163-53747-1-git-send-email-wangnan0@huawei.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: gregkh@linuxfoundation.org, linux-serial@vger.kernel.org, horms+renesas@verge.net.au, magnus.damm@gmail.com, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+To: Ingo Molnar <mingo@redhat.com>, Yinghai Lu <yinghai@kernel.org>, Mel Gorman <mgorman@suse.de>, Andrew Morton <akpm@linux-foundation.org>
+Cc: Pei Feiyue <peifeiyue@huawei.com>, linux-mm@kvack.org, x86@kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-If bit-rate calculation result of HSCIF is expect 255 from 0,
-driver does not calculate error bit. However, we need to round
-the value to calculate error bit in the case of negative value.
-This rounds the value of bit-rate using clamp(), and bit-rate is the
-case of negative value, it enables the calculation of the error bit.
+This patch add new memory to ZONE_MOVABLE if movable zone is setup
+and lower than newly added memory for sh.
 
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Signed-off-by: Wang Nan <wangnan0@huawei.com>
 ---
- drivers/tty/serial/sh-sci.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ arch/sh/mm/init.c | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index ce80137..7f571a8 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1798,8 +1798,7 @@ static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq,
- 			/* integerized formulas from HSCIF documentation */
- 			br = DIV_ROUND_CLOSEST(freq, (sr *
- 					      (1 << (2 * c + 1)) * bps)) - 1;
--			if (br < 0 || br > 255)
--				continue;
-+			br = clamp(br, 0, 255);
- 			err = DIV_ROUND_CLOSEST(freq, ((br + 1) * bps * sr *
- 					       (1 << (2 * c + 1)) / 1000)) -
- 					       1000;
+diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+index 2d089fe..ff9decc 100644
+--- a/arch/sh/mm/init.c
++++ b/arch/sh/mm/init.c
+@@ -487,16 +487,19 @@ void free_initrd_mem(unsigned long start, unsigned long end)
+ #ifdef CONFIG_MEMORY_HOTPLUG
+ int arch_add_memory(int nid, u64 start, u64 size)
+ {
+-	pg_data_t *pgdat;
++	pg_data_t *pgdat = NODE_DATA(nid);
+ 	unsigned long start_pfn = start >> PAGE_SHIFT;
+ 	unsigned long nr_pages = size >> PAGE_SHIFT;
++	struct zone *zone = pgdat->node_zones + ZONE_NORMAL;
++	struct zone *movable_zone = pgdat->node_zones + ZONE_MOVABLE;
+ 	int ret;
+ 
+-	pgdat = NODE_DATA(nid);
++	if (!zone_is_empty(movable_zone))
++		if (zone_spans_pfn(movable_zone, start_pfn) ||
++				(zone_end_pfn(movable_zone) <= start_pfn))
++			zone = movable_zone;
+ 
+-	/* We only have ZONE_NORMAL, so this is easy.. */
+-	ret = __add_pages(nid, pgdat->node_zones + ZONE_NORMAL,
+-				start_pfn, nr_pages);
++	ret = __add_pages(nid, zone, start_pfn, nr_pages);
+ 	if (unlikely(ret))
+ 		printk("%s: Failed, __add_pages() = %d\n", __func__, ret);
+ 
 -- 
-2.0.0
+1.8.4
 
