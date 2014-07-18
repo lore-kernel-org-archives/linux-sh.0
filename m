@@ -1,152 +1,109 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Mon, 14 Jul 2014 07:10:00 +0000
-Subject: [PATCH 3/3] serial: sh-sci: Add calculation recive margin for HSCIF
-Message-Id: <1405321800-18114-3-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+From: Nick Krause <xerofoify@gmail.com>
+Date: Fri, 18 Jul 2014 03:53:50 +0000
+Subject: Build Failures for Sh architecture
+Message-Id: <CAPDOMViWdf1Uw_a76bn3U8H_FE+AGAQV6Zx2AydM0-8ZuerfRA@mail.gmail.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="001a11c3e09e8bffac04fe6fb499"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405321800-18114-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
-In-Reply-To: <1405321800-18114-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: gregkh@linuxfoundation.org, linux-serial@vger.kernel.org, horms+renesas@verge.net.au, magnus.damm@gmail.com, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: laurent.pinchart+renesas@ideasonboard.com, Ingo Molnar <mingo@kernel.org>, Peter Zijlstra <peterz@infradead.org>, horms+renesas@verge.net.au, geert+renesas@glider.be, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-sh@vger.kernel.org, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-When the error of the same bit rate is detected, we will need to select
-the recive margin is large. Current code holds the minimum error, it does
-not have to check the recive margin. This adds this calculation.
+--001a11c3e09e8bffac04fe6fb499
+Content-Type: text/plain; charset=UTF-8
 
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
----
- drivers/tty/serial/sh-sci.c | 77 ++++++++++++++++++++++++++++++++++-----------
- 1 file changed, 59 insertions(+), 18 deletions(-)
+Hey Andrew and other maintainers of this architecture ,
+I seem to be hitting a few build errors with default configurations
+for this architecture.
+I am attached my logs of these failing builds , naming each file after
+the build that is
+logged in each file.
+Cheers Nick
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 7f571a8..d879c0c 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1783,13 +1783,30 @@ static unsigned int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
- 	return ((freq + 16 * bps) / (32 * bps) - 1);
- }
- 
-+/* calculate frame length from SMR */
-+static int sci_baud_calc_frame_len(unsigned int smr_val)
-+{
-+	int len = 10;
-+
-+	if (smr_val & SCSMR_CHR)
-+		len--;
-+	if (smr_val & SCSMR_PE)
-+		len++;
-+	if (smr_val & SCSMR_STOP)
-+		len++;
-+
-+	return len;
-+}
-+
-+
- /* calculate sample rate, BRR, and clock select for HSCIF */
- static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq,
- 				int *brr, unsigned int *srr,
--				unsigned int *cks)
-+				unsigned int *cks, int frame_len)
- {
--	int sr, c, br, err;
-+	int sr, c, br, err, recv_margin;
- 	int min_err = 1000; /* 100% */
-+	int recv_max_margin = 0;
- 
- 	/* Find the combination of sample rate and clock select with the
- 	   smallest deviation from the desired baud rate. */
-@@ -1802,12 +1819,35 @@ static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq,
- 			err = DIV_ROUND_CLOSEST(freq, ((br + 1) * bps * sr *
- 					       (1 << (2 * c + 1)) / 1000)) -
- 					       1000;
-+			if (err < 0)
-+				continue;
-+
-+			/* Calc recv margin
-+			 * M: Receive margin (%)
-+			 * N: Ratio of bit rate to clock (N = sampling rate)
-+			 * D: Clock duty (D = 0 to 1.0)
-+			 * L: Frame length (L = 9 to 12)
-+			 * F: Absolute value of clock frequency deviation
-+			 *
-+			 *  M = |(0.5 - 1 / 2 * N) - ((L - 0.5) * F) -
-+			 *      (|D - 0.5| / N * (1 + F))|
-+			 *  NOTE: Usually, treat D for 0.5, F is 0 by this
-+			 *        calculation.
-+			 */
-+			recv_margin = abs((500 -
-+					DIV_ROUND_CLOSEST(1000, sr << 1)) / 10);
- 			if (min_err > err) {
- 				min_err = err;
--				*brr = br;
--				*srr = sr - 1;
--				*cks = c;
--			}
-+				recv_max_margin = recv_margin;
-+			} else if ((min_err = err) &&
-+				   (recv_margin > recv_max_margin))
-+				recv_max_margin = recv_margin;
-+			else
-+				continue;
-+
-+			*brr = br;
-+			*srr = sr - 1;
-+			*cks = c;
- 		}
- 	}
- 
-@@ -1841,10 +1881,19 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
- {
- 	struct sci_port *s = to_sci_port(port);
- 	struct plat_sci_reg *reg;
--	unsigned int baud, smr_val, max_baud, cks = 0;
-+	unsigned int baud, smr_val = 0, max_baud, cks = 0;
- 	int t = -1;
- 	unsigned int srr = 15;
- 
-+	if ((termios->c_cflag & CSIZE) = CS7)
-+		smr_val |= SCSMR_CHR;
-+	if (termios->c_cflag & PARENB)
-+		smr_val |= SCSMR_PE;
-+	if (termios->c_cflag & PARODD)
-+		smr_val |= SCSMR_PE | SCSMR_ODD;
-+	if (termios->c_cflag & CSTOPB)
-+		smr_val |= SCSMR_STOP;
-+
- 	/*
- 	 * earlyprintk comes here early on with port->uartclk set to zero.
- 	 * the clock framework is not up and running at this point so here
-@@ -1858,8 +1907,9 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
- 	baud = uart_get_baud_rate(port, termios, old, 0, max_baud);
- 	if (likely(baud && port->uartclk)) {
- 		if (s->cfg->type = PORT_HSCIF) {
-+			int frame_len = sci_baud_calc_frame_len(smr_val);
- 			sci_baud_calc_hscif(baud, port->uartclk, &t, &srr,
--					    &cks);
-+					    &cks, frame_len);
- 		} else {
- 			t = sci_scbrr_calc(s, baud, port->uartclk);
- 			for (cks = 0; t >= 256 && cks <= 3; cks++)
-@@ -1871,16 +1921,7 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
- 
- 	sci_reset(port);
- 
--	smr_val = serial_port_in(port, SCSMR) & 3;
--
--	if ((termios->c_cflag & CSIZE) = CS7)
--		smr_val |= SCSMR_CHR;
--	if (termios->c_cflag & PARENB)
--		smr_val |= SCSMR_PE;
--	if (termios->c_cflag & PARODD)
--		smr_val |= SCSMR_PE | SCSMR_ODD;
--	if (termios->c_cflag & CSTOPB)
--		smr_val |= SCSMR_STOP;
-+	smr_val |= serial_port_in(port, SCSMR) & 3;
- 
- 	uart_update_timeout(port, termios->c_cflag, baud);
- 
--- 
-2.0.0
+--001a11c3e09e8bffac04fe6fb499
+Content-Type: application/octet-stream; name=allmodconfig
+Content-Disposition: attachment; filename=allmodconfig
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_hxqyshlu0
 
+PHN0ZGluPjoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGlu
+IHVzZXIgbW9kZQo8c3RkaW4+OjE6MDogZXJyb3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNv
+ZnQtaW1hc2sgaW4gdXNlciBtb2RlCi4vc2NyaXB0cy9nY2MtdmVyc2lvbi5zaDogbGluZSAzMTog
+cHJpbnRmOiAjOiBpbnZhbGlkIG51bWJlcgouL3NjcmlwdHMvZ2NjLXZlcnNpb24uc2g6IGxpbmUg
+MzE6IHByaW50ZjogIzogaW52YWxpZCBudW1iZXIKPHN0ZGluPjoxOjA6IGVycm9yOiBjYW5ub3Qg
+dXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGluIHVzZXIgbW9kZQo8c3RkaW4+OjE6MDogZXJy
+b3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNvZnQtaW1hc2sgaW4gdXNlciBtb2RlCi4vc2Ny
+aXB0cy9nY2MtdmVyc2lvbi5zaDogbGluZSAzMTogcHJpbnRmOiAjOiBpbnZhbGlkIG51bWJlcgou
+L3NjcmlwdHMvZ2NjLXZlcnNpb24uc2g6IGxpbmUgMzE6IHByaW50ZjogIzogaW52YWxpZCBudW1i
+ZXIKL2Jpbi9zaDogbGluZSAwOiBbOiB0b28gbWFueSBhcmd1bWVudHMKc2NyaXB0cy9tb2QvZW1w
+dHkuYzoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGluIHVz
+ZXIgbW9kZQogLyogZW1wdHkgZmlsZSB0byBmaWd1cmUgb3V0IGVuZGlhbm5lc3MgLyB3b3JkIHNp
+emUgKi8KIF4KbWFrZVsyXTogKioqIFtzY3JpcHRzL21vZC9lbXB0eS5vXSBFcnJvciAxCm1ha2Vb
+MV06ICoqKiBbc2NyaXB0cy9tb2RdIEVycm9yIDIKbWFrZVsxXTogKioqIFdhaXRpbmcgZm9yIHVu
+ZmluaXNoZWQgam9icy4uLi4Ka2VybmVsL2JvdW5kcy5jOjE6MDogZXJyb3I6IGNhbm5vdCB1c2Ug
+YXRvbWljIG1vZGVsIHNvZnQtaW1hc2sgaW4gdXNlciBtb2RlCiAvKgogXgptYWtlWzFdOiAqKiog
+W2tlcm5lbC9ib3VuZHMuc10gRXJyb3IgMQptYWtlOiAqKiogW3ByZXBhcmUwXSBFcnJvciAyCm1h
+a2U6ICoqKiBXYWl0aW5nIGZvciB1bmZpbmlzaGVkIGpvYnMuLi4uCm1ha2U6ICoqKiBbc2NyaXB0
+c10gRXJyb3IgMgo=
+--001a11c3e09e8bffac04fe6fb499
+Content-Type: application/octet-stream; name=allyesconfig
+Content-Disposition: attachment; filename=allyesconfig
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_hxqyskyq1
+
+PHN0ZGluPjoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGlu
+IHVzZXIgbW9kZQo8c3RkaW4+OjE6MDogZXJyb3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNv
+ZnQtaW1hc2sgaW4gdXNlciBtb2RlCi4vc2NyaXB0cy9nY2MtdmVyc2lvbi5zaDogbGluZSAzMTog
+cHJpbnRmOiAjOiBpbnZhbGlkIG51bWJlcgouL3NjcmlwdHMvZ2NjLXZlcnNpb24uc2g6IGxpbmUg
+MzE6IHByaW50ZjogIzogaW52YWxpZCBudW1iZXIKPHN0ZGluPjoxOjA6IGVycm9yOiBjYW5ub3Qg
+dXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGluIHVzZXIgbW9kZQo8c3RkaW4+OjE6MDogZXJy
+b3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNvZnQtaW1hc2sgaW4gdXNlciBtb2RlCi4vc2Ny
+aXB0cy9nY2MtdmVyc2lvbi5zaDogbGluZSAzMTogcHJpbnRmOiAjOiBpbnZhbGlkIG51bWJlcgou
+L3NjcmlwdHMvZ2NjLXZlcnNpb24uc2g6IGxpbmUgMzE6IHByaW50ZjogIzogaW52YWxpZCBudW1i
+ZXIKL2Jpbi9zaDogbGluZSAwOiBbOiB0b28gbWFueSBhcmd1bWVudHMKPHN0ZGluPjoxOjA6IGVy
+cm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGluIHVzZXIgbW9kZQo8c3Rk
+aW4+OjE6MDogZXJyb3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNvZnQtaW1hc2sgaW4gdXNl
+ciBtb2RlCi4vc2NyaXB0cy9nY2MtdmVyc2lvbi5zaDogbGluZSAzMTogcHJpbnRmOiAjOiBpbnZh
+bGlkIG51bWJlcgouL3NjcmlwdHMvZ2NjLXZlcnNpb24uc2g6IGxpbmUgMzE6IHByaW50ZjogIzog
+aW52YWxpZCBudW1iZXIKL2Jpbi9zaDogbGluZSAwOiBbOiB0b28gbWFueSBhcmd1bWVudHMKc2Ny
+aXB0cy9tb2QvZW1wdHkuYzoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBzb2Z0
+LWltYXNrIGluIHVzZXIgbW9kZQogLyogZW1wdHkgZmlsZSB0byBmaWd1cmUgb3V0IGVuZGlhbm5l
+c3MgLyB3b3JkIHNpemUgKi8KIF4KbWFrZVsyXTogKioqIFtzY3JpcHRzL21vZC9lbXB0eS5vXSBF
+cnJvciAxCm1ha2VbMl06ICoqKiBXYWl0aW5nIGZvciB1bmZpbmlzaGVkIGpvYnMuLi4uCm1ha2Vb
+MV06ICoqKiBbc2NyaXB0cy9tb2RdIEVycm9yIDIKbWFrZVsxXTogKioqIFdhaXRpbmcgZm9yIHVu
+ZmluaXNoZWQgam9icy4uLi4KbWFrZTogKioqIFtzY3JpcHRzXSBFcnJvciAyCm1ha2U6ICoqKiBX
+YWl0aW5nIGZvciB1bmZpbmlzaGVkIGpvYnMuLi4uCg==
+--001a11c3e09e8bffac04fe6fb499
+Content-Type: application/octet-stream; name=rsk7203_defconfig
+Content-Disposition: attachment; filename=rsk7203_defconfig
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_hxqyyl8k2
+
+c2NyaXB0cy9tb2QvZW1wdHkuYzoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBz
+b2Z0LWltYXNrIGluIHVzZXIgbW9kZQogLyogZW1wdHkgZmlsZSB0byBmaWd1cmUgb3V0IGVuZGlh
+bm5lc3MgLyB3b3JkIHNpemUgKi8KIF4Kc2NyaXB0cy9tb2QvZGV2aWNldGFibGUtb2Zmc2V0cy5j
+OjE6MDogZXJyb3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNvZnQtaW1hc2sgaW4gdXNlciBt
+b2RlCiAjaW5jbHVkZSA8bGludXgva2J1aWxkLmg+CiBeCm1ha2VbMl06ICoqKiBbc2NyaXB0cy9t
+b2QvZGV2aWNldGFibGUtb2Zmc2V0cy5zXSBFcnJvciAxCm1ha2VbMl06ICoqKiBXYWl0aW5nIGZv
+ciB1bmZpbmlzaGVkIGpvYnMuLi4uCm1ha2VbMl06ICoqKiBbc2NyaXB0cy9tb2QvZW1wdHkub10g
+RXJyb3IgMQptYWtlWzFdOiAqKiogW3NjcmlwdHMvbW9kXSBFcnJvciAyCm1ha2VbMV06ICoqKiBX
+YWl0aW5nIGZvciB1bmZpbmlzaGVkIGpvYnMuLi4uCm1ha2U6ICoqKiBbc2NyaXB0c10gRXJyb3Ig
+MgptYWtlOiAqKiogV2FpdGluZyBmb3IgdW5maW5pc2hlZCBqb2JzLi4uLgprZXJuZWwvYm91bmRz
+LmM6MTowOiBlcnJvcjogY2Fubm90IHVzZSBhdG9taWMgbW9kZWwgc29mdC1pbWFzayBpbiB1c2Vy
+IG1vZGUKIC8qCiBeCm1ha2VbMV06ICoqKiBba2VybmVsL2JvdW5kcy5zXSBFcnJvciAxCm1ha2U6
+ICoqKiBbcHJlcGFyZTBdIEVycm9yIDIK
+--001a11c3e09e8bffac04fe6fb499
+Content-Type: application/octet-stream; name=se7206_defconfig
+Content-Disposition: attachment; filename=se7206_defconfig
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_hxqz1qaa3
+
+c2NyaXB0cy9tb2QvZW1wdHkuYzoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBz
+b2Z0LWltYXNrIGluIHVzZXIgbW9kZQogLyogZW1wdHkgZmlsZSB0byBmaWd1cmUgb3V0IGVuZGlh
+bm5lc3MgLyB3b3JkIHNpemUgKi8KIF4Kc2NyaXB0cy9tb2QvZGV2aWNldGFibGUtb2Zmc2V0cy5j
+OjE6MDogZXJyb3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNvZnQtaW1hc2sgaW4gdXNlciBt
+b2RlCiAjaW5jbHVkZSA8bGludXgva2J1aWxkLmg+CiBeCm1ha2VbMl06ICoqKiBbc2NyaXB0cy9t
+b2QvZW1wdHkub10gRXJyb3IgMQptYWtlWzJdOiAqKiogV2FpdGluZyBmb3IgdW5maW5pc2hlZCBq
+b2JzLi4uLgptYWtlWzJdOiAqKiogW3NjcmlwdHMvbW9kL2RldmljZXRhYmxlLW9mZnNldHMuc10g
+RXJyb3IgMQptYWtlWzFdOiAqKiogW3NjcmlwdHMvbW9kXSBFcnJvciAyCm1ha2U6ICoqKiBbc2Ny
+aXB0c10gRXJyb3IgMgo=
+--001a11c3e09e8bffac04fe6fb499--
