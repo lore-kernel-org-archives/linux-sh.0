@@ -1,95 +1,127 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 15 Jul 2014 20:18:35 +0000
-Subject: [PATCH 0/7] R-Car Gen2 DMA Controller driver
-Message-Id: <1405455522-20676-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 18 Jul 2014 23:50:19 +0000
+Subject: [PATCH v2 2/8] dmaengine: shdma: Make channel filter ignore unrelated devices
+Message-Id: <1405727425-6237-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello,
+The shdma_chan_filter() function relies on the DMA channel being
+embedded in an shdma_chan structure. If this assumption isn't true, for
+instance when the system contains DMA channels supported by an unrelated
+driver, the function will crash.
 
-This patch sets adds a new driver for the DMA controller found in the R-Car
-Gen2 SoCs under the name "Direct Memory Access Controller for System
-(SYS-DMAC)". Support for the "Realtime Direct Memory Access Controller
-(RT-DMAC)" and "Direct Memory Access Controller for Audio (Audio-DMAC)" will
-be added later.
+Avoid this by returning false directly when the channel belongs to an
+unrelated device.
 
-Support for the R-Car Gen2 DMAC could have been added to the existing shdmac
-driver. However, the shdmac driver supports older generation hardware, not
-aligned with the features set of the R-Car Gen2 DMAC. In particular
-implementing support for hardware descriptors lists would have been difficult.
-In order to avoid hindering Gen2 (and future) DMAC development a new driver is
-preferable.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/dma/sh/shdma-base.c | 84 ++++++++++++++++++++++++---------------------
+ 1 file changed, 45 insertions(+), 39 deletions(-)
 
-Preliminary performance tests showed similar numbers for the two drivers, in
-the range of 675 to 775 MB/s throughput for the dmatest memcpy test using four
-channels and one thread per channel.
-
-modprobe dmatest run=1 iterations000 noverify=1 \
-	 max_channels=4 threads_per_chan=1
-
-Performances increase up to a more stable 893 to 895 MB/s with the new driver
-when raising the number of threads per channel to 4.
-
-modprobe dmatest run=1 iterations000 noverify=1 \
-	 max_channels=4 threads_per_chan=4
-
-However, running the same test with the shdmac driver produces timeouts:
-
-[ 2150.819650] dmatest: dma0chan3-copy0: summary 10000 tests, 0 failures 6468 iops 103499 KB/s (0)
-[ 2150.829205] dmatest: dma0chan3-copy1: summary 10000 tests, 0 failures 6430 iops 102892 KB/s (0)
-[ 2150.839716] dmatest: dma0chan3-copy2: summary 10000 tests, 0 failures 6387 iops 102193 KB/s (0)
-[ 2150.850093] dmatest: dma0chan3-copy3: summary 10000 tests, 0 failures 6376 iops 102028 KB/s (0)
-[ 2152.263688] dmatest: dma0chan1-copy0: result #22: 'test timed out' with src_off=0x0 dst_off=0x0 len=0x4000 (0)
-[ 2152.273617] dmatest: dma0chan2-copy3: result #4: 'test timed out' with src_off=0x0 dst_off=0x0 len=0x4000 (0)
-[ 2152.273644] dmatest: dma0chan2-copy0: result #21: 'test timed out' with src_off=0x0 dst_off=0x0 len=0x4000 (0)
-[ 2152.273667] dmatest: dma0chan2-copy1: result #7: 'test timed out' with src_off=0x0 dst_off=0x0 len=0x4000 (0)
-[ 2152.284062] dmatest: dma0chan0-copy0: result #90: 'test timed out' with src_off=0x0 dst_off=0x0 len=0x4000 (0)
-[ 2152.284085] dmatest: dma0chan2-copy2: result #5: 'test timed out' with src_off=0x0 dst_off=0x0 len=0x4000 (0)
-[ 2152.284107] dmatest: dma0chan1-copy3: result #1: 'test timed out' with src_off=0x0 dst_off=0x0 len=0x4000 (0)
-[ 2152.284129] dmatest: dma0chan1-copy2: result #7: 'test timed out' with src_off=0x0 dst_off=0x0 len=0x4000 (0)
-
-This is probably due to a runtime PM-related race condition in the shdmac
-driver. No performance measurement can thus be performed with the existing
-driver.
-
-The rcar-dmac driver has been tested both with memcpy transfers using the
-dmatest kernel module on the Lager and Koelsch boards, and with the MMCIF
-device on the Lager board. A second patch set will follow to enable DMA
-support for MMCIF on the Lager board.
-
-Support for hardware descriptors lists is under development and will be posted
-in the near future. No change to the DT bindings will be needed.
-
-The first four patches should go through the DMA engine tree, while the last
-three patches should go through the Renesas tree. If the driver can make it to
-v3.17 merging the platform changes will be easier.
-
-Laurent Pinchart (7):
-  dmaengine: sh: Rework Kconfig and Makefile
-  dmaengine: shdma: Make channel filter ignore unrelated devices
-  dmaengine: rcar-dmac: Add device tree bindings documentation
-  dmaengine: rcar-dmac: Add Renesas R-Car Gen2 DMA Controller (DMAC)
-    driver
-  ARM: shmobile: r8a7790: Add DMAC clocks to DT
-  ARM: shmobile: r8a7790: Add DMAC devices to DT
-  ARM: shmobile: r8a7791: Add DMAC devices to DT
-
- .../devicetree/bindings/dma/renesas,rcar-dmac.txt  |   98 ++
- arch/arm/boot/dts/r8a7790.dtsi                     |   66 +-
- arch/arm/boot/dts/r8a7791.dtsi                     |   60 +
- drivers/dma/sh/Kconfig                             |   30 +-
- drivers/dma/sh/Makefile                            |   15 +-
- drivers/dma/sh/rcar-dmac.c                         | 1514 ++++++++++++++++++++
- drivers/dma/sh/shdma-base.c                        |   84 +-
- 7 files changed, 1819 insertions(+), 48 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/dma/renesas,rcar-dmac.txt
- create mode 100644 drivers/dma/sh/rcar-dmac.c
-
+diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
+index b35007e..94b6bde 100644
+--- a/drivers/dma/sh/shdma-base.c
++++ b/drivers/dma/sh/shdma-base.c
+@@ -206,45 +206,6 @@ static int shdma_setup_slave(struct shdma_chan *schan, int slave_id,
+ 	return 0;
+ }
+ 
+-/*
+- * This is the standard shdma filter function to be used as a replacement to the
+- * "old" method, using the .private pointer. If for some reason you allocate a
+- * channel without slave data, use something like ERR_PTR(-EINVAL) as a filter
+- * parameter. If this filter is used, the slave driver, after calling
+- * dma_request_channel(), will also have to call dmaengine_slave_config() with
+- * .slave_id, .direction, and either .src_addr or .dst_addr set.
+- * NOTE: this filter doesn't support multiple DMAC drivers with the DMA_SLAVE
+- * capability! If this becomes a requirement, hardware glue drivers, using this
+- * services would have to provide their own filters, which first would check
+- * the device driver, similar to how other DMAC drivers, e.g., sa11x0-dma.c, do
+- * this, and only then, in case of a match, call this common filter.
+- * NOTE 2: This filter function is also used in the DT case by shdma_of_xlate().
+- * In that case the MID-RID value is used for slave channel filtering and is
+- * passed to this function in the "arg" parameter.
+- */
+-bool shdma_chan_filter(struct dma_chan *chan, void *arg)
+-{
+-	struct shdma_chan *schan = to_shdma_chan(chan);
+-	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
+-	const struct shdma_ops *ops = sdev->ops;
+-	int match = (long)arg;
+-	int ret;
+-
+-	if (match < 0)
+-		/* No slave requested - arbitrary channel */
+-		return true;
+-
+-	if (!schan->dev->of_node && match >= slave_num)
+-		return false;
+-
+-	ret = ops->set_slave(schan, match, 0, true);
+-	if (ret < 0)
+-		return false;
+-
+-	return true;
+-}
+-EXPORT_SYMBOL(shdma_chan_filter);
+-
+ static int shdma_alloc_chan_resources(struct dma_chan *chan)
+ {
+ 	struct shdma_chan *schan = to_shdma_chan(chan);
+@@ -295,6 +256,51 @@ esetslave:
+ 	return ret;
+ }
+ 
++/*
++ * This is the standard shdma filter function to be used as a replacement to the
++ * "old" method, using the .private pointer. If for some reason you allocate a
++ * channel without slave data, use something like ERR_PTR(-EINVAL) as a filter
++ * parameter. If this filter is used, the slave driver, after calling
++ * dma_request_channel(), will also have to call dmaengine_slave_config() with
++ * .slave_id, .direction, and either .src_addr or .dst_addr set.
++ * NOTE: this filter doesn't support multiple DMAC drivers with the DMA_SLAVE
++ * capability! If this becomes a requirement, hardware glue drivers, using this
++ * services would have to provide their own filters, which first would check
++ * the device driver, similar to how other DMAC drivers, e.g., sa11x0-dma.c, do
++ * this, and only then, in case of a match, call this common filter.
++ * NOTE 2: This filter function is also used in the DT case by shdma_of_xlate().
++ * In that case the MID-RID value is used for slave channel filtering and is
++ * passed to this function in the "arg" parameter.
++ */
++bool shdma_chan_filter(struct dma_chan *chan, void *arg)
++{
++	struct shdma_chan *schan;
++	struct shdma_dev *sdev;
++	int match = (long)arg;
++	int ret;
++
++	/* Only support channels handled by this driver. */
++	if (chan->device->device_alloc_chan_resources !+	    shdma_alloc_chan_resources)
++		return false;
++
++	if (match < 0)
++		/* No slave requested - arbitrary channel */
++		return true;
++
++	schan = to_shdma_chan(chan);
++	if (!schan->dev->of_node && match >= slave_num)
++		return false;
++
++	sdev = to_shdma_dev(schan->dma_chan.device);
++	ret = sdev->ops->set_slave(schan, match, 0, true);
++	if (ret < 0)
++		return false;
++
++	return true;
++}
++EXPORT_SYMBOL(shdma_chan_filter);
++
+ static dma_async_tx_callback __ld_cleanup(struct shdma_chan *schan, bool all)
+ {
+ 	struct shdma_desc *desc, *_desc;
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.5.5
 
