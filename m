@@ -1,124 +1,74 @@
-From: Marc Kleine-Budde <mkl@pengutronix.de>
-Date: Thu, 31 Jul 2014 21:31:59 +0000
-Subject: Re: [PATCH v3 1/2] rcar_can: document device tree bindings
-Message-Id: <53DAB5CF.8000407@pengutronix.de>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="FsXowED51Aco8VL12W78o92IgaqntontE"
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 18 Jul 2014 23:50:17 +0000
+Subject: [PATCH v2 0/8] R-Car Gen2 DMA Controller driver
+Message-Id: <1405727425-6237-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201408010124.26505.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201408010124.26505.sergei.shtylyov@cogentembedded.com>
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, devicetree@vger.kernel.org
-Cc: netdev@vger.kernel.org, wg@grandegger.com, linux-can@vger.kernel.org, linux-sh@vger.kernel.org, vksavl@gmail.com
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---FsXowED51Aco8VL12W78o92IgaqntontE
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+Hello,
 
-On 07/31/2014 11:24 PM, Sergei Shtylyov wrote:
-> Document the R-Car CAN device tree bindings.
->=20
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+This patch sets adds a new driver for the DMA controller found in the R-Car
+Gen2 SoCs under the name "Direct Memory Access Controller for System
+(SYS-DMAC)". Support for the "Realtime Direct Memory Access Controller
+(RT-DMAC)" and "Direct Memory Access Controller for Audio (Audio-DMAC)" will
+be added later.
 
-The series looks good from the CAN perpective. I'll apply the patches
-after we've got an Acked-by from the DT folks.
+For the rationale of why a new driver is needed, and performance figures,
+please see the cover letter of v1 ("[PATCH 0/7] R-Car Gen2 DMA Controller
+driver") [1].
 
-Marc
+Support for hardware descriptors lists is under development and will be posted
+in the near future. No change to the DT bindings will be needed.
 
->=20
-> ---
-> The patch is against the 'linux-can-next.git' repo.
->=20
-> Changes in version 2:
-> - new patch, split from the driver's device tree support patch;
-> - adjusted "clocks" property to refer to 3 clocks instead of 1;
-> - added mandatory "clock-names" property;
-> - renamed the "clock-select" property to "renesas,can-clock-select".
->=20
->  Documentation/devicetree/bindings/net/can/rcar_can.txt |   43 ++++++++=
-+++++++++
->  1 file changed, 43 insertions(+)
->=20
-> Index: linux-can-next/Documentation/devicetree/bindings/net/can/rcar_ca=
-n.txt
-> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
-> --- /dev/null
-> +++ linux-can-next/Documentation/devicetree/bindings/net/can/rcar_can.t=
-xt
-> @@ -0,0 +1,43 @@
-> +Renesas R-Car CAN controller Device Tree Bindings
-> +-------------------------------------------------
-> +
-> +Required properties:
-> +- compatible: "renesas,can-r8a7778" if CAN controller is a part of R8A=
-7778 SoC.
-> +	      "renesas,can-r8a7779" if CAN controller is a part of R8A7779 So=
-C.
-> +	      "renesas,can-r8a7790" if CAN controller is a part of R8A7790 So=
-C.
-> +	      "renesas,can-r8a7791" if CAN controller is a part of R8A7791 So=
-C.
-> +- reg: physical base address and size of the R-Car CAN register map.
-> +- interrupts: interrupt specifier for the sole interrupt.
-> +- clocks: phandles and clock specifiers for 3 CAN clock inputs.
-> +- clock-names: 3 clock input name strings: "clkp1", "clkp2", "can_clk"=
-=2E
-> +- pinctrl-0: pin control group to be used for this controller.
-> +- pinctrl-names: must be "default".
-> +
-> +Optional properties:
-> +- renesas,can-clock-select: R-Car CAN Clock Source Select. Valid value=
-s are:
-> +			    <0x0> (default) : Peripheral clock (clkp1)
-> +			    <0x1> : Peripheral clock (clkp2)
-> +			    <0x3> : Externally input clock
-> +
-> +Example
-> +-------
-> +
-> +SoC common .dtsi file:
-> +
-> +	can0: can@e6e80000 {
-> +		compatible =3D "renesas,can-r8a7791";
-> +		reg =3D <0 0xe6e80000 0 0x1000>;
-> +		interrupts =3D <0 186 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks =3D <&mstp9_clks R8A7791_CLK_RCAN0>,
-> +		       	 <&cpg_clocks R8A7791_CLK_RCAN>, <&can_clk>;
-> +		clock-names =3D "clkp1", "clkp2", "can_clk";
-> +		status =3D "disabled";
-> +	};
-> +
-> +Board specific .dts file:
-> +
-> +&can0 {
-> +	pinctrl-0 =3D <&can0_pins>;
-> +	pinctrl-names =3D "default";
-> +	status =3D "okay";
-> +};
->=20
+The first five patches should go through the DMA engine tree, while the last
+three patches should go through the Renesas tree. If the driver can make it to
+v3.17 merging the platform changes will be easier.
 
+Morimoto-san, could you please test if this version fixes the channel filter
+issue you've experienced with the R-Car audio driver ? I would also appreciate
+if you could tell me how to test cyclic DMA transfers using the audio driver.
 
---=20
-Pengutronix e.K.                  | Marc Kleine-Budde           |
-Industrial Linux Solutions        | Phone: +49-231-2826-924     |
-Vertretung West/Dortmund          | Fax:   +49-5121-206917-5555 |
-Amtsgericht Hildesheim, HRA 2686  | http://www.pengutronix.de   |
+Changes since v1:
 
+- Allocate IRQ name strings dynamically
+- Only call the callback function if one is supplied
+- Don't overallocate sg list entries
+- Allocate sg list entries with GFP_KERNEL
+- Don't manage function clock manually
+- Make channel filter ignore unrelated devices
+- Document why the cyclic sg list is kcalloc'ed
+- Remove ch15 from interrupt names in DT
+- Replace CONFIG_OF with OF in Kconfig
 
---FsXowED51Aco8VL12W78o92IgaqntontE
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+[1] http://www.spinics.net/lists/linux-sh/msg33768.html
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-Comment: Using GnuPG with Icedove - http://www.enigmail.net/
+Laurent Pinchart (8):
+  dmaengine: sh: Rework Kconfig and Makefile
+  dmaengine: shdma: Make channel filter ignore unrelated devices
+  dmaengine: shdma: Allocate cyclic sg list dynamically
+  dmaengine: rcar-dmac: Add device tree bindings documentation
+  dmaengine: rcar-dmac: Add Renesas R-Car Gen2 DMA Controller (DMAC)
+    driver
+  ARM: shmobile: r8a7790: Add DMAC clocks to DT
+  ARM: shmobile: r8a7790: Add DMAC devices to DT
+  ARM: shmobile: r8a7791: Add DMAC devices to DT
 
-iEYEARECAAYFAlPatc8ACgkQjTAFq1RaXHOcowCgl/LMlK7JEu0EsxGWyxQ6X6nQ
-GcQAnRa1j7v8IAd0fiBZeQkuGHVht3H9
-=9LoU
------END PGP SIGNATURE-----
+ .../devicetree/bindings/dma/renesas,rcar-dmac.txt  |   98 ++
+ arch/arm/boot/dts/r8a7790.dtsi                     |   66 +-
+ arch/arm/boot/dts/r8a7791.dtsi                     |   60 +
+ drivers/dma/sh/Kconfig                             |   30 +-
+ drivers/dma/sh/Makefile                            |   15 +-
+ drivers/dma/sh/rcar-dmac.c                         | 1525 ++++++++++++++++++++
+ drivers/dma/sh/shdma-base.c                        |  101 +-
+ 7 files changed, 1845 insertions(+), 50 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/dma/renesas,rcar-dmac.txt
+ create mode 100644 drivers/dma/sh/rcar-dmac.c
 
---FsXowED51Aco8VL12W78o92IgaqntontE--
+-- 
+Regards,
+
+Laurent Pinchart
+
