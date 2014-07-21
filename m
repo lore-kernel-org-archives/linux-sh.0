@@ -1,30 +1,41 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 30 Jul 2014 23:32:41 +0000
-Subject: [PATCH 04/09] ARM: shmobile: Add shmobile_init_late() to Marzen
-Message-Id: <20140730233241.5969.59510.sendpatchset@w520>
+From: Wang Nan <wangnan0@huawei.com>
+Date: Mon, 21 Jul 2014 03:46:40 +0000
+Subject: [PATCH v2 5/7] memory-hotplug: ppc: suitable memory should go to ZONE_MOVABLE
+Message-Id: <1405914402-66212-6-git-send-email-wangnan0@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1405914402-66212-1-git-send-email-wangnan0@huawei.com>
+In-Reply-To: <1405914402-66212-1-git-send-email-wangnan0@huawei.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ingo Molnar <mingo@redhat.com>, Yinghai Lu <yinghai@kernel.org>, Mel Gorman <mgorman@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Dave Hansen <dave.hansen@intel.com>, Zhang Yanfei <zhangyanfei@cn.fujitsu.com>
+Cc: peifeiyue@huawei.com, linux-mm@kvack.org, x86@kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, wangnan0@huawei.com
 
-From: Magnus Damm <damm+renesas@opensource.se>
+This patch introduces zone_for_memory() to arch_add_memory() on powerpc
+to ensure new, higher memory added into ZONE_MOVABLE if movable zone has
+already setup.
 
-Extend board specific Marzen DT reference machine vector to include
-shmobile_init_late() so Suspend-to-RAM and CPUIdle are setup as expected.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Wang Nan <wangnan0@huawei.com>
+Cc: Zhang Yanfei <zhangyanfei@cn.fujitsu.com>
+Cc: Dave Hansen <dave.hansen@intel.com>
 ---
+ arch/powerpc/mm/mem.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
- arch/arm/mach-shmobile/board-marzen-reference.c |    1 +
- 1 file changed, 1 insertion(+)
+diff --git a/arch/powerpc/mm/mem.c b/arch/powerpc/mm/mem.c
+index 2c8e90f..e0f7a18 100644
+--- a/arch/powerpc/mm/mem.c
++++ b/arch/powerpc/mm/mem.c
+@@ -128,7 +128,8 @@ int arch_add_memory(int nid, u64 start, u64 size)
+ 		return -EINVAL;
+ 
+ 	/* this should work for most non-highmem platforms */
+-	zone = pgdata->node_zones;
++	zone = pgdata->node_zones +
++		zone_for_memory(nid, start, size, 0);
+ 
+ 	return __add_pages(nid, zone, start_pfn, nr_pages);
+ }
+-- 
+1.8.4
 
---- 0001/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ work/arch/arm/mach-shmobile/board-marzen-reference.c	2014-07-31 07:45:06.000000000 +0900
-@@ -57,5 +57,6 @@ DT_MACHINE_START(MARZEN, "marzen")
- 	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= r8a7779_init_irq_dt,
- 	.init_machine	= marzen_init,
-+	.init_late	= shmobile_init_late,
- 	.dt_compat	= marzen_boards_compat_dt,
- MACHINE_END
