@@ -1,35 +1,41 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 24 Jul 2014 01:57:40 +0000
-Subject: [PATCH 3/5] ARM: shmobile: r8a73a4: add CMT1 clock support for DT
-Message-Id: <aad64dc31954dbbb84cd8fcfaf1bc028f3bc2616.1406164563.git.horms+renesas@verge.net.au>
+From: Wang Nan <wangnan0@huawei.com>
+Date: Mon, 21 Jul 2014 03:46:37 +0000
+Subject: [PATCH v2 2/7] memory-hotplug: x86_64: suitable memory should go to ZONE_MOVABLE
+Message-Id: <1405914402-66212-3-git-send-email-wangnan0@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1406164563.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1406164563.git.horms+renesas@verge.net.au>
+References: <1405914402-66212-1-git-send-email-wangnan0@huawei.com>
+In-Reply-To: <1405914402-66212-1-git-send-email-wangnan0@huawei.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ingo Molnar <mingo@redhat.com>, Yinghai Lu <yinghai@kernel.org>, Mel Gorman <mgorman@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Dave Hansen <dave.hansen@intel.com>, Zhang Yanfei <zhangyanfei@cn.fujitsu.com>
+Cc: peifeiyue@huawei.com, linux-mm@kvack.org, x86@kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, wangnan0@huawei.com
 
-This will be used when initialising CMT1 device using DT
-until common clock framework support is added.
+This patch introduces zone_for_memory() to arch_add_memory() on x86_64
+to ensure new, higher memory added into ZONE_MOVABLE if movable zone has
+already setup.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Wang Nan <wangnan0@huawei.com>
+Cc: Zhang Yanfei <zhangyanfei@cn.fujitsu.com>
+Cc: Dave Hansen <dave.hansen@intel.com>
 ---
- arch/arm/mach-shmobile/clock-r8a73a4.c | 1 +
- 1 file changed, 1 insertion(+)
+ arch/x86/mm/init_64.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
-index 1d2fe05..9629851 100644
---- a/arch/arm/mach-shmobile/clock-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
-@@ -604,6 +604,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e6500000.i2c", &mstp_clks[MSTP318]),
- 	CLKDEV_DEV_ID("e6510000.i2c", &mstp_clks[MSTP323]),
- 	CLKDEV_ICK_ID("fck", "sh-cmt-48-gen2.1", &mstp_clks[MSTP329]),
-+	CLKDEV_ICK_ID("fck", "e6130000.timer", &mstp_clks[MSTP329]),
- 	CLKDEV_DEV_ID("e60b0000.i2c", &mstp_clks[MSTP409]),
- 	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP410]),
- 	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP411]),
+diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
+index df1a992..5621c47 100644
+--- a/arch/x86/mm/init_64.c
++++ b/arch/x86/mm/init_64.c
+@@ -691,7 +691,8 @@ static void  update_end_of_memory_vars(u64 start, u64 size)
+ int arch_add_memory(int nid, u64 start, u64 size)
+ {
+ 	struct pglist_data *pgdat = NODE_DATA(nid);
+-	struct zone *zone = pgdat->node_zones + ZONE_NORMAL;
++	struct zone *zone = pgdat->node_zones +
++		zone_for_memory(nid, start, size, ZONE_NORMAL);
+ 	unsigned long start_pfn = start >> PAGE_SHIFT;
+ 	unsigned long nr_pages = size >> PAGE_SHIFT;
+ 	int ret;
 -- 
-2.0.1
+1.8.4
 
