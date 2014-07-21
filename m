@@ -1,50 +1,43 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 07 Jul 2014 07:54:36 +0000
-Subject: [PATCH v2 11/30] ARM: shmobile: r8a73a4: Add CMT1 node
-Message-Id: <1404719695-1634-12-git-send-email-horms+renesas@verge.net.au>
+From: Wang Nan <wangnan0@huawei.com>
+Date: Mon, 21 Jul 2014 03:46:41 +0000
+Subject: [PATCH v2 6/7] memory-hotplug: sh: suitable memory should go to ZONE_MOVABLE
+Message-Id: <1405914402-66212-7-git-send-email-wangnan0@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+References: <1405914402-66212-1-git-send-email-wangnan0@huawei.com>
+In-Reply-To: <1405914402-66212-1-git-send-email-wangnan0@huawei.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ingo Molnar <mingo@redhat.com>, Yinghai Lu <yinghai@kernel.org>, Mel Gorman <mgorman@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Dave Hansen <dave.hansen@intel.com>, Zhang Yanfei <zhangyanfei@cn.fujitsu.com>
+Cc: peifeiyue@huawei.com, linux-mm@kvack.org, x86@kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, wangnan0@huawei.com
 
-This describes all of the CMT1 hardware of the r8a73a4.
-The node is disabled and may be enabled as necessary by board DTS files.
+This patch introduces zone_for_memory() to arch_add_memory() on sh to
+ensure new, higher memory added into ZONE_MOVABLE if movable zone has
+already setup.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Wang Nan <wangnan0@huawei.com>
+Cc: Zhang Yanfei <zhangyanfei@cn.fujitsu.com>
+Cc: Dave Hansen <dave.hansen@intel.com>
 ---
-N.B: This only adds cmt1, as per the legacy C code
+ arch/sh/mm/init.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-v2
-* First post
----
- arch/arm/boot/dts/r8a73a4.dtsi | 10 ++++++++++
- 1 file changed, 10 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index d8ec505..9bf3386 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -50,6 +50,16 @@
- 			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
- 	};
+diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+index 2d089fe..2790b6a 100644
+--- a/arch/sh/mm/init.c
++++ b/arch/sh/mm/init.c
+@@ -495,8 +495,9 @@ int arch_add_memory(int nid, u64 start, u64 size)
+ 	pgdat = NODE_DATA(nid);
  
-+	cmt1: timer@e6130000 {
-+		compatible = "renesas,cmt-48-gen2";
-+		reg = <0 0xe6130000 0 0x1004>;
-+		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>;
-+
-+		renesas,channels-mask = <0xff>;
-+
-+		status = "disabled";
-+	};
-+
- 	irqc0: interrupt-controller@e61c0000 {
- 		compatible = "renesas,irqc";
- 		#interrupt-cells = <2>;
+ 	/* We only have ZONE_NORMAL, so this is easy.. */
+-	ret = __add_pages(nid, pgdat->node_zones + ZONE_NORMAL,
+-				start_pfn, nr_pages);
++	ret = __add_pages(nid, pgdat->node_zones +
++			zone_for_memory(nid, start, size, ZONE_NORMAL),
++			start_pfn, nr_pages);
+ 	if (unlikely(ret))
+ 		printk("%s: Failed, __add_pages() = %d\n", __func__, ret);
+ 
 -- 
-2.0.0.rc2
+1.8.4
 
