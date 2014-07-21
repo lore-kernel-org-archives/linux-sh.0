@@ -1,34 +1,41 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 30 Jul 2014 23:32:50 +0000
-Subject: [PATCH 05/09] ARM: shmobile: Fix shmobile_init_late() on r8a7778
-Message-Id: <20140730233250.5969.67116.sendpatchset@w520>
+From: Wang Nan <wangnan0@huawei.com>
+Date: Mon, 21 Jul 2014 03:46:38 +0000
+Subject: [PATCH v2 3/7] memory-hotplug: x86_32: suitable memory should go to ZONE_MOVABLE
+Message-Id: <1405914402-66212-4-git-send-email-wangnan0@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1405914402-66212-1-git-send-email-wangnan0@huawei.com>
+In-Reply-To: <1405914402-66212-1-git-send-email-wangnan0@huawei.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ingo Molnar <mingo@redhat.com>, Yinghai Lu <yinghai@kernel.org>, Mel Gorman <mgorman@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Dave Hansen <dave.hansen@intel.com>, Zhang Yanfei <zhangyanfei@cn.fujitsu.com>
+Cc: peifeiyue@huawei.com, linux-mm@kvack.org, x86@kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, wangnan0@huawei.com
 
-From: Magnus Damm <damm+renesas@opensource.se>
+This patch introduces zone_for_memory() to arch_add_memory() on x86_32
+to ensure new, higher memory added into ZONE_MOVABLE if movable zone has
+already setup.
 
-Fix r8a7778 SoC machine vector to include shmobile_init_late()
-so Suspend-to-RAM and CPUIdle are setup and platform devices
-are omitted as expected.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Wang Nan <wangnan0@huawei.com>
+Cc: Zhang Yanfei <zhangyanfei@cn.fujitsu.com>
+Cc: Dave Hansen <dave.hansen@intel.com>
 ---
+ arch/x86/mm/init_32.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
- arch/arm/mach-shmobile/setup-r8a7778.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
---- 0001/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7778.c	2014-07-31 08:26:09.000000000 +0900
-@@ -610,8 +610,8 @@ static const char *r8a7778_compat_dt[] _
- DT_MACHINE_START(R8A7778_DT, "Generic R8A7778 (Flattened Device Tree)")
- 	.init_early	= r8a7778_init_delay,
- 	.init_irq	= r8a7778_init_irq_dt,
-+	.init_late	= shmobile_init_late,
- 	.dt_compat	= r8a7778_compat_dt,
--	.init_late      = r8a7778_init_late,
- MACHINE_END
+diff --git a/arch/x86/mm/init_32.c b/arch/x86/mm/init_32.c
+index e395048..7d05565 100644
+--- a/arch/x86/mm/init_32.c
++++ b/arch/x86/mm/init_32.c
+@@ -825,7 +825,8 @@ void __init mem_init(void)
+ int arch_add_memory(int nid, u64 start, u64 size)
+ {
+ 	struct pglist_data *pgdata = NODE_DATA(nid);
+-	struct zone *zone = pgdata->node_zones + ZONE_HIGHMEM;
++	struct zone *zone = pgdata->node_zones +
++		zone_for_memory(nid, start, size, ZONE_HIGHMEM);
+ 	unsigned long start_pfn = start >> PAGE_SHIFT;
+ 	unsigned long nr_pages = size >> PAGE_SHIFT;
  
- #endif /* CONFIG_USE_OF */
+-- 
+1.8.4
+
