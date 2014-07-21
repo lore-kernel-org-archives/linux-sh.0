@@ -1,36 +1,44 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Tue, 22 Jul 2014 21:20:36 +0000
-Subject: Re: [PATCH v2 1/5] i2c: Don't start transfers when suspended
-Message-Id: <20140722212036.GL21766@n2100.arm.linux.org.uk>
+From: Wang Nan <wangnan0@huawei.com>
+Date: Mon, 21 Jul 2014 03:46:42 +0000
+Subject: [PATCH v2 7/7] memory-hotplug: tile: suitable memory should go to ZONE_MOVABLE
+Message-Id: <1405914402-66212-8-git-send-email-wangnan0@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405608520-5644-1-git-send-email-hechtb@gmail.com>
- <53CEB196.9060903@ti.com>
-In-Reply-To: <53CEB196.9060903@ti.com>
+References: <1405914402-66212-1-git-send-email-wangnan0@huawei.com>
+In-Reply-To: <1405914402-66212-1-git-send-email-wangnan0@huawei.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ingo Molnar <mingo@redhat.com>, Yinghai Lu <yinghai@kernel.org>, Mel Gorman <mgorman@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Dave Hansen <dave.hansen@intel.com>, Zhang Yanfei <zhangyanfei@cn.fujitsu.com>
+Cc: peifeiyue@huawei.com, linux-mm@kvack.org, x86@kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, wangnan0@huawei.com
 
-On Tue, Jul 22, 2014 at 09:46:46PM +0300, Grygorii Strashko wrote:
->  I'm not sure, this optimization is safe  (
-> Because, in many cases the access to PMIC IC needs to be allowed till late
-> stages of suspending (at least till suspend_noirq stage or even later).
-> For example, on some OMAP SoC Voltage management code need to use services
-> provided by PMIC IC, which is connected to I2C.
+This patch introduces zone_for_memory() to arch_add_memory() on tile to
+ensure new, higher memory added into ZONE_MOVABLE if movable zone has
+already setup.
 
-This is definitely not safe.  I worked on a PXA platform a while back
-where the only way to tell the thing to "sleep" was to send an I2C
-message to a microcontroller asking it to remove power.
+This patch also fix a problem: on tile, new memory should be added into
+ZONE_HIGHMEM by default, not MAX_NR_ZONES-1, which is ZONE_MOVABLE.
 
-Plus, as you say, you may also have PMICs that you need to talk to
-in order to shut power off to various peripherals (and maybe even
-the CPU itself) during the suspend process.
+Signed-off-by: Wang Nan <wangnan0@huawei.com>
+Cc: Zhang Yanfei <zhangyanfei@cn.fujitsu.com>
+Cc: Dave Hansen <dave.hansen@intel.com>
+---
+ arch/tile/mm/init.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-I2C is one of those cases where devices attached to the I2C bus are
-themselves responsible for doing their own suspend shutdown at the
-appropriate time; it's not the responsibility of the I2C core to
-know this kind of system/driver dependent detail.
-
+diff --git a/arch/tile/mm/init.c b/arch/tile/mm/init.c
+index bfb3127..22ac6c1 100644
+--- a/arch/tile/mm/init.c
++++ b/arch/tile/mm/init.c
+@@ -872,7 +872,8 @@ void __init mem_init(void)
+ int arch_add_memory(u64 start, u64 size)
+ {
+ 	struct pglist_data *pgdata = &contig_page_data;
+-	struct zone *zone = pgdata->node_zones + MAX_NR_ZONES-1;
++	struct zone *zone = pgdata->node_zones +
++		zone_for_memory(nid, start, size, ZONE_HIGHMEM);
+ 	unsigned long start_pfn = start >> PAGE_SHIFT;
+ 	unsigned long nr_pages = size >> PAGE_SHIFT;
+ 
 -- 
-FTTC broadband for 0.8mile line: currently at 9.5Mbps down 400kbps up
-according to speedtest.net.
+1.8.4
+
