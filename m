@@ -1,82 +1,62 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 24 Jul 2014 01:58:04 +0000
-Subject: [PATCH 1/3] ARM: shmobile: r7s72100: genmai: Remove reference board file
-Message-Id: <5cebb8e908161eadf136dd0f21ddbfe7f1dba1fc.1406166426.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 22 Jul 2014 21:15:51 +0000
+Subject: [PATCH v3 1/2] ARM: shmobile: r8a7790: add USB PHY DT support
+Message-Id: <201407230115.52372.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1406166426.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1406166426.git.horms+renesas@verge.net.au>
+References: <201407230113.46444.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201407230113.46444.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Define the R8A7790 generic part of the USB PHY device node. It is up to the
+board file to enable the device.
 
-The genmai board now boots using the generic R7S72100 DT machine with
-the same feature set as the board file. Remove the board file.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Wolfram Sang <wsa@sang-engineering.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Makefile                 |  1 -
- arch/arm/mach-shmobile/board-genmai-reference.c | 35 -------------------------
- 2 files changed, 36 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/board-genmai-reference.c
+Changes in version 3:
+- changed subnodes of the USB PHY node to be per-channel;
+- changed "renesas,phy-select" property to "reg" in the subnodes, and thus added
+  "#address-cells" and "#size-cells" properties to the parent node;
+- moved "#phy-cells" property from the parent node to the subnodes, changing its
+  value to <1>;
+- refreshed the patch.
 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index dd542e7..18b05a8 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -62,7 +62,6 @@ obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
+Changes in version 2:
+- added subnodes to the USB PHY node;
+- refreshed the patch.
+
+ arch/arm/boot/dts/r8a7790.dtsi |   19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
++++ renesas/arch/arm/boot/dts/r8a7790.dtsi
+@@ -505,6 +505,25 @@
+ 		status = "disabled";
+ 	};
  
- # Board objects
- ifdef CONFIG_ARCH_SHMOBILE_MULTI
--obj-$(CONFIG_MACH_GENMAI)	+= board-genmai-reference.o
- obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch-reference.o
- obj-$(CONFIG_MACH_LAGER)	+= board-lager-reference.o
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen-reference.o
-diff --git a/arch/arm/mach-shmobile/board-genmai-reference.c b/arch/arm/mach-shmobile/board-genmai-reference.c
-deleted file mode 100644
-index bc52677..0000000
---- a/arch/arm/mach-shmobile/board-genmai-reference.c
-+++ /dev/null
-@@ -1,35 +0,0 @@
--/*
-- * Genmai board support
-- *
-- * Copyright (C) 2013  Renesas Solutions Corp.
-- * Copyright (C) 2013  Magnus Damm
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; version 2 of the License.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, write to the Free Software
-- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-- */
--
--#include <linux/kernel.h>
--
--#include <asm/mach/arch.h>
--
--#include "common.h"
--
--static const char * const genmai_boards_compat_dt[] __initconst = {
--	"renesas,genmai",
--	NULL,
--};
--
--DT_MACHINE_START(GENMAI_DT, "genmai")
--	.init_early	= shmobile_init_delay,
--	.dt_compat	= genmai_boards_compat_dt,
--MACHINE_END
--- 
-2.0.1
-
++	usbphy: usb-phy@e6590100 {
++		compatible = "renesas,usb-phy-r8a7790";
++		reg = <0 0xe6590100 0 0x100>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		clocks = <&mstp7_clks R8A7790_CLK_HSUSB>;
++		clock-names = "usbhs";
++		status = "disabled";
++
++		usb0: usb-channel@0 {
++			reg = <0>;
++			#phy-cells = <1>;
++		};
++		usb2: usb-channel@2 {
++			reg = <2>;
++			#phy-cells = <1>;
++		};
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
