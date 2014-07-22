@@ -1,37 +1,47 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 15 Jul 2014 22:45:19 +0000
-Subject: [PATCH 09/11] ARM: shmobile: r8a7791: Reference DMA channels in MMCIF DT node
-Message-Id: <1405464321-4723-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 22 Jul 2014 05:30:37 +0000
+Subject: [PATCH 0/10][RFC] mmc: tmio: fixup patches
+Message-Id: <87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>	<53AD638C.5060907@renesas.com>
+In-Reply-To: <53AD638C.5060907@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Ian Molton <ian.molton@codethink.co.uk>
+To: Simon <horms@verge.net.au>, Ian Molton <ian@mnementh.co.uk>, Chris Ball <cjb@laptop.org>
+Cc: TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, ryo.kataoka.wt@renesas.com, shinobu.uehara.xc@renesas.com, kouei.abe.cp@renesas.com
 
-Add references to the transmit and receive DMA channels in the MMCIF
-node.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/r8a7791.dtsi | 2 ++
- 1 file changed, 2 insertions(+)
+Hi Chris, Simon
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 6738bc9..ff0d415 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -370,6 +370,8 @@
- 		reg = <0 0xee200000 0 0x80>;
- 		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7791_CLK_MMCIF0>;
-+		dmas = <&dmac0 0xd1>, <&dmac0 0xd2>;
-+		dma-names = "tx", "rx";
- 		reg-io-width = <4>;
- 		status = "disabled";
- 	};
--- 
-1.8.5.5
+These are fixup patches for mmc tmio/shmobile.
+I tesed these patches on my environment.
+I'm very happy if someone test these patches.
 
+These patches modify TMIO driver,
+but, basically it has no effect to non-Renesas chip.
+I CC:ed Ian who created original TMIO driver.
+
+Kuninori Morimoto (3):
+      mmc: tmio: care about DMA tx/rx addr offset
+      mmc: tmio: remove Renesas specific #ifdef
+      mmc: tmio: remove SCLKEN bit setting from tmio_mmc_set_clock()
+
+Shinobu Uehara (6):
+      mmc: sh_mobile_sdhi: Add EXT_ACC register busy check
+      mmc: block: add block number limitation flag for multiple block read
+      mmc: tmio: clear error IRQ status
+      mmc: tmio: control multiple block transfer mode
+      mmc: tmio: add TMIO_MMC_SDIO_STATUS_QUIRK
+      mmc: tmio: check ILL_FUNC instead of CBSY
+      mmc: tmio: add actual clock support as option
+
+ arch/arm/mach-shmobile/board-koelsch.c |    6 ++---
+ arch/arm/mach-shmobile/board-lager.c   |    4 ++--
+ drivers/mmc/card/block.c               |   19 ++++++++++++++--
+ drivers/mmc/host/sh_mobile_sdhi.c      |   27 +++++++++++++++++++---
+ drivers/mmc/host/tmio_mmc_dma.c        |    8 +++----
+ drivers/mmc/host/tmio_mmc_pio.c        |   39 +++++++++++++++++++++++++++++---
+ include/linux/mfd/tmio.h               |   22 ++++++++++++++++++
+ include/linux/mmc/host.h               |    3 +++
+ 8 files changed, 110 insertions(+), 18 deletions(-)
