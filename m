@@ -1,47 +1,79 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 07 Jul 2014 06:47:38 +0000
-Subject: [PATCH 3/3] ARM: shmobile: r8a7779: Consistently use tabs for indentation
-Message-Id: <1404715658-31050-4-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 22 Jul 2014 22:25:25 +0000
+Subject: [PATCH v3] ARM: shmobile: r8a7791: link PCI USB devices to USB PHY
+Message-Id: <201407230225.26798.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404715658-31050-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1404715658-31050-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Unify white space usage by consistently using tabs for indentation.
+Describe the PCI USB devices that are behind the PCI bridges, adding necessary
+links to the USB PHY device.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/boot/dts/r8a7779.dtsi | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+This patch is against 'renesas-devel-v3.16-rc5-20140722' tag of Simon Horman's
+'renesas.git' repo plus R8A7791/Koelsch/Henninger USB PHY support patches posted
+before.  The patch requires the USB PHY driver, and USB HCD generic PHY support
+(also already posted) in order to work.
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 94e2fc8..58d0d95 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -54,13 +54,13 @@
- 		spi2 = &hspi2;
+Changes in version 3:
+- adjusted "phys" properties in the PCI OHCI/EHCI device nodes;
+- resolved rejects.
+
+Changes in version 2:
+- renamed the PCI OHCI/EHCI device nodes to comply with the PCI binding;
+- changed the PHY specifier in the PCI#1 node to reflect that channel #1 support
+  was dropped;
+- resolved rejects.
+
+ arch/arm/boot/dts/r8a7791.dtsi |   28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
++++ renesas/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1030,6 +1030,20 @@
+ 		interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
+ 				 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
+ 				 0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
++
++		usb@0,1 {
++			reg = <0x800 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usb0 0>;
++			phy-names = "usb";
++		};
++
++		usb@0,2 {
++			reg = <0x1000 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usb0 0>;
++			phy-names = "usb";
++		};
  	};
  
--        gic: interrupt-controller@f0001000 {
--                compatible = "arm,cortex-a9-gic";
--                #interrupt-cells = <3>;
--                interrupt-controller;
--                reg = <0xf0001000 0x1000>,
--                      <0xf0000100 0x100>;
--        };
-+	gic: interrupt-controller@f0001000 {
-+		compatible = "arm,cortex-a9-gic";
-+		#interrupt-cells = <3>;
-+		interrupt-controller;
-+		reg = <0xf0001000 0x1000>,
-+		      <0xf0000100 0x100>;
-+	};
+ 	pci1: pci@ee0d0000 {
+@@ -1050,6 +1064,20 @@
+ 		interrupt-map = <0x0000 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
+ 				 0x0800 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
+ 				 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
++
++		usb@0,1 {
++			reg = <0x800 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usb2 0>;
++			phy-names = "usb";
++		};
++
++		usb@0,2 {
++			reg = <0x1000 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usb2 0>;
++			phy-names = "usb";
++		};
+ 	};
  
- 	gpio0: gpio@ffc40000 {
- 		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
--- 
-2.0.0.rc2
-
+ 	pciec: pcie@fe000000 {
