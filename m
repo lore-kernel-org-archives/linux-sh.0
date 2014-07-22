@@ -1,22 +1,41 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 22 Jul 2014 21:22:48 +0000
-Subject: [PATCH v3 0/3] Add USB PHY device tree support for R8A7791/Koelsch/Henninger board
-Message-Id: <201407230122.49264.sergei.shtylyov@cogentembedded.com>
+Date: Tue, 22 Jul 2014 21:26:32 +0000
+Subject: [PATCH v3 2/3] ARM: shmobile: koelsch: enable USB PHY
+Message-Id: <201407230126.33886.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201407230122.49264.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201407230122.49264.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Enable USB PHY device for the Koelsch board.
 
-   Here's the set of 3 patches against Simon Horman's 'renesas.git' repo,
-'renesas-devel-v3.16-rc5-20140722' tag. Here we add the USB PHY device tree
-support on the R8A7791/Koelsch/Henninger boards. The patchset requires the USB
-PHY driver (just re-posted) in order to work.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-[1/3] ARM: shmobile: r8a7791: add USB PHY DT support
-[2/3] ARM: shmobile: koelsch: enable USB PHY
-[3/3] ARM: shmobile: henninger: enable USB PHY
+---
+Changes in version 3:
+- refreshed the patch.
 
-WBR, Sergei
+Changes in version 2:
+- fixed the wrong board name in the changelog;
+- refreshed the patch.
+
+ arch/arm/boot/dts/r8a7791-koelsch.dts |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7791-koelsch.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ renesas/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -452,6 +452,10 @@
+ 	pinctrl-names = "default";
+ };
+ 
++&usbphy {
++	status = "okay";
++};
++
+ &pcie_bus_clk {
+ 	status = "okay";
+ };
