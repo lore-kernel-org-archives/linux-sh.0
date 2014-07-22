@@ -1,90 +1,45 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 11 Jul 2014 16:01:17 +0000
-Subject: [PATCH v2 2/2] spi: sh-msiof: Handle dmaengine_prep_slave_single() failures gracefully
-Message-Id: <1405094477-14192-2-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 22 Jul 2014 05:34:24 +0000
+Subject: [PATCH 04/10] mmc: tmio: clear error IRQ status
+Message-Id: <878unmhs81.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405094477-14192-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1405094477-14192-1-git-send-email-geert+renesas@glider.be>
+References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
+	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
+	<53AD638C.5060907@renesas.com>
+	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Laurent Pinchart <Laurent.pinchart@ideasonboard.com>, linux-spi@vger.kernel.org, dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Simon <horms@verge.net.au>, Ian Molton <ian@mnementh.co.uk>, Chris Ball <cjb@laptop.org>
+Cc: TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, ryo.kataoka.wt@renesas.com, shinobu.uehara.xc@renesas.com, kouei.abe.cp@renesas.com
 
-As typically a shmobile SoC has less DMA channels than devices that can use
-DMA, we may want to prioritize access to the DMA channels in the future.
-This means that dmaengine_prep_slave_single() may start failing
-arbitrarily.
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-Handle dmaengine_prep_slave_single() failures gracefully by falling back to
-PIO. This requires moving DMA-specific configuration of the MSIOF device
-after the call(s) to dmaengine_prep_slave_single().
+Next card access will be always
+error if it didn't clear error status
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 ---
-v2:
-  - Add Acked-by
----
- drivers/spi/spi-sh-msiof.c | 23 +++++++++++++++--------
- 1 file changed, 15 insertions(+), 8 deletions(-)
+ drivers/mmc/host/tmio_mmc_pio.c |    3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 6f449b24704a..2a4354dcd661 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -636,12 +636,6 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv *p, const void *tx,
- 	dma_cookie_t cookie;
- 	int ret;
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index faf0924..c3b1b4e 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -557,6 +557,9 @@ static void tmio_mmc_card_irq_status(struct tmio_mmc_host *host,
  
--	/* 1 stage FIFO watermarks for DMA */
--	sh_msiof_write(p, FCTR, FCTR_TFWM_1 | FCTR_RFWM_1);
--
--	/* setup msiof transfer mode registers (32-bit words) */
--	sh_msiof_spi_set_mode_regs(p, tx, rx, 32, len / 4);
--
- 	if (tx) {
- 		ier_bits |= IER_TDREQE | IER_TDMAE;
- 		dma_sync_single_for_device(p->master->dma_tx->device->dev,
-@@ -650,7 +644,7 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv *p, const void *tx,
- 					p->tx_dma_addr, len, DMA_TO_DEVICE,
- 					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
- 		if (!desc_tx)
--			return -EIO;
-+			return -EAGAIN;
- 	}
- 
- 	if (rx) {
-@@ -659,8 +653,15 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv *p, const void *tx,
- 					p->rx_dma_addr, len, DMA_FROM_DEVICE,
- 					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
- 		if (!desc_rx)
--			return -EIO;
-+			return -EAGAIN;
- 	}
+ 	pr_debug_status(*status);
+ 	pr_debug_status(*ireg);
 +
-+	/* 1 stage FIFO watermarks for DMA */
-+	sh_msiof_write(p, FCTR, FCTR_TFWM_1 | FCTR_RFWM_1);
-+
-+	/* setup msiof transfer mode registers (32-bit words) */
-+	sh_msiof_spi_set_mode_regs(p, tx, rx, 32, len / 4);
-+
- 	sh_msiof_write(p, IER, ier_bits);
++	/* Clear the status except the interrupt status */
++	sd_ctrl_write32(host, CTL_STATUS, TMIO_MASK_IRQ);
+ }
  
- 	reinit_completion(&p->done);
-@@ -823,6 +824,12 @@ static int sh_msiof_transfer_one(struct spi_master *master,
- 			copy32(p->tx_dma_page, tx_buf, l / 4);
- 
- 		ret = sh_msiof_dma_once(p, tx_buf, rx_buf, l);
-+		if (ret = -EAGAIN) {
-+			pr_warn_once("%s %s: DMA not available, falling back to PIO\n",
-+				     dev_driver_string(&p->pdev->dev),
-+				     dev_name(&p->pdev->dev));
-+			break;
-+		}
- 		if (ret)
- 			return ret;
- 
+ static bool __tmio_mmc_card_detect_irq(struct tmio_mmc_host *host,
 -- 
-1.9.1
+1.7.9.5
 
