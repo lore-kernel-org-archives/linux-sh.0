@@ -1,30 +1,37 @@
-From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
-Date: Thu, 10 Jul 2014 07:41:45 +0000
-Subject: Re: renesas-drivers-2014-07-07-v3.16-rc4
-Message-Id: <53BE43B9.10907@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 22 Jul 2014 21:28:12 +0000
+Subject: [PATCH v3 3/3] ARM: shmobile: henninger: enable USB PHY
+Message-Id: <201407230128.13836.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMuHMdVTOabkGyJW-jRxXjtGHdA0W=APoiMYWAtvP3y_auqXKg@mail.gmail.com>
-In-Reply-To: <CAMuHMdVTOabkGyJW-jRxXjtGHdA0W=APoiMYWAtvP3y_auqXKg@mail.gmail.com>
+References: <201407230122.49264.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201407230122.49264.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+Enable USB PHY device for the Henninger board.
 
-On 7/10/2014 4:35 PM, Geert Uytterhoeven wrote:
-> Hi Ngyen-san.
-> 
-> On Thu, Jul 10, 2014 at 1:11 AM, Khiem Nguyen
-> <khiem.nguyen.xt@renesas.com> wrote:
->> I assumed you also confirm kernel build and/or kernel boot
->> for some board defconfigs (e.g lager/koelsch) for any new release.
-> 
-> Yes, I usually build and boot test koelsch, both legacy and
-> reference/multi-platform.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Understood. Thanks.
+---
+Changes in version 3:
+- refreshed the patch.
 
--- 
-Best regards,
-KHIEM Nguyen
+ arch/arm/boot/dts/r8a7791-henninger.dts |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7791-henninger.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-henninger.dts
++++ renesas/arch/arm/boot/dts/r8a7791-henninger.dts
+@@ -253,6 +253,10 @@
+ 	pinctrl-names = "default";
+ };
+ 
++&usbphy {
++	status = "okay";
++};
++
+ &pcie_bus_clk {
+ 	status = "okay";
+ };
