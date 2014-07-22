@@ -1,43 +1,108 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Mon, 07 Jul 2014 00:09:12 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Cpufreq Updates for v3.17
-Message-Id: <20140707000912.GG5539@quad.lixom.net>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 22 Jul 2014 05:34:33 +0000
+Subject: [PATCH 05/10] mmc: tmio: control multiple block transfer mode
+Message-Id: <877g36hs7s.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487159.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487159.git.horms+renesas@verge.net.au>
+References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
+	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
+	<53AD638C.5060907@renesas.com>
+	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Ian Molton <ian@mnementh.co.uk>, Chris Ball <cjb@laptop.org>
+Cc: TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, ryo.kataoka.wt@renesas.com, shinobu.uehara.xc@renesas.com, kouei.abe.cp@renesas.com
 
-On Mon, Jun 23, 2014 at 11:25:25AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider this Renesas ARM based SoC cpufreq update for v3.17.
-> 
-> 
-> The following changes since commit 7171511eaec5bf23fb06078f59784a3a0626b38f:
-> 
->   Linux 3.16-rc1 (2014-06-15 17:45:28 -1000)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-cpufreq-for-v3.17
-> 
-> for you to fetch changes up to 06e32c91dbce3c24ccbe84e3af2a35199662bca0:
-> 
->   ARM: shmobile: add cpufreq-cpu0 driver for common SH-Mobile (2014-06-16 19:50:54 +0900)
-> 
-> ----------------------------------------------------------------
-> Renesas ARM Based SoC Cpufreq Updates for v3.17
-> 
-> * Add cpufreq-cpu0 driver
-> 
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-Technically inaccurate (for next time): This doesn't add a driver,
-it adds registration of a device.
+Renesas SDHI has "Multiple Block Transfer Mode" settings
+on SD_CMD register which controls CMD12 automatically.
 
-Merged into next/soc.
+This patch cares it, because
+CMD12 is not needed when CMD53 (= SD_IO_RW_EXTENDED)
 
+[Kuninori Morimoto: tidyuped for upstreaming
+                    enabled this flags for all SH-Mobile/R-Car]
 
--Olof
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c |    5 +++++
+ drivers/mmc/host/tmio_mmc_pio.c   |   10 ++++++++++
+ include/linux/mfd/tmio.h          |    6 ++++++
+ 3 files changed, 21 insertions(+)
+
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index c53bd2f..7b9c816 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -226,6 +226,11 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	 */
+ 	mmc_data->flags |= TMIO_MMC_SDIO_IRQ;
+ 
++	/*
++	 * All SDHI have CMD12 controll bit
++	 */
++	mmc_data->flags |= TMIO_MMC_HAVE_CMD12_CTRL;
++
+ 	if (of_id && of_id->data) {
+ 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
+ 		mmc_data->flags |= of_data->tmio_flags;
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index c3b1b4e..1f1fdfb 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -44,6 +44,7 @@
+ #include <linux/pm_qos.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/regulator/consumer.h>
++#include <linux/mmc/sdio.h>
+ #include <linux/scatterlist.h>
+ #include <linux/spinlock.h>
+ #include <linux/workqueue.h>
+@@ -295,6 +296,7 @@ static void tmio_mmc_done_work(struct work_struct *work)
+ #define TRANSFER_READ  0x1000
+ #define TRANSFER_MULTI 0x2000
+ #define SECURITY_CMD   0x4000
++#define NO_CMD12_ISSUE 0x4000 /* TMIO_MMC_HAVE_CMD12_CTRL */
+ 
+ static int tmio_mmc_start_command(struct tmio_mmc_host *host, struct mmc_command *cmd)
+ {
+@@ -331,6 +333,14 @@ static int tmio_mmc_start_command(struct tmio_mmc_host *host, struct mmc_command
+ 		if (data->blocks > 1) {
+ 			sd_ctrl_write16(host, CTL_STOP_INTERNAL_ACTION, 0x100);
+ 			c |= TRANSFER_MULTI;
++
++			/*
++			 * Disable auto CMD12 at IO_RW_EXTENDED when
++			 * multiple block transfer
++			 */
++			if ((host->pdata->flags & TMIO_MMC_HAVE_CMD12_CTRL) &&
++			    (cmd->opcode = SD_IO_RW_EXTENDED))
++				c |= NO_CMD12_ISSUE;
+ 		}
+ 		if (data->flags & MMC_DATA_READ)
+ 			c |= TRANSFER_READ;
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 777e29b..7432d95 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -83,6 +83,12 @@
+  */
+ #define TMIO_MMC_HAVE_HIGH_REG		(1 << 6)
+ 
++/*
++ * Some controllers have CMD12 automatically
++ * issue/non-issue register
++ */
++#define TMIO_MMC_HAVE_CMD12_CTRL	(1 << 7)
++
+ int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
+ int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
+ void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
+-- 
+1.7.9.5
+
