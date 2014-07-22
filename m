@@ -1,41 +1,125 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Mon, 07 Jul 2014 00:10:54 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Defconfig Updates for v3.17
-Message-Id: <20140707001054.GH5539@quad.lixom.net>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Tue, 22 Jul 2014 15:08:13 +0000
+Subject: Re: [PATCH 3/3] driver:gpio remove all usage of gpio_remove retval in driver
+Message-Id: <CACRpkdasp9bLULT7NJM9nYX58rRSsQKXFddOLz9Ah6kp-j-3=Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487196.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487196.git.horms+renesas@verge.net.au>
+References: <CACRpkda6mzVdaN0cvOxpbsxWyCv2nGyDXOjZg_5aT8u7SSQeUw@mail.gmail.com>
+	<1405197014-25225-1-git-send-email-berthe.ab@gmail.com>
+	<1405197014-25225-4-git-send-email-berthe.ab@gmail.com>
+In-Reply-To: <1405197014-25225-4-git-send-email-berthe.ab@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: abdoulaye berthe <berthe.ab@gmail.com>, "arm@kernel.org" <arm@kernel.org>, Ralf Baechle <ralf@linux-mips.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, =?UTF-8?B?UmFmYcWCIE1pxYJlY2tp?= <zajec5@gmail.com>, Jiri Kosina <jkosina@suse.cz>, Dmitry Torokhov <dmitry.torokhov@gmail.com>, Bryan Wu <cooloney@gmail.com>, Mauro Carvalho Chehab <m.chehab@samsung.com>, Lee Jones <lee.jones@linaro.org>, Samuel Ortiz <sameo@linux.intel.com>, Matthew Garrett <matthew.garrett@nebula.com>, Michael Buesch <m@bues.ch>, Greg KH <gregkh@linuxfoundation.org>, Tomi Valkeinen <tomi.valkeinen@ti.com>, Mark Brown <broonie@kernel.org>, Liam Girdwood <lgirdwood@gmail.com>
+Cc: Alexandre Courbot <gnurou@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, linux-mips@linux-mips.org, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Linux Input <linux-input@vger.kernel.org>, "linux-media@vger.kernel.org" <linux-media@vger.kernel.org>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, "linux-fbdev@vger.kernel.org" <linux-fbdev@vger.kernel.org>, "alsa-devel@alsa-project.org" <alsa-devel@alsa-project.org>
 
-On Mon, Jun 23, 2014 at 11:25:34AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these Renesas ARM based SoC defconfig updates for v3.17.
-> 
-> 
-> The following changes since commit 7171511eaec5bf23fb06078f59784a3a0626b38f:
-> 
->   Linux 3.16-rc1 (2014-06-15 17:45:28 -1000)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-defconfig-for-v3.17
-> 
-> for you to fetch changes up to 468c570ed078f0326745bfe85868adb925659502:
-> 
->   ARM: shmobile: Enable CPUFREQ configuration (2014-06-16 19:44:34 +0900)
-> 
-> ----------------------------------------------------------------
-> Renesas ARM Based SoC Defconfig Updates for v3.17
-> 
-> * Enable Marzen board and r8a7779 SoC, CPUFREQ and PM_RUNTIME in
->   shmobile (multiplatform) defconfig
-> * Enable LED support in armadillo800eva defconfig
+On Sat, Jul 12, 2014 at 10:30 PM, abdoulaye berthe <berthe.ab@gmail.com> wr=
+ote:
 
-Merged into next/defconfig. Thanks.
+Heads up. Requesting ACKs for this patch or I'm atleast warning that it wil=
+l be
+applied. We're getting rid of the return value from gpiochip_remove().
 
+> this remove all reference to gpio_remove retval in all driver
+> except pinctrl and gpio. the same thing is done for gpio and
+> pinctrl in two different patches.
+>
+> Signed-off-by: abdoulaye berthe <berthe.ab@gmail.com>
+(...)
 
--Olof
+I think this patch probably needs to be broken down per-subsystem as it
+hits all over the map. But let's start requesting ACKs for the
+individual pieces.
+Actually I think it will be OK to merge because there is likely not much ch=
+urn
+around these code sites.
+
+I'm a bit torn between just wanting a big patch for this hitting drivers/gp=
+io
+and smaller patches hitting one subsystem at a time. We should be able
+to hammer this in one switch strike.
+
+>  arch/arm/common/scoop.c                        | 10 ++--------
+
+ARM SoC folks, can you ACK this?
+
+>  arch/mips/txx9/generic/setup.c                 |  4 ++--
+
+Ralf can you ACK this?
+
+>  arch/powerpc/platforms/83xx/mcu_mpc8349emitx.c |  3 ++-
+
+Benji, can you ACK this?
+
+>  arch/sh/boards/mach-x3proto/gpio.c             |  6 ++----
+
+Aha noone can ACK this, whatever...
+
+>  drivers/bcma/driver_gpio.c                     |  3 ++-
+
+Rafa=C5=82 can you ACK this?
+
+>  drivers/hid/hid-cp2112.c                       |  6 ++----
+
+Jiri can you ACK this?
+
+>  drivers/input/keyboard/adp5588-keys.c          |  4 +---
+>  drivers/input/keyboard/adp5589-keys.c          |  4 +---
+>  drivers/input/touchscreen/ad7879.c             | 10 +++-------
+
+Dmitry can you ACK this?
+
+>  drivers/leds/leds-pca9532.c                    | 10 ++--------
+>  drivers/leds/leds-tca6507.c                    |  7 ++-----
+
+Bryan can you ACK this?
+
+>  drivers/media/dvb-frontends/cxd2820r_core.c    | 10 +++-------
+
+Mauro can you ACK this?
+
+(Hm that looks weird. Mental note to look closer at this.)
+
+>  drivers/mfd/asic3.c                            |  3 ++-
+>  drivers/mfd/htc-i2cpld.c                       |  8 +-------
+>  drivers/mfd/sm501.c                            | 17 +++--------------
+>  drivers/mfd/tc6393xb.c                         | 13 ++++---------
+>  drivers/mfd/ucb1x00-core.c                     |  8 ++------
+
+Lee/Sam can either of you ACK this?
+
+>  drivers/pinctrl/pinctrl-abx500.c               | 15 +++------------
+>  drivers/pinctrl/pinctrl-exynos5440.c           |  6 +-----
+>  drivers/pinctrl/pinctrl-msm.c                  | 10 +++-------
+>  drivers/pinctrl/pinctrl-nomadik.c              |  2 +-
+>  drivers/pinctrl/pinctrl-samsung.c              | 14 ++++----------
+
+Abdoulaye: these should be in the other patch for pinctrl.
+
+>  drivers/platform/x86/intel_pmic_gpio.c         |  3 +--
+
+Matthew can you ACK this?
+
+>  drivers/ssb/driver_gpio.c                      |  3 ++-
+
+Michael can you (A) ACK this and
+(B) think of moving this driver to drivers/gpio... Patches welcome.
+
+>  drivers/staging/vme/devices/vme_pio2_gpio.c    |  4 +---
+>  drivers/tty/serial/max310x.c                   | 10 ++++------
+
+Greg can you ACK this?
+
+>  drivers/video/fbdev/via/via-gpio.c             | 10 +++-------
+
+Tomi can you ACK this?
+
+>  sound/soc/codecs/wm5100.c                      |  5 +----
+>  sound/soc/codecs/wm8903.c                      |  6 +-----
+>  sound/soc/codecs/wm8962.c                      |  5 +----
+>  sound/soc/codecs/wm8996.c                      |  6 +-----
+
+Liam || Mark can you ACK this?
+
+Yours,
+Linus Walleij
