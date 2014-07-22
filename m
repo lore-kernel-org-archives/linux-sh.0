@@ -1,26 +1,73 @@
-From: Fabian Morision <fmorision4@gmail.com>
-Date: Wed, 30 Jul 2014 23:18:20 +0000
-Subject: Re: Very Urgent............
-Message-Id: <CAPnz-Ta_o==1nJhS330wQOG9PpNNjnWsUp-E5Nd2JTWv-23tTA@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 22 Jul 2014 05:34:50 +0000
+Subject: [PATCH 07/10] mmc: tmio: check ILL_FUNC instead of CBSY
+Message-Id: <874myahs7b.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
+	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
+	<53AD638C.5060907@renesas.com>
+	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sctp@vger.kernel.org
+To: Simon <horms@verge.net.au>, Ian Molton <ian@mnementh.co.uk>, Chris Ball <cjb@laptop.org>
+Cc: TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, ryo.kataoka.wt@renesas.com, shinobu.uehara.xc@renesas.com, kouei.abe.cp@renesas.com
 
-Greetings from gulf region
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-Thanks for the e-mail. I am very interested on funding lucrative
-business partnership with you acting as the manager and sole
-controller of the investment while i remain a silent investor for a
-period of ten yrs , though I am only looking at investment
-opportunities within the range you specified for a start. You can
-reply me here (fmorision@yahoo.com)
+Some controllers need to check SD bus status when writing data.
+Then, it checks ILL_FUNC bit on SD_INFO2 register,
+and this method is controlled via TMIO_MMC_HAS_IDLE_WAIT flags.
+Same method is required on tmio_mmc_data_irq() which will
+be called after writing data.
 
-Let me know your thought asap
+Current driver is checking CBSY bit for this purpose,
+but, some controllers doesn't have CBSY bit.
+This patch checks ILL_FUNC bit instead of CBSY bit
+if it has TMIO_MMC_HAS_IDLE_WAIT flags
 
-Regards
+[Kuninori Morimoto: tidyuped for upstreaming]
 
-Financial Consultant
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/mmc/host/tmio_mmc_pio.c |   13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
 
-Mr.Fabian Morision
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index e51a993..b19d0cd 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -475,6 +475,9 @@ static void tmio_mmc_data_irq(struct tmio_mmc_host *host)
+ 		goto out;
+ 
+ 	if (host->chan_tx && (data->flags & MMC_DATA_WRITE) && !host->force_pio) {
++		u32 status = sd_ctrl_read32(host, CTL_STATUS);
++		bool done = false;
++
+ 		/*
+ 		 * Has all data been written out yet? Testing on SuperH showed,
+ 		 * that in most cases the first interrupt comes already with the
+@@ -483,7 +486,15 @@ static void tmio_mmc_data_irq(struct tmio_mmc_host *host)
+ 		 * DATAEND interrupt with the BUSY bit set, in this cases
+ 		 * waiting for one more interrupt fixes the problem.
+ 		 */
+-		if (!(sd_ctrl_read32(host, CTL_STATUS) & TMIO_STAT_CMD_BUSY)) {
++		if (host->pdata->flags & TMIO_MMC_HAS_IDLE_WAIT) {
++			if (status & TMIO_STAT_ILL_FUNC)
++				done = true;
++		} else {
++			if (!(status & TMIO_STAT_CMD_BUSY))
++				done = true;
++		}
++
++		if (done) {
+ 			tmio_mmc_disable_mmc_irqs(host, TMIO_STAT_DATAEND);
+ 			tasklet_schedule(&host->dma_complete);
+ 		}
+-- 
+1.7.9.5
+
