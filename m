@@ -1,111 +1,81 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 07 Jul 2014 07:54:51 +0000
-Subject: [PATCH v2 26/30] ARM: shmobile: sh73a0: Add SCIF nodes
-Message-Id: <1404719695-1634-27-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 22 Jul 2014 22:24:23 +0000
+Subject: [PATCH v3] ARM: shmobile: r8a7790: link PCI USB devices to USB PHY
+Message-Id: <201407230224.24152.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This describes all of the SCIF hardware of the sh73a0.
-Each node is disabled and may be enabled as necessary
-by board DTS files.
+Describe the PCI USB devices that are behind the PCI bridges, adding necessary
+links to the USB PHY device.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Based on the original work by Ben Dooks <ben.dooks@codethink.co.uk>.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
 ---
-v2
-* First post
----
- arch/arm/boot/dts/sh73a0.dtsi | 72 +++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 72 insertions(+)
+This patch is against 'renesas-devel-v3.16-rc5-20140722' tag of Simon Horman's
+'renesas.git' repo plus R8A7790/Lager USB PHY support patches posted before.
+The patch requires the USB PHY driver, and USB HCD generic PHY support (also
+already posted) in order to work.
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 5ecf552..910b790 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -235,6 +235,78 @@
- 		status = "disabled";
+Changes in version 3:
+- adjusted "phys" properties in the PCI OHCI/EHCI device nodes;
+- resolved rejects.
+
+Changes in version 2:
+- renamed the PCI OHCI/EHCI device nodes to comply with the PCI binding;
+- changed the PHY specifier in the PCI#2 node to reflect that channel #1 support
+  was dropped;
+- resolved rejects, refreshed the patch.
+
+ arch/arm/boot/dts/r8a7790.dtsi |   28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
++++ renesas/arch/arm/boot/dts/r8a7790.dtsi
+@@ -999,6 +999,20 @@
+ 		interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
+ 				 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
+ 				 0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
++
++		usb@0,1 {
++			reg = <0x800 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usb0 0>;
++			phy-names = "usb";
++		};
++
++		usb@0,2 {
++			reg = <0x1000 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usb0 0>;
++			phy-names = "usb";
++		};
  	};
  
-+	scifa0: serial@e6c40000 {
-+		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
-+		reg = <0xe6c40000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 72 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
+ 	pci1: pci@ee0b0000 {
+@@ -1039,6 +1053,20 @@
+ 		interrupt-map = <0x0000 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
+ 				 0x0800 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
+ 				 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
 +
-+	scifa1: serial@e6c50000 {
-+		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
-+		reg = <0xe6c50000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
++		usb@0,1 {
++			reg = <0x800 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usb2 0>;
++			phy-names = "usb";
++		};
 +
-+	scifa2: serial@e6c60000 {
-+		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
-+		reg = <0xe6c60000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scifa3: serial@e6c70000 {
-+		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
-+		reg = <0xe6c70000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scifa4: serial@e6c80000 {
-+		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
-+		reg = <0xe6c80000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 78 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scifa5: serial@e6cb0000 {
-+		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
-+		reg = <0xe6cb0000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 79 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scifa6: serial@e6cc0000 {
-+		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
-+		reg = <0xe6cc0000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scifa7: serial@e6cd0000 {
-+		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
-+		reg = <0xe6cd0000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 143 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	scifb8: serial@e6c30000 {
-+		compatible = "renesas,scifb-sh73a0", "renesas,scifb";
-+		reg = <0xe6c30000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 80 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
- 	pfc: pfc@e6050000 {
- 		compatible = "renesas,pfc-sh73a0";
- 		reg = <0xe6050000 0x8000>,
--- 
-2.0.0.rc2
-
++		usb@0,2 {
++			reg = <0x1000 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usb2 0>;
++			phy-names = "usb";
++		};
+ 	};
+ 
+ 	pciec: pcie@fe000000 {
