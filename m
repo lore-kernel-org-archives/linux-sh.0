@@ -1,28 +1,40 @@
-From: Lars-Peter Clausen <lars@metafoo.de>
-Date: Thu, 24 Jul 2014 12:29:09 +0000
-Subject: Re: [alsa-devel] DMA engine API issue
-Message-Id: <53D0FC15.6050601@metafoo.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 22 Jul 2014 05:33:35 +0000
+Subject: [PATCH 01/10] mmc: sh_mobile_sdhi: Add EXT_ACC register busy check
+Message-Id: <87d2cyhs9e.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1406032431-3807-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <87d2cwvmxa.wl%kuninori.morimoto.gx@gmail.com> <3361994.F0HgAeJkR9@avalon>
- <28702317.aD0C1Ga3DS@avalon>
-In-Reply-To: <28702317.aD0C1Ga3DS@avalon>
+References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
+	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
+	<53AD638C.5060907@renesas.com>
+	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Cc: Linux-ALSA <alsa-devel@alsa-project.org>, linux-sh@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, dmaengine@vger.kernel.org, Maxime Ripard <maxime.ripard@free-electrons.com>, linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Ian Molton <ian@mnementh.co.uk>, Chris Ball <cjb@laptop.org>
+Cc: TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, ryo.kataoka.wt@renesas.com, shinobu.uehara.xc@renesas.com, kouei.abe.cp@renesas.com
 
-On 07/23/2014 01:07 PM, Laurent Pinchart wrote:
-[...]
-> Let's start by answering the background question and updating the DMA engine
-> API documentation once and for good : in which context are drivers allowed to
-> call the prep, tx_submit and issue_pending functions ?
->
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-I think the expectation is that these functions can be called in any 
-context. Maybe what's missing is a way to tell the DMA engine driver to get 
-ready and that it is going to be used very soon. This could be done from the 
-sound devices open() callback.
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-- Lars
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 91058da..18cf462 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -126,6 +126,7 @@ static int sh_mobile_sdhi_write16_hook(struct tmio_mmc_host *host, int addr)
+ 	case CTL_SD_MEM_CARD_OPT:
+ 	case CTL_TRANSACTION_CTL:
+ 	case CTL_DMA_ENABLE:
++	case EXT_ACC:
+ 		return sh_mobile_sdhi_wait_idle(host);
+ 	}
+ 
+-- 
+1.7.9.5
+
