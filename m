@@ -1,147 +1,62 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 31 Jul 2014 21:23:32 +0000
-Subject: [PATCH v2] rcar_can: support all input clocks
-Message-Id: <201408010123.33528.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 22 Jul 2014 12:33:49 +0000
+Subject: [PATCH/RFC 3/5] dmaengine: rcar-dmac: Compute maximum chunk size at runtime
+Message-Id: <1406032431-3807-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org, wg@grandegger.com, mkl@pengutronix.de, linux-can@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, vksavl@gmail.com
+To: linux-sh@vger.kernel.org
 
-When writing the driver, I didn't give enough attention to the possible sources
-of the CAN clock: although the value of the CLKR register was specified by  the
-platform data, the driver only handled one case, that is CAN clock being sourced
-from the clkp1 clock, the same that clocks the whole CAN module. In order to fix
-that overlook, we'll have to handle the CAN clock separately from the peripheral
-clock (however, clkp1 will be specified for a CAN device only once)...
+The DMAC expressed DMA request lengths as a number of transfers, limited
+to 16777216 by the hardware. As a single transfer transfers a
+configurable number of bytes (from 1 to 64), the chunk size limit isn't
+fixed and must be computed at runtime by multiplying the transfers
+number limit by the transfer size.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-The patch is against the 'linux-can-next.git' repo, however it's a fix, not
-a new feature.
+ drivers/dma/sh/rcar-dmac.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-Changes in version 2:
-- added 'clock_select' local variable in the probe() method;
-- used ARRAY_SIZE() in the 'clock_select' variable sanity check.
-
- drivers/net/can/rcar_can.c |   42 ++++++++++++++++++++++++++++++++++++------
- 1 file changed, 36 insertions(+), 6 deletions(-)
-
-Index: linux-can-next/drivers/net/can/rcar_can.c
-=================================--- linux-can-next.orig/drivers/net/can/rcar_can.c
-+++ linux-can-next/drivers/net/can/rcar_can.c
-@@ -87,6 +87,7 @@ struct rcar_can_priv {
- 	struct napi_struct napi;
- 	struct rcar_can_regs __iomem *regs;
- 	struct clk *clk;
-+	struct clk *can_clk;
- 	u8 tx_dlc[RCAR_CAN_FIFO_DEPTH];
- 	u32 tx_head;
- 	u32 tx_tail;
-@@ -505,14 +506,20 @@ static int rcar_can_open(struct net_devi
+diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
+index 09df914..371cca3 100644
+--- a/drivers/dma/sh/rcar-dmac.c
++++ b/drivers/dma/sh/rcar-dmac.c
+@@ -242,7 +242,6 @@ struct rcar_dmac {
  
- 	err = clk_prepare_enable(priv->clk);
- 	if (err) {
--		netdev_err(ndev, "clk_prepare_enable() failed, error %d\n",
-+		netdev_err(ndev, "failed to enable periperal clock, error %d\n",
- 			   err);
- 		goto out;
- 	}
-+	err = clk_prepare_enable(priv->can_clk);
-+	if (err) {
-+		netdev_err(ndev, "failed to enable CAN clock, error %d\n",
-+			   err);
-+		goto out_clock;
-+	}
- 	err = open_candev(ndev);
- 	if (err) {
- 		netdev_err(ndev, "open_candev() failed, error %d\n", err);
--		goto out_clock;
-+		goto out_can_clock;
- 	}
- 	napi_enable(&priv->napi);
- 	err = request_irq(ndev->irq, rcar_can_interrupt, 0, ndev->name, ndev);
-@@ -527,6 +534,8 @@ static int rcar_can_open(struct net_devi
- out_close:
- 	napi_disable(&priv->napi);
- 	close_candev(ndev);
-+out_can_clock:
-+	clk_disable_unprepare(priv->can_clk);
- out_clock:
- 	clk_disable_unprepare(priv->clk);
- out:
-@@ -565,6 +574,7 @@ static int rcar_can_close(struct net_dev
- 	rcar_can_stop(ndev);
- 	free_irq(ndev->irq, ndev);
- 	napi_disable(&priv->napi);
-+	clk_disable_unprepare(priv->can_clk);
- 	clk_disable_unprepare(priv->clk);
- 	close_candev(ndev);
- 	can_led_event(ndev, CAN_LED_EVENT_STOP);
-@@ -715,6 +725,12 @@ static int rcar_can_get_berr_counter(con
- 	return 0;
- }
+ /* Hardcode the MEMCPY transfer size to 4 bytes. */
+ #define RCAR_DMAC_MEMCPY_XFER_SIZE	4
+-#define RCAR_DMAC_MAX_XFER_LEN		(RCAR_DMATCR_MASK + 1)
  
-+static const char * const clock_names[] = {
-+	[CLKR_CLKP1]	= "clkp1",
-+	[CLKR_CLKP2]	= "clkp2",
-+	[CLKR_CLKEXT]	= "can_clk",
-+};
+ /* -----------------------------------------------------------------------------
+  * Device access
+@@ -701,6 +700,7 @@ rcar_dmac_chan_prep_sg(struct rcar_dmac_chan *chan, struct scatterlist *sgl,
+ 	struct rcar_dmac_xfer_chunk *chunk;
+ 	struct rcar_dmac_desc *desc;
+ 	struct scatterlist *sg = sgl;
++	size_t max_chunk_size;
+ 	size_t full_size = 0;
+ 	unsigned int i;
+ 
+@@ -716,6 +716,8 @@ rcar_dmac_chan_prep_sg(struct rcar_dmac_chan *chan, struct scatterlist *sgl,
+ 
+ 	rcar_dmac_chan_configure_desc(chan, desc);
+ 
++	max_chunk_size = (RCAR_DMATCR_MASK + 1) << desc->xfer_shift;
 +
- static int rcar_can_probe(struct platform_device *pdev)
- {
- 	struct rcar_can_platform_data *pdata;
-@@ -722,6 +738,7 @@ static int rcar_can_probe(struct platfor
- 	struct net_device *ndev;
- 	struct resource *mem;
- 	void __iomem *addr;
-+	u32 clock_select;
- 	int err = -ENODEV;
- 	int irq;
+ 	/*
+ 	 * Allocate and fill the transfer chunk descriptors. We own the only
+ 	 * reference to the DMA descriptor, there's no need for locking.
+@@ -727,7 +729,7 @@ rcar_dmac_chan_prep_sg(struct rcar_dmac_chan *chan, struct scatterlist *sgl,
+ 		full_size += len;
  
-@@ -730,6 +747,7 @@ static int rcar_can_probe(struct platfor
- 		dev_err(&pdev->dev, "No platform data provided!\n");
- 		goto fail;
- 	}
-+	clock_select = pdata->clock_select;
+ 		while (len) {
+-			size_t size = min_t(size_t, len, RCAR_DMAC_MAX_XFER_LEN);
++			size_t size = min_t(size_t, len, max_chunk_size);
  
- 	irq = platform_get_irq(pdev, 0);
- 	if (!irq) {
-@@ -753,10 +771,22 @@ static int rcar_can_probe(struct platfor
- 
- 	priv = netdev_priv(ndev);
- 
--	priv->clk = devm_clk_get(&pdev->dev, NULL);
-+	priv->clk = devm_clk_get(&pdev->dev, "clkp1");
- 	if (IS_ERR(priv->clk)) {
- 		err = PTR_ERR(priv->clk);
--		dev_err(&pdev->dev, "cannot get clock: %d\n", err);
-+		dev_err(&pdev->dev, "cannot get peripheral clock: %d\n", err);
-+		goto fail_clk;
-+	}
-+
-+	if (clock_select >= ARRAY_SIZE(clock_names)) {
-+		err = -EINVAL;
-+		dev_err(&pdev->dev, "invalid CAN clock selected\n");
-+		goto fail_clk;
-+	}
-+	priv->can_clk = devm_clk_get(&pdev->dev, clock_names[clock_select]);
-+	if (IS_ERR(priv->can_clk)) {
-+		err = PTR_ERR(priv->can_clk);
-+		dev_err(&pdev->dev, "cannot get CAN clock: %d\n", err);
- 		goto fail_clk;
- 	}
- 
-@@ -765,8 +795,8 @@ static int rcar_can_probe(struct platfor
- 	ndev->flags |= IFF_ECHO;
- 	priv->ndev = ndev;
- 	priv->regs = addr;
--	priv->clock_select = pdata->clock_select;
--	priv->can.clock.freq = clk_get_rate(priv->clk);
-+	priv->clock_select = clock_select;
-+	priv->can.clock.freq = clk_get_rate(priv->can_clk);
- 	priv->can.bittiming_const = &rcar_can_bittiming_const;
- 	priv->can.do_set_mode = rcar_can_do_set_mode;
- 	priv->can.do_get_berr_counter = rcar_can_get_berr_counter;
+ #ifdef CONFIG_ARCH_DMA_ADDR_T_64BIT
+ 			/*
+-- 
+1.8.5.5
+
