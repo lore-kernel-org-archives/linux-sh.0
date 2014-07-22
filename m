@@ -1,164 +1,88 @@
-From: Wang Nan <wangnan0@huawei.com>
-Date: Fri, 18 Jul 2014 09:56:14 +0000
-Subject: Re: [PATCH 0/5] memory-hotplug: suitable memory should go to ZONE_MOVABLE
-Message-Id: <53C8EF3E.1090706@huawei.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 22 Jul 2014 12:33:46 +0000
+Subject: [PATCH/RFC 0/5] R-Car Gen2 DMAC hardware descriptor list support
+Message-Id: <1406032431-3807-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405670163-53747-1-git-send-email-wangnan0@huawei.com> <53C8E602.1060301@cn.fujitsu.com>
-In-Reply-To: <53C8E602.1060301@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Zhang Yanfei <zhangyanfei@cn.fujitsu.com>
-Cc: Ingo Molnar <mingo@redhat.com>, Yinghai Lu <yinghai@kernel.org>, Mel Gorman <mgorman@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Pei Feiyue <peifeiyue@huawei.com>, linux-mm@kvack.org, x86@kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On 2014/7/18 17:16, Zhang Yanfei wrote:
-> Hello,
-> 
-> On 07/18/2014 03:55 PM, Wang Nan wrote:
->> This series of patches fix a problem when adding memory in bad manner.
->> For example: for a x86_64 machine booted with "mem@0M" and with 2GiB
->> memory installed, following commands cause problem:
->>
->>  # echo 0x40000000 > /sys/devices/system/memory/probe
->> [   28.613895] init_memory_mapping: [mem 0x40000000-0x47ffffff]
->>  # echo 0x48000000 > /sys/devices/system/memory/probe
->> [   28.693675] init_memory_mapping: [mem 0x48000000-0x4fffffff]
->>  # echo online_movable > /sys/devices/system/memory/memory9/state
->>  # echo 0x50000000 > /sys/devices/system/memory/probe 
->> [   29.084090] init_memory_mapping: [mem 0x50000000-0x57ffffff]
->>  # echo 0x58000000 > /sys/devices/system/memory/probe 
->> [   29.151880] init_memory_mapping: [mem 0x58000000-0x5fffffff]
->>  # echo online_movable > /sys/devices/system/memory/memory11/state
->>  # echo online> /sys/devices/system/memory/memory8/state
->>  # echo online> /sys/devices/system/memory/memory10/state
->>  # echo offline> /sys/devices/system/memory/memory9/state
->> [   30.558819] Offlined Pages 32768
->>  # free
->>              total       used       free     shared    buffers     cached
->> Mem:        780588 18014398509432020     830552          0          0      51180
->> -/+ buffers/cache: 18014398509380840     881732
->> Swap:            0          0          0
->>
->> This is because the above commands probe higher memory after online a
->> section with online_movable, which causes ZONE_HIGHMEM (or ZONE_NORMAL
->> for systems without ZONE_HIGHMEM) overlaps ZONE_MOVABLE.
-> 
-> Yeah, this is rare in reality but can happen. Could you please also
-> include the free result and zoneinfo after applying your patch?
-> 
-> Thanks.
-> 
+Hello,
 
-OK.
+This patch set implements support for hardware descriptor lists in the R-Car
+Gen2 DMAC driver.
 
-I paste the free result and zoneinfo at the end of this mail. This is a x86_64 result,
-generated on qemu, after applying my patches.
+The DMAC supports reconfiguring itself after every chunk from a list of
+hardware transfer descriptors in physically contiguous memory. This reduces
+the number of interrupts required for processing a DMA transfer.
 
-I only tested x86_64 and x86_32 (and found a typo). Could any one can help me verify
-other platforms?
+In theory the transfer throughput can be slightly increased and the CPU load
+slightly decreased, but in practice the gain might not be significant as most
+DMAC users, if not all, perform small DMA transfers to physically contiguous
+memory, resulting in a single chunk per transfer. I'll perform performance
+tests and will post results shortly.
 
-Thanks.
+The code has been tested by artificially lowering the maximum chunk size to
+4096 bytes and running dmatest, which completed sucessfully. Morimoto-san, is
+there an easy way to test cyclic transfers with your audio driver ?
 
->>
->> After the second online_movable, the problem can be observed from
->> zoneinfo:
->>
->>  # cat /proc/zoneinfo
->> ...
->> Node 0, zone  Movable
->>   pages free     65491
->>         min      250
->>         low      312
->>         high     375
->>         scanned  0
->>         spanned  18446744073709518848
->>         present  65536
->>         managed  65536
->> ...
->>
->> This series of patches solve the problem by checking ZONE_MOVABLE when
->> choosing zone for new memory. If new memory is inside or higher than
->> ZONE_MOVABLE, makes it go there instead.
->>
->>
->> Wang Nan (5):
->>   memory-hotplug: x86_64: suitable memory should go to ZONE_MOVABLE
->>   memory-hotplug: x86_32: suitable memory should go to ZONE_MOVABLE
->>   memory-hotplug: ia64: suitable memory should go to ZONE_MOVABLE
->>   memory-hotplug: sh: suitable memory should go to ZONE_MOVABLE
->>   memory-hotplug: powerpc: suitable memory should go to ZONE_MOVABLE
->>
->>  arch/ia64/mm/init.c   |  7 +++++++
->>  arch/powerpc/mm/mem.c |  6 ++++++
->>  arch/sh/mm/init.c     | 13 ++++++++-----
->>  arch/x86/mm/init_32.c |  6 ++++++
->>  arch/x86/mm/init_64.c | 10 ++++++++--
->>  5 files changed, 35 insertions(+), 7 deletions(-)
->>
-> 
-> 
+The patches apply on top of the "[PATCH v2 0/8] R-Car Gen2 DMA Controller
+driver" series previously posted to the dmaengine and linux-sh mailing list.
 
-After applying the above patches, here is the free result and zoneinfo (after offline memory9):
+The RFC status of this series comes from the way hardware descriptors memory
+is allocated. The DMAC has an internal descriptor memory of 128 entries shared
+between all channels and also supports storing descriptors in system memory.
+Using the DMAC internal descriptor memory speeds descriptor fetch operations
+up compared to system memory.
 
-bash-4.2# free
-             total       used       free     shared    buffers     cached
-Mem:        780588      80860     699728          0          0      51180
--/+ buffers/cache:      29680     750908
-Swap:            0          0          0
+Several options are thus possible :
 
-bash-4.2# cat /proc/zoneinfo
+1. Allocate one descriptor list with the DMA coherent allocation API per DMA
+transfer request. This is the currently implementated option. The upside is
+simplicity, the downsides are slower descriptor fetch operations (compared to
+using internal memory) and higher memory usage as dma_alloc_coherent() can't
+allocate less than one page. Memory allocation and free also introduce an
+overhead, but that's partly alleviated by caching memory (patch 5/5).
 
-Node 0, zone      DMA
-  pages free     3272
-        min      14
-        low      17
-        high     21
-        scanned  0
-        spanned  4095
-        present  3998
-        managed  3977
-    nr_free_pages 3272
-...
-  start_pfn:         1
-  inactive_ratio:    1
-Node 0, zone    DMA32
-  pages free     73548
-        min      341
-        low      426
-        high     511
-        scanned  0
-        spanned  98304
-        present  98304
-        managed  92866
-    nr_free_pages 73548
-...
-  start_pfn:         4096
-  inactive_ratio:    1
-Node 0, zone   Normal
-  pages free     32630
-        min      120
-        low      150
-        high     180
-        scanned  0
-        spanned  32768
-        present  32768
-        managed  32768
-    nr_free_pages 32630
-...
-  start_pfn:         262144
-  inactive_ratio:    1
-Node 0, zone  Movable
-  pages free     65491
-        min      241
-        low      301
-        high     361
-        scanned  0
-        spanned  98304
-        present  65536
-        managed  65536
-    nr_free_pages 65491
-...
-  start_pfn:         294912
-  inactive_ratio:    1
+2. Allocate pages of physically contiguous memory using the DMA coherent
+allocation API as a backend, and manually allocate descriptor lists from
+within those pages. The upside is a lower memory usage, the dowsides are
+slower descriptor fetch operations (compared to using internal memory) and
+higher complexity. As memory will be preallocated the overhead at transfer
+descriptor preparation time will be negligible, except when the driver runs
+out of preallocated memory and needs to perform a new allocation.
 
+3. Manually allocate descriptor lists from the DMAC internal memory. This has
+the upside of speeding descriptor fetch operations up, and the downside of
+limiting the total number of descriptors in use at any given time to 128 at
+most (and possibly less in practice due to fragmentation). Note that failures
+to allocate descriptors memory are not fatal, the driver falls back to not
+using hardware descriptors lists in that case.
+
+4. A mix of options 2 and 3, allocating descriptors from internal memory when
+available, and falling back to system memory otherwise. This is the most
+efficient option from a descriptor fetch point of view, but is also the most
+complex to implement.
+
+My gut feeling is that the overhead introduced by fetching descriptors from
+external memory will not be significant, but that's just a gut feeling.
+Comments and ideas will be appreciated. I plan to keep the current
+implementation for now unless someone strongly believes it needs to be
+changed.
+
+Laurent Pinchart (5):
+  dmaengine: rcar-dmac: Rename rcar_dmac_hw_desc to rcar_dmac_xfer_chunk
+  dmaengine: rcar-dmac: Fix typo in register definition
+  dmaengine: rcar-dmac: Compute maximum chunk size at runtime
+  dmaengine: rcar-dmac: Implement support for hardware descriptor lists
+  dmaengine: rcar-dmac: Cache hardware descriptors memory
+
+ drivers/dma/sh/rcar-dmac.c | 432 +++++++++++++++++++++++++++++++++------------
+ 1 file changed, 324 insertions(+), 108 deletions(-)
+
+-- 
+Regards,
+
+Laurent Pinchart
 
