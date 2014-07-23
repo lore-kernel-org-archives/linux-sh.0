@@ -1,35 +1,73 @@
-From: Michael Ellerman <mpe@ellerman.id.au>
-Date: Tue, 29 Jul 2014 02:19:16 +0000
-Subject: Re: [PATCH v4] arm64, ia64, ppc, s390, sh, tile, um, x86, mm: Remove default gate area
-Message-Id: <1406600356.11977.4.camel@concordia>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 23 Jul 2014 02:43:47 +0000
+Subject: [PATCH 03/11][RFC] ARM: shmobile: r8a7790: sound enables Audio DMAC entry on DTSI
+Message-Id: <87zjg0u74u.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <6435254cc74d6e9172931f27be3854d522ad299b.1406232860.git.luto@amacapital.net>
-In-Reply-To: <6435254cc74d6e9172931f27be3854d522ad299b.1406232860.git.luto@amacapital.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andy Lutomirski <luto@amacapital.net>
-Cc: Andrew Morton <akpm@linux-foundation.org>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Catalin Marinas <catalin.marinas@arm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux-mm@kvack.org, Paul Mackerras <paulus@samba.org>, "H. Peter Anvin" <hpa@zytor.com>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Richard Weinberger <richard@nod.at>, x86@kernel.org, Ingo Molnar <mingo@redhat.com>, Fenghua Yu <fenghua.yu@intel.com>, user-mode-linux-devel@lists.sourceforge.net, Will Deacon <will.deacon@arm.com>, Jeff Dike <jdike@addtoit.com>, Chris Metcalf <cmetcalf@tilera.com>, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Tony Luck <tony.luck@intel.com>, Nathan Lynch <Nathan_Lynch@mentor.com>, linux-kernel@vger.kernel.org, Martin Schwidefsky <schwidefsky@de.ibm.com>, linux390@de.ibm.com, linuxppc-dev@lists.ozlabs.org
+To: linux-sh@vger.kernel.org
 
-On Thu, 2014-07-24 at 13:56 -0700, Andy Lutomirski wrote:
-> The core mm code will provide a default gate area based on
-> FIXADDR_USER_START and FIXADDR_USER_END if
-> !defined(__HAVE_ARCH_GATE_AREA) && defined(AT_SYSINFO_EHDR).
-> 
-> This default is only useful for ia64.  arm64, ppc, s390, sh, tile,
-> 64-bit UML, and x86_32 have their own code just to disable it.  arm,
-> 32-bit UML, and x86_64 have gate areas, but they have their own
-> implementations.
-> 
-> This gets rid of the default and moves the code into ia64.
-> 
-> This should save some code on architectures without a gate area: it's
-> now possible to inline the gate_area functions in the default case.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi |   44 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
 
-Looks good to me. Booted and everything seems happy, I still have a vdso etc.
-
-Tested-by: Michael Ellerman <mpe@ellerman.id.au> (for powerpc)
-
-cheers
-
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 853a5d1..05d8b26 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1171,6 +1171,50 @@
+ 				"dvc.0", "dvc.1",
+ 				"clk_a", "clk_b", "clk_c", "clk_i";
+ 
++		dmas =		<&audma0 0x01>,	<&audma1 0x02>,	<&audma0 0x15>,	<&audma1 0x16>,
++				<&audma0 0x03>,	<&audma1 0x04>,	<&audma0 0x49>,	<&audma1 0x4a>,
++				<&audma0 0x05>,	<&audma1 0x06>,	<&audma0 0x63>,	<&audma1 0x64>,
++				<&audma0 0x07>,	<&audma1 0x08>,	<&audma0 0x6f>,	<&audma1 0x70>,
++				<&audma0 0x09>,	<&audma1 0x0a>,	<&audma0 0x71>,	<&audma1 0x72>,
++				<&audma0 0x0b>,	<&audma1 0x0c>,	<&audma0 0x73>,	<&audma1 0x74>,
++				<&audma0 0x0d>,	<&audma1 0x0e>,	<&audma0 0x75>,	<&audma1 0x76>,
++				<&audma0 0x0f>,	<&audma1 0x10>,	<&audma0 0x79>,	<&audma1 0x7a>,
++				<&audma0 0x11>,	<&audma1 0x12>,	<&audma0 0x7b>,	<&audma1 0x7c>,
++				<&audma0 0x13>,	<&audma1 0x14>,	<&audma0 0x7d>,	<&audma1 0x7e>,
++
++				<&audma0 0x85>,	<&audma1 0x9a>,	<&audma0 0xbc>,
++				<&audma0 0x87>,	<&audma1 0x9c>,	<&audma0 0xbe>,
++				<&audma0 0x89>,	<&audma1 0x9e>,
++				<&audma0 0x8b>,	<&audma1 0xa0>,
++				<&audma0 0x8d>,	<&audma1 0xb0>,
++				<&audma0 0x8f>,	<&audma1 0xb2>,
++				<&audma0 0x91>,	<&audma1 0xb4>,
++				<&audma0 0x93>,	<&audma1 0xb6>,
++				<&audma0 0x95>,	<&audma1 0xb8>,
++				<&audma0 0x97>,	<&audma1 0xba>;
++
++		dma-names =	"mem_ssi0",	"ssi0_mem",	"mem_ssiu0",	"ssiu0_mem",
++				"mem_ssi1",	"ssi1_mem",	"mem_ssiu1",	"ssiu1_mem",
++				"mem_ssi2",	"ssi2_mem",	"mem_ssiu2",	"ssiu2_mem",
++				"mem_ssi3",	"ssi3_mem",	"mem_ssiu3",	"ssiu3_mem",
++				"mem_ssi4",	"ssi4_mem",	"mem_ssiu4",	"ssiu4_mem",
++				"mem_ssi5",	"ssi5_mem",	"mem_ssiu5",	"ssiu5_mem",
++				"mem_ssi6",	"ssi6_mem",	"mem_ssiu6",	"ssiu6_mem",
++				"mem_ssi7",	"ssi7_mem",	"mem_ssiu7",	"ssiu7_mem",
++				"mem_ssi8",	"ssi8_mem",	"mem_ssiu8",	"ssiu8_mem",
++				"mem_ssi9",	"ssi9_mem",	"mem_ssiu9",	"ssiu9_mem",
++
++				"mem_src0",	"src0_mem",	"dvc0_mem",
++				"mem_src1",	"src1_mem",	"dvc1_mem",
++				"mem_src2",	"src2_mem",
++				"mem_src3",	"src3_mem",
++				"mem_src4",	"src4_mem",
++				"mem_src5",	"src5_mem",
++				"mem_src6",	"src6_mem",
++				"mem_src7",	"src7_mem",
++				"mem_src8",	"src8_mem",
++				"mem_src9",	"src9_mem";
++
+ 		status = "disabled";
+ 
+ 		rcar_sound,dvc {
+-- 
+1.7.9.5
 
