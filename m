@@ -1,46 +1,39 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Tue, 08 Jul 2014 08:43:08 +0000
-Subject: Re: [PATCH] sh-pfc: r8a7791: add CAN pin groups
-Message-Id: <CACRpkdYpsSEjuaDiEHjjmtEaJRhj9MiJ218SGf2c3jEJoqAXJA@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 23 Jul 2014 02:43:36 +0000
+Subject: [PATCH 02/11][RFC] ARM: shmobile: r8a7790: Add Audio DMAC peri peri devices to DT
+Message-Id: <871ttcvlpl.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201407010211.23665.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201407010211.23665.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Jul 1, 2014 at 9:11 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
+Instantiate the Audio DMAC peri peri controllers
+in the r8a7790 device tree.
 
->> +static const char * const can0_groups[] = {
->> +     "can0_data_a",
->> +     "can0_data_b",
->> +     "can0_data_c",
->> +     "can0_data_d",
->> +     "can0_data_e",
->> +     "can0_data_f",
->> +     "can_clk_a",
->> +     "can_clk_b",
->> +     "can_clk_c",
->> +     "can_clk_d",
->> +};
->> +
->> +static const char * const can1_groups[] = {
->> +     "can1_data_a",
->> +     "can1_data_b",
->> +     "can1_data_c",
->> +     "can1_data_d",
->> +     "can_clk_a",
->> +     "can_clk_b",
->> +     "can_clk_c",
->> +     "can_clk_d",
->
-> Linus, can a group be listed as part of two different functions ?
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi |    7 +++++++
+ 1 file changed, 7 insertions(+)
 
-Yeah sure, it's just an indication that this group can be mapped
-onto this function. If you try to use both at the same time at runtime,
-the subsystem will complain (hopefully).
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 9f4fb9c..853a5d1 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -333,6 +333,13 @@
+ 		dma-channels = <13>;
+ 	};
+ 
++	audmapp: audio-dma-pp@0xec740000 {
++		compatible = "renesas,rcar-audmapp";
++		#dma-cells = <1>;
++
++		reg = <0 0xec740000 0 0x200>;
++	};
++
+ 	i2c0: i2c@e6508000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-- 
+1.7.9.5
 
-Yours,
-Linus Walleij
