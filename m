@@ -1,97 +1,135 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 18 Jul 2014 23:50:25 +0000
-Subject: [PATCH v2 8/8] ARM: shmobile: r8a7791: Add DMAC devices to DT
-Message-Id: <1405727425-6237-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 23 Jul 2014 02:44:10 +0000
+Subject: [PATCH 05/11][RFC] ARM: shmobile: lager: Sound PIO support on DTS
+Message-Id: <87wqb4u747.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Instantiate the two system DMA controllers in the r8a7791 device tree.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+ arch/arm/boot/dts/r8a7790-lager.dts |   68 +++++++++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig      |    1 +
+ 2 files changed, 69 insertions(+)
 
-Changes since v1:
-
-- Remove ch15 from interrupt names
----
- arch/arm/boot/dts/r8a7791.dtsi | 60 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 60 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 56841d3..9cbe5f8 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -238,6 +238,66 @@
- 			     <0 17 IRQ_TYPE_LEVEL_HIGH>;
- 	};
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 856b423..6fec81a 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -9,6 +9,18 @@
+  * kind, whether express or implied.
+  */
  
-+	dmac0: dma-controller@e6700000 {
-+		compatible = "renesas,rcar-dmac";
-+		reg = <0 0xe6700000 0 0x20000>;
-+		interrupts = <0 197 IRQ_TYPE_LEVEL_HIGH
-+			      0 200 IRQ_TYPE_LEVEL_HIGH
-+			      0 201 IRQ_TYPE_LEVEL_HIGH
-+			      0 202 IRQ_TYPE_LEVEL_HIGH
-+			      0 203 IRQ_TYPE_LEVEL_HIGH
-+			      0 204 IRQ_TYPE_LEVEL_HIGH
-+			      0 205 IRQ_TYPE_LEVEL_HIGH
-+			      0 206 IRQ_TYPE_LEVEL_HIGH
-+			      0 207 IRQ_TYPE_LEVEL_HIGH
-+			      0 208 IRQ_TYPE_LEVEL_HIGH
-+			      0 209 IRQ_TYPE_LEVEL_HIGH
-+			      0 210 IRQ_TYPE_LEVEL_HIGH
-+			      0 211 IRQ_TYPE_LEVEL_HIGH
-+			      0 212 IRQ_TYPE_LEVEL_HIGH
-+			      0 213 IRQ_TYPE_LEVEL_HIGH
-+			      0 214 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "error",
-+				"ch0", "ch1", "ch2", "ch3",
-+				"ch4", "ch5", "ch6", "ch7",
-+				"ch8", "ch9", "ch10", "ch11",
-+				"ch12", "ch13", "ch14";
-+		clocks = <&mstp2_clks R8A7791_CLK_SYS_DMAC0>;
-+		clock-names = "fck";
-+		#dma-cells = <1>;
-+		dma-channels = <15>;
++/*
++ * SSI-AK4643
++ *
++ * SW1: 1: AK4643
++ *      2: CN22
++ *      3: ADV7511
++ *
++ * this command is required when playback.
++ *
++ * # amixer set "LINEOUT Mixer DACL" on
++ */
++
+ /dts-v1/;
+ #include "r8a7790.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
+@@ -144,6 +156,23 @@
+ 		states = <3300000 1
+ 			  1800000 0>;
+ 	};
++
++	sound {
++		compatible = "simple-audio-card";
++
++		simple-audio-card,format = "left_j";
++		simple-audio-card,bitclock-master = <&sndcodec>;
++		simple-audio-card,frame-master = <&sndcodec>;
++
++		sndcpu: simple-audio-card,cpu {
++			sound-dai = <&rcar_sound 0>;
++		};
++
++		sndcodec: simple-audio-card,codec {
++			sound-dai = <&ak4643>;
++			system-clock-frequency = <11289600>;
++		};
++	};
+ };
+ 
+ &extal_clk {
+@@ -234,6 +263,16 @@
+ 		renesas,groups = "usb2";
+ 		renesas,function = "usb2";
+ 	};
++
++	sound_pins: sound {
++		renesas,groups = "ssi0129_ctrl", "ssi0_data", "ssi1_data";
++		renesas,function = "ssi";
 +	};
 +
-+	dmac1: dma-controller@e6720000 {
-+		compatible = "renesas,rcar-dmac";
-+		reg = <0 0xe6720000 0 0x20000>;
-+		interrupts = <0 220 IRQ_TYPE_LEVEL_HIGH
-+			      0 216 IRQ_TYPE_LEVEL_HIGH
-+			      0 217 IRQ_TYPE_LEVEL_HIGH
-+			      0 218 IRQ_TYPE_LEVEL_HIGH
-+			      0 219 IRQ_TYPE_LEVEL_HIGH
-+			      0 308 IRQ_TYPE_LEVEL_HIGH
-+			      0 309 IRQ_TYPE_LEVEL_HIGH
-+			      0 310 IRQ_TYPE_LEVEL_HIGH
-+			      0 311 IRQ_TYPE_LEVEL_HIGH
-+			      0 312 IRQ_TYPE_LEVEL_HIGH
-+			      0 313 IRQ_TYPE_LEVEL_HIGH
-+			      0 314 IRQ_TYPE_LEVEL_HIGH
-+			      0 315 IRQ_TYPE_LEVEL_HIGH
-+			      0 316 IRQ_TYPE_LEVEL_HIGH
-+			      0 317 IRQ_TYPE_LEVEL_HIGH
-+			      0 318 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "error",
-+				"ch0", "ch1", "ch2", "ch3",
-+				"ch4", "ch5", "ch6", "ch7",
-+				"ch8", "ch9", "ch10", "ch11",
-+				"ch12", "ch13", "ch14";
-+		clocks = <&mstp2_clks R8A7791_CLK_SYS_DMAC1>;
-+		clock-names = "fck";
-+		#dma-cells = <1>;
-+		dma-channels = <15>;
++	sound_clk_pins: sound_clk {
++		renesas,groups = "audio_clk_a";
++		renesas,function = "audio_clk";
 +	};
+ };
+ 
+ &ether {
+@@ -366,6 +405,12 @@
+ 	status = "ok";
+ 	pinctrl-0 = <&iic2_pins>;
+ 	pinctrl-names = "default";
 +
- 	/* The memory map in the User's Manual maps the cores to bus numbers */
- 	i2c0: i2c@e6508000 {
- 		#address-cells = <1>;
++	ak4643: sound_codec {
++		compatible = "asahi-kasei,ak4643";
++		#sound-dai-cells = <0>;
++		reg = <0x12>;
++	};
+ };
+ 
+ &iic3 {
+@@ -401,3 +446,26 @@
+ 	pinctrl-0 = <&usb2_pins>;
+ 	pinctrl-names = "default";
+ };
++
++&rcar_sound {
++	pinctrl-0 = <&sound_pins &sound_clk_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++
++	rcar_sound,dai {
++		dai0 {
++			playback = <&ssi0>;
++			capture  = <&ssi1>;
++		};
++	};
++};
++
++&ssi0 {
++	pio-transfer;
++};
++
++&ssi1 {
++	pio-transfer;
++	shared-pin;
++};
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 4508643..3d07811 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -56,6 +56,7 @@ config MACH_LAGER
+ 	bool "Lager board"
+ 	depends on ARCH_R8A7790
+ 	select MICREL_PHY if SH_ETH
++	select SND_SOC_AK4642 if SND_SIMPLE_CARD
+ 
+ config MACH_MARZEN
+ 	bool "MARZEN board"
 -- 
-1.8.5.5
+1.7.9.5
 
