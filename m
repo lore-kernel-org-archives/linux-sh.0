@@ -1,58 +1,72 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Sat, 26 Jul 2014 09:40:40 +0000
-Subject: Re: [PATCH 03/11] mmc: sh_mmcif: Configure DMA slave bus width
-Message-Id: <CAPDyKFoG+MjPTWQg2d96BDL45Bu6fRPRHJBHqUoQv88SC59Vzw@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 23 Jul 2014 02:42:55 +0000
+Subject: [PATCH 0/11][RFC] sound DMA support patches
+Message-Id: <874my8vlqq.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-	<1405464321-4723-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1405464321-4723-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Ian Molton <ian.molton@codethink.co.uk>
-
-On 16 July 2014 00:45, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
-> The data register is 4 bytes wide, hardcode the DMA transfer size to
-> 4 bytes in both directions.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-Thanks! Applied for next.
-
-Kind regards
-Uffe
+To: linux-sh@vger.kernel.org
 
 
-> ---
->  drivers/mmc/host/sh_mmcif.c | 7 +++++--
->  1 file changed, 5 insertions(+), 2 deletions(-)
->
-> diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-> index 436d663..cc8ae09 100644
-> --- a/drivers/mmc/host/sh_mmcif.c
-> +++ b/drivers/mmc/host/sh_mmcif.c
-> @@ -418,10 +418,13 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
->         cfg.slave_id = slave_id;
->         cfg.direction = direction;
->
-> -       if (direction = DMA_DEV_TO_MEM)
-> +       if (direction = DMA_DEV_TO_MEM) {
->                 cfg.src_addr = res->start + MMCIF_CE_DATA;
-> -       else
-> +               cfg.src_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
-> +       } else {
->                 cfg.dst_addr = res->start + MMCIF_CE_DATA;
-> +               cfg.dst_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
-> +       }
->
->         ret = dmaengine_slave_config(chan, &cfg);
->         if (ret < 0) {
-> --
-> 1.8.5.5
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Hi Laurent
+
+These are sound DMA support platform side patches.
+These worked well when it was based on shdma-base
+driver base.
+
+These are including all sound DMA supports,
+but, it is too much for cyclic transfer test.
+
+I guess 1/3/5/6/10/11/ are enough.
+
+Current rcar-dmac filter can't care "dma0" or "audma0" now.
+So, I disabled "dma0/1" as quick-hack.
+
+	&dmac0 {
+			status = "disabled";
+	};
+
+	&dmac1 {
+			status = "disabled";
+	};
+
+I could get short sound if I modified driver as try-and-error.
+(and it dead after that, of course it is wrong fix)
+So, I guess, address/IRQ/MID-RID/MSTP/etc settings are correct.
+
+If you have alsa command, you need this
+
+	> amixer set "LINEOUT Mixer DACL" on
+	> aplay xxx.wav
+
+I used...
+  > git checkout renesas-drivers-2014-07-11-v3.16-rc4
+  > git merge asoc/topic/rcar
+
+  # asoc = git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git
+
+Kuninori Morimoto (11):
+       1) ARM: shmobile: r8a7790: Add Audio DMAC devices to DT
+       2) ARM: shmobile: r8a7790: Add Audio DMAC peri peri devices to DT
+       3) ARM: shmobile: r8a7790: sound enables Audio DMAC entry on DTSI
+       4) ARM: shmobile: r8a7790: sound enables Audio DMAC peri peri entry on DTSI
+       5) ARM: shmobile: lager: Sound PIO support on DTS
+       6) ARM: shmobile: lager: Sound DMA support on DTS
+       7) ARM: shmobile: lager: Sound DMA support via BUSIF on DTS
+       8) ARM: shmobile: lager: Sound DMA support via SRC on DTS
+       9) ARM: shmobile: lager: Sound DMA support via DVC on DTS
+      10) ARM: shmobile: multiplatform: add Audo DMAC peri peri support on defconfig
+      11) ARM: shmobile: multiplatform: add R-Car DMAC support on defconfig
+
+ arch/arm/boot/dts/r8a7790-lager.dts       |   66 ++++++++++
+ arch/arm/boot/dts/r8a7790.dtsi            |  203 ++++++++++++++++++++++++++++-
+ arch/arm/configs/shmobile_defconfig       |    2 +
+ arch/arm/mach-shmobile/Kconfig            |    1 +
+ include/dt-bindings/clock/r8a7790-clock.h |    2 +
+ 5 files changed, 271 insertions(+), 3 deletions(-)
+
+
+Best regards
+---
+Kuninori Morimoto
