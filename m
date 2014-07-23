@@ -1,70 +1,117 @@
-From: Ian Molton <ian.molton@codethink.co.uk>
-Date: Tue, 08 Jul 2014 09:41:14 +0000
-Subject: [PATCH 4/4] media: rcar_vin: Clean up rcar_vin_irq
-Message-Id: <1404812474-7627-5-git-send-email-ian.molton@codethink.co.uk>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 23 Jul 2014 02:43:26 +0000
+Subject: [PATCH 01/11][RFC] ARM: shmobile: r8a7790: Add Audio DMAC devices to DT
+Message-Id: <8738dsvlpv.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404812474-7627-1-git-send-email-ian.molton@codethink.co.uk>
-In-Reply-To: <1404812474-7627-1-git-send-email-ian.molton@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-kernel@lists.codethink.co.uk, ian.molton@codethink.co.uk, g.liakhovetski@gmx.de, m.chehab@samsung.com, vladimir.barinov@cogentembedded.com, magnus.damm@gmail.com, horms@verge.net.au, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-This patch makes the rcar_vin IRQ handler a little more readable.
+Instantiate the two Audio DMA controllers in the r8a7790 device tree.
 
-Removes an else clause, and simplifies the buffer handling.
-
-Signed-off-by: Ian Molton <ian.molton@codethink.co.uk>
-Reviewed-by: William Towle <william.towle@codethink.co.uk>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/media/platform/soc_camera/rcar_vin.c | 24 ++++++++++++++----------
- 1 file changed, 14 insertions(+), 10 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi            |   64 +++++++++++++++++++++++++++--
+ include/dt-bindings/clock/r8a7790-clock.h |    2 +
+ 2 files changed, 63 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-index aeda4e2..a8d2785 100644
---- a/drivers/media/platform/soc_camera/rcar_vin.c
-+++ b/drivers/media/platform/soc_camera/rcar_vin.c
-@@ -554,7 +554,6 @@ static irqreturn_t rcar_vin_irq(int irq, void *data)
- 	struct rcar_vin_priv *priv = data;
- 	u32 int_status;
- 	bool can_run = false, hw_stopped;
--	int slot;
- 	unsigned int handled = 0;
- 
- 	spin_lock(&priv->lock);
-@@ -573,17 +572,22 @@ static irqreturn_t rcar_vin_irq(int irq, void *data)
- 	hw_stopped = !(ioread32(priv->base + VNMS_REG) & VNMS_CA);
- 
- 	if (!priv->request_to_stop) {
-+		struct vb2_buffer **q_entry = priv->queue_buf;
-+		struct vb2_buffer *vb;
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 3707f0e..9f4fb9c 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -276,6 +276,63 @@
+ 		#dma-cells = <1>;
+ 		dma-channels = <15>;
+ 	};
 +
- 		if (is_continuous_transfer(priv))
--			slot = (ioread32(priv->base + VNMS_REG) &
--				VNMS_FBS_MASK) >> VNMS_FBS_SHIFT;
--		else
--			slot = 0;
-+			q_entry += (ioread32(priv->base + VNMS_REG) &
-+					VNMS_FBS_MASK) >> VNMS_FBS_SHIFT;
++	audma0: dma-contorller@ec700000 {
++		compatible = "renesas,rcar-dmac";
++		reg = <0 0xec700000 0 0x10000>;
++		interrupts =	<0 346 IRQ_TYPE_LEVEL_HIGH
++				 0 320 IRQ_TYPE_LEVEL_HIGH
++				 0 321 IRQ_TYPE_LEVEL_HIGH
++				 0 322 IRQ_TYPE_LEVEL_HIGH
++				 0 323 IRQ_TYPE_LEVEL_HIGH
++				 0 324 IRQ_TYPE_LEVEL_HIGH
++				 0 325 IRQ_TYPE_LEVEL_HIGH
++				 0 326 IRQ_TYPE_LEVEL_HIGH
++				 0 327 IRQ_TYPE_LEVEL_HIGH
++				 0 328 IRQ_TYPE_LEVEL_HIGH
++				 0 329 IRQ_TYPE_LEVEL_HIGH
++				 0 330 IRQ_TYPE_LEVEL_HIGH
++				 0 331 IRQ_TYPE_LEVEL_HIGH
++				 0 332 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error",
++				"ch0", "ch1", "ch2", "ch3",
++				"ch4", "ch5", "ch6", "ch7",
++				"ch8", "ch9", "ch10", "ch11",
++				"ch12";
++		clocks = <&mstp5_clks R8A7790_CLK_AUDIO_DMAC0>;
++		clock-names = "fck";
++		#dma-cells = <1>;
++		dma-channels = <13>;
++	};
 +
-+		vb = *q_entry;
++	audma1: dma-controller@ec720000 {
++		compatible = "renesas,rcar-dmac";
++		reg = <0 0xec720000 0 0x10000>;
++		interrupts =	<0 347 IRQ_TYPE_LEVEL_HIGH
++				 0 333 IRQ_TYPE_LEVEL_HIGH
++				 0 334 IRQ_TYPE_LEVEL_HIGH
++				 0 335 IRQ_TYPE_LEVEL_HIGH
++				 0 336 IRQ_TYPE_LEVEL_HIGH
++				 0 337 IRQ_TYPE_LEVEL_HIGH
++				 0 338 IRQ_TYPE_LEVEL_HIGH
++				 0 339 IRQ_TYPE_LEVEL_HIGH
++				 0 340 IRQ_TYPE_LEVEL_HIGH
++				 0 341 IRQ_TYPE_LEVEL_HIGH
++				 0 342 IRQ_TYPE_LEVEL_HIGH
++				 0 343 IRQ_TYPE_LEVEL_HIGH
++				 0 344 IRQ_TYPE_LEVEL_HIGH
++				 0 345 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error",
++				"ch0", "ch1", "ch2", "ch3",
++				"ch4", "ch5", "ch6", "ch7",
++				"ch8", "ch9", "ch10", "ch11",
++				"ch12";
++		clocks = <&mstp5_clks R8A7790_CLK_AUDIO_DMAC1>;
++		clock-names = "fck";
++		#dma-cells = <1>;
++		dma-channels = <13>;
++	};
 +
-+		vb->v4l2_buf.field = priv->field;
-+		vb->v4l2_buf.sequence = priv->sequence++;
-+		do_gettimeofday(&vb->v4l2_buf.timestamp);
-+
-+		vb2_buffer_done(vb, VB2_BUF_STATE_DONE);
+ 	i2c0: i2c@e6508000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -851,10 +908,11 @@
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
+-			clocks = <&extal_clk>, <&p_clk>;
++			clocks = <&hp_clk>, <&hp_clk>, <&extal_clk>, <&p_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <R8A7790_CLK_THERMAL R8A7790_CLK_PWM>;
+-			clock-output-names = "thermal", "pwm";
++			renesas,clock-indices = <R8A7790_CLK_AUDIO_DMAC0 R8A7790_CLK_AUDIO_DMAC1
++						 R8A7790_CLK_THERMAL R8A7790_CLK_PWM>;
++			clock-output-names = "audmac0", "audamc1", "thermal", "pwm";
+ 		};
+ 		mstp7_clks: mstp7_clks@e615014c {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index f929a79e..098573b 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -67,6 +67,8 @@
+ #define R8A7790_CLK_USBDMAC1		31
  
--		priv->queue_buf[slot]->v4l2_buf.field = priv->field;
--		priv->queue_buf[slot]->v4l2_buf.sequence = priv->sequence++;
--		do_gettimeofday(&priv->queue_buf[slot]->v4l2_buf.timestamp);
--		vb2_buffer_done(priv->queue_buf[slot], VB2_BUF_STATE_DONE);
--		priv->queue_buf[slot] = NULL;
-+		*q_entry = NULL;
+ /* MSTP5 */
++#define R8A7790_CLK_AUDIO_DMAC1		1
++#define R8A7790_CLK_AUDIO_DMAC0		2
+ #define R8A7790_CLK_THERMAL		22
+ #define R8A7790_CLK_PWM			23
  
- 		if (priv->state != STOPPING)
- 			can_run = rcar_vin_fill_hw_slot(priv);
 -- 
-1.9.1
+1.7.9.5
 
