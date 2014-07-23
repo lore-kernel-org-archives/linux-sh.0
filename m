@@ -1,63 +1,30 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 28 Jul 2014 18:18:36 +0000
-Subject: [PATCH] drm/rcar-du: Fix maximum frame buffer pitch computation
-Message-Id: <1406571516-5827-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 23 Jul 2014 02:45:01 +0000
+Subject: [PATCH 10/11][RFC] ARM: shmobile: multiplatform: add Audo DMAC peri peri support on defconfig
+Message-Id: <87ppgwu72s.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
+To: linux-sh@vger.kernel.org
 
-The maximum pitch constraint for the hardware is expressed in pixels.
-Convert it to bytes to validate frame buffer creation, as frame buffer
-pitches are expressed in bytes.
-
-Reported-by: Phil Edworthy <phil.edworthy@renesas.com>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_kms.c | 13 +++++++++++--
- 1 file changed, 11 insertions(+), 2 deletions(-)
+ arch/arm/configs/shmobile_defconfig |    1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-index 3875854..7eabbd7 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-@@ -135,7 +135,9 @@ rcar_du_fb_create(struct drm_device *dev, struct drm_file *file_priv,
- {
- 	struct rcar_du_device *rcdu = dev->dev_private;
- 	const struct rcar_du_format_info *format;
-+	unsigned int max_pitch;
- 	unsigned int align;
-+	unsigned int bpp;
- 
- 	format = rcar_du_format_info(mode_cmd->pixel_format);
- 	if (format = NULL) {
-@@ -144,13 +146,20 @@ rcar_du_fb_create(struct drm_device *dev, struct drm_file *file_priv,
- 		return ERR_PTR(-EINVAL);
- 	}
- 
-+	/*
-+	 * The pitch and alignment constraints are expressed in pixels on the
-+	 * hardware side and in bytes in the DRM API.
-+	 */
-+	bpp = format->planes = 2 ? 1 : format->bpp / 8;
-+	max_pitch =  4096 * bpp;
-+
- 	if (rcar_du_needs(rcdu, RCAR_DU_QUIRK_ALIGN_128B))
- 		align = 128;
- 	else
--		align = 16 * format->bpp / 8;
-+		align = 16 * bpp;
- 
- 	if (mode_cmd->pitches[0] & (align - 1) ||
--	    mode_cmd->pitches[0] >= 8192) {
-+	    mode_cmd->pitches[0] >= max_pitch) {
- 		dev_dbg(dev->dev, "invalid pitch value %u\n",
- 			mode_cmd->pitches[0]);
- 		return ERR_PTR(-EINVAL);
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 6bc85a5..d6bdfde 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -133,6 +133,7 @@ CONFIG_LEDS_GPIO=y
+ CONFIG_RTC_CLASS=y
+ CONFIG_DMADEVICES=y
+ CONFIG_SH_DMAE=y
++CONFIG_RCAR_AUDMAC_PP=y
+ # CONFIG_IOMMU_SUPPORT is not set
+ # CONFIG_DNOTIFY is not set
+ CONFIG_MSDOS_FS=y
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
