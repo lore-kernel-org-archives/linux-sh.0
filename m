@@ -1,64 +1,70 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 22 Jul 2014 23:59:33 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: r8a7791: Fix SD2CKCR register address
-Message-Id: <20140722235931.GB21367@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 24 Jul 2014 01:57:54 +0000
+Subject: [GIT PULL v2] Renesas ARM Based SoC Boards Cleanups for v3.17
+Message-Id: <cover.1406166426.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87fvhuhtlw.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87fvhuhtlw.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Jul 21, 2014 at 10:04:29PM -0700, Kuninori Morimoto wrote:
-> From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-> 
-> 59e79895b95892863617ce630fbda467f2470575
-> (ARM: shmobile: r8a7791: Add clocks)
-> added r8a7791 SD clocks when v3.14.
-> 
-> 2c60a7df72711fb8b4be1e6aa651ab166a8931bc
-> (ARM: shmobile: Add SDHI devices for Koelsch DTS)
-> enabled SD on r8a7791 Koelsch when v3.15.
-> 
-> 1299df03d7191ab4356c995dde8b912d3c8922e9
-> (ARM: shmobile: henninger: add SDHI0/2 DT support)
-> enable SD on r8a7791 Henninger when v3.16.
-> 
-> But r8a7791 SD clock had wrong address.
-> This patch fixup it.
-> 
-> [Kuninori Morimoto: tidyup for upstreaming]
-> 
-> Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Thanks, I will queue this up.
+Please consider these Renesas ARM based SoC boards cleanups for v3.17.
 
-> ---
-> v1 -> v2
-> 
-> - update git log
-> 
->  arch/arm/boot/dts/r8a7791.dtsi |    4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-> index 6e9a556..0d82a4b 100644
-> --- a/arch/arm/boot/dts/r8a7791.dtsi
-> +++ b/arch/arm/boot/dts/r8a7791.dtsi
-> @@ -583,9 +583,9 @@
->  			#clock-cells = <0>;
->  			clock-output-names = "sd1";
->  		};
-> -		sd2_clk: sd3_clk@e615007c {
-> +		sd2_clk: sd3_clk@e615026c {
->  			compatible = "renesas,r8a7791-div6-clock", "renesas,cpg-div6-clock";
-> -			reg = <0 0xe615007c 0 4>;
-> +			reg = <0 0xe615026c 0 4>;
->  			clocks = <&pll1_div2_clk>;
->  			#clock-cells = <0>;
->  			clock-output-names = "sd2";
-> -- 
-> 1.7.9.5
-> 
+
+This pull request is based on
+"Renesas ARM Based SoC DT Timers Updates for v3.17",
+tagged as renesas-dt-timers-for-v3.17,
+which I have sent a pull request for.
+
+In this pull-request cleanups are added on top of new development
+due to the order in which the code was developed. In general
+we prefer the reverse ordering.
+
+
+v2 of this pull request is a rebase of v1 removing
+a merge of defconfig changes at the base of the pull-request.
+The motivation for that was to avoid attempts to use
+genmai_defconfig after the board code it relies on has been removed.
+Olof indicated he would prefer not to add that dependency.
+
+
+The following changes since commit 9394af4314554d15762585a3464cefaa2e6d0420:
+
+  ARM: shmobile: genmai-reference: Enable MTU2 in device tree (2014-07-15 21:26:42 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup-boards-for-v3.17
+
+for you to fetch changes up to d2904bb7cd21844ff5e720083b59a344487fcc9b:
+
+  ARM: shmobile: r7s72100: Remove legacy board support (2014-07-24 10:32:53 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC Boards Cleanups for v3.17
+
+d2904bb ARM: shmobile: r7s72100: Remove legacy board support
+6f86033 ARM: shmobile: r7s72100: genmai: Remove legacy board file
+5cebb8e ARM: shmobile: r7s72100: genmai: Remove reference board file
+
+----------------------------------------------------------------
+Laurent Pinchart (3):
+      ARM: shmobile: r7s72100: genmai: Remove reference board file
+      ARM: shmobile: r7s72100: genmai: Remove legacy board file
+      ARM: shmobile: r7s72100: Remove legacy board support
+
+ arch/arm/mach-shmobile/Kconfig                  |  17 --
+ arch/arm/mach-shmobile/Makefile                 |   3 -
+ arch/arm/mach-shmobile/Makefile.boot            |   1 -
+ arch/arm/mach-shmobile/board-genmai-reference.c |  35 ----
+ arch/arm/mach-shmobile/board-genmai.c           | 174 ------------------
+ arch/arm/mach-shmobile/clock-r7s72100.c         | 231 ------------------------
+ arch/arm/mach-shmobile/r7s72100.h               |   6 -
+ arch/arm/mach-shmobile/setup-r7s72100.c         |   2 -
+ 8 files changed, 469 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/board-genmai-reference.c
+ delete mode 100644 arch/arm/mach-shmobile/board-genmai.c
+ delete mode 100644 arch/arm/mach-shmobile/clock-r7s72100.c
+ delete mode 100644 arch/arm/mach-shmobile/r7s72100.h
