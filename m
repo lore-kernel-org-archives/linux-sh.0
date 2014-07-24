@@ -1,51 +1,57 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Wed, 02 Jul 2014 11:36:11 +0000
-Subject: Re: [PATCH 09/10 v2] ASoC: rsnd: DMA start address is properly used for each DMAC
-Message-Id: <20140702113611.GF410@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="mrJd9p1Ce66CJMxE"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 24 Jul 2014 01:57:19 +0000
+Subject: [PATCH] ARM: shmobile: r8a7791: Fix SD2CKCR register address
+Message-Id: <c9b227723d051184b9e78f20c75ae2f9d44a6ea2.1406162627.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
- <8761jstphc.wl%kuninori.morimoto.gx@gmail.com>
- <87simwsap0.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87simwsap0.wl%kuninori.morimoto.gx@renesas.com>
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
+References: <cover.1406162627.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1406162627.git.horms+renesas@verge.net.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
---mrJd9p1Ce66CJMxE
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+59e79895b95892863617ce630fbda467f2470575
+(ARM: shmobile: r8a7791: Add clocks)
+added r8a7791 SD clocks when v3.14.
 
-On Sun, Jun 22, 2014 at 05:59:02PM -0700, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->=20
-> R-Car sound uses Audio DMAC and Audio DMAC peri peri.
-> Audio DMAC peri peri transfers data inside circuit.
+2c60a7df72711fb8b4be1e6aa651ab166a8931bc
+(ARM: shmobile: Add SDHI devices for Koelsch DTS)
+enabled SD on r8a7791 Koelsch when v3.15.
 
-Applied, thanks.
+1299df03d7191ab4356c995dde8b912d3c8922e9
+(ARM: shmobile: henninger: add SDHI0/2 DT support)
+enable SD on r8a7791 Henninger when v3.16.
 
---mrJd9p1Ce66CJMxE
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+But r8a7791 SD clock had wrong address.
+This patch fixup it.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
+[Kuninori Morimoto: tidyup for upstreaming]
 
-iQIcBAEBAgAGBQJTs+6nAAoJELSic+t+oim9GzgQAJuqCb7xAstRds4An5rYUBfa
-U/lhaJRti9QkyK/SGno4a/yAdeObR0zqcSXTtTiq28tGvzGdGRdNiWwdWtr5J414
-RE9TEAvC9pfc7RgXyJU49HrL/m664MHxocxMnw3ysApReBw3D2i4dTBNfEQM2KJA
-N8jVuosvtrG+lHJjvIxmeTuhDpkFdCTGWLfMhrlkWWc8Xu+T1o/+HZNM+GwQ7fWp
-ASsCY/FaUQafQD9joxaDsdl4gPoIi5d6SlLqNO3yeOOlVjHugNK0R8PscAnq5AAr
-dhKerUeI29ysl+QtQhbCWxWQEC+196oVf/y9ZrBKCN7qkgSk0iHf+XdU2feos7Wp
-LTx0mrGA6mIifoLCUSHROBFkOtLwbcM/Ny9ERRmlJlU4n7FdOs+xHYrCJq6kFTWa
-At0gTAp94w7cI/yCLDEw/sgZ59frELO7dslSRR8ylfkiEN/k7BiCP9YF7GDxk9BX
-gz4ZM3xxxmoovMa56eHHfeClEhPmpgwWeU+GJvOEv7AlVgkeHBXDIl1LDB2ozQ1E
-086XNbJWPk/dahA5iAPIv762duLeO11nE9jVI52X1nEOf9wRBSg4vtIF0Xv9s0QS
-Wa4PEUQVq3HYQ87UZ4mPkhXL6+6CjalAgnlETQC5IWAThEtDJHovlGdzz7vEffRB
-H71OF80jfOrNr6Wa3fmS
-=0yVc
------END PGP SIGNATURE-----
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
---mrJd9p1Ce66CJMxE--
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 8d7ffae..79f68ac 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -540,9 +540,9 @@
+ 			#clock-cells = <0>;
+ 			clock-output-names = "sd1";
+ 		};
+-		sd2_clk: sd3_clk@e615007c {
++		sd2_clk: sd3_clk@e615026c {
+ 			compatible = "renesas,r8a7791-div6-clock", "renesas,cpg-div6-clock";
+-			reg = <0 0xe615007c 0 4>;
++			reg = <0 0xe615026c 0 4>;
+ 			clocks = <&pll1_div2_clk>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "sd2";
+-- 
+2.0.1
+
