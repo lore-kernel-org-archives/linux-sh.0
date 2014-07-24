@@ -1,57 +1,47 @@
-From: Grygorii Strashko <grygorii.strashko@ti.com>
-Date: Fri, 25 Jul 2014 17:46:57 +0000
-Subject: [RFC PATCH 2/3] PM / clock_ops: allow to specify custom pm_clk_notifier callback
-Message-Id: <1406313096-29761-3-git-send-email-grygorii.strashko@ti.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 24 Jul 2014 15:27:05 +0000
+Subject: [PATCH 3/3] iommu/ipmmu-vmsa: Invalidate TLB after unmapping
+Message-Id: <1406215625-13982-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1406313096-29761-1-git-send-email-grygorii.strashko@ti.com>
-In-Reply-To: <1406313096-29761-1-git-send-email-grygorii.strashko@ti.com>
+References: <1406215625-13982-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1406215625-13982-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: iommu@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org
 
-The CLK PM domain assumes that platform code should always provide
-list of Connection IDs of the clock (con_id) in
-pm_clk_notifier_block structure. Then CLK PM domain uses these con_ids
-to setup list of clocks per device.
+The TLB must be invalidated after unmapping memory to remove stale TLB
+entries. this was supposed to be performed already, but a bug in the
+driver prevented the TLB invalidate function from being called. Fix it.
 
-Such approach is inconvenient when devices can have different number
-of clocks. For example, if maximum number of clocks used by
-device is 4 the pm_clk_notifier_block structure will look like:
-
-static struct pm_clk_notifier_block platform_domain_notifier = {
-	.pm_domain = &keystone_pm_domain,
-	.con_ids = { "fck", "opt1", "opt2", "opt3", NULL },
-};
-
-More over, clocks in DT have to be named using only con_ids:
-	clocks = <&paclk13>, <&clkcpgmac>, <&chipclk12>;
-	clock-names = "fck", "opt1", "opt2";
-
-This patch allow to specify custom pm_clk_notifier callback from
-platform code and in such way makes CLK PM domain initialization
-more flexible. For example, Keystone 2 will provide custom callback
-to fill list of clocks for Device with all clocks assigned to this
-Device in DT.
-
-Signed-off-by: Grygorii Strashko <grygorii.strashko@ti.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/base/power/clock_ops.c |    3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ drivers/iommu/ipmmu-vmsa.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
-diff --git a/drivers/base/power/clock_ops.c b/drivers/base/power/clock_ops.c
-index 2d5c9c1..c103598 100644
---- a/drivers/base/power/clock_ops.c
-+++ b/drivers/base/power/clock_ops.c
-@@ -520,6 +520,7 @@ void pm_clk_add_notifier(struct bus_type *bus,
- 	if (!bus || !clknb)
- 		return;
+diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
+index eb605e5..a010e47 100644
+--- a/drivers/iommu/ipmmu-vmsa.c
++++ b/drivers/iommu/ipmmu-vmsa.c
+@@ -784,7 +784,6 @@ static int ipmmu_clear_mapping(struct ipmmu_vmsa_domain *domain,
+ 	pud_t *pud;
+ 	pmd_t *pmd;
+ 	pte_t *pte;
+-	int ret = 0;
  
--	clknb->nb.notifier_call = pm_clk_notify;
-+	if (!clknb->nb.notifier_call)
-+		clknb->nb.notifier_call = pm_clk_notify;
- 	bus_register_notifier(bus, &clknb->nb);
+ 	if (!pgd)
+ 		return -EINVAL;
+@@ -846,8 +845,7 @@ static int ipmmu_clear_mapping(struct ipmmu_vmsa_domain *domain,
+ done:
+ 	spin_unlock_irqrestore(&domain->lock, flags);
+ 
+-	if (ret)
+-		ipmmu_tlb_invalidate(domain);
++	ipmmu_tlb_invalidate(domain);
+ 
+ 	return 0;
  }
 -- 
-1.7.9.5
+1.8.5.5
 
