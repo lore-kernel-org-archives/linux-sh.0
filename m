@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Jul 2014 23:59:27 +0000
+Date: Thu, 24 Jul 2014 01:58:06 +0000
 Subject: [PATCH 3/3] ARM: shmobile: r7s72100: Remove legacy board support
-Message-Id: <53b04e7fb3b28517ff86a7ac9fcff86101fe6d5a.1405641497.git.horms+renesas@verge.net.au>
+Message-Id: <d2904bb7cd21844ff5e720083b59a344487fcc9b.1406166426.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1405641497.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1405641497.git.horms+renesas@verge.net.au>
+References: <cover.1406166426.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1406166426.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
