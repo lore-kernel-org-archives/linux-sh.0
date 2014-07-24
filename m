@@ -1,37 +1,35 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Fri, 25 Jul 2014 14:40:50 +0000
-Subject: [PATCH 6/6] media: soc_camera: rcar_vin: Add r8a7794 device support
-Message-Id: <1406299250-23975-7-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 24 Jul 2014 01:57:42 +0000
+Subject: [PATCH 5/5] ARM: shmobile: sh73a0: add CMT1 clock support for DT
+Message-Id: <a0f7e7496d56ac2da7c684e2035815318c17973a.1406164563.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1406299250-23975-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1406299250-23975-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <cover.1406164563.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1406164563.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: magnus.damm@gmail.com, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, linux-media@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+This will be used when initialising CMT1 device using DT
+until common clock framework support is added.
 
-Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-Cc: linux-media@vger.kernel.org
-
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/media/platform/soc_camera/rcar_vin.c | 1 +
+ arch/arm/mach-shmobile/clock-sh73a0.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-index e594230..86d98cd 100644
---- a/drivers/media/platform/soc_camera/rcar_vin.c
-+++ b/drivers/media/platform/soc_camera/rcar_vin.c
-@@ -1391,6 +1391,7 @@ static struct soc_camera_host_ops rcar_vin_host_ops = {
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 4990e03..0d77f65 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -690,6 +690,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.0", &dsi0phy_clk),
+ 	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.1", &dsi1phy_clk),
+ 	CLKDEV_ICK_ID("fck", "sh-cmt-48.1", &mstp_clks[MSTP329]), /* CMT1 */
++	CLKDEV_ICK_ID("fck", "e6138000.timer", &mstp_clks[MSTP329]), /* CMT1 */
+ 	CLKDEV_ICK_ID("fck", "sh-tmu.0", &mstp_clks[MSTP125]), /* TMU0 */
  };
  
- static struct platform_device_id rcar_vin_id_table[] = {
-+	{ "r8a7794-vin",  RCAR_GEN2 },
- 	{ "r8a7791-vin",  RCAR_GEN2 },
- 	{ "r8a7790-vin",  RCAR_GEN2 },
- 	{ "r8a7779-vin",  RCAR_H1 },
 -- 
-1.8.4.5
+2.0.1
 
