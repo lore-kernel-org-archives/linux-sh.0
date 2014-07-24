@@ -1,284 +1,50 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Jul 2014 00:28:38 +0000
-Subject: [PATCH 7/7] ARM: shmobile: Move sh7372.h
-Message-Id: <113522ee3034427472bcb4b8665833719809b31a.1404173049.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 24 Jul 2014 15:27:03 +0000
+Subject: [PATCH 1/3] iommu/ipmmu-vmsa: Cleanup failures of ARM mapping creation or attachment
+Message-Id: <1406215625-13982-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1404173049.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1404173049.git.horms+renesas@verge.net.au>
+References: <1406215625-13982-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1406215625-13982-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: iommu@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+The ARM IOMMU mapping needs to be released when attaching the device
+fails. Add arm_iommu_release_mapping() to the error code path. This is
+safe to call with a NULL mapping, so no specific check is needed.
 
-Change location of sh7372.h so it can be included as "sh7372.h"
-instead of the old style <mach/sh7372.h>
+Cleanup is also missing when failing to create a mapping. Jump to the
+error code path in that case instead of returning immediately.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-mackerel.c      |  4 +-
- arch/arm/mach-shmobile/include/mach/sh7372.h | 84 ----------------------------
- arch/arm/mach-shmobile/pm-sh7372.c           |  4 +-
- arch/arm/mach-shmobile/setup-sh7372.c        |  4 +-
- arch/arm/mach-shmobile/sh7372.h              | 84 ++++++++++++++++++++++++++++
- 5 files changed, 93 insertions(+), 87 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/include/mach/sh7372.h
- create mode 100644 arch/arm/mach-shmobile/sh7372.h
+ drivers/iommu/ipmmu-vmsa.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 0ece865..304b76f 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -51,6 +51,7 @@
- #include <linux/tca6416_keypad.h>
- #include <linux/usb/renesas_usbhs.h>
- #include <linux/dma-mapping.h>
-+
- #include <video/sh_mobile_hdmi.h>
- #include <video/sh_mobile_lcdc.h>
- #include <media/sh_mobile_ceu.h>
-@@ -58,13 +59,14 @@
- #include <media/soc_camera_platform.h>
- #include <sound/sh_fsi.h>
- #include <sound/simple_card.h>
--#include <mach/sh7372.h>
- #include <asm/mach/arch.h>
- #include <asm/mach-types.h>
-+
- #include "common.h"
- #include "irqs.h"
- #include "pm-rmobile.h"
- #include "sh-gpio.h"
-+#include "sh7372.h"
+diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
+index 53cde08..7dc77a6 100644
+--- a/drivers/iommu/ipmmu-vmsa.c
++++ b/drivers/iommu/ipmmu-vmsa.c
+@@ -1090,7 +1090,8 @@ static int ipmmu_add_device(struct device *dev)
+ 						   SZ_1G, SZ_2G);
+ 		if (IS_ERR(mapping)) {
+ 			dev_err(mmu->dev, "failed to create ARM IOMMU mapping\n");
+-			return PTR_ERR(mapping);
++			ret = PTR_ERR(mapping);
++			goto error;
+ 		}
  
- /*
-  * Address	Interface		BusWidth	note
-diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
-deleted file mode 100644
-index 4ad960d..0000000
---- a/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ /dev/null
-@@ -1,84 +0,0 @@
--/*
-- * Copyright (C) 2010 Renesas Solutions Corp.
-- *
-- * Kuninori Morimoto <morimoto.kuninori@renesas.com>
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-- */
--
--#ifndef __ASM_SH7372_H__
--#define __ASM_SH7372_H__
--
--/* DMA slave IDs */
--enum {
--	SHDMA_SLAVE_INVALID,
--	SHDMA_SLAVE_SCIF0_TX,
--	SHDMA_SLAVE_SCIF0_RX,
--	SHDMA_SLAVE_SCIF1_TX,
--	SHDMA_SLAVE_SCIF1_RX,
--	SHDMA_SLAVE_SCIF2_TX,
--	SHDMA_SLAVE_SCIF2_RX,
--	SHDMA_SLAVE_SCIF3_TX,
--	SHDMA_SLAVE_SCIF3_RX,
--	SHDMA_SLAVE_SCIF4_TX,
--	SHDMA_SLAVE_SCIF4_RX,
--	SHDMA_SLAVE_SCIF5_TX,
--	SHDMA_SLAVE_SCIF5_RX,
--	SHDMA_SLAVE_SCIF6_TX,
--	SHDMA_SLAVE_SCIF6_RX,
--	SHDMA_SLAVE_FLCTL0_TX,
--	SHDMA_SLAVE_FLCTL0_RX,
--	SHDMA_SLAVE_FLCTL1_TX,
--	SHDMA_SLAVE_FLCTL1_RX,
--	SHDMA_SLAVE_SDHI0_RX,
--	SHDMA_SLAVE_SDHI0_TX,
--	SHDMA_SLAVE_SDHI1_RX,
--	SHDMA_SLAVE_SDHI1_TX,
--	SHDMA_SLAVE_SDHI2_RX,
--	SHDMA_SLAVE_SDHI2_TX,
--	SHDMA_SLAVE_FSIA_RX,
--	SHDMA_SLAVE_FSIA_TX,
--	SHDMA_SLAVE_MMCIF_RX,
--	SHDMA_SLAVE_MMCIF_TX,
--	SHDMA_SLAVE_USB0_TX,
--	SHDMA_SLAVE_USB0_RX,
--	SHDMA_SLAVE_USB1_TX,
--	SHDMA_SLAVE_USB1_RX,
--};
--
--extern struct clk sh7372_extal1_clk;
--extern struct clk sh7372_extal2_clk;
--extern struct clk sh7372_dv_clki_clk;
--extern struct clk sh7372_dv_clki_div2_clk;
--extern struct clk sh7372_pllc2_clk;
--
--extern void sh7372_init_irq(void);
--extern void sh7372_map_io(void);
--extern void sh7372_earlytimer_init(void);
--extern void sh7372_add_early_devices(void);
--extern void sh7372_add_standard_devices(void);
--extern void sh7372_add_early_devices_dt(void);
--extern void sh7372_add_standard_devices_dt(void);
--extern void sh7372_clock_init(void);
--extern void sh7372_pinmux_init(void);
--extern void sh7372_pm_init(void);
--extern void sh7372_resume_core_standby_sysc(void);
--extern int  sh7372_do_idle_sysc(unsigned long sleep_mode);
--extern void sh7372_intcs_suspend(void);
--extern void sh7372_intcs_resume(void);
--extern void sh7372_intca_suspend(void);
--extern void sh7372_intca_resume(void);
--
--extern unsigned long sh7372_cpu_resume;
--
--#ifdef CONFIG_PM
--extern void __init sh7372_init_pm_domains(void);
--#else
--static inline void sh7372_init_pm_domains(void) {}
--#endif
--
--extern void __init sh7372_pm_init_late(void);
--
--#endif /* __ASM_SH7372_H__ */
-diff --git a/arch/arm/mach-shmobile/pm-sh7372.c b/arch/arm/mach-shmobile/pm-sh7372.c
-index 7ef9a01..7e5c267 100644
---- a/arch/arm/mach-shmobile/pm-sh7372.c
-+++ b/arch/arm/mach-shmobile/pm-sh7372.c
-@@ -21,13 +21,15 @@
- #include <linux/irq.h>
- #include <linux/bitrev.h>
- #include <linux/console.h>
-+
- #include <asm/cpuidle.h>
- #include <asm/io.h>
- #include <asm/tlbflush.h>
- #include <asm/suspend.h>
--#include <mach/sh7372.h>
-+
- #include "common.h"
- #include "pm-rmobile.h"
-+#include "sh7372.h"
+ 		mmu->mapping = mapping;
+@@ -1106,6 +1107,7 @@ static int ipmmu_add_device(struct device *dev)
+ 	return 0;
  
- /* DBG */
- #define DBGREG1 IOMEM(0xe6100020)
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 5571f86..9cdfcdfd 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -33,15 +33,17 @@
- #include <linux/pm_domain.h>
- #include <linux/dma-mapping.h>
- #include <linux/platform_data/sh_ipmmu.h>
--#include <mach/sh7372.h>
-+
- #include <asm/mach/map.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- #include <asm/mach/time.h>
-+
- #include "common.h"
- #include "dma-register.h"
- #include "irqs.h"
- #include "pm-rmobile.h"
-+#include "sh7372.h"
- 
- static struct map_desc sh7372_io_desc[] __initdata = {
- 	/* create a 1:1 entity map for 0xe6xxxxxx
-diff --git a/arch/arm/mach-shmobile/sh7372.h b/arch/arm/mach-shmobile/sh7372.h
-new file mode 100644
-index 0000000..4ad960d
---- /dev/null
-+++ b/arch/arm/mach-shmobile/sh7372.h
-@@ -0,0 +1,84 @@
-+/*
-+ * Copyright (C) 2010 Renesas Solutions Corp.
-+ *
-+ * Kuninori Morimoto <morimoto.kuninori@renesas.com>
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
-+
-+#ifndef __ASM_SH7372_H__
-+#define __ASM_SH7372_H__
-+
-+/* DMA slave IDs */
-+enum {
-+	SHDMA_SLAVE_INVALID,
-+	SHDMA_SLAVE_SCIF0_TX,
-+	SHDMA_SLAVE_SCIF0_RX,
-+	SHDMA_SLAVE_SCIF1_TX,
-+	SHDMA_SLAVE_SCIF1_RX,
-+	SHDMA_SLAVE_SCIF2_TX,
-+	SHDMA_SLAVE_SCIF2_RX,
-+	SHDMA_SLAVE_SCIF3_TX,
-+	SHDMA_SLAVE_SCIF3_RX,
-+	SHDMA_SLAVE_SCIF4_TX,
-+	SHDMA_SLAVE_SCIF4_RX,
-+	SHDMA_SLAVE_SCIF5_TX,
-+	SHDMA_SLAVE_SCIF5_RX,
-+	SHDMA_SLAVE_SCIF6_TX,
-+	SHDMA_SLAVE_SCIF6_RX,
-+	SHDMA_SLAVE_FLCTL0_TX,
-+	SHDMA_SLAVE_FLCTL0_RX,
-+	SHDMA_SLAVE_FLCTL1_TX,
-+	SHDMA_SLAVE_FLCTL1_RX,
-+	SHDMA_SLAVE_SDHI0_RX,
-+	SHDMA_SLAVE_SDHI0_TX,
-+	SHDMA_SLAVE_SDHI1_RX,
-+	SHDMA_SLAVE_SDHI1_TX,
-+	SHDMA_SLAVE_SDHI2_RX,
-+	SHDMA_SLAVE_SDHI2_TX,
-+	SHDMA_SLAVE_FSIA_RX,
-+	SHDMA_SLAVE_FSIA_TX,
-+	SHDMA_SLAVE_MMCIF_RX,
-+	SHDMA_SLAVE_MMCIF_TX,
-+	SHDMA_SLAVE_USB0_TX,
-+	SHDMA_SLAVE_USB0_RX,
-+	SHDMA_SLAVE_USB1_TX,
-+	SHDMA_SLAVE_USB1_RX,
-+};
-+
-+extern struct clk sh7372_extal1_clk;
-+extern struct clk sh7372_extal2_clk;
-+extern struct clk sh7372_dv_clki_clk;
-+extern struct clk sh7372_dv_clki_div2_clk;
-+extern struct clk sh7372_pllc2_clk;
-+
-+extern void sh7372_init_irq(void);
-+extern void sh7372_map_io(void);
-+extern void sh7372_earlytimer_init(void);
-+extern void sh7372_add_early_devices(void);
-+extern void sh7372_add_standard_devices(void);
-+extern void sh7372_add_early_devices_dt(void);
-+extern void sh7372_add_standard_devices_dt(void);
-+extern void sh7372_clock_init(void);
-+extern void sh7372_pinmux_init(void);
-+extern void sh7372_pm_init(void);
-+extern void sh7372_resume_core_standby_sysc(void);
-+extern int  sh7372_do_idle_sysc(unsigned long sleep_mode);
-+extern void sh7372_intcs_suspend(void);
-+extern void sh7372_intcs_resume(void);
-+extern void sh7372_intca_suspend(void);
-+extern void sh7372_intca_resume(void);
-+
-+extern unsigned long sh7372_cpu_resume;
-+
-+#ifdef CONFIG_PM
-+extern void __init sh7372_init_pm_domains(void);
-+#else
-+static inline void sh7372_init_pm_domains(void) {}
-+#endif
-+
-+extern void __init sh7372_pm_init_late(void);
-+
-+#endif /* __ASM_SH7372_H__ */
+ error:
++	arm_iommu_release_mapping(mmu->mapping);
+ 	kfree(dev->archdata.iommu);
+ 	dev->archdata.iommu = NULL;
+ 	iommu_group_remove_device(dev);
 -- 
-2.0.0.rc2
+1.8.5.5
 
