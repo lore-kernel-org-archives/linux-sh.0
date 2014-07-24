@@ -1,93 +1,35 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 22 Jul 2014 05:34:14 +0000
-Subject: [PATCH 03/10] mmc: tmio: care about DMA tx/rx addr offset
-Message-Id: <87a982hs8b.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 24 Jul 2014 01:57:40 +0000
+Subject: [PATCH 3/5] ARM: shmobile: r8a73a4: add CMT1 clock support for DT
+Message-Id: <aad64dc31954dbbb84cd8fcfaf1bc028f3bc2616.1406164563.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
-	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
-	<53AD638C.5060907@renesas.com>
-	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+References: <cover.1406164563.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1406164563.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Ian Molton <ian@mnementh.co.uk>, Chris Ball <cjb@laptop.org>
-Cc: TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, ryo.kataoka.wt@renesas.com, shinobu.uehara.xc@renesas.com, kouei.abe.cp@renesas.com
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This will be used when initialising CMT1 device using DT
+until common clock framework support is added.
 
-Basically, SD_BUF0 Tx/Rx addresses are same
-in normal TMIO controller,
-but, it is different on Renesas R-Car SDHI controller
-if it uses DMAC
-(Rx address needs to add 0x2000 to Tx address)
-
-This patch adds new .dma_rx_offset and cares it
-
-Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Ben Dooks <ben-linux@fluff.org>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |    3 +++
- drivers/mmc/host/tmio_mmc_dma.c   |    2 +-
- include/linux/mfd/tmio.h          |    1 +
- 3 files changed, 5 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/clock-r8a73a4.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 90b1ee2..c53bd2f 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -39,6 +39,7 @@ struct sh_mobile_sdhi_of_data {
- 	unsigned long tmio_flags;
- 	unsigned long capabilities;
- 	unsigned long capabilities2;
-+	dma_addr_t dma_rx_offset;
- };
- 
- static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
-@@ -56,6 +57,7 @@ static const struct sh_mobile_sdhi_of_data of_rcar_gen2_compatible = {
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
- 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
- 	.capabilities2	= MMC_CAP2_NO_2BLKS_READ,
-+	.dma_rx_offset	= 0x2000,
- };
- 
- static const struct of_device_id sh_mobile_sdhi_of_match[] = {
-@@ -229,6 +231,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		mmc_data->flags |= of_data->tmio_flags;
- 		mmc_data->capabilities |= of_data->capabilities;
- 		mmc_data->capabilities2 |= of_data->capabilities2;
-+		dma_priv->dma_rx_offset = of_data->dma_rx_offset;
- 	}
- 
- 	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
-diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
-index 03e7b28..1925170 100644
---- a/drivers/mmc/host/tmio_mmc_dma.c
-+++ b/drivers/mmc/host/tmio_mmc_dma.c
-@@ -311,7 +311,7 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
- 		if (pdata->dma->chan_priv_rx)
- 			cfg.slave_id = pdata->dma->slave_id_rx;
- 		cfg.direction = DMA_DEV_TO_MEM;
--		cfg.src_addr = cfg.dst_addr;
-+		cfg.src_addr = cfg.dst_addr + pdata->dma->dma_rx_offset;
- 		cfg.dst_addr = 0;
- 		ret = dmaengine_slave_config(host->chan_rx, &cfg);
- 		if (ret < 0)
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index 8f6f2e9..777e29b 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -96,6 +96,7 @@ struct tmio_mmc_dma {
- 	int slave_id_tx;
- 	int slave_id_rx;
- 	int alignment_shift;
-+	dma_addr_t dma_rx_offset;
- 	bool (*filter)(struct dma_chan *chan, void *arg);
- };
- 
+diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
+index 1d2fe05..9629851 100644
+--- a/arch/arm/mach-shmobile/clock-r8a73a4.c
++++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
+@@ -604,6 +604,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6500000.i2c", &mstp_clks[MSTP318]),
+ 	CLKDEV_DEV_ID("e6510000.i2c", &mstp_clks[MSTP323]),
+ 	CLKDEV_ICK_ID("fck", "sh-cmt-48-gen2.1", &mstp_clks[MSTP329]),
++	CLKDEV_ICK_ID("fck", "e6130000.timer", &mstp_clks[MSTP329]),
+ 	CLKDEV_DEV_ID("e60b0000.i2c", &mstp_clks[MSTP409]),
+ 	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP410]),
+ 	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP411]),
 -- 
-1.7.9.5
+2.0.1
 
