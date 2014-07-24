@@ -1,73 +1,34 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 22 Jul 2014 05:34:50 +0000
-Subject: [PATCH 07/10] mmc: tmio: check ILL_FUNC instead of CBSY
-Message-Id: <874myahs7b.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 24 Jul 2014 15:27:02 +0000
+Subject: [PATCH 0/3] Renesas IPMMU-VMSA fixes
+Message-Id: <1406215625-13982-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
-	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
-	<53AD638C.5060907@renesas.com>
-	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Ian Molton <ian@mnementh.co.uk>, Chris Ball <cjb@laptop.org>
-Cc: TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, ryo.kataoka.wt@renesas.com, shinobu.uehara.xc@renesas.com, kouei.abe.cp@renesas.com
+To: iommu@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org
 
-From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Hello,
 
-Some controllers need to check SD bus status when writing data.
-Then, it checks ILL_FUNC bit on SD_INFO2 register,
-and this method is controlled via TMIO_MMC_HAS_IDLE_WAIT flags.
-Same method is required on tmio_mmc_data_irq() which will
-be called after writing data.
+This series fixes small issues with the ipmmu-vmsa driver. Please see
+individual patches for details.
 
-Current driver is checking CBSY bit for this purpose,
-but, some controllers doesn't have CBSY bit.
-This patch checks ILL_FUNC bit instead of CBSY bit
-if it has TMIO_MMC_HAS_IDLE_WAIT flags
+If not too late, I'd like these fixes to be merged in v3.17 (after proper
+review of course, or, in the worst case, after lack of review).
 
-[Kuninori Morimoto: tidyuped for upstreaming]
+Laurent Pinchart (3):
+  iommu/ipmmu-vmsa: Cleanup failures of ARM mapping creation or
+    attachment
+  iommu/ipmmu-vmsa: Flush P[UM]D entry before freeing the child page
+    table
+  iommu/ipmmu-vmsa: Invalidate TLB after unmapping
 
-Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- drivers/mmc/host/tmio_mmc_pio.c |   13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
+ drivers/iommu/ipmmu-vmsa.c | 26 ++++++++++++++------------
+ 1 file changed, 14 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index e51a993..b19d0cd 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -475,6 +475,9 @@ static void tmio_mmc_data_irq(struct tmio_mmc_host *host)
- 		goto out;
- 
- 	if (host->chan_tx && (data->flags & MMC_DATA_WRITE) && !host->force_pio) {
-+		u32 status = sd_ctrl_read32(host, CTL_STATUS);
-+		bool done = false;
-+
- 		/*
- 		 * Has all data been written out yet? Testing on SuperH showed,
- 		 * that in most cases the first interrupt comes already with the
-@@ -483,7 +486,15 @@ static void tmio_mmc_data_irq(struct tmio_mmc_host *host)
- 		 * DATAEND interrupt with the BUSY bit set, in this cases
- 		 * waiting for one more interrupt fixes the problem.
- 		 */
--		if (!(sd_ctrl_read32(host, CTL_STATUS) & TMIO_STAT_CMD_BUSY)) {
-+		if (host->pdata->flags & TMIO_MMC_HAS_IDLE_WAIT) {
-+			if (status & TMIO_STAT_ILL_FUNC)
-+				done = true;
-+		} else {
-+			if (!(status & TMIO_STAT_CMD_BUSY))
-+				done = true;
-+		}
-+
-+		if (done) {
- 			tmio_mmc_disable_mmc_irqs(host, TMIO_STAT_DATAEND);
- 			tasklet_schedule(&host->dma_complete);
- 		}
 -- 
-1.7.9.5
+Regards,
+
+Laurent Pinchart
 
