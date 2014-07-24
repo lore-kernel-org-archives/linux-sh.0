@@ -1,41 +1,61 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Sat, 19 Jul 2014 04:31:15 +0000
-Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC Clock Updates for v3.17
-Message-Id: <20140719043115.GA20064@quad.lixom.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 24 Jul 2014 01:57:15 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Fixes for v3.16
+Message-Id: <cover.1406162627.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1405398284.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1405398284.git.horms+renesas@verge.net.au>
+References: <cover.1381222967.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jul 15, 2014 at 06:16:22PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these second round of Renesas ARM based SoC clock updates for v3.17.
-> 
-> This pull request is based on the previous round of
-> such requests, tagged as renesas-clock-for-v3.17,
-> which you have already pulled into next/soc.
-> 
-> CCF support for the SoCs in question is being worked on,
-> so I expect this code to be a temporary measure.
-> 
-> 
-> The following changes since commit edc8fb1d6ebdfc4efa009073586d3567c3368475:
-> 
->   ARM: shmobile: Fix device node reference leakage in shmobile_init_delay (2014-06-16 19:52:00 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clock2-for-v3.17
-> 
-> for you to fetch changes up to ff4ce48e1f163d945c037c1c90ce12950961d91d:
-> 
->   ARM: shmobile: sh73a0: add SCI clock support for DT (2014-07-12 15:15:39 +0200)
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Merged, thanks.
+Please consider these second round of Renesas ARM based SoC fixes for v3.16.
+
+The first round of fixes was prior to the release of v3.16-rc1 so
+this pull-request is based on v3.16-rc1.
+
+I would like this change considered for v3.15-stable.
+I can handle submitting it there if you like.
+
+I do not think it is necessary to consider it for v3.14-stable
+as although the incorrect code is present there it is not exercised
+in that release.
 
 
--Olof
+The following changes since commit 7171511eaec5bf23fb06078f59784a3a0626b38f:
+
+  Linux 3.16-rc1 (2014-06-15 17:45:28 -1000)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-fixes2-for-v3.16
+
+for you to fetch changes up to c9b227723d051184b9e78f20c75ae2f9d44a6ea2:
+
+  ARM: shmobile: r8a7791: Fix SD2CKCR register address (2014-07-23 08:55:12 +0900)
+
+----------------------------------------------------------------
+Second Round of Renesas ARM Based SoC Fixes for v3.16
+
+* Fix SD2CKCR register address of r8a7791 (R-Car M2) SoC
+
+  This corrects a bug introduced in v3.14 by
+  59e79895b9589286 ("ARM: shmobile: r8a7791: Add clocks").
+
+  However, it does not manifest in mainline code until
+  SDHI devices were enabled on the Koelsch board in v3.15 by
+  2c60a7df72711fb8 ("ARM: shmobile: Add SDHI devices for Koelsch DTS").
+
+  It also manifests on the Henninger board when
+  SDHI devices were enabled in v3.16-rc1 by
+  1299df03d7191ab4 ("ARM: shmobile: henninger: add SDHI0/2 DT support")
+
+----------------------------------------------------------------
+Shinobu Uehara (1):
+      ARM: shmobile: r8a7791: Fix SD2CKCR register address
+
+ arch/arm/boot/dts/r8a7791.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
