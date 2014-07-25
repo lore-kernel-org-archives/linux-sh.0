@@ -1,57 +1,42 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 24 Jul 2014 01:57:19 +0000
-Subject: [PATCH] ARM: shmobile: r8a7791: Fix SD2CKCR register address
-Message-Id: <c9b227723d051184b9e78f20c75ae2f9d44a6ea2.1406162627.git.horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 25 Jul 2014 14:40:44 +0000
+Subject: [PATCH 0/6] r8a7794 driver enablement
+Message-Id: <1406299250-23975-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1406162627.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1406162627.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+This is a bunch of slightly brushed up driver enablements for the r8a7794
+from the BSP.
 
-59e79895b95892863617ce630fbda467f2470575
-(ARM: shmobile: r8a7791: Add clocks)
-added r8a7791 SD clocks when v3.14.
+CU
+Uli
 
-2c60a7df72711fb8b4be1e6aa651ab166a8931bc
-(ARM: shmobile: Add SDHI devices for Koelsch DTS)
-enabled SD on r8a7791 Koelsch when v3.15.
+Hisashi Nakamura (3):
+  net: sh_eth: Add r8a7794 support
+  gpio: rcar: Add r8a7794 support
+  clk: shmobile: Add r8a7794 support
 
-1299df03d7191ab4356c995dde8b912d3c8922e9
-(ARM: shmobile: henninger: add SDHI0/2 DT support)
-enable SD on r8a7791 Henninger when v3.16.
+Koji Matsuoka (1):
+  media: soc_camera: rcar_vin: Add r8a7794 device support
 
-But r8a7791 SD clock had wrong address.
-This patch fixup it.
+Shinobu Uehara (2):
+  mmc: sh_mobile_sdhi: Update sh_mobile_sdhi_of_data for r8a7794
+  usb: phy: Add Renesas R-Car Gen2 USB PHY support for r8a7794
 
-[Kuninori Morimoto: tidyup for upstreaming]
+ Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt | 1 +
+ Documentation/devicetree/bindings/mmc/tmio_mmc.txt           | 2 ++
+ Documentation/devicetree/bindings/net/sh_eth.txt             | 1 +
+ drivers/clk/shmobile/Makefile                                | 1 +
+ drivers/gpio/gpio-rcar.c                                     | 6 ++++++
+ drivers/media/platform/soc_camera/rcar_vin.c                 | 1 +
+ drivers/mmc/host/sh_mobile_sdhi.c                            | 1 +
+ drivers/net/ethernet/renesas/sh_eth.c                        | 2 ++
+ drivers/usb/phy/Kconfig                                      | 4 ++--
+ 9 files changed, 17 insertions(+), 2 deletions(-)
 
-Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7791.dtsi | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 8d7ffae..79f68ac 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -540,9 +540,9 @@
- 			#clock-cells = <0>;
- 			clock-output-names = "sd1";
- 		};
--		sd2_clk: sd3_clk@e615007c {
-+		sd2_clk: sd3_clk@e615026c {
- 			compatible = "renesas,r8a7791-div6-clock", "renesas,cpg-div6-clock";
--			reg = <0 0xe615007c 0 4>;
-+			reg = <0 0xe615026c 0 4>;
- 			clocks = <&pll1_div2_clk>;
- 			#clock-cells = <0>;
- 			clock-output-names = "sd2";
 -- 
-2.0.1
+1.8.4.5
 
