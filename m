@@ -1,78 +1,59 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 30 Jul 2014 22:03:01 +0000
-Subject: [PATCH v3 1/3] ARM: shmobile: r8a7791: add CAN clocks
-Message-Id: <201407310203.02115.sergei.shtylyov@cogentembedded.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 25 Jul 2014 14:40:45 +0000
+Subject: [PATCH 1/6] net: sh_eth: Add r8a7794 support
+Message-Id: <1406299250-23975-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201407310158.15446.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201407310158.15446.sergei.shtylyov@cogentembedded.com>
+References: <1406299250-23975-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1406299250-23975-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: magnus.damm@gmail.com, Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, netdev@vger.kernel.org
 
-The R-Car CAN controllers can derive the CAN bus clock not only from their
-peripheral clock input (clkp1) but also from the other internal clock (clkp2)
-and external clock fed on CAN_CLK pin.  Describe those clocks in the device
-tree,  along with  the USB_EXTAL clock  from which clkp2 is derived.
+From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+[uli: added bindings documentation]
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Cc: netdev@vger.kernel.org
 ---
-Changes in version 3:
-- new patch.
+ Documentation/devicetree/bindings/net/sh_eth.txt | 1 +
+ drivers/net/ethernet/renesas/sh_eth.c            | 2 ++
+ 2 files changed, 3 insertions(+)
 
- arch/arm/boot/dts/r8a7791.dtsi            |   23 +++++++++++++++++++++--
- include/dt-bindings/clock/r8a7791-clock.h |    1 +
- 2 files changed, 22 insertions(+), 2 deletions(-)
+diff --git a/Documentation/devicetree/bindings/net/sh_eth.txt b/Documentation/devicetree/bindings/net/sh_eth.txt
+index e7106b5..34d4db1 100644
+--- a/Documentation/devicetree/bindings/net/sh_eth.txt
++++ b/Documentation/devicetree/bindings/net/sh_eth.txt
+@@ -9,6 +9,7 @@ Required properties:
+ 	      "renesas,ether-r8a7779"  if the device is a part of R8A7779 SoC.
+ 	      "renesas,ether-r8a7790"  if the device is a part of R8A7790 SoC.
+ 	      "renesas,ether-r8a7791"  if the device is a part of R8A7791 SoC.
++	      "renesas,ether-r8a7794"  if the device is a part of R8A7794 SoC.
+ 	      "renesas,ether-r7s72100" if the device is a part of R7S72100 SoC.
+ - reg: offset and length of (1) the E-DMAC/feLic register block (required),
+        (2) the TSU register block (optional).
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 7622213..ef2c9ce 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -2752,6 +2752,7 @@ static const struct of_device_id sh_eth_match_table[] = {
+ 	{ .compatible = "renesas,ether-r8a7779", .data = &r8a777x_data },
+ 	{ .compatible = "renesas,ether-r8a7790", .data = &r8a779x_data },
+ 	{ .compatible = "renesas,ether-r8a7791", .data = &r8a779x_data },
++	{ .compatible = "renesas,ether-r8a7794", .data = &r8a779x_data },
+ 	{ .compatible = "renesas,ether-r7s72100", .data = &r7s72100_data },
+ 	{ }
+ };
+@@ -2978,6 +2979,7 @@ static struct platform_device_id sh_eth_id_table[] = {
+ 	{ "r8a777x-ether", (kernel_ulong_t)&r8a777x_data },
+ 	{ "r8a7790-ether", (kernel_ulong_t)&r8a779x_data },
+ 	{ "r8a7791-ether", (kernel_ulong_t)&r8a779x_data },
++	{ "r8a7794-ether", (kernel_ulong_t)&r8a779x_data },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(platform, sh_eth_id_table);
+-- 
+1.8.4.5
 
-Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7791.dtsi
-@@ -596,15 +596,34 @@
- 			status = "disabled";
- 		};
- 
-+		/* External USB clock - can be overridden by the board */
-+		usb_extal_clk: usb_extal_clk {
-+			compatible = "fixed-clock";
-+			#clock-cells = <0>;
-+			clock-frequency = <48000000>;
-+			clock-output-names = "usb_extal";
-+		};
-+
-+		/* External CAN clock */
-+		can_clk: can_clk {
-+			compatible = "fixed-clock";
-+			#clock-cells = <0>;
-+			/* This value must be overriden by the board. */
-+			clock-frequency = <0>;
-+			clock-output-names = "can_clk";
-+			status = "disabled";
-+		};
-+
- 		/* Special CPG clocks */
- 		cpg_clocks: cpg_clocks@e6150000 {
- 			compatible = "renesas,r8a7791-cpg-clocks",
- 				     "renesas,rcar-gen2-cpg-clocks";
- 			reg = <0 0xe6150000 0 0x1000>;
--			clocks = <&extal_clk>;
-+			clocks = <&extal_clk &usb_extal_clk>;
- 			#clock-cells = <1>;
- 			clock-output-names = "main", "pll0", "pll1", "pll3",
--					     "lb", "qspi", "sdh", "sd0", "z";
-+					     "lb", "qspi", "sdh", "sd0", "z",
-+					     "rcan";
- 		};
- 
- 		/* Variable factor clocks */
-Index: renesas/include/dt-bindings/clock/r8a7791-clock.h
-=================================--- renesas.orig/include/dt-bindings/clock/r8a7791-clock.h
-+++ renesas/include/dt-bindings/clock/r8a7791-clock.h
-@@ -20,6 +20,7 @@
- #define R8A7791_CLK_SDH			6
- #define R8A7791_CLK_SD0			7
- #define R8A7791_CLK_Z			8
-+#define R8A7791_CLK_RCAN		9
- 
- /* MSTP0 */
- #define R8A7791_CLK_MSIOF0		0
