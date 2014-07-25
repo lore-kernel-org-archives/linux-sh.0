@@ -1,46 +1,79 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 15 Jul 2014 09:16:25 +0000
-Subject: [PATCH 1/4] ARM: shmobile: r8a7778: add SCI clock support for DT
-Message-Id: <7a0c99478dca80f862912be02bf8ec240a9098d1.1405398284.git.horms+renesas@verge.net.au>
+From: Grygorii Strashko <grygorii.strashko@ti.com>
+Date: Fri, 25 Jul 2014 17:47:48 +0000
+Subject: [RFC PATCH 0/3] PM / clock_ops: allow to specify custom pm_clk_notifier callback
+Message-Id: <1406313096-29761-1-git-send-email-grygorii.strashko@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87ehb8th3c.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87ehb8th3c.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This will be used when initialising SCI devices using DT
-until common clock framework support is added.
+Hi,
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/clock-r8a7778.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+The CLK PM domain (clock_ops.c) assumes that platform code should always provide
+list of Connection IDs of the clock (con_id) in pm_clk_notifier_block structure.
+Then CLK PM domain uses these con_ids to setup list of clocks per device.
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
-index 13f8f3a..a6dd601 100644
---- a/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -202,11 +202,17 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP027]), /* I2C3 */
- 	CLKDEV_DEV_ID("ffc73000.i2c", &mstp_clks[MSTP027]), /* I2C3 */
- 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
-+	CLKDEV_DEV_ID("ffe40000.serial", &mstp_clks[MSTP026]), /* SCIF0 */
- 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
-+	CLKDEV_DEV_ID("ffe41000.serial", &mstp_clks[MSTP025]), /* SCIF1 */
- 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
-+	CLKDEV_DEV_ID("ffe42000.serial", &mstp_clks[MSTP024]), /* SCIF2 */
- 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP023]), /* SCIF3 */
-+	CLKDEV_DEV_ID("ffe43000.serial", &mstp_clks[MSTP023]), /* SCIF3 */
- 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP022]), /* SCIF4 */
-+	CLKDEV_DEV_ID("ffe44000.serial", &mstp_clks[MSTP022]), /* SCIF4 */
- 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
-+	CLKDEV_DEV_ID("ffe45000.serial", &mstp_clks[MSTP021]), /* SCIF5 */
- 	CLKDEV_DEV_ID("sh-hspi.0", &mstp_clks[MSTP007]), /* HSPI0 */
- 	CLKDEV_DEV_ID("fffc7000.spi", &mstp_clks[MSTP007]), /* HSPI0 */
- 	CLKDEV_DEV_ID("sh-hspi.1", &mstp_clks[MSTP007]), /* HSPI1 */
+Such approach is inconvenient when devices can have different number
+of clocks. For example, if maximum number of clocks used by
+devices is 4 the pm_clk_notifier_block structure will look like:
+
+static struct pm_clk_notifier_block platform_domain_notifier = {
+	.pm_domain = &keystone_pm_domain,
+	.con_ids = { "fck", "opt1", "opt2", "opt3", NULL },
+};
+
+More over, clocks in DT have to be named using only above con_ids:
+	clocks = <&paclk13>, <&clkcpgmac>, <&chipclk12>;
+	clock-names = "fck", "opt1", "opt2";
+
+It makes hard to enable/support Runtime PM in case when some HW modules are used
+by different SoCs or there are few version of the same SoC, because clock trees
+can be changed significantly in all such cases.
+
+This patch set allows to specify custom pm_clk_notifier callback from
+platform code and in such way makes CLK PM domain initialization
+more flexible. Also, It updates Keystone 2 platform code to provide custom
+callback which fills list of clocks for Device with all clocks assigned to this
+Device in DT.
+More over, It's safe for Keystone 2 to perform CLK PM domain initialization
+at device's binding time instead of device's creation time.
+
+I've posted these patches because I need fully enable Runtime PM on Keystone 2
+where all HW modules are controlled using clocks only. That's why CLK PM domain 
+fits our needs perfectly. Also, on Keystone 2 clocks are initialized early and
+they are available at device creation time. The main problems from my side are:
+ - every time when support for new HW modules is added the ".con_ids" array 
+   need to be checked and updated;
+ - restriction for clock's names in DT - to be named using only above con_ids
+   It's ugly.
+
+I hope, this approach to be accepted at least as temporal solution until 
+the generic solution is not found.
+
+Thanks for your comments!
+
+PS: patch 1 was reused from [1].
+
+Regards,
+-grygorii
+
+[1] Previously, same problem was discussed in, but no final solution was accepted:
+ "[PATCH/RFC 0/4] of: Register clocks for Runtime PM with PM core"
+ https://lkml.org/lkml/2014/4/24/1118
+
+Geert Uytterhoeven (1):
+  PM / clock_ops: Add pm_clk_add_clk()
+
+Grygorii Strashko (2):
+  PM / clock_ops: allow to specify custom pm_clk_notifier callback
+  ARM: keystone: pm_domain: setup clk pm domain clocks from DT
+
+ arch/arm/mach-keystone/pm_domain.c |   46 ++++++++++++++++++++++++++++++++++++
+ drivers/base/power/clock_ops.c     |   43 ++++++++++++++++++++++++---------
+ include/linux/pm_clock.h           |    3 +++
+ 3 files changed, 81 insertions(+), 11 deletions(-)
+
 -- 
-2.0.0
+1.7.9.5
 
