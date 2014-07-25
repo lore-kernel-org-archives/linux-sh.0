@@ -1,81 +1,57 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Jul 2014 00:28:48 +0000
-Subject: [PATCH 8/8] ARM: shmobile: Allow r8a7791 to build non-SMP APMU code
-Message-Id: <bfe4cfa8ae21628267f2b879b4396ee17ea4fd3a.1404174157.git.horms+renesas@verge.net.au>
+From: Grygorii Strashko <grygorii.strashko@ti.com>
+Date: Fri, 25 Jul 2014 17:46:57 +0000
+Subject: [RFC PATCH 2/3] PM / clock_ops: allow to specify custom pm_clk_notifier callback
+Message-Id: <1406313096-29761-3-git-send-email-grygorii.strashko@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1404174157.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1404174157.git.horms+renesas@verge.net.au>
+References: <1406313096-29761-1-git-send-email-grygorii.strashko@ti.com>
+In-Reply-To: <1406313096-29761-1-git-send-email-grygorii.strashko@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+The CLK PM domain assumes that platform code should always provide
+list of Connection IDs of the clock (con_id) in
+pm_clk_notifier_block structure. Then CLK PM domain uses these con_ids
+to setup list of clocks per device.
 
-Build the APMU for r8a7791 even though SMP is
-disabled in the kernel config. Also initialize
-Suspend-to-RAM from pm-r8a7791.c to in the future
-cover both UP and SMP use cases of the APMU.
+Such approach is inconvenient when devices can have different number
+of clocks. For example, if maximum number of clocks used by
+device is 4 the pm_clk_notifier_block structure will look like:
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+static struct pm_clk_notifier_block platform_domain_notifier = {
+	.pm_domain = &keystone_pm_domain,
+	.con_ids = { "fck", "opt1", "opt2", "opt3", NULL },
+};
+
+More over, clocks in DT have to be named using only con_ids:
+	clocks = <&paclk13>, <&clkcpgmac>, <&chipclk12>;
+	clock-names = "fck", "opt1", "opt2";
+
+This patch allow to specify custom pm_clk_notifier callback from
+platform code and in such way makes CLK PM domain initialization
+more flexible. For example, Keystone 2 will provide custom callback
+to fill list of clocks for Device with all clocks assigned to this
+Device in DT.
+
+Signed-off-by: Grygorii Strashko <grygorii.strashko@ti.com>
 ---
- arch/arm/mach-shmobile/Makefile      | 5 +++--
- arch/arm/mach-shmobile/pm-r8a7791.c  | 1 +
- arch/arm/mach-shmobile/smp-r8a7791.c | 1 -
- 3 files changed, 4 insertions(+), 3 deletions(-)
+ drivers/base/power/clock_ops.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 08f5952..cc0224e 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -37,13 +37,14 @@ endif
- # CPU reset vector handling objects
- cpu-y				:= platsmp.o headsmp.o
- cpu-$(CONFIG_ARCH_R8A7790)	+= platsmp-apmu.o
-+cpu-$(CONFIG_ARCH_R8A7791)	+= platsmp-apmu.o
+diff --git a/drivers/base/power/clock_ops.c b/drivers/base/power/clock_ops.c
+index 2d5c9c1..c103598 100644
+--- a/drivers/base/power/clock_ops.c
++++ b/drivers/base/power/clock_ops.c
+@@ -520,6 +520,7 @@ void pm_clk_add_notifier(struct bus_type *bus,
+ 	if (!bus || !clknb)
+ 		return;
  
- # SMP objects
- smp-y				:= $(cpu-y)
- smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o platsmp-scu.o
- smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o platsmp-scu.o
- smp-$(CONFIG_ARCH_R8A7790)	+= smp-r8a7790.o
--smp-$(CONFIG_ARCH_R8A7791)	+= smp-r8a7791.o platsmp-apmu.o
-+smp-$(CONFIG_ARCH_R8A7791)	+= smp-r8a7791.o
- smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o platsmp-scu.o
- 
- # PM objects
-@@ -54,7 +55,7 @@ obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
- obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
- obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o pm-rcar.o
- obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o $(cpu-y)
--obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o
-+obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o $(cpu-y)
- 
- # IRQ objects
- obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
-diff --git a/arch/arm/mach-shmobile/pm-r8a7791.c b/arch/arm/mach-shmobile/pm-r8a7791.c
-index c44304c..25f107b 100644
---- a/arch/arm/mach-shmobile/pm-r8a7791.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7791.c
-@@ -69,4 +69,5 @@ void __init r8a7791_pm_init(void)
- 	iounmap(p);
- 
- 	r8a7791_sysc_init();
-+	shmobile_smp_apmu_suspend_init();
+-	clknb->nb.notifier_call = pm_clk_notify;
++	if (!clknb->nb.notifier_call)
++		clknb->nb.notifier_call = pm_clk_notify;
+ 	bus_register_notifier(bus, &clknb->nb);
  }
-diff --git a/arch/arm/mach-shmobile/smp-r8a7791.c b/arch/arm/mach-shmobile/smp-r8a7791.c
-index df086aa..f743386 100644
---- a/arch/arm/mach-shmobile/smp-r8a7791.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7791.c
-@@ -30,7 +30,6 @@ static void __init r8a7791_smp_prepare_cpus(unsigned int max_cpus)
- 	shmobile_smp_apmu_prepare_cpus(max_cpus);
- 
- 	r8a7791_pm_init();
--	shmobile_smp_apmu_suspend_init();
- }
- 
- static int r8a7791_smp_boot_secondary(unsigned int cpu,
 -- 
-2.0.0.rc2
+1.7.9.5
 
