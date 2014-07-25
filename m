@@ -1,101 +1,121 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 07 Jul 2014 07:54:28 +0000
-Subject: [PATCH v2 03/30] ARM: shmobile: bockw-reference: Initialise SCIF device using DT
-Message-Id: <1404719695-1634-4-git-send-email-horms+renesas@verge.net.au>
+From: Grygorii Strashko <grygorii.strashko@ti.com>
+Date: Fri, 25 Jul 2014 17:47:33 +0000
+Subject: [RFC PATCH 1/3] PM / clock_ops: Add pm_clk_add_clk()
+Message-Id: <1406313096-29761-2-git-send-email-grygorii.strashko@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+References: <1406313096-29761-1-git-send-email-grygorii.strashko@ti.com>
+In-Reply-To: <1406313096-29761-1-git-send-email-grygorii.strashko@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Initialise SCIF device using DT when booting bockw
-using DT reference.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+The existing pm_clk_add() allows to pass a clock by con_id. However,
+when referring to a specific clock from DT, no con_id is available.
 
+Add pm_clk_add_clk(), which allows to specify the struct clk * directly.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v2
-* Correct whitespace
-* Added Ack from Laurent Pinchart
+ drivers/base/power/clock_ops.c |   40 ++++++++++++++++++++++++++++++----------
+ include/linux/pm_clock.h       |    3 +++
+ 2 files changed, 33 insertions(+), 10 deletions(-)
 
-N.B: This only enables the production serial port (scif0) and not the
-debug serial port. It is unclear to me if the debug port is scif1 or scif5.
-And if the required PFC support is in place. At the very least the
-latter appears to be missing from r8a7778-bockw-reference.dts.
----
- arch/arm/boot/dts/r8a7778-bockw-reference.dts | 14 +++++++++++---
- arch/arm/mach-shmobile/setup-r8a7778.c        | 12 ++++++------
- 2 files changed, 17 insertions(+), 9 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-index f76f6ec..3342c74 100644
---- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-@@ -23,6 +23,10 @@
- 	model = "bockw";
- 	compatible = "renesas,bockw-reference", "renesas,r8a7778";
- 
-+	aliases {
-+		serial0 = &scif0;
-+	};
-+
- 	chosen {
- 		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
- 	};
-@@ -70,9 +74,6 @@
- };
- 
- &pfc {
--	pinctrl-0 = <&scif0_pins>;
--	pinctrl-names = "default";
--
- 	scif0_pins: serial0 {
- 		renesas,groups = "scif0_data_a", "scif0_ctrl";
- 		renesas,function = "scif0";
-@@ -124,3 +125,10 @@
- 		};
- 	};
- };
-+
-+&scif0 {
-+	pinctrl-0 = <&scif0_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+};
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 2ccc012..e218c46 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -294,12 +294,6 @@ void __init r8a7778_add_dt_devices(void)
+diff --git a/drivers/base/power/clock_ops.c b/drivers/base/power/clock_ops.c
+index b99e6c0..2d5c9c1 100644
+--- a/drivers/base/power/clock_ops.c
++++ b/drivers/base/power/clock_ops.c
+@@ -53,7 +53,8 @@ static inline int __pm_clk_enable(struct device *dev, struct clk *clk)
+  */
+ static void pm_clk_acquire(struct device *dev, struct pm_clock_entry *ce)
+ {
+-	ce->clk = clk_get(dev, ce->con_id);
++	if (!ce->clk)
++		ce->clk = clk_get(dev, ce->con_id);
+ 	if (IS_ERR(ce->clk)) {
+ 		ce->status = PCE_STATUS_ERROR;
+ 	} else {
+@@ -63,15 +64,8 @@ static void pm_clk_acquire(struct device *dev, struct pm_clock_entry *ce)
  	}
- #endif
- 
--	r8a7778_register_scif(0);
--	r8a7778_register_scif(1);
--	r8a7778_register_scif(2);
--	r8a7778_register_scif(3);
--	r8a7778_register_scif(4);
--	r8a7778_register_scif(5);
- 	r8a7778_register_tmu(0);
  }
  
-@@ -508,6 +502,12 @@ static void __init r8a7778_register_hpb_dmae(void)
- void __init r8a7778_add_standard_devices(void)
+-/**
+- * pm_clk_add - Start using a device clock for power management.
+- * @dev: Device whose clock is going to be used for power management.
+- * @con_id: Connection ID of the clock.
+- *
+- * Add the clock represented by @con_id to the list of clocks used for
+- * the power management of @dev.
+- */
+-int pm_clk_add(struct device *dev, const char *con_id)
++static int __pm_clk_add(struct device *dev, const char *con_id,
++			struct clk *clk)
  {
- 	r8a7778_add_dt_devices();
-+	r8a7778_register_scif(0);
-+	r8a7778_register_scif(1);
-+	r8a7778_register_scif(2);
-+	r8a7778_register_scif(3);
-+	r8a7778_register_scif(4);
-+	r8a7778_register_scif(5);
- 	r8a7778_register_i2c(0);
- 	r8a7778_register_i2c(1);
- 	r8a7778_register_i2c(2);
+ 	struct pm_subsys_data *psd = dev_to_psd(dev);
+ 	struct pm_clock_entry *ce;
+@@ -93,6 +87,8 @@ int pm_clk_add(struct device *dev, const char *con_id)
+ 			kfree(ce);
+ 			return -ENOMEM;
+ 		}
++	} else {
++		ce->clk = clk;
+ 	}
+ 
+ 	pm_clk_acquire(dev, ce);
+@@ -102,6 +98,30 @@ int pm_clk_add(struct device *dev, const char *con_id)
+ 	spin_unlock_irq(&psd->lock);
+ 	return 0;
+ }
++/**
++ * pm_clk_add - Start using a device clock for power management.
++ * @dev: Device whose clock is going to be used for power management.
++ * @con_id: Connection ID of the clock.
++ *
++ * Add the clock represented by @con_id to the list of clocks used for
++ * the power management of @dev.
++ */
++int pm_clk_add(struct device *dev, const char *con_id)
++{
++	return __pm_clk_add(dev, con_id, NULL);
++}
++
++/**
++ * pm_clk_add_clk - Start using a device clock for power management.
++ * @dev: Device whose clock is going to be used for power management.
++ * @clk: Clock pointer
++ *
++ * Add the clock to the list of clocks used for the power management of @dev.
++ */
++int pm_clk_add_clk(struct device *dev, struct clk *clk)
++{
++	return __pm_clk_add(dev, NULL, clk);
++}
+ 
+ /**
+  * __pm_clk_remove - Destroy PM clock entry.
+diff --git a/include/linux/pm_clock.h b/include/linux/pm_clock.h
+index 8348866..6981aa2 100644
+--- a/include/linux/pm_clock.h
++++ b/include/linux/pm_clock.h
+@@ -18,6 +18,8 @@ struct pm_clk_notifier_block {
+ 	char *con_ids[];
+ };
+ 
++struct clk;
++
+ #ifdef CONFIG_PM_CLK
+ static inline bool pm_clk_no_clocks(struct device *dev)
+ {
+@@ -29,6 +31,7 @@ extern void pm_clk_init(struct device *dev);
+ extern int pm_clk_create(struct device *dev);
+ extern void pm_clk_destroy(struct device *dev);
+ extern int pm_clk_add(struct device *dev, const char *con_id);
++extern int pm_clk_add_clk(struct device *dev, struct clk *clk);
+ extern void pm_clk_remove(struct device *dev, const char *con_id);
+ extern int pm_clk_suspend(struct device *dev);
+ extern int pm_clk_resume(struct device *dev);
 -- 
-2.0.0.rc2
+1.7.9.5
 
