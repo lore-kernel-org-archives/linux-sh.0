@@ -1,91 +1,162 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 22 Jul 2014 05:35:16 +0000
-Subject: [PATCH 10/10] mmc: tmio: add actual clock support as option
-Message-Id: <87zjg2gdm5.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 25 Jul 2014 15:42:41 +0000
+Subject: Trouble with R-Car IPMMU and DMAC (help needed)
+Message-Id: <2062762.kGCMsinYPp@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
-	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
-	<53AD638C.5060907@renesas.com>
-	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Ian Molton <ian@mnementh.co.uk>, Chris Ball <cjb@laptop.org>
-Cc: TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, ryo.kataoka.wt@renesas.com, shinobu.uehara.xc@renesas.com, kouei.abe.cp@renesas.com
+To: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Hi everybody,
 
-Some controller is supporting actual clock on SD_CLK_CTRL :: DIV[7:0].
-Renesas SH-Mobile SDHI doesn't support,
-but, Renesas R-Car SDHI supports it.
-This patch adds new TMIO_MMC_CLK_ACTUAL flag for it.
+I've been pulling my hair off for two days (fortunately the summer is pretty 
+hot and I need a haircut anyway) on an IPMMU and DMAC issue. I'm now stuck and 
+would like to request the help of collective wisdom.
 
-[Kuninori Morimoto: tidyuped for upstreaming]
+A bit of context first. I'm trying to enable IOMMU support for the R-Car Gen2 
+system DMA controller (DMAC) on the Lager and/or Koelsch boards (r8a7790 and 
+r8a7791). The IOMMU driver is drivers/iommu/ipmmu-vmsa.c and the DMAC driver 
+drivers/dma/sh/rcar-dmac.c.
 
-Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- drivers/mmc/host/sh_mobile_sdhi.c |    6 ++++--
- drivers/mmc/host/tmio_mmc_pio.c   |    5 +++++
- include/linux/mfd/tmio.h          |    5 +++++
- 3 files changed, 14 insertions(+), 2 deletions(-)
+The code is available in the git://linuxtv.org/pinchartl/fbdev.git repository 
+in the following branches:
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index b16f1bb..73fac95 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -49,12 +49,14 @@ static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
- };
- 
- static const struct sh_mobile_sdhi_of_data of_rcar_gen1_compatible = {
--	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
-+	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE |
-+			  TMIO_MMC_CLK_ACTUAL,
- 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
- };
- 
- static const struct sh_mobile_sdhi_of_data of_rcar_gen2_compatible = {
--	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
-+	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE |
-+			  TMIO_MMC_CLK_ACTUAL,
- 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
- 	.capabilities2	= MMC_CAP2_NO_2BLKS_READ,
- 	.dma_rx_offset	= 0x2000,
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index da3c74d..f268ba6 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -150,6 +150,11 @@ static void tmio_mmc_set_clock(struct tmio_mmc_host *host, int new_clock)
- 		for (clock = host->mmc->f_min, clk = 0x80000080;
- 			new_clock >= (clock<<1); clk >>= 1)
- 			clock <<= 1;
-+
-+		/* 1/1 clock is option */
-+		if ((host->pdata->flags & TMIO_MMC_CLK_ACTUAL) &&
-+		    ((clk >> 22) & 0x1))
-+			clk |= 0xff;
- 	}
- 
- 	if (host->set_clk_div)
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index adcb0cd..90436d5 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -99,6 +99,11 @@
-  */
- #define TMIO_MMC_HAVE_CTL_DMA_REG	(1 << 9)
- 
-+/*
-+ * Some controllers allows to set SDx actual clock
-+ */
-+#define TMIO_MMC_CLK_ACTUAL		(1 << 10)
-+
- int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
- int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
- void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
+- iommu/next: IOMMU fixes and DT support
+- dma/next: DMAC driver
+- dma/iommu: Merge of iommu/next and dma/next, with two additional patches to 
+enable IOMMU support for the DMAC on r8a7790 and r8a7791
+
+My test suite is the dmatest module (drivers/dma/dmatest.c). I load it with
+
+modprobe dmatest run=1 iterations00 threads_per_chan=4 max_channels=4 \
+        test_buf_size@96
+
+This runs 1000 DMA memcpy transfers on four channels using four threads per 
+channel, with a test buffer size of 4096 bytes.
+
+The test runs fine without enabling IOMMU support for the DMAC. After enabling 
+IOMMU support, I've quickly got reports of both source buffer corruption and 
+destination buffer mismatches from dmatest. Trying to pinpoint the issue, I 
+went for a much simpler test:
+
+modprobe dmatest run=1 iterations=1 threads_per_chan=1 max_channels=1 \
+        test_buf_size@96
+
+One single DMA memcpy transfer on one channel with one thread. This runs fine 
+the first time, keeps running fine for a variable number of times (typically 
+from 0 to 2 or 3 runs), and then fails when verifying the destination buffer 
+contents. When comparing the different runs I've noticed that the source and 
+destination buffers where mapped to the same virtual I/O address by the IOMMU 
+on all runs except the failed run.
+
+Armed with my keyboard I've started digging deeper (and it really ended up 
+feeling like an pickaxe would have been a much better tool). I've modified the 
+dmatest driver to perform the following procedure:
+
+1. create two source buffers and two destination buffers and fill them with 
+different test patterns
+2. map the two source buffers to the IOMMU
+3. map the first destination buffer to the IOMMU
+4. perform a DMA memcpy transfer from source buffer 0 to destination buffer 0
+5. verify that destination buffer 0 contains the test pattern from source 
+buffer 0
+6. unmap destination buffer 0, map destination buffer 1 (the IOMMU reuses the 
+destination buffer 0 IOVA for the new mapping)
+7. perform a DMA memcpy transfer from source buffer 1 to destination buffer 1
+
+At that point destination buffer 1 still contains its initial test pattern, 
+and destination buffer 0 contains the test pattern of source buffer 1. This 
+shows that the DMAC wrote to destination buffer 0, using the old IOMMU 
+mapping.
+
+The IPMMU driver flushes the CPU cache when updating the page tables and 
+flushes the IPMMU TLB as instructed in the datasheet.
+
+To double-check CPU cache management, I've tried the following.
+
+- Adding a flush_cache_all() call after updating the page tables. This didn't 
+help, no change was visible (neither with the test described previously 
+neither with the test described below).
+
+- Allocating the page tables with dma_alloc_coherent(). Again, no change was 
+visible.
+
+- Removing cache flushing completely. This caused the DMAC to report a 
+transfer error immediately.
+
+I've concluded that the IPMMU driver correctly handles CPU cache management 
+and that the TLB was most likely to blame. To check that, I've modified 
+dmatest again to trash the TLB between the two transfers. The new procedure 
+is:
+
+1. create four source buffers, four destination buffers and a configurable 
+number of destination trash buffer, and fill them with different test patterns
+2. map the four source buffers, the first two destination buffers and all the 
+destination trash buffers to the IOMMU
+3. perform a DMA memcpy transfer from source buffer 1 to destination buffer 1
+4. verify that destination buffer 1 contains the test pattern from source 
+buffer 1
+5. unmap destination buffer 1, map destination buffer 2 (the IOMMU reuses the 
+destination buffer 2 IOVA for the new mapping)
+6. perform a DMA memcpy transfer from source buffer 2 to destination buffer 2
+7. verify that destination buffer 1 contains the test pattern from source 
+buffer 2 and that destination buffer 2 hasn't been modified (this is the wrong 
+behaviour noticed in the previous test)
+8. trash the TLB by performing DMA memcpy transfers from source buffer 3 to 
+all destination trash buffers
+9. perform a DMA memcpy transfer from source buffer 2 to destination buffer 2
+10. verify that destination buffer 2 contains the test pattern from source 
+buffer 2
+
+If enough trash buffers are used, the TLB entry corresponding to the first 
+destination buffer 1 mapping should be evicted, and a new page table entry 
+fetched by the IPMMU. The last verification step should succeed in that case.
+
+I've noticed the following:
+
+- At least 8 trash buffers are needed. With 7 trash buffer the verification 
+fails, with 8 trash buffers it succeeds about every other run and with 9 trash 
+buffers it succeeds every time. Note that, as I had to reboot the system 
+between runs, the numbers are not statistically significant, but they provide 
+a rough idea. This could indicate that the TLB eviction algorithm might not be 
+a strict LRU.
+
+- Swapping source and destination in the above procedure leads to identical 
+results.
+
+- When performing verification on the destination side (as above) but trashing 
+the TLB on the source side instead (allocating source trash buffers instead of 
+destination trash buffers and trashing the TLB with DMA memcpy transfers from 
+all source trash buffers to destination buffer 3) the test fails. This would 
+seem to indicate that read and write accesses use separate TLBs.
+
+- When disabling TLB flush in the IPMMU driver I need to raise the number of 
+trash buffers to at least 128. This hints for the presence of two levels of 
+TLBs, possibly the main IPMMU TLB and the per-port microTLBs documented in the 
+datasheet. The IPMMU TLB would then have 128 entries and the microTLBs 2x8 
+entries.
+
+Even though the datasheet states that microTLBs are automatically flushed, 
+I've tried to flush them manually in the IPMMU driver. No significant 
+difference in behaviour has been noticed.
+
+I'm out of ideas. Could this be the sign of a hardware bug ? Or is there a 
+stupid bug in the IPMMU driver that I've failed to notice ? I would tend to 
+rule out problems on the DMAC side, but please feel free to disagree.
+
+I've performed the tests on both Lager and Koelsh. I've implemented quick and 
+dirty support for IPMMU hardware monitoring to see if I could infer more 
+conclusions from the number of TLB hits and misses, but the r8a7790 and 
+r8a7791 IPMMUs don't include hardware performance monitoring. Running the same 
+tests on a V2H or M2 chipset might be useful.
+
+If anyone is interested, I've pushed all my debugging code to the dma/iommu-
+debug branch of the repository mentioned above (be careful, it's pretty 
+dirty).
+
 -- 
-1.7.9.5
+Regards,
 
+Laurent Pinchart
