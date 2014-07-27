@@ -1,48 +1,29 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Thu, 24 Jul 2014 02:16:34 +0000
-Subject: Re: [alsa-devel] [PATCH] ASoC: rsnd: Protect register accesses with a	spinlock instead of a mutex
-Message-Id: <87tx67a4cf.wl%kuninori.morimoto.gx@gmail.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Sun, 27 Jul 2014 10:36:47 +0000
+Subject: Re: [PATCH] ASoC: rsnd: Protect register accesses with a spinlock instead of a mutex
+Message-Id: <53D4D63F.6010701@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1406150366-10169-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-	<87y4vja9xq.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87y4vja9xq.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <1406150366-10169-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, alsa-devel@alsa-project.org, linux-sh@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, alsa-devel@alsa-project.org
+Cc: linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-
-Hi Laurent
-
-> > The hardware registers are accessed from atomic contexts (the
-> > rsnd_soc_dai_trigger function, for instance, is called with the PCM
-> > substream spinlock held). They thus can't be protected by a mutex.
-> > 
-> > Protect regmap register accesses with a spinlock instead of a mutex by
-> > setting the fast_io flag.
-> > 
-> > Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> >  sound/soc/sh/rcar/gen.c | 1 +
-> >  1 file changed, 1 insertion(+)
-> > 
-> > An even better solution might be to use regmap-mmio instead of a custom bus.
-> > Morimoto-san, is there anything that would prevent the driver from switching
-> > to regmap-mmio ?
+On 23/07/14 22:19, Laurent Pinchart wrote:
+> The hardware registers are accessed from atomic contexts (the
+> rsnd_soc_dai_trigger function, for instance, is called with the PCM
+> substream spinlock held). They thus can't be protected by a mutex.
 > 
-> I guess it is possilbe to use regmap-mmio.
-> I check it.
+> Protect regmap register accesses with a spinlock instead of a mutex by
+> setting the fast_io flag.
 
-Hmm... rsnd driver is using "regmap_field".
-regmap-mmio  requests "offset"  on "reg"
-regmap-filed requests "address" on "reg"
+I reported this ages ago.
 
-So, if rsnd driver uses regmap-mmio,
-then, it needs tricky initialize like...
+I ended up removing regmap entirely, it just locks the machine
+solid and provides no useful functionality for the driver.
 
-      regmap_init_mmio(dev, 0, config)
-
-Best regards
----
-Kuninori Morimoto
+-- 
+Ben Dooks				http://www.codethink.co.uk/
+Senior Engineer				Codethink - Providing Genius
