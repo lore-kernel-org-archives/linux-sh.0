@@ -1,51 +1,46 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 07 Jul 2014 07:54:37 +0000
-Subject: [PATCH v2 12/30] ARM: shmobile: r8a73a4: Rename cmt registration helper
-Message-Id: <1404719695-1634-13-git-send-email-horms+renesas@verge.net.au>
+From: Grant Likely <grant.likely@secretlab.ca>
+Date: Mon, 28 Jul 2014 14:05:33 +0000
+Subject: Re: [RFC PATCH 2/2] of/clk: use "clkops-clocks" to specify clocks handled by clock_ops domain
+Message-Id: <20140728140533.6E916C4116F@trevor.secretlab.ca>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+References: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
+ <1402592023-13416-1-git-send-email-grygorii.strashko@ti.com>
+ <1402592023-13416-3-git-send-email-grygorii.strashko@ti.com>
+In-Reply-To: <1402592023-13416-3-git-send-email-grygorii.strashko@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Rename r8a7790_register_cmt() as r8a73a4_register_cmt() to
-reflect name of the SoC in use. The use of r8a7790 appears
-to be due to historical sharing of code from that SoC.
-Shared code is no longer used.
+On Thu, 12 Jun 2014 19:53:43 +0300, Grygorii Strashko <grygorii.strashko@ti.com> wrote:
+> Use "clkops-clocks" property to specify clocks handled by
+> clock_ops domain PM domain. Only clocks defined in "clkops-clocks"
+> set of clocks will be handled by Runtime PM through clock_ops
+> Pm domain.
+> 
+> Signed-off-by: Grygorii Strashko <grygorii.strashko@ti.com>
+> ---
+>  drivers/of/of_clk.c |    7 ++-----
+>  1 file changed, 2 insertions(+), 5 deletions(-)
+> 
+> diff --git a/drivers/of/of_clk.c b/drivers/of/of_clk.c
+> index 35f5e9f..5f9b90e 100644
+> --- a/drivers/of/of_clk.c
+> +++ b/drivers/of/of_clk.c
+> @@ -86,11 +86,8 @@ int of_clk_register_runtime_pm_clocks(struct device_node *np,
+>  	struct clk *clk;
+>  	int error;
+>  
+> -	for (i = 0; (clk = of_clk_get(np, i)) && !IS_ERR(clk); i++) {
+> -		if (!clk_may_runtime_pm(clk)) {
+> -			clk_put(clk);
+> -			continue;
+> -		}
+> +	for (i = 0; (clk = of_clk_get_from_set(np, "clkops", i)) &&
+> +		     !IS_ERR(clk); i++) {
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+This really looks like an ABI break to me. What happens to all the
+existing platforms who don't have this new clkops-clocks in their device
+tree?
 
----
-v2
-* First post
----
- arch/arm/mach-shmobile/setup-r8a73a4.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index 2e1ec5e..496ecf3 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -180,7 +180,7 @@ static struct resource cmt1_resources[] = {
- 	DEFINE_RES_IRQ(gic_spi(120)),
- };
- 
--#define r8a7790_register_cmt(idx)					\
-+#define r8a73a4_register_cmt(idx)					\
- 	platform_device_register_resndata(&platform_bus, "sh-cmt-48-gen2", \
- 					  idx, cmt##idx##_resources,	\
- 					  ARRAY_SIZE(cmt##idx##_resources), \
-@@ -189,7 +189,7 @@ static struct resource cmt1_resources[] = {
- 
- void __init r8a73a4_add_dt_devices(void)
- {
--	r8a7790_register_cmt(1);
-+	r8a73a4_register_cmt(1);
- }
- 
- /* DMA */
--- 
-2.0.0.rc2
-
+g.
