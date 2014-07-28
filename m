@@ -1,175 +1,52 @@
-From: Marc Kleine-Budde <mkl@pengutronix.de>
-Date: Wed, 30 Jul 2014 07:32:14 +0000
-Subject: Re: [PATCH] rcar_can: support all input clocks
-Message-Id: <53D89F7E.3020204@pengutronix.de>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="XQaiERijwWQOKa7U750hwJpR4W2EOvswA"
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 28 Jul 2014 19:16:46 +0000
+Subject: [PATCH] dmaengine: sh: Rename CONFIG_SHDMA_R8A73A4 to CONFIG_SH_DMAE_R8A73A4
+Message-Id: <1406575006-21319-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201407300145.34797.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201407300145.34797.sergei.shtylyov@cogentembedded.com>
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, netdev@vger.kernel.org, wg@grandegger.com, linux-can@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, vksavl@gmail.com
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---XQaiERijwWQOKa7U750hwJpR4W2EOvswA
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+Commit b1aad1586867 ("dmaengine: sh: Rework Kconfig and Makefile")
+renamed the Kconfig symbol SHDMA_R8A73A4 to SH_DMAE_R8A73A4 but forgot
+to rename two instances of CONFIG_SHDMA_R8A73A4. Rename them.
 
-On 07/29/2014 11:45 PM, Sergei Shtylyov wrote:
-> When writing the driver, I didn't give enough attention to the possible=
- sources
-> of the CAN clock: although the value of the CLKR register was specified=
- by  the
-> platform data, the driver only handled one case, that is CAN clock bein=
-g sourced
-> from the clkp1 clock, the same that clocks the whole CAN module. In ord=
-er to fix
-> that overlook, we'll have to handle the CAN clock separately from the p=
-eripheral
-> clock (however, clkp1 will be specified for a CAN device only once)...
->=20
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
-Looks good, nitpick inline:
->=20
-> ---
-> The patch is against the 'linux-can-next.git' repo, however it's a fix,=
- not a
-> cleanup.
->=20
->  drivers/net/can/rcar_can.c |   39 ++++++++++++++++++++++++++++++++++--=
+Reported-by: Paul Bolle <pebolle@tiscali.nl>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
->  1 file changed, 34 insertions(+), 5 deletions(-)
->=20
-> Index: linux-can-next/drivers/net/can/rcar_can.c
-> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
-> --- linux-can-next.orig/drivers/net/can/rcar_can.c
-> +++ linux-can-next/drivers/net/can/rcar_can.c
-> @@ -87,6 +87,7 @@ struct rcar_can_priv {
->  	struct napi_struct napi;
->  	struct rcar_can_regs __iomem *regs;
->  	struct clk *clk;
-> +	struct clk *can_clk;
->  	u8 tx_dlc[RCAR_CAN_FIFO_DEPTH];
->  	u32 tx_head;
->  	u32 tx_tail;
-> @@ -505,14 +506,20 @@ static int rcar_can_open(struct net_devi
-> =20
->  	err =3D clk_prepare_enable(priv->clk);
->  	if (err) {
-> -		netdev_err(ndev, "clk_prepare_enable() failed, error %d\n",
-> +		netdev_err(ndev, "failed to enable periperal clock, error %d\n",
->  			   err);
->  		goto out;
->  	}
-> +	err =3D clk_prepare_enable(priv->can_clk);
-> +	if (err) {
-> +		netdev_err(ndev, "failed to enable CAN clock, error %d\n",
-> +			   err);
-> +		goto out_clock;
-> +	}
->  	err =3D open_candev(ndev);
->  	if (err) {
->  		netdev_err(ndev, "open_candev() failed, error %d\n", err);
-> -		goto out_clock;
-> +		goto out_can_clock;
->  	}
->  	napi_enable(&priv->napi);
->  	err =3D request_irq(ndev->irq, rcar_can_interrupt, 0, ndev->name, nde=
-v);
-> @@ -527,6 +534,8 @@ static int rcar_can_open(struct net_devi
->  out_close:
->  	napi_disable(&priv->napi);
->  	close_candev(ndev);
-> +out_can_clock:
-> +	clk_disable_unprepare(priv->can_clk);
->  out_clock:
->  	clk_disable_unprepare(priv->clk);
->  out:
-> @@ -565,6 +574,7 @@ static int rcar_can_close(struct net_dev
->  	rcar_can_stop(ndev);
->  	free_irq(ndev->irq, ndev);
->  	napi_disable(&priv->napi);
-> +	clk_disable_unprepare(priv->can_clk);
->  	clk_disable_unprepare(priv->clk);
->  	close_candev(ndev);
->  	can_led_event(ndev, CAN_LED_EVENT_STOP);
-> @@ -715,6 +725,12 @@ static int rcar_can_get_berr_counter(con
->  	return 0;
->  }
-> =20
-> +static const char * const clock_names[] =3D {
-> +	[CLKR_CLKP1]	=3D "clkp1",
-> +	[CLKR_CLKP2]	=3D "clkp2",
-> +	[CLKR_CLKEXT]	=3D "can_clk",
-> +};
-> +
->  static int rcar_can_probe(struct platform_device *pdev)
->  {
->  	struct rcar_can_platform_data *pdata;
-> @@ -753,10 +769,23 @@ static int rcar_can_probe(struct platfor
-> =20
->  	priv =3D netdev_priv(ndev);
-> =20
-> -	priv->clk =3D devm_clk_get(&pdev->dev, NULL);
-> +	priv->clk =3D devm_clk_get(&pdev->dev, "clkp1");
->  	if (IS_ERR(priv->clk)) {
->  		err =3D PTR_ERR(priv->clk);
-> -		dev_err(&pdev->dev, "cannot get clock: %d\n", err);
-> +		dev_err(&pdev->dev, "cannot get peripheral clock: %d\n", err);
-> +		goto fail_clk;
-> +	}
-> +
-> +	if (pdata->clock_select > CLKR_CLKEXT) {
+ drivers/dma/sh/Makefile | 2 +-
+ drivers/dma/sh/shdma.h  | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-Please use ARRAY_SIZE instead of CLKR_CLKEXT.
+diff --git a/drivers/dma/sh/Makefile b/drivers/dma/sh/Makefile
+index cfc8268..2852f9d 100644
+--- a/drivers/dma/sh/Makefile
++++ b/drivers/dma/sh/Makefile
+@@ -9,7 +9,7 @@ obj-$(CONFIG_SH_DMAE_BASE) += shdma-base.o shdma-of.o
+ #
+ 
+ shdma-y := shdmac.o
+-shdma-$(CONFIG_SHDMA_R8A73A4) += shdma-r8a73a4.o
++shdma-$(CONFIG_SH_DMAE_R8A73A4) += shdma-r8a73a4.o
+ shdma-objs := $(shdma-y)
+ obj-$(CONFIG_SH_DMAE) += shdma.o
+ 
+diff --git a/drivers/dma/sh/shdma.h b/drivers/dma/sh/shdma.h
+index 758a57b..2c0a969 100644
+--- a/drivers/dma/sh/shdma.h
++++ b/drivers/dma/sh/shdma.h
+@@ -62,7 +62,7 @@ struct sh_dmae_desc {
+ #define to_sh_dev(chan) container_of(chan->shdma_chan.dma_chan.device,\
+ 				     struct sh_dmae_device, shdma_dev.dma_dev)
+ 
+-#ifdef CONFIG_SHDMA_R8A73A4
++#ifdef CONFIG_SH_DMAE_R8A73A4
+ extern const struct sh_dmae_pdata r8a73a4_dma_pdata;
+ #define r8a73a4_shdma_devid (&r8a73a4_dma_pdata)
+ #else
+-- 
+Regards,
 
-> +		err =3D -EINVAL;
-> +		dev_err(&pdev->dev, "invalid CAN clock selected\n");
-> +		goto fail_clk;
-> +	}
-> +	priv->can_clk =3D devm_clk_get(&pdev->dev,
-> +				     clock_names[pdata->clock_select]);
-> +	if (IS_ERR(priv->can_clk)) {
-> +		err =3D PTR_ERR(priv->can_clk);
-> +		dev_err(&pdev->dev, "cannot get CAN clock: %d\n", err);
->  		goto fail_clk;
->  	}
-> =20
-> @@ -766,7 +795,7 @@ static int rcar_can_probe(struct platfor
->  	priv->ndev =3D ndev;
->  	priv->regs =3D addr;
->  	priv->clock_select =3D pdata->clock_select;
-> -	priv->can.clock.freq =3D clk_get_rate(priv->clk);
-> +	priv->can.clock.freq =3D clk_get_rate(priv->can_clk);
->  	priv->can.bittiming_const =3D &rcar_can_bittiming_const;
->  	priv->can.do_set_mode =3D rcar_can_do_set_mode;
->  	priv->can.do_get_berr_counter =3D rcar_can_get_berr_counter;
->=20
+Laurent Pinchart
 
-Marc
-
---=20
-Pengutronix e.K.                  | Marc Kleine-Budde           |
-Industrial Linux Solutions        | Phone: +49-231-2826-924     |
-Vertretung West/Dortmund          | Fax:   +49-5121-206917-5555 |
-Amtsgericht Hildesheim, HRA 2686  | http://www.pengutronix.de   |
-
-
---XQaiERijwWQOKa7U750hwJpR4W2EOvswA
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-Comment: Using GnuPG with Icedove - http://www.enigmail.net/
-
-iEYEARECAAYFAlPYn34ACgkQjTAFq1RaXHPPVwCgmN7VYtORYKKQcGmIq+vVDA3s
-O9UAn0AUEON6GeEJb3h9y6t1BVrKw12Y
-=S9BB
------END PGP SIGNATURE-----
-
---XQaiERijwWQOKa7U750hwJpR4W2EOvswA--
