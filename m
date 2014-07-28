@@ -1,62 +1,40 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 11 Jul 2014 09:19:04 +0000
-Subject: Re: [PATCH 11/13] [RFC] mmc: tmio-mmc: Add support for SDHI on new R-Car Gen2 SoCs
-Message-Id: <20140711091904.GP12420@verge.net.au>
+From: "Opensource [Steve Twiss]" <stwiss.opensource@diasemi.com>
+Date: Mon, 28 Jul 2014 09:53:56 +0000
+Subject: RE: [RESEND RFC V2] devicetree: Dialog Semiconductor consolidate existing vendor prefixes to standar
+Message-Id: <6ED8E3B22081A4459DAC7699F3695FB7D0B28E95@SW-EX-MBX02.diasemi.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404908623-909-1-git-send-email-geert+renesas@glider.be>
- <1404908623-909-12-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1404908623-909-12-git-send-email-geert+renesas@glider.be>
+References: <201407241554.s6OFsqbW031651@swsrvapps-01.diasemi.com>
+ <20140725070002.GH7063@lee--X1>
+In-Reply-To: <20140725070002.GH7063@lee--X1>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Magnus Damm <magnus.damm@gmail.com>, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jul 09, 2014 at 02:23:41PM +0200, Geert Uytterhoeven wrote:
->   - r8a7792 (R-Car V2H)
->   - r8a7793 (R-Car M2-N)
->   - r8a7794 (R-Car E2)
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-This seems to be in keeping with the approach we ave taken for these
-SoCs for other drivers. And from that point of view it is fine by me.
-But I wonder how sure are we that the hardware on the SoCs will work
-with this approach.
-
-> ---
->  Documentation/devicetree/bindings/mmc/tmio_mmc.txt | 3 +++
->  drivers/mmc/host/sh_mobile_sdhi.c                  | 3 +++
->  2 files changed, 6 insertions(+)
-> 
-> diff --git a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-> index fa0f327cde01..400b640fabc7 100644
-> --- a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-> +++ b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-> @@ -19,6 +19,9 @@ Required properties:
->  		"renesas,sdhi-r8a7779" - SDHI IP on R8A7779 SoC
->  		"renesas,sdhi-r8a7790" - SDHI IP on R8A7790 SoC
->  		"renesas,sdhi-r8a7791" - SDHI IP on R8A7791 SoC
-> +		"renesas,sdhi-r8a7792" - SDHI IP on R8A7792 SoC
-> +		"renesas,sdhi-r8a7793" - SDHI IP on R8A7793 SoC
-> +		"renesas,sdhi-r8a7794" - SDHI IP on R8A7794 SoC
->  
->  Optional properties:
->  - toshiba,mmc-wrprotect-disable: write-protect detection is unavailable
-> diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-> index 91058dabd11a..443c20969bd7 100644
-> --- a/drivers/mmc/host/sh_mobile_sdhi.c
-> +++ b/drivers/mmc/host/sh_mobile_sdhi.c
-> @@ -68,6 +68,9 @@ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
->  	{ .compatible = "renesas,sdhi-r8a7779", .data = &of_rcar_gen1_compatible, },
->  	{ .compatible = "renesas,sdhi-r8a7790", .data = &of_rcar_gen2_compatible, },
->  	{ .compatible = "renesas,sdhi-r8a7791", .data = &of_rcar_gen2_compatible, },
-> +	{ .compatible = "renesas,sdhi-r8a7792", .data = &of_rcar_gen2_compatible, },
-> +	{ .compatible = "renesas,sdhi-r8a7793", .data = &of_rcar_gen2_compatible, },
-> +	{ .compatible = "renesas,sdhi-r8a7794", .data = &of_rcar_gen2_compatible, },
->  	{},
->  };
->  MODULE_DEVICE_TABLE(of, sh_mobile_sdhi_of_match);
-> -- 
-> 1.9.1
-> 
+T24gMjUgSnVseSAyMDE0IDA4OjAwLCBMZWUgSm9uZXMgd3JvdGU6DQoNCj5PbiBUaHUsIDI0IEp1
+bCAyMDE0LCBPcGVuc291cmNlIFtTdGV2ZSBUd2lzc10gd3JvdGU6DQo+PiBGcm9tOiBTdGV2ZSBU
+d2lzcyA8c3R3aXNzLm9wZW5zb3VyY2VAZGlhc2VtaS5jb20+DQo+Pg0KPj4gVGhpcyBwYXRjaCBz
+ZXJpZXMgdXBkYXRlcyB0aGUgZGV2aWNlIHRyZWUgdmVuZG9yIHByZWZpeCBmb3INCj4+IERpYWxv
+ZyBTZW1pY29uZHVjdG9yLg0KPj4NCj4+IFZhcmlvdXMgbWV0aG9kcyBhcmUgY3VycmVudGx5IHVz
+ZWQgdGhyb3VnaG91dCB0aGUga2VybmVsOiAnZGlhc2VtaScsDQo+PiAnZGlhbG9nJyBhbmQgJ2Rs
+ZycuIE90aGVycyBoYXZlIGFsc28gYmVlbiBzdWdnZXN0ZWQuDQo+Pg0KPj4gVGhpcyBwYXRjaCBz
+ZXQgYWltcyB0byBjb25zb2xpZGF0ZSB0aGUgdXNhZ2Ugb2YgdGhlIHZlbmRvciBwcmVmaXggdG8N
+Cj4+IHVzZSBhIGNvbW1vbiBzdGFuZGFyZC4gVGhlIHByZWZpeCAnZGxnJyBpcyB1c2VkLg0KPj4N
+Cj4+DQo+PiBTaWduZWQtb2ZmLWJ5OiBTdGV2ZSBUd2lzcyA8c3R3aXNzLm9wZW5zb3VyY2VAZGlh
+c2VtaS5jb20+DQo+DQo+RGlkbid0IEkgQWNrIHRoZSBNRkQgcGFydHMgYWxyZWFkeT8NCj4NCg0K
+WWVzIC0tIGNlcnRhaW5seS4NCiAoSSBzaG91bGQgaGF2ZSBwdXQgdGhlbSBpbiB0aGUgbWFpbiBi
+b2R5IG9mIHRoZSBlLW1haWwgc2hvdWxkbid0IEkgLi4/KQ0KDQpJIGp1c3QgbmVlZCB0aGUgU0hN
+b2JpbGUgcmVzcG9uc2VzIG5vdy4NCkkgd2lsbCB0cnkgdG8gbWFrZSBjb250YWN0IHdpdGggdGhv
+c2UgZ3V5cyB0aGlzIHdlZWsuDQoNCkkgaGF2ZSB0aGUgZm9sbG93aW5nIEFja3Mgc28gZmFyLg0K
+DQo+RnJvbTogUm9iIEhlcnJpbmcgb24gMjEgSnVseSAyMDE0IDE2OjQzDQo+SSdtIG9rYXkgd2l0
+aCB0aGlzLCBidXQgaXQgYWxzbyBuZWVkcyBhY2tzIGZyb20gaS5NWCBhbmQgU0hNb2JpbGUNCj5m
+b2xrcyBhcyBpdCBjb3VsZCBicmVhayBvdXQgb2YgdHJlZSB1c2Vycy4NCj4gIEFja2VkLWJ5OiBS
+b2IgSGVycmluZyA8cm9iaEBrZXJuZWwub3JnPg0KDQo+RnJvbTogU2hhd24gR3VvIG9uIDIyIEp1
+bHkgMjAxNCAwMjozOA0KPmFyY2gvYXJtL2Jvb3QvZHRzL2lteDUzLXNtZC5kdHMgICAgICAgICAg
+ICAgICAgICAgIHwgIDIgKy0NCj5hcmNoL2FybS9ib290L2R0cy9pbXg2cWRsLXBoeXRlYy1wZmxh
+MDIuZHRzaSAgICAgICB8ICAyICstDQo+ICBBY2tlZC1ieTogU2hhd24gR3VvIDxzaGF3bi5ndW9A
+ZnJlZXNjYWxlLmNvbT4NCg0KPkZyb206IExlZSBKb25lcyBvbiAyMiBKdWx5IDIwMTQgMDg6MDkN
+Cj5Gb3IgdGhlIE1GRCBjaGFuZ2VzOg0KPiAgQWNrZWQtYnk6IExlZSBKb25lcyA8bGVlLmpvbmVz
+QGxpbmFyby5vcmc+DQoNCmFuZA0KDQo+RnJvbTogUGhpbGlwcCBaYWJlbCBvbiAyNCBKdWx5IDIw
+MTQgMjA6NDQNCj4gIEFja2VkLWJ5OiBQaGlsaXBwIFphYmVsIDxwLnphYmVsQHBlbmd1dHJvbml4
+LmRlPg0KDQpSZWdhcmRzLA0KU3RldmUNCg0K
