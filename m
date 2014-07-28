@@ -1,103 +1,63 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Jul 2014 00:40:31 +0000
-Subject: [PATCH 4/8] ARM: shmobile: lager-reference: Enable CMT0 in device tree
-Message-Id: <6bb0a55bef2c02d6ddc7e91f79750169741a2f96.1405556312.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 28 Jul 2014 18:18:36 +0000
+Subject: [PATCH] drm/rcar-du: Fix maximum frame buffer pitch computation
+Message-Id: <1406571516-5827-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1405556312.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1405556312.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The maximum pitch constraint for the hardware is expressed in pixels.
+Convert it to bytes to validate frame buffer creation, as frame buffer
+pitches are expressed in bytes.
 
-No more device needs to be added from platform code when booting the
-reference platform, remove the now empty r8a7790_add_dt_devices()
-function completely.
-
+Reported-by: Phil Edworthy <phil.edworthy@renesas.com>
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Simon Horman <horms+renesas@verge.net.au>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts            | 4 ++++
- arch/arm/mach-shmobile/board-lager-reference.c | 2 --
- arch/arm/mach-shmobile/r8a7790.h               | 1 -
- arch/arm/mach-shmobile/setup-r8a7790.c         | 7 +------
- 4 files changed, 5 insertions(+), 9 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 856b423..7853c2c 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -252,6 +252,10 @@
- 	};
- };
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+index 3875854..7eabbd7 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+@@ -135,7 +135,9 @@ rcar_du_fb_create(struct drm_device *dev, struct drm_file *file_priv,
+ {
+ 	struct rcar_du_device *rcdu = dev->dev_private;
+ 	const struct rcar_du_format_info *format;
++	unsigned int max_pitch;
+ 	unsigned int align;
++	unsigned int bpp;
  
-+&cmt0 {
-+	status = "ok";
-+};
+ 	format = rcar_du_format_info(mode_cmd->pixel_format);
+ 	if (format = NULL) {
+@@ -144,13 +146,20 @@ rcar_du_fb_create(struct drm_device *dev, struct drm_file *file_priv,
+ 		return ERR_PTR(-EINVAL);
+ 	}
+ 
++	/*
++	 * The pitch and alignment constraints are expressed in pixels on the
++	 * hardware side and in bytes in the DRM API.
++	 */
++	bpp = format->planes = 2 ? 1 : format->bpp / 8;
++	max_pitch =  4096 * bpp;
 +
- &mmcif1 {
- 	pinctrl-0 = <&mmc1_pins>;
- 	pinctrl-names = "default";
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 41c808e..2a05c02 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -92,7 +92,6 @@ static void __init lager_add_du_device(void)
-  * devices until they get moved to DT.
-  */
- static const struct clk_name clk_names[] __initconst = {
--	{ "cmt0", "fck", "sh-cmt-48-gen2.0" },
- 	{ "du0", "du.0", "rcar-du-r8a7790" },
- 	{ "du1", "du.1", "rcar-du-r8a7790" },
- 	{ "du2", "du.2", "rcar-du-r8a7790" },
-@@ -103,7 +102,6 @@ static const struct clk_name clk_names[] __initconst = {
- static void __init lager_add_standard_devices(void)
- {
- 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
--	r8a7790_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 	if (rcar_du_needs(rcdu, RCAR_DU_QUIRK_ALIGN_128B))
+ 		align = 128;
+ 	else
+-		align = 16 * format->bpp / 8;
++		align = 16 * bpp;
  
- 	lager_add_du_device();
-diff --git a/arch/arm/mach-shmobile/r8a7790.h b/arch/arm/mach-shmobile/r8a7790.h
-index 459827f..388f051 100644
---- a/arch/arm/mach-shmobile/r8a7790.h
-+++ b/arch/arm/mach-shmobile/r8a7790.h
-@@ -27,7 +27,6 @@ enum {
- };
- 
- void r8a7790_add_standard_devices(void);
--void r8a7790_add_dt_devices(void);
- void r8a7790_clock_init(void);
- void r8a7790_pinmux_init(void);
- void r8a7790_pm_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index c37d82d..4795c98 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -282,11 +282,6 @@ static struct resource cmt0_resources[] = {
- 					  &cmt##idx##_platform_data,	\
- 					  sizeof(struct sh_timer_config))
- 
--void __init r8a7790_add_dt_devices(void)
--{
--	r8a7790_register_cmt(0);
--}
--
- void __init r8a7790_add_standard_devices(void)
- {
- 	r8a7790_register_scif(0);
-@@ -299,7 +294,7 @@ void __init r8a7790_add_standard_devices(void)
- 	r8a7790_register_scif(7);
- 	r8a7790_register_scif(8);
- 	r8a7790_register_scif(9);
--	r8a7790_add_dt_devices();
-+	r8a7790_register_cmt(0);
- 	r8a7790_register_irqc(0);
- 	r8a7790_register_thermal();
- 	r8a7790_register_i2c(0);
+ 	if (mode_cmd->pitches[0] & (align - 1) ||
+-	    mode_cmd->pitches[0] >= 8192) {
++	    mode_cmd->pitches[0] >= max_pitch) {
+ 		dev_dbg(dev->dev, "invalid pitch value %u\n",
+ 			mode_cmd->pitches[0]);
+ 		return ERR_PTR(-EINVAL);
 -- 
-2.0.0
+Regards,
+
+Laurent Pinchart
 
