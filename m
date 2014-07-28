@@ -1,54 +1,67 @@
-From: Bjorn Helgaas <bhelgaas@google.com>
-Date: Sat, 05 Jul 2014 17:47:42 +0000
-Subject: Re: [PATCH] pcie-rcar: kill duplicate checks
-Message-Id: <20140705174742.GD26618@google.com>
+From: Grygorii Strashko <grygorii.strashko@ti.com>
+Date: Mon, 28 Jul 2014 17:03:25 +0000
+Subject: Re: [RFC PATCH 2/2] of/clk: use "clkops-clocks" to specify clocks handled by clock_ops domain
+Message-Id: <53D68CC4.1010704@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201406271859.13626.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201406271859.13626.sergei.shtylyov@cogentembedded.com>
+References: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>	<1402592023-13416-1-git-send-email-grygorii.strashko@ti.com>	<1402592023-13416-3-git-send-email-grygorii.strashko@ti.com>
+ <20140728140533.6E916C4116F@trevor.secretlab.ca>
+In-Reply-To: <20140728140533.6E916C4116F@trevor.secretlab.ca>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: horms@verge.net.au, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, phil.edworthy@renesas.com
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jun 27, 2014 at 06:59:13PM +0400, Sergei Shtylyov wrote:
-> The PCI core will have already checked the configuration register address before
-> calling the {read|write}() methods, no need to check it again in these methods.
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Hi Grant.
 
-Applied with Phil and Simon's acks to pci/host-rcar for v3.17, thanks!
+On 07/28/2014 05:05 PM, Grant Likely wrote:
+> On Thu, 12 Jun 2014 19:53:43 +0300, Grygorii Strashko <grygorii.strashko@ti.com> wrote:
+>> Use "clkops-clocks" property to specify clocks handled by
+>> clock_ops domain PM domain. Only clocks defined in "clkops-clocks"
+>> set of clocks will be handled by Runtime PM through clock_ops
+>> Pm domain.
+>>
+>> Signed-off-by: Grygorii Strashko <grygorii.strashko@ti.com>
+>> ---
+>>   drivers/of/of_clk.c |    7 ++-----
+>>   1 file changed, 2 insertions(+), 5 deletions(-)
+>>
+>> diff --git a/drivers/of/of_clk.c b/drivers/of/of_clk.c
+>> index 35f5e9f..5f9b90e 100644
+>> --- a/drivers/of/of_clk.c
+>> +++ b/drivers/of/of_clk.c
+>> @@ -86,11 +86,8 @@ int of_clk_register_runtime_pm_clocks(struct device_node *np,
+>>   	struct clk *clk;
+>>   	int error;
+>>   
+>> -	for (i = 0; (clk = of_clk_get(np, i)) && !IS_ERR(clk); i++) {
+>> -		if (!clk_may_runtime_pm(clk)) {
+>> -			clk_put(clk);
+>> -			continue;
+>> -		}
+>> +	for (i = 0; (clk = of_clk_get_from_set(np, "clkops", i)) &&
+>> +		     !IS_ERR(clk); i++) {
+> 
+> This really looks like an ABI break to me. What happens to all the
+> existing platforms who don't have this new clkops-clocks in their device
+> tree?
 
-> ---
-> The patch is against the 'next' branch of Bjorn Helgaas' 'pci.git' repo.
-> 
->  drivers/pci/host/pcie-rcar.c |   10 ----------
->  1 file changed, 10 deletions(-)
-> 
-> Index: pci/drivers/pci/host/pcie-rcar.c
-> =================================> --- pci.orig/drivers/pci/host/pcie-rcar.c
-> +++ pci/drivers/pci/host/pcie-rcar.c
-> @@ -260,11 +260,6 @@ static int rcar_pcie_read_conf(struct pc
->  	struct rcar_pcie *pcie = sys_to_pcie(bus->sysdata);
->  	int ret;
->  
-> -	if ((size = 2) && (where & 1))
-> -		return PCIBIOS_BAD_REGISTER_NUMBER;
-> -	else if ((size = 4) && (where & 3))
-> -		return PCIBIOS_BAD_REGISTER_NUMBER;
-> -
->  	ret = rcar_pcie_config_access(pcie, PCI_ACCESS_READ,
->  				      bus, devfn, where, val);
->  	if (ret != PCIBIOS_SUCCESSFUL) {
-> @@ -291,11 +286,6 @@ static int rcar_pcie_write_conf(struct p
->  	int shift, ret;
->  	u32 data;
->  
-> -	if ((size = 2) && (where & 1))
-> -		return PCIBIOS_BAD_REGISTER_NUMBER;
-> -	else if ((size = 4) && (where & 3))
-> -		return PCIBIOS_BAD_REGISTER_NUMBER;
-> -
->  	ret = rcar_pcie_config_access(pcie, PCI_ACCESS_READ,
->  				      bus, devfn, where, &data);
->  	if (ret != PCIBIOS_SUCCESSFUL)
+Agree. This patch as is will break such platforms.
+As possible solution for above problem - the NULL can be used as clock's prefix
+by default and platform code can configure new value of clock's prefix during
+initialization.
+In addition, to make this solution full the of_clk_get_by_name() will
+need to be modified too.
+
+But note pls, this is pure RFC patches which I did to find out the answer on questions:
+- What is better: maintain Runtime PM clocks configuration in DT or in code?
+
+- Where and when to call of_clk_register_runtime_pm_clocks()?
+  Bus notifier/ platform core/ device drivers
+
+Also, May be platform dependent solution [1] can be acceptable for now?
+
+[1] https://lkml.org/lkml/2014/7/25/630
+
+Best regards,
+-grygorii
+
