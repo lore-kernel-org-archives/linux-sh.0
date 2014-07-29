@@ -1,155 +1,35 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 22 Jul 2014 05:34:05 +0000
-Subject: [PATCH 02/10] mmc: block: add block number limitation flag for multiple block read
-Message-Id: <87bnsihs8l.wl%kuninori.morimoto.gx@renesas.com>
+From: Michael Ellerman <mpe@ellerman.id.au>
+Date: Tue, 29 Jul 2014 02:19:16 +0000
+Subject: Re: [PATCH v4] arm64, ia64, ppc, s390, sh, tile, um, x86, mm: Remove default gate area
+Message-Id: <1406600356.11977.4.camel@concordia>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
-	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
-	<53AD638C.5060907@renesas.com>
-	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+References: <6435254cc74d6e9172931f27be3854d522ad299b.1406232860.git.luto@amacapital.net>
+In-Reply-To: <6435254cc74d6e9172931f27be3854d522ad299b.1406232860.git.luto@amacapital.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Ian Molton <ian@mnementh.co.uk>, Chris Ball <cjb@laptop.org>
-Cc: TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, ryo.kataoka.wt@renesas.com, shinobu.uehara.xc@renesas.com, kouei.abe.cp@renesas.com
+To: Andy Lutomirski <luto@amacapital.net>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Catalin Marinas <catalin.marinas@arm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux-mm@kvack.org, Paul Mackerras <paulus@samba.org>, "H. Peter Anvin" <hpa@zytor.com>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Richard Weinberger <richard@nod.at>, x86@kernel.org, Ingo Molnar <mingo@redhat.com>, Fenghua Yu <fenghua.yu@intel.com>, user-mode-linux-devel@lists.sourceforge.net, Will Deacon <will.deacon@arm.com>, Jeff Dike <jdike@addtoit.com>, Chris Metcalf <cmetcalf@tilera.com>, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Tony Luck <tony.luck@intel.com>, Nathan Lynch <Nathan_Lynch@mentor.com>, linux-kernel@vger.kernel.org, Martin Schwidefsky <schwidefsky@de.ibm.com>, linux390@de.ibm.com, linuxppc-dev@lists.ozlabs.org
 
-From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+On Thu, 2014-07-24 at 13:56 -0700, Andy Lutomirski wrote:
+> The core mm code will provide a default gate area based on
+> FIXADDR_USER_START and FIXADDR_USER_END if
+> !defined(__HAVE_ARCH_GATE_AREA) && defined(AT_SYSINFO_EHDR).
+> 
+> This default is only useful for ia64.  arm64, ppc, s390, sh, tile,
+> 64-bit UML, and x86_32 have their own code just to disable it.  arm,
+> 32-bit UML, and x86_64 have gate areas, but they have their own
+> implementations.
+> 
+> This gets rid of the default and moves the code into ia64.
+> 
+> This should save some code on architectures without a gate area: it's
+> now possible to inline the gate_area functions in the default case.
 
-In some controllers, when performing a multiple block read of
-one or two blocks, depending on the timing with which the
-response register is read, the response value may not
-be read properly.
-MMC_CAP2_NO_MULTI_READ flags disable all multiple block read,
-but, it is over-kill for this issue.
-This patch adds new MMC_CAP2_2BLKS_LIMIT to use single block read
-when it was two blocks.
-This is additional option of MMC_CAP2_NO_MULTI_READ
+Looks good to me. Booted and everything seems happy, I still have a vdso etc.
 
-[Kuninori Morimoto: tidyup for upstreaming, and cared mach-shmobile]
+Tested-by: Michael Ellerman <mpe@ellerman.id.au> (for powerpc)
 
-Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/mach-shmobile/board-koelsch.c |    6 +++---
- arch/arm/mach-shmobile/board-lager.c   |    4 ++--
- drivers/mmc/card/block.c               |   19 +++++++++++++++++--
- drivers/mmc/host/sh_mobile_sdhi.c      |    2 +-
- include/linux/mmc/host.h               |    3 +++
- 5 files changed, 26 insertions(+), 8 deletions(-)
+cheers
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index 2cd3194..4936436 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -333,7 +333,7 @@ SDHI_REGULATOR(2, RCAR_GP_PIN(7, 19), RCAR_GP_PIN(2, 26));
- static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
--	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
-+	.tmio_caps2	= MMC_CAP2_NO_2BLKS_READ,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
- };
- 
-@@ -346,7 +346,7 @@ static struct resource sdhi0_resources[] __initdata = {
- static struct sh_mobile_sdhi_info sdhi1_info __initdata = {
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
--	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
-+	.tmio_caps2	= MMC_CAP2_NO_2BLKS_READ,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
- };
- 
-@@ -359,7 +359,7 @@ static struct resource sdhi1_resources[] __initdata = {
- static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
--	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
-+	.tmio_caps2	= MMC_CAP2_NO_2BLKS_READ,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
- 			  TMIO_MMC_WRPROTECT_DISABLE,
- };
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index b8b2b44..ad85f9d 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -634,7 +634,7 @@ static void __init lager_add_rsnd_device(void)
- static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
--	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
-+	.tmio_caps2	= MMC_CAP2_NO_2BLKS_READ,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
- 			  TMIO_MMC_WRPROTECT_DISABLE,
- };
-@@ -648,7 +648,7 @@ static struct resource sdhi0_resources[] __initdata = {
- static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
--	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
-+	.tmio_caps2	= MMC_CAP2_NO_2BLKS_READ,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
- 			  TMIO_MMC_WRPROTECT_DISABLE,
- };
-diff --git a/drivers/mmc/card/block.c b/drivers/mmc/card/block.c
-index 452782b..f3cbe37 100644
---- a/drivers/mmc/card/block.c
-+++ b/drivers/mmc/card/block.c
-@@ -1400,8 +1400,23 @@ static void mmc_blk_rw_rq_prep(struct mmc_queue_req *mqrq,
- 
- 		/* Some controllers can't do multiblock reads due to hw bugs */
- 		if (card->host->caps2 & MMC_CAP2_NO_MULTI_READ &&
--		    rq_data_dir(req) = READ)
--			brq->data.blocks = 1;
-+		    rq_data_dir(req) = READ) {
-+
-+			if (card->host->caps2 & MMC_CAP2_2BLKS_LIMIT) {
-+				/*
-+				 * In some controllers, when performing a
-+				 * multiple block read of one or two blocks,
-+				 * depending on the timing with which the
-+				 * response register is read, the response
-+				 * value may not be read properly.
-+				 * Use single block read for this HW bug
-+				 */
-+				if (brq->data.blocks = 2)
-+					brq->data.blocks = 1;
-+			} else {
-+				brq->data.blocks = 1;
-+			}
-+		}
- 	}
- 
- 	if (brq->data.blocks > 1 || do_rel_wr) {
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 18cf462..90b1ee2 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -55,7 +55,7 @@ static const struct sh_mobile_sdhi_of_data of_rcar_gen1_compatible = {
- static const struct sh_mobile_sdhi_of_data of_rcar_gen2_compatible = {
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
- 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
--	.capabilities2	= MMC_CAP2_NO_MULTI_READ,
-+	.capabilities2	= MMC_CAP2_NO_2BLKS_READ,
- };
- 
- static const struct of_device_id sh_mobile_sdhi_of_match[] = {
-diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
-index 7960424..3510fba 100644
---- a/include/linux/mmc/host.h
-+++ b/include/linux/mmc/host.h
-@@ -266,6 +266,9 @@ struct mmc_host {
- #define MMC_CAP2_BOOTPART_NOACC	(1 << 0)	/* Boot partition no access */
- #define MMC_CAP2_FULL_PWR_CYCLE	(1 << 2)	/* Can do full power cycle */
- #define MMC_CAP2_NO_MULTI_READ	(1 << 3)	/* Multiblock reads don't work */
-+#define MMC_CAP2_2BLKS_LIMIT	(1 << 4)	/* 2 blocks limit for multi read */
-+#define MMC_CAP2_NO_2BLKS_READ	(MMC_CAP2_NO_MULTI_READ | \
-+				 MMC_CAP2_2BLKS_LIMIT)
- #define MMC_CAP2_HS200_1_8V_SDR	(1 << 5)        /* can support */
- #define MMC_CAP2_HS200_1_2V_SDR	(1 << 6)        /* can support */
- #define MMC_CAP2_HS200		(MMC_CAP2_HS200_1_8V_SDR | \
--- 
-1.7.9.5
 
