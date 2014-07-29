@@ -1,48 +1,109 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 02 Jul 2014 22:46:16 +0000
-Subject: [PATCH 2/2] ARM: shmobile: henninger: add CAN0 DT support
-Message-Id: <201407030246.17501.sergei.shtylyov@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 29 Jul 2014 08:45:14 +0000
+Subject: [PATCH 04/10 v2] mmc: tmio: control multiple block transfer mode
+Message-Id: <87ha20o8o7.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201407030239.15921.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201407030239.15921.sergei.shtylyov@cogentembedded.com>
+References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
+	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
+	<53AD638C.5060907@renesas.com>
+	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+	<87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Ian Molton <ian@mnementh.co.uk>, TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, ryo.kataoka.wt@renesas.com, shinobu.uehara.xc@renesas.com, kouei.abe.cp@renesas.com, cm-hiep@jinso.co.jp, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
-Define the Henninger board dependent part of the CAN0 device node.
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Renesas SDHI has "Multiple Block Transfer Mode" settings
+on SD_CMD register which controls CMD12 automatically.
 
+This patch cares it, because
+CMD12 is not needed when CMD53 (= SD_IO_RW_EXTENDED)
+
+[Kuninori Morimoto: tidyuped for upstreaming
+                    enabled this flags for all SH-Mobile/R-Car]
+
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7791-henninger.dts |   11 +++++++++++
- 1 file changed, 11 insertions(+)
+ drivers/mmc/host/sh_mobile_sdhi.c |    5 +++++
+ drivers/mmc/host/tmio_mmc_pio.c   |   10 ++++++++++
+ include/linux/mfd/tmio.h          |    6 ++++++
+ 3 files changed, 21 insertions(+)
 
-Index: renesas/arch/arm/boot/dts/r8a7791-henninger.dts
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-henninger.dts
-+++ renesas/arch/arm/boot/dts/r8a7791-henninger.dts
-@@ -125,6 +125,11 @@
- 				 "msiof0_tx";
- 		renesas,function = "msiof0";
- 	};
-+
-+	can0_pins: can0 {
-+		renesas,groups = "can0_data_a", "can_clk_d";
-+		renesas,function = "can0";
-+	};
- };
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 91c6399..1d54b78 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -225,6 +225,11 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	 */
+ 	mmc_data->flags |= TMIO_MMC_SDIO_IRQ;
  
- &scif0 {
-@@ -175,6 +180,12 @@
- 	status = "okay";
- };
- 
-+&can0 {
-+	pinctrl-0 = <&can0_pins>;
-+	pinctrl-names = "default";
-+	status = "okay";
-+};
++	/*
++	 * All SDHI have CMD12 controll bit
++	 */
++	mmc_data->flags |= TMIO_MMC_HAVE_CMD12_CTRL;
 +
- &i2c2 {
- 	pinctrl-0 = <&i2c2_pins>;
- 	pinctrl-names = "default";
+ 	if (of_id && of_id->data) {
+ 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
+ 		mmc_data->flags |= of_data->tmio_flags;
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index c3b1b4e..1f1fdfb 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -44,6 +44,7 @@
+ #include <linux/pm_qos.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/regulator/consumer.h>
++#include <linux/mmc/sdio.h>
+ #include <linux/scatterlist.h>
+ #include <linux/spinlock.h>
+ #include <linux/workqueue.h>
+@@ -295,6 +296,7 @@ static void tmio_mmc_done_work(struct work_struct *work)
+ #define TRANSFER_READ  0x1000
+ #define TRANSFER_MULTI 0x2000
+ #define SECURITY_CMD   0x4000
++#define NO_CMD12_ISSUE 0x4000 /* TMIO_MMC_HAVE_CMD12_CTRL */
+ 
+ static int tmio_mmc_start_command(struct tmio_mmc_host *host, struct mmc_command *cmd)
+ {
+@@ -331,6 +333,14 @@ static int tmio_mmc_start_command(struct tmio_mmc_host *host, struct mmc_command
+ 		if (data->blocks > 1) {
+ 			sd_ctrl_write16(host, CTL_STOP_INTERNAL_ACTION, 0x100);
+ 			c |= TRANSFER_MULTI;
++
++			/*
++			 * Disable auto CMD12 at IO_RW_EXTENDED when
++			 * multiple block transfer
++			 */
++			if ((host->pdata->flags & TMIO_MMC_HAVE_CMD12_CTRL) &&
++			    (cmd->opcode = SD_IO_RW_EXTENDED))
++				c |= NO_CMD12_ISSUE;
+ 		}
+ 		if (data->flags & MMC_DATA_READ)
+ 			c |= TRANSFER_READ;
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 777e29b..7432d95 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -83,6 +83,12 @@
+  */
+ #define TMIO_MMC_HAVE_HIGH_REG		(1 << 6)
+ 
++/*
++ * Some controllers have CMD12 automatically
++ * issue/non-issue register
++ */
++#define TMIO_MMC_HAVE_CMD12_CTRL	(1 << 7)
++
+ int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
+ int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
+ void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
+-- 
+1.7.9.5
+
