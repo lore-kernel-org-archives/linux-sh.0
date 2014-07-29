@@ -1,66 +1,83 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 30 Jul 2014 22:27:05 +0000
-Subject: [PATCH 00/02] ARM: shmobile: Lager/Koelsch SCIF DMA RX prototype
-Message-Id: <20140730222705.4799.45483.sendpatchset@w520>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 29 Jul 2014 08:46:17 +0000
+Subject: [PATCH 07/10 v2] mmc: tmio: remove Renesas specific #ifdef
+Message-Id: <87d2coo8mh.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
+	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
+	<53AD638C.5060907@renesas.com>
+	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+	<87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Ian Molton <ian@mnementh.co.uk>, TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, ryo.kataoka.wt@renesas.com, shinobu.uehara.xc@renesas.com, kouei.abe.cp@renesas.com, cm-hiep@jinso.co.jp, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
-ARM: shmobile: Lager/Koelsch SCIF DMA RX prototype
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-[PATCH 01/02] ARM: shmobile: Lager SYS-DMAC and SCIF RX prototype
-[PATCH 02/02] ARM: shmobile: Koelsch SYS-DMAC and SCIF RX prototype
+This patch adds new TMIO_MMC_HAVE_CTL_DMA_REG flag,
+and remove Renesas specific #ifdef from tmio driver
 
-These patches add DMAC prototype support for the RX side of SCIF
-serial ports on Lager and Koelsch. It is built on top of several
-earlier series that added MMCIF/SDHI DMAC prototype support together
-with 40-bit physical address support in the DMAC controller and
-additional SCIF and MSIOF DMA integration patches.
-
-To use DMA with the SCIF driver the following kconfig bits are needed:
-CONFIG_SERIAL_SH_SCI_DMA=y
-
-DMA support in the SCIF driver is in pretty poor state. With these
-patches applied DMA Engine support for both RX and TX are enabled,
-however the SCIF driver is known to not work well with RX.
-
-Written to show how to make use of platform devices for DMA support
-until the DT bindings for the DMA hardware have been stabilized.
-
-Not for upstream merge.
-
-Depends on the following patches:
-[PATCH] mmc: block: add block number limitation flag for lultiple block read
-[PATCH] mmc: sdhi: tidyup mmc_data setting for R-Car SDHI
-[PATCH] mmc: tmio: care about DMA tx/rx addr offset
-[PATCH v2 00/07] ARM: shmobile: Lager/Koelsch MMCIF/SDHI LPAE DMA prototype V2
-[PATCH v2 01/07] mmc: sdhi: enable .dma_rx_offset for platform prototype
-[PATCH v2 02/07] DMA: shdma: 40-bit address prototype
-[PATCH v2 03/07] ARM: shmobile: Lager SYS-DMAC prototype
-[PATCH v2 04/07] ARM: shmobile: Lager SYS-DMAC and MMCIF prototype
-[PATCH v2 05/07] ARM: shmobile: Lager SYS-DMAC and SDHI prototype
-[PATCH v2 06/07] ARM: shmobile: Koelsch SYS-DMAC prototype
-[PATCH v2 07/07] ARM: shmobile: Koelsch SYS-DMAC and SDHI prototype
-[PATCH 0/5] spi: sh-msiof: Add DMA support
-[PATCH 1/5] spi: sh-msiof: Add more register documentation
-[PATCH 2/5] spi: sh-msiof: Extract sh_msiof_spi_{start,stop}() helpers
-[PATCH 3/5] spi: sh-msiof: Improve transfer error handling
-[PATCH 4/5] spi: sh-msiof: Refactor sh_msiof_transfer_one()
-[PATCH 5/5] spi: sh-msiof: Add DMA support
-[PATCH 00/05] ARM: shmobile: Lager/Koelsch SCIF/MSIOF DMA prototype
-[PATCH 01/05] serial: sh-sci: Allow AUXDATA DMAC parameters 
-[PATCH 02/05] ARM: shmobile: Lager SYS-DMAC and SCIF prototype
-[PATCH 03/05] ARM: shmobile: Lager SYS-DMAC and MSIOF prototype
-[PATCH 04/05] ARM: shmobile: Koelsch SYS-DMAC and SCIF prototype
-[PATCH 05/05] ARM: shmobile: Koelsch SYS-DMAC and MSIOF prototype
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+ drivers/mmc/host/sh_mobile_sdhi.c |    5 +++++
+ drivers/mmc/host/tmio_mmc_dma.c   |    6 ++----
+ include/linux/mfd/tmio.h          |    5 +++++
+ 3 files changed, 12 insertions(+), 4 deletions(-)
 
- Written on top of renesas-devel-v3.16-rc7-20140729 + above + collision fixes
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index ad00fb8..b6f94c8 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -235,6 +235,11 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	 */
+ 	mmc_data->flags |= TMIO_MMC_SDIO_STATUS_QUIRK;
+ 
++	/*
++	 * All SDHI have DMA control register
++	 */
++	mmc_data->flags |= TMIO_MMC_HAVE_CTL_DMA_REG;
++
+ 	if (of_id && of_id->data) {
+ 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
+ 		mmc_data->flags |= of_data->tmio_flags;
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index 1925170..8b1121e 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -28,10 +28,8 @@ void tmio_mmc_enable_dma(struct tmio_mmc_host *host, bool enable)
+ 	if (!host->chan_tx || !host->chan_rx)
+ 		return;
+ 
+-#if defined(CONFIG_SUPERH) || defined(CONFIG_ARCH_SHMOBILE)
+-	/* Switch DMA mode on or off - SuperH specific? */
+-	sd_ctrl_write16(host, CTL_DMA_ENABLE, enable ? 2 : 0);
+-#endif
++	if (host->pdata->flags & TMIO_MMC_HAVE_CTL_DMA_REG)
++		sd_ctrl_write16(host, CTL_DMA_ENABLE, enable ? 2 : 0);
+ }
+ 
+ void tmio_mmc_abort_dma(struct tmio_mmc_host *host)
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index a7493ae..adcb0cd 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -94,6 +94,11 @@
+  */
+ #define TMIO_MMC_SDIO_STATUS_QUIRK	(1 << 8)
+ 
++/*
++ * Some controllers have DMA enable/disable register
++ */
++#define TMIO_MMC_HAVE_CTL_DMA_REG	(1 << 9)
++
+ int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
+ int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
+ void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
+-- 
+1.7.9.5
 
- arch/arm/mach-shmobile/board-koelsch-reference.c |   44 +++++++++-------------
- arch/arm/mach-shmobile/board-lager-reference.c   |   28 +++++---------
- 2 files changed, 28 insertions(+), 44 deletions(-)
