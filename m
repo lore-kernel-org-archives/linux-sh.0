@@ -1,111 +1,97 @@
-From: Nick Krause <xerofoify@gmail.com>
-Date: Sat, 12 Jul 2014 03:38:46 +0000
-Subject: Sh Builds that are failing
-Message-Id: <CAPDOMVguAmVdTE1N++KaoZ7D8pZg7WU=u_AwdZs4Rg-qO=drgQ@mail.gmail.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="e89a8f921a3e9dcdb004fdf6cb9d"
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 29 Jul 2014 08:45:30 +0000
+Subject: [PATCH 05/10 v2] mmc: tmio: add TMIO_MMC_SDIO_STATUS_QUIRK
+Message-Id: <87fvhko8nr.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: laurent.pinchart+renesas@ideasonboard.com, horms+renesas@verge.net.au, peterz@infradead.org, mingo@kernel.org, geert+renesas@glider.be, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-sh@vger.kernel.org, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
+	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
+	<53AD638C.5060907@renesas.com>
+	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+	<87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Ian Molton <ian@mnementh.co.uk>, TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, ryo.kataoka.wt@renesas.com, shinobu.uehara.xc@renesas.com, kouei.abe.cp@renesas.com, cm-hiep@jinso.co.jp, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
---e89a8f921a3e9dcdb004fdf6cb9d
-Content-Type: text/plain; charset=UTF-8
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-Hey Andrew and other maintainers ,
-There seem to be a few failing def config builds with the sh architecture.
-I will post the failing builds and the log of errors leading up to these builds.
-Cheers Nick
-Still failing Builds for sh
-1.  rsk7203_defconfig
-2.  se7206_defconfig
-3. allmodconfig for sh
-4. allyesconfig for sh
+Renesas R-Car SDHI should set reserved bits
+on CTL_SDIO_STATUS register when writing.
+This patch adds new TMIO_MMC_SDIO_STATUS_QUIRK flags
+for this purpose
 
---e89a8f921a3e9dcdb004fdf6cb9d
-Content-Type: application/octet-stream; name=rsk7203_defconfig
-Content-Disposition: attachment; filename=rsk7203_defconfig
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_hxidvngx0
+[Kuninori Morimoto: tidyuped for upstreaming
+                    enabled this flags for all SH-Mobile/R-Car]
 
-c2NyaXB0cy9tb2QvZW1wdHkuYzoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBz
-b2Z0LWltYXNrIGluIHVzZXIgbW9kZQogLyogZW1wdHkgZmlsZSB0byBmaWd1cmUgb3V0IGVuZGlh
-bm5lc3MgLyB3b3JkIHNpemUgKi8KIF4KbWFrZVsyXTogKioqIFtzY3JpcHRzL21vZC9lbXB0eS5v
-XSBFcnJvciAxCm1ha2VbMl06ICoqKiBXYWl0aW5nIGZvciB1bmZpbmlzaGVkIGpvYnMuLi4uCnNj
-cmlwdHMvbW9kL2RldmljZXRhYmxlLW9mZnNldHMuYzoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0
-b21pYyBtb2RlbCBzb2Z0LWltYXNrIGluIHVzZXIgbW9kZQogI2luY2x1ZGUgPGxpbnV4L2tidWls
-ZC5oPgogXgptYWtlWzJdOiAqKiogW3NjcmlwdHMvbW9kL2RldmljZXRhYmxlLW9mZnNldHMuc10g
-RXJyb3IgMQptYWtlWzFdOiAqKiogW3NjcmlwdHMvbW9kXSBFcnJvciAyCm1ha2VbMV06ICoqKiBX
-YWl0aW5nIGZvciB1bmZpbmlzaGVkIGpvYnMuLi4uCmtlcm5lbC9ib3VuZHMuYzoxOjA6IGVycm9y
-OiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGluIHVzZXIgbW9kZQogLyoKIF4K
-bWFrZVsxXTogKioqIFtrZXJuZWwvYm91bmRzLnNdIEVycm9yIDEKbWFrZTogKioqIFtwcmVwYXJl
-MF0gRXJyb3IgMgptYWtlOiAqKiogV2FpdGluZyBmb3IgdW5maW5pc2hlZCBqb2JzLi4uLgptYWtl
-OiAqKiogW3NjcmlwdHNdIEVycm9yIDIK
---e89a8f921a3e9dcdb004fdf6cb9d
-Content-Type: application/octet-stream; name=se7206_defconfig
-Content-Disposition: attachment; filename=se7206_defconfig
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_hxidvnhg1
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c |    5 +++++
+ drivers/mmc/host/tmio_mmc_pio.c   |    7 ++++++-
+ include/linux/mfd/tmio.h          |    5 +++++
+ 3 files changed, 16 insertions(+), 1 deletion(-)
 
-c2NyaXB0cy9tb2QvZW1wdHkuYzoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBz
-b2Z0LWltYXNrIGluIHVzZXIgbW9kZQogLyogZW1wdHkgZmlsZSB0byBmaWd1cmUgb3V0IGVuZGlh
-bm5lc3MgLyB3b3JkIHNpemUgKi8KIF4Kc2NyaXB0cy9tb2QvZGV2aWNldGFibGUtb2Zmc2V0cy5j
-OjE6MDogZXJyb3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNvZnQtaW1hc2sgaW4gdXNlciBt
-b2RlCiAjaW5jbHVkZSA8bGludXgva2J1aWxkLmg+CiBeCm1ha2VbMl06ICoqKiBbc2NyaXB0cy9t
-b2QvZW1wdHkub10gRXJyb3IgMQptYWtlWzJdOiAqKiogV2FpdGluZyBmb3IgdW5maW5pc2hlZCBq
-b2JzLi4uLgptYWtlWzJdOiAqKiogW3NjcmlwdHMvbW9kL2RldmljZXRhYmxlLW9mZnNldHMuc10g
-RXJyb3IgMQptYWtlWzFdOiAqKiogW3NjcmlwdHMvbW9kXSBFcnJvciAyCm1ha2U6ICoqKiBbc2Ny
-aXB0c10gRXJyb3IgMgptYWtlOiBJTlRFUk5BTDogRXhpdGluZyB3aXRoIDkgam9ic2VydmVyIHRv
-a2VucyBhdmFpbGFibGU7IHNob3VsZCBiZSA4IQo=
---e89a8f921a3e9dcdb004fdf6cb9d
-Content-Type: application/octet-stream; name=allmodconfig
-Content-Disposition: attachment; filename=allmodconfig
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_hxidvv4w2
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 1d54b78..ad00fb8 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -230,6 +230,11 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	 */
+ 	mmc_data->flags |= TMIO_MMC_HAVE_CMD12_CTRL;
+ 
++	/*
++	 * All SDHI need SDIO_INFO1 reserved bit
++	 */
++	mmc_data->flags |= TMIO_MMC_SDIO_STATUS_QUIRK;
++
+ 	if (of_id && of_id->data) {
+ 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
+ 		mmc_data->flags |= of_data->tmio_flags;
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 1f1fdfb..e51a993 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -650,6 +650,7 @@ irqreturn_t tmio_mmc_sdio_irq(int irq, void *devid)
+ 	struct mmc_host *mmc = host->mmc;
+ 	struct tmio_mmc_data *pdata = host->pdata;
+ 	unsigned int ireg, status;
++	unsigned int sdio_status;
+ 
+ 	if (!(pdata->flags & TMIO_MMC_SDIO_IRQ))
+ 		return IRQ_HANDLED;
+@@ -657,7 +658,11 @@ irqreturn_t tmio_mmc_sdio_irq(int irq, void *devid)
+ 	status = sd_ctrl_read16(host, CTL_SDIO_STATUS);
+ 	ireg = status & TMIO_SDIO_MASK_ALL & ~host->sdcard_irq_mask;
+ 
+-	sd_ctrl_write16(host, CTL_SDIO_STATUS, status & ~TMIO_SDIO_MASK_ALL);
++	sdio_status = status & ~TMIO_SDIO_MASK_ALL;
++	if (pdata->flags & TMIO_MMC_SDIO_STATUS_QUIRK)
++		sdio_status |= 6;
++
++	sd_ctrl_write16(host, CTL_SDIO_STATUS, sdio_status);
+ 
+ 	if (mmc->caps & MMC_CAP_SDIO_IRQ && ireg & TMIO_SDIO_STAT_IOIRQ)
+ 		mmc_signal_sdio_irq(mmc);
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 7432d95..a7493ae 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -89,6 +89,11 @@
+  */
+ #define TMIO_MMC_HAVE_CMD12_CTRL	(1 << 7)
+ 
++/*
++ * Some controllers needs to set 1 on SDIO status reserved bits
++ */
++#define TMIO_MMC_SDIO_STATUS_QUIRK	(1 << 8)
++
+ int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
+ int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
+ void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
+-- 
+1.7.9.5
 
-PHN0ZGluPjoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGlu
-IHVzZXIgbW9kZQo8c3RkaW4+OjE6MDogZXJyb3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNv
-ZnQtaW1hc2sgaW4gdXNlciBtb2RlCi4vc2NyaXB0cy9nY2MtdmVyc2lvbi5zaDogbGluZSAzMTog
-cHJpbnRmOiAjOiBpbnZhbGlkIG51bWJlcgouL3NjcmlwdHMvZ2NjLXZlcnNpb24uc2g6IGxpbmUg
-MzE6IHByaW50ZjogIzogaW52YWxpZCBudW1iZXIKPHN0ZGluPjoxOjA6IGVycm9yOiBjYW5ub3Qg
-dXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGluIHVzZXIgbW9kZQo8c3RkaW4+OjE6MDogZXJy
-b3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNvZnQtaW1hc2sgaW4gdXNlciBtb2RlCi4vc2Ny
-aXB0cy9nY2MtdmVyc2lvbi5zaDogbGluZSAzMTogcHJpbnRmOiAjOiBpbnZhbGlkIG51bWJlcgou
-L3NjcmlwdHMvZ2NjLXZlcnNpb24uc2g6IGxpbmUgMzE6IHByaW50ZjogIzogaW52YWxpZCBudW1i
-ZXIKL2Jpbi9zaDogbGluZSAwOiBbOiB0b28gbWFueSBhcmd1bWVudHMKc2NyaXB0cy9tb2QvZW1w
-dHkuYzoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGluIHVz
-ZXIgbW9kZQogLyogZW1wdHkgZmlsZSB0byBmaWd1cmUgb3V0IGVuZGlhbm5lc3MgLyB3b3JkIHNp
-emUgKi8KIF4KbWFrZVsyXTogKioqIFtzY3JpcHRzL21vZC9lbXB0eS5vXSBFcnJvciAxCm1ha2Vb
-MV06ICoqKiBbc2NyaXB0cy9tb2RdIEVycm9yIDIKbWFrZVsxXTogKioqIFdhaXRpbmcgZm9yIHVu
-ZmluaXNoZWQgam9icy4uLi4Ka2VybmVsL2JvdW5kcy5jOjE6MDogZXJyb3I6IGNhbm5vdCB1c2Ug
-YXRvbWljIG1vZGVsIHNvZnQtaW1hc2sgaW4gdXNlciBtb2RlCiAvKgogXgptYWtlWzFdOiAqKiog
-W2tlcm5lbC9ib3VuZHMuc10gRXJyb3IgMQptYWtlOiAqKiogW3ByZXBhcmUwXSBFcnJvciAyCm1h
-a2U6ICoqKiBXYWl0aW5nIGZvciB1bmZpbmlzaGVkIGpvYnMuLi4uCm1ha2U6ICoqKiBbc2NyaXB0
-c10gRXJyb3IgMgo=
---e89a8f921a3e9dcdb004fdf6cb9d
-Content-Type: application/octet-stream; name=allyesconfig
-Content-Disposition: attachment; filename=allyesconfig
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_hxidvv5f3
-
-PHN0ZGluPjoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGlu
-IHVzZXIgbW9kZQo8c3RkaW4+OjE6MDogZXJyb3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNv
-ZnQtaW1hc2sgaW4gdXNlciBtb2RlCi4vc2NyaXB0cy9nY2MtdmVyc2lvbi5zaDogbGluZSAzMTog
-cHJpbnRmOiAjOiBpbnZhbGlkIG51bWJlcgouL3NjcmlwdHMvZ2NjLXZlcnNpb24uc2g6IGxpbmUg
-MzE6IHByaW50ZjogIzogaW52YWxpZCBudW1iZXIKPHN0ZGluPjoxOjA6IGVycm9yOiBjYW5ub3Qg
-dXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGluIHVzZXIgbW9kZQo8c3RkaW4+OjE6MDogZXJy
-b3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNvZnQtaW1hc2sgaW4gdXNlciBtb2RlCi4vc2Ny
-aXB0cy9nY2MtdmVyc2lvbi5zaDogbGluZSAzMTogcHJpbnRmOiAjOiBpbnZhbGlkIG51bWJlcgou
-L3NjcmlwdHMvZ2NjLXZlcnNpb24uc2g6IGxpbmUgMzE6IHByaW50ZjogIzogaW52YWxpZCBudW1i
-ZXIKL2Jpbi9zaDogbGluZSAwOiBbOiB0b28gbWFueSBhcmd1bWVudHMKPHN0ZGluPjoxOjA6IGVy
-cm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBzb2Z0LWltYXNrIGluIHVzZXIgbW9kZQo8c3Rk
-aW4+OjE6MDogZXJyb3I6IGNhbm5vdCB1c2UgYXRvbWljIG1vZGVsIHNvZnQtaW1hc2sgaW4gdXNl
-ciBtb2RlCi4vc2NyaXB0cy9nY2MtdmVyc2lvbi5zaDogbGluZSAzMTogcHJpbnRmOiAjOiBpbnZh
-bGlkIG51bWJlcgouL3NjcmlwdHMvZ2NjLXZlcnNpb24uc2g6IGxpbmUgMzE6IHByaW50ZjogIzog
-aW52YWxpZCBudW1iZXIKL2Jpbi9zaDogbGluZSAwOiBbOiB0b28gbWFueSBhcmd1bWVudHMKc2Ny
-aXB0cy9tb2QvZW1wdHkuYzoxOjA6IGVycm9yOiBjYW5ub3QgdXNlIGF0b21pYyBtb2RlbCBzb2Z0
-LWltYXNrIGluIHVzZXIgbW9kZQogLyogZW1wdHkgZmlsZSB0byBmaWd1cmUgb3V0IGVuZGlhbm5l
-c3MgLyB3b3JkIHNpemUgKi8KIF4KbWFrZVsyXTogKioqIFtzY3JpcHRzL21vZC9lbXB0eS5vXSBF
-cnJvciAxCm1ha2VbMV06ICoqKiBbc2NyaXB0cy9tb2RdIEVycm9yIDIKbWFrZVsxXTogKioqIFdh
-aXRpbmcgZm9yIHVuZmluaXNoZWQgam9icy4uLi4KbWFrZTogKioqIFtzY3JpcHRzXSBFcnJvciAy
-Cm1ha2U6ICoqKiBXYWl0aW5nIGZvciB1bmZpbmlzaGVkIGpvYnMuLi4uCg==
---e89a8f921a3e9dcdb004fdf6cb9d--
