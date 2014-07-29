@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 22 Jul 2014 05:34:42 +0000
-Subject: [PATCH 06/10] mmc: tmio: add TMIO_MMC_SDIO_STATUS_QUIRK
-Message-Id: <8761iqhs7j.wl%kuninori.morimoto.gx@renesas.com>
+Date: Tue, 29 Jul 2014 08:44:55 +0000
+Subject: [PATCH 03/10 v2] mmc: tmio: clear error IRQ status
+Message-Id: <87iomgo8oq.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
 	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
@@ -9,88 +9,39 @@ References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook
 	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
 	<53AD638C.5060907@renesas.com>
 	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+	<87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Ian Molton <ian@mnementh.co.uk>, Chris Ball <cjb@laptop.org>
-Cc: TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, ryo.kataoka.wt@renesas.com, shinobu.uehara.xc@renesas.com, kouei.abe.cp@renesas.com
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Ian Molton <ian@mnementh.co.uk>, TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, ryo.kataoka.wt@renesas.com, shinobu.uehara.xc@renesas.com, kouei.abe.cp@renesas.com, cm-hiep@jinso.co.jp, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
 From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-Renesas R-Car SDHI should set reserved bits
-on CTL_SDIO_STATUS register when writing.
-This patch adds new TMIO_MMC_SDIO_STATUS_QUIRK flags
-for this purpose
-
-[Kuninori Morimoto: tidyuped for upstreaming
-                    enabled this flags for all SH-Mobile/R-Car]
+Next card access will be always
+error if it didn't clear error status
 
 Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |    5 +++++
- drivers/mmc/host/tmio_mmc_pio.c   |    7 ++++++-
- include/linux/mfd/tmio.h          |    5 +++++
- 3 files changed, 16 insertions(+), 1 deletion(-)
+ drivers/mmc/host/tmio_mmc_pio.c |    3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 7b9c816..8b3c6cd 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -231,6 +231,11 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	 */
- 	mmc_data->flags |= TMIO_MMC_HAVE_CMD12_CTRL;
- 
-+	/*
-+	 * All SDHI need SDIO_INFO1 reserved bit
-+	 */
-+	mmc_data->flags |= TMIO_MMC_SDIO_STATUS_QUIRK;
-+
- 	if (of_id && of_id->data) {
- 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
- 		mmc_data->flags |= of_data->tmio_flags;
 diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 1f1fdfb..e51a993 100644
+index faf0924..c3b1b4e 100644
 --- a/drivers/mmc/host/tmio_mmc_pio.c
 +++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -650,6 +650,7 @@ irqreturn_t tmio_mmc_sdio_irq(int irq, void *devid)
- 	struct mmc_host *mmc = host->mmc;
- 	struct tmio_mmc_data *pdata = host->pdata;
- 	unsigned int ireg, status;
-+	unsigned int sdio_status;
+@@ -557,6 +557,9 @@ static void tmio_mmc_card_irq_status(struct tmio_mmc_host *host,
  
- 	if (!(pdata->flags & TMIO_MMC_SDIO_IRQ))
- 		return IRQ_HANDLED;
-@@ -657,7 +658,11 @@ irqreturn_t tmio_mmc_sdio_irq(int irq, void *devid)
- 	status = sd_ctrl_read16(host, CTL_SDIO_STATUS);
- 	ireg = status & TMIO_SDIO_MASK_ALL & ~host->sdcard_irq_mask;
- 
--	sd_ctrl_write16(host, CTL_SDIO_STATUS, status & ~TMIO_SDIO_MASK_ALL);
-+	sdio_status = status & ~TMIO_SDIO_MASK_ALL;
-+	if (pdata->flags & TMIO_MMC_SDIO_STATUS_QUIRK)
-+		sdio_status |= 6;
+ 	pr_debug_status(*status);
+ 	pr_debug_status(*ireg);
 +
-+	sd_ctrl_write16(host, CTL_SDIO_STATUS, sdio_status);
++	/* Clear the status except the interrupt status */
++	sd_ctrl_write32(host, CTL_STATUS, TMIO_MASK_IRQ);
+ }
  
- 	if (mmc->caps & MMC_CAP_SDIO_IRQ && ireg & TMIO_SDIO_STAT_IOIRQ)
- 		mmc_signal_sdio_irq(mmc);
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index 7432d95..a7493ae 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -89,6 +89,11 @@
-  */
- #define TMIO_MMC_HAVE_CMD12_CTRL	(1 << 7)
- 
-+/*
-+ * Some controllers needs to set 1 on SDIO status reserved bits
-+ */
-+#define TMIO_MMC_SDIO_STATUS_QUIRK	(1 << 8)
-+
- int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
- int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
- void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
+ static bool __tmio_mmc_card_detect_irq(struct tmio_mmc_host *host,
 -- 
 1.7.9.5
 
