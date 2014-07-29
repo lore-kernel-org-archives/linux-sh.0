@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 22 Jul 2014 05:34:24 +0000
-Subject: [PATCH 04/10] mmc: tmio: clear error IRQ status
-Message-Id: <878unmhs81.wl%kuninori.morimoto.gx@renesas.com>
+Date: Tue, 29 Jul 2014 08:47:41 +0000
+Subject: [PATCH 10/10 v2] mmc: tmio: add actual clock support as option
+Message-Id: <878unco8k4.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
 	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
@@ -9,37 +9,84 @@ References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook
 	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
 	<53AD638C.5060907@renesas.com>
 	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+	<87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Ian Molton <ian@mnementh.co.uk>, Chris Ball <cjb@laptop.org>
-Cc: TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, ryo.kataoka.wt@renesas.com, shinobu.uehara.xc@renesas.com, kouei.abe.cp@renesas.com
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Ian Molton <ian@mnementh.co.uk>, TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, ryo.kataoka.wt@renesas.com, shinobu.uehara.xc@renesas.com, kouei.abe.cp@renesas.com, cm-hiep@jinso.co.jp, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
 From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-Next card access will be always
-error if it didn't clear error status
+Some controller is supporting actual clock on SD_CLK_CTRL :: DIV[7:0].
+Renesas SH-Mobile SDHI doesn't support,
+but, Renesas R-Car SDHI supports it.
+This patch adds new TMIO_MMC_CLK_ACTUAL flag for it.
+
+[Kuninori Morimoto: tidyuped for upstreaming]
 
 Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |    3 +++
- 1 file changed, 3 insertions(+)
+ drivers/mmc/host/sh_mobile_sdhi.c |    6 ++++--
+ drivers/mmc/host/tmio_mmc_pio.c   |    5 +++++
+ include/linux/mfd/tmio.h          |    5 +++++
+ 3 files changed, 14 insertions(+), 2 deletions(-)
 
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index b6f94c8..a6bdb83 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -49,12 +49,14 @@ static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
+ };
+ 
+ static const struct sh_mobile_sdhi_of_data of_rcar_gen1_compatible = {
+-	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE |
++			  TMIO_MMC_CLK_ACTUAL,
+ 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+ };
+ 
+ static const struct sh_mobile_sdhi_of_data of_rcar_gen2_compatible = {
+-	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE |
++			  TMIO_MMC_CLK_ACTUAL,
+ 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+ 	.capabilities2	= MMC_CAP2_NO_2BLKS_READ,
+ 	.dma_rx_offset	= 0x2000,
 diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index faf0924..c3b1b4e 100644
+index 1c5a631..895e713 100644
 --- a/drivers/mmc/host/tmio_mmc_pio.c
 +++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -557,6 +557,9 @@ static void tmio_mmc_card_irq_status(struct tmio_mmc_host *host,
- 
- 	pr_debug_status(*status);
- 	pr_debug_status(*ireg);
+@@ -150,6 +150,11 @@ static void tmio_mmc_set_clock(struct tmio_mmc_host *host, int new_clock)
+ 		for (clock = host->mmc->f_min, clk = 0x80000080;
+ 			new_clock >= (clock<<1); clk >>= 1)
+ 			clock <<= 1;
 +
-+	/* Clear the status except the interrupt status */
-+	sd_ctrl_write32(host, CTL_STATUS, TMIO_MASK_IRQ);
- }
++		/* 1/1 clock is option */
++		if ((host->pdata->flags & TMIO_MMC_CLK_ACTUAL) &&
++		    ((clk >> 22) & 0x1))
++			clk |= 0xff;
+ 	}
  
- static bool __tmio_mmc_card_detect_irq(struct tmio_mmc_host *host,
+ 	if (host->set_clk_div)
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index adcb0cd..90436d5 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -99,6 +99,11 @@
+  */
+ #define TMIO_MMC_HAVE_CTL_DMA_REG	(1 << 9)
+ 
++/*
++ * Some controllers allows to set SDx actual clock
++ */
++#define TMIO_MMC_CLK_ACTUAL		(1 << 10)
++
+ int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
+ int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
+ void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
 -- 
 1.7.9.5
 
