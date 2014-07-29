@@ -1,38 +1,45 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 15 Jul 2014 22:45:16 +0000
-Subject: [PATCH 06/11] ARM: shmobile: r8a7790: Rename mmcif node to mmc
-Message-Id: <1405464321-4723-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 29 Jul 2014 08:47:30 +0000
+Subject: [PATCH 09/10 v2] mmc: tmio: ensure that the clock has been stopped before set_clock
+Message-Id: <87a97so8kf.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
+	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
+	<53AD638C.5060907@renesas.com>
+	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+	<87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Ian Molton <ian.molton@codethink.co.uk>, devicetree@vger.kernel.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Ian Molton <ian@mnementh.co.uk>, TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, ryo.kataoka.wt@renesas.com, shinobu.uehara.xc@renesas.com, kouei.abe.cp@renesas.com, cm-hiep@jinso.co.jp, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
-Node names should describe the function of the device, not its IP core
-name.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Cc: devicetree@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This patch ensures that the clock has been stopped before
+it calls tmio_mmc_set_clock().
+The clock settings might be failed without this patch
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/mmc/host/tmio_mmc_pio.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 0f15f7c..4fae298 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -356,7 +356,7 @@
- 		status = "disabled";
- 	};
- 
--	mmcif0: mmcif@ee200000 {
-+	mmcif0: mmc@ee200000 {
- 		compatible = "renesas,mmcif-r8a7790", "renesas,sh-mmcif";
- 		reg = <0 0xee200000 0 0x80>;
- 		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index da3c74d..1c5a631 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -895,6 +895,7 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 		}
+ 		if (host->power = TMIO_MMC_OFF_STOP)
+ 			tmio_mmc_reset(host);
++		tmio_mmc_clk_stop(host);
+ 		tmio_mmc_set_clock(host, ios->clock);
+ 		if (host->power = TMIO_MMC_OFF_STOP)
+ 			/* power up SD card and the bus */
 -- 
-1.8.5.5
+1.7.9.5
 
