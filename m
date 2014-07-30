@@ -1,40 +1,90 @@
-From: "Opensource [Steve Twiss]" <stwiss.opensource@diasemi.com>
-Date: Mon, 28 Jul 2014 09:53:56 +0000
-Subject: RE: [RESEND RFC V2] devicetree: Dialog Semiconductor consolidate existing vendor prefixes to standar
-Message-Id: <6ED8E3B22081A4459DAC7699F3695FB7D0B28E95@SW-EX-MBX02.diasemi.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 30 Jul 2014 02:37:25 +0000
+Subject: Re: [RESEND RFC V2] devicetree: Dialog Semiconductor consolidate existing vendor prefixes to standar
+Message-Id: <20140730023725.GA23224@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201407241554.s6OFsqbW031651@swsrvapps-01.diasemi.com>
  <20140725070002.GH7063@lee--X1>
-In-Reply-To: <20140725070002.GH7063@lee--X1>
+ <6ED8E3B22081A4459DAC7699F3695FB7D0B28E95@SW-EX-MBX02.diasemi.com>
+In-Reply-To: <6ED8E3B22081A4459DAC7699F3695FB7D0B28E95@SW-EX-MBX02.diasemi.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-T24gMjUgSnVseSAyMDE0IDA4OjAwLCBMZWUgSm9uZXMgd3JvdGU6DQoNCj5PbiBUaHUsIDI0IEp1
-bCAyMDE0LCBPcGVuc291cmNlIFtTdGV2ZSBUd2lzc10gd3JvdGU6DQo+PiBGcm9tOiBTdGV2ZSBU
-d2lzcyA8c3R3aXNzLm9wZW5zb3VyY2VAZGlhc2VtaS5jb20+DQo+Pg0KPj4gVGhpcyBwYXRjaCBz
-ZXJpZXMgdXBkYXRlcyB0aGUgZGV2aWNlIHRyZWUgdmVuZG9yIHByZWZpeCBmb3INCj4+IERpYWxv
-ZyBTZW1pY29uZHVjdG9yLg0KPj4NCj4+IFZhcmlvdXMgbWV0aG9kcyBhcmUgY3VycmVudGx5IHVz
-ZWQgdGhyb3VnaG91dCB0aGUga2VybmVsOiAnZGlhc2VtaScsDQo+PiAnZGlhbG9nJyBhbmQgJ2Rs
-ZycuIE90aGVycyBoYXZlIGFsc28gYmVlbiBzdWdnZXN0ZWQuDQo+Pg0KPj4gVGhpcyBwYXRjaCBz
-ZXQgYWltcyB0byBjb25zb2xpZGF0ZSB0aGUgdXNhZ2Ugb2YgdGhlIHZlbmRvciBwcmVmaXggdG8N
-Cj4+IHVzZSBhIGNvbW1vbiBzdGFuZGFyZC4gVGhlIHByZWZpeCAnZGxnJyBpcyB1c2VkLg0KPj4N
-Cj4+DQo+PiBTaWduZWQtb2ZmLWJ5OiBTdGV2ZSBUd2lzcyA8c3R3aXNzLm9wZW5zb3VyY2VAZGlh
-c2VtaS5jb20+DQo+DQo+RGlkbid0IEkgQWNrIHRoZSBNRkQgcGFydHMgYWxyZWFkeT8NCj4NCg0K
-WWVzIC0tIGNlcnRhaW5seS4NCiAoSSBzaG91bGQgaGF2ZSBwdXQgdGhlbSBpbiB0aGUgbWFpbiBi
-b2R5IG9mIHRoZSBlLW1haWwgc2hvdWxkbid0IEkgLi4/KQ0KDQpJIGp1c3QgbmVlZCB0aGUgU0hN
-b2JpbGUgcmVzcG9uc2VzIG5vdy4NCkkgd2lsbCB0cnkgdG8gbWFrZSBjb250YWN0IHdpdGggdGhv
-c2UgZ3V5cyB0aGlzIHdlZWsuDQoNCkkgaGF2ZSB0aGUgZm9sbG93aW5nIEFja3Mgc28gZmFyLg0K
-DQo+RnJvbTogUm9iIEhlcnJpbmcgb24gMjEgSnVseSAyMDE0IDE2OjQzDQo+SSdtIG9rYXkgd2l0
-aCB0aGlzLCBidXQgaXQgYWxzbyBuZWVkcyBhY2tzIGZyb20gaS5NWCBhbmQgU0hNb2JpbGUNCj5m
-b2xrcyBhcyBpdCBjb3VsZCBicmVhayBvdXQgb2YgdHJlZSB1c2Vycy4NCj4gIEFja2VkLWJ5OiBS
-b2IgSGVycmluZyA8cm9iaEBrZXJuZWwub3JnPg0KDQo+RnJvbTogU2hhd24gR3VvIG9uIDIyIEp1
-bHkgMjAxNCAwMjozOA0KPmFyY2gvYXJtL2Jvb3QvZHRzL2lteDUzLXNtZC5kdHMgICAgICAgICAg
-ICAgICAgICAgIHwgIDIgKy0NCj5hcmNoL2FybS9ib290L2R0cy9pbXg2cWRsLXBoeXRlYy1wZmxh
-MDIuZHRzaSAgICAgICB8ICAyICstDQo+ICBBY2tlZC1ieTogU2hhd24gR3VvIDxzaGF3bi5ndW9A
-ZnJlZXNjYWxlLmNvbT4NCg0KPkZyb206IExlZSBKb25lcyBvbiAyMiBKdWx5IDIwMTQgMDg6MDkN
-Cj5Gb3IgdGhlIE1GRCBjaGFuZ2VzOg0KPiAgQWNrZWQtYnk6IExlZSBKb25lcyA8bGVlLmpvbmVz
-QGxpbmFyby5vcmc+DQoNCmFuZA0KDQo+RnJvbTogUGhpbGlwcCBaYWJlbCBvbiAyNCBKdWx5IDIw
-MTQgMjA6NDQNCj4gIEFja2VkLWJ5OiBQaGlsaXBwIFphYmVsIDxwLnphYmVsQHBlbmd1dHJvbml4
-LmRlPg0KDQpSZWdhcmRzLA0KU3RldmUNCg0K
+On Mon, Jul 28, 2014 at 09:53:56AM +0000, Opensource [Steve Twiss] wrote:
+> On 25 July 2014 08:00, Lee Jones wrote:
+> 
+> >On Thu, 24 Jul 2014, Opensource [Steve Twiss] wrote:
+> >> From: Steve Twiss <stwiss.opensource@diasemi.com>
+> >>
+> >> This patch series updates the device tree vendor prefix for
+> >> Dialog Semiconductor.
+> >>
+> >> Various methods are currently used throughout the kernel: 'diasemi',
+> >> 'dialog' and 'dlg'. Others have also been suggested.
+> >>
+> >> This patch set aims to consolidate the usage of the vendor prefix to
+> >> use a common standard. The prefix 'dlg' is used.
+> >>
+> >>
+> >> Signed-off-by: Steve Twiss <stwiss.opensource@diasemi.com>
+> >
+> >Didn't I Ack the MFD parts already?
+> >
+> 
+> Yes -- certainly.
+>  (I should have put them in the main body of the e-mail shouldn't I ..?)
+> 
+> I just need the SHMobile responses now.
+> I will try to make contact with those guys this week.
+
+Hi Steve,
+
+I apologise for not noticing this earlier:
+I am entirely unsure how I missed it.
+
+In principle I am fine with this change so long as it does not
+introduce any backwards-compatibility problems. In particular removing
+compatibility strings that may already be in use by DTB blobs in the wild.
+
+For SH Mobile it seems that Lager and Koelsch were using "diasemi,da9210"
+which is unsupported by the driver at this time. So it seems there is no
+backwards-compatibility problem there. I'm less sure about other aspects of
+the patch. And I'm also less concerned about them.
+
+I do have a slight preference for SH Mobile changes to go through my
+renesas tree rather than elsewhere (as part of a more global change)
+principally to try to avoid the possibility of conflicts. The SH Mobile dts
+files in question are often updated. And for example I notice some fuzz
+when applying this patch on top of the next-20140729 tag of linux-next.
+
+If you were to break out the SH Mobile portion of this patch I would be
+happy to take it once the driver portion is accepted.  That said, I do see
+that everyone else has acked the change so clearly this is not an issue
+from their point of view. So I will not complain if you decide not to break
+the patch up (though please note my warning about possible conflicts).
+
+In the case where you do not want to split up the patch:
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+
+> I have the following Acks so far.
+> 
+> >From: Rob Herring on 21 July 2014 16:43
+> >I'm okay with this, but it also needs acks from i.MX and SHMobile
+> >folks as it could break out of tree users.
+> >  Acked-by: Rob Herring <robh@kernel.org>
+> 
+> >From: Shawn Guo on 22 July 2014 02:38
+> >arch/arm/boot/dts/imx53-smd.dts                    |  2 +-
+> >arch/arm/boot/dts/imx6qdl-phytec-pfla02.dtsi       |  2 +-
+> >  Acked-by: Shawn Guo <shawn.guo@freescale.com>
+> 
+> >From: Lee Jones on 22 July 2014 08:09
+> >For the MFD changes:
+> >  Acked-by: Lee Jones <lee.jones@linaro.org>
+> 
+> and
+> 
+> >From: Philipp Zabel on 24 July 2014 20:44
+> >  Acked-by: Philipp Zabel <p.zabel@pengutronix.de>
