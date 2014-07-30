@@ -1,57 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 07 Jul 2014 07:54:50 +0000
-Subject: [PATCH v2 25/30] ARM: shmobile: sh73a0: add SCI clock support for DT
-Message-Id: <1404719695-1634-26-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 30 Jul 2014 23:33:17 +0000
+Subject: [PATCH 08/09] ARM: shmobile: Add shmobile_init_late() to APE6EVM
+Message-Id: <20140730233317.5969.91454.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This will be used when initialising SCI devices using DT
-until common clock framework support is added.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Extend board specific APE6EVM reference machine vectors to include
+shmobile_init_late() so Suspend-to-RAM and CPUIdle are setup as expected.
 
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
-v2
-* First post
----
- arch/arm/mach-shmobile/clock-sh73a0.c | 9 +++++++++
- 1 file changed, 9 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index 37f4838..9433a4e 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -638,16 +638,25 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e6820000.i2c", &mstp_clks[MSTP116]), /* I2C0 */
- 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.0", &mstp_clks[MSTP100]), /* LCDC0 */
- 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP219]), /* SCIFA7 */
-+	CLKDEV_DEV_ID("e6cd0000.serial", &mstp_clks[MSTP219]), /* SCIFA7 */
- 	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP218]), /* SY-DMAC */
- 	CLKDEV_DEV_ID("sh-dma-engine.1", &mstp_clks[MSTP217]), /* MP-DMAC */
- 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP207]), /* SCIFA5 */
-+	CLKDEV_DEV_ID("e6cb0000.serial", &mstp_clks[MSTP207]), /* SCIFA5 */
- 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP206]), /* SCIFB */
-+	CLKDEV_DEV_ID("0xe6c3000.serial", &mstp_clks[MSTP206]), /* SCIFB */
- 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]), /* SCIFA0 */
-+	CLKDEV_DEV_ID("e6c40000.serial", &mstp_clks[MSTP204]), /* SCIFA0 */
- 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]), /* SCIFA1 */
-+	CLKDEV_DEV_ID("e6c50000.serial", &mstp_clks[MSTP203]), /* SCIFA1 */
- 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP202]), /* SCIFA2 */
-+	CLKDEV_DEV_ID("e6c60000.serial", &mstp_clks[MSTP202]), /* SCIFA2 */
- 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP201]), /* SCIFA3 */
-+	CLKDEV_DEV_ID("e6c70000.serial", &mstp_clks[MSTP201]), /* SCIFA3 */
- 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP200]), /* SCIFA4 */
-+	CLKDEV_DEV_ID("e6c80000.serial", &mstp_clks[MSTP200]), /* SCIFA4 */
- 	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP331]), /* SCIFA6 */
-+	CLKDEV_DEV_ID("e6cc0000.serial", &mstp_clks[MSTP331]), /* SCIFA6 */
- 	CLKDEV_DEV_ID("sh_fsi2", &mstp_clks[MSTP328]), /* FSI */
- 	CLKDEV_DEV_ID("ec230000.sound", &mstp_clks[MSTP328]), /* FSI */
- 	CLKDEV_DEV_ID("sh_irda.0", &mstp_clks[MSTP325]), /* IrDA */
--- 
-2.0.0.rc2
+ arch/arm/mach-shmobile/board-ape6evm-reference.c |    1 +
+ arch/arm/mach-shmobile/board-ape6evm.c           |    1 +
+ 2 files changed, 2 insertions(+)
 
+--- 0001/arch/arm/mach-shmobile/board-ape6evm-reference.c
++++ work/arch/arm/mach-shmobile/board-ape6evm-reference.c	2014-07-31 07:59:04.000000000 +0900
+@@ -61,5 +61,6 @@ static const char *ape6evm_boards_compat
+ DT_MACHINE_START(APE6EVM_DT, "ape6evm")
+ 	.init_early	= r8a73a4_init_early,
+ 	.init_machine	= ape6evm_add_standard_devices,
++	.init_late	= shmobile_init_late,
+ 	.dt_compat	= ape6evm_boards_compat_dt,
+ MACHINE_END
+--- 0001/arch/arm/mach-shmobile/board-ape6evm.c
++++ work/arch/arm/mach-shmobile/board-ape6evm.c	2014-07-31 08:01:40.000000000 +0900
+@@ -285,5 +285,6 @@ static const char *ape6evm_boards_compat
+ DT_MACHINE_START(APE6EVM_DT, "ape6evm")
+ 	.init_early	= r8a73a4_init_early,
+ 	.init_machine	= ape6evm_add_standard_devices,
++	.init_late	= shmobile_init_late,
+ 	.dt_compat	= ape6evm_boards_compat_dt,
+ MACHINE_END
