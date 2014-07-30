@@ -1,36 +1,51 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 15 Jul 2014 11:35:10 +0000
-Subject: Re: [PATCH v5 0/8] Enable timers DT devices for Marzen, Genmai, Lager and Koelsch
-Message-Id: <20140715113505.GA25203@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 30 Jul 2014 23:45:00 +0000
+Subject: [PATCH] ARM: shmobile: Use shmobile_init_delay() on APE6EVM
+Message-Id: <20140730234500.18995.49199.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404911564-17380-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20140715050106.GG5277@verge.net.au>
- <20140715085536.GC17806@verge.net.au>
-In-Reply-To: <20140715085536.GC17806@verge.net.au>
+References: <20140511231050.19908.86623.sendpatchset@w520>
+In-Reply-To: <20140511231050.19908.86623.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Jul 15, 2014 at 05:55:36PM +0900, Simon Horman wrote:
-> On Tue, Jul 15, 2014 at 02:01:07PM +0900, Simon Horman wrote:
-> > On Wed, Jul 09, 2014 at 03:12:36PM +0200, Laurent Pinchart wrote:
-> > > Hello,
-> > > 
-> > > This patch set enables timer devices in DT for the Marzen, Genmai, Lager and
-> > > Koelsch boards. It has previously been posted as part of the "[PATCH v4 00/19]
-> > > Renesas CMT, MTU2 and TMU timers DT support" series, and is now split into its
-> > > own patch set for merge in v3.17.
-> > > 
-> > > The series depends on the driver changes of the "[PATCH v4 00/19] Renesas CMT,
-> > > MTU2 and TMU timers DT support" series, for which a pull request has been sent.
-> > 
-> > Thanks, I have queued these up.
-> 
-> As reported elsewhere I am having a bit of trouble with the dependencies
-> for this series so I have dropped it for now.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Please ignore that remark, it was supposed to be about
-"ARM: shmobile: r7s72100: Remove legacy board support".
+The r8a73a4 DTS includes CPU Frequency information so
+adjust the APE6EVM board code to use shmobile_init_delay()
+instead of relying on CPU Frequency information included
+in r8a73a4_init_delay() that is specified in C.
 
-I have only dropped the 72100/genmai patches of this series.
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ Written on top of renesas-devel-v3.16-rc7-20140729 and
+ [PATCH 00/09] ARM: shmobile: Consistent use of shmobile_init_late()
+
+ arch/arm/mach-shmobile/board-ape6evm-reference.c |    2 +-
+ arch/arm/mach-shmobile/board-ape6evm.c           |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- 0002/arch/arm/mach-shmobile/board-ape6evm-reference.c
++++ work/arch/arm/mach-shmobile/board-ape6evm-reference.c	2014-07-31 08:38:10.000000000 +0900
+@@ -59,7 +59,7 @@ static const char *ape6evm_boards_compat
+ };
+ 
+ DT_MACHINE_START(APE6EVM_DT, "ape6evm")
+-	.init_early	= r8a73a4_init_early,
++	.init_early	= shmobile_init_delay,
+ 	.init_machine	= ape6evm_add_standard_devices,
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= ape6evm_boards_compat_dt,
+--- 0002/arch/arm/mach-shmobile/board-ape6evm.c
++++ work/arch/arm/mach-shmobile/board-ape6evm.c	2014-07-31 08:39:22.000000000 +0900
+@@ -283,7 +283,7 @@ static const char *ape6evm_boards_compat
+ };
+ 
+ DT_MACHINE_START(APE6EVM_DT, "ape6evm")
+-	.init_early	= r8a73a4_init_early,
++	.init_early	= shmobile_init_delay,
+ 	.init_machine	= ape6evm_add_standard_devices,
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= ape6evm_boards_compat_dt,
