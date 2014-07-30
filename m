@@ -1,31 +1,42 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 17 Jul 2014 01:00:57 +0000
-Subject: Re: [PATCH 05/11] mmc: tmio: Fix DMA source address
-Message-Id: <8738e0g5o8.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 30 Jul 2014 23:32:06 +0000
+Subject: [PATCH 00/09] ARM: shmobile: Consistent use of shmobile_init_late()
+Message-Id: <20140730233206.5969.26669.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-	<1405464321-4723-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-	<87r41mkrpl.wl%kuninori.morimoto.gx@renesas.com>
-	<3064066.cLMrQSJucc@avalon>
-In-Reply-To: <3064066.cLMrQSJucc@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Ian Molton <ian.molton@codethink.co.uk>
+To: linux-sh@vger.kernel.org
 
+ARM: shmobile: Consistent use of shmobile_init_late()
 
-Hi Laurent
+[PATCH 01/09] ARM: shmobile: Add shmobile_init_late() to sh73a0
+[PATCH 02/09] ARM: shmobile: Add shmobile_init_late() to KZM9G
+[PATCH 03/09] ARM: shmobile: Fix shmobile_init_late() on r8a7779
+[PATCH 04/09] ARM: shmobile: Add shmobile_init_late() to Marzen
+[PATCH 05/09] ARM: shmobile: Fix shmobile_init_late() on r8a7778
+[PATCH 06/09] ARM: shmobile: Add shmobile_init_late() to Bock-W
+[PATCH 07/09] ARM: shmobile: Add shmobile_init_late() to r8a73a4
+[PATCH 08/09] ARM: shmobile: Add shmobile_init_late() to APE6EVM
+[PATCH 09/09] ARM: shmobile: Add shmobile_init_late() to r7s72100
 
-> > Unfortunately, this patch breaks compatibility.
-> > This "+ 0x2000" is required only from Renesas R-Car.
-> > I alreay sent this fixup patch before (not accepted yet, and I will re-send
-> > v2 patch soon)
-> > 
-> > https://www.mail-archive.com/linux-mmc@vger.kernel.org/msg26776.html
-> 
-> I've applied your patch locally, thank you. You can add my Acked-by line to 
-> v2. When do you plan to push it to mainline ?
+Make sure all mach-shmobile SoCs and DT Reference board support code
+call shmobile_init_late() so Suspend-to-RAM and CPUIdle get setup
+in a consistent way. The SoC DT case for r8a7778 and r8a7779 are
+also adjusted to not add any platform devices. DT shall be used instead.
 
-Thank you.
-I think v2 will be posted in next week.
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ Written on top of renesas-devel-v3.16-rc7-20140729
+
+ arch/arm/mach-shmobile/board-ape6evm-reference.c |    1 +
+ arch/arm/mach-shmobile/board-ape6evm.c           |    1 +
+ arch/arm/mach-shmobile/board-bockw-reference.c   |    1 +
+ arch/arm/mach-shmobile/board-kzm9g-reference.c   |    1 +
+ arch/arm/mach-shmobile/board-marzen-reference.c  |    1 +
+ arch/arm/mach-shmobile/setup-r7s72100.c          |    1 +
+ arch/arm/mach-shmobile/setup-r8a73a4.c           |    1 +
+ arch/arm/mach-shmobile/setup-r8a7778.c           |    2 +-
+ arch/arm/mach-shmobile/setup-r8a7779.c           |    2 +-
+ arch/arm/mach-shmobile/setup-sh73a0.c            |    1 +
