@@ -1,93 +1,30 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 07 Jul 2014 07:54:42 +0000
-Subject: [PATCH v2 17/30] ARM: shmobile: armadillo800eva-reference: Initialise SCIF device using DT
-Message-Id: <1404719695-1634-18-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 30 Jul 2014 23:32:24 +0000
+Subject: [PATCH 02/09] ARM: shmobile: Add shmobile_init_late() to KZM9G
+Message-Id: <20140730233224.5969.39070.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Initialise SCIF device using DT when booting armadillo800eva
-using DT reference.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Extend board specific KZM9D DT reference machine vector to include
+shmobile_init_late() so Suspend-to-RAM and CPUIdle are setup as expected.
 
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
-v2
-* First post
----
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 14 +++++++++++---
- arch/arm/mach-shmobile/setup-r8a7740.c                  |  8 ++++----
- 2 files changed, 15 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index f6ef73f..f47ab76 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -19,6 +19,10 @@
- 	model = "armadillo 800 eva reference";
- 	compatible = "renesas,armadillo800eva-reference", "renesas,r8a7740";
- 
-+	aliases {
-+		serial1 = &scifa1;
-+	};
-+
- 	chosen {
- 		bootargs = "console=tty0 console=ttySC1,115200 earlyprintk=sh-sci.1,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
- 	};
-@@ -202,9 +206,6 @@
- };
- 
- &pfc {
--	pinctrl-0 = <&scifa1_pins>;
--	pinctrl-names = "default";
--
- 	ether_pins: ether {
- 		renesas,groups = "gether_mii", "gether_int";
- 		renesas,function = "gether";
-@@ -256,6 +257,13 @@
- 	status = "okay";
- };
- 
-+&scifa1 {
-+	pinctrl-0 = <&scifa1_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+};
-+
- &sdhi0 {
- 	pinctrl-0 = <&sdhi0_pins>;
- 	pinctrl-names = "default";
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 348af35..3d5eaca 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -312,6 +312,10 @@ static struct platform_device ipmmu_device = {
- };
- 
- static struct platform_device *r8a7740_devices_dt[] __initdata = {
-+	&cmt1_device,
-+};
-+
-+static struct platform_device *r8a7740_early_devices[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
- 	&scif2_device,
-@@ -321,10 +325,6 @@ static struct platform_device *r8a7740_devices_dt[] __initdata = {
- 	&scif6_device,
- 	&scif7_device,
- 	&scif8_device,
--	&cmt1_device,
--};
--
--static struct platform_device *r8a7740_early_devices[] __initdata = {
- 	&irqpin0_device,
- 	&irqpin1_device,
- 	&irqpin2_device,
--- 
-2.0.0.rc2
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |    1 +
+ 1 file changed, 1 insertion(+)
 
+--- 0001/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ work/arch/arm/mach-shmobile/board-kzm9g-reference.c	2014-07-31 07:41:03.000000000 +0900
+@@ -54,5 +54,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-refere
+ 	.init_early	= sh73a0_init_delay,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_machine	= kzm_init,
++	.init_late	= shmobile_init_late,
+ 	.dt_compat	= kzm9g_boards_compat_dt,
+ MACHINE_END
