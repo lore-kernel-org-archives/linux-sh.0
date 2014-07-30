@@ -1,56 +1,77 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 15 Jul 2014 22:45:10 +0000
-Subject: [PATCH 00/11] MMCIF and SDHI DMA support in DT for R-Car H2 and M2
-Message-Id: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 30 Jul 2014 22:27:23 +0000
+Subject: [PATCH 02/02] ARM: shmobile: Koelsch SYS-DMAC and SCIF RX prototype
+Message-Id: <20140730222723.4799.79194.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Ian Molton <ian.molton@codethink.co.uk>
 
-Hello,
+From: Magnus Damm <damm+renesas@opensource.se>
 
-This patch series enables DMA support for the MMCIF and SDHI devices on R-Car
-H2 (r8a7790) and M2 (r8a7791) when booting through DT.
+Enable RX DMA for r8a7791 / Koelsch SCIF devices.
 
-The first patch documents DT bindings for the MMCIF device. DT support is
-implemented in the driver, but the bindings documentation was missing. Patches
-02/11 to 05/11 then fix DMA slave configuration in the MMCIF and SDHI drivers.
-Finally patches 06/11 to 11/11 enable DMA support in DT for H2 and M2.
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-Patches 08/11 to 11/11 depend on the R-Car Gen2 DMAC driver posted to the
-dmaengine and linux-sh mailing lists as "[PATCH 0/7] R-Car Gen2 DMA Controller
-driver".
+ arch/arm/mach-shmobile/board-koelsch-reference.c |   44 +++++++++-------------
+ 1 file changed, 18 insertions(+), 26 deletions(-)
 
-The first five patches (driver changes) should go through the DMA engine tree,
-while the last six patches (platform changes) should go through the Renesas
-tree. If the driver changes could make it to v3.17 merging the platform
-changes will be easier.
-
-Laurent Pinchart (11):
-  mmc: sh_mmcif: Document DT bindings
-  mmc: sh_mmcif: Fix DMA slave address configuration
-  mmc: sh_mmcif: Configure DMA slave bus width
-  mmc: tmio: Configure DMA slave bus width
-  mmc: tmio: Fix DMA source address
-  ARM: shmobile: r8a7790: Rename mmcif node to mmc
-  ARM: shmobile: r8a7791: Add MMCIF0 DT node
-  ARM: shmobile: r8a7790: Reference DMA channels in MMCIF DT nodes
-  ARM: shmobile: r8a7791: Reference DMA channels in MMCIF DT node
-  ARM: shmobile: r8a7790: Reference DMA channels in SDHI DT nodes
-  ARM: shmobile: r8a7791: Reference DMA channels in SDHI DT nodes
-
- .../devicetree/bindings/mmc/renesas,mmcif.txt      | 32 ++++++++++++++++++++++
- arch/arm/boot/dts/r8a7790.dtsi                     | 14 +++++++++-
- arch/arm/boot/dts/r8a7791.dtsi                     | 17 ++++++++++++
- drivers/mmc/host/sh_mmcif.c                        | 13 +++++++--
- drivers/mmc/host/tmio_mmc_dma.c                    |  4 ++-
- 5 files changed, 75 insertions(+), 5 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-
--- 
-Regards,
-
-Laurent Pinchart
-
+--- 0022/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ work/arch/arm/mach-shmobile/board-koelsch-reference.c	2014-07-31 07:14:52.000000000 +0900
+@@ -151,36 +151,28 @@ enum {
+ 	.mid_rid	= r,					\
+ }
+ 
+-#define SYS_DMAC_SLAVE_TX(_id, _bit, _addr, toffset, roffset, t, r)	\
+-{								\
+-	.slave_id	= SYS_DMAC_SLAVE_## _id ##_TX,		\
+-	.addr		= _addr + toffset,			\
+-	.chcr		= CHCR_TX(XMIT_SZ_## _bit ##BIT),	\
+-	.mid_rid	= t,					\
+-}
+-
+ static const struct sh_dmae_slave_config r8a7791_sys_dmac_slaves[] = {
+ 	SYS_DMAC_SLAVE(SDHI0, 16, 0xee100000, 0x60, 0x2060, 0xcd, 0xce),
+ 	SYS_DMAC_SLAVE(SDHI1, 16, 0xee140000, 0x30, 0x2030, 0xc1, 0xc2),
+ 	SYS_DMAC_SLAVE(SDHI2, 16, 0xee160000, 0x30, 0x2030, 0xd3, 0xd4),
+-	SYS_DMAC_SLAVE_TX(SCIF0, 8, 0xe6e60000, 0xc, 0x14, 0x29, 0x2a),
+-	SYS_DMAC_SLAVE_TX(SCIF1, 8, 0xe6e68000, 0xc, 0x14, 0x2d, 0x2e),
+-	SYS_DMAC_SLAVE_TX(SCIF2, 8, 0xe6e58000, 0xc, 0x14, 0x2b, 0x2c),
+-	SYS_DMAC_SLAVE_TX(SCIF3, 8, 0xe6ea8000, 0xc, 0x14, 0x2f, 0x30),
+-	SYS_DMAC_SLAVE_TX(SCIF4, 8, 0xe6ee0000, 0xc, 0x14, 0xfb, 0xfc),
+-	SYS_DMAC_SLAVE_TX(SCIF5, 8, 0xe6ee8000, 0xc, 0x14, 0xfd, 0xfe),
+-	SYS_DMAC_SLAVE_TX(SCIFA0, 8, 0xe6c40000, 0x20, 0x24, 0x21, 0x22),
+-	SYS_DMAC_SLAVE_TX(SCIFA1, 8, 0xe6c50000, 0x20, 0x24, 0x25, 0x26),
+-	SYS_DMAC_SLAVE_TX(SCIFA2, 8, 0xe6c60000, 0x20, 0x24, 0x27, 0x28),
+-	SYS_DMAC_SLAVE_TX(SCIFA3, 8, 0xe6c70000, 0x20, 0x24, 0x1b, 0x1c),
+-	SYS_DMAC_SLAVE_TX(SCIFA4, 8, 0xe6c78000, 0x20, 0x24, 0x1f, 0x20),
+-	SYS_DMAC_SLAVE_TX(SCIFA5, 8, 0xe6c80000, 0x20, 0x24, 0x23, 0x24),
+-	SYS_DMAC_SLAVE_TX(SCIFB0, 8, 0xe6c20000, 0x40, 0x60, 0x3d, 0x3e),
+-	SYS_DMAC_SLAVE_TX(SCIFB1, 8, 0xe6c30000, 0x40, 0x60, 0x19, 0x1a),
+-	SYS_DMAC_SLAVE_TX(SCIFB2, 8, 0xe6ce0000, 0x40, 0x60, 0x1d, 0x1e),
+-	SYS_DMAC_SLAVE_TX(HSCIF0, 8, 0xe62c0000, 0xc, 0x14, 0x39, 0x3a),
+-	SYS_DMAC_SLAVE_TX(HSCIF1, 8, 0xe62c8000, 0xc, 0x14, 0x4d, 0x4e),
+-	SYS_DMAC_SLAVE_TX(HSCIF2, 8, 0xe62d0000, 0xc, 0x14, 0x3b, 0x3c),
++	SYS_DMAC_SLAVE(SCIF0, 8, 0xe6e60000, 0xc, 0x14, 0x29, 0x2a),
++	SYS_DMAC_SLAVE(SCIF1, 8, 0xe6e68000, 0xc, 0x14, 0x2d, 0x2e),
++	SYS_DMAC_SLAVE(SCIF2, 8, 0xe6e58000, 0xc, 0x14, 0x2b, 0x2c),
++	SYS_DMAC_SLAVE(SCIF3, 8, 0xe6ea8000, 0xc, 0x14, 0x2f, 0x30),
++	SYS_DMAC_SLAVE(SCIF4, 8, 0xe6ee0000, 0xc, 0x14, 0xfb, 0xfc),
++	SYS_DMAC_SLAVE(SCIF5, 8, 0xe6ee8000, 0xc, 0x14, 0xfd, 0xfe),
++	SYS_DMAC_SLAVE(SCIFA0, 8, 0xe6c40000, 0x20, 0x24, 0x21, 0x22),
++	SYS_DMAC_SLAVE(SCIFA1, 8, 0xe6c50000, 0x20, 0x24, 0x25, 0x26),
++	SYS_DMAC_SLAVE(SCIFA2, 8, 0xe6c60000, 0x20, 0x24, 0x27, 0x28),
++	SYS_DMAC_SLAVE(SCIFA3, 8, 0xe6c70000, 0x20, 0x24, 0x1b, 0x1c),
++	SYS_DMAC_SLAVE(SCIFA4, 8, 0xe6c78000, 0x20, 0x24, 0x1f, 0x20),
++	SYS_DMAC_SLAVE(SCIFA5, 8, 0xe6c80000, 0x20, 0x24, 0x23, 0x24),
++	SYS_DMAC_SLAVE(SCIFB0, 8, 0xe6c20000, 0x40, 0x60, 0x3d, 0x3e),
++	SYS_DMAC_SLAVE(SCIFB1, 8, 0xe6c30000, 0x40, 0x60, 0x19, 0x1a),
++	SYS_DMAC_SLAVE(SCIFB2, 8, 0xe6ce0000, 0x40, 0x60, 0x1d, 0x1e),
++	SYS_DMAC_SLAVE(HSCIF0, 8, 0xe62c0000, 0xc, 0x14, 0x39, 0x3a),
++	SYS_DMAC_SLAVE(HSCIF1, 8, 0xe62c8000, 0xc, 0x14, 0x4d, 0x4e),
++	SYS_DMAC_SLAVE(HSCIF2, 8, 0xe62d0000, 0xc, 0x14, 0x3b, 0x3c),
+ 	SYS_DMAC_SLAVE(MSIOF0, 32, 0xe7e20000, 0x50, 0x60, 0x51, 0x52),
+ 	SYS_DMAC_SLAVE(MSIOF1, 32, 0xe7e10000, 0x50, 0x60, 0x55, 0x56),
+ 	SYS_DMAC_SLAVE(MSIOF2, 32, 0xe7e00000, 0x50, 0x60, 0x41, 0x42),
