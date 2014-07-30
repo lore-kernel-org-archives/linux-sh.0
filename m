@@ -1,47 +1,30 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 22 Jul 2014 05:30:37 +0000
-Subject: [PATCH 0/10][RFC] mmc: tmio: fixup patches
-Message-Id: <87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 30 Jul 2014 23:32:41 +0000
+Subject: [PATCH 04/09] ARM: shmobile: Add shmobile_init_late() to Marzen
+Message-Id: <20140730233241.5969.59510.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>	<53AD638C.5060907@renesas.com>
-In-Reply-To: <53AD638C.5060907@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Ian Molton <ian@mnementh.co.uk>, Chris Ball <cjb@laptop.org>
-Cc: TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, ryo.kataoka.wt@renesas.com, shinobu.uehara.xc@renesas.com, kouei.abe.cp@renesas.com
+To: linux-sh@vger.kernel.org
 
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Hi Chris, Simon
+Extend board specific Marzen DT reference machine vector to include
+shmobile_init_late() so Suspend-to-RAM and CPUIdle are setup as expected.
 
-These are fixup patches for mmc tmio/shmobile.
-I tesed these patches on my environment.
-I'm very happy if someone test these patches.
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-These patches modify TMIO driver,
-but, basically it has no effect to non-Renesas chip.
-I CC:ed Ian who created original TMIO driver.
+ arch/arm/mach-shmobile/board-marzen-reference.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-Kuninori Morimoto (3):
-      mmc: tmio: care about DMA tx/rx addr offset
-      mmc: tmio: remove Renesas specific #ifdef
-      mmc: tmio: remove SCLKEN bit setting from tmio_mmc_set_clock()
-
-Shinobu Uehara (6):
-      mmc: sh_mobile_sdhi: Add EXT_ACC register busy check
-      mmc: block: add block number limitation flag for multiple block read
-      mmc: tmio: clear error IRQ status
-      mmc: tmio: control multiple block transfer mode
-      mmc: tmio: add TMIO_MMC_SDIO_STATUS_QUIRK
-      mmc: tmio: check ILL_FUNC instead of CBSY
-      mmc: tmio: add actual clock support as option
-
- arch/arm/mach-shmobile/board-koelsch.c |    6 ++---
- arch/arm/mach-shmobile/board-lager.c   |    4 ++--
- drivers/mmc/card/block.c               |   19 ++++++++++++++--
- drivers/mmc/host/sh_mobile_sdhi.c      |   27 +++++++++++++++++++---
- drivers/mmc/host/tmio_mmc_dma.c        |    8 +++----
- drivers/mmc/host/tmio_mmc_pio.c        |   39 +++++++++++++++++++++++++++++---
- include/linux/mfd/tmio.h               |   22 ++++++++++++++++++
- include/linux/mmc/host.h               |    3 +++
- 8 files changed, 110 insertions(+), 18 deletions(-)
+--- 0001/arch/arm/mach-shmobile/board-marzen-reference.c
++++ work/arch/arm/mach-shmobile/board-marzen-reference.c	2014-07-31 07:45:06.000000000 +0900
+@@ -57,5 +57,6 @@ DT_MACHINE_START(MARZEN, "marzen")
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= r8a7779_init_irq_dt,
+ 	.init_machine	= marzen_init,
++	.init_late	= shmobile_init_late,
+ 	.dt_compat	= marzen_boards_compat_dt,
+ MACHINE_END
