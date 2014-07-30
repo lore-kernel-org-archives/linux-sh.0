@@ -1,41 +1,58 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 07 Jul 2014 07:54:43 +0000
-Subject: [PATCH v2 18/30] ARM: shmobile: r8a7740: add TMU clock support for DT
-Message-Id: <1404719695-1634-19-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 30 Jul 2014 22:04:16 +0000
+Subject: [PATCH v3 2/3] ARM: shmobile: r8a7791: add CAN DT support
+Message-Id: <201407310204.17423.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1404719695-1634-1-git-send-email-horms+renesas@verge.net.au>
+References: <201407310158.15446.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201407310158.15446.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This will be used when initialising TMU devices using DT
-until common clock framework support is added.
+Define the generic R8A7791 parts of the CAN0/1 device nodes.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
 ---
-v2
-* First post
----
- arch/arm/mach-shmobile/clock-r8a7740.c | 2 ++
- 1 file changed, 2 insertions(+)
+Changes in version 3:
+- added 2 more CAN clocks along with "clock-names" property in the CAN0/1 device
+  nodes;
+- refreshed the patch.
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index a60c324..b4ecbd6 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -599,7 +599,9 @@ static struct clk_lookup lookups[] = {
+Changes in version 2:
+- fixed the "compatible" property in the CAN device nodes.
+
+ arch/arm/boot/dts/r8a7791.dtsi |   20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
++++ renesas/arch/arm/boot/dts/r8a7791.dtsi
+@@ -550,6 +550,26 @@
+ 		status = "disabled";
+ 	};
  
- 	/* ICK */
- 	CLKDEV_ICK_ID("fck",	"sh-tmu.1",		&mstp_clks[MSTP111]),
-+	CLKDEV_ICK_ID("fck",	"fff90000.timer",	&mstp_clks[MSTP111]),
- 	CLKDEV_ICK_ID("fck",	"sh-tmu.0",		&mstp_clks[MSTP125]),
-+	CLKDEV_ICK_ID("fck",	"fff80000.timer",	&mstp_clks[MSTP125]),
- 	CLKDEV_ICK_ID("fck",	"sh-cmt-48.1",		&mstp_clks[MSTP329]),
- 	CLKDEV_ICK_ID("host",	"renesas_usbhs",	&mstp_clks[MSTP416]),
- 	CLKDEV_ICK_ID("func",	"renesas_usbhs",	&mstp_clks[MSTP407]),
--- 
-2.0.0.rc2
-
++	can0: can@e6e80000 {
++		compatible = "renesas,can-r8a7791";
++		reg = <0 0xe6e80000 0 0x1000>;
++		interrupts = <0 186 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7791_CLK_RCAN0>,
++		       	 <&cpg_clocks R8A7791_CLK_RCAN>, <&can_clk>;
++		clock-names = "clkp1", "clkp2", "can_clk";
++		status = "disabled";
++	};
++
++	can1: can@e6e88000 {
++		compatible = "renesas,can-r8a7791";
++		reg = <0 0xe6e88000 0 0x1000>;
++		interrupts = <0 187 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7791_CLK_RCAN1>,
++		       	 <&cpg_clocks R8A7791_CLK_RCAN>, <&can_clk>;
++		clock-names = "clkp1", "clkp2", "can_clk";
++		status = "disabled";
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
