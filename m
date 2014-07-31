@@ -1,67 +1,133 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 16 Jul 2014 15:21:18 +0000
-Subject: Re: [PATCH] ARM: shmobile: defconfig: Remove MACH_GENMAI
-Message-Id: <20140716152118.GA22514@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 31 Jul 2014 00:34:07 +0000
+Subject: [PATCH 4/6] dmaengine: rcar-dmac: Add device tree bindings documentation
+Message-Id: <3dc5d31428846326bf122a2a9b402a2a80e97681.1406766014.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405512176-7234-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1405512176-7234-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1406766014.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1406766014.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-
-On Wed, Jul 16, 2014 at 11:24:18PM +0900, Simon Horman wrote:
-> On Wed, Jul 16, 2014 at 02:02:56PM +0200, Laurent Pinchart wrote:
-> > The CONFIG_MACH_GENMAI option has been removed in commit bec652e2fbfe
-> > ("ARM: shmobile: r7s72100: genmai: Remove legacy board file"). Remove
-> > the leftovers from shmobile_defconfig.
-> > 
-> > Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> >  arch/arm/configs/shmobile_defconfig | 1 -
-> >  1 file changed, 1 deletion(-)
-> > 
-> > Simon, could you please queue this on top of your MACH_GENMAI removal
-> > branch ?
-> 
-> Thanks,  have applied this to the deconfigs branch and
-> plan to send it in parallel with the MACH_GENMAI removal branch.
-
-On reflection I have rearranged my branches so that this patch and
-the one to remove genmai_defconfig come before the patches to remove
-the genmai board code. This seems more logical and should avoid
-the build failing in between removal of the code and the defconfig.
-
-I updated the changelog a little to reflect this approach.
-I hope that I haven't messed anything up.
-
+To: Vinod Koul <vinod.koul@intel.com>
+Cc: dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, devicetree@vger.kernel.org, Simon Horman <horms+renesas@verge.net.au>
 
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-ARM: shmobile: defconfig: Remove MACH_GENMAI
+Document the device tree bindings for the R-Car Generation 2 DMA
+Controller (DMAC).
 
-The CONFIG_MACH_GENMAI is scheduled for removal so remove it from
-shmobile_defconfig.
-
+Cc: devicetree@vger.kernel.org
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-[horms+renesas@verge.net.au: revised changelog for updated commit order]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/shmobile_defconfig | 1 -
- 1 file changed, 1 deletion(-)
+ .../devicetree/bindings/dma/renesas,rcar-dmac.txt  | 98 ++++++++++++++++++++++
+ 1 file changed, 98 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/dma/renesas,rcar-dmac.txt
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index 6bc85a5..3b13614 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -14,7 +14,6 @@ CONFIG_ARCH_R7S72100=y
- CONFIG_ARCH_R8A7779=y
- CONFIG_ARCH_R8A7790=y
- CONFIG_ARCH_R8A7791=y
--CONFIG_MACH_GENMAI=y
- CONFIG_MACH_KOELSCH=y
- CONFIG_MACH_LAGER=y
- CONFIG_MACH_MARZEN=y
+diff --git a/Documentation/devicetree/bindings/dma/renesas,rcar-dmac.txt b/Documentation/devicetree/bindings/dma/renesas,rcar-dmac.txt
+new file mode 100644
+index 0000000..df0f48b
+--- /dev/null
++++ b/Documentation/devicetree/bindings/dma/renesas,rcar-dmac.txt
+@@ -0,0 +1,98 @@
++* Renesas R-Car DMA Controller Device Tree bindings
++
++Renesas R-Car Generation 2 SoCs have have multiple multi-channel DMA
++controller instances named DMAC capable of serving multiple clients. Channels
++can be dedicated to specific clients or shared between a large number of
++clients.
++
++DMA clients are connected to the DMAC ports referenced by an 8-bit identifier
++called MID/RID.
++
++Each DMA client is connected to one dedicated port of the DMAC, identified by
++an 8-bit port number called the MID/RID. A DMA controller can thus serve up to
++256 clients in total. When the number of hardware channels is lower than the
++number of clients to be served, channels must be shared between multiple DMA
++clients. The association of DMA clients to DMAC channels is fully dynamic and
++not described in these device tree bindings.
++
++Required Properties:
++
++- compatible: must contain "renesas,rcar-dmac"
++
++- reg: base address and length of the registers block for the DMAC
++
++- interrupts: interrupt specifiers for the DMAC, one for each entry in
++  interrupt-names.
++- interrupt-names: one entry per channel, named "ch%u", where %u is the
++  channel number ranging from zero to the number of channels minus one.
++
++- clock-names: "fck" for the functional clock
++- clocks: a list of phandle + clock-specifier pairs, one for each entry
++  in clock-names.
++- clock-names: must contain "fck" for the functional clock.
++
++- #dma-cells: must be <1>, the cell specifies the MID/RID of the DMAC port
++  connected to the DMA client
++- dma-channels: number of DMA channels
++
++Example: R8A7790 (R-Car H2) SYS-DMACs
++
++	dmac0: dma-controller@e6700000 {
++		compatible = "renesas,rcar-dmac";
++		reg = <0 0xe6700000 0 0x20000>;
++		interrupts = <0 197 IRQ_TYPE_LEVEL_HIGH
++			      0 200 IRQ_TYPE_LEVEL_HIGH
++			      0 201 IRQ_TYPE_LEVEL_HIGH
++			      0 202 IRQ_TYPE_LEVEL_HIGH
++			      0 203 IRQ_TYPE_LEVEL_HIGH
++			      0 204 IRQ_TYPE_LEVEL_HIGH
++			      0 205 IRQ_TYPE_LEVEL_HIGH
++			      0 206 IRQ_TYPE_LEVEL_HIGH
++			      0 207 IRQ_TYPE_LEVEL_HIGH
++			      0 208 IRQ_TYPE_LEVEL_HIGH
++			      0 209 IRQ_TYPE_LEVEL_HIGH
++			      0 210 IRQ_TYPE_LEVEL_HIGH
++			      0 211 IRQ_TYPE_LEVEL_HIGH
++			      0 212 IRQ_TYPE_LEVEL_HIGH
++			      0 213 IRQ_TYPE_LEVEL_HIGH
++			      0 214 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error",
++				"ch0", "ch1", "ch2", "ch3",
++				"ch4", "ch5", "ch6", "ch7",
++				"ch8", "ch9", "ch10", "ch11",
++				"ch12", "ch13", "ch14";
++		clocks = <&mstp2_clks R8A7790_CLK_SYS_DMAC0>;
++		clock-names = "fck";
++		#dma-cells = <1>;
++		dma-channels = <15>;
++	};
++
++	dmac1: dma-controller@e6720000 {
++		compatible = "renesas,rcar-dmac";
++		reg = <0 0xe6720000 0 0x20000>;
++		interrupts = <0 220 IRQ_TYPE_LEVEL_HIGH
++			      0 216 IRQ_TYPE_LEVEL_HIGH
++			      0 217 IRQ_TYPE_LEVEL_HIGH
++			      0 218 IRQ_TYPE_LEVEL_HIGH
++			      0 219 IRQ_TYPE_LEVEL_HIGH
++			      0 308 IRQ_TYPE_LEVEL_HIGH
++			      0 309 IRQ_TYPE_LEVEL_HIGH
++			      0 310 IRQ_TYPE_LEVEL_HIGH
++			      0 311 IRQ_TYPE_LEVEL_HIGH
++			      0 312 IRQ_TYPE_LEVEL_HIGH
++			      0 313 IRQ_TYPE_LEVEL_HIGH
++			      0 314 IRQ_TYPE_LEVEL_HIGH
++			      0 315 IRQ_TYPE_LEVEL_HIGH
++			      0 316 IRQ_TYPE_LEVEL_HIGH
++			      0 317 IRQ_TYPE_LEVEL_HIGH
++			      0 318 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error",
++				"ch0", "ch1", "ch2", "ch3",
++				"ch4", "ch5", "ch6", "ch7",
++				"ch8", "ch9", "ch10", "ch11",
++				"ch12", "ch13", "ch14";
++		clocks = <&mstp2_clks R8A7790_CLK_SYS_DMAC1>;
++		clock-names = "fck";
++		#dma-cells = <1>;
++		dma-channels = <15>;
++	};
 -- 
-2.0.0
+2.0.1
 
