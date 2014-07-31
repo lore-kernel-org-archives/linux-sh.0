@@ -1,39 +1,46 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 11 Jul 2014 15:09:22 +0000
-Subject: Re: [PATCH 10/13] [RFC] ARM: dts: Add shmobile platform device tree bindings documentation
-Message-Id: <20140711150921.GA1777@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 31 Jul 2014 00:42:46 +0000
+Subject: [PATCH repost] ARM: shmobile: sh73a0: Remove spurious 0x from SCIFB clock name
+Message-Id: <20140731004246.GA31860@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404908623-909-1-git-send-email-geert+renesas@glider.be>
- <1404908623-909-11-git-send-email-geert+renesas@glider.be>
- <20140711091720.GO12420@verge.net.au>
- <CAMuHMdXP6GfO7OEnXU8x4Sn5j8_tA2nnrFANr1sriB-B4BYoOQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdXP6GfO7OEnXU8x4Sn5j8_tA2nnrFANr1sriB-B4BYoOQ@mail.gmail.com>
+References: <cover.1406766463.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1406766463.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jul 11, 2014 at 04:26:03PM +0200, Geert Uytterhoeven wrote:
-> Hi Simon,
-> 
-> On Fri, Jul 11, 2014 at 11:17 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Wed, Jul 09, 2014 at 02:23:40PM +0200, Geert Uytterhoeven wrote:
-> >> Add Renesas SH-Mobile, R-Mobile, and R-Car Platform Device Tree Bindings
-> >> Documentation, listing supported SoCs and boards.
-> >>
-> >> This allows to use checkpatch to validate DTSes referring to Renesas
-> >> shmobile SoCs, and boards containing those SoCs.
-> >>
-> >> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> >> Cc: linux-arm-kernel@lists.infradead.org
-> >
-> > Thanks Geert,
-> >
-> > from my point of view this seems nice. Is there a reason it is marked as an RFC?
-> 
-> >From the cover letter:
-> 
-> "The last 4 patches contain compatible strings for new R-Car Gen2 SoCs,
->  which are not yet in active use, hence the RFC status."
+A stray '0x' crept into a0f7e7496d56ac2d ("ARM: shmobile: sh73a0: add CMT1
+clock support for DT"). This  patch removes it.
 
-Thanks, sorry for missing that.
+This change should not have any run-time affect at this time as
+the clock in question is used by a SCIF device that is not enabled by
+default.
+
+Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-sh73a0.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+Hi Olof,
+
+this is a repost of the patch you asked for so you can apply it directly
+rather than as pulling a pull request.
+
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 0d77f65..b0993a5 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -644,7 +644,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP207]), /* SCIFA5 */
+ 	CLKDEV_DEV_ID("e6cb0000.serial", &mstp_clks[MSTP207]), /* SCIFA5 */
+ 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP206]), /* SCIFB */
+-	CLKDEV_DEV_ID("0xe6c3000.serial", &mstp_clks[MSTP206]), /* SCIFB */
++	CLKDEV_DEV_ID("e6c3000.serial", &mstp_clks[MSTP206]), /* SCIFB */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]), /* SCIFA0 */
+ 	CLKDEV_DEV_ID("e6c40000.serial", &mstp_clks[MSTP204]), /* SCIFA0 */
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]), /* SCIFA1 */
+-- 
+2.0.1
+
