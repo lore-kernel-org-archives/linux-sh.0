@@ -1,160 +1,81 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Jul 2014 00:28:41 +0000
-Subject: [PATCH 1/8] ARM: shmobile: Move r8a7791.h
-Message-Id: <5201b5a792e95e3ecebe74cd3553413a67da09db.1404174157.git.horms+renesas@verge.net.au>
+Date: Thu, 31 Jul 2014 00:34:06 +0000
+Subject: [PATCH 3/6] dmaengine: shdma: Allocate cyclic sg list dynamically
+Message-Id: <7c32a21a5152589b8d434d0db0c8c5648c5ff2ef.1406766014.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1404174157.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1404174157.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Change location of r8a7791.h so it can be included as "r8a7791.h"
-instead of the old style <mach/r8a7791.h>
+The sg list used to prepare cyclic DMA descriptors is currently
+allocated statically on the stack as an array of 32 elements. This makes
+the shdma_prep_dma_cyclic() function consume a lot of stack space, as
+reported by the compiler:
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+drivers/dma/sh/shdma-base.c: In function ‘shdma_prep_dma_cyclic’:
+drivers/dma/sh/shdma-base.c:715:1: warning: the frame size of 1056 bytes
+is larger than 1024 bytes [-Wframe-larger-than=]
+
+Given the limited Linux kernel stack size, this could lead to stack
+overflows. Fix the problem by allocating the sg list dynamically.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-koelsch-reference.c |  4 +++-
- arch/arm/mach-shmobile/board-koelsch.c           |  4 +++-
- arch/arm/mach-shmobile/include/mach/r8a7791.h    | 11 -----------
- arch/arm/mach-shmobile/pm-r8a7791.c              |  6 ++++--
- arch/arm/mach-shmobile/r8a7791.h                 | 11 +++++++++++
- arch/arm/mach-shmobile/setup-r8a7791.c           |  4 +++-
- arch/arm/mach-shmobile/smp-r8a7791.c             |  4 +++-
- 7 files changed, 27 insertions(+), 17 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/include/mach/r8a7791.h
- create mode 100644 arch/arm/mach-shmobile/r8a7791.h
+ drivers/dma/sh/shdma-base.c | 17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index 1d3f67d..0b1fb23 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -23,11 +23,13 @@
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
- #include <linux/platform_data/rcar-du.h>
--#include <mach/r8a7791.h>
-+
- #include <asm/mach/arch.h>
-+
- #include "clock.h"
- #include "common.h"
- #include "irqs.h"
-+#include "r8a7791.h"
- #include "rcar-gen2.h"
+diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
+index 94b6bde..e427a03 100644
+--- a/drivers/dma/sh/shdma-base.c
++++ b/drivers/dma/sh/shdma-base.c
+@@ -672,11 +672,12 @@ static struct dma_async_tx_descriptor *shdma_prep_dma_cyclic(
+ {
+ 	struct shdma_chan *schan = to_shdma_chan(chan);
+ 	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
++	struct dma_async_tx_descriptor *desc;
+ 	const struct shdma_ops *ops = sdev->ops;
+ 	unsigned int sg_len = buf_len / period_len;
+ 	int slave_id = schan->slave_id;
+ 	dma_addr_t slave_addr;
+-	struct scatterlist sgl[SHDMA_MAX_SG_LEN];
++	struct scatterlist *sgl;
+ 	int i;
  
- /* DU */
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index 0d44e7eb..e698b90 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -45,11 +45,13 @@
- #include <linux/spi/flash.h>
- #include <linux/spi/rspi.h>
- #include <linux/spi/spi.h>
--#include <mach/r8a7791.h>
-+
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
-+
- #include "common.h"
- #include "irqs.h"
-+#include "r8a7791.h"
- #include "rcar-gen2.h"
+ 	if (!chan)
+@@ -700,7 +701,16 @@ static struct dma_async_tx_descriptor *shdma_prep_dma_cyclic(
  
- /* DU */
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7791.h b/arch/arm/mach-shmobile/include/mach/r8a7791.h
-deleted file mode 100644
-index 86eae7b..0000000
---- a/arch/arm/mach-shmobile/include/mach/r8a7791.h
-+++ /dev/null
-@@ -1,11 +0,0 @@
--#ifndef __ASM_R8A7791_H__
--#define __ASM_R8A7791_H__
--
--void r8a7791_add_standard_devices(void);
--void r8a7791_add_dt_devices(void);
--void r8a7791_clock_init(void);
--void r8a7791_pinmux_init(void);
--void r8a7791_pm_init(void);
--extern struct smp_operations r8a7791_smp_ops;
--
--#endif /* __ASM_R8A7791_H__ */
-diff --git a/arch/arm/mach-shmobile/pm-r8a7791.c b/arch/arm/mach-shmobile/pm-r8a7791.c
-index 1519087..b7e6513 100644
---- a/arch/arm/mach-shmobile/pm-r8a7791.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7791.c
-@@ -10,10 +10,12 @@
-  * for more details.
-  */
+ 	slave_addr = ops->slave_addr(schan);
  
--#include <asm/io.h>
- #include <linux/kernel.h>
--#include <mach/r8a7791.h>
++	/*
++	 * Allocate the sg list dynamically as it would consumer too much stack
++	 * space.
++	 */
++	sgl = kcalloc(sg_len, sizeof(*sgl), GFP_KERNEL);
++	if (!sgl)
++		return NULL;
 +
-+#include <asm/io.h>
+ 	sg_init_table(sgl, sg_len);
 +
- #include "pm-rcar.h"
-+#include "r8a7791.h"
+ 	for (i = 0; i < sg_len; i++) {
+ 		dma_addr_t src = buf_addr + (period_len * i);
  
- /* SYSC */
- #define SYSCIER 0x0c
-diff --git a/arch/arm/mach-shmobile/r8a7791.h b/arch/arm/mach-shmobile/r8a7791.h
-new file mode 100644
-index 0000000..86eae7b
---- /dev/null
-+++ b/arch/arm/mach-shmobile/r8a7791.h
-@@ -0,0 +1,11 @@
-+#ifndef __ASM_R8A7791_H__
-+#define __ASM_R8A7791_H__
-+
-+void r8a7791_add_standard_devices(void);
-+void r8a7791_add_dt_devices(void);
-+void r8a7791_clock_init(void);
-+void r8a7791_pinmux_init(void);
-+void r8a7791_pm_init(void);
-+extern struct smp_operations r8a7791_smp_ops;
-+
-+#endif /* __ASM_R8A7791_H__ */
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index 7e970d0..8823324 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -26,10 +26,12 @@
- #include <linux/platform_data/irq-renesas-irqc.h>
- #include <linux/serial_sci.h>
- #include <linux/sh_timer.h>
--#include <mach/r8a7791.h>
-+
- #include <asm/mach/arch.h>
-+
- #include "common.h"
- #include "irqs.h"
-+#include "r8a7791.h"
- #include "rcar-gen2.h"
+@@ -710,8 +720,11 @@ static struct dma_async_tx_descriptor *shdma_prep_dma_cyclic(
+ 		sg_dma_len(&sgl[i]) = period_len;
+ 	}
  
- static const struct resource pfc_resources[] __initconst = {
-diff --git a/arch/arm/mach-shmobile/smp-r8a7791.c b/arch/arm/mach-shmobile/smp-r8a7791.c
-index c6543b6..2482555 100644
---- a/arch/arm/mach-shmobile/smp-r8a7791.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7791.c
-@@ -17,9 +17,11 @@
- #include <linux/init.h>
- #include <linux/smp.h>
- #include <linux/io.h>
+-	return shdma_prep_sg(schan, sgl, sg_len, &slave_addr,
++	desc = shdma_prep_sg(schan, sgl, sg_len, &slave_addr,
+ 			     direction, flags, true);
 +
- #include <asm/smp_plat.h>
--#include <mach/r8a7791.h>
-+
- #include "common.h"
-+#include "r8a7791.h"
- #include "rcar-gen2.h"
++	kfree(sgl);
++	return desc;
+ }
  
- #define RST		0xe6160000
+ static int shdma_control(struct dma_chan *chan, enum dma_ctrl_cmd cmd,
 -- 
-2.0.0.rc2
+2.0.1
 
