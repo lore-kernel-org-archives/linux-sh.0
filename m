@@ -1,42 +1,37 @@
 From: Fabian Frederick <fabf@skynet.be>
-Date: Fri, 04 Jul 2014 20:07:09 +0000
-Subject: [PATCH 1/1] arch/sh/mm/asids-debugfs.c: use PTR_ERR_OR_ZERO
-Message-Id: <1404504429-602-1-git-send-email-fabf@skynet.be>
+Date: Thu, 31 Jul 2014 21:21:40 +0000
+Subject: SH 7619 CHCR values
+Message-Id: <760230076.57448.1406841700324.open-xchange@webmail.nmp.skynet.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Fabian Frederick <fabf@skynet.be>, Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: richard@nod.at, pebolle@tiscali.nl
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-replace IS_ERR/PTR_ERR
+Hello,
 
-Cc: Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Fabian Frederick <fabf@skynet.be>
----
+ Could you tell me where I could find SH 7619 CHCR values in order to solve the
+following errors ?     
 
-This is untested.
+arch/sh/drivers/dma/dma-sh.c: In function 'calc_xmit_shift':
+arch/sh/drivers/dma/dma-sh.c:97:21: error: 'CHCR_TS_LOW_MASK' undeclared (first
+use in this function)
+arch/sh/drivers/dma/dma-sh.c:97:21: note: each undeclared identifier is reported
+only once for each function it appears in
+arch/sh/drivers/dma/dma-sh.c:97:42: error: 'CHCR_TS_LOW_SHIFT' undeclared (first
+use in this function)
+arch/sh/drivers/dma/dma-sh.c:98:12: error: 'CHCR_TS_HIGH_MASK' undeclared (first
+use in this function)
+arch/sh/drivers/dma/dma-sh.c:98:34: error: 'CHCR_TS_HIGH_SHIFT' undeclared
+(first use in this function)
+arch/sh/drivers/dma/dma-sh.c: In function 'sh_dmac_configure_channel':
+arch/sh/drivers/dma/dma-sh.c:145:10: error: 'CHCR_TS_LOW_SHIFT' undeclared
+(first use in this function)
+arch/sh/drivers/dma/dma-sh.c:145:10: error: 'CHCR_TS_HIGH_SHIFT' undeclared
+(first use in this function)
 
- arch/sh/mm/asids-debugfs.c | 4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
+I guess it should be added in a new dma-register.h in arch/sh/include/cpu-sh2 ?
 
-diff --git a/arch/sh/mm/asids-debugfs.c b/arch/sh/mm/asids-debugfs.c
-index 74c03ec..ecfc6b0 100644
---- a/arch/sh/mm/asids-debugfs.c
-+++ b/arch/sh/mm/asids-debugfs.c
-@@ -67,10 +67,8 @@ static int __init asids_debugfs_init(void)
- 					   NULL, &asids_debugfs_fops);
- 	if (!asids_dentry)
- 		return -ENOMEM;
--	if (IS_ERR(asids_dentry))
--		return PTR_ERR(asids_dentry);
- 
--	return 0;
-+	return PTR_ERR_OR_ZERO(asids_dentry);
- }
- module_init(asids_debugfs_init);
- 
--- 
-1.9.1
-
+Regards,
+Fabian
