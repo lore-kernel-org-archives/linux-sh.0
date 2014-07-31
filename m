@@ -1,42 +1,53 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Sat, 19 Jul 2014 18:52:07 +0000
-Subject: Re: [GIT PULL] Fourth Round of Renesas ARM Based SoC Defconfig Updates for v3.17
-Message-Id: <20140719185207.GB4265@quad.lixom.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 31 Jul 2014 00:33:02 +0000
+Subject: [GIT PULL] Fourth Round of Renesas ARM Based SoC Clock Updates for v3.17
+Message-Id: <cover.1406766463.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1405640905.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1405640905.git.horms+renesas@verge.net.au>
+References: <cover.1394080829.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1394080829.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jul 18, 2014 at 08:55:47AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these fourth round of Renesas ARM based SoC defconfig
-> updates for v3.17.
-> 
-> This pull request is based on the previous round of
-> such requests, tagged as renesas-defconfig3-for-v3.17,
-> which you have merged into renesas/defconfig3.
-> 
-> I will follow-up with a pull request that removes
-> the Genmai board code.
-> 
-> 
-> The following changes since commit 8cbf869a0a278c4d39e50daa4f4101b394a72a93:
-> 
->   ARM: shmobile: Enable R-Car Gen 2 PCIe in shmobile_defconfig (2014-07-09 10:44:12 +0200)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig4-for-v3.17
-> 
-> for you to fetch changes up to 92db2b7af591d3c3212183a34856b4cb190b6999:
-> 
->   ARM: shmobile: defconfig: Remove MACH_GENMAI (2014-07-17 00:02:34 +0900)
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Merged, thanks.
+Please consider these fourth round of Renesas ARM based SoC clock
+updates for v3.17.
+
+I am sending this even though v3.16-rc6 has long since been released
+as this pull-request only includes a single one line fix for a problem
+introduced in patches you have already queued up for v3.16.
+
+At it turns out the problem should not manifest at run time
+as it is an error in an clock that is not used without DT modifications.
+As such I am happy for you to ask me to defer this to v3.18 if you like.
+
+This pull request is based on the previous round of
+such requests, tagged as renesas-clock3-for-v3.17,
+which you have already merged.
 
 
--Olof
+The following changes since commit a0f7e7496d56ac2da7c684e2035815318c17973a:
+
+  ARM: shmobile: sh73a0: add CMT1 clock support for DT (2014-07-15 13:34:17 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clock4-for-v3.17
+
+for you to fetch changes up to 2c3758b01aa6f11382d2b018614b5d48ecf30350:
+
+  ARM: shmobile: sh73a0: Remove spurious 0x from SCIFB clock name (2014-07-16 23:09:18 +0900)
+
+----------------------------------------------------------------
+Fourth Round of Renesas ARM Based SoC Clock Updates for v3.17
+
+* Remove spurious 0x from SCIFB clock name
+
+----------------------------------------------------------------
+Simon Horman (1):
+      ARM: shmobile: sh73a0: Remove spurious 0x from SCIFB clock name
+
+ arch/arm/mach-shmobile/clock-sh73a0.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
