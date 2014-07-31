@@ -1,49 +1,94 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Jul 2014 00:40:34 +0000
-Subject: [PATCH 7/8] ARM: shmobile: r7s72100: Add MTU2 device to DT
-Message-Id: <221cd28d419064d517e62ac6f3c64c1df9aa4c5c.1405556312.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 31 Jul 2014 21:25:53 +0000
+Subject: [PATCH v3 2/2] rcar_can: add device tree support
+Message-Id: <201408010125.54723.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1405556312.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1405556312.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org, wg@grandegger.com, mkl@pengutronix.de, linux-can@vger.kernel.org, robh+dt@kernel.org, grant.likely@linaro.org, devicetree@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, vksavl@gmail.com
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add support of the device tree probing for the Renesas R-Car CAN controllers.
 
-Add the MTU2 counter to the r7s72100 device tree and make it disabled by
-default.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-[horms+renesas@verge.net.au correct irq number]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r7s72100.dtsi | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+The patch is against the 'linux-can-next.git' repo plus the CAN clock handling
+patch I've just posted.
 
-diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
-index bdee225..1d28d01 100644
---- a/arch/arm/boot/dts/r7s72100.dtsi
-+++ b/arch/arm/boot/dts/r7s72100.dtsi
-@@ -229,6 +229,16 @@
- 		status = "disabled";
- 	};
+Changes in version 3:
+- resolved rejects due to the 'clock_select' variable declaration being moved to
+  the CAN clock handling patch.
+
+Changes in version 2:
+- split the device tree bindings document into a separate patch;
+- replaced 0 with CLKR_CLKP1 in the 'clock_select' variable intializer
+- reversed the condition in the *if* stetement handling the reading of the
+  CAN clock selector from the device tree or the paltfrom data;
+- renamed the "clock-select" property to "renesas,can-clock-select";
+- rebased the patch on top of the CAN clock handling fix.
+
+ drivers/net/can/rcar_can.c |   28 ++++++++++++++++++++++------
+ 1 file changed, 22 insertions(+), 6 deletions(-)
+
+Index: linux-can-next/drivers/net/can/rcar_can.c
+=================================--- linux-can-next.orig/drivers/net/can/rcar_can.c
++++ linux-can-next/drivers/net/can/rcar_can.c
+@@ -20,6 +20,7 @@
+ #include <linux/can/dev.h>
+ #include <linux/clk.h>
+ #include <linux/can/platform/rcar_can.h>
++#include <linux/of.h>
  
-+	mtu2: timer@fcff0000 {
-+		compatible = "renesas,mtu2";
-+		reg = <0xfcff0000 0x400>;
-+		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "tgi0a";
-+		clocks = <&mstp3_clks R7S72100_CLK_MTU2>;
-+		clock-names = "fck";
-+		status = "disabled";
-+	};
+ #define RCAR_CAN_DRV_NAME	"rcar_can"
+ 
+@@ -738,16 +739,21 @@ static int rcar_can_probe(struct platfor
+ 	struct net_device *ndev;
+ 	struct resource *mem;
+ 	void __iomem *addr;
+-	u32 clock_select;
++	u32 clock_select = CLKR_CLKP1;
+ 	int err = -ENODEV;
+ 	int irq;
+ 
+-	pdata = dev_get_platdata(&pdev->dev);
+-	if (!pdata) {
+-		dev_err(&pdev->dev, "No platform data provided!\n");
+-		goto fail;
++	if (pdev->dev.of_node) {
++		of_property_read_u32(pdev->dev.of_node,
++				     "renesas,can-clock-select", &clock_select);
++	} else {
++		pdata = dev_get_platdata(&pdev->dev);
++		if (!pdata) {
++			dev_err(&pdev->dev, "No platform data provided!\n");
++			goto fail;
++		}
++		clock_select = pdata->clock_select;
+ 	}
+-	clock_select = pdata->clock_select;
+ 
+ 	irq = platform_get_irq(pdev, 0);
+ 	if (!irq) {
+@@ -888,10 +894,20 @@ static int __maybe_unused rcar_can_resum
+ 
+ static SIMPLE_DEV_PM_OPS(rcar_can_pm_ops, rcar_can_suspend, rcar_can_resume);
+ 
++static const struct of_device_id rcar_can_of_table[] __maybe_unused = {
++	{ .compatible = "renesas,can-r8a7778" },
++	{ .compatible = "renesas,can-r8a7779" },
++	{ .compatible = "renesas,can-r8a7790" },
++	{ .compatible = "renesas,can-r8a7791" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, rcar_can_of_table);
 +
- 	scif0: serial@e8007000 {
- 		compatible = "renesas,scif-r7s72100", "renesas,scif";
- 		reg = <0xe8007000 64>;
--- 
-2.0.0
-
+ static struct platform_driver rcar_can_driver = {
+ 	.driver = {
+ 		.name = RCAR_CAN_DRV_NAME,
+ 		.owner = THIS_MODULE,
++		.of_match_table = of_match_ptr(rcar_can_of_table),
+ 		.pm = &rcar_can_pm_ops,
+ 	},
+ 	.probe = rcar_can_probe,
