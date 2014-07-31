@@ -1,8 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 16 Jul 2014 00:20:40 +0000
+Date: Thu, 31 Jul 2014 00:33:06 +0000
 Subject: [PATCH] ARM: shmobile: sh73a0: Remove spurious 0x from SCIFB clock name
-Message-Id: <1405470040-8328-1-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <2c3758b01aa6f11382d2b018614b5d48ecf30350.1406766463.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1406766463.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1406766463.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -22,7 +24,7 @@ Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index d8c4048..02a6f45 100644
+index 0d77f65..b0993a5 100644
 --- a/arch/arm/mach-shmobile/clock-sh73a0.c
 +++ b/arch/arm/mach-shmobile/clock-sh73a0.c
 @@ -644,7 +644,7 @@ static struct clk_lookup lookups[] = {
@@ -35,5 +37,5 @@ index d8c4048..02a6f45 100644
  	CLKDEV_DEV_ID("e6c40000.serial", &mstp_clks[MSTP204]), /* SCIFA0 */
  	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]), /* SCIFA1 */
 -- 
-2.0.0
+2.0.1
 
