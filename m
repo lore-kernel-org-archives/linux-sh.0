@@ -1,28 +1,74 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sun, 06 Jul 2014 14:33:27 +0000
-Subject: Re: [PATCH v2 0/2] Add R8A7791/Henninger board CAN DT support
-Message-Id: <20140706143327.GJ3750@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 31 Jul 2014 21:24:25 +0000
+Subject: [PATCH v3 1/2] rcar_can: document device tree bindings
+Message-Id: <201408010124.26505.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201407032337.03509.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201407032337.03509.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, devicetree@vger.kernel.org
+Cc: netdev@vger.kernel.org, wg@grandegger.com, mkl@pengutronix.de, linux-can@vger.kernel.org, linux-sh@vger.kernel.org, vksavl@gmail.com
 
-On Thu, Jul 03, 2014 at 11:37:02PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
->    Here's the set of 2 patches against Simon Horman's 'renesas.git' repo,
-> 'renesas-devel-v3.16-rc3-20140701' tag. Here we add the CAN device tree support
-> for the R8A7791-based Henninger board. It depends on the PFC CAN support and
-> R-Car CAN device tree support patches posted recently in order to work.
+Document the R-Car CAN device tree bindings.
 
-Thanks, please repost these patches once the bindings have been merged.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-> 
-> [1/2] ARM: shmobile: r8a7791: add CAN DT support
-> [2/2] ARM: shmobile: henninger: add CAN0 DT support
-> 
-> WBR, Sergei
-> 
+---
+The patch is against the 'linux-can-next.git' repo.
+
+Changes in version 2:
+- new patch, split from the driver's device tree support patch;
+- adjusted "clocks" property to refer to 3 clocks instead of 1;
+- added mandatory "clock-names" property;
+- renamed the "clock-select" property to "renesas,can-clock-select".
+
+ Documentation/devicetree/bindings/net/can/rcar_can.txt |   43 +++++++++++++++++
+ 1 file changed, 43 insertions(+)
+
+Index: linux-can-next/Documentation/devicetree/bindings/net/can/rcar_can.txt
+=================================--- /dev/null
++++ linux-can-next/Documentation/devicetree/bindings/net/can/rcar_can.txt
+@@ -0,0 +1,43 @@
++Renesas R-Car CAN controller Device Tree Bindings
++-------------------------------------------------
++
++Required properties:
++- compatible: "renesas,can-r8a7778" if CAN controller is a part of R8A7778 SoC.
++	      "renesas,can-r8a7779" if CAN controller is a part of R8A7779 SoC.
++	      "renesas,can-r8a7790" if CAN controller is a part of R8A7790 SoC.
++	      "renesas,can-r8a7791" if CAN controller is a part of R8A7791 SoC.
++- reg: physical base address and size of the R-Car CAN register map.
++- interrupts: interrupt specifier for the sole interrupt.
++- clocks: phandles and clock specifiers for 3 CAN clock inputs.
++- clock-names: 3 clock input name strings: "clkp1", "clkp2", "can_clk".
++- pinctrl-0: pin control group to be used for this controller.
++- pinctrl-names: must be "default".
++
++Optional properties:
++- renesas,can-clock-select: R-Car CAN Clock Source Select. Valid values are:
++			    <0x0> (default) : Peripheral clock (clkp1)
++			    <0x1> : Peripheral clock (clkp2)
++			    <0x3> : Externally input clock
++
++Example
++-------
++
++SoC common .dtsi file:
++
++	can0: can@e6e80000 {
++		compatible = "renesas,can-r8a7791";
++		reg = <0 0xe6e80000 0 0x1000>;
++		interrupts = <0 186 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7791_CLK_RCAN0>,
++		       	 <&cpg_clocks R8A7791_CLK_RCAN>, <&can_clk>;
++		clock-names = "clkp1", "clkp2", "can_clk";
++		status = "disabled";
++	};
++
++Board specific .dts file:
++
++&can0 {
++	pinctrl-0 = <&can0_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++};
