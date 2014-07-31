@@ -1,61 +1,59 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 24 Jul 2014 01:57:15 +0000
-Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Fixes for v3.16
-Message-Id: <cover.1406162627.git.horms+renesas@verge.net.au>
+Date: Thu, 31 Jul 2014 00:34:03 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Shdma Updates for v3.17
+Message-Id: <cover.1406766014.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1381222967.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+Hi Vinod,
 
-Please consider these second round of Renesas ARM based SoC fixes for v3.16.
+Please consider these second round of Renesas ARM based SoC shdma updates
+for v3.17.
 
-The first round of fixes was prior to the release of v3.16-rc1 so
-this pull-request is based on v3.16-rc1.
-
-I would like this change considered for v3.15-stable.
-I can handle submitting it there if you like.
-
-I do not think it is necessary to consider it for v3.14-stable
-as although the incorrect code is present there it is not exercised
-in that release.
+This pull request is based on the previous round of
+such requests, tagged as renesas-shdma-for-v3.17,
+which you have already pulled.
 
 
-The following changes since commit 7171511eaec5bf23fb06078f59784a3a0626b38f:
+The following changes since commit 0cdbee33ea42bfd5f61f824e258a1a0944dd2a27:
 
-  Linux 3.16-rc1 (2014-06-15 17:45:28 -1000)
+  dmaengine: shdma: Use defines instead of hardcoded numbers (2014-07-15 18:02:29 +0900)
 
 are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-fixes2-for-v3.16
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-shdma2-for-v3.17
 
-for you to fetch changes up to c9b227723d051184b9e78f20c75ae2f9d44a6ea2:
+for you to fetch changes up to dff5450f372ee87b5e0b5762b3ca8944dae8bf7e:
 
-  ARM: shmobile: r8a7791: Fix SD2CKCR register address (2014-07-23 08:55:12 +0900)
-
-----------------------------------------------------------------
-Second Round of Renesas ARM Based SoC Fixes for v3.16
-
-* Fix SD2CKCR register address of r8a7791 (R-Car M2) SoC
-
-  This corrects a bug introduced in v3.14 by
-  59e79895b9589286 ("ARM: shmobile: r8a7791: Add clocks").
-
-  However, it does not manifest in mainline code until
-  SDHI devices were enabled on the Koelsch board in v3.15 by
-  2c60a7df72711fb8 ("ARM: shmobile: Add SDHI devices for Koelsch DTS").
-
-  It also manifests on the Henninger board when
-  SDHI devices were enabled in v3.16-rc1 by
-  1299df03d7191ab4 ("ARM: shmobile: henninger: add SDHI0/2 DT support")
+  dma/sh: fix rcar-dma.c printk format warnings (2014-07-29 10:24:52 +0900)
 
 ----------------------------------------------------------------
-Shinobu Uehara (1):
-      ARM: shmobile: r8a7791: Fix SD2CKCR register address
+Second Round of Renesas ARM Based SoC Shdma Updates for v3.17
 
- arch/arm/boot/dts/r8a7791.dtsi | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+* R-Car Gen2 DMA Controller driver
+
+----------------------------------------------------------------
+Laurent Pinchart (5):
+      dmaengine: sh: Rework Kconfig and Makefile
+      dmaengine: shdma: Make channel filter ignore unrelated devices
+      dmaengine: shdma: Allocate cyclic sg list dynamically
+      dmaengine: rcar-dmac: Add device tree bindings documentation
+      dmaengine: rcar-dmac: Add Renesas R-Car Gen2 DMA Controller (DMAC) driver
+
+Randy Dunlap (1):
+      dma/sh: fix rcar-dma.c printk format warnings
+
+ .../devicetree/bindings/dma/renesas,rcar-dmac.txt  |   98 ++
+ drivers/dma/sh/Kconfig                             |   30 +-
+ drivers/dma/sh/Makefile                            |   17 +-
+ drivers/dma/sh/rcar-dmac.c                         | 1525 ++++++++++++++++++++
+ drivers/dma/sh/shdma-base.c                        |  101 +-
+ drivers/dma/sh/shdma.h                             |    2 +-
+ 6 files changed, 1723 insertions(+), 50 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/dma/renesas,rcar-dmac.txt
+ create mode 100644 drivers/dma/sh/rcar-dmac.c
