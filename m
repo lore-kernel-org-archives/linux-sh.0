@@ -1,36 +1,66 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 22 Aug 2014 14:22:41 +0000
-Subject: [PATCH 1/3] i2c-rcar: simplify check for last message
-Message-Id: <88047351.0D2gRUkLKi@wasted.cogentembedded.com>
+From: keita kobayashi <keita.kobayashi.ym@renesas.com>
+Date: Fri, 01 Aug 2014 09:48:44 +0000
+Subject: [PATCH 4/6] ARM: shmobile: Add initialization cpuidle
+Message-Id: <53DB627C.40104@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <32018817.zX4x1fdR4T@wasted.cogentembedded.com>
-In-Reply-To: <32018817.zX4x1fdR4T@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: wsa@the-dreams.de, linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org
+Cc: horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, rjw@rjwysocki.net
 
-rcar_i2c_master_xfer() needlessly compares the message pointers (using indirect
-addressing) in order to detect the last I2C message, while it's enough to only
-compare the message indexes.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 ---
- drivers/i2c/busses/i2c-rcar.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/cpuidle.c |   22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
-Index: linux/drivers/i2c/busses/i2c-rcar.c
-=================================--- linux.orig/drivers/i2c/busses/i2c-rcar.c
-+++ linux/drivers/i2c/busses/i2c-rcar.c
-@@ -432,7 +432,7 @@ static int rcar_i2c_master_xfer(struct i
- 		priv->msg	= &msgs[i];
- 		priv->pos	= 0;
- 		priv->flags	= 0;
--		if (priv->msg = &msgs[num - 1])
-+		if (i = num - 1)
- 			rcar_i2c_flags_set(priv, ID_LAST_MSG);
- 
- 		ret = rcar_i2c_prepare_msg(priv);
+diff --git a/arch/arm/mach-shmobile/cpuidle.c b/arch/arm/mach-shmobile/cpuidle.c
+index 0afeb5c..19c0c98 100644
+--- a/arch/arm/mach-shmobile/cpuidle.c
++++ b/arch/arm/mach-shmobile/cpuidle.c
+@@ -8,13 +8,17 @@
+  * for more details.
+  */
 
++#include <linux/cpu.h>
+ #include <linux/pm.h>
+ #include <linux/cpuidle.h>
+ #include <linux/suspend.h>
+ #include <linux/module.h>
+ #include <linux/err.h>
++#include <linux/device.h>
++#include <linux/platform_device.h>
+ #include <asm/cpuidle.h>
+ #include <asm/io.h>
++#include "common.h"
+
+ static struct cpuidle_driver shmobile_cpuidle_default_driver = {
+ 	.name			= "shmobile_cpuidle",
+@@ -31,7 +35,25 @@ void __init shmobile_cpuidle_set_driver(struct cpuidle_driver *drv)
+ 	cpuidle_drv = drv;
+ }
+
++static struct platform_device shmobile_cpuidle = {
++	.name              = "cpuidle-shmobile",
++	.dev.platform_data = shmobile_smp_apmu_enter_cpuidle,
++	.id                = -1,
++};
++
+ int __init shmobile_cpuidle_init(void)
+ {
++	int cpu;
++
++	/* Make sure boot CPU also gets CPUIdle initialized */
++	for_each_online_cpu(cpu) {
++		shmobile_smp_hook(cpu, virt_to_phys(cpu_resume), 0);
++	}
++
++#ifdef CONFIG_ARCH_SHMOBILE_MULTI
++	platform_device_register(&shmobile_cpuidle);
++	return 0;
++#else
+ 	return cpuidle_register(cpuidle_drv, NULL);
++#endif
+ }
+-- 
+1.7.9.5
