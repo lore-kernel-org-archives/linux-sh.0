@@ -1,128 +1,79 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 01 Aug 2014 09:24:13 +0000
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Fri, 01 Aug 2014 14:30:20 +0000
 Subject: Re: DMA engine API issue (was: [PATCH/RFC 0/5] R-Car Gen2 DMAC hardware descriptor list support)
-Message-Id: <5972281.SIICqHk85N@avalon>
+Message-Id: <20140801143020.GQ30282@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1406032431-3807-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <28702317.aD0C1Ga3DS@avalon> <20140724125120.GN21766@n2100.arm.linux.org.uk>
-In-Reply-To: <20140724125120.GN21766@n2100.arm.linux.org.uk>
+References: <1406032431-3807-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <28702317.aD0C1Ga3DS@avalon> <20140724045248.GB8181@intel.com> <18522523.T2zy7HfoJ2@avalon>
+In-Reply-To: <18522523.T2zy7HfoJ2@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, linux-sh@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, dmaengine@vger.kernel.org, Maxime Ripard <maxime.ripard@free-electrons.com>, linux-arm-kernel@lists.infradead.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Vinod Koul <vinod.koul@intel.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, linux-arm-kernel@lists.infradead.org, Maxime Ripard <maxime.ripard@free-electrons.com>
 
-Hi Russell,
+On Fri, Aug 01, 2014 at 10:51:26AM +0200, Laurent Pinchart wrote:
+> I'll take this opportunity to question why we have a separation between 
+> tx_submit and issue_pending. What's the rationale for that, especially given 
+> that dma_issue_pending_all() might kick in at any point and issue pending 
+> transfers for all devices. A driver could thus see its submitted but not 
+> issued transactions being issued before it explicitly calls 
+> dma_async_issue_pending().
 
-On Thursday 24 July 2014 13:51:21 Russell King - ARM Linux wrote:
-> On Wed, Jul 23, 2014 at 01:07:43PM +0200, Laurent Pinchart wrote:
-> > Now we have a core issue. On one side there's rsnd_soc_dai_trigger() being
-> > called in atomic context, and on the other side the function ends up
-> > calling dmaengine_prep_dma_cyclic() which needs to allocate memory. To
-> > make this more func the DMA engine API is undocumented and completely
-> > silent on whether the prep functions are allowed to sleep. The question
-> > is, who's wrong ?
->
-> For slave DMA drivers, there is the expectation that the prepare functions
-> will be callable from tasklet context, without any locks held by the driver. 
-> So, it's expected that the prepare functions will work from tasklet context.
-> 
-> I don't think we've ever specified whether they should be callable from
-> interrupt context, but in practice, we have drivers which do exactly that,
-> so I think the decision has already been made - they will be callable from
-> IRQ context, and so GFP_ATOMIC is required in the driver.
+A prepared but not submitted transaction is not a pending transaction.
 
-I agree with you, the decision has made itself to use allocation routines that 
-will not sleep. However,
+The split is necessary so that a callback can be attached to the
+transaction.  This partially comes from the async-tx API, and also
+gets a lot of use with the slave API.
 
-$ grep -r GFP_NOWAIT drivers/dma | wc -l
-22
-$ grep -r GFP_ATOMIC drivers/dma | wc -l
-24
+The prepare function allocates the descriptor and does the initial
+setup, but does not mark the descriptor as a pending transaction.
+It returns the descriptor, and the caller is then free to add a
+callback function and data pointer to the descriptor before finally
+submitting it.  This sequence must occur in a timely manner as some
+DMA engine implementations hold a lock between the prepare and submit
+callbacks (Dan explicitly permits this as part of the API.)
 
-Looks like a draw to me :-) I'm pretty sure most of the decisions to use 
-GFP_NOWAIT or GFP_ATOMIC are cases of cargo-cult programming instead of 
-resulting from a thoughtful process. We should document this in Maxime's new 
-DMA engine internals documentation.
+> The DMA_PRIVATE capability flag seems to play a role here, but it's far from 
+> being clear how that mechanism is supposed to work. This should be documented 
+> as well, and any light you could shed on this dark corner of the API would 
+> help.
 
-This being said, I wonder whether allowing the prep functions to be called in 
-atomic context was a sane decision. We've pushed the whole DMA engine API to 
-atomic context, leading to such niceties as memory allocation pressure and the 
-impossibility to implement runtime PM support without resorting to a work 
-queue for the sole purpose of power management, in *every* DMA engine driver. 
-I can't help but thinking something is broken.
+Why do you think that DMA_PRIVATE has a bearing in the callbacks?  It
+doesn't.  DMA_PRIVATE is all about channel allocation as I explained
+yesterday, and whether the channel is available for async_tx usage.
 
-I'd like your opinion on that. Whether fixing it would be worth the effort is 
-a different question, so we could certainly conclude that we'll have to live 
-with an imperfect design for the time being.
+A channel marked DMA_PRIVATE is not available for async_tx usage at
+any moment.  A channel without DMA_PRIVATE is available for async_tx
+usage until it is allocated for the slave API - at which point the
+generic DMA engine code will mark the channel with DMA_PRIVATE,
+thereby taking it away from async_tx API usage.  When the slave API
+frees the channel, DMA_PRIVATE will be cleared, making the channel
+available for async_tx usage.
 
-> > The rcar-dmac DMA engine driver uses runtime PM. When not used, the device
-> > is suspended. The driver calls pm_runtime_get_sync() to resume the
-> > device, and needs to do so when a descriptor is submitted. This
-> > operation, currently performed in the tx_submit handler, could be moved
-> > to the prep_dma_cyclic or issue_pending handler, but the three operations
-> > are called in a row from rsnd_dma_start(), itself ultimately called from
-> > snd_pcm_lib_write1() with the spinlock held. This means I have no place
-> > in my DMA engine driver where I can resume the device.
-> 
-> Right, runtime PM with DMA engine drivers is hard. The best that can be done
-> right now is to pm_runtime_get() in the alloc_chan_resources() method and
-> put it in free_chan_resources() if you don't want to do the workqueue thing.
+So, basically, DMA_PRIVATE set -> async_tx usage not allowed.
+DMA_PRIVATE clear -> async_tx usage permitted.  It really is that
+simple.
 
-That's an easy enough implementation, but given that channels are usually 
-requested at probe time and released at remove time, that would be roughly 
-equivalent to no PM at all.
+> Similarly, the DMA engine API is split in functions with different
+> prefixes (mostly dmaengine_*, dma_async_*, dma_*, and various
+> unprefixed niceties such as async_tx_ack or txd_lock. If there's a
+> rationale for that (beyond just historical reasons) it should also
+> be documented, otherwise a cleanup would help all the confused DMA
+> engine users (myself included).
 
-> There's a problem with the workqueue thing though - by doing so, you make it
-> asynchronous to the starting of the DMA. The DMA engine API allows for
-> delayed starting (it's actually the normal thing for DMA engine), but that
-> may not always be appropriate or desirable.
+dmaengine_* are generally the interface functions to the DMA engine code,
+which have been recently introduced to avoid the multiple levels of
+pointer indirection having to be typed in every driver.
 
-If I'm not mistaken, the DMA engine API doesn't provide a way to synchronously 
-start DMA transfers. An implementation could do so, but no guarantee is 
-offered by the API to the caller. I agree, however, that it could be an issue.
+dma_async_* are the DMA engine interface functions for the async_tx API.
 
-Doesn't this call for a new pair of open/close-like functions in the API ? 
-They would be called right before a client driver starts using a channel, and 
-right after it stops using it. Those functions would be allowed to sleep.
+dma_* predate the dmaengine_* naming, and are probably too generic, so
+should probably end up being renamed to dmaengine_*.
 
-Beside simplifying power management, those functions could also be used for 
-lazy hardware channel allocation. Renesas SoCs have DMA engines that include 
-general-purpose channels, usable by any slave. There are more slaves than 
-hardware channels, so not all slaves can be used at the same time. At the 
-moment the hardware channel is allocated when requesting the DMA engine 
-channel, at probe time for most slave drivers. This breaks when too many 
-slaves get registered, even if they're not all used at the same time. Some 
-kind of lazy/delayed allocation scheme would be useful.
+txd_* are all about the DMA engine descriptors.
 
-Another option would be to request the DMA engine channel later than probe 
-time, when the channel will actually be used. However, that would break 
-deferred probing, and would possibly degrade performances.
-
-> > One could argue that the rcar-dmac driver could use a work queue to
-> > handle power management. That's correct, but the additional complexity,
-> > which would be required in *all* DMA engine drivers, seem too high to
-> > me. If we need to go that way, this is really a task that the DMA
-> > engine core should handle.
-> 
-> As I mention above, the problem with that is getting the workqueue to run
-> soon enough that it doesn't cause a performance degredation or other issues.
-
-That's why I liked the ability to sleep in the prep functions ;-)
-
-> There's also expectations from other code - OMAP for example explicitly
-> needs DMA to be started on the hardware before the audio block can be
-> enabled (from what I remember, it tickless an erratum if this is not done.)
-
-Nice. That pretty much bans the usage of a workqueue then, we need something 
-else.
-
-> > Let's start by answering the background question and updating the DMA
-> > engine API documentation once and for good : in which context are drivers
-> > allowed to call the prep, tx_submit and issue_pending functions ?
-> 
-> IRQs-off contexts. :)
+async_tx_* are the higher level async_tx API functions.
 
 -- 
-Regards,
-
-Laurent Pinchart
+FTTC broadband for 0.8mile line: currently at 9.5Mbps down 400kbps up
+according to speedtest.net.
