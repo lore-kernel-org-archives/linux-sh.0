@@ -1,33 +1,31 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 04 Aug 2014 09:01:50 +0000
-Subject: Re: [PATCH 11/11] ARM: shmobile: r8a7791: Reference DMA channels in SDHI DT nodes
-Message-Id: <CAMuHMdXdmH4SX6uDn76CMtHSVsdkpoRDfKx6v6N+gu9sLjiA0g@mail.gmail.com>
+From: keita kobayashi <keita.kobayashi.ym@renesas.com>
+Date: Fri, 01 Aug 2014 09:49:01 +0000
+Subject: [PATCH 6/6] ARM: shmobile: Enable CPUIdle configuration for shmobile_defconfig
+Message-Id: <53DB628D.4000900@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-	<1405464321-4723-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1405464321-4723-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, Linux MMC List <linux-mmc@vger.kernel.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Ian Molton <ian.molton@codethink.co.uk>
+To: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org
+Cc: horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, rjw@rjwysocki.net
 
-On Wed, Jul 16, 2014 at 12:45 AM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
-> Add references to the transmit and receive DMA channels in the three
-> SDHI nodes.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+---
+ arch/arm/configs/shmobile_defconfig |    2 ++
+ 1 file changed, 2 insertions(+)
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 3b13614..63e57a5 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -149,6 +149,8 @@ CONFIG_NLS_ISO8859_1=y
+ # CONFIG_ENABLE_WARN_DEPRECATED is not set
+ # CONFIG_ENABLE_MUST_CHECK is not set
+ # CONFIG_ARM_UNWIND is not set
++CONFIG_CPU_IDLE=y
++CONFIG_ARM_SHMOBILE_CPUIDLE=y
+ CONFIG_CPU_FREQ=y
+ CONFIG_CPU_FREQ_GOV_COMMON=y
+ CONFIG_CPU_FREQ_STAT=y
+-- 
+1.7.9.5
