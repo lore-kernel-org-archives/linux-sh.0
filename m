@@ -1,52 +1,54 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 01 Aug 2014 11:49:14 +0000
-Subject: [PATCH 1/2] usb: renesas_usbhs: Add device tree bindings documentation
-Message-Id: <53DB7EBA.3080004@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 01 Aug 2014 13:35:51 +0000
+Subject: Re: [PATCH 1/2] usb: renesas_usbhs: Add device tree bindings documentation
+Message-Id: <53DB97B7.2090203@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <53DB7EBA.3080004@renesas.com>
+In-Reply-To: <53DB7EBA.3080004-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: SH-Linux <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>
-Cc: "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>
+To: Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Grant Likely <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: "linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Document the device tree bindings for the Renesas USBHS controller.
+Hello.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- .../devicetree/bindings/usb/renesas_usbhs.txt      |   24 ++++++++++++++++++++
- 1 file changed, 24 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+On 08/01/2014 03:49 PM, Yoshihiro Shimoda wrote:
 
-diff --git a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-new file mode 100644
-index 0000000..e9faa65
---- /dev/null
-+++ b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-@@ -0,0 +1,24 @@
-+Renesas Electronics USBHS driver
-+
-+Required properties:
-+  - compatible: Must contain one of the following:
-+	- "renesas,usbhs-r8a7790"
-+	- "renesas,usbhs-r8a7791"
-+  - reg: Base address and length of the register for the USBHS
-+  - interrupts: Interrupt specifier for the USBHS
-+  - clocks: A list of phandle + clock specifier pairs
-+
-+Optional properties:
-+  - buswait_bwait: Integer to use BUSWAIT register
-+  - enable-gpio: A gpio specifier to check GPIO determining if USB function
-+		 should be enabled
-+  - phys: phandle + phy specifier pair
-+  - phy-names: must be "usb"
-+
-+Example:
-+	usbhs: usb@e6590000 {
-+		compatible = "renesas,usbhs-r8a7790";
-+		reg = <0 0xe6590000 0 0x100>;
-+		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7790_CLK_HSUSB>;
-+	};
--- 
-1.7.9.5
+> Document the device tree bindings for the Renesas USBHS controller.
+
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> ---
+>   .../devicetree/bindings/usb/renesas_usbhs.txt      |   24 ++++++++++++++++++++
+>   1 file changed, 24 insertions(+)
+>   create mode 100644 Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+
+> diff --git a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+> new file mode 100644
+> index 0000000..e9faa65
+> --- /dev/null
+> +++ b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+> @@ -0,0 +1,24 @@
+> +Renesas Electronics USBHS driver
+> +
+> +Required properties:
+> +  - compatible: Must contain one of the following:
+> +	- "renesas,usbhs-r8a7790"
+> +	- "renesas,usbhs-r8a7791"
+> +  - reg: Base address and length of the register for the USBHS
+> +  - interrupts: Interrupt specifier for the USBHS
+> +  - clocks: A list of phandle + clock specifier pairs
+> +
+> +Optional properties:
+> +  - buswait_bwait: Integer to use BUSWAIT register
+
+   Should be named "renesas,buswait-bwait" or probably just "renesas,buswait".
+
+> +  - enable-gpio: A gpio specifier to check GPIO determining if USB function
+
+   Should also be prefixed with "renesas,".
+
+[...]
+
+WBR, Sergei
 
