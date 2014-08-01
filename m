@@ -1,47 +1,38 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 23 Aug 2014 11:13:01 +0000
-Subject: Re: [PATCH v2 0/5] ARM: shmobile: armadillo800eva-reference: Enable CMT1 in device tree
-Message-Id: <20140823111301.GB27759@verge.net.au>
+From: =?UTF-8?B?44Kr44Kq44CA44Of44Oz44CA44OS44Kn44OD44OX?=  <cm-hiep@jinso.co.jp>
+Date: Fri, 01 Aug 2014 07:14:27 +0000
+Subject: [Bug] GPIO-Rcar: Driver does not work after Unbind-rebind.
+Message-Id: <53DB3E53.2000508@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1407801882-2561-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1407801882-2561-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <damm@opensource.se>, Simon Horman <simon@horms.net>
+Cc: linux-gpio@vger.kernel.org, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, =?UTF-8?B?U+mWizEyL+ajruacrOOBleOCkw==?= <kuninori.morimoto.gx@renesas.com>, SH-Linux <linux-sh@vger.kernel.org>
 
-On Tue, Aug 12, 2014 at 09:04:37AM +0900, Simon Horman wrote:
-> This short series enables the CMT1 timer using DT on
-> armadillo800eva-reference.
-> 
-> It is based on "ARM: shmobile: r8a7740: add clocks to DT" applied
-> on top of renesas-devel-v3.16-20140808.
-> 
-> Ulrich, if you end up reposting "ARM: shmobile: r8a7740: add clocks to DT"
-> please consider appending this series to it.
+Hello,
 
-As I have queued up the above series, less the binding change which
-is for Mike Turquette to handle, I have also queued up this series.
+I tested gpio-rcar driver at Linux-upstream-v3.16-rc5 on Lager.
+When I tried to unbind and then rebind the device, error messages occur. 
+Then
+gpio-rcar did not work and interrupt number did not count up any more.
 
-> Changes since v1
-> * Correct typo in change log of
->   "ARM: shmobile: r8a7740: Add CMT1 device to DT"
-> 
-> Simon Horman (5):
->   ARM: shmobile: r8a7740: Add CMT1 device to DT
->   ARM: shmobile: armadillo800eva-reference: Enable CMT1 in device tree
->   ARM: shmobile: armadillo800eva-reference: Sort includes
->   ARM: shmobile: armadillo800eva-reference: Do not use
->     r8a7740_add_standard_devices_dt()
->   ARM: shmobile: r8a7740: Remove r8a7740_add_standard_devices_dt
-> 
->  .../arm/boot/dts/r8a7740-armadillo800eva-reference.dts |  4 ++++
->  arch/arm/boot/dts/r8a7740.dtsi                         | 12 ++++++++++++
->  .../mach-shmobile/board-armadillo800eva-reference.c    |  5 +++--
->  arch/arm/mach-shmobile/r8a7740.h                       |  1 -
->  arch/arm/mach-shmobile/setup-r8a7740.c                 | 18 ++----------------
->  5 files changed, 21 insertions(+), 19 deletions(-)
-> 
-> -- 
-> 2.0.0.rc2
-> 
+The error messages is showed as below:
+"irq 0, desc: ee005040, depth: 1, cou0
+->handle_irq():  c005eea0, handle_bad_irq+0x0/0x21c
+->irq_data.chip(): c05de7f8, 0xc05de7f8
+->action():   (null)
+    IRQ_NOPROBE set
+  IRQ_NOREQUEST set
+irq 0, desc: ee005040, depth: 1, count: 0, unhandled: 0
+->handle_irq():  c005eea0, handle_bad_irq+0x0/0x21c
+->irq_data.chip(): c05de7f8, 0xc05de7f8
+->action():   (null)
+    IRQ_NOPROBE set
+  IRQ_NOREQUEST set"
+
+Please see it and fix this bug.
+
+
+Best regards,
+JINSO/Cao Minh Hiep.
+
