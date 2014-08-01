@@ -1,62 +1,65 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 23 Aug 2014 01:44:01 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC Cleanup Updates for v3.18
-Message-Id: <cover.1408670789.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 01 Aug 2014 22:16:29 +0000
+Subject: Re: [PATCH 3/4] media: rcar_vin: Fix race condition terminating stream
+Message-Id: <53DC11BD.6060409@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398216284.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1398216284.git.horms+renesas@verge.net.au>
+References: <1404812474-7627-1-git-send-email-ian.molton@codethink.co.uk>	<1404812474-7627-4-git-send-email-ian.molton@codethink.co.uk>	<53BC17D6.2070607@cogentembedded.com> <20140710111523.17ae9078e53001c18bdf6eac@codethink.co.uk>
+In-Reply-To: <20140710111523.17ae9078e53001c18bdf6eac@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ian Molton <ian.molton@codethink.co.uk>
+Cc: linux-media@vger.kernel.org, linux-kernel@lists.codethink.co.uk, g.liakhovetski@gmx.de, m.chehab@samsung.com, vladimir.barinov@cogentembedded.com, magnus.damm@gmail.com, horms@verge.net.au, linux-sh@vger.kernel.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+Hello.
 
-Please consider these Renesas ARM based SoC cleanup updates for v3.18.
+On 07/10/2014 02:15 PM, Ian Molton wrote:
 
-This pull request is based on
-"Renesas ARM Based SoC DT Timers Updates for v3.18",
-tagged as dt-timers-for-v3.18,
-which I have already sent a pull-request for.
+>>> Signed-off-by: Ian Molton <ian.molton@codethink.co.uk>
+>>> Signed-off-by: William Towle <william.towle@codethink.co.uk>
+>>> ---
+>>>    drivers/media/platform/soc_camera/rcar_vin.c | 43 ++++++++++++++++++----------
+>>>    1 file changed, 28 insertions(+), 15 deletions(-)
 
-This is a rebase of changes that didn't quite make it into v3.17.
-These cleanups depend on changes in dt-timers-for-v3.18 and rebasing
-to remove that dependency is not entirely trivial.
+>>> diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+>>> index 06ce705..aeda4e2 100644
+>>> --- a/drivers/media/platform/soc_camera/rcar_vin.c
+>>> +++ b/drivers/media/platform/soc_camera/rcar_vin.c
+>> [...]
+>>> @@ -462,7 +485,6 @@ static void rcar_vin_videobuf_release(struct vb2_buffer *vb)
+>>>    	struct rcar_vin_priv *priv = ici->priv;
+>>>    	unsigned int i;
+>>>    	int buf_in_use = 0;
+>>> -
+>>>    	spin_lock_irq(&priv->lock);
 
+>>      This seems like a random whitespace change. This empty should be present.
 
-The following changes since commit 9dddfcfacaadb5491b62233b893b510fa00da4e0:
+> Agreed.
 
-  ARM: shmobile: genmai-reference: Enable MTU2 in device tree (2014-08-17 09:02:54 +0900)
+>> [...]
+>>> @@ -517,12 +527,15 @@ static void rcar_vin_stop_streaming(struct vb2_queue *vq)
+>>>
+>>>    	spin_lock_irq(&priv->lock);
+>>>
+>>> +	rcar_vin_wait_stop_streaming(priv);
+>>> +
+>>>    	for (i = 0; i < vq->num_buffers; ++i)
+>>>    		if (vq->bufs[i]->state = VB2_BUF_STATE_ACTIVE)
+>>>    			vb2_buffer_done(vq->bufs[i], VB2_BUF_STATE_ERROR);
+>>>
+>>>    	list_for_each_safe(buf_head, tmp, &priv->capture)
+>>>    		list_del_init(buf_head);
+>>> +
+>>
+>>      Also quite a random "drove-by" change.
 
-are available in the git repository at:
+> Agreed.
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup-for-v3.18
+> Any further comments? If not, I can re-spin this ready for upstreaming.
 
-for you to fetch changes up to ad8c3af8b75ff26c5c887f2101da653bdcd53a38:
+    There has been no further comments but you've never re-appeared. :-(
+Now I'm about to test these patches...
 
-  ARM: shmobile: r7s72100: Remove legacy board support (2014-08-17 09:57:08 +0900)
+WBR, Sergei
 
-----------------------------------------------------------------
-Renesas ARM Based SoC Cleanup Updates for v3.18
-
-* Remove Genmai board code
-
-----------------------------------------------------------------
-Laurent Pinchart (3):
-      ARM: shmobile: r7s72100: genmai: Remove reference board file
-      ARM: shmobile: r7s72100: genmai: Remove legacy board file
-      ARM: shmobile: r7s72100: Remove legacy board support
-
- arch/arm/mach-shmobile/Kconfig                  |  17 --
- arch/arm/mach-shmobile/Makefile                 |   3 -
- arch/arm/mach-shmobile/Makefile.boot            |   1 -
- arch/arm/mach-shmobile/board-genmai-reference.c |  35 ----
- arch/arm/mach-shmobile/board-genmai.c           | 173 ------------------
- arch/arm/mach-shmobile/clock-r7s72100.c         | 231 ------------------------
- arch/arm/mach-shmobile/r7s72100.h               |   6 -
- arch/arm/mach-shmobile/setup-r7s72100.c         |   2 -
- 8 files changed, 468 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/board-genmai-reference.c
- delete mode 100644 arch/arm/mach-shmobile/board-genmai.c
- delete mode 100644 arch/arm/mach-shmobile/clock-r7s72100.c
- delete mode 100644 arch/arm/mach-shmobile/r7s72100.h
