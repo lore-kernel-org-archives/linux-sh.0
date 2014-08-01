@@ -1,45 +1,127 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 28 Aug 2014 08:00:00 +0000
-Subject: [PATCH v2 3/3] irqchip: renesas-irqc: Add binding docs for new R-Car Gen2 SoCs
-Message-Id: <1409212800-4957-3-git-send-email-geert+renesas@glider.be>
+From: keita kobayashi <keita.kobayashi.ym@renesas.com>
+Date: Fri, 01 Aug 2014 09:48:37 +0000
+Subject: [PATCH 3/6] cpuidle: shmobile: Add CPUIdle driver
+Message-Id: <53DB6275.1010707@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409212800-4957-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1409212800-4957-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>
-Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org
+Cc: horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, rjw@rjwysocki.net
 
-  - r8a7792 (R-Car V2H)
-  - r8a7793 (R-Car M2-N)
-  - r8a7794 (R-Car E2)
+Add the wfi and Core-Standby for CPUIdle power states support for
+the shmobile SoCs.
 
-r8a7791 is now called "R-Car M2-W".
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 ---
-v2: Drop RFC
----
- .../devicetree/bindings/interrupt-controller/renesas,irqc.txt        | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+ drivers/cpuidle/Kconfig.arm        |    6 +++
+ drivers/cpuidle/Makefile           |    1 +
+ drivers/cpuidle/cpuidle-shmobile.c |   71 ++++++++++++++++++++++++++++++++++++
+ 3 files changed, 78 insertions(+)
+ create mode 100644 drivers/cpuidle/cpuidle-shmobile.c
 
-diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt
-index 48e8291e5bcc..1a88e62228e5 100644
---- a/Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt
-+++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt
-@@ -6,7 +6,10 @@ Required properties:
-   Examples with soctypes are:
-     - "renesas,irqc-r8a73a4" (R-Mobile AP6)
-     - "renesas,irqc-r8a7790" (R-Car H2)
--    - "renesas,irqc-r8a7791" (R-Car M2)
-+    - "renesas,irqc-r8a7791" (R-Car M2-W)
-+    - "renesas,irqc-r8a7792" (R-Car V2H)
-+    - "renesas,irqc-r8a7793" (R-Car M2-N)
-+    - "renesas,irqc-r8a7794" (R-Car E2)
- - #interrupt-cells: has to be <2>: an interrupt index and flags, as defined in
-   interrupts.txt in this directory
- 
+diff --git a/drivers/cpuidle/Kconfig.arm b/drivers/cpuidle/Kconfig.arm
+index b6d69e8..2908cd0 100644
+--- a/drivers/cpuidle/Kconfig.arm
++++ b/drivers/cpuidle/Kconfig.arm
+@@ -61,3 +61,9 @@ config ARM_EXYNOS_CPUIDLE
+ 	depends on ARCH_EXYNOS
+ 	help
+ 	  Select this to enable cpuidle for Exynos processors
++
++config ARM_SHMOBILE_CPUIDLE
++	bool "Cpu Idle Driver for the shmobile SoCs"
++	depends on ARCH_SHMOBILE_MULTI
++	help
++	  Select this to enable cpuidle for shmobile SoCs
+diff --git a/drivers/cpuidle/Makefile b/drivers/cpuidle/Makefile
+index d8bb1ff..0d24054 100644
+--- a/drivers/cpuidle/Makefile
++++ b/drivers/cpuidle/Makefile
+@@ -16,6 +16,7 @@ obj-$(CONFIG_ARM_ZYNQ_CPUIDLE)		+= cpuidle-zynq.o
+ obj-$(CONFIG_ARM_U8500_CPUIDLE)         += cpuidle-ux500.o
+ obj-$(CONFIG_ARM_AT91_CPUIDLE)          += cpuidle-at91.o
+ obj-$(CONFIG_ARM_EXYNOS_CPUIDLE)        += cpuidle-exynos.o
++obj-$(CONFIG_ARM_SHMOBILE_CPUIDLE)      += cpuidle-shmobile.o
+
+ ###############################################################################
+ # MIPS drivers
+diff --git a/drivers/cpuidle/cpuidle-shmobile.c b/drivers/cpuidle/cpuidle-shmobile.c
+new file mode 100644
+index 0000000..538c4ec
+--- /dev/null
++++ b/drivers/cpuidle/cpuidle-shmobile.c
+@@ -0,0 +1,71 @@
++/*
++ * CPUIdle support code for SH-Mobile ARM
++ *
++ *  Copyright (C) 2014 Renesas Electronics Corporation
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++
++#include <linux/cpuidle.h>
++#include <linux/device.h>
++#include <linux/io.h>
++#include <linux/platform_device.h>
++#include <linux/pm.h>
++#include <linux/suspend.h>
++
++#include <asm/cpuidle.h>
++#include <asm/proc-fns.h>
++
++static void (*shmobile_enter_corestandby)(void);
++
++int shmobile_enter_cpuidle(struct cpuidle_device *dev,
++			   struct cpuidle_driver *drv,
++			   int index)
++{
++	shmobile_enter_corestandby();
++	return index;
++}
++
++static struct cpuidle_driver renesas_cpuidle_driver = {
++	.name = "shmobile_cpuidle",
++	.owner = THIS_MODULE,
++	.states = {
++		ARM_CPUIDLE_WFI_STATE,
++		{
++			.name			= "C1",
++			.desc			= "Core Standby Mode",
++			.exit_latency		= 500,
++			.target_residency	= 100000,
++			.flags			= CPUIDLE_FLAG_TIME_VALID,
++			.enter			= shmobile_enter_cpuidle,
++		},
++	},
++	.state_count = 2,
++};
++
++static int shmobile_cpuidle_probe(struct platform_device *pdev)
++{
++	int ret;
++
++	shmobile_enter_corestandby = (void *)(pdev->dev.platform_data);
++
++	ret = cpuidle_register(&renesas_cpuidle_driver, NULL);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to register cpuidle driver\n");
++		return ret;
++	}
++
++	return 0;
++}
++
++static struct platform_driver shmobile_cpuidle_driver = {
++	.probe	= shmobile_cpuidle_probe,
++	.driver	= {
++		.name = "cpuidle-shmobile",
++		.owner = THIS_MODULE,
++	},
++};
++
++module_platform_driver(shmobile_cpuidle_driver);
 -- 
-1.9.1
-
+1.7.9.5
