@@ -1,77 +1,39 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 06 Aug 2014 12:59:07 +0000
-Subject: [PATCH 10/12] [v3] ARM: shmobile: r8a7791 dtsi: Enable DMA for MSIOF
-Message-Id: <1407329949-5695-11-git-send-email-geert+renesas@glider.be>
+From: keita kobayashi <keita.kobayashi.ym@renesas.com>
+Date: Fri, 01 Aug 2014 09:48:07 +0000
+Subject: [PATCH 0/6] ARM: shmobile: Add Core-Standby for CPUIDLE
+Message-Id: <53DB6257.7090109@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1407329949-5695-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
-Cc: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org
+Cc: horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, rjw@rjwysocki.net
 
-Add register sets used for access by the DMA engine, and DMA properties to
-the MSIOF nodes.
+Hi Simon and Rafael
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: devicetree@vger.kernel.org
----
-This depends on "[PATCH v2 8/8] ARM: shmobile: r8a7791: Add DMAC devices
-to DT" of series "[PATCH v2 0/8] R-Car Gen2 DMA Controller driver".
+These patches add Core-Standby state for CPUIDLE support
+to the r8a7790/r8a7791 SoCs. This patch series was tested on
+both Lager and Koelsch board.
 
-v3:
-  - Update DMA specifiers to match the renesas,rcar-dmac bindings,
-v2:
-  - Add register sets for DMA,
-  - Reorder: TX first, RX second.
----
- arch/arm/boot/dts/r8a7791.dtsi | 12 +++++++++---
- 1 file changed, 9 insertions(+), 3 deletions(-)
+This patch series is based on renesas-devel-v3.16-rc7-20140731v2 tag
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 8186c9f4a18a..152c75ce8534 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1054,9 +1054,11 @@
- 
- 	msiof0: spi@e6e20000 {
- 		compatible = "renesas,msiof-r8a7791";
--		reg = <0 0xe6e20000 0 0x0064>;
-+		reg = <0 0xe6e20000 0 0x0064>, <0 0xe7e20000 0 0x0064>;
- 		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7791_CLK_MSIOF0>;
-+		dmas = <&dmac0 0x51>, <&dmac0 0x52>;
-+		dma-names = "tx", "rx";
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		status = "disabled";
-@@ -1064,9 +1066,11 @@
- 
- 	msiof1: spi@e6e10000 {
- 		compatible = "renesas,msiof-r8a7791";
--		reg = <0 0xe6e10000 0 0x0064>;
-+		reg = <0 0xe6e10000 0 0x0064>, <0 0xe7e10000 0 0x0064>;
- 		interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7791_CLK_MSIOF1>;
-+		dmas = <&dmac0 0x55>, <&dmac0 0x56>;
-+		dma-names = "tx", "rx";
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		status = "disabled";
-@@ -1074,9 +1078,11 @@
- 
- 	msiof2: spi@e6e00000 {
- 		compatible = "renesas,msiof-r8a7791";
--		reg = <0 0xe6e00000 0 0x0064>;
-+		reg = <0 0xe6e00000 0 0x0064>, <0 0xe7e00000 0 0x0064>;
- 		interrupts = <0 158 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7791_CLK_MSIOF2>;
-+		dmas = <&dmac0 0x41>, <&dmac0 0x42>;
-+		dma-names = "tx", "rx";
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		status = "disabled";
+Keita Kobayashi (6):
+  ARM: shmobile: APMU: Move the shmobile_smp_hook call
+  ARM: shmobile: APMU: Add CPUIdle function
+  cpuidle: shmobile: Add CPUIdle driver
+  ARM: shmobile: Add initialization cpuidle
+  ARM: shmobile: Add CPU notifier for CPUIdle boot vector
+  ARM: shmobile: Enable CPUIdle configuration for shmobile_defconfig
+
+ arch/arm/configs/shmobile_defconfig   |    2 +
+ arch/arm/mach-shmobile/common.h       |    1 +
+ arch/arm/mach-shmobile/cpuidle.c      |   46 +++++++++++++++++++++
+ arch/arm/mach-shmobile/platsmp-apmu.c |   21 ++++++++--
+ drivers/cpuidle/Kconfig.arm           |    6 +++
+ drivers/cpuidle/Makefile              |    1 +
+ drivers/cpuidle/cpuidle-shmobile.c    |   71 +++++++++++++++++++++++++++++++++
+ 7 files changed, 145 insertions(+), 3 deletions(-)
+ create mode 100644 drivers/cpuidle/cpuidle-shmobile.c
+
 -- 
-1.9.1
-
+1.7.9.5
