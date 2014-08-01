@@ -1,53 +1,95 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Mon, 25 Aug 2014 03:02:16 +0000
-Subject: [PATCH 7/9 v3] mmc: tmio: remove SCLKEN bit setting from tmio_mmc_set_clock()
-Message-Id: <871ts5tgp6.wl%kuninori.morimoto.gx@gmail.com>
+From: keita kobayashi <keita.kobayashi.ym@renesas.com>
+Date: Fri, 01 Aug 2014 09:48:30 +0000
+Subject: [PATCH 2/6] ARM: shmobile: APMU: Add CPUIdle function
+Message-Id: <53DB626E.7070101@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
-	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
-	<53AD638C.5060907@renesas.com>
-	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
-	<87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Ulf Hansson <ulf.hansson@linaro.org>
-Cc: Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org
+Cc: horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, rjw@rjwysocki.net
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This patch add support Core-Standby state for CPUIdle.
 
-TMIO clock is set via tmio_mmc_set_clock() -> tmio_mmc_clk_start(),
-and SCLKEN bit will be set on tmio_mmc_clk_start().
-It is not needed on tmio_mmc_set_clock() function.
-The required clock setting will not be able to set
-in some clocks without this patch.
-
-Tested-by: Nguyen Xuan Nui <nx-nui@jinso.co.jp>
-Tested-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 ---
-v2 -> v3
+ arch/arm/mach-shmobile/common.h       |    1 +
+ arch/arm/mach-shmobile/platsmp-apmu.c |   19 +++++++++++++++++--
+ 2 files changed, 18 insertions(+), 2 deletions(-)
 
- - no change
+diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
+index 9805608..adbb422 100644
+--- a/arch/arm/mach-shmobile/common.h
++++ b/arch/arm/mach-shmobile/common.h
+@@ -32,6 +32,7 @@ extern void shmobile_handle_irq_intc(struct pt_regs *);
+ extern struct platform_suspend_ops shmobile_suspend_ops;
+ struct cpuidle_driver;
+ extern void shmobile_cpuidle_set_driver(struct cpuidle_driver *drv);
++extern void shmobile_smp_apmu_enter_cpuidle(void);
 
- drivers/mmc/host/tmio_mmc_pio.c |    1 -
- 1 file changed, 1 deletion(-)
+ #ifdef CONFIG_SUSPEND
+ int shmobile_suspend_init(void);
+diff --git a/arch/arm/mach-shmobile/platsmp-apmu.c b/arch/arm/mach-shmobile/platsmp-apmu.c
+index ad6a383..3bfb1a0 100644
+--- a/arch/arm/mach-shmobile/platsmp-apmu.c
++++ b/arch/arm/mach-shmobile/platsmp-apmu.c
+@@ -7,6 +7,7 @@
+  * it under the terms of the GNU General Public License version 2 as
+  * published by the Free Software Foundation.
+  */
++#include <linux/cpuidle.h>
+ #include <linux/cpu_pm.h>
+ #include <linux/delay.h>
+ #include <linux/init.h>
+@@ -18,6 +19,7 @@
+ #include <linux/threads.h>
+ #include <asm/cacheflush.h>
+ #include <asm/cp15.h>
++#include <asm/cpuidle.h>
+ #include <asm/proc-fns.h>
+ #include <asm/smp_plat.h>
+ #include <asm/suspend.h>
+@@ -148,7 +150,8 @@ int shmobile_smp_apmu_boot_secondary(unsigned int cpu, struct task_struct *idle)
+ }
+ #endif
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index b19d0cd..da3c74d 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -150,7 +150,6 @@ static void tmio_mmc_set_clock(struct tmio_mmc_host *host, int new_clock)
- 		for (clock = host->mmc->f_min, clk = 0x80000080;
- 			new_clock >= (clock<<1); clk >>= 1)
- 			clock <<= 1;
--		clk |= 0x100;
- 	}
- 
- 	if (host->set_clk_div)
+-#if defined(CONFIG_HOTPLUG_CPU) || defined(CONFIG_SUSPEND)
++#if defined(CONFIG_HOTPLUG_CPU) || defined(CONFIG_SUSPEND) || \
++defined(CONFIG_CPU_IDLE)
+ /* nicked from arch/arm/mach-exynos/hotplug.c */
+ static inline void cpu_enter_lowpower_a15(void)
+ {
+@@ -224,14 +227,16 @@ int shmobile_smp_apmu_cpu_kill(unsigned int cpu)
+ }
+ #endif
+
+-#if defined(CONFIG_SUSPEND)
++#if defined(CONFIG_SUSPEND) || defined(CONFIG_CPU_IDLE)
+ static int shmobile_smp_apmu_do_suspend(unsigned long cpu)
+ {
+ 	shmobile_smp_apmu_cpu_shutdown(cpu);
+ 	cpu_do_idle(); /* WFI selects Core Standby */
+ 	return 1;
+ }
++#endif
+
++#if defined(CONFIG_SUSPEND)
+ static int shmobile_smp_apmu_enter_suspend(suspend_state_t state)
+ {
+ 	shmobile_smp_hook(smp_processor_id(), virt_to_phys(cpu_resume), 0);
+@@ -245,3 +250,13 @@ void __init shmobile_smp_apmu_suspend_init(void)
+ 	shmobile_suspend_ops.enter = shmobile_smp_apmu_enter_suspend;
+ }
+ #endif
++
++#if defined(CONFIG_CPU_IDLE)
++void shmobile_smp_apmu_enter_cpuidle(void)
++{
++	cpu_pm_enter();
++	cpu_suspend(smp_processor_id(), shmobile_smp_apmu_do_suspend);
++	cpu_leave_lowpower();
++	cpu_pm_exit();
++}
++#endif
 -- 
 1.7.9.5
-
