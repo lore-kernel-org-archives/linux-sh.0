@@ -1,40 +1,81 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Aug 2014 01:10:13 +0000
-Subject: [PATCH 08/10] ARM: shmobile: r8a7778: Use shmobile_init_delay()
-Message-Id: <6fe950ebfd3a374c78ce66a335fce258648426a1.1408927601.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 02 Aug 2014 00:05:54 +0000
+Subject: [PATCH v2 2/2] ARM: shmobile: henninger: add VIN0/ADV7180 DT support
+Message-Id: <201408020405.54978.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408927601.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408927601.git.horms+renesas@verge.net.au>
+References: <201408020402.14560.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201408020402.14560.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Define the Henninger board dependent part of the VIN0 device node. Add the
+device node for Analog Devices ADV7180 video decoder to I2C2  bus. Add the
+necessary subnodes to interconnect VIN0 and ADV7180 devices.
 
-Adjust the r8a7778 SoC support code to use shmobile_init_delay()
-together with CPU Frequency settings from the DTS. Get rid of the
-C code version.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7778.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Changes in version 2:
+- refreshed the patch.
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index e1a477b..85fe016 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -574,7 +574,7 @@ void __init r8a7778_init_irq_extpin(int irlm)
- 
- void __init r8a7778_init_delay(void)
- {
--	shmobile_setup_delay(800, 1, 3); /* Cortex-A9 @ 800MHz */
-+	shmobile_init_delay();
- }
- 
- #ifdef CONFIG_USE_OF
--- 
-2.0.1
+ arch/arm/boot/dts/r8a7791-henninger.dts |   35 ++++++++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
 
+Index: renesas/arch/arm/boot/dts/r8a7791-henninger.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-henninger.dts
++++ renesas/arch/arm/boot/dts/r8a7791-henninger.dts
+@@ -135,6 +135,11 @@
+ 		renesas,groups = "usb1";
+ 		renesas,function = "usb1";
+ 	};
++
++	vin0_pins: vin0 {
++		renesas,groups = "vin0_data8", "vin0_clk";
++		renesas,function = "vin0";
++	};
+ };
+ 
+ &scif0 {
+@@ -191,6 +196,19 @@
+ 
+ 	status = "okay";
+ 	clock-frequency = <400000>;
++
++	composite-in@20 {
++		compatible = "adi,adv7180";
++		reg = <0x20>;
++		remote = <&vin0>;
++
++		port {
++			adv7180: endpoint {
++				bus-width = <8>;
++				remote-endpoint = <&vin0ep>;
++			};
++		};
++	};
+ };
+ 
+ &qspi {
+@@ -260,3 +278,20 @@
+ &pciec {
+ 	status = "okay";
+ };
++
++/* composite video input */
++&vin0 {
++	status = "ok";
++	pinctrl-0 = <&vin0_pins>;
++	pinctrl-names = "default";
++
++	port {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		vin0ep: endpoint {
++			remote-endpoint = <&adv7180>;
++			bus-width = <8>;
++		};
++	};
++};
