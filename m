@@ -1,58 +1,69 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Wed, 06 Aug 2014 11:04:40 +0000
-Subject: Re: DMA engine API issue (was: [PATCH/RFC 0/5] R-Car Gen2 DMAC hardware descriptor list support)
-Message-Id: <201408061304.41105.arnd@arndb.de>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 02 Aug 2014 00:04:21 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: r8a7791: add VIN DT support
+Message-Id: <201408020404.21944.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1406032431-3807-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1877927.dGcJCfKbeH@avalon> <CAMuHMdVz8hNus5x1hn0feqb1SYsUuhA4QHHfPGyebiKLZJwfEQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdVz8hNus5x1hn0feqb1SYsUuhA4QHHfPGyebiKLZJwfEQ@mail.gmail.com>
+References: <201408020402.14560.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201408020402.14560.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Russell King - ARM Linux <linux@arm.linux.org.uk>, Linux-sh list <linux-sh@vger.kernel.org>, Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, dmaengine@vger.kernel.org, Maxime Ripard <maxime.ripard@free-electrons.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
-On Wednesday 06 August 2014, Geert Uytterhoeven wrote:
-> > I actually have the opposite problem, in my case channels of physically
-> > separate DMA engines can be used interchangeably to serve the system's slaves.
-> > Using the DMA engine DT bindings, DT nodes of the slaves currently reference a
-> > specific DMA engine, even if they can be served by both. This leads to limited
-> > dynamic channel allocation capabilities (especially when taking into account
-> > lazy channel allocation as mentioned in another mail in this thread).
-> 
-> What about adding a property to the first one, referencing the second
-> (or the other way around, don't know what's the easiest to implement)?
-> 
->         dmac0: dma-controller@e6700000 {
->                 ...
->                 renesas,alternative = <&dmac1>;
->                 ...
->         };
-> 
->         dmac1: dma-controller@e6720000 {
->                 ...
->         };
-> 
-> That would avoid having to bind a slave device explicitly to a single
-> dmac, or having to bind all slave devices to all dmacs.
+Define the generic R8A7791 parts of the VIN[0-2] device nodes. Add aliases for
+the VIN[0-2] device nodes. 
 
-We have a perfectly fine way to express this with the existing binding
-already: you just list channels for both (or more) controllers for each
-slave, and let the dma subsystem pick one. This was a compromise we
-reached when we initially introduced the dma slave binding, the downside
-being that we have to name every reference from a slave to a controller,
-even though almost all of them are "rx", "tx" or "data".
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-I believe what happened though is that the initial implementation in the
-kernel was to just pick the first channel for a given name and try that
-but give up if it fails. This works for the majority of users and I had
-expected someone to implement a smarter strategy as needed.
+---
+Changes in version 2:
+- fixed the "compatible" properties;
+- refreshed the patch.
 
-The easiest way would be to just randomize the order of the channels
-during lookup and then try them all, but there is a potential problem
-with this failing sometimes in nondeterministic ways.
-Another alternative would be for the dma controller to report back
-some form of "utilization" number to the dma subsystem and have the
-common code pick the least utilized engine that is connected to that
-slave.
+ arch/arm/boot/dts/r8a7791.dtsi |   27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
 
-	Arnd
+Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
++++ renesas/arch/arm/boot/dts/r8a7791.dtsi
+@@ -34,6 +34,9 @@
+ 		spi1 = &msiof0;
+ 		spi2 = &msiof1;
+ 		spi3 = &msiof2;
++		vin0 = &vin0;
++		vin1 = &vin1;
++		vin2 = &vin2;
+ 	};
+ 
+ 	cpus {
+@@ -550,6 +553,30 @@
+ 		status = "disabled";
+ 	};
+ 
++	vin0: video@e6ef0000 {
++		compatible = "renesas,vin-r8a7791";
++		clocks = <&mstp8_clks R8A7791_CLK_VIN0>;
++		reg = <0 0xe6ef0000 0 0x1000>;
++		interrupts = <0 188 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	vin1: video@e6ef1000 {
++		compatible = "renesas,vin-r8a7791";
++		clocks = <&mstp8_clks R8A7791_CLK_VIN1>;
++		reg = <0 0xe6ef1000 0 0x1000>;
++		interrupts = <0 189 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	vin2: video@e6ef2000 {
++		compatible = "renesas,vin-r8a7791";
++		clocks = <&mstp8_clks R8A7791_CLK_VIN2>;
++		reg = <0 0xe6ef2000 0 0x1000>;
++		interrupts = <0 190 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
