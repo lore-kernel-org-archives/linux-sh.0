@@ -1,18 +1,35 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 29 Aug 2014 00:12:47 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7791 is now called "R-Car M2-W"
-Message-Id: <20140829001247.GK16165@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 04 Aug 2014 06:51:48 +0000
+Subject: [PATCH] ARM: shmobile: Remove genmai_defconfig from MAINTAINERS
+Message-Id: <1407135108-3371-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409214489-6458-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1409214489-6458-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Aug 28, 2014 at 10:28:09AM +0200, Geert Uytterhoeven wrote:
-> As per recent revisions of the datasheet.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+The genmai defconfig file has been removed by
+3ed27bd90d6d0c8b ("ARM: shmobile: genmai: remove defconfig")
+so remove its entry in the MAINTAINERS accordingly.
 
-Thanks, I have queued this up.0
+Reported-by: Joe Perches <joe@perches.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ MAINTAINERS | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 86efa7e..6fb61a1 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -1320,7 +1320,6 @@ F:	arch/arm/boot/dts/sh*
+ F:	arch/arm/configs/ape6evm_defconfig
+ F:	arch/arm/configs/armadillo800eva_defconfig
+ F:	arch/arm/configs/bockw_defconfig
+-F:	arch/arm/configs/genmai_defconfig
+ F:	arch/arm/configs/koelsch_defconfig
+ F:	arch/arm/configs/kzm9g_defconfig
+ F:	arch/arm/configs/lager_defconfig
+-- 
+2.0.1
+
