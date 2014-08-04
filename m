@@ -1,90 +1,30 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Aug 2014 01:09:41 +0000
-Subject: [PATCH 2/2] ARM: shmobile: armadillo800eva: Sort includes
-Message-Id: <0e56d75395f98a659e6879708bbd9328d2ce347e.1408927475.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 04 Aug 2014 17:20:14 +0000
+Subject: Re: [PATCH v3 1/2] rcar_can: document device tree bindings
+Message-Id: <53DFC0CE.4050602@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408927475.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408927475.git.horms+renesas@verge.net.au>
+References: <201408010124.26505.sergei.shtylyov@cogentembedded.com> <53DAB5CF.8000407@pengutronix.de>
+In-Reply-To: <53DAB5CF.8000407@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Marc Kleine-Budde <mkl@pengutronix.de>, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, devicetree@vger.kernel.org
+Cc: netdev@vger.kernel.org, wg@grandegger.com, linux-can@vger.kernel.org, linux-sh@vger.kernel.org, vksavl@gmail.com
 
-Sorted includes seems to be the done thing these days.
+Hello.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-armadillo800eva.c | 40 +++++++++++++-------------
- 1 file changed, 20 insertions(+), 20 deletions(-)
+On 08/01/2014 01:31 AM, Marc Kleine-Budde wrote:
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 6dbaad6..3d07a9a 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -22,43 +22,43 @@
- #include <linux/clk.h>
- #include <linux/delay.h>
- #include <linux/err.h>
--#include <linux/kernel.h>
--#include <linux/input.h>
--#include <linux/platform_data/st1232_pdata.h>
--#include <linux/irq.h>
--#include <linux/platform_device.h>
- #include <linux/gpio.h>
- #include <linux/gpio_keys.h>
--#include <linux/regulator/driver.h>
-+#include <linux/i2c-gpio.h>
-+#include <linux/input.h>
-+#include <linux/irq.h>
-+#include <linux/kernel.h>
-+#include <linux/mfd/tmio.h>
-+#include <linux/mmc/host.h>
-+#include <linux/mmc/sh_mmcif.h>
-+#include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/pinctrl/machine.h>
-+#include <linux/platform_data/st1232_pdata.h>
-+#include <linux/platform_device.h>
- #include <linux/pwm.h>
- #include <linux/pwm_backlight.h>
-+#include <linux/reboot.h>
-+#include <linux/regulator/driver.h>
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/gpio-regulator.h>
- #include <linux/regulator/machine.h>
- #include <linux/sh_eth.h>
--#include <linux/videodev2.h>
- #include <linux/usb/renesas_usbhs.h>
--#include <linux/mfd/tmio.h>
--#include <linux/mmc/host.h>
--#include <linux/mmc/sh_mmcif.h>
--#include <linux/mmc/sh_mobile_sdhi.h>
--#include <linux/i2c-gpio.h>
--#include <linux/reboot.h>
-+#include <linux/videodev2.h>
- 
--#include <media/mt9t112.h>
--#include <media/sh_mobile_ceu.h>
--#include <media/soc_camera.h>
--#include <asm/page.h>
-+#include <asm/hardware/cache-l2x0.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- #include <asm/mach/map.h>
- #include <asm/mach/time.h>
--#include <asm/hardware/cache-l2x0.h>
--#include <video/sh_mobile_lcdc.h>
--#include <video/sh_mobile_hdmi.h>
-+#include <asm/page.h>
-+#include <media/mt9t112.h>
-+#include <media/sh_mobile_ceu.h>
-+#include <media/soc_camera.h>
- #include <sound/sh_fsi.h>
- #include <sound/simple_card.h>
-+#include <video/sh_mobile_hdmi.h>
-+#include <video/sh_mobile_lcdc.h>
- 
- #include "common.h"
- #include "irqs.h"
--- 
-2.0.1
+>> Document the R-Car CAN device tree bindings.
+
+>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+> The series looks good from the CAN perpective. I'll apply the patches
+> after we've got an Acked-by from the DT folks.
+
+    How about the prior CAN clock support patch?
+
+> Marc
+
+WBR, Sergei
 
