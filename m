@@ -1,80 +1,56 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 26 Aug 2014 09:17:39 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC r8a7740 CCF and Timers Updates for v3.18
-Message-Id: <20140826091739.GB1210@verge.net.au>
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Mon, 04 Aug 2014 18:03:45 +0000
+Subject: Re: DMA engine API issue
+Message-Id: <53DFCB01.5050703@metafoo.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1409030383.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1409030383.git.horms+renesas@verge.net.au>
+References: <1406032431-3807-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <18522523.T2zy7HfoJ2@avalon> <20140801170744.GD8181@intel.com> <1621896.RqTTnmY7rK@avalon>
+In-Reply-To: <1621896.RqTTnmY7rK@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Vinod Koul <vinod.koul@intel.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, linux-arm-kernel@lists.infradead.org, Maxime Ripard <maxime.ripard@free-electrons.com>, Russell King - ARM Linux <linux@arm.linux.org.uk>
 
-On Tue, Aug 26, 2014 at 02:23:57PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these Renesas ARM based SoC r8a7740 CCF and timers updates
-> for v3.18.
-> 
-> These changes are in their own branch as there are SoC and board changes
-> that depend on DT changes, the reverse of the usual branch dependencies.
+On 08/04/2014 06:50 PM, Laurent Pinchart wrote:
+[...]
+>>>> from atomic context too.
+>>>
+>>> I'll take this opportunity to question why we have a separation between
+>>> tx_submit and issue_pending. What's the rationale for that, especially
+>>> given that dma_issue_pending_all() might kick in at any point and issue
+>>> pending transfers for all devices. A driver could thus see its submitted
+>>> but not issued transactions being issued before it explicitly calls
+>>> dma_async_issue_pending().
+>>
+>> The  API states that you need to get a channel, then prepare a descriptor
+>> and submit it back. Prepare can be in any order. The submit order is the one
+>> which is run on dmaengine. The submit marks the descriptor as pending.
+>> Typically you should have a pending_list which the descriptor should be
+>> pushed to.
+>>
+>> And lastly invoke dma_async_issue_pending() to start the pending ones.
+>>
+>> You have the flexibility to prepare descriptors and issue in the order you
+>> like. You can also attach the callback required for descriptors here.
+>
+> The question was why is there a dma_async_issue_pending() operation at all ?
+> Why can't dmaengine_submit() triggers the transfer start ? The only
+> explanation is a small comment in dmaengine.h that states
+>
+>   * This allows drivers to push copies to HW in batches,
+>   * reducing MMIO writes where possible.
+>
+> I don't think that's applicable for DMA slave transfers. Is it still
+> applicable for anything else ?
+[...]
 
-This pull request includes a minor conflict in
-arch/arm/mach-shmobile/board-armadillo800eva-reference.c with
-0eb07c96ee61be10 ("ARM: shmobile: armadillo800eva-reference: Sort
-includes") which is included in the pull request
-"Renesas ARM Based SoC Boards Cleanups For v3.18"
-which is tagged as renesas-boards-cleanups-for-v3.18.
+If the hardware has scatter gather support it allows the driver to chain the 
+descriptors before submitting them, which reduces the latency between the 
+transfers as well as the IO over overhead. The flaw with the current 
+implementation is that there is only one global chain per channel instead of 
+e.g. having the possibility to build up a chain in a driver and then submit and 
+start the chain. Some drivers have virtual channels where each channel 
+basically acts as the chain and once issue pending is called it is the chain is 
+mapped to a real channel which then executes it.
 
-The resolution is to take both.
-The resulting #includes should be:
-
-#include <linux/clk.h>
-#include <linux/err.h>
-#include <linux/gpio.h>
-#include <linux/io.h>
-#include <linux/kernel.h>
-#include <linux/of_platform.h>
-
-This resolution can be found in the next branch of the renesas tree.
-
-> The following changes since commit 7d1311b93e58ed55f3a31cc8f94c4b8fe988a2b9:
-> 
->   Linux 3.17-rc1 (2014-08-16 10:40:26 -0600)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-r8a7740-ccf-and-timers-for-v3.18
-> 
-> for you to fetch changes up to 433306747791845677ba662435a9bbbafaa21df3:
-> 
->   ARM: shmobile: r8a7740: Remove r8a7740_add_standard_devices_dt (2014-08-23 19:58:57 +0900)
-> 
-> ----------------------------------------------------------------
-> Renesas ARM Based SoC R8a7740 CCF and Timers Updates for v3.18
-> 
-> When booting using the r8a7740/armadillo800eva using dt-reference:
-> * Use CCF to initialise clocks via DT
-> * Initialise timers via DT
-> 
-> ----------------------------------------------------------------
-> Simon Horman (4):
->       ARM: shmobile: r8a7740: Add CMT1 device to DT
->       ARM: shmobile: armadillo800eva-reference: Enable CMT1 in device tree
->       ARM: shmobile: armadillo800eva-reference: Do not use r8a7740_add_standard_devices_dt()
->       ARM: shmobile: r8a7740: Remove r8a7740_add_standard_devices_dt
-> 
-> Ulrich Hecht (4):
->       ARM: shmobile: r8a7740: clock register bits
->       ARM: shmobile: r8a7740: add SoC clocks to DTS
->       ARM: shmobile: r8a7740: add MSTP clock assignments to DT
->       ARM: shmobile: armadillo800eva-reference: add clock overrides to DTS
-> 
->  .../boot/dts/r8a7740-armadillo800eva-reference.dts |  17 ++
->  arch/arm/boot/dts/r8a7740.dtsi                     | 220 ++++++++++++++++++++-
->  .../board-armadillo800eva-reference.c              |   3 +-
->  arch/arm/mach-shmobile/r8a7740.h                   |   1 -
->  arch/arm/mach-shmobile/setup-r8a7740.c             |  18 +-
->  include/dt-bindings/clock/r8a7740-clock.h          |  77 ++++++++
->  6 files changed, 317 insertions(+), 19 deletions(-)
->  create mode 100644 include/dt-bindings/clock/r8a7740-clock.h
+- Lars
