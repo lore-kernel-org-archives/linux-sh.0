@@ -1,61 +1,98 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Aug 2014 01:10:01 +0000
-Subject: [PATCH 1/7] ARM: shmobile: r8a7790: Add JPU clock dt and CPG define.
-Message-Id: <da076a888ab19f13816372796ed231e7d6ff5fed.1408928822.git.horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 04 Aug 2014 10:48:03 +0000
+Subject: [PATCH v2 2/2] usb: renesas_usbhs: Add device tree support for R-Car H2 and M2
+Message-Id: <53DF64E3.6040000@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408928822.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408928822.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: SH-Linux <linux-sh@vger.kernel.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>
+Cc: "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>
 
-From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+This driver supports other SoCs, but they need boards/Soc depend code.
+So, this patch adds device tree support for R-Car H2 and M2 initially.
 
-Signed-off-by: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi            | 6 +++---
- include/dt-bindings/clock/r8a7790-clock.h | 1 +
- 2 files changed, 4 insertions(+), 3 deletions(-)
+ drivers/usb/renesas_usbhs/common.c |   44 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 2278bd0..c11541d 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -836,17 +836,17 @@
- 		mstp1_clks: mstp1_clks@e6150134 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
--			clocks = <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
-+			clocks = <&m2_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
- 				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>,
- 				 <&zs_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
--				R8A7790_CLK_TMU1 R8A7790_CLK_TMU3 R8A7790_CLK_TMU2
-+				R8A7790_CLK_JPU R8A7790_CLK_TMU1 R8A7790_CLK_TMU3 R8A7790_CLK_TMU2
- 				R8A7790_CLK_CMT0 R8A7790_CLK_TMU0 R8A7790_CLK_VSP1_DU1
- 				R8A7790_CLK_VSP1_DU0 R8A7790_CLK_VSP1_R R8A7790_CLK_VSP1_S
- 			>;
- 			clock-output-names -				"tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
-+				"jpu", "tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
- 				"vsp1-du0", "vsp1-rt", "vsp1-sy";
- 		};
- 		mstp2_clks: mstp2_clks@e6150138 {
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-index f929a79e..8ea7ab0 100644
---- a/include/dt-bindings/clock/r8a7790-clock.h
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -26,6 +26,7 @@
- #define R8A7790_CLK_MSIOF0		0
- 
- /* MSTP1 */
-+#define R8A7790_CLK_JPU		6
- #define R8A7790_CLK_TMU1		11
- #define R8A7790_CLK_TMU3		21
- #define R8A7790_CLK_TMU2		22
+diff --git a/drivers/usb/renesas_usbhs/common.c b/drivers/usb/renesas_usbhs/common.c
+index 1b9bf8d..b3b6813 100644
+--- a/drivers/usb/renesas_usbhs/common.c
++++ b/drivers/usb/renesas_usbhs/common.c
+@@ -18,6 +18,8 @@
+ #include <linux/gpio.h>
+ #include <linux/io.h>
+ #include <linux/module.h>
++#include <linux/of_device.h>
++#include <linux/of_gpio.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/slab.h>
+ #include <linux/sysfs.h>
+@@ -438,6 +440,43 @@ static int usbhsc_drvcllbck_notify_hotplug(struct platform_device *pdev)
+ /*
+  *		platform functions
+  */
++static const struct of_device_id usbhs_of_match[] = {
++	{
++		.compatible = "renesas,usbhs-r8a7790",
++		.data = (void *)USBHS_TYPE_R8A7790,
++	},
++	{
++		.compatible = "renesas,usbhs-r8a7791",
++		.data = (void *)USBHS_TYPE_R8A7791,
++	},
++	{ },
++};
++MODULE_DEVICE_TABLE(of, usbhs_of_match);
++
++static struct renesas_usbhs_platform_info *usbhs_parse_dt(struct device *dev)
++{
++	struct renesas_usbhs_platform_info *info;
++	struct renesas_usbhs_driver_param *dparam;
++	const struct of_device_id *of_id = of_match_device(usbhs_of_match, dev);
++	u32 tmp;
++	int gpio;
++
++	info = devm_kzalloc(dev, sizeof(*info), GFP_KERNEL);
++	if (!info)
++		return NULL;
++
++	dparam = &info->driver_param;
++	dparam->type = of_id ? (u32)of_id->data : 0;
++	if (!of_property_read_u32(dev->of_node, "renesas,buswait", &tmp))
++		dparam->buswait_bwait = tmp;
++	gpio = of_get_named_gpio_flags(dev->of_node, "renesas,enable-gpio", 0,
++				       NULL);
++	if (gpio > 0)
++		dparam->enable_gpio = gpio;
++
++	return info;
++}
++
+ static int usbhs_probe(struct platform_device *pdev)
+ {
+ 	struct renesas_usbhs_platform_info *info = dev_get_platdata(&pdev->dev);
+@@ -446,6 +485,10 @@ static int usbhs_probe(struct platform_device *pdev)
+ 	struct resource *res, *irq_res;
+ 	int ret;
+
++	/* check device node */
++	if (pdev->dev.of_node)
++		info = pdev->dev.platform_data = usbhs_parse_dt(&pdev->dev);
++
+ 	/* check platform information */
+ 	if (!info) {
+ 		dev_err(&pdev->dev, "no platform information\n");
+@@ -689,6 +732,7 @@ static struct platform_driver renesas_usbhs_driver = {
+ 	.driver		= {
+ 		.name	= "renesas_usbhs",
+ 		.pm	= &usbhsc_pm_ops,
++		.of_match_table = of_match_ptr(usbhs_of_match),
+ 	},
+ 	.probe		= usbhs_probe,
+ 	.remove		= usbhs_remove,
 -- 
-2.0.1
+1.7.9.5
 
