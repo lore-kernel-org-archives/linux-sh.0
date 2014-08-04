@@ -1,32 +1,46 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 28 Aug 2014 03:35:01 +0000
-Subject: [PATCH 02/05] ARM: shmobile: armadillo800eva: Build DTS for multiplatform
-Message-Id: <20140828033501.18867.73429.sendpatchset@w520>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 04 Aug 2014 12:29:08 +0000
+Subject: Re: [PATCH/RFC 5/5] dmaengine: rcar-dmac: Cache hardware descriptors memory
+Message-Id: <CAMuHMdWeOPYnXBnnkm9vFDY6gC5wJ-jywNY2_rxPU_ZtsT9Oug@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+On Tue, Jul 22, 2014 at 2:33 PM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
+> Unlike DMA transfers descriptors that are preallocated and cached,
+> memory used to store hardware descriptors is allocated and freed with
+> the DMA coherent allocation API for every transfer. Beside degrading
 
-Build the r8a7740 Armadillo800EVA board DTB in case
-of Multiplatform. The DT reference case will be removed
-and can be ignored for now.
+Besides
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
+> performances, this creates a CMA stress test that seem to cause issues.
 
- arch/arm/boot/dts/Makefile |    1 +
- 1 file changed, 1 insertion(+)
+seems
 
---- 0001/arch/arm/boot/dts/Makefile
-+++ work/arch/arm/boot/dts/Makefile	2014-08-27 18:38:49.000000000 +0900
-@@ -372,6 +372,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += r7
- 	sh7372-mackerel.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
- 	r7s72100-genmai.dtb \
-+	r8a7740-armadillo800eva.dtb \
- 	r8a7791-henninger.dtb \
- 	r8a7791-koelsch.dtb \
- 	r8a7790-lager.dtb \
+> Running dmatest with the noverify option produces
+>
+> [   50.066539] alloc_contig_range test_pages_isolated(6b845, 6b846) failed
+> [   50.235180] alloc_contig_range test_pages_isolated(6b848, 6b84e) failed
+> [   52.964584] alloc_contig_range test_pages_isolated(6b847, 6b848) failed
+> [   54.127113] alloc_contig_range test_pages_isolated(6b843, 6b844) failed
+> [   56.270253] alloc_contig_range test_pages_isolated(6b84c, 6b850) failed
+>
+> The root cause need to be fixed, but in the meantime, as a workaround
+
+needs
+
+> and a performance improvement, cache hardware descriptors.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
