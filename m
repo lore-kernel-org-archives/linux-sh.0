@@ -1,66 +1,33 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Aug 2014 01:10:10 +0000
-Subject: [PATCH 05/10] ARM: shmobile: r8a73a4: Use shmobile_init_delay()
-Message-Id: <f5720080b51d61c33dc559fedab9a601930e95c1.1408927601.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 04 Aug 2014 09:01:50 +0000
+Subject: Re: [PATCH 11/11] ARM: shmobile: r8a7791: Reference DMA channels in SDHI DT nodes
+Message-Id: <CAMuHMdXdmH4SX6uDn76CMtHSVsdkpoRDfKx6v6N+gu9sLjiA0g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408927601.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408927601.git.horms+renesas@verge.net.au>
+References: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+	<1405464321-4723-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1405464321-4723-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: Linux-sh list <linux-sh@vger.kernel.org>, Linux MMC List <linux-mmc@vger.kernel.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Ian Molton <ian.molton@codethink.co.uk>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+On Wed, Jul 16, 2014 at 12:45 AM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
+> Add references to the transmit and receive DMA channels in the three
+> SDHI nodes.
+>
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Adjust the r8a73a4 SoC support code to use shmobile_init_delay()
-together with CPU Frequency settings from the DTS. Get rid of the
-C code version and r8a73a4_init_early() that now are unused.
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/r8a73a4.h       | 1 -
- arch/arm/mach-shmobile/setup-r8a73a4.c | 9 +--------
- 2 files changed, 1 insertion(+), 9 deletions(-)
+Gr{oetje,eeting}s,
 
-diff --git a/arch/arm/mach-shmobile/r8a73a4.h b/arch/arm/mach-shmobile/r8a73a4.h
-index ce8bdd1..5fafd6f 100644
---- a/arch/arm/mach-shmobile/r8a73a4.h
-+++ b/arch/arm/mach-shmobile/r8a73a4.h
-@@ -14,6 +14,5 @@ void r8a73a4_add_standard_devices(void);
- void r8a73a4_add_dt_devices(void);
- void r8a73a4_clock_init(void);
- void r8a73a4_pinmux_init(void);
--void r8a73a4_init_early(void);
- 
- #endif /* __ASM_R8A73A4_H__ */
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index 6fbcdcc..53f40b7 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -295,13 +295,6 @@ void __init r8a73a4_add_standard_devices(void)
- 	r8a73a4_register_dmac();
- }
- 
--void __init r8a73a4_init_early(void)
--{
--#ifndef CONFIG_ARM_ARCH_TIMER
--	shmobile_setup_delay(1500, 2, 4); /* Cortex-A15 @ 1500MHz */
--#endif
--}
--
- #ifdef CONFIG_USE_OF
- 
- static const char *r8a73a4_boards_compat_dt[] __initdata = {
-@@ -310,7 +303,7 @@ static const char *r8a73a4_boards_compat_dt[] __initdata = {
- };
- 
- DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
--	.init_early	= r8a73a4_init_early,
-+	.init_early	= shmobile_init_delay,
- 	.init_late	= shmobile_init_late,
- 	.dt_compat	= r8a73a4_boards_compat_dt,
- MACHINE_END
--- 
-2.0.1
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
