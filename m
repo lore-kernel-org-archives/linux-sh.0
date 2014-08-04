@@ -1,55 +1,52 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Mon, 25 Aug 2014 12:26:03 +0000
-Subject: [PATCH 11/12] mmc: tmio_mmc: Fixup system PM suspend lock-up
-Message-Id: <1408969564-6335-12-git-send-email-ulf.hansson@linaro.org>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 04 Aug 2014 10:47:55 +0000
+Subject: [PATCH v2 1/2] usb: renesas_usbhs: Add device tree bindings documentation
+Message-Id: <53DF64DB.7000206@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
-In-Reply-To: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org, Ian Molton <ian.molton@codethink.co.uk>, Chris Ball <chris@printf.net>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Ulf Hansson <ulf.hansson@linaro.org>
+To: SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Grant Likely <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: "linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-At system PM suspend, the tmio core accessed the internal registers of
-the controller without first moving the device into active state. This
-caused a lock-up in system PM suspend phase.
+Document the device tree bindings for the Renesas USBHS controller.
 
-The reason for the register access were masking of IRQs. Since that is
-managed via the runtime PM suspend path, let's just re-use that path
-for system PM suspend.
-
-In other words force the device into runtime PM suspend state at system
-PM suspend and restore it to active state at system PM resume.
-
-Reported-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- drivers/mmc/host/tmio_mmc.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ .../devicetree/bindings/usb/renesas_usbhs.txt      |   24 ++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/usb/renesas_usbhs.txt
 
-diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
-index 58f50ef..659028d 100644
---- a/drivers/mmc/host/tmio_mmc.c
-+++ b/drivers/mmc/host/tmio_mmc.c
-@@ -30,7 +30,7 @@ static int tmio_mmc_suspend(struct device *dev)
- 	const struct mfd_cell *cell = mfd_get_cell(pdev);
- 	int ret;
- 
--	ret = tmio_mmc_host_suspend(dev);
-+	ret = pm_runtime_force_suspend(dev);
- 
- 	/* Tell MFD core it can disable us now.*/
- 	if (!ret && cell->disable)
-@@ -50,7 +50,7 @@ static int tmio_mmc_resume(struct device *dev)
- 		ret = cell->resume(pdev);
- 
- 	if (!ret)
--		ret = tmio_mmc_host_resume(dev);
-+		ret = pm_runtime_force_resume(dev);
- 
- 	return ret;
- }
+diff --git a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+new file mode 100644
+index 0000000..b08c903
+--- /dev/null
++++ b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+@@ -0,0 +1,24 @@
++Renesas Electronics USBHS driver
++
++Required properties:
++  - compatible: Must contain one of the following:
++	- "renesas,usbhs-r8a7790"
++	- "renesas,usbhs-r8a7791"
++  - reg: Base address and length of the register for the USBHS
++  - interrupts: Interrupt specifier for the USBHS
++  - clocks: A list of phandle + clock specifier pairs
++
++Optional properties:
++  - renesas,buswait: Integer to use BUSWAIT register
++  - renesas,enable-gpio: A gpio specifier to check GPIO determining if USB
++			 function should be enabled
++  - phys: phandle + phy specifier pair
++  - phy-names: must be "usb"
++
++Example:
++	usbhs: usb@e6590000 {
++		compatible = "renesas,usbhs-r8a7790";
++		reg = <0 0xe6590000 0 0x100>;
++		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7790_CLK_HSUSB>;
++	};
 -- 
-1.9.1
+1.7.9.5
 
