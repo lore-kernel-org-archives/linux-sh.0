@@ -1,50 +1,48 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 04 Aug 2014 11:28:32 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Mon, 04 Aug 2014 15:21:49 +0000
 Subject: Re: [RFC PATCH 2/2] of/clk: use "clkops-clocks" to specify clocks handled by clock_ops domain
-Message-Id: <CAMuHMdVKDQz8q0b2UA7=1K8Qw4n3U0=M+mJyi5UQP7QZdC-JiQ@mail.gmail.com>
+Message-Id: <1616494.8YxGyrZW3V@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
- <53D68CC4.1010704@ti.com>
- <CACxGe6uMke5vgzcNC9xUqjr2bHJ4QFHD6YjocSZWq8Ccx8Mm6A@mail.gmail.com>
  <2717555.fiA6A86F65@avalon>
-In-Reply-To: <2717555.fiA6A86F65@avalon>
+ <CAMuHMdVKDQz8q0b2UA7=1K8Qw4n3U0=M+mJyi5UQP7QZdC-JiQ@mail.gmail.com>
+In-Reply-To: <CAMuHMdVKDQz8q0b2UA7=1K8Qw4n3U0=M+mJyi5UQP7QZdC-JiQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Laurent,
+Hi Geert,
 
-On Wed, Jul 30, 2014 at 2:06 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> The third option would require storing the clocks lists in device drivers. I
-> believe this is our best option, as a trade-off between simplicity and
-> versatility. Drivers that use runtime PM already need to enable it explicitly
-> when probing devices. Passing a list of clock names to runtime PM at that
-> point wouldn't complicate drivers much. When the clocks list isn't SoC-
-> dependent it could be stored as static information. Otherwise it could be
-> derived from DT (or any other source of hardware description) using C code,
-> offering all the versatility we need.
->
-> The only drawback of this solution I can think of right now is that the
-> runtime PM core couldn't manage device clocks before probing the device.
-> Specifically device clocks couldn't be managed if no driver is loaded for that
-> device. I somehow recall that someone raised this as being a problem, but I
-> can't remember why.
+On Monday 04 August 2014 13:28:32 Geert Uytterhoeven wrote:
+> On Wed, Jul 30, 2014 at 2:06 AM, Laurent Pinchart wrote:
+> > The third option would require storing the clocks lists in device drivers.
+> > I believe this is our best option, as a trade-off between simplicity and
+> > versatility. Drivers that use runtime PM already need to enable it
+> > explicitly when probing devices. Passing a list of clock names to runtime
+> > PM at that point wouldn't complicate drivers much. When the clocks list
+> > isn't SoC- dependent it could be stored as static information. Otherwise
+> > it could be derived from DT (or any other source of hardware description)
+> > using C code, offering all the versatility we need.
+> > 
+> > The only drawback of this solution I can think of right now is that the
+> > runtime PM core couldn't manage device clocks before probing the device.
+> > Specifically device clocks couldn't be managed if no driver is loaded for
+> > that device. I somehow recall that someone raised this as being a
+> > problem, but I can't remember why.
+> 
+> Perhaps you're thinking of clocks that were enabled (by the boot loader or
+> implicit reset state) before running Linux, and aren't disabled?
 
-Perhaps you're thinking of clocks that were enabled (by the boot loader or
-implicit reset state) before running Linux, and aren't disabled?
+That wasn't the reason, I know that clk_disable_unused() takes care of that 
+problem (provided the clock drivers behave correctly, the commit you mention 
+below shows that's not always the case, but that's an unrelated issue).
 
-That was fixed by commit bb178da701382a230e26d90cf94e8a24b280e0d9
-("clk: shmobile: mstp: Fix the is_enabled() operation").
+> That was fixed by commit bb178da701382a230e26d90cf94e8a24b280e0d9
+> ("clk: shmobile: mstp: Fix the is_enabled() operation").
 
-Gr{oetje,eeting}s,
+-- 
+Regards,
 
-                        Geert
+Laurent Pinchart
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
