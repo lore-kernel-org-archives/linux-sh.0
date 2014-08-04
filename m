@@ -1,96 +1,51 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Fri, 22 Aug 2014 08:37:12 +0000
-Subject: [PATCH 02/10 v2 resend] mmc: tmio: care about DMA tx/rx addr offset
-Message-Id: <8738co7weh.wl%kuninori.morimoto.gx@gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 04 Aug 2014 13:33:34 +0000
+Subject: Re: SH 7619 CHCR values
+Message-Id: <CAMuHMdW=zbGnTEY0EnaNU_Z1hRjaF0QaKR8C-6qVJt_bQkpr1A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
-	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
-	<53AD638C.5060907@renesas.com>
-	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
-	<8761hk7wgy.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <8761hk7wgy.wl%kuninori.morimoto.gx@gmail.com>
+References: <760230076.57448.1406841700324.open-xchange@webmail.nmp.skynet.be>
+In-Reply-To: <760230076.57448.1406841700324.open-xchange@webmail.nmp.skynet.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
-Cc: Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: Fabian Frederick <fabf@skynet.be>
+Cc: Richard Weinberger <richard@nod.at>, Paul Bolle <pebolle@tiscali.nl>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Thu, Jul 31, 2014 at 11:21 PM, Fabian Frederick <fabf@skynet.be> wrote:
+>  Could you tell me where I could find SH 7619 CHCR values in order to solve the
+> following errors ?
+>
+> arch/sh/drivers/dma/dma-sh.c: In function 'calc_xmit_shift':
+> arch/sh/drivers/dma/dma-sh.c:97:21: error: 'CHCR_TS_LOW_MASK' undeclared (first
+> use in this function)
+> arch/sh/drivers/dma/dma-sh.c:97:21: note: each undeclared identifier is reported
+> only once for each function it appears in
+> arch/sh/drivers/dma/dma-sh.c:97:42: error: 'CHCR_TS_LOW_SHIFT' undeclared (first
+> use in this function)
+> arch/sh/drivers/dma/dma-sh.c:98:12: error: 'CHCR_TS_HIGH_MASK' undeclared (first
+> use in this function)
+> arch/sh/drivers/dma/dma-sh.c:98:34: error: 'CHCR_TS_HIGH_SHIFT' undeclared
+> (first use in this function)
+> arch/sh/drivers/dma/dma-sh.c: In function 'sh_dmac_configure_channel':
+> arch/sh/drivers/dma/dma-sh.c:145:10: error: 'CHCR_TS_LOW_SHIFT' undeclared
+> (first use in this function)
+> arch/sh/drivers/dma/dma-sh.c:145:10: error: 'CHCR_TS_HIGH_SHIFT' undeclared
+> (first use in this function)
+>
+> I guess it should be added in a new dma-register.h in arch/sh/include/cpu-sh2 ?
 
-Basically, SD_BUF0 Tx/Rx addresses are same
-in normal TMIO controller,
-but, it is different on Renesas R-Car SDHI controller
-if it uses DMAC
-(Rx address needs to add 0x2000 to Tx address)
+Google told me:
+http://www.alldatasheet.com/datasheet-pdf/pdf/249585/RENESAS/SH7619.html
 
-This patch adds new .dma_rx_offset and cares it
+The values seem to be the same as for sh3.
 
-Tested-by: Nguyen Xuan Nui <nx-nui@jinso.co.jp>
-Tested-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
-Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Ben Dooks <ben-linux@fluff.org>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- drivers/mmc/host/sh_mobile_sdhi.c |    3 +++
- drivers/mmc/host/tmio_mmc_dma.c   |    2 +-
- include/linux/mfd/tmio.h          |    1 +
- 3 files changed, 5 insertions(+), 1 deletion(-)
+Gr{oetje,eeting}s,
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index b3baa83..91c6399 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -39,6 +39,7 @@ struct sh_mobile_sdhi_of_data {
- 	unsigned long tmio_flags;
- 	unsigned long capabilities;
- 	unsigned long capabilities2;
-+	dma_addr_t dma_rx_offset;
- };
- 
- static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
-@@ -56,6 +57,7 @@ static const struct sh_mobile_sdhi_of_data of_rcar_gen2_compatible = {
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
- 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
- 	.capabilities2	= MMC_CAP2_NO_2BLKS_READ,
-+	.dma_rx_offset	= 0x2000,
- };
- 
- static const struct of_device_id sh_mobile_sdhi_of_match[] = {
-@@ -228,6 +230,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		mmc_data->flags |= of_data->tmio_flags;
- 		mmc_data->capabilities |= of_data->capabilities;
- 		mmc_data->capabilities2 |= of_data->capabilities2;
-+		dma_priv->dma_rx_offset = of_data->dma_rx_offset;
- 	}
- 
- 	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
-diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
-index eb8f1d5..bd646b0 100644
---- a/drivers/mmc/host/tmio_mmc_dma.c
-+++ b/drivers/mmc/host/tmio_mmc_dma.c
-@@ -312,7 +312,7 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
- 		if (pdata->dma->chan_priv_rx)
- 			cfg.slave_id = pdata->dma->slave_id_rx;
- 		cfg.direction = DMA_DEV_TO_MEM;
--		cfg.src_addr = cfg.dst_addr;
-+		cfg.src_addr = cfg.dst_addr + pdata->dma->dma_rx_offset;
- 		cfg.src_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
- 		cfg.dst_addr = 0;
- 		ret = dmaengine_slave_config(host->chan_rx, &cfg);
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index 8f6f2e9..777e29b 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -96,6 +96,7 @@ struct tmio_mmc_dma {
- 	int slave_id_tx;
- 	int slave_id_rx;
- 	int alignment_shift;
-+	dma_addr_t dma_rx_offset;
- 	bool (*filter)(struct dma_chan *chan, void *arg);
- };
- 
--- 
-1.7.9.5
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
