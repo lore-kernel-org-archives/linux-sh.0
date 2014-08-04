@@ -1,148 +1,43 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Aug 2014 16:41:11 +0000
-Subject: [PATCH 14/16] ARM: shmobile: marzen: Enable DU device in DT
-Message-Id: <1409157673-4154-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 04 Aug 2014 20:00:20 +0000
+Subject: Re: Resend: [PATCH 0/4] rcar_vin: fix soc_camera WARN_ON() issues.
+Message-Id: <53DFE654.1000102@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1404812474-7627-1-git-send-email-ian.molton@codethink.co.uk>
+In-Reply-To: <1404812474-7627-1-git-send-email-ian.molton@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: Ian Molton <ian.molton@codethink.co.uk>, linux-media@vger.kernel.org
+Cc: linux-kernel@lists.codethink.co.uk, g.liakhovetski@gmx.de, m.chehab@samsung.com, vladimir.barinov@cogentembedded.com, magnus.damm@gmail.com, horms@verge.net.au, linux-sh@vger.kernel.org
 
-Specify the DU output topology, enable the DU device and configure the
-related pins.
+Hello.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/r8a7779-marzen.dts | 106 +++++++++++++++++++++++++++++++++++
- 1 file changed, 106 insertions(+)
+On 07/08/2014 01:41 PM, Ian Molton wrote:
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
-index c160404..da2d0aa 100644
---- a/arch/arm/boot/dts/r8a7779-marzen.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-@@ -68,6 +68,101 @@
- 			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
- 		};
- 	};
-+
-+	vga-enc {
-+		compatible = "adi,adv7123";
-+
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		ports {
-+			port@0 {
-+				vga_enc_in: endpoint {
-+					remote-endpoint = <&du_out_rgb0>;
-+				};
-+			};
-+			port@1 {
-+				vga_enc_out: endpoint {
-+					remote-endpoint = <&vga_in>;
-+				};
-+			};
-+		};
-+	};
-+
-+	vga {
-+		compatible = "vga-connector";
-+
-+		port {
-+			vga_in: endpoint {
-+				remote-endpoint = <&vga_enc_out>;
-+			};
-+		};
-+	};
-+
-+	lvds-enc {
-+		compatible = "thine,thc63lvdm83d";
-+
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		ports {
-+			port@0 {
-+				lvds_enc_in: endpoint {
-+					remote-endpoint = <&du_out_rgb1>;
-+				};
-+			};
-+			port@1 {
-+				lvds_enc_out: endpoint {
-+					remote-endpoint = <&panel_in>;
-+				};
-+			};
-+		};
-+	};
-+
-+	panel {
-+		compatible = "mitsubishi,aa104xd12", "panel-dpi";
-+
-+		width-mm = <210>;
-+		height-mm = <158>;
-+
-+		panel-timing {
-+			/* 1024x768 @65Hz */
-+			clock-frequency = <65000000>;
-+			hactive = <1024>;
-+			vactive = <768>;
-+			hsync-len = <136>;
-+			hfront-porch = <20>;
-+			hback-porch = <160>;
-+			vfront-porch = <3>;
-+			vback-porch = <29>;
-+			vsync-len = <6>;
-+		};
-+
-+		port {
-+			panel_in: endpoint {
-+				remote-endpoint = <&lvds_enc_out>;
-+			};
-+		};
-+	};
-+};
-+
-+&du {
-+	pinctrl-0 = <&du_pins>;
-+	pinctrl-names = "default";
-+	status = "okay";
-+
-+	ports {
-+		port@0 {
-+			endpoint {
-+				remote-endpoint = <&vga_enc_in>;
-+			};
-+		};
-+		port@1 {
-+			endpoint {
-+				remote-endpoint = <&lvds_enc_in>;
-+			};
-+		};
-+	};
- };
- 
- &irqpin0 {
-@@ -83,6 +178,17 @@
- };
- 
- &pfc {
-+	du_pins: du {
-+		du0 {
-+			renesas,groups = "du0_rgb888", "du0_sync_1", "du0_clk_out_0";
-+			renesas,function = "du0";
-+		};
-+		du1 {
-+			renesas,groups = "du1_rgb666", "du1_sync_1", "du1_clk_out";
-+			renesas,function = "du1";
-+		};
-+	};
-+
- 	lan0_pins: lan0 {
- 		intc {
- 			renesas,groups = "intc_irq1_b";
--- 
-1.8.5.5
+> Resent to include the author and a couple of other interested parties :)
+
+    Thank you (despite you didn't include me :-).
+
+> This patch series provides fixes that allow the rcar_vin driver to function
+> without triggering dozens of warnings from the videobuf2 and soc_camera layers.
+
+> Patches 2/3 should probably be merged into a single, atomic change, although
+> patch 2 does not make the existing situation /worse/ in and of itself.
+
+    Perhaps it's worth to just swap patches 2 & 3...
+
+> Patch 4 does not change the code logic, but is cleaner and less prone to
+> breakage caused by furtutre modification. Also, more consistent with the use of
+> vb pointers elsewhere in the driver.
+
+    It's not a good practice to post fixes and clean-ups in a single series.
+
+> Comments welcome!
+
+    I've just tested the whole series, so here's my:
+
+Tested-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+WBR, Sergei
 
