@@ -1,47 +1,33 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sat, 30 Aug 2014 09:32:30 +0000
-Subject: Re: [PATCH 1/2] ARM: multi_v7_defconfig: Enable shmobile platforms
-Message-Id: <CAMuHMdXXUrq3tsiaEym_uuoiYXNt66c5sm+1mSAfX6cHgMbEOQ@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 04 Aug 2014 10:47:36 +0000
+Subject: [PATCH v2 0/2] usb: renesas_usbhs: Add device tree support for R-Car H2 and M2
+Message-Id: <53DF64C8.4050906@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409234429-1916-1-git-send-email-geert+renesas@glider.be>
- <1965890.bT7bZyQJt8@amdc1032> <3598124.ze8sbSR9ui@wuerfel>
-In-Reply-To: <3598124.ze8sbSR9ui@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: SH-Linux <linux-sh@vger.kernel.org>
+Cc: "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>
 
-Hi Arnd,
+This driver supports other SoCs, but they need boards/Soc depend code.
+So, this patch adds device tree support for R-Car H2 and M2 initially.
 
-On Fri, Aug 29, 2014 at 10:11 PM, Arnd Bergmann <arnd@arndb.de> wrote:
-> A related problem that I think is more significant is that
-> some platforms 'select' a particular driver and when you
-> disable the platform, that driver is suddenly removed from the
-> defconfig for all other platforms as well. This has bitten
-> us a few times in the past, and I'd really like to fix those
-> cases first.
+Changes from v1:
+ - Change an optional property name from "buswait_bwait" to "buswait" in
+   patch 1.
+ - Add the prefix "renesas," to "buswait" and "enable-gpio" in patch 1.
+ - Modify the usbhs_parse_dt() to remove the check of some
+   of_device_is_compatible() in patch 2.
 
-Indeed. "select" is evil, and has a devastating effect on minimal
-defconfigs (lots of churn and nasty surprises like the one you mentioned).
+Yoshihiro Shimoda (2):
+  usb: renesas_usbhs: Add device tree bindings documentation
+  usb: renesas_usbhs: Add device tree support for R-Car H2 and M2
 
-So it actually makes more sense to derive multi_v7_defconfig
-from the individual platform's defconfigs.
-I also have a script for that, which I wrote to create m68k's multi_defconfig
-a long time ago:
-https://github.com/geertu/linux-scripts/blob/master/linux-config-merge
+ .../devicetree/bindings/usb/renesas_usbhs.txt      |   24 +++++++++++
+ drivers/usb/renesas_usbhs/common.c                 |   44 ++++++++++++++++++++
+ 2 files changed, 68 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/usb/renesas_usbhs.txt
 
-In the long run, I think creating defconfigs from DTS is the way to go.
-Extracting dependencies from the build system (both Makefile and
-the myriad of complex dependencies in Kconfig) are the biggest hurdles to
-solve.
+-- 
+1.7.9.5
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
