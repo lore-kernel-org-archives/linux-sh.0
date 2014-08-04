@@ -1,56 +1,79 @@
-From: Lars-Peter Clausen <lars@metafoo.de>
-Date: Mon, 04 Aug 2014 18:03:45 +0000
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Mon, 04 Aug 2014 18:32:25 +0000
 Subject: Re: DMA engine API issue
-Message-Id: <53DFCB01.5050703@metafoo.de>
+Message-Id: <20140804183225.GJ30282@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1406032431-3807-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <18522523.T2zy7HfoJ2@avalon> <20140801170744.GD8181@intel.com> <1621896.RqTTnmY7rK@avalon>
-In-Reply-To: <1621896.RqTTnmY7rK@avalon>
+References: <1406032431-3807-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <18522523.T2zy7HfoJ2@avalon> <20140801170744.GD8181@intel.com> <1621896.RqTTnmY7rK@avalon> <53DFCB01.5050703@metafoo.de>
+In-Reply-To: <53DFCB01.5050703@metafoo.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Vinod Koul <vinod.koul@intel.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, linux-arm-kernel@lists.infradead.org, Maxime Ripard <maxime.ripard@free-electrons.com>, Russell King - ARM Linux <linux@arm.linux.org.uk>
+To: Lars-Peter Clausen <lars@metafoo.de>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Vinod Koul <vinod.koul@intel.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, linux-arm-kernel@lists.infradead.org, Maxime Ripard <maxime.ripard@free-electrons.com>
 
-On 08/04/2014 06:50 PM, Laurent Pinchart wrote:
-[...]
->>>> from atomic context too.
->>>
->>> I'll take this opportunity to question why we have a separation between
->>> tx_submit and issue_pending. What's the rationale for that, especially
->>> given that dma_issue_pending_all() might kick in at any point and issue
->>> pending transfers for all devices. A driver could thus see its submitted
->>> but not issued transactions being issued before it explicitly calls
->>> dma_async_issue_pending().
->>
->> The  API states that you need to get a channel, then prepare a descriptor
->> and submit it back. Prepare can be in any order. The submit order is the one
->> which is run on dmaengine. The submit marks the descriptor as pending.
->> Typically you should have a pending_list which the descriptor should be
->> pushed to.
->>
->> And lastly invoke dma_async_issue_pending() to start the pending ones.
->>
->> You have the flexibility to prepare descriptors and issue in the order you
->> like. You can also attach the callback required for descriptors here.
->
-> The question was why is there a dma_async_issue_pending() operation at all ?
-> Why can't dmaengine_submit() triggers the transfer start ? The only
-> explanation is a small comment in dmaengine.h that states
->
->   * This allows drivers to push copies to HW in batches,
->   * reducing MMIO writes where possible.
->
-> I don't think that's applicable for DMA slave transfers. Is it still
-> applicable for anything else ?
-[...]
+On Mon, Aug 04, 2014 at 08:03:45PM +0200, Lars-Peter Clausen wrote:
+> If the hardware has scatter gather support it allows the driver to chain 
+> the descriptors before submitting them, which reduces the latency between 
+> the transfers as well as the IO over overhead.
 
-If the hardware has scatter gather support it allows the driver to chain the 
-descriptors before submitting them, which reduces the latency between the 
-transfers as well as the IO over overhead. The flaw with the current 
-implementation is that there is only one global chain per channel instead of 
-e.g. having the possibility to build up a chain in a driver and then submit and 
-start the chain. Some drivers have virtual channels where each channel 
-basically acts as the chain and once issue pending is called it is the chain is 
-mapped to a real channel which then executes it.
+While partially true, that's not the full story...
 
-- Lars
+BTW, you're talking about stuff in DMA engine not being clear, but you're
+using confusing terminology.  Descriptors vs transactions.  The prepare
+functions return a transaction.  Descriptors are the hardware data
+structures which describe the transaction.  I'll take what you're talking
+about above as "chain the previous transaction descriptors to the next
+transaction descriptors".
+
+> The flaw with the current  
+> implementation is that there is only one global chain per channel instead 
+> of e.g. having the possibility to build up a chain in a driver and then 
+> submit and start the chain. Some drivers have virtual channels where each 
+> channel basically acts as the chain and once issue pending is called it 
+> is the chain is mapped to a real channel which then executes it.
+
+Most DMA engines are unable to program anything except the parameters for
+the next stage of the transfer.  In order to switch between "channels",
+many DMA engine implementations need the help of the CPU to reprogram the
+physical channel configuration.  Chaining two different channels which
+may ultimately end up on the same physical channel would be a bug in that
+case.
+
+Where the real flaw exists is the way that a lot of people write their
+DMA engine drivers - in particular how they deal with the end of a
+transfer.
+
+Many driver implementations receive an interrupt from the DMA controller,
+and either queue a tasklet, or they check the existing transfer, mark it
+as completed in some way, and queue a tasklet.
+
+When the tasklet runs, they then look to see if there's another transfer
+which they can start, and they then start it.
+
+That is horribly inefficient - it is much better to do all the DMA
+manipulation in IRQ context.  So, when the channel completes the
+existing transfer, you move the transaction to the queue of completed
+transfers and queue the tasklet, check whether there's a transaction for
+the same channel pending, and if so, start it immediately.
+
+This means that your inter-transfer gap is reduced down from the
+interrupt latency plus tasklet latency, to just the interrupt latency.
+
+Controllers such as OMAP (if their hardware scatter chains were used)
+do have the ability to reprogram the entire channel configuration from
+an appropriate transaction, and so /could/ start the next transfer
+entirely automatically - but I never added support for the hardware
+scatterlists as I have been told that TI measurements indicated that
+it did not gain any performance to use them.  Had this been implemented,
+it would mean that OMAP would only need to issue an interrupt to notify
+completion of a transfer (so the driver would only have to work out
+how many dma transactions had been completed.)
+
+In this case, it is important that we do batch up the entries (since
+an already in progress descriptor should not be modified), but I
+suspect in the case of slave DMA, it is rarely the case that there
+is more than one or two descriptors queued at any moment.
+
+-- 
+FTTC broadband for 0.8mile line: currently at 9.5Mbps down 400kbps up
+according to speedtest.net.
