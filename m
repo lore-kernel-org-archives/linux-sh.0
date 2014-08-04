@@ -1,46 +1,24 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 28 Aug 2014 07:59:58 +0000
-Subject: [PATCH v2 1/3] irqchip: renesas-intc-irqpin: Document SoC-specific bindings
-Message-Id: <1409212800-4957-1-git-send-email-geert+renesas@glider.be>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Mon, 04 Aug 2014 10:08:19 +0000
+Subject: Re: [GIT PULL] Renesas rcar-audmapp Driver Updates for v3.17
+Message-Id: <53DF5B93.5010406@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1405401560.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1405401560.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>
-Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-The documentation only mentioned the generic fallback compatible property.
-Add the missing SoC-specific compatible properties, which are already in
-use.
+On 15/07/14 11:51, Simon Horman wrote:
+> Hi Vinod
+> 
+> Please consider pulling these Renesas rcar-audmapp Driver Updates for v3.17
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
----
-v2:
-  - Add Acked-by
----
- .../bindings/interrupt-controller/renesas,intc-irqpin.txt         | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+Out of interest, what happened to the series I posted adding DT
+support for the renesas dma code? I don't seem to have had any
+feedback on it?
 
-diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
-index 1f8b0c507c26..c73acd060093 100644
---- a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
-+++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
-@@ -2,7 +2,13 @@ DT bindings for the R-/SH-Mobile irqpin controller
- 
- Required properties:
- 
--- compatible: has to be "renesas,intc-irqpin"
-+- compatible: has to be "renesas,intc-irqpin-<soctype>", "renesas,intc-irqpin"
-+  as fallback.
-+  Examples with soctypes are:
-+    - "renesas,intc-irqpin-r8a7740" (R-Mobile A1)
-+    - "renesas,intc-irqpin-r8a7778" (R-Car M1A)
-+    - "renesas,intc-irqpin-r8a7779" (R-Car H1)
-+    - "renesas,intc-irqpin-sh73a0" (SH-Mobile AG5)
- - #interrupt-cells: has to be <2>: an interrupt index and flags, as defined in
-   interrupts.txt in this directory
- 
 -- 
-1.9.1
-
+Ben Dooks				http://www.codethink.co.uk/
+Senior Engineer				Codethink - Providing Genius
