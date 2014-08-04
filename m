@@ -1,52 +1,56 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 04 Aug 2014 10:47:55 +0000
-Subject: [PATCH v2 1/2] usb: renesas_usbhs: Add device tree bindings documentation
-Message-Id: <53DF64DB.7000206@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 04 Aug 2014 07:01:55 +0000
+Subject: Re: [PATCH] ARM: shmobile: Rework multiplatform include workaround
+Message-Id: <20140804070151.GA1889@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Grant Likely <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: "linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-sh@vger.kernel.org
 
-Document the device tree bindings for the Renesas USBHS controller.
+On Thu, Jul 31, 2014 at 09:25:15AM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm+renesas@opensource.se>
+> 
+> Now when the majority of the include files have moved from
+> arch/arm/mach-shmobile/include/mach/ to arch/arm/mach-shmobile/
+> remove the header include file workaround in the Makefile...
+> 
+> ... and add another workaround in irqs.h to cope with the fact
+> that <mach/irqs.h> needs to be where it is until the PFC code
+> has been updated to remove legacy non-DT interfaces.
+> 
+> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+> ---
+> 
+>  Written against renesas-devel-v3.16-rc7-20140729
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- .../devicetree/bindings/usb/renesas_usbhs.txt      |   24 ++++++++++++++++++++
- 1 file changed, 24 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+Thanks, I have queued this up as a cleanup for v3.18.
 
-diff --git a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-new file mode 100644
-index 0000000..b08c903
---- /dev/null
-+++ b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-@@ -0,0 +1,24 @@
-+Renesas Electronics USBHS driver
-+
-+Required properties:
-+  - compatible: Must contain one of the following:
-+	- "renesas,usbhs-r8a7790"
-+	- "renesas,usbhs-r8a7791"
-+  - reg: Base address and length of the register for the USBHS
-+  - interrupts: Interrupt specifier for the USBHS
-+  - clocks: A list of phandle + clock specifier pairs
-+
-+Optional properties:
-+  - renesas,buswait: Integer to use BUSWAIT register
-+  - renesas,enable-gpio: A gpio specifier to check GPIO determining if USB
-+			 function should be enabled
-+  - phys: phandle + phy specifier pair
-+  - phy-names: must be "usb"
-+
-+Example:
-+	usbhs: usb@e6590000 {
-+		compatible = "renesas,usbhs-r8a7790";
-+		reg = <0 0xe6590000 0 0x100>;
-+		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7790_CLK_HSUSB>;
-+	};
--- 
-1.7.9.5
-
+> 
+>  arch/arm/mach-shmobile/Makefile |    2 --
+>  arch/arm/mach-shmobile/irqs.h   |    2 +-
+>  2 files changed, 1 insertion(+), 3 deletions(-)
+> 
+> --- 0001/arch/arm/mach-shmobile/Makefile
+> +++ work/arch/arm/mach-shmobile/Makefile	2014-07-31 09:11:18.000000000 +0900
+> @@ -2,8 +2,6 @@
+>  # Makefile for the linux kernel.
+>  #
+>  
+> -ccflags-$(CONFIG_ARCH_MULTIPLATFORM) := -I$(srctree)/arch/arm/mach-shmobile/include
+> -
+>  # Common objects
+>  obj-y				:= timer.o console.o
+>  
+> --- 0001/arch/arm/mach-shmobile/irqs.h
+> +++ work/arch/arm/mach-shmobile/irqs.h	2014-07-31 09:12:56.000000000 +0900
+> @@ -2,7 +2,7 @@
+>  #define __SHMOBILE_IRQS_H
+>  
+>  #include <linux/sh_intc.h>
+> -#include <mach/irqs.h>
+> +#include "include/mach/irqs.h"
+>  
+>  /* GIC */
+>  #define gic_spi(nr)		((nr) + 32)
+> 
