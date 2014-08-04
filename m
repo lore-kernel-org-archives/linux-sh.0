@@ -1,63 +1,50 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 06 Aug 2014 04:40:42 +0000
-Subject: [PATCH 4/5] ARM: shmobile: r8a7790: add generation level compatible for i2c
-Message-Id: <87mwbiw7qv.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 04 Aug 2014 11:28:32 +0000
+Subject: Re: [RFC PATCH 2/2] of/clk: use "clkops-clocks" to specify clocks handled by clock_ops domain
+Message-Id: <CAMuHMdVKDQz8q0b2UA7=1K8Qw4n3U0=M+mJyi5UQP7QZdC-JiQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87silaw7t2.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87silaw7t2.wl%kuninori.morimoto.gx@gmail.com>
+References: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
+ <53D68CC4.1010704@ti.com>
+ <CACxGe6uMke5vgzcNC9xUqjr2bHJ4QFHD6YjocSZWq8Ccx8Mm6A@mail.gmail.com>
+ <2717555.fiA6A86F65@avalon>
+In-Reply-To: <2717555.fiA6A86F65@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>, Simon <horms@verge.net.au>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-I2C <linux-i2c@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi Laurent,
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/boot/dts/r8a7790.dtsi |    8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+On Wed, Jul 30, 2014 at 2:06 AM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> The third option would require storing the clocks lists in device drivers. I
+> believe this is our best option, as a trade-off between simplicity and
+> versatility. Drivers that use runtime PM already need to enable it explicitly
+> when probing devices. Passing a list of clock names to runtime PM at that
+> point wouldn't complicate drivers much. When the clocks list isn't SoC-
+> dependent it could be stored as static information. Otherwise it could be
+> derived from DT (or any other source of hardware description) using C code,
+> offering all the versatility we need.
+>
+> The only drawback of this solution I can think of right now is that the
+> runtime PM core couldn't manage device clocks before probing the device.
+> Specifically device clocks couldn't be managed if no driver is loaded for that
+> device. I somehow recall that someone raised this as being a problem, but I
+> can't remember why.
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 7218bff..02d07b7 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -252,7 +252,7 @@
- 	i2c0: i2c@e6508000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,i2c-r8a7790";
-+		compatible = "renesas,i2c-r8a7790", "renesas,i2c-rcar-gen2";
- 		reg = <0 0xe6508000 0 0x40>;
- 		interrupts = <0 287 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7790_CLK_I2C0>;
-@@ -262,7 +262,7 @@
- 	i2c1: i2c@e6518000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,i2c-r8a7790";
-+		compatible = "renesas,i2c-r8a7790", "renesas,i2c-rcar-gen2";
- 		reg = <0 0xe6518000 0 0x40>;
- 		interrupts = <0 288 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7790_CLK_I2C1>;
-@@ -272,7 +272,7 @@
- 	i2c2: i2c@e6530000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,i2c-r8a7790";
-+		compatible = "renesas,i2c-r8a7790", "renesas,i2c-rcar-gen2";
- 		reg = <0 0xe6530000 0 0x40>;
- 		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7790_CLK_I2C2>;
-@@ -282,7 +282,7 @@
- 	i2c3: i2c@e6540000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,i2c-r8a7790";
-+		compatible = "renesas,i2c-r8a7790", "renesas,i2c-rcar-gen2";
- 		reg = <0 0xe6540000 0 0x40>;
- 		interrupts = <0 290 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7790_CLK_I2C3>;
--- 
-1.7.9.5
+Perhaps you're thinking of clocks that were enabled (by the boot loader or
+implicit reset state) before running Linux, and aren't disabled?
 
+That was fixed by commit bb178da701382a230e26d90cf94e8a24b280e0d9
+("clk: shmobile: mstp: Fix the is_enabled() operation").
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
