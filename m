@@ -1,115 +1,71 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 04 Aug 2014 15:38:27 +0000
-Subject: Re: [PATCH v2 1/8] dmaengine: sh: Rework Kconfig and Makefile
-Message-Id: <7434411.teHIrKfERp@avalon>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 04 Aug 2014 07:53:30 +0000
+Subject: Re: [PATCH 3/3] dma: rcar-audmapp: add DT support
+Message-Id: <CAMuHMdUY5rHrvwDp6RpHoY3vmGc9Khi-jkkiTytby6CxZgmauA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405727425-6237-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1405727425-6237-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <87ppi6y4n2.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87ppi6y4n2.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Geert,
+Hi Morimoto-san,
 
-Thank you for the review.
+On Tue, Jul 15, 2014 at 12:51 PM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> --- /dev/null
+> +++ b/Documentation/devicetree/bindings/dma/rcar-audmapp.txt
+> @@ -0,0 +1,29 @@
 
-On Monday 04 August 2014 11:09:06 Geert Uytterhoeven wrote:
-> On Sat, Jul 19, 2014 at 1:50 AM, Laurent Pinchart wrote:
-> > Separate helpers and drivers in the Kconfig and Makefile to improve
-> > readability and move the CONFIG_OF dependency from the Makefile to
-> > Kconfig.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > 
-> > ---
-> > 
-> > Changes since v1:
-> > 
-> > - Replace CONFIG_OF with OF in Kconfig
-> > ---
-> > 
-> >  drivers/dma/sh/Kconfig  | 24 +++++++++++++++++++-----
-> >  drivers/dma/sh/Makefile | 14 +++++++++++---
-> >  2 files changed, 30 insertions(+), 8 deletions(-)
-> > 
-> > diff --git a/drivers/dma/sh/Kconfig b/drivers/dma/sh/Kconfig
-> > index 0f71981..0349125 100644
-> > --- a/drivers/dma/sh/Kconfig
-> > +++ b/drivers/dma/sh/Kconfig
-> > @@ -2,21 +2,39 @@
-> >  # DMA engine configuration for sh
-> >  #
-> > 
-> > +#
-> > +# DMA Engine Helpers
-> > +#
-> > +
-> >  config SH_DMAE_BASE
-> >         bool "Renesas SuperH DMA Engine support"
-> > -       depends on (SUPERH && SH_DMA) || ARCH_SHMOBILE || COMPILE_TEST
-> > +       depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
-> > +       depends on !SUPERH || SH_DMA
-> >         depends on !SH_DMA_API
-> >         default y
-> >         select DMA_ENGINE
-> >         help
-> >           Enable support for the Renesas SuperH DMA controllers.
-> > 
-> > +#
-> > +# DMA Controllers
-> > +#
-> > +
-> >  config SH_DMAE
-> >         tristate "Renesas SuperH DMAC support"
-> >         depends on SH_DMAE_BASE
-> >         help
-> >           Enable support for the Renesas SuperH DMA controllers.
-> > 
-> > +if SH_DMAE
-> > +
-> > +config SH_DMAE_R8A73A4
-> > +       def_bool y
-> > +       depends on ARCH_R8A73A4
-> > +       depends on OF
-> > +
-> > +endif
-> 
-> What's the rationale behind putting this inside an "if/endif" block, instead
-> of using "depends on"?
+> +Required properties:
+> +- dmas:                a list of <[DMA multiplexer phandle] [SRS/DRS value]> pairs,
+> +               where SRS/DRS values are fixed handles, specified in the SoC
+> +               manual as the value that would be written into the PDMACHCR.
 
-In my opinion it shows more clearly that the SH_DMAE_R8A73A4 option is a sub-
-driver of SH_DMAE. It might just be a matter of personal taste though.
+I think this wording is a little bit confusing.
+It's not the "value that would be written into the PDMACHCR", but the
+high 16-bit
+part of that value, cfr. the example and the actual code below.
 
-> BTW, I'm still puzzled by the difference between SH_DMAE_BASE and SH_DMAE,
-> which have identical help texts.
+An alternative way of saying this could be "SRS << 8 | DRS", which clearly
+shows how to combine SRS and DRS.
+Unlike the docs for SYS-DMAC, which contains a table of combined MID/RID
+values,  the Audio DMAC-peri-peri docs contain 2 separate tables for SRS and
+DRS values, so the DTS writer has to combine them manually.
 
-SH_DMAE_BASE is a helper layer that aims at handling tasks required by the DMA 
-engine API but not specific to drivers in a central location. There's nothing 
-really SH-specific in there, it should be turned in more generic helpers and 
-moved to the DMA engine core.
+> +- dma-names:   a list of DMA channel names, one per "dmas" entry
+> +
+> +Example:
+> +
+> +       dmas = <&audmapp 0x2d00
+> +               &audmapp 0x3700>;
+> +       dma-names =  "src0_ssiu0",
+> +                    "dvc0_ssiu0";
 
-SH_DMAE is the SYS-DMAC driver itself. The Kconfig symbol is badly named given 
-that we now have different DMA engine drivers for "sh" (in the sense SuperH + 
-ARM).
+> --- a/drivers/dma/sh/rcar-audmapp.c
+> +++ b/drivers/dma/sh/rcar-audmapp.c
 
-> > +
-> >  config SUDMAC
-> >         tristate "Renesas SUDMAC support"
-> >         depends on SH_DMAE_BASE
-> > @@ -34,7 +52,3 @@ config RCAR_AUDMAC_PP
-> >         depends on SH_DMAE_BASE
-> >         help
-> >           Enable support for the Renesas R-Car Audio DMAC Peripheral
-> >           Peripheral controllers.> 
-> > -
-> > -config SHDMA_R8A73A4
-> > -       def_bool y
-> > -       depends on ARCH_R8A73A4 && SH_DMAE != n
+> @@ -114,38 +117,50 @@ static void audmapp_start_xfer(struct shdma_chan *schan,
+>         audmapp_write(auchan, chcr,     PDMACHCR);
+>  }
+>
+> -static struct audmapp_slave_config *
+> -audmapp_find_slave(struct audmapp_chan *auchan, int slave_id)
+> +static void audmapp_get_config(struct audmapp_chan *auchan, int slave_id,
+> +                             u32 *chcr, dma_addr_t *dst)
+>  {
 
--- 
-Regards,
+> +       if (!pdata) { /* DT */
+> +               *chcr = ((u32)slave_id) << 16;
 
-Laurent Pinchart
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
