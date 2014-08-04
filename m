@@ -1,249 +1,29 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 23 Aug 2014 01:44:02 +0000
-Subject: [PATCH 2/3] ARM: shmobile: r7s72100: genmai: Remove legacy board file
-Message-Id: <05104c266ae9a1673d92a068e2eeb0059db8c075.1408670789.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 04 Aug 2014 20:39:53 +0000
+Subject: Re: [PATCH 2/4] media: rcar_vin: Ensure all in-flight buffers are returned to error state before sto
+Message-Id: <53DFEF99.7040503@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408670789.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408670789.git.horms+renesas@verge.net.au>
+References: <1404812474-7627-1-git-send-email-ian.molton@codethink.co.uk> <1404812474-7627-3-git-send-email-ian.molton@codethink.co.uk>
+In-Reply-To: <1404812474-7627-3-git-send-email-ian.molton@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ian Molton <ian.molton@codethink.co.uk>, linux-media@vger.kernel.org
+Cc: linux-kernel@lists.codethink.co.uk, g.liakhovetski@gmx.de, m.chehab@samsung.com, vladimir.barinov@cogentembedded.com, magnus.damm@gmail.com, horms@verge.net.au, linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+On 07/08/2014 01:41 PM, Ian Molton wrote:
 
-The genmai board now boots using DT and multiplatform kernel with the
-same feature set as the legacy board. Remove the legacy board file and
-the board Kconfig option.
+> Videobuf2 complains about buffers that are still marked ACTIVE (in use by the driver) following a call to stop_streaming().
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Wolfram Sang <wsa@sang-engineering.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/Kconfig        |   9 --
- arch/arm/mach-shmobile/Makefile       |   1 -
- arch/arm/mach-shmobile/board-genmai.c | 173 ----------------------------------
- 3 files changed, 183 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/board-genmai.c
+> This patch returns all active buffers to state ERROR prior to stopping.
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index e15dff7..169bda4 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -43,10 +43,6 @@ config ARCH_R8A7791
- 
- comment "Renesas ARM SoCs Board Type"
- 
--config MACH_GENMAI
--	bool "Genmai board"
--	depends on ARCH_R7S72100
--
- config MACH_KOELSCH
- 	bool "Koelsch board"
- 	depends on ARCH_R8A7791
-@@ -232,11 +228,6 @@ config MACH_BOCKW_REFERENCE
- 
- 	   This is intended to aid developers
- 
--config MACH_GENMAI
--	bool "Genmai board"
--	depends on ARCH_R7S72100
--	select USE_OF
--
- config MACH_MARZEN
- 	bool "MARZEN board"
- 	depends on ARCH_R8A7779
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index a058ec3..be5fed2 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -72,7 +72,6 @@ obj-$(CONFIG_MACH_APE6EVM_REFERENCE)	+= board-ape6evm-reference.o
- obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
- obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
- obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
--obj-$(CONFIG_MACH_GENMAI)	+= board-genmai.o
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
- obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
-diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
-deleted file mode 100644
-index ba545fc..0000000
---- a/arch/arm/mach-shmobile/board-genmai.c
-+++ /dev/null
-@@ -1,173 +0,0 @@
--/*
-- * Genmai board support
-- *
-- * Copyright (C) 2013-2014  Renesas Solutions Corp.
-- * Copyright (C) 2013  Magnus Damm
-- * Copyright (C) 2014  Cogent Embedded, Inc.
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; version 2 of the License.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, write to the Free Software
-- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-- */
--
--#include <linux/kernel.h>
--#include <linux/platform_device.h>
--#include <linux/serial_sci.h>
--#include <linux/sh_eth.h>
--#include <linux/sh_timer.h>
--#include <linux/spi/rspi.h>
--#include <linux/spi/spi.h>
--
--#include <asm/mach-types.h>
--#include <asm/mach/arch.h>
--
--#include "common.h"
--#include "irqs.h"
--#include "r7s72100.h"
--
--/* Ether */
--static const struct sh_eth_plat_data ether_pdata __initconst = {
--	.phy			= 0x00, /* PD60610 */
--	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
--	.phy_interface		= PHY_INTERFACE_MODE_MII,
--	.no_ether_link		= 1
--};
--
--static const struct resource ether_resources[] __initconst = {
--	DEFINE_RES_MEM(0xe8203000, 0x800),
--	DEFINE_RES_MEM(0xe8204800, 0x200),
--	DEFINE_RES_IRQ(gic_iid(359)),
--};
--
--static const struct platform_device_info ether_info __initconst = {
--	.name		= "r7s72100-ether",
--	.id		= -1,
--	.res		= ether_resources,
--	.num_res	= ARRAY_SIZE(ether_resources),
--	.data		= &ether_pdata,
--	.size_data	= sizeof(ether_pdata),
--	.dma_mask	= DMA_BIT_MASK(32),
--};
--
--/* RSPI */
--#define RSPI_RESOURCE(idx, baseaddr, irq)				\
--static const struct resource rspi##idx##_resources[] __initconst = {	\
--	DEFINE_RES_MEM(baseaddr, 0x24),					\
--	DEFINE_RES_IRQ_NAMED(irq, "error"),				\
--	DEFINE_RES_IRQ_NAMED(irq + 1, "rx"),				\
--	DEFINE_RES_IRQ_NAMED(irq + 2, "tx"),				\
--}
--
--RSPI_RESOURCE(0, 0xe800c800, gic_iid(270));
--RSPI_RESOURCE(1, 0xe800d000, gic_iid(273));
--RSPI_RESOURCE(2, 0xe800d800, gic_iid(276));
--RSPI_RESOURCE(3, 0xe800e000, gic_iid(279));
--RSPI_RESOURCE(4, 0xe800e800, gic_iid(282));
--
--static const struct rspi_plat_data rspi_pdata __initconst = {
--	.num_chipselect	= 1,
--};
--
--#define r7s72100_register_rspi(idx)					   \
--	platform_device_register_resndata(NULL, "rspi-rz", idx,            \
--					rspi##idx##_resources,		   \
--					ARRAY_SIZE(rspi##idx##_resources), \
--					&rspi_pdata, sizeof(rspi_pdata))
--
--static const struct spi_board_info spi_info[] __initconst = {
--	{
--		.modalias               = "wm8978",
--		.max_speed_hz           = 5000000,
--		.bus_num                = 4,
--		.chip_select            = 0,
--	},
--};
--
--/* SCIF */
--#define R7S72100_SCIF(index, baseaddr, irq)				\
--static const struct plat_sci_port scif##index##_platform_data = {	\
--	.type		= PORT_SCIF,					\
--	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,		\
--	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
--	.scscr		= SCSCR_RIE | SCSCR_TIE | SCSCR_RE | SCSCR_TE |	\
--			  SCSCR_REIE,					\
--};									\
--									\
--static struct resource scif##index##_resources[] = {			\
--	DEFINE_RES_MEM(baseaddr, 0x100),				\
--	DEFINE_RES_IRQ(irq + 1),					\
--	DEFINE_RES_IRQ(irq + 2),					\
--	DEFINE_RES_IRQ(irq + 3),					\
--	DEFINE_RES_IRQ(irq),						\
--}									\
--
--R7S72100_SCIF(0, 0xe8007000, gic_iid(221));
--R7S72100_SCIF(1, 0xe8007800, gic_iid(225));
--R7S72100_SCIF(2, 0xe8008000, gic_iid(229));
--R7S72100_SCIF(3, 0xe8008800, gic_iid(233));
--R7S72100_SCIF(4, 0xe8009000, gic_iid(237));
--R7S72100_SCIF(5, 0xe8009800, gic_iid(241));
--R7S72100_SCIF(6, 0xe800a000, gic_iid(245));
--R7S72100_SCIF(7, 0xe800a800, gic_iid(249));
--
--#define r7s72100_register_scif(index)					       \
--	platform_device_register_resndata(NULL, "sh-sci", index,               \
--					  scif##index##_resources,	       \
--					  ARRAY_SIZE(scif##index##_resources), \
--					  &scif##index##_platform_data,	       \
--					  sizeof(scif##index##_platform_data))
--
--static struct resource mtu2_resources[] __initdata = {
--	DEFINE_RES_MEM(0xfcff0000, 0x400),
--	DEFINE_RES_IRQ_NAMED(gic_iid(139), "tgi0a"),
--};
--
--#define r7s72100_register_mtu2()					\
--	platform_device_register_resndata(&platform_bus, "sh-mtu2",	\
--					  -1, mtu2_resources,		\
--					  ARRAY_SIZE(mtu2_resources),	\
--					  NULL, 0)
--
--static void __init genmai_add_standard_devices(void)
--{
--	r7s72100_clock_init();
--	r7s72100_register_mtu2();
--
--	platform_device_register_full(&ether_info);
--
--	r7s72100_register_rspi(0);
--	r7s72100_register_rspi(1);
--	r7s72100_register_rspi(2);
--	r7s72100_register_rspi(3);
--	r7s72100_register_rspi(4);
--	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
--
--	r7s72100_register_scif(0);
--	r7s72100_register_scif(1);
--	r7s72100_register_scif(2);
--	r7s72100_register_scif(3);
--	r7s72100_register_scif(4);
--	r7s72100_register_scif(5);
--	r7s72100_register_scif(6);
--	r7s72100_register_scif(7);
--}
--
--static const char * const genmai_boards_compat_dt[] __initconst = {
--	"renesas,genmai",
--	NULL,
--};
--
--DT_MACHINE_START(GENMAI_DT, "genmai")
--	.init_early	= shmobile_init_delay,
--	.init_machine	= genmai_add_standard_devices,
--	.dt_compat	= genmai_boards_compat_dt,
--MACHINE_END
--- 
-2.0.1
+> Note: this introduces a (non fatal) race condition as the stream is not guaranteed to be stopped at this point.
+
+> Signed-off-by: Ian Molton <ian.molton@codethink.co.uk>
+> Signed-off-by: William Towle <william.towle@codethink.co.uk>
+
+    Fixed kernel WARNINGs for me! \o/
+    Ian, perhaps it makes sense for me to take these patches into my hands?
+
+WBR, Sergei
 
