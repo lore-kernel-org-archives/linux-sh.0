@@ -1,25 +1,29 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 01 Aug 2014 11:49:04 +0000
-Subject: [PATCH 0/2] usb: renesas_usbhs: Add device tree support for R-Car H2 and M2
-Message-Id: <53DB7EB0.8000401@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 05 Aug 2014 19:34:38 +0000
+Subject: renesas-drivers-2014-08-05-v3.16
+Message-Id: <CAMuHMdXXPrpsrA_rQr5EDtPb8+RDdXcq0C7TCxrfV5_SEwnt7w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: SH-Linux <linux-sh@vger.kernel.org>
-Cc: "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>
+To: linux-sh@vger.kernel.org
 
-This driver supports other SoCs, but they need boards/Soc depend code.
-So, this patch adds device tree support for R-Car H2 and M2 initially.
+I've pushed renesas-drivers-2014-08-05-v3.16 to
+https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+This tree is meant to ease development of platform support and drivers for
+Renesas ARM ("shmobile") SoCs. It's created by merging the for-next branches
+of various subsystem trees into the development branch of Simon Horman's
+renesas.git tree.
 
-Yoshihiro Shimoda (2):
-  usb: renesas_usbhs: Add device tree bindings documentation
-  usb: renesas_usbhs: Add device tree support for R-Car H2 and M2
+Today's version is based on renesas-devel-v3.16-20140804.
 
- .../devicetree/bindings/usb/renesas_usbhs.txt      |   24 +++++++++++
- drivers/usb/renesas_usbhs/common.c                 |   43 ++++++++++++++++++++
- 2 files changed, 67 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+Gr{oetje,eeting}s,
 
--- 
-1.7.9.5
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
