@@ -1,61 +1,54 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 22 Aug 2014 10:48:33 +0000
-Subject: Re: [PATCH 5/6] ARM: shmobile: Add CPU notifier for CPUIdle boot vector
-Message-Id: <CANqRtoR5aCLv9_Qnh5gzjd3-zZCnZGk95sO0sLc7FXR+-r5Kxw@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 05 Aug 2014 03:17:05 +0000
+Subject: [PATCH 2/5] ARM: shmobile: r8a7778: add generation level compatible for SDHI
+Message-Id: <87tx5rocb4.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <53DB6284.3090506@renesas.com>
-In-Reply-To: <53DB6284.3090506@renesas.com>
+References: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: keita kobayashi <keita.kobayashi.ym@renesas.com>
-Cc: SH-Linux <linux-sh@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Simon Horman <horms+renesas@verge.net.au>, "Rafael J. Wysocki" <rjw@rjwysocki.net>
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org
 
-Hi Kobayashi-san,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks for your patches. About the use of CPU notifiers, please see my
-question below:
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7778.dtsi |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-On Fri, Aug 1, 2014 at 6:48 PM, keita kobayashi
-<keita.kobayashi.ym@renesas.com> wrote:
-> Add CPU notifiers for the shared mach-shmobile cpuidle code.
->
-> Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
-> ---
->  arch/arm/mach-shmobile/cpuidle.c |   24 ++++++++++++++++++++++++
->  1 file changed, 24 insertions(+)
->
-> diff --git a/arch/arm/mach-shmobile/cpuidle.c b/arch/arm/mach-shmobile/cpuidle.c
-> index 19c0c98..1771dd3 100644
-> --- a/arch/arm/mach-shmobile/cpuidle.c
-> +++ b/arch/arm/mach-shmobile/cpuidle.c
-> @@ -20,6 +20,27 @@
->  #include <asm/io.h>
->  #include "common.h"
->
-> +static int shmobile_cpuidle_notifier_call(struct notifier_block *nfb,
-> +                                         unsigned long action, void *hcpu)
-> +{
-> +       unsigned int cpu = (long)hcpu;
-> +
-> +       switch (action) {
-> +       case CPU_ONLINE:
-> +       case CPU_STARTING:
-> +       case CPU_STARTING_FROZEN:
-> +               /* For this particular CPU register CPUIdle boot vector */
-> +               shmobile_smp_hook(cpu, virt_to_phys(cpu_resume), 0);
-> +               break;
-> +       };
-> +
-> +       return NOTIFY_OK;
-> +}
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index ecfdf4b..7986cf27 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -206,7 +206,7 @@
+ 	};
+ 
+ 	sdhi0: sd@ffe4c000 {
+-		compatible = "renesas,sdhi-r8a7778";
++		compatible = "renesas,sdhi-r8a7778", "renesas,sdhi-rcar-gen1";
+ 		reg = <0xffe4c000 0x100>;
+ 		interrupts = <0 87 IRQ_TYPE_LEVEL_HIGH>;
+ 		cap-sd-highspeed;
+@@ -215,7 +215,7 @@
+ 	};
+ 
+ 	sdhi1: sd@ffe4d000 {
+-		compatible = "renesas,sdhi-r8a7778";
++		compatible = "renesas,sdhi-r8a7778", "renesas,sdhi-rcar-gen1";
+ 		reg = <0xffe4d000 0x100>;
+ 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
+ 		cap-sd-highspeed;
+@@ -224,7 +224,7 @@
+ 	};
+ 
+ 	sdhi2: sd@ffe4f000 {
+-		compatible = "renesas,sdhi-r8a7778";
++		compatible = "renesas,sdhi-r8a7778", "renesas,sdhi-rcar-gen1";
+ 		reg = <0xffe4f000 0x100>;
+ 		interrupts = <0 86 IRQ_TYPE_LEVEL_HIGH>;
+ 		cap-sd-highspeed;
+-- 
+1.7.9.5
 
-In my earlier CPUIdle and reset vector sharing experiments it seemed
-enough to install the reset vector with CPU notifier using CPU_ONLINE.
-
-Can you please explain the reason why you also include CPU_STARTING
-and CPU_STARTING_FROZEN above?
-
-Thanks,
-
-/ magnus
