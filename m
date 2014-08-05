@@ -1,47 +1,48 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Fri, 22 Aug 2014 08:41:11 +0000
-Subject: [PATCH 09/10 v2 resend] mmc: tmio: ensure that the clock has been stopped before set_clock
-Message-Id: <87siko6hne.wl%kuninori.morimoto.gx@gmail.com>
+From: Pranith Kumar <bobby.prani@gmail.com>
+Date: Tue, 05 Aug 2014 19:25:08 +0000
+Subject: [PATCH 1/1] sh: Fix build error by adding generic ioport_{map/unmap}()
+Message-Id: <1407266709-9296-1-git-send-email-bobby.prani@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
-	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
-	<53AD638C.5060907@renesas.com>
-	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
-	<8761hk7wgy.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <8761hk7wgy.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
-Cc: Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: "GitAuthor: Pranith Kumar" <bobby.prani@gmail.com>, "open list:SUPERH" <linux-sh@vger.kernel.org>, open list <linux-kernel@vger.kernel.org>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Fix build error as reported by Geert Uytterhoeven here:
+http://kisskb.ellerman.id.au/kisskb/buildresult/11607865/
 
-This patch ensures that the clock has been stopped before
-it calls tmio_mmc_set_clock().
-The clock settings might be failed without this patch
+The error happens when CONFIG_HAS_IOPORT_MAP=n because of which there are
+missing definitions of ioport_map/unmap(). Fix this build error by adding these
+prototypes.
 
-Tested-by: Nguyen Xuan Nui <nx-nui@jinso.co.jp>
-Tested-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Pranith Kumar <bobby.prani@gmail.com>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |    1 +
- 1 file changed, 1 insertion(+)
+ arch/sh/include/asm/io_noioport.h | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index da3c74d..1c5a631 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -895,6 +895,7 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 		}
- 		if (host->power = TMIO_MMC_OFF_STOP)
- 			tmio_mmc_reset(host);
-+		tmio_mmc_clk_stop(host);
- 		tmio_mmc_set_clock(host, ios->clock);
- 		if (host->power = TMIO_MMC_OFF_STOP)
- 			/* power up SD card and the bus */
+diff --git a/arch/sh/include/asm/io_noioport.h b/arch/sh/include/asm/io_noioport.h
+index 4d48f14..c727e6d 100644
+--- a/arch/sh/include/asm/io_noioport.h
++++ b/arch/sh/include/asm/io_noioport.h
+@@ -34,6 +34,17 @@ static inline void outl(unsigned int x, unsigned long port)
+ 	BUG();
+ }
+ 
++static inline void __iomem *ioport_map(unsigned long port, unsigned int size)
++{
++	BUG();
++	return NULL;
++}
++
++static inline void ioport_unmap(void __iomem *addr)
++{
++	BUG();
++}
++
+ #define inb_p(addr)	inb(addr)
+ #define inw_p(addr)	inw(addr)
+ #define inl_p(addr)	inl(addr)
 -- 
-1.7.9.5
+1.9.1
 
