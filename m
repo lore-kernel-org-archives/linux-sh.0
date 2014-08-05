@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 05 Aug 2014 08:51:12 +0000
+Date: Tue, 05 Aug 2014 08:57:01 +0000
 Subject: Re: [PATCH] clk: shmobile: add missing 0x0100 for SDCKCR
-Message-Id: <87mwbj1fr4.wl%kuninori.morimoto.gx@gmail.com>
+Message-Id: <87lhr31fhf.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87ppgf1kgv.wl%kuninori.morimoto.gx@gmail.com>
 In-Reply-To: <87ppgf1kgv.wl%kuninori.morimoto.gx@gmail.com>
@@ -11,48 +11,24 @@ Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
 
-Hi Simon
-
-Thank you for your feedback
+Hi Geert
 
 > > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > 
+> >
 > > Current cpg_sd01_div_table is missing
 > > "0x0100: x 1/8" division ratio.
 > > This patch is based on R-Car H2 v0.7, R-Car M2 v0.9.
-> > 
+> >
 > > Reported-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
 > > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > ---
-(snip)
-> >  static const struct clk_div_table cpg_sd01_div_table[] = {
-> > +	{  4,  8 },
-> >  	{  5, 12 }, {  6, 16 }, {  7, 18 }, {  8, 24 },
-> >  	{ 10, 36 }, { 11, 48 }, { 12, 10 }, {  0,  0 },
-> >  };
 > 
-> Thanks. I have a few questions about this.
+> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 > 
-> 1. Could you provide information on the patch that added this problem
->    and the kernel version it was added in?
+> BTW, has this been verified by testing, or is it purely based on the datasheet?
 
-I see.
-It is added on v3.14.
-I can send v2 patch (or can you add it on log area ?)
-
-> 2. Is this a bug-fix?
->    If so, does it manifest in mainline?
->    If so what happens?
-
-This fixes hidden bug.
-No board/SoC doesn't have issue without this patch.
-
-> 3. Should we also fix clock-r8a7790.c and clock-r8a7791.c?
->    If so I can make a patch or I am happy for you to do so.
-
-I can do it, but is it possible ?
-I'm afraid that clock-r8axxx is used for legacy (= non-DT)
-But, I'm happy to send it if you say "Yes"
+Thank you for your feedback.
+I can understand your distrust :)
+I just checked datasheet, but, BSP team had tested it.
 
 Best regards
 ---
