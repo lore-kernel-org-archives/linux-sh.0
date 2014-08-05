@@ -1,48 +1,63 @@
-From: Jason Cooper <jason@lakedaemon.net>
-Date: Thu, 21 Aug 2014 12:45:50 +0000
-Subject: Re: [PATCH] irqchip: renesas-intc-irqpin: Add suspend-to-RAM wake up support
-Message-Id: <20140821124550.GX12769@titan.lakedaemon.net>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 05 Aug 2014 03:17:17 +0000
+Subject: [PATCH 3/5] ARM: shmobile: r8a7779: add generation level compatible for SDHI
+Message-Id: <87silbocas.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1408546172-22484-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1408546172-22484-1-git-send-email-geert+renesas@glider.be>
+References: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Thomas Gleixner <tglx@linutronix.de>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org
 
-Geert,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Wed, Aug 20, 2014 at 04:49:32PM +0200, Geert Uytterhoeven wrote:
-> Set the ->irq_enable() and ->irq_disable() methods to NULL to enable
-> lazy disable of interrupts, and set IRQCHIP_MASK_ON_SUSPEND to tell the
-> core that only IRQs marked as wake-ups need to stay enabled during
-> suspend-to-RAM.
-> 
-> This makes wake-up by gpio-keys from suspend-to-RAM work on
-> r8a7740/Armadillo.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> Not tested on sh73a0/kzm9g, r8a7778/bock-w, r8a7779/marzen
-> 
-> Similar changes for gpio-rcar and renesas-irqc went in before, but
-> split in two parts:
->   - commit 272012d0f748de2e ("irqchip: renesas-irqc: Use lazy disable")
->   - commit 6a7e3b3007b5396a ("irqchip: renesas-irqc: Enable mask on suspend")
->   - commit fba968a1e6b84be0 ("gpio: rcar: Use lazy disable")
->   - commit 403961120667bed7 ("gpio: rcar: Enable mask on suspend")
-> 
-> However, I believe it doesn't make much sense to split this:
->   - Enabling lazy disable on its own introduces a regression, as it
->     causes the system to wake-up on IRQs not marked as wake-ups,
->   - Adding IRQCHIP_MASK_ON_SUSPEND on its own doesn't have any impact.
-> ---
->  drivers/irqchip/irq-renesas-intc-irqpin.c | 4 +---
->  1 file changed, 1 insertion(+), 3 deletions(-)
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7779.dtsi |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-Applied to irqchip/core
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 463e3fd..e56e174 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -316,7 +316,7 @@
+ 	};
+ 
+ 	sdhi0: sd@ffe4c000 {
+-		compatible = "renesas,sdhi-r8a7779";
++		compatible = "renesas,sdhi-r8a7779", "renesas,sdhi-rcar-gen1";
+ 		reg = <0xffe4c000 0x100>;
+ 		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7779_CLK_SDHI0>;
+@@ -326,7 +326,7 @@
+ 	};
+ 
+ 	sdhi1: sd@ffe4d000 {
+-		compatible = "renesas,sdhi-r8a7779";
++		compatible = "renesas,sdhi-r8a7779", "renesas,sdhi-rcar-gen1";
+ 		reg = <0xffe4d000 0x100>;
+ 		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7779_CLK_SDHI1>;
+@@ -336,7 +336,7 @@
+ 	};
+ 
+ 	sdhi2: sd@ffe4e000 {
+-		compatible = "renesas,sdhi-r8a7779";
++		compatible = "renesas,sdhi-r8a7779", "renesas,sdhi-rcar-gen1";
+ 		reg = <0xffe4e000 0x100>;
+ 		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7779_CLK_SDHI2>;
+@@ -346,7 +346,7 @@
+ 	};
+ 
+ 	sdhi3: sd@ffe4f000 {
+-		compatible = "renesas,sdhi-r8a7779";
++		compatible = "renesas,sdhi-r8a7779", "renesas,sdhi-rcar-gen1";
+ 		reg = <0xffe4f000 0x100>;
+ 		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7779_CLK_SDHI3>;
+-- 
+1.7.9.5
 
-thx,
-
-Jason.
