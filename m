@@ -1,73 +1,54 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 29 Aug 2014 00:32:04 +0000
-Subject: Re: [PATCH] ARM: dts: Sort SHMOBILE dtbs alphabetically
-Message-Id: <20140829003204.GA22661@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 05 Aug 2014 03:17:32 +0000
+Subject: [PATCH 5/5] ARM: shmobile: r8a7791: add generation level compatible for SDHI
+Message-Id: <87ppgfocad.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409227243-25102-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1409227243-25102-1-git-send-email-geert+renesas@glider.be>
+References: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org
 
-On Thu, Aug 28, 2014 at 02:00:43PM +0200, Geert Uytterhoeven wrote:
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> This depends on Magnus' series "[PATCH 00/05] ARM: shmobile: r8a7740 and
-> Armadillo cleanup".
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-As per my response to that series:
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7791.dtsi |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-   Thanks. I have tentatively queued this up.
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 1e97113..82be0af 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -341,7 +341,7 @@
+ 	};
+ 
+ 	sdhi0: sd@ee100000 {
+-		compatible = "renesas,sdhi-r8a7791";
++		compatible = "renesas,sdhi-r8a7791", "renesas,sdhi-rcar-gen2";
+ 		reg = <0 0xee100000 0 0x200>;
+ 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7791_CLK_SDHI0>;
+@@ -349,7 +349,7 @@
+ 	};
+ 
+ 	sdhi1: sd@ee140000 {
+-		compatible = "renesas,sdhi-r8a7791";
++		compatible = "renesas,sdhi-r8a7791", "renesas,sdhi-rcar-gen2";
+ 		reg = <0 0xee140000 0 0x100>;
+ 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7791_CLK_SDHI1>;
+@@ -357,7 +357,7 @@
+ 	};
+ 
+ 	sdhi2: sd@ee160000 {
+-		compatible = "renesas,sdhi-r8a7791";
++		compatible = "renesas,sdhi-r8a7791", "renesas,sdhi-rcar-gen2";
+ 		reg = <0 0xee160000 0 0x100>;
+ 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7791_CLK_SDHI2>;
+-- 
+1.7.9.5
 
-   I got some push back from Olof [CCed] about putting cleanups on top of
-   development when sending pull-requests for v3.17. This series falls
-   into the same category: cleaning up board and related files on top
-   of changes to initialise devices using DT.
-
-   Olof, ideally I'd like this to go into v3.18.
-   Let me know if you have preference to delay it.
-
->  arch/arm/boot/dts/Makefile | 16 ++++++++--------
->  1 file changed, 8 insertions(+), 8 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-> index 2bff594ca7e2..8f9604c6ca24 100644
-> --- a/arch/arm/boot/dts/Makefile
-> +++ b/arch/arm/boot/dts/Makefile
-> @@ -358,24 +358,24 @@ dtb-$(CONFIG_ARCH_S5PV210) += s5pv210-aquila.dtb \
->  	s5pv210-smdkv210.dtb \
->  	s5pv210-torbreck.dtb
->  dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += r7s72100-genmai.dtb \
-> +	r8a73a4-ape6evm.dtb \
-> +	r8a73a4-ape6evm-reference.dtb \
->  	r8a7740-armadillo800eva.dtb \
->  	r8a7778-bockw.dtb \
->  	r8a7778-bockw-reference.dtb \
->  	r8a7779-marzen.dtb \
-> -	r8a7791-koelsch.dtb \
->  	r8a7790-lager.dtb \
-> +	r8a7791-koelsch.dtb \
-> +	sh7372-mackerel.dtb \
->  	sh73a0-kzm9g.dtb \
-> -	sh73a0-kzm9g-reference.dtb \
-> -	r8a73a4-ape6evm.dtb \
-> -	r8a73a4-ape6evm-reference.dtb \
-> -	sh7372-mackerel.dtb
-> +	sh73a0-kzm9g-reference.dtb
->  dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
->  	r7s72100-genmai.dtb \
->  	r8a7740-armadillo800eva.dtb \
-> -	r8a7791-henninger.dtb \
-> -	r8a7791-koelsch.dtb \
-> +	r8a7779-marzen.dtb \
->  	r8a7790-lager.dtb \
-> -	r8a7779-marzen.dtb
-> +	r8a7791-henninger.dtb \
-> +	r8a7791-koelsch.dtb
->  dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
->  	socfpga_cyclone5_socdk.dtb \
->  	socfpga_cyclone5_sockit.dtb \
-> -- 
-> 1.9.1
-> 
