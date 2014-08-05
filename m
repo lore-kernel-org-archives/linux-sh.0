@@ -1,57 +1,46 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 27 Aug 2014 00:06:47 +0000
-Subject: Re: [PATCH v2 00/05] ARM: shmobile: Kconfig and Makefile cleanups V2
-Message-Id: <20140827000642.GB8950@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 05 Aug 2014 02:16:35 +0000
+Subject: [PATCH] dt/bindings: rcar-audmapp: tidyup dmas explanation
+Message-Id: <87y4v3of3z.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140825030316.1936.88249.sendpatchset@w520>
-In-Reply-To: <20140825030316.1936.88249.sendpatchset@w520>
+References: <cover.1405401560.git.horms+renesas@verge.net.au>
+	<caf18c27ddb2fb8ae2a7591b908e7efb7484e459.1405401560.git.horms+renesas@verge.net.au>
+	<CAMuHMdUY5rHrvwDp6RpHoY3vmGc9Khi-jkkiTytby6CxZgmauA@mail.gmail.com>
+	<87silcwpv9.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87silcwpv9.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms+renesas@verge.net.au>, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>
+Cc: devicetree@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Vinod Koul <vinod.koul@intel.com>, dmaengine@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
 
-On Mon, Aug 25, 2014 at 12:03:16PM +0900, Magnus Damm wrote:
-> ARM: shmobile: Kconfig and Makefile cleanups V2
-> 
-> [PATCH v2 01/05] ARM: shmobile: Introduce a Kconfig entry for R-Mobile
-> [PATCH v2 02/05] ARM: shmobile: Introduce a Kconfig entry for R-Car Gen1
-> [PATCH v2 03/05] ARM: shmobile: Introduce a Kconfig entry for R-Car Gen2
-> [PATCH v2 04/05] ARM: shmobile: Cleanup pm-rcar.o build using Kconfig
-> [PATCH v2 05/05] ARM: shmobile: Cleanup pm-rmobile.o build using Kconfig
-> 
-> Update the ARM mach-shmobile Kconfig and Makefile to prepare for
-> multiplatform support of R-Mobile SoCs. While at it do various
-> cleanups - thanks to Simon Horman for suggesting using Kconfig
-> for pm-rmobile.o. I applied the same idea to patch 4. Thanks to
-> Geert Uytterhoeven for pointing out the mess in the Kconfig files,
-> hopefully this cleanup series is a step in the right direction.
-> 
-> The first patch in V1 of the series has been removed temporarily to
-> be extended into a separate series with more cleanups for the legacy
-> case.
-> 
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, I have queued these up.
+Current dmas explanation of SRC/DRS is confusable.
+This patch clarifies it.
 
-> ---
-> 
->  Written on top of renesas-devel-20140823-v3.17-rc1
-> 
->  Only lightly build tested. 
-> 
->  Changes since V1:
->  - Removed "[PATCH 01/06] ARM: shmobile: Consolidate GPIOLIB Kconfig bits"
-> 
->  arch/arm/mach-shmobile/Kconfig      |   57 +++++++++++++++++++++--------------
->  arch/arm/mach-shmobile/Makefile     |   36 +++++++++-------------
->  arch/arm/mach-shmobile/pm-rcar.c    |    4 --
->  arch/arm/mach-shmobile/pm-rmobile.c |    2 -
->  arch/arm/mach-shmobile/pm-rmobile.h |    4 +-
->  5 files changed, 53 insertions(+), 50 deletions(-)
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ .../devicetree/bindings/dma/rcar-audmapp.txt       |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/dma/rcar-audmapp.txt b/Documentation/devicetree/bindings/dma/rcar-audmapp.txt
+index 9f1d750..61bca50 100644
+--- a/Documentation/devicetree/bindings/dma/rcar-audmapp.txt
++++ b/Documentation/devicetree/bindings/dma/rcar-audmapp.txt
+@@ -16,9 +16,9 @@ Example:
+ * DMA client
+ 
+ Required properties:
+-- dmas:		a list of <[DMA multiplexer phandle] [SRS/DRS value]> pairs,
+-		where SRS/DRS values are fixed handles, specified in the SoC
+-		manual as the value that would be written into the PDMACHCR.
++- dmas:		a list of <[DMA multiplexer phandle] [SRS << 8 | DRS]> pairs.
++		where SRS/DRS are specified in the SoC manual.
++		It will be written into PDMACHCR as high 16-bit parts.
+ - dma-names:	a list of DMA channel names, one per "dmas" entry
+ 
+ Example:
+-- 
+1.7.9.5
+
