@@ -1,37 +1,51 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Fri, 29 Aug 2014 18:15:42 +0000
-Subject: [PATCH 0/3] r8a7794/Cortex-A7 arch timer fix
-Message-Id: <1409336145-619-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Pranith Kumar <bobby.prani@gmail.com>
+Date: Tue, 05 Aug 2014 19:32:39 +0000
+Subject: [PATCH RESEND 1/1] sh: Fix build error by adding generic ioport_{map/unmap}()
+Message-Id: <1407267160-15878-1-git-send-email-bobby.prani@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>, "GitAuthor: Pranith Kumar" <bobby.prani@gmail.com>, "open list:SUPERH" <linux-sh@vger.kernel.org>, open list <linux-kernel@vger.kernel.org>
+Cc: Tony Breeds <tony@bakeyournoodle.com>, Guenter Roeck <linux@roeck-us.net>, Alexei Starovoitov <ast@plumgrid.com>, Fengguang Wu <fengguang.wu@intel.com>, Daniel Borkmann <dborkman@redhat.com>, Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>
 
-Hi!
+Resending with a bigger CC list. get_maintainer only picked up open lists.
 
-Here's a little bit to get the arch timer working on the r8a7794 platform. 
-There probably is a better place for the assembly code in setup-rcar-gen2.c
-because it is likely to be needed on other platforms with A7 cores as well.
-Suggestions would be appreciated.
+Fix build error as reported by Geert Uytterhoeven here:
+http://kisskb.ellerman.id.au/kisskb/buildresult/11607865/
 
-CU
-Uli
+The error happens when CONFIG_HAS_IOPORT_MAP=n because of which there are
+missing definitions of ioport_map/unmap(). Fix this build error by adding these
+prototypes.
 
+Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Pranith Kumar <bobby.prani@gmail.com>
+---
+ arch/sh/include/asm/io_noioport.h | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-Hisashi Nakamura (2):
-  ARM: shmobile: r8a7794: Add arch_timer to device tree
-  ARM: shmobile: Add CA7 arch_timer initialization for secondary CPUs
-
-Ulrich Hecht (1):
-  ARM: shmobile: rcar-gen2: Add CA7 arch_timer initialization for
-    r8a7794
-
- arch/arm/boot/dts/r8a7794.dtsi           |  8 ++++
- arch/arm/mach-shmobile/headsmp.S         | 26 ++++++++++++
- arch/arm/mach-shmobile/setup-rcar-gen2.c | 72 ++++++++++++++++++++++----------
- 3 files changed, 83 insertions(+), 23 deletions(-)
-
+diff --git a/arch/sh/include/asm/io_noioport.h b/arch/sh/include/asm/io_noioport.h
+index 4d48f14..c727e6d 100644
+--- a/arch/sh/include/asm/io_noioport.h
++++ b/arch/sh/include/asm/io_noioport.h
+@@ -34,6 +34,17 @@ static inline void outl(unsigned int x, unsigned long port)
+ 	BUG();
+ }
+ 
++static inline void __iomem *ioport_map(unsigned long port, unsigned int size)
++{
++	BUG();
++	return NULL;
++}
++
++static inline void ioport_unmap(void __iomem *addr)
++{
++	BUG();
++}
++
+ #define inb_p(addr)	inb(addr)
+ #define inw_p(addr)	inw(addr)
+ #define inl_p(addr)	inl(addr)
 -- 
-1.8.4.5
+1.9.1
 
