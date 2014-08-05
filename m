@@ -1,46 +1,37 @@
-From: Rob Herring <robherring2@gmail.com>
-Date: Wed, 27 Aug 2014 17:07:29 +0000
-Subject: Re: [PATCH 02/16] devicetree: Add vendor prefix "thine" to vendor-prefixes.txt
-Message-Id: <CAL_Jsq+c-QZwTAbd+Sh87HJqGeRaQpf08qYAoYjqn=AxDeSW-g@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 05 Aug 2014 13:21:29 +0000
+Subject: [PATCH resend] ARM: shmobile: dma: Use defines instead of hardcoded numbers
+Message-Id: <1407244889-26655-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1409157673-4154-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1409157673-4154-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: dri-devel@lists.freedesktop.org, SH-Linux <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Wed, Aug 27, 2014 at 11:40 AM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
-> Use the company name as vendor prefix.
->
-> Cc: devicetree@vger.kernel.org
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Commit  6b32fafee2bb5fcf0b3d3d04a9762d3a0212089e ("dmaengine: shdma: Add
+more register documentation") has landed in
+git://git.infradead.org/users/vkoul/slave-dma.git#next
 
-Acked-by: Rob Herring <robh@kernel.org>
+ arch/arm/mach-shmobile/dma-register.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-> ---
->  Documentation/devicetree/bindings/vendor-prefixes.txt | 1 +
->  1 file changed, 1 insertion(+)
->
-> diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
-> index 7292cfc..2b5648b 100644
-> --- a/Documentation/devicetree/bindings/vendor-prefixes.txt
-> +++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
-> @@ -134,6 +134,7 @@ st  STMicroelectronics
->  ste    ST-Ericsson
->  stericsson     ST-Ericsson
->  synology       Synology, Inc.
-> +thine  THine Electronics, Inc.
->  ti     Texas Instruments
->  tlm    Trusted Logic Mobility
->  toradex        Toradex AG
-> --
-> 1.8.5.5
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe devicetree" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/arch/arm/mach-shmobile/dma-register.h b/arch/arm/mach-shmobile/dma-register.h
+index 97c40bd9b94f..52a2f66e600f 100644
+--- a/arch/arm/mach-shmobile/dma-register.h
++++ b/arch/arm/mach-shmobile/dma-register.h
+@@ -52,8 +52,8 @@ static const unsigned int dma_ts_shift[] = {
+ 	((((i) & TS_LOW_BIT) << TS_LOW_SHIFT) |\
+ 	 (((i) & TS_HI_BIT)  << TS_HI_SHIFT))
+ 
+-#define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL((xmit_sz)))
+-#define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL((xmit_sz)))
++#define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL((xmit_sz)))
++#define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL((xmit_sz)))
+ 
+ 
+ /*
+-- 
+1.9.1
+
