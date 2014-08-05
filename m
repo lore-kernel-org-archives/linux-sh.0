@@ -1,45 +1,198 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 05 Aug 2014 01:05:04 +0000
+From: =?UTF-8?B?44Kr44Kq44CA44Of44Oz44CA44OS44Kn44OD44OX?=  <cm-hiep@jinso.co.jp>
+Date: Tue, 05 Aug 2014 02:37:23 +0000
 Subject: Re: [Bug] GPIO-Rcar: Driver does not work after Unbind-rebind.
-Message-Id: <11539044.7ozDkqgRA7@avalon>
+Message-Id: <53E04363.2040709@jinso.co.jp>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="------------080404090502030206040107"
 List-Id: <linux-sh.vger.kernel.org>
-References: <53DB3E53.2000508@jinso.co.jp>
-In-Reply-To: <53DB3E53.2000508@jinso.co.jp>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+References: <53DB3E53.2000508@jinso.co.jp> <11539044.7ozDkqgRA7@avalon>
+In-Reply-To: <11539044.7ozDkqgRA7@avalon>
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Magnus Damm <damm@opensource.se>, Simon Horman <simon@horms.net>, linux-gpio@vger.kernel.org, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, =?UTF-8?B?U+mWizEyL+ajruacrOOBleOCkw==?= <kuninori.morimoto.gx@renesas.com>, SH-Linux <linux-sh@vger.kernel.org>
+
+This is a multi-part message in MIME format.
+--------------080404090502030206040107
+Content-Type: text/plain; charset="utf-8"; format="flowed"
 Content-Transfer-Encoding: 8bit
-To: cm-hiep@jinso.co.jp
-Cc: Magnus Damm <damm@opensource.se>, Simon Horman <simon@horms.net>, linux-gpio@vger.kernel.org, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, =?utf-8?B?U+mWizEyL+ajruacrOOBleOCkw==?= <kuninori.morimoto.gx@renesas.com>, SH-Linux <linux-sh@vger.kernel.org>
 
-Hello,
+Hi Laurent
+Thanks for your replying!
 
-On Friday 01 August 2014 16:14:27 カオ　ミン　ヒェップ wrote:
+On 08/05/2014 10:05 AM, Laurent Pinchart wrote:
 > Hello,
-> 
-> I tested gpio-rcar driver at Linux-upstream-v3.16-rc5 on Lager.
-> When I tried to unbind and then rebind the device, error messages occur.
-> Then gpio-rcar did not work and interrupt number did not count up any more.
-> 
-> The error messages is showed as below:
-> "irq 0, desc: ee005040, depth: 1, cou0
-> ->handle_irq():  c005eea0, handle_bad_irq+0x0/0x21c
-> ->irq_data.chip(): c05de7f8, 0xc05de7f8
-> ->action():   (null)
->     IRQ_NOPROBE set
->   IRQ_NOREQUEST set
-> irq 0, desc: ee005040, depth: 1, count: 0, unhandled: 0
-> ->handle_irq():  c005eea0, handle_bad_irq+0x0/0x21c
-> ->irq_data.chip(): c05de7f8, 0xc05de7f8
-> ->action():   (null)
->     IRQ_NOPROBE set
->   IRQ_NOREQUEST set"
-> 
-> Please see it and fix this bug.
+>
+> On Friday 01 August 2014 16:14:27 カオ　ミン　ヒェップ wrote:
+>> Hello,
+>>
+>> I tested gpio-rcar driver at Linux-upstream-v3.16-rc5 on Lager.
+>> When I tried to unbind and then rebind the device, error messages occur.
+>> Then gpio-rcar did not work and interrupt number did not count up any more.
+>>
+>> The error messages is showed as below:
+>> "irq 0, desc: ee005040, depth: 1, cou0
+>> ->handle_irq():  c005eea0, handle_bad_irq+0x0/0x21c
+>> ->irq_data.chip(): c05de7f8, 0xc05de7f8
+>> ->action():   (null)
+>>      IRQ_NOPROBE set
+>>    IRQ_NOREQUEST set
+>> irq 0, desc: ee005040, depth: 1, count: 0, unhandled: 0
+>> ->handle_irq():  c005eea0, handle_bad_irq+0x0/0x21c
+>> ->irq_data.chip(): c05de7f8, 0xc05de7f8
+>> ->action():   (null)
+>>      IRQ_NOPROBE set
+>>    IRQ_NOREQUEST set"
+>>
+>> Please see it and fix this bug.
+> Could you please detail the procedure to follow to reproduce the problem ?
+>
+Below is the procedure to follow to reproduce the problem:
 
-Could you please detail the procedure to follow to reproduce the problem ?
+1. The first, confirms gpio device:
+# cd /sys/bus/platform/drivers/gpio_rcar;find -type l
+2. unbind the device:
+# cd /sys/bus/platform/drivers/gpio_rcar; echo e6051000.gpio> unbind
+3. Confirm unbind status:
+#  cd /sys/bus/platform/drivers/gpio_rcar;  ls -d e6051000.gpio
+4. rebind the device:
+#  cd /sys/bus/platform/drivers/gpio_rcar; echo e6051000.gpio > bind
+5. confirm bind status:
+#  cd /sys/bus/platform/drivers/gpio_rcar;  ls -d e6051000.gpio
+6.# cat /proc/interrupts | grep e6051000.gpio
+7. Switch SW2 ON/OFF on the board to ensure that device works normally 
+after rebinding.
 
--- 
-Regards,
+I attached the detail log of two cases unbinding-rebinding e6051000.gpio 
+and e6053000.gpio
 
-Laurent Pinchart
+--------------080404090502030206040107
+Content-Type: text/plain; charset=UTF-8;
+ name="e6051000.gpio_unbind-rebind_log.txt"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename="e6051000.gpio_unbind-rebind_log.txt"
 
+IyB1bmFtZSAtYQpMaW51eCBsaW5hcm8tbmFubyAzLjE2LjAtcmM1LTAwMDAxLWdmNTIyYjQ1
+ICMxIFNNUCBUdWUgQXVnIDUgMTA6MjU6MTYgSlNUIDIwMTQgYXJtdjdsIGFybXY3bCBhcm12
+N2wgR05VL0xpbnV4CgojIGRtZXNnIHwgZ3JlcCBncGlvCmdwaW8tcmVndWxhdG9yIHJlZ3Vs
+YXRvckAyOiBDb3VsZCBub3Qgb2J0YWluIHJlZ3VsYXRvciBzZXR0aW5nIEdQSU9zOiAtNTE3
+CnBsYXRmb3JtIHJlZ3VsYXRvckAyOiBEcml2ZXIgZ3Bpby1yZWd1bGF0b3IgcmVxdWVzdHMg
+cHJvYmUgZGVmZXJyYWwKZ3Bpby1yZWd1bGF0b3IgcmVndWxhdG9yQDQ6IENvdWxkIG5vdCBv
+YnRhaW4gcmVndWxhdG9yIHNldHRpbmcgR1BJT3M6IC01MTcKcGxhdGZvcm0gcmVndWxhdG9y
+QDQ6IERyaXZlciBncGlvLXJlZ3VsYXRvciByZXF1ZXN0cyBwcm9iZSBkZWZlcnJhbApncGlv
+X3JjYXIgZTYwNTAwMDAuZ3BpbzogUnVudGltZSBQTSBkaXNhYmxlZCwgY2xvY2sgZm9yY2Vk
+IG9uLgpncGlvX3JjYXIgZTYwNTAwMDAuZ3BpbzogZHJpdmluZyAzMiBHUElPcwpncGlvX3Jj
+YXIgZTYwNTEwMDAuZ3BpbzogUnVudGltZSBQTSBkaXNhYmxlZCwgY2xvY2sgZm9yY2VkIG9u
+LgpncGlvX3JjYXIgZTYwNTEwMDAuZ3BpbzogZHJpdmluZyAzMiBHUElPcwpncGlvX3JjYXIg
+ZTYwNTIwMDAuZ3BpbzogUnVudGltZSBQTSBkaXNhYmxlZCwgY2xvY2sgZm9yY2VkIG9uLgpn
+cGlvX3JjYXIgZTYwNTIwMDAuZ3BpbzogZHJpdmluZyAzMiBHUElPcwpncGlvX3JjYXIgZTYw
+NTMwMDAuZ3BpbzogUnVudGltZSBQTSBkaXNhYmxlZCwgY2xvY2sgZm9yY2VkIG9uLgpncGlv
+X3JjYXIgZTYwNTMwMDAuZ3BpbzogZHJpdmluZyAzMiBHUElPcwpncGlvX3JjYXIgZTYwNTQw
+MDAuZ3BpbzogUnVudGltZSBQTSBkaXNhYmxlZCwgY2xvY2sgZm9yY2VkIG9uLgpncGlvX3Jj
+YXIgZTYwNTQwMDAuZ3BpbzogZHJpdmluZyAzMiBHUElPcwpncGlvX3JjYXIgZTYwNTUwMDAu
+Z3BpbzogUnVudGltZSBQTSBkaXNhYmxlZCwgY2xvY2sgZm9yY2VkIG9uLgpncGlvX3JjYXIg
+ZTYwNTUwMDAuZ3BpbzogZHJpdmluZyAzMiBHUElPcwppbnB1dDogZ3Bpb19rZXlzIGFzIC9k
+ZXZpY2VzL2dwaW9fa2V5cy9pbnB1dC9pbnB1dDAKCiMgY2QgL3N5cy9idXMvcGxhdGZvcm0v
+ZHJpdmVycy9ncGlvX3JjYXI7IGxzIC1kIGU2MDUxMDAwLmdwaW8KZTYwNTEwMDAuZ3BpbwoK
+IyBjZCAvc3lzL2J1cy9wbGF0Zm9ybS9kcml2ZXJzL2dwaW9fcmNhcjsgZWNobyBlNjA1MTAw
+MC5ncGlvPiB1bmJpbmQKCnJvb3RAbGluYXJvLW5hbm86L3N5cy9idXMvcGxhdGZvcm0vZHJp
+dmVycy9ncGlvX3JjYXIjIGxzIC1kIGU2MDUxMDAwLmdwaW8KbHM6IGNhbm5vdCBhY2Nlc3Mg
+ZTYwNTEwMDAuZ3BpbzogTm8gc3VjaCBmaWxlIG9yIGRpcmVjdG9yeQoKcm9vdEBsaW5hcm8t
+bmFubzovc3lzL2J1cy9wbGF0Zm9ybS9kcml2ZXJzL2dwaW9fcmNhciMgbHMgL2Rldi9pbnB1
+dC9ldmVudDAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIApsczogY2Fubm90
+IGFjY2VzcyAvZGV2L2lucHV0L2V2ZW50MDogTm8gc3VjaCBmaWxlIG9yIGRpcmVjdG9yeQoK
+IyAgY2QgL3N5cy9idXMvcGxhdGZvcm0vZHJpdmVycy9ncGlvX3JjYXI7IGVjaG8gZTYwNTEw
+MDAuZ3BpbyA+IGJpbmQKZ3Bpb19yY2FyIGU2MDUxMDAwLmdwaW86IFJ1bnRpbWUgUE0gZGlz
+YWJsZWQsIGNsb2NrIGZvcmNlZCBvbi4KZ3Bpb19yY2FyIGU2MDUxMDAwLmdwaW86IGRyaXZp
+bmcgMzIgR1BJT3MKIyAgbHMgLWQgZTYwNTEwMDAuZ3Bpby9kcml2ZXJzL2dwaW9fcmNhciMg
+Y2QgL3N5cy9idXMvcGxhdGZvcm0vZHJpdmUgCmU2MDUxMDAwLmdwaW8KCiMgY2F0IC9wcm9j
+L2ludGVycnVwdHMgfCBncmVwIGU2MDUxMDAwLmdwaW8KIDM3OiAgICAgICAgICAwICAgICAg
+ICAgIDAgICAgICAgICAgMCAgICAgICAgICAwICAgICAgIEdJQyAgMzcgIGU2MDUxMDAwLmdw
+aW8KNDE5OiAgICAgICAgICAwICAgICAgICAgIDAgICAgICAgICAgMCAgICAgICAgICAwICBl
+NjA1MTAwMC5ncGlvICAxNCAgU1cyLTEKNDIwOiAgICAgICAgICAwICAgICAgICAgIDAgICAg
+ICAgICAgMCAgICAgICAgICAwICBlNjA1MTAwMC5ncGlvICAyNCAgU1cyLTIKNDIxOiAgICAg
+ICAgICAwICAgICAgICAgIDAgICAgICAgICAgMCAgICAgICAgICAwICBlNjA1MTAwMC5ncGlv
+ICAyNiAgU1cyLTMKNDIyOiAgICAgICAgICAwICAgICAgICAgIDAgICAgICAgICAgMCAgICAg
+ICAgICAwICBlNjA1MTAwMC5ncGlvICAyOCAgU1cyLTQKCgpXaGVuIHN3aXRjaHMgdGhlIFNX
+MiBPTi9PRkYsIHRoZSBlcnJvciBtZXNzYWdlcyBvY2N1ciBhcyBiZWxvdzoKCnJvb3RAbGlu
+YXJvLW5hbm86L3N5cy9idXMvcGxhdGZvcm0vZHJpdmVycy9ncGlvX3JjYXIjIGlycSAwLCBk
+ZXNjOiBlZWMwNTA0MCwgZGVwdGg6IDEsIGNvdW50OiAwLCB1bmhhbmRsZWQ6IDAKLT5oYW5k
+bGVfaXJxKCk6ICBjMDA1ZmQwYywgaGFuZGxlX2JhZF9pcnErMHgwLzB4MjFjCi0+aXJxX2Rh
+dGEuY2hpcCgpOiBjMDVlYzc5MCwgMHhjMDVlYzc5MAotPmFjdGlvbigpOiAgIChudWxsKQog
+ICBJUlFfTk9QUk9CRSBzZXQKIElSUV9OT1JFUVVFU1Qgc2V0CmlycSAwLCBkZXNjOiBlZWMw
+NTA0MCwgZGVwdGg6IDEsIGNvdW50OiAwLCB1bmhhbmRsZWQ6IDAKLT5oYW5kbGVfaXJxKCk6
+ICBjMDA1ZmQwYywgaGFuZGxlX2JhZF9pcnErMHgwLzB4MjFjCi0+aXJxX2RhdGEuY2hpcCgp
+OiBjMDVlYzc5MCwgMHhjMDVlYzc5MAotPmFjdGlvbigpOiAgIChudWxsKQogICBJUlFfTk9Q
+Uk9CRSBzZXQKIElSUV9OT1JFUVVFU1Qgc2V0CmlycSAwLCBkZXNjOiBlZWMwNTA0MCwgZGVw
+dGg6IDEsIGNvdW50OiAwLCB1bmhhbmRsZWQ6IDAKLT5oYW5kbGVfaXJxKCk6ICBjMDA1ZmQw
+YywgaGFuZGxlX2JhZF9pcnErMHgwLzB4MjFjCi0+aXJxX2RhdGEuY2hpcCgpOiBjMDVlYzc5
+MCwgMHhjMDVlYzc5MAotPmFjdGlvbigpOiAgIChudWxsKQogICBJUlFfTk9QUk9CRSBzZXQK
+IElSUV9OT1JFUVVFU1Qgc2V0CmlycSAwLCBkZXNjOiBlZWMwNTA0MCwgZGVwdGg6IDEsIGNv
+dW50OiAwLCB1bmhhbmRsZWQ6IDAKLT5oYW5kbGVfaXJxKCk6ICBjMDA1ZmQwYywgaGFuZGxl
+X2JhZF9pcnErMHgwLzB4MjFjCi0+aXJxX2RhdGEuY2hpcCgpOiBjMDVlYzc5MCwgMHhjMDVl
+Yzc5MAotPmFjdGlvbigpOiAgIChudWxsKQogICBJUlFfTk9QUk9CRSBzZXQKIElSUV9OT1JF
+UVVFU1Qgc2V0CmlycSAwLCBkZXNjOiBlZWMwNTA0MCwgZGVwdGg6IDEsIGNvdW50OiAwLCB1
+bmhhbmRsZWQ6IDAKLT5oYW5kbGVfaXJxKCk6ICBjMDA1ZmQwYywgaGFuZGxlX2JhZF9pcnEr
+MHgwLzB4MjFjCi0+aXJxX2RhdGEuY2hpcCgpOiBjMDVlYzc5MCwgMHhjMDVlYzc5MAotPmFj
+dGlvbigpOiAgIChudWxsKQogICBJUlFfTk9QUk9CRSBzZXQKIElSUV9OT1JFUVVFU1Qgc2V0
+Cgo=
+--------------080404090502030206040107
+Content-Type: text/plain; charset=UTF-8;
+ name="e6053000.gpio_unbind-rebind_log.txt"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename="e6053000.gpio_unbind-rebind_log.txt"
+
+IyB1bmFtZSAtYQpMaW51eCBsaW5hcm8tbmFubyAzLjE2LjAtcmM1LTAwMDAxLWdmNTIyYjQ1
+ICMxIFNNUCBUdWUgQXVnIDUgMTA6MjU6MTYgSlNUIDIwMTQgYXJtdjdsIGFybXY3bCBhcm12
+N2wgR05VL0xpbnV4CnJvb3RAbGluYXJvLW5hbm86fiMgY2QgL3N5cy9idXMvcGxhdGZvcm0v
+ZHJpdmVycy9ncGlvX3JjYXI7ZmluZCAtdHlwZSBsCi4vZTYwNTEwMDAuZ3BpbwouL2U2MDUz
+MDAwLmdwaW8KLi9lNjA1NTAwMC5ncGlvCi4vZTYwNTAwMDAuZ3BpbwouL2U2MDUyMDAwLmdw
+aW8KLi9lNjA1NDAwMC5ncGlvCnBsYXRmb3JtIGU2MDUzMDAwLmdwaW86IFJ1bnRpbWUgUE0g
+ZGlzYWJsZWQsIGNsb2NrIGZvcmNlZCBvZmYuCgojZWNobyBlNjA1MzAwMC5ncGlvPiB1bmJp
+bmQKCnJvb3RAbGluYXJvLW5hbm86L3N5cy9idXMvcGxhdGZvcm0vZHJpdmVycy9ncGlvX3Jj
+YXIjIGxzIC1kIGU2MDUzMDAwLmdwaW8KbHM6IGNhbm5vdCBhY2Nlc3MgZTYwNTMwMDAuZ3Bp
+bzogTm8gc3VjaCBmaWxlIG9yIGRpcmVjdG9yeQoKI2VjaG8gZTYwNTMwMDAuZ3BpbyA+IGJp
+bmQKZ3Bpb19yY2FyIGU2MDUzMDAwLmdwaW86IFJ1bnRpbWUgUE0gZGlzYWJsZWQsIGNsb2Nr
+IGZvcmNlZCBvbi4KZ3Bpb19yY2FyIGU2MDUzMDAwLmdwaW86IGRyaXZpbmcgMzIgR1BJT3MK
+CnJvb3RAbGluYXJvLW5hbm86L3N5cy9idXMvcGxhdGZvcm0vZHJpdmVycy9ncGlvX3JjYXIj
+IGxzIC1kIGU2MDUzMDAwLmdwaW8KZTYwNTMwMDAuZ3BpbwoKcm9vdEBsaW5hcm8tbmFubzp+
+IyBjYXQgL3Byb2MvaW50ZXJydXB0cyB8IGdyZXAgZTYwNTMwMDAuZ3BpbwogMzk6ICAgICAg
+ICAgIDAgICAgICAgICAgMCAgICAgICAgICAwICAgICAgICAgIDAgICAgICAgR0lDICAzOSAg
+ZTYwNTMwMDAuZ3BpbwoKCldoZW4gSW5zZXJ0L3JlbW92ZSBtU0QgaW50by9mcm9tIFNEMCBh
+bmQgU0QyIHNsb3QsIHRoZSBlcnJvciBtZXNzYWdlcyBvY2N1ciBhcyBiZWxvdzoKCnJvb3RA
+bGluYXJvLW5hbm86fiMgaXJxIDAsIGRlc2M6IGVlYzA1MDQwLCBkZXB0aDogMSwgY291bnQ6
+IDAsIHVuaGFuZGxlZDogMAotPmhhbmRsZV9pcnEoKTogIGMwMDVmZDBjLCBoYW5kbGVfYmFk
+X2lycSsweDAvMHgyMWMKLT5pcnFfZGF0YS5jaGlwKCk6IGMwNWVjNzkwLCAweGMwNWVjNzkw
+Ci0+YWN0aW9uKCk6ICAgKG51bGwpCiAgIElSUV9OT1BST0JFIHNldAogSVJRX05PUkVRVUVT
+VCBzZXQKaXJxIDAsIGRlc2M6IGVlYzA1MDQwLCBkZXB0aDogMSwgY291bnQ6IDAsIHVuaGFu
+ZGxlZDogMAotPmhhbmRsZV9pcnEoKTogIGMwMDVmZDBjLCBoYW5kbGVfYmFkX2lycSsweDAv
+MHgyMWMKLT5pcnFfZGF0YS5jaGlwKCk6IGMwNWVjNzkwLCAweGMwNWVjNzkwCi0+YWN0aW9u
+KCk6ICAgKG51bGwpCiAgIElSUV9OT1BST0JFIHNldAogSVJRX05PUkVRVUVTVCBzZXQKaXJx
+IDAsIGRlc2M6IGVlYzA1MDQwLCBkZXB0aDogMSwgY291bnQ6IDAsIHVuaGFuZGxlZDogMAot
+PmhhbmRsZV9pcnEoKTogIGMwMDVmZDBjLCBoYW5kbGVfYmFkX2lycSsweDAvMHgyMWMKLT5p
+cnFfZGF0YS5jaGlwKCk6IGMwNWVjNzkwLCAweGMwNWVjNzkwCi0+YWN0aW9uKCk6ICAgKG51
+bGwpCiAgIElSUV9OT1BST0JFIHNldAogSVJRX05PUkVRVUVTVCBzZXQKaXJxIDAsIGRlc2M6
+IGVlYzA1MDQwLCBkZXB0aDogMSwgY291bnQ6IDAsIHVuaGFuZGxlZDogMAotPmhhbmRsZV9p
+cnEoKTogIGMwMDVmZDBjLCBoYW5kbGVfYmFkX2lycSsweDAvMHgyMWMKLT5pcnFfZGF0YS5j
+aGlwKCk6IGMwNWVjNzkwLCAweGMwNWVjNzkwCi0+YWN0aW9uKCk6ICAgKG51bGwpCiAgIElS
+UV9OT1BST0JFIHNldAogSVJRX05PUkVRVUVTVCBzZXQKaXJxIDAsIGRlc2M6IGVlYzA1MDQw
+LCBkZXB0aDogMSwgY291bnQ6IDAsIHVuaGFuZGxlZDogMAotPmhhbmRsZV9pcnEoKTogIGMw
+MDVmZDBjLCBoYW5kbGVfYmFkX2lycSsweDAvMHgyMWMKLT5pcnFfZGF0YS5jaGlwKCk6IGMw
+NWVjNzkwLCAweGMwNWVjNzkwCi0+YWN0aW9uKCk6ICAgKG51bGwpCiAgIElSUV9OT1BST0JF
+IHNldAogSVJRX05PUkVRVUVTVCBzZXQKaXJxIDAsIGRlc2M6IGVlYzA1MDQwLCBkZXB0aDog
+MSwgY291bnQ6IDAsIHVuaGFuZGxlZDogMAotPmhhbmRsZV9pcnEoKTogIGMwMDVmZDBjLCBo
+YW5kbGVfYmFkX2lycSsweDAvMHgyMWMKLT5pcnFfZGF0YS5jaGlwKCk6IGMwNWVjNzkwLCAw
+eGMwNWVjNzkwCi0+YWN0aW9uKCk6ICAgKG51bGwpCiAgIElSUV9OT1BST0JFIHNldAogSVJR
+X05PUkVRVUVTVCBzZXQKaXJxIDAsIGRlc2M6IGVlYzA1MDQwLCBkZXB0aDogMSwgY291bnQ6
+IDAsIHVuaGFuZGxlZDogMAotPmhhbmRsZV9pcnEoKTogIGMwMDVmZDBjLCBoYW5kbGVfYmFk
+X2lycSsweDAvMHgyMWMKLT5pcnFfZGF0YS5jaGlwKCk6IGMwNWVjNzkwLCAweGMwNWVjNzkw
+Ci0+YWN0aW9uKCk6ICAgKG51bGwpCiAgIElSUV9OT1BST0JFIHNldAogSVJRX05PUkVRVUVT
+VCBzZXQKaXJxIDAsIGRlc2M6IGVlYzA1MDQwLCBkZXB0aDogMSwgY291bnQ6IDAsIHVuaGFu
+ZGxlZDogMAotPmhhbmRsZV9pcnEoKTogIGMwMDVmZDBjLCBoYW5kbGVfYmFkX2lycSsweDAv
+MHgyMWMKLT5pcnFfZGF0YS5jaGlwKCk6IGMwNWVjNzkwLCAweGMwNWVjNzkwCi0+YWN0aW9u
+KCk6ICAgKG51bGwpCiAgIElSUV9OT1BST0JFIHNldAogSVJRX05PUkVRVUVTVCBzZXQKaXJx
+IDAsIGRlc2M6IGVlYzA1MDQwLCBkZXB0aDogMSwgY291bnQ6IDAsIHVuaGFuZGxlZDogMAot
+PmhhbmRsZV9pcnEoKTogIGMwMDVmZDBjLCBoYW5kbGVfYmFkX2lycSsweDAvMHgyMWMKLT5p
+cnFfZGF0YS5jaGlwKCk6IGMwNWVjNzkwLCAweGMwNWVjNzkwCi0+YWN0aW9uKCk6ICAgKG51
+bGwpCiAgIElSUV9OT1BST0JFIHNldAogSVJRX05PUkVRVUVTVCBzZXQKCg==
+--------------080404090502030206040107--
