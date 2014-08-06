@@ -1,38 +1,47 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 06 Aug 2014 12:58:59 +0000
-Subject: [PATCH 02/12] spi: rspi: Remove unneeded semicolon
-Message-Id: <1407329949-5695-3-git-send-email-geert+renesas@glider.be>
+From: Mark Brown <broonie@kernel.org>
+Date: Wed, 06 Aug 2014 20:26:11 +0000
+Subject: Re: [PATCH 02/12] spi: rspi: Remove unneeded semicolon
+Message-Id: <20140806202611.GQ17528@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="Uw3dxuaueHhmUKqq"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>, Simon Horman <horms@verge.net.au>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, dmaengine@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+ <1407329949-5695-3-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1407329949-5695-3-git-send-email-geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, dmaengine@vger.kernel.org
 
-Introduced by commit 426ef76dd8a394a0e04d096941cd9acb49539a3e ("spi:
-rspi: Add DT support").
 
-Reported-by: kbuild test robot <fengguang.wu@intel.com>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- drivers/spi/spi-rspi.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+--Uw3dxuaueHhmUKqq
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index ad87a98f8f68..a4d8d3cf2912 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -1084,7 +1084,7 @@ static int rspi_probe(struct platform_device *pdev)
- 			master->num_chipselect = rspi_pd->num_chipselect;
- 		else
- 			master->num_chipselect = 2; /* default */
--	};
-+	}
- 
- 	/* ops parameter check */
- 	if (!ops->set_config_register) {
--- 
-1.9.1
+On Wed, Aug 06, 2014 at 02:58:59PM +0200, Geert Uytterhoeven wrote:
+> Introduced by commit 426ef76dd8a394a0e04d096941cd9acb49539a3e ("spi:
+> rspi: Add DT support").
 
+Applied, thanks.
+
+--Uw3dxuaueHhmUKqq
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBAgAGBQJT4o9gAAoJELSic+t+oim9LMUP/iR6s1iyPdrFHai/oR+QvU5D
+C2tY2NC0U3yKFDpY+BGsXMfaRb0JEC2dP7XncE0BITgoqUAqmGranvkL7sSekBqe
+rACSIWMCAbQ8Mq7p8qaFhCG1syNl1auKR9YM2azR6qX5S0eORVGwqi++2586j5FO
+VHP5V3EaSISvc//tTJSaXS2qhxuXWI77fypX0e0QqWhkZWISgIjp0Sxhfrodm/2D
+pAvG8IUQuC0nBgr4V7hVaLRkRO/sxfZD1cSpUr7fmrFR8O3fQhNVxanocRx04txV
+m9+nEVloRD8gFr/GAGRZ8Jefy+9I4jH2FHDHyfiUxTLNhuuM6wK9FKHamE60T1KJ
+Tr65XUiPBOQiknL03HXrZ+XcJaXIkA2uI+IRqw6bCg8HvHBKhGlySVpDYI4oWSZx
+RsXwykeTWP9KuGXfsO+KqeojEsbPJaxwWaUd9ACX2uI8M0xlIzSTgB4uSdMYWTQC
+nYT9+J9Z3oiyhM03hnGR+hhLMX7detBM+5BbvBQArgeMZu/pl9uqQ8ku4XD+qj7I
+rk8IXUnwGC+M1Z1B9pAQs8Za3zKKlUFrSTsdaDdqM+64GwJS4eF8ur7gyyxmXy0n
+Z0ipb/WKshASmsqY5S5Vj9zSP68F+Rlih0rJWNecPRLkfBXMpbhZUmMReQAW4bP7
+lvf4tgsRmmxabhx5aRNI
+=XF0X
+-----END PGP SIGNATURE-----
+
+--Uw3dxuaueHhmUKqq--
