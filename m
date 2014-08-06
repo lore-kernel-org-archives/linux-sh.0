@@ -1,155 +1,47 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 06 Aug 2014 12:59:03 +0000
-Subject: [PATCH 06/12] spi: sh-msiof: Fix leaking of unused DMA descriptors
-Message-Id: <1407329949-5695-7-git-send-email-geert+renesas@glider.be>
+From: Mark Brown <broonie@kernel.org>
+Date: Wed, 06 Aug 2014 20:35:43 +0000
+Subject: Re: [PATCH 06/12] spi: sh-msiof: Fix leaking of unused DMA descriptors
+Message-Id: <20140806203543.GV17528@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="rT2J5DU38xRYJFcJ"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>, Simon Horman <horms@verge.net.au>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, dmaengine@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+ <1407329949-5695-7-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1407329949-5695-7-git-send-email-geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, dmaengine@vger.kernel.org
 
-If dmaengine_prep_slave_sg() or dmaengine_submit() fail, we may leak
-unused DMA descriptors.
 
-As per Documentation/dmaengine.txt, once a DMA descriptor has been
-obtained, it must be submitted. Hence:
-  - First prepare and submit all DMA descriptors,
-  - Prepare the SPI controller for DMA,
-  - Start DMA by calling dma_async_issue_pending(),
-  - Make sure to call dmaengine_terminate_all() on all descriptors that
-    haven't completed.
+--rT2J5DU38xRYJFcJ
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Reported-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- drivers/spi/spi-sh-msiof.c | 71 +++++++++++++++++++++++++---------------------
- 1 file changed, 38 insertions(+), 33 deletions(-)
+On Wed, Aug 06, 2014 at 02:59:03PM +0200, Geert Uytterhoeven wrote:
+> If dmaengine_prep_slave_sg() or dmaengine_submit() fail, we may leak
+> unused DMA descriptors.
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 2a4354dcd661..887c2084130f 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -636,48 +636,38 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv *p, const void *tx,
- 	dma_cookie_t cookie;
- 	int ret;
- 
--	if (tx) {
--		ier_bits |= IER_TDREQE | IER_TDMAE;
--		dma_sync_single_for_device(p->master->dma_tx->device->dev,
--					   p->tx_dma_addr, len, DMA_TO_DEVICE);
--		desc_tx = dmaengine_prep_slave_single(p->master->dma_tx,
--					p->tx_dma_addr, len, DMA_TO_DEVICE,
--					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
--		if (!desc_tx)
--			return -EAGAIN;
--	}
--
-+	/* First prepare and submit the DMA request(s), as this may fail */
- 	if (rx) {
- 		ier_bits |= IER_RDREQE | IER_RDMAE;
- 		desc_rx = dmaengine_prep_slave_single(p->master->dma_rx,
- 					p->rx_dma_addr, len, DMA_FROM_DEVICE,
- 					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
--		if (!desc_rx)
--			return -EAGAIN;
--	}
--
--	/* 1 stage FIFO watermarks for DMA */
--	sh_msiof_write(p, FCTR, FCTR_TFWM_1 | FCTR_RFWM_1);
--
--	/* setup msiof transfer mode registers (32-bit words) */
--	sh_msiof_spi_set_mode_regs(p, tx, rx, 32, len / 4);
--
--	sh_msiof_write(p, IER, ier_bits);
--
--	reinit_completion(&p->done);
-+		if (!desc_rx) {
-+			ret = -EAGAIN;
-+			goto no_dma_rx;
-+		}
- 
--	if (rx) {
- 		desc_rx->callback = sh_msiof_dma_complete;
- 		desc_rx->callback_param = p;
- 		cookie = dmaengine_submit(desc_rx);
- 		if (dma_submit_error(cookie)) {
- 			ret = cookie;
--			goto stop_ier;
-+			goto no_dma_rx;
- 		}
--		dma_async_issue_pending(p->master->dma_rx);
- 	}
- 
- 	if (tx) {
-+		ier_bits |= IER_TDREQE | IER_TDMAE;
-+		dma_sync_single_for_device(p->master->dma_tx->device->dev,
-+					   p->tx_dma_addr, len, DMA_TO_DEVICE);
-+		desc_tx = dmaengine_prep_slave_single(p->master->dma_tx,
-+					p->tx_dma_addr, len, DMA_TO_DEVICE,
-+					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
-+		if (!desc_tx) {
-+			ret = -EAGAIN;
-+			goto no_dma_tx;
-+		}
-+
- 		if (rx) {
- 			/* No callback */
- 			desc_tx->callback = NULL;
-@@ -688,15 +678,30 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv *p, const void *tx,
- 		cookie = dmaengine_submit(desc_tx);
- 		if (dma_submit_error(cookie)) {
- 			ret = cookie;
--			goto stop_rx;
-+			goto no_dma_tx;
- 		}
--		dma_async_issue_pending(p->master->dma_tx);
- 	}
- 
-+	/* 1 stage FIFO watermarks for DMA */
-+	sh_msiof_write(p, FCTR, FCTR_TFWM_1 | FCTR_RFWM_1);
-+
-+	/* setup msiof transfer mode registers (32-bit words) */
-+	sh_msiof_spi_set_mode_regs(p, tx, rx, 32, len / 4);
-+
-+	sh_msiof_write(p, IER, ier_bits);
-+
-+	reinit_completion(&p->done);
-+
-+	/* Now start DMA */
-+	if (tx)
-+		dma_async_issue_pending(p->master->dma_rx);
-+	if (rx)
-+		dma_async_issue_pending(p->master->dma_tx);
-+
- 	ret = sh_msiof_spi_start(p, rx);
- 	if (ret) {
- 		dev_err(&p->pdev->dev, "failed to start hardware\n");
--		goto stop_tx;
-+		goto stop_dma;
- 	}
- 
- 	/* wait for tx fifo to be emptied / rx fifo to be filled */
-@@ -726,14 +731,14 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv *p, const void *tx,
- stop_reset:
- 	sh_msiof_reset_str(p);
- 	sh_msiof_spi_stop(p, rx);
--stop_tx:
-+stop_dma:
- 	if (tx)
- 		dmaengine_terminate_all(p->master->dma_tx);
--stop_rx:
-+no_dma_tx:
- 	if (rx)
- 		dmaengine_terminate_all(p->master->dma_rx);
--stop_ier:
- 	sh_msiof_write(p, IER, 0);
-+no_dma_rx:
- 	return ret;
- }
- 
--- 
-1.9.1
+Applied, thanks.
 
+--rT2J5DU38xRYJFcJ
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBAgAGBQJT4pGcAAoJELSic+t+oim94zIP/2I0+gJWLqdtDt3XKKd2zmAb
+Qd9jsZWmnJhcxCq7CzpvYOmocPrHQoTd7WfMoqv5BwsHyp0+1NOsALKDKW+dXkP1
+BGAL5Ox2aSNm1O3gXqtK+bAh7mz/8EcbPTfcVn3EJnHt0j6uVbiAkH25MWEhmmIr
+I9Kmg1sj6ROUSSJlbJcaCTJKSneKGxFV8Zt3ikMy3xWe+mFGVLGLiQJQrC7gRztg
+0BzXPsMIIsvmbnEAz/S3dkU9YFLgk+2HNwXGGr4Tv00u5DePLfydOonwVgbH/2fO
+3mZFVvIOvL4f/w3WNWaDlc2QO8ieUxpjs+ac14TIbwCLNAVJFRyOQLDBLYL5soGc
+zvkxnvwrqxNGEfvDRAUe+tnlKdqXLqpncB/v0bWZxEOdfPvgH0x0JBhZR6AI8yoK
+opL6nT08qnUKUJ7UHYzlOebdO9vBjUI7xNBHme4AwC+RpN6/EYKWoCcvmaV9VglC
+G1rpS8wLmgybAvE5ps1xVfc8dkPc2z5MNnwzx1KbTGfQloBa3b7kLRHcsjzxMOCv
+BRdqSBF+zujQPhXs0x2ho5MHZjggrhEsOWMbzcNXgZAs+qUeM+hjewKjjRro3ucR
+yvXO0KoE4jdK7c9vbD6OK42MVBbY0FeTDrMt05Q23FrPmZC3PZEVrIqV95CoXww6
+SlY28KKY7ekdR+0MbBkV
+=tqID
+-----END PGP SIGNATURE-----
+
+--rT2J5DU38xRYJFcJ--
