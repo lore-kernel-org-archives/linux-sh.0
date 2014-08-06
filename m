@@ -1,41 +1,68 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Mon, 25 Aug 2014 12:26:01 +0000
-Subject: [PATCH 09/12] mmc: tmio_mmc: Enable runtime PM support
-Message-Id: <1408969564-6335-10-git-send-email-ulf.hansson@linaro.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 06 Aug 2014 01:49:56 +0000
+Subject: [PATCH 4/5 v2] ARM: shmobile: r8a7790: add generation level compatible for SDHI
+Message-Id: <87iom68jzy.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
-In-Reply-To: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
+References: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
+	<87oavy8k3v.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87oavy8k3v.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org, Ian Molton <ian.molton@codethink.co.uk>, Chris Ball <chris@printf.net>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Ulf Hansson <ulf.hansson@linaro.org>
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-To take advantage of the clock gating support, use the runtime PM
-callbacks provided by the tmio core.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Additionally, we make use of the SET_PM_RUNTIME_PM_OPS, which is a
-preparation needed to simplify system PM.
-
-Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/mmc/host/tmio_mmc.c | 3 +++
- 1 file changed, 3 insertions(+)
+v1 -> v2
 
-diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
-index cfad844..58f50ef 100644
---- a/drivers/mmc/host/tmio_mmc.c
-+++ b/drivers/mmc/host/tmio_mmc.c
-@@ -135,6 +135,9 @@ static int tmio_mmc_remove(struct platform_device *pdev)
+- no change
+
+ arch/arm/boot/dts/r8a7790.dtsi |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 7218bff..570e433 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -353,7 +353,7 @@
+ 	};
  
- static const struct dev_pm_ops tmio_mmc_dev_pm_ops = {
- 	SET_SYSTEM_SLEEP_PM_OPS(tmio_mmc_suspend, tmio_mmc_resume)
-+	SET_PM_RUNTIME_PM_OPS(tmio_mmc_host_runtime_suspend,
-+			tmio_mmc_host_runtime_resume,
-+			NULL)
- };
+ 	sdhi0: sd@ee100000 {
+-		compatible = "renesas,sdhi-r8a7790";
++		compatible = "renesas,sdhi-r8a7790", "renesas,sdhi-rcar-gen2";
+ 		reg = <0 0xee100000 0 0x200>;
+ 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
+@@ -362,7 +362,7 @@
+ 	};
  
- static struct platform_driver tmio_mmc_driver = {
+ 	sdhi1: sd@ee120000 {
+-		compatible = "renesas,sdhi-r8a7790";
++		compatible = "renesas,sdhi-r8a7790", "renesas,sdhi-rcar-gen2";
+ 		reg = <0 0xee120000 0 0x200>;
+ 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
+@@ -371,7 +371,7 @@
+ 	};
+ 
+ 	sdhi2: sd@ee140000 {
+-		compatible = "renesas,sdhi-r8a7790";
++		compatible = "renesas,sdhi-r8a7790", "renesas,sdhi-rcar-gen2";
+ 		reg = <0 0xee140000 0 0x100>;
+ 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
+@@ -380,7 +380,7 @@
+ 	};
+ 
+ 	sdhi3: sd@ee160000 {
+-		compatible = "renesas,sdhi-r8a7790";
++		compatible = "renesas,sdhi-r8a7790", "renesas,sdhi-rcar-gen2";
+ 		reg = <0 0xee160000 0 0x100>;
+ 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_SDHI3>;
 -- 
-1.9.1
+1.7.9.5
 
