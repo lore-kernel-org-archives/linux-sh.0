@@ -1,27 +1,44 @@
-From: "Opensource [Steve Twiss]" <stwiss.opensource@diasemi.com>
-Date: Fri, 29 Aug 2014 09:54:00 +0000
-Subject: RE: [GIT PULL] MFD: ARM (IMX & R8): Immutable branch for Dialog Semiconductor - vendor prefix consol
-Message-Id: <6ED8E3B22081A4459DAC7699F3695FB7D0B3BF98@SW-EX-MBX02.diasemi.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 06 Aug 2014 01:24:00 +0000
+Subject: [PATCH 1/3 v2] clk: shmobile: add missing 0x0100 for SDCKCR
+Message-Id: <871tsul8b3.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201408221446.s7MEkNVF001775@swsrvapps-01.diasemi.com>
- <20140829091359.GF24579@lee--X1>
-In-Reply-To: <20140829091359.GF24579@lee--X1>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-T24gMjkgQXVndXN0IDIwMTQgMTA6MTQsIExlZSBKb25lcyB3cm90ZQ0KDQo+IFN1YmplY3Q6IFtH
-SVQgUFVMTF0gTUZEOiBBUk0gKElNWCAmIFI4KTogSW1tdXRhYmxlIGJyYW5jaCBmb3IgRGlhbG9n
-DQo+IFNlbWljb25kdWN0b3IgLSB2ZW5kb3IgcHJlZml4IGNvbnNvbGlkYXRpb24NCj4gDQo+IElN
-WCBhbmQgUjggc3ViLWFyY2ggTWFpbnRhaW5lcnMsDQo+IA0KPiBUaGUgZm9sbG93aW5nIGNoYW5n
-ZXMgc2luY2UgY29tbWl0DQo+IDUyYWRkY2Y5ZDY2NjlmYTQzOTM4NzYxMGJjNjVjOTJmYTA5ODBj
-ZWY6DQo+IA0KPiAgIExpbnV4IDMuMTctcmMyICgyMDE0LTA4LTI1IDE1OjM2OjIwIC0wNzAwKQ0K
-PiANCj4gYXJlIGF2YWlsYWJsZSBpbiB0aGUgZ2l0IHJlcG9zaXRvcnkgYXQ6DQo+IA0KPiAgIGdp
-dDovL2dpdC5rZXJuZWwub3JnL3B1Yi9zY20vbGludXgva2VybmVsL2dpdC9sZWUvbWZkLmdpdCB0
-YWdzL2liLW1mZC1hcm0tDQo+IHYzLjE4DQo+IA0KPiBmb3IgeW91IHRvIGZldGNoIGNoYW5nZXMg
-dXAgdG8gYmQ1OTdmNDdjYTRiZjdhNTIyYTAyOThhOTVjN2Y5YjJmMGE3NWI5ZToNCj4gDQo+ICAg
-ZGV2aWNldHJlZTogRGlhbG9nIFNlbWljb25kdWN0b3IgY29uc29saWRhdGUgZXhpc3RpbmcgdmVu
-ZG9yIHByZWZpeGVzIHRvDQo+IHN0YW5kYXJkaXNlIG9uICdkbGcnICgyMDE0LTA4LTI5IDA5OjI2
-OjI5ICswMTAwKQ0KPiANCg0KWy4uLl0NCg0KVGhhbmsgeW91IGZvciBkb2luZyB0aGlzLg0KUmVn
-YXJkcywNClN0ZXZlDQo
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+10cdfe9f327ab8d120cf6957e58c6203e3a53847
+(clk: shmobile: Add R-Car Gen2 clocks support)
+added R-Car Gen2 clock support via DT for v3.14.
+
+But, cpg_sd01_div_table is missing
+"0x0100: x 1/8" division ratio.
+This patch fixes hidden bug.
+It is based on R-Car H2 v0.7, R-Car M2 v0.9.
+
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Reported-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/clk/shmobile/clk-rcar-gen2.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/clk/shmobile/clk-rcar-gen2.c b/drivers/clk/shmobile/clk-rcar-gen2.c
+index dff7f79..e996425 100644
+--- a/drivers/clk/shmobile/clk-rcar-gen2.c
++++ b/drivers/clk/shmobile/clk-rcar-gen2.c
+@@ -202,6 +202,7 @@ static const struct clk_div_table cpg_sdh_div_table[] = {
+ };
+ 
+ static const struct clk_div_table cpg_sd01_div_table[] = {
++	{  4,  8 },
+ 	{  5, 12 }, {  6, 16 }, {  7, 18 }, {  8, 24 },
+ 	{ 10, 36 }, { 11, 48 }, { 12, 10 }, {  0,  0 },
+ };
+-- 
+1.7.9.5
+
