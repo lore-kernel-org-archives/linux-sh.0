@@ -1,63 +1,155 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 06 Aug 2014 04:40:34 +0000
-Subject: [PATCH 3/5] ARM: shmobile: r8a7779: add generation level compatible for i2c
-Message-Id: <87oavyw7r3.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 06 Aug 2014 12:59:03 +0000
+Subject: [PATCH 06/12] spi: sh-msiof: Fix leaking of unused DMA descriptors
+Message-Id: <1407329949-5695-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87silaw7t2.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87silaw7t2.wl%kuninori.morimoto.gx@gmail.com>
+References: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>, Simon <horms@verge.net.au>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-I2C <linux-i2c@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: Mark Brown <broonie@kernel.org>, Simon Horman <horms@verge.net.au>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, dmaengine@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+If dmaengine_prep_slave_sg() or dmaengine_submit() fail, we may leak
+unused DMA descriptors.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+As per Documentation/dmaengine.txt, once a DMA descriptor has been
+obtained, it must be submitted. Hence:
+  - First prepare and submit all DMA descriptors,
+  - Prepare the SPI controller for DMA,
+  - Start DMA by calling dma_async_issue_pending(),
+  - Make sure to call dmaengine_terminate_all() on all descriptors that
+    haven't completed.
+
+Reported-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7779.dtsi |    8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ drivers/spi/spi-sh-msiof.c | 71 +++++++++++++++++++++++++---------------------
+ 1 file changed, 38 insertions(+), 33 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 463e3fd..ac89e42 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -159,7 +159,7 @@
- 	i2c0: i2c@ffc70000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,i2c-r8a7779";
-+		compatible = "renesas,i2c-r8a7779", "renesas,i2c-rcar-gen1";
- 		reg = <0xffc70000 0x1000>;
- 		interrupts = <0 79 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_I2C0>;
-@@ -169,7 +169,7 @@
- 	i2c1: i2c@ffc71000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,i2c-r8a7779";
-+		compatible = "renesas,i2c-r8a7779", "renesas,i2c-rcar-gen1";
- 		reg = <0xffc71000 0x1000>;
- 		interrupts = <0 82 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_I2C1>;
-@@ -179,7 +179,7 @@
- 	i2c2: i2c@ffc72000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,i2c-r8a7779";
-+		compatible = "renesas,i2c-r8a7779", "renesas,i2c-rcar-gen1";
- 		reg = <0xffc72000 0x1000>;
- 		interrupts = <0 80 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_I2C2>;
-@@ -189,7 +189,7 @@
- 	i2c3: i2c@ffc73000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,i2c-r8a7779";
-+		compatible = "renesas,i2c-r8a7779", "renesas,i2c-rcar-gen1";
- 		reg = <0xffc73000 0x1000>;
- 		interrupts = <0 81 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_I2C3>;
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index 2a4354dcd661..887c2084130f 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -636,48 +636,38 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv *p, const void *tx,
+ 	dma_cookie_t cookie;
+ 	int ret;
+ 
+-	if (tx) {
+-		ier_bits |= IER_TDREQE | IER_TDMAE;
+-		dma_sync_single_for_device(p->master->dma_tx->device->dev,
+-					   p->tx_dma_addr, len, DMA_TO_DEVICE);
+-		desc_tx = dmaengine_prep_slave_single(p->master->dma_tx,
+-					p->tx_dma_addr, len, DMA_TO_DEVICE,
+-					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+-		if (!desc_tx)
+-			return -EAGAIN;
+-	}
+-
++	/* First prepare and submit the DMA request(s), as this may fail */
+ 	if (rx) {
+ 		ier_bits |= IER_RDREQE | IER_RDMAE;
+ 		desc_rx = dmaengine_prep_slave_single(p->master->dma_rx,
+ 					p->rx_dma_addr, len, DMA_FROM_DEVICE,
+ 					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+-		if (!desc_rx)
+-			return -EAGAIN;
+-	}
+-
+-	/* 1 stage FIFO watermarks for DMA */
+-	sh_msiof_write(p, FCTR, FCTR_TFWM_1 | FCTR_RFWM_1);
+-
+-	/* setup msiof transfer mode registers (32-bit words) */
+-	sh_msiof_spi_set_mode_regs(p, tx, rx, 32, len / 4);
+-
+-	sh_msiof_write(p, IER, ier_bits);
+-
+-	reinit_completion(&p->done);
++		if (!desc_rx) {
++			ret = -EAGAIN;
++			goto no_dma_rx;
++		}
+ 
+-	if (rx) {
+ 		desc_rx->callback = sh_msiof_dma_complete;
+ 		desc_rx->callback_param = p;
+ 		cookie = dmaengine_submit(desc_rx);
+ 		if (dma_submit_error(cookie)) {
+ 			ret = cookie;
+-			goto stop_ier;
++			goto no_dma_rx;
+ 		}
+-		dma_async_issue_pending(p->master->dma_rx);
+ 	}
+ 
+ 	if (tx) {
++		ier_bits |= IER_TDREQE | IER_TDMAE;
++		dma_sync_single_for_device(p->master->dma_tx->device->dev,
++					   p->tx_dma_addr, len, DMA_TO_DEVICE);
++		desc_tx = dmaengine_prep_slave_single(p->master->dma_tx,
++					p->tx_dma_addr, len, DMA_TO_DEVICE,
++					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
++		if (!desc_tx) {
++			ret = -EAGAIN;
++			goto no_dma_tx;
++		}
++
+ 		if (rx) {
+ 			/* No callback */
+ 			desc_tx->callback = NULL;
+@@ -688,15 +678,30 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv *p, const void *tx,
+ 		cookie = dmaengine_submit(desc_tx);
+ 		if (dma_submit_error(cookie)) {
+ 			ret = cookie;
+-			goto stop_rx;
++			goto no_dma_tx;
+ 		}
+-		dma_async_issue_pending(p->master->dma_tx);
+ 	}
+ 
++	/* 1 stage FIFO watermarks for DMA */
++	sh_msiof_write(p, FCTR, FCTR_TFWM_1 | FCTR_RFWM_1);
++
++	/* setup msiof transfer mode registers (32-bit words) */
++	sh_msiof_spi_set_mode_regs(p, tx, rx, 32, len / 4);
++
++	sh_msiof_write(p, IER, ier_bits);
++
++	reinit_completion(&p->done);
++
++	/* Now start DMA */
++	if (tx)
++		dma_async_issue_pending(p->master->dma_rx);
++	if (rx)
++		dma_async_issue_pending(p->master->dma_tx);
++
+ 	ret = sh_msiof_spi_start(p, rx);
+ 	if (ret) {
+ 		dev_err(&p->pdev->dev, "failed to start hardware\n");
+-		goto stop_tx;
++		goto stop_dma;
+ 	}
+ 
+ 	/* wait for tx fifo to be emptied / rx fifo to be filled */
+@@ -726,14 +731,14 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv *p, const void *tx,
+ stop_reset:
+ 	sh_msiof_reset_str(p);
+ 	sh_msiof_spi_stop(p, rx);
+-stop_tx:
++stop_dma:
+ 	if (tx)
+ 		dmaengine_terminate_all(p->master->dma_tx);
+-stop_rx:
++no_dma_tx:
+ 	if (rx)
+ 		dmaengine_terminate_all(p->master->dma_rx);
+-stop_ier:
+ 	sh_msiof_write(p, IER, 0);
++no_dma_rx:
+ 	return ret;
+ }
+ 
 -- 
-1.7.9.5
+1.9.1
 
