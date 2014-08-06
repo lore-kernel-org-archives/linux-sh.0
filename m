@@ -1,39 +1,84 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 27 Aug 2014 05:28:17 +0000
-Subject: [PATCH 0/3 repost] clocksource: Document Renesas SoC specific bindings
-Message-Id: <1409117300-2133-1-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 06 Aug 2014 12:59:09 +0000
+Subject: [PATCH 12/12] ARM: shmobile: r8a7790 dtsi: Enable DMA for MSIOF
+Message-Id: <1407329949-5695-13-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1407329949-5695-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
+Cc: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-[Repost with correct deviceetree email address]
+Add register sets used for access by the DMA engine, and DMA properties to
+the MSIOF nodes.
 
-In general Renesas hardware is not documented to the extent where the
-relationship between IP blocks on different SoCs can be assumed although
-they may appear to operate the same way. Furthermore the documentation
-typically does not specify a version for individual IP blocks. For these
-reasons a convention of using the SoC name in place of a version and
-providing SoC-specific compat strings has been adopted.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: devicetree@vger.kernel.org
+---
+This depends on "[PATCH v2 7/8] ARM: shmobile: r8a7790: Add DMAC devices
+to DT" of series "[PATCH v2 0/8] R-Car Gen2 DMA Controller driver".
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 16 ++++++++++++----
+ 1 file changed, 12 insertions(+), 4 deletions(-)
 
-Although not universally liked this convention is used in the bindings for
-the drivers a number of drivers for Renesas hardware. The purpose of this
-patch is to update the Renesas clocksource drivers to follow this convention.
-
-I plan to follow up with patches to use these new bindings in the
-dtsi files for the affected SoCs.
-
-Simon Horman (3):
-  clocksource: sh_cmt: Document SoC specific bindings
-  clocksource: sh_mtu2: Document r7s72100 binding
-  clocksource: sh_tmu: Document r8a7779 binding
-
- .../devicetree/bindings/timer/renesas,cmt.txt      | 26 +++++++++++++++++++++-
- .../devicetree/bindings/timer/renesas,mtu2.txt     |  6 +++--
- .../devicetree/bindings/timer/renesas,tmu.txt      |  6 +++--
- 3 files changed, 33 insertions(+), 5 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 495771b3cb34..45d6fdd6877b 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -988,9 +988,11 @@
+ 
+ 	msiof0: spi@e6e20000 {
+ 		compatible = "renesas,msiof-r8a7790";
+-		reg = <0 0xe6e20000 0 0x0064>;
++		reg = <0 0xe6e20000 0 0x0064>, <0 0xe7e20000 0 0x0064>;
+ 		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7790_CLK_MSIOF0>;
++		dmas = <&dmac0 0x51>, <&dmac0 0x52>;
++		dma-names = "tx", "rx";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		status = "disabled";
+@@ -998,9 +1000,11 @@
+ 
+ 	msiof1: spi@e6e10000 {
+ 		compatible = "renesas,msiof-r8a7790";
+-		reg = <0 0xe6e10000 0 0x0064>;
++		reg = <0 0xe6e10000 0 0x0064>, <0 0xe7e10000 0 0x0064>;
+ 		interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_MSIOF1>;
++		dmas = <&dmac0 0x55>, <&dmac0 0x56>;
++		dma-names = "tx", "rx";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		status = "disabled";
+@@ -1008,9 +1012,11 @@
+ 
+ 	msiof2: spi@e6e00000 {
+ 		compatible = "renesas,msiof-r8a7790";
+-		reg = <0 0xe6e00000 0 0x0064>;
++		reg = <0 0xe6e00000 0 0x0064>, <0 0xe7e00000 0 0x0064>;
+ 		interrupts = <0 158 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_MSIOF2>;
++		dmas = <&dmac0 0x41>, <&dmac0 0x42>;
++		dma-names = "tx", "rx";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		status = "disabled";
+@@ -1018,9 +1024,11 @@
+ 
+ 	msiof3: spi@e6c90000 {
+ 		compatible = "renesas,msiof-r8a7790";
+-		reg = <0 0xe6c90000 0 0x0064>;
++		reg = <0 0xe6c90000 0 0x0064>, <0 0xe7c90000 0 0x0064>;
+ 		interrupts = <0 159 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_MSIOF3>;
++		dmas = <&dmac0 0x45>, <&dmac0 0x46>;
++		dma-names = "tx", "rx";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		status = "disabled";
 -- 
-2.0.1
+1.9.1
 
