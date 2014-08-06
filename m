@@ -1,91 +1,108 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 22 Aug 2014 03:53:13 +0000
-Subject: Re: [PATCH repost] ARM: shmobile: sh73a0: Remove spurious 0x from SCIFB clock name
-Message-Id: <20140822035313.GP9099@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 06 Aug 2014 12:59:02 +0000
+Subject: [PATCH 05/12] [v2] spi: rspi: Add DT support to DMA setup
+Message-Id: <1407329949-5695-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1406766463.git.horms+renesas@verge.net.au>
- <20140731004246.GA31860@verge.net.au>
- <CAMuHMdWS14CsDvk+cTYJ7JeX0_3oQdfsRC__Hofmv54uOOtG1Q@mail.gmail.com>
- <20140818235634.GK1623@verge.net.au>
-In-Reply-To: <20140818235634.GK1623@verge.net.au>
+References: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1407329949-5695-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
+Cc: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Tue, Aug 19, 2014 at 08:56:34AM +0900, Simon Horman wrote:
-> Hi Geert, thanks for noting that.
-> 
-> I will add this back to the devel branch in the renesas tree.
-> 
-> Olof, could you pick up the patch below for v3.17-rcX?
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: devicetree@vger.kernel.org
+---
+v2:
+  - Update DMA specifiers to match the renesas,rcar-dmac bindings
+---
+ Documentation/devicetree/bindings/spi/spi-rspi.txt |  5 +++
+ drivers/spi/spi-rspi.c                             | 37 ++++++++++++++--------
+ 2 files changed, 28 insertions(+), 14 deletions(-)
 
-Olof, I have two more clock fixes for v3.17.
-I'll send a pull request for them and the one below once
-things have sat in next for a bit.
+diff --git a/Documentation/devicetree/bindings/spi/spi-rspi.txt b/Documentation/devicetree/bindings/spi/spi-rspi.txt
+index d57d82a74054..f9929aceeacc 100644
+--- a/Documentation/devicetree/bindings/spi/spi-rspi.txt
++++ b/Documentation/devicetree/bindings/spi/spi-rspi.txt
+@@ -30,6 +30,9 @@ Required properties:
+ 
+ Optional properties:
+ - clocks           : Must contain a reference to the functional clock.
++- dmas             : Must contain a list of two references to DMA specifiers,
++		     one for transmission, and one for reception.
++- dma-names        : Must contain a list of two DMA names, "tx" and "rx".
+ 
+ Pinctrl properties might be needed, too.  See
+ Documentation/devicetree/bindings/pinctrl/renesas,*.
+@@ -58,4 +61,6 @@ Examples:
+ 		num-cs = <1>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		dmas = <&dmac0 0x17>, <&dmac0 0x18>;
++		dma-names = "tx", "rx";
+ 	};
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 6a4eb2d7f644..1da609e4491d 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -909,10 +909,11 @@ static struct dma_chan *rspi_request_dma_chan(struct device *dev,
+ 	dma_cap_zero(mask);
+ 	dma_cap_set(DMA_SLAVE, mask);
+ 
+-	chan = dma_request_channel(mask, shdma_chan_filter,
+-				   (void *)(unsigned long)id);
++	chan = dma_request_slave_channel_compat(mask, shdma_chan_filter,
++				(void *)(unsigned long)id, dev,
++				dir = DMA_MEM_TO_DEV ? "tx" : "rx");
+ 	if (!chan) {
+-		dev_warn(dev, "dma_request_channel failed\n");
++		dev_warn(dev, "dma_request_slave_channel_compat failed\n");
+ 		return NULL;
+ 	}
+ 
+@@ -941,22 +942,30 @@ static int rspi_request_dma(struct device *dev, struct spi_master *master,
+ 			    const struct resource *res)
+ {
+ 	const struct rspi_plat_data *rspi_pd = dev_get_platdata(dev);
++	unsigned int dma_tx_id, dma_rx_id;
++
++	if (dev->of_node) {
++		/* In the OF case we will get the slave IDs from the DT */
++		dma_tx_id = 0;
++		dma_rx_id = 0;
++	} else if (rspi_pd && rspi_pd->dma_tx_id && rspi_pd->dma_rx_id) {
++		dma_tx_id = rspi_pd->dma_tx_id;
++		dma_rx_id = rspi_pd->dma_rx_id;
++	} else {
++		/* The driver assumes no error. */
++		return 0;
++	}
+ 
+-	if (!rspi_pd || !rspi_pd->dma_rx_id || !rspi_pd->dma_tx_id)
+-		return 0;	/* The driver assumes no error. */
+-
+-	master->dma_rx = rspi_request_dma_chan(dev, DMA_DEV_TO_MEM,
+-					       rspi_pd->dma_rx_id,
++	master->dma_tx = rspi_request_dma_chan(dev, DMA_MEM_TO_DEV, dma_tx_id,
+ 					       res->start + RSPI_SPDR);
+-	if (!master->dma_rx)
++	if (!master->dma_tx)
+ 		return -ENODEV;
+ 
+-	master->dma_tx = rspi_request_dma_chan(dev, DMA_MEM_TO_DEV,
+-					       rspi_pd->dma_tx_id,
++	master->dma_rx = rspi_request_dma_chan(dev, DMA_DEV_TO_MEM, dma_rx_id,
+ 					       res->start + RSPI_SPDR);
+-	if (!master->dma_tx) {
+-		dma_release_channel(master->dma_rx);
+-		master->dma_rx = NULL;
++	if (!master->dma_rx) {
++		dma_release_channel(master->dma_tx);
++		master->dma_tx = NULL;
+ 		return -ENODEV;
+ 	}
+ 
+-- 
+1.9.1
 
-> 
-> On Mon, Aug 18, 2014 at 10:32:19AM +0200, Geert Uytterhoeven wrote:
-> > Hi Simon, Olof,
-> > 
-> > On Thu, Jul 31, 2014 at 2:42 AM, Simon Horman
-> > <horms+renesas@verge.net.au> wrote:
-> > > A stray '0x' crept into a0f7e7496d56ac2d ("ARM: shmobile: sh73a0: add CMT1
-> > > clock support for DT"). This  patch removes it.
-> > >
-> > > This change should not have any run-time affect at this time as
-> > > the clock in question is used by a SCIF device that is not enabled by
-> > > default.
-> > >
-> > > Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> > > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > > ---
-> > >  arch/arm/mach-shmobile/clock-sh73a0.c | 2 +-
-> > >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > >
-> > > Hi Olof,
-> > >
-> > > this is a repost of the patch you asked for so you can apply it directly
-> > > rather than as pulling a pull request.
-> > 
-> > It seems Olof missed this one.
-> > As a consequence, we now have the bad version in v3.17-rc1, and in
-> > renesas-devel-20140818-v3.17-rc1.
-> > 
-> > > diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-> > > index 0d77f65..b0993a5 100644
-> > > --- a/arch/arm/mach-shmobile/clock-sh73a0.c
-> > > +++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-> > > @@ -644,7 +644,7 @@ static struct clk_lookup lookups[] = {
-> > >         CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP207]), /* SCIFA5 */
-> > >         CLKDEV_DEV_ID("e6cb0000.serial", &mstp_clks[MSTP207]), /* SCIFA5 */
-> > >         CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP206]), /* SCIFB */
-> > > -       CLKDEV_DEV_ID("0xe6c3000.serial", &mstp_clks[MSTP206]), /* SCIFB */
-> > > +       CLKDEV_DEV_ID("e6c3000.serial", &mstp_clks[MSTP206]), /* SCIFB */
-> > >         CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]), /* SCIFA0 */
-> > >         CLKDEV_DEV_ID("e6c40000.serial", &mstp_clks[MSTP204]), /* SCIFA0 */
-> > >         CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]), /* SCIFA1 */
-> > > --
-> > > 2.0.1
-> > >
-> > > --
-> > > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> > > the body of a message to majordomo@vger.kernel.org
-> > > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > 
-> > Gr{oetje,eeting}s,
-> > 
-> >                         Geert
-> > 
-> > --
-> > Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> > 
-> > In personal conversations with technical people, I call myself a hacker. But
-> > when I'm talking to journalists I just say "programmer" or something like that.
-> >                                 -- Linus Torvalds
-> > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
