@@ -1,47 +1,47 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 06 Aug 2014 12:59:00 +0000
-Subject: [PATCH 03/12] spi: rspi: Use devm_kasprintf()
-Message-Id: <1407329949-5695-4-git-send-email-geert+renesas@glider.be>
+From: Mark Brown <broonie@kernel.org>
+Date: Wed, 06 Aug 2014 20:26:32 +0000
+Subject: Re: [PATCH 03/12] spi: rspi: Use devm_kasprintf()
+Message-Id: <20140806202632.GR17528@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="rGFapJQksCwzvIuF"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1407329949-5695-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
-Cc: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+ <1407329949-5695-4-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1407329949-5695-4-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+To: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Use the devm_kasprintf() helper function instead of open coding
-error-prone buffer handling and string formatting.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-devm_kasprintf() was included in upstream, and will be available as of
-release v3.17-rc1.
----
- drivers/spi/spi-rspi.c | 7 +++----
- 1 file changed, 3 insertions(+), 4 deletions(-)
+--rGFapJQksCwzvIuF
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index a4d8d3cf2912..aa1c6a893570 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -1046,12 +1046,11 @@ static int rspi_request_irq(struct device *dev, unsigned int irq,
- 			    irq_handler_t handler, const char *suffix,
- 			    void *dev_id)
- {
--	const char *base = dev_name(dev);
--	size_t len = strlen(base) + strlen(suffix) + 2;
--	char *name = devm_kzalloc(dev, len, GFP_KERNEL);
-+	const char *name = devm_kasprintf(dev, GFP_KERNEL, "%s:%s",
-+					  dev_name(dev), suffix);
- 	if (!name)
- 		return -ENOMEM;
--	snprintf(name, len, "%s:%s", base, suffix);
-+
- 	return devm_request_irq(dev, irq, handler, 0, name, dev_id);
- }
- 
--- 
-1.9.1
+On Wed, Aug 06, 2014 at 02:59:00PM +0200, Geert Uytterhoeven wrote:
+> Use the devm_kasprintf() helper function instead of open coding
+> error-prone buffer handling and string formatting.
 
+Applied, thanks.
+
+--rGFapJQksCwzvIuF
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBAgAGBQJT4o91AAoJELSic+t+oim957gP/370VcQiNyBaXn7MiFb3fxCU
+LyjgnZoqsA6mtsT8ocUg752LbafjcFtF06dqawGvyZ5Lm1HkoGCM+jrUAqkBGtg+
+yE0uRChxTXyZOfOFh2ceZBlMbeSmvxuLF+nk+QKTt/RNQRv4cCj4s7dqWtR41+PN
+dyBDSq4QsJHK7ssLecAF6JYoISbVpbFxEkJc+hfwzABHBcr9q1fJ8I/4D/oJr7L0
+Jz/QFcwBfbfKYFhGYRDwEljbstL3RnE1p+GzhF3cDc/lqxMWjpGmDWBokHePeK7S
+QxbK0uJ7ivToiTaIzj24zqE2eXczpIewefMSEG32PZYf8ndEn0wO6rcagsGUjT9s
+Jmo0iVz8Vp7h9+54uvBTkbGT/5p0nDilZRAvo0W/G5OlcdMdgApy0gJCgnaA7JMt
+AQSYlxY+mgVwm7IC26cCWPzlKy0Ot7P3UDAhUShsiipP7MEemGjAGoHdKywXvhzS
+HIcy0eohogwTf4tE50z5JOFF7DHGfuUP8RRYroqb/DSvW6+nQkmOdJIhX6MewsDR
+i+sNDKs48RBA+Z283DEaE5z+EARBR7oQqDMHH9A1DJdGfRcuNZgC3/2f/iPUUW0p
+QbArir9ED0PATx1rR69k0VTPOslqzLrh9mMNuL82sTPo2OA7f6+1JyNPOx10JtuW
+TKaqijRrkMLYsAwZO6RP
+=0NBV
+-----END PGP SIGNATURE-----
+
+--rGFapJQksCwzvIuF--
