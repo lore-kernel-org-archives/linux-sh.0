@@ -1,41 +1,59 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 23 Aug 2014 01:44:14 +0000
-Subject: [PATCH 04/11] ARM: shmobile: r8a7778: Fix shmobile_init_late()
-Message-Id: <7759a7a8e9b07a9046c1bdb2cd4c9ce197280392.1408671240.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 06 Aug 2014 01:50:18 +0000
+Subject: [PATCH 5/5 v2] ARM: shmobile: r8a7791: add generation level compatible for SDHI
+Message-Id: <87ha1q8jzb.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408671240.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408671240.git.horms+renesas@verge.net.au>
+References: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
+	<87oavy8k3v.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87oavy8k3v.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Fix r8a7778 SoC machine vector to include shmobile_init_late()
-so Suspend-to-RAM and CPUIdle are setup and platform devices
-are omitted as expected.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7778.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+v1 -> v2
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 383e43b..e1a477b 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -610,8 +610,8 @@ static const char *r8a7778_compat_dt[] __initdata = {
- DT_MACHINE_START(R8A7778_DT, "Generic R8A7778 (Flattened Device Tree)")
- 	.init_early	= r8a7778_init_delay,
- 	.init_irq	= r8a7778_init_irq_dt,
-+	.init_late	= shmobile_init_late,
- 	.dt_compat	= r8a7778_compat_dt,
--	.init_late      = r8a7778_init_late,
- MACHINE_END
+- no change
+
+ arch/arm/boot/dts/r8a7791.dtsi |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 1e97113..82be0af 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -341,7 +341,7 @@
+ 	};
  
- #endif /* CONFIG_USE_OF */
+ 	sdhi0: sd@ee100000 {
+-		compatible = "renesas,sdhi-r8a7791";
++		compatible = "renesas,sdhi-r8a7791", "renesas,sdhi-rcar-gen2";
+ 		reg = <0 0xee100000 0 0x200>;
+ 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7791_CLK_SDHI0>;
+@@ -349,7 +349,7 @@
+ 	};
+ 
+ 	sdhi1: sd@ee140000 {
+-		compatible = "renesas,sdhi-r8a7791";
++		compatible = "renesas,sdhi-r8a7791", "renesas,sdhi-rcar-gen2";
+ 		reg = <0 0xee140000 0 0x100>;
+ 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7791_CLK_SDHI1>;
+@@ -357,7 +357,7 @@
+ 	};
+ 
+ 	sdhi2: sd@ee160000 {
+-		compatible = "renesas,sdhi-r8a7791";
++		compatible = "renesas,sdhi-r8a7791", "renesas,sdhi-rcar-gen2";
+ 		reg = <0 0xee160000 0 0x100>;
+ 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7791_CLK_SDHI2>;
 -- 
-2.0.1
+1.7.9.5
 
