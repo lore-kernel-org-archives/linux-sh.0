@@ -1,62 +1,46 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 22 Aug 2014 11:14:10 +0000
-Subject: [PATCH 3/4] usb: renesas_usbhs: fix the condition of is_done in usbhsf_dma_push_done
-Message-Id: <53F72602.3010704@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 06 Aug 2014 12:59:04 +0000
+Subject: [PATCH 07/12] spi: sh-msiof: Configure DMA slave bus width
+Message-Id: <1407329949-5695-8-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie@kernel.org>, Simon Horman <horms@verge.net.au>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, dmaengine@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-This patch fixes the condition of is_done in usbhsf_dma_push_done().
-This function will be called after a transmission finished by DMAC.
-So, the function should check if the transmission packet is short packet
-or not. Also the function should call try_run to send the zero packet
-by the pio handler if the "*is_done" is not set. Otherwize, the
-transaction will not finish if a gadget driver sets the "zero" flag
-in a transmission.
+The new Renesas R-Car Gen2 DMA Controller driver (rcar-dmac) requires
+explicit configuration of the DMA slave bus width.
+Hardcode the DMA transfer size to 4 bytes, as MSIOF DMA is limited to
+32-bit words.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/usb/renesas_usbhs/fifo.c |   17 +++++++++++++++--
- 1 file changed, 15 insertions(+), 2 deletions(-)
+ drivers/spi/spi-sh-msiof.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
-index 3efece3..1564829 100644
---- a/drivers/usb/renesas_usbhs/fifo.c
-+++ b/drivers/usb/renesas_usbhs/fifo.c
-@@ -889,16 +889,29 @@ usbhsf_pio_prepare_push:
- static int usbhsf_dma_push_done(struct usbhs_pkt *pkt, int *is_done)
- {
- 	struct usbhs_pipe *pipe = pkt->pipe;
-+	int is_short = pkt->trans % usbhs_pipe_get_maxpacket(pipe);
-
--	pkt->actual = pkt->trans;
-+	pkt->actual += pkt->trans;
-+
-+	if (pkt->actual < pkt->length)
-+		*is_done = 0;		/* there are remainder data */
-+	else if (is_short)
-+		*is_done = 1;		/* short packet */
-+	else
-+		*is_done = !pkt->zero;	/* send zero packet? */
-
--	*is_done = !pkt->zero;	/* send zero packet ? */
- 	usbhs_pipe_running(pipe, !*is_done);
-
- 	usbhsf_dma_stop(pipe, pipe->fifo);
- 	usbhsf_dma_unmap(pkt);
- 	usbhsf_fifo_unselect(pipe, pipe->fifo);
-
-+	if (!*is_done) {
-+		/* change handler to PIO */
-+		pkt->handler = &usbhs_fifo_pio_push_handler;
-+		return pkt->handler->try_run(pkt, is_done);
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index 887c2084130f..b19cbb4cb4a0 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -987,10 +987,13 @@ static struct dma_chan *sh_msiof_request_dma_chan(struct device *dev,
+ 	memset(&cfg, 0, sizeof(cfg));
+ 	cfg.slave_id = id;
+ 	cfg.direction = dir;
+-	if (dir = DMA_MEM_TO_DEV)
++	if (dir = DMA_MEM_TO_DEV) {
+ 		cfg.dst_addr = port_addr;
+-	else
++		cfg.dst_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
++	} else {
+ 		cfg.src_addr = port_addr;
++		cfg.src_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
 +	}
-+
- 	return 0;
- }
-
+ 
+ 	ret = dmaengine_slave_config(chan, &cfg);
+ 	if (ret) {
 -- 
-1.7.9.5
+1.9.1
 
