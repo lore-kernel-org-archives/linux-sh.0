@@ -1,71 +1,45 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 20 Aug 2014 00:23:52 +0000
-Subject: [PATCH 01/12] ARM: shmobile: r8a7791: add VIN DT support
-Message-Id: <0b8d1d579b4130f33a8776691453238839cb1973.1408492753.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 06 Aug 2014 01:24:30 +0000
+Subject: [PATCH 2/3 v2] ARM: shmobile: r8a7790: add missing 0x0100 for SDCKCR
+Message-Id: <87zjfijtpv.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408492753.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408492753.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Define the generic R8A7791 parts of the VIN[0-2] device nodes. Add aliases for
-the VIN[0-2] device nodes.
+9f13ee6f83c52065112d3e396e42e3780911ef53
+(ARM: shmobile: r8a7790: add div4 clocks)
+added r8a7790 DIV4 clock support.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+But, it is missing
+"0x0100: x 1/8" division ratio.
+This patch fixes hidden bug.
+It is based on R-Car H2 v0.7, R-Car M2 v0.9.
+
+Reported-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 27 +++++++++++++++++++++++++++
- 1 file changed, 27 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a7790.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 0d82a4b..0f28921 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -34,6 +34,9 @@
- 		spi1 = &msiof0;
- 		spi2 = &msiof1;
- 		spi3 = &msiof2;
-+		vin0 = &vin0;
-+		vin1 = &vin1;
-+		vin2 = &vin2;
- 	};
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 17435c1..126ddaf 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -183,8 +183,8 @@ enum {
  
- 	cpus {
-@@ -518,6 +521,30 @@
- 		status = "disabled";
- 	};
+ static struct clk div4_clks[DIV4_NR] = {
+ 	[DIV4_SDH] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 8, 0x0dff, CLK_ENABLE_ON_INIT),
+-	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1de0, CLK_ENABLE_ON_INIT),
+-	[DIV4_SD1] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 0, 0x1de0, CLK_ENABLE_ON_INIT),
++	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1df0, CLK_ENABLE_ON_INIT),
++	[DIV4_SD1] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 0, 0x1df0, CLK_ENABLE_ON_INIT),
+ };
  
-+	vin0: video@e6ef0000 {
-+		compatible = "renesas,vin-r8a7791";
-+		clocks = <&mstp8_clks R8A7791_CLK_VIN0>;
-+		reg = <0 0xe6ef0000 0 0x1000>;
-+		interrupts = <0 188 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	vin1: video@e6ef1000 {
-+		compatible = "renesas,vin-r8a7791";
-+		clocks = <&mstp8_clks R8A7791_CLK_VIN1>;
-+		reg = <0 0xe6ef1000 0 0x1000>;
-+		interrupts = <0 189 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	vin2: video@e6ef2000 {
-+		compatible = "renesas,vin-r8a7791";
-+		clocks = <&mstp8_clks R8A7791_CLK_VIN2>;
-+		reg = <0 0xe6ef2000 0 0x1000>;
-+		interrupts = <0 190 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
+ /* DIV6 clocks */
 -- 
-2.0.1
+1.7.9.5
 
