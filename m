@@ -1,157 +1,53 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 05 Aug 2014 23:19:16 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 06 Aug 2014 07:17:57 +0000
 Subject: Re: DMA engine API issue (was: [PATCH/RFC 0/5] R-Car Gen2 DMAC hardware descriptor list support)
-Message-Id: <1877927.dGcJCfKbeH@avalon>
+Message-Id: <CAMuHMdVz8hNus5x1hn0feqb1SYsUuhA4QHHfPGyebiKLZJwfEQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1406032431-3807-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <2568292.I2Yo4lJlu6@avalon> <20140804175458.GH30282@n2100.arm.linux.org.uk>
-In-Reply-To: <20140804175458.GH30282@n2100.arm.linux.org.uk>
+References: <1406032431-3807-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+	<2568292.I2Yo4lJlu6@avalon>
+	<20140804175458.GH30282@n2100.arm.linux.org.uk>
+	<1877927.dGcJCfKbeH@avalon>
+In-Reply-To: <1877927.dGcJCfKbeH@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Cc: Vinod Koul <vinod.koul@intel.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, linux-arm-kernel@lists.infradead.org, Maxime Ripard <maxime.ripard@free-electrons.com>
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Russell King - ARM Linux <linux@arm.linux.org.uk>, Vinod Koul <vinod.koul@intel.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, dmaengine@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>, Maxime Ripard <maxime.ripard@free-electrons.com>
 
-Hi Russell,
+Hi Laurent,
 
-On Monday 04 August 2014 18:54:58 Russell King - ARM Linux wrote:
-> On Mon, Aug 04, 2014 at 07:00:36PM +0200, Laurent Pinchart wrote:
-> > On Friday 01 August 2014 15:30:20 Russell King - ARM Linux wrote:
-> >>  This sequence must occur in a timely manner as some DMA engine
-> >> 
-> >> implementations hold a lock between the prepare and submit callbacks
-> >> (Dan explicitly permits this as part of the API.)
-> > 
-> > That really triggers a red alarm in the part of my brain that deals with
-> > API design, but I suppose it would be too difficult to change that.
-> 
-> Mine to, but there's not a lot which can be done about it without changing a
-> lot of users.
+On Wed, Aug 6, 2014 at 1:19 AM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> I actually have the opposite problem, in my case channels of physically
+> separate DMA engines can be used interchangeably to serve the system's slaves.
+> Using the DMA engine DT bindings, DT nodes of the slaves currently reference a
+> specific DMA engine, even if they can be served by both. This leads to limited
+> dynamic channel allocation capabilities (especially when taking into account
+> lazy channel allocation as mentioned in another mail in this thread).
 
-Well, the good side is that it "only" requires enough motivation and free time 
-then :-)
+What about adding a property to the first one, referencing the second
+(or the other way around, don't know what's the easiest to implement)?
 
-> >>> The DMA_PRIVATE capability flag seems to play a role here, but it's
-> >>> far from being clear how that mechanism is supposed to work. This
-> >>> should be documented as well, and any light you could shed on this
-> >>> dark corner of the API would help.
-> >> 
-> >> Why do you think that DMA_PRIVATE has a bearing in the callbacks? It
-> >> doesn't.
-> > 
-> > Not on callbacks, but on how pending descriptors are pushed to the
-> > hardware. The flag is explicitly checked in dma_issue_pending_all().
-> 
-> Right.  So, let me put a question to you - what do you think is the
-> effect of the check in dma_issue_pending_all()?
-> 
-> I'll give you a hint - disregard the comment at the top of the function,
-> because that's out of date.
+        dmac0: dma-controller@e6700000 {
+                ...
+                renesas,alternative = <&dmac1>;
+                ...
+        };
 
-I suppose the idea is that dma_issue_pending_all() is only used for memcpy 
-offload, and can thus ignore channels used for slave transfers.
+        dmac1: dma-controller@e6720000 {
+                ...
+        };
 
-The code seems to be buggy though. A DMA engine that can serve both memcpy and 
-slave transfers could have one channel allocated for memcpy first, then a 
-second channel allocated for slave transfers. This would cause the DMA_PRIVATE 
-flag to be set, which will prevent dma_issue_pending_all() from calling the 
-device_issue_pending operation of the memcpy channel.
+That would avoid having to bind a slave device explicitly to a single
+dmac, or having to bind all slave devices to all dmacs.
 
-> >> DMA_PRIVATE is all about channel allocation as I explained yesterday,
-> >> and whether the channel is available for async_tx usage.
-> >> 
-> >> A channel marked DMA_PRIVATE is not available for async_tx usage at
-> >> any moment.  A channel without DMA_PRIVATE is available for async_tx
-> >> usage until it is allocated for the slave API - at which point the
-> >> generic DMA engine code will mark the channel with DMA_PRIVATE,
-> >> thereby taking it away from async_tx API usage.  When the slave API
-> >> frees the channel, DMA_PRIVATE will be cleared, making the channel
-> >> available for async_tx usage.
-> >> 
-> >> So, basically, DMA_PRIVATE set -> async_tx usage not allowed.
-> >> DMA_PRIVATE clear -> async_tx usage permitted.  It really is that
-> >> simple.
-> > 
-> > DMA_PRIVATE is a dma_device flag, not a dma_chan flag. As soon as one
-> > channel is allocated by __dma_request_channel() the whole device is
-> > marked with DMA_PRIVATE, making all channels private. What am I missing ?
-> 
-> I can't answer that - I don't know why the previous authors decided to
-> make it a DMA-device wide property - presumably there are DMA controllers
-> where this matters.
+Gr{oetje,eeting}s,
 
-If I understand the history correctly, the reason to make DMA_PRIVATE a device 
-flag is to avoid starving slaves by allocating all channels of a device for 
-memcpy. If the DMA_PRIVATE flag is set by the DMA engine driver that works as 
-expected. If the DMA engine can be used for both, though, there's no 
-guarantee, and the behaviour won't be very predictable.
+                        Geert
 
-By the way, shouldn't DMA_PRIVATE be renamed to something more explicit, such 
-as DMA_NO_MEMCPY or DMA_SLAVE_ONLY ?
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-> However, one thing to realise is that a dma_device is a virtual concept -
-> it is a set of channels which share a common set of properties.  It is not
-> a physical device.  It is entirely reasonable for a set of channels on a
-> physical device to be shared between two different dma_device instances
-> and handed out by the driver code as needed.
-
-When the channels are independent, sure, but they sometimes share hardware 
-resources. For instance the Renesas R-Car Gen2 SoCs have 2 generic-purpose DMA 
-engines usable for both memcpy and slave transfers, each of them having 15 
-channels. Each DMA engine arbitrates memory accesses from the different 
-channels, using either fixed priorities, or a round-robin arbitration. In that 
-case it wouldn't make much sense to split the 15 channels across several 
-dma_device instances.
-
-I actually have the opposite problem, in my case channels of physically 
-separate DMA engines can be used interchangeably to serve the system's slaves. 
-Using the DMA engine DT bindings, DT nodes of the slaves currently reference a 
-specific DMA engine, even if they can be served by both. This leads to limited 
-dynamic channel allocation capabilities (especially when taking into account 
-lazy channel allocation as mentioned in another mail in this thread).
-
-> >>> Similarly, the DMA engine API is split in functions with different
-> >>> prefixes (mostly dmaengine_*, dma_async_*, dma_*, and various
-> >>> unprefixed niceties such as async_tx_ack or txd_lock. If there's a
-> >>> rationale for that (beyond just historical reasons) it should also
-> >>> be documented, otherwise a cleanup would help all the confused DMA
-> >>> engine users (myself included).
-> >> 
-> >> dmaengine_* are generally the interface functions to the DMA engine
-> >> code, which have been recently introduced to avoid the multiple levels of
-> >> pointer indirection having to be typed in every driver.
-> >> 
-> >> dma_async_* are the DMA engine interface functions for the async_tx API.
-> >> 
-> >> dma_* predate the dmaengine_* naming, and are probably too generic, so
-> >> should probably end up being renamed to dmaengine_*.
-> > 
-> > Thank you for the confirmation. I'll see if I can cook up a patch. It will
-> > likely be pretty large and broad though, but I guess there's no way around
-> > it.
-> >
-> >> txd_* are all about the DMA engine descriptors.
-> >> 
-> >> async_tx_* are the higher level async_tx API functions.
-> > 
-> > Thank you for the information. How about the dma_async_* functions, should
-> > they be renamed to dmaengine_* as well ? Or are some of them part of the
-> > async_tx_* API ?
-> 
-> Well, these:
-> 
-> dma_async_device_register
-> dma_async_device_unregister
-> dma_async_tx_descriptor_init
-> 
-> are more DMA engine core <-> DMA engine driver interface functions than
-> user functions.  The remainder of the dma_async_* functions are internal
-> to the async_tx API.
-
-I was also thinking about dma_async_issue_pending(). Isn't that function part 
-of the DMA engine API rather than the async API ?
-
--- 
-Regards,
-
-Laurent Pinchart
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
