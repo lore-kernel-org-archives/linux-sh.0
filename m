@@ -1,50 +1,82 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 22 Aug 2014 03:55:03 +0000
-Subject: Re: [PATCH] ARM: shmobile: sh73a0: Remove duplicate CPUFreq bits
-Message-Id: <20140822035459.GQ9099@verge.net.au>
+From: sergei.shtylyov@cogentembedded.com
+Date: Wed, 06 Aug 2014 18:38:22 +0000
+Subject: [PATCH] ARM: shmobile: koelsch: add VIN1/ADV7180 DT support
+Message-Id: <2131152.vMTPsJUYLQ@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140820130707.350.39869.sendpatchset@w520>
-In-Reply-To: <20140820130707.350.39869.sendpatchset@w520>
+References: <201408020402.14560.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201408020402.14560.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Aug 20, 2014 at 10:07:07PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
-> 
-> The CPUFreq platform device is already registered by
-> shmobile_init_late(), so get rid of sh73a0 specific bits.
-> 
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Define the Koelsch board dependent part of the VIN1 device node. Add the device
+node for Analog  Devices ADV7180  video decoder to  I2C2 bus. Add the necessary
+subnodes to interconnect VIN1 and ADV7180 devices.
 
-Thanks, I have queued this up.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-> ---
-> 
->  Built of top of renesas-devel-20140820-v3.17-rc1
-> 
->  arch/arm/mach-shmobile/setup-sh73a0.c |    5 -----
->  1 file changed, 5 deletions(-)
-> 
-> --- 0001/arch/arm/mach-shmobile/setup-sh73a0.c
-> +++ work/arch/arm/mach-shmobile/setup-sh73a0.c	2014-08-19 23:06:54.000000000 +0900
-> @@ -775,17 +775,12 @@ void __init sh73a0_add_early_devices(voi
->  
->  void __init sh73a0_add_standard_devices_dt(void)
->  {
-> -	struct platform_device_info devinfo = { .name = "cpufreq-cpu0", .id = -1, };
-> -
->  	/* clocks are setup late during boot in the case of DT */
->  	sh73a0_clock_init();
->  
->  	platform_add_devices(sh73a0_devices_dt,
->  			     ARRAY_SIZE(sh73a0_devices_dt));
->  	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
-> -
-> -	/* Instantiate cpufreq-cpu0 */
-> -	platform_device_register_full(&devinfo);
->  }
->  
->  static const char *sh73a0_boards_compat_dt[] __initdata = {
-> 
+---
+This patch is against the 'renesas-devel-v3.16-20140804' tag of Simon Horman's
+'renesas.git' repo. It requires the 'soc_camera' and 'rcar_vin' device tree
+support patches (already merged to the 'media_tree.git' repo) in order to work.
+
+ arch/arm/boot/dts/r8a7791-koelsch.dts |   35 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7791-koelsch.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ renesas/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -289,6 +289,11 @@
+ 		renesas,groups = "usb1";
+ 		renesas,function = "usb1";
+ 	};
++
++	vin1_pins: vin1 {
++		renesas,groups = "vin1_data8", "vin1_clk";
++		renesas,function = "vin1";
++	};
+ };
+ 
+ &ether {
+@@ -416,6 +421,19 @@
+ 	status = "okay";
+ 	clock-frequency = <400000>;
+ 
++	composite-in@20 {
++		compatible = "adi,adv7180";
++		reg = <0x20>;
++		remote = <&vin1>;
++
++		port {
++			adv7180: endpoint {
++				bus-width = <8>;
++				remote-endpoint = <&vin1ep>;
++			};
++		};
++	};
++
+ 	eeprom@50 {
+ 		compatible = "renesas,24c02";
+ 		reg = <0x50>;
+@@ -463,3 +481,20 @@
+ &cpu0 {
+ 	cpu0-supply = <&vdd_dvfs>;
+ };
++
++/* composite video input */
++&vin1 {
++	status = "ok";
++	pinctrl-0 = <&vin1_pins>;
++	pinctrl-names = "default";
++
++	port {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		vin1ep: endpoint {
++			remote-endpoint = <&adv7180>;
++			bus-width = <8>;
++		};
++	};
++};
