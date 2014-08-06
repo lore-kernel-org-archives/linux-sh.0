@@ -1,36 +1,59 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 29 Aug 2014 13:26:19 +0000
-Subject: [PATCH 2/5] ARM: shmobile: sh7372: Make domain_devices[] static __initdata
-Message-Id: <1409318782-28133-3-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 06 Aug 2014 01:49:08 +0000
+Subject: [PATCH 2/5 v2] ARM: shmobile: r8a7778: add generation level compatible for SDHI
+Message-Id: <87lhr28k19.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
+	<87oavy8k3v.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87oavy8k3v.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Make the domain_devices[] array static and __initdata, to reduce kernel
-size:
-  - Making it static gets rid of the code to copy the data to the stack,
-  - Marking it __initdata allows more init memory to be freed.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/setup-sh7372.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+v1 -> v2
 
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index ea63fbe2538c..d646c8d12423 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -928,7 +928,7 @@ static struct platform_device *sh7372_late_devices[] __initdata = {
+ - no change
+
+ arch/arm/boot/dts/r8a7778.dtsi |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index ecfdf4b..7986cf27 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -206,7 +206,7 @@
+ 	};
  
- void __init sh7372_add_standard_devices(void)
- {
--	struct pm_domain_device domain_devices[] = {
-+	static struct pm_domain_device domain_devices[] __initdata = {
- 		{ "A3RV", &vpu_device, },
- 		{ "A4MP", &spu0_device, },
- 		{ "A4MP", &spu1_device, },
+ 	sdhi0: sd@ffe4c000 {
+-		compatible = "renesas,sdhi-r8a7778";
++		compatible = "renesas,sdhi-r8a7778", "renesas,sdhi-rcar-gen1";
+ 		reg = <0xffe4c000 0x100>;
+ 		interrupts = <0 87 IRQ_TYPE_LEVEL_HIGH>;
+ 		cap-sd-highspeed;
+@@ -215,7 +215,7 @@
+ 	};
+ 
+ 	sdhi1: sd@ffe4d000 {
+-		compatible = "renesas,sdhi-r8a7778";
++		compatible = "renesas,sdhi-r8a7778", "renesas,sdhi-rcar-gen1";
+ 		reg = <0xffe4d000 0x100>;
+ 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
+ 		cap-sd-highspeed;
+@@ -224,7 +224,7 @@
+ 	};
+ 
+ 	sdhi2: sd@ffe4f000 {
+-		compatible = "renesas,sdhi-r8a7778";
++		compatible = "renesas,sdhi-r8a7778", "renesas,sdhi-rcar-gen1";
+ 		reg = <0xffe4f000 0x100>;
+ 		interrupts = <0 86 IRQ_TYPE_LEVEL_HIGH>;
+ 		cap-sd-highspeed;
 -- 
 1.7.9.5
 
