@@ -1,7 +1,7 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 06 Aug 2014 08:46:39 +0000
+Date: Wed, 06 Aug 2014 12:47:39 +0000
 Subject: Re: [PATCH 5/6] dmaengine: rcar-dmac: Add Renesas R-Car Gen2 DMA Controller (DMAC) driver
-Message-Id: <CAMuHMdW8Vhn1R6tmP20m2HzE=0X2uO0DqGV-F3pjRF1GRHY49g@mail.gmail.com>
+Message-Id: <CAMuHMdVWeonmPjzNV9bOEcYvsRMruzc+jkVYRf_gZwk8D1id+A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <7ae1dbb4f4a79a529250600cc2eeb7c31a644938.1406766014.git.horms+renesas@verge.net.au>
 In-Reply-To: <7ae1dbb4f4a79a529250600cc2eeb7c31a644938.1406766014.git.horms+renesas@verge.net.au>
@@ -12,23 +12,20 @@ To: linux-sh@vger.kernel.org
 
 On Thu, Jul 31, 2014 at 2:34 AM, Simon Horman
 <horms+renesas@verge.net.au> wrote:
-> --- a/drivers/dma/sh/Kconfig
-> +++ b/drivers/dma/sh/Kconfig
-> @@ -52,3 +52,11 @@ config RCAR_AUDMAC_PP
->         depends on SH_DMAE_BASE
->         help
->           Enable support for the Renesas R-Car Audio DMAC Peripheral Peripheral controllers.
-> +
-> +config RCAR_DMAC
-> +       tristate "Renesas R-Car Gen2 DMA Controller"
-> +       depends on ARCH_SHMOBILE || COMPILE_TEST
-> +       select DMA_ENGINE
-> +       help
-> +         This driver supports the general purpose DMA controller found in the
-> +         Renesas R-Car second generator SoCs.
+> +static struct dma_async_tx_descriptor *
+> +rcar_dmac_prep_dma_cyclic(struct dma_chan *chan, dma_addr_t buf_addr,
+> +                         size_t buf_len, size_t period_len,
+> +                         enum dma_transfer_direction dir, unsigned long flags,
+> +                         void *context)
 
-generation
+BTW, the "context" parameter should be removed, as Laurent's independent
+patch to remove it everywhere else has hit slave-dma/next"
 
+drivers/dma/sh/rcar-dmac.c: In function 'rcar_dmac_probe':
+drivers/dma/sh/rcar-dmac.c:1462:33: warning: assignment from
+incompatible pointer type
+  engine->device_prep_dma_cyclic = rcar_dmac_prep_dma_cyclic;
+                                 ^
 Gr{oetje,eeting}s,
 
                         Geert
