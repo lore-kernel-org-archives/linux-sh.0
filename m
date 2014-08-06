@@ -1,70 +1,68 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 20 Aug 2014 00:24:11 +0000
-Subject: [PATCH 2/8] ARM: shmobile: r8a7791: Add CMT devices to DT
-Message-Id: <ceaa18949a190cf335408751cac0de2a0de0b9e7.1408492048.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 06 Aug 2014 01:49:32 +0000
+Subject: [PATCH 3/5 v2] ARM: shmobile: r8a7779: add generation level compatible for SDHI
+Message-Id: <87k36m8k0l.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408492048.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408492048.git.horms+renesas@verge.net.au>
+References: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
+	<87oavy8k3v.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87oavy8k3v.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Add the CMT0 and CMT1 counters to the r8a7791 device tree and make them
-disabled by default.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Simon Horman <horms+renesas@verge.net.au>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 32 ++++++++++++++++++++++++++++++++
- 1 file changed, 32 insertions(+)
+v1 -> v2
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 0d82a4b..bdb9ac1 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -189,6 +189,38 @@
- 			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
+- no change
+
+ arch/arm/boot/dts/r8a7779.dtsi |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 463e3fd..e56e174 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -316,7 +316,7 @@
  	};
  
-+	cmt0: timer@ffca0000 {
-+		compatible = "renesas,cmt-48-gen2";
-+		reg = <0 0xffca0000 0 0x1004>;
-+		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7791_CLK_CMT0>;
-+		clock-names = "fck";
-+
-+		renesas,channels-mask = <0x60>;
-+
-+		status = "disabled";
-+	};
-+
-+	cmt1: timer@e6130000 {
-+		compatible = "renesas,cmt-48-gen2";
-+		reg = <0 0xe6130000 0 0x1004>;
-+		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 122 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 123 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 124 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 125 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 126 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 127 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7791_CLK_CMT1>;
-+		clock-names = "fck";
-+
-+		renesas,channels-mask = <0xff>;
-+
-+		status = "disabled";
-+	};
-+
- 	irqc0: interrupt-controller@e61c0000 {
- 		compatible = "renesas,irqc-r8a7791", "renesas,irqc";
- 		#interrupt-cells = <2>;
+ 	sdhi0: sd@ffe4c000 {
+-		compatible = "renesas,sdhi-r8a7779";
++		compatible = "renesas,sdhi-r8a7779", "renesas,sdhi-rcar-gen1";
+ 		reg = <0xffe4c000 0x100>;
+ 		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7779_CLK_SDHI0>;
+@@ -326,7 +326,7 @@
+ 	};
+ 
+ 	sdhi1: sd@ffe4d000 {
+-		compatible = "renesas,sdhi-r8a7779";
++		compatible = "renesas,sdhi-r8a7779", "renesas,sdhi-rcar-gen1";
+ 		reg = <0xffe4d000 0x100>;
+ 		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7779_CLK_SDHI1>;
+@@ -336,7 +336,7 @@
+ 	};
+ 
+ 	sdhi2: sd@ffe4e000 {
+-		compatible = "renesas,sdhi-r8a7779";
++		compatible = "renesas,sdhi-r8a7779", "renesas,sdhi-rcar-gen1";
+ 		reg = <0xffe4e000 0x100>;
+ 		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7779_CLK_SDHI2>;
+@@ -346,7 +346,7 @@
+ 	};
+ 
+ 	sdhi3: sd@ffe4f000 {
+-		compatible = "renesas,sdhi-r8a7779";
++		compatible = "renesas,sdhi-r8a7779", "renesas,sdhi-rcar-gen1";
+ 		reg = <0xffe4f000 0x100>;
+ 		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7779_CLK_SDHI3>;
 -- 
-2.0.1
+1.7.9.5
 
