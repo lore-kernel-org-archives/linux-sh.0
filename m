@@ -1,49 +1,62 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 22 Aug 2014 03:39:46 +0000
-Subject: Re: [PATCH 0/4] ARM: shmobile: dtsi: interrupt-parent cleanups
-Message-Id: <20140822033942.GM9099@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 06 Aug 2014 01:48:42 +0000
+Subject: [PATCH 1/5 v2] mmc: shmobile: add renesas,sdhi-rcar-gen1/gen2 in DT compatible
+Message-Id: <87mwbi8k1z.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1408544914-21742-1-git-send-email-geert+renesas@glider.be>
- <CAMuHMdWFhqv5j8g8wGnaXBOZ7r7vBpOnW4K_KY7WAs04OYxQQg@mail.gmail.com>
- <CANqRtoTDdrR-VJ4dh96BJBmw5b-fHPRELNTrHTZK7jEXYasmJQ@mail.gmail.com>
-In-Reply-To: <CANqRtoTDdrR-VJ4dh96BJBmw5b-fHPRELNTrHTZK7jEXYasmJQ@mail.gmail.com>
+References: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
+	<87oavy8k3v.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87oavy8k3v.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Geert Uytterhoeven <geert+renesas@glider.be>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Wed, Aug 20, 2014 at 11:53:05PM +0900, Magnus Damm wrote:
-> On Wed, Aug 20, 2014 at 11:32 PM, Geert Uytterhoeven
-> <geert@linux-m68k.org> wrote:
-> > On Wed, Aug 20, 2014 at 4:28 PM, Geert Uytterhoeven
-> > <geert+renesas@glider.be> wrote:
-> >> This series cleans up interrupt-parent use, to match common use.
-> >> It makes sure there's an "interrupt-parent = <&gic>;" at the top, which is
-> >> thus inherited by all child nodes, and removes superflous "interrupt-parent"
-> >> properties from the individual child nodes.
-> >>
-> >> This was tested on r8a7791/koelsch only.
-> >>
-> >> Geert Uytterhoeven (4):
-> >>   ARM: shmobile: r8a7779 dtsi: Remove superfluous interrupt-parent
-> >>   ARM: shmobile: r8a7790 dtsi: Remove superfluous interrupt-parent
-> >>   ARM: shmobile: r8a7790 dtsi: Remove superfluous interrupt-parent
-> >
-> > Oops, that should have been "r8a7791". I've sent a fixed version of that patch.
-> >
-> >>   ARM: shmobile: sh73a0 dtsi: Move interrupt-parent to the top
-> 
-> Thanks, those look like fine cleanups to me!
-> 
-> Acked-by: Magnus Damm <damm+renesas@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, applied.
+This patch adds DT compatible for Renesas R-Car Gen1/Gen2.
+Current driver has SoC level .compatible
+(r8a7778/r8a7779/r8a7790/r8a7791),
+but these can be match as generation level.
 
-> I suppose both your and my recent patches need a bit of testing, so I
-> guess it may make sense for Simon to merge one series at a time to
-> avoid introducing multiple potential issues simultaneously... Combine
-> early delay issues with Kconfig errors and potential interrupt parent
-> error and you have something fun to debug. =)
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-Hopefully I haven't merged too much :)
+ - update tmio_mmc.txt
+
+ Documentation/devicetree/bindings/mmc/tmio_mmc.txt |    2 ++
+ drivers/mmc/host/sh_mobile_sdhi.c                  |    2 ++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
+index 6a2a116..51c05cf 100644
+--- a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
++++ b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
+@@ -11,6 +11,8 @@ optional bindings can be used.
+ 
+ Required properties:
+ - compatible:	"renesas,sdhi-shmobile" - a generic sh-mobile SDHI unit
++		"renesas,sdhi-rcar-gen1" - a generic R-Car Gen1 SDHI unit
++		"renesas,sdhi-rcar-gen2" - a generic R-Car Gen2 SDHI unit
+ 		"renesas,sdhi-sh7372" - SDHI IP on SH7372 SoC
+ 		"renesas,sdhi-sh73a0" - SDHI IP on SH73A0 SoC
+ 		"renesas,sdhi-r8a73a4" - SDHI IP on R8A73A4 SoC
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 91058da..cb3bb39 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -64,8 +64,10 @@ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
+ 	{ .compatible = "renesas,sdhi-sh73a0", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{ .compatible = "renesas,sdhi-r8a73a4", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,sdhi-rcar-gen1", .data = &of_rcar_gen1_compatible, },
+ 	{ .compatible = "renesas,sdhi-r8a7778", .data = &of_rcar_gen1_compatible, },
+ 	{ .compatible = "renesas,sdhi-r8a7779", .data = &of_rcar_gen1_compatible, },
++	{ .compatible = "renesas,sdhi-rcar-gen2", .data = &of_rcar_gen2_compatible, },
+ 	{ .compatible = "renesas,sdhi-r8a7790", .data = &of_rcar_gen2_compatible, },
+ 	{ .compatible = "renesas,sdhi-r8a7791", .data = &of_rcar_gen2_compatible, },
+ 	{},
+-- 
+1.7.9.5
+
