@@ -1,37 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 27 Aug 2014 04:59:57 +0000
-Subject: [PATCH 0/3] clocksource: Document Renesas SoC specific bindings
-Message-Id: <1409115600-26192-1-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 06 Aug 2014 12:59:08 +0000
+Subject: [PATCH 11/12] ARM: shmobile: r8a7790 dtsi: Enable DMA for QSPI
+Message-Id: <1407329949-5695-12-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>, Simon Horman <horms@verge.net.au>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, dmaengine@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, devicetree@vger.kernel.org
 
-In general Renesas hardware is not documented to the extent where the
-relationship between IP blocks on different SoCs can be assumed although
-they may appear to operate the same way. Furthermore the documentation
-typically does not specify a version for individual IP blocks. For these
-reasons a convention of using the SoC name in place of a version and
-providing SoC-specific compat strings has been adopted.
+Add a DMA property to the QSPI node
 
-Although not universally liked this convention is used in the bindings for
-the drivers a number of drivers for Renesas hardware. The purpose of this
-patch is to update the Renesas clocksource drivers to follow this convention.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: devicetree@vger.kernel.org
+---
+This depends on "[PATCH v2 7/8] ARM: shmobile: r8a7790: Add DMAC devices
+to DT" of series "[PATCH v2 0/8] R-Car Gen2 DMA Controller driver".
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 2 ++
+ 1 file changed, 2 insertions(+)
 
-I plan to follow up with patches to use these new bindings in the
-dtsi files for the affected SoCs.
-
-Simon Horman (3):
-  clocksource: sh_cmt: Document SoC specific bindings
-  clocksource: sh_mtu2: Document r7s72100 binding
-  clocksource: sh_tmu: Document r8a7779 binding
-
- .../devicetree/bindings/timer/renesas,cmt.txt      | 26 +++++++++++++++++++++-
- .../devicetree/bindings/timer/renesas,mtu2.txt     |  6 +++--
- .../devicetree/bindings/timer/renesas,tmu.txt      |  6 +++--
- 3 files changed, 33 insertions(+), 5 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 4c74f219c824..495771b3cb34 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -978,6 +978,8 @@
+ 		reg = <0 0xe6b10000 0 0x2c>;
+ 		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7790_CLK_QSPI_MOD>;
++		dmas = <&dmac0 0x17>, <&dmac0 0x18>;
++		dma-names = "tx", "rx";
+ 		num-cs = <1>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
 -- 
-2.0.1
+1.9.1
 
