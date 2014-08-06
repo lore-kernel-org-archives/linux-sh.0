@@ -1,68 +1,39 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Wed, 06 Aug 2014 01:49:56 +0000
-Subject: [PATCH 4/5 v2] ARM: shmobile: r8a7790: add generation level compatible for SDHI
-Message-Id: <87iom68jzy.wl%kuninori.morimoto.gx@gmail.com>
+Date: Wed, 06 Aug 2014 01:47:35 +0000
+Subject: [PATCH 0/5 v2] mmc: shmobile: adds generatoin level DT compatible
+Message-Id: <87oavy8k3v.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
-	<87oavy8k3v.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87oavy8k3v.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
 Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi Chris, Simon
+
+These are v2 patches of Renesas SDHI driver.
+These patches add R-Car generatoin level
+DT compatible on driver/platform.
+
+Kuninori Morimoto (5):
+      mmc: shmobile: add renesas,sdhi-rcar-gen1/gen2 in DT compatible
+      ARM: shmobile: r8a7778: add generation level compatible for SDHI
+      ARM: shmobile: r8a7779: add generation level compatible for SDHI
+      ARM: shmobile: r8a7790: add generation level compatible for SDHI
+      ARM: shmobile: r8a7791: add generation level compatible for SDHI
+
+ Documentation/devicetree/bindings/mmc/tmio_mmc.txt |    2 ++
+ arch/arm/boot/dts/r8a7778.dtsi                     |    6 +++---
+ arch/arm/boot/dts/r8a7779.dtsi                     |    8 ++++----
+ arch/arm/boot/dts/r8a7790.dtsi                     |    8 ++++----
+ arch/arm/boot/dts/r8a7791.dtsi                     |    6 +++---
+ drivers/mmc/host/sh_mobile_sdhi.c                  |    2 ++
+ 6 files changed, 18 insertions(+), 14 deletions(-)
+
+
+Best regards
 ---
-v1 -> v2
-
-- no change
-
- arch/arm/boot/dts/r8a7790.dtsi |    8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 7218bff..570e433 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -353,7 +353,7 @@
- 	};
- 
- 	sdhi0: sd@ee100000 {
--		compatible = "renesas,sdhi-r8a7790";
-+		compatible = "renesas,sdhi-r8a7790", "renesas,sdhi-rcar-gen2";
- 		reg = <0 0xee100000 0 0x200>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
-@@ -362,7 +362,7 @@
- 	};
- 
- 	sdhi1: sd@ee120000 {
--		compatible = "renesas,sdhi-r8a7790";
-+		compatible = "renesas,sdhi-r8a7790", "renesas,sdhi-rcar-gen2";
- 		reg = <0 0xee120000 0 0x200>;
- 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
-@@ -371,7 +371,7 @@
- 	};
- 
- 	sdhi2: sd@ee140000 {
--		compatible = "renesas,sdhi-r8a7790";
-+		compatible = "renesas,sdhi-r8a7790", "renesas,sdhi-rcar-gen2";
- 		reg = <0 0xee140000 0 0x100>;
- 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
-@@ -380,7 +380,7 @@
- 	};
- 
- 	sdhi3: sd@ee160000 {
--		compatible = "renesas,sdhi-r8a7790";
-+		compatible = "renesas,sdhi-r8a7790", "renesas,sdhi-rcar-gen2";
- 		reg = <0 0xee160000 0 0x100>;
- 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI3>;
--- 
-1.7.9.5
-
+Kuninori Morimoto
