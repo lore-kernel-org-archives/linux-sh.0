@@ -1,33 +1,46 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Fri, 22 Aug 2014 04:32:35 +0000
-Subject: Re: [PATCH] dma: rcar-audmapp: Fix for no corresponding slave ID
-Message-Id: <87egw96t5t.wl%kuninori.morimoto.gx@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 06 Aug 2014 12:59:06 +0000
+Subject: [PATCH 09/12] [v3] ARM: shmobile: r8a7791 dtsi: Enable DMA for QSPI
+Message-Id: <1407329949-5695-10-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d2buk6j7.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87d2buk6j7.wl%kuninori.morimoto.gx@gmail.com>
+References: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1407329949-5695-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
+Cc: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
+Add a DMA property to the QSPI node
 
-Hi Simon
-
-> > From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
-> > 
-> > In case of no corresponding slave ID, the audmapp_set_slave() returns
-> > -ENXIO same as sh_dmae_set_slave() of shdmac.c.
-> > DMAEngine might return wrong channel without this patch
-> 
-> Hi Morimoto-san,
-> 
-> could you please make a note of which commit introduced this problem
-> and if is known to manifest at this time?
-
-This issue happens under non-DT style,
-and, upstream code doesn't have it.
-So, this patch solved hidden bug for upstream.
-
-Best regards
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: devicetree@vger.kernel.org
 ---
-Kuninori Morimoto
+This depends on "[PATCH v2 8/8] ARM: shmobile: r8a7791: Add DMAC devices
+to DT" of series "[PATCH v2 0/8] R-Car Gen2 DMA Controller driver".
+
+v2:
+  - Update DMA specifiers to match the renesas,rcar-dmac bindings,
+v2:
+  - QSPI needs to use 8-bit accesses for DMA, not 32-bit,
+  - Reorder: TX first, RX second.
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index d59af615e365..8186c9f4a18a 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1044,6 +1044,8 @@
+ 		reg = <0 0xe6b10000 0 0x2c>;
+ 		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7791_CLK_QSPI_MOD>;
++		dmas = <&dmac0 0x17>, <&dmac0 0x18>;
++		dma-names = "tx", "rx";
+ 		num-cs = <1>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-- 
+1.9.1
+
