@@ -1,22 +1,29 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 27 Aug 2014 00:09:58 +0000
-Subject: Re: [PATCH 02/03] ARM: shmobile: Consolidate Legacy SH_CLK_CPG Kconfig
-Message-Id: <20140827000958.GE8950@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 06 Aug 2014 01:22:00 +0000
+Subject: [PATCH 0/3 v2] clk: shmobile: clk: shmobile: add missing 0x0100 for SDCKCR
+Message-Id: <874mxql8eh.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140825034550.9316.14635.sendpatchset@w520>
-In-Reply-To: <20140825034550.9316.14635.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Aug 25, 2014 at 10:41:40AM +0200, Geert Uytterhoeven wrote:
-> On Mon, Aug 25, 2014 at 5:45 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> > Consolidate SH_CLK_CPG under ARCH_SHMOBILE_LEGACY so it can
-> > be shared by the legacy ARM mach-shmobile support code.
-> >
-> > Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> 
-> Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 
-Thanks, I have queued this up.
+Hi Simon, Mike
+
+These patches fixup hidden-bug for R-Car Gen2 clock.
+
+Kuninori Morimoto (3):
+      clk: shmobile: add missing 0x0100 for SDCKCR
+      ARM: shmobile: r8a7790: add missing 0x0100 for SDCKCR
+      ARM: shmobile: r8a7791: add missing 0x0100 for SDCKCR
+
+ arch/arm/mach-shmobile/clock-r8a7790.c |    4 ++--
+ arch/arm/mach-shmobile/clock-r8a7791.c |    2 +-
+ drivers/clk/shmobile/clk-rcar-gen2.c   |    1 +
+ 3 files changed, 4 insertions(+), 3 deletions(-)
+
+
+Best regards
+---
+Kuninori Morimoto
