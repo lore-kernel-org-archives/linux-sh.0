@@ -1,15 +1,15 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 05 Aug 2014 03:17:25 +0000
-Subject: [PATCH 4/5] ARM: shmobile: r8a7790: add generation level compatible for SDHI
-Message-Id: <87r40vocak.wl%kuninori.morimoto.gx@renesas.com>
+Date: Wed, 06 Aug 2014 04:40:42 +0000
+Subject: [PATCH 4/5] ARM: shmobile: r8a7790: add generation level compatible for i2c
+Message-Id: <87mwbiw7qv.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
+References: <87silaw7t2.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87silaw7t2.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
-Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org
+To: Wolfram Sang <wsa@the-dreams.de>, Simon <horms@verge.net.au>
+Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-I2C <linux-i2c@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
@@ -19,45 +19,45 @@ Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
  1 file changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 7218bff..570e433 100644
+index 7218bff..02d07b7 100644
 --- a/arch/arm/boot/dts/r8a7790.dtsi
 +++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -353,7 +353,7 @@
- 	};
- 
- 	sdhi0: sd@ee100000 {
--		compatible = "renesas,sdhi-r8a7790";
-+		compatible = "renesas,sdhi-r8a7790", "renesas,sdhi-rcar-gen2";
- 		reg = <0 0xee100000 0 0x200>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
-@@ -362,7 +362,7 @@
- 	};
- 
- 	sdhi1: sd@ee120000 {
--		compatible = "renesas,sdhi-r8a7790";
-+		compatible = "renesas,sdhi-r8a7790", "renesas,sdhi-rcar-gen2";
- 		reg = <0 0xee120000 0 0x200>;
- 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
-@@ -371,7 +371,7 @@
- 	};
- 
- 	sdhi2: sd@ee140000 {
--		compatible = "renesas,sdhi-r8a7790";
-+		compatible = "renesas,sdhi-r8a7790", "renesas,sdhi-rcar-gen2";
- 		reg = <0 0xee140000 0 0x100>;
- 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
-@@ -380,7 +380,7 @@
- 	};
- 
- 	sdhi3: sd@ee160000 {
--		compatible = "renesas,sdhi-r8a7790";
-+		compatible = "renesas,sdhi-r8a7790", "renesas,sdhi-rcar-gen2";
- 		reg = <0 0xee160000 0 0x100>;
- 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI3>;
+@@ -252,7 +252,7 @@
+ 	i2c0: i2c@e6508000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,i2c-r8a7790";
++		compatible = "renesas,i2c-r8a7790", "renesas,i2c-rcar-gen2";
+ 		reg = <0 0xe6508000 0 0x40>;
+ 		interrupts = <0 287 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7790_CLK_I2C0>;
+@@ -262,7 +262,7 @@
+ 	i2c1: i2c@e6518000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,i2c-r8a7790";
++		compatible = "renesas,i2c-r8a7790", "renesas,i2c-rcar-gen2";
+ 		reg = <0 0xe6518000 0 0x40>;
+ 		interrupts = <0 288 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7790_CLK_I2C1>;
+@@ -272,7 +272,7 @@
+ 	i2c2: i2c@e6530000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,i2c-r8a7790";
++		compatible = "renesas,i2c-r8a7790", "renesas,i2c-rcar-gen2";
+ 		reg = <0 0xe6530000 0 0x40>;
+ 		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7790_CLK_I2C2>;
+@@ -282,7 +282,7 @@
+ 	i2c3: i2c@e6540000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,i2c-r8a7790";
++		compatible = "renesas,i2c-r8a7790", "renesas,i2c-rcar-gen2";
+ 		reg = <0 0xe6540000 0 0x40>;
+ 		interrupts = <0 290 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7790_CLK_I2C3>;
 -- 
 1.7.9.5
 
