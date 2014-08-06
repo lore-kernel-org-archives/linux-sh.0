@@ -1,46 +1,49 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 06 Aug 2014 12:59:04 +0000
-Subject: [PATCH 07/12] spi: sh-msiof: Configure DMA slave bus width
-Message-Id: <1407329949-5695-8-git-send-email-geert+renesas@glider.be>
+From: Mark Brown <broonie@kernel.org>
+Date: Wed, 06 Aug 2014 20:36:23 +0000
+Subject: Re: [PATCH 07/12] spi: sh-msiof: Configure DMA slave bus width
+Message-Id: <20140806203623.GW17528@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="kJlOB0td3EGXEEtS"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>, Simon Horman <horms@verge.net.au>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, dmaengine@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+ <1407329949-5695-8-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1407329949-5695-8-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+To: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-The new Renesas R-Car Gen2 DMA Controller driver (rcar-dmac) requires
-explicit configuration of the DMA slave bus width.
-Hardcode the DMA transfer size to 4 bytes, as MSIOF DMA is limited to
-32-bit words.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- drivers/spi/spi-sh-msiof.c | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+--kJlOB0td3EGXEEtS
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 887c2084130f..b19cbb4cb4a0 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -987,10 +987,13 @@ static struct dma_chan *sh_msiof_request_dma_chan(struct device *dev,
- 	memset(&cfg, 0, sizeof(cfg));
- 	cfg.slave_id = id;
- 	cfg.direction = dir;
--	if (dir = DMA_MEM_TO_DEV)
-+	if (dir = DMA_MEM_TO_DEV) {
- 		cfg.dst_addr = port_addr;
--	else
-+		cfg.dst_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
-+	} else {
- 		cfg.src_addr = port_addr;
-+		cfg.src_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
-+	}
- 
- 	ret = dmaengine_slave_config(chan, &cfg);
- 	if (ret) {
--- 
-1.9.1
+On Wed, Aug 06, 2014 at 02:59:04PM +0200, Geert Uytterhoeven wrote:
+> The new Renesas R-Car Gen2 DMA Controller driver (rcar-dmac) requires
+> explicit configuration of the DMA slave bus width.
+> Hardcode the DMA transfer size to 4 bytes, as MSIOF DMA is limited to
+> 32-bit words.
 
+Applied, thanks.
+
+--kJlOB0td3EGXEEtS
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBAgAGBQJT4pHEAAoJELSic+t+oim9VMoP/1EgrIQwtywULQg02bazBtOY
+OllfIauTXe1qr49RfFRr1elpp5G6/vlGb+0gQytNXajCJWXXOg9iaSBNESYkpawX
+XXXK65GJi88BKRtUHjmTpaFJpteWz2ZpaBWP0oAeY/Tpm4Q6l1p1x6ZktldS6NM3
+EC7uBWqxbRbcBS7eJZ3TtlZsjFFmsq9GUqEH966V3KS583T3w/VwNZgDPVjDgsLm
+EHH9zb3EzbyjXZWF8pfC34Gt8b6Bn/prm4kkgtLfWxEJfHF+SbAmXDO5zJZuHqee
+ynZ9oYGKyj8iLaNsfA9lkSsv+GTwcSxlQNUeaOORxB2u1rX/95Q/Pzz8PTa/fZEP
+P3rxx3pr8psSXim2LN01q1oPIgvzKau/jA3M4eyOWQgOlBa0Dxo6piyqQW7PR7zp
+XT8yUqaQMXa2mjptFD+A0idDTy3X9RVTE1ujFhFXk/BVQey1cKxxfH4gomdksYwL
+L1So+jd1T9W4sbzBVUfjVZKCI0oV7bbjZ5mtDH5TAzjXwPcvDx0yiGU9BLmgn6uT
+2WHkblSY+2gqoz7g5FGXQkAi2M4oqlSKgq1DjUfFgdk0dszi+cG8lfEQlGaVcl+x
+PPkjfSCJlyZPKQo1Iygd8m8i8611Mjo4J7qtfjDmsbpoxTA+wJ1XzbgtI2wS0PUR
+ftmcVSRsiuXFebAac7bW
+=+Yjb
+-----END PGP SIGNATURE-----
+
+--kJlOB0td3EGXEEtS--
