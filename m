@@ -1,55 +1,43 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 23 Aug 2014 01:43:34 +0000
-Subject: [PATCH 5/8] ARM: shmobile: ape6evm: Use shmobile_init_delay()
-Message-Id: <911f7cec78af1445d4b0f5f79907cb5bd4522ce5.1408671094.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 06 Aug 2014 01:24:51 +0000
+Subject: [PATCH 3/3 v2] ARM: shmobile: r8a7791: add missing 0x0100 for SDCKCR
+Message-Id: <87y4v2jtpb.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408671094.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408671094.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-The r8a73a4 DTS includes CPU Frequency information so
-adjust the APE6EVM board code to use shmobile_init_delay()
-instead of relying on CPU Frequency information included
-in r8a73a4_init_delay() that is specified in C.
+4bfb358b1d6cdeff8c6a13677f01ed78e9696b98
+(ARM: shmobile: Add r8a7791 legacy SDHI clocks)
+added r8a7791 SDHI clock support.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+But, it is missing
+"0x0100: x 1/8" division ratio.
+This patch fixes hidden bug.
+It is based on R-Car H2 v0.7, R-Car M2 v0.9.
+
+Reported-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-ape6evm-reference.c | 2 +-
- arch/arm/mach-shmobile/board-ape6evm.c           | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7791.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ape6evm-reference.c b/arch/arm/mach-shmobile/board-ape6evm-reference.c
-index 1ecda4b..9e99b15 100644
---- a/arch/arm/mach-shmobile/board-ape6evm-reference.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm-reference.c
-@@ -59,7 +59,7 @@ static const char *ape6evm_boards_compat_dt[] __initdata = {
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index 10e193d..453b231 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -152,7 +152,7 @@ enum {
+ 
+ static struct clk div4_clks[DIV4_NR] = {
+ 	[DIV4_SDH] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 8, 0x0dff, CLK_ENABLE_ON_INIT),
+-	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1de0, CLK_ENABLE_ON_INIT),
++	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1df0, CLK_ENABLE_ON_INIT),
  };
  
- DT_MACHINE_START(APE6EVM_DT, "ape6evm")
--	.init_early	= r8a73a4_init_early,
-+	.init_early	= shmobile_init_delay,
- 	.init_machine	= ape6evm_add_standard_devices,
- 	.init_late	= shmobile_init_late,
- 	.dt_compat	= ape6evm_boards_compat_dt,
-diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-index befbae03..b222f68 100644
---- a/arch/arm/mach-shmobile/board-ape6evm.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm.c
-@@ -283,7 +283,7 @@ static const char *ape6evm_boards_compat_dt[] __initdata = {
- };
- 
- DT_MACHINE_START(APE6EVM_DT, "ape6evm")
--	.init_early	= r8a73a4_init_early,
-+	.init_early	= shmobile_init_delay,
- 	.init_machine	= ape6evm_add_standard_devices,
- 	.init_late	= shmobile_init_late,
- 	.dt_compat	= ape6evm_boards_compat_dt,
+ /* DIV6 clocks */
 -- 
-2.0.1
+1.7.9.5
 
