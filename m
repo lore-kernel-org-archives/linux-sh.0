@@ -1,72 +1,94 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 07 Aug 2014 00:41:08 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 07 Aug 2014 08:27:21 +0000
 Subject: Re: [PATCH 09/12] [v3] ARM: shmobile: r8a7791 dtsi: Enable DMA for QSPI
-Message-Id: <20140807004107.GB30872@verge.net.au>
+Message-Id: <CAMuHMdU+o=CGFMyDVSxSKbpAx1oi1id7zABf-pm_pYzvuGOrWw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
- <1407329949-5695-10-git-send-email-geert+renesas@glider.be>
- <20140807003755.GF32652@verge.net.au>
- <20140807003908.GA30872@verge.net.au>
-In-Reply-To: <20140807003908.GA30872@verge.net.au>
+	<1407329949-5695-10-git-send-email-geert+renesas@glider.be>
+	<20140807003755.GF32652@verge.net.au>
+	<20140807003908.GA30872@verge.net.au>
+	<20140807004107.GB30872@verge.net.au>
+In-Reply-To: <20140807004107.GB30872-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Mark Brown <broonie@kernel.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, dmaengine@vger.kernel.org, devicetree@vger.kernel.org
+To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
+Cc: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On Thu, Aug 07, 2014 at 09:39:08AM +0900, Simon Horman wrote:
-> On Thu, Aug 07, 2014 at 09:37:56AM +0900, Simon Horman wrote:
-> > On Wed, Aug 06, 2014 at 02:59:06PM +0200, Geert Uytterhoeven wrote:
-> > > Add a DMA property to the QSPI node
-> > > 
-> > > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> > > Cc: devicetree@vger.kernel.org
-> > > ---
-> > > This depends on "[PATCH v2 8/8] ARM: shmobile: r8a7791: Add DMAC devices
-> > > to DT" of series "[PATCH v2 0/8] R-Car Gen2 DMA Controller driver".
-> > 
-> > Hi Geert, Hi Laurent,
-> > 
-> > Am I correct in assuming that with this patch applied things
-> > will continue to work the old way until the patch above applied
-> > to the same tree and from there on the user will get the new behaviour?
-> > 
-> > If so I think that I can take this patch as although the driver hasn't been
-> > merged the relevant bindings were added to the subsystem maintainers tree
-> > by "dmaengine: rcar-dmac: Add device tree bindings documentation" and are
-> > available in linux-next.
-> > 
-> > Likewise for "[v3] ARM: shmobile: r8a7791 dtsi: Enable DMA for MSIO".
-> 
-> ... and "ARM: shmobile: r8a7790 dtsi: Enable DMA for QSPI"
+Hi Simon,
 
-... and "ARM: shmobile: r8a7790 dtsi: Enable DMA for MSIO"
+On Thu, Aug 7, 2014 at 2:41 AM, Simon Horman <horms@verge.net.au> wrote:
+> On Thu, Aug 07, 2014 at 09:39:08AM +0900, Simon Horman wrote:
+>> On Thu, Aug 07, 2014 at 09:37:56AM +0900, Simon Horman wrote:
+>> > On Wed, Aug 06, 2014 at 02:59:06PM +0200, Geert Uytterhoeven wrote:
+>> > > Add a DMA property to the QSPI node
+>> > >
+>> > > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>> > > Cc: devicetree@vger.kernel.org
+>> > > ---
+>> > > This depends on "[PATCH v2 8/8] ARM: shmobile: r8a7791: Add DMAC devices
+>> > > to DT" of series "[PATCH v2 0/8] R-Car Gen2 DMA Controller driver".
+>> >
+>> > Hi Geert, Hi Laurent,
+>> >
+>> > Am I correct in assuming that with this patch applied things
+>> > will continue to work the old way until the patch above applied
+>> > to the same tree and from there on the user will get the new behaviour?
+>> >
+>> > If so I think that I can take this patch as although the driver hasn't been
+>> > merged the relevant bindings were added to the subsystem maintainers tree
+>> > by "dmaengine: rcar-dmac: Add device tree bindings documentation" and are
+>> > available in linux-next.
+>> >
+>> > Likewise for "[v3] ARM: shmobile: r8a7791 dtsi: Enable DMA for MSIO".
+>>
+>> ... and "ARM: shmobile: r8a7790 dtsi: Enable DMA for QSPI"
+>
+> ... and "ARM: shmobile: r8a7790 dtsi: Enable DMA for MSIO"
+>
+> and any other similar patches I didn't list above :)
 
-and any other similar patches I didn't list above :)
+Yes[*].
 
-> 
-> > > v2:
-> > >   - Update DMA specifiers to match the renesas,rcar-dmac bindings,
-> > > v2:
-> > >   - QSPI needs to use 8-bit accesses for DMA, not 32-bit,
-> > >   - Reorder: TX first, RX second.
-> > > ---
-> > >  arch/arm/boot/dts/r8a7791.dtsi | 2 ++
-> > >  1 file changed, 2 insertions(+)
-> > > 
-> > > diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-> > > index d59af615e365..8186c9f4a18a 100644
-> > > --- a/arch/arm/boot/dts/r8a7791.dtsi
-> > > +++ b/arch/arm/boot/dts/r8a7791.dtsi
-> > > @@ -1044,6 +1044,8 @@
-> > >  		reg = <0 0xe6b10000 0 0x2c>;
-> > >  		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
-> > >  		clocks = <&mstp9_clks R8A7791_CLK_QSPI_MOD>;
-> > > +		dmas = <&dmac0 0x17>, <&dmac0 0x18>;
-> > > +		dma-names = "tx", "rx";
-> > >  		num-cs = <1>;
-> > >  		#address-cells = <1>;
-> > >  		#size-cells = <0>;
-> > > -- 
-> > > 1.9.1
-> > > 
+If rcar-dma is not available, drivers fall back to PIO, cfr. for rspi:
+
+-renesas_spi e6b10000.spi: DMA available
++renesas_spi e6b10000.spi: dma_request_slave_channel_compat failed
++renesas_spi e6b10000.spi: DMA not available, using PIO
+ renesas_spi e6b10000.spi: registered master spi0
+ spi spi0.0: setup mode 0, 8 bits/w, 30000000 Hz max --> 0
+ m25p80 spi0.0: s25fl512s (65536 Kbytes)
+ 3 ofpart partitions found on MTD device spi0.0
+ Creating 3 MTD partitions on "spi0.0":
+ 0x000000000000-0x000000080000 : "loader"
+ 0x000000080000-0x000000100000 : "bootenv"
+ 0x000000100000-0x000004000000 : "data"
+ renesas_spi e6b10000.spi: registered child spi0.0
+
+and sh-msiof:
+
+-spi_sh_msiof e6e20000.spi: DMA available
++spi_sh_msiof e6e20000.spi: dma_request_slave_channel_compat failed
++spi_sh_msiof e6e20000.spi: DMA not available, using PIO
+ spi_sh_msiof e6e20000.spi: registered master spi1
+ spi spi1.0: setup mode 3, 8 bits/w, 6000000 Hz max --> 0
+ spi_sh_msiof e6e20000.spi: registered child spi1.0
+
+and everything still works, but slower.
+
+[*] If the individual DMA slave drivers properly handle DMA request
+    failures. If they don't, they will already fail now, as there is no DMA
+    platform configuration without the dmas/dma-names properties
+    (ignoring Magnus' DMA prototypes using auxdata, as DT is the way
+     forward).
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
