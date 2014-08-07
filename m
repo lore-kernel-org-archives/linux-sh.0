@@ -1,46 +1,61 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 06 Aug 2014 12:59:06 +0000
-Subject: [PATCH 09/12] [v3] ARM: shmobile: r8a7791 dtsi: Enable DMA for QSPI
-Message-Id: <1407329949-5695-10-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 07 Aug 2014 00:37:56 +0000
+Subject: Re: [PATCH 09/12] [v3] ARM: shmobile: r8a7791 dtsi: Enable DMA for QSPI
+Message-Id: <20140807003755.GF32652@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1407329949-5695-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+ <1407329949-5695-10-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1407329949-5695-10-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
-Cc: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Mark Brown <broonie@kernel.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, dmaengine@vger.kernel.org, devicetree@vger.kernel.org
 
-Add a DMA property to the QSPI node
+On Wed, Aug 06, 2014 at 02:59:06PM +0200, Geert Uytterhoeven wrote:
+> Add a DMA property to the QSPI node
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> Cc: devicetree@vger.kernel.org
+> ---
+> This depends on "[PATCH v2 8/8] ARM: shmobile: r8a7791: Add DMAC devices
+> to DT" of series "[PATCH v2 0/8] R-Car Gen2 DMA Controller driver".
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: devicetree@vger.kernel.org
----
-This depends on "[PATCH v2 8/8] ARM: shmobile: r8a7791: Add DMAC devices
-to DT" of series "[PATCH v2 0/8] R-Car Gen2 DMA Controller driver".
+Hi Geert, Hi Laurent,
 
-v2:
-  - Update DMA specifiers to match the renesas,rcar-dmac bindings,
-v2:
-  - QSPI needs to use 8-bit accesses for DMA, not 32-bit,
-  - Reorder: TX first, RX second.
----
- arch/arm/boot/dts/r8a7791.dtsi | 2 ++
- 1 file changed, 2 insertions(+)
+Am I correct in assuming that with this patch applied things
+will continue to work the old way until the patch above applied
+to the same tree and from there on the user will get the new behaviour?
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index d59af615e365..8186c9f4a18a 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1044,6 +1044,8 @@
- 		reg = <0 0xe6b10000 0 0x2c>;
- 		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7791_CLK_QSPI_MOD>;
-+		dmas = <&dmac0 0x17>, <&dmac0 0x18>;
-+		dma-names = "tx", "rx";
- 		num-cs = <1>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--- 
-1.9.1
+If so I think that I can take this patch as although the driver hasn't been
+merged the relevant bindings were added to the subsystem maintainers tree
+by "dmaengine: rcar-dmac: Add device tree bindings documentation" and are
+available in linux-next.
 
+Likewise for "[v3] ARM: shmobile: r8a7791 dtsi: Enable DMA for MSIO".
+
+> v2:
+>   - Update DMA specifiers to match the renesas,rcar-dmac bindings,
+> v2:
+>   - QSPI needs to use 8-bit accesses for DMA, not 32-bit,
+>   - Reorder: TX first, RX second.
+> ---
+>  arch/arm/boot/dts/r8a7791.dtsi | 2 ++
+>  1 file changed, 2 insertions(+)
+> 
+> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+> index d59af615e365..8186c9f4a18a 100644
+> --- a/arch/arm/boot/dts/r8a7791.dtsi
+> +++ b/arch/arm/boot/dts/r8a7791.dtsi
+> @@ -1044,6 +1044,8 @@
+>  		reg = <0 0xe6b10000 0 0x2c>;
+>  		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
+>  		clocks = <&mstp9_clks R8A7791_CLK_QSPI_MOD>;
+> +		dmas = <&dmac0 0x17>, <&dmac0 0x18>;
+> +		dma-names = "tx", "rx";
+>  		num-cs = <1>;
+>  		#address-cells = <1>;
+>  		#size-cells = <0>;
+> -- 
+> 1.9.1
+> 
