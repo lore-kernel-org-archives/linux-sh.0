@@ -1,272 +1,347 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 28 Aug 2014 03:35:18 +0000
-Subject: [PATCH 04/05] ARM: shmobile: armadillo800eva reference: Remove C board code
-Message-Id: <20140828033518.18867.19496.sendpatchset@w520>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 07 Aug 2014 08:12:10 +0000
+Subject: [PATCH] ARM: shmobile: r8a7740: Add clocks to DTS
+Message-Id: <1407399130-14020-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Declares the r8a7740 clocks supported by the legacy clock framework,
+excluding those requiring extensions to the DIV6 driver, as well as
+the Armadillo800-specific overrides.
 
-Now when the r8a7740 generic multiplatform case has the same
-features as the DT reference board code then get rid of the
-Armadillo800EVA DT reference C board code. DT Reference code
-in the future shall make use of the r8a7740 Multiplatform 
-support code with the generic SoC machine vector.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
 
- arch/arm/mach-shmobile/Kconfig                           |   15 -
- arch/arm/mach-shmobile/Makefile                          |    1 
- arch/arm/mach-shmobile/Makefile.boot                     |    1 
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c |  199 --------------
- 4 files changed, 216 deletions(-)
+Hi!
 
---- 0001/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2014-08-28 11:47:11.000000000 +0900
-@@ -187,21 +187,6 @@ config MACH_ARMADILLO800EVA
- 	select SND_SOC_WM8978 if SND_SIMPLE_CARD
- 	select USE_OF
+This one omits the funky DIV6 clocks because the corresponding changes to
+the clock driver have not been accepted yet.  It should not have any
+negative impact on legacy support.
+
+CU
+Uli
+
+
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |   1 +
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts |  13 ++
+ arch/arm/boot/dts/r8a7740.dtsi                     | 180 +++++++++++++++++++++
+ include/dt-bindings/clock/r8a7740-clock.h          |  77 +++++++++
+ 4 files changed, 271 insertions(+)
+ create mode 100644 include/dt-bindings/clock/r8a7740-clock.h
+
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+index 8a92b5f..b3c0617 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+@@ -11,6 +11,7 @@ Required Properties:
  
--config MACH_ARMADILLO800EVA_REFERENCE
--	bool "Armadillo-800 EVA board - Reference Device Tree Implementation"
--	depends on ARCH_R8A7740
--	select ARCH_REQUIRE_GPIOLIB
--	select REGULATOR_FIXED_VOLTAGE if REGULATOR
--	select SMSC_PHY if SH_ETH
--	select SND_SOC_WM8978 if SND_SIMPLE_CARD
--	select USE_OF
--	---help---
--	   Use reference implementation of Armadillo800 EVA board support
--	   which makes greater use of device tree at the expense
--	   of not supporting a number of devices.
--
--	   This is intended to aid developers
--
- config MACH_BOCKW
- 	bool "BOCK-W platform"
- 	depends on ARCH_R8A7778
---- 0001/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2014-08-28 11:47:11.000000000 +0900
-@@ -68,7 +68,6 @@ obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= bo
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
- obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
--obj-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE)	+= board-armadillo800eva-reference.o
- obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch.o
- obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
- obj-$(CONFIG_MACH_KZM9G_REFERENCE)	+= board-kzm9g-reference.o
---- 0001/arch/arm/mach-shmobile/Makefile.boot
-+++ work/arch/arm/mach-shmobile/Makefile.boot	2014-08-28 12:08:36.000000000 +0900
-@@ -3,7 +3,6 @@ loadaddr-y	: loadaddr-$(CONFIG_MACH_APE6EVM) += 0x40008000
- loadaddr-$(CONFIG_MACH_APE6EVM_REFERENCE) += 0x40008000
- loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
--loadaddr-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE) += 0x40008000
- loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
- loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
- loadaddr-$(CONFIG_MACH_KOELSCH) += 0x40008000
---- 0001/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ /dev/null	2013-06-03 21:41:10.638032047 +0900
-@@ -1,199 +0,0 @@
--/*
-- * armadillo 800 eva board support
-- *
-- * Copyright (C) 2012 Renesas Solutions Corp.
-- * Copyright (C) 2012 Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; version 2 of the License.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, write to the Free Software
-- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-- *
-- */
--
--#include <linux/clk.h>
--#include <linux/err.h>
--#include <linux/gpio.h>
--#include <linux/io.h>
--#include <linux/kernel.h>
--#include <linux/of_platform.h>
--
--#include <asm/mach/arch.h>
--#include <asm/hardware/cache-l2x0.h>
--
--#include "common.h"
--#include "r8a7740.h"
--
--/*
-- * CON1		Camera Module
-- * CON2		Extension Bus
-- * CON3		HDMI Output
-- * CON4		Composite Video Output
-- * CON5		H-UDI JTAG
-- * CON6		ARM JTAG
-- * CON7		SD1
-- * CON8		SD2
-- * CON9		RTC BackUp
-- * CON10	Monaural Mic Input
-- * CON11	Stereo Headphone Output
-- * CON12	Audio Line Output(L)
-- * CON13	Audio Line Output(R)
-- * CON14	AWL13 Module
-- * CON15	Extension
-- * CON16	LCD1
-- * CON17	LCD2
-- * CON19	Power Input
-- * CON20	USB1
-- * CON21	USB2
-- * CON22	Serial
-- * CON23	LAN
-- * CON24	USB3
-- * LED1		Camera LED (Yellow)
-- * LED2		Power LED (Green)
-- * LED3-LED6	User LED (Yellow)
-- * LED7		LAN link LED (Green)
-- * LED8		LAN activity LED (Yellow)
-- */
--
--/*
-- * DipSwitch
-- *
-- *                    SW1
-- *
-- * -12345678-+---------------+----------------------------
-- *  1        | boot          | hermit
-- *  0        | boot          | OS auto boot
-- * -12345678-+---------------+----------------------------
-- *   00      | boot device   | eMMC
-- *   10      | boot device   | SDHI0 (CON7)
-- *   01      | boot device   | -
-- *   11      | boot device   | Extension Buss (CS0)
-- * -12345678-+---------------+----------------------------
-- *     0     | Extension Bus | D8-D15 disable, eMMC enable
-- *     1     | Extension Bus | D8-D15 enable,  eMMC disable
-- * -12345678-+---------------+----------------------------
-- *      0    | SDHI1         | COM8 disable, COM14 enable
-- *      1    | SDHI1         | COM8 enable,  COM14 disable
-- * -12345678-+---------------+----------------------------
-- *       0   | USB0          | COM20 enable,  COM24 disable
-- *       1   | USB0          | COM20 disable, COM24 enable
-- * -12345678-+---------------+----------------------------
-- *        00 | JTAG          | SH-X2
-- *        10 | JTAG          | ARM
-- *        01 | JTAG          | -
-- *        11 | JTAG          | Boundary Scan
-- *-----------+---------------+----------------------------
-- */
--
--/*
-- * FSI-WM8978
-- *
-- * this command is required when playback.
-- *
-- * # amixer set "Headphone" 50
-- *
-- * this command is required when capture.
-- *
-- * # amixer set "Input PGA" 15
-- * # amixer set "Left Input Mixer MicP" on
-- * # amixer set "Left Input Mixer MicN" on
-- * # amixer set "Right Input Mixer MicN" on
-- * # amixer set "Right Input Mixer MicP" on
-- */
--
--/*
-- * USB function
-- *
-- * When you use USB Function,
-- * set SW1.6 ON, and connect cable to CN24.
-- *
-- * USBF needs workaround on R8A7740 chip.
-- * These are a little bit complex.
-- * see
-- *	usbhsf_power_ctrl()
-- */
--
--static void __init eva_clock_init(void)
--{
--	struct clk *system	= clk_get(NULL, "system_clk");
--	struct clk *xtal1	= clk_get(NULL, "extal1");
--	struct clk *usb24s	= clk_get(NULL, "usb24s");
--	struct clk *fsibck	= clk_get(NULL, "fsibck");
--
--	if (IS_ERR(system)	||
--	    IS_ERR(xtal1)	||
--	    IS_ERR(usb24s)	||
--	    IS_ERR(fsibck)) {
--		pr_err("armadillo800eva board clock init failed\n");
--		goto clock_error;
--	}
--
--	/* armadillo 800 eva extal1 is 24MHz */
--	clk_set_rate(xtal1, 24000000);
--
--	/* usb24s use extal1 (= system) clock (= 24MHz) */
--	clk_set_parent(usb24s, system);
--
--	/* FSIBCK is 12.288MHz, and it is parent of FSI-B */
--	clk_set_rate(fsibck, 12288000);
--
--clock_error:
--	if (!IS_ERR(system))
--		clk_put(system);
--	if (!IS_ERR(xtal1))
--		clk_put(xtal1);
--	if (!IS_ERR(usb24s))
--		clk_put(usb24s);
--	if (!IS_ERR(fsibck))
--		clk_put(fsibck);
--}
--
--/*
-- * board init
-- */
--static void __init eva_init(void)
--{
--	r8a7740_clock_init(MD_CK0 | MD_CK2);
--	eva_clock_init();
--
--	r8a7740_meram_workaround();
--
--#ifdef CONFIG_CACHE_L2X0
--	/* Shared attribute override enable, 32K*8way */
--	l2x0_init(IOMEM(0xf0002000), 0x00400000, 0xc20f0fff);
--#endif
--
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
--
--	r8a7740_pm_init();
--}
--
--#define RESCNT2 IOMEM(0xe6188020)
--static void eva_restart(enum reboot_mode mode, const char *cmd)
--{
--	/* Do soft power on reset */
--	writel(1 << 31, RESCNT2);
--}
--
--static const char *eva_boards_compat_dt[] __initdata = {
--	"renesas,armadillo800eva-reference",
--	NULL,
--};
--
--DT_MACHINE_START(ARMADILLO800EVA_DT, "armadillo800eva-reference")
--	.map_io		= r8a7740_map_io,
--	.init_early	= shmobile_init_delay,
--	.init_irq	= r8a7740_init_irq_of,
--	.init_machine	= eva_init,
--	.init_late	= shmobile_init_late,
--	.dt_compat	= eva_boards_compat_dt,
--	.restart	= eva_restart,
--MACHINE_END
+   - compatible: Must be one of the following
+     - "renesas,r7s72100-mstp-clocks" for R7S72100 (RZ) MSTP gate clocks
++    - "renesas,r8a7740-mstp-clocks" for R8A7740 (R-Mobile A1) MSTP gate clocks
+     - "renesas,r8a7779-mstp-clocks" for R8A7779 (R-Car H1) MSTP gate clocks
+     - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
+     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index ee9e7d5..266c439 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -178,6 +178,19 @@
+ 	};
+ };
+ 
++&extal1_clk {
++	clock-frequency = <25000000>;
++};
++&extal2_clk {
++	clock-frequency = <48000000>;
++};
++&fsibck_clk {
++	clock-frequency = <12288000>;
++};
++&cpg_clocks {
++	renesas,mode = <0x05>; /* MD_CK0 | MD_CK2 */
++};
++
+ &i2c0 {
+ 	status = "okay";
+ 	touchscreen@55 {
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index bda18fb..3c61c5d 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -10,6 +10,7 @@
+ 
+ /include/ "skeleton.dtsi"
+ 
++#include <dt-bindings/clock/r8a7740-clock.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+ 
+ / {
+@@ -291,4 +292,183 @@
+ 		interrupts = <0 9 0x4>;
+ 		status = "disabled";
+ 	};
++
++	clocks {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges;
++
++		/* External root clock */
++		extalr_clk: extalr_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <32768>;
++			clock-output-names = "extalr";
++		};
++		extal1_clk: extal1_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "extal1";
++		};
++		extal2_clk: extal2_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "extal2";
++		};
++		dv_clk: dv_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <27000000>;
++			clock-output-names = "dv";
++		};
++		fsiack_clk: fsiack_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "fsiack";
++		};
++		fsibck_clk: fsibck_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "fsibck";
++		};
++
++		/* Special CPG clocks */
++		cpg_clocks: cpg_clocks@e6150000 {
++			compatible = "renesas,r8a7740-cpg-clocks";
++			reg = <0xe6150000 0x10000>;
++			clocks = <&extal1_clk>, <&extalr_clk>;
++			#clock-cells = <1>;
++			clock-output-names = "system", "pllc0", "pllc1",
++					     "pllc2", "r",
++					     "usb24s",
++					     "i", "zg", "b", "m1", "hp",
++					     "hpp", "usbp", "s", "zb", "m3",
++					     "cp";
++		};
++
++		/* Variable factor clocks (DIV6) */
++		sub_clk: sub_clk@e6150080 {
++			compatible = "renesas,r8a7740-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe6150080 4>;
++			clocks = <&pllc1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "sub";
++		};
++
++		/* Fixed factor clocks */
++		pllc1_div2_clk: pllc1_div2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7740_CLK_PLLC1>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "pllc1_div2";
++		};
++		extal1_div2_clk: extal1_div2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&extal1_clk>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "extal1_div2";
++		};
++
++		/* Gate clocks */
++		subck_clks: subck_clks@e6150080 {
++			compatible = "renesas,r8a7740-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xe6150080 4>;
++			clocks = <&sub_clk>, <&sub_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A7740_CLK_SUBCK R8A7740_CLK_SUBCK2
++			>;
++			clock-output-names +				"subck", "subck2";
++		};
++		mstp1_clks: mstp1_clks@e6150134 {
++			compatible = "renesas,r8a7740-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xe6150134 4>, <0xe6150038 4>;
++			clocks = <&cpg_clocks R8A7740_CLK_S>,
++				 <&cpg_clocks R8A7740_CLK_S>, <&sub_clk>,
++				 <&cpg_clocks R8A7740_CLK_B>,
++				 <&sub_clk>, <&sub_clk>,
++				 <&cpg_clocks R8A7740_CLK_B>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A7740_CLK_CEU21 R8A7740_CLK_CEU20 R8A7740_CLK_TMU0
++				R8A7740_CLK_LCDC1 R8A7740_CLK_IIC0 R8A7740_CLK_TMU1
++				R8A7740_CLK_LCDC0
++			>;
++			clock-output-names +				"ceu21", "ceu20", "tmu0", "lcdc1", "iic0",
++				"tmu1", "lcdc0";
++		};
++		mstp2_clks: mstp2_clks@e6150138 {
++			compatible = "renesas,r8a7740-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xe6150138 4>, <0xe6150040 4>;
++			clocks = <&sub_clk>, <&sub_clk>,
++				 <&cpg_clocks R8A7740_CLK_HP>,
++				 <&cpg_clocks R8A7740_CLK_HP>,
++				 <&cpg_clocks R8A7740_CLK_HP>,
++				 <&cpg_clocks R8A7740_CLK_HP>,
++				 <&sub_clk>, <&sub_clk>, <&sub_clk>,
++				 <&sub_clk>, <&sub_clk>, <&sub_clk>,
++				 <&sub_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A7740_CLK_SCIFA6 R8A7740_CLK_SCIFA7
++				R8A7740_CLK_DMAC1 R8A7740_CLK_DMAC2
++				R8A7740_CLK_DMAC3 R8A7740_CLK_USBDMAC
++				R8A7740_CLK_SCIFA5 R8A7740_CLK_SCIFB
++				R8A7740_CLK_SCIFA0 R8A7740_CLK_SCIFA1
++				R8A7740_CLK_SCIFA2 R8A7740_CLK_SCIFA3
++				R8A7740_CLK_SCIFA4
++			>;
++			clock-output-names +				"scifa6", "scifa7", "dmac1", "dmac2", "dmac3",
++				"usbdmac", "scifa5", "scifb", "scifa0", "scifa1",
++				"scifa2", "scifa3", "scifa4";
++		};
++		mstp3_clks: mstp3_clks@e615013c {
++			compatible = "renesas,r8a7740-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xe615013c 4>, <0xe6150048 4>;
++			clocks = <&cpg_clocks R8A7740_CLK_R>,
++				 <&cpg_clocks R8A7740_CLK_HP>,
++				 <&sub_clk>,
++				 <&cpg_clocks R8A7740_CLK_HP>,
++				 <&cpg_clocks R8A7740_CLK_HP>,
++				 <&cpg_clocks R8A7740_CLK_HP>,
++				 <&cpg_clocks R8A7740_CLK_HP>,
++				 <&cpg_clocks R8A7740_CLK_HP>,
++				 <&cpg_clocks R8A7740_CLK_HP>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A7740_CLK_CMT1 R8A7740_CLK_FSI R8A7740_CLK_IIC1
++				R8A7740_CLK_USBF R8A7740_CLK_SDHI0 R8A7740_CLK_SDHI1
++				R8A7740_CLK_MMC R8A7740_CLK_GETHER R8A7740_CLK_TPU0
++			>;
++			clock-output-names +				"cmt1", "fsi", "iic1", "usbf", "sdhi0", "sdhi1",
++				"mmc", "gether", "tpu0";
++		};
++		mstp4_clks: mstp4_clks@e6150140 {
++			compatible = "renesas,r8a7740-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xe6150140 4>, <0xe615004c 4>;
++			clocks = <&cpg_clocks R8A7740_CLK_HP>,
++				 <&cpg_clocks R8A7740_CLK_HP>,
++				 <&cpg_clocks R8A7740_CLK_HP>,
++				 <&cpg_clocks R8A7740_CLK_HP>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A7740_CLK_USBH R8A7740_CLK_SDHI2
++				R8A7740_CLK_USBFUNC R8A7740_CLK_USBPHY
++			>;
++			clock-output-names +				"usbhost", "sdhi2", "usbfunc", "usphy";
++		};
++	};
+ };
+diff --git a/include/dt-bindings/clock/r8a7740-clock.h b/include/dt-bindings/clock/r8a7740-clock.h
+new file mode 100644
+index 0000000..f6b4b0f
+--- /dev/null
++++ b/include/dt-bindings/clock/r8a7740-clock.h
+@@ -0,0 +1,77 @@
++/*
++ * Copyright 2014 Ulrich Hecht
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++
++#ifndef __DT_BINDINGS_CLOCK_R8A7740_H__
++#define __DT_BINDINGS_CLOCK_R8A7740_H__
++
++/* CPG */
++#define R8A7740_CLK_SYSTEM	0
++#define R8A7740_CLK_PLLC0	1
++#define R8A7740_CLK_PLLC1	2
++#define R8A7740_CLK_PLLC2	3
++#define R8A7740_CLK_R		4
++#define R8A7740_CLK_USB24S	5
++#define R8A7740_CLK_I		6
++#define R8A7740_CLK_ZG		7
++#define R8A7740_CLK_B		8
++#define R8A7740_CLK_M1		9
++#define R8A7740_CLK_HP		10
++#define R8A7740_CLK_HPP		11
++#define R8A7740_CLK_USBP	12
++#define R8A7740_CLK_S		13
++#define R8A7740_CLK_ZB		14
++#define R8A7740_CLK_M3		15
++#define R8A7740_CLK_CP		16
++
++/* MSTP1 */
++#define R8A7740_CLK_CEU21	28
++#define R8A7740_CLK_CEU20	27
++#define R8A7740_CLK_TMU0	25
++#define R8A7740_CLK_LCDC1	17
++#define R8A7740_CLK_IIC0	16
++#define R8A7740_CLK_TMU1	11
++#define R8A7740_CLK_LCDC0	0
++
++/* MSTP2 */
++#define R8A7740_CLK_SCIFA6	30
++#define R8A7740_CLK_SCIFA7	22
++#define R8A7740_CLK_DMAC1	18
++#define R8A7740_CLK_DMAC2	17
++#define R8A7740_CLK_DMAC3	16
++#define R8A7740_CLK_USBDMAC	14
++#define R8A7740_CLK_SCIFA5	7
++#define R8A7740_CLK_SCIFB	6
++#define R8A7740_CLK_SCIFA0	4
++#define R8A7740_CLK_SCIFA1	3
++#define R8A7740_CLK_SCIFA2	2
++#define R8A7740_CLK_SCIFA3	1
++#define R8A7740_CLK_SCIFA4	0
++
++/* MSTP3 */
++#define R8A7740_CLK_CMT1	29
++#define R8A7740_CLK_FSI		28
++#define R8A7740_CLK_IIC1	23
++#define R8A7740_CLK_USBF	20
++#define R8A7740_CLK_SDHI0	14
++#define R8A7740_CLK_SDHI1	13
++#define R8A7740_CLK_MMC		12
++#define R8A7740_CLK_GETHER	9
++#define R8A7740_CLK_TPU0	4
++
++/* MSTP4 */
++#define R8A7740_CLK_USBH	16
++#define R8A7740_CLK_SDHI2	15
++#define R8A7740_CLK_USBFUNC	7
++#define R8A7740_CLK_USBPHY	6
++
++/* SUBCK* */
++#define R8A7740_CLK_SUBCK	9
++#define R8A7740_CLK_SUBCK2	10
++
++#endif /* __DT_BINDINGS_CLOCK_R8A7740_H__ */
+-- 
+1.8.4.5
+
