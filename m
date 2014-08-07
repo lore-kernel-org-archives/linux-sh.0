@@ -1,39 +1,42 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 14 Aug 2014 05:40:59 +0000
-Subject: Re: [PATCH v2 7/8] ARM: shmobile: r8a7790: Add DMAC devices to DT
-Message-Id: <20140814054058.GC26709@verge.net.au>
+From: Nick Krause <xerofoiify@gmail.com>
+Date: Thu, 07 Aug 2014 01:42:20 +0000
+Subject: [PATCH] sh: bug: add unreachable() to silence warnings
+Message-Id: <1407375741-3209-1-git-send-email-xerofoiify@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405727425-6237-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1405727425-6237-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Simon Horman <horms+renesas@verge.net.au>, "GitAuthor: Nick Krause" <xerofoiify@gmail.com>, "open list:SUPERH" <linux-sh@vger.kernel.org>, open list <linux-kernel@vger.kernel.org>
+Cc: josh@joshtriplett.org
 
-On Thu, Aug 14, 2014 at 08:41:27AM +0900, Simon Horman wrote:
-> On Wed, Aug 13, 2014 at 03:20:04PM +0200, Geert Uytterhoeven wrote:
-> > Hi Simon,
-> > 
-> > On Fri, Aug 8, 2014 at 4:19 AM, Simon Horman <horms@verge.net.au> wrote:
-> > > On Sat, Jul 19, 2014 at 01:50:24AM +0200, Laurent Pinchart wrote:
-> > >> Instantiate the two system DMA controllers in the r8a7790 device tree.
-> > >>
-> > >> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> > >
-> > > Thanks. As the bindings have been merged I have queued up this patch for
-> > > v3.18.
-> > 
-> > It seems you forgot to apply "[PATCH v2 6/8] ARM: shmobile: r8a7790: Add
-> > DMAC clocks to DT", which adds the clocks that are used by "[PATCH v2 7/8]
-> > ARM: shmobile: r8a7790: Add DMAC devices to DT".
-> > 
-> > As these clocks are referenced by (symbolic define for a) number, not a
-> > phandle, you don't get an error from dtc.
-> 
-> Thanks, I'll look into that.
+SuperH BUG() have warnings like
 
-Thanks, for pointing out my miss.
+kernel/sched/core.c:2692:1: warning: control reaches end of non-void function
+[-Wreturn-type]
+net/core/ethtool.c:236:1: warning: control reaches end of non-void function
+[-Wreturn-type]
 
-I've queued up the missing patch and rebased the dt branch
-so that the dependencies are in order. I'll push it and a
-refreshed devel branch a little later today.
+Other BUG() implementations
+have added unreachable() at end becuase of which I guess
+it does not showthese errors. We can silence them using unreachable().
+
+Signed-off-by: Nick Krause <xerofoify@gmail.com>
+---
+ arch/sh/include/asm/bug.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/sh/include/asm/bug.h b/arch/sh/include/asm/bug.h
+index dcf2780..1ae948f 100644
+--- a/arch/sh/include/asm/bug.h
++++ b/arch/sh/include/asm/bug.h
+@@ -48,6 +48,7 @@ do {							\
+ 		   "i" (__FILE__),			\
+ 		   "i" (__LINE__), "i" (0),		\
+ 		   "i" (sizeof(struct bug_entry)));	\
++	unreachable();					\
+ } while (0)
+ 
+ #define __WARN_TAINT(taint)				\
+-- 
+2.0.1
+
