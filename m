@@ -1,55 +1,76 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Wed, 06 Aug 2014 20:29:51 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 07 Aug 2014 00:16:47 +0000
 Subject: Re: [PATCH 00/12] spi: rspi and sh-msiof driver updates
-Message-Id: <20140806202951.GU17528@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="FFJq4JBCEm+n5/He"
+Message-Id: <2006783.fexCv50f5Y@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, dmaengine@vger.kernel.org
+In-Reply-To: <1407329949-5695-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+Cc: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
+Hi Geert,
 
---FFJq4JBCEm+n5/He
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Thank you for the patches.
 
-On Wed, Aug 06, 2014 at 02:58:57PM +0200, Geert Uytterhoeven wrote:
+On Wednesday 06 August 2014 14:58:57 Geert Uytterhoeven wrote:
 > 	Hi Mark, Simon,
->=20
+> 
 > Here's a series of Renesas RSPI/QSPI and SH-MSIOF SPI driver updates.
 > I grouped them in three parts:
 >   - [1-5] are for the rspi driver (Mark),
 >   - [6-8] are for the sh-msiof driver (Mark),
 >   - [9-12] are for the R-Car Gen2 DTSes (Simon).
 
-Please don't send big jumbo patch serieses for different things in one
-fell swoop - for example the two bug fixes here should probably have
-been split out, and the rspi and sh-msiof changes have little
-interdependency with the rest of the series.
+For everything but 06/12,
 
---FFJq4JBCEm+n5/He
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
+> Summary of changes:
+>   - [1] and [6] are bug fixes I have sent before, but that weren't applied
+>     due to dependency confusion,
+>   - [2] is a new cosmetic fix,
+>   - [3] makes rspi use a new helper function that will be available as of
+>     v3.17-rc1,
+>   - [4-5] and [7-8] make DMA work with the new R-Car DMAC driver,
+>     developed by Laurent Pinchart in the series "[PATCH v2 0/8] R-Car Gen2
+>     DMA Controller driver"
+>     (http://www.spinics.net/lists/linux-sh/msg33890.html),
+>   - [9-12] enable DMA in DT for r8a7791 and r8a7790, and depend on
+>     "[PATCH v2 8/8] ARM: shmobile: r8a7791: Add DMAC devices to DT"
+>     (http://www.spinics.net/lists/linux-sh/msg33897.html) resp.
+>     "[PATCH v2 7/8] ARM: shmobile: r8a7790: Add DMAC devices to DT"
+>     (http://www.spinics.net/lists/linux-sh/msg33896.html) of the
+>     aforementioned series.
+> 
+> This has been tested on r8a7791/koelsch.
+> 
+> Geert Uytterhoeven (12):
+>    [1] spi: rspi: Fix leaking of unused DMA descriptors
+>    [2] spi: rspi: Remove unneeded semicolon
+>    [3] spi: rspi: Use devm_kasprintf()
+>    [4] spi: rspi: Configure DMA slave bus width to 8 bit
+>    [5] spi: rspi: Add DT support to DMA setup
+>    [6] spi: sh-msiof: Fix leaking of unused DMA descriptors
+>    [7] spi: sh-msiof: Configure DMA slave bus width
+>    [8] spi: sh-msiof: Add DT support to DMA setup
+>    [9] ARM: shmobile: r8a7791 dtsi: Enable DMA for QSPI
+>   [10] ARM: shmobile: r8a7791 dtsi: Enable DMA for MSIOF
+>   [11] ARM: shmobile: r8a7790 dtsi: Enable DMA for QSPI
+>   [12] ARM: shmobile: r8a7790 dtsi: Enable DMA for MSIOF
+> 
+>  Documentation/devicetree/bindings/spi/sh-msiof.txt |  17 ++-
+>  Documentation/devicetree/bindings/spi/spi-rspi.txt |   5 +
+>  arch/arm/boot/dts/r8a7790.dtsi                     |  18 ++-
+>  arch/arm/boot/dts/r8a7791.dtsi                     |  14 +-
+>  drivers/spi/spi-rspi.c                             | 147 +++++++++++-------
+>  drivers/spi/spi-sh-msiof.c                         | 103 +++++++++------
+>  6 files changed, 195 insertions(+), 109 deletions(-)
 
-iQIcBAEBAgAGBQJT4pA8AAoJELSic+t+oim9GX8P/iroLOv780dwIimD7Ud+fZc2
-GlYyZCFEOEuSz5PFyL/8y3zWrNk0r3M1ldt+IayO1Kz5MvlbCCc74udfljla8LJ7
-x/LipNn2nTFpwKcKRqPLJcJVCzDdiNO1+3ohu+S5Yl6AI+TUXjPyjKqjFOrcppGd
-vow+Bkjlq+zLjv6cLEzKlNBMYJCv6sPlAdaCGZR0FnkxiL38CafXWW2DKjj25Qzj
-ZB68scnEf/DorfcREDAYNh99EznLqsyNoWuD8wSBCPVhXvXBLKpJArEUya/Jx7Gx
-x58EXIIupSwSMb7iMRWAmZ8X2uRABa5GlnS/Q1SIRl41USlCwtdJOtKttDD6n16K
-dyIofk5GbUv/PJwaSvzjpj1mZzKC6TAfll8BiQBx3jdJpBJuWYi15GgoKEjPnJ8a
-0wCRGbc3d1hMdNx9gKrYO+6VeaRXxulbxB5Tc/rH+9PocOYrWfc2TQ6pcMNbFR1F
-ozq2KNNJa3/kZMVe7t8rG/pcAngfwckDjOwkTB4gcV12YhzQofcFXaRtvchX9E+s
-1+Ia/9KsK84T8iFFW59Vsdz6nMdTSVKde8KLvy0yi49wae/HnG7Ln4KoKHtL+/bA
-hnvqbNXIUxeNPILGridWVeuAZknWJQG/6U3SeTXTylNv29st+9uhMoPYPrRRwnKM
-TFNTugBkxSqDemRsTVkg
-=HojX
------END PGP SIGNATURE-----
+-- 
+Regards,
 
---FFJq4JBCEm+n5/He--
+Laurent Pinchart
+
