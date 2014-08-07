@@ -1,46 +1,47 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Aug 2014 01:09:48 +0000
-Subject: [PATCH 3/3] ARM: shmobile: r8a7791: add missing 0x0100 for SDCKCR
-Message-Id: <58b80ad6472c0fa12926dfa1f9103d3a326bdf18.1408926048.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 07 Aug 2014 12:07:43 +0000
+Subject: [PATCH 2/2] spi: sh-msiof: Fix transmit-only DMA transfers
+Message-Id: <1407413263-20177-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408926048.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408926048.git.horms+renesas@verge.net.au>
+References: <CAMuHMdUd3OKqDwhLSCMW-rEQSnWky+saN5TgC005rkmNPfEL+g@mail.gmail.com>
+ <1407413263-20177-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1407413263-20177-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Fix tx/rx mixup, which broke transmit-only transfers.
 
-4bfb358b1d6cdeff8c6a13677f01ed78e9696b98
-(ARM: shmobile: Add r8a7791 legacy SDHI clocks)
-added r8a7791 SDHI clock support.
+Introduced by commit 4240305f7cbdc7782aa8bc40cc702775d9ac0839
+("spi: sh-msiof: Fix leaking of unused DMA descriptors").
 
-But, it is missing
-"0x0100: x 1/8" division ratio.
-This patch fixes hidden bug.
-It is based on R-Car H2 v0.7, R-Car M2 v0.9.
-
-Reported-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Reported-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/clock-r8a7791.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Feel free to fold into commit 4240305f7cbdc7782aa8bc40cc702775d9ac0839
+("spi: sh-msiof: Fix leaking of unused DMA descriptors")
+---
+ drivers/spi/spi-sh-msiof.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index e2fdfcc..53161c4 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -152,7 +152,7 @@ enum {
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index 0d9ccd0953de..5ee13a2d93df 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -689,9 +689,9 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv *p, const void *tx,
+ 	reinit_completion(&p->done);
  
- static struct clk div4_clks[DIV4_NR] = {
- 	[DIV4_SDH] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 8, 0x0dff, CLK_ENABLE_ON_INIT),
--	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1de0, CLK_ENABLE_ON_INIT),
-+	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1df0, CLK_ENABLE_ON_INIT),
- };
+ 	/* Now start DMA */
+-	if (tx)
+-		dma_async_issue_pending(p->master->dma_rx);
+ 	if (rx)
++		dma_async_issue_pending(p->master->dma_rx);
++	if (tx)
+ 		dma_async_issue_pending(p->master->dma_tx);
  
- /* DIV6 clocks */
+ 	ret = sh_msiof_spi_start(p, rx);
 -- 
-2.0.1
+1.9.1
 
