@@ -1,54 +1,107 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 14 Aug 2014 15:20:34 +0000
-Subject: Re: ARM: shmobile: Koelsch fails to resume due to sh_mobile_sdhi or regulator-fixed
-Message-Id: <CAMuHMdWRDHexT94Mxk2LSWDe-GpD2zXD_xv++H7aQDFeNfjJSA@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 08 Aug 2014 14:23:09 +0000
+Subject: [PATCH v2 2/5] ARM: shmobile: r8a7740: clock register bits
+Message-Id: <1407507792-8121-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMuHMdWTudFK_EiL8xQpmL5OmJxYX1i80WjfAA+L2Dfn21NWtA@mail.gmail.com>
-	<20140812214734.GA17528@sirena.org.uk>
-In-Reply-To: <20140812214734.GA17528@sirena.org.uk>
+References: <1407507792-8121-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1407507792-8121-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Ian Molton <ian.molton@codethink.co.uk>, Linux-sh list <linux-sh@vger.kernel.org>, Linux MMC List <linux-mmc@vger.kernel.org>
+To: horms@verge.net.au
+Cc: linux-sh@vger.kernel.org, mturquette@linaro.org, devicetree@vger.kernel.org, magnus.damm@gmail.com, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-On Tue, Aug 12, 2014 at 11:47 PM, Mark Brown <broonie@kernel.org> wrote:
-> On Tue, Aug 12, 2014 at 04:28:39PM +0200, Geert Uytterhoeven wrote:
->> r8a7791/Koelsch fails to resume from s2ram with
->
->>     CONFIG_REGULATOR_FIXED_VOLTAGE=y
->>     CONFIG_REGULATOR_GPIO=y
->>     CONFIG_MMC_SDHI=y
->
->> Disabling CONFIG_REGULATOR_FIXED_VOLTAGE or CONFIG_MMC_SDHI,
->> or both, fixes resume.
->
->> Note that SDHI on r8a7791 uses both regulator-fixed and regulator-gpio.
->> However, CONFIG_REGULATOR_GPIO doesn't seem to have any impact
->> on the resume failure, it resumes fine with CONFIG_REGULATOR_GPIO=y.
->
->> Anyone with a clue?
->
-> No idea, I expect it's some bug in the board description - both that
-> regulator driver and that MMC driver should be very well tested.  Given
-> the lack of traces are you sure that the system is actually suspending
-> successfully and not just crashing?  First guess would be that the
-> regulator is being powered off on suspend and the hardware is trying to
-> boot from a powered off device on resume but that really is just a guess.
+Contains the header file with the clock pulse generator and MSTP bits.
 
-It's not a regulator issue.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ include/dt-bindings/clock/r8a7740-clock.h | 77 +++++++++++++++++++++++++++++++
+ 1 file changed, 77 insertions(+)
+ create mode 100644 include/dt-bindings/clock/r8a7740-clock.h
 
-Further investigation showed that he system locks up when suspending,
-as the SDHI driver's tmio_mmc_host_suspend() accesses the SDHI registers
-while the SDHI module clock is disabled.
+diff --git a/include/dt-bindings/clock/r8a7740-clock.h b/include/dt-bindings/clock/r8a7740-clock.h
+new file mode 100644
+index 0000000..f6b4b0f
+--- /dev/null
++++ b/include/dt-bindings/clock/r8a7740-clock.h
+@@ -0,0 +1,77 @@
++/*
++ * Copyright 2014 Ulrich Hecht
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++
++#ifndef __DT_BINDINGS_CLOCK_R8A7740_H__
++#define __DT_BINDINGS_CLOCK_R8A7740_H__
++
++/* CPG */
++#define R8A7740_CLK_SYSTEM	0
++#define R8A7740_CLK_PLLC0	1
++#define R8A7740_CLK_PLLC1	2
++#define R8A7740_CLK_PLLC2	3
++#define R8A7740_CLK_R		4
++#define R8A7740_CLK_USB24S	5
++#define R8A7740_CLK_I		6
++#define R8A7740_CLK_ZG		7
++#define R8A7740_CLK_B		8
++#define R8A7740_CLK_M1		9
++#define R8A7740_CLK_HP		10
++#define R8A7740_CLK_HPP		11
++#define R8A7740_CLK_USBP	12
++#define R8A7740_CLK_S		13
++#define R8A7740_CLK_ZB		14
++#define R8A7740_CLK_M3		15
++#define R8A7740_CLK_CP		16
++
++/* MSTP1 */
++#define R8A7740_CLK_CEU21	28
++#define R8A7740_CLK_CEU20	27
++#define R8A7740_CLK_TMU0	25
++#define R8A7740_CLK_LCDC1	17
++#define R8A7740_CLK_IIC0	16
++#define R8A7740_CLK_TMU1	11
++#define R8A7740_CLK_LCDC0	0
++
++/* MSTP2 */
++#define R8A7740_CLK_SCIFA6	30
++#define R8A7740_CLK_SCIFA7	22
++#define R8A7740_CLK_DMAC1	18
++#define R8A7740_CLK_DMAC2	17
++#define R8A7740_CLK_DMAC3	16
++#define R8A7740_CLK_USBDMAC	14
++#define R8A7740_CLK_SCIFA5	7
++#define R8A7740_CLK_SCIFB	6
++#define R8A7740_CLK_SCIFA0	4
++#define R8A7740_CLK_SCIFA1	3
++#define R8A7740_CLK_SCIFA2	2
++#define R8A7740_CLK_SCIFA3	1
++#define R8A7740_CLK_SCIFA4	0
++
++/* MSTP3 */
++#define R8A7740_CLK_CMT1	29
++#define R8A7740_CLK_FSI		28
++#define R8A7740_CLK_IIC1	23
++#define R8A7740_CLK_USBF	20
++#define R8A7740_CLK_SDHI0	14
++#define R8A7740_CLK_SDHI1	13
++#define R8A7740_CLK_MMC		12
++#define R8A7740_CLK_GETHER	9
++#define R8A7740_CLK_TPU0	4
++
++/* MSTP4 */
++#define R8A7740_CLK_USBH	16
++#define R8A7740_CLK_SDHI2	15
++#define R8A7740_CLK_USBFUNC	7
++#define R8A7740_CLK_USBPHY	6
++
++/* SUBCK* */
++#define R8A7740_CLK_SUBCK	9
++#define R8A7740_CLK_SUBCK2	10
++
++#endif /* __DT_BINDINGS_CLOCK_R8A7740_H__ */
+-- 
+1.8.4.5
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
