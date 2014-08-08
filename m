@@ -1,59 +1,181 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Wed, 06 Aug 2014 01:50:18 +0000
-Subject: [PATCH 5/5 v2] ARM: shmobile: r8a7791: add generation level compatible for SDHI
-Message-Id: <87ha1q8jzb.wl%kuninori.morimoto.gx@gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 08 Aug 2014 14:23:11 +0000
+Subject: [PATCH v2 4/5] ARM: shmobile: r8a7740: add MSTP clock assignments to DT
+Message-Id: <1407507792-8121-5-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
-	<87oavy8k3v.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87oavy8k3v.wl%kuninori.morimoto.gx@gmail.com>
+References: <1407507792-8121-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1407507792-8121-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
-Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: horms@verge.net.au
+Cc: linux-sh@vger.kernel.org, mturquette@linaro.org, devicetree@vger.kernel.org, magnus.damm@gmail.com, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Assigns clocks to ether, i2c*, scif*, tpu, mmcif0, sdhi*, and fsi2.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
-v1 -> v2
+ arch/arm/boot/dts/r8a7740.dtsi | 28 +++++++++++++++++++++++++++-
+ 1 file changed, 27 insertions(+), 1 deletion(-)
 
-- no change
-
- arch/arm/boot/dts/r8a7791.dtsi |    6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 1e97113..82be0af 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -341,7 +341,7 @@
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 3c61c5d..6cd6a46 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -126,7 +126,7 @@
+ 		reg = <0xe9a00000 0x800>,
+ 		      <0xe9a01800 0x800>;
+ 		interrupts = <0 110 IRQ_TYPE_LEVEL_HIGH>;
+-		/* clocks = <&mstp3_clks R8A7740_CLK_GETHER>; */
++		clocks = <&mstp3_clks R8A7740_CLK_GETHER>;
+ 		phy-mode = "mii";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -142,6 +142,7 @@
+ 			      0 202 IRQ_TYPE_LEVEL_HIGH
+ 			      0 203 IRQ_TYPE_LEVEL_HIGH
+ 			      0 204 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7740_CLK_IIC0>;
+ 		status = "disabled";
  	};
  
- 	sdhi0: sd@ee100000 {
--		compatible = "renesas,sdhi-r8a7791";
-+		compatible = "renesas,sdhi-r8a7791", "renesas,sdhi-rcar-gen2";
- 		reg = <0 0xee100000 0 0x200>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7791_CLK_SDHI0>;
-@@ -349,7 +349,7 @@
+@@ -154,6 +155,7 @@
+ 			      0 71 IRQ_TYPE_LEVEL_HIGH
+ 			      0 72 IRQ_TYPE_LEVEL_HIGH
+ 			      0 73 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7740_CLK_IIC1>;
+ 		status = "disabled";
  	};
  
- 	sdhi1: sd@ee140000 {
--		compatible = "renesas,sdhi-r8a7791";
-+		compatible = "renesas,sdhi-r8a7791", "renesas,sdhi-rcar-gen2";
- 		reg = <0 0xee140000 0 0x100>;
- 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7791_CLK_SDHI1>;
-@@ -357,7 +357,7 @@
+@@ -161,6 +163,8 @@
+ 		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
+ 		reg = <0xe6c40000 0x100>;
+ 		interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7740_CLK_SCIFA0>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
  	};
  
- 	sdhi2: sd@ee160000 {
--		compatible = "renesas,sdhi-r8a7791";
-+		compatible = "renesas,sdhi-r8a7791", "renesas,sdhi-rcar-gen2";
- 		reg = <0 0xee160000 0 0x100>;
- 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7791_CLK_SDHI2>;
+@@ -168,6 +172,8 @@
+ 		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
+ 		reg = <0xe6c50000 0x100>;
+ 		interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7740_CLK_SCIFA1>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -175,6 +181,8 @@
+ 		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
+ 		reg = <0xe6c60000 0x100>;
+ 		interrupts = <0 102 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7740_CLK_SCIFA0>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -182,6 +190,8 @@
+ 		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
+ 		reg = <0xe6c70000 0x100>;
+ 		interrupts = <0 103 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7740_CLK_SCIFA3>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -189,6 +199,8 @@
+ 		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
+ 		reg = <0xe6c80000 0x100>;
+ 		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7740_CLK_SCIFA4>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -196,6 +208,8 @@
+ 		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
+ 		reg = <0xe6cb0000 0x100>;
+ 		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7740_CLK_SCIFA5>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -203,6 +217,8 @@
+ 		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
+ 		reg = <0xe6cc0000 0x100>;
+ 		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7740_CLK_SCIFA6>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -210,6 +226,8 @@
+ 		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
+ 		reg = <0xe6cd0000 0x100>;
+ 		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7740_CLK_SCIFA7>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -217,6 +235,8 @@
+ 		compatible = "renesas,scifb-r8a7740", "renesas,scifb";
+ 		reg = <0xe6c30000 0x100>;
+ 		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7740_CLK_SCIFB>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -240,6 +260,7 @@
+ 	tpu: pwm@e6600000 {
+ 		compatible = "renesas,tpu-r8a7740", "renesas,tpu";
+ 		reg = <0xe6600000 0x100>;
++		clocks = <&mstp3_clks R8A7740_CLK_TPU0>;
+ 		status = "disabled";
+ 		#pwm-cells = <3>;
+ 	};
+@@ -249,6 +270,7 @@
+ 		reg = <0xe6bd0000 0x100>;
+ 		interrupts = <0 56 IRQ_TYPE_LEVEL_HIGH
+ 			      0 57 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7740_CLK_MMC>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -258,6 +280,7 @@
+ 		interrupts = <0 117 IRQ_TYPE_LEVEL_HIGH
+ 			      0 118 IRQ_TYPE_LEVEL_HIGH
+ 			      0 119 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7740_CLK_SDHI0>;
+ 		cap-sd-highspeed;
+ 		cap-sdio-irq;
+ 		status = "disabled";
+@@ -269,6 +292,7 @@
+ 		interrupts = <0 121 IRQ_TYPE_LEVEL_HIGH
+ 			      0 122 IRQ_TYPE_LEVEL_HIGH
+ 			      0 123 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7740_CLK_SDHI1>;
+ 		cap-sd-highspeed;
+ 		cap-sdio-irq;
+ 		status = "disabled";
+@@ -280,6 +304,7 @@
+ 		interrupts = <0 125 IRQ_TYPE_LEVEL_HIGH
+ 			      0 126 IRQ_TYPE_LEVEL_HIGH
+ 			      0 127 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R8A7740_CLK_SDHI2>;
+ 		cap-sd-highspeed;
+ 		cap-sdio-irq;
+ 		status = "disabled";
+@@ -290,6 +315,7 @@
+ 		compatible = "renesas,fsi2-r8a7740", "renesas,sh_fsi2";
+ 		reg = <0xfe1f0000 0x400>;
+ 		interrupts = <0 9 0x4>;
++		clocks = <&mstp3_clks R8A7740_CLK_FSI>;
+ 		status = "disabled";
+ 	};
+ 
 -- 
-1.7.9.5
+1.8.4.5
 
