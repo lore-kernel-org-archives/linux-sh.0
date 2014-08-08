@@ -1,120 +1,105 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Mon, 11 Aug 2014 01:11:40 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7740: Multiplatform support
-Message-Id: <20140811011136.GA3748@verge.net.au>
+Date: Fri, 08 Aug 2014 02:19:45 +0000
+Subject: Re: [PATCH v2 7/8] ARM: shmobile: r8a7790: Add DMAC devices to DT
+Message-Id: <20140808021945.GB23715@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140808110437.2822.33109.sendpatchset@w520>
-In-Reply-To: <20140808110437.2822.33109.sendpatchset@w520>
+References: <1405727425-6237-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1405727425-6237-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Aug 08, 2014 at 08:04:37PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
+On Sat, Jul 19, 2014 at 01:50:24AM +0200, Laurent Pinchart wrote:
+> Instantiate the two system DMA controllers in the r8a7790 device tree.
 > 
-> Enable r8a7740 Multiplatform support for the generic r8a7740
-> machine vector. No board support is enabled, and the board
-> code for Armadillo 800 EVA DT Reference is left by itself.
-> 
-> Once the r8a7740 CCF DTS bits are merged together with SCIF
-> and CMT clock changes and a CMT DT update it will be possible
-> to boot an Armadillo 800 EVA board using the generic r8a7740
-> machine vector.
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-As part of this change uses the same ifdef scheme as
-"ARM: shmobile: Partial build of pm-rmobile.c for multiplatform"
-I would like to wait for disucssion of that patch to conclude
-before taking this one.
+Thanks. As the bindings have been merged I have queued up this patch for
+v3.18.
 
-> 
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 > ---
 > 
->  Built on top of renesas-devel-v3.16-20140808 and
->  "[PATCH] ARM: shmobile: Partial build of pm-rmobile.c for multiplatform"
+> Changes since v1:
 > 
->  arch/arm/mach-shmobile/Kconfig         |    6 ++++++
->  arch/arm/mach-shmobile/pm-r8a7740.c    |    5 ++---
->  arch/arm/mach-shmobile/r8a7740.h       |    4 ++--
->  arch/arm/mach-shmobile/setup-r8a7740.c |    8 +++++++-
->  4 files changed, 17 insertions(+), 6 deletions(-)
+> - Remove ch15 from interrupt names
+> ---
+>  arch/arm/boot/dts/r8a7790.dtsi | 59 ++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 59 insertions(+)
 > 
-> --- 0001/arch/arm/mach-shmobile/Kconfig
-> +++ work/arch/arm/mach-shmobile/Kconfig	2014-08-08 17:58:04.000000000 +0900
-> @@ -26,6 +26,12 @@ config ARCH_R7S72100
->  	bool "RZ/A1H (R7S72100)"
->  	select SYS_SUPPORTS_SH_MTU2
+> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+> index 0922a38..4c74f21 100644
+> --- a/arch/arm/boot/dts/r8a7790.dtsi
+> +++ b/arch/arm/boot/dts/r8a7790.dtsi
+> @@ -249,6 +249,65 @@
+>  			     <0 3 IRQ_TYPE_LEVEL_HIGH>;
+>  	};
 >  
-> +config ARCH_R8A7740
-> +	bool "R-Mobile A1 (R8A77400)"
-> +	select RENESAS_INTC_IRQPIN
-> +	select SYS_SUPPORTS_SH_CMT
-> +	select SYS_SUPPORTS_SH_TMU
+> +	dmac0: dma-controller@e6700000 {
+> +		compatible = "renesas,rcar-dmac";
+> +		reg = <0 0xe6700000 0 0x20000>;
+> +		interrupts = <0 197 IRQ_TYPE_LEVEL_HIGH
+> +			      0 200 IRQ_TYPE_LEVEL_HIGH
+> +			      0 201 IRQ_TYPE_LEVEL_HIGH
+> +			      0 202 IRQ_TYPE_LEVEL_HIGH
+> +			      0 203 IRQ_TYPE_LEVEL_HIGH
+> +			      0 204 IRQ_TYPE_LEVEL_HIGH
+> +			      0 205 IRQ_TYPE_LEVEL_HIGH
+> +			      0 206 IRQ_TYPE_LEVEL_HIGH
+> +			      0 207 IRQ_TYPE_LEVEL_HIGH
+> +			      0 208 IRQ_TYPE_LEVEL_HIGH
+> +			      0 209 IRQ_TYPE_LEVEL_HIGH
+> +			      0 210 IRQ_TYPE_LEVEL_HIGH
+> +			      0 211 IRQ_TYPE_LEVEL_HIGH
+> +			      0 212 IRQ_TYPE_LEVEL_HIGH
+> +			      0 213 IRQ_TYPE_LEVEL_HIGH
+> +			      0 214 IRQ_TYPE_LEVEL_HIGH>;
+> +		interrupt-names = "error",
+> +				"ch0", "ch1", "ch2", "ch3",
+> +				"ch4", "ch5", "ch6", "ch7",
+> +				"ch8", "ch9", "ch10", "ch11",
+> +				"ch12", "ch13", "ch14";
+> +		clocks = <&mstp2_clks R8A7790_CLK_SYS_DMAC0>;
+> +		clock-names = "fck";
+> +		#dma-cells = <1>;
+> +		dma-channels = <15>;
+> +	};
 > +
->  config ARCH_R8A7779
->  	bool "R-Car H1 (R8A77790)"
->  	select RENESAS_INTC_IRQPIN
-> --- 0001/arch/arm/mach-shmobile/pm-r8a7740.c
-> +++ work/arch/arm/mach-shmobile/pm-r8a7740.c	2014-08-08 17:58:04.000000000 +0900
-> @@ -13,7 +13,7 @@
->  #include "common.h"
->  #include "pm-rmobile.h"
->  
-> -#ifdef CONFIG_PM
-> +#if defined(CONFIG_PM) && !defined(CONFIG_ARCH_MULTIPLATFORM)
->  static int r8a7740_pd_a4s_suspend(void)
->  {
->  	/*
-> @@ -58,8 +58,7 @@ void __init r8a7740_init_pm_domains(void
->  	rmobile_init_domains(r8a7740_pm_domains, ARRAY_SIZE(r8a7740_pm_domains));
->  	pm_genpd_add_subdomain_names("A4S", "A3SP");
->  }
-> -
-> -#endif /* CONFIG_PM */
-> +#endif /* CONFIG_PM && !CONFIG_ARCH_MULTIPLATFORM */
->  
->  #ifdef CONFIG_SUSPEND
->  static int r8a7740_enter_suspend(suspend_state_t suspend_state)
-> --- 0001/arch/arm/mach-shmobile/r8a7740.h
-> +++ work/arch/arm/mach-shmobile/r8a7740.h	2014-08-08 17:58:04.000000000 +0900
-> @@ -54,10 +54,10 @@ extern void r8a7740_clock_init(u8 md_ck)
->  extern void r8a7740_pinmux_init(void);
->  extern void r8a7740_pm_init(void);
->  
-> -#ifdef CONFIG_PM
-> +#if defined(CONFIG_PM) && !defined(CONFIG_ARCH_MULTIPLATFORM)
->  extern void __init r8a7740_init_pm_domains(void);
->  #else
->  static inline void r8a7740_init_pm_domains(void) {}
-> -#endif /* CONFIG_PM */
-> +#endif /* CONFIG_PM && !CONFIG_ARCH_MULTIPLATFORM */
->  
->  #endif /* __ASM_R8A7740_H__ */
-> --- 0001/arch/arm/mach-shmobile/setup-r8a7740.c
-> +++ work/arch/arm/mach-shmobile/setup-r8a7740.c	2014-08-08 19:45:44.000000000 +0900
-> @@ -36,6 +36,7 @@
->  #include <asm/mach/map.h>
->  #include <asm/mach/arch.h>
->  #include <asm/mach/time.h>
-> +#include <asm/hardware/cache-l2x0.h>
->  
->  #include "common.h"
->  #include "dma-register.h"
-> @@ -827,7 +828,12 @@ void __init r8a7740_init_irq_of(void)
->  
->  static void __init r8a7740_generic_init(void)
->  {
-> -	r8a7740_clock_init(0);
-> +	r8a7740_meram_workaround();
-> +
-> +#ifdef CONFIG_CACHE_L2X0
-> +	/* Shared attribute override enable, 32K*8way */
-> +	l2x0_init(IOMEM(0xf0002000), 0x00400000, 0xc20f0fff);
-> +#endif
->  	r8a7740_add_standard_devices_dt();
->  }
->  
+> +	dmac1: dma-controller@e6720000 {
+> +		compatible = "renesas,rcar-dmac";
+> +		reg = <0 0xe6720000 0 0x20000>;
+> +		interrupts = <0 220 IRQ_TYPE_LEVEL_HIGH
+> +			      0 216 IRQ_TYPE_LEVEL_HIGH
+> +			      0 217 IRQ_TYPE_LEVEL_HIGH
+> +			      0 218 IRQ_TYPE_LEVEL_HIGH
+> +			      0 219 IRQ_TYPE_LEVEL_HIGH
+> +			      0 308 IRQ_TYPE_LEVEL_HIGH
+> +			      0 309 IRQ_TYPE_LEVEL_HIGH
+> +			      0 310 IRQ_TYPE_LEVEL_HIGH
+> +			      0 311 IRQ_TYPE_LEVEL_HIGH
+> +			      0 312 IRQ_TYPE_LEVEL_HIGH
+> +			      0 313 IRQ_TYPE_LEVEL_HIGH
+> +			      0 314 IRQ_TYPE_LEVEL_HIGH
+> +			      0 315 IRQ_TYPE_LEVEL_HIGH
+> +			      0 316 IRQ_TYPE_LEVEL_HIGH
+> +			      0 317 IRQ_TYPE_LEVEL_HIGH
+> +			      0 318 IRQ_TYPE_LEVEL_HIGH>;
+> +		interrupt-names = "error",
+> +				"ch0", "ch1", "ch2", "ch3",
+> +				"ch4", "ch5", "ch6", "ch7",
+> +				"ch8", "ch9", "ch10", "ch11",
+> +				"ch12", "ch13", "ch14";
+> +		clocks = <&mstp2_clks R8A7790_CLK_SYS_DMAC1>;
+> +		clock-names = "fck";
+> +		#dma-cells = <1>;
+> +		dma-channels = <15>;
+> +	};
+>  	i2c0: i2c@e6508000 {
+>  		#address-cells = <1>;
+>  		#size-cells = <0>;
+> -- 
+> 1.8.5.5
+> 
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
 > the body of a message to majordomo@vger.kernel.org
