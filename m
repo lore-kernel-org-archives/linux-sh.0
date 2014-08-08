@@ -1,56 +1,64 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 05 Aug 2014 13:33:41 +0000
-Subject: Re: [PATCH 4/6] dmaengine: rcar-dmac: Add device tree bindings documentation
-Message-Id: <11536846.yTpuKL4B5k@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 08 Aug 2014 10:59:23 +0000
+Subject: [PATCH] ARM: shmobile: Partial build of pm-rmobile.c for multiplatform
+Message-Id: <20140808105923.2628.30007.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1406766014.git.horms+renesas@verge.net.au> <2984491.bHCssUOyYu@avalon> <20140805014641.GD26270@verge.net.au>
-In-Reply-To: <20140805014641.GD26270@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Vinod Koul <vinod.koul@intel.com>, dmaengine@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Hi Simon,
+From: Magnus Damm <damm+renesas@opensource.se>
 
-On Tuesday 05 August 2014 10:46:42 Simon Horman wrote:
-> On Mon, Aug 04, 2014 at 04:01:42PM +0200, Laurent Pinchart wrote:
-> > On Monday 04 August 2014 10:05:49 Geert Uytterhoeven wrote:
-> >> On Thu, Jul 31, 2014 at 2:34 AM, Simon Horman wrote:
-> >>> --- /dev/null
-> >>> +++ b/Documentation/devicetree/bindings/dma/renesas,rcar-dmac.txt
-> >>> @@ -0,0 +1,98 @@
-> >>> +* Renesas R-Car DMA Controller Device Tree bindings
-> >>> +
-> >>> +Renesas R-Car Generation 2 SoCs have have multiple multi-channel DMA
-> >>> +controller instances named DMAC capable of serving multiple clients.
-> >>> Channels
-> >>> +can be dedicated to specific clients or shared between a large number
-> >>> of
-> >>> +clients.
-> >>> +
-> >>> +DMA clients are connected to the DMAC ports referenced by an 8-bit
-> >>> identifier +called MID/RID.
-> >> 
-> >> I think the above sentence can be removed, as it's superseded by the
-> >> first sentence of the successive paragraph:
-> >>
-> > I've probably just forgotten to remove the sentence while reworking the
-> > documentation. Thanks for reporting it, I'll fix that in the next version.
-> 
-> BTW, I believe Vinod has already applied this and the previous three
-> patches of this series to his tree.
+Disconnect Multiplatform PM domain enablement and
+SoC specific Multiplatform enablement by allowing
+to build pm-rmobile.c with parts of it disabled.
 
-Indeed. I'm surprised to see the DT bindings being merged without the driver, 
-but given that they seem to be OK, that's not a problem.
+This way it is possible to start using r8a7740
+with Multiplatform before PM domain DT is ready.
 
-> As he applied then rather than pulling the pull-request I sent I intend
-> to drop the entire series from my tree for now.
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-Please do. I'll resubmit the remaining patches.
+ Built on top of renesas-devel-v3.16-20140808
 
--- 
-Regards,
+ arch/arm/mach-shmobile/pm-rmobile.c |    4 ++--
+ arch/arm/mach-shmobile/pm-rmobile.h |    4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
 
-Laurent Pinchart
-
+--- 0001/arch/arm/mach-shmobile/pm-rmobile.c
++++ work/arch/arm/mach-shmobile/pm-rmobile.c	2014-08-07 15:36:40.000000000 +0900
+@@ -27,7 +27,7 @@
+ #define PSTR_RETRIES	100
+ #define PSTR_DELAY_US	10
+ 
+-#ifdef CONFIG_PM
++#if defined(CONFIG_PM) && !defined(CONFIG_ARCH_MULTIPLATFORM)
+ static int rmobile_pd_power_down(struct generic_pm_domain *genpd)
+ {
+ 	struct rmobile_pm_domain *rmobile_pd = to_rmobile_pd(genpd);
+@@ -151,4 +151,4 @@ void rmobile_add_devices_to_domains(stru
+ 		rmobile_add_device_to_domain_td(data[j].domain_name,
+ 						data[j].pdev, &latencies);
+ }
+-#endif /* CONFIG_PM */
++#endif /* CONFIG_PM && !CONFIG_ARCH_MULTIPLATFORM */
+--- 0001/arch/arm/mach-shmobile/pm-rmobile.h
++++ work/arch/arm/mach-shmobile/pm-rmobile.h	2014-08-07 15:34:58.000000000 +0900
+@@ -36,7 +36,7 @@ struct pm_domain_device {
+ 	struct platform_device *pdev;
+ };
+ 
+-#ifdef CONFIG_PM
++#if defined(CONFIG_PM) && !defined(CONFIG_ARCH_MULTIPLATFORM)
+ extern void rmobile_init_domains(struct rmobile_pm_domain domains[], int num);
+ extern void rmobile_add_device_to_domain_td(const char *domain_name,
+ 					    struct platform_device *pdev,
+@@ -58,6 +58,6 @@ extern void rmobile_add_devices_to_domai
+ 
+ static inline void rmobile_add_devices_to_domains(struct pm_domain_device d[],
+ 						  int size) {}
+-#endif /* CONFIG_PM */
++#endif /* CONFIG_PM && !CONFIG_ARCH_MULTIPLATFORM */
+ 
+ #endif /* PM_RMOBILE_H */
