@@ -1,41 +1,40 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 26 Aug 2014 07:43:39 +0000
-Subject: Re: [PATCH 10/12] mmc: sdhi: Fixup system PM suspend lock-up
-Message-Id: <CAMuHMdW-+xGKmcDSNjzS6MBB9ZnQ1FVrCeM82kyr5SgO-nPr0Q@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 08 Aug 2014 14:23:07 +0000
+Subject: [PATCH v2 0/5] ARM: shmobile: r8a7740: add clocks to DT
+Message-Id: <1407507792-8121-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
-	<1408969564-6335-11-git-send-email-ulf.hansson@linaro.org>
-In-Reply-To: <1408969564-6335-11-git-send-email-ulf.hansson@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: Linux MMC List <linux-mmc@vger.kernel.org>, Ian Molton <ian.molton@codethink.co.uk>, Chris Ball <chris@printf.net>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: horms@verge.net.au
+Cc: linux-sh@vger.kernel.org, mturquette@linaro.org, devicetree@vger.kernel.org, magnus.damm@gmail.com, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-On Mon, Aug 25, 2014 at 2:26 PM, Ulf Hansson <ulf.hansson@linaro.org> wrote:
-> At system PM suspend, the tmio core accessed the internal registers of
-> the controller without first moving the device into active state. This
-> caused a lock-up in system PM suspend phase.
->
-> The reason for the register access were masking of IRQs. Since that is
-> managed via the runtime PM suspend path, let's just re-use that path
-> for system PM suspend.
->
-> In other words force the device into runtime PM suspend state at system
-> PM suspend and restore it to active state at system PM resume.
->
-> Reported-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+Hi!
 
-Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Here's the r8a7740 DT clock patch(es) with the changes requested by Simon
+and Magnus as specified below.  Enjoy!
 
-Gr{oetje,eeting}s,
+changes since v1:
+- split up into separate patches
+- added MSTP clock assignments
 
-                        Geert
+CU Uli
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Ulrich Hecht (5):
+  ARM: shmobile: r8a7740: document MSTP clock support
+  ARM: shmobile: r8a7740: clock register bits
+  ARM: shmobile: r8a7740: add SoC clocks to DTS
+  ARM: shmobile: r8a7740: add MSTP clock assignments to DT
+  ARM: shmobile: armadillo800eva-reference: add clock overrides to DTS
+
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |   1 +
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts |  13 ++
+ arch/arm/boot/dts/r8a7740.dtsi                     | 208 ++++++++++++++++++++-
+ include/dt-bindings/clock/r8a7740-clock.h          |  77 ++++++++
+ 4 files changed, 298 insertions(+), 1 deletion(-)
+ create mode 100644 include/dt-bindings/clock/r8a7740-clock.h
+
+-- 
+1.8.4.5
+
