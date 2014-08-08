@@ -1,37 +1,106 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 23 Aug 2014 01:43:31 +0000
-Subject: [PATCH 2/8] ARM: shmobile: marzen: Add shmobile_init_late()
-Message-Id: <b9c9281339376521d0feb78c9051fedfbb3cf111.1408671094.git.horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 08 Aug 2014 02:19:35 +0000
+Subject: Re: [PATCH v2 8/8] ARM: shmobile: r8a7791: Add DMAC devices to DT
+Message-Id: <20140808021932.GA23715@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408671094.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408671094.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+On Sat, Jul 19, 2014 at 01:50:25AM +0200, Laurent Pinchart wrote:
+> Instantiate the two system DMA controllers in the r8a7791 device tree.
+> 
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Extend board specific Marzen DT reference machine vector to include
-shmobile_init_late() so Suspend-to-RAM and CPUIdle are setup as expected.
+Thanks. As the bindings have been merged I have queued up this patch for
+v3.18.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-marzen-reference.c | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index 21b3e1c..9194bce 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -67,5 +67,6 @@ DT_MACHINE_START(MARZEN, "marzen")
- 	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= r8a7779_init_irq_dt,
- 	.init_machine	= marzen_init,
-+	.init_late	= shmobile_init_late,
- 	.dt_compat	= marzen_boards_compat_dt,
- MACHINE_END
--- 
-2.0.1
-
+> ---
+> 
+> Changes since v1:
+> 
+> - Remove ch15 from interrupt names
+> ---
+>  arch/arm/boot/dts/r8a7791.dtsi | 60 ++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 60 insertions(+)
+> 
+> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+> index 56841d3..9cbe5f8 100644
+> --- a/arch/arm/boot/dts/r8a7791.dtsi
+> +++ b/arch/arm/boot/dts/r8a7791.dtsi
+> @@ -238,6 +238,66 @@
+>  			     <0 17 IRQ_TYPE_LEVEL_HIGH>;
+>  	};
+>  
+> +	dmac0: dma-controller@e6700000 {
+> +		compatible = "renesas,rcar-dmac";
+> +		reg = <0 0xe6700000 0 0x20000>;
+> +		interrupts = <0 197 IRQ_TYPE_LEVEL_HIGH
+> +			      0 200 IRQ_TYPE_LEVEL_HIGH
+> +			      0 201 IRQ_TYPE_LEVEL_HIGH
+> +			      0 202 IRQ_TYPE_LEVEL_HIGH
+> +			      0 203 IRQ_TYPE_LEVEL_HIGH
+> +			      0 204 IRQ_TYPE_LEVEL_HIGH
+> +			      0 205 IRQ_TYPE_LEVEL_HIGH
+> +			      0 206 IRQ_TYPE_LEVEL_HIGH
+> +			      0 207 IRQ_TYPE_LEVEL_HIGH
+> +			      0 208 IRQ_TYPE_LEVEL_HIGH
+> +			      0 209 IRQ_TYPE_LEVEL_HIGH
+> +			      0 210 IRQ_TYPE_LEVEL_HIGH
+> +			      0 211 IRQ_TYPE_LEVEL_HIGH
+> +			      0 212 IRQ_TYPE_LEVEL_HIGH
+> +			      0 213 IRQ_TYPE_LEVEL_HIGH
+> +			      0 214 IRQ_TYPE_LEVEL_HIGH>;
+> +		interrupt-names = "error",
+> +				"ch0", "ch1", "ch2", "ch3",
+> +				"ch4", "ch5", "ch6", "ch7",
+> +				"ch8", "ch9", "ch10", "ch11",
+> +				"ch12", "ch13", "ch14";
+> +		clocks = <&mstp2_clks R8A7791_CLK_SYS_DMAC0>;
+> +		clock-names = "fck";
+> +		#dma-cells = <1>;
+> +		dma-channels = <15>;
+> +	};
+> +
+> +	dmac1: dma-controller@e6720000 {
+> +		compatible = "renesas,rcar-dmac";
+> +		reg = <0 0xe6720000 0 0x20000>;
+> +		interrupts = <0 220 IRQ_TYPE_LEVEL_HIGH
+> +			      0 216 IRQ_TYPE_LEVEL_HIGH
+> +			      0 217 IRQ_TYPE_LEVEL_HIGH
+> +			      0 218 IRQ_TYPE_LEVEL_HIGH
+> +			      0 219 IRQ_TYPE_LEVEL_HIGH
+> +			      0 308 IRQ_TYPE_LEVEL_HIGH
+> +			      0 309 IRQ_TYPE_LEVEL_HIGH
+> +			      0 310 IRQ_TYPE_LEVEL_HIGH
+> +			      0 311 IRQ_TYPE_LEVEL_HIGH
+> +			      0 312 IRQ_TYPE_LEVEL_HIGH
+> +			      0 313 IRQ_TYPE_LEVEL_HIGH
+> +			      0 314 IRQ_TYPE_LEVEL_HIGH
+> +			      0 315 IRQ_TYPE_LEVEL_HIGH
+> +			      0 316 IRQ_TYPE_LEVEL_HIGH
+> +			      0 317 IRQ_TYPE_LEVEL_HIGH
+> +			      0 318 IRQ_TYPE_LEVEL_HIGH>;
+> +		interrupt-names = "error",
+> +				"ch0", "ch1", "ch2", "ch3",
+> +				"ch4", "ch5", "ch6", "ch7",
+> +				"ch8", "ch9", "ch10", "ch11",
+> +				"ch12", "ch13", "ch14";
+> +		clocks = <&mstp2_clks R8A7791_CLK_SYS_DMAC1>;
+> +		clock-names = "fck";
+> +		#dma-cells = <1>;
+> +		dma-channels = <15>;
+> +	};
+> +
+>  	/* The memory map in the User's Manual maps the cores to bus numbers */
+>  	i2c0: i2c@e6508000 {
+>  		#address-cells = <1>;
+> -- 
+> 1.8.5.5
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
