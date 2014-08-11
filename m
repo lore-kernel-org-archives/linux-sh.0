@@ -1,85 +1,46 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Aug 2014 16:41:13 +0000
-Subject: [PATCH 16/16] ARM: shmobile: koelsch: Enable DU device in DT
-Message-Id: <1409157673-4154-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 11 Aug 2014 02:52:48 +0000
+Subject: [PATCH repost 4/5] ARM: shmobile: armadillo800eva-reference: Do not use r8a7740_add_standard_devices
+Message-Id: <1407725569-31413-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1407725569-31413-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1407725569-31413-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Specify the DU output topology, enable the DU device and configure the
-related pins.
+Now that r8a7740_add_standard_devices_dt() is just a wrapper for
+of_platform_populate() call the latter directly.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This is in preparation for removing r8a7740_add_standard_devices_dt().
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 43 ++++++++++++++++++++++++++++++++---
- 1 file changed, 40 insertions(+), 3 deletions(-)
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 178431d..19d7b36 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -209,6 +209,46 @@
- 		states = <3300000 1
- 			  1800000 0>;
- 	};
-+
-+	panel {
-+		compatible = "mitsubishi,aa104xd12", "panel-dpi";
-+
-+		width-mm = <210>;
-+		height-mm = <158>;
-+
-+		panel-timing {
-+			/* 1024x768 @65Hz */
-+			clock-frequency = <65000000>;
-+			hactive = <1024>;
-+			vactive = <768>;
-+			hsync-len = <136>;
-+			hfront-porch = <20>;
-+			hback-porch = <160>;
-+			vfront-porch = <3>;
-+			vback-porch = <29>;
-+			vsync-len = <6>;
-+		};
-+
-+		port {
-+			panel_in: endpoint {
-+				remote-endpoint = <&du_out_lvds0>;
-+			};
-+		};
-+	};
-+};
-+
-+&du {
-+	pinctrl-0 = <&du_pins>;
-+	pinctrl-names = "default";
-+	status = "okay";
-+
-+	ports {
-+		port@1 {
-+			endpoint {
-+				remote-endpoint = <&panel_in>;
-+			};
-+		};
-+	};
- };
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index c392632..ea8a781 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -24,6 +24,7 @@
+ #include <linux/gpio.h>
+ #include <linux/io.h>
+ #include <linux/kernel.h>
++#include <linux/of_platform.h>
  
- &extal_clk {
-@@ -216,9 +256,6 @@
- };
+ #include <asm/mach/arch.h>
+ #include <asm/hardware/cache-l2x0.h>
+@@ -170,7 +171,7 @@ static void __init eva_init(void)
+ 	l2x0_init(IOMEM(0xf0002000), 0x00400000, 0xc20f0fff);
+ #endif
  
- &pfc {
--	pinctrl-0 = <&du_pins>;
--	pinctrl-names = "default";
--
- 	i2c2_pins: i2c2 {
- 		renesas,groups = "i2c2";
- 		renesas,function = "i2c2";
+-	r8a7740_add_standard_devices_dt();
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 
+ 	r8a7740_pm_init();
+ }
 -- 
-1.8.5.5
+2.0.1
 
