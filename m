@@ -1,76 +1,37 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 29 Aug 2014 13:50:15 +0000
-Subject: [PATCH 09/11] ARM: shmobile: r8a7740/armadillo legacy: Add A4R pm domain support
-Message-Id: <1409320217-13278-10-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 11 Aug 2014 02:52:44 +0000
+Subject: [PATCH repost 0/5] ARM: shmobile: armadillo800eva-reference: Enable CMT1 in device tree
+Message-Id: <1407725569-31413-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add support for the A4R power domain, and hook up the A3RV subdomain,
-and the CEU0, TMU0, and IIC0 hardware blocks.
-This domain also contains the Realtime CPU (SH-4A), Realtime CPU debug
-modules, H-UDI, RT-SHwy, INTCS, RT-HPB, VIO6C, JPU, RTDMAC1/2, SSP,
-MSIOF0, CMT0, ICB, DREQPAK (RT), 2DDMAC, IPMMUI, and 2DG hardware
-blocks, but these are currently not used by any driver.
+This short series enables the CMT1 timer using DT on
+armadillo800eva-reference.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/mach-shmobile/board-armadillo800eva.c |    1 +
- arch/arm/mach-shmobile/pm-r8a7740.c            |    4 ++++
- arch/arm/mach-shmobile/setup-r8a7740.c         |    2 ++
- 3 files changed, 7 insertions(+)
+It is based on "ARM: shmobile: r8a7740: add clocks to DT" applied
+on top of renesas-devel-v3.16-20140808.
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index c2ac4ee51710..20967dbbc1c9 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1235,6 +1235,7 @@ static void __init eva_init(void)
- 		{ "A4LC", &lcdc0_device },
- 		{ "A4LC", &hdmi_lcdc_device },
- 		{ "A4MP", &fsi_device },
-+		{ "A4R",  &ceu0_device },
- 		{ "A4S",  &sh_eth_device },
- 		{ "A3SP", &pwm_device },
- 		{ "A3SP", &sdhi0_device },
-diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
-index cbdb87c67711..3e15143572dc 100644
---- a/arch/arm/mach-shmobile/pm-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7740.c
-@@ -43,6 +43,9 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
- //		.genpd.name	= "D4",
- //		.bit_shift	= 3,
- //	}, {
-+		.genpd.name	= "A4R",
-+		.bit_shift	= 5,
-+	}, {
- 		.genpd.name	= "A3RV",
- 		.bit_shift	= 6,
- 	}, {
-@@ -66,6 +69,7 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
- void __init r8a7740_init_pm_domains(void)
- {
- 	rmobile_init_domains(r8a7740_pm_domains, ARRAY_SIZE(r8a7740_pm_domains));
-+	pm_genpd_add_subdomain_names("A4R", "A3RV");
- 	pm_genpd_add_subdomain_names("A4S", "A3SP");
- 	pm_genpd_add_subdomain_names("A4S", "A3SG");
- }
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index dbf8a93ccc4f..b77c226ab891 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -746,6 +746,8 @@ static void r8a7740_i2c_workaround(struct platform_device *pdev)
- void __init r8a7740_add_standard_devices(void)
- {
- 	static struct pm_domain_device domain_devices[] __initdata = {
-+		{ "A4R",  &tmu0_device },
-+		{ "A4R",  &i2c0_device },
- 		{ "A4S",  &irqpin0_device },
- 		{ "A4S",  &irqpin1_device },
- 		{ "A4S",  &irqpin2_device },
+Ulrich, if you end up reposting "ARM: shmobile: r8a7740: add clocks to DT"
+please consider appending this series to it.
+
+Simon Horman (5):
+  ARM: shmobile: r8a7740: Add CMT1 device to DT
+  ARM: shmobile: armadillo800eva-reference: Enable CMT1 in device tree
+  ARM: shmobile: armadillo800eva-reference: Sort includes
+  ARM: shmobile: armadillo800eva-reference: Do not use
+    r8a7740_add_standard_devices_dt()
+  ARM: shmobile: r8a7740: Remove r8a7740_add_standard_devices_dt
+
+ .../arm/boot/dts/r8a7740-armadillo800eva-reference.dts |  4 ++++
+ arch/arm/boot/dts/r8a7740.dtsi                         | 12 ++++++++++++
+ .../mach-shmobile/board-armadillo800eva-reference.c    |  5 +++--
+ arch/arm/mach-shmobile/r8a7740.h                       |  1 -
+ arch/arm/mach-shmobile/setup-r8a7740.c                 | 18 ++----------------
+ 5 files changed, 21 insertions(+), 19 deletions(-)
+
 -- 
-1.7.9.5
+2.0.1
 
