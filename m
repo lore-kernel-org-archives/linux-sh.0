@@ -1,22 +1,37 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 22 Aug 2014 14:21:26 +0000
-Subject: [PATCH 0/3] R-Car I2C driver: some cleanups
-Message-Id: <32018817.zX4x1fdR4T@wasted.cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 11 Aug 2014 02:52:47 +0000
+Subject: [PATCH repost 3/5] ARM: shmobile: armadillo800eva-reference: Sort includes
+Message-Id: <1407725569-31413-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1407725569-31413-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1407725569-31413-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: wsa@the-dreams.de, linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Sorted includes seems to be the done thing these days.
 
-   Here's the set of 3 patches against Wolfram Sang's 'linux.git' repo's
-'i2c/for-next' branch.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-[1/3] i2c-rcar: simplify check for last message
-[2/3] i2c-rcar: make rcar_i2c_prepare_msg() *void*
-[3/3] i2c-rcar: make rcar_i2c_irq_recv() *void*
-
-WBR, Sergei
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index 84bc6cb..c392632 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -21,9 +21,9 @@
+ 
+ #include <linux/clk.h>
+ #include <linux/err.h>
+-#include <linux/kernel.h>
+ #include <linux/gpio.h>
+ #include <linux/io.h>
++#include <linux/kernel.h>
+ 
+ #include <asm/mach/arch.h>
+ #include <asm/hardware/cache-l2x0.h>
+-- 
+2.0.1
 
