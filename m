@@ -1,43 +1,62 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Wed, 06 Aug 2014 01:24:51 +0000
-Subject: [PATCH 3/3 v2] ARM: shmobile: r8a7791: add missing 0x0100 for SDCKCR
-Message-Id: <87y4v2jtpb.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 11 Aug 2014 02:52:49 +0000
+Subject: [PATCH repost 5/5] ARM: shmobile: r8a7740: Remove r8a7740_add_standard_devices_dt
+Message-Id: <1407725569-31413-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1407725569-31413-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1407725569-31413-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Now that r8a7740_add_standard_devices_dt() is simply a wrapper
+for a call to of_platform_populate() remove it and call
+of_platform_populate() directly.
 
-4bfb358b1d6cdeff8c6a13677f01ed78e9696b98
-(ARM: shmobile: Add r8a7791 legacy SDHI clocks)
-added r8a7791 SDHI clock support.
-
-But, it is missing
-"0x0100: x 1/8" division ratio.
-This patch fixes hidden bug.
-It is based on R-Car H2 v0.7, R-Car M2 v0.9.
-
-Reported-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7791.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/r8a7740.h       | 1 -
+ arch/arm/mach-shmobile/setup-r8a7740.c | 7 +------
+ 2 files changed, 1 insertion(+), 7 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index 10e193d..453b231 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -152,7 +152,7 @@ enum {
+diff --git a/arch/arm/mach-shmobile/r8a7740.h b/arch/arm/mach-shmobile/r8a7740.h
+index 1d1a5fd..3352fb8 100644
+--- a/arch/arm/mach-shmobile/r8a7740.h
++++ b/arch/arm/mach-shmobile/r8a7740.h
+@@ -49,7 +49,6 @@ extern void r8a7740_init_irq_of(void);
+ extern void r8a7740_map_io(void);
+ extern void r8a7740_add_early_devices(void);
+ extern void r8a7740_add_standard_devices(void);
+-extern void r8a7740_add_standard_devices_dt(void);
+ extern void r8a7740_clock_init(u8 md_ck);
+ extern void r8a7740_pinmux_init(void);
+ extern void r8a7740_pm_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index dc44a44..8fe270d 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -781,11 +781,6 @@ void __init r8a7740_add_early_devices(void)
  
- static struct clk div4_clks[DIV4_NR] = {
- 	[DIV4_SDH] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 8, 0x0dff, CLK_ENABLE_ON_INIT),
--	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1de0, CLK_ENABLE_ON_INIT),
-+	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1df0, CLK_ENABLE_ON_INIT),
- };
+ #ifdef CONFIG_USE_OF
  
- /* DIV6 clocks */
+-void __init r8a7740_add_standard_devices_dt(void)
+-{
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-}
+-
+ void __init r8a7740_init_irq_of(void)
+ {
+ 	void __iomem *intc_prio_base = ioremap_nocache(0xe6900010, 0x10);
+@@ -819,7 +814,7 @@ void __init r8a7740_init_irq_of(void)
+ static void __init r8a7740_generic_init(void)
+ {
+ 	r8a7740_clock_init(0);
+-	r8a7740_add_standard_devices_dt();
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
+ static const char *r8a7740_boards_compat_dt[] __initdata = {
 -- 
-1.7.9.5
+2.0.1
 
