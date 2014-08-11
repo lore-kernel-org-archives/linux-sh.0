@@ -1,76 +1,90 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 07 Aug 2014 00:16:47 +0000
-Subject: Re: [PATCH 00/12] spi: rspi and sh-msiof driver updates
-Message-Id: <2006783.fexCv50f5Y@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 11 Aug 2014 02:38:59 +0000
+Subject: [PATCH] ARM: shmobile: armadillo800eva: Sort includes
+Message-Id: <1407724739-14100-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1407329949-5695-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+References: <87fw7w38mf.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87fw7w38mf.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
-Cc: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+Sorted includes seems to be the done thing these days.
 
-Thank you for the patches.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 40 +++++++++++++-------------
+ 1 file changed, 20 insertions(+), 20 deletions(-)
 
-On Wednesday 06 August 2014 14:58:57 Geert Uytterhoeven wrote:
-> 	Hi Mark, Simon,
-> 
-> Here's a series of Renesas RSPI/QSPI and SH-MSIOF SPI driver updates.
-> I grouped them in three parts:
->   - [1-5] are for the rspi driver (Mark),
->   - [6-8] are for the sh-msiof driver (Mark),
->   - [9-12] are for the R-Car Gen2 DTSes (Simon).
-
-For everything but 06/12,
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> Summary of changes:
->   - [1] and [6] are bug fixes I have sent before, but that weren't applied
->     due to dependency confusion,
->   - [2] is a new cosmetic fix,
->   - [3] makes rspi use a new helper function that will be available as of
->     v3.17-rc1,
->   - [4-5] and [7-8] make DMA work with the new R-Car DMAC driver,
->     developed by Laurent Pinchart in the series "[PATCH v2 0/8] R-Car Gen2
->     DMA Controller driver"
->     (http://www.spinics.net/lists/linux-sh/msg33890.html),
->   - [9-12] enable DMA in DT for r8a7791 and r8a7790, and depend on
->     "[PATCH v2 8/8] ARM: shmobile: r8a7791: Add DMAC devices to DT"
->     (http://www.spinics.net/lists/linux-sh/msg33897.html) resp.
->     "[PATCH v2 7/8] ARM: shmobile: r8a7790: Add DMAC devices to DT"
->     (http://www.spinics.net/lists/linux-sh/msg33896.html) of the
->     aforementioned series.
-> 
-> This has been tested on r8a7791/koelsch.
-> 
-> Geert Uytterhoeven (12):
->    [1] spi: rspi: Fix leaking of unused DMA descriptors
->    [2] spi: rspi: Remove unneeded semicolon
->    [3] spi: rspi: Use devm_kasprintf()
->    [4] spi: rspi: Configure DMA slave bus width to 8 bit
->    [5] spi: rspi: Add DT support to DMA setup
->    [6] spi: sh-msiof: Fix leaking of unused DMA descriptors
->    [7] spi: sh-msiof: Configure DMA slave bus width
->    [8] spi: sh-msiof: Add DT support to DMA setup
->    [9] ARM: shmobile: r8a7791 dtsi: Enable DMA for QSPI
->   [10] ARM: shmobile: r8a7791 dtsi: Enable DMA for MSIOF
->   [11] ARM: shmobile: r8a7790 dtsi: Enable DMA for QSPI
->   [12] ARM: shmobile: r8a7790 dtsi: Enable DMA for MSIOF
-> 
->  Documentation/devicetree/bindings/spi/sh-msiof.txt |  17 ++-
->  Documentation/devicetree/bindings/spi/spi-rspi.txt |   5 +
->  arch/arm/boot/dts/r8a7790.dtsi                     |  18 ++-
->  arch/arm/boot/dts/r8a7791.dtsi                     |  14 +-
->  drivers/spi/spi-rspi.c                             | 147 +++++++++++-------
->  drivers/spi/spi-sh-msiof.c                         | 103 +++++++++------
->  6 files changed, 195 insertions(+), 109 deletions(-)
-
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index fc73246..ad27665 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -22,43 +22,43 @@
+ #include <linux/clk.h>
+ #include <linux/delay.h>
+ #include <linux/err.h>
+-#include <linux/kernel.h>
+-#include <linux/input.h>
+-#include <linux/platform_data/st1232_pdata.h>
+-#include <linux/irq.h>
+-#include <linux/platform_device.h>
+ #include <linux/gpio.h>
+ #include <linux/gpio_keys.h>
+-#include <linux/regulator/driver.h>
++#include <linux/i2c-gpio.h>
++#include <linux/input.h>
++#include <linux/irq.h>
++#include <linux/kernel.h>
++#include <linux/mfd/tmio.h>
++#include <linux/mmc/host.h>
++#include <linux/mmc/sh_mmcif.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/pinctrl/machine.h>
++#include <linux/platform_data/st1232_pdata.h>
++#include <linux/platform_device.h>
+ #include <linux/pwm.h>
+ #include <linux/pwm_backlight.h>
++#include <linux/reboot.h>
++#include <linux/regulator/driver.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/gpio-regulator.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/sh_eth.h>
+-#include <linux/videodev2.h>
+ #include <linux/usb/renesas_usbhs.h>
+-#include <linux/mfd/tmio.h>
+-#include <linux/mmc/host.h>
+-#include <linux/mmc/sh_mmcif.h>
+-#include <linux/mmc/sh_mobile_sdhi.h>
+-#include <linux/i2c-gpio.h>
+-#include <linux/reboot.h>
++#include <linux/videodev2.h>
+ 
+-#include <media/mt9t112.h>
+-#include <media/sh_mobile_ceu.h>
+-#include <media/soc_camera.h>
+-#include <asm/page.h>
++#include <asm/hardware/cache-l2x0.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
+ #include <asm/mach/time.h>
+-#include <asm/hardware/cache-l2x0.h>
+-#include <video/sh_mobile_lcdc.h>
+-#include <video/sh_mobile_hdmi.h>
++#include <asm/page.h>
++#include <media/mt9t112.h>
++#include <media/sh_mobile_ceu.h>
++#include <media/soc_camera.h>
+ #include <sound/sh_fsi.h>
+ #include <sound/simple_card.h>
++#include <video/sh_mobile_hdmi.h>
++#include <video/sh_mobile_lcdc.h>
+ 
+ #include "common.h"
+ #include "irqs.h"
 -- 
-Regards,
-
-Laurent Pinchart
+2.0.1
 
