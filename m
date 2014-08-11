@@ -1,49 +1,33 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 11 Aug 2014 02:45:35 +0000
-Subject: [PATCH 1/5] ARM: shmobile: r8a7740: Add CMT1 device to DT
-Message-Id: <1407725139-16156-2-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 11 Aug 2014 07:11:22 +0000
+Subject: Re: [PATCH 1/5] ARM: shmobile: r8a7740: Add CMT1 device to DT
+Message-Id: <CAMuHMdWBdbeTAG9eB_kg63i=4jYKLK7_1iD_POVOLnDkVHCUDQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1407725139-16156-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1407725139-16156-1-git-send-email-horms+renesas@verge.net.au>
+ <1407725139-16156-2-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1407725139-16156-2-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add the CMT0 counters to the r8a7740 device tree and make it
-disabled by default.
+On Mon, Aug 11, 2014 at 4:45 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> Add the CMT0 counters to the r8a7740 device tree and make it
 
-Based on work by Magnus Damm.
+CMT1?
 
-Cc: Magnus Damm <magnus.damm@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7740.dtsi | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+> disabled by default.
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 6cd6a46..1067a96 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -41,6 +41,18 @@
- 		interrupts = <0 83 IRQ_TYPE_LEVEL_HIGH>;
- 	};
- 
-+	cmt1: timer@e6138000 {
-+		compatible = "renesas,cmt-48";
-+		reg = <0xe6138000 0x170>;
-+		interrupts = <0 58 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7740_CLK_CMT1>;
-+		clock-names = "fck";
-+
-+		renesas,channels-mask = <0x3f>;
-+
-+		status = "disabled";
-+	};
-+
- 	/* irqpin0: IRQ0 - IRQ7 */
- 	irqpin0: irqpin@e6900000 {
- 		compatible = "renesas,intc-irqpin-r8a7740", "renesas,intc-irqpin";
--- 
-2.0.1
+> +       cmt1: timer@e6138000 {
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
