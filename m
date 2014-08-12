@@ -1,39 +1,83 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 08 Aug 2014 11:49:13 +0000
-Subject: [PATCH 02/02] ARM: shmobile: marzen: Remove NR_IRQS_LEGACY
-Message-Id: <20140808114913.14647.10399.sendpatchset@w520>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 12 Aug 2014 20:16:18 +0000
+Subject: [PATCH v5 1/2] ARM: shmobile: r8a7790: add VIN device nodes
+Message-Id: <3266734.k9AqsXjshd@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1793694.Z8xUpkGDQx@wasted.cogentembedded.com>
+In-Reply-To: <1793694.Z8xUpkGDQx@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-Remove NR_IRQS_LEGACY from the Marzen Reference code.
-The Marzen Reference machine vector requires use of
-Multiplatform, and in such case SPARSE_IRQ is enabled
-by default. This in turns means that the default value
-of .nr_irqs equals NR_IRQS and NR_IRQS_LEGACY. Because
-of this we can simply remove NR_IRQS_LEGACY and move one
-step closer to a cruft-free environment.
+Add device nodes for the four video input controllers on the R8A7790.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+[Sergei: renamed VIN device nodes, edited changelog]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
+Changes in version 5:
+- renamed VIN device nodes;
+- edited changelog and summary;
+- refreshed patch.
 
- Built on top of renesas-devel-v3.16-20140808.
- Completely untested.
+ arch/arm/boot/dts/r8a7790.dtsi |   36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
 
- arch/arm/mach-shmobile/board-marzen-reference.c |    1 -
- 1 file changed, 1 deletion(-)
+Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
++++ renesas/arch/arm/boot/dts/r8a7790.dtsi
+@@ -33,6 +33,10 @@
+ 		spi2 = &msiof1;
+ 		spi3 = &msiof2;
+ 		spi4 = &msiof3;
++		vin0 = &vin0;
++		vin1 = &vin1;
++		vin2 = &vin2;
++		vin3 = &vin3;
+ 	};
+ 
+ 	cpus {
+@@ -564,6 +568,38 @@
+ 		status = "disabled";
+ 	};
+ 
++	vin0: video@e6ef0000 {
++		compatible = "renesas,vin-r8a7790";
++		clocks = <&mstp8_clks R8A7790_CLK_VIN0>;
++		reg = <0 0xe6ef0000 0 0x1000>;
++		interrupts = <0 188 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	vin1: video@e6ef1000 {
++		compatible = "renesas,vin-r8a7790";
++		clocks = <&mstp8_clks R8A7790_CLK_VIN1>;
++		reg = <0 0xe6ef1000 0 0x1000>;
++		interrupts = <0 189 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	vin2: video@e6ef2000 {
++		compatible = "renesas,vin-r8a7790";
++		clocks = <&mstp8_clks R8A7790_CLK_VIN2>;
++		reg = <0 0xe6ef2000 0 0x1000>;
++		interrupts = <0 190 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	vin3: video@e6ef3000 {
++		compatible = "renesas,vin-r8a7790";
++		clocks = <&mstp8_clks R8A7790_CLK_VIN3>;
++		reg = <0 0xe6ef3000 0 0x1000>;
++		interrupts = <0 191 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 
---- 0001/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ work/arch/arm/mach-shmobile/board-marzen-reference.c	2014-08-07 16:08:05.000000000 +0900
-@@ -54,7 +54,6 @@ DT_MACHINE_START(MARZEN, "marzen")
- 	.map_io		= r8a7779_map_io,
- 	.init_early	= shmobile_init_delay,
- 	.init_time	= marzen_init_timer,
--	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= r8a7779_init_irq_dt,
- 	.init_machine	= marzen_init,
- 	.init_late	= shmobile_init_late,
