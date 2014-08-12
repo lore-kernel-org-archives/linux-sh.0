@@ -1,81 +1,54 @@
-From: Mark Rutland <mark.rutland@arm.com>
-Date: Wed, 27 Aug 2014 09:52:40 +0000
-Subject: Re: [PATCH 2/3 repost] clocksource: sh_mtu2: Document r7s72100 binding
-Message-Id: <20140827095240.GC7295@leverpostej>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 12 Aug 2014 13:03:13 +0000
+Subject: [PATCH] ARM: shmobile: koelsch: Remove non-existent i2c6 pinmux
+Message-Id: <1407848593-23040-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409117300-2133-1-git-send-email-horms+renesas@verge.net.au>
- <1409117300-2133-3-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1409117300-2133-3-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Gaku Inami <gaku.inami.xw-kTT6dE0pTRh9uiUsa/gSgQ@public.gmane.org>
+Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-On Wed, Aug 27, 2014 at 06:28:19AM +0100, Simon Horman wrote:
-> In general Renesas hardware is not documented to the extent
-> where the relationship between IP blocks on different SoCs can be assumed
-> although they may appear to operate the same way. Furthermore the
-> documentation typically does not specify a version for individual
-> IP blocks. For these reasons a convention of using the SoC name in place
-> of a version and providing SoC-specific compat strings has been adopted.
-> 
-> Although not universally liked this convention is used in the bindings
-> for the drivers a number of drivers for Renesas hardware. The purpose
-> of this patch is to update the Renesas R-Car Multi-Function Timer Pulse
-> Unit 2 (MTU2) driver to follow this convention.
-> 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> ---
-> * I plan to follow up with a patch patch to use the new binding in the
->   dtsi files for the r7s72100 SoC.
-> ---
->  Documentation/devicetree/bindings/timer/renesas,mtu2.txt | 6 ++++--
->  1 file changed, 4 insertions(+), 2 deletions(-)
-> 
-> diff --git a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-> index 917453f..ec4d334 100644
-> --- a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-> +++ b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-> @@ -8,7 +8,9 @@ are independent. The MTU2 hardware supports five channels indexed from 0 to 4.
->  
->  Required Properties:
->  
-> -  - compatible: must contain "renesas,mtu2"
-> +  - compatible: must be one of the following.
+On r8a7791, i2c6 (aka iic3) doesn't need pinmux, but the koelsch dts
+refers to non-existent pinmux configuration data:
 
-Surely "one or more", follwing the example?
+pinmux core: sh-pfc does not support function i2c6
+sh-pfc e6060000.pfc: invalid function i2c6 in map table
 
-> +    - "renesas,mtu2" for generic MTU2
+Remove it to fix this.
 
-s/generic/any/ to make it clearer this should be present in all lists
-for the moment?
+Fixes: commit 1d41f36a68c0f4e9b01d563ce33bab5201858b54 ("ARM: shmobile:
+       koelsch dts: Add VDD MPU regulator for DVFS")
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 7 -------
+ 1 file changed, 7 deletions(-)
 
-> +    - "renesas,mtu2-r7s72100" for R7S72100 MTU2
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 7966dace64ce..951a5c55003e 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -275,11 +275,6 @@
+ 		renesas,function = "msiof0";
+ 	};
+ 
+-	i2c6_pins: i2c6 {
+-		renesas,groups = "i2c6";
+-		renesas,function = "i2c6";
+-	};
+-
+ 	usb0_pins: usb0 {
+ 		renesas,groups = "usb0";
+ 		renesas,function = "usb0";
+@@ -477,8 +472,6 @@
+ };
+ 
+ &i2c6 {
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&i2c6_pins>;
+ 	status = "okay";
+ 	clock-frequency = <100000>;
+ 
+-- 
+1.9.1
 
-It might make sense to move this above the "renesas,mtu2" entry to make
-the ordering a bit clearer.
-
-Cheers,
-Mark.
-
->  
->    - reg: base address and length of the registers block for the timer module.
->  
-> @@ -26,7 +28,7 @@ Required Properties:
->  Example: R7S72100 (RZ/A1H) MTU2 node
->  
->  	mtu2: timer@fcff0000 {
-> -		compatible = "renesas,mtu2";
-> +		compatible = "renesas,mtu2-r7s72100", "renesas,mtu2";
->  		reg = <0xfcff0000 0x400>;
->  		interrupts = <0 139 IRQ_TYPE_LEVEL_HIGH>,
->  			     <0 146 IRQ_TYPE_LEVEL_HIGH>,
-> -- 
-> 2.0.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe devicetree" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
