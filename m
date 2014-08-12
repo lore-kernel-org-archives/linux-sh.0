@@ -1,68 +1,79 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 27 Aug 2014 11:09:31 +0000
-Subject: Re: [PATCH 2/3] clocksource: sh_mtu2: Document r7s72100 binding
-Message-Id: <53FDBC6B.5090801@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 12 Aug 2014 12:11:07 +0000
+Subject: rcar-dmac: DMAOR initialization failed
+Message-Id: <CAMuHMdUbJ2DyL2wpV6SDDyxmoBiQEycUYiBpN8BigWTh5jiEyQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409115600-26192-1-git-send-email-horms+renesas@verge.net.au>
- <1409115600-26192-3-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1409115600-26192-3-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+Hi Laurent,
 
-On 8/27/2014 8:59 AM, Simon Horman wrote:
+When resuming from s2ram on Koelsch ("echo mem > /sys/power/state" to
+suspend, and press any of the SW3x to resume), DMAOR initialization fails:
 
-> In general Renesas hardware is not documented to the extent
-> where the relationship between IP blocks on different SoCs can be assumed
-> although they may appear to operate the same way. Furthermore the
-> documentation typically does not specify a version for individual
-> IP blocks. For these reasons a convention of using the SoC name in place
-> of a version and providing SoC-specific compat strings has been adopted.
+PM: Entering mem sleep
+Suspending console(s) (use no_console_suspend to debug)
+r2a1130x spi1.0: ... can't suspend
+m25p80 spi0.2: ... can't suspend
+m25p80 spi0.1: ... can't suspend
+m25p80 spi0.0: ... can't suspend
+PM: suspend of devices complete after 4.011 msecs
+PM: late suspend of devices complete after 2.665 msecs
+PM: noirq suspend of devices complete after 2.686 msecs
+Disabling non-boot CPUs ...
+CPU1: shutdown
+Enabling non-boot CPUs ...
+CPU1: Booted secondary processor
+CPU1 is up
+PM: noirq resume of devices complete after 1.660 msecs
+PM: early resume of devices complete after 1.850 msecs
+rcar-dmac e6700000.dma-controller: DMAOR initialization failed.
+dpm_run_callback(): platform_pm_resume+0x0/0x54 returns -5
+PM: Device e6700000.dma-controller failed to resume: error -5
+rcar-dmac e6720000.dma-controller: DMAOR initialization failed.
+dpm_run_callback(): platform_pm_resume+0x0/0x54 returns -5
+PM: Device e6720000.dma-controller failed to resume: error -5
+m25p80 spi0.0: ... can't resume
+m25p80 spi0.1: ... can't resume
+m25p80 spi0.2: ... can't resume
+r2a1130x spi1.0: ... can't resume
+PM: resume of devices complete after 2.739 msecs
+PM: Finishing wakeup.
+Restarting tasks ... done.
 
-> Although not universally liked this convention is used in the bindings
-> for the drivers a number of drivers for Renesas hardware. The purpose
-> of this patch is to update the Renesas R-Car Multi-Function Timer Pulse
-> Unit 2 (MTU2) driver to follow this convention.
+DMA still works afterwards, though, as verified by reading from QSPI FLASH.
 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+The "can't suspend/resume" messages are due lack of PM support in the
+SPI slave drivers. To rule out any influence, I disabled the RSPI and
+MSIOF drivers, and retried. DMAOR initialization still failed.
 
-> ---
-> * I plan to follow up with a patch patch to use the new binding in the
->    dtsi files for the r7s72100 SoC.
-> ---
->   Documentation/devicetree/bindings/timer/renesas,mtu2.txt | 6 ++++--
->   1 file changed, 4 insertions(+), 2 deletions(-)
->
-> diff --git a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-> index 917453f..ec4d334 100644
-> --- a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-> +++ b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-> @@ -8,7 +8,9 @@ are independent. The MTU2 hardware supports five channels indexed from 0 to 4.
->
->   Required Properties:
->
-> -  - compatible: must contain "renesas,mtu2"
-> +  - compatible: must be one of the following.
+It turns out the issue is that rcar_dmac_resume() calls rcar_dmac_init()
+while the sys-dmacX MSTP clock is disabled.
 
-    Your example below has both.
+I tried a few things to fix this, but I'm not so sure what's the best solution:
 
-> +    - "renesas,mtu2" for generic MTU2
-> +    - "renesas,mtu2-r7s72100" for R7S72100 MTU2
->
->     - reg: base address and length of the registers block for the timer module.
->
-> @@ -26,7 +28,7 @@ Required Properties:
->   Example: R7S72100 (RZ/A1H) MTU2 node
->
->   	mtu2: timer@fcff0000 {
-> -		compatible = "renesas,mtu2";
-> +		compatible = "renesas,mtu2-r7s72100", "renesas,mtu2";
->   		reg = <0xfcff0000 0x400>;
->   		interrupts = <0 139 IRQ_TYPE_LEVEL_HIGH>,
->   			     <0 146 IRQ_TYPE_LEVEL_HIGH>,
+Works:
+  - Calling clk_enable(dmac->clk)/clk_disable(dmac->clk) before resp.
+    after the call to rcar_dmac_init(). This also needs rcar_dmac.clk setup,
+    cfr. the first version of the rcar-dmac driver.
 
-WBR, Sergei
+Does not work:
+  - Calling pm_runtime_get_sync()/pm_runtime_put() instead, as
+    this is inside a runtime PM resume call,
+  - Calling pm_clk_resume()/pm_clk_syspend() instead, as this doesn't
+    support nesting.
 
+Any better solution?
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
