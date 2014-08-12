@@ -1,49 +1,89 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Fri, 22 Aug 2014 08:38:00 +0000
-Subject: [PATCH 03/10 v2 resend] mmc: tmio: clear error IRQ status
-Message-Id: <871ts87wd5.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 12 Aug 2014 00:04:39 +0000
+Subject: [PATCH v2 2/5] ARM: shmobile: armadillo800eva-reference: Enable CMT1 in device tree
+Message-Id: <1407801882-2561-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
-	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
-	<53AD638C.5060907@renesas.com>
-	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
-	<8761hk7wgy.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <8761hk7wgy.wl%kuninori.morimoto.gx@gmail.com>
+References: <1407801882-2561-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1407801882-2561-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
-Cc: Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Based on work by Magnus Damm
 
-Next card access will be always
-error if it didn't clear error status
-
-Tested-by: Nguyen Xuan Nui <nx-nui@jinso.co.jp>
-Tested-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
-Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |    3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts |  4 ++++
+ arch/arm/mach-shmobile/setup-r8a7740.c                  | 11 +----------
+ 2 files changed, 5 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index faf0924..c3b1b4e 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -557,6 +557,9 @@ static void tmio_mmc_card_irq_status(struct tmio_mmc_host *host,
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 266c439..5e646e6 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -191,6 +191,10 @@
+ 	renesas,mode = <0x05>; /* MD_CK0 | MD_CK2 */
+ };
  
- 	pr_debug_status(*status);
- 	pr_debug_status(*ireg);
++&cmt1 {
++	status = "ok";
++};
 +
-+	/* Clear the status except the interrupt status */
-+	sd_ctrl_write32(host, CTL_STATUS, TMIO_MASK_IRQ);
+ &i2c0 {
+ 	status = "okay";
+ 	touchscreen@55 {
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 3d5eaca..dc44a44 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -311,10 +311,6 @@ static struct platform_device ipmmu_device = {
+ 	.num_resources  = ARRAY_SIZE(ipmmu_resources),
+ };
+ 
+-static struct platform_device *r8a7740_devices_dt[] __initdata = {
+-	&cmt1_device,
+-};
+-
+ static struct platform_device *r8a7740_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -331,6 +327,7 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
+ 	&irqpin3_device,
+ 	&tmu0_device,
+ 	&ipmmu_device,
++	&cmt1_device,
+ };
+ 
+ /* DMA */
+@@ -756,8 +753,6 @@ void __init r8a7740_add_standard_devices(void)
+ 	/* add devices */
+ 	platform_add_devices(r8a7740_early_devices,
+ 			    ARRAY_SIZE(r8a7740_early_devices));
+-	platform_add_devices(r8a7740_devices_dt,
+-			    ARRAY_SIZE(r8a7740_devices_dt));
+ 	platform_add_devices(r8a7740_late_devices,
+ 			     ARRAY_SIZE(r8a7740_late_devices));
+ 
+@@ -779,8 +774,6 @@ void __init r8a7740_add_early_devices(void)
+ {
+ 	early_platform_add_devices(r8a7740_early_devices,
+ 				   ARRAY_SIZE(r8a7740_early_devices));
+-	early_platform_add_devices(r8a7740_devices_dt,
+-				   ARRAY_SIZE(r8a7740_devices_dt));
+ 
+ 	/* setup early console here as well */
+ 	shmobile_setup_console();
+@@ -790,8 +783,6 @@ void __init r8a7740_add_early_devices(void)
+ 
+ void __init r8a7740_add_standard_devices_dt(void)
+ {
+-	platform_add_devices(r8a7740_devices_dt,
+-			    ARRAY_SIZE(r8a7740_devices_dt));
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
  }
  
- static bool __tmio_mmc_card_detect_irq(struct tmio_mmc_host *host,
 -- 
-1.7.9.5
+2.0.0.rc2
 
