@@ -1,10 +1,10 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 20 Aug 2014 00:24:03 +0000
-Subject: [PATCH 12/12] ARM: shmobile: lager: add VIN1/ADV7180 device nodes
-Message-Id: <d594c9775409a4276133db5e34dbd791329c5eae.1408492753.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 12 Aug 2014 20:18:26 +0000
+Subject: [PATCH v5 2/2] ARM: shmobile: lager: add VIN1/ADV7180 device nodes
+Message-Id: <703960137.fSsccWupA3@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408492753.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408492753.git.horms+renesas@verge.net.au>
+References: <1793694.Z8xUpkGDQx@wasted.cogentembedded.com>
+In-Reply-To: <1793694.Z8xUpkGDQx@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,15 +19,18 @@ Add the necessary subnodes to interconnect VIN1 and ADV7180 devices.
 Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 [Sergei: rebased, edited changelog and summary]
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 36 ++++++++++++++++++++++++++++++++++++
+Changes in version 5:
+- edited changelog and summary;
+- resolved reject, refreshed patch.
+
+ arch/arm/boot/dts/r8a7790-lager.dts |   36 ++++++++++++++++++++++++++++++++++++
  1 file changed, 36 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 856b423..b5f56bc 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
+Index: renesas/arch/arm/boot/dts/r8a7790-lager.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790-lager.dts
++++ renesas/arch/arm/boot/dts/r8a7790-lager.dts
 @@ -234,6 +234,11 @@
  		renesas,groups = "usb2";
  		renesas,function = "usb2";
@@ -40,7 +43,7 @@ index 856b423..b5f56bc 100644
  };
  
  &ether {
-@@ -366,6 +371,19 @@
+@@ -370,6 +375,19 @@
  	status = "ok";
  	pinctrl-0 = <&iic2_pins>;
  	pinctrl-names = "default";
@@ -60,7 +63,7 @@ index 856b423..b5f56bc 100644
  };
  
  &iic3 {
-@@ -401,3 +419,21 @@
+@@ -405,3 +423,21 @@
  	pinctrl-0 = <&usb2_pins>;
  	pinctrl-names = "default";
  };
@@ -82,6 +85,4 @@ index 856b423..b5f56bc 100644
 +		};
 +	};
 +};
--- 
-2.0.1
 
