@@ -1,60 +1,37 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Wed, 27 Aug 2014 12:59:57 +0000
-Subject: Re: [PATCH 00/12] mmc: tmio: Fixup PM support
-Message-Id: <CAPDyKFr3b6zKAdGrUDM_aMOymLsAag=UvUVX2V4jLYOt_rzKAg@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 12 Aug 2014 00:04:40 +0000
+Subject: [PATCH v2 3/5] ARM: shmobile: armadillo800eva-reference: Sort includes
+Message-Id: <1407801882-2561-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
-	<CAMuHMdWwhLuPp_-4Mhnk4tb_azCeLU7bYEgBUf4zR5bMmd6RHQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdWwhLuPp_-4Mhnk4tb_azCeLU7bYEgBUf4zR5bMmd6RHQ@mail.gmail.com>
+References: <1407801882-2561-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1407801882-2561-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Linux MMC List <linux-mmc@vger.kernel.org>, Ian Molton <ian.molton@codethink.co.uk>, Chris Ball <chris@printf.net>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On 26 August 2014 09:46, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
-> Hi Ulf,
->
-> On Mon, Aug 25, 2014 at 2:25 PM, Ulf Hansson <ulf.hansson@linaro.org> wrote:
->> This patchset fixup the PM support for tmio and the tmio hosts.
->> Some re-structuring of the code was also necessary to accomplish the above.
->>
->> A few of these patches has been posted earlier, but at that time I couldn't get
->> help in testing them on hardware. Let's give this a second try now.
->>
->> http://www.spinics.net/lists/linux-mmc/msg23177.html
->>
->> Ulf Hansson (12):
->>   mmc: tmio: Keep host active while SDIO IRQ is enabled
->>   mmc: tmio: Keep host active while serving requests
->>   mmc: tmio: Extract bus_width modifications to a separate function
->>   mmc: tmio: Restructure ->set_ios() and adapt ->probe() to it
->>   mmc: tmio: Handle clock gating from runtime PM functions
->>   mmc: tmio: Mask all IRQs when inactive
->>   mmc: tmio: Make runtime PM callbacks available for CONFIG_PM
->>   mmc: sdhi: Make runtime PM callbacks available for CONFIG_PM
->>   mmc: tmio_mmc: Enable runtime PM support
->>   mmc: sdhi: Fixup system PM suspend lock-up
->>   mmc: tmio_mmc: Fixup system PM suspend lock-up
->>   mmc: tmio: Remove library functions for system PM
->
-> I gave this series a test run on r8a7791/Koelsch, everything seems to
-> work fine.
-> Even more important, s2ram was fixed by "mmc: sdhi: Fixup system PM
-> suspend lock-up".
->
-> For the whole series:
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
->
-> Thanks!
->
-> Gr{oetje,eeting}s,
->
->                         Geert
+Sorted includes seems to be the done thing these days.
 
-Geert, thanks helping out testing etc.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-I have applied this series with your ack/tested by tag.
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index 84bc6cb..c392632 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -21,9 +21,9 @@
+ 
+ #include <linux/clk.h>
+ #include <linux/err.h>
+-#include <linux/kernel.h>
+ #include <linux/gpio.h>
+ #include <linux/io.h>
++#include <linux/kernel.h>
+ 
+ #include <asm/mach/arch.h>
+ #include <asm/hardware/cache-l2x0.h>
+-- 
+2.0.0.rc2
 
-Kind regards
-Uffe
