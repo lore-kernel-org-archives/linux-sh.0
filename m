@@ -1,81 +1,62 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Aug 2014 01:10:11 +0000
-Subject: [PATCH 06/10] ARM: shmobile: Remove shmobile_setup_delay()
-Message-Id: <7dd4cfd7f8c2976a8d65022146386480474501ca.1408927601.git.horms+renesas@verge.net.au>
+Date: Tue, 12 Aug 2014 00:04:42 +0000
+Subject: [PATCH v2 5/5] ARM: shmobile: r8a7740: Remove r8a7740_add_standard_devices_dt
+Message-Id: <1407801882-2561-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408927601.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408927601.git.horms+renesas@verge.net.au>
+References: <1407801882-2561-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1407801882-2561-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Now that r8a7740_add_standard_devices_dt() is simply a wrapper
+for a call to of_platform_populate() remove it and call
+of_platform_populate() directly.
 
-All ARM mach-shmobile SoCs and boards now rely on DTS for
-CPU Frequency information, so remove the unused function
-shmobile_setup_delay(). While at it, make the function
-shmobile_setup_delay_hz() static.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/common.h |  2 --
- arch/arm/mach-shmobile/timer.c  | 21 ++-------------------
- 2 files changed, 2 insertions(+), 21 deletions(-)
+ arch/arm/mach-shmobile/r8a7740.h       | 1 -
+ arch/arm/mach-shmobile/setup-r8a7740.c | 7 +------
+ 2 files changed, 1 insertion(+), 7 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
-index 9805608..72087c7 100644
---- a/arch/arm/mach-shmobile/common.h
-+++ b/arch/arm/mach-shmobile/common.h
-@@ -2,8 +2,6 @@
- #define __ARCH_MACH_COMMON_H
+diff --git a/arch/arm/mach-shmobile/r8a7740.h b/arch/arm/mach-shmobile/r8a7740.h
+index 1d1a5fd..3352fb8 100644
+--- a/arch/arm/mach-shmobile/r8a7740.h
++++ b/arch/arm/mach-shmobile/r8a7740.h
+@@ -49,7 +49,6 @@ extern void r8a7740_init_irq_of(void);
+ extern void r8a7740_map_io(void);
+ extern void r8a7740_add_early_devices(void);
+ extern void r8a7740_add_standard_devices(void);
+-extern void r8a7740_add_standard_devices_dt(void);
+ extern void r8a7740_clock_init(u8 md_ck);
+ extern void r8a7740_pinmux_init(void);
+ extern void r8a7740_pm_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index dc44a44..8fe270d 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -781,11 +781,6 @@ void __init r8a7740_add_early_devices(void)
  
- extern void shmobile_earlytimer_init(void);
--extern void shmobile_setup_delay(unsigned int max_cpu_core_mhz,
--			 unsigned int mult, unsigned int div);
- extern void shmobile_init_delay(void);
- struct twd_local_timer;
- extern void shmobile_setup_console(void);
-diff --git a/arch/arm/mach-shmobile/timer.c b/arch/arm/mach-shmobile/timer.c
-index 942efdc..adce98b 100644
---- a/arch/arm/mach-shmobile/timer.c
-+++ b/arch/arm/mach-shmobile/timer.c
-@@ -23,8 +23,8 @@
- #include <linux/delay.h>
- #include <linux/of_address.h>
+ #ifdef CONFIG_USE_OF
  
--void __init shmobile_setup_delay_hz(unsigned int max_cpu_core_hz,
--				    unsigned int mult, unsigned int div)
-+static void __init shmobile_setup_delay_hz(unsigned int max_cpu_core_hz,
-+					   unsigned int mult, unsigned int div)
- {
- 	/* calculate a worst-case loops-per-jiffy value
- 	 * based on maximum cpu core hz setting and the
-@@ -40,23 +40,6 @@ void __init shmobile_setup_delay_hz(unsigned int max_cpu_core_hz,
- 		preset_lpj = max_cpu_core_hz / value;
- }
- 
--void __init shmobile_setup_delay(unsigned int max_cpu_core_mhz,
--				 unsigned int mult, unsigned int div)
+-void __init r8a7740_add_standard_devices_dt(void)
 -{
--	/* calculate a worst-case loops-per-jiffy value
--	 * based on maximum cpu core mhz setting and the
--	 * __delay() implementation in arch/arm/lib/delay.S
--	 *
--	 * this will result in a longer delay than expected
--	 * when the cpu core runs on lower frequencies.
--	 */
--
--	unsigned int value = (1000000 * mult) / (HZ * div);
--
--	if (!preset_lpj)
--		preset_lpj = max_cpu_core_mhz * value;
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
 -}
 -
- void __init shmobile_init_delay(void)
+ void __init r8a7740_init_irq_of(void)
  {
- 	struct device_node *np, *cpus;
+ 	void __iomem *intc_prio_base = ioremap_nocache(0xe6900010, 0x10);
+@@ -819,7 +814,7 @@ void __init r8a7740_init_irq_of(void)
+ static void __init r8a7740_generic_init(void)
+ {
+ 	r8a7740_clock_init(0);
+-	r8a7740_add_standard_devices_dt();
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
+ static const char *r8a7740_boards_compat_dt[] __initdata = {
 -- 
-2.0.1
+2.0.0.rc2
 
