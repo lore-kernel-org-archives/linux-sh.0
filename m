@@ -1,9 +1,9 @@
 From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 12 Aug 2014 21:43:43 +0000
+Date: Tue, 12 Aug 2014 21:47:30 +0000
 Subject: Re: ARM: shmobile: "i2c<m>" vs. "iic<n>" DT nodes and pinmux
-Message-Id: <20140812214339.GA2898@katana>
+Message-Id: <20140812214723.GA3443@katana>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="YZ5djTAD1cGYuMQK"
+Content-Type: multipart/mixed; boundary="EVF5PPMfhYS0aIcm"
 List-Id: <linux-sh.vger.kernel.org>
 References: <CAMuHMdWqnMZQcRURufCxiGpbkK7ocjH8KnECxdWVPcxN-68J4g@mail.gmail.com>
 In-Reply-To: <CAMuHMdWqnMZQcRURufCxiGpbkK7ocjH8KnECxdWVPcxN-68J4g@mail.gmail.com>
@@ -11,10 +11,11 @@ To: Geert Uytterhoeven <geert@linux-m68k.org>
 Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>, Linux-sh list <linux-sh@vger.kernel.org>, Linux I2C <linux-i2c@vger.kernel.org>
 
 
---YZ5djTAD1cGYuMQK
+--EVF5PPMfhYS0aIcm
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
+
 
 On Tue, Aug 12, 2014 at 03:11:18PM +0200, Geert Uytterhoeven wrote:
 > Hi,
@@ -35,26 +36,26 @@ The 'iic'-prefix describes the IP core handled by the sh-mobile-driver.
 This core is named iic(b) in the datasheets.
 
 
---YZ5djTAD1cGYuMQK
+--EVF5PPMfhYS0aIcm
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1
 
-iQIcBAEBAgAGBQJT6oqKAAoJEBQN5MwUoCm2WisQAKa8q8Bx2JMJJuk4cRrVdqit
-NYKWQPcisdxxG/esbo+5NGECnsKK0NqIjkHH4eDTCc5+nL10Sr8FEbh2SLCKLr8e
-JQjrZhVkS0GGvRwOKeYWcOdnJlHzZUVHZt84wz6/yX7kyfXu6GTzE9TVoPX4lYFL
-IUWUcAXjI1VZ6hGO557VfDxoElo+uv2f0jZj78fG96Yb9n/lg/ppToFX+UulAcc1
-xQl73i6FKVwY0LL6fHDMmVo15xlTwa/SS4gI+Nr1OKcnsdNfQB6XsfbiSvTOomam
-3QFPT1YgPPLnPmCuaztE2/Zl6+drXPpoRul/SBAbgdN7Y3yfQDG5KTIiWHuTsCf0
-TXXRTe7MiG2VuzzuLWR8+fQXajTxS5odq08aRX7FaCpCN1T90QvEBlPLE7S2hGZ7
-BVQb3qI6cUDaizTtHHm4KPSeJIgv0cnDTu4jNVeWuF27lb4FtvnUIpz7u2MxRTdJ
-EIMN4AZrg8XPxb3jFiD72EDleyy+UFRqHui9NDX68YoCIviw/9i4XWEFHs621L+o
-T0DKexovRcgWqDAt66ia/VyBcphlqJ8xkjmMP1UMyjML8AQ0WTpLcCt0+nwopCAT
-0+swCmXUrPRKAI3SPb0a+3XbttXlK7ksYQI4hFtUw201h3VMdbMjdpSmf4jebyOx
-2lUbq2e08ZE/uzNFx6cU
-=cMim
+iQIcBAEBAgAGBQJT6otrAAoJEBQN5MwUoCm2y2EP/Aw3qzoOgpITADFCwQSXTgMK
+qG/fPHaNhkqoXamGXLBUnYySvZUwbYLtbh7uCpgEp2kBBKyMaQ8oX/+jjd6RgcZ9
+8KBv4gMqFwlwHkueh6AYQfH/jn4TvW4mJ9AvMkT3Z/BNH2lg5anKK41AOHCGZ6zt
+PsSk/C5i/IwrD5FDdH/Nq3LxmkzCTE7s15tpeA4h8CupPAeFyUFDcrJp4GFzSIns
+PlHCGHyAquem2pmjJNC/A8s8nO7XRsmQNo1a6W6e8rFFEOYa1mxHxAP5sfNyD6kx
+SClSJMbowqpCR1Kp7lqUVuWMqrbd++s+e9+GzmZhuogcowlmlKSUE7vMQfk3ubeo
+a/iLkJBMsiQH247srzEpZINUS46Q1sOsfRVlPO/AtobExUsx0zZrXYcp1c3tcsQO
+C50T2AVRM2W09q6Ed4QJvq6vt3QYa0UWmyeW3/juPp/MFAcuKQVcPnDEHR4q1fI1
+P3FF8kFHM0Cvr61TXhTcBjctWu+KRj9b7Eb4e4yL7VCAD2BvkP3LH5Vo3oBwZWUO
+PdXo5RIFwNOWw9EYuhdTzCNoXtslc+y230ZZj3JQApxIeSI5YwFz7vcqlIAyHBmR
+PzrWJ/NB8Tt16///Uzfehv8PDE3HhJ2JaGLiAww0Ph8FRCHVuI1J40FgcAEEzAyd
+BX8Z6ki19YZtAdQPrfwd
+=z0OX
 -----END PGP SIGNATURE-----
 
---YZ5djTAD1cGYuMQK--
+--EVF5PPMfhYS0aIcm--
