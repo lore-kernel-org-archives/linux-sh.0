@@ -1,40 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 28 Aug 2014 23:56:40 +0000
-Subject: Re: [PATCH 01/05] ARM: shmobile: armadillo800eva: Sync DTS
-Message-Id: <20140828235639.GE16165@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 12 Aug 2014 00:04:37 +0000
+Subject: [PATCH v2 0/5] ARM: shmobile: armadillo800eva-reference: Enable CMT1 in device tree
+Message-Id: <1407801882-2561-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140828033451.18867.84721.sendpatchset@w520>
-In-Reply-To: <20140828033451.18867.84721.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Aug 28, 2014 at 05:31:48PM +0900, Simon Horman wrote:
-> On Thu, Aug 28, 2014 at 09:45:20AM +0200, Geert Uytterhoeven wrote:
-> > Hi Magnus,
-> > 
-> > On Thu, Aug 28, 2014 at 5:34 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> > > +++ work/arch/arm/boot/dts/r8a7740-armadillo800eva.dts  2014-08-27 18:37:05.000000000 +0900
-> > > @@ -10,10 +10,18 @@
-> > >
-> > >  /dts-v1/;
-> > >  #include "r8a7740.dtsi"
-> > > +#include <dt-bindings/gpio/gpio.h>
-> > > +#include <dt-bindings/input/input.h>
-> > > +#include <dt-bindings/interrupt-controller/irq.h>
-> > > +#include <dt-bindings/pwm/pwm.h>
-> > >
-> > >  / {
-> > >         model = "armadillo 800 eva";
-> > > -       compatible = "renesas,armadillo800eva";
-> > > +       compatible = "renesas,armadillo800eva", "renesas,r8a7740";
-> > 
-> > As this isn't a Renesas board (but we can't break backwards-compatibility),
-> > shouldn't you add "atmark-techno,armadillo800eva"?
-> 
-> FWIW, I believe that logic would also apply to at least the kzm9d and kzm9g.
+This short series enables the CMT1 timer using DT on
+armadillo800eva-reference.
 
-BTW, I plan to apply this patch as is.
-We can add atmark-techno,armadillo800eva" as an incremental
-change if we reach a consensus on that.
+It is based on "ARM: shmobile: r8a7740: add clocks to DT" applied
+on top of renesas-devel-v3.16-20140808.
+
+Ulrich, if you end up reposting "ARM: shmobile: r8a7740: add clocks to DT"
+please consider appending this series to it.
+
+Changes since v1
+* Correct typo in change log of
+  "ARM: shmobile: r8a7740: Add CMT1 device to DT"
+
+Simon Horman (5):
+  ARM: shmobile: r8a7740: Add CMT1 device to DT
+  ARM: shmobile: armadillo800eva-reference: Enable CMT1 in device tree
+  ARM: shmobile: armadillo800eva-reference: Sort includes
+  ARM: shmobile: armadillo800eva-reference: Do not use
+    r8a7740_add_standard_devices_dt()
+  ARM: shmobile: r8a7740: Remove r8a7740_add_standard_devices_dt
+
+ .../arm/boot/dts/r8a7740-armadillo800eva-reference.dts |  4 ++++
+ arch/arm/boot/dts/r8a7740.dtsi                         | 12 ++++++++++++
+ .../mach-shmobile/board-armadillo800eva-reference.c    |  5 +++--
+ arch/arm/mach-shmobile/r8a7740.h                       |  1 -
+ arch/arm/mach-shmobile/setup-r8a7740.c                 | 18 ++----------------
+ 5 files changed, 21 insertions(+), 19 deletions(-)
+
+-- 
+2.0.0.rc2
+
