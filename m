@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 08 Aug 2014 02:19:45 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 13 Aug 2014 13:20:04 +0000
 Subject: Re: [PATCH v2 7/8] ARM: shmobile: r8a7790: Add DMAC devices to DT
-Message-Id: <20140808021945.GB23715@verge.net.au>
+Message-Id: <CAMuHMdWLgY9yFUOpQWioXshP7XDVE7rh0MFS1djzv_SSvW8JMg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1405727425-6237-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1405727425-6237-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -10,98 +10,31 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Sat, Jul 19, 2014 at 01:50:24AM +0200, Laurent Pinchart wrote:
-> Instantiate the two system DMA controllers in the r8a7790 device tree.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Hi Simon,
 
-Thanks. As the bindings have been merged I have queued up this patch for
-v3.18.
+On Fri, Aug 8, 2014 at 4:19 AM, Simon Horman <horms@verge.net.au> wrote:
+> On Sat, Jul 19, 2014 at 01:50:24AM +0200, Laurent Pinchart wrote:
+>> Instantiate the two system DMA controllers in the r8a7790 device tree.
+>>
+>> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+>
+> Thanks. As the bindings have been merged I have queued up this patch for
+> v3.18.
 
-> ---
-> 
-> Changes since v1:
-> 
-> - Remove ch15 from interrupt names
-> ---
->  arch/arm/boot/dts/r8a7790.dtsi | 59 ++++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 59 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-> index 0922a38..4c74f21 100644
-> --- a/arch/arm/boot/dts/r8a7790.dtsi
-> +++ b/arch/arm/boot/dts/r8a7790.dtsi
-> @@ -249,6 +249,65 @@
->  			     <0 3 IRQ_TYPE_LEVEL_HIGH>;
->  	};
->  
-> +	dmac0: dma-controller@e6700000 {
-> +		compatible = "renesas,rcar-dmac";
-> +		reg = <0 0xe6700000 0 0x20000>;
-> +		interrupts = <0 197 IRQ_TYPE_LEVEL_HIGH
-> +			      0 200 IRQ_TYPE_LEVEL_HIGH
-> +			      0 201 IRQ_TYPE_LEVEL_HIGH
-> +			      0 202 IRQ_TYPE_LEVEL_HIGH
-> +			      0 203 IRQ_TYPE_LEVEL_HIGH
-> +			      0 204 IRQ_TYPE_LEVEL_HIGH
-> +			      0 205 IRQ_TYPE_LEVEL_HIGH
-> +			      0 206 IRQ_TYPE_LEVEL_HIGH
-> +			      0 207 IRQ_TYPE_LEVEL_HIGH
-> +			      0 208 IRQ_TYPE_LEVEL_HIGH
-> +			      0 209 IRQ_TYPE_LEVEL_HIGH
-> +			      0 210 IRQ_TYPE_LEVEL_HIGH
-> +			      0 211 IRQ_TYPE_LEVEL_HIGH
-> +			      0 212 IRQ_TYPE_LEVEL_HIGH
-> +			      0 213 IRQ_TYPE_LEVEL_HIGH
-> +			      0 214 IRQ_TYPE_LEVEL_HIGH>;
-> +		interrupt-names = "error",
-> +				"ch0", "ch1", "ch2", "ch3",
-> +				"ch4", "ch5", "ch6", "ch7",
-> +				"ch8", "ch9", "ch10", "ch11",
-> +				"ch12", "ch13", "ch14";
-> +		clocks = <&mstp2_clks R8A7790_CLK_SYS_DMAC0>;
-> +		clock-names = "fck";
-> +		#dma-cells = <1>;
-> +		dma-channels = <15>;
-> +	};
-> +
-> +	dmac1: dma-controller@e6720000 {
-> +		compatible = "renesas,rcar-dmac";
-> +		reg = <0 0xe6720000 0 0x20000>;
-> +		interrupts = <0 220 IRQ_TYPE_LEVEL_HIGH
-> +			      0 216 IRQ_TYPE_LEVEL_HIGH
-> +			      0 217 IRQ_TYPE_LEVEL_HIGH
-> +			      0 218 IRQ_TYPE_LEVEL_HIGH
-> +			      0 219 IRQ_TYPE_LEVEL_HIGH
-> +			      0 308 IRQ_TYPE_LEVEL_HIGH
-> +			      0 309 IRQ_TYPE_LEVEL_HIGH
-> +			      0 310 IRQ_TYPE_LEVEL_HIGH
-> +			      0 311 IRQ_TYPE_LEVEL_HIGH
-> +			      0 312 IRQ_TYPE_LEVEL_HIGH
-> +			      0 313 IRQ_TYPE_LEVEL_HIGH
-> +			      0 314 IRQ_TYPE_LEVEL_HIGH
-> +			      0 315 IRQ_TYPE_LEVEL_HIGH
-> +			      0 316 IRQ_TYPE_LEVEL_HIGH
-> +			      0 317 IRQ_TYPE_LEVEL_HIGH
-> +			      0 318 IRQ_TYPE_LEVEL_HIGH>;
-> +		interrupt-names = "error",
-> +				"ch0", "ch1", "ch2", "ch3",
-> +				"ch4", "ch5", "ch6", "ch7",
-> +				"ch8", "ch9", "ch10", "ch11",
-> +				"ch12", "ch13", "ch14";
-> +		clocks = <&mstp2_clks R8A7790_CLK_SYS_DMAC1>;
-> +		clock-names = "fck";
-> +		#dma-cells = <1>;
-> +		dma-channels = <15>;
-> +	};
->  	i2c0: i2c@e6508000 {
->  		#address-cells = <1>;
->  		#size-cells = <0>;
-> -- 
-> 1.8.5.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+It seems you forgot to apply "[PATCH v2 6/8] ARM: shmobile: r8a7790: Add
+DMAC clocks to DT", which adds the clocks that are used by "[PATCH v2 7/8]
+ARM: shmobile: r8a7790: Add DMAC devices to DT".
+
+As these clocks are referenced by (symbolic define for a) number, not a
+phandle, you don't get an error from dtc.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
