@@ -1,99 +1,69 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 19 Aug 2014 09:18:33 +0000
-Subject: Re: [PATCH] mmc: tmio: Fix hang during suspend
-Message-Id: <CAMuHMdUVwY_Y_jK6+EMbBDvF3OF0Aqio2zpw=dXcV9sLj4CHSg@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 13 Aug 2014 15:18:53 +0000
+Subject: [PATCH] pwm: Fix period and polarity in pwm_get() for non-perfect matches
+Message-Id: <1407943133-18170-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1408029833-6970-1-git-send-email-geert+renesas@glider.be>
-	<20140815134917.da77205b68f18341140c6593@codethink.co.uk>
-	<CAMuHMdXrWgW2iMDd7GA+QC-vcAsp+vH9fidkdnBj-f9F878yAw@mail.gmail.com>
-	<CAPDyKFpyZM8thDhtcw4PUhGPezdag=6Fv_J9nejvenPNdTu-aA@mail.gmail.com>
-In-Reply-To: <CAPDyKFpyZM8thDhtcw4PUhGPezdag=6Fv_J9nejvenPNdTu-aA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: Ian Molton <ian.molton@codethink.co.uk>, Geert Uytterhoeven <geert+renesas@glider.be>, Chris Ball <chris@printf.net>, Linux MMC List <linux-mmc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Ulf,
+If pwm_get() finds a look-up entry with a perfect match (both dev_id and
+con_id match), the loop is aborted, and "p" still points to the correct
+struct pwm_lookup.
 
-On Mon, Aug 18, 2014 at 3:10 PM, Ulf Hansson <ulf.hansson@linaro.org> wrote:
-> On 18 August 2014 14:36, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
->> On Fri, Aug 15, 2014 at 2:49 PM, Ian Molton <ian.molton@codethink.co.uk> wrote:
->>> On Thu, 14 Aug 2014 17:23:53 +0200
->>> Geert Uytterhoeven <geert+renesas@glider.be> wrote:
->>>> On R-Car Gen 2, the SDHI registers cannot be accessed while the SDHI
->>>> module clock is disabled. Doing so will cause a lock-up.
->>>>
->>>> When suspending, enable the module clock before disabling the SDHI
->>>> interrupts, and disable the clock again afterwards.
->>>
->>> This feels wrong. Why can't interrupts be disabled prior to turning the clock off?
->>
->> The clock is handled by runtime PM. So if SDHI becomes idle, the clock
->> is turned off.
->> However, the card insertion interrupt is still enabled.
->> If all interrupts would be disabled when the clock is turned off, I believe card
->> insertion can no longer be detected.
->>
->> BTW, I'm still wondering why tmio_mmc_host_resume() works without
->> enabling the clock, as it calls tmio_mmc_enable_dma(), which also writes to
->> an SDHI register (CTL_DMA_ENABLE).
->
-> A while ago, I tried to rework the runtime PM handling of tmio.
->
-> http://www.spinics.net/lists/linux-mmc/msg23177.html
->
-> The hole set never got merged, due to that we couldn't get them tested
-> on hardware and there were a lack in review.
->
-> We might want to pick them up to see if those may solve our problem. :-)
+If only an entry with a matching dev_id or con_id is found, the loop
+terminates after traversing the whole list, and "p" now points to
+arbitrary memory, not part of the pwm_lookup list.
+Then pwm_set_period() and pwm_set_polarity() will set random values for
+period resp. polarity.
 
-Thanks, I applied patches 4-8 (1-3 did get merged), and tried them on
-SDHI1 of r8a7791/koelsch. It still seems to work as before.
+To fix this, save period and polarity when finding a new best match,
+just like is done for chip (for the provider) and index.
 
-However, I still need my patch to fix suspend.
-Your "[PATCH 8/8] mmc: tmio: Handle clock gating from runtime PM functions"
-manages the SDHI interface clock, while my patch manages the platform-specific
-SDHI module clock.
+This fixes the LCD backlight on r8a7740/armadillo-legacy, which was fed
+period 0 and polarity -1068821144 instead of 33333 resp. 1.
 
->>>> This fixes suspend and resume on r8a7791/koelsch.
->>>>
->>>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->>>> ---
->>>>  drivers/mmc/host/tmio_mmc_pio.c | 10 ++++++++++
->>>>  1 file changed, 10 insertions(+)
->>>>
->>>> diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
->>>> index faf0924e71cb..83192420a7e3 100644
->>>> --- a/drivers/mmc/host/tmio_mmc_pio.c
->>>> +++ b/drivers/mmc/host/tmio_mmc_pio.c
->>>> @@ -1147,8 +1147,18 @@ int tmio_mmc_host_suspend(struct device *dev)
->>>>  {
->>>>       struct mmc_host *mmc = dev_get_drvdata(dev);
->>>>       struct tmio_mmc_host *host = mmc_priv(mmc);
->>>> +     struct tmio_mmc_data *pdata = host->pdata;
->>>> +
->>>> +     if (pdata->clk_enable) {
->>>> +             unsigned int f;
->>>> +             pdata->clk_enable(host->pdev, &f);
->>>> +     }
->>>>
->>>>       tmio_mmc_disable_mmc_irqs(host, TMIO_MASK_ALL);
->>>> +
->>>> +     if (pdata->clk_disable)
->>>> +             pdata->clk_disable(host->pdev);
->>>> +
->>>>       return 0;
->>>>  }
->>>>  EXPORT_SYMBOL(tmio_mmc_host_suspend);
+Fixes: 3796ce1d4d4b330a75005c5eda105603ce9d4071 ("pwm: add period and polarity to struct pwm_lookup")
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: stable@vger.kernel.org
+---
+ drivers/pwm/core.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
 
-Gr{oetje,eeting}s,
+diff --git a/drivers/pwm/core.c b/drivers/pwm/core.c
+index 4b66bf09ee55..d2c35920ff08 100644
+--- a/drivers/pwm/core.c
++++ b/drivers/pwm/core.c
+@@ -606,6 +606,8 @@ struct pwm_device *pwm_get(struct device *dev, const char *con_id)
+ 	unsigned int best = 0;
+ 	struct pwm_lookup *p;
+ 	unsigned int match;
++	unsigned int period;
++	enum pwm_polarity polarity;
+ 
+ 	/* look up via DT first */
+ 	if (IS_ENABLED(CONFIG_OF) && dev && dev->of_node)
+@@ -653,6 +655,8 @@ struct pwm_device *pwm_get(struct device *dev, const char *con_id)
+ 		if (match > best) {
+ 			chip = pwmchip_find_by_name(p->provider);
+ 			index = p->index;
++			period = p->period;
++			polarity = p->polarity;
+ 
+ 			if (match != 3)
+ 				best = match;
+@@ -668,8 +672,8 @@ struct pwm_device *pwm_get(struct device *dev, const char *con_id)
+ 	if (IS_ERR(pwm))
+ 		return pwm;
+ 
+-	pwm_set_period(pwm, p->period);
+-	pwm_set_polarity(pwm, p->polarity);
++	pwm_set_period(pwm, period);
++	pwm_set_polarity(pwm, polarity);
+ 
+ 
+ 	return pwm;
+-- 
+1.9.1
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
