@@ -1,55 +1,41 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Aug 2014 01:10:22 +0000
-Subject: [GIT PULL] Second Round Of Renesas ARM Based SoC Updates For v3.18
-Message-Id: <cover.1408927858.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 13 Aug 2014 11:59:59 +0000
+Subject: [PATCH 0/4] ARM: shmobile: Remove unneeded nr_irqs initialization
+Message-Id: <1407931199-11756-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381222967.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+This patch series removes the remaining initializations of
+machine_desc.nr_irqs, which are unneeded as they match the default value.
 
-Please consider these second round of Renesas ARM based SoC updates for v3.18.
+As per arch_probe_nr_irqs(), the default value is NR_IRQS, which maps to
+NR_IRQS_LEGACY if CONFIG_SPARSE_IRQ=y.
 
-This pull request is based on the previous round of
-such requests, tagged as renesas-soc-for-v3.18,
-which I have already sent a pull-request for.
+Since SPARSE_IRQ is selected by both ARCH_MULTIPLATFORM and
+ARCH_SHMOBILE_LEGACY, it's always enabled on shmobile.
 
+Geert Uytterhoeven (4):
+  ARM: shmobile: sh7372: Remove unneeded nr_irqs initialization
+  ARM: shmobile: sh73a0: Remove unneeded nr_irqs initialization
+  ARM: shmobile: kzm9g-reference: Remove unneeded nr_irqs initialization
+  ARM: shmobile: kzm9g: Remove unneeded nr_irqs initialization
 
-The following changes since commit 5ac9e7f35db00e630c9f95a1f73ac329371cdbbf:
+ arch/arm/mach-shmobile/board-kzm9g-reference.c | 1 -
+ arch/arm/mach-shmobile/board-kzm9g.c           | 1 -
+ arch/arm/mach-shmobile/setup-sh7372.c          | 1 -
+ arch/arm/mach-shmobile/setup-sh73a0.c          | 1 -
+ 4 files changed, 4 deletions(-)
 
-  ARM: shmobile: sh73a0: Remove unneeded nr_irqs initialization (2014-08-20 09:09:24 +0900)
+Gr{oetje,eeting}s,
 
-are available in the git repository at:
+						Geert
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc2-for-v3.18
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-for you to fetch changes up to 86155b35d173317518458c6f9c0a3ea8c5324bed:
-
-  ARM: shmobile: Move legacy INTC definitions from irqs.h to intc.h (2014-08-22 12:23:32 +0900)
-
-----------------------------------------------------------------
-Second Round Of Renesas ARM Based SoC Updates For v3.18
-
-* Move legacy INTC definitions from irqs.h to intc.h
-* Remove duplicate CPUFreq bits on r8a73a0/ape6evm
-
-----------------------------------------------------------------
-Geert Uytterhoeven (1):
-      ARM: shmobile: Move legacy INTC definitions from irqs.h to intc.h
-
-Magnus Damm (2):
-      ARM: shmobile: sh73a0: Remove duplicate CPUFreq bits
-      ARM: shmobile: ape6evm: Remove duplicate CPUFreq bits
-
- arch/arm/mach-shmobile/board-ape6evm-reference.c | 1 -
- arch/arm/mach-shmobile/board-kzm9g.c             | 1 +
- arch/arm/mach-shmobile/board-mackerel.c          | 1 +
- arch/arm/mach-shmobile/intc.h                    | 5 +++++
- arch/arm/mach-shmobile/irqs.h                    | 6 ------
- arch/arm/mach-shmobile/setup-sh7372.c            | 1 +
- arch/arm/mach-shmobile/setup-sh73a0.c            | 6 +-----
- 7 files changed, 9 insertions(+), 12 deletions(-)
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
