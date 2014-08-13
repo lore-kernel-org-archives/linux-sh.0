@@ -1,118 +1,36 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 25 Aug 2014 03:03:43 +0000
-Subject: [PATCH v2 03/05] ARM: shmobile: Introduce a Kconfig entry for R-Car Gen2
-Message-Id: <20140825030343.1936.61634.sendpatchset@w520>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 13 Aug 2014 11:56:58 +0000
+Subject: [PATCH 3/4] ARM: shmobile: kzm9g-reference: Remove unneeded nr_irqs initialization
+Message-Id: <1407931019-11409-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+As per arch_probe_nr_irqs(), the default value is NR_IRQS, which maps to
+NR_IRQS_LEGACY if CONFIG_SPARSE_IRQ=y.
 
-Add a Kconfig entry for R-Car Generation 2 SoCs that
-enables CMT timer and the IRQC interrupt driver.
+Since SPARSE_IRQ is selected by both ARCH_MULTIPLATFORM and
+ARCH_SHMOBILE_LEGACY, it's always enabled on shmobile.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+ arch/arm/mach-shmobile/board-kzm9g-reference.c | 1 -
+ 1 file changed, 1 deletion(-)
 
- Changes since V1:
- - Removed dependency of "ARM: shmobile: Consolidate GPIOLIB Kconfig bits"
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index 9ec98871e292..1694a1609296 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -52,7 +52,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
+ 	.smp		= smp_ops(sh73a0_smp_ops),
+ 	.map_io		= sh73a0_map_io,
+ 	.init_early	= sh73a0_init_delay,
+-	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_machine	= kzm_init,
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= kzm9g_boards_compat_dt,
+-- 
+1.9.1
 
- arch/arm/mach-shmobile/Kconfig  |   17 +++++++++--------
- arch/arm/mach-shmobile/Makefile |   12 ++++++------
- 2 files changed, 15 insertions(+), 14 deletions(-)
-
---- 0003/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2014-08-25 11:32:29.000000000 +0900
-@@ -6,6 +6,11 @@ config ARCH_RCAR_GEN1
- 	select RENESAS_INTC_IRQPIN
- 	select SYS_SUPPORTS_SH_TMU
- 
-+config ARCH_RCAR_GEN2
-+	bool
-+	select RENESAS_IRQC
-+	select SYS_SUPPORTS_SH_CMT
-+
- config ARCH_RMOBILE
- 	bool
- 	select SYS_SUPPORTS_SH_CMT
-@@ -42,13 +47,11 @@ config ARCH_R8A7779
- 
- config ARCH_R8A7790
- 	bool "R-Car H2 (R8A77900)"
--	select RENESAS_IRQC
--	select SYS_SUPPORTS_SH_CMT
-+	select ARCH_RCAR_GEN2
- 
- config ARCH_R8A7791
- 	bool "R-Car M2 (R8A77910)"
--	select RENESAS_IRQC
--	select SYS_SUPPORTS_SH_CMT
-+	select ARCH_RCAR_GEN2
- 
- comment "Renesas ARM SoCs Board Type"
- 
-@@ -130,24 +133,22 @@ config ARCH_R8A7779
- 
- config ARCH_R8A7790
- 	bool "R-Car H2 (R8A77900)"
-+	select ARCH_RCAR_GEN2
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
- 	select CPU_V7
- 	select MIGHT_HAVE_PCI
- 	select SH_CLK_CPG
--	select RENESAS_IRQC
--	select SYS_SUPPORTS_SH_CMT
- 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
- 
- config ARCH_R8A7791
- 	bool "R-Car M2 (R8A77910)"
-+	select ARCH_RCAR_GEN2
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
- 	select CPU_V7
- 	select MIGHT_HAVE_PCI
- 	select SH_CLK_CPG
--	select RENESAS_IRQC
--	select SYS_SUPPORTS_SH_CMT
- 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
- 
- comment "Renesas ARM SoCs Board Type"
---- 0001/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2014-08-25 11:31:37.000000000 +0900
-@@ -13,8 +13,7 @@ obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7
- obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
- obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o
- obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o
--obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o setup-rcar-gen2.o
--obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o setup-rcar-gen2.o
-+obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o
- obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o
- obj-$(CONFIG_ARCH_R7S72100)	+= setup-r7s72100.o
- 
-@@ -33,8 +32,9 @@ endif
- 
- # CPU reset vector handling objects
- cpu-y				:= platsmp.o headsmp.o
--cpu-$(CONFIG_ARCH_R8A7790)	+= platsmp-apmu.o
--cpu-$(CONFIG_ARCH_R8A7791)	+= platsmp-apmu.o
-+
-+# Shared SoC family objects
-+obj-$(CONFIG_ARCH_RCAR_GEN2)	+= setup-rcar-gen2.o platsmp-apmu.o $(cpu-y)
- 
- # SMP objects
- smp-y				:= $(cpu-y)
-@@ -52,8 +52,8 @@ obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o
- obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
- obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
- obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o pm-rcar.o
--obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o $(cpu-y)
--obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o $(cpu-y)
-+obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o
-+obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o
- 
- # IRQ objects
- obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
