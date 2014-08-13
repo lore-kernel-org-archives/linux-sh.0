@@ -1,43 +1,36 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 04 Aug 2014 20:00:20 +0000
-Subject: Re: Resend: [PATCH 0/4] rcar_vin: fix soc_camera WARN_ON() issues.
-Message-Id: <53DFE654.1000102@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 13 Aug 2014 11:56:56 +0000
+Subject: [PATCH 1/4] ARM: shmobile: sh7372: Remove unneeded nr_irqs initialization
+Message-Id: <1407931019-11409-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404812474-7627-1-git-send-email-ian.molton@codethink.co.uk>
-In-Reply-To: <1404812474-7627-1-git-send-email-ian.molton@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ian Molton <ian.molton@codethink.co.uk>, linux-media@vger.kernel.org
-Cc: linux-kernel@lists.codethink.co.uk, g.liakhovetski@gmx.de, m.chehab@samsung.com, vladimir.barinov@cogentembedded.com, magnus.damm@gmail.com, horms@verge.net.au, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+As per arch_probe_nr_irqs(), the default value is NR_IRQS, which maps to
+NR_IRQS_LEGACY if CONFIG_SPARSE_IRQ=y.
 
-On 07/08/2014 01:41 PM, Ian Molton wrote:
+Since SPARSE_IRQ is selected by both ARCH_MULTIPLATFORM and
+ARCH_SHMOBILE_LEGACY, it's always enabled on shmobile.
 
-> Resent to include the author and a couple of other interested parties :)
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-shmobile/setup-sh7372.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-    Thank you (despite you didn't include me :-).
-
-> This patch series provides fixes that allow the rcar_vin driver to function
-> without triggering dozens of warnings from the videobuf2 and soc_camera layers.
-
-> Patches 2/3 should probably be merged into a single, atomic change, although
-> patch 2 does not make the existing situation /worse/ in and of itself.
-
-    Perhaps it's worth to just swap patches 2 & 3...
-
-> Patch 4 does not change the code logic, but is cleaner and less prone to
-> breakage caused by furtutre modification. Also, more consistent with the use of
-> vb pointers elsewhere in the driver.
-
-    It's not a good practice to post fixes and clean-ups in a single series.
-
-> Comments welcome!
-
-    I've just tested the whole series, so here's my:
-
-Tested-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
-WBR, Sergei
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 9cdfcdfd38fc..3731eccccef4 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -1008,7 +1008,6 @@ static const char *sh7372_boards_compat_dt[] __initdata = {
+ DT_MACHINE_START(SH7372_DT, "Generic SH7372 (Flattened Device Tree)")
+ 	.map_io		= sh7372_map_io,
+ 	.init_early	= sh7372_add_early_devices_dt,
+-	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= sh7372_init_irq,
+ 	.handle_irq	= shmobile_handle_irq_intc,
+ 	.init_machine	= sh7372_add_standard_devices_dt,
+-- 
+1.9.1
 
