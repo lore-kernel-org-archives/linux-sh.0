@@ -1,37 +1,46 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 23 Aug 2014 01:43:32 +0000
-Subject: [PATCH 3/8] ARM: shmobile: bockw: Add shmobile_init_late()
-Message-Id: <6e15a3873aa9b4ab2980f781b05bfc5c99bf4b99.1408671094.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 14 Aug 2014 16:57:24 +0000
+Subject: [PATCH 3/7] ARM: shmobile: bockw_defconfig: Enable missing hardware support
+Message-Id: <1408035448-8811-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408671094.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408671094.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Based on the DTS
 
-Extend board specific Bock-W DT reference machine vector to include
-shmobile_init_late() so Suspend-to-RAM and CPUIdle are setup as expected.
+Notes:
+  - MTD_SPI_NOR is a dependency for MTD_M25P80 since commit
+    03e296f613affcc2671c1e86d8c25ecad867204e ("mtd: m25p80: use the SPI
+    nor framework") and commit e43b20619bdb6c851dd7b49cbd15e52875a785d4
+    ("mtd: spi-nor: shorten Kconfig naming").
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/board-bockw-reference.c | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/configs/bockw_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw-reference.c b/arch/arm/mach-shmobile/board-bockw-reference.c
-index ba840cd..9202f16 100644
---- a/arch/arm/mach-shmobile/board-bockw-reference.c
-+++ b/arch/arm/mach-shmobile/board-bockw-reference.c
-@@ -83,5 +83,6 @@ DT_MACHINE_START(BOCKW_DT, "bockw")
- 	.init_early	= r8a7778_init_delay,
- 	.init_irq	= r8a7778_init_irq_dt,
- 	.init_machine	= bockw_init,
-+	.init_late	= shmobile_init_late,
- 	.dt_compat	= bockw_boards_compat_dt,
- MACHINE_END
+diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
+index e816140d81c5..70b3f451f065 100644
+--- a/arch/arm/configs/bockw_defconfig
++++ b/arch/arm/configs/bockw_defconfig
+@@ -55,6 +55,7 @@ CONFIG_MTD_BLOCK=y
+ CONFIG_MTD_CFI=y
+ CONFIG_MTD_CFI_AMDSTD=y
+ CONFIG_MTD_M25P80=y
++CONFIG_MTD_SPI_NOR=y
+ CONFIG_SCSI=y
+ CONFIG_BLK_DEV_SD=y
+ CONFIG_NETDEVICES=y
+@@ -82,6 +83,7 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HWMON is not set
+ CONFIG_I2C=y
+ CONFIG_I2C_RCAR=y
++CONFIG_GPIO_RCAR=y
+ CONFIG_REGULATOR=y
+ CONFIG_MEDIA_SUPPORT=y
+ CONFIG_MEDIA_CAMERA_SUPPORT=y
 -- 
-2.0.1
+1.9.1
 
