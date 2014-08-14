@@ -1,41 +1,41 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 23 Aug 2014 01:44:20 +0000
-Subject: [PATCH 10/11] ARM: shmobile: sh7372: Remove unneeded nr_irqs initialization
-Message-Id: <ea2e46086969e11b759a8f2c111c9b007d1b35c9.1408671240.git.horms+renesas@verge.net.au>
+From: "Head Quarter Western Union and Money Gram Transfer" <info@wu.org>
+Date: Thu, 14 Aug 2014 20:53:52 +0000
+Subject: NOTICE
+Message-Id: <2c3163dff28d22e917e77d5f0a7b85d3.squirrel@webmail.unf.edu.ar>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408671240.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408671240.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Top of the day to you all from the Head Quarter Western Union and Money
+Gram Transfer.
 
-As per arch_probe_nr_irqs(), the default value is NR_IRQS, which maps to
-NR_IRQS_LEGACY if CONFIG_SPARSE_IRQ=y.
+Dear User
 
-Since SPARSE_IRQ is selected by both ARCH_MULTIPLATFORM and
-ARCH_SHMOBILE_LEGACY, it's always enabled on shmobile.
+This is to inform all our users that the high rate of scam has been coming
+so much and we are receive complains from beach Transfer office that our
+customer has been send money to differed country as a result of scam. So
+we have decided to upgrade our system for security reasons.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/setup-sh7372.c | 1 -
- 1 file changed, 1 deletion(-)
+Dear customer for security reason if any payment is been made via Western
+Union or MoneyGram you are been advise to send us the scan copy of the
+payment slip and the information of the payment for verification.
 
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 9cdfcdfd..3731ecc 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -1008,7 +1008,6 @@ static const char *sh7372_boards_compat_dt[] __initdata = {
- DT_MACHINE_START(SH7372_DT, "Generic SH7372 (Flattened Device Tree)")
- 	.map_io		= sh7372_map_io,
- 	.init_early	= sh7372_add_early_devices_dt,
--	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= sh7372_init_irq,
- 	.handle_irq	= shmobile_handle_irq_intc,
- 	.init_machine	= sh7372_add_standard_devices_dt,
--- 
-2.0.1
+For Western Union or MoneyGarm verification:
+
+Name of sender:
+Name of Receiver:
+Address of sender:
+Address of Receiver:
+Amount sent:
+MTCN (Money Transfer Control Number) OR Reference number:
+Country from which payment was made:
+Country from which payment is about to be receive:
+Test question and answer if any required:
+
+Once this informations are receive verification take place and we will get
+back to you as soon as the payment is been verified.
+
+Thanks for your understanding and we look forward to serve you better.
 
