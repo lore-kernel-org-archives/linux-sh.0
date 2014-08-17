@@ -1,83 +1,44 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Aug 2014 16:41:02 +0000
-Subject: [PATCH 05/16] video: Add THC63LVDM83D DT bindings documentation
-Message-Id: <1409157673-4154-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 17 Aug 2014 20:58:14 +0000
+Subject: Re: Build regressions/improvements in v3.17-rc1
+Message-Id: <CAMuHMdUrBYrHiwj=S-kWYEHb+1CX2VUgYmvJhj_aaC-8ChFL_g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1408308358-27494-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1408308358-27494-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: devicetree@vger.kernel.org, linux-fbdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Cc: "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>, uml-devel <user-mode-linux-devel@lists.sourceforge.net>, Linux-sh list <linux-sh@vger.kernel.org>
 
-The THC63LVDM83D is a video LVDS serializer described by an input port,
-an output port, and an optional power down GPIO.
+On Sun, Aug 17, 2014 at 10:45 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> 16 regressions:
+>   + /scratch/kisskb/src/arch/powerpc/include/asm/floppy.h: error: 'isa_bridge_pcidev' undeclared (first use in this function):  => 142:20
 
-Cc: devicetree@vger.kernel.org
-Cc: linux-fbdev@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- .../devicetree/bindings/video/thine,thc63lvdm83d   | 50 ++++++++++++++++++++++
- 1 file changed, 50 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/video/thine,thc63lvdm83d
+powerpc-randconfig
 
-diff --git a/Documentation/devicetree/bindings/video/thine,thc63lvdm83d b/Documentation/devicetree/bindings/video/thine,thc63lvdm83d
-new file mode 100644
-index 0000000..527e236
---- /dev/null
-+++ b/Documentation/devicetree/bindings/video/thine,thc63lvdm83d
-@@ -0,0 +1,50 @@
-+THine Electronics THC63LVDM83D LVDS serializer
-+----------------------------------------------
-+
-+The THC63LVDM83D is an LVDS serializer designed to support pixel data
-+transmission between a host and a flat panel.
-+
-+Required properties:
-+
-+- compatible: Should be "thine,thc63lvdm83d"
-+
-+Optional properties:
-+
-+- pwdn-gpios: Power down control GPIO
-+
-+Required nodes:
-+
-+The THC63LVDM83D has two video ports. Their connections are modeled using the
-+OFgraph bindings specified in Documentation/devicetree/bindings/graph.txt.
-+
-+- Video port 0 for CMOS/TTL input
-+- Video port 1 for LVDS output
-+
-+
-+Example
-+-------
-+
-+	lvds_enc: encoder@0 {
-+		compatible = "thine,thc63lvdm83d";
-+
-+		ports {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+
-+			port@0 {
-+				reg = <0>;
-+
-+				lvds_enc_in: endpoint@0 {
-+					remote-endpoint = <&rgb_out>;
-+				};
-+			};
-+
-+			port@1 {
-+				reg = <1>;
-+
-+				lvds_enc_out: endpoint@0 {
-+					remote-endpoint = <&panel_in>;
-+				};
-+			};
-+		};
-+	};
--- 
-1.8.5.5
+>   + /scratch/kisskb/src/fs/hostfs/hostfs_user.c: error: 'AT_FDCWD' undeclared (first use in this function):  => 378
+>   + /scratch/kisskb/src/fs/hostfs/hostfs_user.c: error: (Each undeclared identifier is reported only once:  => 378
+>   + /scratch/kisskb/src/fs/hostfs/hostfs_user.c: error: for each function it appears in.):  => 378
 
+um-defconfig
+
+>   + /scratch/kisskb/src/kernel/locking/mcs_spinlock.h: error: implicit declaration of function 'cpu_relax_lowlatency' [-Werror=implicit-function-declaration]:  => 87:2
+
+frv-defconfig (somehow the fix never made it past Linus' mbox)
+
+>   + error: "flush_icache_range" [drivers/misc/lkdtm.ko] undefined!:  => N/A
+
+sh-allmodconfig (woohoo, this means it has reached the link phase!)
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
