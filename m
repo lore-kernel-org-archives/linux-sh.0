@@ -1,89 +1,40 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 09 Jul 2014 11:30:13 +0000
-Subject: [PATCH 2/2] usb: renesas_usbhs: gadget: fix re-enabling pipe without re-connecting
-Message-Id: <53BD27C5.80006@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 18 Aug 2014 22:24:35 +0000
+Subject: Re: [PATCH v5] phy: Renesas R-Car Gen2 PHY driver
+Message-Id: <53F27D23.3040002@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201407222327.15179.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201407222327.15179.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, kishon@ti.com, grant.likely@linaro.org, devicetree@vger.kernel.org
+Cc: rdunlap@infradead.org, linux-doc@vger.kernel.org, linux-sh@vger.kernel.org, linux-usb@vger.kernel.org
 
-This patch fixes an issue that the renesas_usbhs driver in gadget mode
-cannot work correctly even if I disabled DMAC of the driver when I used
-the g_zero driver and the testusb tool.
+Hello.
 
-When a usb cable is re-connected, the renesas_usbhs driver calls the
-usbhsp_flags_init() (via usbhs_hotplug() --> usbhs_mod_call(start) -->
-usbhsg_try_start() --> usbhs_pipe_init()). However, the driver doesn't
-call the usbhsp_flags_init() when usbhsg_ep_disable() is called.
-So, if a gadget driver calls usb_ep_enable() and usb_ep_disable() again
-and again, the renesas_usbhs driver will output the following log:
+On 07/22/2014 11:27 PM, Sergei Shtylyov wrote:
 
-  renesas_usbhs renesas_usbhs: can't get pipe (BULK)
-  renesas_usbhs renesas_usbhs: wrong recip request
+> This PHY, though formally being a part of Renesas USBHS controller, contains the
+> UGCTRL2 register that controls multiplexing of the USB ports (Renesas calls them
+> channels) to the different USB controllers: channel 0 can be connected to either
+> PCI EHCI/OHCI or USBHS controllers, channel 2 can be connected to PCI EHCI/OHCI
+> or xHCI controllers.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- drivers/usb/renesas_usbhs/mod_gadget.c |    2 ++
- drivers/usb/renesas_usbhs/pipe.c       |   10 ++++++++++
- drivers/usb/renesas_usbhs/pipe.h       |    1 +
- 3 files changed, 13 insertions(+)
+> This is a new driver for this USB PHY currently already supported under drivers/
+> usb/phy/. The reason for writing the new driver was the requirement that the
+> multiplexing  of USB channels to the controller be dynamic, depending on what
+> USB drivers  are loaded,  rather than static as provided by the old driver. The
+> infrastructure provided by drivers/phy/phy-core.c  seems to fit that purpose
+> ideally. The new driver only  supports device tree probing  for now.
 
-diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
-index 458f376..04e6505 100644
---- a/drivers/usb/renesas_usbhs/mod_gadget.c
-+++ b/drivers/usb/renesas_usbhs/mod_gadget.c
-@@ -600,8 +600,10 @@ static int usbhsg_ep_enable(struct usb_ep *ep,
- static int usbhsg_ep_disable(struct usb_ep *ep)
- {
- 	struct usbhsg_uep *uep = usbhsg_ep_to_uep(ep);
-+	struct usbhs_pipe *pipe = usbhsg_uep_to_pipe(uep);
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
- 	usbhsg_pipe_disable(uep);
-+	usbhs_pipe_free(pipe);
+> ---
+> The patch is against the 'next' branch of Kishon's 'linux-phy.git' repo.
 
- 	uep->pipe->mod_private	= NULL;
- 	uep->pipe		= NULL;
-diff --git a/drivers/usb/renesas_usbhs/pipe.c b/drivers/usb/renesas_usbhs/pipe.c
-index 239b889..75fbcf6 100644
---- a/drivers/usb/renesas_usbhs/pipe.c
-+++ b/drivers/usb/renesas_usbhs/pipe.c
-@@ -640,6 +640,11 @@ static struct usbhs_pipe *usbhsp_get_pipe(struct usbhs_priv *priv, u32 type)
- 	return pipe;
- }
+    Kishon, may I ask what was the problem with this patch? I don't see it in 
+3.17-rc1 and you've never replied though nearly a month has passed...
 
-+static void usbhsp_put_pipe(struct usbhs_pipe *pipe)
-+{
-+	usbhsp_flags_init(pipe);
-+}
-+
- void usbhs_pipe_init(struct usbhs_priv *priv,
- 		     int (*dma_map_ctrl)(struct usbhs_pkt *pkt, int map))
- {
-@@ -727,6 +732,11 @@ struct usbhs_pipe *usbhs_pipe_malloc(struct usbhs_priv *priv,
- 	return pipe;
- }
-
-+void usbhs_pipe_free(struct usbhs_pipe *pipe)
-+{
-+	usbhsp_put_pipe(pipe);
-+}
-+
- void usbhs_pipe_select_fifo(struct usbhs_pipe *pipe, struct usbhs_fifo *fifo)
- {
- 	if (pipe->fifo)
-diff --git a/drivers/usb/renesas_usbhs/pipe.h b/drivers/usb/renesas_usbhs/pipe.h
-index 3e53498..406f36d 100644
---- a/drivers/usb/renesas_usbhs/pipe.h
-+++ b/drivers/usb/renesas_usbhs/pipe.h
-@@ -75,6 +75,7 @@ struct usbhs_pipe_info {
- char *usbhs_pipe_name(struct usbhs_pipe *pipe);
- struct usbhs_pipe
- *usbhs_pipe_malloc(struct usbhs_priv *priv, int endpoint_type, int dir_in);
-+void usbhs_pipe_free(struct usbhs_pipe *pipe);
- int usbhs_pipe_probe(struct usbhs_priv *priv);
- void usbhs_pipe_remove(struct usbhs_priv *priv);
- int usbhs_pipe_is_dir_in(struct usbhs_pipe *pipe);
--- 
-1.7.9.5
+WBR, Sergei
 
