@@ -1,50 +1,73 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 15 Aug 2014 15:10:53 +0000
+Date: Mon, 18 Aug 2014 12:36:52 +0000
 Subject: Re: [PATCH] mmc: tmio: Fix hang during suspend
-Message-Id: <CAMuHMdVpAJdFEpGsXmf2kVUZ4_qRwW8QS9c=iTtDkYu-XFX8OQ@mail.gmail.com>
+Message-Id: <CAMuHMdXrWgW2iMDd7GA+QC-vcAsp+vH9fidkdnBj-f9F878yAw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1408029833-6970-1-git-send-email-geert+renesas@glider.be>
-	<CAPDyKFpuCyRVJe_oRTukoryDAMK9iN5qoR4VU2wrjnvjMA-+Bg@mail.gmail.com>
-In-Reply-To: <CAPDyKFpuCyRVJe_oRTukoryDAMK9iN5qoR4VU2wrjnvjMA-+Bg@mail.gmail.com>
+	<20140815134917.da77205b68f18341140c6593@codethink.co.uk>
+In-Reply-To: <20140815134917.da77205b68f18341140c6593@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Ian Molton <ian.molton@codethink.co.uk>, Chris Ball <chris@printf.net>, linux-mmc <linux-mmc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: Ian Molton <ian.molton@codethink.co.uk>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Chris Ball <chris@printf.net>, Ulf Hansson <ulf.hansson@linaro.org>, Linux MMC List <linux-mmc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-Hi Ulf,
+Hi Ian,
 
-On Fri, Aug 15, 2014 at 4:42 PM, Ulf Hansson <ulf.hansson@linaro.org> wrote:
-> On 14 August 2014 17:23, Geert Uytterhoeven <geert+renesas@glider.be> wrote:
+On Fri, Aug 15, 2014 at 2:49 PM, Ian Molton <ian.molton@codethink.co.uk> wrote:
+> On Thu, 14 Aug 2014 17:23:53 +0200
+> Geert Uytterhoeven <geert+renesas@glider.be> wrote:
+>
 >> On R-Car Gen 2, the SDHI registers cannot be accessed while the SDHI
 >> module clock is disabled. Doing so will cause a lock-up.
 >>
 >> When suspending, enable the module clock before disabling the SDHI
 >> interrupts, and disable the clock again afterwards.
->>
->> This fixes suspend and resume on r8a7791/koelsch.
 >
-> Out of curiosity, are you using CONFIG_PM_RUNTIME to trigger this bug?
+> This feels wrong. Why can't interrupts be disabled prior to turning the clock off?
 
-Yes I am:
+The clock is handled by runtime PM. So if SDHI becomes idle, the clock
+is turned off.
+However, the card insertion interrupt is still enabled.
+If all interrupts would be disabled when the clock is turned off, I believe card
+insertion can no longer be detected.
 
-$ grep CONFIG_PM .config
-CONFIG_PM_SLEEP=y
-CONFIG_PM_SLEEP_SMP=y
-# CONFIG_PM_AUTOSLEEP is not set
-# CONFIG_PM_WAKELOCKS is not set
-CONFIG_PM_RUNTIME=y
-CONFIG_PM=y
-CONFIG_PM_DEBUG=y
-CONFIG_PM_ADVANCED_DEBUG=y
-# CONFIG_PM_TEST_SUSPEND is not set
-CONFIG_PM_SLEEP_DEBUG=y
-CONFIG_PM_OPP=y
-CONFIG_PM_CLK=y
-# CONFIG_PMIC_ADP5520 is not set
-# CONFIG_PMIC_DA903X is not set
-# CONFIG_PM_DEVFREQ is not set
-$
+BTW, I'm still wondering why tmio_mmc_host_resume() works without
+enabling the clock, as it calls tmio_mmc_enable_dma(), which also writes to
+an SDHI register (CTL_DMA_ENABLE).
+
+>> This fixes suspend and resume on r8a7791/koelsch.
+>>
+>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>> ---
+>>  drivers/mmc/host/tmio_mmc_pio.c | 10 ++++++++++
+>>  1 file changed, 10 insertions(+)
+>>
+>> diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+>> index faf0924e71cb..83192420a7e3 100644
+>> --- a/drivers/mmc/host/tmio_mmc_pio.c
+>> +++ b/drivers/mmc/host/tmio_mmc_pio.c
+>> @@ -1147,8 +1147,18 @@ int tmio_mmc_host_suspend(struct device *dev)
+>>  {
+>>       struct mmc_host *mmc = dev_get_drvdata(dev);
+>>       struct tmio_mmc_host *host = mmc_priv(mmc);
+>> +     struct tmio_mmc_data *pdata = host->pdata;
+>> +
+>> +     if (pdata->clk_enable) {
+>> +             unsigned int f;
+>> +             pdata->clk_enable(host->pdev, &f);
+>> +     }
+>>
+>>       tmio_mmc_disable_mmc_irqs(host, TMIO_MASK_ALL);
+>> +
+>> +     if (pdata->clk_disable)
+>> +             pdata->clk_disable(host->pdev);
+>> +
+>>       return 0;
+>>  }
+>>  EXPORT_SYMBOL(tmio_mmc_host_suspend);
+>> --
+>> 1.9.1
 
 Gr{oetje,eeting}s,
 
