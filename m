@@ -1,72 +1,127 @@
-From: Mark Rutland <mark.rutland@arm.com>
-Date: Wed, 27 Aug 2014 09:53:08 +0000
-Subject: Re: [PATCH 3/3 repost] clocksource: sh_tmu: Document r8a7779 binding
-Message-Id: <20140827095308.GD7295@leverpostej>
+From: Pranith Kumar <bobby.prani@gmail.com>
+Date: Mon, 18 Aug 2014 04:24:49 +0000
+Subject: [PATCH] flush_icache_range: Export symbol to fix build errors
+Message-Id: <1408335898-3109-1-git-send-email-bobby.prani@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409117300-2133-1-git-send-email-horms+renesas@verge.net.au>
- <1409117300-2133-4-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1409117300-2133-4-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Vineet Gupta <vgupta@synopsys.com>, Steven Miao <realmz6@gmail.com>, David Howells <dhowells@redhat.com>, Richard Kuo <rkuo@codeaurora.org>, James Hogan <james.hogan@imgtec.com>, Chris Metcalf <cmetcalf@tilera.com>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, Noam Camus <noamc@ezchip.com>, Andrew Morton <akpm@linux-foundation.org>, Geert Uytterhoeven <geert@linux-m68k.org>, Masami Hiramatsu <masami.hiramatsu.pt@hitachi.com>, Tony Lu <zlu@tilera.com>, Kirill Tkhai <tkhai@yandex.ru>, open list <linux-kernel@vger.kernel.org>, "moderated list:BLACKFIN
+	ARCHITEC..." <adi-buildroot-devel@lists.sourceforge.net>, "open list:QUALCOMM HEXAGON..." <linux-hexagon@vger.kernel.org>, "open list:METAG ARCHITECTURE" <linux-metag@vger.kernel.org>, "open list:SUPERH" <linux-sh@vger.kernel.org>, "open list:TENSILICA XTENSA..." <linux-xtensa@linux-xtensa.org>
 
-On Wed, Aug 27, 2014 at 06:28:20AM +0100, Simon Horman wrote:
-> In general Renesas hardware is not documented to the extent
-> where the relationship between IP blocks on different SoCs can be assumed
-> although they may appear to operate the same way. Furthermore the
-> documentation typically does not specify a version for individual
-> IP blocks. For these reasons a convention of using the SoC name in place
-> of a version and providing SoC-specific compat strings has been adopted.
-> 
-> Although not universally liked this convention is used in the bindings
-> for the drivers a number of drivers for Renesas hardware. The purpose
-> of this patch is to update the Renesas R-Car Timer Unit (TMU)
-> driver to follow this convention.
-> 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> ---
-> * I plan to follow up with a patch patch to use the new binding in the
->   dtsi files for the r8a7779 SoC.
-> ---
->  Documentation/devicetree/bindings/timer/renesas,tmu.txt | 6 ++++--
->  1 file changed, 4 insertions(+), 2 deletions(-)
-> 
-> diff --git a/Documentation/devicetree/bindings/timer/renesas,tmu.txt b/Documentation/devicetree/bindings/timer/renesas,tmu.txt
-> index 425d0c5..712ddfa 100644
-> --- a/Documentation/devicetree/bindings/timer/renesas,tmu.txt
-> +++ b/Documentation/devicetree/bindings/timer/renesas,tmu.txt
-> @@ -8,7 +8,9 @@ are independent. The TMU hardware supports up to three channels.
->  
->  Required Properties:
->  
-> -  - compatible: must contain "renesas,tmu"
-> +  - compatible: must contain one of the following.
-> +    - "renesas,tmu" generic TMU
-> +    - "renesas,tmu-r8a7779" R8A7779 TMU
+Fix building errors occuring due to a missing export of flush_icache_range() in
+architectures missing the export.
 
-Similarly to patch 2, "one or more" and swap the order here?
+Signed-off-by: Pranith Kumar <bobby.prani@gmail.com>
+Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
+CC: Andrew Morton <akpm@linux-foundation.org>
+---
+ arch/arc/mm/cache_arc700.c             |    1 +
+ arch/blackfin/include/asm/cacheflush.h |    1 +
+ arch/frv/include/asm/cacheflush.h      |    1 +
+ arch/hexagon/mm/cache.c                |    1 +
+ arch/metag/include/asm/cacheflush.h    |    1 +
+ arch/sh/mm/cache.c                     |    1 +
+ arch/tile/kernel/smp.c                 |    1 +
+ arch/xtensa/kernel/smp.c               |    1 +
+ 8 files changed, 8 insertions(+)
 
-Mark.
+diff --git a/arch/arc/mm/cache_arc700.c b/arch/arc/mm/cache_arc700.c
+index 4670afc..e88ddbf 100644
+--- a/arch/arc/mm/cache_arc700.c
++++ b/arch/arc/mm/cache_arc700.c
+@@ -581,6 +581,7 @@ void flush_icache_range(unsigned long kstart, unsigned long kend)
+ 		tot_sz -= sz;
+ 	}
+ }
++EXPORT_SYMBOL(flush_icache_range);
+ 
+ /*
+  * General purpose helper to make I and D cache lines consistent.
+diff --git a/arch/blackfin/include/asm/cacheflush.h b/arch/blackfin/include/asm/cacheflush.h
+index 9a5b2c5..0e2eb8c 100644
+--- a/arch/blackfin/include/asm/cacheflush.h
++++ b/arch/blackfin/include/asm/cacheflush.h
+@@ -70,6 +70,7 @@ static inline void flush_icache_range(unsigned start, unsigned end)
+ 	}
+ #endif
+ }
++EXPORT_SYMBOL(flush_icache_range);
+ 
+ #define copy_to_user_page(vma, page, vaddr, dst, src, len)		\
+ do { memcpy(dst, src, len);						\
+diff --git a/arch/frv/include/asm/cacheflush.h b/arch/frv/include/asm/cacheflush.h
+index edbac54..07ee4b3 100644
+--- a/arch/frv/include/asm/cacheflush.h
++++ b/arch/frv/include/asm/cacheflush.h
+@@ -72,6 +72,7 @@ static inline void flush_icache_range(unsigned long start, unsigned long end)
+ {
+ 	frv_cache_wback_inv(start, end);
+ }
++EXPORT_SYMBOL(flush_icache_range);
+ 
+ #ifdef CONFIG_MMU
+ extern void flush_icache_user_range(struct vm_area_struct *vma, struct page *page,
+diff --git a/arch/hexagon/mm/cache.c b/arch/hexagon/mm/cache.c
+index fe14ccf..0c76c80 100644
+--- a/arch/hexagon/mm/cache.c
++++ b/arch/hexagon/mm/cache.c
+@@ -68,6 +68,7 @@ void flush_icache_range(unsigned long start, unsigned long end)
+ 	);
+ 	local_irq_restore(flags);
+ }
++EXPORT_SYMBOL(flush_icache_range);
+ 
+ void hexagon_clean_dcache_range(unsigned long start, unsigned long end)
+ {
+diff --git a/arch/metag/include/asm/cacheflush.h b/arch/metag/include/asm/cacheflush.h
+index 7787ec5..117c212 100644
+--- a/arch/metag/include/asm/cacheflush.h
++++ b/arch/metag/include/asm/cacheflush.h
+@@ -124,6 +124,7 @@ static inline void flush_icache_range(unsigned long address,
+ 	metag_code_cache_flush((void *) address, endaddr - address);
+ #endif
+ }
++EXPORT_SYMBOL(flush_icache_range);
+ 
+ static inline void flush_cache_sigtramp(unsigned long addr, int size)
+ {
+diff --git a/arch/sh/mm/cache.c b/arch/sh/mm/cache.c
+index 097c2cd..f770e39 100644
+--- a/arch/sh/mm/cache.c
++++ b/arch/sh/mm/cache.c
+@@ -229,6 +229,7 @@ void flush_icache_range(unsigned long start, unsigned long end)
+ 
+ 	cacheop_on_each_cpu(local_flush_icache_range, (void *)&data, 1);
+ }
++EXPORT_SYMBOL(flush_icache_range);
+ 
+ void flush_icache_page(struct vm_area_struct *vma, struct page *page)
+ {
+diff --git a/arch/tile/kernel/smp.c b/arch/tile/kernel/smp.c
+index 01e8ab2..19eaa62 100644
+--- a/arch/tile/kernel/smp.c
++++ b/arch/tile/kernel/smp.c
+@@ -183,6 +183,7 @@ void flush_icache_range(unsigned long start, unsigned long end)
+ 		preempt_enable();
+ 	}
+ }
++EXPORT_SYMBOL(flush_icache_range);
+ 
+ 
+ /* Called when smp_send_reschedule() triggers IRQ_RESCHEDULE. */
+diff --git a/arch/xtensa/kernel/smp.c b/arch/xtensa/kernel/smp.c
+index 40b5a37..4d02e38 100644
+--- a/arch/xtensa/kernel/smp.c
++++ b/arch/xtensa/kernel/smp.c
+@@ -571,6 +571,7 @@ void flush_icache_range(unsigned long start, unsigned long end)
+ 	};
+ 	on_each_cpu(ipi_flush_icache_range, &fd, 1);
+ }
++EXPORT_SYMBOL(flush_icache_range);
+ 
+ /* ------------------------------------------------------------------------- */
+ 
+-- 
+1.7.9.5
 
->  
->    - reg: base address and length of the registers block for the timer module.
->  
-> @@ -27,7 +29,7 @@ Optional Properties:
->  Example: R8A7779 (R-Car H1) TMU0 node
->  
->  	tmu0: timer@ffd80000 {
-> -		compatible = "renesas,tmu";
-> +		compatible = "renesas,tmu-r8a7779", "renesas,tmu";
->  		reg = <0xffd80000 0x30>;
->  		interrupts = <0 32 IRQ_TYPE_LEVEL_HIGH>,
->  			     <0 33 IRQ_TYPE_LEVEL_HIGH>,
-> -- 
-> 2.0.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe devicetree" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
