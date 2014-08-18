@@ -1,89 +1,55 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 12 Aug 2014 00:04:39 +0000
-Subject: [PATCH v2 2/5] ARM: shmobile: armadillo800eva-reference: Enable CMT1 in device tree
-Message-Id: <1407801882-2561-3-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 18 Aug 2014 11:55:52 +0000
+Subject: renesas-drivers-2014-08-18-v3.17-rc1
+Message-Id: <1408362952-16377-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1407801882-2561-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1407801882-2561-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Based on work by Magnus Damm
+I've pushed renesas-drivers-2014-08-18-v3.17-rc1 to
+https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+This tree is meant to ease development of platform support and drivers for
+Renesas ARM ("shmobile") SoCs.
+It's created by merging the for-next branches of various subsystem trees
+into the development branch of Simon Horman's renesas.git tree.
 
-Cc: Magnus Damm <magnus.damm@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts |  4 ++++
- arch/arm/mach-shmobile/setup-r8a7740.c                  | 11 +----------
- 2 files changed, 5 insertions(+), 10 deletions(-)
+Today's version is based on renesas-devel-20140818-v3.17-rc1.
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 266c439..5e646e6 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -191,6 +191,10 @@
- 	renesas,mode = <0x05>; /* MD_CK0 | MD_CK2 */
- };
- 
-+&cmt1 {
-+	status = "ok";
-+};
-+
- &i2c0 {
- 	status = "okay";
- 	touchscreen@55 {
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 3d5eaca..dc44a44 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -311,10 +311,6 @@ static struct platform_device ipmmu_device = {
- 	.num_resources  = ARRAY_SIZE(ipmmu_resources),
- };
- 
--static struct platform_device *r8a7740_devices_dt[] __initdata = {
--	&cmt1_device,
--};
--
- static struct platform_device *r8a7740_early_devices[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
-@@ -331,6 +327,7 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
- 	&irqpin3_device,
- 	&tmu0_device,
- 	&ipmmu_device,
-+	&cmt1_device,
- };
- 
- /* DMA */
-@@ -756,8 +753,6 @@ void __init r8a7740_add_standard_devices(void)
- 	/* add devices */
- 	platform_add_devices(r8a7740_early_devices,
- 			    ARRAY_SIZE(r8a7740_early_devices));
--	platform_add_devices(r8a7740_devices_dt,
--			    ARRAY_SIZE(r8a7740_devices_dt));
- 	platform_add_devices(r8a7740_late_devices,
- 			     ARRAY_SIZE(r8a7740_late_devices));
- 
-@@ -779,8 +774,6 @@ void __init r8a7740_add_early_devices(void)
- {
- 	early_platform_add_devices(r8a7740_early_devices,
- 				   ARRAY_SIZE(r8a7740_early_devices));
--	early_platform_add_devices(r8a7740_devices_dt,
--				   ARRAY_SIZE(r8a7740_devices_dt));
- 
- 	/* setup early console here as well */
- 	shmobile_setup_console();
-@@ -790,8 +783,6 @@ void __init r8a7740_add_early_devices(void)
- 
- void __init r8a7740_add_standard_devices_dt(void)
- {
--	platform_add_devices(r8a7740_devices_dt,
--			    ARRAY_SIZE(r8a7740_devices_dt));
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
- 
--- 
-2.0.0.rc2
+Included subsystem trees:
+    git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
+    git://git.linaro.org/people/mturquette/linux.git#clk-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
+    git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
+    git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
+    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c for-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
+    git://gitorious.org/linux-can/linux-can-next.git#master
+    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
+    git://people.freedesktop.org/~airlied/linux#drm-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
+    git://linuxtv.org/mchehab/media-next.git#master
+    git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
+    git://git.linaro.org/people/ulf.hansson/mmc.git#next
+    git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
+    git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents next
+    git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
+    git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
+    git://git.infradead.org/users/vkoul/slave-dma.git#next
+    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
+    git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
