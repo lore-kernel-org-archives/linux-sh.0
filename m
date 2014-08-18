@@ -1,25 +1,33 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 14 Aug 2014 05:32:31 +0000
-Subject: Re: [PATCH v5 0/2] Add VIN and ADV7180 device tree support for R8A7790/Lager board
-Message-Id: <20140814053231.GA26709@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 18 Aug 2014 15:51:46 +0000
+Subject: [PATCH 7/8] ARM: shmobile: r8a7794: document SCIF clock support
+Message-Id: <1408377107-3822-8-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1793694.Z8xUpkGDQx@wasted.cogentembedded.com>
-In-Reply-To: <1793694.Z8xUpkGDQx@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Aug 13, 2014 at 12:10:19AM +0400, sergei.shtylyov@cogentembedded.com wrote:
-> Hello.
-> 
->    Here's the set of 2 patches against Simon Horman's 'renesas.git' repo,
-> 'renesas-devel-v3.16-20140811' tag. Here Ben Dooks adds the VIN and ADV7180
-> video decoder device tree support on the R8A7790/Lager board. The patchset
-> requires Ben Dooks' 'rcar_vin' and 'soc_camera' DT support patches (already
-> merged to the 'media_tree.git' repo) in order to work.
-> 
-> [1/2] ARM: shmobile: r8a7790: add VIN device nodes
-> [2/2] ARM: shmobile: lager: add VIN1/ADV7180 device nodes
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-Thanks, I have queued these up for v3.18.
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+index b355660..7b87eb2 100644
+--- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
++++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+@@ -20,6 +20,10 @@ Required properties:
+     - "renesas,scifa-r8a7791" for R8A7791 (R-Car M2) SCIFA compatible UART.
+     - "renesas,scifb-r8a7791" for R8A7791 (R-Car M2) SCIFB compatible UART.
+     - "renesas,hscif-r8a7791" for R8A7791 (R-Car M2) HSCIF compatible UART.
++    - "renesas,scif-r8a7794" for R8A7794 (R-Car E2) SCIF compatible UART.
++    - "renesas,scifa-r8a7794" for R8A7794 (R-Car E2) SCIFA compatible UART.
++    - "renesas,scifb-r8a7794" for R8A7794 (R-Car E2) SCIFB compatible UART.
++    - "renesas,hscif-r8a7794" for R8A7794 (R-Car E2) HSCIF compatible UART.
+     - "renesas,scif" for generic SCIF compatible UART.
+     - "renesas,scifa" for generic SCIFA compatible UART.
+     - "renesas,scifb" for generic SCIFB compatible UART.
+-- 
+1.8.4.5
+
