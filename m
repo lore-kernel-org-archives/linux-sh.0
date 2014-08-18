@@ -1,22 +1,30 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 29 Aug 2014 00:00:58 +0000
-Subject: Re: [PATCH resend 1/2] ARM: shmobile: r8a73a4 dtsi: Add SoC-specific thermal compatible property
-Message-Id: <20140829000058.GG16165@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 18 Aug 2014 15:51:47 +0000
+Subject: [PATCH 8/8] ARM: shmobile: r8a7794: document CPG clock support
+Message-Id: <1408377107-3822-9-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409214040-5937-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1409214040-5937-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Magnus Damm <magnus.damm@gmail.com>, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Aug 28, 2014 at 10:20:39AM +0200, Geert Uytterhoeven wrote:
-> The thermal node used the generic compatible property only.
-> Add the SoC-specific one, to make it future proof.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> Resend, doc update is in v3.17-rc1
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-Thanks, I have queued this up.
+diff --git a/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
+index 7b41c2f..e6ad35b 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
+@@ -8,6 +8,7 @@ Required Properties:
+   - compatible: Must be one of
+     - "renesas,r8a7790-cpg-clocks" for the r8a7790 CPG
+     - "renesas,r8a7791-cpg-clocks" for the r8a7791 CPG
++    - "renesas,r8a7794-cpg-clocks" for the r8a7794 CPG
+     - "renesas,rcar-gen2-cpg-clocks" for the generic R-Car Gen2 CPG
+ 
+   - reg: Base address and length of the memory resource used by the CPG
+-- 
+1.8.4.5
+
