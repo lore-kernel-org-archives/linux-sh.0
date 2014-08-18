@@ -1,43 +1,53 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 11 Aug 2014 07:57:57 +0000
-Subject: Re: [PATCH 1/5] ARM: shmobile: r8a7740: Add CMT1 device to DT
-Message-Id: <20140811075752.GA21071@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 18 Aug 2014 15:51:44 +0000
+Subject: [PATCH 5/8] ARM: shmobile: support Cortex-A7 in shmobile_init_delay()
+Message-Id: <1408377107-3822-6-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1407725139-16156-1-git-send-email-horms+renesas@verge.net.au>
- <1407725139-16156-2-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdWBdbeTAG9eB_kg63i=4jYKLK7_1iD_POVOLnDkVHCUDQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdWBdbeTAG9eB_kg63i=4jYKLK7_1iD_POVOLnDkVHCUDQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Aug 11, 2014 at 09:11:22AM +0200, Geert Uytterhoeven wrote:
-> On Mon, Aug 11, 2014 at 4:45 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > Add the CMT0 counters to the r8a7740 device tree and make it
-> 
-> CMT1?
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/mach-shmobile/timer.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
-Thanks, I was sure I had fixed that... obviously not.
+diff --git a/arch/arm/mach-shmobile/timer.c b/arch/arm/mach-shmobile/timer.c
+index 942efdc..0b01770 100644
+--- a/arch/arm/mach-shmobile/timer.c
++++ b/arch/arm/mach-shmobile/timer.c
+@@ -60,7 +60,7 @@ void __init shmobile_setup_delay(unsigned int max_cpu_core_mhz,
+ void __init shmobile_init_delay(void)
+ {
+ 	struct device_node *np, *cpus;
+-	bool is_a8_a9 = false;
++	bool is_a7_a8_a9 = false;
+ 	bool is_a15 = false;
+ 	u32 max_freq = 0;
+ 
+@@ -74,9 +74,10 @@ void __init shmobile_init_delay(void)
+ 		if (!of_property_read_u32(np, "clock-frequency", &freq))
+ 			max_freq = max(max_freq, freq);
+ 
+-		if (of_device_is_compatible(np, "arm,cortex-a8") ||
++		if (of_device_is_compatible(np, "arm,cortex-a7") ||
++		    of_device_is_compatible(np, "arm,cortex-a8") ||
+ 		    of_device_is_compatible(np, "arm,cortex-a9"))
+-			is_a8_a9 = true;
++			is_a7_a8_a9 = true;
+ 		else if (of_device_is_compatible(np, "arm,cortex-a15"))
+ 			is_a15 = true;
+ 	}
+@@ -86,7 +87,7 @@ void __init shmobile_init_delay(void)
+ 	if (!max_freq)
+ 		return;
+ 
+-	if (is_a8_a9)
++	if (is_a7_a8_a9)
+ 		shmobile_setup_delay_hz(max_freq, 1, 3);
+ 	else if (is_a15 && !IS_ENABLED(CONFIG_ARM_ARCH_TIMER))
+ 		shmobile_setup_delay_hz(max_freq, 2, 4);
+-- 
+1.8.4.5
 
-> 
-> > disabled by default.
-> 
-> > +       cmt1: timer@e6138000 {
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
