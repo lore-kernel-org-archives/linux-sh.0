@@ -1,129 +1,95 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 07 Aug 2014 08:55:01 +0000
-Subject: Re: [PATCH 06/12] spi: sh-msiof: Fix leaking of unused DMA descriptors
-Message-Id: <CAMuHMdUd3OKqDwhLSCMW-rEQSnWky+saN5TgC005rkmNPfEL+g@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 18 Aug 2014 15:51:42 +0000
+Subject: [PATCH 3/8] ARM: shmobile: Initial r8a7794 Alt board support
+Message-Id: <1408377107-3822-4-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
-	<1407329949-5695-7-git-send-email-geert+renesas@glider.be>
-	<1888537.ONCuOO6jck@avalon>
-In-Reply-To: <1888537.ONCuOO6jck@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Mark Brown <broonie@kernel.org>, Simon Horman <horms@verge.net.au>, linux-spi <linux-spi@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, dmaengine@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Laurent,
+Minimal board support, based on work by Hisashi Nakamura.
 
-On Thu, Aug 7, 2014 at 2:07 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> On Wednesday 06 August 2014 14:59:03 Geert Uytterhoeven wrote:
->> +++ b/drivers/spi/spi-sh-msiof.c
->> @@ -636,48 +636,38 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv
->> *p, const void *tx, dma_cookie_t cookie;
->>       int ret;
->>
->> -     if (tx) {
->> -             ier_bits |= IER_TDREQE | IER_TDMAE;
->> -             dma_sync_single_for_device(p->master->dma_tx->device->dev,
->> -                                        p->tx_dma_addr, len, DMA_TO_DEVICE);
->> -             desc_tx = dmaengine_prep_slave_single(p->master->dma_tx,
->> -                                     p->tx_dma_addr, len, DMA_TO_DEVICE,
->> -                                     DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
->> -             if (!desc_tx)
->> -                     return -EAGAIN;
->> -     }
->> -
->> +     /* First prepare and submit the DMA request(s), as this may fail */
->>       if (rx) {
->>               ier_bits |= IER_RDREQE | IER_RDMAE;
->>               desc_rx = dmaengine_prep_slave_single(p->master->dma_rx,
->>                                       p->rx_dma_addr, len, DMA_FROM_DEVICE,
->>                                       DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
->> -             if (!desc_rx)
->> -                     return -EAGAIN;
->> -     }
->> -
->> -     /* 1 stage FIFO watermarks for DMA */
->> -     sh_msiof_write(p, FCTR, FCTR_TFWM_1 | FCTR_RFWM_1);
->> -
->> -     /* setup msiof transfer mode registers (32-bit words) */
->> -     sh_msiof_spi_set_mode_regs(p, tx, rx, 32, len / 4);
->> -
->> -     sh_msiof_write(p, IER, ier_bits);
->> -
->> -     reinit_completion(&p->done);
->> +             if (!desc_rx) {
->> +                     ret = -EAGAIN;
->> +                     goto no_dma_rx;
->
-> You could return -EAGAIN directly here.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/mach-shmobile/Kconfig               |  5 ++++
+ arch/arm/mach-shmobile/Makefile              |  1 +
+ arch/arm/mach-shmobile/board-alt-reference.c | 38 ++++++++++++++++++++++++++++
+ 3 files changed, 44 insertions(+)
+ create mode 100644 arch/arm/mach-shmobile/board-alt-reference.c
 
-Indeed...
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 0ef01d4..9c4a670 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -62,6 +62,11 @@ config MACH_MARZEN
+ 	depends on ARCH_R8A7779
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 
++config MACH_ALT
++	bool "Alt board"
++	depends on ARCH_R8A7794
++	select MICREL_PHY if SH_ETH
++
+ comment "Renesas ARM SoCs System Configuration"
+ endif
+ 
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 315784f..ec0cd31 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -64,6 +64,7 @@ ifdef CONFIG_ARCH_SHMOBILE_MULTI
+ obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch-reference.o
+ obj-$(CONFIG_MACH_LAGER)	+= board-lager-reference.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen-reference.o
++obj-$(CONFIG_MACH_ALT)		+= board-alt-reference.o
+ else
+ obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
+ obj-$(CONFIG_MACH_APE6EVM_REFERENCE)	+= board-ape6evm-reference.o
+diff --git a/arch/arm/mach-shmobile/board-alt-reference.c b/arch/arm/mach-shmobile/board-alt-reference.c
+new file mode 100644
+index 0000000..c74935e
+--- /dev/null
++++ b/arch/arm/mach-shmobile/board-alt-reference.c
+@@ -0,0 +1,38 @@
++/*
++ * Alt board support - Reference DT implementation
++ *
++ * Copyright (C) 2014  Renesas Electronics Corporation
++ * Copyright (C) 2014  Ulrich Hecht
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <linux/of_platform.h>
++#include "common.h"
++#include "rcar-gen2.h"
++#include <asm/mach/arch.h>
++
++static void __init alt_add_standard_devices(void)
++{
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++}
++
++static const char * const alt_boards_compat_dt[] __initconst = {
++	"renesas,alt-reference",
++	NULL,
++};
++
++DT_MACHINE_START(ALT_DT, "alt")
++	.init_early	= shmobile_init_delay,
++	.init_time	= rcar_gen2_timer_init,
++	.init_machine	= alt_add_standard_devices,
++	.init_late	= shmobile_init_late,
++	.dt_compat	= alt_boards_compat_dt,
++MACHINE_END
+-- 
+1.8.4.5
 
->> +             }
->>
->> -     if (rx) {
->>               desc_rx->callback = sh_msiof_dma_complete;
->>               desc_rx->callback_param = p;
->>               cookie = dmaengine_submit(desc_rx);
->>               if (dma_submit_error(cookie)) {
->>                       ret = cookie;
->> -                     goto stop_ier;
->> +                     goto no_dma_rx;
-
-... and here, too. Will do.
-
->> @@ -688,15 +678,30 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv
->> *p, const void *tx, cookie = dmaengine_submit(desc_tx);
->>               if (dma_submit_error(cookie)) {
->>                       ret = cookie;
->> -                     goto stop_rx;
->> +                     goto no_dma_tx;
->>               }
->> -             dma_async_issue_pending(p->master->dma_tx);
->>       }
->>
->> +     /* 1 stage FIFO watermarks for DMA */
->> +     sh_msiof_write(p, FCTR, FCTR_TFWM_1 | FCTR_RFWM_1);
->> +
->> +     /* setup msiof transfer mode registers (32-bit words) */
->> +     sh_msiof_spi_set_mode_regs(p, tx, rx, 32, len / 4);
->> +
->> +     sh_msiof_write(p, IER, ier_bits);
->> +
->> +     reinit_completion(&p->done);
->> +
->> +     /* Now start DMA */
->> +     if (tx)
->> +             dma_async_issue_pending(p->master->dma_rx);
->
-> if (tx) issue pending on dma_rx ? Shouldn't is be tx -> tx and rx -> rx below
-> ? I would also start rx before tx, but that might be an unnecessary
-> precaution.
-
-Woops. That check should indeed be "if (rx)", and the one below should
-be "if (tx)".
-
->> +     if (rx)
->> +             dma_async_issue_pending(p->master->dma_tx);
->> +
-
-While I did test transmit-only in the past, usually I tested transmit + receive
-only, as the attached PMIC doesn't offer much test potential for large
-write-only transfers.
-
-Will send an update soon.
-
-Thanks for your review!
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
