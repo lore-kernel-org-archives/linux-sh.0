@@ -1,43 +1,70 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 19 Aug 2014 06:48:35 +0000
-Subject: Re: [PATCH v2 0/5] ARM: shmobile: r8a7740: add clocks to DT
-Message-Id: <CANqRtoSS91FxVZnt7_pkfXtG3LvO=n=m0FaXQvX9F+8goEEWSg@mail.gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 18 Aug 2014 08:32:19 +0000
+Subject: Re: [PATCH repost] ARM: shmobile: sh73a0: Remove spurious 0x from SCIFB clock name
+Message-Id: <CAMuHMdWS14CsDvk+cTYJ7JeX0_3oQdfsRC__Hofmv54uOOtG1Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1407507792-8121-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1407507792-8121-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <cover.1406766463.git.horms+renesas@verge.net.au>
+ <20140731004246.GA31860@verge.net.au>
+In-Reply-To: <20140731004246.GA31860@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Cc: "Simon Horman [Horms]" <horms@verge.net.au>, SH-Linux <linux-sh@vger.kernel.org>, Mike Turquette <mturquette@linaro.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Ulrich,
+Hi Simon, Olof,
 
-On Fri, Aug 8, 2014 at 11:23 PM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> Hi!
+On Thu, Jul 31, 2014 at 2:42 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> A stray '0x' crept into a0f7e7496d56ac2d ("ARM: shmobile: sh73a0: add CMT1
+> clock support for DT"). This  patch removes it.
 >
-> Here's the r8a7740 DT clock patch(es) with the changes requested by Simon
-> and Magnus as specified below.  Enjoy!
+> This change should not have any run-time affect at this time as
+> the clock in question is used by a SCIF device that is not enabled by
+> default.
 >
-> changes since v1:
-> - split up into separate patches
-> - added MSTP clock assignments
+> Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> ---
+>  arch/arm/mach-shmobile/clock-sh73a0.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>
+> Hi Olof,
+>
+> this is a repost of the patch you asked for so you can apply it directly
+> rather than as pulling a pull request.
 
-Looking great, very easy to review IMO! I guess some people may prefer
-to have the patches merged into fewer ones somehow, but if it is up to
-me then I take over-splitted patches over overly-complex ones any day!
+It seems Olof missed this one.
+As a consequence, we now have the bad version in v3.17-rc1, and in
+renesas-devel-20140818-v3.17-rc1.
 
-> Ulrich Hecht (5):
->   ARM: shmobile: r8a7740: document MSTP clock support
->   ARM: shmobile: r8a7740: clock register bits
->   ARM: shmobile: r8a7740: add SoC clocks to DTS
->   ARM: shmobile: r8a7740: add MSTP clock assignments to DT
->   ARM: shmobile: armadillo800eva-reference: add clock overrides to DTS
+> diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+> index 0d77f65..b0993a5 100644
+> --- a/arch/arm/mach-shmobile/clock-sh73a0.c
+> +++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+> @@ -644,7 +644,7 @@ static struct clk_lookup lookups[] = {
+>         CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP207]), /* SCIFA5 */
+>         CLKDEV_DEV_ID("e6cb0000.serial", &mstp_clks[MSTP207]), /* SCIFA5 */
+>         CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP206]), /* SCIFB */
+> -       CLKDEV_DEV_ID("0xe6c3000.serial", &mstp_clks[MSTP206]), /* SCIFB */
+> +       CLKDEV_DEV_ID("e6c3000.serial", &mstp_clks[MSTP206]), /* SCIFB */
+>         CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]), /* SCIFA0 */
+>         CLKDEV_DEV_ID("e6c40000.serial", &mstp_clks[MSTP204]), /* SCIFA0 */
+>         CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]), /* SCIFA1 */
+> --
+> 2.0.1
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-For patch 1-5 above:
-Acked-by: Magnus Damm <damm+renesas@opensource.se>
+Gr{oetje,eeting}s,
 
-Cheers,
+                        Geert
 
-/ magnus
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
