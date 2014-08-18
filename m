@@ -1,67 +1,43 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 20 Aug 2014 13:31:54 +0000
-Subject: [PATCH 03/06] ARM: shmobile: Introduce a Kconfig entry for R-Car Gen1
-Message-Id: <20140820133154.808.36321.sendpatchset@w520>
+From: David Howells <dhowells@redhat.com>
+Date: Mon, 18 Aug 2014 11:01:05 +0000
+Subject: [PATCH 2/2] SH: Fix compilation errors in SH64 signal handling code
+Message-Id: <20140818110105.18167.37116.stgit@warthog.procyon.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20140818110055.18167.18408.stgit@warthog.procyon.org.uk>
+In-Reply-To: <20140818110055.18167.18408.stgit@warthog.procyon.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: torvalds@linux-foundation.org
+Cc: dhowells@redhat.com, apkm@linux-foundation.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Fix a couple of compilation errors in SH64 signal handling code.
 
-Add a Kconfig entry for R-Car Generation 1 SoCs that
-enables TMU timer and the INTC IRQPIN driver.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: David Howells <dhowells@redhat.com>
 ---
+ arch/sh/kernel/signal_64.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
- arch/arm/mach-shmobile/Kconfig |   14 ++++++++------
- 1 file changed, 8 insertions(+), 6 deletions(-)
+diff --git a/arch/sh/kernel/signal_64.c b/arch/sh/kernel/signal_64.c
+index 897abe7b871e..28448381deb9 100644
+--- a/arch/sh/kernel/signal_64.c
++++ b/arch/sh/kernel/signal_64.c
+@@ -412,7 +412,7 @@ static int setup_frame(struct ksignal *ksig, sigset_t *set, struct pt_regs *regs
+ 		 * On SH5 all edited pointers are subject to NEFF
+ 		 */
+ 		DEREF_REG_PR = neff_sign_extend((unsigned long)
+-			ksig->ka->sa.sa_restorer | 0x1);
++			ksig->ka.sa.sa_restorer | 0x1);
+ 	} else {
+ 		/*
+ 		 * Different approach on SH5.
+@@ -468,7 +468,7 @@ static int setup_frame(struct ksignal *ksig, sigset_t *set, struct pt_regs *regs
+ 	return 0;
+ }
+ 
+-static int setup_rt_frame(struct ksignal *kig, sigset_t *set,
++static int setup_rt_frame(struct ksignal *ksig, sigset_t *set,
+ 			  struct pt_regs *regs)
+ {
+ 	struct rt_sigframe __user *frame;
 
---- 0003/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2014-08-19 21:55:09.000000000 +0900
-@@ -2,6 +2,11 @@ config ARCH_SHMOBILE
- 	bool
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 
-+config ARCH_RCAR_GEN1
-+	bool
-+	select RENESAS_INTC_IRQPIN
-+	select SYS_SUPPORTS_SH_TMU
-+
- config ARCH_RMOBILE
- 	bool
- 	select SYS_SUPPORTS_SH_CMT
-@@ -34,8 +39,7 @@ config ARCH_R7S72100
- 
- config ARCH_R8A7779
- 	bool "R-Car H1 (R8A77790)"
--	select RENESAS_INTC_IRQPIN
--	select SYS_SUPPORTS_SH_TMU
-+	select ARCH_RCAR_GEN1
- 
- config ARCH_R8A7790
- 	bool "R-Car H2 (R8A77900)"
-@@ -105,19 +109,17 @@ config ARCH_R8A7740
- 
- config ARCH_R8A7778
- 	bool "R-Car M1A (R8A77781)"
-+	select ARCH_RCAR_GEN1
- 	select CPU_V7
- 	select SH_CLK_CPG
- 	select ARM_GIC
--	select SYS_SUPPORTS_SH_TMU
--	select RENESAS_INTC_IRQPIN
- 
- config ARCH_R8A7779
- 	bool "R-Car H1 (R8A77790)"
-+	select ARCH_RCAR_GEN1
- 	select ARM_GIC
- 	select CPU_V7
- 	select SH_CLK_CPG
--	select RENESAS_INTC_IRQPIN
--	select SYS_SUPPORTS_SH_TMU
- 
- config ARCH_R8A7790
- 	bool "R-Car H2 (R8A77900)"
