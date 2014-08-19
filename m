@@ -1,53 +1,48 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Aug 2014 01:10:14 +0000
-Subject: [PATCH 09/10] ARM: shmobile: bockw: Use shmobile_init_delay()
-Message-Id: <ca609e666c47cceb64610ad703dda1bebafef605.1408927601.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 19 Aug 2014 21:04:31 +0000
+Subject: [PATCH] MAINTAINERS: Add entry for Renesas DRM drivers
+Message-Id: <1408482271-7310-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408927601.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408927601.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
-
-Adjust the BockW board support code to use shmobile_init_delay()
-together with CPU Frequency settings from the DTS.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-bockw-reference.c | 2 +-
- arch/arm/mach-shmobile/board-bockw.c           | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ MAINTAINERS | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw-reference.c b/arch/arm/mach-shmobile/board-bockw-reference.c
-index 9202f16..79c4784 100644
---- a/arch/arm/mach-shmobile/board-bockw-reference.c
-+++ b/arch/arm/mach-shmobile/board-bockw-reference.c
-@@ -80,7 +80,7 @@ static const char *bockw_boards_compat_dt[] __initdata = {
- };
+Hi Dave,
+
+Could you please pick this patch up, or let me know if you would like it to go
+through a different tree ?
+
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 6813d0a..375c019 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -3046,6 +3046,17 @@ F:	include/linux/host1x.h
+ F:	include/uapi/drm/tegra_drm.h
+ F:	Documentation/devicetree/bindings/gpu/nvidia,tegra20-host1x.txt
  
- DT_MACHINE_START(BOCKW_DT, "bockw")
--	.init_early	= r8a7778_init_delay,
-+	.init_early	= shmobile_init_delay,
- 	.init_irq	= r8a7778_init_irq_dt,
- 	.init_machine	= bockw_init,
- 	.init_late	= shmobile_init_late,
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index 8a83eb3..1cf2c75 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -733,7 +733,7 @@ static const char *bockw_boards_compat_dt[] __initdata = {
- };
- 
- DT_MACHINE_START(BOCKW_DT, "bockw")
--	.init_early	= r8a7778_init_delay,
-+	.init_early	= shmobile_init_delay,
- 	.init_irq	= r8a7778_init_irq_dt,
- 	.init_machine	= bockw_init,
- 	.dt_compat	= bockw_boards_compat_dt,
++DRM DRIVERS FOR RENESAS
++M:	Laurent Pinchart <laurent.pinchart@ideasonboard.com>
++L:	dri-devel@lists.freedesktop.org
++L:	linux-sh@vger.kernel.org
++T:	git git://people.freedesktop.org/~airlied/linux
++S:	Supported
++F:	drivers/gpu/drm/rcar-du/
++F:	drivers/gpu/drm/shmobile/
++F:	include/linux/platforma_data/rcar-du.h
++F:	include/linux/platforma_data/shmob_drm.h
++
+ DSBR100 USB FM RADIO DRIVER
+ M:	Alexey Klimov <klimov.linux@gmail.com>
+ L:	linux-media@vger.kernel.org
 -- 
-2.0.1
+Regards,
+
+Laurent Pinchart
 
