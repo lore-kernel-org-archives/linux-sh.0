@@ -1,96 +1,99 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Mon, 18 Aug 2014 13:10:53 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 19 Aug 2014 09:18:33 +0000
 Subject: Re: [PATCH] mmc: tmio: Fix hang during suspend
-Message-Id: <CAPDyKFpyZM8thDhtcw4PUhGPezdag=6Fv_J9nejvenPNdTu-aA@mail.gmail.com>
+Message-Id: <CAMuHMdUVwY_Y_jK6+EMbBDvF3OF0Aqio2zpw=dXcV9sLj4CHSg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1408029833-6970-1-git-send-email-geert+renesas@glider.be>
 	<20140815134917.da77205b68f18341140c6593@codethink.co.uk>
 	<CAMuHMdXrWgW2iMDd7GA+QC-vcAsp+vH9fidkdnBj-f9F878yAw@mail.gmail.com>
-In-Reply-To: <CAMuHMdXrWgW2iMDd7GA+QC-vcAsp+vH9fidkdnBj-f9F878yAw@mail.gmail.com>
+	<CAPDyKFpyZM8thDhtcw4PUhGPezdag=6Fv_J9nejvenPNdTu-aA@mail.gmail.com>
+In-Reply-To: <CAPDyKFpyZM8thDhtcw4PUhGPezdag=6Fv_J9nejvenPNdTu-aA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>, Ian Molton <ian.molton@codethink.co.uk>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Chris Ball <chris@printf.net>, Linux MMC List <linux-mmc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: Ulf Hansson <ulf.hansson@linaro.org>
+Cc: Ian Molton <ian.molton@codethink.co.uk>, Geert Uytterhoeven <geert+renesas@glider.be>, Chris Ball <chris@printf.net>, Linux MMC List <linux-mmc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-On 18 August 2014 14:36, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
-> Hi Ian,
->
-> On Fri, Aug 15, 2014 at 2:49 PM, Ian Molton <ian.molton@codethink.co.uk> wrote:
->> On Thu, 14 Aug 2014 17:23:53 +0200
->> Geert Uytterhoeven <geert+renesas@glider.be> wrote:
+Hi Ulf,
+
+On Mon, Aug 18, 2014 at 3:10 PM, Ulf Hansson <ulf.hansson@linaro.org> wrote:
+> On 18 August 2014 14:36, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+>> On Fri, Aug 15, 2014 at 2:49 PM, Ian Molton <ian.molton@codethink.co.uk> wrote:
+>>> On Thu, 14 Aug 2014 17:23:53 +0200
+>>> Geert Uytterhoeven <geert+renesas@glider.be> wrote:
+>>>> On R-Car Gen 2, the SDHI registers cannot be accessed while the SDHI
+>>>> module clock is disabled. Doing so will cause a lock-up.
+>>>>
+>>>> When suspending, enable the module clock before disabling the SDHI
+>>>> interrupts, and disable the clock again afterwards.
+>>>
+>>> This feels wrong. Why can't interrupts be disabled prior to turning the clock off?
 >>
->>> On R-Car Gen 2, the SDHI registers cannot be accessed while the SDHI
->>> module clock is disabled. Doing so will cause a lock-up.
->>>
->>> When suspending, enable the module clock before disabling the SDHI
->>> interrupts, and disable the clock again afterwards.
+>> The clock is handled by runtime PM. So if SDHI becomes idle, the clock
+>> is turned off.
+>> However, the card insertion interrupt is still enabled.
+>> If all interrupts would be disabled when the clock is turned off, I believe card
+>> insertion can no longer be detected.
 >>
->> This feels wrong. Why can't interrupts be disabled prior to turning the clock off?
+>> BTW, I'm still wondering why tmio_mmc_host_resume() works without
+>> enabling the clock, as it calls tmio_mmc_enable_dma(), which also writes to
+>> an SDHI register (CTL_DMA_ENABLE).
 >
-> The clock is handled by runtime PM. So if SDHI becomes idle, the clock
-> is turned off.
-> However, the card insertion interrupt is still enabled.
-> If all interrupts would be disabled when the clock is turned off, I believe card
-> insertion can no longer be detected.
+> A while ago, I tried to rework the runtime PM handling of tmio.
 >
-> BTW, I'm still wondering why tmio_mmc_host_resume() works without
-> enabling the clock, as it calls tmio_mmc_enable_dma(), which also writes to
-> an SDHI register (CTL_DMA_ENABLE).
+> http://www.spinics.net/lists/linux-mmc/msg23177.html
+>
+> The hole set never got merged, due to that we couldn't get them tested
+> on hardware and there were a lack in review.
+>
+> We might want to pick them up to see if those may solve our problem. :-)
 
-A while ago, I tried to rework the runtime PM handling of tmio.
+Thanks, I applied patches 4-8 (1-3 did get merged), and tried them on
+SDHI1 of r8a7791/koelsch. It still seems to work as before.
 
-http://www.spinics.net/lists/linux-mmc/msg23177.html
+However, I still need my patch to fix suspend.
+Your "[PATCH 8/8] mmc: tmio: Handle clock gating from runtime PM functions"
+manages the SDHI interface clock, while my patch manages the platform-specific
+SDHI module clock.
 
-The hole set never got merged, due to that we couldn't get them tested
-on hardware and there were a lack in review.
+>>>> This fixes suspend and resume on r8a7791/koelsch.
+>>>>
+>>>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>>>> ---
+>>>>  drivers/mmc/host/tmio_mmc_pio.c | 10 ++++++++++
+>>>>  1 file changed, 10 insertions(+)
+>>>>
+>>>> diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+>>>> index faf0924e71cb..83192420a7e3 100644
+>>>> --- a/drivers/mmc/host/tmio_mmc_pio.c
+>>>> +++ b/drivers/mmc/host/tmio_mmc_pio.c
+>>>> @@ -1147,8 +1147,18 @@ int tmio_mmc_host_suspend(struct device *dev)
+>>>>  {
+>>>>       struct mmc_host *mmc = dev_get_drvdata(dev);
+>>>>       struct tmio_mmc_host *host = mmc_priv(mmc);
+>>>> +     struct tmio_mmc_data *pdata = host->pdata;
+>>>> +
+>>>> +     if (pdata->clk_enable) {
+>>>> +             unsigned int f;
+>>>> +             pdata->clk_enable(host->pdev, &f);
+>>>> +     }
+>>>>
+>>>>       tmio_mmc_disable_mmc_irqs(host, TMIO_MASK_ALL);
+>>>> +
+>>>> +     if (pdata->clk_disable)
+>>>> +             pdata->clk_disable(host->pdev);
+>>>> +
+>>>>       return 0;
+>>>>  }
+>>>>  EXPORT_SYMBOL(tmio_mmc_host_suspend);
 
-We might want to pick them up to see if those may solve our problem. :-)
+Gr{oetje,eeting}s,
 
-Kind regards
-Uffe
+                        Geert
 
->
->>> This fixes suspend and resume on r8a7791/koelsch.
->>>
->>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->>> ---
->>>  drivers/mmc/host/tmio_mmc_pio.c | 10 ++++++++++
->>>  1 file changed, 10 insertions(+)
->>>
->>> diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
->>> index faf0924e71cb..83192420a7e3 100644
->>> --- a/drivers/mmc/host/tmio_mmc_pio.c
->>> +++ b/drivers/mmc/host/tmio_mmc_pio.c
->>> @@ -1147,8 +1147,18 @@ int tmio_mmc_host_suspend(struct device *dev)
->>>  {
->>>       struct mmc_host *mmc = dev_get_drvdata(dev);
->>>       struct tmio_mmc_host *host = mmc_priv(mmc);
->>> +     struct tmio_mmc_data *pdata = host->pdata;
->>> +
->>> +     if (pdata->clk_enable) {
->>> +             unsigned int f;
->>> +             pdata->clk_enable(host->pdev, &f);
->>> +     }
->>>
->>>       tmio_mmc_disable_mmc_irqs(host, TMIO_MASK_ALL);
->>> +
->>> +     if (pdata->clk_disable)
->>> +             pdata->clk_disable(host->pdev);
->>> +
->>>       return 0;
->>>  }
->>>  EXPORT_SYMBOL(tmio_mmc_host_suspend);
->>> --
->>> 1.9.1
->
-> Gr{oetje,eeting}s,
->
->                         Geert
->
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
->
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
