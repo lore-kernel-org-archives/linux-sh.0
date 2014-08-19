@@ -1,43 +1,51 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 05 Aug 2014 14:34:40 +0000
-Subject: Re: [PATCH 1/2] spi: rspi: Fix leaking of unused DMA descriptors
-Message-Id: <CAMuHMdX4bDMogeSwmd3bxm_fKpjouxZJFT_dd5ErxgJkZ2U=cA@mail.gmail.com>
+From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+Date: Tue, 19 Aug 2014 12:50:53 +0000
+Subject: [PATCH 6/6] devicetree: bindings: Document Renesas JPEG Processing Unit.
+Message-Id: <1408452653-14067-7-git-send-email-mikhail.ulyanov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405094802-14401-1-git-send-email-geert+renesas@glider.be>
-	<20140714185830.GE6800@sirena.org.uk>
-In-Reply-To: <20140714185830.GE6800-GFdadSzt00ze9xe1eoZjHA@public.gmane.org>
+References: <1408452653-14067-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
+In-Reply-To: <1408452653-14067-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, Laurent Pinchart <Laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: m.chehab@samsung.com, horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com
+Cc: laurent.pinchart@ideasonboard.com, linux-sh@vger.kernel.org, linux-media@vger.kernel.org, devicetree@vger.kernel.org, Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
 
-Hi Mark,
+Signed-off-by: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+---
+ .../devicetree/bindings/media/renesas,jpu.txt      | 23 ++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/media/renesas,jpu.txt
 
-On Mon, Jul 14, 2014 at 8:58 PM, Mark Brown <broonie@kernel.org> wrote:
-> On Fri, Jul 11, 2014 at 06:06:41PM +0200, Geert Uytterhoeven wrote:
->> If dmaengine_prep_slave_sg() or dmaengine_submit() fail, we may leak
->> unused DMA descriptors.
->
-> This doesn't apply, I guess it may depend on some of your other DMA
-> related patches but it's not immediately obvious and it's not been sent
-> as part of a series.  Can you please check and/or clarify?
+diff --git a/Documentation/devicetree/bindings/media/renesas,jpu.txt b/Documentation/devicetree/bindings/media/renesas,jpu.txt
+new file mode 100644
+index 0000000..44b07df
+--- /dev/null
++++ b/Documentation/devicetree/bindings/media/renesas,jpu.txt
+@@ -0,0 +1,23 @@
++* Renesas VSP1 Video Processing Engine
++
++The JPEG processing unit (JPU) incorporates the JPEG codec with an encoding
++and decoding function conforming to the JPEG baseline process, so that the JPU
++can encode image data and decode JPEG data quickly.
++It can be found in the Renesas R-Car first and second generation SoCs.
++
++Required properties:
++  - compatible: should containg one of the following:
++			- "renesas,jpu-r8a7790" for R-Car H2
++			- "renesas,jpu-r8a7791" for R-Car M2
++
++  - reg: Base address and length of the registers block for the JPU.
++  - interrupts: JPU interrupt specifier.
++  - clocks: A phandle + clock-specifier pair for the JPU functional clock.
++
++Example: R8A7790 (R-Car H2) JPU node
++	jpeg-codec@fe980000 {
++		compatible = "renesas,jpu-r8a7790";
++		reg = <0 0xfe980000 0 0x10300>;
++		interrupts = <0 272 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7790_CLK_JPU>;
++	};
+-- 
+2.1.0.rc1
 
-Indeed, this (and the rspi one) depended on the two "Handle
-dmaengine_prep_slave_single() failures gracefully" patches.
-
-Unless you recover them from e.g. patchwork, I'll resend them with my
-next batch.
-
-Sorry for the fuzz.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
