@@ -1,44 +1,47 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 19 Aug 2014 07:29:01 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 19 Aug 2014 10:17:33 +0000
 Subject: Re: [PATCH v2 1/5] ARM: shmobile: r8a7740: Add CMT1 device to DT
-Message-Id: <CAMuHMdXTa8dG0L2xLNELn3R310PJc+HotHwJZsaqPzuWQRJf5A@mail.gmail.com>
+Message-Id: <CANqRtoQ-g906KNRGjx_6nuX_E8COSunXMDZQUZkPUFzBUTZFgA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1407801882-2561-1-git-send-email-horms+renesas@verge.net.au>
  <1407801882-2561-2-git-send-email-horms+renesas@verge.net.au>
  <CANqRtoTBJOZEFoOg+YmfyovCGDTa43Qs77OW-qd9YQLFq3tQ3A@mail.gmail.com>
-In-Reply-To: <CANqRtoTBJOZEFoOg+YmfyovCGDTa43Qs77OW-qd9YQLFq3tQ3A@mail.gmail.com>
+ <CAMuHMdXTa8dG0L2xLNELn3R310PJc+HotHwJZsaqPzuWQRJf5A@mail.gmail.com>
+In-Reply-To: <CAMuHMdXTa8dG0L2xLNELn3R310PJc+HotHwJZsaqPzuWQRJf5A@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Aug 19, 2014 at 8:39 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
->>  arch/arm/boot/dts/r8a7740.dtsi | 12 ++++++++++++
->>  1 file changed, 12 insertions(+)
+On Tue, Aug 19, 2014 at 4:29 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> On Tue, Aug 19, 2014 at 8:39 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+>>>  arch/arm/boot/dts/r8a7740.dtsi | 12 ++++++++++++
+>>>  1 file changed, 12 insertions(+)
+>>>
+>>> diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+>>> index 6cd6a46..1067a96 100644
+>>> --- a/arch/arm/boot/dts/r8a7740.dtsi
+>>> +++ b/arch/arm/boot/dts/r8a7740.dtsi
+>>> @@ -41,6 +41,18 @@
+>>>                 interrupts = <0 83 IRQ_TYPE_LEVEL_HIGH>;
+>>>         };
+>>>
+>>> +       cmt1: timer@e6138000 {
+>>> +               compatible = "renesas,cmt-48";
 >>
->> diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
->> index 6cd6a46..1067a96 100644
->> --- a/arch/arm/boot/dts/r8a7740.dtsi
->> +++ b/arch/arm/boot/dts/r8a7740.dtsi
->> @@ -41,6 +41,18 @@
->>                 interrupts = <0 83 IRQ_TYPE_LEVEL_HIGH>;
->>         };
->>
->> +       cmt1: timer@e6138000 {
->> +               compatible = "renesas,cmt-48";
+>> Do we want to have the "r8a7740" in the compatible string somewhere?
 >
-> Do we want to have the "r8a7740" in the compatible string somewhere?
+> Documentation/devicetree/bindings/timer/renesas,cmt.txt does not
+> mention compatible properties containing SoC names.
 
-Documentation/devicetree/bindings/timer/renesas,cmt.txt does not
-mention compatible properties containing SoC names.
+Right, that seems to be missing from the timers. Is there any reason
+why we need to treat those in a special way?
 
-Gr{oetje,eeting}s,
+In my mind this timer case is similar to various SCIF variants
+documented in Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+- in the case of SCIF we have SoC name in the binding documentation.
 
-                        Geert
+Cheers,
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+/ magnus
