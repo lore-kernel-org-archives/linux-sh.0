@@ -1,37 +1,57 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 28 Aug 2014 07:47:54 +0000
-Subject: [PATCH v2] of: Add vendor prefix for Sitronix
-Message-Id: <1409212074-2966-1-git-send-email-geert+renesas@glider.be>
+From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+Date: Tue, 19 Aug 2014 12:50:51 +0000
+Subject: [PATCH 4/6] ARM: shmobile: r8a7791: Add JPU clock dt and CPG define.
+Message-Id: <1408452653-14067-5-git-send-email-mikhail.ulyanov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1408452653-14067-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
+In-Reply-To: <1408452653-14067-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>
-Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: m.chehab@samsung.com, horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com
+Cc: laurent.pinchart@ideasonboard.com, linux-sh@vger.kernel.org, linux-media@vger.kernel.org, devicetree@vger.kernel.org, Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
 
-The stock ticker for Sitronix is just a number.
-"sitronix,st1232" is already in use for the Sitronix st1232 touchscreen
-controller on Atmark Techno Armadillo 800 EVA.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
 ---
-v2: Mention armadillo
----
- Documentation/devicetree/bindings/vendor-prefixes.txt | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/r8a7791.dtsi            | 6 +++---
+ include/dt-bindings/clock/r8a7791-clock.h | 1 +
+ 2 files changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
-index 34cc1bfcebfd..41799a69964b 100644
---- a/Documentation/devicetree/bindings/vendor-prefixes.txt
-+++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
-@@ -126,6 +126,7 @@ silabs	Silicon Laboratories
- simtek
- sii	Seiko Instruments, Inc.
- sirf	SiRF Technology, Inc.
-+sitronix	Sitronix Technology Corporation
- smsc	Standard Microsystems Corporation
- snps 	Synopsys, Inc.
- solidrun	SolidRun
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 152c75c..c2d0c6e 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -889,16 +889,16 @@
+ 		mstp1_clks: mstp1_clks@e6150134 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
+-			clocks = <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
++			clocks = <&m2_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
+ 				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+-				R8A7791_CLK_TMU1 R8A7791_CLK_TMU3 R8A7791_CLK_TMU2
++				R8A7791_CLK_JPU R8A7791_CLK_TMU1 R8A7791_CLK_TMU3 R8A7791_CLK_TMU2
+ 				R8A7791_CLK_CMT0 R8A7791_CLK_TMU0 R8A7791_CLK_VSP1_DU1
+ 				R8A7791_CLK_VSP1_DU0 R8A7791_CLK_VSP1_S
+ 			>;
+ 			clock-output-names -				"tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
++				"jpu", "tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
+ 				"vsp1-du0", "vsp1-sy";
+ 		};
+ 		mstp2_clks: mstp2_clks@e6150138 {
+diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
+index f0d4d10..58c3f49 100644
+--- a/include/dt-bindings/clock/r8a7791-clock.h
++++ b/include/dt-bindings/clock/r8a7791-clock.h
+@@ -25,6 +25,7 @@
+ #define R8A7791_CLK_MSIOF0		0
+ 
+ /* MSTP1 */
++#define R8A7791_CLK_JPU		6
+ #define R8A7791_CLK_TMU1		11
+ #define R8A7791_CLK_TMU3		21
+ #define R8A7791_CLK_TMU2		22
 -- 
-1.9.1
+2.1.0.rc1
 
