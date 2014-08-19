@@ -1,53 +1,58 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 23 Aug 2014 11:11:52 +0000
-Subject: Re: [PATCH v2 1/5] ARM: shmobile: r8a7740: document MSTP clock support
-Message-Id: <20140823111151.GA27759@verge.net.au>
+From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+Date: Tue, 19 Aug 2014 12:50:49 +0000
+Subject: [PATCH 2/6] ARM: shmobile: r8a7790: Add JPU clock dt and CPG define.
+Message-Id: <1408452653-14067-3-git-send-email-mikhail.ulyanov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1407507792-8121-1-git-send-email-ulrich.hecht+renesas@gmail.com>
- <1407507792-8121-2-git-send-email-ulrich.hecht+renesas@gmail.com>
- <20140811011214.GI26570@verge.net.au>
- <20140822010400.GC2783@verge.net.au>
- <CAMuHMdXxgYYyZz_M2975W-bPv6EEsoXp6r8QxfrvgP-Ya4q13w@mail.gmail.com>
- <20140822084657.GF18670@verge.net.au>
-In-Reply-To: <20140822084657.GF18670@verge.net.au>
+References: <1408452653-14067-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
+In-Reply-To: <1408452653-14067-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, Mike Turquette <mturquette@linaro.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
+To: m.chehab@samsung.com, horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com
+Cc: laurent.pinchart@ideasonboard.com, linux-sh@vger.kernel.org, linux-media@vger.kernel.org, devicetree@vger.kernel.org, Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
 
-On Fri, Aug 22, 2014 at 05:46:58PM +0900, Simon Horman wrote:
-> On Fri, Aug 22, 2014 at 09:44:09AM +0200, Geert Uytterhoeven wrote:
-> > Hi Simon,
-> > 
-> > On Fri, Aug 22, 2014 at 3:04 AM, Simon Horman <horms@verge.net.au> wrote:
-> > > On Mon, Aug 11, 2014 at 10:12:14AM +0900, Simon Horman wrote:
-> > >> On Fri, Aug 08, 2014 at 04:23:08PM +0200, Ulrich Hecht wrote:
-> > >> > Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> > >>
-> > >> Acked-by: Simon Horman <horms+renesas@verge.net.au>
-> > >>
-> > >> Mike, could you consider taking this?
-> > >
-> > > Hi Mike,
-> > >
-> > > I'm wondering if you could take moment to consider this patch.
-> > > It is a dependency for enabling ccf and in turn multiplatform on
-> > > the r8a7740 SoC.
-> > 
-> > Sidenote: as this patch only updates the documentation, and the driver
-> > won't use the newly added value (for now), there's no hard dependency.
-> > Furthermore, adding this value is done following the spirit of the existing
-> > values, and thus I think you can just continue going forward with the parts
-> > that fall under the shmobile jurisdiction.
-> 
-> Hi Geert,
-> 
-> I had a conversation with Magnus earlier today and I believe that
-> all three of us are (now) in agreement on the point you have made above.
-> 
-> I'd like to allow myself the weekend to think about this and
-> if no issues have surfaced by then I plan to take the remaining
-> patches of this series into the next branch of the renesas tree.
+Signed-off-by: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi            | 6 +++---
+ include/dt-bindings/clock/r8a7790-clock.h | 1 +
+ 2 files changed, 4 insertions(+), 3 deletions(-)
 
-I have now queued up patches 2 - 5.
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index e2e40e5..61fd193 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -868,17 +868,17 @@
+ 		mstp1_clks: mstp1_clks@e6150134 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
+-			clocks = <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
++			clocks = <&m2_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
+ 				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>,
+ 				 <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+-				R8A7790_CLK_TMU1 R8A7790_CLK_TMU3 R8A7790_CLK_TMU2
++				R8A7790_CLK_JPU R8A7790_CLK_TMU1 R8A7790_CLK_TMU3 R8A7790_CLK_TMU2
+ 				R8A7790_CLK_CMT0 R8A7790_CLK_TMU0 R8A7790_CLK_VSP1_DU1
+ 				R8A7790_CLK_VSP1_DU0 R8A7790_CLK_VSP1_R R8A7790_CLK_VSP1_S
+ 			>;
+ 			clock-output-names -				"tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
++				"jpu", "tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
+ 				"vsp1-du0", "vsp1-rt", "vsp1-sy";
+ 		};
+ 		mstp2_clks: mstp2_clks@e6150138 {
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index f929a79e..8ea7ab0 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -26,6 +26,7 @@
+ #define R8A7790_CLK_MSIOF0		0
+ 
+ /* MSTP1 */
++#define R8A7790_CLK_JPU		6
+ #define R8A7790_CLK_TMU1		11
+ #define R8A7790_CLK_TMU3		21
+ #define R8A7790_CLK_TMU2		22
+-- 
+2.1.0.rc1
+
