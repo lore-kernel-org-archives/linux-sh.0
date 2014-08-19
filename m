@@ -1,81 +1,66 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 02 Aug 2014 00:05:54 +0000
-Subject: [PATCH v2 2/2] ARM: shmobile: henninger: add VIN0/ADV7180 DT support
-Message-Id: <201408020405.54978.sergei.shtylyov@cogentembedded.com>
+From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+Date: Tue, 19 Aug 2014 12:50:47 +0000
+Subject: [PATCH 0/6] R-Car JPEG Processing Unit
+Message-Id: <1408452653-14067-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201408020402.14560.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201408020402.14560.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: m.chehab-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org, horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org
+Cc: laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-media-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mikhail Ulyanov <mikhail.ulyanov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
 
-Define the Henninger board dependent part of the VIN0 device node. Add the
-device node for Analog Devices ADV7180 video decoder to I2C2  bus. Add the
-necessary subnodes to interconnect VIN0 and ADV7180 devices.
+This series of patches contains a driver for the JPEG codec integrated
+peripheral found in the Renesas R-Car SoCs, JPU clocking and associated
+DT documentation.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+The driver is implemented within the V4L2 framework as a mem-to-mem device.
 
----
-Changes in version 2:
-- refreshed the patch.
+It presents two video nodes to userspace, one for the encoding part, and one
+for the decoding part.
 
- arch/arm/boot/dts/r8a7791-henninger.dts |   35 ++++++++++++++++++++++++++++++++
- 1 file changed, 35 insertions(+)
+It was found that the only working mode for encoding is no markers output, so
+we generate it with software.
 
-Index: renesas/arch/arm/boot/dts/r8a7791-henninger.dts
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-henninger.dts
-+++ renesas/arch/arm/boot/dts/r8a7791-henninger.dts
-@@ -135,6 +135,11 @@
- 		renesas,groups = "usb1";
- 		renesas,function = "usb1";
- 	};
-+
-+	vin0_pins: vin0 {
-+		renesas,groups = "vin0_data8", "vin0_clk";
-+		renesas,function = "vin0";
-+	};
- };
- 
- &scif0 {
-@@ -191,6 +196,19 @@
- 
- 	status = "okay";
- 	clock-frequency = <400000>;
-+
-+	composite-in@20 {
-+		compatible = "adi,adv7180";
-+		reg = <0x20>;
-+		remote = <&vin0>;
-+
-+		port {
-+			adv7180: endpoint {
-+				bus-width = <8>;
-+				remote-endpoint = <&vin0ep>;
-+			};
-+		};
-+	};
- };
- 
- &qspi {
-@@ -260,3 +278,20 @@
- &pciec {
- 	status = "okay";
- };
-+
-+/* composite video input */
-+&vin0 {
-+	status = "ok";
-+	pinctrl-0 = <&vin0_pins>;
-+	pinctrl-names = "default";
-+
-+	port {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		vin0ep: endpoint {
-+			remote-endpoint = <&adv7180>;
-+			bus-width = <8>;
-+		};
-+	};
-+};
+From a userspace point of view the encoding process is typical (S_FMT, REQBUF,
+optionally QUERYBUF, QBUF, STREAMON, DQBUF) for both the source and destination
+queues. The decoding process requires that the source queue performs S_FMT,
+REQBUF, (QUERYBUF), QBUF and STREAMON. After STREAMON on the source queue,
+it is possible to perform G_FMT on the destination queue to find out the
+processed image width and height in order to be able to allocate an appropriate
+buffer - it is assumed that the user does not pass the compressed image width
+and height but instead this information is parsed from the jpeg input. This is
+done in kernel. Then REQBUF, QBUF and STREAMON on the destination queue complete
+the decoding and it is possible to DQBUF from both queues and finish the operation.
+
+During encoding the available formats are: V4L2_PIX_FMT_NV12 and
+V4L2_PIX_FMT_NV16 for source and V4L2_PIX_FMT_JPEG for destination.
+
+During decoding the available formats are: V4L2_PIX_FMT_JPEG for source and
+V4L2_PIX_FMT_NV12 and V4L2_PIX_FMT_NV16 for destination.
+
+This series of patches is against the 'devel' branch of
+kernel.googlesource.com/pub/scm/linux/kernel/git/horms/renesas repo.
+
+Mikhail Ulyanov (6):
+  V4L2: Add Renesas R-Car JPEG codec driver.
+  ARM: shmobile: r8a7790: Add JPU clock dt and CPG define.
+  ARM: shmobile: r8a7790: Add JPU device node.
+  ARM: shmobile: r8a7791: Add JPU clock dt and CPG define.
+  ARM: shmobile: r8a7791: Add JPU device node.
+  devicetree: bindings: Document Renesas JPEG Processing Unit.
+
+ .../devicetree/bindings/media/renesas,jpu.txt      |   23 +
+ arch/arm/boot/dts/r8a7790.dtsi                     |   13 +-
+ arch/arm/boot/dts/r8a7791.dtsi                     |   13 +-
+ drivers/media/platform/Kconfig                     |   11 +
+ drivers/media/platform/Makefile                    |    2 +
+ drivers/media/platform/jpu.c                       | 1630 ++++++++++++++++++++
+ include/dt-bindings/clock/r8a7790-clock.h          |    1 +
+ include/dt-bindings/clock/r8a7791-clock.h          |    1 +
+ 8 files changed, 1691 insertions(+), 6 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/media/renesas,jpu.txt
+ create mode 100644 drivers/media/platform/jpu.c
+
+-- 
+2.1.0.rc1
+
