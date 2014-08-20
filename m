@@ -1,131 +1,113 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 22 Aug 2014 03:24:45 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: Move legacy INTC definitions from irqs.h to intc.h
-Message-Id: <20140822032445.GJ9099@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 20 Aug 2014 13:32:25 +0000
+Subject: [PATCH 06/06] ARM: shmobile: Cleanup pm-rmobile.o build using Kconfig
+Message-Id: <20140820133225.808.88832.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1408541963-20736-1-git-send-email-geert+renesas@glider.be>
- <1408541963-20736-3-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1408541963-20736-3-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Aug 20, 2014 at 03:39:23PM +0200, Geert Uytterhoeven wrote:
-> Move all definitions for legacy INTC from the common "irqs.h" to the
-> INTC-specific "intc.h".
-> Include "intc.h" in sh7372/sh73a0 CPU and board files where needed.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Thanks, I have queued this up with Magnus's Ack after removing
-the whitespace change noted below.
+Add a CONFIG_PM_MOBILE entry and enable it for R-Mobile
+SoCs in case CONFIG_PM is set. Consolidate Makefile power
+management objects and get rid of #ifdefs in the C code.
 
-> ---
->  arch/arm/mach-shmobile/board-kzm9g.c    | 1 +
->  arch/arm/mach-shmobile/board-mackerel.c | 1 +
->  arch/arm/mach-shmobile/intc.h           | 6 ++++++
->  arch/arm/mach-shmobile/irqs.h           | 6 ------
->  arch/arm/mach-shmobile/setup-sh7372.c   | 1 +
->  arch/arm/mach-shmobile/setup-sh73a0.c   | 1 +
->  6 files changed, 10 insertions(+), 6 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-> index 36593cb20e57..77e36fa0b142 100644
-> --- a/arch/arm/mach-shmobile/board-kzm9g.c
-> +++ b/arch/arm/mach-shmobile/board-kzm9g.c
-> @@ -50,6 +50,7 @@
->  #include <video/sh_mobile_lcdc.h>
->  
->  #include "common.h"
-> +#include "intc.h"
->  #include "irqs.h"
->  #include "sh73a0.h"
->  
-> diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-> index 79f448e93abb..b7c4261492b0 100644
-> --- a/arch/arm/mach-shmobile/board-mackerel.c
-> +++ b/arch/arm/mach-shmobile/board-mackerel.c
-> @@ -63,6 +63,7 @@
->  #include <asm/mach-types.h>
->  
->  #include "common.h"
-> +#include "intc.h"
->  #include "irqs.h"
->  #include "pm-rmobile.h"
->  #include "sh-gpio.h"
-> diff --git a/arch/arm/mach-shmobile/intc.h b/arch/arm/mach-shmobile/intc.h
-> index a5603c76cfe0..0313cf798c32 100644
-> --- a/arch/arm/mach-shmobile/intc.h
-> +++ b/arch/arm/mach-shmobile/intc.h
-> @@ -1,5 +1,6 @@
->  #ifndef __ASM_MACH_INTC_H
->  #define __ASM_MACH_INTC_H
-> +
->  #include <linux/sh_intc.h>
->  
->  #define INTC_IRQ_PINS_ENUM_16L(p)				\
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-I have removed the above hunk as it seems unrelated to the rest of the patch.
+ This is multiplatform preparation for R-Mobile SoCs.
 
-> @@ -287,4 +288,9 @@ static struct intc_desc p ## _desc __initdata = {			\
->  			     p ## _sense_registers, NULL),		\
->  }
->  
-> +/* INTCS */
-> +#define INTCS_VECT_BASE		0x3400
-> +#define INTCS_VECT(n, vect)	INTC_VECT((n), INTCS_VECT_BASE + (vect))
-> +#define intcs_evt2irq(evt)	evt2irq(INTCS_VECT_BASE + (evt))
-> +
->  #endif  /* __ASM_MACH_INTC_H */
-> diff --git a/arch/arm/mach-shmobile/irqs.h b/arch/arm/mach-shmobile/irqs.h
-> index 8e28223f1b3c..3070f6d887eb 100644
-> --- a/arch/arm/mach-shmobile/irqs.h
-> +++ b/arch/arm/mach-shmobile/irqs.h
-> @@ -1,18 +1,12 @@
->  #ifndef __SHMOBILE_IRQS_H
->  #define __SHMOBILE_IRQS_H
->  
-> -#include <linux/sh_intc.h>
->  #include "include/mach/irqs.h"
->  
->  /* GIC */
->  #define gic_spi(nr)		((nr) + 32)
->  #define gic_iid(nr)		(nr) /* ICCIAR / interrupt ID */
->  
-> -/* INTCS */
-> -#define INTCS_VECT_BASE		0x3400
-> -#define INTCS_VECT(n, vect)	INTC_VECT((n), INTCS_VECT_BASE + (vect))
-> -#define intcs_evt2irq(evt)	evt2irq(INTCS_VECT_BASE + (evt))
-> -
->  /* GPIO IRQ */
->  #define _GPIO_IRQ_BASE		2500
->  #define GPIO_IRQ_BASE(x)	(_GPIO_IRQ_BASE + (32 * x))
-> diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-> index 3731eccccef4..eaf5d1332c4b 100644
-> --- a/arch/arm/mach-shmobile/setup-sh7372.c
-> +++ b/arch/arm/mach-shmobile/setup-sh7372.c
-> @@ -41,6 +41,7 @@
->  
->  #include "common.h"
->  #include "dma-register.h"
-> +#include "intc.h"
->  #include "irqs.h"
->  #include "pm-rmobile.h"
->  #include "sh7372.h"
-> diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-> index e7a0296b81b1..4c7022830e30 100644
-> --- a/arch/arm/mach-shmobile/setup-sh73a0.c
-> +++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-> @@ -40,6 +40,7 @@
->  
->  #include "common.h"
->  #include "dma-register.h"
-> +#include "intc.h"
->  #include "irqs.h"
->  #include "sh73a0.h"
->  
-> -- 
-> 1.9.1
-> 
+ arch/arm/mach-shmobile/Kconfig      |    4 ++++
+ arch/arm/mach-shmobile/Makefile     |   14 ++++++--------
+ arch/arm/mach-shmobile/pm-rmobile.c |    2 --
+ arch/arm/mach-shmobile/pm-rmobile.h |    4 ++--
+ 4 files changed, 12 insertions(+), 12 deletions(-)
+
+--- 0006/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2014-08-19 22:28:58.000000000 +0900
+@@ -5,6 +5,9 @@ config ARCH_SHMOBILE
+ config PM_RCAR
+ 	bool
+ 
++config PM_RMOBILE
++	bool
++
+ config ARCH_RCAR_GEN1
+ 	bool
+ 	select PM_RCAR if PM || SMP
+@@ -19,6 +22,7 @@ config ARCH_RCAR_GEN2
+ 
+ config ARCH_RMOBILE
+ 	bool
++	select PM_RMOBILE if PM
+ 	select SYS_SUPPORTS_SH_CMT
+ 	select SYS_SUPPORTS_SH_TMU
+  
+--- 0006/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2014-08-19 22:35:23.000000000 +0900
+@@ -6,10 +6,10 @@
+ obj-y				:= timer.o console.o
+ 
+ # CPU objects
+-obj-$(CONFIG_ARCH_SH7372)	+= setup-sh7372.o intc-sh7372.o
+-obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o intc-sh73a0.o
++obj-$(CONFIG_ARCH_SH7372)	+= setup-sh7372.o intc-sh7372.o pm-sh7372.o
++obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o intc-sh73a0.o pm-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A73A4)	+= setup-r8a73a4.o
+-obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o
++obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o pm-r8a7740.o
+ obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o pm-r8a7779.o
+ obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o pm-r8a7790.o
+@@ -49,12 +49,10 @@ obj-$(CONFIG_SUSPEND)		+= suspend.o
+ obj-$(CONFIG_CPU_IDLE)		+= cpuidle.o
+ obj-$(CONFIG_CPU_FREQ)		+= cpufreq.o
+ obj-$(CONFIG_PM_RCAR)		+= pm-rcar.o
+-obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o pm-rmobile.o
+-obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
+-obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
++obj-$(CONFIG_PM_RMOBILE)	+= pm-rmobile.o
+ 
+-# IRQ objects
+-obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
++# special sh7372 handling for IRQ objects and low level sleep code
++obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o sleep-sh7372.o
+ 
+ # Board objects
+ ifdef CONFIG_ARCH_SHMOBILE_MULTI
+--- 0001/arch/arm/mach-shmobile/pm-rmobile.c
++++ work/arch/arm/mach-shmobile/pm-rmobile.c	2014-08-19 22:30:37.000000000 +0900
+@@ -27,7 +27,6 @@
+ #define PSTR_RETRIES	100
+ #define PSTR_DELAY_US	10
+ 
+-#ifdef CONFIG_PM
+ static int rmobile_pd_power_down(struct generic_pm_domain *genpd)
+ {
+ 	struct rmobile_pm_domain *rmobile_pd = to_rmobile_pd(genpd);
+@@ -151,4 +150,3 @@ void rmobile_add_devices_to_domains(stru
+ 		rmobile_add_device_to_domain_td(data[j].domain_name,
+ 						data[j].pdev, &latencies);
+ }
+-#endif /* CONFIG_PM */
+--- 0001/arch/arm/mach-shmobile/pm-rmobile.h
++++ work/arch/arm/mach-shmobile/pm-rmobile.h	2014-08-19 22:30:52.000000000 +0900
+@@ -36,7 +36,7 @@ struct pm_domain_device {
+ 	struct platform_device *pdev;
+ };
+ 
+-#ifdef CONFIG_PM
++#ifdef CONFIG_PM_RMOBILE
+ extern void rmobile_init_domains(struct rmobile_pm_domain domains[], int num);
+ extern void rmobile_add_device_to_domain_td(const char *domain_name,
+ 					    struct platform_device *pdev,
+@@ -58,6 +58,6 @@ extern void rmobile_add_devices_to_domai
+ 
+ static inline void rmobile_add_devices_to_domains(struct pm_domain_device d[],
+ 						  int size) {}
+-#endif /* CONFIG_PM */
++#endif /* CONFIG_PM_RMOBILE */
+ 
+ #endif /* PM_RMOBILE_H */
