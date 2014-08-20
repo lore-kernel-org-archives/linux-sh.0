@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 20 Aug 2014 14:33:14 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 20 Aug 2014 14:49:22 +0000
 Subject: Re: [PATCH 06/06] ARM: shmobile: Cleanup pm-rmobile.o build using Kconfig
-Message-Id: <CAMuHMdXzkUjBM5uMo+u6MziNvhiVxH9BKwuHred-sa_xv5inUA@mail.gmail.com>
+Message-Id: <CANqRtoTOse_gc+OmReMpXAA5BxsZECX2StGQYWRfWN4JRe_hSA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20140820133225.808.88832.sendpatchset@w520>
 In-Reply-To: <20140820133225.808.88832.sendpatchset@w520>
@@ -10,18 +10,13 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Aug 20, 2014 at 3:32 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> Add a CONFIG_PM_MOBILE entry and enable it for R-Mobile
+On Wed, Aug 20, 2014 at 11:33 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> On Wed, Aug 20, 2014 at 3:32 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
+>> Add a CONFIG_PM_MOBILE entry and enable it for R-Mobile
+>
+> CONFIG_PM_RMOBILE
 
-CONFIG_PM_RMOBILE
+Thanks, will fix!
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+/ magnus
