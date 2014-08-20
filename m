@@ -1,32 +1,33 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 14 Aug 2014 16:57:26 +0000
-Subject: [PATCH 5/7] ARM: shmobile: kzm9g_defconfig: Enable missing hardware support
-Message-Id: <1408035448-8811-6-git-send-email-geert+renesas@glider.be>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 20 Aug 2014 13:02:45 +0000
+Subject: [PATCH 05/10] ARM: shmobile: sh73a0: Use shmobile_init_delay()
+Message-Id: <20140820130245.32075.95808.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Based on the DTS
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Adjust the sh73a0 SoC support code to use shmobile_init_delay()
+together with CPU Frequency settings from the DTS. Get rid of the
+C code version.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/configs/kzm9g_defconfig | 1 +
- 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
-index bd097d455f87..8cb115d74fdf 100644
---- a/arch/arm/configs/kzm9g_defconfig
-+++ b/arch/arm/configs/kzm9g_defconfig
-@@ -119,6 +119,7 @@ CONFIG_MMC_SDHI=y
- CONFIG_MMC_SH_MMCIF=y
- CONFIG_NEW_LEDS=y
- CONFIG_LEDS_CLASS=y
-+CONFIG_LEDS_GPIO=y
- CONFIG_RTC_CLASS=y
- CONFIG_RTC_DRV_RS5C372=y
- CONFIG_DMADEVICES=y
--- 
-1.9.1
+ arch/arm/mach-shmobile/setup-sh73a0.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
+--- 0001/arch/arm/mach-shmobile/setup-sh73a0.c
++++ work/arch/arm/mach-shmobile/setup-sh73a0.c	2014-08-20 21:16:16.000000000 +0900
+@@ -746,7 +746,7 @@ void __init sh73a0_add_standard_devices(
+ 
+ void __init sh73a0_init_delay(void)
+ {
+-	shmobile_setup_delay(1196, 44, 46); /* Cortex-A9 @ 1196MHz */
++	shmobile_init_delay();
+ }
+ 
+ /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
