@@ -1,82 +1,73 @@
-From: Chen Gang <gang.chen.5i5j@gmail.com>
-Date: Mon, 25 Aug 2014 12:26:31 +0000
-Subject: Re: [PATCH v3] arch: Kconfig: Let all architectures set endian explicitly
-Message-Id: <53FB2B77.8070606@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 20 Aug 2014 00:24:13 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC DT Timers Updates for v3.18
+Message-Id: <cover.1408492048.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <53ECE9DD.80004@gmail.com> <20140814180418.GA20777@linux-mips.org> <53ED34CE.3040001@gmail.com> <53EDCC60.5040608@gmail.com> <53F9A48F.3020803@gmail.com>
-In-Reply-To: <53F9A48F.3020803@gmail.com>
+References: <cover.1405556312.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1405556312.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ralf Baechle <ralf@linux-mips.org>
-Cc: Arnd Bergmann <arnd@arndb.de>, akpm@linux-foundation.org, rth@twiddle.net, ink@jurassic.park.msu.ru, mattst88@gmail.com, vgupta@synopsys.com, Geert Uytterhoeven <geert@linux-m68k.org>, Jean Delvare <jdelvare@suse.de>, linux@arm.linux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, hskinnemoen@gmail.com, egtvedt@samfundet.no, realmz6@gmail.com, msalter@redhat.com, a-jacquiot@ti.com, starvik@axis.com, jesper.nilsson@axis.com, dhowells@redhat.com, rkuo@codeaurora.org, tony.luck@intel.com, fenghua.yu@intel.com, takata@linux-m32r.org, james.hogan@imgtec.com, Michal Simek <monstr@monstr.eu>, yasutake.koichi@jp.panasonic.com, jonas@southpole.se, jejb@parisc-linux.org, deller@gmx.de, Benjamin Herrenschmidt <benh@kernel.crashing.org>, paulus@samba.org, mpe@ellerman.id.au, Mart
+To: linux-arm-kernel@lists.infradead.org
 
-Hello all:
+Hi Olof, Hi Kevin, Hi Arnd,
 
-It seems no any additional rejections for it. I guess, I need split the
-'big' patch into pieces, and each send to its' related mailing list, so
-let it not like a spam. And the schedule may like:
+Please consider these Renesas ARM based SoC DT Timers updates for v3.18.
 
- - Firstly, send patch for "init/Kconfig" to add CPU_*_ENDIAN. If pass
-   checking (hope it can be passed checking), then
-
- - Send each related patch to each related architectures which already
-   knew their ENDIAN attributes in config time (24 patches, I guess),
-   then
-
- - Make patch for Kbuild to support __BUILDING_TIME_BIG_ENDIAN__, and
-   pass checking (hope I can finish), then
-
- - Finish left architectures which need __BUILDING_TIME_BIG_ENDIAN__
-   (4 patches, I guess).
-
-Welcome any ideas, suggestions, or completions. And if no additional
-reply, I shall not send any additional information any more to avoid
-spam to other members.
+The patches in this pull request were originally posted as
+"Renesas ARM Based SoC DT Timers Updates for v3.17" and tagged as
+renesas-dt-timers-for-v3.17.  For various reasons it did not get
+pulled for v3.17 so I have rebased it on v3.17-rc1 and am submitting
+it for v3.18.
 
 
-Thanks.
+The following changes since commit 7d1311b93e58ed55f3a31cc8f94c4b8fe988a2b9:
 
-On 08/24/2014 04:38 PM, Chen Gang wrote:
-> Hello Maintainers:
-> 
-> Is this patch OK? If it pass basic checking, please let me know, and I
-> shall try to make another related patch for KBuild (I can do nothing
-> related with Kbuild, before get confirmation for this patch).
-> 
-> Thanks.
-> 
-> On 8/15/14 17:01, Chen Gang wrote:
->>
->>
->> On 8/15/14 6:14, Chen Gang wrote:
->>> On 08/15/2014 02:04 AM, Ralf Baechle wrote:
->>>>
->>>
->>> OK, thanks, I assumes when support both endian, the default choice is
->>> CPU_BIG_ENDIAN, although no default value for choice (originally, I did
->>> worry about it).
->>>
->>>> So I think you can just drop the MIPS segment from your patch.
->>>>
->>>
->>> If what I assumes is correct, what you said sounds reasonable to me.
->>>
->>>
->>
->> So for me, it is harmless to add CPU_*_ENDIAN explicitly, and can let
->> other members don't need think of.
->>
->> By the way, for sh, it is almost the same case, except it contents the
->> default value, for me, it is clear enough, so I skip sh architecture in
->> this patch.
->>
->>
->> Thanks
->>
-> 
+  Linux 3.17-rc1 (2014-08-16 10:40:26 -0600)
 
--- 
-Chen Gang
+are available in the git repository at:
 
-Open, share, and attitude like air, water, and life which God blessed
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-timers-for-v3.18
+
+for you to fetch changes up to 9dddfcfacaadb5491b62233b893b510fa00da4e0:
+
+  ARM: shmobile: genmai-reference: Enable MTU2 in device tree (2014-08-17 09:02:54 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC DT Timers Updates for v3.18
+
+* Enable timers using DT when booting boards without Legacy-C code
+
+----------------------------------------------------------------
+Laurent Pinchart (8):
+      ARM: shmobile: r8a7790: Add CMT devices to DT
+      ARM: shmobile: r8a7791: Add CMT devices to DT
+      ARM: shmobile: r8a7779: Add TMU devices to DT
+      ARM: shmobile: lager-reference: Enable CMT0 in device tree
+      ARM: shmobile: koelsch-reference: Enable CMT0 in device tree
+      ARM: shmobile: marzen-reference: Enable TMU0 in device tree
+      ARM: shmobile: r7s72100: Add MTU2 device to DT
+      ARM: shmobile: genmai-reference: Enable MTU2 in device tree
+
+ arch/arm/boot/dts/r7s72100-genmai.dts            |  4 +++
+ arch/arm/boot/dts/r7s72100.dtsi                  | 10 ++++++
+ arch/arm/boot/dts/r8a7779-marzen.dts             |  4 +++
+ arch/arm/boot/dts/r8a7779.dtsi                   | 42 ++++++++++++++++++++++++
+ arch/arm/boot/dts/r8a7790-lager.dts              |  4 +++
+ arch/arm/boot/dts/r8a7790.dtsi                   | 32 ++++++++++++++++++
+ arch/arm/boot/dts/r8a7791-koelsch.dts            |  4 +++
+ arch/arm/boot/dts/r8a7791.dtsi                   | 32 ++++++++++++++++++
+ arch/arm/mach-shmobile/board-genmai-reference.c  | 20 -----------
+ arch/arm/mach-shmobile/board-genmai.c            | 14 +++++++-
+ arch/arm/mach-shmobile/board-koelsch-reference.c |  2 --
+ arch/arm/mach-shmobile/board-lager-reference.c   |  2 --
+ arch/arm/mach-shmobile/board-marzen-reference.c  | 10 ------
+ arch/arm/mach-shmobile/r7s72100.h                |  1 -
+ arch/arm/mach-shmobile/r8a7779.h                 |  1 -
+ arch/arm/mach-shmobile/r8a7790.h                 |  1 -
+ arch/arm/mach-shmobile/r8a7791.h                 |  1 -
+ arch/arm/mach-shmobile/setup-r7s72100.c          | 21 ------------
+ arch/arm/mach-shmobile/setup-r8a7779.c           | 17 +++-------
+ arch/arm/mach-shmobile/setup-r8a7790.c           |  7 +---
+ arch/arm/mach-shmobile/setup-r8a7791.c           |  7 +---
+ 21 files changed, 152 insertions(+), 84 deletions(-)
