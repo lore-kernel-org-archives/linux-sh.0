@@ -1,80 +1,84 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Mon, 25 Aug 2014 03:01:32 +0000
-Subject: [PATCH 5/9 v3] mmc: tmio: check ILL_FUNC instead of CBSY
-Message-Id: <874mx1tgqe.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 20 Aug 2014 00:23:54 +0000
+Subject: [PATCH 03/12] ARM: shmobile: koelsch: add VIN1/ADV7180 DT support
+Message-Id: <2cf088105db14c00ad69df09b9b4a37c2370ff44.1408492753.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
-	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
-	<53AD638C.5060907@renesas.com>
-	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
-	<87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
+References: <cover.1408492753.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408492753.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Ulf Hansson <ulf.hansson@linaro.org>
-Cc: Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+From: "sergei.shtylyov@cogentembedded.com" <sergei.shtylyov@cogentembedded.com>
 
-Some controllers need to check SD bus status when writing data.
-Then, it checks ILL_FUNC bit on SD_INFO2 register,
-and this method is controlled via TMIO_MMC_HAS_IDLE_WAIT flags.
-Same method is required on tmio_mmc_data_irq() which will
-be called after writing data.
+Define the Koelsch board dependent part of the VIN1 device node. Add the device
+node for Analog  Devices ADV7180  video decoder to  I2C2 bus. Add the necessary
+subnodes to interconnect VIN1 and ADV7180 devices.
 
-Current driver is checking CBSY bit for this purpose,
-but, some controllers doesn't have CBSY bit.
-This patch checks ILL_FUNC bit instead of CBSY bit
-if it has TMIO_MMC_HAS_IDLE_WAIT flags
-
-[Kuninori Morimoto: tidyuped for upstreaming]
-
-Tested-by: Nguyen Xuan Nui <nx-nui@jinso.co.jp>
-Tested-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
-Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2 -> v3
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 35 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
 
- - no change
-
- drivers/mmc/host/tmio_mmc_pio.c |   13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
-
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index e51a993..b19d0cd 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -475,6 +475,9 @@ static void tmio_mmc_data_irq(struct tmio_mmc_host *host)
- 		goto out;
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 23486c0..6be43da 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -289,6 +289,11 @@
+ 		renesas,groups = "usb1";
+ 		renesas,function = "usb1";
+ 	};
++
++	vin1_pins: vin1 {
++		renesas,groups = "vin1_data8", "vin1_clk";
++		renesas,function = "vin1";
++	};
+ };
  
- 	if (host->chan_tx && (data->flags & MMC_DATA_WRITE) && !host->force_pio) {
-+		u32 status = sd_ctrl_read32(host, CTL_STATUS);
-+		bool done = false;
+ &ether {
+@@ -412,6 +417,19 @@
+ 	status = "okay";
+ 	clock-frequency = <400000>;
+ 
++	composite-in@20 {
++		compatible = "adi,adv7180";
++		reg = <0x20>;
++		remote = <&vin1>;
 +
- 		/*
- 		 * Has all data been written out yet? Testing on SuperH showed,
- 		 * that in most cases the first interrupt comes already with the
-@@ -483,7 +486,15 @@ static void tmio_mmc_data_irq(struct tmio_mmc_host *host)
- 		 * DATAEND interrupt with the BUSY bit set, in this cases
- 		 * waiting for one more interrupt fixes the problem.
- 		 */
--		if (!(sd_ctrl_read32(host, CTL_STATUS) & TMIO_STAT_CMD_BUSY)) {
-+		if (host->pdata->flags & TMIO_MMC_HAS_IDLE_WAIT) {
-+			if (status & TMIO_STAT_ILL_FUNC)
-+				done = true;
-+		} else {
-+			if (!(status & TMIO_STAT_CMD_BUSY))
-+				done = true;
-+		}
++		port {
++			adv7180: endpoint {
++				bus-width = <8>;
++				remote-endpoint = <&vin1ep>;
++			};
++		};
++	};
 +
-+		if (done) {
- 			tmio_mmc_disable_mmc_irqs(host, TMIO_STAT_DATAEND);
- 			tasklet_schedule(&host->dma_complete);
- 		}
+ 	eeprom@50 {
+ 		compatible = "renesas,24c02";
+ 		reg = <0x50>;
+@@ -459,3 +477,20 @@
+ &cpu0 {
+ 	cpu0-supply = <&vdd_dvfs>;
+ };
++
++/* composite video input */
++&vin1 {
++	status = "ok";
++	pinctrl-0 = <&vin1_pins>;
++	pinctrl-names = "default";
++
++	port {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		vin1ep: endpoint {
++			remote-endpoint = <&adv7180>;
++			bus-width = <8>;
++		};
++	};
++};
 -- 
-1.7.9.5
+2.0.1
 
