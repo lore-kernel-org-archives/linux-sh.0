@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 23 Aug 2014 01:44:01 +0000
-Subject: [PATCH 1/3] ARM: shmobile: r7s72100: genmai: Remove reference board file
-Message-Id: <71d03dabd6d3141872e23effd00345afe2ea2dab.1408670789.git.horms+renesas@verge.net.au>
+Date: Wed, 20 Aug 2014 00:24:12 +0000
+Subject: [PATCH 3/8] ARM: shmobile: r8a7779: Add TMU devices to DT
+Message-Id: <ef890ea26a37884a21f592c3feccadb019e8a11b.1408492048.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408670789.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408670789.git.horms+renesas@verge.net.au>
+References: <cover.1408492048.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408492048.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,71 +12,69 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-The genmai board now boots using the generic R7S72100 DT machine with
-the same feature set as the board file. Remove the board file.
+Add the TMU0, TMU1 and TMU2 counters to the r8a7779 device tree and make
+them disabled by default.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Wolfram Sang <wsa@sang-engineering.com>
+Tested-by: Simon Horman <horms+renesas@verge.net.au>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Makefile                 |  1 -
- arch/arm/mach-shmobile/board-genmai-reference.c | 35 -------------------------
- 2 files changed, 36 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/board-genmai-reference.c
+ arch/arm/boot/dts/r8a7779.dtsi | 42 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 42 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index fe3878a..a058ec3 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -63,7 +63,6 @@ obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 58d0d95..463e3fd 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -266,6 +266,48 @@
+ 		reg = <0xffc48000 0x38>;
+ 	};
  
- # Board objects
- ifdef CONFIG_ARCH_SHMOBILE_MULTI
--obj-$(CONFIG_MACH_GENMAI)	+= board-genmai-reference.o
- obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch-reference.o
- obj-$(CONFIG_MACH_LAGER)	+= board-lager-reference.o
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen-reference.o
-diff --git a/arch/arm/mach-shmobile/board-genmai-reference.c b/arch/arm/mach-shmobile/board-genmai-reference.c
-deleted file mode 100644
-index bc52677..0000000
---- a/arch/arm/mach-shmobile/board-genmai-reference.c
-+++ /dev/null
-@@ -1,35 +0,0 @@
--/*
-- * Genmai board support
-- *
-- * Copyright (C) 2013  Renesas Solutions Corp.
-- * Copyright (C) 2013  Magnus Damm
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; version 2 of the License.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, write to the Free Software
-- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-- */
--
--#include <linux/kernel.h>
--
--#include <asm/mach/arch.h>
--
--#include "common.h"
--
--static const char * const genmai_boards_compat_dt[] __initconst = {
--	"renesas,genmai",
--	NULL,
--};
--
--DT_MACHINE_START(GENMAI_DT, "genmai")
--	.init_early	= shmobile_init_delay,
--	.dt_compat	= genmai_boards_compat_dt,
--MACHINE_END
++	tmu0: timer@ffd80000 {
++		compatible = "renesas,tmu";
++		reg = <0xffd80000 0x30>;
++		interrupts = <0 32 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 33 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 34 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7779_CLK_TMU0>;
++		clock-names = "fck";
++
++		#renesas,channels = <3>;
++
++		status = "disabled";
++	};
++
++	tmu1: timer@ffd81000 {
++		compatible = "renesas,tmu";
++		reg = <0xffd81000 0x30>;
++		interrupts = <0 36 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 37 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 38 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7779_CLK_TMU1>;
++		clock-names = "fck";
++
++		#renesas,channels = <3>;
++
++		status = "disabled";
++	};
++
++	tmu2: timer@ffd82000 {
++		compatible = "renesas,tmu";
++		reg = <0xffd82000 0x30>;
++		interrupts = <0 40 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 41 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 42 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7779_CLK_TMU2>;
++		clock-names = "fck";
++
++		#renesas,channels = <3>;
++
++		status = "disabled";
++	};
++
+ 	sata: sata@fc600000 {
+ 		compatible = "renesas,rcar-sata";
+ 		reg = <0xfc600000 0x2000>;
 -- 
 2.0.1
 
