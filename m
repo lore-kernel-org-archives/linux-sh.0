@@ -1,116 +1,35 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Mon, 25 Aug 2014 12:25:57 +0000
-Subject: [PATCH 05/12] mmc: tmio: Handle clock gating from runtime PM functions
-Message-Id: <1408969564-6335-6-git-send-email-ulf.hansson@linaro.org>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 20 Aug 2014 18:14:56 +0000
+Subject: [PATCH] rcar_vin: fix error message in rcar_vin_get_formats()
+Message-Id: <9395741.sQ4VThHCsR@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
-In-Reply-To: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org, Ian Molton <ian.molton@codethink.co.uk>, Chris Ball <chris@printf.net>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Ulf Hansson <ulf.hansson@linaro.org>
+To: g.liakhovetski@gmx.de, mchehab@redhat.com, linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Add clock gating control as a part of the tmio library functions for
-runtime PM.
+The dev_err() call is supposed to output <width>x<height> in decimal but one of
+the format specifiers is "%x" instead of "%u" (most probably due  to a typo).
 
-Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- drivers/mmc/host/tmio_mmc.h     |  3 ++-
- drivers/mmc/host/tmio_mmc_pio.c | 28 ++++++++++++++++++++++++----
- 2 files changed, 26 insertions(+), 5 deletions(-)
+The patch is against the 'media_tree.git' repo's 'fixes' branch.
 
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index f837723..f1ee3e4 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -73,9 +73,10 @@ struct tmio_mmc_host {
- 	struct delayed_work	delayed_reset_work;
- 	struct work_struct	done;
+ drivers/media/platform/soc_camera/rcar_vin.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+Index: media_tree/drivers/media/platform/soc_camera/rcar_vin.c
+=================================--- media_tree.orig/drivers/media/platform/soc_camera/rcar_vin.c
++++ media_tree/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -981,7 +981,7 @@ static int rcar_vin_get_formats(struct s
  
--	/* Cache IRQ mask */
-+	/* Cache */
- 	u32			sdcard_irq_mask;
- 	u32			sdio_irq_mask;
-+	unsigned int		clk_cache;
- 
- 	spinlock_t		lock;		/* protect host private data */
- 	unsigned long		last_req_ts;
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index e573a15..2345177 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -149,7 +149,8 @@ static void tmio_mmc_enable_sdio_irq(struct mmc_host *mmc, int enable)
- 	}
- }
- 
--static void tmio_mmc_set_clock(struct tmio_mmc_host *host, int new_clock)
-+static void tmio_mmc_set_clock(struct tmio_mmc_host *host,
-+				unsigned int new_clock)
- {
- 	u32 clk = 0, clock;
- 
-@@ -767,9 +768,9 @@ fail:
- 	pm_runtime_put_autosuspend(mmc_dev(mmc));
- }
- 
--static int tmio_mmc_clk_update(struct mmc_host *mmc)
-+static int tmio_mmc_clk_update(struct tmio_mmc_host *host)
- {
--	struct tmio_mmc_host *host = mmc_priv(mmc);
-+	struct mmc_host *mmc = host->mmc;
- 	struct tmio_mmc_data *pdata = host->pdata;
- 	int ret;
- 
-@@ -911,6 +912,8 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 			ios->clock, ios->power_mode);
- 	host->mrq = NULL;
- 
-+	host->clk_cache = ios->clock;
-+
- 	mutex_unlock(&host->ios_lock);
- 
- 	pm_runtime_mark_last_busy(mmc_dev(mmc));
-@@ -1036,7 +1039,7 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 				  mmc->caps & MMC_CAP_NONREMOVABLE ||
- 				  mmc->slot.cd_irq >= 0);
- 
--	if (tmio_mmc_clk_update(mmc) < 0) {
-+	if (tmio_mmc_clk_update(_host) < 0) {
- 		mmc->f_max = pdata->hclk;
- 		mmc->f_min = mmc->f_max / 512;
- 	}
-@@ -1162,6 +1165,15 @@ EXPORT_SYMBOL(tmio_mmc_host_resume);
- #ifdef CONFIG_PM_RUNTIME
- int tmio_mmc_host_runtime_suspend(struct device *dev)
- {
-+	struct mmc_host *mmc = dev_get_drvdata(dev);
-+	struct tmio_mmc_host *host = mmc_priv(mmc);
-+
-+	if (host->clk_cache)
-+		tmio_mmc_clk_stop(host);
-+
-+	if (host->pdata->clk_disable)
-+		host->pdata->clk_disable(host->pdev);
-+
- 	return 0;
- }
- EXPORT_SYMBOL(tmio_mmc_host_runtime_suspend);
-@@ -1171,6 +1183,14 @@ int tmio_mmc_host_runtime_resume(struct device *dev)
- 	struct mmc_host *mmc = dev_get_drvdata(dev);
- 	struct tmio_mmc_host *host = mmc_priv(mmc);
- 
-+	tmio_mmc_reset(host);
-+	tmio_mmc_clk_update(host);
-+
-+	if (host->clk_cache) {
-+		tmio_mmc_set_clock(host, host->clk_cache);
-+		tmio_mmc_clk_start(host);
-+	}
-+
- 	tmio_mmc_enable_dma(host, true);
- 
- 	return 0;
--- 
-1.9.1
+ 		if (shift = 3) {
+ 			dev_err(dev,
+-				"Failed to configure the client below %ux%x\n",
++				"Failed to configure the client below %ux%u\n",
+ 				mf.width, mf.height);
+ 			return -EIO;
+ 		}
 
