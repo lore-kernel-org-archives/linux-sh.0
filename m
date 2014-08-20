@@ -1,36 +1,71 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 13 Aug 2014 11:56:57 +0000
-Subject: [PATCH 2/4] ARM: shmobile: sh73a0: Remove unneeded nr_irqs initialization
-Message-Id: <1407931019-11409-2-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 20 Aug 2014 00:23:52 +0000
+Subject: [PATCH 01/12] ARM: shmobile: r8a7791: add VIN DT support
+Message-Id: <0b8d1d579b4130f33a8776691453238839cb1973.1408492753.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1408492753.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408492753.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-As per arch_probe_nr_irqs(), the default value is NR_IRQS, which maps to
-NR_IRQS_LEGACY if CONFIG_SPARSE_IRQ=y.
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Since SPARSE_IRQ is selected by both ARCH_MULTIPLATFORM and
-ARCH_SHMOBILE_LEGACY, it's always enabled on shmobile.
+Define the generic R8A7791 parts of the VIN[0-2] device nodes. Add aliases for
+the VIN[0-2] device nodes.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-sh73a0.c | 1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/boot/dts/r8a7791.dtsi | 27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 002291881eb3..e7a0296b81b1 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -797,7 +797,6 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
- 	.smp		= smp_ops(sh73a0_smp_ops),
- 	.map_io		= sh73a0_map_io,
- 	.init_early	= sh73a0_init_delay,
--	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_machine	= sh73a0_add_standard_devices_dt,
- 	.init_late	= shmobile_init_late,
- 	.dt_compat	= sh73a0_boards_compat_dt,
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 0d82a4b..0f28921 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -34,6 +34,9 @@
+ 		spi1 = &msiof0;
+ 		spi2 = &msiof1;
+ 		spi3 = &msiof2;
++		vin0 = &vin0;
++		vin1 = &vin1;
++		vin2 = &vin2;
+ 	};
+ 
+ 	cpus {
+@@ -518,6 +521,30 @@
+ 		status = "disabled";
+ 	};
+ 
++	vin0: video@e6ef0000 {
++		compatible = "renesas,vin-r8a7791";
++		clocks = <&mstp8_clks R8A7791_CLK_VIN0>;
++		reg = <0 0xe6ef0000 0 0x1000>;
++		interrupts = <0 188 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	vin1: video@e6ef1000 {
++		compatible = "renesas,vin-r8a7791";
++		clocks = <&mstp8_clks R8A7791_CLK_VIN1>;
++		reg = <0 0xe6ef1000 0 0x1000>;
++		interrupts = <0 189 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	vin2: video@e6ef2000 {
++		compatible = "renesas,vin-r8a7791";
++		clocks = <&mstp8_clks R8A7791_CLK_VIN2>;
++		reg = <0 0xe6ef2000 0 0x1000>;
++		interrupts = <0 190 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 -- 
-1.9.1
+2.0.1
 
