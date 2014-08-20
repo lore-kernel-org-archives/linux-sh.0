@@ -1,62 +1,103 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 12 Aug 2014 00:04:42 +0000
-Subject: [PATCH v2 5/5] ARM: shmobile: r8a7740: Remove r8a7740_add_standard_devices_dt
-Message-Id: <1407801882-2561-6-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 20 Aug 2014 00:24:13 +0000
+Subject: [PATCH 4/8] ARM: shmobile: lager-reference: Enable CMT0 in device tree
+Message-Id: <247fd5ec6e9a41f9299df27be82104efc56e622b.1408492048.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1407801882-2561-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1407801882-2561-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1408492048.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408492048.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Now that r8a7740_add_standard_devices_dt() is simply a wrapper
-for a call to of_platform_populate() remove it and call
-of_platform_populate() directly.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
+No more device needs to be added from platform code when booting the
+reference platform, remove the now empty r8a7790_add_dt_devices()
+function completely.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Simon Horman <horms+renesas@verge.net.au>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/r8a7740.h       | 1 -
- arch/arm/mach-shmobile/setup-r8a7740.c | 7 +------
- 2 files changed, 1 insertion(+), 7 deletions(-)
+ arch/arm/boot/dts/r8a7790-lager.dts            | 4 ++++
+ arch/arm/mach-shmobile/board-lager-reference.c | 2 --
+ arch/arm/mach-shmobile/r8a7790.h               | 1 -
+ arch/arm/mach-shmobile/setup-r8a7790.c         | 7 +------
+ 4 files changed, 5 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/r8a7740.h b/arch/arm/mach-shmobile/r8a7740.h
-index 1d1a5fd..3352fb8 100644
---- a/arch/arm/mach-shmobile/r8a7740.h
-+++ b/arch/arm/mach-shmobile/r8a7740.h
-@@ -49,7 +49,6 @@ extern void r8a7740_init_irq_of(void);
- extern void r8a7740_map_io(void);
- extern void r8a7740_add_early_devices(void);
- extern void r8a7740_add_standard_devices(void);
--extern void r8a7740_add_standard_devices_dt(void);
- extern void r8a7740_clock_init(u8 md_ck);
- extern void r8a7740_pinmux_init(void);
- extern void r8a7740_pm_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index dc44a44..8fe270d 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -781,11 +781,6 @@ void __init r8a7740_add_early_devices(void)
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 856b423..7853c2c 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -252,6 +252,10 @@
+ 	};
+ };
  
- #ifdef CONFIG_USE_OF
++&cmt0 {
++	status = "ok";
++};
++
+ &mmcif1 {
+ 	pinctrl-0 = <&mmc1_pins>;
+ 	pinctrl-names = "default";
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index 41c808e..2a05c02 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -92,7 +92,6 @@ static void __init lager_add_du_device(void)
+  * devices until they get moved to DT.
+  */
+ static const struct clk_name clk_names[] __initconst = {
+-	{ "cmt0", "fck", "sh-cmt-48-gen2.0" },
+ 	{ "du0", "du.0", "rcar-du-r8a7790" },
+ 	{ "du1", "du.1", "rcar-du-r8a7790" },
+ 	{ "du2", "du.2", "rcar-du-r8a7790" },
+@@ -103,7 +102,6 @@ static const struct clk_name clk_names[] __initconst = {
+ static void __init lager_add_standard_devices(void)
+ {
+ 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+-	r8a7790_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
  
--void __init r8a7740_add_standard_devices_dt(void)
+ 	lager_add_du_device();
+diff --git a/arch/arm/mach-shmobile/r8a7790.h b/arch/arm/mach-shmobile/r8a7790.h
+index 459827f..388f051 100644
+--- a/arch/arm/mach-shmobile/r8a7790.h
++++ b/arch/arm/mach-shmobile/r8a7790.h
+@@ -27,7 +27,6 @@ enum {
+ };
+ 
+ void r8a7790_add_standard_devices(void);
+-void r8a7790_add_dt_devices(void);
+ void r8a7790_clock_init(void);
+ void r8a7790_pinmux_init(void);
+ void r8a7790_pm_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 0c12b01..877fdeb 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -282,11 +282,6 @@ static struct resource cmt0_resources[] = {
+ 					  &cmt##idx##_platform_data,	\
+ 					  sizeof(struct sh_timer_config))
+ 
+-void __init r8a7790_add_dt_devices(void)
 -{
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-	r8a7790_register_cmt(0);
 -}
 -
- void __init r8a7740_init_irq_of(void)
+ void __init r8a7790_add_standard_devices(void)
  {
- 	void __iomem *intc_prio_base = ioremap_nocache(0xe6900010, 0x10);
-@@ -819,7 +814,7 @@ void __init r8a7740_init_irq_of(void)
- static void __init r8a7740_generic_init(void)
- {
- 	r8a7740_clock_init(0);
--	r8a7740_add_standard_devices_dt();
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
- 
- static const char *r8a7740_boards_compat_dt[] __initdata = {
+ 	r8a7790_register_scif(0);
+@@ -299,7 +294,7 @@ void __init r8a7790_add_standard_devices(void)
+ 	r8a7790_register_scif(7);
+ 	r8a7790_register_scif(8);
+ 	r8a7790_register_scif(9);
+-	r8a7790_add_dt_devices();
++	r8a7790_register_cmt(0);
+ 	r8a7790_register_irqc(0);
+ 	r8a7790_register_thermal();
+ 	r8a7790_register_i2c(0);
 -- 
-2.0.0.rc2
+2.0.1
 
