@@ -1,109 +1,81 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Aug 2014 01:10:03 +0000
-Subject: [PATCH 3/7] ARM: shmobile: r8a7740: clock register bits
-Message-Id: <d6fb17ad7c9e0aa28ce0bc2e33790f9459677370.1408928822.git.horms+renesas@verge.net.au>
+Date: Wed, 20 Aug 2014 00:24:02 +0000
+Subject: [PATCH 11/12] ARM: shmobile: r8a7790: add VIN device nodes
+Message-Id: <9f685bfc30edb4cba5d5ae142a9967cd0d74c40a.1408492753.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408928822.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408928822.git.horms+renesas@verge.net.au>
+References: <cover.1408492753.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408492753.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-Contains the header file with the clock pulse generator and MSTP bits.
+Add device nodes for the four video input controllers on the R8A7790.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+[Sergei: renamed VIN device nodes, edited changelog]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- include/dt-bindings/clock/r8a7740-clock.h | 77 +++++++++++++++++++++++++++++++
- 1 file changed, 77 insertions(+)
- create mode 100644 include/dt-bindings/clock/r8a7740-clock.h
+ arch/arm/boot/dts/r8a7790.dtsi | 36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
 
-diff --git a/include/dt-bindings/clock/r8a7740-clock.h b/include/dt-bindings/clock/r8a7740-clock.h
-new file mode 100644
-index 0000000..f6b4b0f
---- /dev/null
-+++ b/include/dt-bindings/clock/r8a7740-clock.h
-@@ -0,0 +1,77 @@
-+/*
-+ * Copyright 2014 Ulrich Hecht
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ */
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 60f8551..2278bd0 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -33,6 +33,10 @@
+ 		spi2 = &msiof1;
+ 		spi3 = &msiof2;
+ 		spi4 = &msiof3;
++		vin0 = &vin0;
++		vin1 = &vin1;
++		vin2 = &vin2;
++		vin3 = &vin3;
+ 	};
+ 
+ 	cpus {
+@@ -532,6 +536,38 @@
+ 		status = "disabled";
+ 	};
+ 
++	vin0: video@e6ef0000 {
++		compatible = "renesas,vin-r8a7790";
++		clocks = <&mstp8_clks R8A7790_CLK_VIN0>;
++		reg = <0 0xe6ef0000 0 0x1000>;
++		interrupts = <0 188 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
 +
-+#ifndef __DT_BINDINGS_CLOCK_R8A7740_H__
-+#define __DT_BINDINGS_CLOCK_R8A7740_H__
++	vin1: video@e6ef1000 {
++		compatible = "renesas,vin-r8a7790";
++		clocks = <&mstp8_clks R8A7790_CLK_VIN1>;
++		reg = <0 0xe6ef1000 0 0x1000>;
++		interrupts = <0 189 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
 +
-+/* CPG */
-+#define R8A7740_CLK_SYSTEM	0
-+#define R8A7740_CLK_PLLC0	1
-+#define R8A7740_CLK_PLLC1	2
-+#define R8A7740_CLK_PLLC2	3
-+#define R8A7740_CLK_R		4
-+#define R8A7740_CLK_USB24S	5
-+#define R8A7740_CLK_I		6
-+#define R8A7740_CLK_ZG		7
-+#define R8A7740_CLK_B		8
-+#define R8A7740_CLK_M1		9
-+#define R8A7740_CLK_HP		10
-+#define R8A7740_CLK_HPP		11
-+#define R8A7740_CLK_USBP	12
-+#define R8A7740_CLK_S		13
-+#define R8A7740_CLK_ZB		14
-+#define R8A7740_CLK_M3		15
-+#define R8A7740_CLK_CP		16
++	vin2: video@e6ef2000 {
++		compatible = "renesas,vin-r8a7790";
++		clocks = <&mstp8_clks R8A7790_CLK_VIN2>;
++		reg = <0 0xe6ef2000 0 0x1000>;
++		interrupts = <0 190 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
 +
-+/* MSTP1 */
-+#define R8A7740_CLK_CEU21	28
-+#define R8A7740_CLK_CEU20	27
-+#define R8A7740_CLK_TMU0	25
-+#define R8A7740_CLK_LCDC1	17
-+#define R8A7740_CLK_IIC0	16
-+#define R8A7740_CLK_TMU1	11
-+#define R8A7740_CLK_LCDC0	0
++	vin3: video@e6ef3000 {
++		compatible = "renesas,vin-r8a7790";
++		clocks = <&mstp8_clks R8A7790_CLK_VIN3>;
++		reg = <0 0xe6ef3000 0 0x1000>;
++		interrupts = <0 191 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
 +
-+/* MSTP2 */
-+#define R8A7740_CLK_SCIFA6	30
-+#define R8A7740_CLK_SCIFA7	22
-+#define R8A7740_CLK_DMAC1	18
-+#define R8A7740_CLK_DMAC2	17
-+#define R8A7740_CLK_DMAC3	16
-+#define R8A7740_CLK_USBDMAC	14
-+#define R8A7740_CLK_SCIFA5	7
-+#define R8A7740_CLK_SCIFB	6
-+#define R8A7740_CLK_SCIFA0	4
-+#define R8A7740_CLK_SCIFA1	3
-+#define R8A7740_CLK_SCIFA2	2
-+#define R8A7740_CLK_SCIFA3	1
-+#define R8A7740_CLK_SCIFA4	0
-+
-+/* MSTP3 */
-+#define R8A7740_CLK_CMT1	29
-+#define R8A7740_CLK_FSI		28
-+#define R8A7740_CLK_IIC1	23
-+#define R8A7740_CLK_USBF	20
-+#define R8A7740_CLK_SDHI0	14
-+#define R8A7740_CLK_SDHI1	13
-+#define R8A7740_CLK_MMC		12
-+#define R8A7740_CLK_GETHER	9
-+#define R8A7740_CLK_TPU0	4
-+
-+/* MSTP4 */
-+#define R8A7740_CLK_USBH	16
-+#define R8A7740_CLK_SDHI2	15
-+#define R8A7740_CLK_USBFUNC	7
-+#define R8A7740_CLK_USBPHY	6
-+
-+/* SUBCK* */
-+#define R8A7740_CLK_SUBCK	9
-+#define R8A7740_CLK_SUBCK2	10
-+
-+#endif /* __DT_BINDINGS_CLOCK_R8A7740_H__ */
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 -- 
 2.0.1
 
