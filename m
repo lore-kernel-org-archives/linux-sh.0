@@ -1,114 +1,116 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 12 Aug 2014 12:29:50 +0000
-Subject: Re: rcar-dmac: DMAOR initialization failed
-Message-Id: <alpine.DEB.2.02.1408121429010.21943@ayla.of.borg>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 20 Aug 2014 13:39:22 +0000
+Subject: [PATCH 1/2] sh: intc: Confine SH_INTC to platforms that need it
+Message-Id: <1408541963-20736-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMuHMdUbJ2DyL2wpV6SDDyxmoBiQEycUYiBpN8BigWTh5jiEyQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdUbJ2DyL2wpV6SDDyxmoBiQEycUYiBpN8BigWTh5jiEyQ@mail.gmail.com>
+References: <1408541963-20736-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1408541963-20736-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Tue, 12 Aug 2014, Geert Uytterhoeven wrote:
-> I tried a few things to fix this, but I'm not so sure what's the best solution:
-> 
-> Works:
->   - Calling clk_enable(dmac->clk)/clk_disable(dmac->clk) before resp.
->     after the call to rcar_dmac_init(). This also needs rcar_dmac.clk setup,
->     cfr. the first version of the rcar-dmac driver.
+Currently the sh-intc driver is compiled on all SuperH and
+non-multiplatform SH-Mobile platforms, while it's only used on a limited
+number of platforms:
+  - SuperH: SH2(A), SH3(A), SH4(A)(L) (all but SH5)
+  - ARM: sh7372, sh73a0
 
-It never hurts to send an actual patch...
-
-From 6f3288de9fe8f107896e65203d3c098989966870 Mon Sep 17 00:00:00 2001
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 12 Aug 2014 14:24:45 +0200
-Subject: [PATCH] [RFC] dmaengine: rcar-dmac: Fix reinitialization on resume
-
-When resuming from s2ram on Koelsch ("echo mem > /sys/power/state" to
-suspend, and press any of the SW3x to resume), DMAOR initialization fails:
-
-rcar-dmac e6700000.dma-controller: DMAOR initialization failed.
-dpm_run_callback(): platform_pm_resume+0x0/0x54 returns -5
-PM: Device e6700000.dma-controller failed to resume: error -5
-rcar-dmac e6720000.dma-controller: DMAOR initialization failed.
-dpm_run_callback(): platform_pm_resume+0x0/0x54 returns -5
-PM: Device e6720000.dma-controller failed to resume: error -5
-
-(note that DMA still works after this)
-
-This is due to rcar_dmac_resume() calling rcar_dmac_init() while the
-device's clock is disabled.
-
-Explicitly enable the clock before calling rcar_dmac_init() to fix this,
-and disable the clock again afterwards.
+Drop the "default y" on SH_INTC, make all CPU platforms that use it
+select it, and protect all sub-options by "if SH_INTC" to fix this.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/dma/sh/rcar-dmac.c | 18 +++++++++++++++++-
- 1 file changed, 17 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/Kconfig | 2 ++
+ arch/sh/Kconfig                | 3 +++
+ drivers/sh/Makefile            | 3 +--
+ drivers/sh/intc/Kconfig        | 6 +++++-
+ 4 files changed, 11 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
-index 0997322b70f8..334ddd3a37c0 100644
---- a/drivers/dma/sh/rcar-dmac.c
-+++ b/drivers/dma/sh/rcar-dmac.c
-@@ -10,6 +10,7 @@
-  * published by the Free Software Foundation.
-  */
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 5814754c1240..dae4c73a5f00 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -71,6 +71,7 @@ config ARCH_SH7372
+ 	select ARM_CPU_SUSPEND if PM || CPU_IDLE
+ 	select CPU_V7
+ 	select SH_CLK_CPG
++	select SH_INTC
+ 	select SYS_SUPPORTS_SH_CMT
+ 	select SYS_SUPPORTS_SH_TMU
  
-+#include <linux/clk.h>
- #include <linux/dmaengine.h>
- #include <linux/interrupt.h>
- #include <linux/list.h>
-@@ -155,6 +156,7 @@ struct rcar_dmac {
- 	struct dma_device engine;
- 	struct device *dev;
- 	void __iomem *iomem;
-+	struct clk *clk;
- 	char *irqname;
+@@ -81,6 +82,7 @@ config ARCH_SH73A0
+ 	select CPU_V7
+ 	select I2C
+ 	select SH_CLK_CPG
++	select SH_INTC
+ 	select RENESAS_INTC_IRQPIN
+ 	select SYS_SUPPORTS_SH_CMT
+ 	select SYS_SUPPORTS_SH_TMU
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 453fa5c09550..b319846ad97f 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -172,6 +172,7 @@ menu "System type"
+ #
+ config CPU_SH2
+ 	bool
++	select SH_INTC
  
- 	unsigned int n_channels;
-@@ -1282,8 +1284,16 @@ static int rcar_dmac_suspend(struct device *dev)
- static int rcar_dmac_resume(struct device *dev)
- {
- 	struct rcar_dmac *dmac = dev_get_drvdata(dev);
-+	int ret;
+ config CPU_SH2A
+ 	bool
+@@ -182,6 +183,7 @@ config CPU_SH3
+ 	bool
+ 	select CPU_HAS_INTEVT
+ 	select CPU_HAS_SR_RB
++	select SH_INTC
+ 	select SYS_SUPPORTS_SH_TMU
  
--	return rcar_dmac_init(dmac);
-+	ret = clk_enable(dmac->clk);
-+	if (ret < 0)
-+		return ret;
+ config CPU_SH4
+@@ -189,6 +191,7 @@ config CPU_SH4
+ 	select CPU_HAS_INTEVT
+ 	select CPU_HAS_SR_RB
+ 	select CPU_HAS_FPU if !CPU_SH4AL_DSP
++	select SH_INTC
+ 	select SYS_SUPPORTS_SH_TMU
+ 	select SYS_SUPPORTS_HUGETLBFS if MMU
+ 
+diff --git a/drivers/sh/Makefile b/drivers/sh/Makefile
+index 788ed9b59b4e..114203f32843 100644
+--- a/drivers/sh/Makefile
++++ b/drivers/sh/Makefile
+@@ -1,8 +1,7 @@
+ #
+ # Makefile for the SuperH specific drivers.
+ #
+-obj-$(CONFIG_SUPERH)			+= intc/
+-obj-$(CONFIG_ARCH_SHMOBILE_LEGACY)	+= intc/
++obj-$(CONFIG_SH_INTC)			+= intc/
+ ifneq ($(CONFIG_COMMON_CLK),y)
+ obj-$(CONFIG_HAVE_CLK)			+= clk/
+ endif
+diff --git a/drivers/sh/intc/Kconfig b/drivers/sh/intc/Kconfig
+index 60228fae943f..6a1b05ddc8c9 100644
+--- a/drivers/sh/intc/Kconfig
++++ b/drivers/sh/intc/Kconfig
+@@ -1,7 +1,9 @@
+ config SH_INTC
+-	def_bool y
++	bool
+ 	select IRQ_DOMAIN
+ 
++if SH_INTC
 +
-+	ret = rcar_dmac_init(dmac);
-+
-+	clk_disable(dmac->clk);
-+	return ret;
- }
- #endif
+ comment "Interrupt controller options"
  
-@@ -1336,6 +1346,12 @@ static int rcar_dmac_chan_probe(struct rcar_dmac *dmac,
- 		return ret;
- 	}
+ config INTC_USERIMASK
+@@ -37,3 +39,5 @@ config INTC_MAPPING_DEBUG
+ 	  between system IRQs and the per-controller id tables.
  
-+	dmac->clk = clk_get(&pdev->dev, "fck");
-+	if (IS_ERR(dmac->clk)) {
-+		dev_err(&pdev->dev, "unable to get fck clock\n");
-+		return PTR_ERR(dmac->clk);
-+	}
+ 	  If in doubt, say N.
 +
- 	/*
- 	 * Initialize the DMA engine channel and add it to the DMA engine
- 	 * channels list.
++endif
 -- 
 1.9.1
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
