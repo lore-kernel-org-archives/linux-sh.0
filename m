@@ -1,47 +1,70 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Wed, 06 Aug 2014 20:26:11 +0000
-Subject: Re: [PATCH 02/12] spi: rspi: Remove unneeded semicolon
-Message-Id: <20140806202611.GQ17528@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Uw3dxuaueHhmUKqq"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 20 Aug 2014 00:24:10 +0000
+Subject: [PATCH 1/8] ARM: shmobile: r8a7790: Add CMT devices to DT
+Message-Id: <39cf6d73dc1ed11c7d5d2c96a0ccbbb868a7f3ce.1408492048.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
- <1407329949-5695-3-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1407329949-5695-3-git-send-email-geert+renesas@glider.be>
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, dmaengine@vger.kernel.org
+References: <cover.1408492048.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408492048.git.horms+renesas@verge.net.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
---Uw3dxuaueHhmUKqq
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Add the CMT0 and CMT1 counters to the r8a7790 device tree and make them
+disabled by default.
 
-On Wed, Aug 06, 2014 at 02:58:59PM +0200, Geert Uytterhoeven wrote:
-> Introduced by commit 426ef76dd8a394a0e04d096941cd9acb49539a3e ("spi:
-> rspi: Add DT support").
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
 
-Applied, thanks.
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index d9ddecb..7218bff 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -206,6 +206,38 @@
+ 			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
+ 	};
+ 
++	cmt0: timer@ffca0000 {
++		compatible = "renesas,cmt-48-gen2";
++		reg = <0 0xffca0000 0 0x1004>;
++		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7790_CLK_CMT0>;
++		clock-names = "fck";
++
++		renesas,channels-mask = <0x60>;
++
++		status = "disabled";
++	};
++
++	cmt1: timer@e6130000 {
++		compatible = "renesas,cmt-48-gen2";
++		reg = <0 0xe6130000 0 0x1004>;
++		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 122 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 123 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 124 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 125 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 126 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 127 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_CMT1>;
++		clock-names = "fck";
++
++		renesas,channels-mask = <0xff>;
++
++		status = "disabled";
++	};
++
+ 	irqc0: interrupt-controller@e61c0000 {
+ 		compatible = "renesas,irqc-r8a7790", "renesas,irqc";
+ 		#interrupt-cells = <2>;
+-- 
+2.0.1
 
---Uw3dxuaueHhmUKqq
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAEBAgAGBQJT4o9gAAoJELSic+t+oim9LMUP/iR6s1iyPdrFHai/oR+QvU5D
-C2tY2NC0U3yKFDpY+BGsXMfaRb0JEC2dP7XncE0BITgoqUAqmGranvkL7sSekBqe
-rACSIWMCAbQ8Mq7p8qaFhCG1syNl1auKR9YM2azR6qX5S0eORVGwqi++2586j5FO
-VHP5V3EaSISvc//tTJSaXS2qhxuXWI77fypX0e0QqWhkZWISgIjp0Sxhfrodm/2D
-pAvG8IUQuC0nBgr4V7hVaLRkRO/sxfZD1cSpUr7fmrFR8O3fQhNVxanocRx04txV
-m9+nEVloRD8gFr/GAGRZ8Jefy+9I4jH2FHDHyfiUxTLNhuuM6wK9FKHamE60T1KJ
-Tr65XUiPBOQiknL03HXrZ+XcJaXIkA2uI+IRqw6bCg8HvHBKhGlySVpDYI4oWSZx
-RsXwykeTWP9KuGXfsO+KqeojEsbPJaxwWaUd9ACX2uI8M0xlIzSTgB4uSdMYWTQC
-nYT9+J9Z3oiyhM03hnGR+hhLMX7detBM+5BbvBQArgeMZu/pl9uqQ8ku4XD+qj7I
-rk8IXUnwGC+M1Z1B9pAQs8Za3zKKlUFrSTsdaDdqM+64GwJS4eF8ur7gyyxmXy0n
-Z0ipb/WKshASmsqY5S5Vj9zSP68F+Rlih0rJWNecPRLkfBXMpbhZUmMReQAW4bP7
-lvf4tgsRmmxabhx5aRNI
-=XF0X
------END PGP SIGNATURE-----
-
---Uw3dxuaueHhmUKqq--
