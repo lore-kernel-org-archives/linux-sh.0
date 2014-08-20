@@ -1,59 +1,39 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Wed, 06 Aug 2014 01:49:08 +0000
-Subject: [PATCH 2/5 v2] ARM: shmobile: r8a7778: add generation level compatible for SDHI
-Message-Id: <87lhr28k19.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 20 Aug 2014 00:23:58 +0000
+Subject: [PATCH 07/12] ARM: shmobile: r8a7791 dtsi: Enable DMA for QSPI
+Message-Id: <591f2fa4eb0aae09cd76d276bb59e25824a7d408.1408492753.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
-	<87oavy8k3v.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87oavy8k3v.wl%kuninori.morimoto.gx@gmail.com>
+References: <cover.1408492753.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408492753.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
-Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Add a DMA property to the QSPI node
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v1 -> v2
+ arch/arm/boot/dts/r8a7791.dtsi | 2 ++
+ 1 file changed, 2 insertions(+)
 
- - no change
-
- arch/arm/boot/dts/r8a7778.dtsi |    6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index ecfdf4b..7986cf27 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -206,7 +206,7 @@
- 	};
- 
- 	sdhi0: sd@ffe4c000 {
--		compatible = "renesas,sdhi-r8a7778";
-+		compatible = "renesas,sdhi-r8a7778", "renesas,sdhi-rcar-gen1";
- 		reg = <0xffe4c000 0x100>;
- 		interrupts = <0 87 IRQ_TYPE_LEVEL_HIGH>;
- 		cap-sd-highspeed;
-@@ -215,7 +215,7 @@
- 	};
- 
- 	sdhi1: sd@ffe4d000 {
--		compatible = "renesas,sdhi-r8a7778";
-+		compatible = "renesas,sdhi-r8a7778", "renesas,sdhi-rcar-gen1";
- 		reg = <0xffe4d000 0x100>;
- 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
- 		cap-sd-highspeed;
-@@ -224,7 +224,7 @@
- 	};
- 
- 	sdhi2: sd@ffe4f000 {
--		compatible = "renesas,sdhi-r8a7778";
-+		compatible = "renesas,sdhi-r8a7778", "renesas,sdhi-rcar-gen1";
- 		reg = <0xffe4f000 0x100>;
- 		interrupts = <0 86 IRQ_TYPE_LEVEL_HIGH>;
- 		cap-sd-highspeed;
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 146ed64..ab55efd 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1012,6 +1012,8 @@
+ 		reg = <0 0xe6b10000 0 0x2c>;
+ 		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7791_CLK_QSPI_MOD>;
++		dmas = <&dmac0 0x17>, <&dmac0 0x18>;
++		dma-names = "tx", "rx";
+ 		num-cs = <1>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
 -- 
-1.7.9.5
+2.0.1
 
