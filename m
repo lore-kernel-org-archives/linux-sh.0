@@ -1,48 +1,39 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 27 Aug 2014 00:35:24 +0000
-Subject: [PATCH v2 3/5] ARM: shmobile: koelsch: correct memory map syntax
-Message-Id: <1409099726-21814-4-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 20 Aug 2014 00:24:00 +0000
+Subject: [PATCH 09/12] ARM: shmobile: r8a7790 dtsi: Enable DMA for QSPI
+Message-Id: <37cf3d61a94790c6f12c6e6e7a28640b8531a8af.1408492753.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409099726-21814-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1409099726-21814-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1408492753.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408492753.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Correct a syntax error by using two comma-delimited 32 bit values
-rather than a single 64 bit value.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-This is a documentation fix and should have no run-time affect.
+Add a DMA property to the QSPI node
 
-This problem was introduced when the second memory region
-was added to the koelsch dts file by 4cd1bad45182c7f1
-("ARM: shmobile: koelsch: (1+1)GiB memory in DT") in v3.14.
-
-Cc: Olof Johansson <olof@lixom.net>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
 ---
-v2
-* First post
----
- arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 51807a3..caf66dc 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -33,7 +33,7 @@
- 		reg = <0 0x40000000 0 0x40000000>;
- 	};
- 
--	memory@200000000 {
-+	memory@2,00000000 {
- 		device_type = "memory";
- 		reg = <2 0x00000000 0 0x40000000>;
- 	};
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 3707f0e..6dc328d 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -946,6 +946,8 @@
+ 		reg = <0 0xe6b10000 0 0x2c>;
+ 		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7790_CLK_QSPI_MOD>;
++		dmas = <&dmac0 0x17>, <&dmac0 0x18>;
++		dma-names = "tx", "rx";
+ 		num-cs = <1>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
 -- 
 2.0.1
 
