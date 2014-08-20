@@ -1,81 +1,59 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 06 Aug 2014 04:40:52 +0000
-Subject: [PATCH 5/5] ARM: shmobile: r8a7791: add generation level compatible for i2c
-Message-Id: <87lhr2w7ql.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 20 Aug 2014 12:59:49 +0000
+Subject: [PATCH 00/10] ARM: shmobile: shmobile_init_delay() conversion
+Message-Id: <20140820130201.32075.45257.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87silaw7t2.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87silaw7t2.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>, Simon <horms@verge.net.au>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-I2C <linux-i2c@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+ARM: shmobile: shmobile_init_delay() conversion
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+[PATCH 01/10] ARM: shmobile: sh7372: Update DTS to include CPU frequency
+[PATCH 02/10] ARM: shmobile: sh73a0: Update DTS to include CPU frequency
+[PATCH 03/10] ARM: shmobile: r8a7778: Update DTS to include CPU frequency
+[PATCH 04/10] ARM: shmobile: sh7372: Use shmobile_init_delay()
+[PATCH 05/10] ARM: shmobile: sh73a0: Use shmobile_init_delay() 
+[PATCH 06/10] ARM: shmobile: r8a7778: Use shmobile_init_delay()
+[PATCH 07/10] ARM: shmobile: r8a73a4: Use shmobile_init_delay() 
+[PATCH 08/10] ARM: shmobile: Remove shmobile_setup_delay()
+[PATCH 09/10] ARM: shmobile: bockw: Use shmobile_init_delay() 
+[PATCH 10/10] ARM: shmobile: kzm9g: Use shmobile_init_delay()
+
+Convert the ARM mach-shmobile subarch to use shmobile_init_delay()
+together with CPU Frequency information in DTS instead of specifying
+these things in C. Remove the now redundant shmobile_setup_delay().
+
+Merge-wise, for this to remain bisectable patch 1-3 needs to be merged
+first (DTS) - any order is however fine. After that patch 4-7 can be
+applied in any order (SoC) followed by any order of the last patches
+8-10 (core + board).
+
+After this one more SoC series is needed to remove local now unused
+delay functions, but it needs to happen after the board code in patch
+9 and 10 are merged, so to avoid cicular dependecy this has been
+omitted for now.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/boot/dts/r8a7791.dtsi |   12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 1e97113..854eca2 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -245,7 +245,7 @@
- 	i2c0: i2c@e6508000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,i2c-r8a7791";
-+		compatible = "renesas,i2c-r8a7791", "renesas,i2c-rcar-gen2";
- 		reg = <0 0xe6508000 0 0x40>;
- 		interrupts = <0 287 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7791_CLK_I2C0>;
-@@ -255,7 +255,7 @@
- 	i2c1: i2c@e6518000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,i2c-r8a7791";
-+		compatible = "renesas,i2c-r8a7791", "renesas,i2c-rcar-gen2";
- 		reg = <0 0xe6518000 0 0x40>;
- 		interrupts = <0 288 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7791_CLK_I2C1>;
-@@ -265,7 +265,7 @@
- 	i2c2: i2c@e6530000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,i2c-r8a7791";
-+		compatible = "renesas,i2c-r8a7791", "renesas,i2c-rcar-gen2";
- 		reg = <0 0xe6530000 0 0x40>;
- 		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7791_CLK_I2C2>;
-@@ -275,7 +275,7 @@
- 	i2c3: i2c@e6540000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,i2c-r8a7791";
-+		compatible = "renesas,i2c-r8a7791", "renesas,i2c-rcar-gen2";
- 		reg = <0 0xe6540000 0 0x40>;
- 		interrupts = <0 290 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7791_CLK_I2C3>;
-@@ -285,7 +285,7 @@
- 	i2c4: i2c@e6520000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,i2c-r8a7791";
-+		compatible = "renesas,i2c-r8a7791", "renesas,i2c-rcar-gen2";
- 		reg = <0 0xe6520000 0 0x40>;
- 		interrupts = <0 19 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7791_CLK_I2C4>;
-@@ -296,7 +296,7 @@
- 		/* doesn't need pinmux */
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,i2c-r8a7791";
-+		compatible = "renesas,i2c-r8a7791", "renesas,i2c-rcar-gen2";
- 		reg = <0 0xe6528000 0 0x40>;
- 		interrupts = <0 20 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7791_CLK_I2C5>;
--- 
-1.7.9.5
+ Written on top of renesas-devel-20140820-v3.17-rc1
+
+ Untested, but should be safe enough. Seems to build with shmobile_defconfig.
+
+ arch/arm/boot/dts/r8a7778.dtsi                 |    6 ++++++
+ arch/arm/boot/dts/sh7372.dtsi                  |    1 +
+ arch/arm/boot/dts/sh73a0.dtsi                  |    2 ++
+ arch/arm/mach-shmobile/board-bockw-reference.c |    2 +-
+ arch/arm/mach-shmobile/board-bockw.c           |    2 +-
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |    2 +-
+ arch/arm/mach-shmobile/common.h                |    2 --
+ arch/arm/mach-shmobile/r8a73a4.h               |    1 -
+ arch/arm/mach-shmobile/setup-r8a73a4.c         |    9 +--------
+ arch/arm/mach-shmobile/setup-r8a7778.c         |    2 +-
+ arch/arm/mach-shmobile/setup-sh7372.c          |    2 +-
+ arch/arm/mach-shmobile/setup-sh73a0.c          |    2 +-
+ arch/arm/mach-shmobile/timer.c                 |   21 ++-------------------
+ 13 files changed, 18 insertions(+), 36 deletions(-)
 
