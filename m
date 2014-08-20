@@ -1,32 +1,49 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 14 Aug 2014 16:57:28 +0000
-Subject: [PATCH 7/7] ARM: shmobile: marzen_defconfig: Enable missing hardware support
-Message-Id: <1408035448-8811-8-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 20 Aug 2014 00:24:16 +0000
+Subject: [PATCH 7/8] ARM: shmobile: r7s72100: Add MTU2 device to DT
+Message-Id: <9162d39ccb9400bfaed85630cf517c85861faa6f.1408492048.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1408492048.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408492048.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Based on the DTS
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Add the MTU2 counter to the r7s72100 device tree and make it disabled by
+default.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+[horms+renesas@verge.net.au correct irq number]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/marzen_defconfig | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/r7s72100.dtsi | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index 92994f7f6fd8..ff91630d34e1 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -84,6 +84,7 @@ CONFIG_GPIO_RCAR=y
- CONFIG_THERMAL=y
- CONFIG_RCAR_THERMAL=y
- CONFIG_SSB=y
-+CONFIG_REGULATOR=y
- CONFIG_MEDIA_SUPPORT=y
- CONFIG_MEDIA_CAMERA_SUPPORT=y
- CONFIG_V4L_PLATFORM_DRIVERS=y
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index bdee225..1d28d01 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -229,6 +229,16 @@
+ 		status = "disabled";
+ 	};
+ 
++	mtu2: timer@fcff0000 {
++		compatible = "renesas,mtu2";
++		reg = <0xfcff0000 0x400>;
++		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "tgi0a";
++		clocks = <&mstp3_clks R7S72100_CLK_MTU2>;
++		clock-names = "fck";
++		status = "disabled";
++	};
++
+ 	scif0: serial@e8007000 {
+ 		compatible = "renesas,scif-r7s72100", "renesas,scif";
+ 		reg = <0xe8007000 64>;
 -- 
-1.9.1
+2.0.1
 
