@@ -1,38 +1,42 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 22 Aug 2014 11:13:39 +0000
-Subject: [PATCH 0/4] usb: renesas_usbhs: fixes this driver in gadget mode
-Message-Id: <53F725E3.4050304@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 20 Aug 2014 13:02:27 +0000
+Subject: [PATCH 03/10] ARM: shmobile: r8a7778: Update DTS to include CPU frequency
+Message-Id: <20140820130227.32075.16599.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-If we tested this driver as gadget and g_ncm driver using iperf,
-some issues below happened:
- - Oops happened.
- - A transaction didn't finish in PIO mode.
- - A transaction didn't finish in DMA mode if the "zero" flag is set.
- - The driver didn't cancel a transaction if dequeue() is called.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-This patch series fixes them. If possible, they would like to be
-merged to v3.17.
-This patch series is based on Greg's usb.git / usb-linus branch.
-(commit id: 6835a3a02b1ae222cbfb167a7e2d5e8df5e9854e)
+Add CPU Frequency information to the r8a7778 DTS file. This
+will allow us to use the shared C code on r8a7778 and BockW
+which reads out the clock frequency from DT and calculates the
+delay settings from there.
 
-Yoshihiro Shimoda (4):
-  usb: renesas_usbhs: fix the behavior of some usbhs_pkt_handle
-  usb: renesas_usbhs: protect mod->irq_{bemp,brdy}sts by spin lock
-  usb: renesas_usbhs: fix the condition of is_done in
-    usbhsf_dma_push_done
-  usb: renesas_usbhs: fix the usb_pkt_pop()
+Also add other missing CPU information to the r8a7778 DTS.
 
- drivers/usb/renesas_usbhs/fifo.c |   72 ++++++++++++++++++++++++++++++++++----
- drivers/usb/renesas_usbhs/mod.c  |    5 +++
- drivers/usb/renesas_usbhs/pipe.c |   13 +++++++
- drivers/usb/renesas_usbhs/pipe.h |    4 +++
- 4 files changed, 88 insertions(+), 6 deletions(-)
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
--- 
-1.7.9.5
+ arch/arm/boot/dts/r8a7778.dtsi |    6 ++++++
+ 1 file changed, 6 insertions(+)
 
+--- 0001/arch/arm/boot/dts/r8a7778.dtsi
++++ work/arch/arm/boot/dts/r8a7778.dtsi	2014-08-20 21:04:52.000000000 +0900
+@@ -23,8 +23,14 @@
+ 	interrupt-parent = <&gic>;
+ 
+ 	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
+ 		cpu@0 {
++			device_type = "cpu";
+ 			compatible = "arm,cortex-a9";
++			reg = <0>;
++			clock-frequency = <800000000>;
+ 		};
+ 	};
+ 
