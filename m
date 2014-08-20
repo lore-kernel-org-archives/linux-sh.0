@@ -1,67 +1,84 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 29 Aug 2014 13:26:20 +0000
-Subject: [PATCH 3/5] ARM: shmobile: r8a7740: Use rmobile_add_devices_to_domains()
-Message-Id: <1409318782-28133-4-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 20 Aug 2014 00:23:53 +0000
+Subject: [PATCH 02/12] ARM: shmobile: henninger: add VIN0/ADV7180 DT support
+Message-Id: <8d62f4f75320db5e95d3610547a26e4487c30742.1408492753.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1408492753.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408492753.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Use a table and the rmobile_add_devices_to_domains() helper function to
-add all platform devices to their power domains at once, which is more
-size-efficient than calling rmobile_add_device_to_domain() explicitly
-for all devices individually.
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Define the Henninger board dependent part of the VIN0 device node. Add the
+device node for Analog Devices ADV7180 video decoder to I2C2  bus. Add the
+necessary subnodes to interconnect VIN0 and ADV7180 devices.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7740.c |   26 +++++++++++++++-----------
- 1 file changed, 15 insertions(+), 11 deletions(-)
+ arch/arm/boot/dts/r8a7791-henninger.dts | 35 +++++++++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index daea3a344121..8894e1b7ab0e 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -745,6 +745,19 @@ static void r8a7740_i2c_workaround(struct platform_device *pdev)
- 
- void __init r8a7740_add_standard_devices(void)
- {
-+	static struct pm_domain_device domain_devices[] __initdata = {
-+		{ "A3SP", &scif0_device },
-+		{ "A3SP", &scif1_device },
-+		{ "A3SP", &scif2_device },
-+		{ "A3SP", &scif3_device },
-+		{ "A3SP", &scif4_device },
-+		{ "A3SP", &scif5_device },
-+		{ "A3SP", &scif6_device },
-+		{ "A3SP", &scif7_device },
-+		{ "A3SP", &scif8_device },
-+		{ "A3SP", &i2c1_device },
-+	};
+diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
+index 3a2ef0a..f1b56de 100644
+--- a/arch/arm/boot/dts/r8a7791-henninger.dts
++++ b/arch/arm/boot/dts/r8a7791-henninger.dts
+@@ -135,6 +135,11 @@
+ 		renesas,groups = "usb1";
+ 		renesas,function = "usb1";
+ 	};
 +
- 	/* I2C work-around */
- 	r8a7740_i2c_workaround(&i2c0_device);
- 	r8a7740_i2c_workaround(&i2c1_device);
-@@ -758,17 +771,8 @@ void __init r8a7740_add_standard_devices(void)
- 			     ARRAY_SIZE(r8a7740_late_devices));
++	vin0_pins: vin0 {
++		renesas,groups = "vin0_data8", "vin0_clk";
++		renesas,function = "vin0";
++	};
+ };
  
- 	/* add devices to PM domain  */
--
--	rmobile_add_device_to_domain("A3SP",	&scif0_device);
--	rmobile_add_device_to_domain("A3SP",	&scif1_device);
--	rmobile_add_device_to_domain("A3SP",	&scif2_device);
--	rmobile_add_device_to_domain("A3SP",	&scif3_device);
--	rmobile_add_device_to_domain("A3SP",	&scif4_device);
--	rmobile_add_device_to_domain("A3SP",	&scif5_device);
--	rmobile_add_device_to_domain("A3SP",	&scif6_device);
--	rmobile_add_device_to_domain("A3SP",	&scif7_device);
--	rmobile_add_device_to_domain("A3SP",	&scif8_device);
--	rmobile_add_device_to_domain("A3SP",	&i2c1_device);
-+	rmobile_add_devices_to_domains(domain_devices,
-+				       ARRAY_SIZE(domain_devices));
- }
+ &scif0 {
+@@ -191,6 +196,19 @@
  
- void __init r8a7740_add_early_devices(void)
+ 	status = "okay";
+ 	clock-frequency = <400000>;
++
++	composite-in@20 {
++		compatible = "adi,adv7180";
++		reg = <0x20>;
++		remote = <&vin0>;
++
++		port {
++			adv7180: endpoint {
++				bus-width = <8>;
++				remote-endpoint = <&vin0ep>;
++			};
++		};
++	};
+ };
+ 
+ &qspi {
+@@ -260,3 +278,20 @@
+ &pciec {
+ 	status = "okay";
+ };
++
++/* composite video input */
++&vin0 {
++	status = "ok";
++	pinctrl-0 = <&vin0_pins>;
++	pinctrl-names = "default";
++
++	port {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		vin0ep: endpoint {
++			remote-endpoint = <&adv7180>;
++			bus-width = <8>;
++		};
++	};
++};
 -- 
-1.7.9.5
+2.0.1
 
