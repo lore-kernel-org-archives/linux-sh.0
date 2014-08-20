@@ -1,39 +1,35 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 20 Aug 2014 13:31:21 +0000
-Subject: [PATCH 00/06] ARM: shmobile: Kconfig and Makefile cleanups
-Message-Id: <20140820133121.808.91022.sendpatchset@w520>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 20 Aug 2014 14:26:13 +0000
+Subject: Re: [PATCH 00/06] ARM: shmobile: Kconfig and Makefile cleanups
+Message-Id: <CAMuHMdWH0JjA8wixmGFxvPvfRdFq0HWR9kft3AstZ1QoARJJcg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20140820133121.808.91022.sendpatchset@w520>
+In-Reply-To: <20140820133121.808.91022.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-ARM: shmobile: Kconfig and Makefile cleanups
+On Wed, Aug 20, 2014 at 3:31 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> ARM: shmobile: Kconfig and Makefile cleanups
+>
+> [PATCH 01/06] ARM: shmobile: Consolidate GPIOLIB Kconfig bits
+> [PATCH 02/06] ARM: shmobile: Introduce a Kconfig entry for R-Mobile
+> [PATCH 03/06] ARM: shmobile: Introduce a Kconfig entry for R-Car Gen1
+> [PATCH 04/06] ARM: shmobile: Introduce a Kconfig entry for R-Car Gen2
+> [PATCH 05/06] ARM: shmobile: Cleanup pm-rcar.o build using Kconfig
+> [PATCH 06/06] ARM: shmobile: Cleanup pm-rmobile.o build using Kconfig
 
-[PATCH 01/06] ARM: shmobile: Consolidate GPIOLIB Kconfig bits
-[PATCH 02/06] ARM: shmobile: Introduce a Kconfig entry for R-Mobile
-[PATCH 03/06] ARM: shmobile: Introduce a Kconfig entry for R-Car Gen1
-[PATCH 04/06] ARM: shmobile: Introduce a Kconfig entry for R-Car Gen2
-[PATCH 05/06] ARM: shmobile: Cleanup pm-rcar.o build using Kconfig
-[PATCH 06/06] ARM: shmobile: Cleanup pm-rmobile.o build using Kconfig
+For 02-05:
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Update the ARM mach-shmobile Kconfig and Makefile to prepare for
-multiplatform support of R-Mobile SoCs. While at it do various
-cleanups - thanks to Simon Horman for suggesting using Kconfig
-for pm-rmobile.o. I applied the same idea to patch 5. Thanks to
-Geert Uytterhoeven for pointing out the mess in the Kconfig files,
-hopefully this cleanup series is a step in the right direction.
+Gr{oetje,eeting}s,
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
+                        Geert
 
- Written on top of renesas-devel-20140820-v3.17-rc1
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
- Only lightly build tested. 
-
- arch/arm/mach-shmobile/Kconfig      |   66 +++++++++++++++++++----------------
- arch/arm/mach-shmobile/Makefile     |   36 ++++++++-----------
- arch/arm/mach-shmobile/pm-rcar.c    |    4 --
- arch/arm/mach-shmobile/pm-rmobile.c |    2 -
- arch/arm/mach-shmobile/pm-rmobile.h |    4 +-
- 5 files changed, 54 insertions(+), 58 deletions(-)
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
