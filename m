@@ -1,47 +1,32 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Thu, 28 Aug 2014 15:01:05 +0000
-Subject: Re: [PATCH] ASoC: Allow SND_SOC_WM8978 to be selected manually
-Message-Id: <20140828150105.GB29327@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="b5gNqxB1S1yM7hjW"
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 20 Aug 2014 13:03:30 +0000
+Subject: [PATCH 10/10] ARM: shmobile: kzm9g: Use shmobile_init_delay()
+Message-Id: <20140820130330.32075.37853.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409230104-22750-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1409230104-22750-1-git-send-email-geert+renesas@glider.be>
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Liam Girdwood <lgirdwood@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, alsa-devel@alsa-project.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+From: Magnus Damm <damm+renesas@opensource.se>
 
---b5gNqxB1S1yM7hjW
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Adjust the KZM9G board support code to use shmobile_init_delay()
+together with CPU Frequency settings from the DTS.
 
-On Thu, Aug 28, 2014 at 02:48:24PM +0200, Geert Uytterhoeven wrote:
-> When using a DT-based multi-platform kernel, there's not always Kconfig
-> logic that selects the right codec driver.
-> Allow the user to manually select WM8978.
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-Applied, thanks.
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
---b5gNqxB1S1yM7hjW
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAEBAgAGBQJT/0QtAAoJELSic+t+oim9B3MP/1OV+gOwt0lH7RQbzJL/bVen
-txlonhecLw2M9U20ESpg48o5ZaZz1/1zm15cKorZc3iUiJAPICXKD9/JaVqztMGE
-xIF1MPemIqRm2ziCEJ9RvqlFjPSSVcUaJCX30pwfLlDYpBtNrw2y2w6+W6eKkivy
-yZEl2M89n7QdmEHX93vabd5NlUsgPrYo9uFMgTUbhxzJD0Ogs0ebA+Xrgq7cDV4D
-7865DpeV+5Lj0OnwjWhAzujphxPls95n1x/8iPjvej9+1BEnELOpLiFYtCSg3uHx
-wStmwgb6auvaR/KU1wssATGlpqYQyjD4WA6M4g0mjZce/uaFk1jamk6X0ItiEbwJ
-uH9hq7KIvHcgeTW9+HElhVPEOVOoEMNM/Mo5l/63JIKq1mhKz6SBNc9MQCw4gQYz
-mWC9T0KA6JTzflUdAdlJviYIfQ56VhfZ8Fax81fhK0+i1jmW4s7+ExXq43AfWGbe
-YJF6OGLfIxg5ICsfF1WCoNJAVBRC+E7RGdGRCp9T3epOa0/289QUzHAoPCCdCFnf
-iQMHV9nPgWIO/qa131ZbkCzKvsyb0PbALp8HqbHh9ACDb5wwrIspuJkgKpFJetMG
-uj/+5mGukvbcCh0/NszqAh9+FseHWIY8OV8p/ZtPKUJVEyLT50vsLOU49OfyvZQl
-8tJgbS/KEfI5HVm9I8ks
-=Etaj
------END PGP SIGNATURE-----
-
---b5gNqxB1S1yM7hjW--
+--- 0001/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ work/arch/arm/mach-shmobile/board-kzm9g-reference.c	2014-08-20 21:14:41.000000000 +0900
+@@ -51,7 +51,7 @@ static const char *kzm9g_boards_compat_d
+ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
+ 	.smp		= smp_ops(sh73a0_smp_ops),
+ 	.map_io		= sh73a0_map_io,
+-	.init_early	= sh73a0_init_delay,
++	.init_early	= shmobile_init_delay,
+ 	.init_machine	= kzm_init,
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= kzm9g_boards_compat_dt,
