@@ -1,85 +1,67 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Fri, 22 Aug 2014 08:40:40 +0000
-Subject: [PATCH 07/10 v2 resend] mmc: tmio: remove Renesas specific #ifdef
-Message-Id: <87vbpk6ho8.wl%kuninori.morimoto.gx@gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 20 Aug 2014 13:31:54 +0000
+Subject: [PATCH 03/06] ARM: shmobile: Introduce a Kconfig entry for R-Car Gen1
+Message-Id: <20140820133154.808.36321.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
-	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
-	<53AD638C.5060907@renesas.com>
-	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
-	<8761hk7wgy.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <8761hk7wgy.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
-Cc: Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-This patch adds new TMIO_MMC_HAVE_CTL_DMA_REG flag,
-and remove Renesas specific #ifdef from tmio driver
+Add a Kconfig entry for R-Car Generation 1 SoCs that
+enables TMU timer and the INTC IRQPIN driver.
 
-Tested-by: Nguyen Xuan Nui <nx-nui@jinso.co.jp>
-Tested-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |    5 +++++
- drivers/mmc/host/tmio_mmc_dma.c   |    6 ++----
- include/linux/mfd/tmio.h          |    5 +++++
- 3 files changed, 12 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index ad00fb8..b6f94c8 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -235,6 +235,11 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	 */
- 	mmc_data->flags |= TMIO_MMC_SDIO_STATUS_QUIRK;
- 
-+	/*
-+	 * All SDHI have DMA control register
-+	 */
-+	mmc_data->flags |= TMIO_MMC_HAVE_CTL_DMA_REG;
-+
- 	if (of_id && of_id->data) {
- 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
- 		mmc_data->flags |= of_data->tmio_flags;
-diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
-index bd646b0..7d07738 100644
---- a/drivers/mmc/host/tmio_mmc_dma.c
-+++ b/drivers/mmc/host/tmio_mmc_dma.c
-@@ -28,10 +28,8 @@ void tmio_mmc_enable_dma(struct tmio_mmc_host *host, bool enable)
- 	if (!host->chan_tx || !host->chan_rx)
- 		return;
- 
--#if defined(CONFIG_SUPERH) || defined(CONFIG_ARCH_SHMOBILE)
--	/* Switch DMA mode on or off - SuperH specific? */
--	sd_ctrl_write16(host, CTL_DMA_ENABLE, enable ? 2 : 0);
--#endif
-+	if (host->pdata->flags & TMIO_MMC_HAVE_CTL_DMA_REG)
-+		sd_ctrl_write16(host, CTL_DMA_ENABLE, enable ? 2 : 0);
- }
- 
- void tmio_mmc_abort_dma(struct tmio_mmc_host *host)
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index a7493ae..adcb0cd 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -94,6 +94,11 @@
-  */
- #define TMIO_MMC_SDIO_STATUS_QUIRK	(1 << 8)
- 
-+/*
-+ * Some controllers have DMA enable/disable register
-+ */
-+#define TMIO_MMC_HAVE_CTL_DMA_REG	(1 << 9)
-+
- int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
- int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
- void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
--- 
-1.7.9.5
+ arch/arm/mach-shmobile/Kconfig |   14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
 
+--- 0003/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2014-08-19 21:55:09.000000000 +0900
+@@ -2,6 +2,11 @@ config ARCH_SHMOBILE
+ 	bool
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 
++config ARCH_RCAR_GEN1
++	bool
++	select RENESAS_INTC_IRQPIN
++	select SYS_SUPPORTS_SH_TMU
++
+ config ARCH_RMOBILE
+ 	bool
+ 	select SYS_SUPPORTS_SH_CMT
+@@ -34,8 +39,7 @@ config ARCH_R7S72100
+ 
+ config ARCH_R8A7779
+ 	bool "R-Car H1 (R8A77790)"
+-	select RENESAS_INTC_IRQPIN
+-	select SYS_SUPPORTS_SH_TMU
++	select ARCH_RCAR_GEN1
+ 
+ config ARCH_R8A7790
+ 	bool "R-Car H2 (R8A77900)"
+@@ -105,19 +109,17 @@ config ARCH_R8A7740
+ 
+ config ARCH_R8A7778
+ 	bool "R-Car M1A (R8A77781)"
++	select ARCH_RCAR_GEN1
+ 	select CPU_V7
+ 	select SH_CLK_CPG
+ 	select ARM_GIC
+-	select SYS_SUPPORTS_SH_TMU
+-	select RENESAS_INTC_IRQPIN
+ 
+ config ARCH_R8A7779
+ 	bool "R-Car H1 (R8A77790)"
++	select ARCH_RCAR_GEN1
+ 	select ARM_GIC
+ 	select CPU_V7
+ 	select SH_CLK_CPG
+-	select RENESAS_INTC_IRQPIN
+-	select SYS_SUPPORTS_SH_TMU
+ 
+ config ARCH_R8A7790
+ 	bool "R-Car H2 (R8A77900)"
