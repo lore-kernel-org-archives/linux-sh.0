@@ -1,48 +1,64 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 29 Aug 2014 00:32:01 +0000
-Subject: Re: [PATCH 00/05] ARM: shmobile: r8a7740 and Armadillo cleanup
-Message-Id: <20140829003200.GL16165@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 20 Aug 2014 00:23:58 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC DT Updates for v3.18
+Message-Id: <cover.1408492753.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140828033443.18867.55162.sendpatchset@w520>
-In-Reply-To: <20140828033443.18867.55162.sendpatchset@w520>
+References: <cover.1398216022.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Aug 28, 2014 at 01:57:23PM +0200, Geert Uytterhoeven wrote:
-> Hi Magnus,
-> 
-> On Thu, Aug 28, 2014 at 5:34 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> > ARM: shmobile: r8a7740 and Armadillo cleanup
-> >
-> > [PATCH 01/05] ARM: shmobile: armadillo800eva: Sync DTS
-> > [PATCH 02/05] ARM: shmobile: armadillo800eva: Build DTS for multiplatform
-> > [PATCH 03/05] ARM: shmobile: r8a7740: Add restart callback
-> > [PATCH 04/05] ARM: shmobile: armadillo800eva reference: Remove C board code
-> > [PATCH 05/05] ARM: shmobile: armadillo800eva reference: Remove DTS
-> >
-> > This patch series cleans up the Armadillo board support by removing
-> > the DT reference implementation. To not lose functionality the reset
-> > handling code is moved from (incorrect) board specific location to
-> > the r8a7740 SoC code.
-> >
-> > With this patch series applied the "DT Reference" case is now replaced
-> > by r8a7740 Multiplatform using the same DTS/DTB as the r8a7740 legacy
-> > case.
-> >
-> > Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> 
-> Thanks, works fine!
-> 
-> Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Thanks. I have tentatively queued this up.
+Please consider these Renesas ARM based SoC DT updates for v3.18.
 
-I got some push back from Olof [CCed] about putting cleanups on top of
-development when sending pull-requests for v3.17. This series falls
-into the same category: cleaning up board and related files on top
-of changes to initialise devices using DT.
 
-Olof, ideally I'd like this to go into v3.18.
-Let me know if you have preference to delay it.
+The following changes since commit 7d1311b93e58ed55f3a31cc8f94c4b8fe988a2b9:
+
+  Linux 3.17-rc1 (2014-08-16 10:40:26 -0600)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-for-v3.18
+
+for you to fetch changes up to d594c9775409a4276133db5e34dbd791329c5eae:
+
+  ARM: shmobile: lager: add VIN1/ADV7180 device nodes (2014-08-17 09:44:07 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC DT Updates for v3.18
+
+* Add VIN support to lager/r8a7790, koelsch/r8a7791 and henninger/r8a7791
+* Enable DMA for MSIOF and QSPI on r8a7790 and r8a7791
+
+----------------------------------------------------------------
+Ben Dooks (2):
+      ARM: shmobile: r8a7790: add VIN device nodes
+      ARM: shmobile: lager: add VIN1/ADV7180 device nodes
+
+Geert Uytterhoeven (4):
+      ARM: shmobile: r8a7791 dtsi: Enable DMA for QSPI
+      ARM: shmobile: r8a7791 dtsi: Enable DMA for MSIOF
+      ARM: shmobile: r8a7790 dtsi: Enable DMA for QSPI
+      ARM: shmobile: r8a7790 dtsi: Enable DMA for MSIOF
+
+Laurent Pinchart (3):
+      ARM: shmobile: r8a7790: Add DMAC clocks to DT
+      ARM: shmobile: r8a7790: Add DMAC devices to DT
+      ARM: shmobile: r8a7791: Add DMAC devices to DT
+
+Sergei Shtylyov (2):
+      ARM: shmobile: r8a7791: add VIN DT support
+      ARM: shmobile: henninger: add VIN0/ADV7180 DT support
+
+sergei.shtylyov@cogentembedded.com (1):
+      ARM: shmobile: koelsch: add VIN1/ADV7180 DT support
+
+ arch/arm/boot/dts/r8a7790-lager.dts     |  36 ++++++++++
+ arch/arm/boot/dts/r8a7790.dtsi          | 120 ++++++++++++++++++++++++++++++--
+ arch/arm/boot/dts/r8a7791-henninger.dts |  35 ++++++++++
+ arch/arm/boot/dts/r8a7791-koelsch.dts   |  35 ++++++++++
+ arch/arm/boot/dts/r8a7791.dtsi          | 101 ++++++++++++++++++++++++++-
+ 5 files changed, 318 insertions(+), 9 deletions(-)
