@@ -1,49 +1,122 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 22 Aug 2014 01:46:06 +0000
-Subject: Re: [PATCH v2 3/5] ARM: shmobile: armadillo800eva-reference: Sort includes
-Message-Id: <20140822014606.GB9099@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 20 Aug 2014 13:39:23 +0000
+Subject: [PATCH 2/2] ARM: shmobile: Move legacy INTC definitions from irqs.h to intc.h
+Message-Id: <1408541963-20736-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1407801882-2561-1-git-send-email-horms+renesas@verge.net.au>
- <1407801882-2561-4-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1407801882-2561-4-git-send-email-horms+renesas@verge.net.au>
+References: <1408541963-20736-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1408541963-20736-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Tue, Aug 12, 2014 at 09:04:40AM +0900, Simon Horman wrote:
-> Sorted includes seems to be the done thing these days.
-> 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Move all definitions for legacy INTC from the common "irqs.h" to the
+INTC-specific "intc.h".
+Include "intc.h" in sh7372/sh73a0 CPU and board files where needed.
 
-I have queued up this patch but I am leaving the rest of the series for
-now.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-shmobile/board-kzm9g.c    | 1 +
+ arch/arm/mach-shmobile/board-mackerel.c | 1 +
+ arch/arm/mach-shmobile/intc.h           | 6 ++++++
+ arch/arm/mach-shmobile/irqs.h           | 6 ------
+ arch/arm/mach-shmobile/setup-sh7372.c   | 1 +
+ arch/arm/mach-shmobile/setup-sh73a0.c   | 1 +
+ 6 files changed, 10 insertions(+), 6 deletions(-)
 
-> ---
->  arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-> index 84bc6cb..c392632 100644
-> --- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-> +++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-> @@ -21,9 +21,9 @@
->  
->  #include <linux/clk.h>
->  #include <linux/err.h>
-> -#include <linux/kernel.h>
->  #include <linux/gpio.h>
->  #include <linux/io.h>
-> +#include <linux/kernel.h>
->  
->  #include <asm/mach/arch.h>
->  #include <asm/hardware/cache-l2x0.h>
-> -- 
-> 2.0.0.rc2
-> 
-> 
-> _______________________________________________
-> linux-arm-kernel mailing list
-> linux-arm-kernel@lists.infradead.org
-> http://lists.infradead.org/mailman/listinfo/linux-arm-kernel
-> 
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index 36593cb20e57..77e36fa0b142 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -50,6 +50,7 @@
+ #include <video/sh_mobile_lcdc.h>
+ 
+ #include "common.h"
++#include "intc.h"
+ #include "irqs.h"
+ #include "sh73a0.h"
+ 
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 79f448e93abb..b7c4261492b0 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -63,6 +63,7 @@
+ #include <asm/mach-types.h>
+ 
+ #include "common.h"
++#include "intc.h"
+ #include "irqs.h"
+ #include "pm-rmobile.h"
+ #include "sh-gpio.h"
+diff --git a/arch/arm/mach-shmobile/intc.h b/arch/arm/mach-shmobile/intc.h
+index a5603c76cfe0..0313cf798c32 100644
+--- a/arch/arm/mach-shmobile/intc.h
++++ b/arch/arm/mach-shmobile/intc.h
+@@ -1,5 +1,6 @@
+ #ifndef __ASM_MACH_INTC_H
+ #define __ASM_MACH_INTC_H
++
+ #include <linux/sh_intc.h>
+ 
+ #define INTC_IRQ_PINS_ENUM_16L(p)				\
+@@ -287,4 +288,9 @@ static struct intc_desc p ## _desc __initdata = {			\
+ 			     p ## _sense_registers, NULL),		\
+ }
+ 
++/* INTCS */
++#define INTCS_VECT_BASE		0x3400
++#define INTCS_VECT(n, vect)	INTC_VECT((n), INTCS_VECT_BASE + (vect))
++#define intcs_evt2irq(evt)	evt2irq(INTCS_VECT_BASE + (evt))
++
+ #endif  /* __ASM_MACH_INTC_H */
+diff --git a/arch/arm/mach-shmobile/irqs.h b/arch/arm/mach-shmobile/irqs.h
+index 8e28223f1b3c..3070f6d887eb 100644
+--- a/arch/arm/mach-shmobile/irqs.h
++++ b/arch/arm/mach-shmobile/irqs.h
+@@ -1,18 +1,12 @@
+ #ifndef __SHMOBILE_IRQS_H
+ #define __SHMOBILE_IRQS_H
+ 
+-#include <linux/sh_intc.h>
+ #include "include/mach/irqs.h"
+ 
+ /* GIC */
+ #define gic_spi(nr)		((nr) + 32)
+ #define gic_iid(nr)		(nr) /* ICCIAR / interrupt ID */
+ 
+-/* INTCS */
+-#define INTCS_VECT_BASE		0x3400
+-#define INTCS_VECT(n, vect)	INTC_VECT((n), INTCS_VECT_BASE + (vect))
+-#define intcs_evt2irq(evt)	evt2irq(INTCS_VECT_BASE + (evt))
+-
+ /* GPIO IRQ */
+ #define _GPIO_IRQ_BASE		2500
+ #define GPIO_IRQ_BASE(x)	(_GPIO_IRQ_BASE + (32 * x))
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 3731eccccef4..eaf5d1332c4b 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -41,6 +41,7 @@
+ 
+ #include "common.h"
+ #include "dma-register.h"
++#include "intc.h"
+ #include "irqs.h"
+ #include "pm-rmobile.h"
+ #include "sh7372.h"
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index e7a0296b81b1..4c7022830e30 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -40,6 +40,7 @@
+ 
+ #include "common.h"
+ #include "dma-register.h"
++#include "intc.h"
+ #include "irqs.h"
+ #include "sh73a0.h"
+ 
+-- 
+1.9.1
+
