@@ -1,69 +1,58 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sat, 23 Aug 2014 03:08:50 +0000
-Subject: Re: [PATCH 08/11] i2c: rcar: remove spinlock
-Message-Id: <20140823030849.GA1305@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nFreZHaLTZJo0R7j"
+From: Vivek Gautam <gautam.vivek@samsung.com>
+Date: Thu, 21 Aug 2014 12:56:23 +0000
+Subject: Re: [PATCH v3] usb: hcd: add generic PHY support
+Message-Id: <CAFp+6iEABcQuEkpQGB4Yb2C_i8YsVWXf=31mbm7Go1oiXQZ2xw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401263086-13720-1-git-send-email-wsa@the-dreams.de>
- <1401263086-13720-9-git-send-email-wsa@the-dreams.de>
- <53F7D83A.5030903@cogentembedded.com>
-In-Reply-To: <53F7D83A.5030903@cogentembedded.com>
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+References: <538891DC.605@renesas.com>
+In-Reply-To: <538891DC.605@renesas.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
+
+On Fri, May 30, 2014 at 7:46 PM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+> Hello.
+>
+> On 05/30/2014 06:12 PM, Yoshihiro Shimoda wrote:
+>
+>>  From Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+>
+>
+>    Should be "From:".
+>
+>
+>> Add the generic PHY support, analogous to the USB PHY support. Intended it
+>> to be
+>> used with the PCI EHCI/OHCI drivers and the xHCI platform driver.
+>
+>
+>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+>> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+>> ---
+>> This patch is against the 'usb-next' branch of Greg KH's 'usb.git' repo.
+>> (commit id = 70d2f61fc7559df3d5be32a9d01efdb9ee1b11d8)
+>
+>
+>    I was pondering on reposting this patch, along with the R8A779x device
+> tree changes using it as Greg KH requested to see the users of this patch...
+
+Are we planning a repost of this patch, since we definitely have user
+for this change [1],
+apart from Antoine's series [2] which makes changes on top of this patch.
+
+It will be easier for us if this patch gets pulled in for 3.18.
+
+[1] [PATCH v4 2/4] usb: host: xhci-plat: Get PHYs for xhci's hcds
+     http://lists.infradead.org/pipermail/linux-arm-kernel/2014-July/272833.html
+
+[2] [PATCH v2 0/8] usb: add support for the generic PHY framework
+     http://www.spinics.net/lists/linux-usb/msg110557.html
 
 
---nFreZHaLTZJo0R7j
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
 
-
-> >The i2c core has per-adapter locks, so no need to protect again.
->=20
->    The core's lock is unable to protect from the IRQs. So I'm proposing to
-> revert this patch. It's a pity I hadn't noticed this issue when the patch
-> was posted.
-
-Yes, you are right. I noticed a while ago, too, but then got
-side-tracked :(
-
->    I'm afraid this unlock is misplaced, the code continues to access the
-> registers.
->=20
-> >  	ret =3D rcar_i2c_bus_barrier(priv);
->=20
->    Should probably unlock here instead?
-
-I can check details next week earliest. If you are confident with your
-suggestions, feel free to send one patch with the revert and the updates
-you mentioned.
-
-Thanks,
-
-   Wolfram
-
-
---nFreZHaLTZJo0R7j
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJT+AXBAAoJEBQN5MwUoCm2vLYP/1mjkHo2Bq/AWmDe5ZbLAAqI
-J7fhRDrr8u0xMWjAJ1FC/UVO+MyP/OVsA6dIoIT/SYs/D64qNmJf21j6pteoXsHm
-bT04EtW6patH+sRTWZfqXpS/k9I/EYEL9bqjcbT/35nTAvBYZwFZJfeANBvDk3Eu
-SZdjzEyeV5/kYYYzJWm+ZDTwpNGyy7Yrx9W7lirF20rCOWZW+LGFxheagvrG6puC
-m+G3aHg9+V2yXDuRQIb47PicmbI4UCsi3+PRaud4A5+aI1l2hJ2bxbrlxciSExVK
-1iH/TRTXFrbjSDzuW1KYB0Y1IFnCYryyLGhRrNJDo+m87wdTJYugYKqJO8Cwqcse
-eB03JqYe+RIZztsUISO1FwGng+jUIkBEecB5rUmJD5pyop0XM943EVjXkxe20IS1
-m6XNy9nbQ13XP8tfsyP6V6Usjjgnq4HeJAQ4hukRv+YXAmJlv/7b1GrD8u0/6iUP
-B+VqnhJjpw1jaxhyNckY6I4xRGotR2T6ZQVSGmhdonIfT/MfxI/3pn01CGWnFQIE
-gdS7mDEr80ik8qMPmejXb2RJWrOYAU7jf2Ud02bptxLEuXuxqQ9Tt1PDNDSWpSXX
-qyjSn5gPcGWwKvL18TTvfcEavVLqghtZg1uF2a/LSBBq4Kc30xBlUAkKeK16nSW0
-E+0uukKh+jwLlVXY58M8
-=djJC
------END PGP SIGNATURE-----
-
---nFreZHaLTZJo0R7j--
+-- 
+Best Regards
+Vivek Gautam
+Samsung R&D Institute, Bangalore
+India
