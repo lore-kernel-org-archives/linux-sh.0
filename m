@@ -1,47 +1,31 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 13 Aug 2014 07:19:43 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 21 Aug 2014 19:09:37 +0000
 Subject: Re: ARM: shmobile: "i2c<m>" vs. "iic<n>" DT nodes and pinmux
-Message-Id: <CAMuHMdVVKOS=o-KSx1q05y_sRx5RcOMiUg8mN4fGM=UyGv1uog@mail.gmail.com>
+Message-Id: <53F643F1.9060409@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <CAMuHMdWqnMZQcRURufCxiGpbkK7ocjH8KnECxdWVPcxN-68J4g@mail.gmail.com>
-	<20140812214723.GA3443@katana>
-In-Reply-To: <20140812214723.GA3443@katana>
+In-Reply-To: <CAMuHMdWqnMZQcRURufCxiGpbkK7ocjH8KnECxdWVPcxN-68J4g-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>, Linux-sh list <linux-sh@vger.kernel.org>, Linux I2C <linux-i2c@vger.kernel.org>
+To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
+Cc: Linus Walleij <linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux I2C <linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Hi Wolfram,
+Hello.
 
-On Tue, Aug 12, 2014 at 11:47 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> On Tue, Aug 12, 2014 at 03:11:18PM +0200, Geert Uytterhoeven wrote:
->> On r8a7790, DT device nodes and C/DT pinmux data for IIC<n> are called
->> "iic<n>", with DT aliases from "i2c<m>" to the "iic<n>" DT nodes.
->> On r8a7791, DT device nodes and C/DT pinmux data for IIC<n> are called
->> "i2c<m>", with DT aliases from "i2c<m>" to the "i2c<m>" DT nodes.
->>
->> In light of the proliferation of other members of the R-Car Gen 2 families, is
->> there a plan to make this consistent?
->
-> The 'i2c'-prefix describes the IP core handled by the rcar driver. This
-> core is named i2c in the datasheets.
->
-> The 'iic'-prefix describes the IP core handled by the sh-mobile-driver.
-> This core is named iic(b) in the datasheets.
+On 08/12/2014 05:11 PM, Geert Uytterhoeven wrote:
 
-I know the difference between i2c and iic(b).
+> On r8a7790, DT device nodes and C/DT pinmux data for IIC<n> are called
+> "iic<n>", with DT aliases from "i2c<m>" to the "iic<n>" DT nodes.
+> On r8a7791, DT device nodes and C/DT pinmux data for IIC<n> are called
+> "i2c<m>", with DT aliases from "i2c<m>" to the "i2c<m>" DT nodes.
 
-However, the DT device nodes and C/DT pinmux data for iic(b) on r8a7791
-are called i2c, too, instead of iic.
+> In light of the proliferation of other members of the R-Car Gen 2 families, is
+> there a plan to make this consistent?
 
-Gr{oetje,eeting}s,
+    I can probably look at this since the SH-Mobile driver (and/or hardware?) 
+is clearly of better quality than R-Car one: I'm constantly getting -ENXIO and 
+-EBUSY from the latter trying to read images from ADV7180 I2C video decoder.
 
-                        Geert
+WBR, Sergei
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
