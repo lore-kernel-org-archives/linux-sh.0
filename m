@@ -1,59 +1,54 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 14 Aug 2014 16:57:23 +0000
-Subject: [PATCH 2/7] ARM: shmobile: ape6evm_defconfig: Enable missing hardware support
-Message-Id: <1408035448-8811-3-git-send-email-geert+renesas@glider.be>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 21 Aug 2014 20:53:53 +0000
+Subject: Re: [PATCH V2 3/5] ARM: shmobile: r8a7791: add IIC(B) cores to dtsi
+Message-Id: <53F65C61.6040700@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1394450820-8158-1-git-send-email-wsa@the-dreams.de>
+ <1394450820-8158-3-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1394450820-8158-3-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Based on the DTS
+Hello.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/configs/ape6evm_defconfig | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
+On 03/10/2014 03:26 PM, Wolfram Sang wrote:
 
-diff --git a/arch/arm/configs/ape6evm_defconfig b/arch/arm/configs/ape6evm_defconfig
-index bb396c0e5fda..b54b28fc5a70 100644
---- a/arch/arm/configs/ape6evm_defconfig
-+++ b/arch/arm/configs/ape6evm_defconfig
-@@ -12,7 +12,6 @@ CONFIG_KALLSYMS_ALL=y
- CONFIG_EMBEDDED=y
- CONFIG_PERF_EVENTS=y
- CONFIG_SLAB=y
--# CONFIG_BLOCK is not set
- CONFIG_ARCH_SHMOBILE_LEGACY=y
- CONFIG_ARCH_R8A73A4=y
- CONFIG_MACH_APE6EVM=y
-@@ -64,6 +63,8 @@ CONFIG_SERIAL_NONSTANDARD=y
- CONFIG_SERIAL_SH_SCI=y
- CONFIG_SERIAL_SH_SCI_NR_UARTS
- CONFIG_SERIAL_SH_SCI_CONSOLE=y
-+CONFIG_I2C=y
-+CONFIG_I2C_SH_MOBILE=y
- CONFIG_GPIO_SH_PFC=y
- CONFIG_GPIOLIB=y
- # CONFIG_HWMON is not set
-@@ -72,11 +73,17 @@ CONFIG_RCAR_THERMAL=y
- CONFIG_REGULATOR=y
- CONFIG_REGULATOR_FIXED_VOLTAGE=y
- CONFIG_REGULATOR_GPIO=y
-+CONFIG_REGULATOR_MAX8973=y
- # CONFIG_HID is not set
- # CONFIG_USB_SUPPORT is not set
-+CONFIG_MMC=y
-+CONFIG_MMC_SDHI=y
-+CONFIG_MMC_SH_MMCIF=y
- CONFIG_NEW_LEDS=y
- CONFIG_LEDS_CLASS=y
- CONFIG_LEDS_GPIO=y
-+CONFIG_DMADEVICES=y
-+CONFIG_SH_DMAE=y
- # CONFIG_IOMMU_SUPPORT is not set
- # CONFIG_DNOTIFY is not set
- CONFIG_TMPFS=y
--- 
-1.9.1
+> From: Wolfram Sang <wsa@sang-engineering.com>
+
+> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+> ---
+>
+> Changes since V1: use better compatible name "renesas,iic-r8a7791"
+
+>   arch/arm/boot/dts/r8a7791.dtsi | 36 ++++++++++++++++++++++++++++++++++++
+>   1 file changed, 36 insertions(+)
+
+> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+> index 858a8a923b00..f71670a5bfbc 100644
+> --- a/arch/arm/boot/dts/r8a7791.dtsi
+> +++ b/arch/arm/boot/dts/r8a7791.dtsi
+> @@ -27,6 +27,9 @@
+>   		i2c3 = &i2c3;
+>   		i2c4 = &i2c4;
+>   		i2c5 = &i2c5;
+> +		i2c6 = &i2c6;
+> +		i2c7 = &i2c7;
+> +		i2c8 = &i2c8;
+>   		spi0 = &qspi;
+>   		spi1 = &msiof0;
+>   		spi2 = &msiof1;
+[...]
+> @@ -244,6 +249,37 @@
+>   		status = "disabled";
+>   	};
+>
+> +	i2c6: i2c@e60b0000 {
+
+    Hm, you finally labelled the nodes "iic[0-3]:" in the R8A7790 patch but 
+not in this patch... what was the reason, did you just forgot to do it? Will 
+you fix this or should I?
+
+WBR, Sergei
 
