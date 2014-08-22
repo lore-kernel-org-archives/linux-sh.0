@@ -1,44 +1,85 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 17 Aug 2014 20:58:14 +0000
-Subject: Re: Build regressions/improvements in v3.17-rc1
-Message-Id: <CAMuHMdUrBYrHiwj=S-kWYEHb+1CX2VUgYmvJhj_aaC-8ChFL_g@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Fri, 22 Aug 2014 08:40:40 +0000
+Subject: [PATCH 07/10 v2 resend] mmc: tmio: remove Renesas specific #ifdef
+Message-Id: <87vbpk6ho8.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1408308358-27494-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1408308358-27494-1-git-send-email-geert@linux-m68k.org>
+References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
+	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
+	<53AD638C.5060907@renesas.com>
+	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+	<8761hk7wgy.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <8761hk7wgy.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-Cc: "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>, uml-devel <user-mode-linux-devel@lists.sourceforge.net>, Linux-sh list <linux-sh@vger.kernel.org>
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-On Sun, Aug 17, 2014 at 10:45 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> 16 regressions:
->   + /scratch/kisskb/src/arch/powerpc/include/asm/floppy.h: error: 'isa_bridge_pcidev' undeclared (first use in this function):  => 142:20
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-powerpc-randconfig
+This patch adds new TMIO_MMC_HAVE_CTL_DMA_REG flag,
+and remove Renesas specific #ifdef from tmio driver
 
->   + /scratch/kisskb/src/fs/hostfs/hostfs_user.c: error: 'AT_FDCWD' undeclared (first use in this function):  => 378
->   + /scratch/kisskb/src/fs/hostfs/hostfs_user.c: error: (Each undeclared identifier is reported only once:  => 378
->   + /scratch/kisskb/src/fs/hostfs/hostfs_user.c: error: for each function it appears in.):  => 378
+Tested-by: Nguyen Xuan Nui <nx-nui@jinso.co.jp>
+Tested-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c |    5 +++++
+ drivers/mmc/host/tmio_mmc_dma.c   |    6 ++----
+ include/linux/mfd/tmio.h          |    5 +++++
+ 3 files changed, 12 insertions(+), 4 deletions(-)
 
-um-defconfig
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index ad00fb8..b6f94c8 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -235,6 +235,11 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	 */
+ 	mmc_data->flags |= TMIO_MMC_SDIO_STATUS_QUIRK;
+ 
++	/*
++	 * All SDHI have DMA control register
++	 */
++	mmc_data->flags |= TMIO_MMC_HAVE_CTL_DMA_REG;
++
+ 	if (of_id && of_id->data) {
+ 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
+ 		mmc_data->flags |= of_data->tmio_flags;
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index bd646b0..7d07738 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -28,10 +28,8 @@ void tmio_mmc_enable_dma(struct tmio_mmc_host *host, bool enable)
+ 	if (!host->chan_tx || !host->chan_rx)
+ 		return;
+ 
+-#if defined(CONFIG_SUPERH) || defined(CONFIG_ARCH_SHMOBILE)
+-	/* Switch DMA mode on or off - SuperH specific? */
+-	sd_ctrl_write16(host, CTL_DMA_ENABLE, enable ? 2 : 0);
+-#endif
++	if (host->pdata->flags & TMIO_MMC_HAVE_CTL_DMA_REG)
++		sd_ctrl_write16(host, CTL_DMA_ENABLE, enable ? 2 : 0);
+ }
+ 
+ void tmio_mmc_abort_dma(struct tmio_mmc_host *host)
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index a7493ae..adcb0cd 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -94,6 +94,11 @@
+  */
+ #define TMIO_MMC_SDIO_STATUS_QUIRK	(1 << 8)
+ 
++/*
++ * Some controllers have DMA enable/disable register
++ */
++#define TMIO_MMC_HAVE_CTL_DMA_REG	(1 << 9)
++
+ int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
+ int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
+ void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
+-- 
+1.7.9.5
 
->   + /scratch/kisskb/src/kernel/locking/mcs_spinlock.h: error: implicit declaration of function 'cpu_relax_lowlatency' [-Werror=implicit-function-declaration]:  => 87:2
-
-frv-defconfig (somehow the fix never made it past Linus' mbox)
-
->   + error: "flush_icache_range" [drivers/misc/lkdtm.ko] undefined!:  => N/A
-
-sh-allmodconfig (woohoo, this means it has reached the link phase!)
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
