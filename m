@@ -1,54 +1,76 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 29 Aug 2014 13:50:17 +0000
-Subject: [PATCH 11/11] [WIP] ARM: shmobile: r8a7740: Add A3SM pm domain support
-Message-Id: <1409320217-13278-12-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Fri, 22 Aug 2014 08:40:25 +0000
+Subject: [PATCH 06/10 v2 resend] mmc: tmio: check ILL_FUNC instead of CBSY
+Message-Id: <87wqa06hoo.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
+References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
+	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
+	<53AD638C.5060907@renesas.com>
+	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+	<8761hk7wgy.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <8761hk7wgy.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-Add support for the A3SM power domain, and hook it up as a subdomain of
-A4S.
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-This domain contains the System CPU (Cortex-A9) hardware block, and thus
-must be controlled by the always-on governor.
+Some controllers need to check SD bus status when writing data.
+Then, it checks ILL_FUNC bit on SD_INFO2 register,
+and this method is controlled via TMIO_MMC_HAS_IDLE_WAIT flags.
+Same method is required on tmio_mmc_data_irq() which will
+be called after writing data.
 
-FIXME: A3SM is never powered down during s2ram, even when adding a
-       .suspend method like A4S has.
-       As A3SM is a subdomain of A4S, A4S is no longer powered down
-       during s2ram.
+Current driver is checking CBSY bit for this purpose,
+but, some controllers doesn't have CBSY bit.
+This patch checks ILL_FUNC bit instead of CBSY bit
+if it has TMIO_MMC_HAS_IDLE_WAIT flags
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+[Kuninori Morimoto: tidyuped for upstreaming]
+
+Tested-by: Nguyen Xuan Nui <nx-nui@jinso.co.jp>
+Tested-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/pm-r8a7740.c |    5 +++++
- 1 file changed, 5 insertions(+)
+ drivers/mmc/host/tmio_mmc_pio.c |   13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
-index d563e623bcb5..23254c31efd9 100644
---- a/arch/arm/mach-shmobile/pm-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7740.c
-@@ -61,6 +61,10 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
- 		.no_debug	= true,
- 		.suspend	= r8a7740_pd_a3sp_suspend,
- 	}, {
-+		.genpd.name	= "A3SM",
-+		.bit_shift	= 12,
-+		.gov		= &pm_domain_always_on_gov,
-+	}, {
- 		.genpd.name	= "A3SG",
- 		.bit_shift	= 13,
- 	}, {
-@@ -74,6 +78,7 @@ void __init r8a7740_init_pm_domains(void)
- 	rmobile_init_domains(r8a7740_pm_domains, ARRAY_SIZE(r8a7740_pm_domains));
- 	pm_genpd_add_subdomain_names("A4R", "A3RV");
- 	pm_genpd_add_subdomain_names("A4S", "A3SP");
-+	pm_genpd_add_subdomain_names("A4S", "A3SM");
- 	pm_genpd_add_subdomain_names("A4S", "A3SG");
- }
- #endif /* CONFIG_PM && !CONFIG_ARCH_MULTIPLATFORM */
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index e51a993..b19d0cd 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -475,6 +475,9 @@ static void tmio_mmc_data_irq(struct tmio_mmc_host *host)
+ 		goto out;
+ 
+ 	if (host->chan_tx && (data->flags & MMC_DATA_WRITE) && !host->force_pio) {
++		u32 status = sd_ctrl_read32(host, CTL_STATUS);
++		bool done = false;
++
+ 		/*
+ 		 * Has all data been written out yet? Testing on SuperH showed,
+ 		 * that in most cases the first interrupt comes already with the
+@@ -483,7 +486,15 @@ static void tmio_mmc_data_irq(struct tmio_mmc_host *host)
+ 		 * DATAEND interrupt with the BUSY bit set, in this cases
+ 		 * waiting for one more interrupt fixes the problem.
+ 		 */
+-		if (!(sd_ctrl_read32(host, CTL_STATUS) & TMIO_STAT_CMD_BUSY)) {
++		if (host->pdata->flags & TMIO_MMC_HAS_IDLE_WAIT) {
++			if (status & TMIO_STAT_ILL_FUNC)
++				done = true;
++		} else {
++			if (!(status & TMIO_STAT_CMD_BUSY))
++				done = true;
++		}
++
++		if (done) {
+ 			tmio_mmc_disable_mmc_irqs(host, TMIO_STAT_DATAEND);
+ 			tasklet_schedule(&host->dma_complete);
+ 		}
 -- 
 1.7.9.5
 
