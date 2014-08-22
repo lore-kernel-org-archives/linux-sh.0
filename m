@@ -1,41 +1,49 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 23 Aug 2014 01:43:37 +0000
-Subject: [PATCH 8/8] ARM: shmobile: kzm9g-reference: Remove unneeded nr_irqs initialization
-Message-Id: <3969d6490ba35b01f84bb12472c29c6029f7298b.1408671094.git.horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 22 Aug 2014 01:54:18 +0000
+Subject: Re: [3/6] ARM: shmobile: r8a7790: Add JPU device node.
+Message-Id: <20140822015418.GD9099@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408671094.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408671094.git.horms+renesas@verge.net.au>
+References: <1408452653-14067-4-git-send-email-mikhail.ulyanov@cogentembedded.com>
+In-Reply-To: <1408452653-14067-4-git-send-email-mikhail.ulyanov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+Cc: m.chehab@samsung.com, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, laurent.pinchart@ideasonboard.com, linux-sh@vger.kernel.org, linux-media@vger.kernel.org, devicetree@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+On Tue, Aug 19, 2014 at 04:50:50PM +0400, Mikhail Ulyanov wrote:
+> Signed-off-by: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
 
-As per arch_probe_nr_irqs(), the default value is NR_IRQS, which maps to
-NR_IRQS_LEGACY if CONFIG_SPARSE_IRQ=y.
+Please add a changelog.
 
-Since SPARSE_IRQ is selected by both ARCH_MULTIPLATFORM and
-ARCH_SHMOBILE_LEGACY, it's always enabled on shmobile.
+Please repost this once the binding used below has been
+accepted by the maintainer.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-kzm9g-reference.c | 1 -
- 1 file changed, 1 deletion(-)
+Please CC both Magnus Damm and I when you resubmit this or
+post and likewise for any other sshmobile patches.
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-index 9ec9887..1694a16 100644
---- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-@@ -52,7 +52,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
- 	.smp		= smp_ops(sh73a0_smp_ops),
- 	.map_io		= sh73a0_map_io,
- 	.init_early	= sh73a0_init_delay,
--	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_machine	= kzm_init,
- 	.init_late	= shmobile_init_late,
- 	.dt_compat	= kzm9g_boards_compat_dt,
--- 
-2.0.1
+Thanks
 
+> 
+> ---
+> arch/arm/boot/dts/r8a7790.dtsi | 7 +++++++
+>  1 file changed, 7 insertions(+)
+> 
+> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+> index 61fd193..c8bc048 100644
+> --- a/arch/arm/boot/dts/r8a7790.dtsi
+> +++ b/arch/arm/boot/dts/r8a7790.dtsi
+> @@ -600,6 +600,13 @@
+>  		status = "disabled";
+>  	};
+>  
+> +	jpu: jpeg-codec@fe980000 {
+> +		compatible = "renesas,jpu-r8a7790";
+> +		reg = <0 0xfe980000 0 0x10300>;
+> +		interrupts = <0 272 IRQ_TYPE_LEVEL_HIGH>;
+> +		clocks = <&mstp1_clks R8A7790_CLK_JPU>;
+> +	};
+> +
+>  	clocks {
+>  		#address-cells = <2>;
+>  		#size-cells = <2>;
