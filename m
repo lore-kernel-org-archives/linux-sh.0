@@ -1,30 +1,49 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Fri, 29 Aug 2014 18:15:10 +0000
-Subject: [PATCH v2 6/6] ARM: shmobile: r8a7794: document CPG clock support
-Message-Id: <1409336110-32734-7-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Fri, 22 Aug 2014 08:40:55 +0000
+Subject: [PATCH 08/10 v2 resend] mmc: tmio: remove SCLKEN bit setting from tmio_mmc_set_clock()
+Message-Id: <87tx546hnu.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
+	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
+	<53AD638C.5060907@renesas.com>
+	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+	<8761hk7wgy.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <8761hk7wgy.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+TMIO clock is set via tmio_mmc_set_clock() -> tmio_mmc_clk_start(),
+and SCLKEN bit will be set on tmio_mmc_clk_start().
+It is not needed on tmio_mmc_set_clock() function.
+The required clock setting will not be able to set
+in some clocks without this patch.
+
+Tested-by: Nguyen Xuan Nui <nx-nui@jinso.co.jp>
+Tested-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt | 1 +
- 1 file changed, 1 insertion(+)
+ drivers/mmc/host/tmio_mmc_pio.c |    1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
-index 7b41c2f..e6ad35b 100644
---- a/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
-@@ -8,6 +8,7 @@ Required Properties:
-   - compatible: Must be one of
-     - "renesas,r8a7790-cpg-clocks" for the r8a7790 CPG
-     - "renesas,r8a7791-cpg-clocks" for the r8a7791 CPG
-+    - "renesas,r8a7794-cpg-clocks" for the r8a7794 CPG
-     - "renesas,rcar-gen2-cpg-clocks" for the generic R-Car Gen2 CPG
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index b19d0cd..da3c74d 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -150,7 +150,6 @@ static void tmio_mmc_set_clock(struct tmio_mmc_host *host, int new_clock)
+ 		for (clock = host->mmc->f_min, clk = 0x80000080;
+ 			new_clock >= (clock<<1); clk >>= 1)
+ 			clock <<= 1;
+-		clk |= 0x100;
+ 	}
  
-   - reg: Base address and length of the memory resource used by the CPG
+ 	if (host->set_clk_div)
 -- 
-1.8.4.5
+1.7.9.5
 
