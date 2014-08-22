@@ -1,50 +1,22 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 22 Aug 2014 11:14:00 +0000
-Subject: [PATCH 2/4] usb: renesas_usbhs: protect mod->irq_{bemp,brdy}sts by spin lock
-Message-Id: <53F725F8.1040601@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 22 Aug 2014 14:21:26 +0000
+Subject: [PATCH 0/3] R-Car I2C driver: some cleanups
+Message-Id: <32018817.zX4x1fdR4T@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: wsa@the-dreams.de, linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-This patch protects the mod->irq_bempsts and mod->irq_brdysts by
-spin lock in the usbhs_status_get_each_irq() because other functions
-will write them during spin lock. Otherwise, the driver will clears
-the BRDYSTS and/or BEMPSTS wrongly, and then, the transaction will not
-finish.
-Also since the driver should use the INTSTS0 and BRDYSTS and BEMPSTS
-as the same timing, the patch protects them.
+Hello.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- drivers/usb/renesas_usbhs/mod.c |    5 +++++
- 1 file changed, 5 insertions(+)
+   Here's the set of 3 patches against Wolfram Sang's 'linux.git' repo's
+'i2c/for-next' branch.
 
-diff --git a/drivers/usb/renesas_usbhs/mod.c b/drivers/usb/renesas_usbhs/mod.c
-index 6a030b9..9a705b1 100644
---- a/drivers/usb/renesas_usbhs/mod.c
-+++ b/drivers/usb/renesas_usbhs/mod.c
-@@ -213,7 +213,10 @@ static int usbhs_status_get_each_irq(struct usbhs_priv *priv,
- {
- 	struct usbhs_mod *mod = usbhs_mod_get_current(priv);
- 	u16 intenb0, intenb1;
-+	unsigned long flags;
+[1/3] i2c-rcar: simplify check for last message
+[2/3] i2c-rcar: make rcar_i2c_prepare_msg() *void*
+[3/3] i2c-rcar: make rcar_i2c_irq_recv() *void*
 
-+	/********************  spin lock ********************/
-+	usbhs_lock(priv, flags);
- 	state->intsts0 = usbhs_read(priv, INTSTS0);
- 	state->intsts1 = usbhs_read(priv, INTSTS1);
-
-@@ -229,6 +232,8 @@ static int usbhs_status_get_each_irq(struct usbhs_priv *priv,
- 		state->bempsts &= mod->irq_bempsts;
- 		state->brdysts &= mod->irq_brdysts;
- 	}
-+	usbhs_unlock(priv, flags);
-+	/********************  spin unlock ******************/
-
- 	/*
- 	 * Check whether the irq enable registers and the irq status are set
--- 
-1.7.9.5
+WBR, Sergei
 
