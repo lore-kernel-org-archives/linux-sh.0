@@ -1,62 +1,38 @@
-From: "Opensource [Steve Twiss]" <stwiss.opensource@diasemi.com>
-Date: Tue, 26 Aug 2014 10:54:59 +0000
-Subject: RE: [RESEND PATCH V2] devicetree: Dialog Semiconductor consolidate existing vendor prefixes to stand
-Message-Id: <6ED8E3B22081A4459DAC7699F3695FB7D0B39744@SW-EX-MBX02.diasemi.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 22 Aug 2014 11:13:39 +0000
+Subject: [PATCH 0/4] usb: renesas_usbhs: fixes this driver in gadget mode
+Message-Id: <53F725E3.4050304@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201408221446.s7MEkNVF001775@swsrvapps-01.diasemi.com>
- <20140826093312.GI9574@lee--X1>
-In-Reply-To: <20140826093312.GI9574@lee--X1>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-T24gMjYgQXVndXN0IDIwMTQgMTA6MzMgTGVlIEpvbmVzIHdyb3RlOg0KDQo+IE9uIEZyaSwgMjIg
-QXVnIDIwMTQsIE9wZW5zb3VyY2UgW1N0ZXZlIFR3aXNzXSB3cm90ZToNCj4gPiBGcm9tOiBTdGV2
-ZSBUd2lzcyA8c3R3aXNzLm9wZW5zb3VyY2VAZGlhc2VtaS5jb20+DQo+ID4NCj4gPiBUaGlzIHBh
-dGNoIHNlcmllcyB1cGRhdGVzIHRoZSBkZXZpY2UgdHJlZSB2ZW5kb3IgcHJlZml4IGZvcg0KPiA+
-IERpYWxvZyBTZW1pY29uZHVjdG9yLg0KPiA+DQoNClsuLi5dDQoNCj4gPiBJIHRoaW5rIHRoaXMg
-aXMgaXQuIEJ1dCwgaWYgSSBhbSBtaXNzaW5nIGFueXRoaW5nIG9yIHRoZXJlIGFyZSBwcm9ibGVt
-cywgY2FuDQo+ID4gSSBnZXQgYSBxdWljayBleHBsYW5hdGlvbiBpbiB0aGUgcmVwbHkgc28gSSBj
-YW4gZml4IGl0IGFuZCBtb3ZlIGZvcndhcmRzDQo+ID4gcGxlYXNlPw0KPiA+DQo+ID4gSW4gZnVs
-bDoNCj4gPiBBY2tlZC1ieSB0aGUgZm9sbG93aW5nIHBlb3BsZSBzbyBmYXI6DQo+IA0KPiBXaGVu
-IHlvdSBzYXkgInNvIGZhciIsIGRvZXMgdGhhdCBtZWFuIHlvdSdyZSBtaXNzaW5nIEFja3Mgc3Rp
-bGw/DQoNCkhpIExlZSwNCg0KQXBvbG9naWVzIGZvciBteSAic28gZmFyIiAtLSB0aGF0IGlzIGp1
-c3QgbXkgd29yZGluZy4NCg0KQXMgSSB1bmRlcnN0YW5kIGl0IEkgaGF2ZSBhbGwgdGhlIEFja3Mg
-dGhhdCBhcmUgbmVjZXNzYXJ5LiBJIGFtIGJhc2luZyBteSBBY2tzIGxpc3Qgb24NCnRoZSBnZXRf
-bWFpbnRhaW5lcnMgc2NyaXB0IG91dHB1dCBhbmQgb24gYSBwcmV2aW91cyByZXF1ZXN0IGZvciBS
-ZW5lc2FzIGFuZCANCkZyZWVzY2FsZSBpbnB1dHMgLS0gd2hpY2ggSSBoYXZlIGFsc28gZ290Lg0K
-SSBkbyBub3Qgc2VlIGFueSBtaXN0YWtlcyBvciBtaXNzaW5nIGVudHJpZXMgZnJvbSBteSBwYXJ0
-Lg0KDQo+IA0KPiBJZiB5b3UgaGF2ZSB0aGUgZnVsbC1zZXQgSSB3aWxsIGFwcGx5IHRoaXMgYW5k
-IHNlbmQgb3V0IHRoZSBuZWNlc3NhcnkNCj4gcHVsbC1yZXF1ZXN0KHMpLg0KPiANCg0KWWVzIHBs
-ZWFzZS4NCg0KUmVnYXJkcywNClN0ZXZlDQoNCnBzLiBmb3IgcmVmZXJlbmNlLCAgdGhpcyBpcyBt
-eSBqdXN0aWZpY2F0aW9uIGZvciBhbGwgZmlsZXMgaW4gdGhlIHBhdGNoLg0KDQouL2RyaXZlcnMv
-bWZkL2RhOTA1NS1jb3JlLmMNCglTdXBwb3J0IE9wZW5zb3VyY2UgPHN1cHBvcnQub3BlbnNvdXJj
-ZUBkaWFzZW1pLmNvbT4gKHN1cHBvcnRlcjpESUFMT0cgU0VNSUNPTkRVQy4uLikNCglMZWUgSm9u
-ZXMgPGxlZS5qb25lc0BsaW5hcm8ub3JnPiAoc3VwcG9ydGVyOk1VTFRJRlVOQ1RJT04gREVWLi4u
-LGNvbW1pdHM6My84PTM4JSkNCg0KLi9Eb2N1bWVudGF0aW9uL2RldmljZXRyZWUvYmluZGluZ3Mv
-cmVndWxhdG9yL2RhOTIxMC50eHQuZ2V0X21haW50YWluZXINCglSb2IgSGVycmluZyA8cm9iaCtk
-dEBrZXJuZWwub3JnPiAobWFpbnRhaW5lcjpPUEVOIEZJUk1XQVJFIEFORC4uLikNCglTIFR3aXNz
-IDxzdHdpc3Mub3BlbnNvdXJjZUBkaWFzZW1pLmNvbT4gKGF1dGhvcmVkIGxpbmVzOjIvMjE9MTAl
-KQ0KDQouL2FyY2gvYXJtL2Jvb3QvZHRzL2lteDZxZGwtcGh5dGVjLXBmbGEwMi5kdHNpLmdldF9t
-YWludGFpbmVyDQoJU2hhd24gR3VvIDxzaGF3bi5ndW9AZnJlZXNjYWxlLmNvbT4gKG1haW50YWlu
-ZXI6QVJNL0ZSRUVTQ0FMRSBJTVguLi4sYXV0aG9yZWQgbGluZXM6Mjc2LzI3OT05OSUsY29tbWl0
-czo2Lzc9ODYlKQ0KCVJvYiBIZXJyaW5nIDxyb2JoK2R0QGtlcm5lbC5vcmc+IChtYWludGFpbmVy
-Ok9QRU4gRklSTVdBUkUgQU5ELi4uKQ0KDQouL2FyY2gvYXJtL2Jvb3QvZHRzL2lteDUzLXNtZC5k
-dHMuZ2V0X21haW50YWluZXINCglTaGF3biBHdW8gPHNoYXduLmd1b0BmcmVlc2NhbGUuY29tPiAo
-bWFpbnRhaW5lcjpBUk0vRlJFRVNDQUxFIElNWC4uLixhdXRob3JlZCBsaW5lczoyNzYvMjc5PTk5
-JSxjb21taXRzOjYvNz04NiUpDQoJUm9iIEhlcnJpbmcgPHJvYmgrZHRAa2VybmVsLm9yZz4gKG1h
-aW50YWluZXI6T1BFTiBGSVJNV0FSRSBBTkQuLi4pDQoNCi4vYXJjaC9hcm0vYm9vdC9kdHMvcjhh
-Nzc5MS1rb2Vsc2NoLmR0cy5nZXRfbWFpbnRhaW5lcg0KCVNpbW9uIEhvcm1hbiA8aG9ybXNAdmVy
-Z2UubmV0LmF1PiAoc3VwcG9ydGVyOkFSTS9TSE1PQklMRSBBUk0uLi4sY29tbWl0czoyNS8yNj05
-NiUpDQoJUm9iIEhlcnJpbmcgPHJvYmgrZHRAa2VybmVsLm9yZz4gKG1haW50YWluZXI6T1BFTiBG
-SVJNV0FSRSBBTkQuLi4pDQoNCi4vYXJjaC9hcm0vYm9vdC9kdHMvcjhhNzc5MC1sYWdlci5kdHMu
-Z2V0X21haW50YWluZXINCglTaW1vbiBIb3JtYW4gPGhvcm1zQHZlcmdlLm5ldC5hdT4gKHN1cHBv
-cnRlcjpBUk0vU0hNT0JJTEUgQVJNLi4uLGNvbW1pdHM6MjUvMjY9OTYlKQ0KCVJvYiBIZXJyaW5n
-IDxyb2JoK2R0QGtlcm5lbC5vcmc+IChtYWludGFpbmVyOk9QRU4gRklSTVdBUkUgQU5ELi4uKQ0K
-DQouL0RvY3VtZW50YXRpb24vZGV2aWNldHJlZS9iaW5kaW5ncy92ZW5kb3ItcHJlZml4ZXMudHh0
-LmdldF9tYWludGFpbmVyDQoJUm9iIEhlcnJpbmcgPHJvYmgrZHRAa2VybmVsLm9yZz4gKG1haW50
-YWluZXI6T1BFTiBGSVJNV0FSRSBBTkQuLi4sY29tbWl0czo0MC83OD01MSUpDQoNCi4vRG9jdW1l
-bnRhdGlvbi9kZXZpY2V0cmVlL2JpbmRpbmdzL2kyYy90cml2aWFsLWRldmljZXMudHh0LmdldF9t
-YWludGFpbmVyDQoJUm9iIEhlcnJpbmcgPHJvYmgrZHRAa2VybmVsLm9yZz4gKG1haW50YWluZXI6
-T1BFTiBGSVJNV0FSRSBBTkQuLi4pDQoNCg=
+If we tested this driver as gadget and g_ncm driver using iperf,
+some issues below happened:
+ - Oops happened.
+ - A transaction didn't finish in PIO mode.
+ - A transaction didn't finish in DMA mode if the "zero" flag is set.
+ - The driver didn't cancel a transaction if dequeue() is called.
+
+This patch series fixes them. If possible, they would like to be
+merged to v3.17.
+This patch series is based on Greg's usb.git / usb-linus branch.
+(commit id: 6835a3a02b1ae222cbfb167a7e2d5e8df5e9854e)
+
+Yoshihiro Shimoda (4):
+  usb: renesas_usbhs: fix the behavior of some usbhs_pkt_handle
+  usb: renesas_usbhs: protect mod->irq_{bemp,brdy}sts by spin lock
+  usb: renesas_usbhs: fix the condition of is_done in
+    usbhsf_dma_push_done
+  usb: renesas_usbhs: fix the usb_pkt_pop()
+
+ drivers/usb/renesas_usbhs/fifo.c |   72 ++++++++++++++++++++++++++++++++++----
+ drivers/usb/renesas_usbhs/mod.c  |    5 +++
+ drivers/usb/renesas_usbhs/pipe.c |   13 +++++++
+ drivers/usb/renesas_usbhs/pipe.h |    4 +++
+ 4 files changed, 88 insertions(+), 6 deletions(-)
+
+-- 
+1.7.9.5
+
