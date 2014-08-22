@@ -1,36 +1,47 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 13 Aug 2014 11:56:59 +0000
-Subject: [PATCH 4/4] ARM: shmobile: kzm9g: Remove unneeded nr_irqs initialization
-Message-Id: <1407931019-11409-4-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Fri, 22 Aug 2014 08:41:11 +0000
+Subject: [PATCH 09/10 v2 resend] mmc: tmio: ensure that the clock has been stopped before set_clock
+Message-Id: <87siko6hne.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
+	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
+	<53AD638C.5060907@renesas.com>
+	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+	<8761hk7wgy.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <8761hk7wgy.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-As per arch_probe_nr_irqs(), the default value is NR_IRQS, which maps to
-NR_IRQS_LEGACY if CONFIG_SPARSE_IRQ=y.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Since SPARSE_IRQ is selected by both ARCH_MULTIPLATFORM and
-ARCH_SHMOBILE_LEGACY, it's always enabled on shmobile.
+This patch ensures that the clock has been stopped before
+it calls tmio_mmc_set_clock().
+The clock settings might be failed without this patch
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Nguyen Xuan Nui <nx-nui@jinso.co.jp>
+Tested-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-kzm9g.c | 1 -
- 1 file changed, 1 deletion(-)
+ drivers/mmc/host/tmio_mmc_pio.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index f8bc7f8f86ad..36593cb20e57 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -910,7 +910,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g")
- 	.smp		= smp_ops(sh73a0_smp_ops),
- 	.map_io		= sh73a0_map_io,
- 	.init_early	= sh73a0_add_early_devices,
--	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= sh73a0_init_irq,
- 	.init_machine	= kzm_init,
- 	.init_late	= shmobile_init_late,
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index da3c74d..1c5a631 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -895,6 +895,7 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 		}
+ 		if (host->power = TMIO_MMC_OFF_STOP)
+ 			tmio_mmc_reset(host);
++		tmio_mmc_clk_stop(host);
+ 		tmio_mmc_set_clock(host, ios->clock);
+ 		if (host->power = TMIO_MMC_OFF_STOP)
+ 			/* power up SD card and the bus */
 -- 
-1.9.1
+1.7.9.5
 
