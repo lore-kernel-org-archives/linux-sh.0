@@ -1,72 +1,111 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 20 Aug 2014 13:03:12 +0000
-Subject: [PATCH 08/10] ARM: shmobile: Remove shmobile_setup_delay()
-Message-Id: <20140820130312.32075.52599.sendpatchset@w520>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Fri, 22 Aug 2014 08:39:11 +0000
+Subject: [PATCH 04/10 v2 resend] mmc: tmio: control multiple block transfer mode
+Message-Id: <87zjew6hqq.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
+	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
+	<53AD638C.5060907@renesas.com>
+	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+	<8761hk7wgy.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <8761hk7wgy.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-All ARM mach-shmobile SoCs and boards now rely on DTS for
-CPU Frequency information, so remove the unused function
-shmobile_setup_delay(). While at it, make the function
-shmobile_setup_delay_hz() static.
+Renesas SDHI has "Multiple Block Transfer Mode" settings
+on SD_CMD register which controls CMD12 automatically.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+This patch cares it, because
+CMD12 is not needed when CMD53 (= SD_IO_RW_EXTENDED)
+
+[Kuninori Morimoto: tidyuped for upstreaming
+                    enabled this flags for all SH-Mobile/R-Car]
+
+Tested-by: Nguyen Xuan Nui <nx-nui@jinso.co.jp>
+Tested-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+ drivers/mmc/host/sh_mobile_sdhi.c |    5 +++++
+ drivers/mmc/host/tmio_mmc_pio.c   |   10 ++++++++++
+ include/linux/mfd/tmio.h          |    6 ++++++
+ 3 files changed, 21 insertions(+)
 
- arch/arm/mach-shmobile/common.h |    2 --
- arch/arm/mach-shmobile/timer.c  |   21 ++-------------------
- 2 files changed, 2 insertions(+), 21 deletions(-)
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 91c6399..1d54b78 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -225,6 +225,11 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	 */
+ 	mmc_data->flags |= TMIO_MMC_SDIO_IRQ;
+ 
++	/*
++	 * All SDHI have CMD12 controll bit
++	 */
++	mmc_data->flags |= TMIO_MMC_HAVE_CMD12_CTRL;
++
+ 	if (of_id && of_id->data) {
+ 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
+ 		mmc_data->flags |= of_data->tmio_flags;
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index c3b1b4e..1f1fdfb 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -44,6 +44,7 @@
+ #include <linux/pm_qos.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/regulator/consumer.h>
++#include <linux/mmc/sdio.h>
+ #include <linux/scatterlist.h>
+ #include <linux/spinlock.h>
+ #include <linux/workqueue.h>
+@@ -295,6 +296,7 @@ static void tmio_mmc_done_work(struct work_struct *work)
+ #define TRANSFER_READ  0x1000
+ #define TRANSFER_MULTI 0x2000
+ #define SECURITY_CMD   0x4000
++#define NO_CMD12_ISSUE 0x4000 /* TMIO_MMC_HAVE_CMD12_CTRL */
+ 
+ static int tmio_mmc_start_command(struct tmio_mmc_host *host, struct mmc_command *cmd)
+ {
+@@ -331,6 +333,14 @@ static int tmio_mmc_start_command(struct tmio_mmc_host *host, struct mmc_command
+ 		if (data->blocks > 1) {
+ 			sd_ctrl_write16(host, CTL_STOP_INTERNAL_ACTION, 0x100);
+ 			c |= TRANSFER_MULTI;
++
++			/*
++			 * Disable auto CMD12 at IO_RW_EXTENDED when
++			 * multiple block transfer
++			 */
++			if ((host->pdata->flags & TMIO_MMC_HAVE_CMD12_CTRL) &&
++			    (cmd->opcode = SD_IO_RW_EXTENDED))
++				c |= NO_CMD12_ISSUE;
+ 		}
+ 		if (data->flags & MMC_DATA_READ)
+ 			c |= TRANSFER_READ;
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 777e29b..7432d95 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -83,6 +83,12 @@
+  */
+ #define TMIO_MMC_HAVE_HIGH_REG		(1 << 6)
+ 
++/*
++ * Some controllers have CMD12 automatically
++ * issue/non-issue register
++ */
++#define TMIO_MMC_HAVE_CMD12_CTRL	(1 << 7)
++
+ int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
+ int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
+ void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
+-- 
+1.7.9.5
 
---- 0001/arch/arm/mach-shmobile/common.h
-+++ work/arch/arm/mach-shmobile/common.h	2014-08-20 21:21:09.000000000 +0900
-@@ -2,8 +2,6 @@
- #define __ARCH_MACH_COMMON_H
- 
- extern void shmobile_earlytimer_init(void);
--extern void shmobile_setup_delay(unsigned int max_cpu_core_mhz,
--			 unsigned int mult, unsigned int div);
- extern void shmobile_init_delay(void);
- struct twd_local_timer;
- extern void shmobile_setup_console(void);
---- 0001/arch/arm/mach-shmobile/timer.c
-+++ work/arch/arm/mach-shmobile/timer.c	2014-08-20 21:21:40.000000000 +0900
-@@ -23,8 +23,8 @@
- #include <linux/delay.h>
- #include <linux/of_address.h>
- 
--void __init shmobile_setup_delay_hz(unsigned int max_cpu_core_hz,
--				    unsigned int mult, unsigned int div)
-+static void __init shmobile_setup_delay_hz(unsigned int max_cpu_core_hz,
-+					   unsigned int mult, unsigned int div)
- {
- 	/* calculate a worst-case loops-per-jiffy value
- 	 * based on maximum cpu core hz setting and the
-@@ -40,23 +40,6 @@ void __init shmobile_setup_delay_hz(unsi
- 		preset_lpj = max_cpu_core_hz / value;
- }
- 
--void __init shmobile_setup_delay(unsigned int max_cpu_core_mhz,
--				 unsigned int mult, unsigned int div)
--{
--	/* calculate a worst-case loops-per-jiffy value
--	 * based on maximum cpu core mhz setting and the
--	 * __delay() implementation in arch/arm/lib/delay.S
--	 *
--	 * this will result in a longer delay than expected
--	 * when the cpu core runs on lower frequencies.
--	 */
--
--	unsigned int value = (1000000 * mult) / (HZ * div);
--
--	if (!preset_lpj)
--		preset_lpj = max_cpu_core_mhz * value;
--}
--
- void __init shmobile_init_delay(void)
- {
- 	struct device_node *np, *cpus;
