@@ -1,46 +1,158 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Wed, 06 Aug 2014 20:36:49 +0000
-Subject: Re: [PATCH 08/12] [v2] spi: sh-msiof: Add DT support to DMA setup
-Message-Id: <20140806203649.GX17528@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="3tAR+pdVMzZMmZao"
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Fri, 22 Aug 2014 08:36:43 +0000
+Subject: [PATCH 01/10 v2 resend] mmc: block: add block number limitation flag for multiple block read
+Message-Id: <874mx47wf9.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
- <1407329949-5695-9-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1407329949-5695-9-git-send-email-geert+renesas@glider.be>
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, dmaengine@vger.kernel.org, devicetree@vger.kernel.org
+References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
+	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
+	<53AD638C.5060907@renesas.com>
+	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+	<8761hk7wgy.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <8761hk7wgy.wl%kuninori.morimoto.gx@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
---3tAR+pdVMzZMmZao
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+In some controllers, when performing a multiple block read of
+one or two blocks, depending on the timing with which the
+response register is read, the response value may not
+be read properly.
+MMC_CAP2_NO_MULTI_READ flags disable all multiple block read,
+but, it is over-kill for this issue.
+This patch adds new MMC_CAP2_2BLKS_LIMIT to use single block read
+when it was two blocks.
+This is additional option of MMC_CAP2_NO_MULTI_READ
 
-On Wed, Aug 06, 2014 at 02:59:05PM +0200, Geert Uytterhoeven wrote:
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+[Kuninori Morimoto: tidyup for upstreaming, and cared mach-shmobile]
 
-Applied, thanks.
+Tested-by: Nguyen Xuan Nui <nx-nui@jinso.co.jp>
+Tested-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-koelsch.c |    6 +++---
+ arch/arm/mach-shmobile/board-lager.c   |    4 ++--
+ drivers/mmc/card/block.c               |   19 +++++++++++++++++--
+ drivers/mmc/host/sh_mobile_sdhi.c      |    2 +-
+ include/linux/mmc/host.h               |    3 +++
+ 5 files changed, 26 insertions(+), 8 deletions(-)
 
---3tAR+pdVMzZMmZao
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index b7d5bc7..32a2b2a 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -331,7 +331,7 @@ SDHI_REGULATOR(2, RCAR_GP_PIN(7, 19), RCAR_GP_PIN(2, 26));
+ static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_POWER_OFF_CARD,
+-	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
++	.tmio_caps2	= MMC_CAP2_NO_2BLKS_READ,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
+ };
+ 
+@@ -344,7 +344,7 @@ static struct resource sdhi0_resources[] __initdata = {
+ static struct sh_mobile_sdhi_info sdhi1_info __initdata = {
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_POWER_OFF_CARD,
+-	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
++	.tmio_caps2	= MMC_CAP2_NO_2BLKS_READ,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
+ };
+ 
+@@ -357,7 +357,7 @@ static struct resource sdhi1_resources[] __initdata = {
+ static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_POWER_OFF_CARD,
+-	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
++	.tmio_caps2	= MMC_CAP2_NO_2BLKS_READ,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
+ 			  TMIO_MMC_WRPROTECT_DISABLE,
+ };
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index e1d8215..953f9c9 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -630,7 +630,7 @@ static void __init lager_add_rsnd_device(void)
+ static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_POWER_OFF_CARD,
+-	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
++	.tmio_caps2	= MMC_CAP2_NO_2BLKS_READ,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
+ 			  TMIO_MMC_WRPROTECT_DISABLE,
+ };
+@@ -644,7 +644,7 @@ static struct resource sdhi0_resources[] __initdata = {
+ static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_POWER_OFF_CARD,
+-	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
++	.tmio_caps2	= MMC_CAP2_NO_2BLKS_READ,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
+ 			  TMIO_MMC_WRPROTECT_DISABLE,
+ };
+diff --git a/drivers/mmc/card/block.c b/drivers/mmc/card/block.c
+index ede41f0..98c7e8c 100644
+--- a/drivers/mmc/card/block.c
++++ b/drivers/mmc/card/block.c
+@@ -1400,8 +1400,23 @@ static void mmc_blk_rw_rq_prep(struct mmc_queue_req *mqrq,
+ 
+ 		/* Some controllers can't do multiblock reads due to hw bugs */
+ 		if (card->host->caps2 & MMC_CAP2_NO_MULTI_READ &&
+-		    rq_data_dir(req) = READ)
+-			brq->data.blocks = 1;
++		    rq_data_dir(req) = READ) {
++
++			if (card->host->caps2 & MMC_CAP2_2BLKS_LIMIT) {
++				/*
++				 * In some controllers, when performing a
++				 * multiple block read of one or two blocks,
++				 * depending on the timing with which the
++				 * response register is read, the response
++				 * value may not be read properly.
++				 * Use single block read for this HW bug
++				 */
++				if (brq->data.blocks = 2)
++					brq->data.blocks = 1;
++			} else {
++				brq->data.blocks = 1;
++			}
++		}
+ 	}
+ 
+ 	if (brq->data.blocks > 1 || do_rel_wr) {
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 91058da..b3baa83 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -55,7 +55,7 @@ static const struct sh_mobile_sdhi_of_data of_rcar_gen1_compatible = {
+ static const struct sh_mobile_sdhi_of_data of_rcar_gen2_compatible = {
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
+ 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+-	.capabilities2	= MMC_CAP2_NO_MULTI_READ,
++	.capabilities2	= MMC_CAP2_NO_2BLKS_READ,
+ };
+ 
+ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
+diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
+index 7960424..3510fba 100644
+--- a/include/linux/mmc/host.h
++++ b/include/linux/mmc/host.h
+@@ -266,6 +266,9 @@ struct mmc_host {
+ #define MMC_CAP2_BOOTPART_NOACC	(1 << 0)	/* Boot partition no access */
+ #define MMC_CAP2_FULL_PWR_CYCLE	(1 << 2)	/* Can do full power cycle */
+ #define MMC_CAP2_NO_MULTI_READ	(1 << 3)	/* Multiblock reads don't work */
++#define MMC_CAP2_2BLKS_LIMIT	(1 << 4)	/* 2 blocks limit for multi read */
++#define MMC_CAP2_NO_2BLKS_READ	(MMC_CAP2_NO_MULTI_READ | \
++				 MMC_CAP2_2BLKS_LIMIT)
+ #define MMC_CAP2_HS200_1_8V_SDR	(1 << 5)        /* can support */
+ #define MMC_CAP2_HS200_1_2V_SDR	(1 << 6)        /* can support */
+ #define MMC_CAP2_HS200		(MMC_CAP2_HS200_1_8V_SDR | \
+-- 
+1.7.9.5
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAEBAgAGBQJT4pHeAAoJELSic+t+oim9pt4P/iWbK55NUrJ9BGBD4toogNpH
-4m8aCoZQU7h5JNkBu3ju/3om7Jn0CQgPVzEu8Trs2Mx+Euj9EpeCeonGHQWuaQjK
-8mG1AF3MVw2S/RJizllKMAQjm0p10pxzKREIJL3GOtpI6XgMnD5THLb65Fc+dujy
-4CF5JEDPleAnUsmttFmTkjh1Bk+uEm9ALryHBoXHbWSodhH56vXvZvn+BG6pOkCg
-/o7T8yAs2TCLryz2VICTPzei8LhNzIlADjdV464l3/oqQ1o4s41WinFG7E7kHHqn
-7Bdcepvm3kxqT0cnI0W8bZIL1T93SXYGUr73rmJJ2tJZ3sBovB40vg20vYRajAQH
-Q7DRcOnXHGz6x4dWwnoHR3Pd33S4o1H2R5feVv2EOpA1qRjD7vahiAUd8xZcW2wO
-XTsPW9QZhniV8KWWyq6XsicCyt0Qeq+VOrbZbU1R+ksmuigYfjZLofwN8GNxsTHU
-LJShzVB6eXwvTjpIhPf+Bjcbdvk5D00an//qKW/0onnO5pG/b/5ulDWNcYeh7Uae
-Qg3z9YAb36x4JnKiB5w4l3oddmQ+KAWWQ7N7uGOZmgPOMaLCTHDvn8Uq0yD7S+Vz
-V1B5R3BYPgM+nSIUgDhDOIlwWZaeRPlUTd5n7wZePS3j6M3dOv0BwQGDYaBZOEy7
-gocyUvWXNeV1Bzpk++zP
-=HXjs
------END PGP SIGNATURE-----
-
---3tAR+pdVMzZMmZao--
