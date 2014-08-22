@@ -1,64 +1,76 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 29 Aug 2014 00:06:13 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7779 dtsi: Use tabs for indentation
-Message-Id: <20140829000613.GI16165@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 22 Aug 2014 23:54:34 +0000
+Subject: Re: [PATCH 08/11] i2c: rcar: remove spinlock
+Message-Id: <53F7D83A.5030903@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409214116-6016-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1409214116-6016-1-git-send-email-geert+renesas@glider.be>
+References: <1401263086-13720-1-git-send-email-wsa@the-dreams.de> <1401263086-13720-9-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1401263086-13720-9-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Magnus Damm <magnus.damm@gmail.com>, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
+To: Wolfram Sang <wsa@the-dreams.de>, linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Thu, Aug 28, 2014 at 10:21:55AM +0200, Geert Uytterhoeven wrote:
-> Checkpatch says:
-> 
-> ERROR: code indent should use tabs where possible
+Hello.
 
-Thanks, I have queued this up.
+On 05/28/2014 11:44 AM, Wolfram Sang wrote:
 
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+
+> The i2c core has per-adapter locks, so no need to protect again.
+
+    The core's lock is unable to protect from the IRQs. So I'm proposing to 
+revert this patch. It's a pity I hadn't noticed this issue when the patch was 
+posted.
+
+> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 > ---
->  arch/arm/boot/dts/r8a7779.dtsi | 8 ++++----
->  1 file changed, 4 insertions(+), 4 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-> index ddc89000854c..d25ed7b4aece 100644
-> --- a/arch/arm/boot/dts/r8a7779.dtsi
-> +++ b/arch/arm/boot/dts/r8a7779.dtsi
-> @@ -440,10 +440,10 @@
->  		/* Gate clocks */
->  		mstp0_clks: clocks@ffc80030 {
->  			compatible = "renesas,r8a7779-mstp-clocks",
-> -			             "renesas,cpg-mstp-clocks";
-> +				     "renesas,cpg-mstp-clocks";
->  			reg = <0xffc80030 4>;
->  			clocks = <&cpg_clocks R8A7779_CLK_S>,
-> -			         <&cpg_clocks R8A7779_CLK_P>,
-> +				 <&cpg_clocks R8A7779_CLK_P>,
->  				 <&cpg_clocks R8A7779_CLK_P>,
->  				 <&cpg_clocks R8A7779_CLK_P>,
->  				 <&cpg_clocks R8A7779_CLK_S>,
-> @@ -477,7 +477,7 @@
->  		};
->  		mstp1_clks: clocks@ffc80034 {
->  			compatible = "renesas,r8a7779-mstp-clocks",
-> -			             "renesas,cpg-mstp-clocks";
-> +				     "renesas,cpg-mstp-clocks";
->  			reg = <0xffc80034 4>, <0xffc80044 4>;
->  			clocks = <&cpg_clocks R8A7779_CLK_P>,
->  				 <&cpg_clocks R8A7779_CLK_P>,
-> @@ -506,7 +506,7 @@
->  		};
->  		mstp3_clks: clocks@ffc8003c {
->  			compatible = "renesas,r8a7779-mstp-clocks",
-> -			             "renesas,cpg-mstp-clocks";
-> +				     "renesas,cpg-mstp-clocks";
->  			reg = <0xffc8003c 4>;
->  			clocks = <&s4_clk>, <&s4_clk>, <&s4_clk>, <&s4_clk>,
->  				 <&s4_clk>, <&s4_clk>;
-> -- 
-> 1.9.1
-> 
+>   drivers/i2c/busses/i2c-rcar.c | 22 ----------------------
+>   1 file changed, 22 deletions(-)
+>
+> diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+> index e82d64b5acef..4b088e67f2fd 100644
+> --- a/drivers/i2c/busses/i2c-rcar.c
+> +++ b/drivers/i2c/busses/i2c-rcar.c
+[...]
+> @@ -110,7 +109,6 @@ struct rcar_i2c_priv {
+>   	struct i2c_msg	*msg;
+>   	struct clk *clk;
+>
+> -	spinlock_t lock;
+
+    Needed a comment (that it protects the I2C registers).
+
+[...]
+> @@ -462,21 +454,14 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+>   {
+>   	struct rcar_i2c_priv *priv = i2c_get_adapdata(adap);
+>   	struct device *dev = rcar_i2c_priv_to_dev(priv);
+> -	unsigned long flags;
+>   	int i, ret, timeout;
+>
+>   	pm_runtime_get_sync(dev);
+>
+> -	/*-------------- spin lock -----------------*/
+> -	spin_lock_irqsave(&priv->lock, flags);
+> -
+>   	rcar_i2c_init(priv);
+>   	/* start clock */
+>   	rcar_i2c_write(priv, ICCCR, priv->icccr);
+>
+> -	spin_unlock_irqrestore(&priv->lock, flags);
+> -	/*-------------- spin unlock -----------------*/
+> -
+
+    I'm afraid this unlock is misplaced, the code continues to access the 
+registers.
+
+>   	ret = rcar_i2c_bus_barrier(priv);
+
+    Should probably unlock here instead?
+
+>   	if (ret < 0)
+>   		goto out;
+
+WBR, Sergei
+
