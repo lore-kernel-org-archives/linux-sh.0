@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 14 Aug 2014 22:37:10 +0000
+Date: Fri, 22 Aug 2014 01:04:00 +0000
 Subject: Re: [PATCH v2 1/5] ARM: shmobile: r8a7740: document MSTP clock support
-Message-Id: <20140814223710.GB9938@verge.net.au>
+Message-Id: <20140822010400.GC2783@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1407507792-8121-1-git-send-email-ulrich.hecht+renesas@gmail.com>
  <1407507792-8121-2-git-send-email-ulrich.hecht+renesas@gmail.com>
@@ -21,7 +21,11 @@ On Mon, Aug 11, 2014 at 10:12:14AM +0900, Simon Horman wrote:
 > 
 > Mike, could you consider taking this?
 
-Ping
+Hi Mike,
+
+I'm wondering if you could take moment to consider this patch.
+It is a dependency for enabling ccf and in turn multiplatform on
+the r8a7740 SoC.
 
 > > ---
 > >  Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 1 +
