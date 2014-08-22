@@ -1,38 +1,50 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 23 Aug 2014 01:44:18 +0000
-Subject: [PATCH 08/11] ARM: shmobile: dma: Use defines instead of hardcoded numbers
-Message-Id: <fe8abe0bc2afb20b126e7e0759081dc0df2cd60d.1408671240.git.horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 22 Aug 2014 11:14:00 +0000
+Subject: [PATCH 2/4] usb: renesas_usbhs: protect mod->irq_{bemp,brdy}sts by spin lock
+Message-Id: <53F725F8.1040601@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408671240.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408671240.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+This patch protects the mod->irq_bempsts and mod->irq_brdysts by
+spin lock in the usbhs_status_get_each_irq() because other functions
+will write them during spin lock. Otherwise, the driver will clears
+the BRDYSTS and/or BEMPSTS wrongly, and then, the transaction will not
+finish.
+Also since the driver should use the INTSTS0 and BRDYSTS and BEMPSTS
+as the same timing, the patch protects them.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/mach-shmobile/dma-register.h | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ drivers/usb/renesas_usbhs/mod.c |    5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/dma-register.h b/arch/arm/mach-shmobile/dma-register.h
-index 97c40bd..52a2f66 100644
---- a/arch/arm/mach-shmobile/dma-register.h
-+++ b/arch/arm/mach-shmobile/dma-register.h
-@@ -52,8 +52,8 @@ static const unsigned int dma_ts_shift[] = {
- 	((((i) & TS_LOW_BIT) << TS_LOW_SHIFT) |\
- 	 (((i) & TS_HI_BIT)  << TS_HI_SHIFT))
- 
--#define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL((xmit_sz)))
--#define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL((xmit_sz)))
-+#define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL((xmit_sz)))
-+#define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL((xmit_sz)))
- 
- 
- /*
+diff --git a/drivers/usb/renesas_usbhs/mod.c b/drivers/usb/renesas_usbhs/mod.c
+index 6a030b9..9a705b1 100644
+--- a/drivers/usb/renesas_usbhs/mod.c
++++ b/drivers/usb/renesas_usbhs/mod.c
+@@ -213,7 +213,10 @@ static int usbhs_status_get_each_irq(struct usbhs_priv *priv,
+ {
+ 	struct usbhs_mod *mod = usbhs_mod_get_current(priv);
+ 	u16 intenb0, intenb1;
++	unsigned long flags;
+
++	/********************  spin lock ********************/
++	usbhs_lock(priv, flags);
+ 	state->intsts0 = usbhs_read(priv, INTSTS0);
+ 	state->intsts1 = usbhs_read(priv, INTSTS1);
+
+@@ -229,6 +232,8 @@ static int usbhs_status_get_each_irq(struct usbhs_priv *priv,
+ 		state->bempsts &= mod->irq_bempsts;
+ 		state->brdysts &= mod->irq_brdysts;
+ 	}
++	usbhs_unlock(priv, flags);
++	/********************  spin unlock ******************/
+
+ 	/*
+ 	 * Check whether the irq enable registers and the irq status are set
 -- 
-2.0.1
+1.7.9.5
 
