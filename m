@@ -1,38 +1,56 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Aug 2014 01:10:22 +0000
-Subject: [PATCH 2/3] ARM: shmobile: ape6evm: Remove duplicate CPUFreq bits
-Message-Id: <664b4c172209f076866419a5a4162e4fc9631807.1408927858.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 22 Aug 2014 14:23:52 +0000
+Subject: [PATCH 2/3] i2c-rcar: make rcar_i2c_prepare_msg() *void*
+Message-Id: <4460482.KmaEIVo0yD@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408927858.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408927858.git.horms+renesas@verge.net.au>
+References: <32018817.zX4x1fdR4T@wasted.cogentembedded.com>
+In-Reply-To: <32018817.zX4x1fdR4T-gHKXc3Y1Z8zGSmamagVegGFoWSdPRAKMAL8bYrjMMd8@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org, linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+rcar_i2c_prepare_msg() always returns 0, so we can make this function return
+*void* and thus remove the result check in rcar_i2c_master_xfer().
 
-The CPUFreq platform device is already registered by
-shmobile_init_late(), so get rid of ape6evm specific bits.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-ape6evm-reference.c | 1 -
- 1 file changed, 1 deletion(-)
+ drivers/i2c/busses/i2c-rcar.c |    9 ++-------
+ 1 file changed, 2 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ape6evm-reference.c b/arch/arm/mach-shmobile/board-ape6evm-reference.c
-index 2f7723e..ac371b7 100644
---- a/arch/arm/mach-shmobile/board-ape6evm-reference.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm-reference.c
-@@ -50,7 +50,6 @@ static void __init ape6evm_add_standard_devices(void)
- 
- 	r8a73a4_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
--	platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
+Index: linux/drivers/i2c/busses/i2c-rcar.c
+=================================--- linux.orig/drivers/i2c/busses/i2c-rcar.c
++++ linux/drivers/i2c/busses/i2c-rcar.c
+@@ -243,7 +243,7 @@ scgd_find:
+ 	return 0;
  }
  
- static const char *ape6evm_boards_compat_dt[] __initdata = {
--- 
-2.0.1
+-static int rcar_i2c_prepare_msg(struct rcar_i2c_priv *priv)
++static void rcar_i2c_prepare_msg(struct rcar_i2c_priv *priv)
+ {
+ 	int read = !!rcar_i2c_is_recv(priv);
+ 
+@@ -251,8 +251,6 @@ static int rcar_i2c_prepare_msg(struct r
+ 	rcar_i2c_write(priv, ICMSR, 0);
+ 	rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
+ 	rcar_i2c_write(priv, ICMIER, read ? RCAR_IRQ_RECV : RCAR_IRQ_SEND);
+-
+-	return 0;
+ }
+ 
+ /*
+@@ -435,10 +433,7 @@ static int rcar_i2c_master_xfer(struct i
+ 		if (i = num - 1)
+ 			rcar_i2c_flags_set(priv, ID_LAST_MSG);
+ 
+-		ret = rcar_i2c_prepare_msg(priv);
+-
+-		if (ret < 0)
+-			break;
++		rcar_i2c_prepare_msg(priv);
+ 
+ 		timeout = wait_event_timeout(priv->wait,
+ 					     rcar_i2c_flags_has(priv, ID_DONE),
 
