@@ -1,33 +1,41 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 20 Aug 2014 13:02:45 +0000
-Subject: [PATCH 05/10] ARM: shmobile: sh73a0: Use shmobile_init_delay()
-Message-Id: <20140820130245.32075.95808.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sat, 23 Aug 2014 01:44:21 +0000
+Subject: [PATCH 11/11] ARM: shmobile: sh73a0: Remove unneeded nr_irqs initialization
+Message-Id: <5ac9e7f35db00e630c9f95a1f73ac329371cdbbf.1408671240.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1408671240.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408671240.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Adjust the sh73a0 SoC support code to use shmobile_init_delay()
-together with CPU Frequency settings from the DTS. Get rid of the
-C code version.
+As per arch_probe_nr_irqs(), the default value is NR_IRQS, which maps to
+NR_IRQS_LEGACY if CONFIG_SPARSE_IRQ=y.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Since SPARSE_IRQ is selected by both ARCH_MULTIPLATFORM and
+ARCH_SHMOBILE_LEGACY, it's always enabled on shmobile.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/setup-sh73a0.c | 1 -
+ 1 file changed, 1 deletion(-)
 
- arch/arm/mach-shmobile/setup-sh73a0.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 0022918..e7a0296 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -797,7 +797,6 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
+ 	.smp		= smp_ops(sh73a0_smp_ops),
+ 	.map_io		= sh73a0_map_io,
+ 	.init_early	= sh73a0_init_delay,
+-	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_machine	= sh73a0_add_standard_devices_dt,
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= sh73a0_boards_compat_dt,
+-- 
+2.0.1
 
---- 0001/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ work/arch/arm/mach-shmobile/setup-sh73a0.c	2014-08-20 21:16:16.000000000 +0900
-@@ -746,7 +746,7 @@ void __init sh73a0_add_standard_devices(
- 
- void __init sh73a0_init_delay(void)
- {
--	shmobile_setup_delay(1196, 44, 46); /* Cortex-A9 @ 1196MHz */
-+	shmobile_init_delay();
- }
- 
- /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
