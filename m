@@ -1,45 +1,75 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Aug 2014 01:08:55 +0000
-Subject: [GIT PULL] SH Drivers Updates For v3.17
-Message-Id: <cover.1408928574.git.horms+renesas@verge.net.au>
+Date: Sat, 23 Aug 2014 01:44:11 +0000
+Subject: [PATCH 6/8] ARM: shmobile: lager_defconfig: Enable missing hardware support
+Message-Id: <387ded8e60bcb6190492f90a3ef25e2bcb0a97a1.1408670623.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1408670623.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408670623.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms+renesas@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Linus,
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Please consider these SH drivers updates for v3.17.
+Based on the DTS
 
-I realise these are slightly late in the rc cycle so
-please don't hesitate to ask me to defer them to v3.18.
+Notes:
+  - MTD_SPI_NOR is a dependency for MTD_M25P80 since commit
+    03e296f613affcc2671c1e86d8c25ecad867204e ("mtd: m25p80: use the SPI
+    nor framework") and commit e43b20619bdb6c851dd7b49cbd15e52875a785d4
+    ("mtd: spi-nor: shorten Kconfig naming").
 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/configs/lager_defconfig | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
-The following changes since commit 7d1311b93e58ed55f3a31cc8f94c4b8fe988a2b9:
+diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
+index 5870244..929c571 100644
+--- a/arch/arm/configs/lager_defconfig
++++ b/arch/arm/configs/lager_defconfig
+@@ -22,6 +22,9 @@ CONFIG_ARM_ERRATA_458693=y
+ CONFIG_ARM_ERRATA_460075=y
+ CONFIG_ARM_ERRATA_743622=y
+ CONFIG_ARM_ERRATA_754322=y
++CONFIG_PCI=y
++CONFIG_PCI_RCAR_GEN2=y
++CONFIG_PCI_RCAR_GEN2_PCIE=y
+ CONFIG_HAVE_ARM_ARCH_TIMER=y
+ CONFIG_AEABI=y
+ # CONFIG_OABI_COMPAT is not set
+@@ -53,6 +56,7 @@ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+ CONFIG_MTD=y
+ CONFIG_MTD_M25P80=y
++CONFIG_MTD_SPI_NOR=y
+ CONFIG_BLK_DEV_SD=y
+ CONFIG_ATA=y
+ CONFIG_SATA_RCAR=y
+@@ -85,11 +89,12 @@ CONFIG_SERIAL_SH_SCI=y
+ CONFIG_SERIAL_SH_SCI_NR_UARTS
+ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HW_RANDOM is not set
+-CONFIG_I2C=y
+ CONFIG_I2C_GPIO=y
++CONFIG_I2C_SH_MOBILE=y
+ CONFIG_I2C_RCAR=y
+ CONFIG_SPI=y
+ CONFIG_SPI_RSPI=y
++CONFIG_SPI_SH_MSIOF=y
+ CONFIG_GPIO_SH_PFC=y
+ CONFIG_GPIOLIB=y
+ CONFIG_GPIO_RCAR=y
+@@ -98,6 +103,7 @@ CONFIG_THERMAL=y
+ CONFIG_RCAR_THERMAL=y
+ CONFIG_REGULATOR=y
+ CONFIG_REGULATOR_FIXED_VOLTAGE=y
++CONFIG_REGULATOR_DA9210=y
+ CONFIG_REGULATOR_GPIO=y
+ CONFIG_MEDIA_SUPPORT=y
+ CONFIG_MEDIA_CAMERA_SUPPORT=y
+-- 
+2.0.1
 
-  Linux 3.17-rc1 (2014-08-16 10:40:26 -0600)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh-drivers-for-v3.17
-
-for you to fetch changes up to 049d28048be595e0a10a58fe1c104b153c386633:
-
-  sh: intc: Confine SH_INTC to platforms that need it (2014-08-22 12:28:16 +0900)
-
-----------------------------------------------------------------
-SH Drivers Updates For v3.17
-
-* Confine SH_INTC to platforms that need it
-
-----------------------------------------------------------------
-Geert Uytterhoeven (1):
-      sh: intc: Confine SH_INTC to platforms that need it
-
- arch/arm/mach-shmobile/Kconfig | 2 ++
- arch/sh/Kconfig                | 3 +++
- drivers/sh/Makefile            | 3 +--
- drivers/sh/intc/Kconfig        | 6 +++++-
- 4 files changed, 11 insertions(+), 3 deletions(-)
