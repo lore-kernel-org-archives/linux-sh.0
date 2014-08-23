@@ -1,56 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 04 Aug 2014 07:01:55 +0000
-Subject: Re: [PATCH] ARM: shmobile: Rework multiplatform include workaround
-Message-Id: <20140804070151.GA1889@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sat, 23 Aug 2014 01:44:14 +0000
+Subject: [PATCH 04/11] ARM: shmobile: r8a7778: Fix shmobile_init_late()
+Message-Id: <7759a7a8e9b07a9046c1bdb2cd4c9ce197280392.1408671240.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1408671240.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408671240.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Jul 31, 2014 at 09:25:15AM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
-> 
-> Now when the majority of the include files have moved from
-> arch/arm/mach-shmobile/include/mach/ to arch/arm/mach-shmobile/
-> remove the header include file workaround in the Makefile...
-> 
-> ... and add another workaround in irqs.h to cope with the fact
-> that <mach/irqs.h> needs to be where it is until the PFC code
-> has been updated to remove legacy non-DT interfaces.
-> 
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> ---
-> 
->  Written against renesas-devel-v3.16-rc7-20140729
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Thanks, I have queued this up as a cleanup for v3.18.
+Fix r8a7778 SoC machine vector to include shmobile_init_late()
+so Suspend-to-RAM and CPUIdle are setup and platform devices
+are omitted as expected.
 
-> 
->  arch/arm/mach-shmobile/Makefile |    2 --
->  arch/arm/mach-shmobile/irqs.h   |    2 +-
->  2 files changed, 1 insertion(+), 3 deletions(-)
-> 
-> --- 0001/arch/arm/mach-shmobile/Makefile
-> +++ work/arch/arm/mach-shmobile/Makefile	2014-07-31 09:11:18.000000000 +0900
-> @@ -2,8 +2,6 @@
->  # Makefile for the linux kernel.
->  #
->  
-> -ccflags-$(CONFIG_ARCH_MULTIPLATFORM) := -I$(srctree)/arch/arm/mach-shmobile/include
-> -
->  # Common objects
->  obj-y				:= timer.o console.o
->  
-> --- 0001/arch/arm/mach-shmobile/irqs.h
-> +++ work/arch/arm/mach-shmobile/irqs.h	2014-07-31 09:12:56.000000000 +0900
-> @@ -2,7 +2,7 @@
->  #define __SHMOBILE_IRQS_H
->  
->  #include <linux/sh_intc.h>
-> -#include <mach/irqs.h>
-> +#include "include/mach/irqs.h"
->  
->  /* GIC */
->  #define gic_spi(nr)		((nr) + 32)
-> 
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-r8a7778.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 383e43b..e1a477b 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -610,8 +610,8 @@ static const char *r8a7778_compat_dt[] __initdata = {
+ DT_MACHINE_START(R8A7778_DT, "Generic R8A7778 (Flattened Device Tree)")
+ 	.init_early	= r8a7778_init_delay,
+ 	.init_irq	= r8a7778_init_irq_dt,
++	.init_late	= shmobile_init_late,
+ 	.dt_compat	= r8a7778_compat_dt,
+-	.init_late      = r8a7778_init_late,
+ MACHINE_END
+ 
+ #endif /* CONFIG_USE_OF */
+-- 
+2.0.1
+
