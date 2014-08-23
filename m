@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 20 Aug 2014 00:23:58 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC DT Updates for v3.18
-Message-Id: <cover.1408492753.git.horms+renesas@verge.net.au>
+Date: Sat, 23 Aug 2014 01:44:20 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Updates for v3.18
+Message-Id: <cover.1408671240.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398216022.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
+References: <cover.1397627619.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1397627619.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,7 +12,7 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hi Olof, Hi Kevin, Hi Arnd,
 
-Please consider these Renesas ARM based SoC DT updates for v3.18.
+Please consider these Renesas ARM based SoC updates for v3.18.
 
 
 The following changes since commit 7d1311b93e58ed55f3a31cc8f94c4b8fe988a2b9:
@@ -21,44 +21,44 @@ The following changes since commit 7d1311b93e58ed55f3a31cc8f94c4b8fe988a2b9:
 
 are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-for-v3.18
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-for-v3.18
 
-for you to fetch changes up to d594c9775409a4276133db5e34dbd791329c5eae:
+for you to fetch changes up to 5ac9e7f35db00e630c9f95a1f73ac329371cdbbf:
 
-  ARM: shmobile: lager: add VIN1/ADV7180 device nodes (2014-08-17 09:44:07 +0900)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC DT Updates for v3.18
-
-* Add VIN support to lager/r8a7790, koelsch/r8a7791 and henninger/r8a7791
-* Enable DMA for MSIOF and QSPI on r8a7790 and r8a7791
+  ARM: shmobile: sh73a0: Remove unneeded nr_irqs initialization (2014-08-20 09:09:24 +0900)
 
 ----------------------------------------------------------------
-Ben Dooks (2):
-      ARM: shmobile: r8a7790: add VIN device nodes
-      ARM: shmobile: lager: add VIN1/ADV7180 device nodes
+Renesas ARM Based SoC Updates for v3.18
 
+* Remove unnecessary nr_irqs initialisation on sh73a0, sh7372,
+  and r8a7779 SoCs
+* Use defines hardcoded numbers for DMA
+* Rework multiplatform include workaround
+* Correctly use shmobile_init_late on a wider range of SoCs
+
+----------------------------------------------------------------
 Geert Uytterhoeven (4):
-      ARM: shmobile: r8a7791 dtsi: Enable DMA for QSPI
-      ARM: shmobile: r8a7791 dtsi: Enable DMA for MSIOF
-      ARM: shmobile: r8a7790 dtsi: Enable DMA for QSPI
-      ARM: shmobile: r8a7790 dtsi: Enable DMA for MSIOF
+      ARM: shmobile: r8a7778: Add missing call to shmobile_init_late()
+      ARM: shmobile: dma: Use defines instead of hardcoded numbers
+      ARM: shmobile: sh7372: Remove unneeded nr_irqs initialization
+      ARM: shmobile: sh73a0: Remove unneeded nr_irqs initialization
 
-Laurent Pinchart (3):
-      ARM: shmobile: r8a7790: Add DMAC clocks to DT
-      ARM: shmobile: r8a7790: Add DMAC devices to DT
-      ARM: shmobile: r8a7791: Add DMAC devices to DT
+Magnus Damm (7):
+      ARM: shmobile: sh73a0: Add shmobile_init_late()
+      ARM: shmobile: r8a7779: Fix shmobile_init_late()
+      ARM: shmobile: r8a7778: Fix shmobile_init_late()
+      ARM: shmobile: r8a73a4: Add shmobile_init_late()
+      ARM: shmobile: r7s72100: Add shmobile_init_late()
+      ARM: shmobile: Rework multiplatform include workaround
+      ARM: shmobile: r8a7779: Remove NR_IRQS_LEGACY
 
-Sergei Shtylyov (2):
-      ARM: shmobile: r8a7791: add VIN DT support
-      ARM: shmobile: henninger: add VIN0/ADV7180 DT support
-
-sergei.shtylyov@cogentembedded.com (1):
-      ARM: shmobile: koelsch: add VIN1/ADV7180 DT support
-
- arch/arm/boot/dts/r8a7790-lager.dts     |  36 ++++++++++
- arch/arm/boot/dts/r8a7790.dtsi          | 120 ++++++++++++++++++++++++++++++--
- arch/arm/boot/dts/r8a7791-henninger.dts |  35 ++++++++++
- arch/arm/boot/dts/r8a7791-koelsch.dts   |  35 ++++++++++
- arch/arm/boot/dts/r8a7791.dtsi          | 101 ++++++++++++++++++++++++++-
- 5 files changed, 318 insertions(+), 9 deletions(-)
+ arch/arm/mach-shmobile/Makefile         | 2 --
+ arch/arm/mach-shmobile/dma-register.h   | 4 ++--
+ arch/arm/mach-shmobile/irqs.h           | 2 +-
+ arch/arm/mach-shmobile/setup-r7s72100.c | 1 +
+ arch/arm/mach-shmobile/setup-r8a73a4.c  | 1 +
+ arch/arm/mach-shmobile/setup-r8a7778.c  | 3 ++-
+ arch/arm/mach-shmobile/setup-r8a7779.c  | 3 +--
+ arch/arm/mach-shmobile/setup-sh7372.c   | 1 -
+ arch/arm/mach-shmobile/setup-sh73a0.c   | 2 +-
+ 9 files changed, 9 insertions(+), 10 deletions(-)
