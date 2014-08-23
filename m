@@ -1,83 +1,115 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Aug 2014 16:41:01 +0000
-Subject: [PATCH 04/16] video: Add ADV7123 DT bindings documentation
-Message-Id: <1409157673-4154-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 23 Aug 2014 20:42:52 +0000
+Subject: [PATCH] Revert "i2c-rcar: remove spinlock"
+Message-Id: <5687273.SAZk4lxXAk@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: devicetree@vger.kernel.org, linux-fbdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: wsa@the-dreams.de, linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-The ADV7123 is a video DAC described by an input port, an output port,
-and an optional power save GPIO.
+This reverts commit 150b8be3cda54412ad7b54f5392b513b25c0aaa7.
 
-Cc: devicetree@vger.kernel.org
-Cc: linux-fbdev@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The I2C core's per-adapter locks can't protect from IRQs, so the driver still
+needs a spinlock to protect the register accesses.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: stable@vger.kernel.org # 3.16+
+
 ---
- .../devicetree/bindings/video/adi,adv7123.txt      | 50 ++++++++++++++++++++++
- 1 file changed, 50 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/video/adi,adv7123.txt
+The patch is against Wolfram Sang's 'linux.git' repo.
 
-diff --git a/Documentation/devicetree/bindings/video/adi,adv7123.txt b/Documentation/devicetree/bindings/video/adi,adv7123.txt
-new file mode 100644
-index 0000000..a6b2b2b
---- /dev/null
-+++ b/Documentation/devicetree/bindings/video/adi,adv7123.txt
-@@ -0,0 +1,50 @@
-+Analog Device ADV7123 Video DAC
-+-------------------------------
+ drivers/i2c/busses/i2c-rcar.c |   22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+Index: linux/drivers/i2c/busses/i2c-rcar.c
+=================================--- linux.orig/drivers/i2c/busses/i2c-rcar.c
++++ linux/drivers/i2c/busses/i2c-rcar.c
+@@ -34,6 +34,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/slab.h>
++#include <linux/spinlock.h>
+ 
+ /* register offsets */
+ #define ICSCR	0x00	/* slave ctrl */
+@@ -95,6 +96,7 @@ struct rcar_i2c_priv {
+ 	struct i2c_msg	*msg;
+ 	struct clk *clk;
+ 
++	spinlock_t lock;
+ 	wait_queue_head_t wait;
+ 
+ 	int pos;
+@@ -365,6 +367,9 @@ static irqreturn_t rcar_i2c_irq(int irq,
+ 	struct rcar_i2c_priv *priv = ptr;
+ 	u32 msr;
+ 
++	/*-------------- spin lock -----------------*/
++	spin_lock(&priv->lock);
 +
-+The ADV7123 is a digital-to-analog converter that outputs VGA signals from a
-+parallel video input.
+ 	msr = rcar_i2c_read(priv, ICMSR);
+ 
+ 	/* Arbitration lost */
+@@ -400,6 +405,9 @@ out:
+ 		wake_up(&priv->wait);
+ 	}
+ 
++	spin_unlock(&priv->lock);
++	/*-------------- spin unlock -----------------*/
 +
-+Required properties:
+ 	return IRQ_HANDLED;
+ }
+ 
+@@ -409,14 +417,21 @@ static int rcar_i2c_master_xfer(struct i
+ {
+ 	struct rcar_i2c_priv *priv = i2c_get_adapdata(adap);
+ 	struct device *dev = rcar_i2c_priv_to_dev(priv);
++	unsigned long flags;
+ 	int i, ret, timeout;
+ 
+ 	pm_runtime_get_sync(dev);
+ 
++	/*-------------- spin lock -----------------*/
++	spin_lock_irqsave(&priv->lock, flags);
 +
-+- compatible: Should be "adi,adv7123"
+ 	rcar_i2c_init(priv);
+ 	/* start clock */
+ 	rcar_i2c_write(priv, ICCCR, priv->icccr);
+ 
++	spin_unlock_irqrestore(&priv->lock, flags);
++	/*-------------- spin unlock -----------------*/
 +
-+Optional properties:
+ 	ret = rcar_i2c_bus_barrier(priv);
+ 	if (ret < 0)
+ 		goto out;
+@@ -428,6 +443,9 @@ static int rcar_i2c_master_xfer(struct i
+ 			break;
+ 		}
+ 
++		/*-------------- spin lock -----------------*/
++		spin_lock_irqsave(&priv->lock, flags);
 +
-+- psave-gpios: Power save control GPIO
+ 		/* init each data */
+ 		priv->msg	= &msgs[i];
+ 		priv->pos	= 0;
+@@ -437,6 +455,9 @@ static int rcar_i2c_master_xfer(struct i
+ 
+ 		ret = rcar_i2c_prepare_msg(priv);
+ 
++		spin_unlock_irqrestore(&priv->lock, flags);
++		/*-------------- spin unlock -----------------*/
 +
-+Required nodes:
-+
-+The ADV7123 has two video ports. Their connections are modeled using the OF
-+graph bindings specified in Documentation/devicetree/bindings/graph.txt.
-+
-+- Video port 0 for DPI input
-+- Video port 1 for VGA output
-+
-+
-+Example
-+-------
-+
-+	adv7123: encoder@0 {
-+		compatible = "adi,adv7123";
-+
-+		ports {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+
-+			port@0 {
-+				reg = <0>;
-+
-+				adv7123_in: endpoint@0 {
-+					remote-endpoint = <&dpi_out>;
-+				};
-+			};
-+
-+			port@1 {
-+				reg = <1>;
-+
-+				adv7123_out: endpoint@0 {
-+					remote-endpoint = <&vga_connector_in>;
-+				};
-+			};
-+		};
-+	};
--- 
-1.8.5.5
+ 		if (ret < 0)
+ 			break;
+ 
+@@ -540,6 +561,7 @@ static int rcar_i2c_probe(struct platfor
+ 
+ 	irq = platform_get_irq(pdev, 0);
+ 	init_waitqueue_head(&priv->wait);
++	spin_lock_init(&priv->lock);
+ 
+ 	adap = &priv->adap;
+ 	adap->nr = pdev->id;
 
