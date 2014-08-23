@@ -1,50 +1,62 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 29 Aug 2014 20:03:27 +0000
-Subject: Re: [PATCH 0/2] r8a777[89] dtsi sorting
-Message-Id: <CAMuHMdXZ_drLTdm_912EOL+g+rYqwOmH361NzQgz9+ruDmUEnA@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sat, 23 Aug 2014 01:44:01 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Cleanup Updates for v3.18
+Message-Id: <cover.1408670789.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409336201-708-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1409336201-708-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <cover.1398216284.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398216284.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, Simon Horman <horms@verge.net.au>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Uli,
+Hi Olof, Hi Kevin, Hi Arnd,
 
-On Fri, Aug 29, 2014 at 8:16 PM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> These are the dtsi files for r8a7778 and r8a7779 sorted according to what I
-> imagine to be accepted standards now: sort by address, "compatible" goes
-> first, #include directives before anything else.  The sorting was done using
-> a little script I wrote (https://github.com/uli/dtssort).
+Please consider these Renesas ARM based SoC cleanup updates for v3.18.
 
-Nice! (but soon thereafter I got sidetracked by decomp ;-)
+This pull request is based on
+"Renesas ARM Based SoC DT Timers Updates for v3.18",
+tagged as dt-timers-for-v3.18,
+which I have already sent a pull-request for.
 
-> I chose these two files because the required changes are relatively small.
-> Doing this for r8a779x yields a gargantuan and entirely unreadable patch due
-> to the random shifting about of large blocks of code.  If anybody knows a
-> tool that makes such things somewhat manageable to review, please speak up.
+This is a rebase of changes that didn't quite make it into v3.17.
+These cleanups depend on changes in dt-timers-for-v3.18 and rebasing
+to remove that dependency is not entirely trivial.
 
-You more or less gave a solution at the top of your email: split it in multiple
-patches: one to sort the includes, one to sort the properties inside the nodes,
-and one single patch for each node you move.
-Yes, too many patches, but good for the patch statistics ;-)
 
-Another approach could be to start considering SoCs as built from multiple
-hardware blocks, not only at the hardware/software level, but also at the DTS
-level. I.e. use macros to instantiate nodes. This makes it easier to avoid
-stupid typos in e.g. the 5th i2c node. In addition, many SoCs are similar, and
-only differ in a few nodes.
+The following changes since commit 9dddfcfacaadb5491b62233b893b510fa00da4e0:
 
-Gr{oetje,eeting}s,
+  ARM: shmobile: genmai-reference: Enable MTU2 in device tree (2014-08-17 09:02:54 +0900)
 
-                        Geert
+are available in the git repository at:
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup-for-v3.18
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+for you to fetch changes up to ad8c3af8b75ff26c5c887f2101da653bdcd53a38:
+
+  ARM: shmobile: r7s72100: Remove legacy board support (2014-08-17 09:57:08 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC Cleanup Updates for v3.18
+
+* Remove Genmai board code
+
+----------------------------------------------------------------
+Laurent Pinchart (3):
+      ARM: shmobile: r7s72100: genmai: Remove reference board file
+      ARM: shmobile: r7s72100: genmai: Remove legacy board file
+      ARM: shmobile: r7s72100: Remove legacy board support
+
+ arch/arm/mach-shmobile/Kconfig                  |  17 --
+ arch/arm/mach-shmobile/Makefile                 |   3 -
+ arch/arm/mach-shmobile/Makefile.boot            |   1 -
+ arch/arm/mach-shmobile/board-genmai-reference.c |  35 ----
+ arch/arm/mach-shmobile/board-genmai.c           | 173 ------------------
+ arch/arm/mach-shmobile/clock-r7s72100.c         | 231 ------------------------
+ arch/arm/mach-shmobile/r7s72100.h               |   6 -
+ arch/arm/mach-shmobile/setup-r7s72100.c         |   2 -
+ 8 files changed, 468 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/board-genmai-reference.c
+ delete mode 100644 arch/arm/mach-shmobile/board-genmai.c
+ delete mode 100644 arch/arm/mach-shmobile/clock-r7s72100.c
+ delete mode 100644 arch/arm/mach-shmobile/r7s72100.h
