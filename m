@@ -1,46 +1,37 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 12 Aug 2014 00:04:41 +0000
-Subject: [PATCH v2 4/5] ARM: shmobile: armadillo800eva-reference: Do not use r8a7740_add_standard_devices_dt(
-Message-Id: <1407801882-2561-5-git-send-email-horms+renesas@verge.net.au>
+Date: Sat, 23 Aug 2014 01:44:10 +0000
+Subject: [PATCH 5/8] ARM: shmobile: kzm9g_defconfig: Enable missing hardware support
+Message-Id: <489610f3324dc1f94c816f4053215d7540871875.1408670623.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1407801882-2561-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1407801882-2561-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1408670623.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408670623.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Now that r8a7740_add_standard_devices_dt() is just a wrapper for
-of_platform_populate() call the latter directly.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-This is in preparation for removing r8a7740_add_standard_devices_dt().
+Based on the DTS
 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ arch/arm/configs/kzm9g_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index c392632..ea8a781 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -24,6 +24,7 @@
- #include <linux/gpio.h>
- #include <linux/io.h>
- #include <linux/kernel.h>
-+#include <linux/of_platform.h>
- 
- #include <asm/mach/arch.h>
- #include <asm/hardware/cache-l2x0.h>
-@@ -170,7 +171,7 @@ static void __init eva_init(void)
- 	l2x0_init(IOMEM(0xf0002000), 0x00400000, 0xc20f0fff);
- #endif
- 
--	r8a7740_add_standard_devices_dt();
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 
- 	r8a7740_pm_init();
- }
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+index bd097d4..8cb115d 100644
+--- a/arch/arm/configs/kzm9g_defconfig
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -119,6 +119,7 @@ CONFIG_MMC_SDHI=y
+ CONFIG_MMC_SH_MMCIF=y
+ CONFIG_NEW_LEDS=y
+ CONFIG_LEDS_CLASS=y
++CONFIG_LEDS_GPIO=y
+ CONFIG_RTC_CLASS=y
+ CONFIG_RTC_DRV_RS5C372=y
+ CONFIG_DMADEVICES=y
 -- 
-2.0.0.rc2
+2.0.1
 
