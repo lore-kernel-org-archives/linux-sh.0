@@ -1,100 +1,52 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Mon, 25 Aug 2014 02:58:48 +0000
-Subject: [PATCH 1/9 v3] mmc: tmio: care about DMA tx/rx addr offset
-Message-Id: <87a96ttguy.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sat, 23 Aug 2014 01:44:06 +0000
+Subject: [PATCH 1/8] ARM: shmobile: shmobile_defconfig: Enable missing hardware support
+Message-Id: <0f6442bef67d7f543d65d12e27006ceda8932b81.1408670623.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
-	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
-	<53AD638C.5060907@renesas.com>
-	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
-	<87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
+References: <cover.1408670623.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408670623.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Ulf Hansson <ulf.hansson@linaro.org>
-Cc: Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Basically, SD_BUF0 Tx/Rx addresses are same
-in normal TMIO controller,
-but, it is different on Renesas R-Car SDHI controller
-if it uses DMAC
-(Rx address needs to add 0x2000 to Tx address)
+Based on the DTSes
 
-This patch adds new .dma_rx_offset and cares it
+Notes:
+  - MTD_SPI_NOR is a dependency for MTD_M25P80 since commit
+    03e296f613affcc2671c1e86d8c25ecad867204e ("mtd: m25p80: use the SPI
+    nor framework") and commit e43b20619bdb6c851dd7b49cbd15e52875a785d4
+    ("mtd: spi-nor: shorten Kconfig naming"),
+  - I2C_RIIC was enabled in the old genmai_defconfig.
 
-Tested-by: Nguyen Xuan Nui <nx-nui@jinso.co.jp>
-Tested-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
-Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Ben Dooks <ben-linux@fluff.org>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2 -> v3
+ arch/arm/configs/shmobile_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
- - no change
-
- drivers/mmc/host/sh_mobile_sdhi.c |    3 +++
- drivers/mmc/host/tmio_mmc_dma.c   |    2 +-
- include/linux/mfd/tmio.h          |    1 +
- 3 files changed, 5 insertions(+), 1 deletion(-)
-
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 91058da..1ccf49b 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -39,6 +39,7 @@ struct sh_mobile_sdhi_of_data {
- 	unsigned long tmio_flags;
- 	unsigned long capabilities;
- 	unsigned long capabilities2;
-+	dma_addr_t dma_rx_offset;
- };
- 
- static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
-@@ -56,6 +57,7 @@ static const struct sh_mobile_sdhi_of_data of_rcar_gen2_compatible = {
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
- 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
- 	.capabilities2	= MMC_CAP2_NO_MULTI_READ,
-+	.dma_rx_offset	= 0x2000,
- };
- 
- static const struct of_device_id sh_mobile_sdhi_of_match[] = {
-@@ -228,6 +230,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		mmc_data->flags |= of_data->tmio_flags;
- 		mmc_data->capabilities |= of_data->capabilities;
- 		mmc_data->capabilities2 |= of_data->capabilities2;
-+		dma_priv->dma_rx_offset = of_data->dma_rx_offset;
- 	}
- 
- 	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
-diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
-index eb8f1d5..bd646b0 100644
---- a/drivers/mmc/host/tmio_mmc_dma.c
-+++ b/drivers/mmc/host/tmio_mmc_dma.c
-@@ -312,7 +312,7 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
- 		if (pdata->dma->chan_priv_rx)
- 			cfg.slave_id = pdata->dma->slave_id_rx;
- 		cfg.direction = DMA_DEV_TO_MEM;
--		cfg.src_addr = cfg.dst_addr;
-+		cfg.src_addr = cfg.dst_addr + pdata->dma->dma_rx_offset;
- 		cfg.src_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
- 		cfg.dst_addr = 0;
- 		ret = dmaengine_slave_config(host->chan_rx, &cfg);
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index 8f6f2e9..777e29b 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -96,6 +96,7 @@ struct tmio_mmc_dma {
- 	int slave_id_tx;
- 	int slave_id_rx;
- 	int alignment_shift;
-+	dma_addr_t dma_rx_offset;
- 	bool (*filter)(struct dma_chan *chan, void *arg);
- };
- 
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 3b13614..0cd63f5 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -49,6 +49,7 @@ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+ CONFIG_MTD=y
+ CONFIG_MTD_M25P80=y
++CONFIG_MTD_SPI_NOR=y
+ CONFIG_EEPROM_AT24=y
+ CONFIG_BLK_DEV_SD=y
+ CONFIG_ATA=y
+@@ -82,6 +83,7 @@ CONFIG_SERIAL_SH_SCI=y
+ CONFIG_SERIAL_SH_SCI_NR_UARTS 
+ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ CONFIG_I2C_GPIO=y
++CONFIG_I2C_RIIC=y
+ CONFIG_I2C_SH_MOBILE=y
+ CONFIG_I2C_RCAR=y
+ CONFIG_SPI=y
 -- 
-1.7.9.5
+2.0.1
 
