@@ -1,48 +1,39 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 26 Aug 2014 05:23:58 +0000
-Subject: [PATCH 4/8] ARM: shmobile: armadillo800eva-reference: add clock overrides to DTS
-Message-Id: <ae2a8cdd5c52b4e205cc1e5abca31168fb20dadb.1409030383.git.horms+renesas@verge.net.au>
+Date: Sat, 23 Aug 2014 01:44:11 +0000
+Subject: [PATCH 01/11] ARM: shmobile: r8a7778: Add missing call to shmobile_init_late()
+Message-Id: <54a06dde40f6a01e323d49390d78b8c9f1dfacc0.1408671240.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1409030383.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1409030383.git.horms+renesas@verge.net.au>
+References: <cover.1408671240.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408671240.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Magnus Damm <damm+renesas@opensource.se>
+Add the missing call to shmobile_init_late() to r8a7778_init_late().
+This should make sure Suspend-to-RAM and CPUIdle are setup as expected
+on bockw.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ arch/arm/mach-shmobile/setup-r8a7778.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index ee9e7d5..266c439 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -178,6 +178,19 @@
- 	};
- };
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index f00a488..383e43b 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -520,6 +520,7 @@ void __init r8a7778_add_standard_devices(void)
  
-+&extal1_clk {
-+	clock-frequency = <25000000>;
-+};
-+&extal2_clk {
-+	clock-frequency = <48000000>;
-+};
-+&fsibck_clk {
-+	clock-frequency = <12288000>;
-+};
-+&cpg_clocks {
-+	renesas,mode = <0x05>; /* MD_CK0 | MD_CK2 */
-+};
-+
- &i2c0 {
- 	status = "okay";
- 	touchscreen@55 {
+ void __init r8a7778_init_late(void)
+ {
++	shmobile_init_late();
+ 	platform_device_register_full(&ehci_info);
+ 	platform_device_register_full(&ohci_info);
+ }
 -- 
 2.0.1
 
