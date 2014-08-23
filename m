@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 23 Aug 2014 01:44:21 +0000
-Subject: [PATCH 11/11] ARM: shmobile: sh73a0: Remove unneeded nr_irqs initialization
-Message-Id: <5ac9e7f35db00e630c9f95a1f73ac329371cdbbf.1408671240.git.horms+renesas@verge.net.au>
+Date: Sat, 23 Aug 2014 01:43:36 +0000
+Subject: [PATCH 7/8] ARM: shmobile: kzm9g: Remove unneeded nr_irqs initialization
+Message-Id: <f185a01b3877880135ea73ddfcec52bd9a4d4864.1408671094.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408671240.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408671240.git.horms+renesas@verge.net.au>
+References: <cover.1408671094.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408671094.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -21,21 +21,21 @@ ARCH_SHMOBILE_LEGACY, it's always enabled on shmobile.
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-sh73a0.c | 1 -
+ arch/arm/mach-shmobile/board-kzm9g.c | 1 -
  1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 0022918..e7a0296 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -797,7 +797,6 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index f8bc7f8..36593cb 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -910,7 +910,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g")
  	.smp		= smp_ops(sh73a0_smp_ops),
  	.map_io		= sh73a0_map_io,
- 	.init_early	= sh73a0_init_delay,
+ 	.init_early	= sh73a0_add_early_devices,
 -	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_machine	= sh73a0_add_standard_devices_dt,
+ 	.init_irq	= sh73a0_init_irq,
+ 	.init_machine	= kzm_init,
  	.init_late	= shmobile_init_late,
- 	.dt_compat	= sh73a0_boards_compat_dt,
 -- 
 2.0.1
 
