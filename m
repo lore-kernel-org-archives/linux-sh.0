@@ -1,84 +1,38 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 20 Aug 2014 00:23:53 +0000
-Subject: [PATCH 02/12] ARM: shmobile: henninger: add VIN0/ADV7180 DT support
-Message-Id: <8d62f4f75320db5e95d3610547a26e4487c30742.1408492753.git.horms+renesas@verge.net.au>
+Date: Sat, 23 Aug 2014 01:44:15 +0000
+Subject: [PATCH 05/11] ARM: shmobile: r8a73a4: Add shmobile_init_late()
+Message-Id: <0592d1b5d296b0b6a24b7e48b7b48662164d3117.1408671240.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408492753.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408492753.git.horms+renesas@verge.net.au>
+References: <cover.1408671240.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408671240.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Define the Henninger board dependent part of the VIN0 device node. Add the
-device node for Analog Devices ADV7180 video decoder to I2C2  bus. Add the
-necessary subnodes to interconnect VIN0 and ADV7180 devices.
+Extend r8a73a4 SoC machine vector to include shmobile_init_late()
+so Suspend-to-RAM and CPUIdle are setup as expected.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791-henninger.dts | 35 +++++++++++++++++++++++++++++++++
- 1 file changed, 35 insertions(+)
+ arch/arm/mach-shmobile/setup-r8a73a4.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
-index 3a2ef0a..f1b56de 100644
---- a/arch/arm/boot/dts/r8a7791-henninger.dts
-+++ b/arch/arm/boot/dts/r8a7791-henninger.dts
-@@ -135,6 +135,11 @@
- 		renesas,groups = "usb1";
- 		renesas,function = "usb1";
- 	};
-+
-+	vin0_pins: vin0 {
-+		renesas,groups = "vin0_data8", "vin0_clk";
-+		renesas,function = "vin0";
-+	};
- };
+diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
+index 6683072..6fbcdcc 100644
+--- a/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
+@@ -311,6 +311,7 @@ static const char *r8a73a4_boards_compat_dt[] __initdata = {
  
- &scif0 {
-@@ -191,6 +196,19 @@
- 
- 	status = "okay";
- 	clock-frequency = <400000>;
-+
-+	composite-in@20 {
-+		compatible = "adi,adv7180";
-+		reg = <0x20>;
-+		remote = <&vin0>;
-+
-+		port {
-+			adv7180: endpoint {
-+				bus-width = <8>;
-+				remote-endpoint = <&vin0ep>;
-+			};
-+		};
-+	};
- };
- 
- &qspi {
-@@ -260,3 +278,20 @@
- &pciec {
- 	status = "okay";
- };
-+
-+/* composite video input */
-+&vin0 {
-+	status = "ok";
-+	pinctrl-0 = <&vin0_pins>;
-+	pinctrl-names = "default";
-+
-+	port {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		vin0ep: endpoint {
-+			remote-endpoint = <&adv7180>;
-+			bus-width = <8>;
-+		};
-+	};
-+};
+ DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
+ 	.init_early	= r8a73a4_init_early,
++	.init_late	= shmobile_init_late,
+ 	.dt_compat	= r8a73a4_boards_compat_dt,
+ MACHINE_END
+ #endif /* CONFIG_USE_OF */
 -- 
 2.0.1
 
