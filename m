@@ -1,68 +1,38 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Wed, 06 Aug 2014 01:49:32 +0000
-Subject: [PATCH 3/5 v2] ARM: shmobile: r8a7779: add generation level compatible for SDHI
-Message-Id: <87k36m8k0l.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sat, 23 Aug 2014 01:44:13 +0000
+Subject: [PATCH 8/8] ARM: shmobile: defconfig: enable initrd
+Message-Id: <874ee23c83d888f8824305c277e047c7799f30b9.1408670623.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
-	<87oavy8k3v.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87oavy8k3v.wl%kuninori.morimoto.gx@gmail.com>
+References: <cover.1408670623.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408670623.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
-Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, "goda (Renesas)" <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Kevin Hilman <khilman@linaro.org>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Enable initrd support.
+
+Signed-off-by: Kevin Hilman <khilman@linaro.org>
+[horms+renesas@verge.net.au: dropped enabling atag dtb compat]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v1 -> v2
+ arch/arm/configs/shmobile_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-- no change
-
- arch/arm/boot/dts/r8a7779.dtsi |    8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 463e3fd..e56e174 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -316,7 +316,7 @@
- 	};
- 
- 	sdhi0: sd@ffe4c000 {
--		compatible = "renesas,sdhi-r8a7779";
-+		compatible = "renesas,sdhi-r8a7779", "renesas,sdhi-rcar-gen1";
- 		reg = <0xffe4c000 0x100>;
- 		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7779_CLK_SDHI0>;
-@@ -326,7 +326,7 @@
- 	};
- 
- 	sdhi1: sd@ffe4d000 {
--		compatible = "renesas,sdhi-r8a7779";
-+		compatible = "renesas,sdhi-r8a7779", "renesas,sdhi-rcar-gen1";
- 		reg = <0xffe4d000 0x100>;
- 		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7779_CLK_SDHI1>;
-@@ -336,7 +336,7 @@
- 	};
- 
- 	sdhi2: sd@ffe4e000 {
--		compatible = "renesas,sdhi-r8a7779";
-+		compatible = "renesas,sdhi-r8a7779", "renesas,sdhi-rcar-gen1";
- 		reg = <0xffe4e000 0x100>;
- 		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7779_CLK_SDHI2>;
-@@ -346,7 +346,7 @@
- 	};
- 
- 	sdhi3: sd@ffe4f000 {
--		compatible = "renesas,sdhi-r8a7779";
-+		compatible = "renesas,sdhi-r8a7779", "renesas,sdhi-rcar-gen1";
- 		reg = <0xffe4f000 0x100>;
- 		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7779_CLK_SDHI3>;
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 0cd63f5..b7ebf1e 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -3,6 +3,7 @@ CONFIG_NO_HZ=y
+ CONFIG_IKCONFIG=y
+ CONFIG_IKCONFIG_PROC=y
+ CONFIG_LOG_BUF_SHIFT
++CONFIG_BLK_DEV_INITRD=y
+ CONFIG_CC_OPTIMIZE_FOR_SIZE=y
+ CONFIG_SYSCTL_SYSCALL=y
+ CONFIG_EMBEDDED=y
 -- 
-1.7.9.5
+2.0.1
 
