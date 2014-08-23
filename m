@@ -1,76 +1,69 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 22 Aug 2014 23:54:34 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sat, 23 Aug 2014 03:08:50 +0000
 Subject: Re: [PATCH 08/11] i2c: rcar: remove spinlock
-Message-Id: <53F7D83A.5030903@cogentembedded.com>
+Message-Id: <20140823030849.GA1305@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="nFreZHaLTZJo0R7j"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401263086-13720-1-git-send-email-wsa@the-dreams.de> <1401263086-13720-9-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1401263086-13720-9-git-send-email-wsa@the-dreams.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>, linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+References: <1401263086-13720-1-git-send-email-wsa@the-dreams.de>
+ <1401263086-13720-9-git-send-email-wsa@the-dreams.de>
+ <53F7D83A.5030903@cogentembedded.com>
+In-Reply-To: <53F7D83A.5030903@cogentembedded.com>
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Hello.
 
-On 05/28/2014 11:44 AM, Wolfram Sang wrote:
+--nFreZHaLTZJo0R7j
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-> The i2c core has per-adapter locks, so no need to protect again.
+> >The i2c core has per-adapter locks, so no need to protect again.
+>=20
+>    The core's lock is unable to protect from the IRQs. So I'm proposing to
+> revert this patch. It's a pity I hadn't noticed this issue when the patch
+> was posted.
 
-    The core's lock is unable to protect from the IRQs. So I'm proposing to 
-revert this patch. It's a pity I hadn't noticed this issue when the patch was 
-posted.
+Yes, you are right. I noticed a while ago, too, but then got
+side-tracked :(
 
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> ---
->   drivers/i2c/busses/i2c-rcar.c | 22 ----------------------
->   1 file changed, 22 deletions(-)
->
-> diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-> index e82d64b5acef..4b088e67f2fd 100644
-> --- a/drivers/i2c/busses/i2c-rcar.c
-> +++ b/drivers/i2c/busses/i2c-rcar.c
-[...]
-> @@ -110,7 +109,6 @@ struct rcar_i2c_priv {
->   	struct i2c_msg	*msg;
->   	struct clk *clk;
->
-> -	spinlock_t lock;
+>    I'm afraid this unlock is misplaced, the code continues to access the
+> registers.
+>=20
+> >  	ret =3D rcar_i2c_bus_barrier(priv);
+>=20
+>    Should probably unlock here instead?
 
-    Needed a comment (that it protects the I2C registers).
+I can check details next week earliest. If you are confident with your
+suggestions, feel free to send one patch with the revert and the updates
+you mentioned.
 
-[...]
-> @@ -462,21 +454,14 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
->   {
->   	struct rcar_i2c_priv *priv = i2c_get_adapdata(adap);
->   	struct device *dev = rcar_i2c_priv_to_dev(priv);
-> -	unsigned long flags;
->   	int i, ret, timeout;
->
->   	pm_runtime_get_sync(dev);
->
-> -	/*-------------- spin lock -----------------*/
-> -	spin_lock_irqsave(&priv->lock, flags);
-> -
->   	rcar_i2c_init(priv);
->   	/* start clock */
->   	rcar_i2c_write(priv, ICCCR, priv->icccr);
->
-> -	spin_unlock_irqrestore(&priv->lock, flags);
-> -	/*-------------- spin unlock -----------------*/
-> -
+Thanks,
 
-    I'm afraid this unlock is misplaced, the code continues to access the 
-registers.
+   Wolfram
 
->   	ret = rcar_i2c_bus_barrier(priv);
 
-    Should probably unlock here instead?
+--nFreZHaLTZJo0R7j
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
->   	if (ret < 0)
->   		goto out;
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
-WBR, Sergei
+iQIcBAEBAgAGBQJT+AXBAAoJEBQN5MwUoCm2vLYP/1mjkHo2Bq/AWmDe5ZbLAAqI
+J7fhRDrr8u0xMWjAJ1FC/UVO+MyP/OVsA6dIoIT/SYs/D64qNmJf21j6pteoXsHm
+bT04EtW6patH+sRTWZfqXpS/k9I/EYEL9bqjcbT/35nTAvBYZwFZJfeANBvDk3Eu
+SZdjzEyeV5/kYYYzJWm+ZDTwpNGyy7Yrx9W7lirF20rCOWZW+LGFxheagvrG6puC
+m+G3aHg9+V2yXDuRQIb47PicmbI4UCsi3+PRaud4A5+aI1l2hJ2bxbrlxciSExVK
+1iH/TRTXFrbjSDzuW1KYB0Y1IFnCYryyLGhRrNJDo+m87wdTJYugYKqJO8Cwqcse
+eB03JqYe+RIZztsUISO1FwGng+jUIkBEecB5rUmJD5pyop0XM943EVjXkxe20IS1
+m6XNy9nbQ13XP8tfsyP6V6Usjjgnq4HeJAQ4hukRv+YXAmJlv/7b1GrD8u0/6iUP
+B+VqnhJjpw1jaxhyNckY6I4xRGotR2T6ZQVSGmhdonIfT/MfxI/3pn01CGWnFQIE
+gdS7mDEr80ik8qMPmejXb2RJWrOYAU7jf2Ud02bptxLEuXuxqQ9Tt1PDNDSWpSXX
+qyjSn5gPcGWwKvL18TTvfcEavVLqghtZg1uF2a/LSBBq4Kc30xBlUAkKeK16nSW0
+E+0uukKh+jwLlVXY58M8
+=djJC
+-----END PGP SIGNATURE-----
 
+--nFreZHaLTZJo0R7j--
