@@ -1,43 +1,51 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 23 Aug 2014 01:43:35 +0000
-Subject: [PATCH 6/8] ARM: shmobile: marzen: Remove NR_IRQS_LEGACY
-Message-Id: <322163c437b200b70ecb87ab102dfedce0ba0e91.1408671094.git.horms+renesas@verge.net.au>
+Date: Sat, 23 Aug 2014 01:44:08 +0000
+Subject: [PATCH 3/8] ARM: shmobile: bockw_defconfig: Enable missing hardware support
+Message-Id: <4f0c320be6164ab39af42867aa1ccf69475850b7.1408670623.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408671094.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408671094.git.horms+renesas@verge.net.au>
+References: <cover.1408670623.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408670623.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Remove NR_IRQS_LEGACY from the Marzen Reference code.
-The Marzen Reference machine vector requires use of
-Multiplatform, and in such case SPARSE_IRQ is enabled
-by default. This in turns means that the default value
-of .nr_irqs equals NR_IRQS and NR_IRQS_LEGACY. Because
-of this we can simply remove NR_IRQS_LEGACY and move one
-step closer to a cruft-free environment.
+Based on the DTS
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Notes:
+  - MTD_SPI_NOR is a dependency for MTD_M25P80 since commit
+    03e296f613affcc2671c1e86d8c25ecad867204e ("mtd: m25p80: use the SPI
+    nor framework") and commit e43b20619bdb6c851dd7b49cbd15e52875a785d4
+    ("mtd: spi-nor: shorten Kconfig naming").
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-marzen-reference.c | 1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/configs/bockw_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index 9194bce..c3dfa6c 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -64,7 +64,6 @@ DT_MACHINE_START(MARZEN, "marzen")
- 	.map_io		= r8a7779_map_io,
- 	.init_early	= shmobile_init_delay,
- 	.init_time	= marzen_init_timer,
--	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= r8a7779_init_irq_dt,
- 	.init_machine	= marzen_init,
- 	.init_late	= shmobile_init_late,
+diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
+index e816140..70b3f45 100644
+--- a/arch/arm/configs/bockw_defconfig
++++ b/arch/arm/configs/bockw_defconfig
+@@ -55,6 +55,7 @@ CONFIG_MTD_BLOCK=y
+ CONFIG_MTD_CFI=y
+ CONFIG_MTD_CFI_AMDSTD=y
+ CONFIG_MTD_M25P80=y
++CONFIG_MTD_SPI_NOR=y
+ CONFIG_SCSI=y
+ CONFIG_BLK_DEV_SD=y
+ CONFIG_NETDEVICES=y
+@@ -82,6 +83,7 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HWMON is not set
+ CONFIG_I2C=y
+ CONFIG_I2C_RCAR=y
++CONFIG_GPIO_RCAR=y
+ CONFIG_REGULATOR=y
+ CONFIG_MEDIA_SUPPORT=y
+ CONFIG_MEDIA_CAMERA_SUPPORT=y
 -- 
 2.0.1
 
