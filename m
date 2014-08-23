@@ -1,39 +1,43 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 20 Aug 2014 00:24:25 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC Maintainers Updates for v3.18
-Message-Id: <cover.1408492852.git.horms+renesas@verge.net.au>
+Date: Sat, 23 Aug 2014 01:43:35 +0000
+Subject: [PATCH 6/8] ARM: shmobile: marzen: Remove NR_IRQS_LEGACY
+Message-Id: <322163c437b200b70ecb87ab102dfedce0ba0e91.1408671094.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1408671094.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408671094.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Please consider these Renesas ARM based SoC maintainers updates for v3.18.
+Remove NR_IRQS_LEGACY from the Marzen Reference code.
+The Marzen Reference machine vector requires use of
+Multiplatform, and in such case SPARSE_IRQ is enabled
+by default. This in turns means that the default value
+of .nr_irqs equals NR_IRQS and NR_IRQS_LEGACY. Because
+of this we can simply remove NR_IRQS_LEGACY and move one
+step closer to a cruft-free environment.
 
-
-The following changes since commit 7d1311b93e58ed55f3a31cc8f94c4b8fe988a2b9:
-
-  Linux 3.17-rc1 (2014-08-16 10:40:26 -0600)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-maintainers-for-v3.18
-
-for you to fetch changes up to f7b98477f613a69b74ba4a715856630cc6508c0d:
-
-  ARM: shmobile: Remove genmai_defconfig from MAINTAINERS (2014-08-17 09:39:29 +0900)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC Maintainers Updates for v3.18
-
-* Remove genmai_defconfig from MAINTAINERS
-  genmai_defconfig was removed in v3.17-rc1.
-
-----------------------------------------------------------------
-Simon Horman (1):
-      ARM: shmobile: Remove genmai_defconfig from MAINTAINERS
-
- MAINTAINERS | 1 -
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-marzen-reference.c | 1 -
  1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 9194bce..c3dfa6c 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -64,7 +64,6 @@ DT_MACHINE_START(MARZEN, "marzen")
+ 	.map_io		= r8a7779_map_io,
+ 	.init_early	= shmobile_init_delay,
+ 	.init_time	= marzen_init_timer,
+-	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= r8a7779_init_irq_dt,
+ 	.init_machine	= marzen_init,
+ 	.init_late	= shmobile_init_late,
+-- 
+2.0.1
+
