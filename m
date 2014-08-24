@@ -1,71 +1,54 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 07 Aug 2014 00:43:06 +0000
-Subject: Re: [PATCH 1/5 v2] mmc: shmobile: add renesas,sdhi-rcar-gen1/gen2 in DT compatible
-Message-Id: <20140807004303.GG32652@verge.net.au>
+From: Chen Gang <gang.chen.5i5j@gmail.com>
+Date: Sun, 24 Aug 2014 08:38:39 +0000
+Subject: Re: [PATCH v3] arch: Kconfig: Let all architectures set endian explicitly
+Message-Id: <53F9A48F.3020803@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87mwbso8sp.wl%kuninori.morimoto.gx@gmail.com>
- <87oavy8k3v.wl%kuninori.morimoto.gx@gmail.com>
- <87mwbi8k1z.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87mwbi8k1z.wl%kuninori.morimoto.gx@gmail.com>
+References: <53ECE9DD.80004@gmail.com> <20140814180418.GA20777@linux-mips.org> <53ED34CE.3040001@gmail.com> <53EDCC60.5040608@gmail.com>
+In-Reply-To: <53EDCC60.5040608@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Cc: Chris Ball <cjb@laptop.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, goda <yusuke.goda.sx@renesas.com>, linux-mmc@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: Ralf Baechle <ralf@linux-mips.org>
+Cc: Arnd Bergmann <arnd@arndb.de>, akpm@linux-foundation.org, rth@twiddle.net, ink@jurassic.park.msu.ru, mattst88@gmail.com, vgupta@synopsys.com, Geert Uytterhoeven <geert@linux-m68k.org>, Jean Delvare <jdelvare@suse.de>, linux@arm.linux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, hskinnemoen@gmail.com, egtvedt@samfundet.no, realmz6@gmail.com, msalter@redhat.com, a-jacquiot@ti.com, starvik@axis.com, jesper.nilsson@axis.com, dhowells@redhat.com, rkuo@codeaurora.org, tony.luck@intel.com, fenghua.yu@intel.com, takata@linux-m32r.org, james.hogan@imgtec.com, Michal Simek <monstr@monstr.eu>, yasutake.koichi@jp.panasonic.com, jonas@southpole.se, jejb@parisc-linux.org, deller@gmx.de, Benjamin Herrenschmidt <benh@kernel.crashing.org>, paulus@samba.org, mpe@ellerman.id.au, Martin Schwidefsky <schwidefsky@de.ibm.com>, heiko.carstens@de.ibm.com, Liqin Chen <liqin.linux@gmail>
 
-On Tue, Aug 05, 2014 at 06:48:42PM -0700, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> This patch adds DT compatible for Renesas R-Car Gen1/Gen2.
-> Current driver has SoC level .compatible
-> (r8a7778/r8a7779/r8a7790/r8a7791),
-> but these can be match as generation level.
+Hello Maintainers:
 
-Is this compatibility explicitly documented anywhere?
+Is this patch OK? If it pass basic checking, please let me know, and I
+shall try to make another related patch for KBuild (I can do nothing
+related with Kbuild, before get confirmation for this patch).
 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> v1 -> v2
+Thanks.
+
+On 8/15/14 17:01, Chen Gang wrote:
 > 
->  - update tmio_mmc.txt
 > 
->  Documentation/devicetree/bindings/mmc/tmio_mmc.txt |    2 ++
->  drivers/mmc/host/sh_mobile_sdhi.c                  |    2 ++
->  2 files changed, 4 insertions(+)
+> On 8/15/14 6:14, Chen Gang wrote:
+>> On 08/15/2014 02:04 AM, Ralf Baechle wrote:
+>>>
+>>
+>> OK, thanks, I assumes when support both endian, the default choice is
+>> CPU_BIG_ENDIAN, although no default value for choice (originally, I did
+>> worry about it).
+>>
+>>> So I think you can just drop the MIPS segment from your patch.
+>>>
+>>
+>> If what I assumes is correct, what you said sounds reasonable to me.
+>>
+>>
 > 
-> diff --git a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-> index 6a2a116..51c05cf 100644
-> --- a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-> +++ b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-> @@ -11,6 +11,8 @@ optional bindings can be used.
->  
->  Required properties:
->  - compatible:	"renesas,sdhi-shmobile" - a generic sh-mobile SDHI unit
-> +		"renesas,sdhi-rcar-gen1" - a generic R-Car Gen1 SDHI unit
-> +		"renesas,sdhi-rcar-gen2" - a generic R-Car Gen2 SDHI unit
->  		"renesas,sdhi-sh7372" - SDHI IP on SH7372 SoC
->  		"renesas,sdhi-sh73a0" - SDHI IP on SH73A0 SoC
->  		"renesas,sdhi-r8a73a4" - SDHI IP on R8A73A4 SoC
-> diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-> index 91058da..cb3bb39 100644
-> --- a/drivers/mmc/host/sh_mobile_sdhi.c
-> +++ b/drivers/mmc/host/sh_mobile_sdhi.c
-> @@ -64,8 +64,10 @@ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
->  	{ .compatible = "renesas,sdhi-sh73a0", .data = &sh_mobile_sdhi_of_cfg[0], },
->  	{ .compatible = "renesas,sdhi-r8a73a4", .data = &sh_mobile_sdhi_of_cfg[0], },
->  	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
-> +	{ .compatible = "renesas,sdhi-rcar-gen1", .data = &of_rcar_gen1_compatible, },
->  	{ .compatible = "renesas,sdhi-r8a7778", .data = &of_rcar_gen1_compatible, },
->  	{ .compatible = "renesas,sdhi-r8a7779", .data = &of_rcar_gen1_compatible, },
-> +	{ .compatible = "renesas,sdhi-rcar-gen2", .data = &of_rcar_gen2_compatible, },
->  	{ .compatible = "renesas,sdhi-r8a7790", .data = &of_rcar_gen2_compatible, },
->  	{ .compatible = "renesas,sdhi-r8a7791", .data = &of_rcar_gen2_compatible, },
->  	{},
-> -- 
-> 1.7.9.5
+> So for me, it is harmless to add CPU_*_ENDIAN explicitly, and can let
+> other members don't need think of.
 > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> By the way, for sh, it is almost the same case, except it contents the
+> default value, for me, it is clear enough, so I skip sh architecture in
+> this patch.
 > 
+> 
+> Thanks
+> 
+
+-- 
+Chen Gang
+
+Open, share, and attitude like air, water, and life which God blessed
