@@ -1,117 +1,52 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 23 Aug 2014 20:44:09 +0000
-Subject: [PATCH v2] Revert "i2c: rcar: remove spinlock"
-Message-Id: <1642788.pEhrsPDp4u@wasted.cogentembedded.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sun, 24 Aug 2014 06:45:20 +0000
+Subject: Re: [PATCH v2] Revert "i2c: rcar: remove spinlock"
+Message-Id: <20140824064520.GA2578@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="+HP7ph2BbKc20aGI"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: wsa@the-dreams.de, linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+References: <1642788.pEhrsPDp4u@wasted.cogentembedded.com>
+In-Reply-To: <1642788.pEhrsPDp4u@wasted.cogentembedded.com>
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org
 
-This reverts commit 150b8be3cda54412ad7b54f5392b513b25c0aaa7.
 
-The I2C core's per-adapter locks can't protect from IRQs, so the driver still
-needs a spinlock to protect the register accesses.
+--+HP7ph2BbKc20aGI
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: stable@vger.kernel.org # 3.16+
+On Sun, Aug 24, 2014 at 12:44:09AM +0400, Sergei Shtylyov wrote:
+> This reverts commit 150b8be3cda54412ad7b54f5392b513b25c0aaa7.
+>=20
+> The I2C core's per-adapter locks can't protect from IRQs, so the driver s=
+till
+> needs a spinlock to protect the register accesses.
 
----
-The patch is against Wolfram Sang's 'linux.git' repo.
+Looks to me like a plain revert. What about the issues you mentioned?
+Don't you want to fix them? Confused...
 
-Changes in version 2:
-- fixed summary.
 
- drivers/i2c/busses/i2c-rcar.c |   22 ++++++++++++++++++++++
- 1 file changed, 22 insertions(+)
+--+HP7ph2BbKc20aGI
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-Index: linux/drivers/i2c/busses/i2c-rcar.c
-=================================--- linux.orig/drivers/i2c/busses/i2c-rcar.c
-+++ linux/drivers/i2c/busses/i2c-rcar.c
-@@ -34,6 +34,7 @@
- #include <linux/platform_device.h>
- #include <linux/pm_runtime.h>
- #include <linux/slab.h>
-+#include <linux/spinlock.h>
- 
- /* register offsets */
- #define ICSCR	0x00	/* slave ctrl */
-@@ -95,6 +96,7 @@ struct rcar_i2c_priv {
- 	struct i2c_msg	*msg;
- 	struct clk *clk;
- 
-+	spinlock_t lock;
- 	wait_queue_head_t wait;
- 
- 	int pos;
-@@ -365,6 +367,9 @@ static irqreturn_t rcar_i2c_irq(int irq,
- 	struct rcar_i2c_priv *priv = ptr;
- 	u32 msr;
- 
-+	/*-------------- spin lock -----------------*/
-+	spin_lock(&priv->lock);
-+
- 	msr = rcar_i2c_read(priv, ICMSR);
- 
- 	/* Arbitration lost */
-@@ -400,6 +405,9 @@ out:
- 		wake_up(&priv->wait);
- 	}
- 
-+	spin_unlock(&priv->lock);
-+	/*-------------- spin unlock -----------------*/
-+
- 	return IRQ_HANDLED;
- }
- 
-@@ -409,14 +417,21 @@ static int rcar_i2c_master_xfer(struct i
- {
- 	struct rcar_i2c_priv *priv = i2c_get_adapdata(adap);
- 	struct device *dev = rcar_i2c_priv_to_dev(priv);
-+	unsigned long flags;
- 	int i, ret, timeout;
- 
- 	pm_runtime_get_sync(dev);
- 
-+	/*-------------- spin lock -----------------*/
-+	spin_lock_irqsave(&priv->lock, flags);
-+
- 	rcar_i2c_init(priv);
- 	/* start clock */
- 	rcar_i2c_write(priv, ICCCR, priv->icccr);
- 
-+	spin_unlock_irqrestore(&priv->lock, flags);
-+	/*-------------- spin unlock -----------------*/
-+
- 	ret = rcar_i2c_bus_barrier(priv);
- 	if (ret < 0)
- 		goto out;
-@@ -428,6 +443,9 @@ static int rcar_i2c_master_xfer(struct i
- 			break;
- 		}
- 
-+		/*-------------- spin lock -----------------*/
-+		spin_lock_irqsave(&priv->lock, flags);
-+
- 		/* init each data */
- 		priv->msg	= &msgs[i];
- 		priv->pos	= 0;
-@@ -437,6 +455,9 @@ static int rcar_i2c_master_xfer(struct i
- 
- 		ret = rcar_i2c_prepare_msg(priv);
- 
-+		spin_unlock_irqrestore(&priv->lock, flags);
-+		/*-------------- spin unlock -----------------*/
-+
- 		if (ret < 0)
- 			break;
- 
-@@ -540,6 +561,7 @@ static int rcar_i2c_probe(struct platfor
- 
- 	irq = platform_get_irq(pdev, 0);
- 	init_waitqueue_head(&priv->wait);
-+	spin_lock_init(&priv->lock);
- 
- 	adap = &priv->adap;
- 	adap->nr = pdev->id;
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJT+YoAAAoJEBQN5MwUoCm2I9AP/3U4vvRRB1klX4xQSQtVQ1F6
+CtNGnhiG99cNCsSw6I5VaONAyGKxMka0mpF9F/GaG5Wtzc0uKA9AWyd1qmv7j+rh
+i703jBrfSG3AmRI28BYgm9ITBVe0eR2Oc13XACmCSa+N5E/AQ/VAmi7DuwMThm/3
+RZbMyaX8MFtEbjf3Bb6L4BDWgF9CU+TNg4ShIShPk4qVWGtyT6aH9HPiW+79omCD
+e01E53TYJP8kAxXESCWrYNlf0W6JJtmIncDfE2DOdyEsCX/hg2pYJNIBtX9eo8BC
+fVnjvev9cIMZKbBOsid2MMapAw78KLvrRd/2L9GRCVim596zjSb+DINoGBfPiQdP
+GQsIwidwSSPJCA+q/XJAFmJulhmIT1/bVsy4BC2f01TNc3ew6FOAJBRvttU4mOGq
+iEitR5CVkusm6npNjIfy9AGlLalDfSnwhZeg3MCinA4Q0eN9JWiTErqKnlufWRL8
+HGaUl9P/+JfZ8VhbNuKsruPT3soyNh/DFBn1YmmWqOk7KLUAn9UOTHxTHtgKXhXL
+mrK+8NkS0i+YWjSETQGDs/jNZWynPWbuf/iFrVlyVTpwj+rQZJndB0VZcGZ7XMu6
+tUPxSVyp+Sk2NSAajho2T3ik/LNW0DuUG7s+dfqLTR8PjQ3Jh2NXqs+x0wVeZnTB
+PvRSlaZG0B3/GL1FPKV/
+=fjpP
+-----END PGP SIGNATURE-----
+
+--+HP7ph2BbKc20aGI--
