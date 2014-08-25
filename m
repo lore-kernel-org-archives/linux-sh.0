@@ -1,49 +1,98 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 20 Aug 2014 00:24:16 +0000
-Subject: [PATCH 7/8] ARM: shmobile: r7s72100: Add MTU2 device to DT
-Message-Id: <9162d39ccb9400bfaed85630cf517c85861faa6f.1408492048.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 25 Aug 2014 03:03:00 +0000
+Subject: [PATCH 9/9 v3] mmc: tmio: add actual clock support as option
+Message-Id: <87y4uds23i.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408492048.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408492048.git.horms+renesas@verge.net.au>
+References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
+	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
+	<53AD638C.5060907@renesas.com>
+	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+	<87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Ulf Hansson <ulf.hansson@linaro.org>
+Cc: Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-Add the MTU2 counter to the r7s72100 device tree and make it disabled by
-default.
+Some controller is supporting actual clock on SD_CLK_CTRL :: DIV[7:0].
+Renesas SH-Mobile SDHI doesn't support,
+but, Renesas R-Car SDHI supports it.
+This patch adds new TMIO_MMC_CLK_ACTUAL flag for it.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-[horms+renesas@verge.net.au correct irq number]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+[Kuninori Morimoto: tidyuped for upstreaming]
+
+Tested-by: Nguyen Xuan Nui <nx-nui@jinso.co.jp>
+Tested-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r7s72100.dtsi | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+v2 -> v3
 
-diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
-index bdee225..1d28d01 100644
---- a/arch/arm/boot/dts/r7s72100.dtsi
-+++ b/arch/arm/boot/dts/r7s72100.dtsi
-@@ -229,6 +229,16 @@
- 		status = "disabled";
- 	};
+ - no change
+
+ drivers/mmc/host/sh_mobile_sdhi.c |    6 ++++--
+ drivers/mmc/host/tmio_mmc_pio.c   |    5 +++++
+ include/linux/mfd/tmio.h          |    5 +++++
+ 3 files changed, 14 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index cd54ca8..e55f761 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -49,12 +49,14 @@ static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
+ };
  
-+	mtu2: timer@fcff0000 {
-+		compatible = "renesas,mtu2";
-+		reg = <0xfcff0000 0x400>;
-+		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "tgi0a";
-+		clocks = <&mstp3_clks R7S72100_CLK_MTU2>;
-+		clock-names = "fck";
-+		status = "disabled";
-+	};
+ static const struct sh_mobile_sdhi_of_data of_rcar_gen1_compatible = {
+-	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE |
++			  TMIO_MMC_CLK_ACTUAL,
+ 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+ };
+ 
+ static const struct sh_mobile_sdhi_of_data of_rcar_gen2_compatible = {
+-	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE |
++			  TMIO_MMC_CLK_ACTUAL,
+ 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+ 	.capabilities2	= MMC_CAP2_NO_MULTI_READ,
+ 	.dma_rx_offset	= 0x2000,
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 1c5a631..895e713 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -150,6 +150,11 @@ static void tmio_mmc_set_clock(struct tmio_mmc_host *host, int new_clock)
+ 		for (clock = host->mmc->f_min, clk = 0x80000080;
+ 			new_clock >= (clock<<1); clk >>= 1)
+ 			clock <<= 1;
 +
- 	scif0: serial@e8007000 {
- 		compatible = "renesas,scif-r7s72100", "renesas,scif";
- 		reg = <0xe8007000 64>;
++		/* 1/1 clock is option */
++		if ((host->pdata->flags & TMIO_MMC_CLK_ACTUAL) &&
++		    ((clk >> 22) & 0x1))
++			clk |= 0xff;
+ 	}
+ 
+ 	if (host->set_clk_div)
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index adcb0cd..90436d5 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -99,6 +99,11 @@
+  */
+ #define TMIO_MMC_HAVE_CTL_DMA_REG	(1 << 9)
+ 
++/*
++ * Some controllers allows to set SDx actual clock
++ */
++#define TMIO_MMC_CLK_ACTUAL		(1 << 10)
++
+ int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
+ int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
+ void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
 -- 
-2.0.1
+1.7.9.5
 
