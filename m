@@ -1,51 +1,175 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 23 Aug 2014 01:44:08 +0000
-Subject: [PATCH 3/8] ARM: shmobile: bockw_defconfig: Enable missing hardware support
-Message-Id: <4f0c320be6164ab39af42867aa1ccf69475850b7.1408670623.git.horms+renesas@verge.net.au>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Mon, 25 Aug 2014 12:25:56 +0000
+Subject: [PATCH 04/12] mmc: tmio: Restructure ->set_ios() and adapt ->probe() to it
+Message-Id: <1408969564-6335-5-git-send-email-ulf.hansson@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408670623.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408670623.git.horms+renesas@verge.net.au>
+References: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
+In-Reply-To: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org, Ian Molton <ian.molton@codethink.co.uk>, Chris Ball <chris@printf.net>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Ulf Hansson <ulf.hansson@linaro.org>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+An internal power state machine were beeing used to keep ->probe() and
+->set_ios() in sync. Especially for handling specific scenarios while
+using CONFIG_MMC_CLKGATE. Moreover dependency to CONFIG_MMC_CLKGATE
+existed to handle runtime PM properly, which we moves away from here.
 
-Based on the DTS
+By removing the state machine and instead make ->set_ios() rely on the
+information provided through the function's in-parameters, the code
+becomes significantly simplier.
 
-Notes:
-  - MTD_SPI_NOR is a dependency for MTD_M25P80 since commit
-    03e296f613affcc2671c1e86d8c25ecad867204e ("mtd: m25p80: use the SPI
-    nor framework") and commit e43b20619bdb6c851dd7b49cbd15e52875a785d4
-    ("mtd: spi-nor: shorten Kconfig naming").
+Additonally as a part of this rework we prepares for making the runtime
+PM callbacks responsible of clock gating.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
- arch/arm/configs/bockw_defconfig | 2 ++
- 1 file changed, 2 insertions(+)
+ drivers/mmc/host/tmio_mmc.h     | 20 --------------
+ drivers/mmc/host/tmio_mmc_pio.c | 61 ++++++++++-------------------------------
+ 2 files changed, 14 insertions(+), 67 deletions(-)
 
-diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
-index e816140..70b3f45 100644
---- a/arch/arm/configs/bockw_defconfig
-+++ b/arch/arm/configs/bockw_defconfig
-@@ -55,6 +55,7 @@ CONFIG_MTD_BLOCK=y
- CONFIG_MTD_CFI=y
- CONFIG_MTD_CFI_AMDSTD=y
- CONFIG_MTD_M25P80=y
-+CONFIG_MTD_SPI_NOR=y
- CONFIG_SCSI=y
- CONFIG_BLK_DEV_SD=y
- CONFIG_NETDEVICES=y
-@@ -82,6 +83,7 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
- # CONFIG_HWMON is not set
- CONFIG_I2C=y
- CONFIG_I2C_RCAR=y
-+CONFIG_GPIO_RCAR=y
- CONFIG_REGULATOR=y
- CONFIG_MEDIA_SUPPORT=y
- CONFIG_MEDIA_CAMERA_SUPPORT=y
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index d6ceb1a..f837723 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -40,22 +40,6 @@
+ 
+ struct tmio_mmc_data;
+ 
+-/*
+- * We differentiate between the following 3 power states:
+- * 1. card slot powered off, controller stopped. This is used, when either there
+- *    is no card in the slot, or the card really has to be powered down.
+- * 2. card slot powered on, controller stopped. This is used, when a card is in
+- *    the slot, but no activity is currently taking place. This is a power-
+- *    saving mode with card-state preserved. This state can be entered, e.g.
+- *    when MMC clock-gating is used.
+- * 3. card slot powered on, controller running. This is the actual active state.
+- */
+-enum tmio_mmc_power {
+-	TMIO_MMC_OFF_STOP,	/* card power off, controller stopped */
+-	TMIO_MMC_ON_STOP,	/* card power on, controller stopped */
+-	TMIO_MMC_ON_RUN,	/* card power on, controller running */
+-};
+-
+ struct tmio_mmc_host {
+ 	void __iomem *ctl;
+ 	struct mmc_command      *cmd;
+@@ -63,9 +47,6 @@ struct tmio_mmc_host {
+ 	struct mmc_data         *data;
+ 	struct mmc_host         *mmc;
+ 
+-	/* Controller and card power state */
+-	enum tmio_mmc_power	power;
+-
+ 	/* Callbacks for clock / power control */
+ 	void (*set_pwr)(struct platform_device *host, int state);
+ 	void (*set_clk_div)(struct platform_device *host, int state);
+@@ -100,7 +81,6 @@ struct tmio_mmc_host {
+ 	unsigned long		last_req_ts;
+ 	struct mutex		ios_lock;	/* protect set_ios() context */
+ 	bool			native_hotplug;
+-	bool			resuming;
+ 	bool			sdio_irq_enabled;
+ };
+ 
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 8f5b5cc..e573a15 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -884,51 +884,23 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 
+ 	spin_unlock_irqrestore(&host->lock, flags);
+ 
+-	/*
+-	 * host->power toggles between false and true in both cases - either
+-	 * or not the controller can be runtime-suspended during inactivity.
+-	 * But if the controller has to be kept on, the runtime-pm usage_count
+-	 * is kept positive, so no suspending actually takes place.
+-	 */
+-	if (ios->power_mode = MMC_POWER_ON && ios->clock) {
+-		if (host->power != TMIO_MMC_ON_RUN) {
+-			tmio_mmc_clk_update(mmc);
+-			if (host->resuming) {
+-				tmio_mmc_reset(host);
+-				host->resuming = false;
+-			}
+-		}
+-		if (host->power = TMIO_MMC_OFF_STOP)
+-			tmio_mmc_reset(host);
++	switch (ios->power_mode) {
++	case MMC_POWER_OFF:
++		tmio_mmc_power_off(host);
++		tmio_mmc_clk_stop(host);
++		break;
++	case MMC_POWER_UP:
+ 		tmio_mmc_set_clock(host, ios->clock);
+-		if (host->power = TMIO_MMC_OFF_STOP)
+-			/* power up SD card and the bus */
+-			tmio_mmc_power_on(host, ios->vdd);
+-		host->power = TMIO_MMC_ON_RUN;
+-		/* start bus clock */
++		tmio_mmc_power_on(host, ios->vdd);
+ 		tmio_mmc_clk_start(host);
+-	} else if (ios->power_mode != MMC_POWER_UP) {
+-		struct tmio_mmc_data *pdata = host->pdata;
+-		unsigned int old_power = host->power;
+-
+-		if (old_power != TMIO_MMC_OFF_STOP) {
+-			if (ios->power_mode = MMC_POWER_OFF) {
+-				tmio_mmc_power_off(host);
+-				host->power = TMIO_MMC_OFF_STOP;
+-			} else {
+-				host->power = TMIO_MMC_ON_STOP;
+-			}
+-		}
+-
+-		if (old_power = TMIO_MMC_ON_RUN) {
+-			tmio_mmc_clk_stop(host);
+-			if (pdata->clk_disable)
+-				pdata->clk_disable(host->pdev);
+-		}
+-	}
+-
+-	if (host->power != TMIO_MMC_OFF_STOP)
+ 		tmio_mmc_set_bus_width(host, ios->bus_width);
++		break;
++	case MMC_POWER_ON:
++		tmio_mmc_set_clock(host, ios->clock);
++		tmio_mmc_clk_start(host);
++		tmio_mmc_set_bus_width(host, ios->bus_width);
++		break;
++	}
+ 
+ 	/* Let things settle. delay taken from winCE driver */
+ 	udelay(140);
+@@ -1064,7 +1036,6 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 				  mmc->caps & MMC_CAP_NONREMOVABLE ||
+ 				  mmc->slot.cd_irq >= 0);
+ 
+-	_host->power = TMIO_MMC_OFF_STOP;
+ 	if (tmio_mmc_clk_update(mmc) < 0) {
+ 		mmc->f_max = pdata->hclk;
+ 		mmc->f_min = mmc->f_max / 512;
+@@ -1116,8 +1087,6 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	pm_runtime_enable(&pdev->dev);
+ 
+ 	ret = mmc_add_host(mmc);
+-	if (pdata->clk_disable)
+-		pdata->clk_disable(pdev);
+ 	if (ret < 0) {
+ 		tmio_mmc_host_remove(_host);
+ 		return ret;
+@@ -1185,8 +1154,6 @@ int tmio_mmc_host_resume(struct device *dev)
+ 
+ 	tmio_mmc_enable_dma(host, true);
+ 
+-	/* The MMC core will perform the complete set up */
+-	host->resuming = true;
+ 	return 0;
+ }
+ EXPORT_SYMBOL(tmio_mmc_host_resume);
 -- 
-2.0.1
+1.9.1
 
