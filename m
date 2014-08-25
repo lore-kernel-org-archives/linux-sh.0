@@ -1,38 +1,66 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 29 Aug 2014 13:50:11 +0000
-Subject: [PATCH 05/11] ARM: shmobile: r8a7740: Add A3RV pm domain support
-Message-Id: <1409320217-13278-6-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 25 Aug 2014 01:10:10 +0000
+Subject: [PATCH 05/10] ARM: shmobile: r8a73a4: Use shmobile_init_delay()
+Message-Id: <f5720080b51d61c33dc559fedab9a601930e95c1.1408927601.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1408927601.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408927601.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add support for the A3RV power domain.
-This domain contains the VPU5F and VCP1 hardware blocks, which are
-currently not used by any driver.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Adjust the r8a73a4 SoC support code to use shmobile_init_delay()
+together with CPU Frequency settings from the DTS. Get rid of the
+C code version and r8a73a4_init_early() that now are unused.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/pm-r8a7740.c |    3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/mach-shmobile/r8a73a4.h       | 1 -
+ arch/arm/mach-shmobile/setup-r8a73a4.c | 9 +--------
+ 2 files changed, 1 insertion(+), 9 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
-index b20dd5b37e6d..93a89329d927 100644
---- a/arch/arm/mach-shmobile/pm-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7740.c
-@@ -37,6 +37,9 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
- 		.genpd.name	= "A4LC",
- 		.bit_shift	= 1,
- 	}, {
-+		.genpd.name	= "A3RV",
-+		.bit_shift	= 6,
-+	}, {
- 		.genpd.name	= "A4S",
- 		.bit_shift	= 10,
- 		.gov		= &pm_domain_always_on_gov,
+diff --git a/arch/arm/mach-shmobile/r8a73a4.h b/arch/arm/mach-shmobile/r8a73a4.h
+index ce8bdd1..5fafd6f 100644
+--- a/arch/arm/mach-shmobile/r8a73a4.h
++++ b/arch/arm/mach-shmobile/r8a73a4.h
+@@ -14,6 +14,5 @@ void r8a73a4_add_standard_devices(void);
+ void r8a73a4_add_dt_devices(void);
+ void r8a73a4_clock_init(void);
+ void r8a73a4_pinmux_init(void);
+-void r8a73a4_init_early(void);
+ 
+ #endif /* __ASM_R8A73A4_H__ */
+diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
+index 6fbcdcc..53f40b7 100644
+--- a/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
+@@ -295,13 +295,6 @@ void __init r8a73a4_add_standard_devices(void)
+ 	r8a73a4_register_dmac();
+ }
+ 
+-void __init r8a73a4_init_early(void)
+-{
+-#ifndef CONFIG_ARM_ARCH_TIMER
+-	shmobile_setup_delay(1500, 2, 4); /* Cortex-A15 @ 1500MHz */
+-#endif
+-}
+-
+ #ifdef CONFIG_USE_OF
+ 
+ static const char *r8a73a4_boards_compat_dt[] __initdata = {
+@@ -310,7 +303,7 @@ static const char *r8a73a4_boards_compat_dt[] __initdata = {
+ };
+ 
+ DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
+-	.init_early	= r8a73a4_init_early,
++	.init_early	= shmobile_init_delay,
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= r8a73a4_boards_compat_dt,
+ MACHINE_END
 -- 
-1.7.9.5
+2.0.1
 
