@@ -1,55 +1,41 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 29 Aug 2014 13:50:13 +0000
-Subject: [PATCH 07/11] [WIP] ARM: shmobile: r8a7740/armadillo legacy: Add A4MP pm domain support
-Message-Id: <1409320217-13278-8-git-send-email-geert+renesas@glider.be>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Mon, 25 Aug 2014 12:26:01 +0000
+Subject: [PATCH 09/12] mmc: tmio_mmc: Enable runtime PM support
+Message-Id: <1408969564-6335-10-git-send-email-ulf.hansson@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
+References: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
+In-Reply-To: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org, Ian Molton <ian.molton@codethink.co.uk>, Chris Ball <chris@printf.net>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Ulf Hansson <ulf.hansson@linaro.org>
 
-Add support for the A4MP power domain, and hook up the FSI hardware block.
-This domain also contains the SPU2, FMSI, and BBIF2 hardware blocks,
-but these are currently not used by any driver.
+To take advantage of the clock gating support, use the runtime PM
+callbacks provided by the tmio core.
 
-FIXME: A4PM is not added, as it causes "irq 163: nobody cared" (irq 163
-       is registered by sh-mobile-hdmi), either on boot, or, when trying
-       to fix it using pm_domain_always_on_gov, on resume.
+Additionally, we make use of the SET_PM_RUNTIME_PM_OPS, which is a
+preparation needed to simplify system PM.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |    1 +
- arch/arm/mach-shmobile/pm-r8a7740.c            |    3 +++
- 2 files changed, 4 insertions(+)
+ drivers/mmc/host/tmio_mmc.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 735036038951..c2ac4ee51710 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1234,6 +1234,7 @@ static void __init eva_init(void)
- 	static struct pm_domain_device domain_devices[] __initdata = {
- 		{ "A4LC", &lcdc0_device },
- 		{ "A4LC", &hdmi_lcdc_device },
-+		{ "A4MP", &fsi_device },
- 		{ "A4S",  &sh_eth_device },
- 		{ "A3SP", &pwm_device },
- 		{ "A3SP", &sdhi0_device },
-diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
-index 84b94d1d96db..86b2df8b5391 100644
---- a/arch/arm/mach-shmobile/pm-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7740.c
-@@ -37,6 +37,9 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
- 		.genpd.name	= "A4LC",
- 		.bit_shift	= 1,
- 	}, {
-+//		.genpd.name	= "A4MP",
-+//		.bit_shift	= 2,
-+//	}, {
- 		.genpd.name	= "A3RV",
- 		.bit_shift	= 6,
- 	}, {
+diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
+index cfad844..58f50ef 100644
+--- a/drivers/mmc/host/tmio_mmc.c
++++ b/drivers/mmc/host/tmio_mmc.c
+@@ -135,6 +135,9 @@ static int tmio_mmc_remove(struct platform_device *pdev)
+ 
+ static const struct dev_pm_ops tmio_mmc_dev_pm_ops = {
+ 	SET_SYSTEM_SLEEP_PM_OPS(tmio_mmc_suspend, tmio_mmc_resume)
++	SET_PM_RUNTIME_PM_OPS(tmio_mmc_host_runtime_suspend,
++			tmio_mmc_host_runtime_resume,
++			NULL)
+ };
+ 
+ static struct platform_driver tmio_mmc_driver = {
 -- 
-1.7.9.5
+1.9.1
 
