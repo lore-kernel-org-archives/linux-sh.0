@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 23 Aug 2014 01:43:35 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC Boards Updates for v3.18
-Message-Id: <cover.1408671094.git.horms+renesas@verge.net.au>
+Date: Mon, 25 Aug 2014 01:09:40 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Boards Cleanups For v3.18
+Message-Id: <cover.1408927475.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1397774190.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1397774190.git.horms+renesas@verge.net.au>
@@ -12,7 +12,7 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hi Olof, Hi Kevin, Hi Arnd,
 
-Please consider these Renesas ARM based SoC boards updates for v3.18.
+Please consider these Renesas ARM based SoC boards cleanups for v3.18.
 
 
 The following changes since commit 7d1311b93e58ed55f3a31cc8f94c4b8fe988a2b9:
@@ -21,36 +21,22 @@ The following changes since commit 7d1311b93e58ed55f3a31cc8f94c4b8fe988a2b9:
 
 are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards-for-v3.18
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards-cleanups-for-v3.18
 
-for you to fetch changes up to 3969d6490ba35b01f84bb12472c29c6029f7298b:
+for you to fetch changes up to 0e56d75395f98a659e6879708bbd9328d2ce347e:
 
-  ARM: shmobile: kzm9g-reference: Remove unneeded nr_irqs initialization (2014-08-20 09:06:37 +0900)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC Boards Updates for v3.18
-
-* Remove unnecessary nr_irqs initialisation on kzm9g and marzen
-* Use shmobile_init_delay and shmobile_init_late on a wider
-  range of boards
+  ARM: shmobile: armadillo800eva: Sort includes (2014-08-22 10:46:54 +0900)
 
 ----------------------------------------------------------------
-Geert Uytterhoeven (2):
-      ARM: shmobile: kzm9g: Remove unneeded nr_irqs initialization
-      ARM: shmobile: kzm9g-reference: Remove unneeded nr_irqs initialization
+Renesas ARM Based SoC Boards Cleanups For v3.18
 
-Magnus Damm (6):
-      ARM: shmobile: kzm9g: Add shmobile_init_late()
-      ARM: shmobile: marzen: Add shmobile_init_late()
-      ARM: shmobile: bockw: Add shmobile_init_late()
-      ARM: shmobile: ape6evm: Add shmobile_init_late()
-      ARM: shmobile: ape6evm: Use shmobile_init_delay()
-      ARM: shmobile: marzen: Remove NR_IRQS_LEGACY
+* Sort armadillo800eva includes
 
- arch/arm/mach-shmobile/board-ape6evm-reference.c | 3 ++-
- arch/arm/mach-shmobile/board-ape6evm.c           | 3 ++-
- arch/arm/mach-shmobile/board-bockw-reference.c   | 1 +
- arch/arm/mach-shmobile/board-kzm9g-reference.c   | 2 +-
- arch/arm/mach-shmobile/board-kzm9g.c             | 1 -
- arch/arm/mach-shmobile/board-marzen-reference.c  | 2 +-
- 6 files changed, 7 insertions(+), 5 deletions(-)
+----------------------------------------------------------------
+Simon Horman (2):
+      ARM: shmobile: armadillo800eva-reference: Sort includes
+      ARM: shmobile: armadillo800eva: Sort includes
+
+ .../board-armadillo800eva-reference.c              |  2 +-
+ arch/arm/mach-shmobile/board-armadillo800eva.c     | 40 +++++++++++-----------
+ 2 files changed, 21 insertions(+), 21 deletions(-)
