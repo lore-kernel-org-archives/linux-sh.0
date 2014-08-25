@@ -1,40 +1,103 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 29 Aug 2014 13:50:07 +0000
-Subject: [PATCH 01/11] ARM: shmobile: r8a7740: Add missing A3SP pm domain devices
-Message-Id: <1409320217-13278-2-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 25 Aug 2014 03:00:52 +0000
+Subject: [PATCH 4/9 v3] mmc: tmio: add TMIO_MMC_SDIO_STATUS_QUIRK
+Message-Id: <8761hhtgrh.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
+References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
+	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
+	<53AD638C.5060907@renesas.com>
+	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+	<87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Ulf Hansson <ulf.hansson@linaro.org>
+Cc: Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-Commit 802a5639aa7041b2 ("ARM: shmobile: r8a7740: add A3SP pm domain
-support") added the A3SP power domain, but forgot to hook up the IPPMU,
-DMAC0/1/2, and USBDMAC hardware blocks.
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Renesas R-Car SDHI should set reserved bits
+on CTL_SDIO_STATUS register when writing.
+This patch adds new TMIO_MMC_SDIO_STATUS_QUIRK flags
+for this purpose
+
+[Kuninori Morimoto: tidyuped for upstreaming
+                    enabled this flags for all SH-Mobile/R-Car]
+
+Tested-by: Nguyen Xuan Nui <nx-nui@jinso.co.jp>
+Tested-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7740.c |    5 +++++
- 1 file changed, 5 insertions(+)
+v2 -> v3
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 8894e1b7ab0e..6992d4013ef0 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -756,6 +756,11 @@ void __init r8a7740_add_standard_devices(void)
- 		{ "A3SP", &scif7_device },
- 		{ "A3SP", &scif8_device },
- 		{ "A3SP", &i2c1_device },
-+		{ "A3SP", &ipmmu_device },
-+		{ "A3SP", &dma0_device },
-+		{ "A3SP", &dma1_device },
-+		{ "A3SP", &dma2_device },
-+		{ "A3SP", &usb_dma_device },
- 	};
+ - no change
+
+ drivers/mmc/host/sh_mobile_sdhi.c |    5 +++++
+ drivers/mmc/host/tmio_mmc_pio.c   |    7 ++++++-
+ include/linux/mfd/tmio.h          |    5 +++++
+ 3 files changed, 16 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index d56ebd9..42730d9 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -230,6 +230,11 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	 */
+ 	mmc_data->flags |= TMIO_MMC_HAVE_CMD12_CTRL;
  
- 	/* I2C work-around */
++	/*
++	 * All SDHI need SDIO_INFO1 reserved bit
++	 */
++	mmc_data->flags |= TMIO_MMC_SDIO_STATUS_QUIRK;
++
+ 	if (of_id && of_id->data) {
+ 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
+ 		mmc_data->flags |= of_data->tmio_flags;
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 1f1fdfb..e51a993 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -650,6 +650,7 @@ irqreturn_t tmio_mmc_sdio_irq(int irq, void *devid)
+ 	struct mmc_host *mmc = host->mmc;
+ 	struct tmio_mmc_data *pdata = host->pdata;
+ 	unsigned int ireg, status;
++	unsigned int sdio_status;
+ 
+ 	if (!(pdata->flags & TMIO_MMC_SDIO_IRQ))
+ 		return IRQ_HANDLED;
+@@ -657,7 +658,11 @@ irqreturn_t tmio_mmc_sdio_irq(int irq, void *devid)
+ 	status = sd_ctrl_read16(host, CTL_SDIO_STATUS);
+ 	ireg = status & TMIO_SDIO_MASK_ALL & ~host->sdcard_irq_mask;
+ 
+-	sd_ctrl_write16(host, CTL_SDIO_STATUS, status & ~TMIO_SDIO_MASK_ALL);
++	sdio_status = status & ~TMIO_SDIO_MASK_ALL;
++	if (pdata->flags & TMIO_MMC_SDIO_STATUS_QUIRK)
++		sdio_status |= 6;
++
++	sd_ctrl_write16(host, CTL_SDIO_STATUS, sdio_status);
+ 
+ 	if (mmc->caps & MMC_CAP_SDIO_IRQ && ireg & TMIO_SDIO_STAT_IOIRQ)
+ 		mmc_signal_sdio_irq(mmc);
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 7432d95..a7493ae 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -89,6 +89,11 @@
+  */
+ #define TMIO_MMC_HAVE_CMD12_CTRL	(1 << 7)
+ 
++/*
++ * Some controllers needs to set 1 on SDIO status reserved bits
++ */
++#define TMIO_MMC_SDIO_STATUS_QUIRK	(1 << 8)
++
+ int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
+ int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
+ void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
 -- 
 1.7.9.5
 
