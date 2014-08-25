@@ -1,47 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 22 Aug 2014 01:40:27 +0000
-Subject: Re: [PATCH] ARM: shmobile: bockw: Do not disable SUSPEND in defconfig
-Message-Id: <20140822014027.GA9099@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 25 Aug 2014 01:10:00 +0000
+Subject: [PATCH] ARM: shmobile: bockw: Do not disable SUSPEND in defconfig
+Message-Id: <99923753e7c17a9c9d46bfe4d7fa543e426ec647.1408926588.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1408052188-8551-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1408052188-8551-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1408926588.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408926588.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Aug 15, 2014 at 06:36:28AM +0900, Simon Horman wrote:
-> As of "ARM: shmobile: r8a7778: Add missing call to shmobile_init_late()"
-> suspend-to-ram is now supported on the r8a7778 SoC and thus the bockw
-> board.
-> 
-> Cc: Geert Uytterhoeven <geert+renesas@glider.be>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+As of "ARM: shmobile: r8a7778: Add missing call to shmobile_init_late()"
+suspend-to-ram is now supported on the r8a7778 SoC and thus the bockw
+board.
 
-I have queued this up.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/configs/bockw_defconfig | 1 -
+ 1 file changed, 1 deletion(-)
 
-> ---
->  arch/arm/configs/bockw_defconfig | 1 -
->  1 file changed, 1 deletion(-)
-> 
-> diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
-> index 70b3f45..1dde5da 100644
-> --- a/arch/arm/configs/bockw_defconfig
-> +++ b/arch/arm/configs/bockw_defconfig
-> @@ -29,7 +29,6 @@ CONFIG_ZBOOT_ROM_BSS=0x0
->  CONFIG_ARM_APPENDED_DTB=y
->  CONFIG_VFP=y
->  # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
-> -# CONFIG_SUSPEND is not set
->  CONFIG_PM_RUNTIME=y
->  CONFIG_NET=y
->  CONFIG_PACKET=y
-> -- 
-> 2.0.1
-> 
-> 
-> _______________________________________________
-> linux-arm-kernel mailing list
-> linux-arm-kernel@lists.infradead.org
-> http://lists.infradead.org/mailman/listinfo/linux-arm-kernel
-> 
+diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
+index 70b3f45..1dde5da 100644
+--- a/arch/arm/configs/bockw_defconfig
++++ b/arch/arm/configs/bockw_defconfig
+@@ -29,7 +29,6 @@ CONFIG_ZBOOT_ROM_BSS=0x0
+ CONFIG_ARM_APPENDED_DTB=y
+ CONFIG_VFP=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+-# CONFIG_SUSPEND is not set
+ CONFIG_PM_RUNTIME=y
+ CONFIG_NET=y
+ CONFIG_PACKET=y
+-- 
+2.0.1
+
