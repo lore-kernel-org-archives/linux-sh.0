@@ -1,37 +1,89 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 11 Aug 2014 02:52:44 +0000
-Subject: [PATCH repost 0/5] ARM: shmobile: armadillo800eva-reference: Enable CMT1 in device tree
-Message-Id: <1407725569-31413-1-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 25 Aug 2014 03:01:54 +0000
+Subject: [PATCH 6/9 v3] mmc: tmio: remove Renesas specific #ifdef
+Message-Id: <8738cltgpr.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
+	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
+	<53AD638C.5060907@renesas.com>
+	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+	<87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Ulf Hansson <ulf.hansson@linaro.org>
+Cc: Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-This short series enables the CMT1 timer using DT on
-armadillo800eva-reference.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-It is based on "ARM: shmobile: r8a7740: add clocks to DT" applied
-on top of renesas-devel-v3.16-20140808.
+This patch adds new TMIO_MMC_HAVE_CTL_DMA_REG flag,
+and remove Renesas specific #ifdef from tmio driver
 
-Ulrich, if you end up reposting "ARM: shmobile: r8a7740: add clocks to DT"
-please consider appending this series to it.
+Tested-by: Nguyen Xuan Nui <nx-nui@jinso.co.jp>
+Tested-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v2 -> v3
 
-Simon Horman (5):
-  ARM: shmobile: r8a7740: Add CMT1 device to DT
-  ARM: shmobile: armadillo800eva-reference: Enable CMT1 in device tree
-  ARM: shmobile: armadillo800eva-reference: Sort includes
-  ARM: shmobile: armadillo800eva-reference: Do not use
-    r8a7740_add_standard_devices_dt()
-  ARM: shmobile: r8a7740: Remove r8a7740_add_standard_devices_dt
+ - no change
 
- .../arm/boot/dts/r8a7740-armadillo800eva-reference.dts |  4 ++++
- arch/arm/boot/dts/r8a7740.dtsi                         | 12 ++++++++++++
- .../mach-shmobile/board-armadillo800eva-reference.c    |  5 +++--
- arch/arm/mach-shmobile/r8a7740.h                       |  1 -
- arch/arm/mach-shmobile/setup-r8a7740.c                 | 18 ++----------------
- 5 files changed, 21 insertions(+), 19 deletions(-)
+ drivers/mmc/host/sh_mobile_sdhi.c |    5 +++++
+ drivers/mmc/host/tmio_mmc_dma.c   |    6 ++----
+ include/linux/mfd/tmio.h          |    5 +++++
+ 3 files changed, 12 insertions(+), 4 deletions(-)
 
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 42730d9..cd54ca8 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -235,6 +235,11 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	 */
+ 	mmc_data->flags |= TMIO_MMC_SDIO_STATUS_QUIRK;
+ 
++	/*
++	 * All SDHI have DMA control register
++	 */
++	mmc_data->flags |= TMIO_MMC_HAVE_CTL_DMA_REG;
++
+ 	if (of_id && of_id->data) {
+ 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
+ 		mmc_data->flags |= of_data->tmio_flags;
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index bd646b0..7d07738 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -28,10 +28,8 @@ void tmio_mmc_enable_dma(struct tmio_mmc_host *host, bool enable)
+ 	if (!host->chan_tx || !host->chan_rx)
+ 		return;
+ 
+-#if defined(CONFIG_SUPERH) || defined(CONFIG_ARCH_SHMOBILE)
+-	/* Switch DMA mode on or off - SuperH specific? */
+-	sd_ctrl_write16(host, CTL_DMA_ENABLE, enable ? 2 : 0);
+-#endif
++	if (host->pdata->flags & TMIO_MMC_HAVE_CTL_DMA_REG)
++		sd_ctrl_write16(host, CTL_DMA_ENABLE, enable ? 2 : 0);
+ }
+ 
+ void tmio_mmc_abort_dma(struct tmio_mmc_host *host)
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index a7493ae..adcb0cd 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -94,6 +94,11 @@
+  */
+ #define TMIO_MMC_SDIO_STATUS_QUIRK	(1 << 8)
+ 
++/*
++ * Some controllers have DMA enable/disable register
++ */
++#define TMIO_MMC_HAVE_CTL_DMA_REG	(1 << 9)
++
+ int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
+ int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
+ void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
 -- 
-2.0.1
+1.7.9.5
 
