@@ -1,81 +1,97 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 22 Aug 2014 01:57:03 +0000
-Subject: Re: [PATCH 2/6] ARM: shmobile: r8a7790: Add JPU clock dt and CPG define.
-Message-Id: <20140822015702.GF9099@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 25 Aug 2014 03:45:50 +0000
+Subject: [PATCH 02/03] ARM: shmobile: Consolidate Legacy SH_CLK_CPG Kconfig
+Message-Id: <20140825034550.9316.14635.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1408452653-14067-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
- <1408452653-14067-3-git-send-email-mikhail.ulyanov@cogentembedded.com>
- <2193234.fL02BJsSMl@avalon>
-In-Reply-To: <2193234.fL02BJsSMl@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>, m.chehab@samsung.com, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, linux-sh@vger.kernel.org, linux-media@vger.kernel.org, devicetree@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Aug 21, 2014 at 01:07:23AM +0200, Laurent Pinchart wrote:
-> Hi Mikhail,
-> 
-> Thank you for the patch.
-> 
-> On Tuesday 19 August 2014 16:50:49 Mikhail Ulyanov wrote:
-> 
-> A commit message would be nice.
-> 
-> > Signed-off-by: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Thanks, I have queued this up.
+Consolidate SH_CLK_CPG under ARCH_SHMOBILE_LEGACY so it can
+be shared by the legacy ARM mach-shmobile support code.
 
-> > ---
-> >  arch/arm/boot/dts/r8a7790.dtsi            | 6 +++---
-> >  include/dt-bindings/clock/r8a7790-clock.h | 1 +
-> >  2 files changed, 4 insertions(+), 3 deletions(-)
-> > 
-> > diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-> > index e2e40e5..61fd193 100644
-> > --- a/arch/arm/boot/dts/r8a7790.dtsi
-> > +++ b/arch/arm/boot/dts/r8a7790.dtsi
-> > @@ -868,17 +868,17 @@
-> >  		mstp1_clks: mstp1_clks@e6150134 {
-> >  			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-
-> clocks";
-> >  			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
-> > -			clocks = <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
-> > +			clocks = <&m2_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
-> >  				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>,
-> >  				 <&zs_clk>;
-> >  			#clock-cells = <1>;
-> >  			renesas,clock-indices = <
-> > -				R8A7790_CLK_TMU1 R8A7790_CLK_TMU3 R8A7790_CLK_TMU2
-> > +				R8A7790_CLK_JPU R8A7790_CLK_TMU1 R8A7790_CLK_TMU3 
-> R8A7790_CLK_TMU2
-> >  				R8A7790_CLK_CMT0 R8A7790_CLK_TMU0 R8A7790_CLK_VSP1_DU1
-> >  				R8A7790_CLK_VSP1_DU0 R8A7790_CLK_VSP1_R R8A7790_CLK_VSP1_S
-> > 
-> >  			>;
-> > 
-> >  			clock-output-names > > -				"tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
-> > +				"jpu", "tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
-> >  				"vsp1-du0", "vsp1-rt", "vsp1-sy";
-> >  		};
-> >  		mstp2_clks: mstp2_clks@e6150138 {
-> > diff --git a/include/dt-bindings/clock/r8a7790-clock.h
-> > b/include/dt-bindings/clock/r8a7790-clock.h index f929a79e..8ea7ab0 100644
-> > --- a/include/dt-bindings/clock/r8a7790-clock.h
-> > +++ b/include/dt-bindings/clock/r8a7790-clock.h
-> > @@ -26,6 +26,7 @@
-> >  #define R8A7790_CLK_MSIOF0		0
-> > 
-> >  /* MSTP1 */
-> > +#define R8A7790_CLK_JPU		6
-> >  #define R8A7790_CLK_TMU1		11
-> >  #define R8A7790_CLK_TMU3		21
-> >  #define R8A7790_CLK_TMU2		22
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ arch/arm/Kconfig               |    1 +
+ arch/arm/mach-shmobile/Kconfig |    8 --------
+ 2 files changed, 1 insertion(+), 8 deletions(-)
+
+--- 0007/arch/arm/Kconfig
++++ work/arch/arm/Kconfig	2014-08-25 12:13:59.000000000 +0900
+@@ -661,6 +661,7 @@ config ARCH_SHMOBILE_LEGACY
+ 	select NO_IOPORT_MAP
+ 	select PINCTRL
+ 	select PM_GENERIC_DOMAINS if PM
++	select SH_CLK_CPG
+ 	select SPARSE_IRQ
+ 	help
+ 	  Support for Renesas ARM SoC platforms using a non-multiplatform
+--- 0007/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2014-08-25 12:14:51.000000000 +0900
+@@ -91,7 +91,6 @@ config ARCH_SH7372
+ 	select ARCH_RMOBILE
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_CPU_SUSPEND if PM || CPU_IDLE
+-	select SH_CLK_CPG
+ 	select SH_INTC
+ 
+ config ARCH_SH73A0
+@@ -100,7 +99,6 @@ config ARCH_SH73A0
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select I2C
+-	select SH_CLK_CPG
+ 	select SH_INTC
+ 	select RENESAS_INTC_IRQPIN
+ 
+@@ -109,7 +107,6 @@ config ARCH_R8A73A4
+ 	select ARCH_RMOBILE
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+-	select SH_CLK_CPG
+ 	select RENESAS_IRQC
+ 
+ config ARCH_R8A7740
+@@ -117,14 +114,12 @@ config ARCH_R8A7740
+ 	select ARCH_RMOBILE
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+-	select SH_CLK_CPG
+ 	select RENESAS_INTC_IRQPIN
+ 
+ config ARCH_R8A7778
+ 	bool "R-Car M1A (R8A77781)"
+ 	select ARCH_RCAR_GEN1
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+-	select SH_CLK_CPG
+ 	select ARM_GIC
+ 
+ config ARCH_R8A7779
+@@ -132,7 +127,6 @@ config ARCH_R8A7779
+ 	select ARCH_RCAR_GEN1
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+-	select SH_CLK_CPG
+ 
+ config ARCH_R8A7790
+ 	bool "R-Car H2 (R8A77900)"
+@@ -140,7 +134,6 @@ config ARCH_R8A7790
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select MIGHT_HAVE_PCI
+-	select SH_CLK_CPG
+ 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
+ 
+ config ARCH_R8A7791
+@@ -149,7 +142,6 @@ config ARCH_R8A7791
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select MIGHT_HAVE_PCI
+-	select SH_CLK_CPG
+ 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
+ 
+ comment "Renesas ARM SoCs Board Type"
