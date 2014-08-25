@@ -1,33 +1,74 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 25 Aug 2014 03:36:35 +0000
-Subject: [PATCH v2 00/02] ARM: shmobile: r8a7740: Multiplatform support V2
-Message-Id: <20140825033635.9284.9060.sendpatchset@w520>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Mon, 25 Aug 2014 12:26:04 +0000
+Subject: [PATCH 12/12] mmc: tmio: Remove library functions for system PM
+Message-Id: <1408969564-6335-13-git-send-email-ulf.hansson@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
+In-Reply-To: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org, Ian Molton <ian.molton@codethink.co.uk>, Chris Ball <chris@printf.net>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Ulf Hansson <ulf.hansson@linaro.org>
 
-ARM: shmobile: r8a7740: Multiplatform support V2
+These library functions aren't used and nor needed, let's remove them.
 
-[PATCH v2 01/02] ARM: shmobile: Only select PM_RMOBILE for legacy case
-[PATCH v2 02/02] ARM: shmobile: r8a7740: Multiplatform support
-
-This patch series enables r8a7740 Multiplatform support. At this point
-the Armadillo800EVA code is left as-is, but future updates will make
-sure to consolidate the DTS and get rid of C board code.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
+ drivers/mmc/host/tmio_mmc.h     |  5 -----
+ drivers/mmc/host/tmio_mmc_pio.c | 23 -----------------------
+ 2 files changed, 28 deletions(-)
 
- Built on top of renesas-devel-20140823-v3.17-rc1 and
- "[PATCH v2 00/05] ARM: shmobile: Kconfig and Makefile cleanups V2"
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index 2ad52d6..a34ecbe 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -144,11 +144,6 @@ static inline void tmio_mmc_abort_dma(struct tmio_mmc_host *host)
+ }
+ #endif
+ 
+-#ifdef CONFIG_PM_SLEEP
+-int tmio_mmc_host_suspend(struct device *dev);
+-int tmio_mmc_host_resume(struct device *dev);
+-#endif
+-
+ #ifdef CONFIG_PM
+ int tmio_mmc_host_runtime_suspend(struct device *dev);
+ int tmio_mmc_host_runtime_resume(struct device *dev);
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 494ecc5..a993208 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -1139,29 +1139,6 @@ void tmio_mmc_host_remove(struct tmio_mmc_host *host)
+ }
+ EXPORT_SYMBOL(tmio_mmc_host_remove);
+ 
+-#ifdef CONFIG_PM_SLEEP
+-int tmio_mmc_host_suspend(struct device *dev)
+-{
+-	struct mmc_host *mmc = dev_get_drvdata(dev);
+-	struct tmio_mmc_host *host = mmc_priv(mmc);
+-
+-	tmio_mmc_disable_mmc_irqs(host, TMIO_MASK_ALL);
+-	return 0;
+-}
+-EXPORT_SYMBOL(tmio_mmc_host_suspend);
+-
+-int tmio_mmc_host_resume(struct device *dev)
+-{
+-	struct mmc_host *mmc = dev_get_drvdata(dev);
+-	struct tmio_mmc_host *host = mmc_priv(mmc);
+-
+-	tmio_mmc_enable_dma(host, true);
+-
+-	return 0;
+-}
+-EXPORT_SYMBOL(tmio_mmc_host_resume);
+-#endif
+-
+ #ifdef CONFIG_PM
+ int tmio_mmc_host_runtime_suspend(struct device *dev)
+ {
+-- 
+1.9.1
 
- Changes since V1:
- - Reworked dependencies
-
- arch/arm/mach-shmobile/Kconfig         |    7 ++++++-
- arch/arm/mach-shmobile/pm-r8a7740.c    |    5 ++---
- arch/arm/mach-shmobile/r8a7740.h       |    4 ++--
- arch/arm/mach-shmobile/setup-r8a7740.c |    8 +++++++-
- 4 files changed, 17 insertions(+), 7 deletions(-)
