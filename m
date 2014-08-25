@@ -1,51 +1,40 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 04 Aug 2014 13:33:34 +0000
-Subject: Re: SH 7619 CHCR values
-Message-Id: <CAMuHMdW=zbGnTEY0EnaNU_Z1hRjaF0QaKR8C-6qVJt_bQkpr1A@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 25 Aug 2014 01:10:05 +0000
+Subject: [PATCH 5/7] ARM: shmobile: r8a7790 dtsi: Remove superfluous interrupt-parent
+Message-Id: <980724eb5b56b43d0ff2c7a7f5cf6e5ba290d2e5.1408928822.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <760230076.57448.1406841700324.open-xchange@webmail.nmp.skynet.be>
-In-Reply-To: <760230076.57448.1406841700324.open-xchange@webmail.nmp.skynet.be>
+References: <cover.1408928822.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408928822.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Fabian Frederick <fabf@skynet.be>
-Cc: Richard Weinberger <richard@nod.at>, Paul Bolle <pebolle@tiscali.nl>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Jul 31, 2014 at 11:21 PM, Fabian Frederick <fabf@skynet.be> wrote:
->  Could you tell me where I could find SH 7619 CHCR values in order to solve the
-> following errors ?
->
-> arch/sh/drivers/dma/dma-sh.c: In function 'calc_xmit_shift':
-> arch/sh/drivers/dma/dma-sh.c:97:21: error: 'CHCR_TS_LOW_MASK' undeclared (first
-> use in this function)
-> arch/sh/drivers/dma/dma-sh.c:97:21: note: each undeclared identifier is reported
-> only once for each function it appears in
-> arch/sh/drivers/dma/dma-sh.c:97:42: error: 'CHCR_TS_LOW_SHIFT' undeclared (first
-> use in this function)
-> arch/sh/drivers/dma/dma-sh.c:98:12: error: 'CHCR_TS_HIGH_MASK' undeclared (first
-> use in this function)
-> arch/sh/drivers/dma/dma-sh.c:98:34: error: 'CHCR_TS_HIGH_SHIFT' undeclared
-> (first use in this function)
-> arch/sh/drivers/dma/dma-sh.c: In function 'sh_dmac_configure_channel':
-> arch/sh/drivers/dma/dma-sh.c:145:10: error: 'CHCR_TS_LOW_SHIFT' undeclared
-> (first use in this function)
-> arch/sh/drivers/dma/dma-sh.c:145:10: error: 'CHCR_TS_HIGH_SHIFT' undeclared
-> (first use in this function)
->
-> I guess it should be added in a new dma-register.h in arch/sh/include/cpu-sh2 ?
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Google told me:
-http://www.alldatasheet.com/datasheet-pdf/pdf/249585/RENESAS/SH7619.html
+There's already an "interrupt-parent = <&gic>;" at the top, which is
+inherited by all child nodes, so the "interrupt-parent" property in
+the sound node can be removed.
 
-The values seem to be the same as for sh3.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 1 -
+ 1 file changed, 1 deletion(-)
 
-Gr{oetje,eeting}s,
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index c11541d..4b6915a 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1126,7 +1126,6 @@
+ 	rcar_sound: rcar_sound@0xec500000 {
+ 		#sound-dai-cells = <1>;
+ 		compatible =  "renesas,rcar_sound-r8a7790", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
+-		interrupt-parent = <&gic>;
+ 		reg =	<0 0xec500000 0 0x1000>, /* SCU */
+ 			<0 0xec5a0000 0 0x100>,  /* ADG */
+ 			<0 0xec540000 0 0x1000>, /* SSIU */
+-- 
+2.0.1
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
