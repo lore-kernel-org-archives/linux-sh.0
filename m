@@ -1,88 +1,60 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 12 Aug 2014 20:18:26 +0000
-Subject: [PATCH v5 2/2] ARM: shmobile: lager: add VIN1/ADV7180 device nodes
-Message-Id: <703960137.fSsccWupA3@wasted.cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 25 Aug 2014 01:10:02 +0000
+Subject: [PATCH 2/7] ARM: shmobile: r8a7791: Add JPU clock dt and CPG define.
+Message-Id: <ed48b5d6fd339d145df5a6a1e48cf56ef265cf4f.1408928822.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1793694.Z8xUpkGDQx@wasted.cogentembedded.com>
-In-Reply-To: <1793694.Z8xUpkGDQx@wasted.cogentembedded.com>
+References: <cover.1408928822.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408928822.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
 
-Add the Lager board specific device node part for VIN1 (composite video in);
-add the device node for Analog Devices ADV7180 video decoder to IIC2 bus.
-Add the necessary subnodes to interconnect VIN1 and ADV7180 devices.
-
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-[Sergei: rebased, edited changelog and summary]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes in version 5:
-- edited changelog and summary;
-- resolved reject, refreshed patch.
+ arch/arm/boot/dts/r8a7791.dtsi            | 6 +++---
+ include/dt-bindings/clock/r8a7791-clock.h | 1 +
+ 2 files changed, 4 insertions(+), 3 deletions(-)
 
- arch/arm/boot/dts/r8a7790-lager.dts |   36 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
-
-Index: renesas/arch/arm/boot/dts/r8a7790-lager.dts
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7790-lager.dts
-+++ renesas/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -234,6 +234,11 @@
- 		renesas,groups = "usb2";
- 		renesas,function = "usb2";
- 	};
-+
-+	vin1_pins: vin {
-+		renesas,groups = "vin1_data8", "vin1_clk";
-+		renesas,function = "vin1";
-+	};
- };
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index f26226e..d62c237 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -857,16 +857,16 @@
+ 		mstp1_clks: mstp1_clks@e6150134 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
+-			clocks = <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
++			clocks = <&m2_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
+ 				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+-				R8A7791_CLK_TMU1 R8A7791_CLK_TMU3 R8A7791_CLK_TMU2
++				R8A7791_CLK_JPU R8A7791_CLK_TMU1 R8A7791_CLK_TMU3 R8A7791_CLK_TMU2
+ 				R8A7791_CLK_CMT0 R8A7791_CLK_TMU0 R8A7791_CLK_VSP1_DU1
+ 				R8A7791_CLK_VSP1_DU0 R8A7791_CLK_VSP1_S
+ 			>;
+ 			clock-output-names -				"tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
++				"jpu", "tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
+ 				"vsp1-du0", "vsp1-sy";
+ 		};
+ 		mstp2_clks: mstp2_clks@e6150138 {
+diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
+index f0d4d10..58c3f49 100644
+--- a/include/dt-bindings/clock/r8a7791-clock.h
++++ b/include/dt-bindings/clock/r8a7791-clock.h
+@@ -25,6 +25,7 @@
+ #define R8A7791_CLK_MSIOF0		0
  
- &ether {
-@@ -370,6 +375,19 @@
- 	status = "ok";
- 	pinctrl-0 = <&iic2_pins>;
- 	pinctrl-names = "default";
-+
-+	composite-in@20 {
-+		compatible = "adi,adv7180";
-+		reg = <0x20>;
-+		remote = <&vin1>;
-+
-+		port {
-+			adv7180: endpoint {
-+				bus-width = <8>;
-+				remote-endpoint = <&vin1ep0>;
-+			};
-+		};
-+	};
- };
- 
- &iic3 {
-@@ -405,3 +423,21 @@
- 	pinctrl-0 = <&usb2_pins>;
- 	pinctrl-names = "default";
- };
-+
-+/* composite video input */
-+&vin1 {
-+	pinctrl-0 = <&vin1_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "ok";
-+
-+	port {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		vin1ep0: endpoint {
-+			remote-endpoint = <&adv7180>;
-+			bus-width = <8>;
-+		};
-+	};
-+};
+ /* MSTP1 */
++#define R8A7791_CLK_JPU		6
+ #define R8A7791_CLK_TMU1		11
+ #define R8A7791_CLK_TMU3		21
+ #define R8A7791_CLK_TMU2		22
+-- 
+2.0.1
 
