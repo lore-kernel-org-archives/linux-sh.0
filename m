@@ -1,29 +1,51 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 05 Aug 2014 19:34:38 +0000
-Subject: renesas-drivers-2014-08-05-v3.16
-Message-Id: <CAMuHMdXXPrpsrA_rQr5EDtPb8+RDdXcq0C7TCxrfV5_SEwnt7w@mail.gmail.com>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Mon, 25 Aug 2014 12:25:59 +0000
+Subject: [PATCH 07/12] mmc: tmio: Make runtime PM callbacks available for CONFIG_PM
+Message-Id: <1408969564-6335-8-git-send-email-ulf.hansson@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
+In-Reply-To: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org, Ian Molton <ian.molton@codethink.co.uk>, Chris Ball <chris@printf.net>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Ulf Hansson <ulf.hansson@linaro.org>
 
-I've pushed renesas-drivers-2014-08-05-v3.16 to
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
-This tree is meant to ease development of platform support and drivers for
-Renesas ARM ("shmobile") SoCs. It's created by merging the for-next branches
-of various subsystem trees into the development branch of Simon Horman's
-renesas.git tree.
+To give the option for tmio hosts to use the runtime PM callbacks for
+CONFIG_PM_SLEEP as well as CONFIG_PM_RUNTIME, move them to CONFIG_PM.
 
-Today's version is based on renesas-devel-v3.16-20140804.
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+---
+ drivers/mmc/host/tmio_mmc.h     | 2 +-
+ drivers/mmc/host/tmio_mmc_pio.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-Gr{oetje,eeting}s,
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index f1ee3e4..2ad52d6 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -149,7 +149,7 @@ int tmio_mmc_host_suspend(struct device *dev);
+ int tmio_mmc_host_resume(struct device *dev);
+ #endif
+ 
+-#ifdef CONFIG_PM_RUNTIME
++#ifdef CONFIG_PM
+ int tmio_mmc_host_runtime_suspend(struct device *dev);
+ int tmio_mmc_host_runtime_resume(struct device *dev);
+ #endif
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index d52280d..494ecc5 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -1162,7 +1162,7 @@ int tmio_mmc_host_resume(struct device *dev)
+ EXPORT_SYMBOL(tmio_mmc_host_resume);
+ #endif
+ 
+-#ifdef CONFIG_PM_RUNTIME
++#ifdef CONFIG_PM
+ int tmio_mmc_host_runtime_suspend(struct device *dev)
+ {
+ 	struct mmc_host *mmc = dev_get_drvdata(dev);
+-- 
+1.9.1
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
