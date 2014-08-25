@@ -1,43 +1,81 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 29 Aug 2014 13:26:17 +0000
-Subject: [PATCH 0/5] ARM: shmobile: pm domain improvements and cleanups
-Message-Id: <1409318782-28133-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 25 Aug 2014 01:10:11 +0000
+Subject: [PATCH 06/10] ARM: shmobile: Remove shmobile_setup_delay()
+Message-Id: <7dd4cfd7f8c2976a8d65022146386480474501ca.1408927601.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1408927601.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408927601.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-	Hi Simon, Magnus,
+From: Magnus Damm <damm+renesas@opensource.se>
 
-This patch series improves and cleans up the initialization of power domains
-and their devices on sh7372/mackerel and r8a7740/armadillo800eva.
+All ARM mach-shmobile SoCs and boards now rely on DTS for
+CPU Frequency information, so remove the unused function
+shmobile_setup_delay(). While at it, make the function
+shmobile_setup_delay_hz() static.
 
-Geert Uytterhoeven (5):
-  ARM: shmobile: mackerel: Make domain_devices[] static __initdata
-  ARM: shmobile: sh7372: Make domain_devices[] static __initdata
-  ARM: shmobile: r8a7740: Use rmobile_add_devices_to_domains()
-  ARM: shmobile: armadillo800eva legacy: Use
-    rmobile_add_devices_to_domains()
-  ARM: shmobile: r8a7740: Clean up pm domain table
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/common.h |  2 --
+ arch/arm/mach-shmobile/timer.c  | 21 ++-------------------
+ 2 files changed, 2 insertions(+), 21 deletions(-)
 
- arch/arm/mach-shmobile/board-armadillo800eva.c |    8 ++++++--
- arch/arm/mach-shmobile/board-mackerel.c        |    2 +-
- arch/arm/mach-shmobile/pm-r8a7740.c            |   10 ++++-----
- arch/arm/mach-shmobile/setup-r8a7740.c         |   26 ++++++++++++++----------
- arch/arm/mach-shmobile/setup-sh7372.c          |    2 +-
- 5 files changed, 27 insertions(+), 21 deletions(-)
-
+diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
+index 9805608..72087c7 100644
+--- a/arch/arm/mach-shmobile/common.h
++++ b/arch/arm/mach-shmobile/common.h
+@@ -2,8 +2,6 @@
+ #define __ARCH_MACH_COMMON_H
+ 
+ extern void shmobile_earlytimer_init(void);
+-extern void shmobile_setup_delay(unsigned int max_cpu_core_mhz,
+-			 unsigned int mult, unsigned int div);
+ extern void shmobile_init_delay(void);
+ struct twd_local_timer;
+ extern void shmobile_setup_console(void);
+diff --git a/arch/arm/mach-shmobile/timer.c b/arch/arm/mach-shmobile/timer.c
+index 942efdc..adce98b 100644
+--- a/arch/arm/mach-shmobile/timer.c
++++ b/arch/arm/mach-shmobile/timer.c
+@@ -23,8 +23,8 @@
+ #include <linux/delay.h>
+ #include <linux/of_address.h>
+ 
+-void __init shmobile_setup_delay_hz(unsigned int max_cpu_core_hz,
+-				    unsigned int mult, unsigned int div)
++static void __init shmobile_setup_delay_hz(unsigned int max_cpu_core_hz,
++					   unsigned int mult, unsigned int div)
+ {
+ 	/* calculate a worst-case loops-per-jiffy value
+ 	 * based on maximum cpu core hz setting and the
+@@ -40,23 +40,6 @@ void __init shmobile_setup_delay_hz(unsigned int max_cpu_core_hz,
+ 		preset_lpj = max_cpu_core_hz / value;
+ }
+ 
+-void __init shmobile_setup_delay(unsigned int max_cpu_core_mhz,
+-				 unsigned int mult, unsigned int div)
+-{
+-	/* calculate a worst-case loops-per-jiffy value
+-	 * based on maximum cpu core mhz setting and the
+-	 * __delay() implementation in arch/arm/lib/delay.S
+-	 *
+-	 * this will result in a longer delay than expected
+-	 * when the cpu core runs on lower frequencies.
+-	 */
+-
+-	unsigned int value = (1000000 * mult) / (HZ * div);
+-
+-	if (!preset_lpj)
+-		preset_lpj = max_cpu_core_mhz * value;
+-}
+-
+ void __init shmobile_init_delay(void)
+ {
+ 	struct device_node *np, *cpus;
 -- 
-1.7.9.5
+2.0.1
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
