@@ -1,52 +1,47 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 22 Aug 2014 02:57:58 +0000
-Subject: Re: [PATCH 1/2] I2C: EMMA Mobile I2C master driver
-Message-Id: <20140822025758.GA1266@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="gBBFr7Ir9EOA20Yy"
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Mon, 25 Aug 2014 12:26:02 +0000
+Subject: [PATCH 10/12] mmc: sdhi: Fixup system PM suspend lock-up
+Message-Id: <1408969564-6335-11-git-send-email-ulf.hansson@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377688911-10911-1-git-send-email-ian.molton@codethink.co.uk>
- <1378226969-18722-1-git-send-email-ian.molton@codethink.co.uk>
- <1378226969-18722-2-git-send-email-ian.molton@codethink.co.uk>
- <20140218173843.GB18768@katana>
- <20140617095724.GJ2638@katana>
- <20140718154549.GC2731@katana>
-In-Reply-To: <20140718154549.GC2731@katana>
-To: Ian Molton <ian.molton@codethink.co.uk>
-Cc: magnus.damm@gmail.com, grant.likely@linaro.org, devicetree@vger.kernel.org, linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, ben.dooks@codethink.co.uk
+References: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
+In-Reply-To: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-mmc@vger.kernel.org, Ian Molton <ian.molton@codethink.co.uk>, Chris Ball <chris@printf.net>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Ulf Hansson <ulf.hansson@linaro.org>
 
+At system PM suspend, the tmio core accessed the internal registers of
+the controller without first moving the device into active state. This
+caused a lock-up in system PM suspend phase.
 
---gBBFr7Ir9EOA20Yy
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+The reason for the register access were masking of IRQs. Since that is
+managed via the runtime PM suspend path, let's just re-use that path
+for system PM suspend.
 
+In other words force the device into runtime PM suspend state at system
+PM suspend and restore it to active state at system PM resume.
 
-> I happen to have access to a kzm9d board meanwhile. Do you have the
-> board enablement patches still somewhere?
+Reported-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-Ping. Did you get this one?
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 4cd0f09..2dafe28 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -332,7 +332,8 @@ static int sh_mobile_sdhi_remove(struct platform_device *pdev)
+ }
+ 
+ static const struct dev_pm_ops tmio_mmc_dev_pm_ops = {
+-	SET_SYSTEM_SLEEP_PM_OPS(tmio_mmc_host_suspend, tmio_mmc_host_resume)
++	SET_SYSTEM_SLEEP_PM_OPS(pm_runtime_force_suspend,
++			pm_runtime_force_resume)
+ 	SET_PM_RUNTIME_PM_OPS(tmio_mmc_host_runtime_suspend,
+ 			tmio_mmc_host_runtime_resume,
+ 			NULL)
+-- 
+1.9.1
 
-
---gBBFr7Ir9EOA20Yy
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJT9rG1AAoJEBQN5MwUoCm2ca4QAId1h7xqglrtvMiIfGoKc+ia
-+tXjN5cPL6r7DoINUIDXdSwkzbgZL/iL+JQ6wqUqBgbftBvlBVBOWhdf7tQZfwAk
-j7yVVdYSUDHLl0dhwF87Y6eZpYb4aDiMlP9SaZvf84ez9E+9fRMfhl++ZUnRHySK
-9lBEgZljEnjiQZIgJPYQuwPfPloJ5OxjLcktegn8fT5K2Y3opj1HPHb5xrjL7/tG
-v/fMxSha9MPbgfmMD/NJUh6tRmdl1rMe4NUD5jIks/tIcCE6ngIpybt2sVF2O/g0
-tMjBiiA83ULnNUgzPihAQCnAGX3Q5BsYwsSowt3wZMLwpKltiU4bZDSuFWaw3f/N
-edkdZfHPZjCouJkcWDt+Tyyr3wkDvM6Yd1xvO63Qe1DDfEu7cXqYINdiVTE8kmtq
-oaXgL4K1KzmbfVnzUnpyJs2/WbtriuFcKgVuFlbJ5xCmDcqTPgou7vzEJ3OMBy/W
-v6hvMOHMyzZMd8XV3X8qKj2p5vej+PXS0mcgS3+g4lX7uz0SfFdcGOOzAoyeLfKO
-ZHtoXEqKhvA0cy8D5ndJL8MKAz9tfWhJitsQSbq3pnm04Sd8rKUbw9jmDC/M7iRC
-Pu74QH1HRYTKxbobR0jWuNEjAGrJysDOP2g4rBFd160ezrTRHQ5Z1f4vYd8eM1eA
-BghRLT+uhaeUN7+ttIRT
-=Usf3
------END PGP SIGNATURE-----
-
---gBBFr7Ir9EOA20Yy--
