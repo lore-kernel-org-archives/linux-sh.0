@@ -1,49 +1,53 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 23 Aug 2014 01:43:33 +0000
-Subject: [PATCH 4/8] ARM: shmobile: ape6evm: Add shmobile_init_late()
-Message-Id: <509c42a5fce00f8769f68847580ba3c4dc884218.1408671094.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 25 Aug 2014 02:59:22 +0000
+Subject: [PATCH 2/9 v3] mmc: tmio: clear error IRQ status
+Message-Id: <878umdtgu0.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408671094.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408671094.git.horms+renesas@verge.net.au>
+References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
+	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
+	<53AD638C.5060907@renesas.com>
+	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+	<87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Ulf Hansson <ulf.hansson@linaro.org>
+Cc: Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-Extend board specific APE6EVM reference machine vectors to include
-shmobile_init_late() so Suspend-to-RAM and CPUIdle are setup as expected.
+Next card access will be always
+error if it didn't clear error status
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Tested-by: Nguyen Xuan Nui <nx-nui@jinso.co.jp>
+Tested-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-ape6evm-reference.c | 1 +
- arch/arm/mach-shmobile/board-ape6evm.c           | 1 +
- 2 files changed, 2 insertions(+)
+v2 -> v3
 
-diff --git a/arch/arm/mach-shmobile/board-ape6evm-reference.c b/arch/arm/mach-shmobile/board-ape6evm-reference.c
-index 2f7723e..1ecda4b 100644
---- a/arch/arm/mach-shmobile/board-ape6evm-reference.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm-reference.c
-@@ -61,5 +61,6 @@ static const char *ape6evm_boards_compat_dt[] __initdata = {
- DT_MACHINE_START(APE6EVM_DT, "ape6evm")
- 	.init_early	= r8a73a4_init_early,
- 	.init_machine	= ape6evm_add_standard_devices,
-+	.init_late	= shmobile_init_late,
- 	.dt_compat	= ape6evm_boards_compat_dt,
- MACHINE_END
-diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-index 1585b88..befbae03 100644
---- a/arch/arm/mach-shmobile/board-ape6evm.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm.c
-@@ -285,5 +285,6 @@ static const char *ape6evm_boards_compat_dt[] __initdata = {
- DT_MACHINE_START(APE6EVM_DT, "ape6evm")
- 	.init_early	= r8a73a4_init_early,
- 	.init_machine	= ape6evm_add_standard_devices,
-+	.init_late	= shmobile_init_late,
- 	.dt_compat	= ape6evm_boards_compat_dt,
- MACHINE_END
+ - no change
+
+ drivers/mmc/host/tmio_mmc_pio.c |    3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index faf0924..c3b1b4e 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -557,6 +557,9 @@ static void tmio_mmc_card_irq_status(struct tmio_mmc_host *host,
+ 
+ 	pr_debug_status(*status);
+ 	pr_debug_status(*ireg);
++
++	/* Clear the status except the interrupt status */
++	sd_ctrl_write32(host, CTL_STATUS, TMIO_MASK_IRQ);
+ }
+ 
+ static bool __tmio_mmc_card_detect_irq(struct tmio_mmc_host *host,
 -- 
-2.0.1
+1.7.9.5
 
