@@ -1,41 +1,48 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Aug 2014 01:09:46 +0000
-Subject: [PATCH 1/3] ARM: shmobile: sh73a0: Remove spurious 0x from SCIFB clock name
-Message-Id: <2c3758b01aa6f11382d2b018614b5d48ecf30350.1408926048.git.horms+renesas@verge.net.au>
+Date: Mon, 25 Aug 2014 01:10:21 +0000
+Subject: [PATCH 1/3] ARM: shmobile: sh73a0: Remove duplicate CPUFreq bits
+Message-Id: <aa0bdc303b0f8bc59fc0a0645560917810ba041b.1408927858.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408926048.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408926048.git.horms+renesas@verge.net.au>
+References: <cover.1408927858.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408927858.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-A stray '0x' crept into a0f7e7496d56ac2d ("ARM: shmobile: sh73a0: add CMT1
-clock support for DT"). This  patch removes it.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-This change should not have any run-time affect at this time as
-the clock in question is used by a SCIF device that is not enabled by
-default.
+The CPUFreq platform device is already registered by
+shmobile_init_late(), so get rid of sh73a0 specific bits.
 
-Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-sh73a0.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/setup-sh73a0.c | 5 -----
+ 1 file changed, 5 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index 0d77f65..b0993a5 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -644,7 +644,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP207]), /* SCIFA5 */
- 	CLKDEV_DEV_ID("e6cb0000.serial", &mstp_clks[MSTP207]), /* SCIFA5 */
- 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP206]), /* SCIFB */
--	CLKDEV_DEV_ID("0xe6c3000.serial", &mstp_clks[MSTP206]), /* SCIFB */
-+	CLKDEV_DEV_ID("e6c3000.serial", &mstp_clks[MSTP206]), /* SCIFB */
- 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]), /* SCIFA0 */
- 	CLKDEV_DEV_ID("e6c40000.serial", &mstp_clks[MSTP204]), /* SCIFA0 */
- 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]), /* SCIFA1 */
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index e7a0296..8ff9679 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -775,17 +775,12 @@ void __init sh73a0_add_early_devices(void)
+ 
+ void __init sh73a0_add_standard_devices_dt(void)
+ {
+-	struct platform_device_info devinfo = { .name = "cpufreq-cpu0", .id = -1, };
+-
+ 	/* clocks are setup late during boot in the case of DT */
+ 	sh73a0_clock_init();
+ 
+ 	platform_add_devices(sh73a0_devices_dt,
+ 			     ARRAY_SIZE(sh73a0_devices_dt));
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-
+-	/* Instantiate cpufreq-cpu0 */
+-	platform_device_register_full(&devinfo);
+ }
+ 
+ static const char *sh73a0_boards_compat_dt[] __initdata = {
 -- 
 2.0.1
 
