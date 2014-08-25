@@ -1,119 +1,37 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Aug 2014 01:10:23 +0000
-Subject: [PATCH 3/3] ARM: shmobile: Move legacy INTC definitions from irqs.h to intc.h
-Message-Id: <86155b35d173317518458c6f9c0a3ea8c5324bed.1408927858.git.horms+renesas@verge.net.au>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Mon, 25 Aug 2014 12:26:00 +0000
+Subject: [PATCH 08/12] mmc: sdhi: Make runtime PM callbacks available for CONFIG_PM
+Message-Id: <1408969564-6335-9-git-send-email-ulf.hansson@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408927858.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408927858.git.horms+renesas@verge.net.au>
+References: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
+In-Reply-To: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org, Ian Molton <ian.molton@codethink.co.uk>, Chris Ball <chris@printf.net>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Ulf Hansson <ulf.hansson@linaro.org>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+To be able to simplify system PM, let's re-use the runtime PM callbacks
+by converting to the SET_PM_RUNTIME_PM_OPS macro.
 
-Move all definitions for legacy INTC from the common "irqs.h" to the
-INTC-specific "intc.h".
-Include "intc.h" in sh7372/sh73a0 CPU and board files where needed.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Magnus Damm <damm+renesas@opensource.se>
-[horms+renesas@verge.net.au: omitted whitespace change]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
- arch/arm/mach-shmobile/board-kzm9g.c    | 1 +
- arch/arm/mach-shmobile/board-mackerel.c | 1 +
- arch/arm/mach-shmobile/intc.h           | 5 +++++
- arch/arm/mach-shmobile/irqs.h           | 6 ------
- arch/arm/mach-shmobile/setup-sh7372.c   | 1 +
- arch/arm/mach-shmobile/setup-sh73a0.c   | 1 +
- 6 files changed, 9 insertions(+), 6 deletions(-)
+ drivers/mmc/host/sh_mobile_sdhi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index f8bc7f8..1bcd7eb 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -50,6 +50,7 @@
- #include <video/sh_mobile_lcdc.h>
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index be5e25d..4cd0f09 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -333,7 +333,7 @@ static int sh_mobile_sdhi_remove(struct platform_device *pdev)
  
- #include "common.h"
-+#include "intc.h"
- #include "irqs.h"
- #include "sh73a0.h"
- 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 79f448e..b7c4261 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -63,6 +63,7 @@
- #include <asm/mach-types.h>
- 
- #include "common.h"
-+#include "intc.h"
- #include "irqs.h"
- #include "pm-rmobile.h"
- #include "sh-gpio.h"
-diff --git a/arch/arm/mach-shmobile/intc.h b/arch/arm/mach-shmobile/intc.h
-index a5603c7..40b2ad4 100644
---- a/arch/arm/mach-shmobile/intc.h
-+++ b/arch/arm/mach-shmobile/intc.h
-@@ -287,4 +287,9 @@ static struct intc_desc p ## _desc __initdata = {			\
- 			     p ## _sense_registers, NULL),		\
- }
- 
-+/* INTCS */
-+#define INTCS_VECT_BASE		0x3400
-+#define INTCS_VECT(n, vect)	INTC_VECT((n), INTCS_VECT_BASE + (vect))
-+#define intcs_evt2irq(evt)	evt2irq(INTCS_VECT_BASE + (evt))
-+
- #endif  /* __ASM_MACH_INTC_H */
-diff --git a/arch/arm/mach-shmobile/irqs.h b/arch/arm/mach-shmobile/irqs.h
-index 8e28223..3070f6d 100644
---- a/arch/arm/mach-shmobile/irqs.h
-+++ b/arch/arm/mach-shmobile/irqs.h
-@@ -1,18 +1,12 @@
- #ifndef __SHMOBILE_IRQS_H
- #define __SHMOBILE_IRQS_H
- 
--#include <linux/sh_intc.h>
- #include "include/mach/irqs.h"
- 
- /* GIC */
- #define gic_spi(nr)		((nr) + 32)
- #define gic_iid(nr)		(nr) /* ICCIAR / interrupt ID */
- 
--/* INTCS */
--#define INTCS_VECT_BASE		0x3400
--#define INTCS_VECT(n, vect)	INTC_VECT((n), INTCS_VECT_BASE + (vect))
--#define intcs_evt2irq(evt)	evt2irq(INTCS_VECT_BASE + (evt))
--
- /* GPIO IRQ */
- #define _GPIO_IRQ_BASE		2500
- #define GPIO_IRQ_BASE(x)	(_GPIO_IRQ_BASE + (32 * x))
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 3731ecc..eaf5d13 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -41,6 +41,7 @@
- 
- #include "common.h"
- #include "dma-register.h"
-+#include "intc.h"
- #include "irqs.h"
- #include "pm-rmobile.h"
- #include "sh7372.h"
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 8ff9679..173c678 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -40,6 +40,7 @@
- 
- #include "common.h"
- #include "dma-register.h"
-+#include "intc.h"
- #include "irqs.h"
- #include "sh73a0.h"
- 
+ static const struct dev_pm_ops tmio_mmc_dev_pm_ops = {
+ 	SET_SYSTEM_SLEEP_PM_OPS(tmio_mmc_host_suspend, tmio_mmc_host_resume)
+-	SET_RUNTIME_PM_OPS(tmio_mmc_host_runtime_suspend,
++	SET_PM_RUNTIME_PM_OPS(tmio_mmc_host_runtime_suspend,
+ 			tmio_mmc_host_runtime_resume,
+ 			NULL)
+ };
 -- 
-2.0.1
+1.9.1
 
