@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 20 Aug 2014 00:24:00 +0000
-Subject: [PATCH 09/12] ARM: shmobile: r8a7790 dtsi: Enable DMA for QSPI
-Message-Id: <37cf3d61a94790c6f12c6e6e7a28640b8531a8af.1408492753.git.horms+renesas@verge.net.au>
+Date: Mon, 25 Aug 2014 01:10:06 +0000
+Subject: [PATCH 6/7] ARM: shmobile: r8a7791 dtsi: Remove superfluous interrupt-parent
+Message-Id: <5fb1453c2ff02ce5e5298351ff774e19f8d9dbb3.1408928822.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408492753.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408492753.git.horms+renesas@verge.net.au>
+References: <cover.1408928822.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408928822.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,28 +12,29 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Add a DMA property to the QSPI node
+There's already an "interrupt-parent = <&gic>;" at the top, which is
+inherited by all child nodes, so the "interrupt-parent" property in
+the sound node can be removed.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Magnus Damm <damm+renesas@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 2 ++
- 1 file changed, 2 insertions(+)
+ arch/arm/boot/dts/r8a7791.dtsi | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 3707f0e..6dc328d 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -946,6 +946,8 @@
- 		reg = <0 0xe6b10000 0 0x2c>;
- 		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7790_CLK_QSPI_MOD>;
-+		dmas = <&dmac0 0x17>, <&dmac0 0x18>;
-+		dma-names = "tx", "rx";
- 		num-cs = <1>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index d62c237..9ee1d41 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1124,7 +1124,6 @@
+ 	rcar_sound: rcar_sound@0xec500000 {
+ 		#sound-dai-cells = <1>;
+ 		compatible =  "renesas,rcar_sound-r8a7791", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
+-		interrupt-parent = <&gic>;
+ 		reg =	<0 0xec500000 0 0x1000>, /* SCU */
+ 			<0 0xec5a0000 0 0x100>,  /* ADG */
+ 			<0 0xec540000 0 0x1000>, /* SSIU */
 -- 
 2.0.1
 
