@@ -1,66 +1,67 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 29 Aug 2014 13:50:09 +0000
-Subject: [PATCH 03/11] [WIP] ARM: shmobile: armadillo800eva legacy: Add missing A3SP pm domain devices
-Message-Id: <1409320217-13278-4-git-send-email-geert+renesas@glider.be>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Mon, 25 Aug 2014 12:25:55 +0000
+Subject: [PATCH 03/12] mmc: tmio: Extract bus_width modifications to a separate function
+Message-Id: <1408969564-6335-4-git-send-email-ulf.hansson@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
+References: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
+In-Reply-To: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-mmc@vger.kernel.org, Ian Molton <ian.molton@codethink.co.uk>, Chris Ball <chris@printf.net>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Ulf Hansson <ulf.hansson@linaro.org>
 
-Commit 802a5639aa7041b2 ("ARM: shmobile: r8a7740: add A3SP pm domain
-support") added the A3SP power domain, but forgot to hook up the TPU,
-SDHI0/1, and MMCIF hardware blocks.
+Move code for bus_width modification, out of the ->set_ios() callback
+and into a separate function, to simplify code.
 
-FIXME: As the default PM QoS latency constraint for SDHI is only 100 µs
-       (cfr. commit c419e611c3c59c0e ("tmio_mmc / PM: Use PM QoS latency
-       constraint"), while DEFAULT_DEV_LATENCY_NS is 250000, suspend
-       fails with -EBUSY, unless the constraint is increased first to
-       more than 500 µs using e.g.
-
-	echo 501 > /sys/devices/platform/sh_mobile_sdhi.0/power/pm_qos_resume_latency_us
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |    8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+ drivers/mmc/host/tmio_mmc_pio.c | 25 +++++++++++++++----------
+ 1 file changed, 15 insertions(+), 10 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index f19459a8c3ed..64a68450c28a 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1234,8 +1234,11 @@ static void __init eva_init(void)
- 	static struct pm_domain_device domain_devices[] __initdata = {
- 		{ "A4LC", &lcdc0_device },
- 		{ "A4LC", &hdmi_lcdc_device },
-+		{ "A3SP", &pwm_device },
-+		{ "A3SP", &sdhi0_device },
-+		{ "A3SP", &sh_mmcif_device },
- 	};
--	struct platform_device *usb = NULL;
-+	struct platform_device *usb = NULL, *sdhi1 = NULL;
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index d63d292..8f5b5cc 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -831,6 +831,19 @@ static void tmio_mmc_power_off(struct tmio_mmc_host *host)
+ 		host->set_pwr(host->pdev, 0);
+ }
  
- 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
- 				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
-@@ -1304,6 +1307,7 @@ static void __init eva_init(void)
- 
- 		platform_device_register(&vcc_sdhi1);
- 		platform_device_register(&sdhi1_device);
-+		sdhi1 = &sdhi1_device;
++static void tmio_mmc_set_bus_width(struct tmio_mmc_host *host,
++				unsigned char bus_width)
++{
++	switch (bus_width) {
++	case MMC_BUS_WIDTH_1:
++		sd_ctrl_write16(host, CTL_SD_MEM_CARD_OPT, 0x80e0);
++		break;
++	case MMC_BUS_WIDTH_4:
++		sd_ctrl_write16(host, CTL_SD_MEM_CARD_OPT, 0x00e0);
++		break;
++	}
++}
++
+ /* Set MMC clock / power.
+  * Note: This controller uses a simple divider scheme therefore it cannot
+  * run a MMC card at full speed (20MHz). The max clock is 24MHz on SD, but as
+@@ -914,16 +927,8 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 		}
  	}
  
+-	if (host->power != TMIO_MMC_OFF_STOP) {
+-		switch (ios->bus_width) {
+-		case MMC_BUS_WIDTH_1:
+-			sd_ctrl_write16(host, CTL_SD_MEM_CARD_OPT, 0x80e0);
+-		break;
+-		case MMC_BUS_WIDTH_4:
+-			sd_ctrl_write16(host, CTL_SD_MEM_CARD_OPT, 0x00e0);
+-		break;
+-		}
+-	}
++	if (host->power != TMIO_MMC_OFF_STOP)
++		tmio_mmc_set_bus_width(host, ios->bus_width);
  
-@@ -1324,6 +1328,8 @@ static void __init eva_init(void)
- 				       ARRAY_SIZE(domain_devices));
- 	if (usb)
- 		rmobile_add_device_to_domain("A3SP", usb);
-+	if (sdhi1)
-+		rmobile_add_device_to_domain("A3SP", sdhi1);
- 
- 	r8a7740_pm_init();
- }
+ 	/* Let things settle. delay taken from winCE driver */
+ 	udelay(140);
 -- 
-1.7.9.5
+1.9.1
 
