@@ -1,70 +1,91 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 20 Aug 2014 00:24:10 +0000
-Subject: [PATCH 1/8] ARM: shmobile: r8a7790: Add CMT devices to DT
-Message-Id: <39cf6d73dc1ed11c7d5d2c96a0ccbbb868a7f3ce.1408492048.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 25 Aug 2014 03:45:59 +0000
+Subject: [PATCH 03/03] ARM: shmobile: Consolidate Legacy GPIOLIB Kconfig bits
+Message-Id: <20140825034559.9316.68303.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408492048.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408492048.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Add the CMT0 and CMT1 counters to the r8a7790 device tree and make them
-disabled by default.
+Consolidate ARCH_WANT_OPTIONAL_GPIOLIB under ARCH_SHMOBILE_LEGACY
+so it can be shared by the legacy ARM mach-shmobile code.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Simon Horman <horms+renesas@verge.net.au>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 32 ++++++++++++++++++++++++++++++++
- 1 file changed, 32 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index d9ddecb..7218bff 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -206,6 +206,38 @@
- 			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
- 	};
+ arch/arm/Kconfig               |    1 +
+ arch/arm/mach-shmobile/Kconfig |    8 --------
+ 2 files changed, 1 insertion(+), 8 deletions(-)
+
+--- 0008/arch/arm/Kconfig
++++ work/arch/arm/Kconfig	2014-08-25 12:16:25.000000000 +0900
+@@ -648,6 +648,7 @@ config ARCH_MSM
+ config ARCH_SHMOBILE_LEGACY
+ 	bool "Renesas ARM SoCs (non-multiplatform)"
+ 	select ARCH_SHMOBILE
++	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_PATCH_PHYS_VIRT if MMU
+ 	select CLKDEV_LOOKUP
+ 	select CPU_V7
+--- 0008/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2014-08-25 12:17:10.000000000 +0900
+@@ -89,14 +89,12 @@ comment "Renesas ARM SoCs System Type"
+ config ARCH_SH7372
+ 	bool "SH-Mobile AP4 (SH7372)"
+ 	select ARCH_RMOBILE
+-	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_CPU_SUSPEND if PM || CPU_IDLE
+ 	select SH_INTC
  
-+	cmt0: timer@ffca0000 {
-+		compatible = "renesas,cmt-48-gen2";
-+		reg = <0 0xffca0000 0 0x1004>;
-+		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7790_CLK_CMT0>;
-+		clock-names = "fck";
-+
-+		renesas,channels-mask = <0x60>;
-+
-+		status = "disabled";
-+	};
-+
-+	cmt1: timer@e6130000 {
-+		compatible = "renesas,cmt-48-gen2";
-+		reg = <0 0xe6130000 0 0x1004>;
-+		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 122 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 123 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 124 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 125 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 126 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 127 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_CMT1>;
-+		clock-names = "fck";
-+
-+		renesas,channels-mask = <0xff>;
-+
-+		status = "disabled";
-+	};
-+
- 	irqc0: interrupt-controller@e61c0000 {
- 		compatible = "renesas,irqc-r8a7790", "renesas,irqc";
- 		#interrupt-cells = <2>;
--- 
-2.0.1
-
+ config ARCH_SH73A0
+ 	bool "SH-Mobile AG5 (R8A73A00)"
+ 	select ARCH_RMOBILE
+-	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select I2C
+ 	select SH_INTC
+@@ -105,33 +103,28 @@ config ARCH_SH73A0
+ config ARCH_R8A73A4
+ 	bool "R-Mobile APE6 (R8A73A40)"
+ 	select ARCH_RMOBILE
+-	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select RENESAS_IRQC
+ 
+ config ARCH_R8A7740
+ 	bool "R-Mobile A1 (R8A77400)"
+ 	select ARCH_RMOBILE
+-	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select RENESAS_INTC_IRQPIN
+ 
+ config ARCH_R8A7778
+ 	bool "R-Car M1A (R8A77781)"
+ 	select ARCH_RCAR_GEN1
+-	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 
+ config ARCH_R8A7779
+ 	bool "R-Car H1 (R8A77790)"
+ 	select ARCH_RCAR_GEN1
+-	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 
+ config ARCH_R8A7790
+ 	bool "R-Car H2 (R8A77900)"
+ 	select ARCH_RCAR_GEN2
+-	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select MIGHT_HAVE_PCI
+ 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
+@@ -139,7 +132,6 @@ config ARCH_R8A7790
+ config ARCH_R8A7791
+ 	bool "R-Car M2 (R8A77910)"
+ 	select ARCH_RCAR_GEN2
+-	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select MIGHT_HAVE_PCI
+ 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
