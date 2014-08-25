@@ -1,57 +1,45 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 27 Aug 2014 14:40:01 +0000
-Subject: renesas-drivers-2014-08-27-v3.17-rc2
-Message-Id: <1409150401-26045-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 25 Aug 2014 01:08:55 +0000
+Subject: [GIT PULL] SH Drivers Updates For v3.17
+Message-Id: <cover.1408928574.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms+renesas@verge.net.au>
 
-I've pushed renesas-drivers-2014-08-27-v3.17-rc2 to
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
-This tree is meant to ease development of platform support and drivers for
-Renesas ARM ("shmobile") SoCs. It's created by merging the for-next branches
-of various subsystem trees into the development branch of Simon Horman's
-renesas.git tree.
+Hi Linus,
 
-Today's version is based on renesas-devel-20140827v2-v3.17-rc2.
+Please consider these SH drivers updates for v3.17.
 
-Included subsystem trees (the last 2 are new):
-    git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
-    git://git.linaro.org/people/mturquette/linux.git#clk-next
-    git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
-    git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
-    git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
-    git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
-    git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
-    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
-    git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c for-next
-    git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
-    git://gitorious.org/linux-can/linux-can-next.git#master
-    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
-    git://people.freedesktop.org/~airlied/linux#drm-next
-    git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
-    git://linuxtv.org/mchehab/media-next.git#master
-    git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
-    git://git.linaro.org/people/ulf.hansson/mmc.git#next
-    git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
-    git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents next
-    git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
-    git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
-    git://git.infradead.org/users/vkoul/slave-dma.git#next
-    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
-    git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
-    git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
-    git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
+I realise these are slightly late in the rc cycle so
+please don't hesitate to ask me to defer them to v3.18.
 
-Gr{oetje,eeting}s,
 
-						Geert
+The following changes since commit 7d1311b93e58ed55f3a31cc8f94c4b8fe988a2b9:
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+  Linux 3.17-rc1 (2014-08-16 10:40:26 -0600)
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh-drivers-for-v3.17
+
+for you to fetch changes up to 049d28048be595e0a10a58fe1c104b153c386633:
+
+  sh: intc: Confine SH_INTC to platforms that need it (2014-08-22 12:28:16 +0900)
+
+----------------------------------------------------------------
+SH Drivers Updates For v3.17
+
+* Confine SH_INTC to platforms that need it
+
+----------------------------------------------------------------
+Geert Uytterhoeven (1):
+      sh: intc: Confine SH_INTC to platforms that need it
+
+ arch/arm/mach-shmobile/Kconfig | 2 ++
+ arch/sh/Kconfig                | 3 +++
+ drivers/sh/Makefile            | 3 +--
+ drivers/sh/intc/Kconfig        | 6 +++++-
+ 4 files changed, 11 insertions(+), 3 deletions(-)
