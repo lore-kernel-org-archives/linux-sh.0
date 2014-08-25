@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Mon, 25 Aug 2014 03:03:00 +0000
-Subject: [PATCH 9/9 v3] mmc: tmio: add actual clock support as option
-Message-Id: <87y4uds23i.wl%kuninori.morimoto.gx@gmail.com>
+Date: Mon, 25 Aug 2014 03:00:25 +0000
+Subject: [PATCH 3/9 v3] mmc: tmio: control multiple block transfer mode
+Message-Id: <877g1xtgs8.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
 	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
@@ -19,12 +19,14 @@ Cc: Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>
 
 From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-Some controller is supporting actual clock on SD_CLK_CTRL :: DIV[7:0].
-Renesas SH-Mobile SDHI doesn't support,
-but, Renesas R-Car SDHI supports it.
-This patch adds new TMIO_MMC_CLK_ACTUAL flag for it.
+Renesas SDHI has "Multiple Block Transfer Mode" settings
+on SD_CMD register which controls CMD12 automatically.
 
-[Kuninori Morimoto: tidyuped for upstreaming]
+This patch cares it, because
+CMD12 is not needed when CMD53 (= SD_IO_RW_EXTENDED)
+
+[Kuninori Morimoto: tidyuped for upstreaming
+                    enabled this flags for all SH-Mobile/R-Car]
 
 Tested-by: Nguyen Xuan Nui <nx-nui@jinso.co.jp>
 Tested-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
@@ -35,60 +37,75 @@ v2 -> v3
 
  - no change
 
- drivers/mmc/host/sh_mobile_sdhi.c |    6 ++++--
- drivers/mmc/host/tmio_mmc_pio.c   |    5 +++++
- include/linux/mfd/tmio.h          |    5 +++++
- 3 files changed, 14 insertions(+), 2 deletions(-)
+ drivers/mmc/host/sh_mobile_sdhi.c |    5 +++++
+ drivers/mmc/host/tmio_mmc_pio.c   |   10 ++++++++++
+ include/linux/mfd/tmio.h          |    6 ++++++
+ 3 files changed, 21 insertions(+)
 
 diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index cd54ca8..e55f761 100644
+index 1ccf49b..d56ebd9 100644
 --- a/drivers/mmc/host/sh_mobile_sdhi.c
 +++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -49,12 +49,14 @@ static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
- };
+@@ -225,6 +225,11 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	 */
+ 	mmc_data->flags |= TMIO_MMC_SDIO_IRQ;
  
- static const struct sh_mobile_sdhi_of_data of_rcar_gen1_compatible = {
--	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
-+	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE |
-+			  TMIO_MMC_CLK_ACTUAL,
- 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
- };
- 
- static const struct sh_mobile_sdhi_of_data of_rcar_gen2_compatible = {
--	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
-+	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE |
-+			  TMIO_MMC_CLK_ACTUAL,
- 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
- 	.capabilities2	= MMC_CAP2_NO_MULTI_READ,
- 	.dma_rx_offset	= 0x2000,
++	/*
++	 * All SDHI have CMD12 controll bit
++	 */
++	mmc_data->flags |= TMIO_MMC_HAVE_CMD12_CTRL;
++
+ 	if (of_id && of_id->data) {
+ 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
+ 		mmc_data->flags |= of_data->tmio_flags;
 diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 1c5a631..895e713 100644
+index c3b1b4e..1f1fdfb 100644
 --- a/drivers/mmc/host/tmio_mmc_pio.c
 +++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -150,6 +150,11 @@ static void tmio_mmc_set_clock(struct tmio_mmc_host *host, int new_clock)
- 		for (clock = host->mmc->f_min, clk = 0x80000080;
- 			new_clock >= (clock<<1); clk >>= 1)
- 			clock <<= 1;
-+
-+		/* 1/1 clock is option */
-+		if ((host->pdata->flags & TMIO_MMC_CLK_ACTUAL) &&
-+		    ((clk >> 22) & 0x1))
-+			clk |= 0xff;
- 	}
+@@ -44,6 +44,7 @@
+ #include <linux/pm_qos.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/regulator/consumer.h>
++#include <linux/mmc/sdio.h>
+ #include <linux/scatterlist.h>
+ #include <linux/spinlock.h>
+ #include <linux/workqueue.h>
+@@ -295,6 +296,7 @@ static void tmio_mmc_done_work(struct work_struct *work)
+ #define TRANSFER_READ  0x1000
+ #define TRANSFER_MULTI 0x2000
+ #define SECURITY_CMD   0x4000
++#define NO_CMD12_ISSUE 0x4000 /* TMIO_MMC_HAVE_CMD12_CTRL */
  
- 	if (host->set_clk_div)
+ static int tmio_mmc_start_command(struct tmio_mmc_host *host, struct mmc_command *cmd)
+ {
+@@ -331,6 +333,14 @@ static int tmio_mmc_start_command(struct tmio_mmc_host *host, struct mmc_command
+ 		if (data->blocks > 1) {
+ 			sd_ctrl_write16(host, CTL_STOP_INTERNAL_ACTION, 0x100);
+ 			c |= TRANSFER_MULTI;
++
++			/*
++			 * Disable auto CMD12 at IO_RW_EXTENDED when
++			 * multiple block transfer
++			 */
++			if ((host->pdata->flags & TMIO_MMC_HAVE_CMD12_CTRL) &&
++			    (cmd->opcode = SD_IO_RW_EXTENDED))
++				c |= NO_CMD12_ISSUE;
+ 		}
+ 		if (data->flags & MMC_DATA_READ)
+ 			c |= TRANSFER_READ;
 diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index adcb0cd..90436d5 100644
+index 777e29b..7432d95 100644
 --- a/include/linux/mfd/tmio.h
 +++ b/include/linux/mfd/tmio.h
-@@ -99,6 +99,11 @@
+@@ -83,6 +83,12 @@
   */
- #define TMIO_MMC_HAVE_CTL_DMA_REG	(1 << 9)
+ #define TMIO_MMC_HAVE_HIGH_REG		(1 << 6)
  
 +/*
-+ * Some controllers allows to set SDx actual clock
++ * Some controllers have CMD12 automatically
++ * issue/non-issue register
 + */
-+#define TMIO_MMC_CLK_ACTUAL		(1 << 10)
++#define TMIO_MMC_HAVE_CMD12_CTRL	(1 << 7)
 +
  int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
  int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
