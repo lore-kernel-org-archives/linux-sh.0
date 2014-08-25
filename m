@@ -1,47 +1,102 @@
-From: Rob Herring <robherring2@gmail.com>
-Date: Wed, 27 Aug 2014 17:08:50 +0000
-Subject: Re: [PATCH 01/16] devicetree: Add vendor prefix "mitsubishi" to vendor-prefixes.txt
-Message-Id: <CAL_JsqJgPJbz+v2FnTG=iW9q42SpWmhdREtwm1Eo-AJURgjvsQ@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 25 Aug 2014 03:36:53 +0000
+Subject: [PATCH v2 02/02] ARM: shmobile: r8a7740: Multiplatform support
+Message-Id: <20140825033653.9284.94459.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1409157673-4154-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1409157673-4154-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: dri-devel@lists.freedesktop.org, SH-Linux <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Wed, Aug 27, 2014 at 11:40 AM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
-> Mitsubishi Electric Corporation has a numerical stock ticker, use the
-> company name as vendor prefix.
->
-> Cc: devicetree@vger.kernel.org
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Acked-by: Rob Herring <robh@kernel.org>
+Enable r8a7740 Multiplatform support for the generic r8a7740
+machine vector. No board support is enabled, and the board
+code for Armadillo 800 EVA DT Reference is left by itself.
 
-> ---
->  Documentation/devicetree/bindings/vendor-prefixes.txt | 1 +
->  1 file changed, 1 insertion(+)
->
-> diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
-> index ac7269f..7292cfc 100644
-> --- a/Documentation/devicetree/bindings/vendor-prefixes.txt
-> +++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
-> @@ -83,6 +83,7 @@ maxim Maxim Integrated Products
->  mediatek       MediaTek Inc.
->  micrel Micrel Inc.
->  microchip      Microchip Technology Inc.
-> +mitsubishi     Mitsubishi Electric Corporation
->  mosaixtech     Mosaix Technologies, Inc.
->  moxa   Moxa
->  mpl    MPL AG
-> --
-> 1.8.5.5
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe devicetree" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ Built on top of renesas-devel-20140823-v3.17-rc1 and
+ "[PATCH v2 00/05] ARM: shmobile: Kconfig and Makefile cleanups V2"
+
+ arch/arm/mach-shmobile/Kconfig         |    5 +++++
+ arch/arm/mach-shmobile/pm-r8a7740.c    |    5 ++---
+ arch/arm/mach-shmobile/r8a7740.h       |    4 ++--
+ arch/arm/mach-shmobile/setup-r8a7740.c |    8 +++++++-
+ 4 files changed, 16 insertions(+), 6 deletions(-)
+
+--- 0011/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2014-08-25 12:20:19.000000000 +0900
+@@ -50,6 +50,11 @@ config ARCH_R7S72100
+ 	bool "RZ/A1H (R7S72100)"
+ 	select SYS_SUPPORTS_SH_MTU2
+ 
++config ARCH_R8A7740
++	bool "R-Mobile A1 (R8A77400)"
++	select ARCH_RMOBILE
++	select RENESAS_INTC_IRQPIN
++
+ config ARCH_R8A7779
+ 	bool "R-Car H1 (R8A77790)"
+ 	select ARCH_RCAR_GEN1
+--- 0001/arch/arm/mach-shmobile/pm-r8a7740.c
++++ work/arch/arm/mach-shmobile/pm-r8a7740.c	2014-08-25 12:20:19.000000000 +0900
+@@ -13,7 +13,7 @@
+ #include "common.h"
+ #include "pm-rmobile.h"
+ 
+-#ifdef CONFIG_PM
++#if defined(CONFIG_PM) && !defined(CONFIG_ARCH_MULTIPLATFORM)
+ static int r8a7740_pd_a4s_suspend(void)
+ {
+ 	/*
+@@ -58,8 +58,7 @@ void __init r8a7740_init_pm_domains(void
+ 	rmobile_init_domains(r8a7740_pm_domains, ARRAY_SIZE(r8a7740_pm_domains));
+ 	pm_genpd_add_subdomain_names("A4S", "A3SP");
+ }
+-
+-#endif /* CONFIG_PM */
++#endif /* CONFIG_PM && !CONFIG_ARCH_MULTIPLATFORM */
+ 
+ #ifdef CONFIG_SUSPEND
+ static int r8a7740_enter_suspend(suspend_state_t suspend_state)
+--- 0001/arch/arm/mach-shmobile/r8a7740.h
++++ work/arch/arm/mach-shmobile/r8a7740.h	2014-08-25 12:20:19.000000000 +0900
+@@ -53,10 +53,10 @@ extern void r8a7740_clock_init(u8 md_ck)
+ extern void r8a7740_pinmux_init(void);
+ extern void r8a7740_pm_init(void);
+ 
+-#ifdef CONFIG_PM
++#if defined(CONFIG_PM) && !defined(CONFIG_ARCH_MULTIPLATFORM)
+ extern void __init r8a7740_init_pm_domains(void);
+ #else
+ static inline void r8a7740_init_pm_domains(void) {}
+-#endif /* CONFIG_PM */
++#endif /* CONFIG_PM && !CONFIG_ARCH_MULTIPLATFORM */
+ 
+ #endif /* __ASM_R8A7740_H__ */
+--- 0001/arch/arm/mach-shmobile/setup-r8a7740.c
++++ work/arch/arm/mach-shmobile/setup-r8a7740.c	2014-08-25 12:21:43.000000000 +0900
+@@ -36,6 +36,7 @@
+ #include <asm/mach/map.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/time.h>
++#include <asm/hardware/cache-l2x0.h>
+ 
+ #include "common.h"
+ #include "dma-register.h"
+@@ -813,7 +814,12 @@ void __init r8a7740_init_irq_of(void)
+ 
+ static void __init r8a7740_generic_init(void)
+ {
+-	r8a7740_clock_init(0);
++	r8a7740_meram_workaround();
++
++#ifdef CONFIG_CACHE_L2X0
++	/* Shared attribute override enable, 32K*8way */
++	l2x0_init(IOMEM(0xf0002000), 0x00400000, 0xc20f0fff);
++#endif
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
