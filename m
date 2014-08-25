@@ -1,112 +1,81 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 20 Aug 2014 13:32:03 +0000
-Subject: [PATCH 04/06] ARM: shmobile: Introduce a Kconfig entry for R-Car Gen2
-Message-Id: <20140820133203.808.85577.sendpatchset@w520>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Mon, 25 Aug 2014 12:25:53 +0000
+Subject: [PATCH 01/12] mmc: tmio: Keep host active while SDIO IRQ is enabled
+Message-Id: <1408969564-6335-2-git-send-email-ulf.hansson@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
+In-Reply-To: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org, Ian Molton <ian.molton@codethink.co.uk>, Chris Ball <chris@printf.net>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Ulf Hansson <ulf.hansson@linaro.org>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+The host must be kept active to be able to serve SDIO IRQs, thus let's
+prevent it from going inactive while SDIO IRQ is enabled.
 
-Add a Kconfig entry for R-Car Generation 2 SoCs that
-enables CMT timer and the IRQC interrupt driver.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
+ drivers/mmc/host/tmio_mmc.h     |  1 +
+ drivers/mmc/host/tmio_mmc_pio.c | 19 +++++++++++++++----
+ 2 files changed, 16 insertions(+), 4 deletions(-)
 
- arch/arm/mach-shmobile/Kconfig  |   17 +++++++++--------
- arch/arm/mach-shmobile/Makefile |   12 ++++++------
- 2 files changed, 15 insertions(+), 14 deletions(-)
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index 100ffe0..d6ceb1a 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -101,6 +101,7 @@ struct tmio_mmc_host {
+ 	struct mutex		ios_lock;	/* protect set_ios() context */
+ 	bool			native_hotplug;
+ 	bool			resuming;
++	bool			sdio_irq_enabled;
+ };
+ 
+ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index faf0924..5c2e5a3 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -129,15 +129,22 @@ static void tmio_mmc_enable_sdio_irq(struct mmc_host *mmc, int enable)
+ {
+ 	struct tmio_mmc_host *host = mmc_priv(mmc);
+ 
+-	if (enable) {
++	if (enable && !host->sdio_irq_enabled) {
++		/* Keep device active while SDIO irq is enabled */
++		pm_runtime_get_sync(mmc_dev(mmc));
++		host->sdio_irq_enabled = true;
++
+ 		host->sdio_irq_mask = TMIO_SDIO_MASK_ALL &
+ 					~TMIO_SDIO_STAT_IOIRQ;
+ 		sd_ctrl_write16(host, CTL_TRANSACTION_CTL, 0x0001);
+ 		sd_ctrl_write16(host, CTL_SDIO_IRQ_MASK, host->sdio_irq_mask);
+-	} else {
++	} else if (!enable && host->sdio_irq_enabled) {
+ 		host->sdio_irq_mask = TMIO_SDIO_MASK_ALL;
+ 		sd_ctrl_write16(host, CTL_SDIO_IRQ_MASK, host->sdio_irq_mask);
+ 		sd_ctrl_write16(host, CTL_TRANSACTION_CTL, 0x0000);
++
++		host->sdio_irq_enabled = false;
++		pm_runtime_put(mmc_dev(mmc));
+ 	}
+ }
+ 
+@@ -1074,8 +1081,12 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 
+ 	_host->sdcard_irq_mask &= ~irq_mask;
+ 
+-	if (pdata->flags & TMIO_MMC_SDIO_IRQ)
+-		tmio_mmc_enable_sdio_irq(mmc, 0);
++	_host->sdio_irq_enabled = false;
++	if (pdata->flags & TMIO_MMC_SDIO_IRQ) {
++		_host->sdio_irq_mask = TMIO_SDIO_MASK_ALL;
++		sd_ctrl_write16(_host, CTL_SDIO_IRQ_MASK, _host->sdio_irq_mask);
++		sd_ctrl_write16(_host, CTL_TRANSACTION_CTL, 0x0000);
++	}
+ 
+ 	spin_lock_init(&_host->lock);
+ 	mutex_init(&_host->ios_lock);
+-- 
+1.9.1
 
---- 0004/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2014-08-19 22:14:24.000000000 +0900
-@@ -7,6 +7,11 @@ config ARCH_RCAR_GEN1
- 	select RENESAS_INTC_IRQPIN
- 	select SYS_SUPPORTS_SH_TMU
- 
-+config ARCH_RCAR_GEN2
-+	bool
-+	select RENESAS_IRQC
-+	select SYS_SUPPORTS_SH_CMT
-+
- config ARCH_RMOBILE
- 	bool
- 	select SYS_SUPPORTS_SH_CMT
-@@ -43,13 +48,11 @@ config ARCH_R8A7779
- 
- config ARCH_R8A7790
- 	bool "R-Car H2 (R8A77900)"
--	select RENESAS_IRQC
--	select SYS_SUPPORTS_SH_CMT
-+	select ARCH_RCAR_GEN2
- 
- config ARCH_R8A7791
- 	bool "R-Car M2 (R8A77910)"
--	select RENESAS_IRQC
--	select SYS_SUPPORTS_SH_CMT
-+	select ARCH_RCAR_GEN2
- 
- comment "Renesas ARM SoCs Board Type"
- 
-@@ -123,22 +126,20 @@ config ARCH_R8A7779
- 
- config ARCH_R8A7790
- 	bool "R-Car H2 (R8A77900)"
-+	select ARCH_RCAR_GEN2
- 	select ARM_GIC
- 	select CPU_V7
- 	select MIGHT_HAVE_PCI
- 	select SH_CLK_CPG
--	select RENESAS_IRQC
--	select SYS_SUPPORTS_SH_CMT
- 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
- 
- config ARCH_R8A7791
- 	bool "R-Car M2 (R8A77910)"
-+	select ARCH_RCAR_GEN2
- 	select ARM_GIC
- 	select CPU_V7
- 	select MIGHT_HAVE_PCI
- 	select SH_CLK_CPG
--	select RENESAS_IRQC
--	select SYS_SUPPORTS_SH_CMT
- 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
- 
- comment "Renesas ARM SoCs Board Type"
---- 0001/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2014-08-19 22:21:23.000000000 +0900
-@@ -13,8 +13,7 @@ obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7
- obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
- obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o
- obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o
--obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o setup-rcar-gen2.o
--obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o setup-rcar-gen2.o
-+obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o
- obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o
- obj-$(CONFIG_ARCH_R7S72100)	+= setup-r7s72100.o
- 
-@@ -33,8 +32,9 @@ endif
- 
- # CPU reset vector handling objects
- cpu-y				:= platsmp.o headsmp.o
--cpu-$(CONFIG_ARCH_R8A7790)	+= platsmp-apmu.o
--cpu-$(CONFIG_ARCH_R8A7791)	+= platsmp-apmu.o
-+
-+# Shared SoC family objects
-+obj-$(CONFIG_ARCH_RCAR_GEN2)	+= setup-rcar-gen2.o platsmp-apmu.o $(cpu-y)
- 
- # SMP objects
- smp-y				:= $(cpu-y)
-@@ -52,8 +52,8 @@ obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o
- obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
- obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
- obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o pm-rcar.o
--obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o $(cpu-y)
--obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o $(cpu-y)
-+obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o
-+obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o
- 
- # IRQ objects
- obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
