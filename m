@@ -1,12 +1,14 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 20 Aug 2014 13:02:36 +0000
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 25 Aug 2014 01:10:09 +0000
 Subject: [PATCH 04/10] ARM: shmobile: sh7372: Use shmobile_init_delay()
-Message-Id: <20140820130236.32075.74067.sendpatchset@w520>
+Message-Id: <39b22e20a3086002c5abe0c569cf11a71bc17faf.1408927601.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1408927601.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408927601.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm+renesas@opensource.se>
 
@@ -15,14 +17,16 @@ together with CPU Frequency settings from the DTS. Get rid of the
 C code version.
 
 Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-
- arch/arm/mach-shmobile/setup-sh7372.c |    2 +-
+ arch/arm/mach-shmobile/setup-sh7372.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
---- 0001/arch/arm/mach-shmobile/setup-sh7372.c
-+++ work/arch/arm/mach-shmobile/setup-sh7372.c	2014-08-20 21:01:39.000000000 +0900
-@@ -984,7 +984,7 @@ void __init sh7372_add_early_devices(voi
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 3731ecc..ad7a82d 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -984,7 +984,7 @@ void __init sh7372_add_early_devices(void)
  
  void __init sh7372_add_early_devices_dt(void)
  {
@@ -31,3 +35,6 @@ Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
  
  	sh7372_add_early_devices();
  }
+-- 
+2.0.1
+
