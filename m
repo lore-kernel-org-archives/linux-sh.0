@@ -1,155 +1,43 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Mon, 11 Aug 2014 12:14:34 +0000
-Subject: Re: [PATCH 3/4] media: rcar_vin: Fix race condition terminating stream
-Message-Id: <53E8B3AA.2000509@xs4all.nl>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 25 Aug 2014 02:57:50 +0000
+Subject: Re: [PATCH 0/9 v3] mmc: tmio: fixup patches
+Message-Id: <87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404812474-7627-1-git-send-email-ian.molton@codethink.co.uk>	<1404812474-7627-4-git-send-email-ian.molton@codethink.co.uk>	<53DFFABC.9000800@xs4all.nl> <20140811122343.858030a5082cfe1723acec4c@codethink.co.uk>
-In-Reply-To: <20140811122343.858030a5082cfe1723acec4c@codethink.co.uk>
+References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>	<53AD638C.5060907@renesas.com>	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ian Molton <ian.molton@codethink.co.uk>
-Cc: linux-media@vger.kernel.org, linux-kernel@lists.codethink.co.uk, g.liakhovetski@gmx.de, m.chehab@samsung.com, vladimir.barinov@cogentembedded.com, magnus.damm@gmail.com, horms@verge.net.au, linux-sh@vger.kernel.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Ulf Hansson <ulf.hansson@linaro.org>
+Cc: Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-On 08/11/2014 01:23 PM, Ian Molton wrote:
-> On Mon, 04 Aug 2014 23:27:24 +0200
-> Hans Verkuil <hverkuil@xs4all.nl> wrote:
-> 
->>> +/*
->>> + * Wait for capture to stop and all in-flight buffers to be finished with by
->>> + * the video hardware. This must be called under &priv->lock
->>> + *
->>> + */
->>> +static void rcar_vin_wait_stop_streaming(struct rcar_vin_priv *priv)
->>> +{
->>> +	while (priv->state != STOPPED) {
->>> +
->>> +		/* issue stop if running */
->>> +		if (priv->state = RUNNING)
->>> +			rcar_vin_request_capture_stop(priv);
->>> +
->>> +		/* wait until capturing has been stopped */
->>> +		if (priv->state = STOPPING) {
->>> +			priv->request_to_stop = true;
->>> +			spin_unlock_irq(&priv->lock);
->>> +			wait_for_completion(&priv->capture_stop);
->>> +			spin_lock_irq(&priv->lock);
->>> +		}
->>> +	}
->>> +}
->>> +
->>>  static void rcar_vin_videobuf_release(struct vb2_buffer *vb)
->>>  {
->>>  	struct soc_camera_device *icd = soc_camera_from_vb2q(vb->vb2_queue);
->>> @@ -462,7 +485,6 @@ static void rcar_vin_videobuf_release(struct vb2_buffer *vb)
->>>  	struct rcar_vin_priv *priv = ici->priv;
->>>  	unsigned int i;
->>>  	int buf_in_use = 0;
->>> -
->>>  	spin_lock_irq(&priv->lock);
->>>  
->>>  	/* Is the buffer in use by the VIN hardware? */
->>> @@ -474,20 +496,8 @@ static void rcar_vin_videobuf_release(struct vb2_buffer *vb)
->>>  	}
->>>  
->>>  	if (buf_in_use) {
->>> -		while (priv->state != STOPPED) {
->>> -
->>> -			/* issue stop if running */
->>> -			if (priv->state = RUNNING)
->>> -				rcar_vin_request_capture_stop(priv);
->>> -
->>> -			/* wait until capturing has been stopped */
->>> -			if (priv->state = STOPPING) {
->>> -				priv->request_to_stop = true;
->>> -				spin_unlock_irq(&priv->lock);
->>> -				wait_for_completion(&priv->capture_stop);
->>> -				spin_lock_irq(&priv->lock);
->>> -			}
->>> -		}
->>> +		rcar_vin_wait_stop_streaming(priv);
->>> +
->>
->> Why on earth would videobuf_release call stop_streaming()?
-> 
-> It doesn't. But it appears it can be called whilst the driver still
-> possesses the buffer, in which case, the driver (as was) would
-> request capture stop, and wait for the buffer to be returned from the
-> driver.
-> 
-> This logic here has not been changed, merely moved out to an
-> appropriately named function, so that it can be re-used in
-> rcar_vin_stop_streaming().
-> 
->> You start streaming in the start_streaming op, not in the buf_queue op. If you
->> need a certain minimum of buffers before start_streaming can be called, then just
->> set min_buffers_needed in struct vb2_queue.
-> 
-> I can submit an additional patch to correct this behaviour in the rcar_vin driver, if that would be helpful?
 
-Please do. The vb2 framework is great, but not if try to second-guess it.
-I can guarantee that the current approach will fail in all sorts of subtle
-ways. Frankly, I'm surprised it works at all!
- 
->> And stop streaming happens in stop_streaming. The various vb2 queue ops should just
->> do what the op name says. That way everything works nicely together and it makes
->> your driver much easier to understand.
-> 
-> Agreed. It was particularly difficult to understand WTH this driver was doing.
+Hi Chris, Ulf, Simon
 
-If you can, take kernel 3.15 or 3.16, enable CONFIG_VIDEO_ADV_DEBUG and then
-rewrite that code. A good template for the vb2 part might be
-Documentation/video4linux/v4l2-pci-skeleton.c.
+These are v3 fixup patches for mmc tmio/shmobile.
+I dropped [1/10] patch (which Ulf was pointed) from v2 patch-set.
+We will post it again in the future,
+but we want last 9 patches in upstream at this point.
 
-Looking at the rcar code I think that you only have to implement buf_queue and
-start/stop_streaming and can ditch buf_init/cleanup altogether. The stop_streaming
-op is the crucial one since that's where you have to stop the DMA, wait (if needed)
-for the hardware to access any remaining buffers and return those buffers to the
-vb2 framework.
+Kuninori Morimoto (4):
+      mmc: tmio: care about DMA tx/rx addr offset
+      mmc: tmio: remove Renesas specific #ifdef
+      mmc: tmio: remove SCLKEN bit setting from tmio_mmc_set_clock()
+      mmc: tmio: ensure that the clock has been stopped before set_clock
 
-If you try that and test with CONFIG_VIDEO_ADV_DEBUG on, then the vb2 instrumentation
-I added will tell you if there are any remaining issues. Also test what happens if
-start_streaming fails (assuming it can fail).
+Shinobu Uehara (5):
+      mmc: tmio: clear error IRQ status
+      mmc: tmio: control multiple block transfer mode
+      mmc: tmio: add TMIO_MMC_SDIO_STATUS_QUIRK
+      mmc: tmio: check ILL_FUNC instead of CBSY
+      mmc: tmio: add actual clock support as option
 
-I also recommend testing with the v4l2-compliance tool from v4l-utils.git. See what
-works/breaks.
+ drivers/mmc/host/sh_mobile_sdhi.c |   24 ++++++++++++++++++++--
+ drivers/mmc/host/tmio_mmc_dma.c   |    8 +++-----
+ drivers/mmc/host/tmio_mmc_pio.c   |   40 ++++++++++++++++++++++++++++++++++---
+ include/linux/mfd/tmio.h          |   22 ++++++++++++++++++++
+ 4 files changed, 84 insertions(+), 10 deletions(-)
 
-If you have questions, don't hesitate to contact me.
-
-Regards,
-
-	Hans
-
-> 
->> Sorry I am late in reviewing this, but I only now stumbled on these patches.
-> 
-> Thanks for the review!
-> 
-> -Ian
-> 
->>>  		/*
->>>  		 * Capturing has now stopped. The buffer we have been asked
->>>  		 * to release could be any of the current buffers in use, so
->>> @@ -517,12 +527,15 @@ static void rcar_vin_stop_streaming(struct vb2_queue *vq)
->>>  
->>>  	spin_lock_irq(&priv->lock);
->>>  
->>> +	rcar_vin_wait_stop_streaming(priv);
->>> +
->>>  	for (i = 0; i < vq->num_buffers; ++i)
->>>  		if (vq->bufs[i]->state = VB2_BUF_STATE_ACTIVE)
->>>  			vb2_buffer_done(vq->bufs[i], VB2_BUF_STATE_ERROR);
->>>  
->>>  	list_for_each_safe(buf_head, tmp, &priv->capture)
->>>  		list_del_init(buf_head);
->>> +
->>>  	spin_unlock_irq(&priv->lock);
->>>  }
->>>  
->>>
->>
->>
->>
-> 
-> 
-
+Best regards
+---
+Kuninori Morimoto
