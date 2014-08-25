@@ -1,49 +1,118 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 26 Aug 2014 05:23:59 +0000
-Subject: [PATCH 5/8] ARM: shmobile: r8a7740: Add CMT1 device to DT
-Message-Id: <c10df265febc7e46a60b129756915ad1d4d13e27.1409030383.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 25 Aug 2014 03:03:43 +0000
+Subject: [PATCH v2 03/05] ARM: shmobile: Introduce a Kconfig entry for R-Car Gen2
+Message-Id: <20140825030343.1936.61634.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1409030383.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1409030383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add the CMT1 counters to the r8a7740 device tree and make it
-disabled by default.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Based on work by Magnus Damm.
+Add a Kconfig entry for R-Car Generation 2 SoCs that
+enables CMT timer and the IRQC interrupt driver.
 
-Cc: Magnus Damm <magnus.damm@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7740.dtsi | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 6cd6a46..1067a96 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -41,6 +41,18 @@
- 		interrupts = <0 83 IRQ_TYPE_LEVEL_HIGH>;
- 	};
+ Changes since V1:
+ - Removed dependency of "ARM: shmobile: Consolidate GPIOLIB Kconfig bits"
+
+ arch/arm/mach-shmobile/Kconfig  |   17 +++++++++--------
+ arch/arm/mach-shmobile/Makefile |   12 ++++++------
+ 2 files changed, 15 insertions(+), 14 deletions(-)
+
+--- 0003/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2014-08-25 11:32:29.000000000 +0900
+@@ -6,6 +6,11 @@ config ARCH_RCAR_GEN1
+ 	select RENESAS_INTC_IRQPIN
+ 	select SYS_SUPPORTS_SH_TMU
  
-+	cmt1: timer@e6138000 {
-+		compatible = "renesas,cmt-48";
-+		reg = <0xe6138000 0x170>;
-+		interrupts = <0 58 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7740_CLK_CMT1>;
-+		clock-names = "fck";
++config ARCH_RCAR_GEN2
++	bool
++	select RENESAS_IRQC
++	select SYS_SUPPORTS_SH_CMT
 +
-+		renesas,channels-mask = <0x3f>;
+ config ARCH_RMOBILE
+ 	bool
+ 	select SYS_SUPPORTS_SH_CMT
+@@ -42,13 +47,11 @@ config ARCH_R8A7779
+ 
+ config ARCH_R8A7790
+ 	bool "R-Car H2 (R8A77900)"
+-	select RENESAS_IRQC
+-	select SYS_SUPPORTS_SH_CMT
++	select ARCH_RCAR_GEN2
+ 
+ config ARCH_R8A7791
+ 	bool "R-Car M2 (R8A77910)"
+-	select RENESAS_IRQC
+-	select SYS_SUPPORTS_SH_CMT
++	select ARCH_RCAR_GEN2
+ 
+ comment "Renesas ARM SoCs Board Type"
+ 
+@@ -130,24 +133,22 @@ config ARCH_R8A7779
+ 
+ config ARCH_R8A7790
+ 	bool "R-Car H2 (R8A77900)"
++	select ARCH_RCAR_GEN2
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select CPU_V7
+ 	select MIGHT_HAVE_PCI
+ 	select SH_CLK_CPG
+-	select RENESAS_IRQC
+-	select SYS_SUPPORTS_SH_CMT
+ 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
+ 
+ config ARCH_R8A7791
+ 	bool "R-Car M2 (R8A77910)"
++	select ARCH_RCAR_GEN2
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select CPU_V7
+ 	select MIGHT_HAVE_PCI
+ 	select SH_CLK_CPG
+-	select RENESAS_IRQC
+-	select SYS_SUPPORTS_SH_CMT
+ 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
+ 
+ comment "Renesas ARM SoCs Board Type"
+--- 0001/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2014-08-25 11:31:37.000000000 +0900
+@@ -13,8 +13,7 @@ obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7
+ obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o
+ obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o
+-obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o setup-rcar-gen2.o
+-obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o setup-rcar-gen2.o
++obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o
+ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o
+ obj-$(CONFIG_ARCH_R7S72100)	+= setup-r7s72100.o
+ 
+@@ -33,8 +32,9 @@ endif
+ 
+ # CPU reset vector handling objects
+ cpu-y				:= platsmp.o headsmp.o
+-cpu-$(CONFIG_ARCH_R8A7790)	+= platsmp-apmu.o
+-cpu-$(CONFIG_ARCH_R8A7791)	+= platsmp-apmu.o
 +
-+		status = "disabled";
-+	};
-+
- 	/* irqpin0: IRQ0 - IRQ7 */
- 	irqpin0: irqpin@e6900000 {
- 		compatible = "renesas,intc-irqpin-r8a7740", "renesas,intc-irqpin";
--- 
-2.0.1
-
++# Shared SoC family objects
++obj-$(CONFIG_ARCH_RCAR_GEN2)	+= setup-rcar-gen2.o platsmp-apmu.o $(cpu-y)
+ 
+ # SMP objects
+ smp-y				:= $(cpu-y)
+@@ -52,8 +52,8 @@ obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o
+ obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o pm-rcar.o
+-obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o $(cpu-y)
+-obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o $(cpu-y)
++obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o
++obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o
+ 
+ # IRQ objects
+ obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
