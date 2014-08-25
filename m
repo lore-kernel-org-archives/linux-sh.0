@@ -1,50 +1,46 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 13 Aug 2014 11:46:22 +0000
-Subject: Re: [PATCH 00/09] ARM: shmobile: Consistent use of shmobile_init_late()
-Message-Id: <CAMuHMdWakLxum1rEcStdhw3rAcaS8OcNZN7npa6VhWXOU6cUcg@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 25 Aug 2014 01:09:48 +0000
+Subject: [PATCH 3/3] ARM: shmobile: r8a7791: add missing 0x0100 for SDCKCR
+Message-Id: <58b80ad6472c0fa12926dfa1f9103d3a326bdf18.1408926048.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140730233206.5969.26669.sendpatchset@w520>
-In-Reply-To: <20140730233206.5969.26669.sendpatchset@w520>
+References: <cover.1408926048.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408926048.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Tue, Aug 5, 2014 at 7:49 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> On Mon, Aug 4, 2014 at 10:11 PM, Geert Uytterhoeven
-> <geert@linux-m68k.org> wrote:
->> On Thu, Jul 31, 2014 at 1:32 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
->>> Make sure all mach-shmobile SoCs and DT Reference board support code
->>> call shmobile_init_late() so Suspend-to-RAM and CPUIdle get setup
->>> in a consistent way. The SoC DT case for r8a7778 and r8a7779 are
->>> also adjusted to not add any platform devices. DT shall be used instead.
->>
->> Aha, that last part was missing from the individual descriptions for
->> r8a7778 and r8a7779 ;-)
->> r8a7779_init_late() already called shmobile_init_late() internally.
->
-> Right, next time I'll put more contents in the each patch!
->
->> However, r8a7778_init_late() doesn't call shmobile_init_late(). Shouldn't
->> that be added, too, to fix bockw?
->
-> Maybe so, but I deem the legacy code as a lost cause. I also don't
-> have any hardware access myself, so I can't test it.
->
-> If you feel like it, please cook up a patch then I think Simon or
-> Morimoto-san can test!
+4bfb358b1d6cdeff8c6a13677f01ed78e9696b98
+(ARM: shmobile: Add r8a7791 legacy SDHI clocks)
+added r8a7791 SDHI clock support.
 
-Understood. Patch sent.
+But, it is missing
+"0x0100: x 1/8" division ratio.
+This patch fixes hidden bug.
+It is based on R-Car H2 v0.7, R-Car M2 v0.9.
 
-Gr{oetje,eeting}s,
+Reported-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a7791.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-                        Geert
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index e2fdfcc..53161c4 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -152,7 +152,7 @@ enum {
+ 
+ static struct clk div4_clks[DIV4_NR] = {
+ 	[DIV4_SDH] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 8, 0x0dff, CLK_ENABLE_ON_INIT),
+-	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1de0, CLK_ENABLE_ON_INIT),
++	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1df0, CLK_ENABLE_ON_INIT),
+ };
+ 
+ /* DIV6 clocks */
+-- 
+2.0.1
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
