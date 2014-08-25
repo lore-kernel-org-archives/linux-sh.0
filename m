@@ -1,63 +1,42 @@
-From: Vivek Gautam <gautam.vivek@samsung.com>
-Date: Thu, 21 Aug 2014 13:36:02 +0000
-Subject: Re: [PATCH v3] usb: hcd: add generic PHY support
-Message-Id: <CAFp+6iGMj-B6y+jUWOnYwfqCb071kzoyFUnxf=9_K0Ne-+35oA@mail.gmail.com>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Mon, 25 Aug 2014 12:25:52 +0000
+Subject: [PATCH 00/12] mmc: tmio: Fixup PM support
+Message-Id: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <538891DC.605@renesas.com>
-In-Reply-To: <538891DC.605@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org, Ian Molton <ian.molton@codethink.co.uk>, Chris Ball <chris@printf.net>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Ulf Hansson <ulf.hansson@linaro.org>
 
-Hi Sergei,
+This patchset fixup the PM support for tmio and the tmio hosts.
+Some re-structuring of the code was also necessary to accomplish the above.
 
+A few of these patches has been posted earlier, but at that time I couldn't get
+help in testing them on hardware. Let's give this a second try now.
 
-On Thu, Aug 21, 2014 at 6:37 PM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> Hello.
->
->
-> On 08/21/2014 04:44 PM, Vivek Gautam wrote:
->
->>>>   From Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->
->
->>>     Should be "From:".
->
->
->>>> Add the generic PHY support, analogous to the USB PHY support. Intended
->>>> it
->>>> to be
->>>> used with the PCI EHCI/OHCI drivers and the xHCI platform driver.
->
->
->>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->>>> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
->>>> ---
->>>> This patch is against the 'usb-next' branch of Greg KH's 'usb.git' repo.
->>>> (commit id = 70d2f61fc7559df3d5be32a9d01efdb9ee1b11d8)
->
->
->>>     I was pondering on reposting this patch, along with the R8A779x
->>> device
->>> tree changes using it as Greg KH requested to see the users of this
->>> patch...
->
->
->> Are we planning a repost of this patch,
->
->
->    Yes, I'm planning this since Greg has lost v4.
+http://www.spinics.net/lists/linux-mmc/msg23177.html
 
-Ok, for now i will rebase my series for xhci-plat on this.
-Thanks :-)
+Ulf Hansson (12):
+  mmc: tmio: Keep host active while SDIO IRQ is enabled
+  mmc: tmio: Keep host active while serving requests
+  mmc: tmio: Extract bus_width modifications to a separate function
+  mmc: tmio: Restructure ->set_ios() and adapt ->probe() to it
+  mmc: tmio: Handle clock gating from runtime PM functions
+  mmc: tmio: Mask all IRQs when inactive
+  mmc: tmio: Make runtime PM callbacks available for CONFIG_PM
+  mmc: sdhi: Make runtime PM callbacks available for CONFIG_PM
+  mmc: tmio_mmc: Enable runtime PM support
+  mmc: sdhi: Fixup system PM suspend lock-up
+  mmc: tmio_mmc: Fixup system PM suspend lock-up
+  mmc: tmio: Remove library functions for system PM
 
-
-
+ drivers/mmc/host/sh_mobile_sdhi.c |   5 +-
+ drivers/mmc/host/tmio_mmc.c       |   7 +-
+ drivers/mmc/host/tmio_mmc.h       |  31 +-----
+ drivers/mmc/host/tmio_mmc_pio.c   | 193 ++++++++++++++++++--------------------
+ 4 files changed, 104 insertions(+), 132 deletions(-)
 
 -- 
-Best Regards
-Vivek Gautam
-Samsung R&D Institute, Bangalore
-India
+1.9.1
+
