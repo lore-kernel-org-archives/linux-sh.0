@@ -1,37 +1,90 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Mon, 25 Aug 2014 12:25:58 +0000
-Subject: [PATCH 06/12] mmc: tmio: Mask all IRQs when inactive
-Message-Id: <1408969564-6335-7-git-send-email-ulf.hansson@linaro.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 25 Aug 2014 03:03:25 +0000
+Subject: [PATCH v2 01/05] ARM: shmobile: Introduce a Kconfig entry for R-Mobile
+Message-Id: <20140825030325.1936.4365.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
-In-Reply-To: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org, Ian Molton <ian.molton@codethink.co.uk>, Chris Ball <chris@printf.net>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Ulf Hansson <ulf.hansson@linaro.org>
+To: linux-sh@vger.kernel.org
 
-To make sure we don't receive any spurious IRQs while we are inactive,
-mask the IRQs from within the ->runtime_suspend() callback.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+Add a Kconfig entry for R-Mobile SoCs that enables
+both CMT and TMU timers. Interrupt controller varies
+with SoC version so it is excluded.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/mmc/host/tmio_mmc_pio.c | 2 ++
- 1 file changed, 2 insertions(+)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 2345177..d52280d 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -1168,6 +1168,8 @@ int tmio_mmc_host_runtime_suspend(struct device *dev)
- 	struct mmc_host *mmc = dev_get_drvdata(dev);
- 	struct tmio_mmc_host *host = mmc_priv(mmc);
+ Changes since V1:
+ - Removed dependency of "ARM: shmobile: Consolidate GPIOLIB Kconfig bits"
+
+ arch/arm/mach-shmobile/Kconfig |   17 +++++++++--------
+ 1 file changed, 9 insertions(+), 8 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2014-08-25 11:28:15.000000000 +0900
+@@ -1,6 +1,11 @@
+ config ARCH_SHMOBILE
+ 	bool
  
-+	tmio_mmc_disable_mmc_irqs(host, TMIO_MASK_ALL);
++config ARCH_RMOBILE
++	bool
++	select SYS_SUPPORTS_SH_CMT
++	select SYS_SUPPORTS_SH_TMU
 +
- 	if (host->clk_cache)
- 		tmio_mmc_clk_stop(host);
+ menuconfig ARCH_SHMOBILE_MULTI
+ 	bool "Renesas ARM SoCs" if ARCH_MULTI_V7
+ 	depends on MMU
+@@ -67,16 +72,16 @@ comment "Renesas ARM SoCs System Type"
  
--- 
-1.9.1
-
+ config ARCH_SH7372
+ 	bool "SH-Mobile AP4 (SH7372)"
++	select ARCH_RMOBILE
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_CPU_SUSPEND if PM || CPU_IDLE
+ 	select CPU_V7
+ 	select SH_CLK_CPG
+ 	select SH_INTC
+-	select SYS_SUPPORTS_SH_CMT
+-	select SYS_SUPPORTS_SH_TMU
+ 
+ config ARCH_SH73A0
+ 	bool "SH-Mobile AG5 (R8A73A00)"
++	select ARCH_RMOBILE
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select CPU_V7
+@@ -84,28 +89,24 @@ config ARCH_SH73A0
+ 	select SH_CLK_CPG
+ 	select SH_INTC
+ 	select RENESAS_INTC_IRQPIN
+-	select SYS_SUPPORTS_SH_CMT
+-	select SYS_SUPPORTS_SH_TMU
+ 
+ config ARCH_R8A73A4
+ 	bool "R-Mobile APE6 (R8A73A40)"
++	select ARCH_RMOBILE
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select CPU_V7
+ 	select SH_CLK_CPG
+ 	select RENESAS_IRQC
+-	select SYS_SUPPORTS_SH_CMT
+-	select SYS_SUPPORTS_SH_TMU
+ 
+ config ARCH_R8A7740
+ 	bool "R-Mobile A1 (R8A77400)"
++	select ARCH_RMOBILE
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select CPU_V7
+ 	select SH_CLK_CPG
+ 	select RENESAS_INTC_IRQPIN
+-	select SYS_SUPPORTS_SH_CMT
+-	select SYS_SUPPORTS_SH_TMU
+ 
+ config ARCH_R8A7778
+ 	bool "R-Car M1A (R8A77781)"
