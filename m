@@ -1,81 +1,38 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Mon, 25 Aug 2014 12:25:53 +0000
-Subject: [PATCH 01/12] mmc: tmio: Keep host active while SDIO IRQ is enabled
-Message-Id: <1408969564-6335-2-git-send-email-ulf.hansson@linaro.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 25 Aug 2014 01:10:22 +0000
+Subject: [PATCH 2/3] ARM: shmobile: ape6evm: Remove duplicate CPUFreq bits
+Message-Id: <664b4c172209f076866419a5a4162e4fc9631807.1408927858.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
-In-Reply-To: <1408969564-6335-1-git-send-email-ulf.hansson@linaro.org>
+References: <cover.1408927858.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408927858.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org, Ian Molton <ian.molton@codethink.co.uk>, Chris Ball <chris@printf.net>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Ulf Hansson <ulf.hansson@linaro.org>
+To: linux-arm-kernel@lists.infradead.org
 
-The host must be kept active to be able to serve SDIO IRQs, thus let's
-prevent it from going inactive while SDIO IRQ is enabled.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+The CPUFreq platform device is already registered by
+shmobile_init_late(), so get rid of ape6evm specific bits.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/mmc/host/tmio_mmc.h     |  1 +
- drivers/mmc/host/tmio_mmc_pio.c | 19 +++++++++++++++----
- 2 files changed, 16 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/board-ape6evm-reference.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index 100ffe0..d6ceb1a 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -101,6 +101,7 @@ struct tmio_mmc_host {
- 	struct mutex		ios_lock;	/* protect set_ios() context */
- 	bool			native_hotplug;
- 	bool			resuming;
-+	bool			sdio_irq_enabled;
- };
+diff --git a/arch/arm/mach-shmobile/board-ape6evm-reference.c b/arch/arm/mach-shmobile/board-ape6evm-reference.c
+index 2f7723e..ac371b7 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm-reference.c
++++ b/arch/arm/mach-shmobile/board-ape6evm-reference.c
+@@ -50,7 +50,6 @@ static void __init ape6evm_add_standard_devices(void)
  
- int tmio_mmc_host_probe(struct tmio_mmc_host **host,
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index faf0924..5c2e5a3 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -129,15 +129,22 @@ static void tmio_mmc_enable_sdio_irq(struct mmc_host *mmc, int enable)
- {
- 	struct tmio_mmc_host *host = mmc_priv(mmc);
- 
--	if (enable) {
-+	if (enable && !host->sdio_irq_enabled) {
-+		/* Keep device active while SDIO irq is enabled */
-+		pm_runtime_get_sync(mmc_dev(mmc));
-+		host->sdio_irq_enabled = true;
-+
- 		host->sdio_irq_mask = TMIO_SDIO_MASK_ALL &
- 					~TMIO_SDIO_STAT_IOIRQ;
- 		sd_ctrl_write16(host, CTL_TRANSACTION_CTL, 0x0001);
- 		sd_ctrl_write16(host, CTL_SDIO_IRQ_MASK, host->sdio_irq_mask);
--	} else {
-+	} else if (!enable && host->sdio_irq_enabled) {
- 		host->sdio_irq_mask = TMIO_SDIO_MASK_ALL;
- 		sd_ctrl_write16(host, CTL_SDIO_IRQ_MASK, host->sdio_irq_mask);
- 		sd_ctrl_write16(host, CTL_TRANSACTION_CTL, 0x0000);
-+
-+		host->sdio_irq_enabled = false;
-+		pm_runtime_put(mmc_dev(mmc));
- 	}
+ 	r8a73a4_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-	platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
  }
  
-@@ -1074,8 +1081,12 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 
- 	_host->sdcard_irq_mask &= ~irq_mask;
- 
--	if (pdata->flags & TMIO_MMC_SDIO_IRQ)
--		tmio_mmc_enable_sdio_irq(mmc, 0);
-+	_host->sdio_irq_enabled = false;
-+	if (pdata->flags & TMIO_MMC_SDIO_IRQ) {
-+		_host->sdio_irq_mask = TMIO_SDIO_MASK_ALL;
-+		sd_ctrl_write16(_host, CTL_SDIO_IRQ_MASK, _host->sdio_irq_mask);
-+		sd_ctrl_write16(_host, CTL_TRANSACTION_CTL, 0x0000);
-+	}
- 
- 	spin_lock_init(&_host->lock);
- 	mutex_init(&_host->ios_lock);
+ static const char *ape6evm_boards_compat_dt[] __initdata = {
 -- 
-1.9.1
+2.0.1
 
