@@ -1,36 +1,53 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 13 Aug 2014 11:56:56 +0000
-Subject: [PATCH 1/4] ARM: shmobile: sh7372: Remove unneeded nr_irqs initialization
-Message-Id: <1407931019-11409-1-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 25 Aug 2014 03:02:16 +0000
+Subject: [PATCH 7/9 v3] mmc: tmio: remove SCLKEN bit setting from tmio_mmc_set_clock()
+Message-Id: <871ts5tgp6.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
+	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
+	<53AD638C.5060907@renesas.com>
+	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+	<87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Ulf Hansson <ulf.hansson@linaro.org>
+Cc: Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-As per arch_probe_nr_irqs(), the default value is NR_IRQS, which maps to
-NR_IRQS_LEGACY if CONFIG_SPARSE_IRQ=y.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Since SPARSE_IRQ is selected by both ARCH_MULTIPLATFORM and
-ARCH_SHMOBILE_LEGACY, it's always enabled on shmobile.
+TMIO clock is set via tmio_mmc_set_clock() -> tmio_mmc_clk_start(),
+and SCLKEN bit will be set on tmio_mmc_clk_start().
+It is not needed on tmio_mmc_set_clock() function.
+The required clock setting will not be able to set
+in some clocks without this patch.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Nguyen Xuan Nui <nx-nui@jinso.co.jp>
+Tested-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/setup-sh7372.c | 1 -
+v2 -> v3
+
+ - no change
+
+ drivers/mmc/host/tmio_mmc_pio.c |    1 -
  1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 9cdfcdfd38fc..3731eccccef4 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -1008,7 +1008,6 @@ static const char *sh7372_boards_compat_dt[] __initdata = {
- DT_MACHINE_START(SH7372_DT, "Generic SH7372 (Flattened Device Tree)")
- 	.map_io		= sh7372_map_io,
- 	.init_early	= sh7372_add_early_devices_dt,
--	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= sh7372_init_irq,
- 	.handle_irq	= shmobile_handle_irq_intc,
- 	.init_machine	= sh7372_add_standard_devices_dt,
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index b19d0cd..da3c74d 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -150,7 +150,6 @@ static void tmio_mmc_set_clock(struct tmio_mmc_host *host, int new_clock)
+ 		for (clock = host->mmc->f_min, clk = 0x80000080;
+ 			new_clock >= (clock<<1); clk >>= 1)
+ 			clock <<= 1;
+-		clk |= 0x100;
+ 	}
+ 
+ 	if (host->set_clk_div)
 -- 
-1.9.1
+1.7.9.5
 
