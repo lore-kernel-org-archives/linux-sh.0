@@ -1,12 +1,14 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 20 Aug 2014 13:02:27 +0000
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 25 Aug 2014 01:10:08 +0000
 Subject: [PATCH 03/10] ARM: shmobile: r8a7778: Update DTS to include CPU frequency
-Message-Id: <20140820130227.32075.16599.sendpatchset@w520>
+Message-Id: <869f92aed207f2f6e595ea41c841bd9ad0c0d0d4.1408927601.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1408927601.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408927601.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm+renesas@opensource.se>
 
@@ -18,13 +20,15 @@ delay settings from there.
 Also add other missing CPU information to the r8a7778 DTS.
 
 Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-
- arch/arm/boot/dts/r8a7778.dtsi |    6 ++++++
+ arch/arm/boot/dts/r8a7778.dtsi | 6 ++++++
  1 file changed, 6 insertions(+)
 
---- 0001/arch/arm/boot/dts/r8a7778.dtsi
-+++ work/arch/arm/boot/dts/r8a7778.dtsi	2014-08-20 21:04:52.000000000 +0900
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index ecfdf4b..315ec62 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
 @@ -23,8 +23,14 @@
  	interrupt-parent = <&gic>;
  
@@ -40,3 +44,6 @@ Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
  		};
  	};
  
+-- 
+2.0.1
+
