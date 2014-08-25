@@ -1,48 +1,40 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 27 Aug 2014 00:35:25 +0000
-Subject: [PATCH v2 4/5] ARM: shmobile: ape6evm-reference: correct memory map syntax
-Message-Id: <1409099726-21814-5-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 25 Aug 2014 01:10:12 +0000
+Subject: [PATCH 07/10] ARM: shmobile: sh73a0: Use shmobile_init_delay()
+Message-Id: <5df622a56b7da3c54609f26cc6221ab3382efaaf.1408927601.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409099726-21814-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1409099726-21814-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1408927601.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408927601.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Correct a syntax error by using two comma-delimited 32 bit values
-rather than a single 64 bit value.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-This is a documentation fix and should have no run-time affect.
+Adjust the sh73a0 SoC support code to use shmobile_init_delay()
+together with CPU Frequency settings from the DTS. Get rid of the
+C code version.
 
-This problem was introduced when the second memory region
-was added to the ape6evm-reference dts file by 9701f442139bd21c
-("ARM: shmobile: Include all 2 GiB of memory on APE6EVM DT Ref") in v3.13.
-
-Cc: Olof Johansson <olof@lixom.net>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
 ---
-v2
-* First post
----
- arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts | 2 +-
+ arch/arm/mach-shmobile/setup-sh73a0.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-index a860f32..9f1795f 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-@@ -29,7 +29,7 @@
- 		reg = <0 0x40000000 0 0x40000000>;
- 	};
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index e7a0296..fe29ebb 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -746,7 +746,7 @@ void __init sh73a0_add_standard_devices(void)
  
--	memory@200000000 {
-+	memory@2,00000000 {
- 		device_type = "memory";
- 		reg = <2 0x00000000 0 0x40000000>;
- 	};
+ void __init sh73a0_init_delay(void)
+ {
+-	shmobile_setup_delay(1196, 44, 46); /* Cortex-A9 @ 1196MHz */
++	shmobile_init_delay();
+ }
+ 
+ /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
 -- 
 2.0.1
 
