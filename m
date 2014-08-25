@@ -1,48 +1,90 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Aug 2014 01:09:47 +0000
-Subject: [PATCH 2/3] ARM: shmobile: r8a7790: add missing 0x0100 for SDCKCR
-Message-Id: <4fb12fe9c34928c1d2bed817e144aec3f44540e9.1408926048.git.horms+renesas@verge.net.au>
+Date: Mon, 25 Aug 2014 01:09:41 +0000
+Subject: [PATCH 2/2] ARM: shmobile: armadillo800eva: Sort includes
+Message-Id: <0e56d75395f98a659e6879708bbd9328d2ce347e.1408927475.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408926048.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408926048.git.horms+renesas@verge.net.au>
+References: <cover.1408927475.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408927475.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Sorted includes seems to be the done thing these days.
 
-9f13ee6f83c52065112d3e396e42e3780911ef53
-(ARM: shmobile: r8a7790: add div4 clocks)
-added r8a7790 DIV4 clock support.
-
-But, it is missing
-"0x0100: x 1/8" division ratio.
-This patch fixes hidden bug.
-It is based on R-Car H2 v0.7, R-Car M2 v0.9.
-
-Reported-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 40 +++++++++++++-------------
+ 1 file changed, 20 insertions(+), 20 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 296a057..c62bfe7 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -181,8 +181,8 @@ enum {
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 6dbaad6..3d07a9a 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -22,43 +22,43 @@
+ #include <linux/clk.h>
+ #include <linux/delay.h>
+ #include <linux/err.h>
+-#include <linux/kernel.h>
+-#include <linux/input.h>
+-#include <linux/platform_data/st1232_pdata.h>
+-#include <linux/irq.h>
+-#include <linux/platform_device.h>
+ #include <linux/gpio.h>
+ #include <linux/gpio_keys.h>
+-#include <linux/regulator/driver.h>
++#include <linux/i2c-gpio.h>
++#include <linux/input.h>
++#include <linux/irq.h>
++#include <linux/kernel.h>
++#include <linux/mfd/tmio.h>
++#include <linux/mmc/host.h>
++#include <linux/mmc/sh_mmcif.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/pinctrl/machine.h>
++#include <linux/platform_data/st1232_pdata.h>
++#include <linux/platform_device.h>
+ #include <linux/pwm.h>
+ #include <linux/pwm_backlight.h>
++#include <linux/reboot.h>
++#include <linux/regulator/driver.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/gpio-regulator.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/sh_eth.h>
+-#include <linux/videodev2.h>
+ #include <linux/usb/renesas_usbhs.h>
+-#include <linux/mfd/tmio.h>
+-#include <linux/mmc/host.h>
+-#include <linux/mmc/sh_mmcif.h>
+-#include <linux/mmc/sh_mobile_sdhi.h>
+-#include <linux/i2c-gpio.h>
+-#include <linux/reboot.h>
++#include <linux/videodev2.h>
  
- static struct clk div4_clks[DIV4_NR] = {
- 	[DIV4_SDH] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 8, 0x0dff, CLK_ENABLE_ON_INIT),
--	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1de0, CLK_ENABLE_ON_INIT),
--	[DIV4_SD1] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 0, 0x1de0, CLK_ENABLE_ON_INIT),
-+	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1df0, CLK_ENABLE_ON_INIT),
-+	[DIV4_SD1] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 0, 0x1df0, CLK_ENABLE_ON_INIT),
- };
+-#include <media/mt9t112.h>
+-#include <media/sh_mobile_ceu.h>
+-#include <media/soc_camera.h>
+-#include <asm/page.h>
++#include <asm/hardware/cache-l2x0.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
+ #include <asm/mach/time.h>
+-#include <asm/hardware/cache-l2x0.h>
+-#include <video/sh_mobile_lcdc.h>
+-#include <video/sh_mobile_hdmi.h>
++#include <asm/page.h>
++#include <media/mt9t112.h>
++#include <media/sh_mobile_ceu.h>
++#include <media/soc_camera.h>
+ #include <sound/sh_fsi.h>
+ #include <sound/simple_card.h>
++#include <video/sh_mobile_hdmi.h>
++#include <video/sh_mobile_lcdc.h>
  
- /* DIV6 clocks */
+ #include "common.h"
+ #include "irqs.h"
 -- 
 2.0.1
 
