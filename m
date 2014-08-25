@@ -1,39 +1,51 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 23 Aug 2014 01:44:11 +0000
-Subject: [PATCH 01/11] ARM: shmobile: r8a7778: Add missing call to shmobile_init_late()
-Message-Id: <54a06dde40f6a01e323d49390d78b8c9f1dfacc0.1408671240.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 25 Aug 2014 03:02:40 +0000
+Subject: [PATCH 8/9 v3] mmc: tmio: ensure that the clock has been stopped before set_clock
+Message-Id: <87zjets241.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408671240.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408671240.git.horms+renesas@verge.net.au>
+References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
+	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
+	<53AD638C.5060907@renesas.com>
+	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+	<87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Ulf Hansson <ulf.hansson@linaro.org>
+Cc: Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Add the missing call to shmobile_init_late() to r8a7778_init_late().
-This should make sure Suspend-to-RAM and CPUIdle are setup as expected
-on bockw.
+This patch ensures that the clock has been stopped before
+it calls tmio_mmc_set_clock().
+The clock settings might be failed without this patch
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Tested-by: Nguyen Xuan Nui <nx-nui@jinso.co.jp>
+Tested-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7778.c | 1 +
+v2 -> v3
+
+ - no change
+
+ drivers/mmc/host/tmio_mmc_pio.c |    1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index f00a488..383e43b 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -520,6 +520,7 @@ void __init r8a7778_add_standard_devices(void)
- 
- void __init r8a7778_init_late(void)
- {
-+	shmobile_init_late();
- 	platform_device_register_full(&ehci_info);
- 	platform_device_register_full(&ohci_info);
- }
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index da3c74d..1c5a631 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -895,6 +895,7 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 		}
+ 		if (host->power = TMIO_MMC_OFF_STOP)
+ 			tmio_mmc_reset(host);
++		tmio_mmc_clk_stop(host);
+ 		tmio_mmc_set_clock(host, ios->clock);
+ 		if (host->power = TMIO_MMC_OFF_STOP)
+ 			/* power up SD card and the bus */
 -- 
-2.0.1
+1.7.9.5
 
