@@ -1,33 +1,46 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 04 Aug 2014 08:49:55 +0000
-Subject: Re: [PATCH 09/11] ARM: shmobile: r8a7791: Reference DMA channels in MMCIF DT node
-Message-Id: <CAMuHMdVqU1VsmM5HpaGxeh68kmFKc2nA1XMFuBkOvphfCqMc_Q@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 26 Aug 2014 05:24:01 +0000
+Subject: [PATCH 7/8] ARM: shmobile: armadillo800eva-reference: Do not use r8a7740_add_standard_devices_dt()
+Message-Id: <5ebb4e849966e9cb3d5450773c86a1bf79e76f2d.1409030383.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405464321-4723-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-	<1405464321-4723-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1405464321-4723-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1409030383.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1409030383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, Linux MMC List <linux-mmc@vger.kernel.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Ian Molton <ian.molton@codethink.co.uk>
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jul 16, 2014 at 12:45 AM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
-> Add references to the transmit and receive DMA channels in the MMCIF
-> node.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Now that r8a7740_add_standard_devices_dt() is just a wrapper for
+of_platform_populate() call the latter directly.
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+This is in preparation for removing r8a7740_add_standard_devices_dt().
 
-Gr{oetje,eeting}s,
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-                        Geert
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index 84bc6cb..f06e1f3 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -24,6 +24,7 @@
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
+ #include <linux/io.h>
++#include <linux/of_platform.h>
+ 
+ #include <asm/mach/arch.h>
+ #include <asm/hardware/cache-l2x0.h>
+@@ -170,7 +171,7 @@ static void __init eva_init(void)
+ 	l2x0_init(IOMEM(0xf0002000), 0x00400000, 0xc20f0fff);
+ #endif
+ 
+-	r8a7740_add_standard_devices_dt();
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 
+ 	r8a7740_pm_init();
+ }
+-- 
+2.0.1
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
