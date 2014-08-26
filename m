@@ -1,131 +1,218 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Aug 2014 16:41:09 +0000
-Subject: [PATCH 12/16] ARM: shmobile: lager-reference: Remove DU platform device
-Message-Id: <1409157673-4154-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 26 Aug 2014 05:23:56 +0000
+Subject: [PATCH 2/8] ARM: shmobile: r8a7740: add SoC clocks to DTS
+Message-Id: <d9ffd583bf345e2ea79a8ab8044df3a979349af7.1409030383.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1409030383.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1409030383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The DU device is now instantiated from the device tree, remote the
-corresponding platform device.
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Declares the r8a7740 clocks supported by the legacy clock framework,
+excluding those requiring extensions to the DIV6 driver.
+
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-lager-reference.c | 80 --------------------------
- 1 file changed, 80 deletions(-)
+ arch/arm/boot/dts/r8a7740.dtsi | 180 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 180 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index bc4b483..82b077a 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -18,94 +18,15 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index bda18fb..3c61c5d 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -10,6 +10,7 @@
  
--#include <linux/dma-mapping.h>
- #include <linux/init.h>
- #include <linux/of_platform.h>
--#include <linux/platform_data/rcar-du.h>
+ /include/ "skeleton.dtsi"
  
- #include <asm/mach/arch.h>
++#include <dt-bindings/clock/r8a7740-clock.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
  
--#include "clock.h"
- #include "common.h"
--#include "irqs.h"
- #include "r8a7790.h"
- #include "rcar-gen2.h"
- 
--/* DU */
--static struct rcar_du_encoder_data lager_du_encoders[] = {
--	{
--		.type = RCAR_DU_ENCODER_VGA,
--		.output = RCAR_DU_OUTPUT_DPAD0,
--	}, {
--		.type = RCAR_DU_ENCODER_NONE,
--		.output = RCAR_DU_OUTPUT_LVDS1,
--		.connector.lvds.panel = {
--			.width_mm = 210,
--			.height_mm = 158,
--			.mode = {
--				.pixelclock = 65000000,
--				.hactive = 1024,
--				.hfront_porch = 20,
--				.hback_porch = 160,
--				.hsync_len = 136,
--				.vactive = 768,
--				.vfront_porch = 3,
--				.vback_porch = 29,
--				.vsync_len = 6,
--			},
--		},
--	},
--};
--
--static struct rcar_du_platform_data lager_du_pdata = {
--	.encoders = lager_du_encoders,
--	.num_encoders = ARRAY_SIZE(lager_du_encoders),
--};
--
--static const struct resource du_resources[] __initconst = {
--	DEFINE_RES_MEM(0xfeb00000, 0x70000),
--	DEFINE_RES_MEM_NAMED(0xfeb90000, 0x1c, "lvds.0"),
--	DEFINE_RES_MEM_NAMED(0xfeb94000, 0x1c, "lvds.1"),
--	DEFINE_RES_IRQ(gic_spi(256)),
--	DEFINE_RES_IRQ(gic_spi(268)),
--	DEFINE_RES_IRQ(gic_spi(269)),
--};
--
--static void __init lager_add_du_device(void)
--{
--	struct platform_device_info info = {
--		.name = "rcar-du-r8a7790",
--		.id = -1,
--		.res = du_resources,
--		.num_res = ARRAY_SIZE(du_resources),
--		.data = &lager_du_pdata,
--		.size_data = sizeof(lager_du_pdata),
--		.dma_mask = DMA_BIT_MASK(32),
--	};
--
--	platform_device_register_full(&info);
--}
--
--/*
-- * This is a really crude hack to provide clkdev support to platform
-- * devices until they get moved to DT.
-- */
--static const struct clk_name clk_names[] __initconst = {
--	{ "du0", "du.0", "rcar-du-r8a7790" },
--	{ "du1", "du.1", "rcar-du-r8a7790" },
--	{ "du2", "du.2", "rcar-du-r8a7790" },
--	{ "lvds0", "lvds.0", "rcar-du-r8a7790" },
--	{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
--};
--
--static void __init lager_add_standard_devices(void)
--{
--	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
--
--	lager_add_du_device();
--}
--
- static const char *lager_boards_compat_dt[] __initdata = {
- 	"renesas,lager",
- 	"renesas,lager-reference",
-@@ -116,7 +37,6 @@ DT_MACHINE_START(LAGER_DT, "lager")
- 	.smp		= smp_ops(r8a7790_smp_ops),
- 	.init_early	= shmobile_init_delay,
- 	.init_time	= rcar_gen2_timer_init,
--	.init_machine	= lager_add_standard_devices,
- 	.init_late	= shmobile_init_late,
- 	.reserve	= rcar_gen2_reserve,
- 	.dt_compat	= lager_boards_compat_dt,
+ / {
+@@ -291,4 +292,183 @@
+ 		interrupts = <0 9 0x4>;
+ 		status = "disabled";
+ 	};
++
++	clocks {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges;
++
++		/* External root clock */
++		extalr_clk: extalr_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <32768>;
++			clock-output-names = "extalr";
++		};
++		extal1_clk: extal1_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "extal1";
++		};
++		extal2_clk: extal2_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "extal2";
++		};
++		dv_clk: dv_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <27000000>;
++			clock-output-names = "dv";
++		};
++		fsiack_clk: fsiack_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "fsiack";
++		};
++		fsibck_clk: fsibck_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "fsibck";
++		};
++
++		/* Special CPG clocks */
++		cpg_clocks: cpg_clocks@e6150000 {
++			compatible = "renesas,r8a7740-cpg-clocks";
++			reg = <0xe6150000 0x10000>;
++			clocks = <&extal1_clk>, <&extalr_clk>;
++			#clock-cells = <1>;
++			clock-output-names = "system", "pllc0", "pllc1",
++					     "pllc2", "r",
++					     "usb24s",
++					     "i", "zg", "b", "m1", "hp",
++					     "hpp", "usbp", "s", "zb", "m3",
++					     "cp";
++		};
++
++		/* Variable factor clocks (DIV6) */
++		sub_clk: sub_clk@e6150080 {
++			compatible = "renesas,r8a7740-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe6150080 4>;
++			clocks = <&pllc1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "sub";
++		};
++
++		/* Fixed factor clocks */
++		pllc1_div2_clk: pllc1_div2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7740_CLK_PLLC1>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "pllc1_div2";
++		};
++		extal1_div2_clk: extal1_div2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&extal1_clk>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "extal1_div2";
++		};
++
++		/* Gate clocks */
++		subck_clks: subck_clks@e6150080 {
++			compatible = "renesas,r8a7740-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xe6150080 4>;
++			clocks = <&sub_clk>, <&sub_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A7740_CLK_SUBCK R8A7740_CLK_SUBCK2
++			>;
++			clock-output-names +				"subck", "subck2";
++		};
++		mstp1_clks: mstp1_clks@e6150134 {
++			compatible = "renesas,r8a7740-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xe6150134 4>, <0xe6150038 4>;
++			clocks = <&cpg_clocks R8A7740_CLK_S>,
++				 <&cpg_clocks R8A7740_CLK_S>, <&sub_clk>,
++				 <&cpg_clocks R8A7740_CLK_B>,
++				 <&sub_clk>, <&sub_clk>,
++				 <&cpg_clocks R8A7740_CLK_B>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A7740_CLK_CEU21 R8A7740_CLK_CEU20 R8A7740_CLK_TMU0
++				R8A7740_CLK_LCDC1 R8A7740_CLK_IIC0 R8A7740_CLK_TMU1
++				R8A7740_CLK_LCDC0
++			>;
++			clock-output-names +				"ceu21", "ceu20", "tmu0", "lcdc1", "iic0",
++				"tmu1", "lcdc0";
++		};
++		mstp2_clks: mstp2_clks@e6150138 {
++			compatible = "renesas,r8a7740-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xe6150138 4>, <0xe6150040 4>;
++			clocks = <&sub_clk>, <&sub_clk>,
++				 <&cpg_clocks R8A7740_CLK_HP>,
++				 <&cpg_clocks R8A7740_CLK_HP>,
++				 <&cpg_clocks R8A7740_CLK_HP>,
++				 <&cpg_clocks R8A7740_CLK_HP>,
++				 <&sub_clk>, <&sub_clk>, <&sub_clk>,
++				 <&sub_clk>, <&sub_clk>, <&sub_clk>,
++				 <&sub_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A7740_CLK_SCIFA6 R8A7740_CLK_SCIFA7
++				R8A7740_CLK_DMAC1 R8A7740_CLK_DMAC2
++				R8A7740_CLK_DMAC3 R8A7740_CLK_USBDMAC
++				R8A7740_CLK_SCIFA5 R8A7740_CLK_SCIFB
++				R8A7740_CLK_SCIFA0 R8A7740_CLK_SCIFA1
++				R8A7740_CLK_SCIFA2 R8A7740_CLK_SCIFA3
++				R8A7740_CLK_SCIFA4
++			>;
++			clock-output-names +				"scifa6", "scifa7", "dmac1", "dmac2", "dmac3",
++				"usbdmac", "scifa5", "scifb", "scifa0", "scifa1",
++				"scifa2", "scifa3", "scifa4";
++		};
++		mstp3_clks: mstp3_clks@e615013c {
++			compatible = "renesas,r8a7740-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xe615013c 4>, <0xe6150048 4>;
++			clocks = <&cpg_clocks R8A7740_CLK_R>,
++				 <&cpg_clocks R8A7740_CLK_HP>,
++				 <&sub_clk>,
++				 <&cpg_clocks R8A7740_CLK_HP>,
++				 <&cpg_clocks R8A7740_CLK_HP>,
++				 <&cpg_clocks R8A7740_CLK_HP>,
++				 <&cpg_clocks R8A7740_CLK_HP>,
++				 <&cpg_clocks R8A7740_CLK_HP>,
++				 <&cpg_clocks R8A7740_CLK_HP>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A7740_CLK_CMT1 R8A7740_CLK_FSI R8A7740_CLK_IIC1
++				R8A7740_CLK_USBF R8A7740_CLK_SDHI0 R8A7740_CLK_SDHI1
++				R8A7740_CLK_MMC R8A7740_CLK_GETHER R8A7740_CLK_TPU0
++			>;
++			clock-output-names +				"cmt1", "fsi", "iic1", "usbf", "sdhi0", "sdhi1",
++				"mmc", "gether", "tpu0";
++		};
++		mstp4_clks: mstp4_clks@e6150140 {
++			compatible = "renesas,r8a7740-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xe6150140 4>, <0xe615004c 4>;
++			clocks = <&cpg_clocks R8A7740_CLK_HP>,
++				 <&cpg_clocks R8A7740_CLK_HP>,
++				 <&cpg_clocks R8A7740_CLK_HP>,
++				 <&cpg_clocks R8A7740_CLK_HP>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A7740_CLK_USBH R8A7740_CLK_SDHI2
++				R8A7740_CLK_USBFUNC R8A7740_CLK_USBPHY
++			>;
++			clock-output-names +				"usbhost", "sdhi2", "usbfunc", "usphy";
++		};
++	};
+ };
 -- 
-1.8.5.5
+2.0.1
 
