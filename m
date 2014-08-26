@@ -1,70 +1,89 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 14 Aug 2014 16:57:27 +0000
-Subject: [PATCH 6/7] ARM: shmobile: lager_defconfig: Enable missing hardware support
-Message-Id: <1408035448-8811-7-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 26 Aug 2014 05:24:00 +0000
+Subject: [PATCH 6/8] ARM: shmobile: armadillo800eva-reference: Enable CMT1 in device tree
+Message-Id: <1145eaabcf1d108993b5c7bea3d86bbef7143135.1409030383.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1409030383.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1409030383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Based on the DTS
+Based on work by Magnus Damm
 
-Notes:
-  - MTD_SPI_NOR is a dependency for MTD_M25P80 since commit
-    03e296f613affcc2671c1e86d8c25ecad867204e ("mtd: m25p80: use the SPI
-    nor framework") and commit e43b20619bdb6c851dd7b49cbd15e52875a785d4
-    ("mtd: spi-nor: shorten Kconfig naming").
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/lager_defconfig | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts |  4 ++++
+ arch/arm/mach-shmobile/setup-r8a7740.c                  | 11 +----------
+ 2 files changed, 5 insertions(+), 10 deletions(-)
 
-diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
-index 58702440472a..929c571ea29b 100644
---- a/arch/arm/configs/lager_defconfig
-+++ b/arch/arm/configs/lager_defconfig
-@@ -22,6 +22,9 @@ CONFIG_ARM_ERRATA_458693=y
- CONFIG_ARM_ERRATA_460075=y
- CONFIG_ARM_ERRATA_743622=y
- CONFIG_ARM_ERRATA_754322=y
-+CONFIG_PCI=y
-+CONFIG_PCI_RCAR_GEN2=y
-+CONFIG_PCI_RCAR_GEN2_PCIE=y
- CONFIG_HAVE_ARM_ARCH_TIMER=y
- CONFIG_AEABI=y
- # CONFIG_OABI_COMPAT is not set
-@@ -53,6 +56,7 @@ CONFIG_DEVTMPFS=y
- CONFIG_DEVTMPFS_MOUNT=y
- CONFIG_MTD=y
- CONFIG_MTD_M25P80=y
-+CONFIG_MTD_SPI_NOR=y
- CONFIG_BLK_DEV_SD=y
- CONFIG_ATA=y
- CONFIG_SATA_RCAR=y
-@@ -85,11 +89,12 @@ CONFIG_SERIAL_SH_SCI=y
- CONFIG_SERIAL_SH_SCI_NR_UARTS
- CONFIG_SERIAL_SH_SCI_CONSOLE=y
- # CONFIG_HW_RANDOM is not set
--CONFIG_I2C=y
- CONFIG_I2C_GPIO=y
-+CONFIG_I2C_SH_MOBILE=y
- CONFIG_I2C_RCAR=y
- CONFIG_SPI=y
- CONFIG_SPI_RSPI=y
-+CONFIG_SPI_SH_MSIOF=y
- CONFIG_GPIO_SH_PFC=y
- CONFIG_GPIOLIB=y
- CONFIG_GPIO_RCAR=y
-@@ -98,6 +103,7 @@ CONFIG_THERMAL=y
- CONFIG_RCAR_THERMAL=y
- CONFIG_REGULATOR=y
- CONFIG_REGULATOR_FIXED_VOLTAGE=y
-+CONFIG_REGULATOR_DA9210=y
- CONFIG_REGULATOR_GPIO=y
- CONFIG_MEDIA_SUPPORT=y
- CONFIG_MEDIA_CAMERA_SUPPORT=y
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 266c439..5e646e6 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -191,6 +191,10 @@
+ 	renesas,mode = <0x05>; /* MD_CK0 | MD_CK2 */
+ };
+ 
++&cmt1 {
++	status = "ok";
++};
++
+ &i2c0 {
+ 	status = "okay";
+ 	touchscreen@55 {
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 3d5eaca..dc44a44 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -311,10 +311,6 @@ static struct platform_device ipmmu_device = {
+ 	.num_resources  = ARRAY_SIZE(ipmmu_resources),
+ };
+ 
+-static struct platform_device *r8a7740_devices_dt[] __initdata = {
+-	&cmt1_device,
+-};
+-
+ static struct platform_device *r8a7740_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -331,6 +327,7 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
+ 	&irqpin3_device,
+ 	&tmu0_device,
+ 	&ipmmu_device,
++	&cmt1_device,
+ };
+ 
+ /* DMA */
+@@ -756,8 +753,6 @@ void __init r8a7740_add_standard_devices(void)
+ 	/* add devices */
+ 	platform_add_devices(r8a7740_early_devices,
+ 			    ARRAY_SIZE(r8a7740_early_devices));
+-	platform_add_devices(r8a7740_devices_dt,
+-			    ARRAY_SIZE(r8a7740_devices_dt));
+ 	platform_add_devices(r8a7740_late_devices,
+ 			     ARRAY_SIZE(r8a7740_late_devices));
+ 
+@@ -779,8 +774,6 @@ void __init r8a7740_add_early_devices(void)
+ {
+ 	early_platform_add_devices(r8a7740_early_devices,
+ 				   ARRAY_SIZE(r8a7740_early_devices));
+-	early_platform_add_devices(r8a7740_devices_dt,
+-				   ARRAY_SIZE(r8a7740_devices_dt));
+ 
+ 	/* setup early console here as well */
+ 	shmobile_setup_console();
+@@ -790,8 +783,6 @@ void __init r8a7740_add_early_devices(void)
+ 
+ void __init r8a7740_add_standard_devices_dt(void)
+ {
+-	platform_add_devices(r8a7740_devices_dt,
+-			    ARRAY_SIZE(r8a7740_devices_dt));
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
 -- 
-1.9.1
+2.0.1
 
