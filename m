@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 26 Aug 2014 04:40:59 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 26 Aug 2014 07:47:37 +0000
 Subject: Re: [PATCH v2 02/02] ARM: shmobile: r8a7740: Multiplatform support
-Message-Id: <20140826044055.GA18237@verge.net.au>
+Message-Id: <CAMuHMdVAtwTTDjoPXXdi-mYt1qBq_pKZHaL7NyWwYVR7XgVgcw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20140825033653.9284.94459.sendpatchset@w520>
 In-Reply-To: <20140825033653.9284.94459.sendpatchset@w520>
@@ -10,124 +10,40 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Aug 26, 2014 at 11:40:12AM +0900, Simon Horman wrote:
-> On Mon, Aug 25, 2014 at 12:36:53PM +0900, Magnus Damm wrote:
-> > From: Magnus Damm <damm+renesas@opensource.se>
-> > 
-> > Enable r8a7740 Multiplatform support for the generic r8a7740
-> > machine vector. No board support is enabled, and the board
-> > code for Armadillo 800 EVA DT Reference is left by itself.
-> 
-> I would still like some discussion of weather using
-> #if defined(CONFIG_PM) && !defined(CONFIG_ARCH_MULTIPLATFORM)
-> is the best way to go.
-> 
-> It seems to me that it would be cleaner to add a new Kconfig symbol or two.
-> 
-> E.g. CONFIG_RMOBILE_PM which depends on CONFIG_PM and CONFIG_HAS_RMOBILE_PM
-> and then allow SoC or board Kconfig stanzas to select CONFIG_HAS_RMOBILE_PM.
+On Tue, Aug 26, 2014 at 6:40 AM, Simon Horman <horms@verge.net.au> wrote:
+> On Tue, Aug 26, 2014 at 11:40:12AM +0900, Simon Horman wrote:
+>> On Mon, Aug 25, 2014 at 12:36:53PM +0900, Magnus Damm wrote:
+>> > From: Magnus Damm <damm+renesas@opensource.se>
+>> >
+>> > Enable r8a7740 Multiplatform support for the generic r8a7740
+>> > machine vector. No board support is enabled, and the board
+>> > code for Armadillo 800 EVA DT Reference is left by itself.
+>>
+>> I would still like some discussion of weather using
+>> #if defined(CONFIG_PM) && !defined(CONFIG_ARCH_MULTIPLATFORM)
+>> is the best way to go.
+>>
+>> It seems to me that it would be cleaner to add a new Kconfig symbol or two.
+>>
+>> E.g. CONFIG_RMOBILE_PM which depends on CONFIG_PM and CONFIG_HAS_RMOBILE_PM
+>> and then allow SoC or board Kconfig stanzas to select CONFIG_HAS_RMOBILE_PM.
+>
+> I am confused.
+>
+> I see that in "[PATCH v2 05/05] ARM: shmobile: Cleanup pm-rmobile.o build
+> using Kconfig" you propose adding PM_RMOBILE but it isn't used in this
+> series.
 
-I am confused.
+PM_RMOBILE controls the build of pm-rmobile.c, while the new #ifdefs are in the
+r8a7740-specific code in pm-r8a7740.c.
 
-I see that in "[PATCH v2 05/05] ARM: shmobile: Cleanup pm-rmobile.o build
-using Kconfig" you propose adding PM_RMOBILE but it isn't used in this
-series.
+Gr{oetje,eeting}s,
 
-> 
-> > 
-> > Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> > ---
-> > 
-> >  Built on top of renesas-devel-20140823-v3.17-rc1 and
-> >  "[PATCH v2 00/05] ARM: shmobile: Kconfig and Makefile cleanups V2"
-> > 
-> >  arch/arm/mach-shmobile/Kconfig         |    5 +++++
-> >  arch/arm/mach-shmobile/pm-r8a7740.c    |    5 ++---
-> >  arch/arm/mach-shmobile/r8a7740.h       |    4 ++--
-> >  arch/arm/mach-shmobile/setup-r8a7740.c |    8 +++++++-
-> >  4 files changed, 16 insertions(+), 6 deletions(-)
-> > 
-> > --- 0011/arch/arm/mach-shmobile/Kconfig
-> > +++ work/arch/arm/mach-shmobile/Kconfig	2014-08-25 12:20:19.000000000 +0900
-> > @@ -50,6 +50,11 @@ config ARCH_R7S72100
-> >  	bool "RZ/A1H (R7S72100)"
-> >  	select SYS_SUPPORTS_SH_MTU2
-> >  
-> > +config ARCH_R8A7740
-> > +	bool "R-Mobile A1 (R8A77400)"
-> > +	select ARCH_RMOBILE
-> > +	select RENESAS_INTC_IRQPIN
-> > +
-> >  config ARCH_R8A7779
-> >  	bool "R-Car H1 (R8A77790)"
-> >  	select ARCH_RCAR_GEN1
-> > --- 0001/arch/arm/mach-shmobile/pm-r8a7740.c
-> > +++ work/arch/arm/mach-shmobile/pm-r8a7740.c	2014-08-25 12:20:19.000000000 +0900
-> > @@ -13,7 +13,7 @@
-> >  #include "common.h"
-> >  #include "pm-rmobile.h"
-> >  
-> > -#ifdef CONFIG_PM
-> > +#if defined(CONFIG_PM) && !defined(CONFIG_ARCH_MULTIPLATFORM)
-> >  static int r8a7740_pd_a4s_suspend(void)
-> >  {
-> >  	/*
-> > @@ -58,8 +58,7 @@ void __init r8a7740_init_pm_domains(void
-> >  	rmobile_init_domains(r8a7740_pm_domains, ARRAY_SIZE(r8a7740_pm_domains));
-> >  	pm_genpd_add_subdomain_names("A4S", "A3SP");
-> >  }
-> > -
-> > -#endif /* CONFIG_PM */
-> > +#endif /* CONFIG_PM && !CONFIG_ARCH_MULTIPLATFORM */
-> >  
-> >  #ifdef CONFIG_SUSPEND
-> >  static int r8a7740_enter_suspend(suspend_state_t suspend_state)
-> > --- 0001/arch/arm/mach-shmobile/r8a7740.h
-> > +++ work/arch/arm/mach-shmobile/r8a7740.h	2014-08-25 12:20:19.000000000 +0900
-> > @@ -53,10 +53,10 @@ extern void r8a7740_clock_init(u8 md_ck)
-> >  extern void r8a7740_pinmux_init(void);
-> >  extern void r8a7740_pm_init(void);
-> >  
-> > -#ifdef CONFIG_PM
-> > +#if defined(CONFIG_PM) && !defined(CONFIG_ARCH_MULTIPLATFORM)
-> >  extern void __init r8a7740_init_pm_domains(void);
-> >  #else
-> >  static inline void r8a7740_init_pm_domains(void) {}
-> > -#endif /* CONFIG_PM */
-> > +#endif /* CONFIG_PM && !CONFIG_ARCH_MULTIPLATFORM */
-> >  
-> >  #endif /* __ASM_R8A7740_H__ */
-> > --- 0001/arch/arm/mach-shmobile/setup-r8a7740.c
-> > +++ work/arch/arm/mach-shmobile/setup-r8a7740.c	2014-08-25 12:21:43.000000000 +0900
-> > @@ -36,6 +36,7 @@
-> >  #include <asm/mach/map.h>
-> >  #include <asm/mach/arch.h>
-> >  #include <asm/mach/time.h>
-> > +#include <asm/hardware/cache-l2x0.h>
-> >  
-> >  #include "common.h"
-> >  #include "dma-register.h"
-> > @@ -813,7 +814,12 @@ void __init r8a7740_init_irq_of(void)
-> >  
-> >  static void __init r8a7740_generic_init(void)
-> >  {
-> > -	r8a7740_clock_init(0);
-> > +	r8a7740_meram_workaround();
-> > +
-> > +#ifdef CONFIG_CACHE_L2X0
-> > +	/* Shared attribute override enable, 32K*8way */
-> > +	l2x0_init(IOMEM(0xf0002000), 0x00400000, 0xc20f0fff);
-> > +#endif
-> >  	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
-> >  }
-> >  
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
