@@ -1,48 +1,56 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Aug 2014 01:10:21 +0000
-Subject: [PATCH 1/3] ARM: shmobile: sh73a0: Remove duplicate CPUFreq bits
-Message-Id: <aa0bdc303b0f8bc59fc0a0645560917810ba041b.1408927858.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 26 Aug 2014 11:50:53 +0000
+Subject: Re: [PATCH 3/6] clk: shmobile: Add r8a7794 support
+Message-Id: <CANqRtoSXFATbKPkf2DFeXqk0Q2Li3oj+UDV9X5wE2GzSpP1sSw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408927858.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408927858.git.horms+renesas@verge.net.au>
+References: <1406299250-23975-4-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1406299250-23975-4-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Hi Mike,
 
-The CPUFreq platform device is already registered by
-shmobile_init_late(), so get rid of sh73a0 specific bits.
+[CC Simon and Laurent]
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/setup-sh73a0.c | 5 -----
- 1 file changed, 5 deletions(-)
+On Sat, Jul 26, 2014 at 4:44 AM, Mike Turquette <mturquette@linaro.org> wrote:
+> Quoting Ulrich Hecht (2014-07-25 07:40:47)
+>> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+>>
+>> Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+>> Cc: Mike Turquette <mturquette@linaro.org>
+>
+> Acked-by: Mike Turquette <mturquette@linaro.org>
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index e7a0296..8ff9679 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -775,17 +775,12 @@ void __init sh73a0_add_early_devices(void)
- 
- void __init sh73a0_add_standard_devices_dt(void)
- {
--	struct platform_device_info devinfo = { .name = "cpufreq-cpu0", .id = -1, };
--
- 	/* clocks are setup late during boot in the case of DT */
- 	sh73a0_clock_init();
- 
- 	platform_add_devices(sh73a0_devices_dt,
- 			     ARRAY_SIZE(sh73a0_devices_dt));
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
--
--	/* Instantiate cpufreq-cpu0 */
--	platform_device_register_full(&devinfo);
- }
- 
- static const char *sh73a0_boards_compat_dt[] __initdata = {
--- 
-2.0.1
+Thanks!
 
+> Are you taking this through arm-soc?
+
+Good question. Simon, do you have any preference how to merge this?
+
+Perhaps Laurent remembers how we dealt with the earlier SoCs?
+
+Thanks,
+
+/ magnus
+
+>> ---
+>>  drivers/clk/shmobile/Makefile | 1 +
+>>  1 file changed, 1 insertion(+)
+>>
+>> diff --git a/drivers/clk/shmobile/Makefile b/drivers/clk/shmobile/Makefile
+>> index e002923..531d4f6 100644
+>> --- a/drivers/clk/shmobile/Makefile
+>> +++ b/drivers/clk/shmobile/Makefile
+>> @@ -4,6 +4,7 @@ obj-$(CONFIG_ARCH_R8A7740)              += clk-r8a7740.o
+>>  obj-$(CONFIG_ARCH_R8A7779)             += clk-r8a7779.o
+>>  obj-$(CONFIG_ARCH_R8A7790)             += clk-rcar-gen2.o
+>>  obj-$(CONFIG_ARCH_R8A7791)             += clk-rcar-gen2.o
+>> +obj-$(CONFIG_ARCH_R8A7794)             += clk-rcar-gen2.o
+>>  obj-$(CONFIG_ARCH_SHMOBILE_MULTI)      += clk-div6.o
+>>  obj-$(CONFIG_ARCH_SHMOBILE_MULTI)      += clk-mstp.o
+>>  # for emply built-in.o
+>> --
+>> 1.8.4.5
+>>
