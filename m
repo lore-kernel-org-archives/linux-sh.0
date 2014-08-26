@@ -1,42 +1,62 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 29 Aug 2014 13:50:14 +0000
-Subject: [PATCH 08/11] [WIP] ARM: shmobile: r8a7740: Add D4 pm domain support
-Message-Id: <1409320217-13278-9-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 26 Aug 2014 05:24:02 +0000
+Subject: [PATCH 8/8] ARM: shmobile: r8a7740: Remove r8a7740_add_standard_devices_dt
+Message-Id: <433306747791845677ba662435a9bbbafaa21df3.1409030383.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1409030383.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1409030383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add support for the D4 power domain.
-This domain contains the Coresight-ETM hardware block.
+Now that r8a7740_add_standard_devices_dt() is simply a wrapper
+for a call to of_platform_populate() remove it and call
+of_platform_populate() directly.
 
-FIXME: D4 is not added, as this breaks resume (dbg_cpu_pm_notify() calls
-       reset_ctrl_regs(), which crashes as D4 is powered down, and commit
-       0d352e3d006c9589 ("ARM: hw_breakpoint: trap undef instruction
-       exceptions in reset_ctrl_regs") doesn't seem to work...)
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/pm-r8a7740.c |    3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/mach-shmobile/r8a7740.h       | 1 -
+ arch/arm/mach-shmobile/setup-r8a7740.c | 7 +------
+ 2 files changed, 1 insertion(+), 7 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
-index 86b2df8b5391..cbdb87c67711 100644
---- a/arch/arm/mach-shmobile/pm-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7740.c
-@@ -40,6 +40,9 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
- //		.genpd.name	= "A4MP",
- //		.bit_shift	= 2,
- //	}, {
-+//		.genpd.name	= "D4",
-+//		.bit_shift	= 3,
-+//	}, {
- 		.genpd.name	= "A3RV",
- 		.bit_shift	= 6,
- 	}, {
+diff --git a/arch/arm/mach-shmobile/r8a7740.h b/arch/arm/mach-shmobile/r8a7740.h
+index 1d1a5fd..3352fb8 100644
+--- a/arch/arm/mach-shmobile/r8a7740.h
++++ b/arch/arm/mach-shmobile/r8a7740.h
+@@ -49,7 +49,6 @@ extern void r8a7740_init_irq_of(void);
+ extern void r8a7740_map_io(void);
+ extern void r8a7740_add_early_devices(void);
+ extern void r8a7740_add_standard_devices(void);
+-extern void r8a7740_add_standard_devices_dt(void);
+ extern void r8a7740_clock_init(u8 md_ck);
+ extern void r8a7740_pinmux_init(void);
+ extern void r8a7740_pm_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index dc44a44..8fe270d 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -781,11 +781,6 @@ void __init r8a7740_add_early_devices(void)
+ 
+ #ifdef CONFIG_USE_OF
+ 
+-void __init r8a7740_add_standard_devices_dt(void)
+-{
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-}
+-
+ void __init r8a7740_init_irq_of(void)
+ {
+ 	void __iomem *intc_prio_base = ioremap_nocache(0xe6900010, 0x10);
+@@ -819,7 +814,7 @@ void __init r8a7740_init_irq_of(void)
+ static void __init r8a7740_generic_init(void)
+ {
+ 	r8a7740_clock_init(0);
+-	r8a7740_add_standard_devices_dt();
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
+ static const char *r8a7740_boards_compat_dt[] __initdata = {
 -- 
-1.7.9.5
+2.0.1
 
