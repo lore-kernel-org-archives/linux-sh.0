@@ -1,67 +1,62 @@
-From: Lee Jones <lee.jones@linaro.org>
-Date: Tue, 26 Aug 2014 09:33:12 +0000
-Subject: Re: [RESEND PATCH V2] devicetree: Dialog Semiconductor consolidate existing vendor prefixes to stand
-Message-Id: <20140826093312.GI9574@lee--X1>
+From: "Opensource [Steve Twiss]" <stwiss.opensource@diasemi.com>
+Date: Tue, 26 Aug 2014 10:54:59 +0000
+Subject: RE: [RESEND PATCH V2] devicetree: Dialog Semiconductor consolidate existing vendor prefixes to stand
+Message-Id: <6ED8E3B22081A4459DAC7699F3695FB7D0B39744@SW-EX-MBX02.diasemi.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201408221446.s7MEkNVF001775@swsrvapps-01.diasemi.com>
-In-Reply-To: <201408221446.s7MEkNVF001775@swsrvapps-01.diasemi.com>
+ <20140826093312.GI9574@lee--X1>
+In-Reply-To: <20140826093312.GI9574@lee--X1>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, 22 Aug 2014, Opensource [Steve Twiss] wrote:
-> From: Steve Twiss <stwiss.opensource@diasemi.com>
->=20
-> This patch series updates the device tree vendor prefix for
-> Dialog Semiconductor.
->=20
-> Various methods are currently used throughout the kernel: 'diasemi',
-> 'dialog' and 'dlg'. Others have also been suggested.
->=20
-> This patch set aims to consolidate the usage of the vendor prefix to
-> use a common standard. The prefix 'dlg' is used.
->=20
-> Acked-by: Simon Horman <horms+renesas@verge.net.au>
-> Acked-by: Rob Herring <robh@kernel.org>
-> Acked-by: Lee Jones <lee.jones@linaro.org>
-> Acked-by: Shawn Guo <shawn.guo@freescale.com>
->=20
-> Signed-off-by: Steve Twiss <stwiss.opensource@diasemi.com>
->=20
-> ---
-
-[...]
-
-> Hi Lee,
->=20
-> This is a resend according to requests for e-mail reformatting and removal
-> of '[]' in From: and Signed-off-by: tags. There are no patch alterations
-> from RFC V2.
->=20
-> I have got the Ack for the two remaining files r8a7790-lager.dts and
-> r8a7791-koelsch.dts because of the previous request for SHMobile to Ack
-> their part of the patch.
-> - http://www.spinics.net/lists/arm-kernel/msg349289.html
-> - https://lkml.org/lkml/2014/6/11/273
->=20
-> I think this is it. But, if I am missing anything or there are problems, =
-can
-> I get a quick explanation in the reply so I can fix it and move forwards
-> please?
->=20
-> In full:
-> Acked-by the following people so far:
-
-When you say "so far", does that mean you're missing Acks still?
-
-If you have the full-set I will apply this and send out the necessary
-pull-request(s).
-
-[...]
-
---=20
-Lee Jones
-Linaro STMicroelectronics Landing Team Lead
-Linaro.org =E2=94=82 Open source software for ARM SoCs
-Follow Linaro: Facebook | Twitter | Blog
+T24gMjYgQXVndXN0IDIwMTQgMTA6MzMgTGVlIEpvbmVzIHdyb3RlOg0KDQo+IE9uIEZyaSwgMjIg
+QXVnIDIwMTQsIE9wZW5zb3VyY2UgW1N0ZXZlIFR3aXNzXSB3cm90ZToNCj4gPiBGcm9tOiBTdGV2
+ZSBUd2lzcyA8c3R3aXNzLm9wZW5zb3VyY2VAZGlhc2VtaS5jb20+DQo+ID4NCj4gPiBUaGlzIHBh
+dGNoIHNlcmllcyB1cGRhdGVzIHRoZSBkZXZpY2UgdHJlZSB2ZW5kb3IgcHJlZml4IGZvcg0KPiA+
+IERpYWxvZyBTZW1pY29uZHVjdG9yLg0KPiA+DQoNClsuLi5dDQoNCj4gPiBJIHRoaW5rIHRoaXMg
+aXMgaXQuIEJ1dCwgaWYgSSBhbSBtaXNzaW5nIGFueXRoaW5nIG9yIHRoZXJlIGFyZSBwcm9ibGVt
+cywgY2FuDQo+ID4gSSBnZXQgYSBxdWljayBleHBsYW5hdGlvbiBpbiB0aGUgcmVwbHkgc28gSSBj
+YW4gZml4IGl0IGFuZCBtb3ZlIGZvcndhcmRzDQo+ID4gcGxlYXNlPw0KPiA+DQo+ID4gSW4gZnVs
+bDoNCj4gPiBBY2tlZC1ieSB0aGUgZm9sbG93aW5nIHBlb3BsZSBzbyBmYXI6DQo+IA0KPiBXaGVu
+IHlvdSBzYXkgInNvIGZhciIsIGRvZXMgdGhhdCBtZWFuIHlvdSdyZSBtaXNzaW5nIEFja3Mgc3Rp
+bGw/DQoNCkhpIExlZSwNCg0KQXBvbG9naWVzIGZvciBteSAic28gZmFyIiAtLSB0aGF0IGlzIGp1
+c3QgbXkgd29yZGluZy4NCg0KQXMgSSB1bmRlcnN0YW5kIGl0IEkgaGF2ZSBhbGwgdGhlIEFja3Mg
+dGhhdCBhcmUgbmVjZXNzYXJ5LiBJIGFtIGJhc2luZyBteSBBY2tzIGxpc3Qgb24NCnRoZSBnZXRf
+bWFpbnRhaW5lcnMgc2NyaXB0IG91dHB1dCBhbmQgb24gYSBwcmV2aW91cyByZXF1ZXN0IGZvciBS
+ZW5lc2FzIGFuZCANCkZyZWVzY2FsZSBpbnB1dHMgLS0gd2hpY2ggSSBoYXZlIGFsc28gZ290Lg0K
+SSBkbyBub3Qgc2VlIGFueSBtaXN0YWtlcyBvciBtaXNzaW5nIGVudHJpZXMgZnJvbSBteSBwYXJ0
+Lg0KDQo+IA0KPiBJZiB5b3UgaGF2ZSB0aGUgZnVsbC1zZXQgSSB3aWxsIGFwcGx5IHRoaXMgYW5k
+IHNlbmQgb3V0IHRoZSBuZWNlc3NhcnkNCj4gcHVsbC1yZXF1ZXN0KHMpLg0KPiANCg0KWWVzIHBs
+ZWFzZS4NCg0KUmVnYXJkcywNClN0ZXZlDQoNCnBzLiBmb3IgcmVmZXJlbmNlLCAgdGhpcyBpcyBt
+eSBqdXN0aWZpY2F0aW9uIGZvciBhbGwgZmlsZXMgaW4gdGhlIHBhdGNoLg0KDQouL2RyaXZlcnMv
+bWZkL2RhOTA1NS1jb3JlLmMNCglTdXBwb3J0IE9wZW5zb3VyY2UgPHN1cHBvcnQub3BlbnNvdXJj
+ZUBkaWFzZW1pLmNvbT4gKHN1cHBvcnRlcjpESUFMT0cgU0VNSUNPTkRVQy4uLikNCglMZWUgSm9u
+ZXMgPGxlZS5qb25lc0BsaW5hcm8ub3JnPiAoc3VwcG9ydGVyOk1VTFRJRlVOQ1RJT04gREVWLi4u
+LGNvbW1pdHM6My84PTM4JSkNCg0KLi9Eb2N1bWVudGF0aW9uL2RldmljZXRyZWUvYmluZGluZ3Mv
+cmVndWxhdG9yL2RhOTIxMC50eHQuZ2V0X21haW50YWluZXINCglSb2IgSGVycmluZyA8cm9iaCtk
+dEBrZXJuZWwub3JnPiAobWFpbnRhaW5lcjpPUEVOIEZJUk1XQVJFIEFORC4uLikNCglTIFR3aXNz
+IDxzdHdpc3Mub3BlbnNvdXJjZUBkaWFzZW1pLmNvbT4gKGF1dGhvcmVkIGxpbmVzOjIvMjE9MTAl
+KQ0KDQouL2FyY2gvYXJtL2Jvb3QvZHRzL2lteDZxZGwtcGh5dGVjLXBmbGEwMi5kdHNpLmdldF9t
+YWludGFpbmVyDQoJU2hhd24gR3VvIDxzaGF3bi5ndW9AZnJlZXNjYWxlLmNvbT4gKG1haW50YWlu
+ZXI6QVJNL0ZSRUVTQ0FMRSBJTVguLi4sYXV0aG9yZWQgbGluZXM6Mjc2LzI3OT05OSUsY29tbWl0
+czo2Lzc9ODYlKQ0KCVJvYiBIZXJyaW5nIDxyb2JoK2R0QGtlcm5lbC5vcmc+IChtYWludGFpbmVy
+Ok9QRU4gRklSTVdBUkUgQU5ELi4uKQ0KDQouL2FyY2gvYXJtL2Jvb3QvZHRzL2lteDUzLXNtZC5k
+dHMuZ2V0X21haW50YWluZXINCglTaGF3biBHdW8gPHNoYXduLmd1b0BmcmVlc2NhbGUuY29tPiAo
+bWFpbnRhaW5lcjpBUk0vRlJFRVNDQUxFIElNWC4uLixhdXRob3JlZCBsaW5lczoyNzYvMjc5PTk5
+JSxjb21taXRzOjYvNz04NiUpDQoJUm9iIEhlcnJpbmcgPHJvYmgrZHRAa2VybmVsLm9yZz4gKG1h
+aW50YWluZXI6T1BFTiBGSVJNV0FSRSBBTkQuLi4pDQoNCi4vYXJjaC9hcm0vYm9vdC9kdHMvcjhh
+Nzc5MS1rb2Vsc2NoLmR0cy5nZXRfbWFpbnRhaW5lcg0KCVNpbW9uIEhvcm1hbiA8aG9ybXNAdmVy
+Z2UubmV0LmF1PiAoc3VwcG9ydGVyOkFSTS9TSE1PQklMRSBBUk0uLi4sY29tbWl0czoyNS8yNj05
+NiUpDQoJUm9iIEhlcnJpbmcgPHJvYmgrZHRAa2VybmVsLm9yZz4gKG1haW50YWluZXI6T1BFTiBG
+SVJNV0FSRSBBTkQuLi4pDQoNCi4vYXJjaC9hcm0vYm9vdC9kdHMvcjhhNzc5MC1sYWdlci5kdHMu
+Z2V0X21haW50YWluZXINCglTaW1vbiBIb3JtYW4gPGhvcm1zQHZlcmdlLm5ldC5hdT4gKHN1cHBv
+cnRlcjpBUk0vU0hNT0JJTEUgQVJNLi4uLGNvbW1pdHM6MjUvMjY9OTYlKQ0KCVJvYiBIZXJyaW5n
+IDxyb2JoK2R0QGtlcm5lbC5vcmc+IChtYWludGFpbmVyOk9QRU4gRklSTVdBUkUgQU5ELi4uKQ0K
+DQouL0RvY3VtZW50YXRpb24vZGV2aWNldHJlZS9iaW5kaW5ncy92ZW5kb3ItcHJlZml4ZXMudHh0
+LmdldF9tYWludGFpbmVyDQoJUm9iIEhlcnJpbmcgPHJvYmgrZHRAa2VybmVsLm9yZz4gKG1haW50
+YWluZXI6T1BFTiBGSVJNV0FSRSBBTkQuLi4sY29tbWl0czo0MC83OD01MSUpDQoNCi4vRG9jdW1l
+bnRhdGlvbi9kZXZpY2V0cmVlL2JpbmRpbmdzL2kyYy90cml2aWFsLWRldmljZXMudHh0LmdldF9t
+YWludGFpbmVyDQoJUm9iIEhlcnJpbmcgPHJvYmgrZHRAa2VybmVsLm9yZz4gKG1haW50YWluZXI6
+T1BFTiBGSVJNV0FSRSBBTkQuLi4pDQoNCg=
