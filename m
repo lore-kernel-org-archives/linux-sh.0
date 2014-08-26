@@ -1,91 +1,184 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Fri, 29 Aug 2014 18:15:06 +0000
-Subject: [PATCH v2 2/6] ARM: shmobile: Initial r8a7794 SoC support
-Message-Id: <1409336110-32734-3-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 26 Aug 2014 05:23:57 +0000
+Subject: [PATCH 3/8] ARM: shmobile: r8a7740: add MSTP clock assignments to DT
+Message-Id: <4a7ae2e27e18cbbdd83fb7783cd62abb4a62f33b.1409030383.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1409030383.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1409030383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Initial support for the r8a7794 SoC, based on work by Hisashi Nakamura.
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+
+Assigns clocks to ether, i2c*, scif*, tpu, mmcif0, sdhi*, and fsi2.
 
 Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Kconfig         |  4 ++++
- arch/arm/mach-shmobile/Makefile        |  1 +
- arch/arm/mach-shmobile/setup-r8a7794.c | 35 ++++++++++++++++++++++++++++++++++
- 3 files changed, 40 insertions(+)
- create mode 100644 arch/arm/mach-shmobile/setup-r8a7794.c
+ arch/arm/boot/dts/r8a7740.dtsi | 28 +++++++++++++++++++++++++++-
+ 1 file changed, 27 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index c1023d7..1168ead 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -67,6 +67,10 @@ config ARCH_R8A7791
- 	bool "R-Car M2 (R8A77910)"
- 	select ARCH_RCAR_GEN2
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 3c61c5d..6cd6a46 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -126,7 +126,7 @@
+ 		reg = <0xe9a00000 0x800>,
+ 		      <0xe9a01800 0x800>;
+ 		interrupts = <0 110 IRQ_TYPE_LEVEL_HIGH>;
+-		/* clocks = <&mstp3_clks R8A7740_CLK_GETHER>; */
++		clocks = <&mstp3_clks R8A7740_CLK_GETHER>;
+ 		phy-mode = "mii";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -142,6 +142,7 @@
+ 			      0 202 IRQ_TYPE_LEVEL_HIGH
+ 			      0 203 IRQ_TYPE_LEVEL_HIGH
+ 			      0 204 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7740_CLK_IIC0>;
+ 		status = "disabled";
+ 	};
  
-+config ARCH_R8A7794
-+	bool "R-Car E2 (R8A77940)"
-+	select ARCH_RCAR_GEN2
-+
- comment "Renesas ARM SoCs Board Type"
+@@ -154,6 +155,7 @@
+ 			      0 71 IRQ_TYPE_LEVEL_HIGH
+ 			      0 72 IRQ_TYPE_LEVEL_HIGH
+ 			      0 73 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7740_CLK_IIC1>;
+ 		status = "disabled";
+ 	};
  
- config MACH_KOELSCH
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 5625a87..e283346 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -14,6 +14,7 @@ obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
- obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o pm-r8a7779.o
- obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o pm-r8a7790.o
- obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o pm-r8a7791.o
-+obj-$(CONFIG_ARCH_R8A7794)	+= setup-r8a7794.o
- obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o
- obj-$(CONFIG_ARCH_R7S72100)	+= setup-r7s72100.o
+@@ -161,6 +163,8 @@
+ 		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
+ 		reg = <0xe6c40000 0x100>;
+ 		interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7740_CLK_SCIFA0>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
  
-diff --git a/arch/arm/mach-shmobile/setup-r8a7794.c b/arch/arm/mach-shmobile/setup-r8a7794.c
-new file mode 100644
-index 0000000..05e970c
---- /dev/null
-+++ b/arch/arm/mach-shmobile/setup-r8a7794.c
-@@ -0,0 +1,35 @@
-+/*
-+ * r8a7794 processor support
-+ *
-+ * Copyright (C) 2014  Renesas Electronics Corporation
-+ * Copyright (C) 2014  Ulrich Hecht
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
-+
-+#include <linux/of_platform.h>
-+#include "common.h"
-+#include "rcar-gen2.h"
-+#include <asm/mach/arch.h>
-+
-+#ifdef CONFIG_USE_OF
-+
-+static const char * const r8a7794_boards_compat_dt[] __initconst = {
-+	"renesas,r8a7794",
-+	NULL,
-+};
-+
-+DT_MACHINE_START(R8A7794_DT, "Generic R8A7794 (Flattened Device Tree)")
-+	.init_early	= shmobile_init_delay,
-+	.init_late	= shmobile_init_late,
-+	.init_time	= rcar_gen2_timer_init,
-+	.dt_compat	= r8a7794_boards_compat_dt,
-+MACHINE_END
-+#endif /* CONFIG_USE_OF */
+@@ -168,6 +172,8 @@
+ 		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
+ 		reg = <0xe6c50000 0x100>;
+ 		interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7740_CLK_SCIFA1>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -175,6 +181,8 @@
+ 		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
+ 		reg = <0xe6c60000 0x100>;
+ 		interrupts = <0 102 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7740_CLK_SCIFA0>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -182,6 +190,8 @@
+ 		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
+ 		reg = <0xe6c70000 0x100>;
+ 		interrupts = <0 103 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7740_CLK_SCIFA3>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -189,6 +199,8 @@
+ 		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
+ 		reg = <0xe6c80000 0x100>;
+ 		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7740_CLK_SCIFA4>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -196,6 +208,8 @@
+ 		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
+ 		reg = <0xe6cb0000 0x100>;
+ 		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7740_CLK_SCIFA5>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -203,6 +217,8 @@
+ 		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
+ 		reg = <0xe6cc0000 0x100>;
+ 		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7740_CLK_SCIFA6>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -210,6 +226,8 @@
+ 		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
+ 		reg = <0xe6cd0000 0x100>;
+ 		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7740_CLK_SCIFA7>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -217,6 +235,8 @@
+ 		compatible = "renesas,scifb-r8a7740", "renesas,scifb";
+ 		reg = <0xe6c30000 0x100>;
+ 		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7740_CLK_SCIFB>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -240,6 +260,7 @@
+ 	tpu: pwm@e6600000 {
+ 		compatible = "renesas,tpu-r8a7740", "renesas,tpu";
+ 		reg = <0xe6600000 0x100>;
++		clocks = <&mstp3_clks R8A7740_CLK_TPU0>;
+ 		status = "disabled";
+ 		#pwm-cells = <3>;
+ 	};
+@@ -249,6 +270,7 @@
+ 		reg = <0xe6bd0000 0x100>;
+ 		interrupts = <0 56 IRQ_TYPE_LEVEL_HIGH
+ 			      0 57 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7740_CLK_MMC>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -258,6 +280,7 @@
+ 		interrupts = <0 117 IRQ_TYPE_LEVEL_HIGH
+ 			      0 118 IRQ_TYPE_LEVEL_HIGH
+ 			      0 119 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7740_CLK_SDHI0>;
+ 		cap-sd-highspeed;
+ 		cap-sdio-irq;
+ 		status = "disabled";
+@@ -269,6 +292,7 @@
+ 		interrupts = <0 121 IRQ_TYPE_LEVEL_HIGH
+ 			      0 122 IRQ_TYPE_LEVEL_HIGH
+ 			      0 123 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7740_CLK_SDHI1>;
+ 		cap-sd-highspeed;
+ 		cap-sdio-irq;
+ 		status = "disabled";
+@@ -280,6 +304,7 @@
+ 		interrupts = <0 125 IRQ_TYPE_LEVEL_HIGH
+ 			      0 126 IRQ_TYPE_LEVEL_HIGH
+ 			      0 127 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R8A7740_CLK_SDHI2>;
+ 		cap-sd-highspeed;
+ 		cap-sdio-irq;
+ 		status = "disabled";
+@@ -290,6 +315,7 @@
+ 		compatible = "renesas,fsi2-r8a7740", "renesas,sh_fsi2";
+ 		reg = <0xfe1f0000 0x400>;
+ 		interrupts = <0 9 0x4>;
++		clocks = <&mstp3_clks R8A7740_CLK_FSI>;
+ 		status = "disabled";
+ 	};
+ 
 -- 
-1.8.4.5
+2.0.1
 
