@@ -1,56 +1,139 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 23 Aug 2014 01:44:12 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC Defconfig Updates for v3.18
-Message-Id: <cover.1408670623.git.horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 26 Aug 2014 15:11:18 +0000
+Subject: [RESEND PATCH v3] clk: shmobile: div6: support selectable-input clocks
+Message-Id: <1409065878-32047-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364877094-1508-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364877094-1508-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: horms@verge.net.au
+Cc: linux-sh@vger.kernel.org, mturquette@linaro.org, magnus.damm@gmail.com, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, devicetree@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Hi Olof, Hi Kevin, Hi Arnd,
+Adds support for DIV6 clocks with selectable parents as found in the r8a73a4,
+r8a7740, sh73a0, and other SoCs.
 
-Please consider these Renesas ARM based SoC defconfig updates for v3.18.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
 
+Changes since v2:
+- add r8a73a4 to bindings
+- use u32 where appropriate
+- don't split error message
 
-The following changes since commit 7d1311b93e58ed55f3a31cc8f94c4b8fe988a2b9:
+Changes since v1:
+- make sure unrelated register bits are preserved
+- use the plural for the clocks property in bindings
 
-  Linux 3.17-rc1 (2014-08-16 10:40:26 -0600)
+ .../bindings/clock/renesas,cpg-div6-clocks.txt     | 12 +++++++-
+ drivers/clk/shmobile/clk-div6.c                    | 32 ++++++++++++++++++----
+ 2 files changed, 37 insertions(+), 7 deletions(-)
 
-are available in the git repository at:
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
+index 952e373..b002d2b 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
+@@ -7,14 +7,24 @@ to 64.
+ Required Properties:
+ 
+   - compatible: Must be one of the following
++    - "renesas,r8a73a4-div6-clock" for R8A73A4 (R-Mobile APE6) DIV6 clocks
++    - "renesas,r8a7740-div6-clock" for R8A7740 (R-Mobile A1) DIV6 clocks
+     - "renesas,r8a7790-div6-clock" for R8A7790 (R-Car H2) DIV6 clocks
+     - "renesas,r8a7791-div6-clock" for R8A7791 (R-Car M2) DIV6 clocks
++    - "renesas,sh73a0-div6-clock" for SH73A0 (SH-MobileAG5) DIV6 clocks
+     - "renesas,cpg-div6-clock" for generic DIV6 clocks
+   - reg: Base address and length of the memory resource used by the DIV6 clock
+-  - clocks: Reference to the parent clock
++  - clocks: Reference to the parent clock(s)
+   - #clock-cells: Must be 0
+   - clock-output-names: The name of the clock as a free-form string
+ 
++Optional Properties:
++
++  - renesas,src-shift: Bit position of the input clock selector (default:
++    fixed input clock)
++  - renesas,src-width: Bit width of the input clock selector (default: fixed
++    input clock)
++
+ 
+ Example
+ -------
+diff --git a/drivers/clk/shmobile/clk-div6.c b/drivers/clk/shmobile/clk-div6.c
+index f065f69..2282bec 100644
+--- a/drivers/clk/shmobile/clk-div6.c
++++ b/drivers/clk/shmobile/clk-div6.c
+@@ -38,9 +38,12 @@ struct div6_clock {
+ 
+ static int cpg_div6_clock_enable(struct clk_hw *hw)
+ {
++	u32 val;
+ 	struct div6_clock *clock = to_div6_clock(hw);
+ 
+-	clk_writel(CPG_DIV6_DIV(clock->div - 1), clock->reg);
++	val = (clk_readl(clock->reg) & ~(CPG_DIV6_DIV_MASK | CPG_DIV6_CKSTP))
++		| CPG_DIV6_DIV(clock->div - 1);
++	clk_writel(val, clock->reg);
+ 
+ 	return 0;
+ }
+@@ -52,8 +55,8 @@ static void cpg_div6_clock_disable(struct clk_hw *hw)
+ 	/* DIV6 clocks require the divisor field to be non-zero when stopping
+ 	 * the clock.
+ 	 */
+-	clk_writel(CPG_DIV6_CKSTP | CPG_DIV6_DIV(CPG_DIV6_DIV_MASK),
+-		   clock->reg);
++	clk_writel(clk_readl(clock->reg) | CPG_DIV6_CKSTP | CPG_DIV6_DIV_MASK,
++		clock->reg);
+ }
+ 
+ static int cpg_div6_clock_is_enabled(struct clk_hw *hw)
+@@ -94,12 +97,14 @@ static int cpg_div6_clock_set_rate(struct clk_hw *hw, unsigned long rate,
+ {
+ 	struct div6_clock *clock = to_div6_clock(hw);
+ 	unsigned int div = cpg_div6_clock_calc_div(rate, parent_rate);
++	u32 val;
+ 
+ 	clock->div = div;
+ 
++	val = clk_readl(clock->reg) & ~CPG_DIV6_DIV_MASK;
+ 	/* Only program the new divisor if the clock isn't stopped. */
+-	if (!(clk_readl(clock->reg) & CPG_DIV6_CKSTP))
+-		clk_writel(CPG_DIV6_DIV(clock->div - 1), clock->reg);
++	if (!(val & CPG_DIV6_CKSTP))
++		clk_writel(val | CPG_DIV6_DIV(clock->div - 1), clock->reg);
+ 
+ 	return 0;
+ }
+@@ -121,6 +126,7 @@ static void __init cpg_div6_clock_init(struct device_node *np)
+ 	const char *name;
+ 	struct clk *clk;
+ 	int ret;
++	u32 src_shift, src_width;
+ 
+ 	clock = kzalloc(sizeof(*clock), GFP_KERNEL);
+ 	if (!clock) {
+@@ -150,7 +156,21 @@ static void __init cpg_div6_clock_init(struct device_node *np)
+ 		goto error;
+ 	}
+ 
+-	parent_name = of_clk_get_parent_name(np, 0);
++	if (!of_property_read_u32(np, "renesas,src-shift", &src_shift)) {
++		if (!of_property_read_u32(np, "renesas,src-width",
++					&src_width)) {
++			unsigned int parent_idx +				(clk_readl(clock->reg) >> src_shift) &
++				(BIT(src_width) - 1);
++			parent_name = of_clk_get_parent_name(np, parent_idx);
++		} else {
++			pr_err("%s: renesas,src-shift without renesas,src-width in %s\n",
++			       __func__, np->name);
++			goto error;
++		}
++	} else
++		parent_name = of_clk_get_parent_name(np, 0);
++
+ 	if (parent_name = NULL) {
+ 		pr_err("%s: failed to get %s DIV6 clock parent name\n",
+ 		       __func__, np->name);
+-- 
+1.8.4.5
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig-for-v3.18
-
-for you to fetch changes up to 874ee23c83d888f8824305c277e047c7799f30b9:
-
-  ARM: shmobile: defconfig: enable initrd (2014-08-18 08:07:38 +0900)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC Defconfig Updates for v3.18
-
-* Enable initrd in shmobile defconfig
-* Enable missing hardware support in shmobile and several board defconfigs
-
-----------------------------------------------------------------
-Geert Uytterhoeven (7):
-      ARM: shmobile: shmobile_defconfig: Enable missing hardware support
-      ARM: shmobile: ape6evm_defconfig: Enable missing hardware support
-      ARM: shmobile: bockw_defconfig: Enable missing hardware support
-      ARM: shmobile: koelsch_defconfig: Enable missing hardware support
-      ARM: shmobile: kzm9g_defconfig: Enable missing hardware support
-      ARM: shmobile: lager_defconfig: Enable missing hardware support
-      ARM: shmobile: marzen_defconfig: Enable missing hardware support
-
-Kevin Hilman (1):
-      ARM: shmobile: defconfig: enable initrd
-
- arch/arm/configs/ape6evm_defconfig  |  9 ++++++++-
- arch/arm/configs/bockw_defconfig    |  2 ++
- arch/arm/configs/koelsch_defconfig  | 17 +++++++++++++++++
- arch/arm/configs/kzm9g_defconfig    |  1 +
- arch/arm/configs/lager_defconfig    |  8 +++++++-
- arch/arm/configs/marzen_defconfig   |  1 +
- arch/arm/configs/shmobile_defconfig |  3 +++
- 7 files changed, 39 insertions(+), 2 deletions(-)
