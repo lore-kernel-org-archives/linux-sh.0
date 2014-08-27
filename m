@@ -1,221 +1,124 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 20 Aug 2014 14:28:34 +0000
-Subject: [PATCH 4/4] ARM: shmobile: sh73a0 dtsi: Move interrupt-parent to the top
-Message-Id: <1408544914-21742-5-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Aug 2014 16:41:10 +0000
+Subject: [PATCH 13/16] ARM: shmobile: koelsch-reference: Remove DU platform device
+Message-Id: <1409157673-4154-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1408544914-21742-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1408544914-21742-1-git-send-email-geert+renesas@glider.be>
+References: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-Add an "interrupt-parent = <&gic>;" at the top, which is inherited by
-all child nodes, so the "interrupt-parent" properties can be removed
-from the individual child nodes.
+The DU device is now instantiated from the device tree, remote the
+corresponding platform device.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/sh73a0.dtsi | 24 +-----------------------
- 1 file changed, 1 insertion(+), 23 deletions(-)
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 73 ------------------------
+ 1 file changed, 73 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 910b79079d5a..c95935563e44 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -14,6 +14,7 @@
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index 46aa540..c370818 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -19,87 +19,15 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
  
- / {
- 	compatible = "renesas,sh73a0";
-+	interrupt-parent = <&gic>;
+-#include <linux/dma-mapping.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+-#include <linux/platform_data/rcar-du.h>
  
- 	cpus {
- 		#address-cells = <1>;
-@@ -54,7 +55,6 @@
- 			<0xe6900020 1>,
- 			<0xe6900040 1>,
- 			<0xe6900060 1>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 1 IRQ_TYPE_LEVEL_HIGH
- 			      0 2 IRQ_TYPE_LEVEL_HIGH
- 			      0 3 IRQ_TYPE_LEVEL_HIGH
-@@ -74,7 +74,6 @@
- 			<0xe6900024 1>,
- 			<0xe6900044 1>,
- 			<0xe6900064 1>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 9 IRQ_TYPE_LEVEL_HIGH
- 			      0 10 IRQ_TYPE_LEVEL_HIGH
- 			      0 11 IRQ_TYPE_LEVEL_HIGH
-@@ -95,7 +94,6 @@
- 			<0xe6900028 1>,
- 			<0xe6900048 1>,
- 			<0xe6900068 1>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 17 IRQ_TYPE_LEVEL_HIGH
- 			      0 18 IRQ_TYPE_LEVEL_HIGH
- 			      0 19 IRQ_TYPE_LEVEL_HIGH
-@@ -115,7 +113,6 @@
- 			<0xe690002c 1>,
- 			<0xe690004c 1>,
- 			<0xe690006c 1>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 25 IRQ_TYPE_LEVEL_HIGH
- 			      0 26 IRQ_TYPE_LEVEL_HIGH
- 			      0 27 IRQ_TYPE_LEVEL_HIGH
-@@ -131,7 +128,6 @@
- 		#size-cells = <0>;
- 		compatible = "renesas,rmobile-iic";
- 		reg = <0xe6820000 0x425>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH
- 			      0 168 IRQ_TYPE_LEVEL_HIGH
- 			      0 169 IRQ_TYPE_LEVEL_HIGH
-@@ -144,7 +140,6 @@
- 		#size-cells = <0>;
- 		compatible = "renesas,rmobile-iic";
- 		reg = <0xe6822000 0x425>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 51 IRQ_TYPE_LEVEL_HIGH
- 			      0 52 IRQ_TYPE_LEVEL_HIGH
- 			      0 53 IRQ_TYPE_LEVEL_HIGH
-@@ -157,7 +152,6 @@
- 		#size-cells = <0>;
- 		compatible = "renesas,rmobile-iic";
- 		reg = <0xe6824000 0x425>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 171 IRQ_TYPE_LEVEL_HIGH
- 			      0 172 IRQ_TYPE_LEVEL_HIGH
- 			      0 173 IRQ_TYPE_LEVEL_HIGH
-@@ -170,7 +164,6 @@
- 		#size-cells = <0>;
- 		compatible = "renesas,rmobile-iic";
- 		reg = <0xe6826000 0x425>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 183 IRQ_TYPE_LEVEL_HIGH
- 			      0 184 IRQ_TYPE_LEVEL_HIGH
- 			      0 185 IRQ_TYPE_LEVEL_HIGH
-@@ -183,7 +176,6 @@
- 		#size-cells = <0>;
- 		compatible = "renesas,rmobile-iic";
- 		reg = <0xe6828000 0x425>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 187 IRQ_TYPE_LEVEL_HIGH
- 			      0 188 IRQ_TYPE_LEVEL_HIGH
- 			      0 189 IRQ_TYPE_LEVEL_HIGH
-@@ -194,7 +186,6 @@
- 	mmcif: mmc@e6bd0000 {
- 		compatible = "renesas,sh-mmcif";
- 		reg = <0xe6bd0000 0x100>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 140 IRQ_TYPE_LEVEL_HIGH
- 			      0 141 IRQ_TYPE_LEVEL_HIGH>;
- 		reg-io-width = <4>;
-@@ -204,7 +195,6 @@
- 	sdhi0: sd@ee100000 {
- 		compatible = "renesas,sdhi-sh73a0";
- 		reg = <0xee100000 0x100>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 83 IRQ_TYPE_LEVEL_HIGH
- 			      0 84 IRQ_TYPE_LEVEL_HIGH
- 			      0 85 IRQ_TYPE_LEVEL_HIGH>;
-@@ -216,7 +206,6 @@
- 	sdhi1: sd@ee120000 {
- 		compatible = "renesas,sdhi-sh73a0";
- 		reg = <0xee120000 0x100>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH
- 			      0 89 IRQ_TYPE_LEVEL_HIGH>;
- 		toshiba,mmc-wrprotect-disable;
-@@ -227,7 +216,6 @@
- 	sdhi2: sd@ee140000 {
- 		compatible = "renesas,sdhi-sh73a0";
- 		reg = <0xee140000 0x100>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH
- 			      0 105 IRQ_TYPE_LEVEL_HIGH>;
- 		toshiba,mmc-wrprotect-disable;
-@@ -238,7 +226,6 @@
- 	scifa0: serial@e6c40000 {
- 		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
- 		reg = <0xe6c40000 0x100>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 72 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
- 	};
-@@ -246,7 +233,6 @@
- 	scifa1: serial@e6c50000 {
- 		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
- 		reg = <0xe6c50000 0x100>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
- 	};
-@@ -254,7 +240,6 @@
- 	scifa2: serial@e6c60000 {
- 		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
- 		reg = <0xe6c60000 0x100>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
- 	};
-@@ -262,7 +247,6 @@
- 	scifa3: serial@e6c70000 {
- 		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
- 		reg = <0xe6c70000 0x100>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
- 	};
-@@ -270,7 +254,6 @@
- 	scifa4: serial@e6c80000 {
- 		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
- 		reg = <0xe6c80000 0x100>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 78 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
- 	};
-@@ -278,7 +261,6 @@
- 	scifa5: serial@e6cb0000 {
- 		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
- 		reg = <0xe6cb0000 0x100>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 79 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
- 	};
-@@ -286,7 +268,6 @@
- 	scifa6: serial@e6cc0000 {
- 		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
- 		reg = <0xe6cc0000 0x100>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
- 	};
-@@ -294,7 +275,6 @@
- 	scifa7: serial@e6cd0000 {
- 		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
- 		reg = <0xe6cd0000 0x100>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 143 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
- 	};
-@@ -302,7 +282,6 @@
- 	scifb8: serial@e6c30000 {
- 		compatible = "renesas,scifb-sh73a0", "renesas,scifb";
- 		reg = <0xe6c30000 0x100>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 80 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
- 	};
-@@ -328,7 +307,6 @@
- 		#sound-dai-cells = <1>;
- 		compatible = "renesas,sh_fsi2";
- 		reg = <0xec230000 0x400>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 146 0x4>;
- 		status = "disabled";
- 	};
+ #include <asm/mach/arch.h>
+ 
+-#include "clock.h"
+ #include "common.h"
+-#include "irqs.h"
+ #include "r8a7791.h"
+ #include "rcar-gen2.h"
+ 
+-/* DU */
+-static struct rcar_du_encoder_data koelsch_du_encoders[] = {
+-	{
+-		.type = RCAR_DU_ENCODER_NONE,
+-		.output = RCAR_DU_OUTPUT_LVDS0,
+-		.connector.lvds.panel = {
+-			.width_mm = 210,
+-			.height_mm = 158,
+-			.mode = {
+-				.pixelclock = 65000000,
+-				.hactive = 1024,
+-				.hfront_porch = 20,
+-				.hback_porch = 160,
+-				.hsync_len = 136,
+-				.vactive = 768,
+-				.vfront_porch = 3,
+-				.vback_porch = 29,
+-				.vsync_len = 6,
+-			},
+-		},
+-	},
+-};
+-
+-static struct rcar_du_platform_data koelsch_du_pdata = {
+-	.encoders = koelsch_du_encoders,
+-	.num_encoders = ARRAY_SIZE(koelsch_du_encoders),
+-};
+-
+-static const struct resource du_resources[] __initconst = {
+-	DEFINE_RES_MEM(0xfeb00000, 0x40000),
+-	DEFINE_RES_MEM_NAMED(0xfeb90000, 0x1c, "lvds.0"),
+-	DEFINE_RES_IRQ(gic_spi(256)),
+-	DEFINE_RES_IRQ(gic_spi(268)),
+-};
+-
+-static void __init koelsch_add_du_device(void)
+-{
+-	struct platform_device_info info = {
+-		.name = "rcar-du-r8a7791",
+-		.id = -1,
+-		.res = du_resources,
+-		.num_res = ARRAY_SIZE(du_resources),
+-		.data = &koelsch_du_pdata,
+-		.size_data = sizeof(koelsch_du_pdata),
+-		.dma_mask = DMA_BIT_MASK(32),
+-	};
+-
+-	platform_device_register_full(&info);
+-}
+-
+-/*
+- * This is a really crude hack to provide clkdev support to platform
+- * devices until they get moved to DT.
+- */
+-static const struct clk_name clk_names[] __initconst = {
+-	{ "du0", "du.0", "rcar-du-r8a7791" },
+-	{ "du1", "du.1", "rcar-du-r8a7791" },
+-	{ "lvds0", "lvds.0", "rcar-du-r8a7791" },
+-};
+-
+-static void __init koelsch_add_standard_devices(void)
+-{
+-	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-
+-	koelsch_add_du_device();
+-}
+-
+ static const char * const koelsch_boards_compat_dt[] __initconst = {
+ 	"renesas,koelsch",
+ 	"renesas,koelsch-reference",
+@@ -110,7 +38,6 @@ DT_MACHINE_START(KOELSCH_DT, "koelsch")
+ 	.smp		= smp_ops(r8a7791_smp_ops),
+ 	.init_early	= shmobile_init_delay,
+ 	.init_time	= rcar_gen2_timer_init,
+-	.init_machine	= koelsch_add_standard_devices,
+ 	.init_late	= shmobile_init_late,
+ 	.reserve	= rcar_gen2_reserve,
+ 	.dt_compat	= koelsch_boards_compat_dt,
 -- 
-1.9.1
+1.8.5.5
 
