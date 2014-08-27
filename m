@@ -1,41 +1,61 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 25 Aug 2014 01:19:30 +0000
-Subject: Re: [PATCH] ARM: shmobile: koelsch: Remove non-existent i2c6 pinmux
-Message-Id: <20140825011930.GC31233@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Aug 2014 16:41:00 +0000
+Subject: [PATCH 03/16] video: Add DT binding documentation for VGA connector
+Message-Id: <1409157673-4154-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1408054750-9642-1-git-send-email-horms+renesas@verge.net.au>
- <20140824182344.GB11563@localhost>
-In-Reply-To: <20140824182344.GB11563@localhost>
+References: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: devicetree@vger.kernel.org, linux-fbdev@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Sun, Aug 24, 2014 at 11:23:44AM -0700, Olof Johansson wrote:
-> On Fri, Aug 15, 2014 at 07:19:10AM +0900, Simon Horman wrote:
-> > From: Geert Uytterhoeven <geert+renesas@glider.be>
-> > 
-> > On r8a7791, i2c6 (aka iic3) doesn't need pinmux, but the koelsch dts
-> > refers to non-existent pinmux configuration data:
-> > 
-> > pinmux core: sh-pfc does not support function i2c6
-> > sh-pfc e6060000.pfc: invalid function i2c6 in map table
-> > 
-> > Remove it to fix this.
-> > 
-> > Fixes: commit 1d41f36a68c0f4e9b01d563ce33bab5201858b54 ("ARM: shmobile:
-> >        koelsch dts: Add VDD MPU regulator for DVFS")
-> > 
-> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > ---
-> >  arch/arm/boot/dts/r8a7791-koelsch.dts | 7 -------
-> >  1 file changed, 7 deletions(-)
-> > 
-> > Hi Olof, Arnd, Kevin,
-> > 
-> > please consider this as a fix for v3.17.
-> 
-> Applied.
+The VGA connector is described by a single input port and an optional
+DDC bus.
 
-Thanks!
+Cc: devicetree@vger.kernel.org
+Cc: linux-fbdev@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ .../devicetree/bindings/video/vga-connector.txt    | 28 ++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/video/vga-connector.txt
+
+diff --git a/Documentation/devicetree/bindings/video/vga-connector.txt b/Documentation/devicetree/bindings/video/vga-connector.txt
+new file mode 100644
+index 0000000..9a45ec1
+--- /dev/null
++++ b/Documentation/devicetree/bindings/video/vga-connector.txt
+@@ -0,0 +1,28 @@
++VGA Connector
++=======
++
++Required properties:
++- compatible: "vga-connector"
++
++Optional properties:
++- label: a symbolic name for the connector
++- ddc-i2c-bus: phandle to the I2C bus that is connected to VGA DDC
++
++Required nodes:
++- Video port for VGA input
++
++Example
++-------
++
++vga0: connector@0 {
++	compatible = "vga-connector";
++	label = "vga";
++
++	ddc-i2c-bus = <&i2c3>;
++
++	port {
++		vga_connector_in: endpoint {
++			remote-endpoint = <&adv7123_out>;
++		};
++	};
++};
+-- 
+1.8.5.5
+
