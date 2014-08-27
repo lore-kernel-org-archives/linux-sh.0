@@ -1,111 +1,48 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Fri, 22 Aug 2014 08:39:11 +0000
-Subject: [PATCH 04/10 v2 resend] mmc: tmio: control multiple block transfer mode
-Message-Id: <87zjew6hqq.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 27 Aug 2014 00:35:24 +0000
+Subject: [PATCH v2 3/5] ARM: shmobile: koelsch: correct memory map syntax
+Message-Id: <1409099726-21814-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
-	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
-	<53AD638C.5060907@renesas.com>
-	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
-	<8761hk7wgy.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <8761hk7wgy.wl%kuninori.morimoto.gx@gmail.com>
+References: <1409099726-21814-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1409099726-21814-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
-Cc: Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Correct a syntax error by using two comma-delimited 32 bit values
+rather than a single 64 bit value.
 
-Renesas SDHI has "Multiple Block Transfer Mode" settings
-on SD_CMD register which controls CMD12 automatically.
+This is a documentation fix and should have no run-time affect.
 
-This patch cares it, because
-CMD12 is not needed when CMD53 (= SD_IO_RW_EXTENDED)
+This problem was introduced when the second memory region
+was added to the koelsch dts file by 4cd1bad45182c7f1
+("ARM: shmobile: koelsch: (1+1)GiB memory in DT") in v3.14.
 
-[Kuninori Morimoto: tidyuped for upstreaming
-                    enabled this flags for all SH-Mobile/R-Car]
+Cc: Olof Johansson <olof@lixom.net>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Tested-by: Nguyen Xuan Nui <nx-nui@jinso.co.jp>
-Tested-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
-Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |    5 +++++
- drivers/mmc/host/tmio_mmc_pio.c   |   10 ++++++++++
- include/linux/mfd/tmio.h          |    6 ++++++
- 3 files changed, 21 insertions(+)
+v2
+* First post
+---
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 91c6399..1d54b78 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -225,6 +225,11 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	 */
- 	mmc_data->flags |= TMIO_MMC_SDIO_IRQ;
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 51807a3..caf66dc 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -33,7 +33,7 @@
+ 		reg = <0 0x40000000 0 0x40000000>;
+ 	};
  
-+	/*
-+	 * All SDHI have CMD12 controll bit
-+	 */
-+	mmc_data->flags |= TMIO_MMC_HAVE_CMD12_CTRL;
-+
- 	if (of_id && of_id->data) {
- 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
- 		mmc_data->flags |= of_data->tmio_flags;
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index c3b1b4e..1f1fdfb 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -44,6 +44,7 @@
- #include <linux/pm_qos.h>
- #include <linux/pm_runtime.h>
- #include <linux/regulator/consumer.h>
-+#include <linux/mmc/sdio.h>
- #include <linux/scatterlist.h>
- #include <linux/spinlock.h>
- #include <linux/workqueue.h>
-@@ -295,6 +296,7 @@ static void tmio_mmc_done_work(struct work_struct *work)
- #define TRANSFER_READ  0x1000
- #define TRANSFER_MULTI 0x2000
- #define SECURITY_CMD   0x4000
-+#define NO_CMD12_ISSUE 0x4000 /* TMIO_MMC_HAVE_CMD12_CTRL */
- 
- static int tmio_mmc_start_command(struct tmio_mmc_host *host, struct mmc_command *cmd)
- {
-@@ -331,6 +333,14 @@ static int tmio_mmc_start_command(struct tmio_mmc_host *host, struct mmc_command
- 		if (data->blocks > 1) {
- 			sd_ctrl_write16(host, CTL_STOP_INTERNAL_ACTION, 0x100);
- 			c |= TRANSFER_MULTI;
-+
-+			/*
-+			 * Disable auto CMD12 at IO_RW_EXTENDED when
-+			 * multiple block transfer
-+			 */
-+			if ((host->pdata->flags & TMIO_MMC_HAVE_CMD12_CTRL) &&
-+			    (cmd->opcode = SD_IO_RW_EXTENDED))
-+				c |= NO_CMD12_ISSUE;
- 		}
- 		if (data->flags & MMC_DATA_READ)
- 			c |= TRANSFER_READ;
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index 777e29b..7432d95 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -83,6 +83,12 @@
-  */
- #define TMIO_MMC_HAVE_HIGH_REG		(1 << 6)
- 
-+/*
-+ * Some controllers have CMD12 automatically
-+ * issue/non-issue register
-+ */
-+#define TMIO_MMC_HAVE_CMD12_CTRL	(1 << 7)
-+
- int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
- int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
- void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
+-	memory@200000000 {
++	memory@2,00000000 {
+ 		device_type = "memory";
+ 		reg = <2 0x00000000 0 0x40000000>;
+ 	};
 -- 
-1.7.9.5
+2.0.1
 
