@@ -1,59 +1,57 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Aug 2014 16:41:06 +0000
-Subject: [PATCH 09/16] ARM: shmobile: r8a7779: Add DU node to device tree
-Message-Id: <1409157673-4154-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 27 Aug 2014 14:40:01 +0000
+Subject: renesas-drivers-2014-08-27-v3.17-rc2
+Message-Id: <1409150401-26045-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Add the DU device with a disabled state. Boards that want to enable the
-DU need to specify the output topology
+I've pushed renesas-drivers-2014-08-27-v3.17-rc2 to
+https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+This tree is meant to ease development of platform support and drivers for
+Renesas ARM ("shmobile") SoCs. It's created by merging the for-next branches
+of various subsystem trees into the development branch of Simon Horman's
+renesas.git tree.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/r8a7779.dtsi | 24 ++++++++++++++++++++++++
- 1 file changed, 24 insertions(+)
+Today's version is based on renesas-devel-20140827v2-v3.17-rc2.
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 559788b..9689314 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -379,6 +379,30 @@
- 		status = "disabled";
- 	};
- 
-+	du: du@fff80000 {
-+		compatible = "renesas,du-r8a7779";
-+		reg = <0 0xfff80000 0 0x40000>;
-+		interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7779_CLK_DU>;
-+		status = "disabled";
-+
-+		ports {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+
-+			port@0 {
-+				reg = <0>;
-+				du_out_rgb0: endpoint {
-+				};
-+			};
-+			port@1 {
-+				reg = <1>;
-+				du_out_rgb1: endpoint {
-+				};
-+			};
-+		};
-+	};
-+
- 	clocks {
- 		#address-cells = <1>;
- 		#size-cells = <1>;
--- 
-1.8.5.5
+Included subsystem trees (the last 2 are new):
+    git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
+    git://git.linaro.org/people/mturquette/linux.git#clk-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
+    git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
+    git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
+    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c for-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
+    git://gitorious.org/linux-can/linux-can-next.git#master
+    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
+    git://people.freedesktop.org/~airlied/linux#drm-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
+    git://linuxtv.org/mchehab/media-next.git#master
+    git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
+    git://git.linaro.org/people/ulf.hansson/mmc.git#next
+    git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
+    git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents next
+    git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
+    git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
+    git://git.infradead.org/users/vkoul/slave-dma.git#next
+    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
+    git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
+    git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
