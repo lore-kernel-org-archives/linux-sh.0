@@ -1,95 +1,85 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 20 Aug 2014 00:23:56 +0000
-Subject: [PATCH 05/12] ARM: shmobile: r8a7790: Add DMAC devices to DT
-Message-Id: <b9fea49c79f23212ff21ef2f305ea4ae865db860.1408492753.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Aug 2014 16:41:13 +0000
+Subject: [PATCH 16/16] ARM: shmobile: koelsch: Enable DU device in DT
+Message-Id: <1409157673-4154-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408492753.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408492753.git.horms+renesas@verge.net.au>
+References: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-Instantiate the two system DMA controllers in the r8a7790 device tree.
+Specify the DU output topology, enable the DU device and configure the
+related pins.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 59 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 59 insertions(+)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 43 ++++++++++++++++++++++++++++++++---
+ 1 file changed, 40 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 220662f..3707f0e 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -217,6 +217,65 @@
- 			     <0 3 IRQ_TYPE_LEVEL_HIGH>;
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 178431d..19d7b36 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -209,6 +209,46 @@
+ 		states = <3300000 1
+ 			  1800000 0>;
  	};
- 
-+	dmac0: dma-controller@e6700000 {
-+		compatible = "renesas,rcar-dmac";
-+		reg = <0 0xe6700000 0 0x20000>;
-+		interrupts = <0 197 IRQ_TYPE_LEVEL_HIGH
-+			      0 200 IRQ_TYPE_LEVEL_HIGH
-+			      0 201 IRQ_TYPE_LEVEL_HIGH
-+			      0 202 IRQ_TYPE_LEVEL_HIGH
-+			      0 203 IRQ_TYPE_LEVEL_HIGH
-+			      0 204 IRQ_TYPE_LEVEL_HIGH
-+			      0 205 IRQ_TYPE_LEVEL_HIGH
-+			      0 206 IRQ_TYPE_LEVEL_HIGH
-+			      0 207 IRQ_TYPE_LEVEL_HIGH
-+			      0 208 IRQ_TYPE_LEVEL_HIGH
-+			      0 209 IRQ_TYPE_LEVEL_HIGH
-+			      0 210 IRQ_TYPE_LEVEL_HIGH
-+			      0 211 IRQ_TYPE_LEVEL_HIGH
-+			      0 212 IRQ_TYPE_LEVEL_HIGH
-+			      0 213 IRQ_TYPE_LEVEL_HIGH
-+			      0 214 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "error",
-+				"ch0", "ch1", "ch2", "ch3",
-+				"ch4", "ch5", "ch6", "ch7",
-+				"ch8", "ch9", "ch10", "ch11",
-+				"ch12", "ch13", "ch14";
-+		clocks = <&mstp2_clks R8A7790_CLK_SYS_DMAC0>;
-+		clock-names = "fck";
-+		#dma-cells = <1>;
-+		dma-channels = <15>;
-+	};
 +
-+	dmac1: dma-controller@e6720000 {
-+		compatible = "renesas,rcar-dmac";
-+		reg = <0 0xe6720000 0 0x20000>;
-+		interrupts = <0 220 IRQ_TYPE_LEVEL_HIGH
-+			      0 216 IRQ_TYPE_LEVEL_HIGH
-+			      0 217 IRQ_TYPE_LEVEL_HIGH
-+			      0 218 IRQ_TYPE_LEVEL_HIGH
-+			      0 219 IRQ_TYPE_LEVEL_HIGH
-+			      0 308 IRQ_TYPE_LEVEL_HIGH
-+			      0 309 IRQ_TYPE_LEVEL_HIGH
-+			      0 310 IRQ_TYPE_LEVEL_HIGH
-+			      0 311 IRQ_TYPE_LEVEL_HIGH
-+			      0 312 IRQ_TYPE_LEVEL_HIGH
-+			      0 313 IRQ_TYPE_LEVEL_HIGH
-+			      0 314 IRQ_TYPE_LEVEL_HIGH
-+			      0 315 IRQ_TYPE_LEVEL_HIGH
-+			      0 316 IRQ_TYPE_LEVEL_HIGH
-+			      0 317 IRQ_TYPE_LEVEL_HIGH
-+			      0 318 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "error",
-+				"ch0", "ch1", "ch2", "ch3",
-+				"ch4", "ch5", "ch6", "ch7",
-+				"ch8", "ch9", "ch10", "ch11",
-+				"ch12", "ch13", "ch14";
-+		clocks = <&mstp2_clks R8A7790_CLK_SYS_DMAC1>;
-+		clock-names = "fck";
-+		#dma-cells = <1>;
-+		dma-channels = <15>;
++	panel {
++		compatible = "mitsubishi,aa104xd12", "panel-dpi";
++
++		width-mm = <210>;
++		height-mm = <158>;
++
++		panel-timing {
++			/* 1024x768 @65Hz */
++			clock-frequency = <65000000>;
++			hactive = <1024>;
++			vactive = <768>;
++			hsync-len = <136>;
++			hfront-porch = <20>;
++			hback-porch = <160>;
++			vfront-porch = <3>;
++			vback-porch = <29>;
++			vsync-len = <6>;
++		};
++
++		port {
++			panel_in: endpoint {
++				remote-endpoint = <&du_out_lvds0>;
++			};
++		};
 +	};
- 	i2c0: i2c@e6508000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
++};
++
++&du {
++	pinctrl-0 = <&du_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++
++	ports {
++		port@1 {
++			endpoint {
++				remote-endpoint = <&panel_in>;
++			};
++		};
++	};
+ };
+ 
+ &extal_clk {
+@@ -216,9 +256,6 @@
+ };
+ 
+ &pfc {
+-	pinctrl-0 = <&du_pins>;
+-	pinctrl-names = "default";
+-
+ 	i2c2_pins: i2c2 {
+ 		renesas,groups = "i2c2";
+ 		renesas,function = "i2c2";
 -- 
-2.0.1
+1.8.5.5
 
