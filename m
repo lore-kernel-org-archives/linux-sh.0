@@ -1,37 +1,83 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 23 Aug 2014 01:44:10 +0000
-Subject: [PATCH 5/8] ARM: shmobile: kzm9g_defconfig: Enable missing hardware support
-Message-Id: <489610f3324dc1f94c816f4053215d7540871875.1408670623.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Aug 2014 16:41:02 +0000
+Subject: [PATCH 05/16] video: Add THC63LVDM83D DT bindings documentation
+Message-Id: <1409157673-4154-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408670623.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408670623.git.horms+renesas@verge.net.au>
+References: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: devicetree@vger.kernel.org, linux-fbdev@vger.kernel.org, linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+The THC63LVDM83D is a video LVDS serializer described by an input port,
+an output port, and an optional power down GPIO.
 
-Based on the DTS
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: devicetree@vger.kernel.org
+Cc: linux-fbdev@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/configs/kzm9g_defconfig | 1 +
- 1 file changed, 1 insertion(+)
+ .../devicetree/bindings/video/thine,thc63lvdm83d   | 50 ++++++++++++++++++++++
+ 1 file changed, 50 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/video/thine,thc63lvdm83d
 
-diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
-index bd097d4..8cb115d 100644
---- a/arch/arm/configs/kzm9g_defconfig
-+++ b/arch/arm/configs/kzm9g_defconfig
-@@ -119,6 +119,7 @@ CONFIG_MMC_SDHI=y
- CONFIG_MMC_SH_MMCIF=y
- CONFIG_NEW_LEDS=y
- CONFIG_LEDS_CLASS=y
-+CONFIG_LEDS_GPIO=y
- CONFIG_RTC_CLASS=y
- CONFIG_RTC_DRV_RS5C372=y
- CONFIG_DMADEVICES=y
+diff --git a/Documentation/devicetree/bindings/video/thine,thc63lvdm83d b/Documentation/devicetree/bindings/video/thine,thc63lvdm83d
+new file mode 100644
+index 0000000..527e236
+--- /dev/null
++++ b/Documentation/devicetree/bindings/video/thine,thc63lvdm83d
+@@ -0,0 +1,50 @@
++THine Electronics THC63LVDM83D LVDS serializer
++----------------------------------------------
++
++The THC63LVDM83D is an LVDS serializer designed to support pixel data
++transmission between a host and a flat panel.
++
++Required properties:
++
++- compatible: Should be "thine,thc63lvdm83d"
++
++Optional properties:
++
++- pwdn-gpios: Power down control GPIO
++
++Required nodes:
++
++The THC63LVDM83D has two video ports. Their connections are modeled using the
++OFgraph bindings specified in Documentation/devicetree/bindings/graph.txt.
++
++- Video port 0 for CMOS/TTL input
++- Video port 1 for LVDS output
++
++
++Example
++-------
++
++	lvds_enc: encoder@0 {
++		compatible = "thine,thc63lvdm83d";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++
++				lvds_enc_in: endpoint@0 {
++					remote-endpoint = <&rgb_out>;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++
++				lvds_enc_out: endpoint@0 {
++					remote-endpoint = <&panel_in>;
++				};
++			};
++		};
++	};
 -- 
-2.0.1
+1.8.5.5
 
