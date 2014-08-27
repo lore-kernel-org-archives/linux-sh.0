@@ -1,22 +1,32 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Tue, 19 Aug 2014 17:22:19 +0000
-Subject: Re: [GIT PULL] Second Round of Renesas rcar-audmapp Driver Updates for v3.17
-Message-Id: <20140819171019.GV13288@intel.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 27 Aug 2014 00:35:21 +0000
+Subject: [PATCH v2 0/5] ARM: shmobile: correct memory maps
+Message-Id: <1409099726-21814-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1407288912.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1407288912.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Aug 17, 2014 at 09:43:19AM +0900, Simon Horman wrote:
-> Hi Vinod,
-> 
-> I'm wondering if you could take a moment to consider this pull-request.
+This short series builds on a previous posting
+of a patch to correct the value of the second memory region
+of the lager. It does that and also corrects the syntax
+used for the lager and other shmobile boards.
 
-This looks okay, I can merge it for fixes
+Simon Horman (5):
+  ARM: shmobile: lager: correct memory map value and syntax
+  ARM: shmobile: henninger: correct memory map syntax
+  ARM: shmobile: koelsch: correct memory map syntax
+  ARM: shmobile: ape6evm-reference: correct memory map syntax
+  ARM: shmobile: ape6evm: correct memory map syntax
+
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts | 2 +-
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts           | 2 +-
+ arch/arm/boot/dts/r8a7790-lager.dts             | 2 +-
+ arch/arm/boot/dts/r8a7791-henninger.dts         | 2 +-
+ arch/arm/boot/dts/r8a7791-koelsch.dts           | 2 +-
+ 5 files changed, 5 insertions(+), 5 deletions(-)
 
 -- 
-~Vinod
+2.0.1
 
