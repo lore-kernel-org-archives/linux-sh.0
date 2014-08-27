@@ -1,48 +1,148 @@
-From: Pranith Kumar <bobby.prani@gmail.com>
-Date: Tue, 05 Aug 2014 19:25:08 +0000
-Subject: [PATCH 1/1] sh: Fix build error by adding generic ioport_{map/unmap}()
-Message-Id: <1407266709-9296-1-git-send-email-bobby.prani@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Aug 2014 16:41:11 +0000
+Subject: [PATCH 14/16] ARM: shmobile: marzen: Enable DU device in DT
+Message-Id: <1409157673-4154-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "GitAuthor: Pranith Kumar" <bobby.prani@gmail.com>, "open list:SUPERH" <linux-sh@vger.kernel.org>, open list <linux-kernel@vger.kernel.org>
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-Fix build error as reported by Geert Uytterhoeven here:
-http://kisskb.ellerman.id.au/kisskb/buildresult/11607865/
+Specify the DU output topology, enable the DU device and configure the
+related pins.
 
-The error happens when CONFIG_HAS_IOPORT_MAP=n because of which there are
-missing definitions of ioport_map/unmap(). Fix this build error by adding these
-prototypes.
-
-Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Pranith Kumar <bobby.prani@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/sh/include/asm/io_noioport.h | 11 +++++++++++
- 1 file changed, 11 insertions(+)
+ arch/arm/boot/dts/r8a7779-marzen.dts | 106 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 106 insertions(+)
 
-diff --git a/arch/sh/include/asm/io_noioport.h b/arch/sh/include/asm/io_noioport.h
-index 4d48f14..c727e6d 100644
---- a/arch/sh/include/asm/io_noioport.h
-+++ b/arch/sh/include/asm/io_noioport.h
-@@ -34,6 +34,17 @@ static inline void outl(unsigned int x, unsigned long port)
- 	BUG();
- }
+diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
+index c160404..da2d0aa 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen.dts
+@@ -68,6 +68,101 @@
+ 			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
+ 		};
+ 	};
++
++	vga-enc {
++		compatible = "adi,adv7123";
++
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		ports {
++			port@0 {
++				vga_enc_in: endpoint {
++					remote-endpoint = <&du_out_rgb0>;
++				};
++			};
++			port@1 {
++				vga_enc_out: endpoint {
++					remote-endpoint = <&vga_in>;
++				};
++			};
++		};
++	};
++
++	vga {
++		compatible = "vga-connector";
++
++		port {
++			vga_in: endpoint {
++				remote-endpoint = <&vga_enc_out>;
++			};
++		};
++	};
++
++	lvds-enc {
++		compatible = "thine,thc63lvdm83d";
++
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		ports {
++			port@0 {
++				lvds_enc_in: endpoint {
++					remote-endpoint = <&du_out_rgb1>;
++				};
++			};
++			port@1 {
++				lvds_enc_out: endpoint {
++					remote-endpoint = <&panel_in>;
++				};
++			};
++		};
++	};
++
++	panel {
++		compatible = "mitsubishi,aa104xd12", "panel-dpi";
++
++		width-mm = <210>;
++		height-mm = <158>;
++
++		panel-timing {
++			/* 1024x768 @65Hz */
++			clock-frequency = <65000000>;
++			hactive = <1024>;
++			vactive = <768>;
++			hsync-len = <136>;
++			hfront-porch = <20>;
++			hback-porch = <160>;
++			vfront-porch = <3>;
++			vback-porch = <29>;
++			vsync-len = <6>;
++		};
++
++		port {
++			panel_in: endpoint {
++				remote-endpoint = <&lvds_enc_out>;
++			};
++		};
++	};
++};
++
++&du {
++	pinctrl-0 = <&du_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++
++	ports {
++		port@0 {
++			endpoint {
++				remote-endpoint = <&vga_enc_in>;
++			};
++		};
++		port@1 {
++			endpoint {
++				remote-endpoint = <&lvds_enc_in>;
++			};
++		};
++	};
+ };
  
-+static inline void __iomem *ioport_map(unsigned long port, unsigned int size)
-+{
-+	BUG();
-+	return NULL;
-+}
+ &irqpin0 {
+@@ -83,6 +178,17 @@
+ };
+ 
+ &pfc {
++	du_pins: du {
++		du0 {
++			renesas,groups = "du0_rgb888", "du0_sync_1", "du0_clk_out_0";
++			renesas,function = "du0";
++		};
++		du1 {
++			renesas,groups = "du1_rgb666", "du1_sync_1", "du1_clk_out";
++			renesas,function = "du1";
++		};
++	};
 +
-+static inline void ioport_unmap(void __iomem *addr)
-+{
-+	BUG();
-+}
-+
- #define inb_p(addr)	inb(addr)
- #define inw_p(addr)	inw(addr)
- #define inl_p(addr)	inl(addr)
+ 	lan0_pins: lan0 {
+ 		intc {
+ 			renesas,groups = "intc_irq1_b";
 -- 
-1.9.1
+1.8.5.5
 
