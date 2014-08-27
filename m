@@ -1,38 +1,131 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 23 Aug 2014 01:44:15 +0000
-Subject: [PATCH 05/11] ARM: shmobile: r8a73a4: Add shmobile_init_late()
-Message-Id: <0592d1b5d296b0b6a24b7e48b7b48662164d3117.1408671240.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Aug 2014 16:41:09 +0000
+Subject: [PATCH 12/16] ARM: shmobile: lager-reference: Remove DU platform device
+Message-Id: <1409157673-4154-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408671240.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408671240.git.horms+renesas@verge.net.au>
+References: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+The DU device is now instantiated from the device tree, remote the
+corresponding platform device.
 
-Extend r8a73a4 SoC machine vector to include shmobile_init_late()
-so Suspend-to-RAM and CPUIdle are setup as expected.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-r8a73a4.c | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/mach-shmobile/board-lager-reference.c | 80 --------------------------
+ 1 file changed, 80 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index 6683072..6fbcdcc 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -311,6 +311,7 @@ static const char *r8a73a4_boards_compat_dt[] __initdata = {
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index bc4b483..82b077a 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -18,94 +18,15 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
  
- DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
- 	.init_early	= r8a73a4_init_early,
-+	.init_late	= shmobile_init_late,
- 	.dt_compat	= r8a73a4_boards_compat_dt,
- MACHINE_END
- #endif /* CONFIG_USE_OF */
+-#include <linux/dma-mapping.h>
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
+-#include <linux/platform_data/rcar-du.h>
+ 
+ #include <asm/mach/arch.h>
+ 
+-#include "clock.h"
+ #include "common.h"
+-#include "irqs.h"
+ #include "r8a7790.h"
+ #include "rcar-gen2.h"
+ 
+-/* DU */
+-static struct rcar_du_encoder_data lager_du_encoders[] = {
+-	{
+-		.type = RCAR_DU_ENCODER_VGA,
+-		.output = RCAR_DU_OUTPUT_DPAD0,
+-	}, {
+-		.type = RCAR_DU_ENCODER_NONE,
+-		.output = RCAR_DU_OUTPUT_LVDS1,
+-		.connector.lvds.panel = {
+-			.width_mm = 210,
+-			.height_mm = 158,
+-			.mode = {
+-				.pixelclock = 65000000,
+-				.hactive = 1024,
+-				.hfront_porch = 20,
+-				.hback_porch = 160,
+-				.hsync_len = 136,
+-				.vactive = 768,
+-				.vfront_porch = 3,
+-				.vback_porch = 29,
+-				.vsync_len = 6,
+-			},
+-		},
+-	},
+-};
+-
+-static struct rcar_du_platform_data lager_du_pdata = {
+-	.encoders = lager_du_encoders,
+-	.num_encoders = ARRAY_SIZE(lager_du_encoders),
+-};
+-
+-static const struct resource du_resources[] __initconst = {
+-	DEFINE_RES_MEM(0xfeb00000, 0x70000),
+-	DEFINE_RES_MEM_NAMED(0xfeb90000, 0x1c, "lvds.0"),
+-	DEFINE_RES_MEM_NAMED(0xfeb94000, 0x1c, "lvds.1"),
+-	DEFINE_RES_IRQ(gic_spi(256)),
+-	DEFINE_RES_IRQ(gic_spi(268)),
+-	DEFINE_RES_IRQ(gic_spi(269)),
+-};
+-
+-static void __init lager_add_du_device(void)
+-{
+-	struct platform_device_info info = {
+-		.name = "rcar-du-r8a7790",
+-		.id = -1,
+-		.res = du_resources,
+-		.num_res = ARRAY_SIZE(du_resources),
+-		.data = &lager_du_pdata,
+-		.size_data = sizeof(lager_du_pdata),
+-		.dma_mask = DMA_BIT_MASK(32),
+-	};
+-
+-	platform_device_register_full(&info);
+-}
+-
+-/*
+- * This is a really crude hack to provide clkdev support to platform
+- * devices until they get moved to DT.
+- */
+-static const struct clk_name clk_names[] __initconst = {
+-	{ "du0", "du.0", "rcar-du-r8a7790" },
+-	{ "du1", "du.1", "rcar-du-r8a7790" },
+-	{ "du2", "du.2", "rcar-du-r8a7790" },
+-	{ "lvds0", "lvds.0", "rcar-du-r8a7790" },
+-	{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
+-};
+-
+-static void __init lager_add_standard_devices(void)
+-{
+-	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-
+-	lager_add_du_device();
+-}
+-
+ static const char *lager_boards_compat_dt[] __initdata = {
+ 	"renesas,lager",
+ 	"renesas,lager-reference",
+@@ -116,7 +37,6 @@ DT_MACHINE_START(LAGER_DT, "lager")
+ 	.smp		= smp_ops(r8a7790_smp_ops),
+ 	.init_early	= shmobile_init_delay,
+ 	.init_time	= rcar_gen2_timer_init,
+-	.init_machine	= lager_add_standard_devices,
+ 	.init_late	= shmobile_init_late,
+ 	.reserve	= rcar_gen2_reserve,
+ 	.dt_compat	= lager_boards_compat_dt,
 -- 
-2.0.1
+1.8.5.5
 
