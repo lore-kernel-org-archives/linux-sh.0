@@ -1,46 +1,60 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Aug 2014 01:10:07 +0000
-Subject: [PATCH 02/10] ARM: shmobile: sh73a0: Update DTS to include CPU frequency
-Message-Id: <13bd825bdd5c087d156d294b427d05dcf9bff281.1408927601.git.horms+renesas@verge.net.au>
+Date: Wed, 27 Aug 2014 04:59:59 +0000
+Subject: [PATCH 2/3] clocksource: sh_mtu2: Document r7s72100 binding
+Message-Id: <1409115600-26192-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408927601.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408927601.git.horms+renesas@verge.net.au>
+References: <1409115600-26192-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1409115600-26192-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+In general Renesas hardware is not documented to the extent
+where the relationship between IP blocks on different SoCs can be assumed
+although they may appear to operate the same way. Furthermore the
+documentation typically does not specify a version for individual
+IP blocks. For these reasons a convention of using the SoC name in place
+of a version and providing SoC-specific compat strings has been adopted.
 
-Add CPU Frequency information to the sh73a0 DTS file. This
-will allow us to use the shared C code on sh73a0 and KZM9G
-which reads out the clock frequency from DT and calculates the
-delay settings from there.
+Although not universally liked this convention is used in the bindings
+for the drivers a number of drivers for Renesas hardware. The purpose
+of this patch is to update the Renesas R-Car Multi-Function Timer Pulse
+Unit 2 (MTU2) driver to follow this convention.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/sh73a0.dtsi | 2 ++
- 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 910b790..175729e 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -23,11 +23,13 @@
- 			device_type = "cpu";
- 			compatible = "arm,cortex-a9";
- 			reg = <0>;
-+			clock-frequency = <1196000000>;
- 		};
- 		cpu@1 {
- 			device_type = "cpu";
- 			compatible = "arm,cortex-a9";
- 			reg = <1>;
-+			clock-frequency = <1196000000>;
- 		};
- 	};
+---
+* I plan to follow up with a patch patch to use the new binding in the
+  dtsi files for the r7s72100 SoC.
+---
+ Documentation/devicetree/bindings/timer/renesas,mtu2.txt | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
+index 917453f..ec4d334 100644
+--- a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
++++ b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
+@@ -8,7 +8,9 @@ are independent. The MTU2 hardware supports five channels indexed from 0 to 4.
  
+ Required Properties:
+ 
+-  - compatible: must contain "renesas,mtu2"
++  - compatible: must be one of the following.
++    - "renesas,mtu2" for generic MTU2
++    - "renesas,mtu2-r7s72100" for R7S72100 MTU2
+ 
+   - reg: base address and length of the registers block for the timer module.
+ 
+@@ -26,7 +28,7 @@ Required Properties:
+ Example: R7S72100 (RZ/A1H) MTU2 node
+ 
+ 	mtu2: timer@fcff0000 {
+-		compatible = "renesas,mtu2";
++		compatible = "renesas,mtu2-r7s72100", "renesas,mtu2";
+ 		reg = <0xfcff0000 0x400>;
+ 		interrupts = <0 139 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 146 IRQ_TYPE_LEVEL_HIGH>,
 -- 
 2.0.1
 
