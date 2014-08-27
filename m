@@ -1,40 +1,59 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Aug 2014 01:10:06 +0000
-Subject: [PATCH 6/7] ARM: shmobile: r8a7791 dtsi: Remove superfluous interrupt-parent
-Message-Id: <5fb1453c2ff02ce5e5298351ff774e19f8d9dbb3.1408928822.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Aug 2014 16:41:06 +0000
+Subject: [PATCH 09/16] ARM: shmobile: r8a7779: Add DU node to device tree
+Message-Id: <1409157673-4154-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408928822.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408928822.git.horms+renesas@verge.net.au>
+References: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Add the DU device with a disabled state. Boards that want to enable the
+DU need to specify the output topology
 
-There's already an "interrupt-parent = <&gic>;" at the top, which is
-inherited by all child nodes, so the "interrupt-parent" property in
-the sound node can be removed.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/boot/dts/r8a7779.dtsi | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index d62c237..9ee1d41 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1124,7 +1124,6 @@
- 	rcar_sound: rcar_sound@0xec500000 {
- 		#sound-dai-cells = <1>;
- 		compatible =  "renesas,rcar_sound-r8a7791", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
--		interrupt-parent = <&gic>;
- 		reg =	<0 0xec500000 0 0x1000>, /* SCU */
- 			<0 0xec5a0000 0 0x100>,  /* ADG */
- 			<0 0xec540000 0 0x1000>, /* SSIU */
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 559788b..9689314 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -379,6 +379,30 @@
+ 		status = "disabled";
+ 	};
+ 
++	du: du@fff80000 {
++		compatible = "renesas,du-r8a7779";
++		reg = <0 0xfff80000 0 0x40000>;
++		interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7779_CLK_DU>;
++		status = "disabled";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				du_out_rgb0: endpoint {
++				};
++			};
++			port@1 {
++				reg = <1>;
++				du_out_rgb1: endpoint {
++				};
++			};
++		};
++	};
++
+ 	clocks {
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
 -- 
-2.0.1
+1.8.5.5
 
