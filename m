@@ -1,83 +1,48 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 20 Aug 2014 00:24:01 +0000
-Subject: [PATCH 10/12] ARM: shmobile: r8a7790 dtsi: Enable DMA for MSIOF
-Message-Id: <fbff66886b9c5f657b6649a264551ac572fae0b7.1408492753.git.horms+renesas@verge.net.au>
+Date: Wed, 27 Aug 2014 00:35:26 +0000
+Subject: [PATCH v2 5/5] ARM: shmobile: ape6evm: correct memory map syntax
+Message-Id: <1409099726-21814-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408492753.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408492753.git.horms+renesas@verge.net.au>
+References: <1409099726-21814-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1409099726-21814-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Correct a syntax error by using two comma-delimited 32 bit values
+rather than a single 64 bit value.
 
-Add register sets used for access by the DMA engine, and DMA properties to
-the MSIOF nodes.
+This is a documentation fix and should have no run-time affect.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+This problem was introduced when the second memory region
+was added to the ape6evm dts file by by 8353f09f579631d09
+("ARM: shmobile: Include all 2 GiB of memory on APE6EVM") in v3.13.
+
+Cc: Olof Johansson <olof@lixom.net>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7790.dtsi | 16 ++++++++++++----
- 1 file changed, 12 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 6dc328d..60f8551 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -956,9 +956,11 @@
+---
+v2
+* First post
+---
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+index ce085fa..6d3e8fd 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+@@ -25,7 +25,7 @@
+ 		reg = <0 0x40000000 0 0x40000000>;
+ 	};
  
- 	msiof0: spi@e6e20000 {
- 		compatible = "renesas,msiof-r8a7790";
--		reg = <0 0xe6e20000 0 0x0064>;
-+		reg = <0 0xe6e20000 0 0x0064>, <0 0xe7e20000 0 0x0064>;
- 		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7790_CLK_MSIOF0>;
-+		dmas = <&dmac0 0x51>, <&dmac0 0x52>;
-+		dma-names = "tx", "rx";
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		status = "disabled";
-@@ -966,9 +968,11 @@
- 
- 	msiof1: spi@e6e10000 {
- 		compatible = "renesas,msiof-r8a7790";
--		reg = <0 0xe6e10000 0 0x0064>;
-+		reg = <0 0xe6e10000 0 0x0064>, <0 0xe7e10000 0 0x0064>;
- 		interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_MSIOF1>;
-+		dmas = <&dmac0 0x55>, <&dmac0 0x56>;
-+		dma-names = "tx", "rx";
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		status = "disabled";
-@@ -976,9 +980,11 @@
- 
- 	msiof2: spi@e6e00000 {
- 		compatible = "renesas,msiof-r8a7790";
--		reg = <0 0xe6e00000 0 0x0064>;
-+		reg = <0 0xe6e00000 0 0x0064>, <0 0xe7e00000 0 0x0064>;
- 		interrupts = <0 158 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_MSIOF2>;
-+		dmas = <&dmac0 0x41>, <&dmac0 0x42>;
-+		dma-names = "tx", "rx";
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		status = "disabled";
-@@ -986,9 +992,11 @@
- 
- 	msiof3: spi@e6c90000 {
- 		compatible = "renesas,msiof-r8a7790";
--		reg = <0 0xe6c90000 0 0x0064>;
-+		reg = <0 0xe6c90000 0 0x0064>, <0 0xe7c90000 0 0x0064>;
- 		interrupts = <0 159 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_MSIOF3>;
-+		dmas = <&dmac0 0x45>, <&dmac0 0x46>;
-+		dma-names = "tx", "rx";
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		status = "disabled";
+-	memory@200000000 {
++	memory@2,00000000 {
+ 		device_type = "memory";
+ 		reg = <2 0x00000000 0 0x40000000>;
+ 	};
 -- 
 2.0.1
 
