@@ -1,50 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 18 Aug 2014 23:41:39 +0000
-Subject: Re: [PATCH 7/8] ARM: shmobile: r8a7794: document SCIF clock support
-Message-Id: <20140818234139.GH1623@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Aug 2014 16:40:59 +0000
+Subject: [PATCH 02/16] devicetree: Add vendor prefix "thine" to vendor-prefixes.txt
+Message-Id: <1409157673-4154-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1408377107-3822-1-git-send-email-ulrich.hecht+renesas@gmail.com>
- <1408377107-3822-8-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1408377107-3822-8-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Cc: linux-sh@vger.kernel.org, mturquette@linaro.org, magnus.damm@gmail.com, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-serial@vger.kernel.org
+To: dri-devel@lists.freedesktop.org
+Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Mon, Aug 18, 2014 at 05:51:46PM +0200, Ulrich Hecht wrote:
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> ---
->  Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 4 ++++
->  1 file changed, 4 insertions(+)
+Use the company name as vendor prefix.
 
+Cc: devicetree@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ Documentation/devicetree/bindings/vendor-prefixes.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
+index 7292cfc..2b5648b 100644
+--- a/Documentation/devicetree/bindings/vendor-prefixes.txt
++++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
+@@ -134,6 +134,7 @@ st	STMicroelectronics
+ ste	ST-Ericsson
+ stericsson	ST-Ericsson
+ synology	Synology, Inc.
++thine	THine Electronics, Inc.
+ ti	Texas Instruments
+ tlm	Trusted Logic Mobility
+ toradex	Toradex AG
+-- 
+1.8.5.5
 
-Serial patches need to go through Greg KH and the linux-serial ML (both CCed).
-Please consider reposting this patch with them CCed.
-
-> 
-> diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-> index b355660..7b87eb2 100644
-> --- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-> +++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-> @@ -20,6 +20,10 @@ Required properties:
->      - "renesas,scifa-r8a7791" for R8A7791 (R-Car M2) SCIFA compatible UART.
->      - "renesas,scifb-r8a7791" for R8A7791 (R-Car M2) SCIFB compatible UART.
->      - "renesas,hscif-r8a7791" for R8A7791 (R-Car M2) HSCIF compatible UART.
-> +    - "renesas,scif-r8a7794" for R8A7794 (R-Car E2) SCIF compatible UART.
-> +    - "renesas,scifa-r8a7794" for R8A7794 (R-Car E2) SCIFA compatible UART.
-> +    - "renesas,scifb-r8a7794" for R8A7794 (R-Car E2) SCIFB compatible UART.
-> +    - "renesas,hscif-r8a7794" for R8A7794 (R-Car E2) HSCIF compatible UART.
->      - "renesas,scif" for generic SCIF compatible UART.
->      - "renesas,scifa" for generic SCIFA compatible UART.
->      - "renesas,scifb" for generic SCIFB compatible UART.
-> -- 
-> 1.8.4.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
