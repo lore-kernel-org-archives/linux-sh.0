@@ -1,69 +1,37 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 02 Aug 2014 00:04:21 +0000
-Subject: [PATCH v2 1/2] ARM: shmobile: r8a7791: add VIN DT support
-Message-Id: <201408020404.21944.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Aug 2014 16:40:58 +0000
+Subject: [PATCH 01/16] devicetree: Add vendor prefix "mitsubishi" to vendor-prefixes.txt
+Message-Id: <1409157673-4154-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201408020402.14560.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201408020402.14560.sergei.shtylyov@cogentembedded.com>
+References: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org
 
-Define the generic R8A7791 parts of the VIN[0-2] device nodes. Add aliases for
-the VIN[0-2] device nodes. 
+Mitsubishi Electric Corporation has a numerical stock ticker, use the
+company name as vendor prefix.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Cc: devicetree@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Changes in version 2:
-- fixed the "compatible" properties;
-- refreshed the patch.
+ Documentation/devicetree/bindings/vendor-prefixes.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
- arch/arm/boot/dts/r8a7791.dtsi |   27 +++++++++++++++++++++++++++
- 1 file changed, 27 insertions(+)
+diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
+index ac7269f..7292cfc 100644
+--- a/Documentation/devicetree/bindings/vendor-prefixes.txt
++++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
+@@ -83,6 +83,7 @@ maxim	Maxim Integrated Products
+ mediatek	MediaTek Inc.
+ micrel	Micrel Inc.
+ microchip	Microchip Technology Inc.
++mitsubishi	Mitsubishi Electric Corporation
+ mosaixtech	Mosaix Technologies, Inc.
+ moxa	Moxa
+ mpl	MPL AG
+-- 
+1.8.5.5
 
-Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7791.dtsi
-@@ -34,6 +34,9 @@
- 		spi1 = &msiof0;
- 		spi2 = &msiof1;
- 		spi3 = &msiof2;
-+		vin0 = &vin0;
-+		vin1 = &vin1;
-+		vin2 = &vin2;
- 	};
- 
- 	cpus {
-@@ -550,6 +553,30 @@
- 		status = "disabled";
- 	};
- 
-+	vin0: video@e6ef0000 {
-+		compatible = "renesas,vin-r8a7791";
-+		clocks = <&mstp8_clks R8A7791_CLK_VIN0>;
-+		reg = <0 0xe6ef0000 0 0x1000>;
-+		interrupts = <0 188 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	vin1: video@e6ef1000 {
-+		compatible = "renesas,vin-r8a7791";
-+		clocks = <&mstp8_clks R8A7791_CLK_VIN1>;
-+		reg = <0 0xe6ef1000 0 0x1000>;
-+		interrupts = <0 189 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	vin2: video@e6ef2000 {
-+		compatible = "renesas,vin-r8a7791";
-+		clocks = <&mstp8_clks R8A7791_CLK_VIN2>;
-+		reg = <0 0xe6ef2000 0 0x1000>;
-+		interrupts = <0 190 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
