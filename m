@@ -1,80 +1,65 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Aug 2014 01:10:04 +0000
-Subject: [PATCH 4/7] ARM: shmobile: r8a7779 dtsi: Remove superfluous interrupt-parent
-Message-Id: <6a7147f53f29887e627d84c0a562c8bb87691e9d.1408928822.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Aug 2014 16:41:08 +0000
+Subject: [PATCH 11/16] ARM: shmobile: r8a7791: Add DU node to device tree
+Message-Id: <1409157673-4154-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408928822.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408928822.git.horms+renesas@verge.net.au>
+References: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Add the DU device with a disabled state. Boards that want to enable the
+DU need to specify the output topology
 
-There's already an "interrupt-parent = <&gic>;" at the top, which is
-inherited by all child nodes, so the "interrupt-parent" properties in
-the serial nodes can be removed.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7779.dtsi | 6 ------
- 1 file changed, 6 deletions(-)
+ arch/arm/boot/dts/r8a7791.dtsi | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 58d0d95..0e64c76 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -199,7 +199,6 @@
- 	scif0: serial@ffe40000 {
- 		compatible = "renesas,scif-r8a7779", "renesas,scif";
- 		reg = <0xffe40000 0x100>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&cpg_clocks R8A7779_CLK_P>;
- 		clock-names = "sci_ick";
-@@ -209,7 +208,6 @@
- 	scif1: serial@ffe41000 {
- 		compatible = "renesas,scif-r8a7779", "renesas,scif";
- 		reg = <0xffe41000 0x100>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 89 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&cpg_clocks R8A7779_CLK_P>;
- 		clock-names = "sci_ick";
-@@ -219,7 +217,6 @@
- 	scif2: serial@ffe42000 {
- 		compatible = "renesas,scif-r8a7779", "renesas,scif";
- 		reg = <0xffe42000 0x100>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 90 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&cpg_clocks R8A7779_CLK_P>;
- 		clock-names = "sci_ick";
-@@ -229,7 +226,6 @@
- 	scif3: serial@ffe43000 {
- 		compatible = "renesas,scif-r8a7779", "renesas,scif";
- 		reg = <0xffe43000 0x100>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 91 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&cpg_clocks R8A7779_CLK_P>;
- 		clock-names = "sci_ick";
-@@ -239,7 +235,6 @@
- 	scif4: serial@ffe44000 {
- 		compatible = "renesas,scif-r8a7779", "renesas,scif";
- 		reg = <0xffe44000 0x100>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 92 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&cpg_clocks R8A7779_CLK_P>;
- 		clock-names = "sci_ick";
-@@ -249,7 +244,6 @@
- 	scif5: serial@ffe45000 {
- 		compatible = "renesas,scif-r8a7779", "renesas,scif";
- 		reg = <0xffe45000 0x100>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 93 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&cpg_clocks R8A7779_CLK_P>;
- 		clock-names = "sci_ick";
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 8a07505..d5f9ae06 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -637,6 +637,36 @@
+ 		status = "disabled";
+ 	};
+ 
++	du: du@feb00000 {
++		compatible = "renesas,du-r8a7791";
++		reg = <0 0xfeb00000 0 0x40000>,
++		      <0 0xfeb90000 0 0x1c>;
++		reg-names = "du", "lvds.0";
++		interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 268 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7791_CLK_DU0>,
++		         <&mstp7_clks R8A7791_CLK_DU1>,
++		         <&mstp7_clks R8A7791_CLK_LVDS0>;
++		clock-names = "du.0", "du.1", "lvds.0";
++		status = "disabled";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				du_out_rgb: endpoint {
++				};
++			};
++			port@1 {
++				reg = <1>;
++				du_out_lvds0: endpoint {
++				};
++			};
++		};
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 -- 
-2.0.1
+1.8.5.5
 
