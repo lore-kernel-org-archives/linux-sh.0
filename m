@@ -1,60 +1,74 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Aug 2014 01:10:02 +0000
-Subject: [PATCH 2/7] ARM: shmobile: r8a7791: Add JPU clock dt and CPG define.
-Message-Id: <ed48b5d6fd339d145df5a6a1e48cf56ef265cf4f.1408928822.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Aug 2014 16:41:07 +0000
+Subject: [PATCH 10/16] ARM: shmobile: r8a7790: Add DU node to device tree
+Message-Id: <1409157673-4154-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408928822.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408928822.git.horms+renesas@verge.net.au>
+References: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+Add the DU device with a disabled state. Boards that want to enable the
+DU need to specify the output topology.
 
-Signed-off-by: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi            | 6 +++---
- include/dt-bindings/clock/r8a7791-clock.h | 1 +
- 2 files changed, 4 insertions(+), 3 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 39 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index f26226e..d62c237 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -857,16 +857,16 @@
- 		mstp1_clks: mstp1_clks@e6150134 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
--			clocks = <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
-+			clocks = <&m2_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
- 				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
--				R8A7791_CLK_TMU1 R8A7791_CLK_TMU3 R8A7791_CLK_TMU2
-+				R8A7791_CLK_JPU R8A7791_CLK_TMU1 R8A7791_CLK_TMU3 R8A7791_CLK_TMU2
- 				R8A7791_CLK_CMT0 R8A7791_CLK_TMU0 R8A7791_CLK_VSP1_DU1
- 				R8A7791_CLK_VSP1_DU0 R8A7791_CLK_VSP1_S
- 			>;
- 			clock-output-names -				"tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
-+				"jpu", "tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
- 				"vsp1-du0", "vsp1-sy";
- 		};
- 		mstp2_clks: mstp2_clks@e6150138 {
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index f0d4d10..58c3f49 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -25,6 +25,7 @@
- #define R8A7791_CLK_MSIOF0		0
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index a3cd307..a1617b7 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -600,6 +600,45 @@
+ 		status = "disabled";
+ 	};
  
- /* MSTP1 */
-+#define R8A7791_CLK_JPU		6
- #define R8A7791_CLK_TMU1		11
- #define R8A7791_CLK_TMU3		21
- #define R8A7791_CLK_TMU2		22
++	du: du@feb00000 {
++		compatible = "renesas,du-r8a7790";
++		reg = <0 0xfeb00000 0 0x70000>,
++		      <0 0xfeb90000 0 0x1c>,
++		      <0 0xfeb94000 0 0x1c>;
++		reg-names = "du", "lvds.0", "lvds.1";
++		interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 268 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 269 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7790_CLK_DU0>,
++		         <&mstp7_clks R8A7790_CLK_DU1>,
++		         <&mstp7_clks R8A7790_CLK_DU2>,
++		         <&mstp7_clks R8A7790_CLK_LVDS0>,
++		         <&mstp7_clks R8A7790_CLK_LVDS1>;
++		clock-names = "du.0", "du.1", "du.2", "lvds.0", "lvds.1";
++		status = "disabled";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				du_out_rgb: endpoint {
++				};
++			};
++			port@1 {
++				reg = <1>;
++				du_out_lvds0: endpoint {
++				};
++			};
++			port@2 {
++				reg = <2>;
++				du_out_lvds1: endpoint {
++				};
++			};
++		};
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 -- 
-2.0.1
+1.8.5.5
 
