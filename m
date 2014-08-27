@@ -1,49 +1,60 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Wed, 06 Aug 2014 20:36:23 +0000
-Subject: Re: [PATCH 07/12] spi: sh-msiof: Configure DMA slave bus width
-Message-Id: <20140806203623.GW17528@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="kJlOB0td3EGXEEtS"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 27 Aug 2014 05:28:20 +0000
+Subject: [PATCH 3/3 repost] clocksource: sh_tmu: Document r8a7779 binding
+Message-Id: <1409117300-2133-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
- <1407329949-5695-8-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1407329949-5695-8-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
-To: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
-Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+References: <1409117300-2133-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1409117300-2133-1-git-send-email-horms+renesas@verge.net.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+In general Renesas hardware is not documented to the extent
+where the relationship between IP blocks on different SoCs can be assumed
+although they may appear to operate the same way. Furthermore the
+documentation typically does not specify a version for individual
+IP blocks. For these reasons a convention of using the SoC name in place
+of a version and providing SoC-specific compat strings has been adopted.
 
---kJlOB0td3EGXEEtS
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Although not universally liked this convention is used in the bindings
+for the drivers a number of drivers for Renesas hardware. The purpose
+of this patch is to update the Renesas R-Car Timer Unit (TMU)
+driver to follow this convention.
 
-On Wed, Aug 06, 2014 at 02:59:04PM +0200, Geert Uytterhoeven wrote:
-> The new Renesas R-Car Gen2 DMA Controller driver (rcar-dmac) requires
-> explicit configuration of the DMA slave bus width.
-> Hardcode the DMA transfer size to 4 bytes, as MSIOF DMA is limited to
-> 32-bit words.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Applied, thanks.
+---
+* I plan to follow up with a patch patch to use the new binding in the
+  dtsi files for the r8a7779 SoC.
+---
+ Documentation/devicetree/bindings/timer/renesas,tmu.txt | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
---kJlOB0td3EGXEEtS
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+diff --git a/Documentation/devicetree/bindings/timer/renesas,tmu.txt b/Documentation/devicetree/bindings/timer/renesas,tmu.txt
+index 425d0c5..712ddfa 100644
+--- a/Documentation/devicetree/bindings/timer/renesas,tmu.txt
++++ b/Documentation/devicetree/bindings/timer/renesas,tmu.txt
+@@ -8,7 +8,9 @@ are independent. The TMU hardware supports up to three channels.
+ 
+ Required Properties:
+ 
+-  - compatible: must contain "renesas,tmu"
++  - compatible: must contain one of the following.
++    - "renesas,tmu" generic TMU
++    - "renesas,tmu-r8a7779" R8A7779 TMU
+ 
+   - reg: base address and length of the registers block for the timer module.
+ 
+@@ -27,7 +29,7 @@ Optional Properties:
+ Example: R8A7779 (R-Car H1) TMU0 node
+ 
+ 	tmu0: timer@ffd80000 {
+-		compatible = "renesas,tmu";
++		compatible = "renesas,tmu-r8a7779", "renesas,tmu";
+ 		reg = <0xffd80000 0x30>;
+ 		interrupts = <0 32 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 33 IRQ_TYPE_LEVEL_HIGH>,
+-- 
+2.0.1
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAEBAgAGBQJT4pHEAAoJELSic+t+oim9VMoP/1EgrIQwtywULQg02bazBtOY
-OllfIauTXe1qr49RfFRr1elpp5G6/vlGb+0gQytNXajCJWXXOg9iaSBNESYkpawX
-XXXK65GJi88BKRtUHjmTpaFJpteWz2ZpaBWP0oAeY/Tpm4Q6l1p1x6ZktldS6NM3
-EC7uBWqxbRbcBS7eJZ3TtlZsjFFmsq9GUqEH966V3KS583T3w/VwNZgDPVjDgsLm
-EHH9zb3EzbyjXZWF8pfC34Gt8b6Bn/prm4kkgtLfWxEJfHF+SbAmXDO5zJZuHqee
-ynZ9oYGKyj8iLaNsfA9lkSsv+GTwcSxlQNUeaOORxB2u1rX/95Q/Pzz8PTa/fZEP
-P3rxx3pr8psSXim2LN01q1oPIgvzKau/jA3M4eyOWQgOlBa0Dxo6piyqQW7PR7zp
-XT8yUqaQMXa2mjptFD+A0idDTy3X9RVTE1ujFhFXk/BVQey1cKxxfH4gomdksYwL
-L1So+jd1T9W4sbzBVUfjVZKCI0oV7bbjZ5mtDH5TAzjXwPcvDx0yiGU9BLmgn6uT
-2WHkblSY+2gqoz7g5FGXQkAi2M4oqlSKgq1DjUfFgdk0dszi+cG8lfEQlGaVcl+x
-PPkjfSCJlyZPKQo1Iygd8m8i8611Mjo4J7qtfjDmsbpoxTA+wJ1XzbgtI2wS0PUR
-ftmcVSRsiuXFebAac7bW
-=+Yjb
------END PGP SIGNATURE-----
-
---kJlOB0td3EGXEEtS--
