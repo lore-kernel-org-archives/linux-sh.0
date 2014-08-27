@@ -1,39 +1,52 @@
-From: keita kobayashi <keita.kobayashi.ym@renesas.com>
-Date: Fri, 01 Aug 2014 09:48:07 +0000
-Subject: [PATCH 0/6] ARM: shmobile: Add Core-Standby for CPUIDLE
-Message-Id: <53DB6257.7090109@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 27 Aug 2014 00:35:22 +0000
+Subject: [PATCH v2 1/5] ARM: shmobile: lager: correct memory map value and syntax
+Message-Id: <1409099726-21814-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1409099726-21814-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1409099726-21814-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org
-Cc: horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, rjw@rjwysocki.net
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon and Rafael
+The base address of the second memory region on the lager
+board is 0x140000000. Update the tag used in the dts file accordingly.
 
-These patches add Core-Standby state for CPUIDLE support
-to the r8a7790/r8a7791 SoCs. This patch series was tested on
-both Lager and Koelsch board.
+Also correct a syntax error by using two comma-delimited 32 bit values
+rather than a single 64 bit value.
 
-This patch series is based on renesas-devel-v3.16-rc7-20140731v2 tag
+This is a documentation fix and should have no run-time affect.
 
-Keita Kobayashi (6):
-  ARM: shmobile: APMU: Move the shmobile_smp_hook call
-  ARM: shmobile: APMU: Add CPUIdle function
-  cpuidle: shmobile: Add CPUIdle driver
-  ARM: shmobile: Add initialization cpuidle
-  ARM: shmobile: Add CPU notifier for CPUIdle boot vector
-  ARM: shmobile: Enable CPUIdle configuration for shmobile_defconfig
+This problem was introduced when the second memory region
+was added to the lager dts file by 62bc32a2573c4219
+("ARM: shmobile: Include all 4 GiB of memory on Lager)" in v3.14.
 
- arch/arm/configs/shmobile_defconfig   |    2 +
- arch/arm/mach-shmobile/common.h       |    1 +
- arch/arm/mach-shmobile/cpuidle.c      |   46 +++++++++++++++++++++
- arch/arm/mach-shmobile/platsmp-apmu.c |   21 ++++++++--
- drivers/cpuidle/Kconfig.arm           |    6 +++
- drivers/cpuidle/Makefile              |    1 +
- drivers/cpuidle/cpuidle-shmobile.c    |   71 +++++++++++++++++++++++++++++++++
- 7 files changed, 145 insertions(+), 3 deletions(-)
- create mode 100644 drivers/cpuidle/cpuidle-shmobile.c
+Cc: Olof Johansson <olof@lixom.net>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>
+Reported-by: NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
+---
+v2
+* Correct syntax as well as value
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 0118cbf..9586c35 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -32,7 +32,7 @@
+ 		reg = <0 0x40000000 0 0x40000000>;
+ 	};
+ 
+-	memory@180000000 {
++	memory@1,40000000 {
+ 		device_type = "memory";
+ 		reg = <1 0x40000000 0 0xc0000000>;
+ 	};
 -- 
-1.7.9.5
+2.0.1
+
