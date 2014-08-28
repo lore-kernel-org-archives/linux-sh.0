@@ -1,86 +1,65 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 25 Aug 2014 00:41:30 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Updates for v3.18
-Message-Id: <20140825004130.GA17055@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Thu, 28 Aug 2014 02:24:24 +0000
+Subject: [PATCH v4] mmc: tmio: ensure that the clock has been stopped before set_clock
+Message-Id: <87bnr5ic6h.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408671240.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408671240.git.horms+renesas@verge.net.au>
+References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
+	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
+	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
+	<53AD638C.5060907@renesas.com>
+	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
+	<87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
+	<CAPDyKFrzr_tjLFqZ1nQg63Zfr0xRAf71HWAmge6DcMzTkwCLiQ@mail.gmail.com>
+In-Reply-To: <CAPDyKFrzr_tjLFqZ1nQg63Zfr0xRAf71HWAmge6DcMzTkwCLiQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ulf Hansson <ulf.hansson@linaro.org>
+Cc: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-On Sat, Aug 23, 2014 at 10:44:20AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these Renesas ARM based SoC updates for v3.18.
-> 
-> 
-> The following changes since commit 7d1311b93e58ed55f3a31cc8f94c4b8fe988a2b9:
-> 
->   Linux 3.17-rc1 (2014-08-16 10:40:26 -0600)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-for-v3.18
-> 
-> for you to fetch changes up to 5ac9e7f35db00e630c9f95a1f73ac329371cdbbf:
-> 
->   ARM: shmobile: sh73a0: Remove unneeded nr_irqs initialization (2014-08-20 09:09:24 +0900)
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This pull request has a minor conflict in
-arch/arm/mach-shmobile/setup-r8a7779.c with
-"ARM: shmobile: marzen-reference: Enable TMU0 in device tree" which
-is included in the pull request "Renesas ARM Based SoC DT Timers Updates
-for v3.18" which is tagged as renesas-dt-timers-for-v3.18.
+This patch ensures that the clock has been stopped before
+it calls tmio_mmc_set_clock().
+The clock settings might be failed without this patch
 
-The resolution is to take the changes from both branches.
-The DT_MACHINE_START stanza should end up as follows:
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v3 -> v4
 
-DT_MACHINE_START(R8A7779_DT, "Generic R8A7779 (Flattened Device Tree)")
-        .map_io         = r8a7779_map_io,
-        .init_early     = shmobile_init_delay,
-        .init_irq       = r8a7779_init_irq_dt,
-        .init_late      = shmobile_init_late,
-        .dt_compat      = r8a7779_compat_dt,
-MACHINE_END
+ - based on latest git://git.linaro.org/people/ulf.hansson/mmc.git#next
 
-This resolution is available in renesas-next-20140820-v3.17-rc1
-tag of the next branch of the renesas tree.
+ drivers/mmc/host/tmio_mmc_pio.c |    3 +++
+ 1 file changed, 3 insertions(+)
 
-> ----------------------------------------------------------------
-> Renesas ARM Based SoC Updates for v3.18
-> 
-> * Remove unnecessary nr_irqs initialisation on sh73a0, sh7372,
->   and r8a7779 SoCs
-> * Use defines hardcoded numbers for DMA
-> * Rework multiplatform include workaround
-> * Correctly use shmobile_init_late on a wider range of SoCs
-> 
-> ----------------------------------------------------------------
-> Geert Uytterhoeven (4):
->       ARM: shmobile: r8a7778: Add missing call to shmobile_init_late()
->       ARM: shmobile: dma: Use defines instead of hardcoded numbers
->       ARM: shmobile: sh7372: Remove unneeded nr_irqs initialization
->       ARM: shmobile: sh73a0: Remove unneeded nr_irqs initialization
-> 
-> Magnus Damm (7):
->       ARM: shmobile: sh73a0: Add shmobile_init_late()
->       ARM: shmobile: r8a7779: Fix shmobile_init_late()
->       ARM: shmobile: r8a7778: Fix shmobile_init_late()
->       ARM: shmobile: r8a73a4: Add shmobile_init_late()
->       ARM: shmobile: r7s72100: Add shmobile_init_late()
->       ARM: shmobile: Rework multiplatform include workaround
->       ARM: shmobile: r8a7779: Remove NR_IRQS_LEGACY
-> 
->  arch/arm/mach-shmobile/Makefile         | 2 --
->  arch/arm/mach-shmobile/dma-register.h   | 4 ++--
->  arch/arm/mach-shmobile/irqs.h           | 2 +-
->  arch/arm/mach-shmobile/setup-r7s72100.c | 1 +
->  arch/arm/mach-shmobile/setup-r8a73a4.c  | 1 +
->  arch/arm/mach-shmobile/setup-r8a7778.c  | 3 ++-
->  arch/arm/mach-shmobile/setup-r8a7779.c  | 3 +--
->  arch/arm/mach-shmobile/setup-sh7372.c   | 1 -
->  arch/arm/mach-shmobile/setup-sh73a0.c   | 2 +-
->  9 files changed, 9 insertions(+), 10 deletions(-)
-> 
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index ba45413..7289331 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -924,12 +924,14 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 		tmio_mmc_clk_stop(host);
+ 		break;
+ 	case MMC_POWER_UP:
++		tmio_mmc_clk_stop(host);
+ 		tmio_mmc_set_clock(host, ios->clock);
+ 		tmio_mmc_power_on(host, ios->vdd);
+ 		tmio_mmc_clk_start(host);
+ 		tmio_mmc_set_bus_width(host, ios->bus_width);
+ 		break;
+ 	case MMC_POWER_ON:
++		tmio_mmc_clk_stop(host);
+ 		tmio_mmc_set_clock(host, ios->clock);
+ 		tmio_mmc_clk_start(host);
+ 		tmio_mmc_set_bus_width(host, ios->bus_width);
+@@ -1199,6 +1201,7 @@ int tmio_mmc_host_runtime_resume(struct device *dev)
+ 	tmio_mmc_clk_update(host);
+ 
+ 	if (host->clk_cache) {
++		tmio_mmc_clk_stop(host);
+ 		tmio_mmc_set_clock(host, host->clk_cache);
+ 		tmio_mmc_clk_start(host);
+ 	}
+-- 
+1.7.9.5
+
