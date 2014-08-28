@@ -1,81 +1,54 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 22 Aug 2014 01:56:54 +0000
-Subject: Re: [PATCH 4/6] ARM: shmobile: r8a7791: Add JPU clock dt and CPG define.
-Message-Id: <20140822015653.GE9099@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 28 Aug 2014 08:07:19 +0000
+Subject: [PATCH v2] mmc: tmio-mmc: Add support for SDHI on new R-Car Gen2 SoCs
+Message-Id: <1409213239-5413-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1408452653-14067-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
- <1408452653-14067-5-git-send-email-mikhail.ulyanov@cogentembedded.com>
- <1671726.SQHuEtA4A1@avalon>
-In-Reply-To: <1671726.SQHuEtA4A1@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>, m.chehab@samsung.com, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, linux-sh@vger.kernel.org, linux-media@vger.kernel.org, devicetree@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <chris@printf.net>
+Cc: devicetree@vger.kernel.org, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Thu, Aug 21, 2014 at 01:07:25AM +0200, Laurent Pinchart wrote:
-> Hi Mikhail,
-> 
-> Thank you for the patch.
-> 
-> On Tuesday 19 August 2014 16:50:51 Mikhail Ulyanov wrote:
-> 
-> A commit message would be nice.
-> 
-> > Signed-off-by: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+  - r8a7792 (R-Car V2H)
+  - r8a7793 (R-Car M2-N)
+  - r8a7794 (R-Car E2)
 
-Thanks, I have queued this up.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2: Drop RFC
+---
+ Documentation/devicetree/bindings/mmc/tmio_mmc.txt | 3 +++
+ drivers/mmc/host/sh_mobile_sdhi.c                  | 3 +++
+ 2 files changed, 6 insertions(+)
 
-> 
-> > ---
-> >  arch/arm/boot/dts/r8a7791.dtsi            | 6 +++---
-> >  include/dt-bindings/clock/r8a7791-clock.h | 1 +
-> >  2 files changed, 4 insertions(+), 3 deletions(-)
-> > 
-> > diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-> > index 152c75c..c2d0c6e 100644
-> > --- a/arch/arm/boot/dts/r8a7791.dtsi
-> > +++ b/arch/arm/boot/dts/r8a7791.dtsi
-> > @@ -889,16 +889,16 @@
-> >  		mstp1_clks: mstp1_clks@e6150134 {
-> >  			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-
-> clocks";
-> >  			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
-> > -			clocks = <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
-> > +			clocks = <&m2_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
-> >  				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>;
-> >  			#clock-cells = <1>;
-> >  			renesas,clock-indices = <
-> > -				R8A7791_CLK_TMU1 R8A7791_CLK_TMU3 R8A7791_CLK_TMU2
-> > +				R8A7791_CLK_JPU R8A7791_CLK_TMU1 R8A7791_CLK_TMU3 
-> R8A7791_CLK_TMU2
-> >  				R8A7791_CLK_CMT0 R8A7791_CLK_TMU0 R8A7791_CLK_VSP1_DU1
-> >  				R8A7791_CLK_VSP1_DU0 R8A7791_CLK_VSP1_S
-> > 
-> >  			>;
-> > 
-> >  			clock-output-names > > -				"tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
-> > +				"jpu", "tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
-> >  				"vsp1-du0", "vsp1-sy";
-> >  		};
-> >  		mstp2_clks: mstp2_clks@e6150138 {
-> > diff --git a/include/dt-bindings/clock/r8a7791-clock.h
-> > b/include/dt-bindings/clock/r8a7791-clock.h index f0d4d10..58c3f49 100644
-> > --- a/include/dt-bindings/clock/r8a7791-clock.h
-> > +++ b/include/dt-bindings/clock/r8a7791-clock.h
-> > @@ -25,6 +25,7 @@
-> >  #define R8A7791_CLK_MSIOF0		0
-> > 
-> >  /* MSTP1 */
-> > +#define R8A7791_CLK_JPU		6
-> >  #define R8A7791_CLK_TMU1		11
-> >  #define R8A7791_CLK_TMU3		21
-> >  #define R8A7791_CLK_TMU2		22
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
+diff --git a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
+index fa0f327cde01..400b640fabc7 100644
+--- a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
++++ b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
+@@ -19,6 +19,9 @@ Required properties:
+ 		"renesas,sdhi-r8a7779" - SDHI IP on R8A7779 SoC
+ 		"renesas,sdhi-r8a7790" - SDHI IP on R8A7790 SoC
+ 		"renesas,sdhi-r8a7791" - SDHI IP on R8A7791 SoC
++		"renesas,sdhi-r8a7792" - SDHI IP on R8A7792 SoC
++		"renesas,sdhi-r8a7793" - SDHI IP on R8A7793 SoC
++		"renesas,sdhi-r8a7794" - SDHI IP on R8A7794 SoC
+ 
+ Optional properties:
+ - toshiba,mmc-wrprotect-disable: write-protect detection is unavailable
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index d5d493719491..f2585b6c1414 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -72,6 +72,9 @@ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
+ 	{ .compatible = "renesas,sdhi-r8a7779", .data = &of_rcar_gen1_compatible, },
+ 	{ .compatible = "renesas,sdhi-r8a7790", .data = &of_rcar_gen2_compatible, },
+ 	{ .compatible = "renesas,sdhi-r8a7791", .data = &of_rcar_gen2_compatible, },
++	{ .compatible = "renesas,sdhi-r8a7792", .data = &of_rcar_gen2_compatible, },
++	{ .compatible = "renesas,sdhi-r8a7793", .data = &of_rcar_gen2_compatible, },
++	{ .compatible = "renesas,sdhi-r8a7794", .data = &of_rcar_gen2_compatible, },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, sh_mobile_sdhi_of_match);
+-- 
+1.9.1
+
