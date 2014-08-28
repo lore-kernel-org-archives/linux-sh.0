@@ -1,55 +1,46 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 07 Aug 2014 12:51:54 +0000
-Subject: Re: [PATCH 2/2] spi: sh-msiof: Fix transmit-only DMA transfers
-Message-Id: <1519133.I1M5gTHUZc@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 28 Aug 2014 08:28:09 +0000
+Subject: [PATCH] ARM: shmobile: r8a7791 is now called "R-Car M2-W"
+Message-Id: <1409214489-6458-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMuHMdUd3OKqDwhLSCMW-rEQSnWky+saN5TgC005rkmNPfEL+g@mail.gmail.com> <1407413263-20177-1-git-send-email-geert+renesas@glider.be> <1407413263-20177-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1407413263-20177-2-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Mark Brown <broonie@kernel.org>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Geert,
+As per recent revisions of the datasheet.
 
-On Thursday 07 August 2014 14:07:43 Geert Uytterhoeven wrote:
-> Fix tx/rx mixup, which broke transmit-only transfers.
-> 
-> Introduced by commit 4240305f7cbdc7782aa8bc40cc702775d9ac0839
-> ("spi: sh-msiof: Fix leaking of unused DMA descriptors").
-> 
-> Reported-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+All remaining references to "M2" are in DT binding documentation or Kconfig
+(drivers/iommu/Kconfig only) that still needs to be updated for new R-Car Gen2
+SoCs.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+ arch/arm/mach-shmobile/Kconfig | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-> ---
-> Feel free to fold into commit 4240305f7cbdc7782aa8bc40cc702775d9ac0839
-> ("spi: sh-msiof: Fix leaking of unused DMA descriptors")
-> ---
->  drivers/spi/spi-sh-msiof.c | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-> index 0d9ccd0953de..5ee13a2d93df 100644
-> --- a/drivers/spi/spi-sh-msiof.c
-> +++ b/drivers/spi/spi-sh-msiof.c
-> @@ -689,9 +689,9 @@ static int sh_msiof_dma_once(struct sh_msiof_spi_priv
-> *p, const void *tx, reinit_completion(&p->done);
-> 
->  	/* Now start DMA */
-> -	if (tx)
-> -		dma_async_issue_pending(p->master->dma_rx);
->  	if (rx)
-> +		dma_async_issue_pending(p->master->dma_rx);
-> +	if (tx)
->  		dma_async_issue_pending(p->master->dma_tx);
-> 
->  	ret = sh_msiof_spi_start(p, rx);
-
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index c1023d758eeb..112e857d2c1c 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -64,7 +64,7 @@ config ARCH_R8A7790
+ 	select ARCH_RCAR_GEN2
+ 
+ config ARCH_R8A7791
+-	bool "R-Car M2 (R8A77910)"
++	bool "R-Car M2-W (R8A77910)"
+ 	select ARCH_RCAR_GEN2
+ 
+ comment "Renesas ARM SoCs Board Type"
+@@ -142,7 +142,7 @@ config ARCH_R8A7790
+ 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
+ 
+ config ARCH_R8A7791
+-	bool "R-Car M2 (R8A77910)"
++	bool "R-Car M2-W (R8A77910)"
+ 	select ARCH_RCAR_GEN2
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
