@@ -1,25 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 04 Aug 2014 07:08:13 +0000
-Subject: Re: [PATCH v2 0/2] Add VIN and ADV7180 device tree support for R8A7791/Henninger board
-Message-Id: <20140804070813.GB1889@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 28 Aug 2014 03:34:43 +0000
+Subject: [PATCH 00/05] ARM: shmobile: r8a7740 and Armadillo cleanup
+Message-Id: <20140828033443.18867.55162.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201408020402.14560.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201408020402.14560.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Sat, Aug 02, 2014 at 04:02:13AM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
->    Here's the set of 2 patches against Simon Horman's 'renesas.git' repo,
-> 'renesas-devel-v3.16-rc7-20140731v2' tag. Here we add the VIN and ADV7180 video
-> decoder device tree support on the R8A7791/Henninger board. The patchset
-> requires Ben Dooks' 'rcar_vin' and 'soc_camera' DT support patches already
-> merged to the 'media_tree.git' in order to work.
-> 
-> [1/2] ARM: shmobile: r8a7791: add VIN DT support
-> [2/2] ARM: shmobile: henninger: add VIN0/ADV7180 DT support
+ARM: shmobile: r8a7740 and Armadillo cleanup
 
-Thanks, I have queued these up for v3.18.
+[PATCH 01/05] ARM: shmobile: armadillo800eva: Sync DTS
+[PATCH 02/05] ARM: shmobile: armadillo800eva: Build DTS for multiplatform
+[PATCH 03/05] ARM: shmobile: r8a7740: Add restart callback
+[PATCH 04/05] ARM: shmobile: armadillo800eva reference: Remove C board code
+[PATCH 05/05] ARM: shmobile: armadillo800eva reference: Remove DTS
+
+This patch series cleans up the Armadillo board support by removing
+the DT reference implementation. To not lose functionality the reset
+handling code is moved from (incorrect) board specific location to
+the r8a7740 SoC code.
+
+With this patch series applied the "DT Reference" case is now replaced
+by r8a7740 Multiplatform using the same DTS/DTB as the r8a7740 legacy
+case.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ Built on top of renesas-devel-20140827-v3.17-rc2
+
+ arch/arm/boot/dts/Makefile                               |    2 
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts  |  300 --------------
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts            |  276 ++++++++++++
+ arch/arm/mach-shmobile/Kconfig                           |   15 
+ arch/arm/mach-shmobile/Makefile                          |    1 
+ arch/arm/mach-shmobile/Makefile.boot                     |    1 
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c |  199 ---------
+ arch/arm/mach-shmobile/setup-r8a7740.c                   |    8 
+ 8 files changed, 284 insertions(+), 518 deletions(-)
