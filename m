@@ -1,60 +1,51 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 28 Aug 2014 08:10:19 +0000
-Subject: [PATCH v2] spi: rspi: Add support for new R-Car Gen2 SoCs
-Message-Id: <1409213419-5507-1-git-send-email-geert+renesas@glider.be>
+From: Mark Brown <broonie@kernel.org>
+Date: Thu, 28 Aug 2014 14:33:42 +0000
+Subject: Re: [PATCH v2] spi: rspi: Add support for new R-Car Gen2 SoCs
+Message-Id: <20140828143342.GA29327@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="G4iJoqBmSsgzjUCe"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: devicetree@vger.kernel.org, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+References: <1409213419-5507-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1409213419-5507-1-git-send-email-geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: devicetree@vger.kernel.org, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org
 
-Add support for QSPI in:
-  - r8a7792 (R-Car V2H)
-  - r8a7793 (R-Car M2-N)
-  - r8a7794 (R-Car E2)
 
-r8a7791 is now called "R-Car M2-W".
+--G4iJoqBmSsgzjUCe
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-v2:
-  - Drop RFC
-  - Replace an "M2" by "Gen2"
----
- Documentation/devicetree/bindings/spi/spi-rspi.txt | 5 ++++-
- drivers/spi/spi-rspi.c                             | 2 +-
- 2 files changed, 5 insertions(+), 2 deletions(-)
+On Thu, Aug 28, 2014 at 10:10:19AM +0200, Geert Uytterhoeven wrote:
+> Add support for QSPI in:
+>   - r8a7792 (R-Car V2H)
+>   - r8a7793 (R-Car M2-N)
+>   - r8a7794 (R-Car E2)
+>=20
+> r8a7791 is now called "R-Car M2-W".
 
-diff --git a/Documentation/devicetree/bindings/spi/spi-rspi.txt b/Documentation/devicetree/bindings/spi/spi-rspi.txt
-index f9929aceeacc..8f4169f63936 100644
---- a/Documentation/devicetree/bindings/spi/spi-rspi.txt
-+++ b/Documentation/devicetree/bindings/spi/spi-rspi.txt
-@@ -11,7 +11,10 @@ Required properties:
- 		        - "renesas,rspi-sh7757" (SH)
- 			- "renesas,rspi-r7s72100" (RZ/A1H)
- 			- "renesas,qspi-r8a7790" (R-Car H2)
--			- "renesas,qspi-r8a7791" (R-Car M2)
-+			- "renesas,qspi-r8a7791" (R-Car M2-W)
-+			- "renesas,qspi-r8a7792" (R-Car V2H)
-+			- "renesas,qspi-r8a7793" (R-Car M2-N)
-+			- "renesas,qspi-r8a7794" (R-Car E2)
- - reg              : Address start and address range size of the device
- - interrupts       : A list of interrupt-specifiers, one for each entry in
- 		     interrupt-names.
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 1da609e4491d..54bb0faec155 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -87,7 +87,7 @@
- /* RSPI on SH only */
- #define SPCR_TXMD		0x02	/* TX Only Mode (vs. Full Duplex) */
- #define SPCR_SPMS		0x01	/* 3-wire Mode (vs. 4-wire) */
--/* QSPI on R-Car M2 only */
-+/* QSPI on R-Car Gen2 only */
- #define SPCR_WSWAP		0x02	/* Word Swap of read-data for DMAC */
- #define SPCR_BSWAP		0x01	/* Byte Swap of read-data for DMAC */
- 
--- 
-1.9.1
+Applied, thanks.
 
+--G4iJoqBmSsgzjUCe
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBAgAGBQJT/z3CAAoJELSic+t+oim9PrEP/2XoVZ+UW472VbDvmzLJ6QLc
+s7yFVHmILvNIVKec4SYRZ4HRMUD387ieKeAc//oPKG06RmuP41gxaVNf5X4t1J2r
+Lh4D/LsNSeGFoI633qn3+ZpzV/15CJCTfz2J/YG1ZwY22ba0Yopj3Uh/ehO2CSQc
+Z2Bl3Ud33d6pKFavbL67z4rh11L/kOhCgv+QDGaDg8WKBdksDl/KXhkJ8M6E/kdo
+TY0v3dA5V7YYMZWnIYAGU8Q9VfWxiTWppJcEgU5TOSaCNqxeYzH1A+hMNKoe/2td
+2LzgxkRHZbZQOh98Zzv3n2XvobeGW5pkHPNUD+RZrrgFuIWJruI1LFJ7R4aNjlWI
+nemmR9jzxPmlxcsFzT1f/+ih75ODyMSooaP97HsP/Us9kra2Cdu921O4NFSRO0QD
+oOLWyNM0P61x9qotwlrq8kBCx4EwhR/SaVamYPkEQVo7blKn5YyAswuVD17I1pV4
+31UCS6O5buvyZi8LN+PK3YEqMqMMNQmRcK6gxb3q+rzxJa3OBaefNJ2K/rCSfw0/
+8ScT607aCOghYGaj4l72szHKR/mto7JNjRdf/zNd7JY7RpZjszKTxuLr3/PROnmv
+kUkmwvphJ1nIui+ngX0tMl0bR/S+ZWurdC0+oNAKlPg13NffwfQHfcxvWP/+YuS7
+yZn8kYIO6rU2hFqEGEU7
+=Q1Xr
+-----END PGP SIGNATURE-----
+
+--G4iJoqBmSsgzjUCe--
