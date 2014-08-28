@@ -1,98 +1,69 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 04 Aug 2014 10:48:03 +0000
-Subject: [PATCH v2 2/2] usb: renesas_usbhs: Add device tree support for R-Car H2 and M2
-Message-Id: <53DF64E3.6040000@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 28 Aug 2014 12:40:22 +0000
+Subject: [PATCH] ARM: shmobile: Enable Armadillo 800 EVA board in multiplatform defconfig
+Message-Id: <1409229622-11566-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: SH-Linux <linux-sh@vger.kernel.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>
-Cc: "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-This driver supports other SoCs, but they need boards/Soc depend code.
-So, this patch adds device tree support for R-Car H2 and M2 initially.
-
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/usb/renesas_usbhs/common.c |   44 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 44 insertions(+)
+ arch/arm/configs/shmobile_defconfig | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-diff --git a/drivers/usb/renesas_usbhs/common.c b/drivers/usb/renesas_usbhs/common.c
-index 1b9bf8d..b3b6813 100644
---- a/drivers/usb/renesas_usbhs/common.c
-+++ b/drivers/usb/renesas_usbhs/common.c
-@@ -18,6 +18,8 @@
- #include <linux/gpio.h>
- #include <linux/io.h>
- #include <linux/module.h>
-+#include <linux/of_device.h>
-+#include <linux/of_gpio.h>
- #include <linux/pm_runtime.h>
- #include <linux/slab.h>
- #include <linux/sysfs.h>
-@@ -438,6 +440,43 @@ static int usbhsc_drvcllbck_notify_hotplug(struct platform_device *pdev)
- /*
-  *		platform functions
-  */
-+static const struct of_device_id usbhs_of_match[] = {
-+	{
-+		.compatible = "renesas,usbhs-r8a7790",
-+		.data = (void *)USBHS_TYPE_R8A7790,
-+	},
-+	{
-+		.compatible = "renesas,usbhs-r8a7791",
-+		.data = (void *)USBHS_TYPE_R8A7791,
-+	},
-+	{ },
-+};
-+MODULE_DEVICE_TABLE(of, usbhs_of_match);
-+
-+static struct renesas_usbhs_platform_info *usbhs_parse_dt(struct device *dev)
-+{
-+	struct renesas_usbhs_platform_info *info;
-+	struct renesas_usbhs_driver_param *dparam;
-+	const struct of_device_id *of_id = of_match_device(usbhs_of_match, dev);
-+	u32 tmp;
-+	int gpio;
-+
-+	info = devm_kzalloc(dev, sizeof(*info), GFP_KERNEL);
-+	if (!info)
-+		return NULL;
-+
-+	dparam = &info->driver_param;
-+	dparam->type = of_id ? (u32)of_id->data : 0;
-+	if (!of_property_read_u32(dev->of_node, "renesas,buswait", &tmp))
-+		dparam->buswait_bwait = tmp;
-+	gpio = of_get_named_gpio_flags(dev->of_node, "renesas,enable-gpio", 0,
-+				       NULL);
-+	if (gpio > 0)
-+		dparam->enable_gpio = gpio;
-+
-+	return info;
-+}
-+
- static int usbhs_probe(struct platform_device *pdev)
- {
- 	struct renesas_usbhs_platform_info *info = dev_get_platdata(&pdev->dev);
-@@ -446,6 +485,10 @@ static int usbhs_probe(struct platform_device *pdev)
- 	struct resource *res, *irq_res;
- 	int ret;
-
-+	/* check device node */
-+	if (pdev->dev.of_node)
-+		info = pdev->dev.platform_data = usbhs_parse_dt(&pdev->dev);
-+
- 	/* check platform information */
- 	if (!info) {
- 		dev_err(&pdev->dev, "no platform information\n");
-@@ -689,6 +732,7 @@ static struct platform_driver renesas_usbhs_driver = {
- 	.driver		= {
- 		.name	= "renesas_usbhs",
- 		.pm	= &usbhsc_pm_ops,
-+		.of_match_table = of_match_ptr(usbhs_of_match),
- 	},
- 	.probe		= usbhs_probe,
- 	.remove		= usbhs_remove,
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index fa94612d72cc..d3bced4555aa 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -13,6 +13,7 @@ CONFIG_SLAB=y
+ CONFIG_ARCH_SHMOBILE_MULTI=y
+ CONFIG_ARCH_EMEV2=y
+ CONFIG_ARCH_R7S72100=y
++CONFIG_ARCH_R8A7740=y
+ CONFIG_ARCH_R8A7779=y
+ CONFIG_ARCH_R8A7790=y
+ CONFIG_ARCH_R8A7791=y
+@@ -75,6 +76,8 @@ CONFIG_SMSC_PHY=y
+ # CONFIG_INPUT_MOUSEDEV_PSAUX is not set
+ CONFIG_KEYBOARD_GPIO=y
+ # CONFIG_INPUT_MOUSE is not set
++CONFIG_INPUT_TOUCHSCREEN=y
++CONFIG_TOUCHSCREEN_ST1232=y
+ # CONFIG_LEGACY_PTYS is not set
+ CONFIG_SERIAL_8250=y
+ CONFIG_SERIAL_8250_CONSOLE=y
+@@ -113,10 +116,16 @@ CONFIG_VIDEO_RENESAS_VSP1=y
+ CONFIG_VIDEO_ADV7180=y
+ CONFIG_DRM=y
+ CONFIG_DRM_RCAR_DU=y
++CONFIG_BACKLIGHT_LCD_SUPPORT=y
++# CONFIG_LCD_CLASS_DEVICE is not set
++# CONFIG_BACKLIGHT_GENERIC is not set
++CONFIG_BACKLIGHT_PWM=y
+ CONFIG_SOUND=y
+ CONFIG_SND=y
+ CONFIG_SND_SOC=y
++CONFIG_SND_SOC_SH4_FSI=y
+ CONFIG_SND_SOC_RCAR=y
++CONFIG_SND_SOC_WM8978=y
+ CONFIG_USB=y
+ CONFIG_USB_EHCI_HCD=y
+ CONFIG_USB_OHCI_HCD=y
+@@ -133,9 +142,12 @@ CONFIG_NEW_LEDS=y
+ CONFIG_LEDS_CLASS=y
+ CONFIG_LEDS_GPIO=y
+ CONFIG_RTC_CLASS=y
++CONFIG_RTC_DRV_S35390A=y
+ CONFIG_DMADEVICES=y
+ CONFIG_SH_DMAE=y
+ # CONFIG_IOMMU_SUPPORT is not set
++CONFIG_PWM=y
++CONFIG_PWM_RENESAS_TPU=y
+ # CONFIG_DNOTIFY is not set
+ CONFIG_MSDOS_FS=y
+ CONFIG_VFAT_FS=y
 -- 
-1.7.9.5
+1.9.1
 
