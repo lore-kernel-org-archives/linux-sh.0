@@ -1,65 +1,79 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 29 Aug 2014 13:50:06 +0000
-Subject: [PATCH 00/11] ARM: shmobile: r8a7740/armadillo legacy prototype pm domain support
-Message-Id: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
+Date: Thu, 28 Aug 2014 08:11:03 +0000
+Subject: [PATCH v2] spi: sh-msiof: Add support for new R-Car Gen2 SoCs
+Message-Id: <1409213463-5599-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: devicetree@vger.kernel.org, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-	Hi Simon, Magnus,
+Add support for MSIOF in:
+  - r8a7792 (R-Car V2H)
+  - r8a7793 (R-Car M2-N)
+  - r8a7794 (R-Car E2)
 
-This series contains prototype patches to improve pm domain support for
-r8a7740/armadillo800eva, mimicking (parts of) the existing pm domain support
-for sh7372/mackerel.
+r8a7791 is now called "R-Car M2-W".
 
-More specifically, they
-  - Add missing devices to existing pm domains,
-  - Add missing pm domains, hooking up devices and subdomains,
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2:
+  - Drop RFC
+  - Replace an "H2 and M2" by "Gen2"
+---
+ Documentation/devicetree/bindings/spi/sh-msiof.txt | 6 +++++-
+ drivers/spi/spi-sh-msiof.c                         | 6 ++++++
+ 2 files changed, 11 insertions(+), 1 deletion(-)
 
-There are a few things commented out, and a few rough edges or missing things
-(cfr. the patches marked with "[WIP]", and the "FIXME" sections therein),
-but the result does boot, and s2ram works.
-
-Please note that DT/multi-platform support will be added later.
-
-This series depends on my series "[PATCH 0/5] ARM: shmobile: pm domain
-improvements and cleanups".
-
-Thanks for your comments and suggestions!
-
-Geert Uytterhoeven (11):
-  ARM: shmobile: r8a7740: Add missing A3SP pm domain devices
-  ARM: shmobile: r8a7740: Add missing A4S pm domain devices
-  [WIP] ARM: shmobile: armadillo800eva legacy: Add missing A3SP pm
-    domain devices
-  ARM: shmobile: armadillo800eva legacy: Add missing A4S pm domain
-    devices
-  ARM: shmobile: r8a7740: Add A3RV pm domain support
-  ARM: shmobile: r8a7740: Add A3SG pm domain support
-  [WIP] ARM: shmobile: r8a7740/armadillo legacy: Add A4MP pm domain
-    support
-  [WIP] ARM: shmobile: r8a7740: Add D4 pm domain support
-  ARM: shmobile: r8a7740/armadillo legacy: Add A4R pm domain support
-  [WIP] ARM: shmobile: r8a7740: Add A4SU pm domain support
-  [WIP] ARM: shmobile: r8a7740: Add A3SM pm domain support
-
- arch/arm/mach-shmobile/board-armadillo800eva.c |   11 ++++++++++-
- arch/arm/mach-shmobile/pm-r8a7740.c            |   25 ++++++++++++++++++++++++
- arch/arm/mach-shmobile/setup-r8a7740.c         |   11 +++++++++++
- 3 files changed, 46 insertions(+), 1 deletion(-)
-
+diff --git a/Documentation/devicetree/bindings/spi/sh-msiof.txt b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+index 98e07f1c3dab..d11c3721e7cd 100644
+--- a/Documentation/devicetree/bindings/spi/sh-msiof.txt
++++ b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+@@ -6,6 +6,10 @@ Required properties:
+ 			 "renesas,sh-mobile-msiof" for SH Mobile series.
+ 			 Examples with soctypes are:
+ 			 "renesas,msiof-r8a7790" (R-Car H2)
++			 "renesas,msiof-r8a7791" (R-Car M2-W)
++			 "renesas,msiof-r8a7792" (R-Car V2H)
++			 "renesas,msiof-r8a7793" (R-Car M2-N)
++			 "renesas,msiof-r8a7794" (R-Car E2)
+ - reg                  : A list of offsets and lengths of the register sets for
+ 			 the device.
+ 			 If only one register set is present, it is to be used
+@@ -31,7 +35,7 @@ Optional properties, deprecated for soctype-specific bindings:
+ - renesas,tx-fifo-size : Overrides the default tx fifo size given in words
+ 			 (default is 64)
+ - renesas,rx-fifo-size : Overrides the default rx fifo size given in words
+-			 (default is 64, or 256 on R-Car H2 and M2)
++			 (default is 64, or 256 on R-Car Gen2)
+ 
+ Pinctrl properties might be needed, too.  See
+ Documentation/devicetree/bindings/pinctrl/renesas,*.
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index 1165d418340f..3f365402fcc0 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -928,6 +928,9 @@ static const struct of_device_id sh_msiof_match[] = {
+ 	{ .compatible = "renesas,sh-mobile-msiof", .data = &sh_data },
+ 	{ .compatible = "renesas,msiof-r8a7790",   .data = &r8a779x_data },
+ 	{ .compatible = "renesas,msiof-r8a7791",   .data = &r8a779x_data },
++	{ .compatible = "renesas,msiof-r8a7792",   .data = &r8a779x_data },
++	{ .compatible = "renesas,msiof-r8a7793",   .data = &r8a779x_data },
++	{ .compatible = "renesas,msiof-r8a7794",   .data = &r8a779x_data },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, sh_msiof_match);
+@@ -1219,6 +1222,9 @@ static struct platform_device_id spi_driver_ids[] = {
+ 	{ "spi_sh_msiof",	(kernel_ulong_t)&sh_data },
+ 	{ "spi_r8a7790_msiof",	(kernel_ulong_t)&r8a779x_data },
+ 	{ "spi_r8a7791_msiof",	(kernel_ulong_t)&r8a779x_data },
++	{ "spi_r8a7792_msiof",	(kernel_ulong_t)&r8a779x_data },
++	{ "spi_r8a7793_msiof",	(kernel_ulong_t)&r8a779x_data },
++	{ "spi_r8a7794_msiof",	(kernel_ulong_t)&r8a779x_data },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(platform, spi_driver_ids);
 -- 
-1.7.9.5
+1.9.1
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
