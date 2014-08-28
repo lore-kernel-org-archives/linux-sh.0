@@ -1,47 +1,37 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 26 Aug 2014 23:43:08 +0000
-Subject: Re: [PATCH 3/6] clk: shmobile: Add r8a7794 support
-Message-Id: <20140826234307.GC9189@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 28 Aug 2014 07:47:54 +0000
+Subject: [PATCH v2] of: Add vendor prefix for Sitronix
+Message-Id: <1409212074-2966-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1406299250-23975-4-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1406299250-23975-4-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>
+Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Tue, Aug 26, 2014 at 02:41:33PM +0200, Laurent Pinchart wrote:
-> Hi Magnus,
-> 
-> On Tuesday 26 August 2014 20:50:53 Magnus Damm wrote:
-> > Hi Mike,
-> > 
-> > [CC Simon and Laurent]
-> > 
-> > On Sat, Jul 26, 2014 at 4:44 AM, Mike Turquette wrote:
-> > > Quoting Ulrich Hecht (2014-07-25 07:40:47)
-> > > 
-> > >> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-> > >> 
-> > >> Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-> > >> Cc: Mike Turquette <mturquette@linaro.org>
-> > > 
-> > > Acked-by: Mike Turquette <mturquette@linaro.org>
-> > 
-> > Thanks!
-> > 
-> > > Are you taking this through arm-soc?
-> > 
-> > Good question. Simon, do you have any preference how to merge this?
-> > 
-> > Perhaps Laurent remembers how we dealt with the earlier SoCs?
-> 
-> As far as git log remembers, they have been merged through Mike's tree.
-> 
-> It all depends on how we want to merge the rest of the series. The risk of 
-> conflict on this specific patch is low, so it can go through Simon's tree if 
-> it helps resolving dependencies with the rest of the series.
+The stock ticker for Sitronix is just a number.
+"sitronix,st1232" is already in use for the Sitronix st1232 touchscreen
+controller on Atmark Techno Armadillo 800 EVA.
 
-I don't think there are any dependencies.
-But as the risk of conflicts is low I'll see about taking
-it through my tree anyway.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2: Mention armadillo
+---
+ Documentation/devicetree/bindings/vendor-prefixes.txt | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
+index 34cc1bfcebfd..41799a69964b 100644
+--- a/Documentation/devicetree/bindings/vendor-prefixes.txt
++++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
+@@ -126,6 +126,7 @@ silabs	Silicon Laboratories
+ simtek
+ sii	Seiko Instruments, Inc.
+ sirf	SiRF Technology, Inc.
++sitronix	Sitronix Technology Corporation
+ smsc	Standard Microsystems Corporation
+ snps 	Synopsys, Inc.
+ solidrun	SolidRun
+-- 
+1.9.1
+
