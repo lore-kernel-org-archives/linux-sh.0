@@ -1,51 +1,37 @@
-From: Marc Kleine-Budde <mkl@pengutronix.de>
-Date: Thu, 14 Aug 2014 10:07:08 +0000
-Subject: Re: [PATCH v3 1/2] rcar_can: document device tree bindings
-Message-Id: <53EC8A4C.101@pengutronix.de>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="huIXsEdOghKHtgik9NehnKIfrhbKKXf1K"
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 28 Aug 2014 08:20:39 +0000
+Subject: [PATCH resend 1/2] ARM: shmobile: r8a73a4 dtsi: Add SoC-specific thermal compatible property
+Message-Id: <1409214040-5937-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201408010124.26505.sergei.shtylyov@cogentembedded.com> <53DAB5CF.8000407@pengutronix.de>
-In-Reply-To: <53DAB5CF.8000407@pengutronix.de>
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, devicetree@vger.kernel.org
-Cc: netdev@vger.kernel.org, wg@grandegger.com, linux-can@vger.kernel.org, linux-sh@vger.kernel.org, vksavl@gmail.com
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---huIXsEdOghKHtgik9NehnKIfrhbKKXf1K
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+The thermal node used the generic compatible property only.
+Add the SoC-specific one, to make it future proof.
 
-On 07/31/2014 11:31 PM, Marc Kleine-Budde wrote:
-> On 07/31/2014 11:24 PM, Sergei Shtylyov wrote:
->> Document the R-Car CAN device tree bindings.
->>
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->=20
-> The series looks good from the CAN perpective. I'll apply the patches
-> after we've got an Acked-by from the DT folks.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Resend, doc update is in v3.17-rc1
+---
+ arch/arm/boot/dts/r8a73a4.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Applied both to linux-can-next.
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index d8ec5058c351..fba39a2bfe42 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -165,7 +165,7 @@
+ 	};
+ 
+ 	thermal@e61f0000 {
+-		compatible = "renesas,rcar-thermal";
++		compatible = "renesas,thermal-r8a73a4", "renesas,rcar-thermal";
+ 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>,
+ 			 <0 0xe61f0200 0 0x38>, <0 0xe61f0300 0 0x38>;
+ 		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
+-- 
+1.9.1
 
-Marc
-
---=20
-Pengutronix e.K.                  | Marc Kleine-Budde           |
-Industrial Linux Solutions        | Phone: +49-231-2826-924     |
-Vertretung West/Dortmund          | Fax:   +49-5121-206917-5555 |
-Amtsgericht Hildesheim, HRA 2686  | http://www.pengutronix.de   |
-
-
---huIXsEdOghKHtgik9NehnKIfrhbKKXf1K
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iEYEARECAAYFAlPsikwACgkQjTAFq1RaXHNh7ACeIWidDw7u9rBMF/UpJbyacQr4
-f+YAn2cLEmLeTbEccFH/Oo4Mil1SMK3q
-=6r3X
------END PGP SIGNATURE-----
-
---huIXsEdOghKHtgik9NehnKIfrhbKKXf1K--
