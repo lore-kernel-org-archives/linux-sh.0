@@ -1,48 +1,202 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 04 Aug 2014 15:21:49 +0000
-Subject: Re: [RFC PATCH 2/2] of/clk: use "clkops-clocks" to specify clocks handled by clock_ops domain
-Message-Id: <1616494.8YxGyrZW3V@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 28 Aug 2014 14:00:28 +0000
+Subject: [PATCH 1/2] ARM: multi_v7_defconfig: Enable shmobile platforms
+Message-Id: <1409234429-1916-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
- <2717555.fiA6A86F65@avalon>
- <CAMuHMdVKDQz8q0b2UA7=1K8Qw4n3U0=M+mJyi5UQP7QZdC-JiQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdVKDQz8q0b2UA7=1K8Qw4n3U0=M+mJyi5UQP7QZdC-JiQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Based on next-20140828
+For now excluding r8a7740/armadillo, as it fails to boot on armadillo
 
-On Monday 04 August 2014 13:28:32 Geert Uytterhoeven wrote:
-> On Wed, Jul 30, 2014 at 2:06 AM, Laurent Pinchart wrote:
-> > The third option would require storing the clocks lists in device drivers.
-> > I believe this is our best option, as a trade-off between simplicity and
-> > versatility. Drivers that use runtime PM already need to enable it
-> > explicitly when probing devices. Passing a list of clock names to runtime
-> > PM at that point wouldn't complicate drivers much. When the clocks list
-> > isn't SoC- dependent it could be stored as static information. Otherwise
-> > it could be derived from DT (or any other source of hardware description)
-> > using C code, offering all the versatility we need.
-> > 
-> > The only drawback of this solution I can think of right now is that the
-> > runtime PM core couldn't manage device clocks before probing the device.
-> > Specifically device clocks couldn't be managed if no driver is loaded for
-> > that device. I somehow recall that someone raised this as being a
-> > problem, but I can't remember why.
-> 
-> Perhaps you're thinking of clocks that were enabled (by the boot loader or
-> implicit reset state) before running Linux, and aren't disabled?
+ arch/arm/configs/multi_v7_defconfig | 51 +++++++++++++++++++++++++++++++++++--
+ 1 file changed, 49 insertions(+), 2 deletions(-)
 
-That wasn't the reason, I know that clk_disable_unused() takes care of that 
-problem (provided the clock drivers behave correctly, the commit you mention 
-below shows that's not always the case, but that's an unrelated issue).
-
-> That was fixed by commit bb178da701382a230e26d90cf94e8a24b280e0d9
-> ("clk: shmobile: mstp: Fix the is_enabled() operation").
-
+diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
+index 7cfa5fa5f7ac..077134eaa95e 100644
+--- a/arch/arm/configs/multi_v7_defconfig
++++ b/arch/arm/configs/multi_v7_defconfig
+@@ -53,6 +53,15 @@ CONFIG_MACH_SPEAR1310=y
+ CONFIG_MACH_SPEAR1340=y
+ CONFIG_ARCH_STI=y
+ CONFIG_ARCH_EXYNOS=y
++CONFIG_ARCH_SHMOBILE_MULTI=y
++CONFIG_ARCH_EMEV2=y
++CONFIG_ARCH_R7S72100=y
++CONFIG_ARCH_R8A7779=y
++CONFIG_ARCH_R8A7790=y
++CONFIG_ARCH_R8A7791=y
++CONFIG_MACH_KOELSCH=y
++CONFIG_MACH_LAGER=y
++CONFIG_MACH_MARZEN=y
+ CONFIG_ARCH_SUNXI=y
+ CONFIG_ARCH_SIRF=y
+ CONFIG_ARCH_TEGRA=y
+@@ -74,6 +83,8 @@ CONFIG_PCI=y
+ CONFIG_PCI_MSI=y
+ CONFIG_PCI_MVEBU=y
+ CONFIG_PCI_TEGRA=y
++CONFIG_PCI_RCAR_GEN2=y
++CONFIG_PCI_RCAR_GEN2_PCIE=y
+ CONFIG_SMP=y
+ CONFIG_NR_CPUS=8
+ CONFIG_HIGHPTE=y
+@@ -121,6 +132,7 @@ CONFIG_CMA_SIZE_MBYTESd
+ CONFIG_OMAP_OCP2SCP=y
+ CONFIG_MTD=y
+ CONFIG_MTD_M25P80=y
++CONFIG_MTD_SPI_NOR=y
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_ICS932S401=y
+ CONFIG_APDS9802ALS=y
+@@ -136,6 +148,7 @@ CONFIG_AHCI_ST=y
+ CONFIG_AHCI_SUNXI=y
+ CONFIG_SATA_HIGHBANK=y
+ CONFIG_SATA_MV=y
++CONFIG_SATA_RCAR=y
+ CONFIG_NETDEVICES=y
+ CONFIG_SUN4I_EMAC=y
+ CONFIG_MACB=y
+@@ -145,6 +158,7 @@ CONFIG_MV643XX_ETH=y
+ CONFIG_MVNETA=y
+ CONFIG_KS8851=y
+ CONFIG_R8169=y
++CONFIG_SH_ETH=y
+ CONFIG_SMSC911X=y
+ CONFIG_STMMAC_ETH=y
+ CONFIG_TI_CPSW=y
+@@ -174,6 +188,7 @@ CONFIG_SERIO_AMBAKMI=y
+ CONFIG_SERIAL_8250=y
+ CONFIG_SERIAL_8250_CONSOLE=y
+ CONFIG_SERIAL_8250_DW=y
++CONFIG_SERIAL_8250_EM=y
+ CONFIG_SERIAL_AMBA_PL011=y
+ CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
+ CONFIG_SERIAL_SAMSUNG=y
+@@ -183,6 +198,9 @@ CONFIG_SERIAL_SIRFSOC_CONSOLE=y
+ CONFIG_SERIAL_TEGRA=y
+ CONFIG_SERIAL_IMX=y
+ CONFIG_SERIAL_IMX_CONSOLE=y
++CONFIG_SERIAL_SH_SCI=y
++CONFIG_SERIAL_SH_SCI_NR_UARTS 
++CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ CONFIG_SERIAL_MSM=y
+ CONFIG_SERIAL_MSM_CONSOLE=y
+ CONFIG_SERIAL_VT8500=y
+@@ -204,15 +222,21 @@ CONFIG_I2C_CADENCE=y
+ CONFIG_I2C_DESIGNWARE_PLATFORM=y
+ CONFIG_I2C_EXYNOS5=y
+ CONFIG_I2C_MV64XXX=y
++CONFIG_I2C_RIIC=y
++CONFIG_I2C_SH_MOBILE=y
+ CONFIG_I2C_SIRF=y
+ CONFIG_I2C_TEGRA=y
+ CONFIG_I2C_ST=y
+-CONFIG_SPI=y
+ CONFIG_I2C_XILINX=y
++CONFIG_I2C_RCAR=y
++CONFIG_SPI=y
+ CONFIG_SPI_CADENCE=y
+ CONFIG_SPI_OMAP24XX=y
+ CONFIG_SPI_ORION=y
+ CONFIG_SPI_PL022=y
++CONFIG_SPI_RSPI=y
++CONFIG_SPI_SH_MSIOF=y
++CONFIG_SPI_SH_HSPI=y
+ CONFIG_SPI_SIRF=y
+ CONFIG_SPI_SUN4I=y
+ CONFIG_SPI_SUN6I=y
+@@ -225,6 +249,8 @@ CONFIG_PINCTRL_PALMAS=y
+ CONFIG_GPIO_SYSFS=y
+ CONFIG_GPIO_GENERIC_PLATFORM=y
+ CONFIG_GPIO_DWAPB=y
++CONFIG_GPIO_EM=y
++CONFIG_GPIO_RCAR=y
+ CONFIG_GPIO_XILINX=y
+ CONFIG_GPIO_ZYNQ=y
+ CONFIG_GPIO_PCA953X=y
+@@ -241,6 +267,7 @@ CONFIG_POWER_RESET_SUN6I=y
+ CONFIG_SENSORS_LM90=y
+ CONFIG_SENSORS_LM95245=y
+ CONFIG_THERMAL=y
++CONFIG_RCAR_THERMAL=y
+ CONFIG_ARMADA_THERMAL=y
+ CONFIG_ST_THERMAL_SYSCFG=y
+ CONFIG_ST_THERMAL_MEMMAP=y
+@@ -263,6 +290,7 @@ CONFIG_REGULATOR_VIRTUAL_CONSUMER=y
+ CONFIG_REGULATOR_AB8500=y
+ CONFIG_REGULATOR_AS3722=y
+ CONFIG_REGULATOR_BCM590XX=y
++CONFIG_REGULATOR_DA9210=y
+ CONFIG_REGULATOR_GPIO=y
+ CONFIG_REGULATOR_MAX8907=y
+ CONFIG_REGULATOR_PALMAS=y
+@@ -277,10 +305,21 @@ CONFIG_REGULATOR_TWL4030=y
+ CONFIG_REGULATOR_VEXPRESS=y
+ CONFIG_MEDIA_SUPPORT=y
+ CONFIG_MEDIA_CAMERA_SUPPORT=y
++CONFIG_MEDIA_CONTROLLER=y
++CONFIG_VIDEO_V4L2_SUBDEV_API=y
+ CONFIG_MEDIA_USB_SUPPORT=y
+ CONFIG_USB_VIDEO_CLASS=y
+ CONFIG_USB_GSPCA=y
++CONFIG_V4L_PLATFORM_DRIVERS=y
++CONFIG_SOC_CAMERA=y
++CONFIG_SOC_CAMERA_PLATFORM=y
++CONFIG_VIDEO_RCAR_VIN=y
++CONFIG_V4L_MEM2MEM_DRIVERS=y
++CONFIG_VIDEO_RENESAS_VSP1=y
++# CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
++CONFIG_VIDEO_ADV7180=y
+ CONFIG_DRM=y
++CONFIG_DRM_RCAR_DU=y
+ CONFIG_DRM_TEGRA=y
+ CONFIG_DRM_PANEL_SIMPLE=y
+ CONFIG_FB_ARMCLCD=y
+@@ -293,6 +332,7 @@ CONFIG_FRAMEBUFFER_CONSOLE=y
+ CONFIG_SOUND=y
+ CONFIG_SND=y
+ CONFIG_SND_SOC=y
++CONFIG_SND_SOC_RCAR=y
+ CONFIG_SND_SOC_TEGRA=y
+ CONFIG_SND_SOC_TEGRA_RT5640=y
+ CONFIG_SND_SOC_TEGRA_WM8753=y
+@@ -309,6 +349,7 @@ CONFIG_USB_EHCI_HCD_PLATFORM=y
+ CONFIG_USB_ISP1760_HCD=y
+ CONFIG_USB_OHCI_HCD=y
+ CONFIG_USB_OHCI_HCD_PLATFORM=y
++CONFIG_USB_RENESAS_USBHS=y
+ CONFIG_USB_STORAGE=y
+ CONFIG_USB_CHIPIDEA=y
+ CONFIG_USB_CHIPIDEA_HOST=y
+@@ -319,6 +360,10 @@ CONFIG_SAMSUNG_USB3PHY=y
+ CONFIG_USB_GPIO_VBUS=y
+ CONFIG_USB_ISP1301=y
+ CONFIG_USB_MXS_PHY=y
++CONFIG_USB_RCAR_PHY=y
++CONFIG_USB_RCAR_GEN2_PHY=y
++CONFIG_USB_GADGET=y
++CONFIG_USB_RENESAS_USBHS_UDC=y
+ CONFIG_MMC=y
+ CONFIG_MMC_BLOCK_MINORS
+ CONFIG_MMC_ARMMMCI=y
+@@ -337,9 +382,11 @@ CONFIG_MMC_SDHCI_ST=y
+ CONFIG_MMC_OMAP=y
+ CONFIG_MMC_OMAP_HS=y
+ CONFIG_MMC_MVSDIO=y
+-CONFIG_MMC_SUNXI=y
++CONFIG_MMC_SDHI=y
+ CONFIG_MMC_DW=y
+ CONFIG_MMC_DW_EXYNOS=y
++CONFIG_MMC_SH_MMCIF=y
++CONFIG_MMC_SUNXI=y
+ CONFIG_NEW_LEDS=y
+ CONFIG_LEDS_CLASS=y
+ CONFIG_LEDS_PWM=y
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
