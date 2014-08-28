@@ -1,40 +1,47 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 28 Aug 2014 12:48:24 +0000
-Subject: [PATCH] ASoC: Allow SND_SOC_WM8978 to be selected manually
-Message-Id: <1409230104-22750-1-git-send-email-geert+renesas@glider.be>
+From: Mark Brown <broonie@kernel.org>
+Date: Thu, 28 Aug 2014 15:01:05 +0000
+Subject: Re: [PATCH] ASoC: Allow SND_SOC_WM8978 to be selected manually
+Message-Id: <20140828150105.GB29327@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="b5gNqxB1S1yM7hjW"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Liam Girdwood <lgirdwood@gmail.com>, Mark Brown <broonie@kernel.org>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, alsa-devel@alsa-project.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+References: <1409230104-22750-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1409230104-22750-1-git-send-email-geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Liam Girdwood <lgirdwood@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, alsa-devel@alsa-project.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-When using a DT-based multi-platform kernel, there's not always Kconfig
-logic that selects the right codec driver.
-Allow the user to manually select WM8978.
 
-This is needed for Armadillo 800 EVA using a generic r8a7740 multi-platform
-kernel.
+--b5gNqxB1S1yM7hjW
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- sound/soc/codecs/Kconfig | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+On Thu, Aug 28, 2014 at 02:48:24PM +0200, Geert Uytterhoeven wrote:
+> When using a DT-based multi-platform kernel, there's not always Kconfig
+> logic that selects the right codec driver.
+> Allow the user to manually select WM8978.
 
-diff --git a/sound/soc/codecs/Kconfig b/sound/soc/codecs/Kconfig
-index 7678122f8fe0..8ab154756934 100644
---- a/sound/soc/codecs/Kconfig
-+++ b/sound/soc/codecs/Kconfig
-@@ -731,7 +731,8 @@ config SND_SOC_WM8974
- 	tristate
- 
- config SND_SOC_WM8978
--	tristate
-+	tristate "Wolfson Microelectronics WM8978 codec"
-+	depends on I2C
- 
- config SND_SOC_WM8983
- 	tristate
--- 
-1.9.1
+Applied, thanks.
 
+--b5gNqxB1S1yM7hjW
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBAgAGBQJT/0QtAAoJELSic+t+oim9B3MP/1OV+gOwt0lH7RQbzJL/bVen
+txlonhecLw2M9U20ESpg48o5ZaZz1/1zm15cKorZc3iUiJAPICXKD9/JaVqztMGE
+xIF1MPemIqRm2ziCEJ9RvqlFjPSSVcUaJCX30pwfLlDYpBtNrw2y2w6+W6eKkivy
+yZEl2M89n7QdmEHX93vabd5NlUsgPrYo9uFMgTUbhxzJD0Ogs0ebA+Xrgq7cDV4D
+7865DpeV+5Lj0OnwjWhAzujphxPls95n1x/8iPjvej9+1BEnELOpLiFYtCSg3uHx
+wStmwgb6auvaR/KU1wssATGlpqYQyjD4WA6M4g0mjZce/uaFk1jamk6X0ItiEbwJ
+uH9hq7KIvHcgeTW9+HElhVPEOVOoEMNM/Mo5l/63JIKq1mhKz6SBNc9MQCw4gQYz
+mWC9T0KA6JTzflUdAdlJviYIfQ56VhfZ8Fax81fhK0+i1jmW4s7+ExXq43AfWGbe
+YJF6OGLfIxg5ICsfF1WCoNJAVBRC+E7RGdGRCp9T3epOa0/289QUzHAoPCCdCFnf
+iQMHV9nPgWIO/qa131ZbkCzKvsyb0PbALp8HqbHh9ACDb5wwrIspuJkgKpFJetMG
+uj/+5mGukvbcCh0/NszqAh9+FseHWIY8OV8p/ZtPKUJVEyLT50vsLOU49OfyvZQl
+8tJgbS/KEfI5HVm9I8ks
+=Etaj
+-----END PGP SIGNATURE-----
+
+--b5gNqxB1S1yM7hjW--
