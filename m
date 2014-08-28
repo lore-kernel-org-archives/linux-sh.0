@@ -1,47 +1,43 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Thu, 07 Aug 2014 17:41:05 +0000
-Subject: Re: [PATCH 1/2] spi: sh-msiof: Return early in sh_msiof_dma_once() where possible
-Message-Id: <20140807174105.GO17528@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="xsMkJHRV/XelnYNH"
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 28 Aug 2014 08:12:32 +0000
+Subject: [PATCH v2] thermal: rcar: Add binding docs for new R-Car Gen2 SoCs
+Message-Id: <1409213552-5713-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMuHMdUd3OKqDwhLSCMW-rEQSnWky+saN5TgC005rkmNPfEL+g@mail.gmail.com>
- <1407413263-20177-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1407413263-20177-1-git-send-email-geert+renesas@glider.be>
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
+Cc: devicetree@vger.kernel.org, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
+  - r8a7792 (R-Car V2H)
+  - r8a7793 (R-Car M2-N)
+  - r8a7794 (R-Car E2)
 
---xsMkJHRV/XelnYNH
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+r8a7791 is now called "R-Car M2-W".
 
-On Thu, Aug 07, 2014 at 02:07:42PM +0200, Geert Uytterhoeven wrote:
-> Reported-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2: Drop RFC
+---
+ Documentation/devicetree/bindings/thermal/rcar-thermal.txt | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-Applied both, thanks.
+diff --git a/Documentation/devicetree/bindings/thermal/rcar-thermal.txt b/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
+index 0ef00be44b01..43404b197933 100644
+--- a/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
++++ b/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
+@@ -7,7 +7,10 @@ Required properties:
+ 			    - "renesas,thermal-r8a73a4" (R-Mobile AP6)
+ 			    - "renesas,thermal-r8a7779" (R-Car H1)
+ 			    - "renesas,thermal-r8a7790" (R-Car H2)
+-			    - "renesas,thermal-r8a7791" (R-Car M2)
++			    - "renesas,thermal-r8a7791" (R-Car M2-W)
++			    - "renesas,thermal-r8a7792" (R-Car V2H)
++			    - "renesas,thermal-r8a7793" (R-Car M2-N)
++			    - "renesas,thermal-r8a7794" (R-Car E2)
+ - reg			: Address range of the thermal registers.
+ 			  The 1st reg will be recognized as common register
+ 			  if it has "interrupts".
+-- 
+1.9.1
 
---xsMkJHRV/XelnYNH
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAEBAgAGBQJT47ouAAoJELSic+t+oim9FW0P+wWK1BJEjTSNlEPLE1p+fKVD
-MqXi/nKLDm5ISYSXIkDHWkNOCrYsac692HPIouFBKH4BqVNVcPLJIsVn8m+kXWLq
-x1wJEKpqNIVP3b+u5ZC13av2+YGRCX5IZ84WP68V9bYN4bfHXGBSePOE2TalKuZb
-T5WMr2cqAsY6Ge4YWRCFHJFEyzerO5TnJKdhPrxyHj5WCX63rID5ewuba7nPFC9g
-Gxm98oL/FltoXTIy3wmAG8tyZwTMYBhyzNAl3QBVKUHATCm4Kh9jPZC/dYNWP5h5
-44tcyjDCVYPtQpRfzpunt65e4kLRCP4BSYBDzEmXJ2Pd8hMSAUhHzU27c9FGQwDZ
-lOhYRJai+bhhzKhzpbWOvKXUMI0N8BJeaxXFQ5gkdUR1kNtbD4MV1nT7LD0LrWOS
-LVVPVXRDsan/DFRXybX7AVohSg9Gz3rHudOnEDDQbQpEUkv0HT9Mgnf7n9epgNt7
-yYjy4TWQhirX3WD3ZRh26zetGSZ6rBh4f0BzesSoGZ+3SGWH/syZp8CTM8Cv4QME
-WNNhjpcPmfy1TkwJIOuulXd9Bjb+qeraaXO3KNiOZ3/ebm89wk6N9r2H2HX8YcYG
-TlRDf6MrQY3e1AH/Zd13sAcAMp3/8WJrm2iKVyrV0GgIRV+pJwtWo36AqOWKZDOr
-3Sm3J4E5jIlEwf3VfZHo
-=KdMw
------END PGP SIGNATURE-----
-
---xsMkJHRV/XelnYNH--
