@@ -1,66 +1,58 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Wed, 27 Aug 2014 01:37:46 +0000
-Subject: Re: [PATCH 01/10 v2 resend] mmc: block: add block number limitation flag for multiple block read
-Message-Id: <87bnr6pva0.wl%kuninori.morimoto.gx@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 28 Aug 2014 12:00:43 +0000
+Subject: [PATCH] ARM: dts: Sort SHMOBILE dtbs alphabetically
+Message-Id: <1409227243-25102-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
-	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
-	<53AD638C.5060907@renesas.com>
-	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
-	<8761hk7wgy.wl%kuninori.morimoto.gx@gmail.com>
-	<874mx47wf9.wl%kuninori.morimoto.gx@gmail.com>
-	<CAPDyKFqwDTBu53t6iiiA6REe3feBFWWmgd-V93RsOh5XFPpc4w@mail.gmail.com>
-	<87fvgltmnn.wl%kuninori.morimoto.gx@gmail.com>
-	<CAPDyKFqkstphRrj_0EFx52Snboaz8NryxXkFgY8Zb-CLeGhMZw@mail.gmail.com>
-	<87tx50sxe9.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87tx50sxe9.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Cc: Ulf Hansson <ulf.hansson@linaro.org>, Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-
-Hi Ulf again
-
-What do you think this idea ?
-We can move MMC_CAP2_NO_MULTI_READ from host.h to driver side
-
-> /*
->  * this can replace MMC_CAP2_NO_MULTI_READ ?
->  */
-> void no_multi_read_fixup(struct mmc_blk_request *brq,
->                          struct request *req)
-> {
->         if (rq_data_dir(req) = READ)
->              brq->data.blocks = 1;
-> }
-> 
-> /*
->  * we can use this instead of MMC_CAP2_2BLKS_LIMIT ?
->  */
-> void two_block_limit_read_fixup(struct mmc_blk_request *brq,
->                                 struct request *req)
-> {
->         if ((rq_data_dir(req) = READ) && 
->             (brq->data.blocks = 2))
->                 brq->data.blocks = 1;
-> }
-> 
-> static void mmc_blk_rw_rq_prep(xxxx)
-> {
->         ...
->         if (brq->data.blocks > 1) {
->               ...
-> 
->               if (card->host->host_data_fixup)
->                      card->host->host_data_fixup(brq, req)
->         }
->         ...
-> }
-
-Best regards
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-Kuninori Morimoto
+This depends on Magnus' series "[PATCH 00/05] ARM: shmobile: r8a7740 and
+Armadillo cleanup".
+
+ arch/arm/boot/dts/Makefile | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 2bff594ca7e2..8f9604c6ca24 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -358,24 +358,24 @@ dtb-$(CONFIG_ARCH_S5PV210) += s5pv210-aquila.dtb \
+ 	s5pv210-smdkv210.dtb \
+ 	s5pv210-torbreck.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += r7s72100-genmai.dtb \
++	r8a73a4-ape6evm.dtb \
++	r8a73a4-ape6evm-reference.dtb \
+ 	r8a7740-armadillo800eva.dtb \
+ 	r8a7778-bockw.dtb \
+ 	r8a7778-bockw-reference.dtb \
+ 	r8a7779-marzen.dtb \
+-	r8a7791-koelsch.dtb \
+ 	r8a7790-lager.dtb \
++	r8a7791-koelsch.dtb \
++	sh7372-mackerel.dtb \
+ 	sh73a0-kzm9g.dtb \
+-	sh73a0-kzm9g-reference.dtb \
+-	r8a73a4-ape6evm.dtb \
+-	r8a73a4-ape6evm-reference.dtb \
+-	sh7372-mackerel.dtb
++	sh73a0-kzm9g-reference.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
+ 	r7s72100-genmai.dtb \
+ 	r8a7740-armadillo800eva.dtb \
+-	r8a7791-henninger.dtb \
+-	r8a7791-koelsch.dtb \
++	r8a7779-marzen.dtb \
+ 	r8a7790-lager.dtb \
+-	r8a7779-marzen.dtb
++	r8a7791-henninger.dtb \
++	r8a7791-koelsch.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
+ 	socfpga_cyclone5_socdk.dtb \
+ 	socfpga_cyclone5_sockit.dtb \
+-- 
+1.9.1
+
