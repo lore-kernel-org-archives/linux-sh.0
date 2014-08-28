@@ -1,66 +1,65 @@
-From: keita kobayashi <keita.kobayashi.ym@renesas.com>
-Date: Fri, 01 Aug 2014 09:48:44 +0000
-Subject: [PATCH 4/6] ARM: shmobile: Add initialization cpuidle
-Message-Id: <53DB627C.40104@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 28 Aug 2014 07:59:59 +0000
+Subject: [PATCH v2 2/3] irqchip: renesas-irqc: Add DT binding documentation
+Message-Id: <1409212800-4957-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1409212800-4957-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1409212800-4957-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org
-Cc: horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, rjw@rjwysocki.net
+To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>
+Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+The renesas-irqc driver supports DT, but the DT binding documentation was
+missing.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/cpuidle.c |   22 ++++++++++++++++++++++
- 1 file changed, 22 insertions(+)
+v2:
+  - Add Acked-by
+  - Remove last blank line
+---
+ .../bindings/interrupt-controller/renesas,irqc.txt | 29 ++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt
 
-diff --git a/arch/arm/mach-shmobile/cpuidle.c b/arch/arm/mach-shmobile/cpuidle.c
-index 0afeb5c..19c0c98 100644
---- a/arch/arm/mach-shmobile/cpuidle.c
-+++ b/arch/arm/mach-shmobile/cpuidle.c
-@@ -8,13 +8,17 @@
-  * for more details.
-  */
-
-+#include <linux/cpu.h>
- #include <linux/pm.h>
- #include <linux/cpuidle.h>
- #include <linux/suspend.h>
- #include <linux/module.h>
- #include <linux/err.h>
-+#include <linux/device.h>
-+#include <linux/platform_device.h>
- #include <asm/cpuidle.h>
- #include <asm/io.h>
-+#include "common.h"
-
- static struct cpuidle_driver shmobile_cpuidle_default_driver = {
- 	.name			= "shmobile_cpuidle",
-@@ -31,7 +35,25 @@ void __init shmobile_cpuidle_set_driver(struct cpuidle_driver *drv)
- 	cpuidle_drv = drv;
- }
-
-+static struct platform_device shmobile_cpuidle = {
-+	.name              = "cpuidle-shmobile",
-+	.dev.platform_data = shmobile_smp_apmu_enter_cpuidle,
-+	.id                = -1,
-+};
+diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt
+new file mode 100644
+index 000000000000..48e8291e5bcc
+--- /dev/null
++++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt
+@@ -0,0 +1,29 @@
++DT bindings for the R-Mobile/R-Car interrupt controller
 +
- int __init shmobile_cpuidle_init(void)
- {
-+	int cpu;
++Required properties:
 +
-+	/* Make sure boot CPU also gets CPUIdle initialized */
-+	for_each_online_cpu(cpu) {
-+		shmobile_smp_hook(cpu, virt_to_phys(cpu_resume), 0);
-+	}
++- compatible: has to be "renesas,irqc-<soctype>", "renesas,irqc" as fallback.
++  Examples with soctypes are:
++    - "renesas,irqc-r8a73a4" (R-Mobile AP6)
++    - "renesas,irqc-r8a7790" (R-Car H2)
++    - "renesas,irqc-r8a7791" (R-Car M2)
++- #interrupt-cells: has to be <2>: an interrupt index and flags, as defined in
++  interrupts.txt in this directory
 +
-+#ifdef CONFIG_ARCH_SHMOBILE_MULTI
-+	platform_device_register(&shmobile_cpuidle);
-+	return 0;
-+#else
- 	return cpuidle_register(cpuidle_drv, NULL);
-+#endif
- }
++Optional properties:
++
++- any properties, listed in interrupts.txt, and any standard resource allocation
++  properties
++
++Example:
++
++	irqc0: interrupt-controller@e61c0000 {
++		compatible = "renesas,irqc-r8a7790", "renesas,irqc";
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		reg = <0 0xe61c0000 0 0x200>;
++		interrupts = <0 0 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 1 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 2 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 3 IRQ_TYPE_LEVEL_HIGH>;
++	};
 -- 
-1.7.9.5
+1.9.1
+
