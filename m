@@ -1,7 +1,7 @@
 From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Thu, 28 Aug 2014 07:11:41 +0000
+Date: Thu, 28 Aug 2014 07:13:34 +0000
 Subject: Re: [PATCH v4] mmc: tmio: ensure that the clock has been stopped before set_clock
-Message-Id: <CAPDyKFo2rv-33cgEx+uGnpkDfDDTQfSmLOiAA3Eb=mrfeRab9w@mail.gmail.com>
+Message-Id: <CAPDyKFqUdC5a72rgDPk4HnQJoMe9qkfMPTFnFG+wXuSjMB2jbw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
 	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
@@ -12,88 +12,93 @@ References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook
 	<87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
 	<CAPDyKFrzr_tjLFqZ1nQg63Zfr0xRAf71HWAmge6DcMzTkwCLiQ@mail.gmail.com>
 	<87bnr5ic6h.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87bnr5ic6h.wl%kuninori.morimoto.gx@gmail.com>
+	<CAPDyKFo2rv-33cgEx+uGnpkDfDDTQfSmLOiAA3Eb=mrfeRab9w@mail.gmail.com>
+In-Reply-To: <CAPDyKFo2rv-33cgEx+uGnpkDfDDTQfSmLOiAA3Eb=mrfeRab9w@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 Cc: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-On 28 August 2014 04:24, Kuninori Morimoto
-<kuninori.morimoto.gx@gmail.com> wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On 28 August 2014 09:11, Ulf Hansson <ulf.hansson@linaro.org> wrote:
+> On 28 August 2014 04:24, Kuninori Morimoto
+> <kuninori.morimoto.gx@gmail.com> wrote:
+>> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>>
+>> This patch ensures that the clock has been stopped before
+>> it calls tmio_mmc_set_clock().
+>> The clock settings might be failed without this patch
+>>
+>> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>> ---
+>> v3 -> v4
+>>
+>>  - based on latest git://git.linaro.org/people/ulf.hansson/mmc.git#next
+>>
+>>  drivers/mmc/host/tmio_mmc_pio.c |    3 +++
+>>  1 file changed, 3 insertions(+)
+>>
+>> diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+>> index ba45413..7289331 100644
+>> --- a/drivers/mmc/host/tmio_mmc_pio.c
+>> +++ b/drivers/mmc/host/tmio_mmc_pio.c
+>> @@ -924,12 +924,14 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+>>                 tmio_mmc_clk_stop(host);
+>>                 break;
+>>         case MMC_POWER_UP:
+>> +               tmio_mmc_clk_stop(host);
 >
-> This patch ensures that the clock has been stopped before
-> it calls tmio_mmc_set_clock().
-> The clock settings might be failed without this patch
+> I don't think this is needed. Let me elaborate on why.
 >
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> v3 -> v4
+> There two scenarios for when you may come down this path.
 >
->  - based on latest git://git.linaro.org/people/ulf.hansson/mmc.git#next
+> Either after ->probe() or after a MMC_POWER_OFF has been handled. In
+> both scenarios, tmio_mmc_clk_stop(host) has already been invoked.
 >
->  drivers/mmc/host/tmio_mmc_pio.c |    3 +++
->  1 file changed, 3 insertions(+)
+> Well, actually in the ->probe() we invoke tmio_mmc_clk_stop() and then
+> tmio_mmc_reset(), should those maybe be done in reverse order to make
+> sure the clock is stopped?
 >
-> diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-> index ba45413..7289331 100644
-> --- a/drivers/mmc/host/tmio_mmc_pio.c
-> +++ b/drivers/mmc/host/tmio_mmc_pio.c
-> @@ -924,12 +924,14 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
->                 tmio_mmc_clk_stop(host);
->                 break;
->         case MMC_POWER_UP:
-> +               tmio_mmc_clk_stop(host);
-
-I don't think this is needed. Let me elaborate on why.
-
-There two scenarios for when you may come down this path.
-
-Either after ->probe() or after a MMC_POWER_OFF has been handled. In
-both scenarios, tmio_mmc_clk_stop(host) has already been invoked.
-
-Well, actually in the ->probe() we invoke tmio_mmc_clk_stop() and then
-tmio_mmc_reset(), should those maybe be done in reverse order to make
-sure the clock is stopped?
-
->                 tmio_mmc_set_clock(host, ios->clock);
->                 tmio_mmc_power_on(host, ios->vdd);
->                 tmio_mmc_clk_start(host);
->                 tmio_mmc_set_bus_width(host, ios->bus_width);
->                 break;
->         case MMC_POWER_ON:
-> +               tmio_mmc_clk_stop(host);
->                 tmio_mmc_set_clock(host, ios->clock);
->                 tmio_mmc_clk_start(host);
->                 tmio_mmc_set_bus_width(host, ios->bus_width);
-> @@ -1199,6 +1201,7 @@ int tmio_mmc_host_runtime_resume(struct device *dev)
->         tmio_mmc_clk_update(host);
+>>                 tmio_mmc_set_clock(host, ios->clock);
+>>                 tmio_mmc_power_on(host, ios->vdd);
+>>                 tmio_mmc_clk_start(host);
+>>                 tmio_mmc_set_bus_width(host, ios->bus_width);
+>>                 break;
+>>         case MMC_POWER_ON:
+>> +               tmio_mmc_clk_stop(host);
+>>                 tmio_mmc_set_clock(host, ios->clock);
+>>                 tmio_mmc_clk_start(host);
+>>                 tmio_mmc_set_bus_width(host, ios->bus_width);
+>> @@ -1199,6 +1201,7 @@ int tmio_mmc_host_runtime_resume(struct device *dev)
+>>         tmio_mmc_clk_update(host);
+>>
+>>         if (host->clk_cache) {
+>> +               tmio_mmc_clk_stop(host);
 >
->         if (host->clk_cache) {
-> +               tmio_mmc_clk_stop(host);
-
-This should also not be needed.
-
-To get runtime PM resumed, you must first be runtime PM suspended. In
-the runtime PM suspend callback we have already invoked
-tmio_mmc_set_clock().
-
-Well, again it may depend on if tmio_mmc_reset() should be followed by
-a tmio_mmc_clk_stop(), which isn't the case right now.
-
->                 tmio_mmc_set_clock(host, host->clk_cache);
->                 tmio_mmc_clk_start(host);
->         }
-> --
-> 1.7.9.5
+> This should also not be needed.
 >
+> To get runtime PM resumed, you must first be runtime PM suspended. In
+> the runtime PM suspend callback we have already invoked
+> tmio_mmc_set_clock().
 
-Finally, another question - somewhat related to clocks but not so much
-to this patch.
+/s /tmio_mmc_set_clock() / tmio_mmc_clk_stop()
 
-Shouldn't tmio_mmc_set_clock() when requested rate is 0, actually
-invoke tmio_mmc_clk_stop()? How will otherwise the clock be stopped?
-
-Kind regards
-Uffe
+>
+> Well, again it may depend on if tmio_mmc_reset() should be followed by
+> a tmio_mmc_clk_stop(), which isn't the case right now.
+>
+>>                 tmio_mmc_set_clock(host, host->clk_cache);
+>>                 tmio_mmc_clk_start(host);
+>>         }
+>> --
+>> 1.7.9.5
+>>
+>
+> Finally, another question - somewhat related to clocks but not so much
+> to this patch.
+>
+> Shouldn't tmio_mmc_set_clock() when requested rate is 0, actually
+> invoke tmio_mmc_clk_stop()? How will otherwise the clock be stopped?
+>
+> Kind regards
+> Uffe
