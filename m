@@ -1,74 +1,36 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Aug 2014 16:41:07 +0000
-Subject: [PATCH 10/16] ARM: shmobile: r8a7790: Add DU node to device tree
-Message-Id: <1409157673-4154-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 29 Aug 2014 13:50:10 +0000
+Subject: [PATCH 04/11] ARM: shmobile: armadillo800eva legacy: Add missing A4S pm domain devices
+Message-Id: <1409320217-13278-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add the DU device with a disabled state. Boards that want to enable the
-DU need to specify the output topology.
+Commit 8459293c27bcd13a ("ARM: shmobile: r8a7740: add A4S pm domain
+support") added the A4S power domain, but forgot to hook up the GbEther
+hardware block.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 39 +++++++++++++++++++++++++++++++++++++++
- 1 file changed, 39 insertions(+)
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index a3cd307..a1617b7 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -600,6 +600,45 @@
- 		status = "disabled";
- 	};
- 
-+	du: du@feb00000 {
-+		compatible = "renesas,du-r8a7790";
-+		reg = <0 0xfeb00000 0 0x70000>,
-+		      <0 0xfeb90000 0 0x1c>,
-+		      <0 0xfeb94000 0 0x1c>;
-+		reg-names = "du", "lvds.0", "lvds.1";
-+		interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 268 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 269 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7790_CLK_DU0>,
-+		         <&mstp7_clks R8A7790_CLK_DU1>,
-+		         <&mstp7_clks R8A7790_CLK_DU2>,
-+		         <&mstp7_clks R8A7790_CLK_LVDS0>,
-+		         <&mstp7_clks R8A7790_CLK_LVDS1>;
-+		clock-names = "du.0", "du.1", "du.2", "lvds.0", "lvds.1";
-+		status = "disabled";
-+
-+		ports {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+
-+			port@0 {
-+				reg = <0>;
-+				du_out_rgb: endpoint {
-+				};
-+			};
-+			port@1 {
-+				reg = <1>;
-+				du_out_lvds0: endpoint {
-+				};
-+			};
-+			port@2 {
-+				reg = <2>;
-+				du_out_lvds1: endpoint {
-+				};
-+			};
-+		};
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 64a68450c28a..735036038951 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1234,6 +1234,7 @@ static void __init eva_init(void)
+ 	static struct pm_domain_device domain_devices[] __initdata = {
+ 		{ "A4LC", &lcdc0_device },
+ 		{ "A4LC", &hdmi_lcdc_device },
++		{ "A4S",  &sh_eth_device },
+ 		{ "A3SP", &pwm_device },
+ 		{ "A3SP", &sdhi0_device },
+ 		{ "A3SP", &sh_mmcif_device },
 -- 
-1.8.5.5
+1.7.9.5
 
