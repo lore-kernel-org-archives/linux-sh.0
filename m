@@ -1,84 +1,66 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 06 Aug 2014 12:59:09 +0000
-Subject: [PATCH 12/12] ARM: shmobile: r8a7790 dtsi: Enable DMA for MSIOF
-Message-Id: <1407329949-5695-13-git-send-email-geert+renesas@glider.be>
+Date: Fri, 29 Aug 2014 13:50:09 +0000
+Subject: [PATCH 03/11] [WIP] ARM: shmobile: armadillo800eva legacy: Add missing A3SP pm domain devices
+Message-Id: <1409320217-13278-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1407329949-5695-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1407329949-5695-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+References: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
-Cc: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-arm-kernel@lists.infradead.org
 
-Add register sets used for access by the DMA engine, and DMA properties to
-the MSIOF nodes.
+Commit 802a5639aa7041b2 ("ARM: shmobile: r8a7740: add A3SP pm domain
+support") added the A3SP power domain, but forgot to hook up the TPU,
+SDHI0/1, and MMCIF hardware blocks.
+
+FIXME: As the default PM QoS latency constraint for SDHI is only 100 µs
+       (cfr. commit c419e611c3c59c0e ("tmio_mmc / PM: Use PM QoS latency
+       constraint"), while DEFAULT_DEV_LATENCY_NS is 250000, suspend
+       fails with -EBUSY, unless the constraint is increased first to
+       more than 500 µs using e.g.
+
+	echo 501 > /sys/devices/platform/sh_mobile_sdhi.0/power/pm_qos_resume_latency_us
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: devicetree@vger.kernel.org
 ---
-This depends on "[PATCH v2 7/8] ARM: shmobile: r8a7790: Add DMAC devices
-to DT" of series "[PATCH v2 0/8] R-Car Gen2 DMA Controller driver".
----
- arch/arm/boot/dts/r8a7790.dtsi | 16 ++++++++++++----
- 1 file changed, 12 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 495771b3cb34..45d6fdd6877b 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -988,9 +988,11 @@
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index f19459a8c3ed..64a68450c28a 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1234,8 +1234,11 @@ static void __init eva_init(void)
+ 	static struct pm_domain_device domain_devices[] __initdata = {
+ 		{ "A4LC", &lcdc0_device },
+ 		{ "A4LC", &hdmi_lcdc_device },
++		{ "A3SP", &pwm_device },
++		{ "A3SP", &sdhi0_device },
++		{ "A3SP", &sh_mmcif_device },
+ 	};
+-	struct platform_device *usb = NULL;
++	struct platform_device *usb = NULL, *sdhi1 = NULL;
  
- 	msiof0: spi@e6e20000 {
- 		compatible = "renesas,msiof-r8a7790";
--		reg = <0 0xe6e20000 0 0x0064>;
-+		reg = <0 0xe6e20000 0 0x0064>, <0 0xe7e20000 0 0x0064>;
- 		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7790_CLK_MSIOF0>;
-+		dmas = <&dmac0 0x51>, <&dmac0 0x52>;
-+		dma-names = "tx", "rx";
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		status = "disabled";
-@@ -998,9 +1000,11 @@
+ 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
+ 				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
+@@ -1304,6 +1307,7 @@ static void __init eva_init(void)
  
- 	msiof1: spi@e6e10000 {
- 		compatible = "renesas,msiof-r8a7790";
--		reg = <0 0xe6e10000 0 0x0064>;
-+		reg = <0 0xe6e10000 0 0x0064>, <0 0xe7e10000 0 0x0064>;
- 		interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_MSIOF1>;
-+		dmas = <&dmac0 0x55>, <&dmac0 0x56>;
-+		dma-names = "tx", "rx";
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		status = "disabled";
-@@ -1008,9 +1012,11 @@
+ 		platform_device_register(&vcc_sdhi1);
+ 		platform_device_register(&sdhi1_device);
++		sdhi1 = &sdhi1_device;
+ 	}
  
- 	msiof2: spi@e6e00000 {
- 		compatible = "renesas,msiof-r8a7790";
--		reg = <0 0xe6e00000 0 0x0064>;
-+		reg = <0 0xe6e00000 0 0x0064>, <0 0xe7e00000 0 0x0064>;
- 		interrupts = <0 158 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_MSIOF2>;
-+		dmas = <&dmac0 0x41>, <&dmac0 0x42>;
-+		dma-names = "tx", "rx";
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		status = "disabled";
-@@ -1018,9 +1024,11 @@
  
- 	msiof3: spi@e6c90000 {
- 		compatible = "renesas,msiof-r8a7790";
--		reg = <0 0xe6c90000 0 0x0064>;
-+		reg = <0 0xe6c90000 0 0x0064>, <0 0xe7c90000 0 0x0064>;
- 		interrupts = <0 159 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_MSIOF3>;
-+		dmas = <&dmac0 0x45>, <&dmac0 0x46>;
-+		dma-names = "tx", "rx";
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		status = "disabled";
+@@ -1324,6 +1328,8 @@ static void __init eva_init(void)
+ 				       ARRAY_SIZE(domain_devices));
+ 	if (usb)
+ 		rmobile_add_device_to_domain("A3SP", usb);
++	if (sdhi1)
++		rmobile_add_device_to_domain("A3SP", sdhi1);
+ 
+ 	r8a7740_pm_init();
+ }
 -- 
-1.9.1
+1.7.9.5
 
