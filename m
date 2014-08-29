@@ -1,46 +1,38 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 04 Aug 2014 12:29:08 +0000
-Subject: Re: [PATCH/RFC 5/5] dmaengine: rcar-dmac: Cache hardware descriptors memory
-Message-Id: <CAMuHMdWeOPYnXBnnkm9vFDY6gC5wJ-jywNY2_rxPU_ZtsT9Oug@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 29 Aug 2014 13:50:11 +0000
+Subject: [PATCH 05/11] ARM: shmobile: r8a7740: Add A3RV pm domain support
+Message-Id: <1409320217-13278-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jul 22, 2014 at 2:33 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
-> Unlike DMA transfers descriptors that are preallocated and cached,
-> memory used to store hardware descriptors is allocated and freed with
-> the DMA coherent allocation API for every transfer. Beside degrading
+Add support for the A3RV power domain.
+This domain contains the VPU5F and VCP1 hardware blocks, which are
+currently not used by any driver.
 
-Besides
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-shmobile/pm-r8a7740.c |    3 +++
+ 1 file changed, 3 insertions(+)
 
-> performances, this creates a CMA stress test that seem to cause issues.
+diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
+index b20dd5b37e6d..93a89329d927 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7740.c
++++ b/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -37,6 +37,9 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
+ 		.genpd.name	= "A4LC",
+ 		.bit_shift	= 1,
+ 	}, {
++		.genpd.name	= "A3RV",
++		.bit_shift	= 6,
++	}, {
+ 		.genpd.name	= "A4S",
+ 		.bit_shift	= 10,
+ 		.gov		= &pm_domain_always_on_gov,
+-- 
+1.7.9.5
 
-seems
-
-> Running dmatest with the noverify option produces
->
-> [   50.066539] alloc_contig_range test_pages_isolated(6b845, 6b846) failed
-> [   50.235180] alloc_contig_range test_pages_isolated(6b848, 6b84e) failed
-> [   52.964584] alloc_contig_range test_pages_isolated(6b847, 6b848) failed
-> [   54.127113] alloc_contig_range test_pages_isolated(6b843, 6b844) failed
-> [   56.270253] alloc_contig_range test_pages_isolated(6b84c, 6b850) failed
->
-> The root cause need to be fixed, but in the meantime, as a workaround
-
-needs
-
-> and a performance improvement, cache hardware descriptors.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
