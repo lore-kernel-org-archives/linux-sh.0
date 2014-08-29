@@ -1,50 +1,41 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 29 Aug 2014 08:26:01 +0000
-Subject: Re: [PATCH v2] ARM: dts: Add shmobile platform device tree bindings documentation
-Message-Id: <CAMuHMdXNPk2ACbFsXcPic_zZBDCjF+5j6-jQNgZxGePPcTRUBQ@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 29 Aug 2014 18:16:39 +0000
+Subject: [PATCH 0/2] r8a777[89] dtsi sorting
+Message-Id: <1409336201-708-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409213120-5291-1-git-send-email-geert+renesas@glider.be>
- <20140829003456.GM16165@verge.net.au>
-In-Reply-To: <20140829003456.GM16165@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: horms@verge.net.au, devicetree@vger.kernel.org, magnus.damm@gmail.com, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Hi Simon,
+Hi!
 
-On Fri, Aug 29, 2014 at 2:34 AM, Simon Horman <horms@verge.net.au> wrote:
-> On Thu, Aug 28, 2014 at 10:05:20AM +0200, Geert Uytterhoeven wrote:
->> Add Renesas SH-Mobile, R-Mobile, and R-Car Platform Device Tree Bindings
->> Documentation, listing supported SoCs and boards.
->>
->> This allows to use checkpatch to validate DTSes referring to Renesas
->> shmobile SoCs, and boards containing those SoCs.
->>
->> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->
-> Thanks Geert, this looks good to me.
-> Is it for me to pick up?
+These are the dtsi files for r8a7778 and r8a7779 sorted according to what I
+imagine to be accepted standards now: sort by address, "compatible" goes
+first, #include directives before anything else.  The sorting was done using
+a little script I wrote (https://github.com/uli/dtssort).
 
-I think so.
+I chose these two files because the required changes are relatively small. 
+Doing this for r8a779x yields a gargantuan and entirely unreadable patch due
+to the random shifting about of large blocks of code.  If anybody knows a
+tool that makes such things somewhat manageable to review, please speak up.
 
-> If so I would prefer a slightly re-structured title:
->
-> ARM: shmobile: Add platform device tree bindings documentation
+I'd also like to know if there is consensus on different/additional
+standards that I'm not aware of.
 
-Fine for me.
+CU
+Uli
 
-Do you want me to resend, or will you amend yourself?
 
-Thanks!
+Ulrich Hecht (2):
+  ARM: shmobile: r8a7778 dtsi: sort it
+  ARM: shmobile: r8a7779 dtsi: sort it
 
-Gr{oetje,eeting}s,
+ arch/arm/boot/dts/r8a7778.dtsi |  56 ++---
+ arch/arm/boot/dts/r8a7779.dtsi | 472 ++++++++++++++++++++---------------------
+ 2 files changed, 264 insertions(+), 264 deletions(-)
 
-                        Geert
+-- 
+1.8.4.5
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
