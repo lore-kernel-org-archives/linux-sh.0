@@ -1,115 +1,170 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Mon, 25 Aug 2014 03:00:25 +0000
-Subject: [PATCH 3/9 v3] mmc: tmio: control multiple block transfer mode
-Message-Id: <877g1xtgs8.wl%kuninori.morimoto.gx@gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 29 Aug 2014 18:16:40 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7778 dtsi: sort it
+Message-Id: <1409336201-708-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
-	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
-	<53AD638C.5060907@renesas.com>
-	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
-	<87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
+References: <1409336201-708-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1409336201-708-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Ulf Hansson <ulf.hansson@linaro.org>
-Cc: Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: linux-sh@vger.kernel.org
+Cc: horms@verge.net.au, devicetree@vger.kernel.org, magnus.damm@gmail.com, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+- move #include to the top
+- "compatible" goes first
+- sort nodes by address
 
-Renesas SDHI has "Multiple Block Transfer Mode" settings
-on SD_CMD register which controls CMD12 automatically.
-
-This patch cares it, because
-CMD12 is not needed when CMD53 (= SD_IO_RW_EXTENDED)
-
-[Kuninori Morimoto: tidyuped for upstreaming
-                    enabled this flags for all SH-Mobile/R-Car]
-
-Tested-by: Nguyen Xuan Nui <nx-nui@jinso.co.jp>
-Tested-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
-Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
-v2 -> v3
+ arch/arm/boot/dts/r8a7778.dtsi | 56 +++++++++++++++++++++---------------------
+ 1 file changed, 28 insertions(+), 28 deletions(-)
 
- - no change
-
- drivers/mmc/host/sh_mobile_sdhi.c |    5 +++++
- drivers/mmc/host/tmio_mmc_pio.c   |   10 ++++++++++
- include/linux/mfd/tmio.h          |    6 ++++++
- 3 files changed, 21 insertions(+)
-
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 1ccf49b..d56ebd9 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -225,6 +225,11 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	 */
- 	mmc_data->flags |= TMIO_MMC_SDIO_IRQ;
- 
-+	/*
-+	 * All SDHI have CMD12 controll bit
-+	 */
-+	mmc_data->flags |= TMIO_MMC_HAVE_CMD12_CTRL;
-+
- 	if (of_id && of_id->data) {
- 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
- 		mmc_data->flags |= of_data->tmio_flags;
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index c3b1b4e..1f1fdfb 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -44,6 +44,7 @@
- #include <linux/pm_qos.h>
- #include <linux/pm_runtime.h>
- #include <linux/regulator/consumer.h>
-+#include <linux/mmc/sdio.h>
- #include <linux/scatterlist.h>
- #include <linux/spinlock.h>
- #include <linux/workqueue.h>
-@@ -295,6 +296,7 @@ static void tmio_mmc_done_work(struct work_struct *work)
- #define TRANSFER_READ  0x1000
- #define TRANSFER_MULTI 0x2000
- #define SECURITY_CMD   0x4000
-+#define NO_CMD12_ISSUE 0x4000 /* TMIO_MMC_HAVE_CMD12_CTRL */
- 
- static int tmio_mmc_start_command(struct tmio_mmc_host *host, struct mmc_command *cmd)
- {
-@@ -331,6 +333,14 @@ static int tmio_mmc_start_command(struct tmio_mmc_host *host, struct mmc_command
- 		if (data->blocks > 1) {
- 			sd_ctrl_write16(host, CTL_STOP_INTERNAL_ACTION, 0x100);
- 			c |= TRANSFER_MULTI;
-+
-+			/*
-+			 * Disable auto CMD12 at IO_RW_EXTENDED when
-+			 * multiple block transfer
-+			 */
-+			if ((host->pdata->flags & TMIO_MMC_HAVE_CMD12_CTRL) &&
-+			    (cmd->opcode = SD_IO_RW_EXTENDED))
-+				c |= NO_CMD12_ISSUE;
- 		}
- 		if (data->flags & MMC_DATA_READ)
- 			c |= TRANSFER_READ;
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index 777e29b..7432d95 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -83,6 +83,12 @@
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 315ec62..c152877 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -14,10 +14,10 @@
+  * kind, whether express or implied.
   */
- #define TMIO_MMC_HAVE_HIGH_REG		(1 << 6)
  
-+/*
-+ * Some controllers have CMD12 automatically
-+ * issue/non-issue register
-+ */
-+#define TMIO_MMC_HAVE_CMD12_CTRL	(1 << 7)
+-/include/ "skeleton.dtsi"
+-
+ #include <dt-bindings/interrupt-controller/irq.h>
+ 
++/include/ "skeleton.dtsi"
 +
- int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
- int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
- void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
+ / {
+ 	compatible = "renesas,r8a7778";
+ 	interrupt-parent = <&gic>;
+@@ -27,8 +27,8 @@
+ 		#size-cells = <0>;
+ 
+ 		cpu@0 {
+-			device_type = "cpu";
+ 			compatible = "arm,cortex-a9";
++			device_type = "cpu";
+ 			reg = <0>;
+ 			clock-frequency = <800000000>;
+ 		};
+@@ -121,42 +121,37 @@
+ 		interrupt-controller;
+ 	};
+ 
+-	pfc: pfc@fffc0000 {
+-		compatible = "renesas,pfc-r8a7778";
+-		reg = <0xfffc0000 0x118>;
+-	};
+-
+ 	i2c0: i2c@ffc70000 {
++		compatible = "renesas,i2c-r8a7778";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,i2c-r8a7778";
+ 		reg = <0xffc70000 0x1000>;
+ 		interrupts = <0 67 IRQ_TYPE_LEVEL_HIGH>;
+ 		status = "disabled";
+ 	};
+ 
+ 	i2c1: i2c@ffc71000 {
++		compatible = "renesas,i2c-r8a7778";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,i2c-r8a7778";
+ 		reg = <0xffc71000 0x1000>;
+ 		interrupts = <0 78 IRQ_TYPE_LEVEL_HIGH>;
+ 		status = "disabled";
+ 	};
+ 
+ 	i2c2: i2c@ffc72000 {
++		compatible = "renesas,i2c-r8a7778";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,i2c-r8a7778";
+ 		reg = <0xffc72000 0x1000>;
+ 		interrupts = <0 76 IRQ_TYPE_LEVEL_HIGH>;
+ 		status = "disabled";
+ 	};
+ 
+ 	i2c3: i2c@ffc73000 {
++		compatible = "renesas,i2c-r8a7778";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,i2c-r8a7778";
+ 		reg = <0xffc73000 0x1000>;
+ 		interrupts = <0 77 IRQ_TYPE_LEVEL_HIGH>;
+ 		status = "disabled";
+@@ -204,13 +199,6 @@
+ 		status = "disabled";
+ 	};
+ 
+-	mmcif: mmc@ffe4e000 {
+-		compatible = "renesas,sh-mmcif";
+-		reg = <0xffe4e000 0x100>;
+-		interrupts = <0 61 IRQ_TYPE_LEVEL_HIGH>;
+-		status = "disabled";
+-	};
+-
+ 	sdhi0: sd@ffe4c000 {
+ 		compatible = "renesas,sdhi-r8a7778";
+ 		reg = <0xffe4c000 0x100>;
+@@ -229,6 +217,13 @@
+ 		status = "disabled";
+ 	};
+ 
++	mmcif: mmc@ffe4e000 {
++		compatible = "renesas,sh-mmcif";
++		reg = <0xffe4e000 0x100>;
++		interrupts = <0 61 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
+ 	sdhi2: sd@ffe4f000 {
+ 		compatible = "renesas,sdhi-r8a7778";
+ 		reg = <0xffe4f000 0x100>;
+@@ -238,28 +233,33 @@
+ 		status = "disabled";
+ 	};
+ 
+-	hspi0: spi@fffc7000 {
++	pfc: pfc@fffc0000 {
++		compatible = "renesas,pfc-r8a7778";
++		reg = <0xfffc0000 0x118>;
++	};
++
++	hspi2: spi@fffc6000 {
+ 		compatible = "renesas,hspi-r8a7778", "renesas,hspi";
+-		reg = <0xfffc7000 0x18>;
+-		interrupts = <0 63 IRQ_TYPE_LEVEL_HIGH>;
++		reg = <0xfffc6000 0x18>;
++		interrupts = <0 85 IRQ_TYPE_LEVEL_HIGH>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
+ 
+-	hspi1: spi@fffc8000 {
++	hspi0: spi@fffc7000 {
+ 		compatible = "renesas,hspi-r8a7778", "renesas,hspi";
+-		reg = <0xfffc8000 0x18>;
+-		interrupts = <0 84 IRQ_TYPE_LEVEL_HIGH>;
++		reg = <0xfffc7000 0x18>;
++		interrupts = <0 63 IRQ_TYPE_LEVEL_HIGH>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
+ 
+-	hspi2: spi@fffc6000 {
++	hspi1: spi@fffc8000 {
+ 		compatible = "renesas,hspi-r8a7778", "renesas,hspi";
+-		reg = <0xfffc6000 0x18>;
+-		interrupts = <0 85 IRQ_TYPE_LEVEL_HIGH>;
++		reg = <0xfffc8000 0x18>;
++		interrupts = <0 84 IRQ_TYPE_LEVEL_HIGH>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		status = "disabled";
 -- 
-1.7.9.5
+1.8.4.5
 
