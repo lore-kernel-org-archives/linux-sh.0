@@ -1,51 +1,27 @@
-From: Lee Jones <lee.jones@linaro.org>
-Date: Fri, 29 Aug 2014 09:13:59 +0000
-Subject: [GIT PULL] MFD: ARM (IMX & R8): Immutable branch for Dialog Semiconductor - vendor prefix consolidat
-Message-Id: <20140829091359.GF24579@lee--X1>
+From: "Opensource [Steve Twiss]" <stwiss.opensource@diasemi.com>
+Date: Fri, 29 Aug 2014 09:54:00 +0000
+Subject: RE: [GIT PULL] MFD: ARM (IMX & R8): Immutable branch for Dialog Semiconductor - vendor prefix consol
+Message-Id: <6ED8E3B22081A4459DAC7699F3695FB7D0B3BF98@SW-EX-MBX02.diasemi.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201408221446.s7MEkNVF001775@swsrvapps-01.diasemi.com>
-In-Reply-To: <201408221446.s7MEkNVF001775@swsrvapps-01.diasemi.com>
+ <20140829091359.GF24579@lee--X1>
+In-Reply-To: <20140829091359.GF24579@lee--X1>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-IMX and R8 sub-arch Maintainers,
-
-The following changes since commit 52addcf9d6669fa439387610bc65c92fa0980cef:
-
-  Linux 3.17-rc2 (2014-08-25 15:36:20 -0700)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/lee/mfd.git tags/ib-mfd-arm=
--v3.18
-
-for you to fetch changes up to bd597f47ca4bf7a522a0298a95c7f9b2f0a75b9e:
-
-  devicetree: Dialog Semiconductor consolidate existing vendor prefixes to =
-standardise on 'dlg' (2014-08-29 09:26:29 +0100)
-
-----------------------------------------------------------------
-Immutable branch between MFD and some ARM sub-arch maintainers.
-----------------------------------------------------------------
-Steve Twiss (1):
-      devicetree: Dialog Semiconductor consolidate existing vendor prefixes=
- to standardise on 'dlg'
-
- .../devicetree/bindings/i2c/trivial-devices.txt    |  2 +-
- .../devicetree/bindings/regulator/da9210.txt       |  4 ++--
- .../devicetree/bindings/vendor-prefixes.txt        |  1 +
- arch/arm/boot/dts/imx53-smd.dts                    |  2 +-
- arch/arm/boot/dts/imx6qdl-phytec-pfla02.dtsi       |  2 +-
- arch/arm/boot/dts/r8a7790-lager.dts                |  2 +-
- arch/arm/boot/dts/r8a7791-koelsch.dts              |  2 +-
- drivers/mfd/da9055-core.c                          | 26 +++++++++++-------=
-----
- 8 files changed, 21 insertions(+), 20 deletions(-)
-
---=20
-Lee Jones
-Linaro STMicroelectronics Landing Team Lead
-Linaro.org =E2=94=82 Open source software for ARM SoCs
-Follow Linaro: Facebook | Twitter | Blog
+T24gMjkgQXVndXN0IDIwMTQgMTA6MTQsIExlZSBKb25lcyB3cm90ZQ0KDQo+IFN1YmplY3Q6IFtH
+SVQgUFVMTF0gTUZEOiBBUk0gKElNWCAmIFI4KTogSW1tdXRhYmxlIGJyYW5jaCBmb3IgRGlhbG9n
+DQo+IFNlbWljb25kdWN0b3IgLSB2ZW5kb3IgcHJlZml4IGNvbnNvbGlkYXRpb24NCj4gDQo+IElN
+WCBhbmQgUjggc3ViLWFyY2ggTWFpbnRhaW5lcnMsDQo+IA0KPiBUaGUgZm9sbG93aW5nIGNoYW5n
+ZXMgc2luY2UgY29tbWl0DQo+IDUyYWRkY2Y5ZDY2NjlmYTQzOTM4NzYxMGJjNjVjOTJmYTA5ODBj
+ZWY6DQo+IA0KPiAgIExpbnV4IDMuMTctcmMyICgyMDE0LTA4LTI1IDE1OjM2OjIwIC0wNzAwKQ0K
+PiANCj4gYXJlIGF2YWlsYWJsZSBpbiB0aGUgZ2l0IHJlcG9zaXRvcnkgYXQ6DQo+IA0KPiAgIGdp
+dDovL2dpdC5rZXJuZWwub3JnL3B1Yi9zY20vbGludXgva2VybmVsL2dpdC9sZWUvbWZkLmdpdCB0
+YWdzL2liLW1mZC1hcm0tDQo+IHYzLjE4DQo+IA0KPiBmb3IgeW91IHRvIGZldGNoIGNoYW5nZXMg
+dXAgdG8gYmQ1OTdmNDdjYTRiZjdhNTIyYTAyOThhOTVjN2Y5YjJmMGE3NWI5ZToNCj4gDQo+ICAg
+ZGV2aWNldHJlZTogRGlhbG9nIFNlbWljb25kdWN0b3IgY29uc29saWRhdGUgZXhpc3RpbmcgdmVu
+ZG9yIHByZWZpeGVzIHRvDQo+IHN0YW5kYXJkaXNlIG9uICdkbGcnICgyMDE0LTA4LTI5IDA5OjI2
+OjI5ICswMTAwKQ0KPiANCg0KWy4uLl0NCg0KVGhhbmsgeW91IGZvciBkb2luZyB0aGlzLg0KUmVn
+YXJkcywNClN0ZXZlDQo
