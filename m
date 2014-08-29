@@ -1,37 +1,36 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 20 Aug 2014 14:28:32 +0000
-Subject: [PATCH 2/4] ARM: shmobile: r8a7790 dtsi: Remove superfluous interrupt-parent
-Message-Id: <1408544914-21742-3-git-send-email-geert+renesas@glider.be>
+Date: Fri, 29 Aug 2014 13:26:19 +0000
+Subject: [PATCH 2/5] ARM: shmobile: sh7372: Make domain_devices[] static __initdata
+Message-Id: <1409318782-28133-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1408544914-21742-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1408544914-21742-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-There's already an "interrupt-parent = <&gic>;" at the top, which is
-inherited by all child nodes, so the "interrupt-parent" property in
-the sound node can be removed.
+Make the domain_devices[] array static and __initdata, to reduce kernel
+size:
+  - Making it static gets rid of the code to copy the data to the stack,
+  - Marking it __initdata allows more init memory to be freed.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/mach-shmobile/setup-sh7372.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index e2e40e5bbe5c..cf1ba907cad9 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1158,7 +1158,6 @@
- 	rcar_sound: rcar_sound@0xec500000 {
- 		#sound-dai-cells = <1>;
- 		compatible =  "renesas,rcar_sound-r8a7790", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
--		interrupt-parent = <&gic>;
- 		reg =	<0 0xec500000 0 0x1000>, /* SCU */
- 			<0 0xec5a0000 0 0x100>,  /* ADG */
- 			<0 0xec540000 0 0x1000>, /* SSIU */
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index ea63fbe2538c..d646c8d12423 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -928,7 +928,7 @@ static struct platform_device *sh7372_late_devices[] __initdata = {
+ 
+ void __init sh7372_add_standard_devices(void)
+ {
+-	struct pm_domain_device domain_devices[] = {
++	static struct pm_domain_device domain_devices[] __initdata = {
+ 		{ "A3RV", &vpu_device, },
+ 		{ "A4MP", &spu0_device, },
+ 		{ "A4MP", &spu1_device, },
 -- 
-1.9.1
+1.7.9.5
 
