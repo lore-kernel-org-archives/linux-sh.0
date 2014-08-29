@@ -1,51 +1,55 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Mon, 25 Aug 2014 03:02:40 +0000
-Subject: [PATCH 8/9 v3] mmc: tmio: ensure that the clock has been stopped before set_clock
-Message-Id: <87zjets241.wl%kuninori.morimoto.gx@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 29 Aug 2014 13:50:13 +0000
+Subject: [PATCH 07/11] [WIP] ARM: shmobile: r8a7740/armadillo legacy: Add A4MP pm domain support
+Message-Id: <1409320217-13278-8-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d3d6aa34548248768494ad88056cf4bd@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87simtenpi.wl%kuninori.morimoto.gx@renesas.com>
-	<cb608c5e763f47b597936724ec05b615@SINPR06MB105.apcprd06.prod.outlook.com>
-	<87pphxe2q0.wl%kuninori.morimoto.gx@renesas.com>
-	<53AD638C.5060907@renesas.com>
-	<87egxehsec.wl%kuninori.morimoto.gx@gmail.com>
-	<87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87bnr9tgwj.wl%kuninori.morimoto.gx@gmail.com>
+References: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Ulf Hansson <ulf.hansson@linaro.org>
-Cc: Ian Molton <ian@mnementh.co.uk>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Add support for the A4MP power domain, and hook up the FSI hardware block.
+This domain also contains the SPU2, FMSI, and BBIF2 hardware blocks,
+but these are currently not used by any driver.
 
-This patch ensures that the clock has been stopped before
-it calls tmio_mmc_set_clock().
-The clock settings might be failed without this patch
+FIXME: A4PM is not added, as it causes "irq 163: nobody cared" (irq 163
+       is registered by sh-mobile-hdmi), either on boot, or, when trying
+       to fix it using pm_domain_always_on_gov, on resume.
 
-Tested-by: Nguyen Xuan Nui <nx-nui@jinso.co.jp>
-Tested-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v2 -> v3
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    1 +
+ arch/arm/mach-shmobile/pm-r8a7740.c            |    3 +++
+ 2 files changed, 4 insertions(+)
 
- - no change
-
- drivers/mmc/host/tmio_mmc_pio.c |    1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index da3c74d..1c5a631 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -895,6 +895,7 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 		}
- 		if (host->power = TMIO_MMC_OFF_STOP)
- 			tmio_mmc_reset(host);
-+		tmio_mmc_clk_stop(host);
- 		tmio_mmc_set_clock(host, ios->clock);
- 		if (host->power = TMIO_MMC_OFF_STOP)
- 			/* power up SD card and the bus */
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 735036038951..c2ac4ee51710 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1234,6 +1234,7 @@ static void __init eva_init(void)
+ 	static struct pm_domain_device domain_devices[] __initdata = {
+ 		{ "A4LC", &lcdc0_device },
+ 		{ "A4LC", &hdmi_lcdc_device },
++		{ "A4MP", &fsi_device },
+ 		{ "A4S",  &sh_eth_device },
+ 		{ "A3SP", &pwm_device },
+ 		{ "A3SP", &sdhi0_device },
+diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
+index 84b94d1d96db..86b2df8b5391 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7740.c
++++ b/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -37,6 +37,9 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
+ 		.genpd.name	= "A4LC",
+ 		.bit_shift	= 1,
+ 	}, {
++//		.genpd.name	= "A4MP",
++//		.bit_shift	= 2,
++//	}, {
+ 		.genpd.name	= "A3RV",
+ 		.bit_shift	= 6,
+ 	}, {
 -- 
 1.7.9.5
 
