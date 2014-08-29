@@ -1,83 +1,54 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 12 Aug 2014 20:16:18 +0000
-Subject: [PATCH v5 1/2] ARM: shmobile: r8a7790: add VIN device nodes
-Message-Id: <3266734.k9AqsXjshd@wasted.cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 29 Aug 2014 13:50:17 +0000
+Subject: [PATCH 11/11] [WIP] ARM: shmobile: r8a7740: Add A3SM pm domain support
+Message-Id: <1409320217-13278-12-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1793694.Z8xUpkGDQx@wasted.cogentembedded.com>
-In-Reply-To: <1793694.Z8xUpkGDQx@wasted.cogentembedded.com>
+References: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+Add support for the A3SM power domain, and hook it up as a subdomain of
+A4S.
 
-Add device nodes for the four video input controllers on the R8A7790.
+This domain contains the System CPU (Cortex-A9) hardware block, and thus
+must be controlled by the always-on governor.
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-[Sergei: renamed VIN device nodes, edited changelog]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+FIXME: A3SM is never powered down during s2ram, even when adding a
+       .suspend method like A4S has.
+       As A3SM is a subdomain of A4S, A4S is no longer powered down
+       during s2ram.
 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-Changes in version 5:
-- renamed VIN device nodes;
-- edited changelog and summary;
-- refreshed patch.
+ arch/arm/mach-shmobile/pm-r8a7740.c |    5 +++++
+ 1 file changed, 5 insertions(+)
 
- arch/arm/boot/dts/r8a7790.dtsi |   36 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
-
-Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7790.dtsi
-@@ -33,6 +33,10 @@
- 		spi2 = &msiof1;
- 		spi3 = &msiof2;
- 		spi4 = &msiof3;
-+		vin0 = &vin0;
-+		vin1 = &vin1;
-+		vin2 = &vin2;
-+		vin3 = &vin3;
- 	};
- 
- 	cpus {
-@@ -564,6 +568,38 @@
- 		status = "disabled";
- 	};
- 
-+	vin0: video@e6ef0000 {
-+		compatible = "renesas,vin-r8a7790";
-+		clocks = <&mstp8_clks R8A7790_CLK_VIN0>;
-+		reg = <0 0xe6ef0000 0 0x1000>;
-+		interrupts = <0 188 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	vin1: video@e6ef1000 {
-+		compatible = "renesas,vin-r8a7790";
-+		clocks = <&mstp8_clks R8A7790_CLK_VIN1>;
-+		reg = <0 0xe6ef1000 0 0x1000>;
-+		interrupts = <0 189 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	vin2: video@e6ef2000 {
-+		compatible = "renesas,vin-r8a7790";
-+		clocks = <&mstp8_clks R8A7790_CLK_VIN2>;
-+		reg = <0 0xe6ef2000 0 0x1000>;
-+		interrupts = <0 190 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	vin3: video@e6ef3000 {
-+		compatible = "renesas,vin-r8a7790";
-+		clocks = <&mstp8_clks R8A7790_CLK_VIN3>;
-+		reg = <0 0xe6ef3000 0 0x1000>;
-+		interrupts = <0 191 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
+diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
+index d563e623bcb5..23254c31efd9 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7740.c
++++ b/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -61,6 +61,10 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
+ 		.no_debug	= true,
+ 		.suspend	= r8a7740_pd_a3sp_suspend,
+ 	}, {
++		.genpd.name	= "A3SM",
++		.bit_shift	= 12,
++		.gov		= &pm_domain_always_on_gov,
++	}, {
+ 		.genpd.name	= "A3SG",
+ 		.bit_shift	= 13,
+ 	}, {
+@@ -74,6 +78,7 @@ void __init r8a7740_init_pm_domains(void)
+ 	rmobile_init_domains(r8a7740_pm_domains, ARRAY_SIZE(r8a7740_pm_domains));
+ 	pm_genpd_add_subdomain_names("A4R", "A3RV");
+ 	pm_genpd_add_subdomain_names("A4S", "A3SP");
++	pm_genpd_add_subdomain_names("A4S", "A3SM");
+ 	pm_genpd_add_subdomain_names("A4S", "A3SG");
+ }
+ #endif /* CONFIG_PM && !CONFIG_ARCH_MULTIPLATFORM */
+-- 
+1.7.9.5
 
