@@ -1,46 +1,47 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 11 Aug 2014 02:52:48 +0000
-Subject: [PATCH repost 4/5] ARM: shmobile: armadillo800eva-reference: Do not use r8a7740_add_standard_devices
-Message-Id: <1407725569-31413-5-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 29 Aug 2014 13:50:12 +0000
+Subject: [PATCH 06/11] ARM: shmobile: r8a7740: Add A3SG pm domain support
+Message-Id: <1409320217-13278-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1407725569-31413-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1407725569-31413-1-git-send-email-horms+renesas@verge.net.au>
+References: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Now that r8a7740_add_standard_devices_dt() is just a wrapper for
-of_platform_populate() call the latter directly.
+Add support for the A3SG power domain, and hook it up as a subdomain of
+A4S.
+This domain contains the SGX540 hardware block, which is currently not
+used by any driver.
 
-This is in preparation for removing r8a7740_add_standard_devices_dt().
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/pm-r8a7740.c |    4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index c392632..ea8a781 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -24,6 +24,7 @@
- #include <linux/gpio.h>
- #include <linux/io.h>
- #include <linux/kernel.h>
-+#include <linux/of_platform.h>
+diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
+index 93a89329d927..84b94d1d96db 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7740.c
++++ b/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -51,6 +51,9 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
+ 		.gov		= &pm_domain_always_on_gov,
+ 		.no_debug	= true,
+ 		.suspend	= r8a7740_pd_a3sp_suspend,
++	}, {
++		.genpd.name	= "A3SG",
++		.bit_shift	= 13,
+ 	},
+ };
  
- #include <asm/mach/arch.h>
- #include <asm/hardware/cache-l2x0.h>
-@@ -170,7 +171,7 @@ static void __init eva_init(void)
- 	l2x0_init(IOMEM(0xf0002000), 0x00400000, 0xc20f0fff);
- #endif
- 
--	r8a7740_add_standard_devices_dt();
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 
- 	r8a7740_pm_init();
+@@ -58,6 +61,7 @@ void __init r8a7740_init_pm_domains(void)
+ {
+ 	rmobile_init_domains(r8a7740_pm_domains, ARRAY_SIZE(r8a7740_pm_domains));
+ 	pm_genpd_add_subdomain_names("A4S", "A3SP");
++	pm_genpd_add_subdomain_names("A4S", "A3SG");
  }
+ #endif /* CONFIG_PM && !CONFIG_ARCH_MULTIPLATFORM */
+ 
 -- 
-2.0.1
+1.7.9.5
 
