@@ -1,37 +1,33 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 20 Aug 2014 00:24:26 +0000
-Subject: [PATCH] ARM: shmobile: Remove genmai_defconfig from MAINTAINERS
-Message-Id: <f7b98477f613a69b74ba4a715856630cc6508c0d.1408492852.git.horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 29 Aug 2014 18:15:09 +0000
+Subject: [PATCH v2 5/6] ARM: shmobile: r8a7794: document SCIF clock support
+Message-Id: <1409336110-32734-6-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408492852.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408492852.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The genmai defconfig file has been removed by
-3ed27bd90d6d0c8b ("ARM: shmobile: genmai: remove defconfig")
-so remove its entry in the MAINTAINERS accordingly.
-
-Reported-by: Joe Perches <joe@perches.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
- MAINTAINERS | 1 -
- 1 file changed, 1 deletion(-)
+ Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/MAINTAINERS b/MAINTAINERS
-index aefa948..99b7807 100644
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -1355,7 +1355,6 @@ F:	arch/arm/boot/dts/sh*
- F:	arch/arm/configs/ape6evm_defconfig
- F:	arch/arm/configs/armadillo800eva_defconfig
- F:	arch/arm/configs/bockw_defconfig
--F:	arch/arm/configs/genmai_defconfig
- F:	arch/arm/configs/koelsch_defconfig
- F:	arch/arm/configs/kzm9g_defconfig
- F:	arch/arm/configs/lager_defconfig
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+index b355660..7b87eb2 100644
+--- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
++++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+@@ -20,6 +20,10 @@ Required properties:
+     - "renesas,scifa-r8a7791" for R8A7791 (R-Car M2) SCIFA compatible UART.
+     - "renesas,scifb-r8a7791" for R8A7791 (R-Car M2) SCIFB compatible UART.
+     - "renesas,hscif-r8a7791" for R8A7791 (R-Car M2) HSCIF compatible UART.
++    - "renesas,scif-r8a7794" for R8A7794 (R-Car E2) SCIF compatible UART.
++    - "renesas,scifa-r8a7794" for R8A7794 (R-Car E2) SCIFA compatible UART.
++    - "renesas,scifb-r8a7794" for R8A7794 (R-Car E2) SCIFB compatible UART.
++    - "renesas,hscif-r8a7794" for R8A7794 (R-Car E2) HSCIF compatible UART.
+     - "renesas,scif" for generic SCIF compatible UART.
+     - "renesas,scifa" for generic SCIFA compatible UART.
+     - "renesas,scifb" for generic SCIFB compatible UART.
 -- 
-2.0.1
+1.8.4.5
 
