@@ -1,127 +1,128 @@
-From: keita kobayashi <keita.kobayashi.ym@renesas.com>
-Date: Fri, 01 Aug 2014 09:48:37 +0000
-Subject: [PATCH 3/6] cpuidle: shmobile: Add CPUIdle driver
-Message-Id: <53DB6275.1010707@renesas.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 29 Aug 2014 18:15:43 +0000
+Subject: [PATCH 1/3] ARM: shmobile: rcar-gen2: Add CA7 arch_timer initialization for r8a7794
+Message-Id: <1409336145-619-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org
-Cc: horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, rjw@rjwysocki.net
+To: linux-sh@vger.kernel.org
 
-Add the wfi and Core-Standby for CPUIdle power states support for
-the shmobile SoCs.
+On E2, the arch timer is hooked up to a different clock, and the CA7's arch
+timer CNTVOFF register must be initialized.
 
-Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Based on work by Hisashi Nakamura.
+
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
- drivers/cpuidle/Kconfig.arm        |    6 +++
- drivers/cpuidle/Makefile           |    1 +
- drivers/cpuidle/cpuidle-shmobile.c |   71 ++++++++++++++++++++++++++++++++++++
- 3 files changed, 78 insertions(+)
- create mode 100644 drivers/cpuidle/cpuidle-shmobile.c
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 72 ++++++++++++++++++++++----------
+ 1 file changed, 49 insertions(+), 23 deletions(-)
 
-diff --git a/drivers/cpuidle/Kconfig.arm b/drivers/cpuidle/Kconfig.arm
-index b6d69e8..2908cd0 100644
---- a/drivers/cpuidle/Kconfig.arm
-+++ b/drivers/cpuidle/Kconfig.arm
-@@ -61,3 +61,9 @@ config ARM_EXYNOS_CPUIDLE
- 	depends on ARCH_EXYNOS
- 	help
- 	  Select this to enable cpuidle for Exynos processors
+diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+index 42d5b43..7ed9279 100644
+--- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+@@ -3,6 +3,7 @@
+  *
+  * Copyright (C) 2013  Renesas Solutions Corp.
+  * Copyright (C) 2013  Magnus Damm
++ * Copyright (C) 2014  Ulrich Hecht
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+@@ -24,6 +25,7 @@
+ #include <linux/dma-contiguous.h>
+ #include <linux/io.h>
+ #include <linux/kernel.h>
++#include <linux/of.h>
+ #include <linux/of_fdt.h>
+ #include <asm/mach/arch.h>
+ #include "common.h"
+@@ -54,37 +56,61 @@ void __init rcar_gen2_timer_init(void)
+ {
+ #if defined(CONFIG_ARM_ARCH_TIMER) || defined(CONFIG_COMMON_CLK)
+ 	u32 mode = rcar_gen2_read_mode_pins();
++	bool is_e2 = (bool)of_find_compatible_node(NULL, NULL,
++		"renesas,r8a7794");
+ #endif
+ #ifdef CONFIG_ARM_ARCH_TIMER
+ 	void __iomem *base;
+ 	int extal_mhz = 0;
+ 	u32 freq;
+ 
+-	/* At Linux boot time the r8a7790 arch timer comes up
+-	 * with the counter disabled. Moreover, it may also report
+-	 * a potentially incorrect fixed 13 MHz frequency. To be
+-	 * correct these registers need to be updated to use the
+-	 * frequency EXTAL / 2 which can be determined by the MD pins.
+-	 */
+-
+-	switch (mode & (MD(14) | MD(13))) {
+-	case 0:
+-		extal_mhz = 15;
+-		break;
+-	case MD(13):
+-		extal_mhz = 20;
+-		break;
+-	case MD(14):
+-		extal_mhz = 26;
+-		break;
+-	case MD(13) | MD(14):
+-		extal_mhz = 30;
+-		break;
++	if (is_e2) {
++		freq = 260000000 / 8;	/* ZS / 8 */
++		/* CNTVOFF has to be initialized either from non-secure
++		 * Hypervisor mode or secure Monitor mode with SCR.NS=1.
++		 * If TrustZone is enabled then it should be handled by the
++		 * secure code.
++		 */
++		asm volatile(
++		"	cps	0x16\n"
++		"	mrc	p15, 0, r1, c1, c1, 0\n"
++		"	orr	r0, r1, #1\n"
++		"	mcr	p15, 0, r0, c1, c1, 0\n"
++		"	isb\n"
++		"	mov	r0, #0\n"
++		"	mcrr	p15, 4, r0, r0, c14\n"
++		"	isb\n"
++		"	mcr	p15, 0, r1, c1, c1, 0\n"
++		"	isb\n"
++		"	cps	0x13\n"
++			: : : "r0", "r1");
++	} else {
++		/* At Linux boot time the r8a7790 arch timer comes up
++		 * with the counter disabled. Moreover, it may also report
++		 * a potentially incorrect fixed 13 MHz frequency. To be
++		 * correct these registers need to be updated to use the
++		 * frequency EXTAL / 2 which can be determined by the MD pins.
++		 */
 +
-+config ARM_SHMOBILE_CPUIDLE
-+	bool "Cpu Idle Driver for the shmobile SoCs"
-+	depends on ARCH_SHMOBILE_MULTI
-+	help
-+	  Select this to enable cpuidle for shmobile SoCs
-diff --git a/drivers/cpuidle/Makefile b/drivers/cpuidle/Makefile
-index d8bb1ff..0d24054 100644
---- a/drivers/cpuidle/Makefile
-+++ b/drivers/cpuidle/Makefile
-@@ -16,6 +16,7 @@ obj-$(CONFIG_ARM_ZYNQ_CPUIDLE)		+= cpuidle-zynq.o
- obj-$(CONFIG_ARM_U8500_CPUIDLE)         += cpuidle-ux500.o
- obj-$(CONFIG_ARM_AT91_CPUIDLE)          += cpuidle-at91.o
- obj-$(CONFIG_ARM_EXYNOS_CPUIDLE)        += cpuidle-exynos.o
-+obj-$(CONFIG_ARM_SHMOBILE_CPUIDLE)      += cpuidle-shmobile.o
-
- ###############################################################################
- # MIPS drivers
-diff --git a/drivers/cpuidle/cpuidle-shmobile.c b/drivers/cpuidle/cpuidle-shmobile.c
-new file mode 100644
-index 0000000..538c4ec
---- /dev/null
-+++ b/drivers/cpuidle/cpuidle-shmobile.c
-@@ -0,0 +1,71 @@
-+/*
-+ * CPUIdle support code for SH-Mobile ARM
-+ *
-+ *  Copyright (C) 2014 Renesas Electronics Corporation
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
++		switch (mode & (MD(14) | MD(13))) {
++		case 0:
++			extal_mhz = 15;
++			break;
++		case MD(13):
++			extal_mhz = 20;
++			break;
++		case MD(14):
++			extal_mhz = 26;
++			break;
++		case MD(13) | MD(14):
++			extal_mhz = 30;
++			break;
++		}
 +
-+#include <linux/cpuidle.h>
-+#include <linux/device.h>
-+#include <linux/io.h>
-+#include <linux/platform_device.h>
-+#include <linux/pm.h>
-+#include <linux/suspend.h>
-+
-+#include <asm/cpuidle.h>
-+#include <asm/proc-fns.h>
-+
-+static void (*shmobile_enter_corestandby)(void);
-+
-+int shmobile_enter_cpuidle(struct cpuidle_device *dev,
-+			   struct cpuidle_driver *drv,
-+			   int index)
-+{
-+	shmobile_enter_corestandby();
-+	return index;
-+}
-+
-+static struct cpuidle_driver renesas_cpuidle_driver = {
-+	.name = "shmobile_cpuidle",
-+	.owner = THIS_MODULE,
-+	.states = {
-+		ARM_CPUIDLE_WFI_STATE,
-+		{
-+			.name			= "C1",
-+			.desc			= "Core Standby Mode",
-+			.exit_latency		= 500,
-+			.target_residency	= 100000,
-+			.flags			= CPUIDLE_FLAG_TIME_VALID,
-+			.enter			= shmobile_enter_cpuidle,
-+		},
-+	},
-+	.state_count = 2,
-+};
-+
-+static int shmobile_cpuidle_probe(struct platform_device *pdev)
-+{
-+	int ret;
-+
-+	shmobile_enter_corestandby = (void *)(pdev->dev.platform_data);
-+
-+	ret = cpuidle_register(&renesas_cpuidle_driver, NULL);
-+	if (ret) {
-+		dev_err(&pdev->dev, "failed to register cpuidle driver\n");
-+		return ret;
-+	}
-+
-+	return 0;
-+}
-+
-+static struct platform_driver shmobile_cpuidle_driver = {
-+	.probe	= shmobile_cpuidle_probe,
-+	.driver	= {
-+		.name = "cpuidle-shmobile",
-+		.owner = THIS_MODULE,
-+	},
-+};
-+
-+module_platform_driver(shmobile_cpuidle_driver);
++		/* The arch timer frequency equals EXTAL / 2 */
++		freq = extal_mhz * (1000000 / 2);
+ 	}
+ 
+-	/* The arch timer frequency equals EXTAL / 2 */
+-	freq = extal_mhz * (1000000 / 2);
+-
+ 	/* Remap "armgcnt address map" space */
+ 	base = ioremap(0xe6080000, PAGE_SIZE);
+ 
 -- 
-1.7.9.5
+1.8.4.5
+
