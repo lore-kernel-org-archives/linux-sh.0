@@ -1,62 +1,54 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Sep 2014 13:20:22 +0000
-Subject: [PATCH v3 3/9] ARM: shmobile: r8a7791: Add DU node to device tree
-Message-Id: <1411564828-30272-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 01 Sep 2014 09:22:35 +0000
+Subject: [PATCH 5/7] ARM: shmobile: koelsch: remove MMC_CAP2_NO_MULTI_READ
+Message-Id: <87k35nzodj.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-Add the DU device with a disabled state. Boards that want to enable the
-DU need to specify the output topology
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+sh_mobile_sdhi cares multiblock read bug.
+remove MMC_CAP2_NO_MULTI_READ flag from board code
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 30 ++++++++++++++++++++++++++++++
- 1 file changed, 30 insertions(+)
+ arch/arm/mach-shmobile/board-koelsch.c |    3 ---
+ 1 file changed, 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index e06c11f..00aeaaf 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -637,6 +637,36 @@
- 		status = "disabled";
- 	};
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index b7d5bc7..126a8b4 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -331,7 +331,6 @@ SDHI_REGULATOR(2, RCAR_GP_PIN(7, 19), RCAR_GP_PIN(2, 26));
+ static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_POWER_OFF_CARD,
+-	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
+ };
  
-+	du: display@feb00000 {
-+		compatible = "renesas,du-r8a7791";
-+		reg = <0 0xfeb00000 0 0x40000>,
-+		      <0 0xfeb90000 0 0x1c>;
-+		reg-names = "du", "lvds.0";
-+		interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 268 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7791_CLK_DU0>,
-+		         <&mstp7_clks R8A7791_CLK_DU1>,
-+		         <&mstp7_clks R8A7791_CLK_LVDS0>;
-+		clock-names = "du.0", "du.1", "lvds.0";
-+		status = "disabled";
-+
-+		ports {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+
-+			port@0 {
-+				reg = <0>;
-+				du_out_rgb: endpoint {
-+				};
-+			};
-+			port@1 {
-+				reg = <1>;
-+				du_out_lvds0: endpoint {
-+				};
-+			};
-+		};
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
+@@ -344,7 +343,6 @@ static struct resource sdhi0_resources[] __initdata = {
+ static struct sh_mobile_sdhi_info sdhi1_info __initdata = {
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_POWER_OFF_CARD,
+-	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
+ };
+ 
+@@ -357,7 +355,6 @@ static struct resource sdhi1_resources[] __initdata = {
+ static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_POWER_OFF_CARD,
+-	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
+ 			  TMIO_MMC_WRPROTECT_DISABLE,
+ };
 -- 
-1.8.5.5
+1.7.9.5
 
