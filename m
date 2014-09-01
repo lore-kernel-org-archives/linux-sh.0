@@ -1,96 +1,42 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 24 Sep 2014 01:07:31 +0000
-Subject: Re: [PATCH] ARM: dts: Sort SHMOBILE dtbs alphabetically
-Message-Id: <20140924010730.GE20233@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 01 Sep 2014 02:03:19 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Clk Updates for v3.18
+Message-Id: <cover.1409536884.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409227243-25102-1-git-send-email-geert+renesas@glider.be>
- <20140829003204.GA22661@verge.net.au>
- <20140902011608.GC12650@verge.net.au>
-In-Reply-To: <20140902011608.GC12650@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Sep 02, 2014 at 10:16:08AM +0900, Simon Horman wrote:
-> On Fri, Aug 29, 2014 at 09:32:04AM +0900, Simon Horman wrote:
-> > On Thu, Aug 28, 2014 at 02:00:43PM +0200, Geert Uytterhoeven wrote:
-> > > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> > > ---
-> > > This depends on Magnus' series "[PATCH 00/05] ARM: shmobile: r8a7740 and
-> > > Armadillo cleanup".
-> > 
-> > As per my response to that series:
-> > 
-> >    Thanks. I have tentatively queued this up.
-> > 
-> >    I got some push back from Olof [CCed] about putting cleanups on top of
-> >    development when sending pull-requests for v3.17. This series falls
-> >    into the same category: cleaning up board and related files on top
-> >    of changes to initialise devices using DT.
-> > 
-> >    Olof, ideally I'd like this to go into v3.18.
-> >    Let me know if you have preference to delay it.
-> 
-> Hi Geert,
-> 
-> I have reconsidered this and I think that it would be best to
-> defer this cleanup until v3.19. The reason for this is that
-> I believe that there are plans to both add and DTS files during
-> v3.18, which would conflict with this release cycle.
-> 
-> Please repost this patch once v3.17-rc6 has been released.
+Hi Olof, Hi Kevin, Hi Arnd,
 
-I have queued up the following for v3.19.
-I will push it to a branch that will be included in linux-next
-once v3.18-rc1 has been released.
-
-There was a conflict due to the addition of r8a7794-alt.dtb after
-you posted your patch. I have resolved it as follows. Please
-let me know if I have made an error.
+Please consider these Renesas ARM based SoC clk updates for v3.18.
 
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+I am taking this change through my tree with Mike's Ack
+as it seems to be a smooth way to handle things.
 
-[PATCH] ARM: dts: Sort SHMOBILE dtbs alphabetically
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-[horms+renesas@verge.net.au:  update for addition of r8a7794-alt.dtb]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+The following changes since commit 7d1311b93e58ed55f3a31cc8f94c4b8fe988a2b9:
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 783126b..a9125b8 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -358,24 +358,24 @@ dtb-$(CONFIG_ARCH_S5PV210) += s5pv210-aquila.dtb \
- 	s5pv210-smdkv210.dtb \
- 	s5pv210-torbreck.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += r7s72100-genmai.dtb \
-+	r8a73a4-ape6evm.dtb \
-+	r8a73a4-ape6evm-reference.dtb \
- 	r8a7740-armadillo800eva.dtb \
- 	r8a7778-bockw.dtb \
- 	r8a7778-bockw-reference.dtb \
- 	r8a7779-marzen.dtb \
--	r8a7791-koelsch.dtb \
- 	r8a7790-lager.dtb \
-+	r8a7791-koelsch.dtb \
-+	sh7372-mackerel.dtb \
- 	sh73a0-kzm9g.dtb \
--	sh73a0-kzm9g-reference.dtb \
--	r8a73a4-ape6evm.dtb \
--	r8a73a4-ape6evm-reference.dtb \
--	sh7372-mackerel.dtb
-+	sh73a0-kzm9g-reference.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
- 	r7s72100-genmai.dtb \
- 	r8a7740-armadillo800eva.dtb \
-+	r8a7779-marzen.dtb \
-+	r8a7790-lager.dtb \
- 	r8a7791-henninger.dtb \
- 	r8a7791-koelsch.dtb \
--	r8a7790-lager.dtb \
--	r8a7779-marzen.dtb \
- 	r8a7794-alt.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
- 	socfpga_cyclone5_socdk.dtb \
+  Linux 3.17-rc1 (2014-08-16 10:40:26 -0600)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clk-for-v3.18
+
+for you to fetch changes up to 8de078f189da45453d2ed2a04288e329cc169731:
+
+  clk: shmobile: Add r8a7794 support (2014-08-27 08:40:54 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC Clk Updates for v3.18
+
+* Add r8a7794 support
+
+----------------------------------------------------------------
+Hisashi Nakamura (1):
+      clk: shmobile: Add r8a7794 support
+
+ drivers/clk/shmobile/Makefile | 1 +
+ 1 file changed, 1 insertion(+)
