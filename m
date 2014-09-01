@@ -1,70 +1,42 @@
 From: Xiubo Li <Li.Xiubo@freescale.com>
-Date: Mon, 01 Sep 2014 04:29:41 +0000
-Subject: [PATCHv1 7/7] ASoC: dts: kirkwood-openrd-client: To support simple card newest style.
-Message-Id: <1409545781-20530-8-git-send-email-Li.Xiubo@freescale.com>
+Date: Mon, 01 Sep 2014 04:29:34 +0000
+Subject: [PATCHv1 0/7] simple-card: simplify the code.
+Message-Id: <1409545781-20530-1-git-send-email-Li.Xiubo@freescale.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409545781-20530-1-git-send-email-Li.Xiubo@freescale.com>
-In-Reply-To: <1409545781-20530-1-git-send-email-Li.Xiubo@freescale.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: broonie@kernel.org, lgirdwood@gmail.com, perex@perex.cz, tiwai@suse.de, kuninori.morimoto.gx@renesas.com, moinejf@free.fr, andrew@lunn.ch, jsarha@ti.com, devicetree@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, alsa-devel@alsa-project.org, shawn.guo@freescale.com
-Cc: linux-kernel@vger.kernel.org, Xiubo Li <Li.Xiubo@freescale.com>
+To: broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, lgirdwood-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, perex-/Fr2/VpizcU@public.gmane.org, tiwai-l3A5Bk7waGM@public.gmane.org, kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, moinejf-GANU6spQydw@public.gmane.org, andrew-g2DYL2Zd6BY@public.gmane.org, jsarha-l0cyMroinI0@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, alsa-devel-K7yf7f+aM1XWsZ/bQMPhNw@public.gmane.org, shawn.guo-KZfg59tc24xl57MIdRCFDg@public.gmane.org
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Xiubo Li <Li.Xiubo-KZfg59tc24xl57MIdRCFDg@public.gmane.org>
 
-This patch depends on the following simple card patch:
-=ASoC: simple-card: Merge single and muti DAI link code.
 
-This patch merge single DAI link and muti-DAI links code together,
-and simply the simple-card driver code.
+Change in v1:
+- Add simple-card dts node patches.
+- Fix format parsing bug from Jean-Francois's comment.
+- Rebase to Kuninori-san's newest changes in next branch.
 
-And also do some other improvement:
 
-Since from the DAI format micro SND_SOC_DAIFMT_CBx_CFx, the 'CBx'
-mean Codec's bit clock is as master/slave and the 'CFx' mean Codec's
-frame clock is as master/slave.
+Xiubo Li (7):
+  ASoC: simple-card: Merge single and muti DAI link code.
+  ASoC: simple-card: Adjust the comments of simple card.
+  ASoC: dts: vf610-twr: To support simple card newest style.
+  ASoC: dts: kirkwood-t5325: To support simple card newest style.
+  ASoC: dts: r8a7740-armadillo800eva-reference: To support simple card
+    newest style.
+  ASoC: dts: sh73a0-kzm9g-reference: To support simple card newest
+    style.
+  ASoC: dts: kirkwood-openrd-client: To support simple card newest
+    style.
 
-So these same DAI formats should be informed to CPU and CODE DAIs at
-the same time. For the Codec driver will set the bit clock and frame
-clock as the DAI formats said, but for the CPU driver, if the the
-bit clock or frame clock is as Codec master, so it should be set CPU
-DAI device as bit clock or frame clock as slave, and vice versa.
+ .../devicetree/bindings/sound/simple-card.txt      | 101 ++++++------
+ arch/arm/boot/dts/kirkwood-openrd-client.dts       |  15 +-
+ arch/arm/boot/dts/kirkwood-t5325.dts               |  15 +-
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts |  21 +--
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts       |  18 ++-
+ arch/arm/boot/dts/vf610-twr.dts                    |  17 +-
+ sound/soc/generic/simple-card.c                    | 176 ++++++++-------------
+ 7 files changed, 160 insertions(+), 203 deletions(-)
 
-The old code will cause confusion, and we should be clear that the
-letter 'C' here mean to Codec.
-=
-Signed-off-by: Xiubo Li <Li.Xiubo@freescale.com>
----
- arch/arm/boot/dts/kirkwood-openrd-client.dts | 15 ++++++++-------
- 1 file changed, 8 insertions(+), 7 deletions(-)
-
-diff --git a/arch/arm/boot/dts/kirkwood-openrd-client.dts b/arch/arm/boot/dts/kirkwood-openrd-client.dts
-index 887b9c1..3b6f169 100644
---- a/arch/arm/boot/dts/kirkwood-openrd-client.dts
-+++ b/arch/arm/boot/dts/kirkwood-openrd-client.dts
-@@ -33,15 +33,16 @@
- 
- 	sound {
- 		compatible = "simple-audio-card";
--		simple-audio-card,format = "i2s";
- 		simple-audio-card,mclk-fs = <256>;
- 
--		simple-audio-card,cpu {
--			sound-dai = <&audio0>;
--		};
--
--		simple-audio-card,codec {
--			sound-dai = <&cs42l51>;
-+		simple-audio-card,dai-link {
-+			format = "i2s";
-+			cpu {
-+				sound-dai = <&audio0>;
-+			};
-+			codec {
-+				sound-dai = <&cs42l51>;
-+			};
- 		};
- 	};
- };
 -- 
 1.8.4
 
