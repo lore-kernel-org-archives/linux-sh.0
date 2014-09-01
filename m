@@ -1,58 +1,66 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 01 Sep 2014 01:30:42 +0000
+From: Mike Turquette <mturquette@linaro.org>
+Date: Mon, 01 Sep 2014 21:59:46 +0000
 Subject: Re: [PATCH v2 5/6] ARM: shmobile: r8a7794: document SCIF clock support
-Message-Id: <20140901013042.GH32075@verge.net.au>
+Message-Id: <20140901215946.5251.96347@quantum>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1409336110-32734-1-git-send-email-ulrich.hecht+renesas@gmail.com>
  <1409336110-32734-6-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1409336110-32734-6-git-send-email-ulrich.hecht+renesas@gmail.com>
+ <20140901013042.GH32075@verge.net.au>
+In-Reply-To: <20140901013042.GH32075@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Cc: linux-sh@vger.kernel.org, mturquette@linaro.org, magnus.damm@gmail.com, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-serial@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Cc: linux-sh@vger.kernel.org, magnus.damm@gmail.com, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-serial@vger.kernel.org
 
-Hi Ulrich,
-
-please repost this patch with the following recipients added
-(both CCed on this email):
-
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: linux-serial@vger.kernel.org
-
-I am also sure that Mike Turquette would not mind being dropped from
-the CC list.
-
-Please also include:
-
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-
-On Fri, Aug 29, 2014 at 08:15:09PM +0200, Ulrich Hecht wrote:
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> ---
->  Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 4 ++++
->  1 file changed, 4 insertions(+)
+Quoting Simon Horman (2014-08-31 18:30:42)
+> Hi Ulrich,
 > 
-> diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-> index b355660..7b87eb2 100644
-> --- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-> +++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-> @@ -20,6 +20,10 @@ Required properties:
->      - "renesas,scifa-r8a7791" for R8A7791 (R-Car M2) SCIFA compatible UART.
->      - "renesas,scifb-r8a7791" for R8A7791 (R-Car M2) SCIFB compatible UART.
->      - "renesas,hscif-r8a7791" for R8A7791 (R-Car M2) HSCIF compatible UART.
-> +    - "renesas,scif-r8a7794" for R8A7794 (R-Car E2) SCIF compatible UART.
-> +    - "renesas,scifa-r8a7794" for R8A7794 (R-Car E2) SCIFA compatible UART.
-> +    - "renesas,scifb-r8a7794" for R8A7794 (R-Car E2) SCIFB compatible UART.
-> +    - "renesas,hscif-r8a7794" for R8A7794 (R-Car E2) HSCIF compatible UART.
->      - "renesas,scif" for generic SCIF compatible UART.
->      - "renesas,scifa" for generic SCIFA compatible UART.
->      - "renesas,scifb" for generic SCIFB compatible UART.
-> -- 
-> 1.8.4.5
+> please repost this patch with the following recipients added
+> (both CCed on this email):
 > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+> Cc: linux-serial@vger.kernel.org
 > 
+> I am also sure that Mike Turquette would not mind being dropped from
+> the CC list.
+
+Yeah, I don't really care about DT binding updates ;-)
+
+Regards,
+Mike
+
+> 
+> Please also include:
+> 
+> Acked-by: Simon Horman <horms+renesas@verge.net.au>
+> 
+> On Fri, Aug 29, 2014 at 08:15:09PM +0200, Ulrich Hecht wrote:
+> > Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+> > ---
+> >  Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 4 ++++
+> >  1 file changed, 4 insertions(+)
+> > 
+> > diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+> > index b355660..7b87eb2 100644
+> > --- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+> > +++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+> > @@ -20,6 +20,10 @@ Required properties:
+> >      - "renesas,scifa-r8a7791" for R8A7791 (R-Car M2) SCIFA compatible UART.
+> >      - "renesas,scifb-r8a7791" for R8A7791 (R-Car M2) SCIFB compatible UART.
+> >      - "renesas,hscif-r8a7791" for R8A7791 (R-Car M2) HSCIF compatible UART.
+> > +    - "renesas,scif-r8a7794" for R8A7794 (R-Car E2) SCIF compatible UART.
+> > +    - "renesas,scifa-r8a7794" for R8A7794 (R-Car E2) SCIFA compatible UART.
+> > +    - "renesas,scifb-r8a7794" for R8A7794 (R-Car E2) SCIFB compatible UART.
+> > +    - "renesas,hscif-r8a7794" for R8A7794 (R-Car E2) HSCIF compatible UART.
+> >      - "renesas,scif" for generic SCIF compatible UART.
+> >      - "renesas,scifa" for generic SCIFA compatible UART.
+> >      - "renesas,scifb" for generic SCIFB compatible UART.
+> > -- 
+> > 1.8.4.5
+> > 
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> > 
