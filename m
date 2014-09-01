@@ -1,128 +1,71 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Sep 2014 12:27:53 +0000
-Subject: [PATCH v2 6/9] ARM: shmobile: lager-reference: Remove DU platform device
-Message-Id: <1411561676-9556-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 01 Sep 2014 09:22:16 +0000
+Subject: [PATCH 4/7] mmc: sh_mobile_sdhi: use blk_size_workaround
+Message-Id: <87lhq3zoe3.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-The DU device is now instantiated from the device tree, remove the
-corresponding platform device.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Now, sh_mobile_sdhi can use blk_size_workaround instead of
+MMC_CAP2_NO_MULTI_READ. let's use it.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-lager-reference.c | 80 --------------------------
- 1 file changed, 80 deletions(-)
+ drivers/mmc/host/sh_mobile_sdhi.c |   20 +++++++++++++++++++-
+ 1 file changed, 19 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index bc4b483..82b077a 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -18,94 +18,15 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index d5d4937..5c44e77 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -58,7 +58,6 @@ static const struct sh_mobile_sdhi_of_data of_rcar_gen2_compatible = {
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE |
+ 			  TMIO_MMC_CLK_ACTUAL,
+ 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+-	.capabilities2	= MMC_CAP2_NO_MULTI_READ,
+ 	.dma_rx_offset	= 0x2000,
+ };
  
--#include <linux/dma-mapping.h>
- #include <linux/init.h>
- #include <linux/of_platform.h>
--#include <linux/platform_data/rcar-du.h>
+@@ -136,6 +135,24 @@ static int sh_mobile_sdhi_write16_hook(struct tmio_mmc_host *host, int addr)
+ 	return 0;
+ }
  
- #include <asm/mach/arch.h>
- 
--#include "clock.h"
- #include "common.h"
--#include "irqs.h"
- #include "r8a7790.h"
- #include "rcar-gen2.h"
- 
--/* DU */
--static struct rcar_du_encoder_data lager_du_encoders[] = {
--	{
--		.type = RCAR_DU_ENCODER_VGA,
--		.output = RCAR_DU_OUTPUT_DPAD0,
--	}, {
--		.type = RCAR_DU_ENCODER_NONE,
--		.output = RCAR_DU_OUTPUT_LVDS1,
--		.connector.lvds.panel = {
--			.width_mm = 210,
--			.height_mm = 158,
--			.mode = {
--				.pixelclock = 65000000,
--				.hactive = 1024,
--				.hfront_porch = 20,
--				.hback_porch = 160,
--				.hsync_len = 136,
--				.vactive = 768,
--				.vfront_porch = 3,
--				.vback_porch = 29,
--				.vsync_len = 6,
--			},
--		},
--	},
--};
--
--static struct rcar_du_platform_data lager_du_pdata = {
--	.encoders = lager_du_encoders,
--	.num_encoders = ARRAY_SIZE(lager_du_encoders),
--};
--
--static const struct resource du_resources[] __initconst = {
--	DEFINE_RES_MEM(0xfeb00000, 0x70000),
--	DEFINE_RES_MEM_NAMED(0xfeb90000, 0x1c, "lvds.0"),
--	DEFINE_RES_MEM_NAMED(0xfeb94000, 0x1c, "lvds.1"),
--	DEFINE_RES_IRQ(gic_spi(256)),
--	DEFINE_RES_IRQ(gic_spi(268)),
--	DEFINE_RES_IRQ(gic_spi(269)),
--};
--
--static void __init lager_add_du_device(void)
--{
--	struct platform_device_info info = {
--		.name = "rcar-du-r8a7790",
--		.id = -1,
--		.res = du_resources,
--		.num_res = ARRAY_SIZE(du_resources),
--		.data = &lager_du_pdata,
--		.size_data = sizeof(lager_du_pdata),
--		.dma_mask = DMA_BIT_MASK(32),
--	};
--
--	platform_device_register_full(&info);
--}
--
--/*
-- * This is a really crude hack to provide clkdev support to platform
-- * devices until they get moved to DT.
-- */
--static const struct clk_name clk_names[] __initconst = {
--	{ "du0", "du.0", "rcar-du-r8a7790" },
--	{ "du1", "du.1", "rcar-du-r8a7790" },
--	{ "du2", "du.2", "rcar-du-r8a7790" },
--	{ "lvds0", "lvds.0", "rcar-du-r8a7790" },
--	{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
--};
--
--static void __init lager_add_standard_devices(void)
--{
--	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
--
--	lager_add_du_device();
--}
--
- static const char *lager_boards_compat_dt[] __initdata = {
- 	"renesas,lager",
- 	"renesas,lager-reference",
-@@ -116,7 +37,6 @@ DT_MACHINE_START(LAGER_DT, "lager")
- 	.smp		= smp_ops(r8a7790_smp_ops),
- 	.init_early	= shmobile_init_delay,
- 	.init_time	= rcar_gen2_timer_init,
--	.init_machine	= lager_add_standard_devices,
- 	.init_late	= shmobile_init_late,
- 	.reserve	= rcar_gen2_reserve,
- 	.dt_compat	= lager_boards_compat_dt,
++static int sh_mobile_blk_size_workaround(struct mmc_card *card,
++					 struct request *req, int blk_size)
++{
++	/*
++	 * In Renesas controllers, when performing a
++	 * multiple block read of one or two blocks,
++	 * depending on the timing with which the
++	 * response register is read, the response
++	 * value may not be read properly.
++	 * Use single block read for this HW bug
++	 */
++	if ((rq_data_dir(req) = READ) &&
++	    blk_size = 2)
++		return 1;
++
++	return blk_size;
++}
++
+ static void sh_mobile_sdhi_cd_wakeup(const struct platform_device *pdev)
+ {
+ 	mmc_detect_change(platform_get_drvdata(pdev), msecs_to_jiffies(100));
+@@ -191,6 +208,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
+ 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
+ 	mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
++	mmc_data->blk_size_workaround = sh_mobile_blk_size_workaround;
+ 	if (p) {
+ 		mmc_data->flags = p->tmio_flags;
+ 		mmc_data->ocr_mask = p->tmio_ocr_mask;
 -- 
-1.8.5.5
+1.7.9.5
 
