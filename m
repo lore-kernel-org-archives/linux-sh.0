@@ -1,83 +1,41 @@
-From: "Li.Xiubo@freescale.com" <Li.Xiubo@freescale.com>
-Date: Mon, 01 Sep 2014 07:48:34 +0000
-Subject: RE: [alsa-devel] [PATCHv1 1/7] ASoC: simple-card: Merge single and muti	DAI link code.
-Message-Id: <ac4db632b6c944dcb2179089076b7871@BY2PR0301MB0613.namprd03.prod.outlook.com>
+From: Andrew Lunn <andrew@lunn.ch>
+Date: Mon, 01 Sep 2014 13:34:12 +0000
+Subject: Re: [PATCHv1 1/7] ASoC: simple-card: Merge single and muti DAI link code.
+Message-Id: <20140901133412.GA11312@lunn.ch>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1409545781-20530-1-git-send-email-Li.Xiubo@freescale.com>
-	<1409545781-20530-2-git-send-email-Li.Xiubo@freescale.com>
- <87tx4rzszx.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87tx4rzszx.wl%kuninori.morimoto.gx@gmail.com>
+ <1409545781-20530-2-git-send-email-Li.Xiubo@freescale.com>
+In-Reply-To: <1409545781-20530-2-git-send-email-Li.Xiubo@freescale.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Cc: "broonie@kernel.org" <broonie@kernel.org>, "lgirdwood@gmail.com" <lgirdwood@gmail.com>, "perex@perex.cz" <perex@perex.cz>, "tiwai@suse.de" <tiwai@suse.de>, "kuninori.morimoto.gx@renesas.com" <kuninori.morimoto.gx@renesas.com>, "moinejf@free.fr" <moinejf@free.fr>, "andrew@lunn.ch" <andrew@lunn.ch>, "jsarha@ti.com" <jsarha@ti.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "alsa-devel@alsa-project.org" <alsa-devel@alsa-project.org>, Shawn Guo <Shawn.Guo@freescale.com>, Nicolin Chen <nicoleotsuka@gmail.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: Xiubo Li <Li.Xiubo@freescale.com>
+Cc: broonie@kernel.org, lgirdwood@gmail.com, perex@perex.cz, tiwai@suse.de, kuninori.morimoto.gx@renesas.com, moinejf@free.fr, andrew@lunn.ch, jsarha@ti.com, devicetree@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, alsa-devel@alsa-project.org, shawn.guo@freescale.com, linux-kernel@vger.kernel.org, Nicolin Chen <nicoleotsuka@gmail.com>
 
-> Hi Xiubo
-> 
-> Thank you for your patch.
-> This clean-up is very nice for me.
-> But, I have 1 small comment
-> 
-> >  asoc_simple_card_sub_parse_of(struct device_node *np,
-> >  			      struct asoc_simple_dai *dai,
-> >  			      struct device_node **p_node,
-> > -			      const char **name)
-> > +			      const char **name,
-> > +			      unsigned int *daifmt)
-> >  {
-> >  	struct device_node *node;
-> >  	struct clk *clk;
-> >  	u32 val;
-> >  	int ret;
-> >
-> > +	if (!daifmt)
-> > +		return -EINVAL;
-> > +
-> > +	/*
-> > +	 * Parse format, bitclock-inversion and frame-inversion
-> > +	 * for DAI each device.
-> > +	 */
-> > +	*daifmt = snd_soc_of_parse_daifmt(np, NULL, NULL, NULL);
-> > +	*daifmt &= ~(SND_SOC_DAIFMT_MASTER_MASK | SND_SOC_DAIFMT_FORMAT_MASK);
-> (snip)
-> >  	ret = asoc_simple_card_sub_parse_of(np, &dai_props->cpu_dai,
-> >  					    &dai_link->cpu_of_node,
-> > -					    &dai_link->cpu_dai_name);
-> > +					    &dai_link->cpu_dai_name,
-> > +					    &daifmt);
-> (snip)
-> > +	dai_props->cpu_dai.fmt |= daifmt;
-> (snip)
-> >  	ret = asoc_simple_card_sub_parse_of(np, &dai_props->codec_dai,
-> >  					    &dai_link->codec_of_node,
-> > -					    &dai_link->codec_dai_name);
-> > +					    &dai_link->codec_dai_name,
-> > +					    &daifmt);
-> (snip)
-> > +	dai_props->codec_dai.fmt |= daifmt;
-> 
-> These are using
-> 
->       asoc_simple_card_sub_parse_of(np, &dai_props->cpu_dai, xxx)
->       asoc_simple_card_sub_parse_of(np, &dai_props->codec_dai, xxx)
-> 
-> I guess, asoc_simple_card_sub_parse_of() can update
-> below inside function
-> 
-> 	dai_props->cpu_dai.fmt |= daifmt;
-> 	dai_props->codec_dai.fmt |= daifmt;
-> 
-> 
+On Mon, Sep 01, 2014 at 12:29:35PM +0800, Xiubo Li wrote:
+> This patch merge single DAI link and muti-DAI links code together,
+> and simply the simple-card driver code.
 
-Yes, yes, that's very well.
+Hi Xiubo
 
-Thanks very much for you advice.
+It would be good to note that this breaks the Binary API with DT
+blobs. Old blobs will not work with this new C code.
 
-For some reason I must resent this patch series, and then I will
-fix this together.
+> And also do some other improvement:
 
+It would be good to put these improvements into separate patches,
+making them easier to review.
 
-BRs
-Xiubo
+> +==
+> +DAI link node(s) and its or their subnodes:
+>  
+> -Required dai-link subnodes:
+> +There must be one DAI link node exsit at least, and each DAI link must
 
+typ0. It would also be better to say:
+
+There must be at least one DAI link, and each DAI link must
+
+> +contain one CPU subnode and one CODEC subnode.
+
+  Andrew
