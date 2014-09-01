@@ -1,59 +1,79 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 17 Sep 2014 14:11:05 +0000
-Subject: [PATCH 0/8] DU DT support for Marzen, Lager and Koelsch
-Message-Id: <1410963073-3176-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Xiubo Li <Li.Xiubo@freescale.com>
+Date: Mon, 01 Sep 2014 04:29:37 +0000
+Subject: [PATCHv1 3/7] ASoC: dts: vf610-twr: To support simple card newest style.
+Message-Id: <1409545781-20530-4-git-send-email-Li.Xiubo@freescale.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1409545781-20530-1-git-send-email-Li.Xiubo@freescale.com>
+In-Reply-To: <1409545781-20530-1-git-send-email-Li.Xiubo@freescale.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: broonie@kernel.org, lgirdwood@gmail.com, perex@perex.cz, tiwai@suse.de, kuninori.morimoto.gx@renesas.com, moinejf@free.fr, andrew@lunn.ch, jsarha@ti.com, devicetree@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, alsa-devel@alsa-project.org, shawn.guo@freescale.com
+Cc: linux-kernel@vger.kernel.org, Xiubo Li <Li.Xiubo@freescale.com>
 
-Hello,
+This patch depends on the following simple card patch:
+=ASoC: simple-card: Merge single and muti DAI link code.
 
-This patch series enable the DU device in DT for the Marzen, Lager and Koelsch
-boards (in their multiplatform implementation only).
+This patch merge single DAI link and muti-DAI links code together,
+and simply the simple-card driver code.
 
-Nothing special here, the first three patches add the DU nodes to the SoC
-.dtsi files, the next two patches remove the DU platform devices from the
-lager and koelsch reference board files, and the last three patches finally
-enable the DU devices in the board DT files.
+And also do some other improvement:
 
-Please note that HDMI output isn't supported yet, another patch set will come
-in the next few days.
+Since from the DAI format micro SND_SOC_DAIFMT_CBx_CFx, the 'CBx'
+mean Codec's bit clock is as master/slave and the 'CFx' mean Codec's
+frame clock is as master/slave.
 
-The patches are based on top of the DU changes from the "[PATCH 00/16] R-Car
-Display Unit DT bindings" series that will be merged in v3.18. This series is
-thus targeted at v3.19. Fast-tracking it to v3.18 is still possible if
-desired, in which case I would need to ask Dave Airlie to provide a stable
-branch with the driver changes. The clock is ticking, if anyone would like DU
-DT in v3.18, speak now or forever hold your peace.
+So these same DAI formats should be informed to CPU and CODE DAIs at
+the same time. For the Codec driver will set the bit clock and frame
+clock as the DAI formats said, but for the CPU driver, if the the
+bit clock or frame clock is as Codec master, so it should be set CPU
+DAI device as bit clock or frame clock as slave, and vice versa.
 
-I've pushed a test branch that includes all patches to
+The old code will cause confusion, and we should be clear that the
+letter 'C' here mean to Codec.
+=
+Signed-off-by: Xiubo Li <Li.Xiubo@freescale.com>
+---
+ arch/arm/boot/dts/vf610-twr.dts | 17 ++++++++---------
+ 1 file changed, 8 insertions(+), 9 deletions(-)
 
-	git://linuxtv.org/pinchartl/fbdev.git drm/du/dt
-
-Laurent Pinchart (8):
-  ARM: shmobile: r8a7779: Add DU node to device tree
-  ARM: shmobile: r8a7790: Add DU node to device tree
-  ARM: shmobile: r8a7791: Add DU node to device tree
-  ARM: shmobile: lager-reference: Remove DU platform device
-  ARM: shmobile: koelsch-reference: Remove DU platform device
-  ARM: shmobile: marzen: Enable DU device in DT
-  ARM: shmobile: lager: Enable DU device in DT
-  ARM: shmobile: koelsch: Enable DU device in DT
-
- arch/arm/boot/dts/r8a7779-marzen.dts             | 106 +++++++++++++++++++++++
- arch/arm/boot/dts/r8a7779.dtsi                   |  24 +++++
- arch/arm/boot/dts/r8a7790-lager.dts              |  78 ++++++++++++++++-
- arch/arm/boot/dts/r8a7790.dtsi                   |  39 +++++++++
- arch/arm/boot/dts/r8a7791-koelsch.dts            |  43 ++++++++-
- arch/arm/boot/dts/r8a7791.dtsi                   |  30 +++++++
- arch/arm/mach-shmobile/board-koelsch-reference.c |  73 ----------------
- arch/arm/mach-shmobile/board-lager-reference.c   |  80 -----------------
- 8 files changed, 314 insertions(+), 159 deletions(-)
-
+diff --git a/arch/arm/boot/dts/vf610-twr.dts b/arch/arm/boot/dts/vf610-twr.dts
+index b8a5e8c..841a45a 100644
+--- a/arch/arm/boot/dts/vf610-twr.dts
++++ b/arch/arm/boot/dts/vf610-twr.dts
+@@ -61,7 +61,6 @@
+ 
+ 	sound {
+ 		compatible = "simple-audio-card";
+-		simple-audio-card,format = "i2s";
+ 		simple-audio-card,widgets  			"Microphone", "Microphone Jack",
+ 			"Headphone", "Headphone Jack",
+@@ -74,17 +73,17 @@
+ 			"Headphone Jack", "HP_OUT",
+ 			"Speaker Ext", "LINE_OUT";
+ 
+-		simple-audio-card,cpu {
+-			sound-dai = <&sai2>;
+-			master-clkdir-out;
++		simple-audio-card,dai-link {
++			format = "i2s";
+ 			frame-master;
+ 			bitclock-master;
+-		};
+ 
+-		simple-audio-card,codec {
+-			sound-dai = <&codec>;
+-			frame-master;
+-			bitclock-master;
++			cpu {
++				sound-dai = <&sai2>;
++			};
++			codec {
++				sound-dai = <&codec>;
++			};
+ 		};
+ 	};
+ };
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.4
 
