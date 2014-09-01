@@ -1,54 +1,48 @@
 From: Arnd Bergmann <arnd@arndb.de>
-Date: Mon, 01 Sep 2014 08:24:17 +0000
+Date: Mon, 01 Sep 2014 08:58:19 +0000
 Subject: Re: [PATCH 1/2] ARM: multi_v7_defconfig: Enable shmobile platforms
-Message-Id: <3848521.UcIm3L3emN@wuerfel>
+Message-Id: <7714045.KMII2MK3EF@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1409234429-1916-1-git-send-email-geert+renesas@glider.be>
- <3598124.ze8sbSR9ui@wuerfel>
- <CAMuHMdXXUrq3tsiaEym_uuoiYXNt66c5sm+1mSAfX6cHgMbEOQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdXXUrq3tsiaEym_uuoiYXNt66c5sm+1mSAfX6cHgMbEOQ@mail.gmail.com>
+ <3598124.ze8sbSR9ui@wuerfel> <0a6f01cfc432$507900f0$f16b02d0$@samsung.com>
+In-Reply-To: <0a6f01cfc432$507900f0$f16b02d0$@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Saturday 30 August 2014 11:32:30 Geert Uytterhoeven wrote:
-> Hi Arnd,
-> 
-> On Fri, Aug 29, 2014 at 10:11 PM, Arnd Bergmann <arnd@arndb.de> wrote:
-> > A related problem that I think is more significant is that
-> > some platforms 'select' a particular driver and when you
-> > disable the platform, that driver is suddenly removed from the
-> > defconfig for all other platforms as well. This has bitten
-> > us a few times in the past, and I'd really like to fix those
-> > cases first.
-> 
-> Indeed. "select" is evil, and has a devastating effect on minimal
-> defconfigs (lots of churn and nasty surprises like the one you mentioned).
-> 
-> So it actually makes more sense to derive multi_v7_defconfig
-> from the individual platform's defconfigs.
-> I also have a script for that, which I wrote to create m68k's multi_defconfig
-> a long time ago:
-> https://github.com/geertu/linux-scripts/blob/master/linux-config-merge
+On Saturday 30 August 2014 18:10:59 Kukjin Kim wrote:
+> Arnd Bergmann wrote:
+> > On Friday 29 August 2014 20:05:49 Bartlomiej Zolnierkiewicz wrote:
+> > > I've been looking lately into making it possible to easily go
+> > > from multi_v7_defconfig config to a single platform one (in my
+> > > case Exynos one) and removing the need to keep the latter (i.e.
+> > > exynos_defconfig) in the kernel tree in the long-term.
+> > >
+> Why? I don't have any idea why we should use only multi_v7_defconfig for each
+> hardware platform. In my understanding, multi_v7_defconfig can be used for one
+> kernel image can support all of the platforms but it doesn't mean it should be
+> used for each platform. And I think, if we cannot maintain each platform's
+> defconfig in mainline, it will be kept in each SoC vendor and it is not a good
+> way. I mean both defconfigs has each value in mainline, exynos_defconfig should
+> be updated though ;)
 
-This looks like a very interesting method, and is similar to the "Kconfig
-fragments" that a lot of people are using.
+It's not clear how we are going to do this in the long run. We definitely
+have far more defconfig files in the kernel than we want to have, it's
+a burden for testers. In theory, running multi_v7_defconfig should have
+no downsides other than the obvious space overhead of the unused platform
+code and there should be no difference between disabling unused file systems
+and PCI drivers to disabling unused platforms.
 
-However I'm not sure we can replace the multi_v7_defconfig with it, the
-main problem I see with that is that it can get unpredictable when
-changes are done to one of the inputs. I'd rather keep the multi_v7_defconfig
-in some form (possibly extend it to v6) and use fragments for some specialized
-variation (v6-smp, v7, v7-lpae, ...).
- 
-> In the long run, I think creating defconfigs from DTS is the way to go.
-> Extracting dependencies from the build system (both Makefile and
-> the myriad of complex dependencies in Kconfig) are the biggest hurdles to
-> solve.
+Another argument is that even an exynos_defconfig contains much more
+code than you really want, and for an embedded system you would turn off
+all the drivers that a particular exynos machine does not have. So there
+is no fundamental difference between turning off part of exynos_defconfig
+and turning off parts of multi_v7_defconfig, the difference is mainly
+how many options you'd turn off.
 
-Yes, this looks like very interesting work. We won't be able to use it
-for all cases, in particular for distro kernels that are meant to run
-on a large number of machines that don't all have dts files in the kernel,
-but it should simplify the workflow for a lot of embedded use cases.
+Then again, I also don't see a reason to remove exynos_defconfig any time
+soon. So far the rule is that each platform can have its own defconfig
+because that's the way it has been done for a long time.
 
 	Arnd
