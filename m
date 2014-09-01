@@ -1,58 +1,75 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Sep 2014 12:27:48 +0000
-Subject: [PATCH v2 1/9] ARM: shmobile: r8a7779: Add DU node to device tree
-Message-Id: <1411561676-9556-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 01 Sep 2014 09:21:27 +0000
+Subject: [PATCH 2/7] mmc: omap_hsmmc: use blk_size_workaround
+Message-Id: <87oauzzofe.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375916192-22647-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375916192-22647-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-Add the DU device with a disabled state. Boards that want to enable the
-DU need to specify the output topology
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Now, omap_hsmmc can use blk_size_workaround instead of
+MMC_CAP2_NO_MULTI_READ. let's use it.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7779.dtsi | 24 ++++++++++++++++++++++++
- 1 file changed, 24 insertions(+)
+ drivers/mmc/host/omap_hsmmc.c |   17 ++++++++++++++++-
+ 1 file changed, 16 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 7cfba9a..fda814e 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -379,6 +379,30 @@
- 		status = "disabled";
- 	};
+diff --git a/drivers/mmc/host/omap_hsmmc.c b/drivers/mmc/host/omap_hsmmc.c
+index ece1634..6d2696b 100644
+--- a/drivers/mmc/host/omap_hsmmc.c
++++ b/drivers/mmc/host/omap_hsmmc.c
+@@ -219,6 +219,7 @@ struct omap_hsmmc_host {
+ #define AUTO_CMD23		(1 << 0)        /* Auto CMD23 support */
+ #define HSMMC_SDIO_IRQ_ENABLED	(1 << 1)        /* SDIO irq enabled */
+ #define HSMMC_WAKE_IRQ_ENABLED	(1 << 2)
++#define HSMMC_NO_MULTI_READ	(1 << 3)
+ 	struct omap_hsmmc_next	next_data;
+ 	struct	omap_mmc_platform_data	*pdata;
+ };
+@@ -1829,6 +1830,19 @@ static int omap_hsmmc_disable_fclk(struct mmc_host *mmc)
+ 	return 0;
+ }
  
-+	du: display@fff80000 {
-+		compatible = "renesas,du-r8a7779";
-+		reg = <0 0xfff80000 0 0x40000>;
-+		interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7779_CLK_DU>;
-+		status = "disabled";
++static int *omap_hsmmc_blk_size_workaround(struct mmc_card *card,
++					   struct request *req, int blk_size)
++{
++	struct omap_hsmmc_host *host = mmc_priv(card->host);
 +
-+		ports {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
++	/* Some controllers can't do multiblock reads due to hw bugs */
++	if ((host->flags & HSMMC_NO_MULTI_READ) &&
++	    (rq_data_dir(req) = READ))
++		return 1;
 +
-+			port@0 {
-+				reg = <0>;
-+				du_out_rgb0: endpoint {
-+				};
-+			};
-+			port@1 {
-+				reg = <1>;
-+				du_out_rgb1: endpoint {
-+				};
-+			};
-+		};
-+	};
++	return blk_size;
++}
 +
- 	clocks {
- 		#address-cells = <1>;
- 		#size-cells = <1>;
+ static const struct mmc_host_ops omap_hsmmc_ops = {
+ 	.enable = omap_hsmmc_enable_fclk,
+ 	.disable = omap_hsmmc_disable_fclk,
+@@ -1840,6 +1854,7 @@ static const struct mmc_host_ops omap_hsmmc_ops = {
+ 	.get_ro = omap_hsmmc_get_ro,
+ 	.init_card = omap_hsmmc_init_card,
+ 	.enable_sdio_irq = omap_hsmmc_enable_sdio_irq,
++	.blk_workaround = omap_hsmmc_blk_size_workaround,
+ };
+ 
+ #ifdef CONFIG_DEBUG_FS
+@@ -2101,7 +2116,7 @@ static int omap_hsmmc_probe(struct platform_device *pdev)
+ 
+ 	if (host->pdata->controller_flags & OMAP_HSMMC_BROKEN_MULTIBLOCK_READ) {
+ 		dev_info(&pdev->dev, "multiblock reads disabled due to 35xx erratum 2.1.1.128; MMC read performance may suffer\n");
+-		mmc->caps2 |= MMC_CAP2_NO_MULTI_READ;
++		host->flags |= HSMMC_NO_MULTI_READ;
+ 	}
+ 
+ 	pm_runtime_enable(host->dev);
 -- 
-1.8.5.5
+1.7.9.5
 
