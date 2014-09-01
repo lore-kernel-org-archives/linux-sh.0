@@ -1,34 +1,37 @@
-From: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
-Date: Mon, 01 Sep 2014 13:18:02 +0000
-Subject: [PATCH] v4l: vsp1: fix driver dependencies
-Message-Id: <25174054.f3JtKIKjvH@amdc1032>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 01 Sep 2014 16:32:56 +0000
+Subject: Re: [PATCH] v4l: vsp1: fix driver dependencies
+Message-Id: <CAMuHMdX3UX-XL8g1qQ-aJeRy_iT1uUvcGHyWF2gci+rnPZx4BA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <25174054.f3JtKIKjvH@amdc1032>
+In-Reply-To: <25174054.f3JtKIKjvH@amdc1032>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mauro Carvalho Chehab <m.chehab@samsung.com>
-Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kyungmin Park <kyungmin.park@samsung.com>, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
+Cc: Mauro Carvalho Chehab <m.chehab@samsung.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kyungmin Park <kyungmin.park@samsung.com>, Linux Media Mailing List <linux-media@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-Renesas VSP1 Video Processing Engine support should be available
-only on Renesas ARM SoCs.
+On Mon, Sep 1, 2014 at 3:18 PM, Bartlomiej Zolnierkiewicz
+<b.zolnierkie@samsung.com> wrote:
+> Renesas VSP1 Video Processing Engine support should be available
+> only on Renesas ARM SoCs.
 
-Signed-off-by: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
-Acked-by: Kyungmin Park <kyungmin.park@samsung.com>
-Cc: Simon Horman <horms@verge.net.au>
-Cc: Magnus Damm <magnus.damm@gmail.com>
----
- drivers/media/platform/Kconfig |    1 +
- 1 file changed, 1 insertion(+)
+Thanks!
 
-Index: b/drivers/media/platform/Kconfig
-=================================--- a/drivers/media/platform/Kconfig	2014-09-01 14:51:37.024553544 +0200
-+++ b/drivers/media/platform/Kconfig	2014-09-01 15:17:34.284594657 +0200
-@@ -213,6 +213,7 @@ config VIDEO_SH_VEU
- config VIDEO_RENESAS_VSP1
- 	tristate "Renesas VSP1 Video Processing Engine"
- 	depends on VIDEO_V4L2 && VIDEO_V4L2_SUBDEV_API && HAS_DMA
-+	depends on ARCH_SHMOBILE || COMPILE_TEST
- 	select VIDEOBUF2_DMA_CONTIG
- 	---help---
- 	  This is a V4L2 driver for the Renesas VSP1 video processing engine.
+> Signed-off-by: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
+> Acked-by: Kyungmin Park <kyungmin.park@samsung.com>
+> Cc: Simon Horman <horms@verge.net.au>
+> Cc: Magnus Damm <magnus.damm@gmail.com>
 
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
