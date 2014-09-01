@@ -1,69 +1,136 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 25 Sep 2014 16:15:34 +0000
-Subject: [PATCH v2 03/11] ARM: shmobile: armadillo800eva legacy: Add missing A3SP pm domain devices
-Message-Id: <1411661742-4767-4-git-send-email-geert+renesas@glider.be>
+From: Xiubo Li <Li.Xiubo@freescale.com>
+Date: Mon, 01 Sep 2014 04:29:36 +0000
+Subject: [PATCHv1 2/7] ASoC: simple-card: Adjust the comments of simple card.
+Message-Id: <1409545781-20530-3-git-send-email-Li.Xiubo@freescale.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411661742-4767-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1411661742-4767-1-git-send-email-geert+renesas@glider.be>
+References: <1409545781-20530-1-git-send-email-Li.Xiubo@freescale.com>
+In-Reply-To: <1409545781-20530-1-git-send-email-Li.Xiubo@freescale.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: broonie@kernel.org, lgirdwood@gmail.com, perex@perex.cz, tiwai@suse.de, kuninori.morimoto.gx@renesas.com, moinejf@free.fr, andrew@lunn.ch, jsarha@ti.com, devicetree@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, alsa-devel@alsa-project.org, shawn.guo@freescale.com
+Cc: linux-kernel@vger.kernel.org, Xiubo Li <Li.Xiubo@freescale.com>
 
-Commit 802a5639aa7041b2 ("ARM: shmobile: r8a7740: add A3SP pm domain
-support") added the A3SP power domain, but forgot to hook up the TPU,
-SDHI0/1, and MMCIF hardware blocks.
-
-Note: As the default PM QoS latency constraint for SDHI is only 100 µs
-(cfr. commit c419e611c3c59c0e ("tmio_mmc / PM: Use PM QoS latency
-constraint"), while DEFAULT_DEV_LATENCY_NS is 250000, suspend fails with
--EBUSY, unless the constraint is increased first to more than 500 µs
-using e.g.
-
-    echo 501 > /sys/devices/platform/sh_mobile_sdhi.0/power/pm_qos_resume_latency_us
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Xiubo Li <Li.Xiubo@freescale.com>
 ---
-v2:
-  - Converted FIXME to Note, as this is expected behavior.
+ sound/soc/generic/simple-card.c | 28 ++++++++++++++--------------
+ 1 file changed, 14 insertions(+), 14 deletions(-)
 
- arch/arm/mach-shmobile/board-armadillo800eva.c | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
-
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index f19459a8c3edbb77..64a68450c28a072c 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1234,8 +1234,11 @@ static void __init eva_init(void)
- 	static struct pm_domain_device domain_devices[] __initdata = {
- 		{ "A4LC", &lcdc0_device },
- 		{ "A4LC", &hdmi_lcdc_device },
-+		{ "A3SP", &pwm_device },
-+		{ "A3SP", &sdhi0_device },
-+		{ "A3SP", &sh_mmcif_device },
- 	};
--	struct platform_device *usb = NULL;
-+	struct platform_device *usb = NULL, *sdhi1 = NULL;
+diff --git a/sound/soc/generic/simple-card.c b/sound/soc/generic/simple-card.c
+index d45c8dd..e9d5a69 100644
+--- a/sound/soc/generic/simple-card.c
++++ b/sound/soc/generic/simple-card.c
+@@ -131,7 +131,7 @@ asoc_simple_card_sub_parse_of(struct device_node *np,
+ 	*daifmt &= ~(SND_SOC_DAIFMT_MASTER_MASK | SND_SOC_DAIFMT_FORMAT_MASK);
  
- 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
- 				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
-@@ -1304,6 +1307,7 @@ static void __init eva_init(void)
+ 	/*
+-	 * get node via "sound-dai = <&phandle port>"
++	 * Get node via "sound-dai = <&phandle port>"
+ 	 * it will be used as xxx_of_node on soc_bind_dai_link()
+ 	 */
+ 	node = of_parse_phandle(np, "sound-dai", 0);
+@@ -139,12 +139,12 @@ asoc_simple_card_sub_parse_of(struct device_node *np,
+ 		return -ENODEV;
+ 	*p_node = node;
  
- 		platform_device_register(&vcc_sdhi1);
- 		platform_device_register(&sdhi1_device);
-+		sdhi1 = &sdhi1_device;
- 	}
+-	/* get dai->name */
++	/* Get dai->name */
+ 	ret = snd_soc_of_get_dai_name(np, name);
+ 	if (ret < 0)
+ 		return ret;
  
+-	/* parse TDM slot */
++	/* Parse TDM slot */
+ 	ret = snd_soc_of_parse_tdm_slot(np, &dai->slots, &dai->slot_width);
+ 	if (ret)
+ 		return ret;
+@@ -189,7 +189,7 @@ static int asoc_simple_card_dai_link_of(struct device_node *node,
+ 	daifmt &= (SND_SOC_DAIFMT_MASTER_MASK | SND_SOC_DAIFMT_FORMAT_MASK);
+ 	dai_props->cpu_dai.fmt = dai_props->codec_dai.fmt = daifmt;
  
-@@ -1324,6 +1328,8 @@ static void __init eva_init(void)
- 				       ARRAY_SIZE(domain_devices));
- 	if (usb)
- 		rmobile_add_device_to_domain("A3SP", usb);
-+	if (sdhi1)
-+		rmobile_add_device_to_domain("A3SP", sdhi1);
+-	/* Parse CPU DAI */
++	/* Parse CPU DAI node */
+ 	np = of_get_child_by_name(node, "cpu");
+ 	if (!np) {
+ 		ret = -EINVAL;
+@@ -207,7 +207,7 @@ static int asoc_simple_card_dai_link_of(struct device_node *node,
+ 	dai_props->cpu_dai.fmt |= daifmt;
+ 	of_node_put(np);
  
- 	r8a7740_pm_init();
- }
+-	/* Parse CODEC DAI */
++	/* Parse CODEC DAI node */
+ 	np = of_get_child_by_name(node, "codec");
+ 	if (!np) {
+ 		ret = -EINVAL;
+@@ -229,10 +229,10 @@ static int asoc_simple_card_dai_link_of(struct device_node *node,
+ 
+ 	dai_props->codec_dai.fmt |= daifmt;
+ 
+-	/* simple-card assumes platform = cpu */
++	/* Simple Card assumes platform = cpu */
+ 	dai_link->platform_of_node = dai_link->cpu_of_node;
+ 
+-	/* Link name is created from CPU/CODEC dai name */
++	/* DAI Link's name is created from CPU/CODEC dai name */
+ 	name = devm_kzalloc(dev,
+ 			    strlen(dai_link->cpu_dai_name)   +
+ 			    strlen(dai_link->codec_dai_name) + 2,
+@@ -254,7 +254,7 @@ static int asoc_simple_card_dai_link_of(struct device_node *node,
+ 		dai_props->codec_dai.sysclk);
+ 
+ 	/*
+-	 * soc_bind_dai_link() will check cpu name
++	 * asoc_bind_dai_link() will check cpu name
+ 	 * after of_node matching if dai_link has cpu_dai_name.
+ 	 * but, it will never match if name was created by fmt_single_name()
+ 	 * remove cpu_dai_name to escape name matching.
+@@ -296,10 +296,10 @@ static int asoc_simple_card_parse_of(struct device_node *node,
+ 	u32 val;
+ 	int ret, i = 0;
+ 
+-	/* parsing the card name from DT */
++	/* Parse the card name from DT */
+ 	snd_soc_of_parse_card_name(&priv->snd_card, "simple-audio-card,name");
+ 
+-	/* off-codec widgets */
++	/* Parse off-codec widgets */
+ 	if (of_property_read_bool(node, "simple-audio-card,widgets")) {
+ 		ret = snd_soc_of_parse_audio_simple_widgets(&priv->snd_card,
+ 					"simple-audio-card,widgets");
+@@ -352,13 +352,13 @@ static int asoc_simple_card_probe(struct platform_device *pdev)
+ 	struct device *dev = &pdev->dev;
+ 	int num_links, ret;
+ 
+-	/* get the number of DAI links */
++	/* Get the number of DAI links */
+ 	if (np && of_get_child_by_name(np, "simple-audio-card,dai-link"))
+ 		num_links = of_get_child_count(np);
+ 	else
+ 		return -EINVAL;
+ 
+-	/* allocate the private data and the DAI link array */
++	/* Allocate the private data and the DAI link array */
+ 	priv = devm_kzalloc(dev,
+ 			sizeof(*priv) + sizeof(*dai_link) * num_links,
+ 			GFP_KERNEL);
+@@ -366,7 +366,7 @@ static int asoc_simple_card_probe(struct platform_device *pdev)
+ 		return -ENOMEM;
+ 
+ 	/*
+-	 * init snd_soc_card
++	 * Init snd_soc_card
+ 	 */
+ 	priv->snd_card.owner = THIS_MODULE;
+ 	priv->snd_card.dev = dev;
+@@ -374,7 +374,7 @@ static int asoc_simple_card_probe(struct platform_device *pdev)
+ 	priv->snd_card.dai_link = dai_link;
+ 	priv->snd_card.num_links = num_links;
+ 
+-	/* get room for the other properties */
++	/* Get room for the other properties */
+ 	priv->dai_props = devm_kzalloc(dev,
+ 			sizeof(*priv->dai_props) * num_links,
+ 			GFP_KERNEL);
 -- 
-1.9.1
+1.8.4
 
