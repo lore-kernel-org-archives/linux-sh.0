@@ -1,60 +1,60 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 25 Sep 2014 16:28:33 +0000
-Subject: [PATCH v3 06/13] PM / Domains: Retrieve PM QoS device latencies from DT
-Message-Id: <1411662520-22795-7-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 01 Sep 2014 09:20:58 +0000
+Subject: [PATCH 1/7] mmc: add blk_size_workaround for HW bug
+Message-Id: <87ppffzog7.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
+References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+Current mmc block.c has MMC_CAP2_NO_MULTI_READ flag
+for HW bug workaround, but it should be implemented
+under driver, not framework.
+This patch is prepare for it
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v3:
-  - No changes
-v2:
-  - New
+ drivers/mmc/card/block.c |    5 +++++
+ include/linux/mmc/host.h |    4 ++++
+ 2 files changed, 9 insertions(+)
 
- drivers/base/power/domain.c | 14 +++++++++++++-
- 1 file changed, 13 insertions(+), 1 deletion(-)
-
-diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
-index 0ebc6bb31c9c227f..c79d5d43a5249562 100644
---- a/drivers/base/power/domain.c
-+++ b/drivers/base/power/domain.c
-@@ -2174,6 +2174,8 @@ int genpd_dev_pm_attach(struct device *dev)
- 	struct device_node *np = dev->of_node;
- 	struct of_phandle_args pd_args;
- 	struct generic_pm_domain *pd;
-+	struct gpd_timing_data td;
-+	u32 latency;
- 	int ret;
- 
- 	if (!np)
-@@ -2206,10 +2208,20 @@ int genpd_dev_pm_attach(struct device *dev)
- 		return PTR_ERR(pd);
+diff --git a/drivers/mmc/card/block.c b/drivers/mmc/card/block.c
+index ede41f0..e946067 100644
+--- a/drivers/mmc/card/block.c
++++ b/drivers/mmc/card/block.c
+@@ -1402,6 +1402,11 @@ static void mmc_blk_rw_rq_prep(struct mmc_queue_req *mqrq,
+ 		if (card->host->caps2 & MMC_CAP2_NO_MULTI_READ &&
+ 		    rq_data_dir(req) = READ)
+ 			brq->data.blocks = 1;
++
++		/* Some controllers needs workaround */
++		if (card->host->ops->blk_size_workaround)
++			brq->data.blocks = card->host->ops->blk_size_workaround(
++				card, req, brq->data.blocks);
  	}
  
-+	memset(&td, 0, sizeof(td));
-+	if (!of_property_read_u32(np, "stop-latency", &latency))
-+		td.stop_latency_ns = latency;
-+	if (!of_property_read_u32(np, "start-latency", &latency))
-+		td.start_latency_ns = latency;
-+	if (!of_property_read_u32(np, "save-state-latency", &latency))
-+		td.save_state_latency_ns = latency;
-+	if (!of_property_read_u32(np, "restore-state-latency", &latency))
-+		td.restore_state_latency_ns = latency;
+ 	if (brq->data.blocks > 1 || do_rel_wr) {
+diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
+index 4cbf614..95bd903 100644
+--- a/include/linux/mmc/host.h
++++ b/include/linux/mmc/host.h
+@@ -139,6 +139,10 @@ struct mmc_host_ops {
+ 	int	(*select_drive_strength)(unsigned int max_dtr, int host_drv, int card_drv);
+ 	void	(*hw_reset)(struct mmc_host *host);
+ 	void	(*card_event)(struct mmc_host *host);
 +
- 	dev_dbg(dev, "adding to PM domain %s\n", pd->name);
++	/* optional callback for mmc block HW bug workaround */
++	int	(*blk_size_workaround)(struct mmc_card *card,
++				       struct request *req, int blk_size);
+ };
  
- 	while (1) {
--		ret = pm_genpd_add_device(pd, dev);
-+		ret = __pm_genpd_add_device(pd, dev, &td);
- 		if (ret != -EAGAIN)
- 			break;
- 		cond_resched();
+ struct mmc_card;
 -- 
-1.9.1
+1.7.9.5
 
