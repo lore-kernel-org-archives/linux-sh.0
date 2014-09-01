@@ -1,57 +1,70 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Mon, 01 Sep 2014 01:24:21 +0000
+Date: Mon, 01 Sep 2014 01:34:44 +0000
 Subject: Re: [PATCH 0/2] r8a777[89] dtsi sorting
-Message-Id: <20140901012420.GG32075@verge.net.au>
+Message-Id: <20140901013444.GI32075@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1409336201-708-1-git-send-email-ulrich.hecht+renesas@gmail.com>
  <CAMuHMdXZ_drLTdm_912EOL+g+rYqwOmH361NzQgz9+ruDmUEnA@mail.gmail.com>
-In-Reply-To: <CAMuHMdXZ_drLTdm_912EOL+g+rYqwOmH361NzQgz9+ruDmUEnA@mail.gmail.com>
+ <20140901012420.GG32075@verge.net.au>
+In-Reply-To: <20140901012420.GG32075@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Olof Johansson <olof@lixom.net>
 
-On Fri, Aug 29, 2014 at 10:03:27PM +0200, Geert Uytterhoeven wrote:
-> Hi Uli,
+On Mon, Sep 01, 2014 at 10:24:21AM +0900, Simon Horman wrote:
+> On Fri, Aug 29, 2014 at 10:03:27PM +0200, Geert Uytterhoeven wrote:
+> > Hi Uli,
+> > 
+> > On Fri, Aug 29, 2014 at 8:16 PM, Ulrich Hecht
+> > <ulrich.hecht+renesas@gmail.com> wrote:
+> > > These are the dtsi files for r8a7778 and r8a7779 sorted according to what I
+> > > imagine to be accepted standards now: sort by address, "compatible" goes
+> > > first, #include directives before anything else.  The sorting was done using
+> > > a little script I wrote (https://github.com/uli/dtssort).
+> > 
+> > Nice! (but soon thereafter I got sidetracked by decomp ;-)
+> > 
+> > > I chose these two files because the required changes are relatively small.
+> > > Doing this for r8a779x yields a gargantuan and entirely unreadable patch due
+> > > to the random shifting about of large blocks of code.  If anybody knows a
+> > > tool that makes such things somewhat manageable to review, please speak up.
+> > 
+> > You more or less gave a solution at the top of your email: split it in multiple
+> > patches: one to sort the includes, one to sort the properties inside the nodes,
+> > and one single patch for each node you move.
+> > Yes, too many patches, but good for the patch statistics ;-)
 > 
-> On Fri, Aug 29, 2014 at 8:16 PM, Ulrich Hecht
-> <ulrich.hecht+renesas@gmail.com> wrote:
-> > These are the dtsi files for r8a7778 and r8a7779 sorted according to what I
-> > imagine to be accepted standards now: sort by address, "compatible" goes
-> > first, #include directives before anything else.  The sorting was done using
-> > a little script I wrote (https://github.com/uli/dtssort).
-> 
-> Nice! (but soon thereafter I got sidetracked by decomp ;-)
-> 
-> > I chose these two files because the required changes are relatively small.
-> > Doing this for r8a779x yields a gargantuan and entirely unreadable patch due
-> > to the random shifting about of large blocks of code.  If anybody knows a
-> > tool that makes such things somewhat manageable to review, please speak up.
-> 
-> You more or less gave a solution at the top of your email: split it in multiple
-> patches: one to sort the includes, one to sort the properties inside the nodes,
-> and one single patch for each node you move.
-> Yes, too many patches, but good for the patch statistics ;-)
+> FWIW, I would rather many small patches than one gargatuan one.
 
-FWIW, I would rather many small patches than one gargatuan one.
+Also, please repost this thread with Olof Johansson CCed
+(I have cced him on this reply. It was he who originally requested
+the dts files be sorted. So I would value his opinion on the
+order you have come up with.
 
-> Another approach could be to start considering SoCs as built from multiple
-> hardware blocks, not only at the hardware/software level, but also at the DTS
-> level. I.e. use macros to instantiate nodes. This makes it easier to avoid
-> stupid typos in e.g. the 5th i2c node. In addition, many SoCs are similar, and
-> only differ in a few nodes.
 > 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
+> > Another approach could be to start considering SoCs as built from multiple
+> > hardware blocks, not only at the hardware/software level, but also at the DTS
+> > level. I.e. use macros to instantiate nodes. This makes it easier to avoid
+> > stupid typos in e.g. the 5th i2c node. In addition, many SoCs are similar, and
+> > only differ in a few nodes.
+> > 
+> > Gr{oetje,eeting}s,
+> > 
+> >                         Geert
+> > 
+> > --
+> > Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+> > 
+> > In personal conversations with technical people, I call myself a hacker. But
+> > when I'm talking to journalists I just say "programmer" or something like that.
+> >                                 -- Linus Torvalds
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> > 
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
 > the body of a message to majordomo@vger.kernel.org
