@@ -1,49 +1,41 @@
-From: Eduardo Valentin <edubezval@gmail.com>
-Date: Tue, 09 Sep 2014 14:51:29 +0000
-Subject: Re: [PATCH v2] thermal: rcar: Add binding docs for new R-Car Gen2 SoCs
-Message-Id: <20140909145127.GA5778@developer>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 01 Sep 2014 00:55:45 +0000
+Subject: Re: [PATCH v2] ARM: dts: Add shmobile platform device tree bindings documentation
+Message-Id: <20140901005544.GB28783@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409213552-5713-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1409213552-5713-1-git-send-email-geert+renesas@glider.be>
+References: <1409213120-5291-1-git-send-email-geert+renesas@glider.be>
+ <20140829003456.GM16165@verge.net.au>
+ <CAMuHMdXNPk2ACbFsXcPic_zZBDCjF+5j6-jQNgZxGePPcTRUBQ@mail.gmail.com>
+In-Reply-To: <CAMuHMdXNPk2ACbFsXcPic_zZBDCjF+5j6-jQNgZxGePPcTRUBQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Zhang Rui <rui.zhang@intel.com>, devicetree@vger.kernel.org, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Aug 28, 2014 at 10:12:32AM +0200, Geert Uytterhoeven wrote:
->   - r8a7792 (R-Car V2H)
->   - r8a7793 (R-Car M2-N)
->   - r8a7794 (R-Car E2)
+On Fri, Aug 29, 2014 at 10:26:01AM +0200, Geert Uytterhoeven wrote:
+> Hi Simon,
 > 
-> r8a7791 is now called "R-Car M2-W".
+> On Fri, Aug 29, 2014 at 2:34 AM, Simon Horman <horms@verge.net.au> wrote:
+> > On Thu, Aug 28, 2014 at 10:05:20AM +0200, Geert Uytterhoeven wrote:
+> >> Add Renesas SH-Mobile, R-Mobile, and R-Car Platform Device Tree Bindings
+> >> Documentation, listing supported SoCs and boards.
+> >>
+> >> This allows to use checkpatch to validate DTSes referring to Renesas
+> >> shmobile SoCs, and boards containing those SoCs.
+> >>
+> >> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> >
+> > Thanks Geert, this looks good to me.
+> > Is it for me to pick up?
 > 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> I think so.
+> 
+> > If so I would prefer a slightly re-structured title:
+> >
+> > ARM: shmobile: Add platform device tree bindings documentation
+> 
+> Fine for me.
+> 
+> Do you want me to resend, or will you amend yourself?
 
-Pulled into my next branch. Thanks.
-
-> ---
-> v2: Drop RFC
-> ---
->  Documentation/devicetree/bindings/thermal/rcar-thermal.txt | 5 ++++-
->  1 file changed, 4 insertions(+), 1 deletion(-)
-> 
-> diff --git a/Documentation/devicetree/bindings/thermal/rcar-thermal.txt b/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
-> index 0ef00be44b01..43404b197933 100644
-> --- a/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
-> +++ b/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
-> @@ -7,7 +7,10 @@ Required properties:
->  			    - "renesas,thermal-r8a73a4" (R-Mobile AP6)
->  			    - "renesas,thermal-r8a7779" (R-Car H1)
->  			    - "renesas,thermal-r8a7790" (R-Car H2)
-> -			    - "renesas,thermal-r8a7791" (R-Car M2)
-> +			    - "renesas,thermal-r8a7791" (R-Car M2-W)
-> +			    - "renesas,thermal-r8a7792" (R-Car V2H)
-> +			    - "renesas,thermal-r8a7793" (R-Car M2-N)
-> +			    - "renesas,thermal-r8a7794" (R-Car E2)
->  - reg			: Address range of the thermal registers.
->  			  The 1st reg will be recognized as common register
->  			  if it has "interrupts".
-> -- 
-> 1.9.1
-> 
+No need to resend at this time :)
