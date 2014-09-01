@@ -1,27 +1,38 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 01 Sep 2014 16:13:14 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 01 Sep 2014 16:36:19 +0000
 Subject: Re: [PATCH v2] net: sh_eth: fix driver dependencies
-Message-Id: <54049B1A.70905@cogentembedded.com>
+Message-Id: <CAMuHMdWGdD+-o9Z8gPYwJWJmjhBqfw0HA4ve=RH+adLFJEZa8Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1749721.1a6rN6K2Gg@amdc1032>
 In-Reply-To: <1749721.1a6rN6K2Gg@amdc1032>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, "David S. Miller" <davem@davemloft.net>
-Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kyungmin Park <kyungmin.park@samsung.com>, netdev@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
+Cc: "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kyungmin Park <kyungmin.park@samsung.com>, "netdev@vger.kernel.org" <netdev@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-On 09/01/2014 06:25 PM, Bartlomiej Zolnierkiewicz wrote:
-
+On Mon, Sep 1, 2014 at 4:25 PM, Bartlomiej Zolnierkiewicz
+<b.zolnierkie@samsung.com> wrote:
 > Renesas SuperH Ethernet support should be available only on
 > Renesas ARM SoCs and SuperH architecture.
-
+>
 > Signed-off-by: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
 > Acked-by: Kyungmin Park <kyungmin.park@samsung.com>
 > Cc: Simon Horman <horms@verge.net.au>
 > Cc: Magnus Damm <magnus.damm@gmail.com>
+> ---
+> v2:
+> - s/ARCH_SH/SUPERH/ (thanks to Sergei Shtylyov)
 
-Acked-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-WBR, Sergei
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
