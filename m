@@ -1,211 +1,73 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 09 Sep 2014 14:54:29 +0000
-Subject: [RFC 3/4] i2c: rcar: add slave support
-Message-Id: <1410274470-12712-4-git-send-email-wsa@the-dreams.de>
+From: Xiubo Li <Li.Xiubo@freescale.com>
+Date: Mon, 01 Sep 2014 04:29:40 +0000
+Subject: [PATCHv1 6/7] ASoC: dts: sh73a0-kzm9g-reference: To support simple card newest style.
+Message-Id: <1409545781-20530-7-git-send-email-Li.Xiubo@freescale.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410274470-12712-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1410274470-12712-1-git-send-email-wsa@the-dreams.de>
+References: <1409545781-20530-1-git-send-email-Li.Xiubo@freescale.com>
+In-Reply-To: <1409545781-20530-1-git-send-email-Li.Xiubo@freescale.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: broonie@kernel.org, lgirdwood@gmail.com, perex@perex.cz, tiwai@suse.de, kuninori.morimoto.gx@renesas.com, moinejf@free.fr, andrew@lunn.ch, jsarha@ti.com, devicetree@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, alsa-devel@alsa-project.org, shawn.guo@freescale.com
+Cc: linux-kernel@vger.kernel.org, Xiubo Li <Li.Xiubo@freescale.com>
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+This patch depends on the following simple card patch:
+=ASoC: simple-card: Merge single and muti DAI link code.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+This patch merge single DAI link and muti-DAI links code together,
+and simply the simple-card driver code.
+
+And also do some other improvement:
+
+Since from the DAI format micro SND_SOC_DAIFMT_CBx_CFx, the 'CBx'
+mean Codec's bit clock is as master/slave and the 'CFx' mean Codec's
+frame clock is as master/slave.
+
+So these same DAI formats should be informed to CPU and CODE DAIs at
+the same time. For the Codec driver will set the bit clock and frame
+clock as the DAI formats said, but for the CPU driver, if the the
+bit clock or frame clock is as Codec master, so it should be set CPU
+DAI device as bit clock or frame clock as slave, and vice versa.
+
+The old code will cause confusion, and we should be clear that the
+letter 'C' here mean to Codec.
+=
+Signed-off-by: Xiubo Li <Li.Xiubo@freescale.com>
 ---
- drivers/i2c/busses/i2c-rcar.c | 122 ++++++++++++++++++++++++++++++++++++++----
- 1 file changed, 113 insertions(+), 9 deletions(-)
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 18 +++++++++++-------
+ 1 file changed, 11 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index 1cc146cfc1f3..fe875d994441 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -48,6 +48,12 @@
- #define ICMAR	0x20	/* master address */
- #define ICRXTX	0x24	/* data port */
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 18662ae..e689ae3 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -160,15 +160,19 @@
  
-+/* ICSCR */
-+#define SDBS	(1 << 3)	/* slave data buffer select */
-+#define SIE	(1 << 2)	/* slave interface enable */
-+#define GCAE	(1 << 1)	/* general call address enable */
-+#define FNA	(1 << 0)	/* forced non acknowledgement */
+ 	sound {
+ 		compatible = "simple-audio-card";
+-		simple-audio-card,format = "left_j";
+-		simple-audio-card,cpu {
+-			sound-dai = <&sh_fsi2 0>;
+-		};
+-		simple-audio-card,codec {
+-			sound-dai = <&ak4648>;
 +
- /* ICMCR */
- #define MDBS	(1 << 7)	/* non-fifo mode switch */
- #define FSCL	(1 << 6)	/* override SCL pin */
-@@ -58,6 +64,15 @@
- #define FSB	(1 << 1)	/* force stop bit */
- #define ESG	(1 << 0)	/* en startbit gen */
- 
-+/* ICSSR (also for ICSIER) */
-+#define GCAR	(1 << 6)	/* general call received */
-+#define STM	(1 << 5)	/* slave transmit mode */
-+#define SSR	(1 << 4)	/* stop received */
-+#define SDE	(1 << 3)	/* slave data empty */
-+#define SDT	(1 << 2)	/* slave data transmitted */
-+#define SDR	(1 << 1)	/* slave data received */
-+#define SAR	(1 << 0)	/* slave addr received */
++		simple-audio-card,dai-link {
++			format = "left_j";
+ 			bitclock-master;
+ 			frame-master;
+-			system-clock-frequency = <11289600>;
 +
- /* ICMSR (also for ICMIE) */
- #define MNR	(1 << 6)	/* nack received */
- #define MAL	(1 << 5)	/* arbitration lost */
-@@ -103,6 +118,7 @@ struct rcar_i2c_priv {
- 	u32 icccr;
- 	u32 flags;
- 	enum rcar_i2c_type devtype;
-+	struct i2c_client *slave;
++			cpu {
++				sound-dai = <&sh_fsi2 0>;
++			};
++			codec {
++				sound-dai = <&ak4648>;
++				system-clock-frequency = <11289600>;
++			};
+ 		};
+ 	};
  };
- 
- #define rcar_i2c_priv_to_dev(p)		((p)->adap.dev.parent)
-@@ -126,15 +142,6 @@ static u32 rcar_i2c_read(struct rcar_i2c_priv *priv, int reg)
- 
- static void rcar_i2c_init(struct rcar_i2c_priv *priv)
- {
--	/*
--	 * reset slave mode.
--	 * slave mode is not used on this driver
--	 */
--	rcar_i2c_write(priv, ICSIER, 0);
--	rcar_i2c_write(priv, ICSAR, 0);
--	rcar_i2c_write(priv, ICSCR, 0);
--	rcar_i2c_write(priv, ICSSR, 0);
--
- 	/* reset master mode */
- 	rcar_i2c_write(priv, ICMIER, 0);
- 	rcar_i2c_write(priv, ICMCR, 0);
-@@ -362,6 +369,63 @@ static int rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
- 	return 0;
- }
- 
-+static bool rcar_i2c_slave_irq(struct rcar_i2c_priv *priv)
-+{
-+	u32 ssr_raw, ssr_filtered;
-+	u8 value;
-+
-+	ssr_raw = rcar_i2c_read(priv, ICSSR) & 0xff;
-+	ssr_filtered = ssr_raw & rcar_i2c_read(priv, ICSIER);
-+
-+	if (!ssr_filtered)
-+		return false;
-+
-+	/* address detected */
-+	if (ssr_filtered & SAR) {
-+		/* read or write request */
-+		if (ssr_raw & STM) {
-+			i2c_slave_event(priv->slave, I2C_SLAVE_REQ_READ_START, &value);
-+			rcar_i2c_write(priv, ICRXTX, value);
-+			rcar_i2c_write(priv, ICSIER, SDE | SSR | SAR);
-+		} else {
-+			i2c_slave_event(priv->slave, I2C_SLAVE_REQ_WRITE_START, NULL);
-+			rcar_i2c_read(priv, ICRXTX);	/* dummy read */
-+			rcar_i2c_write(priv, ICSIER, SDR | SSR | SAR);
-+		}
-+
-+		rcar_i2c_write(priv, ICSSR, ~SAR & 0xff);
-+	}
-+
-+	/* master sent stop */
-+	if (ssr_filtered & SSR) {
-+		i2c_slave_event(priv->slave, I2C_SLAVE_STOP, NULL);
-+		rcar_i2c_write(priv, ICSIER, SAR | SSR);
-+		rcar_i2c_write(priv, ICSSR, ~SSR & 0xff);
-+	}
-+
-+	/* master wants to write to us */
-+	if (ssr_filtered & SDR) {
-+		int ret;
-+
-+		value = rcar_i2c_read(priv, ICRXTX);
-+		ret = i2c_slave_event(priv->slave, I2C_SLAVE_REQ_WRITE_END, &value);
-+		/* Send NACK in case of error */
-+		rcar_i2c_write(priv, ICSCR, SIE | SDBS | (ret < 0 ? FNA : 0));
-+		i2c_slave_event(priv->slave, I2C_SLAVE_REQ_WRITE_START, NULL);
-+		rcar_i2c_write(priv, ICSSR, ~SDR & 0xff);
-+	}
-+
-+	/* master wants to read from us */
-+	if (ssr_filtered & SDE) {
-+		i2c_slave_event(priv->slave, I2C_SLAVE_REQ_READ_END, NULL);
-+		i2c_slave_event(priv->slave, I2C_SLAVE_REQ_READ_START, &value);
-+		rcar_i2c_write(priv, ICRXTX, value);
-+		rcar_i2c_write(priv, ICSSR, ~SDE & 0xff);
-+	}
-+
-+	return true;
-+}
-+
- static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
- {
- 	struct rcar_i2c_priv *priv = ptr;
-@@ -370,6 +434,9 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
- 	/*-------------- spin lock -----------------*/
- 	spin_lock(&priv->lock);
- 
-+	if (rcar_i2c_slave_irq(priv))
-+		goto unlock_out;
-+
- 	msr = rcar_i2c_read(priv, ICMSR);
- 
- 	/* Only handle interrupts that are currently enabled */
-@@ -408,6 +475,7 @@ out:
- 		wake_up(&priv->wait);
- 	}
- 
-+unlock_out:
- 	spin_unlock(&priv->lock);
- 	/*-------------- spin unlock -----------------*/
- 
-@@ -498,6 +566,40 @@ out:
- 	return ret;
- }
- 
-+
-+static int rcar_reg_slave(struct i2c_client *slave)
-+{
-+	struct rcar_i2c_priv *priv = i2c_get_adapdata(slave->adapter);
-+
-+	if (priv->slave)
-+		return -EBUSY;
-+
-+	if (slave->flags & I2C_CLIENT_TEN)
-+		return -EAFNOSUPPORT;
-+
-+	priv->slave = slave;
-+	rcar_i2c_write(priv, ICSAR, slave->addr);
-+	rcar_i2c_write(priv, ICSSR, 0);
-+	rcar_i2c_write(priv, ICSIER, SAR | SSR);
-+	rcar_i2c_write(priv, ICSCR, SIE | SDBS);
-+
-+	return 0;
-+}
-+
-+static int rcar_unreg_slave(struct i2c_client *slave)
-+{
-+	struct rcar_i2c_priv *priv = i2c_get_adapdata(slave->adapter);
-+
-+	WARN_ON(!priv->slave);
-+
-+	rcar_i2c_write(priv, ICSIER, 0);
-+	rcar_i2c_write(priv, ICSCR, 0);
-+
-+	priv->slave = NULL;
-+
-+	return 0;
-+}
-+
- static u32 rcar_i2c_func(struct i2c_adapter *adap)
- {
- 	/* This HW can't do SMBUS_QUICK and NOSTART */
-@@ -507,6 +609,8 @@ static u32 rcar_i2c_func(struct i2c_adapter *adap)
- static const struct i2c_algorithm rcar_i2c_algo = {
- 	.master_xfer	= rcar_i2c_master_xfer,
- 	.functionality	= rcar_i2c_func,
-+	.reg_slave	= rcar_reg_slave,
-+	.unreg_slave	= rcar_unreg_slave,
- };
- 
- static const struct of_device_id rcar_i2c_dt_ids[] = {
 -- 
-2.0.0
+1.8.4
 
