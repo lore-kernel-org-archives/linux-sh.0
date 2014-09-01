@@ -1,75 +1,44 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Mon, 01 Sep 2014 09:21:27 +0000
-Subject: [PATCH 2/7] mmc: omap_hsmmc: use blk_size_workaround
-Message-Id: <87oauzzofe.wl%kuninori.morimoto.gx@gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 01 Sep 2014 10:05:49 +0000
+Subject: Re: [PATCH 2/7] mmc: omap_hsmmc: use blk_size_workaround
+Message-Id: <540444FD.4040800@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
+References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com> <87oauzzofe.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87oauzzofe.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
+To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
 Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hello.
 
-Now, omap_hsmmc can use blk_size_workaround instead of
-MMC_CAP2_NO_MULTI_READ. let's use it.
+On 9/1/2014 1:21 PM, Kuninori Morimoto wrote:
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- drivers/mmc/host/omap_hsmmc.c |   17 ++++++++++++++++-
- 1 file changed, 16 insertions(+), 1 deletion(-)
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-diff --git a/drivers/mmc/host/omap_hsmmc.c b/drivers/mmc/host/omap_hsmmc.c
-index ece1634..6d2696b 100644
---- a/drivers/mmc/host/omap_hsmmc.c
-+++ b/drivers/mmc/host/omap_hsmmc.c
-@@ -219,6 +219,7 @@ struct omap_hsmmc_host {
- #define AUTO_CMD23		(1 << 0)        /* Auto CMD23 support */
- #define HSMMC_SDIO_IRQ_ENABLED	(1 << 1)        /* SDIO irq enabled */
- #define HSMMC_WAKE_IRQ_ENABLED	(1 << 2)
-+#define HSMMC_NO_MULTI_READ	(1 << 3)
- 	struct omap_hsmmc_next	next_data;
- 	struct	omap_mmc_platform_data	*pdata;
- };
-@@ -1829,6 +1830,19 @@ static int omap_hsmmc_disable_fclk(struct mmc_host *mmc)
- 	return 0;
- }
- 
-+static int *omap_hsmmc_blk_size_workaround(struct mmc_card *card,
-+					   struct request *req, int blk_size)
-+{
-+	struct omap_hsmmc_host *host = mmc_priv(card->host);
-+
-+	/* Some controllers can't do multiblock reads due to hw bugs */
-+	if ((host->flags & HSMMC_NO_MULTI_READ) &&
-+	    (rq_data_dir(req) = READ))
-+		return 1;
-+
-+	return blk_size;
-+}
-+
- static const struct mmc_host_ops omap_hsmmc_ops = {
- 	.enable = omap_hsmmc_enable_fclk,
- 	.disable = omap_hsmmc_disable_fclk,
-@@ -1840,6 +1854,7 @@ static const struct mmc_host_ops omap_hsmmc_ops = {
- 	.get_ro = omap_hsmmc_get_ro,
- 	.init_card = omap_hsmmc_init_card,
- 	.enable_sdio_irq = omap_hsmmc_enable_sdio_irq,
-+	.blk_workaround = omap_hsmmc_blk_size_workaround,
- };
- 
- #ifdef CONFIG_DEBUG_FS
-@@ -2101,7 +2116,7 @@ static int omap_hsmmc_probe(struct platform_device *pdev)
- 
- 	if (host->pdata->controller_flags & OMAP_HSMMC_BROKEN_MULTIBLOCK_READ) {
- 		dev_info(&pdev->dev, "multiblock reads disabled due to 35xx erratum 2.1.1.128; MMC read performance may suffer\n");
--		mmc->caps2 |= MMC_CAP2_NO_MULTI_READ;
-+		host->flags |= HSMMC_NO_MULTI_READ;
- 	}
- 
- 	pm_runtime_enable(host->dev);
--- 
-1.7.9.5
+> Now, omap_hsmmc can use blk_size_workaround instead of
+> MMC_CAP2_NO_MULTI_READ. let's use it.
+
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> ---
+>   drivers/mmc/host/omap_hsmmc.c |   17 ++++++++++++++++-
+>   1 file changed, 16 insertions(+), 1 deletion(-)
+
+> diff --git a/drivers/mmc/host/omap_hsmmc.c b/drivers/mmc/host/omap_hsmmc.c
+> index ece1634..6d2696b 100644
+> --- a/drivers/mmc/host/omap_hsmmc.c
+> +++ b/drivers/mmc/host/omap_hsmmc.c
+[...]
+> @@ -1840,6 +1854,7 @@ static const struct mmc_host_ops omap_hsmmc_ops = {
+>   	.get_ro = omap_hsmmc_get_ro,
+>   	.init_card = omap_hsmmc_init_card,
+>   	.enable_sdio_irq = omap_hsmmc_enable_sdio_irq,
+> +	.blk_workaround = omap_hsmmc_blk_size_workaround,
+
+    Not '.blk_size_workaround'?
+
+[...]
+
+WBR, Sergei
 
