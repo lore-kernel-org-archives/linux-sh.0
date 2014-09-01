@@ -1,67 +1,46 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 04 Sep 2014 00:55:20 +0000
-Subject: [PATCH v2 2/3] clocksource: sh_mtu2: Document r7s72100 binding
-Message-Id: <1409792121-28912-3-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 01 Sep 2014 09:22:46 +0000
+Subject: [PATCH 6/7] ARM: shmobile: lager: remove MMC_CAP2_NO_MULTI_READ
+Message-Id: <87iol7zoda.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409792121-28912-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1409792121-28912-1-git-send-email-horms+renesas@verge.net.au>
+References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-In general Renesas hardware is not documented to the extent
-where the relationship between IP blocks on different SoCs can be assumed
-although they may appear to operate the same way. Furthermore the
-documentation typically does not specify a version for individual
-IP blocks. For these reasons a convention of using the SoC name in place
-of a version and providing SoC-specific compat strings has been adopted.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Although not universally liked this convention is used in the bindings
-for a number of drivers for Renesas hardware. The purpose of this patch is
-to update the Renesas R-Car Multi-Function Timer Pulse Unit 2 (MTU2) driver
-to follow this convention.
+sh_mobile_sdhi cares multiblock read bug.
+remove MMC_CAP2_NO_MULTI_READ flag from board code
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-* I plan to follow up with a patch patch to use the new binding in the
-  dtsi files for the r7s72100 SoC.
+ arch/arm/mach-shmobile/board-lager.c |    2 --
+ 1 file changed, 2 deletions(-)
 
-v2
-* Suggestions by Mark Rutland and Sergei Shtylyov
-  - Compatible strings should be "one or more" not "one" of those listed
-  - Describe the generic binding as covering any MTU2 device
-  - Re-order compat strings from most to least specific
----
- Documentation/devicetree/bindings/timer/renesas,mtu2.txt | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
-
-diff --git a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-index 917453f..defe2a1 100644
---- a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-+++ b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-@@ -8,7 +8,9 @@ are independent. The MTU2 hardware supports five channels indexed from 0 to 4.
- 
- Required Properties:
- 
--  - compatible: must contain "renesas,mtu2"
-+  - compatible: must be one or more of the following:
-+    - "renesas,mtu2-r7s72100" for R7S72100 MTU2
-+    - "renesas,mtu2" for any MTU2
- 
-   - reg: base address and length of the registers block for the timer module.
- 
-@@ -26,7 +28,7 @@ Required Properties:
- Example: R7S72100 (RZ/A1H) MTU2 node
- 
- 	mtu2: timer@fcff0000 {
--		compatible = "renesas,mtu2";
-+		compatible = "renesas,mtu2-r7s72100", "renesas,mtu2";
- 		reg = <0xfcff0000 0x400>;
- 		interrupts = <0 139 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 146 IRQ_TYPE_LEVEL_HIGH>,
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index e1d8215..f5a98e2 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -630,7 +630,6 @@ static void __init lager_add_rsnd_device(void)
+ static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_POWER_OFF_CARD,
+-	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
+ 			  TMIO_MMC_WRPROTECT_DISABLE,
+ };
+@@ -644,7 +643,6 @@ static struct resource sdhi0_resources[] __initdata = {
+ static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_POWER_OFF_CARD,
+-	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
+ 			  TMIO_MMC_WRPROTECT_DISABLE,
+ };
 -- 
-2.0.1
+1.7.9.5
 
