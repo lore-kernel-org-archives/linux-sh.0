@@ -1,39 +1,34 @@
-From: Guenter Roeck <linux@roeck-us.net>
-Date: Tue, 30 Sep 2014 18:00:45 +0000
-Subject: [RFC PATCH 05/16] arm64: support poweroff through poweroff handler call chain
-Message-Id: <1412100056-15517-6-git-send-email-linux@roeck-us.net>
+From: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
+Date: Mon, 01 Sep 2014 13:15:37 +0000
+Subject: [PATCH] net: sh_eth: fix driver dependencies
+Message-Id: <3693021.H9Y3NelqF1@amdc1032>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
-In-Reply-To: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: "David S. Miller" <davem@davemloft.net>
+Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kyungmin Park <kyungmin.park@samsung.com>, netdev@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-The kernel core now supports a poweroff handler call chain
-to remove power from the system. Call it if pm_power_off
-is set to NULL.
+Renesas SuperH Ethernet support should be available only on
+Renesas ARM SoCs and SuperH architecture.
 
-Cc: Catalin Marinas <catalin.marinas@arm.com>
-Cc: Will Deacon <will.deacon@arm.com>
-Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+Signed-off-by: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
+Acked-by: Kyungmin Park <kyungmin.park@samsung.com>
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Magnus Damm <magnus.damm@gmail.com>
 ---
- arch/arm64/kernel/process.c | 2 ++
- 1 file changed, 2 insertions(+)
+ drivers/net/ethernet/renesas/Kconfig |    1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm64/kernel/process.c b/arch/arm64/kernel/process.c
-index 398ab05..cc0c63e 100644
---- a/arch/arm64/kernel/process.c
-+++ b/arch/arm64/kernel/process.c
-@@ -157,6 +157,8 @@ void machine_power_off(void)
- 	smp_send_stop();
- 	if (pm_power_off)
- 		pm_power_off();
-+	else
-+		do_kernel_poweroff();
- }
- 
- /*
--- 
-1.9.1
+Index: b/drivers/net/ethernet/renesas/Kconfig
+=================================--- a/drivers/net/ethernet/renesas/Kconfig	2014-07-30 14:31:20.479522692 +0200
++++ b/drivers/net/ethernet/renesas/Kconfig	2014-09-01 14:45:36.160544016 +0200
+@@ -5,6 +5,7 @@
+ config SH_ETH
+ 	tristate "Renesas SuperH Ethernet support"
+ 	depends on HAS_DMA
++	depends on ARCH_SHMOBILE || ARCH_SH || COMPILE_TEST
+ 	select CRC32
+ 	select MII
+ 	select MDIO_BITBANG
 
