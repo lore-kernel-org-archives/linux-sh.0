@@ -1,51 +1,40 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 25 Sep 2014 16:28:38 +0000
-Subject: [PATCH v3 11/13] drivers: sh: Disable PM runtime for multi-platform r8a7740 with genpd
-Message-Id: <1411662520-22795-12-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 01 Sep 2014 09:20:13 +0000
+Subject: [PATCH 0/7] mmc: remove MMC_CAP2_NO_MULTI_READ flags
+Message-Id: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>
+Cc: Simon <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-If the default PM domain using PM_CLK is used for PM runtime, the real PM
-domain(s) cannot be registered from DT later.
 
-Hence do not enable it when running a multi-platform kernel with genpd
-support on an r8a7740. The R-Mobile PM domain driver will take care of
-PM runtime management of the module clocks.
+Hi Ulf, Chris, and Simon
 
-The default PM domain is still needed for:
-  - platforms without genpd support,
-  - the legacy (non-DT) case, where genpd may take over later, except
-    for the C5 "always on" PM domain.
+These patches remove MMC_CAP2_NO_MULTI_READ from mmc.
+This flag should be implemented under each driver,
+not mmc block framework.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-v3:
-  - Reword
-v2:
-  - New
+Simon
+5) and 6) are for sh-arm patches.
+Can you check it ?
 
- drivers/sh/pm_runtime.c | 2 ++
- 1 file changed, 2 insertions(+)
+Kuninori Morimoto (7):
+      1) mmc: add blk_size_workaround for HW bug
+      2) mmc: omap_hsmmc: use blk_size_workaround
+      3) mmc: tmio_mmc: use blk_size_workaround
+      4) mmc: sh_mobile_sdhi: use blk_size_workaround
+      5) ARM: shmobile: koelsch: remove MMC_CAP2_NO_MULTI_READ
+      6) ARM: shmobile: lager: remove MMC_CAP2_NO_MULTI_READ
+      7) mmc: remove MMC_CAP2_NO_MULTI_READ flags
 
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index fe2c2d595f599b2f..85cc89fd3e7d7cb7 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -81,7 +81,9 @@ static int __init sh_pm_runtime_init(void)
- 		if (!of_machine_is_compatible("renesas,emev2") &&
- 		    !of_machine_is_compatible("renesas,r7s72100") &&
- 		    !of_machine_is_compatible("renesas,r8a73a4") &&
-+#ifndef CONFIG_PM_GENERIC_DOMAINS_OF
- 		    !of_machine_is_compatible("renesas,r8a7740") &&
-+#endif
- 		    !of_machine_is_compatible("renesas,r8a7778") &&
- 		    !of_machine_is_compatible("renesas,r8a7779") &&
- 		    !of_machine_is_compatible("renesas,r8a7790") &&
--- 
-1.9.1
-
+ arch/arm/mach-shmobile/board-koelsch.c |    3 ---
+ arch/arm/mach-shmobile/board-lager.c   |    2 --
+ drivers/mmc/card/block.c               |    8 ++++----
+ drivers/mmc/host/omap_hsmmc.c          |   17 ++++++++++++++++-
+ drivers/mmc/host/sh_mobile_sdhi.c      |   20 +++++++++++++++++++-
+ drivers/mmc/host/tmio_mmc_pio.c        |   13 +++++++++++++
+ include/linux/mfd/tmio.h               |    4 ++++
+ include/linux/mmc/host.h               |    5 ++++-
+ 8 files changed, 60 insertions(+), 12 deletions(-)
