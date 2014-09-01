@@ -1,61 +1,70 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Wed, 03 Sep 2014 02:10:21 +0000
-Subject: [PATCH 7/7 v3] mmc: remove MMC_CAP2_NO_MULTI_READ flags
-Message-Id: <871trt78tx.wl%kuninori.morimoto.gx@gmail.com>
+From: Xiubo Li <Li.Xiubo@freescale.com>
+Date: Mon, 01 Sep 2014 04:29:41 +0000
+Subject: [PATCHv1 7/7] ASoC: dts: kirkwood-openrd-client: To support simple card newest style.
+Message-Id: <1409545781-20530-8-git-send-email-Li.Xiubo@freescale.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
-	<87bnqx78xr.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87bnqx78xr.wl%kuninori.morimoto.gx@gmail.com>
+References: <1409545781-20530-1-git-send-email-Li.Xiubo@freescale.com>
+In-Reply-To: <1409545781-20530-1-git-send-email-Li.Xiubo@freescale.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: broonie@kernel.org, lgirdwood@gmail.com, perex@perex.cz, tiwai@suse.de, kuninori.morimoto.gx@renesas.com, moinejf@free.fr, andrew@lunn.ch, jsarha@ti.com, devicetree@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, alsa-devel@alsa-project.org, shawn.guo@freescale.com
+Cc: linux-kernel@vger.kernel.org, Xiubo Li <Li.Xiubo@freescale.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This patch depends on the following simple card patch:
+=ASoC: simple-card: Merge single and muti DAI link code.
 
-Now, mmc framework uses multi_io_quirk
-for I/O HW bug workaround.
-MMC_CAP2_NO_MULTI_READ flag is no longer needed
+This patch merge single DAI link and muti-DAI links code together,
+and simply the simple-card driver code.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+And also do some other improvement:
+
+Since from the DAI format micro SND_SOC_DAIFMT_CBx_CFx, the 'CBx'
+mean Codec's bit clock is as master/slave and the 'CFx' mean Codec's
+frame clock is as master/slave.
+
+So these same DAI formats should be informed to CPU and CODE DAIs at
+the same time. For the Codec driver will set the bit clock and frame
+clock as the DAI formats said, but for the CPU driver, if the the
+bit clock or frame clock is as Codec master, so it should be set CPU
+DAI device as bit clock or frame clock as slave, and vice versa.
+
+The old code will cause confusion, and we should be clear that the
+letter 'C' here mean to Codec.
+=
+Signed-off-by: Xiubo Li <Li.Xiubo@freescale.com>
 ---
-v2 -> v3
+ arch/arm/boot/dts/kirkwood-openrd-client.dts | 15 ++++++++-------
+ 1 file changed, 8 insertions(+), 7 deletions(-)
 
-- no change
-
- drivers/mmc/card/block.c |    5 -----
- include/linux/mmc/host.h |    1 -
- 2 files changed, 6 deletions(-)
-
-diff --git a/drivers/mmc/card/block.c b/drivers/mmc/card/block.c
-index adab903..413f984 100644
---- a/drivers/mmc/card/block.c
-+++ b/drivers/mmc/card/block.c
-@@ -1398,11 +1398,6 @@ static void mmc_blk_rw_rq_prep(struct mmc_queue_req *mqrq,
- 		if (disable_multi)
- 			brq->data.blocks = 1;
+diff --git a/arch/arm/boot/dts/kirkwood-openrd-client.dts b/arch/arm/boot/dts/kirkwood-openrd-client.dts
+index 887b9c1..3b6f169 100644
+--- a/arch/arm/boot/dts/kirkwood-openrd-client.dts
++++ b/arch/arm/boot/dts/kirkwood-openrd-client.dts
+@@ -33,15 +33,16 @@
  
--		/* Some controllers can't do multiblock reads due to hw bugs */
--		if (card->host->caps2 & MMC_CAP2_NO_MULTI_READ &&
--		    rq_data_dir(req) = READ)
--			brq->data.blocks = 1;
+ 	sound {
+ 		compatible = "simple-audio-card";
+-		simple-audio-card,format = "i2s";
+ 		simple-audio-card,mclk-fs = <256>;
+ 
+-		simple-audio-card,cpu {
+-			sound-dai = <&audio0>;
+-		};
 -
- 		/*
- 		 * Some controllers have HW issues while operating
- 		 * in multiple I/O mode
-diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
-index bfcf673..db4b4eb 100644
---- a/include/linux/mmc/host.h
-+++ b/include/linux/mmc/host.h
-@@ -272,7 +272,6 @@ struct mmc_host {
- 
- #define MMC_CAP2_BOOTPART_NOACC	(1 << 0)	/* Boot partition no access */
- #define MMC_CAP2_FULL_PWR_CYCLE	(1 << 2)	/* Can do full power cycle */
--#define MMC_CAP2_NO_MULTI_READ	(1 << 3)	/* Multiblock reads don't work */
- #define MMC_CAP2_HS200_1_8V_SDR	(1 << 5)        /* can support */
- #define MMC_CAP2_HS200_1_2V_SDR	(1 << 6)        /* can support */
- #define MMC_CAP2_HS200		(MMC_CAP2_HS200_1_8V_SDR | \
+-		simple-audio-card,codec {
+-			sound-dai = <&cs42l51>;
++		simple-audio-card,dai-link {
++			format = "i2s";
++			cpu {
++				sound-dai = <&audio0>;
++			};
++			codec {
++				sound-dai = <&cs42l51>;
++			};
+ 		};
+ 	};
+ };
 -- 
-1.7.9.5
+1.8.4
 
