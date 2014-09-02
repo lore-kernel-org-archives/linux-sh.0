@@ -1,40 +1,41 @@
-From: Kevin Hilman <khilman@kernel.org>
-Date: Thu, 25 Sep 2014 21:33:55 +0000
-Subject: Re: [PATCH/RFC v2 04/12] PM / Domains: Add genpd attach/detach callbacks
-Message-Id: <7h61gbbd18.fsf@deeprootsystems.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 02 Sep 2014 09:13:01 +0000
+Subject: [PATCH v2 05/10] ARM: shmobile: sh73a0: Add CMT1 device to DT
+Message-Id: <1409649186-1046-6-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
- <1410893339-6361-5-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1410893339-6361-5-git-send-email-geert+renesas@glider.be> (Geert
- Uytterhoeven's message of "Tue, 16 Sep 2014 20:48:51 +0200")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Geert Uytterhoeven <geert+renesas@glider.be> writes:
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/boot/dts/sh73a0.dtsi | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-> While a PM domain can enable PM runtime management of its devices' module
-> clocks by setting
->
-> 	genpd->dev_ops.stop = pm_clk_suspend;
-> 	genpd->dev_ops.start = pm_clk_resume;
->
-> this also requires registering the clocks with the pm_clk subsystem.
-> In the legacy case, this is handled by the platform code, after
-> attaching the device to its PM domain.
->
-> When the devices are instantiated from DT, devices are attached to their
-> PM domains by generic code, leaving no method for the platform-specific
-> PM domain code to register their clocks.
->
-> Add two callbacks, allowing a PM domain to perform platform-specific
-> tasks when a device is attached to or detached from a PM domain.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index dad8404..39cb4cf 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -49,6 +49,18 @@
+ 			     <0 56 IRQ_TYPE_LEVEL_HIGH>;
+ 	};
+ 
++	cmt1: timer@e6138000 {
++		compatible = "renesas,cmt-48";
++		reg = <0xe6138000 0x200>;
++		interrupts = <0 65 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks SH73A0_CLK_CMT1>;
++		clock-names = "fck";
++
++		renesas,channels-mask = <0x3f>;
++
++		status = "disabled";
++	};
++
+ 	irqpin0: irqpin@e6900000 {
+ 		compatible = "renesas,intc-irqpin-sh73a0", "renesas,intc-irqpin";
+ 		#interrupt-cells = <2>;
+-- 
+1.8.4.5
 
-Nice, I like this approach!
-
-Acked-by: Kevin Hilman <khilman@linaro.org>
-
-Kevin
