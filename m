@@ -1,133 +1,65 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 26 Sep 2014 08:16:48 +0000
-Subject: Re: [PATCH v3 13/13] ARM: shmobile: r8a7740 dtsi: Add preliminary PM QoS device latencies
-Message-Id: <CAMuHMdWa_TDz6EyeXGDo-WGJyr15mhA4fH6r45hz8joNdkBbeQ@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 02 Sep 2014 09:12:56 +0000
+Subject: [PATCH v2 00/10] sh73a0 common clock framework implementation
+Message-Id: <1409649186-1046-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
- <1411662520-22795-14-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1411662520-22795-14-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Sep 25, 2014 at 6:28 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
-> diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-> index ed0adeb61a1ad8ec..713170442b7bd4b2 100644
-> --- a/arch/arm/boot/dts/r8a7740.dtsi
-> +++ b/arch/arm/boot/dts/r8a7740.dtsi
+Hi!
 
-> @@ -409,6 +509,10 @@
->                         reg = <0xe6150000 0x10000>;
->                         clocks = <&extal1_clk>, <&extalr_clk>;
->                         power-domains = <&pd_c5>;
-> +                       stop-latency = <250000>;
-> +                       start-latency = <250000>;
-> +                       save-state-latency = <250000>;
-> +                       restore-state-latency = <250000>;
->                         #clock-cells = <1>;
->                         clock-output-names = "system", "pllc0", "pllc1",
->                                              "pllc2", "r",
-> @@ -424,6 +528,10 @@
->                         reg = <0xe6150080 4>;
->                         clocks = <&pllc1_div2_clk>;
->                         power-domains = <&pd_c5>;
-> +                       stop-latency = <250000>;
-> +                       start-latency = <250000>;
-> +                       save-state-latency = <250000>;
-> +                       restore-state-latency = <250000>;
->                         #clock-cells = <0>;
->                         clock-output-names = "sub";
->                 };
-> @@ -433,6 +541,10 @@
->                         compatible = "fixed-factor-clock";
->                         clocks = <&cpg_clocks R8A7740_CLK_PLLC1>;
->                         power-domains = <&pd_c5>;
-> +                       stop-latency = <250000>;
-> +                       start-latency = <250000>;
-> +                       save-state-latency = <250000>;
-> +                       restore-state-latency = <250000>;
->                         #clock-cells = <0>;
->                         clock-div = <2>;
->                         clock-mult = <1>;
-> @@ -442,6 +554,10 @@
->                         compatible = "fixed-factor-clock";
->                         clocks = <&extal1_clk>;
->                         power-domains = <&pd_c5>;
-> +                       stop-latency = <250000>;
-> +                       start-latency = <250000>;
-> +                       save-state-latency = <250000>;
-> +                       restore-state-latency = <250000>;
->                         #clock-cells = <0>;
->                         clock-div = <2>;
->                         clock-mult = <1>;
-> @@ -454,6 +570,10 @@
->                         reg = <0xe6150080 4>;
->                         clocks = <&sub_clk>, <&sub_clk>;
->                         power-domains = <&pd_c5>;
-> +                       stop-latency = <250000>;
-> +                       start-latency = <250000>;
-> +                       save-state-latency = <250000>;
-> +                       restore-state-latency = <250000>;
->                         #clock-cells = <1>;
->                         renesas,clock-indices = <
->                                 R8A7740_CLK_SUBCK R8A7740_CLK_SUBCK2
-> @@ -470,6 +590,10 @@
->                                  <&sub_clk>, <&sub_clk>,
->                                  <&cpg_clocks R8A7740_CLK_B>;
->                         power-domains = <&pd_c5>;
-> +                       stop-latency = <250000>;
-> +                       start-latency = <250000>;
-> +                       save-state-latency = <250000>;
-> +                       restore-state-latency = <250000>;
->                         #clock-cells = <1>;
->                         renesas,clock-indices = <
->                                 R8A7740_CLK_CEU21 R8A7740_CLK_CEU20 R8A7740_CLK_TMU0
-> @@ -492,6 +616,10 @@
->                                  <&sub_clk>, <&sub_clk>, <&sub_clk>,
->                                  <&sub_clk>;
->                         power-domains = <&pd_c5>;
-> +                       stop-latency = <250000>;
-> +                       start-latency = <250000>;
-> +                       save-state-latency = <250000>;
-> +                       restore-state-latency = <250000>;
->                         #clock-cells = <1>;
->                         renesas,clock-indices = <
->                                 R8A7740_CLK_SCIFA6 R8A7740_CLK_INTCA
-> @@ -522,6 +650,10 @@
->                                  <&cpg_clocks R8A7740_CLK_HP>,
->                                  <&cpg_clocks R8A7740_CLK_HP>;
->                         power-domains = <&pd_c5>;
-> +                       stop-latency = <250000>;
-> +                       start-latency = <250000>;
-> +                       save-state-latency = <250000>;
-> +                       restore-state-latency = <250000>;
->                         #clock-cells = <1>;
->                         renesas,clock-indices = <
->                                 R8A7740_CLK_CMT1 R8A7740_CLK_FSI R8A7740_CLK_IIC1
-> @@ -540,6 +672,10 @@
->                                  <&cpg_clocks R8A7740_CLK_HP>,
->                                  <&cpg_clocks R8A7740_CLK_HP>;
->                         power-domains = <&pd_c5>;
-> +                       stop-latency = <250000>;
-> +                       start-latency = <250000>;
-> +                       save-state-latency = <250000>;
-> +                       restore-state-latency = <250000>;
->                         #clock-cells = <1>;
->                         renesas,clock-indices = <
->                                 R8A7740_CLK_USBH R8A7740_CLK_SDHI2
+Here's an updated sh73a0 CCF implementation.  It adds the missing clock
+assignments, CMT1, and various minor fixes.  It also splits off the parent
+selection for the DIV6 clocks so it can be merged without requiring the DIV6
+driver patch.
 
-Same here, as there should be no power-domains properties in the clocks
-nodes, there should be no latencies specified neither.
+CU
+Uli
 
-Gr{oetje,eeting}s,
 
-                        Geert
+Changes since v1:
+- div6 patch replaced with v4
+- split off div6 extended clocks
+- added cmt1 DT description
+- added MSTP clock assignments
+- reordered according to dependencies
+- removed dummy frequencies in extal2, extcki
+- removed enable_on_init on zb1 and flctlck
+- added missing tpu4 in mstp3_clks
+- use c->parent in cpg driver
+- fix some style issues
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Ulrich Hecht (10):
+  clk: shmobile: sh73a0 common clock framework implementation
+  ARM: shmobile: sh73a0: Common clock framework DT description
+  ARM: shmobile: sh73a0: common clock framework board support
+  ARM: shmobile: sh73a0: add MSTP clock assignments to DT
+  ARM: shmobile: sh73a0: Add CMT1 device to DT
+  ARM: shmobile: kzm9g-reference: Enable CMT1 in device tree
+  ARM: shmobile: kzm9g: require ZB1 clock for Ethernet controller
+  clk: shmobile: Add r8a7740, sh73a0 SoCs to MSTP bindings
+  clk: shmobile: div6: support selectable-input clocks
+  ARM: shmobile: sh73a0: add selectable sources to DIV6 clocks
+
+ .../bindings/clock/renesas,cpg-div6-clocks.txt     |  12 +-
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |   2 +
+ .../bindings/clock/renesas,sh73a0-cpg-clocks.txt   |  31 ++
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts       |   9 +
+ arch/arm/boot/dts/sh73a0.dtsi                      | 440 +++++++++++++++++++++
+ arch/arm/mach-shmobile/board-kzm9g-reference.c     |  25 ++
+ arch/arm/mach-shmobile/setup-sh73a0.c              |  16 +-
+ drivers/clk/shmobile/Makefile                      |   1 +
+ drivers/clk/shmobile/clk-div6.c                    |  32 +-
+ drivers/clk/shmobile/clk-sh73a0.c                  | 202 ++++++++++
+ include/dt-bindings/clock/sh73a0-clock.h           |  79 ++++
+ 11 files changed, 832 insertions(+), 17 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/clock/renesas,sh73a0-cpg-clocks.txt
+ create mode 100644 drivers/clk/shmobile/clk-sh73a0.c
+ create mode 100644 include/dt-bindings/clock/sh73a0-clock.h
+
+-- 
+1.8.4.5
+
