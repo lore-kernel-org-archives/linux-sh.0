@@ -1,47 +1,45 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 11 Sep 2014 00:23:52 +0000
-Subject: Re: [PATCH 1/4] usb: renesas_usbhs: gadget: fix NULL pointer dereference in ep_disable()
-Message-Id: <5410EB98.9060203@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Sep 2014 01:31:52 +0000
+Subject: [GIT PULL] Third Round of Renesas ARM Based SoC Defconfig Updates for v3.18
+Message-Id: <cover.1409621323.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <54102904.6060703@renesas.com>
-In-Reply-To: <54102904.6060703@renesas.com>
+References: <cover.1378362045.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1378362045.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Morimoto-san,
+Hi Olof, Hi Kevin, Hi Arnd,
 
-(2014/09/11 8:56), Kuninori Morimoto wrote:
-> 
-> Hi Shimoda-san
-> 
->> --- a/drivers/usb/renesas_usbhs/mod_gadget.c
->> +++ b/drivers/usb/renesas_usbhs/mod_gadget.c
->> @@ -602,6 +602,9 @@ static int usbhsg_ep_disable(struct usb_ep *ep)
->>  	struct usbhsg_uep *uep = usbhsg_ep_to_uep(ep);
->>  	struct usbhs_pipe *pipe = usbhsg_uep_to_pipe(uep);
->>
->> +	if (!uep || !uep->pipe)
->> +		return -EINVAL;
->> +
->>  	usbhsg_pipe_disable(uep);
->>  	usbhs_pipe_free(pipe);
-> 
-> If uep can be NULL,
-> we need care about usbhsg_uep_to_pipe(uep) too.
+Please consider these third round of Renesas ARM based SoC defconfig
+updates for v3.18.
 
-Thank you for the point.
-I will check the uep can be NULL or not.
+This pull request is based on the previous round of
+such requests, tagged as renesas-defconfig2-for-v3.18,
+which I have already sent a pull-request for.
 
-> and, "uep->pipe" is same as "pipe" ?
 
-Yes. I will use "pipe" instead of "uep->pipe".
+The following changes since commit 99923753e7c17a9c9d46bfe4d7fa543e426ec647:
 
-Best regards,
-Yoshihiro Shimoda
+  ARM: shmobile: bockw: Do not disable SUSPEND in defconfig (2014-08-22 10:40:31 +0900)
 
-> Best regards
-> ---
-> Kuninori Morimoto
-> 
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig3-for-v3.18
+
+for you to fetch changes up to de46e95cdb8671e2b0728923b8113654779c3ba8:
+
+  ARM: shmobile: Enable Armadillo 800 EVA board in multiplatform defconfig (2014-09-01 10:46:57 +0900)
+
+----------------------------------------------------------------
+Third Round of Renesas ARM Based SoC Defconfig Updates for v3.18
+
+* Enable Armadillo 800 EVA board in multiplatform defconfig
+
+----------------------------------------------------------------
+Geert Uytterhoeven (1):
+      ARM: shmobile: Enable Armadillo 800 EVA board in multiplatform defconfig
+
+ arch/arm/configs/shmobile_defconfig | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
