@@ -1,41 +1,70 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 17 Sep 2014 00:22:09 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7740 legacy: Fix copied bug in comment
-Message-Id: <20140917002208.GB27426@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 02 Sep 2014 22:10:18 +0000
+Subject: Re: [PATCH 08/11] i2c: rcar: remove spinlock
+Message-Id: <5406404A.7090509@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410897483-28164-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1410897483-28164-1-git-send-email-geert+renesas@glider.be>
+References: <1401263086-13720-1-git-send-email-wsa@the-dreams.de> <1401263086-13720-9-git-send-email-wsa@the-dreams.de> <53F7D83A.5030903@cogentembedded.com>
+In-Reply-To: <53F7D83A.5030903@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Wolfram Sang <wsa@the-dreams.de>, linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Tue, Sep 16, 2014 at 09:58:03PM +0200, Geert Uytterhoeven wrote:
-> The corresponding bug in pm-sh7372.c was fixed in commit
-> 70fe7b24672a988f ("ARM: shmobile: Do not access sh7372 A4S domain
-> internals directly").
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+On 08/23/2014 03:54 AM, Sergei Shtylyov wrote:
 
-Thanks, I have queued this up.
+>> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-> ---
->  arch/arm/mach-shmobile/pm-r8a7740.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
-> index 23254c31efd98a77..17ec649f0bbf3dd7 100644
-> --- a/arch/arm/mach-shmobile/pm-r8a7740.c
-> +++ b/arch/arm/mach-shmobile/pm-r8a7740.c
-> @@ -18,7 +18,7 @@ static int r8a7740_pd_a4s_suspend(void)
->  {
->  	/*
->  	 * The A4S domain contains the CPU core and therefore it should
-> -	 * only be turned off if the CPU is in use.
-> +	 * only be turned off if the CPU is not in use.
->  	 */
->  	return -EBUSY;
->  }
-> -- 
-> 1.9.1
-> 
+>> The i2c core has per-adapter locks, so no need to protect again.
+
+>     The core's lock is unable to protect from the IRQs. So I'm proposing to
+> revert this patch. It's a pity I hadn't noticed this issue when the patch was
+> posted.
+
+>> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+>> ---
+>>   drivers/i2c/busses/i2c-rcar.c | 22 ----------------------
+>>   1 file changed, 22 deletions(-)
+>> diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+>> index e82d64b5acef..4b088e67f2fd 100644
+>> --- a/drivers/i2c/busses/i2c-rcar.c
+>> +++ b/drivers/i2c/busses/i2c-rcar.c
+[...]
+>> @@ -462,21 +454,14 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+>>   {
+>>       struct rcar_i2c_priv *priv = i2c_get_adapdata(adap);
+>>       struct device *dev = rcar_i2c_priv_to_dev(priv);
+>> -    unsigned long flags;
+>>       int i, ret, timeout;
+>>
+>>       pm_runtime_get_sync(dev);
+>>
+>> -    /*-------------- spin lock -----------------*/
+>> -    spin_lock_irqsave(&priv->lock, flags);
+>> -
+>>       rcar_i2c_init(priv);
+>>       /* start clock */
+>>       rcar_i2c_write(priv, ICCCR, priv->icccr);
+>>
+>> -    spin_unlock_irqrestore(&priv->lock, flags);
+>> -    /*-------------- spin unlock -----------------*/
+>> -
+
+>     I'm afraid this unlock is misplaced, the code continues to access the
+> registers.
+
+>>       ret = rcar_i2c_bus_barrier(priv);
+
+>     Should probably unlock here instead?
+
+    After looking at the code, it looks like it was a false alarm on my side.
+The I2C interrupts are disabled here and other threads should be locked out by 
+the I2C core locks. So it doesn't make sense to hold IRQs disabled during a 
+possibly long polling loop in rcar_i2c_bus_barrier(). So I'll just repost the 
+revert patch (if still needed).
+
+>>       if (ret < 0)
+>>           goto out;
+
+WBR, Sergei
+
