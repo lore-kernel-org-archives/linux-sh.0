@@ -1,41 +1,100 @@
 From: "Li.Xiubo@freescale.com" <Li.Xiubo@freescale.com>
-Date: Tue, 02 Sep 2014 03:22:24 +0000
-Subject: RE: [PATCHv1 1/7] ASoC: simple-card: Merge single and muti DAI link code.
-Message-Id: <1b29c16ac3944bb19940da886bf7da3a@BY2PR0301MB0613.namprd03.prod.outlook.com>
+Date: Tue, 02 Sep 2014 09:15:54 +0000
+Subject: RE: [alsa-devel] [PATCHv1 1/7] ASoC: simple-card: Merge single and muti	DAI link code.
+Message-Id: <6ebdb2b0dcec46ef95084d2fc578b7b8@BY2PR0301MB0613.namprd03.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1409545781-20530-1-git-send-email-Li.Xiubo@freescale.com>
- <1409545781-20530-2-git-send-email-Li.Xiubo@freescale.com>
- <20140901133412.GA11312@lunn.ch> <20140901151356.GB29327@sirena.org.uk>
-In-Reply-To: <20140901151356.GB29327-GFdadSzt00ze9xe1eoZjHA@public.gmane.org>
+	<1409545781-20530-2-git-send-email-Li.Xiubo@freescale.com>
+ <87tx4rzszx.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87tx4rzszx.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Andrew Lunn <andrew-g2DYL2Zd6BY@public.gmane.org>
-Cc: "lgirdwood-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org" <lgirdwood-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "perex-/Fr2/VpizcU@public.gmane.org" <perex-/Fr2/VpizcU@public.gmane.org>, "tiwai-l3A5Bk7waGM@public.gmane.org" <tiwai-l3A5Bk7waGM@public.gmane.org>, "kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org" <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, "moinejf-GANU6spQydw@public.gmane.org" <moinejf-GANU6spQydw@public.gmane.org>, "jsarha-l0cyMroinI0@public.gmane.org" <jsarha-l0cyMroinI0@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org" <linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org>, "linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "alsa-devel-K7yf7f+aM1XWsZ/bQMPhNw@public.gmane.org" <alsa-devel-K7yf7f+aM1XWsZ/bQMPhNw@public.gmane.org>, Shawn Guo <Shawn.Guo-KZfg59tc24xl57MIdRCFDg@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Nicolin Chen <nicoleotsuka-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Cc: "broonie@kernel.org" <broonie@kernel.org>, "lgirdwood@gmail.com" <lgirdwood@gmail.com>, "perex@perex.cz" <perex@perex.cz>, "tiwai@suse.de" <tiwai@suse.de>, "kuninori.morimoto.gx@renesas.com" <kuninori.morimoto.gx@renesas.com>, "moinejf@free.fr" <moinejf@free.fr>, "andrew@lunn.ch" <andrew@lunn.ch>, "jsarha@ti.com" <jsarha@ti.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "alsa-devel@alsa-project.org" <alsa-devel@alsa-project.org>, Shawn Guo <Shawn.Guo@freescale.com>, Nicolin Chen <nicoleotsuka@gmail.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-> 
-> On Mon, Sep 01, 2014 at 03:34:12PM +0200, Andrew Lunn wrote:
-> > On Mon, Sep 01, 2014 at 12:29:35PM +0800, Xiubo Li wrote:
-> > > This patch merge single DAI link and muti-DAI links code together,
-> > > and simply the simple-card driver code.
-> 
-> > It would be good to note that this breaks the Binary API with DT
-> > blobs. Old blobs will not work with this new C code.
-> 
-> That's not on, we need to maintian compatibility with the old DTs unless
-> there's a very strong reason not to.  Revising the binding is one option
-> for doing this, keeping the old binding in place and making a v2 binding
-> with the new functionality.
+Hi Kuninori-san
 
-Yes, agree.
+This patch series will break the old DTs, and I will follow Mark's
+Advice to maintain compatibility with the old DTs.
 
-Actually, the current code is a bit more complicated that we should keep in mind
-of two styles of single DAI link and muti-DAI links. And the binding document and
-code are a little unreadable.
+I will send another version, please help me to review it. And I will also
+split the update patch series to many small ones.
 
-For others must read the simple card code carefully to add one DT node.
-
-Thanks,
+Thanks very much,
 
 BRs
+Xiubo
 
+> -----Original Message-----
+> From: Kuninori Morimoto [mailto:kuninori.morimoto.gx@gmail.com]
+> Sent: Monday, September 01, 2014 3:43 PM
+> To: Xiubo Li-B47053
+> Cc: broonie@kernel.org; lgirdwood@gmail.com; perex@perex.cz; tiwai@suse.de;
+> kuninori.morimoto.gx@renesas.com; moinejf@free.fr; andrew@lunn.ch;
+> jsarha@ti.com; devicetree@vger.kernel.org; linux-arm-
+> kernel@lists.infradead.org; linux-sh@vger.kernel.org; alsa-devel@alsa-
+> project.org; Guo Shawn-R65073; Nicolin Chen; linux-kernel@vger.kernel.org
+> Subject: Re: [alsa-devel] [PATCHv1 1/7] ASoC: simple-card: Merge single and
+> muti DAI link code.
+> 
+> 
+> Hi Xiubo
+> 
+> Thank you for your patch.
+> This clean-up is very nice for me.
+> But, I have 1 small comment
+> 
+> >  asoc_simple_card_sub_parse_of(struct device_node *np,
+> >  			      struct asoc_simple_dai *dai,
+> >  			      struct device_node **p_node,
+> > -			      const char **name)
+> > +			      const char **name,
+> > +			      unsigned int *daifmt)
+> >  {
+> >  	struct device_node *node;
+> >  	struct clk *clk;
+> >  	u32 val;
+> >  	int ret;
+> >
+> > +	if (!daifmt)
+> > +		return -EINVAL;
+> > +
+> > +	/*
+> > +	 * Parse format, bitclock-inversion and frame-inversion
+> > +	 * for DAI each device.
+> > +	 */
+> > +	*daifmt = snd_soc_of_parse_daifmt(np, NULL, NULL, NULL);
+> > +	*daifmt &= ~(SND_SOC_DAIFMT_MASTER_MASK | SND_SOC_DAIFMT_FORMAT_MASK);
+> (snip)
+> >  	ret = asoc_simple_card_sub_parse_of(np, &dai_props->cpu_dai,
+> >  					    &dai_link->cpu_of_node,
+> > -					    &dai_link->cpu_dai_name);
+> > +					    &dai_link->cpu_dai_name,
+> > +					    &daifmt);
+> (snip)
+> > +	dai_props->cpu_dai.fmt |= daifmt;
+> (snip)
+> >  	ret = asoc_simple_card_sub_parse_of(np, &dai_props->codec_dai,
+> >  					    &dai_link->codec_of_node,
+> > -					    &dai_link->codec_dai_name);
+> > +					    &dai_link->codec_dai_name,
+> > +					    &daifmt);
+> (snip)
+> > +	dai_props->codec_dai.fmt |= daifmt;
+> 
+> These are using
+> 
+>       asoc_simple_card_sub_parse_of(np, &dai_props->cpu_dai, xxx)
+>       asoc_simple_card_sub_parse_of(np, &dai_props->codec_dai, xxx)
+> 
+> I guess, asoc_simple_card_sub_parse_of() can update
+> below inside function
+> 
+> 	dai_props->cpu_dai.fmt |= daifmt;
+> 	dai_props->codec_dai.fmt |= daifmt;
+> 
+> 
+> Best regards
+> ---
+> Kuninori Morimoto
