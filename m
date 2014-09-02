@@ -1,78 +1,51 @@
-From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
-Date: Mon, 29 Sep 2014 05:06:01 +0000
-Subject: [PATCH RFC v2 7/7] ARM: shmobile: Use separate CPUCMCR addresses for CA15/CA7
-Message-Id: <5428E8B9.1060209@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 02 Sep 2014 02:03:07 +0000
+Subject: [PATCH 6/7 v2] ARM: shmobile: lager: remove MMC_CAP2_NO_MULTI_READ
+Message-Id: <87d2bekcdj.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
+	<87lhq2kcif.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87lhq2kcif.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-It turned out that the CPUCMCR common address was not worked for CA7.
-Change to use separate CPUCMCR addresses for CA15 and CA7.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+sh_mobile_sdhi cares multiblock read bug.
+remove MMC_CAP2_NO_MULTI_READ flag from board code
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/platsmp-apmu.c |   19 ++++++++++++++-----
- 1 file changed, 14 insertions(+), 5 deletions(-)
+v1 -> v2
 
-diff --git a/arch/arm/mach-shmobile/platsmp-apmu.c b/arch/arm/mach-shmobile/platsmp-apmu.c
-index 82db155..08718b3 100644
---- a/arch/arm/mach-shmobile/platsmp-apmu.c
-+++ b/arch/arm/mach-shmobile/platsmp-apmu.c
-@@ -36,9 +36,11 @@ static struct {
- #define WUPCR_OFFS 0x10
- #define PSTR_OFFS 0x40
- #define CPUNCR_OFFS(n) (0x100 + (0x10 * (n)))
--#define CPUCMCR 0xe6154184
-+#define CPUCMCR_CA7  0xe6151184
-+#define CPUCMCR_CA15 0xe6152184
- 
--void __iomem *cpucmcr;
-+void __iomem *cpucmcr_ca7;
-+void __iomem *cpucmcr_ca15;
- 
- static int __maybe_unused apmu_power_on(void __iomem *p, int bit)
- {
-@@ -254,13 +256,14 @@ static int shmobile_smp_apmu_enter_suspend(suspend_state_t state)
- 	 */
- 	gic_cpu_if_down();
- 
--	writel_relaxed(0x2, cpucmcr);
- 	if (read_cpuid_part() = ARM_CPU_PART_CORTEX_A15) {
-+		writel_relaxed(0x2, cpucmcr_ca15);
- 		is_a15_l2shutdown = 1;
- 		asm volatile("mrc p15, 1, %0, c9 , c0, 2"
- 			     : "=r" (l2ctlr_value));
- 		pr_debug("%s: l2ctlr: 0x%08x\n", __func__, l2ctlr_value);
- 	} else {
-+		writel_relaxed(0x2, cpucmcr_ca7);
- 		is_a15_l2shutdown = 0;
- 	}
- 
-@@ -268,7 +271,11 @@ static int shmobile_smp_apmu_enter_suspend(suspend_state_t state)
- 	cpu_suspend(smp_processor_id(), shmobile_smp_apmu_do_suspend);
- 	cpu_leave_lowpower();
- 
--	writel_relaxed(0x0, cpucmcr);
-+	if (read_cpuid_part() = ARM_CPU_PART_CORTEX_A15)
-+		writel_relaxed(0x0, cpucmcr_ca15);
-+	else
-+		writel_relaxed(0x0, cpucmcr_ca7);
-+
- 	rcar_sysc_clear_event_status();
- 	is_a15_l2shutdown = 0;
- 
-@@ -277,7 +284,9 @@ static int shmobile_smp_apmu_enter_suspend(suspend_state_t state)
- 
- void __init shmobile_smp_apmu_suspend_init(void)
- {
--	cpucmcr = ioremap_nocache(CPUCMCR, 0x4);
-+	cpucmcr_ca7  = ioremap_nocache(CPUCMCR_CA7, 0x4);
-+	cpucmcr_ca15 = ioremap_nocache(CPUCMCR_CA15, 0x4);
-+
- 	shmobile_suspend_ops.enter = shmobile_smp_apmu_enter_suspend;
- }
- #endif
+- no change
+
+ arch/arm/mach-shmobile/board-lager.c |    2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index e1d8215..f5a98e2 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -630,7 +630,6 @@ static void __init lager_add_rsnd_device(void)
+ static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_POWER_OFF_CARD,
+-	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
+ 			  TMIO_MMC_WRPROTECT_DISABLE,
+ };
+@@ -644,7 +643,6 @@ static struct resource sdhi0_resources[] __initdata = {
+ static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_POWER_OFF_CARD,
+-	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
+ 			  TMIO_MMC_WRPROTECT_DISABLE,
+ };
 -- 
 1.7.9.5
+
