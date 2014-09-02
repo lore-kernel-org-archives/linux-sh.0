@@ -1,74 +1,60 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 06 Sep 2014 01:26:30 +0000
-Subject: [PATCH v3 3/3] clocksource: sh_tmu: Document r8a7779 binding
-Message-Id: <1409966790-17683-4-git-send-email-horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 02 Sep 2014 18:02:41 +0000
+Subject: [PATCH 3/3] WIP: adapt dts for i2c slave use
+Message-Id: <1409680961-12632-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409966790-17683-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1409966790-17683-1-git-send-email-horms+renesas@verge.net.au>
+References: <1409680961-12632-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1409680961-12632-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 
-In general Renesas hardware is not documented to the extent
-where the relationship between IP blocks on different SoCs can be assumed
-although they may appear to operate the same way. Furthermore the
-documentation typically does not specify a version for individual
-IP blocks. For these reasons a convention of using the SoC name in place
-of a version and providing SoC-specific compat strings has been adopted.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Although not universally liked this convention is used in the bindings
-for a number of drivers for Renesas hardware. The purpose of this patch is
-to update the Renesas R-Car Timer Unit (TMU) driver to follow this
-convention.
+not for upstream yet.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
-* I plan to follow up with a patch patch to use the new binding in the
-  dtsi files for the r8a7779 SoC.
-commit 471269b790aec03385dc4fb127ed7094ff83c16d
+ arch/arm/boot/dts/r8a7790-lager.dts | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
 
-v2
-* Suggestions by Mark Rutland and Sergei Shtylyov
-  - Compatible strings should be "one or more" not "one" of those listed
-  - Describe the generic binding as covering any MTU2 device
-  - Re-order compat strings from most to least specific
-
-v3
-* Suggested by Laurent Pinchart
-  - Reword in keeping with a similar though more extensive patch for CMT
----
- Documentation/devicetree/bindings/timer/renesas,tmu.txt | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
-
-diff --git a/Documentation/devicetree/bindings/timer/renesas,tmu.txt b/Documentation/devicetree/bindings/timer/renesas,tmu.txt
-index 425d0c5..7db89fb 100644
---- a/Documentation/devicetree/bindings/timer/renesas,tmu.txt
-+++ b/Documentation/devicetree/bindings/timer/renesas,tmu.txt
-@@ -8,7 +8,10 @@ are independent. The TMU hardware supports up to three channels.
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 0118cbfd1cb3..93ff6ce357bb 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -205,9 +205,9 @@
+ 		renesas,function = "msiof1";
+ 	};
  
- Required Properties:
+-	iic1_pins: iic1 {
+-		renesas,groups = "iic1";
+-		renesas,function = "iic1";
++	i2c1_pins: i2c1 {
++		renesas,groups = "i2c1";
++		renesas,function = "i2c1";
+ 	};
  
--  - compatible: must contain "renesas,tmu"
-+  - compatible: must contain one or more of the following:
-+    - "renesas,tmu-r8a7779" for the r8a7779 TMU
-+    - "renesas,tmu" for any TMU.
-+      This is a fallback for the above renesas,tmu-* entries
+ 	iic2_pins: iic2 {
+@@ -365,10 +365,15 @@
+ 	status = "ok";
+ };
  
-   - reg: base address and length of the registers block for the timer module.
+-&iic1	{
++&i2c1	{
+ 	status = "ok";
+-	pinctrl-0 = <&iic1_pins>;
++	pinctrl-0 = <&i2c1_pins>;
+ 	pinctrl-names = "default";
++
++	eeprom@64 {
++		compatible = "i2c-slave-eeprom";
++		reg = <0x64>;
++	};
+ };
  
-@@ -27,7 +30,7 @@ Optional Properties:
- Example: R8A7779 (R-Car H1) TMU0 node
- 
- 	tmu0: timer@ffd80000 {
--		compatible = "renesas,tmu";
-+		compatible = "renesas,tmu-r8a7779", "renesas,tmu";
- 		reg = <0xffd80000 0x30>;
- 		interrupts = <0 32 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 33 IRQ_TYPE_LEVEL_HIGH>,
+ &iic2	{
 -- 
-2.0.1
+2.0.0
 
