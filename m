@@ -1,73 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Sep 2014 12:27:49 +0000
-Subject: [PATCH v2 2/9] ARM: shmobile: r8a7790: Add DU node to device tree
-Message-Id: <1411561676-9556-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 02 Sep 2014 09:13:03 +0000
+Subject: [PATCH v2 07/10] ARM: shmobile: kzm9g: require ZB1 clock for Ethernet controller
+Message-Id: <1409649186-1046-8-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397511312-4845-3-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1397511312-4845-3-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add the DU device with a disabled state. Boards that want to enable the
-DU need to specify the output topology.
+Unlike the legacy stuff, CCF disables the ethernet controller's clock
+unless it is used somewhere.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 39 +++++++++++++++++++++++++++++++++++++++
- 1 file changed, 39 insertions(+)
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index d0e1773..4c2deb4 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -600,6 +600,45 @@
- 		status = "disabled";
- 	};
- 
-+	du: display@feb00000 {
-+		compatible = "renesas,du-r8a7790";
-+		reg = <0 0xfeb00000 0 0x70000>,
-+		      <0 0xfeb90000 0 0x1c>,
-+		      <0 0xfeb94000 0 0x1c>;
-+		reg-names = "du", "lvds.0", "lvds.1";
-+		interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 268 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 269 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7790_CLK_DU0>,
-+		         <&mstp7_clks R8A7790_CLK_DU1>,
-+		         <&mstp7_clks R8A7790_CLK_DU2>,
-+		         <&mstp7_clks R8A7790_CLK_LVDS0>,
-+		         <&mstp7_clks R8A7790_CLK_LVDS1>;
-+		clock-names = "du.0", "du.1", "du.2", "lvds.0", "lvds.1";
-+		status = "disabled";
-+
-+		ports {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+
-+			port@0 {
-+				reg = <0>;
-+				du_out_rgb: endpoint {
-+				};
-+			};
-+			port@1 {
-+				reg = <1>;
-+				du_out_lvds0: endpoint {
-+				};
-+			};
-+			port@2 {
-+				reg = <2>;
-+				du_out_lvds1: endpoint {
-+				};
-+			};
-+		};
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 83c6058..a7e1c46 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -90,6 +90,7 @@
+ 		interrupt-parent = <&irqpin0>;
+ 		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
+ 		reg-io-width = <4>;
++		clocks = <&zb1_clk>;
+ 		smsc,irq-push-pull;
+ 		smsc,save-mac-address;
+ 		vddvario-supply = <&reg_1p8v>;
 -- 
-1.8.5.5
+1.8.4.5
 
