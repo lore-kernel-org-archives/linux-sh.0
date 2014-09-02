@@ -1,64 +1,88 @@
-From: Felipe Balbi <balbi@ti.com>
-Date: Wed, 10 Sep 2014 13:50:28 +0000
-Subject: Re: [PATCH 3/4] usb: renesas_usbhs: fix the timing of dcp_control_transfer_done
-Message-Id: <20140910135028.GF667@saruman.home>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="5CUMAwwhRxlRszMD"
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 02 Sep 2014 09:12:59 +0000
+Subject: [PATCH v2 03/10] ARM: shmobile: sh73a0: common clock framework board support
+Message-Id: <1409649186-1046-4-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <53F72602.3010704@renesas.com>
-In-Reply-To: <53F72602.3010704@renesas.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
---5CUMAwwhRxlRszMD
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Adds support for the common clock framework to the KZM9G reference board
+and SH73A0 SoC setup code.
 
-On Wed, Sep 10, 2014 at 07:34:05PM +0900, Yoshihiro Shimoda wrote:
-> According to the datasheet, this driver should clear the INTSTS0.CTRT
-> bit before this controller detects the next stage transition. Otherwise,
-> the driver may not be able to clear the bit after the controller went to
-> the next stage transition. After that, the driver will not be able to
-> clear the INTSTS0.VALID, and a usb control transfer will not finish
-> finally.
->=20
-> If we use the testusb tool, it is easy to reproduce this issue:
->=20
->  # testusb -a -t 10
->=20
-> Since the previous code handled a data stage and a status stage in
-> the usbhsf_pio_try_push(), it may not clear the INTSTS0.CTRT at the
-> right timing.
-> So, this patch changes the timing of usbhs_dcp_control_transfer_done()
-> to the usbhsg_irq_ctrl_stage().
->=20
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/mach-shmobile/board-kzm9g-reference.c | 25 +++++++++++++++++++++++++
+ arch/arm/mach-shmobile/setup-sh73a0.c          |  5 ++++-
+ 2 files changed, 29 insertions(+), 1 deletion(-)
 
-which commit does this fix ? Do we need to Cc stable ?
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index d9cdf9a..19b0842 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -30,11 +30,36 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
++#include "clock.h"
+ #include "common.h"
+ #include "sh73a0.h"
+ 
++#ifdef CONFIG_COMMON_CLK
++static const struct clk_name clk_names[] __initconst = {
++	{ "cmt1", NULL, "sh_cmt.10" },
++	{ "scifa0", NULL, "sh-sci.0" },
++	{ "scifa1", NULL, "sh-sci.1" },
++	{ "scifa2", NULL, "sh-sci.2" },
++	{ "scifa3", NULL, "sh-sci.3" },
++	{ "scifa4", NULL, "sh-sci.4" },
++	{ "scifa5", NULL, "sh-sci.5" },
++	{ "scifa6", NULL, "sh-sci.6" },
++	{ "scifa7", NULL, "sh-sci.7" },
++	{ "scifb", NULL, "sh-sci.8" },
++	{ "sdhi0", NULL, "ee100000.sd" },
++	{ "sdhi1", NULL, "ee120000.sd" },
++	{ "sdhi2", NULL, "ee140000.sd" },
++	{ "mmcif0", NULL, "e6bd0000.mmc" },
++	{ "iic0", NULL, "e6820000.i2c" },
++	{ "iic3", NULL, "e6826000.i2c" },
++};
++#endif
++
+ static void __init kzm_init(void)
+ {
++#ifdef CONFIG_COMMON_CLK
++	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
++#endif
+ 	sh73a0_add_standard_devices_dt();
+ 
+ #ifdef CONFIG_CACHE_L2X0
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 0085305..6d73b83 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -756,7 +756,9 @@ void __init __weak sh73a0_register_twd(void) { }
+ void __init sh73a0_earlytimer_init(void)
+ {
+ 	sh73a0_init_delay();
++#ifndef CONFIG_COMMON_CLK
+ 	sh73a0_clock_init();
++#endif
+ 	shmobile_earlytimer_init();
+ 	sh73a0_register_twd();
+ }
+@@ -777,8 +779,9 @@ void __init sh73a0_add_early_devices(void)
+ void __init sh73a0_add_standard_devices_dt(void)
+ {
+ 	/* clocks are setup late during boot in the case of DT */
++#ifndef CONFIG_COMMON_CLK
+ 	sh73a0_clock_init();
+-
++#endif
+ 	platform_add_devices(sh73a0_devices_dt,
+ 			     ARRAY_SIZE(sh73a0_devices_dt));
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-- 
+1.8.4.5
 
---=20
-balbi
-
---5CUMAwwhRxlRszMD
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJUEFckAAoJEIaOsuA1yqREMOIQAJNEenlCebcvdKhyBSEGFIw3
-bc0lm5Epm0OmBohKjapcGLbH8S6+ZKIubWkHL438sOFGGC8djG2GJxQGScQHXb3j
-R3rPQv8BcP0WSQuynOPccqVhgelr0V+7h9QgVSjdFdw7a/g0ma0UTVjLRk7Y20SZ
-hP/6Df9mtafCWMfdBrtaluXSv/ptZpH9BB0vUqTbjuZhkbuTNRh2i21wEYGUb9Rt
-g4BXfiNbdrj5CqoHnfeF1BZf8mpgFZu6m+jo53OlgZrITUy8loKDS84g+UpncH23
-/2t1huX93EsAOzEJ99Wzx69g4JhSPGylCdIFDkt+TUfeirL2wpSrmG7WlX2KOB60
-xmJRrQgjS4z3J0uHW4zjDEJlGpZigIrD29jpElvDJV4YmdbMrY6mDMWX9SIWPIwb
-WhLGNQbVKYBAhxwt38pIZsh5JkB9R6CQqQ2ABkZFHnJRLNU6HoddVfszgKCoQ5o0
-1kQscDzJHbsYUP4cBPNgCYXWhTyx6Drp3OFdSPkO9NhCxx+7oA/WQC9rFXnTeK0j
-Of+MEvlTTpG97WXkao0vOF5vSQ+UfHSQVdoWGpFtta9XE8PDXAn/C5rAOEN5rJd4
-yTtlCDzLuKrwDL0QosCUYg5t/FXr5kcAObXnUZgJVTvpfKQzpraVWGBdo2dqhUPb
-jcy6bTEdyEoXBmISP4wz
-=+7eP
------END PGP SIGNATURE-----
-
---5CUMAwwhRxlRszMD--
