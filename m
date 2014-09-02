@@ -1,44 +1,481 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Wed, 24 Sep 2014 18:18:08 +0000
-Subject: Re: [GIT PULL] Fourth Round of Renesas ARM Based SoC Soc Updates for v3.18
-Message-Id: <20140924181808.GG19284@localhost>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 02 Sep 2014 09:12:58 +0000
+Subject: [PATCH v2 02/10] ARM: shmobile: sh73a0: Common clock framework DT description
+Message-Id: <1409649186-1046-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1410832584.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1410832584.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Sep 16, 2014 at 10:57:50AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these fourth round of Renesas ARM based SoC soc updates for
-> v3.18.
-> 
-> This pull request is based on the previous round of
-> such requests, tagged as renesas-soc3-for-v3.18,
-> which you have pulled.
-> 
-> 
-> The following changes since commit 5923abb205e05773e0bb16c7ca4c0b41dbeec40e:
-> 
->   ARM: shmobile: Initial r8a7794 SoC support (2014-09-05 17:23:49 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc4-for-v3.18
-> 
-> for you to fetch changes up to 1370078db37de2aa5e906ae2b5dbbb6ba289adb4:
-> 
->   ARM: shmobile: r8a7794: Remove unnecessary #ifdef CONFIG_USE_OF (2014-09-11 09:51:16 +0900)
-> 
-> ----------------------------------------------------------------
-> Fourth Round of Renesas ARM Based SoC Soc Updates for v3.18
-> 
-> * r8a7794: Remove unnecessary #ifdef CONFIG_USE_OF
+Declares all sh73a0 clocks supported by the legacy clock framework as well
+as the KZM9G-specific overrides.
 
-Merged, thanks.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |   4 +
+ arch/arm/boot/dts/sh73a0.dtsi                | 346 +++++++++++++++++++++++++++
+ include/dt-bindings/clock/sh73a0-clock.h     |  79 ++++++
+ 3 files changed, 429 insertions(+)
+ create mode 100644 include/dt-bindings/clock/sh73a0-clock.h
 
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 477f815..e33d698 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -173,6 +173,10 @@
+ 	};
+ };
+ 
++&extal2_clk {
++	clock-frequency = <48000000>;
++};
++
+ &i2c0 {
+ 	status = "okay";
+ 	as3711@40 {
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 0d001eb..84efcc1 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -10,6 +10,7 @@
+ 
+ /include/ "skeleton.dtsi"
+ 
++#include <dt-bindings/clock/sh73a0-clock.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+ 
+ / {
+@@ -312,4 +313,349 @@
+ 		interrupts = <0 146 0x4>;
+ 		status = "disabled";
+ 	};
++
++	clocks {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges;
++
++		/* External root clocks */
++		extalr_clk: extalr_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <32768>;
++			clock-output-names = "extalr";
++		};
++		extal1_clk: extal1_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <26000000>;
++			clock-output-names = "extal1";
++		};
++		extal2_clk: extal2_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-output-names = "extal2";
++		};
++		extcki_clk: extcki_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-output-names = "extcki";
++		};
++		fsiack_clk: fsiack_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "fsiack";
++		};
++		fsibck_clk: fsibck_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "fsibck";
++		};
++
++		/* Special CPG clocks */
++		cpg_clocks: cpg_clocks@e6150000 {
++			compatible = "renesas,sh73a0-cpg-clocks";
++			reg = <0xe6150000 0x10000>;
++			clocks = <&extal1_clk>, <&extal1_div2_clk>,
++				 <&extal2_clk>, <&extal2_div2_clk>;
++			#clock-cells = <1>;
++			clock-output-names = "main", "pll0", "pll1", "pll2",
++					     "pll3", "dsi0phy", "dsi1phy",
++					     "zg", "m3", "b", "m1", "m2",
++					     "z", "zx", "hp";
++		};
++
++		/* Variable factor clocks (DIV6) */
++		vclk1_clk: vclk1_clk@e6150008 {
++			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe6150008 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "vclk1";
++		};
++		vclk2_clk: vclk2_clk@e615000c {
++			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe615000c 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "vclk2";
++		};
++		vclk3_clk: vclk3_clk@e615001c {
++			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe615001c 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "vclk3";
++		};
++		zb1_clk: zb1_clk@e6150010 {
++			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe6150010 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "zb1";
++		};
++		flctl_clk: flctl_clk@e6150014 {
++			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe6150014 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "flctlck";
++		};
++		sdhi0_clk: sdhi0_clk@e6150074 {
++			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe6150074 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "sdhi0ck";
++		};
++		sdhi1_clk: sdhi1_clk@e6150078 {
++			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe6150078 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "sdhi1ck";
++		};
++		sdhi2_clk: sdhi2_clk@e615007c {
++			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe615007c 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "sdhi2ck";
++		};
++		fsia_clk: fsia_clk@e6150018 {
++			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe6150018 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "fsia";
++		};
++		fsib_clk: fsib_clk@e6150090 {
++			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe6150090 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "fsib";
++		};
++		sub_clk: sub_clk@e6150080 {
++			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe6150080 4>;
++			clocks = <&extal2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "sub";
++		};
++		spua_clk: spua_clk@e6150084 {
++			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe6150084 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "spua";
++		};
++		spuv_clk: spuv_clk@e6150094 {
++			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe6150094 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "spuv";
++		};
++		msu_clk: msu_clk@e6150088 {
++			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe6150088 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "msu";
++		};
++		hsi_clk: hsi_clk@e615008c {
++			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe615008c 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "hsi";
++		};
++		mfg1_clk: mfg1_clk@e6150098 {
++			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe6150098 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "mfg1";
++		};
++		mfg2_clk: mfg2_clk@e615009c {
++			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe615009c 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "mfg2";
++		};
++		dsit_clk: dsit_clk@e6150060 {
++			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe6150060 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "dsit";
++		};
++		dsi0p_clk: dsi0p_clk@e6150064 {
++			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe6150064 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "dsi0pck";
++		};
++
++		/* Fixed factor clocks */
++		extal1_div2_clk: extal1_div2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&extal1_clk>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "extal1_div2";
++		};
++		extal2_div2_clk: extal2_div2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&extal2_clk>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "extal2_div2";
++		};
++		main_div2_clk: main_div2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks SH73A0_CLK_MAIN>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "main_div2";
++		};
++		pll1_div2_clk: pll1_div2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks SH73A0_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "pll1_div2";
++		};
++		pll1_div7_clk: pll1_div7_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks SH73A0_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <7>;
++			clock-mult = <1>;
++			clock-output-names = "pll1_div7";
++		};
++		pll1_div13_clk: pll1_div13_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks SH73A0_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <13>;
++			clock-mult = <1>;
++			clock-output-names = "pll1_div13";
++		};
++		twd_clk: twd_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks SH73A0_CLK_Z>;
++			#clock-cells = <0>;
++			clock-div = <4>;
++			clock-mult = <1>;
++			clock-output-names = "twd";
++		};
++
++		/* Gate clocks */
++		mstp0_clks: mstp0_clks@e6150130 {
++			compatible = "renesas,sh73a0-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xe6150130 4>, <0xe6150030 4>;
++			clocks = <&cpg_clocks SH73A0_CLK_HP>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				SH73A0_CLK_IIC2
++			>;
++			clock-output-names +				"iic2";
++		};
++		mstp1_clks: mstp1_clks@e6150134 {
++			compatible = "renesas,sh73a0-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xe6150134 4>, <0xe6150038 4>;
++			clocks = <&cpg_clocks SH73A0_CLK_B>,
++				 <&cpg_clocks SH73A0_CLK_B>,
++				 <&cpg_clocks SH73A0_CLK_B>,
++				 <&cpg_clocks SH73A0_CLK_B>,
++				 <&sub_clk>, <&cpg_clocks SH73A0_CLK_B>,
++				 <&cpg_clocks SH73A0_CLK_HP>,
++				 <&cpg_clocks SH73A0_CLK_ZG>,
++				 <&cpg_clocks SH73A0_CLK_B>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				SH73A0_CLK_CEU1 SH73A0_CLK_CSI2_RX1
++				SH73A0_CLK_CEU0 SH73A0_CLK_CSI2_RX0
++				SH73A0_CLK_TMU0	SH73A0_CLK_DSITX0
++				SH73A0_CLK_IIC0 SH73A0_CLK_SGX
++				SH73A0_CLK_LCDC0
++			>;
++			clock-output-names +				"ceu1", "csi2_rx1", "ceu0", "csi2_rx0",
++				"tmu0", "dsitx0", "iic0", "sgx", "lcdc0";
++		};
++		mstp2_clks: mstp2_clks@e6150138 {
++			compatible = "renesas,sh73a0-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xe6150138 4>, <0xe6150040 4>;
++			clocks = <&sub_clk>, <&cpg_clocks SH73A0_CLK_HP>,
++				 <&cpg_clocks SH73A0_CLK_HP>, <&sub_clk>,
++				 <&sub_clk>, <&sub_clk>, <&sub_clk>, <&sub_clk>,
++				 <&sub_clk>, <&sub_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				SH73A0_CLK_SCIFA7 SH73A0_CLK_SY_DMAC
++				SH73A0_CLK_MP_DMAC SH73A0_CLK_SCIFA5
++				SH73A0_CLK_SCIFB SH73A0_CLK_SCIFA0
++				SH73A0_CLK_SCIFA1 SH73A0_CLK_SCIFA2
++				SH73A0_CLK_SCIFA3 SH73A0_CLK_SCIFA4
++			>;
++			clock-output-names +				"scifa7", "sy_dmac", "mp_dmac", "scifa5",
++				"scifb", "scifa0", "scifa1", "scifa2",
++				"scifa3", "scifa4";
++		};
++		mstp3_clks: mstp3_clks@e615013c {
++			compatible = "renesas,sh73a0-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xe615013c 4>, <0xe6150048 4>;
++			clocks = <&sub_clk>, <&extalr_clk>,
++				 <&cpg_clocks SH73A0_CLK_HP>, <&sub_clk>,
++				 <&cpg_clocks SH73A0_CLK_HP>,
++				 <&cpg_clocks SH73A0_CLK_HP>, <&flctl_clk>,
++				 <&sdhi0_clk>, <&sdhi1_clk>,
++				 <&cpg_clocks SH73A0_CLK_HP>, <&sdhi2_clk>,
++				 <&main_div2_clk>, <&main_div2_clk>,
++				 <&main_div2_clk>, <&main_div2_clk>,
++				 <&main_div2_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				SH73A0_CLK_SCIFA6 SH73A0_CLK_CMT1
++				SH73A0_CLK_FSI SH73A0_CLK_IRDA
++				SH73A0_CLK_IIC1 SH73A0_CLK_USB SH73A0_CLK_FLCTL
++				SH73A0_CLK_SDHI0 SH73A0_CLK_SDHI1
++				SH73A0_CLK_MMCIF0 SH73A0_CLK_SDHI2
++				SH73A0_CLK_TPU0 SH73A0_CLK_TPU1
++				SH73A0_CLK_TPU2 SH73A0_CLK_TPU3
++				SH73A0_CLK_TPU4
++			>;
++			clock-output-names +				"scifa6", "cmt1", "fsi", "irda", "iic1",
++				"usb", "flctl", "sdhi0", "sdhi1", "mmcif0", "sdhi2",
++				"tpu0", "tpu1", "tpu2", "tpu3", "tpu4";
++		};
++		mstp4_clks: mstp4_clks@e6150140 {
++			compatible = "renesas,sh73a0-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xe6150140 4>, <0xe615004c 4>;
++			clocks = <&cpg_clocks SH73A0_CLK_HP>,
++				 <&cpg_clocks SH73A0_CLK_HP>, <&extalr_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				SH73A0_CLK_IIC3 SH73A0_CLK_IIC4
++				SH73A0_CLK_KEYSC
++			>;
++			clock-output-names +				"iic3", "iic4", "keysc";
++		};
++	};
+ };
+diff --git a/include/dt-bindings/clock/sh73a0-clock.h b/include/dt-bindings/clock/sh73a0-clock.h
+new file mode 100644
+index 0000000..6f5e34d
+--- /dev/null
++++ b/include/dt-bindings/clock/sh73a0-clock.h
+@@ -0,0 +1,79 @@
++/*
++ * Copyright 2014 Ulrich Hecht
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++
++#ifndef __DT_BINDINGS_CLOCK_SH73A0_H__
++#define __DT_BINDINGS_CLOCK_SH73A0_H__
++
++/* CPG */
++#define SH73A0_CLK_MAIN 0
++#define SH73A0_CLK_PLL0 1
++#define SH73A0_CLK_PLL1 2
++#define SH73A0_CLK_PLL2 3
++#define SH73A0_CLK_PLL3 4
++#define SH73A0_CLK_DSI0PHY 5
++#define SH73A0_CLK_DSI1PHY 6
++#define SH73A0_CLK_ZG 7
++#define SH73A0_CLK_M3 8
++#define SH73A0_CLK_B 9
++#define SH73A0_CLK_M1 10
++#define SH73A0_CLK_M2 11
++#define SH73A0_CLK_Z 12
++#define SH73A0_CLK_ZX 13
++#define SH73A0_CLK_HP 14
++
++/* MSTP0 */
++#define SH73A0_CLK_IIC2 1
++
++/* MSTP1 */
++#define SH73A0_CLK_CEU1 29
++#define SH73A0_CLK_CSI2_RX1 28
++#define SH73A0_CLK_CEU0 27
++#define SH73A0_CLK_CSI2_RX0 26
++#define SH73A0_CLK_TMU0 25
++#define SH73A0_CLK_DSITX0 18
++#define SH73A0_CLK_IIC0 16
++#define SH73A0_CLK_SGX 12
++#define SH73A0_CLK_LCDC0 0
++
++/* MSTP2 */
++#define SH73A0_CLK_SCIFA7 19
++#define SH73A0_CLK_SY_DMAC 18
++#define SH73A0_CLK_MP_DMAC 17
++#define SH73A0_CLK_SCIFA5 7
++#define SH73A0_CLK_SCIFB 6
++#define SH73A0_CLK_SCIFA0 4
++#define SH73A0_CLK_SCIFA1 3
++#define SH73A0_CLK_SCIFA2 2
++#define SH73A0_CLK_SCIFA3 1
++#define SH73A0_CLK_SCIFA4 0
++
++/* MSTP3 */
++#define SH73A0_CLK_SCIFA6 31
++#define SH73A0_CLK_CMT1 29
++#define SH73A0_CLK_FSI 28
++#define SH73A0_CLK_IRDA 25
++#define SH73A0_CLK_IIC1 23
++#define SH73A0_CLK_USB 22
++#define SH73A0_CLK_FLCTL 15
++#define SH73A0_CLK_SDHI0 14
++#define SH73A0_CLK_SDHI1 13
++#define SH73A0_CLK_MMCIF0 12
++#define SH73A0_CLK_SDHI2 11
++#define SH73A0_CLK_TPU0 4
++#define SH73A0_CLK_TPU1 3
++#define SH73A0_CLK_TPU2 2
++#define SH73A0_CLK_TPU3 1
++#define SH73A0_CLK_TPU4 0
++
++/* MSTP4 */
++#define SH73A0_CLK_IIC3 11
++#define SH73A0_CLK_IIC4 10
++#define SH73A0_CLK_KEYSC 3
++
++#endif
+-- 
+1.8.4.5
 
--Olof
