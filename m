@@ -1,46 +1,39 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 04 Sep 2014 12:20:13 +0000
-Subject: Re: [PATCH 02/03] ARM: shmobile: sh73a0: Add Multiplatform support
-Message-Id: <20140904122009.GB30392@verge.net.au>
+From: Pranith Kumar <bobby.prani@gmail.com>
+Date: Tue, 02 Sep 2014 14:39:04 +0000
+Subject: [PATCH] sh: Fix build error caused by missing dependencies
+Message-Id: <1409668745-31693-1-git-send-email-bobby.prani@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140904022856.26216.25574.sendpatchset@w520>
-In-Reply-To: <20140904022856.26216.25574.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>, Vivek Goyal <vgoyal@redhat.com>, Magnus Damm <damm@opensource.se>, Simon Horman <horms+renesas@verge.net.au>, Mark Salter <msalter@redhat.com>, Kees Cook <keescook@chromium.org>, Geert Uytterhoeven <geert+renesas@glider.be>, AKASHI Takahiro <takahiro.akashi@linaro.org>, "Steven Rostedt (Red Hat)" <rostedt@goodmis.org>, Robert Graffham <psquid@psquid.net>, Paul Bolle <pebolle@tiscali.nl>, "open list:SUPERH" <linux-sh@vger.kernel.org>, open list <linux-kernel@vger.kernel.org>
 
-On Thu, Sep 04, 2014 at 08:01:53PM +0900, Magnus Damm wrote:
-> Hi Simon,
-> 
-> On Thu, Sep 4, 2014 at 3:51 PM, Simon Horman <horms@verge.net.au> wrote:
-> > On Thu, Sep 04, 2014 at 11:28:56AM +0900, Magnus Damm wrote:
-> >> From: Magnus Damm <damm+renesas@opensource.se>
-> >>
-> >> Enable sh73a0 Multiplatform support for the generic sh73a0
-> >> machine vector. No board support is enabled, and the board
-> >> code for KZM9G DT Reference is left by itself.
-> >
-> > This appears to overlap with:
-> >
-> > [PATCH v2 03/10] ARM: shmobile: sh73a0: common clock framework board support
-> 
-> So it seems. I propose that Ulrich will focus on getting the sh73a0
-> drivers/clk bits merged, while I fix up the generic sh73a0
-> multiplatform support in parallel.
-> 
-> Can you make sure the CMT bits get sorted out independently?
+Fix a sh4-randconfig build failure which has the following splat:
 
-Ok. So the implication is that I can take this series once
-you've respun it for the minor #ifdef problem that I pointed out
-earlier today?
+arch/sh/mm/cache-sh4.c:99:17: error: 'cached_to_uncached' undeclared (first use in this function)
+arch/sh/mm/cache-sh4.c:192:2: error: implicit declaration of function 'cpu_context' [-Werror=implicit-function-declaration]
 
-Sure, but it can't be entirely independent as the CMT need a clock.
-I believe there are two options.
+These errors are caused by missing dependencies on UNCACHED_MAPPING and MMU.
 
-1. Add CMT first, using legacy clocks.
-   Then later update it to use CCF.
+Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Pranith Kumar <bobby.prani@gmail.com>
+---
+ arch/sh/Kconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
-2. Add CMT after CCF
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 244fb4c..619d5eb 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -194,6 +194,8 @@ config CPU_SH4
+ 	select SH_INTC
+ 	select SYS_SUPPORTS_SH_TMU
+ 	select SYS_SUPPORTS_HUGETLBFS if MMU
++	select UNCACHED_MAPPING
++	select MMU
+ 
+ config CPU_SH4A
+ 	bool
+-- 
+2.1.0
 
-Which to you prefer?
