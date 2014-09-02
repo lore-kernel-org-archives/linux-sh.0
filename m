@@ -1,42 +1,84 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 16 Sep 2014 01:57:52 +0000
-Subject: [PATCH] ARM: shmobile: r8a7794: Remove unnecessary #ifdef CONFIG_USE_OF
-Message-Id: <1370078db37de2aa5e906ae2b5dbbb6ba289adb4.1410832584.git.horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 02 Sep 2014 09:13:02 +0000
+Subject: [PATCH v2 06/10] ARM: shmobile: kzm9g-reference: Enable CMT1 in device tree
+Message-Id: <1409649186-1046-7-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1410832584.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1410832584.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The r8a7794 support is always compiled using ARCH_MULTIPLATFORM which
-selects USE_OF. So #ifdef CONFIG_USE_OF is unnecessary.
-
-Reported-by: Arnd Bergmann <arnd@arndb.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7794.c | 3 ---
- 1 file changed, 3 deletions(-)
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |  4 ++++
+ arch/arm/mach-shmobile/setup-sh73a0.c        | 11 +----------
+ 2 files changed, 5 insertions(+), 10 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7794.c b/arch/arm/mach-shmobile/setup-r8a7794.c
-index 05e970c..c10acd1 100644
---- a/arch/arm/mach-shmobile/setup-r8a7794.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7794.c
-@@ -19,8 +19,6 @@
- #include "rcar-gen2.h"
- #include <asm/mach/arch.h>
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index e33d698..83c6058 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -177,6 +177,10 @@
+ 	clock-frequency = <48000000>;
+ };
  
--#ifdef CONFIG_USE_OF
++&cmt1 {
++	status = "ok";
++};
++
+ &i2c0 {
+ 	status = "okay";
+ 	as3711@40 {
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 6d73b83..2c6ef79 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -697,10 +697,6 @@ static struct platform_device irqpin3_device = {
+ 	},
+ };
+ 
+-static struct platform_device *sh73a0_devices_dt[] __initdata = {
+-	&cmt1_device,
+-};
 -
- static const char * const r8a7794_boards_compat_dt[] __initconst = {
- 	"renesas,r8a7794",
- 	NULL,
-@@ -32,4 +30,3 @@ DT_MACHINE_START(R8A7794_DT, "Generic R8A7794 (Flattened Device Tree)")
- 	.init_time	= rcar_gen2_timer_init,
- 	.dt_compat	= r8a7794_boards_compat_dt,
- MACHINE_END
--#endif /* CONFIG_USE_OF */
+ static struct platform_device *sh73a0_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -713,6 +709,7 @@ static struct platform_device *sh73a0_early_devices[] __initdata = {
+ 	&scif8_device,
+ 	&tmu0_device,
+ 	&ipmmu_device,
++	&cmt1_device,
+ };
+ 
+ static struct platform_device *sh73a0_late_devices[] __initdata = {
+@@ -737,8 +734,6 @@ void __init sh73a0_add_standard_devices(void)
+ 	/* Clear software reset bit on SY-DMAC module */
+ 	__raw_writel(__raw_readl(SRCR2) & ~(1 << 18), SRCR2);
+ 
+-	platform_add_devices(sh73a0_devices_dt,
+-			    ARRAY_SIZE(sh73a0_devices_dt));
+ 	platform_add_devices(sh73a0_early_devices,
+ 			    ARRAY_SIZE(sh73a0_early_devices));
+ 	platform_add_devices(sh73a0_late_devices,
+@@ -765,8 +760,6 @@ void __init sh73a0_earlytimer_init(void)
+ 
+ void __init sh73a0_add_early_devices(void)
+ {
+-	early_platform_add_devices(sh73a0_devices_dt,
+-				   ARRAY_SIZE(sh73a0_devices_dt));
+ 	early_platform_add_devices(sh73a0_early_devices,
+ 				   ARRAY_SIZE(sh73a0_early_devices));
+ 
+@@ -782,8 +775,6 @@ void __init sh73a0_add_standard_devices_dt(void)
+ #ifndef CONFIG_COMMON_CLK
+ 	sh73a0_clock_init();
+ #endif
+-	platform_add_devices(sh73a0_devices_dt,
+-			     ARRAY_SIZE(sh73a0_devices_dt));
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
 -- 
-2.0.1
+1.8.4.5
 
