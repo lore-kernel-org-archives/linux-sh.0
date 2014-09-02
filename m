@@ -1,47 +1,47 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 11 Sep 2014 00:11:45 +0000
-Subject: Re: [PATCH 0/4] usb: renesas_usbhs: fixes this driver in gadget mode (part2)
-Message-Id: <5410E8C1.70500@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 02 Sep 2014 01:01:53 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC Boards Cleanups For v3.18
+Message-Id: <20140902010153.GA12650@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <53F725E3.4050304@renesas.com>
-In-Reply-To: <53F725E3.4050304@renesas.com>
+References: <cover.1408927475.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408927475.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Felipe,
-
-(2014/09/10 22:49), Felipe Balbi wrote:
-> On Wed, Sep 10, 2014 at 07:33:27PM +0900, Yoshihiro Shimoda wrote:
->> If we tested this driver as gadget, some issues below happened:
->>  - Oops happened if g_audio.
->>  - A usb enumeration may fail if we do insmod during connected the usb cable.
->>  - A transaction will not finish if g_zero.
->>  - A usb enumeration may fail after we re-connected the usb cable.
->>
->> This patch serias fixes them.
->> This patch serias is based on Felipe's usb.git, testing/fixes branch.
->> (commit id: 0b93a4c838fa10370d72f86fe712426ac63804de)
+On Mon, Aug 25, 2014 at 10:09:40AM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
 > 
-> Can you start sending your patches as a thread ? It makes it easier to
-> find them. If you're already formatting patches to a directory, then all
-> you have to git send-email the difectory, instead of all files in that.
+> Please consider these Renesas ARM based SoC boards cleanups for v3.18.
+
+Please ignore this pull-request.
+The board-armadillo800eva-reference.c file is now scheduled for removal
+and I will defer the board-armadillo800eva.c change for now.
+
+> The following changes since commit 7d1311b93e58ed55f3a31cc8f94c4b8fe988a2b9:
 > 
-> e.g.:
+>   Linux 3.17-rc1 (2014-08-16 10:40:26 -0600)
 > 
-> 	$ git format-patch -o patches --cover-letter -4
-> 	$ vim patches/0000-cover-letter*
-> 	$ git send-email --to balbi@ti.com --cc linux-usb@vger.kernel.org \
-> 		patches
-
-Thank you for the comment. Yes, I will try this command from next time.
-
-> With that said, do we need these patches in v3.17 final ? or only v3.18?
-> It's getting pretty late for v3.17-final...
-
-I understand it's getting pretty late for v3.17-final.
-So, I will send these patches for v3.18.
-
-Best regards,
-Yoshihiro Shimoda
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards-cleanups-for-v3.18
+> 
+> for you to fetch changes up to 0e56d75395f98a659e6879708bbd9328d2ce347e:
+> 
+>   ARM: shmobile: armadillo800eva: Sort includes (2014-08-22 10:46:54 +0900)
+> 
+> ----------------------------------------------------------------
+> Renesas ARM Based SoC Boards Cleanups For v3.18
+> 
+> * Sort armadillo800eva includes
+> 
+> ----------------------------------------------------------------
+> Simon Horman (2):
+>       ARM: shmobile: armadillo800eva-reference: Sort includes
+>       ARM: shmobile: armadillo800eva: Sort includes
+> 
+>  .../board-armadillo800eva-reference.c              |  2 +-
+>  arch/arm/mach-shmobile/board-armadillo800eva.c     | 40 +++++++++++-----------
+>  2 files changed, 21 insertions(+), 21 deletions(-)
+> 
