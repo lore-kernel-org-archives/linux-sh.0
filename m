@@ -1,51 +1,28 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 09 Sep 2014 22:03:26 +0000
-Subject: Re: [PATCH v2 07/10] ARM: shmobile: kzm9g: require ZB1 clock for Ethernet controller
-Message-Id: <1588149.oD0qILfl2F@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 02 Sep 2014 17:13:55 +0000
+Subject: Re: [PATCH v2] Revert "i2c: rcar: remove spinlock"
+Message-Id: <5405FAD3.90403@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409649186-1046-8-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1409649186-1046-8-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1642788.pEhrsPDp4u@wasted.cogentembedded.com> <20140824064520.GA2578@katana> <53F9CCE7.3010006@cogentembedded.com> <20140825034009.GA2795@katana> <53FB1F90.6080704@cogentembedded.com> <20140825143316.GA1285@katana>
+In-Reply-To: <20140825143316.GA1285@katana>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
+Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hi Ulrich,
+Hello.
 
-Thank you for the patch.
+On 08/25/2014 06:33 PM, Wolfram Sang wrote:
 
-On Tuesday 02 September 2014 11:13:03 Ulrich Hecht wrote:
-> Unlike the legacy stuff, CCF disables the ethernet controller's clock
-> unless it is used somewhere.
+>>     Ah, I misunderstood you. However, I don't quite understand why you want
+>> to combine revert and the mentioned updates...
 
-But the ethernet controller is not clocked by the ZB1 clock.
+> As I understood from your previous mail, a plain revert is less broken
+> but still broken. Applying a correct fix is my preferred way.
 
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> ---
->  arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-> b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts index 83c6058..a7e1c46
-> 100644
-> --- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-> +++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-> @@ -90,6 +90,7 @@
->  		interrupt-parent = <&irqpin0>;
->  		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
->  		reg-io-width = <4>;
-> +		clocks = <&zb1_clk>;
+    Actually, from the -stable kernel perspective, a single patch would 
+complicate backporting. So could you please reconsider?
 
-By the way, that clock is only named zb1 in a single location in the 
-datasheet, and just zb everywhere else. I think it should be renamed in patch 
-02/10.
-
->  		smsc,irq-push-pull;
->  		smsc,save-mac-address;
->  		vddvario-supply = <&reg_1p8v>;
-
--- 
-Regards,
-
-Laurent Pinchart
+WBR, Sergei
 
