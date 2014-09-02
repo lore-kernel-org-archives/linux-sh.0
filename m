@@ -1,72 +1,91 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 13 Sep 2014 23:36:25 +0000
-Subject: [PATCH 2/2] ARM: shmobile: r8a7791: Add VSP1 devices to DT
-Message-Id: <1410651385-13090-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 02 Sep 2014 01:08:54 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC r8a7740 CCF and Timers Updates for v3.18
+Message-Id: <20140902010854.GB12650@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396974957-6046-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1396974957-6046-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1409030383.git.horms+renesas@verge.net.au>
+ <20140826091739.GB1210@verge.net.au>
+In-Reply-To: <20140826091739.GB1210@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add all available VSP1 devices.
+On Tue, Aug 26, 2014 at 06:17:39PM +0900, Simon Horman wrote:
+> On Tue, Aug 26, 2014 at 02:23:57PM +0900, Simon Horman wrote:
+> > Hi Olof, Hi Kevin, Hi Arnd,
+> > 
+> > Please consider these Renesas ARM based SoC r8a7740 CCF and timers updates
+> > for v3.18.
+> > 
+> > These changes are in their own branch as there are SoC and board changes
+> > that depend on DT changes, the reverse of the usual branch dependencies.
+> 
+> This pull request includes a minor conflict in
+> arch/arm/mach-shmobile/board-armadillo800eva-reference.c with
+> 0eb07c96ee61be10 ("ARM: shmobile: armadillo800eva-reference: Sort
+> includes") which is included in the pull request
+> "Renesas ARM Based SoC Boards Cleanups For v3.18"
+> which is tagged as renesas-boards-cleanups-for-v3.18.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/r8a7791.dtsi | 39 +++++++++++++++++++++++++++++++++++++++
- 1 file changed, 39 insertions(+)
+I have withdrawn the boards cleanup pull request and the
+conflict above should no longer occur.
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index e06c11f..98ea81b 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -637,6 +637,45 @@
- 		status = "disabled";
- 	};
- 
-+	vsp1@fe928000 {
-+		compatible = "renesas,vsp1";
-+		reg = <0 0xfe928000 0 0x8000>;
-+		interrupts = <0 267 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7791_CLK_VSP1_S>;
-+
-+		renesas,has-lut;
-+		renesas,has-sru;
-+		renesas,#rpf = <5>;
-+		renesas,#uds = <3>;
-+		renesas,#wpf = <4>;
-+	};
-+
-+	vsp1@fe930000 {
-+		compatible = "renesas,vsp1";
-+		reg = <0 0xfe930000 0 0x8000>;
-+		interrupts = <0 246 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7791_CLK_VSP1_DU0>;
-+
-+		renesas,has-lif;
-+		renesas,has-lut;
-+		renesas,#rpf = <4>;
-+		renesas,#uds = <1>;
-+		renesas,#wpf = <4>;
-+	};
-+
-+	vsp1@fe938000 {
-+		compatible = "renesas,vsp1";
-+		reg = <0 0xfe938000 0 0x8000>;
-+		interrupts = <0 247 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7791_CLK_VSP1_DU1>;
-+
-+		renesas,has-lif;
-+		renesas,has-lut;
-+		renesas,#rpf = <4>;
-+		renesas,#uds = <1>;
-+		renesas,#wpf = <4>;
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
--- 
-1.8.5.5
-
+> 
+> The resolution is to take both.
+> The resulting #includes should be:
+> 
+> #include <linux/clk.h>
+> #include <linux/err.h>
+> #include <linux/gpio.h>
+> #include <linux/io.h>
+> #include <linux/kernel.h>
+> #include <linux/of_platform.h>
+> 
+> This resolution can be found in the next branch of the renesas tree.
+> 
+> > The following changes since commit 7d1311b93e58ed55f3a31cc8f94c4b8fe988a2b9:
+> > 
+> >   Linux 3.17-rc1 (2014-08-16 10:40:26 -0600)
+> > 
+> > are available in the git repository at:
+> > 
+> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-r8a7740-ccf-and-timers-for-v3.18
+> > 
+> > for you to fetch changes up to 433306747791845677ba662435a9bbbafaa21df3:
+> > 
+> >   ARM: shmobile: r8a7740: Remove r8a7740_add_standard_devices_dt (2014-08-23 19:58:57 +0900)
+> > 
+> > ----------------------------------------------------------------
+> > Renesas ARM Based SoC R8a7740 CCF and Timers Updates for v3.18
+> > 
+> > When booting using the r8a7740/armadillo800eva using dt-reference:
+> > * Use CCF to initialise clocks via DT
+> > * Initialise timers via DT
+> > 
+> > ----------------------------------------------------------------
+> > Simon Horman (4):
+> >       ARM: shmobile: r8a7740: Add CMT1 device to DT
+> >       ARM: shmobile: armadillo800eva-reference: Enable CMT1 in device tree
+> >       ARM: shmobile: armadillo800eva-reference: Do not use r8a7740_add_standard_devices_dt()
+> >       ARM: shmobile: r8a7740: Remove r8a7740_add_standard_devices_dt
+> > 
+> > Ulrich Hecht (4):
+> >       ARM: shmobile: r8a7740: clock register bits
+> >       ARM: shmobile: r8a7740: add SoC clocks to DTS
+> >       ARM: shmobile: r8a7740: add MSTP clock assignments to DT
+> >       ARM: shmobile: armadillo800eva-reference: add clock overrides to DTS
+> > 
+> >  .../boot/dts/r8a7740-armadillo800eva-reference.dts |  17 ++
+> >  arch/arm/boot/dts/r8a7740.dtsi                     | 220 ++++++++++++++++++++-
+> >  .../board-armadillo800eva-reference.c              |   3 +-
+> >  arch/arm/mach-shmobile/r8a7740.h                   |   1 -
+> >  arch/arm/mach-shmobile/setup-r8a7740.c             |  18 +-
+> >  include/dt-bindings/clock/r8a7740-clock.h          |  77 ++++++++
+> >  6 files changed, 317 insertions(+), 19 deletions(-)
+> >  create mode 100644 include/dt-bindings/clock/r8a7740-clock.h
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
