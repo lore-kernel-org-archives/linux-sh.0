@@ -1,86 +1,27 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 10 Sep 2014 00:02:55 +0000
-Subject: Re: [PATCH v2 08/10] clk: shmobile: Add r8a7740, sh73a0 SoCs to MSTP bindings
-Message-Id: <20140910000254.GE16682@verge.net.au>
+Date: Tue, 02 Sep 2014 01:16:59 +0000
+Subject: Re: [PATCH] ARM: shmobile: armadillo800eva: Sort includes
+Message-Id: <20140902011659.GD12650@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409649186-1046-9-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1409649186-1046-9-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1407724739-14100-1-git-send-email-horms+renesas@verge.net.au>
+ <20140822014704.GC9099@verge.net.au>
+In-Reply-To: <20140822014704.GC9099@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Sep 10, 2014 at 01:05:24AM +0300, Laurent Pinchart wrote:
-> On Wednesday 03 September 2014 09:41:05 Simon Horman wrote:
-> > On Tue, Sep 02, 2014 at 05:21:13PM -0700, Mike Turquette wrote:
-> > > Quoting Simon Horman (2014-09-02 16:56:04)
-> > > 
-> > > > On Tue, Sep 02, 2014 at 11:13:04AM +0200, Ulrich Hecht wrote:
-> > > > > Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> > > > 
-> > > > Acked-by: Simon Horman <horms+renesas@verge.net.au>
-> > > > 
-> > > > Mike, could you consider picking this up?
-> > > 
-> > > I had a question about patch 9/10. My mailer seems to have messed up the
-> > > Cc list but it managed to hit the list[0].
+On Fri, Aug 22, 2014 at 10:47:04AM +0900, Simon Horman wrote:
+> On Mon, Aug 11, 2014 at 11:38:59AM +0900, Simon Horman wrote:
+> > Sorted includes seems to be the done thing these days.
 > > 
-> > Hi Mike,
-> > 
-> > Thanks, I agree there seem to be some outstanding questions
-> > regarding that patch. However, I believe although it is not
-> > clear from the arrangement of this patchset that this patch is entirely
-> > independent of 9/10 and can be considered separately.
+> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 > 
-> Correct, there's no reason to delay this patch.
+> I have queued up this patch.
 
-Thanks, I have queued this up with Mike's Ack.
+I have deferred this patch until v3.19.
 
-> > > [0] http://lkml.kernel.org/r/<20140902224500.5251.83168@quantum>
-> > > 
-> > >>> ---
-> > >>> 
-> > >>>  Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt |
-> > >>>  2 ++
-> > >>>  1 file changed, 2 insertions(+)
-> > >>> 
-> > >>> diff --git
-> > >>> a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> > >>> b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> > >>> index 8a92b5f..8f1424f 100644
-> > >>> ---
-> > >>> a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> > >>> +++
-> > >>> b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> > >>> 
-> > >>> @@ -11,9 +11,11 @@ Required Properties:
-> > >>>    - compatible: Must be one of the following
-> > >>>      - "renesas,r7s72100-mstp-clocks" for R7S72100 (RZ) MSTP gate
-> > >>>      clocks
-> > >>> +    - "renesas,r8a7740-mstp-clocks" for R8A7740 (R-Mobile A1) MSTP
-> > >>> gate clocks
-> > >>>      - "renesas,r8a7779-mstp-clocks" for R8A7779 (R-Car H1) MSTP gate
-> > >>>      clocks
-> > >>>      - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate
-> > >>>      clocks
-> > >>>      - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate
-> > >>>      clocks
-> > >>> +    - "renesas,sh73a0-mstp-clocks" for SH73A0 (SH-MobileAG5) MSTP
-> > >>> gate clocks
-> > >>>      - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
-> > >>>    
-> > >>>    - reg: Base address and length of the I/O mapped registers used by
-> > >>>    the MSTP
-> > >>>      clocks. The first register is the clock control register and is
-> > >>>      mandatory.
 > 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+> > ---
+> >  arch/arm/mach-shmobile/board-armadillo800eva.c | 40 +++++++++++++-------------
+> >  1 file changed, 20 insertions(+), 20 deletions(-)
