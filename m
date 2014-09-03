@@ -1,94 +1,58 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 30 Sep 2014 05:24:51 +0000
-Subject: Re: [PATCH v4] ARM: shmobile: r8a7791: link PCI USB devices to USB PHY
-Message-Id: <20140930052451.GD24665@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 03 Sep 2014 19:27:38 +0000
+Subject: Re: [PATCH] tmio_mmc_pio: prevent endless loop in tmio_mmc_set_clock()
+Message-Id: <54076BAA.4030105@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5270578.Srkf5AOOOJ@wasted.cogentembedded.com>
-In-Reply-To: <5270578.Srkf5AOOOJ@wasted.cogentembedded.com>
+References: <201405040219.30018.sergei.shtylyov@cogentembedded.com> <53AC7B06.9070501@cogentembedded.com>
+In-Reply-To: <53AC7B06.9070501@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org, ian@mnementh.co.uk, linux-sh@vger.kernel.org, chris@printf.net, ulf.hansson@linaro.org
 
-On Mon, Sep 29, 2014 at 10:23:11PM +0400, Sergei Shtylyov wrote:
-> Describe the PCI USB devices that are behind the PCI bridges, adding necessary
-> links to the USB PHY device.
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Hello.
 
-Thanks, I have queued this up.
+On 06/26/2014 11:56 PM, Sergei Shtylyov wrote:
 
-> 
-> ---
-> This patch is against 'renesas-devel-20140924-v3.17-rc6' tag of Simon Horman's
-> 'renesas.git' repo plus R8A7791/Koelsch/Henninger USB PHY support patches posted
-> before.  The patch requires the USB PHY driver and USB HCD generic PHY support
-> (merged by Kishon and Greg recently) in order to work.
-> 
-> Changes in version 4:
-> - refreshed the patch.
-> 
-> Changes in version 3:
-> - adjusted "phys" properties in the PCI OHCI/EHCI device nodes;
-> - resolved rejects.
-> 
-> Changes in version 2:
-> - renamed the PCI OHCI/EHCI device nodes to comply with the PCI binding;
-> - changed the PHY specifier in the PCI#1 node to reflect that channel #1 support
->   was dropped;
-> - resolved rejects.
-> 
->  arch/arm/boot/dts/r8a7791.dtsi |   28 ++++++++++++++++++++++++++++
->  1 file changed, 28 insertions(+)
-> 
-> Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
-> =================================> --- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
-> +++ renesas/arch/arm/boot/dts/r8a7791.dtsi
-> @@ -1125,6 +1125,20 @@
->  		interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
->  				 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
->  				 0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
-> +
-> +		usb@0,1 {
-> +			reg = <0x800 0 0 0 0>;
-> +			device_type = "pci";
-> +			phys = <&usb0 0>;
-> +			phy-names = "usb";
-> +		};
-> +
-> +		usb@0,2 {
-> +			reg = <0x1000 0 0 0 0>;
-> +			device_type = "pci";
-> +			phys = <&usb0 0>;
-> +			phy-names = "usb";
-> +		};
->  	};
->  
->  	pci1: pci@ee0d0000 {
-> @@ -1145,6 +1159,20 @@
->  		interrupt-map = <0x0000 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
->  				 0x0800 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
->  				 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
-> +
-> +		usb@0,1 {
-> +			reg = <0x800 0 0 0 0>;
-> +			device_type = "pci";
-> +			phys = <&usb2 0>;
-> +			phy-names = "usb";
-> +		};
-> +
-> +		usb@0,2 {
-> +			reg = <0x1000 0 0 0 0>;
-> +			device_type = "pci";
-> +			phys = <&usb2 0>;
-> +			phy-names = "usb";
-> +		};
->  	};
->  
->  	pciec: pcie@fe000000 {
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+>> I've spent a couple of days with the driver just hanging due to me forgetting
+>> to specify the external crystal frequency, so that clk_get_rate() returned 0
+>> and thus the loop in tmio_mmc_set_clock() never ended. I don't think that's an
+>> acceptable behavior, so I suggest that the minimum frequency is checked for 0
+>> in tmio_mmc_host_probe().
+
+>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+>> ---
+>> The patch is against Chris Ball's 'mmc.git' repo's 'master' branch.
+
+>     I'm still not seeing this patch applied anywhere in this repo... what's
+> the problem with it?
+
+    Chris, Ulf, Ian, what's the issue with this patch? Do you want me to 
+rework it?
+
+>>   drivers/mmc/host/tmio_mmc_pio.c |    9 +++++++++
+>>   1 file changed, 9 insertions(+)
+>
+>> Index: mmc/drivers/mmc/host/tmio_mmc_pio.c
+>> =================================>> --- mmc.orig/drivers/mmc/host/tmio_mmc_pio.c
+>> +++ mmc/drivers/mmc/host/tmio_mmc_pio.c
+>> @@ -1044,6 +1044,15 @@ int tmio_mmc_host_probe(struct tmio_mmc_
+>>       }
+>>
+>>       /*
+>> +     * Check the sanity of mmc->f_min to prevent tmio_mmc_set_clock() from
+>> +     * looping forever...
+>> +     */
+>> +    if (mmc->f_min = 0) {
+>> +        ret = -EINVAL;
+>> +        goto pm_disable;
+>> +    }
+>> +
+>> +    /*
+>>        * There are 4 different scenarios for the card detection:
+>>        *  1) an external gpio irq handles the cd (best for power savings)
+>>        *  2) internal sdhi irq handles the cd
+
+WBR, Sergei
+
