@@ -1,44 +1,77 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 17 Sep 2014 14:52:33 +0000
-Subject: Re: [PATCH 0/3] Remove Koelsch board files
-Message-Id: <3724890.nWbO6RmYZu@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 03 Sep 2014 02:09:44 +0000
+Subject: [PATCH 4/7 v3] mmc: use .multi_io_quirk on sh_mobile
+Message-Id: <8761h578ux.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410964685-12143-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1410964685-12143-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
+	<87bnqx78xr.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87bnqx78xr.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-Hi Geert,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Wednesday 17 September 2014 16:48:02 Geert Uytterhoeven wrote:
-> On Wed, Sep 17, 2014 at 4:38 PM, Laurent Pinchart wrote:
-> > This patch set (also know as "look at the diffstat and fall in love")
-> > removes both the legacy and reference Koelsch board files, now that the
-> > Koelsch board is supported by the r8a7791 generic DT platform.
-> 
-> Great, thanks!
-> 
-> >  arch/arm/configs/koelsch_defconfig               | 113 -----
-> >  arch/arm/configs/shmobile_defconfig              |   1 -
-> >  arch/arm/mach-shmobile/Kconfig                   |  19 -
-> >  arch/arm/mach-shmobile/Makefile                  |   3 -
-> >  arch/arm/mach-shmobile/Makefile.boot             |   1 -
-> >  arch/arm/mach-shmobile/board-koelsch-reference.c |  44 --
-> >  arch/arm/mach-shmobile/board-koelsch.c           | 530 ------------------
-> >  arch/arm/mach-shmobile/clock-r8a7791.c           | 342 ---------------
-> >  arch/arm/mach-shmobile/r8a7791.h                 |   3 -
-> >  arch/arm/mach-shmobile/setup-r8a7791.c           | 181 +-------
-> >  10 files changed, 1 insertion(+), 1236 deletions(-)
-> 
-> Please make it 11 files changed, 1 insertion(+), 1237 deletions(-),
-> by removing one r8a7791-koelsch.dtb line from arch/arm/boot/dts/Makefile...
+Now, sh_mobile_sdhi can use .multi_io_quirk callback
+instead of MMC_CAP2_NO_MULTI_READ flags.
+let's use it.
 
-I knew I had forgotten one :-) Thanks.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v2 -> v3
 
+ - blk_size_workaround -> multi_io_quirk
+
+ drivers/mmc/host/sh_mobile_sdhi.c |   20 +++++++++++++++++++-
+ 1 file changed, 19 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index f2585b6..a2e81a1 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -58,7 +58,6 @@ static const struct sh_mobile_sdhi_of_data of_rcar_gen2_compatible = {
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE |
+ 			  TMIO_MMC_CLK_ACTUAL,
+ 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+-	.capabilities2	= MMC_CAP2_NO_MULTI_READ,
+ 	.dma_rx_offset	= 0x2000,
+ };
+ 
+@@ -139,6 +138,24 @@ static int sh_mobile_sdhi_write16_hook(struct tmio_mmc_host *host, int addr)
+ 	return 0;
+ }
+ 
++static int sh_mobile_sdhi_multi_io_quirk(struct mmc_card *card,
++					 unsigned int direction, int blk_size)
++{
++	/*
++	 * In Renesas controllers, when performing a
++	 * multiple block read of one or two blocks,
++	 * depending on the timing with which the
++	 * response register is read, the response
++	 * value may not be read properly.
++	 * Use single block read for this HW bug
++	 */
++	if ((direction = MMC_DATA_READ) &&
++	    blk_size = 2)
++		return 1;
++
++	return blk_size;
++}
++
+ static void sh_mobile_sdhi_cd_wakeup(const struct platform_device *pdev)
+ {
+ 	mmc_detect_change(platform_get_drvdata(pdev), msecs_to_jiffies(100));
+@@ -194,6 +211,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
+ 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
+ 	mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
++	mmc_data->multi_io_quirk = sh_mobile_sdhi_multi_io_quirk;
+ 	if (p) {
+ 		mmc_data->flags = p->tmio_flags;
+ 		mmc_data->ocr_mask = p->tmio_ocr_mask;
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
