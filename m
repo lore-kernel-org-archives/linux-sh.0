@@ -1,77 +1,53 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 09 Sep 2014 21:55:25 +0000
-Subject: Re: [PATCH v2 03/10] ARM: shmobile: sh73a0: common clock framework board support
-Message-Id: <7505137.5ghCJd5oxl@avalon>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 03 Sep 2014 01:05:49 +0000
+Subject: Re: [PATCH 3/3 repost] clocksource: sh_tmu: Document r8a7779 binding
+Message-Id: <20140903010549.GD2903@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409649186-1046-4-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1409649186-1046-4-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1409117300-2133-1-git-send-email-horms+renesas@verge.net.au>
+ <1409117300-2133-4-git-send-email-horms+renesas@verge.net.au>
+ <20140827095308.GD7295@leverpostej>
+In-Reply-To: <20140827095308.GD7295@leverpostej>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon and Ulrich,
-
-On Thursday 04 September 2014 16:33:41 Simon Horman wrote:
-> On Thu, Sep 04, 2014 at 09:19:59AM +0200, Geert Uytterhoeven wrote:
-> > On Thu, Sep 4, 2014 at 9:10 AM, Simon Horman <horms@verge.net.au> wrote:
-> > >> +#ifdef CONFIG_COMMON_CLK
-> > >> +static const struct clk_name clk_names[] __initconst = {
-> > >> +     { "cmt1", NULL, "sh_cmt.10" },
-> > >> +     { "scifa0", NULL, "sh-sci.0" },
-> > >> +     { "scifa1", NULL, "sh-sci.1" },
-> > >> +     { "scifa2", NULL, "sh-sci.2" },
-> > >> +     { "scifa3", NULL, "sh-sci.3" },
-> > >> +     { "scifa4", NULL, "sh-sci.4" },
-> > >> +     { "scifa5", NULL, "sh-sci.5" },
-> > >> +     { "scifa6", NULL, "sh-sci.6" },
-> > >> +     { "scifa7", NULL, "sh-sci.7" },
-> > >> +     { "scifb", NULL, "sh-sci.8" },
-> > >> +     { "sdhi0", NULL, "ee100000.sd" },
-> > >> +     { "sdhi1", NULL, "ee120000.sd" },
-> > >> +     { "sdhi2", NULL, "ee140000.sd" },
-> > >> +     { "mmcif0", NULL, "e6bd0000.mmc" },
-> > >> +     { "iic0", NULL, "e6820000.i2c" },
-> > >> +     { "iic3", NULL, "e6826000.i2c" },
-> > >> +};
-> > >> +#endif
-> > >> +
-> > >> 
-> > >>  static void __init kzm_init(void)
-> > >>  {
-> > >> 
-> > >> +#ifdef CONFIG_COMMON_CLK
-> > >> +     shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
-> > >> +#endif
-> > >> 
-> > >>       sh73a0_add_standard_devices_dt();
-> > > 
-> > > I believe that the above work-around no longer needed since
-> > > 3c90c55dcde745bed81f6447f24ba96bda43d984 ("drivers: sh: compile
-> > > drivers/sh/pm_runtime.c if ARCH_SHMOBILE_MULTI").
+On Wed, Aug 27, 2014 at 10:53:08AM +0100, Mark Rutland wrote:
+> On Wed, Aug 27, 2014 at 06:28:20AM +0100, Simon Horman wrote:
+> > In general Renesas hardware is not documented to the extent
+> > where the relationship between IP blocks on different SoCs can be assumed
+> > although they may appear to operate the same way. Furthermore the
+> > documentation typically does not specify a version for individual
+> > IP blocks. For these reasons a convention of using the SoC name in place
+> > of a version and providing SoC-specific compat strings has been adopted.
 > > 
-> > That commit applies to the "shmobile_clk_workaround(..., true)" calls.
+> > Although not universally liked this convention is used in the bindings
+> > for the drivers a number of drivers for Renesas hardware. The purpose
+> > of this patch is to update the Renesas R-Car Timer Unit (TMU)
+> > driver to follow this convention.
 > > 
-> > The "shmobile_clk_workaround(..., false)" calls are still needed for
-> > devices not instantiated from DT.
+> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 > > 
-> > >From the device names' formats, that applies to the cmt1 and scif*
-> > >devices?
+> > ---
+> > * I plan to follow up with a patch patch to use the new binding in the
+> >   dtsi files for the r8a7779 SoC.
+> > ---
+> >  Documentation/devicetree/bindings/timer/renesas,tmu.txt | 6 ++++--
+> >  1 file changed, 4 insertions(+), 2 deletions(-)
 > > 
-> > However, I thought scif* was instantiated from DT?
-> > And cmt1 is being moved?
+> > diff --git a/Documentation/devicetree/bindings/timer/renesas,tmu.txt b/Documentation/devicetree/bindings/timer/renesas,tmu.txt
+> > index 425d0c5..712ddfa 100644
+> > --- a/Documentation/devicetree/bindings/timer/renesas,tmu.txt
+> > +++ b/Documentation/devicetree/bindings/timer/renesas,tmu.txt
+> > @@ -8,7 +8,9 @@ are independent. The TMU hardware supports up to three channels.
+> >  
+> >  Required Properties:
+> >  
+> > -  - compatible: must contain "renesas,tmu"
+> > +  - compatible: must contain one of the following.
+> > +    - "renesas,tmu" generic TMU
+> > +    - "renesas,tmu-r8a7779" R8A7779 TMU
 > 
-> My reading of this series is that they will be initialised by
-> DT by subsequent patches. Perhaps the patches could be re-ordered
-> and the workaround omitted?
+> Similarly to patch 2, "one or more" and swap the order here?
 
-I would like that better too. The workaround should at least be removed after 
-adding device clocks in DT.
-
-> Am I confused (again)?
-
--- 
-Regards,
-
-Laurent Pinchart
-
+Sure, will do.
