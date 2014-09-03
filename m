@@ -1,54 +1,37 @@
-From: Michal Marek <mmarek@suse.cz>
-Date: Tue, 23 Sep 2014 15:44:03 +0000
-Subject: [PATCH 4/5] sh: Set CONFIG_NET=y in defconfigs
-Message-Id: <1411487044-14071-4-git-send-email-mmarek@suse.cz>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Wed, 03 Sep 2014 10:52:21 +0000
+Subject: [PATCH 05/15] ARM: shmobile: Drop dev_irq_safe from R-mobile genpd config
+Message-Id: <1409741551-16437-6-git-send-email-ulf.hansson@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <54218AEF.5090200@suse.cz>
- <1411487044-14071-1-git-send-email-mmarek@suse.cz>
-In-Reply-To: <1411487044-14071-1-git-send-email-mmarek@suse.cz>
+References: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
+In-Reply-To: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sfr@canb.auug.org.au, rdunlap@infradead.org, davem@davemloft.net
-Cc: netdev@vger.kernel.org, linux-next@vger.kernel.org, linux-kernel@vger.kernel.org, linux-kbuild@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Commit 5d6be6a5 ("scsi_netlink : Make SCSI_NETLINK dependent on NET
-instead of selecting NET") removed what happened to be the only instance
-of 'select NET'. Defconfigs that were relying on the select now lack
-networking support.
+The dev_irq_safe configuration is redundant, genpd don't have any
+special treatmeant for handling it. Let's remove it.
 
-Reported-by: Stephen Rothwell <sfr@canb.auug.org.au>
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Michal Marek <mmarek@suse.cz>
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
- arch/sh/configs/sdk7780_defconfig | 1 +
- arch/sh/configs/sh2007_defconfig  | 1 +
- 2 files changed, 2 insertions(+)
+ arch/arm/mach-shmobile/pm-rmobile.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/arch/sh/configs/sdk7780_defconfig b/arch/sh/configs/sdk7780_defconfig
-index 6a96b9a..bbd4c22 100644
---- a/arch/sh/configs/sdk7780_defconfig
-+++ b/arch/sh/configs/sdk7780_defconfig
-@@ -30,6 +30,7 @@ CONFIG_PCI_DEBUG=y
- CONFIG_PCCARD=y
- CONFIG_YENTA=y
- CONFIG_HOTPLUG_PCI=y
-+CONFIG_NET=y
- CONFIG_PACKET=y
- CONFIG_UNIX=y
- CONFIG_INET=y
-diff --git a/arch/sh/configs/sh2007_defconfig b/arch/sh/configs/sh2007_defconfig
-index e741b1e..df25ae7 100644
---- a/arch/sh/configs/sh2007_defconfig
-+++ b/arch/sh/configs/sh2007_defconfig
-@@ -25,6 +25,7 @@ CONFIG_CMDLINE_OVERWRITE=y
- CONFIG_CMDLINE="console=ttySC1,115200 ip=dhcp root=/dev/nfs rw nfsroot=/nfs/rootfs,rsize24,wsize24 earlyprintk=sh-sci.1"
- CONFIG_PCCARD=y
- CONFIG_BINFMT_MISC=y
-+CONFIG_NET=y
- CONFIG_PACKET=y
- CONFIG_UNIX=y
- CONFIG_XFRM_USER=y
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index ebdd16e..818de2f 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -111,7 +111,6 @@ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
+ 	genpd->dev_ops.stop		= pm_clk_suspend;
+ 	genpd->dev_ops.start		= pm_clk_resume;
+ 	genpd->dev_ops.active_wakeup	= rmobile_pd_active_wakeup;
+-	genpd->dev_irq_safe		= true;
+ 	genpd->power_off		= rmobile_pd_power_down;
+ 	genpd->power_on			= rmobile_pd_power_up;
+ 	__rmobile_pd_power_up(rmobile_pd, false);
 -- 
-1.8.4.5
+1.9.1
 
