@@ -1,87 +1,89 @@
-From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
-Date: Fri, 26 Sep 2014 11:12:37 +0000
-Subject: Re: [PATCH RFC 0/7] ARM: shmobile: Support L2 shutdown mode in Suspend-to-RAM
-Message-Id: <54254A25.7040407@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 03 Sep 2014 02:09:33 +0000
+Subject: [PATCH 3/7 v3] mmc: use .multi_io_quirk on tmio_mmc
+Message-Id: <877g1l78v9.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5424D1ED.6070309@renesas.com>
-In-Reply-To: <5424D1ED.6070309@renesas.com>
+References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
+	<87bnqx78xr.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87bnqx78xr.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-On 9/26/2014 7:20 PM, Khiem Nguyen wrote:
-> Hi Geert-san,
-> 
-> On 9/26/2014 7:04 PM, Geert Uytterhoeven wrote:
->> Hi Khiem-san,
->>
->> On Fri, Sep 26, 2014 at 4:39 AM, Khiem Nguyen
->> <khiem.nguyen.xt@renesas.com> wrote:
->>> These patches implement L2 shutdown mode in RCar Gen2 SoC and change
->>> Suspend-to-RAM from Core Standby mode to L2 shutdown mode.
->>> The impact to CPUIdle operation was also put into consideration during
->>> implementation.
->>>
->>> I have confirmed Suspend-to-RAM in Lager board and Koelsch board.
->>> So far, there is no regression detected during my testing.
->>> There might be further patches to support Alt board. But it would be
->>> after upstream kernel can boot up in Alt board.
->>>
->>> I hope to receive some comments for this patch series whether it's
->>> right direction or not. Therefore, I marked it with RFC.
->>> Any comments are appreciated.
->>
->> While testing with various combinations of CONFIG_PM options, I noticed
->> the build fails if CONFIG_ARM_CPU_SUSPEND is not set:
->>
->> arch/arm/mach-shmobile/built-in.o: In function
->> `shmobile_smp_apmu_enter_cpuidle':
->> :(.text+0x27c): undefined reference to `cpu_suspend'
->> arch/arm/mach-shmobile/built-in.o: In function `shmobile_cpuidle_notifier_call':
->> :(.text+0x305c): undefined reference to `cpu_resume'
->> arch/arm/mach-shmobile/built-in.o: In function `shmobile_smp_apmu_prepare_cpus':
->> :(.init.text+0xddc): undefined reference to `cpu_resume'
->> arch/arm/mach-shmobile/built-in.o: In function `shmobile_cpuidle_init':
->> :(.init.text+0xe9c): undefined reference to `cpu_resume'
->> make[3]: *** [vmlinux] Error 1
->> make[2]: *** [sub-make] Error 2
->> make[1]: *** [__sub-make] Error 2
->> make: *** [all] Error 2
->>
-> That is interesting build error.
-> To make it clearer and able to fix it, please kindly confirm below points:
-> 1. This only occurred after merging my patch ?
-> (The part related to shmobile_cpuidle_init seems out of my scope.)
-> 2. What kind of 'various combinations of CONFIG_PM options' were you select ?
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-To answer my own questions,
-1. The build error occurred /after/ merging CPUIdle patches from Kobayashi-san. 
-2. If CONFIG_SUSPEND is disabled (and CPUIdle patches was merged),
-this build error occurred. 
-(CONFIG_ARM_CPU_SUSPEND has dependency on CONFIG_SUSPEND)
+Now, tmio_mmc can use .multi_io_quirk callback
+instead of MMC_CAP2_NO_MULTI_READ flags.
+let's use it.
 
-@Kobayashi-san,
-Please take care of this build error in your V2 patches.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v2 -> v3
 
-Thanks.
+ - blk_size_workaround -> multi_io_quirk
 
-> 
-> Thanks.
-> 
->> Gr{oetje,eeting}s,
->>
->>                         Geert
->>
->> --
->> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
->>
->> In personal conversations with technical people, I call myself a hacker. But
->> when I'm talking to journalists I just say "programmer" or something like that.
->>                                 -- Linus Torvalds
->>
-> 
+ drivers/mmc/host/tmio_mmc_pio.c |   13 +++++++++++++
+ include/linux/mfd/tmio.h        |    4 ++++
+ 2 files changed, 17 insertions(+)
 
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index ba45413..ff5ff0f 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -970,12 +970,25 @@ static int tmio_mmc_get_ro(struct mmc_host *mmc)
+ 	return ret;
+ }
+ 
++static int tmio_multi_io_quirk(struct mmc_card *card,
++			       unsigned int direction, int blk_size)
++{
++	struct tmio_mmc_host *host = mmc_priv(card->host);
++	struct tmio_mmc_data *pdata = host->pdata;
++
++	if (pdata->multi_io_quirk)
++		return pdata->multi_io_quirk(card, direction, blk_size);
++
++	return blk_size;
++}
++
+ static const struct mmc_host_ops tmio_mmc_ops = {
+ 	.request	= tmio_mmc_request,
+ 	.set_ios	= tmio_mmc_set_ios,
+ 	.get_ro         = tmio_mmc_get_ro,
+ 	.get_cd		= mmc_gpio_get_cd,
+ 	.enable_sdio_irq = tmio_mmc_enable_sdio_irq,
++	.multi_io_quirk	= tmio_multi_io_quirk,
+ };
+ 
+ static int tmio_mmc_init_ocr(struct tmio_mmc_host *host)
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 90436d5..dec750e 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -1,10 +1,12 @@
+ #ifndef MFD_TMIO_H
+ #define MFD_TMIO_H
+ 
++#include <linux/blkdev.h>
+ #include <linux/device.h>
+ #include <linux/fb.h>
+ #include <linux/io.h>
+ #include <linux/jiffies.h>
++#include <linux/mmc/card.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
+ 
+@@ -142,6 +144,8 @@ struct tmio_mmc_data {
+ 	/* clock management callbacks */
+ 	int (*clk_enable)(struct platform_device *pdev, unsigned int *f);
+ 	void (*clk_disable)(struct platform_device *pdev);
++	int (*multi_io_quirk)(struct mmc_card *card,
++			      unsigned int direction, int blk_size);
+ };
+ 
+ /*
 -- 
-Best regards,
-KHIEM Nguyen
+1.7.9.5
+
