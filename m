@@ -1,48 +1,181 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 06 Sep 2014 01:26:27 +0000
-Subject: [PATCH v3 0/3] clocksource: Document Renesas SoC specific bindings
-Message-Id: <1409966790-17683-1-git-send-email-horms+renesas@verge.net.au>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Wed, 03 Sep 2014 10:52:19 +0000
+Subject: [PATCH 03/15] PM / Domains: Remove system PM callbacks from gpd_dev_ops
+Message-Id: <1409741551-16437-4-git-send-email-ulf.hansson@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
+In-Reply-To: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-In general Renesas hardware is not documented to the extent where the
-relationship between IP blocks on different SoCs can be assumed although
-they may appear to operate the same way. Furthermore the documentation
-typically does not specify a version for individual IP blocks. For these
-reasons a convention of using the SoC name in place of a version and
-providing SoC-specific compat strings has been adopted.
+There no users of these callbacks, let's simplify the generic power
+domain by removing them.
 
-Although not universally liked this convention is used in the bindings for
-a number of drivers for Renesas hardware. The purpose of this patch is to
-update the Renesas clocksource drivers to follow this convention.
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+---
+ drivers/base/power/domain.c | 64 ++++++---------------------------------------
+ include/linux/pm_domain.h   |  8 ------
+ 2 files changed, 8 insertions(+), 64 deletions(-)
 
-I plan to follow up with patches to use these new bindings in the
-dtsi files for the affected SoCs.
-
-Changes between v1 and v2:
-
-* Addressed feedback from Sergei Shtylyov, Geert Uytterhoeven and
-  Mark Rutland: corrected editing errors and generally made
-  things clearer.
-
-* Addressed feedback from Laruent Pinchart to
-  - remove fallback loop for renesas,cmt-48-gen2
-  - Use consistent case for SoC names
-  - Document fallback for MTU2 and TMU
-
-Simon Horman (3):
-  clocksource: sh_cmt: Document SoC specific bindings
-  clocksource: sh_mtu2: Document r7s72100 binding
-  clocksource: sh_tmu: Document r8a7779 binding
-
- .../devicetree/bindings/timer/renesas,cmt.txt      | 44 +++++++++++++++++++---
- .../devicetree/bindings/timer/renesas,mtu2.txt     |  7 +++-
- .../devicetree/bindings/timer/renesas,tmu.txt      |  7 +++-
- 3 files changed, 48 insertions(+), 10 deletions(-)
-
+diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
+index aa5b14c..e777609 100644
+--- a/drivers/base/power/domain.c
++++ b/drivers/base/power/domain.c
+@@ -770,46 +770,6 @@ static bool genpd_dev_active_wakeup(struct generic_pm_domain *genpd,
+ 	return GENPD_DEV_CALLBACK(genpd, bool, active_wakeup, dev);
+ }
+ 
+-static int genpd_suspend_dev(struct generic_pm_domain *genpd, struct device *dev)
+-{
+-	return GENPD_DEV_CALLBACK(genpd, int, suspend, dev);
+-}
+-
+-static int genpd_suspend_late(struct generic_pm_domain *genpd, struct device *dev)
+-{
+-	return GENPD_DEV_CALLBACK(genpd, int, suspend_late, dev);
+-}
+-
+-static int genpd_resume_early(struct generic_pm_domain *genpd, struct device *dev)
+-{
+-	return GENPD_DEV_CALLBACK(genpd, int, resume_early, dev);
+-}
+-
+-static int genpd_resume_dev(struct generic_pm_domain *genpd, struct device *dev)
+-{
+-	return GENPD_DEV_CALLBACK(genpd, int, resume, dev);
+-}
+-
+-static int genpd_freeze_dev(struct generic_pm_domain *genpd, struct device *dev)
+-{
+-	return GENPD_DEV_CALLBACK(genpd, int, freeze, dev);
+-}
+-
+-static int genpd_freeze_late(struct generic_pm_domain *genpd, struct device *dev)
+-{
+-	return GENPD_DEV_CALLBACK(genpd, int, freeze_late, dev);
+-}
+-
+-static int genpd_thaw_early(struct generic_pm_domain *genpd, struct device *dev)
+-{
+-	return GENPD_DEV_CALLBACK(genpd, int, thaw_early, dev);
+-}
+-
+-static int genpd_thaw_dev(struct generic_pm_domain *genpd, struct device *dev)
+-{
+-	return GENPD_DEV_CALLBACK(genpd, int, thaw, dev);
+-}
+-
+ /**
+  * pm_genpd_sync_poweroff - Synchronously power off a PM domain and its masters.
+  * @genpd: PM domain to power off, if possible.
+@@ -991,7 +951,7 @@ static int pm_genpd_suspend(struct device *dev)
+ 	if (IS_ERR(genpd))
+ 		return -EINVAL;
+ 
+-	return genpd->suspend_power_off ? 0 : genpd_suspend_dev(genpd, dev);
++	return genpd->suspend_power_off ? 0 : pm_generic_suspend(dev);
+ }
+ 
+ /**
+@@ -1012,7 +972,7 @@ static int pm_genpd_suspend_late(struct device *dev)
+ 	if (IS_ERR(genpd))
+ 		return -EINVAL;
+ 
+-	return genpd->suspend_power_off ? 0 : genpd_suspend_late(genpd, dev);
++	return genpd->suspend_power_off ? 0 : pm_generic_suspend_late(dev);
+ }
+ 
+ /**
+@@ -1099,7 +1059,7 @@ static int pm_genpd_resume_early(struct device *dev)
+ 	if (IS_ERR(genpd))
+ 		return -EINVAL;
+ 
+-	return genpd->suspend_power_off ? 0 : genpd_resume_early(genpd, dev);
++	return genpd->suspend_power_off ? 0 : pm_generic_resume_early(dev);
+ }
+ 
+ /**
+@@ -1120,7 +1080,7 @@ static int pm_genpd_resume(struct device *dev)
+ 	if (IS_ERR(genpd))
+ 		return -EINVAL;
+ 
+-	return genpd->suspend_power_off ? 0 : genpd_resume_dev(genpd, dev);
++	return genpd->suspend_power_off ? 0 : pm_generic_resume(dev);
+ }
+ 
+ /**
+@@ -1141,7 +1101,7 @@ static int pm_genpd_freeze(struct device *dev)
+ 	if (IS_ERR(genpd))
+ 		return -EINVAL;
+ 
+-	return genpd->suspend_power_off ? 0 : genpd_freeze_dev(genpd, dev);
++	return genpd->suspend_power_off ? 0 : pm_generic_freeze(dev);
+ }
+ 
+ /**
+@@ -1163,7 +1123,7 @@ static int pm_genpd_freeze_late(struct device *dev)
+ 	if (IS_ERR(genpd))
+ 		return -EINVAL;
+ 
+-	return genpd->suspend_power_off ? 0 : genpd_freeze_late(genpd, dev);
++	return genpd->suspend_power_off ? 0 : pm_generic_freeze_late(dev);
+ }
+ 
+ /**
+@@ -1227,7 +1187,7 @@ static int pm_genpd_thaw_early(struct device *dev)
+ 	if (IS_ERR(genpd))
+ 		return -EINVAL;
+ 
+-	return genpd->suspend_power_off ? 0 : genpd_thaw_early(genpd, dev);
++	return genpd->suspend_power_off ? 0 : pm_generic_thaw_early(dev);
+ }
+ 
+ /**
+@@ -1248,7 +1208,7 @@ static int pm_genpd_thaw(struct device *dev)
+ 	if (IS_ERR(genpd))
+ 		return -EINVAL;
+ 
+-	return genpd->suspend_power_off ? 0 : genpd_thaw_dev(genpd, dev);
++	return genpd->suspend_power_off ? 0 : pm_generic_thaw(dev);
+ }
+ 
+ /**
+@@ -1956,14 +1916,6 @@ void pm_genpd_init(struct generic_pm_domain *genpd,
+ 	genpd->domain.ops.complete = pm_genpd_complete;
+ 	genpd->dev_ops.save_state = pm_genpd_default_save_state;
+ 	genpd->dev_ops.restore_state = pm_genpd_default_restore_state;
+-	genpd->dev_ops.suspend = pm_generic_suspend;
+-	genpd->dev_ops.suspend_late = pm_generic_suspend_late;
+-	genpd->dev_ops.resume_early = pm_generic_resume_early;
+-	genpd->dev_ops.resume = pm_generic_resume;
+-	genpd->dev_ops.freeze = pm_generic_freeze;
+-	genpd->dev_ops.freeze_late = pm_generic_freeze_late;
+-	genpd->dev_ops.thaw_early = pm_generic_thaw_early;
+-	genpd->dev_ops.thaw = pm_generic_thaw;
+ 	mutex_lock(&gpd_list_lock);
+ 	list_add(&genpd->gpd_list_node, &gpd_list);
+ 	mutex_unlock(&gpd_list_lock);
+diff --git a/include/linux/pm_domain.h b/include/linux/pm_domain.h
+index a54bbbe..fd5efc8 100644
+--- a/include/linux/pm_domain.h
++++ b/include/linux/pm_domain.h
+@@ -35,14 +35,6 @@ struct gpd_dev_ops {
+ 	int (*stop)(struct device *dev);
+ 	int (*save_state)(struct device *dev);
+ 	int (*restore_state)(struct device *dev);
+-	int (*suspend)(struct device *dev);
+-	int (*suspend_late)(struct device *dev);
+-	int (*resume_early)(struct device *dev);
+-	int (*resume)(struct device *dev);
+-	int (*freeze)(struct device *dev);
+-	int (*freeze_late)(struct device *dev);
+-	int (*thaw_early)(struct device *dev);
+-	int (*thaw)(struct device *dev);
+ 	bool (*active_wakeup)(struct device *dev);
+ };
+ 
 -- 
-2.0.1
+1.9.1
 
