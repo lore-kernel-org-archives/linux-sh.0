@@ -1,41 +1,73 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 18 Sep 2014 16:54:59 +0000
-Subject: Re: [PATCH v3] tmio_mmc_pio: prevent endless loop in tmio_mmc_set_clock()
-Message-Id: <541B0E63.9080605@cogentembedded.com>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Wed, 03 Sep 2014 10:52:30 +0000
+Subject: [PATCH 14/15] PM / Domains: Remove default_stop_ok() API
+Message-Id: <1409741551-16437-15-git-send-email-ulf.hansson@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <3179866.4yEKrAKQ30@wasted.cogentembedded.com> <CAPDyKFq2H0zQjJvHy+Ogz0MbVsY8HAHDvDvr3+CTPvf0bc7xog@mail.gmail.com>
-In-Reply-To: <CAPDyKFq2H0zQjJvHy+Ogz0MbVsY8HAHDvDvr3+CTPvf0bc7xog@mail.gmail.com>
+References: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
+In-Reply-To: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: linux-mmc <linux-mmc@vger.kernel.org>, Ian Molton <ian.molton@codethink.co.uk>, Chris Ball <chris@printf.net>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+There are currently no need to export default_stop_ok() as an API,
+instead let's keep it local to the PM domain governor.
 
-On 9/18/2014 1:03 AM, Ulf Hansson wrote:
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+---
+ drivers/base/power/domain_governor.c | 7 ++-----
+ include/linux/pm_domain.h            | 6 ------
+ 2 files changed, 2 insertions(+), 11 deletions(-)
 
->> I spent a couple of days with the driver just hanging due to me forgetting to
->> specify the external crystal frequency,  so that clk_get_rate() returned 0 and
->> thus the loop in tmio_mmc_set_clock() never ended. I don't think that's an
->> acceptable behavior, so I suggest that the minimum frequency is checked for 0
->> in tmio_mmc_host_probe().
-
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->> Cc: stable@vger.kernel.org
-
->> ---
->> The patch is against Ulf Hansson's 'mmc.git' repo's 'fixes' branch.
-
-> Hi Sergei,
-
-> Could you please rebase it towards next instead?
-
-    Ah, I've misinterpreted your mail, thought that I should either rebase to 
-next /or/ CC: stable. Will do.
-
-> Kind regards
-> Uffe
-
-WBR, Sergei
+diff --git a/drivers/base/power/domain_governor.c b/drivers/base/power/domain_governor.c
+index a089e3b..d88a62e 100644
+--- a/drivers/base/power/domain_governor.c
++++ b/drivers/base/power/domain_governor.c
+@@ -42,7 +42,7 @@ static int dev_update_qos_constraint(struct device *dev, void *data)
+  * default_stop_ok - Default PM domain governor routine for stopping devices.
+  * @dev: Device to check.
+  */
+-bool default_stop_ok(struct device *dev)
++static bool default_stop_ok(struct device *dev)
+ {
+ 	struct gpd_timing_data *td = &dev_gpd_data(dev)->td;
+ 	unsigned long flags;
+@@ -229,10 +229,7 @@ static bool always_on_power_down_ok(struct dev_pm_domain *domain)
+ 
+ #else /* !CONFIG_PM_RUNTIME */
+ 
+-bool default_stop_ok(struct device *dev)
+-{
+-	return false;
+-}
++static inline bool default_stop_ok(struct device *dev) { return false; }
+ 
+ #define default_power_down_ok	NULL
+ #define always_on_power_down_ok	NULL
+diff --git a/include/linux/pm_domain.h b/include/linux/pm_domain.h
+index abeb5dc..ebf52ae 100644
+--- a/include/linux/pm_domain.h
++++ b/include/linux/pm_domain.h
+@@ -151,8 +151,6 @@ extern void pm_genpd_init(struct generic_pm_domain *genpd,
+ extern int pm_genpd_poweron(struct generic_pm_domain *genpd);
+ extern int pm_genpd_name_poweron(const char *domain_name);
+ 
+-extern bool default_stop_ok(struct device *dev);
+-
+ extern struct dev_power_governor pm_domain_always_on_gov;
+ #else
+ 
+@@ -231,10 +229,6 @@ static inline int pm_genpd_name_poweron(const char *domain_name)
+ {
+ 	return -ENOSYS;
+ }
+-static inline bool default_stop_ok(struct device *dev)
+-{
+-	return false;
+-}
+ #define simple_qos_governor NULL
+ #define pm_domain_always_on_gov NULL
+ #endif
+-- 
+1.9.1
 
