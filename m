@@ -1,32 +1,76 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 22 Sep 2014 02:04:47 +0000
-Subject: Re: [PATCH 1/5] i2c: rcar: add renesas,i2c-rcar-gen1/gen2 in DT compatible
-Message-Id: <20140922020446.GG14899@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 03 Sep 2014 02:08:53 +0000
+Subject: [PATCH 1/7 v3] mmc: add .multi_io_quirk callback for multi I/O HW bug
+Message-Id: <87a96h78wd.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r40uw7rp.wl%kuninori.morimoto.gx@renesas.com>
- <20140807001805.GE32652@verge.net.au>
- <8761i5kuel.wl%kuninori.morimoto.gx@renesas.com>
- <20140807011025.GA3284@verge.net.au>
- <8738d9kojw.wl%kuninori.morimoto.gx@gmail.com>
- <CANqRtoSu2cZyY2YELUzPF86UAz+=TFtBYsnmotpNDEh9FEhp1Q@mail.gmail.com>
- <87zjfgkhae.wl%kuninori.morimoto.gx@gmail.com>
- <CANqRtoR1kn0VjDiYy24hJueeL6Lxs5yxAeTEMQ-kNHn76EYMDQ@mail.gmail.com>
- <87y4v0k89a.wl%kuninori.morimoto.gx@gmail.com>
- <20140919171845.GC2874@katana>
-In-Reply-To: <20140919171845.GC2874@katana>
+References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
+	<87bnqx78xr.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87bnqx78xr.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-I2C <linux-i2c@vger.kernel.org>
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-On Fri, Sep 19, 2014 at 07:18:51PM +0200, Wolfram Sang wrote:
-> 
-> > This approach has no effect to current feature,
-> > and can keep compatible for current and future,
-> > and can reduce / cleanup driver in the future.
-> 
-> I defer the patch series for now. Maybe we should talk about it at our
-> next meeting?
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-That is fine by me.
+Historically, we have been using MMC_CAP* to solve
+some issues, and current mmc block.c has
+MMC_CAP2_NO_MULTI_READ flag for multi I/O HW bug workaround.
+But it should be implemented under driver, not framework.
+This patch is prepare for it
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v2 -> v3
+
+ - blk_size_workaround -> multi_io_quirk
+ - fixup comment/explain
+ - use MMC_DATA_READ/WRITE
+
+ drivers/mmc/card/block.c |   10 ++++++++++
+ include/linux/mmc/host.h |    7 +++++++
+ 2 files changed, 17 insertions(+)
+
+diff --git a/drivers/mmc/card/block.c b/drivers/mmc/card/block.c
+index ede41f0..adab903 100644
+--- a/drivers/mmc/card/block.c
++++ b/drivers/mmc/card/block.c
+@@ -1402,6 +1402,16 @@ static void mmc_blk_rw_rq_prep(struct mmc_queue_req *mqrq,
+ 		if (card->host->caps2 & MMC_CAP2_NO_MULTI_READ &&
+ 		    rq_data_dir(req) = READ)
+ 			brq->data.blocks = 1;
++
++		/*
++		 * Some controllers have HW issues while operating
++		 * in multiple I/O mode
++		 */
++		if (card->host->ops->multi_io_quirk)
++			brq->data.blocks = card->host->ops->multi_io_quirk(card,
++						(rq_data_dir(req) = READ) ?
++						MMC_DATA_READ : MMC_DATA_WRITE,
++						brq->data.blocks);
+ 	}
+ 
+ 	if (brq->data.blocks > 1 || do_rel_wr) {
+diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
+index 4cbf614..bfcf673 100644
+--- a/include/linux/mmc/host.h
++++ b/include/linux/mmc/host.h
+@@ -139,6 +139,13 @@ struct mmc_host_ops {
+ 	int	(*select_drive_strength)(unsigned int max_dtr, int host_drv, int card_drv);
+ 	void	(*hw_reset)(struct mmc_host *host);
+ 	void	(*card_event)(struct mmc_host *host);
++
++	/*
++	 * Optional callback to support controllers with HW issues for multiple I/O.
++	 * Returns the number of supported blocks for the request
++	 */
++	int	(*multi_io_quirk)(struct mmc_card *card,
++				  unsigned int direction, int blk_size);
+ };
+ 
+ struct mmc_card;
+-- 
+1.7.9.5
+
