@@ -1,39 +1,37 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 04 Sep 2014 01:12:25 +0000
-Subject: [PATCH 2/5] ARM: shmobile: r8a73a4 dtsi: Add SoC-specific thermal compatible property
-Message-Id: <a2cfaa7458e714aa00be98c630afaa1a4766e2ad.1409792871.git.horms+renesas@verge.net.au>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Wed, 03 Sep 2014 10:52:20 +0000
+Subject: [PATCH 04/15] ARM: shmobile: Drop dev_irq_safe from r8a7779 genpd config
+Message-Id: <1409741551-16437-5-git-send-email-ulf.hansson@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1409792871.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1409792871.git.horms+renesas@verge.net.au>
+References: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
+In-Reply-To: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+The dev_irq_safe configuration is redundant, genpd don't have any
+special treatmeant for handling it. Let's remove it.
 
-The thermal node used the generic compatible property only.
-Add the SoC-specific one, to make it future proof.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
- arch/arm/boot/dts/r8a73a4.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/pm-r8a7779.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index d8ec505..fba39a2 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -165,7 +165,7 @@
- 	};
+diff --git a/arch/arm/mach-shmobile/pm-r8a7779.c b/arch/arm/mach-shmobile/pm-r8a7779.c
+index 69f70b7..82fe3d7 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7779.c
++++ b/arch/arm/mach-shmobile/pm-r8a7779.c
+@@ -87,7 +87,6 @@ static void r8a7779_init_pm_domain(struct r8a7779_pm_domain *r8a7779_pd)
+ 	genpd->dev_ops.stop = pm_clk_suspend;
+ 	genpd->dev_ops.start = pm_clk_resume;
+ 	genpd->dev_ops.active_wakeup = pd_active_wakeup;
+-	genpd->dev_irq_safe = true;
+ 	genpd->power_off = pd_power_down;
+ 	genpd->power_on = pd_power_up;
  
- 	thermal@e61f0000 {
--		compatible = "renesas,rcar-thermal";
-+		compatible = "renesas,thermal-r8a73a4", "renesas,rcar-thermal";
- 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>,
- 			 <0 0xe61f0200 0 0x38>, <0 0xe61f0300 0 0x38>;
- 		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
 -- 
-2.0.1
+1.9.1
 
