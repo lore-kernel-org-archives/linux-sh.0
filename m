@@ -1,54 +1,62 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 09 Sep 2014 21:52:31 +0000
-Subject: Re: [PATCH v2 05/10] ARM: shmobile: sh73a0: Add CMT1 device to DT
-Message-Id: <1561885.jmpjuY4moR@avalon>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Wed, 03 Sep 2014 10:52:16 +0000
+Subject: [PATCH 00/15] PM / Domains: Cleanups and remove superfluous APIs
+Message-Id: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409649186-1046-6-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1409649186-1046-6-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Ulrich,
+This patchset has a bit of a history and some parts of it has been posted
+earlier.
+http://lists.infradead.org/pipermail/linux-arm-kernel/2014-June/262725.html
 
-Thank you for the patch.
+The intent is to simplify code for the generic power domain and also some of
+the machine specific code that uses the generic power domain.
 
-On Tuesday 02 September 2014 11:13:01 Ulrich Hecht wrote:
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Do note, there are dependencies through this patchset, especially related to
+the ARM SoC changes, thus they all need to be kept together.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Ulf Hansson (15):
+  PM / Domains: Remove the pm_genpd_add|remove_callbacks APIs
+  PM / Domains: Ignore callbacks for subsys generic_pm_domain_data
+  PM / Domains: Remove system PM callbacks from gpd_dev_ops
+  ARM: shmobile: Drop dev_irq_safe from r8a7779 genpd config
+  ARM: shmobile: Drop dev_irq_safe from R-mobile genpd config
+  PM / Domains: Remove dev_irq_safe from genpd config
+  PM / Domains: Remove redundant check for CONFIG_PM
+  PM / Domains: Remove pm_genpd_syscore_switch() API
+  PM / Domains: Remove genpd_queue_power_off_work() API
+  PM / Domains: Add late_initcall to disable unused PM domains
+  ARM: exynos: Leave disabling of unused PM domains to genpd
+  ARM: s3c64xx: Leave disabling of unused PM domains to genpd
+  drivers: sh: Leave disabling of unused PM domains to genpd
+  PM / Domains: Remove default_stop_ok() API
+  PM / Domains: Keep declaration of dev_power_governors together
 
-> ---
->  arch/arm/boot/dts/sh73a0.dtsi | 12 ++++++++++++
->  1 file changed, 12 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-> index dad8404..39cb4cf 100644
-> --- a/arch/arm/boot/dts/sh73a0.dtsi
-> +++ b/arch/arm/boot/dts/sh73a0.dtsi
-> @@ -49,6 +49,18 @@
->  			     <0 56 IRQ_TYPE_LEVEL_HIGH>;
->  	};
-> 
-> +	cmt1: timer@e6138000 {
-> +		compatible = "renesas,cmt-48";
-> +		reg = <0xe6138000 0x200>;
-> +		interrupts = <0 65 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp3_clks SH73A0_CLK_CMT1>;
-> +		clock-names = "fck";
-> +
-> +		renesas,channels-mask = <0x3f>;
-> +
-> +		status = "disabled";
-> +	};
-> +
->  	irqpin0: irqpin@e6900000 {
->  		compatible = "renesas,intc-irqpin-sh73a0", "renesas,intc-irqpin";
->  		#interrupt-cells = <2>;
+ arch/arm/mach-exynos/exynos.c         |   1 -
+ arch/arm/mach-s3c64xx/common.c        |   5 -
+ arch/arm/mach-s3c64xx/common.h        |   7 -
+ arch/arm/mach-s3c64xx/mach-anw6410.c  |   1 -
+ arch/arm/mach-s3c64xx/mach-crag6410.c |   1 -
+ arch/arm/mach-s3c64xx/mach-hmt.c      |   1 -
+ arch/arm/mach-s3c64xx/mach-mini6410.c |   1 -
+ arch/arm/mach-s3c64xx/mach-ncp.c      |   1 -
+ arch/arm/mach-s3c64xx/mach-real6410.c |   1 -
+ arch/arm/mach-s3c64xx/mach-smartq5.c  |   1 -
+ arch/arm/mach-s3c64xx/mach-smartq7.c  |   1 -
+ arch/arm/mach-s3c64xx/mach-smdk6400.c |   1 -
+ arch/arm/mach-s3c64xx/mach-smdk6410.c |   1 -
+ arch/arm/mach-s3c64xx/pm.c            |   7 -
+ arch/arm/mach-shmobile/pm-r8a7779.c   |   1 -
+ arch/arm/mach-shmobile/pm-rmobile.c   |   1 -
+ drivers/base/power/domain.c           | 322 ++++------------------------------
+ drivers/base/power/domain_governor.c  |   7 +-
+ drivers/sh/pm_runtime.c               |  11 --
+ include/linux/pm_domain.h             |  56 +-----
+ 20 files changed, 40 insertions(+), 388 deletions(-)
 
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
