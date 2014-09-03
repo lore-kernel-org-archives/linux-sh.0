@@ -1,7 +1,7 @@
 From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Wed, 03 Sep 2014 10:52:23 +0000
-Subject: [PATCH 07/15] PM / Domains: Remove redundant check for CONFIG_PM
-Message-Id: <1409741551-16437-8-git-send-email-ulf.hansson@linaro.org>
+Date: Wed, 03 Sep 2014 10:52:26 +0000
+Subject: [PATCH 10/15] PM / Domains: Add late_initcall to disable unused PM domains
+Message-Id: <1409741551-16437-11-git-send-email-ulf.hansson@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
 In-Reply-To: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
@@ -10,36 +10,32 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-CONFIG_PM_GENERIC_DOMAINS depends on CONFIG_PM, thus there are no need
-to check explicity for it.
+As default behavior let genpd at late init try to disable the unused
+PM domains.
 
 Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
- drivers/base/power/domain.c | 4 ----
- 1 file changed, 4 deletions(-)
+ drivers/base/power/domain.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
 diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
-index 4298a2b..b910d0f 100644
+index d71d045..cf4651a 100644
 --- a/drivers/base/power/domain.c
 +++ b/drivers/base/power/domain.c
-@@ -66,8 +66,6 @@ static struct generic_pm_domain *pm_genpd_lookup_name(const char *domain_name)
- 	return genpd;
+@@ -721,6 +721,13 @@ void pm_genpd_poweroff_unused(void)
+ 	mutex_unlock(&gpd_list_lock);
  }
  
--#ifdef CONFIG_PM
--
- struct generic_pm_domain *dev_to_genpd(struct device *dev)
- {
- 	if (IS_ERR_OR_NULL(dev->pm_domain))
-@@ -281,8 +279,6 @@ int pm_genpd_name_poweron(const char *domain_name)
- 	return genpd ? pm_genpd_poweron(genpd) : -EINVAL;
- }
++static int __init genpd_poweroff_unused(void)
++{
++	pm_genpd_poweroff_unused();
++	return 0;
++}
++late_initcall(genpd_poweroff_unused);
++
+ #else
  
--#endif /* CONFIG_PM */
--
- #ifdef CONFIG_PM_RUNTIME
- 
- static int genpd_start_dev_no_timing(struct generic_pm_domain *genpd,
+ static inline int genpd_dev_pm_qos_notifier(struct notifier_block *nb,
 -- 
 1.9.1
 
