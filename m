@@ -1,134 +1,36 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Sep 2014 20:04:29 +0000
-Subject: [PATCH 09/12] drm: Decouple EDID parsing from I2C adapter
-Message-Id: <1411589072-28609-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 03 Sep 2014 05:25:25 +0000
+Subject: [PATCH v3 0/2] usb: renesas_usbhs: Add device tree support for R-Car H2 and M2
+Message-Id: <5406A645.6070601@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org, Lars-Peter Clausen <lars@metafoo.de>
+To: Rob Herring <robh+dt@kernel.org>, "pawel.moll@arm.com" <pawel.moll@arm.com>, "mark.rutland@arm.com" <mark.rutland@arm.com>, "ijc+devicetree@hellion.org.uk" <ijc+devicetree@hellion.org.uk>, "galak@codeaurora.org" <galak@codeaurora.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Felipe Balbi <balbi@ti.com>
+Cc: "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Ulrich Hecht <ulrich.hecht@gmail.com>
 
-From: Lars-Peter Clausen <lars@metafoo.de>
+This driver supports other SoCs, but they need boards/Soc depend code.
+So, this patch adds device tree support for R-Car H2 and M2 initially.
 
-The drm_get_edid() function performs direct I2C accesses to read EDID
-blocks, assuming that the monitor DDC interface is directly connected to
-the I2C bus. It can't thus be used with HDMI encoders that control the
-DDC bus and expose EDID blocks through a different interface.
+Changes from v2:
+ - Add "Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>".
 
-Refactor drm_do_get_edid() to take a block read callback function
-instead of an I2C adapter, and export it for direct use by drivers.
+Changes from v1:
+ - Change an optional property name from "buswait_bwait" to "buswait" in
+   patch 1.
+ - Add the prefix "renesas," to "buswait" and "enable-gpio" in patch 1.
+ - Modify the usbhs_parse_dt() to remove the check of some
+   of_device_is_compatible() in patch 2.
 
-Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/gpu/drm/drm_edid.c | 26 +++++++++++++-------------
- include/drm/drm_edid.h     |  4 ++++
- 2 files changed, 17 insertions(+), 13 deletions(-)
+Yoshihiro Shimoda (2):
+  usb: renesas_usbhs: Add device tree bindings documentation
+  usb: renesas_usbhs: Add device tree support for R-Car H2 and M2
 
-diff --git a/drivers/gpu/drm/drm_edid.c b/drivers/gpu/drm/drm_edid.c
-index 1bdbfd0..c98958c 100644
---- a/drivers/gpu/drm/drm_edid.c
-+++ b/drivers/gpu/drm/drm_edid.c
-@@ -1125,9 +1125,9 @@ EXPORT_SYMBOL(drm_edid_is_valid);
-  * Return: 0 on success or -1 on failure.
-  */
- static int
--drm_do_probe_ddc_edid(struct i2c_adapter *adapter, unsigned char *buf,
--		      int block, int len)
-+drm_do_probe_ddc_edid(void *data, u8 *buf, unsigned int block, size_t len)
- {
-+	struct i2c_adapter *adapter = data;
- 	unsigned char start = block * EDID_LENGTH;
- 	unsigned char segment = block >> 1;
- 	unsigned char xfers = segment ? 3 : 2;
-@@ -1184,8 +1184,9 @@ static bool drm_edid_is_zero(u8 *in_edid, int length)
- 	return true;
- }
- 
--static u8 *
--drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
-+struct edid *drm_do_get_edid(struct drm_connector *connector,
-+	int (*get_edid_block)(void *, u8 *buf, unsigned int, size_t),
-+	void *data)
- {
- 	int i, j = 0, valid_extensions = 0;
- 	u8 *block, *new;
-@@ -1196,7 +1197,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
- 
- 	/* base block fetch */
- 	for (i = 0; i < 4; i++) {
--		if (drm_do_probe_ddc_edid(adapter, block, 0, EDID_LENGTH))
-+		if (get_edid_block(data, block, 0, EDID_LENGTH))
- 			goto out;
- 		if (drm_edid_block_valid(block, 0, print_bad_edid))
- 			break;
-@@ -1210,7 +1211,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
- 
- 	/* if there's no extensions, we're done */
- 	if (block[0x7e] = 0)
--		return block;
-+		return (struct edid *)block;
- 
- 	new = krealloc(block, (block[0x7e] + 1) * EDID_LENGTH, GFP_KERNEL);
- 	if (!new)
-@@ -1219,7 +1220,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
- 
- 	for (j = 1; j <= block[0x7e]; j++) {
- 		for (i = 0; i < 4; i++) {
--			if (drm_do_probe_ddc_edid(adapter,
-+			if (get_edid_block(data,
- 				  block + (valid_extensions + 1) * EDID_LENGTH,
- 				  j, EDID_LENGTH))
- 				goto out;
-@@ -1247,7 +1248,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
- 		block = new;
- 	}
- 
--	return block;
-+	return (struct edid *)block;
- 
- carp:
- 	if (print_bad_edid) {
-@@ -1260,6 +1261,7 @@ out:
- 	kfree(block);
- 	return NULL;
- }
-+EXPORT_SYMBOL_GPL(drm_do_get_edid);
- 
- /**
-  * drm_probe_ddc() - probe DDC presence
-@@ -1289,12 +1291,10 @@ EXPORT_SYMBOL(drm_probe_ddc);
- struct edid *drm_get_edid(struct drm_connector *connector,
- 			  struct i2c_adapter *adapter)
- {
--	struct edid *edid = NULL;
--
--	if (drm_probe_ddc(adapter))
--		edid = (struct edid *)drm_do_get_edid(connector, adapter);
-+	if (!drm_probe_ddc(adapter))
-+		return NULL;
- 
--	return edid;
-+	return drm_do_get_edid(connector, drm_do_probe_ddc_edid, adapter);
- }
- EXPORT_SYMBOL(drm_get_edid);
- 
-diff --git a/include/drm/drm_edid.h b/include/drm/drm_edid.h
-index b96031d..bcf05ef 100644
---- a/include/drm/drm_edid.h
-+++ b/include/drm/drm_edid.h
-@@ -279,4 +279,8 @@ int
- drm_hdmi_vendor_infoframe_from_display_mode(struct hdmi_vendor_infoframe *frame,
- 					    const struct drm_display_mode *mode);
- 
-+struct edid *drm_do_get_edid(struct drm_connector *connector,
-+	int (*get_edid_block)(void *, u8 *buf, unsigned int, size_t),
-+	void *data);
-+
- #endif /* __DRM_EDID_H__ */
+ .../devicetree/bindings/usb/renesas_usbhs.txt      |   24 +++++++++++
+ drivers/usb/renesas_usbhs/common.c                 |   44 ++++++++++++++++++++
+ 2 files changed, 68 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+
 -- 
-1.8.5.5
+1.7.9.5
 
