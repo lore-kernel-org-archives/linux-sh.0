@@ -1,64 +1,60 @@
-From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
-Date: Mon, 29 Sep 2014 05:05:44 +0000
-Subject: [PATCH RFC v2 1/7] ARM: shmobile: use common ARMv7 cache disabling code
-Message-Id: <5428E8A8.80703@renesas.com>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Wed, 03 Sep 2014 10:52:22 +0000
+Subject: [PATCH 06/15] PM / Domains: Remove dev_irq_safe from genpd config
+Message-Id: <1409741551-16437-7-git-send-email-ulf.hansson@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
+In-Reply-To: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The effort to consolidate ARMv7 cache disabling code via macro
-v7_exit_coherency_flush() was introduced by 'commit 39792c7cf311
-("ARM: 7861/1: cacheflush: consolidate single-CPU ARMv7 cache
-disabling code")'. The code was made use in core powerdown and
-cluster powerdown in other SoC.
-Hence, it's worth changing our code to use it.
+The genpd dev_irq_safe configuration somewhat overlaps with the runtime
+PM pm_runtime_irq_safe() option. Also, currently genpd don't have a
+good way to deal with these device. So, until we figured out if and how
+to support this in genpd, let's remove the option to configure it.
 
-Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
- arch/arm/mach-shmobile/platsmp-apmu.c |   27 +--------------------------
- 1 file changed, 1 insertion(+), 26 deletions(-)
+ drivers/base/power/domain.c | 4 ----
+ include/linux/pm_domain.h   | 1 -
+ 2 files changed, 5 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/platsmp-apmu.c b/arch/arm/mach-shmobile/platsmp-apmu.c
-index 3bfb1a0..21f8ddd 100644
---- a/arch/arm/mach-shmobile/platsmp-apmu.c
-+++ b/arch/arm/mach-shmobile/platsmp-apmu.c
-@@ -152,34 +152,9 @@ int shmobile_smp_apmu_boot_secondary(unsigned int cpu, struct task_struct *idle)
+diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
+index e777609..4298a2b 100644
+--- a/drivers/base/power/domain.c
++++ b/drivers/base/power/domain.c
+@@ -615,8 +615,6 @@ static int pm_genpd_runtime_suspend(struct device *dev)
+ 	if (IS_ERR(genpd))
+ 		return -EINVAL;
  
- #if defined(CONFIG_HOTPLUG_CPU) || defined(CONFIG_SUSPEND) || \
- defined(CONFIG_CPU_IDLE)
--/* nicked from arch/arm/mach-exynos/hotplug.c */
- static inline void cpu_enter_lowpower_a15(void)
- {
--	unsigned int v;
+-	might_sleep_if(!genpd->dev_irq_safe);
 -
--	asm volatile(
--	"       mrc     p15, 0, %0, c1, c0, 0\n"
--	"       bic     %0, %0, %1\n"
--	"       mcr     p15, 0, %0, c1, c0, 0\n"
--		: "=&r" (v)
--		: "Ir" (CR_C)
--		: "cc");
--
--	flush_cache_louis();
--
--	asm volatile(
--	/*
--	 * Turn off coherency
--	 */
--	"       mrc     p15, 0, %0, c1, c0, 1\n"
--	"       bic     %0, %0, %1\n"
--	"       mcr     p15, 0, %0, c1, c0, 1\n"
--		: "=&r" (v)
--		: "Ir" (0x40)
--		: "cc");
--
--	isb();
--	dsb();
-+	v7_exit_coherency_flush(louis);
- }
+ 	stop_ok = genpd->gov ? genpd->gov->stop_ok : NULL;
+ 	if (stop_ok && !stop_ok(dev))
+ 		return -EBUSY;
+@@ -661,8 +659,6 @@ static int pm_genpd_runtime_resume(struct device *dev)
+ 	if (IS_ERR(genpd))
+ 		return -EINVAL;
  
- void shmobile_smp_apmu_cpu_shutdown(unsigned int cpu)
+-	might_sleep_if(!genpd->dev_irq_safe);
+-
+ 	/* If power.irq_safe, the PM domain is never powered off. */
+ 	if (dev->power.irq_safe)
+ 		return genpd_start_dev_no_timing(genpd, dev);
+diff --git a/include/linux/pm_domain.h b/include/linux/pm_domain.h
+index fd5efc8..f2545a8 100644
+--- a/include/linux/pm_domain.h
++++ b/include/linux/pm_domain.h
+@@ -63,7 +63,6 @@ struct generic_pm_domain {
+ 	unsigned int suspended_count;	/* System suspend device counter */
+ 	unsigned int prepared_count;	/* Suspend counter of prepared devices */
+ 	bool suspend_power_off;	/* Power status before system suspend */
+-	bool dev_irq_safe;	/* Device callbacks are IRQ-safe */
+ 	int (*power_off)(struct generic_pm_domain *domain);
+ 	s64 power_off_latency_ns;
+ 	int (*power_on)(struct generic_pm_domain *domain);
 -- 
-1.7.9.5
+1.9.1
+
