@@ -1,44 +1,62 @@
-From: Ricardo Ribalda Delgado <ricardo.ribalda@gmail.com>
-Date: Tue, 09 Sep 2014 18:59:50 +0000
-Subject: [PATCH 2/3 v2] sh/uapi: Add definition of TIOC[SG]RS485
-Message-Id: <1410289190-3913-1-git-send-email-ricardo.ribalda@gmail.com>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Wed, 03 Sep 2014 10:52:25 +0000
+Subject: [PATCH 09/15] PM / Domains: Remove genpd_queue_power_off_work() API
+Message-Id: <1409741551-16437-10-git-send-email-ulf.hansson@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
+In-Reply-To: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-serial@vger.kernel.org, Greg KH <greg@kroah.com>
-Cc: Ricardo Ribalda Delgado <ricardo.ribalda@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Commit: e676253b19b2d269cccf67fdb1592120a0cd0676 (serial/8250: Add
-support for RS485 IOCTLs), adds support for RS485 ioctls for 825_core on
-all the archs. Unfortunaltely the definition of TIOCSRS485 and
-TIOCGRS485 was missing on the ioctls.h file
+There are no active users of this API. Let's remove it and if future
+needs shows up we could consider to have a get/put API instead.
 
-Signed-off-by: Ricardo Ribalda Delgado <ricardo.ribalda@gmail.com>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
-Changelog:
+ drivers/base/power/domain.c | 5 ++++-
+ include/linux/pm_domain.h   | 2 --
+ 2 files changed, 4 insertions(+), 3 deletions(-)
 
-v2: By GregKH
-
-Follow the ioctl numbering scheme used by the particular
- architecture UAPI file you are editing.
-
- arch/sh/include/uapi/asm/ioctls.h | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/arch/sh/include/uapi/asm/ioctls.h b/arch/sh/include/uapi/asm/ioctls.h
-index 3422410..c9903e5 100644
---- a/arch/sh/include/uapi/asm/ioctls.h
-+++ b/arch/sh/include/uapi/asm/ioctls.h
-@@ -83,6 +83,8 @@
- #define TCSETS2		_IOW('T', 43, struct termios2)
- #define TCSETSW2	_IOW('T', 44, struct termios2)
- #define TCSETSF2	_IOW('T', 45, struct termios2)
-+#define TIOCGRS485	_IOR('T', 46, struct serial_rs485)
-+#define TIOCSRS485	_IOWR('T', 47, struct serial_rs485)
- #define TIOCGPTN	_IOR('T',0x30, unsigned int) /* Get Pty Number (of pty-mux device) */
- #define TIOCSPTLCK	_IOW('T',0x31, int)  /* Lock/unlock Pty */
- #define TIOCGDEV	_IOR('T',0x32, unsigned int) /* Get primary device node of /dev/console */
+diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
+index 601e35b..d71d045 100644
+--- a/drivers/base/power/domain.c
++++ b/drivers/base/power/domain.c
+@@ -422,7 +422,7 @@ static bool genpd_abort_poweroff(struct generic_pm_domain *genpd)
+  * Queue up the execution of pm_genpd_poweroff() unless it's already been done
+  * before.
+  */
+-void genpd_queue_power_off_work(struct generic_pm_domain *genpd)
++static void genpd_queue_power_off_work(struct generic_pm_domain *genpd)
+ {
+ 	queue_work(pm_wq, &genpd->power_off_work);
+ }
+@@ -729,6 +729,9 @@ static inline int genpd_dev_pm_qos_notifier(struct notifier_block *nb,
+ 	return NOTIFY_DONE;
+ }
+ 
++static inline void
++genpd_queue_power_off_work(struct generic_pm_domain *genpd) {}
++
+ static inline void genpd_power_off_work_fn(struct work_struct *work) {}
+ 
+ #define pm_genpd_runtime_suspend	NULL
+diff --git a/include/linux/pm_domain.h b/include/linux/pm_domain.h
+index eeba1a4..abeb5dc 100644
+--- a/include/linux/pm_domain.h
++++ b/include/linux/pm_domain.h
+@@ -258,10 +258,8 @@ static inline int pm_genpd_name_add_device(const char *domain_name,
+ }
+ 
+ #ifdef CONFIG_PM_GENERIC_DOMAINS_RUNTIME
+-extern void genpd_queue_power_off_work(struct generic_pm_domain *genpd);
+ extern void pm_genpd_poweroff_unused(void);
+ #else
+-static inline void genpd_queue_power_off_work(struct generic_pm_domain *gpd) {}
+ static inline void pm_genpd_poweroff_unused(void) {}
+ #endif
+ 
 -- 
-2.1.0
+1.9.1
 
