@@ -1,36 +1,61 @@
-From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
-Date: Tue, 30 Sep 2014 04:07:15 +0000
-Subject: [PATCH 0/1] spi: Using Trigger number to transmit/receive data
-Message-Id: <1412050036-7257-1-git-send-email-cm-hiep@jinso.co.jp>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 03 Sep 2014 02:10:21 +0000
+Subject: [PATCH 7/7 v3] mmc: remove MMC_CAP2_NO_MULTI_READ flags
+Message-Id: <871trt78tx.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
+	<87bnqx78xr.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87bnqx78xr.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Hi Geert,
+Now, mmc framework uses multi_io_quirk
+for I/O HW bug workaround.
+MMC_CAP2_NO_MULTI_READ flag is no longer needed
 
-This is the patch of QSPI that support for r8a7790 SOC. The pupose of 
-this patch is to transmit and receive the 32 bytes of data when the data 
-already has prepared on Transmit/Receive Buffer. Using Transmit/Receive 
-Buffer Data Trigger Number to do that instead transmits/receives a byte 
-of data. With this patch will improve the speed of transfer data.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v2 -> v3
 
-These patches was developed base on the upstream-v3.17-rc5 and have 
-tested on the Lager board.
+- no change
 
-Thank you!
+ drivers/mmc/card/block.c |    5 -----
+ include/linux/mmc/host.h |    1 -
+ 2 files changed, 6 deletions(-)
 
-Cao Minh Hiep
-
-Hiep Cao Minh (1):
-  spi: Using Trigger number to transmit/receive data
-
- drivers/spi/spi-rspi.c | 110 +++++++++++++++++++++++++++++++++++++++++++++----
- 1 file changed, 101 insertions(+), 9 deletions(-)
-
+diff --git a/drivers/mmc/card/block.c b/drivers/mmc/card/block.c
+index adab903..413f984 100644
+--- a/drivers/mmc/card/block.c
++++ b/drivers/mmc/card/block.c
+@@ -1398,11 +1398,6 @@ static void mmc_blk_rw_rq_prep(struct mmc_queue_req *mqrq,
+ 		if (disable_multi)
+ 			brq->data.blocks = 1;
+ 
+-		/* Some controllers can't do multiblock reads due to hw bugs */
+-		if (card->host->caps2 & MMC_CAP2_NO_MULTI_READ &&
+-		    rq_data_dir(req) = READ)
+-			brq->data.blocks = 1;
+-
+ 		/*
+ 		 * Some controllers have HW issues while operating
+ 		 * in multiple I/O mode
+diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
+index bfcf673..db4b4eb 100644
+--- a/include/linux/mmc/host.h
++++ b/include/linux/mmc/host.h
+@@ -272,7 +272,6 @@ struct mmc_host {
+ 
+ #define MMC_CAP2_BOOTPART_NOACC	(1 << 0)	/* Boot partition no access */
+ #define MMC_CAP2_FULL_PWR_CYCLE	(1 << 2)	/* Can do full power cycle */
+-#define MMC_CAP2_NO_MULTI_READ	(1 << 3)	/* Multiblock reads don't work */
+ #define MMC_CAP2_HS200_1_8V_SDR	(1 << 5)        /* can support */
+ #define MMC_CAP2_HS200_1_2V_SDR	(1 << 6)        /* can support */
+ #define MMC_CAP2_HS200		(MMC_CAP2_HS200_1_8V_SDR | \
 -- 
-1.9.1
+1.7.9.5
 
