@@ -1,73 +1,54 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Wed, 03 Sep 2014 10:52:30 +0000
-Subject: [PATCH 14/15] PM / Domains: Remove default_stop_ok() API
-Message-Id: <1409741551-16437-15-git-send-email-ulf.hansson@linaro.org>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 03 Sep 2014 13:15:59 +0000
+Subject: Re: [PATCH 14/15] PM / Domains: Remove default_stop_ok() API
+Message-Id: <CAMuHMdUEfAdpUgEtOQfdG1gbZjVo3bfAAmhm0-miFGbQ8ckHgA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
-In-Reply-To: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
+ <1409741551-16437-15-git-send-email-ulf.hansson@linaro.org>
+In-Reply-To: <1409741551-16437-15-git-send-email-ulf.hansson@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-There are currently no need to export default_stop_ok() as an API,
-instead let's keep it local to the PM domain governor.
+Hi Ulf,
 
-Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
----
- drivers/base/power/domain_governor.c | 7 ++-----
- include/linux/pm_domain.h            | 6 ------
- 2 files changed, 2 insertions(+), 11 deletions(-)
+On Wed, Sep 3, 2014 at 12:52 PM, Ulf Hansson <ulf.hansson@linaro.org> wrote:
+> --- a/drivers/base/power/domain_governor.c
+> +++ b/drivers/base/power/domain_governor.c
 
-diff --git a/drivers/base/power/domain_governor.c b/drivers/base/power/domain_governor.c
-index a089e3b..d88a62e 100644
---- a/drivers/base/power/domain_governor.c
-+++ b/drivers/base/power/domain_governor.c
-@@ -42,7 +42,7 @@ static int dev_update_qos_constraint(struct device *dev, void *data)
-  * default_stop_ok - Default PM domain governor routine for stopping devices.
-  * @dev: Device to check.
-  */
--bool default_stop_ok(struct device *dev)
-+static bool default_stop_ok(struct device *dev)
- {
- 	struct gpd_timing_data *td = &dev_gpd_data(dev)->td;
- 	unsigned long flags;
-@@ -229,10 +229,7 @@ static bool always_on_power_down_ok(struct dev_pm_domain *domain)
- 
- #else /* !CONFIG_PM_RUNTIME */
- 
--bool default_stop_ok(struct device *dev)
--{
--	return false;
--}
-+static inline bool default_stop_ok(struct device *dev) { return false; }
- 
- #define default_power_down_ok	NULL
- #define always_on_power_down_ok	NULL
-diff --git a/include/linux/pm_domain.h b/include/linux/pm_domain.h
-index abeb5dc..ebf52ae 100644
---- a/include/linux/pm_domain.h
-+++ b/include/linux/pm_domain.h
-@@ -151,8 +151,6 @@ extern void pm_genpd_init(struct generic_pm_domain *genpd,
- extern int pm_genpd_poweron(struct generic_pm_domain *genpd);
- extern int pm_genpd_name_poweron(const char *domain_name);
- 
--extern bool default_stop_ok(struct device *dev);
--
- extern struct dev_power_governor pm_domain_always_on_gov;
- #else
- 
-@@ -231,10 +229,6 @@ static inline int pm_genpd_name_poweron(const char *domain_name)
- {
- 	return -ENOSYS;
- }
--static inline bool default_stop_ok(struct device *dev)
--{
--	return false;
--}
- #define simple_qos_governor NULL
- #define pm_domain_always_on_gov NULL
- #endif
--- 
-1.9.1
+> @@ -229,10 +229,7 @@ static bool always_on_power_down_ok(struct dev_pm_domain *domain)
+>
+>  #else /* !CONFIG_PM_RUNTIME */
+>
+> -bool default_stop_ok(struct device *dev)
+> -{
+> -       return false;
+> -}
+> +static inline bool default_stop_ok(struct device *dev) { return false; }
 
+The "inline" doesn't make much sense here. This function is only
+referenced from places that need its address:
+
+struct dev_power_governor simple_qos_governor = {
+        .stop_ok = default_stop_ok,
+        .power_down_ok = default_power_down_ok,
+};
+
+and
+
+struct dev_power_governor pm_domain_always_on_gov = {
+        .power_down_ok = always_on_power_down_ok,
+        .stop_ok = default_stop_ok,
+};
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
