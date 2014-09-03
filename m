@@ -1,44 +1,81 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 10 Sep 2014 12:40:57 +0000
-Subject: Re: [PATCH/RFC 4/5] ARM: shmobile: R-Mobile: Add DT support for PM domains
-Message-Id: <CAMuHMdUcaGNQWmfS4U=XhksscuWh6hk8gA8fOpaUwxSmChDbiQ@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 03 Sep 2014 02:09:19 +0000
+Subject: [PATCH 2/7 v3] mmc: use .multi_io_quirk on omap_hsmmc
+Message-Id: <878um178vn.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410183344-14756-1-git-send-email-geert+renesas@glider.be>
- <1410183344-14756-5-git-send-email-geert+renesas@glider.be>
- <7h1trkkc49.fsf@deeprootsystems.com>
-In-Reply-To: <7h1trkkc49.fsf@deeprootsystems.com>
+References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
+	<87bnqx78xr.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87bnqx78xr.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-Hi Kevin,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Tue, Sep 9, 2014 at 6:11 PM, Kevin Hilman <khilman@kernel.org> wrote:
->> +static int r8a7740_pd_a4s_suspend(void)
->> +{
->> +     /*
->> +      * The A4S domain contains the CPU core and therefore it should
->> +      * only be turned off if the CPU is in use.
->> +      */
->> +     return -EBUSY;
->> +}
->
->
-> Do you have plans to use pm_genpd_attach_cpuidle() for this eventually,
-> maybe by checking if the enclosing node is a CPU?  If not, are there
-> other plans to handle idle for the power domains that contain CPUs?
+Now, omap_hsmmc can use .multi_io_quirk callback
+instead of MMC_CAP2_NO_MULTI_READ flags.
+let's use it.
 
-Yes, the plan is to add more power saving features, and use DT topology
-analysis to get rid of the hardcoded domain logic.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v2 -> v3
 
-Gr{oetje,eeting}s,
+ - blk_size_workaround -> multi_io_quirk
 
-                        Geert
+ drivers/mmc/host/omap_hsmmc.c |   17 ++++++++++++++++-
+ 1 file changed, 16 insertions(+), 1 deletion(-)
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+diff --git a/drivers/mmc/host/omap_hsmmc.c b/drivers/mmc/host/omap_hsmmc.c
+index ece1634..7b41f57 100644
+--- a/drivers/mmc/host/omap_hsmmc.c
++++ b/drivers/mmc/host/omap_hsmmc.c
+@@ -219,6 +219,7 @@ struct omap_hsmmc_host {
+ #define AUTO_CMD23		(1 << 0)        /* Auto CMD23 support */
+ #define HSMMC_SDIO_IRQ_ENABLED	(1 << 1)        /* SDIO irq enabled */
+ #define HSMMC_WAKE_IRQ_ENABLED	(1 << 2)
++#define HSMMC_NO_MULTI_READ	(1 << 3)
+ 	struct omap_hsmmc_next	next_data;
+ 	struct	omap_mmc_platform_data	*pdata;
+ };
+@@ -1829,6 +1830,19 @@ static int omap_hsmmc_disable_fclk(struct mmc_host *mmc)
+ 	return 0;
+ }
+ 
++static int *omap_hsmmc_multi_io_quirk(struct mmc_card *card,
++				      unsigned int direction, int blk_size)
++{
++	struct omap_hsmmc_host *host = mmc_priv(card->host);
++
++	/* This controller can't do multiblock reads due to hw bugs */
++	if ((host->flags & HSMMC_NO_MULTI_READ) &&
++	    (direction = MMC_DATA_READ))
++		return 1;
++
++	return blk_size;
++}
++
+ static const struct mmc_host_ops omap_hsmmc_ops = {
+ 	.enable = omap_hsmmc_enable_fclk,
+ 	.disable = omap_hsmmc_disable_fclk,
+@@ -1840,6 +1854,7 @@ static const struct mmc_host_ops omap_hsmmc_ops = {
+ 	.get_ro = omap_hsmmc_get_ro,
+ 	.init_card = omap_hsmmc_init_card,
+ 	.enable_sdio_irq = omap_hsmmc_enable_sdio_irq,
++	.multi_io_quirk = omap_hsmmc_multi_io_quirk,
+ };
+ 
+ #ifdef CONFIG_DEBUG_FS
+@@ -2101,7 +2116,7 @@ static int omap_hsmmc_probe(struct platform_device *pdev)
+ 
+ 	if (host->pdata->controller_flags & OMAP_HSMMC_BROKEN_MULTIBLOCK_READ) {
+ 		dev_info(&pdev->dev, "multiblock reads disabled due to 35xx erratum 2.1.1.128; MMC read performance may suffer\n");
+-		mmc->caps2 |= MMC_CAP2_NO_MULTI_READ;
++		host->flags |= HSMMC_NO_MULTI_READ;
+ 	}
+ 
+ 	pm_runtime_enable(host->dev);
+-- 
+1.7.9.5
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
