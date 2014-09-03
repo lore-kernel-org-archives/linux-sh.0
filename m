@@ -1,51 +1,51 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 16 Sep 2014 18:48:48 +0000
-Subject: [PATCH/RFC v2 01/12] PM / Domains: Add DT bindings for power-on/off latencies
-Message-Id: <1410893339-6361-2-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 03 Sep 2014 02:10:11 +0000
+Subject: [PATCH 6/7 v3] ARM: shmobile: remove MMC_CAP2_NO_MULTI_READ from lager
+Message-Id: <8738c978u7.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
+References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
+	<87bnqx78xr.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87bnqx78xr.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-PM domain power on/off-latencies are properties of the hardware.
-In legacy code, they're specified from platform code.
-On DT platforms, their values should come from DT.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Kevin Hilman <khilman@linaro.org>
+sh_mobile_sdhi cares multiblock read bug.
+remove MMC_CAP2_NO_MULTI_READ flag from board code
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v2:
-  - Add Acked-by
----
- Documentation/devicetree/bindings/power/power_domain.txt | 6 ++++++
- 1 file changed, 6 insertions(+)
+v2 -> v3
 
-diff --git a/Documentation/devicetree/bindings/power/power_domain.txt b/Documentation/devicetree/bindings/power/power_domain.txt
-index 98c16672ab5f49e0..7bc421d84367d636 100644
---- a/Documentation/devicetree/bindings/power/power_domain.txt
-+++ b/Documentation/devicetree/bindings/power/power_domain.txt
-@@ -19,12 +19,18 @@ Required properties:
-    providing multiple PM domains (e.g. power controllers), but can be any value
-    as specified by device tree binding documentation of particular provider.
- 
-+Optional properties:
-+ - power-on-latency: Power-on latency of the PM domain, in ns,
-+ - power-off-latency: Power-off latency of the PM domain, in ns.
-+
- Example:
- 
- 	power: power-controller@12340000 {
- 		compatible = "foo,power-controller";
- 		reg = <0x12340000 0x1000>;
- 		#power-domain-cells = <1>;
-+		power-on-latency = <250000>;
-+		power-off-latency = <250000>;
- 	};
- 
- The node above defines a power controller that is a PM domain provider and
+ - no change
+
+ arch/arm/mach-shmobile/board-lager.c |    2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index e1d8215..f5a98e2 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -630,7 +630,6 @@ static void __init lager_add_rsnd_device(void)
+ static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_POWER_OFF_CARD,
+-	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
+ 			  TMIO_MMC_WRPROTECT_DISABLE,
+ };
+@@ -644,7 +643,6 @@ static struct resource sdhi0_resources[] __initdata = {
+ static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_POWER_OFF_CARD,
+-	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
+ 			  TMIO_MMC_WRPROTECT_DISABLE,
+ };
 -- 
-1.9.1
+1.7.9.5
 
