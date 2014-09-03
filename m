@@ -1,90 +1,46 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 08 Sep 2014 08:50:24 +0000
-Subject: Re: [PATCH] mmc: tmio: enable odd number size transfer
-Message-Id: <540D6DD0.0@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 03 Sep 2014 00:49:01 +0000
+Subject: [PATCH repost] ARM: shmobile: lager: correct memory map
+Message-Id: <20140903004901.GA3277@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87wq9eohuc.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87wq9eohuc.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>
-Cc: Simon <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+The base address of the second memory region on the lager
+board is 0x140000000. Update the tag used in the dts file accordingly.
 
-On 9/8/2014 8:29 AM, Kuninori Morimoto wrote:
+This is a documentation fix and should have no run-time affect.
 
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This problem was introduced when the second memory region
+was added to the lager dts file by 62bc32a2573c4219
+("ARM: shmobile: Include all 4 GiB of memory on Lager)"
+in v3.14.
 
-> Current tmio is using sd_ctrl_read16/write16_rep()
-> for data transfer.
-> It works if transfer size was even number,
-> but, last 1 byte will be ignored if
-> transfer size was odd number.
-> This patch adds new tmio_mmc_transfer_data()
-> and solve this issue.
+Reported-by: NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> Tested-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->   drivers/mmc/host/tmio_mmc_pio.c |   42 +++++++++++++++++++++++++++++++++++----
->   1 file changed, 38 insertions(+), 4 deletions(-)
+I am reposting this as Olof originally requested a syntax change,
+which I followed up on, however that change no longer seems appropriate.
+This this patch seems to be correct.
 
-> diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-> index ba45413..817ec7d 100644
-> --- a/drivers/mmc/host/tmio_mmc_pio.c
-> +++ b/drivers/mmc/host/tmio_mmc_pio.c
-> @@ -376,6 +376,43 @@ static int tmio_mmc_start_command(struct tmio_mmc_host *host, struct mmc_command
->   	return 0;
->   }
->
-> +static void tmio_mmc_transfer_data(struct tmio_mmc_host *host,
-> +				   unsigned short *buf,
-> +				   unsigned int count)
-> +{
-> +	int is_read = host->data->flags & MMC_DATA_READ;
-> +	u16 extra;
-> +	u8  *extra8;
-> +	u8  *buf8;
-> +
-> +	/*
-> +	 * Transfer the data
-> +	 */
-> +	if (is_read)
-> +		sd_ctrl_read16_rep(host, CTL_SD_DATA_PORT, buf, count >> 1);
-> +	else
-> +		sd_ctrl_write16_rep(host, CTL_SD_DATA_PORT, buf, count >> 1);
-> +
-> +	/* count was even number */
-> +	if (!(count & 0x1))
-> +		return;
-> +
-> +	/* count was odd number */
-> +
-> +	extra8 = (u8 *)&extra;
-> +	buf8 = (u8 *)(buf + ((count - 1) >> 1));
-
-    You don't need to subtract 1.
-
-> +
-> +	if (is_read) {
-> +		extra = sd_ctrl_read16(host, CTL_SD_DATA_PORT);
-> +
-> +		buf8[1] = extra8[1];
-> +	} else {
-> +		extra = buf8[1] << 8;
-
-    Hm, why [1] here and above? Shouldn't it be [0] instead?
-
-> +
-> +		sd_ctrl_write16(host, CTL_SD_DATA_PORT, extra);
-> +	}
-> +}
-> +
->   /*
->    * This chip always returns (at least?) as much data as you ask for.
->    * I'm unsure what happens if you ask for less than a block. This should be
-
-WBR, Sergei
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 0118cbf..84dcafa 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -32,7 +32,7 @@
+ 		reg = <0 0x40000000 0 0x40000000>;
+ 	};
+ 
+-	memory@180000000 {
++	memory@140000000 {
+ 		device_type = "memory";
+ 		reg = <1 0x40000000 0 0xc0000000>;
+ 	};
+-- 
+2.0.1
 
