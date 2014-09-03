@@ -1,66 +1,77 @@
-From: Mike Turquette <mturquette@linaro.org>
-Date: Tue, 02 Sep 2014 00:44:53 +0000
-Subject: Re: [PATCH 1/3 v2] clk: shmobile: add missing 0x0100 for SDCKCR
-Message-Id: <20140902004453.5251.30288@quantum>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 03 Sep 2014 01:03:47 +0000
+Subject: Re: [PATCH 2/3] clocksource: sh_mtu2: Document r7s72100 binding
+Message-Id: <20140903010347.GB2903@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <871tsul8b3.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <871tsul8b3.wl%kuninori.morimoto.gx@gmail.com>
+References: <1409115600-26192-1-git-send-email-horms+renesas@verge.net.au>
+ <1409115600-26192-3-git-send-email-horms+renesas@verge.net.au>
+ <53FDBC6B.5090801@cogentembedded.com>
+In-Reply-To: <53FDBC6B.5090801@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Quoting Simon Horman (2014-08-05 18:40:57)
-> On Wed, Aug 06, 2014 at 10:24:00AM +0900, Kuninori Morimoto wrote:
-> > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > 
-> > 10cdfe9f327ab8d120cf6957e58c6203e3a53847
-> > (clk: shmobile: Add R-Car Gen2 clocks support)
-> > added R-Car Gen2 clock support via DT for v3.14.
-> > 
-> > But, cpg_sd01_div_table is missing
-> > "0x0100: x 1/8" division ratio.
-> > This patch fixes hidden bug.
-> > It is based on R-Car H2 v0.7, R-Car M2 v0.9.
-> > 
-> > Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> > Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> > Reported-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Wed, Aug 27, 2014 at 03:09:31PM +0400, Sergei Shtylyov wrote:
+> Hello.
 > 
-> Thanks Morimoto-san.
+> On 8/27/2014 8:59 AM, Simon Horman wrote:
 > 
-> Acked-by: Simon Horman <horms+renesas@verge.net.au>
+> >In general Renesas hardware is not documented to the extent
+> >where the relationship between IP blocks on different SoCs can be assumed
+> >although they may appear to operate the same way. Furthermore the
+> >documentation typically does not specify a version for individual
+> >IP blocks. For these reasons a convention of using the SoC name in place
+> >of a version and providing SoC-specific compat strings has been adopted.
 > 
-> Mike, could you consider picking up this patch.
-> It is a bug fix but it doesn't manifest as no boards use the clock in
-> question.
+> >Although not universally liked this convention is used in the bindings
+> >for the drivers a number of drivers for Renesas hardware. The purpose
+> >of this patch is to update the Renesas R-Car Multi-Function Timer Pulse
+> >Unit 2 (MTU2) driver to follow this convention.
+> 
+> >Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> 
+> >---
+> >* I plan to follow up with a patch patch to use the new binding in the
+> >   dtsi files for the r7s72100 SoC.
+> >---
+> >  Documentation/devicetree/bindings/timer/renesas,mtu2.txt | 6 ++++--
+> >  1 file changed, 4 insertions(+), 2 deletions(-)
+> >
+> >diff --git a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
+> >index 917453f..ec4d334 100644
+> >--- a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
+> >+++ b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
+> >@@ -8,7 +8,9 @@ are independent. The MTU2 hardware supports five channels indexed from 0 to 4.
+> >
+> >  Required Properties:
+> >
+> >-  - compatible: must contain "renesas,mtu2"
+> >+  - compatible: must be one of the following.
+> 
+>    Your example below has both.
 
-Applied to clk-next.
+Thanks, as I will change "one of" to "one or more of".
 
-Regards,
-Mike
-
+> >+    - "renesas,mtu2" for generic MTU2
+> >+    - "renesas,mtu2-r7s72100" for R7S72100 MTU2
+> >
+> >    - reg: base address and length of the registers block for the timer module.
+> >
+> >@@ -26,7 +28,7 @@ Required Properties:
+> >  Example: R7S72100 (RZ/A1H) MTU2 node
+> >
+> >  	mtu2: timer@fcff0000 {
+> >-		compatible = "renesas,mtu2";
+> >+		compatible = "renesas,mtu2-r7s72100", "renesas,mtu2";
+> >  		reg = <0xfcff0000 0x400>;
+> >  		interrupts = <0 139 IRQ_TYPE_LEVEL_HIGH>,
+> >  			     <0 146 IRQ_TYPE_LEVEL_HIGH>,
 > 
-> I believe the remaining two patches in this series should go though my
-> renesas tree.
+> WBR, Sergei
 > 
-> > ---
-> >  drivers/clk/shmobile/clk-rcar-gen2.c |    1 +
-> >  1 file changed, 1 insertion(+)
-> > 
-> > diff --git a/drivers/clk/shmobile/clk-rcar-gen2.c b/drivers/clk/shmobile/clk-rcar-gen2.c
-> > index dff7f79..e996425 100644
-> > --- a/drivers/clk/shmobile/clk-rcar-gen2.c
-> > +++ b/drivers/clk/shmobile/clk-rcar-gen2.c
-> > @@ -202,6 +202,7 @@ static const struct clk_div_table cpg_sdh_div_table[] = {
-> >  };
-> >  
-> >  static const struct clk_div_table cpg_sd01_div_table[] = {
-> > +     {  4,  8 },
-> >       {  5, 12 }, {  6, 16 }, {  7, 18 }, {  8, 24 },
-> >       { 10, 36 }, { 11, 48 }, { 12, 10 }, {  0,  0 },
-> >  };
-> > -- 
-> > 1.7.9.5
-> > 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
