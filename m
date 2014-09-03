@@ -1,130 +1,99 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 03 Sep 2014 21:14:49 +0000
-Subject: Re: [PATCH] pinctrl: sh-pfc: rename confusing pinmux ops variable
-Message-Id: <1591463.JEteqGINz8@avalon>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 03 Sep 2014 05:25:56 +0000
+Subject: [PATCH v3 2/2] usb: renesas_usbhs: Add device tree support for R-Car H2 and M2
+Message-Id: <5406A664.2050501@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409745112-13652-1-git-send-email-linus.walleij@linaro.org>
-In-Reply-To: <1409745112-13652-1-git-send-email-linus.walleij@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Felipe Balbi <balbi@ti.com>
+Cc: Rob Herring <robh+dt@kernel.org>, "pawel.moll@arm.com" <pawel.moll@arm.com>, "mark.rutland@arm.com" <mark.rutland@arm.com>, "ijc+devicetree@hellion.org.uk" <ijc+devicetree@hellion.org.uk>, "galak@codeaurora.org" <galak@codeaurora.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Ulrich Hecht <ulrich.hecht@gmail.com>
 
-Hi Linus,
+This driver supports other SoCs, but they need boards/Soc depend code.
+So, this patch adds device tree support for R-Car H2 and M2 initially.
 
-Thank you for the patch.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/usb/renesas_usbhs/common.c |   44 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
 
-On Wednesday 03 September 2014 13:51:52 Linus Walleij wrote:
-> The vtable named *pinmux_ops in the affected files are not really
-> about pin multiplexing, but a struct related to some PFC-specific
-> operations, inclusing pin config (bias setting). Rename the variable
-> so as to avoid confusions.
-> 
-> Cc: Laurent Pinchart <Laurent.pinchart@ideasonboard.com>
-> Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+diff --git a/drivers/usb/renesas_usbhs/common.c b/drivers/usb/renesas_usbhs/common.c
+index 1b9bf8d..b3b6813 100644
+--- a/drivers/usb/renesas_usbhs/common.c
++++ b/drivers/usb/renesas_usbhs/common.c
+@@ -18,6 +18,8 @@
+ #include <linux/gpio.h>
+ #include <linux/io.h>
+ #include <linux/module.h>
++#include <linux/of_device.h>
++#include <linux/of_gpio.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/slab.h>
+ #include <linux/sysfs.h>
+@@ -438,6 +440,43 @@ static int usbhsc_drvcllbck_notify_hotplug(struct platform_device *pdev)
+ /*
+  *		platform functions
+  */
++static const struct of_device_id usbhs_of_match[] = {
++	{
++		.compatible = "renesas,usbhs-r8a7790",
++		.data = (void *)USBHS_TYPE_R8A7790,
++	},
++	{
++		.compatible = "renesas,usbhs-r8a7791",
++		.data = (void *)USBHS_TYPE_R8A7791,
++	},
++	{ },
++};
++MODULE_DEVICE_TABLE(of, usbhs_of_match);
++
++static struct renesas_usbhs_platform_info *usbhs_parse_dt(struct device *dev)
++{
++	struct renesas_usbhs_platform_info *info;
++	struct renesas_usbhs_driver_param *dparam;
++	const struct of_device_id *of_id = of_match_device(usbhs_of_match, dev);
++	u32 tmp;
++	int gpio;
++
++	info = devm_kzalloc(dev, sizeof(*info), GFP_KERNEL);
++	if (!info)
++		return NULL;
++
++	dparam = &info->driver_param;
++	dparam->type = of_id ? (u32)of_id->data : 0;
++	if (!of_property_read_u32(dev->of_node, "renesas,buswait", &tmp))
++		dparam->buswait_bwait = tmp;
++	gpio = of_get_named_gpio_flags(dev->of_node, "renesas,enable-gpio", 0,
++				       NULL);
++	if (gpio > 0)
++		dparam->enable_gpio = gpio;
++
++	return info;
++}
++
+ static int usbhs_probe(struct platform_device *pdev)
+ {
+ 	struct renesas_usbhs_platform_info *info = dev_get_platdata(&pdev->dev);
+@@ -446,6 +485,10 @@ static int usbhs_probe(struct platform_device *pdev)
+ 	struct resource *res, *irq_res;
+ 	int ret;
 
-Acked-by: Laurent Pinchart <Laurent.pinchart@ideasonboard.com>
-
-> ---
->  drivers/pinctrl/sh-pfc/pfc-r8a73a4.c | 4 ++--
->  drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 4 ++--
->  drivers/pinctrl/sh-pfc/pfc-sh7372.c  | 4 ++--
->  drivers/pinctrl/sh-pfc/pfc-sh73a0.c  | 4 ++--
->  4 files changed, 8 insertions(+), 8 deletions(-)
-> 
-> diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
-> b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c index ce9fb7aa8ba3..280a56f97786
-> 100644
-> --- a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
-> +++ b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
-> @@ -2717,14 +2717,14 @@ static void r8a73a4_pinmux_set_bias(struct sh_pfc
-> *pfc, unsigned int pin, iowrite8(value, addr);
->  }
-> 
-> -static const struct sh_pfc_soc_operations r8a73a4_pinmux_ops = {
-> +static const struct sh_pfc_soc_operations r8a73a4_pfc_ops = {
->  	.get_bias = r8a73a4_pinmux_get_bias,
->  	.set_bias = r8a73a4_pinmux_set_bias,
->  };
-> 
->  const struct sh_pfc_soc_info r8a73a4_pinmux_info = {
->  	.name		= "r8a73a4_pfc",
-> -	.ops		= &r8a73a4_pinmux_ops,
-> +	.ops		= &r8a73a4_pfc_ops,
-> 
->  	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
->  	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
-> diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-> b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c index e4c1ef477053..b486e9d20cc2
-> 100644
-> --- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-> +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-> @@ -3752,14 +3752,14 @@ static void r8a7740_pinmux_set_bias(struct sh_pfc
-> *pfc, unsigned int pin, iowrite8(value, addr);
->  }
-> 
-> -static const struct sh_pfc_soc_operations r8a7740_pinmux_ops = {
-> +static const struct sh_pfc_soc_operations r8a7740_pfc_ops = {
->  	.get_bias = r8a7740_pinmux_get_bias,
->  	.set_bias = r8a7740_pinmux_set_bias,
->  };
-> 
->  const struct sh_pfc_soc_info r8a7740_pinmux_info = {
->  	.name		= "r8a7740_pfc",
-> -	.ops		= &r8a7740_pinmux_ops,
-> +	.ops		= &r8a7740_pfc_ops,
-> 
->  	.input		= { PINMUX_INPUT_BEGIN,
->  			    PINMUX_INPUT_END },
-> diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-> b/drivers/pinctrl/sh-pfc/pfc-sh7372.c index d9158b3b2919..8211f66a2f68
-> 100644
-> --- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-> +++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-> @@ -2614,14 +2614,14 @@ static void sh7372_pinmux_set_bias(struct sh_pfc
-> *pfc, unsigned int pin, iowrite8(value, addr);
->  }
-> 
-> -static const struct sh_pfc_soc_operations sh7372_pinmux_ops = {
-> +static const struct sh_pfc_soc_operations sh7372_pfc_ops = {
->  	.get_bias = sh7372_pinmux_get_bias,
->  	.set_bias = sh7372_pinmux_set_bias,
->  };
-> 
->  const struct sh_pfc_soc_info sh7372_pinmux_info = {
->  	.name = "sh7372_pfc",
-> -	.ops = &sh7372_pinmux_ops,
-> +	.ops = &sh7372_pfc_ops,
-> 
->  	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
->  	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
-> diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-> b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c index 0bd8f4401b42..2dd8fd524a80
-> 100644
-> --- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-> +++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-> @@ -3856,7 +3856,7 @@ static int sh73a0_pinmux_soc_init(struct sh_pfc *pfc)
->  	return 0;
->  }
-> 
-> -static const struct sh_pfc_soc_operations sh73a0_pinmux_ops = {
-> +static const struct sh_pfc_soc_operations sh73a0_pfc_ops = {
->  	.init = sh73a0_pinmux_soc_init,
->  	.get_bias = sh73a0_pinmux_get_bias,
->  	.set_bias = sh73a0_pinmux_set_bias,
-> @@ -3864,7 +3864,7 @@ static const struct sh_pfc_soc_operations
-> sh73a0_pinmux_ops = {
-> 
->  const struct sh_pfc_soc_info sh73a0_pinmux_info = {
->  	.name = "sh73a0_pfc",
-> -	.ops = &sh73a0_pinmux_ops,
-> +	.ops = &sh73a0_pfc_ops,
-> 
->  	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
->  	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
-
++	/* check device node */
++	if (pdev->dev.of_node)
++		info = pdev->dev.platform_data = usbhs_parse_dt(&pdev->dev);
++
+ 	/* check platform information */
+ 	if (!info) {
+ 		dev_err(&pdev->dev, "no platform information\n");
+@@ -689,6 +732,7 @@ static struct platform_driver renesas_usbhs_driver = {
+ 	.driver		= {
+ 		.name	= "renesas_usbhs",
+ 		.pm	= &usbhsc_pm_ops,
++		.of_match_table = of_match_ptr(usbhs_of_match),
+ 	},
+ 	.probe		= usbhs_probe,
+ 	.remove		= usbhs_remove,
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
