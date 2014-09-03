@@ -1,54 +1,206 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 08 Sep 2014 00:27:45 +0000
-Subject: [PATCH 2/5] ARM: shmobile: r8a7790: Use SoC-specific 48-bit CMT compat string
-Message-Id: <1410136068-32220-3-git-send-email-horms+renesas@verge.net.au>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Wed, 03 Sep 2014 10:52:18 +0000
+Subject: [PATCH 02/15] PM / Domains: Ignore callbacks for subsys generic_pm_domain_data
+Message-Id: <1409741551-16437-3-git-send-email-ulf.hansson@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410136068-32220-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1410136068-32220-1-git-send-email-horms+renesas@verge.net.au>
+References: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
+In-Reply-To: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-In general Renesas hardware is not documented to the extent
-where the relationship between IP blocks on different SoCs can be assumed
-although they may appear to operate the same way. Furthermore the
-documentation typically does not specify a version for individual
-IP blocks. For these reasons a convention of using the SoC name in place
-of a version and providing SoC-specific compat strings has been adopted.
+In a step of simplifying the generic power domain let's move away from
+using these callbacks.
 
-Although not universally liked this convention is used in the bindings for
-a number of drivers for Renesas hardware. The purpose of this patch is to
-make use of the SoC-specific CMT compat string for the r8a7790 48-bit CMT
-clock source.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ drivers/base/power/domain.c | 131 +++-----------------------------------------
+ include/linux/pm_domain.h   |   1 -
+ 2 files changed, 8 insertions(+), 124 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index a3cd307..d0e1773 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -211,7 +211,7 @@
- 	};
+diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
+index e613e3c..aa5b14c 100644
+--- a/drivers/base/power/domain.c
++++ b/drivers/base/power/domain.c
+@@ -25,10 +25,6 @@
+ 	__routine = genpd->dev_ops.callback; 			\
+ 	if (__routine) {					\
+ 		__ret = __routine(dev); 			\
+-	} else {						\
+-		__routine = dev_gpd_data(dev)->ops.callback;	\
+-		if (__routine) 					\
+-			__ret = __routine(dev);			\
+ 	}							\
+ 	__ret;							\
+ })
+@@ -1871,10 +1867,6 @@ static int pm_genpd_default_save_state(struct device *dev)
+ {
+ 	int (*cb)(struct device *__dev);
  
- 	cmt0: timer@ffca0000 {
--		compatible = "renesas,cmt-48-gen2";
-+		compatible = "renesas,cmt-48-r8a7790", "renesas,cmt-48-gen2";
- 		reg = <0 0xffca0000 0 0x1004>;
- 		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
-@@ -224,7 +224,7 @@
- 	};
+-	cb = dev_gpd_data(dev)->ops.save_state;
+-	if (cb)
+-		return cb(dev);
+-
+ 	if (dev->type && dev->type->pm)
+ 		cb = dev->type->pm->runtime_suspend;
+ 	else if (dev->class && dev->class->pm)
+@@ -1898,10 +1890,6 @@ static int pm_genpd_default_restore_state(struct device *dev)
+ {
+ 	int (*cb)(struct device *__dev);
  
- 	cmt1: timer@e6130000 {
--		compatible = "renesas,cmt-48-gen2";
-+		compatible = "renesas,cmt-48-r8a7790", "renesas,cmt-48-gen2";
- 		reg = <0 0xe6130000 0 0x1004>;
- 		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
+-	cb = dev_gpd_data(dev)->ops.restore_state;
+-	if (cb)
+-		return cb(dev);
+-
+ 	if (dev->type && dev->type->pm)
+ 		cb = dev->type->pm->runtime_resume;
+ 	else if (dev->class && dev->class->pm)
+@@ -1917,109 +1905,6 @@ static int pm_genpd_default_restore_state(struct device *dev)
+ 	return cb ? cb(dev) : 0;
+ }
+ 
+-#ifdef CONFIG_PM_SLEEP
+-
+-/**
+- * pm_genpd_default_suspend - Default "device suspend" for PM domians.
+- * @dev: Device to handle.
+- */
+-static int pm_genpd_default_suspend(struct device *dev)
+-{
+-	int (*cb)(struct device *__dev) = dev_gpd_data(dev)->ops.suspend;
+-
+-	return cb ? cb(dev) : pm_generic_suspend(dev);
+-}
+-
+-/**
+- * pm_genpd_default_suspend_late - Default "late device suspend" for PM domians.
+- * @dev: Device to handle.
+- */
+-static int pm_genpd_default_suspend_late(struct device *dev)
+-{
+-	int (*cb)(struct device *__dev) = dev_gpd_data(dev)->ops.suspend_late;
+-
+-	return cb ? cb(dev) : pm_generic_suspend_late(dev);
+-}
+-
+-/**
+- * pm_genpd_default_resume_early - Default "early device resume" for PM domians.
+- * @dev: Device to handle.
+- */
+-static int pm_genpd_default_resume_early(struct device *dev)
+-{
+-	int (*cb)(struct device *__dev) = dev_gpd_data(dev)->ops.resume_early;
+-
+-	return cb ? cb(dev) : pm_generic_resume_early(dev);
+-}
+-
+-/**
+- * pm_genpd_default_resume - Default "device resume" for PM domians.
+- * @dev: Device to handle.
+- */
+-static int pm_genpd_default_resume(struct device *dev)
+-{
+-	int (*cb)(struct device *__dev) = dev_gpd_data(dev)->ops.resume;
+-
+-	return cb ? cb(dev) : pm_generic_resume(dev);
+-}
+-
+-/**
+- * pm_genpd_default_freeze - Default "device freeze" for PM domians.
+- * @dev: Device to handle.
+- */
+-static int pm_genpd_default_freeze(struct device *dev)
+-{
+-	int (*cb)(struct device *__dev) = dev_gpd_data(dev)->ops.freeze;
+-
+-	return cb ? cb(dev) : pm_generic_freeze(dev);
+-}
+-
+-/**
+- * pm_genpd_default_freeze_late - Default "late device freeze" for PM domians.
+- * @dev: Device to handle.
+- */
+-static int pm_genpd_default_freeze_late(struct device *dev)
+-{
+-	int (*cb)(struct device *__dev) = dev_gpd_data(dev)->ops.freeze_late;
+-
+-	return cb ? cb(dev) : pm_generic_freeze_late(dev);
+-}
+-
+-/**
+- * pm_genpd_default_thaw_early - Default "early device thaw" for PM domians.
+- * @dev: Device to handle.
+- */
+-static int pm_genpd_default_thaw_early(struct device *dev)
+-{
+-	int (*cb)(struct device *__dev) = dev_gpd_data(dev)->ops.thaw_early;
+-
+-	return cb ? cb(dev) : pm_generic_thaw_early(dev);
+-}
+-
+-/**
+- * pm_genpd_default_thaw - Default "device thaw" for PM domians.
+- * @dev: Device to handle.
+- */
+-static int pm_genpd_default_thaw(struct device *dev)
+-{
+-	int (*cb)(struct device *__dev) = dev_gpd_data(dev)->ops.thaw;
+-
+-	return cb ? cb(dev) : pm_generic_thaw(dev);
+-}
+-
+-#else /* !CONFIG_PM_SLEEP */
+-
+-#define pm_genpd_default_suspend	NULL
+-#define pm_genpd_default_suspend_late	NULL
+-#define pm_genpd_default_resume_early	NULL
+-#define pm_genpd_default_resume		NULL
+-#define pm_genpd_default_freeze		NULL
+-#define pm_genpd_default_freeze_late	NULL
+-#define pm_genpd_default_thaw_early	NULL
+-#define pm_genpd_default_thaw		NULL
+-
+-#endif /* !CONFIG_PM_SLEEP */
+-
+ /**
+  * pm_genpd_init - Initialize a generic I/O PM domain object.
+  * @genpd: PM domain object to initialize.
+@@ -2071,14 +1956,14 @@ void pm_genpd_init(struct generic_pm_domain *genpd,
+ 	genpd->domain.ops.complete = pm_genpd_complete;
+ 	genpd->dev_ops.save_state = pm_genpd_default_save_state;
+ 	genpd->dev_ops.restore_state = pm_genpd_default_restore_state;
+-	genpd->dev_ops.suspend = pm_genpd_default_suspend;
+-	genpd->dev_ops.suspend_late = pm_genpd_default_suspend_late;
+-	genpd->dev_ops.resume_early = pm_genpd_default_resume_early;
+-	genpd->dev_ops.resume = pm_genpd_default_resume;
+-	genpd->dev_ops.freeze = pm_genpd_default_freeze;
+-	genpd->dev_ops.freeze_late = pm_genpd_default_freeze_late;
+-	genpd->dev_ops.thaw_early = pm_genpd_default_thaw_early;
+-	genpd->dev_ops.thaw = pm_genpd_default_thaw;
++	genpd->dev_ops.suspend = pm_generic_suspend;
++	genpd->dev_ops.suspend_late = pm_generic_suspend_late;
++	genpd->dev_ops.resume_early = pm_generic_resume_early;
++	genpd->dev_ops.resume = pm_generic_resume;
++	genpd->dev_ops.freeze = pm_generic_freeze;
++	genpd->dev_ops.freeze_late = pm_generic_freeze_late;
++	genpd->dev_ops.thaw_early = pm_generic_thaw_early;
++	genpd->dev_ops.thaw = pm_generic_thaw;
+ 	mutex_lock(&gpd_list_lock);
+ 	list_add(&genpd->gpd_list_node, &gpd_list);
+ 	mutex_unlock(&gpd_list_lock);
+diff --git a/include/linux/pm_domain.h b/include/linux/pm_domain.h
+index 0aa9ad9..a54bbbe 100644
+--- a/include/linux/pm_domain.h
++++ b/include/linux/pm_domain.h
+@@ -108,7 +108,6 @@ struct gpd_timing_data {
+ 
+ struct generic_pm_domain_data {
+ 	struct pm_domain_data base;
+-	struct gpd_dev_ops ops;
+ 	struct gpd_timing_data td;
+ 	struct notifier_block nb;
+ 	struct mutex lock;
 -- 
-2.0.1
+1.9.1
 
