@@ -1,54 +1,55 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sat, 20 Sep 2014 09:59:47 +0000
-Subject: Re: [PATCH] i2c-rcar: check for no IRQ in rcar_i2c_irq()
-Message-Id: <20140920095947.GL1612@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="9/GiYV45wF7IL3Iq"
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Wed, 03 Sep 2014 10:52:29 +0000
+Subject: [PATCH 13/15] drivers: sh: Leave disabling of unused PM domains to genpd
+Message-Id: <1409741551-16437-14-git-send-email-ulf.hansson@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <3921243.2t7X6eKC2i@wasted.cogentembedded.com>
-In-Reply-To: <3921243.2t7X6eKC2i-gHKXc3Y1Z8zGSmamagVegGFoWSdPRAKMAL8bYrjMMd8@public.gmane.org>
-To: Sergei Shtylyov <sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
-Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+References: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
+In-Reply-To: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+Since genpd at late init, will try to disable unused PM domains we
+don't need to do it from here as well.
 
---9/GiYV45wF7IL3Iq
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+---
+ drivers/sh/pm_runtime.c | 11 -----------
+ 1 file changed, 11 deletions(-)
 
-On Mon, Sep 15, 2014 at 12:20:19AM +0400, Sergei Shtylyov wrote:
-> Check if the ICMSR register (masked with the ICMIER register) evaluates t=
-o 0  in
-> the driver's interrupt handler and return IRQ_NONE in that case, like man=
-y other
-> drivers do.
->=20
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->=20
+diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
+index 72f6381..fe2c2d5 100644
+--- a/drivers/sh/pm_runtime.c
++++ b/drivers/sh/pm_runtime.c
+@@ -75,8 +75,6 @@ static struct pm_clk_notifier_block platform_bus_notifier = {
+ 	.con_ids = { NULL, },
+ };
+ 
+-static bool default_pm_on;
+-
+ static int __init sh_pm_runtime_init(void)
+ {
+ 	if (IS_ENABLED(CONFIG_ARCH_SHMOBILE_MULTI)) {
+@@ -96,16 +94,7 @@ static int __init sh_pm_runtime_init(void)
+ 			return 0;
+ 	}
+ 
+-	default_pm_on = true;
+ 	pm_clk_add_notifier(&platform_bus_type, &platform_bus_notifier);
+ 	return 0;
+ }
+ core_initcall(sh_pm_runtime_init);
+-
+-static int __init sh_pm_runtime_late_init(void)
+-{
+-	if (default_pm_on)
+-		pm_genpd_poweroff_unused();
+-	return 0;
+-}
+-late_initcall(sh_pm_runtime_late_init);
+-- 
+1.9.1
 
-Applied to for-next, thanks!
-
-
---9/GiYV45wF7IL3Iq
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJUHVATAAoJEBQN5MwUoCm2ZukP/jFhNWP79fnNy2gm6Ax9AtIz
-k12hCAa7EvbCDE2i2oRZIxx1M4seEv9Ihp6n6kIKWMHz6yDJSTSY+wFT1HIxSn3i
-WhShRFAsL6Ic5ZQpju60sspR4CIMnp1zEAYS5SeYyMuu+65J/w8hpMC8IHpABmMh
-XOqfVOaN6c1mWkZez0AthT3GMdxe438oTtii7uMPAL2yGIHOkfmTXjQThwtK5Y7o
-I/Hv8LTspfxZ/UtXZdlpXFU2X5lGnh/VQQUALwnkHlPQZwuvhHDPWKU3YYkzL2us
-vmq8E0AIXogP3mwakd5Bgn4+v3GfChzgL91lawgq/xIClgwyd7M35luKvzFZgodK
-VY5EiX0d0lX6W+WcGm/RELls3agN/h42L9SarWVvnVVcd6PyhfRAp7ngHDcS0QYE
-xIAQ68wxMRDEyQIKMLwIBeqFj8Hxxt75NsQ0inkosgxY64FKe3qNSZmy6O/c5s4j
-gXxgOJyD5kGvYl0AdQ6RXuu7qWYQt4xUc4skc0Y0GekS4AYTWnd6odeHkHaRJpd9
-j1apfZCPxda3ZFXmR6NbFZkSeWEp6cvoyJYqMr7HzOKVX4u3wGv/+vQ+bwptf4m2
-hbaFvwf40fyGkB9my3ZlENLFSgVVWzF0VJIzf1senBC3S/Lk+0BIhpBz6vwVA8A6
-mVZm+x8GstaSAbVHeU5M
-=rLJ+
------END PGP SIGNATURE-----
-
---9/GiYV45wF7IL3Iq--
