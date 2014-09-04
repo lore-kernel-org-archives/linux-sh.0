@@ -1,7 +1,7 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Wed, 03 Sep 2014 11:10:32 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 04 Sep 2014 08:40:11 +0000
 Subject: Re: [PATCH 00/15] PM / Domains: Cleanups and remove superfluous APIs
-Message-Id: <4774333.eJdjGCa2sL@wuerfel>
+Message-Id: <CAMuHMdXmfG_bpzX3HrtZPB5nV2n7UPwxGJqdpjJBqWNSnBe-Pw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
 In-Reply-To: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
@@ -10,33 +10,33 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wednesday 03 September 2014 12:52:16 Ulf Hansson wrote:
-> 
->  arch/arm/mach-exynos/exynos.c         |   1 -
->  arch/arm/mach-s3c64xx/common.c        |   5 -
->  arch/arm/mach-s3c64xx/common.h        |   7 -
->  arch/arm/mach-s3c64xx/mach-anw6410.c  |   1 -
->  arch/arm/mach-s3c64xx/mach-crag6410.c |   1 -
->  arch/arm/mach-s3c64xx/mach-hmt.c      |   1 -
->  arch/arm/mach-s3c64xx/mach-mini6410.c |   1 -
->  arch/arm/mach-s3c64xx/mach-ncp.c      |   1 -
->  arch/arm/mach-s3c64xx/mach-real6410.c |   1 -
->  arch/arm/mach-s3c64xx/mach-smartq5.c  |   1 -
->  arch/arm/mach-s3c64xx/mach-smartq7.c  |   1 -
->  arch/arm/mach-s3c64xx/mach-smdk6400.c |   1 -
->  arch/arm/mach-s3c64xx/mach-smdk6410.c |   1 -
->  arch/arm/mach-s3c64xx/pm.c            |   7 -
->  arch/arm/mach-shmobile/pm-r8a7779.c   |   1 -
->  arch/arm/mach-shmobile/pm-rmobile.c   |   1 -
->  drivers/base/power/domain.c           | 322 ++++------------------------------
->  drivers/base/power/domain_governor.c  |   7 +-
->  drivers/sh/pm_runtime.c               |  11 --
->  include/linux/pm_domain.h             |  56 +-----
->  20 files changed, 40 insertions(+), 388 deletions(-)
-> 
+Hi Ulf,
 
-Wow, great diffstat!
+On Wed, Sep 3, 2014 at 12:52 PM, Ulf Hansson <ulf.hansson@linaro.org> wrote:
+> This patchset has a bit of a history and some parts of it has been posted
+> earlier.
+> http://lists.infradead.org/pipermail/linux-arm-kernel/2014-June/262725.html
+>
+> The intent is to simplify code for the generic power domain and also some of
+> the machine specific code that uses the generic power domain.
+>
+> Do note, there are dependencies through this patchset, especially related to
+> the ARM SoC changes, thus they all need to be kept together.
 
-I have no idea what this series really does, but I love it ;-)
+Thanks for your patch series!
 
-	Arnd
+I gave this series (on top of "[PATCH v2 0/9] PM / Domains: Generic OF-based
+support", with one minor conflict) a quick run on r8a7791/koelsch-reference,
+r8a7740/armadillo-legacy, and r8a7740/armadillo-multiplatform.
+Everything looks fine.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
