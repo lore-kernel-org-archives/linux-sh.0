@@ -1,98 +1,64 @@
-From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
-Date: Fri, 26 Sep 2014 09:46:43 +0000
-Subject: Re: [PATCH RFC 6/7] ARM: shmobile: Do additional settings for L2shutdown mode
-Message-Id: <54253603.6080707@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Thu, 04 Sep 2014 06:08:37 +0000
+Subject: [PATCH][resend] of: Add vendor 2nd prefix for Asahi Kasei Corp
+Message-Id: <878ulzx6hr.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5424D21C.6000106@renesas.com>
-In-Reply-To: <5424D21C.6000106@renesas.com>
+References: <CAMuHMdWTVBjFzA9L9Eqpq_2Xi9_NHkOCLrb_UjK611SBfwnc=Q@mail.gmail.com>
+	<87ioo7c0g5.wl%kuninori.morimoto.gx@renesas.com>
+	<539815E6.2050304@codethink.co.uk>
+	<20140611165410.GK5099@sirena.org.uk>
+	<CAMuHMdUT0hEBGbN+W-Oz5zJ0N8S2VDMndqtDO=EtWF3jG2MEew@mail.gmail.com>
+	<20140611170233.GL5099@sirena.org.uk>
+	<5398A53D.3020706@wwwdotorg.org>
+	<20140611190444.GN5099@sirena.org.uk>
+	<5398AB07.4040304@wwwdotorg.org>
+	<87sinbdk44.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87sinbdk44.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Rob Herring <robh@kernel.org>
+Cc: linux-kernel@vger.kernel.org, Mark Brown <broonie@kernel.org>, Stephen Warren <swarren@wwwdotorg.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, ALSA Development Mailing List <alsa-devel@alsa-project.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, Simon <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>
 
-Hi Geert-san,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On 9/26/2014 6:30 PM, Geert Uytterhoeven wrote:
-> Hi Khiem-san,
-> 
-> On Fri, Sep 26, 2014 at 4:40 AM, Khiem Nguyen
-> <khiem.nguyen.xt@renesas.com> wrote:
->> According to Cortex-A15 TRM, some additional settings are needed.
->> Although the procedure was not completely same as in TRM, it was
->> referred to vexpress implementation to arrange order of additional
->> settings.
->>
->> Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
->> ---
->>  arch/arm/mach-shmobile/platsmp-apmu.c |   25 +++++++++++++++++++++++++
->>  1 file changed, 25 insertions(+)
->>
->> diff --git a/arch/arm/mach-shmobile/platsmp-apmu.c b/arch/arm/mach-shmobile/platsmp-apmu.c
->> index dfa8a18..0dedb13 100644
->> --- a/arch/arm/mach-shmobile/platsmp-apmu.c
->> +++ b/arch/arm/mach-shmobile/platsmp-apmu.c
->> @@ -161,8 +161,32 @@ int shmobile_smp_apmu_boot_secondary(unsigned int cpu, struct task_struct *idle)
->>
->>  #if defined(CONFIG_HOTPLUG_CPU) || defined(CONFIG_SUSPEND) || \
->>  defined(CONFIG_CPU_IDLE)
->> +static void do_l2shutdown_settings(void)
->> +{
->> +       unsigned int v;
->> +
->> +       /* Disable L2$ prefetches */
->> +       asm volatile(
->> +       "       mrc     p15, 1, %0, c15, c0, 3\n"
->> +       "       orr     %0, %0, %1\n"
->> +       "       mcr     p15, 1, %0, c15, c0, 3\n"
->> +               : "=&r" (v)
->> +               : "Ir" (0x400)
->> +               : "cc");
->> +       isb();
->> +       dsb();
->> +
->> +       flush_cache_all();
->> +
->> +       /* Set Double lock control bit */
->> +       __asm__ __volatile__("mcr p14, 0, %0, c1, c3, 4" : : "r" (0x1));
->> +}
->> +
->>  static inline void cpu_enter_lowpower_a15(void)
->>  {
->> +       if (is_a15_l2shutdown)
->> +               do_l2shutdown_settings();
->> +
->>         v7_exit_coherency_flush(louis);
->>  }
->>
->> @@ -245,6 +269,7 @@ static int shmobile_smp_apmu_enter_suspend(suspend_state_t state)
->>
->>         writel_relaxed(0x0, cpucmcr);
->>         rcar_sysc_clear_event_status();
->> +       is_a15_l2shutdown = 0;
-> 
-> What's the purpose of clearing is_a15_l2shutdown here?
+Current vendor-prefixes.txt already has
+"ak" prefix for Asahi Kasei Corp by
+ae8c4209af2cec065fef15d200a42a04130799f7
+(of: Add vendor prefix for Asahi Kasei Corp.)
 
-As this bit was set in suspend processing,
-it should be cleared in resume processing.
-And this is to make sure L2shutdown setting is only executed within Suspend-to-RAM,
-not CPUIdle/Core-Standby or CPU hotplug. :)
+But, almost all Asahi Kasei chip driver is
+using "asahi-kasei" prefix today.
 
->>
->>         return 0;
->>  }
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
-> 
+This patch adds "asahi-kasei" to vendor-prefixes.txt.
+checkpatch.pl will report WARNING without this patch.
+(DT compatible string vendor "asahi-kasei" appears un-documented)
 
+OTOH, Asahi Kasei is usually referred to as "AKM",
+but this patch doesn't care about it.
+Because no DT is using it today.
+
+Cc: Stephen Warren <swarren@wwwdotorg.org>
+Cc: Mark Brown <broonie@kernel.org>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>,
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ .../devicetree/bindings/vendor-prefixes.txt        |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
+index abc3080..7e4bb83 100644
+--- a/Documentation/devicetree/bindings/vendor-prefixes.txt
++++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
+@@ -17,6 +17,7 @@ amstaos	AMS-Taos Inc.
+ apm	Applied Micro Circuits Corporation (APM)
+ arm	ARM Ltd.
+ armadeus	ARMadeus Systems SARL
++asahi-kasei	Asahi Kasei Corp.
+ atmel	Atmel Corporation
+ auo	AU Optronics Corporation
+ avago	Avago Technologies
 -- 
-Best regards,
-KHIEM Nguyen
+1.7.9.5
+
