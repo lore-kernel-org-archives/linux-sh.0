@@ -1,129 +1,125 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 17 Sep 2014 14:52:55 +0000
-Subject: [PATCH v2 3/3] ARM: mach-shmobile: Remove the koelsch-reference board code
-Message-Id: <1410965575-21188-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 04 Sep 2014 01:12:36 +0000
+Subject: [PATCH 5/9] ARM: shmobile: Cleanup pm-rmobile.o build using Kconfig
+Message-Id: <abebbc4a026d8cdceb9f65c497b3db445c8ff5e7.1409792454.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1409792454.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1409792454.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The Koelsch board is supported by the r8a7791 generic DT platform
-definition. Remove the board-specific definition along with its board
-file.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add a CONFIG_PM_RMOBILE entry and enable it for R-Mobile
+SoCs in case CONFIG_PM is set. Consolidate Makefile power
+management objects and get rid of #ifdefs in the C code.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/shmobile_defconfig              |  1 -
- arch/arm/mach-shmobile/Kconfig                   |  5 ---
- arch/arm/mach-shmobile/Makefile                  |  1 -
- arch/arm/mach-shmobile/Makefile.boot             |  1 -
- arch/arm/mach-shmobile/board-koelsch-reference.c | 44 ------------------------
- 5 files changed, 52 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/board-koelsch-reference.c
+ arch/arm/mach-shmobile/Kconfig      |  4 ++++
+ arch/arm/mach-shmobile/Makefile     | 14 ++++++--------
+ arch/arm/mach-shmobile/pm-rmobile.c |  2 --
+ arch/arm/mach-shmobile/pm-rmobile.h |  4 ++--
+ 4 files changed, 12 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index d7346ad..c8201a9 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -17,7 +17,6 @@ CONFIG_ARCH_R8A7779=y
- CONFIG_ARCH_R8A7790=y
- CONFIG_ARCH_R8A7791=y
- CONFIG_ARCH_R8A7794=y
--CONFIG_MACH_KOELSCH=y
- CONFIG_MACH_LAGER=y
- CONFIG_MACH_MARZEN=y
- # CONFIG_SWP_EMULATE is not set
 diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index e50402b..fcc181f 100644
+index cd13021..9295776 100644
 --- a/arch/arm/mach-shmobile/Kconfig
 +++ b/arch/arm/mach-shmobile/Kconfig
-@@ -73,11 +73,6 @@ config ARCH_R8A7794
+@@ -4,6 +4,9 @@ config ARCH_SHMOBILE
+ config PM_RCAR
+ 	bool
  
- comment "Renesas ARM SoCs Board Type"
++config PM_RMOBILE
++	bool
++
+ config ARCH_RCAR_GEN1
+ 	bool
+ 	select PM_RCAR if PM || SMP
+@@ -18,6 +21,7 @@ config ARCH_RCAR_GEN2
  
--config MACH_KOELSCH
--	bool "Koelsch board"
--	depends on ARCH_R8A7791
--	select MICREL_PHY if SH_ETH
--
- config MACH_LAGER
- 	bool "Lager board"
- 	depends on ARCH_R8A7790
+ config ARCH_RMOBILE
+ 	bool
++	select PM_RMOBILE if PM
+ 	select SYS_SUPPORTS_SH_CMT
+ 	select SYS_SUPPORTS_SH_TMU
+ 
 diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index b699b26..d9568e9 100644
+index c9ad169..7b259ce 100644
 --- a/arch/arm/mach-shmobile/Makefile
 +++ b/arch/arm/mach-shmobile/Makefile
-@@ -56,7 +56,6 @@ obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o sleep-sh7372.o
+@@ -8,10 +8,10 @@ ccflags-$(CONFIG_ARCH_MULTIPLATFORM) := -I$(srctree)/arch/arm/mach-shmobile/incl
+ obj-y				:= timer.o console.o
+ 
+ # CPU objects
+-obj-$(CONFIG_ARCH_SH7372)	+= setup-sh7372.o intc-sh7372.o
+-obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o intc-sh73a0.o
++obj-$(CONFIG_ARCH_SH7372)	+= setup-sh7372.o intc-sh7372.o pm-sh7372.o
++obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o intc-sh73a0.o pm-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A73A4)	+= setup-r8a73a4.o
+-obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o
++obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o pm-r8a7740.o
+ obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o pm-r8a7779.o
+ obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o pm-r8a7790.o
+@@ -52,12 +52,10 @@ obj-$(CONFIG_SUSPEND)		+= suspend.o
+ obj-$(CONFIG_CPU_IDLE)		+= cpuidle.o
+ obj-$(CONFIG_CPU_FREQ)		+= cpufreq.o
+ obj-$(CONFIG_PM_RCAR)		+= pm-rcar.o
+-obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o pm-rmobile.o
+-obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
+-obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
++obj-$(CONFIG_PM_RMOBILE)	+= pm-rmobile.o
+ 
+-# IRQ objects
+-obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
++# special sh7372 handling for IRQ objects and low level sleep code
++obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o sleep-sh7372.o
  
  # Board objects
  ifdef CONFIG_ARCH_SHMOBILE_MULTI
--obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch-reference.o
- obj-$(CONFIG_MACH_LAGER)	+= board-lager-reference.o
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen-reference.o
- else
-diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
-index de9a238..57d00ed 100644
---- a/arch/arm/mach-shmobile/Makefile.boot
-+++ b/arch/arm/mach-shmobile/Makefile.boot
-@@ -5,7 +5,6 @@ loadaddr-$(CONFIG_MACH_APE6EVM_REFERENCE) += 0x40008000
- loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
- loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
- loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
--loadaddr-$(CONFIG_MACH_KOELSCH) += 0x40008000
- loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
- loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
- loadaddr-$(CONFIG_MACH_LAGER) += 0x40008000
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-deleted file mode 100644
-index c370818..0000000
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ /dev/null
-@@ -1,44 +0,0 @@
--/*
-- * Koelsch board support - Reference DT implementation
-- *
-- * Copyright (C) 2013  Renesas Electronics Corporation
-- * Copyright (C) 2013  Renesas Solutions Corp.
-- * Copyright (C) 2013  Magnus Damm
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; version 2 of the License.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, write to the Free Software
-- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-- */
--
--#include <linux/kernel.h>
--#include <linux/of_platform.h>
--
--#include <asm/mach/arch.h>
--
--#include "common.h"
--#include "r8a7791.h"
--#include "rcar-gen2.h"
--
--static const char * const koelsch_boards_compat_dt[] __initconst = {
--	"renesas,koelsch",
--	"renesas,koelsch-reference",
--	NULL,
--};
--
--DT_MACHINE_START(KOELSCH_DT, "koelsch")
--	.smp		= smp_ops(r8a7791_smp_ops),
--	.init_early	= shmobile_init_delay,
--	.init_time	= rcar_gen2_timer_init,
--	.init_late	= shmobile_init_late,
--	.reserve	= rcar_gen2_reserve,
--	.dt_compat	= koelsch_boards_compat_dt,
--MACHINE_END
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index ebdd16e..a88079a 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -27,7 +27,6 @@
+ #define PSTR_RETRIES	100
+ #define PSTR_DELAY_US	10
+ 
+-#ifdef CONFIG_PM
+ static int rmobile_pd_power_down(struct generic_pm_domain *genpd)
+ {
+ 	struct rmobile_pm_domain *rmobile_pd = to_rmobile_pd(genpd);
+@@ -151,4 +150,3 @@ void rmobile_add_devices_to_domains(struct pm_domain_device data[],
+ 		rmobile_add_device_to_domain_td(data[j].domain_name,
+ 						data[j].pdev, &latencies);
+ }
+-#endif /* CONFIG_PM */
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.h b/arch/arm/mach-shmobile/pm-rmobile.h
+index 690553a..8f66b34 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.h
++++ b/arch/arm/mach-shmobile/pm-rmobile.h
+@@ -36,7 +36,7 @@ struct pm_domain_device {
+ 	struct platform_device *pdev;
+ };
+ 
+-#ifdef CONFIG_PM
++#ifdef CONFIG_PM_RMOBILE
+ extern void rmobile_init_domains(struct rmobile_pm_domain domains[], int num);
+ extern void rmobile_add_device_to_domain_td(const char *domain_name,
+ 					    struct platform_device *pdev,
+@@ -58,6 +58,6 @@ extern void rmobile_add_devices_to_domains(struct pm_domain_device data[],
+ 
+ static inline void rmobile_add_devices_to_domains(struct pm_domain_device d[],
+ 						  int size) {}
+-#endif /* CONFIG_PM */
++#endif /* CONFIG_PM_RMOBILE */
+ 
+ #endif /* PM_RMOBILE_H */
 -- 
-1.8.5.5
+2.0.1
 
