@@ -1,64 +1,55 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 02 Sep 2014 18:10:01 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 04 Sep 2014 18:05:59 +0000
 Subject: Re: [PATCH v2] Revert "i2c: rcar: remove spinlock"
-Message-Id: <540607F9.4060802@cogentembedded.com>
+Message-Id: <20140904180559.GA3754@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="ZPt4rx8FFjLCG7dd"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1642788.pEhrsPDp4u@wasted.cogentembedded.com> <20140824064520.GA2578@katana> <53F9CCE7.3010006@cogentembedded.com> <20140825034009.GA2795@katana> <53FB1F90.6080704@cogentembedded.com> <20140825143316.GA1285@katana> <5405FAD3.90403@cogentembedded.com> <20140902171835.GA10355@katana> <5405FE27.4050909@cogentembedded.com> <20140902174548.GB10355@katana>
-In-Reply-To: <20140902174548.GB10355@katana>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
+References: <1642788.pEhrsPDp4u@wasted.cogentembedded.com>
+In-Reply-To: <1642788.pEhrsPDp4u@wasted.cogentembedded.com>
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org
 
-On 09/02/2014 09:45 PM, Wolfram Sang wrote:
 
->>> I don't see why. If we have two patches, the state inbetween them is
->>> broken.
+--ZPt4rx8FFjLCG7dd
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
->>     Even so, it has always been broken, we don't make it more broken by
->> reverting your change.
+On Sun, Aug 24, 2014 at 12:44:09AM +0400, Sergei Shtylyov wrote:
+> This reverts commit 150b8be3cda54412ad7b54f5392b513b25c0aaa7.
+>=20
+> The I2C core's per-adapter locks can't protect from IRQs, so the driver s=
+till
+> needs a spinlock to protect the register accesses.
+>=20
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> Cc: stable@vger.kernel.org # 3.16+
+>=20
 
-> Yes. Still, if I send something to *stable*, less broken is not an
-> option for me, if I know there is a fix possible. And we are at -rc3
-> now, so there is still time for that.
+Applied to for-current, thanks!
 
-    Not as much time for me since I'm leaving for vacations at the start of 
-the next week. And I have other areas to care about before that.
 
->>> And we don't have two patches yet, just the revert. So, the
+--ZPt4rx8FFjLCG7dd
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
->>     I'm going to consider the spinlock issue ASAP, after I check whether the
->> I2C clock frequency really has any influence on the unexpected read NACK
->> issue I've been chasing for several days.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
-> Good luck with that! Such bugs are truly annoying :(
+iQIcBAEBAgAGBQJUCKoHAAoJEBQN5MwUoCm2tFEP/2IpyChREeKuSX7HgVVv+TQ9
+O13iv8B501HD3A0/xZ9llfRRNicGKbO5s07mNAyXR5weZQmwodKA5xEatlQBzO1K
+y3riabvJrEpT/9QcOvfrIg4xbcWX8EwIHJh9XC/dmI8W5r8NjvxqVEIgoQCxRzOe
+HThH11gao+xVSDKog9cKY0k9/JXTEl2VXI1+Z2nbfi8t6llzxB6EWYmsYWvPuKex
+qwNa4a+pv8dTctXpDVk6LkO56l458V+H3CIhgQBKU0MKTptRycjA1GkDQOVUzhYB
+jjeFArGwN3Jn6wdG55GAAgTAdtVo4qljY4hFiq/1HzfG9/bh2ZlnQaGDsM+ap59W
+sN1cRco5gJRx/grVsl4BBf5oexz1KiZ753hlPYLZXpl9aXPBLr9ylxzQfTCCqCnD
+TZwkj40E76R5vtEOHozFNLNBtq6sDzOKLauMymLAwGtj9XukfqrhUi5OhNaB07l5
+w4pLjctEb4Xebe8Kz+QKBJxt8mEhZZW2FooHd4SWJafQKSRMz2Lg5ff9WelGh5Yx
+n+tcsgyymJKUonPoYKRUu6PfLx/RE4EQ5XTQ1/CUvjseERrHOQlOlpPmnKhphM7v
+pHO3CGSQfBZJwksrPPdpET/X53Z32+r2X+ChEzj3aTOXrpk+LkkAwc8b0rQeLpar
+P52SITCe6gsJPwR/kUKs
+=zmkX
+-----END PGP SIGNATURE-----
 
-   Sigh, that whole issue looks like hardware bug to me (the vendor kernel 
-reportedly doesn't have it though)... overall, this hardware seems excessively 
-buggy, despite I2C protocol is not really rocket science.
-
->>     Your patch removing the spinlock went into 3.16 only but we'd have to
->> backport the assumed single patch to the -stable kernels older than that.
->> This means that I'd have to provide the "delta" patch (i.e. the separate
->> patch that I'd like to provide now atop of the revert) for these kernels
->> instead since the original single patch wouldn't apply anyway.
-
-> With all my changes in 3.16, I wonder if the patch with your addition to
-> the revert will apply anyhow.
-
-    Resolution of the context issues is different from the patch principally 
-not applying as the changes it has are already there.
-
-> But, okay, you send two patches, and I
-> will decide how I apply them and deal with delta-patches. Okay?
-
-    So you mean that I need to repost the revert? I'm OK with that since the 
-context has most probably changed with my recent patch...
-
-> All the best,
-
->     Wolfram
-
-WBR, Sergei
-
+--ZPt4rx8FFjLCG7dd--
