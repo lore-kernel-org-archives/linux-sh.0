@@ -1,62 +1,49 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Wed, 03 Sep 2014 10:52:25 +0000
-Subject: [PATCH 09/15] PM / Domains: Remove genpd_queue_power_off_work() API
-Message-Id: <1409741551-16437-10-git-send-email-ulf.hansson@linaro.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 04 Sep 2014 01:12:28 +0000
+Subject: [PATCH 5/5] ARM: shmobile: kzm9g-reference dts: Use tabs for indentation
+Message-Id: <40c488df84f9fbf4b84b4baed6e2cec4a2d946ed.1409792871.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
-In-Reply-To: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
+References: <cover.1409792871.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1409792871.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-There are no active users of this API. Let's remove it and if future
-needs shows up we could consider to have a get/put API instead.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+Checkpatch says:
+
+ERROR: code indent should use tabs where possible
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/base/power/domain.c | 5 ++++-
- include/linux/pm_domain.h   | 2 --
- 2 files changed, 4 insertions(+), 3 deletions(-)
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
-index 601e35b..d71d045 100644
---- a/drivers/base/power/domain.c
-+++ b/drivers/base/power/domain.c
-@@ -422,7 +422,7 @@ static bool genpd_abort_poweroff(struct generic_pm_domain *genpd)
-  * Queue up the execution of pm_genpd_poweroff() unless it's already been done
-  * before.
-  */
--void genpd_queue_power_off_work(struct generic_pm_domain *genpd)
-+static void genpd_queue_power_off_work(struct generic_pm_domain *genpd)
- {
- 	queue_work(pm_wq, &genpd->power_off_work);
- }
-@@ -729,6 +729,9 @@ static inline int genpd_dev_pm_qos_notifier(struct notifier_block *nb,
- 	return NOTIFY_DONE;
- }
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 18662ae..477f815 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -66,7 +66,7 @@
+ 	};
  
-+static inline void
-+genpd_queue_power_off_work(struct generic_pm_domain *genpd) {}
-+
- static inline void genpd_power_off_work_fn(struct work_struct *work) {}
+ 	vmmc_sdhi0: regulator@2 {
+-	        compatible = "regulator-fixed";
++		compatible = "regulator-fixed";
+ 		regulator-name = "SDHI0 Vcc";
+ 		regulator-min-microvolt = <3300000>;
+ 		regulator-max-microvolt = <3300000>;
+@@ -75,7 +75,7 @@
+ 	};
  
- #define pm_genpd_runtime_suspend	NULL
-diff --git a/include/linux/pm_domain.h b/include/linux/pm_domain.h
-index eeba1a4..abeb5dc 100644
---- a/include/linux/pm_domain.h
-+++ b/include/linux/pm_domain.h
-@@ -258,10 +258,8 @@ static inline int pm_genpd_name_add_device(const char *domain_name,
- }
- 
- #ifdef CONFIG_PM_GENERIC_DOMAINS_RUNTIME
--extern void genpd_queue_power_off_work(struct generic_pm_domain *genpd);
- extern void pm_genpd_poweroff_unused(void);
- #else
--static inline void genpd_queue_power_off_work(struct generic_pm_domain *gpd) {}
- static inline void pm_genpd_poweroff_unused(void) {}
- #endif
- 
+ 	vmmc_sdhi2: regulator@3 {
+-	        compatible = "regulator-fixed";
++		compatible = "regulator-fixed";
+ 		regulator-name = "SDHI2 Vcc";
+ 		regulator-min-microvolt = <3300000>;
+ 		regulator-max-microvolt = <3300000>;
 -- 
-1.9.1
+2.0.1
 
