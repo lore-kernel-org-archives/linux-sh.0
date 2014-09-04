@@ -1,57 +1,104 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Sep 2014 20:04:21 +0000
-Subject: [PATCH 01/12] of: Decrement refcount of previous endpoint in of_graph_get_next_endpoint
-Message-Id: <1411589072-28609-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 04 Sep 2014 01:12:35 +0000
+Subject: [PATCH 4/9] ARM: shmobile: Cleanup pm-rcar.o build using Kconfig
+Message-Id: <1a950ca536dd5c40167ef58951e738ae430fa96d.1409792454.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1409792454.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1409792454.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org, Philipp Zabel <p.zabel@pengutronix.de>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Philipp Zabel <p.zabel@pengutronix.de>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Decrementing the reference count of the previous endpoint node allows to
-use the of_graph_get_next_endpoint function in a for_each_... style macro.
-Prior to this patch, all current users of this function that actually pass
-a non-NULL prev parameter should be changed to not decrement the passed
-prev argument's refcount themselves.
+Add a CONFIG_PM_RCAR entry and enable it for R-Car
+Generation 1 or 2 in case CONFIG_PM or CONFIG_SMP
+is set. Consolidate power management objects and
+get rid of #ifdefs in the C code.
 
-Signed-off-by: Philipp Zabel <p.zabel@pengutronix.de>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/of/base.c | 9 +--------
- 1 file changed, 1 insertion(+), 8 deletions(-)
+ arch/arm/mach-shmobile/Kconfig   |  5 +++++
+ arch/arm/mach-shmobile/Makefile  | 10 ++++------
+ arch/arm/mach-shmobile/pm-rcar.c |  4 ----
+ 3 files changed, 9 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/of/base.c b/drivers/of/base.c
-index d8574ad..a49b5628 100644
---- a/drivers/of/base.c
-+++ b/drivers/of/base.c
-@@ -2058,8 +2058,7 @@ EXPORT_SYMBOL(of_graph_parse_endpoint);
-  * @prev: previous endpoint node, or NULL to get first
-  *
-  * Return: An 'endpoint' node pointer with refcount incremented. Refcount
-- * of the passed @prev node is not decremented, the caller have to use
-- * of_node_put() on it when done.
-+ * of the passed @prev node is decremented.
-  */
- struct device_node *of_graph_get_next_endpoint(const struct device_node *parent,
- 					struct device_node *prev)
-@@ -2095,12 +2094,6 @@ struct device_node *of_graph_get_next_endpoint(const struct device_node *parent,
- 		if (WARN_ONCE(!port, "%s(): endpoint %s has no parent node\n",
- 			      __func__, prev->full_name))
- 			return NULL;
--
--		/*
--		 * Avoid dropping prev node refcount to 0 when getting the next
--		 * child below.
--		 */
--		of_node_get(prev);
- 	}
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 73d6d3d..cd13021 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -1,13 +1,18 @@
+ config ARCH_SHMOBILE
+ 	bool
  
- 	while (1) {
++config PM_RCAR
++	bool
++
+ config ARCH_RCAR_GEN1
+ 	bool
++	select PM_RCAR if PM || SMP
+ 	select RENESAS_INTC_IRQPIN
+ 	select SYS_SUPPORTS_SH_TMU
+ 
+ config ARCH_RCAR_GEN2
+ 	bool
++	select PM_RCAR if PM || SMP
+ 	select RENESAS_IRQC
+ 	select SYS_SUPPORTS_SH_CMT
+ 
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index ddc91fd..c9ad169 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -13,9 +13,9 @@ obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o intc-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A73A4)	+= setup-r8a73a4.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o
+ obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
+-obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o
+-obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o
+-obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o
++obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o pm-r8a7779.o
++obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o pm-r8a7790.o
++obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o pm-r8a7791.o
+ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o
+ obj-$(CONFIG_ARCH_R7S72100)	+= setup-r7s72100.o
+ 
+@@ -51,12 +51,10 @@ smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o platsmp-scu.o
+ obj-$(CONFIG_SUSPEND)		+= suspend.o
+ obj-$(CONFIG_CPU_IDLE)		+= cpuidle.o
+ obj-$(CONFIG_CPU_FREQ)		+= cpufreq.o
++obj-$(CONFIG_PM_RCAR)		+= pm-rcar.o
+ obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o pm-rmobile.o
+ obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
+-obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o pm-rcar.o
+-obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o
+-obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o
+ 
+ # IRQ objects
+ obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
+diff --git a/arch/arm/mach-shmobile/pm-rcar.c b/arch/arm/mach-shmobile/pm-rcar.c
+index 34b8a56..00022ee 100644
+--- a/arch/arm/mach-shmobile/pm-rcar.c
++++ b/arch/arm/mach-shmobile/pm-rcar.c
+@@ -31,8 +31,6 @@
+ #define SYSCISR_RETRIES 1000
+ #define SYSCISR_DELAY_US 1
+ 
+-#if defined(CONFIG_PM) || defined(CONFIG_SMP)
+-
+ static void __iomem *rcar_sysc_base;
+ static DEFINE_SPINLOCK(rcar_sysc_lock); /* SMP CPUs + I/O devices */
+ 
+@@ -137,5 +135,3 @@ void __iomem *rcar_sysc_init(phys_addr_t base)
+ 
+ 	return rcar_sysc_base;
+ }
+-
+-#endif /* CONFIG_PM || CONFIG_SMP */
 -- 
-1.8.5.5
+2.0.1
 
