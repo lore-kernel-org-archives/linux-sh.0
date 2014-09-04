@@ -1,43 +1,34 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Fri, 05 Sep 2014 08:16:27 +0000
-Subject: Re: [PATCH 14/15] PM / Domains: Remove default_stop_ok() API
-Message-Id: <CAPDyKFqbnmGXptn0y5=230HodvEGf94Ab71FjmPj6j9ZJGrgcQ@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 04 Sep 2014 02:29:05 +0000
+Subject: [PATCH 03/03] ARM: shmobile: kzm9g: Build DTS for Multiplatform
+Message-Id: <20140904022905.26216.71286.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
- <1409741551-16437-15-git-send-email-ulf.hansson@linaro.org>
- <CAMuHMdUEfAdpUgEtOQfdG1gbZjVo3bfAAmhm0-miFGbQ8ckHgA@mail.gmail.com>
- <6302495.FUvz9FPcau@vostro.rjw.lan>
-In-Reply-To: <6302495.FUvz9FPcau@vostro.rjw.lan>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On 4 September 2014 21:49, Rafael J. Wysocki <rjw@rjwysocki.net> wrote:
-> On Wednesday, September 03, 2014 03:15:59 PM Geert Uytterhoeven wrote:
->> Hi Ulf,
->>
->> On Wed, Sep 3, 2014 at 12:52 PM, Ulf Hansson <ulf.hansson@linaro.org> wrote:
->> > --- a/drivers/base/power/domain_governor.c
->> > +++ b/drivers/base/power/domain_governor.c
->>
->> > @@ -229,10 +229,7 @@ static bool always_on_power_down_ok(struct dev_pm_domain *domain)
->> >
->> >  #else /* !CONFIG_PM_RUNTIME */
->> >
->> > -bool default_stop_ok(struct device *dev)
->> > -{
->> > -       return false;
->> > -}
->> > +static inline bool default_stop_ok(struct device *dev) { return false; }
->>
->> The "inline" doesn't make much sense here.
->
-> But then it doesn't hurt either I suppose?
->
-> Anyway, Ulf, are you going to update this patch?
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Unless there are other comments, I would prefer to not update. :-)
+Build the sh73a0 KZM9G board DTB in case of Multiplatform.
+The DT reference case will be removed in the future and
+can be ignored for now.
 
-Kind regards
-Uffe
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ arch/arm/boot/dts/Makefile |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- 0001/arch/arm/boot/dts/Makefile
++++ work/arch/arm/boot/dts/Makefile	2014-09-04 11:05:49.000000000 +0900
+@@ -375,7 +375,8 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += eme
+ 	r8a7791-henninger.dtb \
+ 	r8a7791-koelsch.dtb \
+ 	r8a7790-lager.dtb \
+-	r8a7779-marzen.dtb
++	r8a7779-marzen.dtb \
++	sh73a0-kzm9g.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
+ 	socfpga_cyclone5_socdk.dtb \
+ 	socfpga_cyclone5_sockit.dtb \
