@@ -1,125 +1,115 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 04 Sep 2014 06:58:40 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 04 Sep 2014 07:23:25 +0000
 Subject: Re: [PATCH v2 1/3] clocksource: sh_cmt: Document SoC specific bindings
-Message-Id: <6240436.VfJ5CJaKOx@avalon>
+Message-Id: <20140904072324.GF9999@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1409792121-28912-1-git-send-email-horms+renesas@verge.net.au>
  <1409792121-28912-2-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1409792121-28912-2-git-send-email-horms+renesas@verge.net.au>
+ <5552768.CVrm7BiFam@avalon>
+In-Reply-To: <5552768.CVrm7BiFam@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
-
-A couple of other small issues I've missed.
-
-On Thursday 04 September 2014 09:55:19 Simon Horman wrote:
-> In general Renesas hardware is not documented to the extent
-> where the relationship between IP blocks on different SoCs can be assumed
-> although they may appear to operate the same way. Furthermore the
-> documentation typically does not specify a version for individual
-> IP blocks. For these reasons a convention of using the SoC name in place
-> of a version and providing SoC-specific compat strings has been adopted.
+On Thu, Sep 04, 2014 at 09:51:27AM +0300, Laurent Pinchart wrote:
+> Hi Simon,
 > 
-> Although not universally liked this convention is used in the bindings for
-> a number of drivers for Renesas hardware. The purpose of this patch is to
-> update the Renesas R-Car Compare Match Timer (CMT) driver to follow this
-> convention.
+> Thank you for the patch.
 > 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Acked-by: Mark Rutland <mark.rutland@arm.com>
+> On Thursday 04 September 2014 09:55:19 Simon Horman wrote:
+> > In general Renesas hardware is not documented to the extent
+> > where the relationship between IP blocks on different SoCs can be assumed
+> > although they may appear to operate the same way. Furthermore the
+> > documentation typically does not specify a version for individual
+> > IP blocks. For these reasons a convention of using the SoC name in place
+> > of a version and providing SoC-specific compat strings has been adopted.
+> > 
+> > Although not universally liked this convention is used in the bindings for
+> > a number of drivers for Renesas hardware. The purpose of this patch is to
+> > update the Renesas R-Car Compare Match Timer (CMT) driver to follow this
+> > convention.
+> > 
+> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> > Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> > Acked-by: Mark Rutland <mark.rutland@arm.com>
+> > 
+> > ---
+> > * I plan to follow up with patches to use these new bindings in the
+> >   dtsi files for the affected SoCs.
+> > 
+> > v2
+> > * Reorder compat entries so more-specific entries and their fallbacks
+> >   are grouped with the fallback entry coming last.
+> > * Explicitly document fallback
+> > ---
+> >  .../devicetree/bindings/timer/renesas,cmt.txt      | 44 ++++++++++++++++---
+> >  1 file changed, 38 insertions(+), 6 deletions(-)
+> > 
+> > diff --git a/Documentation/devicetree/bindings/timer/renesas,cmt.txt
+> > b/Documentation/devicetree/bindings/timer/renesas,cmt.txt index
+> > a17418b..7b44f4b 100644
+> > --- a/Documentation/devicetree/bindings/timer/renesas,cmt.txt
+> > +++ b/Documentation/devicetree/bindings/timer/renesas,cmt.txt
+> > @@ -11,15 +11,47 @@ datasheets.
+> > 
+> >  Required Properties:
+> > 
+> > -  - compatible: must contain one of the following.
+> > -    - "renesas,cmt-32" for the 32-bit CMT
+> > +  - compatible: must contain one or more of the following:
+> > +    - "renesas,cmt-32-r8a7740" for the R8a7740 32-bit CMT
+> > +		(CMT0)
+> > +    - "renesas,cmt-32-sh7372" for the SH7372 32-bit CMT
+> > +		(CMT0)
+> > +    - "renesas,cmt-32-sh73a0" for the SH73a0 32-bit CMT
+> > +		(CMT0)
+> > +    - "renesas,cmt-32" for all 32-bit CMT without fast clock support
+> >  		(CMT0 on sh7372, sh73a0 and r8a7740)
+> > -    - "renesas,cmt-32-fast" for the 32-bit CMT with fast clock support
+> > +		This is a fallback for the above renesas,cmt-32-* entries.
+> > +
+> > +    - "renesas,cmt-32-fast-r8a7740" for the R8A7740 32-bit CMT with fast
+> > +		clock support (CMT[234])
+> > +    - "renesas,cmt-32-fast-sh7372" for the SH7372 32-bit CMT with fast
+> > +		clock support (CMT[234])
+> > +    - "renesas,cmt-32-fast-sh73a0" for the SH73A0 32-bit CMT with fast
+> > +		clock support (CMT[234])
+> > +    - "renesas,cmt-32-fast" for all 32-bit CMT with fast clock support
+> >  		(CMT[234] on sh7372, sh73a0 and r8a7740)
+> > -    - "renesas,cmt-48" for the 48-bit CMT
+> > +		This is a fallback for the above renesas,cmt-32-fast-* entries.
+> > +
+> > +    - "renesas,cmt-48-sh7372" for the SH7372 48-bit CMT
+> > +		(CMT1)
+> > +    - "renesas,cmt-48-sh73a0" for the SH73A0 48-bit CMT
+> > +		(CMT1)
+> > +    - "renesas,cmt-48-r8a7740" for the R8A7740 48-bit CMT
+> > +		(CMT1)
+> > +    - "renesas,cmt-48" for all non-second generation 48-bit CMT
+> >  		(CMT1 on sh7372, sh73a0 and r8a7740)
+> > -    - "renesas,cmt-48-gen2" for the second generation 48-bit CMT
+> > +		This is a fallback for the above renesas,cmt-48-* entries.
+> > +
+> > +    - "renesas,cmt-48-r8a73a4" for the R8A73A4 48-bit CMT
+> > +		(CMT[01])
+> > +    - "renesas,cmt-48-r8a7790" for the R8A7790 48-bit CMT
+> > +		(CMT[01])
+> > +    - "renesas,cmt-48-r8a7791" for the R8A7791 48-bit CMT
+> > +		(CMT[01])
+> > +    - "renesas,cmt-48-gen2" for all second generation 48-bit CMT
+> >  		(CMT[01] on r8a73a4, r8a7790 and r8a7791)
+> > +		This is a fallback for the renesas,cmt-48-r8a73a4,
+> > +		renesas,cmt-48-r8a7790 and renesas,cmt-48-gen2 entries.
 > 
-> ---
-> * I plan to follow up with patches to use these new bindings in the
->   dtsi files for the affected SoCs.
+> If renesas,cmt-48-gen2 is a fallback for renesas,cmt-48-gen2, we'll have an 
+> infinite loop :-) I suppose you meant
 > 
-> v2
-> * Reorder compat entries so more-specific entries and their fallbacks
->   are grouped with the fallback entry coming last.
-> * Explicitly document fallback
-> ---
->  .../devicetree/bindings/timer/renesas,cmt.txt      | 44 ++++++++++++++++---
->  1 file changed, 38 insertions(+), 6 deletions(-)
-> 
-> diff --git a/Documentation/devicetree/bindings/timer/renesas,cmt.txt
-> b/Documentation/devicetree/bindings/timer/renesas,cmt.txt index
-> a17418b..7b44f4b 100644
-> --- a/Documentation/devicetree/bindings/timer/renesas,cmt.txt
-> +++ b/Documentation/devicetree/bindings/timer/renesas,cmt.txt
-> @@ -11,15 +11,47 @@ datasheets.
-> 
->  Required Properties:
-> 
-> -  - compatible: must contain one of the following.
-> -    - "renesas,cmt-32" for the 32-bit CMT
-> +  - compatible: must contain one or more of the following:
-> +    - "renesas,cmt-32-r8a7740" for the R8a7740 32-bit CMT
+> 		This is a fallback for the renesas,cmt-48-r8a73a4,
+> 		renesas,cmt-48-r8a7790 and renesas,cmt-48-r8a7791 entries.
 
-s/R8a7740/R8A7740/
+Yes, indeed. Thanks :)
 
-> +		(CMT0)
-> +    - "renesas,cmt-32-sh7372" for the SH7372 32-bit CMT
-> +		(CMT0)
-> +    - "renesas,cmt-32-sh73a0" for the SH73a0 32-bit CMT
-
-s/SH73a0/SH73A0/
-
-> +		(CMT0)
-> +    - "renesas,cmt-32" for all 32-bit CMT without fast clock support
->  		(CMT0 on sh7372, sh73a0 and r8a7740)
-> -    - "renesas,cmt-32-fast" for the 32-bit CMT with fast clock support
-> +		This is a fallback for the above renesas,cmt-32-* entries.
-> +
-> +    - "renesas,cmt-32-fast-r8a7740" for the R8A7740 32-bit CMT with fast
-> +		clock support (CMT[234])
-> +    - "renesas,cmt-32-fast-sh7372" for the SH7372 32-bit CMT with fast
-> +		clock support (CMT[234])
-> +    - "renesas,cmt-32-fast-sh73a0" for the SH73A0 32-bit CMT with fast
-> +		clock support (CMT[234])
-> +    - "renesas,cmt-32-fast" for all 32-bit CMT with fast clock support
->  		(CMT[234] on sh7372, sh73a0 and r8a7740)
-> -    - "renesas,cmt-48" for the 48-bit CMT
-> +		This is a fallback for the above renesas,cmt-32-fast-* entries.
-> +
-> +    - "renesas,cmt-48-sh7372" for the SH7372 48-bit CMT
-> +		(CMT1)
-> +    - "renesas,cmt-48-sh73a0" for the SH73A0 48-bit CMT
-> +		(CMT1)
-> +    - "renesas,cmt-48-r8a7740" for the R8A7740 48-bit CMT
-> +		(CMT1)
-> +    - "renesas,cmt-48" for all non-second generation 48-bit CMT
->  		(CMT1 on sh7372, sh73a0 and r8a7740)
-> -    - "renesas,cmt-48-gen2" for the second generation 48-bit CMT
-> +		This is a fallback for the above renesas,cmt-48-* entries.
-> +
-> +    - "renesas,cmt-48-r8a73a4" for the R8A73A4 48-bit CMT
-> +		(CMT[01])
-> +    - "renesas,cmt-48-r8a7790" for the R8A7790 48-bit CMT
-> +		(CMT[01])
-> +    - "renesas,cmt-48-r8a7791" for the R8A7791 48-bit CMT
-> +		(CMT[01])
-> +    - "renesas,cmt-48-gen2" for all second generation 48-bit CMT
->  		(CMT[01] on r8a73a4, r8a7790 and r8a7791)
-> +		This is a fallback for the renesas,cmt-48-r8a73a4,
-> +		renesas,cmt-48-r8a7790 and renesas,cmt-48-gen2 entries.
+> With that change,
 > 
->    - reg: base address and length of the registers block for the timer
-> module. - interrupts: interrupt-specifier for the timer, one per channel.
-> @@ -36,7 +68,7 @@ Example: R8A7790 (R-Car H2) CMT0 node
->  	them channels 0 and 1 in the documentation.
-> 
->  	cmt0: timer@ffca0000 {
-> -		compatible = "renesas,cmt-48-gen2";
-> +		compatible = "renesas,cmt-48-r8a7790", "renesas,cmt-48-gen2";
->  		reg = <0 0xffca0000 0 0x1004>;
->  		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
->  			     <0 142 IRQ_TYPE_LEVEL_HIGH>;
-
--- 
-Regards,
-
-Laurent Pinchart
-
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
