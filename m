@@ -1,60 +1,43 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Mon, 01 Sep 2014 09:20:58 +0000
-Subject: [PATCH 1/7] mmc: add blk_size_workaround for HW bug
-Message-Id: <87ppffzog7.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 04 Sep 2014 00:55:18 +0000
+Subject: [PATCH v2 0/3] clocksource: Document Renesas SoC specific bindings
+Message-Id: <1409792121-28912-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+In general Renesas hardware is not documented to the extent where the
+relationship between IP blocks on different SoCs can be assumed although
+they may appear to operate the same way. Furthermore the documentation
+typically does not specify a version for individual IP blocks. For these
+reasons a convention of using the SoC name in place of a version and
+providing SoC-specific compat strings has been adopted.
 
-Current mmc block.c has MMC_CAP2_NO_MULTI_READ flag
-for HW bug workaround, but it should be implemented
-under driver, not framework.
-This patch is prepare for it
+Although not universally liked this convention is used in the bindings for
+a number of drivers for Renesas hardware. The purpose of this patch is to
+update the Renesas clocksource drivers to follow this convention.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- drivers/mmc/card/block.c |    5 +++++
- include/linux/mmc/host.h |    4 ++++
- 2 files changed, 9 insertions(+)
+I plan to follow up with patches to use these new bindings in the
+dtsi files for the affected SoCs.
 
-diff --git a/drivers/mmc/card/block.c b/drivers/mmc/card/block.c
-index ede41f0..e946067 100644
---- a/drivers/mmc/card/block.c
-+++ b/drivers/mmc/card/block.c
-@@ -1402,6 +1402,11 @@ static void mmc_blk_rw_rq_prep(struct mmc_queue_req *mqrq,
- 		if (card->host->caps2 & MMC_CAP2_NO_MULTI_READ &&
- 		    rq_data_dir(req) = READ)
- 			brq->data.blocks = 1;
-+
-+		/* Some controllers needs workaround */
-+		if (card->host->ops->blk_size_workaround)
-+			brq->data.blocks = card->host->ops->blk_size_workaround(
-+				card, req, brq->data.blocks);
- 	}
- 
- 	if (brq->data.blocks > 1 || do_rel_wr) {
-diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
-index 4cbf614..95bd903 100644
---- a/include/linux/mmc/host.h
-+++ b/include/linux/mmc/host.h
-@@ -139,6 +139,10 @@ struct mmc_host_ops {
- 	int	(*select_drive_strength)(unsigned int max_dtr, int host_drv, int card_drv);
- 	void	(*hw_reset)(struct mmc_host *host);
- 	void	(*card_event)(struct mmc_host *host);
-+
-+	/* optional callback for mmc block HW bug workaround */
-+	int	(*blk_size_workaround)(struct mmc_card *card,
-+				       struct request *req, int blk_size);
- };
- 
- struct mmc_card;
+Changes between v1 and v2:
+
+* Addressed feedback from Sergei Shtylyov, Geert Uytterhoeven and
+  Mark Rutland: corrected editing errors and generally made
+  things clearer.
+
+Simon Horman (3):
+  clocksource: sh_cmt: Document SoC specific bindings
+  clocksource: sh_mtu2: Document r7s72100 binding
+  clocksource: sh_tmu: Document r8a7779 binding
+
+ .../devicetree/bindings/timer/renesas,cmt.txt      | 44 +++++++++++++++++++---
+ .../devicetree/bindings/timer/renesas,mtu2.txt     |  6 ++-
+ .../devicetree/bindings/timer/renesas,tmu.txt      |  6 ++-
+ 3 files changed, 46 insertions(+), 10 deletions(-)
+
 -- 
-1.7.9.5
+2.0.1
 
