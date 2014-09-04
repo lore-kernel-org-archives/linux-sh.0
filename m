@@ -1,91 +1,68 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 02 Sep 2014 01:08:54 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC r8a7740 CCF and Timers Updates for v3.18
-Message-Id: <20140902010854.GB12650@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 04 Sep 2014 01:12:50 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC r8a7740 Multiplatform Updates for v3.18
+Message-Id: <cover.1409792648.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1409030383.git.horms+renesas@verge.net.au>
- <20140826091739.GB1210@verge.net.au>
-In-Reply-To: <20140826091739.GB1210@verge.net.au>
+In-Reply-To: <cover.1409030383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Aug 26, 2014 at 06:17:39PM +0900, Simon Horman wrote:
-> On Tue, Aug 26, 2014 at 02:23:57PM +0900, Simon Horman wrote:
-> > Hi Olof, Hi Kevin, Hi Arnd,
-> > 
-> > Please consider these Renesas ARM based SoC r8a7740 CCF and timers updates
-> > for v3.18.
-> > 
-> > These changes are in their own branch as there are SoC and board changes
-> > that depend on DT changes, the reverse of the usual branch dependencies.
-> 
-> This pull request includes a minor conflict in
-> arch/arm/mach-shmobile/board-armadillo800eva-reference.c with
-> 0eb07c96ee61be10 ("ARM: shmobile: armadillo800eva-reference: Sort
-> includes") which is included in the pull request
-> "Renesas ARM Based SoC Boards Cleanups For v3.18"
-> which is tagged as renesas-boards-cleanups-for-v3.18.
+Hi Olof, Hi Kevin, Hi Arnd,
 
-I have withdrawn the boards cleanup pull request and the
-conflict above should no longer occur.
+Please consider these Renesas ARM based SoC r8a7740 multiplatform updates
+for v3.18.
 
-> 
-> The resolution is to take both.
-> The resulting #includes should be:
-> 
-> #include <linux/clk.h>
-> #include <linux/err.h>
-> #include <linux/gpio.h>
-> #include <linux/io.h>
-> #include <linux/kernel.h>
-> #include <linux/of_platform.h>
-> 
-> This resolution can be found in the next branch of the renesas tree.
-> 
-> > The following changes since commit 7d1311b93e58ed55f3a31cc8f94c4b8fe988a2b9:
-> > 
-> >   Linux 3.17-rc1 (2014-08-16 10:40:26 -0600)
-> > 
-> > are available in the git repository at:
-> > 
-> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-r8a7740-ccf-and-timers-for-v3.18
-> > 
-> > for you to fetch changes up to 433306747791845677ba662435a9bbbafaa21df3:
-> > 
-> >   ARM: shmobile: r8a7740: Remove r8a7740_add_standard_devices_dt (2014-08-23 19:58:57 +0900)
-> > 
-> > ----------------------------------------------------------------
-> > Renesas ARM Based SoC R8a7740 CCF and Timers Updates for v3.18
-> > 
-> > When booting using the r8a7740/armadillo800eva using dt-reference:
-> > * Use CCF to initialise clocks via DT
-> > * Initialise timers via DT
-> > 
-> > ----------------------------------------------------------------
-> > Simon Horman (4):
-> >       ARM: shmobile: r8a7740: Add CMT1 device to DT
-> >       ARM: shmobile: armadillo800eva-reference: Enable CMT1 in device tree
-> >       ARM: shmobile: armadillo800eva-reference: Do not use r8a7740_add_standard_devices_dt()
-> >       ARM: shmobile: r8a7740: Remove r8a7740_add_standard_devices_dt
-> > 
-> > Ulrich Hecht (4):
-> >       ARM: shmobile: r8a7740: clock register bits
-> >       ARM: shmobile: r8a7740: add SoC clocks to DTS
-> >       ARM: shmobile: r8a7740: add MSTP clock assignments to DT
-> >       ARM: shmobile: armadillo800eva-reference: add clock overrides to DTS
-> > 
-> >  .../boot/dts/r8a7740-armadillo800eva-reference.dts |  17 ++
-> >  arch/arm/boot/dts/r8a7740.dtsi                     | 220 ++++++++++++++++++++-
-> >  .../board-armadillo800eva-reference.c              |   3 +-
-> >  arch/arm/mach-shmobile/r8a7740.h                   |   1 -
-> >  arch/arm/mach-shmobile/setup-r8a7740.c             |  18 +-
-> >  include/dt-bindings/clock/r8a7740-clock.h          |  77 ++++++++
-> >  6 files changed, 317 insertions(+), 19 deletions(-)
-> >  create mode 100644 include/dt-bindings/clock/r8a7740-clock.h
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+This pull request is based on
+"Renesas ARM Based SoC R8a7740 CCF and Timers Updates for v3.18"
+tagged as renesas-r8a7740-ccf-and-timers-for-v3.18,
+which I have previously sent a pull request for.
+
+
+The following changes since commit 433306747791845677ba662435a9bbbafaa21df3:
+
+  ARM: shmobile: r8a7740: Remove r8a7740_add_standard_devices_dt (2014-08-23 19:58:57 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-r8a7740-multiplatform-for-v3.18
+
+for you to fetch changes up to 118a04358b7efa884aeedf80ddecc87174d7f3c2:
+
+  ARM: shmobile: armadillo800eva reference: Remove DTS (2014-09-02 10:04:32 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC r8a7740 Multiplatform Updates for v3.18
+
+* Enable multiplatform support for r8a7740 SoC and remove
+  its DT-reference C board DTS files.
+
+118a043 ARM: shmobile: armadillo800eva reference: Remove DTS
+f2d4c4a ARM: shmobile: armadillo800eva reference: Remove C board code
+1174c71 ARM: shmobile: r8a7740: Add restart callback
+cc9517d ARM: shmobile: armadillo800eva: Build DTS for multiplatform
+25aa7ba ARM: shmobile: armadillo800eva: Sync DTS
+c41215b ARM: shmobile: r8a7740: Multiplatform support
+
+----------------------------------------------------------------
+Magnus Damm (6):
+      ARM: shmobile: r8a7740: Multiplatform support
+      ARM: shmobile: armadillo800eva: Sync DTS
+      ARM: shmobile: armadillo800eva: Build DTS for multiplatform
+      ARM: shmobile: r8a7740: Add restart callback
+      ARM: shmobile: armadillo800eva reference: Remove C board code
+      ARM: shmobile: armadillo800eva reference: Remove DTS
+
+ arch/arm/boot/dts/Makefile                         |   2 +-
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts | 300 ---------------------
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts      | 276 ++++++++++++++++++-
+ arch/arm/mach-shmobile/Kconfig                     |   5 +
+ .../board-armadillo800eva-reference.c              | 199 --------------
+ arch/arm/mach-shmobile/pm-r8a7740.c                |   5 +-
+ arch/arm/mach-shmobile/r8a7740.h                   |   4 +-
+ arch/arm/mach-shmobile/setup-r8a7740.c             |  16 +-
+ 8 files changed, 300 insertions(+), 507 deletions(-)
+ delete mode 100644 arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+ delete mode 100644 arch/arm/mach-shmobile/board-armadillo800eva-reference.c
