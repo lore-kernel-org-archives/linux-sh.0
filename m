@@ -1,80 +1,130 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 02 Sep 2014 02:01:48 +0000
-Subject: [PATCH 2/7 v2] mmc: omap_hsmmc: use blk_size_workaround
-Message-Id: <87iol6kcfp.wl%kuninori.morimoto.gx@gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 04 Sep 2014 21:44:49 +0000
+Subject: [PATCH v5 2/2] usb: hcd: add generic PHY support
+Message-Id: <8122209.Bx5fqjxrKB@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
-	<87lhq2kcif.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87lhq2kcif.wl%kuninori.morimoto.gx@gmail.com>
+References: <5072811.p8odmvpxdS@wasted.cogentembedded.com>
+In-Reply-To: <5072811.p8odmvpxdS@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: gregkh@linuxfoundation.org, linux-usb@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, yoshihiro.shimoda.uh@renesas.com, linux-kernel@vger.kernel.org, antoine.tenart@free-electrons.com
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Add the generic PHY support, analogous to the USB PHY support. Intended it to be
+used with the PCI EHCI/OHCI drivers and the xHCI platform driver.
 
-Now, omap_hsmmc can use blk_size_workaround instead of
-MMC_CAP2_NO_MULTI_READ. let's use it.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v1 -> v2
+Changes in version 5:
+- renamed the new 'gen_phy' field of 'struct usb_phy' back to 'phy';
+- resolved rejects occured due to a newly added patch.
 
-- fix typo : .blk_workaround -> .blk_size_workaround
+Changes in version 4:
+- refreshed the patch.
 
- drivers/mmc/host/omap_hsmmc.c |   17 ++++++++++++++++-
- 1 file changed, 16 insertions(+), 1 deletion(-)
+Changes in version 3:
+- refreshed the patch.
 
-diff --git a/drivers/mmc/host/omap_hsmmc.c b/drivers/mmc/host/omap_hsmmc.c
-index ece1634..a7ab924 100644
---- a/drivers/mmc/host/omap_hsmmc.c
-+++ b/drivers/mmc/host/omap_hsmmc.c
-@@ -219,6 +219,7 @@ struct omap_hsmmc_host {
- #define AUTO_CMD23		(1 << 0)        /* Auto CMD23 support */
- #define HSMMC_SDIO_IRQ_ENABLED	(1 << 1)        /* SDIO irq enabled */
- #define HSMMC_WAKE_IRQ_ENABLED	(1 << 2)
-+#define HSMMC_NO_MULTI_READ	(1 << 3)
- 	struct omap_hsmmc_next	next_data;
- 	struct	omap_mmc_platform_data	*pdata;
- };
-@@ -1829,6 +1830,19 @@ static int omap_hsmmc_disable_fclk(struct mmc_host *mmc)
- 	return 0;
- }
+Changes in version 2:
+- renamed the new 'phy' field of 'struct usb_phy' to 'gen_phy';
+- resolved rejects due to removal of the first patch in the series.
+
+ drivers/usb/core/hcd.c  |   42 ++++++++++++++++++++++++++++++++++++++++--
+ include/linux/usb/hcd.h |    1 +
+ 2 files changed, 41 insertions(+), 2 deletions(-)
+
+Index: usb/drivers/usb/core/hcd.c
+=================================--- usb.orig/drivers/usb/core/hcd.c
++++ usb/drivers/usb/core/hcd.c
+@@ -42,6 +42,7 @@
+ #include <linux/pm_runtime.h>
+ #include <linux/types.h>
  
-+static int *omap_hsmmc_blk_size_workaround(struct mmc_card *card,
-+					   struct request *req, int blk_size)
-+{
-+	struct omap_hsmmc_host *host = mmc_priv(card->host);
-+
-+	/* Some controllers can't do multiblock reads due to hw bugs */
-+	if ((host->flags & HSMMC_NO_MULTI_READ) &&
-+	    (rq_data_dir(req) = READ))
-+		return 1;
-+
-+	return blk_size;
-+}
-+
- static const struct mmc_host_ops omap_hsmmc_ops = {
- 	.enable = omap_hsmmc_enable_fclk,
- 	.disable = omap_hsmmc_disable_fclk,
-@@ -1840,6 +1854,7 @@ static const struct mmc_host_ops omap_hsmmc_ops = {
- 	.get_ro = omap_hsmmc_get_ro,
- 	.init_card = omap_hsmmc_init_card,
- 	.enable_sdio_irq = omap_hsmmc_enable_sdio_irq,
-+	.blk_size_workaround = omap_hsmmc_blk_size_workaround,
- };
- 
- #ifdef CONFIG_DEBUG_FS
-@@ -2101,7 +2116,7 @@ static int omap_hsmmc_probe(struct platform_device *pdev)
- 
- 	if (host->pdata->controller_flags & OMAP_HSMMC_BROKEN_MULTIBLOCK_READ) {
- 		dev_info(&pdev->dev, "multiblock reads disabled due to 35xx erratum 2.1.1.128; MMC read performance may suffer\n");
--		mmc->caps2 |= MMC_CAP2_NO_MULTI_READ;
-+		host->flags |= HSMMC_NO_MULTI_READ;
++#include <linux/phy/phy.h>
+ #include <linux/usb.h>
+ #include <linux/usb/hcd.h>
+ #include <linux/usb/phy.h>
+@@ -2645,6 +2646,29 @@ int usb_add_hcd(struct usb_hcd *hcd,
+ 		}
  	}
  
- 	pm_runtime_enable(host->dev);
--- 
-1.7.9.5
++	if (IS_ENABLED(CONFIG_GENERIC_PHY)) {
++		struct phy *phy = phy_get(hcd->self.controller, "usb");
++
++		if (IS_ERR(phy)) {
++			retval = PTR_ERR(phy);
++			if (retval = -EPROBE_DEFER)
++				goto err_phy;
++		} else {
++			retval = phy_init(phy);
++			if (retval) {
++				phy_put(phy);
++				goto err_phy;
++			}
++			retval = phy_power_on(phy);
++			if (retval) {
++				phy_exit(phy);
++				phy_put(phy);
++				goto err_phy;
++			}
++			hcd->phy = phy;
++		}
++	}
++
+ 	dev_info(hcd->self.controller, "%s\n", hcd->product_desc);
+ 
+ 	/* Keep old behaviour if authorized_default is not in [0, 1]. */
+@@ -2660,7 +2684,7 @@ int usb_add_hcd(struct usb_hcd *hcd,
+ 	 */
+ 	if ((retval = hcd_buffer_create(hcd)) != 0) {
+ 		dev_dbg(hcd->self.controller, "pool alloc failed\n");
+-		goto err_remove_phy;
++		goto err_create_buf;
+ 	}
+ 
+ 	if ((retval = usb_register_bus(&hcd->self)) < 0)
+@@ -2787,7 +2811,14 @@ err_allocate_root_hub:
+ 	usb_deregister_bus(&hcd->self);
+ err_register_bus:
+ 	hcd_buffer_destroy(hcd);
+-err_remove_phy:
++err_create_buf:
++	if (IS_ENABLED(CONFIG_GENERIC_PHY) && hcd->phy) {
++		phy_power_off(hcd->phy);
++		phy_exit(hcd->phy);
++		phy_put(hcd->phy);
++		hcd->phy = NULL;
++	}
++err_phy:
+ 	if (hcd->remove_phy && hcd->usb_phy) {
+ 		usb_phy_shutdown(hcd->usb_phy);
+ 		usb_put_phy(hcd->usb_phy);
+@@ -2864,6 +2895,13 @@ void usb_remove_hcd(struct usb_hcd *hcd)
+ 
+ 	usb_deregister_bus(&hcd->self);
+ 	hcd_buffer_destroy(hcd);
++
++	if (IS_ENABLED(CONFIG_GENERIC_PHY) && hcd->phy) {
++		phy_power_off(hcd->phy);
++		phy_exit(hcd->phy);
++		phy_put(hcd->phy);
++		hcd->phy = NULL;
++	}
+ 	if (hcd->remove_phy && hcd->usb_phy) {
+ 		usb_phy_shutdown(hcd->usb_phy);
+ 		usb_put_phy(hcd->usb_phy);
+Index: usb/include/linux/usb/hcd.h
+=================================--- usb.orig/include/linux/usb/hcd.h
++++ usb/include/linux/usb/hcd.h
+@@ -107,6 +107,7 @@ struct usb_hcd {
+ 	 * other external phys should be software-transparent
+ 	 */
+ 	struct usb_phy		*usb_phy;
++	struct phy		*phy;
+ 
+ 	/* Flags that need to be manipulated atomically because they can
+ 	 * change while the host controller is running.  Always use
 
