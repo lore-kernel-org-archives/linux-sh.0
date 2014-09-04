@@ -1,59 +1,91 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Wed, 03 Sep 2014 02:10:00 +0000
-Subject: [PATCH 5/7 v3] ARM: shmobile: remove MMC_CAP2_NO_MULTI_READ from koelsch
-Message-Id: <874mwp78uh.wl%kuninori.morimoto.gx@gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 04 Sep 2014 14:02:28 +0000
+Subject: [PATCH v3 2/4] ARM: shmobile: Initial r8a7794 SoC support
+Message-Id: <1409839350-1245-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
-	<87bnqx78xr.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87bnqx78xr.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Initial support for the r8a7794 SoC, based on work by Hisashi Nakamura.
 
-sh_mobile_sdhi cares multiblock read bug.
-remove MMC_CAP2_NO_MULTI_READ flag from board code
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
-v2 -> v3
+ arch/arm/mach-shmobile/Kconfig         |  4 ++++
+ arch/arm/mach-shmobile/Makefile        |  1 +
+ arch/arm/mach-shmobile/setup-r8a7794.c | 35 ++++++++++++++++++++++++++++++++++
+ 3 files changed, 40 insertions(+)
+ create mode 100644 arch/arm/mach-shmobile/setup-r8a7794.c
 
- - no change
-
- arch/arm/mach-shmobile/board-koelsch.c |    3 ---
- 1 file changed, 3 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index b7d5bc7..126a8b4 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -331,7 +331,6 @@ SDHI_REGULATOR(2, RCAR_GP_PIN(7, 19), RCAR_GP_PIN(2, 26));
- static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
--	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
- };
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index f400a8c..21f457b 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -67,6 +67,10 @@ config ARCH_R8A7791
+ 	bool "R-Car M2-W (R8A77910)"
+ 	select ARCH_RCAR_GEN2
  
-@@ -344,7 +343,6 @@ static struct resource sdhi0_resources[] __initdata = {
- static struct sh_mobile_sdhi_info sdhi1_info __initdata = {
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
--	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
- };
++config ARCH_R8A7794
++	bool "R-Car E2 (R8A77940)"
++	select ARCH_RCAR_GEN2
++
+ comment "Renesas ARM SoCs Board Type"
  
-@@ -357,7 +355,6 @@ static struct resource sdhi1_resources[] __initdata = {
- static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
--	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
- 			  TMIO_MMC_WRPROTECT_DISABLE,
- };
+ config MACH_KOELSCH
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index f9bc4fb..e20f278 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -14,6 +14,7 @@ obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o pm-r8a7779.o
+ obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o pm-r8a7790.o
+ obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o pm-r8a7791.o
++obj-$(CONFIG_ARCH_R8A7794)	+= setup-r8a7794.o
+ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o
+ obj-$(CONFIG_ARCH_R7S72100)	+= setup-r7s72100.o
+ 
+diff --git a/arch/arm/mach-shmobile/setup-r8a7794.c b/arch/arm/mach-shmobile/setup-r8a7794.c
+new file mode 100644
+index 0000000..05e970c
+--- /dev/null
++++ b/arch/arm/mach-shmobile/setup-r8a7794.c
+@@ -0,0 +1,35 @@
++/*
++ * r8a7794 processor support
++ *
++ * Copyright (C) 2014  Renesas Electronics Corporation
++ * Copyright (C) 2014  Ulrich Hecht
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <linux/of_platform.h>
++#include "common.h"
++#include "rcar-gen2.h"
++#include <asm/mach/arch.h>
++
++#ifdef CONFIG_USE_OF
++
++static const char * const r8a7794_boards_compat_dt[] __initconst = {
++	"renesas,r8a7794",
++	NULL,
++};
++
++DT_MACHINE_START(R8A7794_DT, "Generic R8A7794 (Flattened Device Tree)")
++	.init_early	= shmobile_init_delay,
++	.init_late	= shmobile_init_late,
++	.init_time	= rcar_gen2_timer_init,
++	.dt_compat	= r8a7794_boards_compat_dt,
++MACHINE_END
++#endif /* CONFIG_USE_OF */
 -- 
-1.7.9.5
+1.8.4.5
 
