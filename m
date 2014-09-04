@@ -1,136 +1,67 @@
-From: Xiubo Li <Li.Xiubo@freescale.com>
-Date: Mon, 01 Sep 2014 04:29:36 +0000
-Subject: [PATCHv1 2/7] ASoC: simple-card: Adjust the comments of simple card.
-Message-Id: <1409545781-20530-3-git-send-email-Li.Xiubo@freescale.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 04 Sep 2014 00:55:20 +0000
+Subject: [PATCH v2 2/3] clocksource: sh_mtu2: Document r7s72100 binding
+Message-Id: <1409792121-28912-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409545781-20530-1-git-send-email-Li.Xiubo@freescale.com>
-In-Reply-To: <1409545781-20530-1-git-send-email-Li.Xiubo@freescale.com>
+References: <1409792121-28912-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1409792121-28912-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: broonie@kernel.org, lgirdwood@gmail.com, perex@perex.cz, tiwai@suse.de, kuninori.morimoto.gx@renesas.com, moinejf@free.fr, andrew@lunn.ch, jsarha@ti.com, devicetree@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, alsa-devel@alsa-project.org, shawn.guo@freescale.com
-Cc: linux-kernel@vger.kernel.org, Xiubo Li <Li.Xiubo@freescale.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Xiubo Li <Li.Xiubo@freescale.com>
+In general Renesas hardware is not documented to the extent
+where the relationship between IP blocks on different SoCs can be assumed
+although they may appear to operate the same way. Furthermore the
+documentation typically does not specify a version for individual
+IP blocks. For these reasons a convention of using the SoC name in place
+of a version and providing SoC-specific compat strings has been adopted.
+
+Although not universally liked this convention is used in the bindings
+for a number of drivers for Renesas hardware. The purpose of this patch is
+to update the Renesas R-Car Multi-Function Timer Pulse Unit 2 (MTU2) driver
+to follow this convention.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
 ---
- sound/soc/generic/simple-card.c | 28 ++++++++++++++--------------
- 1 file changed, 14 insertions(+), 14 deletions(-)
+* I plan to follow up with a patch patch to use the new binding in the
+  dtsi files for the r7s72100 SoC.
 
-diff --git a/sound/soc/generic/simple-card.c b/sound/soc/generic/simple-card.c
-index d45c8dd..e9d5a69 100644
---- a/sound/soc/generic/simple-card.c
-+++ b/sound/soc/generic/simple-card.c
-@@ -131,7 +131,7 @@ asoc_simple_card_sub_parse_of(struct device_node *np,
- 	*daifmt &= ~(SND_SOC_DAIFMT_MASTER_MASK | SND_SOC_DAIFMT_FORMAT_MASK);
+v2
+* Suggestions by Mark Rutland and Sergei Shtylyov
+  - Compatible strings should be "one or more" not "one" of those listed
+  - Describe the generic binding as covering any MTU2 device
+  - Re-order compat strings from most to least specific
+---
+ Documentation/devicetree/bindings/timer/renesas,mtu2.txt | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
+index 917453f..defe2a1 100644
+--- a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
++++ b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
+@@ -8,7 +8,9 @@ are independent. The MTU2 hardware supports five channels indexed from 0 to 4.
  
- 	/*
--	 * get node via "sound-dai = <&phandle port>"
-+	 * Get node via "sound-dai = <&phandle port>"
- 	 * it will be used as xxx_of_node on soc_bind_dai_link()
- 	 */
- 	node = of_parse_phandle(np, "sound-dai", 0);
-@@ -139,12 +139,12 @@ asoc_simple_card_sub_parse_of(struct device_node *np,
- 		return -ENODEV;
- 	*p_node = node;
+ Required Properties:
  
--	/* get dai->name */
-+	/* Get dai->name */
- 	ret = snd_soc_of_get_dai_name(np, name);
- 	if (ret < 0)
- 		return ret;
+-  - compatible: must contain "renesas,mtu2"
++  - compatible: must be one or more of the following:
++    - "renesas,mtu2-r7s72100" for R7S72100 MTU2
++    - "renesas,mtu2" for any MTU2
  
--	/* parse TDM slot */
-+	/* Parse TDM slot */
- 	ret = snd_soc_of_parse_tdm_slot(np, &dai->slots, &dai->slot_width);
- 	if (ret)
- 		return ret;
-@@ -189,7 +189,7 @@ static int asoc_simple_card_dai_link_of(struct device_node *node,
- 	daifmt &= (SND_SOC_DAIFMT_MASTER_MASK | SND_SOC_DAIFMT_FORMAT_MASK);
- 	dai_props->cpu_dai.fmt = dai_props->codec_dai.fmt = daifmt;
+   - reg: base address and length of the registers block for the timer module.
  
--	/* Parse CPU DAI */
-+	/* Parse CPU DAI node */
- 	np = of_get_child_by_name(node, "cpu");
- 	if (!np) {
- 		ret = -EINVAL;
-@@ -207,7 +207,7 @@ static int asoc_simple_card_dai_link_of(struct device_node *node,
- 	dai_props->cpu_dai.fmt |= daifmt;
- 	of_node_put(np);
+@@ -26,7 +28,7 @@ Required Properties:
+ Example: R7S72100 (RZ/A1H) MTU2 node
  
--	/* Parse CODEC DAI */
-+	/* Parse CODEC DAI node */
- 	np = of_get_child_by_name(node, "codec");
- 	if (!np) {
- 		ret = -EINVAL;
-@@ -229,10 +229,10 @@ static int asoc_simple_card_dai_link_of(struct device_node *node,
- 
- 	dai_props->codec_dai.fmt |= daifmt;
- 
--	/* simple-card assumes platform = cpu */
-+	/* Simple Card assumes platform = cpu */
- 	dai_link->platform_of_node = dai_link->cpu_of_node;
- 
--	/* Link name is created from CPU/CODEC dai name */
-+	/* DAI Link's name is created from CPU/CODEC dai name */
- 	name = devm_kzalloc(dev,
- 			    strlen(dai_link->cpu_dai_name)   +
- 			    strlen(dai_link->codec_dai_name) + 2,
-@@ -254,7 +254,7 @@ static int asoc_simple_card_dai_link_of(struct device_node *node,
- 		dai_props->codec_dai.sysclk);
- 
- 	/*
--	 * soc_bind_dai_link() will check cpu name
-+	 * asoc_bind_dai_link() will check cpu name
- 	 * after of_node matching if dai_link has cpu_dai_name.
- 	 * but, it will never match if name was created by fmt_single_name()
- 	 * remove cpu_dai_name to escape name matching.
-@@ -296,10 +296,10 @@ static int asoc_simple_card_parse_of(struct device_node *node,
- 	u32 val;
- 	int ret, i = 0;
- 
--	/* parsing the card name from DT */
-+	/* Parse the card name from DT */
- 	snd_soc_of_parse_card_name(&priv->snd_card, "simple-audio-card,name");
- 
--	/* off-codec widgets */
-+	/* Parse off-codec widgets */
- 	if (of_property_read_bool(node, "simple-audio-card,widgets")) {
- 		ret = snd_soc_of_parse_audio_simple_widgets(&priv->snd_card,
- 					"simple-audio-card,widgets");
-@@ -352,13 +352,13 @@ static int asoc_simple_card_probe(struct platform_device *pdev)
- 	struct device *dev = &pdev->dev;
- 	int num_links, ret;
- 
--	/* get the number of DAI links */
-+	/* Get the number of DAI links */
- 	if (np && of_get_child_by_name(np, "simple-audio-card,dai-link"))
- 		num_links = of_get_child_count(np);
- 	else
- 		return -EINVAL;
- 
--	/* allocate the private data and the DAI link array */
-+	/* Allocate the private data and the DAI link array */
- 	priv = devm_kzalloc(dev,
- 			sizeof(*priv) + sizeof(*dai_link) * num_links,
- 			GFP_KERNEL);
-@@ -366,7 +366,7 @@ static int asoc_simple_card_probe(struct platform_device *pdev)
- 		return -ENOMEM;
- 
- 	/*
--	 * init snd_soc_card
-+	 * Init snd_soc_card
- 	 */
- 	priv->snd_card.owner = THIS_MODULE;
- 	priv->snd_card.dev = dev;
-@@ -374,7 +374,7 @@ static int asoc_simple_card_probe(struct platform_device *pdev)
- 	priv->snd_card.dai_link = dai_link;
- 	priv->snd_card.num_links = num_links;
- 
--	/* get room for the other properties */
-+	/* Get room for the other properties */
- 	priv->dai_props = devm_kzalloc(dev,
- 			sizeof(*priv->dai_props) * num_links,
- 			GFP_KERNEL);
+ 	mtu2: timer@fcff0000 {
+-		compatible = "renesas,mtu2";
++		compatible = "renesas,mtu2-r7s72100", "renesas,mtu2";
+ 		reg = <0xfcff0000 0x400>;
+ 		interrupts = <0 139 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 146 IRQ_TYPE_LEVEL_HIGH>,
 -- 
-1.8.4
+2.0.1
 
