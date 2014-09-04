@@ -1,128 +1,94 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 17 Sep 2014 14:11:09 +0000
-Subject: [PATCH 4/8] ARM: shmobile: lager-reference: Remove DU platform device
-Message-Id: <1410963073-3176-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 04 Sep 2014 01:12:32 +0000
+Subject: [PATCH 1/9] ARM: shmobile: Introduce a Kconfig entry for R-Mobile
+Message-Id: <5784b195e4c88374764d0961977e03f55f3618cb.1409792454.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1409792454.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1409792454.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The DU device is now instantiated from the device tree, remote the
-corresponding platform device.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add a Kconfig entry for R-Mobile SoCs that enables
+both CMT and TMU timers. Interrupt controller varies
+with SoC version so it is excluded.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-lager-reference.c | 80 --------------------------
- 1 file changed, 80 deletions(-)
+ arch/arm/mach-shmobile/Kconfig | 17 +++++++++--------
+ 1 file changed, 9 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index bc4b483..82b077a 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -18,94 +18,15 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 1e6c51c..6de3058 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -1,6 +1,11 @@
+ config ARCH_SHMOBILE
+ 	bool
  
--#include <linux/dma-mapping.h>
- #include <linux/init.h>
- #include <linux/of_platform.h>
--#include <linux/platform_data/rcar-du.h>
++config ARCH_RMOBILE
++	bool
++	select SYS_SUPPORTS_SH_CMT
++	select SYS_SUPPORTS_SH_TMU
++
+ menuconfig ARCH_SHMOBILE_MULTI
+ 	bool "Renesas ARM SoCs" if ARCH_MULTI_V7
+ 	depends on MMU
+@@ -71,16 +76,16 @@ comment "Renesas ARM SoCs System Type"
  
- #include <asm/mach/arch.h>
+ config ARCH_SH7372
+ 	bool "SH-Mobile AP4 (SH7372)"
++	select ARCH_RMOBILE
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_CPU_SUSPEND if PM || CPU_IDLE
+ 	select CPU_V7
+ 	select SH_CLK_CPG
+ 	select SH_INTC
+-	select SYS_SUPPORTS_SH_CMT
+-	select SYS_SUPPORTS_SH_TMU
  
--#include "clock.h"
- #include "common.h"
--#include "irqs.h"
- #include "r8a7790.h"
- #include "rcar-gen2.h"
+ config ARCH_SH73A0
+ 	bool "SH-Mobile AG5 (R8A73A00)"
++	select ARCH_RMOBILE
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select CPU_V7
+@@ -88,28 +93,24 @@ config ARCH_SH73A0
+ 	select SH_CLK_CPG
+ 	select SH_INTC
+ 	select RENESAS_INTC_IRQPIN
+-	select SYS_SUPPORTS_SH_CMT
+-	select SYS_SUPPORTS_SH_TMU
  
--/* DU */
--static struct rcar_du_encoder_data lager_du_encoders[] = {
--	{
--		.type = RCAR_DU_ENCODER_VGA,
--		.output = RCAR_DU_OUTPUT_DPAD0,
--	}, {
--		.type = RCAR_DU_ENCODER_NONE,
--		.output = RCAR_DU_OUTPUT_LVDS1,
--		.connector.lvds.panel = {
--			.width_mm = 210,
--			.height_mm = 158,
--			.mode = {
--				.pixelclock = 65000000,
--				.hactive = 1024,
--				.hfront_porch = 20,
--				.hback_porch = 160,
--				.hsync_len = 136,
--				.vactive = 768,
--				.vfront_porch = 3,
--				.vback_porch = 29,
--				.vsync_len = 6,
--			},
--		},
--	},
--};
--
--static struct rcar_du_platform_data lager_du_pdata = {
--	.encoders = lager_du_encoders,
--	.num_encoders = ARRAY_SIZE(lager_du_encoders),
--};
--
--static const struct resource du_resources[] __initconst = {
--	DEFINE_RES_MEM(0xfeb00000, 0x70000),
--	DEFINE_RES_MEM_NAMED(0xfeb90000, 0x1c, "lvds.0"),
--	DEFINE_RES_MEM_NAMED(0xfeb94000, 0x1c, "lvds.1"),
--	DEFINE_RES_IRQ(gic_spi(256)),
--	DEFINE_RES_IRQ(gic_spi(268)),
--	DEFINE_RES_IRQ(gic_spi(269)),
--};
--
--static void __init lager_add_du_device(void)
--{
--	struct platform_device_info info = {
--		.name = "rcar-du-r8a7790",
--		.id = -1,
--		.res = du_resources,
--		.num_res = ARRAY_SIZE(du_resources),
--		.data = &lager_du_pdata,
--		.size_data = sizeof(lager_du_pdata),
--		.dma_mask = DMA_BIT_MASK(32),
--	};
--
--	platform_device_register_full(&info);
--}
--
--/*
-- * This is a really crude hack to provide clkdev support to platform
-- * devices until they get moved to DT.
-- */
--static const struct clk_name clk_names[] __initconst = {
--	{ "du0", "du.0", "rcar-du-r8a7790" },
--	{ "du1", "du.1", "rcar-du-r8a7790" },
--	{ "du2", "du.2", "rcar-du-r8a7790" },
--	{ "lvds0", "lvds.0", "rcar-du-r8a7790" },
--	{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
--};
--
--static void __init lager_add_standard_devices(void)
--{
--	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
--
--	lager_add_du_device();
--}
--
- static const char *lager_boards_compat_dt[] __initdata = {
- 	"renesas,lager",
- 	"renesas,lager-reference",
-@@ -116,7 +37,6 @@ DT_MACHINE_START(LAGER_DT, "lager")
- 	.smp		= smp_ops(r8a7790_smp_ops),
- 	.init_early	= shmobile_init_delay,
- 	.init_time	= rcar_gen2_timer_init,
--	.init_machine	= lager_add_standard_devices,
- 	.init_late	= shmobile_init_late,
- 	.reserve	= rcar_gen2_reserve,
- 	.dt_compat	= lager_boards_compat_dt,
+ config ARCH_R8A73A4
+ 	bool "R-Mobile APE6 (R8A73A40)"
++	select ARCH_RMOBILE
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select CPU_V7
+ 	select SH_CLK_CPG
+ 	select RENESAS_IRQC
+-	select SYS_SUPPORTS_SH_CMT
+-	select SYS_SUPPORTS_SH_TMU
+ 
+ config ARCH_R8A7740
+ 	bool "R-Mobile A1 (R8A77400)"
++	select ARCH_RMOBILE
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select CPU_V7
+ 	select SH_CLK_CPG
+ 	select RENESAS_INTC_IRQPIN
+-	select SYS_SUPPORTS_SH_CMT
+-	select SYS_SUPPORTS_SH_TMU
+ 
+ config ARCH_R8A7778
+ 	bool "R-Car M1A (R8A77781)"
 -- 
-1.8.5.5
+2.0.1
 
