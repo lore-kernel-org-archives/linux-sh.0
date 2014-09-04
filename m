@@ -1,50 +1,53 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 17 Sep 2014 19:25:42 +0000
-Subject: Re: [PATCH 1/8] ARM: shmobile: r8a7779: Add DU node to device tree
-Message-Id: <2123803.QxCV3SLlmi@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 04 Sep 2014 01:12:49 +0000
+Subject: [PATCH 4/6] ARM: shmobile: r8a7740: Add restart callback
+Message-Id: <1174c712afa2779fad54b86b3569f40fab78c0c2.1409792648.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410963073-3176-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1410963073-3176-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1409792648.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1409792648.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Sergei,
+From: Magnus Damm <damm+renesas@opensource.se>
 
-On Wednesday 17 September 2014 22:03:12 Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 9/17/2014 5:11 PM, Laurent Pinchart wrote:
-> > Add the DU device with a disabled state. Boards that want to enable the
-> > DU need to specify the output topology
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> > 
-> >   arch/arm/boot/dts/r8a7779.dtsi | 24 ++++++++++++++++++++++++
-> >   1 file changed, 24 insertions(+)
-> > 
-> > diff --git a/arch/arm/boot/dts/r8a7779.dtsi
-> > b/arch/arm/boot/dts/r8a7779.dtsi index 7cfba9a..f4c03cc 100644
-> > --- a/arch/arm/boot/dts/r8a7779.dtsi
-> > +++ b/arch/arm/boot/dts/r8a7779.dtsi
-> > @@ -379,6 +379,30 @@
-> >   		status = "disabled";
-> >   	};
-> > 
-> > +	du: du@fff80000 {
-> 
-> Perhaps the "display" name from the ePAPR section 2.2.2 fits here?
+Port the r8a7740 restart handling from the Armadillo code
+to the r8a7740 generic multiplatform case.
 
-You're absolutely right. I'm sure I'll start thinking about it by myself one 
-day, but until then, please keep on bugging me when I get it wrong :-)
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-r8a7740.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-I'll wait for others to comment on the series and I'll then resubmit it.
-
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 1e55c50..daea3a3 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -823,6 +823,13 @@ static void __init r8a7740_generic_init(void)
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
++#define RESCNT2 IOMEM(0xe6188020)
++static void r8a7740_restart(enum reboot_mode mode, const char *cmd)
++{
++	/* Do soft power on reset */
++	writel(1 << 31, RESCNT2);
++}
++
+ static const char *r8a7740_boards_compat_dt[] __initdata = {
+ 	"renesas,r8a7740",
+ 	NULL,
+@@ -835,6 +842,7 @@ DT_MACHINE_START(R8A7740_DT, "Generic R8A7740 (Flattened Device Tree)")
+ 	.init_machine	= r8a7740_generic_init,
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= r8a7740_boards_compat_dt,
++	.restart	= r8a7740_restart,
+ MACHINE_END
+ 
+ #endif /* CONFIG_USE_OF */
 -- 
-Regards,
-
-Laurent Pinchart
+2.0.1
 
