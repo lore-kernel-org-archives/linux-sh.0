@@ -1,78 +1,31 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 26 Sep 2014 12:30:56 +0000
-Subject: Re: [PATCH 10/12] video: Add ADV751[13] DT bindings documentation
-Message-Id: <1464975.QfMrH1tcTG@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 04 Sep 2014 02:28:35 +0000
+Subject: [PATCH 00/03] ARM: shmobile: sh73a0 and kzm9g Multiplatform support
+Message-Id: <20140904022835.26216.90336.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <7167797.cQ2LzKYS7F@avalon>
- <CAMuHMdXmaxmb0GgidM9LL7DhqHQXO3YfOdfpWv=zwHBN6T_UXA@mail.gmail.com>
-In-Reply-To: <CAMuHMdXmaxmb0GgidM9LL7DhqHQXO3YfOdfpWv=zwHBN6T_UXA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, DRI Development <dri-devel@lists.freedesktop.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Hi Geert,
+ARM: shmobile: sh73a0 and kzm9g Multiplatform support
 
-On Thursday 25 September 2014 12:10:59 Geert Uytterhoeven wrote:
-> On Thu, Sep 25, 2014 at 11:57 AM, Laurent Pinchart wrote:
-> > On Thursday 25 September 2014 09:06:46 Geert Uytterhoeven wrote:
-> >> On Wed, Sep 24, 2014 at 10:04 PM, Laurent Pinchart
-> >> 
-> >> <laurent.pinchart+renesas@ideasonboard.com> wrote:
-> >> > +- adi,input-style: The input components arrangement variant (1, 2 or
-> >> > 3).
-> >> 
-> >> What's the meaning of the numerical values 1, 2, and 3?
-> >> 
-> >> I found this code in "[PATCH 11/12] drm: Add adv7511 encoder driver":
-> >> 
-> >> +       input_style = config->input_style = 1 ? 2
-> >> +                   : (config->input_style = 2 ? 1 : 3);
-> >> 
-> >> which didn't really help much ;-)
-> >> 
-> > :-)
-> > 
-> > The ADV751[13]W? datasheets document all the supported input formats.
-> > They're split in categories, each of them having multiple variants called
-> > styles. The styles are just numbered 1, 2 and 3 in the tables that
-> > describe the formats, and there's a register field used to select a
-> > style. For some reason style 1 maps to register value 2, style 2 to
-> > register value 1, and style 3 to register value 3. Go figure...
-> 
-> Thanks, that explains it.
-> 
-> Then I suggest to reflect this in the binding:
-> 
->     - adi,input-style: The input components arrangement variant (1, 2 or 3),
-> as listed in the datasheet.
-> 
-> and in the code, e.g. by translating the values using a mapping array?
+[PATCH 01/03] ARM: shmobile: sh73a0: Introduce generic setup callback
+[PATCH 02/03] ARM: shmobile: sh73a0: Add Multiplatform support
+[PATCH 03/03] ARM: shmobile: kzm9g: Build DTS for Multiplatform
 
-I'll document the property as
+This patch series enables sh73a0 Multiplatform support. At this point
+the KZM9G board code is left as-is, but future updates will make
+sure to consolidate the DTS and get rid of C board code.
 
-- adi,input-style: The input components arrangement variant (1, 2 or 3), as
-  listed in the input format tables in the datasheet.
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-and modify the code to use an array as in
-
-    /*
-     * The input style values documented in the datasheet don't match the
-     * hardware register field values :-(
-     */
-    static const unsigned int input_styles[4] = { 0, 2, 1, 3 };
-
-    ...
-    regmap_update_bits(adv7511->regmap, ADV7511_REG_VIDEO_INPUT_CFG1, 0x7e,
-                       (color_depth << 4) |
-                       (input_styles[config->input_style] << 2));
-
-(config->input_style is validated when parsing DT).
-
--- 
-Regards,
-
-Laurent Pinchart
+ Built on top of renesas-devel-20140904-v3.17-rc3
+ 
+ arch/arm/boot/dts/Makefile            |    3 ++-
+ arch/arm/mach-shmobile/Kconfig        |    5 +++++
+ arch/arm/mach-shmobile/Makefile       |    4 ++--
+ arch/arm/mach-shmobile/setup-sh73a0.c |   21 +++++++++++++++++----
+ 4 files changed, 26 insertions(+), 7 deletions(-)
 
