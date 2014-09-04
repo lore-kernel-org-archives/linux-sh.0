@@ -1,74 +1,112 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Fri, 26 Sep 2014 08:28:48 +0000
-Subject: Re: [PATCH v3 03/13] PM / Domains: Add DT bindings for PM QoS device latencies
-Message-Id: <CAPDyKFq8oo2M4X3Awb4saijdwaWHMS4Eg0jEZw-3craXH5qVcg@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 04 Sep 2014 01:12:46 +0000
+Subject: [PATCH 1/6] ARM: shmobile: r8a7740: Multiplatform support
+Message-Id: <c41215b781efbfa22ffc9dc474c2981c130c153d.1409792648.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
- <1411662520-22795-4-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1411662520-22795-4-git-send-email-geert+renesas@glider.be>
+References: <cover.1409792648.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1409792648.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 25 September 2014 18:28, Geert Uytterhoeven <geert+renesas@glider.be> wrote:
-> PM QoS device start/stop and save/restore state latencies are more or
-> less properties of the hardware.
-> In legacy code, they're specified from platform code.
-> On DT platforms, their values should come from DT.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-I am not so sure about this.
+Enable r8a7740 Multiplatform support for the generic r8a7740
+machine vector. No board support is enabled, and the board
+code for Armadillo 800 EVA DT Reference is left by itself.
 
-First, I think there a too much software affecting these latencies to
-call them hardware properties.
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/Kconfig         | 5 +++++
+ arch/arm/mach-shmobile/pm-r8a7740.c    | 5 ++---
+ arch/arm/mach-shmobile/r8a7740.h       | 4 ++--
+ arch/arm/mach-shmobile/setup-r8a7740.c | 8 +++++++-
+ 4 files changed, 16 insertions(+), 6 deletions(-)
 
-Second, I am not sure that the future version of genpd will have all
-these four latencies, but maybe only two. Let's see. I would thus
-suggest to put this patch on hold for a while.
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index e15dff7..498162f 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -26,6 +26,11 @@ config ARCH_R7S72100
+ 	bool "RZ/A1H (R7S72100)"
+ 	select SYS_SUPPORTS_SH_MTU2
+ 
++config ARCH_R8A7740
++	bool "R-Mobile A1 (R8A77400)"
++	select ARCH_RMOBILE
++	select RENESAS_INTC_IRQPIN
++
+ config ARCH_R8A7779
+ 	bool "R-Car H1 (R8A77790)"
+ 	select RENESAS_INTC_IRQPIN
+diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
+index a0d44d5..4d327de 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7740.c
++++ b/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -13,7 +13,7 @@
+ #include "common.h"
+ #include "pm-rmobile.h"
+ 
+-#ifdef CONFIG_PM
++#if defined(CONFIG_PM) && !defined(CONFIG_ARCH_MULTIPLATFORM)
+ static int r8a7740_pd_a4s_suspend(void)
+ {
+ 	/*
+@@ -58,8 +58,7 @@ void __init r8a7740_init_pm_domains(void)
+ 	rmobile_init_domains(r8a7740_pm_domains, ARRAY_SIZE(r8a7740_pm_domains));
+ 	pm_genpd_add_subdomain_names("A4S", "A3SP");
+ }
+-
+-#endif /* CONFIG_PM */
++#endif /* CONFIG_PM && !CONFIG_ARCH_MULTIPLATFORM */
+ 
+ #ifdef CONFIG_SUSPEND
+ static int r8a7740_enter_suspend(suspend_state_t suspend_state)
+diff --git a/arch/arm/mach-shmobile/r8a7740.h b/arch/arm/mach-shmobile/r8a7740.h
+index 3352fb8..f369b4b 100644
+--- a/arch/arm/mach-shmobile/r8a7740.h
++++ b/arch/arm/mach-shmobile/r8a7740.h
+@@ -53,10 +53,10 @@ extern void r8a7740_clock_init(u8 md_ck);
+ extern void r8a7740_pinmux_init(void);
+ extern void r8a7740_pm_init(void);
+ 
+-#ifdef CONFIG_PM
++#if defined(CONFIG_PM) && !defined(CONFIG_ARCH_MULTIPLATFORM)
+ extern void __init r8a7740_init_pm_domains(void);
+ #else
+ static inline void r8a7740_init_pm_domains(void) {}
+-#endif /* CONFIG_PM */
++#endif /* CONFIG_PM && !CONFIG_ARCH_MULTIPLATFORM */
+ 
+ #endif /* __ASM_R8A7740_H__ */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 8fe270d..1e55c50 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -36,6 +36,7 @@
+ #include <asm/mach/map.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/time.h>
++#include <asm/hardware/cache-l2x0.h>
+ 
+ #include "common.h"
+ #include "dma-register.h"
+@@ -813,7 +814,12 @@ void __init r8a7740_init_irq_of(void)
+ 
+ static void __init r8a7740_generic_init(void)
+ {
+-	r8a7740_clock_init(0);
++	r8a7740_meram_workaround();
++
++#ifdef CONFIG_CACHE_L2X0
++	/* Shared attribute override enable, 32K*8way */
++	l2x0_init(IOMEM(0xf0002000), 0x00400000, 0xc20f0fff);
++#endif
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
+-- 
+2.0.1
 
-Kind regards
-Uffe
-
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> Should these properties be called "linux,*-latency"?
->
-> v3:
->   - No changes
-> v2:
->   - New
->
->  Documentation/devicetree/bindings/power/power_domain.txt | 10 ++++++++++
->  1 file changed, 10 insertions(+)
->
-> diff --git a/Documentation/devicetree/bindings/power/power_domain.txt b/Documentation/devicetree/bindings/power/power_domain.txt
-> index 7bc421d84367d636..024815bc257723b1 100644
-> --- a/Documentation/devicetree/bindings/power/power_domain.txt
-> +++ b/Documentation/devicetree/bindings/power/power_domain.txt
-> @@ -42,12 +42,22 @@ Required properties:
->   - power-domains : A phandle and PM domain specifier as defined by bindings of
->                     the power controller specified by phandle.
->
-> +Optional properties:
-> + - stop-latency: Stop latency of the device, in ns,
-> + - start-latency: Start latency of the device, in ns,
-> + - save-state-latency: Save-state latency of the device, in ns,
-> + - restore-state-latency: Restore-state latency of the device, in ns.
-> +
->  Example:
->
->         leaky-device@12350000 {
->                 compatible = "foo,i-leak-current";
->                 reg = <0x12350000 0x1000>;
->                 power-domains = <&power 0>;
-> +               stop-latency = <250000>;
-> +               start-latency = <250000>;
-> +               save-state-latency = <250000>;
-> +               restore-state-latency = <250000>;
->         };
->
->  The node above defines a typical PM domain consumer device, which is located
-> --
-> 1.9.1
->
