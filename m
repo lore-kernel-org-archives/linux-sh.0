@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 02 Sep 2014 01:31:52 +0000
-Subject: [GIT PULL] Third Round of Renesas ARM Based SoC Defconfig Updates for v3.18
-Message-Id: <cover.1409621323.git.horms+renesas@verge.net.au>
+Date: Thu, 04 Sep 2014 01:12:26 +0000
+Subject: [GIT PULL] Third Round of Renesas ARM Based SoC DT Updates for v3.18
+Message-Id: <cover.1409792871.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1378362045.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1378362045.git.horms+renesas@verge.net.au>
@@ -12,34 +12,44 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hi Olof, Hi Kevin, Hi Arnd,
 
-Please consider these third round of Renesas ARM based SoC defconfig
-updates for v3.18.
+Please consider these third round of Renesas ARM based SoC DT updates for
+v3.18.
 
 This pull request is based on the previous round of
-such requests, tagged as renesas-defconfig2-for-v3.18,
+such requests, tagged as renesas-dt2-for-v3.18,
 which I have already sent a pull-request for.
 
 
-The following changes since commit 99923753e7c17a9c9d46bfe4d7fa543e426ec647:
+The following changes since commit f170b97c9ad0b8ba3e99f02cbadc7676383fee09:
 
-  ARM: shmobile: bockw: Do not disable SUSPEND in defconfig (2014-08-22 10:40:31 +0900)
+  ARM: shmobile: sh73a0 dtsi: Move interrupt-parent to the top (2014-08-22 12:34:53 +0900)
 
 are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig3-for-v3.18
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt3-for-v3.18
 
-for you to fetch changes up to de46e95cdb8671e2b0728923b8113654779c3ba8:
+for you to fetch changes up to 40c488df84f9fbf4b84b4baed6e2cec4a2d946ed:
 
-  ARM: shmobile: Enable Armadillo 800 EVA board in multiplatform defconfig (2014-09-01 10:46:57 +0900)
-
-----------------------------------------------------------------
-Third Round of Renesas ARM Based SoC Defconfig Updates for v3.18
-
-* Enable Armadillo 800 EVA board in multiplatform defconfig
+  ARM: shmobile: kzm9g-reference dts: Use tabs for indentation (2014-09-02 10:22:42 +0900)
 
 ----------------------------------------------------------------
-Geert Uytterhoeven (1):
-      ARM: shmobile: Enable Armadillo 800 EVA board in multiplatform defconfig
+Third Round of Renesas ARM Based SoC DT Updates for v3.18
 
- arch/arm/configs/shmobile_defconfig | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+* Use tabs for indentation in kzm9g-reference and r8a7779 DTS(I) files
+* Add platform device tree bindings documentation
+* Add SoC-specific thermal compatible property to r8a73a4 and r8a7779
+
+----------------------------------------------------------------
+Geert Uytterhoeven (5):
+      ARM: shmobile: r8a7779 dtsi: Add SoC-specific thermal compatible property
+      ARM: shmobile: r8a73a4 dtsi: Add SoC-specific thermal compatible property
+      ARM: shmobile: Add platform device tree bindings documentation
+      ARM: shmobile: r8a7779 dtsi: Use tabs for indentation
+      ARM: shmobile: kzm9g-reference dts: Use tabs for indentation
+
+ Documentation/devicetree/bindings/arm/shmobile.txt | 71 ++++++++++++++++++++++
+ arch/arm/boot/dts/r8a73a4.dtsi                     |  2 +-
+ arch/arm/boot/dts/r8a7779.dtsi                     | 10 +--
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts       |  4 +-
+ 4 files changed, 79 insertions(+), 8 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/arm/shmobile.txt
