@@ -1,107 +1,109 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Sep 2014 20:04:32 +0000
-Subject: [PATCH 12/12] ARM: shmobile: koelsch: Add DU HDMI output support
-Message-Id: <1411589072-28609-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 04 Sep 2014 00:55:19 +0000
+Subject: [PATCH v2 1/3] clocksource: sh_cmt: Document SoC specific bindings
+Message-Id: <1409792121-28912-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1409792121-28912-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1409792121-28912-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add DT nodes for the ADV7511 HDMI encoder and its HDMI output connector
-and configure the DISP pin group that drives the HDMI transmitter DE
-pin.
+In general Renesas hardware is not documented to the extent
+where the relationship between IP blocks on different SoCs can be assumed
+although they may appear to operate the same way. Furthermore the
+documentation typically does not specify a version for individual
+IP blocks. For these reasons a convention of using the SoC name in place
+of a version and providing SoC-specific compat strings has been adopted.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Although not universally liked this convention is used in the bindings for
+a number of drivers for Renesas hardware. The purpose of this patch is to
+update the Renesas R-Car Compare Match Timer (CMT) driver to follow this
+convention.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Mark Rutland <mark.rutland@arm.com>
+
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 50 ++++++++++++++++++++++++++++++++++-
- 1 file changed, 49 insertions(+), 1 deletion(-)
+* I plan to follow up with patches to use these new bindings in the
+  dtsi files for the affected SoCs.
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 9051e01..b7d0c41 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -209,6 +209,17 @@
- 		states = <3300000 1
- 			  1800000 0>;
- 	};
-+
-+	hdmi-out {
-+		compatible = "hdmi-connector";
-+		type = "a";
-+
-+		port {
-+			hdmi_con: endpoint {
-+				remote-endpoint = <&adv7511_out>;
-+			};
-+		};
-+	};
- };
+v2
+* Reorder compat entries so more-specific entries and their fallbacks
+  are grouped with the fallback entry coming last.
+* Explicitly document fallback
+---
+ .../devicetree/bindings/timer/renesas,cmt.txt      | 44 +++++++++++++++++++---
+ 1 file changed, 38 insertions(+), 6 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/timer/renesas,cmt.txt b/Documentation/devicetree/bindings/timer/renesas,cmt.txt
+index a17418b..7b44f4b 100644
+--- a/Documentation/devicetree/bindings/timer/renesas,cmt.txt
++++ b/Documentation/devicetree/bindings/timer/renesas,cmt.txt
+@@ -11,15 +11,47 @@ datasheets.
  
- &du {
-@@ -217,6 +228,11 @@
- 	status = "okay";
+ Required Properties:
  
- 	ports {
-+		port@0 {
-+			endpoint {
-+				remote-endpoint = <&adv7511_in>;
-+			};
-+		};
- 		port@1 {
- 			lvds_connector: endpoint {
- 			};
-@@ -235,7 +251,7 @@
- 	};
+-  - compatible: must contain one of the following.
+-    - "renesas,cmt-32" for the 32-bit CMT
++  - compatible: must contain one or more of the following:
++    - "renesas,cmt-32-r8a7740" for the R8a7740 32-bit CMT
++		(CMT0)
++    - "renesas,cmt-32-sh7372" for the SH7372 32-bit CMT
++		(CMT0)
++    - "renesas,cmt-32-sh73a0" for the SH73a0 32-bit CMT
++		(CMT0)
++    - "renesas,cmt-32" for all 32-bit CMT without fast clock support
+ 		(CMT0 on sh7372, sh73a0 and r8a7740)
+-    - "renesas,cmt-32-fast" for the 32-bit CMT with fast clock support
++		This is a fallback for the above renesas,cmt-32-* entries.
++
++    - "renesas,cmt-32-fast-r8a7740" for the R8A7740 32-bit CMT with fast
++		clock support (CMT[234])
++    - "renesas,cmt-32-fast-sh7372" for the SH7372 32-bit CMT with fast
++		clock support (CMT[234])
++    - "renesas,cmt-32-fast-sh73a0" for the SH73A0 32-bit CMT with fast
++		clock support (CMT[234])
++    - "renesas,cmt-32-fast" for all 32-bit CMT with fast clock support
+ 		(CMT[234] on sh7372, sh73a0 and r8a7740)
+-    - "renesas,cmt-48" for the 48-bit CMT
++		This is a fallback for the above renesas,cmt-32-fast-* entries.
++
++    - "renesas,cmt-48-sh7372" for the SH7372 48-bit CMT
++		(CMT1)
++    - "renesas,cmt-48-sh73a0" for the SH73A0 48-bit CMT
++		(CMT1)
++    - "renesas,cmt-48-r8a7740" for the R8A7740 48-bit CMT
++		(CMT1)
++    - "renesas,cmt-48" for all non-second generation 48-bit CMT
+ 		(CMT1 on sh7372, sh73a0 and r8a7740)
+-    - "renesas,cmt-48-gen2" for the second generation 48-bit CMT
++		This is a fallback for the above renesas,cmt-48-* entries.
++
++    - "renesas,cmt-48-r8a73a4" for the R8A73A4 48-bit CMT
++		(CMT[01])
++    - "renesas,cmt-48-r8a7790" for the R8A7790 48-bit CMT
++		(CMT[01])
++    - "renesas,cmt-48-r8a7791" for the R8A7791 48-bit CMT
++		(CMT[01])
++    - "renesas,cmt-48-gen2" for all second generation 48-bit CMT
+ 		(CMT[01] on r8a73a4, r8a7790 and r8a7791)
++		This is a fallback for the renesas,cmt-48-r8a73a4,
++		renesas,cmt-48-r8a7790 and renesas,cmt-48-gen2 entries.
  
- 	du_pins: du {
--		renesas,groups = "du_rgb666", "du_sync", "du_clk_out_0";
-+		renesas,groups = "du_rgb666", "du_sync", "du_disp", "du_clk_out_0";
- 		renesas,function = "du";
- 	};
+   - reg: base address and length of the registers block for the timer module.
+   - interrupts: interrupt-specifier for the timer, one per channel.
+@@ -36,7 +68,7 @@ Example: R8A7790 (R-Car H2) CMT0 node
+ 	them channels 0 and 1 in the documentation.
  
-@@ -439,6 +455,38 @@
- 		};
- 	};
- 
-+	hdmi@39 {
-+		compatible = "adi,adv7511w";
-+		reg = <0x39>;
-+		interrupt-parent = <&gpio3>;
-+		interrupts = <29 IRQ_TYPE_EDGE_FALLING>;
-+
-+		adi,input-depth = <8>;
-+		adi,input-colorspace = "rgb";
-+		adi,input-clock = "1x";
-+		adi,input-style = <1>;
-+		adi,input-justification = "evenly";
-+
-+		ports {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+
-+			port@0 {
-+				reg = <0>;
-+				adv7511_in: endpoint {
-+					remote-endpoint = <&du_out_rgb>;
-+				};
-+			};
-+
-+			port@1 {
-+				reg = <1>;
-+				adv7511_out: endpoint {
-+					remote-endpoint = <&hdmi_con>;
-+				};
-+			};
-+		};
-+	};
-+
- 	eeprom@50 {
- 		compatible = "renesas,24c02";
- 		reg = <0x50>;
+ 	cmt0: timer@ffca0000 {
+-		compatible = "renesas,cmt-48-gen2";
++		compatible = "renesas,cmt-48-r8a7790", "renesas,cmt-48-gen2";
+ 		reg = <0 0xffca0000 0 0x1004>;
+ 		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 142 IRQ_TYPE_LEVEL_HIGH>;
 -- 
-1.8.5.5
+2.0.1
 
