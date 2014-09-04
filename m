@@ -1,54 +1,53 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Mon, 01 Sep 2014 09:22:35 +0000
-Subject: [PATCH 5/7] ARM: shmobile: koelsch: remove MMC_CAP2_NO_MULTI_READ
-Message-Id: <87k35nzodj.wl%kuninori.morimoto.gx@gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 04 Sep 2014 14:02:27 +0000
+Subject: [PATCH v3 1/4] ARM: shmobile: support Cortex-A7 in shmobile_init_delay()
+Message-Id: <1409839350-1245-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-sh_mobile_sdhi cares multiblock read bug.
-remove MMC_CAP2_NO_MULTI_READ flag from board code
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/board-koelsch.c |    3 ---
- 1 file changed, 3 deletions(-)
+ arch/arm/mach-shmobile/timer.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index b7d5bc7..126a8b4 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -331,7 +331,6 @@ SDHI_REGULATOR(2, RCAR_GP_PIN(7, 19), RCAR_GP_PIN(2, 26));
- static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
--	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
- };
+diff --git a/arch/arm/mach-shmobile/timer.c b/arch/arm/mach-shmobile/timer.c
+index adce98b..87c6be1 100644
+--- a/arch/arm/mach-shmobile/timer.c
++++ b/arch/arm/mach-shmobile/timer.c
+@@ -43,7 +43,7 @@ static void __init shmobile_setup_delay_hz(unsigned int max_cpu_core_hz,
+ void __init shmobile_init_delay(void)
+ {
+ 	struct device_node *np, *cpus;
+-	bool is_a8_a9 = false;
++	bool is_a7_a8_a9 = false;
+ 	bool is_a15 = false;
+ 	u32 max_freq = 0;
  
-@@ -344,7 +343,6 @@ static struct resource sdhi0_resources[] __initdata = {
- static struct sh_mobile_sdhi_info sdhi1_info __initdata = {
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
--	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
- };
+@@ -57,9 +57,10 @@ void __init shmobile_init_delay(void)
+ 		if (!of_property_read_u32(np, "clock-frequency", &freq))
+ 			max_freq = max(max_freq, freq);
  
-@@ -357,7 +355,6 @@ static struct resource sdhi1_resources[] __initdata = {
- static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
--	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
- 			  TMIO_MMC_WRPROTECT_DISABLE,
- };
+-		if (of_device_is_compatible(np, "arm,cortex-a8") ||
++		if (of_device_is_compatible(np, "arm,cortex-a7") ||
++		    of_device_is_compatible(np, "arm,cortex-a8") ||
+ 		    of_device_is_compatible(np, "arm,cortex-a9"))
+-			is_a8_a9 = true;
++			is_a7_a8_a9 = true;
+ 		else if (of_device_is_compatible(np, "arm,cortex-a15"))
+ 			is_a15 = true;
+ 	}
+@@ -69,7 +70,7 @@ void __init shmobile_init_delay(void)
+ 	if (!max_freq)
+ 		return;
+ 
+-	if (is_a8_a9)
++	if (is_a7_a8_a9)
+ 		shmobile_setup_delay_hz(max_freq, 1, 3);
+ 	else if (is_a15 && !IS_ENABLED(CONFIG_ARM_ARCH_TIMER))
+ 		shmobile_setup_delay_hz(max_freq, 2, 4);
 -- 
-1.7.9.5
+1.8.4.5
 
