@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 04 Sep 2014 06:51:27 +0000
+Date: Thu, 04 Sep 2014 06:58:40 +0000
 Subject: Re: [PATCH v2 1/3] clocksource: sh_cmt: Document SoC specific bindings
-Message-Id: <5552768.CVrm7BiFam@avalon>
+Message-Id: <6240436.VfJ5CJaKOx@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1409792121-28912-1-git-send-email-horms+renesas@verge.net.au>
  <1409792121-28912-2-git-send-email-horms+renesas@verge.net.au>
@@ -13,7 +13,7 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hi Simon,
 
-Thank you for the patch.
+A couple of other small issues I've missed.
 
 On Thursday 04 September 2014 09:55:19 Simon Horman wrote:
 > In general Renesas hardware is not documented to the extent
@@ -57,10 +57,16 @@ On Thursday 04 September 2014 09:55:19 Simon Horman wrote:
 > -    - "renesas,cmt-32" for the 32-bit CMT
 > +  - compatible: must contain one or more of the following:
 > +    - "renesas,cmt-32-r8a7740" for the R8a7740 32-bit CMT
+
+s/R8a7740/R8A7740/
+
 > +		(CMT0)
 > +    - "renesas,cmt-32-sh7372" for the SH7372 32-bit CMT
 > +		(CMT0)
 > +    - "renesas,cmt-32-sh73a0" for the SH73a0 32-bit CMT
+
+s/SH73a0/SH73A0/
+
 > +		(CMT0)
 > +    - "renesas,cmt-32" for all 32-bit CMT without fast clock support
 >  		(CMT0 on sh7372, sh73a0 and r8a7740)
@@ -99,17 +105,7 @@ On Thursday 04 September 2014 09:55:19 Simon Horman wrote:
 >  		(CMT[01] on r8a73a4, r8a7790 and r8a7791)
 > +		This is a fallback for the renesas,cmt-48-r8a73a4,
 > +		renesas,cmt-48-r8a7790 and renesas,cmt-48-gen2 entries.
-
-If renesas,cmt-48-gen2 is a fallback for renesas,cmt-48-gen2, we'll have an 
-infinite loop :-) I suppose you meant
-
-		This is a fallback for the renesas,cmt-48-r8a73a4,
-		renesas,cmt-48-r8a7790 and renesas,cmt-48-r8a7791 entries.
-
-With that change,
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
+> 
 >    - reg: base address and length of the registers block for the timer
 > module. - interrupts: interrupt-specifier for the timer, one per channel.
 > @@ -36,7 +68,7 @@ Example: R8A7790 (R-Car H2) CMT0 node
