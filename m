@@ -1,7 +1,7 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 04 Sep 2014 06:48:38 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 04 Sep 2014 11:04:04 +0000
 Subject: Re: [PATCH] ARM: shmobile: lager: Remove legacy C board code
-Message-Id: <2408146.P4fRldaTJQ@avalon>
+Message-Id: <CANqRtoQmDBcM19KV1KrM8Kc1RFbY5zjAPodX5_Zhj01ZnOoHLQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20140904023440.26241.39089.sendpatchset@w520>
 In-Reply-To: <20140904023440.26241.39089.sendpatchset@w520>
@@ -10,36 +10,30 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Magnus,
+Hi Laurent,
 
-Thank you for the patch.
+On Thu, Sep 4, 2014 at 3:48 PM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> Hi Magnus,
+>
+> Thank you for the patch.
+>
+> On Thursday 04 September 2014 11:34:40 Magnus Damm wrote:
+>> From: Magnus Damm <damm+renesas@opensource.se>
+>>
+>> The Multiplatform r8a7790 Lager board code is at this point
+>> in equally or better state compared to the legacy code.
+>
+> Don't we miss support for USBHS and sound with multiplatform Lager ? Did you
+> maybe mean to remove the Koelsch legacy board code ?
 
-On Thursday 04 September 2014 11:34:40 Magnus Damm wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
-> 
-> The Multiplatform r8a7790 Lager board code is at this point
-> in equally or better state compared to the legacy code.
+I intend to remove both sooner or later, also including defconfigs.
 
-Don't we miss support for USBHS and sound with multiplatform Lager ? Did you 
-maybe mean to remove the Koelsch legacy board code ?
+But yes, DMA enabled sound is not yet there. And some USB bits.
 
-> Because of that it is now a good time to get rid of the old
-> code and force all users move over to Multiplatform.
-> 
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> ---
-> 
->  Built on top of renesas-devel-20140904-v3.17-rc3 and
->  "[PATCH 00/03] ARM: shmobile: sh73a0 and kzm9g Multiplatform support"
-> 
->  arch/arm/mach-shmobile/Kconfig       |    7
->  arch/arm/mach-shmobile/Makefile      |    1
->  arch/arm/mach-shmobile/Makefile.boot |    1
->  arch/arm/mach-shmobile/board-lager.c |  892 -------------------------------
->  4 files changed, 901 deletions(-)
+It also collides with your DU DT patch series. How do we order all
+this, perhaps a discussion to have with Simon?
 
--- 
-Regards,
+Cheers,
 
-Laurent Pinchart
-
+/ magnus
