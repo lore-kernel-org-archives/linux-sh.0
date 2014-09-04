@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 04 Sep 2014 04:29:59 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 04 Sep 2014 06:31:45 +0000
 Subject: Re: [PATCH] ARM: shmobile: r8a7740: Cleanup PM Kconfig usage
-Message-Id: <20140904042956.GA28602@verge.net.au>
+Message-Id: <CAMuHMdXjm8WeA_iQx0hodBRS=T-TPT0SQor4cgcgu6LqqiuDEA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20140904033942.22881.84361.sendpatchset@w520>
 In-Reply-To: <20140904033942.22881.84361.sendpatchset@w520>
@@ -10,34 +10,54 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Sep 04, 2014 at 01:25:05PM +0900, Simon Horman wrote:
-> On Thu, Sep 04, 2014 at 01:17:54PM +0900, Magnus Damm wrote:
-> > Hi Simon,
-> > 
-> > On Thu, Sep 4, 2014 at 1:12 PM, Simon Horman <horms@verge.net.au> wrote:
-> > > On Thu, Sep 04, 2014 at 12:39:42PM +0900, Magnus Damm wrote:
-> > >> From: Magnus Damm <damm+renesas@opensource.se>
-> > >>
-> > >> Simplify the r8a7740 PM code by using CONFIG_PM_RMOBILE instead
-> > >> of having a complex #if expression embedded in the C code.
-> > >>
-> > >> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> > >
-> > > Thanks Magnus,
-> > >
-> > > this looks good to me.
-> > >
-> > > The dependencies for this changes are a bit messy so I would like
-> > > to defer it until v3.19. Could you repost it once v3.18-rc6 is released?
+Hi Magnus,
 
-That should read v3.17-rc6.
+On Thu, Sep 4, 2014 at 5:39 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> @@ -58,7 +58,9 @@ void __init r8a7740_init_pm_domains(void
+>         rmobile_init_domains(r8a7740_pm_domains, ARRAY_SIZE(r8a7740_pm_domains));
+>         pm_genpd_add_subdomain_names("A4S", "A3SP");
+>  }
+> -#endif /* CONFIG_PM && !CONFIG_ARCH_MULTIPLATFORM */
+> +#else
+> +void r8a7740_init_pm_domains(void) {}
+> +#endif
+>
+>  #ifdef CONFIG_SUSPEND
+>  static int r8a7740_enter_suspend(suspend_state_t suspend_state)
+> --- 0001/arch/arm/mach-shmobile/r8a7740.h
+> +++ work/arch/arm/mach-shmobile/r8a7740.h       2014-09-04 12:29:12.000000000 +0900
+> @@ -52,11 +52,6 @@ extern void r8a7740_add_standard_devices
+>  extern void r8a7740_clock_init(u8 md_ck);
+>  extern void r8a7740_pinmux_init(void);
+>  extern void r8a7740_pm_init(void);
+> -
+> -#if defined(CONFIG_PM) && !defined(CONFIG_ARCH_MULTIPLATFORM)
+> -extern void __init r8a7740_init_pm_domains(void);
+> -#else
+> -static inline void r8a7740_init_pm_domains(void) {}
+> -#endif /* CONFIG_PM && !CONFIG_ARCH_MULTIPLATFORM */
+> +extern void r8a7740_init_pm_domains(void);
+>
+>  #endif /* __ASM_R8A7740_H__ */
 
-> > Sure, will do! Does that apply to this patch only, or also to other
-> > things like the new (sh73a0 and/or r8a73a4) multiplatform bits and
-> > legacy board code removal?
-> 
-> At this time I would like to handle-things on a case-by-case basis.
-> 
-> In general it would make my life slightly easier if all futher
-> cleanups were deferred until v3.19. But at this stage I'm still happy
-> to assess each patch on its merits.
+Why do you make r8a7740_init_pm_domains() out-of-line in the
+!CONFIG_PM_RMOBILE case?
+It increases code size (call to an empty function that cannot be optimized
+away), and prevents us from building pm-r8a7740.c conditionally on
+CONFIG_PM_RMOBILE and CONFIG_ARCH_R8A7740 in the future.
+
+For the latter, we can turn pm-rmobile into a library, and do something
+like
+
+pm-rmobile-objs-$(CONFIG_ARCH_R8A7740)      += pm-r8a7740.o
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
