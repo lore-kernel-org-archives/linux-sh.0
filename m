@@ -1,37 +1,47 @@
-From: Mike Turquette <mturquette@linaro.org>
-Date: Mon, 01 Sep 2014 22:08:08 +0000
-Subject: Re: [PATCH v2 4/6] ARM: shmobile: r8a7794: document MSTP clock support
-Message-Id: <20140901220808.5251.7346@quantum>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 04 Sep 2014 01:12:40 +0000
+Subject: [PATCH 9/9] ARM: shmobile: r8a7791 is now called "R-Car M2-W"
+Message-Id: <13298fbbdb3f6a0ef55419dc048e064c7a7b0ef8.1409792454.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1409792454.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1409792454.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Quoting Ulrich Hecht (2014-08-29 11:15:08)
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Applied.
+As per recent revisions of the datasheet.
 
-Regards,
-Mike
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/Kconfig | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-> ---
->  Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> index 8a92b5f..a03c8c0 100644
-> --- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> +++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> @@ -14,6 +14,7 @@ Required Properties:
->      - "renesas,r8a7779-mstp-clocks" for R8A7779 (R-Car H1) MSTP gate clocks
->      - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
->      - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
-> +    - "renesas,r8a7794-mstp-clocks" for R8A7794 (R-Car E2) MSTP gate clocks
->      - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
->    - reg: Base address and length of the I/O mapped registers used by the MSTP
->      clocks. The first register is the clock control register and is mandatory.
-> -- 
-> 1.8.4.5
-> 
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 6283ff2..efc49da 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -59,7 +59,7 @@ config ARCH_R8A7790
+ 	select ARCH_RCAR_GEN2
+ 
+ config ARCH_R8A7791
+-	bool "R-Car M2 (R8A77910)"
++	bool "R-Car M2-W (R8A77910)"
+ 	select ARCH_RCAR_GEN2
+ 
+ comment "Renesas ARM SoCs Board Type"
+@@ -141,7 +141,7 @@ config ARCH_R8A7790
+ 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
+ 
+ config ARCH_R8A7791
+-	bool "R-Car M2 (R8A77910)"
++	bool "R-Car M2-W (R8A77910)"
+ 	select ARCH_RCAR_GEN2
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+-- 
+2.0.1
+
