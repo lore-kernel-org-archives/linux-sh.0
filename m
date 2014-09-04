@@ -1,60 +1,107 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 30 Sep 2014 12:26:27 +0000
-Subject: [PATCH/RFC v2 4/4] ARM: shmobile: r8a7740 dtsi: Add minimal device node for Coresight-ETM
-Message-Id: <1412079987-1827-5-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 04 Sep 2014 01:12:39 +0000
+Subject: [PATCH 8/9] ARM: shmobile: Consolidate Legacy SH_CLK_CPG Kconfig
+Message-Id: <0cdc23df6e4014a6dafe351da436dcc453f203b1.1409792454.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412079987-1827-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1412079987-1827-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1409792454.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1409792454.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-If power area D4, which contains the Coresight-ETM hardware block, is
-powered down on R-Mobile A1 (r8a7740), the kernel crashes when
-suspending from s2ram with:
+From: Magnus Damm <damm+renesas@opensource.se>
 
-    Internal error: Oops - undefined instruction: 0 [#1] ARM
+Consolidate SH_CLK_CPG under ARCH_SHMOBILE_LEGACY so it can
+be shared by the legacy ARM mach-shmobile support code.
 
-This happens because dbg_cpu_pm_notify() calls reset_ctrl_regs(), which
-can't access the debug registers as the debug module is powered down.
-
-Add a minimal device node for the Coresight-ETM hardware block, and hook
-it up to the D4 PM domain, so the R-Mobile System Controller driver can
-keep the arm_dbg_regs_available flag in sync with the state of the D4 PM
-domain.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: devicetree@vger.kernel.org
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-This is a fix on top of series "[PATCH 00/13] ARM: shmobile: R-Mobile:
-DT PM domain support" (https://lkml.org/lkml/2014/9/25/452), to be
-folded into "[PATCH v3 10/13] ARM: shmobile: r8a7740 dtsi: Add PM domain
-support" (https://lkml.org/lkml/2014/9/25/450).
+ arch/arm/Kconfig               | 1 +
+ arch/arm/mach-shmobile/Kconfig | 8 --------
+ 2 files changed, 1 insertion(+), 8 deletions(-)
 
-v2:
-  - New
-
----
- arch/arm/boot/dts/r8a7740.dtsi | 5 +++++
- 1 file changed, 5 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 0fb93df46af4ce08..2ae08fc99be678c3 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -44,6 +44,11 @@
- 		interrupts = <0 83 IRQ_TYPE_LEVEL_HIGH>;
- 	};
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 93efc9a..bd8beae 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -661,6 +661,7 @@ config ARCH_SHMOBILE_LEGACY
+ 	select NO_IOPORT_MAP
+ 	select PINCTRL
+ 	select PM_GENERIC_DOMAINS if PM
++	select SH_CLK_CPG
+ 	select SPARSE_IRQ
+ 	help
+ 	  Support for Renesas ARM SoC platforms using a non-multiplatform
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index d4cf8bf..6283ff2 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -95,7 +95,6 @@ config ARCH_SH7372
+ 	select ARCH_RMOBILE
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_CPU_SUSPEND if PM || CPU_IDLE
+-	select SH_CLK_CPG
+ 	select SH_INTC
  
-+	ptm {
-+		compatible = "arm,coresight-etm3x";
-+		power-domains = <&pd_d4>;
-+	};
-+
- 	cmt1: timer@e6138000 {
- 		compatible = "renesas,cmt-48-r8a7740", "renesas,cmt-48";
- 		reg = <0xe6138000 0x170>;
+ config ARCH_SH73A0
+@@ -104,7 +103,6 @@ config ARCH_SH73A0
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select I2C
+-	select SH_CLK_CPG
+ 	select SH_INTC
+ 	select RENESAS_INTC_IRQPIN
+ 
+@@ -113,7 +111,6 @@ config ARCH_R8A73A4
+ 	select ARCH_RMOBILE
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+-	select SH_CLK_CPG
+ 	select RENESAS_IRQC
+ 
+ config ARCH_R8A7740
+@@ -121,14 +118,12 @@ config ARCH_R8A7740
+ 	select ARCH_RMOBILE
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+-	select SH_CLK_CPG
+ 	select RENESAS_INTC_IRQPIN
+ 
+ config ARCH_R8A7778
+ 	bool "R-Car M1A (R8A77781)"
+ 	select ARCH_RCAR_GEN1
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+-	select SH_CLK_CPG
+ 	select ARM_GIC
+ 
+ config ARCH_R8A7779
+@@ -136,7 +131,6 @@ config ARCH_R8A7779
+ 	select ARCH_RCAR_GEN1
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+-	select SH_CLK_CPG
+ 
+ config ARCH_R8A7790
+ 	bool "R-Car H2 (R8A77900)"
+@@ -144,7 +138,6 @@ config ARCH_R8A7790
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select MIGHT_HAVE_PCI
+-	select SH_CLK_CPG
+ 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
+ 
+ config ARCH_R8A7791
+@@ -153,7 +146,6 @@ config ARCH_R8A7791
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select MIGHT_HAVE_PCI
+-	select SH_CLK_CPG
+ 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
+ 
+ config ARCH_R7S72100
 -- 
-1.9.1
+2.0.1
 
