@@ -1,39 +1,77 @@
-From: Guenter Roeck <linux@roeck-us.net>
-Date: Tue, 30 Sep 2014 18:00:47 +0000
-Subject: [RFC PATCH 07/16] c6x: support poweroff through poweroff handler call chain
-Message-Id: <1412100056-15517-8-git-send-email-linux@roeck-us.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 04 Sep 2014 01:12:33 +0000
+Subject: [PATCH 2/9] ARM: shmobile: Introduce a Kconfig entry for R-Car Gen1
+Message-Id: <57cc67d1422ebee313a62ff7b30981d945728094.1409792454.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
-In-Reply-To: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
+References: <cover.1409792454.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1409792454.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The kernel core now supports a poweroff handler call chain
-to remove power from the system. Call it if pm_power_off
-is set to NULL.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Cc: Mark Salter <msalter@redhat.com>
-Cc: Aurelien Jacquiot <a-jacquiot@ti.com>
-Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+Add a Kconfig entry for R-Car Generation 1 SoCs that
+enables TMU timer and the INTC IRQPIN driver.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/c6x/kernel/process.c | 2 ++
- 1 file changed, 2 insertions(+)
+ arch/arm/mach-shmobile/Kconfig | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
 
-diff --git a/arch/c6x/kernel/process.c b/arch/c6x/kernel/process.c
-index 57d2ea8..ddf088e 100644
---- a/arch/c6x/kernel/process.c
-+++ b/arch/c6x/kernel/process.c
-@@ -75,6 +75,8 @@ void machine_power_off(void)
- {
- 	if (pm_power_off)
- 		pm_power_off();
-+	else
-+		do_kernel_poweroff();
- 	halt_loop();
- }
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 6de3058..258d730 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -1,6 +1,11 @@
+ config ARCH_SHMOBILE
+ 	bool
  
++config ARCH_RCAR_GEN1
++	bool
++	select RENESAS_INTC_IRQPIN
++	select SYS_SUPPORTS_SH_TMU
++
+ config ARCH_RMOBILE
+ 	bool
+ 	select SYS_SUPPORTS_SH_CMT
+@@ -33,8 +38,7 @@ config ARCH_R7S72100
+ 
+ config ARCH_R8A7779
+ 	bool "R-Car H1 (R8A77790)"
+-	select RENESAS_INTC_IRQPIN
+-	select SYS_SUPPORTS_SH_TMU
++	select ARCH_RCAR_GEN1
+ 
+ config ARCH_R8A7790
+ 	bool "R-Car H2 (R8A77900)"
+@@ -114,21 +118,19 @@ config ARCH_R8A7740
+ 
+ config ARCH_R8A7778
+ 	bool "R-Car M1A (R8A77781)"
++	select ARCH_RCAR_GEN1
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select CPU_V7
+ 	select SH_CLK_CPG
+ 	select ARM_GIC
+-	select SYS_SUPPORTS_SH_TMU
+-	select RENESAS_INTC_IRQPIN
+ 
+ config ARCH_R8A7779
+ 	bool "R-Car H1 (R8A77790)"
++	select ARCH_RCAR_GEN1
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select CPU_V7
+ 	select SH_CLK_CPG
+-	select RENESAS_INTC_IRQPIN
+-	select SYS_SUPPORTS_SH_TMU
+ 
+ config ARCH_R8A7790
+ 	bool "R-Car H2 (R8A77900)"
 -- 
-1.9.1
+2.0.1
 
