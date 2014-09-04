@@ -1,54 +1,355 @@
-From: Felipe Balbi <balbi@ti.com>
-Date: Wed, 10 Sep 2014 13:50:04 +0000
-Subject: Re: [PATCH 2/4] usb: renesas_usbhs: gadget: fix the behavior of pullup
-Message-Id: <20140910135004.GE667@saruman.home>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="2qXFWqzzG3v1+95a"
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 04 Sep 2014 21:42:09 +0000
+Subject: [PATCH v5 1/2] usb: rename phy to usb_phy in HCD
+Message-Id: <2282553.NrZjRxyKlv@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <54102910.70703@renesas.com>
-In-Reply-To: <54102910.70703@renesas.com>
-To: linux-sh@vger.kernel.org
+References: <5072811.p8odmvpxdS@wasted.cogentembedded.com>
+In-Reply-To: <5072811.p8odmvpxdS@wasted.cogentembedded.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: gregkh@linuxfoundation.org, linux-usb@vger.kernel.org, Peter.Chen@freescale.com, stern@rowland.harvard.edu, swarren@wwwdotorg.org, thierry.reding@gmail.com, balbi@ti.com, linux-tegra@vger.kernel.org, linux-omap@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, yoshihiro.shimoda.uh@renesas.com, linux-kernel@vger.kernel.org, antoine.tenart@free-electrons.com
 
---2qXFWqzzG3v1+95a
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+From: Antoine Tenart <antoine.tenart@free-electrons.com>
 
-On Wed, Sep 10, 2014 at 07:33:52PM +0900, Yoshihiro Shimoda wrote:
-> This patch fixes an issue that this driver always enable the D+ pullup
-> after it detected the VBUS connection even though this usb controller
-> can control the D+ pullup timing by software. So, this driver should
-> enable the D+ pullup after a gadget driver called usb_gadget_connect().
->=20
-> Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-> Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+The USB PHY member of the HCD structure is renamed to 'usb_phy' and
+modifications are done in all drivers accessing it.
+This is in preparation to adding the generic PHY support.
 
-which commit does this fix ? Do we need cc stable ?
+Signed-off-by: Antoine Tenart <antoine.tenart@free-electrons.com>
+[Sergei: added missing 'drivers/usb/misc/lvstest.c' file, resolved rejects
+caused by patch reordering, updated changelog.]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Alan Stern <stern@rowland.harvard.edu>
 
---=20
-balbi
+---
+Changes in version 5:
+- imported the patch from Antoine Tenart's series;
+- added missing 'drivers/usb/misc/lvstest.c' file;
+- resolved rejects caused by patch reordering;
+- refreshed patch;
+- updated changelog.
 
---2qXFWqzzG3v1+95a
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+ drivers/usb/chipidea/host.c   |    2 +-
+ drivers/usb/core/hcd.c        |   20 ++++++++++----------
+ drivers/usb/core/hub.c        |    8 ++++----
+ drivers/usb/host/ehci-fsl.c   |   16 ++++++++--------
+ drivers/usb/host/ehci-hub.c   |    2 +-
+ drivers/usb/host/ehci-msm.c   |    4 ++--
+ drivers/usb/host/ehci-tegra.c |   16 ++++++++--------
+ drivers/usb/host/ohci-omap.c  |   20 ++++++++++----------
+ drivers/usb/misc/lvstest.c    |    8 ++++----
+ include/linux/usb/hcd.h       |    2 +-
+ 10 files changed, 49 insertions(+), 49 deletions(-)
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+Index: usb/drivers/usb/chipidea/host.c
+=================================--- usb.orig/drivers/usb/chipidea/host.c
++++ usb/drivers/usb/chipidea/host.c
+@@ -59,7 +59,7 @@ static int host_start(struct ci_hdrc *ci
+ 	hcd->has_tt = 1;
+ 
+ 	hcd->power_budget = ci->platdata->power_budget;
+-	hcd->phy = ci->transceiver;
++	hcd->usb_phy = ci->transceiver;
+ 
+ 	ehci = hcd_to_ehci(hcd);
+ 	ehci->caps = ci->hw_bank.cap;
+Index: usb/drivers/usb/core/hcd.c
+=================================--- usb.orig/drivers/usb/core/hcd.c
++++ usb/drivers/usb/core/hcd.c
+@@ -2627,7 +2627,7 @@ int usb_add_hcd(struct usb_hcd *hcd,
+ 	int retval;
+ 	struct usb_device *rhdev;
+ 
+-	if (IS_ENABLED(CONFIG_USB_PHY) && !hcd->phy) {
++	if (IS_ENABLED(CONFIG_USB_PHY) && !hcd->usb_phy) {
+ 		struct usb_phy *phy = usb_get_phy_dev(hcd->self.controller, 0);
+ 
+ 		if (IS_ERR(phy)) {
+@@ -2640,7 +2640,7 @@ int usb_add_hcd(struct usb_hcd *hcd,
+ 				usb_put_phy(phy);
+ 				return retval;
+ 			}
+-			hcd->phy = phy;
++			hcd->usb_phy = phy;
+ 			hcd->remove_phy = 1;
+ 		}
+ 	}
+@@ -2788,10 +2788,10 @@ err_allocate_root_hub:
+ err_register_bus:
+ 	hcd_buffer_destroy(hcd);
+ err_remove_phy:
+-	if (hcd->remove_phy && hcd->phy) {
+-		usb_phy_shutdown(hcd->phy);
+-		usb_put_phy(hcd->phy);
+-		hcd->phy = NULL;
++	if (hcd->remove_phy && hcd->usb_phy) {
++		usb_phy_shutdown(hcd->usb_phy);
++		usb_put_phy(hcd->usb_phy);
++		hcd->usb_phy = NULL;
+ 	}
+ 	return retval;
+ }
+@@ -2864,10 +2864,10 @@ void usb_remove_hcd(struct usb_hcd *hcd)
+ 
+ 	usb_deregister_bus(&hcd->self);
+ 	hcd_buffer_destroy(hcd);
+-	if (hcd->remove_phy && hcd->phy) {
+-		usb_phy_shutdown(hcd->phy);
+-		usb_put_phy(hcd->phy);
+-		hcd->phy = NULL;
++	if (hcd->remove_phy && hcd->usb_phy) {
++		usb_phy_shutdown(hcd->usb_phy);
++		usb_put_phy(hcd->usb_phy);
++		hcd->usb_phy = NULL;
+ 	}
+ 
+ 	usb_put_invalidate_rhdev(hcd);
+Index: usb/drivers/usb/core/hub.c
+=================================--- usb.orig/drivers/usb/core/hub.c
++++ usb/drivers/usb/core/hub.c
+@@ -4461,8 +4461,8 @@ hub_port_init (struct usb_hub *hub, stru
+ 	if (retval)
+ 		goto fail;
+ 
+-	if (hcd->phy && !hdev->parent)
+-		usb_phy_notify_connect(hcd->phy, udev->speed);
++	if (hcd->usb_phy && !hdev->parent)
++		usb_phy_notify_connect(hcd->usb_phy, udev->speed);
+ 
+ 	/*
+ 	 * Some superspeed devices have finished the link training process
+@@ -4617,9 +4617,9 @@ static void hub_port_connect(struct usb_
+ 
+ 	/* Disconnect any existing devices under this port */
+ 	if (udev) {
+-		if (hcd->phy && !hdev->parent &&
++		if (hcd->usb_phy && !hdev->parent &&
+ 				!(portstatus & USB_PORT_STAT_CONNECTION))
+-			usb_phy_notify_disconnect(hcd->phy, udev->speed);
++			usb_phy_notify_disconnect(hcd->usb_phy, udev->speed);
+ 		usb_disconnect(&port_dev->child);
+ 	}
+ 
+Index: usb/drivers/usb/host/ehci-fsl.c
+=================================--- usb.orig/drivers/usb/host/ehci-fsl.c
++++ usb/drivers/usb/host/ehci-fsl.c
+@@ -136,15 +136,15 @@ static int usb_hcd_fsl_probe(const struc
+ 	if (pdata->operating_mode = FSL_USB2_DR_OTG) {
+ 		struct ehci_hcd *ehci = hcd_to_ehci(hcd);
+ 
+-		hcd->phy = usb_get_phy(USB_PHY_TYPE_USB2);
++		hcd->usb_phy = usb_get_phy(USB_PHY_TYPE_USB2);
+ 		dev_dbg(&pdev->dev, "hcd=0x%p  ehci=0x%p, phy=0x%p\n",
+-			hcd, ehci, hcd->phy);
++			hcd, ehci, hcd->usb_phy);
+ 
+-		if (!IS_ERR_OR_NULL(hcd->phy)) {
+-			retval = otg_set_host(hcd->phy->otg,
++		if (!IS_ERR_OR_NULL(hcd->usb_phy)) {
++			retval = otg_set_host(hcd->usb_phy->otg,
+ 					      &ehci_to_hcd(ehci)->self);
+ 			if (retval) {
+-				usb_put_phy(hcd->phy);
++				usb_put_phy(hcd->usb_phy);
+ 				goto err2;
+ 			}
+ 		} else {
+@@ -181,9 +181,9 @@ static void usb_hcd_fsl_remove(struct us
+ {
+ 	struct fsl_usb2_platform_data *pdata = dev_get_platdata(&pdev->dev);
+ 
+-	if (!IS_ERR_OR_NULL(hcd->phy)) {
+-		otg_set_host(hcd->phy->otg, NULL);
+-		usb_put_phy(hcd->phy);
++	if (!IS_ERR_OR_NULL(hcd->usb_phy)) {
++		otg_set_host(hcd->usb_phy->otg, NULL);
++		usb_put_phy(hcd->usb_phy);
+ 	}
+ 
+ 	usb_remove_hcd(hcd);
+Index: usb/drivers/usb/host/ehci-hub.c
+=================================--- usb.orig/drivers/usb/host/ehci-hub.c
++++ usb/drivers/usb/host/ehci-hub.c
+@@ -922,7 +922,7 @@ int ehci_hub_control(
+ #ifdef CONFIG_USB_OTG
+ 			if ((hcd->self.otg_port = (wIndex + 1))
+ 			    && hcd->self.b_hnp_enable) {
+-				otg_start_hnp(hcd->phy->otg);
++				otg_start_hnp(hcd->usb_phy->otg);
+ 				break;
+ 			}
+ #endif
+Index: usb/drivers/usb/host/ehci-msm.c
+=================================--- usb.orig/drivers/usb/host/ehci-msm.c
++++ usb/drivers/usb/host/ehci-msm.c
+@@ -124,7 +124,7 @@ static int ehci_msm_probe(struct platfor
+ 		goto put_hcd;
+ 	}
+ 
+-	hcd->phy = phy;
++	hcd->usb_phy = phy;
+ 	device_init_wakeup(&pdev->dev, 1);
+ 	/*
+ 	 * OTG device parent of HCD takes care of putting
+@@ -151,7 +151,7 @@ static int ehci_msm_remove(struct platfo
+ 	pm_runtime_disable(&pdev->dev);
+ 	pm_runtime_set_suspended(&pdev->dev);
+ 
+-	otg_set_host(hcd->phy->otg, NULL);
++	otg_set_host(hcd->usb_phy->otg, NULL);
+ 
+ 	/* FIXME: need to call usb_remove_hcd() here? */
+ 
+Index: usb/drivers/usb/host/ehci-tegra.c
+=================================--- usb.orig/drivers/usb/host/ehci-tegra.c
++++ usb/drivers/usb/host/ehci-tegra.c
+@@ -206,7 +206,7 @@ static int tegra_ehci_hub_control(
+ 		if (tegra->port_resuming && !(temp & PORT_SUSPEND)) {
+ 			/* Resume completed, re-enable disconnect detection */
+ 			tegra->port_resuming = 0;
+-			tegra_usb_phy_postresume(hcd->phy);
++			tegra_usb_phy_postresume(hcd->usb_phy);
+ 		}
+ 	}
+ 
+@@ -259,7 +259,7 @@ static int tegra_ehci_hub_control(
+ 			goto done;
+ 
+ 		/* Disable disconnect detection during port resume */
+-		tegra_usb_phy_preresume(hcd->phy);
++		tegra_usb_phy_preresume(hcd->usb_phy);
+ 
+ 		ehci->reset_done[wIndex-1] = jiffies + msecs_to_jiffies(25);
+ 
+@@ -454,7 +454,7 @@ static int tegra_ehci_probe(struct platf
+ 		err = PTR_ERR(u_phy);
+ 		goto cleanup_clk_en;
+ 	}
+-	hcd->phy = u_phy;
++	hcd->usb_phy = u_phy;
+ 
+ 	tegra->needs_double_reset = of_property_read_bool(pdev->dev.of_node,
+ 		"nvidia,needs-double-reset");
+@@ -475,7 +475,7 @@ static int tegra_ehci_probe(struct platf
+ 	ehci->caps = hcd->regs + 0x100;
+ 	ehci->has_hostpc = soc_config->has_hostpc;
+ 
+-	err = usb_phy_init(hcd->phy);
++	err = usb_phy_init(hcd->usb_phy);
+ 	if (err) {
+ 		dev_err(&pdev->dev, "Failed to initialize phy\n");
+ 		goto cleanup_clk_en;
+@@ -490,7 +490,7 @@ static int tegra_ehci_probe(struct platf
+ 	}
+ 	u_phy->otg->host = hcd_to_bus(hcd);
+ 
+-	err = usb_phy_set_suspend(hcd->phy, 0);
++	err = usb_phy_set_suspend(hcd->usb_phy, 0);
+ 	if (err) {
+ 		dev_err(&pdev->dev, "Failed to power on the phy\n");
+ 		goto cleanup_phy;
+@@ -517,7 +517,7 @@ static int tegra_ehci_probe(struct platf
+ cleanup_otg_set_host:
+ 	otg_set_host(u_phy->otg, NULL);
+ cleanup_phy:
+-	usb_phy_shutdown(hcd->phy);
++	usb_phy_shutdown(hcd->usb_phy);
+ cleanup_clk_en:
+ 	clk_disable_unprepare(tegra->clk);
+ cleanup_hcd_create:
+@@ -531,9 +531,9 @@ static int tegra_ehci_remove(struct plat
+ 	struct tegra_ehci_hcd *tegra  		(struct tegra_ehci_hcd *)hcd_to_ehci(hcd)->priv;
+ 
+-	otg_set_host(hcd->phy->otg, NULL);
++	otg_set_host(hcd->usb_phy->otg, NULL);
+ 
+-	usb_phy_shutdown(hcd->phy);
++	usb_phy_shutdown(hcd->usb_phy);
+ 	usb_remove_hcd(hcd);
+ 
+ 	clk_disable_unprepare(tegra->clk);
+Index: usb/drivers/usb/host/ohci-omap.c
+=================================--- usb.orig/drivers/usb/host/ohci-omap.c
++++ usb/drivers/usb/host/ohci-omap.c
+@@ -180,10 +180,10 @@ static void start_hnp(struct ohci_hcd *o
+ 	unsigned long	flags;
+ 	u32 l;
+ 
+-	otg_start_hnp(hcd->phy->otg);
++	otg_start_hnp(hcd->usb_phy->otg);
+ 
+ 	local_irq_save(flags);
+-	hcd->phy->state = OTG_STATE_A_SUSPEND;
++	hcd->usb_phy->state = OTG_STATE_A_SUSPEND;
+ 	writel (RH_PS_PSS, &ohci->regs->roothub.portstatus [port]);
+ 	l = omap_readl(OTG_CTRL);
+ 	l &= ~OTG_A_BUSREQ;
+@@ -220,14 +220,14 @@ static int ohci_omap_reset(struct usb_hc
+ 
+ #ifdef	CONFIG_USB_OTG
+ 	if (need_transceiver) {
+-		hcd->phy = usb_get_phy(USB_PHY_TYPE_USB2);
+-		if (!IS_ERR_OR_NULL(hcd->phy)) {
+-			int	status = otg_set_host(hcd->phy->otg,
++		hcd->usb_phy = usb_get_phy(USB_PHY_TYPE_USB2);
++		if (!IS_ERR_OR_NULL(hcd->usb_phy)) {
++			int	status = otg_set_host(hcd->usb_phy->otg,
+ 						&ohci_to_hcd(ohci)->self);
+ 			dev_dbg(hcd->self.controller, "init %s phy, status %d\n",
+-					hcd->phy->label, status);
++					hcd->usb_phy->label, status);
+ 			if (status) {
+-				usb_put_phy(hcd->phy);
++				usb_put_phy(hcd->usb_phy);
+ 				return status;
+ 			}
+ 		} else {
+@@ -399,9 +399,9 @@ usb_hcd_omap_remove (struct usb_hcd *hcd
+ 	dev_dbg(hcd->self.controller, "stopping USB Controller\n");
+ 	usb_remove_hcd(hcd);
+ 	omap_ohci_clock_power(0);
+-	if (!IS_ERR_OR_NULL(hcd->phy)) {
+-		(void) otg_set_host(hcd->phy->otg, 0);
+-		usb_put_phy(hcd->phy);
++	if (!IS_ERR_OR_NULL(hcd->usb_phy)) {
++		(void) otg_set_host(hcd->usb_phy->otg, 0);
++		usb_put_phy(hcd->usb_phy);
+ 	}
+ 	if (machine_is_omap_osk())
+ 		gpio_free(9);
+Index: usb/drivers/usb/misc/lvstest.c
+=================================--- usb.orig/drivers/usb/misc/lvstest.c
++++ usb/drivers/usb/misc/lvstest.c
+@@ -333,13 +333,13 @@ static void lvs_rh_work(struct work_stru
+ 					USB_PORT_STAT_CONNECTION) {
+ 				lvs->present = true;
+ 				lvs->portnum = i;
+-				if (hcd->phy)
+-					usb_phy_notify_connect(hcd->phy,
++				if (hcd->usb_phy)
++					usb_phy_notify_connect(hcd->usb_phy,
+ 							USB_SPEED_SUPER);
+ 			} else {
+ 				lvs->present = false;
+-				if (hcd->phy)
+-					usb_phy_notify_disconnect(hcd->phy,
++				if (hcd->usb_phy)
++					usb_phy_notify_disconnect(hcd->usb_phy,
+ 							USB_SPEED_SUPER);
+ 			}
+ 			break;
+Index: usb/include/linux/usb/hcd.h
+=================================--- usb.orig/include/linux/usb/hcd.h
++++ usb/include/linux/usb/hcd.h
+@@ -106,7 +106,7 @@ struct usb_hcd {
+ 	 * OTG and some Host controllers need software interaction with phys;
+ 	 * other external phys should be software-transparent
+ 	 */
+-	struct usb_phy	*phy;
++	struct usb_phy		*usb_phy;
+ 
+ 	/* Flags that need to be manipulated atomically because they can
+ 	 * change while the host controller is running.  Always use
 
-iQIcBAEBAgAGBQJUEFcMAAoJEIaOsuA1yqRELzUP/RZf7CdVM2VeM2Czpely5F6Q
-503Lk2xUsgburIKMjCg8ypCHn4hR/GzIlTDDrPL11fC7WbxEF8BnZ7kHvgxv4v+S
-yzSLJMwSFlPc+Ci8rd01+EBCWdxSjbGowotUBfb0YI5wfpxxLXoxnVk3vlmrJYUU
-HTnbRzR4xJmrVaUf7Nlx7PvCgKVkuSBNyAZS3f3Ixp66PWxbtOmW7SF+CpVXR/Q1
-5APooY0Dpbzdtjo28kC6oxsXXtSZ6X4JI49GGPxwyHAMbDQlKb7Y0ijdErqf0KR6
-8OH3LpUtp1LvQ9nOiYuJQKQs0SCAnuIr5fO6sX0Sj+PaOAdnYxFAtuKMT91rnuGs
-YdNtUD1gXDI22t5HHrrOS2dPn39T/QkKv9x5D1BfhYb7rt3075BBHoVf4sSHiiQr
-gQEardk+a0YqpUSTyGVBgQ10PqDYYBWCxGHcEEYxrwb6PA2OYrd2wD8WtksSERJS
-wUwkjAN09biygR1Etfb+/ley5sKVZwIV/h0JJwtm+KPHYmmXNp8fcacqIPoU/eNB
-kM5ez+Gs8mkjX5iv/YJg3ph7LSSeKrlcGM2IcQEDd6LUqzKrfVr7gHBJLYccLAdu
-R5i2/dfBt00cc/8v9ghu53ptL9ZtQfGZ46GxFPBqAIHTtLfh9ELNIlDlaEGOZPqU
-5AXxhVnVtpwes7/e2Zd0
-=u168
------END PGP SIGNATURE-----
-
---2qXFWqzzG3v1+95a--
