@@ -1,35 +1,41 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 09 Sep 2014 07:16:34 +0000
-Subject: Re: [PATCH/RFC 2/5] PM / Domains: Add DT bindings for the R-Mobile System Controller
-Message-Id: <CAMuHMdWRT=ZjXLVtPKJ1ppYLACQhBHJxZRxf6cnGkfC2dLxOOQ@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 04 Sep 2014 02:36:16 +0000
+Subject: Re: [PATCH 04/05] ARM: shmobile: armadillo800eva reference: Remove C board code
+Message-Id: <CANqRtoSCT1qx1oL-Up3cNdy0qvfe=Ej=xC7F1BxMexpwL6JXFg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410183344-14756-1-git-send-email-geert+renesas@glider.be>
- <1410183344-14756-3-git-send-email-geert+renesas@glider.be>
- <540E313B.8000305@renesas.com>
-In-Reply-To: <540E313B.8000305@renesas.com>
+References: <20140828033518.18867.19496.sendpatchset@w520>
+In-Reply-To: <20140828033518.18867.19496.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Khiem-san,
-
-On Tue, Sep 9, 2014 at 12:44 AM, Khiem Nguyen
-<khiem.nguyen.xt@renesas.com> wrote:
->> +      - #address-cells: Must be 1,
->> +      - #address-cells: Must be 0.
+On Thu, Aug 28, 2014 at 12:35 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> From: Magnus Damm <damm+renesas@opensource.se>
 >
-> Should it be "#size-cells: Must be 0." ?
+> Now when the r8a7740 generic multiplatform case has the same
+> features as the DT reference board code then get rid of the
+> Armadillo800EVA DT reference C board code. DT Reference code
+> in the future shall make use of the r8a7740 Multiplatform
+> support code with the generic SoC machine vector.
+>
+> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+> ---
+>
+>  arch/arm/mach-shmobile/Kconfig                           |   15 -
+>  arch/arm/mach-shmobile/Makefile                          |    1
+>  arch/arm/mach-shmobile/Makefile.boot                     |    1
+>  arch/arm/mach-shmobile/board-armadillo800eva-reference.c |  199 --------------
+>  4 files changed, 216 deletions(-)
 
-Yes, obviously. Thanks, will fix.
+Hi Simon,
 
-Gr{oetje,eeting}s,
+Thanks for your help picking up this series. I noticed that in your
+git repository this particular patch is missing the Kconfig and
+Makefile bits. If this is intentional and you intend to remove those
+portions in a separate patch somewhere down the line then that's of
+course fine with me. If not then please consider including them. =)
 
-                        Geert
+Cheers,
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+/ magnus
