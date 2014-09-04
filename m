@@ -1,51 +1,62 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Wed, 03 Sep 2014 02:10:11 +0000
-Subject: [PATCH 6/7 v3] ARM: shmobile: remove MMC_CAP2_NO_MULTI_READ from lager
-Message-Id: <8738c978u7.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 04 Sep 2014 01:12:27 +0000
+Subject: [PATCH 4/5] ARM: shmobile: r8a7779 dtsi: Use tabs for indentation
+Message-Id: <99e544c782ba03855b9b6762b73915565065dbf8.1409792871.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
-	<87bnqx78xr.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87bnqx78xr.wl%kuninori.morimoto.gx@gmail.com>
+References: <cover.1409792871.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1409792871.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-sh_mobile_sdhi cares multiblock read bug.
-remove MMC_CAP2_NO_MULTI_READ flag from board code
+Checkpatch says:
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+ERROR: code indent should use tabs where possible
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2 -> v3
+ arch/arm/boot/dts/r8a7779.dtsi | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
- - no change
-
- arch/arm/mach-shmobile/board-lager.c |    2 --
- 1 file changed, 2 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index e1d8215..f5a98e2 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -630,7 +630,6 @@ static void __init lager_add_rsnd_device(void)
- static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
--	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
- 			  TMIO_MMC_WRPROTECT_DISABLE,
- };
-@@ -644,7 +643,6 @@ static struct resource sdhi0_resources[] __initdata = {
- static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
--	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
- 			  TMIO_MMC_WRPROTECT_DISABLE,
- };
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index b749101..05b68f4 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -398,10 +398,10 @@
+ 		/* Gate clocks */
+ 		mstp0_clks: clocks@ffc80030 {
+ 			compatible = "renesas,r8a7779-mstp-clocks",
+-			             "renesas,cpg-mstp-clocks";
++				     "renesas,cpg-mstp-clocks";
+ 			reg = <0xffc80030 4>;
+ 			clocks = <&cpg_clocks R8A7779_CLK_S>,
+-			         <&cpg_clocks R8A7779_CLK_P>,
++				 <&cpg_clocks R8A7779_CLK_P>,
+ 				 <&cpg_clocks R8A7779_CLK_P>,
+ 				 <&cpg_clocks R8A7779_CLK_P>,
+ 				 <&cpg_clocks R8A7779_CLK_S>,
+@@ -435,7 +435,7 @@
+ 		};
+ 		mstp1_clks: clocks@ffc80034 {
+ 			compatible = "renesas,r8a7779-mstp-clocks",
+-			             "renesas,cpg-mstp-clocks";
++				     "renesas,cpg-mstp-clocks";
+ 			reg = <0xffc80034 4>, <0xffc80044 4>;
+ 			clocks = <&cpg_clocks R8A7779_CLK_P>,
+ 				 <&cpg_clocks R8A7779_CLK_P>,
+@@ -464,7 +464,7 @@
+ 		};
+ 		mstp3_clks: clocks@ffc8003c {
+ 			compatible = "renesas,r8a7779-mstp-clocks",
+-			             "renesas,cpg-mstp-clocks";
++				     "renesas,cpg-mstp-clocks";
+ 			reg = <0xffc8003c 4>;
+ 			clocks = <&s4_clk>, <&s4_clk>, <&s4_clk>, <&s4_clk>,
+ 				 <&s4_clk>, <&s4_clk>;
 -- 
-1.7.9.5
+2.0.1
 
