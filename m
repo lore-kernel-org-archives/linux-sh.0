@@ -1,18 +1,18 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 04 Sep 2014 08:40:11 +0000
+From: Kevin Hilman <khilman@kernel.org>
+Date: Fri, 05 Sep 2014 15:35:56 +0000
 Subject: Re: [PATCH 00/15] PM / Domains: Cleanups and remove superfluous APIs
-Message-Id: <CAMuHMdXmfG_bpzX3HrtZPB5nV2n7UPwxGJqdpjJBqWNSnBe-Pw@mail.gmail.com>
+Message-Id: <7ha96eyt9f.fsf@paris.lan>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
-In-Reply-To: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
+In-Reply-To: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org> (Ulf
+ Hansson's message of "Wed, 3 Sep 2014 12:52:16 +0200")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Ulf,
+Ulf Hansson <ulf.hansson@linaro.org> writes:
 
-On Wed, Sep 3, 2014 at 12:52 PM, Ulf Hansson <ulf.hansson@linaro.org> wrote:
 > This patchset has a bit of a history and some parts of it has been posted
 > earlier.
 > http://lists.infradead.org/pipermail/linux-arm-kernel/2014-June/262725.html
@@ -23,20 +23,5 @@ On Wed, Sep 3, 2014 at 12:52 PM, Ulf Hansson <ulf.hansson@linaro.org> wrote:
 > Do note, there are dependencies through this patchset, especially related to
 > the ARM SoC changes, thus they all need to be kept together.
 
-Thanks for your patch series!
+Reviewed-by: Kevin Hilman <khilman@linaro.org>
 
-I gave this series (on top of "[PATCH v2 0/9] PM / Domains: Generic OF-based
-support", with one minor conflict) a quick run on r8a7791/koelsch-reference,
-r8a7740/armadillo-legacy, and r8a7740/armadillo-multiplatform.
-Everything looks fine.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
