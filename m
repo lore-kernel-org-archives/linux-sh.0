@@ -1,42 +1,27 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 25 Sep 2014 16:15:41 +0000
-Subject: [PATCH v2 10/11] ARM: shmobile: r8a7740: Add A4SU pm domain support
-Message-Id: <1411661742-4767-11-git-send-email-geert+renesas@glider.be>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 05 Sep 2014 16:00:47 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC Maintainers Updates for v3.18
+Message-Id: <201409051800.47772.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411661742-4767-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1411661742-4767-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1408492852.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408492852.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add support for the A4SU power domain.
-This domain contains the USBPHY hardware block, which is currently not
-used by any driver.
+On Wednesday 20 August 2014, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
+> for you to fetch changes up to f7b98477f613a69b74ba4a715856630cc6508c0d:
+> 
+>   ARM: shmobile: Remove genmai_defconfig from MAINTAINERS (2014-08-17 09:39:29 +0900)
+> 
+> ----------------------------------------------------------------
+> Renesas ARM Based SoC Maintainers Updates for v3.18
+> 
+> * Remove genmai_defconfig from MAINTAINERS
+>   genmai_defconfig was removed in v3.17-rc1.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-v2:
-  - Drop FIXME about hooking up USB platform devices, as the Armadillo
-    platform code doesn't register a USB host device anyway?
----
- arch/arm/mach-shmobile/pm-r8a7740.c | 3 +++
- 1 file changed, 3 insertions(+)
+Merged into next/fixes-non-critical, thanks!
 
-diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
-index 7226c3543ecdc0ea..f3a1c92f5de6177d 100644
---- a/arch/arm/mach-shmobile/pm-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7740.c
-@@ -63,6 +63,9 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
- 	}, {
- 		.genpd.name	= "A3SG",
- 		.bit_shift	= 13,
-+	}, {
-+		.genpd.name	= "A4SU",
-+		.bit_shift	= 20,
- 	},
- };
- 
--- 
-1.9.1
-
+	Arnd
