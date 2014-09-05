@@ -1,42 +1,34 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 03 Sep 2014 06:03:29 +0000
-Subject: Re: [PATCH v2] usb: renesas_usbhs: fix driver dependencies
-Message-Id: <5406AF31.4070906@renesas.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 05 Sep 2014 15:27:18 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC Init Delay Updates For v3.18
+Message-Id: <201409051727.18845.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1601192.oClrOJlUe8@amdc1032> <CAMuHMdVp16nXS1GefyV0OD7Dwewct0UPTEEYLj+GKCrnBxjhLw@mail.gmail.com> <20140901233900.GB15867@verge.net.au>
-In-Reply-To: <20140901233900.GB15867@verge.net.au>
+References: <cover.1408927601.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408927601.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Magnus Damm <magnus.damm@gmail.com>, Kyungmin Park <kyungmin.park@samsung.com>, USB list <linux-usb@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-(2014/09/02 8:39), Simon Horman wrote:
-> On Mon, Sep 01, 2014 at 06:40:50PM +0200, Geert Uytterhoeven wrote:
->> On Mon, Sep 1, 2014 at 4:24 PM, Bartlomiej Zolnierkiewicz
->> <b.zolnierkie@samsung.com> wrote:
->>> Renesas USBHS controller support should be available only on
->>> Renesas ARM SoCs and SuperH architecture.
->>>
->>> Signed-off-by: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
->>> Acked-by: Kyungmin Park <kyungmin.park@samsung.com>
->>> Cc: Simon Horman <horms@verge.net.au>
->>> Cc: Magnus Damm <magnus.damm@gmail.com>
->>> ---
->>> v2:
->>> - s/ARCH_SH/SUPERH/ (thanks to Sergei Shtylyov)
->>
->> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+On Monday 25 August 2014, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
 > 
-> Acked-by: Simon Horman <horms+renesas@verge.net.au>
-
-Acked-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-
-Best regards,
-Yoshihiro Shimoda
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Please consider these Renesas ARM based SoC init delay updates for v3.18.
 > 
+
+While looking at your branches, I noticed that you go to great lengths
+to compute the correct lpj value and avoid the calibration.
+
+However, I believe the "modern" way to do this is to call
+register_current_timer_delay() in order to base the delay loop
+on the hardware timer instead of looping in the CPU. This is
+more accurate and more robust against CPU frequency scaling.
+
+I'm applying the patches now, but it's something you may want
+to look at in the future. On a related topic, your clocksource
+drivers could be simplified for the DT-only case by using
+CLOCKSOURCE_OF_DECLARE() instead of early_platform_init(), but
+I don't know what the impact would be for the arch/sh and legacy
+mach-shmobile cases.
+
+	Arnd
