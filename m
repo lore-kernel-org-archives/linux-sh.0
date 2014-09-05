@@ -1,60 +1,25 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 10 Sep 2014 10:36:50 +0000
-Subject: Re: [PATCH] clk-rcar-gen2: RCAN clock support
-Message-Id: <2022570.OvxUCWWhWL@avalon>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 05 Sep 2014 16:04:01 +0000
+Subject: Re: [GIT PULL] Second Round Of Renesas ARM Based SoC Updates For v3.18
+Message-Id: <201409051804.01836.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201407310023.43605.sergei.shtylyov@cogentembedded.com> <CAMuHMdU0GJyYiP8NkELZia00gzKMmVRQ+1YwWCrFRLQytJ6YPw@mail.gmail.com> <5409BBA8.8080202@cogentembedded.com>
-In-Reply-To: <5409BBA8.8080202@cogentembedded.com>
+References: <cover.1408927858.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408927858.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Mike Turquette <mturquette@linaro.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Pavel Kiryukhin <vksavl@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Sergei,
-
-On Friday 05 September 2014 17:33:28 Sergei Shtylyov wrote:
-> On 09/05/2014 01:03 PM, Geert Uytterhoeven wrote:
-> >>> Add RCAN clock support to the R-Car generation 2 CPG driver. This clock
-> >>> gets derived from the USB_EXTAL clock by dividing it by 6. The layout of
-> >>> RCANCKCR register is close to those of the clocks supported by the 'clk-
-> >>> div6' driver but has no divider field, and so can't be supported by that
-> >>> driver...
-> >>> 
-> >>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> >>> 
-> >>> ---
-> >>> The patch is against the 'clk-next' branch of Mike Turquette's
-> >>> 'linux.git' repo.
-> >>> 
-> >>>  drivers/clk/shmobile/clk-rcar-gen2.c |   99 +++++++++++++++++++++++++++
-> >>>  1 file changed, 99 insertions(+)
-> >>>    
-> >> More than a months has passed, there hasn't been any feedback, patch
-> >> 
-> >> hasn't been applied... what's wrong with it?
-> > 
-> > Sorry for missing this, it went under my radar.
-> > 
-> > I'm not a clock expert (pulling in Laurent), but it looks fine to me.
-> > I'm just wondering whether you can simplify the code by using clk-gate?
+On Monday 25 August 2014, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
 > 
-> The gated clocks inherit their clock rate from the parent, while the RCAN
-> clock has a fixed divisor (6). I'm gonna look into composite clocks instead.
+> Please consider these second round of Renesas ARM based SoC updates for v3.18.
+> 
+> This pull request is based on the previous round of
+> such requests, tagged as renesas-soc-for-v3.18,
+> which I have already sent a pull-request for.
+> 
 
-The composite clock looks like it would indeed simplify the code. If that's 
-the case I would prefer that solution.
+Pulled into next/soc, thanks!
 
-Please also remember to update the CPG DT bindings documentation to add the 
-rcan clock and the USB input clock. On that subject, do you know what other 
-clocks derive from the USB input clock ? The documentation isn't clear.
-
-I'm also a bit puzzled by V2H that, according to the datasheet, lacks the 
-RANCKCR register, but has a RCAN clock with a dedicated RCAN divider in the 
-CPG diagram. I think Geert and Morimoto-san are investigating this.
-
--- 
-Regards,
-
-Laurent Pinchart
-
+	Arnd
