@@ -1,53 +1,39 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 30 Sep 2014 02:04:23 +0000
-Subject: Re: [PATCH v3 0/4] ARM: shmobile: various DT files sorted by address
-Message-Id: <20140930020423.GB10373@verge.net.au>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 05 Sep 2014 16:20:45 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC Cleanup Updates for v3.18
+Message-Id: <201409051820.45791.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411608734-1349-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1411608734-1349-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1408670789.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1408670789.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Sep 25, 2014 at 10:32:10AM +0900, Simon Horman wrote:
-> Hi,
+On Saturday 23 August 2014, Simon Horman wrote:
+> Please consider these Renesas ARM based SoC cleanup updates for v3.18.
 > 
-> this is an update of a series posted by Ulrich,
-> "ARM: shmobile: various DT files sorted by address",
-> the purpose of which is to sort DT nodes by their address.
+> This pull request is based on
+> "Renesas ARM Based SoC DT Timers Updates for v3.18",
+> tagged as dt-timers-for-v3.18,
+> which I have already sent a pull-request for.
 > 
-> Changes since v1.
-> * Drop patch reo remove spurious regulator base address as it
->   gave two nodes the same name. Until better names be found just
->   use the existing scheme (this series don't add the names it just
->   moves the nodes).
+> This is a rebase of changes that didn't quite make it into v3.17.
+> These cleanups depend on changes in dt-timers-for-v3.18 and rebasing
+> to remove that dependency is not entirely trivial.
 > 
-> Changes since v1.
-> * Some patches from the v1 series have been queued up and thus are not
->   present in v2.
-> * Two new patches have been added to remove spurious regulator base
->   addresses, as suggested by Geert Uytterhoeven. These correct incorrect
->   lines before subsequent patches, rebased since v1, move them.
-> 
-> Based on renesas-next-20140918-v3.17-rc2
-> Targeted for inclusion in v3.19.
-> 
-> Simon Horman (1):
->   ARM: shmobile: r8a73a4: Remove spurious dma-multiplexer base addresses
 
-I have queued these up for v3.19.
 
-> Ulrich Hecht (3):
->   ARM: shmobile: r7s72100: sort dtsi file by address
->   ARM: shmobile: kzm9d: sort dts file by address
->   ARM: shmobile: r8a73a4: sort dtsi file by address
-> 
->  arch/arm/boot/dts/emev2-kzm9d.dts |  62 +++++-----
->  arch/arm/boot/dts/r7s72100.dtsi   | 202 ++++++++++++++++-----------------
->  arch/arm/boot/dts/r8a73a4.dtsi    | 232 +++++++++++++++++++-------------------
->  3 files changed, 248 insertions(+), 248 deletions(-)
-> 
-> -- 
-> 2.0.1
-> 
+I hesitated a bit for this one and the dt-timers-for-v3.18 branch, as they
+don't really fit into our scheme, and I'd much prefer having the cleanups
+done first, while everything else isn't that important.
+
+In the end, I stuck it all into next/soc.
+
+That's the last one of the outstanding shmobile pull requests that I'm
+aware of. Again, sorry for taking my time with them. Please check that
+I didn't miss anything you wanted me to pull.
+
+Thanks,
+
+	Arnd
