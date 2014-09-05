@@ -1,40 +1,43 @@
-From: "Rafael J. Wysocki" <rjw@rjwysocki.net>
-Date: Thu, 04 Sep 2014 19:49:29 +0000
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Fri, 05 Sep 2014 08:16:27 +0000
 Subject: Re: [PATCH 14/15] PM / Domains: Remove default_stop_ok() API
-Message-Id: <6302495.FUvz9FPcau@vostro.rjw.lan>
+Message-Id: <CAPDyKFqbnmGXptn0y5=230HodvEGf94Ab71FjmPj6j9ZJGrgcQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
  <1409741551-16437-15-git-send-email-ulf.hansson@linaro.org>
  <CAMuHMdUEfAdpUgEtOQfdG1gbZjVo3bfAAmhm0-miFGbQ8ckHgA@mail.gmail.com>
-In-Reply-To: <CAMuHMdUEfAdpUgEtOQfdG1gbZjVo3bfAAmhm0-miFGbQ8ckHgA@mail.gmail.com>
+ <6302495.FUvz9FPcau@vostro.rjw.lan>
+In-Reply-To: <6302495.FUvz9FPcau@vostro.rjw.lan>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wednesday, September 03, 2014 03:15:59 PM Geert Uytterhoeven wrote:
-> Hi Ulf,
-> 
-> On Wed, Sep 3, 2014 at 12:52 PM, Ulf Hansson <ulf.hansson@linaro.org> wrote:
-> > --- a/drivers/base/power/domain_governor.c
-> > +++ b/drivers/base/power/domain_governor.c
-> 
-> > @@ -229,10 +229,7 @@ static bool always_on_power_down_ok(struct dev_pm_domain *domain)
-> >
-> >  #else /* !CONFIG_PM_RUNTIME */
-> >
-> > -bool default_stop_ok(struct device *dev)
-> > -{
-> > -       return false;
-> > -}
-> > +static inline bool default_stop_ok(struct device *dev) { return false; }
-> 
-> The "inline" doesn't make much sense here.
+On 4 September 2014 21:49, Rafael J. Wysocki <rjw@rjwysocki.net> wrote:
+> On Wednesday, September 03, 2014 03:15:59 PM Geert Uytterhoeven wrote:
+>> Hi Ulf,
+>>
+>> On Wed, Sep 3, 2014 at 12:52 PM, Ulf Hansson <ulf.hansson@linaro.org> wrote:
+>> > --- a/drivers/base/power/domain_governor.c
+>> > +++ b/drivers/base/power/domain_governor.c
+>>
+>> > @@ -229,10 +229,7 @@ static bool always_on_power_down_ok(struct dev_pm_domain *domain)
+>> >
+>> >  #else /* !CONFIG_PM_RUNTIME */
+>> >
+>> > -bool default_stop_ok(struct device *dev)
+>> > -{
+>> > -       return false;
+>> > -}
+>> > +static inline bool default_stop_ok(struct device *dev) { return false; }
+>>
+>> The "inline" doesn't make much sense here.
+>
+> But then it doesn't hurt either I suppose?
+>
+> Anyway, Ulf, are you going to update this patch?
 
-But then it doesn't hurt either I suppose?
+Unless there are other comments, I would prefer to not update. :-)
 
-Anyway, Ulf, are you going to update this patch?
-
--- 
-I speak only for myself.
-Rafael J. Wysocki, Intel Open Source Technology Center.
+Kind regards
+Uffe
