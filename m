@@ -1,7 +1,7 @@
 From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 05 Sep 2014 15:27:18 +0000
+Date: Fri, 05 Sep 2014 16:13:47 +0000
 Subject: Re: [GIT PULL] Renesas ARM Based SoC Init Delay Updates For v3.18
-Message-Id: <201409051727.18845.arnd@arndb.de>
+Message-Id: <201409051813.47626.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1408927601.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1408927601.git.horms+renesas@verge.net.au>
@@ -15,20 +15,18 @@ On Monday 25 August 2014, Simon Horman wrote:
 > 
 > Please consider these Renesas ARM based SoC init delay updates for v3.18.
 > 
+> This pull request is based on a merge of:
+> 
+> * Renesas ARM Based SoC Boards Updates for v3.18,
+>   tagged as renesas-boards-for-v3.18,
+>   which I have previously sent a pull-request for
+> 
+> * Renesas ARM Based SoC Updates for v3.18,
+>   tagged as renesas-soc-for-v3.18,
+>   which I have previously sent a pull-request for
+> 
 
-While looking at your branches, I noticed that you go to great lengths
-to compute the correct lpj value and avoid the calibration.
-
-However, I believe the "modern" way to do this is to call
-register_current_timer_delay() in order to base the delay loop
-on the hardware timer instead of looping in the CPU. This is
-more accurate and more robust against CPU frequency scaling.
-
-I'm applying the patches now, but it's something you may want
-to look at in the future. On a related topic, your clocksource
-drivers could be simplified for the DT-only case by using
-CLOCKSOURCE_OF_DECLARE() instead of early_platform_init(), but
-I don't know what the impact would be for the arch/sh and legacy
-mach-shmobile cases.
+I merged it all into next/soc now, which means that next/boards has a duplicate copy.
+If we don't get anything else for boards, we probably won't bother sending that.
 
 	Arnd
