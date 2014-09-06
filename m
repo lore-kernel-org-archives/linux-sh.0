@@ -1,47 +1,74 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 04 Sep 2014 01:12:40 +0000
-Subject: [PATCH 9/9] ARM: shmobile: r8a7791 is now called "R-Car M2-W"
-Message-Id: <13298fbbdb3f6a0ef55419dc048e064c7a7b0ef8.1409792454.git.horms+renesas@verge.net.au>
+Date: Sat, 06 Sep 2014 01:26:30 +0000
+Subject: [PATCH v3 3/3] clocksource: sh_tmu: Document r8a7779 binding
+Message-Id: <1409966790-17683-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1409792454.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1409792454.git.horms+renesas@verge.net.au>
+References: <1409966790-17683-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1409966790-17683-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+In general Renesas hardware is not documented to the extent
+where the relationship between IP blocks on different SoCs can be assumed
+although they may appear to operate the same way. Furthermore the
+documentation typically does not specify a version for individual
+IP blocks. For these reasons a convention of using the SoC name in place
+of a version and providing SoC-specific compat strings has been adopted.
 
-As per recent revisions of the datasheet.
+Although not universally liked this convention is used in the bindings
+for a number of drivers for Renesas hardware. The purpose of this patch is
+to update the Renesas R-Car Timer Unit (TMU) driver to follow this
+convention.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/Kconfig | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 6283ff2..efc49da 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -59,7 +59,7 @@ config ARCH_R8A7790
- 	select ARCH_RCAR_GEN2
+---
+* I plan to follow up with a patch patch to use the new binding in the
+  dtsi files for the r8a7779 SoC.
+commit 471269b790aec03385dc4fb127ed7094ff83c16d
+
+v2
+* Suggestions by Mark Rutland and Sergei Shtylyov
+  - Compatible strings should be "one or more" not "one" of those listed
+  - Describe the generic binding as covering any MTU2 device
+  - Re-order compat strings from most to least specific
+
+v3
+* Suggested by Laurent Pinchart
+  - Reword in keeping with a similar though more extensive patch for CMT
+---
+ Documentation/devicetree/bindings/timer/renesas,tmu.txt | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/timer/renesas,tmu.txt b/Documentation/devicetree/bindings/timer/renesas,tmu.txt
+index 425d0c5..7db89fb 100644
+--- a/Documentation/devicetree/bindings/timer/renesas,tmu.txt
++++ b/Documentation/devicetree/bindings/timer/renesas,tmu.txt
+@@ -8,7 +8,10 @@ are independent. The TMU hardware supports up to three channels.
  
- config ARCH_R8A7791
--	bool "R-Car M2 (R8A77910)"
-+	bool "R-Car M2-W (R8A77910)"
- 	select ARCH_RCAR_GEN2
+ Required Properties:
  
- comment "Renesas ARM SoCs Board Type"
-@@ -141,7 +141,7 @@ config ARCH_R8A7790
- 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
+-  - compatible: must contain "renesas,tmu"
++  - compatible: must contain one or more of the following:
++    - "renesas,tmu-r8a7779" for the r8a7779 TMU
++    - "renesas,tmu" for any TMU.
++      This is a fallback for the above renesas,tmu-* entries
  
- config ARCH_R8A7791
--	bool "R-Car M2 (R8A77910)"
-+	bool "R-Car M2-W (R8A77910)"
- 	select ARCH_RCAR_GEN2
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
+   - reg: base address and length of the registers block for the timer module.
+ 
+@@ -27,7 +30,7 @@ Optional Properties:
+ Example: R8A7779 (R-Car H1) TMU0 node
+ 
+ 	tmu0: timer@ffd80000 {
+-		compatible = "renesas,tmu";
++		compatible = "renesas,tmu-r8a7779", "renesas,tmu";
+ 		reg = <0xffd80000 0x30>;
+ 		interrupts = <0 32 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 33 IRQ_TYPE_LEVEL_HIGH>,
 -- 
 2.0.1
 
