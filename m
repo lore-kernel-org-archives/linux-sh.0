@@ -1,57 +1,39 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Tue, 30 Sep 2014 10:43:36 +0000
-Subject: Re: [PATCH/RFC] fbdev: sh_mobile_hdmi: Re-init regs before irq re-enable on resume
-Message-Id: <CAPDyKFoPUEuMEbedFARhQzJy5sFgw8w++KZk=H7CE946tiO77g@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 08 Sep 2014 00:57:05 +0000
+Subject: [PATCH v3 0/3] ARM: shmobile: sh73a0: Enable CMT1 device using DT
+Message-Id: <1410137828-4769-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411474918-2955-1-git-send-email-geert+renesas@glider.be>
-	<542A84F7.5020005@ti.com>
-In-Reply-To: <542A84F7.5020005@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Tomi Valkeinen <tomi.valkeinen@ti.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Jean-Christophe Plagniol-Villard <plagnioj@jcrosoft.com>, "Rafael J. Wysocki" <rjw@rjwysocki.net>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Linux Fbdev development list <linux-fbdev@vger.kernel.org>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On 30 September 2014 12:24, Tomi Valkeinen <tomi.valkeinen@ti.com> wrote:
-> Hi Geert, Ulf,
->
-> On 23/09/14 15:21, Geert Uytterhoeven wrote:
->> When the PM domain containing the HDMI hardware block is powered down,
->> the HDMI register values (incl. interrupt polarity settings) are lost.
->> During resume, after powering up the PM domain, interrupts are
->> re-enabled, and an interrupt storm happens due to incorrect interrupt
->> polarity settings:
->>
->>     irq 163: nobody cared (try booting with the "irqpoll" option)
->>     ...
->>     Disabling IRQ #163
->>
->> To fix this, re-initialize the interrupt polarity settings, and the
->> htop1 register block (if present), during resume.
->>
->> As the .suspend_noirq() and .resume_noirq() callbacks are not called
->> when using the generic PM domain, the normal .resume() callback is used,
->> and the device interrupt needs to be disabled/enabled manually.
->>
->> This fixes resume from s2ram with power down of the A4MP PM domain on
->> r8a7740/Armadillo.
->>
->> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->> ---
->> Is there a specific reason why the .suspend_noirq() and .resume_noirq()
->> callbacks are not called when using genpd, unlike .suspend(),
->> .suspend_late(), .resume_early(), and .resume()?
->> ---
->>  drivers/video/fbdev/sh_mobile_hdmi.c | 44 ++++++++++++++++++++++++++++++++++--
->>  1 file changed, 42 insertions(+), 2 deletions(-)
->
-> Should I queue this version for 3.18, or is there some modifications you
-> think needs to be done first?
+Hi,
 
-I have no objections for this patch. Please go ahead.
+this is a slightly modified version of this change which
+was previously available in
+"[PATCH v2 00/10] sh73a0 common clock framework implementation"
 
-The reason for my comments was to try to figure out if there were any
-impact to the generic PM domain.
+The purpose of breaking or this change is to allow it to
+be applied independently of the changes in the above mentioned series.
 
-Kind regards
-Uffe
+The changes are as follows:
+- Don't use DT clocks as they are added by the above mentioned series
+  and thus not present yet.
+- Add patch to use SoC-specific 48-bit CMT compat string.
+
+Simon Horman (1):
+  ARM: shmobile: sh73a0: Use SoC-specific 48-bit CMT compat string
+
+Ulrich Hecht (2):
+  ARM: shmobile: sh73a0: Add CMT1 device to DT
+  ARM: shmobile: kzm9g-reference: Enable CMT1 in device tree
+
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |  4 ++++
+ arch/arm/boot/dts/sh73a0.dtsi                | 10 ++++++++++
+ arch/arm/mach-shmobile/setup-sh73a0.c        | 11 +----------
+ 3 files changed, 15 insertions(+), 10 deletions(-)
+
+-- 
+2.0.1
+
