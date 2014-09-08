@@ -1,51 +1,90 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 04 Sep 2014 04:15:08 +0000
-Subject: Re: [PATCH 01/03] ARM: shmobile: sh73a0: Introduce generic setup callback
-Message-Id: <CANqRtoQ-OD0p44Bjaeu4siaQdyNWk7z4ydsCnZrkxXgFpStG_A@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 08 Sep 2014 04:29:34 +0000
+Subject: [PATCH] mmc: tmio: enable odd number size transfer
+Message-Id: <87wq9eohuc.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140904022845.26216.45573.sendpatchset@w520>
-In-Reply-To: <20140904022845.26216.45573.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>
+Cc: Simon <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-On Thu, Sep 4, 2014 at 1:05 PM, Simon Horman <horms@verge.net.au> wrote:
-> On Thu, Sep 04, 2014 at 11:28:45AM +0900, Magnus Damm wrote:
->> From: Magnus Damm <damm+renesas@opensource.se>
->>
->> Add a generic sh73a0 machine setup callback for the upcoming
->> sh73a0 multiplatform case. Cache needs to be configured, and
->> legacy clocks must be omitted.
->>
->> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
->> ---
->>
->>  arch/arm/mach-shmobile/setup-sh73a0.c |   16 +++++++++++++---
->>  1 file changed, 13 insertions(+), 3 deletions(-)
->>
->> --- 0001/arch/arm/mach-shmobile/setup-sh73a0.c
->> +++ work/arch/arm/mach-shmobile/setup-sh73a0.c        2014-09-04 10:46:41.000000000 +0900
->> @@ -33,6 +33,7 @@
->>  #include <linux/platform_data/sh_ipmmu.h>
->>  #include <linux/platform_data/irq-renesas-intc-irqpin.h>
->>
->> +#include <asm/hardware/cache-l2x0.h>
->>  #include <asm/mach-types.h>
->>  #include <asm/mach/map.h>
->>  #include <asm/mach/arch.h>
->> @@ -772,8 +773,6 @@ void __init sh73a0_add_early_devices(voi
->>       shmobile_setup_console();
->>  }
->>
->> -#ifdef CONFIG_USE_OF
->> -
->
-> Is moving CONFIG_USE_OF from here to a bit further down intentional?
-> I'm not sure how it fits with the rest of the patch.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-True, I overlooked that, will fix and resend.
+Current tmio is using sd_ctrl_read16/write16_rep()
+for data transfer.
+It works if transfer size was even number,
+but, last 1 byte will be ignored if
+transfer size was odd number.
+This patch adds new tmio_mmc_transfer_data()
+and solve this issue.
 
-Cheers,
+Tested-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/mmc/host/tmio_mmc_pio.c |   42 +++++++++++++++++++++++++++++++++++----
+ 1 file changed, 38 insertions(+), 4 deletions(-)
 
-/ magnus
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index ba45413..817ec7d 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -376,6 +376,43 @@ static int tmio_mmc_start_command(struct tmio_mmc_host *host, struct mmc_command
+ 	return 0;
+ }
+ 
++static void tmio_mmc_transfer_data(struct tmio_mmc_host *host,
++				   unsigned short *buf,
++				   unsigned int count)
++{
++	int is_read = host->data->flags & MMC_DATA_READ;
++	u16 extra;
++	u8  *extra8;
++	u8  *buf8;
++
++	/*
++	 * Transfer the data
++	 */
++	if (is_read)
++		sd_ctrl_read16_rep(host, CTL_SD_DATA_PORT, buf, count >> 1);
++	else
++		sd_ctrl_write16_rep(host, CTL_SD_DATA_PORT, buf, count >> 1);
++
++	/* count was even number */
++	if (!(count & 0x1))
++		return;
++
++	/* count was odd number */
++
++	extra8 = (u8 *)&extra;
++	buf8 = (u8 *)(buf + ((count - 1) >> 1));
++
++	if (is_read) {
++		extra = sd_ctrl_read16(host, CTL_SD_DATA_PORT);
++
++		buf8[1] = extra8[1];
++	} else {
++		extra = buf8[1] << 8;
++
++		sd_ctrl_write16(host, CTL_SD_DATA_PORT, extra);
++	}
++}
++
+ /*
+  * This chip always returns (at least?) as much data as you ask for.
+  * I'm unsure what happens if you ask for less than a block. This should be
+@@ -408,10 +445,7 @@ static void tmio_mmc_pio_irq(struct tmio_mmc_host *host)
+ 		 count, host->sg_off, data->flags);
+ 
+ 	/* Transfer the data */
+-	if (data->flags & MMC_DATA_READ)
+-		sd_ctrl_read16_rep(host, CTL_SD_DATA_PORT, buf, count >> 1);
+-	else
+-		sd_ctrl_write16_rep(host, CTL_SD_DATA_PORT, buf, count >> 1);
++	tmio_mmc_transfer_data(host, buf, count);
+ 
+ 	host->sg_off += count;
+ 
+-- 
+1.7.9.5
+
