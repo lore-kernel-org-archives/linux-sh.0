@@ -1,63 +1,31 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Sep 2014 20:04:27 +0000
-Subject: [PATCH 07/12] drm: rcar-du: Replace drm_encoder with drm_slave_encoder
-Message-Id: <1411589072-28609-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kevin Hilman <khilman@kernel.org>
+Date: Mon, 08 Sep 2014 20:47:59 +0000
+Subject: Re: [RFC PATCH 3/3] ARM: keystone: pm_domain: setup clk pm domain clocks from DT
+Message-Id: <7hmwa9on40.fsf@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1406313096-29761-1-git-send-email-grygorii.strashko@ti.com>
+ <1406313096-29761-4-git-send-email-grygorii.strashko@ti.com>
+In-Reply-To: <1406313096-29761-4-git-send-email-grygorii.strashko@ti.com>
+ (Grygorii Strashko's message of "Fri, 25 Jul 2014 21:31:36 +0300")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-DRM slave encoders require their associated struct drm_encoder instance
-to be embedded in a struct drm_slave_encoder. This makes processing
-encoders regardless of their types needlessly and painfully complex in
-drivers that use a mix of slave encoders and custom encoders. Such a
-driver will need to either create drm_slave_encoder instances that fake
-their embedded encoder instance, or to turn all drm_encoder instances
-into drm_slave_encoder instances.
+Grygorii Strashko <grygorii.strashko@ti.com> writes:
 
-Between the two evils, one must choose the lesser. Use drm_slave_encoder
-everywhere.
+> This patch implements custom pm_clk_notifier callback for Keystone 2
+> CLK PM domain which fills list of clocks for Device with all
+> clocks assigned to this Device in DT.
+>
+> After this patch .con_ids field in pm_clk_notifier_block is not
+> used and there are no limitation for clocks names in DT any more.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/gpu/drm/rcar-du/rcar_du_encoder.h | 7 ++++---
- 1 file changed, 4 insertions(+), 3 deletions(-)
+OK, but this also assumes you want *every* clock associated with a
+device node managed by runtime PM.  Is that really what you want?  
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-index c6334b4..c4dccdb 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-@@ -15,6 +15,7 @@
- #define __RCAR_DU_ENCODER_H__
- 
- #include <drm/drm_crtc.h>
-+#include <drm/drm_encoder_slave.h>
- 
- struct rcar_du_device;
- struct rcar_du_lvdsenc;
-@@ -27,15 +28,15 @@ enum rcar_du_encoder_type {
- };
- 
- struct rcar_du_encoder {
--	struct drm_encoder encoder;
-+	struct drm_encoder_slave slave;
- 	enum rcar_du_output output;
- 	struct rcar_du_lvdsenc *lvds;
- };
- 
- #define to_rcar_encoder(e) \
--	container_of(e, struct rcar_du_encoder, encoder)
-+	container_of(e, struct rcar_du_encoder, slave.base)
- 
--#define rcar_encoder_to_drm_encoder(e)	(&(e)->encoder)
-+#define rcar_encoder_to_drm_encoder(e)	(&(e)->slave.base)
- 
- struct rcar_du_connector {
- 	struct drm_connector connector;
--- 
-1.8.5.5
+I may have misunderstood, but your previous attempts at solving this
+problem suggest you wanted finer grained control over which device
+clocks are runtime PM managed and which ones arent.
 
+Kevin
