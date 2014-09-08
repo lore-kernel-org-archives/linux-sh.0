@@ -1,57 +1,82 @@
-From: Guenter Roeck <linux@roeck-us.net>
-Date: Tue, 30 Sep 2014 18:00:42 +0000
-Subject: [RFC PATCH 02/16] hwmon: (ab8500) Call kernel_power_off instead of pm_power_off
-Message-Id: <1412100056-15517-3-git-send-email-linux@roeck-us.net>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 08 Sep 2014 05:30:53 +0000
+Subject: [PATCH][RFC] mmc: tmio_mmc: remove msleep(10) from tmio_mmc_clk_xxx()
+Message-Id: <87vboyof05.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
-In-Reply-To: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>
+Cc: Simon <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>, Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-Drivers should not call pm_power_off directly; it is not guaranteed
-to be non-NULL. Call kernel_power_off instead.
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-Cc: Jean Delvare <jdelvare@suse.de>
-Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+Current tmio_mmc driver is calling msleep(10) in tmio_mmc_clk_xxx().
+But, it has not been documented, and will be low performance,
+especially if CONFIG_MMC_CLKGATE was enabled.
+This patch remove it
+
+[Kuninori Morimoto: tidyuped for upstreaming]
+
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-I already submitted this patch separately as non-RFC. It is included
-in this series for completeness.
+ drivers/mmc/host/tmio_mmc_pio.c |   14 +++-----------
+ 1 file changed, 3 insertions(+), 11 deletions(-)
 
- drivers/hwmon/ab8500.c | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/hwmon/ab8500.c b/drivers/hwmon/ab8500.c
-index d844dc8..8b6a4f4 100644
---- a/drivers/hwmon/ab8500.c
-+++ b/drivers/hwmon/ab8500.c
-@@ -6,7 +6,7 @@
-  *
-  * When the AB8500 thermal warning temperature is reached (threshold cannot
-  * be changed by SW), an interrupt is set, and if no further action is taken
-- * within a certain time frame, pm_power off will be called.
-+ * within a certain time frame, kernel_power_off will be called.
-  *
-  * When AB8500 thermal shutdown temperature is reached a hardware shutdown of
-  * the AB8500 will occur.
-@@ -21,6 +21,7 @@
- #include <linux/module.h>
- #include <linux/platform_device.h>
- #include <linux/power/ab8500.h>
-+#include <linux/reboot.h>
- #include <linux/slab.h>
- #include <linux/sysfs.h>
- #include "abx500.h"
-@@ -106,7 +107,7 @@ static void ab8500_thermal_power_off(struct work_struct *work)
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index ba45413..657c33d 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -170,33 +170,26 @@ static void tmio_mmc_set_clock(struct tmio_mmc_host *host,
+ 		host->set_clk_div(host->pdev, (clk>>22) & 1);
  
- 	dev_warn(&abx500_data->pdev->dev, "Power off due to critical temp\n");
- 
--	pm_power_off();
-+	kernel_power_off();
+ 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, clk & 0x1ff);
+-	msleep(10);
  }
  
- static ssize_t ab8500_show_name(struct device *dev,
+ static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
+ {
+ 	/* implicit BUG_ON(!res) */
+-	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG) {
++	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG)
+ 		sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0000);
+-		msleep(10);
+-	}
+ 
+ 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, ~0x0100 &
+ 		sd_ctrl_read16(host, CTL_SD_CARD_CLK_CTL));
+-	msleep(10);
+ }
+ 
+ static void tmio_mmc_clk_start(struct tmio_mmc_host *host)
+ {
+ 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, 0x0100 |
+ 		sd_ctrl_read16(host, CTL_SD_CARD_CLK_CTL));
+-	msleep(10);
+ 
+ 	/* implicit BUG_ON(!res) */
+-	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG) {
++	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG)
+ 		sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0100);
+-		msleep(10);
+-	}
+ }
+ 
+ static void tmio_mmc_reset(struct tmio_mmc_host *host)
+@@ -206,11 +199,10 @@ static void tmio_mmc_reset(struct tmio_mmc_host *host)
+ 	/* implicit BUG_ON(!res) */
+ 	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG)
+ 		sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0000);
+-	msleep(10);
++
+ 	sd_ctrl_write16(host, CTL_RESET_SD, 0x0001);
+ 	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG)
+ 		sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0001);
+-	msleep(10);
+ }
+ 
+ static void tmio_mmc_reset_work(struct work_struct *work)
 -- 
-1.9.1
+1.7.9.5
 
