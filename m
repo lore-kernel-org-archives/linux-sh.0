@@ -1,90 +1,97 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Mon, 08 Sep 2014 04:29:34 +0000
-Subject: [PATCH] mmc: tmio: enable odd number size transfer
-Message-Id: <87wq9eohuc.wl%kuninori.morimoto.gx@gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 08 Sep 2014 07:28:48 +0000
+Subject: Re: [PATCH] mmc: tmio: enable odd number size transfer
+Message-Id: <CAMuHMdUJK1Mmd_S+-hGFoshgRbpHKG5OH2w7AFHNaQG5qyvNaw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87wq9eohuc.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87wq9eohuc.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>
-Cc: Simon <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Cc: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi Morimoto-san,
 
-Current tmio is using sd_ctrl_read16/write16_rep()
-for data transfer.
-It works if transfer size was even number,
-but, last 1 byte will be ignored if
-transfer size was odd number.
-This patch adds new tmio_mmc_transfer_data()
-and solve this issue.
+On Mon, Sep 8, 2014 at 6:29 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@gmail.com> wrote:
+> +++ b/drivers/mmc/host/tmio_mmc_pio.c
+> @@ -376,6 +376,43 @@ static int tmio_mmc_start_command(struct tmio_mmc_host *host, struct mmc_command
+>         return 0;
+>  }
+>
+> +static void tmio_mmc_transfer_data(struct tmio_mmc_host *host,
+> +                                  unsigned short *buf,
+> +                                  unsigned int count)
+> +{
+> +       int is_read = host->data->flags & MMC_DATA_READ;
+> +       u16 extra;
+> +       u8  *extra8;
+> +       u8  *buf8;
+> +
+> +       /*
+> +        * Transfer the data
+> +        */
+> +       if (is_read)
+> +               sd_ctrl_read16_rep(host, CTL_SD_DATA_PORT, buf, count >> 1);
+> +       else
+> +               sd_ctrl_write16_rep(host, CTL_SD_DATA_PORT, buf, count >> 1);
+> +
+> +       /* count was even number */
+> +       if (!(count & 0x1))
+> +               return;
+> +
+> +       /* count was odd number */
+> +
+> +       extra8 = (u8 *)&extra;
 
-Tested-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- drivers/mmc/host/tmio_mmc_pio.c |   42 +++++++++++++++++++++++++++++++++++----
- 1 file changed, 38 insertions(+), 4 deletions(-)
+I would drop the extra8 variable, if possible... (see below)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index ba45413..817ec7d 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -376,6 +376,43 @@ static int tmio_mmc_start_command(struct tmio_mmc_host *host, struct mmc_command
- 	return 0;
- }
- 
-+static void tmio_mmc_transfer_data(struct tmio_mmc_host *host,
-+				   unsigned short *buf,
-+				   unsigned int count)
-+{
-+	int is_read = host->data->flags & MMC_DATA_READ;
-+	u16 extra;
-+	u8  *extra8;
-+	u8  *buf8;
-+
-+	/*
-+	 * Transfer the data
-+	 */
-+	if (is_read)
-+		sd_ctrl_read16_rep(host, CTL_SD_DATA_PORT, buf, count >> 1);
-+	else
-+		sd_ctrl_write16_rep(host, CTL_SD_DATA_PORT, buf, count >> 1);
-+
-+	/* count was even number */
-+	if (!(count & 0x1))
-+		return;
-+
-+	/* count was odd number */
-+
-+	extra8 = (u8 *)&extra;
-+	buf8 = (u8 *)(buf + ((count - 1) >> 1));
-+
-+	if (is_read) {
-+		extra = sd_ctrl_read16(host, CTL_SD_DATA_PORT);
-+
-+		buf8[1] = extra8[1];
-+	} else {
-+		extra = buf8[1] << 8;
-+
-+		sd_ctrl_write16(host, CTL_SD_DATA_PORT, extra);
-+	}
-+}
-+
- /*
-  * This chip always returns (at least?) as much data as you ask for.
-  * I'm unsure what happens if you ask for less than a block. This should be
-@@ -408,10 +445,7 @@ static void tmio_mmc_pio_irq(struct tmio_mmc_host *host)
- 		 count, host->sg_off, data->flags);
- 
- 	/* Transfer the data */
--	if (data->flags & MMC_DATA_READ)
--		sd_ctrl_read16_rep(host, CTL_SD_DATA_PORT, buf, count >> 1);
--	else
--		sd_ctrl_write16_rep(host, CTL_SD_DATA_PORT, buf, count >> 1);
-+	tmio_mmc_transfer_data(host, buf, count);
- 
- 	host->sg_off += count;
- 
--- 
-1.7.9.5
+> +       buf8 = (u8 *)(buf + ((count - 1) >> 1));
 
+The "-1" is not really needed.
+
+> +       if (is_read) {
+> +               extra = sd_ctrl_read16(host, CTL_SD_DATA_PORT);
+> +
+> +               buf8[1] = extra8[1];
+> +       } else {
+> +               extra = buf8[1] << 8;
+> +
+> +               sd_ctrl_write16(host, CTL_SD_DATA_PORT, extra);
+> +       }
+> +}
+
+Shouldn't this use buf8[0] instead of buf8[1]?
+Originally, this is a byte buffer, right? Or is it a byte-swapped 16-bit
+buffer?
+
+Does this code need to care about endianness?
+Due to using byte array accesses on read, and shifts on write, the result
+differs depending on endianness.
+
+On little endian, you have
+
+Read: extra = [ buf8[1] | buf8[0] ]
+
+Write: extra = [ buf8[1] | 0 ]
+
+On big endian, you have
+
+Read: extra = [ buf8[0] | buf8[1] ]
+Write: extra = [ buf8[1] | 0 ]
+
+I think it's better to use shifts for both read and write, and add an
+le16_to_cpu()/
+cpu_to_le16() if needed.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
