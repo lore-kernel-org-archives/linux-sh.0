@@ -1,39 +1,63 @@
-From: Guenter Roeck <linux@roeck-us.net>
-Date: Tue, 30 Sep 2014 18:00:48 +0000
-Subject: [RFC PATCH 08/16] ia64: support poweroff through poweroff handler call chain
-Message-Id: <1412100056-15517-9-git-send-email-linux@roeck-us.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 08 Sep 2014 00:27:48 +0000
+Subject: [PATCH 5/5] ARM: shmobile: r8a7779: Use SoC-specific TMU compat string
+Message-Id: <1410136068-32220-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
-In-Reply-To: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
+References: <1410136068-32220-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1410136068-32220-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The kernel core now supports a poweroff handler call chain
-to remove power from the system. Call it if pm_power_off
-is set to NULL.
+In general Renesas hardware is not documented to the extent
+where the relationship between IP blocks on different SoCs can be assumed
+although they may appear to operate the same way. Furthermore the
+documentation typically does not specify a version for individual
+IP blocks. For these reasons a convention of using the SoC name in place
+of a version and providing SoC-specific compat strings has been adopted.
 
-Cc: Tony Luck <tony.luck@intel.com>
-Cc: Fenghua Yu <fenghua.yu@intel.com>
-Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+Although not universally liked this convention is used in the bindings for
+a number of drivers for Renesas hardware. The purpose of this patch is to
+make use of the SoC-specific CMT compat string for the r8a7779 TMU
+clock source.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/ia64/kernel/process.c | 2 ++
- 1 file changed, 2 insertions(+)
+ arch/arm/boot/dts/r8a7779.dtsi | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/ia64/kernel/process.c b/arch/ia64/kernel/process.c
-index deed6fa..489b0d8 100644
---- a/arch/ia64/kernel/process.c
-+++ b/arch/ia64/kernel/process.c
-@@ -677,6 +677,8 @@ machine_power_off (void)
- {
- 	if (pm_power_off)
- 		pm_power_off();
-+	else
-+		do_kernel_poweroff();
- 	machine_halt();
- }
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index d25ed7b..7cfba9a 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -261,7 +261,7 @@
+ 	};
  
+ 	tmu0: timer@ffd80000 {
+-		compatible = "renesas,tmu";
++		compatible = "renesas,tmu-r8a7779", "renesas,tmu";
+ 		reg = <0xffd80000 0x30>;
+ 		interrupts = <0 32 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 33 IRQ_TYPE_LEVEL_HIGH>,
+@@ -275,7 +275,7 @@
+ 	};
+ 
+ 	tmu1: timer@ffd81000 {
+-		compatible = "renesas,tmu";
++		compatible = "renesas,tmu-r8a7779", "renesas,tmu";
+ 		reg = <0xffd81000 0x30>;
+ 		interrupts = <0 36 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 37 IRQ_TYPE_LEVEL_HIGH>,
+@@ -289,7 +289,7 @@
+ 	};
+ 
+ 	tmu2: timer@ffd82000 {
+-		compatible = "renesas,tmu";
++		compatible = "renesas,tmu-r8a7779", "renesas,tmu";
+ 		reg = <0xffd82000 0x30>;
+ 		interrupts = <0 40 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 41 IRQ_TYPE_LEVEL_HIGH>,
 -- 
-1.9.1
+2.0.1
 
