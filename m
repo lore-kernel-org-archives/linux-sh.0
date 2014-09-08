@@ -1,76 +1,48 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Sep 2014 20:04:25 +0000
-Subject: [PATCH 05/12] drm: rcar-du: Pass the encoder DT node to rcar_du_encoder_init()
-Message-Id: <1411589072-28609-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 08 Sep 2014 00:57:06 +0000
+Subject: [PATCH v3 1/3] ARM: shmobile: sh73a0: Add CMT1 device to DT
+Message-Id: <1410137828-4769-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1410137828-4769-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1410137828-4769-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The encoder DT node will be needed to register an external HDMI encoder.
-Pass it to the rcar_du_encoder_init() function to prepare for HDMI
-support.
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- drivers/gpu/drm/rcar-du/rcar_du_encoder.c | 5 +++--
- drivers/gpu/drm/rcar-du/rcar_du_encoder.h | 3 ++-
- drivers/gpu/drm/rcar-du/rcar_du_kms.c     | 2 +-
- 3 files changed, 6 insertions(+), 4 deletions(-)
+v3 [Simon Horman]
+* Dropped use of clocks that are not present in DT yet
+---
+ arch/arm/boot/dts/sh73a0.dtsi | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-index 89ed4a9..c699100 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-@@ -142,7 +142,8 @@ static const struct drm_encoder_funcs encoder_funcs = {
- int rcar_du_encoder_init(struct rcar_du_device *rcdu,
- 			 enum rcar_du_encoder_type type,
- 			 enum rcar_du_output output,
--			 struct device_node *np)
-+			 struct device_node *enc_node,
-+			 struct device_node *con_node)
- {
- 	struct rcar_du_encoder *renc;
- 	unsigned int encoder_type;
-@@ -190,7 +191,7 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 0d001eb..6cb29cd 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -48,6 +48,16 @@
+ 			     <0 56 IRQ_TYPE_LEVEL_HIGH>;
+ 	};
  
- 	switch (encoder_type) {
- 	case DRM_MODE_ENCODER_LVDS:
--		return rcar_du_lvds_connector_init(rcdu, renc, np);
-+		return rcar_du_lvds_connector_init(rcdu, renc, con_node);
- 
- 	case DRM_MODE_ENCODER_DAC:
- 		return rcar_du_vga_connector_init(rcdu, renc);
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-index c37ed94..4b906b9 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-@@ -49,6 +49,7 @@ rcar_du_connector_best_encoder(struct drm_connector *connector);
- int rcar_du_encoder_init(struct rcar_du_device *rcdu,
- 			 enum rcar_du_encoder_type type,
- 			 enum rcar_du_output output,
--			 struct device_node *np);
-+			 struct device_node *enc_node,
-+			 struct device_node *con_node);
- 
- #endif /* __RCAR_DU_ENCODER_H__ */
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-index 6575681..a798294 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-@@ -289,7 +289,7 @@ static int rcar_du_encoders_init_one(struct rcar_du_device *rcdu,
- 		connector = entity;
- 	}
- 
--	ret = rcar_du_encoder_init(rcdu, enc_type, output, connector);
-+	ret = rcar_du_encoder_init(rcdu, enc_type, output, encoder, connector);
- 	of_node_put(encoder);
- 	of_node_put(connector);
- 
++	cmt1: timer@e6138000 {
++		compatible = "renesas,cmt-48";
++		reg = <0xe6138000 0x200>;
++		interrupts = <0 65 IRQ_TYPE_LEVEL_HIGH>;
++
++		renesas,channels-mask = <0x3f>;
++
++		status = "disabled";
++	};
++
+ 	irqpin0: irqpin@e6900000 {
+ 		compatible = "renesas,intc-irqpin-sh73a0", "renesas,intc-irqpin";
+ 		#interrupt-cells = <2>;
 -- 
-1.8.5.5
+2.0.1
 
