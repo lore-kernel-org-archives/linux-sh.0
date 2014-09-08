@@ -1,1417 +1,391 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Sep 2014 20:04:31 +0000
-Subject: [PATCH 11/12] drm: Add adv7511 encoder driver
-Message-Id: <1411589072-28609-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 08 Sep 2014 13:35:44 +0000
+Subject: [PATCH/RFC 5/5] ARM: shmobile: r8a7740 dtsi: Add PM domain support
+Message-Id: <1410183344-14756-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1410183344-14756-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1410183344-14756-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Lars-Peter Clausen <lars@metafoo.de>
+Add a device node for the System Controller, with subnodes that
+represent the hardware power area hierarchy.
+Hook up all devices to their respective PM domains.
 
-This patch adds a driver for the Analog Devices adv7511. The adv7511 is
-a standalone HDMI transmitter chip. It features a HDMI output interface
-on one end and video and audio input interfaces on the other.
-
-Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+ arch/arm/boot/dts/r8a7740.dtsi | 121 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 121 insertions(+)
 
-This commit incorporates the following commits.
-
-DRM: adv7511: Sync to latest version
-DRM: adv7511: Fix calculation and setting of CTS
-DRM: adv7511: Write status word frequency and word len registers
-adv7511: Remove some debug printks
-Merge branch 'xcomm_zynq' into xcomm_zynq_3_5
-Sync adv7511 and axi-hdmi driver to latest version
-drm:adv7511: Re-add module information
-DRM: adv7511: Don't use raw_edid to pass edid data
-drm: adv7511: Ignore the csc scaling factor when the csc is disabled
-drm: adv7511: Check if edid is NULL before duplicating it
-drm: adv7511: Include the extension sections when duplicating the edid
-DRM: adv7511: Work around off-by-one hardware bug
-DRM: adv7511: Make embedded sync generator setup more robust
-DRM: adv7511_audio: Fix typo
-DRM: adv7511: Add powerdown gpio support
-drm: adv7511: Fix use after free
-DRM: adv7511: Properly initialize dpms_mode and status
-DRM: adv7511: Avoid uneccessary disconnected events
-drm: adv7511: Fix adv7511 encoder driver
-drm: adv7511: Fix kernel-doc format
-drm: adv7511: Fix adv7511_parse_dt()
-drm: adv7511: Add the rgb format flag to adv7511_link_config
-drm: adv7511: Configure CSC in adv7511_set_config()
-drm: adv7511: Add adv7511_set_config_csc()
-drm: adv7511: Configure the csc when getting modes
-drm: adv7511: Add adv7511_encoder_mode_valid() function
-drm: adv7511: Don't export adv7511_get_edid function
-drm: adv7511: Mark the revision register as volatile
-drm: adv7511: Initialize work queue before requesting IRQ
-drm: adv7511: Remove trailing whitespaces
-drm: adv7511: Remove audio support
-drm: adv7511: Remove DRM slave encoder .set_config operation
-drm: adv7511: Make the adv7511_packet_(enable|disable) functions static
-drm: adv7511: Move Kconfig entry to drivers/gpu/drm/i2c/Kconfig
-drm: adv7511: Update to the latest DRM API
-drm: adv7511: Rename driver source file to adv7511.c
-drm: adv7511: Add OF match table
-drm: adv7511: Add ADV7513 support
-drm: adv7511: Remove platform data support
-drm: adv7511: Convert to the gpiod API
-drm: adv7511: Remove packet and CEC I2C device support
-drm: adv7511: Use the devm_ managed IRQ API
-drm: adv7511: Remove unneeded local variable initialization
-drm: adv7511: Pass the adv7511 pointer to adv7511_get_edid_block
-drm: adv7511: Make loop counter unsigned
-drm: adv7511: Pass adv7511 pointer to adv7511_set_config_csc function
-drm: adv7511: Reorganize the code in sections
-drm: adv7511: Simplify DT bindings
----
- drivers/gpu/drm/i2c/Kconfig   |    6 +
- drivers/gpu/drm/i2c/Makefile  |    2 +
- drivers/gpu/drm/i2c/adv7511.c | 1007 +++++++++++++++++++++++++++++++++++++++++
- drivers/gpu/drm/i2c/adv7511.h |  289 ++++++++++++
- 4 files changed, 1304 insertions(+)
- create mode 100644 drivers/gpu/drm/i2c/adv7511.c
- create mode 100644 drivers/gpu/drm/i2c/adv7511.h
-
-diff --git a/drivers/gpu/drm/i2c/Kconfig b/drivers/gpu/drm/i2c/Kconfig
-index 4d341db..22c7ed6 100644
---- a/drivers/gpu/drm/i2c/Kconfig
-+++ b/drivers/gpu/drm/i2c/Kconfig
-@@ -1,6 +1,12 @@
- menu "I2C encoder or helper chips"
-      depends on DRM && DRM_KMS_HELPER && I2C
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 1067a96c8425..35cf1fac01b5 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -25,6 +25,7 @@
+ 			device_type = "cpu";
+ 			reg = <0x0>;
+ 			clock-frequency = <800000000>;
++			power-domains = <&pd_a3sm>;
+ 		};
+ 	};
  
-+config DRM_I2C_ADV7511
-+	tristate "AV7511 encoder"
-+	select REGMAP_I2C
-+	help
-+	  Support for the Analog Device ADV7511(W) and ADV7513 HDMI encoders.
-+
- config DRM_I2C_CH7006
- 	tristate "Chrontel ch7006 TV encoder"
- 	default m if DRM_NOUVEAU
-diff --git a/drivers/gpu/drm/i2c/Makefile b/drivers/gpu/drm/i2c/Makefile
-index 43aa33b..2c72eb5 100644
---- a/drivers/gpu/drm/i2c/Makefile
-+++ b/drivers/gpu/drm/i2c/Makefile
-@@ -1,5 +1,7 @@
- ccflags-y := -Iinclude/drm
+@@ -46,6 +47,7 @@
+ 		reg = <0xe6138000 0x170>;
+ 		interrupts = <0 58 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7740_CLK_CMT1>;
++		power-domains = <&pd_c5>;
+ 		clock-names = "fck";
  
-+obj-$(CONFIG_DRM_I2C_ADV7511) += adv7511.o
-+
- ch7006-y := ch7006_drv.o ch7006_mode.o
- obj-$(CONFIG_DRM_I2C_CH7006) += ch7006.o
+ 		renesas,channels-mask = <0x3f>;
+@@ -71,6 +73,7 @@
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
++		power-domains = <&pd_a4s>;
+ 	};
  
-diff --git a/drivers/gpu/drm/i2c/adv7511.c b/drivers/gpu/drm/i2c/adv7511.c
-new file mode 100644
-index 0000000..0a61a17
---- /dev/null
-+++ b/drivers/gpu/drm/i2c/adv7511.c
-@@ -0,0 +1,1007 @@
-+/*
-+ * Analog Devices ADV7511 HDMI transmitter driver
-+ *
-+ * Copyright 2012 Analog Devices Inc.
-+ *
-+ * Licensed under the GPL-2.
-+ */
-+
-+#include <linux/device.h>
-+#include <linux/gpio/consumer.h>
-+#include <linux/i2c.h>
-+#include <linux/module.h>
-+#include <linux/regmap.h>
-+#include <linux/slab.h>
-+
-+#include <drm/drmP.h>
-+#include <drm/drm_crtc_helper.h>
-+#include <drm/drm_edid.h>
-+#include <drm/drm_encoder_slave.h>
-+
-+#include "adv7511.h"
-+
-+struct adv7511 {
-+	struct i2c_client *i2c_main;
-+	struct i2c_client *i2c_edid;
-+
-+	struct regmap *regmap;
-+	struct regmap *packet_memory_regmap;
-+	enum drm_connector_status status;
-+	int dpms_mode;
-+
-+	unsigned int f_tmds;
-+
-+	unsigned int current_edid_segment;
-+	uint8_t edid_buf[256];
-+
-+	wait_queue_head_t wq;
-+	struct drm_encoder *encoder;
-+
-+	bool embedded_sync;
-+	enum adv7511_sync_polarity vsync_polarity;
-+	enum adv7511_sync_polarity hsync_polarity;
-+	bool rgb;
-+
-+	struct edid *edid;
-+
-+	struct gpio_desc *gpio_pd;
-+};
-+
-+static struct adv7511 *encoder_to_adv7511(struct drm_encoder *encoder)
-+{
-+	return to_encoder_slave(encoder)->slave_priv;
-+}
-+
-+/* ADI recommanded values for proper operation. */
-+static const struct reg_default adv7511_fixed_registers[] = {
-+	{ 0x98, 0x03 },
-+	{ 0x9a, 0xe0 },
-+	{ 0x9c, 0x30 },
-+	{ 0x9d, 0x61 },
-+	{ 0xa2, 0xa4 },
-+	{ 0xa3, 0xa4 },
-+	{ 0xe0, 0xd0 },
-+	{ 0xf9, 0x00 },
-+	{ 0x55, 0x02 },
-+};
-+
-+/* -----------------------------------------------------------------------------
-+ * Register access
-+ */
-+
-+static const uint8_t adv7511_register_defaults[] = {
-+	0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 00 */
-+	0x00, 0x00, 0x01, 0x0e, 0xbc, 0x18, 0x01, 0x13,
-+	0x25, 0x37, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 10 */
-+	0x46, 0x62, 0x04, 0xa8, 0x00, 0x00, 0x1c, 0x84,
-+	0x1c, 0xbf, 0x04, 0xa8, 0x1e, 0x70, 0x02, 0x1e, /* 20 */
-+	0x00, 0x00, 0x04, 0xa8, 0x08, 0x12, 0x1b, 0xac,
-+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 30 */
-+	0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0xb0,
-+	0x00, 0x50, 0x90, 0x7e, 0x79, 0x70, 0x00, 0x00, /* 40 */
-+	0x00, 0xa8, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
-+	0x00, 0x00, 0x02, 0x0d, 0x00, 0x00, 0x00, 0x00, /* 50 */
-+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 60 */
-+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-+	0x01, 0x0a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 70 */
-+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 80 */
-+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-+	0x00, 0x00, 0x00, 0x00, 0xc0, 0x00, 0x00, 0x00, /* 90 */
-+	0x0b, 0x02, 0x00, 0x18, 0x5a, 0x60, 0x00, 0x00,
-+	0x00, 0x00, 0x80, 0x80, 0x08, 0x04, 0x00, 0x00, /* a0 */
-+	0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x40, 0x14,
-+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* b0 */
-+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* c0 */
-+	0x00, 0x03, 0x00, 0x00, 0x02, 0x00, 0x01, 0x04,
-+	0x30, 0xff, 0x80, 0x80, 0x80, 0x00, 0x00, 0x00, /* d0 */
-+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x01,
-+	0x80, 0x75, 0x00, 0x00, 0x60, 0x00, 0x00, 0x00, /* e0 */
-+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-+	0x00, 0x00, 0x00, 0x00, 0x00, 0x75, 0x11, 0x00, /* f0 */
-+	0x00, 0x7c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-+};
-+
-+static bool adv7511_register_volatile(struct device *dev, unsigned int reg)
-+{
-+	switch (reg) {
-+	case ADV7511_REG_CHIP_REVISION:
-+	case ADV7511_REG_SPDIF_FREQ:
-+	case ADV7511_REG_CTS_AUTOMATIC1:
-+	case ADV7511_REG_CTS_AUTOMATIC2:
-+	case ADV7511_REG_VIC_DETECTED:
-+	case ADV7511_REG_VIC_SEND:
-+	case ADV7511_REG_AUX_VIC_DETECTED:
-+	case ADV7511_REG_STATUS:
-+	case ADV7511_REG_GC(1):
-+	case ADV7511_REG_INT(0):
-+	case ADV7511_REG_INT(1):
-+	case ADV7511_REG_PLL_STATUS:
-+	case ADV7511_REG_AN(0):
-+	case ADV7511_REG_AN(1):
-+	case ADV7511_REG_AN(2):
-+	case ADV7511_REG_AN(3):
-+	case ADV7511_REG_AN(4):
-+	case ADV7511_REG_AN(5):
-+	case ADV7511_REG_AN(6):
-+	case ADV7511_REG_AN(7):
-+	case ADV7511_REG_HDCP_STATUS:
-+	case ADV7511_REG_BCAPS:
-+	case ADV7511_REG_BKSV(0):
-+	case ADV7511_REG_BKSV(1):
-+	case ADV7511_REG_BKSV(2):
-+	case ADV7511_REG_BKSV(3):
-+	case ADV7511_REG_BKSV(4):
-+	case ADV7511_REG_DDC_STATUS:
-+	case ADV7511_REG_BSTATUS(0):
-+	case ADV7511_REG_BSTATUS(1):
-+	case ADV7511_REG_CHIP_ID_HIGH:
-+	case ADV7511_REG_CHIP_ID_LOW:
-+		return true;
-+	}
-+
-+	return false;
-+}
-+
-+static const struct regmap_config adv7511_regmap_config = {
-+	.reg_bits = 8,
-+	.val_bits = 8,
-+
-+	.max_register = 0xff,
-+	.cache_type = REGCACHE_RBTREE,
-+	.reg_defaults_raw = adv7511_register_defaults,
-+	.num_reg_defaults_raw = ARRAY_SIZE(adv7511_register_defaults),
-+
-+	.volatile_reg = adv7511_register_volatile,
-+};
-+
-+/* -----------------------------------------------------------------------------
-+ * Hardware configuration
-+ */
-+
-+static void adv7511_set_colormap(struct adv7511 *adv7511, bool enable,
-+				 const uint16_t *coeff,
-+				 unsigned int scaling_factor)
-+{
-+	unsigned int i;
-+
-+	regmap_update_bits(adv7511->regmap, ADV7511_REG_CSC_UPPER(1),
-+			   ADV7511_CSC_UPDATE_MODE, ADV7511_CSC_UPDATE_MODE);
-+
-+	if (enable) {
-+		for (i = 0; i < 12; ++i) {
-+			regmap_update_bits(adv7511->regmap,
-+					   ADV7511_REG_CSC_UPPER(i),
-+					   0x1f, coeff[i] >> 8);
-+			regmap_write(adv7511->regmap,
-+				     ADV7511_REG_CSC_LOWER(i),
-+				     coeff[i] & 0xff);
-+		}
-+	}
-+
-+	if (enable)
-+		regmap_update_bits(adv7511->regmap, ADV7511_REG_CSC_UPPER(0),
-+				   0xe0, 0x80 | (scaling_factor << 5));
-+	else
-+		regmap_update_bits(adv7511->regmap, ADV7511_REG_CSC_UPPER(0),
-+				   0x80, 0x00);
-+
-+	regmap_update_bits(adv7511->regmap, ADV7511_REG_CSC_UPPER(1),
-+			   ADV7511_CSC_UPDATE_MODE, 0);
-+}
-+
-+static int adv7511_packet_enable(struct adv7511 *adv7511, unsigned int packet)
-+{
-+	if (packet & 0xff)
-+		regmap_update_bits(adv7511->regmap, ADV7511_REG_PACKET_ENABLE0,
-+				   packet, 0xff);
-+
-+	if (packet & 0xff00) {
-+		packet >>= 8;
-+		regmap_update_bits(adv7511->regmap, ADV7511_REG_PACKET_ENABLE1,
-+				   packet, 0xff);
-+	}
-+
-+	return 0;
-+}
-+
-+static int adv7511_packet_disable(struct adv7511 *adv7511, unsigned int packet)
-+{
-+	if (packet & 0xff)
-+		regmap_update_bits(adv7511->regmap, ADV7511_REG_PACKET_ENABLE0,
-+				   packet, 0x00);
-+
-+	if (packet & 0xff00) {
-+		packet >>= 8;
-+		regmap_update_bits(adv7511->regmap, ADV7511_REG_PACKET_ENABLE1,
-+				   packet, 0x00);
-+	}
-+
-+	return 0;
-+}
-+
-+/* Coefficients for adv7511 color space conversion */
-+static const uint16_t adv7511_csc_ycbcr_to_rgb[] = {
-+	0x0734, 0x04ad, 0x0000, 0x1c1b,
-+	0x1ddc, 0x04ad, 0x1f24, 0x0135,
-+	0x0000, 0x04ad, 0x087c, 0x1b77,
-+};
-+
-+static void adv7511_set_config_csc(struct adv7511 *adv7511,
-+				   struct drm_connector *connector,
-+				   bool rgb)
-+{
-+	struct adv7511_video_config config;
-+	bool output_format_422, output_format_ycbcr;
-+	unsigned int mode;
-+	uint8_t infoframe[17];
-+
-+	if (adv7511->edid)
-+		config.hdmi_mode = drm_detect_hdmi_monitor(adv7511->edid);
-+	else
-+		config.hdmi_mode = false;
-+
-+	hdmi_avi_infoframe_init(&config.avi_infoframe);
-+
-+	config.avi_infoframe.scan_mode = HDMI_SCAN_MODE_UNDERSCAN;
-+
-+	if (rgb) {
-+		config.csc_enable = false;
-+		config.avi_infoframe.colorspace = HDMI_COLORSPACE_RGB;
-+	} else {
-+		config.csc_scaling_factor = ADV7511_CSC_SCALING_4;
-+		config.csc_coefficents = adv7511_csc_ycbcr_to_rgb;
-+
-+		if ((connector->display_info.color_formats &
-+		     DRM_COLOR_FORMAT_YCRCB422) &&
-+		    config.hdmi_mode) {
-+			config.csc_enable = false;
-+			config.avi_infoframe.colorspace +				HDMI_COLORSPACE_YUV422;
-+		} else {
-+			config.csc_enable = true;
-+			config.avi_infoframe.colorspace = HDMI_COLORSPACE_RGB;
-+		}
-+	}
-+
-+	if (config.hdmi_mode) {
-+		mode = ADV7511_HDMI_CFG_MODE_HDMI;
-+
-+		switch (config.avi_infoframe.colorspace) {
-+		case HDMI_COLORSPACE_YUV444:
-+			output_format_422 = false;
-+			output_format_ycbcr = true;
-+			break;
-+		case HDMI_COLORSPACE_YUV422:
-+			output_format_422 = true;
-+			output_format_ycbcr = true;
-+			break;
-+		default:
-+			output_format_422 = false;
-+			output_format_ycbcr = false;
-+			break;
-+		}
-+	} else {
-+		mode = ADV7511_HDMI_CFG_MODE_DVI;
-+		output_format_422 = false;
-+		output_format_ycbcr = false;
-+	}
-+
-+	adv7511_packet_disable(adv7511, ADV7511_PACKET_ENABLE_AVI_INFOFRAME);
-+
-+	adv7511_set_colormap(adv7511, config.csc_enable,
-+			     config.csc_coefficents,
-+			     config.csc_scaling_factor);
-+
-+	regmap_update_bits(adv7511->regmap, ADV7511_REG_VIDEO_INPUT_CFG1, 0x81,
-+			   (output_format_422 << 7) | output_format_ycbcr);
-+
-+	regmap_update_bits(adv7511->regmap, ADV7511_REG_HDCP_HDMI_CFG,
-+			   ADV7511_HDMI_CFG_MODE_MASK, mode);
-+
-+	hdmi_avi_infoframe_pack(&config.avi_infoframe, infoframe,
-+				sizeof(infoframe));
-+
-+	/* The AVI infoframe id is not configurable */
-+	regmap_bulk_write(adv7511->regmap, ADV7511_REG_AVI_INFOFRAME_VERSION,
-+			  infoframe + 1, sizeof(infoframe) - 1);
-+
-+	adv7511_packet_enable(adv7511, ADV7511_PACKET_ENABLE_AVI_INFOFRAME);
-+}
-+
-+static void adv7511_set_link_config(struct adv7511 *adv7511,
-+				    const struct adv7511_link_config *config)
-+{
-+	unsigned int clock_delay;
-+	unsigned int color_depth;
-+	unsigned int input_style;
-+	unsigned int input_id;
-+
-+	clock_delay = (config->clock_delay + 1200) / 400;
-+	color_depth = config->input_color_depth = 8 ? 3
-+		    : (config->input_color_depth = 10 ? 1 : 2);
-+
-+	input_style = config->input_style = 1 ? 2
-+		    : (config->input_style = 2 ? 1 : 3);
-+
-+	/* TODO Support input ID 6 */
-+	if (config->input_colorspace != HDMI_COLORSPACE_YUV422)
-+		input_id = config->input_clock = ADV7511_INPUT_CLOCK_DDR
-+			 ? 5 : 0;
-+	else if (config->input_clock = ADV7511_INPUT_CLOCK_DDR)
-+		input_id = config->embedded_sync ? 8 : 7;
-+	else if (config->input_clock = ADV7511_INPUT_CLOCK_2X)
-+		input_id = config->embedded_sync ? 4 : 3;
-+	else
-+		input_id = config->embedded_sync ? 2 : 1;
-+
-+	regmap_update_bits(adv7511->regmap, ADV7511_REG_I2C_FREQ_ID_CFG, 0xf,
-+			   input_id);
-+	regmap_update_bits(adv7511->regmap, ADV7511_REG_VIDEO_INPUT_CFG1, 0x7e,
-+			   (color_depth << 4) | (input_style << 2));
-+	regmap_write(adv7511->regmap, ADV7511_REG_VIDEO_INPUT_CFG2,
-+		     config->input_justification << 3);
-+	regmap_write(adv7511->regmap, ADV7511_REG_TIMING_GEN_SEQ,
-+		     config->sync_pulse << 2);
-+
-+	regmap_write(adv7511->regmap, 0xba, clock_delay << 5);
-+
-+	adv7511->embedded_sync = config->embedded_sync;
-+	adv7511->hsync_polarity = config->hsync_polarity;
-+	adv7511->vsync_polarity = config->vsync_polarity;
-+	adv7511->rgb = config->input_colorspace = HDMI_COLORSPACE_RGB;
-+}
-+
-+/* -----------------------------------------------------------------------------
-+ * Interrupt and hotplug detection
-+ */
-+
-+static bool adv7511_hpd(struct adv7511 *adv7511)
-+{
-+	unsigned int irq0;
-+	int ret;
-+
-+	ret = regmap_read(adv7511->regmap, ADV7511_REG_INT(0), &irq0);
-+	if (ret < 0)
-+		return false;
-+
-+	if (irq0 & ADV7511_INT0_HDP) {
-+		regmap_write(adv7511->regmap, ADV7511_REG_INT(0),
-+			     ADV7511_INT0_HDP);
-+		return true;
-+	}
-+
-+	return false;
-+}
-+
-+static irqreturn_t adv7511_irq_handler(int irq, void *devid)
-+{
-+	struct adv7511 *adv7511 = devid;
-+
-+	if (adv7511_hpd(adv7511))
-+		drm_helper_hpd_irq_event(adv7511->encoder->dev);
-+
-+	wake_up_all(&adv7511->wq);
-+
-+	return IRQ_HANDLED;
-+}
-+
-+static unsigned int adv7511_is_interrupt_pending(struct adv7511 *adv7511,
-+						 unsigned int irq)
-+{
-+	unsigned int irq0, irq1;
-+	unsigned int pending;
-+	int ret;
-+
-+	ret = regmap_read(adv7511->regmap, ADV7511_REG_INT(0), &irq0);
-+	if (ret < 0)
-+		return 0;
-+	ret = regmap_read(adv7511->regmap, ADV7511_REG_INT(1), &irq1);
-+	if (ret < 0)
-+		return 0;
-+
-+	pending = (irq1 << 8) | irq0;
-+
-+	return pending & irq;
-+}
-+
-+static int adv7511_wait_for_interrupt(struct adv7511 *adv7511, int irq,
-+				      int timeout)
-+{
-+	unsigned int pending;
-+	int ret;
-+
-+	if (adv7511->i2c_main->irq) {
-+		ret = wait_event_interruptible_timeout(adv7511->wq,
-+				adv7511_is_interrupt_pending(adv7511, irq),
-+				msecs_to_jiffies(timeout));
-+		if (ret <= 0)
-+			return 0;
-+		pending = adv7511_is_interrupt_pending(adv7511, irq);
-+	} else {
-+		if (timeout < 25)
-+			timeout = 25;
-+		do {
-+			pending = adv7511_is_interrupt_pending(adv7511, irq);
-+			if (pending)
-+				break;
-+			msleep(25);
-+			timeout -= 25;
-+		} while (timeout >= 25);
-+	}
-+
-+	return pending;
-+}
-+
-+/* -----------------------------------------------------------------------------
-+ * EDID retrieval
-+ */
-+
-+static int adv7511_get_edid_block(void *data, u8 *buf, unsigned int block,
-+				  size_t len)
-+{
-+	struct adv7511 *adv7511 = data;
-+	struct i2c_msg xfer[2];
-+	uint8_t offset;
-+	unsigned int i;
-+	int ret;
-+
-+	if (len > 128)
-+		return -EINVAL;
-+
-+	if (adv7511->current_edid_segment != block / 2) {
-+		unsigned int status;
-+
-+		ret = regmap_read(adv7511->regmap, ADV7511_REG_DDC_STATUS,
-+				  &status);
-+		if (ret < 0)
-+			return ret;
-+
-+		if (status != 2) {
-+			regmap_write(adv7511->regmap, ADV7511_REG_EDID_SEGMENT,
-+				     block);
-+			ret = adv7511_wait_for_interrupt(adv7511,
-+					ADV7511_INT0_EDID_READY |
-+					ADV7511_INT1_DDC_ERROR, 200);
-+
-+			if (!(ret & ADV7511_INT0_EDID_READY))
-+				return -EIO;
-+		}
-+
-+		regmap_write(adv7511->regmap, ADV7511_REG_INT(0),
-+			     ADV7511_INT0_EDID_READY | ADV7511_INT1_DDC_ERROR);
-+
-+		/* Break this apart, hopefully more I2C controllers will
-+		 * support 64 byte transfers than 256 byte transfers
-+		 */
-+
-+		xfer[0].addr = adv7511->i2c_edid->addr;
-+		xfer[0].flags = 0;
-+		xfer[0].len = 1;
-+		xfer[0].buf = &offset;
-+		xfer[1].addr = adv7511->i2c_edid->addr;
-+		xfer[1].flags = I2C_M_RD;
-+		xfer[1].len = 64;
-+		xfer[1].buf = adv7511->edid_buf;
-+
-+		offset = 0;
-+
-+		for (i = 0; i < 4; ++i) {
-+			ret = i2c_transfer(adv7511->i2c_edid->adapter, xfer,
-+					   ARRAY_SIZE(xfer));
-+			if (ret < 0)
-+				return ret;
-+			else if (ret != 2)
-+				return -EIO;
-+
-+			xfer[1].buf += 64;
-+			offset += 64;
-+		}
-+
-+		adv7511->current_edid_segment = block / 2;
-+	}
-+
-+	if (block % 2 = 0)
-+		memcpy(buf, adv7511->edid_buf, len);
-+	else
-+		memcpy(buf, adv7511->edid_buf + 128, len);
-+
-+	return 0;
-+}
-+
-+/* -----------------------------------------------------------------------------
-+ * Encoder operations
-+ */
-+
-+static int adv7511_get_modes(struct drm_encoder *encoder,
-+			     struct drm_connector *connector)
-+{
-+	struct adv7511 *adv7511 = encoder_to_adv7511(encoder);
-+	struct edid *edid;
-+	unsigned int count;
-+
-+	/* Reading the EDID only works if the device is powered */
-+	if (adv7511->dpms_mode != DRM_MODE_DPMS_ON) {
-+		regmap_write(adv7511->regmap, ADV7511_REG_INT(0),
-+			     ADV7511_INT0_EDID_READY | ADV7511_INT1_DDC_ERROR);
-+		regmap_update_bits(adv7511->regmap, ADV7511_REG_POWER,
-+				   ADV7511_POWER_POWER_DOWN, 0);
-+		adv7511->current_edid_segment = -1;
-+	}
-+
-+	edid = drm_do_get_edid(connector, adv7511_get_edid_block, adv7511);
-+
-+	if (adv7511->dpms_mode != DRM_MODE_DPMS_ON)
-+		regmap_update_bits(adv7511->regmap, ADV7511_REG_POWER,
-+				   ADV7511_POWER_POWER_DOWN,
-+				   ADV7511_POWER_POWER_DOWN);
-+
-+	kfree(adv7511->edid);
-+	adv7511->edid = edid;
-+	if (!edid)
-+		return 0;
-+
-+	drm_mode_connector_update_edid_property(connector, edid);
-+	count = drm_add_edid_modes(connector, edid);
-+
-+	adv7511_set_config_csc(adv7511, connector, adv7511->rgb);
-+
-+	return count;
-+}
-+
-+static void adv7511_encoder_dpms(struct drm_encoder *encoder, int mode)
-+{
-+	struct adv7511 *adv7511 = encoder_to_adv7511(encoder);
-+
-+	switch (mode) {
-+	case DRM_MODE_DPMS_ON:
-+		adv7511->current_edid_segment = -1;
-+
-+		regmap_write(adv7511->regmap, ADV7511_REG_INT(0),
-+			     ADV7511_INT0_EDID_READY | ADV7511_INT1_DDC_ERROR);
-+		regmap_update_bits(adv7511->regmap, ADV7511_REG_POWER,
-+				   ADV7511_POWER_POWER_DOWN, 0);
-+		/*
-+		 * Per spec it is allowed to pulse the HDP signal to indicate
-+		 * that the EDID information has changed. Some monitors do this
-+		 * when they wakeup from standby or are enabled. When the HDP
-+		 * goes low the adv7511 is reset and the outputs are disabled
-+		 * which might cause the monitor to go to standby again. To
-+		 * avoid this we ignore the HDP pin for the first few seconds
-+		 * after enabeling the output.
-+		 */
-+		regmap_update_bits(adv7511->regmap, ADV7511_REG_POWER2,
-+				   ADV7511_REG_POWER2_HDP_SRC_MASK,
-+				   ADV7511_REG_POWER2_HDP_SRC_NONE);
-+		/* Most of the registers are reset during power down or
-+		 * when HPD is low
-+		 */
-+		regcache_sync(adv7511->regmap);
-+		break;
-+	default:
-+		/* TODO: setup additional power down modes */
-+		regmap_update_bits(adv7511->regmap, ADV7511_REG_POWER,
-+				   ADV7511_POWER_POWER_DOWN,
-+				   ADV7511_POWER_POWER_DOWN);
-+		regcache_mark_dirty(adv7511->regmap);
-+		break;
-+	}
-+
-+	adv7511->dpms_mode = mode;
-+}
-+
-+static enum drm_connector_status
-+adv7511_encoder_detect(struct drm_encoder *encoder,
-+		       struct drm_connector *connector)
-+{
-+	struct adv7511 *adv7511 = encoder_to_adv7511(encoder);
-+	enum drm_connector_status status;
-+	unsigned int val;
-+	bool hpd;
-+	int ret;
-+
-+	ret = regmap_read(adv7511->regmap, ADV7511_REG_STATUS, &val);
-+	if (ret < 0)
-+		return connector_status_disconnected;
-+
-+	if (val & ADV7511_STATUS_HPD)
-+		status = connector_status_connected;
-+	else
-+		status = connector_status_disconnected;
-+
-+	hpd = adv7511_hpd(adv7511);
-+
-+	/* The chip resets itself when the cable is disconnected, so in case
-+	 * there is a pending HPD interrupt and the cable is connected there was
-+	 * at least one transition from disconnected to connected and the chip
-+	 * has to be reinitialized. */
-+	if (status = connector_status_connected && hpd &&
-+	    adv7511->dpms_mode = DRM_MODE_DPMS_ON) {
-+		regcache_mark_dirty(adv7511->regmap);
-+		adv7511_encoder_dpms(encoder, adv7511->dpms_mode);
-+		adv7511_get_modes(encoder, connector);
-+		if (adv7511->status = connector_status_connected)
-+			status = connector_status_disconnected;
-+	} else {
-+		/* Renable HDP sensing */
-+		regmap_update_bits(adv7511->regmap, ADV7511_REG_POWER2,
-+				   ADV7511_REG_POWER2_HDP_SRC_MASK,
-+				   ADV7511_REG_POWER2_HDP_SRC_BOTH);
-+	}
-+
-+	adv7511->status = status;
-+	return status;
-+}
-+
-+static int adv7511_encoder_mode_valid(struct drm_encoder *encoder,
-+				      struct drm_display_mode *mode)
-+{
-+	if (mode->clock > 165000)
-+		return MODE_CLOCK_HIGH;
-+
-+	if (mode->flags & DRM_MODE_FLAG_INTERLACE)
-+		return MODE_NO_INTERLACE;
-+
-+	return MODE_OK;
-+}
-+
-+static void adv7511_encoder_mode_set(struct drm_encoder *encoder,
-+				     struct drm_display_mode *mode,
-+				     struct drm_display_mode *adj_mode)
-+{
-+	struct adv7511 *adv7511 = encoder_to_adv7511(encoder);
-+	unsigned int low_refresh_rate;
-+	unsigned int hsync_polarity = 0;
-+	unsigned int vsync_polarity = 0;
-+
-+	if (adv7511->embedded_sync) {
-+		unsigned int hsync_offset, hsync_len;
-+		unsigned int vsync_offset, vsync_len;
-+
-+		hsync_offset = adj_mode->crtc_hsync_start -
-+			       adj_mode->crtc_hdisplay;
-+		vsync_offset = adj_mode->crtc_vsync_start -
-+			       adj_mode->crtc_vdisplay;
-+		hsync_len = adj_mode->crtc_hsync_end -
-+			    adj_mode->crtc_hsync_start;
-+		vsync_len = adj_mode->crtc_vsync_end -
-+			    adj_mode->crtc_vsync_start;
-+
-+		/* The hardware vsync generator has a off-by-one bug */
-+		vsync_offset += 1;
-+
-+		regmap_write(adv7511->regmap, ADV7511_REG_HSYNC_PLACEMENT_MSB,
-+			     ((hsync_offset >> 10) & 0x7) << 5);
-+		regmap_write(adv7511->regmap, ADV7511_REG_SYNC_DECODER(0),
-+			     (hsync_offset >> 2) & 0xff);
-+		regmap_write(adv7511->regmap, ADV7511_REG_SYNC_DECODER(1),
-+			     ((hsync_offset & 0x3) << 6) |
-+			     ((hsync_len >> 4) & 0x3f));
-+		regmap_write(adv7511->regmap, ADV7511_REG_SYNC_DECODER(2),
-+			     ((hsync_len & 0xf) << 4) |
-+			     ((vsync_offset >> 6) & 0xf));
-+		regmap_write(adv7511->regmap, ADV7511_REG_SYNC_DECODER(3),
-+			     ((vsync_offset & 0x3f) << 2) |
-+			     ((vsync_len >> 8) & 0x3));
-+		regmap_write(adv7511->regmap, ADV7511_REG_SYNC_DECODER(4),
-+			     vsync_len & 0xff);
-+
-+		hsync_polarity = !(adj_mode->flags & DRM_MODE_FLAG_PHSYNC);
-+		vsync_polarity = !(adj_mode->flags & DRM_MODE_FLAG_PVSYNC);
-+	} else {
-+		enum adv7511_sync_polarity mode_hsync_polarity;
-+		enum adv7511_sync_polarity mode_vsync_polarity;
-+
-+		/**
-+		 * If the input signal is always low or always high we want to
-+		 * invert or let it passthrough depending on the polarity of the
-+		 * current mode.
-+		 **/
-+		if (adj_mode->flags & DRM_MODE_FLAG_NHSYNC)
-+			mode_hsync_polarity = ADV7511_SYNC_POLARITY_LOW;
-+		else
-+			mode_hsync_polarity = ADV7511_SYNC_POLARITY_HIGH;
-+
-+		if (adj_mode->flags & DRM_MODE_FLAG_NVSYNC)
-+			mode_vsync_polarity = ADV7511_SYNC_POLARITY_LOW;
-+		else
-+			mode_vsync_polarity = ADV7511_SYNC_POLARITY_HIGH;
-+
-+		if (adv7511->hsync_polarity != mode_hsync_polarity &&
-+		    adv7511->hsync_polarity !+		    ADV7511_SYNC_POLARITY_PASSTHROUGH)
-+			hsync_polarity = 1;
-+
-+		if (adv7511->vsync_polarity != mode_vsync_polarity &&
-+		    adv7511->vsync_polarity !+		    ADV7511_SYNC_POLARITY_PASSTHROUGH)
-+			vsync_polarity = 1;
-+	}
-+
-+	if (mode->vrefresh <= 24000)
-+		low_refresh_rate = ADV7511_LOW_REFRESH_RATE_24HZ;
-+	else if (mode->vrefresh <= 25000)
-+		low_refresh_rate = ADV7511_LOW_REFRESH_RATE_25HZ;
-+	else if (mode->vrefresh <= 30000)
-+		low_refresh_rate = ADV7511_LOW_REFRESH_RATE_30HZ;
-+	else
-+		low_refresh_rate = ADV7511_LOW_REFRESH_RATE_NONE;
-+
-+	regmap_update_bits(adv7511->regmap, 0xfb,
-+		0x6, low_refresh_rate << 1);
-+	regmap_update_bits(adv7511->regmap, 0x17,
-+		0x60, (vsync_polarity << 6) | (hsync_polarity << 5));
-+
-+	/*
-+	 * TODO Test first order 4:2:2 to 4:4:4 up conversion method, which is
-+	 * supposed to give better results.
-+	 */
-+
-+	adv7511->f_tmds = mode->clock;
-+}
-+
-+static struct drm_encoder_slave_funcs adv7511_encoder_funcs = {
-+	.dpms = adv7511_encoder_dpms,
-+	.mode_valid = adv7511_encoder_mode_valid,
-+	.mode_set = adv7511_encoder_mode_set,
-+	.detect = adv7511_encoder_detect,
-+	.get_modes = adv7511_get_modes,
-+};
-+
-+/* -----------------------------------------------------------------------------
-+ * Probe & remove
-+ */
-+
-+static int adv7511_parse_dt(struct device_node *np,
-+			    struct adv7511_link_config *config)
-+{
-+	const char *str;
-+	int ret;
-+
-+	memset(config, 0, sizeof(*config));
-+
-+	of_property_read_u32(np, "adi,input-depth", &config->input_color_depth);
-+	if (config->input_color_depth != 8 && config->input_color_depth != 10 &&
-+	    config->input_color_depth != 12)
-+		return -EINVAL;
-+
-+	ret = of_property_read_string(np, "adi,input-colorspace", &str);
-+	if (ret < 0)
-+		return ret;
-+
-+	if (!strcmp(str, "rgb"))
-+		config->input_colorspace = HDMI_COLORSPACE_RGB;
-+	else if (!strcmp(str, "yuv422"))
-+		config->input_colorspace = HDMI_COLORSPACE_YUV422;
-+	else if (!strcmp(str, "yuv444"))
-+		config->input_colorspace = HDMI_COLORSPACE_YUV444;
-+	else
-+		return -EINVAL;
-+
-+	ret = of_property_read_string(np, "adi,input-clock", &str);
-+	if (ret < 0)
-+		return ret;
-+
-+	if (!strcmp(str, "1x"))
-+		config->input_clock = ADV7511_INPUT_CLOCK_1X;
-+	else if (!strcmp(str, "2x"))
-+		config->input_clock = ADV7511_INPUT_CLOCK_2X;
-+	else if (!strcmp(str, "ddr"))
-+		config->input_clock = ADV7511_INPUT_CLOCK_DDR;
-+	else
-+		return -EINVAL;
-+
-+	if (config->input_colorspace = HDMI_COLORSPACE_YUV422 ||
-+	    config->input_clock != ADV7511_INPUT_CLOCK_1X) {
-+		ret = of_property_read_u32(np, "adi,input-style",
-+					   &config->input_style);
-+		if (ret)
-+			return ret;
-+
-+		if (config->input_style < 1 || config->input_style > 3)
-+			return -EINVAL;
-+
-+		ret = of_property_read_string(np, "adi,input-justification",
-+					      &str);
-+		if (ret < 0)
-+			return ret;
-+
-+		if (!strcmp(str, "left"))
-+			config->input_justification +				ADV7511_INPUT_JUSTIFICATION_LEFT;
-+		else if (!strcmp(str, "evenly"))
-+			config->input_justification +				ADV7511_INPUT_JUSTIFICATION_EVENLY;
-+		else if (!strcmp(str, "right"))
-+			config->input_justification +				ADV7511_INPUT_JUSTIFICATION_RIGHT;
-+		else
-+			return -EINVAL;
-+
-+	} else {
-+		config->input_style = 1;
-+		config->input_justification = ADV7511_INPUT_JUSTIFICATION_LEFT;
-+	}
-+
-+	of_property_read_u32(np, "adi,clock-delay", &config->clock_delay);
-+	if (config->clock_delay < -1200 || config->clock_delay > 1600)
-+		return -EINVAL;
-+
-+	config->embedded_sync = of_property_read_bool(np, "adi,embedded-sync");
-+
-+	/* Hardcode the sync pulse configurations for now. */
-+	config->sync_pulse = ADV7511_INPUT_SYNC_PULSE_NONE;
-+	config->vsync_polarity = ADV7511_SYNC_POLARITY_PASSTHROUGH;
-+	config->hsync_polarity = ADV7511_SYNC_POLARITY_PASSTHROUGH;
-+
-+	return 0;
-+}
-+
-+static const int edid_i2c_addr = 0x7e;
-+static const int packet_i2c_addr = 0x70;
-+static const int cec_i2c_addr = 0x78;
-+
-+static int adv7511_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
-+{
-+	struct adv7511_link_config link_config;
-+	struct adv7511 *adv7511;
-+	struct device *dev = &i2c->dev;
-+	unsigned int val;
-+	int ret;
-+
-+	if (!dev->of_node)
-+		return -EINVAL;
-+
-+	adv7511 = devm_kzalloc(dev, sizeof(*adv7511), GFP_KERNEL);
-+	if (!adv7511)
-+		return -ENOMEM;
-+
-+	adv7511->dpms_mode = DRM_MODE_DPMS_OFF;
-+	adv7511->status = connector_status_disconnected;
-+
-+	ret = adv7511_parse_dt(dev->of_node, &link_config);
-+	if (ret)
-+		return ret;
-+
-+	/*
-+	 * The power down GPIO is optional. If present, toggle it from active to
-+	 * inactive to wake up the encoder.
-+	 */
-+	adv7511->gpio_pd = devm_gpiod_get_optional(dev, "pd", GPIOD_OUT_HIGH);
-+	if (IS_ERR(adv7511->gpio_pd))
-+		return PTR_ERR(adv7511->gpio_pd);
-+
-+	if (adv7511->gpio_pd) {
-+		mdelay(5);
-+		gpiod_set_value_cansleep(adv7511->gpio_pd, 0);
-+	}
-+
-+	adv7511->regmap = devm_regmap_init_i2c(i2c, &adv7511_regmap_config);
-+	if (IS_ERR(adv7511->regmap))
-+		return PTR_ERR(adv7511->regmap);
-+
-+	ret = regmap_read(adv7511->regmap, ADV7511_REG_CHIP_REVISION, &val);
-+	if (ret)
-+		return ret;
-+	dev_dbg(dev, "Rev. %d\n", val);
-+
-+	ret = regmap_register_patch(adv7511->regmap, adv7511_fixed_registers,
-+				    ARRAY_SIZE(adv7511_fixed_registers));
-+	if (ret)
-+		return ret;
-+
-+	regmap_write(adv7511->regmap, ADV7511_REG_EDID_I2C_ADDR, edid_i2c_addr);
-+	regmap_write(adv7511->regmap, ADV7511_REG_PACKET_I2C_ADDR,
-+		     packet_i2c_addr);
-+	regmap_write(adv7511->regmap, ADV7511_REG_CEC_I2C_ADDR, cec_i2c_addr);
-+	adv7511_packet_disable(adv7511, 0xffff);
-+
-+	adv7511->i2c_main = i2c;
-+	adv7511->i2c_edid = i2c_new_dummy(i2c->adapter, edid_i2c_addr >> 1);
-+	if (!adv7511->i2c_edid)
-+		return -ENOMEM;
-+
-+	if (i2c->irq) {
-+		init_waitqueue_head(&adv7511->wq);
-+
-+		ret = devm_request_threaded_irq(dev, i2c->irq, NULL,
-+						adv7511_irq_handler,
-+						IRQF_ONESHOT, dev_name(dev),
-+						adv7511);
-+		if (ret)
-+			goto err_i2c_unregister_device;
-+	}
-+
-+	/* CEC is unused for now */
-+	regmap_write(adv7511->regmap, ADV7511_REG_CEC_CTRL,
-+		     ADV7511_CEC_CTRL_POWER_DOWN);
-+
-+	regmap_update_bits(adv7511->regmap, ADV7511_REG_POWER,
-+			   ADV7511_POWER_POWER_DOWN, ADV7511_POWER_POWER_DOWN);
-+
-+	adv7511->current_edid_segment = -1;
-+
-+	i2c_set_clientdata(i2c, adv7511);
-+
-+	adv7511_set_link_config(adv7511, &link_config);
-+
-+	return 0;
-+
-+err_i2c_unregister_device:
-+	i2c_unregister_device(adv7511->i2c_edid);
-+
-+	return ret;
-+}
-+
-+static int adv7511_remove(struct i2c_client *i2c)
-+{
-+	struct adv7511 *adv7511 = i2c_get_clientdata(i2c);
-+
-+	i2c_unregister_device(adv7511->i2c_edid);
-+
-+	kfree(adv7511->edid);
-+
-+	return 0;
-+}
-+
-+static int adv7511_encoder_init(struct i2c_client *i2c, struct drm_device *dev,
-+				struct drm_encoder_slave *encoder)
-+{
-+
-+	struct adv7511 *adv7511 = i2c_get_clientdata(i2c);
-+
-+	encoder->slave_priv = adv7511;
-+	encoder->slave_funcs = &adv7511_encoder_funcs;
-+
-+	adv7511->encoder = &encoder->base;
-+
-+	return 0;
-+}
-+
-+static const struct i2c_device_id adv7511_i2c_ids[] = {
-+	{ "adv7511", 0 },
-+	{ "adv7511w", 0 },
-+	{ "adv7513", 0 },
-+	{ }
-+};
-+MODULE_DEVICE_TABLE(i2c, adv7511_i2c_ids);
-+
-+static const struct of_device_id adv7511_of_ids[] = {
-+	{ .compatible = "adi,adv7511", },
-+	{ .compatible = "adi,adv7511w", },
-+	{ .compatible = "adi,adv7513", },
-+	{ }
-+};
-+MODULE_DEVICE_TABLE(of, adv7511_of_ids);
-+
-+static struct drm_i2c_encoder_driver adv7511_driver = {
-+	.i2c_driver = {
-+		.driver = {
-+			.name = "adv7511",
-+			.of_match_table = adv7511_of_ids,
-+		},
-+		.id_table = adv7511_i2c_ids,
-+		.probe = adv7511_probe,
-+		.remove = adv7511_remove,
-+	},
-+
-+	.encoder_init = adv7511_encoder_init,
-+};
-+
-+static int __init adv7511_init(void)
-+{
-+	return drm_i2c_encoder_register(THIS_MODULE, &adv7511_driver);
-+}
-+module_init(adv7511_init);
-+
-+static void __exit adv7511_exit(void)
-+{
-+	drm_i2c_encoder_unregister(&adv7511_driver);
-+}
-+module_exit(adv7511_exit);
-+
-+MODULE_AUTHOR("Lars-Peter Clausen <lars@metafoo.de>");
-+MODULE_DESCRIPTION("ADV7511 HDMI transmitter driver");
-+MODULE_LICENSE("GPL");
-diff --git a/drivers/gpu/drm/i2c/adv7511.h b/drivers/gpu/drm/i2c/adv7511.h
-new file mode 100644
-index 0000000..6599ed5
---- /dev/null
-+++ b/drivers/gpu/drm/i2c/adv7511.h
-@@ -0,0 +1,289 @@
-+/*
-+ * Analog Devices ADV7511 HDMI transmitter driver
-+ *
-+ * Copyright 2012 Analog Devices Inc.
-+ *
-+ * Licensed under the GPL-2.
-+ */
-+
-+#ifndef __DRM_I2C_ADV7511_H__
-+#define __DRM_I2C_ADV7511_H__
-+
-+#include <linux/hdmi.h>
-+
-+#define ADV7511_REG_CHIP_REVISION		0x00
-+#define ADV7511_REG_N0				0x01
-+#define ADV7511_REG_N1				0x02
-+#define ADV7511_REG_N2				0x03
-+#define ADV7511_REG_SPDIF_FREQ			0x04
-+#define ADV7511_REG_CTS_AUTOMATIC1		0x05
-+#define ADV7511_REG_CTS_AUTOMATIC2		0x06
-+#define ADV7511_REG_CTS_MANUAL0			0x07
-+#define ADV7511_REG_CTS_MANUAL1			0x08
-+#define ADV7511_REG_CTS_MANUAL2			0x09
-+#define ADV7511_REG_AUDIO_SOURCE		0x0a
-+#define ADV7511_REG_AUDIO_CONFIG		0x0b
-+#define ADV7511_REG_I2S_CONFIG			0x0c
-+#define ADV7511_REG_I2S_WIDTH			0x0d
-+#define ADV7511_REG_AUDIO_SUB_SRC0		0x0e
-+#define ADV7511_REG_AUDIO_SUB_SRC1		0x0f
-+#define ADV7511_REG_AUDIO_SUB_SRC2		0x10
-+#define ADV7511_REG_AUDIO_SUB_SRC3		0x11
-+#define ADV7511_REG_AUDIO_CFG1			0x12
-+#define ADV7511_REG_AUDIO_CFG2			0x13
-+#define ADV7511_REG_AUDIO_CFG3			0x14
-+#define ADV7511_REG_I2C_FREQ_ID_CFG		0x15
-+#define ADV7511_REG_VIDEO_INPUT_CFG1		0x16
-+#define ADV7511_REG_CSC_UPPER(x)		(0x18 + (x) * 2)
-+#define ADV7511_REG_CSC_LOWER(x)		(0x19 + (x) * 2)
-+#define ADV7511_REG_SYNC_DECODER(x)		(0x30 + (x))
-+#define ADV7511_REG_DE_GENERATOR		(0x35 + (x))
-+#define ADV7511_REG_PIXEL_REPETITION		0x3b
-+#define ADV7511_REG_VIC_MANUAL			0x3c
-+#define ADV7511_REG_VIC_SEND			0x3d
-+#define ADV7511_REG_VIC_DETECTED		0x3e
-+#define ADV7511_REG_AUX_VIC_DETECTED		0x3f
-+#define ADV7511_REG_PACKET_ENABLE0		0x40
-+#define ADV7511_REG_POWER			0x41
-+#define ADV7511_REG_STATUS			0x42
-+#define ADV7511_REG_EDID_I2C_ADDR		0x43
-+#define ADV7511_REG_PACKET_ENABLE1		0x44
-+#define ADV7511_REG_PACKET_I2C_ADDR		0x45
-+#define ADV7511_REG_DSD_ENABLE			0x46
-+#define ADV7511_REG_VIDEO_INPUT_CFG2		0x48
-+#define ADV7511_REG_INFOFRAME_UPDATE		0x4a
-+#define ADV7511_REG_GC(x)			(0x4b + (x)) /* 0x4b - 0x51 */
-+#define ADV7511_REG_AVI_INFOFRAME_VERSION	0x52
-+#define ADV7511_REG_AVI_INFOFRAME_LENGTH	0x53
-+#define ADV7511_REG_AVI_INFOFRAME_CHECKSUM	0x54
-+#define ADV7511_REG_AVI_INFOFRAME(x)		(0x55 + (x)) /* 0x55 - 0x6f */
-+#define ADV7511_REG_AUDIO_INFOFRAME_VERSION	0x70
-+#define ADV7511_REG_AUDIO_INFOFRAME_LENGTH	0x71
-+#define ADV7511_REG_AUDIO_INFOFRAME_CHECKSUM	0x72
-+#define ADV7511_REG_AUDIO_INFOFRAME(x)		(0x73 + (x)) /* 0x73 - 0x7c */
-+#define ADV7511_REG_INT_ENABLE(x)		(0x94 + (x))
-+#define ADV7511_REG_INT(x)			(0x96 + (x))
-+#define ADV7511_REG_INPUT_CLK_DIV		0x9d
-+#define ADV7511_REG_PLL_STATUS			0x9e
-+#define ADV7511_REG_HDMI_POWER			0xa1
-+#define ADV7511_REG_HDCP_HDMI_CFG		0xaf
-+#define ADV7511_REG_AN(x)			(0xb0 + (x)) /* 0xb0 - 0xb7 */
-+#define ADV7511_REG_HDCP_STATUS			0xb8
-+#define ADV7511_REG_BCAPS			0xbe
-+#define ADV7511_REG_BKSV(x)			(0xc0 + (x)) /* 0xc0 - 0xc3 */
-+#define ADV7511_REG_EDID_SEGMENT		0xc4
-+#define ADV7511_REG_DDC_STATUS			0xc8
-+#define ADV7511_REG_EDID_READ_CTRL		0xc9
-+#define ADV7511_REG_BSTATUS(x)			(0xca + (x)) /* 0xca - 0xcb */
-+#define ADV7511_REG_TIMING_GEN_SEQ		0xd0
-+#define ADV7511_REG_POWER2			0xd6
-+#define ADV7511_REG_HSYNC_PLACEMENT_MSB		0xfa
-+
-+#define ADV7511_REG_SYNC_ADJUSTMENT(x)		(0xd7 + (x)) /* 0xd7 - 0xdc */
-+#define ADV7511_REG_TMDS_CLOCK_INV		0xde
-+#define ADV7511_REG_ARC_CTRL			0xdf
-+#define ADV7511_REG_CEC_I2C_ADDR		0xe1
-+#define ADV7511_REG_CEC_CTRL			0xe2
-+#define ADV7511_REG_CHIP_ID_HIGH		0xf5
-+#define ADV7511_REG_CHIP_ID_LOW			0xf6
-+
-+#define ADV7511_CSC_ENABLE			BIT(7)
-+#define ADV7511_CSC_UPDATE_MODE			BIT(5)
-+
-+#define ADV7511_INT0_HDP			BIT(7)
-+#define ADV7511_INT0_VSYNC			BIT(5)
-+#define ADV7511_INT0_AUDIO_FIFO_FULL		BIT(4)
-+#define ADV7511_INT0_EDID_READY			BIT(2)
-+#define ADV7511_INT0_HDCP_AUTHENTICATED		BIT(1)
-+
-+#define ADV7511_INT1_DDC_ERROR			BIT(7)
-+#define ADV7511_INT1_BKSV			BIT(6)
-+#define ADV7511_INT1_CEC_TX_READY		BIT(5)
-+#define ADV7511_INT1_CEC_TX_ARBIT_LOST		BIT(4)
-+#define ADV7511_INT1_CEC_TX_RETRY_TIMEOUT	BIT(3)
-+#define ADV7511_INT1_CEC_RX_READY3		BIT(2)
-+#define ADV7511_INT1_CEC_RX_READY2		BIT(1)
-+#define ADV7511_INT1_CEC_RX_READY1		BIT(0)
-+
-+#define ADV7511_ARC_CTRL_POWER_DOWN		BIT(0)
-+
-+#define ADV7511_CEC_CTRL_POWER_DOWN		BIT(0)
-+
-+#define ADV7511_POWER_POWER_DOWN		BIT(6)
-+
-+#define ADV7511_HDMI_CFG_MODE_MASK		0x2
-+#define ADV7511_HDMI_CFG_MODE_DVI		0x0
-+#define ADV7511_HDMI_CFG_MODE_HDMI		0x2
-+
-+#define ADV7511_AUDIO_SELECT_I2C		0x0
-+#define ADV7511_AUDIO_SELECT_SPDIF		0x1
-+#define ADV7511_AUDIO_SELECT_DSD		0x2
-+#define ADV7511_AUDIO_SELECT_HBR		0x3
-+#define ADV7511_AUDIO_SELECT_DST		0x4
-+
-+#define ADV7511_I2S_SAMPLE_LEN_16		0x2
-+#define ADV7511_I2S_SAMPLE_LEN_20		0x3
-+#define ADV7511_I2S_SAMPLE_LEN_18		0x4
-+#define ADV7511_I2S_SAMPLE_LEN_22		0x5
-+#define ADV7511_I2S_SAMPLE_LEN_19		0x8
-+#define ADV7511_I2S_SAMPLE_LEN_23		0x9
-+#define ADV7511_I2S_SAMPLE_LEN_24		0xb
-+#define ADV7511_I2S_SAMPLE_LEN_17		0xc
-+#define ADV7511_I2S_SAMPLE_LEN_21		0xd
-+
-+#define ADV7511_SAMPLE_FREQ_44100		0x0
-+#define ADV7511_SAMPLE_FREQ_48000		0x2
-+#define ADV7511_SAMPLE_FREQ_32000		0x3
-+#define ADV7511_SAMPLE_FREQ_88200		0x8
-+#define ADV7511_SAMPLE_FREQ_96000		0xa
-+#define ADV7511_SAMPLE_FREQ_176400		0xc
-+#define ADV7511_SAMPLE_FREQ_192000		0xe
-+
-+#define ADV7511_STATUS_POWER_DOWN_POLARITY	BIT(7)
-+#define ADV7511_STATUS_HPD			BIT(6)
-+#define ADV7511_STATUS_MONITOR_SENSE		BIT(5)
-+#define ADV7511_STATUS_I2S_32BIT_MODE		BIT(3)
-+
-+#define ADV7511_PACKET_ENABLE_N_CTS		BIT(8+6)
-+#define ADV7511_PACKET_ENABLE_AUDIO_SAMPLE	BIT(8+5)
-+#define ADV7511_PACKET_ENABLE_AVI_INFOFRAME	BIT(8+4)
-+#define ADV7511_PACKET_ENABLE_AUDIO_INFOFRAME	BIT(8+3)
-+#define ADV7511_PACKET_ENABLE_GC		BIT(7)
-+#define ADV7511_PACKET_ENABLE_SPD		BIT(6)
-+#define ADV7511_PACKET_ENABLE_MPEG		BIT(5)
-+#define ADV7511_PACKET_ENABLE_ACP		BIT(4)
-+#define ADV7511_PACKET_ENABLE_ISRC		BIT(3)
-+#define ADV7511_PACKET_ENABLE_GM		BIT(2)
-+#define ADV7511_PACKET_ENABLE_SPARE2		BIT(1)
-+#define ADV7511_PACKET_ENABLE_SPARE1		BIT(0)
-+
-+#define ADV7511_REG_POWER2_HDP_SRC_MASK		0xc0
-+#define ADV7511_REG_POWER2_HDP_SRC_BOTH		0x00
-+#define ADV7511_REG_POWER2_HDP_SRC_HDP		0x40
-+#define ADV7511_REG_POWER2_HDP_SRC_CEC		0x80
-+#define ADV7511_REG_POWER2_HDP_SRC_NONE		0xc0
-+#define ADV7511_REG_POWER2_TDMS_ENABLE		BIT(4)
-+#define ADV7511_REG_POWER2_GATE_INPUT_CLK	BIT(0)
-+
-+#define ADV7511_LOW_REFRESH_RATE_NONE		0x0
-+#define ADV7511_LOW_REFRESH_RATE_24HZ		0x1
-+#define ADV7511_LOW_REFRESH_RATE_25HZ		0x2
-+#define ADV7511_LOW_REFRESH_RATE_30HZ		0x3
-+
-+#define ADV7511_AUDIO_CFG3_LEN_MASK		0x0f
-+#define ADV7511_I2C_FREQ_ID_CFG_RATE_MASK	0xf0
-+
-+#define ADV7511_AUDIO_SOURCE_I2S		0
-+#define ADV7511_AUDIO_SOURCE_SPDIF		1
-+
-+#define ADV7511_I2S_FORMAT_I2S			0
-+#define ADV7511_I2S_FORMAT_RIGHT_J		1
-+#define ADV7511_I2S_FORMAT_LEFT_J		2
-+
-+#define ADV7511_PACKET(p, x)	    ((p) * 0x20 + (x))
-+#define ADV7511_PACKET_SDP(x)	    ADV7511_PACKET(0, x)
-+#define ADV7511_PACKET_MPEG(x)	    ADV7511_PACKET(1, x)
-+#define ADV7511_PACKET_ACP(x)	    ADV7511_PACKET(2, x)
-+#define ADV7511_PACKET_ISRC1(x)	    ADV7511_PACKET(3, x)
-+#define ADV7511_PACKET_ISRC2(x)	    ADV7511_PACKET(4, x)
-+#define ADV7511_PACKET_GM(x)	    ADV7511_PACKET(5, x)
-+#define ADV7511_PACKET_SPARE(x)	    ADV7511_PACKET(6, x)
-+
-+enum adv7511_input_clock {
-+	ADV7511_INPUT_CLOCK_1X,
-+	ADV7511_INPUT_CLOCK_2X,
-+	ADV7511_INPUT_CLOCK_DDR,
-+};
-+
-+enum adv7511_input_justification {
-+	ADV7511_INPUT_JUSTIFICATION_EVENLY = 0,
-+	ADV7511_INPUT_JUSTIFICATION_RIGHT = 1,
-+	ADV7511_INPUT_JUSTIFICATION_LEFT = 2,
-+};
-+
-+enum adv7511_input_sync_pulse {
-+	ADV7511_INPUT_SYNC_PULSE_DE = 0,
-+	ADV7511_INPUT_SYNC_PULSE_HSYNC = 1,
-+	ADV7511_INPUT_SYNC_PULSE_VSYNC = 2,
-+	ADV7511_INPUT_SYNC_PULSE_NONE = 3,
-+};
-+
-+/**
-+ * enum adv7511_sync_polarity - Polarity for the input sync signals
-+ * @ADV7511_SYNC_POLARITY_PASSTHROUGH:  Sync polarity matches that of
-+ *				       the currently configured mode.
-+ * @ADV7511_SYNC_POLARITY_LOW:	    Sync polarity is low
-+ * @ADV7511_SYNC_POLARITY_HIGH:	    Sync polarity is high
-+ *
-+ * If the polarity is set to either LOW or HIGH the driver will configure the
-+ * ADV7511 to internally invert the sync signal if required to match the sync
-+ * polarity setting for the currently selected output mode.
-+ *
-+ * If the polarity is set to PASSTHROUGH, the ADV7511 will route the signal
-+ * unchanged. This is used when the upstream graphics core already generates
-+ * the sync signals with the correct polarity.
-+ */
-+enum adv7511_sync_polarity {
-+	ADV7511_SYNC_POLARITY_PASSTHROUGH,
-+	ADV7511_SYNC_POLARITY_LOW,
-+	ADV7511_SYNC_POLARITY_HIGH,
-+};
-+
-+/**
-+ * struct adv7511_link_config - Describes adv7511 hardware configuration
-+ * @input_color_depth:		Number of bits per color component (8, 10 or 12)
-+ * @input_colorspace:		The input colorspace (RGB, YUV444, YUV422)
-+ * @input_clock:		The input video clock style (1x, 2x, DDR)
-+ * @input_style:		The input component arrangement variant
-+ * @input_justification:	Video input format bit justification
-+ * @clock_delay:		Clock delay for the input clock (in ps)
-+ * @embedded_sync:		Video input uses BT.656-style embedded sync
-+ * @sync_pulse:			Select the sync pulse
-+ * @vsync_polarity:		vsync input signal configuration
-+ * @hsync_polarity:		hsync input signal configuration
-+ */
-+struct adv7511_link_config {
-+	unsigned int input_color_depth;
-+	enum hdmi_colorspace input_colorspace;
-+	enum adv7511_input_clock input_clock;
-+	unsigned int input_style;
-+	enum adv7511_input_justification input_justification;
-+
-+	int clock_delay;
-+
-+	bool embedded_sync;
-+	enum adv7511_input_sync_pulse sync_pulse;
-+	enum adv7511_sync_polarity vsync_polarity;
-+	enum adv7511_sync_polarity hsync_polarity;
-+};
-+
-+/**
-+ * enum adv7511_csc_scaling - Scaling factor for the ADV7511 CSC
-+ * @ADV7511_CSC_SCALING_1: CSC results are not scaled
-+ * @ADV7511_CSC_SCALING_2: CSC results are scaled by a factor of two
-+ * @ADV7511_CSC_SCALING_4: CSC results are scalled by a factor of four
-+ */
-+enum adv7511_csc_scaling {
-+	ADV7511_CSC_SCALING_1 = 0,
-+	ADV7511_CSC_SCALING_2 = 1,
-+	ADV7511_CSC_SCALING_4 = 2,
-+};
-+
-+/**
-+ * struct adv7511_video_config - Describes adv7511 hardware configuration
-+ * @csc_enable:			Whether to enable color space conversion
-+ * @csc_scaling_factor:		Color space conversion scaling factor
-+ * @csc_coefficents:		Color space conversion coefficents
-+ * @hdmi_mode:			Whether to use HDMI or DVI output mode
-+ * @avi_infoframe:		HDMI infoframe
-+ */
-+struct adv7511_video_config {
-+	bool csc_enable;
-+	enum adv7511_csc_scaling csc_scaling_factor;
-+	const uint16_t *csc_coefficents;
-+
-+	bool hdmi_mode;
-+	struct hdmi_avi_infoframe avi_infoframe;
-+};
-+
-+#endif /* __DRM_I2C_ADV7511_H__ */
+ 	/* irqpin1: IRQ8 - IRQ15 */
+@@ -91,6 +94,7 @@
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
++		power-domains = <&pd_a4s>;
+ 	};
+ 
+ 	/* irqpin2: IRQ16 - IRQ23 */
+@@ -111,6 +115,7 @@
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
++		power-domains = <&pd_a4s>;
+ 	};
+ 
+ 	/* irqpin3: IRQ24 - IRQ31 */
+@@ -131,6 +136,7 @@
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
++		power-domains = <&pd_a4s>;
+ 	};
+ 
+ 	ether: ethernet@e9a00000 {
+@@ -139,6 +145,7 @@
+ 		      <0xe9a01800 0x800>;
+ 		interrupts = <0 110 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7740_CLK_GETHER>;
++		power-domains = <&pd_a4s>;
+ 		phy-mode = "mii";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -155,6 +162,7 @@
+ 			      0 203 IRQ_TYPE_LEVEL_HIGH
+ 			      0 204 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp1_clks R8A7740_CLK_IIC0>;
++		power-domains = <&pd_a4r>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -168,6 +176,7 @@
+ 			      0 72 IRQ_TYPE_LEVEL_HIGH
+ 			      0 73 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7740_CLK_IIC1>;
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -177,6 +186,7 @@
+ 		interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA0>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -186,6 +196,7 @@
+ 		interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA1>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -195,6 +206,7 @@
+ 		interrupts = <0 102 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA0>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -204,6 +216,7 @@
+ 		interrupts = <0 103 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA3>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -213,6 +226,7 @@
+ 		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA4>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -222,6 +236,7 @@
+ 		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA5>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -231,6 +246,7 @@
+ 		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA6>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -240,6 +256,7 @@
+ 		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA7>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -249,6 +266,7 @@
+ 		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFB>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -267,12 +285,14 @@
+ 			<&irqpin2 4 0>, <&irqpin2 5 0>, <&irqpin2 6 0>, <&irqpin2 7 0>,
+ 			<&irqpin3 0 0>, <&irqpin3 1 0>, <&irqpin3 2 0>, <&irqpin3 3 0>,
+ 			<&irqpin3 4 0>, <&irqpin3 5 0>, <&irqpin3 6 0>, <&irqpin3 7 0>;
++			power-domains = <&pd_c5>;
+ 	};
+ 
+ 	tpu: pwm@e6600000 {
+ 		compatible = "renesas,tpu-r8a7740", "renesas,tpu";
+ 		reg = <0xe6600000 0x100>;
+ 		clocks = <&mstp3_clks R8A7740_CLK_TPU0>;
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 		#pwm-cells = <3>;
+ 	};
+@@ -283,6 +303,7 @@
+ 		interrupts = <0 56 IRQ_TYPE_LEVEL_HIGH
+ 			      0 57 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7740_CLK_MMC>;
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -293,6 +314,7 @@
+ 			      0 118 IRQ_TYPE_LEVEL_HIGH
+ 			      0 119 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7740_CLK_SDHI0>;
++		power-domains = <&pd_a3sp>;
+ 		cap-sd-highspeed;
+ 		cap-sdio-irq;
+ 		status = "disabled";
+@@ -305,6 +327,7 @@
+ 			      0 122 IRQ_TYPE_LEVEL_HIGH
+ 			      0 123 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7740_CLK_SDHI1>;
++		power-domains = <&pd_a3sp>;
+ 		cap-sd-highspeed;
+ 		cap-sdio-irq;
+ 		status = "disabled";
+@@ -317,6 +340,7 @@
+ 			      0 126 IRQ_TYPE_LEVEL_HIGH
+ 			      0 127 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R8A7740_CLK_SDHI2>;
++		power-domains = <&pd_a3sp>;
+ 		cap-sd-highspeed;
+ 		cap-sdio-irq;
+ 		status = "disabled";
+@@ -328,6 +352,7 @@
+ 		reg = <0xfe1f0000 0x400>;
+ 		interrupts = <0 9 0x4>;
+ 		clocks = <&mstp3_clks R8A7740_CLK_FSI>;
++		power-domains = <&pd_a4mp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -379,6 +404,7 @@
+ 			compatible = "renesas,r8a7740-cpg-clocks";
+ 			reg = <0xe6150000 0x10000>;
+ 			clocks = <&extal1_clk>, <&extalr_clk>;
++			power-domains = <&pd_c5>;
+ 			#clock-cells = <1>;
+ 			clock-output-names = "system", "pllc0", "pllc1",
+ 					     "pllc2", "r",
+@@ -393,6 +419,7 @@
+ 			compatible = "renesas,r8a7740-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0xe6150080 4>;
+ 			clocks = <&pllc1_div2_clk>;
++			power-domains = <&pd_c5>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "sub";
+ 		};
+@@ -401,6 +428,7 @@
+ 		pllc1_div2_clk: pllc1_div2_clk {
+ 			compatible = "fixed-factor-clock";
+ 			clocks = <&cpg_clocks R8A7740_CLK_PLLC1>;
++			power-domains = <&pd_c5>;
+ 			#clock-cells = <0>;
+ 			clock-div = <2>;
+ 			clock-mult = <1>;
+@@ -409,6 +437,7 @@
+ 		extal1_div2_clk: extal1_div2_clk {
+ 			compatible = "fixed-factor-clock";
+ 			clocks = <&extal1_clk>;
++			power-domains = <&pd_c5>;
+ 			#clock-cells = <0>;
+ 			clock-div = <2>;
+ 			clock-mult = <1>;
+@@ -420,6 +449,7 @@
+ 			compatible = "renesas,r8a7740-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0xe6150080 4>;
+ 			clocks = <&sub_clk>, <&sub_clk>;
++			power-domains = <&pd_c5>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7740_CLK_SUBCK R8A7740_CLK_SUBCK2
+@@ -435,6 +465,7 @@
+ 				 <&cpg_clocks R8A7740_CLK_B>,
+ 				 <&sub_clk>, <&sub_clk>,
+ 				 <&cpg_clocks R8A7740_CLK_B>;
++			power-domains = <&pd_c5>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7740_CLK_CEU21 R8A7740_CLK_CEU20 R8A7740_CLK_TMU0
+@@ -456,6 +487,7 @@
+ 				 <&sub_clk>, <&sub_clk>, <&sub_clk>,
+ 				 <&sub_clk>, <&sub_clk>, <&sub_clk>,
+ 				 <&sub_clk>;
++			power-domains = <&pd_c5>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7740_CLK_SCIFA6 R8A7740_CLK_SCIFA7
+@@ -483,6 +515,7 @@
+ 				 <&cpg_clocks R8A7740_CLK_HP>,
+ 				 <&cpg_clocks R8A7740_CLK_HP>,
+ 				 <&cpg_clocks R8A7740_CLK_HP>;
++			power-domains = <&pd_c5>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7740_CLK_CMT1 R8A7740_CLK_FSI R8A7740_CLK_IIC1
+@@ -500,6 +533,7 @@
+ 				 <&cpg_clocks R8A7740_CLK_HP>,
+ 				 <&cpg_clocks R8A7740_CLK_HP>,
+ 				 <&cpg_clocks R8A7740_CLK_HP>;
++			power-domains = <&pd_c5>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7740_CLK_USBH R8A7740_CLK_SDHI2
+@@ -509,4 +543,91 @@
+ 				"usbhost", "sdhi2", "usbfunc", "usphy";
+ 		};
+ 	};
++
++	sysc: system-controller@e6180000 {
++		compatible = "renesas,sysc-r8a7740", "renesas,sysc-rmobile";
++		reg = <0xe6180000 8000>, <0xe6188000 8000>;
++
++		pm-domains {
++			pd_c5: c5 {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				#power-domain-cells = <0>;
++
++				pd_a4lc: a4lc@1 {
++					reg = <1>;
++					#power-domain-cells = <0>;
++					power-on-latency = <250000>;
++					power-off-latency = <250000>;
++				};
++
++				pd_a4mp: a4mp@2 {
++					reg = <2>;
++					#power-domain-cells = <0>;
++					power-on-latency = <250000>;
++					power-off-latency = <250000>;
++				};
++
++				pd_d4: d4@3 {
++					reg = <3>;
++					#power-domain-cells = <0>;
++					power-on-latency = <250000>;
++					power-off-latency = <250000>;
++				};
++
++				pd_a4r: a4r@5 {
++					reg = <5>;
++					#address-cells = <1>;
++					#size-cells = <0>;
++					#power-domain-cells = <0>;
++					power-on-latency = <250000>;
++					power-off-latency = <250000>;
++
++					pd_a3rv: a3rv@6 {
++						reg = <6>;
++						#power-domain-cells = <0>;
++						power-on-latency = <250000>;
++						power-off-latency = <250000>;
++					};
++				};
++
++				pd_a4s: a4s@10 {
++					reg = <10>;
++					#address-cells = <1>;
++					#size-cells = <0>;
++					#power-domain-cells = <0>;
++					power-on-latency = <250000>;
++					power-off-latency = <250000>;
++
++					pd_a3sp: a3sp@11 {
++						reg = <11>;
++						#power-domain-cells = <0>;
++						power-on-latency = <250000>;
++						power-off-latency = <250000>;
++					};
++
++					pd_a3sm: a3sm@12 {
++						reg = <12>;
++						#power-domain-cells = <0>;
++						power-on-latency = <250000>;
++						power-off-latency = <250000>;
++					};
++
++					pd_a3sg: a3sg@13 {
++						reg = <13>;
++						#power-domain-cells = <0>;
++						power-on-latency = <250000>;
++						power-off-latency = <250000>;
++					};
++				};
++
++				pd_a4su: a4su@20 {
++					reg = <20>;
++					#power-domain-cells = <0>;
++					power-on-latency = <250000>;
++					power-off-latency = <250000>;
++				};
++			};
++		};
++	};
+ };
 -- 
-1.8.5.5
+1.9.1
 
