@@ -1,156 +1,38 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 09 Sep 2014 22:12:00 +0000
-Subject: Re: [PATCH v2 09/10] clk: shmobile: div6: support selectable-input clocks
-Message-Id: <21052807.gR5LUi8hLf@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 08 Sep 2014 00:27:43 +0000
+Subject: [PATCH 0/5] ARM: shmobile: Use SoC-specific clock source compat strings
+Message-Id: <1410136068-32220-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409649186-1046-10-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1409649186-1046-10-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Ulrich,
+In general Renesas hardware is not documented to the extent
+where the relationship between IP blocks on different SoCs can be assumed
+although they may appear to operate the same way. Furthermore the
+documentation typically does not specify a version for individual
+IP blocks. For these reasons a convention of using the SoC name in place
+of a version and providing SoC-specific compat strings has been adopted.
 
-Thank you for the patch.
+Although not universally liked this convention is used in the bindings
+for a number of drivers for Renesas hardware. The purpose of this series
+is to make use of SoC specific clock source strings.
 
-On Tuesday 02 September 2014 11:13:05 Ulrich Hecht wrote:
-> From: Ulrich Hecht <ulrich.hecht@gmail.com>
-> 
-> Support for setting the parent at initialization time based on the current
-> hardware configuration in DIV6 clocks with selectable parents as found in
-> the r8a73a4, r8a7740, sh73a0, and other SoCs.
-> 
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
->  .../bindings/clock/renesas,cpg-div6-clocks.txt     | 12 +++++++-
+Simon Horman (5):
+  ARM: shmobile: r8a7740: Use SoC-specific 48-bit CMT compat string
+  ARM: shmobile: r8a7790: Use SoC-specific 48-bit CMT compat string
+  ARM: shmobile: r8a7791: Use SoC-specific 48-bit CMT compat string
+  ARM: shmobile: r7s72100: Use SoC-specific MTU2 compat string
+  ARM: shmobile: r8a7779: Use SoC-specific TMU compat string
 
-Patches touching Documentation/devicetree must have devicetree@vger.kernel.orf 
-CC'ed.
-
->  drivers/clk/shmobile/clk-div6.c                    | 32 +++++++++++++++----
->  2 files changed, 38 insertions(+), 6 deletions(-)
-> 
-> diff --git
-> a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
-> b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt index
-> 952e373..2633ea1 100644
-> --- a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
-> +++ b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
-> @@ -7,14 +7,24 @@ to 64.
->  Required Properties:
-> 
->    - compatible: Must be one of the following
-> +    - "renesas,r8a73a4-div6-clock" for R8A73A4 (R-Mobile APE6) DIV6 clocks
-> +    - "renesas,r8a7740-div6-clock" for R8A7740 (R-Mobile A1) DIV6 clocks
->      - "renesas,r8a7790-div6-clock" for R8A7790 (R-Car H2) DIV6 clocks
->      - "renesas,r8a7791-div6-clock" for R8A7791 (R-Car M2) DIV6 clocks
-> +    - "renesas,sh73a0-div6-clock" for SH73A0 (SH-MobileAG5) DIV6 clocks
->      - "renesas,cpg-div6-clock" for generic DIV6 clocks
->    - reg: Base address and length of the memory resource used by the DIV6
-> clock -  - clocks: Reference to the parent clock
-> +  - clocks: Reference to the parent clock(s)
->    - #clock-cells: Must be 0
->    - clock-output-names: The name of the clock as a free-form string
-> 
-> +Optional Properties:
-> +
-> +  - renesas,src-shift: Bit position of the input clock selector (default:
-> +    fixed input clock; requires renesas,src-width)
-> +  - renesas,src-width: Bit width of the input clock selector (default:
-> fixed
-> +    input clock; requires renesas,src-shift)
-
-I've proposed an alternate solution in a reply to the previous version of this 
-patch. Please see
-
-http://www.spinics.net/lists/linux-sh/msg34936.html
-
-Let's discuss it in that mail thread.
-
-> +
-> 
->  Example
->  -------
-> diff --git a/drivers/clk/shmobile/clk-div6.c
-> b/drivers/clk/shmobile/clk-div6.c index f065f69..f8b57bf 100644
-> --- a/drivers/clk/shmobile/clk-div6.c
-> +++ b/drivers/clk/shmobile/clk-div6.c
-> @@ -39,8 +39,11 @@ struct div6_clock {
->  static int cpg_div6_clock_enable(struct clk_hw *hw)
->  {
->  	struct div6_clock *clock = to_div6_clock(hw);
-> +	u32 val;
-> 
-> -	clk_writel(CPG_DIV6_DIV(clock->div - 1), clock->reg);
-> +	val = (clk_readl(clock->reg) & ~(CPG_DIV6_DIV_MASK | CPG_DIV6_CKSTP))
-> +	    | CPG_DIV6_DIV(clock->div - 1);
-> +	clk_writel(val, clock->reg);
-> 
->  	return 0;
->  }
-> @@ -52,7 +55,7 @@ static void cpg_div6_clock_disable(struct clk_hw *hw)
->  	/* DIV6 clocks require the divisor field to be non-zero when stopping
->  	 * the clock.
->  	 */
-> -	clk_writel(CPG_DIV6_CKSTP | CPG_DIV6_DIV(CPG_DIV6_DIV_MASK),
-> +	clk_writel(clk_readl(clock->reg) | CPG_DIV6_CKSTP | CPG_DIV6_DIV_MASK,
->  		   clock->reg);
->  }
-> 
-> @@ -94,12 +97,14 @@ static int cpg_div6_clock_set_rate(struct clk_hw *hw,
-> unsigned long rate, {
->  	struct div6_clock *clock = to_div6_clock(hw);
->  	unsigned int div = cpg_div6_clock_calc_div(rate, parent_rate);
-> +	u32 val;
-> 
->  	clock->div = div;
-> 
-> +	val = clk_readl(clock->reg) & ~CPG_DIV6_DIV_MASK;
->  	/* Only program the new divisor if the clock isn't stopped. */
-> -	if (!(clk_readl(clock->reg) & CPG_DIV6_CKSTP))
-> -		clk_writel(CPG_DIV6_DIV(clock->div - 1), clock->reg);
-> +	if (!(val & CPG_DIV6_CKSTP))
-> +		clk_writel(val | CPG_DIV6_DIV(clock->div - 1), clock->reg);
-> 
->  	return 0;
->  }
-> @@ -120,6 +125,8 @@ static void __init cpg_div6_clock_init(struct
-> device_node *np) const char *parent_name;
->  	const char *name;
->  	struct clk *clk;
-> +	u32 src_shift;
-> +	u32 src_width;
->  	int ret;
-> 
->  	clock = kzalloc(sizeof(*clock), GFP_KERNEL);
-> @@ -150,7 +157,22 @@ static void __init cpg_div6_clock_init(struct
-> device_node *np) goto error;
->  	}
-> 
-> -	parent_name = of_clk_get_parent_name(np, 0);
-> +	if (!of_property_read_u32(np, "renesas,src-shift", &src_shift)) {
-> +		if (!of_property_read_u32(np, "renesas,src-width",
-> +					&src_width)) {
-> +			unsigned int parent_idx > +				(clk_readl(clock->reg) >> src_shift) &
-> +				(BIT(src_width) - 1);
-> +			parent_name = of_clk_get_parent_name(np, parent_idx);
-> +		} else {
-> +			pr_err("%s: renesas,src-shift without renesas,src-width in %s\n",
-> +			       __func__, np->name);
-> +			goto error;
-> +		}
-> +	} else {
-> +		parent_name = of_clk_get_parent_name(np, 0);
-> +	}
-> +
->  	if (parent_name = NULL) {
->  		pr_err("%s: failed to get %s DIV6 clock parent name\n",
->  		       __func__, np->name);
+ arch/arm/boot/dts/r7s72100.dtsi | 2 +-
+ arch/arm/boot/dts/r8a7740.dtsi  | 2 +-
+ arch/arm/boot/dts/r8a7779.dtsi  | 6 +++---
+ arch/arm/boot/dts/r8a7790.dtsi  | 4 ++--
+ arch/arm/boot/dts/r8a7791.dtsi  | 4 ++--
+ 5 files changed, 9 insertions(+), 9 deletions(-)
 
 -- 
-Regards,
-
-Laurent Pinchart
+2.0.1
 
