@@ -1,36 +1,39 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Mon, 08 Sep 2014 08:06:26 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 08 Sep 2014 08:18:33 +0000
 Subject: Re: [PATCH] mmc: tmio: enable odd number size transfer
-Message-Id: <87ppf6o7sw.wl%kuninori.morimoto.gx@gmail.com>
+Message-Id: <CAMuHMdWmGOZ-4p4R92hNX5XftavfsmXB_wKoMw-mSFopMP4Hgw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87wq9eohuc.wl%kuninori.morimoto.gx@gmail.com>
 	<CAMuHMdUJK1Mmd_S+-hGFoshgRbpHKG5OH2w7AFHNaQG5qyvNaw@mail.gmail.com>
 	<87r3zmo969.wl%kuninori.morimoto.gx@gmail.com>
 	<CAMuHMdVqFvgPBVenEnoRfpDyMSc_z+9EEF19VHM8CESXmBwFMQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdVqFvgPBVenEnoRfpDyMSc_z+9EEF19VHM8CESXmBwFMQ@mail.gmail.com>
+	<87ppf6o7sw.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87ppf6o7sw.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
+To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 Cc: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
+Hi Morimoto-san,
 
-Hi Geert
+On Mon, Sep 8, 2014 at 10:06 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@gmail.com> wrote:
+> About endianness / byte access, it requires byte access
+> especially "read" case.
+> Because if count was odd number,
+> using shift with u16 will might be buffer overflow
 
-> If count is even, we never get that far, so the even numbers should not
-> be present in your table above?
-> 
-> If count is odd, "(count - 1) >> 1 = count >> 1".
+Of course the buffer must be accessed using byte accesses.
+But sd_ctrl_read16() returns u16, and sd_ctrl_write16() takes u16.
 
-Ahh, yes, indeed.
+Gr{oetje,eeting}s,
 
-About endianness / byte access, it requires byte access
-especially "read" case.
-Because if count was odd number,
-using shift with u16 will might be buffer overflow
+                        Geert
 
-I need to check cpu_to_le16() / le16_to_cpu()
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-Best regards
----
-Kuninori Morimoto
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
