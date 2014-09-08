@@ -1,105 +1,88 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 25 Sep 2014 16:28:39 +0000
-Subject: [PATCH v3 12/13] ARM: shmobile: r8a7740 dtsi: Add preliminary PM domain latencies
-Message-Id: <1411662520-22795-13-git-send-email-geert+renesas@glider.be>
+Date: Mon, 08 Sep 2014 13:35:39 +0000
+Subject: [PATCH/RFC 0/5] ARM: shmobile: R-Mobile: Prototype DT PM domain support
+Message-Id: <1410183344-14756-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-For now use 250 =C2=B5s, just like the legacy platform code does.
+	Hi all,
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-v3:
-  - New, split off from "ARM: shmobile: r8a7740 dtsi: Add PM domain
-    support".
+This patch series contains prototype code to enable DT support for PM domains
+on Renesas R-Mobile SoCs.
 
- arch/arm/boot/dts/r8a7740.dtsi | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+Currently it's limited to R-Mobile A1 (r8a7740), but given the similarity of
+the SYSC System-Controller on the various SH-Mobile/R-Mobile SoCs, and the
+abstraction of PM domains in DT, it should be sufficiently generic to handle
+other SoCs in the future (e.g. SH-Mobile AP4 (sh7372), SH-Mobile AG5 (sh73a0),
+R-Mobile APE6 (r8a73a4)).
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 4fead480a405bebe..ed0adeb61a1ad8ec 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -563,16 +563,22 @@
- 				pd_a4lc: a4lc@1 {
- 					reg =3D <1>;
- 					#power-domain-cells =3D <0>;
-+					power-on-latency =3D <250000>;
-+					power-off-latency =3D <250000>;
- 				};
-=20
- 				pd_a4mp: a4mp@2 {
- 					reg =3D <2>;
- 					#power-domain-cells =3D <0>;
-+					power-on-latency =3D <250000>;
-+					power-off-latency =3D <250000>;
- 				};
-=20
- 				pd_d4: d4@3 {
- 					reg =3D <3>;
- 					#power-domain-cells =3D <0>;
-+					power-on-latency =3D <250000>;
-+					power-off-latency =3D <250000>;
- 				};
-=20
- 				pd_a4r: a4r@5 {
-@@ -580,10 +586,14 @@
- 					#address-cells =3D <1>;
- 					#size-cells =3D <0>;
- 					#power-domain-cells =3D <0>;
-+					power-on-latency =3D <250000>;
-+					power-off-latency =3D <250000>;
-=20
- 					pd_a3rv: a3rv@6 {
- 						reg =3D <6>;
- 						#power-domain-cells =3D <0>;
-+						power-on-latency =3D <250000>;
-+						power-off-latency =3D <250000>;
- 					};
- 				};
-=20
-@@ -592,26 +602,36 @@
- 					#address-cells =3D <1>;
- 					#size-cells =3D <0>;
- 					#power-domain-cells =3D <0>;
-+					power-on-latency =3D <250000>;
-+					power-off-latency =3D <250000>;
-=20
- 					pd_a3sp: a3sp@11 {
- 						reg =3D <11>;
- 						#power-domain-cells =3D <0>;
-+						power-on-latency =3D <250000>;
-+						power-off-latency =3D <250000>;
- 					};
-=20
- 					pd_a3sm: a3sm@12 {
- 						reg =3D <12>;
- 						#power-domain-cells =3D <0>;
-+						power-on-latency =3D <250000>;
-+						power-off-latency =3D <250000>;
- 					};
-=20
- 					pd_a3sg: a3sg@13 {
- 						reg =3D <13>;
- 						#power-domain-cells =3D <0>;
-+						power-on-latency =3D <250000>;
-+						power-off-latency =3D <250000>;
- 					};
- 				};
-=20
- 				pd_a4su: a4su@20 {
- 					reg =3D <20>;
- 					#power-domain-cells =3D <0>;
-+					power-on-latency =3D <250000>;
-+					power-off-latency =3D <250000>;
- 				};
- 			};
- 		};
---=20
-1.9.1
+Despite my request to add support for non-contiguous arrays for onecell PM
+domain providers, I went for representing the SoC's power area hierarchy as a
+hierarchy in DT, with multiple PM domain nodes, and using "#power-domain-cells
+= <0>" (see also the P.S. below).  The code to support a proper hiearchy turned
+out to be surprisingly clean and simple(r).
 
+Dependencies:
+  - "[PATCH 00/11] ARM: shmobile: r8a7740/armadillo legacy prototype pm domain
+    support", sent by me (www.spinics.net/lists/arm-kernel/msg358037.html),
+  - "[PATCH v3 0/9] PM / Domains: Generic OF-based support", sent by Ulf
+    Hansson (www.spinics.net/lists/arm-kernel/msg357003.html),
+  - "[PATCH 00/15] PM / Domains: Cleanups and remove superfluous APIs", sent by
+    Ulf Hansson (www.spinics.net/lists/linux-samsung-soc/msg36407.html).
+
+Note that this still won't work as-is, this is just an RFC.
+More fixes are needed in sh-mobile platform glue, and to resolve the bad
+interaction with drivers/sh/pm_runtime.c and clk_disable_unused().
+But none of these matter for e.g. discussing DT bindings.
+With those fixed/worked around, functionality is almost equivalent to the
+non-DT case.  Missing are Run-Time management of the module clocks
+(pm_clk_*()), and device latencies.
+
+Thanks for your comments!
+
+Geert Uytterhoeven (5):
+  PM / Domains: Add DT bindings for power-on/off latencies
+  PM / Domains: Add DT bindings for the R-Mobile System Controller
+  ARM: shmobile: R-Mobile: Store SYSC base address in rmobile_pm_domain
+  ARM: shmobile: R-Mobile: Add DT support for PM domains
+  ARM: shmobile: r8a7740 dtsi: Add PM domain support
+
+ .../devicetree/bindings/power/power_domain.txt     |   6 +
+ .../bindings/power/renesas,sysc-rmobile.txt        | 106 +++++++++++++
+ arch/arm/boot/dts/r8a7740.dtsi                     | 121 +++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                     |   3 +-
+ arch/arm/mach-shmobile/pm-r8a7740.c                |  14 ++
+ arch/arm/mach-shmobile/pm-rmobile.c                | 169 +++++++++++++++++++--
+ arch/arm/mach-shmobile/pm-rmobile.h                |   1 +
+ arch/arm/mach-shmobile/pm-sh7372.c                 |  11 ++
+ 8 files changed, 417 insertions(+), 14 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
+
+P.S. I did try "#power-domain-cells = <1>", but the hassle with sparse
+     definitions and error-prone multiple arrays (not unlikely, but even worse
+     than with the SMTP clock specifiers) was just too much. Not to mention
+     representing the C5 "always-on" power area...
+
+	renesas,pm-domain-indices = <
+		R8A7740_PD_A4LC R8A7740_PD_A4MP R8A7740_PD_D4
+		R8A7740_PD_A4R R8A7740_PD_A3RV R8A7740_PD_A4S
+		R8A7740_PD_A3SP R8A7740_PD_A3SM R8A7740_PD_A3SG
+		R8A7740_PD_A4SU
+	>;
+	renesas,pm-domain-names 		"A4LC", "A4MP", "D4", "A4R", "A3RV", "A4S", "A3SP",
+		"A3SM", "A3SG", "A4SU";
+	renesas,pm-domain-parents 		"", "", "", "", "A4R", "", "A4S", "A4S", "A4S", "";
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
