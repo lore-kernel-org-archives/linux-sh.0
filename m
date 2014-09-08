@@ -1,77 +1,47 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 24 Sep 2014 13:09:24 +0000
-Subject: Re: [PATCH v2 7/9] ARM: shmobile: lager: Enable DU device in DT
-Message-Id: <3331193.6Bceue8bSn@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 08 Sep 2014 13:35:40 +0000
+Subject: [PATCH/RFC 1/5] PM / Domains: Add DT bindings for power-on/off latencies
+Message-Id: <1410183344-14756-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397511312-4845-8-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1397511312-4845-8-git-send-email-ben.dooks@codethink.co.uk>
+References: <1410183344-14756-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1410183344-14756-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Sergei,
+PM domain power on/off-latencies are properties of the hardware.
+In legacy code, they're specified from platform code.
+On DT platforms, their values should come from DT.
 
-Thank you for the review.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ Documentation/devicetree/bindings/power/power_domain.txt | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-On Wednesday 24 September 2014 17:01:30 Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 9/24/2014 4:27 PM, Laurent Pinchart wrote:
-> > Specify the DU output topology, enable the DU device and configure the
-> > related pins.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> > 
-> >  arch/arm/boot/dts/r8a7790-lager.dts | 51 ++++++++++++++++++++++++++++---
-> >  1 file changed, 48 insertions(+),
-> >  3 deletions(-)
-> > 
-> > diff --git a/arch/arm/boot/dts/r8a7790-lager.dts
-> > b/arch/arm/boot/dts/r8a7790-lager.dts index 84dcafa..a036d88 100644
-> > --- a/arch/arm/boot/dts/r8a7790-lager.dts
-> > +++ b/arch/arm/boot/dts/r8a7790-lager.dts
-> > @@ -144,6 +144,54 @@
-> >   		states = <3300000 1
-> >   			  1800000 0>;
-> >   	};
-> > 
-> > +
-> > +	adv7123 {
-> 
-> Again, ePAPR dictates using generic device node names, not just chip names.
-
-Sure, will fix.
-
-> > +		compatible = "adi,adv7123";
-> > +
-> > +		#address-cells = <1>;
-> > +		#size-cells = <0>;
-> 
-> Er, why? I don't see the "reg" props below...
-
-The reg property is missing in the "port" nodes, and the #*-cells properties 
-should be moved to the "ports" node. I'll fix that.
-
-> > +
-> > +		ports {
-> > +			port@0 {
-> > +				adv7123_in: endpoint {
-> > +					remote-endpoint = <&du_out_rgb>;
-> > +				};
-> > +			};
-> > +			port@1 {
-> > +				adv7123_out: endpoint {
-> > +					remote-endpoint = <&vga_in>;
-> > +				};
-> > +			};
-> > +		};
-> > +	};
-
+diff --git a/Documentation/devicetree/bindings/power/power_domain.txt b/Documentation/devicetree/bindings/power/power_domain.txt
+index 98c16672ab5f..7bc421d84367 100644
+--- a/Documentation/devicetree/bindings/power/power_domain.txt
++++ b/Documentation/devicetree/bindings/power/power_domain.txt
+@@ -19,12 +19,18 @@ Required properties:
+    providing multiple PM domains (e.g. power controllers), but can be any value
+    as specified by device tree binding documentation of particular provider.
+ 
++Optional properties:
++ - power-on-latency: Power-on latency of the PM domain, in ns,
++ - power-off-latency: Power-off latency of the PM domain, in ns.
++
+ Example:
+ 
+ 	power: power-controller@12340000 {
+ 		compatible = "foo,power-controller";
+ 		reg = <0x12340000 0x1000>;
+ 		#power-domain-cells = <1>;
++		power-on-latency = <250000>;
++		power-off-latency = <250000>;
+ 	};
+ 
+ The node above defines a power controller that is a PM domain provider and
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
