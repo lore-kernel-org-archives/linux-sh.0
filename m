@@ -1,45 +1,93 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 26 Sep 2014 21:09:22 +0000
-Subject: [PATCH v4 2/3] ARM: shmobile: koelsch: enable USB PHY
-Message-Id: <2336627.VWjZqGPynz@wasted.cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 08 Sep 2014 00:57:08 +0000
+Subject: [PATCH v3 3/3] ARM: shmobile: kzm9g-reference: Enable CMT1 in device tree
+Message-Id: <1410137828-4769-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <3383603.zZsCVpCDbD@wasted.cogentembedded.com>
-In-Reply-To: <3383603.zZsCVpCDbD@wasted.cogentembedded.com>
+References: <1410137828-4769-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1410137828-4769-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Enable USB PHY device for the Koelsch board.
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
 ---
-Changes in version 4:
-- refreshed the patch.
+v3
+* No change
+---
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |  4 ++++
+ arch/arm/mach-shmobile/setup-sh73a0.c        | 11 +----------
+ 2 files changed, 5 insertions(+), 10 deletions(-)
 
-Changes in version 3:
-- refreshed the patch.
-
-Changes in version 2:
-- fixed the wrong board name in the changelog;
-- refreshed the patch.
-
- arch/arm/boot/dts/r8a7791-koelsch.dts |    4 ++++
- 1 file changed, 4 insertions(+)
-
-Index: renesas/arch/arm/boot/dts/r8a7791-koelsch.dts
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ renesas/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -463,6 +463,10 @@
- 	pinctrl-names = "default";
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 477f815..30ef97e 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -173,6 +173,10 @@
+ 	};
  };
  
-+&usbphy {
-+	status = "okay";
++&cmt1 {
++	status = "ok";
 +};
 +
- &pcie_bus_clk {
+ &i2c0 {
  	status = "okay";
+ 	as3711@40 {
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 0085305..b7bd8e5 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -697,10 +697,6 @@ static struct platform_device irqpin3_device = {
+ 	},
  };
+ 
+-static struct platform_device *sh73a0_devices_dt[] __initdata = {
+-	&cmt1_device,
+-};
+-
+ static struct platform_device *sh73a0_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -713,6 +709,7 @@ static struct platform_device *sh73a0_early_devices[] __initdata = {
+ 	&scif8_device,
+ 	&tmu0_device,
+ 	&ipmmu_device,
++	&cmt1_device,
+ };
+ 
+ static struct platform_device *sh73a0_late_devices[] __initdata = {
+@@ -737,8 +734,6 @@ void __init sh73a0_add_standard_devices(void)
+ 	/* Clear software reset bit on SY-DMAC module */
+ 	__raw_writel(__raw_readl(SRCR2) & ~(1 << 18), SRCR2);
+ 
+-	platform_add_devices(sh73a0_devices_dt,
+-			    ARRAY_SIZE(sh73a0_devices_dt));
+ 	platform_add_devices(sh73a0_early_devices,
+ 			    ARRAY_SIZE(sh73a0_early_devices));
+ 	platform_add_devices(sh73a0_late_devices,
+@@ -763,8 +758,6 @@ void __init sh73a0_earlytimer_init(void)
+ 
+ void __init sh73a0_add_early_devices(void)
+ {
+-	early_platform_add_devices(sh73a0_devices_dt,
+-				   ARRAY_SIZE(sh73a0_devices_dt));
+ 	early_platform_add_devices(sh73a0_early_devices,
+ 				   ARRAY_SIZE(sh73a0_early_devices));
+ 
+@@ -779,8 +772,6 @@ void __init sh73a0_add_standard_devices_dt(void)
+ 	/* clocks are setup late during boot in the case of DT */
+ 	sh73a0_clock_init();
+ 
+-	platform_add_devices(sh73a0_devices_dt,
+-			     ARRAY_SIZE(sh73a0_devices_dt));
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
+-- 
+2.0.1
 
