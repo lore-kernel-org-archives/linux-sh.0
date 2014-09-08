@@ -1,44 +1,54 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 26 Sep 2014 21:01:35 +0000
-Subject: [PATCH v4 2/2] ARM: shmobile: lager: enable USB PHY
-Message-Id: <1862889.19pI7tAsvN@wasted.cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 08 Sep 2014 00:27:45 +0000
+Subject: [PATCH 2/5] ARM: shmobile: r8a7790: Use SoC-specific 48-bit CMT compat string
+Message-Id: <1410136068-32220-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4420279.PiYV5HPFxp@wasted.cogentembedded.com>
-In-Reply-To: <4420279.PiYV5HPFxp@wasted.cogentembedded.com>
+References: <1410136068-32220-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1410136068-32220-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Enable USB PHY device for the Lager board. 
+In general Renesas hardware is not documented to the extent
+where the relationship between IP blocks on different SoCs can be assumed
+although they may appear to operate the same way. Furthermore the
+documentation typically does not specify a version for individual
+IP blocks. For these reasons a convention of using the SoC name in place
+of a version and providing SoC-specific compat strings has been adopted.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Although not universally liked this convention is used in the bindings for
+a number of drivers for Renesas hardware. The purpose of this patch is to
+make use of the SoC-specific CMT compat string for the r8a7790 48-bit CMT
+clock source.
 
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes in version 4:
-- refreshed the patch.
+ arch/arm/boot/dts/r8a7790.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-Changes in version 3:
-- refreshed the patch.
-
-Changes in version 2:
-- refreshed the patch.
-
- arch/arm/boot/dts/r8a7790-lager.dts |    4 ++++
- 1 file changed, 4 insertions(+)
-
-Index: renesas/arch/arm/boot/dts/r8a7790-lager.dts
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7790-lager.dts
-+++ renesas/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -424,6 +424,10 @@
- 	pinctrl-names = "default";
- };
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index a3cd307..d0e1773 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -211,7 +211,7 @@
+ 	};
  
-+&usbphy {
-+	status = "okay";
-+};
-+
- /* composite video input */
- &vin1 {
- 	pinctrl-0 = <&vin1_pins>;
+ 	cmt0: timer@ffca0000 {
+-		compatible = "renesas,cmt-48-gen2";
++		compatible = "renesas,cmt-48-r8a7790", "renesas,cmt-48-gen2";
+ 		reg = <0 0xffca0000 0 0x1004>;
+ 		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
+@@ -224,7 +224,7 @@
+ 	};
+ 
+ 	cmt1: timer@e6130000 {
+-		compatible = "renesas,cmt-48-gen2";
++		compatible = "renesas,cmt-48-r8a7790", "renesas,cmt-48-gen2";
+ 		reg = <0 0xe6130000 0 0x1004>;
+ 		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
+-- 
+2.0.1
 
