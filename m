@@ -1,100 +1,18 @@
-From: "Li.Xiubo@freescale.com" <Li.Xiubo@freescale.com>
-Date: Tue, 02 Sep 2014 09:15:54 +0000
-Subject: RE: [alsa-devel] [PATCHv1 1/7] ASoC: simple-card: Merge single and muti	DAI link code.
-Message-Id: <6ebdb2b0dcec46ef95084d2fc578b7b8@BY2PR0301MB0613.namprd03.prod.outlook.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Mon, 08 Sep 2014 12:28:11 +0000
+Subject: Koelsch boot issue with internal PCI and PCIe controllers
+Message-Id: <8252334e1cb8444e9a75e6cd7d788793@HKXPR06MB168.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409545781-20530-1-git-send-email-Li.Xiubo@freescale.com>
-	<1409545781-20530-2-git-send-email-Li.Xiubo@freescale.com>
- <87tx4rzszx.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87tx4rzszx.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Cc: "broonie@kernel.org" <broonie@kernel.org>, "lgirdwood@gmail.com" <lgirdwood@gmail.com>, "perex@perex.cz" <perex@perex.cz>, "tiwai@suse.de" <tiwai@suse.de>, "kuninori.morimoto.gx@renesas.com" <kuninori.morimoto.gx@renesas.com>, "moinejf@free.fr" <moinejf@free.fr>, "andrew@lunn.ch" <andrew@lunn.ch>, "jsarha@ti.com" <jsarha@ti.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "alsa-devel@alsa-project.org" <alsa-devel@alsa-project.org>, Shawn Guo <Shawn.Guo@freescale.com>, Nicolin Chen <nicoleotsuka@gmail.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Hi Kuninori-san
+Hi,
 
-This patch series will break the old DTs, and I will follow Mark's
-Advice to maintain compatibility with the old DTs.
+I happened to build Linus' master today (d030671f) for the Koelsch board using shmobile_defconfig. It built ok, but fails to boot with no output when a PCIe card is plugged in.
 
-I will send another version, please help me to review it. And I will also
-split the update patch series to many small ones.
+However, if I disable either the internal PCI controller (USB bridge), or the PCIe controller, then everything looks ok.
+Has anyone seen this already and started looking into it?
 
-Thanks very much,
-
-BRs
-Xiubo
-
-> -----Original Message-----
-> From: Kuninori Morimoto [mailto:kuninori.morimoto.gx@gmail.com]
-> Sent: Monday, September 01, 2014 3:43 PM
-> To: Xiubo Li-B47053
-> Cc: broonie@kernel.org; lgirdwood@gmail.com; perex@perex.cz; tiwai@suse.de;
-> kuninori.morimoto.gx@renesas.com; moinejf@free.fr; andrew@lunn.ch;
-> jsarha@ti.com; devicetree@vger.kernel.org; linux-arm-
-> kernel@lists.infradead.org; linux-sh@vger.kernel.org; alsa-devel@alsa-
-> project.org; Guo Shawn-R65073; Nicolin Chen; linux-kernel@vger.kernel.org
-> Subject: Re: [alsa-devel] [PATCHv1 1/7] ASoC: simple-card: Merge single and
-> muti DAI link code.
-> 
-> 
-> Hi Xiubo
-> 
-> Thank you for your patch.
-> This clean-up is very nice for me.
-> But, I have 1 small comment
-> 
-> >  asoc_simple_card_sub_parse_of(struct device_node *np,
-> >  			      struct asoc_simple_dai *dai,
-> >  			      struct device_node **p_node,
-> > -			      const char **name)
-> > +			      const char **name,
-> > +			      unsigned int *daifmt)
-> >  {
-> >  	struct device_node *node;
-> >  	struct clk *clk;
-> >  	u32 val;
-> >  	int ret;
-> >
-> > +	if (!daifmt)
-> > +		return -EINVAL;
-> > +
-> > +	/*
-> > +	 * Parse format, bitclock-inversion and frame-inversion
-> > +	 * for DAI each device.
-> > +	 */
-> > +	*daifmt = snd_soc_of_parse_daifmt(np, NULL, NULL, NULL);
-> > +	*daifmt &= ~(SND_SOC_DAIFMT_MASTER_MASK | SND_SOC_DAIFMT_FORMAT_MASK);
-> (snip)
-> >  	ret = asoc_simple_card_sub_parse_of(np, &dai_props->cpu_dai,
-> >  					    &dai_link->cpu_of_node,
-> > -					    &dai_link->cpu_dai_name);
-> > +					    &dai_link->cpu_dai_name,
-> > +					    &daifmt);
-> (snip)
-> > +	dai_props->cpu_dai.fmt |= daifmt;
-> (snip)
-> >  	ret = asoc_simple_card_sub_parse_of(np, &dai_props->codec_dai,
-> >  					    &dai_link->codec_of_node,
-> > -					    &dai_link->codec_dai_name);
-> > +					    &dai_link->codec_dai_name,
-> > +					    &daifmt);
-> (snip)
-> > +	dai_props->codec_dai.fmt |= daifmt;
-> 
-> These are using
-> 
->       asoc_simple_card_sub_parse_of(np, &dai_props->cpu_dai, xxx)
->       asoc_simple_card_sub_parse_of(np, &dai_props->codec_dai, xxx)
-> 
-> I guess, asoc_simple_card_sub_parse_of() can update
-> below inside function
-> 
-> 	dai_props->cpu_dai.fmt |= daifmt;
-> 	dai_props->codec_dai.fmt |= daifmt;
-> 
-> 
-> Best regards
-> ---
-> Kuninori Morimoto
+Phil
