@@ -1,404 +1,54 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 16 Sep 2014 18:48:58 +0000
-Subject: [PATCH/RFC v2 11/12] ARM: shmobile: r8a7740 dtsi: Add PM QoS device latencies
-Message-Id: <1410893339-6361-12-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 08 Sep 2014 00:27:46 +0000
+Subject: [PATCH 3/5] ARM: shmobile: r8a7791: Use SoC-specific 48-bit CMT compat string
+Message-Id: <1410136068-32220-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
+References: <1410136068-32220-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1410136068-32220-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-For now use 250 =C2=B5s, just like the legacy platform code does.
+In general Renesas hardware is not documented to the extent
+where the relationship between IP blocks on different SoCs can be assumed
+although they may appear to operate the same way. Furthermore the
+documentation typically does not specify a version for individual
+IP blocks. For these reasons a convention of using the SoC name in place
+of a version and providing SoC-specific compat strings has been adopted.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-v2:
-  - New
----
- arch/arm/boot/dts/r8a7740.dtsi | 136 +++++++++++++++++++++++++++++++++++++=
-++++
- 1 file changed, 136 insertions(+)
+Although not universally liked this convention is used in the bindings for
+a number of drivers for Renesas hardware. The purpose of this patch is to
+make use of the SoC-specific CMT compat string for the r8a7791 48-bit CMT
+clock source.
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index ed0adeb61a1ad8ec..713170442b7bd4b2 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -26,6 +26,10 @@
- 			reg =3D <0x0>;
- 			clock-frequency =3D <800000000>;
- 			power-domains =3D <&pd_a3sm>;
-+			stop-latency =3D <250000>;
-+			start-latency =3D <250000>;
-+			save-state-latency =3D <250000>;
-+			restore-state-latency =3D <250000>;
- 		};
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 8a07505..e06c11f 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -193,7 +193,7 @@
  	};
-=20
-@@ -49,6 +53,10 @@
- 		clocks =3D <&mstp3_clks R8A7740_CLK_CMT1>;
- 		clock-names =3D "fck";
- 		power-domains =3D <&pd_c5>;
-+		stop-latency =3D <250000>;
-+		start-latency =3D <250000>;
-+		save-state-latency =3D <250000>;
-+		restore-state-latency =3D <250000>;
-=20
- 		renesas,channels-mask =3D <0x3f>;
-=20
-@@ -75,6 +83,10 @@
- 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks =3D <&mstp2_clks R8A7740_CLK_INTCA>;
- 		power-domains =3D <&pd_a4s>;
-+		stop-latency =3D <250000>;
-+		start-latency =3D <250000>;
-+		save-state-latency =3D <250000>;
-+		restore-state-latency =3D <250000>;
+ 
+ 	cmt0: timer@ffca0000 {
+-		compatible = "renesas,cmt-48-gen2";
++		compatible = "renesas,cmt-48-r8a7791", "renesas,cmt-48-gen2";
+ 		reg = <0 0xffca0000 0 0x1004>;
+ 		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
+@@ -206,7 +206,7 @@
  	};
-=20
- 	/* irqpin1: IRQ8 - IRQ15 */
-@@ -97,6 +109,10 @@
- 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks =3D <&mstp2_clks R8A7740_CLK_INTCA>;
- 		power-domains =3D <&pd_a4s>;
-+		stop-latency =3D <250000>;
-+		start-latency =3D <250000>;
-+		save-state-latency =3D <250000>;
-+		restore-state-latency =3D <250000>;
- 	};
-=20
- 	/* irqpin2: IRQ16 - IRQ23 */
-@@ -119,6 +135,10 @@
- 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks =3D <&mstp2_clks R8A7740_CLK_INTCA>;
- 		power-domains =3D <&pd_a4s>;
-+		stop-latency =3D <250000>;
-+		start-latency =3D <250000>;
-+		save-state-latency =3D <250000>;
-+		restore-state-latency =3D <250000>;
- 	};
-=20
- 	/* irqpin3: IRQ24 - IRQ31 */
-@@ -141,6 +161,10 @@
- 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks =3D <&mstp2_clks R8A7740_CLK_INTCA>;
- 		power-domains =3D <&pd_a4s>;
-+		stop-latency =3D <250000>;
-+		start-latency =3D <250000>;
-+		save-state-latency =3D <250000>;
-+		restore-state-latency =3D <250000>;
- 	};
-=20
- 	ether: ethernet@e9a00000 {
-@@ -150,6 +174,10 @@
- 		interrupts =3D <0 110 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks =3D <&mstp3_clks R8A7740_CLK_GETHER>;
- 		power-domains =3D <&pd_a4s>;
-+		stop-latency =3D <250000>;
-+		start-latency =3D <250000>;
-+		save-state-latency =3D <250000>;
-+		restore-state-latency =3D <250000>;
- 		phy-mode =3D "mii";
- 		#address-cells =3D <1>;
- 		#size-cells =3D <0>;
-@@ -167,6 +195,10 @@
- 			      0 204 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks =3D <&mstp1_clks R8A7740_CLK_IIC0>;
- 		power-domains =3D <&pd_a4r>;
-+		stop-latency =3D <250000>;
-+		start-latency =3D <250000>;
-+		save-state-latency =3D <250000>;
-+		restore-state-latency =3D <250000>;
- 		status =3D "disabled";
- 	};
-=20
-@@ -181,6 +213,10 @@
- 			      0 73 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks =3D <&mstp3_clks R8A7740_CLK_IIC1>;
- 		power-domains =3D <&pd_a3sp>;
-+		stop-latency =3D <250000>;
-+		start-latency =3D <250000>;
-+		save-state-latency =3D <250000>;
-+		restore-state-latency =3D <250000>;
- 		status =3D "disabled";
- 	};
-=20
-@@ -191,6 +227,10 @@
- 		clocks =3D <&mstp2_clks R8A7740_CLK_SCIFA0>;
- 		clock-names =3D "sci_ick";
- 		power-domains =3D <&pd_a3sp>;
-+		stop-latency =3D <250000>;
-+		start-latency =3D <250000>;
-+		save-state-latency =3D <250000>;
-+		restore-state-latency =3D <250000>;
- 		status =3D "disabled";
- 	};
-=20
-@@ -201,6 +241,10 @@
- 		clocks =3D <&mstp2_clks R8A7740_CLK_SCIFA1>;
- 		clock-names =3D "sci_ick";
- 		power-domains =3D <&pd_a3sp>;
-+		stop-latency =3D <250000>;
-+		start-latency =3D <250000>;
-+		save-state-latency =3D <250000>;
-+		restore-state-latency =3D <250000>;
- 		status =3D "disabled";
- 	};
-=20
-@@ -211,6 +255,10 @@
- 		clocks =3D <&mstp2_clks R8A7740_CLK_SCIFA0>;
- 		clock-names =3D "sci_ick";
- 		power-domains =3D <&pd_a3sp>;
-+		stop-latency =3D <250000>;
-+		start-latency =3D <250000>;
-+		save-state-latency =3D <250000>;
-+		restore-state-latency =3D <250000>;
- 		status =3D "disabled";
- 	};
-=20
-@@ -221,6 +269,10 @@
- 		clocks =3D <&mstp2_clks R8A7740_CLK_SCIFA3>;
- 		clock-names =3D "sci_ick";
- 		power-domains =3D <&pd_a3sp>;
-+		stop-latency =3D <250000>;
-+		start-latency =3D <250000>;
-+		save-state-latency =3D <250000>;
-+		restore-state-latency =3D <250000>;
- 		status =3D "disabled";
- 	};
-=20
-@@ -231,6 +283,10 @@
- 		clocks =3D <&mstp2_clks R8A7740_CLK_SCIFA4>;
- 		clock-names =3D "sci_ick";
- 		power-domains =3D <&pd_a3sp>;
-+		stop-latency =3D <250000>;
-+		start-latency =3D <250000>;
-+		save-state-latency =3D <250000>;
-+		restore-state-latency =3D <250000>;
- 		status =3D "disabled";
- 	};
-=20
-@@ -241,6 +297,10 @@
- 		clocks =3D <&mstp2_clks R8A7740_CLK_SCIFA5>;
- 		clock-names =3D "sci_ick";
- 		power-domains =3D <&pd_a3sp>;
-+		stop-latency =3D <250000>;
-+		start-latency =3D <250000>;
-+		save-state-latency =3D <250000>;
-+		restore-state-latency =3D <250000>;
- 		status =3D "disabled";
- 	};
-=20
-@@ -251,6 +311,10 @@
- 		clocks =3D <&mstp2_clks R8A7740_CLK_SCIFA6>;
- 		clock-names =3D "sci_ick";
- 		power-domains =3D <&pd_a3sp>;
-+		stop-latency =3D <250000>;
-+		start-latency =3D <250000>;
-+		save-state-latency =3D <250000>;
-+		restore-state-latency =3D <250000>;
- 		status =3D "disabled";
- 	};
-=20
-@@ -261,6 +325,10 @@
- 		clocks =3D <&mstp2_clks R8A7740_CLK_SCIFA7>;
- 		clock-names =3D "sci_ick";
- 		power-domains =3D <&pd_a3sp>;
-+		stop-latency =3D <250000>;
-+		start-latency =3D <250000>;
-+		save-state-latency =3D <250000>;
-+		restore-state-latency =3D <250000>;
- 		status =3D "disabled";
- 	};
-=20
-@@ -271,6 +339,10 @@
- 		clocks =3D <&mstp2_clks R8A7740_CLK_SCIFB>;
- 		clock-names =3D "sci_ick";
- 		power-domains =3D <&pd_a3sp>;
-+		stop-latency =3D <250000>;
-+		start-latency =3D <250000>;
-+		save-state-latency =3D <250000>;
-+		restore-state-latency =3D <250000>;
- 		status =3D "disabled";
- 	};
-=20
-@@ -290,6 +362,10 @@
- 			<&irqpin3 0 0>, <&irqpin3 1 0>, <&irqpin3 2 0>, <&irqpin3 3 0>,
- 			<&irqpin3 4 0>, <&irqpin3 5 0>, <&irqpin3 6 0>, <&irqpin3 7 0>;
- 			power-domains =3D <&pd_c5>;
-+			stop-latency =3D <250000>;
-+			start-latency =3D <250000>;
-+			save-state-latency =3D <250000>;
-+			restore-state-latency =3D <250000>;
- 	};
-=20
- 	tpu: pwm@e6600000 {
-@@ -297,6 +373,10 @@
- 		reg =3D <0xe6600000 0x100>;
- 		clocks =3D <&mstp3_clks R8A7740_CLK_TPU0>;
- 		power-domains =3D <&pd_a3sp>;
-+		stop-latency =3D <250000>;
-+		start-latency =3D <250000>;
-+		save-state-latency =3D <250000>;
-+		restore-state-latency =3D <250000>;
- 		status =3D "disabled";
- 		#pwm-cells =3D <3>;
- 	};
-@@ -308,6 +388,10 @@
- 			      0 57 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks =3D <&mstp3_clks R8A7740_CLK_MMC>;
- 		power-domains =3D <&pd_a3sp>;
-+		stop-latency =3D <250000>;
-+		start-latency =3D <250000>;
-+		save-state-latency =3D <250000>;
-+		restore-state-latency =3D <250000>;
- 		status =3D "disabled";
- 	};
-=20
-@@ -319,6 +403,10 @@
- 			      0 119 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks =3D <&mstp3_clks R8A7740_CLK_SDHI0>;
- 		power-domains =3D <&pd_a3sp>;
-+		stop-latency =3D <250000>;
-+		start-latency =3D <250000>;
-+		save-state-latency =3D <250000>;
-+		restore-state-latency =3D <250000>;
- 		cap-sd-highspeed;
- 		cap-sdio-irq;
- 		status =3D "disabled";
-@@ -332,6 +420,10 @@
- 			      0 123 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks =3D <&mstp3_clks R8A7740_CLK_SDHI1>;
- 		power-domains =3D <&pd_a3sp>;
-+		stop-latency =3D <250000>;
-+		start-latency =3D <250000>;
-+		save-state-latency =3D <250000>;
-+		restore-state-latency =3D <250000>;
- 		cap-sd-highspeed;
- 		cap-sdio-irq;
- 		status =3D "disabled";
-@@ -345,6 +437,10 @@
- 			      0 127 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks =3D <&mstp4_clks R8A7740_CLK_SDHI2>;
- 		power-domains =3D <&pd_a3sp>;
-+		stop-latency =3D <250000>;
-+		start-latency =3D <250000>;
-+		save-state-latency =3D <250000>;
-+		restore-state-latency =3D <250000>;
- 		cap-sd-highspeed;
- 		cap-sdio-irq;
- 		status =3D "disabled";
-@@ -357,6 +453,10 @@
- 		interrupts =3D <0 9 0x4>;
- 		clocks =3D <&mstp3_clks R8A7740_CLK_FSI>;
- 		power-domains =3D <&pd_a4mp>;
-+		stop-latency =3D <250000>;
-+		start-latency =3D <250000>;
-+		save-state-latency =3D <250000>;
-+		restore-state-latency =3D <250000>;
- 		status =3D "disabled";
- 	};
-=20
-@@ -409,6 +509,10 @@
- 			reg =3D <0xe6150000 0x10000>;
- 			clocks =3D <&extal1_clk>, <&extalr_clk>;
- 			power-domains =3D <&pd_c5>;
-+			stop-latency =3D <250000>;
-+			start-latency =3D <250000>;
-+			save-state-latency =3D <250000>;
-+			restore-state-latency =3D <250000>;
- 			#clock-cells =3D <1>;
- 			clock-output-names =3D "system", "pllc0", "pllc1",
- 					     "pllc2", "r",
-@@ -424,6 +528,10 @@
- 			reg =3D <0xe6150080 4>;
- 			clocks =3D <&pllc1_div2_clk>;
- 			power-domains =3D <&pd_c5>;
-+			stop-latency =3D <250000>;
-+			start-latency =3D <250000>;
-+			save-state-latency =3D <250000>;
-+			restore-state-latency =3D <250000>;
- 			#clock-cells =3D <0>;
- 			clock-output-names =3D "sub";
- 		};
-@@ -433,6 +541,10 @@
- 			compatible =3D "fixed-factor-clock";
- 			clocks =3D <&cpg_clocks R8A7740_CLK_PLLC1>;
- 			power-domains =3D <&pd_c5>;
-+			stop-latency =3D <250000>;
-+			start-latency =3D <250000>;
-+			save-state-latency =3D <250000>;
-+			restore-state-latency =3D <250000>;
- 			#clock-cells =3D <0>;
- 			clock-div =3D <2>;
- 			clock-mult =3D <1>;
-@@ -442,6 +554,10 @@
- 			compatible =3D "fixed-factor-clock";
- 			clocks =3D <&extal1_clk>;
- 			power-domains =3D <&pd_c5>;
-+			stop-latency =3D <250000>;
-+			start-latency =3D <250000>;
-+			save-state-latency =3D <250000>;
-+			restore-state-latency =3D <250000>;
- 			#clock-cells =3D <0>;
- 			clock-div =3D <2>;
- 			clock-mult =3D <1>;
-@@ -454,6 +570,10 @@
- 			reg =3D <0xe6150080 4>;
- 			clocks =3D <&sub_clk>, <&sub_clk>;
- 			power-domains =3D <&pd_c5>;
-+			stop-latency =3D <250000>;
-+			start-latency =3D <250000>;
-+			save-state-latency =3D <250000>;
-+			restore-state-latency =3D <250000>;
- 			#clock-cells =3D <1>;
- 			renesas,clock-indices =3D <
- 				R8A7740_CLK_SUBCK R8A7740_CLK_SUBCK2
-@@ -470,6 +590,10 @@
- 				 <&sub_clk>, <&sub_clk>,
- 				 <&cpg_clocks R8A7740_CLK_B>;
- 			power-domains =3D <&pd_c5>;
-+			stop-latency =3D <250000>;
-+			start-latency =3D <250000>;
-+			save-state-latency =3D <250000>;
-+			restore-state-latency =3D <250000>;
- 			#clock-cells =3D <1>;
- 			renesas,clock-indices =3D <
- 				R8A7740_CLK_CEU21 R8A7740_CLK_CEU20 R8A7740_CLK_TMU0
-@@ -492,6 +616,10 @@
- 				 <&sub_clk>, <&sub_clk>, <&sub_clk>,
- 				 <&sub_clk>;
- 			power-domains =3D <&pd_c5>;
-+			stop-latency =3D <250000>;
-+			start-latency =3D <250000>;
-+			save-state-latency =3D <250000>;
-+			restore-state-latency =3D <250000>;
- 			#clock-cells =3D <1>;
- 			renesas,clock-indices =3D <
- 				R8A7740_CLK_SCIFA6 R8A7740_CLK_INTCA
-@@ -522,6 +650,10 @@
- 				 <&cpg_clocks R8A7740_CLK_HP>,
- 				 <&cpg_clocks R8A7740_CLK_HP>;
- 			power-domains =3D <&pd_c5>;
-+			stop-latency =3D <250000>;
-+			start-latency =3D <250000>;
-+			save-state-latency =3D <250000>;
-+			restore-state-latency =3D <250000>;
- 			#clock-cells =3D <1>;
- 			renesas,clock-indices =3D <
- 				R8A7740_CLK_CMT1 R8A7740_CLK_FSI R8A7740_CLK_IIC1
-@@ -540,6 +672,10 @@
- 				 <&cpg_clocks R8A7740_CLK_HP>,
- 				 <&cpg_clocks R8A7740_CLK_HP>;
- 			power-domains =3D <&pd_c5>;
-+			stop-latency =3D <250000>;
-+			start-latency =3D <250000>;
-+			save-state-latency =3D <250000>;
-+			restore-state-latency =3D <250000>;
- 			#clock-cells =3D <1>;
- 			renesas,clock-indices =3D <
- 				R8A7740_CLK_USBH R8A7740_CLK_SDHI2
---=20
-1.9.1
+ 
+ 	cmt1: timer@e6130000 {
+-		compatible = "renesas,cmt-48-gen2";
++		compatible = "renesas,cmt-48-r8a7791", "renesas,cmt-48-gen2";
+ 		reg = <0 0xe6130000 0 0x1004>;
+ 		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
+-- 
+2.0.1
 
