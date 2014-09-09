@@ -1,71 +1,211 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 17 Sep 2014 14:11:07 +0000
-Subject: [PATCH 2/8] ARM: shmobile: r8a7790: Add DU node to device tree
-Message-Id: <1410963073-3176-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 09 Sep 2014 14:54:29 +0000
+Subject: [RFC 3/4] i2c: rcar: add slave support
+Message-Id: <1410274470-12712-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1410274470-12712-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1410274470-12712-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add the DU device with a disabled state. Boards that want to enable the
-DU need to specify the output topology.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 39 +++++++++++++++++++++++++++++++++++++++
- 1 file changed, 39 insertions(+)
+ drivers/i2c/busses/i2c-rcar.c | 122 ++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 113 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index d0e1773..92001ab 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -600,6 +600,45 @@
- 		status = "disabled";
- 	};
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 1cc146cfc1f3..fe875d994441 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -48,6 +48,12 @@
+ #define ICMAR	0x20	/* master address */
+ #define ICRXTX	0x24	/* data port */
  
-+	du: du@feb00000 {
-+		compatible = "renesas,du-r8a7790";
-+		reg = <0 0xfeb00000 0 0x70000>,
-+		      <0 0xfeb90000 0 0x1c>,
-+		      <0 0xfeb94000 0 0x1c>;
-+		reg-names = "du", "lvds.0", "lvds.1";
-+		interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 268 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 269 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7790_CLK_DU0>,
-+		         <&mstp7_clks R8A7790_CLK_DU1>,
-+		         <&mstp7_clks R8A7790_CLK_DU2>,
-+		         <&mstp7_clks R8A7790_CLK_LVDS0>,
-+		         <&mstp7_clks R8A7790_CLK_LVDS1>;
-+		clock-names = "du.0", "du.1", "du.2", "lvds.0", "lvds.1";
-+		status = "disabled";
++/* ICSCR */
++#define SDBS	(1 << 3)	/* slave data buffer select */
++#define SIE	(1 << 2)	/* slave interface enable */
++#define GCAE	(1 << 1)	/* general call address enable */
++#define FNA	(1 << 0)	/* forced non acknowledgement */
 +
-+		ports {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
+ /* ICMCR */
+ #define MDBS	(1 << 7)	/* non-fifo mode switch */
+ #define FSCL	(1 << 6)	/* override SCL pin */
+@@ -58,6 +64,15 @@
+ #define FSB	(1 << 1)	/* force stop bit */
+ #define ESG	(1 << 0)	/* en startbit gen */
+ 
++/* ICSSR (also for ICSIER) */
++#define GCAR	(1 << 6)	/* general call received */
++#define STM	(1 << 5)	/* slave transmit mode */
++#define SSR	(1 << 4)	/* stop received */
++#define SDE	(1 << 3)	/* slave data empty */
++#define SDT	(1 << 2)	/* slave data transmitted */
++#define SDR	(1 << 1)	/* slave data received */
++#define SAR	(1 << 0)	/* slave addr received */
 +
-+			port@0 {
-+				reg = <0>;
-+				du_out_rgb: endpoint {
-+				};
-+			};
-+			port@1 {
-+				reg = <1>;
-+				du_out_lvds0: endpoint {
-+				};
-+			};
-+			port@2 {
-+				reg = <2>;
-+				du_out_lvds1: endpoint {
-+				};
-+			};
-+		};
-+	};
+ /* ICMSR (also for ICMIE) */
+ #define MNR	(1 << 6)	/* nack received */
+ #define MAL	(1 << 5)	/* arbitration lost */
+@@ -103,6 +118,7 @@ struct rcar_i2c_priv {
+ 	u32 icccr;
+ 	u32 flags;
+ 	enum rcar_i2c_type devtype;
++	struct i2c_client *slave;
+ };
+ 
+ #define rcar_i2c_priv_to_dev(p)		((p)->adap.dev.parent)
+@@ -126,15 +142,6 @@ static u32 rcar_i2c_read(struct rcar_i2c_priv *priv, int reg)
+ 
+ static void rcar_i2c_init(struct rcar_i2c_priv *priv)
+ {
+-	/*
+-	 * reset slave mode.
+-	 * slave mode is not used on this driver
+-	 */
+-	rcar_i2c_write(priv, ICSIER, 0);
+-	rcar_i2c_write(priv, ICSAR, 0);
+-	rcar_i2c_write(priv, ICSCR, 0);
+-	rcar_i2c_write(priv, ICSSR, 0);
+-
+ 	/* reset master mode */
+ 	rcar_i2c_write(priv, ICMIER, 0);
+ 	rcar_i2c_write(priv, ICMCR, 0);
+@@ -362,6 +369,63 @@ static int rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
+ 	return 0;
+ }
+ 
++static bool rcar_i2c_slave_irq(struct rcar_i2c_priv *priv)
++{
++	u32 ssr_raw, ssr_filtered;
++	u8 value;
 +
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
++	ssr_raw = rcar_i2c_read(priv, ICSSR) & 0xff;
++	ssr_filtered = ssr_raw & rcar_i2c_read(priv, ICSIER);
++
++	if (!ssr_filtered)
++		return false;
++
++	/* address detected */
++	if (ssr_filtered & SAR) {
++		/* read or write request */
++		if (ssr_raw & STM) {
++			i2c_slave_event(priv->slave, I2C_SLAVE_REQ_READ_START, &value);
++			rcar_i2c_write(priv, ICRXTX, value);
++			rcar_i2c_write(priv, ICSIER, SDE | SSR | SAR);
++		} else {
++			i2c_slave_event(priv->slave, I2C_SLAVE_REQ_WRITE_START, NULL);
++			rcar_i2c_read(priv, ICRXTX);	/* dummy read */
++			rcar_i2c_write(priv, ICSIER, SDR | SSR | SAR);
++		}
++
++		rcar_i2c_write(priv, ICSSR, ~SAR & 0xff);
++	}
++
++	/* master sent stop */
++	if (ssr_filtered & SSR) {
++		i2c_slave_event(priv->slave, I2C_SLAVE_STOP, NULL);
++		rcar_i2c_write(priv, ICSIER, SAR | SSR);
++		rcar_i2c_write(priv, ICSSR, ~SSR & 0xff);
++	}
++
++	/* master wants to write to us */
++	if (ssr_filtered & SDR) {
++		int ret;
++
++		value = rcar_i2c_read(priv, ICRXTX);
++		ret = i2c_slave_event(priv->slave, I2C_SLAVE_REQ_WRITE_END, &value);
++		/* Send NACK in case of error */
++		rcar_i2c_write(priv, ICSCR, SIE | SDBS | (ret < 0 ? FNA : 0));
++		i2c_slave_event(priv->slave, I2C_SLAVE_REQ_WRITE_START, NULL);
++		rcar_i2c_write(priv, ICSSR, ~SDR & 0xff);
++	}
++
++	/* master wants to read from us */
++	if (ssr_filtered & SDE) {
++		i2c_slave_event(priv->slave, I2C_SLAVE_REQ_READ_END, NULL);
++		i2c_slave_event(priv->slave, I2C_SLAVE_REQ_READ_START, &value);
++		rcar_i2c_write(priv, ICRXTX, value);
++		rcar_i2c_write(priv, ICSSR, ~SDE & 0xff);
++	}
++
++	return true;
++}
++
+ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
+ {
+ 	struct rcar_i2c_priv *priv = ptr;
+@@ -370,6 +434,9 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
+ 	/*-------------- spin lock -----------------*/
+ 	spin_lock(&priv->lock);
+ 
++	if (rcar_i2c_slave_irq(priv))
++		goto unlock_out;
++
+ 	msr = rcar_i2c_read(priv, ICMSR);
+ 
+ 	/* Only handle interrupts that are currently enabled */
+@@ -408,6 +475,7 @@ out:
+ 		wake_up(&priv->wait);
+ 	}
+ 
++unlock_out:
+ 	spin_unlock(&priv->lock);
+ 	/*-------------- spin unlock -----------------*/
+ 
+@@ -498,6 +566,40 @@ out:
+ 	return ret;
+ }
+ 
++
++static int rcar_reg_slave(struct i2c_client *slave)
++{
++	struct rcar_i2c_priv *priv = i2c_get_adapdata(slave->adapter);
++
++	if (priv->slave)
++		return -EBUSY;
++
++	if (slave->flags & I2C_CLIENT_TEN)
++		return -EAFNOSUPPORT;
++
++	priv->slave = slave;
++	rcar_i2c_write(priv, ICSAR, slave->addr);
++	rcar_i2c_write(priv, ICSSR, 0);
++	rcar_i2c_write(priv, ICSIER, SAR | SSR);
++	rcar_i2c_write(priv, ICSCR, SIE | SDBS);
++
++	return 0;
++}
++
++static int rcar_unreg_slave(struct i2c_client *slave)
++{
++	struct rcar_i2c_priv *priv = i2c_get_adapdata(slave->adapter);
++
++	WARN_ON(!priv->slave);
++
++	rcar_i2c_write(priv, ICSIER, 0);
++	rcar_i2c_write(priv, ICSCR, 0);
++
++	priv->slave = NULL;
++
++	return 0;
++}
++
+ static u32 rcar_i2c_func(struct i2c_adapter *adap)
+ {
+ 	/* This HW can't do SMBUS_QUICK and NOSTART */
+@@ -507,6 +609,8 @@ static u32 rcar_i2c_func(struct i2c_adapter *adap)
+ static const struct i2c_algorithm rcar_i2c_algo = {
+ 	.master_xfer	= rcar_i2c_master_xfer,
+ 	.functionality	= rcar_i2c_func,
++	.reg_slave	= rcar_reg_slave,
++	.unreg_slave	= rcar_unreg_slave,
+ };
+ 
+ static const struct of_device_id rcar_i2c_dt_ids[] = {
 -- 
-1.8.5.5
+2.0.0
 
