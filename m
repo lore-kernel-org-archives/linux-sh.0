@@ -1,63 +1,20 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 25 Sep 2014 16:15:38 +0000
-Subject: [PATCH v2 07/11] ARM: shmobile: r8a7740/armadillo legacy: Add A4MP pm domain support
-Message-Id: <1411661742-4767-8-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 09 Sep 2014 09:24:40 +0000
+Subject: [ANNOUNCE] renesas tree closing for v3.18 soon
+Message-Id: <20140909092440.GA11585@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411661742-4767-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1411661742-4767-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add support for the A4MP power domain, and hook up the HDMI-Link and FSI
-hardware blocks.
-This domain also contains the SPU2, FMSI, and BBIF2 hardware blocks,
-but these are currently not used by any driver.
+Hi,
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-This depends on "[PATCH/RFC] fbdev: sh_mobile_hdmi: Re-init regs before
-irq re-enable on resume". Else resuming from s2ram will cause an
-interrupt storm and "irq 163: nobody cared".
+I would like to wind down accepting patches for v3.18 and get the last pull
+requests posted by the end of next week. This is in order for them to be
+sent before the release of v3.17-rc6.  As patches should ideally progress
+from the renesas tree into linux-next before sending pull requests there is
+a few days lead time involved.
 
-v2:
-  - Also hook up HDMI-Link, which was not documented in the datasheet as
-    belonging to A4MP,
-  - Really add A4MP and drop the FIXME, as a fix for the interrupt storm
-    is available.
----
- arch/arm/mach-shmobile/board-armadillo800eva.c | 2 ++
- arch/arm/mach-shmobile/pm-r8a7740.c            | 3 +++
- 2 files changed, 5 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 735036038951868d..c37d7b697a35322d 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1234,6 +1234,8 @@ static void __init eva_init(void)
- 	static struct pm_domain_device domain_devices[] __initdata = {
- 		{ "A4LC", &lcdc0_device },
- 		{ "A4LC", &hdmi_lcdc_device },
-+		{ "A4MP", &hdmi_device },
-+		{ "A4MP", &fsi_device },
- 		{ "A4S",  &sh_eth_device },
- 		{ "A3SP", &pwm_device },
- 		{ "A3SP", &sdhi0_device },
-diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
-index 932c2a621e81ac26..081a4f9726a0c909 100644
---- a/arch/arm/mach-shmobile/pm-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7740.c
-@@ -37,6 +37,9 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
- 		.genpd.name	= "A4LC",
- 		.bit_shift	= 1,
- 	}, {
-+		.genpd.name	= "A4MP",
-+		.bit_shift	= 2,
-+	}, {
- 		.genpd.name	= "A3RV",
- 		.bit_shift	= 6,
- 	}, {
--- 
-1.9.1
-
+Accordingly I would like to stop accepting patches for v3.18
+this time next week.
