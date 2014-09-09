@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 04 Sep 2014 01:12:50 +0000
+Date: Tue, 09 Sep 2014 04:22:05 +0000
 Subject: [PATCH 5/6] ARM: shmobile: armadillo800eva reference: Remove C board code
-Message-Id: <f2d4c4a96d8706353b64f9bd83da774383154824.1409792648.git.horms+renesas@verge.net.au>
+Message-Id: <52031d41be060e9a7f6d113728109aed4758f7ae.1410235700.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1409792648.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1409792648.git.horms+renesas@verge.net.au>
+References: <cover.1410235700.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1410235700.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,13 +19,64 @@ in the future shall make use of the r8a7740 Multiplatform
 support code with the generic SoC machine vector.
 
 Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/Kconfig                     |  15 --
+ arch/arm/mach-shmobile/Makefile                    |   1 -
+ arch/arm/mach-shmobile/Makefile.boot               |   1 -
  .../board-armadillo800eva-reference.c              | 199 ---------------------
- 1 file changed, 199 deletions(-)
+ 4 files changed, 216 deletions(-)
  delete mode 100644 arch/arm/mach-shmobile/board-armadillo800eva-reference.c
 
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 498162f..723bcc5 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -200,21 +200,6 @@ config MACH_ARMADILLO800EVA
+ 	select SND_SOC_WM8978 if SND_SIMPLE_CARD
+ 	select USE_OF
+ 
+-config MACH_ARMADILLO800EVA_REFERENCE
+-	bool "Armadillo-800 EVA board - Reference Device Tree Implementation"
+-	depends on ARCH_R8A7740
+-	select ARCH_REQUIRE_GPIOLIB
+-	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+-	select SMSC_PHY if SH_ETH
+-	select SND_SOC_WM8978 if SND_SIMPLE_CARD
+-	select USE_OF
+-	---help---
+-	   Use reference implementation of Armadillo800 EVA board support
+-	   which makes greater use of device tree at the expense
+-	   of not supporting a number of devices.
+-
+-	   This is intended to aid developers
+-
+ config MACH_BOCKW
+ 	bool "BOCK-W platform"
+ 	depends on ARCH_R8A7778
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index fe3878a..7a9d03a 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -77,7 +77,6 @@ obj-$(CONFIG_MACH_GENMAI)	+= board-genmai.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
+ obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
+ obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
+-obj-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE)	+= board-armadillo800eva-reference.o
+ obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch.o
+ obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
+ obj-$(CONFIG_MACH_KZM9G_REFERENCE)	+= board-kzm9g-reference.o
+diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
+index ebf97d4..ec8caff 100644
+--- a/arch/arm/mach-shmobile/Makefile.boot
++++ b/arch/arm/mach-shmobile/Makefile.boot
+@@ -3,7 +3,6 @@ loadaddr-y	: loadaddr-$(CONFIG_MACH_APE6EVM) += 0x40008000
+ loadaddr-$(CONFIG_MACH_APE6EVM_REFERENCE) += 0x40008000
+ loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
+-loadaddr-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE) += 0x40008000
+ loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
+ loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
+ loadaddr-$(CONFIG_MACH_GENMAI) += 0x08008000
 diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
 deleted file mode 100644
 index f06e1f3..0000000
