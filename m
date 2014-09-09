@@ -1,108 +1,44 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 04 Sep 2014 01:12:38 +0000
-Subject: [PATCH 7/9] ARM: shmobile: Consolidate Legacy CPU_V7 Kconfig
-Message-Id: <0ed82bc9895daad86966d53e561330929774f92d.1409792454.git.horms+renesas@verge.net.au>
+From: Ricardo Ribalda Delgado <ricardo.ribalda@gmail.com>
+Date: Tue, 09 Sep 2014 18:59:50 +0000
+Subject: [PATCH 2/3 v2] sh/uapi: Add definition of TIOC[SG]RS485
+Message-Id: <1410289190-3913-1-git-send-email-ricardo.ribalda@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1409792454.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1409792454.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-serial@vger.kernel.org, Greg KH <greg@kroah.com>
+Cc: Ricardo Ribalda Delgado <ricardo.ribalda@gmail.com>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Commit: e676253b19b2d269cccf67fdb1592120a0cd0676 (serial/8250: Add
+support for RS485 IOCTLs), adds support for RS485 ioctls for 825_core on
+all the archs. Unfortunaltely the definition of TIOCSRS485 and
+TIOCGRS485 was missing on the ioctls.h file
 
-Consolidate CPU_V7 under ARCH_SHMOBILE_LEGACY so it can
-be shared by the legacy ARM mach-shmobile support code.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ricardo Ribalda Delgado <ricardo.ribalda@gmail.com>
 ---
- arch/arm/Kconfig               | 1 +
- arch/arm/mach-shmobile/Kconfig | 8 --------
- 2 files changed, 1 insertion(+), 8 deletions(-)
+Changelog:
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index c49a775..93efc9a 100644
---- a/arch/arm/Kconfig
-+++ b/arch/arm/Kconfig
-@@ -650,6 +650,7 @@ config ARCH_SHMOBILE_LEGACY
- 	select ARCH_SHMOBILE
- 	select ARM_PATCH_PHYS_VIRT if MMU
- 	select CLKDEV_LOOKUP
-+	select CPU_V7
- 	select GENERIC_CLOCKEVENTS
- 	select HAVE_ARM_SCU if SMP
- 	select HAVE_ARM_TWD if SMP
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 42d9de0..d4cf8bf 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -95,7 +95,6 @@ config ARCH_SH7372
- 	select ARCH_RMOBILE
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_CPU_SUSPEND if PM || CPU_IDLE
--	select CPU_V7
- 	select SH_CLK_CPG
- 	select SH_INTC
- 
-@@ -104,7 +103,6 @@ config ARCH_SH73A0
- 	select ARCH_RMOBILE
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
--	select CPU_V7
- 	select I2C
- 	select SH_CLK_CPG
- 	select SH_INTC
-@@ -115,7 +113,6 @@ config ARCH_R8A73A4
- 	select ARCH_RMOBILE
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
--	select CPU_V7
- 	select SH_CLK_CPG
- 	select RENESAS_IRQC
- 
-@@ -124,7 +121,6 @@ config ARCH_R8A7740
- 	select ARCH_RMOBILE
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
--	select CPU_V7
- 	select SH_CLK_CPG
- 	select RENESAS_INTC_IRQPIN
- 
-@@ -132,7 +128,6 @@ config ARCH_R8A7778
- 	bool "R-Car M1A (R8A77781)"
- 	select ARCH_RCAR_GEN1
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
--	select CPU_V7
- 	select SH_CLK_CPG
- 	select ARM_GIC
- 
-@@ -141,7 +136,6 @@ config ARCH_R8A7779
- 	select ARCH_RCAR_GEN1
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
--	select CPU_V7
- 	select SH_CLK_CPG
- 
- config ARCH_R8A7790
-@@ -149,7 +143,6 @@ config ARCH_R8A7790
- 	select ARCH_RCAR_GEN2
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
--	select CPU_V7
- 	select MIGHT_HAVE_PCI
- 	select SH_CLK_CPG
- 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
-@@ -159,7 +152,6 @@ config ARCH_R8A7791
- 	select ARCH_RCAR_GEN2
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
--	select CPU_V7
- 	select MIGHT_HAVE_PCI
- 	select SH_CLK_CPG
- 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
+v2: By GregKH
+
+Follow the ioctl numbering scheme used by the particular
+ architecture UAPI file you are editing.
+
+ arch/sh/include/uapi/asm/ioctls.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/sh/include/uapi/asm/ioctls.h b/arch/sh/include/uapi/asm/ioctls.h
+index 3422410..c9903e5 100644
+--- a/arch/sh/include/uapi/asm/ioctls.h
++++ b/arch/sh/include/uapi/asm/ioctls.h
+@@ -83,6 +83,8 @@
+ #define TCSETS2		_IOW('T', 43, struct termios2)
+ #define TCSETSW2	_IOW('T', 44, struct termios2)
+ #define TCSETSF2	_IOW('T', 45, struct termios2)
++#define TIOCGRS485	_IOR('T', 46, struct serial_rs485)
++#define TIOCSRS485	_IOWR('T', 47, struct serial_rs485)
+ #define TIOCGPTN	_IOR('T',0x30, unsigned int) /* Get Pty Number (of pty-mux device) */
+ #define TIOCSPTLCK	_IOW('T',0x31, int)  /* Lock/unlock Pty */
+ #define TIOCGDEV	_IOR('T',0x32, unsigned int) /* Get primary device node of /dev/console */
 -- 
-2.0.1
+2.1.0
 
