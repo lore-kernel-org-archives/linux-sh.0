@@ -1,64 +1,44 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 24 Sep 2014 18:56:30 +0000
-Subject: Re: [PATCH v5 1/2] usb: rename phy to usb_phy in HCD
-Message-Id: <542313DE.1080709@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 09 Sep 2014 02:40:09 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Clocksource Updates for v3.18
+Message-Id: <cover.1410230283.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5072811.p8odmvpxdS@wasted.cogentembedded.com> <2282553.NrZjRxyKlv@wasted.cogentembedded.com> <20140924051138.GA4440@kroah.com>
-In-Reply-To: <20140924051138.GA4440-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>
+References: <1381222888-4199-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1381222888-4199-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg KH <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>
-Cc: linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Peter.Chen-KZfg59tc24xl57MIdRCFDg@public.gmane.org, stern-nwvwT67g6+6dFdvTe/nMLpVzexx5G7lz@public.gmane.org, swarren-3lzwWm7+Weoh9ZMKESR00Q@public.gmane.org, thierry.reding-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, balbi-l0cyMroinI0@public.gmane.org, linux-tegra-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-omap-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, antoine.tenart-wi1+55ScJUtKEb57/3fJTNBPR1lH4CV8@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-hello.
+Hi Daniel,
 
-On 09/24/2014 09:11 AM, Greg KH wrote:
+Please consider these Renesas ARM based SoC clocksource updates for v3.18.
 
->> From: Antoine Tenart <antoine.tenart@free-electrons.com>
 
->> The USB PHY member of the HCD structure is renamed to 'usb_phy' and
->> modifications are done in all drivers accessing it.
->> This is in preparation to adding the generic PHY support.
+The following changes since commit 7d1311b93e58ed55f3a31cc8f94c4b8fe988a2b9:
 
->> Signed-off-by: Antoine Tenart <antoine.tenart@free-electrons.com>
->> [Sergei: added missing 'drivers/usb/misc/lvstest.c' file, resolved rejects
->> caused by patch reordering, updated changelog.]
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->> Acked-by: Alan Stern <stern@rowland.harvard.edu>
->> Acked-by: Felipe Balbi <balbi@ti.com>
+  Linux 3.17-rc1 (2014-08-16 10:40:26 -0600)
 
->> ---
->> Changes in version 5:
->> - imported the patch from Antoine Tenart's series;
->> - added missing 'drivers/usb/misc/lvstest.c' file;
->> - resolved rejects caused by patch reordering;
->> - refreshed patch;
->> - updated changelog.
+are available in the git repository at:
 
->>   drivers/usb/chipidea/host.c   |    2 +-
->>   drivers/usb/core/hcd.c        |   20 ++++++++++----------
->>   drivers/usb/core/hub.c        |    8 ++++----
->>   drivers/usb/host/ehci-fsl.c   |   16 ++++++++--------
->>   drivers/usb/host/ehci-hub.c   |    2 +-
->>   drivers/usb/host/ehci-msm.c   |    4 ++--
->>   drivers/usb/host/ehci-tegra.c |   16 ++++++++--------
->>   drivers/usb/host/ohci-omap.c  |   20 ++++++++++----------
->>   drivers/usb/misc/lvstest.c    |    8 ++++----
->>   include/linux/usb/hcd.h       |    2 +-
->>   10 files changed, 49 insertions(+), 49 deletions(-)
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clocksource-for-v3.18
 
-> This doesn't apply to my tree at all anymore,
+for you to fetch changes up to fb0eee2f141976b5d7f31e477a71556d312f7dc3:
 
-    Well, I'm seeing only a minor reject in the first file, easily fixable.
+  clocksource: sh_tmu: Document r8a7779 binding (2014-09-06 10:20:53 +0900)
 
-> can you refresh it and resend?
+----------------------------------------------------------------
+Renesas Clocksource Updates for v3.18
 
-    OK, will re-post now.
+* Document per-SoC bindings
 
-> thanks,
+----------------------------------------------------------------
+Simon Horman (3):
+      clocksource: sh_cmt: Document SoC specific bindings
+      clocksource: sh_mtu2: Document r7s72100 binding
+      clocksource: sh_tmu: Document r8a7779 binding
 
-> greg k-h
-
-WBR, Sergei
-
+ .../devicetree/bindings/timer/renesas,cmt.txt      | 44 +++++++++++++++++++---
+ .../devicetree/bindings/timer/renesas,mtu2.txt     |  7 +++-
+ .../devicetree/bindings/timer/renesas,tmu.txt      |  7 +++-
+ 3 files changed, 48 insertions(+), 10 deletions(-)
