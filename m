@@ -1,7 +1,7 @@
 From: Kevin Hilman <khilman@kernel.org>
-Date: Tue, 09 Sep 2014 15:40:13 +0000
+Date: Tue, 09 Sep 2014 16:11:18 +0000
 Subject: Re: [PATCH/RFC 4/5] ARM: shmobile: R-Mobile: Add DT support for PM domains
-Message-Id: <7hfvg0kdk2.fsf@deeprootsystems.com>
+Message-Id: <7h1trkkc49.fsf@deeprootsystems.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1410183344-14756-1-git-send-email-geert+renesas@glider.be>
  <1410183344-14756-5-git-send-email-geert+renesas@glider.be>
@@ -38,13 +38,21 @@ Geert Uytterhoeven <geert+renesas@glider.be> writes:
 
 [...]
 
+This series looks really good to me.  Just a minor question about a
+possible next step...
+
 > +static int r8a7740_pd_a4s_suspend(void)
 > +{
 > +	/*
 > +	 * The A4S domain contains the CPU core and therefore it should
 > +	 * only be turned off if the CPU is in use.
+> +	 */
+> +	return -EBUSY;
+> +}
 
-I think you meant "if the CPU is *not* in use."  ?  :)
+
+Do you have plans to use pm_genpd_attach_cpuidle() for this eventually,
+maybe by checking if the enclosing node is a CPU?  If not, are there
+other plans to handle idle for the power domains that contain CPUs?
 
 Kevin
-
