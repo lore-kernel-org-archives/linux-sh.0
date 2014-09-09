@@ -1,45 +1,84 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 17 Sep 2014 00:23:25 +0000
-Subject: Re: [PATCH] ARM: shmobile: Add manufacturer for KZM boards
-Message-Id: <20140917002325.GC27426@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 09 Sep 2014 06:45:25 +0000
+Subject: [PATCH 2/6 v4] mmc: use .multi_io_quirk on tmio_mmc
+Message-Id: <87ha0h70n1.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410897436-28107-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1410897436-28107-1-git-send-email-geert+renesas@glider.be>
+References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
+	<87k35d70pz.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87k35d70pz.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-On Tue, Sep 16, 2014 at 09:57:16PM +0200, Geert Uytterhoeven wrote:
-> KZM-A9-Dual and KZM-A9-GT are manufactured by Kyoto Microcomputer Co.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, I have queued this up.
+Now, tmio_mmc can use .multi_io_quirk callback
+instead of MMC_CAP2_NO_MULTI_READ flags.
+let's use it.
 
-> ---
->  Documentation/devicetree/bindings/arm/shmobile.txt | 6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
-> 
-> diff --git a/Documentation/devicetree/bindings/arm/shmobile.txt b/Documentation/devicetree/bindings/arm/shmobile.txt
-> index 5d1c5c0085dc7871..51147cb5c036599a 100644
-> --- a/Documentation/devicetree/bindings/arm/shmobile.txt
-> +++ b/Documentation/devicetree/bindings/arm/shmobile.txt
-> @@ -53,11 +53,11 @@ Boards:
->      compatible = "renesas,henninger", "renesas,r8a7791"
->    - Koelsch (RTP0RC7791SEB00010S)
->      compatible = "renesas,koelsch", "renesas,r8a7791"
-> -  - KZM9D
-> +  - Kyoto Microcomputer Co. KZM-A9-Dual
->      compatible = "renesas,kzm9d", "renesas,emev2"
-> -  - KZM-A9-GT
-> +  - Kyoto Microcomputer Co. KZM-A9-GT
->      compatible = "renesas,kzm9g", "renesas,sh73a0"
-> -  - KZM-A9-GT - Reference Device Tree Implementation
-> +  - Kyoto Microcomputer Co. KZM-A9-GT - Reference Device Tree Implementation
->      compatible = "renesas,kzm9g-reference", "renesas,sh73a0"
->    - Lager (RTP0RC7790SEB00010S)
->      compatible = "renesas,lager", "renesas,r8a7790"
-> -- 
-> 1.9.1
-> 
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v3 -> v4
+
+ - remove un-needed header
+
+ drivers/mmc/host/tmio_mmc_pio.c |   13 +++++++++++++
+ include/linux/mfd/tmio.h        |    3 +++
+ 2 files changed, 16 insertions(+)
+
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index ba45413..ff5ff0f 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -970,12 +970,25 @@ static int tmio_mmc_get_ro(struct mmc_host *mmc)
+ 	return ret;
+ }
+ 
++static int tmio_multi_io_quirk(struct mmc_card *card,
++			       unsigned int direction, int blk_size)
++{
++	struct tmio_mmc_host *host = mmc_priv(card->host);
++	struct tmio_mmc_data *pdata = host->pdata;
++
++	if (pdata->multi_io_quirk)
++		return pdata->multi_io_quirk(card, direction, blk_size);
++
++	return blk_size;
++}
++
+ static const struct mmc_host_ops tmio_mmc_ops = {
+ 	.request	= tmio_mmc_request,
+ 	.set_ios	= tmio_mmc_set_ios,
+ 	.get_ro         = tmio_mmc_get_ro,
+ 	.get_cd		= mmc_gpio_get_cd,
+ 	.enable_sdio_irq = tmio_mmc_enable_sdio_irq,
++	.multi_io_quirk	= tmio_multi_io_quirk,
+ };
+ 
+ static int tmio_mmc_init_ocr(struct tmio_mmc_host *host)
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 90436d5..5738817 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -5,6 +5,7 @@
+ #include <linux/fb.h>
+ #include <linux/io.h>
+ #include <linux/jiffies.h>
++#include <linux/mmc/card.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
+ 
+@@ -142,6 +143,8 @@ struct tmio_mmc_data {
+ 	/* clock management callbacks */
+ 	int (*clk_enable)(struct platform_device *pdev, unsigned int *f);
+ 	void (*clk_disable)(struct platform_device *pdev);
++	int (*multi_io_quirk)(struct mmc_card *card,
++			      unsigned int direction, int blk_size);
+ };
+ 
+ /*
+-- 
+1.7.9.5
+
