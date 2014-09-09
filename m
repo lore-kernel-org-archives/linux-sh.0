@@ -1,45 +1,97 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 11 Sep 2014 00:57:02 +0000
-Subject: [PATCH 5/7] ARM: shmobile: r8a7740: Use SoC-specific 48-bit CMT compat string
-Message-Id: <a2ffcf87f5ae83dcd02f5b87bf477ce7e474601e.1410396171.git.horms+renesas@verge.net.au>
+Date: Tue, 09 Sep 2014 04:22:18 +0000
+Subject: [PATCH 2/2] ARM: shmobile: Initial r8a7794 SoC support
+Message-Id: <5923abb205e05773e0bb16c7ca4c0b41dbeec40e.1410235571.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1410396171.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1410396171.git.horms+renesas@verge.net.au>
+References: <cover.1410235571.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1410235571.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-In general Renesas hardware is not documented to the extent
-where the relationship between IP blocks on different SoCs can be assumed
-although they may appear to operate the same way. Furthermore the
-documentation typically does not specify a version for individual
-IP blocks. For these reasons a convention of using the SoC name in place
-of a version and providing SoC-specific compat strings has been adopted.
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Although not universally liked this convention is used in the bindings for
-a number of drivers for Renesas hardware. The purpose of this patch is to
-make use of the SoC-specific CMT compat string for the r8a7740 48-bit CMT
-clock source.
+Initial support for the r8a7794 SoC, based on work by Hisashi Nakamura.
 
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Magnus Damm <damm+renesas@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/Kconfig         |  4 ++++
+ arch/arm/mach-shmobile/Makefile        |  1 +
+ arch/arm/mach-shmobile/setup-r8a7794.c | 35 ++++++++++++++++++++++++++++++++++
+ 3 files changed, 40 insertions(+)
+ create mode 100644 arch/arm/mach-shmobile/setup-r8a7794.c
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 1067a96..d46c213 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -42,7 +42,7 @@
- 	};
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index e15dff7..05f4cc0 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -41,6 +41,10 @@ config ARCH_R8A7791
+ 	select RENESAS_IRQC
+ 	select SYS_SUPPORTS_SH_CMT
  
- 	cmt1: timer@e6138000 {
--		compatible = "renesas,cmt-48";
-+		compatible = "renesas,cmt-48-r8a7740", "renesas,cmt-48";
- 		reg = <0xe6138000 0x170>;
- 		interrupts = <0 58 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7740_CLK_CMT1>;
++config ARCH_R8A7794
++	bool "R-Car E2 (R8A77940)"
++	select ARCH_RCAR_GEN2
++
+ comment "Renesas ARM SoCs Board Type"
+ 
+ config MACH_GENMAI
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index a6a1dc0..6b61d69 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -15,6 +15,7 @@ obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o
+ obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o
+ obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o setup-rcar-gen2.o
+ obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o setup-rcar-gen2.o
++obj-$(CONFIG_ARCH_R8A7794)	+= setup-r8a7794.o
+ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o
+ obj-$(CONFIG_ARCH_R7S72100)	+= setup-r7s72100.o
+ 
+diff --git a/arch/arm/mach-shmobile/setup-r8a7794.c b/arch/arm/mach-shmobile/setup-r8a7794.c
+new file mode 100644
+index 0000000..05e970c
+--- /dev/null
++++ b/arch/arm/mach-shmobile/setup-r8a7794.c
+@@ -0,0 +1,35 @@
++/*
++ * r8a7794 processor support
++ *
++ * Copyright (C) 2014  Renesas Electronics Corporation
++ * Copyright (C) 2014  Ulrich Hecht
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <linux/of_platform.h>
++#include "common.h"
++#include "rcar-gen2.h"
++#include <asm/mach/arch.h>
++
++#ifdef CONFIG_USE_OF
++
++static const char * const r8a7794_boards_compat_dt[] __initconst = {
++	"renesas,r8a7794",
++	NULL,
++};
++
++DT_MACHINE_START(R8A7794_DT, "Generic R8A7794 (Flattened Device Tree)")
++	.init_early	= shmobile_init_delay,
++	.init_late	= shmobile_init_late,
++	.init_time	= rcar_gen2_timer_init,
++	.dt_compat	= r8a7794_boards_compat_dt,
++MACHINE_END
++#endif /* CONFIG_USE_OF */
 -- 
 2.0.1
 
