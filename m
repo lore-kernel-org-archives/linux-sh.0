@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 04 Sep 2014 01:12:51 +0000
+Date: Tue, 09 Sep 2014 04:22:06 +0000
 Subject: [PATCH 6/6] ARM: shmobile: armadillo800eva reference: Remove DTS
-Message-Id: <118a04358b7efa884aeedf80ddecc87174d7f3c2.1409792648.git.horms+renesas@verge.net.au>
+Message-Id: <968d1af17b01b5eb343e17f64281561e1e169bb6.1410235700.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1409792648.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1409792648.git.horms+renesas@verge.net.au>
+References: <cover.1410235700.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1410235700.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
