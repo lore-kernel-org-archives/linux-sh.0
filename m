@@ -1,79 +1,57 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 09 Sep 2014 02:26:50 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 09 Sep 2014 09:48:23 +0000
 Subject: Re: [PATCH 00/11] ARM: shmobile: r8a7740/armadillo legacy prototype pm domain support
-Message-Id: <20140909022649.GC31320@verge.net.au>
+Message-Id: <CAMuHMdWZ_MZQo5QyZmZCx-EHvxOvO==gnoefDqsipHqfSLPXww@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
+ <20140909022649.GC31320@verge.net.au>
+In-Reply-To: <20140909022649.GC31320@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+Hi Simon, Magnus,
 
-I would like Magnus's opinion but mine is that the non-WIP patches
-could be queued up. At least patch 1 and 2. Possibly others if
-they don't depend (other than diff noise) on WIP patches.
+On Tue, Sep 9, 2014 at 4:26 AM, Simon Horman <horms@verge.net.au> wrote:
+> I would like Magnus's opinion but mine is that the non-WIP patches
+> could be queued up. At least patch 1 and 2. Possibly others if
+> they don't depend (other than diff noise) on WIP patches.
 
-With the WIP patches, I am not entirely opposed to merging them
-too, so long as they move things in a good direction. And in particular
-don't break anything.
+The legacy platforms are meant to be extinct in the near future, but
+Armadillo-legacy already has some PM domain support, so adding a
+little bit more can't hurt much, IMHO.
 
-On Fri, Aug 29, 2014 at 03:50:06PM +0200, Geert Uytterhoeven wrote:
-> 	Hi Simon, Magnus,
-> 
-> This series contains prototype patches to improve pm domain support for
-> r8a7740/armadillo800eva, mimicking (parts of) the existing pm domain support
-> for sh7372/mackerel.
-> 
-> More specifically, they
->   - Add missing devices to existing pm domains,
->   - Add missing pm domains, hooking up devices and subdomains,
-> 
-> There are a few things commented out, and a few rough edges or missing things
-> (cfr. the patches marked with "[WIP]", and the "FIXME" sections therein),
-> but the result does boot, and s2ram works.
-> 
-> Please note that DT/multi-platform support will be added later.
-> 
-> This series depends on my series "[PATCH 0/5] ARM: shmobile: pm domain
-> improvements and cleanups".
-> 
-> Thanks for your comments and suggestions!
-> 
-> Geert Uytterhoeven (11):
->   ARM: shmobile: r8a7740: Add missing A3SP pm domain devices
->   ARM: shmobile: r8a7740: Add missing A4S pm domain devices
->   [WIP] ARM: shmobile: armadillo800eva legacy: Add missing A3SP pm
->     domain devices
->   ARM: shmobile: armadillo800eva legacy: Add missing A4S pm domain
->     devices
->   ARM: shmobile: r8a7740: Add A3RV pm domain support
->   ARM: shmobile: r8a7740: Add A3SG pm domain support
->   [WIP] ARM: shmobile: r8a7740/armadillo legacy: Add A4MP pm domain
->     support
->   [WIP] ARM: shmobile: r8a7740: Add D4 pm domain support
->   ARM: shmobile: r8a7740/armadillo legacy: Add A4R pm domain support
->   [WIP] ARM: shmobile: r8a7740: Add A4SU pm domain support
->   [WIP] ARM: shmobile: r8a7740: Add A3SM pm domain support
-> 
->  arch/arm/mach-shmobile/board-armadillo800eva.c |   11 ++++++++++-
->  arch/arm/mach-shmobile/pm-r8a7740.c            |   25 ++++++++++++++++++++++++
->  arch/arm/mach-shmobile/setup-r8a7740.c         |   11 +++++++++++
->  3 files changed, 46 insertions(+), 1 deletion(-)
-> 
-> -- 
-> 1.7.9.5
-> 
-> Gr{oetje,eeting}s,
-> 
-> 						Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
-> 							    -- Linus Torvalds
-> 
+Besides diff noise, there should not be any dependencies on WIP patches.
+
+> With the WIP patches, I am not entirely opposed to merging them
+> too, so long as they move things in a good direction. And in particular
+> don't break anything.
+
+"[PATCH 03/11] [WIP] ARM: shmobile: armadillo800eva legacy: Add
+missing A3SP pm domain devices" should be OK, as this turned out to be
+intended behavior.
+
+"[PATCH 10/11] [WIP] ARM: shmobile: r8a7740: Add A4SU pm domain
+ support" probably introduces a regression for USB, as the domain is now
+powered down after boot-up. I haven't tried USB on Armadillo yet, though.
+So don't apply this one.
+
+"[PATCH 11/11] [WIP] ARM: shmobile: r8a7740: Add A3SM pm domain
+ support" should be safe.
+
+I would not apply the other WIP patches that add C99-commented-out code.
+These issues must be fixed for DT as well.
+
+Thanks!
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
