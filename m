@@ -1,80 +1,37 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Fri, 12 Sep 2014 08:51:46 +0000
-Subject: [RFC 1/3] serial: sh-sci: consider DR (data ready) bit adequately
-Message-Id: <1410511908-9282-2-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Ricardo Ribalda Delgado <ricardo.ribalda@gmail.com>
+Date: Tue, 09 Sep 2014 18:07:27 +0000
+Subject: [PATCH 2/3] sh/uapi: Add definition of TIOC[SG]RS485
+Message-Id: <1410286047-24900-1-git-send-email-ricardo.ribalda@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410511908-9282-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1410511908-9282-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org
-Cc: horms@verge.net.au, magnus.damm@gmail.com, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-serial@vger.kernel.org
+Cc: Ricardo Ribalda Delgado <ricardo.ribalda@gmail.com>
 
-To allow operation with a higher RX FIFO interrupt threshold it is
-necessary to consider the DR bit ("FIFO not full, but no data received
-for 1.5 frames") as an indicator that data can be read. Otherwise the
-driver will let data rot in the FIFO until the threshold is reached.
+Commit: e676253b19b2d269cccf67fdb1592120a0cd0676 (serial/8250: Add
+support for RS485 IOCTLs), adds support for RS485 ioctls for 825_core on
+all the archs. Unfortunaltely the definition of TIOCSRS485 and
+TIOCGRS485 was missing on the ioctls.h file
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Signed-off-by: Ricardo Ribalda Delgado <ricardo.ribalda@gmail.com>
 ---
- drivers/tty/serial/sh-sci.c | 9 +++++----
- drivers/tty/serial/sh-sci.h | 1 +
- 2 files changed, 6 insertions(+), 4 deletions(-)
+ arch/sh/include/uapi/asm/ioctls.h | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 3081e46..f0ff8a7 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -483,7 +483,7 @@ static int sci_poll_get_char(struct uart_port *port)
- 		break;
- 	} while (1);
- 
--	if (!(status & SCxSR_RDxF(port)))
-+	if (!(status & (SCxSR_RDxF(port) | SCxSR_DR(port))))
- 		return NO_POLL_CHAR;
- 
- 	c = serial_port_in(port, SCxRDR);
-@@ -572,7 +572,8 @@ static int sci_rxfill(struct uart_port *port)
- 	if (reg->size)
- 		return serial_port_in(port, SCFDR) & ((port->fifosize << 1) - 1);
- 
--	return (serial_port_in(port, SCxSR) & SCxSR_RDxF(port)) != 0;
-+	return (serial_port_in(port, SCxSR) &
-+	        (SCxSR_RDxF(port) | SCxSR_DR(port))) != 0;
- }
- 
- /*
-@@ -663,7 +664,7 @@ static void sci_receive_chars(struct uart_port *port)
- 	unsigned char flag;
- 
- 	status = serial_port_in(port, SCxSR);
--	if (!(status & SCxSR_RDxF(port)))
-+	if (!(status & (SCxSR_RDxF(port) | SCxSR_DR(port))))
- 		return;
- 
- 	while (1) {
-@@ -1014,7 +1015,7 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
- 	 * Rx Interrupt: if we're using DMA, the DMA controller clears RDF /
- 	 * DR flags
- 	 */
--	if (((ssr_status & SCxSR_RDxF(port)) || s->chan_rx) &&
-+	if (((ssr_status & (SCxSR_RDxF(port) | SCxSR_DR(port))) || s->chan_rx) &&
- 	    (scr_status & SCSCR_RIE))
- 		ret = sci_rx_interrupt(irq, ptr);
- 
-diff --git a/drivers/tty/serial/sh-sci.h b/drivers/tty/serial/sh-sci.h
-index d5db81a..9c4598d 100644
---- a/drivers/tty/serial/sh-sci.h
-+++ b/drivers/tty/serial/sh-sci.h
-@@ -8,6 +8,7 @@
- #define SCxSR_FER(port)		(((port)->type = PORT_SCI) ? SCI_FER    : SCIF_FER)
- #define SCxSR_PER(port)		(((port)->type = PORT_SCI) ? SCI_PER    : SCIF_PER)
- #define SCxSR_BRK(port)		(((port)->type = PORT_SCI) ? 0x00       : SCIF_BRK)
-+#define SCxSR_DR(port)		(((port)->type = PORT_SCI) ? 0x00       : SCIF_DR)
- 
- #define SCxSR_ERRORS(port)	(to_sci_port(port)->error_mask)
- 
+diff --git a/arch/sh/include/uapi/asm/ioctls.h b/arch/sh/include/uapi/asm/ioctls.h
+index 3422410..2ce75622 100644
+--- a/arch/sh/include/uapi/asm/ioctls.h
++++ b/arch/sh/include/uapi/asm/ioctls.h
+@@ -83,6 +83,8 @@
+ #define TCSETS2		_IOW('T', 43, struct termios2)
+ #define TCSETSW2	_IOW('T', 44, struct termios2)
+ #define TCSETSF2	_IOW('T', 45, struct termios2)
++#define TIOCGRS485	0x542E
++#define TIOCSRS485	0x542F
+ #define TIOCGPTN	_IOR('T',0x30, unsigned int) /* Get Pty Number (of pty-mux device) */
+ #define TIOCSPTLCK	_IOW('T',0x31, int)  /* Lock/unlock Pty */
+ #define TIOCGDEV	_IOR('T',0x32, unsigned int) /* Get primary device node of /dev/console */
 -- 
-1.8.4.5
+2.1.0
 
