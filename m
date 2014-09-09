@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 04 Sep 2014 01:12:47 +0000
+Date: Tue, 09 Sep 2014 04:22:02 +0000
 Subject: [PATCH 2/6] ARM: shmobile: armadillo800eva: Sync DTS
-Message-Id: <25aa7ba3fdfbfcb48e13c1b7d008bd9e2ca9fa82.1409792648.git.horms+renesas@verge.net.au>
+Message-Id: <25aa7ba3fdfbfcb48e13c1b7d008bd9e2ca9fa82.1410235700.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1409792648.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1409792648.git.horms+renesas@verge.net.au>
+References: <cover.1410235700.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1410235700.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
