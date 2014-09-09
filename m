@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 09 Sep 2014 21:16:40 +0000
+Date: Tue, 09 Sep 2014 21:24:41 +0000
 Subject: Re: [PATCH v2 01/10] clk: shmobile: sh73a0 common clock framework implementation
-Message-Id: <5759858.ftf5PyZH2j@avalon>
+Message-Id: <2752661.ULs4hDt7mz@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1409649186-1046-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 In-Reply-To: <1409649186-1046-2-git-send-email-ulrich.hecht+renesas@gmail.com>
@@ -12,7 +12,7 @@ To: linux-sh@vger.kernel.org
 
 Hi Ulrich,
 
-Thank you for the patch.
+One more comment.
 
 On Tuesday 02 September 2014 11:12:57 Ulrich Hecht wrote:
 > Driver for the SH73A0's clocks that are too specific to be supported by a
@@ -50,16 +50,10 @@ On Tuesday 02 September 2014 11:12:57 Ulrich Hecht wrote:
 > +  - reg: Base address and length of the memory resource used by the CPG
 > +
 > +  - clocks: Reference to the parent clocks
-
-The parent clocks should be named. Something like
-
-"clocks: References to the parent clocks extal1 and extal2, in that order"
-
 > +  - #clock-cells: Must be 1
 > +  - clock-output-names: The names of the clocks. Supported clocks are
-> "main",
-> +    "pll0", "pll1", "pll2", "pll3", "z", "dsi0phy", "dsi1phy", and "twd"
-> +
+> "main", +    "pll0", "pll1", "pll2", "pll3", "z", "dsi0phy", "dsi1phy", and
+> "twd" +
 > +
 > +Example
 > +-------
@@ -139,18 +133,9 @@ The parent clocks should be named. Something like
 > +	unsigned int shift;
 > +	unsigned int mask;
 > +	int flags;
-
-You don't seem to use the mask and flags fields. As all the div4 clocks use a 
-4 bits divisor you can most likely remove the mask. If you want to keep the 
-flags you should turn them into an unsigned long, as that's what the clock API 
-uses.
-
 > +};
 > +
 > +static struct div4_clk div4_clks[] = {
-
-I think you can make this array const.
-
 > +	{ "zg", "pll0", CPG_FRQCRA, 16, 0x0d7f, CLK_ENABLE_ON_INIT },
 > +	{ "m3", "pll1", CPG_FRQCRA, 12, 0x1dff, CLK_ENABLE_ON_INIT },
 > +	{ "b",  "pll1", CPG_FRQCRA,  8, 0x0dff, CLK_ENABLE_ON_INIT },
@@ -166,6 +151,14 @@ I think you can make this array const.
 > +	{ 0, 2 }, { 1, 3 }, { 2, 4 }, { 3, 6 }, { 4, 8 }, { 5, 12 },
 > +	{ 6, 16 }, { 7, 18 }, { 8, 24 }, { 10, 36 }, { 11, 48 },
 > +	{ 12, 7 }, { 0, 0 }
+
+Not all ratios are valid for all clocks, and not all clocks use the same 
+numerical values for the same ratios. I suppose the first problem can be 
+ignored for now if we assume that the registers are programmed with valid 
+values. The second problem, however, needs to be handled at least for the zg 
+clock that uses value 10 for a 1/5 divisor instead of 1/36 (unless this is a 
+mistake in the datasheet).
+
 > +};
 > +
 > +static struct clk * __init
@@ -182,16 +175,6 @@ I think you can make this array const.
 > +		/* extal1, extal1_div2, extal2, extal2_div2 */
 > +		parent_name = of_clk_get_parent_name(np,
 > +			(clk_readl(cpg->reg + CPG_CKSCR) >> 28) & 3);
-
-That's four options, but your bindings example only define two input clocks 
-and the bindings themselves don't document what the other two clocks should 
-be. Unless I'm mistaken there are two possible input clocks and two possible 
-divisors for them, you could implement it as
-
-		reg = clk_readl(cpg->reg + CPG_CKSCR);
-		parent_name = of_clk_get_parent_name(np, (reg >> 29) & 1);
-		div = ((reg >> 28) & 1) + 1;
-
 > +	} else if (!strncmp(name, "pll", 3)) {
 > +		void __iomem *enable_reg = cpg->reg;
 > +		u32 enable_bit = name[3] - '0';
@@ -214,20 +197,11 @@ divisors for them, you could implement it as
 > +			return ERR_PTR(-EINVAL);
 > +		}
 > +		if (clk_readl(cpg->reg + CPG_PLLECR) & BIT(enable_bit)) {
-
-If I understand the check correctly, it considers that a disabled PLL will 
-work in pass-through mode and will output the input frequency at its output. 
-Have you been able to test that ? I think it would at least deserve a comment 
-explaining what's going on.
-
 > +			mult = ((clk_readl(enable_reg) >> 24) & 0x3f) + 1;
 > +			/* handle CFG bit for PLL1 and PLL2 */
 > +			if (enable_bit = 1 || enable_bit = 2)
 > +				if (clk_readl(enable_reg) & BIT(20))
 > +					mult *= 2;
-
-You could read the PLL enable register once only and use the cached value.
-
 > +		}
 > +	} else if (!strcmp(name, "dsi0phy") || !strcmp(name, "dsi1phy")) {
 > +		u32 phy_no = name[3] - '0';
@@ -236,20 +210,10 @@ You could read the PLL enable register once only and use the cached value.
 > +
 > +		parent_name = phy_no ? "dsi1pck" : "dsi0pck";
 > +		div = __raw_readl(dsi_reg);
-
-Any reason to use clk_readl above and __raw_readl here ?
-
 > +		if (!(div & 0xb8000))
 > +			div = 1;
 > +		else
 > +			div = (div & 0x3f) + 1;
-
-To avoid assigning a different value to div and then reassigning 1, how about
-
-		reg = __raw_readl(dsi_reg);
-		if (reg & 0xb8000)
-			div = (reg & 0x3f) + 1;
-
 > +	} else {
 > +		struct div4_clk *c;
 > +
