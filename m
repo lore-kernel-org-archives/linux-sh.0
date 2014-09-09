@@ -1,92 +1,57 @@
-From: Grygorii Strashko <grygorii.strashko@ti.com>
-Date: Wed, 17 Sep 2014 16:04:50 +0000
-Subject: Re: [RFC PATCH 0/3] PM / clock_ops: allow to specify custom pm_clk_notifier callback
-Message-Id: <5419B122.3010509@ti.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 09 Sep 2014 14:54:26 +0000
+Subject: [RFC 0/4] i2c: slave support framework for Linux devices
+Message-Id: <1410274470-12712-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1406313096-29761-1-git-send-email-grygorii.strashko@ti.com>	<7hr3zln692.fsf@linaro.org>	<540F0381.7010500@ti.com>
- <CAMuHMdUJzXNep14ny24R=FhA4WzsWU9401ZU-nnZ_CkkJqxSsA@mail.gmail.com>
-In-Reply-To: <CAMuHMdUJzXNep14ny24R=FhA4WzsWU9401ZU-nnZ_CkkJqxSsA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+Finally, here is my take on the often desired feature that Linux can not only
+be an I2C master, but also an I2C slave. Compared to my draft sent out last
+week, this RFC has been tested on hardware (Renesas Lager board) and works \o/
 
-On 09/17/2014 06:03 PM, Geert Uytterhoeven wrote:
-> 
-> On Tue, Sep 9, 2014 at 3:41 PM, Grygorii Strashko
-> <grygorii.strashko@ti.com> wrote:
->>> Since you're essentially gutting clock_ops, have you considered
->>> migrating to genpd and having your own pm_domain ops that manage your clocks?
->>
->> Yes. I've thought about using genpd. But:
->> - PM domain is not merged in 3.17 and I don't know if it will be merged in 3.18 :(
->> http://www.spinics.net/lists/arm-kernel/msg357003.html
-> 
-> Let's wait and see...
-> 
->> - To switch using PM domains I will need to create PM domain node PER EACH device,
->> (if I understand PM domain bindings right). For example:
->>
->> +power_netcp: power-controller@0 {
->> +               compatible = "keystone,power-controller";
->> +               #power-domain-cells = <0>;
->> +               clocks = <&clkcpgmac>, <&clkpa>, <&chipclk12>;
->> +       };
->>
->> netcp: netcp@2090000 {
->>                  reg = <0x2620110 0x8>;
->> +               power-domains = <&power_netcp>;
->> ...
->> }
-> 
-> I think you can have one power-controller, and add the clocks and
-> power-domains properties to the individual device nodes.
-> 
-> Then the power-controller driver can use the attach callback
-> introduced in "[PATCH/RFC v2 04/12] PM / Domains: Add genpd attach/detach
-> callbacks" (https://lkml.org/lkml/2014/9/16/429) to set up the clocks?
+One big part still missing is documentation, so brave ones need to "use the
+source". However, this approach turned out to be even less intrusive than
+expected, so that is hopefully a good sign.
 
-Thanks for the advice. I saw your series :)
-Unfortunately, I think, It can't be used as is, because there still no way
- to separate "functional" and "optional" clocks for the device in DT.
-So, I'll need to define some sort of "fck-clocks" or "pm-clocks" properties for each device -
-but, it seems to be mostly impossible to obtain the approval of such a decision  :(
- (taking into account current state of discussion
-  https://lkml.org/lkml/2014/6/12/441).
+Basically, an I2C slave is a standard I2C client providing a callback function.
+When registering as a slave, the connection to the I2C adapter is made which
+uses the callback when a slave event happens. That splits the HW support
+(enabling slave mode on the adapter) and SW support (here a generic eeprom
+simulator) nicely IMO.
 
-There no such problems with Gen PD, but, as drawback:
-- I have to define one Gen PD per-device.
-- some CLK data duplication is present if Driver code need
-  to operate with clocks in legacy way (for example to get current
-  CLK  frequency).
+Besides documentation, there are still some error checks missing and more
+features could also be added (of course). Yet, I think this version is good
+enough to discuss the steps taken here.
 
-Actually, I've done RFC implementation already and I hope to post it soon.
-My DT looks like:
-+               netcp_domain: netcp_pm_controller {
-+                       compatible = "ti,keystone-pm-controller";
-+                       clocks = <&clkpa>, <&clkcpgmac>, <&chipclk12>;
-+                       #power-domain-cells = <0>;
-+               };
-+
-                netcp: netcp@2090000 {
-                        reg = <0x2620110 0x8>;
-                        reg-names = "efuse";
-@@ -229,6 +252,7 @@
-                        #address-cells = <1>;
-                        #size-cells = <1>;
-                        ranges;
-+                       power-domains = <&netcp_domain>;
- 
-                        clocks = <&clkpa>, <&clkcpgmac>, <&chipclk12>;
-                        dma-coherent;
+The patches are based on top of 3.17-rc4, but will easily apply to renesas/devel.
+A git tree can be found here:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git i2c/slave-support
+
+Comments welcome! Thanks,
+
+   Wolfram
 
 
-By the way, looks like you did the same thing as I:
-I've hacked cock_ops, You - Generic PD ;P
-but the goal is the same - add hooks for platform's specific initialization code
-to workaround imperfection of clock_ops framework :)
+Wolfram Sang (4):
+  i2c: core changes for slave support
+  i2c: slave: add eeprom simulator driver
+  i2c: rcar: add slave support
+  ARM: shmobile: r8a7790: adapt DTS for I2C slave support
 
-regards,
--grygorii
+ arch/arm/boot/dts/r8a7790-lager.dts |  15 ++--
+ drivers/i2c/Kconfig                 |  10 +++
+ drivers/i2c/Makefile                |   1 +
+ drivers/i2c/busses/i2c-rcar.c       | 122 ++++++++++++++++++++++++++---
+ drivers/i2c/i2c-core.c              |  44 +++++++++++
+ drivers/i2c/i2c-slave-eeprom.c      | 152 ++++++++++++++++++++++++++++++++++++
+ include/linux/i2c.h                 |  22 ++++++
+ 7 files changed, 352 insertions(+), 14 deletions(-)
+ create mode 100644 drivers/i2c/i2c-slave-eeprom.c
+
+-- 
+2.0.0
+
