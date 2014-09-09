@@ -1,48 +1,44 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 09 Sep 2014 02:53:45 +0000
-Subject: Re: [PATCH v3 0/3] ARM: shmobile: sh73a0: Enable CMT1 device using DT
-Message-Id: <20140909025340.GG31320@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 09 Sep 2014 06:43:40 +0000
+Subject: [PATCH 0/6 v4] mmc: remove MMC_CAP2_NO_MULTI_READ flags
+Message-Id: <87k35d70pz.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410137828-4769-1-git-send-email-horms+renesas@verge.net.au>
- <CANqRtoRYvcEgbpK3=s3i6X2nikaeu6S1cdNZU3ycbWhXE_3oow@mail.gmail.com>
- <20140908015209.GA28715@verge.net.au>
-In-Reply-To: <20140908015209.GA28715@verge.net.au>
+References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-On Mon, Sep 08, 2014 at 10:52:13AM +0900, Simon Horman wrote:
-> On Mon, Sep 08, 2014 at 10:10:45AM +0900, Magnus Damm wrote:
-> > Hi Simon,
-> > 
-> > On Mon, Sep 8, 2014 at 9:57 AM, Simon Horman <horms+renesas@verge.net.au> wrote:
-> > > Hi,
-> > >
-> > > this is a slightly modified version of this change which
-> > > was previously available in
-> > > "[PATCH v2 00/10] sh73a0 common clock framework implementation"
-> > >
-> > > The purpose of breaking or this change is to allow it to
-> > > be applied independently of the changes in the above mentioned series.
-> > >
-> > > The changes are as follows:
-> > > - Don't use DT clocks as they are added by the above mentioned series
-> > >   and thus not present yet.
-> > > - Add patch to use SoC-specific 48-bit CMT compat string.
-> > >
-> > > Simon Horman (1):
-> > >   ARM: shmobile: sh73a0: Use SoC-specific 48-bit CMT compat string
-> > >
-> > > Ulrich Hecht (2):
-> > >   ARM: shmobile: sh73a0: Add CMT1 device to DT
-> > >   ARM: shmobile: kzm9g-reference: Enable CMT1 in device tree
-> > 
-> > Looking good, thanks for doing this!
-> > 
-> > Acked-by: Magnus Damm <damm+renesas@opensource.se>
-> 
-> Thanks, I plan to leave them open for review a little
-> bit longer and if all goes well queue them up tomorrow.
 
-Thanks, I have queued these up after squashing the first two patches together.
+Hi Ulf, Chris, and Simon
+
+These are v4 patches of removing MMC_CAP2_NO_MULTI_READ from mmc.
+
+Simon
+4) and 5) are for sh-arm patches.
+Can you check these, and give it your Acked-by ?
+
+Kuninori Morimoto (6):
+      1) mmc: use .multi_io_quirk on omap_hsmmc
+      2) mmc: use .multi_io_quirk on tmio_mmc
+      3) mmc: use .multi_io_quirk on sh_mobile
+      4) ARM: shmobile: remove MMC_CAP2_NO_MULTI_READ from koelsch
+      5) ARM: shmobile: remove MMC_CAP2_NO_MULTI_READ from lager
+      6) mmc: remove MMC_CAP2_NO_MULTI_READ flags
+
+ arch/arm/mach-shmobile/board-koelsch.c |    3 ---
+ arch/arm/mach-shmobile/board-lager.c   |    2 --
+ drivers/mmc/card/block.c               |    5 -----
+ drivers/mmc/host/omap_hsmmc.c          |   14 ++++++++++++--
+ drivers/mmc/host/sh_mobile_sdhi.c      |   20 +++++++++++++++++++-
+ drivers/mmc/host/tmio_mmc_pio.c        |   13 +++++++++++++
+ include/linux/mfd/tmio.h               |    3 +++
+ include/linux/mmc/host.h               |    1 -
+ 8 files changed, 47 insertions(+), 14 deletions(-)
+
+
+Best regards
+---
+Kuninori Morimoto
