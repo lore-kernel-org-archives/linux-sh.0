@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 04 Sep 2014 01:12:48 +0000
+Date: Tue, 09 Sep 2014 04:22:03 +0000
 Subject: [PATCH 3/6] ARM: shmobile: armadillo800eva: Build DTS for multiplatform
-Message-Id: <cc9517d52fbf4b6e8baf0254f90b47bc1a5d90bb.1409792648.git.horms+renesas@verge.net.au>
+Message-Id: <cc9517d52fbf4b6e8baf0254f90b47bc1a5d90bb.1410235700.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1409792648.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1409792648.git.horms+renesas@verge.net.au>
+References: <cover.1410235700.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1410235700.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
