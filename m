@@ -1,53 +1,77 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Fri, 05 Sep 2014 08:38:32 +0000
-Subject: [PATCH v4 0/2] Initial r8a7794/Alt device tree
-Message-Id: <1409906314-10946-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 09 Sep 2014 06:45:46 +0000
+Subject: [PATCH 3/6 v4] mmc: use .multi_io_quirk on sh_mobile
+Message-Id: <87fvg170mg.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
+	<87k35d70pz.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87k35d70pz.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-Hi!
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-These are the DT parts of the initial r8a7794 support, with the bugs pointed
-out by Khiem Nguyen fixed.
+Now, sh_mobile_sdhi can use .multi_io_quirk callback
+instead of MMC_CAP2_NO_MULTI_READ flags.
+let's use it.
 
-CU
-Uli
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v3 -> v4
 
+ - no change
 
-Changes since v3:
-- dropped C code
-- fixed compatible property for GIC
-- removed non-existing MSTP5 bit 1 in header file
+ drivers/mmc/host/sh_mobile_sdhi.c |   20 +++++++++++++++++++-
+ 1 file changed, 19 insertions(+), 1 deletion(-)
 
-Changes since v2:
-- dropped bindings stuff
-- split SoC and board DT into two patches
-
-Changes since v1:
-- removed loadaddr
-- added init_late method to DT_MACHINE_START
-- removed board file
-- renamed serial10 to serial0 because we're not popular enough to be
-  different
-- reordered patches according to dependencies
-
-
-Ulrich Hecht (2):
-  ARM: shmobile: Initial r8a7794 SoC device tree
-  ARM: shmobile: Initial Alt board device tree
-
- arch/arm/boot/dts/Makefile                |   3 +-
- arch/arm/boot/dts/r8a7794-alt.dts         |  47 +++
- arch/arm/boot/dts/r8a7794.dtsi            | 531 ++++++++++++++++++++++++++++++
- include/dt-bindings/clock/r8a7794-clock.h |  81 +++++
- 4 files changed, 661 insertions(+), 1 deletion(-)
- create mode 100644 arch/arm/boot/dts/r8a7794-alt.dts
- create mode 100644 arch/arm/boot/dts/r8a7794.dtsi
- create mode 100644 include/dt-bindings/clock/r8a7794-clock.h
-
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index f2585b6..a2e81a1 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -58,7 +58,6 @@ static const struct sh_mobile_sdhi_of_data of_rcar_gen2_compatible = {
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE |
+ 			  TMIO_MMC_CLK_ACTUAL,
+ 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+-	.capabilities2	= MMC_CAP2_NO_MULTI_READ,
+ 	.dma_rx_offset	= 0x2000,
+ };
+ 
+@@ -139,6 +138,24 @@ static int sh_mobile_sdhi_write16_hook(struct tmio_mmc_host *host, int addr)
+ 	return 0;
+ }
+ 
++static int sh_mobile_sdhi_multi_io_quirk(struct mmc_card *card,
++					 unsigned int direction, int blk_size)
++{
++	/*
++	 * In Renesas controllers, when performing a
++	 * multiple block read of one or two blocks,
++	 * depending on the timing with which the
++	 * response register is read, the response
++	 * value may not be read properly.
++	 * Use single block read for this HW bug
++	 */
++	if ((direction = MMC_DATA_READ) &&
++	    blk_size = 2)
++		return 1;
++
++	return blk_size;
++}
++
+ static void sh_mobile_sdhi_cd_wakeup(const struct platform_device *pdev)
+ {
+ 	mmc_detect_change(platform_get_drvdata(pdev), msecs_to_jiffies(100));
+@@ -194,6 +211,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
+ 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
+ 	mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
++	mmc_data->multi_io_quirk = sh_mobile_sdhi_multi_io_quirk;
+ 	if (p) {
+ 		mmc_data->flags = p->tmio_flags;
+ 		mmc_data->ocr_mask = p->tmio_ocr_mask;
 -- 
-1.8.4.5
+1.7.9.5
 
