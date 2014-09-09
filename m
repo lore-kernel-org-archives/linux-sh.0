@@ -1,38 +1,51 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Wed, 03 Sep 2014 00:44:59 +0000
-Subject: Re: [PATCH 1/7 v2] mmc: add blk_size_workaround for HW bug
-Message-Id: <87d2bd7cs6.wl%kuninori.morimoto.gx@gmail.com>
+Date: Tue, 09 Sep 2014 06:46:32 +0000
+Subject: [PATCH 5/6 v4] ARM: shmobile: remove MMC_CAP2_NO_MULTI_READ from lager
+Message-Id: <87d2b570l6.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
-	<87lhq2kcif.wl%kuninori.morimoto.gx@gmail.com>
-	<87k35mkcgu.wl%kuninori.morimoto.gx@gmail.com>
-	<CAPDyKFrFMCjKHDLYs=fZKuhf8VD-x+prvAok_2Ngn4vGc2x=hA@mail.gmail.com>
-In-Reply-To: <CAPDyKFrFMCjKHDLYs=fZKuhf8VD-x+prvAok_2Ngn4vGc2x=hA@mail.gmail.com>
+	<87k35d70pz.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87k35d70pz.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Hi Ulf
+sh_mobile_sdhi cares multiblock read bug.
+remove MMC_CAP2_NO_MULTI_READ flag from board code
 
-> > Current mmc block.c has MMC_CAP2_NO_MULTI_READ flag
-> > for HW bug workaround, but it should be implemented
-> > under driver, not framework.
-> > This patch is prepare for it
-> 
-> I like the idea of this patchset!
-> 
-> Still, historically, we have been using MMC_CAP* to solve these kind
-> issues. Therefore I think the commit message deserves a better
-> explanation to why we invent a new host ops function pointer for this
-> particular case.
-
-Thank you for your feedback.
-(Especially "English comment/naming" feedback is very useful for me :)
-I send v3 patchset soon
-
-Best regards
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Kuninori Morimoto
+v3 -> v4
+
+- no change
+
+ arch/arm/mach-shmobile/board-lager.c |    2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index e1d8215..f5a98e2 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -630,7 +630,6 @@ static void __init lager_add_rsnd_device(void)
+ static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_POWER_OFF_CARD,
+-	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
+ 			  TMIO_MMC_WRPROTECT_DISABLE,
+ };
+@@ -644,7 +643,6 @@ static struct resource sdhi0_resources[] __initdata = {
+ static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_POWER_OFF_CARD,
+-	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
+ 			  TMIO_MMC_WRPROTECT_DISABLE,
+ };
+-- 
+1.7.9.5
+
