@@ -1,41 +1,40 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 01 Sep 2014 13:22:55 +0000
-Subject: Re: [PATCH] usb: renesas_usbhs: fix driver dependencies
-Message-Id: <5404732F.4000203@cogentembedded.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 10 Sep 2014 10:33:27 +0000
+Subject: [PATCH 0/4] usb: renesas_usbhs: fixes this driver in gadget mode (part2)
+Message-Id: <541028F7.4050405@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8246169.KgpDT6Hn5J@amdc1032>
-In-Reply-To: <8246169.KgpDT6Hn5J@amdc1032>
+References: <53F725E3.4050304@renesas.com>
+In-Reply-To: <53F725E3.4050304@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kyungmin Park <kyungmin.park@samsung.com>, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+If we tested this driver as gadget, some issues below happened:
+ - Oops happened if g_audio.
+ - A usb enumeration may fail if we do insmod during connected the usb cable.
+ - A transaction will not finish if g_zero.
+ - A usb enumeration may fail after we re-connected the usb cable.
 
-On 9/1/2014 5:14 PM, Bartlomiej Zolnierkiewicz wrote:
+This patch serias fixes them.
+This patch serias is based on Felipe's usb.git, testing/fixes branch.
+(commit id: 0b93a4c838fa10370d72f86fe712426ac63804de)
 
-> Renesas USBHS controller support should be available only on
-> Renesas ARM SoCs and SuperH architecture.
+Yoshihiro Shimoda (4):
+  usb: renesas_usbhs: gadget: fix NULL pointer dereference in
+    ep_disable()
+  usb: renesas_usbhs: gadget: fix the behavior of pullup
+  usb: renesas_usbhs: fix the timing of dcp_control_transfer_done
+  usb: renesas_usbhs: fix usbhs_pipe_clear() for DCP PIPE
 
-> Signed-off-by: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
-> Acked-by: Kyungmin Park <kyungmin.park@samsung.com>
-> Cc: Simon Horman <horms@verge.net.au>
-> Cc: Magnus Damm <magnus.damm@gmail.com>
-> ---
->   drivers/usb/renesas_usbhs/Kconfig |    1 +
->   1 file changed, 1 insertion(+)
+ drivers/usb/renesas_usbhs/common.c     |    6 ++++--
+ drivers/usb/renesas_usbhs/fifo.c       |   34 ++++++++++++++++---------------
+ drivers/usb/renesas_usbhs/fifo.h       |    1 +
+ drivers/usb/renesas_usbhs/mod_gadget.c |   35 ++++++++++++++++++++++++++++++--
+ drivers/usb/renesas_usbhs/mod_host.c   |    2 +-
+ drivers/usb/renesas_usbhs/pipe.c       |    8 ++++++--
+ 6 files changed, 63 insertions(+), 23 deletions(-)
 
-> Index: b/drivers/usb/renesas_usbhs/Kconfig
-> =================================> --- a/drivers/usb/renesas_usbhs/Kconfig	2014-07-30 14:31:51.883523522 +0200
-> +++ b/drivers/usb/renesas_usbhs/Kconfig	2014-09-01 14:25:42.028512490 +0200
-> @@ -5,6 +5,7 @@
->   config USB_RENESAS_USBHS
->   	tristate 'Renesas USBHS controller'
->   	depends on USB_GADGET
-> +	depends on ARCH_SHMOBILE || ARCH_SH || COMPILE_TEST
-
-    Again, I think you meant SUPERH here, not ARCH_SH.
-
-WBR, Sergei
+-- 
+1.7.9.5
 
