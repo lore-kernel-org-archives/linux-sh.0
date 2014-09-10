@@ -1,109 +1,118 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 09 Sep 2014 23:55:31 +0000
-Subject: Re: [PATCH v2 06/10] ARM: shmobile: kzm9g-reference: Enable CMT1 in device tree
-Message-Id: <20140909235530.GD16682@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 10 Sep 2014 10:34:13 +0000
+Subject: [PATCH 4/4] usb: renesas_usbhs: fix usbhs_pipe_clear() for DCP PIPE
+Message-Id: <54102925.10808@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409649186-1046-7-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1409649186-1046-7-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Sep 10, 2014 at 12:50:19AM +0300, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Thursday 04 September 2014 16:10:25 Simon Horman wrote:
-> > On Tue, Sep 02, 2014 at 11:13:02AM +0200, Ulrich Hecht wrote:
-> > > Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> > > ---
-> > > 
-> > >  arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |  4 ++++
-> > >  arch/arm/mach-shmobile/setup-sh73a0.c        | 11 +----------
-> > 
-> > Please split this into two patches, one per file.
-> 
-> This would break bisection.
+Since the DCPCTR doesn't have the ACLRM bit, the usbus_pipe_clear()
+should not call the usbhsp_pipectrl_set() with ACLRM.
+So, this patch fixes this issue to add the usbhs_fifo_clear_dcp()
+in fifo.c because the controller needs the CFIFO to clear the
+DCP PIPE.
 
-Thanks, in that case I withdraw my request.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ drivers/usb/renesas_usbhs/fifo.c       |   18 ++++++++++++++++++
+ drivers/usb/renesas_usbhs/fifo.h       |    1 +
+ drivers/usb/renesas_usbhs/mod_gadget.c |    2 +-
+ drivers/usb/renesas_usbhs/mod_host.c   |    2 +-
+ drivers/usb/renesas_usbhs/pipe.c       |    8 ++++++--
+ 5 files changed, 27 insertions(+), 4 deletions(-)
 
-> 
-> > >  2 files changed, 5 insertions(+), 10 deletions(-)
-> > > 
-> > > diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-> > > b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts index e33d698..83c6058
-> > > 100644
-> > > --- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-> > > +++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-> > > @@ -177,6 +177,10 @@
-> > >  	clock-frequency = <48000000>;
-> > >  };
-> > > 
-> > > +&cmt1 {
-> > > +	status = "ok";
-> > > +};
-> > > +
-> > >  &i2c0 {
-> > >  	status = "okay";
-> > >  	as3711@40 {
-> > > diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c
-> > > b/arch/arm/mach-shmobile/setup-sh73a0.c index 6d73b83..2c6ef79 100644
-> > > --- a/arch/arm/mach-shmobile/setup-sh73a0.c
-> > > +++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-> > > @@ -697,10 +697,6 @@ static struct platform_device irqpin3_device = {
-> > >  	},
-> > >  };
-> > > 
-> > > -static struct platform_device *sh73a0_devices_dt[] __initdata = {
-> > > -	&cmt1_device,
-> > > -};
-> > > -
-> > >  static struct platform_device *sh73a0_early_devices[] __initdata = {
-> > >  	&scif0_device,
-> > >  	&scif1_device,
-> > > @@ -713,6 +709,7 @@ static struct platform_device *sh73a0_early_devices[]
-> > > __initdata = {> 
-> > >  	&scif8_device,
-> > >  	&tmu0_device,
-> > >  	&ipmmu_device,
-> > > +	&cmt1_device,
-> > >  };
-> > >  
-> > >  static struct platform_device *sh73a0_late_devices[] __initdata = {
-> > > @@ -737,8 +734,6 @@ void __init sh73a0_add_standard_devices(void)
-> > > 
-> > >  	/* Clear software reset bit on SY-DMAC module */
-> > >  	__raw_writel(__raw_readl(SRCR2) & ~(1 << 18), SRCR2);
-> > > -	platform_add_devices(sh73a0_devices_dt,
-> > > -			    ARRAY_SIZE(sh73a0_devices_dt));
-> > >  	platform_add_devices(sh73a0_early_devices,
-> > >  			    ARRAY_SIZE(sh73a0_early_devices));
-> > >  	platform_add_devices(sh73a0_late_devices,
-> > > @@ -765,8 +760,6 @@ void __init sh73a0_earlytimer_init(void)
-> > > 
-> > >  void __init sh73a0_add_early_devices(void)
-> > >  {
-> > > -	early_platform_add_devices(sh73a0_devices_dt,
-> > > -				   ARRAY_SIZE(sh73a0_devices_dt));
-> > >  	early_platform_add_devices(sh73a0_early_devices,
-> > >  				   ARRAY_SIZE(sh73a0_early_devices));
-> > > 
-> > > @@ -782,8 +775,6 @@ void __init sh73a0_add_standard_devices_dt(void)
-> > >  #ifndef CONFIG_COMMON_CLK
-> > >  	sh73a0_clock_init();
-> > >  #endif
-> > > -	platform_add_devices(sh73a0_devices_dt,
-> > > -			     ARRAY_SIZE(sh73a0_devices_dt));
-> > >  	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
-> > >  }
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
+index 0e07925..9b48384 100644
+--- a/drivers/usb/renesas_usbhs/fifo.c
++++ b/drivers/usb/renesas_usbhs/fifo.c
+@@ -1160,6 +1160,24 @@ static void usbhsf_dma_complete(void *arg)
+ 			usbhs_pipe_number(pipe), ret);
+ }
+
++void usbhs_fifo_clear_dcp(struct usbhs_pipe *pipe)
++{
++	struct usbhs_priv *priv = usbhs_pipe_to_priv(pipe);
++	struct usbhs_fifo *fifo = usbhsf_get_cfifo(priv); /* CFIFO */
++
++	/* clear DCP FIFO of transmission */
++	if (usbhsf_fifo_select(pipe, fifo, 1) < 0)
++		return;
++	usbhsf_fifo_clear(pipe, fifo);
++	usbhsf_fifo_unselect(pipe, fifo);
++
++	/* clear DCP FIFO of reception */
++	if (usbhsf_fifo_select(pipe, fifo, 0) < 0)
++		return;
++	usbhsf_fifo_clear(pipe, fifo);
++	usbhsf_fifo_unselect(pipe, fifo);
++}
++
+ /*
+  *		fifo init
+  */
+diff --git a/drivers/usb/renesas_usbhs/fifo.h b/drivers/usb/renesas_usbhs/fifo.h
+index a168a17..79ad5f9 100644
+--- a/drivers/usb/renesas_usbhs/fifo.h
++++ b/drivers/usb/renesas_usbhs/fifo.h
+@@ -74,6 +74,7 @@ int usbhs_fifo_probe(struct usbhs_priv *priv);
+ void usbhs_fifo_remove(struct usbhs_priv *priv);
+ void usbhs_fifo_init(struct usbhs_priv *priv);
+ void usbhs_fifo_quit(struct usbhs_priv *priv);
++void usbhs_fifo_clear_dcp(struct usbhs_pipe *pipe);
+
+ /*
+  * packet info
+diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
+index ba890c1..0a54b26 100644
+--- a/drivers/usb/renesas_usbhs/mod_gadget.c
++++ b/drivers/usb/renesas_usbhs/mod_gadget.c
+@@ -782,9 +782,9 @@ static int usbhsg_try_start(struct usbhs_priv *priv, u32 status)
+ 	/*
+ 	 * pipe initialize and enable DCP
+ 	 */
++	usbhs_fifo_init(priv);
+ 	usbhs_pipe_init(priv,
+ 			usbhsg_dma_map_ctrl);
+-	usbhs_fifo_init(priv);
+
+ 	/* dcp init instead of usbhsg_ep_enable() */
+ 	dcp->pipe		= usbhs_dcp_malloc(priv);
+diff --git a/drivers/usb/renesas_usbhs/mod_host.c b/drivers/usb/renesas_usbhs/mod_host.c
+index 10e1ded..f0d3231 100644
+--- a/drivers/usb/renesas_usbhs/mod_host.c
++++ b/drivers/usb/renesas_usbhs/mod_host.c
+@@ -1474,9 +1474,9 @@ static int usbhsh_start(struct usbhs_priv *priv)
+ 	/*
+ 	 * pipe initialize and enable DCP
+ 	 */
++	usbhs_fifo_init(priv);
+ 	usbhs_pipe_init(priv,
+ 			usbhsh_dma_map_ctrl);
+-	usbhs_fifo_init(priv);
+ 	usbhsh_pipe_init_for_host(priv);
+
+ 	/*
+diff --git a/drivers/usb/renesas_usbhs/pipe.c b/drivers/usb/renesas_usbhs/pipe.c
+index 040bcef..007f45a 100644
+--- a/drivers/usb/renesas_usbhs/pipe.c
++++ b/drivers/usb/renesas_usbhs/pipe.c
+@@ -618,8 +618,12 @@ void usbhs_pipe_data_sequence(struct usbhs_pipe *pipe, int sequence)
+
+ void usbhs_pipe_clear(struct usbhs_pipe *pipe)
+ {
+-	usbhsp_pipectrl_set(pipe, ACLRM, ACLRM);
+-	usbhsp_pipectrl_set(pipe, ACLRM, 0);
++	if (usbhs_pipe_is_dcp(pipe)) {
++		usbhs_fifo_clear_dcp(pipe);
++	} else {
++		usbhsp_pipectrl_set(pipe, ACLRM, ACLRM);
++		usbhsp_pipectrl_set(pipe, ACLRM, 0);
++	}
+ }
+
+ static struct usbhs_pipe *usbhsp_get_pipe(struct usbhs_priv *priv, u32 type)
+-- 
+1.7.9.5
+
