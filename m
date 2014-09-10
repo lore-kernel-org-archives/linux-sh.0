@@ -1,42 +1,40 @@
-From: Kevin Hilman <khilman@kernel.org>
-Date: Fri, 26 Sep 2014 15:47:34 +0000
-Subject: Re: [PATCH v3 01/13] PM / Domains: Add genpd attach/detach callbacks
-Message-Id: <7heguy4c4p.fsf@deeprootsystems.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 10 Sep 2014 10:33:40 +0000
+Subject: [PATCH 1/4] usb: renesas_usbhs: gadget: fix NULL pointer dereference in ep_disable()
+Message-Id: <54102904.6060703@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
- <1411662520-22795-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1411662520-22795-2-git-send-email-geert+renesas@glider.be>
- (Geert Uytterhoeven's message of "Thu, 25 Sep 2014 18:28:28 +0200")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Geert Uytterhoeven <geert+renesas@glider.be> writes:
+This patch fixes an issue that the NULL pointer dereference happens
+when we use g_audio driver. Since the g_audio driver will call
+usb_ep_disable() in afunc_set_alt() before it calls usb_ep_enable(),
+the uep->pipe of renesas usbhs driver will be NULL. So, this patch
+adds a condition to avoid the oops.
 
-> While a PM domain can enable PM runtime management of its devices' module
-> clocks by setting
->
-> 	genpd->dev_ops.stop = pm_clk_suspend;
-> 	genpd->dev_ops.start = pm_clk_resume;
->
-> this also requires registering the clocks with the pm_clk subsystem.
-> In the legacy case, this is handled by the platform code, after
-> attaching the device to its PM domain.
->
-> When the devices are instantiated from DT, devices are attached to their
-> PM domains by generic code, leaving no method for the platform-specific
-> PM domain code to register their clocks.
->
-> Add two callbacks, allowing a PM domain to perform platform-specific
-> tasks when a device is attached to or detached from a PM domain.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ drivers/usb/renesas_usbhs/mod_gadget.c |    3 +++
+ 1 file changed, 3 insertions(+)
 
-I replied to the previous RFC, but just to be thorough (and because I
-like this approach):
+diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
+index 04e6505..a582222 100644
+--- a/drivers/usb/renesas_usbhs/mod_gadget.c
++++ b/drivers/usb/renesas_usbhs/mod_gadget.c
+@@ -602,6 +602,9 @@ static int usbhsg_ep_disable(struct usb_ep *ep)
+ 	struct usbhsg_uep *uep = usbhsg_ep_to_uep(ep);
+ 	struct usbhs_pipe *pipe = usbhsg_uep_to_pipe(uep);
 
-Reviewed-by: Kevin Hilman <khilman@linaro.org>
++	if (!uep || !uep->pipe)
++		return -EINVAL;
++
+ 	usbhsg_pipe_disable(uep);
+ 	usbhs_pipe_free(pipe);
 
-Kevin
+-- 
+1.7.9.5
+
