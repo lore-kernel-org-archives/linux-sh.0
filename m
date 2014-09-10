@@ -1,39 +1,44 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 09 Sep 2014 06:39:48 +0000
-Subject: Re: [PATCH 2/7 v3] mmc: use .multi_io_quirk on omap_hsmmc
-Message-Id: <87lhpt70we.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 10 Sep 2014 00:43:31 +0000
+Subject: [PATCH] ARM: shmobile: r8a7794: Remove unnecessary #ifdef CONFIG_USE_OF
+Message-Id: <1410309811-14918-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
-	<87bnqx78xr.wl%kuninori.morimoto.gx@gmail.com>
-	<878um178vn.wl%kuninori.morimoto.gx@gmail.com>
-	<CAPDyKFoj2_3APb1q_tJ8P8qmDb8RftOyx4+j_Sbb74kDSKEe7Q@mail.gmail.com>
-	<87zje97izx.wl%kuninori.morimoto.gx@gmail.com>
-	<CAPDyKFpns_+s3LQ-j=yE6vx-uzRtm5MwhxZVeB8r=fnBqJ8vBA@mail.gmail.com>
-	<87oaup72ew.wl%kuninori.morimoto.gx@gmail.com>
-	<CAPDyKFoVROGoj3fYSsLZLm1mOrD2o9UfYo03=4MbRj=PSuhXhg@mail.gmail.com>
-In-Reply-To: <CAPDyKFoVROGoj3fYSsLZLm1mOrD2o9UfYo03=4MbRj=PSuhXhg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
+The r8a7794 support is always compiled using ARCH_MULTIPLATFORM which
+selects USE_OF. So #ifdef CONFIG_USE_OF is unnecessary.
 
-Hi Ulf
-
-> > omap_hsmmc@0 0xAAAAAA irq = xxxx (MULTI read workaround is needed)
-> > omap_hsmmc@1 0xBBBBBB irq = yyyy (MULTI read workaround is not needed)
-> >
-> > Maybe current omap doesn't have 2 hsmmc on 1 SoC (I don't know)
-> > but, we don't know the future ?
-> > Of course I can follow your style if this issue never happen
-> 
-> The above can be handled by having different omap variants structs,
-> like how mmci does it. Also, I don't think we need to worry about that
-> now. So please adopt to my proposal.
-
-OK, I send patch soon
-
-Best regards
+Cc: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Reported-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Kuninori Morimoto
+
+This patch is based on renesas-devel-20140910v2-v3.17-rc4
+
+ arch/arm/mach-shmobile/setup-r8a7794.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/setup-r8a7794.c b/arch/arm/mach-shmobile/setup-r8a7794.c
+index 05e970c..c10acd1 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7794.c
++++ b/arch/arm/mach-shmobile/setup-r8a7794.c
+@@ -19,8 +19,6 @@
+ #include "rcar-gen2.h"
+ #include <asm/mach/arch.h>
+ 
+-#ifdef CONFIG_USE_OF
+-
+ static const char * const r8a7794_boards_compat_dt[] __initconst = {
+ 	"renesas,r8a7794",
+ 	NULL,
+@@ -32,4 +30,3 @@ DT_MACHINE_START(R8A7794_DT, "Generic R8A7794 (Flattened Device Tree)")
+ 	.init_time	= rcar_gen2_timer_init,
+ 	.dt_compat	= r8a7794_boards_compat_dt,
+ MACHINE_END
+-#endif /* CONFIG_USE_OF */
+-- 
+2.0.1
+
