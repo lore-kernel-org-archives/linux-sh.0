@@ -1,246 +1,210 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Mon, 01 Sep 2014 13:19:42 +0000
+Date: Wed, 10 Sep 2014 00:48:13 +0000
 Subject: Re: [PATCH 1/2] ARM: multi_v7_defconfig: Enable shmobile platforms
-Message-Id: <20140901131942.GC32599@verge.net.au>
+Message-Id: <20140910004812.GB28662@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1409234429-1916-1-git-send-email-geert+renesas@glider.be>
- <1965890.bT7bZyQJt8@amdc1032> <20140901015426.GC10680@verge.net.au>
- <1971708.Jzqdj6e7RC@amdc1032>
-In-Reply-To: <1971708.Jzqdj6e7RC@amdc1032>
+In-Reply-To: <1409234429-1916-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+On Thu, Aug 28, 2014 at 04:00:28PM +0200, Geert Uytterhoeven wrote:
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> ---
+> Based on next-20140828
+> For now excluding r8a7740/armadillo, as it fails to boot on armadillo
 
-On Mon, Sep 01, 2014 at 02:42:02PM +0200, Bartlomiej Zolnierkiewicz wrote:
-> 
-> Hi,
-> 
-> On Monday, September 01, 2014 10:54:26 AM Simon Horman wrote:
-> > On Fri, Aug 29, 2014 at 08:05:49PM +0200, Bartlomiej Zolnierkiewicz wrote:
-> > > 
-> > > Hi,
-> > > 
-> > > On Thursday, August 28, 2014 04:00:28 PM Geert Uytterhoeven wrote:
-> > > > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> > > > ---
-> > > > Based on next-20140828
-> > > > For now excluding r8a7740/armadillo, as it fails to boot on armadillo
-> > > > 
-> > > >  arch/arm/configs/multi_v7_defconfig | 51 +++++++++++++++++++++++++++++++++++--
-> > > >  1 file changed, 49 insertions(+), 2 deletions(-)
-> > > 
-> > > I've been looking lately into making it possible to easily go
-> > > from multi_v7_defconfig config to a single platform one (in my
-> > > case Exynos one) and removing the need to keep the latter (i.e.
-> > > exynos_defconfig) in the kernel tree in the long-term.
-> > > 
-> > > Because of this I've noticed that some config options for platform
-> > > specific hardware that are selected in multi_v7_defconfig don't
-> > > have proper dependencies.  This results in more complex than
-> > > necessary single platform configs (obtained from a multiplatform
-> > > config) and unnecessarily bigger resulting kernel images.
-> > > 
-> > > Your patch also adds/uncovers some such config options.
-> > > 
-> > > Lets first look at sizes of resulting vmlinux images for single
-> > > platform Exynos config before and after your patch:
-> > > 
-> > >   $ size vmlinux.*
-> > >      text    data     bss     dec     hex filename
-> > >   7817317  517188  278992 8613497  836e79 vmlinux.before
-> > >   7978325  527012  279056 8784393  860a09 vmlinux.after
-> > > 
-> > >   (=> the patch results in 170kB bigger vmlinux size)
-> > > 
-> > > and the configs diff later:
-> > > 
-> > > --- multi_v7_exynos_only	2014-08-29 12:29:31.881485357 +0200
-> > > +++ multi_v7_exynos_only_shmobile	2014-08-29 12:36:24.361496247 +0200
-> > > @@ -70,6 +70,8 @@
-> > >  CONFIG_BRCMSTB_GISB_ARB=y
-> > >  CONFIG_VEXPRESS_CONFIG=y
-> > >  CONFIG_MTD=y
-> > > +CONFIG_MTD_M25P80=y
-> > > +CONFIG_MTD_SPI_NOR=y
-> > >  CONFIG_BLK_DEV_LOOP=y
-> > >  CONFIG_ICS932S401=y
-> > >  CONFIG_APDS9802ALS=y
-> > > @@ -86,11 +88,13 @@
-> > >  CONFIG_MVMDIO=y
-> > >  CONFIG_KS8851=y
-> > >  CONFIG_R8169=y
-> > > +CONFIG_SH_ETH=y
-> > > 
-> > > This seems to be option for Renesas specific hardware and it has
-> > > a footprint of 23kB.
-> > > 
-> > > [ I think that this option should depend on ARCH_SHMOBILE || ARCH_SH. ]
-> > > 
-> > >  CONFIG_SMSC911X=y
-> > >  CONFIG_STMMAC_ETH=y
-> > >  CONFIG_AT803X_PHY=y
-> > >  CONFIG_MARVELL_PHY=y
-> > >  CONFIG_ICPLUS_PHY=y
-> > > +CONFIG_MICREL_PHY=y
-> > > 
-> > > This gets selected by CONFIG_SH_ETH and costs us 4kB.
-> > > 
-> > >  CONFIG_USB_PEGASUS=y
-> > >  CONFIG_USB_USBNET=y
-> > >  CONFIG_USB_NET_SMSC75XX=y
-> > > @@ -110,6 +114,7 @@
-> > >  CONFIG_SERIAL_8250=y
-> > >  CONFIG_SERIAL_8250_CONSOLE=y
-> > >  CONFIG_SERIAL_8250_DW=y
-> > > +CONFIG_SERIAL_8250_EM=y
-> > >  CONFIG_SERIAL_AMBA_PL011=y
-> > >  CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
-> > >  CONFIG_SERIAL_SAMSUNG=y
-> > > @@ -122,11 +127,13 @@
-> > >  CONFIG_SERIAL_ST_ASC=y
-> > >  CONFIG_SERIAL_ST_ASC_CONSOLE=y
-> > >  CONFIG_I2C_CHARDEV=y
-> > > +CONFIG_I2C_MUX=y
-> > >  CONFIG_I2C_MUX_PCA954x=y
-> > >  CONFIG_I2C_MUX_PINCTRL=y
-> > >  CONFIG_I2C_DESIGNWARE_PLATFORM=y
-> > >  CONFIG_I2C_NOMADIK=y
-> > >  CONFIG_I2C_XILINX=y
-> > > +CONFIG_SPI=y
-> > >  CONFIG_SPI_CADENCE=y
-> > >  CONFIG_SPI_PL022=y
-> > >  CONFIG_SPI_XILINX=y
-> > > @@ -135,6 +142,7 @@
-> > >  CONFIG_PINCTRL_PALMAS=y
-> > >  CONFIG_GPIO_SYSFS=y
-> > >  CONFIG_GPIO_DWAPB=y
-> > > +CONFIG_GPIO_EM=y
-> > >  CONFIG_GPIO_PL061=y
-> > >  CONFIG_GPIO_PCA953X=y
-> > >  CONFIG_GPIO_PCA953X_IRQ=y
-> > > @@ -173,6 +181,7 @@
-> > >  CONFIG_REGULATOR_VIRTUAL_CONSUMER=y
-> > >  CONFIG_REGULATOR_AS3722=y
-> > >  CONFIG_REGULATOR_BCM590XX=y
-> > > +CONFIG_REGULATOR_DA9210=y
-> > >  CONFIG_REGULATOR_GPIO=y
-> > >  CONFIG_REGULATOR_MAX8907=y
-> > >  CONFIG_REGULATOR_PALMAS=y
-> > > @@ -187,9 +196,18 @@
-> > >  CONFIG_REGULATOR_VEXPRESS=y
-> > >  CONFIG_MEDIA_SUPPORT=y
-> > >  CONFIG_MEDIA_CAMERA_SUPPORT=y
-> > > +CONFIG_MEDIA_CONTROLLER=y
-> > > +CONFIG_VIDEO_V4L2_SUBDEV_API=y
-> > >  CONFIG_MEDIA_USB_SUPPORT=y
-> > >  CONFIG_USB_VIDEO_CLASS=y
-> > >  CONFIG_USB_GSPCA=y
-> > > +CONFIG_V4L_PLATFORM_DRIVERS=y
-> > > +CONFIG_SOC_CAMERA=y
-> > > +CONFIG_SOC_CAMERA_PLATFORM=y
-> > > +CONFIG_V4L_MEM2MEM_DRIVERS=y
-> > > +CONFIG_VIDEO_RENESAS_VSP1=y
-> > > 
-> > > This seems to be another option for Renesas specific hardware and it has
-> > > a footprint of 23kB.
-> > > 
-> > > [ I think that this option should depend on ARCH_SHMOBILE. ]
-> > > 
-> > > +# CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
-> > > +CONFIG_VIDEO_ADV7180=y
-> > >  CONFIG_DRM=y
-> > >  CONFIG_FB=y
-> > >  CONFIG_FB_ARMCLCD=y
-> > > @@ -204,6 +222,7 @@
-> > >  CONFIG_SND_SOC=y
-> > >  CONFIG_SND_SOC_WM8753=y
-> > >  CONFIG_SND_SOC_WM8903=y
-> > > +CONFIG_SND_SIMPLE_CARD=y
-> > >  CONFIG_USB=y
-> > >  CONFIG_USB_XHCI_HCD=y
-> > >  CONFIG_USB_EHCI_HCD=y
-> > > @@ -211,6 +230,7 @@
-> > >  CONFIG_USB_ISP1760_HCD=y
-> > >  CONFIG_USB_OHCI_HCD=y
-> > >  CONFIG_USB_OHCI_HCD_PLATFORM=y
-> > > +CONFIG_USB_RENESAS_USBHS=y
-> > > 
-> > > It seems to be yet another option for Renesas specific hardware and it
-> > > has a footprint of 18kB.
-> > > 
-> > > [ I think that this option should depend on ARCH_SHMOBILE || ARCH_SH. ]
-> > > 
-> > >  CONFIG_USB_STORAGE=y
-> > >  CONFIG_USB_CHIPIDEA=y
-> > >  CONFIG_USB_CHIPIDEA_HOST=y
-> > > @@ -220,6 +240,8 @@
-> > >  CONFIG_USB_GPIO_VBUS=y
-> > >  CONFIG_USB_ISP1301=y
-> > >  CONFIG_USB_ULPI=y
-> > > +CONFIG_USB_GADGET=y
-> > > +CONFIG_USB_RENESAS_USBHS_UDC=y
-> > > 
-> > > This one depends on CONFIG_USB_RENESAS_USBHS and costs us 3kB.
-> > > 
-> > >  CONFIG_MMC=y
-> > >  CONFIG_MMC_BLOCK_MINORS
-> > >  CONFIG_MMC_ARMMMCI=y
-> > > 
-> > > In total by fixing the above three options to have correct dependencies
-> > > it is possible to recover 86kB out of 170kB of vmlinux size inrease for
-> > > a single platform only config derived from a multiplatform one.
-> > > 
-> > > Simon/Magnus, is it okay to send patches fixing
-> > > 
-> > >   CONFIG_SH_ETH
-> > >   CONFIG_VIDEO_RENESAS_VSP1
-> > >   CONFIG_USB_RENESAS_USBHS
-> > > 
-> > > dependencies?
-> > 
-> > Hi Bartlomiej,
-> > 
-> > In general that seems reasonable to me.
-> > But I would tweak the dependency slightly to:
-> > 
-> > ARCH_SHMOBILE || ARCH_SH || COMPILE_TEST
-> 
-> Ok.
->  
-> > And in the case of CONFIG_VIDEO_RENESAS_VSP1 and CONFIG_USB_RENESAS_USBHS
-> > I think ARCH_SH could be omitted.
-> 
-> I agree w.r.t. CONFIG_VIDEO_RENESAS_VSP1 but CONFIG_USB_RENESAS_USBHS
-> seems to be needed by both ARCH_SHMOBILE:
-
-Indeed it does.
+r8a7794 SoC support is now queued up for v3.18.
+So I think could also be added to multi_v7_defconfig too.
+Let me know if you want an incremental patch.
 
 > 
-> $ git grep renesas_usbhs_platform_info arch/arm/mach-shmobile/
-> arch/arm/mach-shmobile/board-armadillo800eva.c: struct renesas_usbhs_platform_info info;
-> arch/arm/mach-shmobile/board-bockw.c:static struct renesas_usbhs_platform_info usbhs_info __initdata = {
-> arch/arm/mach-shmobile/board-bockw.c:           &usbhs_info, sizeof(struct renesas_usbhs_platform_info))
-> arch/arm/mach-shmobile/board-kzm9g.c:   struct renesas_usbhs_platform_info info;
-> arch/arm/mach-shmobile/board-lager.c:   struct renesas_usbhs_platform_info info;
-> arch/arm/mach-shmobile/board-mackerel.c:        struct renesas_usbhs_platform_info info;
+>  arch/arm/configs/multi_v7_defconfig | 51 +++++++++++++++++++++++++++++++++++--
+>  1 file changed, 49 insertions(+), 2 deletions(-)
 > 
-> and ARCH_SH:
-> 
-> $ git grep renesas_usbhs_platform_info arch/sh/
-> arch/sh/boards/board-sh7757lcr.c:static struct renesas_usbhs_platform_info usb0_data = {
-> arch/sh/boards/mach-ecovec24/setup.c:static struct renesas_usbhs_platform_info usbhs_info = {
-> 
-> Best regards,
-> --
-> Bartlomiej Zolnierkiewicz
-> Samsung R&D Institute Poland
-> Samsung Electronics
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
+> index 7cfa5fa5f7ac..077134eaa95e 100644
+> --- a/arch/arm/configs/multi_v7_defconfig
+> +++ b/arch/arm/configs/multi_v7_defconfig
+> @@ -53,6 +53,15 @@ CONFIG_MACH_SPEAR1310=y
+>  CONFIG_MACH_SPEAR1340=y
+>  CONFIG_ARCH_STI=y
+>  CONFIG_ARCH_EXYNOS=y
+> +CONFIG_ARCH_SHMOBILE_MULTI=y
+> +CONFIG_ARCH_EMEV2=y
+> +CONFIG_ARCH_R7S72100=y
+> +CONFIG_ARCH_R8A7779=y
+> +CONFIG_ARCH_R8A7790=y
+> +CONFIG_ARCH_R8A7791=y
+> +CONFIG_MACH_KOELSCH=y
+> +CONFIG_MACH_LAGER=y
+> +CONFIG_MACH_MARZEN=y
+>  CONFIG_ARCH_SUNXI=y
+>  CONFIG_ARCH_SIRF=y
+>  CONFIG_ARCH_TEGRA=y
+> @@ -74,6 +83,8 @@ CONFIG_PCI=y
+>  CONFIG_PCI_MSI=y
+>  CONFIG_PCI_MVEBU=y
+>  CONFIG_PCI_TEGRA=y
+> +CONFIG_PCI_RCAR_GEN2=y
+> +CONFIG_PCI_RCAR_GEN2_PCIE=y
+>  CONFIG_SMP=y
+>  CONFIG_NR_CPUS=8
+>  CONFIG_HIGHPTE=y
+> @@ -121,6 +132,7 @@ CONFIG_CMA_SIZE_MBYTESd
+>  CONFIG_OMAP_OCP2SCP=y
+>  CONFIG_MTD=y
+>  CONFIG_MTD_M25P80=y
+> +CONFIG_MTD_SPI_NOR=y
+>  CONFIG_BLK_DEV_LOOP=y
+>  CONFIG_ICS932S401=y
+>  CONFIG_APDS9802ALS=y
+> @@ -136,6 +148,7 @@ CONFIG_AHCI_ST=y
+>  CONFIG_AHCI_SUNXI=y
+>  CONFIG_SATA_HIGHBANK=y
+>  CONFIG_SATA_MV=y
+> +CONFIG_SATA_RCAR=y
+>  CONFIG_NETDEVICES=y
+>  CONFIG_SUN4I_EMAC=y
+>  CONFIG_MACB=y
+> @@ -145,6 +158,7 @@ CONFIG_MV643XX_ETH=y
+>  CONFIG_MVNETA=y
+>  CONFIG_KS8851=y
+>  CONFIG_R8169=y
+> +CONFIG_SH_ETH=y
+>  CONFIG_SMSC911X=y
+>  CONFIG_STMMAC_ETH=y
+>  CONFIG_TI_CPSW=y
+> @@ -174,6 +188,7 @@ CONFIG_SERIO_AMBAKMI=y
+>  CONFIG_SERIAL_8250=y
+>  CONFIG_SERIAL_8250_CONSOLE=y
+>  CONFIG_SERIAL_8250_DW=y
+> +CONFIG_SERIAL_8250_EM=y
+>  CONFIG_SERIAL_AMBA_PL011=y
+>  CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
+>  CONFIG_SERIAL_SAMSUNG=y
+> @@ -183,6 +198,9 @@ CONFIG_SERIAL_SIRFSOC_CONSOLE=y
+>  CONFIG_SERIAL_TEGRA=y
+>  CONFIG_SERIAL_IMX=y
+>  CONFIG_SERIAL_IMX_CONSOLE=y
+> +CONFIG_SERIAL_SH_SCI=y
+> +CONFIG_SERIAL_SH_SCI_NR_UARTS 
+> +CONFIG_SERIAL_SH_SCI_CONSOLE=y
+>  CONFIG_SERIAL_MSM=y
+>  CONFIG_SERIAL_MSM_CONSOLE=y
+>  CONFIG_SERIAL_VT8500=y
+> @@ -204,15 +222,21 @@ CONFIG_I2C_CADENCE=y
+>  CONFIG_I2C_DESIGNWARE_PLATFORM=y
+>  CONFIG_I2C_EXYNOS5=y
+>  CONFIG_I2C_MV64XXX=y
+> +CONFIG_I2C_RIIC=y
+> +CONFIG_I2C_SH_MOBILE=y
+>  CONFIG_I2C_SIRF=y
+>  CONFIG_I2C_TEGRA=y
+>  CONFIG_I2C_ST=y
+> -CONFIG_SPI=y
+>  CONFIG_I2C_XILINX=y
+> +CONFIG_I2C_RCAR=y
+> +CONFIG_SPI=y
+>  CONFIG_SPI_CADENCE=y
+>  CONFIG_SPI_OMAP24XX=y
+>  CONFIG_SPI_ORION=y
+>  CONFIG_SPI_PL022=y
+> +CONFIG_SPI_RSPI=y
+> +CONFIG_SPI_SH_MSIOF=y
+> +CONFIG_SPI_SH_HSPI=y
+>  CONFIG_SPI_SIRF=y
+>  CONFIG_SPI_SUN4I=y
+>  CONFIG_SPI_SUN6I=y
+> @@ -225,6 +249,8 @@ CONFIG_PINCTRL_PALMAS=y
+>  CONFIG_GPIO_SYSFS=y
+>  CONFIG_GPIO_GENERIC_PLATFORM=y
+>  CONFIG_GPIO_DWAPB=y
+> +CONFIG_GPIO_EM=y
+> +CONFIG_GPIO_RCAR=y
+>  CONFIG_GPIO_XILINX=y
+>  CONFIG_GPIO_ZYNQ=y
+>  CONFIG_GPIO_PCA953X=y
+> @@ -241,6 +267,7 @@ CONFIG_POWER_RESET_SUN6I=y
+>  CONFIG_SENSORS_LM90=y
+>  CONFIG_SENSORS_LM95245=y
+>  CONFIG_THERMAL=y
+> +CONFIG_RCAR_THERMAL=y
+>  CONFIG_ARMADA_THERMAL=y
+>  CONFIG_ST_THERMAL_SYSCFG=y
+>  CONFIG_ST_THERMAL_MEMMAP=y
+> @@ -263,6 +290,7 @@ CONFIG_REGULATOR_VIRTUAL_CONSUMER=y
+>  CONFIG_REGULATOR_AB8500=y
+>  CONFIG_REGULATOR_AS3722=y
+>  CONFIG_REGULATOR_BCM590XX=y
+> +CONFIG_REGULATOR_DA9210=y
+>  CONFIG_REGULATOR_GPIO=y
+>  CONFIG_REGULATOR_MAX8907=y
+>  CONFIG_REGULATOR_PALMAS=y
+> @@ -277,10 +305,21 @@ CONFIG_REGULATOR_TWL4030=y
+>  CONFIG_REGULATOR_VEXPRESS=y
+>  CONFIG_MEDIA_SUPPORT=y
+>  CONFIG_MEDIA_CAMERA_SUPPORT=y
+> +CONFIG_MEDIA_CONTROLLER=y
+> +CONFIG_VIDEO_V4L2_SUBDEV_API=y
+>  CONFIG_MEDIA_USB_SUPPORT=y
+>  CONFIG_USB_VIDEO_CLASS=y
+>  CONFIG_USB_GSPCA=y
+> +CONFIG_V4L_PLATFORM_DRIVERS=y
+> +CONFIG_SOC_CAMERA=y
+> +CONFIG_SOC_CAMERA_PLATFORM=y
+> +CONFIG_VIDEO_RCAR_VIN=y
+> +CONFIG_V4L_MEM2MEM_DRIVERS=y
+> +CONFIG_VIDEO_RENESAS_VSP1=y
+> +# CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
+> +CONFIG_VIDEO_ADV7180=y
+>  CONFIG_DRM=y
+> +CONFIG_DRM_RCAR_DU=y
+>  CONFIG_DRM_TEGRA=y
+>  CONFIG_DRM_PANEL_SIMPLE=y
+>  CONFIG_FB_ARMCLCD=y
+> @@ -293,6 +332,7 @@ CONFIG_FRAMEBUFFER_CONSOLE=y
+>  CONFIG_SOUND=y
+>  CONFIG_SND=y
+>  CONFIG_SND_SOC=y
+> +CONFIG_SND_SOC_RCAR=y
+>  CONFIG_SND_SOC_TEGRA=y
+>  CONFIG_SND_SOC_TEGRA_RT5640=y
+>  CONFIG_SND_SOC_TEGRA_WM8753=y
+> @@ -309,6 +349,7 @@ CONFIG_USB_EHCI_HCD_PLATFORM=y
+>  CONFIG_USB_ISP1760_HCD=y
+>  CONFIG_USB_OHCI_HCD=y
+>  CONFIG_USB_OHCI_HCD_PLATFORM=y
+> +CONFIG_USB_RENESAS_USBHS=y
+>  CONFIG_USB_STORAGE=y
+>  CONFIG_USB_CHIPIDEA=y
+>  CONFIG_USB_CHIPIDEA_HOST=y
+> @@ -319,6 +360,10 @@ CONFIG_SAMSUNG_USB3PHY=y
+>  CONFIG_USB_GPIO_VBUS=y
+>  CONFIG_USB_ISP1301=y
+>  CONFIG_USB_MXS_PHY=y
+> +CONFIG_USB_RCAR_PHY=y
+> +CONFIG_USB_RCAR_GEN2_PHY=y
+> +CONFIG_USB_GADGET=y
+> +CONFIG_USB_RENESAS_USBHS_UDC=y
+>  CONFIG_MMC=y
+>  CONFIG_MMC_BLOCK_MINORS
+>  CONFIG_MMC_ARMMMCI=y
+> @@ -337,9 +382,11 @@ CONFIG_MMC_SDHCI_ST=y
+>  CONFIG_MMC_OMAP=y
+>  CONFIG_MMC_OMAP_HS=y
+>  CONFIG_MMC_MVSDIO=y
+> -CONFIG_MMC_SUNXI=y
+> +CONFIG_MMC_SDHI=y
+>  CONFIG_MMC_DW=y
+>  CONFIG_MMC_DW_EXYNOS=y
+> +CONFIG_MMC_SH_MMCIF=y
+> +CONFIG_MMC_SUNXI=y
+>  CONFIG_NEW_LEDS=y
+>  CONFIG_LEDS_CLASS=y
+>  CONFIG_LEDS_PWM=y
+> -- 
+> 1.9.1
 > 
