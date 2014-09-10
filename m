@@ -1,65 +1,100 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 23 Sep 2014 13:30:57 +0000
-Subject: Re: [PATCH] ARM: hw_breakpoint: Trap undef instruction exceptions on wake-up
-Message-Id: <CAMuHMdU+ztui5N-2p5Va7b7Tp-JRNVtGfNZ6=GPweR2ig_H5wA@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 10 Sep 2014 01:29:16 +0000
+Subject: [PATCH v2] mmc: tmio: enable odd number size access
+Message-Id: <8761gwz2jb.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410955036-1956-1-git-send-email-geert+renesas@glider.be>
- <20140917121820.GR12361@n2100.arm.linux.org.uk>
-In-Reply-To: <20140917121820.GR12361@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>
+Cc: Simon <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>, Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-Hi Russell,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Wed, Sep 17, 2014 at 2:18 PM, Russell King - ARM Linux
-<linux@arm.linux.org.uk> wrote:
-> On Wed, Sep 17, 2014 at 01:57:16PM +0200, Geert Uytterhoeven wrote:
->> If power area D4, which contains the Coresight-ETM hardware block, is
->> powered down on R-Mobile A1 (r8a7740), the kernel crashes when
->> suspending from s2ram with:
->>
->>     Internal error: Oops - undefined instruction: 0 [#1] ARM
->>
->> This happens because dbg_cpu_pm_notify() calls reset_ctrl_regs(), which
->> can't access the debug registers as the debug module is powered down.
->>
->> Protect the call to reset_ctrl_regs() by an undefined instruction hook,
->> like was done in commit 0d352e3d006c9589 ("ARM: hw_breakpoint: trap
->> undef instruction exceptions in reset_ctrl_regs") for another caller.
->
-> I'd prefer a better solution to this (such as tracking whether the ETM
-> block is powered down).  This feels very much like a hack than a good
-> solution.
+Current tmio is using sd_ctrl_read16/write16_rep()
+for data transfer.
+It works if transfer size was even number,
+but, last 1 byte will be ignored if
+transfer size was odd number.
+This patch adds new tmio_mmc_transfer_data()
+and solve this issue.
 
-That seems to be something to fit into "[PATCH 00/11 v6] Coresight framework
-and drivers" (https://lkml.org/lkml/2014/9/11/733)?
+Tested-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-However, if I'm not mistaken, while that series introduces extensive handling
-based on the presence of Coresight device nodes in DT, it looks like it doesn't
-affect the current direct accesses to the debug registers in hw_breakpoint.c?
+ - use u8 pointer only
+ - fix buf offset
+ - remove unneeded -1
 
-For now, do you consider it acceptable to introduce a global bool (defaulting
-to true) to track whether accessing the debug registers is allowed?
+ drivers/mmc/host/tmio_mmc_pio.c |   46 +++++++++++++++++++++++++++++++++++----
+ 1 file changed, 42 insertions(+), 4 deletions(-)
 
-> Also, the undefined instruction hook was not supposed to be used in this
-> way - certainly *not* dynamically like this.  While the lookup of the
-> undef handler is done in a safe atomic way, calling the resulting
-> function is outside of the locks.
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index ff5ff0f..2ee0e21 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -376,6 +376,47 @@ static int tmio_mmc_start_command(struct tmio_mmc_host *host, struct mmc_command
+ 	return 0;
+ }
+ 
++static void tmio_mmc_transfer_data(struct tmio_mmc_host *host,
++				   unsigned short *buf,
++				   unsigned int count)
++{
++	int is_read = host->data->flags & MMC_DATA_READ;
++	u16 extra;
++	u8  *buf8;
++
++	/*
++	 * Transfer the data
++	 */
++	if (is_read)
++		sd_ctrl_read16_rep(host, CTL_SD_DATA_PORT, buf, count >> 1);
++	else
++		sd_ctrl_write16_rep(host, CTL_SD_DATA_PORT, buf, count >> 1);
++
++	/* count was even number */
++	if (!(count & 0x1))
++		return;
++
++	/* count was odd number */
++
++	buf8 = (u8 *)(buf + (count >> 1));
++
++	/*
++	 * FIXME
++	 *
++	 * driver and this function are assuming that
++	 * it is used as little endian
++	 */
++	if (is_read) {
++		extra = sd_ctrl_read16(host, CTL_SD_DATA_PORT);
++
++		*buf8 = (u8)(extra & 0xff);
++	} else {
++		extra = (u16)(*buf8);
++
++		sd_ctrl_write16(host, CTL_SD_DATA_PORT, extra);
++	}
++}
++
+ /*
+  * This chip always returns (at least?) as much data as you ask for.
+  * I'm unsure what happens if you ask for less than a block. This should be
+@@ -408,10 +449,7 @@ static void tmio_mmc_pio_irq(struct tmio_mmc_host *host)
+ 		 count, host->sg_off, data->flags);
+ 
+ 	/* Transfer the data */
+-	if (data->flags & MMC_DATA_READ)
+-		sd_ctrl_read16_rep(host, CTL_SD_DATA_PORT, buf, count >> 1);
+-	else
+-		sd_ctrl_write16_rep(host, CTL_SD_DATA_PORT, buf, count >> 1);
++	tmio_mmc_transfer_data(host, buf, count);
+ 
+ 	host->sg_off += count;
+ 
+-- 
+1.7.9.5
 
-Right, that's definitely not optimal.
-I guess this also applies to the existing (ab)users of debug_reg_hook?
-
-Thanks!
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
