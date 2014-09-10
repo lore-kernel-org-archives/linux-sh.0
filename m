@@ -1,68 +1,68 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Fri, 19 Sep 2014 18:46:29 +0000
-Subject: Re: [PATCH v4] tmio_mmc_pio: prevent endless loop in tmio_mmc_set_clock()
-Message-Id: <CAPDyKFpZnkkDbUHX3HmcGK7+7NEnUU526RADFO+O1xS6mzUhnQ@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 10 Sep 2014 13:33:19 +0000
+Subject: [PATCH] pinctrl: sh-pfc: sh73a0: Remove unnecessary SoC data allocation
+Message-Id: <1410355999-13266-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <10228473.uOqbQ0oioV@wasted.cogentembedded.com>
-In-Reply-To: <10228473.uOqbQ0oioV@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: linux-mmc <linux-mmc@vger.kernel.org>, Ian Molton <ian.molton@codethink.co.uk>, Chris Ball <chris@printf.net>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On 18 September 2014 21:33, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> I spent a couple of days with the driver just hanging due to me forgetting to
-> specify the external crystal frequency,  so that clk_get_rate() returned 0 and
-> thus the loop in tmio_mmc_set_clock() never ended. I don't think that's an
-> acceptable behavior, so I suggest that the minimum frequency is checked for 0
-> in tmio_mmc_host_probe().
->
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> Acked-by: Ian Molton <ian.molton@codethink.co.uk>
-> Cc: stable@vger.kernel.org
+The SoC data structure allocated at init time only holds a regulator
+pointer that is only used in the init function. Replace it with a local
+variable and get rid of the SoC data structure allocation altogether.
 
-Thanks! Applied for next with a smaller change - adding a "mmc" prefix
-for the commit message subject.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 19 ++++---------------
+ 1 file changed, 4 insertions(+), 15 deletions(-)
 
-Kind regards
-Uffe
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 0bd8f44..43d7673 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -3824,35 +3824,24 @@ static void sh73a0_pinmux_set_bias(struct sh_pfc *pfc, unsigned int pin,
+  * SoC information
+  */
+ 
+-struct sh73a0_pinmux_data {
+-	struct regulator_dev *vccq_mc0;
+-};
+-
+ static int sh73a0_pinmux_soc_init(struct sh_pfc *pfc)
+ {
+-	struct sh73a0_pinmux_data *data;
+ 	struct regulator_config cfg = { };
++	struct regulator_dev *vccq;
+ 	int ret;
+ 
+-	data = devm_kzalloc(pfc->dev, sizeof(*data), GFP_KERNEL);
+-	if (data = NULL)
+-		return -ENOMEM;
+-
+ 	cfg.dev = pfc->dev;
+ 	cfg.init_data = &sh73a0_vccq_mc0_init_data;
+ 	cfg.driver_data = pfc;
+ 
+-	data->vccq_mc0 = devm_regulator_register(pfc->dev,
+-						 &sh73a0_vccq_mc0_desc, &cfg);
+-	if (IS_ERR(data->vccq_mc0)) {
+-		ret = PTR_ERR(data->vccq_mc0);
++	vccq = devm_regulator_register(pfc->dev, &sh73a0_vccq_mc0_desc, &cfg);
++	if (IS_ERR(vccq)) {
++		ret = PTR_ERR(vccq);
+ 		dev_err(pfc->dev, "Failed to register VCCQ MC0 regulator: %d\n",
+ 			ret);
+ 		return ret;
+ 	}
+ 
+-	pfc->soc_data = data;
+-
+ 	return 0;
+ }
+ 
+-- 
+Regards,
 
->
-> ---
-> The patch is against Ulf Hansson's 'mmc.git' repo's 'next' branch.
->
-> Changes in version 4:
-> - rebased to the 'next' branch, resolving reject;
-> - added Ian Molton's ACK.
->
-> Changes in version 3:
-> - added Cc: stable.
->
-> Changes in version 2:
-> - fixed grammar in the changelog.
->
->  drivers/mmc/host/tmio_mmc_pio.c |    9 +++++++++
->  1 file changed, 9 insertions(+)
->
-> Index: mmc/drivers/mmc/host/tmio_mmc_pio.c
-> =================================> --- mmc.orig/drivers/mmc/host/tmio_mmc_pio.c
-> +++ mmc/drivers/mmc/host/tmio_mmc_pio.c
-> @@ -1091,6 +1091,15 @@ int tmio_mmc_host_probe(struct tmio_mmc_
->         }
->
->         /*
-> +        * Check the sanity of mmc->f_min to prevent tmio_mmc_set_clock() from
-> +        * looping forever...
-> +        */
-> +       if (mmc->f_min = 0) {
-> +               ret = -EINVAL;
-> +               goto host_free;
-> +       }
-> +
-> +       /*
->          * While using internal tmio hardware logic for card detection, we need
->          * to ensure it stays powered for it to work.
->          */
->
+Laurent Pinchart
+
