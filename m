@@ -1,156 +1,89 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 30 Sep 2014 08:11:00 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7740: Cleanup PM Kconfig usage
-Message-Id: <20140930081059.GR16823@verge.net.au>
+From: Ryusuke Sakato <ryusuke.sakato.bx@renesas.com>
+Date: Wed, 10 Sep 2014 01:21:39 +0000
+Subject: Re: [PATCH 0/5] arm: shmobile: Lager Add USB and SATA support
+Message-Id: <540FA7A3.3080607@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140904033942.22881.84361.sendpatchset@w520>
-In-Reply-To: <20140904033942.22881.84361.sendpatchset@w520>
+References: <1387370660-20481-1-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1387370660-20481-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-On Tue, Sep 30, 2014 at 09:12:24AM +0200, Geert Uytterhoeven wrote:
-> Hi Simon, Magnus,
-> 
-> On Tue, Sep 30, 2014 at 6:25 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Wed, Sep 24, 2014 at 09:54:49AM +0900, Simon Horman wrote:
-> >> On Thu, Sep 04, 2014 at 08:31:45AM +0200, Geert Uytterhoeven wrote:
-> >> > On Thu, Sep 4, 2014 at 5:39 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> >> > > @@ -58,7 +58,9 @@ void __init r8a7740_init_pm_domains(void
-> >> > >         rmobile_init_domains(r8a7740_pm_domains, ARRAY_SIZE(r8a7740_pm_domains));
-> >> > >         pm_genpd_add_subdomain_names("A4S", "A3SP");
-> >> > >  }
-> >> > > -#endif /* CONFIG_PM && !CONFIG_ARCH_MULTIPLATFORM */
-> >> > > +#else
-> >> > > +void r8a7740_init_pm_domains(void) {}
-> >> > > +#endif
-> >> > >
-> >> > >  #ifdef CONFIG_SUSPEND
-> >> > >  static int r8a7740_enter_suspend(suspend_state_t suspend_state)
-> >> > > --- 0001/arch/arm/mach-shmobile/r8a7740.h
-> >> > > +++ work/arch/arm/mach-shmobile/r8a7740.h       2014-09-04 12:29:12.000000000 +0900
-> >> > > @@ -52,11 +52,6 @@ extern void r8a7740_add_standard_devices
-> >> > >  extern void r8a7740_clock_init(u8 md_ck);
-> >> > >  extern void r8a7740_pinmux_init(void);
-> >> > >  extern void r8a7740_pm_init(void);
-> >> > > -
-> >> > > -#if defined(CONFIG_PM) && !defined(CONFIG_ARCH_MULTIPLATFORM)
-> >> > > -extern void __init r8a7740_init_pm_domains(void);
-> >> > > -#else
-> >> > > -static inline void r8a7740_init_pm_domains(void) {}
-> >> > > -#endif /* CONFIG_PM && !CONFIG_ARCH_MULTIPLATFORM */
-> >> > > +extern void r8a7740_init_pm_domains(void);
-> >> > >
-> >> > >  #endif /* __ASM_R8A7740_H__ */
-> >> >
-> >> > Why do you make r8a7740_init_pm_domains() out-of-line in the
-> >> > !CONFIG_PM_RMOBILE case?
-> >> > It increases code size (call to an empty function that cannot be optimized
-> >> > away), and prevents us from building pm-r8a7740.c conditionally on
-> >> > CONFIG_PM_RMOBILE and CONFIG_ARCH_R8A7740 in the future.
-> >> >
-> >> > For the latter, we can turn pm-rmobile into a library, and do something
-> >> > like
-> >> >
-> >> > pm-rmobile-objs-$(CONFIG_ARCH_R8A7740)      += pm-r8a7740.o
-> >>
-> >> This seems to have slipped through the cracks.
-> >
-> > Geert, are you happy with this?
-> 
-> I'd like to ask to drop this patch, as I'll have to revert this hunk
-> in pm-r8a7740.c:
-> 
->     -#if defined(CONFIG_PM) && !defined(CONFIG_ARCH_MULTIPLATFORM)
->     +#ifdef CONFIG_PM_RMOBILE
-> 
-> to add DT PM domain support.
-> 
-> Is that OK for you?
+Hi Hiep-san,
 
-Yes, that is fine. I'll mark it as rejected.
+Can you check as CONFIG_CPU_FREQ is not set?
 
-> BTW, changing
-> 
->     -#if defined(CONFIG_PM) && !defined(CONFIG_ARCH_MULTIPLATFORM)
->     +#if defined(CONFIG_PM_RMOBILE) && !defined(CONFIG_ARCH_MULTIPLATFORM)
-> 
-> is fine for me, though, but I don't know it's worth the effort.
+When you perform a benchmark, you should check a /sys/devices/system/cpu/cp=
+u0/cpufreq/scaling_governor
+setup of your userland.
 
-I don't think it is worth the noise it creates.
+Thank you,
+Sakato.
 
-> 
-> >> For the first part of the problem how about this update to Magnus's patch?
-> >>
-> >> [PATCH v1.1] ARM: shmobile: r8a7740: Cleanup PM Kconfig usage
-> >>
-> >> Simplify the r8a7740 PM code by using CONFIG_PM_RMOBILE instead
-> >> of having a complex #if expression embedded in the C code.
-> >>
-> >> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> >> [horms+renesas@verge.net.au: do not make r8a7740_init_pm_domains
-> >>  out-of-line for !CONFIG_PM_RMOBILE case]
-> >> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >> ---
-> >>  arch/arm/mach-shmobile/pm-r8a7740.c | 4 ++--
-> >>  arch/arm/mach-shmobile/r8a7740.h    | 4 ++--
-> >>  2 files changed, 4 insertions(+), 4 deletions(-)
-> >>
-> >> diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
-> >> index e3f1464..225be5e 100644
-> >> --- a/arch/arm/mach-shmobile/pm-r8a7740.c
-> >> +++ b/arch/arm/mach-shmobile/pm-r8a7740.c
-> >> @@ -13,7 +13,7 @@
-> >>  #include "common.h"
-> >>  #include "pm-rmobile.h"
-> >>
-> >> -#if defined(CONFIG_PM) && !defined(CONFIG_ARCH_MULTIPLATFORM)
-> >> +#ifdef CONFIG_PM_RMOBILE
-> >>  static int r8a7740_pd_a4s_suspend(void)
-> >>  {
-> >>       /*
-> >> @@ -56,7 +56,7 @@ void __init r8a7740_init_pm_domains(void)
-> >>       rmobile_init_domains(r8a7740_pm_domains, ARRAY_SIZE(r8a7740_pm_domains));
-> >>       pm_genpd_add_subdomain_names("A4S", "A3SP");
-> >>  }
-> >> -#endif /* CONFIG_PM && !CONFIG_ARCH_MULTIPLATFORM */
-> >> +#endif
-> >>
-> >>  #ifdef CONFIG_SUSPEND
-> >>  static int r8a7740_enter_suspend(suspend_state_t suspend_state)
-> >> diff --git a/arch/arm/mach-shmobile/r8a7740.h b/arch/arm/mach-shmobile/r8a7740.h
-> >> index f369b4b..5ba292e 100644
-> >> --- a/arch/arm/mach-shmobile/r8a7740.h
-> >> +++ b/arch/arm/mach-shmobile/r8a7740.h
-> >> @@ -53,10 +53,10 @@ extern void r8a7740_clock_init(u8 md_ck);
-> >>  extern void r8a7740_pinmux_init(void);
-> >>  extern void r8a7740_pm_init(void);
-> >>
-> >> -#if defined(CONFIG_PM) && !defined(CONFIG_ARCH_MULTIPLATFORM)
-> >> +#ifdef CONFIG_PM_RMOBILE
-> >>  extern void __init r8a7740_init_pm_domains(void);
-> >>  #else
-> >>  static inline void r8a7740_init_pm_domains(void) {}
-> >> -#endif /* CONFIG_PM && !CONFIG_ARCH_MULTIPLATFORM */
-> >> +#endif
-> >>
-> >>  #endif /* __ASM_R8A7740_H__ */
-> >> --
-> >> 2.0.1
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+(2014/09/09 19:48), =E3=82=AB=E3=82=AA=E3=80=80=E3=83=9F=E3=83=B3=E3=80=80=
+=E3=83=92=E3=82=A7=E3=83=83=E3=83=97 wrote:
+> Hello,
+>=20
+> We are testing Serial-ATA driver on linux uptream-v3.17-rc2 on Lager(R8a7=
+790 SoC),
+> On this version Serial-ATA's Writing speed on HDD is about 42.61MB/s.
+> This writing speed|| seems good, but on Upstream-v3.16-rc5 the writing sp=
+eed was up to 66MB/s,
+> Please see it when you have time.
+>=20
+> Best Regards,
+> Jinso/Cao Minh Hiep.
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+> On 12/18/2013 09:44 PM, Valentine Barshak wrote:
+>> I've decided to bundle USB and SATA patches together, since I've done SA=
+TA on top of USB.
+>> Most of the SATA/USBHS/PCI USB host support patches for Lager are availa=
+ble in the respective
+>> susbsystem git trees (for 3.14) but are still missing from the Renesas t=
+ree.
+>>
+>> So, in order to test these, the following patches from other subsystem t=
+rees are needed:
+>> USB:
+>> https://git.kernel.org/cgit/linux/kernel/git/helgaas/pci.git/commit/?h=
+=3Dpci/host-rcar&id=FB178d8b2fab3f2a9f203c13ffe80cfd6e01bdf1
+>> https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?=
+id=C8ba8115a21226fba3211085f570b128fa271e31
+>> https://git.kernel.org/cgit/linux/kernel/git/balbi/usb.git/commit/?h=3Dn=
+ext&id=C3e5d2985ef720cbbdc63546a5c545ac4450d96e
+>> https://git.kernel.org/cgit/linux/kernel/git/gregkh/usb.git/commit/?h=3D=
+usb-next&id=103e127d1f8f985e8a662da6537ebc5e08902ee3
+>> https://git.kernel.org/cgit/linux/kernel/git/gregkh/usb.git/commit/?h=3D=
+usb-next&id=1Ae5799ef63176cc75ec10e545cb65f620a82747
+>>
+>> SATA:
+>> https://git.kernel.org/cgit/linux/kernel/git/tj/libata.git/commit/?h=3Df=
+or-3.14&id=E67adb4e669db834c1f95cbdf99bb4e9ec8455b3
+>>
+>> The USB channel 0 (CN6) is configured as PCI USB host if USB_RENESAS_USB=
+HS_UDC is disabled.
+>> Otherwise it is configured as USBHS device.
+>> Please note that the following switches have to be set correctly as well:
+>> PCI USB Host: SW5 - pin1;    SW6 - pin1
+>> USBHS device: SW5 - neutral; SW6 - pin3
+>>
+>> Valentine Barshak (5):
+>>    arm: shmobile: r8a7790: Add PCI USB host clock support
+>>    arm: shmobile: r8a7790: Add SATA clock
+>>    arm: shmobile: lager: Add USBHS support
+>>    arm: shmobile: lager: Add internal PCI support
+>>    arm: shmobile: lager: Add SATA support
+>>
+>>   arch/arm/mach-shmobile/board-lager.c   | 203 +++++++++++++++++++++++++=
+++++++++
+>>   arch/arm/mach-shmobile/clock-r8a7790.c |  25 +++-
+>>   2 files changed, 227 insertions(+), 1 deletion(-)
+>>
+>=20
+>=20
