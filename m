@@ -1,70 +1,72 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Sep 2014 12:27:51 +0000
-Subject: [PATCH v2 4/9] ARM: shmobile: dts: Add common file for AA104XD12 panel
-Message-Id: <1411561676-9556-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 11 Sep 2014 00:57:25 +0000
+Subject: [PATCH 3/5] ARM: shmobile: r8a7740: Use rmobile_add_devices_to_domains()
+Message-Id: <c839f93bf8468f4380056d0638e3cba0488bb190.1410395620.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1410395620.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1410395620.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The Mitsubishi AA104XD12 panel is commonly used with the Marzen, Lager
-and Koelsch boards. Create a .dtsi file that describe the panel and its
-connection to the board.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Use a table and the rmobile_add_devices_to_domains() helper function to
+add all platform devices to their power domains at once, which is more
+size-efficient than calling rmobile_add_device_to_domain() explicitly
+for all devices individually.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi | 41 ++++++++++++++++++++++++++
- 1 file changed, 41 insertions(+)
- create mode 100644 arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi
+ arch/arm/mach-shmobile/setup-r8a7740.c | 26 +++++++++++++++-----------
+ 1 file changed, 15 insertions(+), 11 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi b/arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi
-new file mode 100644
-index 0000000..65cb50f
---- /dev/null
-+++ b/arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi
-@@ -0,0 +1,41 @@
-+/*
-+ * Common file for the AA104XD12 panel connected to Renesas R-Car boards
-+ *
-+ * Copyright (C) 2014 Renesas Electronics Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/ {
-+	panel {
-+		compatible = "mitsubishi,aa104xd12", "panel-dpi";
-+
-+		width-mm = <210>;
-+		height-mm = <158>;
-+
-+		panel-timing {
-+			/* 1024x768 @65Hz */
-+			clock-frequency = <65000000>;
-+			hactive = <1024>;
-+			vactive = <768>;
-+			hsync-len = <136>;
-+			hfront-porch = <20>;
-+			hback-porch = <160>;
-+			vfront-porch = <3>;
-+			vback-porch = <29>;
-+			vsync-len = <6>;
-+		};
-+
-+		port {
-+			panel_in: endpoint {
-+				remote-endpoint = <&lvds_connector>;
-+			};
-+		};
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 3d5eaca..30df532 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -747,6 +747,19 @@ static void r8a7740_i2c_workaround(struct platform_device *pdev)
+ 
+ void __init r8a7740_add_standard_devices(void)
+ {
++	static struct pm_domain_device domain_devices[] __initdata = {
++		{ "A3SP", &scif0_device },
++		{ "A3SP", &scif1_device },
++		{ "A3SP", &scif2_device },
++		{ "A3SP", &scif3_device },
++		{ "A3SP", &scif4_device },
++		{ "A3SP", &scif5_device },
++		{ "A3SP", &scif6_device },
++		{ "A3SP", &scif7_device },
++		{ "A3SP", &scif8_device },
++		{ "A3SP", &i2c1_device },
 +	};
-+};
 +
-+&lvds_connector {
-+	remote-endpoint = <&panel_in>;
-+};
+ 	/* I2C work-around */
+ 	r8a7740_i2c_workaround(&i2c0_device);
+ 	r8a7740_i2c_workaround(&i2c1_device);
+@@ -762,17 +775,8 @@ void __init r8a7740_add_standard_devices(void)
+ 			     ARRAY_SIZE(r8a7740_late_devices));
+ 
+ 	/* add devices to PM domain  */
+-
+-	rmobile_add_device_to_domain("A3SP",	&scif0_device);
+-	rmobile_add_device_to_domain("A3SP",	&scif1_device);
+-	rmobile_add_device_to_domain("A3SP",	&scif2_device);
+-	rmobile_add_device_to_domain("A3SP",	&scif3_device);
+-	rmobile_add_device_to_domain("A3SP",	&scif4_device);
+-	rmobile_add_device_to_domain("A3SP",	&scif5_device);
+-	rmobile_add_device_to_domain("A3SP",	&scif6_device);
+-	rmobile_add_device_to_domain("A3SP",	&scif7_device);
+-	rmobile_add_device_to_domain("A3SP",	&scif8_device);
+-	rmobile_add_device_to_domain("A3SP",	&i2c1_device);
++	rmobile_add_devices_to_domains(domain_devices,
++				       ARRAY_SIZE(domain_devices));
+ }
+ 
+ void __init r8a7740_add_early_devices(void)
 -- 
-1.8.5.5
+2.0.1
 
