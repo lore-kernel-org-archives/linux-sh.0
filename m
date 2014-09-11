@@ -1,42 +1,59 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 25 Sep 2014 16:13:21 +0000
-Subject: [PATCH 05/13] ARM: shmobile: ape6evm-reference dts: Add chosen/stdout-path
-Message-Id: <1411661609-4280-6-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 11 Sep 2014 00:57:26 +0000
+Subject: [PATCH 4/5] ARM: shmobile: r8a7740: Clean up pm domain table
+Message-Id: <753490991fd5036fa4f31de7bc5dd7131ed44cc2.1410395620.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411661609-4280-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1411661609-4280-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+References: <cover.1410395620.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1410395620.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Add a stdout-path property so that automatic console selection works
-in the absence of a "console=" parameter on the kernel command line.
-In addition, this will allow the PM domain code to find the PM domain
-for the console device.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Remove the now-superfluous "console=" parameter from chosen/bootargs.
+  - Sort pm domains by bit_shift value,
+  - Combine closing and opening curly braces on a single line, as the
+    table will grow much bigger soon.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/pm-r8a7740.c | 10 ++++------
+ 1 file changed, 4 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-index a860f32bca27fd8d..2bcf69124a6ab3ec 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-@@ -21,7 +21,8 @@
- 	};
+diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
+index a0d44d5..3d50714 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7740.c
++++ b/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -34,23 +34,21 @@ static int r8a7740_pd_a3sp_suspend(void)
  
- 	chosen {
--		bootargs = "console=ttySC0,115200 ignore_loglevel rw";
-+		bootargs = "ignore_loglevel rw";
-+		stdout-path = &scifa0;
- 	};
+ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
+ 	{
++		.genpd.name	= "A4LC",
++		.bit_shift	= 1,
++	}, {
+ 		.genpd.name	= "A4S",
+ 		.bit_shift	= 10,
+ 		.gov		= &pm_domain_always_on_gov,
+ 		.no_debug	= true,
+ 		.suspend	= r8a7740_pd_a4s_suspend,
+-	},
+-	{
++	}, {
+ 		.genpd.name	= "A3SP",
+ 		.bit_shift	= 11,
+ 		.gov		= &pm_domain_always_on_gov,
+ 		.no_debug	= true,
+ 		.suspend	= r8a7740_pd_a3sp_suspend,
+ 	},
+-	{
+-		.genpd.name	= "A4LC",
+-		.bit_shift	= 1,
+-	},
+ };
  
- 	memory@40000000 {
+ void __init r8a7740_init_pm_domains(void)
 -- 
-1.9.1
+2.0.1
 
