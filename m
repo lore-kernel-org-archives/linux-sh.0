@@ -1,28 +1,54 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 04 Sep 2014 21:40:15 +0000
-Subject: [PATCH v5 0/2] Add generic PHY support to USB HCD
-Message-Id: <5072811.p8odmvpxdS@wasted.cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 11 Sep 2014 00:56:58 +0000
+Subject: [PATCH 1/7] ARM: shmobile: r8a7790: Use SoC-specific 48-bit CMT compat string
+Message-Id: <37757030b0f9f107cd428ae7dcb34a778a8e5d57.1410396171.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1410396171.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1410396171.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: gregkh@linuxfoundation.org, linux-usb@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, yoshihiro.shimoda.uh@renesas.com, Peter.Chen@freescale.com, stern@rowland.harvard.edu, swarren@wwwdotorg.org, thierry.reding@gmail.com, balbi@ti.com, linux-tegra@vger.kernel.org, linux-omap@vger.kernel.org, linux-kernel@vger.kernel.org, antoine.tenart@free-electrons.com
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+In general Renesas hardware is not documented to the extent
+where the relationship between IP blocks on different SoCs can be assumed
+although they may appear to operate the same way. Furthermore the
+documentation typically does not specify a version for individual
+IP blocks. For these reasons a convention of using the SoC name in place
+of a version and providing SoC-specific compat strings has been adopted.
 
-   This patchset is against the usb-next' branch of Greg KH's 'usb.git' repo.
-Here I add support for the generic PHY to the 'struct usb_hcd' (having to
-rename the existing 'phy' field to 'usb_phy' beforehand). This was mainly
-intended to be used with the PCI OHCI/EHCI drivers and also xHCI driver;
-however there are several more dependent patchsets now posted to 'linux-usb'.
-   Greg, if you want links to these patchsets and the device tree patches using
-this patchset in order to link the PCI OHCI/EHCI devices to the PHY, just ask
-(I have already posted the previously but will probably have to repost them
-again)...
+Although not universally liked this convention is used in the bindings for
+a number of drivers for Renesas hardware. The purpose of this patch is to
+make use of the SoC-specific CMT compat string for the r8a7790 48-bit CMT
+clock source.
 
-[1/2] usb: rename phy to usb_phy in HCD
-[2/2] usb: hcd: add generic PHY support
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-WBR, Sergei
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 7218bff..aa146d2 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -207,7 +207,7 @@
+ 	};
+ 
+ 	cmt0: timer@ffca0000 {
+-		compatible = "renesas,cmt-48-gen2";
++		compatible = "renesas,cmt-48-r8a7790", "renesas,cmt-48-gen2";
+ 		reg = <0 0xffca0000 0 0x1004>;
+ 		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
+@@ -220,7 +220,7 @@
+ 	};
+ 
+ 	cmt1: timer@e6130000 {
+-		compatible = "renesas,cmt-48-gen2";
++		compatible = "renesas,cmt-48-r8a7790", "renesas,cmt-48-gen2";
+ 		reg = <0 0xe6130000 0 0x1004>;
+ 		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
+-- 
+2.0.1
 
