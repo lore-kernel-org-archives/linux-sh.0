@@ -1,85 +1,45 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Fri, 12 Sep 2014 08:51:48 +0000
-Subject: [RFC 3/3] serial: sh-sci: make RX FIFO trigger tunable via sysfs
-Message-Id: <1410511908-9282-4-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 11 Sep 2014 00:56:59 +0000
+Subject: [PATCH 2/7] ARM: shmobile: r7s72100: Use SoC-specific MTU2 compat string
+Message-Id: <f401ce481082de6327d12a8dc5528d2f7a4a4445.1410396171.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410511908-9282-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1410511908-9282-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <cover.1410396171.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1410396171.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org
-Cc: horms@verge.net.au, magnus.damm@gmail.com, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Allows tuning of the RX FIFO interrupt threshold in case there are
-problems with buffer overruns or latency.
+In general Renesas hardware is not documented to the extent
+where the relationship between IP blocks on different SoCs can be assumed
+although they may appear to operate the same way. Furthermore the
+documentation typically does not specify a version for individual
+IP blocks. For these reasons a convention of using the SoC name in place
+of a version and providing SoC-specific compat strings has been adopted.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Although not universally liked this convention is used in the bindings for
+a number of drivers for Renesas hardware. The purpose of this patch is to
+make use of the SoC-specific CMT compat string for the r7s72100 MTU2
+clock source.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 36 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
+ arch/arm/boot/dts/r7s72100.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 78aeec1..a72ba5c 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1913,6 +1913,30 @@ static void scif_set_rtrg(struct uart_port *port)
- 	serial_port_out(port, SCFCR, serial_port_in(port, SCFCR) | bits);
- }
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index 1d28d01..801a556 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -230,7 +230,7 @@
+ 	};
  
-+static ssize_t rx_trigger_show(struct device *dev,
-+			       struct device_attribute *attr,
-+			       char *buf)
-+{
-+	struct uart_port *port = dev_get_drvdata(dev);
-+	struct sci_port *sci = to_sci_port(port);
-+	return sprintf(buf, "%d\n", sci->rx_trigger);
-+}
-+
-+static ssize_t rx_trigger_store(struct device *dev,
-+				struct device_attribute *attr,
-+				const char *buf,
-+				size_t count)
-+{
-+	struct uart_port *port = dev_get_drvdata(dev);
-+	struct sci_port *sci = to_sci_port(port);
-+	int r = simple_strtol(buf, NULL, 0);
-+	sci->rx_trigger = r;
-+	scif_set_rtrg(port);
-+	return count;
-+}
-+
-+static DEVICE_ATTR(rx_trigger_level, 0644, rx_trigger_show, rx_trigger_store);
-+
- static void sci_reset(struct uart_port *port)
- {
- 	struct plat_sci_reg *reg;
-@@ -2516,6 +2540,11 @@ static int sci_remove(struct platform_device *dev)
- 
- 	sci_cleanup_single(port);
- 
-+	if (port->port.fifosize > 1) {
-+		sysfs_remove_file(&dev->dev.kobj,
-+		                &dev_attr_rx_trigger_level.attr);
-+	}
-+
- 	return 0;
- }
- 
-@@ -2660,6 +2689,13 @@ static int sci_probe(struct platform_device *dev)
- 	if (ret)
- 		return ret;
- 
-+	if (sp->port.fifosize > 1) {
-+		ret = sysfs_create_file(&dev->dev.kobj,
-+				&dev_attr_rx_trigger_level.attr);
-+		if (ret)
-+			return ret;
-+	}
-+
- 	sp->freq_transition.notifier_call = sci_notifier;
- 
- 	ret = cpufreq_register_notifier(&sp->freq_transition,
+ 	mtu2: timer@fcff0000 {
+-		compatible = "renesas,mtu2";
++		compatible = "renesas,mtu2-r7s72100", "renesas,mtu2";
+ 		reg = <0xfcff0000 0x400>;
+ 		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
+ 		interrupt-names = "tgi0a";
 -- 
-1.8.4.5
+2.0.1
 
