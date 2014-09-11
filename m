@@ -1,115 +1,44 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 06 Sep 2014 01:26:28 +0000
-Subject: [PATCH v3 1/3] clocksource: sh_cmt: Document SoC specific bindings
-Message-Id: <1409966790-17683-2-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 11 Sep 2014 00:57:14 +0000
+Subject: [PATCH 1/3] ARM: shmobile: lager: correct memory map
+Message-Id: <126f998e4ae8bc45cd72c7e62c53767c007fc319.1410396013.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409966790-17683-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1409966790-17683-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1410396013.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1410396013.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-In general Renesas hardware is not documented to the extent
-where the relationship between IP blocks on different SoCs can be assumed
-although they may appear to operate the same way. Furthermore the
-documentation typically does not specify a version for individual
-IP blocks. For these reasons a convention of using the SoC name in place
-of a version and providing SoC-specific compat strings has been adopted.
+The base address of the second memory region on the lager
+board is 0x140000000. Update the tag used in the dts file accordingly.
 
-Although not universally liked this convention is used in the bindings for
-a number of drivers for Renesas hardware. The purpose of this patch is to
-update the Renesas R-Car Compare Match Timer (CMT) driver to follow this
-convention.
+This is a documentation fix and should have no run-time affect.
 
+This problem was introduced when the second memory region
+was added to the lager dts file by 62bc32a2573c4219
+("ARM: shmobile: Include all 4 GiB of memory on Lager)"
+in v3.14.
+
+Reported-by: NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Mark Rutland <mark.rutland@arm.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
 ---
-* I plan to follow up with patches to use these new bindings in the
-  dtsi files for the affected SoCs.
+ arch/arm/boot/dts/r8a7790-lager.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-v2
-* Reorder compat entries so more-specific entries and their fallbacks
-  are grouped with the fallback entry coming last.
-* Explicitly document fallback
-
-v3
-* Avoid circular dependency in documentation of fallback
-  behaviour of renesas,cmt-48-gen2
-* Use consistent case for SoC names in compat string descriptions
----
- .../devicetree/bindings/timer/renesas,cmt.txt      | 44 +++++++++++++++++++---
- 1 file changed, 38 insertions(+), 6 deletions(-)
-
-diff --git a/Documentation/devicetree/bindings/timer/renesas,cmt.txt b/Documentation/devicetree/bindings/timer/renesas,cmt.txt
-index a17418b..1a05c1b 100644
---- a/Documentation/devicetree/bindings/timer/renesas,cmt.txt
-+++ b/Documentation/devicetree/bindings/timer/renesas,cmt.txt
-@@ -11,15 +11,47 @@ datasheets.
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index b5f56bc..f467c6d 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -32,7 +32,7 @@
+ 		reg = <0 0x40000000 0 0x40000000>;
+ 	};
  
- Required Properties:
- 
--  - compatible: must contain one of the following.
--    - "renesas,cmt-32" for the 32-bit CMT
-+  - compatible: must contain one or more of the following:
-+    - "renesas,cmt-32-r8a7740" for the r8a7740 32-bit CMT
-+		(CMT0)
-+    - "renesas,cmt-32-sh7372" for the sh7372 32-bit CMT
-+		(CMT0)
-+    - "renesas,cmt-32-sh73a0" for the sh73a0 32-bit CMT
-+		(CMT0)
-+    - "renesas,cmt-32" for all 32-bit CMT without fast clock support
- 		(CMT0 on sh7372, sh73a0 and r8a7740)
--    - "renesas,cmt-32-fast" for the 32-bit CMT with fast clock support
-+		This is a fallback for the above renesas,cmt-32-* entries.
-+
-+    - "renesas,cmt-32-fast-r8a7740" for the r8a7740 32-bit CMT with fast
-+		clock support (CMT[234])
-+    - "renesas,cmt-32-fast-sh7372" for the sh7372 32-bit CMT with fast
-+		clock support (CMT[234])
-+    - "renesas,cmt-32-fast-sh73a0" for the sh73A0 32-bit CMT with fast
-+		clock support (CMT[234])
-+    - "renesas,cmt-32-fast" for all 32-bit CMT with fast clock support
- 		(CMT[234] on sh7372, sh73a0 and r8a7740)
--    - "renesas,cmt-48" for the 48-bit CMT
-+		This is a fallback for the above renesas,cmt-32-fast-* entries.
-+
-+    - "renesas,cmt-48-sh7372" for the sh7372 48-bit CMT
-+		(CMT1)
-+    - "renesas,cmt-48-sh73a0" for the sh73A0 48-bit CMT
-+		(CMT1)
-+    - "renesas,cmt-48-r8a7740" for the r8a7740 48-bit CMT
-+		(CMT1)
-+    - "renesas,cmt-48" for all non-second generation 48-bit CMT
- 		(CMT1 on sh7372, sh73a0 and r8a7740)
--    - "renesas,cmt-48-gen2" for the second generation 48-bit CMT
-+		This is a fallback for the above renesas,cmt-48-* entries.
-+
-+    - "renesas,cmt-48-r8a73a4" for the r8a73a4 48-bit CMT
-+		(CMT[01])
-+    - "renesas,cmt-48-r8a7790" for the r8a7790 48-bit CMT
-+		(CMT[01])
-+    - "renesas,cmt-48-r8a7791" for the r8a7791 48-bit CMT
-+		(CMT[01])
-+    - "renesas,cmt-48-gen2" for all second generation 48-bit CMT
- 		(CMT[01] on r8a73a4, r8a7790 and r8a7791)
-+		This is a fallback for the renesas,cmt-48-r8a73a4,
-+		renesas,cmt-48-r8a7790 and renesas,cmt-48-r8a7791 entries.
- 
-   - reg: base address and length of the registers block for the timer module.
-   - interrupts: interrupt-specifier for the timer, one per channel.
-@@ -36,7 +68,7 @@ Example: R8A7790 (R-Car H2) CMT0 node
- 	them channels 0 and 1 in the documentation.
- 
- 	cmt0: timer@ffca0000 {
--		compatible = "renesas,cmt-48-gen2";
-+		compatible = "renesas,cmt-48-r8a7790", "renesas,cmt-48-gen2";
- 		reg = <0 0xffca0000 0 0x1004>;
- 		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 142 IRQ_TYPE_LEVEL_HIGH>;
+-	memory@180000000 {
++	memory@140000000 {
+ 		device_type = "memory";
+ 		reg = <1 0x40000000 0 0xc0000000>;
+ 	};
 -- 
 2.0.1
 
