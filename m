@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 11 Sep 2014 00:49:36 +0000
+From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+Date: Thu, 11 Sep 2014 00:59:57 +0000
 Subject: Re: [PATCH] ARM: shmobile: Enable r8a7794 SoC in shmobile_defconfig
-Message-Id: <20140911004936.GA23371@verge.net.au>
+Message-Id: <5410F40D.7090704@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1410309887-15492-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1410309887-15492-1-git-send-email-horms+renesas@verge.net.au>
@@ -10,14 +10,31 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Sep 10, 2014 at 09:44:47AM +0900, Simon Horman wrote:
+Hi Simon, 
+cc Ulrich,
+
+Thanks for your patch.
+
+I think it's a bit early to enable r8a7794
+in shmobile_defconfig.
+
+The accepted part of r8a7794 initial code lacked of
+arch. timer initialization code for Cortex-A7 in r8a7794 SoC.
+[PATCH 1/3] ARM: shmobile: rcar-gen2: Add CA7 arch_timer initialization for r8a7794
+http://www.spinics.net/lists/linux-sh/msg34978.html
+
+I guess (at least) that code should be merged (in current form or another)
+before r8a7794 can be enabled in shmobile_defconfig.
+
+On 9/10/2014 9:44 AM, Simon Horman wrote:
 > Support for the r8a7794 was recently added.
 > Enable it in the shmobile_defconfig to increase build coverage.
-> 
+
+IMO, the support is only enabled after the code under that config
+run correctly.
+Please correct me if I'm wrong.
+
 > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
-I have queued this up.
-
 > ---
 > 
 > Based on renesas-devel-20140910v2-v3.17-rc4
@@ -36,6 +53,8 @@ I have queued this up.
 >  CONFIG_MACH_KOELSCH=y
 >  CONFIG_MACH_LAGER=y
 >  CONFIG_MACH_MARZEN=y
-> -- 
-> 2.0.1
 > 
+
+-- 
+Best regards,
+KHIEM Nguyen
