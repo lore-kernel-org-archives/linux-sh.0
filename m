@@ -1,26 +1,63 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 19 Sep 2014 17:18:18 +0000
-Subject: Re: [PATCH v2 1/5] i2c: Don't start transfers when suspended
-Message-Id: <20140919171818.GA2874@katana>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 11 Sep 2014 00:57:01 +0000
+Subject: [PATCH 4/7] ARM: shmobile: r8a7779: Use SoC-specific TMU compat string
+Message-Id: <a51b7b38182918d54813b572d6c28d43082d94ff.1410396171.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405608520-5644-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1405608520-5644-1-git-send-email-hechtb@gmail.com>
+References: <cover.1410396171.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1410396171.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Jul 17, 2014 at 04:48:36PM +0200, Bastian Hecht wrote:
-> i2c transfer requests come in very uncontrolled, like from interrupt routines.
-> We might be suspended when this happens. To avoid i2c timeouts caused by
-> powered down busses we check for suspension.
-> 
-> Several bus drivers handle this problem on their own. We can clean things up
-> by moving the protection mechanism into the core.
-> 
-> Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+In general Renesas hardware is not documented to the extent
+where the relationship between IP blocks on different SoCs can be assumed
+although they may appear to operate the same way. Furthermore the
+documentation typically does not specify a version for individual
+IP blocks. For these reasons a convention of using the SoC name in place
+of a version and providing SoC-specific compat strings has been adopted.
 
-Dropping this series due to the comments. I am not sure if it is worth
-to add information about the clients being "normally" suspendable or
-not. Thanks Bastian for the effort, though.
+Although not universally liked this convention is used in the bindings for
+a number of drivers for Renesas hardware. The purpose of this patch is to
+make use of the SoC-specific CMT compat string for the r8a7779 TMU
+clock source.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7779.dtsi | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 463e3fd..72891e5 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -267,7 +267,7 @@
+ 	};
+ 
+ 	tmu0: timer@ffd80000 {
+-		compatible = "renesas,tmu";
++		compatible = "renesas,tmu-r8a7779", "renesas,tmu";
+ 		reg = <0xffd80000 0x30>;
+ 		interrupts = <0 32 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 33 IRQ_TYPE_LEVEL_HIGH>,
+@@ -281,7 +281,7 @@
+ 	};
+ 
+ 	tmu1: timer@ffd81000 {
+-		compatible = "renesas,tmu";
++		compatible = "renesas,tmu-r8a7779", "renesas,tmu";
+ 		reg = <0xffd81000 0x30>;
+ 		interrupts = <0 36 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 37 IRQ_TYPE_LEVEL_HIGH>,
+@@ -295,7 +295,7 @@
+ 	};
+ 
+ 	tmu2: timer@ffd82000 {
+-		compatible = "renesas,tmu";
++		compatible = "renesas,tmu-r8a7779", "renesas,tmu";
+ 		reg = <0xffd82000 0x30>;
+ 		interrupts = <0 40 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 41 IRQ_TYPE_LEVEL_HIGH>,
+-- 
+2.0.1
 
