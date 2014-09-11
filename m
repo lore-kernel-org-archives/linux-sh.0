@@ -1,39 +1,47 @@
-From: Mike Turquette <mturquette@linaro.org>
-Date: Tue, 02 Sep 2014 00:23:29 +0000
-Subject: Re: [PATCH v4] clk: shmobile: div6: support selectable-input clocks
-Message-Id: <20140902002329.5251.82127@quantum>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 11 Sep 2014 00:57:24 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC PM Cleanups for v3.18
+Message-Id: <cover.1410395620.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409238671-30452-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1409238671-30452-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au
-Cc: linux-sh@vger.kernel.org, magnus.damm@gmail.com, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, devicetree@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, Ulrich Hecht <ulrich.hecht@gmail.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Quoting Ulrich Hecht (2014-08-28 08:11:11)
-> From: Ulrich Hecht <ulrich.hecht@gmail.com>
-> 
-> Support for setting the parent at initialization time based on the current
-> hardware configuration in DIV6 clocks with selectable parents as found in
-> the r8a73a4, r8a7740, sh73a0, and other SoCs.
+Hi Olof, Hi Kevin, Hi Arnd,
 
-<snip>
+Please consider these Renesas ARM based SoC PM cleanups for v3.18.
 
-> -       parent_name = of_clk_get_parent_name(np, 0);
-> +       if (!of_property_read_u32(np, "renesas,src-shift", &src_shift)) {
-> +               if (!of_property_read_u32(np, "renesas,src-width",
-> +                                       &src_width)) {
-> +                       unsigned int parent_idx > +                               (clk_readl(clock->reg) >> src_shift) &
-> +                               (BIT(src_width) - 1);
-> +                       parent_name = of_clk_get_parent_name(np, parent_idx);
 
-Can the clock source be selected at run-time? Is there a use case for
-this?
+The following changes since commit 7d1311b93e58ed55f3a31cc8f94c4b8fe988a2b9:
 
-If so it is probably better to actually model these clocks as
-multiplexers with the corresponding .get_parent and .set_parent
-callbacks.
+  Linux 3.17-rc1 (2014-08-16 10:40:26 -0600)
 
-Regards,
-Mike
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-pm-cleanups-for-v3.18
+
+for you to fetch changes up to 834720dbf03819a8b2d0ba5fbe01d008267f9da6:
+
+  ARM: shmobile: armadillo800eva legacy: Use rmobile_add_devices_to_domains() (2014-09-09 11:16:08 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC PM Cleanups for v3.18
+
+* Make domain_devices[] static __initdata
+* Add and use rmobile_add_devices_to_domain
+
+----------------------------------------------------------------
+Geert Uytterhoeven (5):
+      ARM: shmobile: mackerel: Make domain_devices[] static __initdata
+      ARM: shmobile: sh7372: Make domain_devices[] static __initdata
+      ARM: shmobile: r8a7740: Use rmobile_add_devices_to_domains()
+      ARM: shmobile: r8a7740: Clean up pm domain table
+      ARM: shmobile: armadillo800eva legacy: Use rmobile_add_devices_to_domains()
+
+ arch/arm/mach-shmobile/board-armadillo800eva.c |  8 ++++++--
+ arch/arm/mach-shmobile/board-mackerel.c        |  2 +-
+ arch/arm/mach-shmobile/pm-r8a7740.c            | 10 ++++------
+ arch/arm/mach-shmobile/setup-r8a7740.c         | 26 +++++++++++++++-----------
+ arch/arm/mach-shmobile/setup-sh7372.c          |  2 +-
+ 5 files changed, 27 insertions(+), 21 deletions(-)
