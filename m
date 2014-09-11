@@ -1,27 +1,54 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 05 Sep 2014 16:00:47 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Maintainers Updates for v3.18
-Message-Id: <201409051800.47772.arnd@arndb.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 11 Sep 2014 00:57:00 +0000
+Subject: [PATCH 3/7] ARM: shmobile: r8a7791: Use SoC-specific 48-bit CMT compat string
+Message-Id: <4217f323206c50f4a035338c9a09bd24e5bb263a.1410396171.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408492852.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408492852.git.horms+renesas@verge.net.au>
+References: <cover.1410396171.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1410396171.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wednesday 20 August 2014, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> for you to fetch changes up to f7b98477f613a69b74ba4a715856630cc6508c0d:
-> 
->   ARM: shmobile: Remove genmai_defconfig from MAINTAINERS (2014-08-17 09:39:29 +0900)
-> 
-> ----------------------------------------------------------------
-> Renesas ARM Based SoC Maintainers Updates for v3.18
-> 
-> * Remove genmai_defconfig from MAINTAINERS
->   genmai_defconfig was removed in v3.17-rc1.
+In general Renesas hardware is not documented to the extent
+where the relationship between IP blocks on different SoCs can be assumed
+although they may appear to operate the same way. Furthermore the
+documentation typically does not specify a version for individual
+IP blocks. For these reasons a convention of using the SoC name in place
+of a version and providing SoC-specific compat strings has been adopted.
 
-Merged into next/fixes-non-critical, thanks!
+Although not universally liked this convention is used in the bindings for
+a number of drivers for Renesas hardware. The purpose of this patch is to
+make use of the SoC-specific CMT compat string for the r8a7791 48-bit CMT
+clock source.
 
-	Arnd
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index bdb9ac1..e270f38 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -190,7 +190,7 @@
+ 	};
+ 
+ 	cmt0: timer@ffca0000 {
+-		compatible = "renesas,cmt-48-gen2";
++		compatible = "renesas,cmt-48-r8a7791", "renesas,cmt-48-gen2";
+ 		reg = <0 0xffca0000 0 0x1004>;
+ 		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
+@@ -203,7 +203,7 @@
+ 	};
+ 
+ 	cmt1: timer@e6130000 {
+-		compatible = "renesas,cmt-48-gen2";
++		compatible = "renesas,cmt-48-r8a7791", "renesas,cmt-48-gen2";
+ 		reg = <0 0xe6130000 0 0x1004>;
+ 		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
+-- 
+2.0.1
+
