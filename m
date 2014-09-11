@@ -1,26 +1,57 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 30 Sep 2014 05:24:23 +0000
-Subject: Re: [PATCH v4 0/3] Add USB PHY device tree support for R8A7791/Koelsch/Henninger board
-Message-Id: <20140930052423.GB24665@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 11 Sep 2014 00:57:15 +0000
+Subject: [GIT PULL] Fourth Round of Renesas ARM Based SoC DT Updates for v3.18
+Message-Id: <cover.1410396013.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <3383603.zZsCVpCDbD@wasted.cogentembedded.com>
-In-Reply-To: <3383603.zZsCVpCDbD@wasted.cogentembedded.com>
+References: <cover.1394080829.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1394080829.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Sep 27, 2014 at 01:05:41AM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
->    Here's the set of 3 patches against Simon Horman's 'renesas.git' repo,
-> 'renesas-devel-20140924-v3.17-rc6' tag. Here we add the USB PHY device tree
-> support on the R8A7791/Koelsch/Henninger boards. The patchset requires the USB
-> PHY driver already merged by Kishon and Greg in order to work, so can be
-> applied at last...
-> 
-> [1/3] ARM: shmobile: r8a7791: add USB PHY DT support
-> [2/3] ARM: shmobile: koelsch: enable USB PHY
-> [3/3] ARM: shmobile: henninger: enable USB PHY
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Thanks, I have queued these up.
+Please consider these fourth round of Renesas ARM based SoC DT updates for
+v3.18.
+
+This pull request is based on the previous round of
+such requests, tagged as renesas-dt3-for-v3.18,
+which you have already pulled.
+
+
+The following changes since commit 40c488df84f9fbf4b84b4baed6e2cec4a2d946ed:
+
+  ARM: shmobile: kzm9g-reference dts: Use tabs for indentation (2014-09-02 10:22:42 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt4-for-v3.18
+
+for you to fetch changes up to a742795be9ceae2853ca71f216193f29da151da8:
+
+  ARM: shmobile: Initial Alt board device tree (2014-09-09 11:29:27 +0900)
+
+----------------------------------------------------------------
+Fourth Round of Renesas ARM Based SoC DT Updates for v3.18
+
+* Add r8a7794 SoC and Alt board device tree
+* Correct lager memory map
+
+----------------------------------------------------------------
+Simon Horman (1):
+      ARM: shmobile: lager: correct memory map
+
+Ulrich Hecht (2):
+      ARM: shmobile: Initial r8a7794 SoC device tree
+      ARM: shmobile: Initial Alt board device tree
+
+ arch/arm/boot/dts/Makefile                |   3 +-
+ arch/arm/boot/dts/r8a7790-lager.dts       |   2 +-
+ arch/arm/boot/dts/r8a7794-alt.dts         |  47 +++
+ arch/arm/boot/dts/r8a7794.dtsi            | 531 ++++++++++++++++++++++++++++++
+ include/dt-bindings/clock/r8a7794-clock.h |  80 +++++
+ 5 files changed, 661 insertions(+), 2 deletions(-)
+ create mode 100644 arch/arm/boot/dts/r8a7794-alt.dts
+ create mode 100644 arch/arm/boot/dts/r8a7794.dtsi
+ create mode 100644 include/dt-bindings/clock/r8a7794-clock.h
