@@ -1,23 +1,95 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 16 Sep 2014 00:46:45 +0000
-Subject: Re: [PATCH 6/6] ARM: shmobile: ape6evm-reference: sort dts file by address
-Message-Id: <20140916004645.GH26557@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 11 Sep 2014 00:57:16 +0000
+Subject: [PATCH 3/3] ARM: shmobile: Initial Alt board device tree
+Message-Id: <a742795be9ceae2853ca71f216193f29da151da8.1410396013.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410511876-9235-1-git-send-email-ulrich.hecht+renesas@gmail.com>
- <1410511876-9235-7-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1410511876-9235-7-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <cover.1410396013.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1410396013.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Cc: Olof Johansson <olof@lixom.net>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, magnus.damm@gmail.com
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Sep 12, 2014 at 10:51:16AM +0200, Ulrich Hecht wrote:
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> ---
->  arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts | 26 ++++++++++++-------------
->  1 file changed, 13 insertions(+), 13 deletions(-)
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Thanks, this file seems very quiet so this change doesn't seem
-to conflict with anything else that has been done for v3.18.
-I have queued it up.
+Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+[uli: reduced to minimum, added cmt, enabled scif2, split off from SoC]
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/Makefile        |  3 ++-
+ arch/arm/boot/dts/r8a7794-alt.dts | 47 +++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 49 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/boot/dts/r8a7794-alt.dts
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index b8c5cd3..81c1df9 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -375,7 +375,8 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
+ 	r8a7791-henninger.dtb \
+ 	r8a7791-koelsch.dtb \
+ 	r8a7790-lager.dtb \
+-	r8a7779-marzen.dtb
++	r8a7779-marzen.dtb \
++	r8a7794-alt.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
+ 	socfpga_cyclone5_socdk.dtb \
+ 	socfpga_cyclone5_sockit.dtb \
+diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
+new file mode 100644
+index 0000000..79d06ef
+--- /dev/null
++++ b/arch/arm/boot/dts/r8a7794-alt.dts
+@@ -0,0 +1,47 @@
++/*
++ * Device Tree Source for the Alt board
++ *
++ * Copyright (C) 2014 Renesas Electronics Corporation
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/dts-v1/;
++#include "r8a7794.dtsi"
++
++/ {
++	model = "Alt";
++	compatible = "renesas,alt", "renesas,r8a7794";
++
++	aliases {
++		serial0 = &scif2;
++	};
++
++	chosen {
++		bootargs = "console=ttySC0,38400 ignore_loglevel rw root=/dev/nfs ip=dhcp";
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0 0x40000000 0 0x40000000>;
++	};
++
++	lbsc {
++		#address-cells = <1>;
++		#size-cells = <1>;
++	};
++};
++
++&extal_clk {
++	clock-frequency = <20000000>;
++};
++
++&cmt0 {
++	status = "ok";
++};
++
++&scif2 {
++	status = "ok";
++};
+-- 
+2.0.1
+
