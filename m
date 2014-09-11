@@ -1,54 +1,41 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Mon, 22 Sep 2014 09:51:09 +0000
-Subject: [PATCH 2/3] PCI: rcar-internal-pci: Add call to get domain nr
-Message-Id: <1411379470-20639-3-git-send-email-phil.edworthy@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 11 Sep 2014 00:57:24 +0000
+Subject: [PATCH 2/5] ARM: shmobile: sh7372: Make domain_devices[] static __initdata
+Message-Id: <9eda01b2f665d8bf29f6ac93e3db403290e0f3cf.1410395620.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411379470-20639-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1411379470-20639-1-git-send-email-phil.edworthy@renesas.com>
+References: <cover.1410395620.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1410395620.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-R-Car devices (r8a7790 and r8a7791) need to place the internal PCI and external
-PCIe controllers on separate domains so that they can work at the same time.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Make the domain_devices[] array static and __initdata, to reduce kernel
+size:
+  - Making it static gets rid of the code to copy the data to the stack,
+  - Marking it __initdata allows more init memory to be freed.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pci/host/pci-rcar-gen2.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+ arch/arm/mach-shmobile/setup-sh7372.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/pci/host/pci-rcar-gen2.c b/drivers/pci/host/pci-rcar-gen2.c
-index 3ef854f..17681ea 100644
---- a/drivers/pci/host/pci-rcar-gen2.c
-+++ b/drivers/pci/host/pci-rcar-gen2.c
-@@ -99,6 +99,7 @@ struct rcar_pci_priv {
- 	struct resource io_res;
- 	struct resource mem_res;
- 	struct resource *cfg_res;
-+	int domain;
- 	unsigned busnr;
- 	int irq;
- 	unsigned long window_size;
-@@ -373,6 +374,8 @@ static int rcar_pci_probe(struct platform_device *pdev)
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 9cdfcdfd..a04fa5f 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -927,7 +927,7 @@ static struct platform_device *sh7372_late_devices[] __initdata = {
  
- 	priv->window_size = SZ_1G;
- 
-+	priv->domain = of_pci_get_domain_nr(pdev->dev.of_node, true);
-+
- 	if (pdev->dev.of_node) {
- 		struct resource busnr;
- 		int ret;
-@@ -397,6 +400,9 @@ static int rcar_pci_probe(struct platform_device *pdev)
- 	hw.map_irq = rcar_pci_map_irq;
- 	hw.ops = &rcar_pci_ops;
- 	hw.setup = rcar_pci_setup;
-+#ifdef CONFIG_PCI_DOMAINS
-+	hw.domain = priv->domain;
-+#endif
- 	pci_common_init_dev(&pdev->dev, &hw);
- 	return 0;
- }
+ void __init sh7372_add_standard_devices(void)
+ {
+-	struct pm_domain_device domain_devices[] = {
++	static struct pm_domain_device domain_devices[] __initdata = {
+ 		{ "A3RV", &vpu_device, },
+ 		{ "A4MP", &spu0_device, },
+ 		{ "A4MP", &spu1_device, },
 -- 
-2.1.0
+2.0.1
 
