@@ -1,41 +1,38 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 01 Sep 2014 13:21:42 +0000
-Subject: Re: [PATCH] net: sh_eth: fix driver dependencies
-Message-Id: <540472E6.7020901@cogentembedded.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 12 Sep 2014 08:52:04 +0000
+Subject: [PATCH v2 0/2] ARM: shmobile: r8a7794/Cortex-A7 arch timer fix
+Message-Id: <1410511926-9326-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <3693021.H9Y3NelqF1@amdc1032>
-In-Reply-To: <3693021.H9Y3NelqF1@amdc1032>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, "David S. Miller" <davem@davemloft.net>
-Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kyungmin Park <kyungmin.park@samsung.com>, netdev@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+Hi!
 
-On 9/1/2014 5:15 PM, Bartlomiej Zolnierkiewicz wrote:
+Here's again the bit to get the arch timer working on the r8a7794 platform,
+this time without the secondary CPU initialization which we don't need
+anyway ATM for lack of SMP support.
 
-> Renesas SuperH Ethernet support should be available only on
-> Renesas ARM SoCs and SuperH architecture.
+CU
+Uli
 
-> Signed-off-by: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
-> Acked-by: Kyungmin Park <kyungmin.park@samsung.com>
-> Cc: Simon Horman <horms@verge.net.au>
-> Cc: Magnus Damm <magnus.damm@gmail.com>
-> ---
->   drivers/net/ethernet/renesas/Kconfig |    1 +
->   1 file changed, 1 insertion(+)
 
-> Index: b/drivers/net/ethernet/renesas/Kconfig
-> =================================> --- a/drivers/net/ethernet/renesas/Kconfig	2014-07-30 14:31:20.479522692 +0200
-> +++ b/drivers/net/ethernet/renesas/Kconfig	2014-09-01 14:45:36.160544016 +0200
-> @@ -5,6 +5,7 @@
->   config SH_ETH
->   	tristate "Renesas SuperH Ethernet support"
->   	depends on HAS_DMA
-> +	depends on ARCH_SHMOBILE || ARCH_SH || COMPILE_TEST
+Changes since v1:
+- dumped secondary CPU intialization until we have SMP
 
-    s/ARCH-SH/SUPERH/ perhaps?
 
-WBR, Sergei
+Hisashi Nakamura (1):
+  ARM: shmobile: r8a7794: Add arch_timer to device tree
+
+Ulrich Hecht (1):
+  ARM: shmobile: rcar-gen2: Add CA7 arch_timer initialization for
+    r8a7794
+
+ arch/arm/boot/dts/r8a7794.dtsi           |  8 ++++
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 72 ++++++++++++++++++++++----------
+ 2 files changed, 57 insertions(+), 23 deletions(-)
+
+-- 
+1.8.4.5
 
