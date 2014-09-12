@@ -1,49 +1,57 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 11 Sep 2014 00:22:42 +0000
-Subject: Re: [PATCH 00/11] ARM: shmobile: r8a7740/armadillo legacy prototype pm domain support
-Message-Id: <20140911002242.GE29858@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 12 Sep 2014 13:15:16 +0000
+Subject: [PATCH 0/4] ARM: shmobile: r8a7740: Handle implicitly enabled clocks
+Message-Id: <1410527720-18061-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409320217-13278-1-git-send-email-geert+renesas@glider.be>
- <20140909022649.GC31320@verge.net.au>
- <CAMuHMdWZ_MZQo5QyZmZCx-EHvxOvO==gnoefDqsipHqfSLPXww@mail.gmail.com>
-In-Reply-To: <CAMuHMdWZ_MZQo5QyZmZCx-EHvxOvO==gnoefDqsipHqfSLPXww@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Sep 09, 2014 at 11:48:23AM +0200, Geert Uytterhoeven wrote:
-> Hi Simon, Magnus,
-> 
-> On Tue, Sep 9, 2014 at 4:26 AM, Simon Horman <horms@verge.net.au> wrote:
-> > I would like Magnus's opinion but mine is that the non-WIP patches
-> > could be queued up. At least patch 1 and 2. Possibly others if
-> > they don't depend (other than diff noise) on WIP patches.
-> 
-> The legacy platforms are meant to be extinct in the near future, but
-> Armadillo-legacy already has some PM domain support, so adding a
-> little bit more can't hurt much, IMHO.
-> 
-> Besides diff noise, there should not be any dependencies on WIP patches.
-> 
-> > With the WIP patches, I am not entirely opposed to merging them
-> > too, so long as they move things in a good direction. And in particular
-> > don't break anything.
-> 
-> "[PATCH 03/11] [WIP] ARM: shmobile: armadillo800eva legacy: Add
-> missing A3SP pm domain devices" should be OK, as this turned out to be
-> intended behavior.
-> 
-> "[PATCH 10/11] [WIP] ARM: shmobile: r8a7740: Add A4SU pm domain
->  support" probably introduces a regression for USB, as the domain is now
-> powered down after boot-up. I haven't tried USB on Armadillo yet, though.
-> So don't apply this one.
-> 
-> "[PATCH 11/11] [WIP] ARM: shmobile: r8a7740: Add A3SM pm domain
->  support" should be safe.
-> 
-> I would not apply the other WIP patches that add C99-commented-out code.
-> These issues must be fixed for DT as well.
+	Hi all,
 
-Thanks Geert, that all sounds reasonable to me.
-I will confer with Magnus.
+This patch series fixes an issue with the INTCA module clock, which we
+currently assume enabled by the bootloader or reset state.
+If this clock was not enabled before booting Linux, the intc-irqpin driver
+and all devices connected to it (buttons, RTC on i2c-gpio) don't work.
+
+To fix this, the clock is added to the system, and is managed in the driver
+through runtime PM, taking into account wake-up sources (gpio-keys, RTC alarm).
+
+There's one remaining issue for armadillo-legacy, which has support for the LCD
+controller. Although the shmobile_lcd_fb driver doesn't use MERAM on r8a7740
+(unlike on sh7372), the MERAM (Media RAM) and ICB (MERAM Interconnect Buffer)
+clocks must be enabled to show a picture on the display. However, the MERAM
+doesn't have any device associated with it, so it's non-trivial to hook it up.
+
+This patch series is based on renesas-devel-20140911-v3.17-rc4 and
+irqchip/for-next.
+
+Geert Uytterhoeven (4):
+  irqchip: renesas-intc-irqpin: Add helper variable dev = &pdev->dev
+  irqchip: renesas-intc-irqpin: Add minimal runtime PM support
+  ARM: shmobile: r8a7740 legacy: Add missing INTCA clock for irqpin
+    module
+  ARM: shmobile: r8a7740 dtsi: Add missing INTCA clock for irqpin module
+
+ arch/arm/boot/dts/r8a7740.dtsi            | 14 ++++--
+ arch/arm/mach-shmobile/clock-r8a7740.c    |  7 ++-
+ drivers/irqchip/irq-renesas-intc-irqpin.c | 83 +++++++++++++++++++++----------
+ include/dt-bindings/clock/r8a7740-clock.h |  1 +
+ 4 files changed, 73 insertions(+), 32 deletions(-)
+
+-- 
+1.9.1
+
+Thanks!
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
