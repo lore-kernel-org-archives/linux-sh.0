@@ -1,49 +1,47 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Thu, 11 Sep 2014 08:19:34 +0000
-Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC DT Timers Updates for v3.18
-Message-Id: <2854153.eROdLK4gCy@wuerfel>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 12 Sep 2014 01:23:47 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Clk Updates for v3.18
+Message-Id: <cover.1410484748.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1410396171.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1410396171.git.horms+renesas@verge.net.au>
+References: <cover.1381222967.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thursday 11 September 2014 09:57:01 Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these second round of Renesas ARM based SoC DT timers updates for v3.18.
-> 
-> This pull request is based on a merge of:
-> 
-> * The previous round of DT time updates for v3.18,
->   tagged as renesas-dt-timers-for-v3.18,
->   which you have already merged.
-> 
-> * Renesas ARM Based SoC r8a7740 Multiplatform Updates for v3.18,
->   tagged as renesas-r8a7740-ccf-and-timers-for-v3.18,
->   which you have previously pulled.
-> 
-> 
-> The following changes since commit dcc683aba83cd8db964a9a1d4582d4829d6efcb2:
-> 
->   Merge tag 'renesas-r8a7740-ccf-and-timers-for-v3.18' into dt-timers-for-v3.18 (2014-09-09 11:50:00 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-timers2-for-v3.18
-> 
-> for you to fetch changes up to 48a0d1e07d99ecfd1e5922dd22986d5813f17207:
-> 
->   ARM: shmobile: kzm9g-reference: Enable CMT1 in device tree (2014-09-09 11:53:14 +0900)
-> 
-> ----------------------------------------------------------------
-> Second Round of Renesas ARM Based SoC DT Timers Updates for v3.18
-> 
-> * kzm9g-reference: Enable CMT1 in device tree
-> * Use SoC-specific timer compat strings
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Pulled into next/soc, thanks!
+Please consider these second round of Renesas ARM based SoC clk updates for v3.18.
 
-	Arnd
+This pull request is based on the previous round of
+such requests, tagged as renesas-clk-for-v3.18,
+which you have already pulled.
+
+I am taking this change through my tree with Mike's Ack
+as it seems to be a smooth way to handle things.
+
+
+The following changes since commit 8de078f189da45453d2ed2a04288e329cc169731:
+
+  clk: shmobile: Add r8a7794 support (2014-08-27 08:40:54 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clk2-for-v3.18
+
+for you to fetch changes up to b32c44b93af31e9163514df0f3ac2791972eb124:
+
+  clk: shmobile: Add r8a7740, sh73a0 SoCs to MSTP bindings (2014-09-10 09:08:10 +0900)
+
+----------------------------------------------------------------
+Second Round of Renesas ARM Based SoC Clk Updates for v3.18
+
+* Add r8a7740, sh73a0 SoCs to MSTP bindings
+
+----------------------------------------------------------------
+Ulrich Hecht (1):
+      clk: shmobile: Add r8a7740, sh73a0 SoCs to MSTP bindings
+
+ Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 2 ++
+ 1 file changed, 2 insertions(+)
