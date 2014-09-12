@@ -1,36 +1,103 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Mon, 08 Sep 2014 10:53:30 +0000
-Subject: Re: [PATCH 4/7 v3] mmc: use .multi_io_quirk on sh_mobile
-Message-Id: <CAPDyKFqBRX0=ZL9j9L3qu-MEs5yrBH5HBs9nuPbfEw=9TYpO8A@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 12 Sep 2014 13:15:20 +0000
+Subject: [PATCH 4/4] ARM: shmobile: r8a7740 dtsi: Add missing INTCA clock for irqpin module
+Message-Id: <1410527720-18061-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
-	<87bnqx78xr.wl%kuninori.morimoto.gx@gmail.com>
-	<8761h578ux.wl%kuninori.morimoto.gx@gmail.com>
-	<CAPDyKFqGmVoe91jCpDq5=b4JG6WTJE8TQyZXu7D01DNY=yUi0A@mail.gmail.com>
-In-Reply-To: <CAPDyKFqGmVoe91jCpDq5=b4JG6WTJE8TQyZXu7D01DNY=yUi0A@mail.gmail.com>
+References: <1410527720-18061-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1410527720-18061-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Cc: Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On 8 September 2014 12:28, Ulf Hansson <ulf.hansson@linaro.org> wrote:
-> On 3 September 2014 04:09, Kuninori Morimoto
-> <kuninori.morimoto.gx@gmail.com> wrote:
->> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->>
->> Now, sh_mobile_sdhi can use .multi_io_quirk callback
->> instead of MMC_CAP2_NO_MULTI_READ flags.
->> let's use it.
->>
->> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->
-> Thanks! Applied for next!
+This clock drives the INTCA irqpin controller modules.
+Before, it was assumed enabled by the bootloader or reset state.
 
-So I understand this one depends on patch 3, putting this on hold,
-until we sorted out the comments I had.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: devicetree@vger.kernel.org
+---
+ arch/arm/boot/dts/r8a7740.dtsi            | 14 ++++++++++----
+ include/dt-bindings/clock/r8a7740-clock.h |  1 +
+ 2 files changed, 11 insertions(+), 4 deletions(-)
 
-Sorry for the noise!
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index d46c213a17ad..502483f4dccb 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -71,6 +71,7 @@
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
+ 	};
+ 
+ 	/* irqpin1: IRQ8 - IRQ15 */
+@@ -91,6 +92,7 @@
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
+ 	};
+ 
+ 	/* irqpin2: IRQ16 - IRQ23 */
+@@ -111,6 +113,7 @@
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
+ 	};
+ 
+ 	/* irqpin3: IRQ24 - IRQ31 */
+@@ -131,6 +134,7 @@
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
+ 	};
+ 
+ 	ether: ethernet@e9a00000 {
+@@ -448,8 +452,8 @@
+ 		mstp2_clks: mstp2_clks@e6150138 {
+ 			compatible = "renesas,r8a7740-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0xe6150138 4>, <0xe6150040 4>;
+-			clocks = <&sub_clk>, <&sub_clk>,
+-				 <&cpg_clocks R8A7740_CLK_HP>,
++			clocks = <&sub_clk>, <&cpg_clocks R8A7740_CLK_HP>,
++				 <&sub_clk>, <&cpg_clocks R8A7740_CLK_HP>,
+ 				 <&cpg_clocks R8A7740_CLK_HP>,
+ 				 <&cpg_clocks R8A7740_CLK_HP>,
+ 				 <&cpg_clocks R8A7740_CLK_HP>,
+@@ -458,7 +462,8 @@
+ 				 <&sub_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+-				R8A7740_CLK_SCIFA6 R8A7740_CLK_SCIFA7
++				R8A7740_CLK_SCIFA6 R8A7740_CLK_INTCA
++				R8A7740_CLK_SCIFA7
+ 				R8A7740_CLK_DMAC1 R8A7740_CLK_DMAC2
+ 				R8A7740_CLK_DMAC3 R8A7740_CLK_USBDMAC
+ 				R8A7740_CLK_SCIFA5 R8A7740_CLK_SCIFB
+@@ -467,7 +472,8 @@
+ 				R8A7740_CLK_SCIFA4
+ 			>;
+ 			clock-output-names -				"scifa6", "scifa7", "dmac1", "dmac2", "dmac3",
++				"scifa6", "intca",
++				"scifa7", "dmac1", "dmac2", "dmac3",
+ 				"usbdmac", "scifa5", "scifb", "scifa0", "scifa1",
+ 				"scifa2", "scifa3", "scifa4";
+ 		};
+diff --git a/include/dt-bindings/clock/r8a7740-clock.h b/include/dt-bindings/clock/r8a7740-clock.h
+index f6b4b0fe7a43..476135da0f23 100644
+--- a/include/dt-bindings/clock/r8a7740-clock.h
++++ b/include/dt-bindings/clock/r8a7740-clock.h
+@@ -40,6 +40,7 @@
+ 
+ /* MSTP2 */
+ #define R8A7740_CLK_SCIFA6	30
++#define R8A7740_CLK_INTCA	29
+ #define R8A7740_CLK_SCIFA7	22
+ #define R8A7740_CLK_DMAC1	18
+ #define R8A7740_CLK_DMAC2	17
+-- 
+1.9.1
 
-Kind regards
-Uffe
