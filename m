@@ -1,46 +1,39 @@
-From: Paul Bolle <pebolle@tiscali.nl>
-Date: Fri, 12 Sep 2014 10:46:11 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 12 Sep 2014 11:03:42 +0000
 Subject: Re: [PATCH] PM / OPP: Remove ARCH_HAS_OPP completely
-Message-Id: <1410518771.31130.22.camel@x220>
+Message-Id: <CAMuHMdUe+GKaYMmbC9JO=Qt7oNiEja0nGbp8oXVS=G4WJHmwJg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1406551632.5397.17.camel@x220> <1410511111.31130.4.camel@x220>
  <CAGo_u6r3jXX2FS-PO5_-+zhHM3i3pVzGYumSYLh7YPNXGV98eg@mail.gmail.com>
-In-Reply-To: <CAGo_u6r3jXX2FS-PO5_-+zhHM3i3pVzGYumSYLh7YPNXGV98eg@mail.gmail.com>
+ <1410518771.31130.22.camel@x220>
+In-Reply-To: <1410518771.31130.22.camel@x220>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, 2014-09-12 at 05:20 -0500, Nishanth Menon wrote:
-> On Fri, Sep 12, 2014 at 3:38 AM, Paul Bolle <pebolle@tiscali.nl> wrote:
-> > The Kconfig symbol ARCH_HAS_OPP became redundant in v3.16: commit
-> > 049d595a4db3 ("PM / OPP: Make OPP invisible to users in Kconfig")
-> > removed the only dependency that used it. Setting it had no effect
-> > anymore.
-> >
-> > So commit 78c5e0bb145d ("PM / OPP: Remove ARCH_HAS_OPP") removed it. For
-> > some reason that commit did not remove all select statements for that
-> > symbol. These statements are useless. Remove them too.
-> >
-> > Signed-off-by: Paul Bolle <pebolle@tiscali.nl>
-> > ---
-> > Done on top of next-20140912. Tested with git grep only!
-> >
-> >  arch/arm/mach-omap2/Kconfig    | 5 -----
-> 
-> there can be conflict here:
-> https://patchwork.kernel.org/patch/4857231/
-> 
-> http://marc.info/?l=linux-omap&m1047815520894&w=2
+Hi Paul, Rafael,
 
-Thanks.
+On Fri, Sep 12, 2014 at 12:46 PM, Paul Bolle <pebolle@tiscali.nl> wrote:
+>> >  arch/arm/mach-shmobile/Kconfig | 1 -
+>> >  drivers/devfreq/Kconfig        | 1 -
+>
+> Were patches submitted for these two files too? If so, we can probably
+> just drop my patch.
 
-> >  arch/arm/mach-shmobile/Kconfig | 1 -
-> >  drivers/devfreq/Kconfig        | 1 -
+Rafael said: "I've queued this up for 3.17, thanks!"
 
-Were patches submitted for these two files too? If so, we can probably
-just drop my patch.
+http://lists.infradead.org/pipermail/linux-arm-kernel/2014-July/274681.html
 
+But it's not in -next.
 
-Paul Bolle
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
