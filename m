@@ -1,82 +1,93 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 12 Sep 2014 08:33:48 +0000
+From: Marc Dietrich <marvin24@gmx.de>
+Date: Fri, 12 Sep 2014 09:06:49 +0000
 Subject: Re: [RFC 4/4] ARM: shmobile: r8a7790: adapt DTS for I2C slave support
-Message-Id: <20140912083348.GA1289@katana>
+Message-Id: <7627175.tG5quZH0VN@fb07-iapwap2>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="3V7upXqbjpZ4EhLz"
+Content-Type: multipart/mixed; boundary="nextPart1587627.2fD0quCvaU"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1410274470-12712-1-git-send-email-wsa@the-dreams.de>
- <1591383.Xdy91rktuP@fb07-iapwap2> <20140911145421.GE5149@katana>
- <9935938.eKOCvCAtLt@fb07-iapwap2>
-In-Reply-To: <9935938.eKOCvCAtLt@fb07-iapwap2>
+ <9935938.eKOCvCAtLt@fb07-iapwap2> <20140912083348.GA1289@katana>
+In-Reply-To: <20140912083348.GA1289@katana>
 To: linux-arm-kernel@lists.infradead.org
 
 
---3V7upXqbjpZ4EhLz
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+--nextPart1587627.2fD0quCvaU
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="ISO-8859-1"
 
+Am Freitag, 12. September 2014, 10:33:48 schrieb Wolfram Sang:
+> > > Why do you want DT to be involved at all?
+> > 
+> > Imagine a device which supports both, slave or master mode. The driver
+> > needs to know in which mode it should operate. This cannot be hard coded,
+> > because on different boards, different modes can be used.
+> 
+> Okay, it sounds weird to me that a device is not able to switch between
+> master and slave, but if you say so. Also, solving this issue would also
+> handle potential weird IP blocks which can be slave only, right?
 
-> > Why do you want DT to be involved at all?
->=20
-> Imagine a device which supports both, slave or master mode. The driver ne=
-eds=20
-> to know in which mode it should operate. This cannot be hard coded, becau=
-se on=20
-> different boards, different modes can be used.
+I didn't said device. I meant the driver (software) needs to know if which 
+mode to operate the device. DT has to provide just enough information to 
+select the right mode depending on the board implementation.
 
-Okay, it sounds weird to me that a device is not able to switch between
-master and slave, but if you say so. Also, solving this issue would also
-handle potential weird IP blocks which can be slave only, right?
+> What if you use two different adapter drivers or compatibles? One for
+> master-mode, one for slave-mode (slave could leave algo->master_xfer
+> empty, so the slave mode driver cannot send packets). I'm brainstorming
+> here, so while it should work IMO I will probably need a second thought.
+> 
+> So, in the DT you would have a block registering the I2C slave core
+> which binds to a simple driver providing reg_slave/unreg_slave and
+> pass on the slave-event. Then you could instantiate slave clients as
+> said before.
+> 
+> Maybe we need a real world example?
 
-What if you use two different adapter drivers or compatibles? One for
-master-mode, one for slave-mode (slave could leave algo->master_xfer
-empty, so the slave mode driver cannot send packets). I'm brainstorming
-here, so while it should work IMO I will probably need a second thought.
+ok, take our embedded controller driver (in staging/nvec) as an example. It's 
+basicly an MFD connecting keyboard, mouse, power, gpio, and some other stuff 
+to the soc. The MFD operates in master mode while the SOC is the I2C slave. 
+Theoretically, these roles could also switch (but that's not defined in the 
+nvec protocol).
 
-So, in the DT you would have a block registering the I2C slave core
-which binds to a simple driver providing reg_slave/unreg_slave and
-pass on the slave-event. Then you could instantiate slave clients as
-said before.
+So the i2c client driver sits in between the adapter (in slave or master mode) 
+and the the MFD children (keyboard, mouse, ...) and provides read/write/cb 
+functions (nvec uses a side channel gpio to be able to initiate writes on its 
+own) to its children. The MFD children don't care about how the i2c 
+communication is done, but the client driver needs to decide in which mode it 
+should talk to the EC. If this is not autodetectable, the mode needs to be 
+provided by the device tree.
 
-Maybe we need a real world example?
+In this case you cannot use separate drivers for master and slave mode (or you 
+would need another layer to hide the driver multiplexing).
 
-> The point is, that if we define a dt binding for master device on slave=
-=20
-> adapters it will be there forever. So even if it makes no sense for the=
-=20
-> example eeprom simulator (or even our embedded controller), it may make s=
-ense=20
-> for other or future devices.
+> > The point is, that if we define a dt binding for master device on slave
+> > adapters it will be there forever. So even if it makes no sense for the
+> > example eeprom simulator (or even our embedded controller), it may make
+> > sense for other or future devices.
+> 
+> I don't know what you mean here. Again, an example might help?
 
-I don't know what you mean here. Again, an example might help?
+I just wanted to say that the discussion here should find a *generic* way to 
+distinguish slave and master clients on the i2c bus by using a proper DT 
+binding.
 
-Thanks,
+Marc
 
-   Wolfram
-
-
---3V7upXqbjpZ4EhLz
+--nextPart1587627.2fD0quCvaU
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+Version: GnuPG v2.0.22 (GNU/Linux)
 
-iQIcBAEBAgAGBQJUEq/sAAoJEBQN5MwUoCm2fhQQAKI7BwTUMzwzP7Wm0RjEUm13
-YqFY2XbBIHIbKLeOMltZ0HMtaCuc4VJmlcatpFn3539HpB6XAOjnl9Rce7XxTbgA
-NBaFitahMwyqFv+VBFPdNQHgQc4sVkKqCUzjk+p9S+8J01FcjHZbYFqNc3ci3wj3
-kAl5B8xXJ8QXQRxH1cBSNj5/Ac8WgzOVq/wvvdgzKORDT/o+L8GksFeBTkkbDicv
-FQBSr9EBXBeq1FNkFkkT3jlqXCQsWfqZjXAjB64QBRWE+FjKBKvRZmUMmaCoz3vC
-2jZ5Vp6GxHpWxs1PGxu5yNhgwBUYSCeiTNDS2EKQkVG2UPnZz3R60EbEPisb9qkx
-tdYPBQPbV/pR4XJZV0Z3L/KFP17Ts2bRUovnpMweRsyBbhXUVgtOlLK56p0ahN2Q
-H7u/e/NT4fDKA46dBxxLHZNrGVnw03JeiTluFUdGnLXItAjsO/vvDLpRN42ylb+K
-Yb5Fi37s7Z9OgZALazfpxGDk6wmE9GcVwBS5KwJy9nt2kmYrSIxRWP1ur9XE9RnV
-ALki0WmMVPD1F9Vl5QUxGRw29ESmO2zbfQwH8KqGpndlRmNM1Ml332QeZuROTOuP
-8JvFAFbDgn0QMRfDyOV6Xj47+3T9+Pey2Cl5Ih/z6y+U7GFOt0h6zgv4a9pEW6af
-nQS++k8HsEeFK318YVHv
-=IiNd
+iQEcBAABAgAGBQJUEreqAAoJEKyeR39HFBtohnkIAIYKTkRFpQtlFVC5NojsYh/E
+ylFtmRd1cOXF+SRvBNP++OPcMSyfx07tS/6dheEhmtK7ue3vKzWV2cVGMw7ue2mn
+KfC9damQZj1S2DPbFxXFcV11qqJOh72D7LYcFbI/Vhd0Of5YK9cE8oc6izx6arET
+LDbayFvhd/JyWTqTyxBzd4AQZKS1YL4g23gSanSLt8IqdAf9MM2k9L4SaMp0XvV9
+GbxEJ8H4OvsHwgvGLFxlX0tUYYe6wxu9laGyGskdap5zgb4wIas2v8qn5L4vwr8r
+9vK+xqJOivPKHsZY8Aej/LR3I1KXQ2IrgJ7YbJZw/Qu19Pjx7u8QzE/PwYAuz9Q=
+=AsXP
 -----END PGP SIGNATURE-----
 
---3V7upXqbjpZ4EhLz--
+--nextPart1587627.2fD0quCvaU--
+
