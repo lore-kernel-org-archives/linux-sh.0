@@ -1,83 +1,128 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Mon, 01 Sep 2014 09:21:52 +0000
-Subject: [PATCH 3/7] mmc: tmio_mmc: use blk_size_workaround
-Message-Id: <87mwajzoep.wl%kuninori.morimoto.gx@gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 12 Sep 2014 08:52:05 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: rcar-gen2: Add CA7 arch_timer initialization for r8a7794
+Message-Id: <1410511926-9326-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On E2, the arch timer is hooked up to a different clock, and the CA7's arch
+timer CNTVOFF register must be initialized.
 
-Now, tmio_mmc can use blk_size_workaround.
-let's use it.
+Based on work by Hisashi Nakamura.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |   13 +++++++++++++
- include/linux/mfd/tmio.h        |    4 ++++
- 2 files changed, 17 insertions(+)
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 72 ++++++++++++++++++++++----------
+ 1 file changed, 49 insertions(+), 23 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index ba45413..f9afa27 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -970,12 +970,25 @@ static int tmio_mmc_get_ro(struct mmc_host *mmc)
- 	return ret;
- }
- 
-+static int tmio_blk_size_workaround(struct mmc_card *card,
-+				    struct request *req, int blk_size)
-+{
-+	struct tmio_mmc_host *host = mmc_priv(card->host);
-+	struct tmio_mmc_data *pdata = host->pdata;
-+
-+	if (pdata->blk_size_workaround)
-+		return pdata->blk_size_workaround(card, req, blk_size);
-+
-+	return blk_size;
-+}
-+
- static const struct mmc_host_ops tmio_mmc_ops = {
- 	.request	= tmio_mmc_request,
- 	.set_ios	= tmio_mmc_set_ios,
- 	.get_ro         = tmio_mmc_get_ro,
- 	.get_cd		= mmc_gpio_get_cd,
- 	.enable_sdio_irq = tmio_mmc_enable_sdio_irq,
-+	.blk_size_workaround = tmio_blk_size_workaround,
- };
- 
- static int tmio_mmc_init_ocr(struct tmio_mmc_host *host)
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index 90436d5..0e0bd6a 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -1,10 +1,12 @@
- #ifndef MFD_TMIO_H
- #define MFD_TMIO_H
- 
-+#include <linux/blkdev.h>
- #include <linux/device.h>
- #include <linux/fb.h>
+diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+index 42d5b43..7ed9279 100644
+--- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+@@ -3,6 +3,7 @@
+  *
+  * Copyright (C) 2013  Renesas Solutions Corp.
+  * Copyright (C) 2013  Magnus Damm
++ * Copyright (C) 2014  Ulrich Hecht
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+@@ -24,6 +25,7 @@
+ #include <linux/dma-contiguous.h>
  #include <linux/io.h>
- #include <linux/jiffies.h>
-+#include <linux/mmc/card.h>
- #include <linux/platform_device.h>
- #include <linux/pm_runtime.h>
+ #include <linux/kernel.h>
++#include <linux/of.h>
+ #include <linux/of_fdt.h>
+ #include <asm/mach/arch.h>
+ #include "common.h"
+@@ -54,37 +56,61 @@ void __init rcar_gen2_timer_init(void)
+ {
+ #if defined(CONFIG_ARM_ARCH_TIMER) || defined(CONFIG_COMMON_CLK)
+ 	u32 mode = rcar_gen2_read_mode_pins();
++	bool is_e2 = (bool)of_find_compatible_node(NULL, NULL,
++		"renesas,r8a7794");
+ #endif
+ #ifdef CONFIG_ARM_ARCH_TIMER
+ 	void __iomem *base;
+ 	int extal_mhz = 0;
+ 	u32 freq;
  
-@@ -142,6 +144,8 @@ struct tmio_mmc_data {
- 	/* clock management callbacks */
- 	int (*clk_enable)(struct platform_device *pdev, unsigned int *f);
- 	void (*clk_disable)(struct platform_device *pdev);
-+	int (*blk_size_workaround)(struct mmc_card *card,
-+				   struct request *req, int blk_size);
- };
+-	/* At Linux boot time the r8a7790 arch timer comes up
+-	 * with the counter disabled. Moreover, it may also report
+-	 * a potentially incorrect fixed 13 MHz frequency. To be
+-	 * correct these registers need to be updated to use the
+-	 * frequency EXTAL / 2 which can be determined by the MD pins.
+-	 */
+-
+-	switch (mode & (MD(14) | MD(13))) {
+-	case 0:
+-		extal_mhz = 15;
+-		break;
+-	case MD(13):
+-		extal_mhz = 20;
+-		break;
+-	case MD(14):
+-		extal_mhz = 26;
+-		break;
+-	case MD(13) | MD(14):
+-		extal_mhz = 30;
+-		break;
++	if (is_e2) {
++		freq = 260000000 / 8;	/* ZS / 8 */
++		/* CNTVOFF has to be initialized either from non-secure
++		 * Hypervisor mode or secure Monitor mode with SCR.NS=1.
++		 * If TrustZone is enabled then it should be handled by the
++		 * secure code.
++		 */
++		asm volatile(
++		"	cps	0x16\n"
++		"	mrc	p15, 0, r1, c1, c1, 0\n"
++		"	orr	r0, r1, #1\n"
++		"	mcr	p15, 0, r0, c1, c1, 0\n"
++		"	isb\n"
++		"	mov	r0, #0\n"
++		"	mcrr	p15, 4, r0, r0, c14\n"
++		"	isb\n"
++		"	mcr	p15, 0, r1, c1, c1, 0\n"
++		"	isb\n"
++		"	cps	0x13\n"
++			: : : "r0", "r1");
++	} else {
++		/* At Linux boot time the r8a7790 arch timer comes up
++		 * with the counter disabled. Moreover, it may also report
++		 * a potentially incorrect fixed 13 MHz frequency. To be
++		 * correct these registers need to be updated to use the
++		 * frequency EXTAL / 2 which can be determined by the MD pins.
++		 */
++
++		switch (mode & (MD(14) | MD(13))) {
++		case 0:
++			extal_mhz = 15;
++			break;
++		case MD(13):
++			extal_mhz = 20;
++			break;
++		case MD(14):
++			extal_mhz = 26;
++			break;
++		case MD(13) | MD(14):
++			extal_mhz = 30;
++			break;
++		}
++
++		/* The arch timer frequency equals EXTAL / 2 */
++		freq = extal_mhz * (1000000 / 2);
+ 	}
  
- /*
+-	/* The arch timer frequency equals EXTAL / 2 */
+-	freq = extal_mhz * (1000000 / 2);
+-
+ 	/* Remap "armgcnt address map" space */
+ 	base = ioremap(0xe6080000, PAGE_SIZE);
+ 
 -- 
-1.7.9.5
+1.8.4.5
 
