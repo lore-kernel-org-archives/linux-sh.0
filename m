@@ -1,74 +1,75 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 02 Sep 2014 01:31:54 +0000
-Subject: [PATCH] ARM: shmobile: Enable Armadillo 800 EVA board in multiplatform defconfig
-Message-Id: <de46e95cdb8671e2b0728923b8113654779c3ba8.1409621323.git.horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 12 Sep 2014 08:51:15 +0000
+Subject: [PATCH 5/6] ARM: shmobile: ape6evm: sort dts file by address
+Message-Id: <1410511876-9235-6-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1409621323.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1409621323.git.horms+renesas@verge.net.au>
+References: <1410511876-9235-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1410511876-9235-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: horms@verge.net.au, Olof Johansson <olof@lixom.net>
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, magnus.damm@gmail.com, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
- arch/arm/configs/shmobile_defconfig | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts | 36 +++++++++++++++++------------------
+ 1 file changed, 18 insertions(+), 18 deletions(-)
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index b7ebf1e..522275a 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -12,6 +12,7 @@ CONFIG_SLAB=y
- CONFIG_ARCH_SHMOBILE_MULTI=y
- CONFIG_ARCH_EMEV2=y
- CONFIG_ARCH_R7S72100=y
-+CONFIG_ARCH_R8A7740=y
- CONFIG_ARCH_R8A7779=y
- CONFIG_ARCH_R8A7790=y
- CONFIG_ARCH_R8A7791=y
-@@ -75,6 +76,8 @@ CONFIG_SMSC_PHY=y
- # CONFIG_INPUT_MOUSEDEV_PSAUX is not set
- CONFIG_KEYBOARD_GPIO=y
- # CONFIG_INPUT_MOUSE is not set
-+CONFIG_INPUT_TOUCHSCREEN=y
-+CONFIG_TOUCHSCREEN_ST1232=y
- # CONFIG_LEGACY_PTYS is not set
- CONFIG_SERIAL_8250=y
- CONFIG_SERIAL_8250_CONSOLE=y
-@@ -113,10 +116,16 @@ CONFIG_VIDEO_RENESAS_VSP1=y
- CONFIG_VIDEO_ADV7180=y
- CONFIG_DRM=y
- CONFIG_DRM_RCAR_DU=y
-+CONFIG_BACKLIGHT_LCD_SUPPORT=y
-+# CONFIG_LCD_CLASS_DEVICE is not set
-+# CONFIG_BACKLIGHT_GENERIC is not set
-+CONFIG_BACKLIGHT_PWM=y
- CONFIG_SOUND=y
- CONFIG_SND=y
- CONFIG_SND_SOC=y
-+CONFIG_SND_SOC_SH4_FSI=y
- CONFIG_SND_SOC_RCAR=y
-+CONFIG_SND_SOC_WM8978=y
- CONFIG_USB=y
- CONFIG_USB_EHCI_HCD=y
- CONFIG_USB_OHCI_HCD=y
-@@ -133,9 +142,12 @@ CONFIG_NEW_LEDS=y
- CONFIG_LEDS_CLASS=y
- CONFIG_LEDS_GPIO=y
- CONFIG_RTC_CLASS=y
-+CONFIG_RTC_DRV_S35390A=y
- CONFIG_DMADEVICES=y
- CONFIG_SH_DMAE=y
- # CONFIG_IOMMU_SUPPORT is not set
-+CONFIG_PWM=y
-+CONFIG_PWM_RENESAS_TPU=y
- # CONFIG_DNOTIFY is not set
- CONFIG_MSDOS_FS=y
- CONFIG_VFAT_FS=y
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+index ce085fa..23e9925 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+@@ -20,24 +20,6 @@
+ 		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
+ 	};
+ 
+-	memory@40000000 {
+-		device_type = "memory";
+-		reg = <0 0x40000000 0 0x40000000>;
+-	};
+-
+-	memory@200000000 {
+-		device_type = "memory";
+-		reg = <2 0x00000000 0 0x40000000>;
+-	};
+-
+-	ape6evm_fixed_3v3: fixedregulator@0 {
+-		compatible = "regulator-fixed";
+-		regulator-name = "3V3";
+-		regulator-min-microvolt = <3300000>;
+-		regulator-max-microvolt = <3300000>;
+-		regulator-always-on;
+-	};
+-
+ 	lbsc {
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+@@ -55,6 +37,24 @@
+ 			vddvario-supply = <&ape6evm_fixed_3v3>;
+ 		};
+ 	};
++
++	ape6evm_fixed_3v3: fixedregulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "3V3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0 0x40000000 0 0x40000000>;
++	};
++
++	memory@200000000 {
++		device_type = "memory";
++		reg = <2 0x00000000 0 0x40000000>;
++	};
+ };
+ 
+ &i2c5 {
 -- 
-2.0.1
+1.8.4.5
 
