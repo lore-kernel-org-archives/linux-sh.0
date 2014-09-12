@@ -1,62 +1,69 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 11 Sep 2014 14:54:22 +0000
+From: Marc Dietrich <marvin24@gmx.de>
+Date: Fri, 12 Sep 2014 07:51:31 +0000
 Subject: Re: [RFC 4/4] ARM: shmobile: r8a7790: adapt DTS for I2C slave support
-Message-Id: <20140911145421.GE5149@katana>
+Message-Id: <9935938.eKOCvCAtLt@fb07-iapwap2>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="DqhR8hV3EnoxUkKN"
+Content-Type: multipart/mixed; boundary="nextPart1739861.7zaRQAvcMS"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1410274470-12712-1-git-send-email-wsa@the-dreams.de>
- <20140911141257.GC5149@katana> <20140911144003.GD5149@katana>
- <1591383.Xdy91rktuP@fb07-iapwap2>
-In-Reply-To: <1591383.Xdy91rktuP@fb07-iapwap2>
+ <1591383.Xdy91rktuP@fb07-iapwap2> <20140911145421.GE5149@katana>
+In-Reply-To: <20140911145421.GE5149@katana>
 To: linux-arm-kernel@lists.infradead.org
 
 
---DqhR8hV3EnoxUkKN
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+--nextPart1739861.7zaRQAvcMS
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="ISO-8859-1"
 
-On Thu, Sep 11, 2014 at 04:52:22PM +0200, Marc Dietrich wrote:
-> Am Donnerstag, 11. September 2014, 16:40:04 schrieb Wolfram Sang:
-> > > b) could be seen as a configuration thing since the functionality
-> > > backend could be changed at runtime even.
-> >=20
-> > Come to think of it, not only the functionality, also the address can be
-> > changed at runtime. This makes me think it should really not be in DT
-> > after all.
->=20
-> even worse, there can be multiple masters and slaves changing their role =
-on=20
-> the fly AFAIK. So the best dt can do is to provide an initial configurati=
-on,=20
-> so all drivers know where they are and where to start. Everything else ca=
-n be=20
-> changed during runtime.
+Am Donnerstag, 11. September 2014, 16:54:22 schrieb Wolfram Sang:
+> On Thu, Sep 11, 2014 at 04:52:22PM +0200, Marc Dietrich wrote:
+> > Am Donnerstag, 11. September 2014, 16:40:04 schrieb Wolfram Sang:
+> > > > b) could be seen as a configuration thing since the functionality
+> > > > backend could be changed at runtime even.
+> > > 
+> > > Come to think of it, not only the functionality, also the address can be
+> > > changed at runtime. This makes me think it should really not be in DT
+> > > after all.
+> > 
+> > even worse, there can be multiple masters and slaves changing their role
+> > on
+> > the fly AFAIK. So the best dt can do is to provide an initial
+> > configuration, so all drivers know where they are and where to start.
+> > Everything else can be changed during runtime.
+> 
+> Why do you want DT to be involved at all?
 
-Why do you want DT to be involved at all?
+Imagine a device which supports both, slave or master mode. The driver needs 
+to know in which mode it should operate. This cannot be hard coded, because on 
+different boards, different modes can be used.
 
+The point is, that if we define a dt binding for master device on slave 
+adapters it will be there forever. So even if it makes no sense for the 
+example eeprom simulator (or even our embedded controller), it may make sense 
+for other or future devices.
 
---DqhR8hV3EnoxUkKN
+On the other hand, we had some painful discussion about that issue in the 
+past, so if no one else steps up to propose a good alternative binding, I will 
+be the last to criticize your approach.
+
+Marc
+
+--nextPart1739861.7zaRQAvcMS
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+Version: GnuPG v2.0.22 (GNU/Linux)
 
-iQIcBAEBAgAGBQJUEbedAAoJEBQN5MwUoCm2SEIP/1y1KCLP9O8HoaQmsSO7FrIA
-03eEtT0dQWz1i5+UNR1AXOJrnFsegC2PlSf6Kws+XTmdX3wC1Nd8atxd+nGDRxfE
-kzz+h0PDh3JE2jAX/Txytrsje8PVsfTVM0FW8DPG/rpsUZ/gEN+pfqIVl30/OWR8
-2z5eC4bLRxvxYsG1PkggD2TvhZYfSGwa9AkaDpyHsUBJLomAoBg+Ec6pAbjFHwxO
-95wc1YP03MPydDRZpQ5dGHRt3wkzZJbhra9gG5oBH33na66k6AEWezZKDNcOBy/U
-6x0dOrqn457EFM8WMWkma+Yp9OuOt5wMiybBsA2yj1j8CFaCa4u5N56Zd+y3XNpA
-5evLhIqNzr/hoU/EMAGbNQ1y6mQuMhkYf5ryDdHSlxKEo8yCCsLWvEo71vFmutjP
-0huMZa4b/ZyDqy6rJbfwQ/Nqu1W83qF6Fnhi9czUQUna1mZwwwquHhS9soUt6QDB
-NSLEApGp1irvbbiiMyVk25tsBBh7amPqbGV2tREVrbX5SsdvOjSFZfD/1gDaB2Aq
-MmxHGI1Lv3m7IG/MdM68pv9gMutfv3bXe5W+xabqXODY6oHQgdMZ5lUjF+6ri5l5
-wxg2LIhX7pVzX7kJ5rd9iPNfu6BGRzoZ0zNcfW82QPbfnURtgDArWmkUnBkS8dYp
-9nxCgTFi2PTmtRLWJLSV
-=+FEn
+iQEcBAABAgAGBQJUEqYDAAoJEKyeR39HFBtozwgH/2bHmcw/6W6u/J5YCNajnCsl
+HTeIRhgyVhYg3veMFwivVoQPhSM00YuH7q9GNaKXOspFxkSUuo8wyZQZnaF3/sTE
+gQWMF6KV8qUgGKZe7J5944q7FEhKkiGNaOyBLnSNioq4U7hCdfuUgjaLcNVP2HXZ
+95gPaRInj7dxyoai7LyfYyHKV1qQdR+rVhStxUUFllRtVw9oZFiKr4JEmPcadcNq
+dYdsVkXoWQTLWtAl1dAl2RIvEI3DwygumnqXhwQ9G42FEAgIUbZMlFPsHE6+wDB2
+C5pOAeSI1FWJgKqixF40jutMroUb3naendOMSG2Ee2N40BpXk2m5PLi5Pyqba8I=
+=fuO/
 -----END PGP SIGNATURE-----
 
---DqhR8hV3EnoxUkKN--
+--nextPart1739861.7zaRQAvcMS--
+
