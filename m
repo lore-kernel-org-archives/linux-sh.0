@@ -1,74 +1,133 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 09 Sep 2014 02:40:12 +0000
-Subject: [PATCH 3/3] clocksource: sh_tmu: Document r8a7779 binding
-Message-Id: <fb0eee2f141976b5d7f31e477a71556d312f7dc3.1410230283.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 12 Sep 2014 13:15:18 +0000
+Subject: [PATCH 2/4] irqchip: renesas-intc-irqpin: Add minimal runtime PM support
+Message-Id: <1410527720-18061-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1410230283.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1410230283.git.horms+renesas@verge.net.au>
+References: <1410527720-18061-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1410527720-18061-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-In general Renesas hardware is not documented to the extent
-where the relationship between IP blocks on different SoCs can be assumed
-although they may appear to operate the same way. Furthermore the
-documentation typically does not specify a version for individual
-IP blocks. For these reasons a convention of using the SoC name in place
-of a version and providing SoC-specific compat strings has been adopted.
+This is just enough to let pm_clk_*() enable the functional clock, and
+manage it for suspend/resume, if present.
+Before, it was assumed enabled by the bootloader or reset state.
 
-Although not universally liked this convention is used in the bindings
-for a number of drivers for Renesas hardware. The purpose of this patch is
-to update the Renesas R-Car Timer Unit (TMU) driver to follow this
-convention.
+To prevent the clock from being disabled while the module is needed for
+wake-up, implement irq_chip.irq_set_wake(), which increments/decrements
+the clock's enable_count when needed.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-* I plan to follow up with a patch patch to use the new binding in the
-  dtsi files for the r8a7779 SoC.
-commit 471269b790aec03385dc4fb127ed7094ff83c16d
+ drivers/irqchip/irq-renesas-intc-irqpin.c | 38 +++++++++++++++++++++++++++----
+ 1 file changed, 34 insertions(+), 4 deletions(-)
 
-v2
-* Suggestions by Mark Rutland and Sergei Shtylyov
-  - Compatible strings should be "one or more" not "one" of those listed
-  - Describe the generic binding as covering any MTU2 device
-  - Re-order compat strings from most to least specific
-
-v3
-* Suggested by Laurent Pinchart
-  - Reword in keeping with a similar though more extensive patch for CMT
----
- Documentation/devicetree/bindings/timer/renesas,tmu.txt | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
-
-diff --git a/Documentation/devicetree/bindings/timer/renesas,tmu.txt b/Documentation/devicetree/bindings/timer/renesas,tmu.txt
-index 425d0c5..7db89fb 100644
---- a/Documentation/devicetree/bindings/timer/renesas,tmu.txt
-+++ b/Documentation/devicetree/bindings/timer/renesas,tmu.txt
-@@ -8,7 +8,10 @@ are independent. The TMU hardware supports up to three channels.
+diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
+index a6b205b72c9b..542e850f4946 100644
+--- a/drivers/irqchip/irq-renesas-intc-irqpin.c
++++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
+@@ -17,6 +17,7 @@
+  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+  */
  
- Required Properties:
++#include <linux/clk.h>
+ #include <linux/init.h>
+ #include <linux/of.h>
+ #include <linux/platform_device.h>
+@@ -30,6 +31,7 @@
+ #include <linux/slab.h>
+ #include <linux/module.h>
+ #include <linux/platform_data/irq-renesas-intc-irqpin.h>
++#include <linux/pm_runtime.h>
  
--  - compatible: must contain "renesas,tmu"
-+  - compatible: must contain one or more of the following:
-+    - "renesas,tmu-r8a7779" for the r8a7779 TMU
-+    - "renesas,tmu" for any TMU.
-+      This is a fallback for the above renesas,tmu-* entries
+ #define INTC_IRQPIN_MAX 8 /* maximum 8 interrupts per driver instance */
  
-   - reg: base address and length of the registers block for the timer module.
+@@ -75,6 +77,7 @@ struct intc_irqpin_priv {
+ 	struct platform_device *pdev;
+ 	struct irq_chip irq_chip;
+ 	struct irq_domain *irq_domain;
++	struct clk *clk;
+ 	bool shared_irqs;
+ 	u8 shared_irq_mask;
+ };
+@@ -270,6 +273,21 @@ static int intc_irqpin_irq_set_type(struct irq_data *d, unsigned int type)
+ 				     value ^ INTC_IRQ_SENSE_VALID);
+ }
  
-@@ -27,7 +30,7 @@ Optional Properties:
- Example: R8A7779 (R-Car H1) TMU0 node
++static int intc_irqpin_irq_set_wake(struct irq_data *d, unsigned int on)
++{
++	struct intc_irqpin_priv *p = irq_data_get_irq_chip_data(d);
++
++	if (!p->clk)
++		return 0;
++
++	if (on)
++		clk_enable(p->clk);
++	else
++		clk_disable(p->clk);
++
++	return 0;
++}
++
+ static irqreturn_t intc_irqpin_irq_handler(int irq, void *dev_id)
+ {
+ 	struct intc_irqpin_irq *i = dev_id;
+@@ -346,8 +364,7 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 	p = devm_kzalloc(dev, sizeof(*p), GFP_KERNEL);
+ 	if (!p) {
+ 		dev_err(dev, "failed to allocate driver data\n");
+-		ret = -ENOMEM;
+-		goto err0;
++		return -ENOMEM;
+ 	}
  
- 	tmu0: timer@ffd80000 {
--		compatible = "renesas,tmu";
-+		compatible = "renesas,tmu-r8a7779", "renesas,tmu";
- 		reg = <0xffd80000 0x30>;
- 		interrupts = <0 32 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 33 IRQ_TYPE_LEVEL_HIGH>,
+ 	/* deal with driver instance configuration */
+@@ -365,6 +382,15 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 	p->pdev = pdev;
+ 	platform_set_drvdata(pdev, p);
+ 
++	p->clk = devm_clk_get(dev, NULL);
++	if (IS_ERR(p->clk)) {
++		dev_warn(dev, "unable to get clock\n");
++		p->clk = NULL;
++	}
++
++	pm_runtime_enable(dev);
++	pm_runtime_get_sync(dev);
++
+ 	/* get hold of manadatory IOMEM */
+ 	for (k = 0; k < INTC_IRQPIN_REG_NR; k++) {
+ 		io[k] = platform_get_resource(pdev, IORESOURCE_MEM, k);
+@@ -456,7 +482,8 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 	irq_chip->irq_mask = disable_fn;
+ 	irq_chip->irq_unmask = enable_fn;
+ 	irq_chip->irq_set_type = intc_irqpin_irq_set_type;
+-	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE | IRQCHIP_MASK_ON_SUSPEND;
++	irq_chip->irq_set_wake = intc_irqpin_irq_set_wake;
++	irq_chip->flags	= IRQCHIP_MASK_ON_SUSPEND;
+ 
+ 	p->irq_domain = irq_domain_add_simple(dev->of_node,
+ 					      p->number_of_irqs,
+@@ -508,6 +535,8 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ err1:
+ 	irq_domain_remove(p->irq_domain);
+ err0:
++	pm_runtime_put(dev);
++	pm_runtime_disable(dev);
+ 	return ret;
+ }
+ 
+@@ -516,7 +545,8 @@ static int intc_irqpin_remove(struct platform_device *pdev)
+ 	struct intc_irqpin_priv *p = platform_get_drvdata(pdev);
+ 
+ 	irq_domain_remove(p->irq_domain);
+-
++	pm_runtime_put(&pdev->dev);
++	pm_runtime_disable(&pdev->dev);
+ 	return 0;
+ }
+ 
 -- 
-2.0.1
+1.9.1
 
