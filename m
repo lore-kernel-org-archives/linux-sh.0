@@ -1,30 +1,55 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 09 Sep 2014 15:09:08 +0000
-Subject: Re: [GIT PULL v2] Renesas ARM Based SoC r8a7740 Multiplatform Updates for v3.18
-Message-Id: <4933578.PiiTN8p6Ql@wuerfel>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 12 Sep 2014 13:15:19 +0000
+Subject: [PATCH 3/4] ARM: shmobile: r8a7740 legacy: Add missing INTCA clock for irqpin module
+Message-Id: <1410527720-18061-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1410235700.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1410235700.git.horms+renesas@verge.net.au>
+References: <1410527720-18061-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1410527720-18061-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tuesday 09 September 2014 13:22:01 Simon Horman wrote:
-> Please consider these Renesas ARM based SoC r8a7740 multiplatform updates
-> for v3.18.
-> 
-> This pull request is based on
-> "Renesas ARM Based SoC R8a7740 CCF and Timers Updates for v3.18"
-> tagged as renesas-r8a7740-ccf-and-timers-for-v3.18,
-> which you have previously pulled.
-> 
-> This pull request is a revised version of an earlier
-> pull-request of the same name. The previous version truncated
-> one of the patches due to an error on my part.
-> 
-> 
+This clock drives the irqpin controller modules.
+Before, it was assumed enabled by the bootloader or reset state.
 
-Pulled into next/soc, thanks!
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-shmobile/clock-r8a7740.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
-	Arnd
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 0794f0426e70..6cb1de220612 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -455,7 +455,7 @@ enum {
+ 	MSTP128, MSTP127, MSTP125,
+ 	MSTP116, MSTP111, MSTP100, MSTP117,
+ 
+-	MSTP230,
++	MSTP230, MSTP229,
+ 	MSTP222,
+ 	MSTP218, MSTP217, MSTP216, MSTP214,
+ 	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
+@@ -479,6 +479,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_B],	SMSTPCR1,  0, 0), /* LCDC0 */
+ 
+ 	[MSTP230] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR2, 30, 0), /* SCIFA6 */
++	[MSTP229] = SH_CLK_MSTP32(&div6_clks[DIV4_HP],	SMSTPCR2, 29, 0), /* INTCA */
+ 	[MSTP222] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR2, 22, 0), /* SCIFA7 */
+ 	[MSTP218] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],  SMSTPCR2, 18, 0), /* DMAC1 */
+ 	[MSTP217] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],  SMSTPCR2, 17, 0), /* DMAC2 */
+@@ -575,6 +576,10 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-dma-engine.0",	&mstp_clks[MSTP218]),
+ 	CLKDEV_DEV_ID("sh-sci.7",		&mstp_clks[MSTP222]),
+ 	CLKDEV_DEV_ID("e6cd0000.serial",	&mstp_clks[MSTP222]),
++	CLKDEV_DEV_ID("renesas_intc_irqpin.0",	&mstp_clks[MSTP229]),
++	CLKDEV_DEV_ID("renesas_intc_irqpin.1",	&mstp_clks[MSTP229]),
++	CLKDEV_DEV_ID("renesas_intc_irqpin.2",	&mstp_clks[MSTP229]),
++	CLKDEV_DEV_ID("renesas_intc_irqpin.3",	&mstp_clks[MSTP229]),
+ 	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
+ 	CLKDEV_DEV_ID("e6cc0000.serial",	&mstp_clks[MSTP230]),
+ 
+-- 
+1.9.1
+
