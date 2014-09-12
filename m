@@ -1,107 +1,55 @@
-From: Marc Dietrich <marvin24@gmx.de>
-Date: Fri, 12 Sep 2014 11:42:33 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 12 Sep 2014 12:15:10 +0000
 Subject: Re: [RFC 4/4] ARM: shmobile: r8a7790: adapt DTS for I2C slave support
-Message-Id: <1921859.32moD2F04k@fb07-iapwap2>
+Message-Id: <20140912121510.GD1930@katana>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart282107212.igu25S7V2Q"
+Content-Type: multipart/mixed; boundary="BI5RvnYi6R4T2M87"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1410274470-12712-1-git-send-email-wsa@the-dreams.de>
  <7627175.tG5quZH0VN@fb07-iapwap2> <20140912095821.GB1930@katana>
-In-Reply-To: <20140912095821.GB1930@katana>
+ <1921859.32moD2F04k@fb07-iapwap2>
+In-Reply-To: <1921859.32moD2F04k@fb07-iapwap2>
 To: linux-arm-kernel@lists.infradead.org
 
 
---nextPart282107212.igu25S7V2Q
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="ISO-8859-1"
+--BI5RvnYi6R4T2M87
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Am Freitag, 12. September 2014, 11:58:21 schrieb Wolfram Sang:
-> > ok, take our embedded controller driver (in staging/nvec) as an example.
-> > It's basicly an MFD connecting keyboard, mouse, power, gpio, and some
-> > other stuff to the soc. The MFD operates in master mode while the SOC is
-> > the I2C slave. Theoretically, these roles could also switch (but that's
-> > not defined in the nvec protocol).
-> 
-> I see these cases currently:
-> 
-> 1) my current case
-> 
-> The I2C slave is not needed for board bringup, mainly for development or
-> playing around. It can have this or that functionality on this or that
-> address. -> does not belong into DT, should be done in userspace
-> 
-> 2) Slave mode is needed for board bringup
-> 
-> Some other components need a specific I2C slave to be present before
-> userspace is available, otherwise the system is unusable. This is IMO
-> then a hardware description and justifies DT entries:
-> 
-> DT pseudocode:
-> 
-> 	i2c {
-> 		compatible = "nvidia, tegra-i2c";
-> 
-> 		ec-slave@42 {
-> 			compatible = "nvidia, ax100-ec-slave";
-> 			reg = <0x42>;
-> 		};
-> 	};
-> 
-> Of course, an MFD driver providing "nvidia, ax100-ec-slave" is needed
-> which uses the I2C slave mode of the tegra controller.
-> 
-> 3) Master + slave mode is needed for board bringup:
-> 
-> Again, IMO a hardware description, so we could use:
-> 
-> 	i2c {
-> 		compatible = "nvidia, tegra-i2c";
-> 
-> 		ec@64 {
-> 			compatible = "nvidia, ax100-ec";
-> 			reg = <0x64>;
-> 		};
-> 	};
-> 
-> This is a standard I2C device driver (using the MFD framework) where
-> i2c-tegra would act as a master on the client for 0x64. However, its
-> probe function can fill an i2c_board_device (the driver should know the
-> slave device address because of the protocol), get a new client using
-> i2c_new_device, and register that as a I2C slave client. It then has an
-> address where it listens and an address where it can send to. When to do
-> what is protocol implementation.
-> 
-> Am I missing something? Board properties can be encoded within the
-> compatible entries ("ax100-ec", "ax200-ec"...). I'd think this means
-> mostly different protocols, though.
 
-well, ac100 is the name of the board and nvec is the name of the protocol. 
-Anyway, I'm fine with encoding the mode to use in the compatible property. 
-Like you said before, a hypothetical driver supporting both modes could also 
-register two compatibility strings (eg. nvidia,nvec and nvidia,nvec-slave) and 
-use the mode (and hence the meaning of the reg value) according to this 
-string.
+> > Am I missing something? Board properties can be encoded within the
+> > compatible entries ("ax100-ec", "ax200-ec"...). I'd think this means
+> > mostly different protocols, though.
+>=20
+> well, ac100 is the name of the board and nvec is the name of the protocol=
+=2E=20
 
-Thanks,
+Yes, the driver could be named nvec, yet the compatible-strings should
+be similar to above. From that, the driver can deduce the protocol
+variant and possible initial settings.
 
-Marc
 
---nextPart282107212.igu25S7V2Q
+--BI5RvnYi6R4T2M87
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
+Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
+Version: GnuPG v1
 
-iQEcBAABAgAGBQJUEtwpAAoJEKyeR39HFBtoVGYH/3X351c+h8pLFgPgMMKrei0c
-VumAw7B3XGzSZACoEfMrgNnhUqx9OGJlU5/kzcECC/epuntrumhGZt8xJssSv7HC
-pK3zz/yrvZwEmiTscbgK0wHeLAWxTECTFLUgj4n8k11otpOjqvz3DZHtWya3LGn2
-9MUU7bwNqxEvM4PosiGWqweF1O6IDbyw62/2hj4i7qkosq2OeY+SaH+LaHzXMuWL
-dpXlT6AufznyRulMqKUZTZYayd6P4UcZ75FAkgFKZL0dsBD87JlRpnYmSfx+WngZ
-gAwhu3QaT2PuhbA/T/robkXwyYDSwkwOZL44p968pSsuaZh5Yw+r3xh3XuhunDc=
-=BTjE
+iQIcBAEBAgAGBQJUEuPOAAoJEBQN5MwUoCm2+CQP/2133fSsmcvel6AnjbBLnA1b
+WlICrWzG2ZpamkzbU2pGwQMgQ0mSfOTIHQaZmOqIJQAxz3zVGYYatLlXYEzn9qDw
+XjNcHR81TGM+IoM5y3/02Yt8DEbGmqo7fiUIL/unzgjSlggyWfN+00MDOdTlvXfa
+FkBbfc0drTK3xmxeK4fot5vBty/oNDe75nlB+GgLhj6QysPBWwMk5DCpwR54R50K
+N/uMIj8TiAQHlng7BuoA9C7NkPAEZ1NqYI9rQJHKIN7GybZZNbtfDistL+uYog0q
+KjxS4BcSL3rha2O2i4ATOUG8URBGJi5Dct7GwWGo4jkDV+Du5lYejBL+HQ2GDmdv
+BtqklKnWynlx0+d4NBN6y9/EqM9h4eL5njzfuiCaMIHX9XfLLgxcOClSYt73GpVo
+GH2IgpxAHY8u4g0ARXZRJKsfFQPWhfkWYMo/PnfHpTNbQ8HzcU9fptCo9q5fPw4V
+bOid0iOYxIWXUhqyAS+AVawBQpaw9u0XGxYuks3/GJyvt6FCd/pZDn/j6Daqv90Y
+TQrGrueOHgLjw38DiTm0cU+EeuSjqSQB10UDzu0ZW6LdLIm4hGtJc7XpaYUdzBY0
+CXUlyY1tch4a+N035jYQZ637U1SJ2D/HmFdkMfS4V46WzZKxmOsNcDzjpyt4sf10
+fI3Krrcbh9NsXRUEFkhI
+=BXAr
 -----END PGP SIGNATURE-----
 
---nextPart282107212.igu25S7V2Q--
-
+--BI5RvnYi6R4T2M87--
