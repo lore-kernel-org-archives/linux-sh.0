@@ -1,55 +1,65 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 30 Sep 2014 08:13:05 +0000
-Subject: Re: [PATCH v2 00/11] ARM: shmobile: r8a7740/armadillo800eva legacy PM domain support
-Message-Id: <20140930081305.GS16823@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 12 Sep 2014 08:51:16 +0000
+Subject: [PATCH 6/6] ARM: shmobile: ape6evm-reference: sort dts file by address
+Message-Id: <1410511876-9235-7-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411661742-4767-1-git-send-email-geert+renesas@glider.be>
- <20140930042047.GA24253@verge.net.au>
- <CAMuHMdUgP6OEt6G4VhHoDncz+17j-bDu7u_pcHM0ETmqsDKOiA@mail.gmail.com>
- <CANqRtoS+bur8DA0+gG0Q0hL9RLsQdOLyfSUbgE_6nZ8mCST0Jg@mail.gmail.com>
- <CAMuHMdXP9tFX9FZnH_dR86DkKbP_YZcWAF-hF48BtVfGYRTsFw@mail.gmail.com>
- <CANqRtoS0XgyuMBxU3CcVyQNg=r=MuA_OfJEDJbVsq-m9EHF9UA@mail.gmail.com>
- <CAMuHMdWzg0bnoT0kURFe8h2aw4CYKoHN1SMYt0S3-Dno-e=8Xw@mail.gmail.com>
-In-Reply-To: <CAMuHMdWzg0bnoT0kURFe8h2aw4CYKoHN1SMYt0S3-Dno-e=8Xw@mail.gmail.com>
+References: <1410511876-9235-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1410511876-9235-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: horms@verge.net.au, Olof Johansson <olof@lixom.net>
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, magnus.damm@gmail.com, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-On Tue, Sep 30, 2014 at 09:41:27AM +0200, Geert Uytterhoeven wrote:
-> Hi Magnus,
-> 
-> On Tue, Sep 30, 2014 at 9:32 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> >>> So what is a good way to proceed with this series I wonder?
-> >>
-> >> There are two options:
-> >>   1. Drop the two patches that introduce the D4 and A4MP PM domains,
-> >>   2. Amend the patches that introduce the D4 and A4MP PM domains to
-> >>      comment out the entries in the table in pm-r8a7740.c, like was done in
-> >>      the first submission.
-> >>
-> >> Both will cause conflicts when applying the successive patches.
-> >>
-> >> If you don't care about bisectability, you can implement option 2 as a
-> >> separate change, after applying the whole series.
-> >
-> > Thanks for leading the way! From my side I don't have any special
-> > feeling, so why don't you and Simon decide?
-> 
-> OK.
-> 
-> > If it was up to me only then I think option #1 that simply reduces the
-> > feature set seems rather natural, but perhaps it requires a lot of
-> > rework of the patches. If we go with option #1 we can always
-> > incrementally add D4 and A4MP later I assume.
-> 
-> Yes we can.
-> 
-> Please wait a bit, I'm looking into the !CONFIG_PM_RUNTIME case.
-> Mostly multi-platform, but it may affect legacy too, where there's interaction
-> with the drivers/sh/pm_runtime.c hack.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts | 26 ++++++++++++-------------
+ 1 file changed, 13 insertions(+), 13 deletions(-)
 
-I also feel that option 1 is slightly nicer. But I'm happy
-to consider option 2 if its a better fit for you.
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+index a860f32..bb45a70 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+@@ -24,14 +24,11 @@
+ 		bootargs = "console=ttySC0,115200 ignore_loglevel rw";
+ 	};
+ 
+-	memory@40000000 {
+-		device_type = "memory";
+-		reg = <0 0x40000000 0 0x40000000>;
+-	};
+-
+-	memory@200000000 {
+-		device_type = "memory";
+-		reg = <2 0x00000000 0 0x40000000>;
++	lbsc {
++		compatible = "simple-bus";
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges = <0 0 0 0x80000000>;
+ 	};
+ 
+ 	vcc_mmc0: regulator@0 {
+@@ -62,11 +59,14 @@
+ 		regulator-always-on;
+ 	};
+ 
+-	lbsc {
+-		compatible = "simple-bus";
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+-		ranges = <0 0 0 0x80000000>;
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0 0x40000000 0 0x40000000>;
++	};
++
++	memory@200000000 {
++		device_type = "memory";
++		reg = <2 0x00000000 0 0x40000000>;
+ 	};
+ };
+ 
+-- 
+1.8.4.5
 
-As always I'm happy to wait and will now do so.
