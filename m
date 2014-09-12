@@ -1,63 +1,107 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 12 Sep 2014 10:26:08 +0000
+From: Marc Dietrich <marvin24@gmx.de>
+Date: Fri, 12 Sep 2014 11:42:33 +0000
 Subject: Re: [RFC 4/4] ARM: shmobile: r8a7790: adapt DTS for I2C slave support
-Message-Id: <20140912102607.GC1930@katana>
+Message-Id: <1921859.32moD2F04k@fb07-iapwap2>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Clx92ZfkiYIKRjnr"
+Content-Type: multipart/mixed; boundary="nextPart282107212.igu25S7V2Q"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1410274470-12712-1-git-send-email-wsa@the-dreams.de>
- <9935938.eKOCvCAtLt@fb07-iapwap2> <20140912083348.GA1289@katana>
  <7627175.tG5quZH0VN@fb07-iapwap2> <20140912095821.GB1930@katana>
- <CAMuHMdVi+6TXH68ddQ-UWfUif0Mv=ETu6dnpiy1Apike6zfAbg@mail.gmail.com>
-In-Reply-To: <CAMuHMdVi+6TXH68ddQ-UWfUif0Mv=ETu6dnpiy1Apike6zfAbg@mail.gmail.com>
+In-Reply-To: <20140912095821.GB1930@katana>
 To: linux-arm-kernel@lists.infradead.org
 
 
---Clx92ZfkiYIKRjnr
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+--nextPart282107212.igu25S7V2Q
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="ISO-8859-1"
 
+Am Freitag, 12. September 2014, 11:58:21 schrieb Wolfram Sang:
+> > ok, take our embedded controller driver (in staging/nvec) as an example.
+> > It's basicly an MFD connecting keyboard, mouse, power, gpio, and some
+> > other stuff to the soc. The MFD operates in master mode while the SOC is
+> > the I2C slave. Theoretically, these roles could also switch (but that's
+> > not defined in the nvec protocol).
+> 
+> I see these cases currently:
+> 
+> 1) my current case
+> 
+> The I2C slave is not needed for board bringup, mainly for development or
+> playing around. It can have this or that functionality on this or that
+> address. -> does not belong into DT, should be done in userspace
+> 
+> 2) Slave mode is needed for board bringup
+> 
+> Some other components need a specific I2C slave to be present before
+> userspace is available, otherwise the system is unusable. This is IMO
+> then a hardware description and justifies DT entries:
+> 
+> DT pseudocode:
+> 
+> 	i2c {
+> 		compatible = "nvidia, tegra-i2c";
+> 
+> 		ec-slave@42 {
+> 			compatible = "nvidia, ax100-ec-slave";
+> 			reg = <0x42>;
+> 		};
+> 	};
+> 
+> Of course, an MFD driver providing "nvidia, ax100-ec-slave" is needed
+> which uses the I2C slave mode of the tegra controller.
+> 
+> 3) Master + slave mode is needed for board bringup:
+> 
+> Again, IMO a hardware description, so we could use:
+> 
+> 	i2c {
+> 		compatible = "nvidia, tegra-i2c";
+> 
+> 		ec@64 {
+> 			compatible = "nvidia, ax100-ec";
+> 			reg = <0x64>;
+> 		};
+> 	};
+> 
+> This is a standard I2C device driver (using the MFD framework) where
+> i2c-tegra would act as a master on the client for 0x64. However, its
+> probe function can fill an i2c_board_device (the driver should know the
+> slave device address because of the protocol), get a new client using
+> i2c_new_device, and register that as a I2C slave client. It then has an
+> address where it listens and an address where it can send to. When to do
+> what is protocol implementation.
+> 
+> Am I missing something? Board properties can be encoded within the
+> compatible entries ("ax100-ec", "ax200-ec"...). I'd think this means
+> mostly different protocols, though.
 
-> > DT pseudocode:
-> >
-> >         i2c {
-> >                 compatible =3D "nvidia, tegra-i2c";
-> >
-> >                 ec-slave@42 {
-> >                         compatible =3D "nvidia, ax100-ec-slave";
-> >                         reg =3D <0x42>;
-> >                 };
-> >         };
->=20
-> So distinguishing between drivers providing slave services (using slave
-> mode) and drivers driving actual slave hardware (using master mode) is
-> done based on the compatible-property.
+well, ac100 is the name of the board and nvec is the name of the protocol. 
+Anyway, I'm fine with encoding the mode to use in the compatible property. 
+Like you said before, a hypothetical driver supporting both modes could also 
+register two compatibility strings (eg. nvidia,nvec and nvidia,nvec-slave) and 
+use the mode (and hence the meaning of the reg value) according to this 
+string.
 
-We describe users of one specific I2C bus. And the drivers that go along
-with them. No?
+Thanks,
 
+Marc
 
---Clx92ZfkiYIKRjnr
+--nextPart282107212.igu25S7V2Q
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+Version: GnuPG v2.0.22 (GNU/Linux)
 
-iQIcBAEBAgAGBQJUEso/AAoJEBQN5MwUoCm2dqUQAIJYjozB+npQ2xeKh/n7t2wT
-nThOrcgorY4NuCbm6ZdWpjdgCjcIdduRCh8c8iei+Sh73z7FXxC2RvM7smzLstif
-xKftDaLK0YVIn76pC0hfWQyu2rc57eQUm+JtrjK+IK9cMgJ33/NkwJw6J3yb9Z9j
-4GWQMO42NsxSltYHTUAsmX6l9ASLMaDy1IBJEyTFla2+0HAwK9e8Os/WO7coCEV9
-dknuH/18D/zVL/ZwaEGSJaxZQ6JhrYNUIIwcuty+QG4z1eLXko9seLXP67ARS0mB
-kDqpaY0auznfSDav5d4lL/8b8xpE6+cce4ZESfA3pqVOXR9F8CCud6zzEtV4ui1S
-oq1F34EYnxDOD/wJX03Iw3n+2KHTVvf5Js48F8WNQyv74bbUQK1otIyax2OpsoDL
-t6vpCOImgQuEt96+Q5Yu+HIPdpCivxzSsHNgnuIpeAZFjpFhtEs8zD0MzapB73fl
-z5OHqLZpQbyq38ZtVgT10cReQvq66Enyr081fJhJFK69sU8m1YqHyFG3L+SpJf73
-xW1etxa3RpygDITlJ6iZxrceB6KpnRnURH65HE60aKBxYAMCZ/WixmfT0tP4CVd4
-7bUgInDoHcle4SFDhn7Z0tPT3QW80Ztkd6FE604MOo0xjwNfb9zc72jgxOaPqoTX
-kcPjy04MLtEHtbZp/9xf
-=ci9g
+iQEcBAABAgAGBQJUEtwpAAoJEKyeR39HFBtoVGYH/3X351c+h8pLFgPgMMKrei0c
+VumAw7B3XGzSZACoEfMrgNnhUqx9OGJlU5/kzcECC/epuntrumhGZt8xJssSv7HC
+pK3zz/yrvZwEmiTscbgK0wHeLAWxTECTFLUgj4n8k11otpOjqvz3DZHtWya3LGn2
+9MUU7bwNqxEvM4PosiGWqweF1O6IDbyw62/2hj4i7qkosq2OeY+SaH+LaHzXMuWL
+dpXlT6AufznyRulMqKUZTZYayd6P4UcZ75FAkgFKZL0dsBD87JlRpnYmSfx+WngZ
+gAwhu3QaT2PuhbA/T/robkXwyYDSwkwOZL44p968pSsuaZh5Yw+r3xh3XuhunDc=
+=BTjE
 -----END PGP SIGNATURE-----
 
---Clx92ZfkiYIKRjnr--
+--nextPart282107212.igu25S7V2Q--
+
