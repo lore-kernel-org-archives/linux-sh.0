@@ -1,93 +1,108 @@
-From: Marc Dietrich <marvin24@gmx.de>
-Date: Fri, 12 Sep 2014 09:06:49 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 12 Sep 2014 09:58:21 +0000
 Subject: Re: [RFC 4/4] ARM: shmobile: r8a7790: adapt DTS for I2C slave support
-Message-Id: <7627175.tG5quZH0VN@fb07-iapwap2>
+Message-Id: <20140912095821.GB1930@katana>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart1587627.2fD0quCvaU"
+Content-Type: multipart/mixed; boundary="qlTNgmc+xy1dBmNv"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1410274470-12712-1-git-send-email-wsa@the-dreams.de>
  <9935938.eKOCvCAtLt@fb07-iapwap2> <20140912083348.GA1289@katana>
-In-Reply-To: <20140912083348.GA1289@katana>
+ <7627175.tG5quZH0VN@fb07-iapwap2>
+In-Reply-To: <7627175.tG5quZH0VN@fb07-iapwap2>
 To: linux-arm-kernel@lists.infradead.org
 
 
---nextPart1587627.2fD0quCvaU
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="ISO-8859-1"
+--qlTNgmc+xy1dBmNv
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Am Freitag, 12. September 2014, 10:33:48 schrieb Wolfram Sang:
-> > > Why do you want DT to be involved at all?
-> > 
-> > Imagine a device which supports both, slave or master mode. The driver
-> > needs to know in which mode it should operate. This cannot be hard coded,
-> > because on different boards, different modes can be used.
-> 
-> Okay, it sounds weird to me that a device is not able to switch between
-> master and slave, but if you say so. Also, solving this issue would also
-> handle potential weird IP blocks which can be slave only, right?
 
-I didn't said device. I meant the driver (software) needs to know if which 
-mode to operate the device. DT has to provide just enough information to 
-select the right mode depending on the board implementation.
+> ok, take our embedded controller driver (in staging/nvec) as an example. =
+It's=20
+> basicly an MFD connecting keyboard, mouse, power, gpio, and some other st=
+uff=20
+> to the soc. The MFD operates in master mode while the SOC is the I2C slav=
+e.=20
+> Theoretically, these roles could also switch (but that's not defined in t=
+he=20
+> nvec protocol).
 
-> What if you use two different adapter drivers or compatibles? One for
-> master-mode, one for slave-mode (slave could leave algo->master_xfer
-> empty, so the slave mode driver cannot send packets). I'm brainstorming
-> here, so while it should work IMO I will probably need a second thought.
-> 
-> So, in the DT you would have a block registering the I2C slave core
-> which binds to a simple driver providing reg_slave/unreg_slave and
-> pass on the slave-event. Then you could instantiate slave clients as
-> said before.
-> 
-> Maybe we need a real world example?
+I see these cases currently:
 
-ok, take our embedded controller driver (in staging/nvec) as an example. It's 
-basicly an MFD connecting keyboard, mouse, power, gpio, and some other stuff 
-to the soc. The MFD operates in master mode while the SOC is the I2C slave. 
-Theoretically, these roles could also switch (but that's not defined in the 
-nvec protocol).
+1) my current case
 
-So the i2c client driver sits in between the adapter (in slave or master mode) 
-and the the MFD children (keyboard, mouse, ...) and provides read/write/cb 
-functions (nvec uses a side channel gpio to be able to initiate writes on its 
-own) to its children. The MFD children don't care about how the i2c 
-communication is done, but the client driver needs to decide in which mode it 
-should talk to the EC. If this is not autodetectable, the mode needs to be 
-provided by the device tree.
+The I2C slave is not needed for board bringup, mainly for development or
+playing around. It can have this or that functionality on this or that
+address. -> does not belong into DT, should be done in userspace
 
-In this case you cannot use separate drivers for master and slave mode (or you 
-would need another layer to hide the driver multiplexing).
+2) Slave mode is needed for board bringup
 
-> > The point is, that if we define a dt binding for master device on slave
-> > adapters it will be there forever. So even if it makes no sense for the
-> > example eeprom simulator (or even our embedded controller), it may make
-> > sense for other or future devices.
-> 
-> I don't know what you mean here. Again, an example might help?
+Some other components need a specific I2C slave to be present before
+userspace is available, otherwise the system is unusable. This is IMO
+then a hardware description and justifies DT entries:
 
-I just wanted to say that the discussion here should find a *generic* way to 
-distinguish slave and master clients on the i2c bus by using a proper DT 
-binding.
+DT pseudocode:
 
-Marc
+	i2c {
+		compatible =3D "nvidia, tegra-i2c";
 
---nextPart1587627.2fD0quCvaU
+		ec-slave@42 {
+			compatible =3D "nvidia, ax100-ec-slave";
+			reg =3D <0x42>;
+		};
+	};
+
+Of course, an MFD driver providing "nvidia, ax100-ec-slave" is needed
+which uses the I2C slave mode of the tegra controller.
+
+3) Master + slave mode is needed for board bringup:
+
+Again, IMO a hardware description, so we could use:
+
+	i2c {
+		compatible =3D "nvidia, tegra-i2c";
+
+		ec@64 {
+			compatible =3D "nvidia, ax100-ec";
+			reg =3D <0x64>;
+		};
+	};
+
+This is a standard I2C device driver (using the MFD framework) where
+i2c-tegra would act as a master on the client for 0x64. However, its
+probe function can fill an i2c_board_device (the driver should know the
+slave device address because of the protocol), get a new client using
+i2c_new_device, and register that as a I2C slave client. It then has an
+address where it listens and an address where it can send to. When to do
+what is protocol implementation.
+
+
+Am I missing something? Board properties can be encoded within the
+compatible entries ("ax100-ec", "ax200-ec"...). I'd think this means
+mostly different protocols, though.
+
+
+--qlTNgmc+xy1dBmNv
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
+Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
+Version: GnuPG v1
 
-iQEcBAABAgAGBQJUEreqAAoJEKyeR39HFBtohnkIAIYKTkRFpQtlFVC5NojsYh/E
-ylFtmRd1cOXF+SRvBNP++OPcMSyfx07tS/6dheEhmtK7ue3vKzWV2cVGMw7ue2mn
-KfC9damQZj1S2DPbFxXFcV11qqJOh72D7LYcFbI/Vhd0Of5YK9cE8oc6izx6arET
-LDbayFvhd/JyWTqTyxBzd4AQZKS1YL4g23gSanSLt8IqdAf9MM2k9L4SaMp0XvV9
-GbxEJ8H4OvsHwgvGLFxlX0tUYYe6wxu9laGyGskdap5zgb4wIas2v8qn5L4vwr8r
-9vK+xqJOivPKHsZY8Aej/LR3I1KXQ2IrgJ7YbJZw/Qu19Pjx7u8QzE/PwYAuz9Q=
-=AsXP
+iQIcBAEBAgAGBQJUEsO9AAoJEBQN5MwUoCm2CX8P/26YJnJi+R06TSHAzWpDOdH4
+A21ApjwG4hruJDHfiXsI9cGoUku4uwnIErkIaWh5rHNFfmNRWmKqAxyVh7Lccv9Z
+rPII8I17sSHEDPIdbg4nHdijrVpD9TPVIZiGiGSeMmFV+iYbaFCMJuajDxxfbMe7
+JpXztCFp6buPAjYUAEbnlYEZpegvI1n3etsyvSkY/SgM5aTE9Ut6WSfa1S0Y9ERj
+I5y7YGv9o30hYe5p+KfPqajFicasiybAfpzRgDpaXtGVORsicr+2NNA7PkLmTpS3
+mOCtDaFNP7+QROgm6M5iK3Ki8gzHGDpC3J6r1eZknmIDLDJNaarXQPJ6dhHX2EEy
+CiO7MsxgBHd0HMilgeApjbzCLt43QcztNurWNTicYtNx7X+t97jHBxXlWwEqXr1W
+vAY9cDDBKIQ/NIrsg0MLoeRXebxkcJYBqx0WAVPLXj691p1+ZzfePfxTBEE8PjTq
+60waT2owTSbE+yPuwjS4o/FmfIQM9DipBcfsn/uK5K4p4YARhcJ3LqHsuWWA66s8
+BYeJdoJVcQoev1mxe/cJXIwD0KcNTWDAV7ufzV2qLTnRu21V7qpHdir0bWakzeSF
+jnyNUijBMdzxwXoTEGnvjtfVQJxQkwWexZQgCrLn4Omd6iU/v3AWtI69V3lXPNdL
+YYKHDXmo/WkzHMC1jnQ2
+=O3vC
 -----END PGP SIGNATURE-----
 
---nextPart1587627.2fD0quCvaU--
-
+--qlTNgmc+xy1dBmNv--
