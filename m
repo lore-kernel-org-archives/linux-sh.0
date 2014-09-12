@@ -1,93 +1,80 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 08 Sep 2014 00:57:08 +0000
-Subject: [PATCH v3 3/3] ARM: shmobile: kzm9g-reference: Enable CMT1 in device tree
-Message-Id: <1410137828-4769-4-git-send-email-horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 12 Sep 2014 08:51:46 +0000
+Subject: [RFC 1/3] serial: sh-sci: consider DR (data ready) bit adequately
+Message-Id: <1410511908-9282-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410137828-4769-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1410137828-4769-1-git-send-email-horms+renesas@verge.net.au>
+References: <1410511908-9282-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1410511908-9282-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org
+Cc: horms@verge.net.au, magnus.damm@gmail.com, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+To allow operation with a higher RX FIFO interrupt threshold it is
+necessary to consider the DR bit ("FIFO not full, but no data received
+for 1.5 frames") as an indicator that data can be read. Otherwise the
+driver will let data rot in the FIFO until the threshold is reached.
 
 Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
 ---
-v3
-* No change
----
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |  4 ++++
- arch/arm/mach-shmobile/setup-sh73a0.c        | 11 +----------
- 2 files changed, 5 insertions(+), 10 deletions(-)
+ drivers/tty/serial/sh-sci.c | 9 +++++----
+ drivers/tty/serial/sh-sci.h | 1 +
+ 2 files changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index 477f815..30ef97e 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -173,6 +173,10 @@
- 	};
- };
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 3081e46..f0ff8a7 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -483,7 +483,7 @@ static int sci_poll_get_char(struct uart_port *port)
+ 		break;
+ 	} while (1);
  
-+&cmt1 {
-+	status = "ok";
-+};
-+
- &i2c0 {
- 	status = "okay";
- 	as3711@40 {
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 0085305..b7bd8e5 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -697,10 +697,6 @@ static struct platform_device irqpin3_device = {
- 	},
- };
+-	if (!(status & SCxSR_RDxF(port)))
++	if (!(status & (SCxSR_RDxF(port) | SCxSR_DR(port))))
+ 		return NO_POLL_CHAR;
  
--static struct platform_device *sh73a0_devices_dt[] __initdata = {
--	&cmt1_device,
--};
--
- static struct platform_device *sh73a0_early_devices[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
-@@ -713,6 +709,7 @@ static struct platform_device *sh73a0_early_devices[] __initdata = {
- 	&scif8_device,
- 	&tmu0_device,
- 	&ipmmu_device,
-+	&cmt1_device,
- };
+ 	c = serial_port_in(port, SCxRDR);
+@@ -572,7 +572,8 @@ static int sci_rxfill(struct uart_port *port)
+ 	if (reg->size)
+ 		return serial_port_in(port, SCFDR) & ((port->fifosize << 1) - 1);
  
- static struct platform_device *sh73a0_late_devices[] __initdata = {
-@@ -737,8 +734,6 @@ void __init sh73a0_add_standard_devices(void)
- 	/* Clear software reset bit on SY-DMAC module */
- 	__raw_writel(__raw_readl(SRCR2) & ~(1 << 18), SRCR2);
- 
--	platform_add_devices(sh73a0_devices_dt,
--			    ARRAY_SIZE(sh73a0_devices_dt));
- 	platform_add_devices(sh73a0_early_devices,
- 			    ARRAY_SIZE(sh73a0_early_devices));
- 	platform_add_devices(sh73a0_late_devices,
-@@ -763,8 +758,6 @@ void __init sh73a0_earlytimer_init(void)
- 
- void __init sh73a0_add_early_devices(void)
- {
--	early_platform_add_devices(sh73a0_devices_dt,
--				   ARRAY_SIZE(sh73a0_devices_dt));
- 	early_platform_add_devices(sh73a0_early_devices,
- 				   ARRAY_SIZE(sh73a0_early_devices));
- 
-@@ -779,8 +772,6 @@ void __init sh73a0_add_standard_devices_dt(void)
- 	/* clocks are setup late during boot in the case of DT */
- 	sh73a0_clock_init();
- 
--	platform_add_devices(sh73a0_devices_dt,
--			     ARRAY_SIZE(sh73a0_devices_dt));
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-	return (serial_port_in(port, SCxSR) & SCxSR_RDxF(port)) != 0;
++	return (serial_port_in(port, SCxSR) &
++	        (SCxSR_RDxF(port) | SCxSR_DR(port))) != 0;
  }
  
+ /*
+@@ -663,7 +664,7 @@ static void sci_receive_chars(struct uart_port *port)
+ 	unsigned char flag;
+ 
+ 	status = serial_port_in(port, SCxSR);
+-	if (!(status & SCxSR_RDxF(port)))
++	if (!(status & (SCxSR_RDxF(port) | SCxSR_DR(port))))
+ 		return;
+ 
+ 	while (1) {
+@@ -1014,7 +1015,7 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
+ 	 * Rx Interrupt: if we're using DMA, the DMA controller clears RDF /
+ 	 * DR flags
+ 	 */
+-	if (((ssr_status & SCxSR_RDxF(port)) || s->chan_rx) &&
++	if (((ssr_status & (SCxSR_RDxF(port) | SCxSR_DR(port))) || s->chan_rx) &&
+ 	    (scr_status & SCSCR_RIE))
+ 		ret = sci_rx_interrupt(irq, ptr);
+ 
+diff --git a/drivers/tty/serial/sh-sci.h b/drivers/tty/serial/sh-sci.h
+index d5db81a..9c4598d 100644
+--- a/drivers/tty/serial/sh-sci.h
++++ b/drivers/tty/serial/sh-sci.h
+@@ -8,6 +8,7 @@
+ #define SCxSR_FER(port)		(((port)->type = PORT_SCI) ? SCI_FER    : SCIF_FER)
+ #define SCxSR_PER(port)		(((port)->type = PORT_SCI) ? SCI_PER    : SCIF_PER)
+ #define SCxSR_BRK(port)		(((port)->type = PORT_SCI) ? 0x00       : SCIF_BRK)
++#define SCxSR_DR(port)		(((port)->type = PORT_SCI) ? 0x00       : SCIF_DR)
+ 
+ #define SCxSR_ERRORS(port)	(to_sci_port(port)->error_mask)
+ 
 -- 
-2.0.1
+1.8.4.5
 
