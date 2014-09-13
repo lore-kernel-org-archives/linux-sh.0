@@ -1,48 +1,72 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 09 Sep 2014 08:50:46 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Init Delay Updates For v3.18
-Message-Id: <11409170.rfMyQrIgd0@wuerfel>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 13 Sep 2014 23:36:25 +0000
+Subject: [PATCH 2/2] ARM: shmobile: r8a7791: Add VSP1 devices to DT
+Message-Id: <1410651385-13090-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408927601.git.horms+renesas@verge.net.au>
- <201409051727.18845.arnd@arndb.de> <20140909020218.GA23233@verge.net.au>
-In-Reply-To: <20140909020218.GA23233@verge.net.au>
+References: <1396974957-6046-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1396974957-6046-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tuesday 09 September 2014 11:02:18 Simon Horman wrote:
-> On Fri, Sep 05, 2014 at 05:27:18PM +0200, Arnd Bergmann wrote:
-> > On Monday 25 August 2014, Simon Horman wrote:
-> > > Hi Olof, Hi Kevin, Hi Arnd,
-> > > 
-> > > Please consider these Renesas ARM based SoC init delay updates for v3.18.
-> > > 
-> > 
-> > While looking at your branches, I noticed that you go to great lengths
-> > to compute the correct lpj value and avoid the calibration.
-> > 
-> > However, I believe the "modern" way to do this is to call
-> > register_current_timer_delay() in order to base the delay loop
-> > on the hardware timer instead of looping in the CPU. This is
-> > more accurate and more robust against CPU frequency scaling.
-> 
-> I may be wrong but my understanding is that Renesas SoCs may be
-> booted without a timer.
+Add all available VSP1 devices.
 
-Do you mean some of them only have a clockevent driver but no clocksource,
-and use the jiffies clocksource instead?
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 39 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
 
-I've looked at the three drivers/clocksource/{sh,em}_*.c files, and it seems
-sh_mtu2.c indeed has no clocksource support, although the binding description
-mentions that it has multiple counters that could be used for this
-purpose. This timer is only used on R7S72100, so if you add
-'register_current_timer_delay' calls to the other drivers, you can
-decide to either keep computing the lpj value for R7S72100 but not the
-others, or try to add a clocksource implementation to mtu2 as well.
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index e06c11f..98ea81b 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -637,6 +637,45 @@
+ 		status = "disabled";
+ 	};
+ 
++	vsp1@fe928000 {
++		compatible = "renesas,vsp1";
++		reg = <0 0xfe928000 0 0x8000>;
++		interrupts = <0 267 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7791_CLK_VSP1_S>;
++
++		renesas,has-lut;
++		renesas,has-sru;
++		renesas,#rpf = <5>;
++		renesas,#uds = <3>;
++		renesas,#wpf = <4>;
++	};
++
++	vsp1@fe930000 {
++		compatible = "renesas,vsp1";
++		reg = <0 0xfe930000 0 0x8000>;
++		interrupts = <0 246 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7791_CLK_VSP1_DU0>;
++
++		renesas,has-lif;
++		renesas,has-lut;
++		renesas,#rpf = <4>;
++		renesas,#uds = <1>;
++		renesas,#wpf = <4>;
++	};
++
++	vsp1@fe938000 {
++		compatible = "renesas,vsp1";
++		reg = <0 0xfe938000 0 0x8000>;
++		interrupts = <0 247 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7791_CLK_VSP1_DU1>;
++
++		renesas,has-lif;
++		renesas,has-lut;
++		renesas,#rpf = <4>;
++		renesas,#uds = <1>;
++		renesas,#wpf = <4>;
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
+-- 
+1.8.5.5
 
-Note that the read_current_timer() function for the delay implementation
-doesn't have to be based on the same timer as the clocksource, but in
-practice it often is.
-
-	Arnd
