@@ -1,22 +1,28 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 16 Sep 2014 00:46:30 +0000
-Subject: Re: [PATCH 2/6] ARM: shmobile: emev2: sort dtsi file by address
-Message-Id: <20140916004628.GG26557@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 13 Sep 2014 23:36:23 +0000
+Subject: [PATCH 0/2] Add VSP1 devices to DT for r8a7790 and r8a7791
+Message-Id: <1410651385-13090-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410511876-9235-1-git-send-email-ulrich.hecht+renesas@gmail.com>
- <1410511876-9235-3-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1410511876-9235-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Cc: Olof Johansson <olof@lixom.net>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, magnus.damm@gmail.com
+To: linux-sh@vger.kernel.org
 
-On Fri, Sep 12, 2014 at 10:51:12AM +0200, Ulrich Hecht wrote:
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> ---
->  arch/arm/boot/dts/emev2.dtsi | 120 +++++++++++++++++++++----------------------
+Hello,
 
-Thanks, this file seems very quiet so this change doesn't seem
-to conflict with anything else that has been done for v3.18.
-I have queued it up.
+This patch set simply adds all available VSP1 devices to the r8a7790 and
+r8a7791 .dtsi.
+
+Laurent Pinchart (2):
+  ARM: shmobile: r8a7790: Add VSP1 devices to DT
+  ARM: shmobile: r8a7791: Add VSP1 devices to DT
+
+ arch/arm/boot/dts/r8a7790.dtsi | 51 ++++++++++++++++++++++++++++++++++++++++++
+ arch/arm/boot/dts/r8a7791.dtsi | 39 ++++++++++++++++++++++++++++++++
+ 2 files changed, 90 insertions(+)
+
+-- 
+Regards,
+
+Laurent Pinchart
+
