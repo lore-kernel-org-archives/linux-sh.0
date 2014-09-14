@@ -1,133 +1,63 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 12 Sep 2014 13:15:18 +0000
-Subject: [PATCH 2/4] irqchip: renesas-intc-irqpin: Add minimal runtime PM support
-Message-Id: <1410527720-18061-3-git-send-email-geert+renesas@glider.be>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 14 Sep 2014 20:15:46 +0000
+Subject: [PATCH v2 2/3] i2c-rcar: make rcar_i2c_prepare_msg() *void*
+Message-Id: <3369447.JH8v9DUGDl@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410527720-18061-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1410527720-18061-1-git-send-email-geert+renesas@glider.be>
+References: <2245366.q99HVYG3pL@wasted.cogentembedded.com>
+In-Reply-To: <2245366.q99HVYG3pL@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: wsa@the-dreams.de, linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-This is just enough to let pm_clk_*() enable the functional clock, and
-manage it for suspend/resume, if present.
-Before, it was assumed enabled by the bootloader or reset state.
+rcar_i2c_prepare_msg() always returns 0, so we can make this function return
+*void* and thus remove the result check in rcar_i2c_master_xfer().
 
-To prevent the clock from being disabled while the module is needed for
-wake-up, implement irq_chip.irq_set_wake(), which increments/decrements
-the clock's enable_count when needed.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/irqchip/irq-renesas-intc-irqpin.c | 38 +++++++++++++++++++++++++++----
- 1 file changed, 34 insertions(+), 4 deletions(-)
+Changes in version 2:
+- resolved reject, refreshed patch.
 
-diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
-index a6b205b72c9b..542e850f4946 100644
---- a/drivers/irqchip/irq-renesas-intc-irqpin.c
-+++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
-@@ -17,6 +17,7 @@
-  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-  */
- 
-+#include <linux/clk.h>
- #include <linux/init.h>
- #include <linux/of.h>
- #include <linux/platform_device.h>
-@@ -30,6 +31,7 @@
- #include <linux/slab.h>
- #include <linux/module.h>
- #include <linux/platform_data/irq-renesas-intc-irqpin.h>
-+#include <linux/pm_runtime.h>
- 
- #define INTC_IRQPIN_MAX 8 /* maximum 8 interrupts per driver instance */
- 
-@@ -75,6 +77,7 @@ struct intc_irqpin_priv {
- 	struct platform_device *pdev;
- 	struct irq_chip irq_chip;
- 	struct irq_domain *irq_domain;
-+	struct clk *clk;
- 	bool shared_irqs;
- 	u8 shared_irq_mask;
- };
-@@ -270,6 +273,21 @@ static int intc_irqpin_irq_set_type(struct irq_data *d, unsigned int type)
- 				     value ^ INTC_IRQ_SENSE_VALID);
- }
- 
-+static int intc_irqpin_irq_set_wake(struct irq_data *d, unsigned int on)
-+{
-+	struct intc_irqpin_priv *p = irq_data_get_irq_chip_data(d);
-+
-+	if (!p->clk)
-+		return 0;
-+
-+	if (on)
-+		clk_enable(p->clk);
-+	else
-+		clk_disable(p->clk);
-+
-+	return 0;
-+}
-+
- static irqreturn_t intc_irqpin_irq_handler(int irq, void *dev_id)
- {
- 	struct intc_irqpin_irq *i = dev_id;
-@@ -346,8 +364,7 @@ static int intc_irqpin_probe(struct platform_device *pdev)
- 	p = devm_kzalloc(dev, sizeof(*p), GFP_KERNEL);
- 	if (!p) {
- 		dev_err(dev, "failed to allocate driver data\n");
--		ret = -ENOMEM;
--		goto err0;
-+		return -ENOMEM;
- 	}
- 
- 	/* deal with driver instance configuration */
-@@ -365,6 +382,15 @@ static int intc_irqpin_probe(struct platform_device *pdev)
- 	p->pdev = pdev;
- 	platform_set_drvdata(pdev, p);
- 
-+	p->clk = devm_clk_get(dev, NULL);
-+	if (IS_ERR(p->clk)) {
-+		dev_warn(dev, "unable to get clock\n");
-+		p->clk = NULL;
-+	}
-+
-+	pm_runtime_enable(dev);
-+	pm_runtime_get_sync(dev);
-+
- 	/* get hold of manadatory IOMEM */
- 	for (k = 0; k < INTC_IRQPIN_REG_NR; k++) {
- 		io[k] = platform_get_resource(pdev, IORESOURCE_MEM, k);
-@@ -456,7 +482,8 @@ static int intc_irqpin_probe(struct platform_device *pdev)
- 	irq_chip->irq_mask = disable_fn;
- 	irq_chip->irq_unmask = enable_fn;
- 	irq_chip->irq_set_type = intc_irqpin_irq_set_type;
--	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE | IRQCHIP_MASK_ON_SUSPEND;
-+	irq_chip->irq_set_wake = intc_irqpin_irq_set_wake;
-+	irq_chip->flags	= IRQCHIP_MASK_ON_SUSPEND;
- 
- 	p->irq_domain = irq_domain_add_simple(dev->of_node,
- 					      p->number_of_irqs,
-@@ -508,6 +535,8 @@ static int intc_irqpin_probe(struct platform_device *pdev)
- err1:
- 	irq_domain_remove(p->irq_domain);
- err0:
-+	pm_runtime_put(dev);
-+	pm_runtime_disable(dev);
- 	return ret;
- }
- 
-@@ -516,7 +545,8 @@ static int intc_irqpin_remove(struct platform_device *pdev)
- 	struct intc_irqpin_priv *p = platform_get_drvdata(pdev);
- 
- 	irq_domain_remove(p->irq_domain);
--
-+	pm_runtime_put(&pdev->dev);
-+	pm_runtime_disable(&pdev->dev);
+ drivers/i2c/busses/i2c-rcar.c |    9 ++-------
+ 1 file changed, 2 insertions(+), 7 deletions(-)
+
+Index: linux/drivers/i2c/busses/i2c-rcar.c
+=================================--- linux.orig/drivers/i2c/busses/i2c-rcar.c
++++ linux/drivers/i2c/busses/i2c-rcar.c
+@@ -245,7 +245,7 @@ scgd_find:
  	return 0;
  }
  
--- 
-1.9.1
+-static int rcar_i2c_prepare_msg(struct rcar_i2c_priv *priv)
++static void rcar_i2c_prepare_msg(struct rcar_i2c_priv *priv)
+ {
+ 	int read = !!rcar_i2c_is_recv(priv);
+ 
+@@ -253,8 +253,6 @@ static int rcar_i2c_prepare_msg(struct r
+ 	rcar_i2c_write(priv, ICMSR, 0);
+ 	rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
+ 	rcar_i2c_write(priv, ICMIER, read ? RCAR_IRQ_RECV : RCAR_IRQ_SEND);
+-
+-	return 0;
+ }
+ 
+ /*
+@@ -456,14 +454,11 @@ static int rcar_i2c_master_xfer(struct i
+ 		if (i = num - 1)
+ 			rcar_i2c_flags_set(priv, ID_LAST_MSG);
+ 
+-		ret = rcar_i2c_prepare_msg(priv);
++		rcar_i2c_prepare_msg(priv);
+ 
+ 		spin_unlock_irqrestore(&priv->lock, flags);
+ 		/*-------------- spin unlock -----------------*/
+ 
+-		if (ret < 0)
+-			break;
+-
+ 		timeout = wait_event_timeout(priv->wait,
+ 					     rcar_i2c_flags_has(priv, ID_DONE),
+ 					     5 * HZ);
 
