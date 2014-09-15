@@ -1,79 +1,80 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 30 Sep 2014 21:34:22 +0000
-Subject: Re: [PATCH v3 2/2] usb: renesas_usbhs: Add device tree support for R-Car H2 and M2
-Message-Id: <542B21DE.4010903@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 15 Sep 2014 13:45:29 +0000
+Subject: [PATCH][TEST] ARM: shmobile: lager-reference: Instantiate IPMMU-MX
+Message-Id: <20140915134529.21562.28560.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5406A664.2050501@renesas.com> <54298A38.5030703@cogentembedded.com> <542A7D29.3010805@renesas.com>
-In-Reply-To: <542A7D29.3010805-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Felipe Balbi <balbi-l0cyMroinI0@public.gmane.org>
-Cc: Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "pawel.moll-5wv7dgnIgG8@public.gmane.org" <pawel.moll-5wv7dgnIgG8@public.gmane.org>, "mark.rutland-5wv7dgnIgG8@public.gmane.org" <mark.rutland-5wv7dgnIgG8@public.gmane.org>, "ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org" <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, "galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org" <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, kuninori morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Ulrich Hecht <ulrich.hecht-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: linux-sh@vger.kernel.org
 
-Hello.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-On 09/30/2014 01:51 PM, Yoshihiro Shimoda wrote:
+Hook up the IPMMU MX together with the DU on the Lager board.
 
->>> This driver supports other SoCs, but they need boards/Soc depend code.
->>> So, this patch adds device tree support for R-Car H2 and M2 initially.
+Based on the very similar r8a7791 Koelsch code written by
+Laurent Pinchart, thanks to him for that.
 
->>> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
->>> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->>> ---
->>>    drivers/usb/renesas_usbhs/common.c |   44 ++++++++++++++++++++++++++++++++++++
->>>    1 file changed, 44 insertions(+)
+Tested with DU using the VGA connector on the r8a7790 Lager board.
 
->>> diff --git a/drivers/usb/renesas_usbhs/common.c b/drivers/usb/renesas_usbhs/common.c
->>> index 1b9bf8d..b3b6813 100644
->>> --- a/drivers/usb/renesas_usbhs/common.c
->>> +++ b/drivers/usb/renesas_usbhs/common.c
-[...]
->>> @@ -438,6 +440,43 @@ static int usbhsc_drvcllbck_notify_hotplug(struct platform_device *pdev)
->> [...]
->>> +static struct renesas_usbhs_platform_info *usbhs_parse_dt(struct device *dev)
->>> +{
->>> +	struct renesas_usbhs_platform_info *info;
->>> +	struct renesas_usbhs_driver_param *dparam;
->>> +	const struct of_device_id *of_id = of_match_device(usbhs_of_match, dev);
->>> +	u32 tmp;
->>> +	int gpio;
->>> +
->>> +	info = devm_kzalloc(dev, sizeof(*info), GFP_KERNEL);
->>> +	if (!info)
->>> +		return NULL;
->>> +
->>> +	dparam = &info->driver_param;
->>> +	dparam->type = of_id ? (u32)of_id->data : 0;
->>> +	if (!of_property_read_u32(dev->of_node, "renesas,buswait", &tmp))
->>> +		dparam->buswait_bwait = tmp;
->>> +	gpio = of_get_named_gpio_flags(dev->of_node, "renesas,enable-gpio", 0,
->>> +				       NULL);
->>> +	if (gpio > 0)
->>> +		dparam->enable_gpio = gpio;
->>> +
->>> +	return info;
+Not-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
->>      I don't see where you parse the optional "phy" property. It should exist
->> for the Lager and Koelsch boards you target.
+ Written against renesas-devel-20140911-v3.17-rc4
 
-> Since I wrote 'phy-names: must be "usb"' in the document,
-> I intend to use a fixed property for "phy" driver like the following:
+ arch/arm/mach-shmobile/board-lager-reference.c |   30 ++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
 
-> 	phy = phy_get(&pdev->dev, "usb");
-
-> Is this a bad code?
-
-    Seems OK.
-
-> About using the phy driver in renesas_usbhs driver, I intend to modify
-> the drivers/usb/renesas_usbhs/rcar.c.
-
-    Hm, it slready supports 'struct usb_phy'. Also PHYs are not limited to 
-R-Car Gen2 SoCs...
-
-> Best regards,
-> Yoshihiro Shimoda
-
-WBR, Sergei
-
+--- 0001/arch/arm/mach-shmobile/board-lager-reference.c
++++ work/arch/arm/mach-shmobile/board-lager-reference.c	2014-09-15 20:45:37.000000000 +0900
+@@ -21,6 +21,7 @@
+ #include <linux/dma-mapping.h>
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
++#include <linux/platform_data/ipmmu-vmsa.h>
+ #include <linux/platform_data/rcar-du.h>
+ 
+ #include <asm/mach/arch.h>
+@@ -88,6 +89,34 @@ static void __init lager_add_du_device(v
+ }
+ 
+ /*
++ * IPMMUs
++ *
++ * MX: for JPU, 2DDMAC, VSP, DCU, FDP, IMR-LSX2, DU, VCP, VPC and VIN
++ */
++static struct resource ipmmu_mx_resources[] = {
++	DEFINE_RES_MEM(0xfe951800, 0x800),
++	DEFINE_RES_IRQ(gic_spi(222)),
++};
++
++static const struct ipmmu_vmsa_master ipmmu_mx_masters[] = {
++	{ "rcar-du-r8a7790", 15, },
++};
++
++static struct ipmmu_vmsa_platform_data ipmmu_mx_platform_data = {
++	.masters = ipmmu_mx_masters,
++	.num_masters = ARRAY_SIZE(ipmmu_mx_masters),
++};
++
++static void __init lager_add_ipmmu_devices(void)
++{
++	platform_device_register_resndata(NULL, "ipmmu-vmsa", -1,
++					  ipmmu_mx_resources,
++					  ARRAY_SIZE(ipmmu_mx_resources),
++					  &ipmmu_mx_platform_data,
++					  sizeof(ipmmu_mx_platform_data));
++}
++
++/*
+  * This is a really crude hack to provide clkdev support to platform
+  * devices until they get moved to DT.
+  */
+@@ -104,6 +133,7 @@ static void __init lager_add_standard_de
+ 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 
++	lager_add_ipmmu_devices();
+ 	lager_add_du_device();
+ }
+ 
