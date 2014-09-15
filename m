@@ -1,94 +1,100 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 03 Sep 2014 01:02:01 +0000
-Subject: Re: [PATCH 2/3 repost] clocksource: sh_mtu2: Document r7s72100 binding
-Message-Id: <20140903010201.GA2903@verge.net.au>
+From: Tomi Valkeinen <tomi.valkeinen@ti.com>
+Date: Mon, 15 Sep 2014 08:52:58 +0000
+Subject: Re: [PATCH 03/16] video: Add DT binding documentation for VGA connector
+Message-Id: <5416A8EA.1070402@ti.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="H4VhjwoeT4PGpv3718xbDV0DSVD73oOGA"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409117300-2133-1-git-send-email-horms+renesas@verge.net.au>
- <1409117300-2133-3-git-send-email-horms+renesas@verge.net.au>
- <20140827095240.GC7295@leverpostej>
-In-Reply-To: <20140827095240.GC7295@leverpostej>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+References: <1409157673-4154-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1409157673-4154-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1409157673-4154-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-fbdev@vger.kernel.org
 
-On Wed, Aug 27, 2014 at 10:52:40AM +0100, Mark Rutland wrote:
-> On Wed, Aug 27, 2014 at 06:28:19AM +0100, Simon Horman wrote:
-> > In general Renesas hardware is not documented to the extent
-> > where the relationship between IP blocks on different SoCs can be assumed
-> > although they may appear to operate the same way. Furthermore the
-> > documentation typically does not specify a version for individual
-> > IP blocks. For these reasons a convention of using the SoC name in place
-> > of a version and providing SoC-specific compat strings has been adopted.
-> > 
-> > Although not universally liked this convention is used in the bindings
-> > for the drivers a number of drivers for Renesas hardware. The purpose
-> > of this patch is to update the Renesas R-Car Multi-Function Timer Pulse
-> > Unit 2 (MTU2) driver to follow this convention.
-> > 
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > 
-> > ---
-> > * I plan to follow up with a patch patch to use the new binding in the
-> >   dtsi files for the r7s72100 SoC.
-> > ---
-> >  Documentation/devicetree/bindings/timer/renesas,mtu2.txt | 6 ++++--
-> >  1 file changed, 4 insertions(+), 2 deletions(-)
-> > 
-> > diff --git a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-> > index 917453f..ec4d334 100644
-> > --- a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-> > +++ b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-> > @@ -8,7 +8,9 @@ are independent. The MTU2 hardware supports five channels indexed from 0 to 4.
-> >  
-> >  Required Properties:
-> >  
-> > -  - compatible: must contain "renesas,mtu2"
-> > +  - compatible: must be one of the following.
-> 
-> Surely "one or more", follwing the example?
+--H4VhjwoeT4PGpv3718xbDV0DSVD73oOGA
+Content-Type: text/plain; charset=windows-1252
+Content-Transfer-Encoding: quoted-printable
 
-Thanks, yes, it should be "one or more".
+Hi,
 
-> > +    - "renesas,mtu2" for generic MTU2
-> 
-> s/generic/any/ to make it clearer this should be present in all lists
-> for the moment?
+On 27/08/14 19:41, Laurent Pinchart wrote:
+> The VGA connector is described by a single input port and an optional
+> DDC bus.
+>=20
+> Cc: devicetree@vger.kernel.org
+> Cc: linux-fbdev@vger.kernel.org
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.=
+com>
+> ---
+>  .../devicetree/bindings/video/vga-connector.txt    | 28 ++++++++++++++=
+++++++++
+>  1 file changed, 28 insertions(+)
+>  create mode 100644 Documentation/devicetree/bindings/video/vga-connect=
+or.txt
+>=20
+> diff --git a/Documentation/devicetree/bindings/video/vga-connector.txt =
+b/Documentation/devicetree/bindings/video/vga-connector.txt
+> new file mode 100644
+> index 0000000..9a45ec1
+> --- /dev/null
+> +++ b/Documentation/devicetree/bindings/video/vga-connector.txt
+> @@ -0,0 +1,28 @@
+> +VGA Connector
+> +=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+> +
+> +Required properties:
+> +- compatible: "vga-connector"
+> +
+> +Optional properties:
+> +- label: a symbolic name for the connector
+> +- ddc-i2c-bus: phandle to the I2C bus that is connected to VGA DDC
+> +
+> +Required nodes:
+> +- Video port for VGA input
+> +
+> +Example
+> +-------
+> +
+> +vga0: connector@0 {
+> +	compatible =3D "vga-connector";
+> +	label =3D "vga";
+> +
+> +	ddc-i2c-bus =3D <&i2c3>;
+> +
+> +	port {
+> +		vga_connector_in: endpoint {
+> +			remote-endpoint =3D <&adv7123_out>;
+> +		};
+> +	};
+> +};
+>=20
 
-Sure.
+Looks good to me.
 
-> > +    - "renesas,mtu2-r7s72100" for R7S72100 MTU2
-> 
-> It might make sense to move this above the "renesas,mtu2" entry to make
-> the ordering a bit clearer.
+ Tomi
 
-Sure.
 
-> Cheers,
-> Mark.
-> 
-> >  
-> >    - reg: base address and length of the registers block for the timer module.
-> >  
-> > @@ -26,7 +28,7 @@ Required Properties:
-> >  Example: R7S72100 (RZ/A1H) MTU2 node
-> >  
-> >  	mtu2: timer@fcff0000 {
-> > -		compatible = "renesas,mtu2";
-> > +		compatible = "renesas,mtu2-r7s72100", "renesas,mtu2";
-> >  		reg = <0xfcff0000 0x400>;
-> >  		interrupts = <0 139 IRQ_TYPE_LEVEL_HIGH>,
-> >  			     <0 146 IRQ_TYPE_LEVEL_HIGH>,
-> > -- 
-> > 2.0.1
-> > 
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe devicetree" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+
+--H4VhjwoeT4PGpv3718xbDV0DSVD73oOGA
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJUFqjwAAoJEPo9qoy8lh71/VcP/jo7YNg0B1MyfKaUNQCiftsm
+pFQUlLkiC6tticqYOlYnlcNcLSctyYfV4gmUD/9wOpXAXJynP0SZaqRyDg0ckCTj
+Syhrd+ILrCUmLwtCNY9lKisWtAatu6MgTI/sm5SBzQS2TIYAfEslXnePVVy/bsA+
+bYXpTbuaJhaBkERQ3tWtJjjUtr3IJVPSOcviZhU6rcHWVgxUCwuardJ8vlGmreq8
+5+tyKprnDu47Aq6D7zkmZpDcyybLCfpEei0s7sBdvEX1UcCUkIQ6D3RWks18zIjs
+YCzGdDQHES4zCYWgeuM91hX7WD4xEQrt53326WjbdOWjgeIPcDC6KyiD27QqTrtX
+mRE2yvb8iHtGA94igm7z1nFK5vVKvC8eWXSfHPs0XYguhEQsoauNDwLt2u2xsasP
+gLWqx54uYDV2oLu7iNJii4e6HA5gxyIcUBzUhG0GODqTUiwZJV5xO2zbHo640EM5
+y47+Nv0sIKIjH7Fs6Ht7YFSdxHLPq9fcixMJYGB0BDcPgFz66xHx2IFWRLgrtAxj
+f+kS5Ws0xzp9xp/3dBjPPQwvmXhgHSwqaWj3aUDDUQwFkytJXUJKfU4QIT97yoVv
+yDvJ1w/4h8wuidW3Sjr8q/XiwNunJ+dQwjJw6O7ksMhIfqCq9jxoecnsXUyMwlWX
+b6uVcjvRSAoIwZklP/B/
+=/fjI
+-----END PGP SIGNATURE-----
+
+--H4VhjwoeT4PGpv3718xbDV0DSVD73oOGA--
