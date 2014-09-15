@@ -1,42 +1,47 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Wed, 24 Sep 2014 05:15:42 +0000
-Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC Clk Updates for v3.18
-Message-Id: <20140924051542.GC30340@localhost>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 15 Sep 2014 10:21:17 +0000
+Subject: [PATCH] [RESEND] ARM: shmobile: r8a73a4 dtsi: Add SoC-specific irqc compatible property
+Message-Id: <1410776477-7725-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1410484748.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1410484748.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Sep 12, 2014 at 10:23:47AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these second round of Renesas ARM based SoC clk updates for v3.18.
-> 
-> This pull request is based on the previous round of
-> such requests, tagged as renesas-clk-for-v3.18,
-> which you have already pulled.
-> 
-> I am taking this change through my tree with Mike's Ack
-> as it seems to be a smooth way to handle things.
-> 
-> 
-> The following changes since commit 8de078f189da45453d2ed2a04288e329cc169731:
-> 
->   clk: shmobile: Add r8a7794 support (2014-08-27 08:40:54 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clk2-for-v3.18
-> 
-> for you to fetch changes up to b32c44b93af31e9163514df0f3ac2791972eb124:
-> 
->   clk: shmobile: Add r8a7740, sh73a0 SoCs to MSTP bindings (2014-09-10 09:08:10 +0900)
-> 
+The interrupt controller used the generic compatible property only.
+Add the SoC-specific one, to make it future proof.
 
-Merged, thanks.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Binding has been accepted in commit 41a3322a93395e02 ("irqchip: renesas-irqc:
+Add DT binding documentation"), in
+git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
 
+ arch/arm/boot/dts/r8a73a4.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
--Olof
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index fba39a2bfe42..ef152e384822 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -51,7 +51,7 @@
+ 	};
+ 
+ 	irqc0: interrupt-controller@e61c0000 {
+-		compatible = "renesas,irqc";
++		compatible = "renesas,irqc-r8a73a4", "renesas,irqc";
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
+ 		reg = <0 0xe61c0000 0 0x200>;
+@@ -90,7 +90,7 @@
+ 	};
+ 
+ 	irqc1: interrupt-controller@e61c0200 {
+-		compatible = "renesas,irqc";
++		compatible = "renesas,irqc-r8a73a4", "renesas,irqc";
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
+ 		reg = <0 0xe61c0200 0 0x200>;
+-- 
+1.9.1
+
