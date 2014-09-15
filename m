@@ -1,58 +1,15 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 22 Sep 2014 12:48:04 +0000
-Subject: renesas-drivers-2014-09-22-v3.17-rc6
-Message-Id: <1411390084-27308-1-git-send-email-geert+renesas@glider.be>
+From: Diana <dede.bahtiar@lrs.co.id>
+Date: Mon, 15 Sep 2014 16:56:18 +0000
+Subject: H
+Message-Id: <1991533393.28113.1410800178698.JavaMail.root@lrs.co.id>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-I've pushed renesas-drivers-2014-09-22-v3.17-rc6 to
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
-This tree is meant to ease development of platform support and drivers for
-Renesas ARM ("shmobile") SoCs. It's created by merging the for-next branches
-of various subsystem trees into the development branch of Simon Horman's
-renesas.git tree.
-
-Today's version is based on renesas-devel-20140922-v3.17-rc6.
-
-Included subsystem trees:
-    git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
-    git://git.linaro.org/people/mturquette/linux.git#clk-next
-    git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
-    git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
-    git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
-    git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
-    git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
-    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
-    git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
-    git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
-    git://gitorious.org/linux-can/linux-can-next.git#master
-    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
-    git://people.freedesktop.org/~airlied/linux#drm-next
-    git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
-    git://linuxtv.org/mchehab/media-next.git#master
-    git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
-    git://git.linaro.org/people/ulf.hansson/mmc.git#next
-    git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
-    git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
-    git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
-    git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
-    git://git.infradead.org/users/vkoul/slave-dma.git#next
-    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
-    git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
-    git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
-    git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
-    git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+Please Revert back, your assistance is needed.
+---------------------------------------
+The Exhibitor at innoTrans, Berlin 2014
+Hall : 15.1 / Stand no : 109 
+http://www.virtualmarket.innotrans.de/?Action=showCompany&id46242
