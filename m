@@ -1,75 +1,84 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 06 Sep 2014 01:14:00 +0000
-Subject: Re: [PATCH v2 1/3] clocksource: sh_cmt: Document SoC specific bindings
-Message-Id: <20140906011359.GB16116@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 16 Sep 2014 18:48:51 +0000
+Subject: [PATCH/RFC v2 04/12] PM / Domains: Add genpd attach/detach callbacks
+Message-Id: <1410893339-6361-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409792121-28912-1-git-send-email-horms+renesas@verge.net.au>
- <1409792121-28912-2-git-send-email-horms+renesas@verge.net.au>
- <6240436.VfJ5CJaKOx@avalon>
-In-Reply-To: <6240436.VfJ5CJaKOx@avalon>
+References: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Sep 04, 2014 at 09:58:40AM +0300, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> A couple of other small issues I've missed.
-> 
-> On Thursday 04 September 2014 09:55:19 Simon Horman wrote:
-> > In general Renesas hardware is not documented to the extent
-> > where the relationship between IP blocks on different SoCs can be assumed
-> > although they may appear to operate the same way. Furthermore the
-> > documentation typically does not specify a version for individual
-> > IP blocks. For these reasons a convention of using the SoC name in place
-> > of a version and providing SoC-specific compat strings has been adopted.
-> > 
-> > Although not universally liked this convention is used in the bindings for
-> > a number of drivers for Renesas hardware. The purpose of this patch is to
-> > update the Renesas R-Car Compare Match Timer (CMT) driver to follow this
-> > convention.
-> > 
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> > Acked-by: Mark Rutland <mark.rutland@arm.com>
-> > 
-> > ---
-> > * I plan to follow up with patches to use these new bindings in the
-> >   dtsi files for the affected SoCs.
-> > 
-> > v2
-> > * Reorder compat entries so more-specific entries and their fallbacks
-> >   are grouped with the fallback entry coming last.
-> > * Explicitly document fallback
-> > ---
-> >  .../devicetree/bindings/timer/renesas,cmt.txt      | 44 ++++++++++++++++---
-> >  1 file changed, 38 insertions(+), 6 deletions(-)
-> > 
-> > diff --git a/Documentation/devicetree/bindings/timer/renesas,cmt.txt
-> > b/Documentation/devicetree/bindings/timer/renesas,cmt.txt index
-> > a17418b..7b44f4b 100644
-> > --- a/Documentation/devicetree/bindings/timer/renesas,cmt.txt
-> > +++ b/Documentation/devicetree/bindings/timer/renesas,cmt.txt
-> > @@ -11,15 +11,47 @@ datasheets.
-> > 
-> >  Required Properties:
-> > 
-> > -  - compatible: must contain one of the following.
-> > -    - "renesas,cmt-32" for the 32-bit CMT
-> > +  - compatible: must contain one or more of the following:
-> > +    - "renesas,cmt-32-r8a7740" for the R8a7740 32-bit CMT
-> 
-> s/R8a7740/R8A7740/
-> 
-> > +		(CMT0)
-> > +    - "renesas,cmt-32-sh7372" for the SH7372 32-bit CMT
-> > +		(CMT0)
-> > +    - "renesas,cmt-32-sh73a0" for the SH73a0 32-bit CMT
-> 
-> s/SH73a0/SH73A0/
+While a PM domain can enable PM runtime management of its devices' module
+clocks by setting
 
-Thanks, I have decided to go for lower case instead.
-That is consistent with other nearby usage in the same file.
+	genpd->dev_ops.stop = pm_clk_suspend;
+	genpd->dev_ops.start = pm_clk_resume;
 
-[snip]
+this also requires registering the clocks with the pm_clk subsystem.
+In the legacy case, this is handled by the platform code, after
+attaching the device to its PM domain.
+
+When the devices are instantiated from DT, devices are attached to their
+PM domains by generic code, leaving no method for the platform-specific
+PM domain code to register their clocks.
+
+Add two callbacks, allowing a PM domain to perform platform-specific
+tasks when a device is attached to or detached from a PM domain.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2:
+  - New
+---
+ drivers/base/power/domain.c | 12 ++++++++++++
+ include/linux/pm_domain.h   |  2 ++
+ 2 files changed, 14 insertions(+)
+
+diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
+index f09b615e61515d11..3fa15b6c54f09b36 100644
+--- a/drivers/base/power/domain.c
++++ b/drivers/base/power/domain.c
+@@ -1418,6 +1418,12 @@ int __pm_genpd_add_device(struct generic_pm_domain *genpd, struct device *dev,
+ 	if (ret)
+ 		goto out;
+ 
++	if (genpd->attach_dev) {
++		ret = genpd->attach_dev(genpd, dev);
++		if (ret)
++			goto out;
++	}
++
+ 	genpd->device_count++;
+ 	genpd->max_off_time_changed = true;
+ 
+@@ -1541,6 +1547,12 @@ int pm_genpd_remove_device(struct generic_pm_domain *genpd,
+ 
+ 	spin_unlock_irq(&dev->power.lock);
+ 
++	if (genpd->detach_dev) {
++		ret = genpd->detach_dev(genpd, dev);
++		if (ret)
++			goto out;
++	}
++
+ 	mutex_lock(&gpd_data->lock);
+ 	pdd->dev = NULL;
+ 	mutex_unlock(&gpd_data->lock);
+diff --git a/include/linux/pm_domain.h b/include/linux/pm_domain.h
+index ff128c1ec0de231c..ac07918f907b7495 100644
+--- a/include/linux/pm_domain.h
++++ b/include/linux/pm_domain.h
+@@ -73,6 +73,8 @@ struct generic_pm_domain {
+ 	bool cached_power_down_ok;
+ 	struct device_node *of_node; /* Node in device tree */
+ 	struct gpd_cpu_data *cpu_data;
++	int (*attach_dev)(struct generic_pm_domain *domain, struct device *dev);
++	int (*detach_dev)(struct generic_pm_domain *domain, struct device *dev);
+ };
+ 
+ static inline struct generic_pm_domain *pd_to_genpd(struct dev_pm_domain *pd)
+-- 
+1.9.1
+
