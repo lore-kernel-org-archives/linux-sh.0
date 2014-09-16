@@ -1,54 +1,57 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Mon, 29 Sep 2014 20:44:37 +0000
-Subject: Re: [PATCH] i2c: rcar: remove sign-compare flaw
-Message-Id: <20140929204437.GA2758@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="h31gzZEtNLTqOjlF"
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 16 Sep 2014 18:48:49 +0000
+Subject: [PATCH/RFC v2 02/12] PM / Domains: Add DT bindings for PM QoS device latencies
+Message-Id: <1410893339-6361-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411207657-23707-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1411207657-23707-1-git-send-email-wsa@the-dreams.de>
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+References: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+PM QoS device start/stop and save/restore state latencies are more or
+less properties of the hardware.
+In legacy code, they're specified from platform code.
+On DT platforms, their values should come from DT.
 
---h31gzZEtNLTqOjlF
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Should these properties be called "linux,*-latency"?
 
-On Sat, Sep 20, 2014 at 12:07:37PM +0200, Wolfram Sang wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
->=20
-> gcc rightfully says:
->=20
-> drivers/i2c/busses/i2c-rcar.c:198:10: warning: comparison between signed =
-and unsigned integer expressions [-Wsign-compare]
->=20
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+v2:
+  - New
+---
+ Documentation/devicetree/bindings/power/power_domain.txt | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-Applied to for-next, thanks!
+diff --git a/Documentation/devicetree/bindings/power/power_domain.txt b/Documentation/devicetree/bindings/power/power_domain.txt
+index 7bc421d84367d636..024815bc257723b1 100644
+--- a/Documentation/devicetree/bindings/power/power_domain.txt
++++ b/Documentation/devicetree/bindings/power/power_domain.txt
+@@ -42,12 +42,22 @@ Required properties:
+  - power-domains : A phandle and PM domain specifier as defined by bindings of
+                    the power controller specified by phandle.
+ 
++Optional properties:
++ - stop-latency: Stop latency of the device, in ns,
++ - start-latency: Start latency of the device, in ns,
++ - save-state-latency: Save-state latency of the device, in ns,
++ - restore-state-latency: Restore-state latency of the device, in ns.
++
+ Example:
+ 
+ 	leaky-device@12350000 {
+ 		compatible = "foo,i-leak-current";
+ 		reg = <0x12350000 0x1000>;
+ 		power-domains = <&power 0>;
++		stop-latency = <250000>;
++		start-latency = <250000>;
++		save-state-latency = <250000>;
++		restore-state-latency = <250000>;
+ 	};
+ 
+ The node above defines a typical PM domain consumer device, which is located
+-- 
+1.9.1
 
-
---h31gzZEtNLTqOjlF
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJUKcS0AAoJEBQN5MwUoCm2ZMsP/1UN+I9D/sCLrZJOhstLQ0da
-Y4xkmdwJGZHCDOIjk6wV61m8CkJFVHUJp0KNH+QTeDT2I5hpdRqUcQz7q+M5JWR0
-oxdtbw5aRpUH+Sc/RfJTmO6YVdsg1DQt5ZmofZBzN3C3ymPVpayItrXI9ULVa2N4
-zA2nfIsliXoCz4CqUKDWOTw+iIXs85MYOHsKq00fGDMpseqUq0aFgyQ1+Ss5Pd/m
-c5abk2oDDtaK0hL7zrpOIta9n9FnHAZH9958uAQ80LjFtoaTGe3dK+vBXK3YH+kU
-q4wA8GFZplgViSCgKJ4VPzuEoEcPYjC5yvfN6UUHCxoosvL4X6kIfeESVwuoGszi
-HvThT4tiGrGfnV6CNguJh3HmpBPdKevxoAsyDiNRk3OBDRVgOdN+fsPFw6q9CYJp
-q3utUZCdiJdDfJtCJ57mY0KRSElenykoAeFtmmy5mFg578/dStG25oSgmFs6qGYZ
-HjDbn8OSZd48QcmhyeebvPkeUaS+LZdV2oZsirwnmedZBPOBl2Cot0cFWsmdoI18
-yhPgjRwjkYljYYqo31gmUvUMzsNTdIO1NU7GkwPLkSzArSD/fn5gHbPoHi5lvZ0q
-k0wAC5Hwd/DvO+Z5ueWoGqb6SmSlPiXPUB1hO1wfM7z+5l3Gj5yUrwRak7yFWOsE
-qNQYMIdZXlavO9GuX3Qy
-=JvKm
------END PGP SIGNATURE-----
-
---h31gzZEtNLTqOjlF--
