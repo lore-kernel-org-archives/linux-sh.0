@@ -1,64 +1,79 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 09 Sep 2014 06:44:51 +0000
-Subject: [PATCH 1/6 v4] mmc: use .multi_io_quirk on omap_hsmmc
-Message-Id: <87iokx70nz.wl%kuninori.morimoto.gx@gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 16 Sep 2014 11:20:34 +0000
+Subject: [PATCH 03/03] ARM: shmobile: lager-reference: IOMMUSY1 and USB tests
+Message-Id: <20140916112034.14889.85988.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
-	<87k35d70pz.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87k35d70pz.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Now, omap_hsmmc can use .multi_io_quirk callback
-instead of MMC_CAP2_NO_MULTI_READ flags.
-let's use it.
+Add some prototype code to allow testing of IPMMUSY1
+and USB 2.0 Host controllers on the r8a7790 Lager board.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The USB 2.0 Host controllers are described via DT while
+the IPMMU device is handled as platform device for now.
+
+Not for upstream merge.
+
+Not-Yet-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
-v3 -> v4
 
- - don't use flag
+ arch/arm/mach-shmobile/board-lager-reference.c |   30 ++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
 
- drivers/mmc/host/omap_hsmmc.c |   14 ++++++++++++--
- 1 file changed, 12 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/mmc/host/omap_hsmmc.c b/drivers/mmc/host/omap_hsmmc.c
-index ece1634..df27bb4 100644
---- a/drivers/mmc/host/omap_hsmmc.c
-+++ b/drivers/mmc/host/omap_hsmmc.c
-@@ -1829,7 +1829,17 @@ static int omap_hsmmc_disable_fclk(struct mmc_host *mmc)
- 	return 0;
+--- 0001/arch/arm/mach-shmobile/board-lager-reference.c
++++ work/arch/arm/mach-shmobile/board-lager-reference.c	2014-09-16 17:04:43.000000000 +0900
+@@ -21,6 +21,7 @@
+ #include <linux/dma-mapping.h>
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
++#include <linux/platform_data/ipmmu-vmsa.h>
+ #include <linux/platform_data/rcar-du.h>
+ 
+ #include <asm/mach/arch.h>
+@@ -88,6 +89,34 @@ static void __init lager_add_du_device(v
  }
  
--static const struct mmc_host_ops omap_hsmmc_ops = {
-+static int omap_hsmmc_multi_io_quirk(struct mmc_card *card,
-+				     unsigned int direction, int blk_size)
-+{
-+	/* This controller can't do multiblock reads due to hw bugs */
-+	if (direction = MMC_DATA_READ)
-+		return 1;
+ /*
++ * IPMMUSY1
++ */
++static struct resource ipmmu_resources[] = {
++	DEFINE_RES_MEM(0xe6290800, 0x800),
++	DEFINE_RES_IRQ(gic_spi(225)),
++};
 +
-+	return blk_size;
++static const struct ipmmu_vmsa_master ipmmu_masters[] = {
++	{ "ee090000.pci", 6, },
++	{ "ee0b0000.pci", 8, },
++	{ "ee0d0000.pci", 9, },
++};
++
++static struct ipmmu_vmsa_platform_data ipmmu_platform_data = {
++	.masters = ipmmu_masters,
++	.num_masters = ARRAY_SIZE(ipmmu_masters),
++};
++
++static void __init lager_add_ipmmu_devices(void)
++{
++	platform_device_register_resndata(NULL, "ipmmu-vmsa", -1,
++					  ipmmu_resources,
++					  ARRAY_SIZE(ipmmu_resources),
++					  &ipmmu_platform_data,
++					  sizeof(ipmmu_platform_data));
 +}
 +
-+static struct mmc_host_ops omap_hsmmc_ops = {
- 	.enable = omap_hsmmc_enable_fclk,
- 	.disable = omap_hsmmc_disable_fclk,
- 	.post_req = omap_hsmmc_post_req,
-@@ -2101,7 +2111,7 @@ static int omap_hsmmc_probe(struct platform_device *pdev)
++/*
+  * This is a really crude hack to provide clkdev support to platform
+  * devices until they get moved to DT.
+  */
+@@ -105,6 +134,7 @@ static void __init lager_add_standard_de
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
  
- 	if (host->pdata->controller_flags & OMAP_HSMMC_BROKEN_MULTIBLOCK_READ) {
- 		dev_info(&pdev->dev, "multiblock reads disabled due to 35xx erratum 2.1.1.128; MMC read performance may suffer\n");
--		mmc->caps2 |= MMC_CAP2_NO_MULTI_READ;
-+		omap_hsmmc_ops.multi_io_quirk = omap_hsmmc_multi_io_quirk;
- 	}
+ 	lager_add_du_device();
++	lager_add_ipmmu_devices();
+ }
  
- 	pm_runtime_enable(host->dev);
--- 
-1.7.9.5
-
+ static const char *lager_boards_compat_dt[] __initdata = {
