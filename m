@@ -1,37 +1,39 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 09 Sep 2014 03:56:21 +0000
-Subject: Re: [PATCH 0/7 v3] mmc: remove MMC_CAP2_NO_MULTI_READ flags
-Message-Id: <20140909035618.GI31320@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 16 Sep 2014 19:57:16 +0000
+Subject: [PATCH] ARM: shmobile: Add manufacturer for KZM boards
+Message-Id: <1410897436-28107-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
- <87bnqx78xr.wl%kuninori.morimoto.gx@gmail.com>
- <20140909024310.GE31320@verge.net.au>
- <87sik17bqg.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87sik17bqg.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Cc: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Mon, Sep 08, 2014 at 07:45:46PM -0700, Kuninori Morimoto wrote:
-> 
-> Hi Simon
-> 
-> > > Kuninori Morimoto (7):
-> > >       mmc: add .multi_io_quirk callback for multi I/O HW bug
-> > >       mmc: use .multi_io_quirk on omap_hsmmc
-> > >       mmc: use .multi_io_quirk on tmio_mmc
-> > >       mmc: use .multi_io_quirk on sh_mobile
-> > >       ARM: shmobile: remove MMC_CAP2_NO_MULTI_READ from koelsch
-> > >       ARM: shmobile: remove MMC_CAP2_NO_MULTI_READ from lager
-> > 
-> > Hi Morimoto-san,
-> > 
-> > could you let me know about the dependencies for the above two patches?
-> 
-> These have deep dependencies.
-> "ARM: shmobile: remove xxx" patches are based on 1) - 4) patches,
-> and, it is required to last patch.
+KZM-A9-Dual and KZM-A9-GT are manufactured by Kyoto Microcomputer Co.
 
-Thanks, I understand.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ Documentation/devicetree/bindings/arm/shmobile.txt | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/arm/shmobile.txt b/Documentation/devicetree/bindings/arm/shmobile.txt
+index 5d1c5c0085dc7871..51147cb5c036599a 100644
+--- a/Documentation/devicetree/bindings/arm/shmobile.txt
++++ b/Documentation/devicetree/bindings/arm/shmobile.txt
+@@ -53,11 +53,11 @@ Boards:
+     compatible = "renesas,henninger", "renesas,r8a7791"
+   - Koelsch (RTP0RC7791SEB00010S)
+     compatible = "renesas,koelsch", "renesas,r8a7791"
+-  - KZM9D
++  - Kyoto Microcomputer Co. KZM-A9-Dual
+     compatible = "renesas,kzm9d", "renesas,emev2"
+-  - KZM-A9-GT
++  - Kyoto Microcomputer Co. KZM-A9-GT
+     compatible = "renesas,kzm9g", "renesas,sh73a0"
+-  - KZM-A9-GT - Reference Device Tree Implementation
++  - Kyoto Microcomputer Co. KZM-A9-GT - Reference Device Tree Implementation
+     compatible = "renesas,kzm9g-reference", "renesas,sh73a0"
+   - Lager (RTP0RC7790SEB00010S)
+     compatible = "renesas,lager", "renesas,r8a7790"
+-- 
+1.9.1
+
