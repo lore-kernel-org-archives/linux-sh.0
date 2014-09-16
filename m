@@ -1,59 +1,187 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 09 Sep 2014 04:22:17 +0000
-Subject: [PATCH 1/2] ARM: shmobile: support Cortex-A7 in shmobile_init_delay()
-Message-Id: <0dc50fd3dc4a70d0d317103188c129d378125643.1410235571.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 16 Sep 2014 11:20:22 +0000
+Subject: [PATCH 02/03] iommu/ipmmu-vmsa: Create mapping via group notifier
+Message-Id: <20140916112022.14889.48320.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1410235571.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1410235571.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Extend the IPMMU-VMSA driver to use a notifier
+together with IOMMU groups to hook in all devices
+in the same IOMMU group to the same IOMMU.
+
+This patch introduces an assumption that all devices
+in one IOMMU group share the same UTLB number.
+
+Tested with USB Host 2.0 on r8a7790 Lager.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/mach-shmobile/timer.c | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/timer.c b/arch/arm/mach-shmobile/timer.c
-index 942efdc..0b01770 100644
---- a/arch/arm/mach-shmobile/timer.c
-+++ b/arch/arm/mach-shmobile/timer.c
-@@ -60,7 +60,7 @@ void __init shmobile_setup_delay(unsigned int max_cpu_core_mhz,
- void __init shmobile_init_delay(void)
+ drivers/iommu/ipmmu-vmsa.c |  121 +++++++++++++++++++++++++++-----------------
+ 1 file changed, 75 insertions(+), 46 deletions(-)
+
+--- 0001/drivers/iommu/ipmmu-vmsa.c
++++ work/drivers/iommu/ipmmu-vmsa.c	2014-09-16 16:52:21.000000000 +0900
+@@ -33,6 +33,7 @@ struct ipmmu_vmsa_device {
+ 	unsigned int num_utlbs;
+ 
+ 	struct dma_iommu_mapping *mapping;
++	struct notifier_block group_notifier;
+ };
+ 
+ struct ipmmu_vmsa_domain {
+@@ -1013,9 +1014,79 @@ static int ipmmu_find_utlb(struct ipmmu_
+ 	return -1;
+ }
+ 
+-static int ipmmu_add_device(struct device *dev)
++static int ipmmu_add_device_mapping(struct device *dev,
++				    struct ipmmu_vmsa_device *mmu,
++				    int utlb)
  {
- 	struct device_node *np, *cpus;
--	bool is_a8_a9 = false;
-+	bool is_a7_a8_a9 = false;
- 	bool is_a15 = false;
- 	u32 max_freq = 0;
- 
-@@ -74,9 +74,10 @@ void __init shmobile_init_delay(void)
- 		if (!of_property_read_u32(np, "clock-frequency", &freq))
- 			max_freq = max(max_freq, freq);
- 
--		if (of_device_is_compatible(np, "arm,cortex-a8") ||
-+		if (of_device_is_compatible(np, "arm,cortex-a7") ||
-+		    of_device_is_compatible(np, "arm,cortex-a8") ||
- 		    of_device_is_compatible(np, "arm,cortex-a9"))
--			is_a8_a9 = true;
-+			is_a7_a8_a9 = true;
- 		else if (of_device_is_compatible(np, "arm,cortex-a15"))
- 			is_a15 = true;
+ 	struct ipmmu_vmsa_archdata *archdata;
++	int ret;
++
++	archdata = kzalloc(sizeof(*archdata), GFP_KERNEL);
++	if (!archdata)
++		return -ENOMEM;
++
++	archdata->mmu = mmu;
++	archdata->utlb = utlb;
++	dev->archdata.iommu = archdata;
++
++	/*
++	 * Create the ARM mapping, used by the ARM DMA mapping core to allocate
++	 * VAs. This will allocate a corresponding IOMMU domain.
++	 *
++	 * TODO:
++	 * - Create one mapping per context (TLB).
++	 * - Make the mapping size configurable ? We currently use a 2GB mapping
++	 *   at a 1GB offset to ensure that NULL VAs will fault.
++	 */
++	if (!mmu->mapping) {
++		struct dma_iommu_mapping *mapping;
++
++		mapping = arm_iommu_create_mapping(&platform_bus_type,
++						   SZ_1G, SZ_2G);
++		if (IS_ERR(mapping)) {
++			dev_err(mmu->dev, "failed to create ARM IOMMU mapping\n");
++			return PTR_ERR(mapping);
++		}
++
++		mmu->mapping = mapping;
++	}
++
++	/* Attach the ARM VA mapping to the device. */
++	ret = arm_iommu_attach_device(dev, mmu->mapping);
++	if (ret < 0) {
++		dev_err(dev, "Failed to attach device to VA mapping\n");
++		goto error;
++	}
++	return 0;
++
++error:
++	kfree(archdata);
++	dev->archdata.iommu = NULL;
++	return ret;
++}
++
++static int ipmmu_group_notify(struct notifier_block *nb,
++			      unsigned long action, void *data)
++{
++	struct ipmmu_vmsa_device *mmu;
++	struct device *dev = data;
++	struct iommu_group *group = iommu_group_get(dev);
++	int utlb = (int)iommu_group_get_iommudata(group);
++
++	mmu = container_of(nb, struct ipmmu_vmsa_device, group_notifier);
++
++	/* TODO: remove device */
++	switch (action) {
++	case IOMMU_GROUP_NOTIFY_ADD_DEVICE:
++		ipmmu_add_device_mapping(dev, mmu, utlb);
++		break;
++	}
++
++	return NOTIFY_OK;
++}
++
++static int ipmmu_add_device(struct device *dev)
++{
+ 	struct ipmmu_vmsa_device *mmu;
+ 	struct iommu_group *group;
+ 	int utlb = -1;
+@@ -1056,6 +1127,8 @@ static int ipmmu_add_device(struct devic
+ 		return PTR_ERR(group);
  	}
-@@ -86,7 +87,7 @@ void __init shmobile_init_delay(void)
- 	if (!max_freq)
- 		return;
  
--	if (is_a8_a9)
-+	if (is_a7_a8_a9)
- 		shmobile_setup_delay_hz(max_freq, 1, 3);
- 	else if (is_a15 && !IS_ENABLED(CONFIG_ARM_ARCH_TIMER))
- 		shmobile_setup_delay_hz(max_freq, 2, 4);
--- 
-2.0.1
-
++	iommu_group_set_iommudata(group, (void *)utlb, NULL);
++	iommu_group_register_notifier(group, &mmu->group_notifier);
+ 	ret = iommu_group_add_device(group, dev);
+ 	iommu_group_put(group);
+ 
+@@ -1064,51 +1137,6 @@ static int ipmmu_add_device(struct devic
+ 		return ret;
+ 	}
+ 
+-	archdata = kzalloc(sizeof(*archdata), GFP_KERNEL);
+-	if (!archdata) {
+-		ret = -ENOMEM;
+-		goto error;
+-	}
+-
+-	archdata->mmu = mmu;
+-	archdata->utlb = utlb;
+-	dev->archdata.iommu = archdata;
+-
+-	/*
+-	 * Create the ARM mapping, used by the ARM DMA mapping core to allocate
+-	 * VAs. This will allocate a corresponding IOMMU domain.
+-	 *
+-	 * TODO:
+-	 * - Create one mapping per context (TLB).
+-	 * - Make the mapping size configurable ? We currently use a 2GB mapping
+-	 *   at a 1GB offset to ensure that NULL VAs will fault.
+-	 */
+-	if (!mmu->mapping) {
+-		struct dma_iommu_mapping *mapping;
+-
+-		mapping = arm_iommu_create_mapping(&platform_bus_type,
+-						   SZ_1G, SZ_2G);
+-		if (IS_ERR(mapping)) {
+-			dev_err(mmu->dev, "failed to create ARM IOMMU mapping\n");
+-			return PTR_ERR(mapping);
+-		}
+-
+-		mmu->mapping = mapping;
+-	}
+-
+-	/* Attach the ARM VA mapping to the device. */
+-	ret = arm_iommu_attach_device(dev, mmu->mapping);
+-	if (ret < 0) {
+-		dev_err(dev, "Failed to attach device to VA mapping\n");
+-		goto error;
+-	}
+-
+-	return 0;
+-
+-error:
+-	kfree(dev->archdata.iommu);
+-	dev->archdata.iommu = NULL;
+-	iommu_group_remove_device(dev);
+ 	return ret;
+ }
+ 
+@@ -1167,6 +1195,7 @@ static int ipmmu_probe(struct platform_d
+ 	mmu->dev = &pdev->dev;
+ 	mmu->pdata = pdev->dev.platform_data;
+ 	mmu->num_utlbs = 32;
++	mmu->group_notifier.notifier_call = ipmmu_group_notify;
+ 
+ 	/* Map I/O memory and request IRQ. */
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
