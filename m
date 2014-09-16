@@ -1,163 +1,53 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Fri, 26 Sep 2014 08:32:43 +0000
-Subject: Re: [PATCH v3 04/13] PM / Domains: Add DT bindings for the R-Mobile System Controller
-Message-Id: <CAPDyKFo7QruMXivxXoxkZD8DkFdcZCacH=g0rxH=TEH_nJtJpw@mail.gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 16 Sep 2014 08:34:34 +0000
+Subject: Re: [PATCH v2] of: Add vendor prefix for Sitronix
+Message-Id: <CAMuHMdXWpRyj7ke-RV0t0G4CzS1_5bCOpCYuOA1TiLZxTPYNUA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
- <1411662520-22795-5-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1411662520-22795-5-git-send-email-geert+renesas@glider.be>
+References: <1409212074-2966-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1409212074-2966-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-On 25 September 2014 18:28, Geert Uytterhoeven <geert+renesas@glider.be> wrote:
-> The Renesas R-Mobile System Controller provides a.o. power management
-> support, following the generic PM domain bindings in
-> Documentation/devicetree/bindings/power/power_domain.txt.
->
-> For now this supports the R-Mobile A1 (r8a7740) only, but it should be
-> sufficiently generic to handle other members of the SH-Mobile/R-Mobile
-> family in the future.
+ping?
+
+On Thu, Aug 28, 2014 at 9:47 AM, Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
+> The stock ticker for Sitronix is just a number.
+> "sitronix,st1232" is already in use for the Sitronix st1232 touchscreen
+> controller on Atmark Techno Armadillo 800 EVA.
 >
 > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 > ---
-> v3:
->   - Reword,
-> v2:
->   - Fix copy-and-paste s/#address-cells/#size-cells/,
->   - Add optional PM QoS device latencies.
+> v2: Mention armadillo
+> ---
+>  Documentation/devicetree/bindings/vendor-prefixes.txt | 1 +
+>  1 file changed, 1 insertion(+)
 >
->  .../bindings/power/renesas,sysc-rmobile.txt        | 111 +++++++++++++++++++++
->  1 file changed, 111 insertions(+)
->  create mode 100644 Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
->
-> diff --git a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-> new file mode 100644
-> index 0000000000000000..0b1e56d6ed1ab9a2
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-> @@ -0,0 +1,111 @@
-> +DT bindings for the Renesas R-Mobile System Controller
-> +
-> += System Controller Node =
-> +
-> +The R-Mobile System Controller provides the following functions:
-> +  - Boot mode management,
-> +  - Reset generation,
-> +  - Power management.
-> +
-> +Required properties:
-> +- compatible: Should be "renesas,sysc-<soctype>", "renesas,sysc-rmobile" as
-> +             fallback.
-> +             Examples with soctypes are:
-> +               - "renesas,sysc-r8a7740" (R-Mobile A1)
-> +- reg: Two address start and address range blocks for the device:
-> +         - The first block refers to the normally accessible registers,
-> +         - the second block refers to the registers protected by the HPB
-> +          semaphore.
-> +
-> +Optional nodes:
-> +- pm-domains: This node contains a hierarchy of PM domain nodes, which should
-> +  match the Power Area Hierarchy in the Power Domain Specifications section of
-> +  the device's datasheet.
-> +
-> +
-> += PM Domain Nodes =
-> +
-> +Each of the PM domain nodes represents a PM domain, as documented by the
-> +generic PM domain bindings in
-> +Documentation/devicetree/bindings/power/power_domain.txt.
-> +
-> +The nodes should be named by the real power area names, and thus their names
-> +should be unique.
-> +
-> +Required properties:
-> +  - #power-domain-cells: Must be 0.
-> +
-> +Optional properties:
-> +- reg: If the PM domain is not always-on, this property must contain the bit
-> +       index number for the corresponding power area in the various Power
-> +       Control and Status Registers. The parent's node must contain the
-> +       following two properties:
-> +        - #address-cells: Must be 1,
-> +        - #size-cells: Must be 0.
-> +       If the PM domain is always-on, this property must be omitted.
-> +- power-on-latency: Power-on latency of the PM domain, in ns,
-> +- power-off-latency: Power-off latency of the PM domain, in ns.
-> +
-> +
-> +Example:
-> +
-> +This shows a subset of the r8a7740 PM domain hierarchy, containing the
-> +C5 "always-on" domain, 2 of its subdomains (A4S and A4SU), and the A3SP domain,
-> +which is a subdomain of A4S.
-> +
-> +       sysc: system-controller@e6180000 {
-> +               compatible = "renesas,sysc-r8a7740", "renesas,sysc-rmobile";
-> +               reg = <0xe6180000 8000>, <0xe6188000 8000>;
-> +
-> +               pm-domains {
-> +                       pd_c5: c5 {
-> +                               #address-cells = <1>;
-> +                               #size-cells = <0>;
-> +                               #power-domain-cells = <0>;
-> +
-> +                               pd_a4s: a4s@10 {
-> +                                       reg = <10>;
-> +                                       #address-cells = <1>;
-> +                                       #size-cells = <0>;
-> +                                       #power-domain-cells = <0>;
-> +                                       power-on-latency = <250000>;
-> +                                       power-off-latency = <250000>;
-> +
-> +                                       pd_a3sp: a3sp@11 {
-> +                                               reg = <11>;
-> +                                               #power-domain-cells = <0>;
-> +                                               power-on-latency = <250000>;
-> +                                               power-off-latency = <250000>;
-> +                                       };
-> +                               };
-> +
-> +                               pd_a4su: a4su@20 {
-> +                                       reg = <20>;
-> +                                       #power-domain-cells = <0>;
-> +                                       power-on-latency = <250000>;
-> +                                       power-off-latency = <250000>;
-> +                               };
-> +                       };
-> +               };
-> +       };
-> +
-> +
-> += PM Domain Consumers =
-> +
-> +Hardware blocks belonging to a PM domain should contain a "power-domains"
-> +property that is a phandle pointing to the corresponding PM domain node,
-> +and optional PM QoS device latencies:
-> +
-> +Example:
-> +
-> +       tpu: pwm@e6600000 {
-> +               compatible = "renesas,tpu-r8a7740", "renesas,tpu";
-> +               reg = <0xe6600000 0x100>;
-> +               clocks = <&mstp3_clks R8A7740_CLK_TPU0>;
-> +               power-domains = <&pd_a3sp>;
-> +               stop-latency = <250000>;
-> +               start-latency = <250000>;
-> +               save-state-latency = <250000>;
-> +               restore-state-latency = <250000>;
-
-As per comment for the previous patch, I think you should remove these
-latencies.
-
-> +               #pwm-cells = <3>;
-> +       };
+> diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
+> index 34cc1bfcebfd..41799a69964b 100644
+> --- a/Documentation/devicetree/bindings/vendor-prefixes.txt
+> +++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
+> @@ -126,6 +126,7 @@ silabs      Silicon Laboratories
+>  simtek
+>  sii    Seiko Instruments, Inc.
+>  sirf   SiRF Technology, Inc.
+> +sitronix       Sitronix Technology Corporation
+>  smsc   Standard Microsystems Corporation
+>  snps   Synopsys, Inc.
+>  solidrun       SolidRun
 > --
 > 1.9.1
->
 
-When you fixed the above you may add my reviewed by tag for this patch.
+Gr{oetje,eeting}s,
 
-Kind regards
-Uffe
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
