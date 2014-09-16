@@ -1,118 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Sep 2014 12:27:52 +0000
-Subject: [PATCH v2 5/9] ARM: shmobile: marzen: Enable DU device in DT
-Message-Id: <1411561676-9556-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 16 Sep 2014 18:48:59 +0000
+Subject: [PATCH/RFC v2 12/12] drivers: sh: Disable PM runtime for multi-platform r8a7740 with genpd
+Message-Id: <1410893339-6361-13-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Specify the DU output topology, enable the DU device and configure the
-related pins.
+If the default PM domain using PM_CLK is used for PM runtime, the real PM
+domain(s) cannot be registered from DT later.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Hence do not enable it when running a multi-platform kernel with genpd
+support on an r8a7740. The R-Mobile PM domain driver will take care of
+PM runtime management of the module clocks.
+
+The default PM domain is still needed for:
+  - platforms without genpd support,
+  - the legacy (non-DT) case, where real PM domains may take over later,
+    except for the C5 "always on" PM domain.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7779-marzen.dts | 79 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 79 insertions(+)
+v2:
+  - New
+---
+ drivers/sh/pm_runtime.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
-index c160404..981968d 100644
---- a/arch/arm/boot/dts/r8a7779-marzen.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-@@ -68,6 +68,74 @@
- 			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
- 		};
- 	};
-+
-+	vga-enc {
-+		compatible = "adi,adv7123";
-+
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		ports {
-+			port@0 {
-+				vga_enc_in: endpoint {
-+					remote-endpoint = <&du_out_rgb0>;
-+				};
-+			};
-+			port@1 {
-+				vga_enc_out: endpoint {
-+					remote-endpoint = <&vga_in>;
-+				};
-+			};
-+		};
-+	};
-+
-+	vga {
-+		compatible = "vga-connector";
-+
-+		port {
-+			vga_in: endpoint {
-+				remote-endpoint = <&vga_enc_out>;
-+			};
-+		};
-+	};
-+
-+	lvds-enc {
-+		compatible = "thine,thc63lvdm83d";
-+
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		ports {
-+			port@0 {
-+				lvds_enc_in: endpoint {
-+					remote-endpoint = <&du_out_rgb1>;
-+				};
-+			};
-+			port@1 {
-+				lvds_connector: endpoint {
-+				};
-+			};
-+		};
-+	};
-+};
-+
-+&du {
-+	pinctrl-0 = <&du_pins>;
-+	pinctrl-names = "default";
-+	status = "okay";
-+
-+	ports {
-+		port@0 {
-+			endpoint {
-+				remote-endpoint = <&vga_enc_in>;
-+			};
-+		};
-+		port@1 {
-+			endpoint {
-+				remote-endpoint = <&lvds_enc_in>;
-+			};
-+		};
-+	};
- };
- 
- &irqpin0 {
-@@ -83,6 +151,17 @@
- };
- 
- &pfc {
-+	du_pins: du {
-+		du0 {
-+			renesas,groups = "du0_rgb888", "du0_sync_1", "du0_clk_out_0";
-+			renesas,function = "du0";
-+		};
-+		du1 {
-+			renesas,groups = "du1_rgb666", "du1_sync_1", "du1_clk_out";
-+			renesas,function = "du1";
-+		};
-+	};
-+
- 	lan0_pins: lan0 {
- 		intc {
- 			renesas,groups = "intc_irq1_b";
+diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
+index fe2c2d595f599b2f..85cc89fd3e7d7cb7 100644
+--- a/drivers/sh/pm_runtime.c
++++ b/drivers/sh/pm_runtime.c
+@@ -81,7 +81,9 @@ static int __init sh_pm_runtime_init(void)
+ 		if (!of_machine_is_compatible("renesas,emev2") &&
+ 		    !of_machine_is_compatible("renesas,r7s72100") &&
+ 		    !of_machine_is_compatible("renesas,r8a73a4") &&
++#ifndef CONFIG_PM_GENERIC_DOMAINS_OF
+ 		    !of_machine_is_compatible("renesas,r8a7740") &&
++#endif
+ 		    !of_machine_is_compatible("renesas,r8a7778") &&
+ 		    !of_machine_is_compatible("renesas,r8a7779") &&
+ 		    !of_machine_is_compatible("renesas,r8a7790") &&
 -- 
-1.8.5.5
+1.9.1
 
