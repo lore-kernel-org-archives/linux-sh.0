@@ -1,40 +1,57 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Mon, 01 Sep 2014 23:52:29 +0000
-Subject: Re: [PATCH 2/7] mmc: omap_hsmmc: use blk_size_workaround
-Message-Id: <87sikakifc.wl%kuninori.morimoto.gx@gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 16 Sep 2014 11:20:01 +0000
+Subject: [PATCH 00/03] USB Host 2.0 and IOMMU trial on r8a7790 Lager
+Message-Id: <20140916112001.14889.62059.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
-	<87oauzzofe.wl%kuninori.morimoto.gx@gmail.com>
-	<540444FD.4040800@cogentembedded.com>
-In-Reply-To: <540444FD.4040800@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
+USB Host 2.0 and IOMMU trial on r8a7790 Lager
 
-Hi Sergei
+[PATCH 01/03] PCI: rcar: Use notifier to hook up IOMMU groups
+[PATCH 02/03] iommu/ipmmu-vmsa: Create mapping via group notifier
+[PATCH 03/03] ARM: shmobile: lager-reference: IOMMUSY1 and USB tests
 
-> > diff --git a/drivers/mmc/host/omap_hsmmc.c b/drivers/mmc/host/omap_hsmmc.c
-> > index ece1634..6d2696b 100644
-> > --- a/drivers/mmc/host/omap_hsmmc.c
-> > +++ b/drivers/mmc/host/omap_hsmmc.c
-> [...]
-> > @@ -1840,6 +1854,7 @@ static const struct mmc_host_ops omap_hsmmc_ops = {
-> >   	.get_ro = omap_hsmmc_get_ro,
-> >   	.init_card = omap_hsmmc_init_card,
-> >   	.enable_sdio_irq = omap_hsmmc_enable_sdio_irq,
-> > +	.blk_workaround = omap_hsmmc_blk_size_workaround,
-> 
->     Not '.blk_size_workaround'?
+This patch series modifies the R-Car Gen2 PCI driver and the IPMMU-VMSA
+driver to coexist and assign one IOMMU group per PCI host controller.
 
-Ohh my..
-I noticed and fixed it in my tree,
-but it seems sent old version.
-Thank you for pointing it.
-will fix in v2
+The PCI host controllers and the IOMMU device are glued together via
+prototype code that adds the IOMMU as a platform device and ties in
+the 3 PCI host controllers to the IPMMUSY1 device. Patch 3/3 is not
+intended for upstream merge, however patch 1/3 and 2/3 may be useful
+with or without further fixes. Comments are very welcome.
 
-Best regards
+The code in this series has been lightly tested on r8a7790 Lager using
+USB1 on the CN5 connector. A USB smart card reader has been hot plugged
+and notifications and IOMMU map/unmap operations have been verified.
+
+IOMMU groups have been used to separate the PCI host controllers into
+groups of devices that need to use the same UTLB number. Perhaps it
+would make sense to also use per-device ASIDs somehow, but this needs
+further discussions.
+
+After bootup the OHCI and EHCI devices associated with the IOMMU groups
+can be located like this:
+
+# cd /sys/kernel/iommu_groups/
+# ls */*  
+2/devices:
+0000:02:02.0  0000:02:01.0  ee0d0000.pci
+
+1/devices:
+ee0b0000.pci  0000:01:02.0  0000:01:01.0
+
+0/devices:
+ee090000.pci  0000:00:02.0  0000:00:01.0
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
-Kuninori Morimoto
+
+ Built on top of renesas-devel-20140911-v3.17-rc4
+ 
+ arch/arm/mach-shmobile/board-lager-reference.c |   30 +++++
+ drivers/iommu/ipmmu-vmsa.c                     |  121 ++++++++++++++----------
+ drivers/pci/host/pci-rcar-gen2.c               |   52 ++++++++++
+ 3 files changed, 157 insertions(+), 46 deletions(-)
