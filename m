@@ -1,418 +1,395 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Sep 2014 20:04:23 +0000
-Subject: [PATCH 03/12] drm: rcar-du: Remove platform data support
-Message-Id: <1411589072-28609-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 16 Sep 2014 18:48:57 +0000
+Subject: [PATCH/RFC v2 10/12] ARM: shmobile: r8a7740 dtsi: Add PM domain support
+Message-Id: <1410893339-6361-11-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-All platforms now instantiate the DU through DT, platform data support
-isn't needed anymore.
+Add a device node for the System Controller, with subnodes that
+represent the hardware power area hierarchy.
+Hook up all devices to their respective PM domains.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_crtc.h    | 10 ++++-
- drivers/gpu/drm/rcar-du/rcar_du_drv.c     |  4 +-
- drivers/gpu/drm/rcar-du/rcar_du_drv.h     |  2 -
- drivers/gpu/drm/rcar-du/rcar_du_encoder.c |  8 +---
- drivers/gpu/drm/rcar-du/rcar_du_encoder.h | 10 +++--
- drivers/gpu/drm/rcar-du/rcar_du_kms.c     | 52 +++-------------------
- drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c | 26 +++++------
- drivers/gpu/drm/rcar-du/rcar_du_lvdscon.h |  2 -
- drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h |  1 -
- include/linux/platform_data/rcar-du.h     | 74 -------------------------------
- 10 files changed, 38 insertions(+), 151 deletions(-)
- delete mode 100644 include/linux/platform_data/rcar-du.h
+v2:
+  - Insert power-domains property after clock-names property in the cmt1
+    node.
+---
+ arch/arm/boot/dts/r8a7740.dtsi | 121 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 121 insertions(+)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.h b/drivers/gpu/drm/rcar-du/rcar_du_crtc.h
-index e97ae50..984e608 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.h
-@@ -15,7 +15,6 @@
- #define __RCAR_DU_CRTC_H__
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 502483f4dccb2f45..ed0adeb61a1ad8ec 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -25,6 +25,7 @@
+ 			device_type = "cpu";
+ 			reg = <0x0>;
+ 			clock-frequency = <800000000>;
++			power-domains = <&pd_a3sm>;
+ 		};
+ 	};
  
- #include <linux/mutex.h>
--#include <linux/platform_data/rcar-du.h>
+@@ -47,6 +48,7 @@
+ 		interrupts = <0 58 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7740_CLK_CMT1>;
+ 		clock-names = "fck";
++		power-domains = <&pd_c5>;
  
- #include <drm/drmP.h>
- #include <drm/drm_crtc.h>
-@@ -41,6 +40,15 @@ struct rcar_du_crtc {
+ 		renesas,channels-mask = <0x3f>;
  
- #define to_rcar_crtc(c)	container_of(c, struct rcar_du_crtc, crtc)
+@@ -72,6 +74,7 @@
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
++		power-domains = <&pd_a4s>;
+ 	};
  
-+enum rcar_du_output {
-+	RCAR_DU_OUTPUT_DPAD0,
-+	RCAR_DU_OUTPUT_DPAD1,
-+	RCAR_DU_OUTPUT_LVDS0,
-+	RCAR_DU_OUTPUT_LVDS1,
-+	RCAR_DU_OUTPUT_TCON,
-+	RCAR_DU_OUTPUT_MAX,
-+};
+ 	/* irqpin1: IRQ8 - IRQ15 */
+@@ -93,6 +96,7 @@
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
++		power-domains = <&pd_a4s>;
+ 	};
+ 
+ 	/* irqpin2: IRQ16 - IRQ23 */
+@@ -114,6 +118,7 @@
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
++		power-domains = <&pd_a4s>;
+ 	};
+ 
+ 	/* irqpin3: IRQ24 - IRQ31 */
+@@ -135,6 +140,7 @@
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
++		power-domains = <&pd_a4s>;
+ 	};
+ 
+ 	ether: ethernet@e9a00000 {
+@@ -143,6 +149,7 @@
+ 		      <0xe9a01800 0x800>;
+ 		interrupts = <0 110 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7740_CLK_GETHER>;
++		power-domains = <&pd_a4s>;
+ 		phy-mode = "mii";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -159,6 +166,7 @@
+ 			      0 203 IRQ_TYPE_LEVEL_HIGH
+ 			      0 204 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp1_clks R8A7740_CLK_IIC0>;
++		power-domains = <&pd_a4r>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -172,6 +180,7 @@
+ 			      0 72 IRQ_TYPE_LEVEL_HIGH
+ 			      0 73 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7740_CLK_IIC1>;
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -181,6 +190,7 @@
+ 		interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA0>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -190,6 +200,7 @@
+ 		interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA1>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -199,6 +210,7 @@
+ 		interrupts = <0 102 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA0>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -208,6 +220,7 @@
+ 		interrupts = <0 103 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA3>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -217,6 +230,7 @@
+ 		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA4>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -226,6 +240,7 @@
+ 		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA5>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -235,6 +250,7 @@
+ 		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA6>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -244,6 +260,7 @@
+ 		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA7>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -253,6 +270,7 @@
+ 		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFB>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -271,12 +289,14 @@
+ 			<&irqpin2 4 0>, <&irqpin2 5 0>, <&irqpin2 6 0>, <&irqpin2 7 0>,
+ 			<&irqpin3 0 0>, <&irqpin3 1 0>, <&irqpin3 2 0>, <&irqpin3 3 0>,
+ 			<&irqpin3 4 0>, <&irqpin3 5 0>, <&irqpin3 6 0>, <&irqpin3 7 0>;
++			power-domains = <&pd_c5>;
+ 	};
+ 
+ 	tpu: pwm@e6600000 {
+ 		compatible = "renesas,tpu-r8a7740", "renesas,tpu";
+ 		reg = <0xe6600000 0x100>;
+ 		clocks = <&mstp3_clks R8A7740_CLK_TPU0>;
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 		#pwm-cells = <3>;
+ 	};
+@@ -287,6 +307,7 @@
+ 		interrupts = <0 56 IRQ_TYPE_LEVEL_HIGH
+ 			      0 57 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7740_CLK_MMC>;
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -297,6 +318,7 @@
+ 			      0 118 IRQ_TYPE_LEVEL_HIGH
+ 			      0 119 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7740_CLK_SDHI0>;
++		power-domains = <&pd_a3sp>;
+ 		cap-sd-highspeed;
+ 		cap-sdio-irq;
+ 		status = "disabled";
+@@ -309,6 +331,7 @@
+ 			      0 122 IRQ_TYPE_LEVEL_HIGH
+ 			      0 123 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7740_CLK_SDHI1>;
++		power-domains = <&pd_a3sp>;
+ 		cap-sd-highspeed;
+ 		cap-sdio-irq;
+ 		status = "disabled";
+@@ -321,6 +344,7 @@
+ 			      0 126 IRQ_TYPE_LEVEL_HIGH
+ 			      0 127 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R8A7740_CLK_SDHI2>;
++		power-domains = <&pd_a3sp>;
+ 		cap-sd-highspeed;
+ 		cap-sdio-irq;
+ 		status = "disabled";
+@@ -332,6 +356,7 @@
+ 		reg = <0xfe1f0000 0x400>;
+ 		interrupts = <0 9 0x4>;
+ 		clocks = <&mstp3_clks R8A7740_CLK_FSI>;
++		power-domains = <&pd_a4mp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -383,6 +408,7 @@
+ 			compatible = "renesas,r8a7740-cpg-clocks";
+ 			reg = <0xe6150000 0x10000>;
+ 			clocks = <&extal1_clk>, <&extalr_clk>;
++			power-domains = <&pd_c5>;
+ 			#clock-cells = <1>;
+ 			clock-output-names = "system", "pllc0", "pllc1",
+ 					     "pllc2", "r",
+@@ -397,6 +423,7 @@
+ 			compatible = "renesas,r8a7740-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0xe6150080 4>;
+ 			clocks = <&pllc1_div2_clk>;
++			power-domains = <&pd_c5>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "sub";
+ 		};
+@@ -405,6 +432,7 @@
+ 		pllc1_div2_clk: pllc1_div2_clk {
+ 			compatible = "fixed-factor-clock";
+ 			clocks = <&cpg_clocks R8A7740_CLK_PLLC1>;
++			power-domains = <&pd_c5>;
+ 			#clock-cells = <0>;
+ 			clock-div = <2>;
+ 			clock-mult = <1>;
+@@ -413,6 +441,7 @@
+ 		extal1_div2_clk: extal1_div2_clk {
+ 			compatible = "fixed-factor-clock";
+ 			clocks = <&extal1_clk>;
++			power-domains = <&pd_c5>;
+ 			#clock-cells = <0>;
+ 			clock-div = <2>;
+ 			clock-mult = <1>;
+@@ -424,6 +453,7 @@
+ 			compatible = "renesas,r8a7740-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0xe6150080 4>;
+ 			clocks = <&sub_clk>, <&sub_clk>;
++			power-domains = <&pd_c5>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7740_CLK_SUBCK R8A7740_CLK_SUBCK2
+@@ -439,6 +469,7 @@
+ 				 <&cpg_clocks R8A7740_CLK_B>,
+ 				 <&sub_clk>, <&sub_clk>,
+ 				 <&cpg_clocks R8A7740_CLK_B>;
++			power-domains = <&pd_c5>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7740_CLK_CEU21 R8A7740_CLK_CEU20 R8A7740_CLK_TMU0
+@@ -460,6 +491,7 @@
+ 				 <&sub_clk>, <&sub_clk>, <&sub_clk>,
+ 				 <&sub_clk>, <&sub_clk>, <&sub_clk>,
+ 				 <&sub_clk>;
++			power-domains = <&pd_c5>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7740_CLK_SCIFA6 R8A7740_CLK_INTCA
+@@ -489,6 +521,7 @@
+ 				 <&cpg_clocks R8A7740_CLK_HP>,
+ 				 <&cpg_clocks R8A7740_CLK_HP>,
+ 				 <&cpg_clocks R8A7740_CLK_HP>;
++			power-domains = <&pd_c5>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7740_CLK_CMT1 R8A7740_CLK_FSI R8A7740_CLK_IIC1
+@@ -506,6 +539,7 @@
+ 				 <&cpg_clocks R8A7740_CLK_HP>,
+ 				 <&cpg_clocks R8A7740_CLK_HP>,
+ 				 <&cpg_clocks R8A7740_CLK_HP>;
++			power-domains = <&pd_c5>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7740_CLK_USBH R8A7740_CLK_SDHI2
+@@ -515,4 +549,91 @@
+ 				"usbhost", "sdhi2", "usbfunc", "usphy";
+ 		};
+ 	};
 +
- int rcar_du_crtc_create(struct rcar_du_group *rgrp, unsigned int index);
- void rcar_du_crtc_enable_vblank(struct rcar_du_crtc *rcrtc, bool enable);
- void rcar_du_crtc_cancel_page_flip(struct rcar_du_crtc *rcrtc,
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-index d212efa..967ae8f 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-@@ -146,12 +146,11 @@ static int rcar_du_load(struct drm_device *dev, unsigned long flags)
- {
- 	struct platform_device *pdev = dev->platformdev;
- 	struct device_node *np = pdev->dev.of_node;
--	struct rcar_du_platform_data *pdata = pdev->dev.platform_data;
- 	struct rcar_du_device *rcdu;
- 	struct resource *mem;
- 	int ret;
- 
--	if (pdata = NULL && np = NULL) {
-+	if (np = NULL) {
- 		dev_err(dev->dev, "no platform data\n");
- 		return -ENODEV;
- 	}
-@@ -163,7 +162,6 @@ static int rcar_du_load(struct drm_device *dev, unsigned long flags)
- 	}
- 
- 	rcdu->dev = &pdev->dev;
--	rcdu->pdata = pdata;
- 	rcdu->info = np ? of_match_device(rcar_du_of_table, rcdu->dev)->data
- 		   : (void *)platform_get_device_id(pdev)->driver_data;
- 	rcdu->ddev = dev;
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.h b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
-index 8e49463..0a72466 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_drv.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
-@@ -15,7 +15,6 @@
- #define __RCAR_DU_DRV_H__
- 
- #include <linux/kernel.h>
--#include <linux/platform_data/rcar-du.h>
- 
- #include "rcar_du_crtc.h"
- #include "rcar_du_group.h"
-@@ -67,7 +66,6 @@ struct rcar_du_device_info {
- 
- struct rcar_du_device {
- 	struct device *dev;
--	const struct rcar_du_platform_data *pdata;
- 	const struct rcar_du_device_info *info;
- 
- 	void __iomem *mmio;
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-index 7c0ec95..89ed4a9 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-@@ -142,7 +142,6 @@ static const struct drm_encoder_funcs encoder_funcs = {
- int rcar_du_encoder_init(struct rcar_du_device *rcdu,
- 			 enum rcar_du_encoder_type type,
- 			 enum rcar_du_output output,
--			 const struct rcar_du_encoder_data *data,
- 			 struct device_node *np)
- {
- 	struct rcar_du_encoder *renc;
-@@ -190,11 +189,8 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
- 	drm_encoder_helper_add(&renc->encoder, &encoder_helper_funcs);
- 
- 	switch (encoder_type) {
--	case DRM_MODE_ENCODER_LVDS: {
--		const struct rcar_du_panel_data *pdata -			data ? &data->connector.lvds.panel : NULL;
--		return rcar_du_lvds_connector_init(rcdu, renc, pdata, np);
--	}
-+	case DRM_MODE_ENCODER_LVDS:
-+		return rcar_du_lvds_connector_init(rcdu, renc, np);
- 
- 	case DRM_MODE_ENCODER_DAC:
- 		return rcar_du_vga_connector_init(rcdu, renc);
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-index bd62413..c37ed94 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-@@ -14,13 +14,18 @@
- #ifndef __RCAR_DU_ENCODER_H__
- #define __RCAR_DU_ENCODER_H__
- 
--#include <linux/platform_data/rcar-du.h>
--
- #include <drm/drm_crtc.h>
- 
- struct rcar_du_device;
- struct rcar_du_lvdsenc;
- 
-+enum rcar_du_encoder_type {
-+	RCAR_DU_ENCODER_UNUSED = 0,
-+	RCAR_DU_ENCODER_NONE,
-+	RCAR_DU_ENCODER_VGA,
-+	RCAR_DU_ENCODER_LVDS,
-+};
++	sysc: system-controller@e6180000 {
++		compatible = "renesas,sysc-r8a7740", "renesas,sysc-rmobile";
++		reg = <0xe6180000 8000>, <0xe6188000 8000>;
 +
- struct rcar_du_encoder {
- 	struct drm_encoder encoder;
- 	enum rcar_du_output output;
-@@ -44,7 +49,6 @@ rcar_du_connector_best_encoder(struct drm_connector *connector);
- int rcar_du_encoder_init(struct rcar_du_device *rcdu,
- 			 enum rcar_du_encoder_type type,
- 			 enum rcar_du_output output,
--			 const struct rcar_du_encoder_data *data,
- 			 struct device_node *np);
- 
- #endif /* __RCAR_DU_ENCODER_H__ */
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-index 6c24ad7..c6a7fd6 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-@@ -190,43 +190,9 @@ static const struct drm_mode_config_funcs rcar_du_mode_config_funcs = {
- 	.output_poll_changed = rcar_du_output_poll_changed,
++		pm-domains {
++			pd_c5: c5 {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				#power-domain-cells = <0>;
++
++				pd_a4lc: a4lc@1 {
++					reg = <1>;
++					#power-domain-cells = <0>;
++					power-on-latency = <250000>;
++					power-off-latency = <250000>;
++				};
++
++				pd_a4mp: a4mp@2 {
++					reg = <2>;
++					#power-domain-cells = <0>;
++					power-on-latency = <250000>;
++					power-off-latency = <250000>;
++				};
++
++				pd_d4: d4@3 {
++					reg = <3>;
++					#power-domain-cells = <0>;
++					power-on-latency = <250000>;
++					power-off-latency = <250000>;
++				};
++
++				pd_a4r: a4r@5 {
++					reg = <5>;
++					#address-cells = <1>;
++					#size-cells = <0>;
++					#power-domain-cells = <0>;
++					power-on-latency = <250000>;
++					power-off-latency = <250000>;
++
++					pd_a3rv: a3rv@6 {
++						reg = <6>;
++						#power-domain-cells = <0>;
++						power-on-latency = <250000>;
++						power-off-latency = <250000>;
++					};
++				};
++
++				pd_a4s: a4s@10 {
++					reg = <10>;
++					#address-cells = <1>;
++					#size-cells = <0>;
++					#power-domain-cells = <0>;
++					power-on-latency = <250000>;
++					power-off-latency = <250000>;
++
++					pd_a3sp: a3sp@11 {
++						reg = <11>;
++						#power-domain-cells = <0>;
++						power-on-latency = <250000>;
++						power-off-latency = <250000>;
++					};
++
++					pd_a3sm: a3sm@12 {
++						reg = <12>;
++						#power-domain-cells = <0>;
++						power-on-latency = <250000>;
++						power-off-latency = <250000>;
++					};
++
++					pd_a3sg: a3sg@13 {
++						reg = <13>;
++						#power-domain-cells = <0>;
++						power-on-latency = <250000>;
++						power-off-latency = <250000>;
++					};
++				};
++
++				pd_a4su: a4su@20 {
++					reg = <20>;
++					#power-domain-cells = <0>;
++					power-on-latency = <250000>;
++					power-off-latency = <250000>;
++				};
++			};
++		};
++	};
  };
- 
--static int rcar_du_encoders_init_pdata(struct rcar_du_device *rcdu)
--{
--	unsigned int num_encoders = 0;
--	unsigned int i;
--	int ret;
--
--	for (i = 0; i < rcdu->pdata->num_encoders; ++i) {
--		const struct rcar_du_encoder_data *pdata -			&rcdu->pdata->encoders[i];
--		const struct rcar_du_output_routing *route -			&rcdu->info->routes[pdata->output];
--
--		if (pdata->type = RCAR_DU_ENCODER_UNUSED)
--			continue;
--
--		if (pdata->output >= RCAR_DU_OUTPUT_MAX ||
--		    route->possible_crtcs = 0) {
--			dev_warn(rcdu->dev,
--				 "encoder %u references unexisting output %u, skipping\n",
--				 i, pdata->output);
--			continue;
--		}
--
--		ret = rcar_du_encoder_init(rcdu, pdata->type, pdata->output,
--					   pdata, NULL);
--		if (ret < 0)
--			return ret;
--
--		num_encoders++;
--	}
--
--	return num_encoders;
--}
--
--static int rcar_du_encoders_init_dt_one(struct rcar_du_device *rcdu,
--					enum rcar_du_output output,
--					struct of_endpoint *ep)
-+static int rcar_du_encoders_init_one(struct rcar_du_device *rcdu,
-+				     enum rcar_du_output output,
-+				     struct of_endpoint *ep)
- {
- 	static const struct {
- 		const char *compatible;
-@@ -323,14 +289,14 @@ static int rcar_du_encoders_init_dt_one(struct rcar_du_device *rcdu,
- 		connector = entity;
- 	}
- 
--	ret = rcar_du_encoder_init(rcdu, enc_type, output, NULL, connector);
-+	ret = rcar_du_encoder_init(rcdu, enc_type, output, connector);
- 	of_node_put(encoder);
- 	of_node_put(connector);
- 
- 	return ret < 0 ? ret : 1;
- }
- 
--static int rcar_du_encoders_init_dt(struct rcar_du_device *rcdu)
-+static int rcar_du_encoders_init(struct rcar_du_device *rcdu)
- {
- 	struct device_node *np = rcdu->dev->of_node;
- 	struct device_node *prev = NULL;
-@@ -377,7 +343,7 @@ static int rcar_du_encoders_init_dt(struct rcar_du_device *rcdu)
- 		}
- 
- 		/* Process the output pipeline. */
--		ret = rcar_du_encoders_init_dt_one(rcdu, output, &ep);
-+		ret = rcar_du_encoders_init_one(rcdu, output, &ep);
- 		if (ret < 0) {
- 			of_node_put(ep_node);
- 			return ret;
-@@ -442,11 +408,7 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
- 	if (ret < 0)
- 		return ret;
- 
--	if (rcdu->pdata)
--		ret = rcar_du_encoders_init_pdata(rcdu);
--	else
--		ret = rcar_du_encoders_init_dt(rcdu);
--
-+	ret = rcar_du_encoders_init(rcdu);
- 	if (ret < 0)
- 		return ret;
- 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
-index 115eed2..80dc021 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
-@@ -27,7 +27,11 @@
- struct rcar_du_lvds_connector {
- 	struct rcar_du_connector connector;
- 
--	struct rcar_du_panel_data panel;
-+	struct {
-+		unsigned int width_mm;		/* Panel width in mm */
-+		unsigned int height_mm;		/* Panel height in mm */
-+		struct videomode mode;
-+	} panel;
- };
- 
- #define to_rcar_lvds_connector(c) \
-@@ -78,31 +82,25 @@ static const struct drm_connector_funcs connector_funcs = {
- 
- int rcar_du_lvds_connector_init(struct rcar_du_device *rcdu,
- 				struct rcar_du_encoder *renc,
--				const struct rcar_du_panel_data *panel,
- 				/* TODO const */ struct device_node *np)
- {
- 	struct rcar_du_lvds_connector *lvdscon;
- 	struct drm_connector *connector;
-+	struct display_timing timing;
- 	int ret;
- 
- 	lvdscon = devm_kzalloc(rcdu->dev, sizeof(*lvdscon), GFP_KERNEL);
- 	if (lvdscon = NULL)
- 		return -ENOMEM;
- 
--	if (panel) {
--		lvdscon->panel = *panel;
--	} else {
--		struct display_timing timing;
--
--		ret = of_get_display_timing(np, "panel-timing", &timing);
--		if (ret < 0)
--			return ret;
-+	ret = of_get_display_timing(np, "panel-timing", &timing);
-+	if (ret < 0)
-+		return ret;
- 
--		videomode_from_timing(&timing, &lvdscon->panel.mode);
-+	videomode_from_timing(&timing, &lvdscon->panel.mode);
- 
--		of_property_read_u32(np, "width-mm", &lvdscon->panel.width_mm);
--		of_property_read_u32(np, "height-mm", &lvdscon->panel.height_mm);
--	}
-+	of_property_read_u32(np, "width-mm", &lvdscon->panel.width_mm);
-+	of_property_read_u32(np, "height-mm", &lvdscon->panel.height_mm);
- 
- 	connector = &lvdscon->connector.connector;
- 	connector->display_info.width_mm = lvdscon->panel.width_mm;
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.h b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.h
-index d11424d..d4881ee 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.h
-@@ -16,11 +16,9 @@
- 
- struct rcar_du_device;
- struct rcar_du_encoder;
--struct rcar_du_panel_data;
- 
- int rcar_du_lvds_connector_init(struct rcar_du_device *rcdu,
- 				struct rcar_du_encoder *renc,
--				const struct rcar_du_panel_data *panel,
- 				struct device_node *np);
- 
- #endif /* __RCAR_DU_LVDSCON_H__ */
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h b/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h
-index 3303a55..f65aabd 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h
-@@ -16,7 +16,6 @@
- 
- #include <linux/io.h>
- #include <linux/module.h>
--#include <linux/platform_data/rcar-du.h>
- 
- struct rcar_drm_crtc;
- struct rcar_du_lvdsenc;
-diff --git a/include/linux/platform_data/rcar-du.h b/include/linux/platform_data/rcar-du.h
-deleted file mode 100644
-index a5f045e..0000000
---- a/include/linux/platform_data/rcar-du.h
-+++ /dev/null
-@@ -1,74 +0,0 @@
--/*
-- * rcar_du.h  --  R-Car Display Unit DRM driver
-- *
-- * Copyright (C) 2013 Renesas Corporation
-- *
-- * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; either version 2 of the License, or
-- * (at your option) any later version.
-- */
--
--#ifndef __RCAR_DU_H__
--#define __RCAR_DU_H__
--
--#include <video/videomode.h>
--
--enum rcar_du_output {
--	RCAR_DU_OUTPUT_DPAD0,
--	RCAR_DU_OUTPUT_DPAD1,
--	RCAR_DU_OUTPUT_LVDS0,
--	RCAR_DU_OUTPUT_LVDS1,
--	RCAR_DU_OUTPUT_TCON,
--	RCAR_DU_OUTPUT_MAX,
--};
--
--enum rcar_du_encoder_type {
--	RCAR_DU_ENCODER_UNUSED = 0,
--	RCAR_DU_ENCODER_NONE,
--	RCAR_DU_ENCODER_VGA,
--	RCAR_DU_ENCODER_LVDS,
--};
--
--struct rcar_du_panel_data {
--	unsigned int width_mm;		/* Panel width in mm */
--	unsigned int height_mm;		/* Panel height in mm */
--	struct videomode mode;
--};
--
--struct rcar_du_connector_lvds_data {
--	struct rcar_du_panel_data panel;
--};
--
--struct rcar_du_connector_vga_data {
--	/* TODO: Add DDC information for EDID retrieval */
--};
--
--/*
-- * struct rcar_du_encoder_data - Encoder platform data
-- * @type: the encoder type (RCAR_DU_ENCODER_*)
-- * @output: the DU output the connector is connected to (RCAR_DU_OUTPUT_*)
-- * @connector.lvds: platform data for LVDS connectors
-- * @connector.vga: platform data for VGA connectors
-- *
-- * Encoder platform data describes an on-board encoder, its associated DU SoC
-- * output, and the connector.
-- */
--struct rcar_du_encoder_data {
--	enum rcar_du_encoder_type type;
--	enum rcar_du_output output;
--
--	union {
--		struct rcar_du_connector_lvds_data lvds;
--		struct rcar_du_connector_vga_data vga;
--	} connector;
--};
--
--struct rcar_du_platform_data {
--	struct rcar_du_encoder_data *encoders;
--	unsigned int num_encoders;
--};
--
--#endif /* __RCAR_DU_H__ */
 -- 
-1.8.5.5
+1.9.1
 
