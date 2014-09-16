@@ -1,55 +1,60 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 12 Sep 2014 13:15:19 +0000
-Subject: [PATCH 3/4] ARM: shmobile: r8a7740 legacy: Add missing INTCA clock for irqpin module
-Message-Id: <1410527720-18061-4-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 16 Sep 2014 00:40:06 +0000
+Subject: Re: [PATCH 3/4] ARM: shmobile: r8a7740 legacy: Add missing INTCA clock for irqpin module
+Message-Id: <20140916004006.GC26557@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1410527720-18061-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1410527720-18061-1-git-send-email-geert+renesas@glider.be>
+ <1410527720-18061-4-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1410527720-18061-4-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This clock drives the irqpin controller modules.
-Before, it was assumed enabled by the bootloader or reset state.
+On Fri, Sep 12, 2014 at 03:15:19PM +0200, Geert Uytterhoeven wrote:
+> This clock drives the irqpin controller modules.
+> Before, it was assumed enabled by the bootloader or reset state.
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/mach-shmobile/clock-r8a7740.c | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+Thanks, I have queued this up.
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index 0794f0426e70..6cb1de220612 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -455,7 +455,7 @@ enum {
- 	MSTP128, MSTP127, MSTP125,
- 	MSTP116, MSTP111, MSTP100, MSTP117,
- 
--	MSTP230,
-+	MSTP230, MSTP229,
- 	MSTP222,
- 	MSTP218, MSTP217, MSTP216, MSTP214,
- 	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
-@@ -479,6 +479,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_B],	SMSTPCR1,  0, 0), /* LCDC0 */
- 
- 	[MSTP230] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR2, 30, 0), /* SCIFA6 */
-+	[MSTP229] = SH_CLK_MSTP32(&div6_clks[DIV4_HP],	SMSTPCR2, 29, 0), /* INTCA */
- 	[MSTP222] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR2, 22, 0), /* SCIFA7 */
- 	[MSTP218] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],  SMSTPCR2, 18, 0), /* DMAC1 */
- 	[MSTP217] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],  SMSTPCR2, 17, 0), /* DMAC2 */
-@@ -575,6 +576,10 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-dma-engine.0",	&mstp_clks[MSTP218]),
- 	CLKDEV_DEV_ID("sh-sci.7",		&mstp_clks[MSTP222]),
- 	CLKDEV_DEV_ID("e6cd0000.serial",	&mstp_clks[MSTP222]),
-+	CLKDEV_DEV_ID("renesas_intc_irqpin.0",	&mstp_clks[MSTP229]),
-+	CLKDEV_DEV_ID("renesas_intc_irqpin.1",	&mstp_clks[MSTP229]),
-+	CLKDEV_DEV_ID("renesas_intc_irqpin.2",	&mstp_clks[MSTP229]),
-+	CLKDEV_DEV_ID("renesas_intc_irqpin.3",	&mstp_clks[MSTP229]),
- 	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
- 	CLKDEV_DEV_ID("e6cc0000.serial",	&mstp_clks[MSTP230]),
- 
--- 
-1.9.1
-
+> ---
+>  arch/arm/mach-shmobile/clock-r8a7740.c | 7 ++++++-
+>  1 file changed, 6 insertions(+), 1 deletion(-)
+> 
+> diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+> index 0794f0426e70..6cb1de220612 100644
+> --- a/arch/arm/mach-shmobile/clock-r8a7740.c
+> +++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+> @@ -455,7 +455,7 @@ enum {
+>  	MSTP128, MSTP127, MSTP125,
+>  	MSTP116, MSTP111, MSTP100, MSTP117,
+>  
+> -	MSTP230,
+> +	MSTP230, MSTP229,
+>  	MSTP222,
+>  	MSTP218, MSTP217, MSTP216, MSTP214,
+>  	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
+> @@ -479,6 +479,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+>  	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_B],	SMSTPCR1,  0, 0), /* LCDC0 */
+>  
+>  	[MSTP230] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR2, 30, 0), /* SCIFA6 */
+> +	[MSTP229] = SH_CLK_MSTP32(&div6_clks[DIV4_HP],	SMSTPCR2, 29, 0), /* INTCA */
+>  	[MSTP222] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR2, 22, 0), /* SCIFA7 */
+>  	[MSTP218] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],  SMSTPCR2, 18, 0), /* DMAC1 */
+>  	[MSTP217] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],  SMSTPCR2, 17, 0), /* DMAC2 */
+> @@ -575,6 +576,10 @@ static struct clk_lookup lookups[] = {
+>  	CLKDEV_DEV_ID("sh-dma-engine.0",	&mstp_clks[MSTP218]),
+>  	CLKDEV_DEV_ID("sh-sci.7",		&mstp_clks[MSTP222]),
+>  	CLKDEV_DEV_ID("e6cd0000.serial",	&mstp_clks[MSTP222]),
+> +	CLKDEV_DEV_ID("renesas_intc_irqpin.0",	&mstp_clks[MSTP229]),
+> +	CLKDEV_DEV_ID("renesas_intc_irqpin.1",	&mstp_clks[MSTP229]),
+> +	CLKDEV_DEV_ID("renesas_intc_irqpin.2",	&mstp_clks[MSTP229]),
+> +	CLKDEV_DEV_ID("renesas_intc_irqpin.3",	&mstp_clks[MSTP229]),
+>  	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
+>  	CLKDEV_DEV_ID("e6cc0000.serial",	&mstp_clks[MSTP230]),
+>  
+> -- 
+> 1.9.1
+> 
