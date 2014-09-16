@@ -1,41 +1,58 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 11 Sep 2014 00:57:24 +0000
-Subject: [PATCH 2/5] ARM: shmobile: sh7372: Make domain_devices[] static __initdata
-Message-Id: <9eda01b2f665d8bf29f6ac93e3db403290e0f3cf.1410395620.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 16 Sep 2014 18:48:53 +0000
+Subject: [PATCH/RFC v2 06/12] PM / Domains: Retrieve PM QoS device latencies from DT
+Message-Id: <1410893339-6361-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1410395620.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1410395620.git.horms+renesas@verge.net.au>
+References: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Make the domain_devices[] array static and __initdata, to reduce kernel
-size:
-  - Making it static gets rid of the code to copy the data to the stack,
-  - Marking it __initdata allows more init memory to be freed.
-
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-sh7372.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+v2:
+  - New
+---
+ drivers/base/power/domain.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 9cdfcdfd..a04fa5f 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -927,7 +927,7 @@ static struct platform_device *sh7372_late_devices[] __initdata = {
+diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
+index e1cbde985d4de606..7b166911be541229 100644
+--- a/drivers/base/power/domain.c
++++ b/drivers/base/power/domain.c
+@@ -2133,6 +2133,8 @@ int genpd_dev_pm_attach(struct device *dev)
+ 	struct device_node *np = dev->of_node;
+ 	struct of_phandle_args pd_args;
+ 	struct generic_pm_domain *pd;
++	struct gpd_timing_data td;
++	u32 latency;
+ 	int ret;
  
- void __init sh7372_add_standard_devices(void)
- {
--	struct pm_domain_device domain_devices[] = {
-+	static struct pm_domain_device domain_devices[] __initdata = {
- 		{ "A3RV", &vpu_device, },
- 		{ "A4MP", &spu0_device, },
- 		{ "A4MP", &spu1_device, },
+ 	if (!np)
+@@ -2165,10 +2167,20 @@ int genpd_dev_pm_attach(struct device *dev)
+ 		return PTR_ERR(pd);
+ 	}
+ 
++	memset(&td, 0, sizeof(td));
++	if (!of_property_read_u32(np, "stop-latency", &latency))
++		td.stop_latency_ns = latency;
++	if (!of_property_read_u32(np, "start-latency", &latency))
++		td.start_latency_ns = latency;
++	if (!of_property_read_u32(np, "save-state-latency", &latency))
++		td.save_state_latency_ns = latency;
++	if (!of_property_read_u32(np, "restore-state-latency", &latency))
++		td.restore_state_latency_ns = latency;
++
+ 	dev_dbg(dev, "adding to PM domain %s\n", pd->name);
+ 
+ 	while (1) {
+-		ret = pm_genpd_add_device(pd, dev);
++		ret = __pm_genpd_add_device(pd, dev, &td);
+ 		if (ret != -EAGAIN)
+ 			break;
+ 		cond_resched();
 -- 
-2.0.1
+1.9.1
 
