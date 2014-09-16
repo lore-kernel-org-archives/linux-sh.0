@@ -1,33 +1,44 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Thu, 11 Sep 2014 08:54:04 +0000
-Subject: Re: [GIT PULL] Fourth Round of Renesas ARM Based SoC DT Updates for v3.18
-Message-Id: <5147898.LS8hxRrHzU@wuerfel>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 16 Sep 2014 01:57:43 +0000
+Subject: [GIT PULL] Fourth Round of Renesas ARM Based SoC Defconfig Updates for v3.18
+Message-Id: <cover.1410832469.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1410396013.git.horms+renesas@verge.net.au>
- <2746360.e5Qbnl0Vc0@wuerfel>
- <CAMuHMdU30XE8A55m++W=Rf=0fVu3s07J=ki10bEuuDN4bgxqeA@mail.gmail.com>
-In-Reply-To: <CAMuHMdU30XE8A55m++W=Rf=0fVu3s07J=ki10bEuuDN4bgxqeA@mail.gmail.com>
+References: <cover.1394080829.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1394080829.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thursday 11 September 2014 10:46:02 Geert Uytterhoeven wrote:
-> However, I don't see the warning with my current tree, nor with next-20140910,
-> as both are selected with mackerel_defconfig, due to:
-> 
->  config ARCH_RMOBILE
->         bool
->         select PM_RMOBILE if PM && !ARCH_SHMOBILE_MULTI
-> 
-> Perhaps this change hadn't trickled from Simon's tree into your tree, due
-> to following a different merge path?
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Ah, you are right, I was testing with another branch merged in that changed
-some of the Kconfig statements in shmobile to work around randconfig build
-problems. Apparently one of the patches in my branch was wrong, the
-shmobile branches are all good.
+Please consider these fourth round of Renesas ARM based SoC defconfig updates for v3.18.
 
-Sorry for the noise.
+This pull request is based on the previous round of
+such requests, tagged as renesas-defconfig3-for-v3.18,
+which you have pulled.
 
-	Arnd
+
+The following changes since commit de46e95cdb8671e2b0728923b8113654779c3ba8:
+
+  ARM: shmobile: Enable Armadillo 800 EVA board in multiplatform defconfig (2014-09-01 10:46:57 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig4-for-v3.18
+
+for you to fetch changes up to 7d984c95723725d26f3961c1655c20256f0affdf:
+
+  ARM: shmobile: Enable r8a7794 SoC in shmobile_defconfig (2014-09-11 09:49:40 +0900)
+
+----------------------------------------------------------------
+Fourth Round of Renesas ARM Based SoC Defconfig Updates for v3.18
+
+* Enable r8a7794 SoC in shmobile_defconfig
+
+----------------------------------------------------------------
+Simon Horman (1):
+      ARM: shmobile: Enable r8a7794 SoC in shmobile_defconfig
+
+ arch/arm/configs/shmobile_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
