@@ -1,43 +1,51 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 04 Sep 2014 00:55:18 +0000
-Subject: [PATCH v2 0/3] clocksource: Document Renesas SoC specific bindings
-Message-Id: <1409792121-28912-1-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 16 Sep 2014 18:48:48 +0000
+Subject: [PATCH/RFC v2 01/12] PM / Domains: Add DT bindings for power-on/off latencies
+Message-Id: <1410893339-6361-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-In general Renesas hardware is not documented to the extent where the
-relationship between IP blocks on different SoCs can be assumed although
-they may appear to operate the same way. Furthermore the documentation
-typically does not specify a version for individual IP blocks. For these
-reasons a convention of using the SoC name in place of a version and
-providing SoC-specific compat strings has been adopted.
+PM domain power on/off-latencies are properties of the hardware.
+In legacy code, they're specified from platform code.
+On DT platforms, their values should come from DT.
 
-Although not universally liked this convention is used in the bindings for
-a number of drivers for Renesas hardware. The purpose of this patch is to
-update the Renesas clocksource drivers to follow this convention.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Kevin Hilman <khilman@linaro.org>
+---
+v2:
+  - Add Acked-by
+---
+ Documentation/devicetree/bindings/power/power_domain.txt | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-I plan to follow up with patches to use these new bindings in the
-dtsi files for the affected SoCs.
-
-Changes between v1 and v2:
-
-* Addressed feedback from Sergei Shtylyov, Geert Uytterhoeven and
-  Mark Rutland: corrected editing errors and generally made
-  things clearer.
-
-Simon Horman (3):
-  clocksource: sh_cmt: Document SoC specific bindings
-  clocksource: sh_mtu2: Document r7s72100 binding
-  clocksource: sh_tmu: Document r8a7779 binding
-
- .../devicetree/bindings/timer/renesas,cmt.txt      | 44 +++++++++++++++++++---
- .../devicetree/bindings/timer/renesas,mtu2.txt     |  6 ++-
- .../devicetree/bindings/timer/renesas,tmu.txt      |  6 ++-
- 3 files changed, 46 insertions(+), 10 deletions(-)
-
+diff --git a/Documentation/devicetree/bindings/power/power_domain.txt b/Documentation/devicetree/bindings/power/power_domain.txt
+index 98c16672ab5f49e0..7bc421d84367d636 100644
+--- a/Documentation/devicetree/bindings/power/power_domain.txt
++++ b/Documentation/devicetree/bindings/power/power_domain.txt
+@@ -19,12 +19,18 @@ Required properties:
+    providing multiple PM domains (e.g. power controllers), but can be any value
+    as specified by device tree binding documentation of particular provider.
+ 
++Optional properties:
++ - power-on-latency: Power-on latency of the PM domain, in ns,
++ - power-off-latency: Power-off latency of the PM domain, in ns.
++
+ Example:
+ 
+ 	power: power-controller@12340000 {
+ 		compatible = "foo,power-controller";
+ 		reg = <0x12340000 0x1000>;
+ 		#power-domain-cells = <1>;
++		power-on-latency = <250000>;
++		power-off-latency = <250000>;
+ 	};
+ 
+ The node above defines a power controller that is a PM domain provider and
 -- 
-2.0.1
+1.9.1
 
