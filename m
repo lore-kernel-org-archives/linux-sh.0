@@ -1,51 +1,61 @@
-From: Shawn Guo <shawn.guo@freescale.com>
-Date: Mon, 01 Sep 2014 14:35:18 +0000
-Subject: Re: [GIT PULL] MFD: ARM (IMX & R8): Immutable branch for Dialog Semiconductor - vendor prefix consol
-Message-Id: <20140901143517.GH3135@dragon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 17 Sep 2014 11:57:16 +0000
+Subject: [PATCH] ARM: hw_breakpoint: Trap undef instruction exceptions on wake-up
+Message-Id: <1410955036-1956-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201408221446.s7MEkNVF001775@swsrvapps-01.diasemi.com>
- <20140829091359.GF24579@lee--X1> <20140901132736.GG3135@dragon>
- <20140901133854.GA8796@lee--X1>
-In-Reply-To: <20140901133854.GA8796@lee--X1>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Sep 01, 2014 at 02:38:54PM +0100, Lee Jones wrote:
-> On Mon, 01 Sep 2014, Shawn Guo wrote:
-> > On Fri, Aug 29, 2014 at 10:13:59AM +0100, Lee Jones wrote:
-> > > IMX and R8 sub-arch Maintainers,
-> > > 
-> > > The following changes since commit 52addcf9d6669fa439387610bc65c92fa0980cef:
-> > > 
-> > >   Linux 3.17-rc2 (2014-08-25 15:36:20 -0700)
-> > > 
-> > > are available in the git repository at:
-> > > 
-> > >   git://git.kernel.org/pub/scm/linux/kernel/git/lee/mfd.git tags/ib-mfd-arm-v3.18
-> > > 
-> > > for you to fetch changes up to bd597f47ca4bf7a522a0298a95c7f9b2f0a75b9e:
-> > > 
-> > >   devicetree: Dialog Semiconductor consolidate existing vendor prefixes to standardise on 'dlg' (2014-08-29 09:26:29 +0100)
-> > > 
-> > > ----------------------------------------------------------------
-> > > Immutable branch between MFD and some ARM sub-arch maintainers.
-> > 
-> > I assume that I need to pull it into my tree only when it turns out
-> > there are merge conflicts, but otherwise it can just go through your
-> > tree, right?
-> 
-> If someone realises there's a conflict the chances are we've already
-> hacked someone off.  If the first person to realise is Linus during
-> the merge-window, you'd have to go to the effort of re-spinning your
-> pull-request.  Something else you'd probably like to avoid.
+If power area D4, which contains the Coresight-ETM hardware block, is
+powered down on R-Mobile A1 (r8a7740), the kernel crashes when
+suspending from s2ram with:
 
-I think if there is a conflict, linux-next will firstly report.  But,
-yes, pulling it in is the safest.
-> 
-> I would suggest for each affected Maintainer to pull this in.
+    Internal error: Oops - undefined instruction: 0 [#1] ARM
 
-Pulled it into imx/dt branch, thanks.
+This happens because dbg_cpu_pm_notify() calls reset_ctrl_regs(), which
+can't access the debug registers as the debug module is powered down.
 
-Shawn
+Protect the call to reset_ctrl_regs() by an undefined instruction hook,
+like was done in commit 0d352e3d006c9589 ("ARM: hw_breakpoint: trap
+undef instruction exceptions in reset_ctrl_regs") for another caller.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Question: Do we need the same protection in dbg_reset_notify()?
+          I can't trigger that case, as r8a7740 has only one CPU core.
+---
+ arch/arm/kernel/hw_breakpoint.c | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/kernel/hw_breakpoint.c b/arch/arm/kernel/hw_breakpoint.c
+index 4d963fb66e3f0bce..f55f25d4e4de7674 100644
+--- a/arch/arm/kernel/hw_breakpoint.c
++++ b/arch/arm/kernel/hw_breakpoint.c
+@@ -1038,8 +1038,21 @@ static struct notifier_block dbg_reset_nb = {
+ static int dbg_cpu_pm_notify(struct notifier_block *self, unsigned long action,
+ 			     void *v)
+ {
+-	if (action = CPU_PM_EXIT)
++	if (action = CPU_PM_EXIT) {
++		/*
++		 * We need to tread carefully here because DBGSWENABLE may be
++		 * driven low on this core and there isn't an architected way to
++		 * determine that.
++		 */
++		register_undef_hook(&debug_reg_hook);
++
++		/*
++		 * Reset the breakpoint resources. We assume that a halting
++		 * debugger will leave the world in a nice state for us.
++		 */
+ 		reset_ctrl_regs(NULL);
++		unregister_undef_hook(&debug_reg_hook);
++	}
+ 
+ 	return NOTIFY_OK;
+ }
+-- 
+1.9.1
+
