@@ -1,26 +1,45 @@
-From: Kevin Hilman <khilman@kernel.org>
-Date: Thu, 25 Sep 2014 21:36:01 +0000
-Subject: Re: [PATCH/RFC v2 05/12] PM / Domains: Add helper variable np = dev->of_node
-Message-Id: <7hwq8r9yda.fsf@deeprootsystems.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 17 Sep 2014 14:38:02 +0000
+Subject: [PATCH 0/3] Remove Koelsch board files
+Message-Id: <1410964685-12143-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
- <1410893339-6361-6-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1410893339-6361-6-git-send-email-geert+renesas@glider.be> (Geert
- Uytterhoeven's message of "Tue, 16 Sep 2014 20:48:52 +0200")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Geert Uytterhoeven <geert+renesas@glider.be> writes:
+Hello,
 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+This patch set (also know as "look at the diffstat and fall in love") removes
+both the legacy and reference Koelsch board files, now that the Koelsch board
+is supported by the r8a7791 generic DT platform.
 
-Maybe a short changelog answering "why?" (just a cleanup), and saying
-there are no functional changes.
+The patches depend on the "[PATCH 0/8] DU DT support for Marzen, Lager and
+Koelsch" series I've just posted, and are thus targeted at v3.19.
 
-Otherwise,
+Laurent Pinchart (3):
+  ARM: mach-shmobile: koelsch: Remove legacy C board code
+  ARM: mach-shmobile: r8a7791: Remove legacy code
+  ARM: mach-shmobile: Remove the koelsch-reference board code
 
-Acked-by: Kevin Hilman <khilman@linaro.org>
+ arch/arm/configs/koelsch_defconfig               | 113 -----
+ arch/arm/configs/shmobile_defconfig              |   1 -
+ arch/arm/mach-shmobile/Kconfig                   |  19 -
+ arch/arm/mach-shmobile/Makefile                  |   3 -
+ arch/arm/mach-shmobile/Makefile.boot             |   1 -
+ arch/arm/mach-shmobile/board-koelsch-reference.c |  44 --
+ arch/arm/mach-shmobile/board-koelsch.c           | 530 -----------------------
+ arch/arm/mach-shmobile/clock-r8a7791.c           | 342 ---------------
+ arch/arm/mach-shmobile/r8a7791.h                 |   3 -
+ arch/arm/mach-shmobile/setup-r8a7791.c           | 181 +-------
+ 10 files changed, 1 insertion(+), 1236 deletions(-)
+ delete mode 100644 arch/arm/configs/koelsch_defconfig
+ delete mode 100644 arch/arm/mach-shmobile/board-koelsch-reference.c
+ delete mode 100644 arch/arm/mach-shmobile/board-koelsch.c
+ delete mode 100644 arch/arm/mach-shmobile/clock-r8a7791.c
 
-Kevin
+-- 
+Regards,
+
+Laurent Pinchart
+
