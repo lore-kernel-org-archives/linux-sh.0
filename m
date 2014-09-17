@@ -1,56 +1,43 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Mon, 01 Sep 2014 09:23:08 +0000
-Subject: [PATCH 7/7] mmc: remove MMC_CAP2_NO_MULTI_READ flags
-Message-Id: <87ha0rzock.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 17 Sep 2014 00:48:11 +0000
+Subject: [PATCH v2 0/5] ARM: shmobile: various DT files sorted by address
+Message-Id: <1410914896-14395-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi,
 
-Now, mmc framework uses blk_size_workaround
-for block size HW bug workaround.
-MMC_CAP2_NO_MULTI_READ flag is no longer needed
+this is an update of a series posted by Ulrich,
+"ARM: shmobile: various DT files sorted by address",
+the purpose of which is to sort DT nodes by their address.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- drivers/mmc/card/block.c |    5 -----
- include/linux/mmc/host.h |    1 -
- 2 files changed, 6 deletions(-)
+Changes since v1.
+* Some patches from the v1 series have been queued up and thus are not
+  present in v2.
+* Two new patches have been added to remove spurious regulator base
+  addresses, as suggested by Geert Uytterhoeven. These correct incorrect
+  lines before subsequent patches, rebased since v1, move them.
 
-diff --git a/drivers/mmc/card/block.c b/drivers/mmc/card/block.c
-index e946067..7b09ac3 100644
---- a/drivers/mmc/card/block.c
-+++ b/drivers/mmc/card/block.c
-@@ -1398,11 +1398,6 @@ static void mmc_blk_rw_rq_prep(struct mmc_queue_req *mqrq,
- 		if (disable_multi)
- 			brq->data.blocks = 1;
- 
--		/* Some controllers can't do multiblock reads due to hw bugs */
--		if (card->host->caps2 & MMC_CAP2_NO_MULTI_READ &&
--		    rq_data_dir(req) = READ)
--			brq->data.blocks = 1;
--
- 		/* Some controllers needs workaround */
- 		if (card->host->ops->blk_size_workaround)
- 			brq->data.blocks = card->host->ops->blk_size_workaround(
-diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
-index 95bd903..70d2cfc 100644
---- a/include/linux/mmc/host.h
-+++ b/include/linux/mmc/host.h
-@@ -269,7 +269,6 @@ struct mmc_host {
- 
- #define MMC_CAP2_BOOTPART_NOACC	(1 << 0)	/* Boot partition no access */
- #define MMC_CAP2_FULL_PWR_CYCLE	(1 << 2)	/* Can do full power cycle */
--#define MMC_CAP2_NO_MULTI_READ	(1 << 3)	/* Multiblock reads don't work */
- #define MMC_CAP2_HS200_1_8V_SDR	(1 << 5)        /* can support */
- #define MMC_CAP2_HS200_1_2V_SDR	(1 << 6)        /* can support */
- #define MMC_CAP2_HS200		(MMC_CAP2_HS200_1_8V_SDR | \
+Based on renesas-next-20140916v2-v3.17-rc2.
+Targeted for inclusion in v3.19.
+
+Simon Horman (2):
+  ARM: shmobile: kzm9d: Remove spurious regulator base addresses
+  ARM: shmobile: r8a73a4: Remove spurious dma-multiplexer base addresses
+
+Ulrich Hecht (3):
+  ARM: shmobile: r7s72100: sort dtsi file by address
+  ARM: shmobile: kzm9d: sort dts file by address
+  ARM: shmobile: r8a73a4: sort dtsi file by address
+
+ arch/arm/boot/dts/emev2-kzm9d.dts |  62 +++++-----
+ arch/arm/boot/dts/r7s72100.dtsi   | 202 ++++++++++++++++-----------------
+ arch/arm/boot/dts/r8a73a4.dtsi    | 232 +++++++++++++++++++-------------------
+ 3 files changed, 248 insertions(+), 248 deletions(-)
+
 -- 
-1.7.9.5
+2.0.1
 
