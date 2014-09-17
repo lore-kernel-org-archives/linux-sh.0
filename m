@@ -1,38 +1,56 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Fri, 12 Sep 2014 08:52:04 +0000
-Subject: [PATCH v2 0/2] ARM: shmobile: r8a7794/Cortex-A7 arch timer fix
-Message-Id: <1410511926-9326-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 17 Sep 2014 14:11:06 +0000
+Subject: [PATCH 1/8] ARM: shmobile: r8a7779: Add DU node to device tree
+Message-Id: <1410963073-3176-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi!
+Add the DU device with a disabled state. Boards that want to enable the
+DU need to specify the output topology
 
-Here's again the bit to get the arch timer working on the r8a7794 platform,
-this time without the secondary CPU initialization which we don't need
-anyway ATM for lack of SMP support.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7779.dtsi | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
 
-CU
-Uli
-
-
-Changes since v1:
-- dumped secondary CPU intialization until we have SMP
-
-
-Hisashi Nakamura (1):
-  ARM: shmobile: r8a7794: Add arch_timer to device tree
-
-Ulrich Hecht (1):
-  ARM: shmobile: rcar-gen2: Add CA7 arch_timer initialization for
-    r8a7794
-
- arch/arm/boot/dts/r8a7794.dtsi           |  8 ++++
- arch/arm/mach-shmobile/setup-rcar-gen2.c | 72 ++++++++++++++++++++++----------
- 2 files changed, 57 insertions(+), 23 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 7cfba9a..f4c03cc 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -379,6 +379,30 @@
+ 		status = "disabled";
+ 	};
+ 
++	du: du@fff80000 {
++		compatible = "renesas,du-r8a7779";
++		reg = <0 0xfff80000 0 0x40000>;
++		interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7779_CLK_DU>;
++		status = "disabled";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				du_out_rgb0: endpoint {
++				};
++			};
++			port@1 {
++				reg = <1>;
++				du_out_rgb1: endpoint {
++				};
++			};
++		};
++	};
++
+ 	clocks {
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
 -- 
-1.8.4.5
+1.8.5.5
 
