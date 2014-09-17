@@ -1,7 +1,7 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 10 Sep 2014 12:34:02 +0000
+Date: Wed, 17 Sep 2014 15:03:03 +0000
 Subject: Re: [RFC PATCH 0/3] PM / clock_ops: allow to specify custom pm_clk_notifier callback
-Message-Id: <CAMuHMdXRx6QUs2zhsXXz6aia0=v521+_B4NR61JVv61aWnwyPw@mail.gmail.com>
+Message-Id: <CAMuHMdUJzXNep14ny24R=FhA4WzsWU9401ZU-nnZ_CkkJqxSsA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1406313096-29761-1-git-send-email-grygorii.strashko@ti.com>
  <7hr3zln692.fsf@linaro.org> <540F0381.7010500@ti.com>
@@ -15,53 +15,36 @@ Hi Grygorii,
 
 On Tue, Sep 9, 2014 at 3:41 PM, Grygorii Strashko
 <grygorii.strashko@ti.com> wrote:
->>> Also, It updates Keystone 2 platform code to provide custom
->>> callback which fills list of clocks for Device with all clocks assigned to this
->>> Device in DT.
->>> More over, It's safe for Keystone 2 to perform CLK PM domain initialization
->>> at device's binding time instead of device's creation time.
->>>
->>> I've posted these patches because I need fully enable Runtime PM on Keystone 2
->>> where all HW modules are controlled using clocks only. That's why CLK PM domain
->>> fits our needs perfectly.
->>
->> Heh, doesn't seem like a perfect fit to me ;)
->>
->>> Also, on Keystone 2 clocks are initialized early and
->>> they are available at device creation time. The main problems from my side are:
->>>   - every time when support for new HW modules is added the ".con_ids" array
->>>     need to be checked and updated;
->>>   - restriction for clock's names in DT - to be named using only above con_ids
->>>     It's ugly.
->>>
->>> I hope, this approach to be accepted at least as temporal solution until
->>> the generic solution is not found.
->>
->> Sorry if I missed it, but is there ongoing discussion of a more generic
->> solution other than this one:
+>> Since you're essentially gutting clock_ops, have you considered
+>> migrating to genpd and having your own pm_domain ops that manage your clocks?
 >
-> Yep. :( But It's ongoing more than 2 months already and seems there is no
-> light at the end of tunnel.
->
->>
->>> [1] Previously, same problem was discussed in, but no final solution was accepted:
->>>   "[PATCH/RFC 0/4] of: Register clocks for Runtime PM with PM core"
->>>   https://lkml.org/lkml/2014/4/24/1118
->>
->> Personally, I still like Geert's approach better.
->>
->
-> Unfortunately, Geert is not going to continue working on it (as I know).
+> Yes. I've thought about using genpd. But:
+> - PM domain is not merged in 3.17 and I don't know if it will be merged in 3.18 :(
+> http://www.spinics.net/lists/arm-kernel/msg357003.html
 
-For the record, I had postponed working on it, as we had an interim solution for
-multiplatform shmobile being broken in mainline (drivers/sh/pm_runtime.c).
+Let's wait and see...
 
-Currently I'm tackling "real" power domains. As this is incompatible with
-the above hack (you can attach only one power domain to a device, as Ulf
-had pointed out before --- Hm, why is the DT property called "power-domains"
-(plural) then?), I'll have to revisit anyway, and get back to it.
-Furthermore, not all shmobile SoCs have such fine-grained power domains
-as sh7372/sh73a0/r8a7740/r8a73a4, so we still need something better there.
+> - To switch using PM domains I will need to create PM domain node PER EACH device,
+> (if I understand PM domain bindings right). For example:
+>
+> +power_netcp: power-controller@0 {
+> +               compatible = "keystone,power-controller";
+> +               #power-domain-cells = <0>;
+> +               clocks = <&clkcpgmac>, <&clkpa>, <&chipclk12>;
+> +       };
+>
+> netcp: netcp@2090000 {
+>                 reg = <0x2620110 0x8>;
+> +               power-domains = <&power_netcp>;
+> ...
+> }
+
+I think you can have one power-controller, and add the clocks and
+power-domains properties to the individual device nodes.
+
+Then the power-controller driver can use the attach callback
+introduced in "[PATCH/RFC v2 04/12] PM / Domains: Add genpd attach/detach
+callbacks" (https://lkml.org/lkml/2014/9/16/429) to set up the clocks?
 
 Gr{oetje,eeting}s,
 
