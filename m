@@ -1,106 +1,71 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 17 Sep 2014 00:48:15 +0000
-Subject: [PATCH v2 4/5] ARM: shmobile: kzm9d: sort dts file by address
-Message-Id: <1410914896-14395-5-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 17 Sep 2014 14:11:07 +0000
+Subject: [PATCH 2/8] ARM: shmobile: r8a7790: Add DU node to device tree
+Message-Id: <1410963073-3176-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410914896-14395-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1410914896-14395-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Add the DU device with a disabled state. Boards that want to enable the
+DU need to specify the output topology.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-[horms+renesas@verge.net.au: updated for removal of regulator base addresses]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v2 [Simon Horman]
-* Rebase
----
- arch/arm/boot/dts/emev2-kzm9d.dts | 62 +++++++++++++++++++--------------------
- 1 file changed, 31 insertions(+), 31 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 39 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
 
-diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts b/arch/arm/boot/dts/emev2-kzm9d.dts
-index f27fcf0..922da27 100644
---- a/arch/arm/boot/dts/emev2-kzm9d.dts
-+++ b/arch/arm/boot/dts/emev2-kzm9d.dts
-@@ -27,37 +27,6 @@
- 		bootargs = "console=ttyS1,115200n81 ignore_loglevel root=/dev/nfs ip=dhcp";
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index d0e1773..92001ab 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -600,6 +600,45 @@
+ 		status = "disabled";
  	};
  
--	reg_1p8v: regulator {
--		compatible = "regulator-fixed";
--		regulator-name = "fixed-1.8V";
--		regulator-min-microvolt = <1800000>;
--		regulator-max-microvolt = <1800000>;
--		regulator-always-on;
--		regulator-boot-on;
--	};
--
--	reg_3p3v: regulator {
--		compatible = "regulator-fixed";
--		regulator-name = "fixed-3.3V";
--		regulator-min-microvolt = <3300000>;
--		regulator-max-microvolt = <3300000>;
--		regulator-always-on;
--		regulator-boot-on;
--	};
--
--	lan9220@20000000 {
--		compatible = "smsc,lan9220", "smsc,lan9115";
--		reg = <0x20000000 0x10000>;
--		phy-mode = "mii";
--		interrupt-parent = <&gpio0>;
--		interrupts = <1 IRQ_TYPE_EDGE_RISING>;
--		reg-io-width = <4>;
--		smsc,irq-active-high;
--		smsc,irq-push-pull;
--		vddvario-supply = <&reg_1p8v>;
--		vdd33a-supply = <&reg_3p3v>;
--	};
--
- 	gpio_keys {
- 		compatible = "gpio-keys";
- 		#address-cells = <1>;
-@@ -92,4 +61,35 @@
- 			gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
- 		};
- 	};
++	du: du@feb00000 {
++		compatible = "renesas,du-r8a7790";
++		reg = <0 0xfeb00000 0 0x70000>,
++		      <0 0xfeb90000 0 0x1c>,
++		      <0 0xfeb94000 0 0x1c>;
++		reg-names = "du", "lvds.0", "lvds.1";
++		interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 268 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 269 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7790_CLK_DU0>,
++		         <&mstp7_clks R8A7790_CLK_DU1>,
++		         <&mstp7_clks R8A7790_CLK_DU2>,
++		         <&mstp7_clks R8A7790_CLK_LVDS0>,
++		         <&mstp7_clks R8A7790_CLK_LVDS1>;
++		clock-names = "du.0", "du.1", "du.2", "lvds.0", "lvds.1";
++		status = "disabled";
 +
-+	reg_1p8v: regulator {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-1.8V";
-+		regulator-min-microvolt = <1800000>;
-+		regulator-max-microvolt = <1800000>;
-+		regulator-always-on;
-+		regulator-boot-on;
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				du_out_rgb: endpoint {
++				};
++			};
++			port@1 {
++				reg = <1>;
++				du_out_lvds0: endpoint {
++				};
++			};
++			port@2 {
++				reg = <2>;
++				du_out_lvds1: endpoint {
++				};
++			};
++		};
 +	};
 +
-+	reg_3p3v: regulator {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-3.3V";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		regulator-always-on;
-+		regulator-boot-on;
-+	};
-+
-+	lan9220@20000000 {
-+		compatible = "smsc,lan9220", "smsc,lan9115";
-+		reg = <0x20000000 0x10000>;
-+		phy-mode = "mii";
-+		interrupt-parent = <&gpio0>;
-+		interrupts = <1 IRQ_TYPE_EDGE_RISING>;
-+		reg-io-width = <4>;
-+		smsc,irq-active-high;
-+		smsc,irq-push-pull;
-+		vddvario-supply = <&reg_1p8v>;
-+		vdd33a-supply = <&reg_3p3v>;
-+	};
- };
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 -- 
-2.0.1
+1.8.5.5
 
