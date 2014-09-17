@@ -1,74 +1,50 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 09 Sep 2014 02:40:11 +0000
-Subject: [PATCH 2/3] clocksource: sh_mtu2: Document r7s72100 binding
-Message-Id: <ffd24a543afe4c693d5c611ecfa01cc48e97f97d.1410230283.git.horms+renesas@verge.net.au>
+Date: Wed, 17 Sep 2014 00:48:12 +0000
+Subject: [PATCH v2 1/5] ARM: shmobile: kzm9d: Remove spurious regulator base addresses
+Message-Id: <1410914896-14395-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1410230283.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1410230283.git.horms+renesas@verge.net.au>
+References: <1410914896-14395-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1410914896-14395-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-In general Renesas hardware is not documented to the extent
-where the relationship between IP blocks on different SoCs can be assumed
-although they may appear to operate the same way. Furthermore the
-documentation typically does not specify a version for individual
-IP blocks. For these reasons a convention of using the SoC name in place
-of a version and providing SoC-specific compat strings has been adopted.
+As there is no reg property the regulator nodes should
+not include @...
 
-Although not universally liked this convention is used in the bindings
-for a number of drivers for Renesas hardware. The purpose of this patch is
-to update the Renesas R-Car Multi-Function Timer Pulse Unit 2 (MTU2) driver
-to follow this convention.
-
+Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
 ---
-* I plan to follow up with a patch patch to use the new binding in the
-  dtsi files for the r7s72100 SoC.
-
 v2
-* Suggestions by Mark Rutland and Sergei Shtylyov
-  - Compatible strings should be "one or more" not "one" of those listed
-  - Describe the generic binding as covering any MTU2 device
-  - Re-order compat strings from most to least specific
-
-v3
-* Suggested by Laurent Pinchart
-  - Reword compat documentation for consistency with a more extensive
-    CMT change
+* First post
 ---
- Documentation/devicetree/bindings/timer/renesas,mtu2.txt | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/emev2-kzm9d.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-index 917453f..d9a8d5a 100644
---- a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-+++ b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-@@ -8,7 +8,10 @@ are independent. The MTU2 hardware supports five channels indexed from 0 to 4.
+diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts b/arch/arm/boot/dts/emev2-kzm9d.dts
+index 50ccd15..f27fcf0 100644
+--- a/arch/arm/boot/dts/emev2-kzm9d.dts
++++ b/arch/arm/boot/dts/emev2-kzm9d.dts
+@@ -27,7 +27,7 @@
+ 		bootargs = "console=ttyS1,115200n81 ignore_loglevel root=/dev/nfs ip=dhcp";
+ 	};
  
- Required Properties:
+-	reg_1p8v: regulator@0 {
++	reg_1p8v: regulator {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "fixed-1.8V";
+ 		regulator-min-microvolt = <1800000>;
+@@ -36,7 +36,7 @@
+ 		regulator-boot-on;
+ 	};
  
--  - compatible: must contain "renesas,mtu2"
-+  - compatible: must be one or more of the following:
-+    - "renesas,mtu2-r7s72100" for the r7s72100 MTU2
-+    - "renesas,mtu2" for any MTU2
-+      This is a fallback for the above renesas,mtu2-* entries
- 
-   - reg: base address and length of the registers block for the timer module.
- 
-@@ -26,7 +29,7 @@ Required Properties:
- Example: R7S72100 (RZ/A1H) MTU2 node
- 
- 	mtu2: timer@fcff0000 {
--		compatible = "renesas,mtu2";
-+		compatible = "renesas,mtu2-r7s72100", "renesas,mtu2";
- 		reg = <0xfcff0000 0x400>;
- 		interrupts = <0 139 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 146 IRQ_TYPE_LEVEL_HIGH>,
+-	reg_3p3v: regulator@1 {
++	reg_3p3v: regulator {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "fixed-3.3V";
+ 		regulator-min-microvolt = <3300000>;
 -- 
 2.0.1
 
