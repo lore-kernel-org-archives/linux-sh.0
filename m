@@ -1,45 +1,47 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 17 Sep 2014 14:38:02 +0000
-Subject: [PATCH 0/3] Remove Koelsch board files
-Message-Id: <1410964685-12143-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 17 Sep 2014 14:48:02 +0000
+Subject: Re: [PATCH 0/3] Remove Koelsch board files
+Message-Id: <CAMuHMdVCwA7pK+YPBx9obXDRnXSi6_HRxK_JnwH-DjZUHcdWeg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1410964685-12143-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1410964685-12143-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello,
+Hi Laurent,
 
-This patch set (also know as "look at the diffstat and fall in love") removes
-both the legacy and reference Koelsch board files, now that the Koelsch board
-is supported by the r8a7791 generic DT platform.
+On Wed, Sep 17, 2014 at 4:38 PM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
+> This patch set (also know as "look at the diffstat and fall in love") removes
+> both the legacy and reference Koelsch board files, now that the Koelsch board
+> is supported by the r8a7791 generic DT platform.
 
-The patches depend on the "[PATCH 0/8] DU DT support for Marzen, Lager and
-Koelsch" series I've just posted, and are thus targeted at v3.19.
+Great, thanks!
 
-Laurent Pinchart (3):
-  ARM: mach-shmobile: koelsch: Remove legacy C board code
-  ARM: mach-shmobile: r8a7791: Remove legacy code
-  ARM: mach-shmobile: Remove the koelsch-reference board code
+>  arch/arm/configs/koelsch_defconfig               | 113 -----
+>  arch/arm/configs/shmobile_defconfig              |   1 -
+>  arch/arm/mach-shmobile/Kconfig                   |  19 -
+>  arch/arm/mach-shmobile/Makefile                  |   3 -
+>  arch/arm/mach-shmobile/Makefile.boot             |   1 -
+>  arch/arm/mach-shmobile/board-koelsch-reference.c |  44 --
+>  arch/arm/mach-shmobile/board-koelsch.c           | 530 -----------------------
+>  arch/arm/mach-shmobile/clock-r8a7791.c           | 342 ---------------
+>  arch/arm/mach-shmobile/r8a7791.h                 |   3 -
+>  arch/arm/mach-shmobile/setup-r8a7791.c           | 181 +-------
+>  10 files changed, 1 insertion(+), 1236 deletions(-)
 
- arch/arm/configs/koelsch_defconfig               | 113 -----
- arch/arm/configs/shmobile_defconfig              |   1 -
- arch/arm/mach-shmobile/Kconfig                   |  19 -
- arch/arm/mach-shmobile/Makefile                  |   3 -
- arch/arm/mach-shmobile/Makefile.boot             |   1 -
- arch/arm/mach-shmobile/board-koelsch-reference.c |  44 --
- arch/arm/mach-shmobile/board-koelsch.c           | 530 -----------------------
- arch/arm/mach-shmobile/clock-r8a7791.c           | 342 ---------------
- arch/arm/mach-shmobile/r8a7791.h                 |   3 -
- arch/arm/mach-shmobile/setup-r8a7791.c           | 181 +-------
- 10 files changed, 1 insertion(+), 1236 deletions(-)
- delete mode 100644 arch/arm/configs/koelsch_defconfig
- delete mode 100644 arch/arm/mach-shmobile/board-koelsch-reference.c
- delete mode 100644 arch/arm/mach-shmobile/board-koelsch.c
- delete mode 100644 arch/arm/mach-shmobile/clock-r8a7791.c
+Please make it 11 files changed, 1 insertion(+), 1237 deletions(-),
+by removing one r8a7791-koelsch.dtb line from arch/arm/boot/dts/Makefile...
 
--- 
-Regards,
+Gr{oetje,eeting}s,
 
-Laurent Pinchart
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
