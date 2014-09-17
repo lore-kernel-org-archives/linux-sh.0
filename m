@@ -1,59 +1,129 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 02 Sep 2014 02:02:49 +0000
-Subject: [PATCH 5/7 v2] ARM: shmobile: koelsch: remove MMC_CAP2_NO_MULTI_READ
-Message-Id: <87egvukce1.wl%kuninori.morimoto.gx@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 17 Sep 2014 14:38:05 +0000
+Subject: [PATCH 3/3] ARM: mach-shmobile: Remove the koelsch-reference board code
+Message-Id: <1410964685-12143-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
-	<87lhq2kcif.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87lhq2kcif.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The Koelsch board is supported by the r8a7791 generic DT platform
+definition. Remove the board-specific definition along with its board
+file.
 
-sh_mobile_sdhi cares multiblock read bug.
-remove MMC_CAP2_NO_MULTI_READ flag from board code
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v1 -> v2
+ arch/arm/configs/shmobile_defconfig              |  1 -
+ arch/arm/mach-shmobile/Kconfig                   |  5 ---
+ arch/arm/mach-shmobile/Makefile                  |  1 -
+ arch/arm/mach-shmobile/Makefile.boot             |  1 -
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 44 ------------------------
+ 5 files changed, 52 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/board-koelsch-reference.c
 
-- no change
-
- arch/arm/mach-shmobile/board-koelsch.c |    3 ---
- 1 file changed, 3 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index b7d5bc7..126a8b4 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -331,7 +331,6 @@ SDHI_REGULATOR(2, RCAR_GP_PIN(7, 19), RCAR_GP_PIN(2, 26));
- static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
--	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
- };
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index d7346ad..c8201a9 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -17,7 +17,6 @@ CONFIG_ARCH_R8A7779=y
+ CONFIG_ARCH_R8A7790=y
+ CONFIG_ARCH_R8A7791=y
+ CONFIG_ARCH_R8A7794=y
+-CONFIG_MACH_KOELSCH=y
+ CONFIG_MACH_LAGER=y
+ CONFIG_MACH_MARZEN=y
+ # CONFIG_SWP_EMULATE is not set
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index e50402b..fcc181f 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -73,11 +73,6 @@ config ARCH_R8A7794
  
-@@ -344,7 +343,6 @@ static struct resource sdhi0_resources[] __initdata = {
- static struct sh_mobile_sdhi_info sdhi1_info __initdata = {
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
--	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
- };
+ comment "Renesas ARM SoCs Board Type"
  
-@@ -357,7 +355,6 @@ static struct resource sdhi1_resources[] __initdata = {
- static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
--	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
- 			  TMIO_MMC_WRPROTECT_DISABLE,
- };
+-config MACH_KOELSCH
+-	bool "Koelsch board"
+-	depends on ARCH_R8A7791
+-	select MICREL_PHY if SH_ETH
+-
+ config MACH_LAGER
+ 	bool "Lager board"
+ 	depends on ARCH_R8A7790
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index b699b26..d9568e9 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -56,7 +56,6 @@ obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o sleep-sh7372.o
+ 
+ # Board objects
+ ifdef CONFIG_ARCH_SHMOBILE_MULTI
+-obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch-reference.o
+ obj-$(CONFIG_MACH_LAGER)	+= board-lager-reference.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen-reference.o
+ else
+diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
+index de9a238..57d00ed 100644
+--- a/arch/arm/mach-shmobile/Makefile.boot
++++ b/arch/arm/mach-shmobile/Makefile.boot
+@@ -5,7 +5,6 @@ loadaddr-$(CONFIG_MACH_APE6EVM_REFERENCE) += 0x40008000
+ loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
+ loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
+ loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
+-loadaddr-$(CONFIG_MACH_KOELSCH) += 0x40008000
+ loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
+ loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
+ loadaddr-$(CONFIG_MACH_LAGER) += 0x40008000
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+deleted file mode 100644
+index c370818..0000000
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ /dev/null
+@@ -1,44 +0,0 @@
+-/*
+- * Koelsch board support - Reference DT implementation
+- *
+- * Copyright (C) 2013  Renesas Electronics Corporation
+- * Copyright (C) 2013  Renesas Solutions Corp.
+- * Copyright (C) 2013  Magnus Damm
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; version 2 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+- */
+-
+-#include <linux/kernel.h>
+-#include <linux/of_platform.h>
+-
+-#include <asm/mach/arch.h>
+-
+-#include "common.h"
+-#include "r8a7791.h"
+-#include "rcar-gen2.h"
+-
+-static const char * const koelsch_boards_compat_dt[] __initconst = {
+-	"renesas,koelsch",
+-	"renesas,koelsch-reference",
+-	NULL,
+-};
+-
+-DT_MACHINE_START(KOELSCH_DT, "koelsch")
+-	.smp		= smp_ops(r8a7791_smp_ops),
+-	.init_early	= shmobile_init_delay,
+-	.init_time	= rcar_gen2_timer_init,
+-	.init_late	= shmobile_init_late,
+-	.reserve	= rcar_gen2_reserve,
+-	.dt_compat	= koelsch_boards_compat_dt,
+-MACHINE_END
 -- 
-1.7.9.5
+1.8.5.5
 
