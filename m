@@ -1,71 +1,145 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Sep 2014 13:20:21 +0000
-Subject: [PATCH v3 2/9] ARM: shmobile: r8a7790: Add DU node to device tree
-Message-Id: <1411564828-30272-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 17 Sep 2014 14:11:11 +0000
+Subject: [PATCH 6/8] ARM: shmobile: marzen: Enable DU device in DT
+Message-Id: <1410963073-3176-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add the DU device with a disabled state. Boards that want to enable the
-DU need to specify the output topology.
+Specify the DU output topology, enable the DU device and configure the
+related pins.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 39 +++++++++++++++++++++++++++++++++++++++
- 1 file changed, 39 insertions(+)
+ arch/arm/boot/dts/r8a7779-marzen.dts | 106 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 106 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index d0e1773..4c2deb4 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -600,6 +600,45 @@
- 		status = "disabled";
+diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
+index c160404..da2d0aa 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen.dts
+@@ -68,6 +68,101 @@
+ 			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
+ 		};
  	};
- 
-+	du: display@feb00000 {
-+		compatible = "renesas,du-r8a7790";
-+		reg = <0 0xfeb00000 0 0x70000>,
-+		      <0 0xfeb90000 0 0x1c>,
-+		      <0 0xfeb94000 0 0x1c>;
-+		reg-names = "du", "lvds.0", "lvds.1";
-+		interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 268 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 269 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7790_CLK_DU0>,
-+		         <&mstp7_clks R8A7790_CLK_DU1>,
-+		         <&mstp7_clks R8A7790_CLK_DU2>,
-+		         <&mstp7_clks R8A7790_CLK_LVDS0>,
-+		         <&mstp7_clks R8A7790_CLK_LVDS1>;
-+		clock-names = "du.0", "du.1", "du.2", "lvds.0", "lvds.1";
-+		status = "disabled";
++
++	vga-enc {
++		compatible = "adi,adv7123";
++
++		#address-cells = <1>;
++		#size-cells = <0>;
 +
 +		ports {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+
 +			port@0 {
-+				reg = <0>;
-+				du_out_rgb: endpoint {
++				vga_enc_in: endpoint {
++					remote-endpoint = <&du_out_rgb0>;
 +				};
 +			};
 +			port@1 {
-+				reg = <1>;
-+				du_out_lvds0: endpoint {
-+				};
-+			};
-+			port@2 {
-+				reg = <2>;
-+				du_out_lvds1: endpoint {
++				vga_enc_out: endpoint {
++					remote-endpoint = <&vga_in>;
 +				};
 +			};
 +		};
 +	};
 +
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
++	vga {
++		compatible = "vga-connector";
++
++		port {
++			vga_in: endpoint {
++				remote-endpoint = <&vga_enc_out>;
++			};
++		};
++	};
++
++	lvds-enc {
++		compatible = "thine,thc63lvdm83d";
++
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		ports {
++			port@0 {
++				lvds_enc_in: endpoint {
++					remote-endpoint = <&du_out_rgb1>;
++				};
++			};
++			port@1 {
++				lvds_enc_out: endpoint {
++					remote-endpoint = <&panel_in>;
++				};
++			};
++		};
++	};
++
++	panel {
++		compatible = "mitsubishi,aa104xd12", "panel-dpi";
++
++		width-mm = <210>;
++		height-mm = <158>;
++
++		panel-timing {
++			/* 1024x768 @65Hz */
++			clock-frequency = <65000000>;
++			hactive = <1024>;
++			vactive = <768>;
++			hsync-len = <136>;
++			hfront-porch = <20>;
++			hback-porch = <160>;
++			vfront-porch = <3>;
++			vback-porch = <29>;
++			vsync-len = <6>;
++		};
++
++		port {
++			panel_in: endpoint {
++				remote-endpoint = <&lvds_enc_out>;
++			};
++		};
++	};
++};
++
++&du {
++	pinctrl-0 = <&du_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++
++	ports {
++		port@0 {
++			endpoint {
++				remote-endpoint = <&vga_enc_in>;
++			};
++		};
++		port@1 {
++			endpoint {
++				remote-endpoint = <&lvds_enc_in>;
++			};
++		};
++	};
+ };
+ 
+ &irqpin0 {
+@@ -83,6 +178,17 @@
+ };
+ 
+ &pfc {
++	du_pins: du {
++		du0 {
++			renesas,groups = "du0_rgb888", "du0_sync_1", "du0_clk_out_0";
++			renesas,function = "du0";
++		};
++		du1 {
++			renesas,groups = "du1_rgb666", "du1_sync_1", "du1_clk_out";
++			renesas,function = "du1";
++		};
++	};
++
+ 	lan0_pins: lan0 {
+ 		intc {
+ 			renesas,groups = "intc_irq1_b";
 -- 
 1.8.5.5
 
