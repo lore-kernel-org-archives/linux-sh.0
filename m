@@ -1,61 +1,38 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 17 Sep 2014 11:57:16 +0000
-Subject: [PATCH] ARM: hw_breakpoint: Trap undef instruction exceptions on wake-up
-Message-Id: <1410955036-1956-1-git-send-email-geert+renesas@glider.be>
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Wed, 17 Sep 2014 12:18:20 +0000
+Subject: Re: [PATCH] ARM: hw_breakpoint: Trap undef instruction exceptions on wake-up
+Message-Id: <20140917121820.GR12361@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1410955036-1956-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1410955036-1956-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-If power area D4, which contains the Coresight-ETM hardware block, is
-powered down on R-Mobile A1 (r8a7740), the kernel crashes when
-suspending from s2ram with:
+On Wed, Sep 17, 2014 at 01:57:16PM +0200, Geert Uytterhoeven wrote:
+> If power area D4, which contains the Coresight-ETM hardware block, is
+> powered down on R-Mobile A1 (r8a7740), the kernel crashes when
+> suspending from s2ram with:
+> 
+>     Internal error: Oops - undefined instruction: 0 [#1] ARM
+> 
+> This happens because dbg_cpu_pm_notify() calls reset_ctrl_regs(), which
+> can't access the debug registers as the debug module is powered down.
+> 
+> Protect the call to reset_ctrl_regs() by an undefined instruction hook,
+> like was done in commit 0d352e3d006c9589 ("ARM: hw_breakpoint: trap
+> undef instruction exceptions in reset_ctrl_regs") for another caller.
 
-    Internal error: Oops - undefined instruction: 0 [#1] ARM
+I'd prefer a better solution to this (such as tracking whether the ETM
+block is powered down).  This feels very much like a hack than a good
+solution.
 
-This happens because dbg_cpu_pm_notify() calls reset_ctrl_regs(), which
-can't access the debug registers as the debug module is powered down.
+Also, the undefined instruction hook was not supposed to be used in this
+way - certainly *not* dynamically like this.  While the lookup of the
+undef handler is done in a safe atomic way, calling the resulting
+function is outside of the locks.
 
-Protect the call to reset_ctrl_regs() by an undefined instruction hook,
-like was done in commit 0d352e3d006c9589 ("ARM: hw_breakpoint: trap
-undef instruction exceptions in reset_ctrl_regs") for another caller.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-Question: Do we need the same protection in dbg_reset_notify()?
-          I can't trigger that case, as r8a7740 has only one CPU core.
----
- arch/arm/kernel/hw_breakpoint.c | 15 ++++++++++++++-
- 1 file changed, 14 insertions(+), 1 deletion(-)
-
-diff --git a/arch/arm/kernel/hw_breakpoint.c b/arch/arm/kernel/hw_breakpoint.c
-index 4d963fb66e3f0bce..f55f25d4e4de7674 100644
---- a/arch/arm/kernel/hw_breakpoint.c
-+++ b/arch/arm/kernel/hw_breakpoint.c
-@@ -1038,8 +1038,21 @@ static struct notifier_block dbg_reset_nb = {
- static int dbg_cpu_pm_notify(struct notifier_block *self, unsigned long action,
- 			     void *v)
- {
--	if (action = CPU_PM_EXIT)
-+	if (action = CPU_PM_EXIT) {
-+		/*
-+		 * We need to tread carefully here because DBGSWENABLE may be
-+		 * driven low on this core and there isn't an architected way to
-+		 * determine that.
-+		 */
-+		register_undef_hook(&debug_reg_hook);
-+
-+		/*
-+		 * Reset the breakpoint resources. We assume that a halting
-+		 * debugger will leave the world in a nice state for us.
-+		 */
- 		reset_ctrl_regs(NULL);
-+		unregister_undef_hook(&debug_reg_hook);
-+	}
- 
- 	return NOTIFY_OK;
- }
 -- 
-1.9.1
-
+FTTC broadband for 0.8mile line: currently at 9.5Mbps down 400kbps up
+according to speedtest.net.
