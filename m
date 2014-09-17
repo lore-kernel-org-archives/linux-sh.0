@@ -1,58 +1,62 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 16 Sep 2014 18:48:53 +0000
-Subject: [PATCH/RFC v2 06/12] PM / Domains: Retrieve PM QoS device latencies from DT
-Message-Id: <1410893339-6361-7-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 17 Sep 2014 14:11:08 +0000
+Subject: [PATCH 3/8] ARM: shmobile: r8a7791: Add DU node to device tree
+Message-Id: <1410963073-3176-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-v2:
-  - New
----
- drivers/base/power/domain.c | 14 +++++++++++++-
- 1 file changed, 13 insertions(+), 1 deletion(-)
+Add the DU device with a disabled state. Boards that want to enable the
+DU need to specify the output topology
 
-diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
-index e1cbde985d4de606..7b166911be541229 100644
---- a/drivers/base/power/domain.c
-+++ b/drivers/base/power/domain.c
-@@ -2133,6 +2133,8 @@ int genpd_dev_pm_attach(struct device *dev)
- 	struct device_node *np = dev->of_node;
- 	struct of_phandle_args pd_args;
- 	struct generic_pm_domain *pd;
-+	struct gpd_timing_data td;
-+	u32 latency;
- 	int ret;
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index e06c11f..d477c57 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -637,6 +637,36 @@
+ 		status = "disabled";
+ 	};
  
- 	if (!np)
-@@ -2165,10 +2167,20 @@ int genpd_dev_pm_attach(struct device *dev)
- 		return PTR_ERR(pd);
- 	}
- 
-+	memset(&td, 0, sizeof(td));
-+	if (!of_property_read_u32(np, "stop-latency", &latency))
-+		td.stop_latency_ns = latency;
-+	if (!of_property_read_u32(np, "start-latency", &latency))
-+		td.start_latency_ns = latency;
-+	if (!of_property_read_u32(np, "save-state-latency", &latency))
-+		td.save_state_latency_ns = latency;
-+	if (!of_property_read_u32(np, "restore-state-latency", &latency))
-+		td.restore_state_latency_ns = latency;
++	du: du@feb00000 {
++		compatible = "renesas,du-r8a7791";
++		reg = <0 0xfeb00000 0 0x40000>,
++		      <0 0xfeb90000 0 0x1c>;
++		reg-names = "du", "lvds.0";
++		interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 268 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7791_CLK_DU0>,
++		         <&mstp7_clks R8A7791_CLK_DU1>,
++		         <&mstp7_clks R8A7791_CLK_LVDS0>;
++		clock-names = "du.0", "du.1", "lvds.0";
++		status = "disabled";
 +
- 	dev_dbg(dev, "adding to PM domain %s\n", pd->name);
- 
- 	while (1) {
--		ret = pm_genpd_add_device(pd, dev);
-+		ret = __pm_genpd_add_device(pd, dev, &td);
- 		if (ret != -EAGAIN)
- 			break;
- 		cond_resched();
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				du_out_rgb: endpoint {
++				};
++			};
++			port@1 {
++				reg = <1>;
++				du_out_lvds0: endpoint {
++				};
++			};
++		};
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 -- 
-1.9.1
+1.8.5.5
 
