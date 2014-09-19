@@ -1,41 +1,40 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 25 Sep 2014 16:13:29 +0000
-Subject: [PATCH 13/13] ARM: shmobile: kzm9g-reference dts: Add chosen/stdout-path
-Message-Id: <1411661609-4280-14-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 19 Sep 2014 04:14:21 +0000
+Subject: [PATCH 2/2] ARM: shmobile: r8a7740 legacy: Fix copied bug in comment
+Message-Id: <8237f9e5c38098aeb8570a77bacd0fe0ebc61dfa.1411100007.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411661609-4280-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1411661609-4280-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1411100007.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1411100007.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-Add a stdout-path property so that automatic console selection works
-in the absence of a "console=" parameter on the kernel command line.
-In addition, this will allow the PM domain code to find the PM domain
-for the console device.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Note that we have to keep the "console=ttySC4" parameter in
-chosen/bootargs, else we only get console messages on tty0.
+The corresponding bug in pm-sh7372.c was fixed in commit
+70fe7b24672a988f ("ARM: shmobile: Do not access sh7372 A4S domain
+internals directly").
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/mach-shmobile/pm-r8a7740.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index 30ef97e99dc53ea7..0dac0e66ccad8f74 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -40,6 +40,7 @@
- 
- 	chosen {
- 		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel rw";
-+		stdout-path = &scifa4;
- 	};
- 
- 	memory {
+diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
+index a0d44d5..94c8815 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7740.c
++++ b/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -18,7 +18,7 @@ static int r8a7740_pd_a4s_suspend(void)
+ {
+ 	/*
+ 	 * The A4S domain contains the CPU core and therefore it should
+-	 * only be turned off if the CPU is in use.
++	 * only be turned off if the CPU is not in use.
+ 	 */
+ 	return -EBUSY;
+ }
 -- 
-1.9.1
+2.0.1
 
