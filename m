@@ -1,51 +1,44 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 02 Sep 2014 02:03:07 +0000
-Subject: [PATCH 6/7 v2] ARM: shmobile: lager: remove MMC_CAP2_NO_MULTI_READ
-Message-Id: <87d2bekcdj.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 19 Sep 2014 04:14:15 +0000
+Subject: [PATCH 2/2] ARM: shmobile: Add manufacturer for KZM boards
+Message-Id: <08adafd4a1f8c9b6e2c49d955a0e45743c9ffd9a.1411099817.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
-	<87lhq2kcif.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87lhq2kcif.wl%kuninori.morimoto.gx@gmail.com>
+References: <cover.1411099817.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1411099817.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-sh_mobile_sdhi cares multiblock read bug.
-remove MMC_CAP2_NO_MULTI_READ flag from board code
+KZM-A9-Dual and KZM-A9-GT are manufactured by Kyoto Microcomputer Co.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v1 -> v2
+ Documentation/devicetree/bindings/arm/shmobile.txt | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-- no change
-
- arch/arm/mach-shmobile/board-lager.c |    2 --
- 1 file changed, 2 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index e1d8215..f5a98e2 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -630,7 +630,6 @@ static void __init lager_add_rsnd_device(void)
- static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
--	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
- 			  TMIO_MMC_WRPROTECT_DISABLE,
- };
-@@ -644,7 +643,6 @@ static struct resource sdhi0_resources[] __initdata = {
- static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
--	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
- 			  TMIO_MMC_WRPROTECT_DISABLE,
- };
+diff --git a/Documentation/devicetree/bindings/arm/shmobile.txt b/Documentation/devicetree/bindings/arm/shmobile.txt
+index 5d1c5c0..51147cb 100644
+--- a/Documentation/devicetree/bindings/arm/shmobile.txt
++++ b/Documentation/devicetree/bindings/arm/shmobile.txt
+@@ -53,11 +53,11 @@ Boards:
+     compatible = "renesas,henninger", "renesas,r8a7791"
+   - Koelsch (RTP0RC7791SEB00010S)
+     compatible = "renesas,koelsch", "renesas,r8a7791"
+-  - KZM9D
++  - Kyoto Microcomputer Co. KZM-A9-Dual
+     compatible = "renesas,kzm9d", "renesas,emev2"
+-  - KZM-A9-GT
++  - Kyoto Microcomputer Co. KZM-A9-GT
+     compatible = "renesas,kzm9g", "renesas,sh73a0"
+-  - KZM-A9-GT - Reference Device Tree Implementation
++  - Kyoto Microcomputer Co. KZM-A9-GT - Reference Device Tree Implementation
+     compatible = "renesas,kzm9g-reference", "renesas,sh73a0"
+   - Lager (RTP0RC7790SEB00010S)
+     compatible = "renesas,lager", "renesas,r8a7790"
 -- 
-1.7.9.5
+2.0.1
 
