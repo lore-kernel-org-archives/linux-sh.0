@@ -1,55 +1,38 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 26 Sep 2014 17:52:29 +0000
-Subject: Re: [PATCH v3 02/13] PM / Domains: Add DT bindings for power-on/off latencies
-Message-Id: <CAMuHMdU+4MX-XYe9rHmyPN3=-VQRg+CrnxWEaU2M_Jg+1Psw8A@mail.gmail.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sat, 20 Sep 2014 10:07:37 +0000
+Subject: [PATCH] i2c: rcar: remove sign-compare flaw
+Message-Id: <1411207657-23707-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
- <1411662520-22795-3-git-send-email-geert+renesas@glider.be>
- <CAPDyKFrAv9oyBzX764+CWkOxfN1kN_MddB3ks1q69+TnmnHXuQ@mail.gmail.com>
- <20140926152835.GK10233@codeaurora.org>
-In-Reply-To: <20140926152835.GK10233@codeaurora.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Hi Stephen,
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-On Fri, Sep 26, 2014 at 5:28 PM, Stephen Boyd <sboyd@codeaurora.org> wrote:
->> On 25 September 2014 18:28, Geert Uytterhoeven <geert+renesas@glider.be> wrote:
->> > +Optional properties:
->> > + - power-on-latency: Power-on latency of the PM domain, in ns,
->> > + - power-off-latency: Power-off latency of the PM domain, in ns.
->> > +
->> >  Example:
->> >
->> >         power: power-controller@12340000 {
->> >                 compatible = "foo,power-controller";
->> >                 reg = <0x12340000 0x1000>;
->> >                 #power-domain-cells = <1>;
->> > +               power-on-latency = <250000>;
->> > +               power-off-latency = <250000>;
->
-> This assumes every power domain within a power controller has the
-> same latencies? That isn't always true. This should be an array
-> of values corresponding to the number of power domains if
-> #power-domain-cells is 1, or just one value if the cell count is
-> 0.
+gcc rightfully says:
 
-Thanks, you're right. Will update.
+drivers/i2c/busses/i2c-rcar.c:198:10: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
 
-However, I'd still like to allow just one value in the #power-domain-cells = <1>
-case if the latencies are the same. Is that OK for you?
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/busses/i2c-rcar.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Thanks again.
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 4c6fa78063fb..1eed463662c4 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -195,7 +195,7 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
+ 	 */
+ 	rate = clk_get_rate(priv->clk);
+ 	cdf = rate / 20000000;
+-	if (cdf >= 1 << cdf_width) {
++	if (cdf >= 1U << cdf_width) {
+ 		dev_err(dev, "Input clock %lu too high\n", rate);
+ 		return -EIO;
+ 	}
+-- 
+2.0.0
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
