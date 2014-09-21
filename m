@@ -1,7 +1,7 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 21 Sep 2014 17:56:20 +0000
+Date: Sun, 21 Sep 2014 17:56:34 +0000
 Subject: Re: [PATCH v2 1/6] V4L2: Add Renesas R-Car JPEG codec driver.
-Message-Id: <541F1144.3050808@cogentembedded.com>
+Message-Id: <541F1152.5000200@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1408452653-14067-2-git-send-email-mikhail.ulyanov@cogentembedded.com> <1408969787-23132-1-git-send-email-mikhail.ulyanov@cogentembedded.com> <53FB2E95.7040505@xs4all.nl> <53FB30E3.2050304@xs4all.nl>
 In-Reply-To: <53FB30E3.2050304@xs4all.nl>
@@ -34,7 +34,7 @@ On 08/25/2014 04:49 PM, Hans Verkuil wrote:
 > So I will change v4l2-compliance instead.
 
     I take it we don't need to change the driver? Asking because the driver 
-seems stuck for nearly a months now.
+seems stuck for nearly a month now.
     I'm myself still seeing a place for improvement (register macro naming of 
 the top of my head). Perhaps it's time to take this driver into my own hands...
 
