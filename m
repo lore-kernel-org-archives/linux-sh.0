@@ -1,41 +1,47 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 11 Sep 2014 00:57:23 +0000
-Subject: [PATCH 1/5] ARM: shmobile: mackerel: Make domain_devices[] static __initdata
-Message-Id: <d6dc6ed8540ab8802c6ba31b4292204dd3cb0fee.1410395620.git.horms+renesas@verge.net.au>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Mon, 22 Sep 2014 09:51:10 +0000
+Subject: [RFC PATCH 3/3] ARM: Enable PCI domains
+Message-Id: <1411379470-20639-4-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1410395620.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1410395620.git.horms+renesas@verge.net.au>
+References: <1411379470-20639-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1411379470-20639-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Since there are ARM devices with multiple independant PCI controllers, enable
+PCI domains for all ARM devices.
 
-Make the domain_devices[] array static and __initdata, to reduce kernel
-size:
-  - Making it static gets rid of the code to copy the data to the stack,
-  - Marking it __initdata allows more init memory to be freed.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
- arch/arm/mach-shmobile/board-mackerel.c | 2 +-
+Marked as RFC as I am not sure of the impact of enabling PCI domains for all
+ARM devices. In the march to 'one kernel to rule them all', I steered clear of
+mach specific changes.
+
+ arch/arm/Kconfig | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 79f448e..d47b262 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1420,7 +1420,7 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
- #define USCCR1		IOMEM(0xE6058144)
- static void __init mackerel_init(void)
- {
--	struct pm_domain_device domain_devices[] = {
-+	static struct pm_domain_device domain_devices[] __initdata = {
- 		{ "A4LC", &lcdc_device, },
- 		{ "A4LC", &hdmi_lcdc_device, },
- 		{ "A4LC", &meram_device, },
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 32cbbd5..8741d3d 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -1274,6 +1274,7 @@ config ISA_DMA_API
+ 
+ config PCI
+ 	bool "PCI support" if MIGHT_HAVE_PCI
++	select PCI_DOMAINS
+ 	help
+ 	  Find out whether you have a PCI motherboard. PCI is the name of a
+ 	  bus system, i.e. the way the CPU talks to the other stuff inside
+@@ -1282,7 +1283,6 @@ config PCI
+ 
+ config PCI_DOMAINS
+ 	bool
+-	depends on PCI
+ 
+ config PCI_NANOENGINE
+ 	bool "BSE nanoEngine PCI support"
 -- 
-2.0.1
+2.1.0
 
