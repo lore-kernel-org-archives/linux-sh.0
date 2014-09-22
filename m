@@ -1,49 +1,61 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 16 Sep 2014 18:48:59 +0000
-Subject: [PATCH/RFC v2 12/12] drivers: sh: Disable PM runtime for multi-platform r8a7740 with genpd
-Message-Id: <1410893339-6361-13-git-send-email-geert+renesas@glider.be>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Mon, 22 Sep 2014 09:51:08 +0000
+Subject: [PATCH 1/3] PCI: rcar-pcie: Add call to get domain nr
+Message-Id: <1411379470-20639-2-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
+References: <1411379470-20639-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1411379470-20639-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-If the default PM domain using PM_CLK is used for PM runtime, the real PM
-domain(s) cannot be registered from DT later.
+R-Car devices (r8a7790 and r8a7791) need to place the internal PCI and external
+PCIe controllers on separate domains so that they can work at the same time.
 
-Hence do not enable it when running a multi-platform kernel with genpd
-support on an r8a7740. The R-Mobile PM domain driver will take care of
-PM runtime management of the module clocks.
-
-The default PM domain is still needed for:
-  - platforms without genpd support,
-  - the legacy (non-DT) case, where real PM domains may take over later,
-    except for the C5 "always on" PM domain.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
-v2:
-  - New
----
- drivers/sh/pm_runtime.c | 2 ++
- 1 file changed, 2 insertions(+)
+ drivers/pci/host/pcie-rcar.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index fe2c2d595f599b2f..85cc89fd3e7d7cb7 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -81,7 +81,9 @@ static int __init sh_pm_runtime_init(void)
- 		if (!of_machine_is_compatible("renesas,emev2") &&
- 		    !of_machine_is_compatible("renesas,r7s72100") &&
- 		    !of_machine_is_compatible("renesas,r8a73a4") &&
-+#ifndef CONFIG_PM_GENERIC_DOMAINS_OF
- 		    !of_machine_is_compatible("renesas,r8a7740") &&
+diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
+index 4884ee5..db74371 100644
+--- a/drivers/pci/host/pcie-rcar.c
++++ b/drivers/pci/host/pcie-rcar.c
+@@ -128,6 +128,7 @@ struct rcar_pcie {
+ 	struct device		*dev;
+ 	void __iomem		*base;
+ 	struct resource		res[RCAR_PCI_MAX_RESOURCES];
++	int			domain;
+ 	struct resource		busn;
+ 	int			root_bus_nr;
+ 	struct clk		*clk;
+@@ -393,13 +394,13 @@ static void rcar_pcie_enable(struct rcar_pcie *pcie)
+ {
+ 	struct platform_device *pdev = to_platform_device(pcie->dev);
+ 
++#ifdef CONFIG_PCI_DOMAINS
++	rcar_pci.domain = pcie->domain;
 +#endif
- 		    !of_machine_is_compatible("renesas,r8a7778") &&
- 		    !of_machine_is_compatible("renesas,r8a7779") &&
- 		    !of_machine_is_compatible("renesas,r8a7790") &&
+ 	rcar_pci.nr_controllers = 1;
+ 	rcar_pci.private_data = (void **)&pcie;
+ 
+ 	pci_common_init_dev(&pdev->dev, &rcar_pci);
+-#ifdef CONFIG_PCI_DOMAINS
+-	rcar_pci.domain++;
+-#endif
+ }
+ 
+ static int phy_wait_for_ack(struct rcar_pcie *pcie)
+@@ -917,6 +918,8 @@ static int rcar_pcie_probe(struct platform_device *pdev)
+ 	pcie->dev = &pdev->dev;
+ 	platform_set_drvdata(pdev, pcie);
+ 
++	pcie->domain = of_pci_get_domain_nr(pdev->dev.of_node, true);
++
+ 	/* Get the bus range */
+ 	if (of_pci_parse_bus_range(pdev->dev.of_node, &pcie->busn)) {
+ 		dev_err(&pdev->dev, "failed to parse bus-range property\n");
 -- 
-1.9.1
+2.1.0
 
