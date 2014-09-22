@@ -1,78 +1,54 @@
-From: Liviu Dudau <Liviu.Dudau@arm.com>
-Date: Mon, 22 Sep 2014 11:28:50 +0000
-Subject: Re: [PATCH 0/3] Add PCI domain support to R-Car drivers
-Message-Id: <20140922112849.GL1994@e106497-lin.cambridge.arm.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Mon, 22 Sep 2014 11:40:42 +0000
+Subject: RE: [PATCH 0/3] Add PCI domain support to R-Car drivers
+Message-Id: <a9539cb545eb4ce6b6636a28ff498f90@HKXPR06MB168.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1411379470-20639-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1411379470-20639-1-git-send-email-phil.edworthy@renesas.com>
+ <20140922112849.GL1994@e106497-lin.cambridge.arm.com>
+In-Reply-To: <20140922112849.GL1994@e106497-lin.cambridge.arm.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Sep 22, 2014 at 10:51:07AM +0100, Phil Edworthy wrote:
-> The Renesas R-Car devices (r8a7790 and r8a7791) use two PCI controller drivers,
-> one for an external PCIe slot, the other for an internal PCI bridge to USB
-> controllers.
-> 
-> However, they currently do not work at the same time as they use the same PCI
-> domain and use the same root bus number. We can't use different root bus numbers
-> due to the way root bus numbers are assigned in pcibios_init_hw() in
-> arch/arm/kernel/bios32.c.
-> 
-> Since the two PCI controllers are completely independent, I think it makes sense
-> to use different PCI domains for them.
-> 
-> I've marked the third patch as RFC as I am not sure of the impact of enabling
-> PCI domains for all ARM devices. In the march to 'one kernel to rule them all',
-> I steered clear of mach specific changes.
-> 
-> These patches require the following patch from Liviu Dudau:
->   [PATCH v11 07/10] OF: Introduce helper function for getting PCI domain_nr
-> Based on comments on this patch from Jason Gunthorpe, there is still the issue
-> that the domain numbers may change depending on the ordering at probe time.
-> However, this can be fixed later on by adding the entries in the DT files.
-
-Hi Phil,
-
-I'm happy that you found use for my patch, but I can't help wondering if it is
-not a better idea to convert your drivers to the whole new API in my series.
-Do you have any thoughts on that?
-
-One other thing to note: Rob Herring is not very happy with the mix of OF
-parsing and domain number allocation going in together, so I might remove the
-OF parsing entirely for now. Would that cause you any problems (other than
-the fact that if of_pci_get_domain_nr() doesn't do anything OF related I might
-rename it to pci_get_domain_nr()). You don't seem to have any alias defined
-for pci-domain in the DT, so I'll guess not.
-
-Best regards,
-Liviu
-
-> 
-> 
-> Phil Edworthy (3):
->   PCI: rcar-pcie: Add call to get domain nr
->   PCI: rcar-internal-pci: Add call to get domain nr
->   ARM: Enable PCI domains
-> 
->  arch/arm/Kconfig                 | 2 +-
->  drivers/pci/host/pci-rcar-gen2.c | 6 ++++++
->  drivers/pci/host/pcie-rcar.c     | 9 ++++++---
->  3 files changed, 13 insertions(+), 4 deletions(-)
-> 
-> -- 
-> 2.1.0
-> 
-> 
-
--- 
-==========
-| I would like to |
-| fix the world,  |
-| but they're not |
-| giving me the   |
- \ source code!  /
-  ---------------
-    ¯\_(ツ)_/¯
-
+SGkgTGl2aXUsDQoNCk9uIDIyIFNlcHRlbWJlciAyMDE0IDEyOjI5LCBMaXZpdSB3cm90ZToNCj4g
+T24gTW9uLCBTZXAgMjIsIDIwMTQgYXQgMTA6NTE6MDdBTSArMDEwMCwgUGhpbCBFZHdvcnRoeSB3
+cm90ZToNCj4gPiBUaGUgUmVuZXNhcyBSLUNhciBkZXZpY2VzIChyOGE3NzkwIGFuZCByOGE3Nzkx
+KSB1c2UgdHdvIFBDSSBjb250cm9sbGVyDQo+IGRyaXZlcnMsDQo+ID4gb25lIGZvciBhbiBleHRl
+cm5hbCBQQ0llIHNsb3QsIHRoZSBvdGhlciBmb3IgYW4gaW50ZXJuYWwgUENJIGJyaWRnZSB0byBV
+U0INCj4gPiBjb250cm9sbGVycy4NCj4gPg0KPiA+IEhvd2V2ZXIsIHRoZXkgY3VycmVudGx5IGRv
+IG5vdCB3b3JrIGF0IHRoZSBzYW1lIHRpbWUgYXMgdGhleSB1c2UgdGhlDQo+IHNhbWUgUENJDQo+
+ID4gZG9tYWluIGFuZCB1c2UgdGhlIHNhbWUgcm9vdCBidXMgbnVtYmVyLiBXZSBjYW4ndCB1c2Ug
+ZGlmZmVyZW50IHJvb3QNCj4gYnVzIG51bWJlcnMNCj4gPiBkdWUgdG8gdGhlIHdheSByb290IGJ1
+cyBudW1iZXJzIGFyZSBhc3NpZ25lZCBpbiBwY2liaW9zX2luaXRfaHcoKSBpbg0KPiA+IGFyY2gv
+YXJtL2tlcm5lbC9iaW9zMzIuYy4NCj4gPg0KPiA+IFNpbmNlIHRoZSB0d28gUENJIGNvbnRyb2xs
+ZXJzIGFyZSBjb21wbGV0ZWx5IGluZGVwZW5kZW50LCBJIHRoaW5rIGl0IG1ha2VzDQo+IHNlbnNl
+DQo+ID4gdG8gdXNlIGRpZmZlcmVudCBQQ0kgZG9tYWlucyBmb3IgdGhlbS4NCj4gPg0KPiA+IEkn
+dmUgbWFya2VkIHRoZSB0aGlyZCBwYXRjaCBhcyBSRkMgYXMgSSBhbSBub3Qgc3VyZSBvZiB0aGUg
+aW1wYWN0IG9mDQo+IGVuYWJsaW5nDQo+ID4gUENJIGRvbWFpbnMgZm9yIGFsbCBBUk0gZGV2aWNl
+cy4gSW4gdGhlIG1hcmNoIHRvICdvbmUga2VybmVsIHRvIHJ1bGUgdGhlbQ0KPiBhbGwnLA0KPiA+
+IEkgc3RlZXJlZCBjbGVhciBvZiBtYWNoIHNwZWNpZmljIGNoYW5nZXMuDQo+ID4NCj4gPiBUaGVz
+ZSBwYXRjaGVzIHJlcXVpcmUgdGhlIGZvbGxvd2luZyBwYXRjaCBmcm9tIExpdml1IER1ZGF1Og0K
+PiA+ICAgW1BBVENIIHYxMSAwNy8xMF0gT0Y6IEludHJvZHVjZSBoZWxwZXIgZnVuY3Rpb24gZm9y
+IGdldHRpbmcgUENJDQo+IGRvbWFpbl9ucg0KPiA+IEJhc2VkIG9uIGNvbW1lbnRzIG9uIHRoaXMg
+cGF0Y2ggZnJvbSBKYXNvbiBHdW50aG9ycGUsIHRoZXJlIGlzIHN0aWxsIHRoZQ0KPiBpc3N1ZQ0K
+PiA+IHRoYXQgdGhlIGRvbWFpbiBudW1iZXJzIG1heSBjaGFuZ2UgZGVwZW5kaW5nIG9uIHRoZSBv
+cmRlcmluZyBhdCBwcm9iZQ0KPiB0aW1lLg0KPiA+IEhvd2V2ZXIsIHRoaXMgY2FuIGJlIGZpeGVk
+IGxhdGVyIG9uIGJ5IGFkZGluZyB0aGUgZW50cmllcyBpbiB0aGUgRFQgZmlsZXMuDQo+IA0KPiBI
+aSBQaGlsLA0KPiANCj4gSSdtIGhhcHB5IHRoYXQgeW91IGZvdW5kIHVzZSBmb3IgbXkgcGF0Y2gs
+IGJ1dCBJIGNhbid0IGhlbHAgd29uZGVyaW5nIGlmIGl0IGlzDQo+IG5vdCBhIGJldHRlciBpZGVh
+IHRvIGNvbnZlcnQgeW91ciBkcml2ZXJzIHRvIHRoZSB3aG9sZSBuZXcgQVBJIGluIG15IHNlcmll
+cy4NCj4gRG8geW91IGhhdmUgYW55IHRob3VnaHRzIG9uIHRoYXQ/DQpUaGUgbWFpbiByZWFzb24g
+YmVpbmcgdGhhdCBSZW5lc2FzIGFsc28gc3VwcG9ydHMgdGhlIExUU0kgdHJlZXMsIHNvIHRoaXMg
+Zml4DQp3aWxsIGFsc28gbmVlZCBiYWNrcG9ydGluZyB0byB2My4xMC4gDQoNCj4gT25lIG90aGVy
+IHRoaW5nIHRvIG5vdGU6IFJvYiBIZXJyaW5nIGlzIG5vdCB2ZXJ5IGhhcHB5IHdpdGggdGhlIG1p
+eCBvZiBPRg0KPiBwYXJzaW5nIGFuZCBkb21haW4gbnVtYmVyIGFsbG9jYXRpb24gZ29pbmcgaW4g
+dG9nZXRoZXIsIHNvIEkgbWlnaHQgcmVtb3ZlDQo+IHRoZQ0KPiBPRiBwYXJzaW5nIGVudGlyZWx5
+IGZvciBub3cuIFdvdWxkIHRoYXQgY2F1c2UgeW91IGFueSBwcm9ibGVtcyAob3RoZXIgdGhhbg0K
+PiB0aGUgZmFjdCB0aGF0IGlmIG9mX3BjaV9nZXRfZG9tYWluX25yKCkgZG9lc24ndCBkbyBhbnl0
+aGluZyBPRiByZWxhdGVkIEkNCj4gbWlnaHQNCj4gcmVuYW1lIGl0IHRvIHBjaV9nZXRfZG9tYWlu
+X25yKCkpLiBZb3UgZG9uJ3Qgc2VlbSB0byBoYXZlIGFueSBhbGlhcyBkZWZpbmVkDQo+IGZvciBw
+Y2ktZG9tYWluIGluIHRoZSBEVCwgc28gSSdsbCBndWVzcyBub3QuDQpJbiB0aGUgY292ZXJpbmcg
+bGV0dGVyIEkgbWVudGlvbmVkIHRoYXQgY29udHJvbGxlcnMgc2hvdWxkIGFsd2F5cyB1c2UgdGhl
+IHNhbWUNCmRvbWFpbiBudW1iZXIsIHNvIEkgd2FzIHBsYW5uaW5nIHRvIGFkZCBwY2ktZG9tYWlu
+IGludG8gdGhlIERUcyBsYXRlciBvbi4NCg0KVGhhbmtzDQpQaGlsDQo
