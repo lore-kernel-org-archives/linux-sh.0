@@ -1,91 +1,58 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Thu, 04 Sep 2014 14:02:28 +0000
-Subject: [PATCH v3 2/4] ARM: shmobile: Initial r8a7794 SoC support
-Message-Id: <1409839350-1245-3-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 22 Sep 2014 12:48:04 +0000
+Subject: renesas-drivers-2014-09-22-v3.17-rc6
+Message-Id: <1411390084-27308-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Initial support for the r8a7794 SoC, based on work by Hisashi Nakamura.
+I've pushed renesas-drivers-2014-09-22-v3.17-rc6 to
+https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+This tree is meant to ease development of platform support and drivers for
+Renesas ARM ("shmobile") SoCs. It's created by merging the for-next branches
+of various subsystem trees into the development branch of Simon Horman's
+renesas.git tree.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
----
- arch/arm/mach-shmobile/Kconfig         |  4 ++++
- arch/arm/mach-shmobile/Makefile        |  1 +
- arch/arm/mach-shmobile/setup-r8a7794.c | 35 ++++++++++++++++++++++++++++++++++
- 3 files changed, 40 insertions(+)
- create mode 100644 arch/arm/mach-shmobile/setup-r8a7794.c
+Today's version is based on renesas-devel-20140922-v3.17-rc6.
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index f400a8c..21f457b 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -67,6 +67,10 @@ config ARCH_R8A7791
- 	bool "R-Car M2-W (R8A77910)"
- 	select ARCH_RCAR_GEN2
- 
-+config ARCH_R8A7794
-+	bool "R-Car E2 (R8A77940)"
-+	select ARCH_RCAR_GEN2
-+
- comment "Renesas ARM SoCs Board Type"
- 
- config MACH_KOELSCH
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index f9bc4fb..e20f278 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -14,6 +14,7 @@ obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
- obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o pm-r8a7779.o
- obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o pm-r8a7790.o
- obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o pm-r8a7791.o
-+obj-$(CONFIG_ARCH_R8A7794)	+= setup-r8a7794.o
- obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o
- obj-$(CONFIG_ARCH_R7S72100)	+= setup-r7s72100.o
- 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7794.c b/arch/arm/mach-shmobile/setup-r8a7794.c
-new file mode 100644
-index 0000000..05e970c
---- /dev/null
-+++ b/arch/arm/mach-shmobile/setup-r8a7794.c
-@@ -0,0 +1,35 @@
-+/*
-+ * r8a7794 processor support
-+ *
-+ * Copyright (C) 2014  Renesas Electronics Corporation
-+ * Copyright (C) 2014  Ulrich Hecht
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
-+
-+#include <linux/of_platform.h>
-+#include "common.h"
-+#include "rcar-gen2.h"
-+#include <asm/mach/arch.h>
-+
-+#ifdef CONFIG_USE_OF
-+
-+static const char * const r8a7794_boards_compat_dt[] __initconst = {
-+	"renesas,r8a7794",
-+	NULL,
-+};
-+
-+DT_MACHINE_START(R8A7794_DT, "Generic R8A7794 (Flattened Device Tree)")
-+	.init_early	= shmobile_init_delay,
-+	.init_late	= shmobile_init_late,
-+	.init_time	= rcar_gen2_timer_init,
-+	.dt_compat	= r8a7794_boards_compat_dt,
-+MACHINE_END
-+#endif /* CONFIG_USE_OF */
--- 
-1.8.4.5
+Included subsystem trees:
+    git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
+    git://git.linaro.org/people/mturquette/linux.git#clk-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
+    git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
+    git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
+    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
+    git://gitorious.org/linux-can/linux-can-next.git#master
+    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
+    git://people.freedesktop.org/~airlied/linux#drm-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
+    git://linuxtv.org/mchehab/media-next.git#master
+    git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
+    git://git.linaro.org/people/ulf.hansson/mmc.git#next
+    git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
+    git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
+    git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
+    git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
+    git://git.infradead.org/users/vkoul/slave-dma.git#next
+    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
+    git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
+    git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
+    git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
