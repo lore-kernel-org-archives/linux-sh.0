@@ -1,44 +1,20 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Wed, 03 Sep 2014 10:52:31 +0000
-Subject: [PATCH 15/15] PM / Domains: Keep declaration of dev_power_governors together
-Message-Id: <1409741551-16437-16-git-send-email-ulf.hansson@linaro.org>
+From: "Benjamin Siaka" <siajaka@gmail.com>
+Date: Mon, 22 Sep 2014 01:14:57 +0000
+Subject: HOW ARE YOU?
+Message-Id: <20140922011508.1A0703AE86A8@studentsvm0.itb.ac.id>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
-In-Reply-To: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This is a pure code cleanup in the header file for the PM domain. No
-functional change.
+Hello my Dear,
 
-Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
----
- include/linux/pm_domain.h | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+I will greatly appreciate my correspondence meets you in good health condition.
 
-diff --git a/include/linux/pm_domain.h b/include/linux/pm_domain.h
-index ebf52ae..324b927 100644
---- a/include/linux/pm_domain.h
-+++ b/include/linux/pm_domain.h
-@@ -117,8 +117,6 @@ static inline struct generic_pm_domain_data *dev_gpd_data(struct device *dev)
- 	return to_gpd_data(dev->power.subsys_data->domain_data);
- }
- 
--extern struct dev_power_governor simple_qos_governor;
--
- extern struct generic_pm_domain *dev_to_genpd(struct device *dev);
- extern int __pm_genpd_add_device(struct generic_pm_domain *genpd,
- 				 struct device *dev,
-@@ -151,6 +149,7 @@ extern void pm_genpd_init(struct generic_pm_domain *genpd,
- extern int pm_genpd_poweron(struct generic_pm_domain *genpd);
- extern int pm_genpd_name_poweron(const char *domain_name);
- 
-+extern struct dev_power_governor simple_qos_governor;
- extern struct dev_power_governor pm_domain_always_on_gov;
- #else
- 
--- 
-1.9.1
+My name is Mr. Benjamin Siaka. I am seeking for your co-operation for investment partnership in your Country. I shall provide the FUND for the investment. When you acknowledged the receipt of this correspondence, thereafter I will give you the Full Details of my investment proposal.
 
+I await your response in earliest.
+
+My regards,
+Mr. Benjamin Siaka.
