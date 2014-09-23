@@ -1,53 +1,49 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 02 Sep 2014 22:18:58 +0000
-Subject: Re: [PATCH 08/11] i2c: rcar: remove spinlock
-Message-Id: <20140902221858.GA1267@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="PEIAKu/WMn1b1Hv9"
+From: Paul Bolle <pebolle@tiscali.nl>
+Date: Tue, 23 Sep 2014 08:08:50 +0000
+Subject: [PATCH] ARM: shmobile: Remove ARCH_HAS_OPP completely
+Message-Id: <1411459730.20236.6.camel@x220>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401263086-13720-1-git-send-email-wsa@the-dreams.de>
- <1401263086-13720-9-git-send-email-wsa@the-dreams.de>
- <53F7D83A.5030903@cogentembedded.com>
- <5406404A.7090509@cogentembedded.com>
-In-Reply-To: <5406404A.7090509-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
-To: Sergei Shtylyov <sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
-Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+References: <1406551632.5397.17.camel@x220> <1410511111.31130.4.camel@x220>
+ <20140916000916.GD9847@verge.net.au> <20140916002333.GI9847@verge.net.au>
+In-Reply-To: <20140916002333.GI9847@verge.net.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+The Kconfig symbol ARCH_HAS_OPP became redundant in v3.16: commit
+049d595a4db3 ("PM / OPP: Make OPP invisible to users in Kconfig")
+removed the only dependency that used it. Setting it had no effect
+anymore.
 
---PEIAKu/WMn1b1Hv9
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+So commit 78c5e0bb145d ("PM / OPP: Remove ARCH_HAS_OPP") removed it. For
+some reason that commit did not remove all select statements for that
+symbol. These statements are now useless. Remove one from shmobile too.
 
+Signed-off-by: Paul Bolle <pebolle@tiscali.nl>
+---
+Sent previously as part of the treewide patch "PM / OPP: Remove
+ARCH_HAS_OPP completely". But it turns out the changes for omap2 are
+already queued in omap-for-v3.18/soc (but not in linux-next!). Besides,
+Simon Horman wanted the shmobile change split off.
 
->    After looking at the code, it looks like it was a false alarm on my side.
-> The I2C interrupts are disabled here and other threads should be locked out
-> by the I2C core locks. So it doesn't make sense to hold IRQs disabled during
-> a possibly long polling loop in rcar_i2c_bus_barrier(). So I'll just repost
-> the revert patch (if still needed).
+Done on top of next-20140922. Tested by grepping the tree. 
 
-Nope. Thanks for looking into it.
+ arch/arm/mach-shmobile/Kconfig | 1 -
+ 1 file changed, 1 deletion(-)
 
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 21f457b56c01..f59019dd986e 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -36,7 +36,6 @@ menuconfig ARCH_SHMOBILE_MULTI
+ 	select NO_IOPORT_MAP
+ 	select PINCTRL
+ 	select ARCH_REQUIRE_GPIOLIB
+-	select ARCH_HAS_OPP
+ 
+ if ARCH_SHMOBILE_MULTI
+ 
+-- 
+1.9.3
 
---PEIAKu/WMn1b1Hv9
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJUBkJSAAoJEBQN5MwUoCm227cP/jOC6o1z4waCZRIqCPSC9dq+
-sXDtcJV51rRD9twDNselSXa+shVKEv64r5aIJs4jso4Ts2Vu/zdcBifgfHFoTABe
-4ndruPa4gYtPu0dbrNewOpcleZGTl6CqLW+InjodHlG17jC2j7PzOBEVrmCjEDin
-oySMeBQYjsIl7y/qyqOS4vY9yZsrvWMLFAkFflGRxrXyvVl1vrj22b1ivrymM+p3
-nXSbP9PrFK3cUbusuMdfIcV0mKVuMm0AJZURxm0RTBF7jb2pgjSa35eajx/XZPYd
-M2xX0J8uvNCBID8ut2iV1mM9i3tOgjynRe3plZSgPu3TlSdYwLkm+pSkM3tY9BAO
-4ArnIa2DrmRRye+45M3lCbjQJbfFNccOv0zQGYHKXLPiaUpWC7FVmJnWl8dqXDd5
-M7zsoruqJLe9RiRZoPhdQwshtbk+8HW31+/cz/gaByDhaQQBWODVlscUx8n3aHmB
-n5RCmDJCdeOxY+FvBB3CDvyLSGzwgGLf3kCCm8+YuSE6yqgEy0JnKqaPZBmHLJu7
-VERF442EGHtKbLzcgiRkd/UffLmWArtKquPTQTAHh9ZvmX/6ezSpgtbz5NzARxae
-oDuu+YNpBlkXaLMxy6peWXGIPIVFLt0UDqsNeixImannE5N4U01AgsgN76ZJR6e3
-c3tXDgb/ynLGgYlGZMHk
-=lIZu
------END PGP SIGNATURE-----
-
---PEIAKu/WMn1b1Hv9--
