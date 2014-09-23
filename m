@@ -1,110 +1,54 @@
-From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
-Date: Fri, 26 Sep 2014 02:40:06 +0000
-Subject: [PATCH RFC 3/7] ARM: shmobile: Implement L2 shutdown mode for Suspend-to-RAM
-Message-Id: <5424D206.1010405@renesas.com>
+From: Michal Marek <mmarek@suse.cz>
+Date: Tue, 23 Sep 2014 15:44:03 +0000
+Subject: [PATCH 4/5] sh: Set CONFIG_NET=y in defconfigs
+Message-Id: <1411487044-14071-4-git-send-email-mmarek@suse.cz>
 List-Id: <linux-sh.vger.kernel.org>
+References: <54218AEF.5090200@suse.cz>
+ <1411487044-14071-1-git-send-email-mmarek@suse.cz>
+In-Reply-To: <1411487044-14071-1-git-send-email-mmarek@suse.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: sfr@canb.auug.org.au, rdunlap@infradead.org, davem@davemloft.net
+Cc: netdev@vger.kernel.org, linux-next@vger.kernel.org, linux-kernel@vger.kernel.org, linux-kbuild@vger.kernel.org, linux-sh@vger.kernel.org
 
-From now on, Suspend to RAM will enter L2 shutdown mode,
-instead of Core Standby mode.
+Commit 5d6be6a5 ("scsi_netlink : Make SCSI_NETLINK dependent on NET
+instead of selecting NET") removed what happened to be the only instance
+of 'select NET'. Defconfigs that were relying on the select now lack
+networking support.
 
-Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+Reported-by: Stephen Rothwell <sfr@canb.auug.org.au>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Michal Marek <mmarek@suse.cz>
 ---
- arch/arm/mach-shmobile/common.h       |    2 ++
- arch/arm/mach-shmobile/headsmp.S      |    9 +++++++++
- arch/arm/mach-shmobile/platsmp-apmu.c |   16 ++++++++++++++--
- 3 files changed, 25 insertions(+), 2 deletions(-)
+ arch/sh/configs/sdk7780_defconfig | 1 +
+ arch/sh/configs/sh2007_defconfig  | 1 +
+ 2 files changed, 2 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
-index 0f08656..361bb3f 100644
---- a/arch/arm/mach-shmobile/common.h
-+++ b/arch/arm/mach-shmobile/common.h
-@@ -53,6 +53,8 @@ static inline int shmobile_cpufreq_init(void) { return 0; }
- #endif
- 
- extern void __iomem *shmobile_scu_base;
-+extern phys_addr_t cpu_resume_phys_addr;
-+extern void rcar_cpu_resume(void);
- 
- static inline void __init shmobile_init_late(void)
- {
-diff --git a/arch/arm/mach-shmobile/headsmp.S b/arch/arm/mach-shmobile/headsmp.S
-index 50c4915..800b53d 100644
---- a/arch/arm/mach-shmobile/headsmp.S
-+++ b/arch/arm/mach-shmobile/headsmp.S
-@@ -23,6 +23,15 @@ ENTRY(shmobile_invalidate_start)
- ENDPROC(shmobile_invalidate_start)
- #endif
- 
-+ENTRY(rcar_cpu_resume)
-+	bl	v7_invalidate_l1
-+	ldr     pc, 1f
-+ENDPROC(rcar_cpu_resume)
-+
-+	.globl	cpu_resume_phys_addr
-+cpu_resume_phys_addr:
-+1:	.space	4
-+
- /*
-  * Reset vector for secondary CPUs.
-  * This will be mapped at address 0 by SBAR register.
-diff --git a/arch/arm/mach-shmobile/platsmp-apmu.c b/arch/arm/mach-shmobile/platsmp-apmu.c
-index f6e4f0b..fb6d3e5 100644
---- a/arch/arm/mach-shmobile/platsmp-apmu.c
-+++ b/arch/arm/mach-shmobile/platsmp-apmu.c
-@@ -34,6 +34,9 @@ static struct {
- #define WUPCR_OFFS 0x10
- #define PSTR_OFFS 0x40
- #define CPUNCR_OFFS(n) (0x100 + (0x10 * (n)))
-+#define CPUCMCR 0xe6154184
-+
-+void __iomem *cpucmcr;
- 
- static int __maybe_unused apmu_power_on(void __iomem *p, int bit)
- {
-@@ -133,6 +136,9 @@ static void apmu_parse_cfg(void (*fn)(struct resource *res, int cpu, int bit))
- 
- void __init shmobile_smp_apmu_prepare_cpus(unsigned int max_cpus)
- {
-+	/* pass physical address of cpu_resume() to assembly resume code */
-+	cpu_resume_phys_addr = virt_to_phys(cpu_resume);
-+
- 	/* install boot code shared by all CPUs */
- 	shmobile_boot_fn = virt_to_phys(shmobile_smp_boot);
- 	shmobile_boot_arg = MPIDR_HWID_BITMASK;
-@@ -207,7 +213,7 @@ int shmobile_smp_apmu_cpu_kill(unsigned int cpu)
- static int shmobile_smp_apmu_do_suspend(unsigned long cpu)
- {
- 	shmobile_smp_apmu_cpu_shutdown(cpu);
--	cpu_do_idle(); /* WFI selects Core Standby */
-+	cpu_do_idle();
- 	return 1;
- }
- #endif
-@@ -222,14 +228,20 @@ static int shmobile_smp_apmu_enter_suspend(suspend_state_t state)
- 	 */
- 	gic_cpu_if_down();
- 
--	shmobile_smp_hook(smp_processor_id(), virt_to_phys(cpu_resume), 0);
-+	writel_relaxed(0x2, cpucmcr);
-+
-+	shmobile_smp_hook(smp_processor_id(), virt_to_phys(rcar_cpu_resume), 0);
- 	cpu_suspend(smp_processor_id(), shmobile_smp_apmu_do_suspend);
- 	cpu_leave_lowpower();
-+
-+	writel_relaxed(0x0, cpucmcr);
-+
- 	return 0;
- }
- 
- void __init shmobile_smp_apmu_suspend_init(void)
- {
-+	cpucmcr = ioremap_nocache(CPUCMCR, 0x4);
- 	shmobile_suspend_ops.enter = shmobile_smp_apmu_enter_suspend;
- }
- #endif
+diff --git a/arch/sh/configs/sdk7780_defconfig b/arch/sh/configs/sdk7780_defconfig
+index 6a96b9a..bbd4c22 100644
+--- a/arch/sh/configs/sdk7780_defconfig
++++ b/arch/sh/configs/sdk7780_defconfig
+@@ -30,6 +30,7 @@ CONFIG_PCI_DEBUG=y
+ CONFIG_PCCARD=y
+ CONFIG_YENTA=y
+ CONFIG_HOTPLUG_PCI=y
++CONFIG_NET=y
+ CONFIG_PACKET=y
+ CONFIG_UNIX=y
+ CONFIG_INET=y
+diff --git a/arch/sh/configs/sh2007_defconfig b/arch/sh/configs/sh2007_defconfig
+index e741b1e..df25ae7 100644
+--- a/arch/sh/configs/sh2007_defconfig
++++ b/arch/sh/configs/sh2007_defconfig
+@@ -25,6 +25,7 @@ CONFIG_CMDLINE_OVERWRITE=y
+ CONFIG_CMDLINE="console=ttySC1,115200 ip=dhcp root=/dev/nfs rw nfsroot=/nfs/rootfs,rsize24,wsize24 earlyprintk=sh-sci.1"
+ CONFIG_PCCARD=y
+ CONFIG_BINFMT_MISC=y
++CONFIG_NET=y
+ CONFIG_PACKET=y
+ CONFIG_UNIX=y
+ CONFIG_XFRM_USER=y
 -- 
-1.7.9.5
+1.8.4.5
+
