@@ -1,78 +1,131 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Tue, 23 Sep 2014 11:00:41 +0000
-Subject: RE: [PATCH 0/3] Add PCI domain support to R-Car drivers
-Message-Id: <99f5c020d74b465384e42ef2c883a479@HKXPR06MB168.apcprd06.prod.outlook.com>
+From: Liviu Dudau <Liviu.Dudau@arm.com>
+Date: Tue, 23 Sep 2014 11:10:00 +0000
+Subject: Re: [PATCH 0/3] Add PCI domain support to R-Car drivers
+Message-Id: <20140923111000.GQ1994@e106497-lin.cambridge.arm.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1411379470-20639-1-git-send-email-phil.edworthy@renesas.com>
  <20140922210038.GJ1880@google.com>
  <84672882bcaa4730aae409f092bcbcfb@HKXPR06MB168.apcprd06.prod.outlook.com>
  <20140923103224.GO1994@e106497-lin.cambridge.arm.com>
-In-Reply-To: <20140923103224.GO1994@e106497-lin.cambridge.arm.com>
+ <99f5c020d74b465384e42ef2c883a479@HKXPR06MB168.apcprd06.prod.outlook.com>
+In-Reply-To: <99f5c020d74b465384e42ef2c883a479@HKXPR06MB168.apcprd06.prod.outlook.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 To: linux-arm-kernel@lists.infradead.org
 
-SGkgTGl2aXUsDQoNCk9uIDIzIFNlcHRlbWJlciAyMDE0IDExOjMyLCBMaXZpdSB3cm90ZToNCj4g
-T24gVHVlLCBTZXAgMjMsIDIwMTQgYXQgMTE6MTA6MjlBTSArMDEwMCwgUGhpbCBFZHdvcnRoeSB3
-cm90ZToNCj4gPiBIaSBCam9ybiwNCj4gPg0KPiA+IE9uIDIyIFNlcHRlbWJlciAyMDE0IDIyOjAx
-LCBCam9ybiB3cm90ZToNCj4gPiA+IE9uIE1vbiwgU2VwIDIyLCAyMDE0IGF0IDEwOjUxOjA3QU0g
-KzAxMDAsIFBoaWwgRWR3b3J0aHkgd3JvdGU6DQo+ID4gPiA+IFRoZSBSZW5lc2FzIFItQ2FyIGRl
-dmljZXMgKHI4YTc3OTAgYW5kIHI4YTc3OTEpIHVzZSB0d28gUENJIGNvbnRyb2xsZXINCj4gPiA+
-IGRyaXZlcnMsDQo+ID4gPiA+IG9uZSBmb3IgYW4gZXh0ZXJuYWwgUENJZSBzbG90LCB0aGUgb3Ro
-ZXIgZm9yIGFuIGludGVybmFsIFBDSSBicmlkZ2UgdG8gVVNCDQo+ID4gPiA+IGNvbnRyb2xsZXJz
-Lg0KPiA+ID4gPg0KPiA+ID4gPiBIb3dldmVyLCB0aGV5IGN1cnJlbnRseSBkbyBub3Qgd29yayBh
-dCB0aGUgc2FtZSB0aW1lIGFzIHRoZXkgdXNlIHRoZQ0KPiA+ID4gc2FtZSBQQ0kNCj4gPiA+ID4g
-ZG9tYWluIGFuZCB1c2UgdGhlIHNhbWUgcm9vdCBidXMgbnVtYmVyLiBXZSBjYW4ndCB1c2UgZGlm
-ZmVyZW50IHJvb3QNCj4gPiA+IGJ1cyBudW1iZXJzDQo+ID4gPiA+IGR1ZSB0byB0aGUgd2F5IHJv
-b3QgYnVzIG51bWJlcnMgYXJlIGFzc2lnbmVkIGluIHBjaWJpb3NfaW5pdF9odygpIGluDQo+ID4g
-PiA+IGFyY2gvYXJtL2tlcm5lbC9iaW9zMzIuYy4NCj4gPiA+ID4NCj4gPiA+ID4gU2luY2UgdGhl
-IHR3byBQQ0kgY29udHJvbGxlcnMgYXJlIGNvbXBsZXRlbHkgaW5kZXBlbmRlbnQsIEkgdGhpbmsg
-aXQgbWFrZXMNCj4gPiA+IHNlbnNlDQo+ID4gPiA+IHRvIHVzZSBkaWZmZXJlbnQgUENJIGRvbWFp
-bnMgZm9yIHRoZW0uDQo+ID4gPiA+DQo+ID4gPiA+IEkndmUgbWFya2VkIHRoZSB0aGlyZCBwYXRj
-aCBhcyBSRkMgYXMgSSBhbSBub3Qgc3VyZSBvZiB0aGUgaW1wYWN0IG9mDQo+ID4gPiBlbmFibGlu
-Zw0KPiA+ID4gPiBQQ0kgZG9tYWlucyBmb3IgYWxsIEFSTSBkZXZpY2VzLiBJbiB0aGUgbWFyY2gg
-dG8gJ29uZSBrZXJuZWwgdG8gcnVsZSB0aGVtDQo+ID4gPiBhbGwnLA0KPiA+ID4gPiBJIHN0ZWVy
-ZWQgY2xlYXIgb2YgbWFjaCBzcGVjaWZpYyBjaGFuZ2VzLg0KPiA+ID4gPg0KPiA+ID4gPiBUaGVz
-ZSBwYXRjaGVzIHJlcXVpcmUgdGhlIGZvbGxvd2luZyBwYXRjaCBmcm9tIExpdml1IER1ZGF1Og0K
-PiA+ID4gPiAgIFtQQVRDSCB2MTEgMDcvMTBdIE9GOiBJbnRyb2R1Y2UgaGVscGVyIGZ1bmN0aW9u
-IGZvciBnZXR0aW5nIFBDSQ0KPiA+ID4gZG9tYWluX25yDQo+ID4gPiA+IEJhc2VkIG9uIGNvbW1l
-bnRzIG9uIHRoaXMgcGF0Y2ggZnJvbSBKYXNvbiBHdW50aG9ycGUsIHRoZXJlIGlzIHN0aWxsIHRo
-ZQ0KPiA+ID4gaXNzdWUNCj4gPiA+ID4gdGhhdCB0aGUgZG9tYWluIG51bWJlcnMgbWF5IGNoYW5n
-ZSBkZXBlbmRpbmcgb24gdGhlIG9yZGVyaW5nIGF0IHByb2JlDQo+ID4gPiB0aW1lLg0KPiA+ID4g
-PiBIb3dldmVyLCB0aGlzIGNhbiBiZSBmaXhlZCBsYXRlciBvbiBieSBhZGRpbmcgdGhlIGVudHJp
-ZXMgaW4gdGhlIERUIGZpbGVzLg0KPiA+ID4gPg0KPiA+ID4gPg0KPiA+ID4gPiBQaGlsIEVkd29y
-dGh5ICgzKToNCj4gPiA+ID4gICBQQ0k6IHJjYXItcGNpZTogQWRkIGNhbGwgdG8gZ2V0IGRvbWFp
-biBucg0KPiA+ID4gPiAgIFBDSTogcmNhci1pbnRlcm5hbC1wY2k6IEFkZCBjYWxsIHRvIGdldCBk
-b21haW4gbnINCj4gPiA+ID4gICBBUk06IEVuYWJsZSBQQ0kgZG9tYWlucw0KPiA+ID4NCj4gPiA+
-IEknbSBkZWZlcnJpbmcgdGhlc2UgZm9yIG5vdyBiZWNhdXNlIHRoZXkgZGVwZW5kIG9uIExpdml1
-J3Mgd29yaywgd2hpY2ggSQ0KPiA+ID4gaGF2ZW4ndCBtZXJnZWQgeWV0LCBhbmQgSSBzdXNwZWN0
-IHNvbWUgbWlub3IgYWRhcHRhdGlvbiB3aWxsIGJlIHJlcXVpcmVkDQo+ID4gPiBoZXJlLg0KPiA+
-ID4NCj4gPiA+IEZvciB3aGF0IGl0J3Mgd29ydGgsIEkgYWdyZWUgd2l0aCBSb2IncyBoZXNpdGF0
-aW9uIGFib3V0IG1peGluZyBsb29rdXAgd2l0aA0KPiA+ID4gZG9tYWluIG51bWJlciBhbGxvY2F0
-aW9uIGluIG9mX3BjaV9nZXRfZG9tYWluX25yKCkuICBUaGF0IHNlZW1zDQo+ID4gPiB1bm5lY2Vz
-c2FyaWx5IGNvbXBsaWNhdGVkLg0KPiA+IEkgY291bGQgY3JlYXRlIHBhdGNoZXMgdG8gYWRkIGFu
-IG9wdGlvbmFsICJwY2ktZG9tYWluIiBwcm9wZXJ0eSBmb3IgdGhlIFItQ2FyDQo+ID4gUENJIGRy
-aXZlcnMsIGFuZCBqdXN0IGF0dGVtcHQgdG8gZ2V0IHRoZSBwcm9wZXJ0eSBpbiB0aGUgZHJpdmVy
-cy4gSWYgbm90IGZvdW5kLA0KPiA+IHRoZSBkcml2ZXJzIHdpbGwgYXNzdW1lIHRoZSBkb21haW4g
-aXMgMC4NCj4gPg0KPiA+IFdlIHdvdWxkIHRoZW4gaGF2ZSBmaXhlZCBQQ0kgZG9tYWluIG51bWJl
-cmluZyBhbmQgSSBkb24ndCBoYXZlIHRvIHdvcnJ5IGFib3V0DQo+ID4gTGl2aXUncyB3b3JrLg0K
-PiANCj4gSSB3aWxsIHNwbGl0IHRoZSBjdXJyZW50IG9mX3BjaV9nZXRfZG9tYWluX25yKCkgZXZl
-biBmdXJ0aGVyIGFuZCByZXBsYWNlIGl0IHdpdGgNCj4gdHdvIGZ1bmN0aW9uczogcGNpX2dldF9k
-b21haW5fbnIoKSB3aGljaCB3aWxsIGRvIGp1c3QgdGhlIGFsbG9jYXRpb24gKHN0aWxsIGJhc2Vk
-DQo+IG9uIHRoZSBib29sZWFuIGZsYWcgcGFzc2VkIGFzIHBhcmFtZXRlcikgYW5kIG9mX2dldF9w
-Y2lfZG9tYWluX25yKCkgdGhhdCB3aWxsDQo+IHJldHJpZXZlIGEgImxpbnV4LHBjaS1kb21haW4i
-IHZhbHVlIGZyb20gYSBwcm9wZXJ0eSBiZWxvbmdpbmcgdG8gYSBnaXZlbiBkZXZpY2UNCj4gbm9k
-ZS4NClRoaXMgZG9lc24ndCBzb2x2ZSB0aGUgcHJvYmxlbSBvZiBkaWZmZXJlbnQgZG9tYWluIG51
-bWJlcnMgYmFzZWQgb24gZGlmZmVyZW50DQpwcm9iZSBvcmRlcmluZy4gSWYgeW91IGhhdmUgbXVs
-dGlwbGUgZG9tYWlucyB0aGVuIEkgdGhpbmsgeW91IG11c3QgaGF2ZSB0aGUNCiJsaW51eCxwY2kt
-ZG9tYWluIiBwcm9wZXJ0eSBmb3IgZWFjaCBjb250cm9sbGVyLg0KDQpJZiB3ZSBhc3N1bWUgdGhl
-IGFib3ZlLCBvZl9nZXRfcGNpX2RvbWFpbl9ucigpIGNhbiBqdXN0IHJldHVybiBhIGJ1cyBudW1i
-ZXIgb2YNCjAgaWYgdGhlICJsaW51eCxwY2ktZG9tYWluIiBwcm9wZXJ0eSBkb2Vzbid0IGV4aXN0
-Lg0KDQpJIHN1cHBvc2UgeW91IGNvdWxkIGhhdmUgYSB0ZW1wb3Jhcnkgc29sdXRpb24gdGhhdCBh
-bGxvY2F0ZXMgdGhlIGRvbWFpbiBudW1iZXJzDQp1bnRpbCB0aGUgbmVjZXNzYXJ5IGRyaXZlcnMg
-aGF2ZSBiZWVuIHVwZGF0ZWQuDQoNCj4gSSBwbGFuIHRvIGxlYXZlIGZvciB0aGUgbW9tZW50IHRo
-ZSBjaGVjayBmb3IgbWFuZGF0b3J5IHByZXNlbmNlIG9mDQo+ICJsaW51eCxwY2ktZG9tYWluIg0K
-PiB0byB0aGUgaG9zdCBicmlkZ2UgZHJpdmVyIHNvIHRoYXQgZXZlcnlvbmUgY2FuIGltcGxlbWVu
-dCB0aGVpciBvd24gcG9saWNpZXMuDQo+IA0KPiBIb3cgZG9lcyB0aGF0IHNvdW5kPw0KDQpUaGFu
-a3MNClBoaWwNCg=
+On Tue, Sep 23, 2014 at 12:00:41PM +0100, Phil Edworthy wrote:
+> Hi Liviu,
+> 
+> On 23 September 2014 11:32, Liviu wrote:
+> > On Tue, Sep 23, 2014 at 11:10:29AM +0100, Phil Edworthy wrote:
+> > > Hi Bjorn,
+> > >
+> > > On 22 September 2014 22:01, Bjorn wrote:
+> > > > On Mon, Sep 22, 2014 at 10:51:07AM +0100, Phil Edworthy wrote:
+> > > > > The Renesas R-Car devices (r8a7790 and r8a7791) use two PCI controller
+> > > > drivers,
+> > > > > one for an external PCIe slot, the other for an internal PCI bridge to USB
+> > > > > controllers.
+> > > > >
+> > > > > However, they currently do not work at the same time as they use the
+> > > > same PCI
+> > > > > domain and use the same root bus number. We can't use different root
+> > > > bus numbers
+> > > > > due to the way root bus numbers are assigned in pcibios_init_hw() in
+> > > > > arch/arm/kernel/bios32.c.
+> > > > >
+> > > > > Since the two PCI controllers are completely independent, I think it makes
+> > > > sense
+> > > > > to use different PCI domains for them.
+> > > > >
+> > > > > I've marked the third patch as RFC as I am not sure of the impact of
+> > > > enabling
+> > > > > PCI domains for all ARM devices. In the march to 'one kernel to rule them
+> > > > all',
+> > > > > I steered clear of mach specific changes.
+> > > > >
+> > > > > These patches require the following patch from Liviu Dudau:
+> > > > >   [PATCH v11 07/10] OF: Introduce helper function for getting PCI
+> > > > domain_nr
+> > > > > Based on comments on this patch from Jason Gunthorpe, there is still the
+> > > > issue
+> > > > > that the domain numbers may change depending on the ordering at probe
+> > > > time.
+> > > > > However, this can be fixed later on by adding the entries in the DT files.
+> > > > >
+> > > > >
+> > > > > Phil Edworthy (3):
+> > > > >   PCI: rcar-pcie: Add call to get domain nr
+> > > > >   PCI: rcar-internal-pci: Add call to get domain nr
+> > > > >   ARM: Enable PCI domains
+> > > >
+> > > > I'm deferring these for now because they depend on Liviu's work, which I
+> > > > haven't merged yet, and I suspect some minor adaptation will be required
+> > > > here.
+> > > >
+> > > > For what it's worth, I agree with Rob's hesitation about mixing lookup with
+> > > > domain number allocation in of_pci_get_domain_nr().  That seems
+> > > > unnecessarily complicated.
+> > > I could create patches to add an optional "pci-domain" property for the R-Car
+> > > PCI drivers, and just attempt to get the property in the drivers. If not found,
+> > > the drivers will assume the domain is 0.
+> > >
+> > > We would then have fixed PCI domain numbering and I don't have to worry about
+> > > Liviu's work.
+> > 
+> > I will split the current of_pci_get_domain_nr() even further and replace it with
+> > two functions: pci_get_domain_nr() which will do just the allocation (still based
+> > on the boolean flag passed as parameter) and of_get_pci_domain_nr() that will
+> > retrieve a "linux,pci-domain" value from a property belonging to a given device
+> > node.
+> This doesn't solve the problem of different domain numbers based on different
+> probe ordering. If you have multiple domains then I think you must have the
+> "linux,pci-domain" property for each controller.
+
+Correct, but I've said I'm going to leave for the moment the check to the host controller(s).
+So if you care about ordering or mandating the presence of "linux,pci-domain" in the
+DT, please add the check in your driver.
+
+> 
+> If we assume the above, of_get_pci_domain_nr() can just return a bus number of
+> 0 if the "linux,pci-domain" property doesn't exist.
+
+You mean *domain* number of 0. But that is still a valid value and you won't be able
+to distinguish between DT providing a "linux,pci-domain" value of zero and the
+property not being present.
+
+> 
+> I suppose you could have a temporary solution that allocates the domain numbers
+> until the necessary drivers have been updated.
+
+And that is what pci_get_domain_nr() will do. If you don't care about ordering, one
+will use that one. If you care about ordering then "linux,pci-domain" is required
+and one can use of_get_pci_domain_nr() to retrieve it and fail if the information
+is missing.
+
+Does that look like a workable solution?
+
+Best regards,
+Liviu
+
+> 
+> > I plan to leave for the moment the check for mandatory presence of
+> > "linux,pci-domain"
+> > to the host bridge driver so that everyone can implement their own policies.
+> > 
+> > How does that sound?
+> 
+> Thanks
+> Phil
+
+-- 
+==========
+| I would like to |
+| fix the world,  |
+| but they're not |
+| giving me the   |
+ \ source code!  /
+  ---------------
+    ¯\_(ツ)_/¯
+
