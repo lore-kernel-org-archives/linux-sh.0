@@ -1,124 +1,72 @@
-From: Guenter Roeck <linux@roeck-us.net>
-Date: Tue, 30 Sep 2014 18:00:56 +0000
-Subject: [RFC PATCH 16/16] mfd: palmas: Register with kernel poweroff handler
-Message-Id: <1412100056-15517-17-git-send-email-linux@roeck-us.net>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Sep 2014 12:27:47 +0000
+Subject: [PATCH v2 0/9] DU DT support for Marzen, Lager and Koelsch
+Message-Id: <1411561676-9556-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
-In-Reply-To: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Register with kernel poweroff handler instead of setting pm_power_off
-directly.
+Hello,
 
-Cc: Samuel Ortiz <sameo@linux.intel.com>
-Cc: Lee Jones <lee.jones@linaro.org>
-Signed-off-by: Guenter Roeck <linux@roeck-us.net>
----
- drivers/mfd/palmas.c       | 30 +++++++++++++++++-------------
- include/linux/mfd/palmas.h |  3 +++
- 2 files changed, 20 insertions(+), 13 deletions(-)
+This patch series enable the DU device in DT for the Marzen, Lager and Koelsch
+boards (in their multiplatform implementation only).
 
-diff --git a/drivers/mfd/palmas.c b/drivers/mfd/palmas.c
-index 28cb048..e8ef345a 100644
---- a/drivers/mfd/palmas.c
-+++ b/drivers/mfd/palmas.c
-@@ -19,6 +19,7 @@
- #include <linux/i2c.h>
- #include <linux/interrupt.h>
- #include <linux/irq.h>
-+#include <linux/reboot.h>
- #include <linux/regmap.h>
- #include <linux/err.h>
- #include <linux/mfd/core.h>
-@@ -425,20 +426,18 @@ static void palmas_dt_to_pdata(struct i2c_client *i2c,
- 			"ti,system-power-controller");
- }
- 
--static struct palmas *palmas_dev;
--static void palmas_power_off(void)
-+static int palmas_power_off(struct notifier_block *this, unsigned long unused1,
-+			    void *unused2)
- {
-+	struct palmas *palmas = container_of(this, struct palmas, poweroff_nb);
- 	unsigned int addr;
- 	int ret, slave;
- 
--	if (!palmas_dev)
--		return;
--
- 	slave = PALMAS_BASE_TO_SLAVE(PALMAS_PMU_CONTROL_BASE);
- 	addr = PALMAS_BASE_TO_REG(PALMAS_PMU_CONTROL_BASE, PALMAS_DEV_CTRL);
- 
- 	ret = regmap_update_bits(
--			palmas_dev->regmap[slave],
-+			palmas->regmap[slave],
- 			addr,
- 			PALMAS_DEV_CTRL_DEV_ON,
- 			0);
-@@ -446,6 +445,8 @@ static void palmas_power_off(void)
- 	if (ret)
- 		pr_err("%s: Unable to write to DEV_CTRL_DEV_ON: %d\n",
- 				__func__, ret);
-+
-+	return NOTIFY_DONE;
- }
- 
- static unsigned int palmas_features = PALMAS_PMIC_FEATURE_SMPS10_BOOST;
-@@ -668,9 +669,15 @@ no_irq:
- 		ret = of_platform_populate(node, NULL, NULL, &i2c->dev);
- 		if (ret < 0) {
- 			goto err_irq;
--		} else if (pdata->pm_off && !pm_power_off) {
--			palmas_dev = palmas;
--			pm_power_off = palmas_power_off;
-+		} else if (pdata->pm_off) {
-+			palmas->poweroff_nb.notifier_call = palmas_power_off;
-+			palmas->poweroff_nb.priority = 128;
-+			ret = register_poweroff_handler(&palmas->poweroff_nb);
-+			if (ret) {
-+				dev_err(palmas->dev,
-+					"cannot register poweroff handler");
-+				ret = 0;
-+			}
- 		}
- 	}
- 
-@@ -698,10 +705,7 @@ static int palmas_i2c_remove(struct i2c_client *i2c)
- 			i2c_unregister_device(palmas->i2c_clients[i]);
- 	}
- 
--	if (palmas = palmas_dev) {
--		pm_power_off = NULL;
--		palmas_dev = NULL;
--	}
-+	unregister_poweroff_handler(&palmas->poweroff_nb);
- 
- 	return 0;
- }
-diff --git a/include/linux/mfd/palmas.h b/include/linux/mfd/palmas.h
-index fb0390a..4715057 100644
---- a/include/linux/mfd/palmas.h
-+++ b/include/linux/mfd/palmas.h
-@@ -18,6 +18,7 @@
- 
- #include <linux/usb/otg.h>
- #include <linux/leds.h>
-+#include <linux/notifier.h>
- #include <linux/regmap.h>
- #include <linux/regulator/driver.h>
- #include <linux/extcon.h>
-@@ -68,6 +69,8 @@ struct palmas {
- 	struct i2c_client *i2c_clients[PALMAS_NUM_CLIENTS];
- 	struct regmap *regmap[PALMAS_NUM_CLIENTS];
- 
-+	struct notifier_block poweroff_nb;
-+
- 	/* Stored chip id */
- 	int id;
- 
+Compared to v1
+
+- support for the external LVDS panel commonly used with the three boards has
+been moved to a separate file (r8a77xx-aa104xd12-panel.dtsi) that can be
+included at the end of the Marzen, Lager or Koelsch DTS
+
+- the DU DT nodes have been renamed to "display"
+
+- the s/remote/remove/ typo has been fixed in commit messages.
+
+The first three patches add the DU nodes to the SoC .dtsi files. Patch 04 adds
+the panel .dtsi. Patches 05 enables the DU device in DT for the Marzen board,
+and patches 06 to 09 perform the same operation for the Lager and Koelsch
+boards, removing the C code DU platform device in the process.
+
+Please note that HDMI output isn't supported yet, another patch set will come
+in the next few days.
+
+The patches are based on top of the DU changes from the "[PATCH 00/16] R-Car
+Display Unit DT bindings" series that will be merged in v3.18. This series is
+thus targeted at v3.19. Fast-tracking it to v3.18 is still possible if
+desired, in which case I would need to ask Dave Airlie to provide a stable
+branch with the driver changes. The clock is ticking, if anyone would like DU
+DT in v3.18, speak now or forever hold your peace.
+
+I've pushed a test branch that includes all patches to
+
+	git://linuxtv.org/pinchartl/fbdev.git drm/du/dt
+
+Laurent Pinchart (9):
+  ARM: shmobile: r8a7779: Add DU node to device tree
+  ARM: shmobile: r8a7790: Add DU node to device tree
+  ARM: shmobile: r8a7791: Add DU node to device tree
+  ARM: shmobile: dts: Add common file for AA104XD12 panel
+  ARM: shmobile: marzen: Enable DU device in DT
+  ARM: shmobile: lager-reference: Remove DU platform device
+  ARM: shmobile: lager: Enable DU device in DT
+  ARM: shmobile: koelsch-reference: Remove DU platform device
+  ARM: shmobile: koelsch: Enable DU device in DT
+
+ arch/arm/boot/dts/r8a7779-marzen.dts             | 79 +++++++++++++++++++++++
+ arch/arm/boot/dts/r8a7779.dtsi                   | 24 +++++++
+ arch/arm/boot/dts/r8a7790-lager.dts              | 51 ++++++++++++++-
+ arch/arm/boot/dts/r8a7790.dtsi                   | 39 ++++++++++++
+ arch/arm/boot/dts/r8a7791-koelsch.dts            | 16 ++++-
+ arch/arm/boot/dts/r8a7791.dtsi                   | 30 +++++++++
+ arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi   | 41 ++++++++++++
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 73 ---------------------
+ arch/arm/mach-shmobile/board-lager-reference.c   | 80 ------------------------
+ 9 files changed, 274 insertions(+), 159 deletions(-)
+ create mode 100644 arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi
+
 -- 
-1.9.1
+Regards,
+
+Laurent Pinchart
 
