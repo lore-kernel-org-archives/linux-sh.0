@@ -1,73 +1,76 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 25 Sep 2014 09:59:02 +0000
-Subject: Re: [PATCH v2 0/3] Remove Koelsch board files
-Message-Id: <3018439.7eEdlWCsM0@avalon>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Sep 2014 13:20:19 +0000
+Subject: [PATCH v3 0/9] DU DT support for Marzen, Lager and Koelsch
+Message-Id: <1411564828-30272-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410965575-21188-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1410965575-21188-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Simon,
+Hello,
 
-On Thursday 25 September 2014 09:17:18 Simon Horman wrote:
-> On Wed, Sep 24, 2014 at 03:28:54PM +0300, Laurent Pinchart wrote:
-> > On Wednesday 24 September 2014 09:33:21 Simon Horman wrote:
-> > > On Wed, Sep 17, 2014 at 05:52:52PM +0300, Laurent Pinchart wrote:
-> > > > Hello,
-> > > > 
-> > > > This patch set (also know as "look at the diffstat and fall in love -
-> > > > again") removes both the legacy and reference Koelsch board files, now
-> > > > that the Koelsch board is supported by the r8a7791 generic DT
-> > > > platform.
-> > > > 
-> > > > The patches depend on the "[PATCH 0/8] DU DT support for Marzen, Lager
-> > > > and Koelsch" series I've just posted, and are thus targeted at v3.19.
-> > > 
-> > > Wonderful, lets work on getting that dependency and this series in!
-> > 
-> > How would you like to merge the two series ? The DU driver dependency
-> > will be merged in v3.18-rc1, can you then merge "[PATCH 0/8] DU DT
-> > support for Marzen, Lager and Koelsch" (for which I've just sent a v2)
-> > and "[PATCH v2 0/3] Remove Koelsch board files" for v3.19,
-> 
-> My plan was as above.
-> 
-> > or should (part of) the first series be merged
-> > in v3.18-rc1 as well ?
-> 
-> I'm happy to consider that if you have something specific in mind.
+This patch series enable the DU device in DT for the Marzen, Lager and Koelsch
+boards (in their multiplatform implementation only).
 
-If you're fine with the above plan, there's no need to.
+Compared to v2,
 
-> > > > Changes since v1:
-> > > > 
-> > > > - Remove legacy r8a7791-koelsch.dtb line from
-> > > > arch/arm/boot/dts/Makefile
-> > > > 
-> > > > Laurent Pinchart (3):
-> > > >   ARM: mach-shmobile: koelsch: Remove legacy C board code
-> > > >   ARM: mach-shmobile: r8a7791: Remove legacy code
-> > > >   ARM: mach-shmobile: Remove the koelsch-reference board code
-> > > >  
-> > > >  arch/arm/boot/dts/Makefile                       |   1 -
-> > > >  arch/arm/configs/koelsch_defconfig               | 113 -----
-> > > >  arch/arm/configs/shmobile_defconfig              |   1 -
-> > > >  arch/arm/mach-shmobile/Kconfig                   |  19 -
-> > > >  arch/arm/mach-shmobile/Makefile                  |   3 -
-> > > >  arch/arm/mach-shmobile/Makefile.boot             |   1 -
-> > > >  arch/arm/mach-shmobile/board-koelsch-reference.c |  44 --
-> > > >  arch/arm/mach-shmobile/board-koelsch.c           | 530 --------------
-> > > >  arch/arm/mach-shmobile/clock-r8a7791.c           | 342 --------------
-> > > >  arch/arm/mach-shmobile/r8a7791.h                 |   3 -
-> > > >  arch/arm/mach-shmobile/setup-r8a7791.c           | 181 +-------
-> > > >  11 files changed, 1 insertion(+), 1237 deletions(-)
-> > > >  delete mode 100644 arch/arm/configs/koelsch_defconfig
-> > > >  delete mode 100644 arch/arm/mach-shmobile/board-koelsch-reference.c
-> > > >  delete mode 100644 arch/arm/mach-shmobile/board-koelsch.c
-> > > >  delete mode 100644 arch/arm/mach-shmobile/clock-r8a7791.c
+- the Marzen and Lager adv7123 DT nodes have been renamed to vga-encoder
+
+- the Marzen and Lager adv7123 DT nodes now correctly set the "reg" property
+in their port subnodes.
+
+Compared to v1,
+
+- support for the external LVDS panel commonly used with the three boards has
+been moved to a separate file (r8a77xx-aa104xd12-panel.dtsi) that can be
+included at the end of the Marzen, Lager or Koelsch DTS
+
+- the DU DT nodes have been renamed to "display"
+
+- the s/remote/remove/ typo has been fixed in commit messages.
+
+The first three patches add the DU nodes to the SoC .dtsi files. Patch 04 adds
+the panel .dtsi. Patches 05 enables the DU device in DT for the Marzen board,
+and patches 06 to 09 perform the same operation for the Lager and Koelsch
+boards, removing the C code DU platform device in the process.
+
+Please note that HDMI output isn't supported yet, another patch set will come
+in the next few days.
+
+The patches are based on top of the DU changes from the "[PATCH 00/16] R-Car
+Display Unit DT bindings" series that will be merged in v3.18. This series is
+thus targeted at v3.19. Fast-tracking it to v3.18 is still possible if
+desired, in which case I would need to ask Dave Airlie to provide a stable
+branch with the driver changes. The clock is ticking, if anyone would like DU
+DT in v3.18, speak now or forever hold your peace.
+
+I've pushed a test branch that includes all patches to
+
+	git://linuxtv.org/pinchartl/fbdev.git drm/du/dt
+
+Laurent Pinchart (9):
+  ARM: shmobile: r8a7779: Add DU node to device tree
+  ARM: shmobile: r8a7790: Add DU node to device tree
+  ARM: shmobile: r8a7791: Add DU node to device tree
+  ARM: shmobile: dts: Add common file for AA104XD12 panel
+  ARM: shmobile: marzen: Enable DU device in DT
+  ARM: shmobile: lager-reference: Remove DU platform device
+  ARM: shmobile: lager: Enable DU device in DT
+  ARM: shmobile: koelsch-reference: Remove DU platform device
+  ARM: shmobile: koelsch: Enable DU device in DT
+
+ arch/arm/boot/dts/r8a7779-marzen.dts             | 81 ++++++++++++++++++++++++
+ arch/arm/boot/dts/r8a7779.dtsi                   | 24 +++++++
+ arch/arm/boot/dts/r8a7790-lager.dts              | 53 +++++++++++++++-
+ arch/arm/boot/dts/r8a7790.dtsi                   | 39 ++++++++++++
+ arch/arm/boot/dts/r8a7791-koelsch.dts            | 16 ++++-
+ arch/arm/boot/dts/r8a7791.dtsi                   | 30 +++++++++
+ arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi   | 41 ++++++++++++
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 73 ---------------------
+ arch/arm/mach-shmobile/board-lager-reference.c   | 80 -----------------------
+ 9 files changed, 278 insertions(+), 159 deletions(-)
+ create mode 100644 arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi
 
 -- 
 Regards,
