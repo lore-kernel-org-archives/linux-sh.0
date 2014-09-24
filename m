@@ -1,61 +1,134 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Mon, 22 Sep 2014 09:51:08 +0000
-Subject: [PATCH 1/3] PCI: rcar-pcie: Add call to get domain nr
-Message-Id: <1411379470-20639-2-git-send-email-phil.edworthy@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Sep 2014 20:04:29 +0000
+Subject: [PATCH 09/12] drm: Decouple EDID parsing from I2C adapter
+Message-Id: <1411589072-28609-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411379470-20639-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1411379470-20639-1-git-send-email-phil.edworthy@renesas.com>
+References: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org, Lars-Peter Clausen <lars@metafoo.de>
 
-R-Car devices (r8a7790 and r8a7791) need to place the internal PCI and external
-PCIe controllers on separate domains so that they can work at the same time.
+From: Lars-Peter Clausen <lars@metafoo.de>
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+The drm_get_edid() function performs direct I2C accesses to read EDID
+blocks, assuming that the monitor DDC interface is directly connected to
+the I2C bus. It can't thus be used with HDMI encoders that control the
+DDC bus and expose EDID blocks through a different interface.
+
+Refactor drm_do_get_edid() to take a block read callback function
+instead of an I2C adapter, and export it for direct use by drivers.
+
+Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pci/host/pcie-rcar.c | 9 ++++++---
- 1 file changed, 6 insertions(+), 3 deletions(-)
+ drivers/gpu/drm/drm_edid.c | 26 +++++++++++++-------------
+ include/drm/drm_edid.h     |  4 ++++
+ 2 files changed, 17 insertions(+), 13 deletions(-)
 
-diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
-index 4884ee5..db74371 100644
---- a/drivers/pci/host/pcie-rcar.c
-+++ b/drivers/pci/host/pcie-rcar.c
-@@ -128,6 +128,7 @@ struct rcar_pcie {
- 	struct device		*dev;
- 	void __iomem		*base;
- 	struct resource		res[RCAR_PCI_MAX_RESOURCES];
-+	int			domain;
- 	struct resource		busn;
- 	int			root_bus_nr;
- 	struct clk		*clk;
-@@ -393,13 +394,13 @@ static void rcar_pcie_enable(struct rcar_pcie *pcie)
+diff --git a/drivers/gpu/drm/drm_edid.c b/drivers/gpu/drm/drm_edid.c
+index 1bdbfd0..c98958c 100644
+--- a/drivers/gpu/drm/drm_edid.c
++++ b/drivers/gpu/drm/drm_edid.c
+@@ -1125,9 +1125,9 @@ EXPORT_SYMBOL(drm_edid_is_valid);
+  * Return: 0 on success or -1 on failure.
+  */
+ static int
+-drm_do_probe_ddc_edid(struct i2c_adapter *adapter, unsigned char *buf,
+-		      int block, int len)
++drm_do_probe_ddc_edid(void *data, u8 *buf, unsigned int block, size_t len)
  {
- 	struct platform_device *pdev = to_platform_device(pcie->dev);
- 
-+#ifdef CONFIG_PCI_DOMAINS
-+	rcar_pci.domain = pcie->domain;
-+#endif
- 	rcar_pci.nr_controllers = 1;
- 	rcar_pci.private_data = (void **)&pcie;
- 
- 	pci_common_init_dev(&pdev->dev, &rcar_pci);
--#ifdef CONFIG_PCI_DOMAINS
--	rcar_pci.domain++;
--#endif
++	struct i2c_adapter *adapter = data;
+ 	unsigned char start = block * EDID_LENGTH;
+ 	unsigned char segment = block >> 1;
+ 	unsigned char xfers = segment ? 3 : 2;
+@@ -1184,8 +1184,9 @@ static bool drm_edid_is_zero(u8 *in_edid, int length)
+ 	return true;
  }
  
- static int phy_wait_for_ack(struct rcar_pcie *pcie)
-@@ -917,6 +918,8 @@ static int rcar_pcie_probe(struct platform_device *pdev)
- 	pcie->dev = &pdev->dev;
- 	platform_set_drvdata(pdev, pcie);
+-static u8 *
+-drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
++struct edid *drm_do_get_edid(struct drm_connector *connector,
++	int (*get_edid_block)(void *, u8 *buf, unsigned int, size_t),
++	void *data)
+ {
+ 	int i, j = 0, valid_extensions = 0;
+ 	u8 *block, *new;
+@@ -1196,7 +1197,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
  
-+	pcie->domain = of_pci_get_domain_nr(pdev->dev.of_node, true);
+ 	/* base block fetch */
+ 	for (i = 0; i < 4; i++) {
+-		if (drm_do_probe_ddc_edid(adapter, block, 0, EDID_LENGTH))
++		if (get_edid_block(data, block, 0, EDID_LENGTH))
+ 			goto out;
+ 		if (drm_edid_block_valid(block, 0, print_bad_edid))
+ 			break;
+@@ -1210,7 +1211,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
+ 
+ 	/* if there's no extensions, we're done */
+ 	if (block[0x7e] = 0)
+-		return block;
++		return (struct edid *)block;
+ 
+ 	new = krealloc(block, (block[0x7e] + 1) * EDID_LENGTH, GFP_KERNEL);
+ 	if (!new)
+@@ -1219,7 +1220,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
+ 
+ 	for (j = 1; j <= block[0x7e]; j++) {
+ 		for (i = 0; i < 4; i++) {
+-			if (drm_do_probe_ddc_edid(adapter,
++			if (get_edid_block(data,
+ 				  block + (valid_extensions + 1) * EDID_LENGTH,
+ 				  j, EDID_LENGTH))
+ 				goto out;
+@@ -1247,7 +1248,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
+ 		block = new;
+ 	}
+ 
+-	return block;
++	return (struct edid *)block;
+ 
+ carp:
+ 	if (print_bad_edid) {
+@@ -1260,6 +1261,7 @@ out:
+ 	kfree(block);
+ 	return NULL;
+ }
++EXPORT_SYMBOL_GPL(drm_do_get_edid);
+ 
+ /**
+  * drm_probe_ddc() - probe DDC presence
+@@ -1289,12 +1291,10 @@ EXPORT_SYMBOL(drm_probe_ddc);
+ struct edid *drm_get_edid(struct drm_connector *connector,
+ 			  struct i2c_adapter *adapter)
+ {
+-	struct edid *edid = NULL;
+-
+-	if (drm_probe_ddc(adapter))
+-		edid = (struct edid *)drm_do_get_edid(connector, adapter);
++	if (!drm_probe_ddc(adapter))
++		return NULL;
+ 
+-	return edid;
++	return drm_do_get_edid(connector, drm_do_probe_ddc_edid, adapter);
+ }
+ EXPORT_SYMBOL(drm_get_edid);
+ 
+diff --git a/include/drm/drm_edid.h b/include/drm/drm_edid.h
+index b96031d..bcf05ef 100644
+--- a/include/drm/drm_edid.h
++++ b/include/drm/drm_edid.h
+@@ -279,4 +279,8 @@ int
+ drm_hdmi_vendor_infoframe_from_display_mode(struct hdmi_vendor_infoframe *frame,
+ 					    const struct drm_display_mode *mode);
+ 
++struct edid *drm_do_get_edid(struct drm_connector *connector,
++	int (*get_edid_block)(void *, u8 *buf, unsigned int, size_t),
++	void *data);
 +
- 	/* Get the bus range */
- 	if (of_pci_parse_bus_range(pdev->dev.of_node, &pcie->busn)) {
- 		dev_err(&pdev->dev, "failed to parse bus-range property\n");
+ #endif /* __DRM_EDID_H__ */
 -- 
-2.1.0
+1.8.5.5
 
