@@ -1,51 +1,92 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 04 Sep 2014 21:51:07 +0000
-Subject: Re: [PATCH] tmio_mmc_pio: prevent endless loop in tmio_mmc_set_clock()
-Message-Id: <5408DECB.6000102@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Sep 2014 12:27:54 +0000
+Subject: [PATCH v2 7/9] ARM: shmobile: lager: Enable DU device in DT
+Message-Id: <1411561676-9556-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201405040219.30018.sergei.shtylyov@cogentembedded.com>	<53AC7B06.9070501@cogentembedded.com>	<54076BAA.4030105@cogentembedded.com> <CAPDyKFoWxCiVdeqJfx1s1bOPAr-_QmfxrXBHpZfmaupD4ED_bQ@mail.gmail.com>
-In-Reply-To: <CAPDyKFoWxCiVdeqJfx1s1bOPAr-_QmfxrXBHpZfmaupD4ED_bQ@mail.gmail.com>
+References: <1397511312-4845-8-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1397511312-4845-8-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: linux-mmc <linux-mmc@vger.kernel.org>, Ian Molton <ian@mnementh.co.uk>, Linux-sh list <linux-sh@vger.kernel.org>, Chris Ball <chris@printf.net>
+To: linux-sh@vger.kernel.org
 
-Hello.
+Specify the DU output topology, enable the DU device and configure the
+related pins.
 
-On 09/04/2014 03:00 PM, Ulf Hansson wrote:
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 51 ++++++++++++++++++++++++++++++++++---
+ 1 file changed, 48 insertions(+), 3 deletions(-)
 
->>>> I've spent a couple of days with the driver just hanging due to me
->>>> forgetting
->>>> to specify the external crystal frequency, so that clk_get_rate()
->>>> returned 0
->>>> and thus the loop in tmio_mmc_set_clock() never ended. I don't think
->>>> that's an
->>>> acceptable behavior, so I suggest that the minimum frequency is checked
->>>> for 0
->>>> in tmio_mmc_host_probe().
-
->>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
->>>> ---
->>>> The patch is against Chris Ball's 'mmc.git' repo's 'master' branch.
-
->>>      I'm still not seeing this patch applied anywhere in this repo...
->>> what's
->>> the problem with it?
-
->>     Chris, Ulf, Ian, what's the issue with this patch? Do you want me to
->> rework it?
-
-> I guess it has been forgotten, sorry about that.
-
-> Please rebase it towards my mmc tree, which is the one we are using
-> currently and repost it.
-
-    It should still apply flawlessly to your tree, want me to repost it anyway?
-
-> Kind regards
-> Uffe
-
-WBR, Sergei
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 84dcafa..a036d88 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -144,6 +144,54 @@
+ 		states = <3300000 1
+ 			  1800000 0>;
+ 	};
++
++	adv7123 {
++		compatible = "adi,adv7123";
++
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		ports {
++			port@0 {
++				adv7123_in: endpoint {
++					remote-endpoint = <&du_out_rgb>;
++				};
++			};
++			port@1 {
++				adv7123_out: endpoint {
++					remote-endpoint = <&vga_in>;
++				};
++			};
++		};
++	};
++
++	vga {
++		compatible = "vga-connector";
++
++		port {
++			vga_in: endpoint {
++				remote-endpoint = <&adv7123_out>;
++			};
++		};
++	};
++};
++
++&du {
++	pinctrl-0 = <&du_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++
++	ports {
++		port@0 {
++			endpoint {
++				remote-endpoint = <&adv7123_in>;
++			};
++		};
++		port@2 {
++			lvds_connector: endpoint {
++			};
++		};
++	};
+ };
+ 
+ &extal_clk {
+@@ -151,9 +199,6 @@
+ };
+ 
+ &pfc {
+-	pinctrl-0 = <&du_pins>;
+-	pinctrl-names = "default";
+-
+ 	du_pins: du {
+ 		renesas,groups = "du_rgb666", "du_sync_1", "du_clk_out_0";
+ 		renesas,function = "du";
+-- 
+1.8.5.5
 
