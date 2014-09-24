@@ -1,82 +1,53 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Mon, 08 Sep 2014 05:30:53 +0000
-Subject: [PATCH][RFC] mmc: tmio_mmc: remove msleep(10) from tmio_mmc_clk_xxx()
-Message-Id: <87vboyof05.wl%kuninori.morimoto.gx@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Sep 2014 13:20:28 +0000
+Subject: [PATCH v3 9/9] ARM: shmobile: koelsch: Enable DU device in DT
+Message-Id: <1411564828-30272-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>
-Cc: Simon <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>, Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+To: linux-sh@vger.kernel.org
 
-From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Specify the DU output topology, enable the DU device and configure the
+related pins.
 
-Current tmio_mmc driver is calling msleep(10) in tmio_mmc_clk_xxx().
-But, it has not been documented, and will be low performance,
-especially if CONFIG_MMC_CLKGATE was enabled.
-This patch remove it
-
-[Kuninori Morimoto: tidyuped for upstreaming]
-
-Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |   14 +++-----------
- 1 file changed, 3 insertions(+), 11 deletions(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index ba45413..657c33d 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -170,33 +170,26 @@ static void tmio_mmc_set_clock(struct tmio_mmc_host *host,
- 		host->set_clk_div(host->pdev, (clk>>22) & 1);
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 51807a3..5f88108 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -211,14 +211,24 @@
+ 	};
+ };
  
- 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, clk & 0x1ff);
--	msleep(10);
- }
- 
- static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
- {
- 	/* implicit BUG_ON(!res) */
--	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG) {
-+	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG)
- 		sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0000);
--		msleep(10);
--	}
- 
- 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, ~0x0100 &
- 		sd_ctrl_read16(host, CTL_SD_CARD_CLK_CTL));
--	msleep(10);
- }
- 
- static void tmio_mmc_clk_start(struct tmio_mmc_host *host)
- {
- 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, 0x0100 |
- 		sd_ctrl_read16(host, CTL_SD_CARD_CLK_CTL));
--	msleep(10);
- 
- 	/* implicit BUG_ON(!res) */
--	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG) {
-+	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG)
- 		sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0100);
--		msleep(10);
--	}
- }
- 
- static void tmio_mmc_reset(struct tmio_mmc_host *host)
-@@ -206,11 +199,10 @@ static void tmio_mmc_reset(struct tmio_mmc_host *host)
- 	/* implicit BUG_ON(!res) */
- 	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG)
- 		sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0000);
--	msleep(10);
++&du {
++	pinctrl-0 = <&du_pins>;
++	pinctrl-names = "default";
++	status = "okay";
 +
- 	sd_ctrl_write16(host, CTL_RESET_SD, 0x0001);
- 	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG)
- 		sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0001);
--	msleep(10);
- }
++	ports {
++		port@1 {
++			lvds_connector: endpoint {
++			};
++		};
++	};
++};
++
+ &extal_clk {
+ 	clock-frequency = <20000000>;
+ };
  
- static void tmio_mmc_reset_work(struct work_struct *work)
+ &pfc {
+-	pinctrl-0 = <&du_pins>;
+-	pinctrl-names = "default";
+-
+ 	i2c2_pins: i2c2 {
+ 		renesas,groups = "i2c2";
+ 		renesas,function = "i2c2";
 -- 
-1.7.9.5
+1.8.5.5
 
