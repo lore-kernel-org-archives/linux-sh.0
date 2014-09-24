@@ -1,60 +1,130 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Wed, 03 Sep 2014 10:52:22 +0000
-Subject: [PATCH 06/15] PM / Domains: Remove dev_irq_safe from genpd config
-Message-Id: <1409741551-16437-7-git-send-email-ulf.hansson@linaro.org>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 24 Sep 2014 19:09:44 +0000
+Subject: [PATCH v6 2/2] usb: hcd: add generic PHY support
+Message-Id: <4738517.TNcWBCM3Rf@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
-In-Reply-To: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
+References: <37148636.BU5lT4M4eC@wasted.cogentembedded.com>
+In-Reply-To: <37148636.BU5lT4M4eC@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: gregkh@linuxfoundation.org, linux-usb@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, antoine.tenart@free-electrons.com, yoshihiro.shimoda.uh@renesas.com
 
-The genpd dev_irq_safe configuration somewhat overlaps with the runtime
-PM pm_runtime_irq_safe() option. Also, currently genpd don't have a
-good way to deal with these device. So, until we figured out if and how
-to support this in genpd, let's remove the option to configure it.
+Add the generic PHY support, analogous to the USB PHY support. Intended it to be
+used with the PCI EHCI/OHCI drivers and the xHCI platform driver.
 
-Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+
 ---
- drivers/base/power/domain.c | 4 ----
- include/linux/pm_domain.h   | 1 -
- 2 files changed, 5 deletions(-)
+Changes in version 5:
+- renamed the new 'gen_phy' field of 'struct usb_phy' back to 'phy';
+- resolved rejects occured due to a newly added patch.
 
-diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
-index e777609..4298a2b 100644
---- a/drivers/base/power/domain.c
-+++ b/drivers/base/power/domain.c
-@@ -615,8 +615,6 @@ static int pm_genpd_runtime_suspend(struct device *dev)
- 	if (IS_ERR(genpd))
- 		return -EINVAL;
+Changes in version 4:
+- refreshed the patch.
+
+Changes in version 3:
+- refreshed the patch.
+
+Changes in version 2:
+- renamed the new 'phy' field of 'struct usb_phy' to 'gen_phy';
+- resolved rejects due to removal of the first patch in the series.
+
+ drivers/usb/core/hcd.c  |   42 ++++++++++++++++++++++++++++++++++++++++--
+ include/linux/usb/hcd.h |    1 +
+ 2 files changed, 41 insertions(+), 2 deletions(-)
+
+Index: usb/drivers/usb/core/hcd.c
+=================================--- usb.orig/drivers/usb/core/hcd.c
++++ usb/drivers/usb/core/hcd.c
+@@ -42,6 +42,7 @@
+ #include <linux/pm_runtime.h>
+ #include <linux/types.h>
  
--	might_sleep_if(!genpd->dev_irq_safe);
--
- 	stop_ok = genpd->gov ? genpd->gov->stop_ok : NULL;
- 	if (stop_ok && !stop_ok(dev))
- 		return -EBUSY;
-@@ -661,8 +659,6 @@ static int pm_genpd_runtime_resume(struct device *dev)
- 	if (IS_ERR(genpd))
- 		return -EINVAL;
++#include <linux/phy/phy.h>
+ #include <linux/usb.h>
+ #include <linux/usb/hcd.h>
+ #include <linux/usb/phy.h>
+@@ -2645,6 +2646,29 @@ int usb_add_hcd(struct usb_hcd *hcd,
+ 		}
+ 	}
  
--	might_sleep_if(!genpd->dev_irq_safe);
--
- 	/* If power.irq_safe, the PM domain is never powered off. */
- 	if (dev->power.irq_safe)
- 		return genpd_start_dev_no_timing(genpd, dev);
-diff --git a/include/linux/pm_domain.h b/include/linux/pm_domain.h
-index fd5efc8..f2545a8 100644
---- a/include/linux/pm_domain.h
-+++ b/include/linux/pm_domain.h
-@@ -63,7 +63,6 @@ struct generic_pm_domain {
- 	unsigned int suspended_count;	/* System suspend device counter */
- 	unsigned int prepared_count;	/* Suspend counter of prepared devices */
- 	bool suspend_power_off;	/* Power status before system suspend */
--	bool dev_irq_safe;	/* Device callbacks are IRQ-safe */
- 	int (*power_off)(struct generic_pm_domain *domain);
- 	s64 power_off_latency_ns;
- 	int (*power_on)(struct generic_pm_domain *domain);
--- 
-1.9.1
++	if (IS_ENABLED(CONFIG_GENERIC_PHY)) {
++		struct phy *phy = phy_get(hcd->self.controller, "usb");
++
++		if (IS_ERR(phy)) {
++			retval = PTR_ERR(phy);
++			if (retval = -EPROBE_DEFER)
++				goto err_phy;
++		} else {
++			retval = phy_init(phy);
++			if (retval) {
++				phy_put(phy);
++				goto err_phy;
++			}
++			retval = phy_power_on(phy);
++			if (retval) {
++				phy_exit(phy);
++				phy_put(phy);
++				goto err_phy;
++			}
++			hcd->phy = phy;
++		}
++	}
++
+ 	dev_info(hcd->self.controller, "%s\n", hcd->product_desc);
+ 
+ 	/* Keep old behaviour if authorized_default is not in [0, 1]. */
+@@ -2660,7 +2684,7 @@ int usb_add_hcd(struct usb_hcd *hcd,
+ 	 */
+ 	if ((retval = hcd_buffer_create(hcd)) != 0) {
+ 		dev_dbg(hcd->self.controller, "pool alloc failed\n");
+-		goto err_remove_phy;
++		goto err_create_buf;
+ 	}
+ 
+ 	if ((retval = usb_register_bus(&hcd->self)) < 0)
+@@ -2787,7 +2811,14 @@ err_allocate_root_hub:
+ 	usb_deregister_bus(&hcd->self);
+ err_register_bus:
+ 	hcd_buffer_destroy(hcd);
+-err_remove_phy:
++err_create_buf:
++	if (IS_ENABLED(CONFIG_GENERIC_PHY) && hcd->phy) {
++		phy_power_off(hcd->phy);
++		phy_exit(hcd->phy);
++		phy_put(hcd->phy);
++		hcd->phy = NULL;
++	}
++err_phy:
+ 	if (hcd->remove_phy && hcd->usb_phy) {
+ 		usb_phy_shutdown(hcd->usb_phy);
+ 		usb_put_phy(hcd->usb_phy);
+@@ -2864,6 +2895,13 @@ void usb_remove_hcd(struct usb_hcd *hcd)
+ 
+ 	usb_deregister_bus(&hcd->self);
+ 	hcd_buffer_destroy(hcd);
++
++	if (IS_ENABLED(CONFIG_GENERIC_PHY) && hcd->phy) {
++		phy_power_off(hcd->phy);
++		phy_exit(hcd->phy);
++		phy_put(hcd->phy);
++		hcd->phy = NULL;
++	}
+ 	if (hcd->remove_phy && hcd->usb_phy) {
+ 		usb_phy_shutdown(hcd->usb_phy);
+ 		usb_put_phy(hcd->usb_phy);
+Index: usb/include/linux/usb/hcd.h
+=================================--- usb.orig/include/linux/usb/hcd.h
++++ usb/include/linux/usb/hcd.h
+@@ -107,6 +107,7 @@ struct usb_hcd {
+ 	 * other external phys should be software-transparent
+ 	 */
+ 	struct usb_phy		*usb_phy;
++	struct phy		*phy;
+ 
+ 	/* Flags that need to be manipulated atomically because they can
+ 	 * change while the host controller is running.  Always use
 
