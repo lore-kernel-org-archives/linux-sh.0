@@ -1,40 +1,96 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Tue, 02 Sep 2014 01:16:08 +0000
+Date: Wed, 24 Sep 2014 01:07:31 +0000
 Subject: Re: [PATCH] ARM: dts: Sort SHMOBILE dtbs alphabetically
-Message-Id: <20140902011608.GC12650@verge.net.au>
+Message-Id: <20140924010730.GE20233@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1409227243-25102-1-git-send-email-geert+renesas@glider.be>
  <20140829003204.GA22661@verge.net.au>
-In-Reply-To: <20140829003204.GA22661@verge.net.au>
+ <20140902011608.GC12650@verge.net.au>
+In-Reply-To: <20140902011608.GC12650@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Aug 29, 2014 at 09:32:04AM +0900, Simon Horman wrote:
-> On Thu, Aug 28, 2014 at 02:00:43PM +0200, Geert Uytterhoeven wrote:
-> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> > ---
-> > This depends on Magnus' series "[PATCH 00/05] ARM: shmobile: r8a7740 and
-> > Armadillo cleanup".
+On Tue, Sep 02, 2014 at 10:16:08AM +0900, Simon Horman wrote:
+> On Fri, Aug 29, 2014 at 09:32:04AM +0900, Simon Horman wrote:
+> > On Thu, Aug 28, 2014 at 02:00:43PM +0200, Geert Uytterhoeven wrote:
+> > > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> > > ---
+> > > This depends on Magnus' series "[PATCH 00/05] ARM: shmobile: r8a7740 and
+> > > Armadillo cleanup".
+> > 
+> > As per my response to that series:
+> > 
+> >    Thanks. I have tentatively queued this up.
+> > 
+> >    I got some push back from Olof [CCed] about putting cleanups on top of
+> >    development when sending pull-requests for v3.17. This series falls
+> >    into the same category: cleaning up board and related files on top
+> >    of changes to initialise devices using DT.
+> > 
+> >    Olof, ideally I'd like this to go into v3.18.
+> >    Let me know if you have preference to delay it.
 > 
-> As per my response to that series:
+> Hi Geert,
 > 
->    Thanks. I have tentatively queued this up.
+> I have reconsidered this and I think that it would be best to
+> defer this cleanup until v3.19. The reason for this is that
+> I believe that there are plans to both add and DTS files during
+> v3.18, which would conflict with this release cycle.
 > 
->    I got some push back from Olof [CCed] about putting cleanups on top of
->    development when sending pull-requests for v3.17. This series falls
->    into the same category: cleaning up board and related files on top
->    of changes to initialise devices using DT.
-> 
->    Olof, ideally I'd like this to go into v3.18.
->    Let me know if you have preference to delay it.
+> Please repost this patch once v3.17-rc6 has been released.
 
-Hi Geert,
+I have queued up the following for v3.19.
+I will push it to a branch that will be included in linux-next
+once v3.18-rc1 has been released.
 
-I have reconsidered this and I think that it would be best to
-defer this cleanup until v3.19. The reason for this is that
-I believe that there are plans to both add and DTS files during
-v3.18, which would conflict with this release cycle.
+There was a conflict due to the addition of r8a7794-alt.dtb after
+you posted your patch. I have resolved it as follows. Please
+let me know if I have made an error.
 
-Please repost this patch once v3.17-rc6 has been released.
+
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+
+[PATCH] ARM: dts: Sort SHMOBILE dtbs alphabetically
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+[horms+renesas@verge.net.au:  update for addition of r8a7794-alt.dtb]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 783126b..a9125b8 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -358,24 +358,24 @@ dtb-$(CONFIG_ARCH_S5PV210) += s5pv210-aquila.dtb \
+ 	s5pv210-smdkv210.dtb \
+ 	s5pv210-torbreck.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += r7s72100-genmai.dtb \
++	r8a73a4-ape6evm.dtb \
++	r8a73a4-ape6evm-reference.dtb \
+ 	r8a7740-armadillo800eva.dtb \
+ 	r8a7778-bockw.dtb \
+ 	r8a7778-bockw-reference.dtb \
+ 	r8a7779-marzen.dtb \
+-	r8a7791-koelsch.dtb \
+ 	r8a7790-lager.dtb \
++	r8a7791-koelsch.dtb \
++	sh7372-mackerel.dtb \
+ 	sh73a0-kzm9g.dtb \
+-	sh73a0-kzm9g-reference.dtb \
+-	r8a73a4-ape6evm.dtb \
+-	r8a73a4-ape6evm-reference.dtb \
+-	sh7372-mackerel.dtb
++	sh73a0-kzm9g-reference.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
+ 	r7s72100-genmai.dtb \
+ 	r8a7740-armadillo800eva.dtb \
++	r8a7779-marzen.dtb \
++	r8a7790-lager.dtb \
+ 	r8a7791-henninger.dtb \
+ 	r8a7791-koelsch.dtb \
+-	r8a7790-lager.dtb \
+-	r8a7779-marzen.dtb \
+ 	r8a7794-alt.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
+ 	socfpga_cyclone5_socdk.dtb \
