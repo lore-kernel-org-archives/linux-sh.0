@@ -1,40 +1,92 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 25 Sep 2014 16:13:23 +0000
-Subject: [PATCH 07/13] ARM: shmobile: bockw-reference dts: Add chosen/stdout-path
-Message-Id: <1411661609-4280-8-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Sep 2014 13:20:26 +0000
+Subject: [PATCH v3 7/9] ARM: shmobile: lager: Enable DU device in DT
+Message-Id: <1411564828-30272-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411661609-4280-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1411661609-4280-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-Add a stdout-path property so that automatic console selection works
-in the absence of a "console=" parameter on the kernel command line.
+Specify the DU output topology, enable the DU device and configure the
+related pins.
 
-Remove the now-superfluous "console=" parameter from chosen/bootargs.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7778-bockw-reference.dts | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7790-lager.dts | 53 ++++++++++++++++++++++++++++++++++---
+ 1 file changed, 50 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-index 3342c74c5de890b1..fba294905ff42690 100644
---- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-@@ -28,7 +28,8 @@
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 84dcafa..a5f6071 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -144,6 +144,56 @@
+ 		states = <3300000 1
+ 			  1800000 0>;
  	};
++
++	vga-encoder {
++		compatible = "adi,adv7123";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				adv7123_in: endpoint {
++					remote-endpoint = <&du_out_rgb>;
++				};
++			};
++			port@1 {
++				reg = <1>;
++				adv7123_out: endpoint {
++					remote-endpoint = <&vga_in>;
++				};
++			};
++		};
++	};
++
++	vga {
++		compatible = "vga-connector";
++
++		port {
++			vga_in: endpoint {
++				remote-endpoint = <&adv7123_out>;
++			};
++		};
++	};
++};
++
++&du {
++	pinctrl-0 = <&du_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++
++	ports {
++		port@0 {
++			endpoint {
++				remote-endpoint = <&adv7123_in>;
++			};
++		};
++		port@2 {
++			lvds_connector: endpoint {
++			};
++		};
++	};
+ };
  
- 	chosen {
--		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
-+		bootargs = "ignore_loglevel root=/dev/nfs ip=dhcp rw";
-+		stdout-path = &scif0;
- 	};
+ &extal_clk {
+@@ -151,9 +201,6 @@
+ };
  
- 	memory {
+ &pfc {
+-	pinctrl-0 = <&du_pins>;
+-	pinctrl-names = "default";
+-
+ 	du_pins: du {
+ 		renesas,groups = "du_rgb666", "du_sync_1", "du_clk_out_0";
+ 		renesas,function = "du";
 -- 
-1.9.1
+1.8.5.5
 
