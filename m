@@ -1,72 +1,56 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 11 Sep 2014 00:57:25 +0000
-Subject: [PATCH 3/5] ARM: shmobile: r8a7740: Use rmobile_add_devices_to_domains()
-Message-Id: <c839f93bf8468f4380056d0638e3cba0488bb190.1410395620.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Sep 2014 13:20:20 +0000
+Subject: [PATCH v3 1/9] ARM: shmobile: r8a7779: Add DU node to device tree
+Message-Id: <1411564828-30272-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1410395620.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1410395620.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Add the DU device with a disabled state. Boards that want to enable the
+DU need to specify the output topology
 
-Use a table and the rmobile_add_devices_to_domains() helper function to
-add all platform devices to their power domains at once, which is more
-size-efficient than calling rmobile_add_device_to_domain() explicitly
-for all devices individually.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7740.c | 26 +++++++++++++++-----------
- 1 file changed, 15 insertions(+), 11 deletions(-)
+ arch/arm/boot/dts/r8a7779.dtsi | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 3d5eaca..30df532 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -747,6 +747,19 @@ static void r8a7740_i2c_workaround(struct platform_device *pdev)
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 7cfba9a..fda814e 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -379,6 +379,30 @@
+ 		status = "disabled";
+ 	};
  
- void __init r8a7740_add_standard_devices(void)
- {
-+	static struct pm_domain_device domain_devices[] __initdata = {
-+		{ "A3SP", &scif0_device },
-+		{ "A3SP", &scif1_device },
-+		{ "A3SP", &scif2_device },
-+		{ "A3SP", &scif3_device },
-+		{ "A3SP", &scif4_device },
-+		{ "A3SP", &scif5_device },
-+		{ "A3SP", &scif6_device },
-+		{ "A3SP", &scif7_device },
-+		{ "A3SP", &scif8_device },
-+		{ "A3SP", &i2c1_device },
++	du: display@fff80000 {
++		compatible = "renesas,du-r8a7779";
++		reg = <0 0xfff80000 0 0x40000>;
++		interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7779_CLK_DU>;
++		status = "disabled";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				du_out_rgb0: endpoint {
++				};
++			};
++			port@1 {
++				reg = <1>;
++				du_out_rgb1: endpoint {
++				};
++			};
++		};
 +	};
 +
- 	/* I2C work-around */
- 	r8a7740_i2c_workaround(&i2c0_device);
- 	r8a7740_i2c_workaround(&i2c1_device);
-@@ -762,17 +775,8 @@ void __init r8a7740_add_standard_devices(void)
- 			     ARRAY_SIZE(r8a7740_late_devices));
- 
- 	/* add devices to PM domain  */
--
--	rmobile_add_device_to_domain("A3SP",	&scif0_device);
--	rmobile_add_device_to_domain("A3SP",	&scif1_device);
--	rmobile_add_device_to_domain("A3SP",	&scif2_device);
--	rmobile_add_device_to_domain("A3SP",	&scif3_device);
--	rmobile_add_device_to_domain("A3SP",	&scif4_device);
--	rmobile_add_device_to_domain("A3SP",	&scif5_device);
--	rmobile_add_device_to_domain("A3SP",	&scif6_device);
--	rmobile_add_device_to_domain("A3SP",	&scif7_device);
--	rmobile_add_device_to_domain("A3SP",	&scif8_device);
--	rmobile_add_device_to_domain("A3SP",	&i2c1_device);
-+	rmobile_add_devices_to_domains(domain_devices,
-+				       ARRAY_SIZE(domain_devices));
- }
- 
- void __init r8a7740_add_early_devices(void)
+ 	clocks {
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
 -- 
-2.0.1
+1.8.5.5
 
