@@ -1,76 +1,58 @@
-From: Xiubo Li <Li.Xiubo@freescale.com>
-Date: Mon, 01 Sep 2014 04:29:39 +0000
-Subject: [PATCHv1 5/7] ASoC: dts: r8a7740-armadillo800eva-reference: To support simple card newest style.
-Message-Id: <1409545781-20530-6-git-send-email-Li.Xiubo@freescale.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Sep 2014 20:04:24 +0000
+Subject: [PATCH 04/12] drm: rcar-du: Use for_each_endpoint_of_node()
+Message-Id: <1411589072-28609-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409545781-20530-1-git-send-email-Li.Xiubo@freescale.com>
-In-Reply-To: <1409545781-20530-1-git-send-email-Li.Xiubo@freescale.com>
+References: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: broonie@kernel.org, lgirdwood@gmail.com, perex@perex.cz, tiwai@suse.de, kuninori.morimoto.gx@renesas.com, moinejf@free.fr, andrew@lunn.ch, jsarha@ti.com, devicetree@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, alsa-devel@alsa-project.org, shawn.guo@freescale.com
-Cc: linux-kernel@vger.kernel.org, Xiubo Li <Li.Xiubo@freescale.com>
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-This patch depends on the following simple card patch:
-=ASoC: simple-card: Merge single and muti DAI link code.
+Replace the manual loop implementation with the macro to simplify the
+code.
 
-This patch merge single DAI link and muti-DAI links code together,
-and simply the simple-card driver code.
-
-And also do some other improvement:
-
-Since from the DAI format micro SND_SOC_DAIFMT_CBx_CFx, the 'CBx'
-mean Codec's bit clock is as master/slave and the 'CFx' mean Codec's
-frame clock is as master/slave.
-
-So these same DAI formats should be informed to CPU and CODE DAIs at
-the same time. For the Codec driver will set the bit clock and frame
-clock as the DAI formats said, but for the CPU driver, if the the
-bit clock or frame clock is as Codec master, so it should be set CPU
-DAI device as bit clock or frame clock as slave, and vice versa.
-
-The old code will cause confusion, and we should be clear that the
-letter 'C' here mean to Codec.
-=
-Signed-off-by: Xiubo Li <Li.Xiubo@freescale.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- .../boot/dts/r8a7740-armadillo800eva-reference.dts  | 21 +++++++++++----------
- 1 file changed, 11 insertions(+), 10 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c | 12 ++----------
+ 1 file changed, 2 insertions(+), 10 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index ee9e7d5..b83d95a 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -150,18 +150,19 @@
- 	sound {
- 		compatible = "simple-audio-card";
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+index c6a7fd6..6575681 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+@@ -299,27 +299,19 @@ static int rcar_du_encoders_init_one(struct rcar_du_device *rcdu,
+ static int rcar_du_encoders_init(struct rcar_du_device *rcdu)
+ {
+ 	struct device_node *np = rcdu->dev->of_node;
+-	struct device_node *prev = NULL;
+ 	unsigned int num_encoders = 0;
++	struct device_node *ep_node;
  
--		simple-audio-card,format = "i2s";
+ 	/*
+ 	 * Iterate over the endpoints and create one encoder for each output
+ 	 * pipeline.
+ 	 */
+-	while (1) {
+-		struct device_node *ep_node;
++	for_each_endpoint_of_node(np, ep_node) {
+ 		enum rcar_du_output output;
+ 		struct of_endpoint ep;
+ 		unsigned int i;
+ 		int ret;
+ 
+-		ep_node = of_graph_get_next_endpoint(np, prev);
+-		of_node_put(prev);
+-		prev = ep_node;
 -
--		simple-audio-card,cpu {
--			sound-dai = <&sh_fsi2 0>;
--			bitclock-inversion;
--		};
+-		if (ep_node = NULL)
+-			break;
 -
--		simple-audio-card,codec {
--			sound-dai = <&wm8978>;
-+		simple-audio-card,dai-link {
-+			format = "i2s";
- 			bitclock-master;
- 			frame-master;
--			system-clock-frequency = <12288000>;
-+
-+			cpu {
-+				sound-dai = <&sh_fsi2 0>;
-+				bitclock-inversion;
-+			};
-+			codec {
-+				sound-dai = <&wm8978>;
-+				system-clock-frequency = <12288000>;
-+			};
- 		};
- 	};
- };
+ 		ret = of_graph_parse_endpoint(ep_node, &ep);
+ 		if (ret < 0) {
+ 			of_node_put(ep_node);
 -- 
-1.8.4
+1.8.5.5
 
