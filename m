@@ -1,333 +1,418 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 25 Sep 2014 16:28:36 +0000
-Subject: [PATCH v3 09/13] ARM: shmobile: R-Mobile: Add DT support for PM domains
-Message-Id: <1411662520-22795-10-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Sep 2014 20:04:23 +0000
+Subject: [PATCH 03/12] drm: rcar-du: Remove platform data support
+Message-Id: <1411589072-28609-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
+References: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-Populate the PM domains from DT, and provide support to hook up devices
-to their respective PM domain.
+All platforms now instantiate the DU through DT, platform data support
+isn't needed anymore.
 
-The always-on power area (e.g. C5 on r8a7740) is created as a PM domain
-without software control, to allow Run-Time management of module clocks
-for hardware blocks inside this area.
-
-Power-on/off latencies are supported.
-
-Special cases like PM domains containing CPUs and the console device are
-handled by scanning the DT topology.
-
-Initialization is done from core_initcall(), as the
-"renesas,intc-irqpin" driver uses postcore_initcall().
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Working "no_console_suspend" handling depends on "[PATCH 06/13] ARM:
-shmobile: armadillo800eva dts: Add chosen/stdout-path".
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.h    | 10 ++++-
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c     |  4 +-
+ drivers/gpu/drm/rcar-du/rcar_du_drv.h     |  2 -
+ drivers/gpu/drm/rcar-du/rcar_du_encoder.c |  8 +---
+ drivers/gpu/drm/rcar-du/rcar_du_encoder.h | 10 +++--
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c     | 52 +++-------------------
+ drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c | 26 +++++------
+ drivers/gpu/drm/rcar-du/rcar_du_lvdscon.h |  2 -
+ drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h |  1 -
+ include/linux/platform_data/rcar-du.h     | 74 -------------------------------
+ 10 files changed, 38 insertions(+), 151 deletions(-)
+ delete mode 100644 include/linux/platform_data/rcar-du.h
 
-v3:
-  - Remove limitations, as fixes for the interrupt storm (A4MP) and
-    crash (D4) are available,
-  - Scan DT topology to identify special PM domains,
-  - Add dependency on chosen/stdout-path,
-v2:
-  - Fix typo "CPU is _not_ in use",
-  - Include build glue,
-  - Remove paragraph about missing functionality compared to the legacy
-    case, as it is no longer missing (runtime management of module
-    clocks, device latencies).
-
- arch/arm/mach-shmobile/Kconfig      |   3 +-
- arch/arm/mach-shmobile/pm-rmobile.c | 197 +++++++++++++++++++++++++++++++++++-
- arch/arm/mach-shmobile/pm-rmobile.h |   2 +-
- 3 files changed, 198 insertions(+), 4 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index f59019dd986e7c94..9523c88fd4b3b9bb 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -6,6 +6,7 @@ config PM_RCAR
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.h b/drivers/gpu/drm/rcar-du/rcar_du_crtc.h
+index e97ae50..984e608 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.h
+@@ -15,7 +15,6 @@
+ #define __RCAR_DU_CRTC_H__
  
- config PM_RMOBILE
- 	bool
-+	select PM_GENERIC_DOMAINS
+ #include <linux/mutex.h>
+-#include <linux/platform_data/rcar-du.h>
  
- config ARCH_RCAR_GEN1
- 	bool
-@@ -21,7 +22,7 @@ config ARCH_RCAR_GEN2
+ #include <drm/drmP.h>
+ #include <drm/drm_crtc.h>
+@@ -41,6 +40,15 @@ struct rcar_du_crtc {
  
- config ARCH_RMOBILE
- 	bool
--	select PM_RMOBILE if PM && !ARCH_SHMOBILE_MULTI
-+	select PM_RMOBILE if PM
- 	select SYS_SUPPORTS_SH_CMT
- 	select SYS_SUPPORTS_SH_TMU
+ #define to_rcar_crtc(c)	container_of(c, struct rcar_du_crtc, crtc)
  
-diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
-index 8b876fcf7d0fc2ba..b1aa0e8541feaea4 100644
---- a/arch/arm/mach-shmobile/pm-rmobile.c
-+++ b/arch/arm/mach-shmobile/pm-rmobile.c
-@@ -3,6 +3,7 @@
-  *
-  * Copyright (C) 2012  Renesas Solutions Corp.
-  * Copyright (C) 2012  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ * Copyright (C) 2014  Glider bvba
-  *
-  * based on pm-sh7372.c
-  *  Copyright (C) 2011 Magnus Damm
-@@ -13,9 +14,13 @@
-  */
- #include <linux/console.h>
- #include <linux/delay.h>
-+#include <linux/of.h>
-+#include <linux/of_address.h>
-+#include <linux/of_platform.h>
- #include <linux/platform_device.h>
- #include <linux/pm.h>
- #include <linux/pm_clock.h>
-+#include <linux/slab.h>
- #include <asm/io.h>
- #include "pm-rmobile.h"
- 
-@@ -30,8 +35,12 @@
- static int rmobile_pd_power_down(struct generic_pm_domain *genpd)
++enum rcar_du_output {
++	RCAR_DU_OUTPUT_DPAD0,
++	RCAR_DU_OUTPUT_DPAD1,
++	RCAR_DU_OUTPUT_LVDS0,
++	RCAR_DU_OUTPUT_LVDS1,
++	RCAR_DU_OUTPUT_TCON,
++	RCAR_DU_OUTPUT_MAX,
++};
++
+ int rcar_du_crtc_create(struct rcar_du_group *rgrp, unsigned int index);
+ void rcar_du_crtc_enable_vblank(struct rcar_du_crtc *rcrtc, bool enable);
+ void rcar_du_crtc_cancel_page_flip(struct rcar_du_crtc *rcrtc,
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+index d212efa..967ae8f 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+@@ -146,12 +146,11 @@ static int rcar_du_load(struct drm_device *dev, unsigned long flags)
  {
- 	struct rmobile_pm_domain *rmobile_pd = to_rmobile_pd(genpd);
--	unsigned int mask = 1 << rmobile_pd->bit_shift;
-+	unsigned int mask;
+ 	struct platform_device *pdev = dev->platformdev;
+ 	struct device_node *np = pdev->dev.of_node;
+-	struct rcar_du_platform_data *pdata = pdev->dev.platform_data;
+ 	struct rcar_du_device *rcdu;
+ 	struct resource *mem;
+ 	int ret;
  
-+	if (rmobile_pd->bit_shift = ~0)
-+		return -EBUSY;
-+
-+	mask = 1 << rmobile_pd->bit_shift;
- 	if (rmobile_pd->suspend) {
- 		int ret = rmobile_pd->suspend();
+-	if (pdata = NULL && np = NULL) {
++	if (np = NULL) {
+ 		dev_err(dev->dev, "no platform data\n");
+ 		return -ENODEV;
+ 	}
+@@ -163,7 +162,6 @@ static int rcar_du_load(struct drm_device *dev, unsigned long flags)
+ 	}
  
-@@ -61,10 +70,14 @@ static int rmobile_pd_power_down(struct generic_pm_domain *genpd)
- static int __rmobile_pd_power_up(struct rmobile_pm_domain *rmobile_pd,
- 				 bool do_resume)
+ 	rcdu->dev = &pdev->dev;
+-	rcdu->pdata = pdata;
+ 	rcdu->info = np ? of_match_device(rcar_du_of_table, rcdu->dev)->data
+ 		   : (void *)platform_get_device_id(pdev)->driver_data;
+ 	rcdu->ddev = dev;
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.h b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
+index 8e49463..0a72466 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
+@@ -15,7 +15,6 @@
+ #define __RCAR_DU_DRV_H__
+ 
+ #include <linux/kernel.h>
+-#include <linux/platform_data/rcar-du.h>
+ 
+ #include "rcar_du_crtc.h"
+ #include "rcar_du_group.h"
+@@ -67,7 +66,6 @@ struct rcar_du_device_info {
+ 
+ struct rcar_du_device {
+ 	struct device *dev;
+-	const struct rcar_du_platform_data *pdata;
+ 	const struct rcar_du_device_info *info;
+ 
+ 	void __iomem *mmio;
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
+index 7c0ec95..89ed4a9 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
+@@ -142,7 +142,6 @@ static const struct drm_encoder_funcs encoder_funcs = {
+ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
+ 			 enum rcar_du_encoder_type type,
+ 			 enum rcar_du_output output,
+-			 const struct rcar_du_encoder_data *data,
+ 			 struct device_node *np)
  {
--	unsigned int mask = 1 << rmobile_pd->bit_shift;
-+	unsigned int mask;
- 	unsigned int retry_count;
- 	int ret = 0;
+ 	struct rcar_du_encoder *renc;
+@@ -190,11 +189,8 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
+ 	drm_encoder_helper_add(&renc->encoder, &encoder_helper_funcs);
  
-+	if (rmobile_pd->bit_shift = ~0)
-+		return 0;
-+
-+	mask = 1 << rmobile_pd->bit_shift;
- 	if (__raw_readl(rmobile_pd->base + PSTR) & mask)
- 		goto out;
+ 	switch (encoder_type) {
+-	case DRM_MODE_ENCODER_LVDS: {
+-		const struct rcar_du_panel_data *pdata -			data ? &data->connector.lvds.panel : NULL;
+-		return rcar_du_lvds_connector_init(rcdu, renc, pdata, np);
+-	}
++	case DRM_MODE_ENCODER_LVDS:
++		return rcar_du_lvds_connector_init(rcdu, renc, np);
  
-@@ -130,6 +143,8 @@ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
- 	__rmobile_pd_power_up(rmobile_pd, false);
- }
+ 	case DRM_MODE_ENCODER_DAC:
+ 		return rcar_du_vga_connector_init(rcdu, renc);
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
+index bd62413..c37ed94 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
+@@ -14,13 +14,18 @@
+ #ifndef __RCAR_DU_ENCODER_H__
+ #define __RCAR_DU_ENCODER_H__
  
-+#ifdef CONFIG_ARCH_SHMOBILE_LEGACY
+-#include <linux/platform_data/rcar-du.h>
+-
+ #include <drm/drm_crtc.h>
+ 
+ struct rcar_du_device;
+ struct rcar_du_lvdsenc;
+ 
++enum rcar_du_encoder_type {
++	RCAR_DU_ENCODER_UNUSED = 0,
++	RCAR_DU_ENCODER_NONE,
++	RCAR_DU_ENCODER_VGA,
++	RCAR_DU_ENCODER_LVDS,
++};
 +
- void rmobile_init_domains(struct rmobile_pm_domain domains[], int num)
- {
- 	int j;
-@@ -162,3 +177,181 @@ void rmobile_add_devices_to_domains(struct pm_domain_device data[],
- 		rmobile_add_device_to_domain_td(data[j].domain_name,
- 						data[j].pdev, &latencies);
- }
-+
-+#else /* !CONFIG_ARCH_SHMOBILE_LEGACY */
-+
-+static int rmobile_pd_suspend_cpu(void)
-+{
-+	/*
-+	 * This domain contains the CPU core and therefore it should
-+	 * only be turned off if the CPU is not in use.
-+	 */
-+	return -EBUSY;
-+}
-+
-+static int rmobile_pd_suspend_console(void)
-+{
-+	/*
-+	 * Serial consoles make use of SCIF hardware located in this domain,
-+	 * hence keep the power domain on if "no_console_suspend" is set.
-+	 */
-+	return console_suspend_enabled ? 0 : -EBUSY;
-+}
-+
-+#define MAX_NUM_CPU_PDS		8
-+
-+static unsigned int num_cpu_pds __initdata;
-+static struct device_node *cpu_pds[MAX_NUM_CPU_PDS] __initdata;
-+static struct device_node *console_pd __initdata;
-+
-+static void __init get_special_pds(void)
-+{
-+	struct device_node *cpu, *pd;
-+	unsigned int i;
-+
-+	/* PM domains containing CPUs */
-+	for_each_node_by_type(cpu, "cpu") {
-+		pd = of_parse_phandle(cpu, "power-domains", 0);
-+		if (!pd)
-+			continue;
-+
-+		for (i = 0; i < num_cpu_pds; i++)
-+			if (pd = cpu_pds[i])
-+				break;
-+
-+		if (i < num_cpu_pds) {
-+			of_node_put(pd);
-+			continue;
-+		}
-+
-+		if (num_cpu_pds = MAX_NUM_CPU_PDS) {
-+			pr_warn("Too many CPU PM domains\n");
-+			of_node_put(pd);
-+			continue;
-+		}
-+
-+		cpu_pds[num_cpu_pds++] = pd;
-+	}
-+
-+	/* PM domain containing console */
-+	if (of_stdout)
-+		console_pd = of_parse_phandle(of_stdout, "power-domains", 0);
-+}
-+
-+static void __init put_special_pds(void)
-+{
-+	unsigned int i;
-+
-+	for (i = 0; i < num_cpu_pds; i++)
-+		of_node_put(cpu_pds[i]);
-+	of_node_put(console_pd);
-+}
-+
-+static bool __init pd_contains_cpu(const struct device_node *pd)
-+{
-+	unsigned int i;
-+
-+	for (i = 0; i < num_cpu_pds; i++)
-+		if (pd = cpu_pds[i])
-+			return true;
-+
-+	return false;
-+}
-+
-+static void __init rmobile_setup_pm_domain(struct device_node *np,
-+					   struct rmobile_pm_domain *pd)
-+{
-+	const char *name = pd->genpd.name;
-+
-+	if (pd_contains_cpu(np)) {
-+		pr_debug("PM domain %s contains CPU\n", name);
-+		pd->gov = &pm_domain_always_on_gov;
-+		pd->suspend = rmobile_pd_suspend_cpu;
-+	} else if (np = console_pd) {
-+		pr_debug("PM domain %s contains serial console\n", name);
-+		pd->gov = &pm_domain_always_on_gov;
-+		pd->suspend = rmobile_pd_suspend_console;
-+	}
-+
-+	rmobile_init_pm_domain(pd);
-+}
-+
-+static int __init rmobile_add_pm_domains(void __iomem *base,
-+					 struct device_node *parent,
-+					 struct generic_pm_domain *genpd_parent)
-+{
-+	struct device_node *np;
-+
-+	for_each_child_of_node(parent, np) {
-+		struct rmobile_pm_domain *pd;
-+		u32 idx = ~0;
-+		u32 latency;
-+
-+		if (of_property_read_u32(np, "reg", &idx)) {
-+			/* always-on domain */
-+		}
-+
-+		pd = kzalloc(sizeof(*pd), GFP_KERNEL);
-+		if (!pd)
-+			return -ENOMEM;
-+
-+		pd->genpd.name = np->name;
-+		if (!of_property_read_u32(np, "power-on-latency", &latency))
-+			pd->genpd.power_on_latency_ns = latency;
-+		if (!of_property_read_u32(np, "power-off-latency", &latency))
-+			pd->genpd.power_off_latency_ns = latency;
-+		pd->base = base;
-+		pd->bit_shift = idx;
-+
-+		rmobile_setup_pm_domain(np, pd);
-+		if (genpd_parent)
-+			pm_genpd_add_subdomain(genpd_parent, &pd->genpd);
-+		of_genpd_add_provider_simple(np, &pd->genpd);
-+
-+		rmobile_add_pm_domains(base, np, &pd->genpd);
-+	}
-+	return 0;
-+}
-+
-+static int __init rmobile_init_pm_domains(void)
-+{
-+	struct device_node *np, *pmd;
-+	bool scanned = false;
-+	void __iomem *base;
-+	int ret = 0;
-+
-+	for_each_compatible_node(np, NULL, "renesas,sysc-rmobile") {
-+		base = of_iomap(np, 0);
-+		if (!base) {
-+			pr_warn("%s cannot map reg 0\n", np->full_name);
-+			continue;
-+		}
-+
-+		pmd = of_find_node_by_name(np, "pm-domains");
-+		if (!pmd) {
-+			pr_warn("%s lacks pm-domains node\n", np->full_name);
-+			continue;
-+		}
-+
-+		if (!scanned) {
-+			/* Find PM domains containing special blocks */
-+			get_special_pds();
-+			scanned = true;
-+		}
-+
-+		ret = rmobile_add_pm_domains(base, pmd, NULL);
-+		of_node_put(pmd);
-+		if (ret) {
-+			of_node_put(np);
-+			break;
-+		}
-+	}
-+
-+	put_special_pds();
-+
-+	return ret;
-+}
-+
-+core_initcall(rmobile_init_pm_domains);
-+
-+#endif /* !CONFIG_ARCH_SHMOBILE_LEGACY */
-diff --git a/arch/arm/mach-shmobile/pm-rmobile.h b/arch/arm/mach-shmobile/pm-rmobile.h
-index 0602130bb260c31d..53219786f539fa24 100644
---- a/arch/arm/mach-shmobile/pm-rmobile.h
-+++ b/arch/arm/mach-shmobile/pm-rmobile.h
-@@ -37,7 +37,7 @@ struct pm_domain_device {
- 	struct platform_device *pdev;
+ struct rcar_du_encoder {
+ 	struct drm_encoder encoder;
+ 	enum rcar_du_output output;
+@@ -44,7 +49,6 @@ rcar_du_connector_best_encoder(struct drm_connector *connector);
+ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
+ 			 enum rcar_du_encoder_type type,
+ 			 enum rcar_du_output output,
+-			 const struct rcar_du_encoder_data *data,
+ 			 struct device_node *np);
+ 
+ #endif /* __RCAR_DU_ENCODER_H__ */
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+index 6c24ad7..c6a7fd6 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+@@ -190,43 +190,9 @@ static const struct drm_mode_config_funcs rcar_du_mode_config_funcs = {
+ 	.output_poll_changed = rcar_du_output_poll_changed,
  };
  
--#ifdef CONFIG_PM_RMOBILE
-+#if defined(CONFIG_PM_RMOBILE) && defined(CONFIG_ARCH_SHMOBILE_LEGACY)
- extern void rmobile_init_domains(struct rmobile_pm_domain domains[], int num);
- extern void rmobile_add_device_to_domain_td(const char *domain_name,
- 					    struct platform_device *pdev,
+-static int rcar_du_encoders_init_pdata(struct rcar_du_device *rcdu)
+-{
+-	unsigned int num_encoders = 0;
+-	unsigned int i;
+-	int ret;
+-
+-	for (i = 0; i < rcdu->pdata->num_encoders; ++i) {
+-		const struct rcar_du_encoder_data *pdata -			&rcdu->pdata->encoders[i];
+-		const struct rcar_du_output_routing *route -			&rcdu->info->routes[pdata->output];
+-
+-		if (pdata->type = RCAR_DU_ENCODER_UNUSED)
+-			continue;
+-
+-		if (pdata->output >= RCAR_DU_OUTPUT_MAX ||
+-		    route->possible_crtcs = 0) {
+-			dev_warn(rcdu->dev,
+-				 "encoder %u references unexisting output %u, skipping\n",
+-				 i, pdata->output);
+-			continue;
+-		}
+-
+-		ret = rcar_du_encoder_init(rcdu, pdata->type, pdata->output,
+-					   pdata, NULL);
+-		if (ret < 0)
+-			return ret;
+-
+-		num_encoders++;
+-	}
+-
+-	return num_encoders;
+-}
+-
+-static int rcar_du_encoders_init_dt_one(struct rcar_du_device *rcdu,
+-					enum rcar_du_output output,
+-					struct of_endpoint *ep)
++static int rcar_du_encoders_init_one(struct rcar_du_device *rcdu,
++				     enum rcar_du_output output,
++				     struct of_endpoint *ep)
+ {
+ 	static const struct {
+ 		const char *compatible;
+@@ -323,14 +289,14 @@ static int rcar_du_encoders_init_dt_one(struct rcar_du_device *rcdu,
+ 		connector = entity;
+ 	}
+ 
+-	ret = rcar_du_encoder_init(rcdu, enc_type, output, NULL, connector);
++	ret = rcar_du_encoder_init(rcdu, enc_type, output, connector);
+ 	of_node_put(encoder);
+ 	of_node_put(connector);
+ 
+ 	return ret < 0 ? ret : 1;
+ }
+ 
+-static int rcar_du_encoders_init_dt(struct rcar_du_device *rcdu)
++static int rcar_du_encoders_init(struct rcar_du_device *rcdu)
+ {
+ 	struct device_node *np = rcdu->dev->of_node;
+ 	struct device_node *prev = NULL;
+@@ -377,7 +343,7 @@ static int rcar_du_encoders_init_dt(struct rcar_du_device *rcdu)
+ 		}
+ 
+ 		/* Process the output pipeline. */
+-		ret = rcar_du_encoders_init_dt_one(rcdu, output, &ep);
++		ret = rcar_du_encoders_init_one(rcdu, output, &ep);
+ 		if (ret < 0) {
+ 			of_node_put(ep_node);
+ 			return ret;
+@@ -442,11 +408,7 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	if (rcdu->pdata)
+-		ret = rcar_du_encoders_init_pdata(rcdu);
+-	else
+-		ret = rcar_du_encoders_init_dt(rcdu);
+-
++	ret = rcar_du_encoders_init(rcdu);
+ 	if (ret < 0)
+ 		return ret;
+ 
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
+index 115eed2..80dc021 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
+@@ -27,7 +27,11 @@
+ struct rcar_du_lvds_connector {
+ 	struct rcar_du_connector connector;
+ 
+-	struct rcar_du_panel_data panel;
++	struct {
++		unsigned int width_mm;		/* Panel width in mm */
++		unsigned int height_mm;		/* Panel height in mm */
++		struct videomode mode;
++	} panel;
+ };
+ 
+ #define to_rcar_lvds_connector(c) \
+@@ -78,31 +82,25 @@ static const struct drm_connector_funcs connector_funcs = {
+ 
+ int rcar_du_lvds_connector_init(struct rcar_du_device *rcdu,
+ 				struct rcar_du_encoder *renc,
+-				const struct rcar_du_panel_data *panel,
+ 				/* TODO const */ struct device_node *np)
+ {
+ 	struct rcar_du_lvds_connector *lvdscon;
+ 	struct drm_connector *connector;
++	struct display_timing timing;
+ 	int ret;
+ 
+ 	lvdscon = devm_kzalloc(rcdu->dev, sizeof(*lvdscon), GFP_KERNEL);
+ 	if (lvdscon = NULL)
+ 		return -ENOMEM;
+ 
+-	if (panel) {
+-		lvdscon->panel = *panel;
+-	} else {
+-		struct display_timing timing;
+-
+-		ret = of_get_display_timing(np, "panel-timing", &timing);
+-		if (ret < 0)
+-			return ret;
++	ret = of_get_display_timing(np, "panel-timing", &timing);
++	if (ret < 0)
++		return ret;
+ 
+-		videomode_from_timing(&timing, &lvdscon->panel.mode);
++	videomode_from_timing(&timing, &lvdscon->panel.mode);
+ 
+-		of_property_read_u32(np, "width-mm", &lvdscon->panel.width_mm);
+-		of_property_read_u32(np, "height-mm", &lvdscon->panel.height_mm);
+-	}
++	of_property_read_u32(np, "width-mm", &lvdscon->panel.width_mm);
++	of_property_read_u32(np, "height-mm", &lvdscon->panel.height_mm);
+ 
+ 	connector = &lvdscon->connector.connector;
+ 	connector->display_info.width_mm = lvdscon->panel.width_mm;
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.h b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.h
+index d11424d..d4881ee 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.h
+@@ -16,11 +16,9 @@
+ 
+ struct rcar_du_device;
+ struct rcar_du_encoder;
+-struct rcar_du_panel_data;
+ 
+ int rcar_du_lvds_connector_init(struct rcar_du_device *rcdu,
+ 				struct rcar_du_encoder *renc,
+-				const struct rcar_du_panel_data *panel,
+ 				struct device_node *np);
+ 
+ #endif /* __RCAR_DU_LVDSCON_H__ */
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h b/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h
+index 3303a55..f65aabd 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h
+@@ -16,7 +16,6 @@
+ 
+ #include <linux/io.h>
+ #include <linux/module.h>
+-#include <linux/platform_data/rcar-du.h>
+ 
+ struct rcar_drm_crtc;
+ struct rcar_du_lvdsenc;
+diff --git a/include/linux/platform_data/rcar-du.h b/include/linux/platform_data/rcar-du.h
+deleted file mode 100644
+index a5f045e..0000000
+--- a/include/linux/platform_data/rcar-du.h
++++ /dev/null
+@@ -1,74 +0,0 @@
+-/*
+- * rcar_du.h  --  R-Car Display Unit DRM driver
+- *
+- * Copyright (C) 2013 Renesas Corporation
+- *
+- * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; either version 2 of the License, or
+- * (at your option) any later version.
+- */
+-
+-#ifndef __RCAR_DU_H__
+-#define __RCAR_DU_H__
+-
+-#include <video/videomode.h>
+-
+-enum rcar_du_output {
+-	RCAR_DU_OUTPUT_DPAD0,
+-	RCAR_DU_OUTPUT_DPAD1,
+-	RCAR_DU_OUTPUT_LVDS0,
+-	RCAR_DU_OUTPUT_LVDS1,
+-	RCAR_DU_OUTPUT_TCON,
+-	RCAR_DU_OUTPUT_MAX,
+-};
+-
+-enum rcar_du_encoder_type {
+-	RCAR_DU_ENCODER_UNUSED = 0,
+-	RCAR_DU_ENCODER_NONE,
+-	RCAR_DU_ENCODER_VGA,
+-	RCAR_DU_ENCODER_LVDS,
+-};
+-
+-struct rcar_du_panel_data {
+-	unsigned int width_mm;		/* Panel width in mm */
+-	unsigned int height_mm;		/* Panel height in mm */
+-	struct videomode mode;
+-};
+-
+-struct rcar_du_connector_lvds_data {
+-	struct rcar_du_panel_data panel;
+-};
+-
+-struct rcar_du_connector_vga_data {
+-	/* TODO: Add DDC information for EDID retrieval */
+-};
+-
+-/*
+- * struct rcar_du_encoder_data - Encoder platform data
+- * @type: the encoder type (RCAR_DU_ENCODER_*)
+- * @output: the DU output the connector is connected to (RCAR_DU_OUTPUT_*)
+- * @connector.lvds: platform data for LVDS connectors
+- * @connector.vga: platform data for VGA connectors
+- *
+- * Encoder platform data describes an on-board encoder, its associated DU SoC
+- * output, and the connector.
+- */
+-struct rcar_du_encoder_data {
+-	enum rcar_du_encoder_type type;
+-	enum rcar_du_output output;
+-
+-	union {
+-		struct rcar_du_connector_lvds_data lvds;
+-		struct rcar_du_connector_vga_data vga;
+-	} connector;
+-};
+-
+-struct rcar_du_platform_data {
+-	struct rcar_du_encoder_data *encoders;
+-	unsigned int num_encoders;
+-};
+-
+-#endif /* __RCAR_DU_H__ */
 -- 
-1.9.1
+1.8.5.5
 
