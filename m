@@ -1,121 +1,63 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Sep 2014 12:27:55 +0000
-Subject: [PATCH v2 8/9] ARM: shmobile: koelsch-reference: Remove DU platform device
-Message-Id: <1411561676-9556-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Sep 2014 20:04:27 +0000
+Subject: [PATCH 07/12] drm: rcar-du: Replace drm_encoder with drm_slave_encoder
+Message-Id: <1411589072-28609-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-The DU device is now instantiated from the device tree, remove the
-corresponding platform device.
+DRM slave encoders require their associated struct drm_encoder instance
+to be embedded in a struct drm_slave_encoder. This makes processing
+encoders regardless of their types needlessly and painfully complex in
+drivers that use a mix of slave encoders and custom encoders. Such a
+driver will need to either create drm_slave_encoder instances that fake
+their embedded encoder instance, or to turn all drm_encoder instances
+into drm_slave_encoder instances.
+
+Between the two evils, one must choose the lesser. Use drm_slave_encoder
+everywhere.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-koelsch-reference.c | 73 ------------------------
- 1 file changed, 73 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_encoder.h | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index 46aa540..c370818 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -19,87 +19,15 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
+index c6334b4..c4dccdb 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
+@@ -15,6 +15,7 @@
+ #define __RCAR_DU_ENCODER_H__
  
--#include <linux/dma-mapping.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
--#include <linux/platform_data/rcar-du.h>
+ #include <drm/drm_crtc.h>
++#include <drm/drm_encoder_slave.h>
  
- #include <asm/mach/arch.h>
+ struct rcar_du_device;
+ struct rcar_du_lvdsenc;
+@@ -27,15 +28,15 @@ enum rcar_du_encoder_type {
+ };
  
--#include "clock.h"
- #include "common.h"
--#include "irqs.h"
- #include "r8a7791.h"
- #include "rcar-gen2.h"
+ struct rcar_du_encoder {
+-	struct drm_encoder encoder;
++	struct drm_encoder_slave slave;
+ 	enum rcar_du_output output;
+ 	struct rcar_du_lvdsenc *lvds;
+ };
  
--/* DU */
--static struct rcar_du_encoder_data koelsch_du_encoders[] = {
--	{
--		.type = RCAR_DU_ENCODER_NONE,
--		.output = RCAR_DU_OUTPUT_LVDS0,
--		.connector.lvds.panel = {
--			.width_mm = 210,
--			.height_mm = 158,
--			.mode = {
--				.pixelclock = 65000000,
--				.hactive = 1024,
--				.hfront_porch = 20,
--				.hback_porch = 160,
--				.hsync_len = 136,
--				.vactive = 768,
--				.vfront_porch = 3,
--				.vback_porch = 29,
--				.vsync_len = 6,
--			},
--		},
--	},
--};
--
--static struct rcar_du_platform_data koelsch_du_pdata = {
--	.encoders = koelsch_du_encoders,
--	.num_encoders = ARRAY_SIZE(koelsch_du_encoders),
--};
--
--static const struct resource du_resources[] __initconst = {
--	DEFINE_RES_MEM(0xfeb00000, 0x40000),
--	DEFINE_RES_MEM_NAMED(0xfeb90000, 0x1c, "lvds.0"),
--	DEFINE_RES_IRQ(gic_spi(256)),
--	DEFINE_RES_IRQ(gic_spi(268)),
--};
--
--static void __init koelsch_add_du_device(void)
--{
--	struct platform_device_info info = {
--		.name = "rcar-du-r8a7791",
--		.id = -1,
--		.res = du_resources,
--		.num_res = ARRAY_SIZE(du_resources),
--		.data = &koelsch_du_pdata,
--		.size_data = sizeof(koelsch_du_pdata),
--		.dma_mask = DMA_BIT_MASK(32),
--	};
--
--	platform_device_register_full(&info);
--}
--
--/*
-- * This is a really crude hack to provide clkdev support to platform
-- * devices until they get moved to DT.
-- */
--static const struct clk_name clk_names[] __initconst = {
--	{ "du0", "du.0", "rcar-du-r8a7791" },
--	{ "du1", "du.1", "rcar-du-r8a7791" },
--	{ "lvds0", "lvds.0", "rcar-du-r8a7791" },
--};
--
--static void __init koelsch_add_standard_devices(void)
--{
--	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
--
--	koelsch_add_du_device();
--}
--
- static const char * const koelsch_boards_compat_dt[] __initconst = {
- 	"renesas,koelsch",
- 	"renesas,koelsch-reference",
-@@ -110,7 +38,6 @@ DT_MACHINE_START(KOELSCH_DT, "koelsch")
- 	.smp		= smp_ops(r8a7791_smp_ops),
- 	.init_early	= shmobile_init_delay,
- 	.init_time	= rcar_gen2_timer_init,
--	.init_machine	= koelsch_add_standard_devices,
- 	.init_late	= shmobile_init_late,
- 	.reserve	= rcar_gen2_reserve,
- 	.dt_compat	= koelsch_boards_compat_dt,
+ #define to_rcar_encoder(e) \
+-	container_of(e, struct rcar_du_encoder, encoder)
++	container_of(e, struct rcar_du_encoder, slave.base)
+ 
+-#define rcar_encoder_to_drm_encoder(e)	(&(e)->encoder)
++#define rcar_encoder_to_drm_encoder(e)	(&(e)->slave.base)
+ 
+ struct rcar_du_connector {
+ 	struct drm_connector connector;
 -- 
 1.8.5.5
 
