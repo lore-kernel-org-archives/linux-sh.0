@@ -1,128 +1,62 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Fri, 12 Sep 2014 08:52:05 +0000
-Subject: [PATCH v2 1/2] ARM: shmobile: rcar-gen2: Add CA7 arch_timer initialization for r8a7794
-Message-Id: <1410511926-9326-2-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Sep 2014 12:27:50 +0000
+Subject: [PATCH v2 3/9] ARM: shmobile: r8a7791: Add DU node to device tree
+Message-Id: <1411561676-9556-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On E2, the arch timer is hooked up to a different clock, and the CA7's arch
-timer CNTVOFF register must be initialized.
+Add the DU device with a disabled state. Boards that want to enable the
+DU need to specify the output topology
 
-Based on work by Hisashi Nakamura.
-
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-rcar-gen2.c | 72 ++++++++++++++++++++++----------
- 1 file changed, 49 insertions(+), 23 deletions(-)
+ arch/arm/boot/dts/r8a7791.dtsi | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-index 42d5b43..7ed9279 100644
---- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
-+++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-@@ -3,6 +3,7 @@
-  *
-  * Copyright (C) 2013  Renesas Solutions Corp.
-  * Copyright (C) 2013  Magnus Damm
-+ * Copyright (C) 2014  Ulrich Hecht
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-@@ -24,6 +25,7 @@
- #include <linux/dma-contiguous.h>
- #include <linux/io.h>
- #include <linux/kernel.h>
-+#include <linux/of.h>
- #include <linux/of_fdt.h>
- #include <asm/mach/arch.h>
- #include "common.h"
-@@ -54,37 +56,61 @@ void __init rcar_gen2_timer_init(void)
- {
- #if defined(CONFIG_ARM_ARCH_TIMER) || defined(CONFIG_COMMON_CLK)
- 	u32 mode = rcar_gen2_read_mode_pins();
-+	bool is_e2 = (bool)of_find_compatible_node(NULL, NULL,
-+		"renesas,r8a7794");
- #endif
- #ifdef CONFIG_ARM_ARCH_TIMER
- 	void __iomem *base;
- 	int extal_mhz = 0;
- 	u32 freq;
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index e06c11f..00aeaaf 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -637,6 +637,36 @@
+ 		status = "disabled";
+ 	};
  
--	/* At Linux boot time the r8a7790 arch timer comes up
--	 * with the counter disabled. Moreover, it may also report
--	 * a potentially incorrect fixed 13 MHz frequency. To be
--	 * correct these registers need to be updated to use the
--	 * frequency EXTAL / 2 which can be determined by the MD pins.
--	 */
--
--	switch (mode & (MD(14) | MD(13))) {
--	case 0:
--		extal_mhz = 15;
--		break;
--	case MD(13):
--		extal_mhz = 20;
--		break;
--	case MD(14):
--		extal_mhz = 26;
--		break;
--	case MD(13) | MD(14):
--		extal_mhz = 30;
--		break;
-+	if (is_e2) {
-+		freq = 260000000 / 8;	/* ZS / 8 */
-+		/* CNTVOFF has to be initialized either from non-secure
-+		 * Hypervisor mode or secure Monitor mode with SCR.NS=1.
-+		 * If TrustZone is enabled then it should be handled by the
-+		 * secure code.
-+		 */
-+		asm volatile(
-+		"	cps	0x16\n"
-+		"	mrc	p15, 0, r1, c1, c1, 0\n"
-+		"	orr	r0, r1, #1\n"
-+		"	mcr	p15, 0, r0, c1, c1, 0\n"
-+		"	isb\n"
-+		"	mov	r0, #0\n"
-+		"	mcrr	p15, 4, r0, r0, c14\n"
-+		"	isb\n"
-+		"	mcr	p15, 0, r1, c1, c1, 0\n"
-+		"	isb\n"
-+		"	cps	0x13\n"
-+			: : : "r0", "r1");
-+	} else {
-+		/* At Linux boot time the r8a7790 arch timer comes up
-+		 * with the counter disabled. Moreover, it may also report
-+		 * a potentially incorrect fixed 13 MHz frequency. To be
-+		 * correct these registers need to be updated to use the
-+		 * frequency EXTAL / 2 which can be determined by the MD pins.
-+		 */
++	du: display@feb00000 {
++		compatible = "renesas,du-r8a7791";
++		reg = <0 0xfeb00000 0 0x40000>,
++		      <0 0xfeb90000 0 0x1c>;
++		reg-names = "du", "lvds.0";
++		interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 268 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7791_CLK_DU0>,
++		         <&mstp7_clks R8A7791_CLK_DU1>,
++		         <&mstp7_clks R8A7791_CLK_LVDS0>;
++		clock-names = "du.0", "du.1", "lvds.0";
++		status = "disabled";
 +
-+		switch (mode & (MD(14) | MD(13))) {
-+		case 0:
-+			extal_mhz = 15;
-+			break;
-+		case MD(13):
-+			extal_mhz = 20;
-+			break;
-+		case MD(14):
-+			extal_mhz = 26;
-+			break;
-+		case MD(13) | MD(14):
-+			extal_mhz = 30;
-+			break;
-+		}
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
 +
-+		/* The arch timer frequency equals EXTAL / 2 */
-+		freq = extal_mhz * (1000000 / 2);
- 	}
- 
--	/* The arch timer frequency equals EXTAL / 2 */
--	freq = extal_mhz * (1000000 / 2);
--
- 	/* Remap "armgcnt address map" space */
- 	base = ioremap(0xe6080000, PAGE_SIZE);
- 
++			port@0 {
++				reg = <0>;
++				du_out_rgb: endpoint {
++				};
++			};
++			port@1 {
++				reg = <1>;
++				du_out_lvds0: endpoint {
++				};
++			};
++		};
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 -- 
-1.8.4.5
+1.8.5.5
 
