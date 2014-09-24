@@ -1,61 +1,118 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 09 Sep 2014 06:46:49 +0000
-Subject: [PATCH 6/6 v4] mmc: remove MMC_CAP2_NO_MULTI_READ flags
-Message-Id: <87bnqp70ko.wl%kuninori.morimoto.gx@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Sep 2014 12:27:52 +0000
+Subject: [PATCH v2 5/9] ARM: shmobile: marzen: Enable DU device in DT
+Message-Id: <1411561676-9556-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
-	<87k35d70pz.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87k35d70pz.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Specify the DU output topology, enable the DU device and configure the
+related pins.
 
-Now, mmc framework uses multi_io_quirk
-for I/O HW bug workaround.
-MMC_CAP2_NO_MULTI_READ flag is no longer needed
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v3 -> v4
+ arch/arm/boot/dts/r8a7779-marzen.dts | 79 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 79 insertions(+)
 
- - no change
-
- drivers/mmc/card/block.c |    5 -----
- include/linux/mmc/host.h |    1 -
- 2 files changed, 6 deletions(-)
-
-diff --git a/drivers/mmc/card/block.c b/drivers/mmc/card/block.c
-index adab903..413f984 100644
---- a/drivers/mmc/card/block.c
-+++ b/drivers/mmc/card/block.c
-@@ -1398,11 +1398,6 @@ static void mmc_blk_rw_rq_prep(struct mmc_queue_req *mqrq,
- 		if (disable_multi)
- 			brq->data.blocks = 1;
+diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
+index c160404..981968d 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen.dts
+@@ -68,6 +68,74 @@
+ 			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
+ 		};
+ 	};
++
++	vga-enc {
++		compatible = "adi,adv7123";
++
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		ports {
++			port@0 {
++				vga_enc_in: endpoint {
++					remote-endpoint = <&du_out_rgb0>;
++				};
++			};
++			port@1 {
++				vga_enc_out: endpoint {
++					remote-endpoint = <&vga_in>;
++				};
++			};
++		};
++	};
++
++	vga {
++		compatible = "vga-connector";
++
++		port {
++			vga_in: endpoint {
++				remote-endpoint = <&vga_enc_out>;
++			};
++		};
++	};
++
++	lvds-enc {
++		compatible = "thine,thc63lvdm83d";
++
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		ports {
++			port@0 {
++				lvds_enc_in: endpoint {
++					remote-endpoint = <&du_out_rgb1>;
++				};
++			};
++			port@1 {
++				lvds_connector: endpoint {
++				};
++			};
++		};
++	};
++};
++
++&du {
++	pinctrl-0 = <&du_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++
++	ports {
++		port@0 {
++			endpoint {
++				remote-endpoint = <&vga_enc_in>;
++			};
++		};
++		port@1 {
++			endpoint {
++				remote-endpoint = <&lvds_enc_in>;
++			};
++		};
++	};
+ };
  
--		/* Some controllers can't do multiblock reads due to hw bugs */
--		if (card->host->caps2 & MMC_CAP2_NO_MULTI_READ &&
--		    rq_data_dir(req) = READ)
--			brq->data.blocks = 1;
--
- 		/*
- 		 * Some controllers have HW issues while operating
- 		 * in multiple I/O mode
-diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
-index 10e2bd6..797ae65 100644
---- a/include/linux/mmc/host.h
-+++ b/include/linux/mmc/host.h
-@@ -272,7 +272,6 @@ struct mmc_host {
+ &irqpin0 {
+@@ -83,6 +151,17 @@
+ };
  
- #define MMC_CAP2_BOOTPART_NOACC	(1 << 0)	/* Boot partition no access */
- #define MMC_CAP2_FULL_PWR_CYCLE	(1 << 2)	/* Can do full power cycle */
--#define MMC_CAP2_NO_MULTI_READ	(1 << 3)	/* Multiblock reads don't work */
- #define MMC_CAP2_HS200_1_8V_SDR	(1 << 5)        /* can support */
- #define MMC_CAP2_HS200_1_2V_SDR	(1 << 6)        /* can support */
- #define MMC_CAP2_HS200		(MMC_CAP2_HS200_1_8V_SDR | \
+ &pfc {
++	du_pins: du {
++		du0 {
++			renesas,groups = "du0_rgb888", "du0_sync_1", "du0_clk_out_0";
++			renesas,function = "du0";
++		};
++		du1 {
++			renesas,groups = "du1_rgb666", "du1_sync_1", "du1_clk_out";
++			renesas,function = "du1";
++		};
++	};
++
+ 	lan0_pins: lan0 {
+ 		intc {
+ 			renesas,groups = "intc_irq1_b";
 -- 
-1.7.9.5
+1.8.5.5
 
