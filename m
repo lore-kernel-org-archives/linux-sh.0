@@ -1,44 +1,53 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 25 Sep 2014 01:32:11 +0000
-Subject: [PATCH v3 1/4] ARM: shmobile: r8a73a4: Remove spurious dma-multiplexer base addresses
-Message-Id: <1411608734-1349-2-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Sep 2014 12:27:56 +0000
+Subject: [PATCH v2 9/9] ARM: shmobile: koelsch: Enable DU device in DT
+Message-Id: <1411561676-9556-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411608734-1349-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1411608734-1349-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-As there is no reg property the dma-multiplexer nodes should
-not include @...
+Specify the DU output topology, enable the DU device and configure the
+related pins.
 
-Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v2
-* First post
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
 
-v3
-* No change
----
- arch/arm/boot/dts/r8a73a4.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index ef152e3..8a70dcd 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -122,7 +122,7 @@
- 			     <0 57 IRQ_TYPE_LEVEL_HIGH>;
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 51807a3..5f88108 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -211,14 +211,24 @@
  	};
+ };
  
--	dmac: dma-multiplexer@0 {
-+	dmac: dma-multiplexer {
- 		compatible = "renesas,shdma-mux";
- 		#dma-cells = <1>;
- 		dma-channels = <20>;
++&du {
++	pinctrl-0 = <&du_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++
++	ports {
++		port@1 {
++			lvds_connector: endpoint {
++			};
++		};
++	};
++};
++
+ &extal_clk {
+ 	clock-frequency = <20000000>;
+ };
+ 
+ &pfc {
+-	pinctrl-0 = <&du_pins>;
+-	pinctrl-names = "default";
+-
+ 	i2c2_pins: i2c2 {
+ 		renesas,groups = "i2c2";
+ 		renesas,function = "i2c2";
 -- 
-2.0.1
+1.8.5.5
 
