@@ -1,79 +1,73 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Fri, 05 Sep 2014 08:23:04 +0000
-Subject: Re: [PATCH 13/15] drivers: sh: Leave disabling of unused PM domains to genpd
-Message-Id: <CAPDyKFr2MT9TRt_OXgeWMyoaK1-PrJrTYEFrwyDi4YELgjqe3w@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Sep 2014 12:27:49 +0000
+Subject: [PATCH v2 2/9] ARM: shmobile: r8a7790: Add DU node to device tree
+Message-Id: <1411561676-9556-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
- <1409741551-16437-14-git-send-email-ulf.hansson@linaro.org>
- <20140904003351.GB13821@verge.net.au>
-In-Reply-To: <20140904003351.GB13821@verge.net.au>
+References: <1397511312-4845-3-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1397511312-4845-3-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On 4 September 2014 02:33, Simon Horman <horms@verge.net.au> wrote:
-> On Wed, Sep 03, 2014 at 12:52:29PM +0200, Ulf Hansson wrote:
->> Since genpd at late init, will try to disable unused PM domains we
->> don't need to do it from here as well.
->>
->> Cc: Simon Horman <horms@verge.net.au>
->> Cc: Magnus Damm <magnus.damm@gmail.com>
->> Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
->
->
-> Acked-by: Simon Horman <horms+renesas@verge.net.au>
->
+Add the DU device with a disabled state. Boards that want to enable the
+DU need to specify the output topology.
 
-Simon, thanks for your ack!
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 39 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
 
-When you have time, would you please also have a look at the two patches below:
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index d0e1773..4c2deb4 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -600,6 +600,45 @@
+ 		status = "disabled";
+ 	};
+ 
++	du: display@feb00000 {
++		compatible = "renesas,du-r8a7790";
++		reg = <0 0xfeb00000 0 0x70000>,
++		      <0 0xfeb90000 0 0x1c>,
++		      <0 0xfeb94000 0 0x1c>;
++		reg-names = "du", "lvds.0", "lvds.1";
++		interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 268 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 269 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7790_CLK_DU0>,
++		         <&mstp7_clks R8A7790_CLK_DU1>,
++		         <&mstp7_clks R8A7790_CLK_DU2>,
++		         <&mstp7_clks R8A7790_CLK_LVDS0>,
++		         <&mstp7_clks R8A7790_CLK_LVDS1>;
++		clock-names = "du.0", "du.1", "du.2", "lvds.0", "lvds.1";
++		status = "disabled";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				du_out_rgb: endpoint {
++				};
++			};
++			port@1 {
++				reg = <1>;
++				du_out_lvds0: endpoint {
++				};
++			};
++			port@2 {
++				reg = <2>;
++				du_out_lvds1: endpoint {
++				};
++			};
++		};
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
+-- 
+1.8.5.5
 
-[PATCH 04/15] ARM: shmobile: Drop dev_irq_safe from r8a7779 genpd config
-[PATCH 05/15] ARM: shmobile: Drop dev_irq_safe from R-mobile genpd config
-
-Kind regards
-Uffe
-
->> ---
->>  drivers/sh/pm_runtime.c | 11 -----------
->>  1 file changed, 11 deletions(-)
->>
->> diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
->> index 72f6381..fe2c2d5 100644
->> --- a/drivers/sh/pm_runtime.c
->> +++ b/drivers/sh/pm_runtime.c
->> @@ -75,8 +75,6 @@ static struct pm_clk_notifier_block platform_bus_notifier = {
->>       .con_ids = { NULL, },
->>  };
->>
->> -static bool default_pm_on;
->> -
->>  static int __init sh_pm_runtime_init(void)
->>  {
->>       if (IS_ENABLED(CONFIG_ARCH_SHMOBILE_MULTI)) {
->> @@ -96,16 +94,7 @@ static int __init sh_pm_runtime_init(void)
->>                       return 0;
->>       }
->>
->> -     default_pm_on = true;
->>       pm_clk_add_notifier(&platform_bus_type, &platform_bus_notifier);
->>       return 0;
->>  }
->>  core_initcall(sh_pm_runtime_init);
->> -
->> -static int __init sh_pm_runtime_late_init(void)
->> -{
->> -     if (default_pm_on)
->> -             pm_genpd_poweroff_unused();
->> -     return 0;
->> -}
->> -late_initcall(sh_pm_runtime_late_init);
->> --
->> 1.9.1
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
