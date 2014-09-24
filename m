@@ -1,67 +1,50 @@
-From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
-Date: Mon, 29 Sep 2014 05:05:58 +0000
-Subject: [PATCH RFC v2 6/7] ARM: shmobile: Do additional settings for L2shutdown mode
-Message-Id: <5428E8B6.4010504@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Sep 2014 20:04:22 +0000
+Subject: [PATCH 02/12] of: Add for_each_endpoint_of_node helper macro
+Message-Id: <1411589072-28609-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-According to Cortex-A15 TRM, some additional settings are needed.
-Although the procedure was not completely same as in TRM, it was
-referred to vexpress implementation to arrange order of additional
-settings.
+From: Philipp Zabel <p.zabel@pengutronix.de>
 
-Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+Note that while of_graph_get_next_endpoint decrements the reference count
+of the child node passed to it, of_node_put(child) still has to be called
+manually when breaking out of the loop.
+
+Signed-off-by: Philipp Zabel <p.zabel@pengutronix.de>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/platsmp-apmu.c |   25 +++++++++++++++++++++++++
- 1 file changed, 25 insertions(+)
+ include/linux/of_graph.h | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/platsmp-apmu.c b/arch/arm/mach-shmobile/platsmp-apmu.c
-index ef146fa..82db155 100644
---- a/arch/arm/mach-shmobile/platsmp-apmu.c
-+++ b/arch/arm/mach-shmobile/platsmp-apmu.c
-@@ -161,8 +161,32 @@ int shmobile_smp_apmu_boot_secondary(unsigned int cpu, struct task_struct *idle)
+diff --git a/include/linux/of_graph.h b/include/linux/of_graph.h
+index befef42..e43442e 100644
+--- a/include/linux/of_graph.h
++++ b/include/linux/of_graph.h
+@@ -26,6 +26,17 @@ struct of_endpoint {
+ 	const struct device_node *local_node;
+ };
  
- #if defined(CONFIG_HOTPLUG_CPU) || defined(CONFIG_SUSPEND) || \
- defined(CONFIG_CPU_IDLE)
-+static void do_l2shutdown_settings(void)
-+{
-+	unsigned int v;
++/**
++ * for_each_endpoint_of_node - iterate over every endpoint in a device node
++ * @parent: parent device node containing ports and endpoints
++ * @child: loop variable pointing to the current endpoint node
++ *
++ * When breaking out of the loop, of_node_put(child) has to be called manually.
++ */
++#define for_each_endpoint_of_node(parent, child) \
++	for (child = of_graph_get_next_endpoint(parent, NULL); child != NULL; \
++	     child = of_graph_get_next_endpoint(parent, child))
 +
-+	/* Disable L2$ prefetches */
-+	asm volatile(
-+	"       mrc     p15, 1, %0, c15, c0, 3\n"
-+	"       orr     %0, %0, %1\n"
-+	"       mcr     p15, 1, %0, c15, c0, 3\n"
-+		: "=&r" (v)
-+		: "Ir" (0x400)
-+		: "cc");
-+	isb();
-+	dsb();
-+
-+	flush_cache_all();
-+
-+	/* Set Double lock control bit */
-+	__asm__ __volatile__("mcr p14, 0, %0, c1, c3, 4" : : "r" (0x1));
-+}
-+
- static inline void cpu_enter_lowpower_a15(void)
- {
-+	if (is_a15_l2shutdown)
-+		do_l2shutdown_settings();
-+
- 	v7_exit_coherency_flush(louis);
- }
- 
-@@ -246,6 +270,7 @@ static int shmobile_smp_apmu_enter_suspend(suspend_state_t state)
- 
- 	writel_relaxed(0x0, cpucmcr);
- 	rcar_sysc_clear_event_status();
-+	is_a15_l2shutdown = 0;
- 
- 	return 0;
- }
+ #ifdef CONFIG_OF
+ int of_graph_parse_endpoint(const struct device_node *node,
+ 				struct of_endpoint *endpoint);
 -- 
-1.7.9.5
+1.8.5.5
+
