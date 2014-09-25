@@ -1,40 +1,39 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 25 Sep 2014 16:13:19 +0000
-Subject: [PATCH 03/13] ARM: shmobile: kzm9d dts: Add chosen/stdout-path
-Message-Id: <1411661609-4280-4-git-send-email-geert+renesas@glider.be>
+Date: Thu, 25 Sep 2014 16:15:35 +0000
+Subject: [PATCH v2 04/11] ARM: shmobile: armadillo800eva legacy: Add missing A4S pm domain devices
+Message-Id: <1411661742-4767-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411661609-4280-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1411661609-4280-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+References: <1411661742-4767-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1411661742-4767-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Add a stdout-path property so that automatic console selection works
-in the absence of a "console=" parameter on the kernel command line.
-
-Remove the now-superfluous "console=" parameter from chosen/bootargs.
+Commit 8459293c27bcd13a ("ARM: shmobile: r8a7740: add A4S pm domain
+support") added the A4S power domain, but forgot to hook up the GbEther
+hardware block.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/emev2-kzm9d.dts | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+v2:
+  - No changes
 
-diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts b/arch/arm/boot/dts/emev2-kzm9d.dts
-index 50ccd151091e23d3..afd369f9262288a1 100644
---- a/arch/arm/boot/dts/emev2-kzm9d.dts
-+++ b/arch/arm/boot/dts/emev2-kzm9d.dts
-@@ -24,7 +24,8 @@
- 	};
- 
- 	chosen {
--		bootargs = "console=ttyS1,115200n81 ignore_loglevel root=/dev/nfs ip=dhcp";
-+		bootargs = "ignore_loglevel root=/dev/nfs ip=dhcp";
-+		stdout-path = &uart1;
- 	};
- 
- 	reg_1p8v: regulator@0 {
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 64a68450c28a072c..735036038951868d 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1234,6 +1234,7 @@ static void __init eva_init(void)
+ 	static struct pm_domain_device domain_devices[] __initdata = {
+ 		{ "A4LC", &lcdc0_device },
+ 		{ "A4LC", &hdmi_lcdc_device },
++		{ "A4S",  &sh_eth_device },
+ 		{ "A3SP", &pwm_device },
+ 		{ "A3SP", &sdhi0_device },
+ 		{ "A3SP", &sh_mmcif_device },
 -- 
 1.9.1
 
