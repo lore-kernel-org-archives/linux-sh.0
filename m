@@ -1,37 +1,45 @@
-From: Mike Turquette <mturquette@linaro.org>
-Date: Mon, 01 Sep 2014 22:08:22 +0000
-Subject: Re: [PATCH v2 6/6] ARM: shmobile: r8a7794: document CPG clock support
-Message-Id: <20140901220822.5251.23626@quantum>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 25 Sep 2014 16:13:22 +0000
+Subject: [PATCH 06/13] ARM: shmobile: armadillo800eva dts: Add chosen/stdout-path
+Message-Id: <1411661609-4280-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1411661609-4280-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1411661609-4280-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Quoting Ulrich Hecht (2014-08-29 11:15:10)
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Add a stdout-path property so that automatic console selection works
+in the absence of a "console=" parameter on the kernel command line.
+In addition, this will allow the PM domain code to find the PM domain
+for the console device.
 
-Applied.
+Note that we have to keep the "console=ttySC1" parameter in
+chosen/bootargs, else we only get console messages on tty0.
 
-Regards,
-Mike
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+This is a prerequisite for working "no_console_suspend" support in
+"[PATCH v3 09/13] ARM: shmobile: R-Mobile: Add DT support for PM
+domains".
+---
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts | 1 +
+ 1 file changed, 1 insertion(+)
 
-> ---
->  Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
-> index 7b41c2f..e6ad35b 100644
-> --- a/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
-> +++ b/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
-> @@ -8,6 +8,7 @@ Required Properties:
->    - compatible: Must be one of
->      - "renesas,r8a7790-cpg-clocks" for the r8a7790 CPG
->      - "renesas,r8a7791-cpg-clocks" for the r8a7791 CPG
-> +    - "renesas,r8a7794-cpg-clocks" for the r8a7794 CPG
->      - "renesas,rcar-gen2-cpg-clocks" for the generic R-Car Gen2 CPG
->  
->    - reg: Base address and length of the memory resource used by the CPG
-> -- 
-> 1.8.4.5
-> 
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+index effb7b46f13172d5..2703428557fce9fa 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+@@ -25,6 +25,7 @@
+ 
+ 	chosen {
+ 		bootargs = "console=tty0 console=ttySC1,115200 earlyprintk=sh-sci.1,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
++		stdout-path = &scifa1;
+ 	};
+ 
+ 	memory {
+-- 
+1.9.1
+
