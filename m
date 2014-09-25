@@ -1,76 +1,26 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 16 Sep 2014 18:48:52 +0000
-Subject: [PATCH/RFC v2 05/12] PM / Domains: Add helper variable np = dev->of_node
-Message-Id: <1410893339-6361-6-git-send-email-geert+renesas@glider.be>
+From: Kevin Hilman <khilman@kernel.org>
+Date: Thu, 25 Sep 2014 21:36:01 +0000
+Subject: Re: [PATCH/RFC v2 05/12] PM / Domains: Add helper variable np = dev->of_node
+Message-Id: <7hwq8r9yda.fsf@deeprootsystems.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
+ <1410893339-6361-6-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1410893339-6361-6-git-send-email-geert+renesas@glider.be> (Geert
+ Uytterhoeven's message of "Tue, 16 Sep 2014 20:48:52 +0200")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-v2:
-  - New
----
- drivers/base/power/domain.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+Geert Uytterhoeven <geert+renesas@glider.be> writes:
 
-diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
-index 3fa15b6c54f09b36..e1cbde985d4de606 100644
---- a/drivers/base/power/domain.c
-+++ b/drivers/base/power/domain.c
-@@ -2130,17 +2130,18 @@ static struct generic_pm_domain *of_genpd_get_from_provider(
-  */
- int genpd_dev_pm_attach(struct device *dev)
- {
-+	struct device_node *np = dev->of_node;
- 	struct of_phandle_args pd_args;
- 	struct generic_pm_domain *pd;
- 	int ret;
- 
--	if (!dev->of_node)
-+	if (!np)
- 		return -ENODEV;
- 
- 	if (dev->pm_domain)
- 		return -EEXIST;
- 
--	ret = of_parse_phandle_with_args(dev->of_node, "power-domains",
-+	ret = of_parse_phandle_with_args(np, "power-domains",
- 					"#power-domain-cells", 0, &pd_args);
- 	if (ret < 0) {
- 		if (ret != -ENOENT)
-@@ -2151,8 +2152,7 @@ int genpd_dev_pm_attach(struct device *dev)
- 		 * (for backwards compatibility of DT ABI)
- 		 */
- 		pd_args.args_count = 0;
--		pd_args.np = of_parse_phandle(dev->of_node,
--						"samsung,power-domain", 0);
-+		pd_args.np = of_parse_phandle(np, "samsung,power-domain", 0);
- 		if (!pd_args.np)
- 			return -ENOENT;
- 	}
-@@ -2161,7 +2161,7 @@ int genpd_dev_pm_attach(struct device *dev)
- 	if (IS_ERR(pd)) {
- 		dev_dbg(dev, "%s() failed to find PM domain: %ld\n",
- 			__func__, PTR_ERR(pd));
--		of_node_put(dev->of_node);
-+		of_node_put(np);
- 		return PTR_ERR(pd);
- 	}
- 
-@@ -2177,7 +2177,7 @@ int genpd_dev_pm_attach(struct device *dev)
- 	if (ret < 0) {
- 		dev_err(dev, "failed to add to PM domain %s: %d",
- 			pd->name, ret);
--		of_node_put(dev->of_node);
-+		of_node_put(np);
- 		return ret;
- 	}
- 
--- 
-1.9.1
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
+Maybe a short changelog answering "why?" (just a cleanup), and saying
+there are no functional changes.
+
+Otherwise,
+
+Acked-by: Kevin Hilman <khilman@linaro.org>
+
+Kevin
