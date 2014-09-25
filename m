@@ -1,48 +1,60 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 19 Sep 2014 04:14:14 +0000
-Subject: [PATCH 1/2] ARM: shmobile: r8a73a4 dtsi: Add SoC-specific irqc compatible property
-Message-Id: <34abee398119acaed0b1fb4318eca5b364cf74e2.1411099817.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 25 Sep 2014 16:28:33 +0000
+Subject: [PATCH v3 06/13] PM / Domains: Retrieve PM QoS device latencies from DT
+Message-Id: <1411662520-22795-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1411099817.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1411099817.git.horms+renesas@verge.net.au>
+References: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-
-The interrupt controller used the generic compatible property only.
-Add the SoC-specific one, to make it future proof.
-
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a73a4.dtsi | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+v3:
+  - No changes
+v2:
+  - New
 
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index fba39a2..ef152e3 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -51,7 +51,7 @@
- 	};
+ drivers/base/power/domain.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
+index 0ebc6bb31c9c227f..c79d5d43a5249562 100644
+--- a/drivers/base/power/domain.c
++++ b/drivers/base/power/domain.c
+@@ -2174,6 +2174,8 @@ int genpd_dev_pm_attach(struct device *dev)
+ 	struct device_node *np = dev->of_node;
+ 	struct of_phandle_args pd_args;
+ 	struct generic_pm_domain *pd;
++	struct gpd_timing_data td;
++	u32 latency;
+ 	int ret;
  
- 	irqc0: interrupt-controller@e61c0000 {
--		compatible = "renesas,irqc";
-+		compatible = "renesas,irqc-r8a73a4", "renesas,irqc";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
- 		reg = <0 0xe61c0000 0 0x200>;
-@@ -90,7 +90,7 @@
- 	};
+ 	if (!np)
+@@ -2206,10 +2208,20 @@ int genpd_dev_pm_attach(struct device *dev)
+ 		return PTR_ERR(pd);
+ 	}
  
- 	irqc1: interrupt-controller@e61c0200 {
--		compatible = "renesas,irqc";
-+		compatible = "renesas,irqc-r8a73a4", "renesas,irqc";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
- 		reg = <0 0xe61c0200 0 0x200>;
++	memset(&td, 0, sizeof(td));
++	if (!of_property_read_u32(np, "stop-latency", &latency))
++		td.stop_latency_ns = latency;
++	if (!of_property_read_u32(np, "start-latency", &latency))
++		td.start_latency_ns = latency;
++	if (!of_property_read_u32(np, "save-state-latency", &latency))
++		td.save_state_latency_ns = latency;
++	if (!of_property_read_u32(np, "restore-state-latency", &latency))
++		td.restore_state_latency_ns = latency;
++
+ 	dev_dbg(dev, "adding to PM domain %s\n", pd->name);
+ 
+ 	while (1) {
+-		ret = pm_genpd_add_device(pd, dev);
++		ret = __pm_genpd_add_device(pd, dev, &td);
+ 		if (ret != -EAGAIN)
+ 			break;
+ 		cond_resched();
 -- 
-2.0.1
+1.9.1
 
