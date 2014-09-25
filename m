@@ -1,48 +1,50 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 08 Sep 2014 00:57:06 +0000
-Subject: [PATCH v3 1/3] ARM: shmobile: sh73a0: Add CMT1 device to DT
-Message-Id: <1410137828-4769-2-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 25 Sep 2014 16:15:37 +0000
+Subject: [PATCH v2 06/11] ARM: shmobile: r8a7740: Add A3SG pm domain support
+Message-Id: <1411661742-4767-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410137828-4769-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1410137828-4769-1-git-send-email-horms+renesas@verge.net.au>
+References: <1411661742-4767-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1411661742-4767-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Add support for the A3SG power domain, and hook it up as a subdomain of
+A4S.
+This domain contains the SGX540 hardware block, which is currently not
+used by any driver.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v3 [Simon Horman]
-* Dropped use of clocks that are not present in DT yet
----
- arch/arm/boot/dts/sh73a0.dtsi | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+v2:
+  - No changes
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 0d001eb..6cb29cd 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -48,6 +48,16 @@
- 			     <0 56 IRQ_TYPE_LEVEL_HIGH>;
- 	};
+ arch/arm/mach-shmobile/pm-r8a7740.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
+index 1d916038660d4b8a..932c2a621e81ac26 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7740.c
++++ b/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -51,6 +51,9 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
+ 		.gov		= &pm_domain_always_on_gov,
+ 		.no_debug	= true,
+ 		.suspend	= r8a7740_pd_a3sp_suspend,
++	}, {
++		.genpd.name	= "A3SG",
++		.bit_shift	= 13,
+ 	},
+ };
  
-+	cmt1: timer@e6138000 {
-+		compatible = "renesas,cmt-48";
-+		reg = <0xe6138000 0x200>;
-+		interrupts = <0 65 IRQ_TYPE_LEVEL_HIGH>;
-+
-+		renesas,channels-mask = <0x3f>;
-+
-+		status = "disabled";
-+	};
-+
- 	irqpin0: irqpin@e6900000 {
- 		compatible = "renesas,intc-irqpin-sh73a0", "renesas,intc-irqpin";
- 		#interrupt-cells = <2>;
+@@ -58,6 +61,7 @@ void __init r8a7740_init_pm_domains(void)
+ {
+ 	rmobile_init_domains(r8a7740_pm_domains, ARRAY_SIZE(r8a7740_pm_domains));
+ 	pm_genpd_add_subdomain_names("A4S", "A3SP");
++	pm_genpd_add_subdomain_names("A4S", "A3SG");
+ }
+ #endif /* CONFIG_PM && !CONFIG_ARCH_MULTIPLATFORM */
+ 
 -- 
-2.0.1
+1.9.1
 
