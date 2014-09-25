@@ -1,50 +1,40 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Sep 2014 20:04:22 +0000
-Subject: [PATCH 02/12] of: Add for_each_endpoint_of_node helper macro
-Message-Id: <1411589072-28609-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 25 Sep 2014 16:13:27 +0000
+Subject: [PATCH 11/13] ARM: shmobile: koelsch dts: Add chosen/stdout-path
+Message-Id: <1411661609-4280-12-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1411661609-4280-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1411661609-4280-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Philipp Zabel <p.zabel@pengutronix.de>
+Add a stdout-path property so that automatic console selection works
+in the absence of a "console=" parameter on the kernel command line.
 
-Note that while of_graph_get_next_endpoint decrements the reference count
-of the child node passed to it, of_node_put(child) still has to be called
-manually when breaking out of the loop.
+Remove the now-superfluous "console=" parameter from chosen/bootargs.
 
-Signed-off-by: Philipp Zabel <p.zabel@pengutronix.de>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- include/linux/of_graph.h | 11 +++++++++++
- 1 file changed, 11 insertions(+)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/include/linux/of_graph.h b/include/linux/of_graph.h
-index befef42..e43442e 100644
---- a/include/linux/of_graph.h
-+++ b/include/linux/of_graph.h
-@@ -26,6 +26,17 @@ struct of_endpoint {
- 	const struct device_node *local_node;
- };
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 51807a3795d9b5b8..a33e8eaa7008da51 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -25,7 +25,8 @@
+ 	};
  
-+/**
-+ * for_each_endpoint_of_node - iterate over every endpoint in a device node
-+ * @parent: parent device node containing ports and endpoints
-+ * @child: loop variable pointing to the current endpoint node
-+ *
-+ * When breaking out of the loop, of_node_put(child) has to be called manually.
-+ */
-+#define for_each_endpoint_of_node(parent, child) \
-+	for (child = of_graph_get_next_endpoint(parent, NULL); child != NULL; \
-+	     child = of_graph_get_next_endpoint(parent, child))
-+
- #ifdef CONFIG_OF
- int of_graph_parse_endpoint(const struct device_node *node,
- 				struct of_endpoint *endpoint);
+ 	chosen {
+-		bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
++		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
++		stdout-path = &scif0;
+ 	};
+ 
+ 	memory@40000000 {
 -- 
-1.8.5.5
+1.9.1
 
