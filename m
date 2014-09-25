@@ -1,37 +1,44 @@
-From: Guenter Roeck <linux@roeck-us.net>
-Date: Tue, 30 Sep 2014 18:00:51 +0000
-Subject: [RFC PATCH 11/16] sh: support poweroff through poweroff handler call chain
-Message-Id: <1412100056-15517-12-git-send-email-linux@roeck-us.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 25 Sep 2014 01:32:11 +0000
+Subject: [PATCH v3 1/4] ARM: shmobile: r8a73a4: Remove spurious dma-multiplexer base addresses
+Message-Id: <1411608734-1349-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
-In-Reply-To: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
+References: <1411608734-1349-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1411608734-1349-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The kernel core now supports a poweroff handler call chain
-to remove power from the system. Call it if pm_power_off
-is set to NULL.
+As there is no reg property the dma-multiplexer nodes should
+not include @...
 
-Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- arch/sh/kernel/reboot.c | 2 ++
- 1 file changed, 2 insertions(+)
+v2
+* First post
 
-diff --git a/arch/sh/kernel/reboot.c b/arch/sh/kernel/reboot.c
-index 04afe5b..8e68926 100644
---- a/arch/sh/kernel/reboot.c
-+++ b/arch/sh/kernel/reboot.c
-@@ -53,6 +53,8 @@ static void native_machine_power_off(void)
- {
- 	if (pm_power_off)
- 		pm_power_off();
-+	else
-+		do_kernel_poweroff();
- }
+v3
+* No change
+---
+ arch/arm/boot/dts/r8a73a4.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index ef152e3..8a70dcd 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -122,7 +122,7 @@
+ 			     <0 57 IRQ_TYPE_LEVEL_HIGH>;
+ 	};
  
- static void native_machine_halt(void)
+-	dmac: dma-multiplexer@0 {
++	dmac: dma-multiplexer {
+ 		compatible = "renesas,shdma-mux";
+ 		#dma-cells = <1>;
+ 		dma-channels = <20>;
 -- 
-1.9.1
+2.0.1
 
