@@ -1,124 +1,105 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 04 Sep 2014 01:12:34 +0000
-Subject: [PATCH 3/9] ARM: shmobile: Introduce a Kconfig entry for R-Car Gen2
-Message-Id: <0d91843346049d3131c2f75ff21d6b405cb68741.1409792454.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 25 Sep 2014 16:28:39 +0000
+Subject: [PATCH v3 12/13] ARM: shmobile: r8a7740 dtsi: Add preliminary PM domain latencies
+Message-Id: <1411662520-22795-13-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1409792454.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1409792454.git.horms+renesas@verge.net.au>
+References: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+For now use 250 =C2=B5s, just like the legacy platform code does.
 
-Add a Kconfig entry for R-Car Generation 2 SoCs that
-enables CMT timer and the IRQC interrupt driver.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/Kconfig  | 17 +++++++++--------
- arch/arm/mach-shmobile/Makefile | 12 ++++++------
- 2 files changed, 15 insertions(+), 14 deletions(-)
+v3:
+  - New, split off from "ARM: shmobile: r8a7740 dtsi: Add PM domain
+    support".
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 258d730..73d6d3d 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -6,6 +6,11 @@ config ARCH_RCAR_GEN1
- 	select RENESAS_INTC_IRQPIN
- 	select SYS_SUPPORTS_SH_TMU
- 
-+config ARCH_RCAR_GEN2
-+	bool
-+	select RENESAS_IRQC
-+	select SYS_SUPPORTS_SH_CMT
-+
- config ARCH_RMOBILE
- 	bool
- 	select SYS_SUPPORTS_SH_CMT
-@@ -42,13 +47,11 @@ config ARCH_R8A7779
- 
- config ARCH_R8A7790
- 	bool "R-Car H2 (R8A77900)"
--	select RENESAS_IRQC
--	select SYS_SUPPORTS_SH_CMT
-+	select ARCH_RCAR_GEN2
- 
- config ARCH_R8A7791
- 	bool "R-Car M2 (R8A77910)"
--	select RENESAS_IRQC
--	select SYS_SUPPORTS_SH_CMT
-+	select ARCH_RCAR_GEN2
- 
- comment "Renesas ARM SoCs Board Type"
- 
-@@ -134,24 +137,22 @@ config ARCH_R8A7779
- 
- config ARCH_R8A7790
- 	bool "R-Car H2 (R8A77900)"
-+	select ARCH_RCAR_GEN2
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
- 	select CPU_V7
- 	select MIGHT_HAVE_PCI
- 	select SH_CLK_CPG
--	select RENESAS_IRQC
--	select SYS_SUPPORTS_SH_CMT
- 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
- 
- config ARCH_R8A7791
- 	bool "R-Car M2 (R8A77910)"
-+	select ARCH_RCAR_GEN2
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
- 	select CPU_V7
- 	select MIGHT_HAVE_PCI
- 	select SH_CLK_CPG
--	select RENESAS_IRQC
--	select SYS_SUPPORTS_SH_CMT
- 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
- 
- config ARCH_R7S72100
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index fe3878a..ddc91fd 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -15,8 +15,7 @@ obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o
- obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
- obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o
- obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o
--obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o setup-rcar-gen2.o
--obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o setup-rcar-gen2.o
-+obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o
- obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o
- obj-$(CONFIG_ARCH_R7S72100)	+= setup-r7s72100.o
- 
-@@ -36,8 +35,9 @@ endif
- 
- # CPU reset vector handling objects
- cpu-y				:= platsmp.o headsmp.o
--cpu-$(CONFIG_ARCH_R8A7790)	+= platsmp-apmu.o
--cpu-$(CONFIG_ARCH_R8A7791)	+= platsmp-apmu.o
-+
-+# Shared SoC family objects
-+obj-$(CONFIG_ARCH_RCAR_GEN2)	+= setup-rcar-gen2.o platsmp-apmu.o $(cpu-y)
- 
- # SMP objects
- smp-y				:= $(cpu-y)
-@@ -55,8 +55,8 @@ obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o pm-rmobile.o
- obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
- obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
- obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o pm-rcar.o
--obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o $(cpu-y)
--obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o $(cpu-y)
-+obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o
-+obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o
- 
- # IRQ objects
- obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
--- 
-2.0.1
+ arch/arm/boot/dts/r8a7740.dtsi | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 4fead480a405bebe..ed0adeb61a1ad8ec 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -563,16 +563,22 @@
+ 				pd_a4lc: a4lc@1 {
+ 					reg =3D <1>;
+ 					#power-domain-cells =3D <0>;
++					power-on-latency =3D <250000>;
++					power-off-latency =3D <250000>;
+ 				};
+=20
+ 				pd_a4mp: a4mp@2 {
+ 					reg =3D <2>;
+ 					#power-domain-cells =3D <0>;
++					power-on-latency =3D <250000>;
++					power-off-latency =3D <250000>;
+ 				};
+=20
+ 				pd_d4: d4@3 {
+ 					reg =3D <3>;
+ 					#power-domain-cells =3D <0>;
++					power-on-latency =3D <250000>;
++					power-off-latency =3D <250000>;
+ 				};
+=20
+ 				pd_a4r: a4r@5 {
+@@ -580,10 +586,14 @@
+ 					#address-cells =3D <1>;
+ 					#size-cells =3D <0>;
+ 					#power-domain-cells =3D <0>;
++					power-on-latency =3D <250000>;
++					power-off-latency =3D <250000>;
+=20
+ 					pd_a3rv: a3rv@6 {
+ 						reg =3D <6>;
+ 						#power-domain-cells =3D <0>;
++						power-on-latency =3D <250000>;
++						power-off-latency =3D <250000>;
+ 					};
+ 				};
+=20
+@@ -592,26 +602,36 @@
+ 					#address-cells =3D <1>;
+ 					#size-cells =3D <0>;
+ 					#power-domain-cells =3D <0>;
++					power-on-latency =3D <250000>;
++					power-off-latency =3D <250000>;
+=20
+ 					pd_a3sp: a3sp@11 {
+ 						reg =3D <11>;
+ 						#power-domain-cells =3D <0>;
++						power-on-latency =3D <250000>;
++						power-off-latency =3D <250000>;
+ 					};
+=20
+ 					pd_a3sm: a3sm@12 {
+ 						reg =3D <12>;
+ 						#power-domain-cells =3D <0>;
++						power-on-latency =3D <250000>;
++						power-off-latency =3D <250000>;
+ 					};
+=20
+ 					pd_a3sg: a3sg@13 {
+ 						reg =3D <13>;
+ 						#power-domain-cells =3D <0>;
++						power-on-latency =3D <250000>;
++						power-off-latency =3D <250000>;
+ 					};
+ 				};
+=20
+ 				pd_a4su: a4su@20 {
+ 					reg =3D <20>;
+ 					#power-domain-cells =3D <0>;
++					power-on-latency =3D <250000>;
++					power-off-latency =3D <250000>;
+ 				};
+ 			};
+ 		};
+--=20
+1.9.1
 
