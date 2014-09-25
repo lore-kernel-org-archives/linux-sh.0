@@ -1,104 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 04 Sep 2014 01:12:35 +0000
-Subject: [PATCH 4/9] ARM: shmobile: Cleanup pm-rcar.o build using Kconfig
-Message-Id: <1a950ca536dd5c40167ef58951e738ae430fa96d.1409792454.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 25 Sep 2014 16:13:28 +0000
+Subject: [PATCH 12/13] ARM: shmobile: alt dts: Add chosen/stdout-path
+Message-Id: <1411661609-4280-13-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1409792454.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1409792454.git.horms+renesas@verge.net.au>
+References: <1411661609-4280-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1411661609-4280-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Add a stdout-path property so that automatic console selection works
+in the absence of a "console=" parameter on the kernel command line.
 
-Add a CONFIG_PM_RCAR entry and enable it for R-Car
-Generation 1 or 2 in case CONFIG_PM or CONFIG_SMP
-is set. Consolidate power management objects and
-get rid of #ifdefs in the C code.
+Note that we have to keep the "console=ttySC0,38400" parameter in
+chosen/bootargs, else the console will use the default setting of 115200
+baud.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/Kconfig   |  5 +++++
- arch/arm/mach-shmobile/Makefile  | 10 ++++------
- arch/arm/mach-shmobile/pm-rcar.c |  4 ----
- 3 files changed, 9 insertions(+), 10 deletions(-)
+ arch/arm/boot/dts/r8a7794-alt.dts | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 73d6d3d..cd13021 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -1,13 +1,18 @@
- config ARCH_SHMOBILE
- 	bool
+diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
+index 79d06ef017a05b77..8aec51268b7d8177 100644
+--- a/arch/arm/boot/dts/r8a7794-alt.dts
++++ b/arch/arm/boot/dts/r8a7794-alt.dts
+@@ -21,6 +21,7 @@
  
-+config PM_RCAR
-+	bool
-+
- config ARCH_RCAR_GEN1
- 	bool
-+	select PM_RCAR if PM || SMP
- 	select RENESAS_INTC_IRQPIN
- 	select SYS_SUPPORTS_SH_TMU
+ 	chosen {
+ 		bootargs = "console=ttySC0,38400 ignore_loglevel rw root=/dev/nfs ip=dhcp";
++		stdout-path = &scif2;
+ 	};
  
- config ARCH_RCAR_GEN2
- 	bool
-+	select PM_RCAR if PM || SMP
- 	select RENESAS_IRQC
- 	select SYS_SUPPORTS_SH_CMT
- 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index ddc91fd..c9ad169 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -13,9 +13,9 @@ obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o intc-sh73a0.o
- obj-$(CONFIG_ARCH_R8A73A4)	+= setup-r8a73a4.o
- obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o
- obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
--obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o
--obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o
--obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o
-+obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o pm-r8a7779.o
-+obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o pm-r8a7790.o
-+obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o pm-r8a7791.o
- obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o
- obj-$(CONFIG_ARCH_R7S72100)	+= setup-r7s72100.o
- 
-@@ -51,12 +51,10 @@ smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o platsmp-scu.o
- obj-$(CONFIG_SUSPEND)		+= suspend.o
- obj-$(CONFIG_CPU_IDLE)		+= cpuidle.o
- obj-$(CONFIG_CPU_FREQ)		+= cpufreq.o
-+obj-$(CONFIG_PM_RCAR)		+= pm-rcar.o
- obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o pm-rmobile.o
- obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
- obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
--obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o pm-rcar.o
--obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o
--obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o
- 
- # IRQ objects
- obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
-diff --git a/arch/arm/mach-shmobile/pm-rcar.c b/arch/arm/mach-shmobile/pm-rcar.c
-index 34b8a56..00022ee 100644
---- a/arch/arm/mach-shmobile/pm-rcar.c
-+++ b/arch/arm/mach-shmobile/pm-rcar.c
-@@ -31,8 +31,6 @@
- #define SYSCISR_RETRIES 1000
- #define SYSCISR_DELAY_US 1
- 
--#if defined(CONFIG_PM) || defined(CONFIG_SMP)
--
- static void __iomem *rcar_sysc_base;
- static DEFINE_SPINLOCK(rcar_sysc_lock); /* SMP CPUs + I/O devices */
- 
-@@ -137,5 +135,3 @@ void __iomem *rcar_sysc_init(phys_addr_t base)
- 
- 	return rcar_sysc_base;
- }
--
--#endif /* CONFIG_PM || CONFIG_SMP */
+ 	memory@40000000 {
 -- 
-2.0.1
+1.9.1
 
