@@ -1,41 +1,43 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Wed, 03 Sep 2014 10:52:26 +0000
-Subject: [PATCH 10/15] PM / Domains: Add late_initcall to disable unused PM domains
-Message-Id: <1409741551-16437-11-git-send-email-ulf.hansson@linaro.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 25 Sep 2014 16:15:32 +0000
+Subject: [PATCH v2 01/11] ARM: shmobile: r8a7740: Add missing A3SP pm domain devices
+Message-Id: <1411661742-4767-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
-In-Reply-To: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
+References: <1411661742-4767-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1411661742-4767-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-As default behavior let genpd at late init try to disable the unused
-PM domains.
+Commit 802a5639aa7041b2 ("ARM: shmobile: r8a7740: add A3SP pm domain
+support") added the A3SP power domain, but forgot to hook up the IPPMU,
+DMAC0/1/2, and USBDMAC hardware blocks.
 
-Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/base/power/domain.c | 7 +++++++
- 1 file changed, 7 insertions(+)
+v2:
+  - No changes
 
-diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
-index d71d045..cf4651a 100644
---- a/drivers/base/power/domain.c
-+++ b/drivers/base/power/domain.c
-@@ -721,6 +721,13 @@ void pm_genpd_poweroff_unused(void)
- 	mutex_unlock(&gpd_list_lock);
- }
+ arch/arm/mach-shmobile/setup-r8a7740.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 8894e1b7ab0e65bb..6992d4013ef013da 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -756,6 +756,11 @@ void __init r8a7740_add_standard_devices(void)
+ 		{ "A3SP", &scif7_device },
+ 		{ "A3SP", &scif8_device },
+ 		{ "A3SP", &i2c1_device },
++		{ "A3SP", &ipmmu_device },
++		{ "A3SP", &dma0_device },
++		{ "A3SP", &dma1_device },
++		{ "A3SP", &dma2_device },
++		{ "A3SP", &usb_dma_device },
+ 	};
  
-+static int __init genpd_poweroff_unused(void)
-+{
-+	pm_genpd_poweroff_unused();
-+	return 0;
-+}
-+late_initcall(genpd_poweroff_unused);
-+
- #else
- 
- static inline int genpd_dev_pm_qos_notifier(struct notifier_block *nb,
+ 	/* I2C work-around */
 -- 
 1.9.1
 
