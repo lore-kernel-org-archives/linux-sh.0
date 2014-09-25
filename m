@@ -1,64 +1,112 @@
-From: =?UTF-8?B?44Kr44Kq44CA44Of44Oz44CA44OS44Kn44OD44OX?=  <cm-hiep@jinso.co.jp>
-Date: Tue, 09 Sep 2014 10:16:54 +0000
-Subject: Re: [PATCH 0/3] Add USBHS support to Lager
-Message-Id: <540ED396.6070601@jinso.co.jp>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 25 Sep 2014 16:28:27 +0000
+Subject: [PATCH 00/13] ARM: shmobile: R-Mobile: DT PM domain support
+Message-Id: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1381188423-1867-1-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1381188423-1867-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+	Hi Rafael, Simon, Magnus,
 
-Sorry for bother you!
+This patch series enables DT support for PM domains on Renesas R-Mobile SoCs.
 
-We are testing USB host 2.0 on Lager(R8a7790 SoC),
-We realize that there is only a master USB HOST configured on default 
-config.
-Slave devices is not configured on default config.
-Could you please enable these CONFIGs?
-For Hub:
-CONFIG_USB_EHCI_ROOT_HUB_TT=y
-For Usb memory:
-CONFIG_USB_STORAGE=y
-For: Keyboard, mouse:
-CONFIG_INPUT_EVDEV=y
+Currently it's limited to R-Mobile A1 (r8a7740), but given the similarity of
+the SYSC System-Controller on the various SH-Mobile/R-Mobile SoCs, and the
+abstraction of PM domains in DT, it should be sufficiently generic to handle
+other SoCs in the future (e.g. SH-Mobile AP4 (sh7372), SH-Mobile AG5 (sh73a0),
+R-Mobile APE6 (r8a73a4)).
 
+Changes compared to v2 (more detailed changelogs in the individual patches):
+  - Minor changes to attach/detach callbacks,
+  - Really add the A4MP and D4 PM domains, as fixes are available (see
+    dependencies below),
+  - Scan DT topology to identify special PM domains (CPUs and console),
+  - Move PM domain power-on/off latencies to a separate patch.
 
-Best Regards,
-Jinso/Cao Minh Hiep.
+Changes compared to v1 (more detailed changelogs in the individual patches):
+  - Several new patches: PM QoS device latencies in DT, attach/detach
+    callbacks,
+  - Run-Time management of the module clocks, making the hack in
+    drivers/sh/pm_runtime.c obsolete for DT platforms using genpd,
+  - Addition of PM QoS device latencies, specified from DT,
+  - Addition of build glue, so this builds and runs without additional
+    changes, incl. s2ram.
 
+This means that functionality-wise, the DT version is now on par with the
+legacy version ("[PATCH v2 00/11] ARM: shmobile: r8a7740/armadillo800eva legacy
+PM domain support").
 
-On 10/08/2013 08:27 AM, Valentine Barshak wrote:
-> This patch set adds internal USB PHY support to RCAR Gen2 SoC, and
-> also enables USBHS for the Lager board.
->
-> The patches apply fine to the renesas-devel-20131004 tag of the renesas.git.
->
-> The first patch also applies fine to the usb.git at kernel.org.
-> It adds RCAR Gen2 phy driver, which is used to configure the shared USB
-> channels 0/2 and to control USBHS internal PHY.
-> All the drivers that use the shared USB channels (USBHS/USBSS/PCI USB host)
-> should acquire the USB phy first to set proper channel configuration.
->
-> The other two patches add USBHS support to Lager board, which requires
-> RCAR Gen2 phy driver.
->
-> Valentine Barshak (3):
->    usb: phy: Add RCAR Gen2 USB phy
->    arm: shmobile: r8a7790: Add USBHS clock support
->    arm: shmobile: lager: Add USBHS support
->
->   arch/arm/mach-shmobile/board-lager.c            | 106 +++++++++
->   arch/arm/mach-shmobile/clock-r8a7790.c          |   4 +
->   drivers/usb/phy/Kconfig                         |  14 ++
->   drivers/usb/phy/Makefile                        |   1 +
->   drivers/usb/phy/phy-rcar-gen2-usb.c             | 271 ++++++++++++++++++++++++
->   include/linux/platform_data/usb-rcar-gen2-phy.h |  22 ++
->   6 files changed, 418 insertions(+)
->   create mode 100644 drivers/usb/phy/phy-rcar-gen2-usb.c
->   create mode 100644 include/linux/platform_data/usb-rcar-gen2-phy.h
->
+Dependencies:
+  - Simon Horman's renesas-devel-20140924-v3.17-rc6,
+  - Rafael J. Wysocki's linux-pm.git#linux-next,
+  - Jason Cooper's linux.git#irqchip/for-next.
+  - "ARM: shmobile: R-Mobile: Store SYSC base address in rmobile_pm_domain"
+    depends on the legacy version of this series, but if the legacy version
+    will never be accepted, the conflicts are trivial to resolve (drop changes
+    to non-existing PM domains),
+  - Working resume from s2ram depends on:
+      - "[PATCH/RFC] fbdev: sh_mobile_hdmi: Re-init regs before irq re-enable
+	on resume",
+      - "[PATCH] ARM: hw_breakpoint: Trap undef instruction exceptions on
+	wake-up", or an alternative solution.
+  - Working "no_console_suspend" handling depends on "[PATCH 06/13] ARM:
+    shmobile: armadillo800eva dts: Add chosen/stdout-path".
 
+For your convenience, I've also pushed this (incl. its dependencies) to
+git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers.git#rmobile-genpd
+
+Rafael: If you accept "PM / Domains: Add genpd attach/detach callbacks", it
+would be good to get this patch in v3.18-rc1, as it's the only hard dependency
+on linux-pm.git for the rest of this series. The other parts have relaxed
+ordering constraints due to the separation of code and DTS.
+
+Question: Can we use the preliminary PM domain power-on/off and QoS device
+latencie patches (the last 2) as-is, or should we refine them first?
+
+Thanks!
+
+Geert Uytterhoeven (13):
+  PM / Domains: Add genpd attach/detach callbacks
+  PM / Domains: Add DT bindings for power-on/off latencies
+  PM / Domains: Add DT bindings for PM QoS device latencies
+  PM / Domains: Add DT bindings for the R-Mobile System Controller
+  PM / Domains: Add helper variable np = dev->of_node
+  PM / Domains: Retrieve PM QoS device latencies from DT
+  ARM: shmobile: R-Mobile: Use generic_pm_domain.attach_dev() for pm_clk
+    setup
+  ARM: shmobile: R-Mobile: Store SYSC base address in rmobile_pm_domain
+  ARM: shmobile: R-Mobile: Add DT support for PM domains
+  ARM: shmobile: r8a7740 dtsi: Add PM domain support
+  drivers: sh: Disable PM runtime for multi-platform r8a7740 with genpd
+  ARM: shmobile: r8a7740 dtsi: Add preliminary PM domain latencies
+  ARM: shmobile: r8a7740 dtsi: Add preliminary PM QoS device latencies
+
+ .../devicetree/bindings/power/power_domain.txt     |  16 ++
+ .../bindings/power/renesas,sysc-rmobile.txt        | 111 +++++++++
+ arch/arm/boot/dts/r8a7740.dtsi                     | 257 +++++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                     |   3 +-
+ arch/arm/mach-shmobile/pm-r8a7740.c                |  14 ++
+ arch/arm/mach-shmobile/pm-rmobile.c                | 236 +++++++++++++++++--
+ arch/arm/mach-shmobile/pm-rmobile.h                |   3 +-
+ arch/arm/mach-shmobile/pm-sh7372.c                 |  11 +
+ drivers/base/power/domain.c                        |  32 ++-
+ drivers/sh/pm_runtime.c                            |   2 +
+ include/linux/pm_domain.h                          |   2 +
+ 11 files changed, 663 insertions(+), 24 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
