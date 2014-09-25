@@ -1,38 +1,78 @@
-From: Guenter Roeck <linux@roeck-us.net>
-Date: Tue, 30 Sep 2014 18:00:49 +0000
-Subject: [RFC PATCH 09/16] metag: support poweroff through poweroff handler call chain
-Message-Id: <1412100056-15517-10-git-send-email-linux@roeck-us.net>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 25 Sep 2014 16:15:42 +0000
+Subject: [PATCH v2 11/11] ARM: shmobile: r8a7740: Add A3SM pm domain support
+Message-Id: <1411661742-4767-12-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
-In-Reply-To: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
+References: <1411661742-4767-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1411661742-4767-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The kernel core now supports a poweroff handler call chain
-to remove power from the system. Call it if pm_power_off
-is set to NULL.
+Add support for the A3SM power domain, and hook it up as a subdomain of
+A4S.
 
-Cc: James Hogan <james.hogan@imgtec.com>
-Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+This domain contains the System CPU (Cortex-A9) hardware block. Hence
+move the special CPU handling from A4S to A3SM.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
 ---
- arch/metag/kernel/process.c | 2 ++
- 1 file changed, 2 insertions(+)
+v2:
+  - Move special CPU domain handling from A4S to A3SM,
+  - Drop FIXME about not powering down A4S, as this is expected behavior.
+---
+ arch/arm/mach-shmobile/pm-r8a7740.c | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
 
-diff --git a/arch/metag/kernel/process.c b/arch/metag/kernel/process.c
-index 483dff9..ff7f3eb 100644
---- a/arch/metag/kernel/process.c
-+++ b/arch/metag/kernel/process.c
-@@ -92,6 +92,8 @@ void machine_power_off(void)
+diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
+index f3a1c92f5de6177d..41e61f1b5d44f00d 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7740.c
++++ b/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -14,10 +14,10 @@
+ #include "pm-rmobile.h"
+ 
+ #if defined(CONFIG_PM) && !defined(CONFIG_ARCH_MULTIPLATFORM)
+-static int r8a7740_pd_a4s_suspend(void)
++static int r8a7740_pd_a3sm_suspend(void)
  {
- 	if (pm_power_off)
- 		pm_power_off();
-+	else
-+		do_kernel_poweroff();
- 	smp_send_stop();
- 	hard_processor_halt(HALT_OK);
+ 	/*
+-	 * The A4S domain contains the CPU core and therefore it should
++	 * The A3SM domain contains the CPU core and therefore it should
+ 	 * only be turned off if the CPU is not in use.
+ 	 */
+ 	return -EBUSY;
+@@ -51,9 +51,7 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
+ 	}, {
+ 		.genpd.name	= "A4S",
+ 		.bit_shift	= 10,
+-		.gov		= &pm_domain_always_on_gov,
+ 		.no_debug	= true,
+-		.suspend	= r8a7740_pd_a4s_suspend,
+ 	}, {
+ 		.genpd.name	= "A3SP",
+ 		.bit_shift	= 11,
+@@ -61,6 +59,11 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
+ 		.no_debug	= true,
+ 		.suspend	= r8a7740_pd_a3sp_suspend,
+ 	}, {
++		.genpd.name	= "A3SM",
++		.bit_shift	= 12,
++		.gov		= &pm_domain_always_on_gov,
++		.suspend	= r8a7740_pd_a3sm_suspend,
++	}, {
+ 		.genpd.name	= "A3SG",
+ 		.bit_shift	= 13,
+ 	}, {
+@@ -74,6 +77,7 @@ void __init r8a7740_init_pm_domains(void)
+ 	rmobile_init_domains(r8a7740_pm_domains, ARRAY_SIZE(r8a7740_pm_domains));
+ 	pm_genpd_add_subdomain_names("A4R", "A3RV");
+ 	pm_genpd_add_subdomain_names("A4S", "A3SP");
++	pm_genpd_add_subdomain_names("A4S", "A3SM");
+ 	pm_genpd_add_subdomain_names("A4S", "A3SG");
  }
+ #endif /* CONFIG_PM && !CONFIG_ARCH_MULTIPLATFORM */
 -- 
 1.9.1
 
