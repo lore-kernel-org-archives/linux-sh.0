@@ -1,27 +1,69 @@
-From: Kevin Hilman <khilman@kernel.org>
-Date: Tue, 09 Sep 2014 15:57:50 +0000
-Subject: Re: [PATCH/RFC 1/5] PM / Domains: Add DT bindings for power-on/off latencies
-Message-Id: <7h8ulskcqp.fsf@deeprootsystems.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 25 Sep 2014 16:28:34 +0000
+Subject: [PATCH v3 07/13] ARM: shmobile: R-Mobile: Use generic_pm_domain.attach_dev() for pm_clk setup
+Message-Id: <1411662520-22795-8-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410183344-14756-1-git-send-email-geert+renesas@glider.be>
- <1410183344-14756-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1410183344-14756-2-git-send-email-geert+renesas@glider.be>
- (Geert Uytterhoeven's message of "Mon, 8 Sep 2014 15:35:40 +0200")
+References: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Geert Uytterhoeven <geert+renesas@glider.be> writes:
+Use the just introduced genpd attach/detach callbacks to register the
+devices' module clocks, instead of doing it directly, to make it
+DT-proof.
 
-> PM domain power on/off-latencies are properties of the hardware.
-> In legacy code, they're specified from platform code.
-> On DT platforms, their values should come from DT.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v3:
+  - Update for callback signature changes,
+v2:
+  - New
 
-Nice.
+ arch/arm/mach-shmobile/pm-rmobile.c | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
 
-Acked-by: Kevin Hilman <khilman@linaro.org>
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index 717e6413d29cb998..ae846dfcd69293f7 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -101,6 +101,17 @@ static bool rmobile_pd_active_wakeup(struct device *dev)
+ 	return true;
+ }
+ 
++static void rmobile_pd_attach_dev(struct device *dev)
++{
++	if (pm_clk_no_clocks(dev))
++		pm_clk_add(dev, NULL);
++}
++
++static void rmobile_pd_detach_dev(struct device *dev)
++{
++	pm_clk_remove(dev, NULL);
++}
++
+ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
+ {
+ 	struct generic_pm_domain *genpd = &rmobile_pd->genpd;
+@@ -112,6 +123,8 @@ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
+ 	genpd->dev_ops.active_wakeup	= rmobile_pd_active_wakeup;
+ 	genpd->power_off		= rmobile_pd_power_down;
+ 	genpd->power_on			= rmobile_pd_power_up;
++	genpd->attach_dev		= rmobile_pd_attach_dev;
++	genpd->detach_dev		= rmobile_pd_detach_dev;
+ 	__rmobile_pd_power_up(rmobile_pd, false);
+ }
+ 
+@@ -130,8 +143,6 @@ void rmobile_add_device_to_domain_td(const char *domain_name,
+ 	struct device *dev = &pdev->dev;
+ 
+ 	__pm_genpd_name_add_device(domain_name, dev, td);
+-	if (pm_clk_no_clocks(dev))
+-		pm_clk_add(dev, NULL);
+ }
+ 
+ void rmobile_add_devices_to_domains(struct pm_domain_device data[],
+-- 
+1.9.1
 
-Kevin
