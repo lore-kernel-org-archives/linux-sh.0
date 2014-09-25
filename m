@@ -1,70 +1,84 @@
-From: Felipe Balbi <balbi@ti.com>
-Date: Wed, 24 Sep 2014 19:39:42 +0000
-Subject: Re: [PATCH v6 1/2] usb: rename phy to usb_phy in HCD
-Message-Id: <20140924193942.GR17997@saruman>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="ffBYM5qgR8HH9Mta"
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 25 Sep 2014 16:28:28 +0000
+Subject: [PATCH v3 01/13] PM / Domains: Add genpd attach/detach callbacks
+Message-Id: <1411662520-22795-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <37148636.BU5lT4M4eC@wasted.cogentembedded.com>
- <2300651.HNvMzB0aUB@wasted.cogentembedded.com>
- <20140924192806.GO17997@saruman>
- <54231BFF.5070901@cogentembedded.com>
-In-Reply-To: <54231BFF.5070901@cogentembedded.com>
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: balbi@ti.com, gregkh@linuxfoundation.org, linux-usb@vger.kernel.org, Peter.Chen@freescale.com, stern@rowland.harvard.edu, swarren@wwwdotorg.org, thierry.reding@gmail.com, linux-tegra@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org, yoshihiro.shimoda.uh@renesas.com, linux-kernel@vger.kernel.org, antoine.tenart@free-electrons.com
+References: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
---ffBYM5qgR8HH9Mta
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+While a PM domain can enable PM runtime management of its devices' module
+clocks by setting
 
-On Wed, Sep 24, 2014 at 11:31:11PM +0400, Sergei Shtylyov wrote:
-> Hello.
->=20
-> On 09/24/2014 11:28 PM, Felipe Balbi wrote:
->=20
-> >>From: Antoine Tenart <antoine.tenart@free-electrons.com>
->=20
-> >>The USB PHY member of the HCD structure is renamed to 'usb_phy' and
-> >>modifications are done in all drivers accessing it.
-> >>This is in preparation to adding the generic PHY support.
->=20
-> >>Signed-off-by: Antoine Tenart <antoine.tenart@free-electrons.com>
-> >>[Sergei: added missing 'drivers/usb/misc/lvstest.c' file, resolved reje=
-cts,
-> >>updated changelog.]
-> >>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> >>Acked-by: Alan Stern <stern@rowland.harvard.edu>
->=20
-> >Acked-by: Felipe Balbi <balbi@ti.com>
->=20
->    Sorry, forgot to collect your ACK from the previous posting. :-/
+	genpd->dev_ops.stop = pm_clk_suspend;
+	genpd->dev_ops.start = pm_clk_resume;
 
-don't worry ;-)
+this also requires registering the clocks with the pm_clk subsystem.
+In the legacy case, this is handled by the platform code, after
+attaching the device to its PM domain.
 
---=20
-balbi
+When the devices are instantiated from DT, devices are attached to their
+PM domains by generic code, leaving no method for the platform-specific
+PM domain code to register their clocks.
 
---ffBYM5qgR8HH9Mta
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Add two callbacks, allowing a PM domain to perform platform-specific
+tasks when a device is attached to or detached from a PM domain.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
+---
+v3:
+  - Add Reviewed-by (Ulf: are you still OK with the changes in v3?)
+  - Move calling of the callbacks to a point where dev->pm_domain is
+    valid, so the domain parameter is no longer needed,
+  - Make callbacks return void.
+v2:
+  - New
 
-iQIcBAEBAgAGBQJUIx3+AAoJEIaOsuA1yqREKlQP/ilSdXJbAq8hq/pE2JDK3q+P
-A8zFNo5Kjpz0wuUFg4KaP9s/rPx+aLPdhSTuPTXobe+J1ayYAO5g0JgrDOOQ/BI5
-WF9a64pZuHJjSK5lp8LgjZ5GXCsJyy75SOCAjrsdZD1Zqhoo4g151YlxTcC3ZUCj
-NXtrMzH1uYDEz9p7t6laFus8s+UyVTahEeQyYLiICW72uRIygtiWDZulhwoiSlSi
-IcYfuJmumvgmPnC6J3ym+Muh65TjVzyods3KDT/qbNGpYJkk6yWICb+OS5xGt3mm
-8e5pyRnlCTMH2M1Do5kUwMFNlH29m41iMIypqZZqY0Vi/QfIKZFo2iNPNPHNBNmg
-rSBA6RqDzIeqGcLa6FWPGeFPiTRl/XL4+x4tWaWkGFnedsTY11eX0kC04wPtShQS
-e795+RRL8TOInyStcpN2srnnDzSIhdAcKjM/kdcMAaHv+h6FZTFolm6pQRV9PNbZ
-kl4iO1apq9mUhFURsN6I3xL6S447jTpjN+G0zSZm5kpClc0zuFTjmBQH0bKydrWM
-H1cI1/PjTo2qNrrfKMswur5SwSUZI/PY0lk4jifZqLD314PR3W+fwQYiomzX6veh
-M5D+D5tDy+SPNM9CZ5ms7Uaj1cd8m7TGyjyZ0UqSrc/CBBgJMeDTnfuIIB5Mtc+B
-NuUPT9yX6NpVl45S/NPc
-=aVIp
------END PGP SIGNATURE-----
+ drivers/base/power/domain.c | 6 ++++++
+ include/linux/pm_domain.h   | 2 ++
+ 2 files changed, 8 insertions(+)
 
---ffBYM5qgR8HH9Mta--
+diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
+index cd400575ee0ee89c..6e36bb09e7d9c144 100644
+--- a/drivers/base/power/domain.c
++++ b/drivers/base/power/domain.c
+@@ -1436,6 +1436,9 @@ int __pm_genpd_add_device(struct generic_pm_domain *genpd, struct device *dev,
+ 
+ 	spin_unlock_irq(&dev->power.lock);
+ 
++	if (genpd->attach_dev)
++		genpd->attach_dev(dev);
++
+ 	mutex_lock(&gpd_data->lock);
+ 	gpd_data->base.dev = dev;
+ 	list_add_tail(&gpd_data->base.list_node, &genpd->dev_list);
+@@ -1528,6 +1531,9 @@ int pm_genpd_remove_device(struct generic_pm_domain *genpd,
+ 	genpd->device_count--;
+ 	genpd->max_off_time_changed = true;
+ 
++	if (genpd->detach_dev)
++		genpd->detach_dev(dev);
++
+ 	spin_lock_irq(&dev->power.lock);
+ 
+ 	dev->pm_domain = NULL;
+diff --git a/include/linux/pm_domain.h b/include/linux/pm_domain.h
+index 292079d8da6b8a78..9a93e622bdea3f79 100644
+--- a/include/linux/pm_domain.h
++++ b/include/linux/pm_domain.h
+@@ -73,6 +73,8 @@ struct generic_pm_domain {
+ 	bool cached_power_down_ok;
+ 	struct device_node *of_node; /* Node in device tree */
+ 	struct gpd_cpu_data *cpu_data;
++	void (*attach_dev)(struct device *dev);
++	void (*detach_dev)(struct device *dev);
+ };
+ 
+ static inline struct generic_pm_domain *pd_to_genpd(struct dev_pm_domain *pd)
+-- 
+1.9.1
+
