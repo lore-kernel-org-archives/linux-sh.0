@@ -1,37 +1,40 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Wed, 03 Sep 2014 10:52:21 +0000
-Subject: [PATCH 05/15] ARM: shmobile: Drop dev_irq_safe from R-mobile genpd config
-Message-Id: <1409741551-16437-6-git-send-email-ulf.hansson@linaro.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 25 Sep 2014 16:13:23 +0000
+Subject: [PATCH 07/13] ARM: shmobile: bockw-reference dts: Add chosen/stdout-path
+Message-Id: <1411661609-4280-8-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
-In-Reply-To: <1409741551-16437-1-git-send-email-ulf.hansson@linaro.org>
+References: <1411661609-4280-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1411661609-4280-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-The dev_irq_safe configuration is redundant, genpd don't have any
-special treatmeant for handling it. Let's remove it.
+Add a stdout-path property so that automatic console selection works
+in the absence of a "console=" parameter on the kernel command line.
 
-Cc: Simon Horman <horms@verge.net.au>
-Cc: Magnus Damm <magnus.damm@gmail.com>
-Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+Remove the now-superfluous "console=" parameter from chosen/bootargs.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/pm-rmobile.c | 1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
-index ebdd16e..818de2f 100644
---- a/arch/arm/mach-shmobile/pm-rmobile.c
-+++ b/arch/arm/mach-shmobile/pm-rmobile.c
-@@ -111,7 +111,6 @@ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
- 	genpd->dev_ops.stop		= pm_clk_suspend;
- 	genpd->dev_ops.start		= pm_clk_resume;
- 	genpd->dev_ops.active_wakeup	= rmobile_pd_active_wakeup;
--	genpd->dev_irq_safe		= true;
- 	genpd->power_off		= rmobile_pd_power_down;
- 	genpd->power_on			= rmobile_pd_power_up;
- 	__rmobile_pd_power_up(rmobile_pd, false);
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index 3342c74c5de890b1..fba294905ff42690 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -28,7 +28,8 @@
+ 	};
+ 
+ 	chosen {
+-		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
++		bootargs = "ignore_loglevel root=/dev/nfs ip=dhcp rw";
++		stdout-path = &scif0;
+ 	};
+ 
+ 	memory {
 -- 
 1.9.1
 
