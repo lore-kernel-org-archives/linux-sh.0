@@ -1,137 +1,45 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Sep 2014 20:04:26 +0000
-Subject: [PATCH 06/12] drm: rcar-du: Replace direct DRM encoder access with cast macro
-Message-Id: <1411589072-28609-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 25 Sep 2014 16:15:39 +0000
+Subject: [PATCH v2 08/11] ARM: shmobile: r8a7740: Add D4 pm domain support
+Message-Id: <1411661742-4767-9-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1411589072-28609-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1411661742-4767-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1411661742-4767-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add a new macro to downcast an rcar_du_encoder pointer to a drm_encoder
-pointer and use it. This prepares for the replacement of the
-rcar_drm_encoder encoder field with a drm_slave_encoder.
+Add support for the D4 power domain.
+This domain contains the Coresight-ETM hardware block.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_encoder.c | 8 +++++---
- drivers/gpu/drm/rcar-du/rcar_du_encoder.h | 2 ++
- drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c | 5 +++--
- drivers/gpu/drm/rcar-du/rcar_du_vgacon.c  | 5 +++--
- 4 files changed, 13 insertions(+), 7 deletions(-)
+This depends on "[PATCH] ARM: hw_breakpoint: Trap undef instruction
+exceptions on wake-up", or an alternative solution. Else resuming from
+s2ram will cause a crash.
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-index c699100..e88e63b 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-@@ -33,7 +33,7 @@ rcar_du_connector_best_encoder(struct drm_connector *connector)
- {
- 	struct rcar_du_connector *rcon = to_rcar_connector(connector);
- 
--	return &rcon->encoder->encoder;
-+	return rcar_encoder_to_drm_encoder(rcon->encoder);
- }
- 
- /* -----------------------------------------------------------------------------
-@@ -146,6 +146,7 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
- 			 struct device_node *con_node)
- {
- 	struct rcar_du_encoder *renc;
-+	struct drm_encoder *encoder;
- 	unsigned int encoder_type;
- 	int ret;
- 
-@@ -154,6 +155,7 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
- 		return -ENOMEM;
- 
- 	renc->output = output;
-+	encoder = rcar_encoder_to_drm_encoder(renc);
- 
- 	switch (output) {
- 	case RCAR_DU_OUTPUT_LVDS0:
-@@ -182,12 +184,12 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
- 		break;
- 	}
- 
--	ret = drm_encoder_init(rcdu->ddev, &renc->encoder, &encoder_funcs,
-+	ret = drm_encoder_init(rcdu->ddev, encoder, &encoder_funcs,
- 			       encoder_type);
- 	if (ret < 0)
- 		return ret;
- 
--	drm_encoder_helper_add(&renc->encoder, &encoder_helper_funcs);
-+	drm_encoder_helper_add(encoder, &encoder_helper_funcs);
- 
- 	switch (encoder_type) {
- 	case DRM_MODE_ENCODER_LVDS:
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-index 4b906b9..c6334b4 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-@@ -35,6 +35,8 @@ struct rcar_du_encoder {
- #define to_rcar_encoder(e) \
- 	container_of(e, struct rcar_du_encoder, encoder)
- 
-+#define rcar_encoder_to_drm_encoder(e)	(&(e)->encoder)
-+
- struct rcar_du_connector {
- 	struct drm_connector connector;
- 	struct rcar_du_encoder *encoder;
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
-index 80dc021..6d9811c 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
-@@ -84,6 +84,7 @@ int rcar_du_lvds_connector_init(struct rcar_du_device *rcdu,
- 				struct rcar_du_encoder *renc,
- 				/* TODO const */ struct device_node *np)
- {
-+	struct drm_encoder *encoder = rcar_encoder_to_drm_encoder(renc);
- 	struct rcar_du_lvds_connector *lvdscon;
- 	struct drm_connector *connector;
- 	struct display_timing timing;
-@@ -120,11 +121,11 @@ int rcar_du_lvds_connector_init(struct rcar_du_device *rcdu,
- 	drm_object_property_set_value(&connector->base,
- 		rcdu->ddev->mode_config.dpms_property, DRM_MODE_DPMS_OFF);
- 
--	ret = drm_mode_connector_attach_encoder(connector, &renc->encoder);
-+	ret = drm_mode_connector_attach_encoder(connector, encoder);
- 	if (ret < 0)
- 		return ret;
- 
--	connector->encoder = &renc->encoder;
-+	connector->encoder = encoder;
- 	lvdscon->connector.encoder = renc;
- 
- 	return 0;
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
-index 7807bb2..316108e 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
-@@ -52,6 +52,7 @@ static const struct drm_connector_funcs connector_funcs = {
- int rcar_du_vga_connector_init(struct rcar_du_device *rcdu,
- 			       struct rcar_du_encoder *renc)
- {
-+	struct drm_encoder *encoder = rcar_encoder_to_drm_encoder(renc);
- 	struct rcar_du_connector *rcon;
- 	struct drm_connector *connector;
- 	int ret;
-@@ -78,11 +79,11 @@ int rcar_du_vga_connector_init(struct rcar_du_device *rcdu,
- 	drm_object_property_set_value(&connector->base,
- 		rcdu->ddev->mode_config.dpms_property, DRM_MODE_DPMS_OFF);
- 
--	ret = drm_mode_connector_attach_encoder(connector, &renc->encoder);
-+	ret = drm_mode_connector_attach_encoder(connector, encoder);
- 	if (ret < 0)
- 		return ret;
- 
--	connector->encoder = &renc->encoder;
-+	connector->encoder = encoder;
- 	rcon->encoder = renc;
- 
- 	return 0;
+v2:
+  - Really add D4 and drop the FIXME, as a fix for the crash is
+    available.
+---
+ arch/arm/mach-shmobile/pm-r8a7740.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
+index 081a4f9726a0c909..6697ac00eff72957 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7740.c
++++ b/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -40,6 +40,9 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
+ 		.genpd.name	= "A4MP",
+ 		.bit_shift	= 2,
+ 	}, {
++		.genpd.name	= "D4",
++		.bit_shift	= 3,
++	}, {
+ 		.genpd.name	= "A3RV",
+ 		.bit_shift	= 6,
+ 	}, {
 -- 
-1.8.5.5
+1.9.1
 
