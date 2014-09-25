@@ -1,65 +1,59 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 30 Sep 2014 12:26:23 +0000
-Subject: [PATCH/RFC v2 0/4] ARM: hw_breakpoint: Avoid undef instruction exceptions on wake-up
-Message-Id: <1412079987-1827-1-git-send-email-geert+renesas@glider.be>
+Date: Thu, 25 Sep 2014 16:28:30 +0000
+Subject: [PATCH v3 03/13] PM / Domains: Add DT bindings for PM QoS device latencies
+Message-Id: <1411662520-22795-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412079970-1779-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1412079970-1779-1-git-send-email-geert+renesas@glider.be>
+References: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-	Hi all,
+PM QoS device start/stop and save/restore state latencies are more or
+less properties of the hardware.
+In legacy code, they're specified from platform code.
+On DT platforms, their values should come from DT.
 
-If power area D4, which contains the Coresight-ETM hardware block, is
-powered down on R-Mobile A1 (r8a7740), the kernel crashes when
-suspending from s2ram with:
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Should these properties be called "linux,*-latency"?
 
-    Internal error: Oops - undefined instruction: 0 [#1] ARM
+v3:
+  - No changes
+v2:
+  - New
 
-This happens because dbg_cpu_pm_notify() calls reset_ctrl_regs(), which
-can't access the debug registers as the debug module is powered down.
+ Documentation/devicetree/bindings/power/power_domain.txt | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-As suggested by Russell King, track whether the ETM block is powered down
-to fix this.
-
-The availability of the debug registers depends on the platform and its
-state.  Hence provide a mechanism for platform code to indicate that the
-debug registers are available or not, using a boolean flag that
-defaults to true.
-
-This is an alternative solution for "[PATCH] ARM: hw_breakpoint: Trap undef
-instruction exceptions on wake-up" (https://lkml.org/lkml/2014/9/17/190).
-
-Thanks for your comments!
-
-Geert Uytterhoeven (4):
-  [RFC] ARM: hw_breakpoint: Add arm_dbg_regs_available flag
-  [RFC] ARM: shmobile: r8a7740 legacy: Sync arm_dbg_regs_available with
-    D4 PM domain
-  [RFC] ARM: shmobile: R-Mobile: Sync arm_dbg_regs_available with D4 PM
-    domain
-  [RFC] ARM: shmobile: r8a7740 dtsi: Add minimal device node for
-    Coresight-ETM
-
- arch/arm/boot/dts/r8a7740.dtsi       |  5 +++++
- arch/arm/include/asm/hw_breakpoint.h |  2 ++
- arch/arm/kernel/hw_breakpoint.c      |  7 +++++++
- arch/arm/mach-shmobile/pm-r8a7740.c  | 19 +++++++++++++++++++
- arch/arm/mach-shmobile/pm-rmobile.c  | 35 ++++++++++++++++++++++++++++++++---
- 5 files changed, 65 insertions(+), 3 deletions(-)
-
+diff --git a/Documentation/devicetree/bindings/power/power_domain.txt b/Documentation/devicetree/bindings/power/power_domain.txt
+index 7bc421d84367d636..024815bc257723b1 100644
+--- a/Documentation/devicetree/bindings/power/power_domain.txt
++++ b/Documentation/devicetree/bindings/power/power_domain.txt
+@@ -42,12 +42,22 @@ Required properties:
+  - power-domains : A phandle and PM domain specifier as defined by bindings of
+                    the power controller specified by phandle.
+ 
++Optional properties:
++ - stop-latency: Stop latency of the device, in ns,
++ - start-latency: Start latency of the device, in ns,
++ - save-state-latency: Save-state latency of the device, in ns,
++ - restore-state-latency: Restore-state latency of the device, in ns.
++
+ Example:
+ 
+ 	leaky-device@12350000 {
+ 		compatible = "foo,i-leak-current";
+ 		reg = <0x12350000 0x1000>;
+ 		power-domains = <&power 0>;
++		stop-latency = <250000>;
++		start-latency = <250000>;
++		save-state-latency = <250000>;
++		restore-state-latency = <250000>;
+ 	};
+ 
+ The node above defines a typical PM domain consumer device, which is located
 -- 
 1.9.1
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
