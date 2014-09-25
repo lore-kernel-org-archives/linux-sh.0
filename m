@@ -1,210 +1,406 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 10 Sep 2014 00:48:13 +0000
-Subject: Re: [PATCH 1/2] ARM: multi_v7_defconfig: Enable shmobile platforms
-Message-Id: <20140910004812.GB28662@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 25 Sep 2014 16:28:40 +0000
+Subject: [PATCH v3 13/13] ARM: shmobile: r8a7740 dtsi: Add preliminary PM QoS device latencies
+Message-Id: <1411662520-22795-14-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409234429-1916-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1409234429-1916-1-git-send-email-geert+renesas@glider.be>
+References: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Aug 28, 2014 at 04:00:28PM +0200, Geert Uytterhoeven wrote:
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> Based on next-20140828
-> For now excluding r8a7740/armadillo, as it fails to boot on armadillo
+For now use 250 =C2=B5s, just like the legacy platform code does.
 
-r8a7794 SoC support is now queued up for v3.18.
-So I think could also be added to multi_v7_defconfig too.
-Let me know if you want an incremental patch.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v3:
+  - No changes
+v2:
+  - New
 
-> 
->  arch/arm/configs/multi_v7_defconfig | 51 +++++++++++++++++++++++++++++++++++--
->  1 file changed, 49 insertions(+), 2 deletions(-)
-> 
-> diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
-> index 7cfa5fa5f7ac..077134eaa95e 100644
-> --- a/arch/arm/configs/multi_v7_defconfig
-> +++ b/arch/arm/configs/multi_v7_defconfig
-> @@ -53,6 +53,15 @@ CONFIG_MACH_SPEAR1310=y
->  CONFIG_MACH_SPEAR1340=y
->  CONFIG_ARCH_STI=y
->  CONFIG_ARCH_EXYNOS=y
-> +CONFIG_ARCH_SHMOBILE_MULTI=y
-> +CONFIG_ARCH_EMEV2=y
-> +CONFIG_ARCH_R7S72100=y
-> +CONFIG_ARCH_R8A7779=y
-> +CONFIG_ARCH_R8A7790=y
-> +CONFIG_ARCH_R8A7791=y
-> +CONFIG_MACH_KOELSCH=y
-> +CONFIG_MACH_LAGER=y
-> +CONFIG_MACH_MARZEN=y
->  CONFIG_ARCH_SUNXI=y
->  CONFIG_ARCH_SIRF=y
->  CONFIG_ARCH_TEGRA=y
-> @@ -74,6 +83,8 @@ CONFIG_PCI=y
->  CONFIG_PCI_MSI=y
->  CONFIG_PCI_MVEBU=y
->  CONFIG_PCI_TEGRA=y
-> +CONFIG_PCI_RCAR_GEN2=y
-> +CONFIG_PCI_RCAR_GEN2_PCIE=y
->  CONFIG_SMP=y
->  CONFIG_NR_CPUS=8
->  CONFIG_HIGHPTE=y
-> @@ -121,6 +132,7 @@ CONFIG_CMA_SIZE_MBYTESd
->  CONFIG_OMAP_OCP2SCP=y
->  CONFIG_MTD=y
->  CONFIG_MTD_M25P80=y
-> +CONFIG_MTD_SPI_NOR=y
->  CONFIG_BLK_DEV_LOOP=y
->  CONFIG_ICS932S401=y
->  CONFIG_APDS9802ALS=y
-> @@ -136,6 +148,7 @@ CONFIG_AHCI_ST=y
->  CONFIG_AHCI_SUNXI=y
->  CONFIG_SATA_HIGHBANK=y
->  CONFIG_SATA_MV=y
-> +CONFIG_SATA_RCAR=y
->  CONFIG_NETDEVICES=y
->  CONFIG_SUN4I_EMAC=y
->  CONFIG_MACB=y
-> @@ -145,6 +158,7 @@ CONFIG_MV643XX_ETH=y
->  CONFIG_MVNETA=y
->  CONFIG_KS8851=y
->  CONFIG_R8169=y
-> +CONFIG_SH_ETH=y
->  CONFIG_SMSC911X=y
->  CONFIG_STMMAC_ETH=y
->  CONFIG_TI_CPSW=y
-> @@ -174,6 +188,7 @@ CONFIG_SERIO_AMBAKMI=y
->  CONFIG_SERIAL_8250=y
->  CONFIG_SERIAL_8250_CONSOLE=y
->  CONFIG_SERIAL_8250_DW=y
-> +CONFIG_SERIAL_8250_EM=y
->  CONFIG_SERIAL_AMBA_PL011=y
->  CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
->  CONFIG_SERIAL_SAMSUNG=y
-> @@ -183,6 +198,9 @@ CONFIG_SERIAL_SIRFSOC_CONSOLE=y
->  CONFIG_SERIAL_TEGRA=y
->  CONFIG_SERIAL_IMX=y
->  CONFIG_SERIAL_IMX_CONSOLE=y
-> +CONFIG_SERIAL_SH_SCI=y
-> +CONFIG_SERIAL_SH_SCI_NR_UARTS 
-> +CONFIG_SERIAL_SH_SCI_CONSOLE=y
->  CONFIG_SERIAL_MSM=y
->  CONFIG_SERIAL_MSM_CONSOLE=y
->  CONFIG_SERIAL_VT8500=y
-> @@ -204,15 +222,21 @@ CONFIG_I2C_CADENCE=y
->  CONFIG_I2C_DESIGNWARE_PLATFORM=y
->  CONFIG_I2C_EXYNOS5=y
->  CONFIG_I2C_MV64XXX=y
-> +CONFIG_I2C_RIIC=y
-> +CONFIG_I2C_SH_MOBILE=y
->  CONFIG_I2C_SIRF=y
->  CONFIG_I2C_TEGRA=y
->  CONFIG_I2C_ST=y
-> -CONFIG_SPI=y
->  CONFIG_I2C_XILINX=y
-> +CONFIG_I2C_RCAR=y
-> +CONFIG_SPI=y
->  CONFIG_SPI_CADENCE=y
->  CONFIG_SPI_OMAP24XX=y
->  CONFIG_SPI_ORION=y
->  CONFIG_SPI_PL022=y
-> +CONFIG_SPI_RSPI=y
-> +CONFIG_SPI_SH_MSIOF=y
-> +CONFIG_SPI_SH_HSPI=y
->  CONFIG_SPI_SIRF=y
->  CONFIG_SPI_SUN4I=y
->  CONFIG_SPI_SUN6I=y
-> @@ -225,6 +249,8 @@ CONFIG_PINCTRL_PALMAS=y
->  CONFIG_GPIO_SYSFS=y
->  CONFIG_GPIO_GENERIC_PLATFORM=y
->  CONFIG_GPIO_DWAPB=y
-> +CONFIG_GPIO_EM=y
-> +CONFIG_GPIO_RCAR=y
->  CONFIG_GPIO_XILINX=y
->  CONFIG_GPIO_ZYNQ=y
->  CONFIG_GPIO_PCA953X=y
-> @@ -241,6 +267,7 @@ CONFIG_POWER_RESET_SUN6I=y
->  CONFIG_SENSORS_LM90=y
->  CONFIG_SENSORS_LM95245=y
->  CONFIG_THERMAL=y
-> +CONFIG_RCAR_THERMAL=y
->  CONFIG_ARMADA_THERMAL=y
->  CONFIG_ST_THERMAL_SYSCFG=y
->  CONFIG_ST_THERMAL_MEMMAP=y
-> @@ -263,6 +290,7 @@ CONFIG_REGULATOR_VIRTUAL_CONSUMER=y
->  CONFIG_REGULATOR_AB8500=y
->  CONFIG_REGULATOR_AS3722=y
->  CONFIG_REGULATOR_BCM590XX=y
-> +CONFIG_REGULATOR_DA9210=y
->  CONFIG_REGULATOR_GPIO=y
->  CONFIG_REGULATOR_MAX8907=y
->  CONFIG_REGULATOR_PALMAS=y
-> @@ -277,10 +305,21 @@ CONFIG_REGULATOR_TWL4030=y
->  CONFIG_REGULATOR_VEXPRESS=y
->  CONFIG_MEDIA_SUPPORT=y
->  CONFIG_MEDIA_CAMERA_SUPPORT=y
-> +CONFIG_MEDIA_CONTROLLER=y
-> +CONFIG_VIDEO_V4L2_SUBDEV_API=y
->  CONFIG_MEDIA_USB_SUPPORT=y
->  CONFIG_USB_VIDEO_CLASS=y
->  CONFIG_USB_GSPCA=y
-> +CONFIG_V4L_PLATFORM_DRIVERS=y
-> +CONFIG_SOC_CAMERA=y
-> +CONFIG_SOC_CAMERA_PLATFORM=y
-> +CONFIG_VIDEO_RCAR_VIN=y
-> +CONFIG_V4L_MEM2MEM_DRIVERS=y
-> +CONFIG_VIDEO_RENESAS_VSP1=y
-> +# CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
-> +CONFIG_VIDEO_ADV7180=y
->  CONFIG_DRM=y
-> +CONFIG_DRM_RCAR_DU=y
->  CONFIG_DRM_TEGRA=y
->  CONFIG_DRM_PANEL_SIMPLE=y
->  CONFIG_FB_ARMCLCD=y
-> @@ -293,6 +332,7 @@ CONFIG_FRAMEBUFFER_CONSOLE=y
->  CONFIG_SOUND=y
->  CONFIG_SND=y
->  CONFIG_SND_SOC=y
-> +CONFIG_SND_SOC_RCAR=y
->  CONFIG_SND_SOC_TEGRA=y
->  CONFIG_SND_SOC_TEGRA_RT5640=y
->  CONFIG_SND_SOC_TEGRA_WM8753=y
-> @@ -309,6 +349,7 @@ CONFIG_USB_EHCI_HCD_PLATFORM=y
->  CONFIG_USB_ISP1760_HCD=y
->  CONFIG_USB_OHCI_HCD=y
->  CONFIG_USB_OHCI_HCD_PLATFORM=y
-> +CONFIG_USB_RENESAS_USBHS=y
->  CONFIG_USB_STORAGE=y
->  CONFIG_USB_CHIPIDEA=y
->  CONFIG_USB_CHIPIDEA_HOST=y
-> @@ -319,6 +360,10 @@ CONFIG_SAMSUNG_USB3PHY=y
->  CONFIG_USB_GPIO_VBUS=y
->  CONFIG_USB_ISP1301=y
->  CONFIG_USB_MXS_PHY=y
-> +CONFIG_USB_RCAR_PHY=y
-> +CONFIG_USB_RCAR_GEN2_PHY=y
-> +CONFIG_USB_GADGET=y
-> +CONFIG_USB_RENESAS_USBHS_UDC=y
->  CONFIG_MMC=y
->  CONFIG_MMC_BLOCK_MINORS
->  CONFIG_MMC_ARMMMCI=y
-> @@ -337,9 +382,11 @@ CONFIG_MMC_SDHCI_ST=y
->  CONFIG_MMC_OMAP=y
->  CONFIG_MMC_OMAP_HS=y
->  CONFIG_MMC_MVSDIO=y
-> -CONFIG_MMC_SUNXI=y
-> +CONFIG_MMC_SDHI=y
->  CONFIG_MMC_DW=y
->  CONFIG_MMC_DW_EXYNOS=y
-> +CONFIG_MMC_SH_MMCIF=y
-> +CONFIG_MMC_SUNXI=y
->  CONFIG_NEW_LEDS=y
->  CONFIG_LEDS_CLASS=y
->  CONFIG_LEDS_PWM=y
-> -- 
-> 1.9.1
-> 
+ arch/arm/boot/dts/r8a7740.dtsi | 136 +++++++++++++++++++++++++++++++++++++=
+++++
+ 1 file changed, 136 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index ed0adeb61a1ad8ec..713170442b7bd4b2 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -26,6 +26,10 @@
+ 			reg =3D <0x0>;
+ 			clock-frequency =3D <800000000>;
+ 			power-domains =3D <&pd_a3sm>;
++			stop-latency =3D <250000>;
++			start-latency =3D <250000>;
++			save-state-latency =3D <250000>;
++			restore-state-latency =3D <250000>;
+ 		};
+ 	};
+=20
+@@ -49,6 +53,10 @@
+ 		clocks =3D <&mstp3_clks R8A7740_CLK_CMT1>;
+ 		clock-names =3D "fck";
+ 		power-domains =3D <&pd_c5>;
++		stop-latency =3D <250000>;
++		start-latency =3D <250000>;
++		save-state-latency =3D <250000>;
++		restore-state-latency =3D <250000>;
+=20
+ 		renesas,channels-mask =3D <0x3f>;
+=20
+@@ -75,6 +83,10 @@
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks =3D <&mstp2_clks R8A7740_CLK_INTCA>;
+ 		power-domains =3D <&pd_a4s>;
++		stop-latency =3D <250000>;
++		start-latency =3D <250000>;
++		save-state-latency =3D <250000>;
++		restore-state-latency =3D <250000>;
+ 	};
+=20
+ 	/* irqpin1: IRQ8 - IRQ15 */
+@@ -97,6 +109,10 @@
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks =3D <&mstp2_clks R8A7740_CLK_INTCA>;
+ 		power-domains =3D <&pd_a4s>;
++		stop-latency =3D <250000>;
++		start-latency =3D <250000>;
++		save-state-latency =3D <250000>;
++		restore-state-latency =3D <250000>;
+ 	};
+=20
+ 	/* irqpin2: IRQ16 - IRQ23 */
+@@ -119,6 +135,10 @@
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks =3D <&mstp2_clks R8A7740_CLK_INTCA>;
+ 		power-domains =3D <&pd_a4s>;
++		stop-latency =3D <250000>;
++		start-latency =3D <250000>;
++		save-state-latency =3D <250000>;
++		restore-state-latency =3D <250000>;
+ 	};
+=20
+ 	/* irqpin3: IRQ24 - IRQ31 */
+@@ -141,6 +161,10 @@
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks =3D <&mstp2_clks R8A7740_CLK_INTCA>;
+ 		power-domains =3D <&pd_a4s>;
++		stop-latency =3D <250000>;
++		start-latency =3D <250000>;
++		save-state-latency =3D <250000>;
++		restore-state-latency =3D <250000>;
+ 	};
+=20
+ 	ether: ethernet@e9a00000 {
+@@ -150,6 +174,10 @@
+ 		interrupts =3D <0 110 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks =3D <&mstp3_clks R8A7740_CLK_GETHER>;
+ 		power-domains =3D <&pd_a4s>;
++		stop-latency =3D <250000>;
++		start-latency =3D <250000>;
++		save-state-latency =3D <250000>;
++		restore-state-latency =3D <250000>;
+ 		phy-mode =3D "mii";
+ 		#address-cells =3D <1>;
+ 		#size-cells =3D <0>;
+@@ -167,6 +195,10 @@
+ 			      0 204 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks =3D <&mstp1_clks R8A7740_CLK_IIC0>;
+ 		power-domains =3D <&pd_a4r>;
++		stop-latency =3D <250000>;
++		start-latency =3D <250000>;
++		save-state-latency =3D <250000>;
++		restore-state-latency =3D <250000>;
+ 		status =3D "disabled";
+ 	};
+=20
+@@ -181,6 +213,10 @@
+ 			      0 73 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks =3D <&mstp3_clks R8A7740_CLK_IIC1>;
+ 		power-domains =3D <&pd_a3sp>;
++		stop-latency =3D <250000>;
++		start-latency =3D <250000>;
++		save-state-latency =3D <250000>;
++		restore-state-latency =3D <250000>;
+ 		status =3D "disabled";
+ 	};
+=20
+@@ -191,6 +227,10 @@
+ 		clocks =3D <&mstp2_clks R8A7740_CLK_SCIFA0>;
+ 		clock-names =3D "sci_ick";
+ 		power-domains =3D <&pd_a3sp>;
++		stop-latency =3D <250000>;
++		start-latency =3D <250000>;
++		save-state-latency =3D <250000>;
++		restore-state-latency =3D <250000>;
+ 		status =3D "disabled";
+ 	};
+=20
+@@ -201,6 +241,10 @@
+ 		clocks =3D <&mstp2_clks R8A7740_CLK_SCIFA1>;
+ 		clock-names =3D "sci_ick";
+ 		power-domains =3D <&pd_a3sp>;
++		stop-latency =3D <250000>;
++		start-latency =3D <250000>;
++		save-state-latency =3D <250000>;
++		restore-state-latency =3D <250000>;
+ 		status =3D "disabled";
+ 	};
+=20
+@@ -211,6 +255,10 @@
+ 		clocks =3D <&mstp2_clks R8A7740_CLK_SCIFA0>;
+ 		clock-names =3D "sci_ick";
+ 		power-domains =3D <&pd_a3sp>;
++		stop-latency =3D <250000>;
++		start-latency =3D <250000>;
++		save-state-latency =3D <250000>;
++		restore-state-latency =3D <250000>;
+ 		status =3D "disabled";
+ 	};
+=20
+@@ -221,6 +269,10 @@
+ 		clocks =3D <&mstp2_clks R8A7740_CLK_SCIFA3>;
+ 		clock-names =3D "sci_ick";
+ 		power-domains =3D <&pd_a3sp>;
++		stop-latency =3D <250000>;
++		start-latency =3D <250000>;
++		save-state-latency =3D <250000>;
++		restore-state-latency =3D <250000>;
+ 		status =3D "disabled";
+ 	};
+=20
+@@ -231,6 +283,10 @@
+ 		clocks =3D <&mstp2_clks R8A7740_CLK_SCIFA4>;
+ 		clock-names =3D "sci_ick";
+ 		power-domains =3D <&pd_a3sp>;
++		stop-latency =3D <250000>;
++		start-latency =3D <250000>;
++		save-state-latency =3D <250000>;
++		restore-state-latency =3D <250000>;
+ 		status =3D "disabled";
+ 	};
+=20
+@@ -241,6 +297,10 @@
+ 		clocks =3D <&mstp2_clks R8A7740_CLK_SCIFA5>;
+ 		clock-names =3D "sci_ick";
+ 		power-domains =3D <&pd_a3sp>;
++		stop-latency =3D <250000>;
++		start-latency =3D <250000>;
++		save-state-latency =3D <250000>;
++		restore-state-latency =3D <250000>;
+ 		status =3D "disabled";
+ 	};
+=20
+@@ -251,6 +311,10 @@
+ 		clocks =3D <&mstp2_clks R8A7740_CLK_SCIFA6>;
+ 		clock-names =3D "sci_ick";
+ 		power-domains =3D <&pd_a3sp>;
++		stop-latency =3D <250000>;
++		start-latency =3D <250000>;
++		save-state-latency =3D <250000>;
++		restore-state-latency =3D <250000>;
+ 		status =3D "disabled";
+ 	};
+=20
+@@ -261,6 +325,10 @@
+ 		clocks =3D <&mstp2_clks R8A7740_CLK_SCIFA7>;
+ 		clock-names =3D "sci_ick";
+ 		power-domains =3D <&pd_a3sp>;
++		stop-latency =3D <250000>;
++		start-latency =3D <250000>;
++		save-state-latency =3D <250000>;
++		restore-state-latency =3D <250000>;
+ 		status =3D "disabled";
+ 	};
+=20
+@@ -271,6 +339,10 @@
+ 		clocks =3D <&mstp2_clks R8A7740_CLK_SCIFB>;
+ 		clock-names =3D "sci_ick";
+ 		power-domains =3D <&pd_a3sp>;
++		stop-latency =3D <250000>;
++		start-latency =3D <250000>;
++		save-state-latency =3D <250000>;
++		restore-state-latency =3D <250000>;
+ 		status =3D "disabled";
+ 	};
+=20
+@@ -290,6 +362,10 @@
+ 			<&irqpin3 0 0>, <&irqpin3 1 0>, <&irqpin3 2 0>, <&irqpin3 3 0>,
+ 			<&irqpin3 4 0>, <&irqpin3 5 0>, <&irqpin3 6 0>, <&irqpin3 7 0>;
+ 			power-domains =3D <&pd_c5>;
++			stop-latency =3D <250000>;
++			start-latency =3D <250000>;
++			save-state-latency =3D <250000>;
++			restore-state-latency =3D <250000>;
+ 	};
+=20
+ 	tpu: pwm@e6600000 {
+@@ -297,6 +373,10 @@
+ 		reg =3D <0xe6600000 0x100>;
+ 		clocks =3D <&mstp3_clks R8A7740_CLK_TPU0>;
+ 		power-domains =3D <&pd_a3sp>;
++		stop-latency =3D <250000>;
++		start-latency =3D <250000>;
++		save-state-latency =3D <250000>;
++		restore-state-latency =3D <250000>;
+ 		status =3D "disabled";
+ 		#pwm-cells =3D <3>;
+ 	};
+@@ -308,6 +388,10 @@
+ 			      0 57 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks =3D <&mstp3_clks R8A7740_CLK_MMC>;
+ 		power-domains =3D <&pd_a3sp>;
++		stop-latency =3D <250000>;
++		start-latency =3D <250000>;
++		save-state-latency =3D <250000>;
++		restore-state-latency =3D <250000>;
+ 		status =3D "disabled";
+ 	};
+=20
+@@ -319,6 +403,10 @@
+ 			      0 119 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks =3D <&mstp3_clks R8A7740_CLK_SDHI0>;
+ 		power-domains =3D <&pd_a3sp>;
++		stop-latency =3D <250000>;
++		start-latency =3D <250000>;
++		save-state-latency =3D <250000>;
++		restore-state-latency =3D <250000>;
+ 		cap-sd-highspeed;
+ 		cap-sdio-irq;
+ 		status =3D "disabled";
+@@ -332,6 +420,10 @@
+ 			      0 123 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks =3D <&mstp3_clks R8A7740_CLK_SDHI1>;
+ 		power-domains =3D <&pd_a3sp>;
++		stop-latency =3D <250000>;
++		start-latency =3D <250000>;
++		save-state-latency =3D <250000>;
++		restore-state-latency =3D <250000>;
+ 		cap-sd-highspeed;
+ 		cap-sdio-irq;
+ 		status =3D "disabled";
+@@ -345,6 +437,10 @@
+ 			      0 127 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks =3D <&mstp4_clks R8A7740_CLK_SDHI2>;
+ 		power-domains =3D <&pd_a3sp>;
++		stop-latency =3D <250000>;
++		start-latency =3D <250000>;
++		save-state-latency =3D <250000>;
++		restore-state-latency =3D <250000>;
+ 		cap-sd-highspeed;
+ 		cap-sdio-irq;
+ 		status =3D "disabled";
+@@ -357,6 +453,10 @@
+ 		interrupts =3D <0 9 0x4>;
+ 		clocks =3D <&mstp3_clks R8A7740_CLK_FSI>;
+ 		power-domains =3D <&pd_a4mp>;
++		stop-latency =3D <250000>;
++		start-latency =3D <250000>;
++		save-state-latency =3D <250000>;
++		restore-state-latency =3D <250000>;
+ 		status =3D "disabled";
+ 	};
+=20
+@@ -409,6 +509,10 @@
+ 			reg =3D <0xe6150000 0x10000>;
+ 			clocks =3D <&extal1_clk>, <&extalr_clk>;
+ 			power-domains =3D <&pd_c5>;
++			stop-latency =3D <250000>;
++			start-latency =3D <250000>;
++			save-state-latency =3D <250000>;
++			restore-state-latency =3D <250000>;
+ 			#clock-cells =3D <1>;
+ 			clock-output-names =3D "system", "pllc0", "pllc1",
+ 					     "pllc2", "r",
+@@ -424,6 +528,10 @@
+ 			reg =3D <0xe6150080 4>;
+ 			clocks =3D <&pllc1_div2_clk>;
+ 			power-domains =3D <&pd_c5>;
++			stop-latency =3D <250000>;
++			start-latency =3D <250000>;
++			save-state-latency =3D <250000>;
++			restore-state-latency =3D <250000>;
+ 			#clock-cells =3D <0>;
+ 			clock-output-names =3D "sub";
+ 		};
+@@ -433,6 +541,10 @@
+ 			compatible =3D "fixed-factor-clock";
+ 			clocks =3D <&cpg_clocks R8A7740_CLK_PLLC1>;
+ 			power-domains =3D <&pd_c5>;
++			stop-latency =3D <250000>;
++			start-latency =3D <250000>;
++			save-state-latency =3D <250000>;
++			restore-state-latency =3D <250000>;
+ 			#clock-cells =3D <0>;
+ 			clock-div =3D <2>;
+ 			clock-mult =3D <1>;
+@@ -442,6 +554,10 @@
+ 			compatible =3D "fixed-factor-clock";
+ 			clocks =3D <&extal1_clk>;
+ 			power-domains =3D <&pd_c5>;
++			stop-latency =3D <250000>;
++			start-latency =3D <250000>;
++			save-state-latency =3D <250000>;
++			restore-state-latency =3D <250000>;
+ 			#clock-cells =3D <0>;
+ 			clock-div =3D <2>;
+ 			clock-mult =3D <1>;
+@@ -454,6 +570,10 @@
+ 			reg =3D <0xe6150080 4>;
+ 			clocks =3D <&sub_clk>, <&sub_clk>;
+ 			power-domains =3D <&pd_c5>;
++			stop-latency =3D <250000>;
++			start-latency =3D <250000>;
++			save-state-latency =3D <250000>;
++			restore-state-latency =3D <250000>;
+ 			#clock-cells =3D <1>;
+ 			renesas,clock-indices =3D <
+ 				R8A7740_CLK_SUBCK R8A7740_CLK_SUBCK2
+@@ -470,6 +590,10 @@
+ 				 <&sub_clk>, <&sub_clk>,
+ 				 <&cpg_clocks R8A7740_CLK_B>;
+ 			power-domains =3D <&pd_c5>;
++			stop-latency =3D <250000>;
++			start-latency =3D <250000>;
++			save-state-latency =3D <250000>;
++			restore-state-latency =3D <250000>;
+ 			#clock-cells =3D <1>;
+ 			renesas,clock-indices =3D <
+ 				R8A7740_CLK_CEU21 R8A7740_CLK_CEU20 R8A7740_CLK_TMU0
+@@ -492,6 +616,10 @@
+ 				 <&sub_clk>, <&sub_clk>, <&sub_clk>,
+ 				 <&sub_clk>;
+ 			power-domains =3D <&pd_c5>;
++			stop-latency =3D <250000>;
++			start-latency =3D <250000>;
++			save-state-latency =3D <250000>;
++			restore-state-latency =3D <250000>;
+ 			#clock-cells =3D <1>;
+ 			renesas,clock-indices =3D <
+ 				R8A7740_CLK_SCIFA6 R8A7740_CLK_INTCA
+@@ -522,6 +650,10 @@
+ 				 <&cpg_clocks R8A7740_CLK_HP>,
+ 				 <&cpg_clocks R8A7740_CLK_HP>;
+ 			power-domains =3D <&pd_c5>;
++			stop-latency =3D <250000>;
++			start-latency =3D <250000>;
++			save-state-latency =3D <250000>;
++			restore-state-latency =3D <250000>;
+ 			#clock-cells =3D <1>;
+ 			renesas,clock-indices =3D <
+ 				R8A7740_CLK_CMT1 R8A7740_CLK_FSI R8A7740_CLK_IIC1
+@@ -540,6 +672,10 @@
+ 				 <&cpg_clocks R8A7740_CLK_HP>,
+ 				 <&cpg_clocks R8A7740_CLK_HP>;
+ 			power-domains =3D <&pd_c5>;
++			stop-latency =3D <250000>;
++			start-latency =3D <250000>;
++			save-state-latency =3D <250000>;
++			restore-state-latency =3D <250000>;
+ 			#clock-cells =3D <1>;
+ 			renesas,clock-indices =3D <
+ 				R8A7740_CLK_USBH R8A7740_CLK_SDHI2
+--=20
+1.9.1
+
