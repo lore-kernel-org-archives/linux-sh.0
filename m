@@ -1,115 +1,152 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 26 Sep 2014 08:13:06 +0000
-Subject: Re: [PATCH v3 10/13] ARM: shmobile: r8a7740 dtsi: Add PM domain support
-Message-Id: <CAMuHMdWfyL3eju+GF1M_h9gvTLsO=3NniFjhP6SRgiQ_-H2gyw@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 25 Sep 2014 16:28:31 +0000
+Subject: [PATCH v3 04/13] PM / Domains: Add DT bindings for the R-Mobile System Controller
+Message-Id: <1411662520-22795-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
- <1411662520-22795-11-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1411662520-22795-11-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Sep 25, 2014 at 6:28 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
-> Add a device node for the System Controller, with subnodes that
-> represent the hardware power area hierarchy.
-> Hook up all devices to their respective PM domains.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+The Renesas R-Mobile System Controller provides a.o. power management
+support, following the generic PM domain bindings in
+Documentation/devicetree/bindings/power/power_domain.txt.
 
-> diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-> index 502483f4dccb2f45..4fead480a405bebe 100644
-> --- a/arch/arm/boot/dts/r8a7740.dtsi
-> +++ b/arch/arm/boot/dts/r8a7740.dtsi
+For now this supports the R-Mobile A1 (r8a7740) only, but it should be
+sufficiently generic to handle other members of the SH-Mobile/R-Mobile
+family in the future.
 
-> @@ -383,6 +408,7 @@
->                         compatible = "renesas,r8a7740-cpg-clocks";
->                         reg = <0xe6150000 0x10000>;
->                         clocks = <&extal1_clk>, <&extalr_clk>;
-> +                       power-domains = <&pd_c5>;
->                         #clock-cells = <1>;
->                         clock-output-names = "system", "pllc0", "pllc1",
->                                              "pllc2", "r",
-> @@ -397,6 +423,7 @@
->                         compatible = "renesas,r8a7740-div6-clock", "renesas,cpg-div6-clock";
->                         reg = <0xe6150080 4>;
->                         clocks = <&pllc1_div2_clk>;
-> +                       power-domains = <&pd_c5>;
->                         #clock-cells = <0>;
->                         clock-output-names = "sub";
->                 };
-> @@ -405,6 +432,7 @@
->                 pllc1_div2_clk: pllc1_div2_clk {
->                         compatible = "fixed-factor-clock";
->                         clocks = <&cpg_clocks R8A7740_CLK_PLLC1>;
-> +                       power-domains = <&pd_c5>;
->                         #clock-cells = <0>;
->                         clock-div = <2>;
->                         clock-mult = <1>;
-> @@ -413,6 +441,7 @@
->                 extal1_div2_clk: extal1_div2_clk {
->                         compatible = "fixed-factor-clock";
->                         clocks = <&extal1_clk>;
-> +                       power-domains = <&pd_c5>;
->                         #clock-cells = <0>;
->                         clock-div = <2>;
->                         clock-mult = <1>;
-> @@ -424,6 +453,7 @@
->                         compatible = "renesas,r8a7740-mstp-clocks", "renesas,cpg-mstp-clocks";
->                         reg = <0xe6150080 4>;
->                         clocks = <&sub_clk>, <&sub_clk>;
-> +                       power-domains = <&pd_c5>;
->                         #clock-cells = <1>;
->                         renesas,clock-indices = <
->                                 R8A7740_CLK_SUBCK R8A7740_CLK_SUBCK2
-> @@ -439,6 +469,7 @@
->                                  <&cpg_clocks R8A7740_CLK_B>,
->                                  <&sub_clk>, <&sub_clk>,
->                                  <&cpg_clocks R8A7740_CLK_B>;
-> +                       power-domains = <&pd_c5>;
->                         #clock-cells = <1>;
->                         renesas,clock-indices = <
->                                 R8A7740_CLK_CEU21 R8A7740_CLK_CEU20 R8A7740_CLK_TMU0
-> @@ -460,6 +491,7 @@
->                                  <&sub_clk>, <&sub_clk>, <&sub_clk>,
->                                  <&sub_clk>, <&sub_clk>, <&sub_clk>,
->                                  <&sub_clk>;
-> +                       power-domains = <&pd_c5>;
->                         #clock-cells = <1>;
->                         renesas,clock-indices = <
->                                 R8A7740_CLK_SCIFA6 R8A7740_CLK_INTCA
-> @@ -489,6 +521,7 @@
->                                  <&cpg_clocks R8A7740_CLK_HP>,
->                                  <&cpg_clocks R8A7740_CLK_HP>,
->                                  <&cpg_clocks R8A7740_CLK_HP>;
-> +                       power-domains = <&pd_c5>;
->                         #clock-cells = <1>;
->                         renesas,clock-indices = <
->                                 R8A7740_CLK_CMT1 R8A7740_CLK_FSI R8A7740_CLK_IIC1
-> @@ -506,6 +539,7 @@
->                                  <&cpg_clocks R8A7740_CLK_HP>,
->                                  <&cpg_clocks R8A7740_CLK_HP>,
->                                  <&cpg_clocks R8A7740_CLK_HP>;
-> +                       power-domains = <&pd_c5>;
->                         #clock-cells = <1>;
->                         renesas,clock-indices = <
->                                 R8A7740_CLK_USBH R8A7740_CLK_SDHI2
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v3:
+  - Reword,
+v2:
+  - Fix copy-and-paste s/#address-cells/#size-cells/,
+  - Add optional PM QoS device latencies.
 
-Woosh, looks like I've been too eager adding links to the pd_c5 "always on"
-PM domain to any node that has a clocks property. This must not be done for
-the clocks. They are not instantiated as platform devices.
+ .../bindings/power/renesas,sysc-rmobile.txt        | 111 +++++++++++++++++++++
+ 1 file changed, 111 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
 
-Thanks to Grygorii for questioning me.
+diff --git a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
+new file mode 100644
+index 0000000000000000..0b1e56d6ed1ab9a2
+--- /dev/null
++++ b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
+@@ -0,0 +1,111 @@
++DT bindings for the Renesas R-Mobile System Controller
++
++= System Controller Node =
++
++The R-Mobile System Controller provides the following functions:
++  - Boot mode management,
++  - Reset generation,
++  - Power management.
++
++Required properties:
++- compatible: Should be "renesas,sysc-<soctype>", "renesas,sysc-rmobile" as
++	      fallback.
++	      Examples with soctypes are:
++		- "renesas,sysc-r8a7740" (R-Mobile A1)
++- reg: Two address start and address range blocks for the device:
++         - The first block refers to the normally accessible registers,
++         - the second block refers to the registers protected by the HPB
++	   semaphore.
++
++Optional nodes:
++- pm-domains: This node contains a hierarchy of PM domain nodes, which should
++  match the Power Area Hierarchy in the Power Domain Specifications section of
++  the device's datasheet.
++
++
++= PM Domain Nodes =
++
++Each of the PM domain nodes represents a PM domain, as documented by the
++generic PM domain bindings in
++Documentation/devicetree/bindings/power/power_domain.txt.
++
++The nodes should be named by the real power area names, and thus their names
++should be unique.
++
++Required properties:
++  - #power-domain-cells: Must be 0.
++
++Optional properties:
++- reg: If the PM domain is not always-on, this property must contain the bit
++       index number for the corresponding power area in the various Power
++       Control and Status Registers. The parent's node must contain the
++       following two properties:
++	 - #address-cells: Must be 1,
++	 - #size-cells: Must be 0.
++       If the PM domain is always-on, this property must be omitted.
++- power-on-latency: Power-on latency of the PM domain, in ns,
++- power-off-latency: Power-off latency of the PM domain, in ns.
++
++
++Example:
++
++This shows a subset of the r8a7740 PM domain hierarchy, containing the
++C5 "always-on" domain, 2 of its subdomains (A4S and A4SU), and the A3SP domain,
++which is a subdomain of A4S.
++
++	sysc: system-controller@e6180000 {
++		compatible = "renesas,sysc-r8a7740", "renesas,sysc-rmobile";
++		reg = <0xe6180000 8000>, <0xe6188000 8000>;
++
++		pm-domains {
++			pd_c5: c5 {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				#power-domain-cells = <0>;
++
++				pd_a4s: a4s@10 {
++					reg = <10>;
++					#address-cells = <1>;
++					#size-cells = <0>;
++					#power-domain-cells = <0>;
++					power-on-latency = <250000>;
++					power-off-latency = <250000>;
++
++					pd_a3sp: a3sp@11 {
++						reg = <11>;
++						#power-domain-cells = <0>;
++						power-on-latency = <250000>;
++						power-off-latency = <250000>;
++					};
++				};
++
++				pd_a4su: a4su@20 {
++					reg = <20>;
++					#power-domain-cells = <0>;
++					power-on-latency = <250000>;
++					power-off-latency = <250000>;
++				};
++			};
++		};
++	};
++
++
++= PM Domain Consumers =
++
++Hardware blocks belonging to a PM domain should contain a "power-domains"
++property that is a phandle pointing to the corresponding PM domain node,
++and optional PM QoS device latencies:
++
++Example:
++
++	tpu: pwm@e6600000 {
++		compatible = "renesas,tpu-r8a7740", "renesas,tpu";
++		reg = <0xe6600000 0x100>;
++		clocks = <&mstp3_clks R8A7740_CLK_TPU0>;
++		power-domains = <&pd_a3sp>;
++		stop-latency = <250000>;
++		start-latency = <250000>;
++		save-state-latency = <250000>;
++		restore-state-latency = <250000>;
++		#pwm-cells = <3>;
++	};
+-- 
+1.9.1
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
