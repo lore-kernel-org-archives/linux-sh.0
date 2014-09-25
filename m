@@ -1,64 +1,78 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 09 Sep 2014 08:20:44 +0000
-Subject: Re: [PATCH 4/6 v4] ARM: shmobile: remove MMC_CAP2_NO_MULTI_READ from koelsch
-Message-Id: <20140909082041.GA5819@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 25 Sep 2014 16:28:32 +0000
+Subject: [PATCH v3 05/13] PM / Domains: Add helper variable np = dev->of_node
+Message-Id: <1411662520-22795-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
- <87k35d70pz.wl%kuninori.morimoto.gx@gmail.com>
- <87egvl70ls.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87egvl70ls.wl%kuninori.morimoto.gx@gmail.com>
+References: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Cc: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Sep 08, 2014 at 11:46:10PM -0700, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> sh_mobile_sdhi cares multiblock read bug.
-> remove MMC_CAP2_NO_MULTI_READ flag from board code
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v3:
+  - No changes
+v2:
+  - New
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+ drivers/base/power/domain.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-> ---
-> v3 -> v4
-> 
->  - no change
-> 
->  arch/arm/mach-shmobile/board-koelsch.c |    3 ---
->  1 file changed, 3 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-> index b7d5bc7..126a8b4 100644
-> --- a/arch/arm/mach-shmobile/board-koelsch.c
-> +++ b/arch/arm/mach-shmobile/board-koelsch.c
-> @@ -331,7 +331,6 @@ SDHI_REGULATOR(2, RCAR_GP_PIN(7, 19), RCAR_GP_PIN(2, 26));
->  static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
->  	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
->  			  MMC_CAP_POWER_OFF_CARD,
-> -	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
->  	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
->  };
->  
-> @@ -344,7 +343,6 @@ static struct resource sdhi0_resources[] __initdata = {
->  static struct sh_mobile_sdhi_info sdhi1_info __initdata = {
->  	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
->  			  MMC_CAP_POWER_OFF_CARD,
-> -	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
->  	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
->  };
->  
-> @@ -357,7 +355,6 @@ static struct resource sdhi1_resources[] __initdata = {
->  static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
->  	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
->  			  MMC_CAP_POWER_OFF_CARD,
-> -	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
->  	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
->  			  TMIO_MMC_WRPROTECT_DISABLE,
->  };
-> -- 
-> 1.7.9.5
-> 
+diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
+index 6e36bb09e7d9c144..0ebc6bb31c9c227f 100644
+--- a/drivers/base/power/domain.c
++++ b/drivers/base/power/domain.c
+@@ -2171,17 +2171,18 @@ static void genpd_dev_pm_detach(struct device *dev, bool power_off)
+  */
+ int genpd_dev_pm_attach(struct device *dev)
+ {
++	struct device_node *np = dev->of_node;
+ 	struct of_phandle_args pd_args;
+ 	struct generic_pm_domain *pd;
+ 	int ret;
+ 
+-	if (!dev->of_node)
++	if (!np)
+ 		return -ENODEV;
+ 
+ 	if (dev->pm_domain)
+ 		return -EEXIST;
+ 
+-	ret = of_parse_phandle_with_args(dev->of_node, "power-domains",
++	ret = of_parse_phandle_with_args(np, "power-domains",
+ 					"#power-domain-cells", 0, &pd_args);
+ 	if (ret < 0) {
+ 		if (ret != -ENOENT)
+@@ -2192,8 +2193,7 @@ int genpd_dev_pm_attach(struct device *dev)
+ 		 * (for backwards compatibility of DT ABI)
+ 		 */
+ 		pd_args.args_count = 0;
+-		pd_args.np = of_parse_phandle(dev->of_node,
+-						"samsung,power-domain", 0);
++		pd_args.np = of_parse_phandle(np, "samsung,power-domain", 0);
+ 		if (!pd_args.np)
+ 			return -ENOENT;
+ 	}
+@@ -2202,7 +2202,7 @@ int genpd_dev_pm_attach(struct device *dev)
+ 	if (IS_ERR(pd)) {
+ 		dev_dbg(dev, "%s() failed to find PM domain: %ld\n",
+ 			__func__, PTR_ERR(pd));
+-		of_node_put(dev->of_node);
++		of_node_put(np);
+ 		return PTR_ERR(pd);
+ 	}
+ 
+@@ -2218,7 +2218,7 @@ int genpd_dev_pm_attach(struct device *dev)
+ 	if (ret < 0) {
+ 		dev_err(dev, "failed to add to PM domain %s: %d",
+ 			pd->name, ret);
+-		of_node_put(dev->of_node);
++		of_node_put(np);
+ 		return ret;
+ 	}
+ 
+-- 
+1.9.1
+
