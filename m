@@ -1,79 +1,61 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 16 Sep 2014 11:20:34 +0000
-Subject: [PATCH 03/03] ARM: shmobile: lager-reference: IOMMUSY1 and USB tests
-Message-Id: <20140916112034.14889.85988.sendpatchset@w520>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 25 Sep 2014 16:13:18 +0000
+Subject: [PATCH 02/13] ARM: shmobile: emev2 dtsi: Add uart* labels for easier referencing
+Message-Id: <1411661609-4280-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1411661609-4280-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1411661609-4280-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Magnus Damm <damm+renesas@opensource.se>
-
-Add some prototype code to allow testing of IPMMUSY1
-and USB 2.0 Host controllers on the r8a7790 Lager board.
-
-The USB 2.0 Host controllers are described via DT while
-the IPMMU device is handled as platform device for now.
-
-Not for upstream merge.
-
-Not-Yet-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+ arch/arm/boot/dts/emev2.dtsi | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
- arch/arm/mach-shmobile/board-lager-reference.c |   30 ++++++++++++++++++++++++
- 1 file changed, 30 insertions(+)
+diff --git a/arch/arm/boot/dts/emev2.dtsi b/arch/arm/boot/dts/emev2.dtsi
+index 5fe9212b6bc5e50b..cc7bfe0ba40af9a9 100644
+--- a/arch/arm/boot/dts/emev2.dtsi
++++ b/arch/arm/boot/dts/emev2.dtsi
+@@ -137,7 +137,7 @@
+ 		clock-names = "sclk";
+ 	};
+ 
+-	serial@e1020000 {
++	uart0: serial@e1020000 {
+ 		compatible = "renesas,em-uart";
+ 		reg = <0xe1020000 0x38>;
+ 		interrupts = <0 8 IRQ_TYPE_LEVEL_HIGH>;
+@@ -145,7 +145,7 @@
+ 		clock-names = "sclk";
+ 	};
+ 
+-	serial@e1030000 {
++	uart1: serial@e1030000 {
+ 		compatible = "renesas,em-uart";
+ 		reg = <0xe1030000 0x38>;
+ 		interrupts = <0 9 IRQ_TYPE_LEVEL_HIGH>;
+@@ -153,7 +153,7 @@
+ 		clock-names = "sclk";
+ 	};
+ 
+-	serial@e1040000 {
++	uart2: serial@e1040000 {
+ 		compatible = "renesas,em-uart";
+ 		reg = <0xe1040000 0x38>;
+ 		interrupts = <0 10 IRQ_TYPE_LEVEL_HIGH>;
+@@ -161,7 +161,7 @@
+ 		clock-names = "sclk";
+ 	};
+ 
+-	serial@e1050000 {
++	uart3: serial@e1050000 {
+ 		compatible = "renesas,em-uart";
+ 		reg = <0xe1050000 0x38>;
+ 		interrupts = <0 11 IRQ_TYPE_LEVEL_HIGH>;
+-- 
+1.9.1
 
---- 0001/arch/arm/mach-shmobile/board-lager-reference.c
-+++ work/arch/arm/mach-shmobile/board-lager-reference.c	2014-09-16 17:04:43.000000000 +0900
-@@ -21,6 +21,7 @@
- #include <linux/dma-mapping.h>
- #include <linux/init.h>
- #include <linux/of_platform.h>
-+#include <linux/platform_data/ipmmu-vmsa.h>
- #include <linux/platform_data/rcar-du.h>
- 
- #include <asm/mach/arch.h>
-@@ -88,6 +89,34 @@ static void __init lager_add_du_device(v
- }
- 
- /*
-+ * IPMMUSY1
-+ */
-+static struct resource ipmmu_resources[] = {
-+	DEFINE_RES_MEM(0xe6290800, 0x800),
-+	DEFINE_RES_IRQ(gic_spi(225)),
-+};
-+
-+static const struct ipmmu_vmsa_master ipmmu_masters[] = {
-+	{ "ee090000.pci", 6, },
-+	{ "ee0b0000.pci", 8, },
-+	{ "ee0d0000.pci", 9, },
-+};
-+
-+static struct ipmmu_vmsa_platform_data ipmmu_platform_data = {
-+	.masters = ipmmu_masters,
-+	.num_masters = ARRAY_SIZE(ipmmu_masters),
-+};
-+
-+static void __init lager_add_ipmmu_devices(void)
-+{
-+	platform_device_register_resndata(NULL, "ipmmu-vmsa", -1,
-+					  ipmmu_resources,
-+					  ARRAY_SIZE(ipmmu_resources),
-+					  &ipmmu_platform_data,
-+					  sizeof(ipmmu_platform_data));
-+}
-+
-+/*
-  * This is a really crude hack to provide clkdev support to platform
-  * devices until they get moved to DT.
-  */
-@@ -105,6 +134,7 @@ static void __init lager_add_standard_de
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 
- 	lager_add_du_device();
-+	lager_add_ipmmu_devices();
- }
- 
- static const char *lager_boards_compat_dt[] __initdata = {
