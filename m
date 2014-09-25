@@ -1,36 +1,105 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 09 Sep 2014 02:21:10 +0000
-Subject: Re: [PATCH 0/5] ARM: shmobile: pm domain improvements and cleanups
-Message-Id: <20140909022109.GB31320@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 25 Sep 2014 01:32:13 +0000
+Subject: [PATCH v3 3/4] ARM: shmobile: kzm9d: sort dts file by address
+Message-Id: <1411608734-1349-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1411608734-1349-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1411608734-1349-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Aug 29, 2014 at 03:26:17PM +0200, Geert Uytterhoeven wrote:
-> 	Hi Simon, Magnus,
-> 
-> This patch series improves and cleans up the initialization of power domains
-> and their devices on sh7372/mackerel and r8a7740/armadillo800eva.
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Thanks, I have queued these up.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-As I have (once again) received push-back from the ARM-SoC maintainers
-relating to cleanups I will describe my reasoning for picking these up
-below.
+---
+v2 - v3
+* No change
+---
+ arch/arm/boot/dts/emev2-kzm9d.dts | 62 +++++++++++++++++++--------------------
+ 1 file changed, 31 insertions(+), 31 deletions(-)
 
-I have picked these up because they can be applied cleanly on
-top of v3.17-rc1 and do not conflict with anything else that is
-currently queued up for v3.18. As such I do not believe I need
-to consider deferring them until v3.19.
+diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts b/arch/arm/boot/dts/emev2-kzm9d.dts
+index 50ccd15..a1794cb 100644
+--- a/arch/arm/boot/dts/emev2-kzm9d.dts
++++ b/arch/arm/boot/dts/emev2-kzm9d.dts
+@@ -27,37 +27,6 @@
+ 		bootargs = "console=ttyS1,115200n81 ignore_loglevel root=/dev/nfs ip=dhcp";
+ 	};
+ 
+-	reg_1p8v: regulator@0 {
+-		compatible = "regulator-fixed";
+-		regulator-name = "fixed-1.8V";
+-		regulator-min-microvolt = <1800000>;
+-		regulator-max-microvolt = <1800000>;
+-		regulator-always-on;
+-		regulator-boot-on;
+-	};
+-
+-	reg_3p3v: regulator@1 {
+-		compatible = "regulator-fixed";
+-		regulator-name = "fixed-3.3V";
+-		regulator-min-microvolt = <3300000>;
+-		regulator-max-microvolt = <3300000>;
+-		regulator-always-on;
+-		regulator-boot-on;
+-	};
+-
+-	lan9220@20000000 {
+-		compatible = "smsc,lan9220", "smsc,lan9115";
+-		reg = <0x20000000 0x10000>;
+-		phy-mode = "mii";
+-		interrupt-parent = <&gpio0>;
+-		interrupts = <1 IRQ_TYPE_EDGE_RISING>;
+-		reg-io-width = <4>;
+-		smsc,irq-active-high;
+-		smsc,irq-push-pull;
+-		vddvario-supply = <&reg_1p8v>;
+-		vdd33a-supply = <&reg_3p3v>;
+-	};
+-
+ 	gpio_keys {
+ 		compatible = "gpio-keys";
+ 		#address-cells = <1>;
+@@ -92,4 +61,35 @@
+ 			gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
+ 		};
+ 	};
++
++	reg_1p8v: regulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-1.8V";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++		regulator-always-on;
++		regulator-boot-on;
++	};
++
++	reg_3p3v: regulator@1 {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-3.3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++		regulator-boot-on;
++	};
++
++	lan9220@20000000 {
++		compatible = "smsc,lan9220", "smsc,lan9115";
++		reg = <0x20000000 0x10000>;
++		phy-mode = "mii";
++		interrupt-parent = <&gpio0>;
++		interrupts = <1 IRQ_TYPE_EDGE_RISING>;
++		reg-io-width = <4>;
++		smsc,irq-active-high;
++		smsc,irq-push-pull;
++		vddvario-supply = <&reg_1p8v>;
++		vdd33a-supply = <&reg_3p3v>;
++	};
+ };
+-- 
+2.0.1
 
-If, on the other hand, they had conflicted with patches queued up
-for v3.18 I would have been hesitant to pick them up and probably
-would have asked you to defer them until v3.19. This is because
-within a release cycle the ARM-SoC maintainers have a preference for
-cleanups to come before other changes.
-
-I hope the above makes sense and may help everyone to understand
-a little more how I am handling cleanups in accordance with request
-made by the ARM-SoC maintainers.
