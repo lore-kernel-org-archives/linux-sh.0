@@ -1,72 +1,48 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 01 Sep 2014 01:34:44 +0000
-Subject: Re: [PATCH 0/2] r8a777[89] dtsi sorting
-Message-Id: <20140901013444.GI32075@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 25 Sep 2014 01:32:10 +0000
+Subject: [PATCH v3 0/4] ARM: shmobile: various DT files sorted by address
+Message-Id: <1411608734-1349-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409336201-708-1-git-send-email-ulrich.hecht+renesas@gmail.com>
- <CAMuHMdXZ_drLTdm_912EOL+g+rYqwOmH361NzQgz9+ruDmUEnA@mail.gmail.com>
- <20140901012420.GG32075@verge.net.au>
-In-Reply-To: <20140901012420.GG32075@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Olof Johansson <olof@lixom.net>
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Sep 01, 2014 at 10:24:21AM +0900, Simon Horman wrote:
-> On Fri, Aug 29, 2014 at 10:03:27PM +0200, Geert Uytterhoeven wrote:
-> > Hi Uli,
-> > 
-> > On Fri, Aug 29, 2014 at 8:16 PM, Ulrich Hecht
-> > <ulrich.hecht+renesas@gmail.com> wrote:
-> > > These are the dtsi files for r8a7778 and r8a7779 sorted according to what I
-> > > imagine to be accepted standards now: sort by address, "compatible" goes
-> > > first, #include directives before anything else.  The sorting was done using
-> > > a little script I wrote (https://github.com/uli/dtssort).
-> > 
-> > Nice! (but soon thereafter I got sidetracked by decomp ;-)
-> > 
-> > > I chose these two files because the required changes are relatively small.
-> > > Doing this for r8a779x yields a gargantuan and entirely unreadable patch due
-> > > to the random shifting about of large blocks of code.  If anybody knows a
-> > > tool that makes such things somewhat manageable to review, please speak up.
-> > 
-> > You more or less gave a solution at the top of your email: split it in multiple
-> > patches: one to sort the includes, one to sort the properties inside the nodes,
-> > and one single patch for each node you move.
-> > Yes, too many patches, but good for the patch statistics ;-)
-> 
-> FWIW, I would rather many small patches than one gargatuan one.
+Hi,
 
-Also, please repost this thread with Olof Johansson CCed
-(I have cced him on this reply. It was he who originally requested
-the dts files be sorted. So I would value his opinion on the
-order you have come up with.
+this is an update of a series posted by Ulrich,
+"ARM: shmobile: various DT files sorted by address",
+the purpose of which is to sort DT nodes by their address.
 
-> 
-> > Another approach could be to start considering SoCs as built from multiple
-> > hardware blocks, not only at the hardware/software level, but also at the DTS
-> > level. I.e. use macros to instantiate nodes. This makes it easier to avoid
-> > stupid typos in e.g. the 5th i2c node. In addition, many SoCs are similar, and
-> > only differ in a few nodes.
-> > 
-> > Gr{oetje,eeting}s,
-> > 
-> >                         Geert
-> > 
-> > --
-> > Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> > 
-> > In personal conversations with technical people, I call myself a hacker. But
-> > when I'm talking to journalists I just say "programmer" or something like that.
-> >                                 -- Linus Torvalds
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Changes since v1.
+* Drop patch reo remove spurious regulator base address as it
+  gave two nodes the same name. Until better names be found just
+  use the existing scheme (this series don't add the names it just
+  moves the nodes).
+
+Changes since v1.
+* Some patches from the v1 series have been queued up and thus are not
+  present in v2.
+* Two new patches have been added to remove spurious regulator base
+  addresses, as suggested by Geert Uytterhoeven. These correct incorrect
+  lines before subsequent patches, rebased since v1, move them.
+
+Based on renesas-next-20140918-v3.17-rc2
+Targeted for inclusion in v3.19.
+
+Simon Horman (1):
+  ARM: shmobile: r8a73a4: Remove spurious dma-multiplexer base addresses
+
+Ulrich Hecht (3):
+  ARM: shmobile: r7s72100: sort dtsi file by address
+  ARM: shmobile: kzm9d: sort dts file by address
+  ARM: shmobile: r8a73a4: sort dtsi file by address
+
+ arch/arm/boot/dts/emev2-kzm9d.dts |  62 +++++-----
+ arch/arm/boot/dts/r7s72100.dtsi   | 202 ++++++++++++++++-----------------
+ arch/arm/boot/dts/r8a73a4.dtsi    | 232 +++++++++++++++++++-------------------
+ 3 files changed, 248 insertions(+), 248 deletions(-)
+
+-- 
+2.0.1
+
