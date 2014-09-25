@@ -1,107 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 04 Sep 2014 01:12:39 +0000
-Subject: [PATCH 8/9] ARM: shmobile: Consolidate Legacy SH_CLK_CPG Kconfig
-Message-Id: <0cdc23df6e4014a6dafe351da436dcc453f203b1.1409792454.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 25 Sep 2014 16:13:19 +0000
+Subject: [PATCH 03/13] ARM: shmobile: kzm9d dts: Add chosen/stdout-path
+Message-Id: <1411661609-4280-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1409792454.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1409792454.git.horms+renesas@verge.net.au>
+References: <1411661609-4280-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1411661609-4280-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Add a stdout-path property so that automatic console selection works
+in the absence of a "console=" parameter on the kernel command line.
 
-Consolidate SH_CLK_CPG under ARCH_SHMOBILE_LEGACY so it can
-be shared by the legacy ARM mach-shmobile support code.
+Remove the now-superfluous "console=" parameter from chosen/bootargs.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/Kconfig               | 1 +
- arch/arm/mach-shmobile/Kconfig | 8 --------
- 2 files changed, 1 insertion(+), 8 deletions(-)
+ arch/arm/boot/dts/emev2-kzm9d.dts | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index 93efc9a..bd8beae 100644
---- a/arch/arm/Kconfig
-+++ b/arch/arm/Kconfig
-@@ -661,6 +661,7 @@ config ARCH_SHMOBILE_LEGACY
- 	select NO_IOPORT_MAP
- 	select PINCTRL
- 	select PM_GENERIC_DOMAINS if PM
-+	select SH_CLK_CPG
- 	select SPARSE_IRQ
- 	help
- 	  Support for Renesas ARM SoC platforms using a non-multiplatform
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index d4cf8bf..6283ff2 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -95,7 +95,6 @@ config ARCH_SH7372
- 	select ARCH_RMOBILE
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_CPU_SUSPEND if PM || CPU_IDLE
--	select SH_CLK_CPG
- 	select SH_INTC
+diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts b/arch/arm/boot/dts/emev2-kzm9d.dts
+index 50ccd151091e23d3..afd369f9262288a1 100644
+--- a/arch/arm/boot/dts/emev2-kzm9d.dts
++++ b/arch/arm/boot/dts/emev2-kzm9d.dts
+@@ -24,7 +24,8 @@
+ 	};
  
- config ARCH_SH73A0
-@@ -104,7 +103,6 @@ config ARCH_SH73A0
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
- 	select I2C
--	select SH_CLK_CPG
- 	select SH_INTC
- 	select RENESAS_INTC_IRQPIN
+ 	chosen {
+-		bootargs = "console=ttyS1,115200n81 ignore_loglevel root=/dev/nfs ip=dhcp";
++		bootargs = "ignore_loglevel root=/dev/nfs ip=dhcp";
++		stdout-path = &uart1;
+ 	};
  
-@@ -113,7 +111,6 @@ config ARCH_R8A73A4
- 	select ARCH_RMOBILE
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
--	select SH_CLK_CPG
- 	select RENESAS_IRQC
- 
- config ARCH_R8A7740
-@@ -121,14 +118,12 @@ config ARCH_R8A7740
- 	select ARCH_RMOBILE
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
--	select SH_CLK_CPG
- 	select RENESAS_INTC_IRQPIN
- 
- config ARCH_R8A7778
- 	bool "R-Car M1A (R8A77781)"
- 	select ARCH_RCAR_GEN1
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
--	select SH_CLK_CPG
- 	select ARM_GIC
- 
- config ARCH_R8A7779
-@@ -136,7 +131,6 @@ config ARCH_R8A7779
- 	select ARCH_RCAR_GEN1
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
--	select SH_CLK_CPG
- 
- config ARCH_R8A7790
- 	bool "R-Car H2 (R8A77900)"
-@@ -144,7 +138,6 @@ config ARCH_R8A7790
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
- 	select MIGHT_HAVE_PCI
--	select SH_CLK_CPG
- 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
- 
- config ARCH_R8A7791
-@@ -153,7 +146,6 @@ config ARCH_R8A7791
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
- 	select MIGHT_HAVE_PCI
--	select SH_CLK_CPG
- 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
- 
- config ARCH_R7S72100
+ 	reg_1p8v: regulator@0 {
 -- 
-2.0.1
+1.9.1
 
