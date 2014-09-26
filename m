@@ -1,40 +1,66 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 12 Sep 2014 01:23:53 +0000
-Subject: [PATCH] clk: shmobile: Add r8a7740, sh73a0 SoCs to MSTP bindings
-Message-Id: <b32c44b93af31e9163514df0f3ac2791972eb124.1410484748.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 26 Sep 2014 21:08:12 +0000
+Subject: [PATCH v4 1/3] ARM: shmobile: r8a7791: add USB PHY DT support
+Message-Id: <2840152.T6qjI3ulQ6@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1410484748.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1410484748.git.horms+renesas@verge.net.au>
+References: <3383603.zZsCVpCDbD@wasted.cogentembedded.com>
+In-Reply-To: <3383603.zZsCVpCDbD@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Define the R8A7791 generic part of the USB PHY device node. It is up to the
+board file to enable the device.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Mike Turquette <mturquette@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 2 ++
- 1 file changed, 2 insertions(+)
+Changes in version 4:
+- refreshed the patch.
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-index 8a92b5fb..8f1424f 100644
---- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-@@ -11,9 +11,11 @@ Required Properties:
+Changes in version 3:
+- changed subnodes of the USB PHY node to be per-channel;
+- changed "renesas,phy-select" property to "reg" in the subnodes, and thus added
+  "#address-cells" and "#size-cells" properties to the parent node;
+- moved "#phy-cells" property from the parent node to the subnodes, changing its
+  value to <1>;
+- refreshed the patch.
+
+Changes in version 2:
+- added subnodes to the USB PHY node;
+- refreshed the patch.
+
+ arch/arm/boot/dts/r8a7791.dtsi |   19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
++++ renesas/arch/arm/boot/dts/r8a7791.dtsi
+@@ -637,6 +637,25 @@
+ 		status = "disabled";
+ 	};
  
-   - compatible: Must be one of the following
-     - "renesas,r7s72100-mstp-clocks" for R7S72100 (RZ) MSTP gate clocks
-+    - "renesas,r8a7740-mstp-clocks" for R8A7740 (R-Mobile A1) MSTP gate clocks
-     - "renesas,r8a7779-mstp-clocks" for R8A7779 (R-Car H1) MSTP gate clocks
-     - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
-     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
-+    - "renesas,sh73a0-mstp-clocks" for SH73A0 (SH-MobileAG5) MSTP gate clocks
-     - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
-   - reg: Base address and length of the I/O mapped registers used by the MSTP
-     clocks. The first register is the clock control register and is mandatory.
--- 
-2.0.1
++	usbphy: usb-phy@e6590100 {
++		compatible = "renesas,usb-phy-r8a7791";
++		reg = <0 0xe6590100 0 0x100>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		clocks = <&mstp7_clks R8A7791_CLK_HSUSB>;
++		clock-names = "usbhs";
++		status = "disabled";
++
++		usb0: usb-channel@0 {
++			reg = <0>;
++			#phy-cells = <1>;
++		};
++		usb2: usb-channel@2 {
++			reg = <2>;
++			#phy-cells = <1>;
++		};
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 
