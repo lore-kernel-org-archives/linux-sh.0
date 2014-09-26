@@ -1,40 +1,44 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 25 Sep 2014 16:13:24 +0000
-Subject: [PATCH 08/13] ARM: shmobile: marzen dts: Add chosen/stdout-path
-Message-Id: <1411661609-4280-9-git-send-email-geert+renesas@glider.be>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 26 Sep 2014 21:01:35 +0000
+Subject: [PATCH v4 2/2] ARM: shmobile: lager: enable USB PHY
+Message-Id: <1862889.19pI7tAsvN@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411661609-4280-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1411661609-4280-1-git-send-email-geert+renesas@glider.be>
+References: <4420279.PiYV5HPFxp@wasted.cogentembedded.com>
+In-Reply-To: <4420279.PiYV5HPFxp@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-Add a stdout-path property so that automatic console selection works
-in the absence of a "console=" parameter on the kernel command line.
+Enable USB PHY device for the Lager board. 
 
-Remove the now-superfluous "console=" parameter from chosen/bootargs.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7779-marzen.dts | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+Changes in version 4:
+- refreshed the patch.
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
-index c160404e4d405eb2..0971659e27140ef7 100644
---- a/arch/arm/boot/dts/r8a7779-marzen.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-@@ -24,7 +24,8 @@
- 	};
+Changes in version 3:
+- refreshed the patch.
+
+Changes in version 2:
+- refreshed the patch.
+
+ arch/arm/boot/dts/r8a7790-lager.dts |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7790-lager.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790-lager.dts
++++ renesas/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -424,6 +424,10 @@
+ 	pinctrl-names = "default";
+ };
  
- 	chosen {
--		bootargs = "console=ttySC2,115200 ignore_loglevel root=/dev/nfs ip=on";
-+		bootargs = "ignore_loglevel root=/dev/nfs ip=on";
-+		stdout-path = &scif2;
- 	};
- 
- 	memory {
--- 
-1.9.1
++&usbphy {
++	status = "okay";
++};
++
+ /* composite video input */
+ &vin1 {
+ 	pinctrl-0 = <&vin1_pins>;
 
