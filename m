@@ -1,47 +1,66 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 10 Sep 2014 07:11:24 +0000
-Subject: Re: [PATCH v2] mmc: tmio: enable odd number size access
-Message-Id: <CAMuHMdW_xLeP6gxdqs9vx6HnwDUQe_DV31j5Pqd6vZ387+ychw@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 26 Sep 2014 21:00:20 +0000
+Subject: [PATCH v4 1/2] ARM: shmobile: r8a7790: add USB PHY DT support
+Message-Id: <1527337.LO1rEHY4Sk@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8761gwz2jb.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <8761gwz2jb.wl%kuninori.morimoto.gx@gmail.com>
+References: <4420279.PiYV5HPFxp@wasted.cogentembedded.com>
+In-Reply-To: <4420279.PiYV5HPFxp@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Cc: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>, Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Morimoto-san,
+Define the R8A7790 generic part of the USB PHY device node. It is up to the
+board file to enable the device.
 
-On Wed, Sep 10, 2014 at 3:29 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@gmail.com> wrote:
-> +       if (is_read) {
-> +               extra = sd_ctrl_read16(host, CTL_SD_DATA_PORT);
-> +
-> +               *buf8 = (u8)(extra & 0xff);
-> +       } else {
-> +               extra = (u16)(*buf8);
-> +
-> +               sd_ctrl_write16(host, CTL_SD_DATA_PORT, extra);
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-The casts to "u8" resp. "u16" are not needed.
+---
+Changes in version 4:
+- refreshed the patch.
 
-You can even avoid introducing the "extra" variable:
+Changes in version 3:
+- changed subnodes of the USB PHY node to be per-channel;
+- changed "renesas,phy-select" property to "reg" in the subnodes, and thus added
+  "#address-cells" and "#size-cells" properties to the parent node;
+- moved "#phy-cells" property from the parent node to the subnodes, changing its
+  value to <1>;
+- refreshed the patch.
 
-if (is_read)
-        *buf8 = sd_ctrl_read16(host, CTL_SD_DATA_PORT) & 0xff;
-else
-        sd_ctrl_write16(host, CTL_SD_DATA_PORT, *buf8);
+Changes in version 2:
+- added subnodes to the USB PHY node;
+- refreshed the patch.
 
-Technically, the "& 0xff" is also not needed, but I'd keep it for clarity.
+ arch/arm/boot/dts/r8a7790.dtsi |   19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
 
-Gr{oetje,eeting}s,
+Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
++++ renesas/arch/arm/boot/dts/r8a7790.dtsi
+@@ -600,6 +600,25 @@
+ 		status = "disabled";
+ 	};
+ 
++	usbphy: usb-phy@e6590100 {
++		compatible = "renesas,usb-phy-r8a7790";
++		reg = <0 0xe6590100 0 0x100>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		clocks = <&mstp7_clks R8A7790_CLK_HSUSB>;
++		clock-names = "usbhs";
++		status = "disabled";
++
++		usb0: usb-channel@0 {
++			reg = <0>;
++			#phy-cells = <1>;
++		};
++		usb2: usb-channel@2 {
++			reg = <2>;
++			#phy-cells = <1>;
++		};
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
