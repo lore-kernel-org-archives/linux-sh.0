@@ -1,7 +1,7 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Fri, 26 Sep 2014 08:45:50 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 26 Sep 2014 18:04:55 +0000
 Subject: Re: [PATCH v3 07/13] ARM: shmobile: R-Mobile: Use generic_pm_domain.attach_dev() for pm_clk setup
-Message-Id: <CAPDyKFrWKOENKxF1JBrtwYfQNTVjsQPqws3UTfGXy_4Uqog+pg@mail.gmail.com>
+Message-Id: <CAMuHMdVZmhpKcRO0rnXFMu7RJ4zFNPdvzuW=TBpvE5B4JviAZA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
  <1411662520-22795-8-git-send-email-geert+renesas@glider.be>
@@ -11,24 +11,8 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 25 September 2014 18:28, Geert Uytterhoeven <geert+renesas@glider.be> wrote:
-> Use the just introduced genpd attach/detach callbacks to register the
-> devices' module clocks, instead of doing it directly, to make it
-> DT-proof.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
-
-> ---
-> v3:
->   - Update for callback signature changes,
-> v2:
->   - New
->
->  arch/arm/mach-shmobile/pm-rmobile.c | 15 +++++++++++++--
->  1 file changed, 13 insertions(+), 2 deletions(-)
->
+On Thu, Sep 25, 2014 at 6:28 PM, Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
 > diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
 > index 717e6413d29cb998..ae846dfcd69293f7 100644
 > --- a/arch/arm/mach-shmobile/pm-rmobile.c
@@ -41,6 +25,17 @@ Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
 > +{
 > +       if (pm_clk_no_clocks(dev))
 > +               pm_clk_add(dev, NULL);
+
+With !CONFIG_PM_RUNTIME, this doesn't work well in the DT case,
+as the clocks are no longer enabled by runtime PM
+(some clocks may have been enabled by boot loader/reset state though).
+
+In the legacy case, this works more or less, as genpd takes over after
+the pm_clk domain has been initialized, which implies enabling the clocks
+if !CONFIG_PM_RUNTIME.
+
+Will fix...
+
 > +}
 > +
 > +static void rmobile_pd_detach_dev(struct device *dev)
@@ -69,6 +64,14 @@ Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
 >  }
 >
 >  void rmobile_add_devices_to_domains(struct pm_domain_device data[],
-> --
-> 1.9.1
->
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
