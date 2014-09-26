@@ -1,47 +1,78 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 09 Sep 2014 16:34:15 +0000
-Subject: Re: [RFC 2/4] i2c: slave: add eeprom simulator driver
-Message-Id: <20140909163415.GA1781@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="UugvWAfsgieZRqgk"
+From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+Date: Fri, 26 Sep 2014 02:40:38 +0000
+Subject: [PATCH RFC 7/7] ARM: shmobile: Use separate CPUCMCR addresses for CA15/CA7
+Message-Id: <5424D226.7020502@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410274470-12712-1-git-send-email-wsa@the-dreams.de>
- <1410274470-12712-3-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1410274470-12712-3-git-send-email-wsa@the-dreams.de>
-To: linux-arm-kernel@lists.infradead.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+It turned out that the CPUCMCR common address was not worked for CA7.
+Change to use separate CPUCMCR addresses for CA15 and CA7.
 
---UugvWAfsgieZRqgk
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+---
+ arch/arm/mach-shmobile/platsmp-apmu.c |   21 +++++++++++++++------
+ 1 file changed, 15 insertions(+), 6 deletions(-)
 
-
-> +config I2C_SLAVE_EEPROM
-> +	bool "I2C eeprom slave driver"
-
-This should be "tristate". Fixed in my branch.
-
-
---UugvWAfsgieZRqgk
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJUDywHAAoJEBQN5MwUoCm2AkQP+wXcw+8bfng9AY654kJpP2f4
-l2rpU2Dy1TUlXeNJnLQc8g5NnB55vTxamBYsLLBVWOC2n6d5Dmd0HvyoPXzAjCPl
-ecUzBxmUtGk9zbDvFRzSpsJB6LbHqmUSrBL6J/7dFpc8FVOI/piURwCdom9uVStw
-67f687huNm2s580A8niRqryWKeSH+dpF85kGhCLF4VYvGgNQhB3fcHvrRkxU5FYy
-qUGTs+kdVRjwn8gSLS1kOiovyRHir/Db8OwlAl7KSW2XZDea8ZNb6w5tuUK4UfKP
-h3Vymbes8k8q5Oguekbbi+ZAWj4EwGydNKdxmeSSv4Cf5IhBXf9O4XdliyfNs06P
-dwWlQvyF9LF0Uy25K8DxjzzeJ4UdV13BljYhxQr99PJDMYvjtEAbmKmYkQiMIxii
-sUgB23AZKl9b8eOGtLB5J2NmMegSZg8uNDGLVfasJ8Qdn8FEETga5dGqQUith7ta
-tht4u0+KGRn8eK6MKoU8o4X5r3jY4U+22OEYKtnVxoZzVnOMvfj0tV4rxwrJIwGB
-7mBAsrO85oFG8EXxZrevnn3y0uXzJq84LpHswfamWvC871o7grQs8djXowc/FfYa
-9p0hS3OZS4ha2tYIA/MtCGARxtDlRAuw5tCSW9K7rMNRh7MP7qq54W8YUyla0MGP
-E1qf9XH5l3B41zkIyMZN
-=Of2l
------END PGP SIGNATURE-----
-
---UugvWAfsgieZRqgk--
+diff --git a/arch/arm/mach-shmobile/platsmp-apmu.c b/arch/arm/mach-shmobile/platsmp-apmu.c
+index 0dedb13..7d030fc 100644
+--- a/arch/arm/mach-shmobile/platsmp-apmu.c
++++ b/arch/arm/mach-shmobile/platsmp-apmu.c
+@@ -36,9 +36,11 @@ static struct {
+ #define WUPCR_OFFS 0x10
+ #define PSTR_OFFS 0x40
+ #define CPUNCR_OFFS(n) (0x100 + (0x10 * (n)))
+-#define CPUCMCR 0xe6154184
++#define CPUCMCR_CA7  0xe6151184
++#define CPUCMCR_CA15 0xe6152184
+ 
+-void __iomem *cpucmcr;
++void __iomem *cpucmcr_ca7;
++void __iomem *cpucmcr_ca15;
+ 
+ static int __maybe_unused apmu_power_on(void __iomem *p, int bit)
+ {
+@@ -254,20 +256,25 @@ static int shmobile_smp_apmu_enter_suspend(suspend_state_t state)
+ 	 */
+ 	gic_cpu_if_down();
+ 
+-	writel_relaxed(0x2, cpucmcr);
+ 	if (read_cpuid_part() = ARM_CPU_PART_CORTEX_A15) {
+ 		is_a15_l2shutdown = 1;
+ 		asm volatile("mrc p15, 1, %0, c9 , c0, 2"
+ 			     : "=r" (l2ctlr_value));
+ 		pr_debug("%s: l2ctlr: 0x%08x\n", __func__, l2ctlr_value);
+-	} else
++	} else {
++		writel_relaxed(0x2, cpucmcr_ca7);
+ 		is_a15_l2shutdown = 0;
++	}
+ 
+ 	shmobile_smp_hook(smp_processor_id(), virt_to_phys(rcar_cpu_resume), 0);
+ 	cpu_suspend(smp_processor_id(), shmobile_smp_apmu_do_suspend);
+ 	cpu_leave_lowpower();
+ 
+-	writel_relaxed(0x0, cpucmcr);
++	if (read_cpuid_part() = ARM_CPU_PART_CORTEX_A15)
++		writel_relaxed(0x0, cpucmcr_ca15);
++	else
++		writel_relaxed(0x0, cpucmcr_ca7);
++
+ 	rcar_sysc_clear_event_status();
+ 	is_a15_l2shutdown = 0;
+ 
+@@ -276,7 +283,9 @@ static int shmobile_smp_apmu_enter_suspend(suspend_state_t state)
+ 
+ void __init shmobile_smp_apmu_suspend_init(void)
+ {
+-	cpucmcr = ioremap_nocache(CPUCMCR, 0x4);
++	cpucmcr_ca7  = ioremap_nocache(CPUCMCR_CA7, 0x4);
++	cpucmcr_ca15 = ioremap_nocache(CPUCMCR_CA15, 0x4);
++
+ 	shmobile_suspend_ops.enter = shmobile_smp_apmu_enter_suspend;
+ }
+ #endif
+-- 
+1.7.9.5
