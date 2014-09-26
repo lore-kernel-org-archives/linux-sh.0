@@ -1,90 +1,31 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Fri, 26 Sep 2014 08:43:22 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 26 Sep 2014 08:47:18 +0000
 Subject: Re: [PATCH v3 05/13] PM / Domains: Add helper variable np = dev->of_node
-Message-Id: <CAPDyKFpiTBKEJHTF9cK20GTqEgx=4UNt52sKi0dQ7NsZNhfFOA@mail.gmail.com>
+Message-Id: <CAMuHMdUEA07weFje47u4sJ6uc0FCvoq+FEe27DSmKOVB0dTatA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1411662520-22795-1-git-send-email-geert+renesas@glider.be>
  <1411662520-22795-6-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1411662520-22795-6-git-send-email-geert+renesas@glider.be>
+ <CAPDyKFpiTBKEJHTF9cK20GTqEgx=4UNt52sKi0dQ7NsZNhfFOA@mail.gmail.com>
+In-Reply-To: <CAPDyKFpiTBKEJHTF9cK20GTqEgx=4UNt52sKi0dQ7NsZNhfFOA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 25 September 2014 18:28, Geert Uytterhoeven <geert+renesas@glider.be> wrote:
+On Fri, Sep 26, 2014 at 10:43 AM, Ulf Hansson <ulf.hansson@linaro.org> wrote:
+> On 25 September 2014 18:28, Geert Uytterhoeven <geert+renesas@glider.be> wrote:
+>
+> Why?
 
-Why?
+Because else the next patch would add a few more users of dev->of_node.
 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Gr{oetje,eeting}s,
 
-Normally I think this kind of cleanup patches is a bit unnecessary,
-but I don't have strong opinions.
+                        Geert
 
-Kind regards
-Uffe
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-> ---
-> v3:
->   - No changes
-> v2:
->   - New
->
->  drivers/base/power/domain.c | 12 ++++++------
->  1 file changed, 6 insertions(+), 6 deletions(-)
->
-> diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
-> index 6e36bb09e7d9c144..0ebc6bb31c9c227f 100644
-> --- a/drivers/base/power/domain.c
-> +++ b/drivers/base/power/domain.c
-> @@ -2171,17 +2171,18 @@ static void genpd_dev_pm_detach(struct device *dev, bool power_off)
->   */
->  int genpd_dev_pm_attach(struct device *dev)
->  {
-> +       struct device_node *np = dev->of_node;
->         struct of_phandle_args pd_args;
->         struct generic_pm_domain *pd;
->         int ret;
->
-> -       if (!dev->of_node)
-> +       if (!np)
->                 return -ENODEV;
->
->         if (dev->pm_domain)
->                 return -EEXIST;
->
-> -       ret = of_parse_phandle_with_args(dev->of_node, "power-domains",
-> +       ret = of_parse_phandle_with_args(np, "power-domains",
->                                         "#power-domain-cells", 0, &pd_args);
->         if (ret < 0) {
->                 if (ret != -ENOENT)
-> @@ -2192,8 +2193,7 @@ int genpd_dev_pm_attach(struct device *dev)
->                  * (for backwards compatibility of DT ABI)
->                  */
->                 pd_args.args_count = 0;
-> -               pd_args.np = of_parse_phandle(dev->of_node,
-> -                                               "samsung,power-domain", 0);
-> +               pd_args.np = of_parse_phandle(np, "samsung,power-domain", 0);
->                 if (!pd_args.np)
->                         return -ENOENT;
->         }
-> @@ -2202,7 +2202,7 @@ int genpd_dev_pm_attach(struct device *dev)
->         if (IS_ERR(pd)) {
->                 dev_dbg(dev, "%s() failed to find PM domain: %ld\n",
->                         __func__, PTR_ERR(pd));
-> -               of_node_put(dev->of_node);
-> +               of_node_put(np);
->                 return PTR_ERR(pd);
->         }
->
-> @@ -2218,7 +2218,7 @@ int genpd_dev_pm_attach(struct device *dev)
->         if (ret < 0) {
->                 dev_err(dev, "failed to add to PM domain %s: %d",
->                         pd->name, ret);
-> -               of_node_put(dev->of_node);
-> +               of_node_put(np);
->                 return ret;
->         }
->
-> --
-> 1.9.1
->
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
