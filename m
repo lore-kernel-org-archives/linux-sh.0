@@ -1,53 +1,45 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 03 Sep 2014 05:25:40 +0000
-Subject: [PATCH v3 1/2] usb: renesas_usbhs: Add device tree bindings documentation
-Message-Id: <5406A654.3020806@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 26 Sep 2014 21:09:22 +0000
+Subject: [PATCH v4 2/3] ARM: shmobile: koelsch: enable USB PHY
+Message-Id: <2336627.VWjZqGPynz@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <3383603.zZsCVpCDbD@wasted.cogentembedded.com>
+In-Reply-To: <3383603.zZsCVpCDbD@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rob Herring <robh+dt@kernel.org>, "pawel.moll@arm.com" <pawel.moll@arm.com>, "mark.rutland@arm.com" <mark.rutland@arm.com>, "ijc+devicetree@hellion.org.uk" <ijc+devicetree@hellion.org.uk>, "galak@codeaurora.org" <galak@codeaurora.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Felipe Balbi <balbi@ti.com>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Ulrich Hecht <ulrich.hecht@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Document the device tree bindings for the Renesas USBHS controller.
+Enable USB PHY device for the Koelsch board.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- .../devicetree/bindings/usb/renesas_usbhs.txt      |   24 ++++++++++++++++++++
- 1 file changed, 24 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+Changes in version 4:
+- refreshed the patch.
 
-diff --git a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-new file mode 100644
-index 0000000..b08c903
---- /dev/null
-+++ b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-@@ -0,0 +1,24 @@
-+Renesas Electronics USBHS driver
+Changes in version 3:
+- refreshed the patch.
+
+Changes in version 2:
+- fixed the wrong board name in the changelog;
+- refreshed the patch.
+
+ arch/arm/boot/dts/r8a7791-koelsch.dts |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7791-koelsch.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ renesas/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -463,6 +463,10 @@
+ 	pinctrl-names = "default";
+ };
+ 
++&usbphy {
++	status = "okay";
++};
 +
-+Required properties:
-+  - compatible: Must contain one of the following:
-+	- "renesas,usbhs-r8a7790"
-+	- "renesas,usbhs-r8a7791"
-+  - reg: Base address and length of the register for the USBHS
-+  - interrupts: Interrupt specifier for the USBHS
-+  - clocks: A list of phandle + clock specifier pairs
-+
-+Optional properties:
-+  - renesas,buswait: Integer to use BUSWAIT register
-+  - renesas,enable-gpio: A gpio specifier to check GPIO determining if USB
-+			 function should be enabled
-+  - phys: phandle + phy specifier pair
-+  - phy-names: must be "usb"
-+
-+Example:
-+	usbhs: usb@e6590000 {
-+		compatible = "renesas,usbhs-r8a7790";
-+		reg = <0 0xe6590000 0 0x100>;
-+		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7790_CLK_HSUSB>;
-+	};
--- 
-1.7.9.5
+ &pcie_bus_clk {
+ 	status = "okay";
+ };
 
