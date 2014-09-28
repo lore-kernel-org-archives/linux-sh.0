@@ -1,50 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 28 Sep 2014 21:25:26 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Sun, 28 Sep 2014 23:58:50 +0000
 Subject: Re: [periperi] How to set default GPIO pin ?
-Message-Id: <2033766.6tR9OHe7ZC@avalon>
+Message-Id: <8738bb9u1a.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <8738cc0vx9.wl%kuninori.morimoto.gx@gmail.com>
  <2862746.g5u9pdpKDi@avalon>
  <CACRpkdb1jF-ro3XcFHFC+Lhgi+0dEHzQYVSSLV6AWnAxiwNLdw@mail.gmail.com>
-In-Reply-To: <CACRpkdb1jF-ro3XcFHFC+Lhgi+0dEHzQYVSSLV6AWnAxiwNLdw@mail.gmail.com>
+ <2033766.6tR9OHe7ZC@avalon>
+In-Reply-To: <2033766.6tR9OHe7ZC@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Linus and Morimoto-san,
 
-On Tuesday 23 September 2014 17:06:28 Linus Walleij wrote:
-> On Wed, Sep 10, 2014 at 10:55 AM, Laurent Pinchart wrote:
-> > On Sunday 31 August 2014 22:08:52 Kuninori Morimoto wrote:
-> >> I know we can use "defalt" PFC settings on DT.
-> >> But, how to use "defalt" GPIO pin settings on DT ?
-> >> 
-> >> We would like to use GPIO 7-17 as Low output,
-> >> and do nothing after boot.
+Hi Laurent, Linus
+
+> > I have suggested adding GPIO hogs, so that a GPIO node can specify
+> > that some GPIO's specified on the local ship be hogged high or
+> > low at probe. Generic DT bindings and generic code in gpiolib.c.
 > > 
-> > From a DT point of view I believe this is supposed to be done by
-> > specifying the output-low or output-high properties in the pinctrl
-> > configuration node. However, these properties are not supported by the PFC
-> > driver, and there's no easy way for the PFC driver to configure GPIOs
-> > handled by a different driver such as the gpio-rcar driver for instance.
-> > 
-> > Linus, do you have any hindsight on how this should be implemented ?
+> > gpios-hog-high = <....>;
+> > gpios-hog-low = <....>;
 > 
-> I have suggested adding GPIO hogs, so that a GPIO node can specify
-> that some GPIO's specified on the local ship be hogged high or
-> low at probe. Generic DT bindings and generic code in gpiolib.c.
+> How about just a gpios-hog property, with a list of gpio specifiers + flags ? 
+> That's bikeshedding I suppose.
 > 
-> gpios-hog-high = <....>;
-> gpios-hog-low = <....>;
+> Morimoto-san, would you like to implement that ? :-)
 
-How about just a gpios-hog property, with a list of gpio specifiers + flags ? 
-That's bikeshedding I suppose.
+Thank you for your help
+OK, I try to implement this method (when I have time :)
+Thank you
 
-Morimoto-san, would you like to implement that ? :-)
-
--- 
-Regards,
-
-Laurent Pinchart
-
+Best regards
+---
+Kuninori Morimoto
