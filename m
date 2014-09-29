@@ -1,76 +1,100 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 02 Sep 2014 02:02:32 +0000
-Subject: [PATCH 4/7 v2] mmc: sh_mobile_sdhi: use blk_size_workaround
-Message-Id: <87fvgakcei.wl%kuninori.morimoto.gx@gmail.com>
+From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+Date: Mon, 29 Sep 2014 05:05:55 +0000
+Subject: [PATCH RFC v2 5/7] ARM: shmobile: Clear External Event Request in system resume
+Message-Id: <5428E8B3.3090609@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r3zvzohj.wl%kuninori.morimoto.gx@gmail.com>
-	<87lhq2kcif.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87lhq2kcif.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+According to datasheet, this step is necessary when waking up
+from L2shutdown mode.
 
-Now, sh_mobile_sdhi can use blk_size_workaround instead of
-MMC_CAP2_NO_MULTI_READ. let's use it.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
 ---
-v1 -> v2
+ arch/arm/mach-shmobile/platsmp-apmu.c |    2 ++
+ arch/arm/mach-shmobile/pm-rcar.c      |   22 ++++++++++++++++++++++
+ arch/arm/mach-shmobile/pm-rcar.h      |    1 +
+ 3 files changed, 25 insertions(+)
 
-- no change
-
- drivers/mmc/host/sh_mobile_sdhi.c |   20 +++++++++++++++++++-
- 1 file changed, 19 insertions(+), 1 deletion(-)
-
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index f2585b6..474cd8e 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -58,7 +58,6 @@ static const struct sh_mobile_sdhi_of_data of_rcar_gen2_compatible = {
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE |
- 			  TMIO_MMC_CLK_ACTUAL,
- 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
--	.capabilities2	= MMC_CAP2_NO_MULTI_READ,
- 	.dma_rx_offset	= 0x2000,
- };
+diff --git a/arch/arm/mach-shmobile/platsmp-apmu.c b/arch/arm/mach-shmobile/platsmp-apmu.c
+index 5e4dcdb..ef146fa 100644
+--- a/arch/arm/mach-shmobile/platsmp-apmu.c
++++ b/arch/arm/mach-shmobile/platsmp-apmu.c
+@@ -26,6 +26,7 @@
+ #include <asm/smp_plat.h>
+ #include <asm/suspend.h>
+ #include "common.h"
++#include "pm-rcar.h"
  
-@@ -139,6 +138,24 @@ static int sh_mobile_sdhi_write16_hook(struct tmio_mmc_host *host, int addr)
+ static struct {
+ 	void __iomem *iomem;
+@@ -244,6 +245,7 @@ static int shmobile_smp_apmu_enter_suspend(suspend_state_t state)
+ 	cpu_leave_lowpower();
+ 
+ 	writel_relaxed(0x0, cpucmcr);
++	rcar_sysc_clear_event_status();
+ 
  	return 0;
  }
+diff --git a/arch/arm/mach-shmobile/pm-rcar.c b/arch/arm/mach-shmobile/pm-rcar.c
+index 00022ee..9f4ec85 100644
+--- a/arch/arm/mach-shmobile/pm-rcar.c
++++ b/arch/arm/mach-shmobile/pm-rcar.c
+@@ -12,6 +12,7 @@
+ #include <linux/err.h>
+ #include <linux/mm.h>
+ #include <linux/spinlock.h>
++#include <asm/cputype.h>
+ #include <asm/io.h>
+ #include "pm-rcar.h"
  
-+static int sh_mobile_blk_size_workaround(struct mmc_card *card,
-+					 struct request *req, int blk_size)
+@@ -24,6 +25,10 @@
+ #define PWROFFCR_OFFS 0x04
+ #define PWRONCR_OFFS 0x0c
+ #define PWRER_OFFS 0x14
++#define SYSCEERSR_OFFS  0x20
++#define SYSCEERSCR_OFFS 0x24
++#define SYSCEERSR2_OFFS  0x2C
++#define SYSCEERSCR2_OFFS 0x30
+ 
+ #define SYSCSR_RETRIES 100
+ #define SYSCSR_DELAY_US 1
+@@ -34,6 +39,23 @@
+ static void __iomem *rcar_sysc_base;
+ static DEFINE_SPINLOCK(rcar_sysc_lock); /* SMP CPUs + I/O devices */
+ 
++void rcar_sysc_clear_event_status(void)
 +{
-+	/*
-+	 * In Renesas controllers, when performing a
-+	 * multiple block read of one or two blocks,
-+	 * depending on the timing with which the
-+	 * response register is read, the response
-+	 * value may not be read properly.
-+	 * Use single block read for this HW bug
-+	 */
-+	if ((rq_data_dir(req) = READ) &&
-+	    blk_size = 2)
-+		return 1;
++	if (read_cpuid_part() = ARM_CPU_PART_CORTEX_A15) {
++		/* Clear External event status regiser */
++		iowrite32(0x111, rcar_sysc_base + SYSCEERSCR_OFFS);
 +
-+	return blk_size;
++		pr_debug("%s: External event status: 0x%08x\n", __func__,
++			ioread32(rcar_sysc_base + SYSCEERSR_OFFS));
++	} else {
++		/* Clear External event status regiser */
++		iowrite32(0x111, rcar_sysc_base + SYSCEERSCR2_OFFS);
++
++		pr_debug("%s: External event status: 0x%08x\n", __func__,
++			ioread32(rcar_sysc_base + SYSCEERSR2_OFFS));
++	}
 +}
 +
- static void sh_mobile_sdhi_cd_wakeup(const struct platform_device *pdev)
+ static int rcar_sysc_pwr_on_off(struct rcar_sysc_ch *sysc_ch,
+ 				int sr_bit, int reg_offs)
  {
- 	mmc_detect_change(platform_get_drvdata(pdev), msecs_to_jiffies(100));
-@@ -194,6 +211,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
- 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
- 	mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
-+	mmc_data->blk_size_workaround = sh_mobile_blk_size_workaround;
- 	if (p) {
- 		mmc_data->flags = p->tmio_flags;
- 		mmc_data->ocr_mask = p->tmio_ocr_mask;
+diff --git a/arch/arm/mach-shmobile/pm-rcar.h b/arch/arm/mach-shmobile/pm-rcar.h
+index ef3a1ef..1a349bf 100644
+--- a/arch/arm/mach-shmobile/pm-rcar.h
++++ b/arch/arm/mach-shmobile/pm-rcar.h
+@@ -11,5 +11,6 @@ int rcar_sysc_power_down(struct rcar_sysc_ch *sysc_ch);
+ int rcar_sysc_power_up(struct rcar_sysc_ch *sysc_ch);
+ bool rcar_sysc_power_is_off(struct rcar_sysc_ch *sysc_ch);
+ void __iomem *rcar_sysc_init(phys_addr_t base);
++void rcar_sysc_clear_event_status(void);
+ 
+ #endif /* PM_RCAR_H */
 -- 
 1.7.9.5
-
