@@ -1,90 +1,112 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 11 Sep 2014 00:57:04 +0000
-Subject: [PATCH 7/7] ARM: shmobile: kzm9g-reference: Enable CMT1 in device tree
-Message-Id: <48a0d1e07d99ecfd1e5922dd22986d5813f17207.1410396171.git.horms+renesas@verge.net.au>
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Mon, 29 Sep 2014 12:30:53 +0000
+Subject: [PATCH] ARM: don't set unused name in struct flash_platform_data
+Message-Id: <1411993853-6309-1-git-send-email-zajec5@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1410396171.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1410396171.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Loading correct SPI driver (m25p80) is handled using modalias from the
+struct spi_board_info. There is no point of setting name in the
+platform_data, m25p80 ignores it anyway.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |  4 ++++
- arch/arm/mach-shmobile/setup-sh73a0.c        | 11 +----------
- 2 files changed, 5 insertions(+), 10 deletions(-)
+ arch/arm/mach-davinci/board-da830-evm.c    | 1 -
+ arch/arm/mach-davinci/board-da850-evm.c    | 1 -
+ arch/arm/mach-davinci/board-mityomapl138.c | 1 -
+ arch/arm/mach-shmobile/board-bockw.c       | 1 -
+ arch/arm/mach-shmobile/board-koelsch.c     | 1 -
+ arch/arm/mach-shmobile/board-lager.c       | 1 -
+ arch/arm/mach-w90x900/dev.c                | 1 -
+ 7 files changed, 7 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index 18662ae..99659db 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -173,6 +173,10 @@
- 	};
+diff --git a/arch/arm/mach-davinci/board-da830-evm.c b/arch/arm/mach-davinci/board-da830-evm.c
+index 5623131..263004a 100644
+--- a/arch/arm/mach-davinci/board-da830-evm.c
++++ b/arch/arm/mach-davinci/board-da830-evm.c
+@@ -567,7 +567,6 @@ static struct mtd_partition da830evm_spiflash_part[] = {
  };
  
-+&cmt1 {
-+	status = "ok";
-+};
-+
- &i2c0 {
- 	status = "okay";
- 	as3711@40 {
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 2c802ae..928e96a 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -696,10 +696,6 @@ static struct platform_device irqpin3_device = {
- 	},
+ static struct flash_platform_data da830evm_spiflash_data = {
+-	.name		= "m25p80",
+ 	.parts		= da830evm_spiflash_part,
+ 	.nr_parts	= ARRAY_SIZE(da830evm_spiflash_part),
+ 	.type		= "w25x32",
+diff --git a/arch/arm/mach-davinci/board-da850-evm.c b/arch/arm/mach-davinci/board-da850-evm.c
+index 234c5bb..721ff2b 100644
+--- a/arch/arm/mach-davinci/board-da850-evm.c
++++ b/arch/arm/mach-davinci/board-da850-evm.c
+@@ -104,7 +104,6 @@ static struct mtd_partition da850evm_spiflash_part[] = {
  };
  
--static struct platform_device *sh73a0_devices_dt[] __initdata = {
--	&cmt1_device,
--};
--
- static struct platform_device *sh73a0_early_devices[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
-@@ -712,6 +708,7 @@ static struct platform_device *sh73a0_early_devices[] __initdata = {
- 	&scif8_device,
- 	&tmu0_device,
- 	&ipmmu_device,
-+	&cmt1_device,
+ static struct flash_platform_data da850evm_spiflash_data = {
+-	.name		= "m25p80",
+ 	.parts		= da850evm_spiflash_part,
+ 	.nr_parts	= ARRAY_SIZE(da850evm_spiflash_part),
+ 	.type		= "m25p64",
+diff --git a/arch/arm/mach-davinci/board-mityomapl138.c b/arch/arm/mach-davinci/board-mityomapl138.c
+index 96fc00a..3c93b65 100644
+--- a/arch/arm/mach-davinci/board-mityomapl138.c
++++ b/arch/arm/mach-davinci/board-mityomapl138.c
+@@ -350,7 +350,6 @@ static struct mtd_partition spi_flash_partitions[] = {
  };
  
- static struct platform_device *sh73a0_late_devices[] __initdata = {
-@@ -736,8 +733,6 @@ void __init sh73a0_add_standard_devices(void)
- 	/* Clear software reset bit on SY-DMAC module */
- 	__raw_writel(__raw_readl(SRCR2) & ~(1 << 18), SRCR2);
+ static struct flash_platform_data mityomapl138_spi_flash_data = {
+-	.name		= "m25p80",
+ 	.parts		= spi_flash_partitions,
+ 	.nr_parts	= ARRAY_SIZE(spi_flash_partitions),
+ 	.type		= "m24p64",
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 8a83eb3..e25af56 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -266,7 +266,6 @@ static struct mtd_partition m25p80_spi_flash_partitions[] = {
+ };
  
--	platform_add_devices(sh73a0_devices_dt,
--			    ARRAY_SIZE(sh73a0_devices_dt));
- 	platform_add_devices(sh73a0_early_devices,
- 			    ARRAY_SIZE(sh73a0_early_devices));
- 	platform_add_devices(sh73a0_late_devices,
-@@ -762,8 +757,6 @@ void __init sh73a0_earlytimer_init(void)
+ static struct flash_platform_data spi_flash_data = {
+-	.name		= "m25p80",
+ 	.type		= "s25fl008k",
+ 	.parts		= m25p80_spi_flash_partitions,
+ 	.nr_parts	= ARRAY_SIZE(m25p80_spi_flash_partitions),
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index b7d5bc7..a494a00 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -207,7 +207,6 @@ static struct mtd_partition spi_flash_part[] = {
+ };
  
- void __init sh73a0_add_early_devices(void)
- {
--	early_platform_add_devices(sh73a0_devices_dt,
--				   ARRAY_SIZE(sh73a0_devices_dt));
- 	early_platform_add_devices(sh73a0_early_devices,
- 				   ARRAY_SIZE(sh73a0_early_devices));
+ static const struct flash_platform_data spi_flash_data = {
+-	.name		= "m25p80",
+ 	.parts		= spi_flash_part,
+ 	.nr_parts	= ARRAY_SIZE(spi_flash_part),
+ 	.type		= "s25fl512s",
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index e1d8215..3575731 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -315,7 +315,6 @@ static struct mtd_partition spi_flash_part[] = {
+ };
  
-@@ -780,8 +773,6 @@ void __init sh73a0_add_standard_devices_dt(void)
- 	/* clocks are setup late during boot in the case of DT */
- 	sh73a0_clock_init();
+ static const struct flash_platform_data spi_flash_data = {
+-	.name           = "m25p80",
+ 	.parts          = spi_flash_part,
+ 	.nr_parts       = ARRAY_SIZE(spi_flash_part),
+ 	.type           = "s25fl512s",
+diff --git a/arch/arm/mach-w90x900/dev.c b/arch/arm/mach-w90x900/dev.c
+index e65a80a..9745a73 100644
+--- a/arch/arm/mach-w90x900/dev.c
++++ b/arch/arm/mach-w90x900/dev.c
+@@ -249,7 +249,6 @@ static struct mtd_partition nuc900_spi_flash_partitions[] = {
+ };
  
--	platform_add_devices(sh73a0_devices_dt,
--			     ARRAY_SIZE(sh73a0_devices_dt));
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 
- 	/* Instantiate cpufreq-cpu0 */
+ static struct flash_platform_data nuc900_spi_flash_data = {
+-	.name = "m25p80",
+ 	.parts =  nuc900_spi_flash_partitions,
+ 	.nr_parts = ARRAY_SIZE(nuc900_spi_flash_partitions),
+ 	.type = "w25x16",
 -- 
-2.0.1
+1.8.4.5
 
