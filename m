@@ -1,52 +1,54 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 28 Sep 2014 23:15:59 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 29 Sep 2014 20:44:37 +0000
 Subject: Re: [PATCH] i2c: rcar: remove sign-compare flaw
-Message-Id: <1990855.9bK888YyIm@avalon>
+Message-Id: <20140929204437.GA2758@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="h31gzZEtNLTqOjlF"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1411207657-23707-1-git-send-email-wsa@the-dreams.de>
 In-Reply-To: <1411207657-23707-1-git-send-email-wsa@the-dreams.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Hi Wolfram,
 
-Thank you for the patch.
+--h31gzZEtNLTqOjlF
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On Saturday 20 September 2014 12:07:37 Wolfram Sang wrote:
+On Sat, Sep 20, 2014 at 12:07:37PM +0200, Wolfram Sang wrote:
 > From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> 
+>=20
 > gcc rightfully says:
-> 
-> drivers/i2c/busses/i2c-rcar.c:198:10: warning: comparison between signed and
-> unsigned integer expressions [-Wsign-compare]
-> 
+>=20
+> drivers/i2c/busses/i2c-rcar.c:198:10: warning: comparison between signed =
+and unsigned integer expressions [-Wsign-compare]
+>=20
 > Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Applied to for-next, thanks!
 
-> ---
->  drivers/i2c/busses/i2c-rcar.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-> index 4c6fa78063fb..1eed463662c4 100644
-> --- a/drivers/i2c/busses/i2c-rcar.c
-> +++ b/drivers/i2c/busses/i2c-rcar.c
-> @@ -195,7 +195,7 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv
-> *priv, */
->  	rate = clk_get_rate(priv->clk);
->  	cdf = rate / 20000000;
-> -	if (cdf >= 1 << cdf_width) {
-> +	if (cdf >= 1U << cdf_width) {
->  		dev_err(dev, "Input clock %lu too high\n", rate);
->  		return -EIO;
->  	}
 
--- 
-Regards,
+--h31gzZEtNLTqOjlF
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-Laurent Pinchart
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
+iQIcBAEBAgAGBQJUKcS0AAoJEBQN5MwUoCm2ZMsP/1UN+I9D/sCLrZJOhstLQ0da
+Y4xkmdwJGZHCDOIjk6wV61m8CkJFVHUJp0KNH+QTeDT2I5hpdRqUcQz7q+M5JWR0
+oxdtbw5aRpUH+Sc/RfJTmO6YVdsg1DQt5ZmofZBzN3C3ymPVpayItrXI9ULVa2N4
+zA2nfIsliXoCz4CqUKDWOTw+iIXs85MYOHsKq00fGDMpseqUq0aFgyQ1+Ss5Pd/m
+c5abk2oDDtaK0hL7zrpOIta9n9FnHAZH9958uAQ80LjFtoaTGe3dK+vBXK3YH+kU
+q4wA8GFZplgViSCgKJ4VPzuEoEcPYjC5yvfN6UUHCxoosvL4X6kIfeESVwuoGszi
+HvThT4tiGrGfnV6CNguJh3HmpBPdKevxoAsyDiNRk3OBDRVgOdN+fsPFw6q9CYJp
+q3utUZCdiJdDfJtCJ57mY0KRSElenykoAeFtmmy5mFg578/dStG25oSgmFs6qGYZ
+HjDbn8OSZd48QcmhyeebvPkeUaS+LZdV2oZsirwnmedZBPOBl2Cot0cFWsmdoI18
+yhPgjRwjkYljYYqo31gmUvUMzsNTdIO1NU7GkwPLkSzArSD/fn5gHbPoHi5lvZ0q
+k0wAC5Hwd/DvO+Z5ueWoGqb6SmSlPiXPUB1hO1wfM7z+5l3Gj5yUrwRak7yFWOsE
+qNQYMIdZXlavO9GuX3Qy
+=JvKm
+-----END PGP SIGNATURE-----
+
+--h31gzZEtNLTqOjlF--
