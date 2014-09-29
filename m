@@ -1,50 +1,83 @@
-From: Jason Cooper <jason@lakedaemon.net>
-Date: Sun, 14 Sep 2014 06:54:46 +0000
-Subject: Re: [PATCH 0/4] ARM: shmobile: r8a7740: Handle implicitly enabled clocks
-Message-Id: <20140914065446.GO21986@titan.lakedaemon.net>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 29 Sep 2014 18:23:11 +0000
+Subject: [PATCH v4] ARM: shmobile: r8a7791: link PCI USB devices to USB PHY
+Message-Id: <5270578.Srkf5AOOOJ@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410527720-18061-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1410527720-18061-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Sep 12, 2014 at 03:15:16PM +0200, Geert Uytterhoeven wrote:
-> 	Hi all,
-> 
-> This patch series fixes an issue with the INTCA module clock, which we
-> currently assume enabled by the bootloader or reset state.
-> If this clock was not enabled before booting Linux, the intc-irqpin driver
-> and all devices connected to it (buttons, RTC on i2c-gpio) don't work.
-> 
-> To fix this, the clock is added to the system, and is managed in the driver
-> through runtime PM, taking into account wake-up sources (gpio-keys, RTC alarm).
-> 
-> There's one remaining issue for armadillo-legacy, which has support for the LCD
-> controller. Although the shmobile_lcd_fb driver doesn't use MERAM on r8a7740
-> (unlike on sh7372), the MERAM (Media RAM) and ICB (MERAM Interconnect Buffer)
-> clocks must be enabled to show a picture on the display. However, the MERAM
-> doesn't have any device associated with it, so it's non-trivial to hook it up.
-> 
-> This patch series is based on renesas-devel-20140911-v3.17-rc4 and
-> irqchip/for-next.
-> 
-> Geert Uytterhoeven (4):
->   irqchip: renesas-intc-irqpin: Add helper variable dev = &pdev->dev
->   irqchip: renesas-intc-irqpin: Add minimal runtime PM support
->   ARM: shmobile: r8a7740 legacy: Add missing INTCA clock for irqpin
->     module
->   ARM: shmobile: r8a7740 dtsi: Add missing INTCA clock for irqpin module
-> 
->  arch/arm/boot/dts/r8a7740.dtsi            | 14 ++++--
->  arch/arm/mach-shmobile/clock-r8a7740.c    |  7 ++-
->  drivers/irqchip/irq-renesas-intc-irqpin.c | 83 +++++++++++++++++++++----------
->  include/dt-bindings/clock/r8a7740-clock.h |  1 +
->  4 files changed, 73 insertions(+), 32 deletions(-)
+Describe the PCI USB devices that are behind the PCI bridges, adding necessary
+links to the USB PHY device.
 
-Patches 1 and 2 applied to irqchip/core
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-thx,
+---
+This patch is against 'renesas-devel-20140924-v3.17-rc6' tag of Simon Horman's
+'renesas.git' repo plus R8A7791/Koelsch/Henninger USB PHY support patches posted
+before.  The patch requires the USB PHY driver and USB HCD generic PHY support
+(merged by Kishon and Greg recently) in order to work.
 
-Jason.
+Changes in version 4:
+- refreshed the patch.
+
+Changes in version 3:
+- adjusted "phys" properties in the PCI OHCI/EHCI device nodes;
+- resolved rejects.
+
+Changes in version 2:
+- renamed the PCI OHCI/EHCI device nodes to comply with the PCI binding;
+- changed the PHY specifier in the PCI#1 node to reflect that channel #1 support
+  was dropped;
+- resolved rejects.
+
+ arch/arm/boot/dts/r8a7791.dtsi |   28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
++++ renesas/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1125,6 +1125,20 @@
+ 		interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
+ 				 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
+ 				 0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
++
++		usb@0,1 {
++			reg = <0x800 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usb0 0>;
++			phy-names = "usb";
++		};
++
++		usb@0,2 {
++			reg = <0x1000 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usb0 0>;
++			phy-names = "usb";
++		};
+ 	};
+ 
+ 	pci1: pci@ee0d0000 {
+@@ -1145,6 +1159,20 @@
+ 		interrupt-map = <0x0000 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
+ 				 0x0800 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
+ 				 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
++
++		usb@0,1 {
++			reg = <0x800 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usb2 0>;
++			phy-names = "usb";
++		};
++
++		usb@0,2 {
++			reg = <0x1000 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usb2 0>;
++			phy-names = "usb";
++		};
+ 	};
+ 
+ 	pciec: pcie@fe000000 {
+
