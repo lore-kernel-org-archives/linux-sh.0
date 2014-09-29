@@ -1,261 +1,67 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 08 Sep 2014 13:35:42 +0000
-Subject: [PATCH/RFC 3/5] ARM: shmobile: R-Mobile: Store SYSC base address in rmobile_pm_domain
-Message-Id: <1410183344-14756-4-git-send-email-geert+renesas@glider.be>
+From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+Date: Mon, 29 Sep 2014 05:05:58 +0000
+Subject: [PATCH RFC v2 6/7] ARM: shmobile: Do additional settings for L2shutdown mode
+Message-Id: <5428E8B6.4010504@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410183344-14756-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1410183344-14756-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Replace the hardcoded addresses for accessing the SYSC PM domain
-registers by register offsets, relative to the SYSC base address stored
-in struct rmobile_pm_domain.
+According to Cortex-A15 TRM, some additional settings are needed.
+Although the procedure was not completely same as in TRM, it was
+referred to vexpress implementation to arrange order of additional
+settings.
 
-In the future, the SYSC base address will come from DT.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
 ---
- arch/arm/mach-shmobile/pm-r8a7740.c | 14 ++++++++++++++
- arch/arm/mach-shmobile/pm-rmobile.c | 24 +++++++++++++-----------
- arch/arm/mach-shmobile/pm-rmobile.h |  1 +
- arch/arm/mach-shmobile/pm-sh7372.c  | 11 +++++++++++
- 4 files changed, 39 insertions(+), 11 deletions(-)
+ arch/arm/mach-shmobile/platsmp-apmu.c |   25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
-index 23254c31efd9..627fec98c785 100644
---- a/arch/arm/mach-shmobile/pm-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7740.c
-@@ -9,10 +9,14 @@
-  * for more details.
-  */
- #include <linux/console.h>
-+#include <linux/io.h>
- #include <linux/suspend.h>
-+
- #include "common.h"
- #include "pm-rmobile.h"
+diff --git a/arch/arm/mach-shmobile/platsmp-apmu.c b/arch/arm/mach-shmobile/platsmp-apmu.c
+index ef146fa..82db155 100644
+--- a/arch/arm/mach-shmobile/platsmp-apmu.c
++++ b/arch/arm/mach-shmobile/platsmp-apmu.c
+@@ -161,8 +161,32 @@ int shmobile_smp_apmu_boot_secondary(unsigned int cpu, struct task_struct *idle)
  
-+#define SYSC_BASE	IOMEM(0xe6180000)
+ #if defined(CONFIG_HOTPLUG_CPU) || defined(CONFIG_SUSPEND) || \
+ defined(CONFIG_CPU_IDLE)
++static void do_l2shutdown_settings(void)
++{
++	unsigned int v;
 +
- #if defined(CONFIG_PM) && !defined(CONFIG_ARCH_MULTIPLATFORM)
- static int r8a7740_pd_a4s_suspend(void)
++	/* Disable L2$ prefetches */
++	asm volatile(
++	"       mrc     p15, 1, %0, c15, c0, 3\n"
++	"       orr     %0, %0, %1\n"
++	"       mcr     p15, 1, %0, c15, c0, 3\n"
++		: "=&r" (v)
++		: "Ir" (0x400)
++		: "cc");
++	isb();
++	dsb();
++
++	flush_cache_all();
++
++	/* Set Double lock control bit */
++	__asm__ __volatile__("mcr p14, 0, %0, c1, c3, 4" : : "r" (0x1));
++}
++
+ static inline void cpu_enter_lowpower_a15(void)
  {
-@@ -35,40 +39,50 @@ static int r8a7740_pd_a3sp_suspend(void)
- static struct rmobile_pm_domain r8a7740_pm_domains[] = {
- 	{
- 		.genpd.name	= "A4LC",
-+		.base		= SYSC_BASE,
- 		.bit_shift	= 1,
- 	}, {
- //		.genpd.name	= "A4MP",
-+//		.base		= SYSC_BASE,
- //		.bit_shift	= 2,
- //	}, {
- //		.genpd.name	= "D4",
-+//		.base		= SYSC_BASE,
- //		.bit_shift	= 3,
- //	}, {
- 		.genpd.name	= "A4R",
-+		.base		= SYSC_BASE,
- 		.bit_shift	= 5,
- 	}, {
- 		.genpd.name	= "A3RV",
-+		.base		= SYSC_BASE,
- 		.bit_shift	= 6,
- 	}, {
- 		.genpd.name	= "A4S",
-+		.base		= SYSC_BASE,
- 		.bit_shift	= 10,
- 		.gov		= &pm_domain_always_on_gov,
- 		.no_debug	= true,
- 		.suspend	= r8a7740_pd_a4s_suspend,
- 	}, {
- 		.genpd.name	= "A3SP",
-+		.base		= SYSC_BASE,
- 		.bit_shift	= 11,
- 		.gov		= &pm_domain_always_on_gov,
- 		.no_debug	= true,
- 		.suspend	= r8a7740_pd_a3sp_suspend,
- 	}, {
- 		.genpd.name	= "A3SM",
-+		.base		= SYSC_BASE,
- 		.bit_shift	= 12,
- 		.gov		= &pm_domain_always_on_gov,
- 	}, {
- 		.genpd.name	= "A3SG",
-+		.base		= SYSC_BASE,
- 		.bit_shift	= 13,
- 	}, {
- 		.genpd.name	= "A4SU",
-+		.base		= SYSC_BASE,
- 		.bit_shift	= 20,
- 	},
- };
-diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
-index 717e6413d29c..578446af6e7b 100644
---- a/arch/arm/mach-shmobile/pm-rmobile.c
-+++ b/arch/arm/mach-shmobile/pm-rmobile.c
-@@ -20,9 +20,9 @@
- #include "pm-rmobile.h"
++	if (is_a15_l2shutdown)
++		do_l2shutdown_settings();
++
+ 	v7_exit_coherency_flush(louis);
+ }
  
- /* SYSC */
--#define SPDCR		IOMEM(0xe6180008)
--#define SWUCR		IOMEM(0xe6180014)
--#define PSTR		IOMEM(0xe6180080)
-+#define SPDCR	0x08	/* SYS Power Down Control Register */
-+#define SWUCR	0x14	/* SYS Wakeup Control Register */
-+#define PSTR	0x80	/* Power Status Register */
+@@ -246,6 +270,7 @@ static int shmobile_smp_apmu_enter_suspend(suspend_state_t state)
  
- #define PSTR_RETRIES	100
- #define PSTR_DELAY_US	10
-@@ -39,12 +39,12 @@ static int rmobile_pd_power_down(struct generic_pm_domain *genpd)
- 			return ret;
- 	}
- 
--	if (__raw_readl(PSTR) & mask) {
-+	if (__raw_readl(rmobile_pd->base + PSTR) & mask) {
- 		unsigned int retry_count;
--		__raw_writel(mask, SPDCR);
-+		__raw_writel(mask, rmobile_pd->base + SPDCR);
- 
- 		for (retry_count = PSTR_RETRIES; retry_count; retry_count--) {
--			if (!(__raw_readl(SPDCR) & mask))
-+			if (!(__raw_readl(rmobile_pd->base + SPDCR) & mask))
- 				break;
- 			cpu_relax();
- 		}
-@@ -52,7 +52,8 @@ static int rmobile_pd_power_down(struct generic_pm_domain *genpd)
- 
- 	if (!rmobile_pd->no_debug)
- 		pr_debug("%s: Power off, 0x%08x -> PSTR = 0x%08x\n",
--			 genpd->name, mask, __raw_readl(PSTR));
-+			 genpd->name, mask,
-+			 __raw_readl(rmobile_pd->base + PSTR));
+ 	writel_relaxed(0x0, cpucmcr);
+ 	rcar_sysc_clear_event_status();
++	is_a15_l2shutdown = 0;
  
  	return 0;
  }
-@@ -64,13 +65,13 @@ static int __rmobile_pd_power_up(struct rmobile_pm_domain *rmobile_pd,
- 	unsigned int retry_count;
- 	int ret = 0;
- 
--	if (__raw_readl(PSTR) & mask)
-+	if (__raw_readl(rmobile_pd->base + PSTR) & mask)
- 		goto out;
- 
--	__raw_writel(mask, SWUCR);
-+	__raw_writel(mask, rmobile_pd->base + SWUCR);
- 
- 	for (retry_count = 2 * PSTR_RETRIES; retry_count; retry_count--) {
--		if (!(__raw_readl(SWUCR) & mask))
-+		if (!(__raw_readl(rmobile_pd->base + SWUCR) & mask))
- 			break;
- 		if (retry_count > PSTR_RETRIES)
- 			udelay(PSTR_DELAY_US);
-@@ -82,7 +83,8 @@ static int __rmobile_pd_power_up(struct rmobile_pm_domain *rmobile_pd,
- 
- 	if (!rmobile_pd->no_debug)
- 		pr_debug("%s: Power on, 0x%08x -> PSTR = 0x%08x\n",
--			 rmobile_pd->genpd.name, mask, __raw_readl(PSTR));
-+			 rmobile_pd->genpd.name, mask,
-+			 __raw_readl(rmobile_pd->base + PSTR));
- 
- out:
- 	if (ret = 0 && rmobile_pd->resume && do_resume)
-diff --git a/arch/arm/mach-shmobile/pm-rmobile.h b/arch/arm/mach-shmobile/pm-rmobile.h
-index 8f66b343162b..0602130bb260 100644
---- a/arch/arm/mach-shmobile/pm-rmobile.h
-+++ b/arch/arm/mach-shmobile/pm-rmobile.h
-@@ -21,6 +21,7 @@ struct rmobile_pm_domain {
- 	struct dev_power_governor *gov;
- 	int (*suspend)(void);
- 	void (*resume)(void);
-+	void __iomem *base;
- 	unsigned int bit_shift;
- 	bool no_debug;
- };
-diff --git a/arch/arm/mach-shmobile/pm-sh7372.c b/arch/arm/mach-shmobile/pm-sh7372.c
-index 7e5c2676c489..7181a280b3b5 100644
---- a/arch/arm/mach-shmobile/pm-sh7372.c
-+++ b/arch/arm/mach-shmobile/pm-sh7372.c
-@@ -45,6 +45,8 @@
- #define PLLC01STPCR IOMEM(0xe61500c8)
- 
- /* SYSC */
-+#define SYSC_BASE IOMEM(0xe6180000)
-+
- #define SBAR IOMEM(0xe6180020)
- #define WUPRMSK IOMEM(0xe6180028)
- #define WUPSMSK IOMEM(0xe618002c)
-@@ -118,24 +120,28 @@ static struct rmobile_pm_domain sh7372_pm_domains[] = {
- 		.genpd.name = "A4LC",
- 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
- 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
-+		.base = SYSC_BASE,
- 		.bit_shift = 1,
- 	},
- 	{
- 		.genpd.name = "A4MP",
- 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
- 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
-+		.base = SYSC_BASE,
- 		.bit_shift = 2,
- 	},
- 	{
- 		.genpd.name = "D4",
- 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
- 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
-+		.base = SYSC_BASE,
- 		.bit_shift = 3,
- 	},
- 	{
- 		.genpd.name = "A4R",
- 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
- 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
-+		.base = SYSC_BASE,
- 		.bit_shift = 5,
- 		.suspend = sh7372_a4r_pd_suspend,
- 		.resume = sh7372_intcs_resume,
-@@ -144,18 +150,21 @@ static struct rmobile_pm_domain sh7372_pm_domains[] = {
- 		.genpd.name = "A3RV",
- 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
- 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
-+		.base = SYSC_BASE,
- 		.bit_shift = 6,
- 	},
- 	{
- 		.genpd.name = "A3RI",
- 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
- 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
-+		.base = SYSC_BASE,
- 		.bit_shift = 8,
- 	},
- 	{
- 		.genpd.name = "A4S",
- 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
- 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
-+		.base = SYSC_BASE,
- 		.bit_shift = 10,
- 		.gov = &pm_domain_always_on_gov,
- 		.no_debug = true,
-@@ -166,6 +175,7 @@ static struct rmobile_pm_domain sh7372_pm_domains[] = {
- 		.genpd.name = "A3SP",
- 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
- 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
-+		.base = SYSC_BASE,
- 		.bit_shift = 11,
- 		.gov = &pm_domain_always_on_gov,
- 		.no_debug = true,
-@@ -175,6 +185,7 @@ static struct rmobile_pm_domain sh7372_pm_domains[] = {
- 		.genpd.name = "A3SG",
- 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
- 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
-+		.base = SYSC_BASE,
- 		.bit_shift = 13,
- 	},
- };
 -- 
-1.9.1
-
+1.7.9.5
