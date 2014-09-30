@@ -1,54 +1,38 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 11 Sep 2014 00:57:27 +0000
-Subject: [PATCH 5/5] ARM: shmobile: armadillo800eva legacy: Use rmobile_add_devices_to_domains()
-Message-Id: <834720dbf03819a8b2d0ba5fbe01d008267f9da6.1410395620.git.horms+renesas@verge.net.au>
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Tue, 30 Sep 2014 18:00:49 +0000
+Subject: [RFC PATCH 09/16] metag: support poweroff through poweroff handler call chain
+Message-Id: <1412100056-15517-10-git-send-email-linux@roeck-us.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1410395620.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1410395620.git.horms+renesas@verge.net.au>
+References: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
+In-Reply-To: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+The kernel core now supports a poweroff handler call chain
+to remove power from the system. Call it if pm_power_off
+is set to NULL.
 
-Use a table and the rmobile_add_devices_to_domains() helper function to
-add all platform devices to their power domains at once, which is more
-size-efficient than calling rmobile_add_device_to_domain() explicitly
-for all devices individually.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: James Hogan <james.hogan@imgtec.com>
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
+ arch/metag/kernel/process.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 6dbaad6..e709835 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1231,6 +1231,10 @@ clock_error:
- #define GPIO_PORT8CR	IOMEM(0xe6050008)
- static void __init eva_init(void)
+diff --git a/arch/metag/kernel/process.c b/arch/metag/kernel/process.c
+index 483dff9..ff7f3eb 100644
+--- a/arch/metag/kernel/process.c
++++ b/arch/metag/kernel/process.c
+@@ -92,6 +92,8 @@ void machine_power_off(void)
  {
-+	static struct pm_domain_device domain_devices[] __initdata = {
-+		{ "A4LC", &lcdc0_device },
-+		{ "A4LC", &hdmi_lcdc_device },
-+	};
- 	struct platform_device *usb = NULL;
- 
- 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
-@@ -1316,8 +1320,8 @@ static void __init eva_init(void)
- 	platform_add_devices(eva_devices,
- 			     ARRAY_SIZE(eva_devices));
- 
--	rmobile_add_device_to_domain("A4LC", &lcdc0_device);
--	rmobile_add_device_to_domain("A4LC", &hdmi_lcdc_device);
-+	rmobile_add_devices_to_domains(domain_devices,
-+				       ARRAY_SIZE(domain_devices));
- 	if (usb)
- 		rmobile_add_device_to_domain("A3SP", usb);
- 
+ 	if (pm_power_off)
+ 		pm_power_off();
++	else
++		do_kernel_poweroff();
+ 	smp_send_stop();
+ 	hard_processor_halt(HALT_OK);
+ }
 -- 
-2.0.1
+1.9.1
 
