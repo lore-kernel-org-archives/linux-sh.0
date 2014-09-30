@@ -1,72 +1,60 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 16 Sep 2014 18:48:54 +0000
-Subject: [PATCH/RFC v2 07/12] ARM: shmobile: R-Mobile: Use generic_pm_domain.attach_dev() for pm_clk setup
-Message-Id: <1410893339-6361-8-git-send-email-geert+renesas@glider.be>
+Date: Tue, 30 Sep 2014 12:26:27 +0000
+Subject: [PATCH/RFC v2 4/4] ARM: shmobile: r8a7740 dtsi: Add minimal device node for Coresight-ETM
+Message-Id: <1412079987-1827-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1410893339-6361-1-git-send-email-geert+renesas@glider.be>
+References: <1412079987-1827-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1412079987-1827-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Use the just introduced genpd attach/detach callbacks to register the
-devices' module clocks, instead of doing it directly, to make it
-DT-proof.
+If power area D4, which contains the Coresight-ETM hardware block, is
+powered down on R-Mobile A1 (r8a7740), the kernel crashes when
+suspending from s2ram with:
+
+    Internal error: Oops - undefined instruction: 0 [#1] ARM
+
+This happens because dbg_cpu_pm_notify() calls reset_ctrl_regs(), which
+can't access the debug registers as the debug module is powered down.
+
+Add a minimal device node for the Coresight-ETM hardware block, and hook
+it up to the D4 PM domain, so the R-Mobile System Controller driver can
+keep the arm_dbg_regs_available flag in sync with the state of the D4 PM
+domain.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: devicetree@vger.kernel.org
 ---
+This is a fix on top of series "[PATCH 00/13] ARM: shmobile: R-Mobile:
+DT PM domain support" (https://lkml.org/lkml/2014/9/25/452), to be
+folded into "[PATCH v3 10/13] ARM: shmobile: r8a7740 dtsi: Add PM domain
+support" (https://lkml.org/lkml/2014/9/25/450).
+
 v2:
   - New
----
- arch/arm/mach-shmobile/pm-rmobile.c | 20 ++++++++++++++++++--
- 1 file changed, 18 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
-index 717e6413d29cb998..4c8e47179fdd333b 100644
---- a/arch/arm/mach-shmobile/pm-rmobile.c
-+++ b/arch/arm/mach-shmobile/pm-rmobile.c
-@@ -101,6 +101,22 @@ static bool rmobile_pd_active_wakeup(struct device *dev)
- 	return true;
- }
+---
+ arch/arm/boot/dts/r8a7740.dtsi | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 0fb93df46af4ce08..2ae08fc99be678c3 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -44,6 +44,11 @@
+ 		interrupts = <0 83 IRQ_TYPE_LEVEL_HIGH>;
+ 	};
  
-+static int rmobile_pd_attach_dev(struct generic_pm_domain *genpd,
-+				 struct device *dev)
-+{
-+	if (pm_clk_no_clocks(dev))
-+		pm_clk_add(dev, NULL);
++	ptm {
++		compatible = "arm,coresight-etm3x";
++		power-domains = <&pd_d4>;
++	};
 +
-+	return 0;
-+}
-+
-+static int rmobile_pd_detach_dev(struct generic_pm_domain *genpd,
-+				 struct device *dev)
-+{
-+	pm_clk_remove(dev, NULL);
-+	return 0;
-+}
-+
- static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
- {
- 	struct generic_pm_domain *genpd = &rmobile_pd->genpd;
-@@ -112,6 +128,8 @@ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
- 	genpd->dev_ops.active_wakeup	= rmobile_pd_active_wakeup;
- 	genpd->power_off		= rmobile_pd_power_down;
- 	genpd->power_on			= rmobile_pd_power_up;
-+	genpd->attach_dev		= rmobile_pd_attach_dev;
-+	genpd->detach_dev		= rmobile_pd_detach_dev;
- 	__rmobile_pd_power_up(rmobile_pd, false);
- }
- 
-@@ -130,8 +148,6 @@ void rmobile_add_device_to_domain_td(const char *domain_name,
- 	struct device *dev = &pdev->dev;
- 
- 	__pm_genpd_name_add_device(domain_name, dev, td);
--	if (pm_clk_no_clocks(dev))
--		pm_clk_add(dev, NULL);
- }
- 
- void rmobile_add_devices_to_domains(struct pm_domain_device data[],
+ 	cmt1: timer@e6138000 {
+ 		compatible = "renesas,cmt-48-r8a7740", "renesas,cmt-48";
+ 		reg = <0xe6138000 0x170>;
 -- 
 1.9.1
 
