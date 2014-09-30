@@ -1,45 +1,39 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 08 Sep 2014 00:27:44 +0000
-Subject: [PATCH 1/5] ARM: shmobile: r8a7740: Use SoC-specific 48-bit CMT compat string
-Message-Id: <1410136068-32220-2-git-send-email-horms+renesas@verge.net.au>
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Tue, 30 Sep 2014 18:00:48 +0000
+Subject: [RFC PATCH 08/16] ia64: support poweroff through poweroff handler call chain
+Message-Id: <1412100056-15517-9-git-send-email-linux@roeck-us.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410136068-32220-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1410136068-32220-1-git-send-email-horms+renesas@verge.net.au>
+References: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
+In-Reply-To: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-In general Renesas hardware is not documented to the extent
-where the relationship between IP blocks on different SoCs can be assumed
-although they may appear to operate the same way. Furthermore the
-documentation typically does not specify a version for individual
-IP blocks. For these reasons a convention of using the SoC name in place
-of a version and providing SoC-specific compat strings has been adopted.
+The kernel core now supports a poweroff handler call chain
+to remove power from the system. Call it if pm_power_off
+is set to NULL.
 
-Although not universally liked this convention is used in the bindings for
-a number of drivers for Renesas hardware. The purpose of this patch is to
-make use of the SoC-specific CMT compat string for the r8a7740 48-bit CMT
-clock source.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: Tony Luck <tony.luck@intel.com>
+Cc: Fenghua Yu <fenghua.yu@intel.com>
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
 ---
- arch/arm/boot/dts/r8a7740.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/ia64/kernel/process.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 1067a96..d46c213 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -42,7 +42,7 @@
- 	};
+diff --git a/arch/ia64/kernel/process.c b/arch/ia64/kernel/process.c
+index deed6fa..489b0d8 100644
+--- a/arch/ia64/kernel/process.c
++++ b/arch/ia64/kernel/process.c
+@@ -677,6 +677,8 @@ machine_power_off (void)
+ {
+ 	if (pm_power_off)
+ 		pm_power_off();
++	else
++		do_kernel_poweroff();
+ 	machine_halt();
+ }
  
- 	cmt1: timer@e6138000 {
--		compatible = "renesas,cmt-48";
-+		compatible = "renesas,cmt-48-r8a7740", "renesas,cmt-48";
- 		reg = <0xe6138000 0x170>;
- 		interrupts = <0 58 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7740_CLK_CMT1>;
 -- 
-2.0.1
+1.9.1
 
