@@ -1,112 +1,126 @@
-From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
-Date: Mon, 29 Sep 2014 12:30:53 +0000
-Subject: [PATCH] ARM: don't set unused name in struct flash_platform_data
-Message-Id: <1411993853-6309-1-git-send-email-zajec5@gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 30 Sep 2014 02:21:07 +0000
+Subject: Re: [PATCH] ARM: don't set unused name in struct flash_platform_data
+Message-Id: <20140930022107.GG10373@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1411993853-6309-1-git-send-email-zajec5@gmail.com>
+In-Reply-To: <1411993853-6309-1-git-send-email-zajec5@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
 To: linux-arm-kernel@lists.infradead.org
 
-Loading correct SPI driver (m25p80) is handled using modalias from the
-struct spi_board_info. There is no point of setting name in the
-platform_data, m25p80 ignores it anyway.
+On Mon, Sep 29, 2014 at 02:30:53PM +0200, Rafał Miłecki wrote:
+> Loading correct SPI driver (m25p80) is handled using modalias from the
+> struct spi_board_info. There is no point of setting name in the
+> platform_data, m25p80 ignores it anyway.
+> 
+> Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+> ---
+>  arch/arm/mach-davinci/board-da830-evm.c    | 1 -
+>  arch/arm/mach-davinci/board-da850-evm.c    | 1 -
+>  arch/arm/mach-davinci/board-mityomapl138.c | 1 -
+>  arch/arm/mach-shmobile/board-bockw.c       | 1 -
+>  arch/arm/mach-shmobile/board-koelsch.c     | 1 -
+>  arch/arm/mach-shmobile/board-lager.c       | 1 -
+>  arch/arm/mach-w90x900/dev.c                | 1 -
+>  7 files changed, 7 deletions(-)
 
-Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
----
- arch/arm/mach-davinci/board-da830-evm.c    | 1 -
- arch/arm/mach-davinci/board-da850-evm.c    | 1 -
- arch/arm/mach-davinci/board-mityomapl138.c | 1 -
- arch/arm/mach-shmobile/board-bockw.c       | 1 -
- arch/arm/mach-shmobile/board-koelsch.c     | 1 -
- arch/arm/mach-shmobile/board-lager.c       | 1 -
- arch/arm/mach-w90x900/dev.c                | 1 -
- 7 files changed, 7 deletions(-)
+Hi,
 
-diff --git a/arch/arm/mach-davinci/board-da830-evm.c b/arch/arm/mach-davinci/board-da830-evm.c
-index 5623131..263004a 100644
---- a/arch/arm/mach-davinci/board-da830-evm.c
-+++ b/arch/arm/mach-davinci/board-da830-evm.c
-@@ -567,7 +567,6 @@ static struct mtd_partition da830evm_spiflash_part[] = {
- };
- 
- static struct flash_platform_data da830evm_spiflash_data = {
--	.name		= "m25p80",
- 	.parts		= da830evm_spiflash_part,
- 	.nr_parts	= ARRAY_SIZE(da830evm_spiflash_part),
- 	.type		= "w25x32",
-diff --git a/arch/arm/mach-davinci/board-da850-evm.c b/arch/arm/mach-davinci/board-da850-evm.c
-index 234c5bb..721ff2b 100644
---- a/arch/arm/mach-davinci/board-da850-evm.c
-+++ b/arch/arm/mach-davinci/board-da850-evm.c
-@@ -104,7 +104,6 @@ static struct mtd_partition da850evm_spiflash_part[] = {
- };
- 
- static struct flash_platform_data da850evm_spiflash_data = {
--	.name		= "m25p80",
- 	.parts		= da850evm_spiflash_part,
- 	.nr_parts	= ARRAY_SIZE(da850evm_spiflash_part),
- 	.type		= "m25p64",
-diff --git a/arch/arm/mach-davinci/board-mityomapl138.c b/arch/arm/mach-davinci/board-mityomapl138.c
-index 96fc00a..3c93b65 100644
---- a/arch/arm/mach-davinci/board-mityomapl138.c
-+++ b/arch/arm/mach-davinci/board-mityomapl138.c
-@@ -350,7 +350,6 @@ static struct mtd_partition spi_flash_partitions[] = {
- };
- 
- static struct flash_platform_data mityomapl138_spi_flash_data = {
--	.name		= "m25p80",
- 	.parts		= spi_flash_partitions,
- 	.nr_parts	= ARRAY_SIZE(spi_flash_partitions),
- 	.type		= "m24p64",
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index 8a83eb3..e25af56 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -266,7 +266,6 @@ static struct mtd_partition m25p80_spi_flash_partitions[] = {
- };
- 
- static struct flash_platform_data spi_flash_data = {
--	.name		= "m25p80",
- 	.type		= "s25fl008k",
- 	.parts		= m25p80_spi_flash_partitions,
- 	.nr_parts	= ARRAY_SIZE(m25p80_spi_flash_partitions),
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index b7d5bc7..a494a00 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -207,7 +207,6 @@ static struct mtd_partition spi_flash_part[] = {
- };
- 
- static const struct flash_platform_data spi_flash_data = {
--	.name		= "m25p80",
- 	.parts		= spi_flash_part,
- 	.nr_parts	= ARRAY_SIZE(spi_flash_part),
- 	.type		= "s25fl512s",
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index e1d8215..3575731 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -315,7 +315,6 @@ static struct mtd_partition spi_flash_part[] = {
- };
- 
- static const struct flash_platform_data spi_flash_data = {
--	.name           = "m25p80",
- 	.parts          = spi_flash_part,
- 	.nr_parts       = ARRAY_SIZE(spi_flash_part),
- 	.type           = "s25fl512s",
-diff --git a/arch/arm/mach-w90x900/dev.c b/arch/arm/mach-w90x900/dev.c
-index e65a80a..9745a73 100644
---- a/arch/arm/mach-w90x900/dev.c
-+++ b/arch/arm/mach-w90x900/dev.c
-@@ -249,7 +249,6 @@ static struct mtd_partition nuc900_spi_flash_partitions[] = {
- };
- 
- static struct flash_platform_data nuc900_spi_flash_data = {
--	.name = "m25p80",
- 	.parts =  nuc900_spi_flash_partitions,
- 	.nr_parts = ARRAY_SIZE(nuc900_spi_flash_partitions),
- 	.type = "w25x16",
--- 
-1.8.4.5
+I am happy to queue up the mach-shmobile portion of this change
+if you break it out into a separate patch, one per board.
 
+> 
+> diff --git a/arch/arm/mach-davinci/board-da830-evm.c b/arch/arm/mach-davinci/board-da830-evm.c
+> index 5623131..263004a 100644
+> --- a/arch/arm/mach-davinci/board-da830-evm.c
+> +++ b/arch/arm/mach-davinci/board-da830-evm.c
+> @@ -567,7 +567,6 @@ static struct mtd_partition da830evm_spiflash_part[] = {
+>  };
+>  
+>  static struct flash_platform_data da830evm_spiflash_data = {
+> -	.name		= "m25p80",
+>  	.parts		= da830evm_spiflash_part,
+>  	.nr_parts	= ARRAY_SIZE(da830evm_spiflash_part),
+>  	.type		= "w25x32",
+> diff --git a/arch/arm/mach-davinci/board-da850-evm.c b/arch/arm/mach-davinci/board-da850-evm.c
+> index 234c5bb..721ff2b 100644
+> --- a/arch/arm/mach-davinci/board-da850-evm.c
+> +++ b/arch/arm/mach-davinci/board-da850-evm.c
+> @@ -104,7 +104,6 @@ static struct mtd_partition da850evm_spiflash_part[] = {
+>  };
+>  
+>  static struct flash_platform_data da850evm_spiflash_data = {
+> -	.name		= "m25p80",
+>  	.parts		= da850evm_spiflash_part,
+>  	.nr_parts	= ARRAY_SIZE(da850evm_spiflash_part),
+>  	.type		= "m25p64",
+> diff --git a/arch/arm/mach-davinci/board-mityomapl138.c b/arch/arm/mach-davinci/board-mityomapl138.c
+> index 96fc00a..3c93b65 100644
+> --- a/arch/arm/mach-davinci/board-mityomapl138.c
+> +++ b/arch/arm/mach-davinci/board-mityomapl138.c
+> @@ -350,7 +350,6 @@ static struct mtd_partition spi_flash_partitions[] = {
+>  };
+>  
+>  static struct flash_platform_data mityomapl138_spi_flash_data = {
+> -	.name		= "m25p80",
+>  	.parts		= spi_flash_partitions,
+>  	.nr_parts	= ARRAY_SIZE(spi_flash_partitions),
+>  	.type		= "m24p64",
+> diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+> index 8a83eb3..e25af56 100644
+> --- a/arch/arm/mach-shmobile/board-bockw.c
+> +++ b/arch/arm/mach-shmobile/board-bockw.c
+> @@ -266,7 +266,6 @@ static struct mtd_partition m25p80_spi_flash_partitions[] = {
+>  };
+>  
+>  static struct flash_platform_data spi_flash_data = {
+> -	.name		= "m25p80",
+>  	.type		= "s25fl008k",
+>  	.parts		= m25p80_spi_flash_partitions,
+>  	.nr_parts	= ARRAY_SIZE(m25p80_spi_flash_partitions),
+> diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+> index b7d5bc7..a494a00 100644
+> --- a/arch/arm/mach-shmobile/board-koelsch.c
+> +++ b/arch/arm/mach-shmobile/board-koelsch.c
+> @@ -207,7 +207,6 @@ static struct mtd_partition spi_flash_part[] = {
+>  };
+>  
+>  static const struct flash_platform_data spi_flash_data = {
+> -	.name		= "m25p80",
+>  	.parts		= spi_flash_part,
+>  	.nr_parts	= ARRAY_SIZE(spi_flash_part),
+>  	.type		= "s25fl512s",
+> diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+> index e1d8215..3575731 100644
+> --- a/arch/arm/mach-shmobile/board-lager.c
+> +++ b/arch/arm/mach-shmobile/board-lager.c
+> @@ -315,7 +315,6 @@ static struct mtd_partition spi_flash_part[] = {
+>  };
+>  
+>  static const struct flash_platform_data spi_flash_data = {
+> -	.name           = "m25p80",
+>  	.parts          = spi_flash_part,
+>  	.nr_parts       = ARRAY_SIZE(spi_flash_part),
+>  	.type           = "s25fl512s",
+> diff --git a/arch/arm/mach-w90x900/dev.c b/arch/arm/mach-w90x900/dev.c
+> index e65a80a..9745a73 100644
+> --- a/arch/arm/mach-w90x900/dev.c
+> +++ b/arch/arm/mach-w90x900/dev.c
+> @@ -249,7 +249,6 @@ static struct mtd_partition nuc900_spi_flash_partitions[] = {
+>  };
+>  
+>  static struct flash_platform_data nuc900_spi_flash_data = {
+> -	.name = "m25p80",
+>  	.parts =  nuc900_spi_flash_partitions,
+>  	.nr_parts = ARRAY_SIZE(nuc900_spi_flash_partitions),
+>  	.type = "w25x16",
+> -- 
+> 1.8.4.5
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
