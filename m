@@ -1,8 +1,10 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 30 Sep 2014 12:26:06 +0000
+Date: Tue, 30 Sep 2014 12:26:23 +0000
 Subject: [PATCH/RFC v2 0/4] ARM: hw_breakpoint: Avoid undef instruction exceptions on wake-up
-Message-Id: <1412079970-1779-1-git-send-email-geert+renesas@glider.be>
+Message-Id: <1412079987-1827-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1412079970-1779-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1412079970-1779-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
