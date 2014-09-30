@@ -1,53 +1,42 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Sep 2014 12:27:56 +0000
-Subject: [PATCH v2 9/9] ARM: shmobile: koelsch: Enable DU device in DT
-Message-Id: <1411561676-9556-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Tue, 30 Sep 2014 18:00:54 +0000
+Subject: [RFC PATCH 14/16] x86/xen: support poweroff through poweroff handler call chain
+Message-Id: <1412100056-15517-15-git-send-email-linux@roeck-us.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
+In-Reply-To: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Specify the DU output topology, enable the DU device and configure the
-related pins.
+The kernel core now supports a poweroff handler call chain
+to remove power from the system. Call it if pm_power_off
+is set to NULL.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>
+Cc: Boris Ostrovsky <boris.ostrovsky@oracle.com>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Ingo Molnar <mingo@redhat.com>
+Cc: H. Peter Anvin <hpa@zytor.com>
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 16 +++++++++++++---
- 1 file changed, 13 insertions(+), 3 deletions(-)
+ arch/x86/xen/enlighten.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 51807a3..5f88108 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -211,14 +211,24 @@
- 	};
- };
+diff --git a/arch/x86/xen/enlighten.c b/arch/x86/xen/enlighten.c
+index c0cb11f..645d00f 100644
+--- a/arch/x86/xen/enlighten.c
++++ b/arch/x86/xen/enlighten.c
+@@ -1322,6 +1322,8 @@ static void xen_machine_power_off(void)
+ {
+ 	if (pm_power_off)
+ 		pm_power_off();
++	else
++		do_kernel_poweroff();
+ 	xen_reboot(SHUTDOWN_poweroff);
+ }
  
-+&du {
-+	pinctrl-0 = <&du_pins>;
-+	pinctrl-names = "default";
-+	status = "okay";
-+
-+	ports {
-+		port@1 {
-+			lvds_connector: endpoint {
-+			};
-+		};
-+	};
-+};
-+
- &extal_clk {
- 	clock-frequency = <20000000>;
- };
- 
- &pfc {
--	pinctrl-0 = <&du_pins>;
--	pinctrl-names = "default";
--
- 	i2c2_pins: i2c2 {
- 		renesas,groups = "i2c2";
- 		renesas,function = "i2c2";
 -- 
-1.8.5.5
+1.9.1
 
