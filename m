@@ -1,120 +1,39 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Sep 2014 13:20:24 +0000
-Subject: [PATCH v3 5/9] ARM: shmobile: marzen: Enable DU device in DT
-Message-Id: <1411564828-30272-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Tue, 30 Sep 2014 18:00:47 +0000
+Subject: [RFC PATCH 07/16] c6x: support poweroff through poweroff handler call chain
+Message-Id: <1412100056-15517-8-git-send-email-linux@roeck-us.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
+In-Reply-To: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Specify the DU output topology, enable the DU device and configure the
-related pins.
+The kernel core now supports a poweroff handler call chain
+to remove power from the system. Call it if pm_power_off
+is set to NULL.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: Mark Salter <msalter@redhat.com>
+Cc: Aurelien Jacquiot <a-jacquiot@ti.com>
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
 ---
- arch/arm/boot/dts/r8a7779-marzen.dts | 81 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 81 insertions(+)
+ arch/c6x/kernel/process.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
-index c160404..58ca67b 100644
---- a/arch/arm/boot/dts/r8a7779-marzen.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-@@ -68,6 +68,76 @@
- 			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
- 		};
- 	};
-+
-+	vga-encoder {
-+		compatible = "adi,adv7123";
-+
-+		ports {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+
-+			port@0 {
-+				reg = <0>;
-+				vga_enc_in: endpoint {
-+					remote-endpoint = <&du_out_rgb0>;
-+				};
-+			};
-+			port@1 {
-+				reg = <1>;
-+				vga_enc_out: endpoint {
-+					remote-endpoint = <&vga_in>;
-+				};
-+			};
-+		};
-+	};
-+
-+	vga {
-+		compatible = "vga-connector";
-+
-+		port {
-+			vga_in: endpoint {
-+				remote-endpoint = <&vga_enc_out>;
-+			};
-+		};
-+	};
-+
-+	lvds-enc {
-+		compatible = "thine,thc63lvdm83d";
-+
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		ports {
-+			port@0 {
-+				lvds_enc_in: endpoint {
-+					remote-endpoint = <&du_out_rgb1>;
-+				};
-+			};
-+			port@1 {
-+				lvds_connector: endpoint {
-+				};
-+			};
-+		};
-+	};
-+};
-+
-+&du {
-+	pinctrl-0 = <&du_pins>;
-+	pinctrl-names = "default";
-+	status = "okay";
-+
-+	ports {
-+		port@0 {
-+			endpoint {
-+				remote-endpoint = <&vga_enc_in>;
-+			};
-+		};
-+		port@1 {
-+			endpoint {
-+				remote-endpoint = <&lvds_enc_in>;
-+			};
-+		};
-+	};
- };
+diff --git a/arch/c6x/kernel/process.c b/arch/c6x/kernel/process.c
+index 57d2ea8..ddf088e 100644
+--- a/arch/c6x/kernel/process.c
++++ b/arch/c6x/kernel/process.c
+@@ -75,6 +75,8 @@ void machine_power_off(void)
+ {
+ 	if (pm_power_off)
+ 		pm_power_off();
++	else
++		do_kernel_poweroff();
+ 	halt_loop();
+ }
  
- &irqpin0 {
-@@ -83,6 +153,17 @@
- };
- 
- &pfc {
-+	du_pins: du {
-+		du0 {
-+			renesas,groups = "du0_rgb888", "du0_sync_1", "du0_clk_out_0";
-+			renesas,function = "du0";
-+		};
-+		du1 {
-+			renesas,groups = "du1_rgb666", "du1_sync_1", "du1_clk_out";
-+			renesas,function = "du1";
-+		};
-+	};
-+
- 	lan0_pins: lan0 {
- 		intc {
- 			renesas,groups = "intc_irq1_b";
 -- 
-1.8.5.5
+1.9.1
 
