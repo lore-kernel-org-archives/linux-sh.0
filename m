@@ -1,42 +1,78 @@
-From: Xiubo Li <Li.Xiubo@freescale.com>
-Date: Mon, 01 Sep 2014 04:29:34 +0000
-Subject: [PATCHv1 0/7] simple-card: simplify the code.
-Message-Id: <1409545781-20530-1-git-send-email-Li.Xiubo@freescale.com>
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Tue, 30 Sep 2014 18:00:55 +0000
+Subject: [RFC PATCH 15/16] power/reset: restart-poweroff: Register with kernel poweroff handler
+Message-Id: <1412100056-15517-16-git-send-email-linux@roeck-us.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
+In-Reply-To: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, lgirdwood-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, perex-/Fr2/VpizcU@public.gmane.org, tiwai-l3A5Bk7waGM@public.gmane.org, kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, moinejf-GANU6spQydw@public.gmane.org, andrew-g2DYL2Zd6BY@public.gmane.org, jsarha-l0cyMroinI0@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, alsa-devel-K7yf7f+aM1XWsZ/bQMPhNw@public.gmane.org, shawn.guo-KZfg59tc24xl57MIdRCFDg@public.gmane.org
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Xiubo Li <Li.Xiubo-KZfg59tc24xl57MIdRCFDg@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
+Register with kernel poweroff handler instead of seting pm_power_off
+directly.  Register as poweroff handler of last resort since the driver
+does not really power off the system but executes a restart.
 
-Change in v1:
-- Add simple-card dts node patches.
-- Fix format parsing bug from Jean-Francois's comment.
-- Rebase to Kuninori-san's newest changes in next branch.
+Cc: Sebastian Reichel <sre@kernel.org>
+Cc: Dmitry Eremin-Solenikov <dbaryshkov@gmail.com>
+Cc: David Woodhouse <dwmw2@infradead.org>
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+---
+ drivers/power/reset/restart-poweroff.c | 24 +++++++++++-------------
+ 1 file changed, 11 insertions(+), 13 deletions(-)
 
-
-Xiubo Li (7):
-  ASoC: simple-card: Merge single and muti DAI link code.
-  ASoC: simple-card: Adjust the comments of simple card.
-  ASoC: dts: vf610-twr: To support simple card newest style.
-  ASoC: dts: kirkwood-t5325: To support simple card newest style.
-  ASoC: dts: r8a7740-armadillo800eva-reference: To support simple card
-    newest style.
-  ASoC: dts: sh73a0-kzm9g-reference: To support simple card newest
-    style.
-  ASoC: dts: kirkwood-openrd-client: To support simple card newest
-    style.
-
- .../devicetree/bindings/sound/simple-card.txt      | 101 ++++++------
- arch/arm/boot/dts/kirkwood-openrd-client.dts       |  15 +-
- arch/arm/boot/dts/kirkwood-t5325.dts               |  15 +-
- .../boot/dts/r8a7740-armadillo800eva-reference.dts |  21 +--
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts       |  18 ++-
- arch/arm/boot/dts/vf610-twr.dts                    |  17 +-
- sound/soc/generic/simple-card.c                    | 176 ++++++++-------------
- 7 files changed, 160 insertions(+), 203 deletions(-)
-
+diff --git a/drivers/power/reset/restart-poweroff.c b/drivers/power/reset/restart-poweroff.c
+index edd707e..82d058f 100644
+--- a/drivers/power/reset/restart-poweroff.c
++++ b/drivers/power/reset/restart-poweroff.c
+@@ -12,35 +12,33 @@
+  */
+ #include <linux/kernel.h>
+ #include <linux/init.h>
++#include <linux/notifier.h>
+ #include <linux/platform_device.h>
+ #include <linux/of_platform.h>
+ #include <linux/module.h>
+ #include <linux/reboot.h>
+-#include <asm/system_misc.h>
+ 
+-static void restart_poweroff_do_poweroff(void)
++static int restart_poweroff_do_poweroff(struct notifier_block *this,
++					unsigned long unused1, void *unused2)
+ {
+ 	reboot_mode = REBOOT_HARD;
+ 	machine_restart(NULL);
++
++	return NOTIFY_DONE;
+ }
+ 
++static struct notifier_block restart_poweroff_handler = {
++	.notifier_call = restart_poweroff_do_poweroff,
++};
++
+ static int restart_poweroff_probe(struct platform_device *pdev)
+ {
+-	/* If a pm_power_off function has already been added, leave it alone */
+-	if (pm_power_off != NULL) {
+-		dev_err(&pdev->dev,
+-			"pm_power_off function already registered");
+-		return -EBUSY;
+-	}
+-
+-	pm_power_off = &restart_poweroff_do_poweroff;
+-	return 0;
++	return register_restart_handler(&restart_poweroff_handler);
+ }
+ 
+ static int restart_poweroff_remove(struct platform_device *pdev)
+ {
+-	if (pm_power_off = &restart_poweroff_do_poweroff)
+-		pm_power_off = NULL;
++	unregister_restart_handler(&restart_poweroff_handler);
+ 
+ 	return 0;
+ }
 -- 
-1.8.4
+1.9.1
 
