@@ -1,63 +1,128 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 11 Sep 2014 00:57:01 +0000
-Subject: [PATCH 4/7] ARM: shmobile: r8a7779: Use SoC-specific TMU compat string
-Message-Id: <a51b7b38182918d54813b572d6c28d43082d94ff.1410396171.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 30 Sep 2014 12:26:26 +0000
+Subject: [PATCH/RFC v2 3/4] ARM: shmobile: R-Mobile: Sync arm_dbg_regs_available with D4 PM domain
+Message-Id: <1412079987-1827-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1410396171.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1410396171.git.horms+renesas@verge.net.au>
+References: <1412079987-1827-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1412079987-1827-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-In general Renesas hardware is not documented to the extent
-where the relationship between IP blocks on different SoCs can be assumed
-although they may appear to operate the same way. Furthermore the
-documentation typically does not specify a version for individual
-IP blocks. For these reasons a convention of using the SoC name in place
-of a version and providing SoC-specific compat strings has been adopted.
+If power area D4, which contains the Coresight-ETM hardware block, is
+powered down on R-Mobile A1 (r8a7740), the kernel crashes when
+suspending from s2ram with:
 
-Although not universally liked this convention is used in the bindings for
-a number of drivers for Renesas hardware. The purpose of this patch is to
-make use of the SoC-specific CMT compat string for the r8a7779 TMU
-clock source.
+    Internal error: Oops - undefined instruction: 0 [#1] ARM
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+This happens because dbg_cpu_pm_notify() calls reset_ctrl_regs(), which
+can't access the debug registers as the debug module is powered down.
+
+Keep the arm_dbg_regs_available flag in sync with the state of the PM
+domain that contains a device node that is compatible with
+"arm,coresight-etm3x".
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7779.dtsi | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+This is a fix on top of series "[PATCH 00/13] ARM: shmobile: R-Mobile:
+DT PM domain support" (https://lkml.org/lkml/2014/9/25/452), to be
+folded into "[PATCH v3 09/13] ARM: shmobile: R-Mobile: Add DT support
+for PM domains" (https://lkml.org/lkml/2014/9/25/448).
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 463e3fd..72891e5 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -267,7 +267,7 @@
- 	};
+v2:
+  - New
+
+---
+ arch/arm/mach-shmobile/pm-rmobile.c | 35 ++++++++++++++++++++++++++++++++---
+ 1 file changed, 32 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index b1aa0e8541feaea4..80be5848adc8f15c 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -21,7 +21,10 @@
+ #include <linux/pm.h>
+ #include <linux/pm_clock.h>
+ #include <linux/slab.h>
++
++#include <asm/hw_breakpoint.h>
+ #include <asm/io.h>
++
+ #include "pm-rmobile.h"
  
- 	tmu0: timer@ffd80000 {
--		compatible = "renesas,tmu";
-+		compatible = "renesas,tmu-r8a7779", "renesas,tmu";
- 		reg = <0xffd80000 0x30>;
- 		interrupts = <0 32 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 33 IRQ_TYPE_LEVEL_HIGH>,
-@@ -281,7 +281,7 @@
- 	};
+ /* SYSC */
+@@ -198,20 +201,36 @@ static int rmobile_pd_suspend_console(void)
+ 	return console_suspend_enabled ? 0 : -EBUSY;
+ }
  
- 	tmu1: timer@ffd81000 {
--		compatible = "renesas,tmu";
-+		compatible = "renesas,tmu-r8a7779", "renesas,tmu";
- 		reg = <0xffd81000 0x30>;
- 		interrupts = <0 36 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 37 IRQ_TYPE_LEVEL_HIGH>,
-@@ -295,7 +295,7 @@
- 	};
++/*
++ * This domain contains the Coresight-ETM hardware block.
++ * The debug registers cannot be accessed while this domain is powered down.
++ */
++static int rmobile_pd_suspend_debug(void)
++{
++	arm_dbg_regs_available = false;
++	return 0;
++}
++
++static void rmobile_pd_resume_debug(void)
++{
++	arm_dbg_regs_available = true;
++}
++
+ #define MAX_NUM_CPU_PDS		8
  
- 	tmu2: timer@ffd82000 {
--		compatible = "renesas,tmu";
-+		compatible = "renesas,tmu-r8a7779", "renesas,tmu";
- 		reg = <0xffd82000 0x30>;
- 		interrupts = <0 40 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 41 IRQ_TYPE_LEVEL_HIGH>,
+ static unsigned int num_cpu_pds __initdata;
+ static struct device_node *cpu_pds[MAX_NUM_CPU_PDS] __initdata;
+ static struct device_node *console_pd __initdata;
++static struct device_node *debug_pd __initdata;
+ 
+ static void __init get_special_pds(void)
+ {
+-	struct device_node *cpu, *pd;
++	struct device_node *np, *pd;
+ 	unsigned int i;
+ 
+ 	/* PM domains containing CPUs */
+-	for_each_node_by_type(cpu, "cpu") {
+-		pd = of_parse_phandle(cpu, "power-domains", 0);
++	for_each_node_by_type(np, "cpu") {
++		pd = of_parse_phandle(np, "power-domains", 0);
+ 		if (!pd)
+ 			continue;
+ 
+@@ -236,6 +255,11 @@ static void __init get_special_pds(void)
+ 	/* PM domain containing console */
+ 	if (of_stdout)
+ 		console_pd = of_parse_phandle(of_stdout, "power-domains", 0);
++
++	/* PM domain containing Coresight-ETM */
++	np = of_find_compatible_node(NULL, NULL, "arm,coresight-etm3x");
++	if (np)
++		debug_pd = of_parse_phandle(np, "power-domains", 0);
+ }
+ 
+ static void __init put_special_pds(void)
+@@ -245,6 +269,7 @@ static void __init put_special_pds(void)
+ 	for (i = 0; i < num_cpu_pds; i++)
+ 		of_node_put(cpu_pds[i]);
+ 	of_node_put(console_pd);
++	of_node_put(debug_pd);
+ }
+ 
+ static bool __init pd_contains_cpu(const struct device_node *pd)
+@@ -271,6 +296,10 @@ static void __init rmobile_setup_pm_domain(struct device_node *np,
+ 		pr_debug("PM domain %s contains serial console\n", name);
+ 		pd->gov = &pm_domain_always_on_gov;
+ 		pd->suspend = rmobile_pd_suspend_console;
++	} else if (np = debug_pd) {
++		pr_debug("PM domain %s contains Coresight-ETM\n", name);
++		pd->suspend = rmobile_pd_suspend_debug;
++		pd->resume = rmobile_pd_resume_debug;
+ 	}
+ 
+ 	rmobile_init_pm_domain(pd);
 -- 
-2.0.1
+1.9.1
 
