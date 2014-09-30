@@ -1,66 +1,36 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 26 Sep 2014 21:08:12 +0000
-Subject: [PATCH v4 1/3] ARM: shmobile: r8a7791: add USB PHY DT support
-Message-Id: <2840152.T6qjI3ulQ6@wasted.cogentembedded.com>
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Tue, 30 Sep 2014 18:00:50 +0000
+Subject: [RFC PATCH 10/16] mips: support poweroff through poweroff handler call chain
+Message-Id: <1412100056-15517-11-git-send-email-linux@roeck-us.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <3383603.zZsCVpCDbD@wasted.cogentembedded.com>
-In-Reply-To: <3383603.zZsCVpCDbD@wasted.cogentembedded.com>
+References: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
+In-Reply-To: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Define the R8A7791 generic part of the USB PHY device node. It is up to the
-board file to enable the device.
+The kernel core now supports a poweroff handler call chain
+to remove power from the system. Call it if pm_power_off
+is set to NULL.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Cc: Ralf Baechle <ralf@linux-mips.org>
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
 ---
-Changes in version 4:
-- refreshed the patch.
+ arch/mips/kernel/reset.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-Changes in version 3:
-- changed subnodes of the USB PHY node to be per-channel;
-- changed "renesas,phy-select" property to "reg" in the subnodes, and thus added
-  "#address-cells" and "#size-cells" properties to the parent node;
-- moved "#phy-cells" property from the parent node to the subnodes, changing its
-  value to <1>;
-- refreshed the patch.
-
-Changes in version 2:
-- added subnodes to the USB PHY node;
-- refreshed the patch.
-
- arch/arm/boot/dts/r8a7791.dtsi |   19 +++++++++++++++++++
- 1 file changed, 19 insertions(+)
-
-Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7791.dtsi
-@@ -637,6 +637,25 @@
- 		status = "disabled";
- 	};
- 
-+	usbphy: usb-phy@e6590100 {
-+		compatible = "renesas,usb-phy-r8a7791";
-+		reg = <0 0xe6590100 0 0x100>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		clocks = <&mstp7_clks R8A7791_CLK_HSUSB>;
-+		clock-names = "usbhs";
-+		status = "disabled";
-+
-+		usb0: usb-channel@0 {
-+			reg = <0>;
-+			#phy-cells = <1>;
-+		};
-+		usb2: usb-channel@2 {
-+			reg = <2>;
-+			#phy-cells = <1>;
-+		};
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
+diff --git a/arch/mips/kernel/reset.c b/arch/mips/kernel/reset.c
+index 07fc524..c3391d7 100644
+--- a/arch/mips/kernel/reset.c
++++ b/arch/mips/kernel/reset.c
+@@ -41,4 +41,6 @@ void machine_power_off(void)
+ {
+ 	if (pm_power_off)
+ 		pm_power_off();
++	else
++		do_kernel_poweroff();
+ }
+-- 
+1.9.1
 
