@@ -1,70 +1,76 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Sep 2014 13:20:23 +0000
-Subject: [PATCH v3 4/9] ARM: shmobile: dts: Add common file for AA104XD12 panel
-Message-Id: <1411564828-30272-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Tue, 30 Sep 2014 18:00:43 +0000
+Subject: [RFC PATCH 03/16] parisc: support poweroff through poweroff handler call chain
+Message-Id: <1412100056-15517-4-git-send-email-linux@roeck-us.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
+In-Reply-To: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The Mitsubishi AA104XD12 panel is commonly used with the Marzen, Lager
-and Koelsch boards. Create a .dtsi file that describe the panel and its
-connection to the board.
+The kernel core now supports a poweroff handler call chain
+to remove power from the system. Call it from machine_power_off.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Also, do not use pm_power_off as alternate pointer to machine_power_off.
+Have the parisc/power driver call kernel_power_off() which in turn will
+call machine_power_off().
+
+Cc: James E.J. Bottomley <jejb@parisc-linux.org>
+Cc: Helge Deller <deller@gmx.de>
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
 ---
- arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi | 41 ++++++++++++++++++++++++++
- 1 file changed, 41 insertions(+)
- create mode 100644 arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi
+ arch/parisc/kernel/process.c | 7 +++++--
+ drivers/parisc/power.c       | 3 +--
+ 2 files changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi b/arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi
-new file mode 100644
-index 0000000..65cb50f
---- /dev/null
-+++ b/arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi
-@@ -0,0 +1,41 @@
-+/*
-+ * Common file for the AA104XD12 panel connected to Renesas R-Car boards
-+ *
-+ * Copyright (C) 2014 Renesas Electronics Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
+diff --git a/arch/parisc/kernel/process.c b/arch/parisc/kernel/process.c
+index 0bbbf0d..21d1ab3 100644
+--- a/arch/parisc/kernel/process.c
++++ b/arch/parisc/kernel/process.c
+@@ -42,6 +42,7 @@
+ #include <linux/module.h>
+ #include <linux/personality.h>
+ #include <linux/ptrace.h>
++#include <linux/reboot.h>
+ #include <linux/sched.h>
+ #include <linux/slab.h>
+ #include <linux/stddef.h>
+@@ -133,7 +134,9 @@ void machine_power_off(void)
+ 	pdc_soft_power_button(0);
+ 	
+ 	pdc_chassis_send_status(PDC_CHASSIS_DIRECT_SHUTDOWN);
+-		
 +
-+/ {
-+	panel {
-+		compatible = "mitsubishi,aa104xd12", "panel-dpi";
++	do_kernel_poweroff();
 +
-+		width-mm = <210>;
-+		height-mm = <158>;
-+
-+		panel-timing {
-+			/* 1024x768 @65Hz */
-+			clock-frequency = <65000000>;
-+			hactive = <1024>;
-+			vactive = <768>;
-+			hsync-len = <136>;
-+			hfront-porch = <20>;
-+			hback-porch = <160>;
-+			vfront-porch = <3>;
-+			vback-porch = <29>;
-+			vsync-len = <6>;
-+		};
-+
-+		port {
-+			panel_in: endpoint {
-+				remote-endpoint = <&lvds_connector>;
-+			};
-+		};
-+	};
-+};
-+
-+&lvds_connector {
-+	remote-endpoint = <&panel_in>;
-+};
+ 	/* It seems we have no way to power the system off via
+ 	 * software. The user has to press the button himself. */
+ 
+@@ -141,7 +144,7 @@ void machine_power_off(void)
+ 	       "Please power this system off now.");
+ }
+ 
+-void (*pm_power_off)(void) = machine_power_off;
++void (*pm_power_off)(void);
+ EXPORT_SYMBOL(pm_power_off);
+ 
+ /*
+diff --git a/drivers/parisc/power.c b/drivers/parisc/power.c
+index 90cca5e..de5b2ff 100644
+--- a/drivers/parisc/power.c
++++ b/drivers/parisc/power.c
+@@ -95,8 +95,7 @@ static void process_shutdown(void)
+ 		/* send kill signal */
+ 		if (kill_cad_pid(SIGINT, 1)) {
+ 			/* just in case killing init process failed */
+-			if (pm_power_off)
+-				pm_power_off();
++			kernel_power_off();
+ 		}
+ 	}
+ }
 -- 
-1.8.5.5
+1.9.1
 
