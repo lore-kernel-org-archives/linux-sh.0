@@ -1,47 +1,79 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 09 Sep 2014 02:50:21 +0000
-Subject: Re: [PATCH 0/5] ARM: shmobile: Use SoC-specific clock source compat strings
-Message-Id: <20140909025021.GF31320@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 30 Sep 2014 12:26:24 +0000
+Subject: [PATCH/RFC v2 1/4] ARM: hw_breakpoint: Add arm_dbg_regs_available flag
+Message-Id: <1412079987-1827-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410136068-32220-1-git-send-email-horms+renesas@verge.net.au>
- <20140908002956.GA32532@verge.net.au>
-In-Reply-To: <20140908002956.GA32532@verge.net.au>
+References: <1412079987-1827-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1412079987-1827-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Sep 08, 2014 at 09:29:56AM +0900, Simon Horman wrote:
-> On Mon, Sep 08, 2014 at 09:27:43AM +0900, Simon Horman wrote:
-> > In general Renesas hardware is not documented to the extent
-> > where the relationship between IP blocks on different SoCs can be assumed
-> > although they may appear to operate the same way. Furthermore the
-> > documentation typically does not specify a version for individual
-> > IP blocks. For these reasons a convention of using the SoC name in place
-> > of a version and providing SoC-specific compat strings has been adopted.
-> > 
-> > Although not universally liked this convention is used in the bindings
-> > for a number of drivers for Renesas hardware. The purpose of this series
-> > is to make use of SoC specific clock source strings.
-> 
-> This series is based on
-> renesas-next-20140904v2-v3.17-rc2
-> 
-> The bindings used are proposed in
-> "[PATCH v3 0/3] clocksource: Document Renesas SoC specific bindings"
-> 
-> > Simon Horman (5):
-> >   ARM: shmobile: r8a7740: Use SoC-specific 48-bit CMT compat string
-> >   ARM: shmobile: r8a7790: Use SoC-specific 48-bit CMT compat string
-> >   ARM: shmobile: r8a7791: Use SoC-specific 48-bit CMT compat string
-> >   ARM: shmobile: r7s72100: Use SoC-specific MTU2 compat string
-> >   ARM: shmobile: r8a7779: Use SoC-specific TMU compat string
-> > 
-> >  arch/arm/boot/dts/r7s72100.dtsi | 2 +-
-> >  arch/arm/boot/dts/r8a7740.dtsi  | 2 +-
-> >  arch/arm/boot/dts/r8a7779.dtsi  | 6 +++---
-> >  arch/arm/boot/dts/r8a7790.dtsi  | 4 ++--
-> >  arch/arm/boot/dts/r8a7791.dtsi  | 4 ++--
-> >  5 files changed, 9 insertions(+), 9 deletions(-)
+If power area D4, which contains the Coresight-ETM hardware block, is
+powered down on R-Mobile A1 (r8a7740), the kernel crashes when
+suspending from s2ram with:
 
-I have queued up these changes.
+    Internal error: Oops - undefined instruction: 0 [#1] ARM
+
+This happens because dbg_cpu_pm_notify() calls reset_ctrl_regs(), which
+can't access the debug registers as the debug module is powered down.
+
+As suggested by Russell King, track whether the ETM block is powered down
+to fix this.
+
+The availability of the debug registers depends on the platform and its
+state.  Hence provide a mechanism for platform code to indicate that the
+debug registers are available or not, using a boolean flag that defaults
+to true.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2:
+  - New
+
+ arch/arm/include/asm/hw_breakpoint.h | 2 ++
+ arch/arm/kernel/hw_breakpoint.c      | 7 +++++++
+ 2 files changed, 9 insertions(+)
+
+diff --git a/arch/arm/include/asm/hw_breakpoint.h b/arch/arm/include/asm/hw_breakpoint.h
+index 8e427c7b44257d2d..51ffdae41bfe3754 100644
+--- a/arch/arm/include/asm/hw_breakpoint.h
++++ b/arch/arm/include/asm/hw_breakpoint.h
+@@ -110,6 +110,8 @@ static inline void decode_ctrl_reg(u32 reg,
+ 	asm volatile("mcr p14, 0, %0, " #N "," #M ", " #OP2 : : "r" (VAL));\
+ } while (0)
+ 
++extern bool arm_dbg_regs_available;
++
+ struct notifier_block;
+ struct perf_event;
+ struct pmu;
+diff --git a/arch/arm/kernel/hw_breakpoint.c b/arch/arm/kernel/hw_breakpoint.c
+index b5b452f90f761bd2..96193c0165fbe5ca 100644
+--- a/arch/arm/kernel/hw_breakpoint.c
++++ b/arch/arm/kernel/hw_breakpoint.c
+@@ -38,6 +38,8 @@
+ #include <asm/traps.h>
+ #include <asm/hardware/coresight.h>
+ 
++bool arm_dbg_regs_available = true;
++
+ /* Breakpoint currently in use for each BRP. */
+ static DEFINE_PER_CPU(struct perf_event *, bp_on_reg[ARM_MAX_BRP]);
+ 
+@@ -931,6 +933,11 @@ static void reset_ctrl_regs(void *unused)
+ 	int i, raw_num_brps, err = 0, cpu = smp_processor_id();
+ 	u32 val;
+ 
++	if (!arm_dbg_regs_available) {
++		pr_warn_once("Debug registers are not available\n");
++		return;
++	}
++
+ 	/*
+ 	 * v7 debug contains save and restore registers so that debug state
+ 	 * can be maintained across low-power modes without leaving the debug
+-- 
+1.9.1
+
