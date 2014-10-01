@@ -1,36 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 30 Oct 2014 05:57:56 +0000
-Subject: [PATCH 1/2] ARM: shmobile: r8a7790: Fix SD3CKCR address
-Message-Id: <1414648677-31104-2-git-send-email-horms+renesas@verge.net.au>
+From: Ralf Baechle <ralf@linux-mips.org>
+Date: Wed, 01 Oct 2014 13:32:39 +0000
+Subject: Re: [RFC PATCH 10/16] mips: support poweroff through poweroff handler call chain
+Message-Id: <20141001133238.GJ19854@linux-mips.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414648677-31104-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1414648677-31104-1-git-send-email-horms+renesas@verge.net.au>
+References: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
+ <1412100056-15517-11-git-send-email-linux@roeck-us.net>
+In-Reply-To: <1412100056-15517-11-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+On Tue, Sep 30, 2014 at 11:00:50AM -0700, Guenter Roeck wrote:
 
-Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/clock-r8a7790.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+> The kernel core now supports a poweroff handler call chain
+> to remove power from the system. Call it if pm_power_off
+> is set to NULL.
+> 
+> Cc: Ralf Baechle <ralf@linux-mips.org>
+> Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+> ---
+>  arch/mips/kernel/reset.c | 2 ++
+>  1 file changed, 2 insertions(+)
+> 
+> diff --git a/arch/mips/kernel/reset.c b/arch/mips/kernel/reset.c
+> index 07fc524..c3391d7 100644
+> --- a/arch/mips/kernel/reset.c
+> +++ b/arch/mips/kernel/reset.c
+> @@ -41,4 +41,6 @@ void machine_power_off(void)
+>  {
+>  	if (pm_power_off)
+>  		pm_power_off();
+> +	else
+> +		do_kernel_poweroff();
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index c395ff1..f9bbc5f 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -64,7 +64,7 @@
- 
- #define SDCKCR		0xE6150074
- #define SD2CKCR		0xE6150078
--#define SD3CKCR		0xE615007C
-+#define SD3CKCR		0xE615026C
- #define MMC0CKCR	0xE6150240
- #define MMC1CKCR	0xE6150244
- #define SSPCKCR		0xE6150248
--- 
-2.1.1
+I'm happy with this as long as in a later version pm_power_off indeed
+goes away.
 
+  Ralf
