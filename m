@@ -1,57 +1,48 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 27 Oct 2014 23:30:38 +0000
-Subject: Re: [PATCH v3 07/11] ARM: shmobile: r8a7740/armadillo legacy: Add A4MP pm domain support
-Message-Id: <20141027233034.GA31257@verge.net.au>
+From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Date: Wed, 01 Oct 2014 04:35:16 +0000
+Subject: Re: [PATCH 0/2] Add VSP1 devices to DT for r8a7790 and r8a7791
+Message-Id: <542B8484.30202@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414063141-8856-1-git-send-email-geert+renesas@glider.be>
- <1414063141-8856-8-git-send-email-geert+renesas@glider.be>
- <20141027040305.GG31487@verge.net.au>
- <CAMuHMdWkM4jgWX7fL63e4WGwhpGt2W1R8Jx-q+dz0GmesrRsOw@mail.gmail.com>
-In-Reply-To: <CAMuHMdWkM4jgWX7fL63e4WGwhpGt2W1R8Jx-q+dz0GmesrRsOw@mail.gmail.com>
+References: <1410651385-13090-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1410651385-13090-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-sh@vger.kernel.org
 
-On Mon, Oct 27, 2014 at 09:17:55AM +0100, Geert Uytterhoeven wrote:
-> Hi Simon,
-> 
-> On Mon, Oct 27, 2014 at 5:03 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Thu, Oct 23, 2014 at 01:18:57PM +0200, Geert Uytterhoeven wrote:
-> >> Add support for the A4MP power domain, and hook up the HDMI-Link and FSI
-> >> hardware blocks.
-> >> This domain also contains the SPU2, FMSI, and BBIF2 hardware blocks,
-> >> but these are currently not used by any driver.
-> >>
-> >> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> >
-> > Is it possible to split this into two patches.
-> >
-> > A board patch (that touches board-armadillo800eva.c)
-> > and an SoC patch (the rest). Likewise for any remaining
-> > patches in this series that touch both board and SoC code.
-> >
-> > The reason for this is that it would make the patches fit
-> > the branch scheme that arm-soc people like. In particular splitting
-> > patches between soc and boards branches.
-> 
-> I kept them together as adding the PM domain without the devices will
-> cause regressions (the PM domain core will power down the PM domain as
-> it doesn't know about the to-be-added devices, and thus thinks it's unused).
-> 
-> As the link from a device to a PM domain is a name string, and not a
-> C reference, I could split them in two parts: first the board part
-> that adds some
-> devices, and then the SoC part that adds the PM domain and more devices.
-> But only if you can guarantee that the SoC part will be merged first, also
-> by arm-soc and Linus.
-> 
-> Still, I prefer to keep them together. Hooking up devices to PM domains is
-> SoC-specific, not board specific (for DT it lives in the .dtsi). It's
-> unfortunate this code is in the board-specific C files due to board-specific
-> configuration (cfr. .dts overriding/extending .dtsi).
-> 
-> What do you think? Do you agree?
+Hi Laurent,
 
-Hi Geert, thanks for the explanation. I agree that it makes sense
-to keep things together. I'll see about queuing-up your series as-is.
+Thank you for your help!
+
+On 2014年10月01日 07:56, Laurent Pinchart wrote:
+> Hi Cao Minh,
+>
+> On Tuesday 30 September 2014 13:47:32 Cao Minh Hiep wrote:
+>> Hi Laurent,
+>>
+>> We are testing the upstream linux version on Lager.
+>> I have tried to test VSP1 driver on r8a7790(Lager).
+>> But I don't know how to test it.
+>> Could you please tell the method to test it?
+> Sure.
+>
+> I've attached the test script I use to configure the VSP1 pipeline to this e-
+> mail.
+>
+> Syntax: vsp1.sh dev cmd [...]
+>
+> Supported commands:
+>   - m2d | m2d-bru | m2d-crop | m2d-scale | m2m | m2m-crop | m2m-scale infmt
+> outfmt
+>   - input index infmt
+>   - output index outfmt
+>
+> "dev" should be the media device name without the /dev/ prefix. For the first
+> VSP1 that would thus be "media0".
+I'll try to do it as you are showing me.
+Please let's me ask you again if I have any problem.
+
+
+Thank you!
+Jinso/Cao Minh Hiep
+
