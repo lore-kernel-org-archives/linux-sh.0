@@ -1,48 +1,64 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 31 Oct 2014 08:18:07 +0000
-Subject: Re: [PATCH v3 0/9] Renesas R-Car DU HDMI support
-Message-Id: <20141031081803.GA23848@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 01 Oct 2014 07:41:08 +0000
+Subject: Re: [PATCH/RFC v2 1/4] ARM: hw_breakpoint: Add arm_dbg_regs_available flag
+Message-Id: <CAMuHMdWA8zhBdT3QO9E8YinCFu3m943LenvYAO9A3F5y8RoSQQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414337068-28664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <11054192.lJRMYJX3F4@avalon>
- <CAGv-rZm=0rvvnO1cgBp0ZNdu0PvA-nwh6Nk05LSyTE=0vg0ipA@mail.gmail.com>
- <2727864.n2TjKgUQyN@avalon>
-In-Reply-To: <2727864.n2TjKgUQyN@avalon>
+References: <1412079987-1827-1-git-send-email-geert+renesas@glider.be>
+ <1412079987-1827-2-git-send-email-geert+renesas@glider.be>
+ <20140930160331.GN2548@arm.com>
+In-Reply-To: <20140930160331.GN2548@arm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Lars-Peter Clausen <lars@metafoo.de>, dri-devel@lists.freedesktop.org, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Dave Airlie <airlied@gmail.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Oct 30, 2014 at 01:40:34PM +0200, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Thursday 30 October 2014 20:29:22 Simon Horman wrote:
-> > 2014/10/30 20:05 "Laurent Pinchart" <laurent.pinchart@ideasonboard.com>:
-> > > On Tuesday 28 October 2014 15:30:05 Dave Airlie wrote:
-> > >>> The last patch instantiates the HDMI encoder in the Koelsch board DT
-> > >>> file and connects it to the DU output.
-> > >>> 
-> > >>> The patch series depends on Koelsch DU DT enablement (scheduled for
-> > >>> merge in v3.19-rc1). Dave, I'd like to get this merged in v3.19-rc1, how
-> > >>> would you like to proceed ? Could it go through Simon's Renesas tree ?
-> > >>> There's a small risk of conflict in drivers/gpu/drm/drm_edid.c,
-> > >>> include/drm/drm_edid.h, drivers/gpu/drm/i2c/Kconfig and
-> > >>> drivers/gpu/drm/i2c/Makefile. Simon, could you alternatively provide a
-> > >>> stable branch with the required dependencies ?
-> > >> 
-> > >> I'd probably like to take the drm patches into drm-next first, then
-> > >> maybe get a stable branch from Simon I could use to base the rest on.
-> > > 
-> > > Simon, I believe that would be the dt-du-for-v3.19 branch of
-> > > git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
-> > > 
-> > > Is it correct ?
-> > 
-> > Sorry I shuffled things around a bit and what you need should now be in the
-> > dt-for-v3.19 branch. I hope what is there now is stable. But I'd appreciate
-> > it if you could wait a few more days.
-> 
-> Sure, no problem. Could you please let me know when I can use it ?
+Hi Will,
 
-Of course, will do.
+On Tue, Sep 30, 2014 at 6:03 PM, Will Deacon <will.deacon@arm.com> wrote:
+> On Tue, Sep 30, 2014 at 01:26:24PM +0100, Geert Uytterhoeven wrote:
+>> If power area D4, which contains the Coresight-ETM hardware block, is
+>> powered down on R-Mobile A1 (r8a7740), the kernel crashes when
+>> suspending from s2ram with:
+>>
+>>     Internal error: Oops - undefined instruction: 0 [#1] ARM
+>>
+>> This happens because dbg_cpu_pm_notify() calls reset_ctrl_regs(), which
+>> can't access the debug registers as the debug module is powered down.
+>>
+>> As suggested by Russell King, track whether the ETM block is powered down
+>> to fix this.
+>>
+>> The availability of the debug registers depends on the platform and its
+>> state.  Hence provide a mechanism for platform code to indicate that the
+>> debug registers are available or not, using a boolean flag that defaults
+>> to true.
+
+> Whilst I guess this solves your problem, it doesn't feel like a scalable fix
+> for something that can/will assumedly happen elsewhere in an SoC (e.g. PMU
+> registers in perf). I'd much rather have a generic abstraction for power
+> domains, which subsystems such as hw_breakpoint can attempt to take a
+> reference on when they want to access registers in that domain.
+
+I agree this is a bit hackish, and not a long-term solution.
+
+As soon as the ARM debug/perf subsystem starts using devices instantiated
+from DT, implementing PM runtime support, this will work out-of-the-box.
+Until then, we cannot have proper support for the D4 PM domain on R-Mobile
+SoCs, without hacks like this (or like never powering down the D4 PM domain
+--- perhaps that's the way to go).
+
+I believe Mathieu is working on the former, but so far without converting
+hw_breakpoint.c nor adding PM runtime support?
+
+Thanks for your understanding!
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
