@@ -1,143 +1,78 @@
-From: Lee Jones <lee.jones@linaro.org>
-Date: Tue, 07 Oct 2014 07:52:38 +0000
-Subject: Re: [PATCH 18/44] mfd: twl4030-power: Register with kernel poweroff handler
-Message-Id: <20141007075238.GA25331@lee--X1>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 01 Oct 2014 19:22:36 +0000
+Subject: Re: [PATCH v3 2/2] usb: renesas_usbhs: Add device tree support for R-Car H2 and M2
+Message-Id: <542C547C.1080601@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412659726-29957-1-git-send-email-linux@roeck-us.net>
- <1412659726-29957-19-git-send-email-linux@roeck-us.net>
-In-Reply-To: <1412659726-29957-19-git-send-email-linux@roeck-us.net>
+References: <5406A664.2050501@renesas.com> <54298A38.5030703@cogentembedded.com> <542A7D29.3010805@renesas.com> <542B21DE.4010903@cogentembedded.com>
+In-Reply-To: <542B21DE.4010903-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: Guenter Roeck <linux@roeck-us.net>
-Cc: linux-kernel@vger.kernel.org, adi-buildroot-devel@lists.sourceforge.net, devel@driverdev.osuosl.org, devicetree@vger.kernel.org, lguest@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-alpha@vger.kernel.org, linux-am33-list@redhat.com, linux-cris-kernel@axis.com, linux-efi@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-m32r-ja@ml.linux-m32r.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-tegra@vger.kernel.org, linux-xtensa@linux-xtensa.org, openipmi-developer@lists.sourceforge.net, user-mode-linux-devel@lists.sourceforge.net, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, xen-devel@lists.xenproject.org, Samuel Ortiz <same>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Felipe Balbi <balbi-l0cyMroinI0@public.gmane.org>
+Cc: Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "pawel.moll-5wv7dgnIgG8@public.gmane.org" <pawel.moll-5wv7dgnIgG8@public.gmane.org>, "mark.rutland-5wv7dgnIgG8@public.gmane.org" <mark.rutland-5wv7dgnIgG8@public.gmane.org>, "ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org" <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, "galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org" <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, kuninori morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Ulrich Hecht <ulrich.hecht-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-On Mon, 06 Oct 2014, Guenter Roeck wrote:
+On 10/01/2014 01:34 AM, Sergei Shtylyov wrote:
 
-> Register with kernel poweroff handler instead of setting pm_power_off
-> directly. Register with a low priority value of 64 to reflect that
-> the original code only sets pm_power_off if it was not already set.
->=20
-> Make twl4030_power_off static as it is only called from the twl4030-power
-> driver.
->=20
-> Cc: Samuel Ortiz <sameo@linux.intel.com>
-> Cc: Lee Jones <lee.jones@linaro.org>
-> Signed-off-by: Guenter Roeck <linux@roeck-us.net>
-> ---
->  drivers/mfd/twl4030-power.c | 25 +++++++++++++++++++++----
->  include/linux/i2c/twl.h     |  1 -
->  2 files changed, 21 insertions(+), 5 deletions(-)
->=20
-> diff --git a/drivers/mfd/twl4030-power.c b/drivers/mfd/twl4030-power.c
-> index 4d3ff37..bd6b830 100644
-> --- a/drivers/mfd/twl4030-power.c
-> +++ b/drivers/mfd/twl4030-power.c
-> @@ -25,9 +25,10 @@
->   */
-> =20
->  #include <linux/module.h>
-> -#include <linux/pm.h>
-> +#include <linux/notifier.h>
->  #include <linux/i2c/twl.h>
->  #include <linux/platform_device.h>
-> +#include <linux/pm.h>
->  #include <linux/of.h>
->  #include <linux/of_device.h>
-> =20
-> @@ -611,7 +612,8 @@ twl4030_power_configure_resources(const struct twl403=
-0_power_data *pdata)
->   * After a successful execution, TWL shuts down the power to the SoC
->   * and all peripherals connected to it.
->   */
-> -void twl4030_power_off(void)
-> +static int twl4030_power_off(struct notifier_block *this, unsigned long =
-unused1,
-> +			     void *unused2)
->  {
->  	int err;
-> =20
-> @@ -619,8 +621,15 @@ void twl4030_power_off(void)
->  			       TWL4030_PM_MASTER_P1_SW_EVENTS);
->  	if (err)
->  		pr_err("TWL4030 Unable to power off\n");
-> +
-> +	return NOTIFY_DONE;
->  }
-> =20
-> +static struct notifier_block twl4030_poweroff_nb =3D {
-> +	.notifier_call =3D twl4030_power_off,
-> +	.priority =3D 64,
+>>>> This driver supports other SoCs, but they need boards/Soc depend code.
+>>>> So, this patch adds device tree support for R-Car H2 and M2 initially.
 
-64 out of what?  How is this calculated?  Wouldn't it be better to
-define these?
+>>>> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+>>>> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>>>> ---
+>>>>    drivers/usb/renesas_usbhs/common.c |   44
+>>>> ++++++++++++++++++++++++++++++++++++
+>>>>    1 file changed, 44 insertions(+)
 
-> +};
-> +
->  static bool twl4030_power_use_poweroff(const struct twl4030_power_data *=
-pdata,
->  					struct device_node *node)
->  {
-> @@ -836,7 +845,7 @@ static int twl4030_power_probe(struct platform_device=
- *pdev)
->  	}
-> =20
->  	/* Board has to be wired properly to use this feature */
-> -	if (twl4030_power_use_poweroff(pdata, node) && !pm_power_off) {
-> +	if (twl4030_power_use_poweroff(pdata, node)) {
->  		/* Default for SEQ_OFFSYNC is set, lets ensure this */
->  		err =3D twl_i2c_read_u8(TWL_MODULE_PM_MASTER, &val,
->  				      TWL4030_PM_MASTER_CFG_P123_TRANSITION);
-> @@ -853,7 +862,13 @@ static int twl4030_power_probe(struct platform_devic=
-e *pdev)
->  			}
->  		}
-> =20
-> -		pm_power_off =3D twl4030_power_off;
-> +		err =3D register_poweroff_handler(&twl4030_poweroff_nb);
-> +		if (err) {
-> +			dev_err(&pdev->dev,
-> +				"Failed to register poweroff handler\n");
+>>>> diff --git a/drivers/usb/renesas_usbhs/common.c
+>>>> b/drivers/usb/renesas_usbhs/common.c
+>>>> index 1b9bf8d..b3b6813 100644
+>>>> --- a/drivers/usb/renesas_usbhs/common.c
+>>>> +++ b/drivers/usb/renesas_usbhs/common.c
+> [...]
+>>>> @@ -438,6 +440,43 @@ static int usbhsc_drvcllbck_notify_hotplug(struct
+>>>> platform_device *pdev)
+>>> [...]
+>>>> +static struct renesas_usbhs_platform_info *usbhs_parse_dt(struct device
+>>>> *dev)
+>>>> +{
+>>>> +    struct renesas_usbhs_platform_info *info;
+>>>> +    struct renesas_usbhs_driver_param *dparam;
+>>>> +    const struct of_device_id *of_id = of_match_device(usbhs_of_match, dev);
+>>>> +    u32 tmp;
+>>>> +    int gpio;
+>>>> +
+>>>> +    info = devm_kzalloc(dev, sizeof(*info), GFP_KERNEL);
+>>>> +    if (!info)
+>>>> +        return NULL;
+>>>> +
+>>>> +    dparam = &info->driver_param;
+>>>> +    dparam->type = of_id ? (u32)of_id->data : 0;
+>>>> +    if (!of_property_read_u32(dev->of_node, "renesas,buswait", &tmp))
+>>>> +        dparam->buswait_bwait = tmp;
+>>>> +    gpio = of_get_named_gpio_flags(dev->of_node, "renesas,enable-gpio", 0,
+>>>> +                       NULL);
+>>>> +    if (gpio > 0)
+>>>> +        dparam->enable_gpio = gpio;
+>>>> +
+>>>> +    return info;
 
-If this is not fatal, you should issue a dev_warn() instead.
+>>>      I don't see where you parse the optional "phy" property. It should exist
+>>> for the Lager and Koelsch boards you target.
 
-> +			/* Not a fatal error */
-> +			err =3D 0;
+[...]
 
-How about using your own variable for this?  Then you don't have to
-worry about resetting it.
+>> About using the phy driver in renesas_usbhs driver, I intend to modify
+>> the drivers/usb/renesas_usbhs/rcar.c.
 
-> +		}
->  	}
-> =20
->  relock:
-> @@ -869,6 +884,8 @@ relock:
-> =20
->  static int twl4030_power_remove(struct platform_device *pdev)
->  {
-> +	unregister_poweroff_handler(&twl4030_poweroff_nb);
+>     Hm, it slready supports 'struct usb_phy'. Also PHYs are not limited to
+> R-Car Gen2 SoCs...
 
-Perhaps a naive question, but is there any way you can do this using
-devres (devm_* managed resources)?
+    OK, let's do this locally to rcar2.c for now. But since you still haven't 
+provided the patches and I'm tasked with the USBHS support, I have to take the 
+further development in my hands.
 
->  	return 0;
->  }
-> =20
-> diff --git a/include/linux/i2c/twl.h b/include/linux/i2c/twl.h
-> index 8cfb50f..f8544f1 100644
-> --- a/include/linux/i2c/twl.h
-> +++ b/include/linux/i2c/twl.h
-> @@ -680,7 +680,6 @@ struct twl4030_power_data {
->  };
-> =20
->  extern int twl4030_remove_script(u8 flags);
-> -extern void twl4030_power_off(void);
-> =20
->  struct twl4030_codec_data {
->  	unsigned int digimic_delay; /* in ms */
+>> Best regards,
+>> Yoshihiro Shimoda
 
---=20
-Lee Jones
-Linaro STMicroelectronics Landing Team Lead
-Linaro.org =E2=94=82 Open source software for ARM SoCs
-Follow Linaro: Facebook | Twitter | Blog
+WBR, Sergei
+
