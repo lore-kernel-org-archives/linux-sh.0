@@ -1,7 +1,7 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 02 Oct 2014 09:58:21 +0000
+Date: Thu, 02 Oct 2014 09:59:48 +0000
 Subject: Re: [PATCH 1/2] arm: shimobile: r8a7790: add HS-USB device node
-Message-Id: <542D21BD.8020709@cogentembedded.com>
+Message-Id: <542D2214.9050803@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1412237073-1288-1-git-send-email-yoshihiro.shimoda.uh@renesas.com> <1412237073-1288-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 In-Reply-To: <1412237073-1288-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
@@ -32,17 +32,15 @@ On 10/2/2014 12:04 PM, Yoshihiro Shimoda wrote:
 > +		reg = <0 0xe6590000 0 0x100>;
 > +		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
 > +		clocks = <&mstp7_clks R8A7790_CLK_HSUSB>;
-
-    I don't see where are you handling this prop in the driver...
-
 > +		renesas,buswait_bwait = <4>;
-
-    This prop is named "renesas,buswait" now.
-
->" +		phys = <&usb0 1>;
+> +		phys = <&usb0 1>;
 > +		phy-names = "usb";
-> +	};
->   };
+
+    You need.
+
+    status = "disabled";
+
+since you're enabling the device node in the board .dts.
 
 WBR, Sergei
 
