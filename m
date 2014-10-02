@@ -1,42 +1,29 @@
-From: Guenter Roeck <linux@roeck-us.net>
-Date: Tue, 07 Oct 2014 05:28:04 +0000
-Subject: [PATCH 02/44] memory: emif: Use API function to determine poweroff capability
-Message-Id: <1412659726-29957-3-git-send-email-linux@roeck-us.net>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 02 Oct 2014 08:05:32 +0000
+Subject: [PATCH 0/3] arm: shimobile: add HS-USB device node on r8a7791
+Message-Id: <1412237135-1668-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412659726-29957-1-git-send-email-linux@roeck-us.net>
-In-Reply-To: <1412659726-29957-1-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: adi-buildroot-devel@lists.sourceforge.net, devel@driverdev.osuosl.org, devicetree@vger.kernel.org, lguest@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-alpha@vger.kernel.org, linux-am33-list@redhat.com, linux-cris-kernel@axis.com, linux-efi@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-m32r-ja@ml.linux-m32r.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-tegra@vger.kernel.org, linux-xtensa@linux-xtensa.org, openipmi-developer@lists.sourceforge.net, user-mode-linux-devel@lists.sourceforge.net, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, xen-devel@lists.xenproject.org, Guenter Roeck <linux@roeck-us.net>, Santosh
+To: horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org, linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org
+Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 
-Use have_kernel_poweroff() to determine if the kernel is able
-to power off the system.
+ This series is based on Simon's renesas.git branch and
+renesas-devel-20141002-v3.17-rc7 tag. If we use the generic phy
+driver for R-Car Gen2 (drivers/phy/phy-rcar-gen2.c), we can use
+the HS-USB on koelsch and henninger.
 
-Cc: Santosh Shilimkar <santosh.shilimkar@ti.com>
-Signed-off-by: Guenter Roeck <linux@roeck-us.net>
----
- drivers/memory/emif.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+Yoshihiro Shimoda (3):
+  arm: shimobile: r8a7791: add HS-USB device node
+  arm: shmobile: koelsch: enable HS-USB
+  arm: shmobile: henninger: enable HS-USB
 
-diff --git a/drivers/memory/emif.c b/drivers/memory/emif.c
-index 04644e7..acd830a 100644
---- a/drivers/memory/emif.c
-+++ b/drivers/memory/emif.c
-@@ -1053,10 +1053,10 @@ static irqreturn_t emif_threaded_isr(int irq, void *dev_id)
- 		dev_emerg(emif->dev, "SDRAM temperature exceeds operating limit.. Needs shut down!!!\n");
- 
- 		/* If we have Power OFF ability, use it, else try restarting */
--		if (pm_power_off) {
-+		if (have_kernel_poweroff()) {
- 			kernel_power_off();
- 		} else {
--			WARN(1, "FIXME: NO pm_power_off!!! trying restart\n");
-+			WARN(1, "FIXME: NO kernel poweroff capability!!! trying restart\n");
- 			kernel_restart("SDRAM Over-temp Emergency restart");
- 		}
- 		return IRQ_HANDLED;
+ arch/arm/boot/dts/r8a7791-henninger.dts |    5 +++++
+ arch/arm/boot/dts/r8a7791-koelsch.dts   |    5 +++++
+ arch/arm/boot/dts/r8a7791.dtsi          |   10 ++++++++++
+ 3 files changed, 20 insertions(+)
+
 -- 
-1.9.1
+1.7.9.5
 
