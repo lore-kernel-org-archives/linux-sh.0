@@ -1,43 +1,34 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 29 Oct 2014 04:59:24 +0000
-Subject: [PATCH 18/19] ARM: shmobile: kzm9g-reference dts: Add chosen/stdout-path
-Message-Id: <59ab5bff23020b6223857a460a39b9ec71d91cea.1414556944.git.horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 02 Oct 2014 08:05:34 +0000
+Subject: [PATCH 2/3] arm: shmobile: koelsch: enable HS-USB
+Message-Id: <1412237135-1668-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1414556943.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1414556943.git.horms+renesas@verge.net.au>
+References: <1412237135-1668-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1412237135-1668-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
+Cc: devicetree@vger.kernel.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Add a stdout-path property so that automatic console selection works
-in the absence of a "console=" parameter on the kernel command line.
-In addition, this will allow the PM domain code to find the PM domain
-for the console device.
-
-Note that we have to keep the "console=ttySC4" parameter in
-chosen/bootargs, else we only get console messages on tty0.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/r8a7791-koelsch.dts |    5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index 30ef97e..0dac0e6 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -40,6 +40,7 @@
- 
- 	chosen {
- 		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel rw";
-+		stdout-path = &scifa4;
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 3f55c16..b3dac1a 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -495,3 +495,8 @@
+ 		};
  	};
- 
- 	memory {
+ };
++
++&hsusb {
++	status = "okay";
++	renesas,enable-gpio = <&gpio5 18 GPIO_ACTIVE_LOW>;
++};
 -- 
-2.1.1
+1.7.9.5
 
