@@ -1,59 +1,47 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 02 Oct 2014 11:41:01 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 02 Oct 2014 12:08:24 +0000
 Subject: Re: [PATCH 1/2] arm: shimobile: r8a7790: add HS-USB device node
-Message-Id: <542D39CD.7010402@renesas.com>
+Message-Id: <542D4038.5000504@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412237073-1288-1-git-send-email-yoshihiro.shimoda.uh@renesas.com> <1412237073-1288-2-git-send-email-yoshihiro.shimoda.uh@renesas.com> <542D2214.9050803@cogentembedded.com>
-In-Reply-To: <542D2214.9050803-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
+References: <1412237073-1288-1-git-send-email-yoshihiro.shimoda.uh@renesas.com> <1412237073-1288-2-git-send-email-yoshihiro.shimoda.uh@renesas.com> <542D21BD.8020709@cogentembedded.com> <542D3998.7000303@renesas.com>
+In-Reply-To: <542D3998.7000303@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>, horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org, linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org
-Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
+Cc: devicetree@vger.kernel.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org
 
 Hello.
 
-(2014/10/02 18:59), Sergei Shtylyov wrote:
-> On 10/2/2014 12:04 PM, Yoshihiro Shimoda wrote:
-> 
->> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
->> ---
->>   arch/arm/boot/dts/r8a7790.dtsi |   10 ++++++++++
->>   1 file changed, 10 insertions(+)
-> 
->> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
->> index 2380fd5..fd9fc37 100644
->> --- a/arch/arm/boot/dts/r8a7790.dtsi
->> +++ b/arch/arm/boot/dts/r8a7790.dtsi
->> @@ -1314,4 +1314,14 @@
->>               ssi9: ssi@9 { interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>; };
->>           };
->>       };
->> +
->> +    hsusb: usb@e6590000 {
->> +        compatible = "renesas,usbhs-r8a7790";
->> +        reg = <0 0xe6590000 0 0x100>;
->> +        interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
->> +        clocks = <&mstp7_clks R8A7790_CLK_HSUSB>;
->> +        renesas,buswait_bwait = <4>;
->> +        phys = <&usb0 1>;
->> +        phy-names = "usb";
-> 
->    You need.
-> 
->    status = "disabled";
-> 
-> since you're enabling the device node in the board .dts.
+On 10/02/2014 03:40 PM, Yoshihiro Shimoda wrote:
 
-Thank you for the point again.
-I will add this.
+>>> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+>>> ---
+>>>    arch/arm/boot/dts/r8a7790.dtsi |   10 ++++++++++
+>>>    1 file changed, 10 insertions(+)
 
-Best regards,
-Yoshihiro Shimoda
+>>> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+>>> index 2380fd5..fd9fc37 100644
+>>> --- a/arch/arm/boot/dts/r8a7790.dtsi
+>>> +++ b/arch/arm/boot/dts/r8a7790.dtsi
+>>> @@ -1314,4 +1314,14 @@
+>>>                ssi9: ssi@9 { interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>; };
+>>>            };
+>>>        };
+>>> +
+>>> +    hsusb: usb@e6590000 {
+>>> +        compatible = "renesas,usbhs-r8a7790";
+>>> +        reg = <0 0xe6590000 0 0x100>;
+>>> +        interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
+>>> +        clocks = <&mstp7_clks R8A7790_CLK_HSUSB>;
 
-> WBR, Sergei
-> 
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-usb" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>     I don't see where are you handling this prop in the driver...
+
+> Thank you for the point. I misunderstood this prop.
+> Since the driver is using pm_runtime functions, I thought that
+> this device node needs this prop.
+
+    Ah, I've overlooked the RPM related code. No need to remove the prop then.
+
+WBR, Sergei
+
