@@ -1,85 +1,40 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 31 Oct 2014 13:40:46 +0000
-Subject: Re: [PATCH] media: soc_camera: rcar_vin: Fix alignment of clipping size
-Message-Id: <5453915E.3020100@cogentembedded.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 02 Oct 2014 08:04:32 +0000
+Subject: [PATCH 1/2] arm: shimobile: r8a7790: add HS-USB device node
+Message-Id: <1412237073-1288-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414746610-23194-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1414746610-23194-1-git-send-email-ykaneko0929@gmail.com>
+References: <1412237073-1288-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1412237073-1288-1-git-send-email-yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>, linux-media@vger.kernel.org
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org, linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org
+Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 
-Hello.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-On 10/31/2014 12:10 PM, Yoshihiro Kaneko wrote:
-
-> From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-
-> Since the Start Line Pre-Clip register, the Start Pixel Pre-Clip
-> register and the End Line Post-Clip register do not have restriction
-
-    Hm, my R-Car H1 manual says to specify an even number for the Start Pixel 
-Pre-Clip Register.
-
-> of H/W to a setting value, the processing of alignment is unnecessary.
-> This patch corrects so that processing of alignment is not performed.
-
-> However, the End Pixel Post-Clip register has restriction
-> of H/W which must be an even number value at the time of the
-> output of YCbCr-422 format. By this patch, the processing of
-> alignment to an even number value is added on the above-mentioned
-> conditions.
-
-    Well, the R-Car H1/M1A manuals don't specify such restriction.
-
-> The variable set to a register is as follows.
-
->   - Start Line Pre-Clip register
->     cam->vin_top
->   - Start Pixel Pre-Clip register
->     cam->vin_left
->   - End Line Post-Clip register
->     pix->height
->   - End Pixel Post-Clip register
->     pix->width
-
-> Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> ---
->   drivers/media/platform/soc_camera/rcar_vin.c | 18 ++++++++++++++----
->   1 file changed, 14 insertions(+), 4 deletions(-)
-
-> diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-> index d3d2f7d..1934e15 100644
-> --- a/drivers/media/platform/soc_camera/rcar_vin.c
-> +++ b/drivers/media/platform/soc_camera/rcar_vin.c
-[...]
-> @@ -1761,8 +1761,18 @@ static int rcar_vin_try_fmt(struct soc_camera_device *icd,
->   	}
->
->   	/* FIXME: calculate using depth and bus width */
-> -	v4l_bound_align_image(&pix->width, 2, VIN_MAX_WIDTH, 1,
-> -			      &pix->height, 4, VIN_MAX_HEIGHT, 2, 0);
-> +	/*
-> +	 * When performing a YCbCr-422 format output, even if it performs
-> +	 * odd number clipping by pixel post clip processing, it is outputted
-
-    s/outputted/output/ -- it's an irregular verb.
-
-> +	 * to a memory per even pixels.
-> +	 */
-> +	if ((pixfmt = V4L2_PIX_FMT_NV16) || (pixfmt = V4L2_PIX_FMT_YUYV) ||
-> +		(pixfmt = V4L2_PIX_FMT_UYVY))
-
-    This is certainly asking to be a *switch* statement instead...
-
-> +		v4l_bound_align_image(&pix->width, 5, VIN_MAX_WIDTH, 1,
-> +				      &pix->height, 2, VIN_MAX_HEIGHT, 0, 0);
-> +	else
-> +		v4l_bound_align_image(&pix->width, 5, VIN_MAX_WIDTH, 0,
-> +				      &pix->height, 2, VIN_MAX_HEIGHT, 0, 0);
-
-WBR, Sergei
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 2380fd5..fd9fc37 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1314,4 +1314,14 @@
+ 			ssi9: ssi@9 { interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>; };
+ 		};
+ 	};
++
++	hsusb: usb@e6590000 {
++		compatible = "renesas,usbhs-r8a7790";
++		reg = <0 0xe6590000 0 0x100>;
++		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7790_CLK_HSUSB>;
++		renesas,buswait_bwait = <4>;
++		phys = <&usb0 1>;
++		phy-names = "usb";
++	};
+ };
+-- 
+1.7.9.5
 
