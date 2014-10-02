@@ -1,10 +1,10 @@
 From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 02 Oct 2014 11:40:08 +0000
+Date: Thu, 02 Oct 2014 11:41:01 +0000
 Subject: Re: [PATCH 1/2] arm: shimobile: r8a7790: add HS-USB device node
-Message-Id: <542D3998.7000303@renesas.com>
+Message-Id: <542D39CD.7010402@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412237073-1288-1-git-send-email-yoshihiro.shimoda.uh@renesas.com> <1412237073-1288-2-git-send-email-yoshihiro.shimoda.uh@renesas.com> <542D21BD.8020709@cogentembedded.com>
-In-Reply-To: <542D21BD.8020709-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
+References: <1412237073-1288-1-git-send-email-yoshihiro.shimoda.uh@renesas.com> <1412237073-1288-2-git-send-email-yoshihiro.shimoda.uh@renesas.com> <542D2214.9050803@cogentembedded.com>
+In-Reply-To: <542D2214.9050803-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -13,7 +13,7 @@ Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z
 
 Hello.
 
-(2014/10/02 18:58), Sergei Shtylyov wrote:
+(2014/10/02 18:59), Sergei Shtylyov wrote:
 > On 10/2/2014 12:04 PM, Yoshihiro Shimoda wrote:
 > 
 >> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
@@ -35,28 +35,25 @@ Hello.
 >> +        reg = <0 0xe6590000 0 0x100>;
 >> +        interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
 >> +        clocks = <&mstp7_clks R8A7790_CLK_HSUSB>;
-> 
->    I don't see where are you handling this prop in the driver...
-
-Thank you for the point. I misunderstood this prop.
-Since the driver is using pm_runtime functions, I thought that
-this device node needs this prop.
-
-So, I will remove this. And, I will also modify the Documentation.
-
 >> +        renesas,buswait_bwait = <4>;
+>> +        phys = <&usb0 1>;
+>> +        phy-names = "usb";
 > 
->    This prop is named "renesas,buswait" now.
+>    You need.
+> 
+>    status = "disabled";
+> 
+> since you're enabling the device node in the board .dts.
 
-Thank you for the point. I will fix it.
+Thank you for the point again.
+I will add this.
 
 Best regards,
 Yoshihiro Shimoda
 
->> " +        phys = <&usb0 1>;
->> +        phy-names = "usb";
->> +    };
->>   };
-> 
 > WBR, Sergei
 > 
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-usb" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
