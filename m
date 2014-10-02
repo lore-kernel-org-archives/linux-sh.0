@@ -1,107 +1,59 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Tue, 14 Oct 2014 06:26:52 +0000
-Subject: [PATCH 2/3] media: soc_camera: rcar_vin: Add capture width check for NV16 format
-Message-Id: <1413268013-8437-3-git-send-email-ykaneko0929@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 02 Oct 2014 13:35:57 +0000
+Subject: renesas-drivers-2014-10-02-v3.17-rc7
+Message-Id: <1412256957-17960-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1413268013-8437-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1413268013-8437-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+I've pushed renesas-drivers-2014-10-02-v3.17-rc7 to
+https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+This tree is meant to ease development of platform support and drivers for
+Renesas ARM ("shmobile") SoCs. It's created by merging the for-next branches
+of various subsystem trees into the development branch of Simon Horman's
+renesas.git tree.
 
-At the time of NV16 capture format, the user has to specify the
-capture output width of the multiple of 32 for H/W specification.
-At the time of using NV16 format by ioctl of VIDIOC_S_FMT,
-this patch adds align check and the error handling to forbid
-specification of the capture output width which is not a multiple of 32.
+Today's version is based on renesas-devel-20141002-v3.17-rc7.
 
-Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
----
- drivers/media/platform/soc_camera/rcar_vin.c | 24 ++++++++++++++++++++++--
- 1 file changed, 22 insertions(+), 2 deletions(-)
+Included subsystem trees (the last one is new):
+    git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
+    git://git.linaro.org/people/mturquette/linux.git#clk-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
+    git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
+    git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
+    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
+    git://gitorious.org/linux-can/linux-can-next.git#master
+    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
+    git://people.freedesktop.org/~airlied/linux#drm-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
+    git://linuxtv.org/mchehab/media-next.git#master
+    git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
+    git://git.linaro.org/people/ulf.hansson/mmc.git#next
+    git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
+    git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
+    git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
+    git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
+    git://git.infradead.org/users/vkoul/slave-dma.git#next
+    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
+    git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
+    git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
+    git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
 
-diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-index 746f03f..00bc98d 100644
---- a/drivers/media/platform/soc_camera/rcar_vin.c
-+++ b/drivers/media/platform/soc_camera/rcar_vin.c
-@@ -488,6 +488,7 @@ struct rcar_vin_priv {
- 	bool				request_to_stop;
- 	struct completion		capture_stop;
- 	enum chip_id			chip;
-+	bool				error_flag;
- };
- 
- #define is_continuous_transfer(priv)	(priv->vb_count > MAX_BUFFER_NUM)
-@@ -647,7 +648,7 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
- 	/* output format */
- 	switch (icd->current_fmt->host_fmt->fourcc) {
- 	case V4L2_PIX_FMT_NV16:
--		iowrite32(ALIGN(cam->width * cam->height, 0x80),
-+		iowrite32(ALIGN(ALIGN(cam->width, 0x20) * cam->height, 0x80),
- 			  priv->base + VNUVAOF_REG);
- 		dmr = VNDMR_DTMD_YCSEP;
- 		output_is_yuv = true;
-@@ -976,6 +977,8 @@ static int rcar_vin_add_device(struct soc_camera_device *icd)
- 	dev_dbg(icd->parent, "R-Car VIN driver attached to camera %d\n",
- 		icd->devnum);
- 
-+	priv->error_flag = false;
-+
- 	return 0;
- }
- 
-@@ -993,6 +996,7 @@ static void rcar_vin_remove_device(struct soc_camera_device *icd)
- 
- 	priv->state = STOPPED;
- 	priv->request_to_stop = false;
-+	priv->error_flag = false;
- 
- 	/* make sure active buffer is cancelled */
- 	spin_lock_irq(&priv->lock);
-@@ -1089,6 +1093,7 @@ static int rcar_vin_set_rect(struct soc_camera_device *icd)
- 	unsigned char dsize = 0;
- 	struct v4l2_rect *cam_subrect = &cam->subrect;
- 	unsigned long value;
-+	unsigned long imgstr;
- 
- 	dev_dbg(icd->parent, "Crop %ux%u@%u:%u\n",
- 		icd->user_width, icd->user_height, cam->vin_left, cam->vin_top);
-@@ -1166,7 +1171,11 @@ static int rcar_vin_set_rect(struct soc_camera_device *icd)
- 		break;
- 	}
- 
--	iowrite32(ALIGN(cam->out_width, 0x10), priv->base + VNIS_REG);
-+	if (icd->current_fmt->host_fmt->fourcc = V4L2_PIX_FMT_NV16)
-+		imgstr = ALIGN(cam->out_width, 0x20);
-+	else
-+		imgstr = ALIGN(cam->out_width, 0x10);
-+	iowrite32(imgstr, priv->base + VNIS_REG);
- 
- 	return 0;
- }
-@@ -1608,6 +1617,17 @@ static int rcar_vin_set_fmt(struct soc_camera_device *icd,
- 	dev_dbg(dev, "S_FMT(pix=0x%x, %ux%u)\n",
- 		pixfmt, pix->width, pix->height);
- 
-+	/* At the time of NV16 capture format, the user has to specify the
-+	   width of the multiple of 32 for H/W specification. */
-+	if (priv->error_flag = false)
-+		priv->error_flag = true;
-+	else {
-+		if ((pixfmt = V4L2_PIX_FMT_NV16) && (pix->width & 0x1F)) {
-+			dev_err(icd->parent, "Specified width error in NV16 format.\n");
-+			return -EINVAL;
-+		}
-+	}
-+
- 	switch (pix->field) {
- 	default:
- 		pix->field = V4L2_FIELD_NONE;
--- 
-1.9.1
+Gr{oetje,eeting}s,
 
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
