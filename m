@@ -1,70 +1,97 @@
-From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
-Date: Fri, 03 Oct 2014 08:53:39 +0000
-Subject: Re: [PATCH 1/1] spi: Using Trigger number to transmit/receive data
-Message-Id: <542E6413.7010300@jinso.co.jp>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 02 Oct 2014 08:02:33 +0000
+Subject: [PATCH 2/2] usb: renesas_usbhs: add support for generic PHY
+Message-Id: <1412236953-1084-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412045974-6715-1-git-send-email-cm-hiep@jinso.co.jp>	<1412045974-6715-2-git-send-email-cm-hiep@jinso.co.jp> <CAMuHMdU3riiMHpYQ8VSjhBnoi9CAJgDHvbkWKwvgDQFefTmi9g@mail.gmail.com>
-In-Reply-To: <CAMuHMdU3riiMHpYQ8VSjhBnoi9CAJgDHvbkWKwvgDQFefTmi9g@mail.gmail.com>
+References: <4F05318F.9060209@renesas.com>
+In-Reply-To: <4F05318F.9060209@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Ryusuke Sakato <ryusuke.sakato.bx@renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>, linux-spi <linux-spi@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-Hi Geert-san
+This patch adds support for the generic PHY. The generic PHY will be
+used in multiplatform environment.
 
-On 2014年10月01日 02:17, Geert Uytterhoeven wrote:
-> Hi Hiep-san,
->
-> On Tue, Sep 30, 2014 at 4:59 AM, Cao Minh Hiep <cm-hiep@jinso.co.jp> wrote:
->> From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
->>
->> In order to transmit and receive data when have 32 bytes of data that
->> ready has prepared on Transmit/Receive Buffer to transmit or receive.
->> Instead transmits/receives a byte data using Transmit/Receive Buffer
->> Data Triggering Number will improve the speed of transfer data.
->>
->> Signed-off-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
-> Thanks for your patch!
->
-> Please CC linux-spi on SPI patches.
-Thanks, I'll do it next time!
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ drivers/usb/renesas_usbhs/common.h |    1 +
+ drivers/usb/renesas_usbhs/rcar2.c  |   29 +++++++++++++++++++++++++++++
+ 2 files changed, 30 insertions(+)
 
-
->>   static int qspi_transfer_out_in(struct rspi_data *rspi,
->>                                  struct spi_transfer *xfer)
->>   {
->>          qspi_receive_init(rspi);
->> -
->> -       return rspi_common_transfer(rspi, xfer);
->> +       return qspi_trigger_transfer_out_int(rspi, xfer->tx_buf,
->> +                                           xfer->rx_buf, xfer->len);
-> So this will always use PIO mode, even if DMA is available?
-Thanks, I am going to make a new version with a DMA support.
-
-
-Best Regards,
-Jinso/Cao Minh Hiep.
-
->>   }
->>
->>   static int qspi_transfer_out(struct rspi_data *rspi, struct spi_transfer *xfer)
->> --
->> 1.9.1
-> Gr{oetje,eeting}s,
->
->                          Geert
->
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
->
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                  -- Linus Torvalds
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
+diff --git a/drivers/usb/renesas_usbhs/common.h b/drivers/usb/renesas_usbhs/common.h
+index e0d53c5..c45667f 100644
+--- a/drivers/usb/renesas_usbhs/common.h
++++ b/drivers/usb/renesas_usbhs/common.h
+@@ -270,6 +270,7 @@ struct usbhs_priv {
+ 	struct usbhs_fifo_info fifo_info;
+ 
+ 	struct usb_phy *usb_phy;
++	struct phy *phy;
+ };
+ 
+ /*
+diff --git a/drivers/usb/renesas_usbhs/rcar2.c b/drivers/usb/renesas_usbhs/rcar2.c
+index 485b889..8fc15c0 100644
+--- a/drivers/usb/renesas_usbhs/rcar2.c
++++ b/drivers/usb/renesas_usbhs/rcar2.c
+@@ -12,6 +12,7 @@
+ 
+ #include <linux/gpio.h>
+ #include <linux/of_gpio.h>
++#include <linux/phy/phy.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/usb/phy.h>
+ #include "common.h"
+@@ -21,6 +22,16 @@ static int usbhs_rcar2_hardware_init(struct platform_device *pdev)
+ {
+ 	struct usbhs_priv *priv = usbhs_pdev_to_priv(pdev);
+ 
++	if (IS_ENABLED(CONFIG_GENERIC_PHY)) {
++		struct phy *phy = phy_get(&pdev->dev, "usb");
++
++		if (IS_ERR(phy))
++			return PTR_ERR(phy);
++
++		priv->phy = phy;
++		return 0;
++	}
++
+ 	if (IS_ENABLED(CONFIG_USB_PHY)) {
+ 		struct usb_phy *usb_phy = usb_get_phy_dev(&pdev->dev, 0);
+ 
+@@ -38,6 +49,11 @@ static int usbhs_rcar2_hardware_exit(struct platform_device *pdev)
+ {
+ 	struct usbhs_priv *priv = usbhs_pdev_to_priv(pdev);
+ 
++	if (priv->phy) {
++		phy_put(priv->phy);
++		priv->phy = NULL;
++	}
++
+ 	if (priv->usb_phy) {
+ 		usb_put_phy(priv->usb_phy);
+ 		priv->usb_phy = NULL;
+@@ -52,6 +68,19 @@ static int usbhs_rcar2_power_ctrl(struct platform_device *pdev,
+ 	struct usbhs_priv *priv = usbhs_pdev_to_priv(pdev);
+ 	int retval = -ENODEV;
+ 
++	if (priv->phy) {
++		if (enable) {
++			retval = phy_init(priv->phy);
++
++			if (!retval)
++				retval = phy_power_on(priv->phy);
++		} else {
++			phy_power_off(priv->phy);
++			phy_exit(priv->phy);
++			retval = 0;
++		}
++	}
++
+ 	if (priv->usb_phy) {
+ 		if (enable) {
+ 			retval = usb_phy_init(priv->usb_phy);
+-- 
+1.7.9.5
 
