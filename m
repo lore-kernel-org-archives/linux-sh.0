@@ -1,49 +1,34 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Thu, 30 Oct 2014 08:27:42 +0000
-Subject: [PATCH 08/11] ARM: shmobile: lager: Sound DMA support via SRC on DTS
-Message-Id: <878ujyx8qr.wl%kuninori.morimoto.gx@gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 02 Oct 2014 08:05:35 +0000
+Subject: [PATCH 3/3] arm: shmobile: henninger: enable HS-USB
+Message-Id: <1412237135-1668-4-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1412237135-1668-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1412237135-1668-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
+Cc: devicetree@vger.kernel.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-DMA transfer to/from SRC
-
-     DMA      DMApp
-[MEM] -> [SRC] -> [SSIU] -> [SSI]
-
-     DMA      DMApp
-[MEM] <- [SRC] <- [SSIU] <- [SSI]
-
-Current sound driver is supporting
-SSI/SRC random connection.
-So, this patch is tring
-SSI0 -> SRC2
-SSI1 <- SRC3
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7791-henninger.dts |    5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index cf31fc6..06365de 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -567,8 +567,8 @@
- 
- 	rcar_sound,dai {
- 		dai0 {
--			playback = <&ssi0>;
--			capture  = <&ssi1>;
-+			playback = <&ssi0 &src2>;
-+			capture  = <&ssi1 &src3>;
+diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
+index fee8bef..d0800d2 100644
+--- a/arch/arm/boot/dts/r8a7791-henninger.dts
++++ b/arch/arm/boot/dts/r8a7791-henninger.dts
+@@ -299,3 +299,8 @@
  		};
  	};
  };
++
++&hsusb {
++	status = "okay";
++	renesas,enable-gpio = <&gpio5 18 GPIO_ACTIVE_LOW>;
++};
 -- 
 1.7.9.5
 
