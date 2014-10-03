@@ -1,43 +1,82 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 07 Oct 2014 09:19:36 +0000
-Subject: Re: [PATCH 35/44] m68k: Register with kernel poweroff handler
-Message-Id: <CAMuHMdVZmsjK9FdK0T6mWwrnNc=Xc97B7ynm+QbWUMBCnvQB_g@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 03 Oct 2014 15:11:31 +0000
+Subject: [PATCH v2 00/13] ARM: shmobile: dts: Add chosen/stdout-path
+Message-Id: <1412349104-18724-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412659726-29957-1-git-send-email-linux@roeck-us.net>
-	<1412659726-29957-36-git-send-email-linux@roeck-us.net>
-In-Reply-To: <1412659726-29957-36-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guenter Roeck <linux@roeck-us.net>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "adi-buildroot-devel@lists.sourceforge.net" <adi-buildroot-devel@lists.sourceforge.net>, driverdevel <devel@driverdev.osuosl.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, lguest@lists.ozlabs.org, ACPI Devel Maling List <linux-acpi@vger.kernel.org>, alpha <linux-alpha@vger.kernel.org>, "moderated list:PANASONIC MN10300..." <linux-am33-list@redhat.com>, Cris <linux-cris-kernel@axis.com>, linux-efi@vger.kernel.org, "open list:QUALCOMM HEXAGON..." <linux-hexagon@vger.kernel.org>, linux-m32r-ja@ml.linux-m32r.org, "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>, linux-s390 <linux-s390@vger.kernel.org>, linux-tegra@vger.kernel.org, "linux-xtensa@linux-xtensa.org" <linux-xtensa@linux-xtensa.org>, openipmi-developer@lists.sourceforge.net, uml-devel <user-mode-linux-devel@lists.s>
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Tue, Oct 7, 2014 at 7:28 AM, Guenter Roeck <linux@roeck-us.net> wrote:
-> Register with kernel poweroff handler instead of setting pm_power_off
-> directly.
->
-> Cc: Geert Uytterhoeven <geert@linux-m68k.org>
-> Cc: Joshua Thompson <funaho@jurai.org>
-> Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+	Hi Simon, Magnus,
 
-As someone already mentioned, having #defines instead of hardcoded
-numbers for the priorities would be nice.
+This patch series adds chosen/stdout-path to the various shmobile DTS files
+that are used for reference or multi-platform builds.
 
-Apart from that:
+This serves two purposes:
+  1. It makes automatic console selection work in the absence of a "console="
+     parameter on the kernel command line, allowing to remove "console="
+     parameters from chosen/bootargs on many platforms.
+     Note that these "console=" parameters are still needed in some cases:
+       a. If console output is wanted on two consoles devices (graphical and
+          serial consoles), like on armadillo and kzm9g,
+       b. When using a non-default baud for the serial console, like on
+          henninger and alt,
+       c. If the DTS is shared between legacy and multi-platform, like on
+          armadillo, koelsch, lager, and marzen,
+  2. It will allow the PM domain code to find the PM domain for the console
+     device, to make "no_console_suspend" work in the DT case.
+     For now, this will matter on armadillo.
 
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+The first two patches are small cleanups for emev2 dtsi, on top of which the
+change for kzm9d is built.
 
-> +       register_poweroff_handler_simple(nf_poweroff, 128);
+Changes in v2:
+  - Keep "console" for DTSes shared between legacy and multi-platform,
+  - Update for lager switching the console from scif0 to scifa0.
 
-> +       register_poweroff_handler_simple(mac_poweroff, 128);
+Thanks for applying!
+
+Geert Uytterhoeven (13):
+  ARM: shmobile: emev2 dtsi: Use generic names for device nodes
+  ARM: shmobile: emev2 dtsi: Add uart* labels for easier referencing
+  ARM: shmobile: kzm9d dts: Add chosen/stdout-path
+  ARM: shmobile: genmai dts: Add chosen/stdout-path
+  ARM: shmobile: ape6evm-reference dts: Add chosen/stdout-path
+  ARM: shmobile: armadillo800eva dts: Add chosen/stdout-path
+  ARM: shmobile: bockw-reference dts: Add chosen/stdout-path
+  ARM: shmobile: marzen dts: Add chosen/stdout-path
+  ARM: shmobile: lager dts: Add chosen/stdout-path
+  ARM: shmobile: henninger dts: Add chosen/stdout-path
+  ARM: shmobile: koelsch dts: Add chosen/stdout-path
+  ARM: shmobile: alt dts: Add chosen/stdout-path
+  ARM: shmobile: kzm9g-reference dts: Add chosen/stdout-path
+
+ arch/arm/boot/dts/emev2-kzm9d.dts               |  3 ++-
+ arch/arm/boot/dts/emev2.dtsi                    | 12 ++++++------
+ arch/arm/boot/dts/r7s72100-genmai.dts           |  3 ++-
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts |  3 ++-
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts   |  1 +
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts   |  3 ++-
+ arch/arm/boot/dts/r8a7779-marzen.dts            |  1 +
+ arch/arm/boot/dts/r8a7790-lager.dts             |  1 +
+ arch/arm/boot/dts/r8a7791-henninger.dts         |  1 +
+ arch/arm/boot/dts/r8a7791-koelsch.dts           |  1 +
+ arch/arm/boot/dts/r8a7794-alt.dts               |  1 +
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts    |  1 +
+ 12 files changed, 21 insertions(+), 10 deletions(-)
+
+-- 
+1.9.1
 
 Gr{oetje,eeting}s,
 
-                        Geert
+						Geert
 
 --
 Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
 In personal conversations with technical people, I call myself a hacker. But
 when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+							    -- Linus Torvalds
