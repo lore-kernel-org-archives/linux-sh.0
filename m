@@ -1,255 +1,43 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 29 Oct 2014 04:59:09 +0000
-Subject: [PATCH 03/19] ARM: shmobile: r7s72100: sort dtsi file by address
-Message-Id: <005980c0024ecd192c2eac3e3a9dcda1bedddffb.1414556943.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 03 Oct 2014 15:11:35 +0000
+Subject: [PATCH v2 04/13] ARM: shmobile: genmai dts: Add chosen/stdout-path
+Message-Id: <1412349104-18724-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1414556943.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1414556943.git.horms+renesas@verge.net.au>
+References: <1412349104-18724-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1412349104-18724-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Add a stdout-path property so that automatic console selection works
+in the absence of a "console=" parameter on the kernel command line.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Remove the now-superfluous "console=" parameter from chosen/bootargs.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r7s72100.dtsi | 202 ++++++++++++++++++++--------------------
- 1 file changed, 101 insertions(+), 101 deletions(-)
+v2:
+  - No changes
+---
+ arch/arm/boot/dts/r7s72100-genmai.dts | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
-index 801a556..277e73c 100644
---- a/arch/arm/boot/dts/r7s72100.dtsi
-+++ b/arch/arm/boot/dts/r7s72100.dtsi
-@@ -52,16 +52,6 @@
- 			clock-output-names = "usb_x1";
- 		};
- 
--		/* Special CPG clocks */
--		cpg_clocks: cpg_clocks@fcfe0000 {
--			#clock-cells = <1>;
--			compatible = "renesas,r7s72100-cpg-clocks",
--				     "renesas,rz-cpg-clocks";
--			reg = <0xfcfe0000 0x18>;
--			clocks = <&extal_clk>, <&usb_x1_clk>;
--			clock-output-names = "pll", "i", "g";
--		};
--
- 		/* Fixed factor clocks */
- 		b_clk: b_clk {
- 			#clock-cells = <0>;
-@@ -88,6 +78,16 @@
- 			clock-output-names = "p0";
- 		};
- 
-+		/* Special CPG clocks */
-+		cpg_clocks: cpg_clocks@fcfe0000 {
-+			#clock-cells = <1>;
-+			compatible = "renesas,r7s72100-cpg-clocks",
-+				     "renesas,rz-cpg-clocks";
-+			reg = <0xfcfe0000 0x18>;
-+			clocks = <&extal_clk>, <&usb_x1_clk>;
-+			clock-output-names = "pll", "i", "g";
-+		};
-+
- 		/* MSTP clocks */
- 		mstp3_clks: mstp3_clks@fcfe0420 {
- 			#clock-cells = <1>;
-@@ -148,97 +148,6 @@
- 		};
+diff --git a/arch/arm/boot/dts/r7s72100-genmai.dts b/arch/arm/boot/dts/r7s72100-genmai.dts
+index a3ed23c0a8f58abd..1518c5bcca33d8d1 100644
+--- a/arch/arm/boot/dts/r7s72100-genmai.dts
++++ b/arch/arm/boot/dts/r7s72100-genmai.dts
+@@ -21,7 +21,8 @@
  	};
  
--	gic: interrupt-controller@e8201000 {
--		compatible = "arm,cortex-a9-gic";
--		#interrupt-cells = <3>;
--		#address-cells = <0>;
--		interrupt-controller;
--		reg = <0xe8201000 0x1000>,
--			<0xe8202000 0x1000>;
--	};
--
--	i2c0: i2c@fcfee000 {
--		#address-cells = <1>;
--		#size-cells = <0>;
--		compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
--		reg = <0xfcfee000 0x44>;
--		interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>,
--			     <0 158 IRQ_TYPE_EDGE_RISING>,
--			     <0 159 IRQ_TYPE_EDGE_RISING>,
--			     <0 160 IRQ_TYPE_LEVEL_HIGH>,
--			     <0 161 IRQ_TYPE_LEVEL_HIGH>,
--			     <0 162 IRQ_TYPE_LEVEL_HIGH>,
--			     <0 163 IRQ_TYPE_LEVEL_HIGH>,
--			     <0 164 IRQ_TYPE_LEVEL_HIGH>;
--		clocks = <&mstp9_clks R7S72100_CLK_I2C0>;
--		clock-frequency = <100000>;
--		status = "disabled";
--	};
--
--	i2c1: i2c@fcfee400 {
--		#address-cells = <1>;
--		#size-cells = <0>;
--		compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
--		reg = <0xfcfee400 0x44>;
--		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>,
--			     <0 166 IRQ_TYPE_EDGE_RISING>,
--			     <0 167 IRQ_TYPE_EDGE_RISING>,
--			     <0 168 IRQ_TYPE_LEVEL_HIGH>,
--			     <0 169 IRQ_TYPE_LEVEL_HIGH>,
--			     <0 170 IRQ_TYPE_LEVEL_HIGH>,
--			     <0 171 IRQ_TYPE_LEVEL_HIGH>,
--			     <0 172 IRQ_TYPE_LEVEL_HIGH>;
--		clocks = <&mstp9_clks R7S72100_CLK_I2C1>;
--		clock-frequency = <100000>;
--		status = "disabled";
--	};
--
--	i2c2: i2c@fcfee800 {
--		#address-cells = <1>;
--		#size-cells = <0>;
--		compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
--		reg = <0xfcfee800 0x44>;
--		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>,
--			     <0 174 IRQ_TYPE_EDGE_RISING>,
--			     <0 175 IRQ_TYPE_EDGE_RISING>,
--			     <0 176 IRQ_TYPE_LEVEL_HIGH>,
--			     <0 177 IRQ_TYPE_LEVEL_HIGH>,
--			     <0 178 IRQ_TYPE_LEVEL_HIGH>,
--			     <0 179 IRQ_TYPE_LEVEL_HIGH>,
--			     <0 180 IRQ_TYPE_LEVEL_HIGH>;
--		clocks = <&mstp9_clks R7S72100_CLK_I2C2>;
--		clock-frequency = <100000>;
--		status = "disabled";
--	};
--
--	i2c3: i2c@fcfeec00 {
--		#address-cells = <1>;
--		#size-cells = <0>;
--		compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
--		reg = <0xfcfeec00 0x44>;
--		interrupts = <0 181 IRQ_TYPE_LEVEL_HIGH>,
--			     <0 182 IRQ_TYPE_EDGE_RISING>,
--			     <0 183 IRQ_TYPE_EDGE_RISING>,
--			     <0 184 IRQ_TYPE_LEVEL_HIGH>,
--			     <0 185 IRQ_TYPE_LEVEL_HIGH>,
--			     <0 186 IRQ_TYPE_LEVEL_HIGH>,
--			     <0 187 IRQ_TYPE_LEVEL_HIGH>,
--			     <0 188 IRQ_TYPE_LEVEL_HIGH>;
--		clocks = <&mstp9_clks R7S72100_CLK_I2C3>;
--		clock-frequency = <100000>;
--		status = "disabled";
--	};
--
--	mtu2: timer@fcff0000 {
--		compatible = "renesas,mtu2-r7s72100", "renesas,mtu2";
--		reg = <0xfcff0000 0x400>;
--		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
--		interrupt-names = "tgi0a";
--		clocks = <&mstp3_clks R7S72100_CLK_MTU2>;
--		clock-names = "fck";
--		status = "disabled";
--	};
--
- 	scif0: serial@e8007000 {
- 		compatible = "renesas,scif-r7s72100", "renesas,scif";
- 		reg = <0xe8007000 64>;
-@@ -404,4 +313,95 @@
- 		#size-cells = <0>;
- 		status = "disabled";
+ 	chosen {
+-		bootargs = "console=ttySC2,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
++		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
++		stdout-path = &scif2;
  	};
-+
-+	gic: interrupt-controller@e8201000 {
-+		compatible = "arm,cortex-a9-gic";
-+		#interrupt-cells = <3>;
-+		#address-cells = <0>;
-+		interrupt-controller;
-+		reg = <0xe8201000 0x1000>,
-+			<0xe8202000 0x1000>;
-+	};
-+
-+	i2c0: i2c@fcfee000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
-+		reg = <0xfcfee000 0x44>;
-+		interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 158 IRQ_TYPE_EDGE_RISING>,
-+			     <0 159 IRQ_TYPE_EDGE_RISING>,
-+			     <0 160 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 161 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 162 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 163 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 164 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R7S72100_CLK_I2C0>;
-+		clock-frequency = <100000>;
-+		status = "disabled";
-+	};
-+
-+	i2c1: i2c@fcfee400 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
-+		reg = <0xfcfee400 0x44>;
-+		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 166 IRQ_TYPE_EDGE_RISING>,
-+			     <0 167 IRQ_TYPE_EDGE_RISING>,
-+			     <0 168 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 169 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 170 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 171 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 172 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R7S72100_CLK_I2C1>;
-+		clock-frequency = <100000>;
-+		status = "disabled";
-+	};
-+
-+	i2c2: i2c@fcfee800 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
-+		reg = <0xfcfee800 0x44>;
-+		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 174 IRQ_TYPE_EDGE_RISING>,
-+			     <0 175 IRQ_TYPE_EDGE_RISING>,
-+			     <0 176 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 177 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 178 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 179 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 180 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R7S72100_CLK_I2C2>;
-+		clock-frequency = <100000>;
-+		status = "disabled";
-+	};
-+
-+	i2c3: i2c@fcfeec00 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
-+		reg = <0xfcfeec00 0x44>;
-+		interrupts = <0 181 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 182 IRQ_TYPE_EDGE_RISING>,
-+			     <0 183 IRQ_TYPE_EDGE_RISING>,
-+			     <0 184 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 185 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 186 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 187 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 188 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R7S72100_CLK_I2C3>;
-+		clock-frequency = <100000>;
-+		status = "disabled";
-+	};
-+
-+	mtu2: timer@fcff0000 {
-+		compatible = "renesas,mtu2-r7s72100", "renesas,mtu2";
-+		reg = <0xfcff0000 0x400>;
-+		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "tgi0a";
-+		clocks = <&mstp3_clks R7S72100_CLK_MTU2>;
-+		clock-names = "fck";
-+		status = "disabled";
-+	};
- };
+ 
+ 	memory {
 -- 
-2.1.1
+1.9.1
 
