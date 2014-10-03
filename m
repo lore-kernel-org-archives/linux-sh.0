@@ -1,43 +1,70 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Wed, 01 Oct 2014 18:19:10 +0000
+From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Date: Fri, 03 Oct 2014 08:53:39 +0000
 Subject: Re: [PATCH 1/1] spi: Using Trigger number to transmit/receive data
-Message-Id: <20141001181910.GA17974@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="lrZ03NoBR/3+SXJZ"
+Message-Id: <542E6413.7010300@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412045974-6715-1-git-send-email-cm-hiep@jinso.co.jp>
- <1412045974-6715-2-git-send-email-cm-hiep@jinso.co.jp>
- <CAMuHMdU3riiMHpYQ8VSjhBnoi9CAJgDHvbkWKwvgDQFefTmi9g@mail.gmail.com>
-In-Reply-To: <CAMuHMdU3riiMHpYQ8VSjhBnoi9CAJgDHvbkWKwvgDQFefTmi9g-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: Cao Minh Hiep <cm-hiep-HEF513clHfp3+QwDJ9on6Q@public.gmane.org>, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Ryusuke Sakato <ryusuke.sakato.bx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+References: <1412045974-6715-1-git-send-email-cm-hiep@jinso.co.jp>	<1412045974-6715-2-git-send-email-cm-hiep@jinso.co.jp> <CAMuHMdU3riiMHpYQ8VSjhBnoi9CAJgDHvbkWKwvgDQFefTmi9g@mail.gmail.com>
+In-Reply-To: <CAMuHMdU3riiMHpYQ8VSjhBnoi9CAJgDHvbkWKwvgDQFefTmi9g@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Ryusuke Sakato <ryusuke.sakato.bx@renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>, linux-spi <linux-spi@vger.kernel.org>
 
+Hi Geert-san
 
---lrZ03NoBR/3+SXJZ
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Tue, Sep 30, 2014 at 07:17:47PM +0200, Geert Uytterhoeven wrote:
-
+On 2014年10月01日 02:17, Geert Uytterhoeven wrote:
+> Hi Hiep-san,
+>
+> On Tue, Sep 30, 2014 at 4:59 AM, Cao Minh Hiep <cm-hiep@jinso.co.jp> wrote:
+>> From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+>>
+>> In order to transmit and receive data when have 32 bytes of data that
+>> ready has prepared on Transmit/Receive Buffer to transmit or receive.
+>> Instead transmits/receives a byte data using Transmit/Receive Buffer
+>> Data Triggering Number will improve the speed of transfer data.
+>>
+>> Signed-off-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+> Thanks for your patch!
+>
 > Please CC linux-spi on SPI patches.
+Thanks, I'll do it next time!
 
-The maintainer as well (that's me for this) - this applies to all
-upstream submissions, see SubmittingPatches.
 
---lrZ03NoBR/3+SXJZ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+>>   static int qspi_transfer_out_in(struct rspi_data *rspi,
+>>                                  struct spi_transfer *xfer)
+>>   {
+>>          qspi_receive_init(rspi);
+>> -
+>> -       return rspi_common_transfer(rspi, xfer);
+>> +       return qspi_trigger_transfer_out_int(rspi, xfer->tx_buf,
+>> +                                           xfer->rx_buf, xfer->len);
+> So this will always use PIO mode, even if DMA is available?
+Thanks, I am going to make a new version with a DMA support.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
 
-iQEcBAEBAgAGBQJULEWdAAoJECTWi3JdVIfQRRIIAIbYKY3AgDOWrHe9IF7OquxU
-9/uO4uacQUbdI3K3o5VoX4snehiTmvIZdN91NXzV2DaeGqLDrRKjz/2dKXhhQBmx
-zJILNHiZc/gQbOCn53OnMi0wUOj1dm6XiKCgrwWKc8Una6bg13FIyuqgte+3kPcU
-3KvmXx4qdsGUTV8kdrTIY4UOyLqDpuULu/cnQVnlqjjLeoQkDpklEC6OX3e8RAs7
-LC8T9cs6lQxk0blqB4iRMlbHf7okbhMNRHuQgFZL4TP5ddvoZSnIi+AHYWrbuIIw
-TMl1fP6S2m59DUnExwoNGgKsYAkPmKbAKkGhfRd076lHVDV/hwQapvobpywvx0Q=
-=9UkX
------END PGP SIGNATURE-----
+Best Regards,
+Jinso/Cao Minh Hiep.
 
---lrZ03NoBR/3+SXJZ--
+>>   }
+>>
+>>   static int qspi_transfer_out(struct rspi_data *rspi, struct spi_transfer *xfer)
+>> --
+>> 1.9.1
+> Gr{oetje,eeting}s,
+>
+>                          Geert
+>
+> --
+> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+>
+> In personal conversations with technical people, I call myself a hacker. But
+> when I'm talking to journalists I just say "programmer" or something like that.
+>                                  -- Linus Torvalds
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
+
