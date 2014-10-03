@@ -1,33 +1,43 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 29 Oct 2014 14:28:36 +0000
-Subject: [PATCH 1/3] MAINTAINERS: Remove reference to shmobile / koelsch_defconfig
-Message-Id: <1414592918-25138-2-git-send-email-geert+renesas@glider.be>
+From: Mark Salter <msalter@redhat.com>
+Date: Fri, 03 Oct 2014 15:17:22 +0000
+Subject: Re: [RFC PATCH 07/16] c6x: support poweroff through poweroff handler call chain
+Message-Id: <1412349442.5410.14.camel@deneb.redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
+ <1412100056-15517-8-git-send-email-linux@roeck-us.net>
+In-Reply-To: <1412100056-15517-8-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-koelsch_defconfig was removed in commit 595c6a4bb77f0096 ("ARM:
-shmobile: koelsch: Remove legacy C board code").
+On Tue, 2014-09-30 at 11:00 -0700, Guenter Roeck wrote:
+> The kernel core now supports a poweroff handler call chain
+> to remove power from the system. Call it if pm_power_off
+> is set to NULL.
+> 
+> Cc: Mark Salter <msalter@redhat.com>
+> Cc: Aurelien Jacquiot <a-jacquiot@ti.com>
+> Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+> ---
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- MAINTAINERS | 1 -
- 1 file changed, 1 deletion(-)
+Acked-by: Mark Salter <msalter@redhat.com>
 
-diff --git a/MAINTAINERS b/MAINTAINERS
-index 8d9038077258b722..7095c6de7bbc1beb 100644
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -1381,7 +1381,6 @@ F:	arch/arm/boot/dts/sh*
- F:	arch/arm/configs/ape6evm_defconfig
- F:	arch/arm/configs/armadillo800eva_defconfig
- F:	arch/arm/configs/bockw_defconfig
--F:	arch/arm/configs/koelsch_defconfig
- F:	arch/arm/configs/kzm9g_defconfig
- F:	arch/arm/configs/lager_defconfig
- F:	arch/arm/configs/mackerel_defconfig
--- 
-1.9.1
+>  arch/c6x/kernel/process.c | 2 ++
+>  1 file changed, 2 insertions(+)
+> 
+> diff --git a/arch/c6x/kernel/process.c b/arch/c6x/kernel/process.c
+> index 57d2ea8..ddf088e 100644
+> --- a/arch/c6x/kernel/process.c
+> +++ b/arch/c6x/kernel/process.c
+> @@ -75,6 +75,8 @@ void machine_power_off(void)
+>  {
+>  	if (pm_power_off)
+>  		pm_power_off();
+> +	else
+> +		do_kernel_poweroff();
+>  	halt_loop();
+>  }
+>  
+
 
