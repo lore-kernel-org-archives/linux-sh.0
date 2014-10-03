@@ -1,24 +1,34 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 30 Oct 2014 01:03:09 +0000
-Subject: Re: [PATCH 0/3] ARM: shmobile: Remove unnecessary MMC options
-Message-Id: <20141030010309.GD22052@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 03 Oct 2014 14:55:52 +0000
+Subject: [PATCH] ARM: shmobile: r7s72100: Remove r7s72100-genmai.dtb for ARCH_SHMOBILE_LEGACY
+Message-Id: <1412348152-15326-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414591779-22954-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1414591779-22954-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, linux-mmc@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Oct 29, 2014 at 03:09:36PM +0100, Geert Uytterhoeven wrote:
-> 	Hi Simon, Magnus,
-> 
-> This patch series, sent before by Morimoto-san, removes unnecessary MMC options
-> from the DTS files that are already set automatically by the driver, based on
-> the compatible property value. Note that these options were never added on
-> r8a7791, which gained SDHI device nodes later than the three affected SoCs.
-> 
-> Thanks for applying!
+Forgotten by commit ad8c3af8b75ff26c ("ARM: shmobile: r7s72100: Remove
+legacy board support").
 
-Thanks, I have queued these up.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index a9125b8d394e5c4a..dc619a48d2c5bb70 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -357,7 +357,7 @@ dtb-$(CONFIG_ARCH_S5PV210) += s5pv210-aquila.dtb \
+ 	s5pv210-smdkc110.dtb \
+ 	s5pv210-smdkv210.dtb \
+ 	s5pv210-torbreck.dtb
+-dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += r7s72100-genmai.dtb \
++dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += \
+ 	r8a73a4-ape6evm.dtb \
+ 	r8a73a4-ape6evm-reference.dtb \
+ 	r8a7740-armadillo800eva.dtb \
+-- 
+1.9.1
+
