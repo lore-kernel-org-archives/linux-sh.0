@@ -1,48 +1,44 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 30 Oct 2014 10:30:15 +0000
-Subject: [PATCH v3 0/4] usb: renesas_usbhs: fixes this driver in gadget mode (part2)
-Message-Id: <1414665019-1340-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 03 Oct 2014 15:11:44 +0000
+Subject: [PATCH v2 13/13] ARM: shmobile: kzm9g-reference dts: Add chosen/stdout-path
+Message-Id: <1412349104-18724-14-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1412349104-18724-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1412349104-18724-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-If we tested this driver as gadget, some issues below happened:
- - Oops happened if g_audio.
- - A usb enumeration may fail if we do insmod during connected the usb cable.
- - A transaction will not finish if g_zero.
- - A usb enumeration may fail after we re-connected the usb cable.
+Add a stdout-path property so that automatic console selection works
+in the absence of a "console=" parameter on the kernel command line.
+In addition, this will allow the PM domain code to find the PM domain
+for the console device.
 
-This patch serias fixes them.
-This patch serias is based on Felipe's usb.git / testing/fixes branch.
-(commit id: 9f2104db129512fd2ee086c8a616d296d1afbb75)
+Note that we have to keep the "console=ttySC4" parameter in
+chosen/bootargs, else we only get console messages on tty0.
 
-Changes from v2:
- - Use USBHSG_STATUS_ instead of a new variable in patch 2.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2:
+  - No changes
+---
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 1 +
+ 1 file changed, 1 insertion(+)
 
-Changes from v1:
- - Rebase this patch serias for the latest testing/fixes branch.
- - Add "From:" in patch 1 and 2.
- - Add "Cc: <stable@vger.kernel.org>" in patch 1.
-
-*** BLURB HERE ***
-
-Yoshihiro Shimoda (4):
-  usb: renesas_usbhs: gadget: fix NULL pointer dereference in
-    ep_disable()
-  usb: renesas_usbhs: gadget: fix the behavior of pullup
-  usb: renesas_usbhs: fix the timing of dcp_control_transfer_done
-  usb: renesas_usbhs: fix usbhs_pipe_clear() for DCP PIPE
-
- drivers/usb/renesas_usbhs/common.c     |    6 +++--
- drivers/usb/renesas_usbhs/fifo.c       |   34 ++++++++++++++--------------
- drivers/usb/renesas_usbhs/fifo.h       |    1 +
- drivers/usb/renesas_usbhs/mod_gadget.c |   38 ++++++++++++++++++++++++++++++--
- drivers/usb/renesas_usbhs/mod_host.c   |    2 +-
- drivers/usb/renesas_usbhs/pipe.c       |    8 +++++--
- 6 files changed, 66 insertions(+), 23 deletions(-)
-
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 30ef97e99dc53ea7..0dac0e66ccad8f74 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -40,6 +40,7 @@
+ 
+ 	chosen {
+ 		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel rw";
++		stdout-path = &scifa4;
+ 	};
+ 
+ 	memory {
 -- 
-1.7.9.5
+1.9.1
 
