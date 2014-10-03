@@ -1,60 +1,42 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 06 Oct 2014 09:05:27 +0000
-Subject: Re: [PATCH v2 03/13] ARM: shmobile: kzm9d dts: Add chosen/stdout-path
-Message-Id: <20141006090525.GA1866@verge.net.au>
+From: Catalin Marinas <catalin.marinas@arm.com>
+Date: Fri, 03 Oct 2014 10:30:56 +0000
+Subject: Re: [RFC PATCH 05/16] arm64: support poweroff through poweroff handler call chain
+Message-Id: <20141003103056.GB14110@localhost>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412349104-18724-1-git-send-email-geert+renesas@glider.be>
- <1412349104-18724-4-git-send-email-geert+renesas@glider.be>
- <20141006023650.GA23099@verge.net.au>
- <CAMuHMdUq1ivb0iQ=9YbVc5-BcqxVQ_SyqAkpBKn2X4Uq9WK5Mg@mail.gmail.com>
-In-Reply-To: <CAMuHMdUq1ivb0iQ=9YbVc5-BcqxVQ_SyqAkpBKn2X4Uq9WK5Mg@mail.gmail.com>
+References: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
+ <1412100056-15517-6-git-send-email-linux@roeck-us.net>
+In-Reply-To: <1412100056-15517-6-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Oct 06, 2014 at 10:43:28AM +0200, Geert Uytterhoeven wrote:
-> Hi Simon,
+On Tue, Sep 30, 2014 at 07:00:45PM +0100, Guenter Roeck wrote:
+> The kernel core now supports a poweroff handler call chain
+> to remove power from the system. Call it if pm_power_off
+> is set to NULL.
 > 
-> On Mon, Oct 6, 2014 at 4:36 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Fri, Oct 03, 2014 at 05:11:34PM +0200, Geert Uytterhoeven wrote:
-> >> Add a stdout-path property so that automatic console selection works
-> >> in the absence of a "console=" parameter on the kernel command line.
-> >>
-> >> Remove the now-superfluous "console=" parameter from chosen/bootargs.
-> >>
-> >> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> >
-> > In my environment the bootargs portion of this change results
-> > in no console output. I am guessing that this is because the
-> > console starts with a different terminal speed (though which speed
-> > I am unsure).
-> >
-> > If my guess is correct then strictly speaking this is not a bug,
-> > though it is a behavioural change. And as such I think at the very
-> > least it needs some discussion.
+> Cc: Catalin Marinas <catalin.marinas@arm.com>
+> Cc: Will Deacon <will.deacon@arm.com>
+> Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+> ---
+>  arch/arm64/kernel/process.c | 2 ++
+>  1 file changed, 2 insertions(+)
 > 
-> I forgot emev is the only supported SoC not using sh-sci.
-> drivers/tty/serial/sh-sci.c:serial_console_setup() defaults to 115200 baud,
-> while serial8250_console_setup() defaults to 9600 baud.
-> 
-> So we have to keep the console= parameter. Will resend.
+> diff --git a/arch/arm64/kernel/process.c b/arch/arm64/kernel/process.c
+> index 398ab05..cc0c63e 100644
+> --- a/arch/arm64/kernel/process.c
+> +++ b/arch/arm64/kernel/process.c
+> @@ -157,6 +157,8 @@ void machine_power_off(void)
+>  	smp_send_stop();
+>  	if (pm_power_off)
+>  		pm_power_off();
+> +	else
+> +		do_kernel_poweroff();
 
-Thanks!
+Acked-by: Catalin Marinas <catalin.marinas@arm.com>
 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+As others already stated, I think we should eventually remove
+pm_power_off entirely.
+
+Catalin
