@@ -1,69 +1,53 @@
-From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
-Date: Thu, 02 Oct 2014 23:14:48 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 03 Oct 2014 00:13:58 +0000
 Subject: Re: [PATCH] ARM: shmobile: r8a7790: switch from scif to scifa
-Message-Id: <542DDC68.80704@renesas.com>
+Message-Id: <20141003001358.GA1323@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="pWyiEgJYm5f9v55/"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1410883837-5611-1-git-send-email-wsa@the-dreams.de>
 In-Reply-To: <1410883837-5611-1-git-send-email-wsa@the-dreams.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Wolfram, Simon,
 
-Though the patch was already queued up by Simon,
-I'd like to confirm one point in changelog.
+--pWyiEgJYm5f9v55/
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-On 10/2/2014 9:12 AM, Simon Horman wrote:
-[snip]
->>>>>>>>>> On Tuesday 16 September 2014 18:10:37 Wolfram Sang wrote:
->>>>>>>>>>> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
->>>>>>>>>>>
->>>>>>>>>>> SCIF and SCIFA can be plexed onto the same wires on Lager board.
->>>>>>>>>>> The datasheet also describes the wires as SCIFA. So, to make use
->>>>>>>>>>> of the bigger FIFOs switch to SCIFA instead.
+Hello,
 
-Which datasheet you are mentioned about ?
-I checked Lager board datasheet rev0.09 and it said debug interface is SCIF0 and SCIF1.
+> Which datasheet you are mentioned about ?
+> I checked Lager board datasheet rev0.09 and it said debug interface is SCIF0 and SCIF1.
 
-[snip]
->>>>>>>>>>> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-[snip]
->>>>>>>>>>> Currently, I use this patch to check if the DMA RX issue is the
->>>>>>>>>>> same on SCIF and SCIFA (yes, it is). However, I still think it
->>>>>>>>>>> makes sense to use the bigger FIFOs. I will check this next week
->>>>>>>>>>> with Bastian's FIFO patches. Until then, I send this as RFC to
->>>>>>>>>>> collect opinions speaking for/against this change.
+V0.12D. On Page 22, the headline says "Debug Interface (SCIF0)", true.
+However, the wires are named SCIFA0_TXD/RXD. Same for SCIF(A)1. On Page
+2, as well. Check Y30 and AA29, they are named SCIFA0/A1.
 
-[snip]
->>>>>>>>>> I have nothing against this change, but I believe the aliases should
->>>>>>>>>> now be serial0 and serial1 to match the legacy code (OK, that's a
->>>>>>>>>> lame excuse, we all know that I just want to change the aliases
->>>>>>>>>> ;-)).
+Kind regards,
 
-[snip]
->>>>> This patch switches the Lager board to use SCIFA[01] instead of SCIF[01],
->>>>> while keeping the Linux devices named /dev/ttySC[67]. With legacy boot,
->>>>> SCIFA[01] are named /dev/ttySC[01]. There would thus be a mismatch in that
->>>>> sense, even if this change doesn't prevent using the same Linux serial
->>>>> devices on both legacy and DT boot.
+   Wolfram
 
-[snip]
->>>> So if I understand if correctly, booting with the current
->>>> "console=ttySC6,115200"
->>>> in /chosen/bootargs will give a working console for both legacy and
->>>> multi-platform,
->>>> but the underlying serial hardware block for the console differs (legacy
->>>> uses SCIF0, multi-platform uses SCIFA0)?
 
-[snip]
->> I will confer with Magnus as he has had strong opinions in this area
->> in the past.
+--pWyiEgJYm5f9v55/
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-[snip] 
-> Magnus also seems happy with this change so I have queued it up.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
--- 
-Best regards,
-KHIEM Nguyen
+iQIcBAEBAgAGBQJULepFAAoJEBQN5MwUoCm2riEP/1znM8NU3ZVWYO0llDjhSCLS
+DPkxJAuU3Qk929f58ODltmx4t90dnMM6+NxWfil+6ecd+Mb2Hh01glKQK9/KJAy7
+s38pgFL31gS1KCjjnXcBGwG+JbFzam8+ERIcmWodlFUHtXYD5FjUsyUdPd3t6TLY
+G7vGIpOydvYSZHqb8qAASo3lVhVKX5zUGPeuacCBD2Y5dR+Lx+CQmCx0HYlD47XW
+uyabE9jSk1kubXa40+cBAlLNaF2j+cdO1oJhyDUsfNYMy5NNmFvkzwXAHvsR9c5E
+tvDHNN+Xex/tPMafVqnJdz4J7I4H+lCrWTFrEmEFvxHok55/zK8pqKsCixII4o0g
+1b9UQ2WKvbGFvO6kPyoN7vGptfoGridLHRFqq8+zy1S81Wc5l9rZ2oE0T3MDdevC
++SCgLiLOEQEaoJtOrmy2l57ZU1HjONXIOvZUgLpQ0FksGeSEa3fQLza4QYWMZ94P
+PEuav589FgiyIJAZBBTold5cJ/GNjFe/CJ8Sqycxj5ijQZ7il9r9VDUeR+bsy286
+hsWSOQtWvN1Ce/TXjmeyxxIKjndUQEmsv31NauqW3sM2Z4x8uN0L34vf+zkP4NR4
+fYMZrOCVcbJ5JSUb60tGx0qvfYu5kIrTMM6P12N0QVh0sueSgjzejqIJEjd9+TTk
+7Eg9TJ4u03Tg2PjJBuiM
+=cgoM
+-----END PGP SIGNATURE-----
+
+--pWyiEgJYm5f9v55/--
