@@ -1,64 +1,43 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 03 Oct 2014 15:11:33 +0000
-Subject: [PATCH v2 02/13] ARM: shmobile: emev2 dtsi: Add uart* labels for easier referencing
-Message-Id: <1412349104-18724-3-git-send-email-geert+renesas@glider.be>
+From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Date: Mon, 06 Oct 2014 09:54:23 +0000
+Subject: [PATCH v2 0/1] spi: Using Trigger number to transmit/receive data
+Message-Id: <1412589264-16136-1-git-send-email-cm-hiep@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412349104-18724-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1412349104-18724-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: broonie@kernel.org, geert+renesas@glider.be
+Cc: linux-spi@vger.kernel.org, kuninori.morimoto.gx@renesas.com, yoshihiro.shimoda.uh@renesas.com, ryusuke.sakato.bx@renesas.com, linux-sh@vger.kernel.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-v2:
-  - No changes
----
- arch/arm/boot/dts/emev2.dtsi | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
 
-diff --git a/arch/arm/boot/dts/emev2.dtsi b/arch/arm/boot/dts/emev2.dtsi
-index 5fe9212b6bc5e50b..cc7bfe0ba40af9a9 100644
---- a/arch/arm/boot/dts/emev2.dtsi
-+++ b/arch/arm/boot/dts/emev2.dtsi
-@@ -137,7 +137,7 @@
- 		clock-names = "sclk";
- 	};
- 
--	serial@e1020000 {
-+	uart0: serial@e1020000 {
- 		compatible = "renesas,em-uart";
- 		reg = <0xe1020000 0x38>;
- 		interrupts = <0 8 IRQ_TYPE_LEVEL_HIGH>;
-@@ -145,7 +145,7 @@
- 		clock-names = "sclk";
- 	};
- 
--	serial@e1030000 {
-+	uart1: serial@e1030000 {
- 		compatible = "renesas,em-uart";
- 		reg = <0xe1030000 0x38>;
- 		interrupts = <0 9 IRQ_TYPE_LEVEL_HIGH>;
-@@ -153,7 +153,7 @@
- 		clock-names = "sclk";
- 	};
- 
--	serial@e1040000 {
-+	uart2: serial@e1040000 {
- 		compatible = "renesas,em-uart";
- 		reg = <0xe1040000 0x38>;
- 		interrupts = <0 10 IRQ_TYPE_LEVEL_HIGH>;
-@@ -161,7 +161,7 @@
- 		clock-names = "sclk";
- 	};
- 
--	serial@e1050000 {
-+	uart3: serial@e1050000 {
- 		compatible = "renesas,em-uart";
- 		reg = <0xe1050000 0x38>;
- 		interrupts = <0 11 IRQ_TYPE_LEVEL_HIGH>;
+Hi Geert, Mark Brown
+
+Here is the verion 2 of the QSPI patch, I have added the DMA support on it.
+In order to use DMA When the DMA is available. 
+This patch supports for r8a7790 SOC and developed base on the upstream-v3.17-rc7
+and have tested on the Lager board.
+
+Version 1:
+
+This is the patch of QSPI that support for r8a7790 SOC. The pupose of 
+this patch is to transmit and receive the 32 bytes of data when the data 
+already has prepared on Transmit/Receive Buffer. Using Transmit/Receive 
+Buffer Data Trigger Number to do that instead transmits/receives a byte 
+of data. With this patch will improve the speed of transfer data.
+This patch was developed base on the upstream-v3.17-rc5 and have 
+tested on the Lager board.
+
+
+Best Regards,
+Cao Minh Hiep 
+
+Hiep Cao Minh (1):
+  spi: Using Trigger number to transmit/receive data
+
+ drivers/spi/spi-rspi.c | 138 ++++++++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 125 insertions(+), 13 deletions(-)
+
 -- 
 1.9.1
 
