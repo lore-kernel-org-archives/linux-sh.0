@@ -1,99 +1,86 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 06 Oct 2014 01:55:40 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 06 Oct 2014 05:59:15 +0000
 Subject: Re: [PATCH] serial: sh-sci: submit rx dma the way the DMA driver can handle it
-Message-Id: <20141006015540.GD22040@verge.net.au>
+Message-Id: <20141006055914.GA1266@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="5vNYLRcllDrimb99"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1412266448-20266-1-git-send-email-wsa@the-dreams.de>
 In-Reply-To: <1412266448-20266-1-git-send-email-wsa@the-dreams.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Oct 02, 2014 at 06:14:08PM +0200, Wolfram Sang wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> 
-> The shdmac driver has a problem when one wants to submit two RX
-> descriptors and then use issue_pending on both (like this driver does):
-> 
-> Submit first desc
-> -> channel state after: SHDMA_PM_ESTABLISHED
-> 
-> Submit second desc
-> -> channel state after: SHDMA_PM_PENDING
-> 
-> PENDING here means: "Oh, we will wait until the first desc is finished
-> and then the second desc will be grabbed from the list anyhow"
-> 
-> However, because issue_pending does nothing for states !> SHDMA_PM_ESTABLISHED, nothing ever gets active :(
-> 
-> Since the DMA driver is probably replaced soon anyhow, I decided for the
-> least intrusive workaround which is to use issue_pending on every RX
-> desc. (Yes, setting s->active_rx twice is ugly).
-> 
-> Probably not for upstream! However, this patch restores DMA capability
-> for SCIFA on my Lager board. Sadly, not for SCIF due to interrupt
-> problems still to be investigated.
-> 
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+--5vNYLRcllDrimb99
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-sh-sci patches usually go via linux-serial@vger.kernel.org and
-Greg Kroah-Hartman <gregkh@linuxfoundation.org>. Could you repost this patch
-with those parties included?
+On Mon, Oct 06, 2014 at 10:55:40AM +0900, Simon Horman wrote:
+> On Thu, Oct 02, 2014 at 06:14:08PM +0200, Wolfram Sang wrote:
+> > From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+> >=20
+> > The shdmac driver has a problem when one wants to submit two RX
+> > descriptors and then use issue_pending on both (like this driver does):
+> >=20
+> > Submit first desc
+> > -> channel state after: SHDMA_PM_ESTABLISHED
+> >=20
+> > Submit second desc
+> > -> channel state after: SHDMA_PM_PENDING
+> >=20
+> > PENDING here means: "Oh, we will wait until the first desc is finished
+> > and then the second desc will be grabbed from the list anyhow"
+> >=20
+> > However, because issue_pending does nothing for states !=3D
+> > SHDMA_PM_ESTABLISHED, nothing ever gets active :(
+> >=20
+> > Since the DMA driver is probably replaced soon anyhow, I decided for the
+> > least intrusive workaround which is to use issue_pending on every RX
+> > desc. (Yes, setting s->active_rx twice is ugly).
+> >=20
+> > Probably not for upstream! However, this patch restores DMA capability
+> > for SCIFA on my Lager board. Sadly, not for SCIF due to interrupt
+> > problems still to be investigated.
+> >=20
+> > Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+>=20
+> Acked-by: Simon Horman <horms+renesas@verge.net.au>
+>=20
+> sh-sci patches usually go via linux-serial@vger.kernel.org and
+> Greg Kroah-Hartman <gregkh@linuxfoundation.org>. Could you repost this pa=
+tch
+> with those parties included?
 
-> ---
-> 
-> Some more words about the not working SCIF:
-> 
-> Once I submit the RX descriptor, I don't get any irq anymore (which the driver
-> needs to detect timeouts). Before that, I got them.
-> 
-> SCIFA has a bit (SCSCR_RDRQE) to select if the interrupt should go to the CPU
-> or DMAC and the driver handles this correctly, so DMA works again.
-> 
-> Plain SCIF does not have such a bit. The documentation has a chapter "SCIF
-> Interrupt Sources and the DMAC" (chapter 51.4 here in v0.9) which is a little
-> vague to me. But from what I understand, I should get an irq along with the
-> DMAC transferring data. The implementation of this driver shows that earlier SH
-> hardware worked this way. However, I don't get interrupts, so the timeout
-> mechanism fails. DMA works partly, you can receive in 32 bytes chunks only. If
-> you are happy with that, you can also use SCIF. Good practice for your typing
-> skills ;)
-> 
-> So, my SCIF->SCIFA patch becomes more useful, too.
-> 
->  drivers/tty/serial/sh-sci.c | 10 ++++++----
->  1 file changed, 6 insertions(+), 4 deletions(-)
-> 
-> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-> index b11819bc95c4..f23b4d2ab51f 100644
-> --- a/drivers/tty/serial/sh-sci.c
-> +++ b/drivers/tty/serial/sh-sci.c
-> @@ -1365,16 +1365,18 @@ static void sci_submit_rx(struct sci_port *s)
->  			}
->  			dev_warn(s->port.dev,
->  				 "failed to re-start DMA, using PIO\n");
-> +
-> +			chan->device->device_control(chan, DMA_TERMINATE_ALL, 0);
->  			sci_rx_dma_release(s, true);
->  			return;
->  		}
-> +
-> +		s->active_rx = s->cookie_rx[0];
-> +
-> +		dma_async_issue_pending(chan);
->  		dev_dbg(s->port.dev, "%s(): cookie %d to #%d\n",
->  			__func__, s->cookie_rx[i], i);
->  	}
-> -
-> -	s->active_rx = s->cookie_rx[0];
-> -
-> -	dma_async_issue_pending(chan);
->  }
->  
->  static void work_fn_rx(struct work_struct *work)
-> -- 
-> 2.0.0
-> 
+I wanted to send this patch as RFC, but forgot to rename it :) I'd
+really like some discussion about it, probably in D=C3=BCsseldorf even. I am
+still not sure this patch should go upstream, but we should talk about
+it.
+
+Thanks,
+
+   Wolfram
+
+
+--5vNYLRcllDrimb99
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJUMi+yAAoJEBQN5MwUoCm2TFUQAIZfTK/wf57SB4whfRfVoXm4
+6h99ay3XzPiJYg6DiEmNx7t8bHyfYG0bPNNOKnNxRyn6jJu8yaLNUnEcN0Z1i4tS
+3XOE3Lv0UtJkE8Wsu/MrAGDIjFHv1B2A9FYCfKfPLaZYcHL/j2mLuOd8OPBU64dW
+2zuk4st9+ElkmpZ1rJkqUG6qlNibjRu/xbO774U2UAWN+81t2KPZMT7Eg+5g6MZj
+qSJ6x4mMnshu2BTEdSsGIKTPWhGyfLuURoQrld1Ry/AT/ACbv6MpbA35E9BXq0eC
+TDCUBfboGRYkvb2us1tIzDqzi8NNZvvrgWNkQzXCLS+J6nWy/dUkTFY72Mjp5gbV
+/YwwjqE8DZ4oHk43KZj8/uZOqchKI58OrarBxAk7vEg/fUiLixrBqV9KY4QTcBTB
+4o8LgGveQjwss3Ji7TPPN+9g0uOaLYaJRMlcyrdZ/Iu7DXQ3vf4BgcKe7F7xW2g5
+kftFOPTxZ53hNFBgnAnIlg8USx9NB055EhxOFmfbNJLxDQ9KWu1q0izVrvV6saZO
+qWvtU42wc2vWDbMgBoinPcZYruBlI8UMIQk8CbwqnzKk+xoiZBNQBd/scofsQYg6
+JUaxPPtsFX3suVv4ccXLK5OJQ87AhJUiFy9P/ekg+zrofL8RhxkdfvDZ41E5RP0x
+uBdvWas/nHbtjWRHXsxD
+=9M5T
+-----END PGP SIGNATURE-----
+
+--5vNYLRcllDrimb99--
