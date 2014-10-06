@@ -1,46 +1,57 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 06 Oct 2014 08:56:51 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 06 Oct 2014 09:01:50 +0000
 Subject: Re: [PATCH] [RFC] ARM: shmobile: Add early debugging support using SCIF(A)
-Message-Id: <CAMuHMdXRcuq+hcyjeRDgFqKo2n7JSR5tTfz6wstTXnm2ohKdtQ@mail.gmail.com>
+Message-Id: <20141006090149.GC1266@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="GPJrCs/72TxItFYR"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1412276563-21473-1-git-send-email-geert+renesas@glider.be>
  <2257006.dpJJ6zLgnP@avalon> <20141006060347.GB1266@katana>
-In-Reply-To: <20141006060347.GB1266@katana>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+ <CAMuHMdXRcuq+hcyjeRDgFqKo2n7JSR5tTfz6wstTXnm2ohKdtQ@mail.gmail.com>
+In-Reply-To: <CAMuHMdXRcuq+hcyjeRDgFqKo2n7JSR5tTfz6wstTXnm2ohKdtQ@mail.gmail.com>
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Wolfram,
 
-On Mon, Oct 6, 2014 at 8:03 AM, Wolfram Sang <wsa@the-dreams.de> wrote:
->> >   - While the serial console on r8a7790 was switched from SCIF0 to
->> >     SCIFA0 recently, I believe r8a7990 still needs to use SCIF0 instead
->> >     of SCIFA0, as that's what the bootloader has configured.
->>
->> Good point. Wolfram, any opinion about this ?
->
-> IMO we should only use SCIFA if it uses the same wires as SCIF. This
-> is the case for Lager (7790). Dunno about other boards.
+--GPJrCs/72TxItFYR
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-I agree with your statement about using the same wires.
-However, having the ability to pinmux both SCIF0 and SCIFA0 to the same
-wires is not a board property, but an SoC property, right?
 
-Nevertheless, for DEBUG_LL, this is early debug output, so it should use the
-exact same settings as the bootloader, which has configured SCIF0, and
-(b) has setup pinmux for SCIF0. Pinmux setup for SCIFA0 only kicks in when
-the real SCIFA1 is initialized later.
+> I agree with your statement about using the same wires.
+> However, having the ability to pinmux both SCIF0 and SCIFA0 to the same
+> wires is not a board property, but an SoC property, right?
 
-Please correct me if I'm wrong.
+Both. The SoC needs to support muxing them to the same wires, yes. But
+the board must also support it. E.g. SCIFA0 could already be used using
+some other wires, then it is not possible anymore.
 
-Gr{oetje,eeting}s,
+> Nevertheless, for DEBUG_LL, this is early debug output, so it should use the
+> exact same settings as the bootloader, which has configured SCIF0, and
+> (b) has setup pinmux for SCIF0.
 
-                        Geert
+True.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+--GPJrCs/72TxItFYR
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJUMlp9AAoJEBQN5MwUoCm2FFQP/2uX5L3ndoBflaBrXOA9Hu7n
+VnmnkbE+gzSVbGBA40B7ZqR6jDZ1RyqeNGcu2gy+wIqy5oNpNogsuk4/CVi3iv3f
+vlYQWrcsF7nFEOnt3XnBRH0VlK51sT/Y7SzAwxzNyNWW7OZVDbA0cLxkqJqwvvf2
+rWeTctoJF+MKUwJbNIlsvbN23l7obYlxK6iNkzzIg3/yIUApUmnVG0EgsBk+ut+p
+6IS76c6d3n0Wwmta4rZuThJYaydwC6FHIS0/PXIEocrbRdYtXqU1dUFy5lxVuUif
+GdOB3OdzvXJ+9HFDoxb2rWMNFwH75v8Mp5UlE0lupgnWWwA2I0C4aT4qtPaxUxjI
+eJMLgu5yxwLO90khoSPgdNNBxRsYT+HUSOGKbr/22IiYDD/otxugw6husdvLr/OH
+cFMMCHPHJ3FbdifVEvwyf0C7j8jxyYUjf2Hz4BOxMe+p6ghMi6vJw34LfN7/W3N9
+DZkEujHAKa44+Sjq/9ggGChNM2dA6qixWJwei0qdX/JSo9+/1IVG/Ht4xW0nC62r
+eHgSVKHRm1Vqa5H0mbVMRe4GiU86ltrkH/OBx1abSJN6LWAEtUP2I0iwwRLleL9o
+WtWBZJzGV0iVi98/lYinhrc+pNBfYsHnav5nTxzsDEHq/MHYnDstSRF7MRYooS+B
+yLa4dORhePdLBZWx5h9V
+=u7Qn
+-----END PGP SIGNATURE-----
+
+--GPJrCs/72TxItFYR--
