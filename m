@@ -1,66 +1,52 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Sun, 05 Oct 2014 23:36:00 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 06 Oct 2014 06:03:47 +0000
 Subject: Re: [PATCH] [RFC] ARM: shmobile: Add early debugging support using SCIF(A)
-Message-Id: <CANqRtoTJNb7a9J05U0chrGoxBV7e1s6o0Xxeup0p1sOUZhE+vA@mail.gmail.com>
+Message-Id: <20141006060347.GB1266@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="OwLcNYc0lM97+oe1"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1412276563-21473-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1412276563-21473-1-git-send-email-geert+renesas@glider.be>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+ <2257006.dpJJ6zLgnP@avalon>
+In-Reply-To: <2257006.dpJJ6zLgnP@avalon>
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
 
-Thanks for your patch! Quick comment from my side below:
+--OwLcNYc0lM97+oe1
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On Fri, Oct 3, 2014 at 4:02 AM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
-> Add serial port debug macros for the SCIF(A) serial ports.
-> This includes all shmobile SoCs, except for EMEV2.
->
-> On SoCs using the legacy machine_desc.map_io(), an identity mapping of
-> the SCIF(A) registers must be set up in .map_io(). On all but r8a7779
-> this was already done.
->
-> On other SoCs, debug_ll_io_init() maps the SCIF(A) registers to a fixed
-> virtual address. 0xfdxxxxxx was chosen, as it should lie below
-> VMALLOC_END = 0xff000000, and must not conflict with the 2 MiB reserved
-> region at PCI_IO_VIRT_BASE = 0xfee00000.
->
-> This was derived from the r8a7790 version by Laurent Pinchart.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> Tested on r8a7791/koelsch and r8a7740/armadillo.
-> Testing on other platforms would be highly appreciated.
->
-> Notes:
->   - On armadillo-multiplatform there may be a period while garbage data
->     is output.
->     This happens because sh_mobile_i2c_init() enables and disables its
->     clock during probing. As iic0 and scifa1 share the same parent
->     clock, this causes the scifa1 clock to no longer receive clock
->     ticks.
->     On armadillo-legacy, this is mitigated by the pre-CCF clock driver,
->     which never really disables clocks during boot-up for exactly this
->     reason. Cfr. "One example of this is the handling of the Mackerel
->     serial console output that shares clock with the I2C controller.",
->     in commit 794d78fea51504ba ("drivers: sh: late disabling of clocks
->     V2").
->     I'm wondering whether this can be fixed in the i2c driver? Does it
->     really have to enable and disable the clock?
 
-I've seen this issue on several SoCs actually, and as you describe the
-main issue seems to be that there are clock topologies that present
-for devices used during boot (like serial) but this clock topology is
-not yet managed by software. This does not trigger on all SoCs though.
+> >   - While the serial console on r8a7790 was switched from SCIF0 to
+> >     SCIFA0 recently, I believe r8a7990 still needs to use SCIF0 instead
+> >     of SCIFA0, as that's what the bootloader has configured.
+>=20
+> Good point. Wolfram, any opinion about this ?
 
-It is my opinion that it has very little todo with the other devices
-that happen to be using the same parent clock. The legacy clock
-framework solved this by not allowing clocks to be disabled until all
-devices were registered.
+IMO we should only use SCIFA if it uses the same wires as SCIF. This
+is the case for Lager (7790). Dunno about other boards.
 
-Cheers,
 
-/ magnus
+--OwLcNYc0lM97+oe1
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJUMjDDAAoJEBQN5MwUoCm24csQAIzMaVJ6nNGPcVAqaRXx4A+S
+PYnk0zNOlltdL/K6qrLzg/8AMSCBP3MiGAJYE/1Petoewqpb4hFloEUkSpPX8YmQ
+zQkl5BdK9TLDHN7+j6vcmLmu2n2Xe7EzFh1u+qKK9ppmY0KPlQZ1WdpkIm2Zhja5
+jY3Rl0dTVZx3HKWLepnX8lnzPKk+jSE9c9e0P1Qdn5NyxLoY/AaS2yauEarwyz4X
+WsTJoh830KJsynYDimfjqzvEOexUeskH44JAnhgLz04Onku30LFkapZ8ZoAXshhg
+e3npVer3BwQRJTW/pQOb8wBqJiWTwkPmyjKcbB00cBQXYZdyzXv0Ele81xjXmbfj
+67Rskcrf/4PIUB3hM3cguDdvU2JvrN5HHfCFSnf43vkWsxuYZ4or5JzxVA8BQ+Jf
+Yq2QhK80jEuUVbv6eiZmRcYO4QHGTQrApqDWu5dVvucNyHMRd//T1Vkp2zmPdLNX
+/UQMr2bnYcMkKW+rjlIG7/rDt2JbDYfoU1l6pqzJi/DOVlfmj4uHHba49/cH9KJ5
+v9w6mtOsoTRSQJx+YAlrSEqDA+AEDv4Hyv0/y05RSw3q3i62jkV+JXkYliUAKaVo
+G504JZ8TCcG6SkPCAYsjAyNIKe17fl4WgtcTQwrO10KR8jOcysaz4cTEC8Tb1Pj/
+jODd1e9lfODcBJmtwdnY
+=9bRg
+-----END PGP SIGNATURE-----
+
+--OwLcNYc0lM97+oe1--
