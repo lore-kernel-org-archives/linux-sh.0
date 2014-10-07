@@ -1,43 +1,57 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 03 Oct 2014 15:11:43 +0000
-Subject: [PATCH v2 12/13] ARM: shmobile: alt dts: Add chosen/stdout-path
-Message-Id: <1412349104-18724-13-git-send-email-geert+renesas@glider.be>
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Tue, 07 Oct 2014 05:28:08 +0000
+Subject: [PATCH 06/44] gpio-poweroff: Drop reference to pm_power_off from devicetree bindings
+Message-Id: <1412659726-29957-7-git-send-email-linux@roeck-us.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412349104-18724-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1412349104-18724-1-git-send-email-geert+renesas@glider.be>
+References: <1412659726-29957-1-git-send-email-linux@roeck-us.net>
+In-Reply-To: <1412659726-29957-1-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-kernel@vger.kernel.org
+Cc: adi-buildroot-devel@lists.sourceforge.net, devel@driverdev.osuosl.org, devicetree@vger.kernel.org, lguest@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-alpha@vger.kernel.org, linux-am33-list@redhat.com, linux-cris-kernel@axis.com, linux-efi@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-m32r-ja@ml.linux-m32r.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-tegra@vger.kernel.org, linux-xtensa@linux-xtensa.org, openipmi-developer@lists.sourceforge.net, user-mode-linux-devel@lists.sourceforge.net, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, xen-devel@lists.xenproject.org, Guenter Roeck <linux@roeck-us.net>, Rob
 
-Add a stdout-path property so that automatic console selection works
-in the absence of a "console=" parameter on the kernel command line.
+pm_power_off is an implementation detail. Replace it with a more generic
+description of the driver's functionality.
 
-Note that we have to keep the "console=ttySC0,38400" parameter in
-chosen/bootargs, else the console will use the default setting of 115200
-baud.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Rob Herring <robh+dt@kernel.org>
+Cc: Pawel Moll <pawel.moll@arm.com>
+Cc: Mark Rutland <mark.rutland@arm.com>
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
 ---
-v2:
-  - No changes
----
- arch/arm/boot/dts/r8a7794-alt.dts | 1 +
- 1 file changed, 1 insertion(+)
+ Documentation/devicetree/bindings/gpio/gpio-poweroff.txt | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
-index 79d06ef017a05b77..8aec51268b7d8177 100644
---- a/arch/arm/boot/dts/r8a7794-alt.dts
-+++ b/arch/arm/boot/dts/r8a7794-alt.dts
-@@ -21,6 +21,7 @@
+diff --git a/Documentation/devicetree/bindings/gpio/gpio-poweroff.txt b/Documentation/devicetree/bindings/gpio/gpio-poweroff.txt
+index d4eab92..c95a1a6 100644
+--- a/Documentation/devicetree/bindings/gpio/gpio-poweroff.txt
++++ b/Documentation/devicetree/bindings/gpio/gpio-poweroff.txt
+@@ -2,12 +2,12 @@ Driver a GPIO line that can be used to turn the power off.
  
- 	chosen {
- 		bootargs = "console=ttySC0,38400 ignore_loglevel rw root=/dev/nfs ip=dhcp";
-+		stdout-path = &scif2;
- 	};
+ The driver supports both level triggered and edge triggered power off.
+ At driver load time, the driver will request the given gpio line and
+-install a pm_power_off handler. If the optional properties 'input' is
+-not found, the GPIO line will be driven in the inactive
++install a handler to power off the system. If the optional properties
++'input' is not found, the GPIO line will be driven in the inactive
+ state. Otherwise its configured as an input.
  
- 	memory@40000000 {
+-When the pm_power_off is called, the gpio is configured as an output,
+-and drive active, so triggering a level triggered power off
++When the the poweroff handler is called, the gpio is configured as an
++output, and drive active, so triggering a level triggered power off
+ condition. This will also cause an inactive->active edge condition, so
+ triggering positive edge triggered power off. After a delay of 100ms,
+ the GPIO is set to inactive, thus causing an active->inactive edge,
+@@ -24,7 +24,7 @@ Required properties:
+ 
+ Optional properties:
+ - input : Initially configure the GPIO line as an input. Only reconfigure
+-  it to an output when the pm_power_off function is called. If this optional
++  it to an output when the poweroff handler is called. If this optional
+   property is not specified, the GPIO is initialized as an output in its
+   inactive state.
+ 
 -- 
 1.9.1
 
