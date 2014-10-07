@@ -1,51 +1,95 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Wed, 15 Oct 2014 09:22:51 +0000
-Subject: Re: [PATCH] ata: sata_rcar: Add r8a7793 device support
-Message-Id: <CAH1o70JV7kkigKtYfGHQpwub9JnuJCQwUAL4s66G-bFKP3ADAg@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 07 Oct 2014 03:43:06 +0000
+Subject: [PATCH v2 3/3] usb: renesas_usbhs: add support for generic PHY
+Message-Id: <1412653386-5856-4-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1413271894-10056-1-git-send-email-ykaneko0929@gmail.com>
-	<CAMuHMdWSQYct5dnFnDBvVFBRCti8g5qJNKaVBBXOW9NZ6FWwQw@mail.gmail.com>
-In-Reply-To: <CAMuHMdWSQYct5dnFnDBvVFBRCti8g5qJNKaVBBXOW9NZ6FWwQw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: "linux-ide@vger.kernel.org" <linux-ide@vger.kernel.org>, Tejun Heo <tj@kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Hello Geert,
+This patch adds support for the generic PHY. The generic PHY will be
+used in multiplatform environment.
 
-Thank you for your comment.
-I updated the documentation and posted patch v2.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ drivers/usb/renesas_usbhs/common.h |    1 +
+ drivers/usb/renesas_usbhs/rcar2.c  |   29 +++++++++++++++++++++++++++++
+ 2 files changed, 30 insertions(+)
 
-Thanks,
-Kaneko
+diff --git a/drivers/usb/renesas_usbhs/common.h b/drivers/usb/renesas_usbhs/common.h
+index e0d53c5..c45667f 100644
+--- a/drivers/usb/renesas_usbhs/common.h
++++ b/drivers/usb/renesas_usbhs/common.h
+@@ -270,6 +270,7 @@ struct usbhs_priv {
+ 	struct usbhs_fifo_info fifo_info;
+ 
+ 	struct usb_phy *usb_phy;
++	struct phy *phy;
+ };
+ 
+ /*
+diff --git a/drivers/usb/renesas_usbhs/rcar2.c b/drivers/usb/renesas_usbhs/rcar2.c
+index 485b889..8fc15c0 100644
+--- a/drivers/usb/renesas_usbhs/rcar2.c
++++ b/drivers/usb/renesas_usbhs/rcar2.c
+@@ -12,6 +12,7 @@
+ 
+ #include <linux/gpio.h>
+ #include <linux/of_gpio.h>
++#include <linux/phy/phy.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/usb/phy.h>
+ #include "common.h"
+@@ -21,6 +22,16 @@ static int usbhs_rcar2_hardware_init(struct platform_device *pdev)
+ {
+ 	struct usbhs_priv *priv = usbhs_pdev_to_priv(pdev);
+ 
++	if (IS_ENABLED(CONFIG_GENERIC_PHY)) {
++		struct phy *phy = phy_get(&pdev->dev, "usb");
++
++		if (IS_ERR(phy))
++			return PTR_ERR(phy);
++
++		priv->phy = phy;
++		return 0;
++	}
++
+ 	if (IS_ENABLED(CONFIG_USB_PHY)) {
+ 		struct usb_phy *usb_phy = usb_get_phy_dev(&pdev->dev, 0);
+ 
+@@ -38,6 +49,11 @@ static int usbhs_rcar2_hardware_exit(struct platform_device *pdev)
+ {
+ 	struct usbhs_priv *priv = usbhs_pdev_to_priv(pdev);
+ 
++	if (priv->phy) {
++		phy_put(priv->phy);
++		priv->phy = NULL;
++	}
++
+ 	if (priv->usb_phy) {
+ 		usb_put_phy(priv->usb_phy);
+ 		priv->usb_phy = NULL;
+@@ -52,6 +68,19 @@ static int usbhs_rcar2_power_ctrl(struct platform_device *pdev,
+ 	struct usbhs_priv *priv = usbhs_pdev_to_priv(pdev);
+ 	int retval = -ENODEV;
+ 
++	if (priv->phy) {
++		if (enable) {
++			retval = phy_init(priv->phy);
++
++			if (!retval)
++				retval = phy_power_on(priv->phy);
++		} else {
++			phy_power_off(priv->phy);
++			phy_exit(priv->phy);
++			retval = 0;
++		}
++	}
++
+ 	if (priv->usb_phy) {
+ 		if (enable) {
+ 			retval = usb_phy_init(priv->usb_phy);
+-- 
+1.7.9.5
 
-2014-10-15 4:32 GMT+09:00 Geert Uytterhoeven <geert@linux-m68k.org>:
-> Hi Kaneko-san, Matsuoka-san,
->
-> On Tue, Oct 14, 2014 at 9:31 AM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
->> From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
->>
->> Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
->> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->> ---
->>
->> This patch is against for-next branch of Tejun's libata repo.
->>
->>  drivers/ata/sata_rcar.c | 5 +++++
->
-> Can you please also update the binding documentation in
-> Documentation/devicetree/bindings/ata/sata_rcar.txt?
->
-> Thanks!
->
-> Gr{oetje,eeting}s,
->
->                         Geert
->
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
->
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
