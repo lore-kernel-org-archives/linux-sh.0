@@ -1,84 +1,113 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Tue, 14 Oct 2014 07:01:42 +0000
-Subject: [PATCH 3/4] ARM: shmobile: r8a7790: Add MMP clock to device tree
-Message-Id: <1413270103-9517-4-git-send-email-ykaneko0929@gmail.com>
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Tue, 07 Oct 2014 05:28:31 +0000
+Subject: [PATCH 29/44] staging: nvec: Register with kernel poweroff handler
+Message-Id: <1412659726-29957-30-git-send-email-linux@roeck-us.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1413270103-9517-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1413270103-9517-1-git-send-email-ykaneko0929@gmail.com>
+References: <1412659726-29957-1-git-send-email-linux@roeck-us.net>
+In-Reply-To: <1412659726-29957-1-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: adi-buildroot-devel@lists.sourceforge.net, devel@driverdev.osuosl.org, devicetree@vger.kernel.org, lguest@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-alpha@vger.kernel.org, linux-am33-list@redhat.com, linux-cris-kernel@axis.com, linux-efi@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-m32r-ja@ml.linux-m32r.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-tegra@vger.kernel.org, linux-xtensa@linux-xtensa.org, openipmi-developer@lists.sourceforge.net, user-mode-linux-devel@lists.sourceforge.net, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, xen-devel@lists.xenproject.org, Guenter Roeck <linux@roeck-us.net>, Julian
 
-From: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
+Register with kernel poweroff handler instead of setting pm_power_off
+directly. Register with default priority value of 128 since we don't know
+any better.
 
-Signed-off-by: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Cc: Julian Andres Klode <jak@jak-linux.org>
+Cc: Marc Dietrich <marvin24@gmx.de>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
 ---
- arch/arm/boot/dts/r8a7790.dtsi            | 22 ++++++++++++++--------
- include/dt-bindings/clock/r8a7790-clock.h | 11 ++++++++++-
- 2 files changed, 24 insertions(+), 9 deletions(-)
+ drivers/staging/nvec/nvec.c | 24 +++++++++++++++---------
+ drivers/staging/nvec/nvec.h |  2 ++
+ 2 files changed, 17 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 1e96705..3f1e4b3 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -938,18 +938,24 @@
- 		mstp1_clks: mstp1_clks@e6150134 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
--			clocks = <&m2_clk>, <&p_clk>, <&zg_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
--				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>,
--				 <&zs_clk>;
-+			clocks = <&zs_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>, <&m2_clk>,
-+				 <&zs_clk>, <&p_clk>, <&zg_clk>, <&zs_clk>, <&zs_clk>,
-+				 <&zs_clk>, <&zs_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
-+				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
--				R8A7790_CLK_JPU R8A7790_CLK_TMU1 R8A7790_CLK_3DG
--				R8A7790_CLK_TMU3 R8A7790_CLK_TMU2
--				R8A7790_CLK_CMT0 R8A7790_CLK_TMU0 R8A7790_CLK_VSP1_DU1
--				R8A7790_CLK_VSP1_DU0 R8A7790_CLK_VSP1_R R8A7790_CLK_VSP1_S
-+				R8A7790_CLK_VCP1 R8A7790_CLK_VCP0 R8A7790_CLK_VPC1
-+				R8A7790_CLK_VPC0 R8A7790_CLK_JPU R8A7790_CLK_SSP1
-+				R8A7790_CLK_TMU1 R8A7790_CLK_3DG R8A7790_CLK_2DDMAC
-+				R8A7790_CLK_FDP1_2 R8A7790_CLK_FDP1_1 R8A7790_CLK_FDP1_0
-+				R8A7790_CLK_TMU3 R8A7790_CLK_TMU2 R8A7790_CLK_CMT0
-+				R8A7790_CLK_TMU0 R8A7790_CLK_VSP1_DU1 R8A7790_CLK_VSP1_DU0
-+				R8A7790_CLK_VSP1_R R8A7790_CLK_VSP1_S
- 			>;
- 			clock-output-names -				"jpu", "tmu1", "3dg", "tmu3", "tmu2", "cmt0", "tmu0",
-+				"vcp1", "vcp0", "vpc1", "vpc0", "jpu", "ssp1",
-+				"tmu1", "3dg", "2ddmac", "fdp1-2", "fdp1-1",
-+				"fdp1-0", "tmu3", "tmu2", "cmt0", "tmu0",
- 				"vsp1-du1", "vsp1-du0", "vsp1-rt", "vsp1-sy";
- 		};
- 		mstp2_clks: mstp2_clks@e6150138 {
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-index 14a3f12..e3a3fb8 100644
---- a/include/dt-bindings/clock/r8a7790-clock.h
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -26,9 +26,18 @@
- #define R8A7790_CLK_MSIOF0		0
+diff --git a/drivers/staging/nvec/nvec.c b/drivers/staging/nvec/nvec.c
+index a93208a..33d406c 100644
+--- a/drivers/staging/nvec/nvec.c
++++ b/drivers/staging/nvec/nvec.c
+@@ -33,6 +33,7 @@
+ #include <linux/mfd/core.h>
+ #include <linux/mutex.h>
+ #include <linux/notifier.h>
++#include <linux/pm.h>
+ #include <linux/slab.h>
+ #include <linux/spinlock.h>
+ #include <linux/workqueue.h>
+@@ -80,8 +81,6 @@ enum nvec_sleep_subcmds {
+ #define LID_SWITCH BIT(1)
+ #define PWR_BUTTON BIT(15)
  
- /* MSTP1 */
--#define R8A7790_CLK_JPU		6
-+#define R8A7790_CLK_VCP1		0
-+#define R8A7790_CLK_VCP0		1
-+#define R8A7790_CLK_VPC1		2
-+#define R8A7790_CLK_VPC0		3
-+#define R8A7790_CLK_JPU			6
-+#define R8A7790_CLK_SSP1		9
- #define R8A7790_CLK_TMU1		11
- #define R8A7790_CLK_3DG			12
-+#define R8A7790_CLK_2DDMAC		15
-+#define R8A7790_CLK_FDP1_2		17
-+#define R8A7790_CLK_FDP1_1		18
-+#define R8A7790_CLK_FDP1_0		19
- #define R8A7790_CLK_TMU3		21
- #define R8A7790_CLK_TMU2		22
- #define R8A7790_CLK_CMT0		24
+-static struct nvec_chip *nvec_power_handle;
+-
+ static const struct mfd_cell nvec_devices[] = {
+ 	{
+ 		.name = "nvec-kbd",
+@@ -759,12 +758,17 @@ static void nvec_disable_i2c_slave(struct nvec_chip *nvec)
+ }
+ #endif
+ 
+-static void nvec_power_off(void)
++static int nvec_power_off(struct notifier_block *this, unsigned long unused1,
++			  void *unused2)
+ {
++	struct nvec_chip *nvec = container_of(this, struct nvec_chip,
++					      poweroff_nb);
+ 	char ap_pwr_down[] = { NVEC_SLEEP, AP_PWR_DOWN };
+ 
+-	nvec_toggle_global_events(nvec_power_handle, false);
+-	nvec_write_async(nvec_power_handle, ap_pwr_down, 2);
++	nvec_toggle_global_events(nvec, false);
++	nvec_write_async(nvec, ap_pwr_down, 2);
++
++	return NOTIFY_DONE;
+ }
+ 
+ /*
+@@ -878,8 +882,11 @@ static int tegra_nvec_probe(struct platform_device *pdev)
+ 	nvec->nvec_status_notifier.notifier_call = nvec_status_notifier;
+ 	nvec_register_notifier(nvec, &nvec->nvec_status_notifier, 0);
+ 
+-	nvec_power_handle = nvec;
+-	pm_power_off = nvec_power_off;
++	nvec->poweroff_nb.notifier_call = nvec_power_off;
++	nvec->poweroff_nb.priority = 128;
++	ret = register_poweroff_handler(&nvec->poweroff_nb);
++	if (ret)
++		dev_err(nvec->dev, "Failed to register poweroff handler\n");
+ 
+ 	/* Get Firmware Version */
+ 	msg = nvec_write_sync(nvec, get_firmware_version, 2);
+@@ -914,13 +921,12 @@ static int tegra_nvec_remove(struct platform_device *pdev)
+ {
+ 	struct nvec_chip *nvec = platform_get_drvdata(pdev);
+ 
++	unregister_poweroff_handler(&nvec->poweroff_nb);
+ 	nvec_toggle_global_events(nvec, false);
+ 	mfd_remove_devices(nvec->dev);
+ 	nvec_unregister_notifier(nvec, &nvec->nvec_status_notifier);
+ 	cancel_work_sync(&nvec->rx_work);
+ 	cancel_work_sync(&nvec->tx_work);
+-	/* FIXME: needs check wether nvec is responsible for power off */
+-	pm_power_off = NULL;
+ 
+ 	return 0;
+ }
+diff --git a/drivers/staging/nvec/nvec.h b/drivers/staging/nvec/nvec.h
+index e271375..e5ee2af 100644
+--- a/drivers/staging/nvec/nvec.h
++++ b/drivers/staging/nvec/nvec.h
+@@ -163,6 +163,8 @@ struct nvec_chip {
+ 	struct nvec_msg *last_sync_msg;
+ 
+ 	int state;
++
++	struct notifier_block poweroff_nb;
+ };
+ 
+ extern int nvec_write_async(struct nvec_chip *nvec, const unsigned char *data,
 -- 
 1.9.1
 
