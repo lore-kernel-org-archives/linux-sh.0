@@ -1,70 +1,46 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 24 Oct 2014 12:03:56 +0000
-Subject: [PATCH v4 4/9] ARM: shmobile: dts: Add common file for AA104XD12 panel
-Message-Id: <1414152241-5390-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Tue, 07 Oct 2014 05:28:36 +0000
+Subject: [PATCH 34/44] ia64: Register with kernel poweroff handler
+Message-Id: <1412659726-29957-35-git-send-email-linux@roeck-us.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1412659726-29957-1-git-send-email-linux@roeck-us.net>
+In-Reply-To: <1412659726-29957-1-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: adi-buildroot-devel@lists.sourceforge.net, devel@driverdev.osuosl.org, devicetree@vger.kernel.org, lguest@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-alpha@vger.kernel.org, linux-am33-list@redhat.com, linux-cris-kernel@axis.com, linux-efi@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-m32r-ja@ml.linux-m32r.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-tegra@vger.kernel.org, linux-xtensa@linux-xtensa.org, openipmi-developer@lists.sourceforge.net, user-mode-linux-devel@lists.sourceforge.net, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, xen-devel@lists.xenproject.org, Guenter Roeck <linux@roeck-us.net>Tony Luck <t>
 
-The Mitsubishi AA104XD12 panel is commonly used with the Marzen, Lager
-and Koelsch boards. Create a .dtsi file that describe the panel and its
-connection to the board.
+Register with kernel poweroff handler instead of setting pm_power_off
+directly. Register with lower priority of 64 to reflect that the call
+is expected to be replaced at some point.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: Tony Luck <tony.luck@intel.com>
+Cc: Fenghua Yu <fenghua.yu@intel.com>
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
 ---
- arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi | 41 ++++++++++++++++++++++++++
- 1 file changed, 41 insertions(+)
- create mode 100644 arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi
+ arch/ia64/sn/kernel/setup.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi b/arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi
-new file mode 100644
-index 000000000000..65cb50f0c29f
---- /dev/null
-+++ b/arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi
-@@ -0,0 +1,41 @@
-+/*
-+ * Common file for the AA104XD12 panel connected to Renesas R-Car boards
-+ *
-+ * Copyright (C) 2014 Renesas Electronics Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/ {
-+	panel {
-+		compatible = "mitsubishi,aa104xd12", "panel-dpi";
-+
-+		width-mm = <210>;
-+		height-mm = <158>;
-+
-+		panel-timing {
-+			/* 1024x768 @65Hz */
-+			clock-frequency = <65000000>;
-+			hactive = <1024>;
-+			vactive = <768>;
-+			hsync-len = <136>;
-+			hfront-porch = <20>;
-+			hback-porch = <160>;
-+			vfront-porch = <3>;
-+			vback-porch = <29>;
-+			vsync-len = <6>;
-+		};
-+
-+		port {
-+			panel_in: endpoint {
-+				remote-endpoint = <&lvds_connector>;
-+			};
-+		};
-+	};
-+};
-+
-+&lvds_connector {
-+	remote-endpoint = <&panel_in>;
-+};
+diff --git a/arch/ia64/sn/kernel/setup.c b/arch/ia64/sn/kernel/setup.c
+index 36182c8..6c83425 100644
+--- a/arch/ia64/sn/kernel/setup.c
++++ b/arch/ia64/sn/kernel/setup.c
+@@ -488,12 +488,12 @@ void __init sn_setup(char **cmdline_p)
+ 	sn_timer_init();
+ 
+ 	/*
+-	 * set pm_power_off to a SAL call to allow
++	 * set poweroff handler to a SAL call to allow
+ 	 * sn machines to power off. The SAL call can be replaced
+ 	 * by an ACPI interface call when ACPI is fully implemented
+ 	 * for sn.
+ 	 */
+-	pm_power_off = ia64_sn_power_down;
++	register_poweroff_handler_simple(ia64_sn_power_down, 64);
+ 	current->thread.flags |= IA64_THREAD_MIGRATION;
+ }
+ 
 -- 
-2.0.4
+1.9.1
 
