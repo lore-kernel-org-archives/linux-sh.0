@@ -1,84 +1,56 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 28 Oct 2014 18:59:58 +0000
-Subject: Re: CMA: test_pages_isolated failures in alloc_contig_range
-Message-Id: <1703418.04z9xDaRPF@avalon>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 07 Oct 2014 12:32:57 +0000
+Subject: Re: [PATCH] ASoC: simple-card: Add mic and hp detect gpios.
+Message-Id: <CAMuHMdWh=sXAD59T1T=gvROX+fbF6=gFo6C0nkJdfnCrdNrwYg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2457604.k03RC2Mv4q@avalon> <xa1tsii8l683.fsf@mina86.com> <544F9EAA.5010404@hurleysoftware.com>
-In-Reply-To: <544F9EAA.5010404@hurleysoftware.com>
+References: <1412198720-2326-1-git-send-email-dgreid@chromium.org>
+	<20141002155350.GU4273@sirena.org.uk>
+In-Reply-To: <20141002155350.GU4273@sirena.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Peter Hurley <peter@hurleysoftware.com>
-Cc: Michal Nazarewicz <mina86@mina86.com>, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Minchan Kim <minchan@kernel.org>, Andrew Morton <akpm@linux-foundation.org>
+To: Mark Brown <broonie@kernel.org>, Dylan Reid <dgreid@chromium.org>
+Cc: ALSA Development Mailing List <alsa-devel@alsa-project.org>, jay.xu@rock-chips.com, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, sonnyrao@chromium.org, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Hello,
+Hi Mark, Dylan,
 
-On Tuesday 28 October 2014 09:48:26 Peter Hurley wrote:
-> [ +cc Andrew Morton ]
-> 
-> On 10/28/2014 08:38 AM, Michal Nazarewicz wrote:
-> > On Sun, Oct 26 2014, Laurent Pinchart wrote:
-> >> Hello,
-> >> 
-> >> I've run into a CMA-related issue while testing a DMA engine driver with
-> >> dmatest on a Renesas R-Car ARM platform.
-> >> 
-> >> When allocating contiguous memory through CMA the kernel prints the
-> >> following messages to the kernel log.
-> >> 
-> >> [   99.770000] alloc_contig_range test_pages_isolated(6b843, 6b844)
-> >> failed
-> >> [  124.220000] alloc_contig_range test_pages_isolated(6b843, 6b844)
-> >> failed
-> >> [  127.550000] alloc_contig_range test_pages_isolated(6b845, 6b846)
-> >> failed
-> >> [  132.850000] alloc_contig_range test_pages_isolated(6b845, 6b846)
-> >> failed
-> >> [  151.390000] alloc_contig_range test_pages_isolated(6b843, 6b844)
-> >> failed
-> >> [  166.490000] alloc_contig_range test_pages_isolated(6b843, 6b844)
-> >> failed
-> >> [  181.450000] alloc_contig_range test_pages_isolated(6b845, 6b846)
-> >> failed
-> >> 
-> >> I've stripped the dmatest module down as much as possible to remove any
-> >> hardware dependencies and came up with the following implementation.
-> > 
-> > Like Laura wrote, the message is not (should not be) a problem in
-> > itself:
+On Thu, Oct 2, 2014 at 5:53 PM, Mark Brown <broonie@kernel.org> wrote:
+> On Wed, Oct 01, 2014 at 02:25:20PM -0700, Dylan Reid wrote:
+>> Allow Headphone and Microphone jack detect gpios to be specified in
+>> device tree.  This will allow a few systems including rk3288_max98090
+>> to use simple-card instead of having their own board file.
 >
-> [...]
-> 
-> > So as you can see cma_alloc will try another part of the cma region if
-> > test_pages_isolated fails.
-> > 
-> > Obviously, if CMA region is fragmented or there's enough space for only
-> > one allocation of required size isolation failures will cause allocation
-> > failures, so it's best to avoid them, but they are not always avoidable.
-> > 
-> > To debug you would probably want to add more debug information about the
-> > page (i.e. data from struct page) that failed isolation after the
-> > pr_warn in alloc_contig_range.
+> Applied, thanks.
 
-[   94.730000] __test_page_isolated_in_pageblock: failed at pfn 6b845: buddy 0 
-count 0 migratetype 4 poison 0
-[   94.740000] alloc_contig_range test_pages_isolated(6b845, 6b846) failed 
-(-16)
-[  202.140000] __test_page_isolated_in_pageblock: failed at pfn 6b843: buddy 0 
-count 0 migratetype 4 poison 0
-[  202.150000] alloc_contig_range test_pages_isolated(6b843, 6b844) failed 
-(-16)
+Unfortunately there's no equivalent code for platform data, and the
+uninitialized default of 0 for gpio_hp_det and gpio_mic_det doesn't
+play well with asm-generic's gpio_is_valid():
 
-(4 is MIGRATE_CMA)
+static inline bool gpio_is_valid(int number)
+{
+        return number >= 0 && number < ARCH_NR_GPIOS;
+}
 
-> If the message does not indicate an actual problem, then its printk level is
-> too high. These messages have been reported when using 3.16+ distro kernels.
+Hence on r8a7740/armadillo-legacy, which uses platform devices instead of DT:
 
-The messages got me worried, and if there's nothing to worry about, that's bad 
-:-)
+    sh-mobile-hdmi sh-mobile-hdmi: SH Mobile HDMI Audio Codec
+    sh-mobile-hdmi sh-mobile-hdmi: ASoC: DAPM unknown pin Headphones
+    sh-mobile-hdmi sh-mobile-hdmi: ASoC: DAPM unknown pin Mic Jack
 
--- 
-Regards,
+After that the kernel log is spammed ca. 7 times per second with:
 
-Laurent Pinchart
+    sh-mobile-hdmi sh-mobile-hdmi: ASoC: DAPM unknown pin Headphones
 
+Reverting commit 3fe240326cc395c66 ("ASoC: simple-card: Add mic and
+hp detect gpios.") fixes this.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
