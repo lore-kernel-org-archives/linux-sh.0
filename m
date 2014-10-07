@@ -1,44 +1,34 @@
-From: Ian Molton <ian.molton@codethink.co.uk>
-Date: Tue, 07 Oct 2014 10:37:17 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 07 Oct 2014 10:49:16 +0000
 Subject: Re: [PATCH] [RFC] ARM: shmobile: Add early debugging support using SCIF(A)
-Message-Id: <20141007113717.d8dcc5607caf23971ec06c9d@codethink.co.uk>
+Message-Id: <16427778.JB7cnWY0r4@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1412276563-21473-1-git-send-email-geert+renesas@glider.be>
- <2257006.dpJJ6zLgnP@avalon>
-In-Reply-To: <2257006.dpJJ6zLgnP@avalon>
+In-Reply-To: <1412276563-21473-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-To be fair, my patches were in last month, and awaiting a chance to test on Rcar-H1...
+On Thursday 02 October 2014 21:02:43 Geert Uytterhoeven wrote:
+> +       default 0xe6c40000 if DEBUG_SCIF && (ARCH_R8A73A4 || ARCH_SH7372)
+> +       default 0xe6c50000 if DEBUG_SCIF && ARCH_R8A7740
+> +       default 0xe6c80000 if DEBUG_SCIF && ARCH_SH73A0
+> +       default 0xe6e58000 if DEBUG_SCIF && ARCH_R8A7794
+> +       default 0xe6e60000 if DEBUG_SCIF && (ARCH_R8A7790 || ARCH_R8A7791 || ARCH_R8A7793)
+> +       default 0xe8008000 if DEBUG_SCIF && ARCH_R7S72100
 
-Can we share credit (Signed-off-by:) on the core, lager, 7779, and Kconfig patches please?
+Just saw this patch. Note that most other entries do not depend on a particular
+SoC but instead on one of the Kconfig entries, and I would like to eventually
+change all of them to be the same way.
 
-Cheers guys :)
+The main reason for this is that your way is a mix of two methods: if you
+build a kernel for just one SoC you get the right entry here, but if you
+build the kernel for multiple SoCs combined, you have to edit the address
+by hand.
 
-(Its been a crap year for me, I've had almost zero chance to mainline anything :( )
+An alternative would be to not define a default here and document the
+possible addresses in the help text for DEBUG_SCIF, so that users will
+/always/ have to manually edit these, so at least it would be consistent.
 
--Ian
-
-On Mon, 06 Oct 2014 01:18 +0300
-Laurent Pinchart <laurent.pinchart@ideasonboard.com> wrote:
-
-> Hi Geert,
-> 
-> Thank you for the patch.
-> 
-> It looks like you've beaten Ian Molton (CC'ed) on this, he was planning to 
-> send exactly the same thing.
-> 
-> On Thursday 02 October 2014 21:02:43 Geert Uytterhoeven wrote:
-> > Add serial port debug macros for the SCIF(A) serial ports.
-> > This includes all shmobile SoCs, except for EMEV2.
-> > 
-> > On SoCs using the legacy machine_desc.map_io(), an identity mapping of
-> > the SCIF(A) registers must be set up in .map_io(). On all but r8a7779
-> > this was already done.
-> > 
-
--- 
-Ian Molton <ian.molton@codethink.co.uk>
+	Arnd
