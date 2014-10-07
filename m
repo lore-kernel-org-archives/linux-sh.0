@@ -1,53 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 26 Oct 2014 17:40:16 +0000
-Subject: [PATCH v3 9/9] ARM: shmobile: r8a7791: Reference DMA channels in SDHI DT nodes
-Message-Id: <1414345216-14486-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 07 Oct 2014 11:10:18 +0000
+Subject: [PATCH v2 0/2] arm: shimobile: add HS-USB device node on r8a7790
+Message-Id: <1412680220-4552-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org, linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org
+Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 
-Add references to the transmit and receive DMA channels in the three
-SDHI nodes.
+ This series is based on Simon's renesas.git branch and
+renesas-devel-20141007-v3.17 tag. If we use the generic phy
+driver for R-Car Gen2 (drivers/phy/phy-rcar-gen2.c), we can use
+the HS-USB on lager.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/boot/dts/r8a7791.dtsi | 6 ++++++
- 1 file changed, 6 insertions(+)
+Changes from v1:
+ - Correct typo of git log in patch 1.
+ - Change the placement of hsusb node in patch 1.
+ - Add git log comment in patch 2.
+ - Fix the gpio prop in patch 2.
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 859341e78250..5ab3e858ebf5 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -416,6 +416,8 @@
- 		reg = <0 0xee100000 0 0x200>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7791_CLK_SDHI0>;
-+		dmas = <&dmac0 0xcd>, <&dmac0 0xce>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -424,6 +426,8 @@
- 		reg = <0 0xee140000 0 0x100>;
- 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7791_CLK_SDHI1>;
-+		dmas = <&dmac0 0xc1>, <&dmac0 0xc2>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -432,6 +436,8 @@
- 		reg = <0 0xee160000 0 0x100>;
- 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7791_CLK_SDHI2>;
-+		dmas = <&dmac0 0xd3>, <&dmac0 0xd4>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
+Yoshihiro Shimoda (2):
+  arm: shmobile: r8a7790: add HS-USB device node
+  arm: shmobile: lager: enable HS-USB
+
+ arch/arm/boot/dts/r8a7790-lager.dts |    5 +++++
+ arch/arm/boot/dts/r8a7790.dtsi      |   11 +++++++++++
+ 2 files changed, 16 insertions(+)
+
 -- 
-2.0.4
+1.7.9.5
 
