@@ -1,84 +1,119 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Fri, 31 Oct 2014 15:06:38 +0000
-Subject: [PATCH v4] media: soc_camera: rcar_vin: Add BT.709 24-bit RGB888 input support
-Message-Id: <1414767998-8508-1-git-send-email-ykaneko0929@gmail.com>
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Tue, 07 Oct 2014 05:28:23 +0000
+Subject: [PATCH 21/44] power/reset: gpio-poweroff: Register with kernel poweroff handler
+Message-Id: <1412659726-29957-22-git-send-email-linux@roeck-us.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1412659726-29957-1-git-send-email-linux@roeck-us.net>
+In-Reply-To: <1412659726-29957-1-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-m32r-ja@ml.linux-m32r.org, linux-mips@linux-mips.org, linux-efi@vger.kernel.org, linux-ia64@vger.kernel.org, linux-xtensa@linux-xtensa.org, devel@driverdev.osuosl.org, linux-s390@vger.kernel.org, lguest@lists.ozlabs.org, linux-c6x-dev@linux-c6x.org, Dmitry Eremin-Solenikov <dbaryshkov@gmail.com>, linux-hexagon@vger.kernel.org, linux-sh@vger.kernel.org, linux-acpi@vger.kernel.org, xen-devel@lists.xenproject.org, Guenter Roeck <linux@roeck-us.net>, devicetree@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net, linux-pm@vger.kernel.org, adi-buildroot-devel@lists.sourceforge.net, linux-m68k@lists.linux-m68k.org, linux-am33-list@redhat.com, linux-tegra@vger.kernel.org, openipmi-developer@lists.sourceforge.net, linux-metag@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-parisc@vger.kernel.org, linux-cris-kernel@axis.com, David Woodhouse <dwmw2@in>
 
-From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+Register with kernel poweroff handler instead of setting pm_power_off
+directly. Register with a low priority value of 64 to reflect that
+the original code only sets pm_power_off if it was not already set.
 
-Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Other changes:
+
+Drop note that there can not be an additional instance of this driver.
+The original reason no longer applies, it should be obvious that there
+can only be one instance of the driver if static variables are used to
+reflect its state, and support for multiple instances can now be added
+easily if needed by avoiding static variables.
+
+Do not create an error message if another poweroff handler has already been
+registered. This is perfectly normal and acceptable.
+
+Do not display a warning traceback if the poweroff handler fails to
+power off the system. There may be other poweroff handlers.
+
+Cc: Sebastian Reichel <sre@kernel.org>
+Cc: Dmitry Eremin-Solenikov <dbaryshkov@gmail.com>
+Cc: David Woodhouse <dwmw2@infradead.org>
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
 ---
+ drivers/power/reset/gpio-poweroff.c | 36 ++++++++++++++++++------------------
+ 1 file changed, 18 insertions(+), 18 deletions(-)
 
-This patch is against master branch of linuxtv.org/media_tree.git.
-
-v4 [Yoshihiro Kaneko]
-* indent with a tab, not with spaces
-
-v3 [Yoshihiro Kaneko]
-* fixes the detection of RGB input
-
-v2 [Yoshihiro Kaneko]
-* remove unused definition as suggested by Sergei Shtylyov
-* use VNMC_INF_RGB888 directly instead of VNMC_INF_RGB_MASK as a bit-field
-  mask
-
- drivers/media/platform/soc_camera/rcar_vin.c | 15 +++++++++++++++
- 1 file changed, 15 insertions(+)
-
-diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-index 20defcb..7becec0 100644
---- a/drivers/media/platform/soc_camera/rcar_vin.c
-+++ b/drivers/media/platform/soc_camera/rcar_vin.c
-@@ -74,6 +74,7 @@
- #define VNMC_INF_YUV10_BT656	(2 << 16)
- #define VNMC_INF_YUV10_BT601	(3 << 16)
- #define VNMC_INF_YUV16		(5 << 16)
-+#define VNMC_INF_RGB888		(6 << 16)
- #define VNMC_VUP		(1 << 10)
- #define VNMC_IM_ODD		(0 << 3)
- #define VNMC_IM_ODD_EVEN	(1 << 3)
-@@ -272,6 +273,10 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+diff --git a/drivers/power/reset/gpio-poweroff.c b/drivers/power/reset/gpio-poweroff.c
+index ce849bc..e95a7a1 100644
+--- a/drivers/power/reset/gpio-poweroff.c
++++ b/drivers/power/reset/gpio-poweroff.c
+@@ -14,18 +14,18 @@
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+ #include <linux/delay.h>
++#include <linux/notifier.h>
++#include <linux/pm.h>
+ #include <linux/platform_device.h>
+ #include <linux/gpio/consumer.h>
+ #include <linux/of_platform.h>
+ #include <linux/module.h>
  
- 	/* input interface */
- 	switch (icd->current_fmt->code) {
-+	case V4L2_MBUS_FMT_RGB888_1X24:
-+		/* BT.601/BT.709 24-bit RGB-888 */
-+		vnmc |= VNMC_INF_RGB888;
-+		break;
- 	case V4L2_MBUS_FMT_YUYV8_1X16:
- 		/* BT.601/BT.1358 16bit YCbCr422 */
- 		vnmc |= VNMC_INF_YUV16;
-@@ -331,6 +336,15 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
- 	if (output_is_yuv)
- 		vnmc |= VNMC_BPS;
+-/*
+- * Hold configuration here, cannot be more than one instance of the driver
+- * since pm_power_off itself is global.
+- */
+ static struct gpio_desc *reset_gpio;
  
-+	/*
-+	 * The above assumes YUV input, toggle BPS for RGB input.
-+	 * RGB inputs can be detected by checking that the most-significant
-+	 * two bits of INF are set. This corresponds to the bits
-+	 * set in VNMC_INF_RGB888.
-+	 */
-+	if ((vnmc & VNMC_INF_RGB888) = VNMC_INF_RGB888)
-+		vnmc ^= VNMC_BPS;
+-static void gpio_poweroff_do_poweroff(void)
++static int gpio_poweroff_do_poweroff(struct notifier_block *this,
++				     unsigned long unused1, void *unused2)
 +
- 	/* progressive or interlaced mode */
- 	interrupts = progressive ? VNIE_FIE | VNIE_EFE : VNIE_EFE;
+ {
+ 	BUG_ON(!reset_gpio);
  
-@@ -1013,6 +1027,7 @@ static int rcar_vin_get_formats(struct soc_camera_device *icd, unsigned int idx,
- 	case V4L2_MBUS_FMT_YUYV8_1X16:
- 	case V4L2_MBUS_FMT_YUYV8_2X8:
- 	case V4L2_MBUS_FMT_YUYV10_2X10:
-+	case V4L2_MBUS_FMT_RGB888_1X24:
- 		if (cam->extra_fmt)
- 			break;
+@@ -42,20 +42,18 @@ static void gpio_poweroff_do_poweroff(void)
+ 	/* give it some time */
+ 	mdelay(3000);
  
+-	WARN_ON(1);
++	return NOTIFY_DONE;
+ }
+ 
++static struct notifier_block gpio_poweroff_nb = {
++	.notifier_call = gpio_poweroff_do_poweroff,
++	.priority = 64,
++};
++
+ static int gpio_poweroff_probe(struct platform_device *pdev)
+ {
+ 	bool input = false;
+-
+-	/* If a pm_power_off function has already been added, leave it alone */
+-	if (pm_power_off != NULL) {
+-		dev_err(&pdev->dev,
+-			"%s: pm_power_off function already registered",
+-		       __func__);
+-		return -EBUSY;
+-	}
++	int err;
+ 
+ 	reset_gpio = devm_gpiod_get(&pdev->dev, NULL);
+ 	if (IS_ERR(reset_gpio))
+@@ -77,14 +75,16 @@ static int gpio_poweroff_probe(struct platform_device *pdev)
+ 		}
+ 	}
+ 
+-	pm_power_off = &gpio_poweroff_do_poweroff;
+-	return 0;
++	err = register_poweroff_handler(&gpio_poweroff_nb);
++	if (err)
++		dev_err(&pdev->dev, "Failed to register poweroff handler\n");
++
++	return err;
+ }
+ 
+ static int gpio_poweroff_remove(struct platform_device *pdev)
+ {
+-	if (pm_power_off = &gpio_poweroff_do_poweroff)
+-		pm_power_off = NULL;
++	unregister_poweroff_handler(&gpio_poweroff_nb);
+ 
+ 	return 0;
+ }
 -- 
 1.9.1
 
