@@ -1,53 +1,51 @@
-From: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 30 Oct 2014 06:47:07 +0000
-Subject: RE: [PATCH v2 2/4] usb: renesas_usbhs: gadget: fix the behavior of pullup
-Message-Id: <88b4b558bfc140fe97860dbf52e67ce5@HKNPR06MB322.apcprd06.prod.outlook.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 07 Oct 2014 20:23:16 +0000
+Subject: [PATCH v3 1/2] ARM: shmobile: r8a7790: add HS-USB device node
+Message-Id: <2254854.tSoZel4tS4@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414641767-5780-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1414641767-5780-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <2438577.UAUDMkTTWI@wasted.cogentembedded.com>
+In-Reply-To: <2438577.UAUDMkTTWI@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Morimoto-san,
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-> Hi shimoda-san
-> 
-> > From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-> >
-> > This patch fixes an issue that this driver always enable the D+ pullup
-> > after it detected the VBUS connection even though this usb controller
-> > can control the D+ pullup timing by software. So, this driver should
-> > enable the D+ pullup after a gadget driver called usb_gadget_connect().
-> >
-> > Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-> > Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-> > Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> > ---
-> (snip)
-> > diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c
-> > b/drivers/usb/renesas_usbhs/mod_gadget.c
-> > index 2d0903f..0d50be0 100644
-> > --- a/drivers/usb/renesas_usbhs/mod_gadget.c
-> > +++ b/drivers/usb/renesas_usbhs/mod_gadget.c
-> > @@ -56,6 +56,8 @@ struct usbhsg_gpriv {
-> >  #define USBHSG_STATUS_REGISTERD		(1 << 1)
-> >  #define USBHSG_STATUS_WEDGE		(1 << 2)
-> >  #define USBHSG_STATUS_SELF_POWERED	(1 << 3)
-> > +
-> > +	unsigned		softconnect:1;
-> >  };
-> 
-> We can re-use USBHSG_STATUS_xxx instead of new variable ?
-> renesas_usb driver has usbhsg_status_xxx() macro.
+Define the R8A7790 generic part of the HS-USB device node. It is up to the board
+file to enable the device.
 
-Thank you for the review.
-Yes, we can re-use that. So, I will fix this patch.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+[Sergei: fixed summary, added changelog]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Best regards,
-Yoshihiro Shimoda
+---
+Changes in version 3:
+- uppercased "arm" in the summary;
+- added changelog.
 
-> Best regards
-> ---
-> Kuninori Morimoto
+ arch/arm/boot/dts/r8a7790.dtsi |   11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
++++ renesas/arch/arm/boot/dts/r8a7790.dtsi
+@@ -600,6 +600,17 @@
+ 		status = "disabled";
+ 	};
+ 
++	hsusb: usb@e6590000 {
++		compatible = "renesas,usbhs-r8a7790";
++		reg = <0 0xe6590000 0 0x100>;
++		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7790_CLK_HSUSB>;
++		renesas,buswait = <4>;
++		phys = <&usb0 1>;
++		phy-names = "usb";
++		status = "disabled";
++	};
++
+ 	usbphy: usb-phy@e6590100 {
+ 		compatible = "renesas,usb-phy-r8a7790";
+ 		reg = <0 0xe6590100 0 0x100>;
+
