@@ -1,45 +1,56 @@
-From: Joonsoo Kim <iamjoonsoo.kim@lge.com>
-Date: Mon, 27 Oct 2014 07:44:42 +0000
-Subject: Re: [PATCH v2 3/4] mm: cma: Ensure that reservations never cross the low/high mem boundary
-Message-Id: <20141027074442.GD23379@js1304-P5Q-DELUXE>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 07 Oct 2014 13:09:26 +0000
+Subject: [PATCH] ASoC: simple-card: Initialize headphone and mic GPIO numbers
+Message-Id: <1412687366-6400-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414145922-26042-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1414145922-26042-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <xa1toat13031.fsf@mina86.com> <1436531.s0VJY8ZaKv@avalon>
-In-Reply-To: <1436531.s0VJY8ZaKv@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Liam Girdwood <lgirdwood@gmail.com>, Mark Brown <broonie@kernel.org>, Dylan Reid <dgreid@chromium.org>
+Cc: Linus Walleij <linus.walleij@linaro.org>, Alexandre Courbot <gnurou@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, alsa-devel@alsa-project.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Sun, Oct 26, 2014 at 02:43:52PM +0200, Laurent Pinchart wrote:
-> On Friday 24 October 2014 18:26:58 Michal Nazarewicz wrote:
-> > On Fri, Oct 24 2014, Laurent Pinchart wrote:
-> > > Commit 95b0e655f914 ("ARM: mm: don't limit default CMA region only to
-> > > low memory") extended CMA memory reservation to allow usage of high
-> > > memory. It relied on commit f7426b983a6a ("mm: cma: adjust address limit
-> > > to avoid hitting low/high memory boundary") to ensure that the reserved
-> > > block never crossed the low/high memory boundary. While the
-> > > implementation correctly lowered the limit, it failed to consider the
-> > > case where the base..limit range crossed the low/high memory boundary
-> > > with enough space on each side to reserve the requested size on either
-> > > low or high memory.
-> > > 
-> > > Rework the base and limit adjustment to fix the problem. The function
-> > > now starts by rejecting the reservation altogether for fixed
-> > > reservations that cross the boundary, tries to reserve from high memory
-> > > first and then falls back to low memory.
-> > > 
-> > > Signed-off-by: Laurent Pinchart
-> > > <laurent.pinchart+renesas@ideasonboard.com>
-> > 
-> > Acked-by: Michal Nazarewicz <mina86@mina86.com>
-> 
-> Thank you. Can we get this series merged in v3.18-rc ?
+The uninitialized default of 0 for gpio_hp_det and gpio_mic_det doesn't
+play well with asm-generic's gpio_is_valid():
 
+	static inline bool gpio_is_valid(int number)
+	{
+		return number >= 0 && number < ARCH_NR_GPIOS;
+	}
 
-Hello,
+Hence on r8a7740/armadillo-legacy:
 
-You'd better to resend whole series to Andrew.
+	sh-mobile-hdmi sh-mobile-hdmi: SH Mobile HDMI Audio Codec
+	sh-mobile-hdmi sh-mobile-hdmi: ASoC: DAPM unknown pin Headphones
+	sh-mobile-hdmi sh-mobile-hdmi: ASoC: DAPM unknown pin Mic Jack
 
-Thanks.
+After that the kernel log is spammed ca. 7 times per second with:
+
+	sh-mobile-hdmi sh-mobile-hdmi: ASoC: DAPM unknown pin Headphones
+
+Initialize the GPIO numbers with a negative number (-ENOENT) to fix this.
+
+Fixes: 3fe240326cc395c6 ("ASoC: simple-card: Add mic and hp detect gpios.")
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+This is against sound-asoc/for-next
+
+ sound/soc/generic/simple-card.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/sound/soc/generic/simple-card.c b/sound/soc/generic/simple-card.c
+index fcb431fe20b4ae7b..d1b7293c133eaa45 100644
+--- a/sound/soc/generic/simple-card.c
++++ b/sound/soc/generic/simple-card.c
+@@ -501,6 +501,9 @@ static int asoc_simple_card_probe(struct platform_device *pdev)
+ 	priv->snd_card.dai_link = dai_link;
+ 	priv->snd_card.num_links = num_links;
+ 
++	priv->gpio_hp_det = -ENOENT;
++	priv->gpio_mic_det = -ENOENT;
++
+ 	/* Get room for the other properties */
+ 	priv->dai_props = devm_kzalloc(dev,
+ 			sizeof(*priv->dai_props) * num_links,
+-- 
+1.9.1
+
