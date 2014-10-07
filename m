@@ -1,51 +1,74 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 31 Oct 2014 01:24:20 +0000
-Subject: [PATCH v4 0/4] usb: renesas_usbhs: fixes this driver in gadget mode (part2)
-Message-Id: <1414718664-4568-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Tue, 07 Oct 2014 05:28:32 +0000
+Subject: [PATCH 30/44] acpi: Register poweroff handler with kernel poweroff handler
+Message-Id: <1412659726-29957-31-git-send-email-linux@roeck-us.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1412659726-29957-1-git-send-email-linux@roeck-us.net>
+In-Reply-To: <1412659726-29957-1-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: adi-buildroot-devel@lists.sourceforge.net, devel@driverdev.osuosl.org, devicetree@vger.kernel.org, lguest@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-alpha@vger.kernel.org, linux-am33-list@redhat.com, linux-cris-kernel@axis.com, linux-efi@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-m32r-ja@ml.linux-m32r.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-tegra@vger.kernel.org, linux-xtensa@linux-xtensa.org, openipmi-developer@lists.sourceforge.net, user-mode-linux-devel@lists.sourceforge.net, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, xen-devel@lists.xenproject.org, Guenter Roeck <linux@roeck-us.net>, Rafael
 
-If we tested this driver as gadget, some issues below happened:
- - Oops happened if g_audio.
- - A usb enumeration may fail if we do insmod during connected the usb cable.
- - A transaction will not finish if g_zero.
- - A usb enumeration may fail after we re-connected the usb cable.
+Register with kernel poweroff handler instead of setting pm_power_off
+directly. Register with high priority value of 192 to reflect that
+the driver explicitly overrides existing poweroff handlers.
 
-This patch serias fixes them.
-This patch serias is based on Felipe's usb.git / testing/fixes branch.
-(commit id: 9f2104db129512fd2ee086c8a616d296d1afbb75)
+Cc: Rafael J. Wysocki <rjw@rjwysocki.net>
+Cc: Len Brown <lenb@kernel.org>
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+---
+ drivers/acpi/sleep.c | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
 
-Changes from v3:
- - Change redundant condtion in patch 1.
-
-Changes from v2:
- - Use USBHSG_STATUS_ instead of a new variable in patch 2.
-
-Changes from v1:
- - Rebase this patch serias for the latest testing/fixes branch.
- - Add "From:" in patch 1 and 2.
- - Add "Cc: <stable@vger.kernel.org>" in patch 1.
-
-*** BLURB HERE ***
-
-Yoshihiro Shimoda (4):
-  usb: renesas_usbhs: gadget: fix NULL pointer dereference in
-    ep_disable()
-  usb: renesas_usbhs: gadget: fix the behavior of pullup
-  usb: renesas_usbhs: fix the timing of dcp_control_transfer_done
-  usb: renesas_usbhs: fix usbhs_pipe_clear() for DCP PIPE
-
- drivers/usb/renesas_usbhs/common.c     |    6 +++--
- drivers/usb/renesas_usbhs/fifo.c       |   34 ++++++++++++++--------------
- drivers/usb/renesas_usbhs/fifo.h       |    1 +
- drivers/usb/renesas_usbhs/mod_gadget.c |   38 ++++++++++++++++++++++++++++++--
- drivers/usb/renesas_usbhs/mod_host.c   |    2 +-
- drivers/usb/renesas_usbhs/pipe.c       |    8 +++++--
- 6 files changed, 66 insertions(+), 23 deletions(-)
-
+diff --git a/drivers/acpi/sleep.c b/drivers/acpi/sleep.c
+index 54da4a3..25aad22 100644
+--- a/drivers/acpi/sleep.c
++++ b/drivers/acpi/sleep.c
+@@ -15,6 +15,8 @@
+ #include <linux/dmi.h>
+ #include <linux/device.h>
+ #include <linux/suspend.h>
++#include <linux/notifier.h>
++#include <linux/pm.h>
+ #include <linux/reboot.h>
+ #include <linux/acpi.h>
+ #include <linux/module.h>
+@@ -811,14 +813,22 @@ static void acpi_power_off_prepare(void)
+ 	acpi_disable_all_gpes();
+ }
+ 
+-static void acpi_power_off(void)
++static int acpi_power_off(struct notifier_block *this,
++			  unsigned long unused1, void *unused2)
+ {
+ 	/* acpi_sleep_prepare(ACPI_STATE_S5) should have already been called */
+ 	printk(KERN_DEBUG "%s called\n", __func__);
+ 	local_irq_disable();
+ 	acpi_enter_sleep_state(ACPI_STATE_S5);
++
++	return NOTIFY_DONE;
+ }
+ 
++static struct notifier_block acpi_poweroff_nb = {
++	.notifier_call = acpi_power_off,
++	.priority = 192,
++};
++
+ int __init acpi_sleep_init(void)
+ {
+ 	char supported[ACPI_S_STATE_COUNT * 3 + 1];
+@@ -835,7 +845,8 @@ int __init acpi_sleep_init(void)
+ 	if (acpi_sleep_state_supported(ACPI_STATE_S5)) {
+ 		sleep_states[ACPI_STATE_S5] = 1;
+ 		pm_power_off_prepare = acpi_power_off_prepare;
+-		pm_power_off = acpi_power_off;
++		if (register_poweroff_handler(&acpi_poweroff_nb))
++			pr_err("acpi: Failed to register poweroff handler\n");
+ 	}
+ 
+ 	supported[0] = 0;
 -- 
-1.7.9.5
+1.9.1
 
