@@ -1,61 +1,42 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Fri, 31 Oct 2014 00:26:51 +0000
-Subject: [PATCH 09/12 v2] ARM: shmobile: lager: Sound DMA support via DVC on DTS
-Message-Id: <87k33h2ies.wl%kuninori.morimoto.gx@gmail.com>
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Tue, 07 Oct 2014 05:28:04 +0000
+Subject: [PATCH 02/44] memory: emif: Use API function to determine poweroff capability
+Message-Id: <1412659726-29957-3-git-send-email-linux@roeck-us.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1412659726-29957-1-git-send-email-linux@roeck-us.net>
+In-Reply-To: <1412659726-29957-1-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: adi-buildroot-devel@lists.sourceforge.net, devel@driverdev.osuosl.org, devicetree@vger.kernel.org, lguest@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-alpha@vger.kernel.org, linux-am33-list@redhat.com, linux-cris-kernel@axis.com, linux-efi@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-m32r-ja@ml.linux-m32r.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-tegra@vger.kernel.org, linux-xtensa@linux-xtensa.org, openipmi-developer@lists.sourceforge.net, user-mode-linux-devel@lists.sourceforge.net, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, xen-devel@lists.xenproject.org, Guenter Roeck <linux@roeck-us.net>, Santosh
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Use have_kernel_poweroff() to determine if the kernel is able
+to power off the system.
 
-DMA transfer uses DVC
-
-     DMA               DMApp
-[MEM] -> [SRC] -> [DVC] -> [SSIU] -> [SSI]
-
-     DMA               DMApp
-[MEM] <- [DVC] <- [SRC] <- [SSIU] <- [SSI]
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Santosh Shilimkar <santosh.shilimkar@ti.com>
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
 ---
-v1 -> v2
+ drivers/memory/emif.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-- no change
-
- arch/arm/boot/dts/r8a7790-lager.dts |   11 +++++++++--
- 1 file changed, 9 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 06365de..7aab833 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -19,6 +19,13 @@
-  * This command is required when Playback/Capture
-  *
-  *	amixer set "LINEOUT Mixer DACL" on
-+ *	amixer set "DVC Out" 100%
-+ *	amixer set "DVC In" 100%
-+ *
-+ * You can use Mute
-+ *
-+ *	amixer set "DVC Out Mute" on
-+ *	amixer set "DVC In Mute" on
-  */
+diff --git a/drivers/memory/emif.c b/drivers/memory/emif.c
+index 04644e7..acd830a 100644
+--- a/drivers/memory/emif.c
++++ b/drivers/memory/emif.c
+@@ -1053,10 +1053,10 @@ static irqreturn_t emif_threaded_isr(int irq, void *dev_id)
+ 		dev_emerg(emif->dev, "SDRAM temperature exceeds operating limit.. Needs shut down!!!\n");
  
- /dts-v1/;
-@@ -567,8 +574,8 @@
- 
- 	rcar_sound,dai {
- 		dai0 {
--			playback = <&ssi0 &src2>;
--			capture  = <&ssi1 &src3>;
-+			playback = <&ssi0 &src2 &dvc0>;
-+			capture  = <&ssi1 &src3 &dvc1>;
- 		};
- 	};
- };
+ 		/* If we have Power OFF ability, use it, else try restarting */
+-		if (pm_power_off) {
++		if (have_kernel_poweroff()) {
+ 			kernel_power_off();
+ 		} else {
+-			WARN(1, "FIXME: NO pm_power_off!!! trying restart\n");
++			WARN(1, "FIXME: NO kernel poweroff capability!!! trying restart\n");
+ 			kernel_restart("SDRAM Over-temp Emergency restart");
+ 		}
+ 		return IRQ_HANDLED;
 -- 
-1.7.9.5
+1.9.1
 
