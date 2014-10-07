@@ -1,38 +1,43 @@
-From: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 31 Oct 2014 03:46:42 +0000
-Subject: RE: [PATCH v4 1/4] usb: renesas_usbhs: gadget: fix NULL pointer dereference in ep_disable()
-Message-Id: <4f5ac72bc1a747ba8f07ca34f4fb4512@HKNPR06MB322.apcprd06.prod.outlook.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 07 Oct 2014 11:10:19 +0000
+Subject: [PATCH v2 1/2] arm: shmobile: r8a7790: add HS-USB device node
+Message-Id: <1412680220-4552-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414718664-4568-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1414718664-4568-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <1412680220-4552-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1412680220-4552-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
+Cc: devicetree@vger.kernel.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-> On Fri, Oct 31, 2014 at 10:24:21AM +0900, Yoshihiro Shimoda wrote:
-> > From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-> >
-> > This patch fixes an issue that the NULL pointer dereference happens
-> > when we uses g_audio driver. Since the g_audio driver will call
-> > usb_ep_disable() in afunc_set_alt() before it calls usb_ep_enable(),
-> > the uep->pipe of renesas usbhs driver will be NULL. So, this patch
-> > adds a condition to avoid the oops.
-> >
-> > Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-> > Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-> > Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> > Cc: <stable@vger.kernel.org>
-> 
-> which commit caused this ? You need something like:
-> 
-> Fixes: deadbeef (commit subject line)
-> Cc: <stable@vger.kernel.org> # v3.14+
-> 
-> So stable folks know how far back this needs to be backported to.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi |   11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-Thank you for the point. I will add them.
-
-Best regards,
-Yoshihiro Shimoda
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 2380fd5..63a75f2 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -600,6 +600,17 @@
+ 		status = "disabled";
+ 	};
+ 
++	hsusb: usb@e6590000 {
++		compatible = "renesas,usbhs-r8a7790";
++		reg = <0 0xe6590000 0 0x100>;
++		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7790_CLK_HSUSB>;
++		renesas,buswait = <4>;
++		phys = <&usb0 1>;
++		phy-names = "usb";
++		status = "disabled";
++	};
++
+ 	usbphy: usb-phy@e6590100 {
+ 		compatible = "renesas,usb-phy-r8a7790";
+ 		reg = <0 0xe6590100 0 0x100>;
+-- 
+1.7.9.5
 
