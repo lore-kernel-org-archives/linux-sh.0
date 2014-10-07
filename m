@@ -1,106 +1,103 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 29 Oct 2014 14:19:11 +0000
-Subject: [PATCH 4/6] ARM: shmobile: r8a7790 dtsi: Change to using clock-indices
-Message-Id: <1414592353-24044-5-git-send-email-geert+renesas@glider.be>
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Tue, 07 Oct 2014 05:28:12 +0000
+Subject: [PATCH 10/44] mfd: axp20x: Register with kernel poweroff handler
+Message-Id: <1412659726-29957-11-git-send-email-linux@roeck-us.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414592353-24044-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1414592353-24044-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+References: <1412659726-29957-1-git-send-email-linux@roeck-us.net>
+In-Reply-To: <1412659726-29957-1-git-send-email-linux-0h96xk9xTtrk1uMJSBkQmQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Turquette <mturquette-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Ben Dooks <ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: adi-buildroot-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, devel-gWbeCf7V1WCQmaza687I9mD2FQJk+8+b@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lguest-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-acpi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-am33-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-efi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-m32r-ja-rQhvJZKUsGBRYuoOT4C5/9i2O/JbrIOy@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-tegra-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, openipmi-developer-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, user-mode-linux-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-c6x-dev-jPsnJVOj+W6hPH1hqNUYSQ@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, linux-metag-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-pm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, xen-devel-GuqFBffKawtpuQazS67q72D2FQJk+8+b@public.gmane.org, Guenter Roeck <linux-0h96xk9xTtrk1uMJSBkQmQ@public.gmane.org>
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+Register with kernel poweroff handler instead of setting pm_power_off
+directly. Register with a low priority value of 64 to reflect that
+the original code only sets pm_power_off if it was not already set.
 
-With the addition of clock-indices in commit 8e33f91a0b84ae19 ("clk:
-shmobile: clk-mstp: change to using clock-indices"), we can change the
-DTSes to use the generic property instead of the deprecated
-vendor-specific property.
-
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-[geert: Extracted r8a7790-specific part, rebased, reworded]
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Lee Jones <lee.jones@linaro.org>
+Cc: Samuel Ortiz <sameo@linux.intel.com>
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
+ drivers/mfd/axp20x.c       | 30 +++++++++++++++++-------------
+ include/linux/mfd/axp20x.h |  1 +
+ 2 files changed, 18 insertions(+), 13 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 34f22587555a95ae..7add12c3750aa2fb 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -990,7 +990,7 @@
- 			reg = <0 0xe6150130 0 4>, <0 0xe6150030 0 4>;
- 			clocks = <&mp_clk>;
- 			#clock-cells = <1>;
--			renesas,clock-indices = <R8A7790_CLK_MSIOF0>;
-+			clock-indices = <R8A7790_CLK_MSIOF0>;
- 			clock-output-names = "msiof0";
- 		};
- 		mstp1_clks: mstp1_clks@e6150134 {
-@@ -1001,7 +1001,7 @@
- 				 <&zs_clk>, <&zs_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
- 				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>;
- 			#clock-cells = <1>;
--			renesas,clock-indices = <
-+			clock-indices = <
- 				R8A7790_CLK_VCP1 R8A7790_CLK_VCP0 R8A7790_CLK_VPC1
- 				R8A7790_CLK_VPC0 R8A7790_CLK_JPU R8A7790_CLK_SSP1
- 				R8A7790_CLK_TMU1 R8A7790_CLK_3DG R8A7790_CLK_2DDMAC
-@@ -1023,7 +1023,7 @@
- 				 <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&zs_clk>,
- 				 <&zs_clk>;
- 			#clock-cells = <1>;
--			renesas,clock-indices = <
-+			clock-indices = <
- 				R8A7790_CLK_SCIFA2 R8A7790_CLK_SCIFA1 R8A7790_CLK_SCIFA0
- 				R8A7790_CLK_MSIOF2 R8A7790_CLK_SCIFB0 R8A7790_CLK_SCIFB1
- 				R8A7790_CLK_MSIOF1 R8A7790_CLK_MSIOF3 R8A7790_CLK_SCIFB2
-@@ -1041,7 +1041,7 @@
- 				 <&sd2_clk>, <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks R8A7790_CLK_SD0>, <&mmc0_clk>,
- 				 <&hp_clk>, <&mp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
- 			#clock-cells = <1>;
--			renesas,clock-indices = <
-+			clock-indices = <
- 				R8A7790_CLK_IIC2 R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
- 				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0 R8A7790_CLK_MMCIF0
- 				R8A7790_CLK_IIC0 R8A7790_CLK_PCIEC R8A7790_CLK_IIC1 R8A7790_CLK_SSUSB R8A7790_CLK_CMT1
-@@ -1056,7 +1056,7 @@
- 			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
- 			clocks = <&extal_clk>, <&p_clk>;
- 			#clock-cells = <1>;
--			renesas,clock-indices = <R8A7790_CLK_THERMAL R8A7790_CLK_PWM>;
-+			clock-indices = <R8A7790_CLK_THERMAL R8A7790_CLK_PWM>;
- 			clock-output-names = "thermal", "pwm";
- 		};
- 		mstp7_clks: mstp7_clks@e615014c {
-@@ -1066,7 +1066,7 @@
- 				 <&p_clk>, <&zx_clk>, <&zx_clk>, <&zx_clk>, <&zx_clk>,
- 				 <&zx_clk>;
- 			#clock-cells = <1>;
--			renesas,clock-indices = <
-+			clock-indices = <
- 				R8A7790_CLK_EHCI R8A7790_CLK_HSUSB R8A7790_CLK_HSCIF1
- 				R8A7790_CLK_HSCIF0 R8A7790_CLK_SCIF1 R8A7790_CLK_SCIF0
- 				R8A7790_CLK_DU2 R8A7790_CLK_DU1 R8A7790_CLK_DU0
-@@ -1082,7 +1082,7 @@
- 			clocks = <&zg_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>, <&p_clk>,
- 				 <&zs_clk>, <&zs_clk>;
- 			#clock-cells = <1>;
--			renesas,clock-indices = <
-+			clock-indices = <
- 				R8A7790_CLK_VIN3 R8A7790_CLK_VIN2 R8A7790_CLK_VIN1
- 				R8A7790_CLK_VIN0 R8A7790_CLK_ETHER R8A7790_CLK_SATA1
- 				R8A7790_CLK_SATA0
-@@ -1098,7 +1098,7 @@
- 				 <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>, <&cp_clk>,
- 				 <&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
- 			#clock-cells = <1>;
--			renesas,clock-indices = <
-+			clock-indices = <
- 				R8A7790_CLK_GPIO5 R8A7790_CLK_GPIO4 R8A7790_CLK_GPIO3
- 				R8A7790_CLK_GPIO2 R8A7790_CLK_GPIO1 R8A7790_CLK_GPIO0
- 				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_QSPI_MOD R8A7790_CLK_IICDVFS
+diff --git a/drivers/mfd/axp20x.c b/drivers/mfd/axp20x.c
+index dee6539..238db4c 100644
+--- a/drivers/mfd/axp20x.c
++++ b/drivers/mfd/axp20x.c
+@@ -17,7 +17,8 @@
+ #include <linux/interrupt.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+-#include <linux/pm_runtime.h>
++#include <linux/notifier.h>
++#include <linux/pm.h>
+ #include <linux/regmap.h>
+ #include <linux/slab.h>
+ #include <linux/regulator/consumer.h>
+@@ -161,11 +162,16 @@ static struct mfd_cell axp20x_cells[] = {
+ 	},
+ };
+ 
+-static struct axp20x_dev *axp20x_pm_power_off;
+-static void axp20x_power_off(void)
++static int axp20x_power_off(struct notifier_block *this, unsigned long unused1,
++			    void *unused2)
++
+ {
+-	regmap_write(axp20x_pm_power_off->regmap, AXP20X_OFF_CTRL,
+-		     AXP20X_OFF);
++	struct axp20x_dev *axp20x = container_of(this, struct axp20x_dev,
++						 poweroff_nb);
++
++	regmap_write(axp20x->regmap, AXP20X_OFF_CTRL, AXP20X_OFF);
++
++	return NOTIFY_DONE;
+ }
+ 
+ static int axp20x_i2c_probe(struct i2c_client *i2c,
+@@ -215,10 +221,11 @@ static int axp20x_i2c_probe(struct i2c_client *i2c,
+ 		return ret;
+ 	}
+ 
+-	if (!pm_power_off) {
+-		axp20x_pm_power_off = axp20x;
+-		pm_power_off = axp20x_power_off;
+-	}
++	axp20x->poweroff_nb.notifier_call = axp20x_power_off;
++	axp20x->poweroff_nb.priority = 64;
++	ret = register_poweroff_handler(&axp20x->poweroff_nb);
++	if (ret)
++		dev_err(&i2c->dev, "failed to register poweroff handler\n");
+ 
+ 	dev_info(&i2c->dev, "AXP20X driver loaded\n");
+ 
+@@ -229,10 +236,7 @@ static int axp20x_i2c_remove(struct i2c_client *i2c)
+ {
+ 	struct axp20x_dev *axp20x = i2c_get_clientdata(i2c);
+ 
+-	if (axp20x = axp20x_pm_power_off) {
+-		axp20x_pm_power_off = NULL;
+-		pm_power_off = NULL;
+-	}
++	unregister_poweroff_handler(&axp20x->poweroff_nb);
+ 
+ 	mfd_remove_devices(axp20x->dev);
+ 	regmap_del_irq_chip(axp20x->i2c_client->irq, axp20x->regmap_irqc);
+diff --git a/include/linux/mfd/axp20x.h b/include/linux/mfd/axp20x.h
+index d0e31a2..8f23b39 100644
+--- a/include/linux/mfd/axp20x.h
++++ b/include/linux/mfd/axp20x.h
+@@ -175,6 +175,7 @@ struct axp20x_dev {
+ 	struct regmap			*regmap;
+ 	struct regmap_irq_chip_data	*regmap_irqc;
+ 	long				variant;
++	struct notifier_block		poweroff_nb;
+ };
+ 
+ #endif /* __LINUX_MFD_AXP20X_H */
 -- 
 1.9.1
 
