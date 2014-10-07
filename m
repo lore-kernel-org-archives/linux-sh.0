@@ -1,40 +1,34 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 30 Oct 2014 00:00:02 +0000
-Subject: Re: [PATCH 0/3] ARM: shmobile: sata_rcar updates
-Message-Id: <20141030000002.GE4599@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 07 Oct 2014 11:11:16 +0000
+Subject: [PATCH v2 3/3] arm: shmobile: henninger: enable HS-USB
+Message-Id: <1412680276-3344-4-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414591131-21771-1-git-send-email-geert+renesas@glider.be>
- <20141029145151.GD25226@htj.dyndns.org>
- <CAMuHMdXN-=6budQ=QViG0p3Cfdz1CSVyG6jUC0sRi+iis1nYMA@mail.gmail.com>
-In-Reply-To: <CAMuHMdXN-=6budQ=QViG0p3Cfdz1CSVyG6jUC0sRi+iis1nYMA@mail.gmail.com>
+References: <1412680276-3344-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1412680276-3344-1-git-send-email-yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Tejun Heo <tj@kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>, Magnus Damm <magnus.damm@gmail.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>, "linux-ide@vger.kernel.org" <linux-ide@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org, linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org
+Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 
-On Wed, Oct 29, 2014 at 03:58:11PM +0100, Geert Uytterhoeven wrote:
-> Hi Tejun,
-> 
-> On Wed, Oct 29, 2014 at 3:51 PM, Tejun Heo <tj@kernel.org> wrote:
-> > On Wed, Oct 29, 2014 at 02:58:48PM +0100, Geert Uytterhoeven wrote:
-> >> This patch series improves DT bindings documentation and usage for the
-> >> sata_rcar driver.
-> >>
-> >> The first patch was sent before by Valentine Barshak a while ago, but never
-> >> updated according to the review comments.
-> >
-> > I can route these through libata tree once Simon acks them.  Please
-> > let me know thorugh which tree these should be routed.
-> 
-> I think the first two, tagged "sata_rcar", should go through your tree.
-> The third one, tagged "ARM: shmobile", should go through Simon's tree.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ arch/arm/boot/dts/r8a7791-henninger.dts |    5 +++++
+ 1 file changed, 5 insertions(+)
 
-Yes, I think so too.
-
-For the first two patches:
-
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-
-I'll pick up the last patch myself.
+diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
+index ef2cb92..8fc7802 100644
+--- a/arch/arm/boot/dts/r8a7791-henninger.dts
++++ b/arch/arm/boot/dts/r8a7791-henninger.dts
+@@ -300,3 +300,8 @@
+ 		};
+ 	};
+ };
++
++&hsusb {
++	status = "okay";
++	renesas,enable-gpio = <&gpio5 31 GPIO_ACTIVE_HIGH>;
++};
+-- 
+1.7.9.5
 
