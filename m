@@ -1,56 +1,34 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 29 Oct 2014 07:58:56 +0000
-Subject: Re: [PATCH] ARM: shmobile: Fix is_e2 warning
-Message-Id: <20141029075855.GA30524@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 07 Oct 2014 11:11:15 +0000
+Subject: [PATCH v2 2/3] arm: shmobile: koelsch: enable HS-USB
+Message-Id: <1412680276-3344-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20141029073510.357.85076.sendpatchset@w520>
-In-Reply-To: <20141029073510.357.85076.sendpatchset@w520>
+References: <1412680276-3344-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1412680276-3344-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
+Cc: devicetree@vger.kernel.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-On Wed, Oct 29, 2014 at 04:47:20PM +0900, Magnus Damm wrote:
-> Hi Simon,
-> 
-> On Wed, Oct 29, 2014 at 4:42 PM, Simon Horman <horms@verge.net.au> wrote:
-> > On Wed, Oct 29, 2014 at 04:35:10PM +0900, Magnus Damm wrote:
-> >> From: Magnus Damm <damm+renesas@opensource.se>
-> >>
-> >> Fix "is_e2" warning introduced by:
-> >>
-> >> 9ce3fa6 ARM: shmobile: rcar-gen2: Add CA7 arch_timer initialization for r8a7794
-> >>
-> >> Only triggers on kernel configurations that have ARCH_ARM_TIMER=n.
-> >>
-> >> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> >> ---
-> >>
-> >>  arch/arm/mach-shmobile/setup-rcar-gen2.c |    4 ++--
-> >>  1 file changed, 2 insertions(+), 2 deletions(-)
-> >>
-> >> --- 0001/arch/arm/mach-shmobile/setup-rcar-gen2.c
-> >> +++ work/arch/arm/mach-shmobile/setup-rcar-gen2.c     2014-10-29 16:06:08.000000000 +0900
-> >> @@ -52,10 +52,10 @@ void __init rcar_gen2_timer_init(void)
-> >>  {
-> >>  #if defined(CONFIG_ARM_ARCH_TIMER) || defined(CONFIG_COMMON_CLK)
-> >>       u32 mode = rcar_gen2_read_mode_pins();
-> >> -     bool is_e2 = (bool)of_find_compatible_node(NULL, NULL,
-> >> -             "renesas,r8a7794");
-> >>  #endif
-> >>  #ifdef CONFIG_ARM_ARCH_TIMER
-> >> +     bool is_e2 = (bool)of_find_compatible_node(NULL, NULL,
-> >> +             "renesas,r8a7794");
-> >>       void __iomem *base;
-> >>       int extal_mhz = 0;
-> >>       u32 freq;
-> >
-> > Not strictly related, but I wonder if we can avoid the cast by
-> > changing the type of is_e2 to struct device_node *. Also changing
-> > the variable name might make sense in that scenario.
-> >
-> > Casting makes me sad.
-> 
-> Indeed. Perhaps we can simply use "of_machine_is_compatible("renesas,r8a7794")"?
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ arch/arm/boot/dts/r8a7791-koelsch.dts |    5 +++++
+ 1 file changed, 5 insertions(+)
 
-If so that does seem cleaner to me.
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 17cfcaa..055f8f8 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -496,3 +496,8 @@
+ 		};
+ 	};
+ };
++
++&hsusb {
++	status = "okay";
++	renesas,enable-gpio = <&gpio5 31 GPIO_ACTIVE_HIGH>;
++};
+-- 
+1.7.9.5
+
