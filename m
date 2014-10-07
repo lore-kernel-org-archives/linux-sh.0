@@ -1,41 +1,80 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 24 Oct 2014 05:22:19 +0000
-Subject: Re: [PATCH v4 0/2] Add HS-USB device tree support for R8A7790/Lager board
-Message-Id: <5449E20B.2070103@renesas.com>
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Tue, 07 Oct 2014 05:28:22 +0000
+Subject: [PATCH 20/44] power/reset: restart-poweroff: Register with kernel poweroff handler
+Message-Id: <1412659726-29957-21-git-send-email-linux@roeck-us.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1674850.BZpGW9kEud@wasted.cogentembedded.com>
- <20141024050928.GI7537@verge.net.au>
-In-Reply-To: <20141024050928.GI7537@verge.net.au>
+References: <1412659726-29957-1-git-send-email-linux@roeck-us.net>
+In-Reply-To: <1412659726-29957-1-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-m32r-ja@ml.linux-m32r.org, linux-mips@linux-mips.org, linux-efi@vger.kernel.org, linux-ia64@vger.kernel.org, linux-xtensa@linux-xtensa.org, devel@driverdev.osuosl.org, linux-s390@vger.kernel.org, lguest@lists.ozlabs.org, linux-c6x-dev@linux-c6x.org, Dmitry Eremin-Solenikov <dbaryshkov@gmail.com>, linux-hexagon@vger.kernel.org, linux-sh@vger.kernel.org, linux-acpi@vger.kernel.org, xen-devel@lists.xenproject.org, Guenter Roeck <linux@roeck-us.net>, devicetree@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net, linux-pm@vger.kernel.org, adi-buildroot-devel@lists.sourceforge.net, linux-m68k@lists.linux-m68k.org, linux-am33-list@redhat.com, linux-tegra@vger.kernel.org, openipmi-developer@lists.sourceforge.net, linux-metag@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-parisc@vger.kernel.org, linux-cris-kernel@axis.com, David Woodhouse <dwmw2@infr>
 
-Hi Simon-san,
+Register with kernel poweroff handler instead of seting pm_power_off
+directly.  Register as poweroff handler of last resort since the driver
+does not really power off the system but executes a restart.
 
-(2014/10/24 14:09), Simon Horman wrote:
-> On Wed, Oct 08, 2014 at 11:53:11PM +0400, Sergei Shtylyov wrote:
->> Hello.
->>
->>    Here's the set of 2 patches against Simon Horman's 'renesas.git' repo,
->> 'renesas-devel-20141007-v3.17' tag. Here we add the HS-USB device tree support
->> on the R8A7790/Lager reference board. The patchset requires the USB PHY
->> driver (already merged by Kishon and Greg) and the generic PHY support patches
->> for the HS-USB driver posted by Yoshihiro Shimoda in order to work...
->>
->> [1/2] ARM: shmobile: r8a7790: add HS-USB device node
->> [2/2] ARM: shmobile: lager: enable HS-USB
-> 
-> Now that v3.18-rc1 is present in my devel branch should I queue-up
-> these patches? If so, please rebase them on renesas-devel-20141024-v3.18-rc1
+Cc: Sebastian Reichel <sre@kernel.org>
+Cc: Dmitry Eremin-Solenikov <dbaryshkov@gmail.com>
+Cc: David Woodhouse <dwmw2@infradead.org>
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+---
+ drivers/power/reset/restart-poweroff.c | 25 ++++++++++++-------------
+ 1 file changed, 12 insertions(+), 13 deletions(-)
 
-Since the first patch set was made from me, I will rebase this.
+diff --git a/drivers/power/reset/restart-poweroff.c b/drivers/power/reset/restart-poweroff.c
+index edd707e..5437697 100644
+--- a/drivers/power/reset/restart-poweroff.c
++++ b/drivers/power/reset/restart-poweroff.c
+@@ -12,35 +12,34 @@
+  */
+ #include <linux/kernel.h>
+ #include <linux/init.h>
++#include <linux/notifier.h>
+ #include <linux/platform_device.h>
+ #include <linux/of_platform.h>
+ #include <linux/module.h>
++#include <linux/pm.h>
+ #include <linux/reboot.h>
+-#include <asm/system_misc.h>
+ 
+-static void restart_poweroff_do_poweroff(void)
++static int restart_poweroff_do_poweroff(struct notifier_block *this,
++					unsigned long unused1, void *unused2)
+ {
+ 	reboot_mode = REBOOT_HARD;
+ 	machine_restart(NULL);
++
++	return NOTIFY_DONE;
+ }
+ 
++static struct notifier_block restart_poweroff_handler = {
++	.notifier_call = restart_poweroff_do_poweroff,
++};
++
+ static int restart_poweroff_probe(struct platform_device *pdev)
+ {
+-	/* If a pm_power_off function has already been added, leave it alone */
+-	if (pm_power_off != NULL) {
+-		dev_err(&pdev->dev,
+-			"pm_power_off function already registered");
+-		return -EBUSY;
+-	}
+-
+-	pm_power_off = &restart_poweroff_do_poweroff;
+-	return 0;
++	return register_poweroff_handler(&restart_poweroff_handler);
+ }
+ 
+ static int restart_poweroff_remove(struct platform_device *pdev)
+ {
+-	if (pm_power_off = &restart_poweroff_do_poweroff)
+-		pm_power_off = NULL;
++	unregister_poweroff_handler(&restart_poweroff_handler);
+ 
+ 	return 0;
+ }
+-- 
+1.9.1
 
-Best regards,
-Yoshihiro Shimoda
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
