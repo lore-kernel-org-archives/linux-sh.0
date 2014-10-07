@@ -1,61 +1,44 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 06 Oct 2014 09:18:10 +0000
+From: Ian Molton <ian.molton@codethink.co.uk>
+Date: Tue, 07 Oct 2014 10:37:17 +0000
 Subject: Re: [PATCH] [RFC] ARM: shmobile: Add early debugging support using SCIF(A)
-Message-Id: <CAMuHMdWm=4zqgUXypLZtck1=vx7S7nBtn_cBr32ODViccOY3cA@mail.gmail.com>
+Message-Id: <20141007113717.d8dcc5607caf23971ec06c9d@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1412276563-21473-1-git-send-email-geert+renesas@glider.be>
- <CANqRtoTJNb7a9J05U0chrGoxBV7e1s6o0Xxeup0p1sOUZhE+vA@mail.gmail.com>
-In-Reply-To: <CANqRtoTJNb7a9J05U0chrGoxBV7e1s6o0Xxeup0p1sOUZhE+vA@mail.gmail.com>
+ <2257006.dpJJ6zLgnP@avalon>
+In-Reply-To: <2257006.dpJJ6zLgnP@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
+To be fair, my patches were in last month, and awaiting a chance to test on Rcar-H1...
 
-On Mon, Oct 6, 2014 at 1:36 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
->>   - On armadillo-multiplatform there may be a period while garbage data
->>     is output.
->>     This happens because sh_mobile_i2c_init() enables and disables its
->>     clock during probing. As iic0 and scifa1 share the same parent
->>     clock, this causes the scifa1 clock to no longer receive clock
->>     ticks.
->>     On armadillo-legacy, this is mitigated by the pre-CCF clock driver,
->>     which never really disables clocks during boot-up for exactly this
->>     reason. Cfr. "One example of this is the handling of the Mackerel
->>     serial console output that shares clock with the I2C controller.",
->>     in commit 794d78fea51504ba ("drivers: sh: late disabling of clocks
->>     V2").
->>     I'm wondering whether this can be fixed in the i2c driver? Does it
->>     really have to enable and disable the clock?
->
-> I've seen this issue on several SoCs actually, and as you describe the
-> main issue seems to be that there are clock topologies that present
-> for devices used during boot (like serial) but this clock topology is
-> not yet managed by software. This does not trigger on all SoCs though.
+Can we share credit (Signed-off-by:) on the core, lager, 7779, and Kconfig patches please?
 
-To work perfectly, (a) everything must be described correctly in DT, and
-(b) this information must be used correctly.
-IMHO we can live with the deficiencies for DEBUG_LL.
+Cheers guys :)
 
-> It is my opinion that it has very little todo with the other devices
-> that happen to be using the same parent clock. The legacy clock
-> framework solved this by not allowing clocks to be disabled until all
-> devices were registered.
+(Its been a crap year for me, I've had almost zero chance to mainline anything :( )
 
-Not allowing clocks to be disabled until all devices were registered has its
-own problems (some hardware requires disabling clocks for various reasons).
+-Ian
 
-A similar horse is currently being beaten to death in the "simplefb" threads...
-Read on if you feel bored ;-)
+On Mon, 06 Oct 2014 01:18 +0300
+Laurent Pinchart <laurent.pinchart@ideasonboard.com> wrote:
 
-Gr{oetje,eeting}s,
+> Hi Geert,
+> 
+> Thank you for the patch.
+> 
+> It looks like you've beaten Ian Molton (CC'ed) on this, he was planning to 
+> send exactly the same thing.
+> 
+> On Thursday 02 October 2014 21:02:43 Geert Uytterhoeven wrote:
+> > Add serial port debug macros for the SCIF(A) serial ports.
+> > This includes all shmobile SoCs, except for EMEV2.
+> > 
+> > On SoCs using the legacy machine_desc.map_io(), an identity mapping of
+> > the SCIF(A) registers must be set up in .map_io(). On all but r8a7779
+> > this was already done.
+> > 
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+-- 
+Ian Molton <ian.molton@codethink.co.uk>
