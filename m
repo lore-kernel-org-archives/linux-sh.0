@@ -1,37 +1,42 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 07 Oct 2014 11:10:20 +0000
-Subject: [PATCH v2 2/2] arm: shmobile: lager: enable HS-USB
-Message-Id: <1412680220-4552-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 07 Oct 2014 11:42:03 +0000
+Subject: Re: [PATCH v2 2/2] arm: shmobile: lager: enable HS-USB
+Message-Id: <5433D18B.6050208@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412680220-4552-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1412680220-4552-1-git-send-email-yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+References: <1412680220-4552-1-git-send-email-yoshihiro.shimoda.uh@renesas.com> <1412680220-4552-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1412680220-4552-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org, linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org
-Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
+Cc: devicetree@vger.kernel.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org
 
-Since this board doesn't have USB ID pin, we assumes the GP5_18 (USB0_PWEN)
-is an ID pin because the gpio is high when the SW5 is Pin 3 side.
+On 10/7/2014 3:10 PM, Yoshihiro Shimoda wrote:
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- arch/arm/boot/dts/r8a7790-lager.dts |    5 +++++
- 1 file changed, 5 insertions(+)
+> Since this board doesn't have USB ID pin, we assumes the GP5_18 (USB0_PWEN)
+> is an ID pin because the gpio is high when the SW5 is Pin 3 side.
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 719979e..011254a 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -446,3 +446,8 @@
- 		};
- 	};
- };
-+
-+&hsusb {
-+	status = "okay";
-+	renesas,enable-gpio = <&gpio5 18 GPIO_ACTIVE_HIGH>;
-+};
--- 
-1.7.9.5
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> ---
+>   arch/arm/boot/dts/r8a7790-lager.dts |    5 +++++
+>   1 file changed, 5 insertions(+)
+
+> diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+> index 719979e..011254a 100644
+> --- a/arch/arm/boot/dts/r8a7790-lager.dts
+> +++ b/arch/arm/boot/dts/r8a7790-lager.dts
+> @@ -446,3 +446,8 @@
+>   		};
+>   	};
+>   };
+> +
+> +&hsusb {
+> +	status = "okay";
+> +	renesas,enable-gpio = <&gpio5 18 GPIO_ACTIVE_HIGH>;
+> +};
+
+    As I said before, this is not enough. We need pinctrl-related props. Same 
+is true for other boards.
+
+WBR, Sergei
 
