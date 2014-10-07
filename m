@@ -1,10 +1,10 @@
 From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 07 Oct 2014 00:20:20 +0000
+Date: Tue, 07 Oct 2014 03:25:02 +0000
 Subject: Re: [PATCH 2/2] arm: shmobile: lager: enable HS-USB
-Message-Id: <543331C4.90608@renesas.com>
+Message-Id: <54335D0E.6070606@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412237073-1288-1-git-send-email-yoshihiro.shimoda.uh@renesas.com> <1412237073-1288-3-git-send-email-yoshihiro.shimoda.uh@renesas.com> <54330BC4.2050501@cogentembedded.com>
-In-Reply-To: <54330BC4.2050501-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
+References: <1412237073-1288-1-git-send-email-yoshihiro.shimoda.uh@renesas.com> <1412237073-1288-3-git-send-email-yoshihiro.shimoda.uh@renesas.com> <542EFDEA.2030906@cogentembedded.com> <5431E984.6000203@renesas.com>
+In-Reply-To: <5431E984.6000203-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -13,41 +13,65 @@ Cc: "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY
 
 Hello.
 
-(2014/10/07 6:38), Sergei Shtylyov wrote:
+(2014/10/06 9:59), Yoshihiro Shimoda wrote:
 > Hello.
 > 
-> On 10/02/2014 12:04 PM, Yoshihiro Shimoda wrote:
+> (2014/10/04 4:50), Sergei Shtylyov wrote:
+>> On 10/02/2014 12:04 PM, Yoshihiro Shimoda wrote:
+>>
+>>> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+>>> ---
+>>>   arch/arm/boot/dts/r8a7790-lager.dts |    5 +++++
+>>>   1 file changed, 5 insertions(+)
+>>
+>>> diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+>>> index 1698591..4badd0a 100644
+>>> --- a/arch/arm/boot/dts/r8a7790-lager.dts
+>>> +++ b/arch/arm/boot/dts/r8a7790-lager.dts
+>>> @@ -445,3 +445,8 @@
+>>>   		};
+>>>   	};
+>>>   };
+>>> +
+>>> +&hsusb {
+>>> +	status = "okay";
+>>> +	renesas,enable-gpio = <&gpio5 18 GPIO_ACTIVE_LOW>;
+>>
+>>     It's certainly active-high.
 > 
->> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
->> ---
->>   arch/arm/boot/dts/r8a7790-lager.dts |    5 +++++
->>   1 file changed, 5 insertions(+)
+> Since the current code has the following, we have to set the active_low...
+> However, the code is unreadable, I think. So, I will modify the code.
 > 
->> diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
->> index 1698591..4badd0a 100644
->> --- a/arch/arm/boot/dts/r8a7790-lager.dts
->> +++ b/arch/arm/boot/dts/r8a7790-lager.dts
->> @@ -445,3 +445,8 @@
->>   		};
->>   	};
->>   };
->> +
->> +&hsusb {
->> +	status = "okay";
->> +	renesas,enable-gpio = <&gpio5 18 GPIO_ACTIVE_LOW>;
->> +};
-> 
->     Darn, this also misses the PinMux props... I was going to post v2 of these 
-> patches but now would need to add that and retest... :-/
+> 	/* check GPIO determining if USB function should be enabled */
+> 	if (priv->dparam.enable_gpio) {
+> 		gpio_request_one(priv->dparam.enable_gpio, GPIOF_IN, NULL);
+> 		ret = !gpio_get_value(priv->dparam.enable_gpio);
+> 		gpio_free(priv->dparam.enable_gpio);
+> 		if (ret) {
+> 			dev_warn(&pdev->dev,
+> 				 "USB function not selected (GPIO %d)\n",
+> 				 priv->dparam.enable_gpio);
+> 			ret = -ENOTSUPP;
+> 			goto probe_end_mod_exit;
+> 		}
+> 	}
 
-I'm sorry for the my delayed work... I will submit v2 patches today.
+I am confusing about the gpio_get_value()...
+In case of ARM, gpio_get_value() will call gpiod_get_raw_value() finally.
 
-By the way, I cannot understand that "this also misses the PinMux props".
-According to the original "legacy" code in board-lager.c, it uses gpio5 18:
-https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id6be7686caa05334ca8d52df157b373a41d8d9f1
+gpio_get_value() in arch/arm/include/asm/gpio.h
+ --> __gpio_get_value() in include/asm-generic/gpio.h
+  --> gpiod_get_raw_value() in drivers/gpio/gpiolib.c
+
+The gpiod_get_raw_value() doesn't care of the GPIO_ACTIVE_{HIGH,LOW}.
+So, should I add gpiod_is_active_low() or someting in the renesas_usbhs driver?
+Or, Do I misunderstand something?
 
 Best regards,
 Yoshihiro Shimoda
 
-> WBR, Sergei
+> Best regards,
+> Yoshihiro Shimoda
 > 
+>> WBR, Sergei
+>>
