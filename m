@@ -1,63 +1,98 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 29 Oct 2014 04:59:14 +0000
-Subject: [PATCH 08/19] ARM: shmobile: emev2 dtsi: Add uart* labels for easier referencing
-Message-Id: <e87aabaf24d660e3d4c68cfbd6aae0814b573375.1414556944.git.horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 07 Oct 2014 03:43:05 +0000
+Subject: [PATCH v2 2/3] usb: renesas_usbhs: clean up rcar2.c to support a generic PHY
+Message-Id: <1412653386-5856-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1414556943.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1414556943.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+To support both usb PHY and generic PHY, this patch cleans up rcar2.c.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/boot/dts/emev2.dtsi | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ drivers/usb/renesas_usbhs/rcar2.c |   48 ++++++++++++++++++++-----------------
+ 1 file changed, 26 insertions(+), 22 deletions(-)
 
-diff --git a/arch/arm/boot/dts/emev2.dtsi b/arch/arm/boot/dts/emev2.dtsi
-index 5fe9212..cc7bfe0 100644
---- a/arch/arm/boot/dts/emev2.dtsi
-+++ b/arch/arm/boot/dts/emev2.dtsi
-@@ -137,7 +137,7 @@
- 		clock-names = "sclk";
- 	};
+diff --git a/drivers/usb/renesas_usbhs/rcar2.c b/drivers/usb/renesas_usbhs/rcar2.c
+index f264cad..485b889 100644
+--- a/drivers/usb/renesas_usbhs/rcar2.c
++++ b/drivers/usb/renesas_usbhs/rcar2.c
+@@ -20,25 +20,28 @@
+ static int usbhs_rcar2_hardware_init(struct platform_device *pdev)
+ {
+ 	struct usbhs_priv *priv = usbhs_pdev_to_priv(pdev);
+-	struct usb_phy *usb_phy;
  
--	serial@e1020000 {
-+	uart0: serial@e1020000 {
- 		compatible = "renesas,em-uart";
- 		reg = <0xe1020000 0x38>;
- 		interrupts = <0 8 IRQ_TYPE_LEVEL_HIGH>;
-@@ -145,7 +145,7 @@
- 		clock-names = "sclk";
- 	};
+-	usb_phy = usb_get_phy_dev(&pdev->dev, 0);
+-	if (IS_ERR(usb_phy))
+-		return PTR_ERR(usb_phy);
++	if (IS_ENABLED(CONFIG_USB_PHY)) {
++		struct usb_phy *usb_phy = usb_get_phy_dev(&pdev->dev, 0);
  
--	serial@e1030000 {
-+	uart1: serial@e1030000 {
- 		compatible = "renesas,em-uart";
- 		reg = <0xe1030000 0x38>;
- 		interrupts = <0 9 IRQ_TYPE_LEVEL_HIGH>;
-@@ -153,7 +153,7 @@
- 		clock-names = "sclk";
- 	};
+-	priv->usb_phy = usb_phy;
+-	return 0;
++		if (IS_ERR(usb_phy))
++			return PTR_ERR(usb_phy);
++
++		priv->usb_phy = usb_phy;
++		return 0;
++	}
++
++	return -ENXIO;
+ }
  
--	serial@e1040000 {
-+	uart2: serial@e1040000 {
- 		compatible = "renesas,em-uart";
- 		reg = <0xe1040000 0x38>;
- 		interrupts = <0 10 IRQ_TYPE_LEVEL_HIGH>;
-@@ -161,7 +161,7 @@
- 		clock-names = "sclk";
- 	};
+ static int usbhs_rcar2_hardware_exit(struct platform_device *pdev)
+ {
+ 	struct usbhs_priv *priv = usbhs_pdev_to_priv(pdev);
  
--	serial@e1050000 {
-+	uart3: serial@e1050000 {
- 		compatible = "renesas,em-uart";
- 		reg = <0xe1050000 0x38>;
- 		interrupts = <0 11 IRQ_TYPE_LEVEL_HIGH>;
+-	if (!priv->usb_phy)
+-		return 0;
+-
+-	usb_put_phy(priv->usb_phy);
+-	priv->usb_phy = NULL;
++	if (priv->usb_phy) {
++		usb_put_phy(priv->usb_phy);
++		priv->usb_phy = NULL;
++	}
+ 
+ 	return 0;
+ }
+@@ -47,21 +50,22 @@ static int usbhs_rcar2_power_ctrl(struct platform_device *pdev,
+ 				void __iomem *base, int enable)
+ {
+ 	struct usbhs_priv *priv = usbhs_pdev_to_priv(pdev);
++	int retval = -ENODEV;
+ 
+-	if (!priv->usb_phy)
+-		return -ENODEV;
++	if (priv->usb_phy) {
++		if (enable) {
++			retval = usb_phy_init(priv->usb_phy);
+ 
+-	if (enable) {
+-		int retval = usb_phy_init(priv->usb_phy);
+-
+-		if (!retval)
+-			retval = usb_phy_set_suspend(priv->usb_phy, 0);
+-		return retval;
++			if (!retval)
++				retval = usb_phy_set_suspend(priv->usb_phy, 0);
++		} else {
++			usb_phy_set_suspend(priv->usb_phy, 1);
++			usb_phy_shutdown(priv->usb_phy);
++			retval = 0;
++		}
+ 	}
+ 
+-	usb_phy_set_suspend(priv->usb_phy, 1);
+-	usb_phy_shutdown(priv->usb_phy);
+-	return 0;
++	return retval;
+ }
+ 
+ static int usbhs_rcar2_get_id(struct platform_device *pdev)
 -- 
-2.1.1
+1.7.9.5
 
