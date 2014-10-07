@@ -1,46 +1,105 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 07 Oct 2014 11:07:10 +0000
+Date: Tue, 07 Oct 2014 11:46:16 +0000
 Subject: Re: [PATCH] [RFC] ARM: shmobile: Add early debugging support using SCIF(A)
-Message-Id: <CAMuHMdV2=OaEsouzRM9dK=NP6VvxrUkXZHm-Zqsc=qB18tgsdg@mail.gmail.com>
+Message-Id: <CAMuHMdW5qzmKrq-tj7zekaX48T8WByeo+T664+7L-kJZ35MtEQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1412276563-21473-1-git-send-email-geert+renesas@glider.be>
- <2257006.dpJJ6zLgnP@avalon>
- <20141007113717.d8dcc5607caf23971ec06c9d@codethink.co.uk>
-In-Reply-To: <20141007113717.d8dcc5607caf23971ec06c9d@codethink.co.uk>
+ <16427778.JB7cnWY0r4@wuerfel>
+In-Reply-To: <16427778.JB7cnWY0r4@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Ian,
+Hi Arnd,
 
-On Tue, Oct 7, 2014 at 12:37 PM, Ian Molton <ian.molton@codethink.co.uk> wrote:
-> To be fair, my patches were in last month, and awaiting a chance to test on Rcar-H1...
->
-> Can we share credit (Signed-off-by:) on the core, lager, 7779, and Kconfig patches please?
+On Tue, Oct 7, 2014 at 12:49 PM, Arnd Bergmann <arnd@arndb.de> wrote:
+> On Thursday 02 October 2014 21:02:43 Geert Uytterhoeven wrote:
+>> +       default 0xe6c40000 if DEBUG_SCIF && (ARCH_R8A73A4 || ARCH_SH7372)
+>> +       default 0xe6c50000 if DEBUG_SCIF && ARCH_R8A7740
+>> +       default 0xe6c80000 if DEBUG_SCIF && ARCH_SH73A0
+>> +       default 0xe6e58000 if DEBUG_SCIF && ARCH_R8A7794
+>> +       default 0xe6e60000 if DEBUG_SCIF && (ARCH_R8A7790 || ARCH_R8A7791 || ARCH_R8A7793)
+>> +       default 0xe8008000 if DEBUG_SCIF && ARCH_R7S72100
 
-I never saw your patches, and I can't seem to find them?
-I started from Laurent's version at
-http://lists.infradead.org/pipermail/linux-arm-kernel/2013-October/207939.html
+There were two (important ones for my point below) more here:
 
-Confused...
++       default 0xffe40000 if DEBUG_SCIF && ARCH_R8A7778
++       default 0xffe42000 if DEBUG_SCIF && ARCH_R8A7779
 
-> Cheers guys :)
->
-> (Its been a crap year for me, I've had almost zero chance to mainline anything :( )
->
-> -Ian
->
->
-> On Mon, 06 Oct 2014 01:18 +0300
-> Laurent Pinchart <laurent.pinchart@ideasonboard.com> wrote:
->
->> Hi Geert,
->>
->> Thank you for the patch.
->>
->> It looks like you've beaten Ian Molton (CC'ed) on this, he was planning to
->> send exactly the same thing.
+> Just saw this patch. Note that most other entries do not depend on a particular
+> SoC but instead on one of the Kconfig entries, and I would like to eventually
+> change all of them to be the same way.
+
+I thought about having separate Kconfig entries for the various serial ports,
+until I started realizing that
+(a) not all serial ports are at the same addresses on all SoCs (most
+are, though),
+    The list above corresponds to these ports and addresses (note that we
+    have multiple scif0 and scif2):
+
+        scifa0: serial@e6c40000
+        scifa1: serial@e6c50000
+        scifa4: serial@e6c80000
+        scif2: serial@e6e58000
+        scif0: serial@e6e60000
+        scif2: serial@e8008000
+        scif0: serial@ffe40000
+        scif2: serial@ffe42000
+
+(b) this would just add lots of sections with similar lines in Kconfig.debug.
+E.g. compare
+
+    default 0xe6c50000 if DEBUG_SCIF && ARCH_R8A7740
+
+to
+
+    config DEBUG_RENESAS_SCIFA1
+        bool "Kernel low-level debugging messages via SCIFA1 on
+Renesas ARM SoCs"
+        depends on DEBUG_RENESAS_SCIF && ARCH_R8A7740
+        help
+                [ ....]
+
+
+    default 0xe6c50000 if DEBUG_RENESAS_SCIFA1
+
+and repeat for all serial ports...
+Or do you mean something different?
+
+> The main reason for this is that your way is a mix of two methods: if you
+> build a kernel for just one SoC you get the right entry here, but if you
+> build the kernel for multiple SoCs combined, you have to edit the address
+> by hand.
+
+It's not guaranteed to work if you have a kernel with support for multiple
+SoCs, as some SoCs still use machine_desc.map_io(), while others don't.
+ARCH_R8A73A4 and ARCH_SH7372 use the same serial port at the same
+address, but ARCH_SH7372 uses machine_desc.map_io().
+
+Note that also encoding the SoC names/families, and offering a choice option
+out of
+
+DEBUG_RENESAS_R8A73A4_SCIFA0
+DEBUG_RENESAS_SH7372_SCIFA0
+DEBUG_RENESAS_R8A7740_SCIFA1
+DEBUG_RENESAS_SH73A0_SCIFA4
+DEBUG_RENESAS_RCAR_GEN2_SCIF2
+DEBUG_RENESAS_RCAR_GEN2_SCIF0
+DEBUG_RENESAS_R7S72100_SCIF2
+DEBUG_RENESAS_RCAR_GEN1_SCIF0
+DEBUG_RENESAS_RCAR_GEN1_SCIF2
+
+could be used to solve the machine_desc.map_io() issue.
+Then we can have hardcoded addresses based on the above.
+
+> An alternative would be to not define a default here and document the
+> possible addresses in the help text for DEBUG_SCIF, so that users will
+> /always/ have to manually edit these, so at least it would be consistent.
+
+I prefer to optimize the user experience for the common case, i.e.
+autoselection for the SoC you're using, and manual edit for the less common
+case.
 
 Gr{oetje,eeting}s,
 
