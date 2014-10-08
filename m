@@ -1,32 +1,24 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 08 Oct 2014 21:42:29 +0000
-Subject: [PATCH] renesas_usbhs: fix platform init error message
-Message-Id: <1629718.KlA1FP4xFz@wasted.cogentembedded.com>
+Date: Wed, 08 Oct 2014 21:45:14 +0000
+Subject: Re: [PATCH] renesas_usbhs: fix platform init error message
+Message-Id: <5435B06A.8020705@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1629718.KlA1FP4xFz@wasted.cogentembedded.com>
+In-Reply-To: <1629718.KlA1FP4xFz@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-There is a typo ("prove" instead of "probe") in the error message printed when
-the platform initialization fails. Replace that word with more fitting "init".
+On 10/09/2014 01:42 AM, Sergei Shtylyov wrote:
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> There is a typo ("prove" instead of "probe") in the error message printed when
+> the platform initialization fails. Replace that word with more fitting "init".
 
----
- drivers/usb/renesas_usbhs/common.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Index: usb/drivers/usb/renesas_usbhs/common.c
-=================================--- usb.orig/drivers/usb/renesas_usbhs/common.c
-+++ usb/drivers/usb/renesas_usbhs/common.c
-@@ -572,7 +572,7 @@ static int usbhs_probe(struct platform_d
- 	 */
- 	ret = usbhs_platform_call(priv, hardware_init, pdev);
- 	if (ret < 0) {
--		dev_err(&pdev->dev, "platform prove failed.\n");
-+		dev_err(&pdev->dev, "platform init failed.\n");
- 		goto probe_end_mod_exit;
- 	}
- 
+    Oops, forgot to mention the patch is atop of the 'usb-linus' branch of 
+GregKH's repo.
+
+WBR, Sergei
 
