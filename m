@@ -1,58 +1,42 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 29 Oct 2014 04:58:23 +0000
-Subject: [PATCH] ARM: shmobile: r8a7740 legacy: Add missing INTCA clock for irqpin module
-Message-Id: <2b02b8020fad6ed505ff9cfb1b418c4b59f102a5.1414558424.git.horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 08 Oct 2014 06:24:58 +0000
+Subject: [PATCH] ARM: shmobile: r8a7791: add USB3.0 device node
+Message-Id: <1412749498-2748-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1414558424.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1414558424.git.horms+renesas@verge.net.au>
+References: <1412749498-2748-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1412749498-2748-1-git-send-email-yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org, linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org
+Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-
-This clock drives the irqpin controller modules.
-Before, it was assumed enabled by the bootloader or reset state.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7740.c | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7791.dtsi |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index 0794f04..6cb1de2 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -455,7 +455,7 @@ enum {
- 	MSTP128, MSTP127, MSTP125,
- 	MSTP116, MSTP111, MSTP100, MSTP117,
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index d343099..cdf4b46 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1146,6 +1146,16 @@
+ 		status = "disabled";
+ 	};
  
--	MSTP230,
-+	MSTP230, MSTP229,
- 	MSTP222,
- 	MSTP218, MSTP217, MSTP216, MSTP214,
- 	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
-@@ -479,6 +479,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_B],	SMSTPCR1,  0, 0), /* LCDC0 */
- 
- 	[MSTP230] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR2, 30, 0), /* SCIFA6 */
-+	[MSTP229] = SH_CLK_MSTP32(&div6_clks[DIV4_HP],	SMSTPCR2, 29, 0), /* INTCA */
- 	[MSTP222] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR2, 22, 0), /* SCIFA7 */
- 	[MSTP218] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],  SMSTPCR2, 18, 0), /* DMAC1 */
- 	[MSTP217] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],  SMSTPCR2, 17, 0), /* DMAC2 */
-@@ -575,6 +576,10 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-dma-engine.0",	&mstp_clks[MSTP218]),
- 	CLKDEV_DEV_ID("sh-sci.7",		&mstp_clks[MSTP222]),
- 	CLKDEV_DEV_ID("e6cd0000.serial",	&mstp_clks[MSTP222]),
-+	CLKDEV_DEV_ID("renesas_intc_irqpin.0",	&mstp_clks[MSTP229]),
-+	CLKDEV_DEV_ID("renesas_intc_irqpin.1",	&mstp_clks[MSTP229]),
-+	CLKDEV_DEV_ID("renesas_intc_irqpin.2",	&mstp_clks[MSTP229]),
-+	CLKDEV_DEV_ID("renesas_intc_irqpin.3",	&mstp_clks[MSTP229]),
- 	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
- 	CLKDEV_DEV_ID("e6cc0000.serial",	&mstp_clks[MSTP230]),
- 
++	xhci: usb@ee000000 {
++		compatible = "renesas,xhci-r8a7791";
++		reg = <0 0xee000000 0 0xc00>;
++		interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7791_CLK_SSUSB>;
++		phys = <&usb2 1>;
++		phy-names = "usb";
++		status = "disabled";
++	};
++
+ 	pci0: pci@ee090000 {
+ 		compatible = "renesas,pci-r8a7791";
+ 		device_type = "pci";
 -- 
-2.1.1
+1.7.9.5
 
