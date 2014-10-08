@@ -1,128 +1,71 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 26 Oct 2014 14:11:11 +0000
-Subject: [PATCH v5 06/14] ARM: shmobile: lager-reference: Remove DU platform device
-Message-Id: <1414332679-15497-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 08 Oct 2014 19:55:59 +0000
+Subject: [PATCH v4 2/2] ARM: shmobile: lager: enable HS-USB
+Message-Id: <2455064.TG6DqQLVoV@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1674850.BZpGW9kEud@wasted.cogentembedded.com>
+In-Reply-To: <1674850.BZpGW9kEud@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The DU device is now instantiated from the device tree, remove the
-corresponding platform device.
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Enable HS-USB device for the Lager board, defining the GPIO that the driver
+should check when probing. Since this board doesn't have the OTG ID pin, we
+assume that GP5_18 (USB0_PWEN) is an ID pin because it is 1 when the SW5 is
+in position 2-3 (meaning USB function) and 0 in other positions.
+
+Note that there will be pinctrl-related error messages if both internal PCI
+and HS-USB drivers are enabled but they should be just ignored.
+
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+[Sergei: added pin node and prop, moved device node, fixed summary, supplemented
+changelog]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/mach-shmobile/board-lager-reference.c | 80 --------------------------
- 1 file changed, 80 deletions(-)
+Changes in version 4:
+- fixed pin node name;
+- moved pin node before USB0's one.
 
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index bc4b48357dde..82b077a1a172 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -18,94 +18,15 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
+Changes in version 3:
+- added pin function/group and the pinctrl-related prop;
+- moved the HS-USB node to precede the USB PHY node;
+- uppercased "arm" in the summary;
+- supplemented changelog.
+
+ arch/arm/boot/dts/r8a7790-lager.dts |   12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7790-lager.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790-lager.dts
++++ renesas/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -221,6 +221,11 @@
+ 		renesas,function = "iic3";
+ 	};
  
--#include <linux/dma-mapping.h>
- #include <linux/init.h>
- #include <linux/of_platform.h>
--#include <linux/platform_data/rcar-du.h>
++	hsusb_pins: hsusb {
++		renesas,groups = "usb0_ovc_vbus";
++		renesas,function = "usb0";
++	};
++
+ 	usb0_pins: usb0 {
+ 		renesas,groups = "usb0";
+ 		renesas,function = "usb0";
+@@ -425,6 +430,13 @@
+ 	pinctrl-names = "default";
+ };
  
- #include <asm/mach/arch.h>
- 
--#include "clock.h"
- #include "common.h"
--#include "irqs.h"
- #include "r8a7790.h"
- #include "rcar-gen2.h"
- 
--/* DU */
--static struct rcar_du_encoder_data lager_du_encoders[] = {
--	{
--		.type = RCAR_DU_ENCODER_VGA,
--		.output = RCAR_DU_OUTPUT_DPAD0,
--	}, {
--		.type = RCAR_DU_ENCODER_NONE,
--		.output = RCAR_DU_OUTPUT_LVDS1,
--		.connector.lvds.panel = {
--			.width_mm = 210,
--			.height_mm = 158,
--			.mode = {
--				.pixelclock = 65000000,
--				.hactive = 1024,
--				.hfront_porch = 20,
--				.hback_porch = 160,
--				.hsync_len = 136,
--				.vactive = 768,
--				.vfront_porch = 3,
--				.vback_porch = 29,
--				.vsync_len = 6,
--			},
--		},
--	},
--};
--
--static struct rcar_du_platform_data lager_du_pdata = {
--	.encoders = lager_du_encoders,
--	.num_encoders = ARRAY_SIZE(lager_du_encoders),
--};
--
--static const struct resource du_resources[] __initconst = {
--	DEFINE_RES_MEM(0xfeb00000, 0x70000),
--	DEFINE_RES_MEM_NAMED(0xfeb90000, 0x1c, "lvds.0"),
--	DEFINE_RES_MEM_NAMED(0xfeb94000, 0x1c, "lvds.1"),
--	DEFINE_RES_IRQ(gic_spi(256)),
--	DEFINE_RES_IRQ(gic_spi(268)),
--	DEFINE_RES_IRQ(gic_spi(269)),
--};
--
--static void __init lager_add_du_device(void)
--{
--	struct platform_device_info info = {
--		.name = "rcar-du-r8a7790",
--		.id = -1,
--		.res = du_resources,
--		.num_res = ARRAY_SIZE(du_resources),
--		.data = &lager_du_pdata,
--		.size_data = sizeof(lager_du_pdata),
--		.dma_mask = DMA_BIT_MASK(32),
--	};
--
--	platform_device_register_full(&info);
--}
--
--/*
-- * This is a really crude hack to provide clkdev support to platform
-- * devices until they get moved to DT.
-- */
--static const struct clk_name clk_names[] __initconst = {
--	{ "du0", "du.0", "rcar-du-r8a7790" },
--	{ "du1", "du.1", "rcar-du-r8a7790" },
--	{ "du2", "du.2", "rcar-du-r8a7790" },
--	{ "lvds0", "lvds.0", "rcar-du-r8a7790" },
--	{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
--};
--
--static void __init lager_add_standard_devices(void)
--{
--	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
--
--	lager_add_du_device();
--}
--
- static const char *lager_boards_compat_dt[] __initdata = {
- 	"renesas,lager",
- 	"renesas,lager-reference",
-@@ -116,7 +37,6 @@ DT_MACHINE_START(LAGER_DT, "lager")
- 	.smp		= smp_ops(r8a7790_smp_ops),
- 	.init_early	= shmobile_init_delay,
- 	.init_time	= rcar_gen2_timer_init,
--	.init_machine	= lager_add_standard_devices,
- 	.init_late	= shmobile_init_late,
- 	.reserve	= rcar_gen2_reserve,
- 	.dt_compat	= lager_boards_compat_dt,
--- 
-2.0.4
++&hsusb {
++	status = "okay";
++	pinctrl-0 = <&hsusb_pins>;
++	pinctrl-names = "default";
++	renesas,enable-gpio = <&gpio5 18 GPIO_ACTIVE_HIGH>;
++};
++
+ &usbphy {
+ 	status = "okay";
+ };
 
