@@ -1,25 +1,51 @@
-From: Tejun Heo <tj@kernel.org>
-Date: Tue, 28 Oct 2014 03:51:37 +0000
-Subject: Re: [PATCH v3] ata: sata_rcar: Add r8a7793 device support
-Message-Id: <20141028035137.GA4751@mtj.dyndns.org>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 08 Oct 2014 19:54:36 +0000
+Subject: [PATCH v4 1/2] ARM: shmobile: r8a7790: add HS-USB device node
+Message-Id: <10323171.5b5fxKKK8u@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414467932-17688-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1414467932-17688-1-git-send-email-ykaneko0929@gmail.com>
+References: <1674850.BZpGW9kEud@wasted.cogentembedded.com>
+In-Reply-To: <1674850.BZpGW9kEud@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Cc: linux-ide@vger.kernel.org, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Oct 28, 2014 at 12:45:32PM +0900, Yoshihiro Kaneko wrote:
-> From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-> 
-> Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Applied to libata/for-3.18-fixes.
+Define the R8A7790 generic part of the HS-USB device node. It is up to the board
+file to enable the device.
 
-Thanks.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+[Sergei: fixed summary, added changelog]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
--- 
-tejun
+---
+Changes in version 3:
+- uppercased "arm" in the summary;
+- added changelog.
+
+ arch/arm/boot/dts/r8a7790.dtsi |   11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
++++ renesas/arch/arm/boot/dts/r8a7790.dtsi
+@@ -600,6 +600,17 @@
+ 		status = "disabled";
+ 	};
+ 
++	hsusb: usb@e6590000 {
++		compatible = "renesas,usbhs-r8a7790";
++		reg = <0 0xe6590000 0 0x100>;
++		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7790_CLK_HSUSB>;
++		renesas,buswait = <4>;
++		phys = <&usb0 1>;
++		phy-names = "usb";
++		status = "disabled";
++	};
++
+ 	usbphy: usb-phy@e6590100 {
+ 		compatible = "renesas,usb-phy-r8a7790";
+ 		reg = <0 0xe6590100 0 0x100>;
+
