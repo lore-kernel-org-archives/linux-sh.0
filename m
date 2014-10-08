@@ -1,43 +1,32 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 26 Oct 2014 13:13:36 +0000
-Subject: Re: [PATCH v4 8/9] ARM: shmobile: koelsch-reference: Remove DU platform device
-Message-Id: <3733861.rNreKO7l72@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 08 Oct 2014 21:42:29 +0000
+Subject: [PATCH] renesas_usbhs: fix platform init error message
+Message-Id: <1629718.KlA1FP4xFz@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414152241-5390-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1414152241-5390-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Geert,
+There is a typo ("prove" instead of "probe") in the error message printed when
+the platform initialization fails. Replace that word with more fitting "init".
 
-Thank you for the review.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-On Friday 24 October 2014 14:38:42 Geert Uytterhoeven wrote:
-> On Fri, Oct 24, 2014 at 2:04 PM, Laurent Pinchart
-> 
-> <laurent.pinchart+renesas@ideasonboard.com> wrote:
-> > --- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-> > +++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-> > 
-> > -static void __init koelsch_add_standard_devices(void)
-> > -{
-> > -       shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
-> 
-> And that was the last user of shmobile_clk_workaround(), which can now be
-> sent to the land of the dodo...
+---
+ drivers/usb/renesas_usbhs/common.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Good point. I'll add removal patches to the series.
-
-> > -       of_platform_populate(NULL, of_default_bus_match_table, NULL,
-> > NULL);
-> > -
-> > -       koelsch_add_du_device();
-> > -}
-
--- 
-Regards,
-
-Laurent Pinchart
+Index: usb/drivers/usb/renesas_usbhs/common.c
+=================================--- usb.orig/drivers/usb/renesas_usbhs/common.c
++++ usb/drivers/usb/renesas_usbhs/common.c
+@@ -572,7 +572,7 @@ static int usbhs_probe(struct platform_d
+ 	 */
+ 	ret = usbhs_platform_call(priv, hardware_init, pdev);
+ 	if (ret < 0) {
+-		dev_err(&pdev->dev, "platform prove failed.\n");
++		dev_err(&pdev->dev, "platform init failed.\n");
+ 		goto probe_end_mod_exit;
+ 	}
+ 
 
