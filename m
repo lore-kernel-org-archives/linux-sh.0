@@ -1,41 +1,25 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 30 Oct 2014 11:03:22 +0000
-Subject: Re: [PATCH 3/3] ARM: shmobile: koelsch dts: Drop console= bootargs parameter
-Message-Id: <CAMuHMdUOX845FFaNkEan9c+fRrsSk4q0gXUeknTn-MK5JAYWGg@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 08 Oct 2014 06:24:57 +0000
+Subject: [PATCH] ARM: shmobile: add USB3.0 device node on r8a7791
+Message-Id: <1412749498-2748-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414592918-25138-1-git-send-email-geert+renesas@glider.be>
-	<1414592918-25138-4-git-send-email-geert+renesas@glider.be>
-	<42870768.kOpZNjp1qs@avalon>
-In-Reply-To: <42870768.kOpZNjp1qs@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
-Cc: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org, linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org
+Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 
-On Thu, Oct 30, 2014 at 11:44 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> On Wednesday 29 October 2014 15:28:38 Geert Uytterhoeven wrote:
->> Since commit 595c6a4bb77f0096 ("ARM: shmobile: koelsch: Remove legacy C
->> board code"), koelsch is restricted to booting from DT, so
->> chosen/stdout-path is always used, and we can drop the "console="
->> parameter from chosen/bootargs.
->
-> I'm curious, how is the baud rate now selected ?
+ This patch is based on Simon's renesas.git branch and
+renesas-devel-20141007-v3.17 tag.
+Since koelsch and henninger doesn't have a USB3.0 connector,
+I submit a patch for r8a7791.dtsi only.
 
-From an earlier response for kzm9d:
+Yoshihiro Shimoda (1):
+  ARM: shmobile: r8a7791: add USB3.0 device node
 
-"I forgot emev is the only supported SoC not using sh-sci.
- drivers/tty/serial/sh-sci.c:serial_console_setup() defaults to 115200 baud,
- while serial8250_console_setup() defaults to 9600 baud."
+ arch/arm/boot/dts/r8a7791.dtsi |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-Gr{oetje,eeting}s,
+-- 
+1.7.9.5
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
