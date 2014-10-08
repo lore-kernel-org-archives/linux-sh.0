@@ -1,87 +1,59 @@
 From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 07 Oct 2014 11:01:32 +0000
-Subject: Re: [PATCH 2/2] arm: shmobile: lager: enable HS-USB
-Message-Id: <5433C80C.2090006@renesas.com>
+Date: Wed, 08 Oct 2014 06:24:30 +0000
+Subject: [PATCH 2/2] ARM: shmobile: lager: enable USB3.0
+Message-Id: <1412749470-6028-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412237073-1288-1-git-send-email-yoshihiro.shimoda.uh@renesas.com> <1412237073-1288-3-git-send-email-yoshihiro.shimoda.uh@renesas.com> <542EFDEA.2030906@cogentembedded.com> <5431E984.6000203@renesas.com> <54335D0E.6070606@renesas.com> <5433B665.9040302@cogentembedded.com>
-In-Reply-To: <5433B665.9040302@cogentembedded.com>
+References: <1412749470-6028-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1412749470-6028-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, "horms@verge.net.au" <horms@verge.net.au>, "magnus.damm@gmail.com" <magnus.damm@gmail.com>, "robh+dt@kernel.org" <robh+dt@kernel.org>, "pawel.moll@arm.com" <pawel.moll@arm.com>, "mark.rutland@arm.com" <mark.rutland@arm.com>, "ijc+devicetree@hellion.org.uk" <ijc+devicetree@hellion.org.uk>, "galak@codeaurora.org" <galak@codeaurora.org>, "linux@arm.linux.org.uk" <linux@arm.linux.org.uk>
-Cc: "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
+Cc: devicetree@vger.kernel.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Hello.
+Since the PHY of USB3.0 and EHCI/OHCI ch2 are the same, the USB3.0
+driver cannot use the phy driver when the EHCI/OHCI ch2 already used it:
 
-(2014/10/07 18:46), Sergei Shtylyov wrote:
-> On 10/7/2014 7:25 AM, Yoshihiro Shimoda wrote:
-> 
->>>>> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
->>>>> ---
->>>>>    arch/arm/boot/dts/r8a7790-lager.dts |    5 +++++
->>>>>    1 file changed, 5 insertions(+)
-> 
->>>>> diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
->>>>> index 1698591..4badd0a 100644
->>>>> --- a/arch/arm/boot/dts/r8a7790-lager.dts
->>>>> +++ b/arch/arm/boot/dts/r8a7790-lager.dts
->>>>> @@ -445,3 +445,8 @@
->>>>>            };
->>>>>        };
->>>>>    };
->>>>> +
->>>>> +&hsusb {
->>>>> +    status = "okay";
->>>>> +    renesas,enable-gpio = <&gpio5 18 GPIO_ACTIVE_LOW>;
-> 
->>>>      It's certainly active-high.
-> 
->>> Since the current code has the following, we have to set the active_low...
->>> However, the code is unreadable, I think. So, I will modify the code.
->>>
->>>     /* check GPIO determining if USB function should be enabled */
->>>     if (priv->dparam.enable_gpio) {
->>>         gpio_request_one(priv->dparam.enable_gpio, GPIOF_IN, NULL);
->>>         ret = !gpio_get_value(priv->dparam.enable_gpio);
->>>         gpio_free(priv->dparam.enable_gpio);
->>>         if (ret) {
->>>             dev_warn(&pdev->dev,
->>>                  "USB function not selected (GPIO %d)\n",
->>>                  priv->dparam.enable_gpio);
->>>             ret = -ENOTSUPP;
->>>             goto probe_end_mod_exit;
->>>         }
->>>     }
-> 
->> I am confusing about the gpio_get_value()...
->> In case of ARM, gpio_get_value() will call gpiod_get_raw_value() finally.
-> 
->> gpio_get_value() in arch/arm/include/asm/gpio.h
->>   --> __gpio_get_value() in include/asm-generic/gpio.h
->>    --> gpiod_get_raw_value() in drivers/gpio/gpiolib.c
-> 
->> The gpiod_get_raw_value() doesn't care of the GPIO_ACTIVE_{HIGH,LOW}.
->> So, should I add gpiod_is_active_low() or someting in the renesas_usbhs driver?
-> 
->    Why do you still think it's active-low?!
-> 
->> Or, Do I misunderstand something?
-> 
->    Look at the above code again.
+phy phy-e6590100.usb-phy.3: phy init failed --> -16
+xhci-hcd: probe of ee000000.usb failed with error -16
 
-Thank you for the comment.
-Finally, I understood this. I will not modify the driver and
-I just change the "GPIO_ACTIVE_LOW" in the dts file to "GPIO_ACTIVE_HIGH"
-because of your previous comment below:
+If so, we have to unbind the EHCI/OHCI ch2, and then we have to bind
+the USB3.0 driver as the following:
 
->>     'ret' is non-zero here if gpio_get_value() returned 0, so 0 means "host"
->> and 1 means "gadget", i.e. GPIO is active-high.
+  echo 0000:02:02.0 > /sys/bus/pci/drivers/ehci-pci/unbind
+  echo 0000:02:01.0 > /sys/bus/pci/drivers/ohci-pci/unbind
+  echo ee000000.usb > /sys/bus/platform/drivers/xhci-hcd/bind
 
-Best regards,
-Yoshihiro Shimoda
+Note that there will be pinctrl-related error messages if both
+internal PCI and USB3.0 are enabled but they should be just ignored:
 
->> Best regards,
->> Yoshihiro Shimoda
-> 
-> WBR, Sergei
-> 
+sh-pfc e6060000.pfc: pin GP_5_22 already requested by ee0d0000.pci; cannot claim for ee000000.usb
+sh-pfc e6060000.pfc: pin-182 (ee000000.usb) status -22
+ata1: SATA link down (SStatus 0 SControl 300)
+sh-pfc e6060000.pfc: could not request pin 182 (GP_5_22) from group usb2  on device sh-pfc
+
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts |    6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 719979e..3f51be1 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -419,6 +419,12 @@
+ 	pinctrl-names = "default";
+ };
+ 
++&xhci {
++	status = "okay";
++	pinctrl-0 = <&usb2_pins>;
++	pinctrl-names = "default";
++};
++
+ &pci2 {
+ 	status = "okay";
+ 	pinctrl-0 = <&usb2_pins>;
+-- 
+1.7.9.5
+
