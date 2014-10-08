@@ -1,41 +1,42 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 23 Oct 2014 12:03:22 +0000
-Subject: Re: Koelsch boot broken on 3.18-rc1 ?
-Message-Id: <CAMuHMdWp9KaOYPBcHryaVKwkDCC36B-=DG54n-NBq-UBz5Amsg@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 08 Oct 2014 06:24:29 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7790: add USB3.0 device node
+Message-Id: <1412749470-6028-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <10893192.WlcHQvfHhT@avalon>
- <CAMuHMdWydH0wrnkYSPgQqR19AN7pd1m+bD=Vwtv-EtPiSZ-6JA@mail.gmail.com>
- <2292868.3VDUqTO9A7@avalon> <1859424.eZJcJgnv8e@avalon>
- <CAMuHMdWno4WWBU5Y5R_=bCDDZT6YBqY1SACXtn6v_psJjV8iJg@mail.gmail.com>
- <5448EE0C.2050204@st.com>
-In-Reply-To: <5448EE0C.2050204@st.com>
+References: <1412749470-6028-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1412749470-6028-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
+Cc: devicetree@vger.kernel.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-On Thu, Oct 23, 2014 at 2:01 PM, Maxime Coquelin <maxime.coquelin@st.com> wrote:
->>> Both problems still occur for me with
->>> renesas-drivers-2014-10-23-v3.18-rc1.
->>> What kernel configuration do you use ?
->>
->> Ah, didn't have CONFIG_CMA enabled.
->> koelsch_defconfig with CONFIG_CMA=y fails for me, too.
->> The failure mode seems to be slightly different with and without DEBUG_LL.
->>
->> Interestingly, multi_v7_defconfig, which has CONFIG_CMA=y, does work.
->
-> But LPAE is not enabled in multi_v7_defconfig?
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-It's also not enabled in koelsch_defconfig.
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 2380fd5..16f8646 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1140,6 +1140,16 @@
+ 		status = "disabled";
+ 	};
+ 
++	xhci: usb@ee000000 {
++		compatible = "renesas,xhci-r8a7790";
++		reg = <0 0xee000000 0 0xc00>;
++		interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_SSUSB>;
++		phys = <&usb2 1>;
++		phy-names = "usb";
++		status = "disabled";
++	};
++
+ 	pci0: pci@ee090000 {
+ 		compatible = "renesas,pci-r8a7790";
+ 		device_type = "pci";
+-- 
+1.7.9.5
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
