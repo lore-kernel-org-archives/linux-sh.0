@@ -1,63 +1,59 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Thu, 09 Oct 2014 10:03:02 +0000
-Subject: [PATCH 1/4] ARM: shmobile: r8a7790: Add RGX clock to device tree
-Message-Id: <1412848985-29353-2-git-send-email-ykaneko0929@gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 09 Oct 2014 12:27:07 +0000
+Subject: Re: [PATCH 1/4] ARM: shmobile: r8a7790: Add RGX clock to device tree
+Message-Id: <CAMuHMdV59fkhAxGrvx4VERWPm5v4roy1WNVyPAO73+W-bPn16A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1412848985-29353-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1412848985-29353-1-git-send-email-ykaneko0929@gmail.com>
+ <1412848985-29353-2-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1412848985-29353-2-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kouei Abe <kouei.abe.cp@renesas.com>
+Hi Kaneko-san, Abe-san,
 
-Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
----
- arch/arm/boot/dts/r8a7790.dtsi            | 9 +++++----
- include/dt-bindings/clock/r8a7790-clock.h | 1 +
- 2 files changed, 6 insertions(+), 4 deletions(-)
+On Thu, Oct 9, 2014 at 12:03 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
+> From: Kouei Abe <kouei.abe.cp@renesas.com>
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 2380fd5..27c038c 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -938,18 +938,19 @@
- 		mstp1_clks: mstp1_clks@e6150134 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
--			clocks = <&m2_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
-+			clocks = <&m2_clk>, <&p_clk>, <&zg_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
- 				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>,
- 				 <&zs_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
--				R8A7790_CLK_JPU R8A7790_CLK_TMU1 R8A7790_CLK_TMU3 R8A7790_CLK_TMU2
-+				R8A7790_CLK_JPU R8A7790_CLK_TMU1 R8A7790_CLK_PVRSRVKM
-+				R8A7790_CLK_TMU3 R8A7790_CLK_TMU2
- 				R8A7790_CLK_CMT0 R8A7790_CLK_TMU0 R8A7790_CLK_VSP1_DU1
- 				R8A7790_CLK_VSP1_DU0 R8A7790_CLK_VSP1_R R8A7790_CLK_VSP1_S
- 			>;
- 			clock-output-names -				"jpu", "tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
--				"vsp1-du0", "vsp1-rt", "vsp1-sy";
-+				"jpu", "tmu1", "pvrsrvkm", "tmu3", "tmu2", "cmt0", "tmu0",
-+				"vsp1-du1", "vsp1-du0", "vsp1-rt", "vsp1-sy";
- 		};
- 		mstp2_clks: mstp2_clks@e6150138 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-index 8ea7ab0..2d2f668 100644
---- a/include/dt-bindings/clock/r8a7790-clock.h
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -28,6 +28,7 @@
- /* MSTP1 */
- #define R8A7790_CLK_JPU		6
- #define R8A7790_CLK_TMU1		11
-+#define R8A7790_CLK_PVRSRVKM		12
- #define R8A7790_CLK_TMU3		21
- #define R8A7790_CLK_TMU2		22
- #define R8A7790_CLK_CMT0		24
--- 
-1.9.1
+Thanks for your patches!
 
+> Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
+> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+> ---
+>  arch/arm/boot/dts/r8a7790.dtsi            | 9 +++++----
+>  include/dt-bindings/clock/r8a7790-clock.h | 1 +
+>  2 files changed, 6 insertions(+), 4 deletions(-)
+>
+> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+> index 2380fd5..27c038c 100644
+> --- a/arch/arm/boot/dts/r8a7790.dtsi
+> +++ b/arch/arm/boot/dts/r8a7790.dtsi
+
+>                         clock-output-names > -                               "jpu", "tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
+> -                               "vsp1-du0", "vsp1-rt", "vsp1-sy";
+> +                               "jpu", "tmu1", "pvrsrvkm", "tmu3", "tmu2", "cmt0", "tmu0",
+> +                               "vsp1-du1", "vsp1-du0", "vsp1-rt", "vsp1-sy";
+
+Why is this clock called "pvrsrvkm"?
+The datasheet calls this clock "3DG".
+
+> --- a/include/dt-bindings/clock/r8a7790-clock.h
+> +++ b/include/dt-bindings/clock/r8a7790-clock.h
+
+> +#define R8A7790_CLK_PVRSRVKM           12
+
+Likewise.
+
+My comments also apply to the corresponding patch for r8a7791.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
