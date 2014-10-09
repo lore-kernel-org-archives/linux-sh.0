@@ -1,118 +1,54 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Fri, 31 Oct 2014 08:01:45 +0000
-Subject: [PATCH 03/12] ARM: shmobile: r8a7791: Add Audio DMAC devices to DT
-Message-Id: <87wq7g1xcl.wl%kuninori.morimoto.gx@gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 09 Oct 2014 02:09:00 +0000
+Subject: [PATCH] dmaengine: shdma: fix a race condition in __ld_cleanup()
+Message-Id: <1412820540-4892-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This patch fixes a race condition about a list of shdma-base driver.
+If we don't apply this patch, a dma slave driver (especially a usb
+peripheral driver) may not be able to start the transfer.
 
-Instantiate the two Audio DMA controllers in the r8a7791 device tree.
+If a dma slave driver has a callback, __ld_cleanup() will call
+the callback before this driver removes the list. After the callback,
+since the return value of __ld_cleanup() is not zero,
+shdma_chan_ld_cleanup() calls __ld_cleanup() again. And, __ld_clean()
+will removes the list.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+At this time, if a dma slave driver calls dmaengine_submit() before
+this driver removes the list, this driver will set schan->pm_state
+to SHDMA_PM_PENDING in shdma_tx_submit(). And then, even if a dma
+slave driver calls dma_async_issue_pending(), this driver don't
+start the transfer because the schan->pm_state is SHDMA_PM_PENDING
+in shdma_issue_pending().
+
+So, this patch adds a new condition in __ld_clean() to check if the
+schan->pm_state is SHDMA_PM_PENDING or not.
+
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi            |   63 +++++++++++++++++++++++++++--
- include/dt-bindings/clock/r8a7791-clock.h |    2 +
- 2 files changed, 62 insertions(+), 3 deletions(-)
+ This patch is based on slave-dma.git / next branch.
+ (commit id : ade4a2a8e6e40fe18be1f83e5ea2e915692a0028)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 828b4c5..31f65f8 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -301,6 +301,62 @@
- 		dma-channels = <15>;
- 	};
- 
-+	audma0: dma-contorller@ec700000 {
-+		compatible = "renesas,rcar-dmac";
-+		reg = <0 0xec700000 0 0x10000>;
-+		interrupts =	<0 346 IRQ_TYPE_LEVEL_HIGH
-+				 0 320 IRQ_TYPE_LEVEL_HIGH
-+				 0 321 IRQ_TYPE_LEVEL_HIGH
-+				 0 322 IRQ_TYPE_LEVEL_HIGH
-+				 0 323 IRQ_TYPE_LEVEL_HIGH
-+				 0 324 IRQ_TYPE_LEVEL_HIGH
-+				 0 325 IRQ_TYPE_LEVEL_HIGH
-+				 0 326 IRQ_TYPE_LEVEL_HIGH
-+				 0 327 IRQ_TYPE_LEVEL_HIGH
-+				 0 328 IRQ_TYPE_LEVEL_HIGH
-+				 0 329 IRQ_TYPE_LEVEL_HIGH
-+				 0 330 IRQ_TYPE_LEVEL_HIGH
-+				 0 331 IRQ_TYPE_LEVEL_HIGH
-+				 0 332 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "error",
-+				"ch0", "ch1", "ch2", "ch3",
-+				"ch4", "ch5", "ch6", "ch7",
-+				"ch8", "ch9", "ch10", "ch11",
-+				"ch12";
-+		clocks = <&mstp5_clks R8A7791_CLK_AUDIO_DMAC0>;
-+		clock-names = "fck";
-+		#dma-cells = <1>;
-+		dma-channels = <13>;
-+	};
-+
-+	audma1: dma-controller@ec720000 {
-+		compatible = "renesas,rcar-dmac";
-+		reg = <0 0xec720000 0 0x10000>;
-+		interrupts =	<0 347 IRQ_TYPE_LEVEL_HIGH
-+				 0 333 IRQ_TYPE_LEVEL_HIGH
-+				 0 334 IRQ_TYPE_LEVEL_HIGH
-+				 0 335 IRQ_TYPE_LEVEL_HIGH
-+				 0 336 IRQ_TYPE_LEVEL_HIGH
-+				 0 337 IRQ_TYPE_LEVEL_HIGH
-+				 0 338 IRQ_TYPE_LEVEL_HIGH
-+				 0 339 IRQ_TYPE_LEVEL_HIGH
-+				 0 340 IRQ_TYPE_LEVEL_HIGH
-+				 0 341 IRQ_TYPE_LEVEL_HIGH
-+				 0 342 IRQ_TYPE_LEVEL_HIGH
-+				 0 343 IRQ_TYPE_LEVEL_HIGH
-+				 0 344 IRQ_TYPE_LEVEL_HIGH
-+				 0 345 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "error",
-+				"ch0", "ch1", "ch2", "ch3",
-+				"ch4", "ch5", "ch6", "ch7",
-+				"ch8", "ch9", "ch10", "ch11",
-+				"ch12";
-+		clocks = <&mstp5_clks R8A7791_CLK_AUDIO_DMAC1>;
-+		clock-names = "fck";
-+		#dma-cells = <1>;
-+		dma-channels = <13>;
-+	};
-+
- 	/* The memory map in the User's Manual maps the cores to bus numbers */
- 	i2c0: i2c@e6508000 {
- 		#address-cells = <1>;
-@@ -1059,10 +1115,11 @@
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
--			clocks = <&extal_clk>, <&p_clk>;
-+			clocks = <&hp_clk>, <&hp_clk>, <&extal_clk>, <&p_clk>;
- 			#clock-cells = <1>;
--			renesas,clock-indices = <R8A7791_CLK_THERMAL R8A7791_CLK_PWM>;
--			clock-output-names = "thermal", "pwm";
-+			renesas,clock-indices = <R8A7791_CLK_AUDIO_DMAC0 R8A7791_CLK_AUDIO_DMAC1
-+						 R8A7791_CLK_THERMAL R8A7791_CLK_PWM>;
-+			clock-output-names = "audmac0", "audamc1", "thermal", "pwm";
- 		};
- 		mstp7_clks: mstp7_clks@e615014c {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index dcececd..3ea2bbc 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -69,6 +69,8 @@
- #define R8A7791_CLK_USBDMAC1		31
- 
- /* MSTP5 */
-+#define R8A7791_CLK_AUDIO_DMAC1		1
-+#define R8A7791_CLK_AUDIO_DMAC0		2
- #define R8A7791_CLK_THERMAL		22
- #define R8A7791_CLK_PWM			23
- 
+ drivers/dma/sh/shdma-base.c |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
+index 42d4974..2fd2f0ea 100644
+--- a/drivers/dma/sh/shdma-base.c
++++ b/drivers/dma/sh/shdma-base.c
+@@ -391,6 +391,8 @@ static dma_async_tx_callback __ld_cleanup(struct shdma_chan *schan, bool all)
+ 				dev_dbg(schan->dev, "Bring down channel %d\n", schan->id);
+ 				pm_runtime_put(schan->dev);
+ 				schan->pm_state = SHDMA_PM_ESTABLISHED;
++			} else if (schan->pm_state = SHDMA_PM_PENDING) {
++				shdma_chan_xfer_ld_queue(schan);
+ 			}
+ 		}
+ 	}
 -- 
 1.7.9.5
 
