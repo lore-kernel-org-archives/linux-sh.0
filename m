@@ -1,57 +1,63 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 27 Oct 2014 03:59:15 +0000
-Subject: Re: [PATCH v3 04/11] ARM: shmobile: armadillo800eva legacy: Add missing A4S pm domain devices
-Message-Id: <20141027035915.GE31487@verge.net.au>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Thu, 09 Oct 2014 10:03:02 +0000
+Subject: [PATCH 1/4] ARM: shmobile: r8a7790: Add RGX clock to device tree
+Message-Id: <1412848985-29353-2-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414063141-8856-1-git-send-email-geert+renesas@glider.be>
- <1414063141-8856-5-git-send-email-geert+renesas@glider.be>
- <20141027035657.GC31487@verge.net.au>
-In-Reply-To: <20141027035657.GC31487@verge.net.au>
+References: <1412848985-29353-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1412848985-29353-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Oct 27, 2014 at 12:56:57PM +0900, Simon Horman wrote:
-> On Thu, Oct 23, 2014 at 01:18:54PM +0200, Geert Uytterhoeven wrote:
-> > Commit 8459293c27bcd13a ("ARM: shmobile: r8a7740: add A4S pm domain
-> > support") added the A4S power domain, but forgot to hook up the GbEther
-> > hardware block.
-> > 
-> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> 
-> Thanks, I have queued this up.
+From: Kouei Abe <kouei.abe.cp@renesas.com>
 
-Sorry, my mistake, I have not queued this up as
-I would like to get all the soc changes in place before
-adding the board changes.
+Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi            | 9 +++++----
+ include/dt-bindings/clock/r8a7790-clock.h | 1 +
+ 2 files changed, 6 insertions(+), 4 deletions(-)
 
-> > ---
-> > v3:
-> >   - No changes,
-> > v2:
-> >   - No changes.
-> > ---
-> >  arch/arm/mach-shmobile/board-armadillo800eva.c | 1 +
-> >  1 file changed, 1 insertion(+)
-> > 
-> > diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-> > index 64a68450c28a072c..735036038951868d 100644
-> > --- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-> > +++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-> > @@ -1234,6 +1234,7 @@ static void __init eva_init(void)
-> >  	static struct pm_domain_device domain_devices[] __initdata = {
-> >  		{ "A4LC", &lcdc0_device },
-> >  		{ "A4LC", &hdmi_lcdc_device },
-> > +		{ "A4S",  &sh_eth_device },
-> >  		{ "A3SP", &pwm_device },
-> >  		{ "A3SP", &sdhi0_device },
-> >  		{ "A3SP", &sh_mmcif_device },
-> > -- 
-> > 1.9.1
-> > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 2380fd5..27c038c 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -938,18 +938,19 @@
+ 		mstp1_clks: mstp1_clks@e6150134 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
+-			clocks = <&m2_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
++			clocks = <&m2_clk>, <&p_clk>, <&zg_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
+ 				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>,
+ 				 <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+-				R8A7790_CLK_JPU R8A7790_CLK_TMU1 R8A7790_CLK_TMU3 R8A7790_CLK_TMU2
++				R8A7790_CLK_JPU R8A7790_CLK_TMU1 R8A7790_CLK_PVRSRVKM
++				R8A7790_CLK_TMU3 R8A7790_CLK_TMU2
+ 				R8A7790_CLK_CMT0 R8A7790_CLK_TMU0 R8A7790_CLK_VSP1_DU1
+ 				R8A7790_CLK_VSP1_DU0 R8A7790_CLK_VSP1_R R8A7790_CLK_VSP1_S
+ 			>;
+ 			clock-output-names -				"jpu", "tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
+-				"vsp1-du0", "vsp1-rt", "vsp1-sy";
++				"jpu", "tmu1", "pvrsrvkm", "tmu3", "tmu2", "cmt0", "tmu0",
++				"vsp1-du1", "vsp1-du0", "vsp1-rt", "vsp1-sy";
+ 		};
+ 		mstp2_clks: mstp2_clks@e6150138 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index 8ea7ab0..2d2f668 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -28,6 +28,7 @@
+ /* MSTP1 */
+ #define R8A7790_CLK_JPU		6
+ #define R8A7790_CLK_TMU1		11
++#define R8A7790_CLK_PVRSRVKM		12
+ #define R8A7790_CLK_TMU3		21
+ #define R8A7790_CLK_TMU2		22
+ #define R8A7790_CLK_CMT0		24
+-- 
+1.9.1
+
