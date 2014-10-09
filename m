@@ -1,32 +1,51 @@
-From: Michal Nazarewicz <mina86@mina86.com>
-Date: Fri, 24 Oct 2014 16:34:46 +0000
-Subject: Re: [PATCH 1/4] mm: cma: Don't crash on allocation if CMA area can't be activated
-Message-Id: <xa1tfved2zq1.fsf@mina86.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 09 Oct 2014 04:45:47 +0000
+Subject: [PATCH] usb: host: xhci-plat: fix suspend/resume on xhci-rcar
+Message-Id: <1412829947-736-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414074828-4488-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1414074828-4488-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <xa1tmw8mlobz.fsf@mina86.com> <1463193.4qGZjcvNod@avalon>
-In-Reply-To: <1463193.4qGZjcvNod@avalon>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-> On Thursday 23 October 2014 18:53:36 Michal Nazarewicz wrote:
->> As a matter of fact, this is present in kernels earlier than 3.17 but in
->> the 3.17 the code has been moved from drivers/base/dma-contiguous.c to
->> mm/cma.c so this might require separate stable patch.
+This patch fixes an issue that suspend/resume cannot work correctly
+on xhci-rcar because the xhci driver output the following log:
 
-On Fri, Oct 24 2014, Laurent Pinchart <laurent.pinchart@ideasonboard.com> wrote:
-> That could be done, but I'm not sure if it's really worth it. The bug only 
-> occurs when the CMA zone activation fails. I've ran into that case due to a 
-> bug introduced in v3.18-rc1, but this shouldn't be the case for older kernel 
-> versions.
+        xhci-hcd ee000000.usb: WARN: xHC CMD_RUN timeout
 
-Fair enough.
+So, this patch adds to set the XHCI_SLOW_SUSPEND quirk if xhci-rcar.
 
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ This patch is based on the Greg's usb.git / usb-next branch.
+ (commit id : 4ed9a3d455558406cad83d38764ee659de25851c)
+
+ drivers/usb/host/xhci-plat.c |    6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
+index 3d78b0c..a266883 100644
+--- a/drivers/usb/host/xhci-plat.c
++++ b/drivers/usb/host/xhci-plat.c
+@@ -27,12 +27,18 @@ static struct hc_driver __read_mostly xhci_plat_hc_driver;
+ 
+ static void xhci_plat_quirks(struct device *dev, struct xhci_hcd *xhci)
+ {
++	struct device_node *of_node = dev->of_node;
+ 	/*
+ 	 * As of now platform drivers don't provide MSI support so we ensure
+ 	 * here that the generic code does not try to make a pci_dev from our
+ 	 * dev struct in order to setup MSI
+ 	 */
+ 	xhci->quirks |= XHCI_PLAT;
++
++	/* QUIRK: R-Car xHCI must be suspended extra slowly */
++	if (of_device_is_compatible(of_node, "renesas,xhci-r8a7790") ||
++	    of_device_is_compatible(of_node, "renesas,xhci-r8a7791"))
++		xhci->quirks |= XHCI_SLOW_SUSPEND;
+ }
+ 
+ /* called during probe() after chip reset completes */
 -- 
-Best regards,                                         _     _
-.o. | Liege of Serenely Enlightened Majesty of      o' \,=./ `o
-..o | Computer Science,  Michał “mina86” Nazarewicz    (o o)
-ooo +--<mpn@google.com>--<xmpp:mina86@jabber.org>--ooO--(_)--Ooo--
+1.7.9.5
+
