@@ -1,58 +1,30 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 27 Oct 2014 00:26:40 +0000
-Subject: Re: [PATCH v2] clocksource: sh_mtu2: Drop incorrect SoC family name
-Message-Id: <20141027002639.GJ25692@verge.net.au>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Thu, 09 Oct 2014 10:03:01 +0000
+Subject: [PATCH 0/4] ARM: shmobile: Add clock to DT
+Message-Id: <1412848985-29353-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414150178-4986-1-git-send-email-geert+renesas@glider.be>
- <2748392.6fMSe2cx9z@avalon>
-In-Reply-To: <2748392.6fMSe2cx9z@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Daniel Lezcano <daniel.lezcano@linaro.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Oct 26, 2014 at 03:14:19PM +0200, Laurent Pinchart wrote:
-> Hi Geert,
-> 
-> Thank you for the patch.
-> 
-> On Friday 24 October 2014 13:29:38 Geert Uytterhoeven wrote:
-> > The TPU2 hardware block is found in many Renesas SH and ARM SoCs, but
-> 
-> s/TPU2/MTU2/
-> 
-> With this fixed,
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+This patch series is based on the renesas-devel-20141007-v3.17 tag
+of Simon's renesas tree.
 
-Thanks, I have fixed that and queued up the following:
+Kouei Abe (2):
+  ARM: shmobile: r8a7790: Add RGX clock to device tree
+  ARM: shmobile: r8a7791: Add SGX clock to device tree
 
+Yoshifumi Hosoya (2):
+  ARM: shmobile: r8a7790: Add MMP clock to device tree
+  ARM: shmobile: r8a7791: Add MMP clock to device tree
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+ arch/arm/boot/dts/r8a7790.dtsi            | 23 +++++++++++++++--------
+ arch/arm/boot/dts/r8a7791.dtsi            | 22 ++++++++++++++--------
+ include/dt-bindings/clock/r8a7790-clock.h | 12 +++++++++++-
+ include/dt-bindings/clock/r8a7791-clock.h |  9 ++++++++-
+ 4 files changed, 48 insertions(+), 18 deletions(-)
 
-[PATCH] clocksource: sh_mtu2: Drop incorrect SoC family name
-
-The MTU2 hardware block is found in many Renesas SH and ARM SoCs, but
-not in R-Car.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- Documentation/devicetree/bindings/timer/renesas,mtu2.txt | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-index d9a8d5a..ba0a34d 100644
---- a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-+++ b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-@@ -1,4 +1,4 @@
--* Renesas R-Car Multi-Function Timer Pulse Unit 2 (MTU2)
-+* Renesas Multi-Function Timer Pulse Unit 2 (MTU2)
- 
- The MTU2 is a multi-purpose, multi-channel timer/counter with configurable
- clock inputs and programmable compare match.
 -- 
-2.1.1
+1.9.1
 
