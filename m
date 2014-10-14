@@ -1,10 +1,10 @@
 From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Thu, 09 Oct 2014 10:03:03 +0000
+Date: Tue, 14 Oct 2014 07:01:41 +0000
 Subject: [PATCH 2/4] ARM: shmobile: r8a7791: Add SGX clock to device tree
-Message-Id: <1412848985-29353-3-git-send-email-ykaneko0929@gmail.com>
+Message-Id: <1413270103-9517-3-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412848985-29353-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1412848985-29353-1-git-send-email-ykaneko0929@gmail.com>
+References: <1413270103-9517-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1413270103-9517-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,7 +20,7 @@ Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
  2 files changed, 7 insertions(+), 5 deletions(-)
 
 diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index d343099..d59d2a8 100644
+index d343099..5a26c1a 100644
 --- a/arch/arm/boot/dts/r8a7791.dtsi
 +++ b/arch/arm/boot/dts/r8a7791.dtsi
 @@ -1,7 +1,7 @@
@@ -42,27 +42,27 @@ index d343099..d59d2a8 100644
  			#clock-cells = <1>;
  			renesas,clock-indices = <
 -				R8A7791_CLK_JPU R8A7791_CLK_TMU1 R8A7791_CLK_TMU3 R8A7791_CLK_TMU2
-+				R8A7791_CLK_JPU R8A7791_CLK_TMU1 R8A7791_CLK_PVRSRVKM
++				R8A7791_CLK_JPU R8A7791_CLK_TMU1 R8A7791_CLK_3DG
 +				R8A7791_CLK_TMU3 R8A7791_CLK_TMU2
  				R8A7791_CLK_CMT0 R8A7791_CLK_TMU0 R8A7791_CLK_VSP1_DU1
  				R8A7791_CLK_VSP1_DU0 R8A7791_CLK_VSP1_S
  			>;
  			clock-output-names -				"jpu", "tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
 -				"vsp1-du0", "vsp1-sy";
-+				"jpu", "tmu1", "pvrsrvkm", "tmu3", "tmu2", "cmt0", "tmu0",
++				"jpu", "tmu1", "3dg", "tmu3", "tmu2", "cmt0", "tmu0",
 +				"vsp1-du1", "vsp1-du0", "vsp1-sy";
  		};
  		mstp2_clks: mstp2_clks@e6150138 {
  			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
 diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index 58c3f49..950250d 100644
+index 58c3f49..9570b7c 100644
 --- a/include/dt-bindings/clock/r8a7791-clock.h
 +++ b/include/dt-bindings/clock/r8a7791-clock.h
 @@ -27,6 +27,7 @@
  /* MSTP1 */
  #define R8A7791_CLK_JPU		6
  #define R8A7791_CLK_TMU1		11
-+#define R8A7791_CLK_PVRSRVKM		12
++#define R8A7791_CLK_3DG			12
  #define R8A7791_CLK_TMU3		21
  #define R8A7791_CLK_TMU2		22
  #define R8A7791_CLK_CMT0		24
