@@ -1,44 +1,51 @@
-From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
-Date: Tue, 14 Oct 2014 00:57:43 +0000
-Subject: [PATCH v2 0/1 resend] spi: Using Trigger number to transmit/receive data
-Message-Id: <1413248264-3685-1-git-send-email-cm-hiep@jinso.co.jp>
+From: Mark Brown <broonie@kernel.org>
+Date: Tue, 14 Oct 2014 12:08:30 +0000
+Subject: Re: [PATCH v2 0/1 resend] spi: Using Trigger number to transmit/receive data
+Message-Id: <20141014120830.GS27755@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="Z5R++VQVird/TDtY"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: geert+renesas@glider.be
-Cc: broonie@kernel.org, linux-spi@vger.kernel.org, kuninori.morimoto.gx@renesas.com, yoshihiro.shimoda.uh@renesas.com, ryusuke.sakato.bx@renesas.com, linux-sh@vger.kernel.org
-
-From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
-
-Hi Geert,
-
-Here is the verion 2 of the QSPI patch, I have added the DMA support on it.
-In order to use DMA When the DMA is available. 
-This patch supports for r8a7790 SOC and developed base on the upstream-v3.17-rc7
-and have tested on the Lager board.
-Please review it when you have time!
-
-Version 1:
-
-This is the patch of QSPI that support for r8a7790 SOC. The pupose of 
-this patch is to transmit and receive the 32 bytes of data when the data 
-already has prepared on Transmit/Receive Buffer. Using Transmit/Receive 
-Buffer Data Trigger Number to do that instead transmits/receives a byte 
-of data. With this patch will improve the speed of transfer data.
-This patch was developed base on the upstream-v3.17-rc5 and have 
-tested on the Lager board.
+References: <1413248264-3685-1-git-send-email-cm-hiep@jinso.co.jp>
+In-Reply-To: <1413248264-3685-1-git-send-email-cm-hiep-HEF513clHfp3+QwDJ9on6Q@public.gmane.org>
+To: Cao Minh Hiep <cm-hiep-HEF513clHfp3+QwDJ9on6Q@public.gmane.org>
+Cc: geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, ryusuke.sakato.bx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
 
-Best Regards,
-Cao Minh Hiep 
+--Z5R++VQVird/TDtY
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Hiep Cao Minh (1):
-  spi: Using Trigger number to transmit/receive data
+On Tue, Oct 14, 2014 at 09:57:43AM +0900, Cao Minh Hiep wrote:
+> From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+>=20
+> Hi Geert,
+>=20
+> Here is the verion 2 of the QSPI patch, I have added the DMA support on i=
+t.
+> In order to use DMA When the DMA is available.=20
+> This patch supports for r8a7790 SOC and developed base on the upstream-v3=
+=2E17-rc7
+> and have tested on the Lager board.
+> Please review it when you have time!
 
- drivers/spi/spi-rspi.c | 138 ++++++++++++++++++++++++++++++++++++++++++++-----
- 1 file changed, 125 insertions(+), 13 deletions(-)
+You appear to be resending this about a week after the last send -
+please don't do that, you should allow longer for review.
 
--- 
-1.9.1
+--Z5R++VQVird/TDtY
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQEcBAEBAgAGBQJUPRI6AAoJECTWi3JdVIfQndgH+gMGleTnyVSMWwqykBuRaoRz
+aua1DJlLxB8f3l9Eqssd/o5up4MSNaS87NRziPIkaPU2Hx+4zYMBh7qNGmu+QFKv
+Mozp9IGS2/wKu7I4eDXza4Sz6WrFustvXm0/0diVnrqsMbH3vblUP8y2FtYUgmYu
+YWqdQ6IEdUmKMa8X3vB3i9hq4imwGco4we3/gi3rIV3UPxlZZvgB6XP9Rd0fQzMD
+G+FHiTvEMDtPnN85uAx0tf4O621H6ZFtD7db9GQ1CkPh1IAX07rxXkFPAU50MeH2
+a8yshRn9yusovBxfRciQGNWjK3otCCsiI3PgaUt5ufX8LCDquVjHxNTqlCu7jSc=
+=9/dq
+-----END PGP SIGNATURE-----
+
+--Z5R++VQVird/TDtY--
