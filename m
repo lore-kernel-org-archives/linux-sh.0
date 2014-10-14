@@ -1,44 +1,107 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 23 Oct 2014 11:19:00 +0000
-Subject: [PATCH v3 10/11] ARM: shmobile: r8a7740: Add A4SU pm domain support
-Message-Id: <1414063141-8856-11-git-send-email-geert+renesas@glider.be>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Tue, 14 Oct 2014 06:26:52 +0000
+Subject: [PATCH 2/3] media: soc_camera: rcar_vin: Add capture width check for NV16 format
+Message-Id: <1413268013-8437-3-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414063141-8856-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1414063141-8856-1-git-send-email-geert+renesas@glider.be>
+References: <1413268013-8437-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1413268013-8437-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Add support for the A4SU power domain.
-This domain contains the USBPHY hardware block, which is currently not
-used by any driver.
+From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+At the time of NV16 capture format, the user has to specify the
+capture output width of the multiple of 32 for H/W specification.
+At the time of using NV16 format by ioctl of VIDIOC_S_FMT,
+this patch adds align check and the error handling to forbid
+specification of the capture output width which is not a multiple of 32.
+
+Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 ---
-v3:
-  - No changes,
-v2:
-  - Drop FIXME about hooking up USB platform devices, as the Armadillo
-    platform code doesn't register a USB host device anyway?
----
- arch/arm/mach-shmobile/pm-r8a7740.c | 3 +++
- 1 file changed, 3 insertions(+)
+ drivers/media/platform/soc_camera/rcar_vin.c | 24 ++++++++++++++++++++++--
+ 1 file changed, 22 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
-index 74e6a67a28d3c336..27117a8a49ad8556 100644
---- a/arch/arm/mach-shmobile/pm-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7740.c
-@@ -75,6 +75,9 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
- 	}, {
- 		.genpd.name	= "A3SG",
- 		.bit_shift	= 13,
-+	}, {
-+		.genpd.name	= "A4SU",
-+		.bit_shift	= 20,
- 	},
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index 746f03f..00bc98d 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -488,6 +488,7 @@ struct rcar_vin_priv {
+ 	bool				request_to_stop;
+ 	struct completion		capture_stop;
+ 	enum chip_id			chip;
++	bool				error_flag;
  };
  
+ #define is_continuous_transfer(priv)	(priv->vb_count > MAX_BUFFER_NUM)
+@@ -647,7 +648,7 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+ 	/* output format */
+ 	switch (icd->current_fmt->host_fmt->fourcc) {
+ 	case V4L2_PIX_FMT_NV16:
+-		iowrite32(ALIGN(cam->width * cam->height, 0x80),
++		iowrite32(ALIGN(ALIGN(cam->width, 0x20) * cam->height, 0x80),
+ 			  priv->base + VNUVAOF_REG);
+ 		dmr = VNDMR_DTMD_YCSEP;
+ 		output_is_yuv = true;
+@@ -976,6 +977,8 @@ static int rcar_vin_add_device(struct soc_camera_device *icd)
+ 	dev_dbg(icd->parent, "R-Car VIN driver attached to camera %d\n",
+ 		icd->devnum);
+ 
++	priv->error_flag = false;
++
+ 	return 0;
+ }
+ 
+@@ -993,6 +996,7 @@ static void rcar_vin_remove_device(struct soc_camera_device *icd)
+ 
+ 	priv->state = STOPPED;
+ 	priv->request_to_stop = false;
++	priv->error_flag = false;
+ 
+ 	/* make sure active buffer is cancelled */
+ 	spin_lock_irq(&priv->lock);
+@@ -1089,6 +1093,7 @@ static int rcar_vin_set_rect(struct soc_camera_device *icd)
+ 	unsigned char dsize = 0;
+ 	struct v4l2_rect *cam_subrect = &cam->subrect;
+ 	unsigned long value;
++	unsigned long imgstr;
+ 
+ 	dev_dbg(icd->parent, "Crop %ux%u@%u:%u\n",
+ 		icd->user_width, icd->user_height, cam->vin_left, cam->vin_top);
+@@ -1166,7 +1171,11 @@ static int rcar_vin_set_rect(struct soc_camera_device *icd)
+ 		break;
+ 	}
+ 
+-	iowrite32(ALIGN(cam->out_width, 0x10), priv->base + VNIS_REG);
++	if (icd->current_fmt->host_fmt->fourcc = V4L2_PIX_FMT_NV16)
++		imgstr = ALIGN(cam->out_width, 0x20);
++	else
++		imgstr = ALIGN(cam->out_width, 0x10);
++	iowrite32(imgstr, priv->base + VNIS_REG);
+ 
+ 	return 0;
+ }
+@@ -1608,6 +1617,17 @@ static int rcar_vin_set_fmt(struct soc_camera_device *icd,
+ 	dev_dbg(dev, "S_FMT(pix=0x%x, %ux%u)\n",
+ 		pixfmt, pix->width, pix->height);
+ 
++	/* At the time of NV16 capture format, the user has to specify the
++	   width of the multiple of 32 for H/W specification. */
++	if (priv->error_flag = false)
++		priv->error_flag = true;
++	else {
++		if ((pixfmt = V4L2_PIX_FMT_NV16) && (pix->width & 0x1F)) {
++			dev_err(icd->parent, "Specified width error in NV16 format.\n");
++			return -EINVAL;
++		}
++	}
++
+ 	switch (pix->field) {
+ 	default:
+ 		pix->field = V4L2_FIELD_NONE;
 -- 
 1.9.1
 
