@@ -1,73 +1,73 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 17 Oct 2014 19:54:33 +0000
-Subject: Re: [PATCH] ata: sata_rcar: Disable DIPM mode for r8a7790 ES1
-Message-Id: <544173F9.20908@cogentembedded.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Tue, 14 Oct 2014 06:26:53 +0000
+Subject: [PATCH 3/3] media: soc_camera: rcar_vin: Add NV16 horizontal scaling-up support
+Message-Id: <1413268013-8437-4-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1413438652-18107-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1413438652-18107-1-git-send-email-horms+renesas@verge.net.au>
+References: <1413268013-8437-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1413268013-8437-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms+renesas@verge.net.au>, linux-ide@vger.kernel.org
-Cc: Yoshihiro Kaneko <ykaneko0929@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Hello.
+From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
 
-On 10/16/2014 9:50 AM, Simon Horman wrote:
+The scaling function had been forbidden for the capture format of
+NV16 until now. With this patch, a horizontal scaling-up function
+is supported to the capture format of NV16. a vertical scaling-up
+by the capture format of NV16 is forbidden for the H/W specification.
 
-> Unlike other SATA R-Car r8a7790 controllers the r8a7790 ES1 SATA R-Car
-> controller needs to be run with DIPM disabled.
+Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
+ drivers/media/platform/soc_camera/rcar_vin.c | 19 +++++++++++++++----
+ 1 file changed, 15 insertions(+), 4 deletions(-)
 
-> Loosely based on work by Koji Matsuoka.
-
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> ---
-> This patch is against for-next branch of Tejun's libata tree.
-
->   Documentation/devicetree/bindings/ata/sata_rcar.txt |  3 ++-
->   drivers/ata/sata_rcar.c                             | 10 ++++++++++
->   2 files changed, 12 insertions(+), 1 deletion(-)
->
-> diff --git a/Documentation/devicetree/bindings/ata/sata_rcar.txt b/Documentation/devicetree/bindings/ata/sata_rcar.txt
-> index 1e61113..7dd32d3 100644
-> --- a/Documentation/devicetree/bindings/ata/sata_rcar.txt
-> +++ b/Documentation/devicetree/bindings/ata/sata_rcar.txt
-> @@ -3,7 +3,8 @@
->   Required properties:
->   - compatible		: should contain one of the following:
->   			  - "renesas,sata-r8a7779" for R-Car H1
-> -			  - "renesas,sata-r8a7790" for R-Car H2
-> +			  - "renesas,sata-r8a7790-es1" for R-Car H2 ES1
-> +			  - "renesas,sata-r8a7790" for R-Car H2 other than ES1
->   			  - "renesas,sata-r8a7791" for R-Car M2
->   - reg			: address and length of the SATA registers;
->   - interrupts		: must consist of one interrupt specifier.
-> diff --git a/drivers/ata/sata_rcar.c b/drivers/ata/sata_rcar.c
-> index 61eb6d7..d5cacb5 100644
-> --- a/drivers/ata/sata_rcar.c
-> +++ b/drivers/ata/sata_rcar.c
-> @@ -146,6 +146,7 @@
->   enum sata_rcar_type {
->   	RCAR_GEN1_SATA,
->   	RCAR_GEN2_SATA,
-> +	RCAR_R8A7790_ES1_SATA,
-
-    Hm, can't we read the SoC revision somewhere?
-
->   };
->
->   struct sata_rcar_priv {
-> @@ -763,6 +764,10 @@ static void sata_rcar_setup_port(struct ata_host *host)
->   	ap->udma_mask	= ATA_UDMA6;
->   	ap->flags	|= ATA_FLAG_SATA;
->
-> +	if (priv->type = RCAR_R8A7790_ES1_SATA) {
-> +		ap->flags	|= ATA_FLAG_NO_DIPM;
-> +	}
-
-    {} not needed here.
-
-[...]
-
-Back home, Sergei
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index 00bc98d..bf3588f 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -648,7 +648,7 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+ 	/* output format */
+ 	switch (icd->current_fmt->host_fmt->fourcc) {
+ 	case V4L2_PIX_FMT_NV16:
+-		iowrite32(ALIGN(ALIGN(cam->width, 0x20) * cam->height, 0x80),
++		iowrite32(ALIGN((cam->out_width * cam->out_height), 0x80),
+ 			  priv->base + VNUVAOF_REG);
+ 		dmr = VNDMR_DTMD_YCSEP;
+ 		output_is_yuv = true;
+@@ -1622,9 +1622,19 @@ static int rcar_vin_set_fmt(struct soc_camera_device *icd,
+ 	if (priv->error_flag = false)
+ 		priv->error_flag = true;
+ 	else {
+-		if ((pixfmt = V4L2_PIX_FMT_NV16) && (pix->width & 0x1F)) {
+-			dev_err(icd->parent, "Specified width error in NV16 format.\n");
+-			return -EINVAL;
++		if (pixfmt = V4L2_PIX_FMT_NV16) {
++			if (pix->width & 0x1F) {
++				dev_err(icd->parent,
++				"Specified width error in NV16 format. "
++				"Please specify the multiple of 32.\n");
++				return -EINVAL;
++			}
++			if (pix->height != cam->height) {
++				dev_err(icd->parent,
++				"Vertical scaling-up error in NV16 format. "
++				"Please specify input height size.\n");
++				return -EINVAL;
++			}
+ 		}
+ 	}
+ 
+@@ -1670,6 +1680,7 @@ static int rcar_vin_set_fmt(struct soc_camera_device *icd,
+ 	case V4L2_PIX_FMT_YUYV:
+ 	case V4L2_PIX_FMT_RGB565:
+ 	case V4L2_PIX_FMT_RGB555X:
++	case V4L2_PIX_FMT_NV16: /* horizontal scaling-up only is supported */
+ 		can_scale = true;
+ 		break;
+ 	default:
+-- 
+1.9.1
 
