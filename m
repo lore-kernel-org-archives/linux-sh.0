@@ -1,40 +1,82 @@
-From: Catalin Marinas <catalin.marinas@arm.com>
-Date: Thu, 09 Oct 2014 10:41:04 +0000
-Subject: Re: [PATCH 32/44] arm64: psci: Register with kernel poweroff handler
-Message-Id: <20141009104104.GG17836@e104818-lin.cambridge.arm.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Tue, 14 Oct 2014 06:22:10 +0000
+Subject: [PATCH] media: soc_camera: rcar_vin: Add BT.709 24-bit RGB888 input support
+Message-Id: <1413267730-8172-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412659726-29957-1-git-send-email-linux@roeck-us.net>
- <1412659726-29957-33-git-send-email-linux@roeck-us.net>
-In-Reply-To: <1412659726-29957-33-git-send-email-linux-0h96xk9xTtrk1uMJSBkQmQ@public.gmane.org>
+References: <1387830486-10650-1-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1387830486-10650-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guenter Roeck <linux-0h96xk9xTtrk1uMJSBkQmQ@public.gmane.org>
-Cc: "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "adi-buildroot-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org" <adi-buildroot-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, "devel-gWbeCf7V1WCQmaza687I9mD2FQJk+8+b@public.gmane.org" <devel-gWbeCf7V1WCQmaza687I9mD2FQJk+8+b@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "lguest-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org" <lguest-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org>, "linux-acpi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-acpi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-am33-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org" <linux-am33-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "linux-cris-kernel-VrBV9hrLPhE@public.gmane.org" <linux-cris-kernel-VrBV9hrLPhE@public.gmane.org>, "linux-efi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-efi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-hexagon-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-m32r-ja-rQhvJZKUsGBRYuoOT4C5/9i2O/JbrIOy@public.gmane.org" <linux-m32r-ja-rQhvJZKUsGBRYuoOT4C5/9i2O/JbrIOy@public.gmane.org>, "linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org" <linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org>, "linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-media@vger.kernel.org
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Tue, Oct 07, 2014 at 06:28:34AM +0100, Guenter Roeck wrote:
-> Register with kernel poweroff handler instead of setting pm_power_off
-> directly.
-> 
-> Cc: Catalin Marinas <catalin.marinas@arm.com>
-> Cc: Will Deacon <will.deacon@arm.com>
-> Signed-off-by: Guenter Roeck <linux@roeck-us.net>
-> ---
->  arch/arm64/kernel/psci.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm64/kernel/psci.c b/arch/arm64/kernel/psci.c
-> index 5539547..c1f3d09 100644
-> --- a/arch/arm64/kernel/psci.c
-> +++ b/arch/arm64/kernel/psci.c
-> @@ -286,7 +286,7 @@ static int __init psci_0_2_init(struct device_node *np)
->  
->  	arm_pm_restart = psci_sys_reset;
->  
-> -	pm_power_off = psci_sys_poweroff;
-> +	register_poweroff_handler_simple(psci_sys_poweroff, 128);
->  
->  out_put_node:
->  	of_node_put(np);
+From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
 
-Acked-by: Catalin Marinas <catalin.marinas@arm.com>
+Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
+
+This patch is against master branch of linuxtv.org/media_tree.git.
+
+ drivers/media/platform/soc_camera/rcar_vin.c | 10 ++++++++++
+ include/linux/platform_data/camera-rcar.h    |  1 +
+ 2 files changed, 11 insertions(+)
+
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index 20defcb..7eb4f1e 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -74,6 +74,8 @@
+ #define VNMC_INF_YUV10_BT656	(2 << 16)
+ #define VNMC_INF_YUV10_BT601	(3 << 16)
+ #define VNMC_INF_YUV16		(5 << 16)
++#define VNMC_INF_RGB888		(6 << 16)
++#define VNMC_INF_RGB_MASK	(6 << 16)
+ #define VNMC_VUP		(1 << 10)
+ #define VNMC_IM_ODD		(0 << 3)
+ #define VNMC_IM_ODD_EVEN	(1 << 3)
+@@ -272,6 +274,10 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+ 
+ 	/* input interface */
+ 	switch (icd->current_fmt->code) {
++	case V4L2_MBUS_FMT_RGB888_1X24:
++		/* BT.601/BT.709 24-bit RGB-888 */
++		vnmc |= VNMC_INF_RGB888;
++		break;
+ 	case V4L2_MBUS_FMT_YUYV8_1X16:
+ 		/* BT.601/BT.1358 16bit YCbCr422 */
+ 		vnmc |= VNMC_INF_YUV16;
+@@ -331,6 +337,9 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+ 	if (output_is_yuv)
+ 		vnmc |= VNMC_BPS;
+ 
++	if (vnmc & VNMC_INF_RGB_MASK)
++		vnmc ^= VNMC_BPS;
++
+ 	/* progressive or interlaced mode */
+ 	interrupts = progressive ? VNIE_FIE | VNIE_EFE : VNIE_EFE;
+ 
+@@ -1013,6 +1022,7 @@ static int rcar_vin_get_formats(struct soc_camera_device *icd, unsigned int idx,
+ 	case V4L2_MBUS_FMT_YUYV8_1X16:
+ 	case V4L2_MBUS_FMT_YUYV8_2X8:
+ 	case V4L2_MBUS_FMT_YUYV10_2X10:
++	case V4L2_MBUS_FMT_RGB888_1X24:
+ 		if (cam->extra_fmt)
+ 			break;
+ 
+diff --git a/include/linux/platform_data/camera-rcar.h b/include/linux/platform_data/camera-rcar.h
+index dfc83c5..03a9df6 100644
+--- a/include/linux/platform_data/camera-rcar.h
++++ b/include/linux/platform_data/camera-rcar.h
+@@ -17,6 +17,7 @@
+ #define RCAR_VIN_VSYNC_ACTIVE_LOW	(1 << 1)
+ #define RCAR_VIN_BT601			(1 << 2)
+ #define RCAR_VIN_BT656			(1 << 3)
++#define RCAR_VIN_BT709			(1 << 4)
+ 
+ struct rcar_vin_platform_data {
+ 	unsigned int flags;
+-- 
+1.9.1
+
