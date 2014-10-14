@@ -1,73 +1,71 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Tue, 14 Oct 2014 06:26:53 +0000
-Subject: [PATCH 3/3] media: soc_camera: rcar_vin: Add NV16 horizontal scaling-up support
-Message-Id: <1413268013-8437-4-git-send-email-ykaneko0929@gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 14 Oct 2014 12:57:53 +0000
+Subject: Re: [PATCH 3/3] media: soc_camera: rcar_vin: Add NV16 horizontal scaling-up support
+Message-Id: <543D1DD1.2060700@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1413268013-8437-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1413268013-8437-1-git-send-email-ykaneko0929@gmail.com>
+References: <1413268013-8437-1-git-send-email-ykaneko0929@gmail.com> <1413268013-8437-4-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1413268013-8437-4-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
+To: Yoshihiro Kaneko <ykaneko0929@gmail.com>, linux-media@vger.kernel.org
 Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+Hello.
 
-The scaling function had been forbidden for the capture format of
-NV16 until now. With this patch, a horizontal scaling-up function
-is supported to the capture format of NV16. a vertical scaling-up
-by the capture format of NV16 is forbidden for the H/W specification.
+On 10/14/2014 10:26 AM, Yoshihiro Kaneko wrote:
 
-Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
----
- drivers/media/platform/soc_camera/rcar_vin.c | 19 +++++++++++++++----
- 1 file changed, 15 insertions(+), 4 deletions(-)
+> From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
 
-diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-index 00bc98d..bf3588f 100644
---- a/drivers/media/platform/soc_camera/rcar_vin.c
-+++ b/drivers/media/platform/soc_camera/rcar_vin.c
-@@ -648,7 +648,7 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
- 	/* output format */
- 	switch (icd->current_fmt->host_fmt->fourcc) {
- 	case V4L2_PIX_FMT_NV16:
--		iowrite32(ALIGN(ALIGN(cam->width, 0x20) * cam->height, 0x80),
-+		iowrite32(ALIGN((cam->out_width * cam->out_height), 0x80),
- 			  priv->base + VNUVAOF_REG);
- 		dmr = VNDMR_DTMD_YCSEP;
- 		output_is_yuv = true;
-@@ -1622,9 +1622,19 @@ static int rcar_vin_set_fmt(struct soc_camera_device *icd,
- 	if (priv->error_flag = false)
- 		priv->error_flag = true;
- 	else {
--		if ((pixfmt = V4L2_PIX_FMT_NV16) && (pix->width & 0x1F)) {
--			dev_err(icd->parent, "Specified width error in NV16 format.\n");
--			return -EINVAL;
-+		if (pixfmt = V4L2_PIX_FMT_NV16) {
-+			if (pix->width & 0x1F) {
-+				dev_err(icd->parent,
-+				"Specified width error in NV16 format. "
-+				"Please specify the multiple of 32.\n");
-+				return -EINVAL;
-+			}
-+			if (pix->height != cam->height) {
-+				dev_err(icd->parent,
-+				"Vertical scaling-up error in NV16 format. "
-+				"Please specify input height size.\n");
-+				return -EINVAL;
-+			}
- 		}
- 	}
- 
-@@ -1670,6 +1680,7 @@ static int rcar_vin_set_fmt(struct soc_camera_device *icd,
- 	case V4L2_PIX_FMT_YUYV:
- 	case V4L2_PIX_FMT_RGB565:
- 	case V4L2_PIX_FMT_RGB555X:
-+	case V4L2_PIX_FMT_NV16: /* horizontal scaling-up only is supported */
- 		can_scale = true;
- 		break;
- 	default:
--- 
-1.9.1
+> The scaling function had been forbidden for the capture format of
+> NV16 until now. With this patch, a horizontal scaling-up function
+> is supported to the capture format of NV16. a vertical scaling-up
+> by the capture format of NV16 is forbidden for the H/W specification.
+
+    s/for/by/?
+
+> Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+> ---
+>   drivers/media/platform/soc_camera/rcar_vin.c | 19 +++++++++++++++----
+>   1 file changed, 15 insertions(+), 4 deletions(-)
+
+> diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+> index 00bc98d..bf3588f 100644
+> --- a/drivers/media/platform/soc_camera/rcar_vin.c
+> +++ b/drivers/media/platform/soc_camera/rcar_vin.c
+[...]
+> @@ -1622,9 +1622,19 @@ static int rcar_vin_set_fmt(struct soc_camera_device *icd,
+>   	if (priv->error_flag = false)
+>   		priv->error_flag = true;
+>   	else {
+> -		if ((pixfmt = V4L2_PIX_FMT_NV16) && (pix->width & 0x1F)) {
+> -			dev_err(icd->parent, "Specified width error in NV16 format.\n");
+> -			return -EINVAL;
+> +		if (pixfmt = V4L2_PIX_FMT_NV16) {
+> +			if (pix->width & 0x1F) {
+> +				dev_err(icd->parent,
+> +				"Specified width error in NV16 format. "
+
+    You should indent the string more to the right, preferrably starting it 
+under 'icd'.
+
+> +				"Please specify the multiple of 32.\n");
+
+    Do not break the string like this. scripts/checkpatch.pl has been taught 
+to not complain about long strings.
+
+> +				return -EINVAL;
+> +			}
+> +			if (pix->height != cam->height) {
+> +				dev_err(icd->parent,
+> +				"Vertical scaling-up error in NV16 format. "
+> +				"Please specify input height size.\n");
+
+    Same here. Not breaking the lines helps to find the error messages in the 
+code.
+
+[...]
+
+WBR, Sergei
 
