@@ -1,7 +1,7 @@
 From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Tue, 14 Oct 2014 06:22:10 +0000
-Subject: [PATCH] media: soc_camera: rcar_vin: Add BT.709 24-bit RGB888 input support
-Message-Id: <1413267730-8172-1-git-send-email-ykaneko0929@gmail.com>
+Date: Tue, 14 Oct 2014 06:24:38 +0000
+Subject: [PATCH] media: soc_camera: rcar_vin: Add YUYV capture format support
+Message-Id: <1413267878-8222-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1387830486-10650-1-git-send-email-valentine.barshak@cogentembedded.com>
 In-Reply-To: <1387830486-10650-1-git-send-email-valentine.barshak@cogentembedded.com>
@@ -19,64 +19,28 @@ Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 
 This patch is against master branch of linuxtv.org/media_tree.git.
 
- drivers/media/platform/soc_camera/rcar_vin.c | 10 ++++++++++
- include/linux/platform_data/camera-rcar.h    |  1 +
- 2 files changed, 11 insertions(+)
+ drivers/media/platform/soc_camera/rcar_vin.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
 diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-index 20defcb..7eb4f1e 100644
+index 7eb4f1e..61c36b0 100644
 --- a/drivers/media/platform/soc_camera/rcar_vin.c
 +++ b/drivers/media/platform/soc_camera/rcar_vin.c
-@@ -74,6 +74,8 @@
- #define VNMC_INF_YUV10_BT656	(2 << 16)
- #define VNMC_INF_YUV10_BT601	(3 << 16)
- #define VNMC_INF_YUV16		(5 << 16)
-+#define VNMC_INF_RGB888		(6 << 16)
-+#define VNMC_INF_RGB_MASK	(6 << 16)
- #define VNMC_VUP		(1 << 10)
- #define VNMC_IM_ODD		(0 << 3)
- #define VNMC_IM_ODD_EVEN	(1 << 3)
-@@ -272,6 +274,10 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
- 
- 	/* input interface */
- 	switch (icd->current_fmt->code) {
-+	case V4L2_MBUS_FMT_RGB888_1X24:
-+		/* BT.601/BT.709 24-bit RGB-888 */
-+		vnmc |= VNMC_INF_RGB888;
-+		break;
- 	case V4L2_MBUS_FMT_YUYV8_1X16:
- 		/* BT.601/BT.1358 16bit YCbCr422 */
- 		vnmc |= VNMC_INF_YUV16;
-@@ -331,6 +337,9 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
- 	if (output_is_yuv)
- 		vnmc |= VNMC_BPS;
- 
-+	if (vnmc & VNMC_INF_RGB_MASK)
-+		vnmc ^= VNMC_BPS;
-+
- 	/* progressive or interlaced mode */
- 	interrupts = progressive ? VNIE_FIE | VNIE_EFE : VNIE_EFE;
- 
-@@ -1013,6 +1022,7 @@ static int rcar_vin_get_formats(struct soc_camera_device *icd, unsigned int idx,
- 	case V4L2_MBUS_FMT_YUYV8_1X16:
- 	case V4L2_MBUS_FMT_YUYV8_2X8:
- 	case V4L2_MBUS_FMT_YUYV10_2X10:
-+	case V4L2_MBUS_FMT_RGB888_1X24:
- 		if (cam->extra_fmt)
- 			break;
- 
-diff --git a/include/linux/platform_data/camera-rcar.h b/include/linux/platform_data/camera-rcar.h
-index dfc83c5..03a9df6 100644
---- a/include/linux/platform_data/camera-rcar.h
-+++ b/include/linux/platform_data/camera-rcar.h
-@@ -17,6 +17,7 @@
- #define RCAR_VIN_VSYNC_ACTIVE_LOW	(1 << 1)
- #define RCAR_VIN_BT601			(1 << 2)
- #define RCAR_VIN_BT656			(1 << 3)
-+#define RCAR_VIN_BT709			(1 << 4)
- 
- struct rcar_vin_platform_data {
- 	unsigned int flags;
+@@ -889,6 +889,14 @@ static const struct soc_mbus_pixelfmt rcar_vin_formats[] = {
+ 		.layout			= SOC_MBUS_LAYOUT_PLANAR_Y_C,
+ 	},
+ 	{
++		.fourcc			= V4L2_PIX_FMT_YUYV,
++		.name			= "YUYV",
++		.bits_per_sample	= 16,
++		.packing		= SOC_MBUS_PACKING_NONE,
++		.order			= SOC_MBUS_ORDER_LE,
++		.layout			= SOC_MBUS_LAYOUT_PACKED,
++	},
++	{
+ 		.fourcc			= V4L2_PIX_FMT_UYVY,
+ 		.name			= "UYVY",
+ 		.bits_per_sample	= 16,
 -- 
 1.9.1
 
