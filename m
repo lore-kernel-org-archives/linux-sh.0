@@ -1,66 +1,42 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 23 Oct 2014 09:53:02 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: Add early debugging support using SCIF(A)
-Message-Id: <16849819.4PUYgNsGu5@avalon>
+From: Rolf Evers-Fischer <embedded24@evers-fischer.de>
+Date: Wed, 15 Oct 2014 13:29:45 +0000
+Subject: [PATCH] arch: arm: mach-shmobile: Remove ARCH_HAS_OPP completely
+Message-Id: <1413379785-14468-1-git-send-email-embedded24@evers-fischer.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1413993263-10444-1-git-send-email-geert+renesas@glider.be>
- <1467605.AdUxz6EOpv@avalon>
- <CAMuHMdV4S+bV8C-aiHuYShjSNaGx6wD1C3uJRjRGqZ7U9SAFXw@mail.gmail.com>
-In-Reply-To: <CAMuHMdV4S+bV8C-aiHuYShjSNaGx6wD1C3uJRjRGqZ7U9SAFXw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+The Kconfig symbol ARCH_HAS_OPP became redundant in v3.16: commit
+049d595a4db3 ("PM / OPP: Make OPP invisible to users in Kconfig")
+removed the only dependency that used it. Setting it had no effect
+anymore.
 
-On Thursday 23 October 2014 09:02:46 Geert Uytterhoeven wrote:
-> On Wed, Oct 22, 2014 at 10:59 PM, Laurent Pinchart wrote:
-> > On Wednesday 22 October 2014 19:34:17 Geert Uytterhoeven wrote:
-> >> On Wed, Oct 22, 2014 at 6:08 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> >> >> I'm wondering whether this can be fixed in the i2c driver? Does it
-> >> >> really
-> >> >> have to enable and disable the clock?
-> >> > 
-> >> > From a power-saving PoV, this makes sense. I assume serial output works
-> >> > again as soon as the regular scif driver takes over? Isn't that a
-> >> 
-> >> Yes it continues fine afterwards.
-> >> With TMU0 in DT, it's enabled again even earlier, as they share the
-> >> parent.
-> > 
-> > Would it make sense to have a list of clocks to reference from setup code
-> > when DEBUG_LL is defined ? It's a bit hackish, but DEBUG_LL is hackish
-> > anyway.
->
-> With setup code you mean platform or MSTP setup code?
+So commit 78c5e0bb145d ("PM / OPP: Remove ARCH_HAS_OPP") removed it. For
+some reason that commit did not remove all select statements for that
+symbol. These statements are now useless.
 
-I was thinking about platform setup code, but I'm open to other options as 
-well.
+Commit adad5621f3e1 ("PM / devfreq: Remove ARCH_HAS_OPP completely")
+removed it for devfreq. Remove one from mach-shmobile too.
 
-> That would be an option. The clock to enable depends on the SoC and SCIF(A)
-> address, so it's gonna need a large table.
+Signed-off-by: Rolf Evers-Fischer <embedded24@evers-fischer.de>
+---
+ arch/arm/mach-shmobile/Kconfig | 1 -
+ 1 file changed, 1 deletion(-)
 
-I know. It's not an ideal solution, I agree.
-
-> >> BTW, the code in sh_mobile_i2c_init() does this:
-> >>         /* Get clock rate after clock is enabled */
-> >>         clk_prepare_enable(pd->clk);
-> >>         i2c_clk_khz = clk_get_rate(pd->clk) / 1000;
-> >>         clk_disable_unprepare(pd->clk);
-> >> 
-> >> I assume the enable/disable is no longer needed with CCF?
-> > 
-> > I assume so as well.
-> 
-> Is it still needed with non-CCF? This driver is shared with arch/sh/.
-
-I haven't checked. If it is, I wonder whether we could move the prepare_enable 
-and disable_unprepare calls to inside the non-CCF clk_get_rate() 
-implementation.
-
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 21f457b..f59019d 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -36,7 +36,6 @@ menuconfig ARCH_SHMOBILE_MULTI
+ 	select NO_IOPORT_MAP
+ 	select PINCTRL
+ 	select ARCH_REQUIRE_GPIOLIB
+-	select ARCH_HAS_OPP
+ 
+ if ARCH_SHMOBILE_MULTI
+ 
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
