@@ -1,71 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 26 Oct 2014 14:11:07 +0000
-Subject: [PATCH v5 02/14] ARM: shmobile: r8a7790: Add DU node to device tree
-Message-Id: <1414332679-15497-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Bjorn Helgaas <bhelgaas@google.com>
+Date: Wed, 15 Oct 2014 23:35:05 +0000
+Subject: Re: [PATCH v1 08/10] kgdb: Remove "weak" from kgdb_arch_pc() declaration
+Message-Id: <CAErSpo4j060imN0SOZM0LUc0hymDZMg4b3PcMhCChsubWfcNGA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20141015165957.4063.66741.stgit@bhelgaas-glaptop2.roam.corp.google.com>
+ <20141015170637.4063.22185.stgit@bhelgaas-glaptop2.roam.corp.google.com>
+In-Reply-To: <20141015170637.4063.22185.stgit@bhelgaas-glaptop2.roam.corp.google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Jason Wessel <jason.wessel@windriver.com>, Ralf Baechle <ralf@linux-mips.org>, Ingo Molnar <mingo@redhat.com>, John Stultz <john.stultz@linaro.org>, Eric Paris <eparis@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, Thomas Gleixner <tglx@linutronix.de>, Andrew Morton <akpm@linux-foundation.org>
+Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Harvey Harrison <harvey.harrison@gmail.com>, Vineet Gupta <vgupta@synopsys.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
 
-Add the DU device with a disabled state. Boards that want to enable the
-DU need to specify the output topology.
+[+cc Harvey, Vineet, linux-sh; arc, sh, and x86 have kgdb_arch_pc()
+definitions and could see issues from this]
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/r8a7790.dtsi | 39 +++++++++++++++++++++++++++++++++++++++
- 1 file changed, 39 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 3f1e4b3898cd..13662d6c6693 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -670,6 +670,45 @@
- 		renesas,#wpf = <4>;
- 	};
- 
-+	du: display@feb00000 {
-+		compatible = "renesas,du-r8a7790";
-+		reg = <0 0xfeb00000 0 0x70000>,
-+		      <0 0xfeb90000 0 0x1c>,
-+		      <0 0xfeb94000 0 0x1c>;
-+		reg-names = "du", "lvds.0", "lvds.1";
-+		interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 268 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 269 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7790_CLK_DU0>,
-+			 <&mstp7_clks R8A7790_CLK_DU1>,
-+			 <&mstp7_clks R8A7790_CLK_DU2>,
-+			 <&mstp7_clks R8A7790_CLK_LVDS0>,
-+			 <&mstp7_clks R8A7790_CLK_LVDS1>;
-+		clock-names = "du.0", "du.1", "du.2", "lvds.0", "lvds.1";
-+		status = "disabled";
-+
-+		ports {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+
-+			port@0 {
-+				reg = <0>;
-+				du_out_rgb: endpoint {
-+				};
-+			};
-+			port@1 {
-+				reg = <1>;
-+				du_out_lvds0: endpoint {
-+				};
-+			};
-+			port@2 {
-+				reg = <2>;
-+				du_out_lvds1: endpoint {
-+				};
-+			};
-+		};
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
--- 
-2.0.4
-
+On Wed, Oct 15, 2014 at 11:06 AM, Bjorn Helgaas <bhelgaas@google.com> wrote:
+> kernel/debug/debug_core.c provides a default kgdb_arch_pc() definition
+> explicitly marked "weak".  Several architectures provide their own
+> definitions intended to override the default, but the "weak" attribute on
+> the declaration applied to the arch definitions as well, so the linker
+> chose one based on link order (see 10629d711ed7 ("PCI: Remove __weak
+> annotation from pcibios_get_phb_of_node decl")).
+>
+> Remove the "weak" attribute from the declaration so we always prefer a
+> non-weak definition over the weak one, independent of link order.
+>
+> Fixes: 688b744d8bc8 ("kgdb: fix signedness mixmatches, add statics, add declaration to header")
+> Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+> CC: Harvey Harrison <harvey.harrison@gmail.com>
+> ---
+>  include/linux/kgdb.h |    2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>
+> diff --git a/include/linux/kgdb.h b/include/linux/kgdb.h
+> index 6b06d378f3df..e465bb15912d 100644
+> --- a/include/linux/kgdb.h
+> +++ b/include/linux/kgdb.h
+> @@ -283,7 +283,7 @@ struct kgdb_io {
+>
+>  extern struct kgdb_arch                arch_kgdb_ops;
+>
+> -extern unsigned long __weak kgdb_arch_pc(int exception, struct pt_regs *regs);
+> +extern unsigned long kgdb_arch_pc(int exception, struct pt_regs *regs);
+>
+>  #ifdef CONFIG_SERIAL_KGDB_NMI
+>  extern int kgdb_register_nmi_console(void);
+>
