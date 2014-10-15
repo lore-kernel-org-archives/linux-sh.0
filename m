@@ -1,34 +1,66 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 24 Oct 2014 08:33:07 +0000
-Subject: [PATCH 0/2] ARM: shmobile: r8a7791: Correct number of CPU cores
-Message-Id: <1414139589-13605-1-git-send-email-horms+renesas@verge.net.au>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Wed, 15 Oct 2014 08:59:37 +0000
+Subject: [PATCH v2] ata: sata_rcar: Add r8a7793 device support
+Message-Id: <1413363577-25969-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-ide@vger.kernel.org
+Cc: Tejun Heo <tj@kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
 
-Hi,
+From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
 
-this short series separates AMPU resource data as it is not
-common accross R-Car gen2 SoCs: only the r8a7790 (H1) has the resouces
-described. It then corrects the resource data for the r8a7791,
-the only other SoC currently present in mainline that uses this data.
+Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
 
-Based on the renesas-next-20141024-v3.18-rc1 tag of my renesas tree.
+This patch is against for-next branch of Tejun's libata repo.
 
-Hisashi Nakamura (2):
-  ARM: shmobile: Separate APMU resource data into CPU dependant part
-  ARM: shmobile: r8a7791: Correct number of CPU cores
+v2 [Yoshihiro Kaneko]
+* Update the binding documentation
 
- arch/arm/mach-shmobile/common.h       |  5 -----
- arch/arm/mach-shmobile/platsmp-apmu.c | 27 +++++++++------------------
- arch/arm/mach-shmobile/platsmp-apmu.h | 32 ++++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/smp-r8a7790.c  | 16 +++++++++++++++-
- arch/arm/mach-shmobile/smp-r8a7791.c  | 12 +++++++++++-
- 5 files changed, 67 insertions(+), 25 deletions(-)
- create mode 100644 arch/arm/mach-shmobile/platsmp-apmu.h
+ Documentation/devicetree/bindings/ata/sata_rcar.txt | 3 ++-
+ drivers/ata/sata_rcar.c                             | 5 +++++
+ 2 files changed, 7 insertions(+), 1 deletion(-)
 
+diff --git a/Documentation/devicetree/bindings/ata/sata_rcar.txt b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+index 1e61113..74b1130 100644
+--- a/Documentation/devicetree/bindings/ata/sata_rcar.txt
++++ b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+@@ -4,7 +4,8 @@ Required properties:
+ - compatible		: should contain one of the following:
+ 			  - "renesas,sata-r8a7779" for R-Car H1
+ 			  - "renesas,sata-r8a7790" for R-Car H2
+-			  - "renesas,sata-r8a7791" for R-Car M2
++			  - "renesas,sata-r8a7791" for R-Car M2-W
++			  - "renesas,sata-r8a7793" for R-Car M2-N
+ - reg			: address and length of the SATA registers;
+ - interrupts		: must consist of one interrupt specifier.
+ 
+diff --git a/drivers/ata/sata_rcar.c b/drivers/ata/sata_rcar.c
+index 61eb6d7..6f8ed8e 100644
+--- a/drivers/ata/sata_rcar.c
++++ b/drivers/ata/sata_rcar.c
+@@ -841,6 +841,10 @@ static struct of_device_id sata_rcar_match[] = {
+ 		.compatible = "renesas,sata-r8a7791",
+ 		.data = (void *)RCAR_GEN2_SATA
+ 	},
++	{
++		.compatible = "renesas,sata-r8a7793",
++		.data = (void *)RCAR_GEN2_SATA
++	},
+ 	{ },
+ };
+ MODULE_DEVICE_TABLE(of, sata_rcar_match);
+@@ -850,6 +854,7 @@ static const struct platform_device_id sata_rcar_id_table[] = {
+ 	{ "sata-r8a7779", RCAR_GEN1_SATA },
+ 	{ "sata-r8a7790", RCAR_GEN2_SATA },
+ 	{ "sata-r8a7791", RCAR_GEN2_SATA },
++	{ "sata-r8a7793", RCAR_GEN2_SATA },
+ 	{ },
+ };
+ MODULE_DEVICE_TABLE(platform, sata_rcar_id_table);
 -- 
-2.1.1
+1.9.1
 
