@@ -1,92 +1,111 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 06 Oct 2014 02:40:29 +0000
-Subject: Re: [PATCH v2 00/13] ARM: shmobile: dts: Add chosen/stdout-path
-Message-Id: <20141006024027.GB23099@verge.net.au>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Thu, 16 Oct 2014 06:12:47 +0000
+Subject: [PATCH v2 2/3] media: soc_camera: rcar_vin: Add capture width check for NV16 format
+Message-Id: <1413439968-6349-3-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412349104-18724-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1412349104-18724-1-git-send-email-geert+renesas@glider.be>
+References: <1413439968-6349-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1413439968-6349-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Fri, Oct 03, 2014 at 05:11:31PM +0200, Geert Uytterhoeven wrote:
-> 	Hi Simon, Magnus,
-> 
-> This patch series adds chosen/stdout-path to the various shmobile DTS files
-> that are used for reference or multi-platform builds.
-> 
-> This serves two purposes:
->   1. It makes automatic console selection work in the absence of a "console="
->      parameter on the kernel command line, allowing to remove "console="
->      parameters from chosen/bootargs on many platforms.
->      Note that these "console=" parameters are still needed in some cases:
->        a. If console output is wanted on two consoles devices (graphical and
->           serial consoles), like on armadillo and kzm9g,
->        b. When using a non-default baud for the serial console, like on
->           henninger and alt,
->        c. If the DTS is shared between legacy and multi-platform, like on
->           armadillo, koelsch, lager, and marzen,
->   2. It will allow the PM domain code to find the PM domain for the console
->      device, to make "no_console_suspend" work in the DT case.
->      For now, this will matter on armadillo.
-> 
-> The first two patches are small cleanups for emev2 dtsi, on top of which the
-> change for kzm9d is built.
-> 
-> Changes in v2:
->   - Keep "console" for DTSes shared between legacy and multi-platform,
->   - Update for lager switching the console from scif0 to scifa0.
-> 
-> Thanks for applying!
-> 
-> Geert Uytterhoeven (13):
->   ARM: shmobile: emev2 dtsi: Use generic names for device nodes
->   ARM: shmobile: emev2 dtsi: Add uart* labels for easier referencing
->   ARM: shmobile: kzm9d dts: Add chosen/stdout-path
->   ARM: shmobile: genmai dts: Add chosen/stdout-path
->   ARM: shmobile: ape6evm-reference dts: Add chosen/stdout-path
->   ARM: shmobile: armadillo800eva dts: Add chosen/stdout-path
->   ARM: shmobile: bockw-reference dts: Add chosen/stdout-path
->   ARM: shmobile: marzen dts: Add chosen/stdout-path
->   ARM: shmobile: lager dts: Add chosen/stdout-path
->   ARM: shmobile: henninger dts: Add chosen/stdout-path
->   ARM: shmobile: koelsch dts: Add chosen/stdout-path
->   ARM: shmobile: alt dts: Add chosen/stdout-path
->   ARM: shmobile: kzm9g-reference dts: Add chosen/stdout-path
+From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
 
-I have not queued-up the kzm9d patch which I have commented on in
-a reply to it.
+At the time of NV16 capture format, the user has to specify the
+capture output width of the multiple of 32 for H/W specification.
+At the time of using NV16 format by ioctl of VIDIOC_S_FMT,
+this patch adds align check and the error handling to forbid
+specification of the capture output width which is not a multiple of 32.
 
-I have queued up all the other patches for v3.19.
+Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
 
-> 
->  arch/arm/boot/dts/emev2-kzm9d.dts               |  3 ++-
->  arch/arm/boot/dts/emev2.dtsi                    | 12 ++++++------
->  arch/arm/boot/dts/r7s72100-genmai.dts           |  3 ++-
->  arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts |  3 ++-
->  arch/arm/boot/dts/r8a7740-armadillo800eva.dts   |  1 +
->  arch/arm/boot/dts/r8a7778-bockw-reference.dts   |  3 ++-
->  arch/arm/boot/dts/r8a7779-marzen.dts            |  1 +
->  arch/arm/boot/dts/r8a7790-lager.dts             |  1 +
->  arch/arm/boot/dts/r8a7791-henninger.dts         |  1 +
->  arch/arm/boot/dts/r8a7791-koelsch.dts           |  1 +
->  arch/arm/boot/dts/r8a7794-alt.dts               |  1 +
->  arch/arm/boot/dts/sh73a0-kzm9g-reference.dts    |  1 +
->  12 files changed, 21 insertions(+), 10 deletions(-)
-> 
-> -- 
-> 1.9.1
-> 
-> Gr{oetje,eeting}s,
-> 
-> 						Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
-> 							    -- Linus Torvalds
-> 
+v2 [Yoshihiro Kaneko]
+* use u32 instead of unsigned long
+
+ drivers/media/platform/soc_camera/rcar_vin.c | 24 ++++++++++++++++++++++--
+ 1 file changed, 22 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index 34d5b80..ff5f80a 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -486,6 +486,7 @@ struct rcar_vin_priv {
+ 	bool				request_to_stop;
+ 	struct completion		capture_stop;
+ 	enum chip_id			chip;
++	bool				error_flag;
+ };
+ 
+ #define is_continuous_transfer(priv)	(priv->vb_count > MAX_BUFFER_NUM)
+@@ -645,7 +646,7 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+ 	/* output format */
+ 	switch (icd->current_fmt->host_fmt->fourcc) {
+ 	case V4L2_PIX_FMT_NV16:
+-		iowrite32(ALIGN(cam->width * cam->height, 0x80),
++		iowrite32(ALIGN(ALIGN(cam->width, 0x20) * cam->height, 0x80),
+ 			  priv->base + VNUVAOF_REG);
+ 		dmr = VNDMR_DTMD_YCSEP;
+ 		output_is_yuv = true;
+@@ -974,6 +975,8 @@ static int rcar_vin_add_device(struct soc_camera_device *icd)
+ 	dev_dbg(icd->parent, "R-Car VIN driver attached to camera %d\n",
+ 		icd->devnum);
+ 
++	priv->error_flag = false;
++
+ 	return 0;
+ }
+ 
+@@ -991,6 +994,7 @@ static void rcar_vin_remove_device(struct soc_camera_device *icd)
+ 
+ 	priv->state = STOPPED;
+ 	priv->request_to_stop = false;
++	priv->error_flag = false;
+ 
+ 	/* make sure active buffer is cancelled */
+ 	spin_lock_irq(&priv->lock);
+@@ -1087,6 +1091,7 @@ static int rcar_vin_set_rect(struct soc_camera_device *icd)
+ 	unsigned char dsize = 0;
+ 	struct v4l2_rect *cam_subrect = &cam->subrect;
+ 	u32 value;
++	u32 imgstr;
+ 
+ 	dev_dbg(icd->parent, "Crop %ux%u@%u:%u\n",
+ 		icd->user_width, icd->user_height, cam->vin_left, cam->vin_top);
+@@ -1164,7 +1169,11 @@ static int rcar_vin_set_rect(struct soc_camera_device *icd)
+ 		break;
+ 	}
+ 
+-	iowrite32(ALIGN(cam->out_width, 0x10), priv->base + VNIS_REG);
++	if (icd->current_fmt->host_fmt->fourcc = V4L2_PIX_FMT_NV16)
++		imgstr = ALIGN(cam->out_width, 0x20);
++	else
++		imgstr = ALIGN(cam->out_width, 0x10);
++	iowrite32(imgstr, priv->base + VNIS_REG);
+ 
+ 	return 0;
+ }
+@@ -1606,6 +1615,17 @@ static int rcar_vin_set_fmt(struct soc_camera_device *icd,
+ 	dev_dbg(dev, "S_FMT(pix=0x%x, %ux%u)\n",
+ 		pixfmt, pix->width, pix->height);
+ 
++	/* At the time of NV16 capture format, the user has to specify the
++	   width of the multiple of 32 for H/W specification. */
++	if (priv->error_flag = false)
++		priv->error_flag = true;
++	else {
++		if ((pixfmt = V4L2_PIX_FMT_NV16) && (pix->width & 0x1F)) {
++			dev_err(icd->parent, "Specified width error in NV16 format.\n");
++			return -EINVAL;
++		}
++	}
++
+ 	switch (pix->field) {
+ 	default:
+ 		pix->field = V4L2_FIELD_NONE;
+-- 
+1.9.1
+
