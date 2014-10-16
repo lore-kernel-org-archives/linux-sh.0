@@ -1,48 +1,83 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 24 Oct 2014 10:45:06 +0000
-Subject: [PATCH v4 1/3] ARM: shmobile: r8a7791: add HS-USB device node
-Message-Id: <1414147508-5556-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 16 Oct 2014 05:50:52 +0000
+Subject: [PATCH] ata: sata_rcar: Disable DIPM mode for r8a7790 ES1
+Message-Id: <1413438652-18107-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414147508-5556-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1414147508-5556-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au, sergei.shtylyov@cogentembedded.com, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
-Cc: devicetree@vger.kernel.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-ide@vger.kernel.org
+Cc: Yoshihiro Kaneko <ykaneko0929@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Simon Horman <horms+renesas@verge.net.au>
 
-Define the R8A7791 generic part of the HS-USB device node. It is up to the board
-file to enable the device.
+Unlike other SATA R-Car r8a7790 controllers the r8a7790 ES1 SATA R-Car
+controller needs to be run with DIPM disabled.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-[Sergei: fixed summary, added changelog]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Loosely based on work by Koji Matsuoka.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791.dtsi |   11 +++++++++++
- 1 file changed, 11 insertions(+)
+This patch is against for-next branch of Tejun's libata tree.
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 1f4b6db..51a1b84 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -637,6 +637,17 @@
- 		status = "disabled";
- 	};
+ Documentation/devicetree/bindings/ata/sata_rcar.txt |  3 ++-
+ drivers/ata/sata_rcar.c                             | 10 ++++++++++
+ 2 files changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/Documentation/devicetree/bindings/ata/sata_rcar.txt b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+index 1e61113..7dd32d3 100644
+--- a/Documentation/devicetree/bindings/ata/sata_rcar.txt
++++ b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+@@ -3,7 +3,8 @@
+ Required properties:
+ - compatible		: should contain one of the following:
+ 			  - "renesas,sata-r8a7779" for R-Car H1
+-			  - "renesas,sata-r8a7790" for R-Car H2
++			  - "renesas,sata-r8a7790-es1" for R-Car H2 ES1
++			  - "renesas,sata-r8a7790" for R-Car H2 other than ES1
+ 			  - "renesas,sata-r8a7791" for R-Car M2
+ - reg			: address and length of the SATA registers;
+ - interrupts		: must consist of one interrupt specifier.
+diff --git a/drivers/ata/sata_rcar.c b/drivers/ata/sata_rcar.c
+index 61eb6d7..d5cacb5 100644
+--- a/drivers/ata/sata_rcar.c
++++ b/drivers/ata/sata_rcar.c
+@@ -146,6 +146,7 @@
+ enum sata_rcar_type {
+ 	RCAR_GEN1_SATA,
+ 	RCAR_GEN2_SATA,
++	RCAR_R8A7790_ES1_SATA,
+ };
  
-+	hsusb: usb@e6590000 {
-+		compatible = "renesas,usbhs-r8a7791";
-+		reg = <0 0xe6590000 0 0x100>;
-+		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7791_CLK_HSUSB>;
-+		renesas,buswait = <4>;
-+		phys = <&usb0 1>;
-+		phy-names = "usb";
-+		status = "disabled";
-+	};
+ struct sata_rcar_priv {
+@@ -763,6 +764,10 @@ static void sata_rcar_setup_port(struct ata_host *host)
+ 	ap->udma_mask	= ATA_UDMA6;
+ 	ap->flags	|= ATA_FLAG_SATA;
+ 
++	if (priv->type = RCAR_R8A7790_ES1_SATA) {
++		ap->flags	|= ATA_FLAG_NO_DIPM;
++	}
 +
- 	usbphy: usb-phy@e6590100 {
- 		compatible = "renesas,usb-phy-r8a7791";
- 		reg = <0 0xe6590100 0 0x100>;
+ 	ioaddr->cmd_addr = base + SDATA_REG;
+ 	ioaddr->ctl_addr = base + SSDEVCON_REG;
+ 	ioaddr->scr_addr = base + SCRSSTS_REG;
+@@ -838,6 +843,10 @@ static struct of_device_id sata_rcar_match[] = {
+ 		.data = (void *)RCAR_GEN2_SATA
+ 	},
+ 	{
++		.compatible = "renesas,sata-r8a7790-es1",
++		.data = (void *)RCAR_R8A7790_ES1_SATA
++	},
++	{
+ 		.compatible = "renesas,sata-r8a7791",
+ 		.data = (void *)RCAR_GEN2_SATA
+ 	},
+@@ -849,6 +858,7 @@ static const struct platform_device_id sata_rcar_id_table[] = {
+ 	{ "sata_rcar", RCAR_GEN1_SATA }, /* Deprecated by "sata-r8a7779" */
+ 	{ "sata-r8a7779", RCAR_GEN1_SATA },
+ 	{ "sata-r8a7790", RCAR_GEN2_SATA },
++	{ "sata-r8a7790-es1", RCAR_R8A7790_ES1_SATA },
+ 	{ "sata-r8a7791", RCAR_GEN2_SATA },
+ 	{ },
+ };
 -- 
-1.7.9.5
+2.1.1
 
