@@ -1,42 +1,73 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 29 Oct 2014 04:59:25 +0000
-Subject: [PATCH 19/19] ARM: shmobile: kzm9d dts: Add chosen/stdout-path
-Message-Id: <120f038cf04b95dc895cba503a7516ff75561438.1414556944.git.horms+renesas@verge.net.au>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Thu, 16 Oct 2014 06:12:48 +0000
+Subject: [PATCH v2 3/3] media: soc_camera: rcar_vin: Add NV16 horizontal scaling-up support
+Message-Id: <1413439968-6349-4-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1414556943.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1414556943.git.horms+renesas@verge.net.au>
+References: <1413439968-6349-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1413439968-6349-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
 
-Add a stdout-path property so that automatic console selection works
-in the absence of a "console=" parameter on the kernel command line.
+Up until now scaling has been forbidden for the NV16 capture format.
+This patch adds support for horizontal scaling-up for NV16. Vertical
+scaling-up for NV16 is forbidden by the H/W specification.
 
-Note that we have to keep the "console=ttyS1,115200n81" parameter in
-chosen/bootargs, else the console will use the default setting of 9600
-baud.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 ---
- arch/arm/boot/dts/emev2-kzm9d.dts | 1 +
- 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts b/arch/arm/boot/dts/emev2-kzm9d.dts
-index a1794cb..667d323 100644
---- a/arch/arm/boot/dts/emev2-kzm9d.dts
-+++ b/arch/arm/boot/dts/emev2-kzm9d.dts
-@@ -25,6 +25,7 @@
- 
- 	chosen {
- 		bootargs = "console=ttyS1,115200n81 ignore_loglevel root=/dev/nfs ip=dhcp";
-+		stdout-path = &uart1;
- 	};
- 
- 	gpio_keys {
+v2 [Yoshihiro Kaneko]
+* Updated change log text from Simon Horman
+* Code-style fixes as suggested by Sergei Shtylyov
+
+ drivers/media/platform/soc_camera/rcar_vin.c | 15 +++++++++++----
+ 1 file changed, 11 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index ff5f80a..234cf86 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -646,7 +646,7 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+ 	/* output format */
+ 	switch (icd->current_fmt->host_fmt->fourcc) {
+ 	case V4L2_PIX_FMT_NV16:
+-		iowrite32(ALIGN(ALIGN(cam->width, 0x20) * cam->height, 0x80),
++		iowrite32(ALIGN((cam->out_width * cam->out_height), 0x80),
+ 			  priv->base + VNUVAOF_REG);
+ 		dmr = VNDMR_DTMD_YCSEP;
+ 		output_is_yuv = true;
+@@ -1619,9 +1619,15 @@ static int rcar_vin_set_fmt(struct soc_camera_device *icd,
+ 	   width of the multiple of 32 for H/W specification. */
+ 	if (priv->error_flag = false)
+ 		priv->error_flag = true;
+-	else {
+-		if ((pixfmt = V4L2_PIX_FMT_NV16) && (pix->width & 0x1F)) {
+-			dev_err(icd->parent, "Specified width error in NV16 format.\n");
++	else if (pixfmt = V4L2_PIX_FMT_NV16) {
++		if (pix->width & 0x1F) {
++			dev_err(icd->parent,
++				"Specified width error in NV16 format. Please specify the multiple of 32.\n");
++			return -EINVAL;
++		}
++		if (pix->height != cam->height) {
++			dev_err(icd->parent,
++				"Vertical scaling-up error in NV16 format. Please specify input height size.\n");
+ 			return -EINVAL;
+ 		}
+ 	}
+@@ -1668,6 +1674,7 @@ static int rcar_vin_set_fmt(struct soc_camera_device *icd,
+ 	case V4L2_PIX_FMT_YUYV:
+ 	case V4L2_PIX_FMT_RGB565:
+ 	case V4L2_PIX_FMT_RGB555X:
++	case V4L2_PIX_FMT_NV16: /* horizontal scaling-up only is supported */
+ 		can_scale = true;
+ 		break;
+ 	default:
 -- 
-2.1.1
+1.9.1
 
