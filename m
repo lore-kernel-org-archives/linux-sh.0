@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 16 Oct 2014 05:19:41 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 16 Oct 2014 20:27:13 +0000
 Subject: Re: [PATCH 0/2] media: soc_camera: rcar_vin: Add r8a7794, r8a7793 device support
-Message-Id: <20141016051940.GE1265@verge.net.au>
+Message-Id: <Pine.LNX.4.64.1410162222550.16927@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1413271224-9792-1-git-send-email-ykaneko0929@gmail.com>
 In-Reply-To: <1413271224-9792-1-git-send-email-ykaneko0929@gmail.com>
@@ -9,11 +9,29 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Cc: linux-media@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mauro Carvalho Chehab <m.chehab@samsung.com>
+Cc: linux-media@vger.kernel.org, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-[CC Mauro Carvalho Chehab]
+Hello,
 
-On Tue, Oct 14, 2014 at 04:20:22PM +0900, Yoshihiro Kaneko wrote:
+Thanks for the patches. Could you please fold these two into one - they 
+really don't deserve to be separated. As for your other series - patches 
+there look mostly good - from just a formal review. If you don't mind, 
+I'll adjust a couple of cosmetic issues like missing curly braces in 
+
+	if (a)
+		x();
+	else {
+		y();
+		z();
+	}
+
+or multiline comments or similar minor things.
+
+Thanks
+Guennadi
+
+On Tue, 14 Oct 2014, Yoshihiro Kaneko wrote:
+
 > This series is against master branch of linuxtv.org/media_tree.git.
 > 
 > Koji Matsuoka (2):
@@ -22,10 +40,7 @@ On Tue, Oct 14, 2014 at 04:20:22PM +0900, Yoshihiro Kaneko wrote:
 > 
 >  drivers/media/platform/soc_camera/rcar_vin.c | 2 ++
 >  1 file changed, 2 insertions(+)
-
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-
-If the series needs reposting to a different CC list -
-e.g. including Mauro - please let Kaneko-san or myself know.
-
-
+> 
+> -- 
+> 1.9.1
+> 
