@@ -1,48 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 27 Oct 2014 03:57:13 +0000
-Subject: Re: [PATCH v3 05/11] ARM: shmobile: r8a7740: Add A3RV pm domain support
-Message-Id: <20141027035713.GD31487@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 17 Oct 2014 12:22:37 +0000
+Subject: [PATCH] ARM: shmobile: sh7372: Add shmobile_init_late()
+Message-Id: <1413548557-11962-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414063141-8856-1-git-send-email-geert+renesas@glider.be>
- <1414063141-8856-6-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1414063141-8856-6-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Oct 23, 2014 at 01:18:55PM +0200, Geert Uytterhoeven wrote:
-> Add support for the A3RV power domain.
-> This domain contains the VPU5F and VCP1 hardware blocks, which are
-> currently not used by any driver.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Extend sh7372 SoC machine vector to include shmobile_init_late()
+so Suspend-to-RAM and CPUIdle are setup as expected.
 
-Thanks, I have queued this up.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+This was the last remaining machine_desc not calling
+shmobile_init_late().
+---
+ arch/arm/mach-shmobile/setup-sh7372.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-> ---
-> v3:
->   - No changes,
-> v2:
->   - No changes.
-> ---
->  arch/arm/mach-shmobile/pm-r8a7740.c | 3 +++
->  1 file changed, 3 insertions(+)
-> 
-> diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
-> index e3f1464482371bb4..1d916038660d4b8a 100644
-> --- a/arch/arm/mach-shmobile/pm-r8a7740.c
-> +++ b/arch/arm/mach-shmobile/pm-r8a7740.c
-> @@ -37,6 +37,9 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
->  		.genpd.name	= "A4LC",
->  		.bit_shift	= 1,
->  	}, {
-> +		.genpd.name	= "A3RV",
-> +		.bit_shift	= 6,
-> +	}, {
->  		.genpd.name	= "A4S",
->  		.bit_shift	= 10,
->  		.gov		= &pm_domain_always_on_gov,
-> -- 
-> 1.9.1
-> 
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index d646c8d12423a600..769ff008571d6732 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -1012,6 +1012,7 @@ DT_MACHINE_START(SH7372_DT, "Generic SH7372 (Flattened Device Tree)")
+ 	.init_irq	= sh7372_init_irq,
+ 	.handle_irq	= shmobile_handle_irq_intc,
+ 	.init_machine	= sh7372_add_standard_devices_dt,
++	.init_late	= shmobile_init_late,
+ 	.dt_compat	= sh7372_boards_compat_dt,
+ MACHINE_END
+ 
+-- 
+1.9.1
+
