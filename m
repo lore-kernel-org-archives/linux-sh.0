@@ -1,7 +1,7 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 18 Oct 2014 14:46:53 +0000
+Date: Sat, 18 Oct 2014 15:05:39 +0000
 Subject: Re: [PATCH v2 2/3] media: soc_camera: rcar_vin: Add capture width check for NV16 format
-Message-Id: <54427D5D.70603@cogentembedded.com>
+Message-Id: <544281C3.9030002@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1413439968-6349-1-git-send-email-ykaneko0929@gmail.com> <1413439968-6349-3-git-send-email-ykaneko0929@gmail.com>
 In-Reply-To: <1413439968-6349-3-git-send-email-ykaneko0929@gmail.com>
@@ -10,8 +10,6 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Yoshihiro Kaneko <ykaneko0929@gmail.com>, linux-media@vger.kernel.org
 Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
-
-Hello.
 
 On 10/16/2014 10:12 AM, Yoshihiro Kaneko wrote:
 
@@ -38,60 +36,23 @@ On 10/16/2014 10:12 AM, Yoshihiro Kaneko wrote:
 > --- a/drivers/media/platform/soc_camera/rcar_vin.c
 > +++ b/drivers/media/platform/soc_camera/rcar_vin.c
 [...]
-> @@ -1087,6 +1091,7 @@ static int rcar_vin_set_rect(struct soc_camera_device *icd)
->   	unsigned char dsize = 0;
->   	struct v4l2_rect *cam_subrect = &cam->subrect;
->   	u32 value;
-> +	u32 imgstr;
-
-    Quite strange name, given the variable's use... what does it stands for?
-
->
->   	dev_dbg(icd->parent, "Crop %ux%u@%u:%u\n",
->   		icd->user_width, icd->user_height, cam->vin_left, cam->vin_top);
-> @@ -1164,7 +1169,11 @@ static int rcar_vin_set_rect(struct soc_camera_device *icd)
->   		break;
->   	}
->
-> -	iowrite32(ALIGN(cam->out_width, 0x10), priv->base + VNIS_REG);
-> +	if (icd->current_fmt->host_fmt->fourcc = V4L2_PIX_FMT_NV16)
-> +		imgstr = ALIGN(cam->out_width, 0x20);
-> +	else
-> +		imgstr = ALIGN(cam->out_width, 0x10);
-> +	iowrite32(imgstr, priv->base + VNIS_REG);
-
-    I'd call the variable 'vnis' as it gets written to the VNIS register...
-
->
->   	return 0;
->   }
 > @@ -1606,6 +1615,17 @@ static int rcar_vin_set_fmt(struct soc_camera_device *icd,
 >   	dev_dbg(dev, "S_FMT(pix=0x%x, %ux%u)\n",
 >   		pixfmt, pix->width, pix->height);
 >
 > +	/* At the time of NV16 capture format, the user has to specify the
 > +	   width of the multiple of 32 for H/W specification. */
-
-    The preferred multi-line comment format is this:
-
-/*
-  * bla
-  * bla
-  */
-
 > +	if (priv->error_flag = false)
 > +		priv->error_flag = true;
-
-    I don't see where else you check this flag, it seems rather useless. I 
-also don't see where you clear it, other than the "add/remove device" paths.
-
 > +	else {
 > +		if ((pixfmt = V4L2_PIX_FMT_NV16) && (pix->width & 0x1F)) {
 > +			dev_err(icd->parent, "Specified width error in NV16 format.\n");
 > +			return -EINVAL;
 > +		}
 > +	}
-> +
+
+    Oh, and the kernel style dictates that {} should be used in all arms of 
+the *if* statement if they're used in at least one.
 
 WBR, Sergei
 
