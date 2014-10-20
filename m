@@ -1,57 +1,55 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 18 Oct 2014 14:55:54 +0000
-Subject: Re: [PATCH] media: soc_camera: rcar_vin: Add BT.709 24-bit RGB888 input support
-Message-Id: <54427F7A.5030009@cogentembedded.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Mon, 20 Oct 2014 02:51:29 +0000
+Subject: [PATCH] media: soc_camera: rcar_vin: Add DT support for r8a7793 and r8a7794 SoCs
+Message-Id: <1413773489-18170-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1413267730-8172-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1413267730-8172-1-git-send-email-ykaneko0929@gmail.com>
+References: <1387830486-10650-1-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1387830486-10650-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>, linux-media@vger.kernel.org
+To: linux-media@vger.kernel.org
 Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Hello.
+Based on platform device work by Matsuoka-san.
 
-On 10/14/2014 10:22 AM, Yoshihiro Kaneko wrote:
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
 
-> From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+Compile tested only.
 
-> Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> ---
+This patch is against master branch of linuxtv.org/media_tree.git.
 
-> This patch is against master branch of linuxtv.org/media_tree.git.
+ Documentation/devicetree/bindings/media/rcar_vin.txt | 2 ++
+ drivers/media/platform/soc_camera/rcar_vin.c         | 2 ++
+ 2 files changed, 4 insertions(+)
 
->   drivers/media/platform/soc_camera/rcar_vin.c | 10 ++++++++++
->   include/linux/platform_data/camera-rcar.h    |  1 +
->   2 files changed, 11 insertions(+)
-
-> diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-> index 20defcb..7eb4f1e 100644
-> --- a/drivers/media/platform/soc_camera/rcar_vin.c
-> +++ b/drivers/media/platform/soc_camera/rcar_vin.c
-> @@ -74,6 +74,8 @@
->   #define VNMC_INF_YUV10_BT656	(2 << 16)
->   #define VNMC_INF_YUV10_BT601	(3 << 16)
->   #define VNMC_INF_YUV16		(5 << 16)
-> +#define VNMC_INF_RGB888		(6 << 16)
-> +#define VNMC_INF_RGB_MASK	(6 << 16)
-
-    I don't see why you direly need this mask; you could use VNMC_INF_RGB888.
-
-[...]
-> diff --git a/include/linux/platform_data/camera-rcar.h b/include/linux/platform_data/camera-rcar.h
-> index dfc83c5..03a9df6 100644
-> --- a/include/linux/platform_data/camera-rcar.h
-> +++ b/include/linux/platform_data/camera-rcar.h
-> @@ -17,6 +17,7 @@
->   #define RCAR_VIN_VSYNC_ACTIVE_LOW	(1 << 1)
->   #define RCAR_VIN_BT601			(1 << 2)
->   #define RCAR_VIN_BT656			(1 << 3)
-> +#define RCAR_VIN_BT709			(1 << 4)
-
-    I don't see where it's used...
-
-WBR, Sergei
+diff --git a/Documentation/devicetree/bindings/media/rcar_vin.txt b/Documentation/devicetree/bindings/media/rcar_vin.txt
+index ba61782..9dafe6b 100644
+--- a/Documentation/devicetree/bindings/media/rcar_vin.txt
++++ b/Documentation/devicetree/bindings/media/rcar_vin.txt
+@@ -6,6 +6,8 @@ family of devices. The current blocks are always slaves and suppot one input
+ channel which can be either RGB, YUYV or BT656.
+ 
+  - compatible: Must be one of the following
++   - "renesas,vin-r8a7794" for the R8A7794 device
++   - "renesas,vin-r8a7793" for the R8A7793 device
+    - "renesas,vin-r8a7791" for the R8A7791 device
+    - "renesas,vin-r8a7790" for the R8A7790 device
+    - "renesas,vin-r8a7779" for the R8A7779 device
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index 234cf86..c023aab 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -1871,6 +1871,8 @@ static struct soc_camera_host_ops rcar_vin_host_ops = {
+ 
+ #ifdef CONFIG_OF
+ static struct of_device_id rcar_vin_of_table[] = {
++	{ .compatible = "renesas,vin-r8a7794", .data = (void *)RCAR_GEN2 },
++	{ .compatible = "renesas,vin-r8a7793", .data = (void *)RCAR_GEN2 },
+ 	{ .compatible = "renesas,vin-r8a7791", .data = (void *)RCAR_GEN2 },
+ 	{ .compatible = "renesas,vin-r8a7790", .data = (void *)RCAR_GEN2 },
+ 	{ .compatible = "renesas,vin-r8a7779", .data = (void *)RCAR_H1 },
+-- 
+1.9.1
 
