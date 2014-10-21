@@ -1,71 +1,24 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 24 Oct 2014 12:03:54 +0000
-Subject: [PATCH v4 2/9] ARM: shmobile: r8a7790: Add DU node to device tree
-Message-Id: <1414152241-5390-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Tue, 21 Oct 2014 05:10:26 +0000
+Subject: [PATCH v3 0/3] media: soc_camera: rcar_vin: Add scaling support
+Message-Id: <1413868229-22205-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Add the DU device with a disabled state. Boards that want to enable the
-DU need to specify the output topology.
+This series is against master branch of linuxtv.org/media_tree.git.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/r8a7790.dtsi | 39 +++++++++++++++++++++++++++++++++++++++
- 1 file changed, 39 insertions(+)
+Koji Matsuoka (3):
+  media: soc_camera: rcar_vin: Add scaling support
+  media: soc_camera: rcar_vin: Add capture width check for NV16 format
+  media: soc_camera: rcar_vin: Add NV16 horizontal scaling-up support
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 3f1e4b3898cd..13662d6c6693 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -670,6 +670,45 @@
- 		renesas,#wpf = <4>;
- 	};
- 
-+	du: display@feb00000 {
-+		compatible = "renesas,du-r8a7790";
-+		reg = <0 0xfeb00000 0 0x70000>,
-+		      <0 0xfeb90000 0 0x1c>,
-+		      <0 0xfeb94000 0 0x1c>;
-+		reg-names = "du", "lvds.0", "lvds.1";
-+		interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 268 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 269 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7790_CLK_DU0>,
-+			 <&mstp7_clks R8A7790_CLK_DU1>,
-+			 <&mstp7_clks R8A7790_CLK_DU2>,
-+			 <&mstp7_clks R8A7790_CLK_LVDS0>,
-+			 <&mstp7_clks R8A7790_CLK_LVDS1>;
-+		clock-names = "du.0", "du.1", "du.2", "lvds.0", "lvds.1";
-+		status = "disabled";
-+
-+		ports {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+
-+			port@0 {
-+				reg = <0>;
-+				du_out_rgb: endpoint {
-+				};
-+			};
-+			port@1 {
-+				reg = <1>;
-+				du_out_lvds0: endpoint {
-+				};
-+			};
-+			port@2 {
-+				reg = <2>;
-+				du_out_lvds1: endpoint {
-+				};
-+			};
-+		};
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
+ drivers/media/platform/soc_camera/rcar_vin.c | 478 ++++++++++++++++++++++++++-
+ 1 file changed, 468 insertions(+), 10 deletions(-)
+
 -- 
-2.0.4
+1.9.1
 
