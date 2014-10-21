@@ -1,67 +1,54 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Tue, 21 Oct 2014 03:30:29 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 21 Oct 2014 07:09:43 +0000
 Subject: Re: [PATCH] media: soc_camera: rcar_vin: Enable VSYNC field toggle mode
-Message-Id: <CAH1o70JoiJhec6thnQZnQ_99DLjhMrYhypFubkDYNnTcP_02ZQ@mail.gmail.com>
+Message-Id: <CAMuHMdXDKP=KDzGUqXuPLirPX6Y4BA-n4RC8kdx-8A-e=fa4MQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1413267956-8342-1-git-send-email-ykaneko0929@gmail.com>
 	<544280E4.20101@cogentembedded.com>
-In-Reply-To: <544280E4.20101@cogentembedded.com>
+	<CAH1o70JoiJhec6thnQZnQ_99DLjhMrYhypFubkDYNnTcP_02ZQ@mail.gmail.com>
+In-Reply-To: <CAH1o70JoiJhec6thnQZnQ_99DLjhMrYhypFubkDYNnTcP_02ZQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Linux Media Mailing List <linux-media@vger.kernel.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Hello Sergei,
+Hi Kaneko-san,
 
-Thank you for your comments.
+On Tue, Oct 21, 2014 at 5:30 AM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
+>>> --- a/drivers/media/platform/soc_camera/rcar_vin.c
+>>> +++ b/drivers/media/platform/soc_camera/rcar_vin.c
+>>> @@ -108,6 +108,7 @@
+>>>   #define VNDMR2_VPS            (1 << 30)
+>>>   #define VNDMR2_HPS            (1 << 29)
+>>>   #define VNDMR2_FTEV           (1 << 17)
+>>> +#define VNDMR2_VLV_1           (1 << 12)
+>>
+>>    Please instead do:
+>>
+>> #define VNDMR2_VLV(n)   ((n & 0xf) << 12)
+>
+> It's unclear to me why the style of the new #define should differ
+> from those of the existing ones.
 
-2014-10-19 0:01 GMT+09:00 Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>:
-> Hello.
->
-> On 10/14/2014 10:25 AM, Yoshihiro Kaneko wrote:
->
->> From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
->
->
->> By applying this patch, it sets to VSYNC field toggle mode not only
->> at the time of progressive mode but at the time of an interlace mode.
->
->
->> Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
->> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->> ---
->
->
->> This patch is against master branch of linuxtv.org/media_tree.git.
->
->
->>   drivers/media/platform/soc_camera/rcar_vin.c | 3 ++-
->>   1 file changed, 2 insertions(+), 1 deletion(-)
->
->
->> diff --git a/drivers/media/platform/soc_camera/rcar_vin.c
->> b/drivers/media/platform/soc_camera/rcar_vin.c
->> index 5196c81..bf97ed6 100644
->> --- a/drivers/media/platform/soc_camera/rcar_vin.c
->> +++ b/drivers/media/platform/soc_camera/rcar_vin.c
->> @@ -108,6 +108,7 @@
->>   #define VNDMR2_VPS            (1 << 30)
->>   #define VNDMR2_HPS            (1 << 29)
->>   #define VNDMR2_FTEV           (1 << 17)
->> +#define VNDMR2_VLV_1           (1 << 12)
->
->
->    Please instead do:
->
-> #define VNDMR2_VLV(n)   ((n & 0xf) << 12)
+I think Sergey wants to say that unlike for the other fields, there are
+multiple possible values for the VLV field.
 
-It's unclear to me why the style of the new #define should differ
-from those of the existing ones.
+By providing the single macro definition
 
-Thanks,
-Kaneko
+        #define VNDMR2_VLV(n)   ((n & 0xf) << 12)
 
->
-> WBR, Sergei
->
+you can easily provide a way to set any of VNDMR2_VLV_n.
+
+I hope this explanation makes it clearer.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
