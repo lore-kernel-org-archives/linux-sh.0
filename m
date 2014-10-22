@@ -1,48 +1,36 @@
-From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
-Date: Wed, 01 Oct 2014 04:35:16 +0000
-Subject: Re: [PATCH 0/2] Add VSP1 devices to DT for r8a7790 and r8a7791
-Message-Id: <542B8484.30202@jinso.co.jp>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 22 Oct 2014 09:38:29 +0000
+Subject: [PATCH 3/3] ARM: shmobile: armadillo800eva dts: Enable TMU0
+Message-Id: <1413970709-26607-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410651385-13090-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1410651385-13090-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1413970709-26607-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1413970709-26607-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Daniel Lezcano <daniel.lezcano@linaro.org>, Simon Horman <horms+renesas@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Laurent,
+ch0 will be used for clock events and for periodic clock events,
+ch1 will be used as clock source.
 
-Thank you for your help!
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-On 2014年10月01日 07:56, Laurent Pinchart wrote:
-> Hi Cao Minh,
->
-> On Tuesday 30 September 2014 13:47:32 Cao Minh Hiep wrote:
->> Hi Laurent,
->>
->> We are testing the upstream linux version on Lager.
->> I have tried to test VSP1 driver on r8a7790(Lager).
->> But I don't know how to test it.
->> Could you please tell the method to test it?
-> Sure.
->
-> I've attached the test script I use to configure the VSP1 pipeline to this e-
-> mail.
->
-> Syntax: vsp1.sh dev cmd [...]
->
-> Supported commands:
->   - m2d | m2d-bru | m2d-crop | m2d-scale | m2m | m2m-crop | m2m-scale infmt
-> outfmt
->   - input index infmt
->   - output index outfmt
->
-> "dev" should be the media device name without the /dev/ prefix. For the first
-> VSP1 that would thus be "media0".
-I'll try to do it as you are showing me.
-Please let's me ask you again if I have any problem.
-
-
-Thank you!
-Jinso/Cao Minh Hiep
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+index 2703428557fce9fa..98504e0b06c8e2ca 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+@@ -299,3 +299,7 @@
+ 
+ 	status = "okay";
+ };
++
++&tmu0 {
++	status = "okay";
++};
+-- 
+1.9.1
 
