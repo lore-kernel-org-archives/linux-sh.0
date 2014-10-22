@@ -1,80 +1,126 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 06 Oct 2014 01:42:28 +0000
-Subject: Re: [PATCH v2 00/11] ARM: shmobile: r8a7740/armadillo800eva legacy PM domain support
-Message-Id: <CANqRtoRiK1gAg6rPDwk5CSxASguyyfjb=sHeFQJ6G2Loqx1row@mail.gmail.com>
+From: Brian Norris <computersforpeace@gmail.com>
+Date: Wed, 22 Oct 2014 05:53:26 +0000
+Subject: Re: [PATCH] ARM: don't set unused name in struct flash_platform_data
+Message-Id: <20141022055326.GB16128@brian-ubuntu>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1411661742-4767-1-git-send-email-geert+renesas@glider.be>
- <20140930042047.GA24253@verge.net.au>
- <CAMuHMdUgP6OEt6G4VhHoDncz+17j-bDu7u_pcHM0ETmqsDKOiA@mail.gmail.com>
- <CANqRtoS+bur8DA0+gG0Q0hL9RLsQdOLyfSUbgE_6nZ8mCST0Jg@mail.gmail.com>
- <CAMuHMdXP9tFX9FZnH_dR86DkKbP_YZcWAF-hF48BtVfGYRTsFw@mail.gmail.com>
- <CANqRtoS0XgyuMBxU3CcVyQNg=r=MuA_OfJEDJbVsq-m9EHF9UA@mail.gmail.com>
- <CAMuHMdWzg0bnoT0kURFe8h2aw4CYKoHN1SMYt0S3-Dno-e=8Xw@mail.gmail.com>
- <20140930081305.GS16823@verge.net.au>
- <CAMuHMdV-D+qic4Tt9bYQRmEsLsu5ojX+rfeEGRaWGwfvm9c_cA@mail.gmail.com>
-In-Reply-To: <CAMuHMdV-D+qic4Tt9bYQRmEsLsu5ojX+rfeEGRaWGwfvm9c_cA@mail.gmail.com>
+References: <1411993853-6309-1-git-send-email-zajec5@gmail.com>
+In-Reply-To: <1411993853-6309-1-git-send-email-zajec5@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+On Mon, Sep 29, 2014 at 02:30:53PM +0200, Rafał Miłecki wrote:
+> Loading correct SPI driver (m25p80) is handled using modalias from the
+> struct spi_board_info. There is no point of setting name in the
+> platform_data, m25p80 ignores it anyway.
 
-On Sat, Oct 4, 2014 at 12:23 AM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> Hi Simon, Magnus,
->
-> On Tue, Sep 30, 2014 at 10:13 AM, Simon Horman <horms@verge.net.au> wrote:
->> On Tue, Sep 30, 2014 at 09:41:27AM +0200, Geert Uytterhoeven wrote:
->>> On Tue, Sep 30, 2014 at 9:32 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
->>> >>> So what is a good way to proceed with this series I wonder?
->>> >>
->>> >> There are two options:
->>> >>   1. Drop the two patches that introduce the D4 and A4MP PM domains,
->>> >>   2. Amend the patches that introduce the D4 and A4MP PM domains to
->>> >>      comment out the entries in the table in pm-r8a7740.c, like was done in
->>> >>      the first submission.
->>> >>
->>> >> Both will cause conflicts when applying the successive patches.
->>> >>
->>> >> If you don't care about bisectability, you can implement option 2 as a
->>> >> separate change, after applying the whole series.
->>> >
->>> > Thanks for leading the way! From my side I don't have any special
->>> > feeling, so why don't you and Simon decide?
->>>
->>> OK.
->>>
->>> > If it was up to me only then I think option #1 that simply reduces the
->>> > feature set seems rather natural, but perhaps it requires a lot of
->>> > rework of the patches. If we go with option #1 we can always
->>> > incrementally add D4 and A4MP later I assume.
->>>
->>> Yes we can.
->>>
->>> Please wait a bit, I'm looking into the !CONFIG_PM_RUNTIME case.
->>> Mostly multi-platform, but it may affect legacy too, where there's interaction
->>> with the drivers/sh/pm_runtime.c hack.
->
-> I posted a fix for the !CONFIG_PM_RUNTIME problem
-> "[PATCH] PM / clock_ops: Fix crash in clocks management code if
-> !CONFIG_PM_RUNTIME"
-> (https://lkml.org/lkml/2014/10/1/506). I hope to see that fix in v3.18-rc1.
->
->> I also feel that option 1 is slightly nicer. But I'm happy
->> to consider option 2 if its a better fit for you.
->>
->> As always I'm happy to wait and will now do so.
->
-> The fix for the HDMI-related interrupt storm, also affecting A4MP, is in
-> fbdev's next, so I expect to see that in v3.18-rc1.
->
-> For D4, a final solution seems to be a long-term plan...
-> I'll disable powering down the D4 power area, and will repost the patches
-> after v3.18-rc1, when the other prerequisites are in.
+Wait, is 'name' actually ignored? It looks to me like it sets the MTD
+name. See the comments in include/linux/spi/flash.h and
+arch/arm/include/asm/mach/flash.h (BTW, why do we have two definitions
+for this??):
 
-Sounds good. Thanks for your efforts!
+  @name: optional flash device name (eg, as used with mtdparts=)
 
-Cheers,
+And I think it's used for exactly that in m25p80.c:
 
-/ magnus
+	if (data && data->name)
+		flash->mtd.name = data->name;
+
+> Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+> ---
+>  arch/arm/mach-davinci/board-da830-evm.c    | 1 -
+>  arch/arm/mach-davinci/board-da850-evm.c    | 1 -
+>  arch/arm/mach-davinci/board-mityomapl138.c | 1 -
+>  arch/arm/mach-shmobile/board-bockw.c       | 1 -
+>  arch/arm/mach-shmobile/board-koelsch.c     | 1 -
+>  arch/arm/mach-shmobile/board-lager.c       | 1 -
+>  arch/arm/mach-w90x900/dev.c                | 1 -
+>  7 files changed, 7 deletions(-)
+> 
+> diff --git a/arch/arm/mach-davinci/board-da830-evm.c b/arch/arm/mach-davinci/board-da830-evm.c
+> index 5623131..263004a 100644
+> --- a/arch/arm/mach-davinci/board-da830-evm.c
+> +++ b/arch/arm/mach-davinci/board-da830-evm.c
+> @@ -567,7 +567,6 @@ static struct mtd_partition da830evm_spiflash_part[] = {
+>  };
+>  
+>  static struct flash_platform_data da830evm_spiflash_data = {
+> -	.name		= "m25p80",
+>  	.parts		= da830evm_spiflash_part,
+>  	.nr_parts	= ARRAY_SIZE(da830evm_spiflash_part),
+>  	.type		= "w25x32",
+> diff --git a/arch/arm/mach-davinci/board-da850-evm.c b/arch/arm/mach-davinci/board-da850-evm.c
+> index 234c5bb..721ff2b 100644
+> --- a/arch/arm/mach-davinci/board-da850-evm.c
+> +++ b/arch/arm/mach-davinci/board-da850-evm.c
+> @@ -104,7 +104,6 @@ static struct mtd_partition da850evm_spiflash_part[] = {
+>  };
+>  
+>  static struct flash_platform_data da850evm_spiflash_data = {
+> -	.name		= "m25p80",
+>  	.parts		= da850evm_spiflash_part,
+>  	.nr_parts	= ARRAY_SIZE(da850evm_spiflash_part),
+>  	.type		= "m25p64",
+> diff --git a/arch/arm/mach-davinci/board-mityomapl138.c b/arch/arm/mach-davinci/board-mityomapl138.c
+> index 96fc00a..3c93b65 100644
+> --- a/arch/arm/mach-davinci/board-mityomapl138.c
+> +++ b/arch/arm/mach-davinci/board-mityomapl138.c
+> @@ -350,7 +350,6 @@ static struct mtd_partition spi_flash_partitions[] = {
+>  };
+>  
+>  static struct flash_platform_data mityomapl138_spi_flash_data = {
+> -	.name		= "m25p80",
+>  	.parts		= spi_flash_partitions,
+>  	.nr_parts	= ARRAY_SIZE(spi_flash_partitions),
+>  	.type		= "m24p64",
+> diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+> index 8a83eb3..e25af56 100644
+> --- a/arch/arm/mach-shmobile/board-bockw.c
+> +++ b/arch/arm/mach-shmobile/board-bockw.c
+> @@ -266,7 +266,6 @@ static struct mtd_partition m25p80_spi_flash_partitions[] = {
+>  };
+>  
+>  static struct flash_platform_data spi_flash_data = {
+> -	.name		= "m25p80",
+>  	.type		= "s25fl008k",
+>  	.parts		= m25p80_spi_flash_partitions,
+>  	.nr_parts	= ARRAY_SIZE(m25p80_spi_flash_partitions),
+> diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+> index b7d5bc7..a494a00 100644
+> --- a/arch/arm/mach-shmobile/board-koelsch.c
+> +++ b/arch/arm/mach-shmobile/board-koelsch.c
+> @@ -207,7 +207,6 @@ static struct mtd_partition spi_flash_part[] = {
+>  };
+>  
+>  static const struct flash_platform_data spi_flash_data = {
+> -	.name		= "m25p80",
+>  	.parts		= spi_flash_part,
+>  	.nr_parts	= ARRAY_SIZE(spi_flash_part),
+>  	.type		= "s25fl512s",
+> diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+> index e1d8215..3575731 100644
+> --- a/arch/arm/mach-shmobile/board-lager.c
+> +++ b/arch/arm/mach-shmobile/board-lager.c
+> @@ -315,7 +315,6 @@ static struct mtd_partition spi_flash_part[] = {
+>  };
+>  
+>  static const struct flash_platform_data spi_flash_data = {
+> -	.name           = "m25p80",
+>  	.parts          = spi_flash_part,
+>  	.nr_parts       = ARRAY_SIZE(spi_flash_part),
+>  	.type           = "s25fl512s",
+> diff --git a/arch/arm/mach-w90x900/dev.c b/arch/arm/mach-w90x900/dev.c
+> index e65a80a..9745a73 100644
+> --- a/arch/arm/mach-w90x900/dev.c
+> +++ b/arch/arm/mach-w90x900/dev.c
+> @@ -249,7 +249,6 @@ static struct mtd_partition nuc900_spi_flash_partitions[] = {
+>  };
+>  
+>  static struct flash_platform_data nuc900_spi_flash_data = {
+> -	.name = "m25p80",
+>  	.parts =  nuc900_spi_flash_partitions,
+>  	.nr_parts = ARRAY_SIZE(nuc900_spi_flash_partitions),
+>  	.type = "w25x16",
+
+Brian
