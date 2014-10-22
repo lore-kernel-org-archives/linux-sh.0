@@ -1,50 +1,47 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 22 Oct 2014 16:08:01 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 22 Oct 2014 17:34:17 +0000
 Subject: Re: [PATCH v2] ARM: shmobile: Add early debugging support using SCIF(A)
-Message-Id: <20141022160800.GB1895@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="zx4FCpZtqtKETZ7O"
+Message-Id: <CAMuHMdUqWaaP9DKADj3t2gTib9_+nNE5N-teLc2dMk_zVowZFA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1413993263-10444-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1413993263-10444-1-git-send-email-geert+renesas@glider.be>
+ <20141022160800.GB1895@katana>
+In-Reply-To: <20141022160800.GB1895@katana>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+On Wed, Oct 22, 2014 at 6:08 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
+>>     I'm wondering whether this can be fixed in the i2c driver? Does it
+>>     really have to enable and disable the clock?
+>
+> From a power-saving PoV, this makes sense. I assume serial output works
+> again as soon as the regular scif driver takes over? Isn't that a
 
---zx4FCpZtqtKETZ7O
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Yes it continues fine afterwards.
+With TMU0 in DT, it's enabled again even earlier, as they share the parent.
 
+> generic problem of early_printk drivers that they are not refcounted for
+> the clocks?
 
->     I'm wondering whether this can be fixed in the i2c driver? Does it
->     really have to enable and disable the clock?
+Yes.
 
-=46rom a power-saving PoV, this makes sense. I assume serial output works
-again as soon as the regular scif driver takes over? Isn't that a
-generic problem of early_printk drivers that they are not refcounted for
-the clocks?
+BTW, the code in sh_mobile_i2c_init() does this:
 
+        /* Get clock rate after clock is enabled */
+        clk_prepare_enable(pd->clk);
+        i2c_clk_khz = clk_get_rate(pd->clk) / 1000;
+        clk_disable_unprepare(pd->clk);
 
---zx4FCpZtqtKETZ7O
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+I assume the enable/disable is no longer needed with CCF?
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+Gr{oetje,eeting}s,
 
-iQIcBAEBAgAGBQJUR9ZgAAoJEBQN5MwUoCm2e7AP/iy6TnZmWVT6Nuy2WHsPAF7v
-Jm4j4bJGuGOlmC8XrKI7TSMuyJvvRWibn84DakC+lVtGrfmXtpN6AEAuJqdSd1ep
-Dp7CNaX0L+sz8z+294p3QRx2KPrf7NQFU8ywBpq1NuqFhpzTuFBvjeYN2MwPXfwd
-HMoqR96KGUIxcJvIVD4+HJ8IMWdKu5gKnOtsKpq/xZuLDcB3q/vkLCBTgUJo8ZEC
-XArLCakDP8N/JnJlcg1niw11OR6iJdNUZ7vTbjDIRgtaK4E3wKX+TKMGuaTjnBUu
-uQptx4ibVU2uOiXmfwmk7w/FJq43x0ZdbNEQxd7qR0HJNVarnydX+8qQZewVkTA9
-wMnf72lgj343rq+MSSutl3rcYS7G0zmdxX+4sBdd+JPejdr6sG1azFFPQqWVG112
-45RRouW5RWfI45GK627U1cc8RnofLxyrl/LrBmOS2uYfQvwzXUdzesM/Qx0N+KkR
-fmVWMOqdLWKiAgRCL6wZWbgT/26SWzUD8gZV4XiB7oawAHKapCXpc1HFmOil+m2z
-4tZalkXgpPDpKgviCEaiok3z1m1Gh/kheE/uhzldW03VGv26PAAfBps4hwHmuxsO
-TntokmmbPJDg9QTBdK7OXM2nwEG1xZOokjiJVhVpLmYh6ePYpAuZYQeRI//m+rJa
-DgtuZMJ9W9O8QklcwoE9
-=U18Y
------END PGP SIGNATURE-----
+                        Geert
 
---zx4FCpZtqtKETZ7O--
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
