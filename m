@@ -1,54 +1,43 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 31 Oct 2014 10:51:18 +0000
-Subject: [RFC 3/3] ARM: shmobile: r8a7791: add DMA nodes for IIC
-Message-Id: <1414752678-26078-4-git-send-email-wsa@the-dreams.de>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 22 Oct 2014 09:38:27 +0000
+Subject: [PATCH 1/3] clocksource: sh_tmu: Document R-Mobile r8a7740 binding
+Message-Id: <1413970709-26607-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414752678-26078-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1414752678-26078-1-git-send-email-wsa@the-dreams.de>
+References: <1413970709-26607-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1413970709-26607-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>
+To: Daniel Lezcano <daniel.lezcano@linaro.org>, Simon Horman <horms+renesas@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Compared to the r8a7779, the r8a7740 lacks the input capture register,
+which is not used by the driver (the current driver already handles the
+r8a7740 in the non-DT case).
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 6 ++++++
- 1 file changed, 6 insertions(+)
+ Documentation/devicetree/bindings/timer/renesas,tmu.txt | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 9a57215f54f7..213b6bda6201 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -371,6 +371,8 @@
- 		reg = <0 0xe60b0000 0 0x425>;
- 		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7791_CLK_IICDVFS>;
-+		dmas = <&dmac0 0x77>, <&dmac0 0x78>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
+diff --git a/Documentation/devicetree/bindings/timer/renesas,tmu.txt b/Documentation/devicetree/bindings/timer/renesas,tmu.txt
+index 7db89fb2544411b5..4ae7910af09ffcb4 100644
+--- a/Documentation/devicetree/bindings/timer/renesas,tmu.txt
++++ b/Documentation/devicetree/bindings/timer/renesas,tmu.txt
+@@ -1,4 +1,4 @@
+-* Renesas R-Car Timer Unit (TMU)
++* Renesas R-Mobile/R-Car Timer Unit (TMU)
  
-@@ -381,6 +383,8 @@
- 		reg = <0 0xe6500000 0 0x425>;
- 		interrupts = <0 174 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7791_CLK_IIC0>;
-+		dmas = <&dmac0 0x61>, <&dmac0 0x62>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
+ The TMU is a 32-bit timer/counter with configurable clock inputs and
+ programmable compare match.
+@@ -9,6 +9,7 @@ are independent. The TMU hardware supports up to three channels.
+ Required Properties:
  
-@@ -391,6 +395,8 @@
- 		reg = <0 0xe6510000 0 0x425>;
- 		interrupts = <0 175 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7791_CLK_IIC1>;
-+		dmas = <&dmac0 0x65>, <&dmac0 0x66>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
+   - compatible: must contain one or more of the following:
++    - "renesas,tmu-r8a7740" for the r8a7740 TMU
+     - "renesas,tmu-r8a7779" for the r8a7779 TMU
+     - "renesas,tmu" for any TMU.
+       This is a fallback for the above renesas,tmu-* entries
 -- 
-2.0.0
+1.9.1
 
