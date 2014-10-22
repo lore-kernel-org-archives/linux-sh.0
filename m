@@ -1,60 +1,41 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 29 Oct 2014 04:59:07 +0000
-Subject: [PATCH 01/19] ARM: dts: Sort SHMOBILE dtbs alphabetically
-Message-Id: <c9095970ceb8f46ede77d1de7ed0275099e55d2a.1414556943.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 22 Oct 2014 09:38:26 +0000
+Subject: [PATCH 0/3] ARM: shmobile: r8a7740/armadillo800eva dts: Enable TMU0
+Message-Id: <1413970709-26607-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1414556943.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1414556943.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Daniel Lezcano <daniel.lezcano@linaro.org>, Simon Horman <horms+renesas@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+	Hi all,
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-[horms+renesas@verge.net.au:  update for addition of r8a7794-alt.dtb]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/Makefile | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+It seems the TMU got lost from armadillo800eva-reference at some point
+in time, and thus the conversion to DT was forgotten.
+This series extends the existing bindings to cover r8a7740, adds the device
+nodes on r8a7740, and enables TMU0 on armadillo800eva-multiplatform.
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 38c89ca..88282c8 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -377,24 +377,24 @@ dtb-$(CONFIG_ARCH_S5PV210) += s5pv210-aquila.dtb \
- 	s5pv210-smdkv210.dtb \
- 	s5pv210-torbreck.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += r7s72100-genmai.dtb \
-+	r8a73a4-ape6evm.dtb \
-+	r8a73a4-ape6evm-reference.dtb \
- 	r8a7740-armadillo800eva.dtb \
- 	r8a7778-bockw.dtb \
- 	r8a7778-bockw-reference.dtb \
- 	r8a7779-marzen.dtb \
--	r8a7791-koelsch.dtb \
- 	r8a7790-lager.dtb \
-+	r8a7791-koelsch.dtb \
-+	sh7372-mackerel.dtb \
- 	sh73a0-kzm9g.dtb \
--	sh73a0-kzm9g-reference.dtb \
--	r8a73a4-ape6evm.dtb \
--	r8a73a4-ape6evm-reference.dtb \
--	sh7372-mackerel.dtb
-+	sh73a0-kzm9g-reference.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
- 	r7s72100-genmai.dtb \
- 	r8a7740-armadillo800eva.dtb \
-+	r8a7779-marzen.dtb \
-+	r8a7790-lager.dtb \
- 	r8a7791-henninger.dtb \
- 	r8a7791-koelsch.dtb \
--	r8a7790-lager.dtb \
--	r8a7779-marzen.dtb \
- 	r8a7794-alt.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
- 	socfpga_cyclone5_socdk.dtb \
+Geert Uytterhoeven (3):
+  clocksource: sh_tmu: Document R-Mobile r8a7740 binding
+  ARM: shmobile: r8a7740 dtsi: Add TMU0 and TMU1 device nodes
+  ARM: shmobile: armadillo800eva dts: Enable TMU0
+
+ .../devicetree/bindings/timer/renesas,tmu.txt      |  3 ++-
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts      |  4 ++++
+ arch/arm/boot/dts/r8a7740.dtsi                     | 28 ++++++++++++++++++++++
+ 3 files changed, 34 insertions(+), 1 deletion(-)
+
 -- 
-2.1.1
+1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
