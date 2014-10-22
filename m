@@ -1,31 +1,45 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 22 Oct 2014 09:26:18 +0000
-Subject: [PATCH] clocksource: sh_mtu2: Correct SoC family name
-Message-Id: <1413969978-15946-1-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 22 Oct 2014 15:00:19 +0000
+Subject: Re: [PATCH] clocksource: sh_mtu2: Correct SoC family name
+Message-Id: <1593823.SBtdMLb0Ra@avalon>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1413969978-15946-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1413969978-15946-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Daniel Lezcano <daniel.lezcano@linaro.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Simon Horman <horms+renesas@verge.net.au>
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>, Simon Horman <horms+renesas@verge.net.au>
+Cc: Daniel Lezcano <daniel.lezcano@linaro.org>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
 
-r7s72100 is a member of the RZ family, not of the R-Car family
+Hi Geert,
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- Documentation/devicetree/bindings/timer/renesas,mtu2.txt | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Thank you for the patch.
 
-diff --git a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-index d9a8d5af1a21270f..55484a77a6ae54d0 100644
---- a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-+++ b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-@@ -1,4 +1,4 @@
--* Renesas R-Car Multi-Function Timer Pulse Unit 2 (MTU2)
-+* Renesas RZ Multi-Function Timer Pulse Unit 2 (MTU2)
- 
- The MTU2 is a multi-purpose, multi-channel timer/counter with configurable
- clock inputs and programmable compare match.
+On Wednesday 22 October 2014 11:26:18 Geert Uytterhoeven wrote:
+> r7s72100 is a member of the RZ family, not of the R-Car family
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+> ---
+>  Documentation/devicetree/bindings/timer/renesas,mtu2.txt | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
+> b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt index
+> d9a8d5af1a21270f..55484a77a6ae54d0 100644
+> --- a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
+> +++ b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
+> @@ -1,4 +1,4 @@
+> -* Renesas R-Car Multi-Function Timer Pulse Unit 2 (MTU2)
+> +* Renesas RZ Multi-Function Timer Pulse Unit 2 (MTU2)
+> 
+>  The MTU2 is a multi-purpose, multi-channel timer/counter with configurable
+>  clock inputs and programmable compare match.
+
 -- 
-1.9.1
+Regards,
+
+Laurent Pinchart
 
