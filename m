@@ -1,37 +1,86 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 27 Oct 2014 00:22:49 +0000
-Subject: Re: [PATCH v5 0/2] Add HS-USB device tree support for R8A7790/Lager board
-Message-Id: <20141027002249.GG25692@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 23 Oct 2014 09:19:48 +0000
+Subject: Re: [RESEND 2] cpufreq: dt: disable unsupported OPPs
+Message-Id: <CAMuHMdV2gPOZoV62rSNjpD=dJ43EE+s0wtRW4ncLWU-J-eHLDg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414147474-2348-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1414147474-2348-1-git-send-email-yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+References: <48734362.lRa73hezrZ@vostro.rjw.lan>
+	<1413454100-23009-1-git-send-email-l.stach@pengutronix.de>
+	<8590662.lsNXszcTd0@vostro.rjw.lan>
+In-Reply-To: <8590662.lsNXszcTd0@vostro.rjw.lan>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
-Cc: sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org, magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org, linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Lucas Stach <l.stach@pengutronix.de>
+Cc: Viresh Kumar <viresh.kumar@linaro.org>, Linux PM list <linux-pm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-On Fri, Oct 24, 2014 at 07:44:32PM +0900, Yoshihiro Shimoda wrote:
-> Here's the set of 2 patches against Simon Horman's 'renesas.git' repo,
-> 'renesas-devel-20141024-v3.18-rc1' tag. Here we add the HS-USB device tree
-> support on the R8A7790/Lager reference board. The patchset requires the USB PHY
-> driver (already merged by Kishon and Greg) and the generic PHY support patches
-> for the HS-USB driver posted by Yoshihiro Shimoda in order to work...
+Hi Rafael, Lucas,
 
-Thanks, I have queued these up.
+On Tue, Oct 21, 2014 at 4:19 PM, Rafael J. Wysocki <rjw@rjwysocki.net> wrot=
+e:
+> On Thursday, October 16, 2014 12:08:20 PM Lucas Stach wrote:
+>> If the regulator connected to the CPU voltage plane doesn't
+>> support an OPP specified voltage with the acceptable tolerance
+>> it's better to just disable the OPP instead of constantly
+>> failing the voltage scaling later on.
+>>
+>> Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
+>> Acked-by: Viresh Kumar <viresh.kumar@linaro.org>
+>
+> Applied, thanks!
 
-> 
-> Changes from v4:
->  - rebase the repository.
-> 
-> Yoshihiro Shimoda (2):
->   ARM: shmobile: r8a7790: add HS-USB device node
->   ARM: shmobile: lager: enable HS-USB
-> 
->  arch/arm/boot/dts/r8a7790-lager.dts |   12 ++++++++++++
->  arch/arm/boot/dts/r8a7790.dtsi      |   11 +++++++++++
->  2 files changed, 23 insertions(+)
-> 
-> -- 
-> 1.7.9.5
-> 
+This commit
+(http://git.kernel.org/cgit/linux/kernel/git/rafael/linux-pm.git/commit/?h=
+=3Dlinux-next&id=D7bbd4cd0359d781b67c9e621d4bbfd1bb2f3783)
+causes a boot regression on r8a7791/koelsch. It hangs after:
+
+    TCP: cubic registered
+    Initializing XFRM netlink socket
+    NET: Registered protocol family 17
+    NET: Registered protocol family 15
+    ata1: link resume succeeded after 1 retries
+    ata1: SATA link down (SStatus 0 SControl 300)
+    random: nonblocking pool is initialized
+
+With more debugging, it seems to end up in an infinite loop
+calling runtime_{suspend,resume}():
+
+    cpufreq-dt cpufreq-dt: pm_clk_notify() 4
+    i2c-sh_mobile e60b0000.i2c: pm_clk_resume()
+    MSTP i2c6 ON
+    i2c-sh_mobile e60b0000.i2c: pm_clk_suspend()
+    MSTP i2c6 OFF
+    i2c-sh_mobile e60b0000.i2c: pm_clk_resume()
+    MSTP i2c6 ON
+    i2c-sh_mobile e60b0000.i2c: pm_clk_suspend()
+    MSTP i2c6 OFF
+    i2c-sh_mobile e60b0000.i2c: pm_clk_resume()
+    MSTP i2c6 ON
+    i2c-sh_mobile e60b0000.i2c: pm_clk_suspend()
+    MSTP i2c6 OFF
+    i2c-sh_mobile e60b0000.i2c: pm_clk_resume()
+    MSTP i2c6 ON
+    i2c-sh_mobile e60b0000.i2c: pm_clk_suspend()
+    MSTP i2c6 OFF
+    i2c-sh_mobile e60b0000.i2c: pm_clk_resume()
+    ...
+
+Reverting this commit fixes the issue, and makes the boot continue with:
+
+    cpufreq: __cpufreq_add_dev: CPU0: Running at unlisted freq: 1300000 KHz
+    cpufreq: __cpufreq_add_dev: CPU0: Unlisted initial frequency
+changed to: 1312500 KHz
+    cpu cpu1: failed to get cpu-2 clock: 1
+    cpufreq_dt: cpufreq_init: Failed to allocate resources: -2
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
+.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like t=
+hat.
+                                -- Linus Torvalds
