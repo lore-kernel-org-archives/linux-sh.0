@@ -1,43 +1,69 @@
-From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
-Date: Mon, 06 Oct 2014 09:54:23 +0000
-Subject: [PATCH v2 0/1] spi: Using Trigger number to transmit/receive data
-Message-Id: <1412589264-16136-1-git-send-email-cm-hiep@jinso.co.jp>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 23 Oct 2014 11:18:50 +0000
+Subject: [PATCH v3 00/11] ARM: shmobile: r8a7740/armadillo800eva legacy PM domain support
+Message-Id: <1414063141-8856-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: broonie@kernel.org, geert+renesas@glider.be
-Cc: linux-spi@vger.kernel.org, kuninori.morimoto.gx@renesas.com, yoshihiro.shimoda.uh@renesas.com, ryusuke.sakato.bx@renesas.com, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+	Hi Simon, Magnus,
 
-Hi Geert, Mark Brown
+This series improves PM domain support for r8a7740/armadillo800eva legacy,
+mimicking (parts of) the existing PM domain support for sh7372/mackerel.
 
-Here is the verion 2 of the QSPI patch, I have added the DMA support on it.
-In order to use DMA When the DMA is available. 
-This patch supports for r8a7790 SOC and developed base on the upstream-v3.17-rc7
-and have tested on the Lager board.
+More specifically, it
+  - Adds missing devices to existing PM domains,
+  - Adds missing PM domains, hooking up devices and subdomains.
 
-Version 1:
+This series is based on renesas-devel-20141016-v3.17, but working resume from
+s2ram depends on a fix for sh_mobile_hdmi which is only in v3.18-rc1.
 
-This is the patch of QSPI that support for r8a7790 SOC. The pupose of 
-this patch is to transmit and receive the 32 bytes of data when the data 
-already has prepared on Transmit/Receive Buffer. Using Transmit/Receive 
-Buffer Data Trigger Number to do that instead transmits/receives a byte 
-of data. With this patch will improve the speed of transfer data.
-This patch was developed base on the upstream-v3.17-rc5 and have 
-tested on the Lager board.
+Changes in v3:
+  - Keep D4 PM domain powered, until the ARM debug/perf code uses resource
+    management with runtime PM support.
 
+Changes in v2:
+  - Dropped FIXMes on behavior that turned out to be expected,
+  - Hook up the HDMI-Link hardware block,
+  - Really add the A4MP and D4 PM domains, as fixes are available,
+  - Move special CPU domain handling from A4S to A3SM.
 
-Best Regards,
-Cao Minh Hiep 
+Please apply, after merging in v3.18-rc1.
 
-Hiep Cao Minh (1):
-  spi: Using Trigger number to transmit/receive data
+Thanks!
 
- drivers/spi/spi-rspi.c | 138 ++++++++++++++++++++++++++++++++++++++++++++-----
- 1 file changed, 125 insertions(+), 13 deletions(-)
+Geert Uytterhoeven (11):
+  ARM: shmobile: r8a7740: Add missing A3SP pm domain devices
+  ARM: shmobile: r8a7740: Add missing A4S pm domain devices
+  ARM: shmobile: armadillo800eva legacy: Add missing A3SP pm domain
+    devices
+  ARM: shmobile: armadillo800eva legacy: Add missing A4S pm domain
+    devices
+  ARM: shmobile: r8a7740: Add A3RV pm domain support
+  ARM: shmobile: r8a7740: Add A3SG pm domain support
+  ARM: shmobile: r8a7740/armadillo legacy: Add A4MP pm domain support
+  ARM: shmobile: r8a7740: Add D4 pm domain support
+  ARM: shmobile: r8a7740/armadillo legacy: Add A4R pm domain support
+  ARM: shmobile: r8a7740: Add A4SU pm domain support
+  ARM: shmobile: r8a7740: Add A3SM pm domain support
+
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 12 ++++++-
+ arch/arm/mach-shmobile/pm-r8a7740.c            | 44 +++++++++++++++++++++++---
+ arch/arm/mach-shmobile/setup-r8a7740.c         | 11 +++++++
+ 3 files changed, 62 insertions(+), 5 deletions(-)
 
 -- 
 1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
