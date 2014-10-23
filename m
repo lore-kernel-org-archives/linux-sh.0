@@ -1,69 +1,59 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 23 Oct 2014 11:18:58 +0000
-Subject: [PATCH v3 08/11] ARM: shmobile: r8a7740: Add D4 pm domain support
-Message-Id: <1414063141-8856-9-git-send-email-geert+renesas@glider.be>
+Date: Thu, 23 Oct 2014 09:39:57 +0000
+Subject: renesas-drivers-2014-10-23-v3.18-rc1
+Message-Id: <1414057197-3446-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414063141-8856-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1414063141-8856-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add support for the D4 power domain.
-This domain contains the Coresight-ETM hardware block.
+I've pushed renesas-drivers-2014-10-23-v3.18-rc1 to
+https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+This tree is meant to ease development of platform support and drivers for
+Renesas ARM ("shmobile") SoCs. It's created by merging the for-next branches
+of various subsystem trees into the development branch of Simon Horman's
+renesas.git tree.
 
-As long as the ARM debug/perf code doesn't use resource management with
-runtime PM support, the D4 power domain must be kept powered to avoid a
-crash during resume from s2ram (dbg_cpu_pm_notify() calls
-reset_ctrl_regs() unconditionally, causing an undefined instruction
-oops).
+Today's version is based on renesas-devel-20141016-v3.17.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-v3:
-  - Always keep D4 powered, until the new Coresight code handles runtime
-    PM,
-v2:
-  - Really add D4 and drop the FIXME, as a fix for the crash is
-    available.
----
- arch/arm/mach-shmobile/pm-r8a7740.c | 15 +++++++++++++++
- 1 file changed, 15 insertions(+)
+Included subsystem trees:
+    git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
+    git://git.linaro.org/people/mturquette/linux.git#clk-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
+    git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
+    git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
+    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
+    git://gitorious.org/linux-can/linux-can-next.git#master
+    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
+    git://people.freedesktop.org/~airlied/linux#drm-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
+    git://linuxtv.org/mchehab/media-next.git#master
+    git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
+    git://git.linaro.org/people/ulf.hansson/mmc.git#next
+    git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
+    git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
+    git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
+    git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
+    git://git.infradead.org/users/vkoul/slave-dma.git#next
+    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
+    git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
+    git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
+    git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
+    git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
 
-diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
-index 081a4f9726a0c909..8b1af2a585ab99d4 100644
---- a/arch/arm/mach-shmobile/pm-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7740.c
-@@ -32,6 +32,16 @@ static int r8a7740_pd_a3sp_suspend(void)
- 	return console_suspend_enabled ? 0 : -EBUSY;
- }
- 
-+static int r8a7740_pd_d4_suspend(void)
-+{
-+	/*
-+	 * The D4 domain contains the Coresight-ETM hardware block and
-+	 * therefore it should only be turned off if the debug module is
-+	 * not in use.
-+	 */
-+	return -EBUSY;
-+}
-+
- static struct rmobile_pm_domain r8a7740_pm_domains[] = {
- 	{
- 		.genpd.name	= "A4LC",
-@@ -40,6 +50,11 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
- 		.genpd.name	= "A4MP",
- 		.bit_shift	= 2,
- 	}, {
-+		.genpd.name	= "D4",
-+		.bit_shift	= 3,
-+		.gov		= &pm_domain_always_on_gov,
-+		.suspend	= r8a7740_pd_d4_suspend,
-+	}, {
- 		.genpd.name	= "A3RV",
- 		.bit_shift	= 6,
- 	}, {
--- 
-1.9.1
+Gr{oetje,eeting}s,
 
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
