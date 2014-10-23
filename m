@@ -1,54 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 06 Oct 2014 23:53:39 +0000
-Subject: Re: [PATCH v3] ARM: shmobile: kzm9d dts: Add chosen/stdout-path
-Message-Id: <20141006235338.GA8379@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 23 Oct 2014 11:18:54 +0000
+Subject: [PATCH v3 04/11] ARM: shmobile: armadillo800eva legacy: Add missing A4S pm domain devices
+Message-Id: <1414063141-8856-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412596753-20734-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1412596753-20734-1-git-send-email-geert+renesas@glider.be>
+References: <1414063141-8856-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1414063141-8856-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Oct 06, 2014 at 01:59:13PM +0200, Geert Uytterhoeven wrote:
-> Add a stdout-path property so that automatic console selection works
-> in the absence of a "console=" parameter on the kernel command line.
-> 
-> Note that we have to keep the "console=ttyS1,115200n81" parameter in
-> chosen/bootargs, else the console will use the default setting of 9600
-> baud.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Commit 8459293c27bcd13a ("ARM: shmobile: r8a7740: add A4S pm domain
+support") added the A4S power domain, but forgot to hook up the GbEther
+hardware block.
 
-Thanks Geert, I have queued this up.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v3:
+  - No changes,
+v2:
+  - No changes.
+---
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-> ---
-> v3:
->   - Keep "console="
-> v2:
->   - No changes
-> ---
->  arch/arm/boot/dts/emev2-kzm9d.dts | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts b/arch/arm/boot/dts/emev2-kzm9d.dts
-> index a1794cbd23fee319..667d323e80a3e176 100644
-> --- a/arch/arm/boot/dts/emev2-kzm9d.dts
-> +++ b/arch/arm/boot/dts/emev2-kzm9d.dts
-> @@ -25,6 +25,7 @@
->  
->  	chosen {
->  		bootargs = "console=ttyS1,115200n81 ignore_loglevel root=/dev/nfs ip=dhcp";
-> +		stdout-path = &uart1;
->  	};
->  
->  	gpio_keys {
-> -- 
-> 1.9.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 64a68450c28a072c..735036038951868d 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1234,6 +1234,7 @@ static void __init eva_init(void)
+ 	static struct pm_domain_device domain_devices[] __initdata = {
+ 		{ "A4LC", &lcdc0_device },
+ 		{ "A4LC", &hdmi_lcdc_device },
++		{ "A4S",  &sh_eth_device },
+ 		{ "A3SP", &pwm_device },
+ 		{ "A3SP", &sdhi0_device },
+ 		{ "A3SP", &sh_mmcif_device },
+-- 
+1.9.1
+
