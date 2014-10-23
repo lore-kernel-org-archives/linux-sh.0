@@ -1,43 +1,44 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 03 Oct 2014 15:11:41 +0000
-Subject: [PATCH v2 10/13] ARM: shmobile: henninger dts: Add chosen/stdout-path
-Message-Id: <1412349104-18724-11-git-send-email-geert+renesas@glider.be>
+Date: Thu, 23 Oct 2014 11:19:00 +0000
+Subject: [PATCH v3 10/11] ARM: shmobile: r8a7740: Add A4SU pm domain support
+Message-Id: <1414063141-8856-11-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412349104-18724-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1412349104-18724-1-git-send-email-geert+renesas@glider.be>
+References: <1414063141-8856-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1414063141-8856-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-Add a stdout-path property so that automatic console selection works
-in the absence of a "console=" parameter on the kernel command line.
-
-Note that we have to keep the "console=ttySC0,38400" parameter in
-chosen/bootargs, else the console will use the default setting of 115200
-baud.
+Add support for the A4SU power domain.
+This domain contains the USBPHY hardware block, which is currently not
+used by any driver.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+v3:
+  - No changes,
 v2:
-  - No changes
+  - Drop FIXME about hooking up USB platform devices, as the Armadillo
+    platform code doesn't register a USB host device anyway?
 ---
- arch/arm/boot/dts/r8a7791-henninger.dts | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/mach-shmobile/pm-r8a7740.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
-index fee8befc4c70d29e..ef2cb9217aef9eb8 100644
---- a/arch/arm/boot/dts/r8a7791-henninger.dts
-+++ b/arch/arm/boot/dts/r8a7791-henninger.dts
-@@ -23,6 +23,7 @@
+diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
+index 74e6a67a28d3c336..27117a8a49ad8556 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7740.c
++++ b/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -75,6 +75,9 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
+ 	}, {
+ 		.genpd.name	= "A3SG",
+ 		.bit_shift	= 13,
++	}, {
++		.genpd.name	= "A4SU",
++		.bit_shift	= 20,
+ 	},
+ };
  
- 	chosen {
- 		bootargs = "console=ttySC0,38400 ignore_loglevel rw root=/dev/nfs ip=dhcp";
-+		stdout-path = &scif0;
- 	};
- 
- 	memory@40000000 {
 -- 
 1.9.1
 
