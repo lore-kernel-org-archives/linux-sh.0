@@ -1,63 +1,39 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 24 Oct 2014 12:58:10 +0000
-Subject: [PATCH v2 4/9] drm: rcar-du: Replace drm_encoder with drm_slave_encoder
-Message-Id: <1414155495-3979-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 23 Oct 2014 14:33:44 +0000
+Subject: [PATCH 0/4] Low/high memory CMA reservation fixes
+Message-Id: <1414074828-4488-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414155495-3979-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1414155495-3979-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-DRM slave encoders require their associated struct drm_encoder instance
-to be embedded in a struct drm_slave_encoder. This makes processing
-encoders regardless of their types needlessly and painfully complex in
-drivers that use a mix of slave encoders and custom encoders. Such a
-driver will need to either create drm_slave_encoder instances that fake
-their embedded encoder instance, or to turn all drm_encoder instances
-into drm_slave_encoder instances.
+Hello,
 
-Between the two evils, one must choose the lesser. Use drm_slave_encoder
-everywhere.
+This patch set fixes an issue introduced by commits 95b0e655f914 ("ARM: mm:
+don't limit default CMA region only to low memory") and f7426b983a6a ("mm:
+cma: adjust address limit to avoid hitting low/high memory boundary")
+resulting in reserved areas crossing the low/high memory boundary.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/gpu/drm/rcar-du/rcar_du_encoder.h | 7 ++++---
- 1 file changed, 4 insertions(+), 3 deletions(-)
+Patches 1/4 and 2/4 fix sides issues, with the bulk of the work in patch 3/4.
+Patch 4/4 then fixes a printk issue that got me puzzled wondering why memory
+reported under the lowmem limit was actually highmem.
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-index c6334b4280d9..c4dccdbcff33 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-@@ -15,6 +15,7 @@
- #define __RCAR_DU_ENCODER_H__
- 
- #include <drm/drm_crtc.h>
-+#include <drm/drm_encoder_slave.h>
- 
- struct rcar_du_device;
- struct rcar_du_lvdsenc;
-@@ -27,15 +28,15 @@ enum rcar_du_encoder_type {
- };
- 
- struct rcar_du_encoder {
--	struct drm_encoder encoder;
-+	struct drm_encoder_slave slave;
- 	enum rcar_du_output output;
- 	struct rcar_du_lvdsenc *lvds;
- };
- 
- #define to_rcar_encoder(e) \
--	container_of(e, struct rcar_du_encoder, encoder)
-+	container_of(e, struct rcar_du_encoder, slave.base)
- 
--#define rcar_encoder_to_drm_encoder(e)	(&(e)->encoder)
-+#define rcar_encoder_to_drm_encoder(e)	(&(e)->slave.base)
- 
- struct rcar_du_connector {
- 	struct drm_connector connector;
+This series fixes a v3.18-rc1 regression causing Renesas Koelsch boot
+breakages when CMA is enabled.
+
+Laurent Pinchart (4):
+  mm: cma: Don't crash on allocation if CMA area can't be activated
+  mm: cma: Always consider a 0 base address reservation as dynamic
+  mm: cma: Ensure that reservations never cross the low/high mem
+    boundary
+  mm: cma: Use %pa to print physical addresses
+
+ mm/cma.c | 93 +++++++++++++++++++++++++++++++++++++++++-----------------------
+ 1 file changed, 60 insertions(+), 33 deletions(-)
+
 -- 
-2.0.4
+Regards,
+
+Laurent Pinchart
 
