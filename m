@@ -1,54 +1,52 @@
-From: Guenter Roeck <linux@roeck-us.net>
-Date: Fri, 03 Oct 2014 13:12:23 +0000
-Subject: Re: [RFC PATCH 05/16] arm64: support poweroff through poweroff handler call chain
-Message-Id: <542EA0B7.5040007@roeck-us.net>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 23 Oct 2014 14:33:46 +0000
+Subject: [PATCH 2/4] mm: cma: Always consider a 0 base address reservation as dynamic
+Message-Id: <1414074828-4488-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
- <1412100056-15517-6-git-send-email-linux@roeck-us.net>
- <20141003103056.GB14110@localhost>
-In-Reply-To: <20141003103056.GB14110@localhost>
+References: <1414074828-4488-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1414074828-4488-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 10/03/2014 03:30 AM, Catalin Marinas wrote:
-> On Tue, Sep 30, 2014 at 07:00:45PM +0100, Guenter Roeck wrote:
->> The kernel core now supports a poweroff handler call chain
->> to remove power from the system. Call it if pm_power_off
->> is set to NULL.
->>
->> Cc: Catalin Marinas <catalin.marinas@arm.com>
->> Cc: Will Deacon <will.deacon@arm.com>
->> Signed-off-by: Guenter Roeck <linux@roeck-us.net>
->> ---
->>   arch/arm64/kernel/process.c | 2 ++
->>   1 file changed, 2 insertions(+)
->>
->> diff --git a/arch/arm64/kernel/process.c b/arch/arm64/kernel/process.c
->> index 398ab05..cc0c63e 100644
->> --- a/arch/arm64/kernel/process.c
->> +++ b/arch/arm64/kernel/process.c
->> @@ -157,6 +157,8 @@ void machine_power_off(void)
->>   	smp_send_stop();
->>   	if (pm_power_off)
->>   		pm_power_off();
->> +	else
->> +		do_kernel_poweroff();
->
-> Acked-by: Catalin Marinas <catalin.marinas@arm.com>
->
-> As others already stated, I think we should eventually remove
-> pm_power_off entirely.
->
+The fixed parameter to cma_declare_contiguous() tells the function
+whether the given base address must be honoured or should be considered
+as a hint only. The API considers a zero base address as meaning any
+base address, which must never be considered as a fixed value.
 
-Hi Catalin,
-yes, already working on it. As suggested by others, I'll move pm_power_off
-to a central location (no need to declare the same variable for each
-architecture) and hide the call to it in do_kernel_poweroff() as a
-first step. You'll see this in the next version of the series.
-This will make it much easier to remove it later on.
+Part of the implementation correctly checks both fixed and base != 0,
+but two locations check the fixed value only. Set fixed to false when
+base is 0 to fix that and simplify the code.
 
-Thanks,
-Guenter
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ mm/cma.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/mm/cma.c b/mm/cma.c
+index 16c6650..6b14346 100644
+--- a/mm/cma.c
++++ b/mm/cma.c
+@@ -239,6 +239,9 @@ int __init cma_declare_contiguous(phys_addr_t base,
+ 	size = ALIGN(size, alignment);
+ 	limit &= ~(alignment - 1);
+ 
++	if (!base)
++		fixed = false;
++
+ 	/* size should be aligned with order_per_bit */
+ 	if (!IS_ALIGNED(size >> PAGE_SHIFT, 1 << order_per_bit))
+ 		return -EINVAL;
+@@ -262,7 +265,7 @@ int __init cma_declare_contiguous(phys_addr_t base,
+ 	}
+ 
+ 	/* Reserve memory */
+-	if (base && fixed) {
++	if (fixed) {
+ 		if (memblock_is_region_reserved(base, size) ||
+ 		    memblock_reserve(base, size) < 0) {
+ 			ret = -EBUSY;
+-- 
+2.0.4
 
