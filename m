@@ -1,59 +1,123 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 24 Oct 2014 02:15:16 +0000
-Subject: Re: [PATCH] clocksource: sh_mtu2: Correct SoC family name
-Message-Id: <20141024021513.GD7537@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 23 Oct 2014 14:33:47 +0000
+Subject: [PATCH 3/4] mm: cma: Ensure that reservations never cross the low/high mem boundary
+Message-Id: <1414074828-4488-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1413969978-15946-1-git-send-email-geert+renesas@glider.be>
- <1593823.SBtdMLb0Ra@avalon>
-In-Reply-To: <1593823.SBtdMLb0Ra@avalon>
+References: <1414074828-4488-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1414074828-4488-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Daniel Lezcano <daniel.lezcano@linaro.org>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Oct 22, 2014 at 06:00:19PM +0300, Laurent Pinchart wrote:
-> Hi Geert,
-> 
-> Thank you for the patch.
-> 
-> On Wednesday 22 October 2014 11:26:18 Geert Uytterhoeven wrote:
-> > r7s72100 is a member of the RZ family, not of the R-Car family
-> > 
-> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Commit 95b0e655f914 ("ARM: mm: don't limit default CMA region only to
+low memory") extended CMA memory reservation to allow usage of high
+memory. It relied on commit f7426b983a6a ("mm: cma: adjust address limit
+to avoid hitting low/high memory boundary") to ensure that the reserved
+block never crossed the low/high memory boundary. While the
+implementation correctly lowered the limit, it failed to consider the
+case where the base..limit range crossed the low/high memory boundary
+with enough space on each side to reserve the requested size on either
+low or high memory.
 
-My understanding is that mtu2 is an IP block that has been around
-inside Renesas for quite some time and has a history of use
-on the SH architecture as well as its more recent use on the r7s72100.
+Rework the base and limit adjustment to fix the problem. The function
+now starts by rejecting the reservation altogether for fixed
+reservations that cross the boundary, then adjust the limit if
+reservation from high memory is impossible, and finally first try to
+reserve from high memory first and then falls back to low memory.
 
-So perhaps "Renesas Multi-Function Timer Pulse Unit 2 (MTU2)"
-would be (slightly) better.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ mm/cma.c | 58 ++++++++++++++++++++++++++++++++++++++++++++--------------
+ 1 file changed, 44 insertions(+), 14 deletions(-)
 
-> > ---
-> >  Documentation/devicetree/bindings/timer/renesas,mtu2.txt | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > 
-> > diff --git a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-> > b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt index
-> > d9a8d5af1a21270f..55484a77a6ae54d0 100644
-> > --- a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-> > +++ b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-> > @@ -1,4 +1,4 @@
-> > -* Renesas R-Car Multi-Function Timer Pulse Unit 2 (MTU2)
-> > +* Renesas RZ Multi-Function Timer Pulse Unit 2 (MTU2)
-> > 
-> >  The MTU2 is a multi-purpose, multi-channel timer/counter with configurable
-> >  clock inputs and programmable compare match.
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/mm/cma.c b/mm/cma.c
+index 6b14346..b83597b 100644
+--- a/mm/cma.c
++++ b/mm/cma.c
+@@ -247,23 +247,38 @@ int __init cma_declare_contiguous(phys_addr_t base,
+ 		return -EINVAL;
+ 
+ 	/*
+-	 * adjust limit to avoid crossing low/high memory boundary for
++	 * Adjust limit and base to avoid crossing low/high memory boundary for
+ 	 * automatically allocated regions
+ 	 */
+-	if (((limit = 0 || limit > memblock_end) &&
+-	     (memblock_end - size < highmem_start &&
+-	      memblock_end > highmem_start)) ||
+-	    (!fixed && limit > highmem_start && limit - size < highmem_start)) {
+-		limit = highmem_start;
+-	}
+ 
+-	if (fixed && base < highmem_start && base+size > highmem_start) {
++	/*
++	 * If allocating at a fixed base the request region must not cross the
++	 * low/high memory boundary.
++	 */
++	if (fixed && base < highmem_start && base + size > highmem_start) {
+ 		ret = -EINVAL;
+ 		pr_err("Region at %08lx defined on low/high memory boundary (%08lx)\n",
+ 			(unsigned long)base, (unsigned long)highmem_start);
+ 		goto err;
+ 	}
+ 
++	/*
++	 * If the limit is unspecified or above the memblock end, its effective
++	 * value will be the memblock end. Set it explicitly to simplify further
++	 * checks.
++	 */
++	if (limit = 0 || limit > memblock_end)
++		limit = memblock_end;
++
++	/*
++	 * If the limit is above the highmem start by less than the reserved
++	 * size allocation in highmem won't be possible. Lower the limit to the
++	 * lowmem end.
++	 */
++	if (limit > highmem_start && limit - size < highmem_start)
++		limit = highmem_start;
++
++
+ 	/* Reserve memory */
+ 	if (fixed) {
+ 		if (memblock_is_region_reserved(base, size) ||
+@@ -272,14 +287,29 @@ int __init cma_declare_contiguous(phys_addr_t base,
+ 			goto err;
+ 		}
+ 	} else {
+-		phys_addr_t addr = memblock_alloc_range(size, alignment, base,
+-							limit);
++		phys_addr_t addr = 0;
++
++		/*
++		 * If the requested region crosses the low/high memory boundary,
++		 * try allocating from high memory first and fall back to low
++		 * memory in case of failure.
++		 */
++		if (base < highmem_start && limit > highmem_start) {
++			addr = memblock_alloc_range(size, alignment,
++						    highmem_start, limit);
++			limit = highmem_start;
++		}
++
+ 		if (!addr) {
+-			ret = -ENOMEM;
+-			goto err;
+-		} else {
+-			base = addr;
++			addr = memblock_alloc_range(size, alignment, base,
++						    limit);
++			if (!addr) {
++				ret = -ENOMEM;
++				goto err;
++			}
+ 		}
++
++		base = addr;
+ 	}
+ 
+ 	ret = cma_init_reserved_mem(base, size, order_per_bit, res_cma);
+-- 
+2.0.4
+
