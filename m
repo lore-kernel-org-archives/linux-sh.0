@@ -1,84 +1,47 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 30 Oct 2014 10:30:18 +0000
-Subject: [PATCH v3 3/4] usb: renesas_usbhs: fix the timing of dcp_control_transfer_done
-Message-Id: <1414665019-1340-4-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Date: Thu, 23 Oct 2014 03:14:12 +0000
+Subject: [PATCH v3 0/1] spi: Using Trigger number to transmit/receive data
+Message-Id: <1414034053-14750-1-git-send-email-cm-hiep@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: geert+renesas@glider.be
+Cc: broonie@kernel.org, linux-spi@vger.kernel.org, kuninori.morimoto.gx@renesas.com, yoshihiro.shimoda.uh@renesas.com, ryusuke.sakato.bx@renesas.com, linux-sh@vger.kernel.org
 
-According to the datasheet, this driver should clear the INTSTS0.CTRT
-bit before this controller detects the next stage transition. Otherwise,
-the driver may not be able to clear the bit after the controller went to
-the next stage transition. After that, the driver will not be able to
-clear the INTSTS0.VALID, and a usb control transfer will not finish
-finally.
+From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
 
-If we use the testusb tool, it is easy to reproduce this issue:
+Hi Geert-san,
 
- # testusb -a -t 10
+I have updated a new version of the QSPI patch (verion 3), that I modified as 
+your comments. This patch supports for r8a7790 SOC and developed base on the 
+upstream-stable-v3.17 and have tested on the Lager board.
+Please consider the following patches for the r8a7790 Soc.
 
-Since the previous code handled a data stage and a status stage in
-the usbhsf_pio_try_push(), it may not clear the INTSTS0.CTRT at the
-right timing.
-So, this patch change the timing of usbhs_dcp_control_transfer_done()
-to the usbhsg_irq_ctrl_stage().
+Version 2:
+Added the DMA support on it.In order to use DMA When the DMA is available. 
+This patch supports for r8a7790 SOC and developed base on the upstream-v3.17-rc7
+and have tested on the Lager board.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- drivers/usb/renesas_usbhs/fifo.c       |   16 ----------------
- drivers/usb/renesas_usbhs/mod_gadget.c |    3 +++
- 2 files changed, 3 insertions(+), 16 deletions(-)
+Version 1:
 
-diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
-index b0c97a3..0e07925 100644
---- a/drivers/usb/renesas_usbhs/fifo.c
-+++ b/drivers/usb/renesas_usbhs/fifo.c
-@@ -577,14 +577,6 @@ static int usbhsf_pio_try_push(struct usbhs_pkt *pkt, int *is_done)
- 		usbhs_pipe_number(pipe),
- 		pkt->length, pkt->actual, *is_done, pkt->zero);
- 
--	/*
--	 * Transmission end
--	 */
--	if (*is_done) {
--		if (usbhs_pipe_is_dcp(pipe))
--			usbhs_dcp_control_transfer_done(pipe);
--	}
--
- 	usbhsf_fifo_unselect(pipe, fifo);
- 
- 	return 0;
-@@ -722,14 +714,6 @@ usbhs_fifo_read_end:
- 		usbhs_pipe_number(pipe),
- 		pkt->length, pkt->actual, *is_done, pkt->zero);
- 
--	/*
--	 * Transmission end
--	 */
--	if (*is_done) {
--		if (usbhs_pipe_is_dcp(pipe))
--			usbhs_dcp_control_transfer_done(pipe);
--	}
--
- usbhs_fifo_read_busy:
- 	usbhsf_fifo_unselect(pipe, fifo);
- 
-diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
-index daecf74..c46641a 100644
---- a/drivers/usb/renesas_usbhs/mod_gadget.c
-+++ b/drivers/usb/renesas_usbhs/mod_gadget.c
-@@ -485,6 +485,9 @@ static int usbhsg_irq_ctrl_stage(struct usbhs_priv *priv,
- 	case NODATA_STATUS_STAGE:
- 		pipe->handler = &usbhs_ctrl_stage_end_handler;
- 		break;
-+	case READ_STATUS_STAGE:
-+	case WRITE_STATUS_STAGE:
-+		usbhs_dcp_control_transfer_done(pipe);
- 	default:
- 		return ret;
- 	}
+This is the patch of QSPI that support for r8a7790 SOC. The pupose of 
+this patch is to transmit and receive the 32 bytes of data when the data 
+already has prepared on Transmit/Receive Buffer. Using Transmit/Receive 
+Buffer Data Trigger Number to do that instead transmits/receives a byte 
+of data. With this patch will improve the speed of transfer data.
+This patch was developed base on the upstream-v3.17-rc5 and have 
+tested on the Lager board.
+
+Best Regards,
+Cao Minh Hiep 
+
+Hiep Cao Minh (1):
+  spi: Using Trigger number to transmit/receive data
+
+ drivers/spi/spi-rspi.c | 124 ++++++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 117 insertions(+), 7 deletions(-)
+
 -- 
-1.7.9.5
+1.9.1
 
