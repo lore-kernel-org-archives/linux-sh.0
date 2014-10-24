@@ -1,23 +1,107 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 07 Oct 2014 20:19:03 +0000
-Subject: [PATCH v3 0/2] Add HS-USB device tree support for R8A7790/Lager board
-Message-Id: <2438577.UAUDMkTTWI@wasted.cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 24 Oct 2014 12:58:15 +0000
+Subject: [PATCH v2 9/9] ARM: shmobile: koelsch: Add DU HDMI output support
+Message-Id: <1414155495-3979-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1414155495-3979-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1414155495-3979-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-Hello.
+Add DT nodes for the ADV7511 HDMI encoder and its HDMI output connector
+and configure the DISP pin group that drives the HDMI transmitter DE
+pin.
 
-   Here's the set of 2 patches against Simon Horman's 'renesas.git' repo,
-'renesas-devel-20141007-v3.17' tag. Here we add the HS-USB device tree support
-on the R8A7790/Lager reference board. The patchset requires the USB PHY
-driver (already merged by Kishon and Greg) and the generic PHY support patches
-for the HS-USB driver posted by Yoshihiro Shimoda in order to work...
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 50 ++++++++++++++++++++++++++++++++++-
+ 1 file changed, 49 insertions(+), 1 deletion(-)
 
-[1/2] ARM: shmobile: r8a7790: add HS-USB device node
-[2/2] ARM: shmobile: lager: enable HS-USB
-
-WBR, Sergei
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 0402c498b05b..317f5788a00c 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -210,6 +210,17 @@
+ 		states = <3300000 1
+ 			  1800000 0>;
+ 	};
++
++	hdmi-out {
++		compatible = "hdmi-connector";
++		type = "a";
++
++		port {
++			hdmi_con: endpoint {
++				remote-endpoint = <&adv7511_out>;
++			};
++		};
++	};
+ };
+ 
+ &du {
+@@ -218,6 +229,11 @@
+ 	status = "okay";
+ 
+ 	ports {
++		port@0 {
++			endpoint {
++				remote-endpoint = <&adv7511_in>;
++			};
++		};
+ 		port@1 {
+ 			lvds_connector: endpoint {
+ 			};
+@@ -236,7 +252,7 @@
+ 	};
+ 
+ 	du_pins: du {
+-		renesas,groups = "du_rgb666", "du_sync", "du_clk_out_0";
++		renesas,groups = "du_rgb666", "du_sync", "du_disp", "du_clk_out_0";
+ 		renesas,function = "du";
+ 	};
+ 
+@@ -440,6 +456,38 @@
+ 		};
+ 	};
+ 
++	hdmi@39 {
++		compatible = "adi,adv7511w";
++		reg = <0x39>;
++		interrupt-parent = <&gpio3>;
++		interrupts = <29 IRQ_TYPE_EDGE_FALLING>;
++
++		adi,input-depth = <8>;
++		adi,input-colorspace = "rgb";
++		adi,input-clock = "1x";
++		adi,input-style = <1>;
++		adi,input-justification = "evenly";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				adv7511_in: endpoint {
++					remote-endpoint = <&du_out_rgb>;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				adv7511_out: endpoint {
++					remote-endpoint = <&hdmi_con>;
++				};
++			};
++		};
++	};
++
+ 	eeprom@50 {
+ 		compatible = "renesas,24c02";
+ 		reg = <0x50>;
+-- 
+2.0.4
 
