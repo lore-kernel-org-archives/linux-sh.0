@@ -1,45 +1,48 @@
-From: Joonsoo Kim <iamjoonsoo.kim@lge.com>
-Date: Fri, 24 Oct 2014 02:50:14 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 24 Oct 2014 09:54:08 +0000
 Subject: Re: [PATCH 1/4] mm: cma: Don't crash on allocation if CMA area can't be activated
-Message-Id: <20141024025014.GA15243@js1304-P5Q-DELUXE>
+Message-Id: <1796959.xTvOMRAxHJ@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1414074828-4488-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1414074828-4488-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <xa1tmw8mlobz.fsf@mina86.com>
- <1463193.4qGZjcvNod@avalon>
  <CAL1ERfPiv6KG5Lim6F0w72z=j47D1KCWhukLc5T6jJPOHTP_mQ@mail.gmail.com>
-In-Reply-To: <CAL1ERfPiv6KG5Lim6F0w72z=j47D1KCWhukLc5T6jJPOHTP_mQ@mail.gmail.com>
+ <20141024025014.GA15243@js1304-P5Q-DELUXE>
+In-Reply-To: <20141024025014.GA15243@js1304-P5Q-DELUXE>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Weijie Yang <weijie.yang.kh@gmail.com>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Michal Nazarewicz <mina86@mina86.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, Marek Szyprowski <m.szyprowski@samsung.com>, Russell King - ARM Linux <linux@arm.linux.org.uk>
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Oct 24, 2014 at 10:02:49AM +0800, Weijie Yang wrote:
-> On Fri, Oct 24, 2014 at 7:42 AM, Laurent Pinchart
-> <laurent.pinchart@ideasonboard.com> wrote:
-> > Hi Michal,
-> >
-> > On Thursday 23 October 2014 18:53:36 Michal Nazarewicz wrote:
-> >> On Thu, Oct 23 2014, Laurent Pinchart wrote:
-> >> > If activation of the CMA area fails its mutex won't be initialized,
-> >> > leading to an oops at allocation time when trying to lock the mutex. Fix
-> >> > this by failing allocation if the area hasn't been successfully actived,
-> >> > and detect that condition by moving the CMA bitmap allocation after page
-> >> > block reservation completion.
-> >> >
-> >> > Signed-off-by: Laurent Pinchart
-> >> > <laurent.pinchart+renesas@ideasonboard.com>
-> >>
-> >> Cc: <stable@vger.kernel.org>  # v3.17
-> >> Acked-by: Michal Nazarewicz <mina86@mina86.com>
+Hello,
+
+On Friday 24 October 2014 11:50:14 Joonsoo Kim wrote:
+> On Fri, Oct 24, 2014 at 10:02:49AM +0800, Weijie Yang wrote:
+> > On Fri, Oct 24, 2014 at 7:42 AM, Laurent Pinchart wrote:
+> > > On Thursday 23 October 2014 18:53:36 Michal Nazarewicz wrote:
+> > >> On Thu, Oct 23 2014, Laurent Pinchart wrote:
+> > >> > If activation of the CMA area fails its mutex won't be initialized,
+> > >> > leading to an oops at allocation time when trying to lock the mutex.
+> > >> > Fix this by failing allocation if the area hasn't been successfully
+> > >> > actived, and detect that condition by moving the CMA bitmap
+> > >> > allocation after page block reservation completion.
+> > >> > 
+> > >> > Signed-off-by: Laurent Pinchart
+> > >> > <laurent.pinchart+renesas@ideasonboard.com>
+> > >> 
+> > >> Cc: <stable@vger.kernel.org>  # v3.17
+> > >> Acked-by: Michal Nazarewicz <mina86@mina86.com>
+> > 
+> > This patch is good, but how about add a active field in cma struct?
+> > use cma->active to check whether cma is actived successfully.
+> > I think it will make code more clear and readable.
+> > Just my little opinion.
 > 
-> This patch is good, but how about add a active field in cma struct?
-> use cma->active to check whether cma is actived successfully.
-> I think it will make code more clear and readable.
-> Just my little opinion.
-> 
+> Or just setting cma->count to 0 would work fine.
 
-Or just setting cma->count to 0 would work fine.
+I would prefer setting cma->count to 0 to avoid the extra field. I'll modify 
+the patch accordingly.
 
-Thanks.
+-- 
+Regards,
+
+Laurent Pinchart
+
