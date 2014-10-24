@@ -1,56 +1,48 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 27 Oct 2014 23:43:30 +0000
-Subject: Re: [PATCH] ARM: shmobile: Select CONFIG_ZONE_DMA when CONFIG_ARM_LPAE is enabled
-Message-Id: <20141027234329.GA2770@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 24 Oct 2014 10:45:06 +0000
+Subject: [PATCH v4 1/3] ARM: shmobile: r8a7791: add HS-USB device node
+Message-Id: <1414147508-5556-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414075111-4642-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1414075111-4642-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1414147508-5556-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1414147508-5556-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: horms@verge.net.au, sergei.shtylyov@cogentembedded.com, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
+Cc: devicetree@vger.kernel.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-On Thu, Oct 23, 2014 at 05:38:31PM +0300, Laurent Pinchart wrote:
-> Most IP cores on ARM Renesas platforms can only address 32 bits of
-> physical memory for DMA. Without CONFIG_ZONE_DMA enabled and with the
-> recent CMA highmem allocation support, the default CMA zone is reserved
-> above the 4GiB limit when LPAE is enabled, resulting in various driver
-> failures.
-> 
-> Fix the problem by selecting CONFIG_ZONE_DMA. Other options to
-> investigate in the future would be to either enable IOMMU support or use
-> custom CMA reservations for peripherals not supporting LPAE.
-> 
-> While not a strict dependency, the "[PATCH 0/4] Low/high memory CMA
-> reservation fixes" series is also required to fix a different but related CMA
-> allocation problem.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Define the R8A7791 generic part of the HS-USB device node. It is up to the board
+file to enable the device.
 
-Thanks, I have queued this up.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+[Sergei: fixed summary, added changelog]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+---
+ arch/arm/boot/dts/r8a7791.dtsi |   11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-> ---
->  arch/arm/mach-shmobile/Kconfig | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-> index 21f457b..6bc018f 100644
-> --- a/arch/arm/mach-shmobile/Kconfig
-> +++ b/arch/arm/mach-shmobile/Kconfig
-> @@ -1,5 +1,6 @@
->  config ARCH_SHMOBILE
->  	bool
-> +	select ZONE_DMA if ARM_LPAE
->  
->  config PM_RCAR
->  	bool
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 1f4b6db..51a1b84 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -637,6 +637,17 @@
+ 		status = "disabled";
+ 	};
+ 
++	hsusb: usb@e6590000 {
++		compatible = "renesas,usbhs-r8a7791";
++		reg = <0 0xe6590000 0 0x100>;
++		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7791_CLK_HSUSB>;
++		renesas,buswait = <4>;
++		phys = <&usb0 1>;
++		phy-names = "usb";
++		status = "disabled";
++	};
++
+ 	usbphy: usb-phy@e6590100 {
+ 		compatible = "renesas,usb-phy-r8a7791";
+ 		reg = <0 0xe6590100 0 0x100>;
+-- 
+1.7.9.5
+
