@@ -1,52 +1,34 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 30 Oct 2014 01:21:51 +0000
-Subject: Re: [PATCH 0/3] ARM: shmobile: koelsch: Removal cleanups
-Message-Id: <20141030012150.GH22052@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 24 Oct 2014 10:45:05 +0000
+Subject: [PATCH v4 0/3] HS-USB device tree support for R8A7791/Koelsch/Henninger board
+Message-Id: <1414147508-5556-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414592918-25138-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1414592918-25138-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: horms@verge.net.au, sergei.shtylyov@cogentembedded.com, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
+Cc: devicetree@vger.kernel.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-On Wed, Oct 29, 2014 at 03:28:35PM +0100, Geert Uytterhoeven wrote:
-> 	Hi Simon, Magnus,
-> 
-> This patch series does some cleanups after the removal of koelsch-legacy
-> support.
-> 
-> Thanks for applying!
+   Here's the set of 3 patches against Simon Horman's 'renesas.git' repo,
+'renesas-devel-20141024-v3.18-rc1' tag. Here we add the HS-USB device tree
+support on the R8A7791/Koelsch/Henninger reference boards. The patchset
+requires the USB PHY driver (already merged by Kishon and Greg) and the
+generic PHY support patches for the HS-USB driver posted by Yoshihiro Shimoda
+in order to work...
 
-Thanks. I have taken the liberty of rewording the changelogs a little
-as the commit ids they refer to are not stable.
+Changes from v3:
+ - rebase the repository.
 
-> 
-> Geert Uytterhoeven (3):
->   MAINTAINERS: Remove reference to shmobile / koelsch_defconfig
->   ARM: dts: koelsch: Stop building r8a7791-koelsch.dtb in legacy builds
->   ARM: shmobile: koelsch dts: Drop console= bootargs parameter
-> 
->  MAINTAINERS                           | 1 -
->  arch/arm/boot/dts/Makefile            | 1 -
->  arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
->  3 files changed, 1 insertion(+), 3 deletions(-)
-> 
-> -- 
-> 1.9.1
-> 
-> Gr{oetje,eeting}s,
-> 
-> 						Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
-> 							    -- Linus Torvalds
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Yoshihiro Shimoda (3):
+  ARM: shmobile: r8a7791: add HS-USB device node
+  ARM: shmobile: koelsch: enable HS-USB
+  ARM: shmobile: henninger: enable HS-USB
+
+ arch/arm/boot/dts/r8a7791-henninger.dts |    7 +++++++
+ arch/arm/boot/dts/r8a7791-koelsch.dts   |    7 +++++++
+ arch/arm/boot/dts/r8a7791.dtsi          |   11 +++++++++++
+ 3 files changed, 25 insertions(+)
+
+-- 
+1.7.9.5
+
