@@ -1,89 +1,54 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 30 Oct 2014 10:01:52 +0000
-Subject: Re: [PATCH 3/3] ARM: shmobile: r8a7794: Add MMP and VSP1 clocks to device tree
-Message-Id: <CAMuHMdW7R_g3hYQSP_VBTXKfbuTZTJEfbZ9ScmE1bzzHKbcPSQ@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 24 Oct 2014 11:36:03 +0000
+Subject: [PATCH 2/2] ARM: shmobile: r8a7778: Add SoC-specific TMU compatible property
+Message-Id: <1414150563-6645-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414648736-31412-1-git-send-email-horms+renesas@verge.net.au>
- <1414648736-31412-4-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1414648736-31412-4-git-send-email-horms+renesas@verge.net.au>
+References: <1414150563-6645-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1414150563-6645-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Oct 30, 2014 at 6:58 AM, Simon Horman
-<horms+renesas@verge.net.au> wrote:
-> --- a/arch/arm/boot/dts/r8a7794.dtsi
-> +++ b/arch/arm/boot/dts/r8a7794.dtsi
-> @@ -461,15 +461,19 @@
->                 mstp1_clks: mstp1_clks@e6150134 {
->                         compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
->                         reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
-> -                       clocks = <&p_clk>, <&zg_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
-> -                                <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>;
-> +                       clocks = <&zs_clk>, <&zs_clk>, <&p_clk>, <&zg_clk>, <&zs_clk>,
-> +                                <&zs_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>, <&cp_clk>,
-> +                                <&zs_clk>, <&zs_clk>;
->                         #clock-cells = <1>;
->                         renesas,clock-indices = <
-> -                               R8A7794_CLK_TMU1 R8A7794_CLK_PVRSRVKM R8A7794_CLK_TMU3
-> -                               R8A7794_CLK_TMU2 R8A7794_CLK_CMT0 R8A7794_CLK_TMU0
-> +                               R8A7794_CLK_VCP0 R8A7794_CLK_VPC0 R8A7794_CLK_TMU1
-> +                               R8A7794_CLK_PVRSRVKM R8A7794_CLK_2DDMAC R8A7794_CLK_FDP0
-> +                               R8A7794_CLK_TMU3 R8A7794_CLK_TMU2 R8A7794_CLK_CMT0
-> +                               R8A7794_CLK_TMU0 R8A7794_CLK_VSP1_DU0 R8A7794_CLK_VSP1_S
->                         >;
->                         clock-output-names > -                               "tmu1", "pvrsrvkm", "tmu3", "tmu2", "cmt0", "tmu0";
-> +                               "vcp0", "vpc0", "tmu1", "pvrsrvkm", "tddmac", "fdp0",
+The TMU timers used the generic compatible property only.
+Add the SoC-specific one, to make it future proof.
 
-Please match the names with other R-Car Gen2 members:
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a7778.dtsi | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-"2ddmac", "fdp1-0"
-
-> +                               "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du0", "vsps";
-
-(Oops, r8a779[01] still have "vsp1-sy" here)
-
->                 };
->                 mstp2_clks: mstp2_clks@e6150138 {
->                         compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
-> diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
-> index 7d49531..512ce89 100644
-> --- a/include/dt-bindings/clock/r8a7794-clock.h
-> +++ b/include/dt-bindings/clock/r8a7794-clock.h
-> @@ -26,12 +26,18 @@
->  #define R8A7794_CLK_MSIOF0             0
->
->  /* MSTP1 */
-> +#define R8A7794_CLK_VCP0               1
-> +#define R8A7794_CLK_VPC0               3
->  #define R8A7794_CLK_TMU1               11
->  #define R8A7794_CLK_PVRSRVKM           12
-> +#define R8A7794_CLK_2DDMAC             15
-> +#define R8A7794_CLK_FDP0               19
-
-R8A7794_CLK_FDP1_0
-
->  #define R8A7794_CLK_TMU3               21
->  #define R8A7794_CLK_TMU2               22
->  #define R8A7794_CLK_CMT0               24
->  #define R8A7794_CLK_TMU0               25
-> +#define R8A7794_CLK_VSP1_DU0           28
-> +#define R8A7794_CLK_VSP1_S             31
-
-
-
-
-
-
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 1e80e4c694828e15..96297f67fda8e632 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -163,7 +163,7 @@
+ 	};
+ 
+ 	tmu0: timer@ffd80000 {
+-		compatible = "renesas,tmu";
++		compatible = "renesas,tmu-r8a7778", "renesas,tmu";
+ 		reg = <0xffd80000 0x30>;
+ 		interrupts = <0 32 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 33 IRQ_TYPE_LEVEL_HIGH>,
+@@ -175,7 +175,7 @@
+ 	};
+ 
+ 	tmu1: timer@ffd81000 {
+-		compatible = "renesas,tmu";
++		compatible = "renesas,tmu-r8a7778", "renesas,tmu";
+ 		reg = <0xffd81000 0x30>;
+ 		interrupts = <0 36 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 37 IRQ_TYPE_LEVEL_HIGH>,
+@@ -187,7 +187,7 @@
+ 	};
+ 
+ 	tmu2: timer@ffd82000 {
+-		compatible = "renesas,tmu";
++		compatible = "renesas,tmu-r8a7778", "renesas,tmu";
+ 		reg = <0xffd82000 0x30>;
+ 		interrupts = <0 40 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 41 IRQ_TYPE_LEVEL_HIGH>,
 -- 
-Gr{oetje,eeting}s,
+1.9.1
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
