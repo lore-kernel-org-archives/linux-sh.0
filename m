@@ -1,104 +1,137 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Tue, 28 Oct 2014 17:02:11 +0000
-Subject: [PATCH v3 2/7] ARM: shmobile: sh73a0: Add CPG register bits header
-Message-Id: <1414515736-24905-3-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 24 Oct 2014 12:58:09 +0000
+Subject: [PATCH v2 3/9] drm: rcar-du: Replace direct DRM encoder access with cast macro
+Message-Id: <1414155495-3979-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1414155495-3979-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1414155495-3979-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Add a new macro to downcast an rcar_du_encoder pointer to a drm_encoder
+pointer and use it. This prepares for the replacement of the
+rcar_drm_encoder encoder field with a drm_slave_encoder.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- include/dt-bindings/clock/sh73a0-clock.h | 79 ++++++++++++++++++++++++++++++++
- 1 file changed, 79 insertions(+)
- create mode 100644 include/dt-bindings/clock/sh73a0-clock.h
+ drivers/gpu/drm/rcar-du/rcar_du_encoder.c | 8 +++++---
+ drivers/gpu/drm/rcar-du/rcar_du_encoder.h | 2 ++
+ drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c | 5 +++--
+ drivers/gpu/drm/rcar-du/rcar_du_vgacon.c  | 5 +++--
+ 4 files changed, 13 insertions(+), 7 deletions(-)
 
-diff --git a/include/dt-bindings/clock/sh73a0-clock.h b/include/dt-bindings/clock/sh73a0-clock.h
-new file mode 100644
-index 0000000..1dd3eb2
---- /dev/null
-+++ b/include/dt-bindings/clock/sh73a0-clock.h
-@@ -0,0 +1,79 @@
-+/*
-+ * Copyright 2014 Ulrich Hecht
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ */
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
+index c699100a1359..e88e63b06b09 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
+@@ -33,7 +33,7 @@ rcar_du_connector_best_encoder(struct drm_connector *connector)
+ {
+ 	struct rcar_du_connector *rcon = to_rcar_connector(connector);
+ 
+-	return &rcon->encoder->encoder;
++	return rcar_encoder_to_drm_encoder(rcon->encoder);
+ }
+ 
+ /* -----------------------------------------------------------------------------
+@@ -146,6 +146,7 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
+ 			 struct device_node *con_node)
+ {
+ 	struct rcar_du_encoder *renc;
++	struct drm_encoder *encoder;
+ 	unsigned int encoder_type;
+ 	int ret;
+ 
+@@ -154,6 +155,7 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
+ 		return -ENOMEM;
+ 
+ 	renc->output = output;
++	encoder = rcar_encoder_to_drm_encoder(renc);
+ 
+ 	switch (output) {
+ 	case RCAR_DU_OUTPUT_LVDS0:
+@@ -182,12 +184,12 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
+ 		break;
+ 	}
+ 
+-	ret = drm_encoder_init(rcdu->ddev, &renc->encoder, &encoder_funcs,
++	ret = drm_encoder_init(rcdu->ddev, encoder, &encoder_funcs,
+ 			       encoder_type);
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	drm_encoder_helper_add(&renc->encoder, &encoder_helper_funcs);
++	drm_encoder_helper_add(encoder, &encoder_helper_funcs);
+ 
+ 	switch (encoder_type) {
+ 	case DRM_MODE_ENCODER_LVDS:
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
+index 4b906b90c204..c6334b4280d9 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
+@@ -35,6 +35,8 @@ struct rcar_du_encoder {
+ #define to_rcar_encoder(e) \
+ 	container_of(e, struct rcar_du_encoder, encoder)
+ 
++#define rcar_encoder_to_drm_encoder(e)	(&(e)->encoder)
 +
-+#ifndef __DT_BINDINGS_CLOCK_SH73A0_H__
-+#define __DT_BINDINGS_CLOCK_SH73A0_H__
-+
-+/* CPG */
-+#define SH73A0_CLK_MAIN		0
-+#define SH73A0_CLK_PLL0		1
-+#define SH73A0_CLK_PLL1		2
-+#define SH73A0_CLK_PLL2		3
-+#define SH73A0_CLK_PLL3		4
-+#define SH73A0_CLK_DSI0PHY	5
-+#define SH73A0_CLK_DSI1PHY	6
-+#define SH73A0_CLK_ZG		7
-+#define SH73A0_CLK_M3		8
-+#define SH73A0_CLK_B		9
-+#define SH73A0_CLK_M1		10
-+#define SH73A0_CLK_M2		11
-+#define SH73A0_CLK_Z		12
-+#define SH73A0_CLK_ZX		13
-+#define SH73A0_CLK_HP		14
-+
-+/* MSTP0 */
-+#define SH73A0_CLK_IIC2	1
-+
-+/* MSTP1 */
-+#define SH73A0_CLK_CEU1		29
-+#define SH73A0_CLK_CSI2_RX1	28
-+#define SH73A0_CLK_CEU0		27
-+#define SH73A0_CLK_CSI2_RX0	26
-+#define SH73A0_CLK_TMU0		25
-+#define SH73A0_CLK_DSITX0	18
-+#define SH73A0_CLK_IIC0		16
-+#define SH73A0_CLK_SGX		12
-+#define SH73A0_CLK_LCDC0	0
-+
-+/* MSTP2 */
-+#define SH73A0_CLK_SCIFA7	19
-+#define SH73A0_CLK_SY_DMAC	18
-+#define SH73A0_CLK_MP_DMAC	17
-+#define SH73A0_CLK_SCIFA5	7
-+#define SH73A0_CLK_SCIFB	6
-+#define SH73A0_CLK_SCIFA0	4
-+#define SH73A0_CLK_SCIFA1	3
-+#define SH73A0_CLK_SCIFA2	2
-+#define SH73A0_CLK_SCIFA3	1
-+#define SH73A0_CLK_SCIFA4	0
-+
-+/* MSTP3 */
-+#define SH73A0_CLK_SCIFA6	31
-+#define SH73A0_CLK_CMT1		29
-+#define SH73A0_CLK_FSI		28
-+#define SH73A0_CLK_IRDA		25
-+#define SH73A0_CLK_IIC1		23
-+#define SH73A0_CLK_USB		22
-+#define SH73A0_CLK_FLCTL	15
-+#define SH73A0_CLK_SDHI0	14
-+#define SH73A0_CLK_SDHI1	13
-+#define SH73A0_CLK_MMCIF0	12
-+#define SH73A0_CLK_SDHI2	11
-+#define SH73A0_CLK_TPU0		4
-+#define SH73A0_CLK_TPU1		3
-+#define SH73A0_CLK_TPU2		2
-+#define SH73A0_CLK_TPU3		1
-+#define SH73A0_CLK_TPU4		0
-+
-+/* MSTP4 */
-+#define SH73A0_CLK_IIC3		11
-+#define SH73A0_CLK_IIC4		10
-+#define SH73A0_CLK_KEYSC	3
-+
-+#endif
+ struct rcar_du_connector {
+ 	struct drm_connector connector;
+ 	struct rcar_du_encoder *encoder;
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
+index 80dc02166c88..6d9811c052c4 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
+@@ -84,6 +84,7 @@ int rcar_du_lvds_connector_init(struct rcar_du_device *rcdu,
+ 				struct rcar_du_encoder *renc,
+ 				/* TODO const */ struct device_node *np)
+ {
++	struct drm_encoder *encoder = rcar_encoder_to_drm_encoder(renc);
+ 	struct rcar_du_lvds_connector *lvdscon;
+ 	struct drm_connector *connector;
+ 	struct display_timing timing;
+@@ -120,11 +121,11 @@ int rcar_du_lvds_connector_init(struct rcar_du_device *rcdu,
+ 	drm_object_property_set_value(&connector->base,
+ 		rcdu->ddev->mode_config.dpms_property, DRM_MODE_DPMS_OFF);
+ 
+-	ret = drm_mode_connector_attach_encoder(connector, &renc->encoder);
++	ret = drm_mode_connector_attach_encoder(connector, encoder);
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	connector->encoder = &renc->encoder;
++	connector->encoder = encoder;
+ 	lvdscon->connector.encoder = renc;
+ 
+ 	return 0;
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
+index 564a723ede03..752747a5e920 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
+@@ -52,6 +52,7 @@ static const struct drm_connector_funcs connector_funcs = {
+ int rcar_du_vga_connector_init(struct rcar_du_device *rcdu,
+ 			       struct rcar_du_encoder *renc)
+ {
++	struct drm_encoder *encoder = rcar_encoder_to_drm_encoder(renc);
+ 	struct rcar_du_connector *rcon;
+ 	struct drm_connector *connector;
+ 	int ret;
+@@ -78,11 +79,11 @@ int rcar_du_vga_connector_init(struct rcar_du_device *rcdu,
+ 	drm_object_property_set_value(&connector->base,
+ 		rcdu->ddev->mode_config.dpms_property, DRM_MODE_DPMS_OFF);
+ 
+-	ret = drm_mode_connector_attach_encoder(connector, &renc->encoder);
++	ret = drm_mode_connector_attach_encoder(connector, encoder);
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	connector->encoder = &renc->encoder;
++	connector->encoder = encoder;
+ 	rcon->encoder = renc;
+ 
+ 	return 0;
 -- 
-1.8.4.5
+2.0.4
 
