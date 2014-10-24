@@ -1,50 +1,60 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Mon, 27 Oct 2014 00:14:46 +0000
-Subject: Re: [PATCH v2] ata: sata_rcar: Disable DIPM mode for r8a7790 ES1
-Message-Id: <20141027001446.GB25692@verge.net.au>
+Date: Fri, 24 Oct 2014 05:09:43 +0000
+Subject: Re: [PATCH v3 0/9] DU DT support for Marzen, Lager and Koelsch
+Message-Id: <20141024050943.GJ7537@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414116319-16813-1-git-send-email-horms+renesas@verge.net.au>
- <544A2E37.6090206@cogentembedded.com>
-In-Reply-To: <544A2E37.6090206@cogentembedded.com>
+References: <1411564828-30272-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1411564828-30272-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: linux-ide@vger.kernel.org, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Oct 24, 2014 at 02:47:19PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 10/24/2014 6:05 AM, Simon Horman wrote:
-> 
-> >Unlike other SATA R-Car r8a7790 controllers the r8a7790 ES1 SATA R-Car
-> >controller needs to be run with DIPM disabled.
-> 
-> >Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> >---
-> >v2
-> >* Handle ES1 in sata_rcar_init_controller()
-> >---
-> >  Documentation/devicetree/bindings/ata/sata_rcar.txt |  3 ++-
-> >  drivers/ata/sata_rcar.c                             | 11 +++++++++++
-> >  2 files changed, 13 insertions(+), 1 deletion(-)
-> 
-> [...]
-> >diff --git a/drivers/ata/sata_rcar.c b/drivers/ata/sata_rcar.c
-> >index 61eb6d7..b398513 100644
-> >--- a/drivers/ata/sata_rcar.c
-> >+++ b/drivers/ata/sata_rcar.c
-> [...]
-> >@@ -763,6 +764,10 @@ static void sata_rcar_setup_port(struct ata_host *host)
-> >  	ap->udma_mask	= ATA_UDMA6;
-> >  	ap->flags	|= ATA_FLAG_SATA;
-> >
-> >+	if (priv->type = RCAR_R8A7790_ES1_SATA) {
-> >+		ap->flags	|= ATA_FLAG_NO_DIPM;
-> >+	}
-> >+
-> 
->    Please, please drop {}. I think checkpatch.pl should complain about them...
+Hi Laurent,
 
-Thanks, done.
+On Wed, Sep 24, 2014 at 04:20:19PM +0300, Laurent Pinchart wrote:
+> Hello,
+> 
+> This patch series enable the DU device in DT for the Marzen, Lager and Koelsch
+> boards (in their multiplatform implementation only).
+> 
+> Compared to v2,
+> 
+> - the Marzen and Lager adv7123 DT nodes have been renamed to vga-encoder
+> 
+> - the Marzen and Lager adv7123 DT nodes now correctly set the "reg" property
+> in their port subnodes.
+> 
+> Compared to v1,
+> 
+> - support for the external LVDS panel commonly used with the three boards has
+> been moved to a separate file (r8a77xx-aa104xd12-panel.dtsi) that can be
+> included at the end of the Marzen, Lager or Koelsch DTS
+> 
+> - the DU DT nodes have been renamed to "display"
+> 
+> - the s/remote/remove/ typo has been fixed in commit messages.
+> 
+> The first three patches add the DU nodes to the SoC .dtsi files. Patch 04 adds
+> the panel .dtsi. Patches 05 enables the DU device in DT for the Marzen board,
+> and patches 06 to 09 perform the same operation for the Lager and Koelsch
+> boards, removing the C code DU platform device in the process.
+> 
+> Please note that HDMI output isn't supported yet, another patch set will come
+> in the next few days.
+> 
+> The patches are based on top of the DU changes from the "[PATCH 00/16] R-Car
+> Display Unit DT bindings" series that will be merged in v3.18. This series is
+> thus targeted at v3.19. Fast-tracking it to v3.18 is still possible if
+> desired, in which case I would need to ask Dave Airlie to provide a stable
+> branch with the driver changes. The clock is ticking, if anyone would like DU
+> DT in v3.18, speak now or forever hold your peace.
+> 
+> I've pushed a test branch that includes all patches to
+> 
+> 	git://linuxtv.org/pinchartl/fbdev.git drm/du/dt
+
+Thanks for this, I'm very happy to see these changes.
+
+Now that v3.18-rc1 is part of my devel tree could you consider
+rebasing these patches?
