@@ -1,107 +1,53 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 26 Oct 2014 15:24:28 +0000
-Subject: [PATCH v3 9/9] ARM: shmobile: koelsch: Add DU HDMI output support
-Message-Id: <1414337068-28664-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 24 Oct 2014 12:04:01 +0000
+Subject: [PATCH v4 9/9] ARM: shmobile: koelsch: Enable DU device in DT
+Message-Id: <1414152241-5390-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414337068-28664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1414337068-28664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Add DT nodes for the ADV7511 HDMI encoder and its HDMI output connector
-and configure the DISP pin group that drives the HDMI transmitter DE
-pin.
+Specify the DU output topology, enable the DU device and configure the
+related pins.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 50 ++++++++++++++++++++++++++++++++++-
- 1 file changed, 49 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
 
 diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 0402c498b05b..317f5788a00c 100644
+index 53184637f160..0402c498b05b 100644
 --- a/arch/arm/boot/dts/r8a7791-koelsch.dts
 +++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -210,6 +210,17 @@
- 		states = <3300000 1
- 			  1800000 0>;
+@@ -212,14 +212,24 @@
  	};
-+
-+	hdmi-out {
-+		compatible = "hdmi-connector";
-+		type = "a";
-+
-+		port {
-+			hdmi_con: endpoint {
-+				remote-endpoint = <&adv7511_out>;
-+			};
-+		};
-+	};
  };
  
- &du {
-@@ -218,6 +229,11 @@
- 	status = "okay";
- 
- 	ports {
-+		port@0 {
-+			endpoint {
-+				remote-endpoint = <&adv7511_in>;
-+			};
-+		};
- 		port@1 {
- 			lvds_connector: endpoint {
- 			};
-@@ -236,7 +252,7 @@
- 	};
- 
- 	du_pins: du {
--		renesas,groups = "du_rgb666", "du_sync", "du_clk_out_0";
-+		renesas,groups = "du_rgb666", "du_sync", "du_disp", "du_clk_out_0";
- 		renesas,function = "du";
- 	};
- 
-@@ -440,6 +456,38 @@
- 		};
- 	};
- 
-+	hdmi@39 {
-+		compatible = "adi,adv7511w";
-+		reg = <0x39>;
-+		interrupt-parent = <&gpio3>;
-+		interrupts = <29 IRQ_TYPE_EDGE_FALLING>;
++&du {
++	pinctrl-0 = <&du_pins>;
++	pinctrl-names = "default";
++	status = "okay";
 +
-+		adi,input-depth = <8>;
-+		adi,input-colorspace = "rgb";
-+		adi,input-clock = "1x";
-+		adi,input-style = <1>;
-+		adi,input-justification = "evenly";
-+
-+		ports {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+
-+			port@0 {
-+				reg = <0>;
-+				adv7511_in: endpoint {
-+					remote-endpoint = <&du_out_rgb>;
-+				};
-+			};
-+
-+			port@1 {
-+				reg = <1>;
-+				adv7511_out: endpoint {
-+					remote-endpoint = <&hdmi_con>;
-+				};
++	ports {
++		port@1 {
++			lvds_connector: endpoint {
 +			};
 +		};
 +	};
++};
 +
- 	eeprom@50 {
- 		compatible = "renesas,24c02";
- 		reg = <0x50>;
+ &extal_clk {
+ 	clock-frequency = <20000000>;
+ };
+ 
+ &pfc {
+-	pinctrl-0 = <&du_pins>;
+-	pinctrl-names = "default";
+-
+ 	i2c2_pins: i2c2 {
+ 		renesas,groups = "i2c2";
+ 		renesas,function = "i2c2";
 -- 
 2.0.4
 
