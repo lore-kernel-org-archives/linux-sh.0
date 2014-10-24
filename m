@@ -1,10 +1,10 @@
 From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 07 Oct 2014 11:10:19 +0000
-Subject: [PATCH v2 1/2] arm: shmobile: r8a7790: add HS-USB device node
-Message-Id: <1412680220-4552-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 24 Oct 2014 10:41:46 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: r8a7790: add USB3.0 device node
+Message-Id: <1414147307-4584-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412680220-4552-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1412680220-4552-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <1414147307-4584-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1414147307-4584-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -13,31 +13,30 @@ Cc: devicetree@vger.kernel.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.
 
 Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi |   11 +++++++++++
- 1 file changed, 11 insertions(+)
+ arch/arm/boot/dts/r8a7790.dtsi |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
 diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 2380fd5..63a75f2 100644
+index 3f1e4b3..776f1c4 100644
 --- a/arch/arm/boot/dts/r8a7790.dtsi
 +++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -600,6 +600,17 @@
+@@ -1147,6 +1147,16 @@
  		status = "disabled";
  	};
  
-+	hsusb: usb@e6590000 {
-+		compatible = "renesas,usbhs-r8a7790";
-+		reg = <0 0xe6590000 0 0x100>;
-+		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7790_CLK_HSUSB>;
-+		renesas,buswait = <4>;
-+		phys = <&usb0 1>;
++	xhci: usb@ee000000 {
++		compatible = "renesas,xhci-r8a7790";
++		reg = <0 0xee000000 0 0xc00>;
++		interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_SSUSB>;
++		phys = <&usb2 1>;
 +		phy-names = "usb";
 +		status = "disabled";
 +	};
 +
- 	usbphy: usb-phy@e6590100 {
- 		compatible = "renesas,usb-phy-r8a7790";
- 		reg = <0 0xe6590100 0 0x100>;
+ 	pci0: pci@ee090000 {
+ 		compatible = "renesas,pci-r8a7790";
+ 		device_type = "pci";
 -- 
 1.7.9.5
 
