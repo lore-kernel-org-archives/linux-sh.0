@@ -1,137 +1,226 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 26 Oct 2014 15:24:22 +0000
-Subject: [PATCH v3 3/9] drm: rcar-du: Replace direct DRM encoder access with cast macro
-Message-Id: <1414337068-28664-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 24 Oct 2014 08:33:08 +0000
+Subject: [PATCH 1/2] ARM: shmobile: Separate APMU resource data into CPU dependant part
+Message-Id: <1414139589-13605-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414337068-28664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1414337068-28664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1414139589-13605-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1414139589-13605-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add a new macro to downcast an rcar_du_encoder pointer to a drm_encoder
-pointer and use it. This prepares for the replacement of the
-rcar_drm_encoder encoder field with a drm_slave_encoder.
+From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+APMU resources are not common to all R-Car SoCs so don't share this data.
+A subsequent patch will correct the CPU cores for the r8a7791.
+
+Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_encoder.c | 8 +++++---
- drivers/gpu/drm/rcar-du/rcar_du_encoder.h | 2 ++
- drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c | 5 +++--
- drivers/gpu/drm/rcar-du/rcar_du_vgacon.c  | 5 +++--
- 4 files changed, 13 insertions(+), 7 deletions(-)
+ arch/arm/mach-shmobile/common.h       |  5 -----
+ arch/arm/mach-shmobile/platsmp-apmu.c | 27 +++++++++------------------
+ arch/arm/mach-shmobile/platsmp-apmu.h | 32 ++++++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/smp-r8a7790.c  | 16 +++++++++++++++-
+ arch/arm/mach-shmobile/smp-r8a7791.c  | 16 +++++++++++++++-
+ 5 files changed, 71 insertions(+), 25 deletions(-)
+ create mode 100644 arch/arm/mach-shmobile/platsmp-apmu.h
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-index c699100a1359..e88e63b06b09 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-@@ -33,7 +33,7 @@ rcar_du_connector_best_encoder(struct drm_connector *connector)
- {
- 	struct rcar_du_connector *rcon = to_rcar_connector(connector);
+diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
+index 72087c7..309025e 100644
+--- a/arch/arm/mach-shmobile/common.h
++++ b/arch/arm/mach-shmobile/common.h
+@@ -19,11 +19,6 @@ extern void shmobile_boot_scu(void);
+ extern void shmobile_smp_scu_prepare_cpus(unsigned int max_cpus);
+ extern void shmobile_smp_scu_cpu_die(unsigned int cpu);
+ extern int shmobile_smp_scu_cpu_kill(unsigned int cpu);
+-extern void shmobile_smp_apmu_prepare_cpus(unsigned int max_cpus);
+-extern int shmobile_smp_apmu_boot_secondary(unsigned int cpu,
+-					    struct task_struct *idle);
+-extern void shmobile_smp_apmu_cpu_die(unsigned int cpu);
+-extern int shmobile_smp_apmu_cpu_kill(unsigned int cpu);
+ struct clk;
+ extern int shmobile_clk_init(void);
+ extern void shmobile_handle_irq_intc(struct pt_regs *);
+diff --git a/arch/arm/mach-shmobile/platsmp-apmu.c b/arch/arm/mach-shmobile/platsmp-apmu.c
+index 2c06810..f483b56 100644
+--- a/arch/arm/mach-shmobile/platsmp-apmu.c
++++ b/arch/arm/mach-shmobile/platsmp-apmu.c
+@@ -1,6 +1,7 @@
+ /*
+  * SMP support for SoCs with APMU
+  *
++ * Copyright (C) 2014  Renesas Electronics Corporation
+  * Copyright (C) 2013  Magnus Damm
+  *
+  * This program is free software; you can redistribute it and/or modify
+@@ -22,6 +23,7 @@
+ #include <asm/smp_plat.h>
+ #include <asm/suspend.h>
+ #include "common.h"
++#include "platsmp-apmu.h"
  
--	return &rcon->encoder->encoder;
-+	return rcar_encoder_to_drm_encoder(rcon->encoder);
+ static struct {
+ 	void __iomem *iomem;
+@@ -83,28 +85,15 @@ static void apmu_init_cpu(struct resource *res, int cpu, int bit)
+ 	pr_debug("apmu ioremap %d %d %pr\n", cpu, bit, res);
  }
  
- /* -----------------------------------------------------------------------------
-@@ -146,6 +146,7 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
- 			 struct device_node *con_node)
+-static struct {
+-	struct resource iomem;
+-	int cpus[4];
+-} apmu_config[] = {
+-	{
+-		.iomem = DEFINE_RES_MEM(0xe6152000, 0x88),
+-		.cpus = { 0, 1, 2, 3 },
+-	},
+-	{
+-		.iomem = DEFINE_RES_MEM(0xe6151000, 0x88),
+-		.cpus = { 0x100, 0x101, 0x102, 0x103 },
+-	}
+-};
+-
+-static void apmu_parse_cfg(void (*fn)(struct resource *res, int cpu, int bit))
++static void apmu_parse_cfg(void (*fn)(struct resource *res, int cpu, int bit),
++			   struct rcar_apmu_config *apmu_config, int num)
  {
- 	struct rcar_du_encoder *renc;
-+	struct drm_encoder *encoder;
- 	unsigned int encoder_type;
- 	int ret;
+ 	u32 id;
+ 	int k;
+ 	int bit, index;
+ 	bool is_allowed;
  
-@@ -154,6 +155,7 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
- 		return -ENOMEM;
- 
- 	renc->output = output;
-+	encoder = rcar_encoder_to_drm_encoder(renc);
- 
- 	switch (output) {
- 	case RCAR_DU_OUTPUT_LVDS0:
-@@ -182,12 +184,12 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
- 		break;
+-	for (k = 0; k < ARRAY_SIZE(apmu_config); k++) {
++	for (k = 0; k < num; k++) {
+ 		/* only enable the cluster that includes the boot CPU */
+ 		is_allowed = false;
+ 		for (bit = 0; bit < ARRAY_SIZE(apmu_config[k].cpus); bit++) {
+@@ -128,14 +117,16 @@ static void apmu_parse_cfg(void (*fn)(struct resource *res, int cpu, int bit))
  	}
+ }
  
--	ret = drm_encoder_init(rcdu->ddev, &renc->encoder, &encoder_funcs,
-+	ret = drm_encoder_init(rcdu->ddev, encoder, &encoder_funcs,
- 			       encoder_type);
- 	if (ret < 0)
- 		return ret;
+-void __init shmobile_smp_apmu_prepare_cpus(unsigned int max_cpus)
++void __init shmobile_smp_apmu_prepare_cpus(unsigned int max_cpus,
++					   struct rcar_apmu_config *apmu_config,
++					   int num)
+ {
+ 	/* install boot code shared by all CPUs */
+ 	shmobile_boot_fn = virt_to_phys(shmobile_smp_boot);
+ 	shmobile_boot_arg = MPIDR_HWID_BITMASK;
  
--	drm_encoder_helper_add(&renc->encoder, &encoder_helper_funcs);
-+	drm_encoder_helper_add(encoder, &encoder_helper_funcs);
+ 	/* perform per-cpu setup */
+-	apmu_parse_cfg(apmu_init_cpu);
++	apmu_parse_cfg(apmu_init_cpu, apmu_config, num);
+ }
  
- 	switch (encoder_type) {
- 	case DRM_MODE_ENCODER_LVDS:
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-index 4b906b90c204..c6334b4280d9 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-@@ -35,6 +35,8 @@ struct rcar_du_encoder {
- #define to_rcar_encoder(e) \
- 	container_of(e, struct rcar_du_encoder, encoder)
- 
-+#define rcar_encoder_to_drm_encoder(e)	(&(e)->encoder)
+ #ifdef CONFIG_SMP
+diff --git a/arch/arm/mach-shmobile/platsmp-apmu.h b/arch/arm/mach-shmobile/platsmp-apmu.h
+new file mode 100644
+index 0000000..76512c9
+--- /dev/null
++++ b/arch/arm/mach-shmobile/platsmp-apmu.h
+@@ -0,0 +1,32 @@
++/*
++ * rmobile apmu definition
++ *
++ * Copyright (C) 2014  Renesas Electronics Corporation
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
 +
- struct rcar_du_connector {
- 	struct drm_connector connector;
- 	struct rcar_du_encoder *encoder;
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
-index 80dc02166c88..6d9811c052c4 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
-@@ -84,6 +84,7 @@ int rcar_du_lvds_connector_init(struct rcar_du_device *rcdu,
- 				struct rcar_du_encoder *renc,
- 				/* TODO const */ struct device_node *np)
++#ifndef PLATSMP_APMU_H
++#define PLATSMP_APMU_H
++
++struct rcar_apmu_config {
++	struct resource iomem;
++	int cpus[4];
++};
++
++extern void shmobile_smp_apmu_prepare_cpus(unsigned int max_cpus,
++					   struct rcar_apmu_config *apmu_config,
++					   int num);
++extern int shmobile_smp_apmu_boot_secondary(unsigned int cpu,
++					    struct task_struct *idle);
++extern void shmobile_smp_apmu_cpu_die(unsigned int cpu);
++extern int shmobile_smp_apmu_cpu_kill(unsigned int cpu);
++
++#endif /* PLATSMP_APMU_H */
+diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
+index 2311694..9c3da13 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7790.c
++++ b/arch/arm/mach-shmobile/smp-r8a7790.c
+@@ -21,6 +21,7 @@
+ #include <asm/smp_plat.h>
+ 
+ #include "common.h"
++#include "platsmp-apmu.h"
+ #include "pm-rcar.h"
+ #include "r8a7790.h"
+ 
+@@ -34,10 +35,23 @@ static struct rcar_sysc_ch r8a7790_ca7_scu = {
+ 	.isr_bit = 21, /* CA7-SCU */
+ };
+ 
++static struct rcar_apmu_config r8a7790_apmu_config[] = {
++	{
++		.iomem = DEFINE_RES_MEM(0xe6152000, 0x88),
++		.cpus = { 0, 1, 2, 3 },
++	},
++	{
++		.iomem = DEFINE_RES_MEM(0xe6151000, 0x88),
++		.cpus = { 0x100, 0x0101, 0x102, 0x103 },
++	}
++};
++
+ static void __init r8a7790_smp_prepare_cpus(unsigned int max_cpus)
  {
-+	struct drm_encoder *encoder = rcar_encoder_to_drm_encoder(renc);
- 	struct rcar_du_lvds_connector *lvdscon;
- 	struct drm_connector *connector;
- 	struct display_timing timing;
-@@ -120,11 +121,11 @@ int rcar_du_lvds_connector_init(struct rcar_du_device *rcdu,
- 	drm_object_property_set_value(&connector->base,
- 		rcdu->ddev->mode_config.dpms_property, DRM_MODE_DPMS_OFF);
+ 	/* let APMU code install data related to shmobile_boot_vector */
+-	shmobile_smp_apmu_prepare_cpus(max_cpus);
++	shmobile_smp_apmu_prepare_cpus(max_cpus,
++				       r8a7790_apmu_config,
++				       ARRAY_SIZE(r8a7790_apmu_config));
  
--	ret = drm_mode_connector_attach_encoder(connector, &renc->encoder);
-+	ret = drm_mode_connector_attach_encoder(connector, encoder);
- 	if (ret < 0)
- 		return ret;
+ 	/* turn on power to SCU */
+ 	r8a7790_pm_init();
+diff --git a/arch/arm/mach-shmobile/smp-r8a7791.c b/arch/arm/mach-shmobile/smp-r8a7791.c
+index f743386..96e392c 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7791.c
++++ b/arch/arm/mach-shmobile/smp-r8a7791.c
+@@ -21,13 +21,27 @@
+ #include <asm/smp_plat.h>
  
--	connector->encoder = &renc->encoder;
-+	connector->encoder = encoder;
- 	lvdscon->connector.encoder = renc;
+ #include "common.h"
++#include "platsmp-apmu.h"
+ #include "r8a7791.h"
+ #include "rcar-gen2.h"
  
- 	return 0;
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
-index 564a723ede03..752747a5e920 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
-@@ -52,6 +52,7 @@ static const struct drm_connector_funcs connector_funcs = {
- int rcar_du_vga_connector_init(struct rcar_du_device *rcdu,
- 			       struct rcar_du_encoder *renc)
++static struct rcar_apmu_config r8a7791_apmu_config[] = {
++	{
++		.iomem = DEFINE_RES_MEM(0xe6152000, 0x88),
++		.cpus = { 0, 1, 2, 3 },
++	},
++	{
++		.iomem = DEFINE_RES_MEM(0xe6151000, 0x88),
++		.cpus = { 0x100, 0x0101, 0x102, 0x103 },
++	}
++};
++
+ static void __init r8a7791_smp_prepare_cpus(unsigned int max_cpus)
  {
-+	struct drm_encoder *encoder = rcar_encoder_to_drm_encoder(renc);
- 	struct rcar_du_connector *rcon;
- 	struct drm_connector *connector;
- 	int ret;
-@@ -78,11 +79,11 @@ int rcar_du_vga_connector_init(struct rcar_du_device *rcdu,
- 	drm_object_property_set_value(&connector->base,
- 		rcdu->ddev->mode_config.dpms_property, DRM_MODE_DPMS_OFF);
+ 	/* let APMU code install data related to shmobile_boot_vector */
+-	shmobile_smp_apmu_prepare_cpus(max_cpus);
++	shmobile_smp_apmu_prepare_cpus(max_cpus,
++				       r8a7791_apmu_config,
++				       ARRAY_SIZE(r8a7791_apmu_config));
  
--	ret = drm_mode_connector_attach_encoder(connector, &renc->encoder);
-+	ret = drm_mode_connector_attach_encoder(connector, encoder);
- 	if (ret < 0)
- 		return ret;
- 
--	connector->encoder = &renc->encoder;
-+	connector->encoder = encoder;
- 	rcon->encoder = renc;
- 
- 	return 0;
+ 	r8a7791_pm_init();
+ }
 -- 
-2.0.4
+2.1.1
 
