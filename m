@@ -1,47 +1,92 @@
-From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
-Date: Thu, 23 Oct 2014 03:14:12 +0000
-Subject: [PATCH v3 0/1] spi: Using Trigger number to transmit/receive data
-Message-Id: <1414034053-14750-1-git-send-email-cm-hiep@jinso.co.jp>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 24 Oct 2014 12:03:59 +0000
+Subject: [PATCH v4 7/9] ARM: shmobile: lager: Enable DU device in DT
+Message-Id: <1414152241-5390-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: geert+renesas@glider.be
-Cc: broonie@kernel.org, linux-spi@vger.kernel.org, kuninori.morimoto.gx@renesas.com, yoshihiro.shimoda.uh@renesas.com, ryusuke.sakato.bx@renesas.com, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+Specify the DU output topology, enable the DU device and configure the
+related pins.
 
-Hi Geert-san,
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 53 ++++++++++++++++++++++++++++++++++---
+ 1 file changed, 50 insertions(+), 3 deletions(-)
 
-I have updated a new version of the QSPI patch (verion 3), that I modified as 
-your comments. This patch supports for r8a7790 SOC and developed base on the 
-upstream-stable-v3.17 and have tested on the Lager board.
-Please consider the following patches for the r8a7790 Soc.
-
-Version 2:
-Added the DMA support on it.In order to use DMA When the DMA is available. 
-This patch supports for r8a7790 SOC and developed base on the upstream-v3.17-rc7
-and have tested on the Lager board.
-
-Version 1:
-
-This is the patch of QSPI that support for r8a7790 SOC. The pupose of 
-this patch is to transmit and receive the 32 bytes of data when the data 
-already has prepared on Transmit/Receive Buffer. Using Transmit/Receive 
-Buffer Data Trigger Number to do that instead transmits/receives a byte 
-of data. With this patch will improve the speed of transfer data.
-This patch was developed base on the upstream-v3.17-rc5 and have 
-tested on the Lager board.
-
-Best Regards,
-Cao Minh Hiep 
-
-Hiep Cao Minh (1):
-  spi: Using Trigger number to transmit/receive data
-
- drivers/spi/spi-rspi.c | 124 ++++++++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 117 insertions(+), 7 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 2115de237421..e96f95216437 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -145,6 +145,56 @@
+ 		states = <3300000 1
+ 			  1800000 0>;
+ 	};
++
++	vga-encoder {
++		compatible = "adi,adv7123";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				adv7123_in: endpoint {
++					remote-endpoint = <&du_out_rgb>;
++				};
++			};
++			port@1 {
++				reg = <1>;
++				adv7123_out: endpoint {
++					remote-endpoint = <&vga_in>;
++				};
++			};
++		};
++	};
++
++	vga {
++		compatible = "vga-connector";
++
++		port {
++			vga_in: endpoint {
++				remote-endpoint = <&adv7123_out>;
++			};
++		};
++	};
++};
++
++&du {
++	pinctrl-0 = <&du_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++
++	ports {
++		port@0 {
++			endpoint {
++				remote-endpoint = <&adv7123_in>;
++			};
++		};
++		port@2 {
++			lvds_connector: endpoint {
++			};
++		};
++	};
+ };
+ 
+ &extal_clk {
+@@ -152,9 +202,6 @@
+ };
+ 
+ &pfc {
+-	pinctrl-0 = <&du_pins>;
+-	pinctrl-names = "default";
+-
+ 	du_pins: du {
+ 		renesas,groups = "du_rgb666", "du_sync_1", "du_clk_out_0";
+ 		renesas,function = "du";
 -- 
-1.9.1
+2.0.4
 
