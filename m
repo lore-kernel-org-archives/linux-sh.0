@@ -1,98 +1,70 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 07 Oct 2014 03:43:05 +0000
-Subject: [PATCH v2 2/3] usb: renesas_usbhs: clean up rcar2.c to support a generic PHY
-Message-Id: <1412653386-5856-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 24 Oct 2014 12:03:56 +0000
+Subject: [PATCH v4 4/9] ARM: shmobile: dts: Add common file for AA104XD12 panel
+Message-Id: <1414152241-5390-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-To support both usb PHY and generic PHY, this patch cleans up rcar2.c.
+The Mitsubishi AA104XD12 panel is commonly used with the Marzen, Lager
+and Koelsch boards. Create a .dtsi file that describe the panel and its
+connection to the board.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/usb/renesas_usbhs/rcar2.c |   48 ++++++++++++++++++++-----------------
- 1 file changed, 26 insertions(+), 22 deletions(-)
+ arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi | 41 ++++++++++++++++++++++++++
+ 1 file changed, 41 insertions(+)
+ create mode 100644 arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi
 
-diff --git a/drivers/usb/renesas_usbhs/rcar2.c b/drivers/usb/renesas_usbhs/rcar2.c
-index f264cad..485b889 100644
---- a/drivers/usb/renesas_usbhs/rcar2.c
-+++ b/drivers/usb/renesas_usbhs/rcar2.c
-@@ -20,25 +20,28 @@
- static int usbhs_rcar2_hardware_init(struct platform_device *pdev)
- {
- 	struct usbhs_priv *priv = usbhs_pdev_to_priv(pdev);
--	struct usb_phy *usb_phy;
- 
--	usb_phy = usb_get_phy_dev(&pdev->dev, 0);
--	if (IS_ERR(usb_phy))
--		return PTR_ERR(usb_phy);
-+	if (IS_ENABLED(CONFIG_USB_PHY)) {
-+		struct usb_phy *usb_phy = usb_get_phy_dev(&pdev->dev, 0);
- 
--	priv->usb_phy = usb_phy;
--	return 0;
-+		if (IS_ERR(usb_phy))
-+			return PTR_ERR(usb_phy);
+diff --git a/arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi b/arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi
+new file mode 100644
+index 000000000000..65cb50f0c29f
+--- /dev/null
++++ b/arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi
+@@ -0,0 +1,41 @@
++/*
++ * Common file for the AA104XD12 panel connected to Renesas R-Car boards
++ *
++ * Copyright (C) 2014 Renesas Electronics Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
 +
-+		priv->usb_phy = usb_phy;
-+		return 0;
-+	}
++/ {
++	panel {
++		compatible = "mitsubishi,aa104xd12", "panel-dpi";
 +
-+	return -ENXIO;
- }
- 
- static int usbhs_rcar2_hardware_exit(struct platform_device *pdev)
- {
- 	struct usbhs_priv *priv = usbhs_pdev_to_priv(pdev);
- 
--	if (!priv->usb_phy)
--		return 0;
--
--	usb_put_phy(priv->usb_phy);
--	priv->usb_phy = NULL;
-+	if (priv->usb_phy) {
-+		usb_put_phy(priv->usb_phy);
-+		priv->usb_phy = NULL;
-+	}
- 
- 	return 0;
- }
-@@ -47,21 +50,22 @@ static int usbhs_rcar2_power_ctrl(struct platform_device *pdev,
- 				void __iomem *base, int enable)
- {
- 	struct usbhs_priv *priv = usbhs_pdev_to_priv(pdev);
-+	int retval = -ENODEV;
- 
--	if (!priv->usb_phy)
--		return -ENODEV;
-+	if (priv->usb_phy) {
-+		if (enable) {
-+			retval = usb_phy_init(priv->usb_phy);
- 
--	if (enable) {
--		int retval = usb_phy_init(priv->usb_phy);
--
--		if (!retval)
--			retval = usb_phy_set_suspend(priv->usb_phy, 0);
--		return retval;
-+			if (!retval)
-+				retval = usb_phy_set_suspend(priv->usb_phy, 0);
-+		} else {
-+			usb_phy_set_suspend(priv->usb_phy, 1);
-+			usb_phy_shutdown(priv->usb_phy);
-+			retval = 0;
-+		}
- 	}
- 
--	usb_phy_set_suspend(priv->usb_phy, 1);
--	usb_phy_shutdown(priv->usb_phy);
--	return 0;
-+	return retval;
- }
- 
- static int usbhs_rcar2_get_id(struct platform_device *pdev)
++		width-mm = <210>;
++		height-mm = <158>;
++
++		panel-timing {
++			/* 1024x768 @65Hz */
++			clock-frequency = <65000000>;
++			hactive = <1024>;
++			vactive = <768>;
++			hsync-len = <136>;
++			hfront-porch = <20>;
++			hback-porch = <160>;
++			vfront-porch = <3>;
++			vback-porch = <29>;
++			vsync-len = <6>;
++		};
++
++		port {
++			panel_in: endpoint {
++				remote-endpoint = <&lvds_connector>;
++			};
++		};
++	};
++};
++
++&lvds_connector {
++	remote-endpoint = <&panel_in>;
++};
 -- 
-1.7.9.5
+2.0.4
 
