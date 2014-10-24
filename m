@@ -1,48 +1,32 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 24 Oct 2014 09:54:08 +0000
+From: Michal Nazarewicz <mina86@mina86.com>
+Date: Fri, 24 Oct 2014 16:34:46 +0000
 Subject: Re: [PATCH 1/4] mm: cma: Don't crash on allocation if CMA area can't be activated
-Message-Id: <1796959.xTvOMRAxHJ@avalon>
+Message-Id: <xa1tfved2zq1.fsf@mina86.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1414074828-4488-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <CAL1ERfPiv6KG5Lim6F0w72z=j47D1KCWhukLc5T6jJPOHTP_mQ@mail.gmail.com>
- <20141024025014.GA15243@js1304-P5Q-DELUXE>
-In-Reply-To: <20141024025014.GA15243@js1304-P5Q-DELUXE>
+ <1414074828-4488-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <xa1tmw8mlobz.fsf@mina86.com> <1463193.4qGZjcvNod@avalon>
+In-Reply-To: <1463193.4qGZjcvNod@avalon>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+> On Thursday 23 October 2014 18:53:36 Michal Nazarewicz wrote:
+>> As a matter of fact, this is present in kernels earlier than 3.17 but in
+>> the 3.17 the code has been moved from drivers/base/dma-contiguous.c to
+>> mm/cma.c so this might require separate stable patch.
 
-On Friday 24 October 2014 11:50:14 Joonsoo Kim wrote:
-> On Fri, Oct 24, 2014 at 10:02:49AM +0800, Weijie Yang wrote:
-> > On Fri, Oct 24, 2014 at 7:42 AM, Laurent Pinchart wrote:
-> > > On Thursday 23 October 2014 18:53:36 Michal Nazarewicz wrote:
-> > >> On Thu, Oct 23 2014, Laurent Pinchart wrote:
-> > >> > If activation of the CMA area fails its mutex won't be initialized,
-> > >> > leading to an oops at allocation time when trying to lock the mutex.
-> > >> > Fix this by failing allocation if the area hasn't been successfully
-> > >> > actived, and detect that condition by moving the CMA bitmap
-> > >> > allocation after page block reservation completion.
-> > >> > 
-> > >> > Signed-off-by: Laurent Pinchart
-> > >> > <laurent.pinchart+renesas@ideasonboard.com>
-> > >> 
-> > >> Cc: <stable@vger.kernel.org>  # v3.17
-> > >> Acked-by: Michal Nazarewicz <mina86@mina86.com>
-> > 
-> > This patch is good, but how about add a active field in cma struct?
-> > use cma->active to check whether cma is actived successfully.
-> > I think it will make code more clear and readable.
-> > Just my little opinion.
-> 
-> Or just setting cma->count to 0 would work fine.
+On Fri, Oct 24 2014, Laurent Pinchart <laurent.pinchart@ideasonboard.com> wrote:
+> That could be done, but I'm not sure if it's really worth it. The bug only 
+> occurs when the CMA zone activation fails. I've ran into that case due to a 
+> bug introduced in v3.18-rc1, but this shouldn't be the case for older kernel 
+> versions.
 
-I would prefer setting cma->count to 0 to avoid the extra field. I'll modify 
-the patch accordingly.
+Fair enough.
 
 -- 
-Regards,
-
-Laurent Pinchart
-
+Best regards,                                         _     _
+.o. | Liege of Serenely Enlightened Majesty of      o' \,=./ `o
+..o | Computer Science,  Michał “mina86” Nazarewicz    (o o)
+ooo +--<mpn@google.com>--<xmpp:mina86@jabber.org>--ooO--(_)--Ooo--
