@@ -1,42 +1,40 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 22 Oct 2014 15:17:06 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 24 Oct 2014 02:39:54 +0000
 Subject: Re: [PATCH 3/3] ARM: shmobile: armadillo800eva dts: Enable TMU0
-Message-Id: <CAMuHMdUDTk=V=07aTt4YmkcXLWLMwS58_+g15BkQ=Gh9Q7Oibw@mail.gmail.com>
+Message-Id: <20141024023953.GF7537@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1413970709-26607-1-git-send-email-geert+renesas@glider.be>
-	<1413970709-26607-4-git-send-email-geert+renesas@glider.be>
-	<1909016.A6gXeHnn7V@avalon>
-In-Reply-To: <1909016.A6gXeHnn7V@avalon>
+ <1413970709-26607-4-git-send-email-geert+renesas@glider.be>
+ <1909016.A6gXeHnn7V@avalon>
+ <CAMuHMdUDTk=V=07aTt4YmkcXLWLMwS58_+g15BkQ=Gh9Q7Oibw@mail.gmail.com>
+In-Reply-To: <CAMuHMdUDTk=V=07aTt4YmkcXLWLMwS58_+g15BkQ=Gh9Q7Oibw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Linux-sh list <linux-sh@vger.kernel.org>, Daniel Lezcano <daniel.lezcano@linaro.org>, Simon Horman <horms+renesas@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Linux-sh list <linux-sh@vger.kernel.org>, Daniel Lezcano <daniel.lezcano@linaro.org>, Magnus Damm <magnus.damm@gmail.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-On Wed, Oct 22, 2014 at 4:58 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> On Wednesday 22 October 2014 11:38:29 Geert Uytterhoeven wrote:
->> ch0 will be used for clock events and for periodic clock events,
->> ch1 will be used as clock source.
->>
->> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->
-> Simon has posted the same change as "[PATCH v2 20/30] ARM: shmobile:
-> armadillo800eva-reference: Initialise TMU device using DT". You might want to
-> credit him.
+On Wed, Oct 22, 2014 at 05:17:06PM +0200, Geert Uytterhoeven wrote:
+> On Wed, Oct 22, 2014 at 4:58 PM, Laurent Pinchart
+> <laurent.pinchart@ideasonboard.com> wrote:
+> > On Wednesday 22 October 2014 11:38:29 Geert Uytterhoeven wrote:
+> >> ch0 will be used for clock events and for periodic clock events,
+> >> ch1 will be used as clock source.
+> >>
+> >> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> >
+> > Simon has posted the same change as "[PATCH v2 20/30] ARM: shmobile:
+> > armadillo800eva-reference: Initialise TMU device using DT". You might want to
+> > credit him.
+> 
+> Bummer, didn't look hard enough...
+> 
+> Simon: what's the reason these hadn't been applied yet?
+> Likewise for r8a7778.
 
-Bummer, didn't look hard enough...
+Good question. It looks like a number of patches from that series
+slipped through the cracks.
 
-Simon: what's the reason these hadn't been applied yet?
-Likewise for r8a7778.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+I have queued up your r8a7740 patches (patches 2 and 3 of this series)
+and my r8a7778 patches. I have also queued up my r8a73a4 CMT1 patches
+from the same series that Laurent referred to above.
