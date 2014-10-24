@@ -1,56 +1,59 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 07 Oct 2014 19:15:50 +0000
-Subject: Re: [PATCH v2 2/2] arm: shmobile: lager: enable HS-USB
-Message-Id: <54343BE6.2020903@cogentembedded.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 24 Oct 2014 10:41:47 +0000
+Subject: [PATCH v2 2/2] ARM: shmobile: lager: enable USB3.0
+Message-Id: <1414147307-4584-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412680220-4552-1-git-send-email-yoshihiro.shimoda.uh@renesas.com> <1412680220-4552-3-git-send-email-yoshihiro.shimoda.uh@renesas.com> <5433D18B.6050208@cogentembedded.com> <5433DA52.2020005@renesas.com>
-In-Reply-To: <5433DA52.2020005@renesas.com>
+References: <1414147307-4584-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1414147307-4584-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
-Cc: devicetree@vger.kernel.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org
+To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
+Cc: devicetree@vger.kernel.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Hello.
+Since the PHY of USB3.0 and EHCI/OHCI ch2 are the same, the USB3.0
+driver cannot use the phy driver when the EHCI/OHCI ch2 already used it:
 
-On 10/07/2014 04:19 PM, Yoshihiro Shimoda wrote:
+phy phy-e6590100.usb-phy.3: phy init failed --> -16
+xhci-hcd: probe of ee000000.usb failed with error -16
 
->>> Since this board doesn't have USB ID pin, we assumes the GP5_18 (USB0_PWEN)
->>> is an ID pin because the gpio is high when the SW5 is Pin 3 side.
+If so, we have to unbind the EHCI/OHCI ch2, and then we have to bind
+the USB3.0 driver as the following:
 
->>> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
->>> ---
->>>    arch/arm/boot/dts/r8a7790-lager.dts |    5 +++++
->>>    1 file changed, 5 insertions(+)
+  echo 0000:02:02.0 > /sys/bus/pci/drivers/ehci-pci/unbind
+  echo 0000:02:01.0 > /sys/bus/pci/drivers/ohci-pci/unbind
+  echo ee000000.usb > /sys/bus/platform/drivers/xhci-hcd/bind
 
->>> diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
->>> index 719979e..011254a 100644
->>> --- a/arch/arm/boot/dts/r8a7790-lager.dts
->>> +++ b/arch/arm/boot/dts/r8a7790-lager.dts
->>> @@ -446,3 +446,8 @@
->>>            };
->>>        };
->>>    };
->>> +
->>> +&hsusb {
->>> +    status = "okay";
->>> +    renesas,enable-gpio = <&gpio5 18 GPIO_ACTIVE_HIGH>;
->>> +};
+Note that there will be pinctrl-related error messages if both
+internal PCI and USB3.0 are enabled but they should be just ignored:
 
->>     As I said before, this is not enough. We need pinctrl-related props. Same is true for other boards.
+sh-pfc e6060000.pfc: pin GP_5_22 already requested by ee0d0000.pci; cannot claim for ee000000.usb
+sh-pfc e6060000.pfc: pin-182 (ee000000.usb) status -22
+ata1: SATA link down (SStatus 0 SControl 300)
+sh-pfc e6060000.pfc: could not request pin 182 (GP_5_22) from group usb2  on device sh-pfc
 
-> Thank you very much for the point again.
-> Finally I understood what you said before.
-> I will start studying the pinctrl world.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts |    6 ++++++
+ 1 file changed, 6 insertions(+)
 
-    Looks like it will be quicker if I post v3 of your patches.
-
-    Unfortunately, there'll be pinctrl-related error messages in the log if 
-the internal PCI and HS-USB drivers are enabled together but everything should 
-still work.
-
-> Best regards,
-> Yoshihiro Shimoda
-
-WBR, Sergei
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 2115de2..b48173b 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -419,6 +419,12 @@
+ 	pinctrl-names = "default";
+ };
+ 
++&xhci {
++	status = "okay";
++	pinctrl-0 = <&usb2_pins>;
++	pinctrl-names = "default";
++};
++
+ &pci2 {
+ 	status = "okay";
+ 	pinctrl-0 = <&usb2_pins>;
+-- 
+1.7.9.5
 
