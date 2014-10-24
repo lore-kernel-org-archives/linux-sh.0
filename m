@@ -1,54 +1,44 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 06 Oct 2014 07:39:20 +0000
-Subject: Re: [PATCH] serial: sh-sci: submit rx dma the way the DMA driver can handle it
-Message-Id: <20141006073920.GB10073@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 24 Oct 2014 10:18:38 +0000
+Subject: [PATCH v2 0/4] Low/high memory CMA reservation fixes
+Message-Id: <1414145922-26042-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412266448-20266-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1412266448-20266-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Oct 06, 2014 at 07:59:15AM +0200, Wolfram Sang wrote:
-> On Mon, Oct 06, 2014 at 10:55:40AM +0900, Simon Horman wrote:
-> > On Thu, Oct 02, 2014 at 06:14:08PM +0200, Wolfram Sang wrote:
-> > > From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> > > 
-> > > The shdmac driver has a problem when one wants to submit two RX
-> > > descriptors and then use issue_pending on both (like this driver does):
-> > > 
-> > > Submit first desc
-> > > -> channel state after: SHDMA_PM_ESTABLISHED
-> > > 
-> > > Submit second desc
-> > > -> channel state after: SHDMA_PM_PENDING
-> > > 
-> > > PENDING here means: "Oh, we will wait until the first desc is finished
-> > > and then the second desc will be grabbed from the list anyhow"
-> > > 
-> > > However, because issue_pending does nothing for states !> > > SHDMA_PM_ESTABLISHED, nothing ever gets active :(
-> > > 
-> > > Since the DMA driver is probably replaced soon anyhow, I decided for the
-> > > least intrusive workaround which is to use issue_pending on every RX
-> > > desc. (Yes, setting s->active_rx twice is ugly).
-> > > 
-> > > Probably not for upstream! However, this patch restores DMA capability
-> > > for SCIFA on my Lager board. Sadly, not for SCIF due to interrupt
-> > > problems still to be investigated.
-> > > 
-> > > Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> > 
-> > Acked-by: Simon Horman <horms+renesas@verge.net.au>
-> > 
-> > sh-sci patches usually go via linux-serial@vger.kernel.org and
-> > Greg Kroah-Hartman <gregkh@linuxfoundation.org>. Could you repost this patch
-> > with those parties included?
-> 
-> I wanted to send this patch as RFC, but forgot to rename it :) I'd
-> really like some discussion about it, probably in Düsseldorf even. I am
-> still not sure this patch should go upstream, but we should talk about
-> it.
+Hello,
 
-Thanks, I understand. Lets put this on the agenda for Düsseldorf.
+This patch set fixes an issue introduced by commits 95b0e655f914 ("ARM: mm:
+don't limit default CMA region only to low memory") and f7426b983a6a ("mm:
+cma: adjust address limit to avoid hitting low/high memory boundary")
+resulting in reserved areas crossing the low/high memory boundary.
+
+Patches 1/4 and 2/4 fix sides issues, with the bulk of the work in patch 3/4.
+Patch 4/4 then fixes a printk issue that got me puzzled wondering why memory
+reported under the lowmem limit was actually highmem.
+
+This series fixes a v3.18-rc1 regression causing Renesas Koelsch boot
+breakages when CMA is enabled.
+
+Changes since v1:
+
+- Use the cma count field to detect non-activated reservations
+- Remove the redundant limit adjustment
+
+Laurent Pinchart (4):
+  mm: cma: Don't crash on allocation if CMA area can't be activated
+  mm: cma: Always consider a 0 base address reservation as dynamic
+  mm: cma: Ensure that reservations never cross the low/high mem
+    boundary
+  mm: cma: Use %pa to print physical addresses
+
+ mm/cma.c | 68 +++++++++++++++++++++++++++++++++++++++++-----------------------
+ 1 file changed, 44 insertions(+), 24 deletions(-)
+
+-- 
+Regards,
+
+Laurent Pinchart
 
