@@ -1,71 +1,121 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Tue, 14 Oct 2014 07:01:41 +0000
-Subject: [PATCH 2/4] ARM: shmobile: r8a7791: Add SGX clock to device tree
-Message-Id: <1413270103-9517-3-git-send-email-ykaneko0929@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 24 Oct 2014 12:04:00 +0000
+Subject: [PATCH v4 8/9] ARM: shmobile: koelsch-reference: Remove DU platform device
+Message-Id: <1414152241-5390-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1413270103-9517-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1413270103-9517-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kouei Abe <kouei.abe.cp@renesas.com>
+The DU device is now instantiated from the device tree, remove the
+corresponding platform device.
 
-Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi            | 11 ++++++-----
- include/dt-bindings/clock/r8a7791-clock.h |  1 +
- 2 files changed, 7 insertions(+), 5 deletions(-)
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 73 ------------------------
+ 1 file changed, 73 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index d343099..5a26c1a 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1,7 +1,7 @@
- /*
-  * Device Tree Source for the r8a7791 SoC
-  *
-- * Copyright (C) 2013 Renesas Electronics Corporation
-+ * Copyright (C) 2013-2014 Renesas Electronics Corporation
-  * Copyright (C) 2013-2014 Renesas Solutions Corp.
-  * Copyright (C) 2014 Cogent Embedded Inc.
-  *
-@@ -947,17 +947,18 @@
- 		mstp1_clks: mstp1_clks@e6150134 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
--			clocks = <&m2_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
-+			clocks = <&m2_clk>, <&p_clk>, <&zg_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
- 				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
--				R8A7791_CLK_JPU R8A7791_CLK_TMU1 R8A7791_CLK_TMU3 R8A7791_CLK_TMU2
-+				R8A7791_CLK_JPU R8A7791_CLK_TMU1 R8A7791_CLK_3DG
-+				R8A7791_CLK_TMU3 R8A7791_CLK_TMU2
- 				R8A7791_CLK_CMT0 R8A7791_CLK_TMU0 R8A7791_CLK_VSP1_DU1
- 				R8A7791_CLK_VSP1_DU0 R8A7791_CLK_VSP1_S
- 			>;
- 			clock-output-names -				"jpu", "tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
--				"vsp1-du0", "vsp1-sy";
-+				"jpu", "tmu1", "3dg", "tmu3", "tmu2", "cmt0", "tmu0",
-+				"vsp1-du1", "vsp1-du0", "vsp1-sy";
- 		};
- 		mstp2_clks: mstp2_clks@e6150138 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index 58c3f49..9570b7c 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -27,6 +27,7 @@
- /* MSTP1 */
- #define R8A7791_CLK_JPU		6
- #define R8A7791_CLK_TMU1		11
-+#define R8A7791_CLK_3DG			12
- #define R8A7791_CLK_TMU3		21
- #define R8A7791_CLK_TMU2		22
- #define R8A7791_CLK_CMT0		24
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index 46aa540133d6..c3708180e69e 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -19,87 +19,15 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
+-#include <linux/dma-mapping.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+-#include <linux/platform_data/rcar-du.h>
+ 
+ #include <asm/mach/arch.h>
+ 
+-#include "clock.h"
+ #include "common.h"
+-#include "irqs.h"
+ #include "r8a7791.h"
+ #include "rcar-gen2.h"
+ 
+-/* DU */
+-static struct rcar_du_encoder_data koelsch_du_encoders[] = {
+-	{
+-		.type = RCAR_DU_ENCODER_NONE,
+-		.output = RCAR_DU_OUTPUT_LVDS0,
+-		.connector.lvds.panel = {
+-			.width_mm = 210,
+-			.height_mm = 158,
+-			.mode = {
+-				.pixelclock = 65000000,
+-				.hactive = 1024,
+-				.hfront_porch = 20,
+-				.hback_porch = 160,
+-				.hsync_len = 136,
+-				.vactive = 768,
+-				.vfront_porch = 3,
+-				.vback_porch = 29,
+-				.vsync_len = 6,
+-			},
+-		},
+-	},
+-};
+-
+-static struct rcar_du_platform_data koelsch_du_pdata = {
+-	.encoders = koelsch_du_encoders,
+-	.num_encoders = ARRAY_SIZE(koelsch_du_encoders),
+-};
+-
+-static const struct resource du_resources[] __initconst = {
+-	DEFINE_RES_MEM(0xfeb00000, 0x40000),
+-	DEFINE_RES_MEM_NAMED(0xfeb90000, 0x1c, "lvds.0"),
+-	DEFINE_RES_IRQ(gic_spi(256)),
+-	DEFINE_RES_IRQ(gic_spi(268)),
+-};
+-
+-static void __init koelsch_add_du_device(void)
+-{
+-	struct platform_device_info info = {
+-		.name = "rcar-du-r8a7791",
+-		.id = -1,
+-		.res = du_resources,
+-		.num_res = ARRAY_SIZE(du_resources),
+-		.data = &koelsch_du_pdata,
+-		.size_data = sizeof(koelsch_du_pdata),
+-		.dma_mask = DMA_BIT_MASK(32),
+-	};
+-
+-	platform_device_register_full(&info);
+-}
+-
+-/*
+- * This is a really crude hack to provide clkdev support to platform
+- * devices until they get moved to DT.
+- */
+-static const struct clk_name clk_names[] __initconst = {
+-	{ "du0", "du.0", "rcar-du-r8a7791" },
+-	{ "du1", "du.1", "rcar-du-r8a7791" },
+-	{ "lvds0", "lvds.0", "rcar-du-r8a7791" },
+-};
+-
+-static void __init koelsch_add_standard_devices(void)
+-{
+-	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-
+-	koelsch_add_du_device();
+-}
+-
+ static const char * const koelsch_boards_compat_dt[] __initconst = {
+ 	"renesas,koelsch",
+ 	"renesas,koelsch-reference",
+@@ -110,7 +38,6 @@ DT_MACHINE_START(KOELSCH_DT, "koelsch")
+ 	.smp		= smp_ops(r8a7791_smp_ops),
+ 	.init_early	= shmobile_init_delay,
+ 	.init_time	= rcar_gen2_timer_init,
+-	.init_machine	= koelsch_add_standard_devices,
+ 	.init_late	= shmobile_init_late,
+ 	.reserve	= rcar_gen2_reserve,
+ 	.dt_compat	= koelsch_boards_compat_dt,
 -- 
-1.9.1
+2.0.4
 
