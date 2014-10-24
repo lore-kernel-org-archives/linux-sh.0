@@ -1,53 +1,28 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 08 Oct 2014 18:04:04 +0000
-Subject: [PATCH v3 3/3] ARM: shmobile: henninger: enable HS-USB
-Message-Id: <2594830.xOnLuo3vQq@wasted.cogentembedded.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 24 Oct 2014 10:43:01 +0000
+Subject: [PATCH v2 0/1] ARM: shmobile: add USB3.0 device node on r8a7791
+Message-Id: <1414147382-4660-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1511869.4ca9KHmSFr@wasted.cogentembedded.com>
-In-Reply-To: <1511869.4ca9KHmSFr@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org, linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org
+Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+ This patch is based on Simon's renesas.git branch and
+renesas-devel-20141024-v3.18-rc1 tag.
+Since koelsch and henninger doesn't have a USB3.0 connector,
+I submit a patch for r8a7791.dtsi only.
 
-Enable HS-USB device for the Henninger board, defining the GPIO that the driver
-should check when probing (which is the ID output from MAX3355 OTG chip).
+Changes from v1:
+ - rebase the repository.
 
-Note that there will be pinctrl-related error messages if both internal PCI
-and HS-USB drivers are enabled but they should be just ignored.
+Yoshihiro Shimoda (1):
+  ARM: shmobile: r8a7791: add USB3.0 device node
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-[Sergei: added pin function/group and prop, moved device node, fixed summary,
-added changelog]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+ arch/arm/boot/dts/r8a7791.dtsi |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
----
-Changes in version 2:
-- added pinctrl-related properties;
-- moved the HS-USB node to precede the USB PHY node;
-- uppercased "arm" in the summary;
-- added changelog.
-
- arch/arm/boot/dts/r8a7791-henninger.dts |    7 +++++++
- 1 file changed, 7 insertions(+)
-
-Index: renesas/arch/arm/boot/dts/r8a7791-henninger.dts
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-henninger.dts
-+++ renesas/arch/arm/boot/dts/r8a7791-henninger.dts
-@@ -272,6 +272,13 @@
- 	pinctrl-names = "default";
- };
- 
-+&hsusb {
-+	status = "okay";
-+	pinctrl-0 = <&usb0_pins>;
-+	pinctrl-names = "default";
-+	renesas,enable-gpio = <&gpio5 31 GPIO_ACTIVE_HIGH>;
-+};
-+
- &usbphy {
- 	status = "okay";
- };
+-- 
+1.7.9.5
 
