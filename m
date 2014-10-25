@@ -1,73 +1,122 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 30 Oct 2014 10:23:05 +0000
-Subject: Re: [PATCH 1/2] clk: shmobile: mstp: Update DT bindings to use clock-indices property
-Message-Id: <1964191.CeLtYiTBia@avalon>
+Date: Sat, 25 Oct 2014 15:07:55 +0000
+Subject: Re: [PATCH 0/11][RFC] sound DMA support patches
+Message-Id: <2196061.kROSgqD6Pm@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414622133-27247-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <20141030014708.GK22052@verge.net.au>
-In-Reply-To: <20141030014708.GK22052@verge.net.au>
+References: <874my8vlqq.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <874my8vlqq.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Mike Turquette <mturquette@linaro.org>
+To: linux-sh@vger.kernel.org
 
-Hi Simon,
+Hi Morimoto-san,
 
-On Thursday 30 October 2014 10:47:08 Simon Horman wrote:
-> On Thu, Oct 30, 2014 at 12:35:32AM +0200, Laurent Pinchart wrote:
-> > The renesas,clock-indices property got standardized, replace it with
-> > clock-indices.
-> > 
-> > The MSTP clock driver supports both the old and new properties.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
+On Tuesday 22 July 2014 19:42:55 Kuninori Morimoto wrote:
+> Hi Laurent
 > 
-> This change is fine by me, but it seems to be very similar to a
-> change sent by Geert. My comment with regards to that was:
+> These are sound DMA support platform side patches.
+> These worked well when it was based on shdma-base
+> driver base.
 > 
-> I'd appreciate it if you could pick this up (or at least indicate that
-> you intend to) so I can pick up the remaining in this series that
-> make use of the new binding.
-> 
-> Acked-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> I have no particular preference for which version of this patch is accepted.
+> These are including all sound DMA supports,
+> but, it is too much for cyclic transfer test.
 
-Geert was first, so let's pick his series.
+I'm trying to test cyclic DMA support in the rcar-dmac driver using this patch 
+series.
 
-> > ---
-> > 
-> >  .../devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt         | 8
-> >  ++++---- 1 file changed, 4 insertions(+), 4 deletions(-)
-> > 
-> > Mike, can you please take this in your tree for v3.19 ?
-> > 
-> > diff --git
-> > a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> > b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> > index a5f52238c80d..2e18676bd4b5 100644
-> > --- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> > +++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> > 
-> > @@ -26,11 +26,11 @@ Required Properties:
-> >      must appear in the same order as the output clocks.
-> >    
-> >    - #clock-cells: Must be 1
-> >    - clock-output-names: The name of the clocks as free-form strings
-> > 
-> > -  - renesas,clock-indices: Indices of the gate clocks into the group (0
-> > to 31) +  - clock-indices: Indices of the gate clocks into the group (0
-> > to 31)
-> > 
-> > -The clocks, clock-output-names and renesas,clock-indices properties
-> > contain one -entry per gate clock. The MSTP groups are sparsely
-> > populated. Unimplemented -gate clocks must not be declared.
-> > +The clocks, clock-output-names and clock-indices properties contain one
-> > entry +per gate clock. The MSTP groups are sparsely populated.
-> > Unimplemented gate +clocks must not be declared.
-> > 
-> >  Example
+I've applied all the patches on top of a merge of asoc/topic/rcar, renesas-
+drivers-2014-10-23-v3.18-rc1 and Simon's latest master branch. The sound 
+devices are not probed correctly:
+
+[   10.720000] platform sound: Driver asoc-simple-card requests probe deferral
+[   10.730000] sh_mobile_sdhi ee100000.sd: mmc1 base at 0xee100000 clock rate 
+97 MHz
+[   10.730000] i2c-sh_mobile e6510000.i2c: I2C adapter 5 with bus speed 100000 
+Hz (L/H=0x145/0x118)
+[   10.730000] platform sound: Driver asoc-simple-card requests probe deferral
+[   10.750000] rcar_sound ec500000.rcar_sound: Failed to create debugfs 
+directory
+[   10.750000] rcar_sound ec500000.rcar_sound: Failed to create debugfs 
+directory
+[   10.750000] rcar_sound ec500000.rcar_sound: Failed to create debugfs 
+directory
+[   10.760000] rcar_sound ec500000.rcar_sound: probed
+[   10.760000] asoc-simple-card sound: ASoC: CPU DAI rsnd-dai.0 not registered
+[   10.760000] platform sound: Driver asoc-simple-card requests probe deferral
+[   10.770000] i2c-sh_mobile e6520000.i2c: I2C adapter 6 with bus speed 100000 
+Hz (L/H=0x145/0x118)
+[   10.770000] asoc-simple-card sound: ASoC: CPU DAI rsnd-dai.0 not registered
+[   10.770000] platform sound: Driver asoc-simple-card requests probe deferral
+[   10.800000] DA9210: 1000 mV at 4600 mA 
+[   10.800000] i2c-sh_mobile e60b0000.i2c: I2C adapter 7 with bus speed 100000 
+Hz (L/H=0x19/0x16)
+[   10.800000] asoc-simple-card sound: ASoC: CPU DAI rsnd-dai.0 not registered
+[   10.800000] platform sound: Driver asoc-simple-card requests probe deferral
+[   10.860000] asoc-simple-card sound: ASoC: CPU DAI rsnd-dai.0 not registered
+[   10.870000] platform sound: Driver asoc-simple-card requests probe deferral
+[   10.880000] asoc-simple-card sound: ASoC: CPU DAI rsnd-dai.0 not registered
+[   10.890000] platform sound: Driver asoc-simple-card requests probe deferral
+[   10.910000] random: nonblocking pool is initialized
+[   11.060000] sh_mobile_sdhi ee140000.sd: mmc2 base at 0xee140000 clock rate 
+48 MHz
+[   11.060000] asoc-simple-card sound: ASoC: CPU DAI rsnd-dai.0 not registered
+[   11.070000] platform sound: Driver asoc-simple-card requests probe deferral
+
+Am I missing something ? Is there a newer version of the Lager audio + DMA 
+support patches ?
+
+> I guess 1/3/5/6/10/11/ are enough.
+> 
+> Current rcar-dmac filter can't care "dma0" or "audma0" now.
+> So, I disabled "dma0/1" as quick-hack.
+> 
+> 	&dmac0 {
+> 			status = "disabled";
+> 	};
+> 
+> 	&dmac1 {
+> 			status = "disabled";
+> 	};
+> 
+> I could get short sound if I modified driver as try-and-error.
+> (and it dead after that, of course it is wrong fix)
+> So, I guess, address/IRQ/MID-RID/MSTP/etc settings are correct.
+> 
+> If you have alsa command, you need this
+> 
+> 	> amixer set "LINEOUT Mixer DACL" on
+> 	> aplay xxx.wav
+> 
+> I used...
+> 
+>   > git checkout renesas-drivers-2014-07-11-v3.16-rc4
+>   > git merge asoc/topic/rcar
+> 
+>   # asoc = git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git
+> 
+> Kuninori Morimoto (11):
+>        1) ARM: shmobile: r8a7790: Add Audio DMAC devices to DT
+>        2) ARM: shmobile: r8a7790: Add Audio DMAC peri peri devices to DT
+>        3) ARM: shmobile: r8a7790: sound enables Audio DMAC entry on DTSI
+>        4) ARM: shmobile: r8a7790: sound enables Audio DMAC peri peri entry
+> on DTSI
+>        5) ARM: shmobile: lager: Sound PIO support on DTS
+>        6) ARM: shmobile: lager: Sound DMA support on DTS
+>        7) ARM: shmobile: lager: Sound DMA support via BUSIF on DTS
+>        8) ARM: shmobile: lager: Sound DMA support via SRC on DTS
+>        9) ARM: shmobile: lager: Sound DMA support via DVC on DTS
+>       10) ARM: shmobile: multiplatform: add Audo DMAC peri peri support on
+> defconfig
+>       11) ARM: shmobile: multiplatform: add R-Car DMAC support on
+> defconfig
+> 
+>  arch/arm/boot/dts/r8a7790-lager.dts       |   66 ++++++++++
+>  arch/arm/boot/dts/r8a7790.dtsi            |  203 +++++++++++++++++++++++++-
+>  arch/arm/configs/shmobile_defconfig       |    2 +
+>  arch/arm/mach-shmobile/Kconfig            |    1 +
+>  include/dt-bindings/clock/r8a7790-clock.h |    2 +
+>  5 files changed, 271 insertions(+), 3 deletions(-)
 
 -- 
 Regards,
