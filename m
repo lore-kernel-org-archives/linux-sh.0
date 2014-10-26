@@ -1,42 +1,34 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 29 Oct 2014 04:59:21 +0000
-Subject: [PATCH 15/19] ARM: shmobile: henninger dts: Add chosen/stdout-path
-Message-Id: <8590e2d742c1687a733a90edc25ab0178d6a66fc.1414556944.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 26 Oct 2014 17:40:11 +0000
+Subject: [PATCH v3 4/9] ARM: shmobile: r8a7790: Rename mmcif node to mmc
+Message-Id: <1414345216-14486-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1414556943.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1414556943.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Node names should describe the function of the device, not its IP core
+name.
 
-Add a stdout-path property so that automatic console selection works
-in the absence of a "console=" parameter on the kernel command line.
-
-Note that we have to keep the "console=ttySC0,38400" parameter in
-chosen/bootargs, else the console will use the default setting of 115200
-baud.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7791-henninger.dts | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/r8a7790.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
-index f1b56de..0868899 100644
---- a/arch/arm/boot/dts/r8a7791-henninger.dts
-+++ b/arch/arm/boot/dts/r8a7791-henninger.dts
-@@ -23,6 +23,7 @@
- 
- 	chosen {
- 		bootargs = "console=ttySC0,38400 ignore_loglevel rw root=/dev/nfs ip=dhcp";
-+		stdout-path = &scif0;
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 3f1e4b3898cd..0403e80e467d 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -392,7 +392,7 @@
+ 		status = "disabled";
  	};
  
- 	memory@40000000 {
+-	mmcif0: mmcif@ee200000 {
++	mmcif0: mmc@ee200000 {
+ 		compatible = "renesas,mmcif-r8a7790", "renesas,sh-mmcif";
+ 		reg = <0 0xee200000 0 0x80>;
+ 		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
 -- 
-2.1.1
+2.0.4
 
