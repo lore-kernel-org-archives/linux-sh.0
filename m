@@ -1,27 +1,34 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 02 Oct 2014 08:04:31 +0000
-Subject: [PATCH 0/2] arm: shimobile: add HS-USB device node on r8a7790
-Message-Id: <1412237073-1288-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 26 Oct 2014 17:40:08 +0000
+Subject: [PATCH v3 1/9] dmaengine: Add 16 bytes, 32 bytes and 64 bytes bus widths
+Message-Id: <1414345216-14486-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
-Cc: devicetree@vger.kernel.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-sh@vger.kernel.org
 
- This series is based on Simon's renesas.git branch and
-renesas-devel-20141002-v3.17-rc7 tag. If we use the generic phy
-driver for R-Car Gen2 (drivers/phy/phy-rcar-gen2.c), we can use
-the HS-USB on lager.
+The widths are missing, add them.
 
-Yoshihiro Shimoda (2):
-  arm: shimobile: r8a7790: add HS-USB device node
-  arm: shmobile: lager: enable HS-USB
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ include/linux/dmaengine.h | 3 +++
+ 1 file changed, 3 insertions(+)
 
- arch/arm/boot/dts/r8a7790-lager.dts |    5 +++++
- arch/arm/boot/dts/r8a7790.dtsi      |   10 ++++++++++
- 2 files changed, 15 insertions(+)
-
+diff --git a/include/linux/dmaengine.h b/include/linux/dmaengine.h
+index 653a1fd07ae8..aa13a6d9f4e6 100644
+--- a/include/linux/dmaengine.h
++++ b/include/linux/dmaengine.h
+@@ -298,6 +298,9 @@ enum dma_slave_buswidth {
+ 	DMA_SLAVE_BUSWIDTH_3_BYTES = 3,
+ 	DMA_SLAVE_BUSWIDTH_4_BYTES = 4,
+ 	DMA_SLAVE_BUSWIDTH_8_BYTES = 8,
++	DMA_SLAVE_BUSWIDTH_16_BYTES = 16,
++	DMA_SLAVE_BUSWIDTH_32_BYTES = 32,
++	DMA_SLAVE_BUSWIDTH_64_BYTES = 64,
+ };
+ 
+ /**
 -- 
-1.7.9.5
+2.0.4
 
