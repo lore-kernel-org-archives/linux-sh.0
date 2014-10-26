@@ -1,108 +1,163 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 27 Oct 2014 09:27:34 +0000
-Subject: Re: [PATCH v4 5/9] ARM: shmobile: marzen: Enable DU device in DT
-Message-Id: <5424964.hzPFlTc0ZV@avalon>
+Date: Sun, 26 Oct 2014 21:09:16 +0000
+Subject: CMA: test_pages_isolated failures in alloc_contig_range
+Message-Id: <2457604.k03RC2Mv4q@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414152241-5390-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1414152241-5390-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mm@kvack.org
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Michal Nazarewicz <mina86@mina86.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Minchan Kim <minchan@kernel.org>
 
-On Monday 27 October 2014 10:18:16 Geert Uytterhoeven wrote:
-> On Mon, Oct 27, 2014 at 2:23 AM, Simon Horman <horms@verge.net.au> wrote:
-> > I have this patch queued up but I notice that it seems to introduce
-> > the following warnings. Can this be addressed somehow?
-> > 
-> > Warning (reg_format): "reg" property in /lvds-encoder/ports/port@0 has
-> > invalid length (4 bytes) (#address-cells = 2, #size-cells = 1) Warning
-> > (reg_format): "reg" property in /lvds-encoder/ports/port@1 has invalid
-> > length (4 bytes) (#address-cells = 2, #size-cells = 1) Warning
-> > (avoid_default_addr_size): Relying on default #address-cells value for
-> > /lvds-encoder/ports/port@0 Warning (avoid_default_addr_size): Relying on
-> > default #size-cells value for /lvds-encoder/ports/port@0 Warning
-> > (avoid_default_addr_size): Relying on default #address-cells value for
-> > /lvds-encoder/ports/port@1 Warning (avoid_default_addr_size): Relying on
-> > default #size-cells value for /lvds-encoder/ports/port@1> 
-> >> ---
-> >> 
-> >>  arch/arm/boot/dts/r8a7779-marzen.dts | 81 ++++++++++++++++++++++++++++++
-> >>  1 file changed, 81 insertions(+)
-> >> 
-> >> diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts
-> >> b/arch/arm/boot/dts/r8a7779-marzen.dts index 9e1b859190ca..64a5d634edc1
-> >> 100644
-> >> --- a/arch/arm/boot/dts/r8a7779-marzen.dts
-> >> +++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-> >> @@ -69,6 +69,76 @@
-> >>                       gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
-> >>               };
-> >>       };
-> >> +
-> >> +     vga-encoder {
-> >> +             compatible = "adi,adv7123";
-> >> +
-> >> +             ports {
-> >> +                     #address-cells = <1>;
-> >> +                     #size-cells = <0>;
-> >> +
-> >> +                     port@0 {
-> >> +                             reg = <0>;
-> >> +                             vga_enc_in: endpoint {
-> >> +                                     remote-endpoint = <&du_out_rgb0>;
-> >> +                             };
-> >> +                     };
-> >> +                     port@1 {
-> >> +                             reg = <1>;
-> >> +                             vga_enc_out: endpoint {
-> >> +                                     remote-endpoint = <&vga_in>;
-> >> +                             };
-> >> +                     };
-> >> +             };
-> >> +     };
-> >> +
-> >> +     vga {
-> >> +             compatible = "vga-connector";
-> >> +
-> >> +             port {
-> >> +                     vga_in: endpoint {
-> >> +                             remote-endpoint = <&vga_enc_out>;
-> >> +                     };
-> >> +             };
-> >> +     };
-> >> +
-> >> +     lvds-enc {
-> >> +             compatible = "thine,thc63lvdm83d";
-> >> +
-> >> +             #address-cells = <1>;
-> >> +             #size-cells = <0>;
-> 
-> I think the two properties above should be moved to the ports node below.
-> 
-> >> +
-> >> +             ports {
-> 
-> ---> HERE.
+Hello,
 
-That's correct. Sorry for the oversight. I've submitted a patch to fix this.
+I've run into a CMA-related issue while testing a DMA engine driver with 
+dmatest on a Renesas R-Car ARM platform. 
 
-> Yes, this can be a real PITA. I had to sprinkle lots of #address-cells = <1>
-> and #size-cells = <0> to the hierarchical PM domain nodes, too.
+When allocating contiguous memory through CMA the kernel prints the following 
+messages to the kernel log.
 
-I wonder if there's a reason why those properties are not inherited.
+[   99.770000] alloc_contig_range test_pages_isolated(6b843, 6b844) failed
+[  124.220000] alloc_contig_range test_pages_isolated(6b843, 6b844) failed
+[  127.550000] alloc_contig_range test_pages_isolated(6b845, 6b846) failed
+[  132.850000] alloc_contig_range test_pages_isolated(6b845, 6b846) failed
+[  151.390000] alloc_contig_range test_pages_isolated(6b843, 6b844) failed
+[  166.490000] alloc_contig_range test_pages_isolated(6b843, 6b844) failed
+[  181.450000] alloc_contig_range test_pages_isolated(6b845, 6b846) failed
 
-> >> +                     port@0 {
-> >> +                             lvds_enc_in: endpoint {
-> >> +                                     remote-endpoint = <&du_out_rgb1>;
-> >> +                             };
-> >> +                     };
-> >> +                     port@1 {
-> >> +                             lvds_connector: endpoint {
-> >> +                             };
-> >> +                     };
-> >> +             };
-> >> +     };
+I've stripped the dmatest module down as much as possible to remove any 
+hardware dependencies and came up with the following implementation.
+
+-----------------------------------------------------------------------------
+/*
+ * CMA test module
+ *
+ * Copyright (C) 2014 Laurent Pinchart
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+#include <linux/delay.h>
+#include <linux/dma-mapping.h>
+#include <linux/freezer.h>
+#include <linux/kthread.h>
+#include <linux/module.h>
+#include <linux/moduleparam.h>
+#include <linux/slab.h>
+#include <linux/wait.h>
+
+static unsigned int num_threads = 4;
+module_param(num_threads, uint, S_IRUGO | S_IWUSR);
+
+static unsigned int iterations = 100000;
+module_param(iterations, uint, S_IRUGO | S_IWUSR);
+
+struct cma_test_thread {
+	struct list_head node;
+	struct task_struct *task;
+	bool done;
+};
+
+static DECLARE_WAIT_QUEUE_HEAD(thread_wait);
+static LIST_HEAD(threads);
+
+static int cma_test_thread(void *data)
+{
+	struct cma_test_thread *thread = data;
+	unsigned int i = 0;
+
+	set_freezable();
+
+	while (!kthread_should_stop() && i < iterations) {
+		dma_addr_t dma;
+		void *mem;
+
+		mem = dma_alloc_coherent(NULL, 32, &dma, GFP_KERNEL);
+		usleep_range(1000, 2000);
+		if (mem)
+			dma_free_coherent(NULL, 32, mem, dma);
+		else
+			printk(KERN_INFO "allocation error @%u\n", i);
+		++i;
+	}
+
+	thread->done = true;
+	wake_up(&thread_wait);
+
+	return 0;
+}
+
+static bool cma_test_threads_done(void)
+{
+	struct cma_test_thread *thread;
+
+	list_for_each_entry(thread, &threads, node) {
+		if (!thread->done)
+			return false;
+	}
+
+	return true;
+}
+
+static int cma_test_init(void)
+{
+	struct cma_test_thread *thread, *_thread;
+	unsigned int i;
+
+	for (i = 0; i < num_threads; ++i) {
+		thread = kzalloc(sizeof(*thread), GFP_KERNEL);
+		if (!thread) {
+			pr_warn("No memory for thread %u\n", i);
+			break;
+		}
+
+		thread->task = kthread_create(cma_test_thread, thread,
+					      "cmatest-%u", i);
+		if (IS_ERR(thread->task)) {
+			pr_warn("Failed to create thread %u\n", i);
+			kfree(thread);
+			break;
+		}
+
+		get_task_struct(thread->task);
+		list_add_tail(&thread->node, &threads);
+		wake_up_process(thread->task);
+	}
+
+	wait_event(thread_wait, cma_test_threads_done());
+
+	list_for_each_entry_safe(thread, _thread, &threads, node) {
+		kthread_stop(thread->task);
+		put_task_struct(thread->task);
+		list_del(&thread->node);
+		kfree(thread);
+	}
+
+	return 0;
+}
+module_init(cma_test_init);
+
+static void cma_test_exit(void)
+{
+}
+module_exit(cma_test_exit);
+
+MODULE_AUTHOR("Laurent Pinchart");
+MODULE_LICENSE("GPL v2");
+-----------------------------------------------------------------------------
+
+Loading the module will start 4 threads that will allocate and free DMA 
+coherent memory in a tight loop and eventually produce the error. It seems 
+like the probability of occurrence grows with the number of threads, which 
+could indicate a race condition.
+
+The tests have been run on 3.18-rc1, but previous tests on 3.16 did exhibit 
+the same behaviour.
+
+I'm not that familiar with the CMA internals, help would be appreciated to 
+debug the problem.
 
 -- 
 Regards,
