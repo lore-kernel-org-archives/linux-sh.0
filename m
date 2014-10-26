@@ -1,37 +1,44 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 29 Oct 2014 04:59:08 +0000
-Subject: [PATCH 02/19] ARM: shmobile: r8a73a4: Remove spurious dma-multiplexer base addresses
-Message-Id: <6a8663f8bb5e3e2bf0d362744db844f2678d9b8b.1414556943.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 26 Oct 2014 17:40:13 +0000
+Subject: [PATCH v3 6/9] ARM: shmobile: r8a7790: Reference DMA channels in MMCIF DT nodes
+Message-Id: <1414345216-14486-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1414556943.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1414556943.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-As there is no reg property the dma-multiplexer nodes should
-not include @...
+Add references to the transmit and receive DMA channels in the two
+MMCIF nodes.
 
-Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a73a4.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index ef152e3..8a70dcd 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -122,7 +122,7 @@
- 			     <0 57 IRQ_TYPE_LEVEL_HIGH>;
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 0403e80e467d..b800284b9195 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -397,6 +397,8 @@
+ 		reg = <0 0xee200000 0 0x80>;
+ 		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_MMCIF0>;
++		dmas = <&dmac0 0xd1>, <&dmac0 0xd2>;
++		dma-names = "tx", "rx";
+ 		reg-io-width = <4>;
+ 		status = "disabled";
  	};
- 
--	dmac: dma-multiplexer@0 {
-+	dmac: dma-multiplexer {
- 		compatible = "renesas,shdma-mux";
- 		#dma-cells = <1>;
- 		dma-channels = <20>;
+@@ -406,6 +408,8 @@
+ 		reg = <0 0xee220000 0 0x80>;
+ 		interrupts = <0 170 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_MMCIF1>;
++		dmas = <&dmac0 0xe1>, <&dmac0 0xe2>;
++		dma-names = "tx", "rx";
+ 		reg-io-width = <4>;
+ 		status = "disabled";
+ 	};
 -- 
-2.1.1
+2.0.4
 
