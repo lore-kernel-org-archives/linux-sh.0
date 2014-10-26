@@ -1,44 +1,92 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 26 Oct 2014 17:40:13 +0000
-Subject: [PATCH v3 6/9] ARM: shmobile: r8a7790: Reference DMA channels in MMCIF DT nodes
-Message-Id: <1414345216-14486-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 26 Oct 2014 14:11:12 +0000
+Subject: [PATCH v5 07/14] ARM: shmobile: lager: Enable DU device in DT
+Message-Id: <1414332679-15497-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add references to the transmit and receive DMA channels in the two
-MMCIF nodes.
+Specify the DU output topology, enable the DU device and configure the
+related pins.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 4 ++++
- 1 file changed, 4 insertions(+)
+ arch/arm/boot/dts/r8a7790-lager.dts | 53 ++++++++++++++++++++++++++++++++++---
+ 1 file changed, 50 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 0403e80e467d..b800284b9195 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -397,6 +397,8 @@
- 		reg = <0 0xee200000 0 0x80>;
- 		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_MMCIF0>;
-+		dmas = <&dmac0 0xd1>, <&dmac0 0xd2>;
-+		dma-names = "tx", "rx";
- 		reg-io-width = <4>;
- 		status = "disabled";
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 2115de237421..e96f95216437 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -145,6 +145,56 @@
+ 		states = <3300000 1
+ 			  1800000 0>;
  	};
-@@ -406,6 +408,8 @@
- 		reg = <0 0xee220000 0 0x80>;
- 		interrupts = <0 170 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_MMCIF1>;
-+		dmas = <&dmac0 0xe1>, <&dmac0 0xe2>;
-+		dma-names = "tx", "rx";
- 		reg-io-width = <4>;
- 		status = "disabled";
- 	};
++
++	vga-encoder {
++		compatible = "adi,adv7123";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				adv7123_in: endpoint {
++					remote-endpoint = <&du_out_rgb>;
++				};
++			};
++			port@1 {
++				reg = <1>;
++				adv7123_out: endpoint {
++					remote-endpoint = <&vga_in>;
++				};
++			};
++		};
++	};
++
++	vga {
++		compatible = "vga-connector";
++
++		port {
++			vga_in: endpoint {
++				remote-endpoint = <&adv7123_out>;
++			};
++		};
++	};
++};
++
++&du {
++	pinctrl-0 = <&du_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++
++	ports {
++		port@0 {
++			endpoint {
++				remote-endpoint = <&adv7123_in>;
++			};
++		};
++		port@2 {
++			lvds_connector: endpoint {
++			};
++		};
++	};
+ };
+ 
+ &extal_clk {
+@@ -152,9 +202,6 @@
+ };
+ 
+ &pfc {
+-	pinctrl-0 = <&du_pins>;
+-	pinctrl-names = "default";
+-
+ 	du_pins: du {
+ 		renesas,groups = "du_rgb666", "du_sync_1", "du_clk_out_0";
+ 		renesas,function = "du";
 -- 
 2.0.4
 
