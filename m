@@ -1,51 +1,62 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 08 Oct 2014 18:00:53 +0000
-Subject: [PATCH v3 1/3] ARM: shmobile: r8a7791: add HS-USB device node
-Message-Id: <1732319.urzcOrRf7a@wasted.cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 26 Oct 2014 14:11:08 +0000
+Subject: [PATCH v5 03/14] ARM: shmobile: r8a7791: Add DU node to device tree
+Message-Id: <1414332679-15497-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1511869.4ca9KHmSFr@wasted.cogentembedded.com>
-In-Reply-To: <1511869.4ca9KHmSFr@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Add the DU device with a disabled state. Boards that want to enable the
+DU need to specify the output topology
 
-Define the R8A7791 generic part of the HS-USB device node. It is up to the board
-file to enable the device.
-
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-[Sergei: fixed summary, added changelog]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Changes in version 2:
-- uppercased "arm" in the summary;
-- added changelog.
+ arch/arm/boot/dts/r8a7791.dtsi | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
 
- arch/arm/boot/dts/r8a7791.dtsi |   11 +++++++++++
- 1 file changed, 11 insertions(+)
-
-Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7791.dtsi
-@@ -637,6 +637,17 @@
- 		status = "disabled";
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 74f18d89a35f..6b06a7665fae 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -695,6 +695,36 @@
+ 		renesas,#wpf = <4>;
  	};
  
-+	hsusb: usb@e6590000 {
-+		compatible = "renesas,usbhs-r8a7791";
-+		reg = <0 0xe6590000 0 0x100>;
-+		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7791_CLK_HSUSB>;
-+		renesas,buswait = <4>;
-+		phys = <&usb0 1>;
-+		phy-names = "usb";
++	du: display@feb00000 {
++		compatible = "renesas,du-r8a7791";
++		reg = <0 0xfeb00000 0 0x40000>,
++		      <0 0xfeb90000 0 0x1c>;
++		reg-names = "du", "lvds.0";
++		interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 268 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7791_CLK_DU0>,
++			 <&mstp7_clks R8A7791_CLK_DU1>,
++			 <&mstp7_clks R8A7791_CLK_LVDS0>;
++		clock-names = "du.0", "du.1", "lvds.0";
 +		status = "disabled";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				du_out_rgb: endpoint {
++				};
++			};
++			port@1 {
++				reg = <1>;
++				du_out_lvds0: endpoint {
++				};
++			};
++		};
 +	};
 +
- 	usbphy: usb-phy@e6590100 {
- 		compatible = "renesas,usb-phy-r8a7791";
- 		reg = <0 0xe6590100 0 0x100>;
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
+-- 
+2.0.4
 
