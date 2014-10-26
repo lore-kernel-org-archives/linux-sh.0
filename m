@@ -1,98 +1,137 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 07 Oct 2014 03:43:04 +0000
-Subject: [PATCH v2 1/3] usb: renesas_usbhs: rename phy to usb_phy in usbhs_priv
-Message-Id: <1412653386-5856-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 26 Oct 2014 15:24:22 +0000
+Subject: [PATCH v3 3/9] drm: rcar-du: Replace direct DRM encoder access with cast macro
+Message-Id: <1414337068-28664-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1414337068-28664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1414337068-28664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-To support a generic phy driver in this driver later, this patch
-renames "struct usb_phy *phy" to "struct usb_phy *usb_phy".
+Add a new macro to downcast an rcar_du_encoder pointer to a drm_encoder
+pointer and use it. This prepares for the replacement of the
+rcar_drm_encoder encoder field with a drm_slave_encoder.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/usb/renesas_usbhs/common.h |    2 +-
- drivers/usb/renesas_usbhs/rcar2.c  |   26 +++++++++++++-------------
- 2 files changed, 14 insertions(+), 14 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_encoder.c | 8 +++++---
+ drivers/gpu/drm/rcar-du/rcar_du_encoder.h | 2 ++
+ drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c | 5 +++--
+ drivers/gpu/drm/rcar-du/rcar_du_vgacon.c  | 5 +++--
+ 4 files changed, 13 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/usb/renesas_usbhs/common.h b/drivers/usb/renesas_usbhs/common.h
-index a7996da..e0d53c5 100644
---- a/drivers/usb/renesas_usbhs/common.h
-+++ b/drivers/usb/renesas_usbhs/common.h
-@@ -269,7 +269,7 @@ struct usbhs_priv {
- 	 */
- 	struct usbhs_fifo_info fifo_info;
- 
--	struct usb_phy *phy;
-+	struct usb_phy *usb_phy;
- };
- 
- /*
-diff --git a/drivers/usb/renesas_usbhs/rcar2.c b/drivers/usb/renesas_usbhs/rcar2.c
-index e6b9dcc..f264cad 100644
---- a/drivers/usb/renesas_usbhs/rcar2.c
-+++ b/drivers/usb/renesas_usbhs/rcar2.c
-@@ -20,13 +20,13 @@
- static int usbhs_rcar2_hardware_init(struct platform_device *pdev)
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
+index c699100a1359..e88e63b06b09 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
+@@ -33,7 +33,7 @@ rcar_du_connector_best_encoder(struct drm_connector *connector)
  {
- 	struct usbhs_priv *priv = usbhs_pdev_to_priv(pdev);
--	struct usb_phy *phy;
-+	struct usb_phy *usb_phy;
+ 	struct rcar_du_connector *rcon = to_rcar_connector(connector);
  
--	phy = usb_get_phy_dev(&pdev->dev, 0);
--	if (IS_ERR(phy))
--		return PTR_ERR(phy);
-+	usb_phy = usb_get_phy_dev(&pdev->dev, 0);
-+	if (IS_ERR(usb_phy))
-+		return PTR_ERR(usb_phy);
- 
--	priv->phy = phy;
-+	priv->usb_phy = usb_phy;
- 	return 0;
+-	return &rcon->encoder->encoder;
++	return rcar_encoder_to_drm_encoder(rcon->encoder);
  }
  
-@@ -34,11 +34,11 @@ static int usbhs_rcar2_hardware_exit(struct platform_device *pdev)
+ /* -----------------------------------------------------------------------------
+@@ -146,6 +146,7 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
+ 			 struct device_node *con_node)
  {
- 	struct usbhs_priv *priv = usbhs_pdev_to_priv(pdev);
+ 	struct rcar_du_encoder *renc;
++	struct drm_encoder *encoder;
+ 	unsigned int encoder_type;
+ 	int ret;
  
--	if (!priv->phy)
-+	if (!priv->usb_phy)
- 		return 0;
+@@ -154,6 +155,7 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
+ 		return -ENOMEM;
  
--	usb_put_phy(priv->phy);
--	priv->phy = NULL;
-+	usb_put_phy(priv->usb_phy);
-+	priv->usb_phy = NULL;
+ 	renc->output = output;
++	encoder = rcar_encoder_to_drm_encoder(renc);
  
- 	return 0;
- }
-@@ -48,19 +48,19 @@ static int usbhs_rcar2_power_ctrl(struct platform_device *pdev,
- {
- 	struct usbhs_priv *priv = usbhs_pdev_to_priv(pdev);
- 
--	if (!priv->phy)
-+	if (!priv->usb_phy)
- 		return -ENODEV;
- 
- 	if (enable) {
--		int retval = usb_phy_init(priv->phy);
-+		int retval = usb_phy_init(priv->usb_phy);
- 
- 		if (!retval)
--			retval = usb_phy_set_suspend(priv->phy, 0);
-+			retval = usb_phy_set_suspend(priv->usb_phy, 0);
- 		return retval;
+ 	switch (output) {
+ 	case RCAR_DU_OUTPUT_LVDS0:
+@@ -182,12 +184,12 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
+ 		break;
  	}
  
--	usb_phy_set_suspend(priv->phy, 1);
--	usb_phy_shutdown(priv->phy);
-+	usb_phy_set_suspend(priv->usb_phy, 1);
-+	usb_phy_shutdown(priv->usb_phy);
- 	return 0;
- }
+-	ret = drm_encoder_init(rcdu->ddev, &renc->encoder, &encoder_funcs,
++	ret = drm_encoder_init(rcdu->ddev, encoder, &encoder_funcs,
+ 			       encoder_type);
+ 	if (ret < 0)
+ 		return ret;
  
+-	drm_encoder_helper_add(&renc->encoder, &encoder_helper_funcs);
++	drm_encoder_helper_add(encoder, &encoder_helper_funcs);
+ 
+ 	switch (encoder_type) {
+ 	case DRM_MODE_ENCODER_LVDS:
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
+index 4b906b90c204..c6334b4280d9 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
+@@ -35,6 +35,8 @@ struct rcar_du_encoder {
+ #define to_rcar_encoder(e) \
+ 	container_of(e, struct rcar_du_encoder, encoder)
+ 
++#define rcar_encoder_to_drm_encoder(e)	(&(e)->encoder)
++
+ struct rcar_du_connector {
+ 	struct drm_connector connector;
+ 	struct rcar_du_encoder *encoder;
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
+index 80dc02166c88..6d9811c052c4 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
+@@ -84,6 +84,7 @@ int rcar_du_lvds_connector_init(struct rcar_du_device *rcdu,
+ 				struct rcar_du_encoder *renc,
+ 				/* TODO const */ struct device_node *np)
+ {
++	struct drm_encoder *encoder = rcar_encoder_to_drm_encoder(renc);
+ 	struct rcar_du_lvds_connector *lvdscon;
+ 	struct drm_connector *connector;
+ 	struct display_timing timing;
+@@ -120,11 +121,11 @@ int rcar_du_lvds_connector_init(struct rcar_du_device *rcdu,
+ 	drm_object_property_set_value(&connector->base,
+ 		rcdu->ddev->mode_config.dpms_property, DRM_MODE_DPMS_OFF);
+ 
+-	ret = drm_mode_connector_attach_encoder(connector, &renc->encoder);
++	ret = drm_mode_connector_attach_encoder(connector, encoder);
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	connector->encoder = &renc->encoder;
++	connector->encoder = encoder;
+ 	lvdscon->connector.encoder = renc;
+ 
+ 	return 0;
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
+index 564a723ede03..752747a5e920 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
+@@ -52,6 +52,7 @@ static const struct drm_connector_funcs connector_funcs = {
+ int rcar_du_vga_connector_init(struct rcar_du_device *rcdu,
+ 			       struct rcar_du_encoder *renc)
+ {
++	struct drm_encoder *encoder = rcar_encoder_to_drm_encoder(renc);
+ 	struct rcar_du_connector *rcon;
+ 	struct drm_connector *connector;
+ 	int ret;
+@@ -78,11 +79,11 @@ int rcar_du_vga_connector_init(struct rcar_du_device *rcdu,
+ 	drm_object_property_set_value(&connector->base,
+ 		rcdu->ddev->mode_config.dpms_property, DRM_MODE_DPMS_OFF);
+ 
+-	ret = drm_mode_connector_attach_encoder(connector, &renc->encoder);
++	ret = drm_mode_connector_attach_encoder(connector, encoder);
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	connector->encoder = &renc->encoder;
++	connector->encoder = encoder;
+ 	rcon->encoder = renc;
+ 
+ 	return 0;
 -- 
-1.7.9.5
+2.0.4
 
