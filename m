@@ -1,48 +1,70 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 03 Oct 2014 15:11:37 +0000
-Subject: [PATCH v2 06/13] ARM: shmobile: armadillo800eva dts: Add chosen/stdout-path
-Message-Id: <1412349104-18724-7-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 26 Oct 2014 14:11:09 +0000
+Subject: [PATCH v5 04/14] ARM: shmobile: dts: Add common file for AA104XD12 panel
+Message-Id: <1414332679-15497-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412349104-18724-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1412349104-18724-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-Add a stdout-path property so that automatic console selection works
-in the absence of a "console=" parameter on the kernel command line.
-In addition, this will allow the PM domain code to find the PM domain
-for the console device.
+The Mitsubishi AA104XD12 panel is commonly used with the Marzen, Lager
+and Koelsch boards. Create a .dtsi file that describe the panel and its
+connection to the board.
 
-Note that we have to keep the "console=ttySC1" parameter in
-chosen/bootargs, else we only get console messages on tty0, and because
-this DTS is shared between legacy and multi-platform.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-This is a prerequisite for working "no_console_suspend" support in
-"[PATCH] ARM: shmobile: R-Mobile: Add DT support for PM domains".
+ arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi | 41 ++++++++++++++++++++++++++
+ 1 file changed, 41 insertions(+)
+ create mode 100644 arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi
 
-v2:
-  - Add second reason for keeping "console="
----
- arch/arm/boot/dts/r8a7740-armadillo800eva.dts | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-index effb7b46f13172d5..2703428557fce9fa 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-@@ -25,6 +25,7 @@
- 
- 	chosen {
- 		bootargs = "console=tty0 console=ttySC1,115200 earlyprintk=sh-sci.1,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
-+		stdout-path = &scifa1;
- 	};
- 
- 	memory {
+diff --git a/arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi b/arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi
+new file mode 100644
+index 000000000000..65cb50f0c29f
+--- /dev/null
++++ b/arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi
+@@ -0,0 +1,41 @@
++/*
++ * Common file for the AA104XD12 panel connected to Renesas R-Car boards
++ *
++ * Copyright (C) 2014 Renesas Electronics Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/ {
++	panel {
++		compatible = "mitsubishi,aa104xd12", "panel-dpi";
++
++		width-mm = <210>;
++		height-mm = <158>;
++
++		panel-timing {
++			/* 1024x768 @65Hz */
++			clock-frequency = <65000000>;
++			hactive = <1024>;
++			vactive = <768>;
++			hsync-len = <136>;
++			hfront-porch = <20>;
++			hback-porch = <160>;
++			vfront-porch = <3>;
++			vback-porch = <29>;
++			vsync-len = <6>;
++		};
++
++		port {
++			panel_in: endpoint {
++				remote-endpoint = <&lvds_connector>;
++			};
++		};
++	};
++};
++
++&lvds_connector {
++	remote-endpoint = <&panel_in>;
++};
 -- 
-1.9.1
+2.0.4
 
