@@ -1,51 +1,38 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 06 Oct 2014 01:48:32 +0000
-Subject: Re: [PATCH] ARM: shmobile: r7s72100: Remove r7s72100-genmai.dtb for ARCH_SHMOBILE_LEGACY
-Message-Id: <20141006014832.GB22040@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 27 Oct 2014 12:42:31 +0000
+Subject: [PATCH] dmaengine: shdma: Allocate cyclic sg list with GFP_NOWAIT
+Message-Id: <1414413751-22102-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412348152-15326-1-git-send-email-geert+renesas@glider.be>
- <3422011.ptz11KJ6Ks@avalon>
-In-Reply-To: <3422011.ptz11KJ6Ks@avalon>
+References: <1405691010-24995-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1405691010-24995-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Sat, Oct 04, 2014 at 03:17:57PM +0300, Laurent Pinchart wrote:
-> Hi Geert,
-> 
-> Thank you for the patch.
-> 
-> On Friday 03 October 2014 16:55:52 Geert Uytterhoeven wrote:
-> > Forgotten by commit ad8c3af8b75ff26c ("ARM: shmobile: r7s72100: Remove
-> > legacy board support").
-> > 
-> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The cyclic preparation handler is called in atomic context by the rcar
+sound driver. Use GFP_NOWAIT instead of GFP_KERNEL.
 
-Thanks, I have queued this up as a DT cleanup for v3.19.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/dma/sh/shdma-base.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> > ---
-> >  arch/arm/boot/dts/Makefile | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > 
-> > diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-> > index a9125b8d394e5c4a..dc619a48d2c5bb70 100644
-> > --- a/arch/arm/boot/dts/Makefile
-> > +++ b/arch/arm/boot/dts/Makefile
-> > @@ -357,7 +357,7 @@ dtb-$(CONFIG_ARCH_S5PV210) += s5pv210-aquila.dtb \
-> >  	s5pv210-smdkc110.dtb \
-> >  	s5pv210-smdkv210.dtb \
-> >  	s5pv210-torbreck.dtb
-> > -dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += r7s72100-genmai.dtb \
-> > +dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += \
-> >  	r8a73a4-ape6evm.dtb \
-> >  	r8a73a4-ape6evm-reference.dtb \
-> >  	r8a7740-armadillo800eva.dtb \
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
+diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
+index 42d497416196..b392a74dfa54 100644
+--- a/drivers/dma/sh/shdma-base.c
++++ b/drivers/dma/sh/shdma-base.c
+@@ -705,7 +705,7 @@ static struct dma_async_tx_descriptor *shdma_prep_dma_cyclic(
+ 	 * Allocate the sg list dynamically as it would consumer too much stack
+ 	 * space.
+ 	 */
+-	sgl = kcalloc(sg_len, sizeof(*sgl), GFP_KERNEL);
++	sgl = kcalloc(sg_len, sizeof(*sgl), GFP_NOWAIT);
+ 	if (!sgl)
+ 		return NULL;
+ 
+-- 
+Regards,
+
+Laurent Pinchart
+
