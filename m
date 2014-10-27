@@ -1,31 +1,42 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Thu, 30 Oct 2014 20:40:16 +0000
-Subject: Re: [PATCH 0/6] ARM: shmobile: Change to using clock-indices
-Message-Id: <5452A230.30605@codethink.co.uk>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 27 Oct 2014 09:27:13 +0000
+Subject: [PATCH] ARM: shmobile: marzen: Fix address and size cells in LVDS encoder node
+Message-Id: <1414402033-7311-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414592353-24044-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1414592353-24044-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>, Mike Turquette <mturquette@linaro.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On 29/10/14 14:19, Geert Uytterhoeven wrote:
-> 	Hi Mike, Simon, Magnus,
-> 
-> This patch series finalizes the conversion from the vendor-specific
-> "renesas,clock-indices" to the generic "clock-indices", started by Ben Dooks.
-> 
-> The patches for r8a7790 and r8a7791 were extracted from a patch that Ben sent
-> before ("[PATCH 2/3] renesas: change to using clock-indices"), but it was never
-> split/updated.
-> 
-> Thanks for applying!
+The LVDS encoder DT node #address-cells and #size-cells properties are
+misplaced. Move them to within the ports node.
 
-Thanks for following this up, i've not had time to look at any of this
-code recently.
+Reported-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7779-marzen.dts | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
+diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
+index 034dada2b462..e83d40e24bcd 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen.dts
+@@ -105,10 +105,10 @@
+ 	lvds-encoder {
+ 		compatible = "thine,thc63lvdm83d";
+ 
+-		#address-cells = <1>;
+-		#size-cells = <0>;
+-
+ 		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
+ 			port@0 {
+ 				reg = <0>;
+ 				lvds_enc_in: endpoint {
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+Regards,
+
+Laurent Pinchart
+
