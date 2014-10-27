@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Mon, 06 Oct 2014 02:02:01 +0000
+Date: Mon, 27 Oct 2014 00:18:55 +0000
 Subject: Re: [PATCH v2 0/2] ARM: shmobile: r8a7794/Cortex-A7 arch timer fix
-Message-Id: <20141006020201.GE22040@verge.net.au>
+Message-Id: <20141027001854.GA32437@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1410511926-9326-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 In-Reply-To: <1410511926-9326-1-git-send-email-ulrich.hecht+renesas@gmail.com>
@@ -10,16 +10,15 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi,
-
-I am wondering about the status of this patchset.
-
 On Fri, Sep 12, 2014 at 10:52:04AM +0200, Ulrich Hecht wrote:
 > Hi!
 > 
 > Here's again the bit to get the arch timer working on the r8a7794 platform,
 > this time without the secondary CPU initialization which we don't need
 > anyway ATM for lack of SMP support.
+
+Thanks, I have (finally) queued this up.
+
 > 
 > CU
 > Uli
