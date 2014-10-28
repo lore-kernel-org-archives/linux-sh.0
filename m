@@ -1,118 +1,186 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 30 Oct 2014 04:02:47 +0000
-Subject: [PATCH v2 4/4] usb: renesas_usbhs: fix usbhs_pipe_clear() for DCP PIPE
-Message-Id: <1414641767-5780-5-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 28 Oct 2014 17:02:14 +0000
+Subject: [PATCH v3 5/7] ARM: shmobile: sh73a0: add MSTP clock assignments to DT
+Message-Id: <1414515736-24905-6-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Since the DCPCTR doesn't have the ACLRM bit, the usbus_pipe_clear()
-should not call the usbhsp_pipectrl_set() with ACLRM.
-So, this patch fixes this issue to add the usbhs_fifo_clear_dcp()
-in fifo.c because the controller needs the CFIFO to clear the
-the DCP PIPE.
+Assigns clocks to cmt1, i2c*, mmcif, sdhi*, and scif*.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
- drivers/usb/renesas_usbhs/fifo.c       |   18 ++++++++++++++++++
- drivers/usb/renesas_usbhs/fifo.h       |    1 +
- drivers/usb/renesas_usbhs/mod_gadget.c |    2 +-
- drivers/usb/renesas_usbhs/mod_host.c   |    2 +-
- drivers/usb/renesas_usbhs/pipe.c       |    8 ++++++--
- 5 files changed, 27 insertions(+), 4 deletions(-)
+ arch/arm/boot/dts/sh73a0.dtsi | 29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
 
-diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
-index 0e07925..9b48384 100644
---- a/drivers/usb/renesas_usbhs/fifo.c
-+++ b/drivers/usb/renesas_usbhs/fifo.c
-@@ -1160,6 +1160,24 @@ static void usbhsf_dma_complete(void *arg)
- 			usbhs_pipe_number(pipe), ret);
- }
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index daa486c..de08c10 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -56,6 +56,8 @@
  
-+void usbhs_fifo_clear_dcp(struct usbhs_pipe *pipe)
-+{
-+	struct usbhs_priv *priv = usbhs_pipe_to_priv(pipe);
-+	struct usbhs_fifo *fifo = usbhsf_get_cfifo(priv); /* CFIFO */
-+
-+	/* clear DCP FIFO of transmission */
-+	if (usbhsf_fifo_select(pipe, fifo, 1) < 0)
-+		return;
-+	usbhsf_fifo_clear(pipe, fifo);
-+	usbhsf_fifo_unselect(pipe, fifo);
-+
-+	/* clear DCP FIFO of reception */
-+	if (usbhsf_fifo_select(pipe, fifo, 0) < 0)
-+		return;
-+	usbhsf_fifo_clear(pipe, fifo);
-+	usbhsf_fifo_unselect(pipe, fifo);
-+}
-+
- /*
-  *		fifo init
-  */
-diff --git a/drivers/usb/renesas_usbhs/fifo.h b/drivers/usb/renesas_usbhs/fifo.h
-index a168a17..79ad5f9 100644
---- a/drivers/usb/renesas_usbhs/fifo.h
-+++ b/drivers/usb/renesas_usbhs/fifo.h
-@@ -74,6 +74,7 @@ int usbhs_fifo_probe(struct usbhs_priv *priv);
- void usbhs_fifo_remove(struct usbhs_priv *priv);
- void usbhs_fifo_init(struct usbhs_priv *priv);
- void usbhs_fifo_quit(struct usbhs_priv *priv);
-+void usbhs_fifo_clear_dcp(struct usbhs_pipe *pipe);
+ 		renesas,channels-mask = <0x3f>;
  
- /*
-  * packet info
-diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
-index f7adb3e..4d6c18a 100644
---- a/drivers/usb/renesas_usbhs/mod_gadget.c
-+++ b/drivers/usb/renesas_usbhs/mod_gadget.c
-@@ -782,9 +782,9 @@ static int usbhsg_try_start(struct usbhs_priv *priv, u32 status)
- 	/*
- 	 * pipe initialize and enable DCP
- 	 */
-+	usbhs_fifo_init(priv);
- 	usbhs_pipe_init(priv,
- 			usbhsg_dma_map_ctrl);
--	usbhs_fifo_init(priv);
++		clocks = <&mstp3_clks SH73A0_CLK_CMT1>;
++		clock-names = "fck";
+ 		status = "disabled";
+ 	};
  
- 	/* dcp init instead of usbhsg_ep_enable() */
- 	dcp->pipe		= usbhs_dcp_malloc(priv);
-diff --git a/drivers/usb/renesas_usbhs/mod_host.c b/drivers/usb/renesas_usbhs/mod_host.c
-index 10e1ded..f0d3231 100644
---- a/drivers/usb/renesas_usbhs/mod_host.c
-+++ b/drivers/usb/renesas_usbhs/mod_host.c
-@@ -1474,9 +1474,9 @@ static int usbhsh_start(struct usbhs_priv *priv)
- 	/*
- 	 * pipe initialize and enable DCP
- 	 */
-+	usbhs_fifo_init(priv);
- 	usbhs_pipe_init(priv,
- 			usbhsh_dma_map_ctrl);
--	usbhs_fifo_init(priv);
- 	usbhsh_pipe_init_for_host(priv);
+@@ -145,6 +147,7 @@
+ 			      0 168 IRQ_TYPE_LEVEL_HIGH
+ 			      0 169 IRQ_TYPE_LEVEL_HIGH
+ 			      0 170 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks SH73A0_CLK_IIC0>;
+ 		status = "disabled";
+ 	};
  
- 	/*
-diff --git a/drivers/usb/renesas_usbhs/pipe.c b/drivers/usb/renesas_usbhs/pipe.c
-index 040bcef..007f45a 100644
---- a/drivers/usb/renesas_usbhs/pipe.c
-+++ b/drivers/usb/renesas_usbhs/pipe.c
-@@ -618,8 +618,12 @@ void usbhs_pipe_data_sequence(struct usbhs_pipe *pipe, int sequence)
+@@ -157,6 +160,7 @@
+ 			      0 52 IRQ_TYPE_LEVEL_HIGH
+ 			      0 53 IRQ_TYPE_LEVEL_HIGH
+ 			      0 54 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks SH73A0_CLK_IIC1>;
+ 		status = "disabled";
+ 	};
  
- void usbhs_pipe_clear(struct usbhs_pipe *pipe)
- {
--	usbhsp_pipectrl_set(pipe, ACLRM, ACLRM);
--	usbhsp_pipectrl_set(pipe, ACLRM, 0);
-+	if (usbhs_pipe_is_dcp(pipe)) {
-+		usbhs_fifo_clear_dcp(pipe);
-+	} else {
-+		usbhsp_pipectrl_set(pipe, ACLRM, ACLRM);
-+		usbhsp_pipectrl_set(pipe, ACLRM, 0);
-+	}
- }
+@@ -169,6 +173,7 @@
+ 			      0 172 IRQ_TYPE_LEVEL_HIGH
+ 			      0 173 IRQ_TYPE_LEVEL_HIGH
+ 			      0 174 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks SH73A0_CLK_IIC2>;
+ 		status = "disabled";
+ 	};
  
- static struct usbhs_pipe *usbhsp_get_pipe(struct usbhs_priv *priv, u32 type)
+@@ -181,6 +186,7 @@
+ 			      0 184 IRQ_TYPE_LEVEL_HIGH
+ 			      0 185 IRQ_TYPE_LEVEL_HIGH
+ 			      0 186 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks SH73A0_CLK_IIC3>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -193,6 +199,7 @@
+ 			      0 188 IRQ_TYPE_LEVEL_HIGH
+ 			      0 189 IRQ_TYPE_LEVEL_HIGH
+ 			      0 190 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks SH73A0_CLK_IIC4>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -202,6 +209,7 @@
+ 		interrupts = <0 140 IRQ_TYPE_LEVEL_HIGH
+ 			      0 141 IRQ_TYPE_LEVEL_HIGH>;
+ 		reg-io-width = <4>;
++		clocks = <&mstp3_clks SH73A0_CLK_MMCIF0>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -212,6 +220,7 @@
+ 			      0 84 IRQ_TYPE_LEVEL_HIGH
+ 			      0 85 IRQ_TYPE_LEVEL_HIGH>;
+ 		cap-sd-highspeed;
++		clocks = <&mstp3_clks SH73A0_CLK_SDHI0>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -223,6 +232,7 @@
+ 			      0 89 IRQ_TYPE_LEVEL_HIGH>;
+ 		toshiba,mmc-wrprotect-disable;
+ 		cap-sd-highspeed;
++		clocks = <&mstp3_clks SH73A0_CLK_SDHI1>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -233,6 +243,7 @@
+ 			      0 105 IRQ_TYPE_LEVEL_HIGH>;
+ 		toshiba,mmc-wrprotect-disable;
+ 		cap-sd-highspeed;
++		clocks = <&mstp3_clks SH73A0_CLK_SDHI2>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -240,6 +251,8 @@
+ 		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
+ 		reg = <0xe6c40000 0x100>;
+ 		interrupts = <0 72 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks SH73A0_CLK_SCIFA0>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -247,6 +260,8 @@
+ 		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
+ 		reg = <0xe6c50000 0x100>;
+ 		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks SH73A0_CLK_SCIFA1>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -254,6 +269,8 @@
+ 		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
+ 		reg = <0xe6c60000 0x100>;
+ 		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks SH73A0_CLK_SCIFA2>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -261,6 +278,8 @@
+ 		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
+ 		reg = <0xe6c70000 0x100>;
+ 		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks SH73A0_CLK_SCIFA3>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -268,6 +287,8 @@
+ 		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
+ 		reg = <0xe6c80000 0x100>;
+ 		interrupts = <0 78 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks SH73A0_CLK_SCIFA4>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -275,6 +296,8 @@
+ 		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
+ 		reg = <0xe6cb0000 0x100>;
+ 		interrupts = <0 79 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks SH73A0_CLK_SCIFA5>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -282,6 +305,8 @@
+ 		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
+ 		reg = <0xe6cc0000 0x100>;
+ 		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks SH73A0_CLK_SCIFA6>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -289,6 +314,8 @@
+ 		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
+ 		reg = <0xe6cd0000 0x100>;
+ 		interrupts = <0 143 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks SH73A0_CLK_SCIFA7>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -296,6 +323,8 @@
+ 		compatible = "renesas,scifb-sh73a0", "renesas,scifb";
+ 		reg = <0xe6c30000 0x100>;
+ 		interrupts = <0 80 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks SH73A0_CLK_SCIFB>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
 -- 
-1.7.9.5
+1.8.4.5
 
