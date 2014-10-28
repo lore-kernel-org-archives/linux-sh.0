@@ -1,99 +1,33 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Wed, 15 Oct 2014 09:42:41 +0000
-Subject: Re: [PATCH 1/3] media: soc_camera: rcar_vin: Add scaling support
-Message-Id: <CAH1o70Ko8d5xd6C-2oaSx7nMBvNNDtQ3dj-rKV_KPPUkri6wqA@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 28 Oct 2014 17:02:16 +0000
+Subject: [PATCH v3 7/7] ARM: shmobile: kzm9g-reference: require ZB clock for Ethernet controller
+Message-Id: <1414515736-24905-8-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1413268013-8437-1-git-send-email-ykaneko0929@gmail.com>
-	<1413268013-8437-2-git-send-email-ykaneko0929@gmail.com>
-	<CAMuHMdWZ=G+oHMWLQasHXeCxVnYQkQ81owKBMiyfnjzgigUPYQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdWZ=G+oHMWLQasHXeCxVnYQkQ81owKBMiyfnjzgigUPYQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Linux Media Mailing List <linux-media@vger.kernel.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Hello Geert,
+Unlike the legacy stuff, CCF disables the ethernet controller's clock
+unless it is used somewhere.
 
-Thanks for your comment.
-I'll update this patch.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 1 +
+ 1 file changed, 1 insertion(+)
 
-Thanks,
-Kaneko
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index bad6492..15782f5 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -91,6 +91,7 @@
+ 		interrupt-parent = <&irqpin0>;
+ 		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
+ 		reg-io-width = <4>;
++		clocks = <&zb_clk>;
+ 		smsc,irq-push-pull;
+ 		smsc,save-mac-address;
+ 		vddvario-supply = <&reg_1p8v>;
+-- 
+1.8.4.5
 
-2014-10-15 4:25 GMT+09:00 Geert Uytterhoeven <geert@linux-m68k.org>:
-> Hi Kaneko-san, Matsuoka-san,
->
-> On Tue, Oct 14, 2014 at 8:26 AM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
->> From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
->
-> Thanks for our patch!
->
->> --- a/drivers/media/platform/soc_camera/rcar_vin.c
->> +++ b/drivers/media/platform/soc_camera/rcar_vin.c
->
->> @@ -120,6 +144,326 @@ enum chip_id {
->>         RCAR_E1,
->>  };
->>
->> +struct VIN_COEFF {
->
-> Please don't use upper case for struct names.
->
->> +       unsigned short xs_value;
->> +       unsigned long coeff_set[24];
->
-> The actual size of "long" depends on the word size of the CPU.
-> On 32-bit builds it is 32-bit, on 64-bit builds it is 64-bit.
-> As all values in the table below are 32-bit, and the values are
-> written to register using iowrite32(), please use "u32" instead of
-> "unsigned long".
->
->> +};
->
->> +#define VIN_COEFF_SET_COUNT (sizeof(vin_coeff_set) / sizeof(struct VIN_COEFF))
->
-> There exists a convenience macro "ARRAY_SIZE()" for this.
-> Please just use "ARRAY_SIZE(vin_coeff_set)" instead of defining
-> "VIN_COEFF_SET_COUNT".
->
->> @@ -677,6 +1024,61 @@ static void rcar_vin_clock_stop(struct soc_camera_host *ici)
->>         /* VIN does not have "mclk" */
->>  }
->>
->> +static void set_coeff(struct rcar_vin_priv *priv, unsigned long xs)
->
-> I think xs can be "unsigned short"?
->
->> +{
->> +       int i;
->> +       struct VIN_COEFF *p_prev_set = NULL;
->> +       struct VIN_COEFF *p_set = NULL;
->
-> If you add "const" to the two definitions above...
->
->> +       /* Search the correspondence coefficient values */
->> +       for (i = 0; i < VIN_COEFF_SET_COUNT; i++) {
->> +               p_prev_set = p_set;
->> +               p_set = (struct VIN_COEFF *) &vin_coeff_set[i];
->
-> ... the above cast is no longer needed.
->
->> @@ -686,6 +1088,7 @@ static int rcar_vin_set_rect(struct soc_camera_device *icd)
->>         unsigned int left_offset, top_offset;
->>         unsigned char dsize = 0;
->>         struct v4l2_rect *cam_subrect = &cam->subrect;
->> +       unsigned long value;
->
-> "u32", as it's written to a 32-bit register later.
->
-> Gr{oetje,eeting}s,
->
->                         Geert
->
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
->
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
