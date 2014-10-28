@@ -1,41 +1,69 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 24 Oct 2014 05:08:48 +0000
-Subject: Re: [PATCH 0/2] ARM: shmobile: add USB3.0 device node on r8a7790
-Message-Id: <20141024050848.GH7537@verge.net.au>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Tue, 28 Oct 2014 03:45:32 +0000
+Subject: [PATCH v3] ata: sata_rcar: Add r8a7793 device support
+Message-Id: <1414467932-17688-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412749470-6028-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <20141024042114.GD11281@verge.net.au>
- <ea8c5c855c604eb9acf73a08ee9a0a3f@HKNPR06MB322.apcprd06.prod.outlook.com>
-In-Reply-To: <ea8c5c855c604eb9acf73a08ee9a0a3f@HKNPR06MB322.apcprd06.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
-Cc: "magnus.damm@gmail.com" <magnus.damm@gmail.com>, "robh+dt@kernel.org" <robh+dt@kernel.org>, "pawel.moll@arm.com" <pawel.moll@arm.com>, "mark.rutland@arm.com" <mark.rutland@arm.com>, "ijc+devicetree@hellion.org.uk" <ijc+devicetree@hellion.org.uk>, "galak@codeaurora.org" <galak@codeaurora.org>, "linux@arm.linux.org.uk" <linux@arm.linux.org.uk>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: linux-ide@vger.kernel.org
+Cc: Tejun Heo <tj@kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
 
-On Fri, Oct 24, 2014 at 04:44:28AM +0000, yoshihiro shimoda wrote:
-> Hi Simon-san,
-> 
-> > On Wed, Oct 08, 2014 at 03:24:28PM +0900, Yoshihiro Shimoda wrote:
-> > >  This series is based on Simon's renesas.git branch and
-> > > renesas-devel-20141007-v3.17 tag. If we use the generic phy driver for
-> > > R-Car Gen2 (drivers/phy/phy-rcar-gen2.c), we can use the USB3.0 on
-> > > lager.
-> > >
-> > > Yoshihiro Shimoda (2):
-> > >   ARM: shmobile: r8a7790: add USB3.0 device node
-> > >   ARM: shmobile: lager: enable USB3.0
-> > >
-> > >  arch/arm/boot/dts/r8a7790-lager.dts |    6 ++++++
-> > >  arch/arm/boot/dts/r8a7790.dtsi      |   10 ++++++++++
-> > >  2 files changed, 16 insertions(+)
-> > 
-> > Hi Shimoda-san,
-> > 
-> > could you update me on the status of this patch.
-> > Should I queue it up?
-> 
-> Yes.
-> So, should I rebase this patch serias on the current your repository?
+From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
 
-Yes, please rebase it on renesas-devel-20141024-v3.18-rc1
+Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
+
+This patch is against for-3.19 branch of Tejun's libata repo.
+
+v3 [Yoshihiro Kaneko]
+* Rebased on top of for-3.19
+
+v2 [Yoshihiro Kaneko]
+* Update the binding documentation
+
+ Documentation/devicetree/bindings/ata/sata_rcar.txt | 3 ++-
+ drivers/ata/sata_rcar.c                             | 5 +++++
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/Documentation/devicetree/bindings/ata/sata_rcar.txt b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+index 7dd32d3..80ae87a 100644
+--- a/Documentation/devicetree/bindings/ata/sata_rcar.txt
++++ b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+@@ -5,7 +5,8 @@ Required properties:
+ 			  - "renesas,sata-r8a7779" for R-Car H1
+ 			  - "renesas,sata-r8a7790-es1" for R-Car H2 ES1
+ 			  - "renesas,sata-r8a7790" for R-Car H2 other than ES1
+-			  - "renesas,sata-r8a7791" for R-Car M2
++			  - "renesas,sata-r8a7791" for R-Car M2-W
++			  - "renesas,sata-r8a7793" for R-Car M2-N
+ - reg			: address and length of the SATA registers;
+ - interrupts		: must consist of one interrupt specifier.
+ 
+diff --git a/drivers/ata/sata_rcar.c b/drivers/ata/sata_rcar.c
+index 8732e42..ea1fbc1 100644
+--- a/drivers/ata/sata_rcar.c
++++ b/drivers/ata/sata_rcar.c
+@@ -850,6 +850,10 @@ static struct of_device_id sata_rcar_match[] = {
+ 		.compatible = "renesas,sata-r8a7791",
+ 		.data = (void *)RCAR_GEN2_SATA
+ 	},
++	{
++		.compatible = "renesas,sata-r8a7793",
++		.data = (void *)RCAR_GEN2_SATA
++	},
+ 	{ },
+ };
+ MODULE_DEVICE_TABLE(of, sata_rcar_match);
+@@ -860,6 +864,7 @@ static const struct platform_device_id sata_rcar_id_table[] = {
+ 	{ "sata-r8a7790", RCAR_GEN2_SATA },
+ 	{ "sata-r8a7790-es1", RCAR_R8A7790_ES1_SATA },
+ 	{ "sata-r8a7791", RCAR_GEN2_SATA },
++	{ "sata-r8a7793", RCAR_GEN2_SATA },
+ 	{ },
+ };
+ MODULE_DEVICE_TABLE(platform, sata_rcar_id_table);
+-- 
+1.9.1
+
