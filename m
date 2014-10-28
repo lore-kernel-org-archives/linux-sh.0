@@ -1,7 +1,7 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 27 Oct 2014 12:48:08 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 28 Oct 2014 00:16:16 +0000
 Subject: Re: [PATCH 0/11][RFC] sound DMA support patches
-Message-Id: <4038261.I2upKqcgeP@avalon>
+Message-Id: <87wq7lqcaf.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <874my8vlqq.wl%kuninori.morimoto.gx@gmail.com>
 In-Reply-To: <874my8vlqq.wl%kuninori.morimoto.gx@gmail.com>
@@ -10,80 +10,58 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Morimoto-san,
 
-On Sunday 26 October 2014 17:36:12 Kuninori Morimoto wrote:
-> Hi Laurent
+Hi Laurent
+
+> That fixed the probe issue, thank you. Do you plan to push this change to 
+> Simon's tree ?
+
+Current Simon's tree doesn't have board support yet.
+This means no one (= except you :) have trouble in upstream.
+But, yes, I will fix it when I send sound board support patch-set.
+
+> With this patch applied I've been able to test audio playback and get it to 
+> fail :-) The first problem is caused by GFP_KERNEL allocation in the prep 
+> cyclic handler in shdma-base.c. I've sent a patch to fix that and have CC'ed 
+> you.
 > 
-> Thank you for contacting me
+> The next failure comes from the call to pm_runtime_get() in shdma_tx_submit():
 > 
-> > > These are sound DMA support platform side patches.
-> > > These worked well when it was based on shdma-base
-> > > driver base.
-> > > 
-> > > These are including all sound DMA supports,
-> > > but, it is too much for cyclic transfer test.
-> > 
-> > I'm trying to test cyclic DMA support in the rcar-dmac driver using this
-> > patch series.
-> > 
-> > I've applied all the patches on top of a merge of asoc/topic/rcar,
-> > renesas-
-> > drivers-2014-10-23-v3.18-rc1 and Simon's latest master branch. The sound
-> 
-> > devices are not probed correctly:
-> (snip)
-> 
-> > Am I missing something ? Is there a newer version of the Lager audio + DMA
-> > support patches ?
-> 
-> Sorry, driver had a bug, and I fixed it on latest upstream.
-> Can you add below on my previous patch series ?
-> It should be probed.
+>   rcar-audmapp-engine ec740000.audio-dma-pp: shdma_tx_submit(): GET = -13
+>   rcar_sound ec500000.rcar_sound: status check failed
+>   rcar_sound ec500000.rcar_sound: status check failed
 
-That fixed the probe issue, thank you. Do you plan to push this change to 
-Simon's tree ?
+GET = -13 is because PeriPeri doesn't have MSTP bit,
+but it is message/warning only.
 
-With this patch applied I've been able to test audio playback and get it to 
-fail :-) The first problem is caused by GFP_KERNEL allocation in the prep 
-cyclic handler in shdma-base.c. I've sent a patch to fix that and have CC'ed 
-you.
+status check failed seems DMA doesn't work (?)
+it seems similar with my known issue which was this
 
-The next failure comes from the call to pm_runtime_get() in shdma_tx_submit():
+   http://www.spinics.net/lists/dmaengine/msg01525.html
 
-  rcar-audmapp-engine ec740000.audio-dma-pp: shdma_tx_submit(): GET = -13
-  rcar_sound ec500000.rcar_sound: status check failed
-  rcar_sound ec500000.rcar_sound: status check failed
+especially 1) issue ?
 
-Is that a known problem ?
+Kuninori Morimoto (11):
+       1) ARM: shmobile: r8a7790: Add Audio DMAC devices to DT
+       2) ARM: shmobile: r8a7790: Add Audio DMAC peri peri devices to DT
+       3) ARM: shmobile: r8a7790: sound enables Audio DMAC entry on DTSI
+       4) ARM: shmobile: r8a7790: sound enables Audio DMAC peri peri entry on DTSI
+       5) ARM: shmobile: lager: Sound PIO support on DTS
+       6) ARM: shmobile: lager: Sound DMA support on DTS
+       7) ARM: shmobile: lager: Sound DMA support via BUSIF on DTS
+       8) ARM: shmobile: lager: Sound DMA support via SRC on DTS
+       9) ARM: shmobile: lager: Sound DMA support via DVC on DTS
+      10) ARM: shmobile: multiplatform: add Audo DMAC peri peri support on defconfig
+      11) ARM: shmobile: multiplatform: add R-Car DMAC support on defconfig
 
-> ------------------
-> diff --git a/arch/arm/boot/dts/r8a7790-lager.dts
-> b/arch/arm/boot/dts/r8a7790-lager.dts index 950a438..d6e7efd 100644
-> --- a/arch/arm/boot/dts/r8a7790-lager.dts
-> +++ b/arch/arm/boot/dts/r8a7790-lager.dts
-> @@ -166,7 +166,7 @@
->                 simple-audio-card,frame-master = <&sndcodec>;
-> 
->                 sndcpu: simple-audio-card,cpu {
-> -                       sound-dai = <&rcar_sound 0>;
-> +                       sound-dai = <&rcar_sound>;
->                 };
-> 
->                 sndcodec: simple-audio-card,codec {
-> @@ -474,6 +474,8 @@
->         pinctrl-0 = <&sound_pins &sound_clk_pins>;
->         pinctrl-names = "default";
-> 
-> +       #sound-dai-cells = <0>;
-> +
->         status = "okay";
-> 
->         rcar_sound,dai {
-> ------------------
+I'm sorry that I didn't explain about sound.
+I guess you are using soud FULL feature now (= 1 to 11), and,
+this means your kernel is using Audio DMAC + PeriPeri DMAC.
+But, very basic sound doesn't need PeriPeri DMAC.
 
--- 
-Regards,
+Can you use 1) - 6) patches (and previous fixup patch) ?
+7) / 8) / 9) requests PeriPeri DMAC, and problem will be more complex.
 
-Laurent Pinchart
-
+Best regards
+---
+Kuninori Morimoto
