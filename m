@@ -1,44 +1,58 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 03 Oct 2014 15:11:40 +0000
-Subject: [PATCH v2 09/13] ARM: shmobile: lager dts: Add chosen/stdout-path
-Message-Id: <1412349104-18724-10-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 29 Oct 2014 04:58:23 +0000
+Subject: [PATCH] ARM: shmobile: r8a7740 legacy: Add missing INTCA clock for irqpin module
+Message-Id: <2b02b8020fad6ed505ff9cfb1b418c4b59f102a5.1414558424.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412349104-18724-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1412349104-18724-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1414558424.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1414558424.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-Add a stdout-path property so that automatic console selection works
-in the absence of a "console=" parameter on the kernel command line.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Note that we have to keep the "console=" parameter in chosen/bootargs,
-as this DTS is shared between legacy and multi-platform.
+This clock drives the irqpin controller modules.
+Before, it was assumed enabled by the bootloader or reset state.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2:
-  - Keep "console=",
-  - Update for 3a8912c2f983dbb2 ("ARM: shmobile: r8a7790: switch from
-    scif to scifa")
----
- arch/arm/boot/dts/r8a7790-lager.dts | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/mach-shmobile/clock-r8a7740.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 1698591d530a14df..719979e29bf8d47c 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -25,6 +25,7 @@
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 0794f04..6cb1de2 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -455,7 +455,7 @@ enum {
+ 	MSTP128, MSTP127, MSTP125,
+ 	MSTP116, MSTP111, MSTP100, MSTP117,
  
- 	chosen {
- 		bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
-+		stdout-path = &scifa0;
- 	};
+-	MSTP230,
++	MSTP230, MSTP229,
+ 	MSTP222,
+ 	MSTP218, MSTP217, MSTP216, MSTP214,
+ 	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
+@@ -479,6 +479,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_B],	SMSTPCR1,  0, 0), /* LCDC0 */
  
- 	memory@40000000 {
+ 	[MSTP230] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR2, 30, 0), /* SCIFA6 */
++	[MSTP229] = SH_CLK_MSTP32(&div6_clks[DIV4_HP],	SMSTPCR2, 29, 0), /* INTCA */
+ 	[MSTP222] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR2, 22, 0), /* SCIFA7 */
+ 	[MSTP218] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],  SMSTPCR2, 18, 0), /* DMAC1 */
+ 	[MSTP217] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],  SMSTPCR2, 17, 0), /* DMAC2 */
+@@ -575,6 +576,10 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-dma-engine.0",	&mstp_clks[MSTP218]),
+ 	CLKDEV_DEV_ID("sh-sci.7",		&mstp_clks[MSTP222]),
+ 	CLKDEV_DEV_ID("e6cd0000.serial",	&mstp_clks[MSTP222]),
++	CLKDEV_DEV_ID("renesas_intc_irqpin.0",	&mstp_clks[MSTP229]),
++	CLKDEV_DEV_ID("renesas_intc_irqpin.1",	&mstp_clks[MSTP229]),
++	CLKDEV_DEV_ID("renesas_intc_irqpin.2",	&mstp_clks[MSTP229]),
++	CLKDEV_DEV_ID("renesas_intc_irqpin.3",	&mstp_clks[MSTP229]),
+ 	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
+ 	CLKDEV_DEV_ID("e6cc0000.serial",	&mstp_clks[MSTP230]),
+ 
 -- 
-1.9.1
+2.1.1
 
