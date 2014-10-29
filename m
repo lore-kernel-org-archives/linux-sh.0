@@ -1,106 +1,40 @@
-From: Chai Wen <chaiw.fnst@cn.fujitsu.com>
-Date: Thu, 30 Oct 2014 10:50:49 +0000
-Subject: Re: [PATCH] ARM: shmobile: koelsch: Fix flash partition label and size in device tree
-Message-Id: <54521809.4000208@cn.fujitsu.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 29 Oct 2014 14:28:38 +0000
+Subject: [PATCH 3/3] ARM: shmobile: koelsch dts: Drop console= bootargs parameter
+Message-Id: <1414592918-25138-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414648469-29947-1-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdUAYJfLtMwzwOvsqaoDtXPW=q2yQLUH9+jQDB+A2JHX9Q@mail.gmail.com>
-In-Reply-To: <CAMuHMdUAYJfLtMwzwOvsqaoDtXPW=q2yQLUH9+jQDB+A2JHX9Q@mail.gmail.com>
+References: <1414592918-25138-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1414592918-25138-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, devicetree@vger.kernel.org
 
-On 10/30/2014 06:23 PM, Geert Uytterhoeven wrote:
+Since commit 595c6a4bb77f0096 ("ARM: shmobile: koelsch: Remove legacy C
+board code"), koelsch is restricted to booting from DT, so
+chosen/stdout-path is always used, and we can drop the "console="
+parameter from chosen/bootargs.
 
-> On Thu, Oct 30, 2014 at 6:54 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
->> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
->>
->> The size and the name of flash partition are consistent
->> across use the R-Car Gen2 series.
->>
->> This patch makes the koelsch board consistent with the lager board.
-> 
-> Does this match the actual data in the FLASH?
-> 
-> On my board, the SPI boot loader is at 0x00000000.
-> There's also a small unidentified chunk at 0x00040000:
-> 
->     00040000  00 40 30 e6 5c 3a 03 00  ff ff ff ff ff ff ff ff
-> |.@0.\:..........|
-> 
-> u-Boot seems to be at 0x00080000.
-> u-Boot environment variables are saved at 0x000c0000.
-> This does match the old "bootenv" partition.
-> 
-> After that it's all-zeroes until 0x00100000, where I did my SPI tests,
-> based on the old layout.
-> 
-> Do I have a non-standard Koelsch FLASH layout on my board?
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: devicetree@vger.kernel.org
+---
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-
-
-FYI, I have a koelsch board, and the layout out the flash is like:
-
-0x0            0x10000               0x50000            
-|-- loader.bin --|--    uboot.bin    --|--           something else  --|
-0               64K                   320K                             16M
-
-But, I have no idea whether this is a standard layout or not.
-
-thanks
-chai wen
-
-> 
->> --- a/arch/arm/boot/dts/r8a7791-koelsch.dts
->> +++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
->> @@ -390,17 +390,17 @@
->>
->>                 partition@0 {
->>                         label = "loader";
->> -                       reg = <0x00000000 0x00080000>;
->> +                       reg = <0x00000000 0x00040000>;
->>                         read-only;
->>                 };
->> -               partition@80000 {
->> -                       label = "bootenv";
->> -                       reg = <0x00080000 0x00080000>;
->> +               partition@40000 {
->> +                       label = "user";
->> +                       reg = <0x00040000 0x00400000>;
->>                         read-only;
->>                 };
->> -               partition@100000 {
->> -                       label = "data";
->> -                       reg = <0x00100000 0x03f00000>;
->> +               partition@440000 {
->> +                       label = "flash";
->> +                       reg = <0x00440000 0x03bc0000>;
->>                 };
->>         };
->>  };
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> .
-> 
-
-
-
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 191f32bc43ea6dad..523ae4d807b907b2 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -25,7 +25,7 @@
+ 	};
+ 
+ 	chosen {
+-		bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
++		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
+ 		stdout-path = &scif0;
+ 	};
+ 
 -- 
-Regards
+1.9.1
 
-Chai Wen
