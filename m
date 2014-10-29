@@ -1,34 +1,40 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 07 Oct 2014 11:11:16 +0000
-Subject: [PATCH v2 3/3] arm: shmobile: henninger: enable HS-USB
-Message-Id: <1412680276-3344-4-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 29 Oct 2014 14:28:35 +0000
+Subject: [PATCH 0/3] ARM: shmobile: koelsch: Removal cleanups
+Message-Id: <1414592918-25138-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412680276-3344-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1412680276-3344-1-git-send-email-yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org, linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org
-Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- arch/arm/boot/dts/r8a7791-henninger.dts |    5 +++++
- 1 file changed, 5 insertions(+)
+	Hi Simon, Magnus,
 
-diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
-index ef2cb92..8fc7802 100644
---- a/arch/arm/boot/dts/r8a7791-henninger.dts
-+++ b/arch/arm/boot/dts/r8a7791-henninger.dts
-@@ -300,3 +300,8 @@
- 		};
- 	};
- };
-+
-+&hsusb {
-+	status = "okay";
-+	renesas,enable-gpio = <&gpio5 31 GPIO_ACTIVE_HIGH>;
-+};
+This patch series does some cleanups after the removal of koelsch-legacy
+support.
+
+Thanks for applying!
+
+Geert Uytterhoeven (3):
+  MAINTAINERS: Remove reference to shmobile / koelsch_defconfig
+  ARM: dts: koelsch: Stop building r8a7791-koelsch.dtb in legacy builds
+  ARM: shmobile: koelsch dts: Drop console= bootargs parameter
+
+ MAINTAINERS                           | 1 -
+ arch/arm/boot/dts/Makefile            | 1 -
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
+ 3 files changed, 1 insertion(+), 3 deletions(-)
+
 -- 
-1.7.9.5
+1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
