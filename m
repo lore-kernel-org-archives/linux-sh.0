@@ -1,121 +1,64 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 26 Oct 2014 14:11:13 +0000
-Subject: [PATCH v5 08/14] ARM: shmobile: koelsch-reference: Remove DU platform device
-Message-Id: <1414332679-15497-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 29 Oct 2014 04:59:54 +0000
+Subject: [PATCH 4/4] ARM: shmobile: r8a73a4: Remove empty r8a73a4_add_dt_devices
+Message-Id: <fd3edcbe9f7bf24b13cadca7616f8e10bbe7e2b3.1414557047.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1414557047.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1414557047.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The DU device is now instantiated from the device tree, remove the
-corresponding platform device.
+r8a73a4_add_dt_devices() no longer enables any devices
+so remove it.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-koelsch-reference.c | 73 ------------------------
- 1 file changed, 73 deletions(-)
+ arch/arm/mach-shmobile/board-ape6evm-reference.c | 1 -
+ arch/arm/mach-shmobile/r8a73a4.h                 | 1 -
+ arch/arm/mach-shmobile/setup-r8a73a4.c           | 4 ----
+ 3 files changed, 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index 46aa540133d6..c3708180e69e 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -19,87 +19,15 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
+diff --git a/arch/arm/mach-shmobile/board-ape6evm-reference.c b/arch/arm/mach-shmobile/board-ape6evm-reference.c
+index a6503d8..7c7c6f7 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm-reference.c
++++ b/arch/arm/mach-shmobile/board-ape6evm-reference.c
+@@ -48,7 +48,6 @@ static void __init ape6evm_add_standard_devices(void)
+ 	clk_put(parent);
+ 	clk_put(mp);
  
--#include <linux/dma-mapping.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
--#include <linux/platform_data/rcar-du.h>
+-	r8a73a4_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
  
- #include <asm/mach/arch.h>
+diff --git a/arch/arm/mach-shmobile/r8a73a4.h b/arch/arm/mach-shmobile/r8a73a4.h
+index 5fafd6f..70dcd84 100644
+--- a/arch/arm/mach-shmobile/r8a73a4.h
++++ b/arch/arm/mach-shmobile/r8a73a4.h
+@@ -11,7 +11,6 @@ enum {
+ };
  
--#include "clock.h"
- #include "common.h"
--#include "irqs.h"
- #include "r8a7791.h"
- #include "rcar-gen2.h"
+ void r8a73a4_add_standard_devices(void);
+-void r8a73a4_add_dt_devices(void);
+ void r8a73a4_clock_init(void);
+ void r8a73a4_pinmux_init(void);
  
--/* DU */
--static struct rcar_du_encoder_data koelsch_du_encoders[] = {
--	{
--		.type = RCAR_DU_ENCODER_NONE,
--		.output = RCAR_DU_OUTPUT_LVDS0,
--		.connector.lvds.panel = {
--			.width_mm = 210,
--			.height_mm = 158,
--			.mode = {
--				.pixelclock = 65000000,
--				.hactive = 1024,
--				.hfront_porch = 20,
--				.hback_porch = 160,
--				.hsync_len = 136,
--				.vactive = 768,
--				.vfront_porch = 3,
--				.vback_porch = 29,
--				.vsync_len = 6,
--			},
--		},
--	},
--};
--
--static struct rcar_du_platform_data koelsch_du_pdata = {
--	.encoders = koelsch_du_encoders,
--	.num_encoders = ARRAY_SIZE(koelsch_du_encoders),
--};
--
--static const struct resource du_resources[] __initconst = {
--	DEFINE_RES_MEM(0xfeb00000, 0x40000),
--	DEFINE_RES_MEM_NAMED(0xfeb90000, 0x1c, "lvds.0"),
--	DEFINE_RES_IRQ(gic_spi(256)),
--	DEFINE_RES_IRQ(gic_spi(268)),
--};
--
--static void __init koelsch_add_du_device(void)
+diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
+index 3b7efc0..179f28a 100644
+--- a/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
+@@ -187,10 +187,6 @@ static struct resource cmt1_resources[] = {
+ 					  &cmt##idx##_platform_data,	\
+ 					  sizeof(struct sh_timer_config))
+ 
+-void __init r8a73a4_add_dt_devices(void)
 -{
--	struct platform_device_info info = {
--		.name = "rcar-du-r8a7791",
--		.id = -1,
--		.res = du_resources,
--		.num_res = ARRAY_SIZE(du_resources),
--		.data = &koelsch_du_pdata,
--		.size_data = sizeof(koelsch_du_pdata),
--		.dma_mask = DMA_BIT_MASK(32),
--	};
--
--	platform_device_register_full(&info);
 -}
 -
--/*
-- * This is a really crude hack to provide clkdev support to platform
-- * devices until they get moved to DT.
-- */
--static const struct clk_name clk_names[] __initconst = {
--	{ "du0", "du.0", "rcar-du-r8a7791" },
--	{ "du1", "du.1", "rcar-du-r8a7791" },
--	{ "lvds0", "lvds.0", "rcar-du-r8a7791" },
--};
--
--static void __init koelsch_add_standard_devices(void)
--{
--	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
--
--	koelsch_add_du_device();
--}
--
- static const char * const koelsch_boards_compat_dt[] __initconst = {
- 	"renesas,koelsch",
- 	"renesas,koelsch-reference",
-@@ -110,7 +38,6 @@ DT_MACHINE_START(KOELSCH_DT, "koelsch")
- 	.smp		= smp_ops(r8a7791_smp_ops),
- 	.init_early	= shmobile_init_delay,
- 	.init_time	= rcar_gen2_timer_init,
--	.init_machine	= koelsch_add_standard_devices,
- 	.init_late	= shmobile_init_late,
- 	.reserve	= rcar_gen2_reserve,
- 	.dt_compat	= koelsch_boards_compat_dt,
+ /* DMA */
+ static const struct sh_dmae_slave_config dma_slaves[] = {
+ 	{
 -- 
-2.0.4
+2.1.1
 
