@@ -1,57 +1,90 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 30 Oct 2014 14:26:34 +0000
-Subject: Re: [PATCH v4 0/5] R-Car Gen2 DMA Controller driver
-Message-Id: <20141030142634.GF23852@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="O98KdSgI27dgYlM5"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 29 Oct 2014 04:59:40 +0000
+Subject: [PATCH] ARM: shmobile: armadillo800eva: Sort includes
+Message-Id: <f4115f25c11790646351df243dae070a7cf80163.1414557660.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414628894-24460-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1414628894-24460-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-To: linux-sh@vger.kernel.org
+References: <cover.1414557660.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1414557660.git.horms+renesas@verge.net.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+Sorted includes seems to be the done thing these days.
 
---O98KdSgI27dgYlM5
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 40 +++++++++++++-------------
+ 1 file changed, 20 insertions(+), 20 deletions(-)
 
-On Thu, Oct 30, 2014 at 02:28:09AM +0200, Laurent Pinchart wrote:
-> Hello,
->=20
-> This patch sets adds a new driver for the DMA controller found in the R-C=
-ar
-> Gen2 SoCs under the name "Direct Memory Access Controller for System
-> (SYS-DMAC)". Support for the "Realtime Direct Memory Access Controller
-> (RT-DMAC)" and "Direct Memory Access Controller for Audio (Audio-DMAC)" w=
-ill
-> be added later.
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index e709835..f19459a 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -22,43 +22,43 @@
+ #include <linux/clk.h>
+ #include <linux/delay.h>
+ #include <linux/err.h>
+-#include <linux/kernel.h>
+-#include <linux/input.h>
+-#include <linux/platform_data/st1232_pdata.h>
+-#include <linux/irq.h>
+-#include <linux/platform_device.h>
+ #include <linux/gpio.h>
+ #include <linux/gpio_keys.h>
+-#include <linux/regulator/driver.h>
++#include <linux/i2c-gpio.h>
++#include <linux/input.h>
++#include <linux/irq.h>
++#include <linux/kernel.h>
++#include <linux/mfd/tmio.h>
++#include <linux/mmc/host.h>
++#include <linux/mmc/sh_mmcif.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/pinctrl/machine.h>
++#include <linux/platform_data/st1232_pdata.h>
++#include <linux/platform_device.h>
+ #include <linux/pwm.h>
+ #include <linux/pwm_backlight.h>
++#include <linux/reboot.h>
++#include <linux/regulator/driver.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/gpio-regulator.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/sh_eth.h>
+-#include <linux/videodev2.h>
+ #include <linux/usb/renesas_usbhs.h>
+-#include <linux/mfd/tmio.h>
+-#include <linux/mmc/host.h>
+-#include <linux/mmc/sh_mmcif.h>
+-#include <linux/mmc/sh_mobile_sdhi.h>
+-#include <linux/i2c-gpio.h>
+-#include <linux/reboot.h>
++#include <linux/videodev2.h>
+ 
+-#include <media/mt9t112.h>
+-#include <media/sh_mobile_ceu.h>
+-#include <media/soc_camera.h>
+-#include <asm/page.h>
++#include <asm/hardware/cache-l2x0.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
+ #include <asm/mach/time.h>
+-#include <asm/hardware/cache-l2x0.h>
+-#include <video/sh_mobile_lcdc.h>
+-#include <video/sh_mobile_hdmi.h>
++#include <asm/page.h>
++#include <media/mt9t112.h>
++#include <media/sh_mobile_ceu.h>
++#include <media/soc_camera.h>
+ #include <sound/sh_fsi.h>
+ #include <sound/simple_card.h>
++#include <video/sh_mobile_hdmi.h>
++#include <video/sh_mobile_lcdc.h>
+ 
+ #include "common.h"
+ #include "irqs.h"
+-- 
+2.1.1
 
-This series works fine with my soon to be published I2C DMA support
-patches \o/
-
-Tested-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-
-
---O98KdSgI27dgYlM5
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJUUkqZAAoJEBQN5MwUoCm2Hy4P/RuOfu0BE8FKYINZFC+1rSfz
-YzF+3uxVxuOfP20XuuxLUMSjK0Lel0iE6PBzLhBr7WGelfJsbOyFKDP6zgo8IXUt
-Nfz1zHsz7+j0/6RGQzJTmbp+Bk3yzz5ekmau/c4mRpmNrl/ImehqhXOVm2as1ipi
-l8tc+/LWY2dYpnFbDxjklwDjoCusYVB/lLSn1KBIU5dc0+BZbR8Q2wM274YBRZCL
-J1hGyo55Ey65Y0qI43zUjQnOKdWv8lzGJdzs5NAigrn/6Y/5I71XjGSj4y/BlyEn
-dhodVOEqjJIr01AhY/l6ZjwJl50vpHP/drXEg6h2fNCekvdJ09WxCyyCK7bEY1J6
-lnoeWuxxXlo4YAaIcfMM8AvSyVQP9y8XYrAIRwy+PPNMcZ5dP1DsUjCQphEhuRIB
-F4REcaabgK0aLLuxrUpzTujr/PxTxQekVxxFphv8yrRkXMO3LywB5fIF17nZHTR2
-UHvp1NDVzrQFt0MxlDkOBz7KGS665IWbPhgkBQcTFsUNDhOR/NkZXCZQNEIZxsHf
-p08UJ1/ogvA9hCDqD29RwoHaeWO3i3iadmFs4fJXGuQvFmGz/zNfgMBum46JHVVI
-bXF7OAVV96rDNkdeWh6RTHNTww20qU9zmcQKXOPj72alRtSoiWR9N///LJUbuVBb
-Ygagq3gRCNFFIQb3KyNY
-=NAW5
------END PGP SIGNATURE-----
-
---O98KdSgI27dgYlM5--
