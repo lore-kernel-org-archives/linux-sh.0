@@ -1,69 +1,41 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 23 Oct 2014 11:18:50 +0000
-Subject: [PATCH v3 00/11] ARM: shmobile: r8a7740/armadillo800eva legacy PM domain support
-Message-Id: <1414063141-8856-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 29 Oct 2014 04:59:20 +0000
+Subject: [PATCH 14/19] ARM: shmobile: lager dts: Add chosen/stdout-path
+Message-Id: <cf8558160747694f6011fe26aad79d50f3a40554.1414556944.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1414556943.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1414556943.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-	Hi Simon, Magnus,
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-This series improves PM domain support for r8a7740/armadillo800eva legacy,
-mimicking (parts of) the existing PM domain support for sh7372/mackerel.
+Add a stdout-path property so that automatic console selection works
+in the absence of a "console=" parameter on the kernel command line.
 
-More specifically, it
-  - Adds missing devices to existing PM domains,
-  - Adds missing PM domains, hooking up devices and subdomains.
+Note that we have to keep the "console=" parameter in chosen/bootargs,
+as this DTS is shared between legacy and multi-platform.
 
-This series is based on renesas-devel-20141016-v3.17, but working resume from
-s2ram depends on a fix for sh_mobile_hdmi which is only in v3.18-rc1.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 1 +
+ 1 file changed, 1 insertion(+)
 
-Changes in v3:
-  - Keep D4 PM domain powered, until the ARM debug/perf code uses resource
-    management with runtime PM support.
-
-Changes in v2:
-  - Dropped FIXMes on behavior that turned out to be expected,
-  - Hook up the HDMI-Link hardware block,
-  - Really add the A4MP and D4 PM domains, as fixes are available,
-  - Move special CPU domain handling from A4S to A3SM.
-
-Please apply, after merging in v3.18-rc1.
-
-Thanks!
-
-Geert Uytterhoeven (11):
-  ARM: shmobile: r8a7740: Add missing A3SP pm domain devices
-  ARM: shmobile: r8a7740: Add missing A4S pm domain devices
-  ARM: shmobile: armadillo800eva legacy: Add missing A3SP pm domain
-    devices
-  ARM: shmobile: armadillo800eva legacy: Add missing A4S pm domain
-    devices
-  ARM: shmobile: r8a7740: Add A3RV pm domain support
-  ARM: shmobile: r8a7740: Add A3SG pm domain support
-  ARM: shmobile: r8a7740/armadillo legacy: Add A4MP pm domain support
-  ARM: shmobile: r8a7740: Add D4 pm domain support
-  ARM: shmobile: r8a7740/armadillo legacy: Add A4R pm domain support
-  ARM: shmobile: r8a7740: Add A4SU pm domain support
-  ARM: shmobile: r8a7740: Add A3SM pm domain support
-
- arch/arm/mach-shmobile/board-armadillo800eva.c | 12 ++++++-
- arch/arm/mach-shmobile/pm-r8a7740.c            | 44 +++++++++++++++++++++++---
- arch/arm/mach-shmobile/setup-r8a7740.c         | 11 +++++++
- 3 files changed, 62 insertions(+), 5 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 69098b9..854c13e 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -25,6 +25,7 @@
+ 
+ 	chosen {
+ 		bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
++		stdout-path = &scifa0;
+ 	};
+ 
+ 	memory@40000000 {
 -- 
-1.9.1
+2.1.1
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
