@@ -1,88 +1,91 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Tue, 21 Oct 2014 05:10:28 +0000
-Subject: [PATCH v3 2/3] media: soc_camera: rcar_vin: Add capture width check for NV16 format
-Message-Id: <1413868229-22205-3-git-send-email-ykaneko0929@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 29 Oct 2014 14:19:13 +0000
+Subject: [PATCH 6/6] ARM: shmobile: r8a7794 dtsi: Change to using clock-indices
+Message-Id: <1414592353-24044-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1413868229-22205-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1413868229-22205-1-git-send-email-ykaneko0929@gmail.com>
+References: <1414592353-24044-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1414592353-24044-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: Mike Turquette <mturquette-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Ben Dooks <ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+With the addition of clock-indices in commit 8e33f91a0b84ae19 ("clk:
+shmobile: clk-mstp: change to using clock-indices"), we can change the
+DTSes to use the generic property instead of the deprecated
+vendor-specific property.
 
-At the time of NV16 capture format, the user has to specify the
-capture output width of the multiple of 32 for H/W specification.
-At the time of using NV16 format by ioctl of VIDIOC_S_FMT,
-this patch adds align check and the error handling to forbid
-specification of the capture output width which is not a multiple of 32.
-
-Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+ arch/arm/boot/dts/r8a7794.dtsi | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
 
-v3 [Yoshihiro Kaneko]
-* fixes some code-style and remove useless error flag as suggested by
-  Sergei Shtylyov
-
-v2 [Yoshihiro Kaneko]
-* use u32 instead of unsigned long
-
- drivers/media/platform/soc_camera/rcar_vin.c | 18 ++++++++++++++++--
- 1 file changed, 16 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-index dd6daab..ecdbd48 100644
---- a/drivers/media/platform/soc_camera/rcar_vin.c
-+++ b/drivers/media/platform/soc_camera/rcar_vin.c
-@@ -644,7 +644,7 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
- 	/* output format */
- 	switch (icd->current_fmt->host_fmt->fourcc) {
- 	case V4L2_PIX_FMT_NV16:
--		iowrite32(ALIGN(cam->width * cam->height, 0x80),
-+		iowrite32(ALIGN(ALIGN(cam->width, 0x20) * cam->height, 0x80),
- 			  priv->base + VNUVAOF_REG);
- 		dmr = VNDMR_DTMD_YCSEP;
- 		output_is_yuv = true;
-@@ -1086,6 +1086,7 @@ static int rcar_vin_set_rect(struct soc_camera_device *icd)
- 	unsigned char dsize = 0;
- 	struct v4l2_rect *cam_subrect = &cam->subrect;
- 	u32 value;
-+	u32 vnis;
- 
- 	dev_dbg(icd->parent, "Crop %ux%u@%u:%u\n",
- 		icd->user_width, icd->user_height, cam->vin_left, cam->vin_top);
-@@ -1163,7 +1164,11 @@ static int rcar_vin_set_rect(struct soc_camera_device *icd)
- 		break;
- 	}
- 
--	iowrite32(ALIGN(cam->out_width, 0x10), priv->base + VNIS_REG);
-+	if (icd->current_fmt->host_fmt->fourcc = V4L2_PIX_FMT_NV16)
-+		vnis = ALIGN(cam->out_width, 0x20);
-+	else
-+		vnis = ALIGN(cam->out_width, 0x10);
-+	iowrite32(vnis, priv->base + VNIS_REG);
- 
- 	return 0;
- }
-@@ -1605,6 +1610,15 @@ static int rcar_vin_set_fmt(struct soc_camera_device *icd,
- 	dev_dbg(dev, "S_FMT(pix=0x%x, %ux%u)\n",
- 		pixfmt, pix->width, pix->height);
- 
-+	/*
-+	 * At the time of NV16 capture format, the user has to specify the
-+	 * width of the multiple of 32 for H/W specification.
-+	 */
-+	if ((pixfmt = V4L2_PIX_FMT_NV16) && (pix->width & 0x1F)) {
-+		dev_err(icd->parent, "Specified width error in NV16 format.\n");
-+		return -EINVAL;
-+	}
-+
- 	switch (pix->field) {
- 	default:
- 		pix->field = V4L2_FIELD_NONE;
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 088e79c6551ca4b8..b9539fea92392140 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -455,7 +455,7 @@
+ 			reg = <0 0xe6150130 0 4>, <0 0xe6150030 0 4>;
+ 			clocks = <&mp_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <R8A7794_CLK_MSIOF0>;
++			clock-indices = <R8A7794_CLK_MSIOF0>;
+ 			clock-output-names = "msiof0";
+ 		};
+ 		mstp1_clks: mstp1_clks@e6150134 {
+@@ -465,7 +465,7 @@
+ 				 <&cp_clk>,
+ 				 <&zs_clk>, <&zs_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7794_CLK_TMU1 R8A7794_CLK_TMU3 R8A7794_CLK_TMU2
+ 				R8A7794_CLK_CMT0 R8A7794_CLK_TMU0
+ 			>;
+@@ -478,7 +478,7 @@
+ 			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
+ 				 <&mp_clk>, <&mp_clk>, <&mp_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7794_CLK_SCIFA2 R8A7794_CLK_SCIFA1 R8A7794_CLK_SCIFA0
+ 				R8A7794_CLK_MSIOF2 R8A7794_CLK_SCIFB0 R8A7794_CLK_SCIFB1
+ 				R8A7794_CLK_MSIOF1 R8A7794_CLK_SCIFB2
+@@ -492,7 +492,7 @@
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+ 			clocks = <&rclk_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7794_CLK_CMT1
+ 			>;
+ 			clock-output-names @@ -504,7 +504,7 @@
+ 			clocks = <&zs_clk>, <&p_clk>, <&p_clk>, <&zs_clk>,
+ 				 <&zs_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7794_CLK_HSCIF2 R8A7794_CLK_SCIF5
+ 				R8A7794_CLK_SCIF4 R8A7794_CLK_HSCIF1 R8A7794_CLK_HSCIF0
+ 				R8A7794_CLK_SCIF3 R8A7794_CLK_SCIF2 R8A7794_CLK_SCIF1
+@@ -519,7 +519,7 @@
+ 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
+ 			clocks = <&p_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7794_CLK_ETHER
+ 			>;
+ 			clock-output-names @@ -530,7 +530,7 @@
+ 			reg = <0 0xe615099c 0 4>, <0 0xe61509ac 0 4>;
+ 			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7794_CLK_SCIFA3 R8A7794_CLK_SCIFA4 R8A7794_CLK_SCIFA5
+ 			>;
+ 			clock-output-names = "scifa3", "scifa4", "scifa5";
 -- 
 1.9.1
 
