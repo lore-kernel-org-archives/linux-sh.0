@@ -1,62 +1,55 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 29 Oct 2014 08:13:11 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 29 Oct 2014 09:05:03 +0000
 Subject: Re: non-Multiplatform APE6EVM broken in v3.18-rc1
-Message-Id: <CAMuHMdWkP=t2WL64X8vKdOPXW_ZpbibXQ66un8GfVTWoc-o+tw@mail.gmail.com>
+Message-Id: <20141029090502.GA32069@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20141028004131.GA8280@verge.net.au>
-	<CAMuHMdXmOeJowF9FSQtoUzNK4zohvSYm+r3qp41-JigAOJ=+fg@mail.gmail.com>
-	<20141028092305.GA11937@verge.net.au>
-	<CAMuHMdUnwT7a1Gewz3AW-R9EaQBfYkJ2y7ZQ6uW4GaxBAHXzXg@mail.gmail.com>
-	<20141029001258.GE20702@verge.net.au>
-	<20141029020833.GA29787@verge.net.au>
-In-Reply-To: <20141029020833.GA29787@verge.net.au>
+ <CAMuHMdXmOeJowF9FSQtoUzNK4zohvSYm+r3qp41-JigAOJ=+fg@mail.gmail.com>
+ <20141028092305.GA11937@verge.net.au>
+ <CAMuHMdUnwT7a1Gewz3AW-R9EaQBfYkJ2y7ZQ6uW4GaxBAHXzXg@mail.gmail.com>
+ <20141029001258.GE20702@verge.net.au>
+ <20141029020833.GA29787@verge.net.au>
+ <CAMuHMdWkP=t2WL64X8vKdOPXW_ZpbibXQ66un8GfVTWoc-o+tw@mail.gmail.com>
+In-Reply-To: <CAMuHMdWkP=t2WL64X8vKdOPXW_ZpbibXQ66un8GfVTWoc-o+tw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
 Cc: Linux-sh list <linux-sh@vger.kernel.org>, Sudeep Holla <sudeep.holla@arm.com>, Daniel Lezcano <daniel.lezcano@linaro.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-On Wed, Oct 29, 2014 at 3:08 AM, Simon Horman <horms@verge.net.au> wrote:
-> On Wed, Oct 29, 2014 at 09:12:58AM +0900, Simon Horman wrote:
->> On Tue, Oct 28, 2014 at 10:32:32AM +0100, Geert Uytterhoeven wrote:
->> > On Tue, Oct 28, 2014 at 10:23 AM, Simon Horman <horms@verge.net.au> wrote:
->> > > On Tue, Oct 28, 2014 at 08:59:28AM +0100, Geert Uytterhoeven wrote:
->> > >> On Tue, Oct 28, 2014 at 1:41 AM, Simon Horman <horms@verge.net.au> wrote:
->> > >> > I have noticed that there appears to be a regression between v3.17 and
->> > >> > v3.18-rc1 such that non-multiplatform APE6EVM (ape6evm_defconfig) no longer
->> > >> > boots.  This appears to be the case using both reference DT (MACH_APE6EVM)
+On Wed, Oct 29, 2014 at 09:13:11AM +0100, Geert Uytterhoeven wrote:
+> On Wed, Oct 29, 2014 at 3:08 AM, Simon Horman <horms@verge.net.au> wrote:
+> > On Wed, Oct 29, 2014 at 09:12:58AM +0900, Simon Horman wrote:
+> >> On Tue, Oct 28, 2014 at 10:32:32AM +0100, Geert Uytterhoeven wrote:
+> >> > On Tue, Oct 28, 2014 at 10:23 AM, Simon Horman <horms@verge.net.au> wrote:
+> >> > > On Tue, Oct 28, 2014 at 08:59:28AM +0100, Geert Uytterhoeven wrote:
+> >> > >> On Tue, Oct 28, 2014 at 1:41 AM, Simon Horman <horms@verge.net.au> wrote:
+> >> > >> > I have noticed that there appears to be a regression between v3.17 and
+> >> > >> > v3.18-rc1 such that non-multiplatform APE6EVM (ape6evm_defconfig) no longer
+> >> > >> > boots.  This appears to be the case using both reference DT (MACH_APE6EVM)
+> 
+> > It seems that the boot stops here:
+> >
+> > ...
+> > smsc911x smsc911x eth0: MAC Address: 00:08:f7:00:02:4b
+> > rcar_thermal rcar_thermal: Runtime PM disabled, clock forced on.
+> > rcar_thermal rcar_thermal: 3 sensor probed
+> > sh_mobile_sdhi sh_mobile_sdhi.0: Runtime PM disabled, clock forced on.
+> > sh_mobile_sdhi sh_mobile_sdhi.0: No vqmmc regulator found
+> >
+> > I re-ran my bisection and this time the following showed up as the culprit.
+> >
+> > I suspect that the initialisation of mmcif, which is usually the next
+> > device to be initialised, sleeps and never wakes up because the timer is
+> > disabled.
+> >
+> > commit c387f07e6205cc13f57c1def5f885bf0a20e1c2d
+> > Author: Sudeep Holla <sudeep.holla@arm.com>
+> > Date:   Mon Sep 29 01:50:05 2014 +0200
+> >
+> >     clocksource: arm_arch_timer: Discard unavailable timers correctly
+> 
+> Apparently reported and fixed by Laurent and a few others, cfr.
+> http://www.spinics.net/lists/arm-kernel/msg371615.html
 
-> It seems that the boot stops here:
->
-> ...
-> smsc911x smsc911x eth0: MAC Address: 00:08:f7:00:02:4b
-> rcar_thermal rcar_thermal: Runtime PM disabled, clock forced on.
-> rcar_thermal rcar_thermal: 3 sensor probed
-> sh_mobile_sdhi sh_mobile_sdhi.0: Runtime PM disabled, clock forced on.
-> sh_mobile_sdhi sh_mobile_sdhi.0: No vqmmc regulator found
->
-> I re-ran my bisection and this time the following showed up as the culprit.
->
-> I suspect that the initialisation of mmcif, which is usually the next
-> device to be initialised, sleeps and never wakes up because the timer is
-> disabled.
->
-> commit c387f07e6205cc13f57c1def5f885bf0a20e1c2d
-> Author: Sudeep Holla <sudeep.holla@arm.com>
-> Date:   Mon Sep 29 01:50:05 2014 +0200
->
->     clocksource: arm_arch_timer: Discard unavailable timers correctly
-
-Apparently reported and fixed by Laurent and a few others, cfr.
-http://www.spinics.net/lists/arm-kernel/msg371615.html
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Great!
