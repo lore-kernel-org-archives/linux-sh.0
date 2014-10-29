@@ -1,76 +1,60 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 26 Oct 2014 15:24:21 +0000
-Subject: [PATCH v3 2/9] drm: rcar-du: Pass the encoder DT node to rcar_du_encoder_init()
-Message-Id: <1414337068-28664-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 29 Oct 2014 04:59:07 +0000
+Subject: [PATCH 01/19] ARM: dts: Sort SHMOBILE dtbs alphabetically
+Message-Id: <c9095970ceb8f46ede77d1de7ed0275099e55d2a.1414556943.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414337068-28664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1414337068-28664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1414556943.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1414556943.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The encoder DT node will be needed to register an external HDMI encoder.
-Pass it to the rcar_du_encoder_init() function to prepare for HDMI
-support.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+[horms+renesas@verge.net.au:  update for addition of r8a7794-alt.dtb]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_encoder.c | 5 +++--
- drivers/gpu/drm/rcar-du/rcar_du_encoder.h | 3 ++-
- drivers/gpu/drm/rcar-du/rcar_du_kms.c     | 2 +-
- 3 files changed, 6 insertions(+), 4 deletions(-)
+ arch/arm/boot/dts/Makefile | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-index 89ed4a929f7b..c699100a1359 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-@@ -142,7 +142,8 @@ static const struct drm_encoder_funcs encoder_funcs = {
- int rcar_du_encoder_init(struct rcar_du_device *rcdu,
- 			 enum rcar_du_encoder_type type,
- 			 enum rcar_du_output output,
--			 struct device_node *np)
-+			 struct device_node *enc_node,
-+			 struct device_node *con_node)
- {
- 	struct rcar_du_encoder *renc;
- 	unsigned int encoder_type;
-@@ -190,7 +191,7 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
- 
- 	switch (encoder_type) {
- 	case DRM_MODE_ENCODER_LVDS:
--		return rcar_du_lvds_connector_init(rcdu, renc, np);
-+		return rcar_du_lvds_connector_init(rcdu, renc, con_node);
- 
- 	case DRM_MODE_ENCODER_DAC:
- 		return rcar_du_vga_connector_init(rcdu, renc);
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-index c37ed9499542..4b906b90c204 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-@@ -49,6 +49,7 @@ rcar_du_connector_best_encoder(struct drm_connector *connector);
- int rcar_du_encoder_init(struct rcar_du_device *rcdu,
- 			 enum rcar_du_encoder_type type,
- 			 enum rcar_du_output output,
--			 struct device_node *np);
-+			 struct device_node *enc_node,
-+			 struct device_node *con_node);
- 
- #endif /* __RCAR_DU_ENCODER_H__ */
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-index c6a7fd604d46..bd3b7c48ce1f 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-@@ -289,7 +289,7 @@ static int rcar_du_encoders_init_one(struct rcar_du_device *rcdu,
- 		connector = entity;
- 	}
- 
--	ret = rcar_du_encoder_init(rcdu, enc_type, output, connector);
-+	ret = rcar_du_encoder_init(rcdu, enc_type, output, encoder, connector);
- 	of_node_put(encoder);
- 	of_node_put(connector);
- 
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 38c89ca..88282c8 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -377,24 +377,24 @@ dtb-$(CONFIG_ARCH_S5PV210) += s5pv210-aquila.dtb \
+ 	s5pv210-smdkv210.dtb \
+ 	s5pv210-torbreck.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += r7s72100-genmai.dtb \
++	r8a73a4-ape6evm.dtb \
++	r8a73a4-ape6evm-reference.dtb \
+ 	r8a7740-armadillo800eva.dtb \
+ 	r8a7778-bockw.dtb \
+ 	r8a7778-bockw-reference.dtb \
+ 	r8a7779-marzen.dtb \
+-	r8a7791-koelsch.dtb \
+ 	r8a7790-lager.dtb \
++	r8a7791-koelsch.dtb \
++	sh7372-mackerel.dtb \
+ 	sh73a0-kzm9g.dtb \
+-	sh73a0-kzm9g-reference.dtb \
+-	r8a73a4-ape6evm.dtb \
+-	r8a73a4-ape6evm-reference.dtb \
+-	sh7372-mackerel.dtb
++	sh73a0-kzm9g-reference.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
+ 	r7s72100-genmai.dtb \
+ 	r8a7740-armadillo800eva.dtb \
++	r8a7779-marzen.dtb \
++	r8a7790-lager.dtb \
+ 	r8a7791-henninger.dtb \
+ 	r8a7791-koelsch.dtb \
+-	r8a7790-lager.dtb \
+-	r8a7779-marzen.dtb \
+ 	r8a7794-alt.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
+ 	socfpga_cyclone5_socdk.dtb \
 -- 
-2.0.4
+2.1.1
 
