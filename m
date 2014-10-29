@@ -1,71 +1,42 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 08 Oct 2014 19:55:59 +0000
-Subject: [PATCH v4 2/2] ARM: shmobile: lager: enable HS-USB
-Message-Id: <2455064.TG6DqQLVoV@wasted.cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 29 Oct 2014 04:59:23 +0000
+Subject: [PATCH 17/19] ARM: shmobile: alt dts: Add chosen/stdout-path
+Message-Id: <b4a0f50cc70fef466e5b9935519b8213611e75bb.1414556944.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1674850.BZpGW9kEud@wasted.cogentembedded.com>
-In-Reply-To: <1674850.BZpGW9kEud@wasted.cogentembedded.com>
+References: <cover.1414556943.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1414556943.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Enable HS-USB device for the Lager board, defining the GPIO that the driver
-should check when probing. Since this board doesn't have the OTG ID pin, we
-assume that GP5_18 (USB0_PWEN) is an ID pin because it is 1 when the SW5 is
-in position 2-3 (meaning USB function) and 0 in other positions.
+Add a stdout-path property so that automatic console selection works
+in the absence of a "console=" parameter on the kernel command line.
 
-Note that there will be pinctrl-related error messages if both internal PCI
-and HS-USB drivers are enabled but they should be just ignored.
+Note that we have to keep the "console=ttySC0,38400" parameter in
+chosen/bootargs, else the console will use the default setting of 115200
+baud.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-[Sergei: added pin node and prop, moved device node, fixed summary, supplemented
-changelog]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes in version 4:
-- fixed pin node name;
-- moved pin node before USB0's one.
+ arch/arm/boot/dts/r8a7794-alt.dts | 1 +
+ 1 file changed, 1 insertion(+)
 
-Changes in version 3:
-- added pin function/group and the pinctrl-related prop;
-- moved the HS-USB node to precede the USB PHY node;
-- uppercased "arm" in the summary;
-- supplemented changelog.
-
- arch/arm/boot/dts/r8a7790-lager.dts |   12 ++++++++++++
- 1 file changed, 12 insertions(+)
-
-Index: renesas/arch/arm/boot/dts/r8a7790-lager.dts
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7790-lager.dts
-+++ renesas/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -221,6 +221,11 @@
- 		renesas,function = "iic3";
+diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
+index 79d06ef..8aec512 100644
+--- a/arch/arm/boot/dts/r8a7794-alt.dts
++++ b/arch/arm/boot/dts/r8a7794-alt.dts
+@@ -21,6 +21,7 @@
+ 
+ 	chosen {
+ 		bootargs = "console=ttySC0,38400 ignore_loglevel rw root=/dev/nfs ip=dhcp";
++		stdout-path = &scif2;
  	};
  
-+	hsusb_pins: hsusb {
-+		renesas,groups = "usb0_ovc_vbus";
-+		renesas,function = "usb0";
-+	};
-+
- 	usb0_pins: usb0 {
- 		renesas,groups = "usb0";
- 		renesas,function = "usb0";
-@@ -425,6 +430,13 @@
- 	pinctrl-names = "default";
- };
- 
-+&hsusb {
-+	status = "okay";
-+	pinctrl-0 = <&hsusb_pins>;
-+	pinctrl-names = "default";
-+	renesas,enable-gpio = <&gpio5 18 GPIO_ACTIVE_HIGH>;
-+};
-+
- &usbphy {
- 	status = "okay";
- };
+ 	memory@40000000 {
+-- 
+2.1.1
 
