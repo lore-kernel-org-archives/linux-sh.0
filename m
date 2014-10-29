@@ -1,53 +1,41 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 24 Oct 2014 10:18:40 +0000
-Subject: [PATCH v2 2/4] mm: cma: Always consider a 0 base address reservation as dynamic
-Message-Id: <1414145922-26042-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 29 Oct 2014 04:59:19 +0000
+Subject: [PATCH 13/19] ARM: shmobile: marzen dts: Add chosen/stdout-path
+Message-Id: <1877a35096a3aebd6e848b688f8a50b75882b7e3.1414556944.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414145922-26042-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1414145922-26042-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1414556943.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1414556943.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The fixed parameter to cma_declare_contiguous() tells the function
-whether the given base address must be honoured or should be considered
-as a hint only. The API considers a zero base address as meaning any
-base address, which must never be considered as a fixed value.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Part of the implementation correctly checks both fixed and base != 0,
-but two locations check the fixed value only. Set fixed to false when
-base is 0 to fix that and simplify the code.
+Add a stdout-path property so that automatic console selection works
+in the absence of a "console=" parameter on the kernel command line.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Michal Nazarewicz <mina86@mina86.com>
+Note that we have to keep the "console=" parameter in chosen/bootargs,
+as this DTS is shared between legacy and multi-platform.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- mm/cma.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7779-marzen.dts | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/mm/cma.c b/mm/cma.c
-index 5aa1a6f74dec..62a5dccc3fb8 100644
---- a/mm/cma.c
-+++ b/mm/cma.c
-@@ -245,6 +245,9 @@ int __init cma_declare_contiguous(phys_addr_t base,
- 	size = ALIGN(size, alignment);
- 	limit &= ~(alignment - 1);
+diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
+index c160404..9e1b859 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen.dts
+@@ -25,6 +25,7 @@
  
-+	if (!base)
-+		fixed = false;
-+
- 	/* size should be aligned with order_per_bit */
- 	if (!IS_ALIGNED(size >> PAGE_SHIFT, 1 << order_per_bit))
- 		return -EINVAL;
-@@ -268,7 +271,7 @@ int __init cma_declare_contiguous(phys_addr_t base,
- 	}
+ 	chosen {
+ 		bootargs = "console=ttySC2,115200 ignore_loglevel root=/dev/nfs ip=on";
++		stdout-path = &scif2;
+ 	};
  
- 	/* Reserve memory */
--	if (base && fixed) {
-+	if (fixed) {
- 		if (memblock_is_region_reserved(base, size) ||
- 		    memblock_reserve(base, size) < 0) {
- 			ret = -EBUSY;
+ 	memory {
 -- 
-2.0.4
+2.1.1
 
