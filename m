@@ -1,80 +1,39 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Tue, 14 Oct 2014 07:01:43 +0000
-Subject: [PATCH 4/4] ARM: shmobile: r8a7791: Add MMP clock to device tree
-Message-Id: <1413270103-9517-5-git-send-email-ykaneko0929@gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 29 Oct 2014 07:35:10 +0000
+Subject: [PATCH] ARM: shmobile: Fix is_e2 warning
+Message-Id: <20141029073510.357.85076.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1413270103-9517-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1413270103-9517-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Fix "is_e2" warning introduced by:
+
+9ce3fa6 ARM: shmobile: rcar-gen2: Add CA7 arch_timer initialization for r8a7794
+
+Only triggers on kernel configurations that have ARCH_ARM_TIMER=n.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/boot/dts/r8a7791.dtsi            | 21 +++++++++++++--------
- include/dt-bindings/clock/r8a7791-clock.h |  8 +++++++-
- 2 files changed, 20 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 5a26c1a..74f18d8 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -947,18 +947,23 @@
- 		mstp1_clks: mstp1_clks@e6150134 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
--			clocks = <&m2_clk>, <&p_clk>, <&zg_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
--				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>;
-+			clocks = <&zs_clk>, <&zs_clk>, <&m2_clk>, <&zs_clk>, <&p_clk>,
-+				 <&zg_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>, <&p_clk>,
-+				 <&p_clk>, <&rclk_clk>, <&cp_clk>, <&zs_clk>, <&zs_clk>,
-+				 <&zs_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
--				R8A7791_CLK_JPU R8A7791_CLK_TMU1 R8A7791_CLK_3DG
--				R8A7791_CLK_TMU3 R8A7791_CLK_TMU2
--				R8A7791_CLK_CMT0 R8A7791_CLK_TMU0 R8A7791_CLK_VSP1_DU1
--				R8A7791_CLK_VSP1_DU0 R8A7791_CLK_VSP1_S
-+				R8A7791_CLK_VCP0 R8A7791_CLK_VPC0 R8A7791_CLK_JPU
-+				R8A7791_CLK_SSP1 R8A7791_CLK_TMU1 R8A7791_CLK_3DG
-+				R8A7791_CLK_2DDMAC R8A7791_CLK_FDP1_1 R8A7791_CLK_FDP1_0
-+				R8A7791_CLK_TMU3 R8A7791_CLK_TMU2 R8A7791_CLK_CMT0
-+				R8A7791_CLK_TMU0 R8A7791_CLK_VSP1_DU1 R8A7791_CLK_VSP1_DU0
-+				R8A7791_CLK_VSP1_S
- 			>;
- 			clock-output-names -				"jpu", "tmu1", "3dg", "tmu3", "tmu2", "cmt0", "tmu0",
--				"vsp1-du1", "vsp1-du0", "vsp1-sy";
-+				"vcp0", "vpc0", "jpu", "ssp1", "tmu1", "3dg",
-+				"2ddmac", "fdp1-1", "fdp1-0", "tmu3", "tmu2", "cmt0",
-+				"tmu0", "vsp1-du1", "vsp1-du0", "vsp1-sy";
- 		};
- 		mstp2_clks: mstp2_clks@e6150138 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index 9570b7c..dcececd 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -25,9 +25,15 @@
- #define R8A7791_CLK_MSIOF0		0
- 
- /* MSTP1 */
--#define R8A7791_CLK_JPU		6
-+#define R8A7791_CLK_VCP0		1
-+#define R8A7791_CLK_VPC0		3
-+#define R8A7791_CLK_JPU			6
-+#define R8A7791_CLK_SSP1		9
- #define R8A7791_CLK_TMU1		11
- #define R8A7791_CLK_3DG			12
-+#define R8A7791_CLK_2DDMAC		15
-+#define R8A7791_CLK_FDP1_1		18
-+#define R8A7791_CLK_FDP1_0		19
- #define R8A7791_CLK_TMU3		21
- #define R8A7791_CLK_TMU2		22
- #define R8A7791_CLK_CMT0		24
--- 
-1.9.1
+ arch/arm/mach-shmobile/setup-rcar-gen2.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
+--- 0001/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ work/arch/arm/mach-shmobile/setup-rcar-gen2.c	2014-10-29 16:06:08.000000000 +0900
+@@ -52,10 +52,10 @@ void __init rcar_gen2_timer_init(void)
+ {
+ #if defined(CONFIG_ARM_ARCH_TIMER) || defined(CONFIG_COMMON_CLK)
+ 	u32 mode = rcar_gen2_read_mode_pins();
+-	bool is_e2 = (bool)of_find_compatible_node(NULL, NULL,
+-		"renesas,r8a7794");
+ #endif
+ #ifdef CONFIG_ARM_ARCH_TIMER
++	bool is_e2 = (bool)of_find_compatible_node(NULL, NULL,
++		"renesas,r8a7794");
+ 	void __iomem *base;
+ 	int extal_mhz = 0;
+ 	u32 freq;
