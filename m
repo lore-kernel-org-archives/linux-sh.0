@@ -1,34 +1,46 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 24 Oct 2014 05:23:56 +0000
-Subject: Re: [PATCH v3 1/3] Add HS-USB device tree support for R8A7791/Koelsch/Henninger board
-Message-Id: <5449E26C.7030602@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 29 Oct 2014 22:35:32 +0000
+Subject: [PATCH 1/2] clk: shmobile: mstp: Update DT bindings to use clock-indices property
+Message-Id: <1414622133-27247-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1511869.4ca9KHmSFr@wasted.cogentembedded.com>
-In-Reply-To: <1511869.4ca9KHmSFr@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: devicetree@vger.kernel.org, Mike Turquette <mturquette@linaro.org>
 
-Hi Simon-san,
+The renesas,clock-indices property got standardized, replace it with
+clock-indices.
 
-(2014/10/09 2:59), Sergei Shtylyov wrote:
-> Hello.
-> 
->    Here's the set of 3 patches against Simon Horman's 'renesas.git' repo,
-> 'renesas-devel-20141007-v3.17' tag. Here we add the HS-USB device tree support
-> on the R8A7791/Koelsch/Henninger reference boards. The patchset requires the
-> USB PHY driver (already merged by Kishon and Greg) and the generic PHY support
-> patches for the HS-USB driver posted by Yoshihiro Shimoda in order to work...
-> 
-> [1/3] ARM: shmobile: r8a7791: add HS-USB device node
-> [2/3] ARM: shmobile: koelsch: enable HS-USB
-> [3/3] ARM: shmobile: henninger: enable HS-USB
+The MSTP clock driver supports both the old and new properties.
 
-I will also rebase this patch set.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ .../devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt         | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-Best regards,
-Yoshihiro Shimoda
+Mike, can you please take this in your tree for v3.19 ?
 
-> WBR, Sergei
-> 
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+index a5f52238c80d..2e18676bd4b5 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+@@ -26,11 +26,11 @@ Required Properties:
+     must appear in the same order as the output clocks.
+   - #clock-cells: Must be 1
+   - clock-output-names: The name of the clocks as free-form strings
+-  - renesas,clock-indices: Indices of the gate clocks into the group (0 to 31)
++  - clock-indices: Indices of the gate clocks into the group (0 to 31)
+ 
+-The clocks, clock-output-names and renesas,clock-indices properties contain one
+-entry per gate clock. The MSTP groups are sparsely populated. Unimplemented
+-gate clocks must not be declared.
++The clocks, clock-output-names and clock-indices properties contain one entry
++per gate clock. The MSTP groups are sparsely populated. Unimplemented gate
++clocks must not be declared.
+ 
+ 
+ Example
+-- 
+2.0.4
+
