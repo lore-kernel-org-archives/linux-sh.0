@@ -1,60 +1,115 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Mon, 27 Oct 2014 07:41:28 +0000
-Subject: Re: [PATCH v2] media: soc_camera: rcar_vin: Enable VSYNC field toggle mode
-Message-Id: <20141027074127.GI21182@verge.net.au>
+Date: Wed, 29 Oct 2014 04:11:04 +0000
+Subject: Re: [PATCH v2] media: soc_camera: rcar_vin: Add BT.709 24-bit RGB888 input support
+Message-Id: <20141029041103.GB29787@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1413950736-8230-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1413950736-8230-1-git-send-email-ykaneko0929@gmail.com>
+References: <1413868129-22121-1-git-send-email-ykaneko0929@gmail.com>
+ <544633D3.5010805@cogentembedded.com>
+ <CAH1o70Jk=dCf3VWqdAJmGzd6TSQFeN=x+FCKExDzaf0BZF0L1A@mail.gmail.com>
+In-Reply-To: <CAH1o70Jk=dCf3VWqdAJmGzd6TSQFeN=x+FCKExDzaf0BZF0L1A@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Cc: linux-media@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Linux Media Mailing List <linux-media@vger.kernel.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
 
-On Wed, Oct 22, 2014 at 01:05:36PM +0900, Yoshihiro Kaneko wrote:
-> From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-> 
-> By applying this patch, it sets to VSYNC field toggle mode not only
-> at the time of progressive mode but at the time of an interlace mode.
-> 
-> Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Hi Kaneko-san, Hi Sergei,
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+On Tue, Oct 21, 2014 at 08:33:52PM +0900, Yoshihiro Kaneko wrote:
+> Hello Sergei,
+> 
+> 2014-10-21 19:22 GMT+09:00 Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>:
+> > Hello.
+> >
+> > On 10/21/2014 9:08 AM, Yoshihiro Kaneko wrote:
+> >
+> >> From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+> >
+> >
+> >> Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+> >> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+> >> ---
+> >
+> >
+> >> This patch is against master branch of linuxtv.org/media_tree.git.
+> >
+> >
+> >> v2 [Yoshihiro Kaneko]
+> >> * remove unused/useless definition as suggested by Sergei Shtylyov
+> >
+> >
+> >    I didn't say it's useless, I just suspected that you missed the necessary
+> > test somewhere...
+> 
+> Sorry for my inaccurate description.
+> 
+> >
+> >>   drivers/media/platform/soc_camera/rcar_vin.c | 9 +++++++++
+> >>   1 file changed, 9 insertions(+)
+> >
+> >
+> >> diff --git a/drivers/media/platform/soc_camera/rcar_vin.c
+> >> b/drivers/media/platform/soc_camera/rcar_vin.c
+> >> index 20defcb..cb5e682 100644
+> >> --- a/drivers/media/platform/soc_camera/rcar_vin.c
+> >> +++ b/drivers/media/platform/soc_camera/rcar_vin.c
+> >> @@ -74,6 +74,7 @@
+> >>   #define VNMC_INF_YUV10_BT656  (2 << 16)
+> >>   #define VNMC_INF_YUV10_BT601  (3 << 16)
+> >>   #define VNMC_INF_YUV16                (5 << 16)
+> >> +#define VNMC_INF_RGB888                (6 << 16)
+> >>   #define VNMC_VUP              (1 << 10)
+> >>   #define VNMC_IM_ODD           (0 << 3)
+> >>   #define VNMC_IM_ODD_EVEN      (1 << 3)
+> >
+> > [...]
+> >>
+> >> @@ -331,6 +336,9 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+> >>         if (output_is_yuv)
+> >>                 vnmc |= VNMC_BPS;
+> >>
+> >> +       if (vnmc & VNMC_INF_RGB888)
+> >> +               vnmc ^= VNMC_BPS;
+> >> +
+> >
+> >
+> >    Hm, this also changes the behavior for VNMC_INF_YUV16 and
+> > VNMC_INF_YUV10_BT{601|656}. Is this actually intended?
+> 
+> Probably this code is incorrect.
+> Thank you for your review.
 
-Guennadi, could you consider this patch when you get a chance?
+Thanks, I have confirmed with Matsuoka-san that there is a problem here.
 
-> ---
-> 
-> This patch is against master branch of linuxtv.org/media_tree.git.
-> 
-> v2 [Yoshihiro Kaneko]
-> * improve the macro definition for the VLV field
-> 
->  drivers/media/platform/soc_camera/rcar_vin.c | 3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
-> 
-> diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-> index 9300076..beaf8e5 100644
-> --- a/drivers/media/platform/soc_camera/rcar_vin.c
-> +++ b/drivers/media/platform/soc_camera/rcar_vin.c
-> @@ -107,6 +107,7 @@
->  #define VNDMR2_VPS		(1 << 30)
->  #define VNDMR2_HPS		(1 << 29)
->  #define VNDMR2_FTEV		(1 << 17)
-> +#define VNDMR2_VLV(n)		((n & 0xf) << 12)
->  
->  #define VIN_MAX_WIDTH		2048
->  #define VIN_MAX_HEIGHT		2048
-> @@ -827,7 +828,7 @@ static int rcar_vin_set_bus_param(struct soc_camera_device *icd)
->  	if (ret < 0 && ret != -ENOIOCTLCMD)
->  		return ret;
->  
-> -	val = priv->field = V4L2_FIELD_NONE ? VNDMR2_FTEV : 0;
-> +	val = VNDMR2_FTEV | VNDMR2_VLV(1);
->  	if (!(common_flags & V4L2_MBUS_VSYNC_ACTIVE_LOW))
->  		val |= VNDMR2_VPS;
->  	if (!(common_flags & V4L2_MBUS_HSYNC_ACTIVE_LOW))
-> -- 
-> 1.9.1
-> 
+He has provided the following fix. Could you see about squashing it into
+the above patch and reposting?
+
+
+From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+
+[PATCH] media: soc_camera: rcar_vin: Fix bit field check
+
+Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index 013d75c..da62d94 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -94,7 +94,7 @@
+ #define VNMC_INF_YUV8_BT601	(1 << 16)
+ #define VNMC_INF_YUV16		(5 << 16)
+ #define VNMC_INF_RGB888		(6 << 16)
+-#define VNMC_INF_RGB_MASK	(6 << 16)
++#define VNMC_INF_MASK		(7 << 16)
+ #define VNMC_VUP		(1 << 10)
+ #define VNMC_IM_ODD		(0 << 3)
+ #define VNMC_IM_ODD_EVEN	(1 << 3)
+@@ -675,7 +675,7 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+ 	if (output_is_yuv)
+ 		vnmc |= VNMC_BPS;
+ 
+-	if (vnmc & VNMC_INF_RGB_MASK)
++	if ((vnmc & VNMC_INF_MASK) = VNMC_INF_RGB888)
+ 		vnmc ^= VNMC_BPS;
+ 
+ 	/* progressive or interlaced mode */
