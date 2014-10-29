@@ -1,58 +1,38 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 30 Oct 2014 09:54:04 +0000
-Subject: Re: [PATCH 1/3] ARM: shmobile: r8a7794: Add SGX clock to device tree
-Message-Id: <CAMuHMdUkqmbuLTjGU5DxyrxroKXHKVYtn9dRfbOxho1Rr1_1rQ@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 29 Oct 2014 13:58:51 +0000
+Subject: [PATCH 3/3] ARM: shmobile: r8a7779 dtsi: Add SoC-specific SATA compatible property
+Message-Id: <1414591131-21771-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414648736-31412-1-git-send-email-horms+renesas@verge.net.au>
- <1414648736-31412-2-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1414648736-31412-2-git-send-email-horms+renesas@verge.net.au>
+References: <1414591131-21771-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1414591131-21771-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Tejun Heo <tj@kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Valentine Barshak <valentine.barshak@cogentembedded.com>, linux-ide@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Thu, Oct 30, 2014 at 6:58 AM, Simon Horman
-<horms+renesas@verge.net.au> wrote:
-> --- a/arch/arm/boot/dts/r8a7794.dtsi
-> +++ b/arch/arm/boot/dts/r8a7794.dtsi
-> @@ -461,16 +461,15 @@
->                 mstp1_clks: mstp1_clks@e6150134 {
->                         compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
->                         reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
-> -                       clocks = <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
-> -                                <&cp_clk>,
-> -                                <&zs_clk>, <&zs_clk>, <&zs_clk>;
-> +                       clocks = <&p_clk>, <&zg_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
-> +                                <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>;
->                         #clock-cells = <1>;
->                         renesas,clock-indices = <
-> -                               R8A7794_CLK_TMU1 R8A7794_CLK_TMU3 R8A7794_CLK_TMU2
-> -                               R8A7794_CLK_CMT0 R8A7794_CLK_TMU0
-> +                               R8A7794_CLK_TMU1 R8A7794_CLK_PVRSRVKM R8A7794_CLK_TMU3
-> +                               R8A7794_CLK_TMU2 R8A7794_CLK_CMT0 R8A7794_CLK_TMU0
->                         >;
->                         clock-output-names > -                               "tmu1", "tmu3", "tmu2", "cmt0", "tmu0";
-> +                               "tmu1", "pvrsrvkm", "tmu3", "tmu2", "cmt0", "tmu0";
+The SATA node used the generic compatible property only, which was
+deprecated by commit e67adb4e669db834 ("sata_rcar: Add R-Car Gen2 SATA
+PHY support"). Add the SoC-specific one introduced by that commit.
 
-"3dg"
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a7779.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> --- a/include/dt-bindings/clock/r8a7794-clock.h
-> +++ b/include/dt-bindings/clock/r8a7794-clock.h
-> @@ -27,6 +27,7 @@
->
->  /* MSTP1 */
->  #define R8A7794_CLK_TMU1               11
-> +#define R8A7794_CLK_PVRSRVKM           12
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index fda814ed191d1531..a8845328827a3f0c 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -303,7 +303,7 @@
+ 	};
+ 
+ 	sata: sata@fc600000 {
+-		compatible = "renesas,rcar-sata";
++		compatible = "renesas,sata-r8a7779", "renesas,rcar-sata";
+ 		reg = <0xfc600000 0x2000>;
+ 		interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp1_clks R8A7779_CLK_SATA>;
+-- 
+1.9.1
 
-R8A7794_CLK_3DG
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
