@@ -1,130 +1,57 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 24 Oct 2014 12:58:13 +0000
-Subject: [PATCH v2 7/9] video: Add ADV751[13] DT bindings documentation
-Message-Id: <1414155495-3979-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 29 Oct 2014 14:19:10 +0000
+Subject: [PATCH 3/6] ARM: shmobile: r8a7779 dtsi: Change to using clock-indices
+Message-Id: <1414592353-24044-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414155495-3979-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1414155495-3979-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1414592353-24044-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1414592353-24044-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Lars-Peter Clausen <lars@metafoo.de>
+To: Mike Turquette <mturquette@linaro.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Ben Dooks <ben.dooks@codethink.co.uk>, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-The ADV7511, ADV7511W and ADV7513 are HDMI audio and video transmitters
-compatible with HDMI 1.4 and DVI 1.0. They're described in DT using the
-OF graph bindings and a list of custom properties pertaining to the
-input video bus configuration.
+With the addition of clock-indices in commit 8e33f91a0b84ae19 ("clk:
+shmobile: clk-mstp: change to using clock-indices"), we can change the
+DTSes to use the generic property instead of the deprecated
+vendor-specific property.
 
-Cc: devicetree@vger.kernel.org
-Cc: Lars-Peter Clausen <lars@metafoo.de>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+ arch/arm/boot/dts/r8a7779.dtsi | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-Changes since v1:
-
-- Clarify the adi,input-format DT property documentation
-- Fixed typo
----
- .../devicetree/bindings/video/adi,adv7511.txt      | 88 ++++++++++++++++++++++
- 1 file changed, 88 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/video/adi,adv7511.txt
-
-diff --git a/Documentation/devicetree/bindings/video/adi,adv7511.txt b/Documentation/devicetree/bindings/video/adi,adv7511.txt
-new file mode 100644
-index 000000000000..96c25ee01501
---- /dev/null
-+++ b/Documentation/devicetree/bindings/video/adi,adv7511.txt
-@@ -0,0 +1,88 @@
-+Analog Device ADV7511(W)/13 HDMI Encoders
-+-----------------------------------------
-+
-+The ADV7511, ADV7511W and ADV7513 are HDMI audio and video transmitters
-+compatible with HDMI 1.4 and DVI 1.0. They support color space conversion,
-+S/PDIF, CEC and HDCP.
-+
-+Required properties:
-+
-+- compatible: Should be one of "adi,adv7511", "adi,adv7511w" or "adi,adv7513"
-+- reg: I2C slave address
-+
-+The ADV7511 supports a large number of input data formats that differ by their
-+color depth, color format, clock mode, bit justification and random
-+arrangement of components on the data bus. The combination of the following
-+properties describe the input and map directly to the video input tables of the
-+ADV7511 datasheet that document all the supported combinations.
-+
-+- adi,input-depth: Number of bits per color component at the input (8, 10 or
-+  12).
-+- adi,input-colorspace: The input color space, one of "rgb", "yuv422" or
-+  "yuv444".
-+- adi,input-clock: The input clock type, one of "1x" (one clock cycle per
-+  pixel), "2x" (two clock cycles per pixel), "ddr" (one clock cycle per pixel,
-+  data driven on both edges).
-+
-+The following input format properties are required except in "rgb 1x" and
-+"yuv444 1x" modes, in which case they must not be specified.
-+
-+- adi,input-style: The input components arrangement variant (1, 2 or 3), as
-+  listed in the input format tables in the datasheet.
-+- adi,input-justification: The input bit justification ("left", "evenly",
-+  "right").
-+
-+Optional properties:
-+
-+- interrupts: Specifier for the ADV7511 interrupt
-+- pd-gpios: Specifier for the GPIO connected to the power down signal
-+
-+- adi,clock-delay: Video data clock delay relative to the pixel clock, in ps
-+  (-1200 ps .. 1600 ps). Defaults to no delay.
-+- adi,embedded-sync: The input uses synchronization signals embedded in the
-+  data stream (similar to BT.656). Defaults to separate H/V synchronization
-+  signals.
-+
-+Required nodes:
-+
-+The ADV7511 has two video ports. Their connections are modelled using the OF
-+graph bindings specified in Documentation/devicetree/bindings/graph.txt.
-+
-+- Video port 0 for the RGB or YUV input
-+- Video port 1 for the HDMI output
-+
-+
-+Example
-+-------
-+
-+	adv7511w: hdmi@39 {
-+		compatible = "adi,adv7511w";
-+		reg = <39>;
-+		interrupt-parent = <&gpio3>;
-+		interrupts = <29 IRQ_TYPE_EDGE_FALLING>;
-+
-+		adi,input-depth = <8>;
-+		adi,input-colorspace = "rgb";
-+		adi,input-clock = "1x";
-+		adi,input-style = <1>;
-+		adi,input-justification = "evenly";
-+
-+		ports {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+
-+			port@0 {
-+				reg = <0>;
-+				adv7511w_in: endpoint {
-+					remote-endpoint = <&dpi_out>;
-+				};
-+			};
-+
-+			port@1 {
-+				reg = <1>;
-+				adv7511_out: endpoint {
-+					remote-endpoint = <&hdmi_connector_in>;
-+				};
-+			};
-+		};
-+	};
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index ede9a29e4bc601ae..e3846af833e1d532 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -475,7 +475,7 @@
+ 				 <&cpg_clocks R8A7779_CLK_P>,
+ 				 <&cpg_clocks R8A7779_CLK_P>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7779_CLK_HSPI R8A7779_CLK_TMU2
+ 				R8A7779_CLK_TMU1 R8A7779_CLK_TMU0
+ 				R8A7779_CLK_HSCIF1 R8A7779_CLK_HSCIF0
+@@ -506,7 +506,7 @@
+ 				 <&cpg_clocks R8A7779_CLK_P>,
+ 				 <&cpg_clocks R8A7779_CLK_S>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7779_CLK_USB01 R8A7779_CLK_USB2
+ 				R8A7779_CLK_DU R8A7779_CLK_VIN2
+ 				R8A7779_CLK_VIN1 R8A7779_CLK_VIN0
+@@ -527,7 +527,7 @@
+ 			clocks = <&s4_clk>, <&s4_clk>, <&s4_clk>, <&s4_clk>,
+ 				 <&s4_clk>, <&s4_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7779_CLK_SDHI3 R8A7779_CLK_SDHI2
+ 				R8A7779_CLK_SDHI1 R8A7779_CLK_SDHI0
+ 				R8A7779_CLK_MMC1 R8A7779_CLK_MMC0
 -- 
-2.0.4
+1.9.1
 
