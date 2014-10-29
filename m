@@ -1,65 +1,32 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Wed, 22 Oct 2014 03:17:04 +0000
-Subject: Re: [PATCH] media: soc_camera: rcar_vin: Enable VSYNC field toggle mode
-Message-Id: <CAH1o70KKBObHxZ+Y2++tgJ4ac=MxvyYoSNe-=d=vxo2OV=YnHw@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 29 Oct 2014 14:30:51 +0000
+Subject: [PATCH 1/3] ARM: shmobile: r8a7790 dtsi: Drop bogus 0x unit-address prefix
+Message-Id: <1414593053-25627-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1413267956-8342-1-git-send-email-ykaneko0929@gmail.com>
-	<544280E4.20101@cogentembedded.com>
-	<CAH1o70JoiJhec6thnQZnQ_99DLjhMrYhypFubkDYNnTcP_02ZQ@mail.gmail.com>
-	<CAMuHMdXDKP=KDzGUqXuPLirPX6Y4BA-n4RC8kdx-8A-e=fa4MQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdXDKP=KDzGUqXuPLirPX6Y4BA-n4RC8kdx-8A-e=fa4MQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Linux Media Mailing List <linux-media@vger.kernel.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Geert-san,
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-2014-10-21 16:09 GMT+09:00 Geert Uytterhoeven <geert@linux-m68k.org>:
-> Hi Kaneko-san,
->
-> On Tue, Oct 21, 2014 at 5:30 AM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
->>>> --- a/drivers/media/platform/soc_camera/rcar_vin.c
->>>> +++ b/drivers/media/platform/soc_camera/rcar_vin.c
->>>> @@ -108,6 +108,7 @@
->>>>   #define VNDMR2_VPS            (1 << 30)
->>>>   #define VNDMR2_HPS            (1 << 29)
->>>>   #define VNDMR2_FTEV           (1 << 17)
->>>> +#define VNDMR2_VLV_1           (1 << 12)
->>>
->>>    Please instead do:
->>>
->>> #define VNDMR2_VLV(n)   ((n & 0xf) << 12)
->>
->> It's unclear to me why the style of the new #define should differ
->> from those of the existing ones.
->
-> I think Sergey wants to say that unlike for the other fields, there are
-> multiple possible values for the VLV field.
->
-> By providing the single macro definition
->
->         #define VNDMR2_VLV(n)   ((n & 0xf) << 12)
->
-> you can easily provide a way to set any of VNDMR2_VLV_n.
->
-> I hope this explanation makes it clearer.
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 7add12c3750aa2fb..3e28ee16683bff1c 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1328,7 +1328,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	rcar_sound: rcar_sound@0xec500000 {
++	rcar_sound: rcar_sound@ec500000 {
+ 		#sound-dai-cells = <1>;
+ 		compatible =  "renesas,rcar_sound-r8a7790", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
+ 		reg =	<0 0xec500000 0 0x1000>, /* SCU */
+-- 
+1.9.1
 
-Thank you for the clarification!
-I'll update this patch sooner.
-
-Thanks,
-Kaneko
-
->
-> Gr{oetje,eeting}s,
->
->                         Geert
->
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
->
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
