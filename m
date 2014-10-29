@@ -1,53 +1,87 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 24 Oct 2014 12:04:01 +0000
-Subject: [PATCH v4 9/9] ARM: shmobile: koelsch: Enable DU device in DT
-Message-Id: <1414152241-5390-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 29 Oct 2014 04:59:13 +0000
+Subject: [PATCH 07/19] ARM: shmobile: emev2 dtsi: Use generic names for device nodes
+Message-Id: <87982b2d9a75e10b357e6015f27b94011fc697be.1414556943.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1414556943.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1414556943.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Specify the DU output topology, enable the DU device and configure the
-related pins.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+smu -> clocks
+sti -> timer
+uart -> serial
+
+All but "clocks" are defined in ePAPR v1.1.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 16 +++++++++++++---
- 1 file changed, 13 insertions(+), 3 deletions(-)
+ arch/arm/boot/dts/emev2.dtsi | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 53184637f160..0402c498b05b 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -212,14 +212,24 @@
+diff --git a/arch/arm/boot/dts/emev2.dtsi b/arch/arm/boot/dts/emev2.dtsi
+index 00eeed3..5fe9212 100644
+--- a/arch/arm/boot/dts/emev2.dtsi
++++ b/arch/arm/boot/dts/emev2.dtsi
+@@ -55,7 +55,7 @@
+ 			     <0 121 IRQ_TYPE_LEVEL_HIGH>;
  	};
- };
  
-+&du {
-+	pinctrl-0 = <&du_pins>;
-+	pinctrl-names = "default";
-+	status = "okay";
-+
-+	ports {
-+		port@1 {
-+			lvds_connector: endpoint {
-+			};
-+		};
-+	};
-+};
-+
- &extal_clk {
- 	clock-frequency = <20000000>;
- };
+-	smu@e0110000 {
++	clocks@e0110000 {
+ 		compatible = "renesas,emev2-smu";
+ 		reg = <0xe0110000 0x10000>;
+ 		#address-cells = <2>;
+@@ -129,7 +129,7 @@
+ 		};
+ 	};
  
- &pfc {
--	pinctrl-0 = <&du_pins>;
--	pinctrl-names = "default";
--
- 	i2c2_pins: i2c2 {
- 		renesas,groups = "i2c2";
- 		renesas,function = "i2c2";
+-	sti@e0180000 {
++	timer@e0180000 {
+ 		compatible = "renesas,em-sti";
+ 		reg = <0xe0180000 0x54>;
+ 		interrupts = <0 125 IRQ_TYPE_LEVEL_HIGH>;
+@@ -137,7 +137,7 @@
+ 		clock-names = "sclk";
+ 	};
+ 
+-	uart@e1020000 {
++	serial@e1020000 {
+ 		compatible = "renesas,em-uart";
+ 		reg = <0xe1020000 0x38>;
+ 		interrupts = <0 8 IRQ_TYPE_LEVEL_HIGH>;
+@@ -145,7 +145,7 @@
+ 		clock-names = "sclk";
+ 	};
+ 
+-	uart@e1030000 {
++	serial@e1030000 {
+ 		compatible = "renesas,em-uart";
+ 		reg = <0xe1030000 0x38>;
+ 		interrupts = <0 9 IRQ_TYPE_LEVEL_HIGH>;
+@@ -153,7 +153,7 @@
+ 		clock-names = "sclk";
+ 	};
+ 
+-	uart@e1040000 {
++	serial@e1040000 {
+ 		compatible = "renesas,em-uart";
+ 		reg = <0xe1040000 0x38>;
+ 		interrupts = <0 10 IRQ_TYPE_LEVEL_HIGH>;
+@@ -161,7 +161,7 @@
+ 		clock-names = "sclk";
+ 	};
+ 
+-	uart@e1050000 {
++	serial@e1050000 {
+ 		compatible = "renesas,em-uart";
+ 		reg = <0xe1050000 0x38>;
+ 		interrupts = <0 11 IRQ_TYPE_LEVEL_HIGH>;
 -- 
-2.0.4
+2.1.1
 
