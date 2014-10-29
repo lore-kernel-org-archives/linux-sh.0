@@ -1,38 +1,53 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 30 Oct 2014 09:51:56 +0000
-Subject: Re: [PATCH 0/2] ARM: shmobile: r8a7790: Fix SD3CKCR address
-Message-Id: <CAMuHMdWS1M24vngxvrf3mRGfVwKvmgsXnqZ6xq_hJuPC=KqqWQ@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 29 Oct 2014 14:19:07 +0000
+Subject: [PATCH 0/6] ARM: shmobile: Change to using clock-indices
+Message-Id: <1414592353-24044-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414648677-31104-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1414648677-31104-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mike Turquette <mturquette@linaro.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Ben Dooks <ben.dooks@codethink.co.uk>, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Thu, Oct 30, 2014 at 6:57 AM, Simon Horman
-<horms+renesas@verge.net.au> wrote:
-> This short series corrects the SD3CKCR address in both C and DT
->
-> Based on the renesas-devel-20141030-v3.18-rc2 branch of my renesas tree
->
-> Shinobu Uehara (2):
->   ARM: shmobile: r8a7790: Fix SD3CKCR address
->   ARM: shmobile: r8a7790: Fix SD3CKCR address to device tree
+	Hi Mike, Simon, Magnus,
 
-This  matches my copy of the datasheet, so
+This patch series finalizes the conversion from the vendor-specific
+"renesas,clock-indices" to the generic "clock-indices", started by Ben Dooks.
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+The patches for r8a7790 and r8a7791 were extracted from a patch that Ben sent
+before ("[PATCH 2/3] renesas: change to using clock-indices"), but it was never
+split/updated.
 
-But it would be good to know this has been verified on actual hardware.
+Thanks for applying!
+
+Ben Dooks (2):
+  ARM: shmobile: r8a7790 dtsi: Change to using clock-indices
+  ARM: shmobile: r8a7791 dtsi: Change to using clock-indices
+
+Geert Uytterhoeven (4):
+  clk: shmobile: Deprecate renesas,clock-indices
+  ARM: shmobile: r8a7740 dtsi: Change to using clock-indices
+  ARM: shmobile: r8a7779 dtsi: Change to using clock-indices
+  ARM: shmobile: r8a7794 dtsi: Change to using clock-indices
+
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt         |  9 +++++----
+ arch/arm/boot/dts/r8a7740.dtsi                         | 10 +++++-----
+ arch/arm/boot/dts/r8a7779.dtsi                         |  6 +++---
+ arch/arm/boot/dts/r8a7790.dtsi                         | 16 ++++++++--------
+ arch/arm/boot/dts/r8a7791.dtsi                         | 18 +++++++++---------
+ arch/arm/boot/dts/r8a7794.dtsi                         | 14 +++++++-------
+ 6 files changed, 37 insertions(+), 36 deletions(-)
+
+-- 
+1.9.1
 
 Gr{oetje,eeting}s,
 
-                        Geert
+						Geert
 
 --
 Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
 In personal conversations with technical people, I call myself a hacker. But
 when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+							    -- Linus Torvalds
