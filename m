@@ -1,34 +1,38 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 26 Oct 2014 17:40:11 +0000
-Subject: [PATCH v3 4/9] ARM: shmobile: r8a7790: Rename mmcif node to mmc
-Message-Id: <1414345216-14486-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 29 Oct 2014 13:58:50 +0000
+Subject: [PATCH 2/3] sata_rcar: Document deprecated "renesas,rcar-sata"
+Message-Id: <1414591131-21771-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1414591131-21771-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1414591131-21771-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Tejun Heo <tj@kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Valentine Barshak <valentine.barshak@cogentembedded.com>, linux-ide@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Node names should describe the function of the device, not its IP core
-name.
+Commit e67adb4e669db834 ("sata_rcar: Add R-Car Gen2 SATA PHY support")
+deprecated "renesas,rcar-sata" in favor of "renesas,sata-r8a7779", but
+the deprecated value was never documented in the binding documentation,
+while it is still in active use.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ Documentation/devicetree/bindings/ata/sata_rcar.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 3f1e4b3898cd..0403e80e467d 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -392,7 +392,7 @@
- 		status = "disabled";
- 	};
- 
--	mmcif0: mmcif@ee200000 {
-+	mmcif0: mmc@ee200000 {
- 		compatible = "renesas,mmcif-r8a7790", "renesas,sh-mmcif";
- 		reg = <0 0xee200000 0 0x80>;
- 		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
+diff --git a/Documentation/devicetree/bindings/ata/sata_rcar.txt b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+index 12d9de915ebd6cbf..ed266c87ce106f20 100644
+--- a/Documentation/devicetree/bindings/ata/sata_rcar.txt
++++ b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+@@ -3,6 +3,7 @@
+ Required properties:
+ - compatible		: should contain one of the following:
+ 			  - "renesas,sata-r8a7779" for R-Car H1
++			    ("renesas,rcar-sata" is deprecated)
+ 			  - "renesas,sata-r8a7790" for R-Car H2
+ 			  - "renesas,sata-r8a7791" for R-Car M2
+ - reg			: address and length of the SATA registers;
 -- 
-2.0.4
+1.9.1
 
