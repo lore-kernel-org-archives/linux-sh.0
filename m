@@ -1,64 +1,53 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 29 Oct 2014 04:59:54 +0000
-Subject: [PATCH 4/4] ARM: shmobile: r8a73a4: Remove empty r8a73a4_add_dt_devices
-Message-Id: <fd3edcbe9f7bf24b13cadca7616f8e10bbe7e2b3.1414557047.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 29 Oct 2014 13:58:49 +0000
+Subject: [PATCH 1/3] sata_rcar: Add clocks to sata_rcar bindings
+Message-Id: <1414591131-21771-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1414557047.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1414557047.git.horms+renesas@verge.net.au>
+References: <1414591131-21771-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1414591131-21771-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Tejun Heo <tj@kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Valentine Barshak <valentine.barshak@cogentembedded.com>, linux-ide@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-r8a73a4_add_dt_devices() no longer enables any devices
-so remove it.
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Now that the clocks are available in the R-Car Gen2 DT,
+add clocks property description to the sata_rcar bindings.
+The clocks have been tested on r8a7791 so we use that
+as an example of the R-Car SATA node.
+
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+[geert: Reworded clocks property]
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/board-ape6evm-reference.c | 1 -
- arch/arm/mach-shmobile/r8a73a4.h                 | 1 -
- arch/arm/mach-shmobile/setup-r8a73a4.c           | 4 ----
- 3 files changed, 6 deletions(-)
+ Documentation/devicetree/bindings/ata/sata_rcar.txt | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ape6evm-reference.c b/arch/arm/mach-shmobile/board-ape6evm-reference.c
-index a6503d8..7c7c6f7 100644
---- a/arch/arm/mach-shmobile/board-ape6evm-reference.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm-reference.c
-@@ -48,7 +48,6 @@ static void __init ape6evm_add_standard_devices(void)
- 	clk_put(parent);
- 	clk_put(mp);
+diff --git a/Documentation/devicetree/bindings/ata/sata_rcar.txt b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+index 1e6111333fa88f86..12d9de915ebd6cbf 100644
+--- a/Documentation/devicetree/bindings/ata/sata_rcar.txt
++++ b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+@@ -7,12 +7,14 @@ Required properties:
+ 			  - "renesas,sata-r8a7791" for R-Car M2
+ - reg			: address and length of the SATA registers;
+ - interrupts		: must consist of one interrupt specifier.
++- clocks		: must contain a reference to the functional clock.
  
--	r8a73a4_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
+ Example:
  
-diff --git a/arch/arm/mach-shmobile/r8a73a4.h b/arch/arm/mach-shmobile/r8a73a4.h
-index 5fafd6f..70dcd84 100644
---- a/arch/arm/mach-shmobile/r8a73a4.h
-+++ b/arch/arm/mach-shmobile/r8a73a4.h
-@@ -11,7 +11,6 @@ enum {
+-sata: sata@fc600000 {
+-	compatible = "renesas,sata-r8a7779";
+-	reg = <0xfc600000 0x2000>;
++sata0: sata@ee300000 {
++	compatible = "renesas,sata-r8a7791";
++	reg = <0 0xee300000 0 0x2000>;
+ 	interrupt-parent = <&gic>;
+-	interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
++	interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
++	clocks = <&mstp8_clks R8A7791_CLK_SATA0>;
  };
- 
- void r8a73a4_add_standard_devices(void);
--void r8a73a4_add_dt_devices(void);
- void r8a73a4_clock_init(void);
- void r8a73a4_pinmux_init(void);
- 
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index 3b7efc0..179f28a 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -187,10 +187,6 @@ static struct resource cmt1_resources[] = {
- 					  &cmt##idx##_platform_data,	\
- 					  sizeof(struct sh_timer_config))
- 
--void __init r8a73a4_add_dt_devices(void)
--{
--}
--
- /* DMA */
- static const struct sh_dmae_slave_config dma_slaves[] = {
- 	{
 -- 
-2.1.1
+1.9.1
 
