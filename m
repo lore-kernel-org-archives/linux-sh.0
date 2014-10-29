@@ -1,7 +1,7 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 29 Oct 2014 09:49:33 +0000
-Subject: Re: [PATCH v3 0/9] R-Car Gen2 DMA Controller driver
-Message-Id: <1774775.b7qCaJMkr4@avalon>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Wed, 29 Oct 2014 09:49:59 +0000
+Subject: RE: [PATCH v3 0/9] R-Car Gen2 DMA Controller driver
+Message-Id: <252635dafd384371bf35aaa04fdcafda@HKXPR06MB168.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1414345216-14486-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1414345216-14486-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -10,126 +10,90 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Magnus, Morimoto-san,
-
-On Wednesday 29 October 2014 11:36:03 Magnus Damm wrote:
-> On Wed, Oct 29, 2014 at 6:02 AM, Laurent Pinchart wrote:
-> > On Monday 27 October 2014 20:03:56 Kuninori Morimoto wrote:
-> >> Hi
-> >> Cc Simon
-> >> 
-> >> > Laurent Pinchart (9):
-> >> >   dmaengine: Add 16 bytes, 32 bytes and 64 bytes bus widths
-> >> >   dmaengine: rcar-dmac: Remove duplicate sentence from DT bindings
-> >> >   dmaengine: rcar-dmac: Add Renesas R-Car Gen2 DMA Controller (DMAC)
-> >> >   
-> >> >     driver
-> >> >   
-> >> >   ARM: shmobile: r8a7790: Rename mmcif node to mmc
-> >> >   ARM: shmobile: r8a7791: Add MMCIF0 DT node
-> >> >   ARM: shmobile: r8a7790: Reference DMA channels in MMCIF DT nodes
-> >> >   ARM: shmobile: r8a7791: Reference DMA channels in MMCIF DT node
-> >> >   ARM: shmobile: r8a7790: Reference DMA channels in SDHI DT nodes
-> >> >   ARM: shmobile: r8a7791: Reference DMA channels in SDHI DT nodes
-> >> >  
-> >> >  .../devicetree/bindings/dma/renesas,rcar-dmac.txt  |    3 -
-> >> >  arch/arm/boot/dts/r8a7790.dtsi                     |   14 +-
-> >> >  arch/arm/boot/dts/r8a7791.dtsi                     |   17 +
-> >> >  drivers/dma/sh/Kconfig                             |    8 +
-> >> >  drivers/dma/sh/Makefile                            |    1 +
-> >> >  drivers/dma/sh/rcar-dmac.c                         | 1533 ++++++++++++
-> >> >  include/linux/dmaengine.h                          |    3 +
-> >> >  7 files changed, 1575 insertions(+), 4 deletions(-)
-> >> >  create mode 100644 drivers/dma/sh/rcar-dmac.c
-> >> 
-> >> On Lager board + SDHI
-> >> 
-> >> Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > 
-> > Thank you.
-> > 
-> >> Current SDHI driver + DMAC is working, but super slow,
-> >> especially, write case....
-> > 
-> > *sigh* I'll test that.
-> 
-> If you have energy to deal with this then that is of course greatly
-> appreciated.
-
-I've performed quick SDHI performance tests yesterday. Read performance were 
-around 7.5% lower with DMA support. Write performances varied but seemed 
-similar on average.
-
-- PIO
-
-# time dd if=/dev/mmcblk1 of=/mnt/ram/mmc.bin count2768 bs@96
-262144+0 records in
-262144+0 records out
-real    0m 6.89s
-user    0m 0.19s
-sys     0m 2.71s
-
-# time dd if=/dev/mmcblk1 of=/mnt/ram/mmc.bin count2768 bs@96
-262144+0 records in
-262144+0 records out
-real    0m 6.95s
-user    0m 0.05s
-sys     0m 2.82s
-
-# time dd of=/dev/mmcblk1 if=/mnt/ram/mmc.bin count2768 bs@96
-32+0 records in
-32+0 records out
-real    1m 55.37s
-user    0m 0.00s
-sys     0m 0.72s
-
-# time dd of=/dev/mmcblk1 if=/mnt/ram/mmc.bin count2768 bs@96
-32+0 records in
-32+0 records out
-real    1m 53.44s
-user    0m 0.00s
-sys     0m 0.71s
-
-- DMA
-
-# time dd if=/dev/mmcblk1 of=/mnt/ram/mmc.bin count2768 bs@96
-32+0 records in
-32+0 records out
-real    0m 7.39s
-user    0m 0.00s
-sys     0m 0.60s
-
-# time dd if=/dev/mmcblk1 of=/mnt/ram/mmc.bin count2768 bs@96
-32+0 records in
-32+0 records out
-real    0m 7.46s
-user    0m 0.00s
-sys     0m 0.63s
-
-# time dd of=/dev/mmcblk1 if=/mnt/ram/mmc.bin count2768 bs@96
-32768+0 records in
-32768+0 records out
-real    1m 54.45s
-user    0m 0.00s
-sys     0m 0.71s
-
-# time dd of=/dev/mmcblk1 if=/mnt/ram/mmc.bin count2768 bs@96
-32768+0 records in
-32768+0 records out
-real    1m 55.61s
-user    0m 0.02s
-sys     0m 0.64s
-
-This is without using hardware descriptors. I'll test that next.
-
-> From my point of view it is however easier to simply ignore SDHI for
-> now and remove those patches from this patch series. Once all the
-> dependencies are sorted out for the new DMAC driver and all code is
-> upstream then perhaps the SDHI driver is in a better shape and allows
-> for more easy DMA enablement.
-
--- 
-Regards,
-
-Laurent Pinchart
-
+SGkgTWFnbnVzLA0KDQpPbiAyOSBPY3RvYmVyIDIwMTQgMDc6MjQsIE1hZ251cyB3cm90ZToNCj4g
+T24gTW9uLCBPY3QgMjcsIDIwMTQgYXQgMjo0MCBBTSwgTGF1cmVudCBQaW5jaGFydA0KPiA8bGF1
+cmVudC5waW5jaGFydCtyZW5lc2FzQGlkZWFzb25ib2FyZC5jb20+IHdyb3RlOg0KPiA+IEhlbGxv
+LA0KPiA+DQo+ID4gVGhpcyBwYXRjaCBzZXRzIGFkZHMgYSBuZXcgZHJpdmVyIGZvciB0aGUgRE1B
+IGNvbnRyb2xsZXIgZm91bmQgaW4gdGhlIFItQ2FyDQo+ID4gR2VuMiBTb0NzIHVuZGVyIHRoZSBu
+YW1lICJEaXJlY3QgTWVtb3J5IEFjY2VzcyBDb250cm9sbGVyIGZvciBTeXN0ZW0NCj4gPiAoU1lT
+LURNQUMpIi4gU3VwcG9ydCBmb3IgdGhlICJSZWFsdGltZSBEaXJlY3QgTWVtb3J5IEFjY2VzcyBD
+b250cm9sbGVyDQo+ID4gKFJULURNQUMpIiBhbmQgIkRpcmVjdCBNZW1vcnkgQWNjZXNzIENvbnRy
+b2xsZXIgZm9yIEF1ZGlvIChBdWRpby1ETUFDKSINCj4gd2lsbA0KPiA+IGJlIGFkZGVkIGxhdGVy
+Lg0KPiA+DQo+ID4gRm9yIHRoZSByYXRpb25hbGUgb2Ygd2h5IGEgbmV3IGRyaXZlciBpcyBuZWVk
+ZWQsIGFuZCBwZXJmb3JtYW5jZSBmaWd1cmVzLA0KPiA+IHBsZWFzZSBzZWUgdGhlIGNvdmVyIGxl
+dHRlciBvZiB2MSAoIltQQVRDSCAwLzddIFItQ2FyIEdlbjIgRE1BIENvbnRyb2xsZXINCj4gPiBk
+cml2ZXIiKSBbMV0uDQo+ID4NCj4gPiBTdXBwb3J0IGZvciBoYXJkd2FyZSBkZXNjcmlwdG9ycyBs
+aXN0cyBpcyBub3QgaW5jbHVkZWQgaW4gdGhpcyBzZXJpZXMgdG8ga2VlcA0KPiA+IGl0IHNpbXBs
+ZSBhbmQgaG9wZWZ1bGx5IGdldCBpdCBtZXJnZWQgaW4gdjMuMTkuIEknbGwgcG9zdCBpdCBhcyBh
+IHNlcGFyYXRlDQo+ID4gc2VyaWVzLiBObyBjaGFuZ2UgdG8gdGhlIERUIGJpbmRpbmdzIHdpbGwg
+YmUgbmVlZGVkLg0KPiA+DQo+ID4gVGhlIGZpcnN0IHRocmVlIHBhdGNoZXMgc2hvdWxkIGdvIHRo
+cm91Z2ggdGhlIERNQSBlbmdpbmUgdHJlZSwgd2hpbGUgdGhlIGxhc3QNCj4gPiBzaXggcGF0Y2hl
+cyBzaG91bGQgZ28gdGhyb3VnaCB0aGUgUmVuZXNhcyB0cmVlLiBTaW1vbiwgYXMgdGhlIERUIGJp
+bmRpbmdzIGhhdmUNCj4gPiBiZWVuIG1lcmdlZCBhbHJlYWR5LCBJIGJlbGlldmUgeW91IGNhbiBx
+dWV1ZSB1cCB0aGUgYXJjaCBwYXRjaGVzIHdpdGhvdXQNCj4gPiB3YWl0aW5nIGZvciB0aGUgZHJp
+dmVyIHBhdGNoZXMgdG8gYmUgbWVyZ2VkLg0KPiA+DQo+ID4gS25vd24gaXNzdWVzIGFyZQ0KPiA+
+DQo+ID4gLSBVbnRlc3RlZCBjeWNsaWMgRE1BIHRyYW5zZmVycy4gSSd2ZSBkb25lIG15IGJlc3Qg
+dG8gZml4IHRoZSByZWxhdGVkIGlzc3Vlcw0KPiA+ICAgZnJvbSB2MiwgYnV0IEkgaGF2ZW4ndCBi
+ZWVuIGFibGUgdG8gdGVzdCBhdWRpbyB3aXRoIHRoZSBSLUNhciBwbGF0Zm9ybXMgKHNlZQ0KPiA+
+ICAgWzJdKS4gTW9yaW1vdG8tc2FuLCBpZiB5b3UgY291bGQgaGVscCBtZSB3aXRoIGF1ZGlvIHRl
+c3RpbmcgSSdkIGJlIGdyYXRlZnVsLg0KPiA+DQo+ID4gLSBTdHViIHN5c3RlbSBQTSBpbXBsZW1l
+bnRhdGlvbi4gSSdtIHdvcmtpbmcgb24gdGhpcy4NCj4gPg0KPiA+IC0gUmlzayBvZiBjb25mbGlj
+dCB3aXRoIE1heGltZSdzIERNQSBlbmdpbmUgcmV3b3JrIHNlcmllcy4NCj4gPg0KPiA+IEkgYmVs
+aWV2ZSB0aGUgZmlyc3QgdHdvIGlzc3VlcyBhcmUgbm90IHNob3cgc3RvcHBlcnMuIEkgY2FuIHJl
+YmFzZSB0aGUgcGF0Y2hlcw0KPiA+IGlmIE1heGltZSdzIHBhdGNoZXMgZ2V0IG1lcmdlZCBmaXJz
+dC4NCj4gPg0KPiA+IENoYW5nZXMgc2luY2UgdjI6DQo+ID4NCj4gPiAtIFJlcGxhY2Ugc2V2ZXJh
+bCBvY2N1cnJlbmNlcyBvZiBzaXplX3Qgd2l0aCB1bnNpZ25lZCBpbnQNCj4gPiAtIFJlbW92ZSB1
+bm5lZWRlZCBsb2NhbCB2YXJpYWJsZSBpbml0aWFsaXphdGlvbg0KPiA+IC0gQ29tcHV0ZSBtYXhp
+bXVtIHRyYW5zZmVyIHNpemUgYXQgcnVudGltZQ0KPiA+IC0gVHlwbyBmaXhlcw0KPiA+IC0gUmVw
+bGFjZSBXQVJOX09OIHdpdGggV0FSTl9PTl9PTkNFIGluIGludGVycnVwdCBoYW5kbGVyDQo+ID4g
+LSBWYWxpZGF0ZSB0aGUgbnVtYmVyIG9mIGNoYW5uZWxzDQo+ID4gLSBSZXNldCB0aGUgZGV2aWNl
+IGJlZm9yZSBlbmFibGluZyBpbnRlcnJ1cHRzDQo+ID4gLSBVc2UgRE1BX1NMQVZFX0JVU1dJRFRI
+XyogY29uc3RhbnRzIGluc3RlYWQgb2YgbnVtZXJpY2FsIHZhbHVlcw0KPiA+IC0gVXNlIGRldm1f
+a2FzcHJpbnRmDQo+ID4gLSBVcGRhdGUgdG8gdGhlIG5ldyBwcmVwX2RtYV9jeWNsaWMgQVBJDQo+
+ID4gLSBGaWx0ZXIgb3V0IGNoYW5uZWxzIGZyb20gdW5yZWxhdGVkIGRldmljZXMNCj4gPiAtIEZp
+eCB0eXBvIGluIHJlZ2lzdGVyIGRlZmluaXRpb24NCj4gPiAtIFJlbmFtZSByY2FyX2RtYWNfaHdf
+ZGVzYyB0byByY2FyX2RtYWNfeGZlcl9jaHVuaw0KPiA+IC0gSWdub3JlIHRoZSBkZXByZWNhdGVk
+IGRtYV9zbGF2ZV9jb25maWcgZGlyZWN0aW9uIGZpZWxkDQo+ID4gLSBBbGxvY2F0ZSBtZW1vcnkg
+d2l0aCBHRlBfTk9XQUlUIGluIHByZXAgaGFuZGxlcnMNCj4gPiAtIFNwbGl0IHJ1bnRpbWUgYW5k
+IHN5c3RlbSBQTQ0KPiA+IC0gTW92ZSBydW50aW1lIFBNIHRvIGNoYW5uZWwgYWxsb2MvZnJlDQo+
+ID4NCj4gPiBDaGFuZ2VzIHNpbmNlIHYxOg0KPiA+DQo+ID4gLSBBbGxvY2F0ZSBJUlEgbmFtZSBz
+dHJpbmdzIGR5bmFtaWNhbGx5DQo+ID4gLSBPbmx5IGNhbGwgdGhlIGNhbGxiYWNrIGZ1bmN0aW9u
+IGlmIG9uZSBpcyBzdXBwbGllZA0KPiA+IC0gRG9uJ3Qgb3ZlcmFsbG9jYXRlIHNnIGxpc3QgZW50
+cmllcw0KPiA+IC0gQWxsb2NhdGUgc2cgbGlzdCBlbnRyaWVzIHdpdGggR0ZQX0tFUk5FTA0KPiA+
+IC0gRG9uJ3QgbWFuYWdlIGZ1bmN0aW9uIGNsb2NrIG1hbnVhbGx5DQo+ID4gLSBNYWtlIGNoYW5u
+ZWwgZmlsdGVyIGlnbm9yZSB1bnJlbGF0ZWQgZGV2aWNlcw0KPiA+IC0gRG9jdW1lbnQgd2h5IHRo
+ZSBjeWNsaWMgc2cgbGlzdCBpcyBrY2FsbG9jJ2VkDQo+ID4gLSBSZW1vdmUgY2gxNSBmcm9tIGlu
+dGVycnVwdCBuYW1lcyBpbiBEVA0KPiA+IC0gUmVwbGFjZSBDT05GSUdfT0Ygd2l0aCBPRiBpbiBL
+Y29uZmlnDQo+ID4NCj4gPiBbMV0gaHR0cDovL3d3dy5zcGluaWNzLm5ldC9saXN0cy9saW51eC1z
+aC9tc2czMzc2OC5odG1sDQo+ID4gWzJdIGh0dHA6Ly93d3cuc3Bpbmljcy5uZXQvbGlzdHMvbGlu
+dXgtc2gvbXNnMzY0NzQuaHRtbA0KPiA+DQo+ID4gTGF1cmVudCBQaW5jaGFydCAoOSk6DQo+ID4g
+ICBkbWFlbmdpbmU6IEFkZCAxNiBieXRlcywgMzIgYnl0ZXMgYW5kIDY0IGJ5dGVzIGJ1cyB3aWR0
+aHMNCj4gPiAgIGRtYWVuZ2luZTogcmNhci1kbWFjOiBSZW1vdmUgZHVwbGljYXRlIHNlbnRlbmNl
+IGZyb20gRFQgYmluZGluZ3MNCj4gPiAgIGRtYWVuZ2luZTogcmNhci1kbWFjOiBBZGQgUmVuZXNh
+cyBSLUNhciBHZW4yIERNQSBDb250cm9sbGVyIChETUFDKQ0KPiA+ICAgICBkcml2ZXINCj4gPiAg
+IEFSTTogc2htb2JpbGU6IHI4YTc3OTA6IFJlbmFtZSBtbWNpZiBub2RlIHRvIG1tYw0KPiA+ICAg
+QVJNOiBzaG1vYmlsZTogcjhhNzc5MTogQWRkIE1NQ0lGMCBEVCBub2RlDQo+ID4gICBBUk06IHNo
+bW9iaWxlOiByOGE3NzkwOiBSZWZlcmVuY2UgRE1BIGNoYW5uZWxzIGluIE1NQ0lGIERUIG5vZGVz
+DQo+ID4gICBBUk06IHNobW9iaWxlOiByOGE3NzkxOiBSZWZlcmVuY2UgRE1BIGNoYW5uZWxzIGlu
+IE1NQ0lGIERUIG5vZGUNCj4gPiAgIEFSTTogc2htb2JpbGU6IHI4YTc3OTA6IFJlZmVyZW5jZSBE
+TUEgY2hhbm5lbHMgaW4gU0RISSBEVCBub2Rlcw0KPiA+ICAgQVJNOiBzaG1vYmlsZTogcjhhNzc5
+MTogUmVmZXJlbmNlIERNQSBjaGFubmVscyBpbiBTREhJIERUIG5vZGVzDQo+IA0KPiBIaSBMYXVy
+ZW50LA0KPiANCj4gSSd2ZSBub3cgdGVzdGVkIHRoaXMgc2VyaWVzIGJyaWVmbHkgdG9nZXRoZXIg
+d2l0aCBRU1BJIG9uIEtvZWxzY2gsIGFuZA0KPiBvbiB0b3Agb2YgdGhhdCBJJ3ZlIGFsc28gZG9u
+ZSBhIHByb3RvdHlwZSBiYWNrIHBvcnQgdG8gTFRTSS0zLjE0LiBBbGwNCj4gc2VlbXMgd2VsbCBl
+eGNlcHQgdGhpcyBtaW5vciBLY29uZmlnIGFkanVzdG1lbnQgdGhhdCBJIG5lZWRlZCB0byBkbyB0
+bw0KPiBoYW5kbGUgdGhlIGNhc2Ugd2hlbiB3ZSBvbmx5IGVuYWJsZSB0aGlzIGRyaXZlcjoNCkNv
+dWxkIHlvdSBwb2ludCBtZSB0byB0aGUgTFRTSS0zLjE0IGJhY2twb3J0LCBvciBzZW5kIHBhdGNo
+ZXM/DQoNCg0KPiAtLS0gMDAwMS9kcml2ZXJzL2RtYS9NYWtlZmlsZQ0KPiArKysgd29yay9kcml2
+ZXJzL2RtYS9NYWtlZmlsZSAyMDE0LTEwLTI5IDEzOjE0OjI0LjAwMDAwMDAwMCArMDkwMA0KPiBA
+QCAtMjAsNiArMjAsNyBAQCBvYmotJChDT05GSUdfQVRfSERNQUMpICs9IGF0X2hkbWFjLm8NCj4g
+IG9iai0kKENPTkZJR19NWDNfSVBVKSArPSBpcHUvDQo+ICBvYmotJChDT05GSUdfVFhYOV9ETUFD
+KSArPSB0eHg5ZG1hYy5vDQo+ICBvYmotJChDT05GSUdfU0hfRE1BRV9CQVNFKSArPSBzaC8NCj4g
+K29iai0kKENPTkZJR19SQ0FSX0RNQUMpICs9IHNoLw0KPiAgb2JqLSQoQ09ORklHX0NPSDkwMTMx
+OCkgKz0gY29oOTAxMzE4Lm8gY29oOTAxMzE4X2xsaS5vDQo+ICBvYmotJChDT05GSUdfQU1DQ19Q
+UEM0NDBTUEVfQURNQSkgKz0gcHBjNHh4Lw0KPiAgb2JqLSQoQ09ORklHX0lNWF9TRE1BKSArPSBp
+bXgtc2RtYS5vDQo+IA0KPiBOb3QgdGhlIHByZXR0aWVzdCBzb2x1dGlvbiwgYnV0IGF0IGxlYXN0
+IGl0IG1ha2VzIHRoZSBjb2RlIGNvbXBpbGUNCj4gcmVnYXJkbGVzcyBvZiBTSF9ETUFFX0JBU0Uu
+DQo+IENhbiB5b3UgcGxlYXNlIGNvbnNpZGVyIGZvbGRpbmcgdGhpcyBodW5rIGludG8gbmV4dCB2
+ZXJzaW9uIG9mIHlvdXIgc2VyaWVzPw0KPiANCj4gVGhhbmtzLA0KPiANCj4gLyBtYWdudXMNCg0K
+VGhhbmtzDQpQaGlsDQo
