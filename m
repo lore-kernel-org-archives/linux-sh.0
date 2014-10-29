@@ -1,38 +1,43 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 29 Oct 2014 04:58:17 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC Clocks Updates for v3.19
-Message-Id: <cover.1414558424.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 29 Oct 2014 14:09:36 +0000
+Subject: [PATCH 0/3] ARM: shmobile: Remove unnecessary MMC options
+Message-Id: <1414591779-22954-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, linux-mmc@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Olof, Hi Kevin, Hi Arnd,
+	Hi Simon, Magnus,
 
-Please consider these Renesas ARM based SoC clocks updates for v3.19.
+This patch series, sent before by Morimoto-san, removes unnecessary MMC options
+from the DTS files that are already set automatically by the driver, based on
+the compatible property value. Note that these options were never added on
+r8a7791, which gained SDHI device nodes later than the three affected SoCs.
 
+Thanks for applying!
 
-The following changes since commit f114040e3ea6e07372334ade75d1ee0775c355e1:
+Kuninori Morimoto (3):
+  ARM: shmobile: r8a7778 dtsi: Remove unnecessary MMC options
+  ARM: shmobile: r8a7779 dtsi: Remove unnecessary MMC options
+  ARM: shmobile: r8a7790 dtsi: Remove unnecessary MMC options
 
-  Linux 3.18-rc1 (2014-10-19 18:08:38 -0700)
+ arch/arm/boot/dts/r8a7778.dtsi | 6 ------
+ arch/arm/boot/dts/r8a7779.dtsi | 8 --------
+ arch/arm/boot/dts/r8a7790.dtsi | 4 ----
+ 3 files changed, 18 deletions(-)
 
-are available in the git repository at:
+-- 
+1.9.1
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clocks-for-v3.19
+Gr{oetje,eeting}s,
 
-for you to fetch changes up to 2b02b8020fad6ed505ff9cfb1b418c4b59f102a5:
+						Geert
 
-  ARM: shmobile: r8a7740 legacy: Add missing INTCA clock for irqpin module (2014-10-24 10:30:50 +0900)
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-----------------------------------------------------------------
-Renesas ARM Based SoC Clocks Updates for v3.19
-
-* Add missing INTCA clock for irqpin module on r8a7740
-
-----------------------------------------------------------------
-Geert Uytterhoeven (1):
-      ARM: shmobile: r8a7740 legacy: Add missing INTCA clock for irqpin module
-
- arch/arm/mach-shmobile/clock-r8a7740.c | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
