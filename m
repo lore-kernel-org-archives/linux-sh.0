@@ -1,129 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 26 Oct 2014 14:11:10 +0000
-Subject: [PATCH v5 05/14] ARM: shmobile: marzen: Enable DU device in DT
-Message-Id: <1414332679-15497-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 29 Oct 2014 14:28:36 +0000
+Subject: [PATCH 1/3] MAINTAINERS: Remove reference to shmobile / koelsch_defconfig
+Message-Id: <1414592918-25138-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Specify the DU output topology, enable the DU device and configure the
-related pins.
+koelsch_defconfig was removed in commit 595c6a4bb77f0096 ("ARM:
+shmobile: koelsch: Remove legacy C board code").
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+ MAINTAINERS | 1 -
+ 1 file changed, 1 deletion(-)
 
-Changes since v4:
-
-- Renamed lvds-enc node to lvds-encoder
-- Added reg properties to port nodes of the lvds encoder
----
- arch/arm/boot/dts/r8a7779-marzen.dts | 83 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 83 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
-index 9e1b859190ca..034dada2b462 100644
---- a/arch/arm/boot/dts/r8a7779-marzen.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-@@ -69,6 +69,78 @@
- 			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
- 		};
- 	};
-+
-+	vga-encoder {
-+		compatible = "adi,adv7123";
-+
-+		ports {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+
-+			port@0 {
-+				reg = <0>;
-+				vga_enc_in: endpoint {
-+					remote-endpoint = <&du_out_rgb0>;
-+				};
-+			};
-+			port@1 {
-+				reg = <1>;
-+				vga_enc_out: endpoint {
-+					remote-endpoint = <&vga_in>;
-+				};
-+			};
-+		};
-+	};
-+
-+	vga {
-+		compatible = "vga-connector";
-+
-+		port {
-+			vga_in: endpoint {
-+				remote-endpoint = <&vga_enc_out>;
-+			};
-+		};
-+	};
-+
-+	lvds-encoder {
-+		compatible = "thine,thc63lvdm83d";
-+
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		ports {
-+			port@0 {
-+				reg = <0>;
-+				lvds_enc_in: endpoint {
-+					remote-endpoint = <&du_out_rgb1>;
-+				};
-+			};
-+			port@1 {
-+				reg = <1>;
-+				lvds_connector: endpoint {
-+				};
-+			};
-+		};
-+	};
-+};
-+
-+&du {
-+	pinctrl-0 = <&du_pins>;
-+	pinctrl-names = "default";
-+	status = "okay";
-+
-+	ports {
-+		port@0 {
-+			endpoint {
-+				remote-endpoint = <&vga_enc_in>;
-+			};
-+		};
-+		port@1 {
-+			endpoint {
-+				remote-endpoint = <&lvds_enc_in>;
-+			};
-+		};
-+	};
- };
- 
- &irqpin0 {
-@@ -84,6 +156,17 @@
- };
- 
- &pfc {
-+	du_pins: du {
-+		du0 {
-+			renesas,groups = "du0_rgb888", "du0_sync_1", "du0_clk_out_0";
-+			renesas,function = "du0";
-+		};
-+		du1 {
-+			renesas,groups = "du1_rgb666", "du1_sync_1", "du1_clk_out";
-+			renesas,function = "du1";
-+		};
-+	};
-+
- 	lan0_pins: lan0 {
- 		intc {
- 			renesas,groups = "intc_irq1_b";
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 8d9038077258b722..7095c6de7bbc1beb 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -1381,7 +1381,6 @@ F:	arch/arm/boot/dts/sh*
+ F:	arch/arm/configs/ape6evm_defconfig
+ F:	arch/arm/configs/armadillo800eva_defconfig
+ F:	arch/arm/configs/bockw_defconfig
+-F:	arch/arm/configs/koelsch_defconfig
+ F:	arch/arm/configs/kzm9g_defconfig
+ F:	arch/arm/configs/lager_defconfig
+ F:	arch/arm/configs/mackerel_defconfig
 -- 
-2.0.4
+1.9.1
 
