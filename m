@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 29 Oct 2014 04:59:12 +0000
-Subject: [PATCH 06/19] ARM: shmobile: r7s72100: Remove r7s72100-genmai.dtb for ARCH_SHMOBILE_LEGACY
-Message-Id: <e8e0a1c70c53558ab9295a1a37aefab8fee15e1d.1414556943.git.horms+renesas@verge.net.au>
+Date: Wed, 29 Oct 2014 04:59:08 +0000
+Subject: [PATCH 02/19] ARM: shmobile: r8a73a4: Remove spurious dma-multiplexer base addresses
+Message-Id: <6a8663f8bb5e3e2bf0d362744db844f2678d9b8b.1414556943.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1414556943.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1414556943.git.horms+renesas@verge.net.au>
@@ -10,31 +10,28 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+As there is no reg property the dma-multiplexer nodes should
+not include @...
 
-Forgotten by commit ad8c3af8b75ff26c ("ARM: shmobile: r7s72100: Remove
-legacy board support").
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/Makefile | 2 +-
+ arch/arm/boot/dts/r8a73a4.dtsi | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 88282c8..59b6d3e 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -376,7 +376,7 @@ dtb-$(CONFIG_ARCH_S5PV210) += s5pv210-aquila.dtb \
- 	s5pv210-smdkc110.dtb \
- 	s5pv210-smdkv210.dtb \
- 	s5pv210-torbreck.dtb
--dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += r7s72100-genmai.dtb \
-+dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += \
- 	r8a73a4-ape6evm.dtb \
- 	r8a73a4-ape6evm-reference.dtb \
- 	r8a7740-armadillo800eva.dtb \
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index ef152e3..8a70dcd 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -122,7 +122,7 @@
+ 			     <0 57 IRQ_TYPE_LEVEL_HIGH>;
+ 	};
+ 
+-	dmac: dma-multiplexer@0 {
++	dmac: dma-multiplexer {
+ 		compatible = "renesas,shdma-mux";
+ 		#dma-cells = <1>;
+ 		dma-channels = <20>;
 -- 
 2.1.1
 
