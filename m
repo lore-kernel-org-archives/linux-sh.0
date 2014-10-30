@@ -1,97 +1,39 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 02 Oct 2014 08:02:33 +0000
-Subject: [PATCH 2/2] usb: renesas_usbhs: add support for generic PHY
-Message-Id: <1412236953-1084-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 30 Oct 2014 05:55:51 +0000
+Subject: [PATCH/RFC] ARM: shmobile: lager: Fix SPI mode of SPI-Flash into mode3
+Message-Id: <1414648551-30318-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4F05318F.9060209@renesas.com>
-In-Reply-To: <4F05318F.9060209@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This patch adds support for the generic PHY. The generic PHY will be
-used in multiplatform environment.
+From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+In order to change into mode3, CPOL and CPHA bit of SPCMD register
+of MSIOF is changed. Mode3 can avoid intermediate voltage.
+
+Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/usb/renesas_usbhs/common.h |    1 +
- drivers/usb/renesas_usbhs/rcar2.c  |   29 +++++++++++++++++++++++++++++
- 2 files changed, 30 insertions(+)
+Based on the renesas-devel-20141030-v3.18-rc2 branch of my renesas tree
 
-diff --git a/drivers/usb/renesas_usbhs/common.h b/drivers/usb/renesas_usbhs/common.h
-index e0d53c5..c45667f 100644
---- a/drivers/usb/renesas_usbhs/common.h
-+++ b/drivers/usb/renesas_usbhs/common.h
-@@ -270,6 +270,7 @@ struct usbhs_priv {
- 	struct usbhs_fifo_info fifo_info;
+ arch/arm/boot/dts/r8a7790-lager.dts | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 830f2e8..1606fad 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -343,6 +343,8 @@
+ 		spi-tx-bus-width = <4>;
+ 		spi-rx-bus-width = <4>;
+ 		m25p,fast-read;
++		spi-cpol;
++		spi-cpha;
  
- 	struct usb_phy *usb_phy;
-+	struct phy *phy;
- };
- 
- /*
-diff --git a/drivers/usb/renesas_usbhs/rcar2.c b/drivers/usb/renesas_usbhs/rcar2.c
-index 485b889..8fc15c0 100644
---- a/drivers/usb/renesas_usbhs/rcar2.c
-+++ b/drivers/usb/renesas_usbhs/rcar2.c
-@@ -12,6 +12,7 @@
- 
- #include <linux/gpio.h>
- #include <linux/of_gpio.h>
-+#include <linux/phy/phy.h>
- #include <linux/platform_data/gpio-rcar.h>
- #include <linux/usb/phy.h>
- #include "common.h"
-@@ -21,6 +22,16 @@ static int usbhs_rcar2_hardware_init(struct platform_device *pdev)
- {
- 	struct usbhs_priv *priv = usbhs_pdev_to_priv(pdev);
- 
-+	if (IS_ENABLED(CONFIG_GENERIC_PHY)) {
-+		struct phy *phy = phy_get(&pdev->dev, "usb");
-+
-+		if (IS_ERR(phy))
-+			return PTR_ERR(phy);
-+
-+		priv->phy = phy;
-+		return 0;
-+	}
-+
- 	if (IS_ENABLED(CONFIG_USB_PHY)) {
- 		struct usb_phy *usb_phy = usb_get_phy_dev(&pdev->dev, 0);
- 
-@@ -38,6 +49,11 @@ static int usbhs_rcar2_hardware_exit(struct platform_device *pdev)
- {
- 	struct usbhs_priv *priv = usbhs_pdev_to_priv(pdev);
- 
-+	if (priv->phy) {
-+		phy_put(priv->phy);
-+		priv->phy = NULL;
-+	}
-+
- 	if (priv->usb_phy) {
- 		usb_put_phy(priv->usb_phy);
- 		priv->usb_phy = NULL;
-@@ -52,6 +68,19 @@ static int usbhs_rcar2_power_ctrl(struct platform_device *pdev,
- 	struct usbhs_priv *priv = usbhs_pdev_to_priv(pdev);
- 	int retval = -ENODEV;
- 
-+	if (priv->phy) {
-+		if (enable) {
-+			retval = phy_init(priv->phy);
-+
-+			if (!retval)
-+				retval = phy_power_on(priv->phy);
-+		} else {
-+			phy_power_off(priv->phy);
-+			phy_exit(priv->phy);
-+			retval = 0;
-+		}
-+	}
-+
- 	if (priv->usb_phy) {
- 		if (enable) {
- 			retval = usb_phy_init(priv->usb_phy);
+ 		partition@0 {
+ 			label = "loader";
 -- 
-1.7.9.5
+2.1.1
 
