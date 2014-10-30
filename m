@@ -1,33 +1,61 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Thu, 30 Oct 2014 01:28:27 +0000
-Subject: Re: [PATCH 0/11][RFC] sound DMA support patches
-Message-Id: <87sii6xs5j.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 30 Oct 2014 05:58:54 +0000
+Subject: [PATCH 1/3] ARM: shmobile: r8a7794: Add SGX clock to device tree
+Message-Id: <1414648736-31412-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <874my8vlqq.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <874my8vlqq.wl%kuninori.morimoto.gx@gmail.com>
+References: <1414648736-31412-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1414648736-31412-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+From: Kouei Abe <kouei.abe.cp@renesas.com>
 
-Hi Laurent
-
-> > I thik "normal" cyclic is OK on this driver now.
-> > Are all patches which are required for cyclic posted to ML ?
-> > I'm asking because ...
-> >  - I want to send sound support patch
-> >  - LTSI 3.14 backport want to use it.
-> 
-> I've just send the latest version of the rcar-dmac patches to the dmaengine 
-> and linux-sh mailing list, CC'ing you. They include hardware descriptor list 
-> and cyclic transfer support. I've tested them with your audio patches (I've 
-> just pushed my test branch to git://linuxtv.org/pinchartl/fbdev.git 
-> dma/audio).
-
-Thank you !
-I will check it, and will post sound support patches to ML
-
-Best regards
+Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Kuninori Morimoto
+ arch/arm/boot/dts/r8a7794.dtsi            | 11 +++++------
+ include/dt-bindings/clock/r8a7794-clock.h |  1 +
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 088e79c..d348dee 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -461,16 +461,15 @@
+ 		mstp1_clks: mstp1_clks@e6150134 {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
+-			clocks = <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
+-				 <&cp_clk>,
+-				 <&zs_clk>, <&zs_clk>, <&zs_clk>;
++			clocks = <&p_clk>, <&zg_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
++				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+-				R8A7794_CLK_TMU1 R8A7794_CLK_TMU3 R8A7794_CLK_TMU2
+-				R8A7794_CLK_CMT0 R8A7794_CLK_TMU0
++				R8A7794_CLK_TMU1 R8A7794_CLK_PVRSRVKM R8A7794_CLK_TMU3
++				R8A7794_CLK_TMU2 R8A7794_CLK_CMT0 R8A7794_CLK_TMU0
+ 			>;
+ 			clock-output-names -				"tmu1", "tmu3", "tmu2", "cmt0", "tmu0";
++				"tmu1", "pvrsrvkm", "tmu3", "tmu2", "cmt0", "tmu0";
+ 		};
+ 		mstp2_clks: mstp2_clks@e6150138 {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
+index 9ac1043..29a6789 100644
+--- a/include/dt-bindings/clock/r8a7794-clock.h
++++ b/include/dt-bindings/clock/r8a7794-clock.h
+@@ -27,6 +27,7 @@
+ 
+ /* MSTP1 */
+ #define R8A7794_CLK_TMU1		11
++#define R8A7794_CLK_PVRSRVKM		12
+ #define R8A7794_CLK_TMU3		21
+ #define R8A7794_CLK_TMU2		22
+ #define R8A7794_CLK_CMT0		24
+-- 
+2.1.1
+
