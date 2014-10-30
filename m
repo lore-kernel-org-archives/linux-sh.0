@@ -1,25 +1,38 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 30 Oct 2014 05:57:55 +0000
-Subject: [PATCH 0/2] ARM: shmobile: r8a7790: Fix SD3CKCR address
-Message-Id: <1414648677-31104-1-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 30 Oct 2014 09:51:56 +0000
+Subject: Re: [PATCH 0/2] ARM: shmobile: r8a7790: Fix SD3CKCR address
+Message-Id: <CAMuHMdWS1M24vngxvrf3mRGfVwKvmgsXnqZ6xq_hJuPC=KqqWQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1414648677-31104-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1414648677-31104-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This short series corrects the SD3CKCR address in both C and DT
+On Thu, Oct 30, 2014 at 6:57 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> This short series corrects the SD3CKCR address in both C and DT
+>
+> Based on the renesas-devel-20141030-v3.18-rc2 branch of my renesas tree
+>
+> Shinobu Uehara (2):
+>   ARM: shmobile: r8a7790: Fix SD3CKCR address
+>   ARM: shmobile: r8a7790: Fix SD3CKCR address to device tree
 
-Based on the renesas-devel-20141030-v3.18-rc2 branch of my renesas tree
+This  matches my copy of the datasheet, so
 
-Shinobu Uehara (2):
-  ARM: shmobile: r8a7790: Fix SD3CKCR address
-  ARM: shmobile: r8a7790: Fix SD3CKCR address to device tree
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
- arch/arm/boot/dts/r8a7790.dtsi         | 4 ++--
- arch/arm/mach-shmobile/clock-r8a7790.c | 2 +-
- 2 files changed, 3 insertions(+), 3 deletions(-)
+But it would be good to know this has been verified on actual hardware.
 
--- 
-2.1.1
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
