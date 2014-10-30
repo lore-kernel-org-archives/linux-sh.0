@@ -1,7 +1,7 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 29 Oct 2014 11:22:59 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 30 Oct 2014 00:16:13 +0000
 Subject: Re: [PATCH v3 0/9] R-Car Gen2 DMA Controller driver
-Message-Id: <7382991.mN71S6k9c6@avalon>
+Message-Id: <20141030001612.GC22052@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1414345216-14486-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1414345216-14486-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -10,34 +10,55 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Morimoto-san,
-
-On Tuesday 28 October 2014 17:04:01 Kuninori Morimoto wrote:
-> Hi Laurent, Simon
+On Wed, Oct 29, 2014 at 12:05:15PM +0200, Laurent Pinchart wrote:
+> Hi Geert,
 > 
-> > > On Lager board + SDHI
+> On Wednesday 29 October 2014 10:59:48 Geert Uytterhoeven wrote:
+> > On Wed, Oct 29, 2014 at 10:49 AM, Laurent Pinchart wrote:
+> > > I've performed quick SDHI performance tests yesterday. Read performance
+> > > were around 7.5% lower with DMA support. Write performances varied but
+> > > seemed similar on average.
 > > > 
-> > > Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> > > - PIO
+> > > 
+> > > # time dd if=/dev/mmcblk1 of=/mnt/ram/mmc.bin count2768 bs@96
+> > > 262144+0 records in
+> > > 262144+0 records out
 > > 
-> > Thank you.
-> > 
-> > > Current SDHI driver + DMAC is working, but super slow,
-> > > especially, write case....
-> > 
-> > *sigh* I'll test that.
+> > 262144 records? Did it get split in 512 byte records?
 > 
-> Maybe this is SDHI side issue (?)
-> Buswidth/clock/setting etc etc etc...
-> No one used SDHI + DMA in DT and in R-Car Gen2 today.
+> I knew I should have replaced the whole results instead of copying only the 
+> lines I thought had changed between tests :-) The times correspond to 32768 
+> blocks of 4kB despite what the number of records say.
 
-I've performed my tests using a 2 bytes bus width. Using a 4 bytes bus width I 
-get similar performances for PIO and DMA. 16 bytes and 32 bytes bus widths 
-don't work out of the box, they would need more work.
+As discussed elsewhere, I've dropped the following two patches for now,
+pending further investigation of the problem.
 
-> So, I guess it is very safety if we can ignore SDHI + DMA in upstream
-> -> Simon ?
+ARM: shmobile: r8a7791: Reference DMA channels in SDHI DT nodes
+ARM: shmobile: r8a7790: Reference DMA channels in SDHI DT nodes
 
--- 
-Regards,
-
-Laurent Pinchart
+> > > # time dd of=/dev/mmcblk1 if=/mnt/ram/mmc.bin count2768 bs@96
+> > > 32+0 records in
+> > > 32+0 records out
+> > 
+> > Only 32 records?
+> > 
+> > > - DMA
+> > > 
+> > > # time dd if=/dev/mmcblk1 of=/mnt/ram/mmc.bin count2768 bs@96
+> > > 32+0 records in
+> > > 32+0 records out
+> > 
+> > Only 32 records?
+> > 
+> > > # time dd of=/dev/mmcblk1 if=/mnt/ram/mmc.bin count2768 bs@96
+> > > 32768+0 records in
+> > > 32768+0 records out
+> > 
+> > OK
+> 
+> -- 
+> Regards,
+> 
+> Laurent Pinchart
+> 
