@@ -1,44 +1,57 @@
-From: Guenter Roeck <linux@roeck-us.net>
-Date: Wed, 01 Oct 2014 16:26:17 +0000
-Subject: Re: [RFC PATCH 10/16] mips: support poweroff through poweroff handler call chain
-Message-Id: <20141001162617.GC11708@roeck-us.net>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Thu, 30 Oct 2014 17:43:12 +0000
+Subject: Re: [PATCH 3/8] ARM: shmobile: r8a73a4: Add SCIF nodes
+Message-Id: <CAO3366zufRM-2+ezcKODYD29iuyQjwbjOE3bo5=D9Q+HcZS0TA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412100056-15517-1-git-send-email-linux@roeck-us.net>
- <1412100056-15517-11-git-send-email-linux@roeck-us.net>
- <20141001133238.GJ19854@linux-mips.org>
-In-Reply-To: <20141001133238.GJ19854@linux-mips.org>
+References: <cover.1405398515.git.horms+renesas@verge.net.au>
+ <94f1a03db6988c64601dc84eaf6c8ef1b956d9e7.1405398515.git.horms+renesas@verge.net.au>
+In-Reply-To: <94f1a03db6988c64601dc84eaf6c8ef1b956d9e7.1405398515.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Oct 01, 2014 at 03:32:39PM +0200, Ralf Baechle wrote:
-> On Tue, Sep 30, 2014 at 11:00:50AM -0700, Guenter Roeck wrote:
-> 
-> > The kernel core now supports a poweroff handler call chain
-> > to remove power from the system. Call it if pm_power_off
-> > is set to NULL.
-> > 
-> > Cc: Ralf Baechle <ralf@linux-mips.org>
-> > Signed-off-by: Guenter Roeck <linux@roeck-us.net>
-> > ---
-> >  arch/mips/kernel/reset.c | 2 ++
-> >  1 file changed, 2 insertions(+)
-> > 
-> > diff --git a/arch/mips/kernel/reset.c b/arch/mips/kernel/reset.c
-> > index 07fc524..c3391d7 100644
-> > --- a/arch/mips/kernel/reset.c
-> > +++ b/arch/mips/kernel/reset.c
-> > @@ -41,4 +41,6 @@ void machine_power_off(void)
-> >  {
-> >  	if (pm_power_off)
-> >  		pm_power_off();
-> > +	else
-> > +		do_kernel_poweroff();
-> 
-> I'm happy with this as long as in a later version pm_power_off indeed
-> goes away.
-> 
-Yes, that would be the ultimate goal. Hope we can get there.
+Hi!
 
-Guenter
+On Tue, Jul 15, 2014 at 11:16 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> This describes all of the SCIF hardware of the r8a73a4.
+> Each node is disabled and may be enabled as necessary
+> by board DTS files.
+[...]
+> +       scifb2: serial@e6c20000 {
+> +               compatible = "renesas,scifb-r8a73a4", "renesas,scifb";
+> +               reg = <0 0xe6c20000 0 0x100>;
+> +               interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
+> +               status = "disabled";
+> +       };
+> +
+> +       scifb3: serial@e6c30000 {
+> +               compatible = "renesas,scifb-r8a73a4", "renesas,scifb";
+> +               reg = <0 0xe6c30000 0 0x100>;
+> +               interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
+> +               status = "disabled";
+> +       };
+> +
+> +       scifb4: serial@e6ce0000 {
+> +               compatible = "renesas,scifb-r8a73a4", "renesas,scifb";
+> +               reg = <0 0xe6ce0000 0 0x100>;
+> +               interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
+> +               status = "disabled";
+> +       };
+> +
+> +       scifb5: serial@e6cf0000 {
+> +               compatible = "renesas,scifb-r8a73a4", "renesas,scifb";
+> +               reg = <0 0xe6cf0000 0 0x100>;
+> +               interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
+> +               status = "disabled";
+> +       };
+> +
+
+I was just about to add clocks to these devices when I noticed that
+these ports are labeled scifb0 to scifb3 in the datasheet. Is there
+any deeper reasoning behind this, or did you just forget to reset the
+counter after scifa1? :)
+
+CU
+Uli
