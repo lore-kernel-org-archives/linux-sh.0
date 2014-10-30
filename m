@@ -1,59 +1,110 @@
 From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 08 Oct 2014 06:24:30 +0000
-Subject: [PATCH 2/2] ARM: shmobile: lager: enable USB3.0
-Message-Id: <1412749470-6028-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 30 Oct 2014 04:02:45 +0000
+Subject: [PATCH v2 2/4] usb: renesas_usbhs: gadget: fix the behavior of pullup
+Message-Id: <1414641767-5780-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412749470-6028-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1412749470-6028-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
-Cc: devicetree@vger.kernel.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-sh@vger.kernel.org
 
-Since the PHY of USB3.0 and EHCI/OHCI ch2 are the same, the USB3.0
-driver cannot use the phy driver when the EHCI/OHCI ch2 already used it:
+From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
 
-phy phy-e6590100.usb-phy.3: phy init failed --> -16
-xhci-hcd: probe of ee000000.usb failed with error -16
+This patch fixes an issue that this driver always enable the D+ pullup
+after it detected the VBUS connection even though this usb controller
+can control the D+ pullup timing by software. So, this driver should
+enable the D+ pullup after a gadget driver called usb_gadget_connect().
 
-If so, we have to unbind the EHCI/OHCI ch2, and then we have to bind
-the USB3.0 driver as the following:
-
-  echo 0000:02:02.0 > /sys/bus/pci/drivers/ehci-pci/unbind
-  echo 0000:02:01.0 > /sys/bus/pci/drivers/ohci-pci/unbind
-  echo ee000000.usb > /sys/bus/platform/drivers/xhci-hcd/bind
-
-Note that there will be pinctrl-related error messages if both
-internal PCI and USB3.0 are enabled but they should be just ignored:
-
-sh-pfc e6060000.pfc: pin GP_5_22 already requested by ee0d0000.pci; cannot claim for ee000000.usb
-sh-pfc e6060000.pfc: pin-182 (ee000000.usb) status -22
-ata1: SATA link down (SStatus 0 SControl 300)
-sh-pfc e6060000.pfc: could not request pin 182 (GP_5_22) from group usb2  on device sh-pfc
-
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts |    6 ++++++
- 1 file changed, 6 insertions(+)
+ drivers/usb/renesas_usbhs/common.c     |    6 ++++--
+ drivers/usb/renesas_usbhs/mod_gadget.c |   27 ++++++++++++++++++++++++++-
+ 2 files changed, 30 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 719979e..3f51be1 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -419,6 +419,12 @@
- 	pinctrl-names = "default";
+diff --git a/drivers/usb/renesas_usbhs/common.c b/drivers/usb/renesas_usbhs/common.c
+index b3b6813..7099f17 100644
+--- a/drivers/usb/renesas_usbhs/common.c
++++ b/drivers/usb/renesas_usbhs/common.c
+@@ -126,13 +126,15 @@ void usbhs_sys_host_ctrl(struct usbhs_priv *priv, int enable)
+ void usbhs_sys_function_ctrl(struct usbhs_priv *priv, int enable)
+ {
+ 	u16 mask = DCFM | DRPD | DPRPU | HSE | USBE;
+-	u16 val  = DPRPU | HSE | USBE;
++	u16 val  = HSE | USBE;
+ 
+ 	/*
+ 	 * if enable
+ 	 *
+ 	 * - select Function mode
+-	 * - D+ Line Pull-up
++	 * - D+ Line Pull-up is disabled
++	 *      When D+ Line Pull-up is enabled,
++	 *      calling usbhs_sys_function_pullup(,1)
+ 	 */
+ 	usbhs_bset(priv, SYSCFG, mask, enable ? val : 0);
+ }
+diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
+index 2d0903f..0d50be0 100644
+--- a/drivers/usb/renesas_usbhs/mod_gadget.c
++++ b/drivers/usb/renesas_usbhs/mod_gadget.c
+@@ -56,6 +56,8 @@ struct usbhsg_gpriv {
+ #define USBHSG_STATUS_REGISTERD		(1 << 1)
+ #define USBHSG_STATUS_WEDGE		(1 << 2)
+ #define USBHSG_STATUS_SELF_POWERED	(1 << 3)
++
++	unsigned		softconnect:1;
  };
  
-+&xhci {
-+	status = "okay";
-+	pinctrl-0 = <&usb2_pins>;
-+	pinctrl-names = "default";
-+};
+ struct usbhsg_recip_handle {
+@@ -726,6 +728,24 @@ static struct usb_ep_ops usbhsg_ep_ops = {
+ };
+ 
+ /*
++ *		pullup control
++ */
++static int usbhsg_can_pullup(struct usbhs_priv *priv)
++{
++	struct usbhsg_gpriv *gpriv = usbhsg_priv_to_gpriv(priv);
 +
- &pci2 {
- 	status = "okay";
- 	pinctrl-0 = <&usb2_pins>;
++	return gpriv->driver && gpriv->softconnect;
++}
++
++static void usbhsg_update_pullup(struct usbhs_priv *priv)
++{
++	if (usbhsg_can_pullup(priv))
++		usbhs_sys_function_pullup(priv, 1);
++	else
++		usbhs_sys_function_pullup(priv, 0);
++}
++
++/*
+  *		usb module start/end
+  */
+ static int usbhsg_try_start(struct usbhs_priv *priv, u32 status)
+@@ -775,6 +795,7 @@ static int usbhsg_try_start(struct usbhs_priv *priv, u32 status)
+ 	 * - usb module
+ 	 */
+ 	usbhs_sys_function_ctrl(priv, 1);
++	usbhsg_update_pullup(priv);
+ 
+ 	/*
+ 	 * enable irq callback
+@@ -881,8 +902,12 @@ static int usbhsg_pullup(struct usb_gadget *gadget, int is_on)
+ {
+ 	struct usbhsg_gpriv *gpriv = usbhsg_gadget_to_gpriv(gadget);
+ 	struct usbhs_priv *priv = usbhsg_gpriv_to_priv(gpriv);
++	unsigned long flags;
+ 
+-	usbhs_sys_function_pullup(priv, is_on);
++	usbhs_lock(priv, flags);
++	gpriv->softconnect = (is_on != 0);
++	usbhsg_update_pullup(priv);
++	usbhs_unlock(priv, flags);
+ 
+ 	return 0;
+ }
 -- 
 1.7.9.5
 
