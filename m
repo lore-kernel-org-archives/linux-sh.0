@@ -1,51 +1,75 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Tue, 14 Oct 2014 12:08:30 +0000
-Subject: Re: [PATCH v2 0/1 resend] spi: Using Trigger number to transmit/receive data
-Message-Id: <20141014120830.GS27755@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Z5R++VQVird/TDtY"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 30 Oct 2014 05:58:56 +0000
+Subject: [PATCH 3/3] ARM: shmobile: r8a7794: Add MMP and VSP1 clocks to device tree
+Message-Id: <1414648736-31412-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1413248264-3685-1-git-send-email-cm-hiep@jinso.co.jp>
-In-Reply-To: <1413248264-3685-1-git-send-email-cm-hiep-HEF513clHfp3+QwDJ9on6Q@public.gmane.org>
-To: Cao Minh Hiep <cm-hiep-HEF513clHfp3+QwDJ9on6Q@public.gmane.org>
-Cc: geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, ryusuke.sakato.bx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+References: <1414648736-31412-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1414648736-31412-1-git-send-email-horms+renesas@verge.net.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+From: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
 
---Z5R++VQVird/TDtY
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7794.dtsi            | 14 +++++++++-----
+ include/dt-bindings/clock/r8a7794-clock.h |  6 ++++++
+ 2 files changed, 15 insertions(+), 5 deletions(-)
 
-On Tue, Oct 14, 2014 at 09:57:43AM +0900, Cao Minh Hiep wrote:
-> From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
->=20
-> Hi Geert,
->=20
-> Here is the verion 2 of the QSPI patch, I have added the DMA support on i=
-t.
-> In order to use DMA When the DMA is available.=20
-> This patch supports for r8a7790 SOC and developed base on the upstream-v3=
-=2E17-rc7
-> and have tested on the Lager board.
-> Please review it when you have time!
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 08c50c8..d62589f 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -461,15 +461,19 @@
+ 		mstp1_clks: mstp1_clks@e6150134 {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
+-			clocks = <&p_clk>, <&zg_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
+-				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>;
++			clocks = <&zs_clk>, <&zs_clk>, <&p_clk>, <&zg_clk>, <&zs_clk>,
++				 <&zs_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>, <&cp_clk>,
++				 <&zs_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+-				R8A7794_CLK_TMU1 R8A7794_CLK_PVRSRVKM R8A7794_CLK_TMU3
+-				R8A7794_CLK_TMU2 R8A7794_CLK_CMT0 R8A7794_CLK_TMU0
++				R8A7794_CLK_VCP0 R8A7794_CLK_VPC0 R8A7794_CLK_TMU1
++				R8A7794_CLK_PVRSRVKM R8A7794_CLK_2DDMAC R8A7794_CLK_FDP0
++				R8A7794_CLK_TMU3 R8A7794_CLK_TMU2 R8A7794_CLK_CMT0
++				R8A7794_CLK_TMU0 R8A7794_CLK_VSP1_DU0 R8A7794_CLK_VSP1_S
+ 			>;
+ 			clock-output-names -				"tmu1", "pvrsrvkm", "tmu3", "tmu2", "cmt0", "tmu0";
++				"vcp0", "vpc0", "tmu1", "pvrsrvkm", "tddmac", "fdp0",
++				"tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du0", "vsps";
+ 		};
+ 		mstp2_clks: mstp2_clks@e6150138 {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
+index 7d49531..512ce89 100644
+--- a/include/dt-bindings/clock/r8a7794-clock.h
++++ b/include/dt-bindings/clock/r8a7794-clock.h
+@@ -26,12 +26,18 @@
+ #define R8A7794_CLK_MSIOF0		0
+ 
+ /* MSTP1 */
++#define R8A7794_CLK_VCP0		1
++#define R8A7794_CLK_VPC0		3
+ #define R8A7794_CLK_TMU1		11
+ #define R8A7794_CLK_PVRSRVKM		12
++#define R8A7794_CLK_2DDMAC		15
++#define R8A7794_CLK_FDP0		19
+ #define R8A7794_CLK_TMU3		21
+ #define R8A7794_CLK_TMU2		22
+ #define R8A7794_CLK_CMT0		24
+ #define R8A7794_CLK_TMU0		25
++#define R8A7794_CLK_VSP1_DU0		28
++#define R8A7794_CLK_VSP1_S		31
+ 
+ /* MSTP2 */
+ #define R8A7794_CLK_SCIFA2		2
+-- 
+2.1.1
 
-You appear to be resending this about a week after the last send -
-please don't do that, you should allow longer for review.
-
---Z5R++VQVird/TDtY
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQEcBAEBAgAGBQJUPRI6AAoJECTWi3JdVIfQndgH+gMGleTnyVSMWwqykBuRaoRz
-aua1DJlLxB8f3l9Eqssd/o5up4MSNaS87NRziPIkaPU2Hx+4zYMBh7qNGmu+QFKv
-Mozp9IGS2/wKu7I4eDXza4Sz6WrFustvXm0/0diVnrqsMbH3vblUP8y2FtYUgmYu
-YWqdQ6IEdUmKMa8X3vB3i9hq4imwGco4we3/gi3rIV3UPxlZZvgB6XP9Rd0fQzMD
-G+FHiTvEMDtPnN85uAx0tf4O621H6ZFtD7db9GQ1CkPh1IAX07rxXkFPAU50MeH2
-a8yshRn9yusovBxfRciQGNWjK3otCCsiI3PgaUt5ufX8LCDquVjHxNTqlCu7jSc=
-=9/dq
------END PGP SIGNATURE-----
-
---Z5R++VQVird/TDtY--
