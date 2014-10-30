@@ -1,42 +1,40 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 29 Oct 2014 14:58:11 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 30 Oct 2014 00:00:02 +0000
 Subject: Re: [PATCH 0/3] ARM: shmobile: sata_rcar updates
-Message-Id: <CAMuHMdXN-=6budQ=QViG0p3Cfdz1CSVyG6jUC0sRi+iis1nYMA@mail.gmail.com>
+Message-Id: <20141030000002.GE4599@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1414591131-21771-1-git-send-email-geert+renesas@glider.be>
-	<20141029145151.GD25226@htj.dyndns.org>
-In-Reply-To: <20141029145151.GD25226@htj.dyndns.org>
+ <20141029145151.GD25226@htj.dyndns.org>
+ <CAMuHMdXN-=6budQ=QViG0p3Cfdz1CSVyG6jUC0sRi+iis1nYMA@mail.gmail.com>
+In-Reply-To: <CAMuHMdXN-=6budQ=QViG0p3Cfdz1CSVyG6jUC0sRi+iis1nYMA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Tejun Heo <tj@kernel.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>, "linux-ide@vger.kernel.org" <linux-ide@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Tejun Heo <tj@kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>, Magnus Damm <magnus.damm@gmail.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>, "linux-ide@vger.kernel.org" <linux-ide@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Hi Tejun,
+On Wed, Oct 29, 2014 at 03:58:11PM +0100, Geert Uytterhoeven wrote:
+> Hi Tejun,
+> 
+> On Wed, Oct 29, 2014 at 3:51 PM, Tejun Heo <tj@kernel.org> wrote:
+> > On Wed, Oct 29, 2014 at 02:58:48PM +0100, Geert Uytterhoeven wrote:
+> >> This patch series improves DT bindings documentation and usage for the
+> >> sata_rcar driver.
+> >>
+> >> The first patch was sent before by Valentine Barshak a while ago, but never
+> >> updated according to the review comments.
+> >
+> > I can route these through libata tree once Simon acks them.  Please
+> > let me know thorugh which tree these should be routed.
+> 
+> I think the first two, tagged "sata_rcar", should go through your tree.
+> The third one, tagged "ARM: shmobile", should go through Simon's tree.
 
-On Wed, Oct 29, 2014 at 3:51 PM, Tejun Heo <tj@kernel.org> wrote:
-> On Wed, Oct 29, 2014 at 02:58:48PM +0100, Geert Uytterhoeven wrote:
->> This patch series improves DT bindings documentation and usage for the
->> sata_rcar driver.
->>
->> The first patch was sent before by Valentine Barshak a while ago, but never
->> updated according to the review comments.
->
-> I can route these through libata tree once Simon acks them.  Please
-> let me know thorugh which tree these should be routed.
+Yes, I think so too.
 
-I think the first two, tagged "sata_rcar", should go through your tree.
-The third one, tagged "ARM: shmobile", should go through Simon's tree.
+For the first two patches:
 
-Thanks!
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
-Gr{oetje,eeting}s,
+I'll pick up the last patch myself.
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
