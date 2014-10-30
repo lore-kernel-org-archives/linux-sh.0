@@ -1,42 +1,42 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 08 Oct 2014 06:24:58 +0000
-Subject: [PATCH] ARM: shmobile: r8a7791: add USB3.0 device node
-Message-Id: <1412749498-2748-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 30 Oct 2014 01:50:49 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC DT Clocksource Updates for v3.19
+Message-Id: <cover.1414629281.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412749498-2748-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1412749498-2748-1-git-send-email-yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org, linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org
-Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- arch/arm/boot/dts/r8a7791.dtsi |   10 ++++++++++
- 1 file changed, 10 insertions(+)
+Hi Olof, Hi Kevin, Hi Arnd,
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index d343099..cdf4b46 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1146,6 +1146,16 @@
- 		status = "disabled";
- 	};
- 
-+	xhci: usb@ee000000 {
-+		compatible = "renesas,xhci-r8a7791";
-+		reg = <0 0xee000000 0 0xc00>;
-+		interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7791_CLK_SSUSB>;
-+		phys = <&usb2 1>;
-+		phy-names = "usb";
-+		status = "disabled";
-+	};
-+
- 	pci0: pci@ee090000 {
- 		compatible = "renesas,pci-r8a7791";
- 		device_type = "pci";
--- 
-1.7.9.5
+Please consider these Renesas ARM based SoC DT clocksource updates for v3.19.
 
+
+The following changes since commit f114040e3ea6e07372334ade75d1ee0775c355e1:
+
+  Linux 3.18-rc1 (2014-10-19 18:08:38 -0700)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-clocksource-for-v3.19
+
+for you to fetch changes up to d5153cd734dd6c1243bb3dc98065be99b10d049f:
+
+  clocksource: sh_mtu2: Drop incorrect SoC family name (2014-10-27 10:00:36 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC DT Clocksource Updates for v3.19
+
+* sh_mtu2: Drop incorrect SoC family name
+* sh_tmu: Document r8a7778 and r8a7740 bindings
+
+----------------------------------------------------------------
+Geert Uytterhoeven (3):
+      clocksource: sh_tmu: Document R-Mobile r8a7740 binding
+      clocksource: sh_tmu: Document r8a7778 binding
+      clocksource: sh_mtu2: Drop incorrect SoC family name
+
+ Documentation/devicetree/bindings/timer/renesas,mtu2.txt | 2 +-
+ Documentation/devicetree/bindings/timer/renesas,tmu.txt  | 4 +++-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
