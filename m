@@ -1,48 +1,35 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 24 Oct 2014 10:45:07 +0000
-Subject: [PATCH v4 2/3] ARM: shmobile: koelsch: enable HS-USB
-Message-Id: <1414147508-5556-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 30 Oct 2014 00:28:10 +0000
+Subject: [PATCH v4 1/5] dmaengine: Add 16 bytes, 32 bytes and 64 bytes bus widths
+Message-Id: <1414628894-24460-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414147508-5556-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1414147508-5556-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au, sergei.shtylyov@cogentembedded.com, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
-Cc: devicetree@vger.kernel.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-sh@vger.kernel.org
 
-Enable HS-USB device for the Koelsch board, defining the GPIO that the driver
-should check when probing (which is the ID output from MAX3355 OTG chip).
+The widths are missing, add them.
 
-Note that there will be pinctrl-related error messages if both internal PCI
-and HS-USB drivers are enabled but they should be just ignored.
-
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-[Sergei: added pin function/group and prop, moved device node, fixed summary,
-added changelog]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts |    7 +++++++
- 1 file changed, 7 insertions(+)
+ include/linux/dmaengine.h | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 5318463..6e63200 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -464,6 +464,13 @@
- 	pinctrl-names = "default";
+diff --git a/include/linux/dmaengine.h b/include/linux/dmaengine.h
+index 653a1fd07ae8..aa13a6d9f4e6 100644
+--- a/include/linux/dmaengine.h
++++ b/include/linux/dmaengine.h
+@@ -298,6 +298,9 @@ enum dma_slave_buswidth {
+ 	DMA_SLAVE_BUSWIDTH_3_BYTES = 3,
+ 	DMA_SLAVE_BUSWIDTH_4_BYTES = 4,
+ 	DMA_SLAVE_BUSWIDTH_8_BYTES = 8,
++	DMA_SLAVE_BUSWIDTH_16_BYTES = 16,
++	DMA_SLAVE_BUSWIDTH_32_BYTES = 32,
++	DMA_SLAVE_BUSWIDTH_64_BYTES = 64,
  };
  
-+&hsusb {
-+	status = "okay";
-+	pinctrl-0 = <&usb0_pins>;
-+	pinctrl-names = "default";
-+	renesas,enable-gpio = <&gpio5 31 GPIO_ACTIVE_HIGH>;
-+};
-+
- &usbphy {
- 	status = "okay";
- };
+ /**
 -- 
-1.7.9.5
+2.0.4
 
