@@ -1,47 +1,56 @@
-From: Adam Iwaniuk <adami@cubiware.com>
-Date: Mon, 13 Oct 2014 11:59:12 +0000
-Subject: [PATCH] sh: fix mmap_sem deadlock in sys_cacheflush
-Message-Id: <1413201552-2730-1-git-send-email-adami@cubiware.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 30 Oct 2014 05:57:36 +0000
+Subject: [PATCH/RFC] ARM: shmobile: r8a7791: Add SDHI clock rate to device tree
+Message-Id: <1414648656-30973-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, Adam Iwaniuk <adami@cubiware.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Adam Iwaniuk <adami@cubiware.com>
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-We can't be holding the mmap_sem while calling __flush_XXX_region/flush_icache_range
-because the flush can fault. If we fault on a user address, the page fault handler
-will try to take mmap_sem again. Since both places acquire the read lock, most of the
-time it succeeds. However, if another thread tries to acquire the write lock on the
-mmap_sem (e.g. mmap) in between the call to __flush_XXX_region/flush_icache_range and
-the fault, the down_read in do_page_fault will deadlock.
-
-Signed-off-by: Adam Iwaniuk <adami@cubiware.com>
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+[simon: rebase]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/sh/kernel/sys_sh.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Based on the renesas-devel-20141030-v3.18-rc2 branch of my renesas tree
 
-diff --git a/arch/sh/kernel/sys_sh.c b/arch/sh/kernel/sys_sh.c
-index 8c6a350..4aa294c 100644
---- a/arch/sh/kernel/sys_sh.c
-+++ b/arch/sh/kernel/sys_sh.c
-@@ -74,6 +74,7 @@ asmlinkage int sys_cacheflush(unsigned long addr, unsigned long len, int op)
- 		up_read(&current->mm->mmap_sem);
- 		return -EFAULT;
- 	}
-+	up_read(&current->mm->mmap_sem);
+If this is useful I wonder if it is should be set in the koelsch and/or
+henniger board DTS file instead of the r8a7791 DTSI SoC file.
+
+
+ arch/arm/boot/dts/r8a7791.dtsi | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 9a57215..62745b8 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -416,6 +416,7 @@
+ 		reg = <0 0xee100000 0 0x200>;
+ 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7791_CLK_SDHI0>;
++		renesas,clk-rate = <195000000>;
+ 		status = "disabled";
+ 	};
  
- 	switch (op & CACHEFLUSH_D_PURGE) {
- 		case CACHEFLUSH_D_INVAL:
-@@ -90,6 +91,5 @@ asmlinkage int sys_cacheflush(unsigned long addr, unsigned long len, int op)
- 	if (op & CACHEFLUSH_I)
- 		flush_icache_range(addr, addr+len);
+@@ -424,6 +425,7 @@
+ 		reg = <0 0xee140000 0 0x100>;
+ 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7791_CLK_SDHI1>;
++		renesas,clk-rate = <97500000>;
+ 		status = "disabled";
+ 	};
  
--	up_read(&current->mm->mmap_sem);
- 	return 0;
- }
+@@ -432,6 +434,7 @@
+ 		reg = <0 0xee160000 0 0x100>;
+ 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7791_CLK_SDHI2>;
++		renesas,clk-rate = <97500000>;
+ 		status = "disabled";
+ 	};
+ 
 -- 
-1.7.9.5
+2.1.1
 
