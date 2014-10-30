@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Fri, 31 Oct 2014 00:25:17 +0000
-Subject: [PATCH 02/12 v2] ARM: shmobile: r8a7790: Add Audio DMAC peri peri devices to DT
-Message-Id: <87tx2l2ihf.wl%kuninori.morimoto.gx@gmail.com>
+Date: Thu, 30 Oct 2014 08:27:58 +0000
+Subject: [PATCH 10/11] ARM: shmobile: multiplatform: add Audo DMAC peri peri support on defconfig
+Message-Id: <8761f2x8qb.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,36 +10,23 @@ To: linux-sh@vger.kernel.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Instantiate the Audio DMAC peri peri controllers
-in the r8a7790 device tree.
-
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v1 -v2
+ arch/arm/configs/shmobile_defconfig |    1 +
+ 1 file changed, 1 insertion(+)
 
- - removed "0x" prefix
-
- arch/arm/boot/dts/r8a7790.dtsi |    7 +++++++
- 1 file changed, 7 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 4246106..6fc6ca7 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -369,6 +369,13 @@
- 		dma-channels = <13>;
- 	};
- 
-+	audmapp: audio-dma-pp@ec740000 {
-+		compatible = "renesas,rcar-audmapp";
-+		#dma-cells = <1>;
-+
-+		reg = <0 0xec740000 0 0x200>;
-+	};
-+
- 	i2c0: i2c@e6508000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index c8201a9..e489648 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -145,6 +145,7 @@ CONFIG_RTC_CLASS=y
+ CONFIG_RTC_DRV_S35390A=y
+ CONFIG_DMADEVICES=y
+ CONFIG_SH_DMAE=y
++CONFIG_RCAR_AUDMAC_PP=y
+ # CONFIG_IOMMU_SUPPORT is not set
+ CONFIG_PWM=y
+ CONFIG_PWM_RENESAS_TPU=y
 -- 
 1.7.9.5
 
