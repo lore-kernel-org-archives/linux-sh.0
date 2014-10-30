@@ -1,40 +1,84 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Tue, 07 Oct 2014 17:24:09 +0000
-Subject: Re: [PATCH] ASoC: simple-card: Initialize headphone and mic GPIO numbers
-Message-Id: <20141007172409.GS4609@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Qf878oECjVTnCF6M"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 30 Oct 2014 01:50:30 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Cleanup for v3.19
+Message-Id: <cover.1414629163.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412687366-6400-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1412687366-6400-1-git-send-email-geert+renesas@glider.be>
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Liam Girdwood <lgirdwood@gmail.com>, Dylan Reid <dgreid@chromium.org>, Linus Walleij <linus.walleij@linaro.org>, Alexandre Courbot <gnurou@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, alsa-devel@alsa-project.org, linux-sh@vger.kernel.org
+References: <cover.1398216284.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398216284.git.horms+renesas@verge.net.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
+
+Hi Olof, Hi Kevin, Hi Arnd,
+
+Please consider these Renesas ARM based SoC cleanup for v3.19.
 
 
---Qf878oECjVTnCF6M
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+The following changes since commit f114040e3ea6e07372334ade75d1ee0775c355e1:
 
-On Tue, Oct 07, 2014 at 03:09:26PM +0200, Geert Uytterhoeven wrote:
-> The uninitialized default of 0 for gpio_hp_det and gpio_mic_det doesn't
-> play well with asm-generic's gpio_is_valid():
+  Linux 3.18-rc1 (2014-10-19 18:08:38 -0700)
 
-Applied, thanks.
+are available in the git repository at:
 
---Qf878oECjVTnCF6M
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup-for-v3.19
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
+for you to fetch changes up to 335204dfb83b3105cf4a666d1ad024917831cbdc:
 
-iQEcBAEBAgAGBQJUNCG4AAoJECTWi3JdVIfQK7MH/1pl0zcL8f9mIzBXXC4esXw3
-ll0OSPIHoN9lquIs9e+NBxOZo12ycrtIwoPI+xlMNsPJHq5FlPZBTCEySdXja05j
-vy2zcZjWQvnAtk8qh3QkqYJnypCKB0RpssMNOuE7ACQjtlsBWfDzL7rImd80kBSX
-tkCfaA9CPon9Bzi0xgg6wbdHB8iEko/Isk29zyTAOVsPyaSm3flRNtqL18WVIJl4
-JQDrfo8rQwBrJP0XUYmbyOJwqNXT/YlMREteOhwJuieoSsDfhJ6W3hN4u+pMwtk1
-GYoKJzz4VX2JjQNBHU1nurFroBV3B1CiXRpOOcAfUQUKvu4IaI+1RT9DIRPjF/M=
-=dgdy
------END PGP SIGNATURE-----
+  ARM: shmobile: Remove FSF address from copyright headers (2014-10-27 09:48:07 +0900)
 
---Qf878oECjVTnCF6M--
+----------------------------------------------------------------
+Renesas ARM Based SoC Cleanup for v3.19
+
+* Remove FSF address from copyright headers
+
+----------------------------------------------------------------
+Laurent Pinchart (1):
+      ARM: shmobile: Remove FSF address from copyright headers
+
+ arch/arm/mach-shmobile/board-ape6evm-reference.c | 4 ----
+ arch/arm/mach-shmobile/board-ape6evm.c           | 4 ----
+ arch/arm/mach-shmobile/board-armadillo800eva.c   | 5 -----
+ arch/arm/mach-shmobile/board-bockw-reference.c   | 4 ----
+ arch/arm/mach-shmobile/board-bockw.c             | 4 ----
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 4 ----
+ arch/arm/mach-shmobile/board-koelsch.c           | 4 ----
+ arch/arm/mach-shmobile/board-kzm9g-reference.c   | 4 ----
+ arch/arm/mach-shmobile/board-kzm9g.c             | 4 ----
+ arch/arm/mach-shmobile/board-lager-reference.c   | 4 ----
+ arch/arm/mach-shmobile/board-lager.c             | 4 ----
+ arch/arm/mach-shmobile/board-mackerel.c          | 4 ----
+ arch/arm/mach-shmobile/board-marzen-reference.c  | 4 ----
+ arch/arm/mach-shmobile/board-marzen.c            | 4 ----
+ arch/arm/mach-shmobile/clock-r8a73a4.c           | 4 ----
+ arch/arm/mach-shmobile/clock-r8a7740.c           | 4 ----
+ arch/arm/mach-shmobile/clock-r8a7778.c           | 4 ----
+ arch/arm/mach-shmobile/clock-r8a7779.c           | 4 ----
+ arch/arm/mach-shmobile/clock-r8a7790.c           | 4 ----
+ arch/arm/mach-shmobile/clock-r8a7791.c           | 4 ----
+ arch/arm/mach-shmobile/clock-sh7372.c            | 4 ----
+ arch/arm/mach-shmobile/clock-sh73a0.c            | 4 ----
+ arch/arm/mach-shmobile/clock.c                   | 4 ----
+ arch/arm/mach-shmobile/console.c                 | 4 ----
+ arch/arm/mach-shmobile/headsmp-scu.S             | 5 -----
+ arch/arm/mach-shmobile/intc-sh7372.c             | 4 ----
+ arch/arm/mach-shmobile/intc-sh73a0.c             | 4 ----
+ arch/arm/mach-shmobile/r8a7740.h                 | 4 ----
+ arch/arm/mach-shmobile/r8a7778.h                 | 4 ----
+ arch/arm/mach-shmobile/setup-emev2.c             | 4 ----
+ arch/arm/mach-shmobile/setup-r7s72100.c          | 4 ----
+ arch/arm/mach-shmobile/setup-r8a73a4.c           | 4 ----
+ arch/arm/mach-shmobile/setup-r8a7740.c           | 4 ----
+ arch/arm/mach-shmobile/setup-r8a7778.c           | 4 ----
+ arch/arm/mach-shmobile/setup-r8a7779.c           | 4 ----
+ arch/arm/mach-shmobile/setup-r8a7790.c           | 4 ----
+ arch/arm/mach-shmobile/setup-r8a7791.c           | 4 ----
+ arch/arm/mach-shmobile/setup-rcar-gen2.c         | 4 ----
+ arch/arm/mach-shmobile/setup-sh7372.c            | 4 ----
+ arch/arm/mach-shmobile/setup-sh73a0.c            | 4 ----
+ arch/arm/mach-shmobile/sleep-sh7372.S            | 5 -----
+ arch/arm/mach-shmobile/smp-emev2.c               | 4 ----
+ arch/arm/mach-shmobile/smp-r8a7779.c             | 4 ----
+ arch/arm/mach-shmobile/smp-sh73a0.c              | 4 ----
+ arch/arm/mach-shmobile/timer.c                   | 5 -----
+ 45 files changed, 184 deletions(-)
