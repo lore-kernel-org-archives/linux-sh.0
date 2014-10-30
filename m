@@ -1,60 +1,84 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 29 Oct 2014 14:09:37 +0000
-Subject: [PATCH 1/3] ARM: shmobile: r8a7778 dtsi: Remove unnecessary MMC options
-Message-Id: <1414591779-22954-2-git-send-email-geert+renesas@glider.be>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 30 Oct 2014 04:02:46 +0000
+Subject: [PATCH v2 3/4] usb: renesas_usbhs: fix the timing of dcp_control_transfer_done
+Message-Id: <1414641767-5780-4-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414591779-22954-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1414591779-22954-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, linux-mmc@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+According to the datasheet, this driver should clear the INTSTS0.CTRT
+bit before this controller detects the next stage transition. Otherwise,
+the driver may not be able to clear the bit after the controller went to
+the next stage transition. After that, the driver will not be able to
+clear the INTSTS0.VALID, and a usb control transfer will not finish
+finally.
 
-As of commit b3a5d4ce65162d27 ("mmc: sdhi: update sh_mobile_sdhi_of_data
-for r8a7778), the driver takes care of r8a7778 specific MMC options.
-Hence they can be removed from the dtsi.
+If we use the testusb tool, it is easy to reproduce this issue:
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-[geert: Rebased, reworded, added reference]
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+ # testusb -a -t 10
+
+Since the previous code handled a data stage and a status stage in
+the usbhsf_pio_try_push(), it may not clear the INTSTS0.CTRT at the
+right timing.
+So, this patch change the timing of usbhs_dcp_control_transfer_done()
+to the usbhsg_irq_ctrl_stage().
+
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/boot/dts/r8a7778.dtsi | 6 ------
- 1 file changed, 6 deletions(-)
+ drivers/usb/renesas_usbhs/fifo.c       |   16 ----------------
+ drivers/usb/renesas_usbhs/mod_gadget.c |    3 +++
+ 2 files changed, 3 insertions(+), 16 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 96297f67fda8e632..ef8533910029620e 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -251,8 +251,6 @@
- 		compatible = "renesas,sdhi-r8a7778";
- 		reg = <0xffe4c000 0x100>;
- 		interrupts = <0 87 IRQ_TYPE_LEVEL_HIGH>;
--		cap-sd-highspeed;
--		cap-sdio-irq;
- 		status = "disabled";
- 	};
+diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
+index b0c97a3..0e07925 100644
+--- a/drivers/usb/renesas_usbhs/fifo.c
++++ b/drivers/usb/renesas_usbhs/fifo.c
+@@ -577,14 +577,6 @@ static int usbhsf_pio_try_push(struct usbhs_pkt *pkt, int *is_done)
+ 		usbhs_pipe_number(pipe),
+ 		pkt->length, pkt->actual, *is_done, pkt->zero);
  
-@@ -260,8 +258,6 @@
- 		compatible = "renesas,sdhi-r8a7778";
- 		reg = <0xffe4d000 0x100>;
- 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
--		cap-sd-highspeed;
--		cap-sdio-irq;
- 		status = "disabled";
- 	};
+-	/*
+-	 * Transmission end
+-	 */
+-	if (*is_done) {
+-		if (usbhs_pipe_is_dcp(pipe))
+-			usbhs_dcp_control_transfer_done(pipe);
+-	}
+-
+ 	usbhsf_fifo_unselect(pipe, fifo);
  
-@@ -269,8 +265,6 @@
- 		compatible = "renesas,sdhi-r8a7778";
- 		reg = <0xffe4f000 0x100>;
- 		interrupts = <0 86 IRQ_TYPE_LEVEL_HIGH>;
--		cap-sd-highspeed;
--		cap-sdio-irq;
- 		status = "disabled";
- 	};
+ 	return 0;
+@@ -722,14 +714,6 @@ usbhs_fifo_read_end:
+ 		usbhs_pipe_number(pipe),
+ 		pkt->length, pkt->actual, *is_done, pkt->zero);
  
+-	/*
+-	 * Transmission end
+-	 */
+-	if (*is_done) {
+-		if (usbhs_pipe_is_dcp(pipe))
+-			usbhs_dcp_control_transfer_done(pipe);
+-	}
+-
+ usbhs_fifo_read_busy:
+ 	usbhsf_fifo_unselect(pipe, fifo);
+ 
+diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
+index 0d50be0..f7adb3e 100644
+--- a/drivers/usb/renesas_usbhs/mod_gadget.c
++++ b/drivers/usb/renesas_usbhs/mod_gadget.c
+@@ -486,6 +486,9 @@ static int usbhsg_irq_ctrl_stage(struct usbhs_priv *priv,
+ 	case NODATA_STATUS_STAGE:
+ 		pipe->handler = &usbhs_ctrl_stage_end_handler;
+ 		break;
++	case READ_STATUS_STAGE:
++	case WRITE_STATUS_STAGE:
++		usbhs_dcp_control_transfer_done(pipe);
+ 	default:
+ 		return ret;
+ 	}
 -- 
-1.9.1
+1.7.9.5
 
