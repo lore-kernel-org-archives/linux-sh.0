@@ -1,76 +1,106 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 30 Oct 2014 10:23:39 +0000
+From: Chai Wen <chaiw.fnst@cn.fujitsu.com>
+Date: Thu, 30 Oct 2014 10:50:49 +0000
 Subject: Re: [PATCH] ARM: shmobile: koelsch: Fix flash partition label and size in device tree
-Message-Id: <CAMuHMdUAYJfLtMwzwOvsqaoDtXPW=q2yQLUH9+jQDB+A2JHX9Q@mail.gmail.com>
+Message-Id: <54521809.4000208@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1414648469-29947-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1414648469-29947-1-git-send-email-horms+renesas@verge.net.au>
+ <CAMuHMdUAYJfLtMwzwOvsqaoDtXPW=q2yQLUH9+jQDB+A2JHX9Q@mail.gmail.com>
+In-Reply-To: <CAMuHMdUAYJfLtMwzwOvsqaoDtXPW=q2yQLUH9+jQDB+A2JHX9Q@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Oct 30, 2014 at 6:54 AM, Simon Horman
-<horms+renesas@verge.net.au> wrote:
-> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
->
-> The size and the name of flash partition are consistent
-> across use the R-Car Gen2 series.
->
-> This patch makes the koelsch board consistent with the lager board.
+On 10/30/2014 06:23 PM, Geert Uytterhoeven wrote:
 
-Does this match the actual data in the FLASH?
+> On Thu, Oct 30, 2014 at 6:54 AM, Simon Horman
+> <horms+renesas@verge.net.au> wrote:
+>> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+>>
+>> The size and the name of flash partition are consistent
+>> across use the R-Car Gen2 series.
+>>
+>> This patch makes the koelsch board consistent with the lager board.
+> 
+> Does this match the actual data in the FLASH?
+> 
+> On my board, the SPI boot loader is at 0x00000000.
+> There's also a small unidentified chunk at 0x00040000:
+> 
+>     00040000  00 40 30 e6 5c 3a 03 00  ff ff ff ff ff ff ff ff
+> |.@0.\:..........|
+> 
+> u-Boot seems to be at 0x00080000.
+> u-Boot environment variables are saved at 0x000c0000.
+> This does match the old "bootenv" partition.
+> 
+> After that it's all-zeroes until 0x00100000, where I did my SPI tests,
+> based on the old layout.
+> 
+> Do I have a non-standard Koelsch FLASH layout on my board?
 
-On my board, the SPI boot loader is at 0x00000000.
-There's also a small unidentified chunk at 0x00040000:
 
-    00040000  00 40 30 e6 5c 3a 03 00  ff ff ff ff ff ff ff ff
-|.@0.\:..........|
 
-u-Boot seems to be at 0x00080000.
-u-Boot environment variables are saved at 0x000c0000.
-This does match the old "bootenv" partition.
+FYI, I have a koelsch board, and the layout out the flash is like:
 
-After that it's all-zeroes until 0x00100000, where I did my SPI tests,
-based on the old layout.
+0x0            0x10000               0x50000            
+|-- loader.bin --|--    uboot.bin    --|--           something else  --|
+0               64K                   320K                             16M
 
-Do I have a non-standard Koelsch FLASH layout on my board?
+But, I have no idea whether this is a standard layout or not.
 
-> --- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-> +++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-> @@ -390,17 +390,17 @@
->
->                 partition@0 {
->                         label = "loader";
-> -                       reg = <0x00000000 0x00080000>;
-> +                       reg = <0x00000000 0x00040000>;
->                         read-only;
->                 };
-> -               partition@80000 {
-> -                       label = "bootenv";
-> -                       reg = <0x00080000 0x00080000>;
-> +               partition@40000 {
-> +                       label = "user";
-> +                       reg = <0x00040000 0x00400000>;
->                         read-only;
->                 };
-> -               partition@100000 {
-> -                       label = "data";
-> -                       reg = <0x00100000 0x03f00000>;
-> +               partition@440000 {
-> +                       label = "flash";
-> +                       reg = <0x00440000 0x03bc0000>;
->                 };
->         };
->  };
+thanks
+chai wen
 
-Gr{oetje,eeting}s,
+> 
+>> --- a/arch/arm/boot/dts/r8a7791-koelsch.dts
+>> +++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+>> @@ -390,17 +390,17 @@
+>>
+>>                 partition@0 {
+>>                         label = "loader";
+>> -                       reg = <0x00000000 0x00080000>;
+>> +                       reg = <0x00000000 0x00040000>;
+>>                         read-only;
+>>                 };
+>> -               partition@80000 {
+>> -                       label = "bootenv";
+>> -                       reg = <0x00080000 0x00080000>;
+>> +               partition@40000 {
+>> +                       label = "user";
+>> +                       reg = <0x00040000 0x00400000>;
+>>                         read-only;
+>>                 };
+>> -               partition@100000 {
+>> -                       label = "data";
+>> -                       reg = <0x00100000 0x03f00000>;
+>> +               partition@440000 {
+>> +                       label = "flash";
+>> +                       reg = <0x00440000 0x03bc0000>;
+>>                 };
+>>         };
+>>  };
+> 
+> Gr{oetje,eeting}s,
+> 
+>                         Geert
+> 
+> --
+> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+> 
+> In personal conversations with technical people, I call myself a hacker. But
+> when I'm talking to journalists I just say "programmer" or something like that.
+>                                 -- Linus Torvalds
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> .
+> 
 
-                        Geert
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+-- 
+Regards
+
+Chai Wen
