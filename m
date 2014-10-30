@@ -1,78 +1,43 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 29 Oct 2014 04:59:17 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC DT Cleanups for v3.19
-Message-Id: <cover.1414556943.git.horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 30 Oct 2014 04:02:44 +0000
+Subject: [PATCH v2 1/4] usb: renesas_usbhs: gadget: fix NULL pointer dereference in ep_disable()
+Message-Id: <1414641767-5780-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-Please consider these Renesas ARM based SoC DT cleanups for v3.19.
+This patch fixes an issue that the NULL pointer dereference happens
+when we uses g_audio driver. Since the g_audio driver will call
+usb_ep_disable() in afunc_set_alt() before it calls usb_ep_enable(),
+the uep->pipe of renesas usbhs driver will be NULL. So, this patch
+adds a condition to avoid the oops.
 
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Cc: <stable@vger.kernel.org>
+---
+ drivers/usb/renesas_usbhs/mod_gadget.c |    3 +++
+ 1 file changed, 3 insertions(+)
 
-The following changes since commit f114040e3ea6e07372334ade75d1ee0775c355e1:
+diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
+index 2d17c10..2d0903f 100644
+--- a/drivers/usb/renesas_usbhs/mod_gadget.c
++++ b/drivers/usb/renesas_usbhs/mod_gadget.c
+@@ -602,6 +602,9 @@ static int usbhsg_ep_disable(struct usb_ep *ep)
+ 	struct usbhsg_uep *uep = usbhsg_ep_to_uep(ep);
+ 	struct usbhs_pipe *pipe = usbhsg_uep_to_pipe(uep);
+ 
++	if (!uep || !uep->pipe)
++		return -EINVAL;
++
+ 	usbhsg_pipe_disable(uep);
+ 	usbhs_pipe_free(pipe);
+ 
+-- 
+1.7.9.5
 
-  Linux 3.18-rc1 (2014-10-19 18:08:38 -0700)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-cleanups-for-v3.19
-
-for you to fetch changes up to 120f038cf04b95dc895cba503a7516ff75561438:
-
-  ARM: shmobile: kzm9d dts: Add chosen/stdout-path (2014-10-24 10:44:10 +0900)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC DT Cleanups for v3.19
-
-* Add chosen/stdout-path to DTS files for shmobile boards
-* Remove r7s72100-genmai.dtb for ARCH_SHMOBILE_LEGACY
-  - The corresponding board file has already been removed
-* Sort dts nodes by address
-* Sort SHMOBILE dtbs alphabetically in Makefile
-
-----------------------------------------------------------------
-Geert Uytterhoeven (15):
-      ARM: dts: Sort SHMOBILE dtbs alphabetically
-      ARM: shmobile: r7s72100: Remove r7s72100-genmai.dtb for ARCH_SHMOBILE_LEGACY
-      ARM: shmobile: emev2 dtsi: Use generic names for device nodes
-      ARM: shmobile: emev2 dtsi: Add uart* labels for easier referencing
-      ARM: shmobile: genmai dts: Add chosen/stdout-path
-      ARM: shmobile: ape6evm-reference dts: Add chosen/stdout-path
-      ARM: shmobile: armadillo800eva dts: Add chosen/stdout-path
-      ARM: shmobile: bockw-reference dts: Add chosen/stdout-path
-      ARM: shmobile: marzen dts: Add chosen/stdout-path
-      ARM: shmobile: lager dts: Add chosen/stdout-path
-      ARM: shmobile: henninger dts: Add chosen/stdout-path
-      ARM: shmobile: koelsch dts: Add chosen/stdout-path
-      ARM: shmobile: alt dts: Add chosen/stdout-path
-      ARM: shmobile: kzm9g-reference dts: Add chosen/stdout-path
-      ARM: shmobile: kzm9d dts: Add chosen/stdout-path
-
-Simon Horman (1):
-      ARM: shmobile: r8a73a4: Remove spurious dma-multiplexer base addresses
-
-Ulrich Hecht (3):
-      ARM: shmobile: r7s72100: sort dtsi file by address
-      ARM: shmobile: kzm9d: sort dts file by address
-      ARM: shmobile: r8a73a4: sort dtsi file by address
-
- arch/arm/boot/dts/Makefile                      |  16 +-
- arch/arm/boot/dts/emev2-kzm9d.dts               |  63 +++----
- arch/arm/boot/dts/emev2.dtsi                    |  12 +-
- arch/arm/boot/dts/r7s72100-genmai.dts           |   3 +-
- arch/arm/boot/dts/r7s72100.dtsi                 | 202 ++++++++++-----------
- arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts |   3 +-
- arch/arm/boot/dts/r8a73a4.dtsi                  | 232 ++++++++++++------------
- arch/arm/boot/dts/r8a7740-armadillo800eva.dts   |   1 +
- arch/arm/boot/dts/r8a7778-bockw-reference.dts   |   3 +-
- arch/arm/boot/dts/r8a7779-marzen.dts            |   1 +
- arch/arm/boot/dts/r8a7790-lager.dts             |   1 +
- arch/arm/boot/dts/r8a7791-henninger.dts         |   1 +
- arch/arm/boot/dts/r8a7791-koelsch.dts           |   1 +
- arch/arm/boot/dts/r8a7794-alt.dts               |   1 +
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts    |   1 +
- 15 files changed, 276 insertions(+), 265 deletions(-)
