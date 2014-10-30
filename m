@@ -1,139 +1,43 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Thu, 30 Oct 2014 08:27:19 +0000
-Subject: [PATCH 05/11] ARM: shmobile: lager: Sound PIO support on DTS
-Message-Id: <87d29ax8rf.wl%kuninori.morimoto.gx@gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 30 Oct 2014 09:40:08 +0000
+Subject: Re: [PATCH 05/11] ARM: shmobile: lager: Sound PIO support on DTS
+Message-Id: <CAMuHMdWES_Ziq+GWuqjtgjVOJUvV6WvLWN9kcB4MKYFNJAj6Sw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87d29ax8rf.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87d29ax8rf.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi Morimoto-san,
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/boot/dts/r8a7790-lager.dts |   70 +++++++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/Kconfig      |    1 +
- 2 files changed, 71 insertions(+)
+On Thu, Oct 30, 2014 at 9:27 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@gmail.com> wrote:
+> -- a/arch/arm/mach-shmobile/Kconfig
+> +++ b/arch/arm/mach-shmobile/Kconfig
+> @@ -77,6 +77,7 @@ config MACH_LAGER
+>         bool "Lager board"
+>         depends on ARCH_R8A7790
+>         select MICREL_PHY if SH_ETH
+> +       select SND_SOC_AK4642 if SND_SIMPLE_CARD
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 830f2e8..c4c9ce4 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -9,6 +9,18 @@
-  * kind, whether express or implied.
-  */
- 
-+/*
-+ * SSI-AK4643
-+ *
-+ * SW1: 1: AK4643
-+ *      2: CN22
-+ *      3: ADV7511
-+ *
-+ * This command is required when Playback/Capture
-+ *
-+ *	amixer set "LINEOUT Mixer DACL" on
-+ */
-+
- /dts-v1/;
- #include "r8a7790.dtsi"
- #include <dt-bindings/gpio/gpio.h>
-@@ -146,6 +158,23 @@
- 			  1800000 0>;
- 	};
- 
-+	sound {
-+		compatible = "simple-audio-card";
-+
-+		simple-audio-card,format = "left_j";
-+		simple-audio-card,bitclock-master = <&sndcodec>;
-+		simple-audio-card,frame-master = <&sndcodec>;
-+
-+		sndcpu: simple-audio-card,cpu {
-+			sound-dai = <&rcar_sound>;
-+		};
-+
-+		sndcodec: simple-audio-card,codec {
-+			sound-dai = <&ak4643>;
-+			system-clock-frequency = <11289600>;
-+		};
-+	};
-+
- 	vga-encoder {
- 		compatible = "adi,adv7123";
- 
-@@ -292,6 +321,16 @@
- 		renesas,groups = "vin1_data8", "vin1_clk";
- 		renesas,function = "vin1";
- 	};
-+
-+	sound_pins: sound {
-+		renesas,groups = "ssi0129_ctrl", "ssi0_data", "ssi1_data";
-+		renesas,function = "ssi";
-+	};
-+
-+	sound_clk_pins: sound_clk {
-+		renesas,groups = "audio_clk_a";
-+		renesas,function = "audio_clk";
-+	};
- };
- 
- &ether {
-@@ -429,6 +468,12 @@
- 	pinctrl-0 = <&iic2_pins>;
- 	pinctrl-names = "default";
- 
-+	ak4643: sound-codec@12 {
-+		compatible = "asahi-kasei,ak4643";
-+		#sound-dai-cells = <0>;
-+		reg = <0x12>;
-+	};
-+
- 	composite-in@20 {
- 		compatible = "adi,adv7180";
- 		reg = <0x20>;
-@@ -511,3 +556,28 @@
- 		};
- 	};
- };
-+
-+&rcar_sound {
-+	pinctrl-0 = <&sound_pins &sound_clk_pins>;
-+	pinctrl-names = "default";
-+
-+	#sound-dai-cells = <0>;
-+
-+	status = "okay";
-+
-+	rcar_sound,dai {
-+		dai0 {
-+			playback = <&ssi0>;
-+			capture  = <&ssi1>;
-+		};
-+	};
-+};
-+
-+&ssi0 {
-+	pio-transfer;
-+};
-+
-+&ssi1 {
-+	pio-transfer;
-+	shared-pin;
-+};
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 7cb0a48..55d84b6 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -77,6 +77,7 @@ config MACH_LAGER
- 	bool "Lager board"
- 	depends on ARCH_R8A7790
- 	select MICREL_PHY if SH_ETH
-+	select SND_SOC_AK4642 if SND_SIMPLE_CARD
- 
- config MACH_MARZEN
- 	bool "MARZEN board"
--- 
-1.7.9.5
+I know there's a long history of putting this into Kconfig.
 
+However, once Lager becomes multi-platform-only without board file,
+there will be no MACH_LAGER Kconfig option anymore, and you will have
+to add SND_SOC_AK4642=y to the shmobile_defconfig anyway.
+
+So I think it's better to add it to shmobile_defconfig now, so it won't be
+forgotten.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
