@@ -1,46 +1,36 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Thu, 16 Oct 2014 05:18:31 +0000
-Subject: Re: [PATCH 3/3] media: soc_camera: rcar_vin: Add NV16 horizontal scaling-up support
-Message-Id: <CAH1o70Kk-W1sXG27GgpP+qVpHDo_Pae73jPhOx=Jc9eHvaDpNA@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 30 Oct 2014 05:57:56 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7790: Fix SD3CKCR address
+Message-Id: <1414648677-31104-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1413268013-8437-1-git-send-email-ykaneko0929@gmail.com>
-	<1413268013-8437-4-git-send-email-ykaneko0929@gmail.com>
-	<543D1DD1.2060700@cogentembedded.com>
-	<20141015045213.GA18646@verge.net.au>
-	<543E8746.80809@cogentembedded.com>
-	<20141016045548.GA31899@verge.net.au>
-In-Reply-To: <20141016045548.GA31899@verge.net.au>
+References: <1414648677-31104-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1414648677-31104-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Linux Media Mailing List <linux-media@vger.kernel.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-2014-10-16 13:55 GMT+09:00 Simon Horman <horms@verge.net.au>:
-> On Wed, Oct 15, 2014 at 06:40:06PM +0400, Sergei Shtylyov wrote:
->> Hello.
->>
->> On 10/15/2014 08:52 AM, Simon Horman wrote:
->>
->> >>>From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
->>
->> >>>The scaling function had been forbidden for the capture format of
->> >>>NV16 until now. With this patch, a horizontal scaling-up function
->> >>>is supported to the capture format of NV16. a vertical scaling-up
->> >>>by the capture format of NV16 is forbidden for the H/W specification.
->>
->> >>    s/for/by/?
->>
->> >How about the following text?
->>
->> >Up until now scaling has been forbidden for the NV16 capture format. This
->> >patch adds support for horizontal scaling-up for NV16. Vertical scaling-up
->> >for NV16 is forbidden for by the H/W specification.
->>
->>    "For by", hehe? Were you trying to keep every happy? :-)
->
-> Maybe :^)
->
-> Kaneko-san, can you change "for by" to "by" ?
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-I got it.
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a7790.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index c395ff1..f9bbc5f 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -64,7 +64,7 @@
+ 
+ #define SDCKCR		0xE6150074
+ #define SD2CKCR		0xE6150078
+-#define SD3CKCR		0xE615007C
++#define SD3CKCR		0xE615026C
+ #define MMC0CKCR	0xE6150240
+ #define MMC1CKCR	0xE6150244
+ #define SSPCKCR		0xE6150248
+-- 
+2.1.1
+
