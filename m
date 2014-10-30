@@ -1,58 +1,43 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 18 Oct 2014 15:05:39 +0000
-Subject: Re: [PATCH v2 2/3] media: soc_camera: rcar_vin: Add capture width check for NV16 format
-Message-Id: <544281C3.9030002@cogentembedded.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 30 Oct 2014 10:30:16 +0000
+Subject: [PATCH v3 1/4] usb: renesas_usbhs: gadget: fix NULL pointer dereference in ep_disable()
+Message-Id: <1414665019-1340-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1413439968-6349-1-git-send-email-ykaneko0929@gmail.com> <1413439968-6349-3-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1413439968-6349-3-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>, linux-media@vger.kernel.org
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On 10/16/2014 10:12 AM, Yoshihiro Kaneko wrote:
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-> From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+This patch fixes an issue that the NULL pointer dereference happens
+when we uses g_audio driver. Since the g_audio driver will call
+usb_ep_disable() in afunc_set_alt() before it calls usb_ep_enable(),
+the uep->pipe of renesas usbhs driver will be NULL. So, this patch
+adds a condition to avoid the oops.
 
-> At the time of NV16 capture format, the user has to specify the
-> capture output width of the multiple of 32 for H/W specification.
-> At the time of using NV16 format by ioctl of VIDIOC_S_FMT,
-> this patch adds align check and the error handling to forbid
-> specification of the capture output width which is not a multiple of 32.
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Cc: <stable@vger.kernel.org>
+---
+ drivers/usb/renesas_usbhs/mod_gadget.c |    3 +++
+ 1 file changed, 3 insertions(+)
 
-> Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> ---
-
-> v2 [Yoshihiro Kaneko]
-> * use u32 instead of unsigned long
-
->   drivers/media/platform/soc_camera/rcar_vin.c | 24 ++++++++++++++++++++++--
->   1 file changed, 22 insertions(+), 2 deletions(-)
-
-> diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-> index 34d5b80..ff5f80a 100644
-> --- a/drivers/media/platform/soc_camera/rcar_vin.c
-> +++ b/drivers/media/platform/soc_camera/rcar_vin.c
-[...]
-> @@ -1606,6 +1615,17 @@ static int rcar_vin_set_fmt(struct soc_camera_device *icd,
->   	dev_dbg(dev, "S_FMT(pix=0x%x, %ux%u)\n",
->   		pixfmt, pix->width, pix->height);
->
-> +	/* At the time of NV16 capture format, the user has to specify the
-> +	   width of the multiple of 32 for H/W specification. */
-> +	if (priv->error_flag = false)
-> +		priv->error_flag = true;
-> +	else {
-> +		if ((pixfmt = V4L2_PIX_FMT_NV16) && (pix->width & 0x1F)) {
-> +			dev_err(icd->parent, "Specified width error in NV16 format.\n");
-> +			return -EINVAL;
-> +		}
-> +	}
-
-    Oh, and the kernel style dictates that {} should be used in all arms of 
-the *if* statement if they're used in at least one.
-
-WBR, Sergei
+diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
+index 2d17c10..2d0903f 100644
+--- a/drivers/usb/renesas_usbhs/mod_gadget.c
++++ b/drivers/usb/renesas_usbhs/mod_gadget.c
+@@ -602,6 +602,9 @@ static int usbhsg_ep_disable(struct usb_ep *ep)
+ 	struct usbhsg_uep *uep = usbhsg_ep_to_uep(ep);
+ 	struct usbhs_pipe *pipe = usbhsg_uep_to_pipe(uep);
+ 
++	if (!uep || !uep->pipe)
++		return -EINVAL;
++
+ 	usbhsg_pipe_disable(uep);
+ 	usbhs_pipe_free(pipe);
+ 
+-- 
+1.7.9.5
 
