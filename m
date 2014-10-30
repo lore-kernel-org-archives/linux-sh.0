@@ -1,48 +1,113 @@
 From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 24 Oct 2014 10:45:08 +0000
-Subject: [PATCH v4 3/3] ARM: shmobile: henninger: enable HS-USB
-Message-Id: <1414147508-5556-4-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 30 Oct 2014 10:30:17 +0000
+Subject: [PATCH v3 2/4] usb: renesas_usbhs: gadget: fix the behavior of pullup
+Message-Id: <1414665019-1340-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414147508-5556-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1414147508-5556-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au, sergei.shtylyov@cogentembedded.com, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
-Cc: devicetree@vger.kernel.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-sh@vger.kernel.org
 
-Enable HS-USB device for the Henninger board, defining the GPIO that the driver
-should check when probing (which is the ID output from MAX3355 OTG chip).
+From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
 
-Note that there will be pinctrl-related error messages if both internal PCI
-and HS-USB drivers are enabled but they should be just ignored.
+This patch fixes an issue that this driver always enable the D+ pullup
+after it detected the VBUS connection even though this usb controller
+can control the D+ pullup timing by software. So, this driver should
+enable the D+ pullup after a gadget driver called usb_gadget_connect().
 
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-[Sergei: added pin function/group and prop, moved device node, fixed summary,
-added changelog]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 ---
- arch/arm/boot/dts/r8a7791-henninger.dts |    7 +++++++
- 1 file changed, 7 insertions(+)
+ drivers/usb/renesas_usbhs/common.c     |    6 ++++--
+ drivers/usb/renesas_usbhs/mod_gadget.c |   30 +++++++++++++++++++++++++++++-
+ 2 files changed, 33 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
-index ef2cb92..740e386 100644
---- a/arch/arm/boot/dts/r8a7791-henninger.dts
-+++ b/arch/arm/boot/dts/r8a7791-henninger.dts
-@@ -272,6 +272,13 @@
- 	pinctrl-names = "default";
+diff --git a/drivers/usb/renesas_usbhs/common.c b/drivers/usb/renesas_usbhs/common.c
+index b3b6813..7099f17 100644
+--- a/drivers/usb/renesas_usbhs/common.c
++++ b/drivers/usb/renesas_usbhs/common.c
+@@ -126,13 +126,15 @@ void usbhs_sys_host_ctrl(struct usbhs_priv *priv, int enable)
+ void usbhs_sys_function_ctrl(struct usbhs_priv *priv, int enable)
+ {
+ 	u16 mask = DCFM | DRPD | DPRPU | HSE | USBE;
+-	u16 val  = DPRPU | HSE | USBE;
++	u16 val  = HSE | USBE;
+ 
+ 	/*
+ 	 * if enable
+ 	 *
+ 	 * - select Function mode
+-	 * - D+ Line Pull-up
++	 * - D+ Line Pull-up is disabled
++	 *      When D+ Line Pull-up is enabled,
++	 *      calling usbhs_sys_function_pullup(,1)
+ 	 */
+ 	usbhs_bset(priv, SYSCFG, mask, enable ? val : 0);
+ }
+diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
+index 2d0903f..daecf74 100644
+--- a/drivers/usb/renesas_usbhs/mod_gadget.c
++++ b/drivers/usb/renesas_usbhs/mod_gadget.c
+@@ -56,6 +56,7 @@ struct usbhsg_gpriv {
+ #define USBHSG_STATUS_REGISTERD		(1 << 1)
+ #define USBHSG_STATUS_WEDGE		(1 << 2)
+ #define USBHSG_STATUS_SELF_POWERED	(1 << 3)
++#define USBHSG_STATUS_SOFT_CONNECT	(1 << 4)
  };
  
-+&hsusb {
-+	status = "okay";
-+	pinctrl-0 = <&usb0_pins>;
-+	pinctrl-names = "default";
-+	renesas,enable-gpio = <&gpio5 31 GPIO_ACTIVE_HIGH>;
-+};
-+
- &usbphy {
- 	status = "okay";
+ struct usbhsg_recip_handle {
+@@ -726,6 +727,25 @@ static struct usb_ep_ops usbhsg_ep_ops = {
  };
+ 
+ /*
++ *		pullup control
++ */
++static int usbhsg_can_pullup(struct usbhs_priv *priv)
++{
++	struct usbhsg_gpriv *gpriv = usbhsg_priv_to_gpriv(priv);
++
++	return gpriv->driver &&
++	       usbhsg_status_has(gpriv, USBHSG_STATUS_SOFT_CONNECT);
++}
++
++static void usbhsg_update_pullup(struct usbhs_priv *priv)
++{
++	if (usbhsg_can_pullup(priv))
++		usbhs_sys_function_pullup(priv, 1);
++	else
++		usbhs_sys_function_pullup(priv, 0);
++}
++
++/*
+  *		usb module start/end
+  */
+ static int usbhsg_try_start(struct usbhs_priv *priv, u32 status)
+@@ -775,6 +795,7 @@ static int usbhsg_try_start(struct usbhs_priv *priv, u32 status)
+ 	 * - usb module
+ 	 */
+ 	usbhs_sys_function_ctrl(priv, 1);
++	usbhsg_update_pullup(priv);
+ 
+ 	/*
+ 	 * enable irq callback
+@@ -881,8 +902,15 @@ static int usbhsg_pullup(struct usb_gadget *gadget, int is_on)
+ {
+ 	struct usbhsg_gpriv *gpriv = usbhsg_gadget_to_gpriv(gadget);
+ 	struct usbhs_priv *priv = usbhsg_gpriv_to_priv(gpriv);
++	unsigned long flags;
+ 
+-	usbhs_sys_function_pullup(priv, is_on);
++	usbhs_lock(priv, flags);
++	if (is_on)
++		usbhsg_status_set(gpriv, USBHSG_STATUS_SOFT_CONNECT);
++	else
++		usbhsg_status_clr(gpriv, USBHSG_STATUS_SOFT_CONNECT);
++	usbhsg_update_pullup(priv);
++	usbhs_unlock(priv, flags);
+ 
+ 	return 0;
+ }
 -- 
 1.7.9.5
 
