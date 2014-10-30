@@ -1,52 +1,36 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 31 Oct 2014 04:20:07 +0000
-Subject: [PATCH v5 0/4] usb: renesas_usbhs: fixes this driver in gadget mode (part2)
-Message-Id: <1414729211-3276-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 30 Oct 2014 05:58:53 +0000
+Subject: [PATCH 0/3] ARM: shmobile: r8a7794: Add VIN, SGX, MMP and VSP1 to device tree
+Message-Id: <1414648736-31412-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-If we tested this driver as gadget, some issues below happened:
- - Oops happened if g_audio.
- - A usb enumeration may fail if we do insmod during connected the usb cable.
- - A transaction will not finish if g_zero.
- - A usb enumeration may fail after we re-connected the usb cable.
+Hi,
 
-This patch serias fixes them.
-This patch serias is based on Felipe's usb.git / testing/fixes branch.
-(commit id: 9f2104db129512fd2ee086c8a616d296d1afbb75)
+this short series adds VIN, SGX, MMP and VSP1 clocks to device
+tree for the r8a7794 SoC
 
-Changes from v4:
- - Add "Fixes:" and version info for "Cc: stable@vger.kernel.org" in patch 1.
+Based on the renesas-devel-20141030-v3.18-rc2 branch of my renesas tree
 
-Changes from v3:
- - Change redundant condtion in patch 1.
+Compile tested only
 
-Changes from v2:
- - Use USBHSG_STATUS_ instead of a new variable in patch 2.
 
-Changes from v1:
- - Rebase this patch serias for the latest testing/fixes branch.
- - Add "From:" in patch 1 and 2.
- - Add "Cc: <stable@vger.kernel.org>" in patch 1.
+Koji Matsuoka (1):
+  ARM: shmobile: r8a7794: Add VIN clock to device tree
 
-Yoshihiro Shimoda (4):
-  usb: renesas_usbhs: gadget: fix NULL pointer dereference in
-    ep_disable()
-  usb: renesas_usbhs: gadget: fix the behavior of pullup
-  usb: renesas_usbhs: fix the timing of dcp_control_transfer_done
-  usb: renesas_usbhs: fix usbhs_pipe_clear() for DCP PIPE
+Kouei Abe (1):
+  ARM: shmobile: r8a7794: Add SGX clock to device tree
 
- drivers/usb/renesas_usbhs/common.c     |    6 +++--
- drivers/usb/renesas_usbhs/fifo.c       |   34 ++++++++++++++--------------
- drivers/usb/renesas_usbhs/fifo.h       |    1 +
- drivers/usb/renesas_usbhs/mod_gadget.c |   38 ++++++++++++++++++++++++++++++--
- drivers/usb/renesas_usbhs/mod_host.c   |    2 +-
- drivers/usb/renesas_usbhs/pipe.c       |    8 +++++--
- 6 files changed, 66 insertions(+), 23 deletions(-)
+Yoshifumi Hosoya (1):
+  ARM: shmobile: r8a7794: Add MMP and VSP1 clocks to device tree
+
+ arch/arm/boot/dts/r8a7794.dtsi            | 21 ++++++++++++---------
+ include/dt-bindings/clock/r8a7794-clock.h |  9 +++++++++
+ 2 files changed, 21 insertions(+), 9 deletions(-)
 
 -- 
-1.7.9.5
+2.1.1
 
