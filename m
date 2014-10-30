@@ -1,71 +1,39 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 23 Oct 2014 11:18:53 +0000
-Subject: [PATCH v3 03/11] ARM: shmobile: armadillo800eva legacy: Add missing A3SP pm domain devices
-Message-Id: <1414063141-8856-4-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 30 Oct 2014 05:57:57 +0000
+Subject: [PATCH 2/2] ARM: shmobile: r8a7790: Fix SD3CKCR address to device tree
+Message-Id: <1414648677-31104-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414063141-8856-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1414063141-8856-1-git-send-email-geert+renesas@glider.be>
+References: <1414648677-31104-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1414648677-31104-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Commit 802a5639aa7041b2 ("ARM: shmobile: r8a7740: add A3SP pm domain
-support") added the A3SP power domain, but forgot to hook up the TPU,
-SDHI0/1, and MMCIF hardware blocks.
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-Note: As the default PM QoS latency constraint for SDHI is only 100 µs
-(cfr. commit c419e611c3c59c0e ("tmio_mmc / PM: Use PM QoS latency
-constraint"), while DEFAULT_DEV_LATENCY_NS is 250000, suspend fails with
--EBUSY, unless the constraint is increased first to more than 500 µs
-using e.g.
-
-    echo 501 > /sys/devices/platform/sh_mobile_sdhi.0/power/pm_qos_resume_latency_us
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v3:
-  - No changes,
-v2:
-  - Converted FIXME to Note, as this is expected behavior.
----
- arch/arm/mach-shmobile/board-armadillo800eva.c | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index f19459a8c3edbb77..64a68450c28a072c 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1234,8 +1234,11 @@ static void __init eva_init(void)
- 	static struct pm_domain_device domain_devices[] __initdata = {
- 		{ "A4LC", &lcdc0_device },
- 		{ "A4LC", &hdmi_lcdc_device },
-+		{ "A3SP", &pwm_device },
-+		{ "A3SP", &sdhi0_device },
-+		{ "A3SP", &sh_mmcif_device },
- 	};
--	struct platform_device *usb = NULL;
-+	struct platform_device *usb = NULL, *sdhi1 = NULL;
- 
- 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
- 				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
-@@ -1304,6 +1307,7 @@ static void __init eva_init(void)
- 
- 		platform_device_register(&vcc_sdhi1);
- 		platform_device_register(&sdhi1_device);
-+		sdhi1 = &sdhi1_device;
- 	}
- 
- 
-@@ -1324,6 +1328,8 @@ static void __init eva_init(void)
- 				       ARRAY_SIZE(domain_devices));
- 	if (usb)
- 		rmobile_add_device_to_domain("A3SP", usb);
-+	if (sdhi1)
-+		rmobile_add_device_to_domain("A3SP", sdhi1);
- 
- 	r8a7740_pm_init();
- }
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 69b7cd0..4242778 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -786,9 +786,9 @@
+ 			#clock-cells = <0>;
+ 			clock-output-names = "sd2";
+ 		};
+-		sd3_clk: sd3_clk@e615007c {
++		sd3_clk: sd3_clk@e615026c {
+ 			compatible = "renesas,r8a7790-div6-clock", "renesas,cpg-div6-clock";
+-			reg = <0 0xe615007c 0 4>;
++			reg = <0 0xe615026c 0 4>;
+ 			clocks = <&pll1_div2_clk>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "sd3";
 -- 
-1.9.1
+2.1.1
 
