@@ -1,27 +1,39 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 31 Oct 2014 08:37:59 +0000
-Subject: Re: [PATCH 0/12] Koelsch sound support
-Message-Id: <20141031083757.GD23848@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 30 Oct 2014 05:53:44 +0000
+Subject: [PATCH/RFC] ARM: shmobile: koelsch: Fix SPI mode of SPI-Flash into mode3
+Message-Id: <1414648424-29688-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <871tpo3bz4.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <871tpo3bz4.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Oct 31, 2014 at 01:09:45AM -0700, Kuninori Morimoto wrote:
-> 
-> Hi Simon, Magnus
-> 
-> > These patches add sound support (= PIO/DMA) for Koelsch board.
-> > These are based on Laurent's R-Car DMA driver patch-set +
-> > renesas-devel-20141030-v3.18-rc2
-> 
-> I had sent H2/M2 sound support patches to ML.
-> But, almost all settings are same between H2/M2
-> (= sound / Audio DMAC / Audio DMAC periperi / MSTP)
-> We can consider to sharing code, and remove duplicate code ?
+From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
 
-Are you thinking about a shared DTSI file?
-If so I think it is worth considering.
+In order to change into mode3, CPOL and CPHA bit of SPCMD register
+of MSIOF is changed. Mode3 can avoid intermediate voltage.
+
+Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+Based on the renesas-devel-20141030-v3.18-rc2 branch of my renesas tree
+
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 523ae4d..ced0738 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -387,6 +387,8 @@
+ 		spi-tx-bus-width = <4>;
+ 		spi-rx-bus-width = <4>;
+ 		m25p,fast-read;
++		spi-cpol;
++		spi-cpha;
+ 
+ 		partition@0 {
+ 			label = "loader";
+-- 
+2.1.1
+
