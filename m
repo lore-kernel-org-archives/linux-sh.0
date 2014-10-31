@@ -1,44 +1,35 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 03 Oct 2014 15:11:44 +0000
-Subject: [PATCH v2 13/13] ARM: shmobile: kzm9g-reference dts: Add chosen/stdout-path
-Message-Id: <1412349104-18724-14-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Fri, 31 Oct 2014 08:01:05 +0000
+Subject: [PATCH 01/12] ARM: shmobile: r8a7790: Remove unneeded prefix for sound
+Message-Id: <87zjcc1xdq.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412349104-18724-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1412349104-18724-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-Add a stdout-path property so that automatic console selection works
-in the absence of a "console=" parameter on the kernel command line.
-In addition, this will allow the PM domain code to find the PM domain
-for the console device.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Note that we have to keep the "console=ttySC4" parameter in
-chosen/bootargs, else we only get console messages on tty0.
+"0x" is not needed
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v2:
-  - No changes
----
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/r8a7790.dtsi |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index 30ef97e99dc53ea7..0dac0e66ccad8f74 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -40,6 +40,7 @@
- 
- 	chosen {
- 		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel rw";
-+		stdout-path = &scifa4;
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index a444c68..4331002 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1397,7 +1397,7 @@
+ 		status = "disabled";
  	};
  
- 	memory {
+-	rcar_sound: rcar_sound@0xec500000 {
++	rcar_sound: rcar_sound@ec500000 {
+ 		#sound-dai-cells = <1>;
+ 		compatible =  "renesas,rcar_sound-r8a7790", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
+ 		reg =	<0 0xec500000 0 0x1000>, /* SCU */
 -- 
-1.9.1
+1.7.9.5
 
