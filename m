@@ -1,37 +1,79 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Fri, 31 Oct 2014 00:24:00 +0000
-Subject: [PATCH 0/12 v2] Lager sound support v2
-Message-Id: <87wq7h2ijk.wl%kuninori.morimoto.gx@gmail.com>
+Date: Fri, 31 Oct 2014 00:25:37 +0000
+Subject: [PATCH 03/12 v2] ARM: shmobile: r8a7790: sound enables Audio DMAC entry on DTSI
+Message-Id: <87sii52igv.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Hi Simon
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-These patches add sound support (= PIO/DMA) for Lager board.
-I will send Koelsh board sound support when I can access to it.
-These are based on Laurent's R-Car DMA driver patch-set +
-renesas-devel-20141030-v3.18-rc2
+- no change
 
-Kuninori Morimoto (12):
-      ARM: shmobile: r8a7790: Add Audio DMAC devices to DT
-      ARM: shmobile: r8a7790: Add Audio DMAC peri peri devices to DT
-      ARM: shmobile: r8a7790: sound enables Audio DMAC entry on DTSI
-      ARM: shmobile: r8a7790: sound enables Audio DMAC peri peri entry on DTSI
-      ARM: shmobile: lager: Sound PIO support on DTS
-      ARM: shmobile: lager: Sound DMA support on DTS
-      ARM: shmobile: lager: Sound DMA support via BUSIF on DTS
-      ARM: shmobile: lager: Sound DMA support via SRC on DTS
-      ARM: shmobile: lager: Sound DMA support via DVC on DTS
-      ARM: shmobile: multiplatform: add R-Car DMAC support on defconfig
-      ARM: shmobile: multiplatform: add Audo DMAC peri peri support on defconfig
-      ARM: shmobile: multiplatform: add AK4642 support on defconfig
+ arch/arm/boot/dts/r8a7790.dtsi |   44 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
 
- arch/arm/boot/dts/r8a7790-lager.dts       |   72 ++++++++++
- arch/arm/boot/dts/r8a7790.dtsi            |  203 ++++++++++++++++++++++++++++-
- arch/arm/configs/shmobile_defconfig       |    3 +
- include/dt-bindings/clock/r8a7790-clock.h |    2 +
- 4 files changed, 277 insertions(+), 3 deletions(-)
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 6fc6ca7..7ec0463 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1413,6 +1413,50 @@
+ 				"dvc.0", "dvc.1",
+ 				"clk_a", "clk_b", "clk_c", "clk_i";
+ 
++		dmas =		<&audma0 0x01>,	<&audma1 0x02>,	<&audma0 0x15>,	<&audma1 0x16>,
++				<&audma0 0x03>,	<&audma1 0x04>,	<&audma0 0x49>,	<&audma1 0x4a>,
++				<&audma0 0x05>,	<&audma1 0x06>,	<&audma0 0x63>,	<&audma1 0x64>,
++				<&audma0 0x07>,	<&audma1 0x08>,	<&audma0 0x6f>,	<&audma1 0x70>,
++				<&audma0 0x09>,	<&audma1 0x0a>,	<&audma0 0x71>,	<&audma1 0x72>,
++				<&audma0 0x0b>,	<&audma1 0x0c>,	<&audma0 0x73>,	<&audma1 0x74>,
++				<&audma0 0x0d>,	<&audma1 0x0e>,	<&audma0 0x75>,	<&audma1 0x76>,
++				<&audma0 0x0f>,	<&audma1 0x10>,	<&audma0 0x79>,	<&audma1 0x7a>,
++				<&audma0 0x11>,	<&audma1 0x12>,	<&audma0 0x7b>,	<&audma1 0x7c>,
++				<&audma0 0x13>,	<&audma1 0x14>,	<&audma0 0x7d>,	<&audma1 0x7e>,
++
++				<&audma0 0x85>,	<&audma1 0x9a>,	<&audma0 0xbc>,
++				<&audma0 0x87>,	<&audma1 0x9c>,	<&audma0 0xbe>,
++				<&audma0 0x89>,	<&audma1 0x9e>,
++				<&audma0 0x8b>,	<&audma1 0xa0>,
++				<&audma0 0x8d>,	<&audma1 0xb0>,
++				<&audma0 0x8f>,	<&audma1 0xb2>,
++				<&audma0 0x91>,	<&audma1 0xb4>,
++				<&audma0 0x93>,	<&audma1 0xb6>,
++				<&audma0 0x95>,	<&audma1 0xb8>,
++				<&audma0 0x97>,	<&audma1 0xba>;
++
++		dma-names =	"mem_ssi0",	"ssi0_mem",	"mem_ssiu0",	"ssiu0_mem",
++				"mem_ssi1",	"ssi1_mem",	"mem_ssiu1",	"ssiu1_mem",
++				"mem_ssi2",	"ssi2_mem",	"mem_ssiu2",	"ssiu2_mem",
++				"mem_ssi3",	"ssi3_mem",	"mem_ssiu3",	"ssiu3_mem",
++				"mem_ssi4",	"ssi4_mem",	"mem_ssiu4",	"ssiu4_mem",
++				"mem_ssi5",	"ssi5_mem",	"mem_ssiu5",	"ssiu5_mem",
++				"mem_ssi6",	"ssi6_mem",	"mem_ssiu6",	"ssiu6_mem",
++				"mem_ssi7",	"ssi7_mem",	"mem_ssiu7",	"ssiu7_mem",
++				"mem_ssi8",	"ssi8_mem",	"mem_ssiu8",	"ssiu8_mem",
++				"mem_ssi9",	"ssi9_mem",	"mem_ssiu9",	"ssiu9_mem",
++
++				"mem_src0",	"src0_mem",	"dvc0_mem",
++				"mem_src1",	"src1_mem",	"dvc1_mem",
++				"mem_src2",	"src2_mem",
++				"mem_src3",	"src3_mem",
++				"mem_src4",	"src4_mem",
++				"mem_src5",	"src5_mem",
++				"mem_src6",	"src6_mem",
++				"mem_src7",	"src7_mem",
++				"mem_src8",	"src8_mem",
++				"mem_src9",	"src9_mem";
++
+ 		status = "disabled";
+ 
+ 		rcar_sound,dvc {
+-- 
+1.7.9.5
+
