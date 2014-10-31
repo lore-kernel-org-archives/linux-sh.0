@@ -1,38 +1,38 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 29 Oct 2014 13:58:50 +0000
-Subject: [PATCH 2/3] sata_rcar: Document deprecated "renesas,rcar-sata"
-Message-Id: <1414591131-21771-3-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Fri, 31 Oct 2014 00:27:30 +0000
+Subject: [PATCH 12/12 v2] ARM: shmobile: multiplatform: add AK4642 support on defconfig
+Message-Id: <87fve52idq.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414591131-21771-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1414591131-21771-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Tejun Heo <tj@kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: Valentine Barshak <valentine.barshak@cogentembedded.com>, linux-ide@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-Commit e67adb4e669db834 ("sata_rcar: Add R-Car Gen2 SATA PHY support")
-deprecated "renesas,rcar-sata" in favor of "renesas,sata-r8a7779", but
-the deprecated value was never documented in the binding documentation,
-while it is still in active use.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+AK4642 is well used audio codec on Renesas reference board
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- Documentation/devicetree/bindings/ata/sata_rcar.txt | 1 +
+v1 -> v2
+
+- independent from Kconfig
+
+ arch/arm/configs/shmobile_defconfig |    1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/Documentation/devicetree/bindings/ata/sata_rcar.txt b/Documentation/devicetree/bindings/ata/sata_rcar.txt
-index 12d9de915ebd6cbf..ed266c87ce106f20 100644
---- a/Documentation/devicetree/bindings/ata/sata_rcar.txt
-+++ b/Documentation/devicetree/bindings/ata/sata_rcar.txt
-@@ -3,6 +3,7 @@
- Required properties:
- - compatible		: should contain one of the following:
- 			  - "renesas,sata-r8a7779" for R-Car H1
-+			    ("renesas,rcar-sata" is deprecated)
- 			  - "renesas,sata-r8a7790" for R-Car H2
- 			  - "renesas,sata-r8a7791" for R-Car M2
- - reg			: address and length of the SATA registers;
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index a2de58e..63fb531 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -125,6 +125,7 @@ CONFIG_SND=y
+ CONFIG_SND_SOC=y
+ CONFIG_SND_SOC_SH4_FSI=y
+ CONFIG_SND_SOC_RCAR=y
++CONFIG_SND_SOC_AK4642=y
+ CONFIG_SND_SOC_WM8978=y
+ CONFIG_USB=y
+ CONFIG_USB_EHCI_HCD=y
 -- 
-1.9.1
+1.7.9.5
 
