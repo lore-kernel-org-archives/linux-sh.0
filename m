@@ -1,33 +1,38 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 29 Oct 2014 14:28:37 +0000
-Subject: [PATCH 2/3] ARM: dts: koelsch: Stop building r8a7791-koelsch.dtb in legacy builds
-Message-Id: <1414592918-25138-3-git-send-email-geert+renesas@glider.be>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 31 Oct 2014 15:01:34 +0000
+Subject: [PATCH 0/2] clk: shmobile: DIV6 clock variable parent support
+Message-Id: <1414767696-23211-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: horms@verge.net.au, mturquette@linaro.org, laurent.pinchart+renesas@ideasonboard.com
+Cc: linux-sh@vger.kernel.org, magnus.damm@gmail.com, geert@linux-m68k.org, devicetree@vger.kernel.org, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-As of commit 595c6a4bb77f0096 ("ARM: shmobile: koelsch: Remove legacy C
-board code"), koelsch is no longer supported in legacy builds.
+Hi!
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/boot/dts/Makefile | 1 -
- 1 file changed, 1 deletion(-)
+Here's a new attempt at implementing variable-parent 6-bit divider (DIV6)
+clocks, this time using .get_parent and .set_parent.  Also, the bindings now
+actually explain how to specify the parent clocks and feature a relevant
+example.
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 59b6d3e5aaf05880..8df0598ba94832be 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -384,7 +384,6 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += \
- 	r8a7778-bockw-reference.dtb \
- 	r8a7779-marzen.dtb \
- 	r8a7790-lager.dtb \
--	r8a7791-koelsch.dtb \
- 	sh7372-mackerel.dtb \
- 	sh73a0-kzm9g.dtb \
- 	sh73a0-kzm9g-reference.dtb
+CU
+Uli
+
+Changes since v1:
+- implement .get_parent, .set_parent
+- improve bindings documentation
+- split patch in two
+
+
+Ulrich Hecht (2):
+  clk: shmobile: div6: support selectable-input clocks
+  clk: shmobile: document DIV6 clock parent bindings
+
+ .../bindings/clock/renesas,cpg-div6-clocks.txt     |  28 +++--
+ drivers/clk/shmobile/clk-div6.c                    | 117 ++++++++++++++++++---
+ 2 files changed, 127 insertions(+), 18 deletions(-)
+
 -- 
-1.9.1
+1.8.4.5
 
