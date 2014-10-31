@@ -1,56 +1,84 @@
-From: Guenter Roeck <linux@roeck-us.net>
-Date: Tue, 07 Oct 2014 05:28:45 +0000
-Subject: [PATCH 43/44] hwmon: (ab8500) Call kernel_power_off instead of pm_power_off
-Message-Id: <1412659726-29957-44-git-send-email-linux@roeck-us.net>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 31 Oct 2014 01:24:23 +0000
+Subject: [PATCH v4 3/4] usb: renesas_usbhs: fix the timing of dcp_control_transfer_done
+Message-Id: <1414718664-4568-4-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412659726-29957-1-git-send-email-linux@roeck-us.net>
-In-Reply-To: <1412659726-29957-1-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: adi-buildroot-devel@lists.sourceforge.net, devel@driverdev.osuosl.org, devicetree@vger.kernel.org, lguest@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-alpha@vger.kernel.org, linux-am33-list@redhat.com, linux-cris-kernel@axis.com, linux-efi@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-m32r-ja@ml.linux-m32r.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-tegra@vger.kernel.org, linux-xtensa@linux-xtensa.org, openipmi-developer@lists.sourceforge.net, user-mode-linux-devel@lists.sourceforge.net, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, xen-devel@lists.xenproject.org, Guenter Roeck <linux@roeck-us.net>, Jean
+To: linux-sh@vger.kernel.org
 
-Drivers should not call pm_power_off directly; it is not guaranteed
-to be non-NULL. Call kernel_power_off instead.
+According to the datasheet, this driver should clear the INTSTS0.CTRT
+bit before this controller detects the next stage transition. Otherwise,
+the driver may not be able to clear the bit after the controller went to
+the next stage transition. After that, the driver will not be able to
+clear the INTSTS0.VALID, and a usb control transfer will not finish
+finally.
 
-Cc: Jean Delvare <jdelvare@suse.de>
-Reviewed-by: Jean Delvare <jdelvare@suse.de>
-Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+If we use the testusb tool, it is easy to reproduce this issue:
+
+ # testusb -a -t 10
+
+Since the previous code handled a data stage and a status stage in
+the usbhsf_pio_try_push(), it may not clear the INTSTS0.CTRT at the
+right timing.
+So, this patch change the timing of usbhs_dcp_control_transfer_done()
+to the usbhsg_irq_ctrl_stage().
+
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- drivers/hwmon/ab8500.c | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+ drivers/usb/renesas_usbhs/fifo.c       |   16 ----------------
+ drivers/usb/renesas_usbhs/mod_gadget.c |    3 +++
+ 2 files changed, 3 insertions(+), 16 deletions(-)
 
-diff --git a/drivers/hwmon/ab8500.c b/drivers/hwmon/ab8500.c
-index d844dc8..8b6a4f4 100644
---- a/drivers/hwmon/ab8500.c
-+++ b/drivers/hwmon/ab8500.c
-@@ -6,7 +6,7 @@
-  *
-  * When the AB8500 thermal warning temperature is reached (threshold cannot
-  * be changed by SW), an interrupt is set, and if no further action is taken
-- * within a certain time frame, pm_power off will be called.
-+ * within a certain time frame, kernel_power_off will be called.
-  *
-  * When AB8500 thermal shutdown temperature is reached a hardware shutdown of
-  * the AB8500 will occur.
-@@ -21,6 +21,7 @@
- #include <linux/module.h>
- #include <linux/platform_device.h>
- #include <linux/power/ab8500.h>
-+#include <linux/reboot.h>
- #include <linux/slab.h>
- #include <linux/sysfs.h>
- #include "abx500.h"
-@@ -106,7 +107,7 @@ static void ab8500_thermal_power_off(struct work_struct *work)
+diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
+index b0c97a3..0e07925 100644
+--- a/drivers/usb/renesas_usbhs/fifo.c
++++ b/drivers/usb/renesas_usbhs/fifo.c
+@@ -577,14 +577,6 @@ static int usbhsf_pio_try_push(struct usbhs_pkt *pkt, int *is_done)
+ 		usbhs_pipe_number(pipe),
+ 		pkt->length, pkt->actual, *is_done, pkt->zero);
  
- 	dev_warn(&abx500_data->pdev->dev, "Power off due to critical temp\n");
+-	/*
+-	 * Transmission end
+-	 */
+-	if (*is_done) {
+-		if (usbhs_pipe_is_dcp(pipe))
+-			usbhs_dcp_control_transfer_done(pipe);
+-	}
+-
+ 	usbhsf_fifo_unselect(pipe, fifo);
  
--	pm_power_off();
-+	kernel_power_off();
- }
+ 	return 0;
+@@ -722,14 +714,6 @@ usbhs_fifo_read_end:
+ 		usbhs_pipe_number(pipe),
+ 		pkt->length, pkt->actual, *is_done, pkt->zero);
  
- static ssize_t ab8500_show_name(struct device *dev,
+-	/*
+-	 * Transmission end
+-	 */
+-	if (*is_done) {
+-		if (usbhs_pipe_is_dcp(pipe))
+-			usbhs_dcp_control_transfer_done(pipe);
+-	}
+-
+ usbhs_fifo_read_busy:
+ 	usbhsf_fifo_unselect(pipe, fifo);
+ 
+diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
+index b27b2bc..9cf07c0 100644
+--- a/drivers/usb/renesas_usbhs/mod_gadget.c
++++ b/drivers/usb/renesas_usbhs/mod_gadget.c
+@@ -485,6 +485,9 @@ static int usbhsg_irq_ctrl_stage(struct usbhs_priv *priv,
+ 	case NODATA_STATUS_STAGE:
+ 		pipe->handler = &usbhs_ctrl_stage_end_handler;
+ 		break;
++	case READ_STATUS_STAGE:
++	case WRITE_STATUS_STAGE:
++		usbhs_dcp_control_transfer_done(pipe);
+ 	default:
+ 		return ret;
+ 	}
 -- 
-1.9.1
+1.7.9.5
 
