@@ -1,53 +1,42 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 16 Oct 2014 05:10:31 +0000
-Subject: Re: [PATCH] arch: arm: mach-shmobile: Remove ARCH_HAS_OPP completely
-Message-Id: <20141016051031.GA1265@verge.net.au>
+From: Krzysztof Kozlowski <k.kozlowski@samsung.com>
+Date: Fri, 31 Oct 2014 15:02:46 +0000
+Subject: [RFT] ARM: shmobile: rcar-gen2: Fix build breakage
+Message-Id: <1414767766-19967-1-git-send-email-k.kozlowski@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1413379785-14468-1-git-send-email-embedded24@evers-fischer.de>
-In-Reply-To: <1413379785-14468-1-git-send-email-embedded24@evers-fischer.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Oct 15, 2014 at 03:29:45PM +0200, Rolf Evers-Fischer wrote:
-> The Kconfig symbol ARCH_HAS_OPP became redundant in v3.16: commit
-> 049d595a4db3 ("PM / OPP: Make OPP invisible to users in Kconfig")
-> removed the only dependency that used it. Setting it had no effect
-> anymore.
-> 
-> So commit 78c5e0bb145d ("PM / OPP: Remove ARCH_HAS_OPP") removed it. For
-> some reason that commit did not remove all select statements for that
-> symbol. These statements are now useless.
-> 
-> Commit adad5621f3e1 ("PM / devfreq: Remove ARCH_HAS_OPP completely")
-> removed it for devfreq. Remove one from mach-shmobile too.
-> 
-> Signed-off-by: Rolf Evers-Fischer <embedded24@evers-fischer.de>
+Fix build breakage when building allmodconfig or allyesconfig introduced
+by adding ISB instruction to rcar_gen2_timer_init() function
+(9ce3fa6816c2 "ARM: shmobile: rcar-gen2: Add CA7 arch_timer
+initialization for r8a7794"):
 
-Thanks, I have queued this up.
+  CC      arch/arm/mach-shmobile/setup-rcar-gen2.o
+/tmp/cc770qt0.s: Assembler messages:
+/tmp/cc770qt0.s:378: Error: selected processor does not support ARM mode `isb'
+/tmp/cc770qt0.s:381: Error: selected processor does not support ARM mode `isb'
+/tmp/cc770qt0.s:383: Error: selected processor does not support ARM mode `isb'
+make[1]: *** [arch/arm/mach-shmobile/setup-rcar-gen2.o] Error 1
 
-> ---
->  arch/arm/mach-shmobile/Kconfig | 1 -
->  1 file changed, 1 deletion(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-> index 21f457b..f59019d 100644
-> --- a/arch/arm/mach-shmobile/Kconfig
-> +++ b/arch/arm/mach-shmobile/Kconfig
-> @@ -36,7 +36,6 @@ menuconfig ARCH_SHMOBILE_MULTI
->  	select NO_IOPORT_MAP
->  	select PINCTRL
->  	select ARCH_REQUIRE_GPIOLIB
-> -	select ARCH_HAS_OPP
->  
->  if ARCH_SHMOBILE_MULTI
->  
-> -- 
-> 1.9.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Krzysztof Kozlowski <k.kozlowski@samsung.com>
+---
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+index 3dd6edd9bd1d..47f85643785f 100644
+--- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+@@ -68,6 +68,7 @@ void __init rcar_gen2_timer_init(void)
+ 		 * secure code.
+ 		 */
+ 		asm volatile(
++		"	.arch	armv7-a\n"
+ 		"	cps	0x16\n"
+ 		"	mrc	p15, 0, r1, c1, c1, 0\n"
+ 		"	orr	r0, r1, #1\n"
+-- 
+1.9.1
+
