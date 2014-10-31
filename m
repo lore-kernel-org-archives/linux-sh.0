@@ -1,56 +1,118 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 30 Oct 2014 05:57:36 +0000
-Subject: [PATCH/RFC] ARM: shmobile: r8a7791: Add SDHI clock rate to device tree
-Message-Id: <1414648656-30973-1-git-send-email-horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 31 Oct 2014 01:24:24 +0000
+Subject: [PATCH v4 4/4] usb: renesas_usbhs: fix usbhs_pipe_clear() for DCP PIPE
+Message-Id: <1414718664-4568-5-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Since the DCPCTR doesn't have the ACLRM bit, the usbus_pipe_clear()
+should not call the usbhsp_pipectrl_set() with ACLRM.
+So, this patch fixes this issue to add the usbhs_fifo_clear_dcp()
+in fifo.c because the controller needs the CFIFO to clear the
+the DCP PIPE.
 
-Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-[simon: rebase]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
-Based on the renesas-devel-20141030-v3.18-rc2 branch of my renesas tree
+ drivers/usb/renesas_usbhs/fifo.c       |   18 ++++++++++++++++++
+ drivers/usb/renesas_usbhs/fifo.h       |    1 +
+ drivers/usb/renesas_usbhs/mod_gadget.c |    2 +-
+ drivers/usb/renesas_usbhs/mod_host.c   |    2 +-
+ drivers/usb/renesas_usbhs/pipe.c       |    8 ++++++--
+ 5 files changed, 27 insertions(+), 4 deletions(-)
 
-If this is useful I wonder if it is should be set in the koelsch and/or
-henniger board DTS file instead of the r8a7791 DTSI SoC file.
-
-
- arch/arm/boot/dts/r8a7791.dtsi | 3 +++
- 1 file changed, 3 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 9a57215..62745b8 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -416,6 +416,7 @@
- 		reg = <0 0xee100000 0 0x200>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7791_CLK_SDHI0>;
-+		renesas,clk-rate = <195000000>;
- 		status = "disabled";
- 	};
+diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
+index 0e07925..9b48384 100644
+--- a/drivers/usb/renesas_usbhs/fifo.c
++++ b/drivers/usb/renesas_usbhs/fifo.c
+@@ -1160,6 +1160,24 @@ static void usbhsf_dma_complete(void *arg)
+ 			usbhs_pipe_number(pipe), ret);
+ }
  
-@@ -424,6 +425,7 @@
- 		reg = <0 0xee140000 0 0x100>;
- 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7791_CLK_SDHI1>;
-+		renesas,clk-rate = <97500000>;
- 		status = "disabled";
- 	};
++void usbhs_fifo_clear_dcp(struct usbhs_pipe *pipe)
++{
++	struct usbhs_priv *priv = usbhs_pipe_to_priv(pipe);
++	struct usbhs_fifo *fifo = usbhsf_get_cfifo(priv); /* CFIFO */
++
++	/* clear DCP FIFO of transmission */
++	if (usbhsf_fifo_select(pipe, fifo, 1) < 0)
++		return;
++	usbhsf_fifo_clear(pipe, fifo);
++	usbhsf_fifo_unselect(pipe, fifo);
++
++	/* clear DCP FIFO of reception */
++	if (usbhsf_fifo_select(pipe, fifo, 0) < 0)
++		return;
++	usbhsf_fifo_clear(pipe, fifo);
++	usbhsf_fifo_unselect(pipe, fifo);
++}
++
+ /*
+  *		fifo init
+  */
+diff --git a/drivers/usb/renesas_usbhs/fifo.h b/drivers/usb/renesas_usbhs/fifo.h
+index a168a17..79ad5f9 100644
+--- a/drivers/usb/renesas_usbhs/fifo.h
++++ b/drivers/usb/renesas_usbhs/fifo.h
+@@ -74,6 +74,7 @@ int usbhs_fifo_probe(struct usbhs_priv *priv);
+ void usbhs_fifo_remove(struct usbhs_priv *priv);
+ void usbhs_fifo_init(struct usbhs_priv *priv);
+ void usbhs_fifo_quit(struct usbhs_priv *priv);
++void usbhs_fifo_clear_dcp(struct usbhs_pipe *pipe);
  
-@@ -432,6 +434,7 @@
- 		reg = <0 0xee160000 0 0x100>;
- 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7791_CLK_SDHI2>;
-+		renesas,clk-rate = <97500000>;
- 		status = "disabled";
- 	};
+ /*
+  * packet info
+diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
+index 9cf07c0..a916082 100644
+--- a/drivers/usb/renesas_usbhs/mod_gadget.c
++++ b/drivers/usb/renesas_usbhs/mod_gadget.c
+@@ -782,9 +782,9 @@ static int usbhsg_try_start(struct usbhs_priv *priv, u32 status)
+ 	/*
+ 	 * pipe initialize and enable DCP
+ 	 */
++	usbhs_fifo_init(priv);
+ 	usbhs_pipe_init(priv,
+ 			usbhsg_dma_map_ctrl);
+-	usbhs_fifo_init(priv);
  
+ 	/* dcp init instead of usbhsg_ep_enable() */
+ 	dcp->pipe		= usbhs_dcp_malloc(priv);
+diff --git a/drivers/usb/renesas_usbhs/mod_host.c b/drivers/usb/renesas_usbhs/mod_host.c
+index 10e1ded..f0d3231 100644
+--- a/drivers/usb/renesas_usbhs/mod_host.c
++++ b/drivers/usb/renesas_usbhs/mod_host.c
+@@ -1474,9 +1474,9 @@ static int usbhsh_start(struct usbhs_priv *priv)
+ 	/*
+ 	 * pipe initialize and enable DCP
+ 	 */
++	usbhs_fifo_init(priv);
+ 	usbhs_pipe_init(priv,
+ 			usbhsh_dma_map_ctrl);
+-	usbhs_fifo_init(priv);
+ 	usbhsh_pipe_init_for_host(priv);
+ 
+ 	/*
+diff --git a/drivers/usb/renesas_usbhs/pipe.c b/drivers/usb/renesas_usbhs/pipe.c
+index 040bcef..007f45a 100644
+--- a/drivers/usb/renesas_usbhs/pipe.c
++++ b/drivers/usb/renesas_usbhs/pipe.c
+@@ -618,8 +618,12 @@ void usbhs_pipe_data_sequence(struct usbhs_pipe *pipe, int sequence)
+ 
+ void usbhs_pipe_clear(struct usbhs_pipe *pipe)
+ {
+-	usbhsp_pipectrl_set(pipe, ACLRM, ACLRM);
+-	usbhsp_pipectrl_set(pipe, ACLRM, 0);
++	if (usbhs_pipe_is_dcp(pipe)) {
++		usbhs_fifo_clear_dcp(pipe);
++	} else {
++		usbhsp_pipectrl_set(pipe, ACLRM, ACLRM);
++		usbhsp_pipectrl_set(pipe, ACLRM, 0);
++	}
+ }
+ 
+ static struct usbhs_pipe *usbhsp_get_pipe(struct usbhs_priv *priv, u32 type)
 -- 
-2.1.1
+1.7.9.5
 
