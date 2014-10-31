@@ -1,35 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 30 Oct 2014 00:28:10 +0000
-Subject: [PATCH v4 1/5] dmaengine: Add 16 bytes, 32 bytes and 64 bytes bus widths
-Message-Id: <1414628894-24460-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Fri, 31 Oct 2014 00:26:12 +0000
+Subject: [PATCH 06/12 v2] ARM: shmobile: lager: Sound DMA support on DTS
+Message-Id: <87oast2ifw.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The widths are missing, add them.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+DMA transfer to/from SSI
+
+     DMA
+[MEM] -> [SSI]
+
+     DMA
+[MEM] <- [SSI]
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- include/linux/dmaengine.h | 3 +++
- 1 file changed, 3 insertions(+)
+v1 -> v2
 
-diff --git a/include/linux/dmaengine.h b/include/linux/dmaengine.h
-index 653a1fd07ae8..aa13a6d9f4e6 100644
---- a/include/linux/dmaengine.h
-+++ b/include/linux/dmaengine.h
-@@ -298,6 +298,9 @@ enum dma_slave_buswidth {
- 	DMA_SLAVE_BUSWIDTH_3_BYTES = 3,
- 	DMA_SLAVE_BUSWIDTH_4_BYTES = 4,
- 	DMA_SLAVE_BUSWIDTH_8_BYTES = 8,
-+	DMA_SLAVE_BUSWIDTH_16_BYTES = 16,
-+	DMA_SLAVE_BUSWIDTH_32_BYTES = 32,
-+	DMA_SLAVE_BUSWIDTH_64_BYTES = 64,
+- no change
+
+ arch/arm/boot/dts/r8a7790-lager.dts |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index c4c9ce4..3315538 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -574,10 +574,10 @@
  };
  
- /**
+ &ssi0 {
+-	pio-transfer;
++	no-busif;
+ };
+ 
+ &ssi1 {
+-	pio-transfer;
++	no-busif;
+ 	shared-pin;
+ };
 -- 
-2.0.4
+1.7.9.5
 
