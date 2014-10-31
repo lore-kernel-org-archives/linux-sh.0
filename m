@@ -1,64 +1,83 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 20 Oct 2014 16:20:16 +0000
-Subject: Re: [PATCH] media: soc_camera: rcar_vin: Add DT support for r8a7793 and r8a7794 SoCs
-Message-Id: <20141020162015.GB1362@verge.net.au>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Fri, 31 Oct 2014 09:08:10 +0000
+Subject: [PATCH] media: soc_camera: rcar_vin: Add BT.709 24-bit RGB888 input support
+Message-Id: <1414746490-23077-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1413773489-18170-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1413773489-18170-1-git-send-email-ykaneko0929@gmail.com>
+References: <1387830486-10650-1-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1387830486-10650-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Cc: linux-media@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Mon, Oct 20, 2014 at 11:51:29AM +0900, Yoshihiro Kaneko wrote:
-> Based on platform device work by Matsuoka-san.
-> 
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
 
-> ---
-> 
-> Compile tested only.
-> 
-> This patch is against master branch of linuxtv.org/media_tree.git.
-> 
->  Documentation/devicetree/bindings/media/rcar_vin.txt | 2 ++
->  drivers/media/platform/soc_camera/rcar_vin.c         | 2 ++
->  2 files changed, 4 insertions(+)
-> 
-> diff --git a/Documentation/devicetree/bindings/media/rcar_vin.txt b/Documentation/devicetree/bindings/media/rcar_vin.txt
-> index ba61782..9dafe6b 100644
-> --- a/Documentation/devicetree/bindings/media/rcar_vin.txt
-> +++ b/Documentation/devicetree/bindings/media/rcar_vin.txt
-> @@ -6,6 +6,8 @@ family of devices. The current blocks are always slaves and suppot one input
->  channel which can be either RGB, YUYV or BT656.
->  
->   - compatible: Must be one of the following
-> +   - "renesas,vin-r8a7794" for the R8A7794 device
-> +   - "renesas,vin-r8a7793" for the R8A7793 device
->     - "renesas,vin-r8a7791" for the R8A7791 device
->     - "renesas,vin-r8a7790" for the R8A7790 device
->     - "renesas,vin-r8a7779" for the R8A7779 device
-> diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-> index 234cf86..c023aab 100644
-> --- a/drivers/media/platform/soc_camera/rcar_vin.c
-> +++ b/drivers/media/platform/soc_camera/rcar_vin.c
-> @@ -1871,6 +1871,8 @@ static struct soc_camera_host_ops rcar_vin_host_ops = {
->  
->  #ifdef CONFIG_OF
->  static struct of_device_id rcar_vin_of_table[] = {
-> +	{ .compatible = "renesas,vin-r8a7794", .data = (void *)RCAR_GEN2 },
-> +	{ .compatible = "renesas,vin-r8a7793", .data = (void *)RCAR_GEN2 },
->  	{ .compatible = "renesas,vin-r8a7791", .data = (void *)RCAR_GEN2 },
->  	{ .compatible = "renesas,vin-r8a7790", .data = (void *)RCAR_GEN2 },
->  	{ .compatible = "renesas,vin-r8a7779", .data = (void *)RCAR_H1 },
-> -- 
-> 1.9.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+This patch is against master branch of linuxtv.org/media_tree.git.
+
+v3 [Yoshihiro Kaneko]
+* fixes the detection of RGB input
+
+v2 [Yoshihiro Kaneko]
+* remove unused definition as suggested by Sergei Shtylyov
+* use VNMC_INF_RGB888 directly instead of VNMC_INF_RGB_MASK as a bit-field
+  mask
+
+ drivers/media/platform/soc_camera/rcar_vin.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index 20defcb..18ce4bd 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -74,6 +74,7 @@
+ #define VNMC_INF_YUV10_BT656	(2 << 16)
+ #define VNMC_INF_YUV10_BT601	(3 << 16)
+ #define VNMC_INF_YUV16		(5 << 16)
++#define VNMC_INF_RGB888		(6 << 16)
+ #define VNMC_VUP		(1 << 10)
+ #define VNMC_IM_ODD		(0 << 3)
+ #define VNMC_IM_ODD_EVEN	(1 << 3)
+@@ -272,6 +273,10 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+ 
+ 	/* input interface */
+ 	switch (icd->current_fmt->code) {
++	case V4L2_MBUS_FMT_RGB888_1X24:
++		/* BT.601/BT.709 24-bit RGB-888 */
++		vnmc |= VNMC_INF_RGB888;
++		break;
+ 	case V4L2_MBUS_FMT_YUYV8_1X16:
+ 		/* BT.601/BT.1358 16bit YCbCr422 */
+ 		vnmc |= VNMC_INF_YUV16;
+@@ -331,6 +336,15 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+ 	if (output_is_yuv)
+ 		vnmc |= VNMC_BPS;
+ 
++        /*
++	 * The above assumes YUV input, toggle BPS for RGB input.
++	 * RGB inputs can be detected by checking that the most-significant
++	 * two bits of INF are set. This corresponds to the bits
++	 * set in VNMC_INF_RGB888.
++	 */
++	if ((vnmc & VNMC_INF_RGB888)) = VNMC_INF_RGB888)
++		vnmc ^= VNMC_BPS;
++
+ 	/* progressive or interlaced mode */
+ 	interrupts = progressive ? VNIE_FIE | VNIE_EFE : VNIE_EFE;
+ 
+@@ -1013,6 +1027,7 @@ static int rcar_vin_get_formats(struct soc_camera_device *icd, unsigned int idx,
+ 	case V4L2_MBUS_FMT_YUYV8_1X16:
+ 	case V4L2_MBUS_FMT_YUYV8_2X8:
+ 	case V4L2_MBUS_FMT_YUYV10_2X10:
++	case V4L2_MBUS_FMT_RGB888_1X24:
+ 		if (cam->extra_fmt)
+ 			break;
+ 
+-- 
+1.9.1
+
