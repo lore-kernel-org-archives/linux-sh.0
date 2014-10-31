@@ -1,42 +1,38 @@
-From: Krzysztof Kozlowski <k.kozlowski@samsung.com>
-Date: Fri, 31 Oct 2014 15:02:46 +0000
-Subject: [RFT] ARM: shmobile: rcar-gen2: Fix build breakage
-Message-Id: <1414767766-19967-1-git-send-email-k.kozlowski@samsung.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Fri, 31 Oct 2014 09:09:25 +0000
+Subject: [PATCH] media: soc_camera: rcar_vin: Fix interrupt enable in progressive
+Message-Id: <1414746565-23142-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Fix build breakage when building allmodconfig or allyesconfig introduced
-by adding ISB instruction to rcar_gen2_timer_init() function
-(9ce3fa6816c2 "ARM: shmobile: rcar-gen2: Add CA7 arch_timer
-initialization for r8a7794"):
+From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
 
-  CC      arch/arm/mach-shmobile/setup-rcar-gen2.o
-/tmp/cc770qt0.s: Assembler messages:
-/tmp/cc770qt0.s:378: Error: selected processor does not support ARM mode `isb'
-/tmp/cc770qt0.s:381: Error: selected processor does not support ARM mode `isb'
-/tmp/cc770qt0.s:383: Error: selected processor does not support ARM mode `isb'
-make[1]: *** [arch/arm/mach-shmobile/setup-rcar-gen2.o] Error 1
+The progressive input is captured by the field interrupt.
+Therefore the end of frame interrupt is unnecessary.
 
-Signed-off-by: Krzysztof Kozlowski <k.kozlowski@samsung.com>
+Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 ---
- arch/arm/mach-shmobile/setup-rcar-gen2.c | 1 +
- 1 file changed, 1 insertion(+)
+ drivers/media/platform/soc_camera/rcar_vin.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-index 3dd6edd9bd1d..47f85643785f 100644
---- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
-+++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-@@ -68,6 +68,7 @@ void __init rcar_gen2_timer_init(void)
- 		 * secure code.
- 		 */
- 		asm volatile(
-+		"	.arch	armv7-a\n"
- 		"	cps	0x16\n"
- 		"	mrc	p15, 0, r1, c1, c1, 0\n"
- 		"	orr	r0, r1, #1\n"
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index d55e2c5..d3d2f7d 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -692,7 +692,7 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+ 		vnmc ^= VNMC_BPS;
+ 
+ 	/* progressive or interlaced mode */
+-	interrupts = progressive ? VNIE_FIE | VNIE_EFE : VNIE_EFE;
++	interrupts = progressive ? VNIE_FIE : VNIE_EFE;
+ 
+ 	/* ack interrupts */
+ 	iowrite32(interrupts, priv->base + VNINTS_REG);
 -- 
 1.9.1
 
