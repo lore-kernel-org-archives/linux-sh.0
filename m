@@ -1,39 +1,43 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 07 Oct 2014 12:39:47 +0000
-Subject: Re: [PATCH] [RFC] ARM: shmobile: Add early debugging support using SCIF(A)
-Message-Id: <CAMuHMdUggn=_tyyQvGRJhxmoaCFzo+6EL-QvMtJ0b+MpOM7Vbw@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 31 Oct 2014 01:24:21 +0000
+Subject: [PATCH v4 1/4] usb: renesas_usbhs: gadget: fix NULL pointer dereference in ep_disable()
+Message-Id: <1414718664-4568-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412276563-21473-1-git-send-email-geert+renesas@glider.be>
- <2257006.dpJJ6zLgnP@avalon>
- <20141007113717.d8dcc5607caf23971ec06c9d@codethink.co.uk>
- <CAMuHMdV2=OaEsouzRM9dK=NP6VvxrUkXZHm-Zqsc=qB18tgsdg@mail.gmail.com>
-In-Reply-To: <CAMuHMdV2=OaEsouzRM9dK=NP6VvxrUkXZHm-Zqsc=qB18tgsdg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Oct 7, 2014 at 1:07 PM, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
-> On Tue, Oct 7, 2014 at 12:37 PM, Ian Molton <ian.molton@codethink.co.uk> wrote:
->> To be fair, my patches were in last month, and awaiting a chance to test on Rcar-H1...
->>
->> Can we share credit (Signed-off-by:) on the core, lager, 7779, and Kconfig patches please?
->
-> I never saw your patches, and I can't seem to find them?
-> I started from Laurent's version at
-> http://lists.infradead.org/pipermail/linux-arm-kernel/2013-October/207939.html
->
-> Confused...
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-Ah, found them in http://git.codethink.co.uk/linux.git/log/?h=ian/for_laurent
+This patch fixes an issue that the NULL pointer dereference happens
+when we uses g_audio driver. Since the g_audio driver will call
+usb_ep_disable() in afunc_set_alt() before it calls usb_ep_enable(),
+the uep->pipe of renesas usbhs driver will be NULL. So, this patch
+adds a condition to avoid the oops.
 
-Gr{oetje,eeting}s,
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Cc: <stable@vger.kernel.org>
+---
+ drivers/usb/renesas_usbhs/mod_gadget.c |    3 +++
+ 1 file changed, 3 insertions(+)
 
-                        Geert
+diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
+index 2d17c10..294d43c 100644
+--- a/drivers/usb/renesas_usbhs/mod_gadget.c
++++ b/drivers/usb/renesas_usbhs/mod_gadget.c
+@@ -602,6 +602,9 @@ static int usbhsg_ep_disable(struct usb_ep *ep)
+ 	struct usbhsg_uep *uep = usbhsg_ep_to_uep(ep);
+ 	struct usbhs_pipe *pipe = usbhsg_uep_to_pipe(uep);
+ 
++	if (!pipe)
++		return -EINVAL;
++
+ 	usbhsg_pipe_disable(uep);
+ 	usbhs_pipe_free(pipe);
+ 
+-- 
+1.7.9.5
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
