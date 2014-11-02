@@ -1,61 +1,71 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:50:48 +0000
-Subject: [PATCH 18/34] ARM: shmobile: bockw-reference: Initialise TMU device using DT
-Message-Id: <18b27aeb5591588de35628bf1e423abf24fe9695.1415059587.git.horms+renesas@verge.net.au>
+From: Kevin Cernekee <cernekee@gmail.com>
+Date: Sun, 02 Nov 2014 01:03:53 +0000
+Subject: [PATCH V3 06/14] irqchip: bcm7120-l2: Eliminate bad IRQ check
+Message-Id: <1414890241-9938-7-git-send-email-cernekee@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415059587.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415059587.git.horms+renesas@verge.net.au>
+References: <1414890241-9938-1-git-send-email-cernekee@gmail.com>
+In-Reply-To: <1414890241-9938-1-git-send-email-cernekee@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: arnd@arndb.de, f.fainelli@gmail.com, tglx@linutronix.de, jason@lakedaemon.net, ralf@linux-mips.org
+Cc: linux-sh@vger.kernel.org, sergei.shtylyov@cogentembedded.com, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, mbizon@freebox.fr, jogo@openwrt.org, linux-mips@linux-mips.org
 
-Initialise TMU device using DT when booting bockw
-using DT-reference.
+This check may be prone to race conditions, e.g.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+1) Some external event (e.g. GPIO level) causes an IRQ to become pending
+2) Peripheral asserts the L2 IRQ
+3) CPU takes an interrupt
+4) The event from #1 goes away
+5) bcm7120_l2_intc_irq_handle() reads back a 0 status
+
+Unlike the hardware supported by brcmstb-l2, the bcm7120-l2 controller
+does not latch the IRQ status.  Bits can change if the inputs to the
+controller change.  Also, do_bad_IRQ() is an ARM-specific macro.
+
+So let's just nuke it.
+
+Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
+Acked-by: Florian Fainelli <f.fainelli@gmail.com>
 ---
- arch/arm/boot/dts/r8a7778-bockw-reference.dts | 4 ++++
- arch/arm/mach-shmobile/setup-r8a7778.c        | 3 +--
- 2 files changed, 5 insertions(+), 2 deletions(-)
+ drivers/irqchip/irq-bcm7120-l2.c | 13 ++-----------
+ 1 file changed, 2 insertions(+), 11 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-index fba2949..04c0c37 100644
---- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-@@ -74,6 +74,10 @@
- 	status = "okay";
- };
+diff --git a/drivers/irqchip/irq-bcm7120-l2.c b/drivers/irqchip/irq-bcm7120-l2.c
+index b9f4fb8..7086fe0 100644
+--- a/drivers/irqchip/irq-bcm7120-l2.c
++++ b/drivers/irqchip/irq-bcm7120-l2.c
+@@ -27,8 +27,6 @@
  
-+&tmu0 {
-+	status = "okay";
-+};
-+
- &pfc {
- 	scif0_pins: serial0 {
- 		renesas,groups = "scif0_data_a", "scif0_ctrl";
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 8ec784f..7c7223d 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -288,8 +288,6 @@ void __init r8a7778_add_dt_devices(void)
- 		l2x0_init(base, 0x00400000, 0xc20f0fff);
- 	}
- #endif
+ #include "irqchip.h"
+ 
+-#include <asm/mach/irq.h>
 -
--	r8a7778_register_tmu(0);
+ /* Register offset in the L2 interrupt controller */
+ #define IRQEN		0x00
+ #define IRQSTAT		0x04
+@@ -51,19 +49,12 @@ static void bcm7120_l2_intc_irq_handle(unsigned int irq, struct irq_desc *desc)
+ 	chained_irq_enter(chip, desc);
+ 
+ 	status = __raw_readl(b->base + IRQSTAT);
+-
+-	if (status = 0) {
+-		do_bad_IRQ(irq, desc);
+-		goto out;
+-	}
+-
+-	do {
++	while (status) {
+ 		irq = ffs(status) - 1;
+ 		status &= ~(1 << irq);
+ 		generic_handle_irq(irq_find_mapping(b->domain, irq));
+-	} while (status);
++	}
+ 
+-out:
+ 	chained_irq_exit(chip, desc);
  }
  
- /* HPB-DMA */
-@@ -497,6 +495,7 @@ static void __init r8a7778_register_hpb_dmae(void)
- void __init r8a7778_add_standard_devices(void)
- {
- 	r8a7778_add_dt_devices();
-+	r8a7778_register_tmu(0);
- 	r8a7778_register_scif(0);
- 	r8a7778_register_scif(1);
- 	r8a7778_register_scif(2);
 -- 
 2.1.1
 
