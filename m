@@ -1,129 +1,135 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Nov 2014 00:54:39 +0000
-Subject: [PATCH 13/29] ARM: shmobile: koelsch: Sound PIO support on DTS
-Message-Id: <b160f61516b9b93325b8bf0028ce53cbea8225d1.1416476366.git.horms+renesas@verge.net.au>
+From: Kevin Cernekee <cernekee@gmail.com>
+Date: Sun, 02 Nov 2014 01:04:01 +0000
+Subject: [PATCH V3 14/14] irqchip: brcmstb-l2: Convert driver to use irq_reg_{readl,writel}
+Message-Id: <1414890241-9938-15-git-send-email-cernekee@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1416476366.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
+References: <1414890241-9938-1-git-send-email-cernekee@gmail.com>
+In-Reply-To: <1414890241-9938-1-git-send-email-cernekee@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: arnd@arndb.de, f.fainelli@gmail.com, tglx@linutronix.de, jason@lakedaemon.net, ralf@linux-mips.org
+Cc: linux-sh@vger.kernel.org, sergei.shtylyov@cogentembedded.com, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, mbizon@freebox.fr, jogo@openwrt.org, linux-mips@linux-mips.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This effectively converts the __raw_ accessors to the non-__raw_
+equivalents.  To handle BE, we pass IRQ_GC_BE_IO, similar to what was
+done in irq-bcm7120-l2.c.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Since irq_reg_writel now takes an irq_chip_generic argument, writel must
+be used for the initial hardware reset in the probe function.  But that
+operation never needs endian swapping, so it's probably not a big deal.
+
+Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 70 +++++++++++++++++++++++++++++++++++
- 1 file changed, 70 insertions(+)
+ drivers/irqchip/irq-brcmstb-l2.c | 34 ++++++++++++++++++++++------------
+ 1 file changed, 22 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 59e4251..c92d0d7 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -10,6 +10,18 @@
-  * kind, whether express or implied.
-  */
+diff --git a/drivers/irqchip/irq-brcmstb-l2.c b/drivers/irqchip/irq-brcmstb-l2.c
+index c9bdf20..4aa653a 100644
+--- a/drivers/irqchip/irq-brcmstb-l2.c
++++ b/drivers/irqchip/irq-brcmstb-l2.c
+@@ -18,6 +18,7 @@
+ #include <linux/init.h>
+ #include <linux/slab.h>
+ #include <linux/module.h>
++#include <linux/kconfig.h>
+ #include <linux/platform_device.h>
+ #include <linux/spinlock.h>
+ #include <linux/of.h>
+@@ -53,13 +54,14 @@ struct brcmstb_l2_intc_data {
+ static void brcmstb_l2_intc_irq_handle(unsigned int irq, struct irq_desc *desc)
+ {
+ 	struct brcmstb_l2_intc_data *b = irq_desc_get_handler_data(desc);
++	struct irq_chip_generic *gc = irq_get_domain_generic_chip(b->domain, 0);
+ 	struct irq_chip *chip = irq_desc_get_chip(desc);
+ 	u32 status;
  
-+/*
-+ * SSI-AK4643
-+ *
-+ * SW1: 1: AK4643
-+ *      2: CN22
-+ *      3: ADV7511
-+ *
-+ * This command is required when Playback/Capture
-+ *
-+ *	amixer set "LINEOUT Mixer DACL" on
-+ */
-+
- /dts-v1/;
- #include "r8a7791.dtsi"
- #include <dt-bindings/gpio/gpio.h>
-@@ -210,6 +222,23 @@
- 		states = <3300000 1
- 			  1800000 0>;
- 	};
-+
-+	sound {
-+		compatible = "simple-audio-card";
-+
-+		simple-audio-card,format = "left_j";
-+		simple-audio-card,bitclock-master = <&sndcodec>;
-+		simple-audio-card,frame-master = <&sndcodec>;
-+
-+		sndcpu: simple-audio-card,cpu {
-+			sound-dai = <&rcar_sound>;
-+		};
-+
-+		sndcodec: simple-audio-card,codec {
-+			sound-dai = <&ak4643>;
-+			system-clock-frequency = <11289600>;
-+		};
-+	};
- };
+ 	chained_irq_enter(chip, desc);
  
- &du {
-@@ -300,6 +329,16 @@
- 		renesas,groups = "vin1_data8", "vin1_clk";
- 		renesas,function = "vin1";
- 	};
-+
-+	sound_pins: sound {
-+		renesas,groups = "ssi0129_ctrl", "ssi0_data", "ssi1_data";
-+		renesas,function = "ssi";
-+	};
-+
-+	sound_clk_pins: sound_clk {
-+		renesas,groups = "audio_clk_a";
-+		renesas,function = "audio_clk";
-+	};
- };
+-	status = __raw_readl(b->base + CPU_STATUS) &
+-		~(__raw_readl(b->base + CPU_MASK_STATUS));
++	status = irq_reg_readl(gc, CPU_STATUS) &
++		~(irq_reg_readl(gc, CPU_MASK_STATUS));
  
- &ether {
-@@ -427,6 +466,12 @@
- 	status = "okay";
- 	clock-frequency = <100000>;
+ 	if (status = 0) {
+ 		raw_spin_lock(&desc->lock);
+@@ -71,7 +73,7 @@ static void brcmstb_l2_intc_irq_handle(unsigned int irq, struct irq_desc *desc)
+ 	do {
+ 		irq = ffs(status) - 1;
+ 		/* ack at our level */
+-		__raw_writel(1 << irq, b->base + CPU_CLEAR);
++		irq_reg_writel(gc, 1 << irq, CPU_CLEAR);
+ 		status &= ~(1 << irq);
+ 		generic_handle_irq(irq_find_mapping(b->domain, irq));
+ 	} while (status);
+@@ -86,12 +88,12 @@ static void brcmstb_l2_intc_suspend(struct irq_data *d)
  
-+	ak4643: sound-codec@12 {
-+		compatible = "asahi-kasei,ak4643";
-+		#sound-dai-cells = <0>;
-+		reg = <0x12>;
-+	};
+ 	irq_gc_lock(gc);
+ 	/* Save the current mask */
+-	b->saved_mask = __raw_readl(b->base + CPU_MASK_STATUS);
++	b->saved_mask = irq_reg_readl(gc, CPU_MASK_STATUS);
+ 
+ 	if (b->can_wake) {
+ 		/* Program the wakeup mask */
+-		__raw_writel(~gc->wake_active, b->base + CPU_MASK_SET);
+-		__raw_writel(gc->wake_active, b->base + CPU_MASK_CLEAR);
++		irq_reg_writel(gc, ~gc->wake_active, CPU_MASK_SET);
++		irq_reg_writel(gc, gc->wake_active, CPU_MASK_CLEAR);
+ 	}
+ 	irq_gc_unlock(gc);
+ }
+@@ -103,11 +105,11 @@ static void brcmstb_l2_intc_resume(struct irq_data *d)
+ 
+ 	irq_gc_lock(gc);
+ 	/* Clear unmasked non-wakeup interrupts */
+-	__raw_writel(~b->saved_mask & ~gc->wake_active, b->base + CPU_CLEAR);
++	irq_reg_writel(gc, ~b->saved_mask & ~gc->wake_active, CPU_CLEAR);
+ 
+ 	/* Restore the saved mask */
+-	__raw_writel(b->saved_mask, b->base + CPU_MASK_SET);
+-	__raw_writel(~b->saved_mask, b->base + CPU_MASK_CLEAR);
++	irq_reg_writel(gc, b->saved_mask, CPU_MASK_SET);
++	irq_reg_writel(gc, ~b->saved_mask, CPU_MASK_CLEAR);
+ 	irq_gc_unlock(gc);
+ }
+ 
+@@ -119,6 +121,7 @@ int __init brcmstb_l2_intc_of_init(struct device_node *np,
+ 	struct irq_chip_generic *gc;
+ 	struct irq_chip_type *ct;
+ 	int ret;
++	unsigned int flags;
+ 
+ 	data = kzalloc(sizeof(*data), GFP_KERNEL);
+ 	if (!data)
+@@ -132,8 +135,8 @@ int __init brcmstb_l2_intc_of_init(struct device_node *np,
+ 	}
+ 
+ 	/* Disable all interrupts by default */
+-	__raw_writel(0xffffffff, data->base + CPU_MASK_SET);
+-	__raw_writel(0xffffffff, data->base + CPU_CLEAR);
++	writel(0xffffffff, data->base + CPU_MASK_SET);
++	writel(0xffffffff, data->base + CPU_CLEAR);
+ 
+ 	data->parent_irq = irq_of_parse_and_map(np, 0);
+ 	if (data->parent_irq < 0) {
+@@ -149,9 +152,16 @@ int __init brcmstb_l2_intc_of_init(struct device_node *np,
+ 		goto out_unmap;
+ 	}
+ 
++	/* MIPS chips strapped for BE will automagically configure the
++	 * peripheral registers for CPU-native byte order.
++	 */
++	flags = 0;
++	if (IS_ENABLED(CONFIG_MIPS) && IS_ENABLED(CONFIG_CPU_BIG_ENDIAN))
++		flags |= IRQ_GC_BE_IO;
 +
- 	composite-in@20 {
- 		compatible = "adi,adv7180";
- 		reg = <0x20>;
-@@ -513,3 +558,28 @@
- 		};
- 	};
- };
-+
-+&rcar_sound {
-+	pinctrl-0 = <&sound_pins &sound_clk_pins>;
-+	pinctrl-names = "default";
-+
-+	#sound-dai-cells = <0>;
-+
-+	status = "okay";
-+
-+	rcar_sound,dai {
-+		dai0 {
-+			playback = <&ssi0>;
-+			capture  = <&ssi1>;
-+		};
-+	};
-+};
-+
-+&ssi0 {
-+	pio-transfer;
-+};
-+
-+&ssi1 {
-+	pio-transfer;
-+	shared-pin;
-+};
+ 	/* Allocate a single Generic IRQ chip for this node */
+ 	ret = irq_alloc_domain_generic_chips(data->domain, 32, 1,
+-				np->full_name, handle_edge_irq, clr, 0, 0);
++				np->full_name, handle_edge_irq, clr, 0, flags);
+ 	if (ret) {
+ 		pr_err("failed to allocate generic irq chip\n");
+ 		goto out_free_domain;
 -- 
 2.1.1
 
