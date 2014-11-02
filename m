@@ -1,15 +1,15 @@
 From: Kevin Cernekee <cernekee@gmail.com>
-Date: Fri, 07 Nov 2014 06:44:25 +0000
-Subject: [PATCH V4 10/14] irqchip: bcm7120-l2: Use gc->mask_cache to simplify suspend/resume functions
-Message-Id: <1415342669-30640-11-git-send-email-cernekee@gmail.com>
+Date: Sun, 02 Nov 2014 01:03:57 +0000
+Subject: [PATCH V3 10/14] irqchip: bcm7120-l2: Use gc->mask_cache to simplify suspend/resume functions
+Message-Id: <1414890241-9938-11-git-send-email-cernekee@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415342669-30640-1-git-send-email-cernekee@gmail.com>
-In-Reply-To: <1415342669-30640-1-git-send-email-cernekee-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+References: <1414890241-9938-1-git-send-email-cernekee@gmail.com>
+In-Reply-To: <1414890241-9938-1-git-send-email-cernekee@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, jason-NLaQJdtUoK4Be96aLqz0jA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: arnd-r2nGTMty4D4@public.gmane.org, f.fainelli-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, ralf-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mbizon-MmRyKUhfbQ9GWvitb5QawA@public.gmane.org, jogo-p3rKhJxN3npAfugRpC6u6w@public.gmane.org, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org
+To: arnd@arndb.de, f.fainelli@gmail.com, tglx@linutronix.de, jason@lakedaemon.net, ralf@linux-mips.org
+Cc: linux-sh@vger.kernel.org, sergei.shtylyov@cogentembedded.com, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, mbizon@freebox.fr, jogo@openwrt.org, linux-mips@linux-mips.org
 
 The cached value already incorporates irq_fwd_mask, and was saved the
 last time an IRQ was enabled/disabled.
