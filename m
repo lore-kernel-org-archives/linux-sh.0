@@ -1,35 +1,56 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 17 Nov 2014 01:39:58 +0000
-Subject: Re: [PATCH v2 0/2] ARM: shmobile: r8a7794: Add SGX, MMP and VSP1 to device tree
-Message-Id: <20141117013958.GM11143@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 02 Nov 2014 09:10:11 +0000
+Subject: Re: [RFT] ARM: shmobile: rcar-gen2: Fix build breakage
+Message-Id: <CAMuHMdUGZ5jkBB3s0L=gLpbM3=0+0jhgf1OF2PBUZaGBU3nx=w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415782557-29550-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1415782557-29550-1-git-send-email-horms+renesas@verge.net.au>
+References: <1414767766-19967-1-git-send-email-k.kozlowski@samsung.com>
+In-Reply-To: <1414767766-19967-1-git-send-email-k.kozlowski@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Nov 12, 2014 at 05:55:55PM +0900, Simon Horman wrote:
-> Hi,
-> 
-> this short series adds SGX, MMP and VSP1 clocks to device
-> tree for the r8a7794 SoC
-> 
-> Based on the renesas-devel-20141112-v3.18-rc4 tag of my renesas tree
-> 
-> Changes between v1 and v2
-> * Drop VIN patch which has been queued up
-> * Address review by Geert Uytterhoeven as noted in per-patch changelogs
-> 
-> Kouei Abe (1):
->   ARM: shmobile: r8a7794: Add SGX clock to device tree
-> 
-> Yoshifumi Hosoya (1):
->   ARM: shmobile: r8a7794: Add MMP and VSP1 clocks to device tree
-> 
->  arch/arm/boot/dts/r8a7794.dtsi            | 15 +++++++++------
->  include/dt-bindings/clock/r8a7794-clock.h |  7 +++++++
->  2 files changed, 16 insertions(+), 6 deletions(-)
+On Fri, Oct 31, 2014 at 4:02 PM, Krzysztof Kozlowski
+<k.kozlowski@samsung.com> wrote:
+> Fix build breakage when building allmodconfig or allyesconfig introduced
+> by adding ISB instruction to rcar_gen2_timer_init() function
+> (9ce3fa6816c2 "ARM: shmobile: rcar-gen2: Add CA7 arch_timer
+> initialization for r8a7794"):
+>
+>   CC      arch/arm/mach-shmobile/setup-rcar-gen2.o
+> /tmp/cc770qt0.s: Assembler messages:
+> /tmp/cc770qt0.s:378: Error: selected processor does not support ARM mode `isb'
+> /tmp/cc770qt0.s:381: Error: selected processor does not support ARM mode `isb'
+> /tmp/cc770qt0.s:383: Error: selected processor does not support ARM mode `isb'
+> make[1]: *** [arch/arm/mach-shmobile/setup-rcar-gen2.o] Error 1
+>
+> Signed-off-by: Krzysztof Kozlowski <k.kozlowski@samsung.com>
+> ---
+>  arch/arm/mach-shmobile/setup-rcar-gen2.c | 1 +
+>  1 file changed, 1 insertion(+)
+>
+> diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+> index 3dd6edd9bd1d..47f85643785f 100644
+> --- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
+> +++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+> @@ -68,6 +68,7 @@ void __init rcar_gen2_timer_init(void)
+>                  * secure code.
+>                  */
+>                 asm volatile(
+> +               "       .arch   armv7-a\n"
+>                 "       cps     0x16\n"
+>                 "       mrc     p15, 0, r1, c1, c1, 0\n"
+>                 "       orr     r0, r1, #1\n"
 
-I have queued up this series.
+Shouldn't the ".arch" be reset to some generic value afterwards?
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
