@@ -1,51 +1,479 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 10 Nov 2014 11:02:46 +0000
-Subject: [PATCH 3/4] usb: renesas_usbhs: add a new macro for extending DnFIFOs
-Message-Id: <1415617367-3828-4-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Kevin Cernekee <cernekee@gmail.com>
+Date: Sun, 02 Nov 2014 01:03:49 +0000
+Subject: [PATCH V3 02/14] genirq: Generic chip: Change irq_reg_{readl,writel} arguments
+Message-Id: <1414890241-9938-3-git-send-email-cernekee@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1414890241-9938-1-git-send-email-cernekee@gmail.com>
+In-Reply-To: <1414890241-9938-1-git-send-email-cernekee@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: arnd@arndb.de, f.fainelli@gmail.com, tglx@linutronix.de, jason@lakedaemon.net, ralf@linux-mips.org
+Cc: linux-sh@vger.kernel.org, sergei.shtylyov@cogentembedded.com, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, mbizon@freebox.fr, jogo@openwrt.org, linux-mips@linux-mips.org
 
-To extend DnFIFOs in the future, this patch adds a new macro because
-some SoCs don't the "port" address for DnFIFOs.
+Pass in the irq_chip_generic struct so we can use different readl/writel
+settings for each irqchip driver, when appropriate.  Compute
+(gc->reg_base + reg_offset) in the helper function because this is pretty
+much what all callers want to do anyway.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Compile-tested using the following configurations:
+
+    at91_dt_defconfig (CONFIG_ATMEL_AIC_IRQ=y)
+    sama5_defconfig (CONFIG_ATMEL_AIC5_IRQ=y)
+    sunxi_defconfig (CONFIG_ARCH_SUNXI=y)
+
+tb10x (ARC) is untested.
+
+Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
 ---
- drivers/usb/renesas_usbhs/fifo.c |    9 +++++++--
- 1 file changed, 7 insertions(+), 2 deletions(-)
+ drivers/irqchip/irq-atmel-aic.c  | 40 ++++++++++++-------------
+ drivers/irqchip/irq-atmel-aic5.c | 65 +++++++++++++++++++---------------------
+ drivers/irqchip/irq-sunxi-nmi.c  |  4 +--
+ drivers/irqchip/irq-tb10x.c      |  4 +--
+ include/linux/irq.h              | 19 +++++++-----
+ kernel/irq/generic-chip.c        | 20 ++++++-------
+ 6 files changed, 77 insertions(+), 75 deletions(-)
 
-diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
-index 6c775b7..bc9a050 100644
---- a/drivers/usb/renesas_usbhs/fifo.c
-+++ b/drivers/usb/renesas_usbhs/fifo.c
-@@ -1201,11 +1201,11 @@ void usbhs_fifo_quit(struct usbhs_priv *priv)
- 	mod->irq_brdysts	= 0;
+diff --git a/drivers/irqchip/irq-atmel-aic.c b/drivers/irqchip/irq-atmel-aic.c
+index 9a2cf3c..27fdd8c 100644
+--- a/drivers/irqchip/irq-atmel-aic.c
++++ b/drivers/irqchip/irq-atmel-aic.c
+@@ -65,11 +65,11 @@ aic_handle(struct pt_regs *regs)
+ 	u32 irqnr;
+ 	u32 irqstat;
+ 
+-	irqnr = irq_reg_readl(gc->reg_base + AT91_AIC_IVR);
+-	irqstat = irq_reg_readl(gc->reg_base + AT91_AIC_ISR);
++	irqnr = irq_reg_readl(gc, AT91_AIC_IVR);
++	irqstat = irq_reg_readl(gc, AT91_AIC_ISR);
+ 
+ 	if (!irqstat)
+-		irq_reg_writel(0, gc->reg_base + AT91_AIC_EOICR);
++		irq_reg_writel(gc, 0, AT91_AIC_EOICR);
+ 	else
+ 		handle_domain_irq(aic_domain, irqnr, regs);
+ }
+@@ -80,7 +80,7 @@ static int aic_retrigger(struct irq_data *d)
+ 
+ 	/* Enable interrupt on AIC5 */
+ 	irq_gc_lock(gc);
+-	irq_reg_writel(d->mask, gc->reg_base + AT91_AIC_ISCR);
++	irq_reg_writel(gc, d->mask, AT91_AIC_ISCR);
+ 	irq_gc_unlock(gc);
+ 
+ 	return 0;
+@@ -92,12 +92,12 @@ static int aic_set_type(struct irq_data *d, unsigned type)
+ 	unsigned int smr;
+ 	int ret;
+ 
+-	smr = irq_reg_readl(gc->reg_base + AT91_AIC_SMR(d->hwirq));
++	smr = irq_reg_readl(gc, AT91_AIC_SMR(d->hwirq));
+ 	ret = aic_common_set_type(d, type, &smr);
+ 	if (ret)
+ 		return ret;
+ 
+-	irq_reg_writel(smr, gc->reg_base + AT91_AIC_SMR(d->hwirq));
++	irq_reg_writel(gc, smr, AT91_AIC_SMR(d->hwirq));
+ 
+ 	return 0;
+ }
+@@ -108,8 +108,8 @@ static void aic_suspend(struct irq_data *d)
+ 	struct irq_chip_generic *gc = irq_data_get_irq_chip_data(d);
+ 
+ 	irq_gc_lock(gc);
+-	irq_reg_writel(gc->mask_cache, gc->reg_base + AT91_AIC_IDCR);
+-	irq_reg_writel(gc->wake_active, gc->reg_base + AT91_AIC_IECR);
++	irq_reg_writel(gc, gc->mask_cache, AT91_AIC_IDCR);
++	irq_reg_writel(gc, gc->wake_active, AT91_AIC_IECR);
+ 	irq_gc_unlock(gc);
  }
  
--#define USBHS_DFIFO_INIT(priv, fifo, channel)				\
-+#define __USBHS_DFIFO_INIT(priv, fifo, channel, fifo_port)		\
- do {									\
- 	fifo = usbhsf_get_dnfifo(priv, channel);			\
- 	fifo->name	= "D"#channel"FIFO";				\
--	fifo->port	= D##channel##FIFO;				\
-+	fifo->port	= fifo_port;					\
- 	fifo->sel	= D##channel##FIFOSEL;				\
- 	fifo->ctr	= D##channel##FIFOCTR;				\
- 	fifo->tx_slave.shdma_slave.slave_id =				\
-@@ -1215,6 +1215,11 @@ do {									\
- 	usbhsf_dma_init(priv, fifo);					\
- } while (0)
+@@ -118,8 +118,8 @@ static void aic_resume(struct irq_data *d)
+ 	struct irq_chip_generic *gc = irq_data_get_irq_chip_data(d);
  
-+#define USBHS_DFIFO_INIT(priv, fifo, channel)				\
-+		__USBHS_DFIFO_INIT(priv, fifo, channel, D##channel##FIFO)
-+#define USBHS_DFIFO_INIT_NO_PORT(priv, fifo, channel)			\
-+		__USBHS_DFIFO_INIT(priv, fifo, channel, 0)
-+
- int usbhs_fifo_probe(struct usbhs_priv *priv)
+ 	irq_gc_lock(gc);
+-	irq_reg_writel(gc->wake_active, gc->reg_base + AT91_AIC_IDCR);
+-	irq_reg_writel(gc->mask_cache, gc->reg_base + AT91_AIC_IECR);
++	irq_reg_writel(gc, gc->wake_active, AT91_AIC_IDCR);
++	irq_reg_writel(gc, gc->mask_cache, AT91_AIC_IECR);
+ 	irq_gc_unlock(gc);
+ }
+ 
+@@ -128,8 +128,8 @@ static void aic_pm_shutdown(struct irq_data *d)
+ 	struct irq_chip_generic *gc = irq_data_get_irq_chip_data(d);
+ 
+ 	irq_gc_lock(gc);
+-	irq_reg_writel(0xffffffff, gc->reg_base + AT91_AIC_IDCR);
+-	irq_reg_writel(0xffffffff, gc->reg_base + AT91_AIC_ICCR);
++	irq_reg_writel(gc, 0xffffffff, AT91_AIC_IDCR);
++	irq_reg_writel(gc, 0xffffffff, AT91_AIC_ICCR);
+ 	irq_gc_unlock(gc);
+ }
+ #else
+@@ -148,24 +148,24 @@ static void __init aic_hw_init(struct irq_domain *domain)
+ 	 * will not Lock out nIRQ
+ 	 */
+ 	for (i = 0; i < 8; i++)
+-		irq_reg_writel(0, gc->reg_base + AT91_AIC_EOICR);
++		irq_reg_writel(gc, 0, AT91_AIC_EOICR);
+ 
+ 	/*
+ 	 * Spurious Interrupt ID in Spurious Vector Register.
+ 	 * When there is no current interrupt, the IRQ Vector Register
+ 	 * reads the value stored in AIC_SPU
+ 	 */
+-	irq_reg_writel(0xffffffff, gc->reg_base + AT91_AIC_SPU);
++	irq_reg_writel(gc, 0xffffffff, AT91_AIC_SPU);
+ 
+ 	/* No debugging in AIC: Debug (Protect) Control Register */
+-	irq_reg_writel(0, gc->reg_base + AT91_AIC_DCR);
++	irq_reg_writel(gc, 0, AT91_AIC_DCR);
+ 
+ 	/* Disable and clear all interrupts initially */
+-	irq_reg_writel(0xffffffff, gc->reg_base + AT91_AIC_IDCR);
+-	irq_reg_writel(0xffffffff, gc->reg_base + AT91_AIC_ICCR);
++	irq_reg_writel(gc, 0xffffffff, AT91_AIC_IDCR);
++	irq_reg_writel(gc, 0xffffffff, AT91_AIC_ICCR);
+ 
+ 	for (i = 0; i < 32; i++)
+-		irq_reg_writel(i, gc->reg_base + AT91_AIC_SVR(i));
++		irq_reg_writel(gc, i, AT91_AIC_SVR(i));
+ }
+ 
+ static int aic_irq_domain_xlate(struct irq_domain *d,
+@@ -195,10 +195,10 @@ static int aic_irq_domain_xlate(struct irq_domain *d,
+ 	gc = dgc->gc[idx];
+ 
+ 	irq_gc_lock(gc);
+-	smr = irq_reg_readl(gc->reg_base + AT91_AIC_SMR(*out_hwirq));
++	smr = irq_reg_readl(gc, AT91_AIC_SMR(*out_hwirq));
+ 	ret = aic_common_set_priority(intspec[2], &smr);
+ 	if (!ret)
+-		irq_reg_writel(smr, gc->reg_base + AT91_AIC_SMR(*out_hwirq));
++		irq_reg_writel(gc, smr, AT91_AIC_SMR(*out_hwirq));
+ 	irq_gc_unlock(gc);
+ 
+ 	return ret;
+diff --git a/drivers/irqchip/irq-atmel-aic5.c b/drivers/irqchip/irq-atmel-aic5.c
+index a11aae8..a2e8c3f 100644
+--- a/drivers/irqchip/irq-atmel-aic5.c
++++ b/drivers/irqchip/irq-atmel-aic5.c
+@@ -75,11 +75,11 @@ aic5_handle(struct pt_regs *regs)
+ 	u32 irqnr;
+ 	u32 irqstat;
+ 
+-	irqnr = irq_reg_readl(gc->reg_base + AT91_AIC5_IVR);
+-	irqstat = irq_reg_readl(gc->reg_base + AT91_AIC5_ISR);
++	irqnr = irq_reg_readl(gc, AT91_AIC5_IVR);
++	irqstat = irq_reg_readl(gc, AT91_AIC5_ISR);
+ 
+ 	if (!irqstat)
+-		irq_reg_writel(0, gc->reg_base + AT91_AIC5_EOICR);
++		irq_reg_writel(gc, 0, AT91_AIC5_EOICR);
+ 	else
+ 		handle_domain_irq(aic5_domain, irqnr, regs);
+ }
+@@ -92,8 +92,8 @@ static void aic5_mask(struct irq_data *d)
+ 
+ 	/* Disable interrupt on AIC5 */
+ 	irq_gc_lock(gc);
+-	irq_reg_writel(d->hwirq, gc->reg_base + AT91_AIC5_SSR);
+-	irq_reg_writel(1, gc->reg_base + AT91_AIC5_IDCR);
++	irq_reg_writel(gc, d->hwirq, AT91_AIC5_SSR);
++	irq_reg_writel(gc, 1, AT91_AIC5_IDCR);
+ 	gc->mask_cache &= ~d->mask;
+ 	irq_gc_unlock(gc);
+ }
+@@ -106,8 +106,8 @@ static void aic5_unmask(struct irq_data *d)
+ 
+ 	/* Enable interrupt on AIC5 */
+ 	irq_gc_lock(gc);
+-	irq_reg_writel(d->hwirq, gc->reg_base + AT91_AIC5_SSR);
+-	irq_reg_writel(1, gc->reg_base + AT91_AIC5_IECR);
++	irq_reg_writel(gc, d->hwirq, AT91_AIC5_SSR);
++	irq_reg_writel(gc, 1, AT91_AIC5_IECR);
+ 	gc->mask_cache |= d->mask;
+ 	irq_gc_unlock(gc);
+ }
+@@ -120,8 +120,8 @@ static int aic5_retrigger(struct irq_data *d)
+ 
+ 	/* Enable interrupt on AIC5 */
+ 	irq_gc_lock(gc);
+-	irq_reg_writel(d->hwirq, gc->reg_base + AT91_AIC5_SSR);
+-	irq_reg_writel(1, gc->reg_base + AT91_AIC5_ISCR);
++	irq_reg_writel(gc, d->hwirq, AT91_AIC5_SSR);
++	irq_reg_writel(gc, 1, AT91_AIC5_ISCR);
+ 	irq_gc_unlock(gc);
+ 
+ 	return 0;
+@@ -136,11 +136,11 @@ static int aic5_set_type(struct irq_data *d, unsigned type)
+ 	int ret;
+ 
+ 	irq_gc_lock(gc);
+-	irq_reg_writel(d->hwirq, gc->reg_base + AT91_AIC5_SSR);
+-	smr = irq_reg_readl(gc->reg_base + AT91_AIC5_SMR);
++	irq_reg_writel(gc, d->hwirq, AT91_AIC5_SSR);
++	smr = irq_reg_readl(gc, AT91_AIC5_SMR);
+ 	ret = aic_common_set_type(d, type, &smr);
+ 	if (!ret)
+-		irq_reg_writel(smr, gc->reg_base + AT91_AIC5_SMR);
++		irq_reg_writel(gc, smr, AT91_AIC5_SMR);
+ 	irq_gc_unlock(gc);
+ 
+ 	return ret;
+@@ -162,12 +162,11 @@ static void aic5_suspend(struct irq_data *d)
+ 		if ((mask & gc->mask_cache) = (mask & gc->wake_active))
+ 			continue;
+ 
+-		irq_reg_writel(i + gc->irq_base,
+-			       bgc->reg_base + AT91_AIC5_SSR);
++		irq_reg_writel(bgc, i + gc->irq_base, AT91_AIC5_SSR);
+ 		if (mask & gc->wake_active)
+-			irq_reg_writel(1, bgc->reg_base + AT91_AIC5_IECR);
++			irq_reg_writel(bgc, 1, AT91_AIC5_IECR);
+ 		else
+-			irq_reg_writel(1, bgc->reg_base + AT91_AIC5_IDCR);
++			irq_reg_writel(bgc, 1, AT91_AIC5_IDCR);
+ 	}
+ 	irq_gc_unlock(bgc);
+ }
+@@ -187,12 +186,11 @@ static void aic5_resume(struct irq_data *d)
+ 		if ((mask & gc->mask_cache) = (mask & gc->wake_active))
+ 			continue;
+ 
+-		irq_reg_writel(i + gc->irq_base,
+-			       bgc->reg_base + AT91_AIC5_SSR);
++		irq_reg_writel(bgc, i + gc->irq_base, AT91_AIC5_SSR);
+ 		if (mask & gc->mask_cache)
+-			irq_reg_writel(1, bgc->reg_base + AT91_AIC5_IECR);
++			irq_reg_writel(bgc, 1, AT91_AIC5_IECR);
+ 		else
+-			irq_reg_writel(1, bgc->reg_base + AT91_AIC5_IDCR);
++			irq_reg_writel(bgc, 1, AT91_AIC5_IDCR);
+ 	}
+ 	irq_gc_unlock(bgc);
+ }
+@@ -207,10 +205,9 @@ static void aic5_pm_shutdown(struct irq_data *d)
+ 
+ 	irq_gc_lock(bgc);
+ 	for (i = 0; i < dgc->irqs_per_chip; i++) {
+-		irq_reg_writel(i + gc->irq_base,
+-			       bgc->reg_base + AT91_AIC5_SSR);
+-		irq_reg_writel(1, bgc->reg_base + AT91_AIC5_IDCR);
+-		irq_reg_writel(1, bgc->reg_base + AT91_AIC5_ICCR);
++		irq_reg_writel(bgc, i + gc->irq_base, AT91_AIC5_SSR);
++		irq_reg_writel(bgc, 1, AT91_AIC5_IDCR);
++		irq_reg_writel(bgc, 1, AT91_AIC5_ICCR);
+ 	}
+ 	irq_gc_unlock(bgc);
+ }
+@@ -230,24 +227,24 @@ static void __init aic5_hw_init(struct irq_domain *domain)
+ 	 * will not Lock out nIRQ
+ 	 */
+ 	for (i = 0; i < 8; i++)
+-		irq_reg_writel(0, gc->reg_base + AT91_AIC5_EOICR);
++		irq_reg_writel(gc, 0, AT91_AIC5_EOICR);
+ 
+ 	/*
+ 	 * Spurious Interrupt ID in Spurious Vector Register.
+ 	 * When there is no current interrupt, the IRQ Vector Register
+ 	 * reads the value stored in AIC_SPU
+ 	 */
+-	irq_reg_writel(0xffffffff, gc->reg_base + AT91_AIC5_SPU);
++	irq_reg_writel(gc, 0xffffffff, AT91_AIC5_SPU);
+ 
+ 	/* No debugging in AIC: Debug (Protect) Control Register */
+-	irq_reg_writel(0, gc->reg_base + AT91_AIC5_DCR);
++	irq_reg_writel(gc, 0, AT91_AIC5_DCR);
+ 
+ 	/* Disable and clear all interrupts initially */
+ 	for (i = 0; i < domain->revmap_size; i++) {
+-		irq_reg_writel(i, gc->reg_base + AT91_AIC5_SSR);
+-		irq_reg_writel(i, gc->reg_base + AT91_AIC5_SVR);
+-		irq_reg_writel(1, gc->reg_base + AT91_AIC5_IDCR);
+-		irq_reg_writel(1, gc->reg_base + AT91_AIC5_ICCR);
++		irq_reg_writel(gc, i, AT91_AIC5_SSR);
++		irq_reg_writel(gc, i, AT91_AIC5_SVR);
++		irq_reg_writel(gc, 1, AT91_AIC5_IDCR);
++		irq_reg_writel(gc, 1, AT91_AIC5_ICCR);
+ 	}
+ }
+ 
+@@ -273,11 +270,11 @@ static int aic5_irq_domain_xlate(struct irq_domain *d,
+ 	gc = dgc->gc[0];
+ 
+ 	irq_gc_lock(gc);
+-	irq_reg_writel(*out_hwirq, gc->reg_base + AT91_AIC5_SSR);
+-	smr = irq_reg_readl(gc->reg_base + AT91_AIC5_SMR);
++	irq_reg_writel(gc, *out_hwirq, AT91_AIC5_SSR);
++	smr = irq_reg_readl(gc, AT91_AIC5_SMR);
+ 	ret = aic_common_set_priority(intspec[2], &smr);
+ 	if (!ret)
+-		irq_reg_writel(intspec[2] | smr, gc->reg_base + AT91_AIC5_SMR);
++		irq_reg_writel(gc, intspec[2] | smr, AT91_AIC5_SMR);
+ 	irq_gc_unlock(gc);
+ 
+ 	return ret;
+diff --git a/drivers/irqchip/irq-sunxi-nmi.c b/drivers/irqchip/irq-sunxi-nmi.c
+index 12f547a..4a9ce5b 100644
+--- a/drivers/irqchip/irq-sunxi-nmi.c
++++ b/drivers/irqchip/irq-sunxi-nmi.c
+@@ -50,12 +50,12 @@ static struct sunxi_sc_nmi_reg_offs sun6i_reg_offs = {
+ static inline void sunxi_sc_nmi_write(struct irq_chip_generic *gc, u32 off,
+ 				      u32 val)
  {
- 	struct usbhs_fifo *fifo;
+-	irq_reg_writel(val, gc->reg_base + off);
++	irq_reg_writel(gc, val, off);
+ }
+ 
+ static inline u32 sunxi_sc_nmi_read(struct irq_chip_generic *gc, u32 off)
+ {
+-	return irq_reg_readl(gc->reg_base + off);
++	return irq_reg_readl(gc, off);
+ }
+ 
+ static void sunxi_sc_nmi_handle_irq(unsigned int irq, struct irq_desc *desc)
+diff --git a/drivers/irqchip/irq-tb10x.c b/drivers/irqchip/irq-tb10x.c
+index 7c44c99..accc200 100644
+--- a/drivers/irqchip/irq-tb10x.c
++++ b/drivers/irqchip/irq-tb10x.c
+@@ -43,12 +43,12 @@
+ static inline void ab_irqctl_writereg(struct irq_chip_generic *gc, u32 reg,
+ 	u32 val)
+ {
+-	irq_reg_writel(val, gc->reg_base + reg);
++	irq_reg_writel(gc, val, reg);
+ }
+ 
+ static inline u32 ab_irqctl_readreg(struct irq_chip_generic *gc, u32 reg)
+ {
+-	return irq_reg_readl(gc->reg_base + reg);
++	return irq_reg_readl(gc, reg);
+ }
+ 
+ static int tb10x_irq_set_type(struct irq_data *data, unsigned int flow_type)
+diff --git a/include/linux/irq.h b/include/linux/irq.h
+index 03f48d9..0743743 100644
+--- a/include/linux/irq.h
++++ b/include/linux/irq.h
+@@ -639,13 +639,6 @@ void arch_teardown_hwirq(unsigned int irq);
+ void irq_init_desc(unsigned int irq);
+ #endif
+ 
+-#ifndef irq_reg_writel
+-# define irq_reg_writel(val, addr)	writel(val, addr)
+-#endif
+-#ifndef irq_reg_readl
+-# define irq_reg_readl(addr)		readl(addr)
+-#endif
+-
+ /**
+  * struct irq_chip_regs - register offsets for struct irq_gci
+  * @enable:	Enable register offset to reg_base
+@@ -821,4 +814,16 @@ static inline void irq_gc_lock(struct irq_chip_generic *gc) { }
+ static inline void irq_gc_unlock(struct irq_chip_generic *gc) { }
+ #endif
+ 
++static inline void irq_reg_writel(struct irq_chip_generic *gc,
++				  u32 val, int reg_offset)
++{
++	writel(val, gc->reg_base + reg_offset);
++}
++
++static inline u32 irq_reg_readl(struct irq_chip_generic *gc,
++				int reg_offset)
++{
++	return readl(gc->reg_base + reg_offset);
++}
++
+ #endif /* _LINUX_IRQ_H */
+diff --git a/kernel/irq/generic-chip.c b/kernel/irq/generic-chip.c
+index cf80e7b..db458c6 100644
+--- a/kernel/irq/generic-chip.c
++++ b/kernel/irq/generic-chip.c
+@@ -39,7 +39,7 @@ void irq_gc_mask_disable_reg(struct irq_data *d)
+ 	u32 mask = d->mask;
+ 
+ 	irq_gc_lock(gc);
+-	irq_reg_writel(mask, gc->reg_base + ct->regs.disable);
++	irq_reg_writel(gc, mask, ct->regs.disable);
+ 	*ct->mask_cache &= ~mask;
+ 	irq_gc_unlock(gc);
+ }
+@@ -59,7 +59,7 @@ void irq_gc_mask_set_bit(struct irq_data *d)
+ 
+ 	irq_gc_lock(gc);
+ 	*ct->mask_cache |= mask;
+-	irq_reg_writel(*ct->mask_cache, gc->reg_base + ct->regs.mask);
++	irq_reg_writel(gc, *ct->mask_cache, ct->regs.mask);
+ 	irq_gc_unlock(gc);
+ }
+ EXPORT_SYMBOL_GPL(irq_gc_mask_set_bit);
+@@ -79,7 +79,7 @@ void irq_gc_mask_clr_bit(struct irq_data *d)
+ 
+ 	irq_gc_lock(gc);
+ 	*ct->mask_cache &= ~mask;
+-	irq_reg_writel(*ct->mask_cache, gc->reg_base + ct->regs.mask);
++	irq_reg_writel(gc, *ct->mask_cache, ct->regs.mask);
+ 	irq_gc_unlock(gc);
+ }
+ EXPORT_SYMBOL_GPL(irq_gc_mask_clr_bit);
+@@ -98,7 +98,7 @@ void irq_gc_unmask_enable_reg(struct irq_data *d)
+ 	u32 mask = d->mask;
+ 
+ 	irq_gc_lock(gc);
+-	irq_reg_writel(mask, gc->reg_base + ct->regs.enable);
++	irq_reg_writel(gc, mask, ct->regs.enable);
+ 	*ct->mask_cache |= mask;
+ 	irq_gc_unlock(gc);
+ }
+@@ -114,7 +114,7 @@ void irq_gc_ack_set_bit(struct irq_data *d)
+ 	u32 mask = d->mask;
+ 
+ 	irq_gc_lock(gc);
+-	irq_reg_writel(mask, gc->reg_base + ct->regs.ack);
++	irq_reg_writel(gc, mask, ct->regs.ack);
+ 	irq_gc_unlock(gc);
+ }
+ EXPORT_SYMBOL_GPL(irq_gc_ack_set_bit);
+@@ -130,7 +130,7 @@ void irq_gc_ack_clr_bit(struct irq_data *d)
+ 	u32 mask = ~d->mask;
+ 
+ 	irq_gc_lock(gc);
+-	irq_reg_writel(mask, gc->reg_base + ct->regs.ack);
++	irq_reg_writel(gc, mask, ct->regs.ack);
+ 	irq_gc_unlock(gc);
+ }
+ 
+@@ -145,8 +145,8 @@ void irq_gc_mask_disable_reg_and_ack(struct irq_data *d)
+ 	u32 mask = d->mask;
+ 
+ 	irq_gc_lock(gc);
+-	irq_reg_writel(mask, gc->reg_base + ct->regs.mask);
+-	irq_reg_writel(mask, gc->reg_base + ct->regs.ack);
++	irq_reg_writel(gc, mask, ct->regs.mask);
++	irq_reg_writel(gc, mask, ct->regs.ack);
+ 	irq_gc_unlock(gc);
+ }
+ 
+@@ -161,7 +161,7 @@ void irq_gc_eoi(struct irq_data *d)
+ 	u32 mask = d->mask;
+ 
+ 	irq_gc_lock(gc);
+-	irq_reg_writel(mask, gc->reg_base + ct->regs.eoi);
++	irq_reg_writel(gc, mask, ct->regs.eoi);
+ 	irq_gc_unlock(gc);
+ }
+ 
+@@ -245,7 +245,7 @@ irq_gc_init_mask_cache(struct irq_chip_generic *gc, enum irq_gc_flags flags)
+ 		}
+ 		ct[i].mask_cache = mskptr;
+ 		if (flags & IRQ_GC_INIT_MASK_CACHE)
+-			*mskptr = irq_reg_readl(gc->reg_base + mskreg);
++			*mskptr = irq_reg_readl(gc, mskreg);
+ 	}
+ }
+ 
 -- 
-1.7.9.5
+2.1.1
 
