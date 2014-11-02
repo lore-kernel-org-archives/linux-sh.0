@@ -1,64 +1,64 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 12 Nov 2014 08:22:43 +0000
-Subject: Re: [PATCH/RFC] ARM: shmobile: lager: Fix SPI mode of SPI-Flash into mode3
-Message-Id: <20141112082242.GU9007@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sun, 02 Nov 2014 21:47:46 +0000
+Subject: Re: [RFC 3/3] ARM: shmobile: r8a7791: add DMA nodes for IIC
+Message-Id: <17049901.fYZShuhnQA@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414648551-30318-1-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdVQ0s35sW=kvf80c0s++R-5uNuJQtxMcX1R5ogxNwkp9w@mail.gmail.com>
-In-Reply-To: <CAMuHMdVQ0s35sW=kvf80c0s++R-5uNuJQtxMcX1R5ogxNwkp9w@mail.gmail.com>
+References: <1414752678-26078-1-git-send-email-wsa@the-dreams.de> <1414752678-26078-4-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1414752678-26078-4-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Wolfram Sang <wsa@the-dreams.de>
+Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>
 
-On Thu, Oct 30, 2014 at 10:26:33AM +0100, Geert Uytterhoeven wrote:
-> On Thu, Oct 30, 2014 at 6:55 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-> >
-> > In order to change into mode3, CPOL and CPHA bit of SPCMD register
-> > of MSIOF is changed. Mode3 can avoid intermediate voltage.
-> 
-> This is the QSPI node, not MSIOF?
+Hi Wolfram,
 
-Indeed.
+Thank you for the patch.
 
-Nakamura-san's patch, which I up-ported, was against the QSPI node
-but the version I posted below is indeed against the MSIOF.
+On Friday 31 October 2014 11:51:18 Wolfram Sang wrote:
+> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+> 
+> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Furthermore, I see that spi-cpol and spi-cpha are already present
-in the MSIOF node in mainline. I would like to withdraw this patch.
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-> > Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > ---
-> > Based on the renesas-devel-20141030-v3.18-rc2 branch of my renesas tree
-> >
-> >  arch/arm/boot/dts/r8a7790-lager.dts | 2 ++
-> >  1 file changed, 2 insertions(+)
-> >
-> > diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-> > index 830f2e8..1606fad 100644
-> > --- a/arch/arm/boot/dts/r8a7790-lager.dts
-> > +++ b/arch/arm/boot/dts/r8a7790-lager.dts
-> > @@ -343,6 +343,8 @@
-> >                 spi-tx-bus-width = <4>;
-> >                 spi-rx-bus-width = <4>;
-> >                 m25p,fast-read;
-> > +               spi-cpol;
-> > +               spi-cpha;
-> >
-> >                 partition@0 {
-> >                         label = "loader";
+> ---
+>  arch/arm/boot/dts/r8a7791.dtsi | 6 ++++++
+>  1 file changed, 6 insertions(+)
 > 
-> Gr{oetje,eeting}s,
+> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+> index 9a57215f54f7..213b6bda6201 100644
+> --- a/arch/arm/boot/dts/r8a7791.dtsi
+> +++ b/arch/arm/boot/dts/r8a7791.dtsi
+> @@ -371,6 +371,8 @@
+>  		reg = <0 0xe60b0000 0 0x425>;
+>  		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>;
+>  		clocks = <&mstp9_clks R8A7791_CLK_IICDVFS>;
+> +		dmas = <&dmac0 0x77>, <&dmac0 0x78>;
+> +		dma-names = "tx", "rx";
+>  		status = "disabled";
+>  	};
 > 
->                         Geert
+> @@ -381,6 +383,8 @@
+>  		reg = <0 0xe6500000 0 0x425>;
+>  		interrupts = <0 174 IRQ_TYPE_LEVEL_HIGH>;
+>  		clocks = <&mstp3_clks R8A7791_CLK_IIC0>;
+> +		dmas = <&dmac0 0x61>, <&dmac0 0x62>;
+> +		dma-names = "tx", "rx";
+>  		status = "disabled";
+>  	};
 > 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
-> 
+> @@ -391,6 +395,8 @@
+>  		reg = <0 0xe6510000 0 0x425>;
+>  		interrupts = <0 175 IRQ_TYPE_LEVEL_HIGH>;
+>  		clocks = <&mstp3_clks R8A7791_CLK_IIC1>;
+> +		dmas = <&dmac0 0x65>, <&dmac0 0x66>;
+> +		dma-names = "tx", "rx";
+>  		status = "disabled";
+>  	};
+
+-- 
+Regards,
+
+Laurent Pinchart
+
