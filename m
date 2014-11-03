@@ -1,48 +1,51 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 20 Nov 2014 09:19:15 +0000
-Subject: Re: [GIT PULL] Third Round of Renesas ARM Based Soc Updates for v3.19
-Message-Id: <CAMuHMdXr7QgaGFg8tiDNTLnsTero2_RGZ-Vv4czALmN82aBzRA@mail.gmail.com>
+From: Soren Brinkmann <soren.brinkmann@xilinx.com>
+Date: Mon, 03 Nov 2014 19:05:25 +0000
+Subject: [PATCH 1/7] pinctrl: pinconf-generic: Declare dt_params/conf_items const
+Message-Id: <1415041531-15520-2-git-send-email-soren.brinkmann@xilinx.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415841454.git.horms+renesas@verge.net.au>
- <201411192216.27740.arnd@arndb.de>
- <CAMuHMdWGnx9D4BJR3C0b=iuEKP_AN+JORiOHX+c-MkqcURAjtg@mail.gmail.com>
- <3299155.X2xrgWZ6OL@wuerfel>
-In-Reply-To: <3299155.X2xrgWZ6OL@wuerfel>
+References: <1415041531-15520-1-git-send-email-soren.brinkmann@xilinx.com>
+In-Reply-To: <1415041531-15520-1-git-send-email-soren.brinkmann@xilinx.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Arnd,
+Signed-off-by: Soren Brinkmann <soren.brinkmann@xilinx.com>
+---
+ drivers/pinctrl/pinconf-generic.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-On Thu, Nov 20, 2014 at 10:04 AM, Arnd Bergmann <arnd@arndb.de> wrote:
-> On Thursday 20 November 2014 08:56:10 Geert Uytterhoeven wrote:
->> > Please have a look at drivers/power/restart for how other platforms do
->> > this. You probably need to add a device node for whatever IP block
->> > holds the reset register and then have a driver. What exactly this
->> > driver should look like depends of course on what other registers are
->> > part of this block.
->>
->> I agree. Thanks for reminding us.
->>
->> The IP block is the system-controller, which is also used for PM domain
->> control. So I'll take care of it.
->
-> Is it just the pm-domain driver and the system reset that needs to
-> access this block? If yes, then the best option would be to register
-> the reset handler from the pm-domain driver, otherwise I think you
-> should have a syscon device node that gets shared between all drivers
-> using this device.
+diff --git a/drivers/pinctrl/pinconf-generic.c b/drivers/pinctrl/pinconf-generic.c
+index e28ef957ca2d..f78b416d7984 100644
+--- a/drivers/pinctrl/pinconf-generic.c
++++ b/drivers/pinctrl/pinconf-generic.c
+@@ -38,7 +38,7 @@ struct pin_config_item {
+ #define PCONFDUMP(a, b, c, d) { .param = a, .display = b, .format = c, \
+ 				.has_arg = d }
+ 
+-static struct pin_config_item conf_items[] = {
++static const struct pin_config_item conf_items[] = {
+ 	PCONFDUMP(PIN_CONFIG_BIAS_DISABLE, "input bias disabled", NULL, false),
+ 	PCONFDUMP(PIN_CONFIG_BIAS_HIGH_IMPEDANCE, "input bias high impedance", NULL, false),
+ 	PCONFDUMP(PIN_CONFIG_BIAS_BUS_HOLD, "input bias bus hold", NULL, false),
+@@ -159,7 +159,7 @@ struct pinconf_generic_dt_params {
+ 	u32 default_value;
+ };
+ 
+-static struct pinconf_generic_dt_params dt_params[] = {
++static const struct pinconf_generic_dt_params dt_params[] = {
+ 	{ "bias-disable", PIN_CONFIG_BIAS_DISABLE, 0 },
+ 	{ "bias-high-impedance", PIN_CONFIG_BIAS_HIGH_IMPEDANCE, 0 },
+ 	{ "bias-bus-hold", PIN_CONFIG_BIAS_BUS_HOLD, 0 },
+@@ -209,7 +209,7 @@ int pinconf_generic_parse_dt_config(struct device_node *np,
+ 		return -ENOMEM;
+ 
+ 	for (i = 0; i < ARRAY_SIZE(dt_params); i++) {
+-		struct pinconf_generic_dt_params *par = &dt_params[i];
++		const struct pinconf_generic_dt_params *par = &dt_params[i];
+ 		ret = of_property_read_u32(np, par->property, &val);
+ 
+ 		/* property not found */
+-- 
+1.9.1
 
-Just PM domains, reset, and wake-up factors.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
