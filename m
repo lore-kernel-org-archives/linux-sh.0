@@ -1,55 +1,55 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 13 Nov 2014 22:20:06 +0000
-Subject: Re: [PATCH] net: sh_eth: Add RMII mode setting in probe
-Message-Id: <54652E96.2060100@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 03 Nov 2014 15:34:48 +0000
+Subject: [PATCH v4 1/9] PM / Domains: Change prototype for the ->attach_dev() callback
+Message-Id: <1415028896-9005-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415861645-27685-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1415861645-27685-1-git-send-email-ykaneko0929@gmail.com>
+References: <1415028896-9005-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1415028896-9005-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>, netdev@vger.kernel.org
-Cc: "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Ulf Hansson <ulf.hansson@linaro.org>
 
-On 11/13/2014 09:54 AM, Yoshihiro Kaneko wrote:
+Convert the prototype to return and int. This is just an initial step,
+needed to support error handling.
 
-> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Pavel Machek <pavel@ucw.cz>
+Acked-by: Kevin Hilman <khilman@linaro.org>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Prerequisite
 
-> When using RMMI mode, it is necessary to change in probe.
+Ulf wrote:
 
-    I'd like this need to be explained in more detail.
+This patch is intended as fix for 3.18 rc[n]. Why?
 
-> Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> ---
+There are other SOC specific patches around that adds genpd support and which
+implements the ->attach_dev() callback. To prevent having an "atomic" patch
+during the next release cycle, let's change the prototype now instead.
 
-> This patch is based on net-next tree.
+Further patches will add the actual error handling in genpd and these can then
+be reviewed and tested thoroughly.
+---
+ include/linux/pm_domain.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
->   drivers/net/ethernet/renesas/sh_eth.c | 4 ++++
->   1 file changed, 4 insertions(+)
->
-> diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-> index dbe8606..1f79ed6 100644
-> --- a/drivers/net/ethernet/renesas/sh_eth.c
-> +++ b/drivers/net/ethernet/renesas/sh_eth.c
-> @@ -1,5 +1,6 @@
->   /*  SuperH Ethernet device driver
->    *
-> + *  Copyright (C) 2014  Renesas Electronics Corporation
->    *  Copyright (C) 2006-2012 Nobuhiro Iwamatsu
->    *  Copyright (C) 2008-2014 Renesas Solutions Corp.
->    *  Copyright (C) 2013-2014 Cogent Embedded, Inc.
-> @@ -2883,6 +2884,9 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
->   		}
->   	}
->
-> +	if (mdp->cd->rmiimode)
-> +		sh_eth_write(ndev, 0x1, RMIIMODE);
-> +
-
-    Does not such code need to be removed from sh_eth_dev_init() then?
-
-WBR, Sergei
+diff --git a/include/linux/pm_domain.h b/include/linux/pm_domain.h
+index 73e938b7e9374c68..d44f071988a861ff 100644
+--- a/include/linux/pm_domain.h
++++ b/include/linux/pm_domain.h
+@@ -72,7 +72,7 @@ struct generic_pm_domain {
+ 	bool max_off_time_changed;
+ 	bool cached_power_down_ok;
+ 	struct gpd_cpuidle_data *cpuidle_data;
+-	void (*attach_dev)(struct device *dev);
++	int (*attach_dev)(struct device *dev);
+ 	void (*detach_dev)(struct device *dev);
+ };
+ 
+-- 
+1.9.1
 
