@@ -1,108 +1,119 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 05 Nov 2014 02:09:24 +0000
-Subject: Re: [PATCH 03/10] ARM: shmobile: r8a7790: Add DU node to device tree
-Message-Id: <20141105020924.GC17779@verge.net.au>
+From: Soren Brinkmann <soren.brinkmann@xilinx.com>
+Date: Mon, 03 Nov 2014 19:05:28 +0000
+Subject: [PATCH 4/7] pinctrl: zynq: Document DT binding
+Message-Id: <1415041531-15520-5-git-send-email-soren.brinkmann@xilinx.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415058552.git.horms+renesas@verge.net.au>
- <3ac6a83c09cbb74ebb3d3e7e6e40e1ead3ff9d01.1415058552.git.horms+renesas@verge.net.au>
- <5458D0D1.9080403@cogentembedded.com>
-In-Reply-To: <5458D0D1.9080403@cogentembedded.com>
+References: <1415041531-15520-1-git-send-email-soren.brinkmann@xilinx.com>
+In-Reply-To: <1415041531-15520-1-git-send-email-soren.brinkmann@xilinx.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-[CC Olof]
+Add documentation for the devicetree binding for the Zynq pincontroller.
 
-On Tue, Nov 04, 2014 at 04:12:49PM +0300, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 11/4/2014 4:50 AM, Simon Horman wrote:
-> 
-> >From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> >Add the DU device with a disabled state. Boards that want to enable the
-> >DU need to specify the output topology.
-> 
->    OK, but you're also adding VSP1 device node and don't mention that at all.
-> Haven't you squashed 2 distinct patches by chance?
+Signed-off-by: Soren Brinkmann <soren.brinkmann@xilinx.com>
+---
+ .../bindings/pinctrl/xlnx,zynq-pinctrl.txt         | 90 ++++++++++++++++++++++
+ 1 file changed, 90 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/pinctrl/xlnx,zynq-pinctrl.txt
 
-Yes, I do appear to have squashed two patches.
+diff --git a/Documentation/devicetree/bindings/pinctrl/xlnx,zynq-pinctrl.txt b/Documentation/devicetree/bindings/pinctrl/xlnx,zynq-pinctrl.txt
+new file mode 100644
+index 000000000000..86a86b644e6c
+--- /dev/null
++++ b/Documentation/devicetree/bindings/pinctrl/xlnx,zynq-pinctrl.txt
+@@ -0,0 +1,90 @@
++	Binding for Xilinx Zynq Pinctrl
++
++Required properties:
++- compatible: "xlnx,zynq-pinctrl"
++- syscon: phandle to SLCR
++- reg: Offset and length of pinctrl space in SLCR
++
++Please refer to pinctrl-bindings.txt in this directory for details of the
++common pinctrl bindings used by client devices, including the meaning of the
++phrase "pin configuration node".
++
++Zynq's pin configuration nodes act as a container for an abitrary number of
++subnodes. Each of these subnodes represents some desired configuration for a
++pin, a group, or a list of pins or groups. This configuration can include the
++mux function to select on those pin(s)/group(s), and various pin configuration
++parameters, such as pull-up, slew rate, etc.
++
++The name of each subnode is not important; all subnodes should be enumerated
++and processed purely based on their content.
++
++Each subnode only affects those parameters that are explicitly listed. In
++other words, a subnode that lists a mux function but no pin configuration
++parameters implies no information about any pin configuration parameters.
++Similarly, a pin subnode that describes a pullup parameter implies no
++information about e.g. the mux function.
++
++
++The following generic properties as defined in pinctrl-bindings.txt are valid
++to specify in a pin configuration subnode:
++ groups, pins, function, bias-disable, bias-high-impedance, bias-pull-up,
++ slew-rate, low-power-disable, low-power-enable
++
++ Valid arguments for 'slew-rate' are '0' and '1' to select between slow and fast
++ respectively.
++
++ Valid values for groups are:
++   ethernet0_0_grp, ethernet1_0_grp, mdio0_0_grp, mdio1_0_grp,
++   qspi0_0_grp, qspi1_0_grp, qspi_fbclk, qspi_cs1_grp, spi0_0_grp,
++   spi0_1_grp - spi0_2_grp, spi1_0_grp - spi1_3_grp, sdio0_0_grp - sdio0_2_grp,
++   sdio1_0_grp - sdio1_3_grp, sdio0_emio_wp, sdio0_emio_cd, sdio1_emio_wp,
++   sdio1_emio_cd, smc0_nor, smc0_nor_cs1_grp, smc0_nor_addr25_grp, smc0_nand,
++   can0_0_grp - can0_10_grp, can1_0_grp - can1_11_grp, uart0_0_grp - uart0_10_grp,
++   uart1_0_grp - uart1_11_grp, i2c0_0_grp - i2c0_10_grp, i2c1_0_grp - i2c1_10_grp,
++   ttc0_0_grp - ttc0_2_grp, ttc1_0_grp - ttc1_2_grp, swdt0_0_grp - swdt0_4_grp,
++   gpio0_0_grp - gpio0_53_grp
++
++ Valid values for pins are:
++   MIO0 - MIO53
++
++ Valid values for function are:
++   ethernet0, ethernet1, mdio0, mdio1, qspi0, qspi1, qspi_fbclk, qspi_cs1,
++   spi0, spi1, sdio0, sdio0_pc, sdio0_cd, sdio0_wp,
++   sdio1, sdio1_pc, sdio1_cd, sdio1_wp,
++   smc0_nor, smc0_nor_cs1, smc0_nor_addr25, smc0_nand, can0, can1, uart0, uart1,
++   i2c0, i2c1, ttc0, ttc1, swdt0, gpio0
++
++The following driver-specific properties as defined here are valid to specify in
++a pin configuration subnode:
++ - io-standard: Configure the pin to use the selected IO standard according to
++   this mapping:
++    1: LVCMOS18
++    2: LVCMOS25
++    3: LVCMOS33
++    4: HSTL
++
++Example:
++	pinctrl0: pinctrl@700 {
++		compatible = "xlnx,pinctrl-zynq";
++		reg = <0x700 0x200>;
++		syscon = <&slcr>;
++
++		pinctrl_uart1_default: pinctrl-uart1-default {
++			common {
++				groups = "uart1_10_grp";
++				function = "uart1";
++				slew-rate = <0>;
++				io-standard = <1>;
++			};
++
++			rx {
++				pins = "MIO49";
++				bias-high-impedance;
++			};
++
++			tx {
++				pins = "MIO48";
++				bias-disable;
++			};
++		};
++	};
+-- 
+1.9.1
 
-Its unclear to me if its worth the delay that respinning this pull-request
-would amount to. But I'm happy to do so if that is what Olof would like.
-
-> >Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> >[horms+renesas@verge.net.au: resolved minor conflict]
-> >Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >---
-> >  arch/arm/boot/dts/r8a7790.dtsi | 90 ++++++++++++++++++++++++++++++++++++++++++
-> >  1 file changed, 90 insertions(+)
-> 
-> >diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-> >index d0e1773..b7c59b7 100644
-> >--- a/arch/arm/boot/dts/r8a7790.dtsi
-> >+++ b/arch/arm/boot/dts/r8a7790.dtsi
-> >@@ -600,6 +600,96 @@
-> >  		status = "disabled";
-> >  	};
-> >
-> >+	vsp1@fe920000 {
-> >+		compatible = "renesas,vsp1";
-> >+		reg = <0 0xfe920000 0 0x8000>;
-> >+		interrupts = <0 266 IRQ_TYPE_LEVEL_HIGH>;
-> >+		clocks = <&mstp1_clks R8A7790_CLK_VSP1_R>;
-> >+
-> >+		renesas,has-sru;
-> >+		renesas,#rpf = <5>;
-> >+		renesas,#uds = <1>;
-> >+		renesas,#wpf = <4>;
-> >+	};
-> >+
-> >+	vsp1@fe928000 {
-> >+		compatible = "renesas,vsp1";
-> >+		reg = <0 0xfe928000 0 0x8000>;
-> >+		interrupts = <0 267 IRQ_TYPE_LEVEL_HIGH>;
-> >+		clocks = <&mstp1_clks R8A7790_CLK_VSP1_S>;
-> >+
-> >+		renesas,has-lut;
-> >+		renesas,has-sru;
-> >+		renesas,#rpf = <5>;
-> >+		renesas,#uds = <3>;
-> >+		renesas,#wpf = <4>;
-> >+	};
-> >+
-> >+	vsp1@fe930000 {
-> >+		compatible = "renesas,vsp1";
-> >+		reg = <0 0xfe930000 0 0x8000>;
-> >+		interrupts = <0 246 IRQ_TYPE_LEVEL_HIGH>;
-> >+		clocks = <&mstp1_clks R8A7790_CLK_VSP1_DU0>;
-> >+
-> >+		renesas,has-lif;
-> >+		renesas,has-lut;
-> >+		renesas,#rpf = <4>;
-> >+		renesas,#uds = <1>;
-> >+		renesas,#wpf = <4>;
-> >+	};
-> >+
-> >+	vsp1@fe938000 {
-> >+		compatible = "renesas,vsp1";
-> >+		reg = <0 0xfe938000 0 0x8000>;
-> >+		interrupts = <0 247 IRQ_TYPE_LEVEL_HIGH>;
-> >+		clocks = <&mstp1_clks R8A7790_CLK_VSP1_DU1>;
-> >+
-> >+		renesas,has-lif;
-> >+		renesas,has-lut;
-> >+		renesas,#rpf = <4>;
-> >+		renesas,#uds = <1>;
-> >+		renesas,#wpf = <4>;
-> >+	};
-> [...]
-> 
-> WBR, Sergei
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
