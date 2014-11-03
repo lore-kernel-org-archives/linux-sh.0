@@ -1,43 +1,53 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Nov 2014 00:54:50 +0000
-Subject: [PATCH 24/29] ARM: shmobile: lager: add Volume Ramp usage on comment
-Message-Id: <bd2e4a62ef68b3c5a8542026533bd87c631c544d.1416476366.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 03 Nov 2014 15:34:56 +0000
+Subject: [PATCH v4 9/9] drivers: sh: Disable PM runtime for multi-platform r8a7740 with genpd
+Message-Id: <1415028896-9005-10-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1416476366.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
+References: <1415028896-9005-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1415028896-9005-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+If the default PM domain using PM_CLK is used for PM runtime, the real PM
+domain(s) cannot be registered from DT later.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Hence do not enable it when running a multi-platform kernel with genpd
+support on an r8a7740. The R-Mobile PM domain driver will take care of
+PM runtime management of the module clocks.
+
+The default PM domain is still needed for:
+  - platforms without genpd support,
+  - the legacy (non-DT) case, where genpd may take over later, except
+    for the C5 "always on" PM domain.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 9 +++++++++
- 1 file changed, 9 insertions(+)
+v4:
+  - No changes,
+v3:
+  - Reword,
+v2:
+  - New.
+---
+ drivers/sh/pm_runtime.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 2f91740..a235158 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -26,6 +26,15 @@
-  *
-  *	amixer set "DVC Out Mute" on
-  *	amixer set "DVC In Mute" on
-+ *
-+ * You can use Volume Ramp
-+ *
-+ *	amixer set "DVC Out Ramp Up Rate"   "0.125 dB/64 steps"
-+ *	amixer set "DVC Out Ramp Down Rate" "0.125 dB/512 steps"
-+ *	amixer set "DVC Out Ramp" on
-+ *	aplay xxx.wav &
-+ *	amixer set "DVC Out"  80%  // Volume Down
-+ *	amixer set "DVC Out" 100%  // Volume Up
-  */
- 
- /dts-v1/;
+diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
+index fe2c2d595f599b2f..85cc89fd3e7d7cb7 100644
+--- a/drivers/sh/pm_runtime.c
++++ b/drivers/sh/pm_runtime.c
+@@ -81,7 +81,9 @@ static int __init sh_pm_runtime_init(void)
+ 		if (!of_machine_is_compatible("renesas,emev2") &&
+ 		    !of_machine_is_compatible("renesas,r7s72100") &&
+ 		    !of_machine_is_compatible("renesas,r8a73a4") &&
++#ifndef CONFIG_PM_GENERIC_DOMAINS_OF
+ 		    !of_machine_is_compatible("renesas,r8a7740") &&
++#endif
+ 		    !of_machine_is_compatible("renesas,r8a7778") &&
+ 		    !of_machine_is_compatible("renesas,r8a7779") &&
+ 		    !of_machine_is_compatible("renesas,r8a7790") &&
 -- 
-2.1.1
+1.9.1
 
