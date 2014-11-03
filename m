@@ -1,78 +1,40 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Mon, 03 Nov 2014 11:56:52 +0000
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Mon, 03 Nov 2014 20:18:20 +0000
 Subject: Re: [PATCH V3 00/14] genirq endian fixes; bcm7120/brcmstb IRQ updates
-Message-Id: <2217077.1aQXS9nJph@wuerfel>
+Message-Id: <alpine.DEB.2.11.1411032117050.5308@nanos>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414890241-9938-1-git-send-email-cernekee@gmail.com>
-In-Reply-To: <1414890241-9938-1-git-send-email-cernekee@gmail.com>
+References: <1414890241-9938-1-git-send-email-cernekee@gmail.com> <2217077.1aQXS9nJph@wuerfel>
+In-Reply-To: <2217077.1aQXS9nJph@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kevin Cernekee <cernekee@gmail.com>
-Cc: f.fainelli@gmail.com, tglx@linutronix.de, jason@lakedaemon.net, ralf@linux-mips.org, linux-sh@vger.kernel.org, sergei.shtylyov@cogentembedded.com, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, mbizon@freebox.fr, jogo@openwrt.org, linux-mips@linux-mips.org
+To: Arnd Bergmann <arnd@arndb.de>
+Cc: Kevin Cernekee <cernekee@gmail.com>, f.fainelli@gmail.com, jason@lakedaemon.net, ralf@linux-mips.org, linux-sh@vger.kernel.org, sergei.shtylyov@cogentembedded.com, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, mbizon@freebox.fr, jogo@openwrt.org, linux-mips@linux-mips.org
 
-On Saturday 01 November 2014 18:03:47 Kevin Cernekee wrote:
-> V2->V3:
+On Mon, 3 Nov 2014, Arnd Bergmann wrote:
+> On Saturday 01 November 2014 18:03:47 Kevin Cernekee wrote:
+> > V2->V3:
+> > 
+> >  - Move updated irq_reg_{readl,writel} functions back into <linux/irq.h>
+> >    so they can be called by irqchip drivers
+> > 
+> >  - Add gc->reg_{readl,writel} function pointers so that irqchip
+> >    drivers like arch/sh/boards/mach-se/{7343,7722}/irq.c can override them
+> > 
+> >  - CC: linux-sh list in lieu of Paul's defunct linux-sh.org email address
+> > 
+> >  - Fix handling of zero L2 status in bcm7120-l2.c
+> > 
+> >  - Rebase on Linus' head of tree
 > 
->  - Move updated irq_reg_{readl,writel} functions back into <linux/irq.h>
->    so they can be called by irqchip drivers
-> 
->  - Add gc->reg_{readl,writel} function pointers so that irqchip
->    drivers like arch/sh/boards/mach-se/{7343,7722}/irq.c can override them
-> 
->  - CC: linux-sh list in lieu of Paul's defunct linux-sh.org email address
-> 
->  - Fix handling of zero L2 status in bcm7120-l2.c
-> 
->  - Rebase on Linus' head of tree
+> Looks all great. I also looked at the series now and am very happy
+> about how it turned out.
 
-Looks all great. I also looked at the series now and am very happy
-about how it turned out.
+Does that translate to an Acked-by on the whole lot?
 
->  - Drop GENERIC_CHIP / GENERIC_CHIP_BE compile-time optimizations
-> 
-> For the latter item, I ran a quick benchmark to see if the extra
-> indirection in irq_reg_{readl,write} had any perceptible effect on
-> register access times.  The MIPS BE case did show a small performance
-> hit from using the read wrapper, but on ARM LE the only differences
-> were attributed to the presence/absence of a barrier:
->
->
-> BCM3384 (UBUS architecture, MIPS BE, IRQ_GC_BE_IO):
-> 
-> irq_reg_readl       : 207 ns
-> readl               : 186 ns
-> __raw_readl         : 186 ns
-> ioread32be          : 195 ns
-> 
-> irq_reg_writel      : 177 ns
-> writel              : 177 ns
-> __raw_writel        : 177 ns
-> iowrite32be         : 177 ns
-> 
-> 
-> BCM7445 (GISB architecture, ARM LE, standard LE readl):
-> 
-> irq_reg_readl       : 519 ns
-> readl               : 519 ns
-> __raw_readl         : 482 ns
-> ioread32be          : 519 ns
-> 
-> irq_reg_writel      : 500 ns
-> writel              : 500 ns
-> __raw_writel        : 482 ns
-> iowrite32be         : 500 ns
-> 
+Jason, can you please pick that lot up with an Acked-by-me on the
+changes to the existing infrastructure?
 
-Yes, good idea to check this. 43ns is probably not significant to
-warrant optimizing this, but if we wanted to, a driver could now
-override the accessors using readl_relaxed()/writel_relaxed().
+Thanks,
 
-Note that the cost of the barriers can depend a lot on the hardware
-setup and on the state of the system. I believe synchronizing the
-L2 cache on some Cortex-A9 machines can be particularly expensive.
-
-Anyway, the existing code doesn't do it, so we can leave that as
-a possible optimization.
-
-	Arnd
+	tglx
