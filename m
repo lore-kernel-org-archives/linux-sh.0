@@ -1,34 +1,70 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 12 Nov 2014 09:05:48 +0000
-Subject: Re: [PATCH 1/5] ARM: shmobile: kzm9g legacy: Set i2c clks_per_count to 2
-Message-Id: <20141112090548.GZ9007@verge.net.au>
+From: Soren Brinkmann <soren.brinkmann@xilinx.com>
+Date: Mon, 03 Nov 2014 19:05:24 +0000
+Subject: [PATCH 0/7] Pinctrl support for Zynq
+Message-Id: <1415041531-15520-1-git-send-email-soren.brinkmann@xilinx.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415274730-310-1-git-send-email-geert+renesas@glider.be>
- <1415274730-310-2-git-send-email-geert+renesas@glider.be>
- <20141107052420.GA1278@katana>
- <20141112014450.GC11597@verge.net.au>
- <CAMuHMdUUspG8-dYGiO7cmuECBLpfmQAYg=B8ZpajxRXhaEUJ2A@mail.gmail.com>
- <CAMuHMdXoiX6CreDJNaDHcmsifX0C+TRRvTy4JWYBc2c-MVT_Qw@mail.gmail.com>
-In-Reply-To: <CAMuHMdXoiX6CreDJNaDHcmsifX0C+TRRvTy4JWYBc2c-MVT_Qw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux I2C <linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Nov 12, 2014 at 09:55:58AM +0100, Geert Uytterhoeven wrote:
-> On Wed, Nov 12, 2014 at 9:53 AM, Geert Uytterhoeven
-> <geert@linux-m68k.org> wrote:
-> >>   i2c_shmobile support.") in v2.6.37.
-> >>
-> >>   Without this fix i2c may not operate correctly on the sh73a0/kzm9g.
-> >
-> > Thanks, that's correct.
-> 
-> git tag --contains b028f94b76319e1b8 says v2.6.38.
-> 
-> Not that you're gonna backport it to ltsi-v2.6.37 ;-)
+Hi,
 
-Hopefully not!
+I think we're getting closer. I re-organized the series to illustrate
+the dependencies better instead of my development process. The
+respective patches have some more details and also changelog.
 
-I'll update my description anyway.
+The first three patches essentially extend pinconf-generic by:
+ - properly support and distinguish between the 'groups' and 'pins' DT
+   properties
+ - option for drivers to use the pinconf-generic infrastructure with the
+   generic + driver-specific DT parameters
+
+Doing so, resulted in one change in the API. I fixed up all the
+call-sites I found, I hope.
+
+The last four patches are the platform specific stuff. The actual
+driver, DT update, documentation, etc.
+The DT binding have been revised another time to conform better with how
+the generic parameters are defined.
+
+Since the Zynq-specific parts rely on the pinconf-generic changes, I
+keep the audience to pinctrl stakeholders. Once there is an agreement on
+those patches I will post the Zynq patches on the relevant lists.
+
+	Thanks,
+	Soren
+
+Soren Brinkmann (7):
+  pinctrl: pinconf-generic: Declare dt_params/conf_items const
+  pinctrl: pinconf-generic: Infer map type from DT property
+  pinctrl: pinconf-generic: Allow driver to specify DT params
+  pinctrl: zynq: Document DT binding
+  pinctrl: Add driver for Zynq
+  ARM: zynq: Enable pinctrl
+  ARM: zynq: DT: Add pinctrl information
+
+ .../bindings/pinctrl/xlnx,zynq-pinctrl.txt         |   90 ++
+ arch/arm/boot/dts/zynq-7000.dtsi                   |    8 +-
+ arch/arm/boot/dts/zynq-zc702.dts                   |  143 +++
+ arch/arm/boot/dts/zynq-zc706.dts                   |  120 ++
+ arch/arm/mach-zynq/Kconfig                         |    2 +
+ drivers/pinctrl/Kconfig                            |    8 +
+ drivers/pinctrl/Makefile                           |    1 +
+ drivers/pinctrl/nomadik/pinctrl-abx500.c           |    6 +-
+ drivers/pinctrl/pinconf-generic.c                  |  192 ++--
+ drivers/pinctrl/pinconf.h                          |    1 +
+ drivers/pinctrl/pinctrl-rockchip.c                 |    2 +-
+ drivers/pinctrl/pinctrl-tz1090-pdc.c               |    2 +-
+ drivers/pinctrl/pinctrl-tz1090.c                   |    2 +-
+ drivers/pinctrl/pinctrl-zynq.c                     | 1164 ++++++++++++++++++++
+ drivers/pinctrl/sh-pfc/pinctrl.c                   |    2 +-
+ include/linux/pinctrl/pinconf-generic.h            |   25 +
+ include/linux/pinctrl/pinctrl.h                    |    8 +
+ 17 files changed, 1683 insertions(+), 93 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/pinctrl/xlnx,zynq-pinctrl.txt
+ create mode 100644 drivers/pinctrl/pinctrl-zynq.c
+
+-- 
+1.9.1
+
