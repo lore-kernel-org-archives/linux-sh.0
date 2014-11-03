@@ -1,215 +1,388 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Thu, 20 Nov 2014 16:21:36 +0000
-Subject: [PATCH v2 6/6] ARM: shmobile: r8a73a4: add MSTP clock assignments to DT
-Message-Id: <1416500496-21024-7-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Soren Brinkmann <soren.brinkmann@xilinx.com>
+Date: Mon, 03 Nov 2014 19:05:31 +0000
+Subject: [PATCH 7/7] ARM: zynq: DT: Add pinctrl information
+Message-Id: <1415041531-15520-8-git-send-email-soren.brinkmann@xilinx.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1415041531-15520-1-git-send-email-soren.brinkmann@xilinx.com>
+In-Reply-To: <1415041531-15520-1-git-send-email-soren.brinkmann@xilinx.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Assigns clocks to dmac, i2c*, cmt1, thermal, scif*, sdhi*, and mmcif*.
+Add pinctrl descriptions to the zc702 and zc706 device trees.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Signed-off-by: Soren Brinkmann <soren.brinkmann@xilinx.com>
 ---
- arch/arm/boot/dts/r8a73a4.dtsi | 30 ++++++++++++++++++++++++++++++
- 1 file changed, 30 insertions(+)
+Changes since RFC v2:
+ - add pinconf properties to zc702 mdio node
+ - remove arguments from bias-related props
 
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index 20eae88..87dcb0a 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -78,6 +78,7 @@
- 					"ch8", "ch9", "ch10", "ch11",
- 					"ch12", "ch13", "ch14", "ch15",
- 					"ch16", "ch17", "ch18", "ch19";
-+			clocks = <&mstp2_clks R8A73A4_CLK_DMAC>;
+Changes since RFC v1:
+ - separate DT changes into their own patch
+---
+ arch/arm/boot/dts/zynq-7000.dtsi |   8 ++-
+ arch/arm/boot/dts/zynq-zc702.dts | 143 +++++++++++++++++++++++++++++++++++++++
+ arch/arm/boot/dts/zynq-zc706.dts | 120 ++++++++++++++++++++++++++++++++
+ 3 files changed, 270 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/zynq-7000.dtsi b/arch/arm/boot/dts/zynq-7000.dtsi
+index ce2ef5bec4f2..fc5246a4f69f 100644
+--- a/arch/arm/boot/dts/zynq-7000.dtsi
++++ b/arch/arm/boot/dts/zynq-7000.dtsi
+@@ -237,7 +237,7 @@
+ 		slcr: slcr@f8000000 {
+ 			#address-cells = <1>;
+ 			#size-cells = <1>;
+-			compatible = "xlnx,zynq-slcr", "syscon";
++			compatible = "xlnx,zynq-slcr", "syscon", "simple-bus";
+ 			reg = <0xF8000000 0x1000>;
+ 			ranges;
+ 			clkc: clkc@100 {
+@@ -258,6 +258,12 @@
+ 						"dbg_trc", "dbg_apb";
+ 				reg = <0x100 0x100>;
+ 			};
++
++			pinctrl0: pinctrl@700 {
++				compatible = "xlnx,pinctrl-zynq";
++				reg = <0x700 0x200>;
++				syscon = <&slcr>;
++			};
  		};
- 	};
  
-@@ -110,6 +111,7 @@
- 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe60b0000 0 0x428>;
- 		interrupts = <0 179 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp4_clks R8A73A4_CLK_IIC5>;
+ 		dmac_s: dmac@f8003000 {
+diff --git a/arch/arm/boot/dts/zynq-zc702.dts b/arch/arm/boot/dts/zynq-zc702.dts
+index 94e2cda6f9b6..f64e7ad53c65 100644
+--- a/arch/arm/boot/dts/zynq-zc702.dts
++++ b/arch/arm/boot/dts/zynq-zc702.dts
+@@ -40,21 +40,32 @@
  
- 		status = "disabled";
- 	};
-@@ -118,6 +120,8 @@
- 		compatible = "renesas,cmt-48-r8a73a4", "renesas,cmt-48-gen2";
- 		reg = <0 0xe6130000 0 0x1004>;
- 		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A73A4_CLK_CMT1>;
-+		clock-names = "fck";
+ &can0 {
+ 	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_can0_default>;
+ };
  
- 		renesas,channels-mask = <0xff>;
+ &gem0 {
+ 	status = "okay";
+ 	phy-mode = "rgmii-id";
+ 	phy-handle = <&ethernet_phy>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_gem0_default>;
  
-@@ -201,6 +205,7 @@
- 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>,
- 			 <0 0xe61f0200 0 0x38>, <0 0xe61f0300 0 0x38>;
- 		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp5_clks R8A73A4_CLK_THERMAL>;
+ 	ethernet_phy: ethernet-phy@7 {
+ 		reg = <7>;
  	};
+ };
  
- 	i2c0: i2c@e6500000 {
-@@ -209,6 +214,7 @@
- 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6500000 0 0x428>;
- 		interrupts = <0 174 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A73A4_CLK_IIC0>;
- 		status = "disabled";
- 	};
++&gpio0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_gpio0_default>;
++};
++
+ &i2c0 {
+ 	status = "okay";
+ 	clock-frequency = <400000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_i2c0_default>;
  
-@@ -218,6 +224,7 @@
- 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6510000 0 0x428>;
- 		interrupts = <0 175 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A73A4_CLK_IIC1>;
- 		status = "disabled";
+ 	i2cswitch@74 {
+ 		compatible = "nxp,pca9548";
+@@ -128,10 +139,142 @@
  	};
+ };
  
-@@ -227,6 +234,7 @@
- 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6520000 0 0x428>;
- 		interrupts = <0 176 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A73A4_CLK_IIC2>;
- 		status = "disabled";
- 	};
++&pinctrl0 {
++	pinctrl_can0_default: pinctrl-can0-default {
++		common {
++			function = "can0";
++			groups = "can0_9_grp";
++			slew-rate = <0>;
++			io-standard = <1>;
++		};
++
++		rx {
++			pins = "MIO46";
++			bias-high-impedance;
++		};
++
++		tx {
++			pins = "MIO47";
++			bias-disable;
++		};
++	};
++
++	pinctrl_gem0_default: pinctrl-gem0-default {
++		common {
++			function = "ethernet0";
++			groups = "ethernet0_0_grp";
++			slew-rate = <0>;
++			io-standard = <4>;
++		};
++
++		rx {
++			pins = "MIO22", "MIO23", "MIO24", "MIO25", "MIO26", "MIO27";
++			bias-high-impedance;
++			low-power-disable;
++		};
++
++		tx {
++			pins = "MIO16", "MIO17", "MIO18", "MIO19", "MIO20", "MIO21";
++			bias-disable;
++			low-power-enable;
++		};
++
++		mdio {
++			function = "mdio0";
++			groups = "mdio0_0_grp";
++			slew-rate = <0>;
++			io-standard = <1>;
++			bias-disable;
++		};
++	};
++
++	pinctrl_gpio0_default: pinctrl-gpio0-default {
++		common {
++			function = "gpio0";
++			groups = "gpio0_7_grp", "gpio0_8_grp", "gpio0_9_grp",
++				 "gpio0_10_grp", "gpio0_11_grp", "gpio0_12_grp",
++				 "gpio0_13_grp", "gpio0_14_grp";
++			slew-rate = <0>;
++			io-standard = <1>;
++		};
++
++		pull-up {
++			pins = "MIO9", "MIO10", "MIO11", "MIO12", "MIO13", "MIO14";
++			bias-pull-up;
++		};
++
++		pull-none {
++			pins = "MIO7", "MIO8";
++			bias-disable;
++		};
++	};
++
++	pinctrl_i2c0_default: pinctrl-i2c0-default {
++		common {
++			groups = "i2c0_10_grp";
++			function = "i2c0";
++			bias-pull-up;
++			slew-rate = <0>;
++			io-standard = <1>;
++		};
++	};
++
++	pinctrl_sdhci0_default: pinctrl-sdhci0-default {
++		common {
++			groups = "sdio0_2_grp";
++			function = "sdio0";
++			slew-rate = <0>;
++			io-standard = <1>;
++			bias-disable;
++		};
++
++		cd {
++			groups = "gpio0_0_grp";
++			function = "sdio0_cd";
++			bias-high-impedance;
++			bias-pull-up;
++			slew-rate = <0>;
++			io-standard = <1>;
++		};
++
++		wp {
++			groups = "gpio0_15_grp";
++			function = "sdio0_wp";
++			bias-high-impedance;
++			bias-pull-up;
++			slew-rate = <0>;
++			io-standard = <1>;
++		};
++	};
++
++	pinctrl_uart1_default: pinctrl-uart1-default {
++		common {
++			groups = "uart1_10_grp";
++			function = "uart1";
++			slew-rate = <0>;
++			io-standard = <1>;
++		};
++
++		rx {
++			pins = "MIO49";
++			bias-high-impedance;
++		};
++
++		tx {
++			pins = "MIO48";
++			bias-disable = <0>;
++		};
++	};
++};
++
+ &sdhci0 {
+ 	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_sdhci0_default>;
+ };
  
-@@ -236,6 +244,7 @@
- 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6530000 0 0x428>;
- 		interrupts = <0 177 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp4_clks R8A73A4_CLK_IIC3>;
- 		status = "disabled";
- 	};
+ &uart1 {
+ 	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_uart1_default>;
+ };
+diff --git a/arch/arm/boot/dts/zynq-zc706.dts b/arch/arm/boot/dts/zynq-zc706.dts
+index a8bbdfbc7093..5575a175f867 100644
+--- a/arch/arm/boot/dts/zynq-zc706.dts
++++ b/arch/arm/boot/dts/zynq-zc706.dts
+@@ -33,15 +33,24 @@
+ 	status = "okay";
+ 	phy-mode = "rgmii-id";
+ 	phy-handle = <&ethernet_phy>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_gem0_default>;
  
-@@ -245,6 +254,7 @@
- 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6540000 0 0x428>;
- 		interrupts = <0 178 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp4_clks R8A73A4_CLK_IIC4>;
- 		status = "disabled";
+ 	ethernet_phy: ethernet-phy@7 {
+ 		reg = <7>;
  	};
+ };
  
-@@ -254,6 +264,7 @@
- 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6550000 0 0x428>;
- 		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A73A4_CLK_IIC6>;
- 		status = "disabled";
- 	};
++&gpio0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_gpio0_default>;
++};
++
+ &i2c0 {
+ 	status = "okay";
+ 	clock-frequency = <400000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_i2c0_default>;
  
-@@ -263,6 +274,7 @@
- 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6560000 0 0x428>;
- 		interrupts = <0 185 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A73A4_CLK_IIC7>;
- 		status = "disabled";
+ 	i2cswitch@74 {
+ 		compatible = "nxp,pca9548";
+@@ -107,10 +116,121 @@
  	};
+ };
  
-@@ -272,6 +284,7 @@
- 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6570000 0 0x428>;
- 		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp5_clks R8A73A4_CLK_IIC8>;
- 		status = "disabled";
- 	};
++&pinctrl0 {
++	pinctrl_gem0_default: pinctrl-gem0-default {
++		common {
++			function = "ethernet0";
++			groups = "ethernet0_0_grp";
++			slew-rate = <0>;
++			io-standard = <4>;
++		};
++
++		rx {
++			pins = "MIO22", "MIO23", "MIO24", "MIO25", "MIO26", "MIO27";
++			bias-high-impedance;
++			low-power-disable;
++		};
++
++		tx {
++			pins = "MIO16", "MIO17", "MIO18", "MIO19", "MIO20", "MIO21";
++			low-power-enable;
++			bias-disable;
++		};
++
++		mdio {
++			function = "mdio0";
++			groups = "mdio0_0_grp";
++			slew-rate = <0>;
++			io-standard = <1>;
++			bias-disable;
++		};
++	};
++
++	pinctrl_gpio0_default: pinctrl-gpio0-default {
++		common {
++			function = "gpio0";
++			groups = "gpio0_7_grp", "gpio0_46_grp", "gpio0_47_grp";
++			slew-rate = <0>;
++			io-standard = <1>;
++		};
++
++		pull-up {
++			pins = "MIO46", "MIO47";
++			bias-pull-up;
++		};
++
++		pull-none {
++			pins = "MIO7";
++			bias-disable;
++		};
++	};
++
++	pinctrl_i2c0_default: pinctrl-i2c0-default {
++		common {
++			groups = "i2c0_10_grp";
++			function = "i2c0";
++			bias-pull-up;
++			slew-rate = <0>;
++			io-standard = <1>;
++		};
++	};
++
++	pinctrl_sdhci0_default: pinctrl-sdhci0-default {
++		common {
++			groups = "sdio0_2_grp";
++			function = "sdio0";
++			slew-rate = <0>;
++			io-standard = <1>;
++			bias-disable;
++		};
++
++		cd {
++			groups = "gpio0_14_grp";
++			function = "sdio0_cd";
++			bias-high-impedance;
++			bias-pull-up;
++			slew-rate = <0>;
++			io-standard = <1>;
++		};
++
++		wp {
++			groups = "gpio0_15_grp";
++			function = "sdio0_wp";
++			bias-high-impedance;
++			bias-pull-up;
++			slew-rate = <0>;
++			io-standard = <1>;
++		};
++	};
++
++	pinctrl_uart1_default: pinctrl-uart1-default {
++		common {
++			groups = "uart1_10_grp";
++			function = "uart1";
++			slew-rate = <0>;
++			io-standard = <1>;
++		};
++
++		rx {
++			pins = "MIO49";
++			bias-high-impedance;
++		};
++
++		tx {
++			pins = "MIO48";
++			bias-disable;
++		};
++	};
++};
++
+ &sdhci0 {
+ 	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_sdhci0_default>;
+ };
  
-@@ -279,6 +292,8 @@
- 		compatible = "renesas,scifb-r8a73a4", "renesas,scifb";
- 		reg = <0 0xe6c20000 0 0x100>;
- 		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A73A4_CLK_SCIFB0>;
-+		clock-names = "sci_ick";
- 		status = "disabled";
- 	};
- 
-@@ -286,6 +301,8 @@
- 		compatible = "renesas,scifb-r8a73a4", "renesas,scifb";
- 		reg = <0 0xe6c30000 0 0x100>;
- 		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A73A4_CLK_SCIFB1>;
-+		clock-names = "sci_ick";
- 		status = "disabled";
- 	};
- 
-@@ -293,6 +310,8 @@
- 		compatible = "renesas,scifa-r8a73a4", "renesas,scifa";
- 		reg = <0 0xe6c40000 0 0x100>;
- 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A73A4_CLK_SCIFA0>;
-+		clock-names = "sci_ick";
- 		status = "disabled";
- 	};
- 
-@@ -300,6 +319,8 @@
- 		compatible = "renesas,scifa-r8a73a4", "renesas,scifa";
- 		reg = <0 0xe6c50000 0 0x100>;
- 		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A73A4_CLK_SCIFA1>;
-+		clock-names = "sci_ick";
- 		status = "disabled";
- 	};
- 
-@@ -307,6 +328,8 @@
- 		compatible = "renesas,scifb-r8a73a4", "renesas,scifb";
- 		reg = <0 0xe6ce0000 0 0x100>;
- 		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A73A4_CLK_SCIFB2>;
-+		clock-names = "sci_ick";
- 		status = "disabled";
- 	};
- 
-@@ -314,6 +337,8 @@
- 		compatible = "renesas,scifb-r8a73a4", "renesas,scifb";
- 		reg = <0 0xe6cf0000 0 0x100>;
- 		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A73A4_CLK_SCIFB3>;
-+		clock-names = "sci_ick";
- 		status = "disabled";
- 	};
- 
-@@ -321,6 +346,7 @@
- 		compatible = "renesas,sdhi-r8a73a4";
- 		reg = <0 0xee100000 0 0x100>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A73A4_CLK_SDHI0>;
- 		cap-sd-highspeed;
- 		status = "disabled";
- 	};
-@@ -329,6 +355,7 @@
- 		compatible = "renesas,sdhi-r8a73a4";
- 		reg = <0 0xee120000 0 0x100>;
- 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A73A4_CLK_SDHI1>;
- 		cap-sd-highspeed;
- 		status = "disabled";
- 	};
-@@ -337,6 +364,7 @@
- 		compatible = "renesas,sdhi-r8a73a4";
- 		reg = <0 0xee140000 0 0x100>;
- 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A73A4_CLK_SDHI2>;
- 		cap-sd-highspeed;
- 		status = "disabled";
- 	};
-@@ -345,6 +373,7 @@
- 		compatible = "renesas,sh-mmcif";
- 		reg = <0 0xee200000 0 0x80>;
- 		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A73A4_CLK_MMCIF0>;
- 		reg-io-width = <4>;
- 		status = "disabled";
- 	};
-@@ -353,6 +382,7 @@
- 		compatible = "renesas,sh-mmcif";
- 		reg = <0 0xee220000 0 0x80>;
- 		interrupts = <0 170 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A73A4_CLK_MMCIF1>;
- 		reg-io-width = <4>;
- 		status = "disabled";
- 	};
+ &uart1 {
+ 	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_uart1_default>;
+ };
 -- 
-1.8.4.5
+1.9.1
 
