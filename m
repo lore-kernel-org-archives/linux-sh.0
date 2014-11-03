@@ -1,56 +1,60 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 02 Nov 2014 09:10:11 +0000
+From: Krzysztof Kozlowski <k.kozlowski@samsung.com>
+Date: Mon, 03 Nov 2014 09:09:36 +0000
 Subject: Re: [RFT] ARM: shmobile: rcar-gen2: Fix build breakage
-Message-Id: <CAMuHMdUGZ5jkBB3s0L=gLpbM3=0+0jhgf1OF2PBUZaGBU3nx=w@mail.gmail.com>
+Message-Id: <1415005776.4241.15.camel@AMDC1943>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1414767766-19967-1-git-send-email-k.kozlowski@samsung.com>
-In-Reply-To: <1414767766-19967-1-git-send-email-k.kozlowski@samsung.com>
+ <CAMuHMdUGZ5jkBB3s0L=gLpbM3=0+0jhgf1OF2PBUZaGBU3nx=w@mail.gmail.com>
+In-Reply-To: <CAMuHMdUGZ5jkBB3s0L=gLpbM3=0+0jhgf1OF2PBUZaGBU3nx=w@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Oct 31, 2014 at 4:02 PM, Krzysztof Kozlowski
-<k.kozlowski@samsung.com> wrote:
-> Fix build breakage when building allmodconfig or allyesconfig introduced
-> by adding ISB instruction to rcar_gen2_timer_init() function
-> (9ce3fa6816c2 "ARM: shmobile: rcar-gen2: Add CA7 arch_timer
-> initialization for r8a7794"):
->
->   CC      arch/arm/mach-shmobile/setup-rcar-gen2.o
-> /tmp/cc770qt0.s: Assembler messages:
-> /tmp/cc770qt0.s:378: Error: selected processor does not support ARM mode `isb'
-> /tmp/cc770qt0.s:381: Error: selected processor does not support ARM mode `isb'
-> /tmp/cc770qt0.s:383: Error: selected processor does not support ARM mode `isb'
-> make[1]: *** [arch/arm/mach-shmobile/setup-rcar-gen2.o] Error 1
->
-> Signed-off-by: Krzysztof Kozlowski <k.kozlowski@samsung.com>
-> ---
->  arch/arm/mach-shmobile/setup-rcar-gen2.c | 1 +
->  1 file changed, 1 insertion(+)
->
-> diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-> index 3dd6edd9bd1d..47f85643785f 100644
-> --- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
-> +++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-> @@ -68,6 +68,7 @@ void __init rcar_gen2_timer_init(void)
->                  * secure code.
->                  */
->                 asm volatile(
-> +               "       .arch   armv7-a\n"
->                 "       cps     0x16\n"
->                 "       mrc     p15, 0, r1, c1, c1, 0\n"
->                 "       orr     r0, r1, #1\n"
+On nie, 2014-11-02 at 10:10 +0100, Geert Uytterhoeven wrote:
+> On Fri, Oct 31, 2014 at 4:02 PM, Krzysztof Kozlowski
+> <k.kozlowski@samsung.com> wrote:
+> > Fix build breakage when building allmodconfig or allyesconfig introduced
+> > by adding ISB instruction to rcar_gen2_timer_init() function
+> > (9ce3fa6816c2 "ARM: shmobile: rcar-gen2: Add CA7 arch_timer
+> > initialization for r8a7794"):
+> >
+> >   CC      arch/arm/mach-shmobile/setup-rcar-gen2.o
+> > /tmp/cc770qt0.s: Assembler messages:
+> > /tmp/cc770qt0.s:378: Error: selected processor does not support ARM mode `isb'
+> > /tmp/cc770qt0.s:381: Error: selected processor does not support ARM mode `isb'
+> > /tmp/cc770qt0.s:383: Error: selected processor does not support ARM mode `isb'
+> > make[1]: *** [arch/arm/mach-shmobile/setup-rcar-gen2.o] Error 1
+> >
+> > Signed-off-by: Krzysztof Kozlowski <k.kozlowski@samsung.com>
+> > ---
+> >  arch/arm/mach-shmobile/setup-rcar-gen2.c | 1 +
+> >  1 file changed, 1 insertion(+)
+> >
+> > diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+> > index 3dd6edd9bd1d..47f85643785f 100644
+> > --- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
+> > +++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+> > @@ -68,6 +68,7 @@ void __init rcar_gen2_timer_init(void)
+> >                  * secure code.
+> >                  */
+> >                 asm volatile(
+> > +               "       .arch   armv7-a\n"
+> >                 "       cps     0x16\n"
+> >                 "       mrc     p15, 0, r1, c1, c1, 0\n"
+> >                 "       orr     r0, r1, #1\n"
+> 
+> Shouldn't the ".arch" be reset to some generic value afterwards?
 
-Shouldn't the ".arch" be reset to some generic value afterwards?
+This is per compilation unit so this would make same effect as adding in
+Makefile:
+CFLAGS_setup-rcar-gen2.o := -march=armv7-a
 
-Gr{oetje,eeting}s,
+In both cases the whole unit is affected by armv7-a. Setting it to armv6
+won't always mean "reset" because shmobile config could be compiled by
+default in armv7.
 
-                        Geert
+Best regards,
+Krzysztof
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
