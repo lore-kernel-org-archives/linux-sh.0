@@ -1,60 +1,67 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Nov 2014 00:54:37 +0000
-Subject: [PATCH 11/29] ARM: shmobile: lager: Sound DMA support via DVC on DTS
-Message-Id: <e110c54107d9095c507645f8d95ec85ca250bc37.1416476366.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 03 Nov 2014 15:34:49 +0000
+Subject: [PATCH v4 2/9] PM / Domains: Add DT bindings for power-on/off latencies
+Message-Id: <1415028896-9005-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1416476366.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
+References: <1415028896-9005-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1415028896-9005-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+PM domain power on/off-latencies are properties of the hardware.
+In legacy code, they're specified from platform code.
+On DT platforms, their values should come from DT.
 
-DMA transfer uses DVC
-
-     DMA               DMApp
-[MEM] -> [SRC] -> [DVC] -> [SSIU] -> [SSI]
-
-     DMA               DMApp
-[MEM] <- [DVC] <- [SRC] <- [SSIU] <- [SSI]
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Kevin Hilman <khilman@linaro.org>
+Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 11 +++++++++--
- 1 file changed, 9 insertions(+), 2 deletions(-)
+v4:
+  - Add Reviewed-by,
+  - Replace single latency value by list of latencies,
+v3:
+  - No changes,
+v2:
+  - Add Acked-by.
+---
+ Documentation/devicetree/bindings/power/power_domain.txt | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index a249270..2f91740 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -19,6 +19,13 @@
-  * This command is required when Playback/Capture
-  *
-  *	amixer set "LINEOUT Mixer DACL" on
-+ *	amixer set "DVC Out" 100%
-+ *	amixer set "DVC In" 100%
-+ *
-+ * You can use Mute
-+ *
-+ *	amixer set "DVC Out Mute" on
-+ *	amixer set "DVC In Mute" on
-  */
+diff --git a/Documentation/devicetree/bindings/power/power_domain.txt b/Documentation/devicetree/bindings/power/power_domain.txt
+index 98c16672ab5f49e0..c4a4afb2ac3b0500 100644
+--- a/Documentation/devicetree/bindings/power/power_domain.txt
++++ b/Documentation/devicetree/bindings/power/power_domain.txt
+@@ -19,16 +19,26 @@ Required properties:
+    providing multiple PM domains (e.g. power controllers), but can be any value
+    as specified by device tree binding documentation of particular provider.
  
- /dts-v1/;
-@@ -569,8 +576,8 @@
++Optional properties:
++ - power-on-latency: List of power-on latencies (in ns), one for each PM
++   domain. If all power-on latencies are identical, the list may be shortened
++   to a single value.
++ - power-off-latency: List of power-off latencies (in ns), one for each PM
++   domain. If all power-off latencies are identical, the list may be shortened
++   to a single value.
++
+ Example:
  
- 	rcar_sound,dai {
- 		dai0 {
--			playback = <&ssi0 &src2>;
--			capture  = <&ssi1 &src3>;
-+			playback = <&ssi0 &src2 &dvc0>;
-+			capture  = <&ssi1 &src3 &dvc1>;
- 		};
+ 	power: power-controller@12340000 {
+ 		compatible = "foo,power-controller";
+ 		reg = <0x12340000 0x1000>;
+ 		#power-domain-cells = <1>;
++		power-on-latency = <250000 400000 180000>;
++		power-off-latency = <250000 400000 300000>;
  	};
- };
+ 
+-The node above defines a power controller that is a PM domain provider and
+-expects one cell as its phandle argument.
++The node above defines a power controller that is a PM domain provider for
++3 PM domains, and expects one cell as its phandle argument.
+ 
+ =PM domain consumers=
+ 
 -- 
-2.1.1
+1.9.1
 
