@@ -1,36 +1,38 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 04 Nov 2014 01:50:00 +0000
-Subject: [PATCH 21/23 v3] ARM: shmobile: multiplatform: add R-Car DMAC support on defconfig
-Message-Id: <8761ev91ke.wl%kuninori.morimoto.gx@gmail.com>
+From: Soren Brinkmann <soren.brinkmann@xilinx.com>
+Date: Mon, 03 Nov 2014 19:05:30 +0000
+Subject: [PATCH 6/7] ARM: zynq: Enable pinctrl
+Message-Id: <1415041531-15520-7-git-send-email-soren.brinkmann@xilinx.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1415041531-15520-1-git-send-email-soren.brinkmann@xilinx.com>
+In-Reply-To: <1415041531-15520-1-git-send-email-soren.brinkmann@xilinx.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Select pinctrl and the Zynq pinctrl driver.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Soren Brinkmann <soren.brinkmann@xilinx.com>
 ---
-v2 -> v3
+Changes since RFC v2:
+ - separate mach-zynq changes in their own patch
+---
+ arch/arm/mach-zynq/Kconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
- - no change
-
- arch/arm/configs/shmobile_defconfig |    1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index c8201a9..b32afae 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -145,6 +145,7 @@ CONFIG_RTC_CLASS=y
- CONFIG_RTC_DRV_S35390A=y
- CONFIG_DMADEVICES=y
- CONFIG_SH_DMAE=y
-+CONFIG_RCAR_DMAC=y
- # CONFIG_IOMMU_SUPPORT is not set
- CONFIG_PWM=y
- CONFIG_PWM_RENESAS_TPU=y
+diff --git a/arch/arm/mach-zynq/Kconfig b/arch/arm/mach-zynq/Kconfig
+index aaa5162c1509..78e5e007f52d 100644
+--- a/arch/arm/mach-zynq/Kconfig
++++ b/arch/arm/mach-zynq/Kconfig
+@@ -9,6 +9,8 @@ config ARCH_ZYNQ
+ 	select HAVE_ARM_TWD if SMP
+ 	select ICST
+ 	select MFD_SYSCON
++	select PINCTRL
++	select PINCTRL_ZYNQ
+ 	select SOC_BUS
+ 	help
+ 	  Support for Xilinx Zynq ARM Cortex A9 Platform
 -- 
-1.7.9.5
+1.9.1
 
