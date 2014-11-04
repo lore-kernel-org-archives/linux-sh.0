@@ -1,58 +1,45 @@
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
-Date: Mon, 03 Nov 2014 16:00:55 +0000
-Subject: Re: [PATCH v4] clk: shmobile: div6: support selectable-input clocks
-Message-Id: <CAO3366y98LcYGUCPXUvAKAZ28aPfCej47sUfYV-CUkJqsurxUQ@mail.gmail.com>
+From: Olof Johansson <olof@lixom.net>
+Date: Tue, 04 Nov 2014 22:39:01 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC r8a73a4 DT Timers Updates for v3.19
+Message-Id: <20141104223901.GF5908@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409238671-30452-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-	<20140828160528.GN14650@leverpostej>
-	<1780299.8YZEnbE9lj@avalon>
-In-Reply-To: <1780299.8YZEnbE9lj@avalon>
+References: <cover.1414557047.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1414557047.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Mark Rutland <mark.rutland@arm.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "horms@verge.net.au" <horms@verge.net.au>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "mturquette@linaro.org" <mturquette@linaro.org>, "magnus.damm@gmail.com" <magnus.damm@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Aug 29, 2014 at 1:58 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-[...]
-> We could thus extend the DIV6 clocks with clock source selection using the
-> following layout
->
-> Bits     Name           Function
-> -----------------------------------------------------------------------------
-> 8        CKSTP    Clock Stop
-> 7-6      EXSRC    Source Selection
-> 5-0      DIV      Division Ratio
->
-> The clocks property would be a list of one, two, three or four clock
-> references, mapping to the 00, 01, 10 and 11 values of the EXSRC field. Empty
-> references (just a 0 value) would be used to denote invalid values of the
-> EXSRC field.
->
-> A new compatible string would then be added for the VCLK clocks with the
-> following layout
->
-> Bits     Name           Function
-> -----------------------------------------------------------------------------
-> 14-12    EXSRC    Source Selection (VCLK[123] clocks)
-> 8        CKSTP    Clock Stop
-> 7-6      PDIV     PLL Division Ratio (VCLK3 clock)
-> 5-0      DIV      Division Ratio
+On Wed, Oct 29, 2014 at 01:59:53PM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
+> 
+> Please consider these Renesas ARM based SoC r8a73a4 DT timers updates for v3.19.
+> 
+> This pull-request is based on "[GIT PULL] Renesas ARM Based SoC DT Cleanups
+> for v3.19", tagged as dt-cleanups-for-v3.19, which I have also sent a
+> pull-request for.
+> 
+> The reason for this base is to avoid conflicts.
+> 
+> 
+> This pull-request is in a stand-alone branch as it includes
+> an board, SoC and DT changes that depend on each other in
+> an order other than the way branches dependencies are usually arranged.
+> 
+> 
+> The following changes since commit 120f038cf04b95dc895cba503a7516ff75561438:
+> 
+>   ARM: shmobile: kzm9d dts: Add chosen/stdout-path (2014-10-24 10:44:10 +0900)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-r8a73a4-dt-timers-for-v3.19
+> 
+> for you to fetch changes up to fd3edcbe9f7bf24b13cadca7616f8e10bbe7e2b3:
+> 
+>   ARM: shmobile: r8a73a4: Remove empty r8a73a4_add_dt_devices (2014-10-24 11:54:49 +0900)
 
-I think even a new compatible string would not be necessary, given
-that all such clocks have more than four parents, which cannot be the
-case for clocks with two EXSRC bits.
+Merged into next/dt.
 
-> The clocks property would be handled as for the common DIV6 clocks, and we
-> would need to define a way to describe the valid values of the PDIV field. As
-> far as I can see, the PDIV values are identical for all VCLK clocks when
-> implemented (00 -> 1/1, 01 -> 1/2, 10 -> Reserved, 11 -> 1/4), so a single
-> renesas,has-pdiv property should be enough.
 
-Sounds reasonable to me.
-
-I'll send a patch.
-
-CU
-Uli
+-Olof
