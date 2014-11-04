@@ -1,52 +1,43 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 25 Nov 2014 10:39:09 +0000
-Subject: Re: [PATCH v7 0/2] clk: shmobile: DIV6 clock variable parent support
-Message-Id: <CAMuHMdU4vD2n_S-wasXA8U2G3FpvU0A1NhYeM41JAGObMDcSZw@mail.gmail.com>
+From: Olof Johansson <olof@lixom.net>
+Date: Tue, 04 Nov 2014 22:31:59 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC Kconfig Cleanups for v3.19
+Message-Id: <20141104223159.GC5908@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415375468-15378-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-	<CAMuHMdW=TGAySfRgXtVigcO-HuEudEDhnc2BhWuy8b0KJvE4oA@mail.gmail.com>
-	<CANqRtoQS_868tnScxyLpSkCRiAewVvMfGLh60PqSC+b-mhKakw@mail.gmail.com>
-	<CAMuHMdWkGtMq+gDZ+1YTmUh2E5xAUsCANcuG433=S3QOsPzjdg@mail.gmail.com>
-	<CANqRtoS33Aac3bKvMj7n6o2jhmk8kQAusad1ZPFRBmygVjgLiw@mail.gmail.com>
-	<CAMuHMdW5hr3wtbjJdHszOgAh_-OowjwNbNMsWKi2pAJG0Vjy7g@mail.gmail.com>
-	<20141125014915.12298.63530@quantum>
-In-Reply-To: <20141125014915.12298.63530@quantum>
+References: <cover.1414557793.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1414557793.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Turquette <mturquette@linaro.org>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Mark Rutland <mark.rutland@arm.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Mike,
+On Wed, Oct 29, 2014 at 01:58:37PM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
+> 
+> Please consider these Renesas ARM based SoC kconfig cleanups for v3.19.
+> 
+> 
+> The following changes since commit f114040e3ea6e07372334ade75d1ee0775c355e1:
+> 
+>   Linux 3.18-rc1 (2014-10-19 18:08:38 -0700)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-kconfig-cleanups-for-v3.19
+> 
+> for you to fetch changes up to 383d3f3e979bfbace3101dacb21387806b44e847:
+> 
+>   ARM: shmobile: Remove ARCH_HAS_OPP completely (2014-10-24 10:41:56 +0900)
+> 
+> ----------------------------------------------------------------
+> Renesas ARM Based SoC Kconfig Cleanups for v3.19
+> 
+> * Remove reference to ARCH_HAS_OPP, it has been removed
+> 
+> ----------------------------------------------------------------
+> Paul Bolle (1):
+>       ARM: shmobile: Remove ARCH_HAS_OPP completely
 
-On Tue, Nov 25, 2014 at 2:49 AM, Mike Turquette <mturquette@linaro.org> wrote:
-> Quoting Geert Uytterhoeven (2014-11-20 23:38:26)
->> On Fri, Nov 21, 2014 at 6:54 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
->> >>> From my side this series "[PATCH v7 0/2] clk: shmobile: DIV6 clock
->> >>> variable parent support" looks quite finalized. Would it be possible
->> >>
->> >> Does this mean I can add your acked-by?
->> >
->> > My apologies for late reply and not being more clear. Feel free to add
->> > my Acked-by for this series. No need to spend extra cycles and
->> > reworking anything if you have queued up the patches already though.
->>
->> Too late. Pushed, and already pulled by Mike, but not yet visible in
->> clk-next.
->
-> I also saw this email too late. I would have fixed it up locally but now
-> it is out in the wild and I can't rebase it :-/
+Merged into next/cleanup.
 
-I don't think it's out in the wild yet, unless I'm looking at the wrong place?
-https://git.linaro.org/people/mike.turquette/linux.git/shortlog/refs/heads/clk-next
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+-Olof
