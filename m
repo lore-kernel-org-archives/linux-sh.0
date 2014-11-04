@@ -1,161 +1,184 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 13 Nov 2014 22:48:39 +0000
-Subject: Re: [PATCH 2/3] sh_eth: Fix skb alloc size and alignment adjust rule.
-Message-Id: <54653547.9050207@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 04 Nov 2014 07:07:38 +0000
+Subject: Re: [PATCH v3 0/9] R-Car Gen2 DMA Controller driver
+Message-Id: <CANqRtoQfAzk+f6L_m8cH_A0H_WGHLU7QrNnziPDzR4tgX+38-w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415862301-28032-1-git-send-email-ykaneko0929@gmail.com> <1415862301-28032-3-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1415862301-28032-3-git-send-email-ykaneko0929@gmail.com>
+References: <1414345216-14486-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1414345216-14486-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>, netdev@vger.kernel.org
-Cc: "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On 11/13/2014 10:05 AM, Yoshihiro Kaneko wrote:
+Hi Laurent,
 
-> From: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
-
-> In the current driver, allocation size of skb does not care the alignment
-> adjust after allocation.
-> And also, in the current implementation, buffer alignment method by
-> sh_eth_set_receive_align function has a bug that this function displace
-> buffer start address forcedly when the alignment is corrected.
-> In the result, tail of the skb will exceed allocated area and kernel panic
-> will be occurred.
-
-    Oh, have never seen panic but Geert has reported WARNINGs from the DMA 
-debug code...
-
-> This patch fix this issue.
-
-> Signed-off-by: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> ---
->   drivers/net/ethernet/renesas/sh_eth.c | 35 ++++++++++++++---------------------
->   drivers/net/ethernet/renesas/sh_eth.h |  2 ++
->   2 files changed, 16 insertions(+), 21 deletions(-)
-
-> diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-> index 49e963e..0e4a407 100644
-> --- a/drivers/net/ethernet/renesas/sh_eth.c
-> +++ b/drivers/net/ethernet/renesas/sh_eth.c
-> @@ -917,21 +917,12 @@ static int sh_eth_reset(struct net_device *ndev)
->   	return ret;
->   }
+On Wed, Oct 29, 2014 at 8:15 PM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> Hi Magnus,
 >
-> -#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARCH_SHMOBILE)
->   static void sh_eth_set_receive_align(struct sk_buff *skb)
->   {
-> -	int reserve;
-> -
-> -	reserve = SH4_SKB_RX_ALIGN - ((u32)skb->data & (SH4_SKB_RX_ALIGN - 1));
-> +	u32 reserve = (u32)skb->data & (SH_ETH_RX_ALIGN - 1);
-
-    Please keep an empty line after declaration, as it was before this patch.
-
->   	if (reserve)
-> -		skb_reserve(skb, reserve);
-> -}
-> -#else
-> -static void sh_eth_set_receive_align(struct sk_buff *skb)
-> -{
-> -	skb_reserve(skb, SH2_SH3_SKB_RX_ALIGN);
-> +		skb_reserve(skb, SH_ETH_RX_ALIGN - reserve);
->   }
-> -#endif
+> On Wednesday 29 October 2014 16:24:11 Magnus Damm wrote:
+>> On Mon, Oct 27, 2014 at 2:40 AM, Laurent Pinchart wrote:
+>> > Hello,
+>> >
+>> > This patch sets adds a new driver for the DMA controller found in the
+>> > R-Car Gen2 SoCs under the name "Direct Memory Access Controller for System
+>> > (SYS-DMAC)". Support for the "Realtime Direct Memory Access Controller
+>> > (RT-DMAC)" and "Direct Memory Access Controller for Audio (Audio-DMAC)"
+>> > will be added later.
+>> >
+>> > For the rationale of why a new driver is needed, and performance figures,
+>> > please see the cover letter of v1 ("[PATCH 0/7] R-Car Gen2 DMA Controller
+>> > driver") [1].
+>> >
+>> > Support for hardware descriptors lists is not included in this series to
+>> > keep it simple and hopefully get it merged in v3.19. I'll post it as a
+>> > separate series. No change to the DT bindings will be needed.
+>> >
+>> > The first three patches should go through the DMA engine tree, while the
+>> > last six patches should go through the Renesas tree. Simon, as the DT
+>> > bindings have been merged already, I believe you can queue up the arch
+>> > patches without waiting for the driver patches to be merged.
+>> >
+>> > Known issues are
+>> >
+>> > - Untested cyclic DMA transfers. I've done my best to fix the related
+>> >   issues from v2, but I haven't been able to test audio with the R-Car
+>> >   platforms (see [2]). Morimoto-san, if you could help me with audio
+>> >   testing I'd be grateful.
+>> >
+>> > - Stub system PM implementation. I'm working on this.
+>> >
+>> > - Risk of conflict with Maxime's DMA engine rework series.
+>> >
+>> > I believe the first two issues are not show stoppers. I can rebase the
+>> > patches if Maxime's patches get merged first.
+>> >
+>> > Changes since v2:
+>> >
+>> > - Replace several occurrences of size_t with unsigned int
+>> > - Remove unneeded local variable initialization
+>> > - Compute maximum transfer size at runtime
+>> > - Typo fixes
+>> > - Replace WARN_ON with WARN_ON_ONCE in interrupt handler
+>> > - Validate the number of channels
+>> > - Reset the device before enabling interrupts
+>> > - Use DMA_SLAVE_BUSWIDTH_* constants instead of numerical values
+>> > - Use devm_kasprintf
+>> > - Update to the new prep_dma_cyclic API
+>> > - Filter out channels from unrelated devices
+>> > - Fix typo in register definition
+>> > - Rename rcar_dmac_hw_desc to rcar_dmac_xfer_chunk
+>> > - Ignore the deprecated dma_slave_config direction field
+>> > - Allocate memory with GFP_NOWAIT in prep handlers
+>> > - Split runtime and system PM
+>> > - Move runtime PM to channel alloc/fre
+>> >
+>> > Changes since v1:
+>> >
+>> > - Allocate IRQ name strings dynamically
+>> > - Only call the callback function if one is supplied
+>> > - Don't overallocate sg list entries
+>> > - Allocate sg list entries with GFP_KERNEL
+>> > - Don't manage function clock manually
+>> > - Make channel filter ignore unrelated devices
+>> > - Document why the cyclic sg list is kcalloc'ed
+>> > - Remove ch15 from interrupt names in DT
+>> > - Replace CONFIG_OF with OF in Kconfig
+>> >
+>> > [1] http://www.spinics.net/lists/linux-sh/msg33768.html
+>> > [2] http://www.spinics.net/lists/linux-sh/msg36474.html
+>> >
+>> > Laurent Pinchart (9):
+>> >   dmaengine: Add 16 bytes, 32 bytes and 64 bytes bus widths
+>> >   dmaengine: rcar-dmac: Remove duplicate sentence from DT bindings
+>> >   dmaengine: rcar-dmac: Add Renesas R-Car Gen2 DMA Controller (DMAC)
+>> >
+>> >     driver
+>> >
+>> >   ARM: shmobile: r8a7790: Rename mmcif node to mmc
+>> >   ARM: shmobile: r8a7791: Add MMCIF0 DT node
+>> >   ARM: shmobile: r8a7790: Reference DMA channels in MMCIF DT nodes
+>> >   ARM: shmobile: r8a7791: Reference DMA channels in MMCIF DT node
+>> >   ARM: shmobile: r8a7790: Reference DMA channels in SDHI DT nodes
+>> >   ARM: shmobile: r8a7791: Reference DMA channels in SDHI DT nodes
+>>
+>> Hi Laurent,
+>>
+>> I've now tested this series briefly together with QSPI on Koelsch, and
+>> on top of that I've also done a prototype back port to LTSI-3.14. All
+>> seems well except this minor Kconfig adjustment that I needed to do to
+>> handle the case when we only enable this driver:
+>>
+>> --- 0001/drivers/dma/Makefile
+>> +++ work/drivers/dma/Makefile 2014-10-29 13:14:24.000000000 +0900
+>> @@ -20,6 +20,7 @@ obj-$(CONFIG_AT_HDMAC) += at_hdmac.o
+>>  obj-$(CONFIG_MX3_IPU) += ipu/
+>>  obj-$(CONFIG_TXX9_DMAC) += txx9dmac.o
+>>  obj-$(CONFIG_SH_DMAE_BASE) += sh/
+>> +obj-$(CONFIG_RCAR_DMAC) += sh/
+>>  obj-$(CONFIG_COH901318) += coh901318.o coh901318_lli.o
+>>  obj-$(CONFIG_AMCC_PPC440SPE_ADMA) += ppc4xx/
+>>  obj-$(CONFIG_IMX_SDMA) += imx-sdma.o
+>>
+>> Not the prettiest solution, but at least it makes the code compile
+>> regardless of SH_DMAE_BASE.
+>> Can you please consider folding this hunk into next version of your series?
 >
+> How about this one instead ?
 >
->   /* CPU <-> EDMAC endian convert */
-> @@ -1119,6 +1110,7 @@ static void sh_eth_ring_format(struct net_device *ndev)
->   	struct sh_eth_txdesc *txdesc = NULL;
->   	int rx_ringsize = sizeof(*rxdesc) * mdp->num_rx_ring;
->   	int tx_ringsize = sizeof(*txdesc) * mdp->num_tx_ring;
-> +	int skbuff_size = mdp->rx_buf_sz + SH_ETH_RX_ALIGN - 1;
+> diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
+> index cb626c179911..ebbcfdb8493a 100644
+> --- a/drivers/dma/Makefile
+> +++ b/drivers/dma/Makefile
+> @@ -18,7 +18,7 @@ obj-$(CONFIG_DW_DMAC_CORE) += dw/
+>  obj-$(CONFIG_AT_HDMAC) += at_hdmac.o
+>  obj-$(CONFIG_MX3_IPU) += ipu/
+>  obj-$(CONFIG_TXX9_DMAC) += txx9dmac.o
+> -obj-$(CONFIG_SH_DMAE_BASE) += sh/
+> +obj-$(CONFIG_RENESAS_DMA) += sh/
+>  obj-$(CONFIG_COH901318) += coh901318.o coh901318_lli.o
+>  obj-$(CONFIG_AMCC_PPC440SPE_ADMA) += ppc4xx/
+>  obj-$(CONFIG_IMX_SDMA) += imx-sdma.o
+> diff --git a/drivers/dma/sh/Kconfig b/drivers/dma/sh/Kconfig
+> index 6b4d95377bc8..8190ad225a1b 100644
+> --- a/drivers/dma/sh/Kconfig
+> +++ b/drivers/dma/sh/Kconfig
+> @@ -2,6 +2,10 @@
+>  # DMA engine configuration for sh
+>  #
 >
->   	mdp->cur_rx = 0;
->   	mdp->cur_tx = 0;
-> @@ -1131,21 +1123,21 @@ static void sh_eth_ring_format(struct net_device *ndev)
->   	for (i = 0; i < mdp->num_rx_ring; i++) {
->   		/* skb */
->   		mdp->rx_skbuff[i] = NULL;
-> -		skb = netdev_alloc_skb(ndev, mdp->rx_buf_sz);
-> +		skb = netdev_alloc_skb(ndev, skbuff_size);
->   		mdp->rx_skbuff[i] = skb;
->   		if (skb = NULL)
->   			break;
-> -		dma_map_single(&ndev->dev, skb->data, mdp->rx_buf_sz,
-> -			       DMA_FROM_DEVICE);
->   		sh_eth_set_receive_align(skb);
+> +config RENESAS_DMA
+> +       bool
+> +       select DMA_ENGINE
+> +
+>  #
+>  # DMA Engine Helpers
+>  #
+> @@ -12,7 +16,7 @@ config SH_DMAE_BASE
+>         depends on !SUPERH || SH_DMA
+>         depends on !SH_DMA_API
+>         default y
+> -       select DMA_ENGINE
+> +       select RENESAS_DMA
+>         help
+>           Enable support for the Renesas SuperH DMA controllers.
 >
->   		/* RX descriptor */
->   		rxdesc = &mdp->rx_ring[i];
-> +		/* The size of the buffer is 16 byte boundary. */
-
-    Is *on* 16 byte boundary, you mean?
-
-> +		rxdesc->buffer_length = ALIGN(mdp->rx_buf_sz, 16);
-> +		dma_map_single(&ndev->dev, skb->data, rxdesc->buffer_length,
-> +			       DMA_FROM_DEVICE);
->   		rxdesc->addr = virt_to_phys(skb->data);
->   		rxdesc->status = cpu_to_edmac(mdp, RD_RACT | RD_RFP);
+> @@ -56,7 +60,7 @@ config RCAR_AUDMAC_PP
+>  config RCAR_DMAC
+>         tristate "Renesas R-Car Gen2 DMA Controller"
+>         depends on ARCH_SHMOBILE || COMPILE_TEST
+> -       select DMA_ENGINE
+> +       select RENESAS_DMA
+>         help
+>           This driver supports the general purpose DMA controller found in the
+>           Renesas R-Car second generation SoCs.
 >
-> -		/* The size of the buffer is 16 byte boundary. */
 
-    Ah, you're just copying an existent comment... well, seems a good time to 
-fix it then. :-)
+Thanks for this, it of course looks good to me. Acutally I'm fine with
+more or less anything as long as we can successfully build each driver
+independently. I saw that Wolfram also had a simpler approach which I
+don't mind. Please pick by yourself!
 
-[...]
-> @@ -1448,8 +1441,8 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
->   			if (mdp->cd->rpadir)
->   				skb_reserve(skb, NET_IP_ALIGN);
->   			dma_sync_single_for_cpu(&ndev->dev, rxdesc->addr,
-> -						mdp->rx_buf_sz,
-> -						DMA_FROM_DEVICE);
-> +					ALIGN(mdp->rx_buf_sz, 16),
-> +					DMA_FROM_DEVICE);
+Thanks,
 
-    Please keep the original alignment of the continuation lines.
-
->   			skb_put(skb, pkt_len);
->   			skb->protocol = eth_type_trans(skb, ndev);
->   			netif_receive_skb(skb);
-> @@ -1468,13 +1461,13 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
->   		rxdesc->buffer_length = ALIGN(mdp->rx_buf_sz, 16);
->
->   		if (mdp->rx_skbuff[entry] = NULL) {
-> -			skb = netdev_alloc_skb(ndev, mdp->rx_buf_sz);
-> +			skb = netdev_alloc_skb(ndev, skbuff_size);
->   			mdp->rx_skbuff[entry] = skb;
->   			if (skb = NULL)
->   				break;	/* Better luck next round. */
-> -			dma_map_single(&ndev->dev, skb->data, mdp->rx_buf_sz,
-> -				       DMA_FROM_DEVICE);
->   			sh_eth_set_receive_align(skb);
-> +			dma_map_single(&ndev->dev, skb->data,
-> +				       rxdesc->buffer_length, DMA_FROM_DEVICE);
->
->   			skb_checksum_none_assert(skb);
->   			rxdesc->addr = virt_to_phys(skb->data);
-> diff --git a/drivers/net/ethernet/renesas/sh_eth.h b/drivers/net/ethernet/renesas/sh_eth.h
-> index b37c427..d138ebe 100644
-> --- a/drivers/net/ethernet/renesas/sh_eth.h
-> +++ b/drivers/net/ethernet/renesas/sh_eth.h
-> @@ -163,8 +163,10 @@ enum {
->   /* Driver's parameters */
->   #if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARCH_SHMOBILE)
->   #define SH4_SKB_RX_ALIGN	32
-> +#define SH_ETH_RX_ALIGN		(SH4_SKB_RX_ALIGN)
-
-    () not needed.
-
->   #else
->   #define SH2_SH3_SKB_RX_ALIGN	2
-> +#define SH_ETH_RX_ALIGN		(SH2_SH3_SKB_RX_ALIGN)
-
-    Likewise.
-    And I don't think we still need {SH2_SH3|SH4}_SKB_RX_ALIGN after this patch.
-
-[...]
-
-WBR, Sergei
-
+/ magnus
