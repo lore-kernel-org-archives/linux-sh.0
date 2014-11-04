@@ -1,50 +1,37 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 17 Nov 2014 10:26:15 +0000
-Subject: Re: [PATCH v4] of: replace Asahi Kasei Corp venter prefix
-Message-Id: <5469CD47.3040409@cogentembedded.com>
+Date: Tue, 04 Nov 2014 22:48:48 +0000
+Subject: [PATCH v2] renesas_usbhs: fix platform init error message
+Message-Id: <5384843.KGcHOMgQLi@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <878ulzx6hr.wl%kuninori.morimoto.gx@gmail.com>	<20140922130026.GK3290@leverpostej>	<CAMuHMdX22z97SbGS1HDiYfJ1PXxyEN2S8D7w4sr+4bUwD+mJZw@mail.gmail.com>	<20140922132743.GM3290@leverpostej>	<87y4rfhmgl.wl%kuninori.morimoto.gx@renesas.com>	<1415845309.4269.6.camel@perches.com>	<20141113025105.GA16652@verge.net.au>	<87vbmjhj00.wl%kuninori.morimoto.gx@renesas.com>	<20141113110740.GE3815@sirena.org.uk>	<87k32yd0bd.wl%kuninori.morimoto.gx@renesas.com>	<20141114093554.GC3810@ulmo> <87y4ra8xac.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87y4ra8xac.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Rob Herring <robh@kernel.org>
-Cc: Mark Brown <broonie@kernel.org>, Mark Rutland <mark.rutland@arm.com>, Thierry Reding <thierry.reding@gmail.com>, ALSA Development Mailing List <alsa-devel@alsa-project.org>, linux-tegra@vger.kernel.org, Stephen Warren <swarren@wwwdotorg.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Olof Johansson <olof@lixom.net>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>, Joe Perches <joe@perches.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-arm-kernel@lists.infradead.org, "grant.likely@linaro.org" <grant.likely@linaro.org>
+To: linux-sh@vger.kernel.org
 
-Hello.
+There is a typo ("prove" instead of "probe") in the error message printed when
+the platform initialization fails. Replace that word with more fitting "init".
 
-On 11/17/2014 3:51 AM, Kuninori Morimoto wrote:
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+The patch is against the 'usb-linus' branch of Greg KH's 'usb.git' repo.
 
-    s/venter/vendor/ in the subject. Sorry for a late comment.
+Changes in varsion 2:
+- refreshed the patch.
 
-> Current vendor-prefixes.txt already has "ak" prefix for Asahi Kasei Corp
-> by ae8c4209af2c(of: Add vendor prefix for Asahi Kasei Corp.)
+ drivers/usb/renesas_usbhs/common.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> It went through the appropriate review process. But, almost all
-> Asahi Kasei chip drivers are using "asahi-kasei" prefix today.
-> (arch/arm/boot/dts/tegra20-seaboard.dts only is using "ak,ak8975",
->   but there are instances of "asahi-kasei,ak8975" in other dts files.
->   And drivers/iio/magnetometer/ak8975.c doesn't support "ak,ak8975")
-> So, we made a mistake there.
-
-> In addition, checkpatch.pl reports WARNING if it is using "asahi-kasei"
-> prerfix in DT file.
-> (DT compatible string vendor "asahi-kasei" appears un-documented)
-
-> Marking it deprecated and warning with checkpatch is certainly
-> preferable. So, this patch replace "ak" to "asahi-kasei" in
-> vendor-prefixes.txt. (and fixup tegra20-seaboard)
-
-> OTOH, Asahi Kasei is usually referred to as "AKM", but this patch
-> doesn't care about it. Because no DT is using that today.
-
-> Acked-by: Thierry Reding <treding@nvidia.com>
-> Acked-by: Alexandre Courbot <acourbot@nvidia.com>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-    One normally places ACKs after his own sign-off.
-
-WBR, Sergei
+Index: usb/drivers/usb/renesas_usbhs/common.c
+=================================--- usb.orig/drivers/usb/renesas_usbhs/common.c
++++ usb/drivers/usb/renesas_usbhs/common.c
+@@ -615,7 +615,7 @@ static int usbhs_probe(struct platform_d
+ 	 */
+ 	ret = usbhs_platform_call(priv, hardware_init, pdev);
+ 	if (ret < 0) {
+-		dev_err(&pdev->dev, "platform prove failed.\n");
++		dev_err(&pdev->dev, "platform init failed.\n");
+ 		goto probe_end_mod_exit;
+ 	}
+ 
 
