@@ -1,124 +1,86 @@
-From: Guenter Roeck <linux@roeck-us.net>
-Date: Thu, 06 Nov 2014 16:43:26 +0000
-Subject: [PATCH v5 42/48] sh: Register with kernel power-off handler
-Message-Id: <1415292213-28652-43-git-send-email-linux@roeck-us.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:50:43 +0000
+Subject: [PATCH 13/34] ARM: shmobile: r8a7790: Add MMP clock to device tree
+Message-Id: <4ba8f2468ce346642b4ace3cdf4bdd8d29175011.1415059587.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415292213-28652-1-git-send-email-linux@roeck-us.net>
-In-Reply-To: <1415292213-28652-1-git-send-email-linux@roeck-us.net>
+References: <cover.1415059587.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415059587.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-pm@vger.kernel.org, Guenter Roeck <linux@roeck-us.net>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Register with kernel power-off handler instead of setting pm_power_off
-directly.
+From: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
 
-Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+Signed-off-by: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v5:
-- Rebase to v3.18-rc3
-v4:
-- No change
-v3:
-- Replace poweroff in all newly introduced variables and in text
-  with power_off or power-off as appropriate
-- Replace POWEROFF_PRIORITY_xxx with POWER_OFF_PRIORITY_xxx
-v2:
-- Use defines to specify poweroff handler priorities
+ arch/arm/boot/dts/r8a7790.dtsi            | 22 ++++++++++++++--------
+ include/dt-bindings/clock/r8a7790-clock.h | 11 ++++++++++-
+ 2 files changed, 24 insertions(+), 9 deletions(-)
 
- arch/sh/boards/board-sh7785lcr.c       | 3 ++-
- arch/sh/boards/board-urquell.c         | 3 ++-
- arch/sh/boards/mach-highlander/setup.c | 3 ++-
- arch/sh/boards/mach-landisk/setup.c    | 3 ++-
- arch/sh/boards/mach-r2d/setup.c        | 3 ++-
- arch/sh/boards/mach-sdk7786/setup.c    | 3 ++-
- 6 files changed, 12 insertions(+), 6 deletions(-)
-
-diff --git a/arch/sh/boards/board-sh7785lcr.c b/arch/sh/boards/board-sh7785lcr.c
-index 2c4771e..f7d2ffb 100644
---- a/arch/sh/boards/board-sh7785lcr.c
-+++ b/arch/sh/boards/board-sh7785lcr.c
-@@ -332,7 +332,8 @@ static void __init sh7785lcr_setup(char **cmdline_p)
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 602a46a..050e608 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -977,18 +977,24 @@
+ 		mstp1_clks: mstp1_clks@e6150134 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
+-			clocks = <&m2_clk>, <&p_clk>, <&zg_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
+-				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>,
+-				 <&zs_clk>;
++			clocks = <&zs_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>, <&m2_clk>,
++				 <&zs_clk>, <&p_clk>, <&zg_clk>, <&zs_clk>, <&zs_clk>,
++				 <&zs_clk>, <&zs_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
++				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+-				R8A7790_CLK_JPU R8A7790_CLK_TMU1 R8A7790_CLK_3DG
+-				R8A7790_CLK_TMU3 R8A7790_CLK_TMU2
+-				R8A7790_CLK_CMT0 R8A7790_CLK_TMU0 R8A7790_CLK_VSP1_DU1
+-				R8A7790_CLK_VSP1_DU0 R8A7790_CLK_VSP1_R R8A7790_CLK_VSP1_S
++				R8A7790_CLK_VCP1 R8A7790_CLK_VCP0 R8A7790_CLK_VPC1
++				R8A7790_CLK_VPC0 R8A7790_CLK_JPU R8A7790_CLK_SSP1
++				R8A7790_CLK_TMU1 R8A7790_CLK_3DG R8A7790_CLK_2DDMAC
++				R8A7790_CLK_FDP1_2 R8A7790_CLK_FDP1_1 R8A7790_CLK_FDP1_0
++				R8A7790_CLK_TMU3 R8A7790_CLK_TMU2 R8A7790_CLK_CMT0
++				R8A7790_CLK_TMU0 R8A7790_CLK_VSP1_DU1 R8A7790_CLK_VSP1_DU0
++				R8A7790_CLK_VSP1_R R8A7790_CLK_VSP1_S
+ 			>;
+ 			clock-output-names -				"jpu", "tmu1", "3dg", "tmu3", "tmu2", "cmt0", "tmu0",
++				"vcp1", "vcp0", "vpc1", "vpc0", "jpu", "ssp1",
++				"tmu1", "3dg", "2ddmac", "fdp1-2", "fdp1-1",
++				"fdp1-0", "tmu3", "tmu2", "cmt0", "tmu0",
+ 				"vsp1-du1", "vsp1-du0", "vsp1-rt", "vsp1-sy";
+ 		};
+ 		mstp2_clks: mstp2_clks@e6150138 {
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index 14a3f12..e3a3fb8 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -26,9 +26,18 @@
+ #define R8A7790_CLK_MSIOF0		0
  
- 	printk(KERN_INFO "Renesas Technology Corp. R0P7785LC0011RL support.\n");
- 
--	pm_power_off = sh7785lcr_power_off;
-+	register_power_off_handler_simple(sh7785lcr_power_off,
-+					  POWER_OFF_PRIORITY_DEFAULT);
- 
- 	/* sm501 DRAM configuration */
- 	sm501_reg = ioremap_nocache(SM107_REG_ADDR, SM501_DRAM_CONTROL);
-diff --git a/arch/sh/boards/board-urquell.c b/arch/sh/boards/board-urquell.c
-index b52abcc..8f44256 100644
---- a/arch/sh/boards/board-urquell.c
-+++ b/arch/sh/boards/board-urquell.c
-@@ -204,7 +204,8 @@ static void __init urquell_setup(char **cmdline_p)
- {
- 	printk(KERN_INFO "Renesas Technology Corp. Urquell support.\n");
- 
--	pm_power_off = urquell_power_off;
-+	register_power_off_handler_simple(urquell_power_off,
-+					  POWER_OFF_PRIORITY_DEFAULT);
- 
- 	register_smp_ops(&shx3_smp_ops);
- }
-diff --git a/arch/sh/boards/mach-highlander/setup.c b/arch/sh/boards/mach-highlander/setup.c
-index 4a52590..fc9110a 100644
---- a/arch/sh/boards/mach-highlander/setup.c
-+++ b/arch/sh/boards/mach-highlander/setup.c
-@@ -385,7 +385,8 @@ static void __init highlander_setup(char **cmdline_p)
- 
- 	__raw_writew(__raw_readw(PA_IVDRCTL) | 0x01, PA_IVDRCTL);	/* Si13112 */
- 
--	pm_power_off = r7780rp_power_off;
-+	register_power_off_handler_simple(r7780rp_power_off,
-+					  POWER_OFF_PRIORITY_DEFAULT);
- }
- 
- static unsigned char irl2irq[HL_NR_IRL];
-diff --git a/arch/sh/boards/mach-landisk/setup.c b/arch/sh/boards/mach-landisk/setup.c
-index f1147ca..56adabc 100644
---- a/arch/sh/boards/mach-landisk/setup.c
-+++ b/arch/sh/boards/mach-landisk/setup.c
-@@ -89,7 +89,8 @@ static void __init landisk_setup(char **cmdline_p)
- 	__raw_writeb(__raw_readb(PA_LED) | 0x03, PA_LED);
- 
- 	printk(KERN_INFO "I-O DATA DEVICE, INC. \"LANDISK Series\" support.\n");
--	pm_power_off = landisk_power_off;
-+	register_power_off_handler_simple(landisk_power_off,
-+					  POWER_OFF_PRIORITY_DEFAULT);
- }
- 
- /*
-diff --git a/arch/sh/boards/mach-r2d/setup.c b/arch/sh/boards/mach-r2d/setup.c
-index 4b98a52..4a23bce 100644
---- a/arch/sh/boards/mach-r2d/setup.c
-+++ b/arch/sh/boards/mach-r2d/setup.c
-@@ -279,7 +279,8 @@ static void __init rts7751r2d_setup(char **cmdline_p)
- 					(ver >> 4) & 0xf, ver & 0xf);
- 
- 	__raw_writew(0x0000, PA_OUTPORT);
--	pm_power_off = rts7751r2d_power_off;
-+	register_power_off_handler_simple(rts7751r2d_power_off,
-+					  POWER_OFF_PRIORITY_DEFAULT);
- 
- 	/* sm501 dram configuration:
- 	 * ColSizeX = 11 - External Memory Column Size: 256 words.
-diff --git a/arch/sh/boards/mach-sdk7786/setup.c b/arch/sh/boards/mach-sdk7786/setup.c
-index c29268b..2d77760 100644
---- a/arch/sh/boards/mach-sdk7786/setup.c
-+++ b/arch/sh/boards/mach-sdk7786/setup.c
-@@ -252,7 +252,8 @@ static void __init sdk7786_setup(char **cmdline_p)
- 	pr_info("\tPCB revision:\t%d\n", fpga_read_reg(PCBRR) & 0xf);
- 
- 	machine_ops.restart = sdk7786_restart;
--	pm_power_off = sdk7786_power_off;
-+	register_power_off_handler_simple(sdk7786_power_off,
-+					  POWER_OFF_PRIORITY_DEFAULT);
- 
- 	register_smp_ops(&shx3_smp_ops);
- }
+ /* MSTP1 */
+-#define R8A7790_CLK_JPU		6
++#define R8A7790_CLK_VCP1		0
++#define R8A7790_CLK_VCP0		1
++#define R8A7790_CLK_VPC1		2
++#define R8A7790_CLK_VPC0		3
++#define R8A7790_CLK_JPU			6
++#define R8A7790_CLK_SSP1		9
+ #define R8A7790_CLK_TMU1		11
+ #define R8A7790_CLK_3DG			12
++#define R8A7790_CLK_2DDMAC		15
++#define R8A7790_CLK_FDP1_2		17
++#define R8A7790_CLK_FDP1_1		18
++#define R8A7790_CLK_FDP1_0		19
+ #define R8A7790_CLK_TMU3		21
+ #define R8A7790_CLK_TMU2		22
+ #define R8A7790_CLK_CMT0		24
 -- 
-1.9.1
+2.1.1
 
