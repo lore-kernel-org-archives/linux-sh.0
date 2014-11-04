@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:50:31 +0000
-Subject: [PATCH 01/34] ARM: shmobile: r8a7740 dtsi: Add missing INTCA clock for irqpin module
-Message-Id: <3ab84ee95ba4e28b30fd8ec7c38f5e9f72c4b4b7.1415059587.git.horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:50:57 +0000
+Subject: [PATCH 27/34] ARM: shmobile: henninger: enable HS-USB
+Message-Id: <6f4f7156e0e6b215fad118abf4830177528ef7ad.1415059587.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1415059587.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1415059587.git.horms+renesas@verge.net.au>
@@ -10,97 +10,41 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-This clock drives the INTCA irqpin controller modules.
-Before, it was assumed enabled by the bootloader or reset state.
+Enable HS-USB device for the Henninger board, defining the GPIO that the driver
+should check when probing (which is the ID output from MAX3355 OTG chip).
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: devicetree@vger.kernel.org
+Note that there will be pinctrl-related error messages if both internal PCI
+and HS-USB drivers are enabled but they should be just ignored.
+
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+[Sergei: added pin function/group and prop, moved device node, fixed summary,
+added changelog]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740.dtsi            | 14 ++++++++++----
- include/dt-bindings/clock/r8a7740-clock.h |  1 +
- 2 files changed, 11 insertions(+), 4 deletions(-)
+ arch/arm/boot/dts/r8a7791-henninger.dts | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index d46c213..502483f 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -71,6 +71,7 @@
- 			      0 149 IRQ_TYPE_LEVEL_HIGH
- 			      0 149 IRQ_TYPE_LEVEL_HIGH
- 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
- 	};
+diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
+index ef2cb92..740e386 100644
+--- a/arch/arm/boot/dts/r8a7791-henninger.dts
++++ b/arch/arm/boot/dts/r8a7791-henninger.dts
+@@ -272,6 +272,13 @@
+ 	pinctrl-names = "default";
+ };
  
- 	/* irqpin1: IRQ8 - IRQ15 */
-@@ -91,6 +92,7 @@
- 			      0 149 IRQ_TYPE_LEVEL_HIGH
- 			      0 149 IRQ_TYPE_LEVEL_HIGH
- 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
- 	};
- 
- 	/* irqpin2: IRQ16 - IRQ23 */
-@@ -111,6 +113,7 @@
- 			      0 149 IRQ_TYPE_LEVEL_HIGH
- 			      0 149 IRQ_TYPE_LEVEL_HIGH
- 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
- 	};
- 
- 	/* irqpin3: IRQ24 - IRQ31 */
-@@ -131,6 +134,7 @@
- 			      0 149 IRQ_TYPE_LEVEL_HIGH
- 			      0 149 IRQ_TYPE_LEVEL_HIGH
- 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
- 	};
- 
- 	ether: ethernet@e9a00000 {
-@@ -448,8 +452,8 @@
- 		mstp2_clks: mstp2_clks@e6150138 {
- 			compatible = "renesas,r8a7740-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0xe6150138 4>, <0xe6150040 4>;
--			clocks = <&sub_clk>, <&sub_clk>,
--				 <&cpg_clocks R8A7740_CLK_HP>,
-+			clocks = <&sub_clk>, <&cpg_clocks R8A7740_CLK_HP>,
-+				 <&sub_clk>, <&cpg_clocks R8A7740_CLK_HP>,
- 				 <&cpg_clocks R8A7740_CLK_HP>,
- 				 <&cpg_clocks R8A7740_CLK_HP>,
- 				 <&cpg_clocks R8A7740_CLK_HP>,
-@@ -458,7 +462,8 @@
- 				 <&sub_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
--				R8A7740_CLK_SCIFA6 R8A7740_CLK_SCIFA7
-+				R8A7740_CLK_SCIFA6 R8A7740_CLK_INTCA
-+				R8A7740_CLK_SCIFA7
- 				R8A7740_CLK_DMAC1 R8A7740_CLK_DMAC2
- 				R8A7740_CLK_DMAC3 R8A7740_CLK_USBDMAC
- 				R8A7740_CLK_SCIFA5 R8A7740_CLK_SCIFB
-@@ -467,7 +472,8 @@
- 				R8A7740_CLK_SCIFA4
- 			>;
- 			clock-output-names -				"scifa6", "scifa7", "dmac1", "dmac2", "dmac3",
-+				"scifa6", "intca",
-+				"scifa7", "dmac1", "dmac2", "dmac3",
- 				"usbdmac", "scifa5", "scifb", "scifa0", "scifa1",
- 				"scifa2", "scifa3", "scifa4";
- 		};
-diff --git a/include/dt-bindings/clock/r8a7740-clock.h b/include/dt-bindings/clock/r8a7740-clock.h
-index f6b4b0f..476135d 100644
---- a/include/dt-bindings/clock/r8a7740-clock.h
-+++ b/include/dt-bindings/clock/r8a7740-clock.h
-@@ -40,6 +40,7 @@
- 
- /* MSTP2 */
- #define R8A7740_CLK_SCIFA6	30
-+#define R8A7740_CLK_INTCA	29
- #define R8A7740_CLK_SCIFA7	22
- #define R8A7740_CLK_DMAC1	18
- #define R8A7740_CLK_DMAC2	17
++&hsusb {
++	status = "okay";
++	pinctrl-0 = <&usb0_pins>;
++	pinctrl-names = "default";
++	renesas,enable-gpio = <&gpio5 31 GPIO_ACTIVE_HIGH>;
++};
++
+ &usbphy {
+ 	status = "okay";
+ };
 -- 
 2.1.1
 
