@@ -1,79 +1,97 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 04 Nov 2014 01:46:59 +0000
-Subject: [PATCH 06/23 v3] ARM: shmobile: r8a7791: sound enables Audio DMAC entry on DTSI
-Message-Id: <87r3xj91pf.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:50:31 +0000
+Subject: [PATCH 08/10] ARM: shmobile: lager: Enable DU device in DT
+Message-Id: <3edd18ffe53e3c13820310f51109c12e45874cfd.1415058552.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1415058552.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415058552.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Specify the DU output topology, enable the DU device and configure the
+related pins.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2 -> v3
+ arch/arm/boot/dts/r8a7790-lager.dts | 53 ++++++++++++++++++++++++++++++++++---
+ 1 file changed, 50 insertions(+), 3 deletions(-)
 
- - no change
-
- arch/arm/boot/dts/r8a7791.dtsi |   44 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 44 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index b2b47bd..3ccc812 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1399,6 +1399,50 @@
- 				"dvc.0", "dvc.1",
- 				"clk_a", "clk_b", "clk_c", "clk_i";
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 69098b9..5237d46 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -144,6 +144,56 @@
+ 		states = <3300000 1
+ 			  1800000 0>;
+ 	};
++
++	vga-encoder {
++		compatible = "adi,adv7123";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				adv7123_in: endpoint {
++					remote-endpoint = <&du_out_rgb>;
++				};
++			};
++			port@1 {
++				reg = <1>;
++				adv7123_out: endpoint {
++					remote-endpoint = <&vga_in>;
++				};
++			};
++		};
++	};
++
++	vga {
++		compatible = "vga-connector";
++
++		port {
++			vga_in: endpoint {
++				remote-endpoint = <&adv7123_out>;
++			};
++		};
++	};
++};
++
++&du {
++	pinctrl-0 = <&du_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++
++	ports {
++		port@0 {
++			endpoint {
++				remote-endpoint = <&adv7123_in>;
++			};
++		};
++		port@2 {
++			lvds_connector: endpoint {
++			};
++		};
++	};
+ };
  
-+		dmas =		<&audma0 0x01>,	<&audma1 0x02>,	<&audma0 0x15>,	<&audma1 0x16>,
-+				<&audma0 0x03>,	<&audma1 0x04>,	<&audma0 0x49>,	<&audma1 0x4a>,
-+				<&audma0 0x05>,	<&audma1 0x06>,	<&audma0 0x63>,	<&audma1 0x64>,
-+				<&audma0 0x07>,	<&audma1 0x08>,	<&audma0 0x6f>,	<&audma1 0x70>,
-+				<&audma0 0x09>,	<&audma1 0x0a>,	<&audma0 0x71>,	<&audma1 0x72>,
-+				<&audma0 0x0b>,	<&audma1 0x0c>,	<&audma0 0x73>,	<&audma1 0x74>,
-+				<&audma0 0x0d>,	<&audma1 0x0e>,	<&audma0 0x75>,	<&audma1 0x76>,
-+				<&audma0 0x0f>,	<&audma1 0x10>,	<&audma0 0x79>,	<&audma1 0x7a>,
-+				<&audma0 0x11>,	<&audma1 0x12>,	<&audma0 0x7b>,	<&audma1 0x7c>,
-+				<&audma0 0x13>,	<&audma1 0x14>,	<&audma0 0x7d>,	<&audma1 0x7e>,
-+
-+				<&audma0 0x85>,	<&audma1 0x9a>,	<&audma0 0xbc>,
-+				<&audma0 0x87>,	<&audma1 0x9c>,	<&audma0 0xbe>,
-+				<&audma0 0x89>,	<&audma1 0x9e>,
-+				<&audma0 0x8b>,	<&audma1 0xa0>,
-+				<&audma0 0x8d>,	<&audma1 0xb0>,
-+				<&audma0 0x8f>,	<&audma1 0xb2>,
-+				<&audma0 0x91>,	<&audma1 0xb4>,
-+				<&audma0 0x93>,	<&audma1 0xb6>,
-+				<&audma0 0x95>,	<&audma1 0xb8>,
-+				<&audma0 0x97>,	<&audma1 0xba>;
-+
-+		dma-names =	"mem_ssi0",	"ssi0_mem",	"mem_ssiu0",	"ssiu0_mem",
-+				"mem_ssi1",	"ssi1_mem",	"mem_ssiu1",	"ssiu1_mem",
-+				"mem_ssi2",	"ssi2_mem",	"mem_ssiu2",	"ssiu2_mem",
-+				"mem_ssi3",	"ssi3_mem",	"mem_ssiu3",	"ssiu3_mem",
-+				"mem_ssi4",	"ssi4_mem",	"mem_ssiu4",	"ssiu4_mem",
-+				"mem_ssi5",	"ssi5_mem",	"mem_ssiu5",	"ssiu5_mem",
-+				"mem_ssi6",	"ssi6_mem",	"mem_ssiu6",	"ssiu6_mem",
-+				"mem_ssi7",	"ssi7_mem",	"mem_ssiu7",	"ssiu7_mem",
-+				"mem_ssi8",	"ssi8_mem",	"mem_ssiu8",	"ssiu8_mem",
-+				"mem_ssi9",	"ssi9_mem",	"mem_ssiu9",	"ssiu9_mem",
-+
-+				"mem_src0",	"src0_mem",	"dvc0_mem",
-+				"mem_src1",	"src1_mem",	"dvc1_mem",
-+				"mem_src2",	"src2_mem",
-+				"mem_src3",	"src3_mem",
-+				"mem_src4",	"src4_mem",
-+				"mem_src5",	"src5_mem",
-+				"mem_src6",	"src6_mem",
-+				"mem_src7",	"src7_mem",
-+				"mem_src8",	"src8_mem",
-+				"mem_src9",	"src9_mem";
-+
- 		status = "disabled";
+ &extal_clk {
+@@ -151,9 +201,6 @@
+ };
  
- 		rcar_sound,dvc {
+ &pfc {
+-	pinctrl-0 = <&du_pins>;
+-	pinctrl-names = "default";
+-
+ 	du_pins: du {
+ 		renesas,groups = "du_rgb666", "du_sync_1", "du_clk_out_0";
+ 		renesas,function = "du";
 -- 
-1.7.9.5
+2.1.1
 
