@@ -1,44 +1,44 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Nov 2014 01:19:55 +0000
-Subject: [PATCH 04/25] ARM: shmobile: r8a7790: Add Audio DMAC peri peri devices to DT
-Message-Id: <e416b66a6c62cd935c6959448aba46ae8fd25625.1415755881.git.horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 04 Nov 2014 01:05:42 +0000
+Subject: [PATCH v6 1/4] usb: renesas_usbhs: gadget: fix NULL pointer dereference in ep_disable()
+Message-Id: <1415063145-4200-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415755881.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415755881.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-Instantiate the Audio DMAC peri peri controllers
-in the r8a7790 device tree.
+This patch fixes an issue that the NULL pointer dereference happens
+when we uses g_audio driver. Since the g_audio driver will call
+usb_ep_disable() in afunc_set_alt() before it calls usb_ep_enable(),
+the uep->pipe of renesas usbhs driver will be NULL. So, this patch
+adds a condition to avoid the oops.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Fixes: 2f98382dc (usb: renesas_usbhs: Add Renesas USBHS Gadget)
+Cc: <stable@vger.kernel.org> # v3.0+
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 7 +++++++
- 1 file changed, 7 insertions(+)
+ drivers/usb/renesas_usbhs/mod_gadget.c |    3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 2e01d49..146f918 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -369,6 +369,13 @@
- 		dma-channels = <13>;
- 	};
+diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
+index 2d17c10..294d43c 100644
+--- a/drivers/usb/renesas_usbhs/mod_gadget.c
++++ b/drivers/usb/renesas_usbhs/mod_gadget.c
+@@ -602,6 +602,9 @@ static int usbhsg_ep_disable(struct usb_ep *ep)
+ 	struct usbhsg_uep *uep = usbhsg_ep_to_uep(ep);
+ 	struct usbhs_pipe *pipe = usbhsg_uep_to_pipe(uep);
  
-+	audmapp: dma-controller@ec740000 {
-+		compatible = "renesas,rcar-audmapp";
-+		#dma-cells = <1>;
++	if (!pipe)
++		return -EINVAL;
 +
-+		reg = <0 0xec740000 0 0x200>;
-+	};
-+
- 	i2c0: i2c@e6508000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
+ 	usbhsg_pipe_disable(uep);
+ 	usbhs_pipe_free(pipe);
+ 
 -- 
-2.1.1
+1.7.9.5
 
