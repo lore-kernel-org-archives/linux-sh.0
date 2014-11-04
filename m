@@ -1,61 +1,64 @@
-From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Date: Wed, 26 Nov 2014 01:25:54 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: r8a7790 CCI configuration
-Message-Id: <54752C22.7010806@bp.renesas.com>
+From: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 04 Nov 2014 01:03:57 +0000
+Subject: RE: [PATCH v5 1/4] usb: renesas_usbhs: gadget: fix NULL pointer dereference in ep_disable()
+Message-Id: <f17a94dd97fd491692afe887fb2a9582@HKNPR06MB322.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <54743D0F.5080307@bp.renesas.com> <5474543A.807@arm.com>
-In-Reply-To: <5474543A.807@arm.com>
+References: <1414729211-3276-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1414729211-3276-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Sudeep,
+> On Fri, Oct 31, 2014 at 01:20:08PM +0900, Yoshihiro Shimoda wrote:
+> > From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+> >
+> > This patch fixes an issue that the NULL pointer dereference happens
+> > when we uses g_audio driver. Since the g_audio driver will call
+> > usb_ep_disable() in afunc_set_alt() before it calls usb_ep_enable(),
+> > the uep->pipe of renesas usbhs driver will be NULL. So, this patch
+> > adds a condition to avoid the oops.
+> >
+> > Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+> > Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+> > Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> > Fixes: 132fcb4608 (usb: gadget: Add Audio Class 2.0 Driver)
+> 
+> since this change is not patching the audio class driver, you can be fixing that commit. Looking at the history of that
+> file, it seems like this was always broken since day one of this driver (commit 2f98382dc) and if that's the case, this
+> should become:
+> 
+> Fixes: 2f98382dc (usb: renesas_usbhs: Add Renesas USBHS Gadget)
+> Cc: <stable@vger.kernel.org> # v3.0+
 
-(2014/11/25 19:04), Sudeep Holla wrote:
->
->
-> On 25/11/14 08:25, Gaku Inami wrote:
->> Add the settings of CCI-400 for enabling ca15/ca7 snoop on r8a7790.
->> Needed to configure the CCI boot cluster port regardless of MCPM.
->>
->> Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
->> Signed-off-by: Magnus Damm <damm@opensource.se>
->> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
->> ---
->>
->> Changes since version 1:
->> - Fix a way to wait for the register read.
->>
->>   arch/arm/mach-shmobile/smp-r8a7790.c |   19 +++++++++++++++++++
->>   1 file changed, 19 insertions(+)
->>
->> diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
->> index 9c3da13..b65d908 100644
->> --- a/arch/arm/mach-shmobile/smp-r8a7790.c
->> +++ b/arch/arm/mach-shmobile/smp-r8a7790.c
->> @@ -25,6 +25,12 @@
->>   #include "pm-rcar.h"
->>   #include "r8a7790.h"
->>
->> +#define CCI_BASE    0xf0090000
->> +#define CCI_SLAVE3    0x4000
->> +#define CCI_SLAVE4    0x5000
->> +#define CCI_SNOOP    0x0000
->> +#define CCI_STATUS    0x000c
->> +
->
-> I have asked the same question multiple times in the past, why are you
-> not using the DT bindings and the CCI driver for this ? Why are you
-> duplicating the code ? Any limitations to use them ?
->
-Thank you for your feedback.
-I will consider to use the DT bindings and the CCI driver.
+Thank you very much for the point. I will fix it.
 
-Regards,
-Inami
+Best regards,
+Yoshihiro Shimoda
 
-> Regards,
-> Sudeep
->
-
+> > Cc: <stable@vger.kernel.org> # v3.3+
+> > ---
+> >  drivers/usb/renesas_usbhs/mod_gadget.c |    3 +++
+> >  1 file changed, 3 insertions(+)
+> >
+> > diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c
+> > b/drivers/usb/renesas_usbhs/mod_gadget.c
+> > index 2d17c10..294d43c 100644
+> > --- a/drivers/usb/renesas_usbhs/mod_gadget.c
+> > +++ b/drivers/usb/renesas_usbhs/mod_gadget.c
+> > @@ -602,6 +602,9 @@ static int usbhsg_ep_disable(struct usb_ep *ep)
+> >  	struct usbhsg_uep *uep = usbhsg_ep_to_uep(ep);
+> >  	struct usbhs_pipe *pipe = usbhsg_uep_to_pipe(uep);
+> >
+> > +	if (!pipe)
+> > +		return -EINVAL;
+> > +
+> >  	usbhsg_pipe_disable(uep);
+> >  	usbhs_pipe_free(pipe);
+> >
+> > --
+> > 1.7.9.5
+> >
+> 
+> --
+> balbi
