@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:50:39 +0000
-Subject: [PATCH 09/34] ARM: shmobile: r8a7790: switch from scif to scifa
-Message-Id: <7c05589413fa9902f2843e91845d6084f6f8e2cd.1415059587.git.horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:51:02 +0000
+Subject: [PATCH 32/34] ARM: shmobile: r8a7790: Reference DMA channels in MMCIF DT nodes
+Message-Id: <108216c1e08db6c69a54ba7ee593335eceea2077.1415059587.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1415059587.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1415059587.git.horms+renesas@verge.net.au>
@@ -10,79 +10,41 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-SCIF and SCIFA can be plexed onto the same wires on Lager board. The
-datasheet also describes the wires as SCIFA. So, to make use of the
-bigger FIFOs switch to SCIFA instead.
+Add references to the transmit and receive DMA channels in the two
+MMCIF nodes.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 24 ++++++++++++------------
- 1 file changed, 12 insertions(+), 12 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index cd530de..e96f952 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -19,8 +19,8 @@
- 	compatible = "renesas,lager", "renesas,r8a7790";
- 
- 	aliases {
--		serial6 = &scif0;
--		serial7 = &scif1;
-+		serial6 = &scifa0;
-+		serial7 = &scifa1;
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 63922a1..52c2156 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -397,6 +397,8 @@
+ 		reg = <0 0xee200000 0 0x80>;
+ 		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_MMCIF0>;
++		dmas = <&dmac0 0xd1>, <&dmac0 0xd2>;
++		dma-names = "tx", "rx";
+ 		reg-io-width = <4>;
+ 		status = "disabled";
  	};
- 
- 	chosen {
-@@ -207,9 +207,9 @@
- 		renesas,function = "du";
+@@ -406,6 +408,8 @@
+ 		reg = <0 0xee220000 0 0x80>;
+ 		interrupts = <0 170 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_MMCIF1>;
++		dmas = <&dmac0 0xe1>, <&dmac0 0xe2>;
++		dma-names = "tx", "rx";
+ 		reg-io-width = <4>;
+ 		status = "disabled";
  	};
- 
--	scif0_pins: serial0 {
--		renesas,groups = "scif0_data";
--		renesas,function = "scif0";
-+	scifa0_pins: serial0 {
-+		renesas,groups = "scifa0_data";
-+		renesas,function = "scifa0";
- 	};
- 
- 	ether_pins: ether {
-@@ -222,9 +222,9 @@
- 		renesas,function = "intc";
- 	};
- 
--	scif1_pins: serial1 {
--		renesas,groups = "scif1_data";
--		renesas,function = "scif1";
-+	scifa1_pins: serial1 {
-+		renesas,groups = "scifa1_data";
-+		renesas,function = "scifa1";
- 	};
- 
- 	sdhi0_pins: sd0 {
-@@ -356,15 +356,15 @@
- 	};
- };
- 
--&scif0 {
--	pinctrl-0 = <&scif0_pins>;
-+&scifa0 {
-+	pinctrl-0 = <&scifa0_pins>;
- 	pinctrl-names = "default";
- 
- 	status = "okay";
- };
- 
--&scif1 {
--	pinctrl-0 = <&scif1_pins>;
-+&scifa1 {
-+	pinctrl-0 = <&scifa1_pins>;
- 	pinctrl-names = "default";
- 
- 	status = "okay";
 -- 
 2.1.1
 
