@@ -1,69 +1,130 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 17 Nov 2014 13:30:37 +0000
-Subject: [PATCH v5 1/8] PM / Domains: Add DT bindings for power-on/off latencies
-Message-Id: <1416231044-1903-2-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:50:44 +0000
+Subject: [PATCH 4/7] ARM: shmobile: koelsch: Remove reference board code
+Message-Id: <9e6edccf191fb15ad751796a7962128d2469e209.1415059146.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416231044-1903-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1416231044-1903-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1415059146.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415059146.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-PM domain power on/off-latencies are properties of the hardware.
-In legacy code, they're specified from platform code.
-On DT platforms, their values should come from DT.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Kevin Hilman <khilman@linaro.org>
-Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
----
-v5:
-  - No changes,
-v4:
-  - Add Reviewed-by,
-  - Replace single latency value by list of latencies,
-v3:
-  - No changes,
-v2:
-  - Add Acked-by.
----
- Documentation/devicetree/bindings/power/power_domain.txt | 14 ++++++++++++--
- 1 file changed, 12 insertions(+), 2 deletions(-)
+The Koelsch board is supported by the r8a7791 generic DT platform
+definition. Remove the board-specific definition along with its board
+file.
 
-diff --git a/Documentation/devicetree/bindings/power/power_domain.txt b/Documentation/devicetree/bindings/power/power_domain.txt
-index 98c16672ab5f49e0..c4a4afb2ac3b0500 100644
---- a/Documentation/devicetree/bindings/power/power_domain.txt
-+++ b/Documentation/devicetree/bindings/power/power_domain.txt
-@@ -19,16 +19,26 @@ Required properties:
-    providing multiple PM domains (e.g. power controllers), but can be any value
-    as specified by device tree binding documentation of particular provider.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/configs/shmobile_defconfig              |  1 -
+ arch/arm/mach-shmobile/Kconfig                   |  5 ---
+ arch/arm/mach-shmobile/Makefile                  |  1 -
+ arch/arm/mach-shmobile/Makefile.boot             |  1 -
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 40 ------------------------
+ 5 files changed, 48 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/board-koelsch-reference.c
+
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index d7346ad..c8201a9 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -17,7 +17,6 @@ CONFIG_ARCH_R8A7779=y
+ CONFIG_ARCH_R8A7790=y
+ CONFIG_ARCH_R8A7791=y
+ CONFIG_ARCH_R8A7794=y
+-CONFIG_MACH_KOELSCH=y
+ CONFIG_MACH_LAGER=y
+ CONFIG_MACH_MARZEN=y
+ # CONFIG_SWP_EMULATE is not set
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index e50402b..fcc181f 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -73,11 +73,6 @@ config ARCH_R8A7794
  
-+Optional properties:
-+ - power-on-latency: List of power-on latencies (in ns), one for each PM
-+   domain. If all power-on latencies are identical, the list may be shortened
-+   to a single value.
-+ - power-off-latency: List of power-off latencies (in ns), one for each PM
-+   domain. If all power-off latencies are identical, the list may be shortened
-+   to a single value.
-+
- Example:
+ comment "Renesas ARM SoCs Board Type"
  
- 	power: power-controller@12340000 {
- 		compatible = "foo,power-controller";
- 		reg = <0x12340000 0x1000>;
- 		#power-domain-cells = <1>;
-+		power-on-latency = <250000 400000 180000>;
-+		power-off-latency = <250000 400000 300000>;
- 	};
+-config MACH_KOELSCH
+-	bool "Koelsch board"
+-	depends on ARCH_R8A7791
+-	select MICREL_PHY if SH_ETH
+-
+ config MACH_LAGER
+ 	bool "Lager board"
+ 	depends on ARCH_R8A7790
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index fbb7f85..7d68eba 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -56,7 +56,6 @@ obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o sleep-sh7372.o
  
--The node above defines a power controller that is a PM domain provider and
--expects one cell as its phandle argument.
-+The node above defines a power controller that is a PM domain provider for
-+3 PM domains, and expects one cell as its phandle argument.
- 
- =PM domain consumers=
- 
+ # Board objects
+ ifdef CONFIG_ARCH_SHMOBILE_MULTI
+-obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch-reference.o
+ obj-$(CONFIG_MACH_LAGER)	+= board-lager-reference.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen-reference.o
+ else
+diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
+index de9a238..57d00ed 100644
+--- a/arch/arm/mach-shmobile/Makefile.boot
++++ b/arch/arm/mach-shmobile/Makefile.boot
+@@ -5,7 +5,6 @@ loadaddr-$(CONFIG_MACH_APE6EVM_REFERENCE) += 0x40008000
+ loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
+ loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
+ loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
+-loadaddr-$(CONFIG_MACH_KOELSCH) += 0x40008000
+ loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
+ loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
+ loadaddr-$(CONFIG_MACH_LAGER) += 0x40008000
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+deleted file mode 100644
+index 451ba62..0000000
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ /dev/null
+@@ -1,40 +0,0 @@
+-/*
+- * Koelsch board support - Reference DT implementation
+- *
+- * Copyright (C) 2013  Renesas Electronics Corporation
+- * Copyright (C) 2013  Renesas Solutions Corp.
+- * Copyright (C) 2013  Magnus Damm
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; version 2 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- */
+-
+-#include <linux/kernel.h>
+-#include <linux/of_platform.h>
+-
+-#include <asm/mach/arch.h>
+-
+-#include "common.h"
+-#include "r8a7791.h"
+-#include "rcar-gen2.h"
+-
+-static const char * const koelsch_boards_compat_dt[] __initconst = {
+-	"renesas,koelsch",
+-	"renesas,koelsch-reference",
+-	NULL,
+-};
+-
+-DT_MACHINE_START(KOELSCH_DT, "koelsch")
+-	.smp		= smp_ops(r8a7791_smp_ops),
+-	.init_early	= shmobile_init_delay,
+-	.init_time	= rcar_gen2_timer_init,
+-	.init_late	= shmobile_init_late,
+-	.reserve	= rcar_gen2_reserve,
+-	.dt_compat	= koelsch_boards_compat_dt,
+-MACHINE_END
 -- 
-1.9.1
+2.1.1
 
