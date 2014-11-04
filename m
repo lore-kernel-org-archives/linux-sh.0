@@ -1,43 +1,74 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Wed, 12 Nov 2014 22:31:03 +0000
-Subject: Re: [PATCH 1/5] ASoC: sh: fsi: Document SoC-specific bindings
-Message-Id: <20141112223103.GX3815@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Rd+jWxMEN+3uw23T"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:50:45 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Koelsch Board Removal Updates for v3.19
+Message-Id: <cover.1415059146.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415646044-4168-1-git-send-email-geert+renesas@glider.be>
- <1415646044-4168-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1415646044-4168-2-git-send-email-geert+renesas@glider.be>
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Liam Girdwood <lgirdwood@gmail.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, alsa-devel@alsa-project.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
+
+Hi Olof, Hi Kevin, Hi Arnd,
+
+Please consider these Renesas ARM based SoC koelsch board removal updates for v3.19.
+
+This pull request is based on a merge of:
+
+* "Renesas ARM Based SoC DT DU Updates for v3.19",
+  tagged as renesas-dt-du-for-v3.19.
+
+* "Renesas ARM Based SoC DT Cleanups Updates for v3.19",
+  tagged as renesas-dt-cleanups-for-v3.19.
+
+Both of which I have also sent a pull-request for.
 
 
---Rd+jWxMEN+3uw23T
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+The following changes since commit 11886d1158e0dc123283891b662381f629ab47a0:
 
-On Mon, Nov 10, 2014 at 08:00:40PM +0100, Geert Uytterhoeven wrote:
-> The documentation only mentioned the generic fallback compatible
-> property.
-> Add the missing SoC-specific compatible properties, some of which are
-> already in use.
+  Merge tag 'renesas-dt-cleanups-for-v3.19' into koelsch-board-removal-for-v3.19.base (2014-10-30 10:14:38 +0900)
 
-Applied, thanks.
+are available in the git repository at:
 
---Rd+jWxMEN+3uw23T
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-koelsch-board-removal-for-v3.19
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
+for you to fetch changes up to 79e69d179cb3391040a3693fca8bc12ec03c05fc:
 
-iQEcBAEBAgAGBQJUY9+nAAoJECTWi3JdVIfQjeYH+gNoKe1M32rmF/AgCWO+dmXJ
-GKg9iLCkMT5hz1d4fAlQGu2BjeKCnU8eXMMHx6wus4d0SgR3E+Ana1Z5VwEEV/A8
-+Bu0B8DXjgmJH0kRrOgOZTwmvhXqs/zL2Wpyt1q+pewQhvNuH4wNcHAQy2QnxRlR
-JB521zxN/3QKOSTrnX3HBYgM5q0MhyKXKS8OTRhVgBA1/Hpig7Y11phmKdqTny47
-3wV8kfWtzvUiMnMdpa10YCSKt9O+bEVRFDLyMZPoeTmrjg1xwLBNJr9mipIHe41P
-VKpArLJTJqU4GzLxNH8G0AvNb2SO6//Eq1slYIz0GEv/axDoPCIHeQe9N2CdMYU=
-=2GK/
------END PGP SIGNATURE-----
+  ARM: shmobile: koelsch dts: Drop console= bootargs parameter (2014-10-30 10:18:31 +0900)
 
---Rd+jWxMEN+3uw23T--
+----------------------------------------------------------------
+Renesas ARM Based SoC Koelsch Board Removal Updates for v3.19
+
+* Remove lecacy C koelsh board support
+
+----------------------------------------------------------------
+Geert Uytterhoeven (3):
+      MAINTAINERS: Remove reference to shmobile / koelsch_defconfig
+      ARM: dts: koelsch: Stop building r8a7791-koelsch.dtb in legacy builds
+      ARM: shmobile: koelsch dts: Drop console= bootargs parameter
+
+Laurent Pinchart (4):
+      ARM: shmobile: Remove shmobile_clk_workaround() implementation
+      ARM: shmobile: koelsch: Remove legacy C board code
+      ARM: shmobile: r8a7791: Remove legacy code
+      ARM: shmobile: koelsch: Remove reference board code
+
+ MAINTAINERS                                      |   1 -
+ arch/arm/boot/dts/Makefile                       |   1 -
+ arch/arm/boot/dts/r8a7791-koelsch.dts            |   2 +-
+ arch/arm/configs/koelsch_defconfig               | 113 -----
+ arch/arm/configs/shmobile_defconfig              |   1 -
+ arch/arm/mach-shmobile/Kconfig                   |  19 -
+ arch/arm/mach-shmobile/Makefile                  |   5 +-
+ arch/arm/mach-shmobile/Makefile.boot             |   1 -
+ arch/arm/mach-shmobile/board-koelsch-reference.c |  40 --
+ arch/arm/mach-shmobile/board-koelsch.c           | 523 -----------------------
+ arch/arm/mach-shmobile/clock-r8a7791.c           | 338 ---------------
+ arch/arm/mach-shmobile/clock.c                   |  32 +-
+ arch/arm/mach-shmobile/clock.h                   |  14 -
+ arch/arm/mach-shmobile/r8a7791.h                 |   3 -
+ arch/arm/mach-shmobile/setup-r8a7791.c           | 181 +-------
+ 15 files changed, 6 insertions(+), 1268 deletions(-)
+ delete mode 100644 arch/arm/configs/koelsch_defconfig
+ delete mode 100644 arch/arm/mach-shmobile/board-koelsch-reference.c
+ delete mode 100644 arch/arm/mach-shmobile/board-koelsch.c
+ delete mode 100644 arch/arm/mach-shmobile/clock-r8a7791.c
