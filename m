@@ -1,54 +1,41 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 27 Nov 2014 10:57:17 +0000
-Subject: [PATCH 2/4] ARM: shmobile: r8a7794: Correct mask for GIC PPI interrupts
-Message-Id: <1417085839-22836-3-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:49:58 +0000
+Subject: [PATCH 10/11] ARM: shmobile: r8a7740: Add A4SU pm domain support
+Message-Id: <4ee7830c3ef9224bd078abe41a33c7396f827078.1415058794.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1417085839-22836-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1417085839-22836-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1415058794.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415058794.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-R-Car E2 (r8a7794) contains two Cortex-A7 cores, hence the second
-interrupt specifier cell for Private Peripheral Interrupts should use
-"GIC_CPU_MASK_SIMPLE(2)".
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Add support for the A4SU power domain.
+This domain contains the USBPHY hardware block, which is currently not
+used by any driver.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Untested
----
- arch/arm/boot/dts/r8a7794.dtsi | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+ arch/arm/mach-shmobile/pm-r8a7740.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 19c9de3f2a5ade33..0a6caa99e3afb07e 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -47,7 +47,7 @@
- 			<0 0xf1002000 0 0x1000>,
- 			<0 0xf1004000 0 0x2000>,
- 			<0 0xf1006000 0 0x2000>;
--		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
-+		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_HIGH)>;
- 	};
+diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
+index 74e6a67..27117a8 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7740.c
++++ b/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -75,6 +75,9 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
+ 	}, {
+ 		.genpd.name	= "A3SG",
+ 		.bit_shift	= 13,
++	}, {
++		.genpd.name	= "A4SU",
++		.bit_shift	= 20,
+ 	},
+ };
  
- 	cmt0: timer@ffca0000 {
-@@ -84,10 +84,10 @@
- 
- 	timer {
- 		compatible = "arm,armv7-timer";
--		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
--			     <1 14 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
--			     <1 11 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
--			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
-+		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>,
-+			     <1 14 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>,
-+			     <1 11 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>,
-+			     <1 10 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>;
- 	};
- 
- 	irqc0: interrupt-controller@e61c0000 {
 -- 
-1.9.1
+2.1.1
 
