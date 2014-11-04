@@ -1,59 +1,97 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 12 Nov 2014 16:43:28 +0000
-Subject: Re: [PATCH v2 0/6] ARM: shmobile: Change to using clock-indices
-Message-Id: <20141112164328.GH4031@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Enx9fNJ0XV5HaWRu"
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 04 Nov 2014 00:44:13 +0000
+Subject: Re: [PATCH v2 2/2] ARM: shmobile: lager: enable USB3.0
+Message-Id: <20141104004413.GC22891@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415645379-3366-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1415645379-3366-1-git-send-email-geert+renesas@glider.be>
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Mike Turquette <mturquette@linaro.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Ben Dooks <ben.dooks@codethink.co.uk>, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
+References: <1414147307-4584-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+ <1414147307-4584-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+ <CANqRtoQTBd23z4uVK-EB7JJuJ_K0GkV6ueVfnywShqe6Dx0T5w@mail.gmail.com>
+ <5450CD42.9070101@renesas.com>
+ <20141029235748.GD4599@verge.net.au>
+ <2b89f66c72894bdf8bdce7aab7c69281@HKNPR06MB322.apcprd06.prod.outlook.com>
+ <20141031050422.GC10619@verge.net.au>
+ <9cedf0445a5a4f67abf5e6e1b8aac631@HKNPR06MB322.apcprd06.prod.outlook.com>
+In-Reply-To: <9cedf0445a5a4f67abf5e6e1b8aac631@HKNPR06MB322.apcprd06.prod.outlook.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, "ijc+devicetree@hellion.org.uk" <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, Russell King - ARM Linux <linux@arm.linux.org.uk>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-USB <linux-usb@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>
 
+On Fri, Oct 31, 2014 at 01:22:22PM +0000, yoshihiro shimoda wrote:
+> Hi Simon-san,
+> 
+> > On Fri, Oct 31, 2014 at 02:06:14AM +0000, yoshihiro shimoda wrote:
+> > > Hi Simon-san,
+> > >
+> > > > On Wed, Oct 29, 2014 at 08:19:30PM +0900, Yoshihiro Shimoda wrote:
+> > > > > Hi Magnus-san,
+> > > > >
+> > > > > (2014/10/29 15:53), Magnus Damm wrote:
+> > > < snip >
+> > > > > >
+> > > > > > Hi Shimoda-san,
+> > > > > >
+> > > > > > Thanks for your patch. I'm fine with this patch as a first step,
+> > > > > > but I'm wondering what the reason is to prioritize USB 2.0 over USB 3.0?
+> > > > >
+> > > > > I investigated this reason today, and I found the reason is
+> > > > > request_firmware().  I checked the following environments:
+> > > > >
+> > > > > Case 1: xHCI and EHCI and OHCI are enabled "=y"
+> > > > > Case 2: xHCI and EHCI and OHCI are loadable modules "=m"
+> > > > > Case 3: xHCI and EHCI and OHCI are enabled "=y",
+> > > > >         and CONFIG_EXTRA_FIRMWARE is enabled
+> > > > >
+> > > > > The results are:
+> > > > > - In "Case 1", EHCI and OHCI are probed first because xHCI didn't find the firmware.
+> > > > > - In "Case 2" and "Case 3", xHCI is probed first.
+> > > > >
+> > > > > > Is the current order just based on device init order? In my mind
+> > > > > > the expected behavior would be to always use USB 3.0 if it
+> > > > > > happens to be available in the hardware, specified in the DTS,
+> > > > > > enabled by the kernel configuration and firmware is loadable. Or
+> > > > > > does some case exist where it is better to use USB 2.0? I suspect no.
+> > > > >
+> > > > > I agree with you.
+> > > > >
+> > > > > > So I wonder if you have any plans how to make USB 3.0 enabled by
+> > > > > > default on Lager?
+> > > > >
+> > > > > It depends on a kernel config. I'm not sure of the
+> > > > > shmobile_defconfig strategy.  But, in my opinion, one of a
+> > > > > solution is kernel modules (this means the "Case 2".)
+> > > >
+> > > > It sounds like we should enable CONFIG_EXTRA_FIRMWARE in
+> > > > shmobile_defconfig. I wonder what if any fallout we can foresee occurring if we do that.
+> > >
+> > > According to the firmware/README.AddingFirmware, we are unable to add a new firmware image to the firmware directory
+> > now.
+> > > So, if we enable CONFIG_EXTRA_FIRMWARE with the xHCI firmware, we will not build kernel because the xHCI firmware doesn't
+> > exist in the linux.git.
+> > >
+> > > == from  firmware/README.AddingFirmware
+> > > ==================> > > This directory is _NOT_ for adding arbitrary new firmware images. The
+> > > place to add those is the separate linux-firmware repository:
+> > >
+> > >
+> > > git://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.
+> > > git
+> > > ===================================
+> > > ====
+> > 
+> > Thanks. It seems that EXTRA_FIRMWARE is not an option from a mainline point of view after all.
+> > 
+> > Is the problem in case 1 that the firmware can't be found because userspace does exist yet and thus can't be loaded from
+> > there?
+> 
+> That's correct.
+> If EXTRA_FIRMWARE is not set, the following error happens:
+> 
+> xhci-hcd ee000000.usb: Direct firmware load for r8a779x_usb3_v1.dlmem failed with error -2
+> xhci-hcd ee000000.usb: can't setup: -2
+> xhci-hcd ee000000.usb: USB bus 1 deregistered
+> xhci-hcd: probe of ee000000.usb failed with error -2
 
---Enx9fNJ0XV5HaWRu
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On Mon, Nov 10, 2014 at 07:49:33PM +0100, Geert Uytterhoeven wrote:
-> 	Hi Mike, Simon, Magnus,
->=20
-> This patch series finalizes the conversion from the vendor-specific
-> "renesas,clock-indices" to the generic "clock-indices", started by Ben Do=
-oks.
->=20
-> The patches for r8a7790 and r8a7791 were extracted from a patch that Ben =
-sent
-> before ("[PATCH 2/3] renesas: change to using clock-indices"), but it was=
- never
-> split/updated.
-
-Cool!
-
-Acked-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-
-
---Enx9fNJ0XV5HaWRu
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJUY44vAAoJEBQN5MwUoCm2IQkQAKBdz//mkB6I0lSOHitBnkLq
-0eMOm96nlcV2wf/69p30ugJOgqzuLHHkkpWM/rptRLKETtgIk1GCjaQj7UXmjZVV
-kU2WEQpW6ZuRI89pjmBEZo0ruAqHbhWDPMg+6Fg+F62r+GIQsDoXajqzC88ZsGzg
-9buTyLjlipstPprz88Bkd/LhFC7rVNbCYTihByXKkSDDNk3I7n7MA2CC5SQM8GzJ
-0pIE6383lLLJ+ZfKiwHSn+LRqvximwICTD/Vtw8QNXmaaACQI4J/iWBmZ2a3zTa7
-auv+5CZ29oi5SWcAYq76/OJPdRMXTjMkXmmAJUdqaT9PIEXt01ZyKYvVwY7ZxtH3
-YY3Yt7iMgdVlSAqwVQz9oOEk5ziBYvH5Kq+VZ/5ux7em+CSfELF79t5lXH9HgLCY
-C6TX0Z2EsreXSzuz5dBTD29AyUYsYoKBUr8vfxxVDDsJ4vNixEHyA9rTf4BSs7yK
-0jmd46ee81HoDYjgEBVx0jLnELhNQPgNd7IUBKvv+gUuweZkpDU4X8FZKbx3HH+Y
-gqcy+QDuPkouNATP6eSbisghvrpPBUSKF4gTZR33O63JGryaARmg6vhKr4g33V2k
-9RljTqvrEkipF0KC/n8Lbqb6wzqy4Ltx+jwcuh3pbL6emAW5vzFgNQI4ULF71Ohy
-jVl+5PkxICwkVT7I1C3X
-=uws5
------END PGP SIGNATURE-----
-
---Enx9fNJ0XV5HaWRu--
+At the risk of adding noise to this discussion:
+It seems like case 2 with a fallback to case 3 is the way to go.
