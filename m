@@ -1,122 +1,78 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 04 Nov 2014 01:45:37 +0000
-Subject: [PATCH 02/23 v3] ARM: shmobile: r8a7791: Add Audio DMAC devices to DT
-Message-Id: <87wq7b91rq.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:49:57 +0000
+Subject: [PATCH 09/11] ARM: shmobile: r8a7740/armadillo legacy: Add A4R pm domain support
+Message-Id: <1618a677046b0391621708734f56886233210047.1415058794.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1415058794.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415058794.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Instantiate the two Audio DMA controllers in the r8a7791 device tree.
+Add support for the A4R power domain, and hook up the A3RV subdomain,
+and the CEU0, TMU0, and IIC0 hardware blocks.
+This domain also contains the Realtime CPU (SH-4A), Realtime CPU debug
+modules, H-UDI, RT-SHwy, INTCS, RT-HPB, VIO6C, JPU, RTDMAC1/2, SSP,
+MSIOF0, CMT0, ICB, DREQPAK (RT), 2DDMAC, IPMMUI, and 2DG hardware
+blocks, but these are currently not used by any driver.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2 -> v3
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 1 +
+ arch/arm/mach-shmobile/pm-r8a7740.c            | 4 ++++
+ arch/arm/mach-shmobile/setup-r8a7740.c         | 2 ++
+ 3 files changed, 7 insertions(+)
 
- - dma-contorller -> dma-controller
-
- arch/arm/boot/dts/r8a7791.dtsi            |   63 +++++++++++++++++++++++++++--
- include/dt-bindings/clock/r8a7791-clock.h |    2 +
- 2 files changed, 62 insertions(+), 3 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 9a57215..c10ce1d 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -301,6 +301,62 @@
- 		dma-channels = <15>;
- 	};
- 
-+	audma0: dma-controller@ec700000 {
-+		compatible = "renesas,rcar-dmac";
-+		reg = <0 0xec700000 0 0x10000>;
-+		interrupts =	<0 346 IRQ_TYPE_LEVEL_HIGH
-+				 0 320 IRQ_TYPE_LEVEL_HIGH
-+				 0 321 IRQ_TYPE_LEVEL_HIGH
-+				 0 322 IRQ_TYPE_LEVEL_HIGH
-+				 0 323 IRQ_TYPE_LEVEL_HIGH
-+				 0 324 IRQ_TYPE_LEVEL_HIGH
-+				 0 325 IRQ_TYPE_LEVEL_HIGH
-+				 0 326 IRQ_TYPE_LEVEL_HIGH
-+				 0 327 IRQ_TYPE_LEVEL_HIGH
-+				 0 328 IRQ_TYPE_LEVEL_HIGH
-+				 0 329 IRQ_TYPE_LEVEL_HIGH
-+				 0 330 IRQ_TYPE_LEVEL_HIGH
-+				 0 331 IRQ_TYPE_LEVEL_HIGH
-+				 0 332 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "error",
-+				"ch0", "ch1", "ch2", "ch3",
-+				"ch4", "ch5", "ch6", "ch7",
-+				"ch8", "ch9", "ch10", "ch11",
-+				"ch12";
-+		clocks = <&mstp5_clks R8A7791_CLK_AUDIO_DMAC0>;
-+		clock-names = "fck";
-+		#dma-cells = <1>;
-+		dma-channels = <13>;
-+	};
-+
-+	audma1: dma-controller@ec720000 {
-+		compatible = "renesas,rcar-dmac";
-+		reg = <0 0xec720000 0 0x10000>;
-+		interrupts =	<0 347 IRQ_TYPE_LEVEL_HIGH
-+				 0 333 IRQ_TYPE_LEVEL_HIGH
-+				 0 334 IRQ_TYPE_LEVEL_HIGH
-+				 0 335 IRQ_TYPE_LEVEL_HIGH
-+				 0 336 IRQ_TYPE_LEVEL_HIGH
-+				 0 337 IRQ_TYPE_LEVEL_HIGH
-+				 0 338 IRQ_TYPE_LEVEL_HIGH
-+				 0 339 IRQ_TYPE_LEVEL_HIGH
-+				 0 340 IRQ_TYPE_LEVEL_HIGH
-+				 0 341 IRQ_TYPE_LEVEL_HIGH
-+				 0 342 IRQ_TYPE_LEVEL_HIGH
-+				 0 343 IRQ_TYPE_LEVEL_HIGH
-+				 0 344 IRQ_TYPE_LEVEL_HIGH
-+				 0 345 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "error",
-+				"ch0", "ch1", "ch2", "ch3",
-+				"ch4", "ch5", "ch6", "ch7",
-+				"ch8", "ch9", "ch10", "ch11",
-+				"ch12";
-+		clocks = <&mstp5_clks R8A7791_CLK_AUDIO_DMAC1>;
-+		clock-names = "fck";
-+		#dma-cells = <1>;
-+		dma-channels = <13>;
-+	};
-+
- 	/* The memory map in the User's Manual maps the cores to bus numbers */
- 	i2c0: i2c@e6508000 {
- 		#address-cells = <1>;
-@@ -1053,10 +1109,11 @@
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
--			clocks = <&extal_clk>, <&p_clk>;
-+			clocks = <&hp_clk>, <&hp_clk>, <&extal_clk>, <&p_clk>;
- 			#clock-cells = <1>;
--			renesas,clock-indices = <R8A7791_CLK_THERMAL R8A7791_CLK_PWM>;
--			clock-output-names = "thermal", "pwm";
-+			renesas,clock-indices = <R8A7791_CLK_AUDIO_DMAC0 R8A7791_CLK_AUDIO_DMAC1
-+						 R8A7791_CLK_THERMAL R8A7791_CLK_PWM>;
-+			clock-output-names = "audmac0", "audamc1", "thermal", "pwm";
- 		};
- 		mstp7_clks: mstp7_clks@e615014c {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index dcececd..3ea2bbc 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -69,6 +69,8 @@
- #define R8A7791_CLK_USBDMAC1		31
- 
- /* MSTP5 */
-+#define R8A7791_CLK_AUDIO_DMAC1		1
-+#define R8A7791_CLK_AUDIO_DMAC0		2
- #define R8A7791_CLK_THERMAL		22
- #define R8A7791_CLK_PWM			23
- 
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index e064443..25813da 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1236,6 +1236,7 @@ static void __init eva_init(void)
+ 		{ "A4LC", &hdmi_lcdc_device },
+ 		{ "A4MP", &hdmi_device },
+ 		{ "A4MP", &fsi_device },
++		{ "A4R",  &ceu0_device },
+ 		{ "A4S",  &sh_eth_device },
+ 		{ "A3SP", &pwm_device },
+ 		{ "A3SP", &sdhi0_device },
+diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
+index 8b1af2a..74e6a67 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7740.c
++++ b/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -55,6 +55,9 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
+ 		.gov		= &pm_domain_always_on_gov,
+ 		.suspend	= r8a7740_pd_d4_suspend,
+ 	}, {
++		.genpd.name	= "A4R",
++		.bit_shift	= 5,
++	}, {
+ 		.genpd.name	= "A3RV",
+ 		.bit_shift	= 6,
+ 	}, {
+@@ -78,6 +81,7 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
+ void __init r8a7740_init_pm_domains(void)
+ {
+ 	rmobile_init_domains(r8a7740_pm_domains, ARRAY_SIZE(r8a7740_pm_domains));
++	pm_genpd_add_subdomain_names("A4R", "A3RV");
+ 	pm_genpd_add_subdomain_names("A4S", "A3SP");
+ 	pm_genpd_add_subdomain_names("A4S", "A3SG");
+ }
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index dbf8a93..b77c226 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -746,6 +746,8 @@ static void r8a7740_i2c_workaround(struct platform_device *pdev)
+ void __init r8a7740_add_standard_devices(void)
+ {
+ 	static struct pm_domain_device domain_devices[] __initdata = {
++		{ "A4R",  &tmu0_device },
++		{ "A4R",  &i2c0_device },
+ 		{ "A4S",  &irqpin0_device },
+ 		{ "A4S",  &irqpin1_device },
+ 		{ "A4S",  &irqpin2_device },
 -- 
-1.7.9.5
+2.1.1
 
