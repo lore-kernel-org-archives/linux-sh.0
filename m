@@ -1,44 +1,74 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 04 Nov 2014 01:05:42 +0000
-Subject: [PATCH v6 1/4] usb: renesas_usbhs: gadget: fix NULL pointer dereference in ep_disable()
-Message-Id: <1415063145-4200-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:50:37 +0000
+Subject: [PATCH 07/34] ARM: shmobile: r8a7790: link PCI USB devices to USB PHY
+Message-Id: <538c40e52df32285aa9440995c7345ea1c4d83b4.1415059587.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1415059587.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415059587.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-This patch fixes an issue that the NULL pointer dereference happens
-when we uses g_audio driver. Since the g_audio driver will call
-usb_ep_disable() in afunc_set_alt() before it calls usb_ep_enable(),
-the uep->pipe of renesas usbhs driver will be NULL. So, this patch
-adds a condition to avoid the oops.
+Describe the PCI USB devices that are behind the PCI bridges, adding necessary
+links to the USB PHY device.
 
-Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Fixes: 2f98382dc (usb: renesas_usbhs: Add Renesas USBHS Gadget)
-Cc: <stable@vger.kernel.org> # v3.0+
+Based on the original work by Ben Dooks <ben.dooks@codethink.co.uk>.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/usb/renesas_usbhs/mod_gadget.c |    3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/boot/dts/r8a7790.dtsi | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
 
-diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
-index 2d17c10..294d43c 100644
---- a/drivers/usb/renesas_usbhs/mod_gadget.c
-+++ b/drivers/usb/renesas_usbhs/mod_gadget.c
-@@ -602,6 +602,9 @@ static int usbhsg_ep_disable(struct usb_ep *ep)
- 	struct usbhsg_uep *uep = usbhsg_ep_to_uep(ep);
- 	struct usbhs_pipe *pipe = usbhsg_uep_to_pipe(uep);
- 
-+	if (!pipe)
-+		return -EINVAL;
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 12fb3fc..7b42b25 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1197,6 +1197,20 @@
+ 		interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
+ 				 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
+ 				 0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
 +
- 	usbhsg_pipe_disable(uep);
- 	usbhs_pipe_free(pipe);
++		usb@0,1 {
++			reg = <0x800 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usb0 0>;
++			phy-names = "usb";
++		};
++
++		usb@0,2 {
++			reg = <0x1000 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usb0 0>;
++			phy-names = "usb";
++		};
+ 	};
  
+ 	pci1: pci@ee0b0000 {
+@@ -1237,6 +1251,20 @@
+ 		interrupt-map = <0x0000 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
+ 				 0x0800 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
+ 				 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
++
++		usb@0,1 {
++			reg = <0x800 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usb2 0>;
++			phy-names = "usb";
++		};
++
++		usb@0,2 {
++			reg = <0x1000 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usb2 0>;
++			phy-names = "usb";
++		};
+ 	};
+ 
+ 	pciec: pcie@fe000000 {
 -- 
-1.7.9.5
+2.1.1
 
