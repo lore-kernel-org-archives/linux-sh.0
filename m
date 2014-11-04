@@ -1,46 +1,41 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Wed, 19 Nov 2014 22:58:27 +0000
-Subject: [PATCH] serial: sh-sci: Change checking for error rate of HSCIF
-Message-Id: <1416437907-15160-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:49:53 +0000
+Subject: [PATCH 05/11] ARM: shmobile: r8a7740: Add A3RV pm domain support
+Message-Id: <995d925058b63f8300b20d458d941a8a1306d8fb.1415058794.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1415058794.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415058794.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org
-Cc: horms@verge.net.au, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-This changes negative values of error rate to be checked, because these
-values are valid as error rate. And this changes in the process of adopting
-a value close to 0.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Add support for the A3RV power domain.
+This domain contains the VPU5F and VCP1 hardware blocks, which are
+currently not used by any driver.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+ arch/arm/mach-shmobile/pm-r8a7740.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 3081e46..ae7ac07 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1812,9 +1812,6 @@ static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq,
- 			err = DIV_ROUND_CLOSEST(freq, ((br + 1) * bps * sr *
- 					       (1 << (2 * c + 1)) / 1000)) -
- 					       1000;
--			if (err < 0)
--				continue;
--
- 			/* Calc recv margin
- 			 * M: Receive margin (%)
- 			 * N: Ratio of bit rate to clock (N = sampling rate)
-@@ -1829,7 +1826,7 @@ static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq,
- 			 */
- 			recv_margin = abs((500 -
- 					DIV_ROUND_CLOSEST(1000, sr << 1)) / 10);
--			if (min_err > err) {
-+			if (abs(min_err) > abs(err)) {
- 				min_err = err;
- 				recv_max_margin = recv_margin;
- 			} else if ((min_err = err) &&
+diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
+index e3f1464..1d91603 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7740.c
++++ b/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -37,6 +37,9 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
+ 		.genpd.name	= "A4LC",
+ 		.bit_shift	= 1,
+ 	}, {
++		.genpd.name	= "A3RV",
++		.bit_shift	= 6,
++	}, {
+ 		.genpd.name	= "A4S",
+ 		.bit_shift	= 10,
+ 		.gov		= &pm_domain_always_on_gov,
 -- 
 2.1.1
 
