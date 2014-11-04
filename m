@@ -1,92 +1,48 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 03 Nov 2014 15:34:51 +0000
-Subject: [PATCH v4 4/9] ARM: shmobile: R-Mobile: Use generic_pm_domain.attach_dev() for pm_clk setup
-Message-Id: <1415028896-9005-5-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:50:09 +0000
+Subject: [PATCH 4/4] ARM: shmobile: Select CONFIG_ZONE_DMA when CONFIG_ARM_LPAE is enabled
+Message-Id: <3794705aeb318c431c07072f04380c78cc5a84ac.1415058939.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415028896-9005-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1415028896-9005-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1415058939.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415058939.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Use the just introduced genpd attach/detach callbacks to register the
-devices' module clocks, instead of doing it directly, to make it
-DT-proof.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
+Most IP cores on ARM Renesas platforms can only address 32 bits of
+physical memory for DMA. Without CONFIG_ZONE_DMA enabled and with the
+recent CMA highmem allocation support, the default CMA zone is reserved
+above the 4GiB limit when LPAE is enabled, resulting in various driver
+failures.
+
+Fix the problem by selecting CONFIG_ZONE_DMA. Other options to
+investigate in the future would be to either enable IOMMU support or use
+custom CMA reservations for peripherals not supporting LPAE.
+
+While not a strict dependency, the "[PATCH 0/4] Low/high memory CMA
+reservation fixes" series is also required to fix a different but related CMA
+allocation problem.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v4:
-  - Add Reviewed-by,
-  - Add missing pm_clk_create()/pm_clk_destroy() calls,
-  - Update for attach_dev() returning an error code again,
-v3:
-  - Update for callback signature changes,
-v2:
-  - New.
+ arch/arm/mach-shmobile/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
----
- arch/arm/mach-shmobile/pm-rmobile.c | 32 ++++++++++++++++++++++++++++++--
- 1 file changed, 30 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
-index 717e6413d29cb998..068608d5f54a9a64 100644
---- a/arch/arm/mach-shmobile/pm-rmobile.c
-+++ b/arch/arm/mach-shmobile/pm-rmobile.c
-@@ -101,6 +101,34 @@ static bool rmobile_pd_active_wakeup(struct device *dev)
- 	return true;
- }
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 21f457b..6bc018f 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -1,5 +1,6 @@
+ config ARCH_SHMOBILE
+ 	bool
++	select ZONE_DMA if ARM_LPAE
  
-+static int rmobile_pd_attach_dev(struct device *dev)
-+{
-+	int error;
-+
-+	error = pm_clk_create(dev);
-+	if (error) {
-+		dev_err(dev, "pm_clk_create failed %d\n", error);
-+		return error;
-+	}
-+
-+	error = pm_clk_add(dev, NULL);
-+	if (error) {
-+		dev_err(dev, "pm_clk_add failed %d\n", error);
-+		goto fail;
-+	}
-+
-+	return 0;
-+
-+fail:
-+	pm_clk_destroy(dev);
-+	return error;
-+}
-+
-+static void rmobile_pd_detach_dev(struct device *dev)
-+{
-+	pm_clk_destroy(dev);
-+}
-+
- static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
- {
- 	struct generic_pm_domain *genpd = &rmobile_pd->genpd;
-@@ -112,6 +140,8 @@ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
- 	genpd->dev_ops.active_wakeup	= rmobile_pd_active_wakeup;
- 	genpd->power_off		= rmobile_pd_power_down;
- 	genpd->power_on			= rmobile_pd_power_up;
-+	genpd->attach_dev		= rmobile_pd_attach_dev;
-+	genpd->detach_dev		= rmobile_pd_detach_dev;
- 	__rmobile_pd_power_up(rmobile_pd, false);
- }
- 
-@@ -130,8 +160,6 @@ void rmobile_add_device_to_domain_td(const char *domain_name,
- 	struct device *dev = &pdev->dev;
- 
- 	__pm_genpd_name_add_device(domain_name, dev, td);
--	if (pm_clk_no_clocks(dev))
--		pm_clk_add(dev, NULL);
- }
- 
- void rmobile_add_devices_to_domains(struct pm_domain_device data[],
+ config PM_RCAR
+ 	bool
 -- 
-1.9.1
+2.1.1
 
