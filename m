@@ -1,41 +1,44 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 04 Nov 2014 00:14:32 +0000
-Subject: Re: [PATCH] ARM: shmobile: ape6evm: Enable PM Runtime in defconfig
-Message-Id: <20141104001432.GC20174@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:50:52 +0000
+Subject: [PATCH 22/34] ARM: shmobile: r8a7791: add USB3.0 device node
+Message-Id: <c196931ece017a0aeeef4ee6d4fbb5adeb7dfd0a.1415059587.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414634362-14204-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1414634362-14204-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1415059587.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415059587.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Oct 30, 2014 at 10:59:22AM +0900, Simon Horman wrote:
-> This is consistent with other shmobile defconfigs.
-> 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> ---
-> 
-> Based on renesas-devel-20141030-v3.18-rc2
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-I have queued up this change.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-> 
->  arch/arm/configs/ape6evm_defconfig | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/arch/arm/configs/ape6evm_defconfig b/arch/arm/configs/ape6evm_defconfig
-> index b54b28f..db81d8c 100644
-> --- a/arch/arm/configs/ape6evm_defconfig
-> +++ b/arch/arm/configs/ape6evm_defconfig
-> @@ -33,6 +33,7 @@ CONFIG_ARM_APPENDED_DTB=y
->  CONFIG_VFP=y
->  CONFIG_NEON=y
->  CONFIG_BINFMT_MISC=y
-> +CONFIG_PM_RUNTIME=y
->  CONFIG_NET=y
->  CONFIG_PACKET=y
->  CONFIG_UNIX=y
-> -- 
-> 2.1.1
-> 
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 6ce7819..d55335e 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1182,6 +1182,16 @@
+ 		status = "disabled";
+ 	};
+ 
++	xhci: usb@ee000000 {
++		compatible = "renesas,xhci-r8a7791";
++		reg = <0 0xee000000 0 0xc00>;
++		interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7791_CLK_SSUSB>;
++		phys = <&usb2 1>;
++		phy-names = "usb";
++		status = "disabled";
++	};
++
+ 	pci0: pci@ee090000 {
+ 		compatible = "renesas,pci-r8a7791";
+ 		device_type = "pci";
+-- 
+2.1.1
+
