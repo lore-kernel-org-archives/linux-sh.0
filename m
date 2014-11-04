@@ -1,41 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Nov 2014 00:54:38 +0000
-Subject: [PATCH 12/29] ARM: shmobile: koelsch: fixup I2C2 clock frequency
-Message-Id: <a8d943ed902bdbef05b64b7ad7ed8878a967a286.1416476366.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 04 Nov 2014 01:50:00 +0000
+Subject: [PATCH 21/23 v3] ARM: shmobile: multiplatform: add R-Car DMAC support on defconfig
+Message-Id: <8761ev91ke.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1416476366.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Current Koelsch I2C2 has 400kHz settings,
-but, ak4643 audio codec chip which is connected to I2C2 can't
-work such frequency.
-Fixup I2C2 clock frequency to 100kHz.
-
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+v2 -> v3
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 191f32b..59e4251 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -425,7 +425,7 @@
- 	pinctrl-names = "default";
- 
- 	status = "okay";
--	clock-frequency = <400000>;
-+	clock-frequency = <100000>;
- 
- 	composite-in@20 {
- 		compatible = "adi,adv7180";
+ - no change
+
+ arch/arm/configs/shmobile_defconfig |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index c8201a9..b32afae 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -145,6 +145,7 @@ CONFIG_RTC_CLASS=y
+ CONFIG_RTC_DRV_S35390A=y
+ CONFIG_DMADEVICES=y
+ CONFIG_SH_DMAE=y
++CONFIG_RCAR_DMAC=y
+ # CONFIG_IOMMU_SUPPORT is not set
+ CONFIG_PWM=y
+ CONFIG_PWM_RENESAS_TPU=y
 -- 
-2.1.1
+1.7.9.5
 
