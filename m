@@ -1,46 +1,44 @@
-From: =?utf-8?B?U8O2cmVu?= Brinkmann <soren.brinkmann@xilinx.com>
-Date: Wed, 12 Nov 2014 19:38:58 +0000
-Subject: Re: [PATCH 2/7] pinctrl: pinconf-generic: Infer map type from DT property
-Message-Id: <02ceb46374884cbeaf0335ac44b9ba45@BY2FFO11FD043.protection.gbl>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:50:19 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Boards Cleanups for v3.19
+Message-Id: <cover.1415059054.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415041531-15520-1-git-send-email-soren.brinkmann@xilinx.com>
- <1415041531-15520-3-git-send-email-soren.brinkmann@xilinx.com>
- <CACRpkdbOLMT1vfFg=CAU_VHdjxPWn_Ybso=+8Asp=mXhmNBRSA@mail.gmail.com>
-In-Reply-To: <CACRpkdbOLMT1vfFg=CAU_VHdjxPWn_Ybso=+8Asp=mXhmNBRSA@mail.gmail.com>
+References: <cover.1381222967.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, 2014-11-11 at 01:47PM +0100, Linus Walleij wrote:
-> On Mon, Nov 3, 2014 at 8:05 PM, Soren Brinkmann
-> <soren.brinkmann@xilinx.com> wrote:
->=20
-> > With the new 'groups' property, the DT parser can infer the map type
-> > from the fact whether 'pins' or 'groups' is used to specify the pin
-> > group to work on.
-> > To maintain backwards compatibitliy with current usage of the DT
-> > binding, this is only done when an invalid map type is passed to the
-> > parsing function.
->=20
-> So that is this:
->=20
-> > +               if (type =3D PIN_MAP_TYPE_INVALID)
-> > +                       type =3D PIN_MAP_TYPE_CONFIGS_GROUP;
-> > +               dt_pin_specifier =3D "groups";
->=20
-> This is just kludgy. There are only two kernel-internal users of this fun=
-ction,
-> refactor the function signature and change the other callers over instead,
-> patch the drivers.
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Just looking into this, one user besides those two drivers is
-pinconf-generic: pinconf_generic_dt_node_to_map() which is called from
- pinconf_generic_dt_node_to_map_pin() and
- pinconf_generic_dt_node_to_map_group()
+Please consider these second round of Renesas ARM based SoC boards cleanups for v3.19.
 
-And those would be a couple of more users. That's why I chose to not
-change the behavior since this adds another 4 drivers to the list of
-users that might depend on certain behavior.
+This pull request is based on the previous round of
+such requests, tagged as renesas-boards-cleanups-for-v3.19,
+which I have already sent a pull-request for.
 
-	S=C3=B6ren
+
+The following changes since commit f4115f25c11790646351df243dae070a7cf80163:
+
+  ARM: shmobile: armadillo800eva: Sort includes (2014-10-24 10:50:47 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards-cleanups2-for-v3.19
+
+for you to fetch changes up to 803fc9b590f74ef1066be328f2f33c2b285ca3af:
+
+  ARM: shmobile: marzen-reference: Don't include legacy clock.h (2014-10-30 09:51:35 +0900)
+
+----------------------------------------------------------------
+Second Round of Renesas ARM Based SoC Boards Cleanups for v3.19
+
+* marzen-reference: Don't include legacy clock.h
+
+----------------------------------------------------------------
+Laurent Pinchart (1):
+      ARM: shmobile: marzen-reference: Don't include legacy clock.h
+
+ arch/arm/mach-shmobile/board-marzen-reference.c | 1 -
+ 1 file changed, 1 deletion(-)
