@@ -1,51 +1,45 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 18 Nov 2014 16:04:52 +0000
-Subject: [PATCH 0/3] i2c: slave support framework for Linux devices
-Message-Id: <1416326695-13083-1-git-send-email-wsa@the-dreams.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 04 Nov 2014 01:45:58 +0000
+Subject: [PATCH 03/23 v3] ARM: shmobile: r8a7790: Add Audio DMAC peri peri devices to DT
+Message-Id: <87vbmv91r4.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Finally, here is my take on the often desired feature that Linux can not only
-be an I2C master, but also an I2C slave. Since RFC, most open issues have been
-dealt with. Find details in the patch descriptions. Documentation is still
-missing and will come later this or next week, but surely early enough for
-the 3.19 release which this series wants to go in. Yet, I'd like to encourage
-code-review and build-testing already.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Basically, an I2C slave is a standard I2C client providing a callback function.
-When registering as a slave, the connection to the I2C adapter is made which
-uses the callback when a slave event happens. That splits the HW support
-(enabling slave mode on the adapter) and SW support (here a generic eeprom
-simulator) nicely IMO.
+Instantiate the Audio DMAC peri peri controllers
+in the r8a7790 device tree.
 
-The patches have been tested with a Renesas R8A7790 based Lager board. They are
-based on top of 3.18-rc5, but will easily apply to renesas/devel. A git tree
-can be found here:
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v2 -> v3
 
-git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git i2c/slave-support
+ - audio-dma-pp -> dma-controller
 
-Comments welcome! Thanks,
+ arch/arm/boot/dts/r8a7790.dtsi |    7 +++++++
+ 1 file changed, 7 insertions(+)
 
-   Wolfram
-
-
-Wolfram Sang (3):
-  i2c: core changes for slave support
-  i2c: slave-eeprom: add eeprom simulator driver
-  i2c: rcar: add slave support
-
- drivers/i2c/Kconfig            |  10 +++
- drivers/i2c/Makefile           |   1 +
- drivers/i2c/busses/i2c-rcar.c  | 125 +++++++++++++++++++++++++++---
- drivers/i2c/i2c-core.c         |  49 ++++++++++++
- drivers/i2c/i2c-slave-eeprom.c | 170 +++++++++++++++++++++++++++++++++++++++++
- include/linux/i2c.h            |  29 +++++++
- 6 files changed, 375 insertions(+), 9 deletions(-)
- create mode 100644 drivers/i2c/i2c-slave-eeprom.c
-
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index a46574b..dcb74a5 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -369,6 +369,13 @@
+ 		dma-channels = <13>;
+ 	};
+ 
++	audmapp: dma-controller@ec740000 {
++		compatible = "renesas,rcar-audmapp";
++		#dma-cells = <1>;
++
++		reg = <0 0xec740000 0 0x200>;
++	};
++
+ 	i2c0: i2c@e6508000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
 -- 
-2.1.1
+1.7.9.5
 
