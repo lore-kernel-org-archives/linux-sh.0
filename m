@@ -1,39 +1,44 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 10 Nov 2014 01:32:35 +0000
-Subject: [PATCH 3/3] ARM: shmobile: Enable PCI domains for R-Car Gen2 devices
-Message-Id: <950a3f0e7dd32c372c9957d5c050b08de7ec9e56.1415581286.git.horms+renesas@verge.net.au>
+From: Olof Johansson <olof@lixom.net>
+Date: Tue, 04 Nov 2014 22:39:37 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC Soc Cleanups for v3.19
+Message-Id: <20141104223937.GG5908@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415581286.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415581286.git.horms+renesas@verge.net.au>
+References: <cover.1414556645.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1414556645.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Phil Edworthy <phil.edworthy@renesas.com>
+On Wed, Oct 29, 2014 at 02:00:05PM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
+> 
+> Please consider these Renesas ARM based SoC soc cleanups for v3.19.
+> 
+> 
+> The following changes since commit f114040e3ea6e07372334ade75d1ee0775c355e1:
+> 
+>   Linux 3.18-rc1 (2014-10-19 18:08:38 -0700)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-cleanups-for-v3.19
+> 
+> for you to fetch changes up to dac95365dc2683df55c4e221e2f669a056863307:
+> 
+>   ARM: shmobile: sh73a0: Remove wrapper sh73a0_init_delay() (2014-10-24 13:07:01 +0900)
+> 
+> ----------------------------------------------------------------
+> Renesas ARM Based SoC Soc Cleanups for v3.19
+> 
+> * Remove sh73a0_init_delay and r8a7778_init_delay wrappers
+> 
+> ----------------------------------------------------------------
+> Geert Uytterhoeven (2):
+>       ARM: shmobile: r8a7778: Remove wrapper r8a7778_init_delay()
+>       ARM: shmobile: sh73a0: Remove wrapper sh73a0_init_delay()
 
-The PCI core will soon automatically handle the PCI domain number,
-allowing the internal PCI and external PCIe bridges work at the same time.
-In order for that to work, we need to enable PCI_DOMAINS.
+Merged.
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/Kconfig | 1 +
- 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 6bc018f..b0a9e1a 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -19,6 +19,7 @@ config ARCH_RCAR_GEN2
- 	select PM_RCAR if PM || SMP
- 	select RENESAS_IRQC
- 	select SYS_SUPPORTS_SH_CMT
-+	select PCI_DOMAINS if PCI
- 
- config ARCH_RMOBILE
- 	bool
--- 
-2.1.1
-
+-Olof
