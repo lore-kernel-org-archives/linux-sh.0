@@ -1,191 +1,133 @@
-From: Soren Brinkmann <soren.brinkmann@xilinx.com>
-Date: Fri, 28 Nov 2014 01:26:33 +0000
-Subject: [PATCH v2 7/7] pinctrl: qcom-spmi-gpio: Migrate to pinconf-generic
-Message-Id: <1417137993-8337-8-git-send-email-soren.brinkmann@xilinx.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:50:08 +0000
+Subject: [PATCH 3/4] ARM: shmobile: rcar-gen2: Add CA7 arch_timer initialization for r8a7794
+Message-Id: <9ce3fa6816c2fb59d128248c9b0509aef1c5dae7.1415058939.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1417137993-8337-1-git-send-email-soren.brinkmann@xilinx.com>
-In-Reply-To: <1417137993-8337-1-git-send-email-soren.brinkmann@xilinx.com>
+References: <cover.1415058939.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415058939.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Instead of the driver caring about implementation details like device
-tree, just provide information about driver specific pinconf parameters
-to pinconf-generic which takes care of parsing the DT.
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Signed-off-by: Soren Brinkmann <soren.brinkmann@xilinx.com>
----
-This is compile tested only. So, it's likely that it needs more tweaking
-to make it actually work on HW. But it illustrates the potential
-benefits of the pinconf-generic changes in this series.
----
- drivers/pinctrl/qcom/pinctrl-spmi-gpio.c | 125 +++----------------------------
- 1 file changed, 11 insertions(+), 114 deletions(-)
+On E2, the arch timer is hooked up to a different clock, and the CA7's arch
+timer CNTVOFF register must be initialized.
 
-diff --git a/drivers/pinctrl/qcom/pinctrl-spmi-gpio.c b/drivers/pinctrl/qcom/pinctrl-spmi-gpio.c
-index b863b5080890..2db85e53ef73 100644
---- a/drivers/pinctrl/qcom/pinctrl-spmi-gpio.c
-+++ b/drivers/pinctrl/qcom/pinctrl-spmi-gpio.c
-@@ -131,14 +131,14 @@ struct pmic_gpio_state {
- 	struct gpio_chip chip;
- };
+Based on work by Hisashi Nakamura.
+
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 72 ++++++++++++++++++++++----------
+ 1 file changed, 49 insertions(+), 23 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+index 42d5b43..7ed9279 100644
+--- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+@@ -3,6 +3,7 @@
+  *
+  * Copyright (C) 2013  Renesas Solutions Corp.
+  * Copyright (C) 2013  Magnus Damm
++ * Copyright (C) 2014  Ulrich Hecht
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+@@ -24,6 +25,7 @@
+ #include <linux/dma-contiguous.h>
+ #include <linux/io.h>
+ #include <linux/kernel.h>
++#include <linux/of.h>
+ #include <linux/of_fdt.h>
+ #include <asm/mach/arch.h>
+ #include "common.h"
+@@ -54,37 +56,61 @@ void __init rcar_gen2_timer_init(void)
+ {
+ #if defined(CONFIG_ARM_ARCH_TIMER) || defined(CONFIG_COMMON_CLK)
+ 	u32 mode = rcar_gen2_read_mode_pins();
++	bool is_e2 = (bool)of_find_compatible_node(NULL, NULL,
++		"renesas,r8a7794");
+ #endif
+ #ifdef CONFIG_ARM_ARCH_TIMER
+ 	void __iomem *base;
+ 	int extal_mhz = 0;
+ 	u32 freq;
  
--struct pmic_gpio_bindings {
--	const char	*property;
--	unsigned	param;
-+static const struct pinconf_generic_dt_params pmic_gpio_bindings[] = {
-+	{"qcom,pull-up-strength",	PMIC_GPIO_CONF_PULL_UP,		0},
-+	{"qcom,drive-strength",		PMIC_GPIO_CONF_STRENGTH,	0},
- };
+-	/* At Linux boot time the r8a7790 arch timer comes up
+-	 * with the counter disabled. Moreover, it may also report
+-	 * a potentially incorrect fixed 13 MHz frequency. To be
+-	 * correct these registers need to be updated to use the
+-	 * frequency EXTAL / 2 which can be determined by the MD pins.
+-	 */
+-
+-	switch (mode & (MD(14) | MD(13))) {
+-	case 0:
+-		extal_mhz = 15;
+-		break;
+-	case MD(13):
+-		extal_mhz = 20;
+-		break;
+-	case MD(14):
+-		extal_mhz = 26;
+-		break;
+-	case MD(13) | MD(14):
+-		extal_mhz = 30;
+-		break;
++	if (is_e2) {
++		freq = 260000000 / 8;	/* ZS / 8 */
++		/* CNTVOFF has to be initialized either from non-secure
++		 * Hypervisor mode or secure Monitor mode with SCR.NS=1.
++		 * If TrustZone is enabled then it should be handled by the
++		 * secure code.
++		 */
++		asm volatile(
++		"	cps	0x16\n"
++		"	mrc	p15, 0, r1, c1, c1, 0\n"
++		"	orr	r0, r1, #1\n"
++		"	mcr	p15, 0, r0, c1, c1, 0\n"
++		"	isb\n"
++		"	mov	r0, #0\n"
++		"	mcrr	p15, 4, r0, r0, c14\n"
++		"	isb\n"
++		"	mcr	p15, 0, r1, c1, c1, 0\n"
++		"	isb\n"
++		"	cps	0x13\n"
++			: : : "r0", "r1");
++	} else {
++		/* At Linux boot time the r8a7790 arch timer comes up
++		 * with the counter disabled. Moreover, it may also report
++		 * a potentially incorrect fixed 13 MHz frequency. To be
++		 * correct these registers need to be updated to use the
++		 * frequency EXTAL / 2 which can be determined by the MD pins.
++		 */
++
++		switch (mode & (MD(14) | MD(13))) {
++		case 0:
++			extal_mhz = 15;
++			break;
++		case MD(13):
++			extal_mhz = 20;
++			break;
++		case MD(14):
++			extal_mhz = 26;
++			break;
++		case MD(13) | MD(14):
++			extal_mhz = 30;
++			break;
++		}
++
++		/* The arch timer frequency equals EXTAL / 2 */
++		freq = extal_mhz * (1000000 / 2);
+ 	}
  
--static struct pmic_gpio_bindings pmic_gpio_bindings[] = {
--	{"qcom,pull-up-strength",	PMIC_GPIO_CONF_PULL_UP},
--	{"qcom,drive-strength",		PMIC_GPIO_CONF_STRENGTH},
-+static const struct pin_config_item pmic_conf_items[] = {
-+	PCONFDUMP(PMIC_GPIO_CONF_PULL_UP,  "pull-up-strength", NULL, true),
-+	PCONFDUMP(PMIC_GPIO_CONF_STRENGTH, "drive-strength", NULL, true),
- };
+-	/* The arch timer frequency equals EXTAL / 2 */
+-	freq = extal_mhz * (1000000 / 2);
+-
+ 	/* Remap "armgcnt address map" space */
+ 	base = ioremap(0xe6080000, PAGE_SIZE);
  
- static const char *const pmic_gpio_groups[] = {
-@@ -209,118 +209,11 @@ static int pmic_gpio_get_group_pins(struct pinctrl_dev *pctldev, unsigned pin,
- 	return 0;
- }
- 
--static int pmic_gpio_parse_dt_config(struct device_node *np,
--				     struct pinctrl_dev *pctldev,
--				     unsigned long **configs,
--				     unsigned int *nconfs)
--{
--	struct pmic_gpio_bindings *par;
--	unsigned long cfg;
--	int ret, i;
--	u32 val;
--
--	for (i = 0; i < ARRAY_SIZE(pmic_gpio_bindings); i++) {
--		par = &pmic_gpio_bindings[i];
--		ret = of_property_read_u32(np, par->property, &val);
--
--		/* property not found */
--		if (ret = -EINVAL)
--			continue;
--
--		/* use zero as default value */
--		if (ret)
--			val = 0;
--
--		dev_dbg(pctldev->dev, "found %s with value %u\n",
--			par->property, val);
--
--		cfg = pinconf_to_config_packed(par->param, val);
--
--		ret = pinctrl_utils_add_config(pctldev, configs, nconfs, cfg);
--		if (ret)
--			return ret;
--	}
--
--	return 0;
--}
--
--static int pmic_gpio_dt_subnode_to_map(struct pinctrl_dev *pctldev,
--				       struct device_node *np,
--				       struct pinctrl_map **map,
--				       unsigned *reserv, unsigned *nmaps,
--				       enum pinctrl_map_type type)
--{
--	unsigned long *configs = NULL;
--	unsigned nconfs = 0;
--	struct property *prop;
--	const char *group;
--	int ret;
--
--	ret = pmic_gpio_parse_dt_config(np, pctldev, &configs, &nconfs);
--	if (ret < 0)
--		return ret;
--
--	if (!nconfs)
--		return 0;
--
--	ret = of_property_count_strings(np, "pins");
--	if (ret < 0)
--		goto exit;
--
--	ret = pinctrl_utils_reserve_map(pctldev, map, reserv, nmaps, ret);
--	if (ret < 0)
--		goto exit;
--
--	of_property_for_each_string(np, "pins", prop, group) {
--		ret = pinctrl_utils_add_map_configs(pctldev, map,
--						    reserv, nmaps, group,
--						    configs, nconfs, type);
--		if (ret < 0)
--			break;
--	}
--exit:
--	kfree(configs);
--	return ret;
--}
--
--static int pmic_gpio_dt_node_to_map(struct pinctrl_dev *pctldev,
--				    struct device_node *np_config,
--				    struct pinctrl_map **map, unsigned *nmaps)
--{
--	enum pinctrl_map_type type;
--	struct device_node *np;
--	unsigned reserv;
--	int ret;
--
--	ret = 0;
--	*map = NULL;
--	*nmaps = 0;
--	reserv = 0;
--	type = PIN_MAP_TYPE_CONFIGS_GROUP;
--
--	for_each_child_of_node(np_config, np) {
--		ret = pinconf_generic_dt_subnode_to_map(pctldev, np, map,
--							&reserv, nmaps, type);
--		if (ret)
--			break;
--
--		ret = pmic_gpio_dt_subnode_to_map(pctldev, np, map, &reserv,
--						  nmaps, type);
--		if (ret)
--			break;
--	}
--
--	if (ret < 0)
--		pinctrl_utils_dt_free_map(pctldev, *map, *nmaps);
--
--	return ret;
--}
--
- static const struct pinctrl_ops pmic_gpio_pinctrl_ops = {
- 	.get_groups_count	= pmic_gpio_get_groups_count,
- 	.get_group_name		= pmic_gpio_get_group_name,
- 	.get_group_pins		= pmic_gpio_get_group_pins,
--	.dt_node_to_map		= pmic_gpio_dt_node_to_map,
-+	.dt_node_to_map		= pinconf_generic_dt_node_to_map_group,
- 	.dt_free_map		= pinctrl_utils_dt_free_map,
- };
- 
-@@ -590,6 +483,7 @@ static void pmic_gpio_config_dbg_show(struct pinctrl_dev *pctldev,
- }
- 
- static const struct pinconf_ops pmic_gpio_pinconf_ops = {
-+	.is_generic			= true,
- 	.pin_config_group_get		= pmic_gpio_config_get,
- 	.pin_config_group_set		= pmic_gpio_config_set,
- 	.pin_config_group_dbg_show	= pmic_gpio_config_dbg_show,
-@@ -848,6 +742,9 @@ static int pmic_gpio_probe(struct platform_device *pdev)
- 	pctrldesc->name = dev_name(dev);
- 	pctrldesc->pins = pindesc;
- 	pctrldesc->npins = npins;
-+	pctrldesc->num_dt_params = ARRAY_SIZE(pmic_gpio_bindings);
-+	pctrldesc->params = pmic_gpio_bindings;
-+	pctrldesc->conf_items = pmic_conf_items;
- 
- 	for (i = 0; i < npins; i++, pindesc++) {
- 		pad = &pads[i];
 -- 
-2.1.3.1.ge241007
+2.1.1
 
