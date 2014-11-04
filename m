@@ -1,196 +1,76 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 05 Nov 2014 15:54:43 +0000
-Subject: Re: [PATCH v3 5/7] ARM: shmobile: sh73a0: add MSTP clock assignments to DT
-Message-Id: <1467004.In07WrlpG8@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:49:59 +0000
+Subject: [PATCH 11/11] ARM: shmobile: r8a7740: Add A3SM pm domain support
+Message-Id: <dc4470e177973feedd82596969d86468a1695b1e.1415058794.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1415058794.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415058794.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Ulrich,
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Thank you for the patch.
+Add support for the A3SM power domain, and hook it up as a subdomain of
+A4S.
 
-On Tuesday 28 October 2014 18:02:14 Ulrich Hecht wrote:
-> Assigns clocks to cmt1, i2c*, mmcif, sdhi*, and scif*.
-> 
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+This domain contains the System CPU (Cortex-A9) hardware block. Hence
+move the special CPU handling from A4S to A3SM.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/pm-r8a7740.c | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
 
-> ---
->  arch/arm/boot/dts/sh73a0.dtsi | 29 +++++++++++++++++++++++++++++
->  1 file changed, 29 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-> index daa486c..de08c10 100644
-> --- a/arch/arm/boot/dts/sh73a0.dtsi
-> +++ b/arch/arm/boot/dts/sh73a0.dtsi
-> @@ -56,6 +56,8 @@
-> 
->  		renesas,channels-mask = <0x3f>;
-> 
-> +		clocks = <&mstp3_clks SH73A0_CLK_CMT1>;
-> +		clock-names = "fck";
->  		status = "disabled";
->  	};
-> 
-> @@ -145,6 +147,7 @@
->  			      0 168 IRQ_TYPE_LEVEL_HIGH
->  			      0 169 IRQ_TYPE_LEVEL_HIGH
->  			      0 170 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp1_clks SH73A0_CLK_IIC0>;
->  		status = "disabled";
->  	};
-> 
-> @@ -157,6 +160,7 @@
->  			      0 52 IRQ_TYPE_LEVEL_HIGH
->  			      0 53 IRQ_TYPE_LEVEL_HIGH
->  			      0 54 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp3_clks SH73A0_CLK_IIC1>;
->  		status = "disabled";
->  	};
-> 
-> @@ -169,6 +173,7 @@
->  			      0 172 IRQ_TYPE_LEVEL_HIGH
->  			      0 173 IRQ_TYPE_LEVEL_HIGH
->  			      0 174 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp0_clks SH73A0_CLK_IIC2>;
->  		status = "disabled";
->  	};
-> 
-> @@ -181,6 +186,7 @@
->  			      0 184 IRQ_TYPE_LEVEL_HIGH
->  			      0 185 IRQ_TYPE_LEVEL_HIGH
->  			      0 186 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp4_clks SH73A0_CLK_IIC3>;
->  		status = "disabled";
->  	};
-> 
-> @@ -193,6 +199,7 @@
->  			      0 188 IRQ_TYPE_LEVEL_HIGH
->  			      0 189 IRQ_TYPE_LEVEL_HIGH
->  			      0 190 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp4_clks SH73A0_CLK_IIC4>;
->  		status = "disabled";
->  	};
-> 
-> @@ -202,6 +209,7 @@
->  		interrupts = <0 140 IRQ_TYPE_LEVEL_HIGH
->  			      0 141 IRQ_TYPE_LEVEL_HIGH>;
->  		reg-io-width = <4>;
-> +		clocks = <&mstp3_clks SH73A0_CLK_MMCIF0>;
->  		status = "disabled";
->  	};
-> 
-> @@ -212,6 +220,7 @@
->  			      0 84 IRQ_TYPE_LEVEL_HIGH
->  			      0 85 IRQ_TYPE_LEVEL_HIGH>;
->  		cap-sd-highspeed;
-> +		clocks = <&mstp3_clks SH73A0_CLK_SDHI0>;
->  		status = "disabled";
->  	};
-> 
-> @@ -223,6 +232,7 @@
->  			      0 89 IRQ_TYPE_LEVEL_HIGH>;
->  		toshiba,mmc-wrprotect-disable;
->  		cap-sd-highspeed;
-> +		clocks = <&mstp3_clks SH73A0_CLK_SDHI1>;
->  		status = "disabled";
->  	};
-> 
-> @@ -233,6 +243,7 @@
->  			      0 105 IRQ_TYPE_LEVEL_HIGH>;
->  		toshiba,mmc-wrprotect-disable;
->  		cap-sd-highspeed;
-> +		clocks = <&mstp3_clks SH73A0_CLK_SDHI2>;
->  		status = "disabled";
->  	};
-> 
-> @@ -240,6 +251,8 @@
->  		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
->  		reg = <0xe6c40000 0x100>;
->  		interrupts = <0 72 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp2_clks SH73A0_CLK_SCIFA0>;
-> +		clock-names = "sci_ick";
->  		status = "disabled";
->  	};
-> 
-> @@ -247,6 +260,8 @@
->  		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
->  		reg = <0xe6c50000 0x100>;
->  		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp2_clks SH73A0_CLK_SCIFA1>;
-> +		clock-names = "sci_ick";
->  		status = "disabled";
->  	};
-> 
-> @@ -254,6 +269,8 @@
->  		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
->  		reg = <0xe6c60000 0x100>;
->  		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp2_clks SH73A0_CLK_SCIFA2>;
-> +		clock-names = "sci_ick";
->  		status = "disabled";
->  	};
-> 
-> @@ -261,6 +278,8 @@
->  		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
->  		reg = <0xe6c70000 0x100>;
->  		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp2_clks SH73A0_CLK_SCIFA3>;
-> +		clock-names = "sci_ick";
->  		status = "disabled";
->  	};
-> 
-> @@ -268,6 +287,8 @@
->  		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
->  		reg = <0xe6c80000 0x100>;
->  		interrupts = <0 78 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp2_clks SH73A0_CLK_SCIFA4>;
-> +		clock-names = "sci_ick";
->  		status = "disabled";
->  	};
-> 
-> @@ -275,6 +296,8 @@
->  		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
->  		reg = <0xe6cb0000 0x100>;
->  		interrupts = <0 79 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp2_clks SH73A0_CLK_SCIFA5>;
-> +		clock-names = "sci_ick";
->  		status = "disabled";
->  	};
-> 
-> @@ -282,6 +305,8 @@
->  		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
->  		reg = <0xe6cc0000 0x100>;
->  		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp3_clks SH73A0_CLK_SCIFA6>;
-> +		clock-names = "sci_ick";
->  		status = "disabled";
->  	};
-> 
-> @@ -289,6 +314,8 @@
->  		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
->  		reg = <0xe6cd0000 0x100>;
->  		interrupts = <0 143 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp2_clks SH73A0_CLK_SCIFA7>;
-> +		clock-names = "sci_ick";
->  		status = "disabled";
->  	};
-> 
-> @@ -296,6 +323,8 @@
->  		compatible = "renesas,scifb-sh73a0", "renesas,scifb";
->  		reg = <0xe6c30000 0x100>;
->  		interrupts = <0 80 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp2_clks SH73A0_CLK_SCIFB>;
-> +		clock-names = "sci_ick";
->  		status = "disabled";
->  	};
-
+diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
+index 27117a8..ac2eecd 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7740.c
++++ b/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -14,10 +14,10 @@
+ #include "pm-rmobile.h"
+ 
+ #if defined(CONFIG_PM) && !defined(CONFIG_ARCH_MULTIPLATFORM)
+-static int r8a7740_pd_a4s_suspend(void)
++static int r8a7740_pd_a3sm_suspend(void)
+ {
+ 	/*
+-	 * The A4S domain contains the CPU core and therefore it should
++	 * The A3SM domain contains the CPU core and therefore it should
+ 	 * only be turned off if the CPU is not in use.
+ 	 */
+ 	return -EBUSY;
+@@ -63,9 +63,7 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
+ 	}, {
+ 		.genpd.name	= "A4S",
+ 		.bit_shift	= 10,
+-		.gov		= &pm_domain_always_on_gov,
+ 		.no_debug	= true,
+-		.suspend	= r8a7740_pd_a4s_suspend,
+ 	}, {
+ 		.genpd.name	= "A3SP",
+ 		.bit_shift	= 11,
+@@ -73,6 +71,11 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
+ 		.no_debug	= true,
+ 		.suspend	= r8a7740_pd_a3sp_suspend,
+ 	}, {
++		.genpd.name	= "A3SM",
++		.bit_shift	= 12,
++		.gov		= &pm_domain_always_on_gov,
++		.suspend	= r8a7740_pd_a3sm_suspend,
++	}, {
+ 		.genpd.name	= "A3SG",
+ 		.bit_shift	= 13,
+ 	}, {
+@@ -86,6 +89,7 @@ void __init r8a7740_init_pm_domains(void)
+ 	rmobile_init_domains(r8a7740_pm_domains, ARRAY_SIZE(r8a7740_pm_domains));
+ 	pm_genpd_add_subdomain_names("A4R", "A3RV");
+ 	pm_genpd_add_subdomain_names("A4S", "A3SP");
++	pm_genpd_add_subdomain_names("A4S", "A3SM");
+ 	pm_genpd_add_subdomain_names("A4S", "A3SG");
+ }
+ #endif /* CONFIG_PM && !CONFIG_ARCH_MULTIPLATFORM */
 -- 
-Regards,
-
-Laurent Pinchart
+2.1.1
 
