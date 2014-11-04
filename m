@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:51:03 +0000
-Subject: [PATCH 33/34] ARM: shmobile: r8a7791: Reference DMA channels in MMCIF DT node
-Message-Id: <16b355b4aa234f4358c288e931e4cdefbbcfc4b0.1415059587.git.horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:50:54 +0000
+Subject: [PATCH 24/34] ARM: shmobile: lager: enable HS-USB
+Message-Id: <e03074a7b5fdd2834a9fbbe77bc52a1ddb0d017f.1415059587.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1415059587.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1415059587.git.horms+renesas@verge.net.au>
@@ -10,32 +10,55 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Add references to the transmit and receive DMA channels in the MMCIF
-node.
+Enable HS-USB device for the Lager board, defining the GPIO that the driver
+should check when probing. Since this board doesn't have the OTG ID pin, we
+assume that GP5_18 (USB0_PWEN) is an ID pin because it is 1 when the SW5 is
+in position 2-3 (meaning USB function) and 0 in other positions.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Note that there will be pinctrl-related error messages if both internal PCI
+and HS-USB drivers are enabled but they should be just ignored.
+
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+[Sergei: added pin node and prop, moved device node, fixed summary, supplemented
+changelog]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 2 ++
- 1 file changed, 2 insertions(+)
+ arch/arm/boot/dts/r8a7790-lager.dts | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 8459fe6..a862243 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -405,6 +405,8 @@
- 		reg = <0 0xee200000 0 0x80>;
- 		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7791_CLK_MMCIF0>;
-+		dmas = <&dmac0 0xd1>, <&dmac0 0xd2>;
-+		dma-names = "tx", "rx";
- 		reg-io-width = <4>;
- 		status = "disabled";
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index d869f2a..830f2e8 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -268,6 +268,11 @@
+ 		renesas,function = "iic3";
  	};
+ 
++	hsusb_pins: hsusb {
++		renesas,groups = "usb0_ovc_vbus";
++		renesas,function = "usb0";
++	};
++
+ 	usb0_pins: usb0 {
+ 		renesas,groups = "usb0";
+ 		renesas,function = "usb0";
+@@ -478,6 +483,13 @@
+ 	pinctrl-names = "default";
+ };
+ 
++&hsusb {
++	status = "okay";
++	pinctrl-0 = <&hsusb_pins>;
++	pinctrl-names = "default";
++	renesas,enable-gpio = <&gpio5 18 GPIO_ACTIVE_HIGH>;
++};
++
+ &usbphy {
+ 	status = "okay";
+ };
 -- 
 2.1.1
 
