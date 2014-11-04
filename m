@@ -1,40 +1,30 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 05 Nov 2014 01:56:38 +0000
-Subject: Re: [PATCH 0/2] ARM: shmobile: r8a7791: Correct number of CPU cores
-Message-Id: <20141105015637.GA32470@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 04 Nov 2014 02:14:58 +0000
+Subject: Re: [PATCH 07/12] ARM: shmobile: koelsch: fixup overkill I2C2 clock frequency
+Message-Id: <871tpj90et.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414139589-13605-1-git-send-email-horms+renesas@verge.net.au>
- <20141105003656.GC2017@verge.net.au>
- <CANqRtoT4FezTLYr0RC9QzwwHSTSbMA4aJC70K3J42_O22BAgXw@mail.gmail.com>
-In-Reply-To: <CANqRtoT4FezTLYr0RC9QzwwHSTSbMA4aJC70K3J42_O22BAgXw@mail.gmail.com>
+References: <87r3xo1xak.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87r3xo1xak.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Nov 05, 2014 at 10:23:34AM +0900, Magnus Damm wrote:
-> Hi Simon,
-> 
-> On Wed, Nov 5, 2014 at 9:36 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Fri, Oct 24, 2014 at 05:33:07PM +0900, Simon Horman wrote:
-> >> Hi,
-> >>
-> >> this short series separates AMPU resource data as it is not
-> >> common accross R-Car gen2 SoCs: only the r8a7790 (H1) has the resouces
-> >> described. It then corrects the resource data for the r8a7791,
-> >> the only other SoC currently present in mainline that uses this data.
-> >>
-> >> Based on the renesas-next-20141024-v3.18-rc1 tag of my renesas tree.
-> >>
-> >> Hisashi Nakamura (2):
-> >>   ARM: shmobile: Separate APMU resource data into CPU dependant part
-> >>   ARM: shmobile: r8a7791: Correct number of CPU cores
-> >
-> > I have queued up this series.
-> 
-> Thanks. I didn't say anything so I should probably be silent, but in
-> the future it would make sense to fold in the fix into the original
-> patch to void merging broken stuff.
 
-I'm not quite sure what you are getting at in relation to this series,
-but yes, in general I agree.
+Hi Simon
+
+> > Lager board is expecting that I2C is working with 100000 too.
+> > Can you accept this patch as-is ? if so, I will send 
+> > additional clock frequency 100000 setting patch for both lager/koelsch.
+> > If not, I will send v2 of this patch-set + lager clock frequency patch.
+> 
+> Could send a small patchset that only fixes up all the clock frequency
+> problems? That would be easiest for me.
+
+Done.
+I sent v3 patch-set which includes above
+
+
+Best regards
+---
+Kuninori Morimoto
