@@ -1,241 +1,85 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 10 Nov 2014 09:25:27 +0000
-Subject: Re: [PATCH v4 0/6] sh73a0 common clock framework implementation
-Message-Id: <alpine.DEB.2.10.1411101020290.11544@ayla.of.borg>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 04 Nov 2014 16:05:25 +0000
+Subject: [PATCH] [RFC] cpufreq: Avoid crash in resume on SMP without OPP
+Message-Id: <1415117125-27069-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415292641-30331-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1415292641-30331-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Viresh Kumar <viresh.kumar@linaro.org>
+Cc: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>, Lucas Stach <l.stach@pengutronix.de>, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-	Hi Ulrich,
+When resuming from s2ram on an SMP system without cpufreq operating
+points (e.g. there's no "operating-points" property for the CPU node in
+DT, or the platform doesn't use DT yet), the kernel crashes when
+bringing CPU 1 online:
 
-On Thu, 6 Nov 2014, Ulrich Hecht wrote:
-> This integrates the consistency fixes suggested by Laurent and omits the
-> ethernet clock hack.
+    Enabling non-boot CPUs ...
+    CPU1: Booted secondary processor
+    Unable to handle kernel NULL pointer dereference at virtual address 000=
+0003c
+    pgd =3D ee5e6b00
+    [0000003c] *pgdn579003, *pmdn588003, *pte=00000000
+    Internal error: Oops: a07 [#1] SMP ARM
+    Modules linked in:
+    CPU: 0 PID: 1246 Comm: s2ram Tainted: G        W      3.18.0-rc3-koelsc=
+h-01614-g0377af242bb175c8-dirty #589
+    task: eeec5240 ti: ee704000 task.ti: ee704000
+    PC is at __cpufreq_add_dev.isra.24+0x24c/0x77c
+    LR is at __cpufreq_add_dev.isra.24+0x244/0x77c
+    pc : [<c0298efc>]    lr : [<c0298ef4>]    psr: 60000153
+    sp : ee705d48  ip : ee705d48  fp : ee705d84
+    r10: c04e0450  r9 : 00000000  r8 : 00000001
+    r7 : c05426a8  r6 : 00000001  r5 : 00000001  r4 : 00000000
+    r3 : 00000000  r2 : 00000000  r1 : 20000153  r0 : c0542734
 
-Thanks for your updated series!
+Verify that policy is not NULL before dereferencing it to fix this.
 
-Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
-in combination with:
-
-  - your patch "[PATCH v3 7/7] ARM: shmobile: kzm9g-reference: require ZB clock
-    for Ethernet controller", else the Ethernet doesn't work,
-  - your series "[PATCH v7 0/2] clk: shmobile: DIV6 clock variable parent
-    support",
-  - your patch "[PATCH] ARM: shmobile: sh73a0: add selectable sources to
-    DIV6", which I updated for the series above, result below.
-
-From a93dfe32b2ed92048d812b000c7b80fcf6d87c42 Mon Sep 17 00:00:00 2001
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Tue, 2 Sep 2014 11:13:06 +0200
-Subject: [PATCH] ARM: shmobile: sh73a0: add selectable sources to DIV6
- clocks
-
-Specifies clock sources and register bits.
-
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-[geert: Drop renesas,src-shift/renesas,src-width, pad to 4 or 8 parents]
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/sh73a0.dtsi | 64 ++++++++++++++++++++++++++++++-------------
- 1 file changed, 45 insertions(+), 19 deletions(-)
+Notes:
+  - Is this the right fix?
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 31332c662a409bf2..ccb2b2c54d4711c4 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -410,133 +410,159 @@
- 		vclk1_clk: vclk1_clk@e6150008 {
- 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
- 			reg = <0xe6150008 4>;
--			clocks = <&pll1_div2_clk>;
-+			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
-+				 <&extcki_clk>, <&extal2_clk>, <&main_div2_clk>,
-+				 <&extalr_clk>, <&cpg_clocks SH73A0_CLK_MAIN>,
-+				 <0>;
- 			#clock-cells = <0>;
- 			clock-output-names = "vclk1";
- 		};
- 		vclk2_clk: vclk2_clk@e615000c {
- 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
- 			reg = <0xe615000c 4>;
--			clocks = <&pll1_div2_clk>;
-+			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
-+				 <&extcki_clk>, <&extal2_clk>, <&main_div2_clk>,
-+				 <&extalr_clk>, <&cpg_clocks SH73A0_CLK_MAIN>,
-+				 <0>;
- 			#clock-cells = <0>;
- 			clock-output-names = "vclk2";
- 		};
- 		vclk3_clk: vclk3_clk@e615001c {
- 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
- 			reg = <0xe615001c 4>;
--			clocks = <&pll1_div2_clk>;
-+			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
-+				 <&extcki_clk>, <&extal2_clk>, <&main_div2_clk>,
-+				 <&extalr_clk>, <&cpg_clocks SH73A0_CLK_MAIN>,
-+				 <0>;
- 			#clock-cells = <0>;
- 			clock-output-names = "vclk3";
- 		};
- 		zb_clk: zb_clk@e6150010 {
- 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
- 			reg = <0xe6150010 4>;
--			clocks = <&pll1_div2_clk>;
-+			clocks = <&pll1_div2_clk>,
-+				 <&cpg_clocks SH73A0_CLK_PLL2>, <0>, <0>;
- 			#clock-cells = <0>;
- 			clock-output-names = "zb";
- 		};
- 		flctl_clk: flctl_clk@e6150014 {
- 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
- 			reg = <0xe6150014 4>;
--			clocks = <&pll1_div2_clk>;
-+			clocks = <&pll1_div2_clk>,
-+				 <&cpg_clocks SH73A0_CLK_PLL2>, <0>, <0>;
- 			#clock-cells = <0>;
- 			clock-output-names = "flctlck";
- 		};
- 		sdhi0_clk: sdhi0_clk@e6150074 {
- 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
- 			reg = <0xe6150074 4>;
--			clocks = <&pll1_div2_clk>;
-+			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
-+				 <&pll1_div13_clk>, <0>;
- 			#clock-cells = <0>;
- 			clock-output-names = "sdhi0ck";
- 		};
- 		sdhi1_clk: sdhi1_clk@e6150078 {
- 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
- 			reg = <0xe6150078 4>;
--			clocks = <&pll1_div2_clk>;
-+			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
-+				 <&pll1_div13_clk>, <0>;
- 			#clock-cells = <0>;
- 			clock-output-names = "sdhi1ck";
- 		};
- 		sdhi2_clk: sdhi2_clk@e615007c {
- 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
- 			reg = <0xe615007c 4>;
--			clocks = <&pll1_div2_clk>;
-+			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
-+				 <&pll1_div13_clk>, <0>;
- 			#clock-cells = <0>;
- 			clock-output-names = "sdhi2ck";
- 		};
- 		fsia_clk: fsia_clk@e6150018 {
- 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
- 			reg = <0xe6150018 4>;
--			clocks = <&pll1_div2_clk>;
-+			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
-+				 <&fsiack_clk>, <&fsiack_clk>;
- 			#clock-cells = <0>;
- 			clock-output-names = "fsia";
- 		};
- 		fsib_clk: fsib_clk@e6150090 {
- 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
- 			reg = <0xe6150090 4>;
--			clocks = <&pll1_div2_clk>;
-+			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
-+				 <&fsibck_clk>, <&fsibck_clk>;
- 			#clock-cells = <0>;
- 			clock-output-names = "fsib";
- 		};
- 		sub_clk: sub_clk@e6150080 {
- 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
- 			reg = <0xe6150080 4>;
--			clocks = <&extal2_clk>;
-+			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
-+				 <&extal2_clk>, <&extal2_clk>;
- 			#clock-cells = <0>;
- 			clock-output-names = "sub";
- 		};
- 		spua_clk: spua_clk@e6150084 {
- 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
- 			reg = <0xe6150084 4>;
--			clocks = <&pll1_div2_clk>;
-+			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
-+				 <&extal2_clk>, <&extal2_clk>;
- 			#clock-cells = <0>;
- 			clock-output-names = "spua";
- 		};
- 		spuv_clk: spuv_clk@e6150094 {
- 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
- 			reg = <0xe6150094 4>;
--			clocks = <&pll1_div2_clk>;
-+			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
-+				 <&extal2_clk>, <&extal2_clk>;
- 			#clock-cells = <0>;
- 			clock-output-names = "spuv";
- 		};
- 		msu_clk: msu_clk@e6150088 {
- 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
- 			reg = <0xe6150088 4>;
--			clocks = <&pll1_div2_clk>;
-+			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
-+				 <0>, <0>;
- 			#clock-cells = <0>;
- 			clock-output-names = "msu";
- 		};
- 		hsi_clk: hsi_clk@e615008c {
- 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
- 			reg = <0xe615008c 4>;
--			clocks = <&pll1_div2_clk>;
-+			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
-+				 <&pll1_div7_clk>, <0>;
- 			#clock-cells = <0>;
- 			clock-output-names = "hsi";
- 		};
- 		mfg1_clk: mfg1_clk@e6150098 {
- 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
- 			reg = <0xe6150098 4>;
--			clocks = <&pll1_div2_clk>;
-+			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
-+				 <0>, <0>;
- 			#clock-cells = <0>;
- 			clock-output-names = "mfg1";
- 		};
- 		mfg2_clk: mfg2_clk@e615009c {
- 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
- 			reg = <0xe615009c 4>;
--			clocks = <&pll1_div2_clk>;
-+			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
-+				 <0>, <0>;
- 			#clock-cells = <0>;
- 			clock-output-names = "mfg2";
- 		};
- 		dsit_clk: dsit_clk@e6150060 {
- 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
- 			reg = <0xe6150060 4>;
--			clocks = <&pll1_div2_clk>;
-+			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
-+				 <0>, <0>;
- 			#clock-cells = <0>;
- 			clock-output-names = "dsit";
- 		};
- 		dsi0p_clk: dsi0p_clk@e6150064 {
- 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
- 			reg = <0xe6150064 4>;
--			clocks = <&pll1_div2_clk>;
-+			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
-+				 <&cpg_clocks SH73A0_CLK_MAIN>, <&extal2_clk>,
-+				 <&extcki_clk>, <0>, <0>, <0>;
- 			#clock-cells = <0>;
- 			clock-output-names = "dsi0pck";
- 		};
--- 
+  - Interestingly, the crash is the same as the one reported in
+    http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?=
+id=C81407fe573d8ac3c7150f5373475598c59197de
+    ("cpufreq: cpufreq-dt: Restore default cpumask_setall(policy->cpus)"),
+    but the cause is different.
+
+  - The crash was initially observed on sh73a0/kzm9g-legacy, but it can
+    easily be reproduced on e.g. r8a7791/koelsch, by removing the
+    "operating-points" property from the cpu0 node in
+    arch/arm/boot/dts/r8a7791.dtsi, or by any other means to make the
+    call to dev_pm_opp_init_cpufreq_table() in
+    drivers/cpufreq/cpufreq-dt.c:cpufreq_init() fail.
+
+  - I did not add
+
+	Fixes: 6e2c89d16d987e6e ("cpufreq: move call to __find_governor() to cpufr=
+eq_init_policy()")
+
+    as I couldn't verify that the issue is also present in that (old)
+    version (there have been too many s2ram-related platform and driver
+    fixes since v3.15).
+---
+ drivers/cpufreq/cpufreq.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/cpufreq/cpufreq.c b/drivers/cpufreq/cpufreq.c
+index 644b54e1e7d13e8e..4473eba1d6b0b608 100644
+--- a/drivers/cpufreq/cpufreq.c
++++ b/drivers/cpufreq/cpufreq.c
+@@ -1022,7 +1022,8 @@ static struct cpufreq_policy *cpufreq_policy_restore(=
+unsigned int cpu)
+=20
+ 	read_unlock_irqrestore(&cpufreq_driver_lock, flags);
+=20
+-	policy->governor =3D NULL;
++	if (policy)
++		policy->governor =3D NULL;
+=20
+ 	return policy;
+ }
+--=20
 1.9.1
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
