@@ -1,50 +1,34 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Nov 2014 00:54:54 +0000
-Subject: [PATCH 28/29] ARM: shmobile: r8a7790: add USBDMAC{0,1} clocks to device tree
-Message-Id: <b02ce79fbd5cb822a557e401cfc80d9ce813331e.1416476366.git.horms+renesas@verge.net.au>
+From: Olof Johansson <olof@lixom.net>
+Date: Tue, 04 Nov 2014 22:46:07 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC DT Clocksource Updates for v3.19
+Message-Id: <20141104224607.GK5908@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1416476366.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
+References: <cover.1414629281.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1414629281.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+On Thu, Oct 30, 2014 at 10:50:49AM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
+> 
+> Please consider these Renesas ARM based SoC DT clocksource updates for v3.19.
+> 
+> 
+> The following changes since commit f114040e3ea6e07372334ade75d1ee0775c355e1:
+> 
+>   Linux 3.18-rc1 (2014-10-19 18:08:38 -0700)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-clocksource-for-v3.19
+> 
+> for you to fetch changes up to d5153cd734dd6c1243bb3dc98065be99b10d049f:
+> 
+>   clocksource: sh_mtu2: Drop incorrect SoC family name (2014-10-27 10:00:36 +0900)
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7790.dtsi | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+Applied. These could probably have been a single patch.
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 3afd071..64f610f 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1107,17 +1107,20 @@
- 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
- 			clocks = <&hp_clk>, <&cp_clk>, <&mmc1_clk>, <&sd3_clk>,
- 				 <&sd2_clk>, <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks R8A7790_CLK_SD0>, <&mmc0_clk>,
--				 <&hp_clk>, <&mp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
-+				 <&hp_clk>, <&mp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>,
-+				 <&hp_clk>, <&hp_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
- 				R8A7790_CLK_IIC2 R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
- 				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0 R8A7790_CLK_MMCIF0
- 				R8A7790_CLK_IIC0 R8A7790_CLK_PCIEC R8A7790_CLK_IIC1 R8A7790_CLK_SSUSB R8A7790_CLK_CMT1
-+				R8A7790_CLK_USBDMAC0 R8A7790_CLK_USBDMAC1
- 			>;
- 			clock-output-names  				"iic2", "tpu0", "mmcif1", "sdhi3",
- 				"sdhi2", "sdhi1", "sdhi0", "mmcif0",
--				"iic0", "pciec", "iic1", "ssusb", "cmt1";
-+				"iic0", "pciec", "iic1", "ssusb", "cmt1",
-+				"usbdmac0", "usbdmac1";
- 		};
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
--- 
-2.1.1
 
+-Olof
