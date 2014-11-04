@@ -1,41 +1,61 @@
-From: Kevin Cernekee <cernekee@gmail.com>
-Date: Sun, 02 Nov 2014 01:03:56 +0000
-Subject: [PATCH V3 09/14] irqchip: bcm7120-l2: Fix missing nibble in gc->unused mask
-Message-Id: <1414890241-9938-10-git-send-email-cernekee@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:50:48 +0000
+Subject: [PATCH 18/34] ARM: shmobile: bockw-reference: Initialise TMU device using DT
+Message-Id: <18b27aeb5591588de35628bf1e423abf24fe9695.1415059587.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414890241-9938-1-git-send-email-cernekee@gmail.com>
-In-Reply-To: <1414890241-9938-1-git-send-email-cernekee@gmail.com>
+References: <cover.1415059587.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415059587.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: arnd@arndb.de, f.fainelli@gmail.com, tglx@linutronix.de, jason@lakedaemon.net, ralf@linux-mips.org
-Cc: linux-sh@vger.kernel.org, sergei.shtylyov@cogentembedded.com, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, mbizon@freebox.fr, jogo@openwrt.org, linux-mips@linux-mips.org
+To: linux-arm-kernel@lists.infradead.org
 
-This mask should have been 0xffff_ffff, not 0x0fff_ffff.
+Initialise TMU device using DT when booting bockw
+using DT-reference.
 
-The change should not have an effect on current users (STB) because bits
-31:27 are unused.
-
-Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
-Acked-by: Florian Fainelli <f.fainelli@gmail.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/irqchip/irq-bcm7120-l2.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts | 4 ++++
+ arch/arm/mach-shmobile/setup-r8a7778.c        | 3 +--
+ 2 files changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/irqchip/irq-bcm7120-l2.c b/drivers/irqchip/irq-bcm7120-l2.c
-index 22d3fa1..b70679f8 100644
---- a/drivers/irqchip/irq-bcm7120-l2.c
-+++ b/drivers/irqchip/irq-bcm7120-l2.c
-@@ -171,7 +171,7 @@ int __init bcm7120_l2_intc_of_init(struct device_node *dn,
- 	}
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index fba2949..04c0c37 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -74,6 +74,10 @@
+ 	status = "okay";
+ };
  
- 	gc = irq_get_domain_generic_chip(data->domain, 0);
--	gc->unused = 0xfffffff & ~data->irq_map_mask;
-+	gc->unused = 0xffffffff & ~data->irq_map_mask;
- 	gc->reg_base = data->base;
- 	gc->private = data;
- 	ct = gc->chip_types;
++&tmu0 {
++	status = "okay";
++};
++
+ &pfc {
+ 	scif0_pins: serial0 {
+ 		renesas,groups = "scif0_data_a", "scif0_ctrl";
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 8ec784f..7c7223d 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -288,8 +288,6 @@ void __init r8a7778_add_dt_devices(void)
+ 		l2x0_init(base, 0x00400000, 0xc20f0fff);
+ 	}
+ #endif
+-
+-	r8a7778_register_tmu(0);
+ }
+ 
+ /* HPB-DMA */
+@@ -497,6 +495,7 @@ static void __init r8a7778_register_hpb_dmae(void)
+ void __init r8a7778_add_standard_devices(void)
+ {
+ 	r8a7778_add_dt_devices();
++	r8a7778_register_tmu(0);
+ 	r8a7778_register_scif(0);
+ 	r8a7778_register_scif(1);
+ 	r8a7778_register_scif(2);
 -- 
 2.1.1
 
