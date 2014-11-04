@@ -1,30 +1,48 @@
-From: Takanari Hayama <taki@igel.co.jp>
-Date: Wed, 26 Nov 2014 06:19:50 +0000
-Subject: [PATCH 0/2] v4l: vsp1: crop and a single input issues
-Message-Id: <1416982792-11917-1-git-send-email-taki@igel.co.jp>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 04 Nov 2014 01:48:16 +0000
+Subject: [PATCH 12/23 v3] ARM: shmobile: lager: Sound DMA support via BUSIF on DTS
+Message-Id: <87ioiv91na.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-We've found a couple of issues in VSP1 driver. Each issue is described
-in each patch. They can be applied separetely.
+DMA transfer to/from SSIU
 
-Takanari Hayama (2):
-  v4l: vsp1: Reset VSP1 RPF source address
-  v4l: vsp1: Always enable virtual RPF when BRU is in use
+     DMA
+[MEM] -> [SSIU] -> [SSI]
 
- drivers/media/platform/vsp1/vsp1_rpf.c  | 15 +++++++++++++++
- drivers/media/platform/vsp1/vsp1_rwpf.h |  2 ++
- drivers/media/platform/vsp1/vsp1_wpf.c  | 11 ++++++-----
- 3 files changed, 23 insertions(+), 5 deletions(-)
+     DMA
+[MEM] <- [SSIU] <- [SSI]
 
-Best Regards,
-Takanari Hayama
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v2 -> v3
+
+ - no change
+
+ arch/arm/boot/dts/r8a7790-lager.dts |    5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 93630d0..0634fff 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -575,11 +575,6 @@
+ 	};
+ };
+ 
+-&ssi0 {
+-	no-busif;
+-};
+-
+ &ssi1 {
+-	no-busif;
+ 	shared-pin;
+ };
 -- 
-1.8.0
+1.7.9.5
 
