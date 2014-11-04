@@ -1,87 +1,73 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Fri, 07 Nov 2014 15:52:01 +0000
-Subject: [PATCH 3/6] ARM: shmobile: r8a73a4: Add CPG register bits header
-Message-Id: <1415375524-15468-4-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:50:42 +0000
+Subject: [PATCH 12/34] ARM: shmobile: r8a7791: Add SGX clock to device tree
+Message-Id: <e4d2fd9eb43d12e9b6a7ab842bf6986b4dd75a1d.1415059587.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1415059587.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415059587.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+From: Kouei Abe <kouei.abe.cp@renesas.com>
+
+Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- include/dt-bindings/clock/r8a73a4-clock.h | 62 +++++++++++++++++++++++++++++++
- 1 file changed, 62 insertions(+)
- create mode 100644 include/dt-bindings/clock/r8a73a4-clock.h
+ arch/arm/boot/dts/r8a7791.dtsi            | 11 ++++++-----
+ include/dt-bindings/clock/r8a7791-clock.h |  1 +
+ 2 files changed, 7 insertions(+), 5 deletions(-)
 
-diff --git a/include/dt-bindings/clock/r8a73a4-clock.h b/include/dt-bindings/clock/r8a73a4-clock.h
-new file mode 100644
-index 0000000..cbc1abf
---- /dev/null
-+++ b/include/dt-bindings/clock/r8a73a4-clock.h
-@@ -0,0 +1,62 @@
-+/*
-+ * Copyright 2014 Ulrich Hecht
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ */
-+
-+#ifndef __DT_BINDINGS_CLOCK_R8A73A4_H__
-+#define __DT_BINDINGS_CLOCK_R8A73A4_H__
-+
-+/* CPG */
-+#define R8A73A4_CLK_PLL0	0
-+#define R8A73A4_CLK_PLL1	1
-+#define R8A73A4_CLK_PLL2	2
-+#define R8A73A4_CLK_PLL2S	3
-+#define R8A73A4_CLK_PLL2H	4
-+#define R8A73A4_CLK_MAIN	5
-+#define R8A73A4_CLK_Z		6
-+#define R8A73A4_CLK_Z2		7
-+#define R8A73A4_CLK_I		8
-+#define R8A73A4_CLK_M3		9
-+#define R8A73A4_CLK_B		10
-+#define R8A73A4_CLK_M1		11
-+#define R8A73A4_CLK_M2		12
-+#define R8A73A4_CLK_ZX		13
-+#define R8A73A4_CLK_ZS		14
-+#define R8A73A4_CLK_HP		15
-+
-+/* MSTP2 */
-+#define R8A73A4_CLK_SCIFA0	4
-+#define R8A73A4_CLK_SCIFA1	3
-+#define R8A73A4_CLK_SCIFB0	6
-+#define R8A73A4_CLK_SCIFB1	7
-+#define R8A73A4_CLK_SCIFB2	16
-+#define R8A73A4_CLK_SCIFB3	17
-+#define R8A73A4_CLK_DMAC	18
-+
-+/* MSTP3 */
-+#define R8A73A4_CLK_IIC2	0
-+#define R8A73A4_CLK_MMCIF1	5
-+#define R8A73A4_CLK_SDHI2	12
-+#define R8A73A4_CLK_SDHI1	13
-+#define R8A73A4_CLK_SDHI0	14
-+#define R8A73A4_CLK_MMCIF0	15
-+#define R8A73A4_CLK_IIC6	16
-+#define R8A73A4_CLK_IIC7	17
-+#define R8A73A4_CLK_IIC0	18
-+#define R8A73A4_CLK_IIC1	23
-+#define R8A73A4_CLK_CMT1	29
-+
-+/* MSTP4 */
-+#define R8A73A4_CLK_IIC5	9
-+#define R8A73A4_CLK_IIC4	10
-+#define R8A73A4_CLK_IIC3	11
-+
-+/* MSTP5 */
-+#define R8A73A4_CLK_THERMAL	22
-+#define R8A73A4_CLK_IIC8	15
-+
-+#endif /* __DT_BINDINGS_CLOCK_R8A73A4_H__ */
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 1c58ce0..98c1b8b 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1,7 +1,7 @@
+ /*
+  * Device Tree Source for the r8a7791 SoC
+  *
+- * Copyright (C) 2013 Renesas Electronics Corporation
++ * Copyright (C) 2013-2014 Renesas Electronics Corporation
+  * Copyright (C) 2013-2014 Renesas Solutions Corp.
+  * Copyright (C) 2014 Cogent Embedded Inc.
+  *
+@@ -977,17 +977,18 @@
+ 		mstp1_clks: mstp1_clks@e6150134 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
+-			clocks = <&m2_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
++			clocks = <&m2_clk>, <&p_clk>, <&zg_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
+ 				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+-				R8A7791_CLK_JPU R8A7791_CLK_TMU1 R8A7791_CLK_TMU3 R8A7791_CLK_TMU2
++				R8A7791_CLK_JPU R8A7791_CLK_TMU1 R8A7791_CLK_3DG
++				R8A7791_CLK_TMU3 R8A7791_CLK_TMU2
+ 				R8A7791_CLK_CMT0 R8A7791_CLK_TMU0 R8A7791_CLK_VSP1_DU1
+ 				R8A7791_CLK_VSP1_DU0 R8A7791_CLK_VSP1_S
+ 			>;
+ 			clock-output-names -				"jpu", "tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
+-				"vsp1-du0", "vsp1-sy";
++				"jpu", "tmu1", "3dg", "tmu3", "tmu2", "cmt0", "tmu0",
++				"vsp1-du1", "vsp1-du0", "vsp1-sy";
+ 		};
+ 		mstp2_clks: mstp2_clks@e6150138 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
+index 58c3f49..9570b7c 100644
+--- a/include/dt-bindings/clock/r8a7791-clock.h
++++ b/include/dt-bindings/clock/r8a7791-clock.h
+@@ -27,6 +27,7 @@
+ /* MSTP1 */
+ #define R8A7791_CLK_JPU		6
+ #define R8A7791_CLK_TMU1		11
++#define R8A7791_CLK_3DG			12
+ #define R8A7791_CLK_TMU3		21
+ #define R8A7791_CLK_TMU2		22
+ #define R8A7791_CLK_CMT0		24
 -- 
-1.8.4.5
+2.1.1
 
