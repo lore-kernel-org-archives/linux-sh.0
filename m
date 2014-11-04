@@ -1,49 +1,99 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 28 Nov 2014 11:45:01 +0000
-Subject: Re: [PATCH v5][resend] of: replace Asahi Kasei Corp venter prefix
-Message-Id: <5478603D.1080404@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:50:32 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC DT DU Updates for v3.19
+Message-Id: <cover.1415058552.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <878ulzx6hr.wl%kuninori.morimoto.gx@gmail.com>	<20140922130026.GK3290@leverpostej>	<CAMuHMdX22z97SbGS1HDiYfJ1PXxyEN2S8D7w4sr+4bUwD+mJZw@mail.gmail.com>	<20140922132743.GM3290@leverpostej>	<87y4rfhmgl.wl%kuninori.morimoto.gx@renesas.com>	<1415845309.4269.6.camel@perches.com>	<20141113025105.GA16652@verge.net.au>	<87vbmjhj00.wl%kuninori.morimoto.gx@renesas.com>	<20141113110740.GE3815@sirena.org.uk>	<87k32yd0bd.wl%kuninori.morimoto.gx@renesas.com>	<20141114093554.GC3810@ulmo>	<87y4ra8xac.wl%kuninori.morimoto.gx@renesas.com>	<5469CD47.3040409@cogentembedded.com>	<877fytxsde.wl%kuninori.morimoto.gx@renesas.com> <87egsob2cl.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87egsob2cl.wl%kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Matthias Brugger <matthias.bgg-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Jason Cooper <jason-NLaQJdtUoK4Be96aLqz0jA@public.gmane.org>, Heiko Stuebner <heiko-4mtYJXux2i+zQB+pC5nmwQ@public.gmane.org>, Shawn Guo <shawn.guo-KZfg59tc24xl57MIdRCFDg@public.gmane.org>, Florian Vaussard <florian.vaussard-p8DiymsW2f8@public.gmane.org>, Rob Herring <robh-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Thierry Reding <thierry.reding-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, ALSA Development Mailing List <alsa-devel-K7yf7f+aM1XWsZ/bQMPhNw@public.gmane.org>, linux-tegra-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Stephen Warren <swarren-3lzwWm7+Weoh9ZMKESR00Q@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Olof Johansson <olof-nZhT3qVonbNeoWH0uzbU5w@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Joe Perches <joe-6d6DIl74uiNBDgjK7y7TUQ@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, "grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org" <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Hi Olof, Hi Kevin, Hi Arnd,
 
-On 11/28/2014 3:22 AM, Kuninori Morimoto wrote:
+Please consider these Renesas ARM based SoC DT DU updates for v3.19.
 
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-> Current vendor-prefixes.txt already has "ak" prefix for Asahi Kasei Corp
-> by ae8c4209af2c(of: Add vendor prefix for Asahi Kasei Corp.)
+The following changes since commit f114040e3ea6e07372334ade75d1ee0775c355e1:
 
-> It went through the appropriate review process. But, almost all
-> Asahi Kasei chip drivers are using "asahi-kasei" prefix today.
-> (arch/arm/boot/dts/tegra20-seaboard.dts only is using "ak,ak8975",
->   but there are instances of "asahi-kasei,ak8975" in other dts files.
->   And drivers/iio/magnetometer/ak8975.c doesn't support "ak,ak8975" prefix)
-> So, we made a mistake there.
+  Linux 3.18-rc1 (2014-10-19 18:08:38 -0700)
 
-> In addition, checkpatch.pl reports WARNING if it is using "asahi-kasei"
-> prerfix in DT file.
-> (DT compatible string vendor "asahi-kasei" appears un-documented)
+are available in the git repository at:
 
-> Marking it deprecated and warning with checkpatch is certainly
-> preferable. So, this patch replace "ak" to "asahi-kasei" in
-> vendor-prefixes.txt. (and fixup tegra20-seaboard)
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-du-for-v3.19
 
-> OTOH, Asahi Kasei is usually referred to as "AKM", but this patch
-> doesn't care about it. Because no DT is using that today.
+for you to fetch changes up to 0ee56d403549fd97d8acac6b7ba3a17f6999c30a:
 
-> Acked-by: Thierry Reding <treding@nvidia.com>
-> Acked-by: Alexandre Courbot <acourbot@nvidia.com>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+  ARM: shmobile: koelsch: Enable DU device in DT (2014-10-30 09:47:13 +0900)
 
-    It's "venter" ISO "vendor" again in the subject. And you already fixed 
-that in the previous posting... :-)
+----------------------------------------------------------------
+Renesas ARM Based SoC DT DU Updates for v3.19
 
-WBR, Sergei
+* Enable DU using DT on marzen/r8a7779, lager/r8a7790 and koelsch/r8a7791
 
+----------------------------------------------------------------
+Laurent Pinchart (10):
+      ARM: shmobile: Remove FSF address from copyright headers
+      ARM: shmobile: r8a7779: Add DU node to device tree
+      ARM: shmobile: r8a7790: Add DU node to device tree
+      ARM: shmobile: r8a7791: Add DU node to device tree
+      ARM: shmobile: dts: Add common file for AA104XD12 panel
+      ARM: shmobile: marzen: Enable DU device in DT
+      ARM: shmobile: lager-reference: Remove DU platform device
+      ARM: shmobile: lager: Enable DU device in DT
+      ARM: shmobile: koelsch-reference: Remove DU platform device
+      ARM: shmobile: koelsch: Enable DU device in DT
+
+ arch/arm/boot/dts/r8a7779-marzen.dts             | 83 ++++++++++++++++++++++
+ arch/arm/boot/dts/r8a7779.dtsi                   | 24 +++++++
+ arch/arm/boot/dts/r8a7790-lager.dts              | 53 +++++++++++++-
+ arch/arm/boot/dts/r8a7790.dtsi                   | 90 ++++++++++++++++++++++++
+ arch/arm/boot/dts/r8a7791-koelsch.dts            | 16 ++++-
+ arch/arm/boot/dts/r8a7791.dtsi                   | 69 ++++++++++++++++++
+ arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi   | 41 +++++++++++
+ arch/arm/mach-shmobile/board-ape6evm-reference.c |  4 --
+ arch/arm/mach-shmobile/board-ape6evm.c           |  4 --
+ arch/arm/mach-shmobile/board-armadillo800eva.c   |  5 --
+ arch/arm/mach-shmobile/board-bockw-reference.c   |  4 --
+ arch/arm/mach-shmobile/board-bockw.c             |  4 --
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 77 --------------------
+ arch/arm/mach-shmobile/board-koelsch.c           |  4 --
+ arch/arm/mach-shmobile/board-kzm9g-reference.c   |  4 --
+ arch/arm/mach-shmobile/board-kzm9g.c             |  4 --
+ arch/arm/mach-shmobile/board-lager-reference.c   | 84 ----------------------
+ arch/arm/mach-shmobile/board-lager.c             |  4 --
+ arch/arm/mach-shmobile/board-mackerel.c          |  4 --
+ arch/arm/mach-shmobile/board-marzen-reference.c  |  4 --
+ arch/arm/mach-shmobile/board-marzen.c            |  4 --
+ arch/arm/mach-shmobile/clock-r8a73a4.c           |  4 --
+ arch/arm/mach-shmobile/clock-r8a7740.c           |  4 --
+ arch/arm/mach-shmobile/clock-r8a7778.c           |  4 --
+ arch/arm/mach-shmobile/clock-r8a7779.c           |  4 --
+ arch/arm/mach-shmobile/clock-r8a7790.c           |  4 --
+ arch/arm/mach-shmobile/clock-r8a7791.c           |  4 --
+ arch/arm/mach-shmobile/clock-sh7372.c            |  4 --
+ arch/arm/mach-shmobile/clock-sh73a0.c            |  4 --
+ arch/arm/mach-shmobile/clock.c                   |  4 --
+ arch/arm/mach-shmobile/console.c                 |  4 --
+ arch/arm/mach-shmobile/headsmp-scu.S             |  5 --
+ arch/arm/mach-shmobile/intc-sh7372.c             |  4 --
+ arch/arm/mach-shmobile/intc-sh73a0.c             |  4 --
+ arch/arm/mach-shmobile/r8a7740.h                 |  4 --
+ arch/arm/mach-shmobile/r8a7778.h                 |  4 --
+ arch/arm/mach-shmobile/setup-emev2.c             |  4 --
+ arch/arm/mach-shmobile/setup-r7s72100.c          |  4 --
+ arch/arm/mach-shmobile/setup-r8a73a4.c           |  4 --
+ arch/arm/mach-shmobile/setup-r8a7740.c           |  4 --
+ arch/arm/mach-shmobile/setup-r8a7778.c           |  4 --
+ arch/arm/mach-shmobile/setup-r8a7779.c           |  4 --
+ arch/arm/mach-shmobile/setup-r8a7790.c           |  4 --
+ arch/arm/mach-shmobile/setup-r8a7791.c           |  4 --
+ arch/arm/mach-shmobile/setup-rcar-gen2.c         |  4 --
+ arch/arm/mach-shmobile/setup-sh7372.c            |  4 --
+ arch/arm/mach-shmobile/setup-sh73a0.c            |  4 --
+ arch/arm/mach-shmobile/sleep-sh7372.S            |  5 --
+ arch/arm/mach-shmobile/smp-emev2.c               |  4 --
+ arch/arm/mach-shmobile/smp-r8a7779.c             |  4 --
+ arch/arm/mach-shmobile/smp-sh73a0.c              |  4 --
+ arch/arm/mach-shmobile/timer.c                   |  5 --
+ 52 files changed, 370 insertions(+), 343 deletions(-)
+ create mode 100644 arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi
