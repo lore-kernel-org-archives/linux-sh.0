@@ -1,115 +1,69 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Nov 2014 00:54:44 +0000
-Subject: [PATCH 18/29] ARM: shmobile: r8a73a4 dtsi: Add SoC-specific IIC compatible properties
-Message-Id: <7e9ad4d09d31ac696aa9baf4ff5c06cc015f7528.1416476366.git.horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:49:51 +0000
+Subject: [PATCH 03/11] ARM: shmobile: armadillo800eva legacy: Add missing A3SP pm domain devices
+Message-Id: <4311d9654c66b7cc7147035b8ec74f41ddffa650.1415058794.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1416476366.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
+References: <cover.1415058794.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415058794.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 To: linux-arm-kernel@lists.infradead.org
 
 From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-The IIC nodes used the generic compatible properties only.
-This may cause the driver to fail when using Standard Speed on IIC
-masters where the operational clock is driven by the 130 MHz HP clock.
+Commit 802a5639aa7041b2 ("ARM: shmobile: r8a7740: add A3SP pm domain
+support") added the A3SP power domain, but forgot to hook up the TPU,
+SDHI0/1, and MMCIF hardware blocks.
 
-Add the SoC-specific compatible property to fix this.
+Note: As the default PM QoS latency constraint for SDHI is only 100 µs
+(cfr. commit c419e611c3c59c0e ("tmio_mmc / PM: Use PM QoS latency
+constraint"), while DEFAULT_DEV_LATENCY_NS is 250000, suspend fails with
+-EBUSY, unless the constraint is increased first to more than 500 µs
+using e.g.
+
+    echo 501 > /sys/devices/platform/sh_mobile_sdhi.0/power/pm_qos_resume_latency_us
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a73a4.dtsi | 18 +++++++++---------
- 1 file changed, 9 insertions(+), 9 deletions(-)
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index b5ead84..01373ee 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -106,7 +106,7 @@
- 	i2c5: i2c@e60b0000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe60b0000 0 0x428>;
- 		interrupts = <0 179 IRQ_TYPE_LEVEL_HIGH>;
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index e709835..4bc202d 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1234,8 +1234,11 @@ static void __init eva_init(void)
+ 	static struct pm_domain_device domain_devices[] __initdata = {
+ 		{ "A4LC", &lcdc0_device },
+ 		{ "A4LC", &hdmi_lcdc_device },
++		{ "A3SP", &pwm_device },
++		{ "A3SP", &sdhi0_device },
++		{ "A3SP", &sh_mmcif_device },
+ 	};
+-	struct platform_device *usb = NULL;
++	struct platform_device *usb = NULL, *sdhi1 = NULL;
  
-@@ -205,7 +205,7 @@
- 	i2c0: i2c@e6500000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6500000 0 0x428>;
- 		interrupts = <0 174 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
-@@ -214,7 +214,7 @@
- 	i2c1: i2c@e6510000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6510000 0 0x428>;
- 		interrupts = <0 175 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
-@@ -223,7 +223,7 @@
- 	i2c2: i2c@e6520000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6520000 0 0x428>;
- 		interrupts = <0 176 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
-@@ -232,7 +232,7 @@
- 	i2c3: i2c@e6530000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6530000 0 0x428>;
- 		interrupts = <0 177 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
-@@ -241,7 +241,7 @@
- 	i2c4: i2c@e6540000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6540000 0 0x428>;
- 		interrupts = <0 178 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
-@@ -250,7 +250,7 @@
- 	i2c6: i2c@e6550000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6550000 0 0x428>;
- 		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
-@@ -259,7 +259,7 @@
- 	i2c7: i2c@e6560000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6560000 0 0x428>;
- 		interrupts = <0 185 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
-@@ -268,7 +268,7 @@
- 	i2c8: i2c@e6570000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6570000 0 0x428>;
- 		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
+ 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
+ 				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
+@@ -1304,6 +1307,7 @@ static void __init eva_init(void)
+ 
+ 		platform_device_register(&vcc_sdhi1);
+ 		platform_device_register(&sdhi1_device);
++		sdhi1 = &sdhi1_device;
+ 	}
+ 
+ 
+@@ -1324,6 +1328,8 @@ static void __init eva_init(void)
+ 				       ARRAY_SIZE(domain_devices));
+ 	if (usb)
+ 		rmobile_add_device_to_domain("A3SP", usb);
++	if (sdhi1)
++		rmobile_add_device_to_domain("A3SP", sdhi1);
+ 
+ 	r8a7740_pm_init();
+ }
 -- 
 2.1.1
 
