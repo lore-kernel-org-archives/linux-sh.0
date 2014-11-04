@@ -1,55 +1,57 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 10 Nov 2014 18:42:29 +0000
-Subject: [PATCH v2 1/2] sata_rcar: Add clocks to sata_rcar bindings
-Message-Id: <1415644950-2983-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:50:59 +0000
+Subject: [PATCH 29/34] ARM: shmobile: r8a7778: Add SoC-specific TMU compatible property
+Message-Id: <45b439c1aae45d344c55864f81d52ef90ce4d8f8.1415059587.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1415059587.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415059587.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Tejun Heo <tj@kernel.org>
-Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>, linux-ide@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Now that the clocks are available in the R-Car Gen2 DT,
-add clocks property description to the sata_rcar bindings.
-The clocks have been tested on r8a7791 so we use that
-as an example of the R-Car SATA node.
+The TMU timers used the generic compatible property only.
+Add the SoC-specific one, to make it future proof.
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-[geert: Reworded clocks property]
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2:
-  - Add Acked-by
----
- Documentation/devicetree/bindings/ata/sata_rcar.txt | 10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
+ arch/arm/boot/dts/r8a7778.dtsi | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/ata/sata_rcar.txt b/Documentation/devicetree/bindings/ata/sata_rcar.txt
-index 80ae87a0784bdba8..f09c1ee260ba1d10 100644
---- a/Documentation/devicetree/bindings/ata/sata_rcar.txt
-+++ b/Documentation/devicetree/bindings/ata/sata_rcar.txt
-@@ -9,12 +9,14 @@ Required properties:
- 			  - "renesas,sata-r8a7793" for R-Car M2-N
- - reg			: address and length of the SATA registers;
- - interrupts		: must consist of one interrupt specifier.
-+- clocks		: must contain a reference to the functional clock.
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 1e80e4c..96297f6 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -163,7 +163,7 @@
+ 	};
  
- Example:
+ 	tmu0: timer@ffd80000 {
+-		compatible = "renesas,tmu";
++		compatible = "renesas,tmu-r8a7778", "renesas,tmu";
+ 		reg = <0xffd80000 0x30>;
+ 		interrupts = <0 32 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 33 IRQ_TYPE_LEVEL_HIGH>,
+@@ -175,7 +175,7 @@
+ 	};
  
--sata: sata@fc600000 {
--	compatible = "renesas,sata-r8a7779";
--	reg = <0xfc600000 0x2000>;
-+sata0: sata@ee300000 {
-+	compatible = "renesas,sata-r8a7791";
-+	reg = <0 0xee300000 0 0x2000>;
- 	interrupt-parent = <&gic>;
--	interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
-+	interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
-+	clocks = <&mstp8_clks R8A7791_CLK_SATA0>;
- };
+ 	tmu1: timer@ffd81000 {
+-		compatible = "renesas,tmu";
++		compatible = "renesas,tmu-r8a7778", "renesas,tmu";
+ 		reg = <0xffd81000 0x30>;
+ 		interrupts = <0 36 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 37 IRQ_TYPE_LEVEL_HIGH>,
+@@ -187,7 +187,7 @@
+ 	};
+ 
+ 	tmu2: timer@ffd82000 {
+-		compatible = "renesas,tmu";
++		compatible = "renesas,tmu-r8a7778", "renesas,tmu";
+ 		reg = <0xffd82000 0x30>;
+ 		interrupts = <0 40 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 41 IRQ_TYPE_LEVEL_HIGH>,
 -- 
-1.9.1
+2.1.1
 
