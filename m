@@ -1,54 +1,50 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 17 Nov 2014 01:36:18 +0000
-Subject: Re: [PATCH 1/3] ARM: shmobile: r8a7779: Spelling/grammar s/entity/identity/, s/map/mapping/
-Message-Id: <20141117013618.GJ11143@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:49:56 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Runtime PM Updates for v3.19
+Message-Id: <cover.1415058794.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415981227-13580-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1415981227-13580-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Nov 14, 2014 at 05:07:05PM +0100, Geert Uytterhoeven wrote:
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Thanks, all three patches queued up.
+Please consider these Renesas ARM based SoC runtime PM updates for v3.19.
 
-> ---
->  arch/arm/mach-shmobile/setup-r8a7779.c | 6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-> index 9452dd4ea925a093..6156d172cf3108d7 100644
-> --- a/arch/arm/mach-shmobile/setup-r8a7779.c
-> +++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-> @@ -48,14 +48,14 @@
->  #include "r8a7779.h"
->  
->  static struct map_desc r8a7779_io_desc[] __initdata = {
-> -	/* 2M entity map for 0xf0000000 (MPCORE) */
-> +	/* 2M identity mapping for 0xf0000000 (MPCORE) */
->  	{
->  		.virtual	= 0xf0000000,
->  		.pfn		= __phys_to_pfn(0xf0000000),
->  		.length		= SZ_2M,
->  		.type		= MT_DEVICE_NONSHARED
->  	},
-> -	/* 16M entity map for 0xfexxxxxx (DMAC-S/HPBREG/INTC2/LRAM/DBSC) */
-> +	/* 16M identity mapping for 0xfexxxxxx (DMAC-S/HPBREG/INTC2/LRAM/DBSC) */
->  	{
->  		.virtual	= 0xfe000000,
->  		.pfn		= __phys_to_pfn(0xfe000000),
-> @@ -680,7 +680,7 @@ void __init r8a7779_add_early_devices(void)
->  
->  	/* Early serial console setup is not included here due to
->  	 * memory map collisions. The SCIF serial ports in r8a7779
-> -	 * are difficult to entity map 1:1 due to collision with the
-> +	 * are difficult to identity map 1:1 due to collision with the
->  	 * virtual memory range used by the coherent DMA code on ARM.
->  	 *
->  	 * Anyone wanting to debug early can remove UPF_IOREMAP from
-> -- 
-> 1.9.1
-> 
+
+The following changes since commit f114040e3ea6e07372334ade75d1ee0775c355e1:
+
+  Linux 3.18-rc1 (2014-10-19 18:08:38 -0700)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-runtime-pm-for-v3.19
+
+for you to fetch changes up to dc4470e177973feedd82596969d86468a1695b1e:
+
+  ARM: shmobile: r8a7740: Add A3SM pm domain support (2014-10-28 08:40:18 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC Runtime PM Updates for v3.19
+
+* 8a7740/armadillo800eva legacy PM domain support
+
+----------------------------------------------------------------
+Geert Uytterhoeven (11):
+      ARM: shmobile: r8a7740: Add missing A3SP pm domain devices
+      ARM: shmobile: r8a7740: Add missing A4S pm domain devices
+      ARM: shmobile: armadillo800eva legacy: Add missing A3SP pm domain devices
+      ARM: shmobile: armadillo800eva legacy: Add missing A4S pm domain devices
+      ARM: shmobile: r8a7740: Add A3RV pm domain support
+      ARM: shmobile: r8a7740: Add A3SG pm domain support
+      ARM: shmobile: r8a7740/armadillo legacy: Add A4MP pm domain support
+      ARM: shmobile: r8a7740: Add D4 pm domain support
+      ARM: shmobile: r8a7740/armadillo legacy: Add A4R pm domain support
+      ARM: shmobile: r8a7740: Add A4SU pm domain support
+      ARM: shmobile: r8a7740: Add A3SM pm domain support
+
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 12 ++++++-
+ arch/arm/mach-shmobile/pm-r8a7740.c            | 44 +++++++++++++++++++++++---
+ arch/arm/mach-shmobile/setup-r8a7740.c         | 11 +++++++
+ 3 files changed, 62 insertions(+), 5 deletions(-)
