@@ -1,126 +1,50 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:50:32 +0000
-Subject: [PATCH 09/10] ARM: shmobile: koelsch-reference: Remove DU platform device
-Message-Id: <910343e7e281c3f6ac0c660061370afa306d24d0.1415058552.git.horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:50:55 +0000
+Subject: [PATCH 25/34] ARM: shmobile: r8a7791: add HS-USB device node
+Message-Id: <1c1fee7cbba99023a11d4d2991b56c99a3174bd4.1415059587.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415058552.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415058552.git.horms+renesas@verge.net.au>
+References: <cover.1415059587.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415059587.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-The DU device is now instantiated from the device tree, remove the
-corresponding platform device.
+Define the R8A7791 generic part of the HS-USB device node. It is up to the board
+file to enable the device.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+[Sergei: fixed summary, added changelog]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-koelsch-reference.c | 73 ------------------------
- 1 file changed, 73 deletions(-)
+ arch/arm/boot/dts/r8a7791.dtsi | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index 1da1097..451ba62 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -15,87 +15,15 @@
-  * GNU General Public License for more details.
-  */
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index d55335e..c815313 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -613,6 +613,17 @@
+ 		status = "disabled";
+ 	};
  
--#include <linux/dma-mapping.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
--#include <linux/platform_data/rcar-du.h>
- 
- #include <asm/mach/arch.h>
- 
--#include "clock.h"
- #include "common.h"
--#include "irqs.h"
- #include "r8a7791.h"
- #include "rcar-gen2.h"
- 
--/* DU */
--static struct rcar_du_encoder_data koelsch_du_encoders[] = {
--	{
--		.type = RCAR_DU_ENCODER_NONE,
--		.output = RCAR_DU_OUTPUT_LVDS0,
--		.connector.lvds.panel = {
--			.width_mm = 210,
--			.height_mm = 158,
--			.mode = {
--				.pixelclock = 65000000,
--				.hactive = 1024,
--				.hfront_porch = 20,
--				.hback_porch = 160,
--				.hsync_len = 136,
--				.vactive = 768,
--				.vfront_porch = 3,
--				.vback_porch = 29,
--				.vsync_len = 6,
--			},
--		},
--	},
--};
--
--static struct rcar_du_platform_data koelsch_du_pdata = {
--	.encoders = koelsch_du_encoders,
--	.num_encoders = ARRAY_SIZE(koelsch_du_encoders),
--};
--
--static const struct resource du_resources[] __initconst = {
--	DEFINE_RES_MEM(0xfeb00000, 0x40000),
--	DEFINE_RES_MEM_NAMED(0xfeb90000, 0x1c, "lvds.0"),
--	DEFINE_RES_IRQ(gic_spi(256)),
--	DEFINE_RES_IRQ(gic_spi(268)),
--};
--
--static void __init koelsch_add_du_device(void)
--{
--	struct platform_device_info info = {
--		.name = "rcar-du-r8a7791",
--		.id = -1,
--		.res = du_resources,
--		.num_res = ARRAY_SIZE(du_resources),
--		.data = &koelsch_du_pdata,
--		.size_data = sizeof(koelsch_du_pdata),
--		.dma_mask = DMA_BIT_MASK(32),
--	};
--
--	platform_device_register_full(&info);
--}
--
--/*
-- * This is a really crude hack to provide clkdev support to platform
-- * devices until they get moved to DT.
-- */
--static const struct clk_name clk_names[] __initconst = {
--	{ "du0", "du.0", "rcar-du-r8a7791" },
--	{ "du1", "du.1", "rcar-du-r8a7791" },
--	{ "lvds0", "lvds.0", "rcar-du-r8a7791" },
--};
--
--static void __init koelsch_add_standard_devices(void)
--{
--	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
--
--	koelsch_add_du_device();
--}
--
- static const char * const koelsch_boards_compat_dt[] __initconst = {
- 	"renesas,koelsch",
- 	"renesas,koelsch-reference",
-@@ -106,7 +34,6 @@ DT_MACHINE_START(KOELSCH_DT, "koelsch")
- 	.smp		= smp_ops(r8a7791_smp_ops),
- 	.init_early	= shmobile_init_delay,
- 	.init_time	= rcar_gen2_timer_init,
--	.init_machine	= koelsch_add_standard_devices,
- 	.init_late	= shmobile_init_late,
- 	.reserve	= rcar_gen2_reserve,
- 	.dt_compat	= koelsch_boards_compat_dt,
++	hsusb: usb@e6590000 {
++		compatible = "renesas,usbhs-r8a7791";
++		reg = <0 0xe6590000 0 0x100>;
++		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7791_CLK_HSUSB>;
++		renesas,buswait = <4>;
++		phys = <&usb0 1>;
++		phy-names = "usb";
++		status = "disabled";
++	};
++
+ 	usbphy: usb-phy@e6590100 {
+ 		compatible = "renesas,usb-phy-r8a7791";
+ 		reg = <0 0xe6590100 0 0x100>;
 -- 
 2.1.1
 
