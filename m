@@ -1,82 +1,72 @@
-From: Kevin Cernekee <cernekee@gmail.com>
-Date: Sun, 02 Nov 2014 01:03:59 +0000
-Subject: [PATCH V3 12/14] irqchip: bcm7120-l2: Decouple driver from brcmstb-l2
-Message-Id: <1414890241-9938-13-git-send-email-cernekee@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:50:47 +0000
+Subject: [PATCH 17/34] ARM: shmobile: r8a7778: Add TMU nodes
+Message-Id: <2109b5a28d27a593ab5afa7179fbef2f6a7cabcd.1415059587.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414890241-9938-1-git-send-email-cernekee@gmail.com>
-In-Reply-To: <1414890241-9938-1-git-send-email-cernekee@gmail.com>
+References: <cover.1415059587.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415059587.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: arnd@arndb.de, f.fainelli@gmail.com, tglx@linutronix.de, jason@lakedaemon.net, ralf@linux-mips.org
-Cc: linux-sh@vger.kernel.org, sergei.shtylyov@cogentembedded.com, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, mbizon@freebox.fr, jogo@openwrt.org, linux-mips@linux-mips.org
+To: linux-arm-kernel@lists.infradead.org
 
-Some chips, such as BCM6328, only require bcm7120-l2.  Some BCM7xxx STB
-configurations only require brcmstb-l2.  Treat them as two separate
-entities, and update the mach-bcm dependencies to reflect the change.
+This describes all of the TMU hardware of the r8a7778.
+Each node is disabled and may be enabled as necessary
+by board DTS files.
 
-Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
-Acked-by: Florian Fainelli <f.fainelli@gmail.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-bcm/Kconfig        | 1 +
- drivers/irqchip/Kconfig          | 5 +++++
- drivers/irqchip/Makefile         | 4 ++--
- drivers/irqchip/irq-bcm7120-l2.c | 2 +-
- 4 files changed, 9 insertions(+), 3 deletions(-)
+ arch/arm/boot/dts/r8a7778.dtsi | 36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
 
-diff --git a/arch/arm/mach-bcm/Kconfig b/arch/arm/mach-bcm/Kconfig
-index 2abad74..bf47eb0 100644
---- a/arch/arm/mach-bcm/Kconfig
-+++ b/arch/arm/mach-bcm/Kconfig
-@@ -125,6 +125,7 @@ config ARCH_BRCMSTB
- 	select HAVE_ARM_ARCH_TIMER
- 	select BRCMSTB_GISB_ARB
- 	select BRCMSTB_L2_IRQ
-+	select BCM7120_L2_IRQ
- 	help
- 	  Say Y if you intend to run the kernel on a Broadcom ARM-based STB
- 	  chipset.
-diff --git a/drivers/irqchip/Kconfig b/drivers/irqchip/Kconfig
-index 09c79d1..afdc1f3 100644
---- a/drivers/irqchip/Kconfig
-+++ b/drivers/irqchip/Kconfig
-@@ -48,6 +48,11 @@ config ATMEL_AIC5_IRQ
- 	select MULTI_IRQ_HANDLER
- 	select SPARSE_IRQ
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 315ec62..1e80e4c 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -162,6 +162,42 @@
+ 		status = "disabled";
+ 	};
  
-+config BCM7120_L2_IRQ
-+	bool
-+	select GENERIC_IRQ_CHIP
-+	select IRQ_DOMAIN
++	tmu0: timer@ffd80000 {
++		compatible = "renesas,tmu";
++		reg = <0xffd80000 0x30>;
++		interrupts = <0 32 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 33 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 34 IRQ_TYPE_LEVEL_HIGH>;
 +
- config BRCMSTB_L2_IRQ
- 	bool
- 	select GENERIC_IRQ_CHIP
-diff --git a/drivers/irqchip/Makefile b/drivers/irqchip/Makefile
-index 173bb5f..f0909d0 100644
---- a/drivers/irqchip/Makefile
-+++ b/drivers/irqchip/Makefile
-@@ -35,6 +35,6 @@ obj-$(CONFIG_TB10X_IRQC)		+= irq-tb10x.o
- obj-$(CONFIG_XTENSA)			+= irq-xtensa-pic.o
- obj-$(CONFIG_XTENSA_MX)			+= irq-xtensa-mx.o
- obj-$(CONFIG_IRQ_CROSSBAR)		+= irq-crossbar.o
--obj-$(CONFIG_BRCMSTB_L2_IRQ)		+= irq-brcmstb-l2.o \
--					   irq-bcm7120-l2.o
-+obj-$(CONFIG_BCM7120_L2_IRQ)		+= irq-bcm7120-l2.o
-+obj-$(CONFIG_BRCMSTB_L2_IRQ)		+= irq-brcmstb-l2.o
- obj-$(CONFIG_KEYSTONE_IRQ)		+= irq-keystone.o
-diff --git a/drivers/irqchip/irq-bcm7120-l2.c b/drivers/irqchip/irq-bcm7120-l2.c
-index ef4d32c..e53a3a6 100644
---- a/drivers/irqchip/irq-bcm7120-l2.c
-+++ b/drivers/irqchip/irq-bcm7120-l2.c
-@@ -247,5 +247,5 @@ out_unmap:
- 	kfree(data);
- 	return ret;
- }
--IRQCHIP_DECLARE(brcmstb_l2_intc, "brcm,bcm7120-l2-intc",
-+IRQCHIP_DECLARE(bcm7120_l2_intc, "brcm,bcm7120-l2-intc",
- 		bcm7120_l2_intc_of_init);
++		#renesas,channels = <3>;
++
++		status = "disabled";
++	};
++
++	tmu1: timer@ffd81000 {
++		compatible = "renesas,tmu";
++		reg = <0xffd81000 0x30>;
++		interrupts = <0 36 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 37 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 38 IRQ_TYPE_LEVEL_HIGH>;
++
++		#renesas,channels = <3>;
++
++		status = "disabled";
++	};
++
++	tmu2: timer@ffd82000 {
++		compatible = "renesas,tmu";
++		reg = <0xffd82000 0x30>;
++		interrupts = <0 40 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 41 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 42 IRQ_TYPE_LEVEL_HIGH>;
++
++		#renesas,channels = <3>;
++
++		status = "disabled";
++	};
++
+ 	scif0: serial@ffe40000 {
+ 		compatible = "renesas,scif-r8a7778", "renesas,scif";
+ 		reg = <0xffe40000 0x100>;
 -- 
 2.1.1
 
