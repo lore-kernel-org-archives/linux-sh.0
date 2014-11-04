@@ -1,71 +1,38 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 06 Nov 2014 19:33:19 +0000
-Subject: Re: [PATCH v4 5/6] ARM: shmobile: sh73a0: add MSTP clock assignments to DT
-Message-Id: <CAMuHMdUaZQ3A0VsbYrz+cRu3nRruN2wg3E+xmXZ+khTAOxqjFQ@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:50:20 +0000
+Subject: [PATCH] ARM: shmobile: marzen-reference: Don't include legacy clock.h
+Message-Id: <803fc9b590f74ef1066be328f2f33c2b285ca3af.1415059054.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415292641-30331-6-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1415292641-30331-6-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <cover.1415059054.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415059054.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Nov 6, 2014 at 5:50 PM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> @@ -202,6 +209,7 @@
->                 interrupts = <0 140 IRQ_TYPE_LEVEL_HIGH
->                               0 141 IRQ_TYPE_LEVEL_HIGH>;
->                 reg-io-width = <4>;
-> +               clocks = <&mstp3_clks SH73A0_CLK_MMCIF0>;
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-For consistency, I think it would be best to always add "clocks" just
-below "interrupts".
+The marzen-reference board file doesn't need the clock.h header, don't
+include it.
 
-So I can add "power-domains" just below clocks later ;-)
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-marzen-reference.c | 1 -
+ 1 file changed, 1 deletion(-)
 
->                 status = "disabled";
->         };
->
-> @@ -212,6 +220,7 @@
->                               0 84 IRQ_TYPE_LEVEL_HIGH
->                               0 85 IRQ_TYPE_LEVEL_HIGH>;
->                 cap-sd-highspeed;
-> +               clocks = <&mstp3_clks SH73A0_CLK_SDHI0>;
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 38d9cdd..644883a 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -26,7 +26,6 @@
+ #include <asm/irq.h>
+ #include <asm/mach/arch.h>
+ 
+-#include "clock.h"
+ #include "common.h"
+ #include "irqs.h"
+ #include "r8a7779.h"
+-- 
+2.1.1
 
-Likewise.
-
->                 status = "disabled";
->         };
->
-> @@ -223,6 +232,7 @@
->                               0 89 IRQ_TYPE_LEVEL_HIGH>;
->                 toshiba,mmc-wrprotect-disable;
->                 cap-sd-highspeed;
-> +               clocks = <&mstp3_clks SH73A0_CLK_SDHI1>;
-
-Likewise.
-
->                 status = "disabled";
->         };
->
-> @@ -233,6 +243,7 @@
->                               0 105 IRQ_TYPE_LEVEL_HIGH>;
->                 toshiba,mmc-wrprotect-disable;
->                 cap-sd-highspeed;
-> +               clocks = <&mstp3_clks SH73A0_CLK_SDHI2>;
-
-Likewise.
-
->                 status = "disabled";
->         };
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
