@@ -1,75 +1,61 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:50:28 +0000
-Subject: [PATCH 05/10] ARM: shmobile: dts: Add common file for AA104XD12 panel
-Message-Id: <2610027a48300acc3b98565c7f48b2a48aa6287e.1415058552.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 04 Nov 2014 01:48:38 +0000
+Subject: [PATCH 14/23 v3] ARM: shmobile: lager: Sound DMA support via DVC on DTS
+Message-Id: <87fvdz91mo.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415058552.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415058552.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-The Mitsubishi AA104XD12 panel is commonly used with the Marzen, Lager
-and Koelsch boards. Create a .dtsi file that describe the panel and its
-connection to the board.
+DMA transfer uses DVC
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+     DMA               DMApp
+[MEM] -> [SRC] -> [DVC] -> [SSIU] -> [SSI]
+
+     DMA               DMApp
+[MEM] <- [DVC] <- [SRC] <- [SSIU] <- [SSI]
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi | 41 ++++++++++++++++++++++++++
- 1 file changed, 41 insertions(+)
- create mode 100644 arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi
+v2 -> v3
 
-diff --git a/arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi b/arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi
-new file mode 100644
-index 0000000..65cb50f
---- /dev/null
-+++ b/arch/arm/boot/dts/r8a77xx-aa104xd12-panel.dtsi
-@@ -0,0 +1,41 @@
-+/*
-+ * Common file for the AA104XD12 panel connected to Renesas R-Car boards
+ - no change
+
+ arch/arm/boot/dts/r8a7790-lager.dts |   11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index a249270..2f91740 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -19,6 +19,13 @@
+  * This command is required when Playback/Capture
+  *
+  *	amixer set "LINEOUT Mixer DACL" on
++ *	amixer set "DVC Out" 100%
++ *	amixer set "DVC In" 100%
 + *
-+ * Copyright (C) 2014 Renesas Electronics Corp.
++ * You can use Mute
 + *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/ {
-+	panel {
-+		compatible = "mitsubishi,aa104xd12", "panel-dpi";
-+
-+		width-mm = <210>;
-+		height-mm = <158>;
-+
-+		panel-timing {
-+			/* 1024x768 @65Hz */
-+			clock-frequency = <65000000>;
-+			hactive = <1024>;
-+			vactive = <768>;
-+			hsync-len = <136>;
-+			hfront-porch = <20>;
-+			hback-porch = <160>;
-+			vfront-porch = <3>;
-+			vback-porch = <29>;
-+			vsync-len = <6>;
-+		};
-+
-+		port {
-+			panel_in: endpoint {
-+				remote-endpoint = <&lvds_connector>;
-+			};
-+		};
-+	};
-+};
-+
-+&lvds_connector {
-+	remote-endpoint = <&panel_in>;
-+};
++ *	amixer set "DVC Out Mute" on
++ *	amixer set "DVC In Mute" on
+  */
+ 
+ /dts-v1/;
+@@ -569,8 +576,8 @@
+ 
+ 	rcar_sound,dai {
+ 		dai0 {
+-			playback = <&ssi0 &src2>;
+-			capture  = <&ssi1 &src3>;
++			playback = <&ssi0 &src2 &dvc0>;
++			capture  = <&ssi1 &src3 &dvc1>;
+ 		};
+ 	};
+ };
 -- 
-2.1.1
+1.7.9.5
 
