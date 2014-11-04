@@ -1,17 +1,19 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Wed, 19 Nov 2014 21:33:50 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC DT DU Updates for v3.19
-Message-Id: <201411192233.50732.arnd@arndb.de>
+From: Olof Johansson <olof@lixom.net>
+Date: Tue, 04 Nov 2014 22:33:24 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC Boards Cleanups for v3.19
+Message-Id: <20141104223324.GE5908@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415058552.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415058552.git.horms+renesas@verge.net.au>
+References: <cover.1414557660.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1414557660.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tuesday 04 November 2014, Simon Horman wrote:
-> Please consider these Renesas ARM based SoC DT DU updates for v3.19.
+On Wed, Oct 29, 2014 at 01:59:36PM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
+> 
+> Please consider these Renesas ARM based SoC boards cleanups for v3.19.
 > 
 > 
 > The following changes since commit f114040e3ea6e07372334ade75d1ee0775c355e1:
@@ -20,13 +22,13 @@ On Tuesday 04 November 2014, Simon Horman wrote:
 > 
 > are available in the git repository at:
 > 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-du-for-v3.19
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards-cleanups-for-v3.19
 > 
-> for you to fetch changes up to 0ee56d403549fd97d8acac6b7ba3a17f6999c30a:
+> for you to fetch changes up to f4115f25c11790646351df243dae070a7cf80163:
 > 
->   ARM: shmobile: koelsch: Enable DU device in DT (2014-10-30 09:47:13 +0900)
-> 
+>   ARM: shmobile: armadillo800eva: Sort includes (2014-10-24 10:50:47 +0900)
 
-Pulled into next/cleanup, to simplify the dependency chain, thanks!
+Merged into next/cleanup.
 
-	Arnd
+
+-Olof
