@@ -1,74 +1,43 @@
-From: Soren Brinkmann <soren.brinkmann@xilinx.com>
-Date: Fri, 28 Nov 2014 01:26:26 +0000
-Subject: [PATCH v2 0/7] Pinctrl support for Zynq
-Message-Id: <1417137993-8337-1-git-send-email-soren.brinkmann@xilinx.com>
+From: Peter Hurley <peter@hurleysoftware.com>
+Date: Tue, 04 Nov 2014 03:38:48 +0000
+Subject: Re: CMA: test_pages_isolated failures in alloc_contig_range
+Message-Id: <54584A48.9000409@hurleysoftware.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <2457604.k03RC2Mv4q@avalon> <xa1tsii8l683.fsf@mina86.com> <544F9EAA.5010404@hurleysoftware.com> <xa1tfve8ku7q.fsf@mina86.com>
+In-Reply-To: <xa1tfve8ku7q.fsf@mina86.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Michal Nazarewicz <mina86@mina86.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-mm@kvack.org
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Minchan Kim <minchan@kernel.org>, Andrew Morton <akpm@linux-foundation.org>
 
-Hi all,
+On 10/28/2014 12:57 PM, Michal Nazarewicz wrote:
+>> On 10/28/2014 08:38 AM, Michal Nazarewicz wrote:
+>>> Like Laura wrote, the message is not (should not be) a problem in
+>>> itself:
+>>
+>> [...]
+>>
+>>> So as you can see cma_alloc will try another part of the cma region if
+>>> test_pages_isolated fails.
+>>>
+>>> Obviously, if CMA region is fragmented or there's enough space for only
+>>> one allocation of required size isolation failures will cause allocation
+>>> failures, so it's best to avoid them, but they are not always avoidable.
+>>>
+>>> To debug you would probably want to add more debug information about the
+>>> page (i.e. data from struct page) that failed isolation after the
+>>> pr_warn in alloc_contig_range.
+> 
+> On Tue, Oct 28 2014, Peter Hurley <peter@hurleysoftware.com> wrote:
+>> If the message does not indicate an actual problem, then its printk level is
+>> too high. These messages have been reported when using 3.16+ distro kernels.
+> 
+> I think it could be argued both ways.  The condition is not an error,
+> since in many cases cma_alloc will be able to continue, but it *is* an
+> undesired state.  As such it's not an error but feels to me a bit more
+> then just information, hence a warning.  I don't care either way, though.
 
-here is v2 of this series. On the functional side, adding the support
-for USB mux groups is probably the biggest change. Most other changes
-are mostly cosmetic (typos, function names, documentation, ...).
-More detailed changelogs are included with the respective patches.
-
-Regarding DT, I separated pinconf from pinmux nodes and updated
-documentation accordingly to enforce that separation.
-The parser, though, still handles everything in order to not break
-backwards compatibility.
-
-And finally, as Linus requested, I patched one of the Qualcomm drivers
-to use the features added in 'pinctrl: pinconf-generic: Allow driver to
-specify DT params'. I don't have that HW so, that is compile tested only
-and may take some more work to work on HW.
-
-So much for the changes. What didn't change? I left the parts that have
-been described as "kludgy" as they were, in order to maintain backwards
-compatibility and not break current users of pinconf-generic
-functionality.
-
-The audience is again limited to pinctrl stakeholders.
-
-	Thanks,
-	S=C3=B6ren
-
-Soren Brinkmann (7):
-  pinctrl: pinconf-generic: Infer map type from DT property
-  pinctrl: pinconf-generic: Allow driver to specify DT params
-  pinctrl: zynq: Document DT binding
-  pinctrl: Add driver for Zynq
-  ARM: zynq: Enable pinctrl
-  ARM: zynq: DT: Add pinctrl information
-  pinctrl: qcom-spmi-gpio: Migrate to pinconf-generic
-
- .../bindings/pinctrl/xlnx,zynq-pinctrl.txt         |  104 ++
- arch/arm/boot/dts/zynq-7000.dtsi                   |    8 +-
- arch/arm/boot/dts/zynq-zc702.dts                   |  181 +++
- arch/arm/boot/dts/zynq-zc706.dts                   |  152 +++
- arch/arm/mach-zynq/Kconfig                         |    2 +
- drivers/pinctrl/Kconfig                            |    8 +
- drivers/pinctrl/Makefile                           |    1 +
- drivers/pinctrl/nomadik/pinctrl-abx500.c           |    2 +-
- drivers/pinctrl/pinconf-generic.c                  |  199 ++--
- drivers/pinctrl/pinconf.c                          |    4 +-
- drivers/pinctrl/pinconf.h                          |   22 +-
- drivers/pinctrl/pinctrl-rockchip.c                 |    2 +-
- drivers/pinctrl/pinctrl-tz1090-pdc.c               |    2 +-
- drivers/pinctrl/pinctrl-tz1090.c                   |    2 +-
- drivers/pinctrl/pinctrl-zynq.c                     | 1176 ++++++++++++++++=
-++++
- drivers/pinctrl/qcom/pinctrl-spmi-gpio.c           |  125 +--
- drivers/pinctrl/sh-pfc/pinctrl.c                   |    2 +-
- include/linux/pinctrl/pinconf-generic.h            |   25 +
- include/linux/pinctrl/pinctrl.h                    |    9 +
- 19 files changed, 1804 insertions(+), 222 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/pinctrl/xlnx,zynq-pin=
-ctrl.txt
- create mode 100644 drivers/pinctrl/pinctrl-zynq.c
-
---=20
-2.1.3.1.ge241007
+This "undesired state" is trivially reproducible on 3.16.y on the x86 arch;
+a smattering of these will show up just building a distro kernel.
 
