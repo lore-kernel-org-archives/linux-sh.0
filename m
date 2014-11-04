@@ -1,40 +1,84 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Nov 2014 01:20:01 +0000
-Subject: [PATCH 10/25] ARM: shmobile: lager: fixup IIC2 clock frequency
-Message-Id: <c6f242e2fe485a12a2ee8ef96346be5a2c26e5d9.1415755881.git.horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 04 Nov 2014 01:05:44 +0000
+Subject: [PATCH v6 3/4] usb: renesas_usbhs: fix the timing of dcp_control_transfer_done
+Message-Id: <1415063145-4200-4-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415755881.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415755881.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+According to the datasheet, this driver should clear the INTSTS0.CTRT
+bit before this controller detects the next stage transition. Otherwise,
+the driver may not be able to clear the bit after the controller went to
+the next stage transition. After that, the driver will not be able to
+clear the INTSTS0.VALID, and a usb control transfer will not finish
+finally.
 
-Current Lager IIC2 is using default clock frequency,
-but, ak4643 audio codec chip needs 100kHz
-This patch clarifies IIC2 clock frequency as 100kHz.
+If we use the testusb tool, it is easy to reproduce this issue:
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+ # testusb -a -t 10
+
+Since the previous code handled a data stage and a status stage in
+the usbhsf_pio_try_push(), it may not clear the INTSTS0.CTRT at the
+right timing.
+So, this patch change the timing of usbhs_dcp_control_transfer_done()
+to the usbhsg_irq_ctrl_stage().
+
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 2 ++
- 1 file changed, 2 insertions(+)
+ drivers/usb/renesas_usbhs/fifo.c       |   16 ----------------
+ drivers/usb/renesas_usbhs/mod_gadget.c |    3 +++
+ 2 files changed, 3 insertions(+), 16 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 830f2e8..86fb2ee 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -429,6 +429,8 @@
- 	pinctrl-0 = <&iic2_pins>;
- 	pinctrl-names = "default";
+diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
+index b0c97a3..0e07925 100644
+--- a/drivers/usb/renesas_usbhs/fifo.c
++++ b/drivers/usb/renesas_usbhs/fifo.c
+@@ -577,14 +577,6 @@ static int usbhsf_pio_try_push(struct usbhs_pkt *pkt, int *is_done)
+ 		usbhs_pipe_number(pipe),
+ 		pkt->length, pkt->actual, *is_done, pkt->zero);
  
-+	clock-frequency = <100000>;
-+
- 	composite-in@20 {
- 		compatible = "adi,adv7180";
- 		reg = <0x20>;
+-	/*
+-	 * Transmission end
+-	 */
+-	if (*is_done) {
+-		if (usbhs_pipe_is_dcp(pipe))
+-			usbhs_dcp_control_transfer_done(pipe);
+-	}
+-
+ 	usbhsf_fifo_unselect(pipe, fifo);
+ 
+ 	return 0;
+@@ -722,14 +714,6 @@ usbhs_fifo_read_end:
+ 		usbhs_pipe_number(pipe),
+ 		pkt->length, pkt->actual, *is_done, pkt->zero);
+ 
+-	/*
+-	 * Transmission end
+-	 */
+-	if (*is_done) {
+-		if (usbhs_pipe_is_dcp(pipe))
+-			usbhs_dcp_control_transfer_done(pipe);
+-	}
+-
+ usbhs_fifo_read_busy:
+ 	usbhsf_fifo_unselect(pipe, fifo);
+ 
+diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
+index b27b2bc..9cf07c0 100644
+--- a/drivers/usb/renesas_usbhs/mod_gadget.c
++++ b/drivers/usb/renesas_usbhs/mod_gadget.c
+@@ -485,6 +485,9 @@ static int usbhsg_irq_ctrl_stage(struct usbhs_priv *priv,
+ 	case NODATA_STATUS_STAGE:
+ 		pipe->handler = &usbhs_ctrl_stage_end_handler;
+ 		break;
++	case READ_STATUS_STAGE:
++	case WRITE_STATUS_STAGE:
++		usbhs_dcp_control_transfer_done(pipe);
+ 	default:
+ 		return ret;
+ 	}
 -- 
-2.1.1
+1.7.9.5
 
