@@ -1,79 +1,49 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 10 Nov 2014 18:49:35 +0000
-Subject: [PATCH v2 2/6] ARM: shmobile: r8a7740 dtsi: Change to using clock-indices
-Message-Id: <1415645379-3366-3-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 04 Nov 2014 01:49:12 +0000
+Subject: [PATCH 17/23 v3] ARM: shmobile: koelsch: Sound DMA support on DTS
+Message-Id: <87bnon91lr.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415645379-3366-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1415645379-3366-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Turquette <mturquette@linaro.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: Ben Dooks <ben.dooks@codethink.co.uk>, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-With the addition of clock-indices in commit 8e33f91a0b84ae19 ("clk:
-shmobile: clk-mstp: change to using clock-indices"), we can change the
-DTSes to use the generic property instead of the deprecated
-vendor-specific property.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+DMA transfer to/from SSI
+
+     DMA
+[MEM] -> [SSI]
+
+     DMA
+[MEM] <- [SSI]
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v2:
-  - Add Acked-by
----
- arch/arm/boot/dts/r8a7740.dtsi | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+v2 -> v3
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index e2c9496c2c325a1f..95723764431a3e5d 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -485,7 +485,7 @@
- 			reg = <0xe6150080 4>;
- 			clocks = <&sub_clk>, <&sub_clk>;
- 			#clock-cells = <1>;
--			renesas,clock-indices = <
-+			clock-indices = <
- 				R8A7740_CLK_SUBCK R8A7740_CLK_SUBCK2
- 			>;
- 			clock-output-names @@ -500,7 +500,7 @@
- 				 <&cpg_clocks R8A7740_CLK_HPP>, <&sub_clk>,
- 				 <&cpg_clocks R8A7740_CLK_B>;
- 			#clock-cells = <1>;
--			renesas,clock-indices = <
-+			clock-indices = <
- 				R8A7740_CLK_CEU21 R8A7740_CLK_CEU20 R8A7740_CLK_TMU0
- 				R8A7740_CLK_LCDC1 R8A7740_CLK_IIC0 R8A7740_CLK_TMU1
- 				R8A7740_CLK_LCDC0
-@@ -521,7 +521,7 @@
- 				 <&sub_clk>, <&sub_clk>, <&sub_clk>,
- 				 <&sub_clk>;
- 			#clock-cells = <1>;
--			renesas,clock-indices = <
-+			clock-indices = <
- 				R8A7740_CLK_SCIFA6 R8A7740_CLK_INTCA
- 				R8A7740_CLK_SCIFA7
- 				R8A7740_CLK_DMAC1 R8A7740_CLK_DMAC2
-@@ -550,7 +550,7 @@
- 				 <&cpg_clocks R8A7740_CLK_HP>,
- 				 <&cpg_clocks R8A7740_CLK_HP>;
- 			#clock-cells = <1>;
--			renesas,clock-indices = <
-+			clock-indices = <
- 				R8A7740_CLK_CMT1 R8A7740_CLK_FSI R8A7740_CLK_IIC1
- 				R8A7740_CLK_USBF R8A7740_CLK_SDHI0 R8A7740_CLK_SDHI1
- 				R8A7740_CLK_MMC R8A7740_CLK_GETHER R8A7740_CLK_TPU0
-@@ -567,7 +567,7 @@
- 				 <&cpg_clocks R8A7740_CLK_HP>,
- 				 <&cpg_clocks R8A7740_CLK_HP>;
- 			#clock-cells = <1>;
--			renesas,clock-indices = <
-+			clock-indices = <
- 				R8A7740_CLK_USBH R8A7740_CLK_SDHI2
- 				R8A7740_CLK_USBFUNC R8A7740_CLK_USBPHY
- 			>;
+ - no change
+
+ arch/arm/boot/dts/r8a7791-koelsch.dts |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 90433a7..0ceb6c6 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -576,10 +576,10 @@
+ };
+ 
+ &ssi0 {
+-	pio-transfer;
++	no-busif;
+ };
+ 
+ &ssi1 {
+-	pio-transfer;
++	no-busif;
+ 	shared-pin;
+ };
 -- 
-1.9.1
+1.7.9.5
 
