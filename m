@@ -1,39 +1,41 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 25 Nov 2014 15:08:54 +0000
-Subject: Re: [PATCH 1/2] ARM: multi_v7_defconfig: Enable shmobile platforms
-Message-Id: <CAMuHMdUWg3zDTyCGKOGxmtJxAd-y7mCz_911FnSGWSAPe=CQSQ@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 04 Nov 2014 00:14:32 +0000
+Subject: Re: [PATCH] ARM: shmobile: ape6evm: Enable PM Runtime in defconfig
+Message-Id: <20141104001432.GC20174@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1409234429-1916-1-git-send-email-geert+renesas@glider.be>
- <20140910004812.GB28662@verge.net.au>
-In-Reply-To: <20140910004812.GB28662@verge.net.au>
+References: <1414634362-14204-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1414634362-14204-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Sep 10, 2014 at 2:48 AM, Simon Horman <horms@verge.net.au> wrote:
-> On Thu, Aug 28, 2014 at 04:00:28PM +0200, Geert Uytterhoeven wrote:
->> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->> ---
->> Based on next-20140828
->> For now excluding r8a7740/armadillo, as it fails to boot on armadillo
+On Thu, Oct 30, 2014 at 10:59:22AM +0900, Simon Horman wrote:
+> This is consistent with other shmobile defconfigs.
+> 
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> ---
+> 
+> Based on renesas-devel-20141030-v3.18-rc2
 
-Armadillo failures are an issue with the bootloader (hermit), it works when
-using kexec.
+I have queued up this change.
 
-> r8a7794 SoC support is now queued up for v3.18.
-> So I think could also be added to multi_v7_defconfig too.
-> Let me know if you want an incremental patch.
-
-Adding r8a7794 and other recent additions to shmobile_defconfig.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+> 
+>  arch/arm/configs/ape6evm_defconfig | 1 +
+>  1 file changed, 1 insertion(+)
+> 
+> diff --git a/arch/arm/configs/ape6evm_defconfig b/arch/arm/configs/ape6evm_defconfig
+> index b54b28f..db81d8c 100644
+> --- a/arch/arm/configs/ape6evm_defconfig
+> +++ b/arch/arm/configs/ape6evm_defconfig
+> @@ -33,6 +33,7 @@ CONFIG_ARM_APPENDED_DTB=y
+>  CONFIG_VFP=y
+>  CONFIG_NEON=y
+>  CONFIG_BINFMT_MISC=y
+> +CONFIG_PM_RUNTIME=y
+>  CONFIG_NET=y
+>  CONFIG_PACKET=y
+>  CONFIG_UNIX=y
+> -- 
+> 2.1.1
+> 
