@@ -1,81 +1,29 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 10 Nov 2014 11:02:47 +0000
-Subject: [PATCH 4/4] usb: renesas_usbhs: expand USB-DMAC channels for R-Car Gen2
-Message-Id: <1415617367-3828-5-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Tejun Heo <tj@kernel.org>
+Date: Tue, 04 Nov 2014 14:16:23 +0000
+Subject: Re: [PATCH 2/3] sata_rcar: Document deprecated "renesas,rcar-sata"
+Message-Id: <20141104141623.GC14459@htj.dyndns.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1414591131-21771-1-git-send-email-geert+renesas@glider.be>
+ <1414591131-21771-3-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1414591131-21771-3-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>, linux-ide@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
 
-This patch expands USB-DMAC channels for R-Car Gen2 SoCs. The SoCs
-have 4 channels. If d{2,3}_{t,x}x_id are not set, this driver never
-uses the expanded USB-DMAC channels.
+On Wed, Oct 29, 2014 at 02:58:50PM +0100, Geert Uytterhoeven wrote:
+> Commit e67adb4e669db834 ("sata_rcar: Add R-Car Gen2 SATA PHY support")
+> deprecated "renesas,rcar-sata" in favor of "renesas,sata-r8a7779", but
+> the deprecated value was never documented in the binding documentation,
+> while it is still in active use.
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- drivers/usb/renesas_usbhs/common.h |    4 ++++
- drivers/usb/renesas_usbhs/fifo.c   |    2 ++
- drivers/usb/renesas_usbhs/fifo.h   |    2 +-
- include/linux/usb/renesas_usbhs.h  |    4 ++++
- 4 files changed, 11 insertions(+), 1 deletion(-)
+This one doesn't apply anymore.  Can you please refresh it against
+libata/for-3.19.
 
-diff --git a/drivers/usb/renesas_usbhs/common.h b/drivers/usb/renesas_usbhs/common.h
-index c45667f..0427cdd 100644
---- a/drivers/usb/renesas_usbhs/common.h
-+++ b/drivers/usb/renesas_usbhs/common.h
-@@ -102,6 +102,10 @@ struct usbhs_priv;
- #define DEVADD8		0x00E0
- #define DEVADD9		0x00E2
- #define DEVADDA		0x00E4
-+#define D2FIFOSEL	0x00F0	/* for R-Car Gen2 */
-+#define D2FIFOCTR	0x00F2	/* for R-Car Gen2 */
-+#define D3FIFOSEL	0x00F4	/* for R-Car Gen2 */
-+#define D3FIFOCTR	0x00F6	/* for R-Car Gen2 */
- 
- /* SYSCFG */
- #define SCKE	(1 << 10)	/* USB Module Clock Enable */
-diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
-index bc9a050..f46271c 100644
---- a/drivers/usb/renesas_usbhs/fifo.c
-+++ b/drivers/usb/renesas_usbhs/fifo.c
-@@ -1234,6 +1234,8 @@ int usbhs_fifo_probe(struct usbhs_priv *priv)
- 	/* DFIFO */
- 	USBHS_DFIFO_INIT(priv, fifo, 0);
- 	USBHS_DFIFO_INIT(priv, fifo, 1);
-+	USBHS_DFIFO_INIT_NO_PORT(priv, fifo, 2);
-+	USBHS_DFIFO_INIT_NO_PORT(priv, fifo, 3);
- 
- 	return 0;
- }
-diff --git a/drivers/usb/renesas_usbhs/fifo.h b/drivers/usb/renesas_usbhs/fifo.h
-index 899729a..f07037c1 100644
---- a/drivers/usb/renesas_usbhs/fifo.h
-+++ b/drivers/usb/renesas_usbhs/fifo.h
-@@ -38,7 +38,7 @@ struct usbhs_fifo {
- 	struct sh_dmae_slave	rx_slave;
- };
- 
--#define USBHS_MAX_NUM_DFIFO	2
-+#define USBHS_MAX_NUM_DFIFO	4
- struct usbhs_fifo_info {
- 	struct usbhs_fifo cfifo;
- 	struct usbhs_fifo dfifo[USBHS_MAX_NUM_DFIFO];
-diff --git a/include/linux/usb/renesas_usbhs.h b/include/linux/usb/renesas_usbhs.h
-index d5952bb..9fd9e48 100644
---- a/include/linux/usb/renesas_usbhs.h
-+++ b/include/linux/usb/renesas_usbhs.h
-@@ -145,6 +145,10 @@ struct renesas_usbhs_driver_param {
- 	int d0_rx_id;
- 	int d1_tx_id;
- 	int d1_rx_id;
-+	int d2_tx_id;
-+	int d2_rx_id;
-+	int d3_tx_id;
-+	int d3_rx_id;
- 
- 	/*
- 	 * option:
+Thanks.
+
 -- 
-1.7.9.5
-
+tejun
