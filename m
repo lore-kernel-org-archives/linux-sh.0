@@ -1,48 +1,40 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Nov 2014 01:20:09 +0000
-Subject: [PATCH 18/25] ARM: shmobile: koelsch: Sound DMA support on DTS
-Message-Id: <d7e004a70a3a21dca6c3da3f368dc8fa0c7cbd1c.1415755881.git.horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 01:50:47 +0000
+Subject: [PATCH 7/7] ARM: shmobile: koelsch dts: Drop console= bootargs parameter
+Message-Id: <79e69d179cb3391040a3693fca8bc12ec03c05fc.1415059146.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415755881.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415755881.git.horms+renesas@verge.net.au>
+References: <cover.1415059146.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415059146.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-DMA transfer to/from SSI
+Koelsch is now restricted to booting from DT, so chosen/stdout-path is
+always used, and we can drop the "console=" parameter from chosen/bootargs.
 
-     DMA
-[MEM] -> [SSI]
-
-     DMA
-[MEM] <- [SSI]
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: devicetree@vger.kernel.org
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index c92d0d7..68628cf 100644
+index 5e4d833..9241838 100644
 --- a/arch/arm/boot/dts/r8a7791-koelsch.dts
 +++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -576,10 +576,10 @@
- };
+@@ -25,7 +25,7 @@
+ 	};
  
- &ssi0 {
--	pio-transfer;
-+	no-busif;
- };
+ 	chosen {
+-		bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
++		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
+ 		stdout-path = &scif0;
+ 	};
  
- &ssi1 {
--	pio-transfer;
-+	no-busif;
- 	shared-pin;
- };
 -- 
 2.1.1
 
