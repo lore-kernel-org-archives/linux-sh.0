@@ -1,60 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 12 Nov 2014 08:31:11 +0000
-Subject: Re: [PATCH/RFC] ARM: shmobile: lager: Fix node name of GPIO keys
-Message-Id: <20141112083111.GV9007@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 04 Nov 2014 04:23:38 +0000
+Subject: [PATCH] ARM: shmobile: alt dts: Drop console= bootargs parameter
+Message-Id: <1415075018-27529-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414648571-30419-1-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdXaq+VGBvMzxxaLxwv6x+97o3ZxKHops8pZ8hS1jkG6cg@mail.gmail.com>
-In-Reply-To: <CAMuHMdXaq+VGBvMzxxaLxwv6x+97o3ZxKHops8pZ8hS1jkG6cg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Oct 30, 2014 at 10:48:33AM +0100, Geert Uytterhoeven wrote:
-> On Thu, Oct 30, 2014 at 6:56 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-> >
-> > gpio_keys appears to be consistent with more dts files than gpio-keys
-> 
-> The closest match on page 17 of ePAPR is "keyboard".
-> Should we use that?
-> 
-> https://www.power.org/wp-content/uploads/2012/06/Power_ePAPR_APPROVED_v1.1.pdf
+Alt is booted from DT, so chosen/stdout-path is
+always used, and we can drop the "console=" parameter from chosen/bootargs.
 
-Sure. I will do a sweep to update that for all our boards.
+This change has a side-effect of changing the console speed from 38400
+to 115200. This is intentional as 115200 is consistently used on
+all other shmobile boards.
 
-> > [simon: reworded changelog]
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > ---
-> > Based on the renesas-devel-20141030-v3.18-rc2 branch of my renesas tree
-> >
-> >  arch/arm/boot/dts/r8a7790-lager.dts | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> >
-> > diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-> > index 830f2e8..6c05644 100644
-> > --- a/arch/arm/boot/dts/r8a7790-lager.dts
-> > +++ b/arch/arm/boot/dts/r8a7790-lager.dts
-> > @@ -43,7 +43,7 @@
-> >                 #size-cells = <1>;
-> >         };
-> >
-> > -       gpio_keys {
-> > +       gpio-keys {
-> >                 compatible = "gpio-keys";
-> >
-> >                 button@1 {
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
-> 
+Cc: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: devicetree@vger.kernel.org
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7794-alt.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
+index 8aec512..f2cf757 100644
+--- a/arch/arm/boot/dts/r8a7794-alt.dts
++++ b/arch/arm/boot/dts/r8a7794-alt.dts
+@@ -20,7 +20,7 @@
+ 	};
+ 
+ 	chosen {
+-		bootargs = "console=ttySC0,38400 ignore_loglevel rw root=/dev/nfs ip=dhcp";
++		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
+ 		stdout-path = &scif2;
+ 	};
+ 
+-- 
+2.1.1
+
