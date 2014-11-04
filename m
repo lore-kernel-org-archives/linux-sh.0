@@ -1,75 +1,34 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 26 Nov 2014 22:01:07 +0000
-Subject: Re: [PATCH 4/5] drm/rcar-du: fix error return code
-Message-Id: <2892924.lmSyP4ZfXU@avalon>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 04 Nov 2014 00:11:26 +0000
+Subject: Re: [PATCH 0/2] ARM: shmobile: r8a7790: Fix SD3CKCR address
+Message-Id: <20141104001125.GB20174@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416748278-22881-1-git-send-email-Julia.Lawall@lip6.fr> <1416748278-22881-5-git-send-email-Julia.Lawall@lip6.fr>
-In-Reply-To: <1416748278-22881-5-git-send-email-Julia.Lawall@lip6.fr>
+References: <1414648677-31104-1-git-send-email-horms+renesas@verge.net.au>
+ <CAMuHMdWS1M24vngxvrf3mRGfVwKvmgsXnqZ6xq_hJuPC=KqqWQ@mail.gmail.com>
+In-Reply-To: <CAMuHMdWS1M24vngxvrf3mRGfVwKvmgsXnqZ6xq_hJuPC=KqqWQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Julia Lawall <Julia.Lawall@lip6.fr>
-Cc: kernel-janitors@vger.kernel.org, David Airlie <airlied@linux.ie>, dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Julia,
-
-Thank you for the patch.
-
-On Sunday 23 November 2014 14:11:17 Julia Lawall wrote:
-> From: Julia Lawall <Julia.Lawall@lip6.fr>
+On Thu, Oct 30, 2014 at 10:51:56AM +0100, Geert Uytterhoeven wrote:
+> On Thu, Oct 30, 2014 at 6:57 AM, Simon Horman
+> <horms+renesas@verge.net.au> wrote:
+> > This short series corrects the SD3CKCR address in both C and DT
+> >
+> > Based on the renesas-devel-20141030-v3.18-rc2 branch of my renesas tree
+> >
+> > Shinobu Uehara (2):
+> >   ARM: shmobile: r8a7790: Fix SD3CKCR address
+> >   ARM: shmobile: r8a7790: Fix SD3CKCR address to device tree
 > 
-> Propagate the error code on failure.
-> 
-> A simplified version of the semantic match that finds this problem is as
-> follows: (http://coccinelle.lip6.fr/)
-> 
-> // <smpl>
-> @@
-> identifier ret; expression e1,e2;
-> @@
-> (
-> if (\(ret < 0\|ret != 0\))
->  { ... return ret; }
-> 
-> ret = 0
-> )
-> ... when != ret = e1
->     when != &ret
-> *if(...)
-> {
->   ... when != ret = e2
->       when forall
->  return ret;
-> }
-> // </smpl>
-> 
-> Signed-off-by: Julia Lawall <Julia.Lawall@lip6.fr>
+> This  matches my copy of the datasheet, so
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Mine too :)
 
-I've applied the patch to my tree and sent a pull request.
-
-> ---
->  drivers/gpu/drm/rcar-du/rcar_du_crtc.c |    2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
+> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 > 
-> diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-> b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c index 088bfd8..23cc910 100644
-> --- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-> +++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-> @@ -586,7 +586,7 @@ int rcar_du_crtc_create(struct rcar_du_group *rgrp,
-> unsigned int index)
-> 
->  	if (irq < 0) {
->  		dev_err(rcdu->dev, "no IRQ for CRTC %u\n", index);
-> -		return ret;
-> +		return irq;
->  	}
-> 
->  	ret = devm_request_irq(rcdu->dev, irq, rcar_du_crtc_irq, irqflags,
+> But it would be good to know this has been verified on actual hardware.
 
--- 
-Regards,
-
-Laurent Pinchart
-
+As these came from the BSP my assumption is that they have
+been verified on actual hardware. I will queue up these changes.
