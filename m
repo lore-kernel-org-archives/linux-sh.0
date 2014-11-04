@@ -1,40 +1,58 @@
 From: Simon Horman <horms+renesas@verge.net.au>
 Date: Tue, 04 Nov 2014 01:50:33 +0000
-Subject: [PATCH 03/34] ARM: shmobile: lager: enable USB PHY
-Message-Id: <6742cafb6fe84f00f096b206372b48f14eb56946.1415059587.git.horms+renesas@verge.net.au>
+Subject: [PATCH 10/10] ARM: shmobile: koelsch: Enable DU device in DT
+Message-Id: <0ee56d403549fd97d8acac6b7ba3a17f6999c30a.1415058552.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415059587.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415059587.git.horms+renesas@verge.net.au>
+References: <cover.1415058552.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415058552.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Enable USB PHY device for the Lager board.
+Specify the DU output topology, enable the DU device and configure the
+related pins.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 4 ++++
- 1 file changed, 4 insertions(+)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index acab2e1..cd530de 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -472,6 +472,10 @@
- 	pinctrl-names = "default";
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 07550e7..4f4e56e5 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -211,14 +211,24 @@
+ 	};
  };
  
-+&usbphy {
++&du {
++	pinctrl-0 = <&du_pins>;
++	pinctrl-names = "default";
 +	status = "okay";
++
++	ports {
++		port@1 {
++			lvds_connector: endpoint {
++			};
++		};
++	};
 +};
 +
- /* composite video input */
- &vin1 {
- 	pinctrl-0 = <&vin1_pins>;
+ &extal_clk {
+ 	clock-frequency = <20000000>;
+ };
+ 
+ &pfc {
+-	pinctrl-0 = <&du_pins>;
+-	pinctrl-names = "default";
+-
+ 	i2c2_pins: i2c2 {
+ 		renesas,groups = "i2c2";
+ 		renesas,function = "i2c2";
 -- 
 2.1.1
 
