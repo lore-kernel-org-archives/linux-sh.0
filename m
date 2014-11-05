@@ -1,88 +1,114 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 19 Nov 2014 15:57:29 +0000
-Subject: [PATCH 2/7] ARM: shmobile: R-Mobile: Consolidate rmobile_pd_suspend_*()
-Message-Id: <1416412654-6508-3-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 05 Nov 2014 16:00:23 +0000
+Subject: Re: [PATCH v3 2/7] ARM: shmobile: sh73a0: Add CPG register bits header
+Message-Id: <283042635.p3MImJO7hQ@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416412654-6508-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1416412654-6508-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Consolidate the identical rmobile_pd_suspend_*() routines that just
-return -EBUSY to prevent a PM domain from being powered down into a
-single rmobile_pd_suspend_busy().
+Hi Ulrich,
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/mach-shmobile/pm-rmobile.c | 28 +++++++++++++---------------
- 1 file changed, 13 insertions(+), 15 deletions(-)
+Thank you for the patch.
 
-diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
-index 5e01a28110e24034..3d383d3dcd4ec640 100644
---- a/arch/arm/mach-shmobile/pm-rmobile.c
-+++ b/arch/arm/mach-shmobile/pm-rmobile.c
-@@ -209,11 +209,10 @@ void rmobile_add_devices_to_domains(struct pm_domain_device data[],
- 
- #else /* !CONFIG_ARCH_SHMOBILE_LEGACY */
- 
--static int rmobile_pd_suspend_cpu(void)
-+static int rmobile_pd_suspend_busy(void)
- {
- 	/*
--	 * This domain contains the CPU core and therefore it should
--	 * only be turned off if the CPU is not in use.
-+	 * This domain should not be turned off.
- 	 */
- 	return -EBUSY;
- }
-@@ -227,16 +226,6 @@ static int rmobile_pd_suspend_console(void)
- 	return console_suspend_enabled ? 0 : -EBUSY;
- }
- 
--static int rmobile_pd_suspend_debug(void)
--{
--	/*
--	 * This domain contains the Coresight-ETM hardware block and
--	 * therefore it should only be turned off if the debug module is
--	 * not in use.
--	 */
--	return -EBUSY;
--}
--
- #define MAX_NUM_CPU_PDS		8
- 
- static unsigned int num_cpu_pds __initdata;
-@@ -310,17 +299,26 @@ static void __init rmobile_setup_pm_domain(struct device_node *np,
- 	const char *name = pd->genpd.name;
- 
- 	if (pd_contains_cpu(np)) {
-+		/*
-+		 * This domain contains the CPU core and therefore it should
-+		 * only be turned off if the CPU is not in use.
-+		 */
- 		pr_debug("PM domain %s contains CPU\n", name);
- 		pd->gov = &pm_domain_always_on_gov;
--		pd->suspend = rmobile_pd_suspend_cpu;
-+		pd->suspend = rmobile_pd_suspend_busy;
- 	} else if (np = console_pd) {
- 		pr_debug("PM domain %s contains serial console\n", name);
- 		pd->gov = &pm_domain_always_on_gov;
- 		pd->suspend = rmobile_pd_suspend_console;
- 	} else if (np = debug_pd) {
-+		/*
-+		 * This domain contains the Coresight-ETM hardware block and
-+		 * therefore it should only be turned off if the debug module is
-+		 * not in use.
-+		 */
- 		pr_debug("PM domain %s contains Coresight-ETM\n", name);
- 		pd->gov = &pm_domain_always_on_gov;
--		pd->suspend = rmobile_pd_suspend_debug;
-+		pd->suspend = rmobile_pd_suspend_busy;
- 	}
- 
- 	rmobile_init_pm_domain(pd);
+On Tuesday 28 October 2014 18:02:11 Ulrich Hecht wrote:
+> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+
+> ---
+>  include/dt-bindings/clock/sh73a0-clock.h | 79 +++++++++++++++++++++++++++++
+>  1 file changed, 79 insertions(+)
+>  create mode 100644 include/dt-bindings/clock/sh73a0-clock.h
+> 
+> diff --git a/include/dt-bindings/clock/sh73a0-clock.h
+> b/include/dt-bindings/clock/sh73a0-clock.h new file mode 100644
+> index 0000000..1dd3eb2
+> --- /dev/null
+> +++ b/include/dt-bindings/clock/sh73a0-clock.h
+> @@ -0,0 +1,79 @@
+> +/*
+> + * Copyright 2014 Ulrich Hecht
+> + *
+> + * This program is free software; you can redistribute it and/or modify
+> + * it under the terms of the GNU General Public License as published by
+> + * the Free Software Foundation; either version 2 of the License, or
+> + * (at your option) any later version.
+> + */
+> +
+> +#ifndef __DT_BINDINGS_CLOCK_SH73A0_H__
+> +#define __DT_BINDINGS_CLOCK_SH73A0_H__
+> +
+> +/* CPG */
+> +#define SH73A0_CLK_MAIN		0
+> +#define SH73A0_CLK_PLL0		1
+> +#define SH73A0_CLK_PLL1		2
+> +#define SH73A0_CLK_PLL2		3
+> +#define SH73A0_CLK_PLL3		4
+> +#define SH73A0_CLK_DSI0PHY	5
+> +#define SH73A0_CLK_DSI1PHY	6
+> +#define SH73A0_CLK_ZG		7
+> +#define SH73A0_CLK_M3		8
+> +#define SH73A0_CLK_B		9
+> +#define SH73A0_CLK_M1		10
+> +#define SH73A0_CLK_M2		11
+> +#define SH73A0_CLK_Z		12
+> +#define SH73A0_CLK_ZX		13
+> +#define SH73A0_CLK_HP		14
+> +
+> +/* MSTP0 */
+> +#define SH73A0_CLK_IIC2	1
+> +
+> +/* MSTP1 */
+> +#define SH73A0_CLK_CEU1		29
+> +#define SH73A0_CLK_CSI2_RX1	28
+> +#define SH73A0_CLK_CEU0		27
+> +#define SH73A0_CLK_CSI2_RX0	26
+> +#define SH73A0_CLK_TMU0		25
+> +#define SH73A0_CLK_DSITX0	18
+> +#define SH73A0_CLK_IIC0		16
+> +#define SH73A0_CLK_SGX		12
+> +#define SH73A0_CLK_LCDC0	0
+> +
+> +/* MSTP2 */
+> +#define SH73A0_CLK_SCIFA7	19
+> +#define SH73A0_CLK_SY_DMAC	18
+> +#define SH73A0_CLK_MP_DMAC	17
+> +#define SH73A0_CLK_SCIFA5	7
+> +#define SH73A0_CLK_SCIFB	6
+> +#define SH73A0_CLK_SCIFA0	4
+> +#define SH73A0_CLK_SCIFA1	3
+> +#define SH73A0_CLK_SCIFA2	2
+> +#define SH73A0_CLK_SCIFA3	1
+> +#define SH73A0_CLK_SCIFA4	0
+> +
+> +/* MSTP3 */
+> +#define SH73A0_CLK_SCIFA6	31
+> +#define SH73A0_CLK_CMT1		29
+> +#define SH73A0_CLK_FSI		28
+> +#define SH73A0_CLK_IRDA		25
+> +#define SH73A0_CLK_IIC1		23
+> +#define SH73A0_CLK_USB		22
+> +#define SH73A0_CLK_FLCTL	15
+> +#define SH73A0_CLK_SDHI0	14
+> +#define SH73A0_CLK_SDHI1	13
+> +#define SH73A0_CLK_MMCIF0	12
+> +#define SH73A0_CLK_SDHI2	11
+> +#define SH73A0_CLK_TPU0		4
+> +#define SH73A0_CLK_TPU1		3
+> +#define SH73A0_CLK_TPU2		2
+> +#define SH73A0_CLK_TPU3		1
+> +#define SH73A0_CLK_TPU4		0
+> +
+> +/* MSTP4 */
+> +#define SH73A0_CLK_IIC3		11
+> +#define SH73A0_CLK_IIC4		10
+> +#define SH73A0_CLK_KEYSC	3
+> +
+> +#endif
+
 -- 
-1.9.1
+Regards,
 
+Laurent Pinchart
