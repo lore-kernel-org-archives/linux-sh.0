@@ -1,58 +1,196 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 17 Nov 2014 13:53:07 +0000
-Subject: [PATCH 3/4] ARM: shmobile: armadillo legacy: Migrate to generic l2c OF initialization
-Message-Id: <1416232388-2611-4-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 05 Nov 2014 15:54:43 +0000
+Subject: Re: [PATCH v3 5/7] ARM: shmobile: sh73a0: add MSTP clock assignments to DT
+Message-Id: <1467004.In07WrlpG8@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416232388-2611-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1416232388-2611-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Migrate the generic r8a7740 platform from calling l2x0_of_init() to the
-generic l2c OF initialization.
+Hi Ulrich,
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/mach-shmobile/board-armadillo800eva.c | 10 +++-------
- 1 file changed, 3 insertions(+), 7 deletions(-)
+Thank you for the patch.
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 6d949f1c850bda8b..11feea1da28a03b1 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -41,7 +41,6 @@
- #include <linux/usb/renesas_usbhs.h>
- #include <linux/videodev2.h>
- 
--#include <asm/hardware/cache-l2x0.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- #include <asm/mach/map.h>
-@@ -1309,12 +1308,6 @@ static void __init eva_init(void)
- 		sdhi1 = &sdhi1_device;
- 	}
- 
--
--#ifdef CONFIG_CACHE_L2X0
--	/* Shared attribute override enable, 32K*8way */
--	l2x0_init(IOMEM(0xf0002000), 0x00400000, 0xc20f0fff);
--#endif
--
- 	i2c_register_board_info(0, i2c0_devices, ARRAY_SIZE(i2c0_devices));
- 	i2c_register_board_info(2, i2c2_devices, ARRAY_SIZE(i2c2_devices));
- 
-@@ -1355,6 +1348,9 @@ static const char *eva_boards_compat_dt[] __initdata = {
- };
- 
- DT_MACHINE_START(ARMADILLO800EVA_DT, "armadillo800eva")
-+	/* Shared attribute override enable, 32K*8way */
-+	.l2c_aux_val	= 0x00400000,
-+	.l2c_aux_mask	= 0xc20f0fff,
- 	.map_io		= r8a7740_map_io,
- 	.init_early	= r8a7740_add_early_devices,
- 	.init_irq	= r8a7740_init_irq_of,
+On Tuesday 28 October 2014 18:02:14 Ulrich Hecht wrote:
+> Assigns clocks to cmt1, i2c*, mmcif, sdhi*, and scif*.
+> 
+> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+
+> ---
+>  arch/arm/boot/dts/sh73a0.dtsi | 29 +++++++++++++++++++++++++++++
+>  1 file changed, 29 insertions(+)
+> 
+> diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+> index daa486c..de08c10 100644
+> --- a/arch/arm/boot/dts/sh73a0.dtsi
+> +++ b/arch/arm/boot/dts/sh73a0.dtsi
+> @@ -56,6 +56,8 @@
+> 
+>  		renesas,channels-mask = <0x3f>;
+> 
+> +		clocks = <&mstp3_clks SH73A0_CLK_CMT1>;
+> +		clock-names = "fck";
+>  		status = "disabled";
+>  	};
+> 
+> @@ -145,6 +147,7 @@
+>  			      0 168 IRQ_TYPE_LEVEL_HIGH
+>  			      0 169 IRQ_TYPE_LEVEL_HIGH
+>  			      0 170 IRQ_TYPE_LEVEL_HIGH>;
+> +		clocks = <&mstp1_clks SH73A0_CLK_IIC0>;
+>  		status = "disabled";
+>  	};
+> 
+> @@ -157,6 +160,7 @@
+>  			      0 52 IRQ_TYPE_LEVEL_HIGH
+>  			      0 53 IRQ_TYPE_LEVEL_HIGH
+>  			      0 54 IRQ_TYPE_LEVEL_HIGH>;
+> +		clocks = <&mstp3_clks SH73A0_CLK_IIC1>;
+>  		status = "disabled";
+>  	};
+> 
+> @@ -169,6 +173,7 @@
+>  			      0 172 IRQ_TYPE_LEVEL_HIGH
+>  			      0 173 IRQ_TYPE_LEVEL_HIGH
+>  			      0 174 IRQ_TYPE_LEVEL_HIGH>;
+> +		clocks = <&mstp0_clks SH73A0_CLK_IIC2>;
+>  		status = "disabled";
+>  	};
+> 
+> @@ -181,6 +186,7 @@
+>  			      0 184 IRQ_TYPE_LEVEL_HIGH
+>  			      0 185 IRQ_TYPE_LEVEL_HIGH
+>  			      0 186 IRQ_TYPE_LEVEL_HIGH>;
+> +		clocks = <&mstp4_clks SH73A0_CLK_IIC3>;
+>  		status = "disabled";
+>  	};
+> 
+> @@ -193,6 +199,7 @@
+>  			      0 188 IRQ_TYPE_LEVEL_HIGH
+>  			      0 189 IRQ_TYPE_LEVEL_HIGH
+>  			      0 190 IRQ_TYPE_LEVEL_HIGH>;
+> +		clocks = <&mstp4_clks SH73A0_CLK_IIC4>;
+>  		status = "disabled";
+>  	};
+> 
+> @@ -202,6 +209,7 @@
+>  		interrupts = <0 140 IRQ_TYPE_LEVEL_HIGH
+>  			      0 141 IRQ_TYPE_LEVEL_HIGH>;
+>  		reg-io-width = <4>;
+> +		clocks = <&mstp3_clks SH73A0_CLK_MMCIF0>;
+>  		status = "disabled";
+>  	};
+> 
+> @@ -212,6 +220,7 @@
+>  			      0 84 IRQ_TYPE_LEVEL_HIGH
+>  			      0 85 IRQ_TYPE_LEVEL_HIGH>;
+>  		cap-sd-highspeed;
+> +		clocks = <&mstp3_clks SH73A0_CLK_SDHI0>;
+>  		status = "disabled";
+>  	};
+> 
+> @@ -223,6 +232,7 @@
+>  			      0 89 IRQ_TYPE_LEVEL_HIGH>;
+>  		toshiba,mmc-wrprotect-disable;
+>  		cap-sd-highspeed;
+> +		clocks = <&mstp3_clks SH73A0_CLK_SDHI1>;
+>  		status = "disabled";
+>  	};
+> 
+> @@ -233,6 +243,7 @@
+>  			      0 105 IRQ_TYPE_LEVEL_HIGH>;
+>  		toshiba,mmc-wrprotect-disable;
+>  		cap-sd-highspeed;
+> +		clocks = <&mstp3_clks SH73A0_CLK_SDHI2>;
+>  		status = "disabled";
+>  	};
+> 
+> @@ -240,6 +251,8 @@
+>  		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
+>  		reg = <0xe6c40000 0x100>;
+>  		interrupts = <0 72 IRQ_TYPE_LEVEL_HIGH>;
+> +		clocks = <&mstp2_clks SH73A0_CLK_SCIFA0>;
+> +		clock-names = "sci_ick";
+>  		status = "disabled";
+>  	};
+> 
+> @@ -247,6 +260,8 @@
+>  		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
+>  		reg = <0xe6c50000 0x100>;
+>  		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
+> +		clocks = <&mstp2_clks SH73A0_CLK_SCIFA1>;
+> +		clock-names = "sci_ick";
+>  		status = "disabled";
+>  	};
+> 
+> @@ -254,6 +269,8 @@
+>  		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
+>  		reg = <0xe6c60000 0x100>;
+>  		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
+> +		clocks = <&mstp2_clks SH73A0_CLK_SCIFA2>;
+> +		clock-names = "sci_ick";
+>  		status = "disabled";
+>  	};
+> 
+> @@ -261,6 +278,8 @@
+>  		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
+>  		reg = <0xe6c70000 0x100>;
+>  		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
+> +		clocks = <&mstp2_clks SH73A0_CLK_SCIFA3>;
+> +		clock-names = "sci_ick";
+>  		status = "disabled";
+>  	};
+> 
+> @@ -268,6 +287,8 @@
+>  		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
+>  		reg = <0xe6c80000 0x100>;
+>  		interrupts = <0 78 IRQ_TYPE_LEVEL_HIGH>;
+> +		clocks = <&mstp2_clks SH73A0_CLK_SCIFA4>;
+> +		clock-names = "sci_ick";
+>  		status = "disabled";
+>  	};
+> 
+> @@ -275,6 +296,8 @@
+>  		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
+>  		reg = <0xe6cb0000 0x100>;
+>  		interrupts = <0 79 IRQ_TYPE_LEVEL_HIGH>;
+> +		clocks = <&mstp2_clks SH73A0_CLK_SCIFA5>;
+> +		clock-names = "sci_ick";
+>  		status = "disabled";
+>  	};
+> 
+> @@ -282,6 +305,8 @@
+>  		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
+>  		reg = <0xe6cc0000 0x100>;
+>  		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
+> +		clocks = <&mstp3_clks SH73A0_CLK_SCIFA6>;
+> +		clock-names = "sci_ick";
+>  		status = "disabled";
+>  	};
+> 
+> @@ -289,6 +314,8 @@
+>  		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
+>  		reg = <0xe6cd0000 0x100>;
+>  		interrupts = <0 143 IRQ_TYPE_LEVEL_HIGH>;
+> +		clocks = <&mstp2_clks SH73A0_CLK_SCIFA7>;
+> +		clock-names = "sci_ick";
+>  		status = "disabled";
+>  	};
+> 
+> @@ -296,6 +323,8 @@
+>  		compatible = "renesas,scifb-sh73a0", "renesas,scifb";
+>  		reg = <0xe6c30000 0x100>;
+>  		interrupts = <0 80 IRQ_TYPE_LEVEL_HIGH>;
+> +		clocks = <&mstp2_clks SH73A0_CLK_SCIFB>;
+> +		clock-names = "sci_ick";
+>  		status = "disabled";
+>  	};
+
 -- 
-1.9.1
+Regards,
+
+Laurent Pinchart
 
