@@ -1,25 +1,38 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 10 Nov 2014 01:05:31 +0000
-Subject: Re: [PATCH 3/5] i2c: sh_mobile: Document SoC-specific bindings
-Message-Id: <20141110010531.GI16836@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 05 Nov 2014 10:04:33 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7740 legacy: Correct IIC0 parent clock
+Message-Id: <1415181874-21549-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415274730-310-1-git-send-email-geert+renesas@glider.be>
- <1415274730-310-4-git-send-email-geert+renesas@glider.be>
- <20141107175347.GE3656@katana>
-In-Reply-To: <20141107175347.GE3656@katana>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
-Cc: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Nov 07, 2014 at 06:53:48PM +0100, Wolfram Sang wrote:
-> On Thu, Nov 06, 2014 at 12:52:08PM +0100, Geert Uytterhoeven wrote:
-> > Explicitly list the various SoC-specific compatible properties.
-> > This allows checkpatch to validate DTSes.
-> > 
-> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> 
-> Applied to for-next, thanks! I guess the other patches go via Simon.
+According to the datasheet, the operating clock for IIC0 is the HPP
+(RT Peri) clock, not the SUB (Peri) clock. Both clocks run at the same
+speed (50 Mhz).
 
-Thanks, I have picked up patches 1, 4 and 5.
+This is consistent with IIC0 being located in the A4R PM domain, and
+IIC1 in the A3SP PM domain.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-shmobile/clock-r8a7740.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index dbb0ab283e2fe91f..9cac8247c72b6e45 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -470,7 +470,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP127] = SH_CLK_MSTP32(&div4_clks[DIV4_S],	SMSTPCR1, 27, 0), /* CEU20 */
+ 	[MSTP125] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR1, 25, 0), /* TMU0 */
+ 	[MSTP117] = SH_CLK_MSTP32(&div4_clks[DIV4_B],	SMSTPCR1, 17, 0), /* LCDC1 */
+-	[MSTP116] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR1, 16, 0), /* IIC0 */
++	[MSTP116] = SH_CLK_MSTP32(&div4_clks[DIV4_HPP],	SMSTPCR1, 16, 0), /* IIC0 */
+ 	[MSTP111] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR1, 11, 0), /* TMU1 */
+ 	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_B],	SMSTPCR1,  0, 0), /* LCDC0 */
+ 
+-- 
+1.9.1
+
