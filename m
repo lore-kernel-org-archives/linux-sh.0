@@ -1,54 +1,304 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Fri, 14 Nov 2014 17:06:50 +0000
-Subject: Re: [alsa-devel] Question on Compressed offload session
-Message-Id: <20141114170650.GG3815@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="6cotLj5rESeNB5ig"
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 05 Nov 2014 16:02:51 +0000
+Subject: Re: [PATCH v3 1/7] clk: shmobile: sh73a0 common clock framework implementation
+Message-Id: <1431489.bPNEprh65q@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <85499f52ebd29581bf58b9cafbae6864.squirrel@www.codeaurora.org>
- <5464CDE2.2070406@linux.intel.com>
- <fd33d16f31eb73cc6f0585c192601d9e.squirrel@www.codeaurora.org>
- <54662DC6.7070302@linux.intel.com>
-In-Reply-To: <54662DC6.7070302@linux.intel.com>
-To: Pierre-Louis Bossart <pierre-louis.bossart@linux.intel.com>
-Cc: gsantosh@codeaurora.org, Mark Rutland <mark.rutland@arm.com>, Rob Herring <robh@kernel.org>, ALSA Development Mailing List <alsa-devel@alsa-project.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Stephen Warren <swarren@wwwdotorg.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Olof Johansson <olof@lixom.net>, devicetree@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, grant.likely@linaro.org, alsa-devel-bounces@alsa-project.org, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+References: <1414515736-24905-2-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1414515736-24905-2-git-send-email-ulrich.hecht+renesas@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+Hi Ulrich,
 
---6cotLj5rESeNB5ig
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Thank you for the patch.
 
-On Fri, Nov 14, 2014 at 10:28:54AM -0600, Pierre-Louis Bossart wrote:
-> On 11/13/14, 10:08 PM, gsantosh@codeaurora.org wrote:
+On Tuesday 28 October 2014 18:02:10 Ulrich Hecht wrote:
+> Driver for the SH73A0's clocks that are too specific to be supported by a
+> generic driver.
+> 
+> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+> Acked-by: Mike Turquette <mturquette@linaro.org>
+> ---
+>  .../bindings/clock/renesas,sh73a0-cpg-clocks.txt   |  31 ++++
+>  drivers/clk/shmobile/Makefile                      |   1 +
+>  drivers/clk/shmobile/clk-sh73a0.c                  | 202 ++++++++++++++++++
+>  3 files changed, 234 insertions(+)
+>  create mode 100644
+> Documentation/devicetree/bindings/clock/renesas,sh73a0-cpg-clocks.txt
+> create mode 100644 drivers/clk/shmobile/clk-sh73a0.c
+> 
+> diff --git
+> a/Documentation/devicetree/bindings/clock/renesas,sh73a0-cpg-clocks.txt
+> b/Documentation/devicetree/bindings/clock/renesas,sh73a0-cpg-clocks.txt new
+> file mode 100644
+> index 0000000..6b8dece
+> --- /dev/null
+> +++ b/Documentation/devicetree/bindings/clock/renesas,sh73a0-cpg-clocks.txt
+> @@ -0,0 +1,31 @@
+> +These bindings should be considered EXPERIMENTAL for now.
+> +
+> +* Renesas SH73A0 Clock Pulse Generator (CPG)
+> +
+> +The CPG generates core clocks for the SH73A0 SoC. It includes four PLLs
+> +and several fixed ratio dividers.
+> +
+> +Required Properties:
+> +
+> +  - compatible: Must be "renesas,sh73a0-cpg-clocks"
+> +
+> +  - reg: Base address and length of the memory resource used by the CPG
+> +
+> +  - clocks: Reference to the parent clocks
 
-> >1) in Codec driver avoid adding hw_constraint during startup if compressed
-> >session is routed, this recommend for codec driver to know that compress
-> >session is routed to codec which I feel not the correct way to handle this
+Could you please list the parent clocks here ?
 
-> >I was checking how to handle this situation in much better way.
+> +  - #clock-cells: Must be 1
+> +  - clock-output-names: The names of the clocks. Supported clocks are
+> "main", +    "pll0", "pll1", "pll2", "pll3", "z", "dsi0phy", "dsi1phy", and
+> "twd"
 
-> What exactly do you call a 'legacy codec'? If there is a DAI i am not sure I
-> understand the problem.
+This doesn't match the definitions in the CPG bits, not the values added to 
+arch/arm/boot/dts/sh73a0.dtsi in patch 3/7. I think the documentation just 
+need to be updated to reflect the implementation.
 
-I think what he's trying to say is that there's nothing automatic which
-will ensure that constraints on the back end set by the CODEC driver
-will be paid attention to.  This is true, it's pretty much entirely up
-to the machine driver to make sure it gets the back end links right.
+> +
+> +
+> +Example
+> +-------
+> +
+> +        cpg_clocks: cpg_clocks@e6150000 {
+> +                compatible = "renesas,sh73a0-cpg-clocks";
+> +                reg = <0 0xe6150000 0 0x10000>;
+> +                clocks = <&extal1_clk>, <&extal2_clk>;
+> +                #clock-cells = <1>;
+> +                clock-output-names = "main", "pll0", "pll1", "pll2",
+> +                                     "pll3", "z", "dsi0phy", "dsi1phy",
+> +                                     "twd";
+> +        };
+> diff --git a/drivers/clk/shmobile/Makefile b/drivers/clk/shmobile/Makefile
+> index 960bf22..f83980f 100644
+> --- a/drivers/clk/shmobile/Makefile
+> +++ b/drivers/clk/shmobile/Makefile
+> @@ -5,5 +5,6 @@ obj-$(CONFIG_ARCH_R8A7779)		+= clk-r8a7779.o
+>  obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o
+>  obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o
+>  obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o
+> +obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o
+>  obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-div6.o
+>  obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-mstp.o
+> diff --git a/drivers/clk/shmobile/clk-sh73a0.c
+> b/drivers/clk/shmobile/clk-sh73a0.c new file mode 100644
+> index 0000000..9d45e9d
+> --- /dev/null
+> +++ b/drivers/clk/shmobile/clk-sh73a0.c
+> @@ -0,0 +1,202 @@
+> +/*
+> + * sh73a0 Core CPG Clocks
+> + *
+> + * Copyright (C) 2014  Ulrich Hecht
+> + *
+> + * This program is free software; you can redistribute it and/or modify
+> + * it under the terms of the GNU General Public License as published by
+> + * the Free Software Foundation; version 2 of the License.
+> + */
+> +
+> +#include <linux/clk-provider.h>
+> +#include <linux/clkdev.h>
+> +#include <linux/clk/shmobile.h>
+> +#include <linux/init.h>
+> +#include <linux/kernel.h>
+> +#include <linux/of.h>
+> +#include <linux/of_address.h>
+> +#include <linux/spinlock.h>
+> +
+> +struct sh73a0_cpg {
+> +	struct clk_onecell_data data;
+> +	spinlock_t lock;
+> +	void __iomem *reg;
+> +};
+> +
+> +#define CPG_FRQCRA	0x00
+> +#define CPG_FRQCRB	0x04
+> +#define CPG_SD0CKCR	0x74
+> +#define CPG_SD1CKCR	0x78
+> +#define CPG_SD2CKCR	0x7c
+> +#define CPG_PLLECR	0xd0
+> +#define CPG_PLL0CR	0xd8
+> +#define CPG_PLL1CR	0x28
+> +#define CPG_PLL2CR	0x2c
+> +#define CPG_PLL3CR	0xdc
+> +#define CPG_CKSCR	0xc0
+> +#define CPG_DSI0PHYCR	0x6c
+> +#define CPG_DSI1PHYCR	0x70
+> +
+> +#define CLK_ENABLE_ON_INIT BIT(0)
+> +
+> +struct div4_clk {
+> +	const char *name;
+> +	const char *parent;
+> +	unsigned int reg;
+> +	unsigned int shift;
+> +	unsigned int mask;
+> +	int flags;
+> +};
+> +
+> +static struct div4_clk div4_clks[] = {
+> +	{ "zg", "pll0", CPG_FRQCRA, 16, 0x0d7f, CLK_ENABLE_ON_INIT },
+> +	{ "m3", "pll1", CPG_FRQCRA, 12, 0x1dff, CLK_ENABLE_ON_INIT },
+> +	{ "b",  "pll1", CPG_FRQCRA,  8, 0x0dff, CLK_ENABLE_ON_INIT },
+> +	{ "m1", "pll1", CPG_FRQCRA,  4, 0x1dff, 0 },
+> +	{ "m2", "pll1", CPG_FRQCRA,  0, 0x1dff, 0 },
+> +	{ "z",  "pll0", CPG_FRQCRB, 24, 0x097f, 0 },
+> +	{ "zx", "pll1", CPG_FRQCRB, 12, 0x0dff, 0 },
+> +	{ "hp", "pll1", CPG_FRQCRB,  4, 0x0dff, 0 },
+> +	{ NULL, 0, 0, 0, 0 },
+> +};
+> +
+> +static const struct clk_div_table div4_div_table[] = {
+> +	{ 0, 2 }, { 1, 3 }, { 2, 4 }, { 3, 6 }, { 4, 8 }, { 5, 12 },
+> +	{ 6, 16 }, { 7, 18 }, { 8, 24 }, { 10, 36 }, { 11, 48 },
+> +	{ 12, 7 }, { 0, 0 }
+> +};
+> +
+> +static struct clk * __init
+> +sh73a0_cpg_register_clock(struct device_node *np, struct sh73a0_cpg *cpg,
+> +			     const char *name)
+> +{
+> +	const struct clk_div_table *table = NULL;
+> +	const char *parent_name;
+> +	unsigned int shift, reg;
+> +	unsigned int mult = 1;
+> +	unsigned int div = 1;
+> +
+> +	if (!strcmp(name, "main")) {
+> +		/* extal1, extal1_div2, extal2, extal2_div2 */
+> +		parent_name = of_clk_get_parent_name(np,
+> +			(clk_readl(cpg->reg + CPG_CKSCR) >> 28) & 3);
+> +	} else if (!strncmp(name, "pll", 3)) {
+> +		void __iomem *enable_reg = cpg->reg;
+> +		u32 enable_bit = name[3] - '0';
+> +
+> +		parent_name = "main";
+> +		switch (enable_bit) {
+> +		case 0:
+> +			enable_reg += CPG_PLL0CR;
+> +			break;
+> +		case 1:
+> +			enable_reg += CPG_PLL1CR;
+> +			break;
+> +		case 2:
+> +			enable_reg += CPG_PLL2CR;
+> +			break;
+> +		case 3:
+> +			enable_reg += CPG_PLL3CR;
+> +			break;
+> +		default:
+> +			return ERR_PTR(-EINVAL);
+> +		}
+> +		if (clk_readl(cpg->reg + CPG_PLLECR) & BIT(enable_bit)) {
+> +			mult = ((clk_readl(enable_reg) >> 24) & 0x3f) + 1;
+> +			/* handle CFG bit for PLL1 and PLL2 */
+> +			if (enable_bit = 1 || enable_bit = 2)
+> +				if (clk_readl(enable_reg) & BIT(20))
+> +					mult *= 2;
+> +		}
+> +	} else if (!strcmp(name, "dsi0phy") || !strcmp(name, "dsi1phy")) {
+> +		u32 phy_no = name[3] - '0';
+> +		void __iomem *dsi_reg = cpg->reg +
+> +			(phy_no ? CPG_DSI1PHYCR : CPG_DSI0PHYCR);
+> +
+> +		parent_name = phy_no ? "dsi1pck" : "dsi0pck";
+> +		div = __raw_readl(dsi_reg);
+> +		if (!(div & 0xb8000))
+> +			div = 1;
+> +		else
+> +			div = (div & 0x3f) + 1;
+> +	} else {
+> +		struct div4_clk *c;
+> +
+> +		for (c = div4_clks; c->name; c++) {
+> +			if (!strcmp(name, c->name)) {
+> +				parent_name = c->parent;
+> +				table = div4_div_table;
+> +				reg = c->reg;
+> +				shift = c->shift;
+> +				break;
+> +			}
+> +		}
+> +		if (!c->name)
+> +			return ERR_PTR(-EINVAL);
+> +	}
+> +
+> +	if (!table) {
+> +		return clk_register_fixed_factor(NULL, name, parent_name, 0,
+> +						 mult, div);
+> +	} else {
+> +		return clk_register_divider_table(NULL, name, parent_name, 0,
+> +						  cpg->reg + reg, shift, 4, 0,
+> +						  table, &cpg->lock);
+> +	}
+> +}
+> +
+> +static void __init sh73a0_cpg_clocks_init(struct device_node *np)
+> +{
+> +	struct sh73a0_cpg *cpg;
+> +	struct clk **clks;
+> +	unsigned int i;
+> +	int num_clks;
+> +
+> +	num_clks = of_property_count_strings(np, "clock-output-names");
+> +	if (num_clks < 0) {
+> +		pr_err("%s: failed to count clocks\n", __func__);
+> +		return;
+> +	}
+> +
+> +	cpg = kzalloc(sizeof(*cpg), GFP_KERNEL);
+> +	clks = kcalloc(num_clks, sizeof(*clks), GFP_KERNEL);
+> +	if (cpg = NULL || clks = NULL) {
+> +		/* We're leaking memory on purpose, there's no point in cleaning
+> +		 * up as the system won't boot anyway.
+> +		 */
+> +		return;
+> +	}
+> +
+> +	spin_lock_init(&cpg->lock);
+> +
+> +	cpg->data.clks = clks;
+> +	cpg->data.clk_num = num_clks;
+> +
+> +	cpg->reg = of_iomap(np, 0);
+> +	if (WARN_ON(cpg->reg = NULL))
+> +		return;
+> +
+> +	/* Set SDHI clocks to a known state */
+> +	clk_writel(0x108, cpg->reg + CPG_SD0CKCR);
+> +	clk_writel(0x108, cpg->reg + CPG_SD1CKCR);
+> +	clk_writel(0x108, cpg->reg + CPG_SD2CKCR);
+> +
+> +	for (i = 0; i < num_clks; ++i) {
+> +		const char *name;
+> +		struct clk *clk;
+> +
+> +		of_property_read_string_index(np, "clock-output-names", i,
+> +					      &name);
+> +
+> +		clk = sh73a0_cpg_register_clock(np, cpg, name);
+> +		if (IS_ERR(clk))
+> +			pr_err("%s: failed to register %s %s clock (%ld)\n",
+> +			       __func__, np->name, name, PTR_ERR(clk));
+> +		else
+> +			cpg->data.clks[i] = clk;
+> +	}
+> +
+> +	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
+> +}
+> +CLK_OF_DECLARE(sh73a0_cpg_clks, "renesas,sh73a0-cpg-clocks",
+> +	       sh73a0_cpg_clocks_init);
 
---6cotLj5rESeNB5ig
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+-- 
+Regards,
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
+Laurent Pinchart
 
-iQEcBAEBAgAGBQJUZjaqAAoJECTWi3JdVIfQuFAH/13RyikXZ58DwaCl7jN85TQ8
-BV4EwR+3FqqXVcXw4fX8JLkRyNmUnkv4GSQyFTNEICL2qoHHKSlnd1fbow1tOWdn
-NGuhgFL1yqraNjguNS8/bBKfbwFOZ2OwhQruKXWuZdeOyKJ6qZ+GffsR/ov/7LY4
-Ggrfl4PqjPowCWMulNgwCkCfdy84/E1tzPOfInBj6YXDeORs+Ros6kgnOiyAyXHf
-UVUnExmdreqnqHpnVeBS4TT68hM2Wnh8A7jmWISM6taB6bHe9BAiXpiqtEOx6DBq
-6Kwqjn8w0jZ1jfVUuof+cJs6t/C+MYSabOLn+M6brV8ZY5Z1P7AZvW4W2PmBkC8=
-=hWv8
------END PGP SIGNATURE-----
-
---6cotLj5rESeNB5ig--
