@@ -1,41 +1,23 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 13 Nov 2014 09:04:20 +0000
-Subject: Re: [PATCH 0/3] sh_eth: Remove redundant alignment adjustment
-Message-Id: <CAMuHMdVm9_gUToUjgFh4SwrfxzBvzHcNDb+CNkKyaz6mcT2AJg@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 05 Nov 2014 00:36:51 +0000
+Subject: Re: [PATCH v3 7/7] ARM: shmobile: kzm9g-reference: require ZB clock for Ethernet controller
+Message-Id: <20141105003651.GB2017@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415862301-28032-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1415862301-28032-1-git-send-email-ykaneko0929@gmail.com>
+References: <1414515736-24905-8-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1414515736-24905-8-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Cc: "netdev@vger.kernel.org" <netdev@vger.kernel.org>, "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-Hi Kaneko-san,
+On Fri, Oct 31, 2014 at 10:56:39AM +0100, Ulrich Hecht wrote:
+> On Thu, Oct 30, 2014 at 7:03 PM, Geert Uytterhoeven
+> <geert@linux-m68k.org> wrote:
+> > I don't have the schematics for kzm9g, but I guess the LAN controller
+> > is hooked up to the BSC (Bus State Controller). According to the sh73a0
+> > datasheet, ZB=C3=B8 is the clock for the BSC.
+>=20
+> Yes, I remember something like that. (Please ignore my previous
+> ramblings, I was looking at the APE6EVM schematics...)
 
-On Thu, Nov 13, 2014 at 8:04 AM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
-> This series is based on net tree.
->
-> Mitsuhiro Kimura (3):
->   sh_eth: Remove redundant alignment adjustment
->   sh_eth: Fix skb alloc size and alignment adjust rule.
->   sh_eth: Fix dma mapping issue
-
-Thanks!
-
-I've applied this series, and your series "[PATCH 0/2] Fix sleeping function
-called from invalid context", and the warnings from dma-debug.c I was
-seeing on r8a7791/koelsch are gone.
-
-Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Thanks, I have queued up this series.
