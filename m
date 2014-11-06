@@ -1,56 +1,71 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 12 Nov 2014 09:10:23 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7740 legacy: Correct IIC0 parent clock
-Message-Id: <20141112091022.GA9007@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 06 Nov 2014 09:52:35 +0000
+Subject: Re: [PATCH] leds: leds-gpio: Convert gpio_blink_set() to use GPIO descriptors
+Message-Id: <CAMuHMdXn9W2S7N+YGfjDxQozMtRZCVdTzzdDps6YfOv2FqVBmw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415181874-21549-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1415181874-21549-1-git-send-email-geert+renesas@glider.be>
+References: <1414755658-96293-1-git-send-email-mika.westerberg@linux.intel.com>
+	<545843B1.3020101@nvidia.com>
+	<2455157.3p7mHhT8im@vostro.rjw.lan>
+In-Reply-To: <2455157.3p7mHhT8im@vostro.rjw.lan>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mika Westerberg <mika.westerberg@linux.intel.com>, "Rafael J. Wysocki" <rjw@rjwysocki.net>
+Cc: Alexandre Courbot <acourbot@nvidia.com>, Linus Walleij <linus.walleij@linaro.org>, Bryan Wu <cooloney@gmail.com>, Richard Purdie <rpurdie@rpsys.net>, Ben Dooks <ben-linux@fluff.org>, Kukjin Kim <kgene.kim@samsung.com>, Jason Cooper <jason@lakedaemon.net>, Andrew Lunn <andrew@lunn.ch>, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, ACPI Devel Maling List <linux-acpi@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-On Wed, Nov 12, 2014 at 10:06:34AM +0100, Geert Uytterhoeven wrote:
-> Hi Simon,
-> 
-> On Wed, Nov 12, 2014 at 3:27 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Wed, Nov 12, 2014 at 09:34:23AM +0900, Simon Horman wrote:
-> >> On Mon, Nov 10, 2014 at 09:52:38AM +0900, Simon Horman wrote:
-> >> > On Wed, Nov 05, 2014 at 11:04:33AM +0100, Geert Uytterhoeven wrote:
-> >> > > According to the datasheet, the operating clock for IIC0 is the HPP
-> >> > > (RT Peri) clock, not the SUB (Peri) clock. Both clocks run at the same
-> >> > > speed (50 Mhz).
-> >> > >
-> >> > > This is consistent with IIC0 being located in the A4R PM domain, and
-> >> > > IIC1 in the A3SP PM domain.
-> >> >
-> >> > Thanks, I have queued this up.
-> >>
-> >> Hi Geert,
-> >>
-> >> As this appears to be a bug fix I would like to accompany this patch with
-> >> some text describing when the problem was introduced and what its effects
-> >> are. In short a rough guide to if it should be applied to -stable. To that
-> >> end I prepared the following which I would appreciate your feedback on.
-> >>
-> >> * ARM: shmobile: r8a7740 legacy: Correct IIC0 parent clock
-> >>
-> >>   This problem appears to have been introduced when IIC0 support was
-> >>   added to the r8a7740 by 6831f3a9184a1c540 ("ARM: mach-shmobile: r8a7740:
-> >>   add i2c support") in v3.2.
-> 
-> That's the commit where it became effective. The bug was introduced in
-> commit 6c01ba445cecb2d8 ("ARM: mach-shmobile: R-Mobile A1 support.").
+Hi Mika, Rafael,
 
-Thanks, I have updated my description accordingly.
+On Tue, Nov 4, 2014 at 11:50 PM, Rafael J. Wysocki <rjw@rjwysocki.net> wrote:
+> On Tuesday, November 04, 2014 12:10:41 PM Alexandre Courbot wrote:
+>> On 10/31/2014 08:40 PM, Mika Westerberg wrote:
+>> > Commit 21f2aae91e902aad ("leds: leds-gpio: Add support for GPIO
+>> > descriptors") already converted most of the driver to use GPIO descriptors.
+>> > What is still missing is the platform specific hook gpio_blink_set() and
+>> > board files which pass legacy GPIO numbers to this driver in platform data.
+>> >
+>> > In this patch we handle the former and convert gpio_blink_set() to take
+>> > GPIO descriptor instead. In order to do this we convert the existing four
+>> > users to accept GPIO descriptor and translate it to legacy GPIO number in
+>> > the platform code. This effectively "pushes" legacy GPIO number usage from
+>> > the driver to platforms.
+>> >
+>> > Also add comment to the remaining block describing that it is legacy code
+>> > path and we are getting rid of it eventually.
+>> >
+>> > Suggested-by: Linus Walleij <linus.walleij@linaro.org>
+>> > Signed-off-by: Mika Westerberg <mika.westerberg@linux.intel.com>
+>>
+>> Acked-by: Alexandre Courbot <acourbot@nvidia.com>
+>
+> Patch applied, thanks everyone!
 
-> > s/v3.2/v3.3/
-> >
-> >
-> >>   I am not aware of any run-time effect of this problem
-> 
-> Indeed. Both clocks run at the same frequency, and TTBOMK the HPP clock
-> cannot be disabled (is that correct?), so the IIC0 clock cannot be inadvertently
-> be disabled because the common part is disabled through another clock.
+"leds: leds-gpio: Add support for GPIO descriptors" broke leds-gpio on
+non-DT platforms for me:
 
-That sounds like a question for Morimoto-san :)
+    gpiod_direction_output: invalid GPIO
+    leds-gpio: probe of leds-gpio failed with error -22
+
+(desc is NULL in gpiod_direction_output()).
+
+DT shmobile reference/multi-platform are fine.
+
+I noticed the hard way, as I wanted to add some LEDs to a new platform,
+but couldn't get it work. It turned out it also had stopped working on
+r8a7740/armadillo-legacy, so I started bisecting...
+
+Unfortunately the offending patch can't just be reverted.
+Reverting all three of these on pm/linux-next fixed the issue, though:
+c673a2b400810352 leds: leds-gpio: Convert gpio_blink_set() to use GPIO descripto
+a43f2cbbb009f962 leds: leds-gpio: Make use of device property API
+5c51277a9ababfa4 leds: leds-gpio: Add support for GPIO descriptors
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
