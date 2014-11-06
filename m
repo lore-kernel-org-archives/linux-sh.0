@@ -1,70 +1,79 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 13 Nov 2014 00:29:36 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7790: add missing DVC DMA entry on DTSI
-Message-Id: <20141113002933.GC14971@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 06 Nov 2014 11:52:09 +0000
+Subject: [PATCH 4/5] ARM: shmobile: sh73a0 dtsi: Add SoC-specific IIC compatible properties
+Message-Id: <1415274730-310-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <877fz0oku3.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <877fz0oku3.wl%kuninori.morimoto.gx@renesas.com>
+References: <1415274730-310-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1415274730-310-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-On Wed, Nov 12, 2014 at 08:59:49AM +0000, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The IIC nodes used the generic compatible properties only.
+This causes the driver to fail when using Standard Speed, as the
+operational clock is driven by the 104 MHz HP clock:
 
-Thanks, I have queued this up.
+    i2c-sh_mobile e6820000.i2c: timing values out of range: L/H=0x208/0x1bf
+    i2c-sh_mobile: probe of e6820000.i2c failed with error -22
 
-> ---
->  arch/arm/boot/dts/r8a7790.dtsi |   26 ++++++++++++++++++++++++--
->  1 file changed, 24 insertions(+), 2 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-> index a17f563..52f495f 100644
-> --- a/arch/arm/boot/dts/r8a7790.dtsi
-> +++ b/arch/arm/boot/dts/r8a7790.dtsi
-> @@ -1477,7 +1477,18 @@
->  				<&audmapp 0x0f32>,	<&audmapp 0x0f33>,	<&audmapp 0x0f34>,	<&audmapp 0x0f35>,	<&audmapp 0x0f36>,
->  				<&audmapp 0x1032>,	<&audmapp 0x1033>,	<&audmapp 0x1034>,	<&audmapp 0x1035>,	<&audmapp 0x1036>,
->  				<&audmapp 0x1132>,	<&audmapp 0x1133>,	<&audmapp 0x1134>,	<&audmapp 0x1135>,	<&audmapp 0x1136>,
-> -				<&audmapp 0x1232>,	<&audmapp 0x1233>,	<&audmapp 0x1234>,	<&audmapp 0x1235>,	<&audmapp 0x1236>;
-> +				<&audmapp 0x1232>,	<&audmapp 0x1233>,	<&audmapp 0x1234>,	<&audmapp 0x1235>,	<&audmapp 0x1236>,
-> +
-> +				<&audmapp 0x3700>,	<&audmapp 0x3800>,
-> +				<&audmapp 0x3704>,	<&audmapp 0x3804>,
-> +				<&audmapp 0x3708>,	<&audmapp 0x3808>,
-> +				<&audmapp 0x370c>,	<&audmapp 0x380c>,
-> +				<&audmapp 0x370d>,	<&audmapp 0x380d>,
-> +				<&audmapp 0x370e>,	<&audmapp 0x380e>,
-> +				<&audmapp 0x370f>,	<&audmapp 0x380f>,
-> +				<&audmapp 0x3710>,	<&audmapp 0x3810>,
-> +				<&audmapp 0x3711>,	<&audmapp 0x3811>,
-> +				<&audmapp 0x3712>,	<&audmapp 0x3812>;
->  
->  		dma-names =	"mem_ssi0",	"ssi0_mem",	"mem_ssiu0",	"ssiu0_mem",
->  				"mem_ssi1",	"ssi1_mem",	"mem_ssiu1",	"ssiu1_mem",
-> @@ -1543,7 +1554,18 @@
->  				"ssiu6_src5",		"ssiu6_src6",		"ssiu6_src7",		"ssiu6_src8",		"ssiu6_src9",
->  				"ssiu7_src5",		"ssiu7_src6",		"ssiu7_src7",		"ssiu7_src8",		"ssiu7_src9",
->  				"ssiu8_src5",		"ssiu8_src6",		"ssiu8_src7",		"ssiu8_src8",		"ssiu8_src9",
-> -				"ssiu9_src5",		"ssiu9_src6",		"ssiu9_src7",		"ssiu9_src8",		"ssiu9_src9";
-> +				"ssiu9_src5",		"ssiu9_src6",		"ssiu9_src7",		"ssiu9_src8",		"ssiu9_src9",
-> +
-> +				"dvc0_ssiu0",		"dvc1_ssiu0",
-> +				"dvc0_ssiu1",		"dvc1_ssiu1",
-> +				"dvc0_ssiu2",		"dvc1_ssiu2",
-> +				"dvc0_ssiu3",		"dvc1_ssiu3",
-> +				"dvc0_ssiu4",		"dvc1_ssiu4",
-> +				"dvc0_ssiu5",		"dvc1_ssiu5",
-> +				"dvc0_ssiu6",		"dvc1_ssiu6",
-> +				"dvc0_ssiu7",		"dvc1_ssiu7",
-> +				"dvc0_ssiu8",		"dvc1_ssiu8",
-> +				"dvc0_ssiu9",		"dvc1_ssiu9";
->  
->  		status = "disabled";
->  
-> -- 
-> 1.7.9.5
-> 
+Add the SoC-specific compatible property to fix this.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/sh73a0.dtsi | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 030a5920312fa19b..d8def5a529da2882 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -138,7 +138,7 @@
+ 	i2c0: i2c@e6820000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
+ 		reg = <0xe6820000 0x425>;
+ 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH
+ 			      0 168 IRQ_TYPE_LEVEL_HIGH
+@@ -150,7 +150,7 @@
+ 	i2c1: i2c@e6822000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
+ 		reg = <0xe6822000 0x425>;
+ 		interrupts = <0 51 IRQ_TYPE_LEVEL_HIGH
+ 			      0 52 IRQ_TYPE_LEVEL_HIGH
+@@ -162,7 +162,7 @@
+ 	i2c2: i2c@e6824000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
+ 		reg = <0xe6824000 0x425>;
+ 		interrupts = <0 171 IRQ_TYPE_LEVEL_HIGH
+ 			      0 172 IRQ_TYPE_LEVEL_HIGH
+@@ -174,7 +174,7 @@
+ 	i2c3: i2c@e6826000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
+ 		reg = <0xe6826000 0x425>;
+ 		interrupts = <0 183 IRQ_TYPE_LEVEL_HIGH
+ 			      0 184 IRQ_TYPE_LEVEL_HIGH
+@@ -186,7 +186,7 @@
+ 	i2c4: i2c@e6828000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
+ 		reg = <0xe6828000 0x425>;
+ 		interrupts = <0 187 IRQ_TYPE_LEVEL_HIGH
+ 			      0 188 IRQ_TYPE_LEVEL_HIGH
+-- 
+1.9.1
+
