@@ -1,34 +1,44 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 04 Nov 2014 00:11:26 +0000
-Subject: Re: [PATCH 0/2] ARM: shmobile: r8a7790: Fix SD3CKCR address
-Message-Id: <20141104001125.GB20174@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 06 Nov 2014 11:52:08 +0000
+Subject: [PATCH 3/5] i2c: sh_mobile: Document SoC-specific bindings
+Message-Id: <1415274730-310-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414648677-31104-1-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdWS1M24vngxvrf3mRGfVwKvmgsXnqZ6xq_hJuPC=KqqWQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdWS1M24vngxvrf3mRGfVwKvmgsXnqZ6xq_hJuPC=KqqWQ@mail.gmail.com>
+References: <1415274730-310-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1415274730-310-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-On Thu, Oct 30, 2014 at 10:51:56AM +0100, Geert Uytterhoeven wrote:
-> On Thu, Oct 30, 2014 at 6:57 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > This short series corrects the SD3CKCR address in both C and DT
-> >
-> > Based on the renesas-devel-20141030-v3.18-rc2 branch of my renesas tree
-> >
-> > Shinobu Uehara (2):
-> >   ARM: shmobile: r8a7790: Fix SD3CKCR address
-> >   ARM: shmobile: r8a7790: Fix SD3CKCR address to device tree
-> 
-> This  matches my copy of the datasheet, so
+Explicitly list the various SoC-specific compatible properties.
+This allows checkpatch to validate DTSes.
 
-Mine too :)
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> 
-> But it would be good to know this has been verified on actual hardware.
+diff --git a/Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt b/Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt
+index d2153ce36fa81404..c33e9a32d496ef10 100644
+--- a/Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt
++++ b/Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt
+@@ -2,6 +2,15 @@ Device tree configuration for Renesas IIC (sh_mobile) driver
+ 
+ Required properties:
+ - compatible      : "renesas,iic-<soctype>". "renesas,rmobile-iic" as fallback
++		     Examples with soctypes are:
++			- "renesas,iic-r8a73a4" (R-Mobile APE6)
++			- "renesas,iic-r8a7740" (R-Mobile A1)
++			- "renesas,iic-r8a7790" (R-Car H2)
++			- "renesas,iic-r8a7791" (R-Car M2-W)
++			- "renesas,iic-r8a7792" (R-Car V2H)
++			- "renesas,iic-r8a7793" (R-Car M2-N)
++			- "renesas,iic-r8a7794" (R-Car E2)
++			- "renesas,iic-sh73a0" (SH-Mobile AG5)
+ - reg             : address start and address range size of device
+ - interrupts      : interrupt of device
+ - clocks          : clock for device
+-- 
+1.9.1
 
-As these came from the BSP my assumption is that they have
-been verified on actual hardware. I will queue up these changes.
