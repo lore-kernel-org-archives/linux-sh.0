@@ -1,43 +1,31 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Tue, 04 Nov 2014 22:31:59 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Kconfig Cleanups for v3.19
-Message-Id: <20141104223159.GC5908@quad.lixom.net>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 06 Nov 2014 12:48:08 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7790: Spelling s/audamc1/audmac1/
+Message-Id: <1415278089-1842-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1414557793.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1414557793.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Oct 29, 2014 at 01:58:37PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these Renesas ARM based SoC kconfig cleanups for v3.19.
-> 
-> 
-> The following changes since commit f114040e3ea6e07372334ade75d1ee0775c355e1:
-> 
->   Linux 3.18-rc1 (2014-10-19 18:08:38 -0700)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-kconfig-cleanups-for-v3.19
-> 
-> for you to fetch changes up to 383d3f3e979bfbace3101dacb21387806b44e847:
-> 
->   ARM: shmobile: Remove ARCH_HAS_OPP completely (2014-10-24 10:41:56 +0900)
-> 
-> ----------------------------------------------------------------
-> Renesas ARM Based SoC Kconfig Cleanups for v3.19
-> 
-> * Remove reference to ARCH_HAS_OPP, it has been removed
-> 
-> ----------------------------------------------------------------
-> Paul Bolle (1):
->       ARM: shmobile: Remove ARCH_HAS_OPP completely
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Merged into next/cleanup.
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index c7be6b3e5cf215e7..a17f5630bcc22bec 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1114,7 +1114,7 @@
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <R8A7790_CLK_AUDIO_DMAC0 R8A7790_CLK_AUDIO_DMAC1
+ 						 R8A7790_CLK_THERMAL R8A7790_CLK_PWM>;
+-			clock-output-names = "audmac0", "audamc1", "thermal", "pwm";
++			clock-output-names = "audmac0", "audmac1", "thermal", "pwm";
+ 		};
+ 		mstp7_clks: mstp7_clks@e615014c {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+-- 
+1.9.1
 
-
--Olof
