@@ -1,44 +1,78 @@
-From: Jason Cooper <jason@lakedaemon.net>
-Date: Fri, 07 Nov 2014 05:00:09 +0000
-Subject: Re: [PATCH V3 00/14] genirq endian fixes; bcm7120/brcmstb IRQ updates
-Message-Id: <20141107050009.GI3698@titan.lakedaemon.net>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 06 Nov 2014 12:50:55 +0000
+Subject: [PATCH] ARM: shmobile: kzm9g legacy: Add LED support
+Message-Id: <1415278255-2047-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414890241-9938-1-git-send-email-cernekee@gmail.com>
-In-Reply-To: <1414890241-9938-1-git-send-email-cernekee@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kevin Cernekee <cernekee@gmail.com>
-Cc: arnd@arndb.de, f.fainelli@gmail.com, tglx@linutronix.de, ralf@linux-mips.org, linux-sh@vger.kernel.org, sergei.shtylyov@cogentembedded.com, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, mbizon@freebox.fr, jogo@openwrt.org, linux-mips@linux-mips.org
+To: linux-sh@vger.kernel.org
 
-Kevin,
+Add support for the 4 GPIO-controlled LEDs on the kzm9g development
+board.
 
-On Sat, Nov 01, 2014 at 06:03:47PM -0700, Kevin Cernekee wrote:
-...
-> Kevin Cernekee (14):
->   sh: Eliminate unused irq_reg_{readl,writel} accessors
->   genirq: Generic chip: Change irq_reg_{readl,writel} arguments
->   genirq: Generic chip: Allow irqchip drivers to override
->     irq_reg_{readl,writel}
->   genirq: Generic chip: Add big endian I/O accessors
->   irqchip: brcmstb-l2: Eliminate dependency on ARM code
->   irqchip: bcm7120-l2: Eliminate bad IRQ check
->   irqchip: bcm7120-l2, brcmstb-l2: Remove ARM Kconfig dependency
->   irqchip: bcm7120-l2: Make sure all register accesses use base+offset
->   irqchip: bcm7120-l2: Fix missing nibble in gc->unused mask
->   irqchip: bcm7120-l2: Use gc->mask_cache to simplify suspend/resume
->     functions
->   irqchip: bcm7120-l2: Extend driver to support 64+ bit controllers
->   irqchip: bcm7120-l2: Decouple driver from brcmstb-l2
->   irqchip: bcm7120-l2: Convert driver to use irq_reg_{readl,writel}
->   irqchip: brcmstb-l2: Convert driver to use irq_reg_{readl,writel}
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-shmobile/board-kzm9g.c | 39 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
 
-Patches 2, 3, and 4 applied to irqchip/core with Thomas' and Arnd's Acks
-added.  Patches 5-$ added to irqchip/core with Arnd's Ack added where it
-was missing.
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index 7c9b63bdde9fa458..e9d7dd65fd76ae18 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -528,6 +528,44 @@ static struct platform_device sdhi2_device = {
+ 	},
+ };
+ 
++/* LEDS */
++static struct gpio_led gpio_leds[] = {
++	{
++		.name		= "LED1",
++		.gpio		= 20,
++		.active_low	= 1,
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	}, {
++		.name		= "LED2",
++		.gpio		= 21,
++		.active_low	= 1,
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	}, {
++		.name		= "LED3",
++		.gpio		= 22,
++		.active_low	= 1,
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	}, {
++		.name		= "LED4",
++		.gpio		= 23,
++		.active_low	= 1,
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	},
++};
++
++static struct gpio_led_platform_data leds_gpio_info = {
++	.leds		= gpio_leds,
++	.num_leds	= ARRAY_SIZE(gpio_leds),
++};
++
++static struct platform_device leds_gpio_device = {
++	.name   = "leds-gpio",
++	.id     = -1,
++	.dev    = {
++		.platform_data  = &leds_gpio_info,
++	},
++};
++
+ /* KEY */
+ #define GPIO_KEY(c, g, d) { .code = c, .gpio = g, .desc = d, .active_low = 1 }
+ 
+@@ -793,6 +831,7 @@ static struct platform_device *kzm_devices[] __initdata = {
+ 	&vcc_sdhi2,
+ 	&sdhi0_device,
+ 	&sdhi2_device,
++	&leds_gpio_device,
+ 	&gpio_keys_device,
+ 	&fsi_device,
+ 	&fsi_ak4648_device,
+-- 
+1.9.1
 
-I've left patch #1 for the sh maintainers.
-
-thx,
-
-Jason.
