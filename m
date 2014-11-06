@@ -1,61 +1,46 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Nov 2014 00:54:52 +0000
-Subject: [PATCH 26/29] ARM: shmobile: r8a7794: Add SGX clock to device tree
-Message-Id: <3e58a5424c8325df8b62f1de175dc95c7373bfe1.1416476366.git.horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 06 Nov 2014 16:50:41 +0000
+Subject: [PATCH v4 6/6] ARM: shmobile: sh73a0: disable legacy clock initialization
+Message-Id: <1415292641-30331-7-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1416476366.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kouei Abe <kouei.abe.cp@renesas.com>
+Disables sh73a0_clock_init() if CCF is enabled.
 
-Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7794.dtsi            | 11 +++++------
- include/dt-bindings/clock/r8a7794-clock.h |  1 +
- 2 files changed, 6 insertions(+), 6 deletions(-)
+ arch/arm/mach-shmobile/setup-sh73a0.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 95f656d..b6f8f45 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -461,16 +461,15 @@
- 		mstp1_clks: mstp1_clks@e6150134 {
- 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
--			clocks = <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
--				 <&cp_clk>,
--				 <&zs_clk>, <&zs_clk>, <&zs_clk>;
-+			clocks = <&p_clk>, <&zg_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
-+				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
--				R8A7794_CLK_TMU1 R8A7794_CLK_TMU3 R8A7794_CLK_TMU2
--				R8A7794_CLK_CMT0 R8A7794_CLK_TMU0
-+				R8A7794_CLK_TMU1 R8A7794_CLK_3DG R8A7794_CLK_TMU3
-+				R8A7794_CLK_TMU2 R8A7794_CLK_CMT0 R8A7794_CLK_TMU0
- 			>;
- 			clock-output-names -				"tmu1", "tmu3", "tmu2", "cmt0", "tmu0";
-+				"tmu1", "3dg", "tmu3", "tmu2", "cmt0", "tmu0";
- 		};
- 		mstp2_clks: mstp2_clks@e6150138 {
- 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
-index fd7cdee..9066213 100644
---- a/include/dt-bindings/clock/r8a7794-clock.h
-+++ b/include/dt-bindings/clock/r8a7794-clock.h
-@@ -27,6 +27,7 @@
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 2955a08..3134bc1 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -742,7 +742,9 @@ void __init __weak sh73a0_register_twd(void) { }
+ void __init sh73a0_earlytimer_init(void)
+ {
+ 	shmobile_init_delay();
++#ifndef CONFIG_COMMON_CLK
+ 	sh73a0_clock_init();
++#endif
+ 	shmobile_earlytimer_init();
+ 	sh73a0_register_twd();
+ }
+@@ -761,8 +763,9 @@ void __init sh73a0_add_early_devices(void)
+ void __init sh73a0_add_standard_devices_dt(void)
+ {
+ 	/* clocks are setup late during boot in the case of DT */
++#ifndef CONFIG_COMMON_CLK
+ 	sh73a0_clock_init();
+-
++#endif
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
  
- /* MSTP1 */
- #define R8A7794_CLK_TMU1		11
-+#define R8A7794_CLK_3DG			12
- #define R8A7794_CLK_TMU3		21
- #define R8A7794_CLK_TMU2		22
- #define R8A7794_CLK_CMT0		24
 -- 
-2.1.1
+1.8.4.5
 
