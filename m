@@ -1,29 +1,49 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 25 Nov 2014 00:33:29 +0000
-Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC Cleanups for v3.19
-Message-Id: <20141125003329.GK5656@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 06 Nov 2014 20:38:26 +0000
+Subject: (bisected) Lock up on sh73a0/kzm9g on cpuidle initialization
+Message-Id: <CAMuHMdXaaa2t6+sH2egGacVxkAPeTUkAgwdYsOnMnEPnuLdB5Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1416530979.git.horms+renesas@verge.net.au>
- <2564955.afktPI8I4q@wuerfel>
-In-Reply-To: <2564955.afktPI8I4q@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Nov 21, 2014 at 01:06:30PM +0100, Arnd Bergmann wrote:
-> On Friday 21 November 2014 09:55:08 Simon Horman wrote:
-> > Hi Olof, Hi Kevin, Hi Arnd,
-> > 
-> > Please consider these second round of Renesas ARM based SoC cleanups for v3.19.
-> > 
-> > This pull request is based on the previous round of
-> > such requests, tagged as renesas-soc-cleanups-for-v3.19,
-> > which I have already sent a pull-request for.
-> > 
-> 
-> Pulled into next/cleanup, thanks!
+When CONFIG_CPU_IDLE=y, the kernel locks up during cpuidle initialization
+on Renesas sh73a0/kzm9g-reference, which has a dual-core Cortex-A9.
 
-Thanks Arnd,
+Last message is:
 
-I think that means everything I asked to be pulled for v3.19 is now in :)
+    DMA: preallocated 256 KiB pool for atomic coherent allocations
+
+After this it's supposed to print:
+
+    cpuidle: using governor ladder
+    cpuidle: using governor menu
+
+I've bisected this to commit 442bf3aaf55a91ebfec71da46a4ee10a3c905bcc
+("sched: Let the scheduler see CPU idle states").
+
+Reverting that commit, and commit 83a0a96a5f26d974580fd7251043ff70c8f1823d
+("sched/fair: Leverage the idle state info when choosing the "idlest"
+cpu") which
+depends on it, fixes the problem.
+
+I saw the discussion "lockdep splat in CPU hotplug", so I enabled lockdep
+debugging, but didn't see a lockdep splat.
+
+I'm using CONFIG_TREE_RCU=y, as this is SMP without PREEMPT.
+
+Anyone with a clue?
+
+Thanks!
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
