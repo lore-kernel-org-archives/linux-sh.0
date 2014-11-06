@@ -1,81 +1,108 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 25 Nov 2014 14:09:07 +0000
-Subject: Re: [PATCH 1/2] sh_eth: Fix sleeping function called from invalid context
-Message-Id: <54748D83.1090707@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 06 Nov 2014 11:52:06 +0000
+Subject: [PATCH 1/5] ARM: shmobile: kzm9g legacy: Set i2c clks_per_count to 2
+Message-Id: <1415274730-310-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415862135-27972-1-git-send-email-ykaneko0929@gmail.com>	<1415862135-27972-2-git-send-email-ykaneko0929@gmail.com> <CAMuHMdWJYuXES4g1-=H6xo=gVePPSUkybUhL0VjuKk7asE6syg@mail.gmail.com>
-In-Reply-To: <CAMuHMdWJYuXES4g1-=H6xo=gVePPSUkybUhL0VjuKk7asE6syg@mail.gmail.com>
+References: <1415274730-310-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1415274730-310-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Cc: "netdev@vger.kernel.org" <netdev@vger.kernel.org>, "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-Hello.
+On sh73a0/kzm9g-legacy, probing of the i2c masters fails with:
 
-On 11/25/2014 4:35 PM, Geert Uytterhoeven wrote:
+    i2c-sh_mobile i2c-sh_mobile.0: timing values out of range: L/H=0x208/0x1bf
+    sh_mobile: probe of i2c-sh_mobile.0 failed with error -22
 
->> From: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
+According to the datasheet, the transfer rate is derived from the HP
+clock (which runs at 104 MHz) divided by two. Hence
+i2c_sh_mobile_platform_data.clks_per_count should be set to two.
 
->> Fix the bug as follows:
+Now probing succeeds, and i2c works:
 
->> ----
->> [ 1238.161349] BUG: sleeping function called from invalid context at drivers/base/power/runtime.c:952
->> [ 1238.188279] in_atomic(): 1, irqs_disabled(): 0, pid: 1388, name: cat
->> [ 1238.207425] CPU: 0 PID: 1388 Comm: cat Not tainted 3.10.31-ltsi-00046-gefa0b46 #1087
->> [ 1238.230737] Backtrace:
->> [ 1238.238123] [<c0012e64>] (dump_backtrace+0x0/0x10c) from [<c0013000>] (show_stack+0x18/0x1c)
->> [ 1238.263499]  r6:000003b8 r5:c06160c0 r4:c0669e00 r3:00404000
->> [ 1238.280583] [<c0012fe8>] (show_stack+0x0/0x1c) from [<c04515a4>] (dump_stack+0x20/0x28)
->> [ 1238.304631] [<c0451584>] (dump_stack+0x0/0x28) from [<c004970c>] (__might_sleep+0xf8/0x118)
->> [ 1238.329734] [<c0049614>] (__might_sleep+0x0/0x118) from [<c02465ac>] (__pm_runtime_resume+0x38/0x90)
->> [ 1238.357170]  r7:d616f000 r6:c049c458 r5:00000004 r4:d6a17210
->> [ 1238.374251] [<c0246574>] (__pm_runtime_resume+0x0/0x90) from [<c029b1c4>] (sh_eth_get_stats+0x44/0x280)
->> [ 1238.402468]  r7:d616f000 r6:c049c458 r5:d5c21000 r4:d5c21000
->> [ 1238.419552] [<c029b180>] (sh_eth_get_stats+0x0/0x280) from [<c03ae39c>] (dev_get_stats+0x54/0x88)
->> [ 1238.446204]  r5:d5c21000 r4:d5ed7e08
->> [ 1238.456980] [<c03ae348>] (dev_get_stats+0x0/0x88) from [<c03c677c>] (netstat_show.isra.15+0x54/0x9c)
->> [ 1238.484413]  r6:d5c21000 r5:d5c21238 r4:00000028 r3:00000001
->> [ 1238.501495] [<c03c6728>] (netstat_show.isra.15+0x0/0x9c) from [<c03c69b8>] (show_tx_errors+0x18/0x1c)
->> [ 1238.529196]  r7:d5f945d8 r6:d5f945c0 r5:c049716c r4:c0650e7c
->> [ 1238.546279] [<c03c69a0>] (show_tx_errors+0x0/0x1c) from [<c023963c>] (dev_attr_show+0x24/0x50)
->> [ 1238.572157] [<c0239618>] (dev_attr_show+0x0/0x50) from [<c010c148>] (sysfs_read_file+0xb0/0x140)
->> [ 1238.598554]  r5:c049716c r4:d5c21240
->> [ 1238.609326] [<c010c098>] (sysfs_read_file+0x0/0x140) from [<c00b9ee4>] (vfs_read+0xb0/0x13c)
->> [ 1238.634679] [<c00b9e34>] (vfs_read+0x0/0x13c) from [<c00ba0ac>] (SyS_read+0x44/0x74)
->> [ 1238.657944]  r8:bef45bf0 r7:00000000 r6:d6ac0600 r5:00000000 r4:00000000
->> [ 1238.678172] [<c00ba068>] (SyS_read+0x0/0x74) from [<c000eec0>] (ret_fast_syscall+0x0/0x30)
->> ----
+    i2c-sh_mobile i2c-sh_mobile.0: I2C adapter 0 with bus speed 100000 Hz (L/H=0x104/0xe0)
 
->> Signed-off-by: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
->> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->> ---
->>   drivers/net/ethernet/renesas/sh_eth.c | 64 +++++++++++++++++++----------------
->>   drivers/net/ethernet/renesas/sh_eth.h |  1 +
->>   2 files changed, 36 insertions(+), 29 deletions(-)
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Note that the L/H values still differ from the Transfer Rate Settings
+example in Table 19.3 of the datasheet, which suggests 0x121/0xe7.
 
->> diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
->> index 60e9c2c..862a691 100644
->> --- a/drivers/net/ethernet/renesas/sh_eth.c
->> +++ b/drivers/net/ethernet/renesas/sh_eth.c
-[...]
->> @@ -2131,6 +2133,36 @@ static int sh_eth_start_xmit(struct sk_buff *skb, struct net_device *ndev)
->>          return NETDEV_TX_OK;
->>   }
->>
->> +static struct net_device_stats *sh_eth_get_stats(struct net_device *ndev)
->> +{
->> +       struct sh_eth_private *mdp = netdev_priv(ndev);
->> +
->> +       if (sh_eth_is_rz_fast_ether(mdp))
->> +               return &ndev->stats;
->> +
->> +       if (!mdp->is_opened)
+ arch/arm/mach-shmobile/setup-sh73a0.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
-> Can't you use netif_running(ndev) instead?
-
-    The __LINK_STATE_START flag it tests gets set in __dev_open() before 
-calling the ndo_open() method. Looks like it would be somewhat unsafe to use it...
-
-WBR, Sergei
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 2955a08a655d8889..179c2b65be9f6829 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -22,6 +22,7 @@
+ #include <linux/of_platform.h>
+ #include <linux/delay.h>
+ #include <linux/input.h>
++#include <linux/i2c/i2c-sh_mobile.h>
+ #include <linux/io.h>
+ #include <linux/serial_sci.h>
+ #include <linux/sh_dma.h>
+@@ -188,11 +189,18 @@ static struct resource i2c4_resources[] = {
+ 	},
+ };
+ 
++static struct i2c_sh_mobile_platform_data i2c_platform_data = {
++	.clks_per_count	= 2,
++};
++
+ static struct platform_device i2c0_device = {
+ 	.name		= "i2c-sh_mobile",
+ 	.id		= 0,
+ 	.resource	= i2c0_resources,
+ 	.num_resources	= ARRAY_SIZE(i2c0_resources),
++	.dev		= {
++		.platform_data	= &i2c_platform_data,
++	},
+ };
+ 
+ static struct platform_device i2c1_device = {
+@@ -200,6 +208,9 @@ static struct platform_device i2c1_device = {
+ 	.id		= 1,
+ 	.resource	= i2c1_resources,
+ 	.num_resources	= ARRAY_SIZE(i2c1_resources),
++	.dev		= {
++		.platform_data	= &i2c_platform_data,
++	},
+ };
+ 
+ static struct platform_device i2c2_device = {
+@@ -207,6 +218,9 @@ static struct platform_device i2c2_device = {
+ 	.id		= 2,
+ 	.resource	= i2c2_resources,
+ 	.num_resources	= ARRAY_SIZE(i2c2_resources),
++	.dev		= {
++		.platform_data	= &i2c_platform_data,
++	},
+ };
+ 
+ static struct platform_device i2c3_device = {
+@@ -214,6 +228,9 @@ static struct platform_device i2c3_device = {
+ 	.id		= 3,
+ 	.resource	= i2c3_resources,
+ 	.num_resources	= ARRAY_SIZE(i2c3_resources),
++	.dev		= {
++		.platform_data	= &i2c_platform_data,
++	},
+ };
+ 
+ static struct platform_device i2c4_device = {
+@@ -221,6 +238,9 @@ static struct platform_device i2c4_device = {
+ 	.id		= 4,
+ 	.resource	= i2c4_resources,
+ 	.num_resources	= ARRAY_SIZE(i2c4_resources),
++	.dev		= {
++		.platform_data	= &i2c_platform_data,
++	},
+ };
+ 
+ static const struct sh_dmae_slave_config sh73a0_dmae_slaves[] = {
+-- 
+1.9.1
 
