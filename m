@@ -1,39 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:50:40 +0000
-Subject: [PATCH 10/34] ARM: shmobile: r8a7740 dtsi: Fix clock index for scifa2
-Message-Id: <b345aee4d7c2387f2e36cdeb64e0f4dce34598f3.1415059587.git.horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 06 Nov 2014 16:50:39 +0000
+Subject: [PATCH v4 4/6] ARM: shmobile: kzm9g-reference: Common clock framework DT description
+Message-Id: <1415292641-30331-5-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415059587.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415059587.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+KZM9G-specific clock overrides.
 
-The clocks property for the scifa2 device node referred to the scifa0
-clock index instead of the scifa2 clock index.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7740.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 502483f..559bd39 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -197,7 +197,7 @@
- 		compatible = "renesas,scifa-r8a7740", "renesas,scifa";
- 		reg = <0xe6c60000 0x100>;
- 		interrupts = <0 102 IRQ_TYPE_LEVEL_HIGH>;
--		clocks = <&mstp2_clks R8A7740_CLK_SCIFA0>;
-+		clocks = <&mstp2_clks R8A7740_CLK_SCIFA2>;
- 		clock-names = "sci_ick";
- 		status = "disabled";
- 	};
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 8c913d9..737a732 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -178,6 +178,10 @@
+ 	status = "ok";
+ };
+ 
++&extal2_clk {
++	clock-frequency = <48000000>;
++};
++
+ &i2c0 {
+ 	status = "okay";
+ 	as3711@40 {
 -- 
-2.1.1
+1.8.4.5
 
