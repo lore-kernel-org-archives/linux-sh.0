@@ -1,479 +1,288 @@
-From: Kevin Cernekee <cernekee@gmail.com>
-Date: Sun, 02 Nov 2014 01:03:49 +0000
-Subject: [PATCH V3 02/14] genirq: Generic chip: Change irq_reg_{readl,writel} arguments
-Message-Id: <1414890241-9938-3-git-send-email-cernekee@gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 06 Nov 2014 16:50:36 +0000
+Subject: [PATCH v4 1/6] clk: shmobile: sh73a0 common clock framework implementation
+Message-Id: <1415292641-30331-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414890241-9938-1-git-send-email-cernekee@gmail.com>
-In-Reply-To: <1414890241-9938-1-git-send-email-cernekee@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: arnd@arndb.de, f.fainelli@gmail.com, tglx@linutronix.de, jason@lakedaemon.net, ralf@linux-mips.org
-Cc: linux-sh@vger.kernel.org, sergei.shtylyov@cogentembedded.com, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, mbizon@freebox.fr, jogo@openwrt.org, linux-mips@linux-mips.org
+To: linux-sh@vger.kernel.org
 
-Pass in the irq_chip_generic struct so we can use different readl/writel
-settings for each irqchip driver, when appropriate.  Compute
-(gc->reg_base + reg_offset) in the helper function because this is pretty
-much what all callers want to do anyway.
+Driver for the SH73A0's clocks that are too specific to be supported by a
+generic driver.
 
-Compile-tested using the following configurations:
-
-    at91_dt_defconfig (CONFIG_ATMEL_AIC_IRQ=y)
-    sama5_defconfig (CONFIG_ATMEL_AIC5_IRQ=y)
-    sunxi_defconfig (CONFIG_ARCH_SUNXI=y)
-
-tb10x (ARC) is untested.
-
-Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Mike Turquette <mturquette@linaro.org>
 ---
- drivers/irqchip/irq-atmel-aic.c  | 40 ++++++++++++-------------
- drivers/irqchip/irq-atmel-aic5.c | 65 +++++++++++++++++++---------------------
- drivers/irqchip/irq-sunxi-nmi.c  |  4 +--
- drivers/irqchip/irq-tb10x.c      |  4 +--
- include/linux/irq.h              | 19 +++++++-----
- kernel/irq/generic-chip.c        | 20 ++++++-------
- 6 files changed, 77 insertions(+), 75 deletions(-)
+ .../bindings/clock/renesas,sh73a0-cpg-clocks.txt   |  35 ++++
+ drivers/clk/shmobile/Makefile                      |   1 +
+ drivers/clk/shmobile/clk-sh73a0.c                  | 204 +++++++++++++++++++++
+ 3 files changed, 240 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/clock/renesas,sh73a0-cpg-clocks.txt
+ create mode 100644 drivers/clk/shmobile/clk-sh73a0.c
 
-diff --git a/drivers/irqchip/irq-atmel-aic.c b/drivers/irqchip/irq-atmel-aic.c
-index 9a2cf3c..27fdd8c 100644
---- a/drivers/irqchip/irq-atmel-aic.c
-+++ b/drivers/irqchip/irq-atmel-aic.c
-@@ -65,11 +65,11 @@ aic_handle(struct pt_regs *regs)
- 	u32 irqnr;
- 	u32 irqstat;
- 
--	irqnr = irq_reg_readl(gc->reg_base + AT91_AIC_IVR);
--	irqstat = irq_reg_readl(gc->reg_base + AT91_AIC_ISR);
-+	irqnr = irq_reg_readl(gc, AT91_AIC_IVR);
-+	irqstat = irq_reg_readl(gc, AT91_AIC_ISR);
- 
- 	if (!irqstat)
--		irq_reg_writel(0, gc->reg_base + AT91_AIC_EOICR);
-+		irq_reg_writel(gc, 0, AT91_AIC_EOICR);
- 	else
- 		handle_domain_irq(aic_domain, irqnr, regs);
- }
-@@ -80,7 +80,7 @@ static int aic_retrigger(struct irq_data *d)
- 
- 	/* Enable interrupt on AIC5 */
- 	irq_gc_lock(gc);
--	irq_reg_writel(d->mask, gc->reg_base + AT91_AIC_ISCR);
-+	irq_reg_writel(gc, d->mask, AT91_AIC_ISCR);
- 	irq_gc_unlock(gc);
- 
- 	return 0;
-@@ -92,12 +92,12 @@ static int aic_set_type(struct irq_data *d, unsigned type)
- 	unsigned int smr;
- 	int ret;
- 
--	smr = irq_reg_readl(gc->reg_base + AT91_AIC_SMR(d->hwirq));
-+	smr = irq_reg_readl(gc, AT91_AIC_SMR(d->hwirq));
- 	ret = aic_common_set_type(d, type, &smr);
- 	if (ret)
- 		return ret;
- 
--	irq_reg_writel(smr, gc->reg_base + AT91_AIC_SMR(d->hwirq));
-+	irq_reg_writel(gc, smr, AT91_AIC_SMR(d->hwirq));
- 
- 	return 0;
- }
-@@ -108,8 +108,8 @@ static void aic_suspend(struct irq_data *d)
- 	struct irq_chip_generic *gc = irq_data_get_irq_chip_data(d);
- 
- 	irq_gc_lock(gc);
--	irq_reg_writel(gc->mask_cache, gc->reg_base + AT91_AIC_IDCR);
--	irq_reg_writel(gc->wake_active, gc->reg_base + AT91_AIC_IECR);
-+	irq_reg_writel(gc, gc->mask_cache, AT91_AIC_IDCR);
-+	irq_reg_writel(gc, gc->wake_active, AT91_AIC_IECR);
- 	irq_gc_unlock(gc);
- }
- 
-@@ -118,8 +118,8 @@ static void aic_resume(struct irq_data *d)
- 	struct irq_chip_generic *gc = irq_data_get_irq_chip_data(d);
- 
- 	irq_gc_lock(gc);
--	irq_reg_writel(gc->wake_active, gc->reg_base + AT91_AIC_IDCR);
--	irq_reg_writel(gc->mask_cache, gc->reg_base + AT91_AIC_IECR);
-+	irq_reg_writel(gc, gc->wake_active, AT91_AIC_IDCR);
-+	irq_reg_writel(gc, gc->mask_cache, AT91_AIC_IECR);
- 	irq_gc_unlock(gc);
- }
- 
-@@ -128,8 +128,8 @@ static void aic_pm_shutdown(struct irq_data *d)
- 	struct irq_chip_generic *gc = irq_data_get_irq_chip_data(d);
- 
- 	irq_gc_lock(gc);
--	irq_reg_writel(0xffffffff, gc->reg_base + AT91_AIC_IDCR);
--	irq_reg_writel(0xffffffff, gc->reg_base + AT91_AIC_ICCR);
-+	irq_reg_writel(gc, 0xffffffff, AT91_AIC_IDCR);
-+	irq_reg_writel(gc, 0xffffffff, AT91_AIC_ICCR);
- 	irq_gc_unlock(gc);
- }
- #else
-@@ -148,24 +148,24 @@ static void __init aic_hw_init(struct irq_domain *domain)
- 	 * will not Lock out nIRQ
- 	 */
- 	for (i = 0; i < 8; i++)
--		irq_reg_writel(0, gc->reg_base + AT91_AIC_EOICR);
-+		irq_reg_writel(gc, 0, AT91_AIC_EOICR);
- 
- 	/*
- 	 * Spurious Interrupt ID in Spurious Vector Register.
- 	 * When there is no current interrupt, the IRQ Vector Register
- 	 * reads the value stored in AIC_SPU
- 	 */
--	irq_reg_writel(0xffffffff, gc->reg_base + AT91_AIC_SPU);
-+	irq_reg_writel(gc, 0xffffffff, AT91_AIC_SPU);
- 
- 	/* No debugging in AIC: Debug (Protect) Control Register */
--	irq_reg_writel(0, gc->reg_base + AT91_AIC_DCR);
-+	irq_reg_writel(gc, 0, AT91_AIC_DCR);
- 
- 	/* Disable and clear all interrupts initially */
--	irq_reg_writel(0xffffffff, gc->reg_base + AT91_AIC_IDCR);
--	irq_reg_writel(0xffffffff, gc->reg_base + AT91_AIC_ICCR);
-+	irq_reg_writel(gc, 0xffffffff, AT91_AIC_IDCR);
-+	irq_reg_writel(gc, 0xffffffff, AT91_AIC_ICCR);
- 
- 	for (i = 0; i < 32; i++)
--		irq_reg_writel(i, gc->reg_base + AT91_AIC_SVR(i));
-+		irq_reg_writel(gc, i, AT91_AIC_SVR(i));
- }
- 
- static int aic_irq_domain_xlate(struct irq_domain *d,
-@@ -195,10 +195,10 @@ static int aic_irq_domain_xlate(struct irq_domain *d,
- 	gc = dgc->gc[idx];
- 
- 	irq_gc_lock(gc);
--	smr = irq_reg_readl(gc->reg_base + AT91_AIC_SMR(*out_hwirq));
-+	smr = irq_reg_readl(gc, AT91_AIC_SMR(*out_hwirq));
- 	ret = aic_common_set_priority(intspec[2], &smr);
- 	if (!ret)
--		irq_reg_writel(smr, gc->reg_base + AT91_AIC_SMR(*out_hwirq));
-+		irq_reg_writel(gc, smr, AT91_AIC_SMR(*out_hwirq));
- 	irq_gc_unlock(gc);
- 
- 	return ret;
-diff --git a/drivers/irqchip/irq-atmel-aic5.c b/drivers/irqchip/irq-atmel-aic5.c
-index a11aae8..a2e8c3f 100644
---- a/drivers/irqchip/irq-atmel-aic5.c
-+++ b/drivers/irqchip/irq-atmel-aic5.c
-@@ -75,11 +75,11 @@ aic5_handle(struct pt_regs *regs)
- 	u32 irqnr;
- 	u32 irqstat;
- 
--	irqnr = irq_reg_readl(gc->reg_base + AT91_AIC5_IVR);
--	irqstat = irq_reg_readl(gc->reg_base + AT91_AIC5_ISR);
-+	irqnr = irq_reg_readl(gc, AT91_AIC5_IVR);
-+	irqstat = irq_reg_readl(gc, AT91_AIC5_ISR);
- 
- 	if (!irqstat)
--		irq_reg_writel(0, gc->reg_base + AT91_AIC5_EOICR);
-+		irq_reg_writel(gc, 0, AT91_AIC5_EOICR);
- 	else
- 		handle_domain_irq(aic5_domain, irqnr, regs);
- }
-@@ -92,8 +92,8 @@ static void aic5_mask(struct irq_data *d)
- 
- 	/* Disable interrupt on AIC5 */
- 	irq_gc_lock(gc);
--	irq_reg_writel(d->hwirq, gc->reg_base + AT91_AIC5_SSR);
--	irq_reg_writel(1, gc->reg_base + AT91_AIC5_IDCR);
-+	irq_reg_writel(gc, d->hwirq, AT91_AIC5_SSR);
-+	irq_reg_writel(gc, 1, AT91_AIC5_IDCR);
- 	gc->mask_cache &= ~d->mask;
- 	irq_gc_unlock(gc);
- }
-@@ -106,8 +106,8 @@ static void aic5_unmask(struct irq_data *d)
- 
- 	/* Enable interrupt on AIC5 */
- 	irq_gc_lock(gc);
--	irq_reg_writel(d->hwirq, gc->reg_base + AT91_AIC5_SSR);
--	irq_reg_writel(1, gc->reg_base + AT91_AIC5_IECR);
-+	irq_reg_writel(gc, d->hwirq, AT91_AIC5_SSR);
-+	irq_reg_writel(gc, 1, AT91_AIC5_IECR);
- 	gc->mask_cache |= d->mask;
- 	irq_gc_unlock(gc);
- }
-@@ -120,8 +120,8 @@ static int aic5_retrigger(struct irq_data *d)
- 
- 	/* Enable interrupt on AIC5 */
- 	irq_gc_lock(gc);
--	irq_reg_writel(d->hwirq, gc->reg_base + AT91_AIC5_SSR);
--	irq_reg_writel(1, gc->reg_base + AT91_AIC5_ISCR);
-+	irq_reg_writel(gc, d->hwirq, AT91_AIC5_SSR);
-+	irq_reg_writel(gc, 1, AT91_AIC5_ISCR);
- 	irq_gc_unlock(gc);
- 
- 	return 0;
-@@ -136,11 +136,11 @@ static int aic5_set_type(struct irq_data *d, unsigned type)
- 	int ret;
- 
- 	irq_gc_lock(gc);
--	irq_reg_writel(d->hwirq, gc->reg_base + AT91_AIC5_SSR);
--	smr = irq_reg_readl(gc->reg_base + AT91_AIC5_SMR);
-+	irq_reg_writel(gc, d->hwirq, AT91_AIC5_SSR);
-+	smr = irq_reg_readl(gc, AT91_AIC5_SMR);
- 	ret = aic_common_set_type(d, type, &smr);
- 	if (!ret)
--		irq_reg_writel(smr, gc->reg_base + AT91_AIC5_SMR);
-+		irq_reg_writel(gc, smr, AT91_AIC5_SMR);
- 	irq_gc_unlock(gc);
- 
- 	return ret;
-@@ -162,12 +162,11 @@ static void aic5_suspend(struct irq_data *d)
- 		if ((mask & gc->mask_cache) = (mask & gc->wake_active))
- 			continue;
- 
--		irq_reg_writel(i + gc->irq_base,
--			       bgc->reg_base + AT91_AIC5_SSR);
-+		irq_reg_writel(bgc, i + gc->irq_base, AT91_AIC5_SSR);
- 		if (mask & gc->wake_active)
--			irq_reg_writel(1, bgc->reg_base + AT91_AIC5_IECR);
-+			irq_reg_writel(bgc, 1, AT91_AIC5_IECR);
- 		else
--			irq_reg_writel(1, bgc->reg_base + AT91_AIC5_IDCR);
-+			irq_reg_writel(bgc, 1, AT91_AIC5_IDCR);
- 	}
- 	irq_gc_unlock(bgc);
- }
-@@ -187,12 +186,11 @@ static void aic5_resume(struct irq_data *d)
- 		if ((mask & gc->mask_cache) = (mask & gc->wake_active))
- 			continue;
- 
--		irq_reg_writel(i + gc->irq_base,
--			       bgc->reg_base + AT91_AIC5_SSR);
-+		irq_reg_writel(bgc, i + gc->irq_base, AT91_AIC5_SSR);
- 		if (mask & gc->mask_cache)
--			irq_reg_writel(1, bgc->reg_base + AT91_AIC5_IECR);
-+			irq_reg_writel(bgc, 1, AT91_AIC5_IECR);
- 		else
--			irq_reg_writel(1, bgc->reg_base + AT91_AIC5_IDCR);
-+			irq_reg_writel(bgc, 1, AT91_AIC5_IDCR);
- 	}
- 	irq_gc_unlock(bgc);
- }
-@@ -207,10 +205,9 @@ static void aic5_pm_shutdown(struct irq_data *d)
- 
- 	irq_gc_lock(bgc);
- 	for (i = 0; i < dgc->irqs_per_chip; i++) {
--		irq_reg_writel(i + gc->irq_base,
--			       bgc->reg_base + AT91_AIC5_SSR);
--		irq_reg_writel(1, bgc->reg_base + AT91_AIC5_IDCR);
--		irq_reg_writel(1, bgc->reg_base + AT91_AIC5_ICCR);
-+		irq_reg_writel(bgc, i + gc->irq_base, AT91_AIC5_SSR);
-+		irq_reg_writel(bgc, 1, AT91_AIC5_IDCR);
-+		irq_reg_writel(bgc, 1, AT91_AIC5_ICCR);
- 	}
- 	irq_gc_unlock(bgc);
- }
-@@ -230,24 +227,24 @@ static void __init aic5_hw_init(struct irq_domain *domain)
- 	 * will not Lock out nIRQ
- 	 */
- 	for (i = 0; i < 8; i++)
--		irq_reg_writel(0, gc->reg_base + AT91_AIC5_EOICR);
-+		irq_reg_writel(gc, 0, AT91_AIC5_EOICR);
- 
- 	/*
- 	 * Spurious Interrupt ID in Spurious Vector Register.
- 	 * When there is no current interrupt, the IRQ Vector Register
- 	 * reads the value stored in AIC_SPU
- 	 */
--	irq_reg_writel(0xffffffff, gc->reg_base + AT91_AIC5_SPU);
-+	irq_reg_writel(gc, 0xffffffff, AT91_AIC5_SPU);
- 
- 	/* No debugging in AIC: Debug (Protect) Control Register */
--	irq_reg_writel(0, gc->reg_base + AT91_AIC5_DCR);
-+	irq_reg_writel(gc, 0, AT91_AIC5_DCR);
- 
- 	/* Disable and clear all interrupts initially */
- 	for (i = 0; i < domain->revmap_size; i++) {
--		irq_reg_writel(i, gc->reg_base + AT91_AIC5_SSR);
--		irq_reg_writel(i, gc->reg_base + AT91_AIC5_SVR);
--		irq_reg_writel(1, gc->reg_base + AT91_AIC5_IDCR);
--		irq_reg_writel(1, gc->reg_base + AT91_AIC5_ICCR);
-+		irq_reg_writel(gc, i, AT91_AIC5_SSR);
-+		irq_reg_writel(gc, i, AT91_AIC5_SVR);
-+		irq_reg_writel(gc, 1, AT91_AIC5_IDCR);
-+		irq_reg_writel(gc, 1, AT91_AIC5_ICCR);
- 	}
- }
- 
-@@ -273,11 +270,11 @@ static int aic5_irq_domain_xlate(struct irq_domain *d,
- 	gc = dgc->gc[0];
- 
- 	irq_gc_lock(gc);
--	irq_reg_writel(*out_hwirq, gc->reg_base + AT91_AIC5_SSR);
--	smr = irq_reg_readl(gc->reg_base + AT91_AIC5_SMR);
-+	irq_reg_writel(gc, *out_hwirq, AT91_AIC5_SSR);
-+	smr = irq_reg_readl(gc, AT91_AIC5_SMR);
- 	ret = aic_common_set_priority(intspec[2], &smr);
- 	if (!ret)
--		irq_reg_writel(intspec[2] | smr, gc->reg_base + AT91_AIC5_SMR);
-+		irq_reg_writel(gc, intspec[2] | smr, AT91_AIC5_SMR);
- 	irq_gc_unlock(gc);
- 
- 	return ret;
-diff --git a/drivers/irqchip/irq-sunxi-nmi.c b/drivers/irqchip/irq-sunxi-nmi.c
-index 12f547a..4a9ce5b 100644
---- a/drivers/irqchip/irq-sunxi-nmi.c
-+++ b/drivers/irqchip/irq-sunxi-nmi.c
-@@ -50,12 +50,12 @@ static struct sunxi_sc_nmi_reg_offs sun6i_reg_offs = {
- static inline void sunxi_sc_nmi_write(struct irq_chip_generic *gc, u32 off,
- 				      u32 val)
- {
--	irq_reg_writel(val, gc->reg_base + off);
-+	irq_reg_writel(gc, val, off);
- }
- 
- static inline u32 sunxi_sc_nmi_read(struct irq_chip_generic *gc, u32 off)
- {
--	return irq_reg_readl(gc->reg_base + off);
-+	return irq_reg_readl(gc, off);
- }
- 
- static void sunxi_sc_nmi_handle_irq(unsigned int irq, struct irq_desc *desc)
-diff --git a/drivers/irqchip/irq-tb10x.c b/drivers/irqchip/irq-tb10x.c
-index 7c44c99..accc200 100644
---- a/drivers/irqchip/irq-tb10x.c
-+++ b/drivers/irqchip/irq-tb10x.c
-@@ -43,12 +43,12 @@
- static inline void ab_irqctl_writereg(struct irq_chip_generic *gc, u32 reg,
- 	u32 val)
- {
--	irq_reg_writel(val, gc->reg_base + reg);
-+	irq_reg_writel(gc, val, reg);
- }
- 
- static inline u32 ab_irqctl_readreg(struct irq_chip_generic *gc, u32 reg)
- {
--	return irq_reg_readl(gc->reg_base + reg);
-+	return irq_reg_readl(gc, reg);
- }
- 
- static int tb10x_irq_set_type(struct irq_data *data, unsigned int flow_type)
-diff --git a/include/linux/irq.h b/include/linux/irq.h
-index 03f48d9..0743743 100644
---- a/include/linux/irq.h
-+++ b/include/linux/irq.h
-@@ -639,13 +639,6 @@ void arch_teardown_hwirq(unsigned int irq);
- void irq_init_desc(unsigned int irq);
- #endif
- 
--#ifndef irq_reg_writel
--# define irq_reg_writel(val, addr)	writel(val, addr)
--#endif
--#ifndef irq_reg_readl
--# define irq_reg_readl(addr)		readl(addr)
--#endif
--
- /**
-  * struct irq_chip_regs - register offsets for struct irq_gci
-  * @enable:	Enable register offset to reg_base
-@@ -821,4 +814,16 @@ static inline void irq_gc_lock(struct irq_chip_generic *gc) { }
- static inline void irq_gc_unlock(struct irq_chip_generic *gc) { }
- #endif
- 
-+static inline void irq_reg_writel(struct irq_chip_generic *gc,
-+				  u32 val, int reg_offset)
+diff --git a/Documentation/devicetree/bindings/clock/renesas,sh73a0-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,sh73a0-cpg-clocks.txt
+new file mode 100644
+index 0000000..a8978ec
+--- /dev/null
++++ b/Documentation/devicetree/bindings/clock/renesas,sh73a0-cpg-clocks.txt
+@@ -0,0 +1,35 @@
++These bindings should be considered EXPERIMENTAL for now.
++
++* Renesas SH73A0 Clock Pulse Generator (CPG)
++
++The CPG generates core clocks for the SH73A0 SoC. It includes four PLLs
++and several fixed ratio dividers.
++
++Required Properties:
++
++  - compatible: Must be "renesas,sh73a0-cpg-clocks"
++
++  - reg: Base address and length of the memory resource used by the CPG
++
++  - clocks: Reference to the parent clocks ("extal1" and "extal2")
++
++  - #clock-cells: Must be 1
++
++  - clock-output-names: The names of the clocks. Supported clocks are "main",
++    "pll0", "pll1", "pll2", "pll3", "dsi0phy", "dsi1phy", "zg", "m3", "b",
++    "m1", "m2", "z", "zx", and "hp".
++
++
++Example
++-------
++
++        cpg_clocks: cpg_clocks@e6150000 {
++                compatible = "renesas,sh73a0-cpg-clocks";
++                reg = <0 0xe6150000 0 0x10000>;
++                clocks = <&extal1_clk>, <&extal2_clk>;
++                #clock-cells = <1>;
++                clock-output-names = "main", "pll0", "pll1", "pll2",
++                                     "pll3", "dsi0phy", "dsi1phy",
++                                     "zg", "m3", "b", "m1", "m2",
++                                     "z", "zx", "hp";
++        };
+diff --git a/drivers/clk/shmobile/Makefile b/drivers/clk/shmobile/Makefile
+index 960bf22..f83980f 100644
+--- a/drivers/clk/shmobile/Makefile
++++ b/drivers/clk/shmobile/Makefile
+@@ -5,5 +5,6 @@ obj-$(CONFIG_ARCH_R8A7779)		+= clk-r8a7779.o
+ obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o
+ obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o
+ obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o
++obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o
+ obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-div6.o
+ obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-mstp.o
+diff --git a/drivers/clk/shmobile/clk-sh73a0.c b/drivers/clk/shmobile/clk-sh73a0.c
+new file mode 100644
+index 0000000..ebd51d1
+--- /dev/null
++++ b/drivers/clk/shmobile/clk-sh73a0.c
+@@ -0,0 +1,204 @@
++/*
++ * sh73a0 Core CPG Clocks
++ *
++ * Copyright (C) 2014  Ulrich Hecht
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ */
++
++#include <linux/clk-provider.h>
++#include <linux/clkdev.h>
++#include <linux/clk/shmobile.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/spinlock.h>
++
++struct sh73a0_cpg {
++	struct clk_onecell_data data;
++	spinlock_t lock;
++	void __iomem *reg;
++};
++
++#define CPG_FRQCRA	0x00
++#define CPG_FRQCRB	0x04
++#define CPG_SD0CKCR	0x74
++#define CPG_SD1CKCR	0x78
++#define CPG_SD2CKCR	0x7c
++#define CPG_PLLECR	0xd0
++#define CPG_PLL0CR	0xd8
++#define CPG_PLL1CR	0x28
++#define CPG_PLL2CR	0x2c
++#define CPG_PLL3CR	0xdc
++#define CPG_CKSCR	0xc0
++#define CPG_DSI0PHYCR	0x6c
++#define CPG_DSI1PHYCR	0x70
++
++#define CLK_ENABLE_ON_INIT BIT(0)
++
++struct div4_clk {
++	const char *name;
++	const char *parent;
++	unsigned int reg;
++	unsigned int shift;
++	unsigned int mask;
++	int flags;
++};
++
++static struct div4_clk div4_clks[] = {
++	{ "zg", "pll0", CPG_FRQCRA, 16, 0x0d7f, CLK_ENABLE_ON_INIT },
++	{ "m3", "pll1", CPG_FRQCRA, 12, 0x1dff, CLK_ENABLE_ON_INIT },
++	{ "b",  "pll1", CPG_FRQCRA,  8, 0x0dff, CLK_ENABLE_ON_INIT },
++	{ "m1", "pll1", CPG_FRQCRA,  4, 0x1dff, 0 },
++	{ "m2", "pll1", CPG_FRQCRA,  0, 0x1dff, 0 },
++	{ "z",  "pll0", CPG_FRQCRB, 24, 0x097f, 0 },
++	{ "zx", "pll1", CPG_FRQCRB, 12, 0x0dff, 0 },
++	{ "hp", "pll1", CPG_FRQCRB,  4, 0x0dff, 0 },
++	{ NULL, 0, 0, 0, 0 },
++};
++
++static const struct clk_div_table div4_div_table[] = {
++	{ 0, 2 }, { 1, 3 }, { 2, 4 }, { 3, 6 }, { 4, 8 }, { 5, 12 },
++	{ 6, 16 }, { 7, 18 }, { 8, 24 }, { 10, 36 }, { 11, 48 },
++	{ 12, 7 }, { 0, 0 }
++};
++
++static struct clk * __init
++sh73a0_cpg_register_clock(struct device_node *np, struct sh73a0_cpg *cpg,
++			     const char *name)
 +{
-+	writel(val, gc->reg_base + reg_offset);
++	const struct clk_div_table *table = NULL;
++	const char *parent_name;
++	unsigned int shift, reg;
++	unsigned int mult = 1;
++	unsigned int div = 1;
++
++	if (!strcmp(name, "main")) {
++		/* extal1, extal1_div2, extal2, extal2_div2 */
++		u32 parent_idx = (clk_readl(cpg->reg + CPG_CKSCR) >> 28) & 3;
++
++		parent_name = of_clk_get_parent_name(np, parent_idx >> 1);
++		div = (parent_idx & 1) + 1;
++	} else if (!strncmp(name, "pll", 3)) {
++		void __iomem *enable_reg = cpg->reg;
++		u32 enable_bit = name[3] - '0';
++
++		parent_name = "main";
++		switch (enable_bit) {
++		case 0:
++			enable_reg += CPG_PLL0CR;
++			break;
++		case 1:
++			enable_reg += CPG_PLL1CR;
++			break;
++		case 2:
++			enable_reg += CPG_PLL2CR;
++			break;
++		case 3:
++			enable_reg += CPG_PLL3CR;
++			break;
++		default:
++			return ERR_PTR(-EINVAL);
++		}
++		if (clk_readl(cpg->reg + CPG_PLLECR) & BIT(enable_bit)) {
++			mult = ((clk_readl(enable_reg) >> 24) & 0x3f) + 1;
++			/* handle CFG bit for PLL1 and PLL2 */
++			if (enable_bit = 1 || enable_bit = 2)
++				if (clk_readl(enable_reg) & BIT(20))
++					mult *= 2;
++		}
++	} else if (!strcmp(name, "dsi0phy") || !strcmp(name, "dsi1phy")) {
++		u32 phy_no = name[3] - '0';
++		void __iomem *dsi_reg = cpg->reg +
++			(phy_no ? CPG_DSI1PHYCR : CPG_DSI0PHYCR);
++
++		parent_name = phy_no ? "dsi1pck" : "dsi0pck";
++		div = __raw_readl(dsi_reg);
++		if (!(div & 0xb8000))
++			div = 1;
++		else
++			div = (div & 0x3f) + 1;
++	} else {
++		struct div4_clk *c;
++
++		for (c = div4_clks; c->name; c++) {
++			if (!strcmp(name, c->name)) {
++				parent_name = c->parent;
++				table = div4_div_table;
++				reg = c->reg;
++				shift = c->shift;
++				break;
++			}
++		}
++		if (!c->name)
++			return ERR_PTR(-EINVAL);
++	}
++
++	if (!table) {
++		return clk_register_fixed_factor(NULL, name, parent_name, 0,
++						 mult, div);
++	} else {
++		return clk_register_divider_table(NULL, name, parent_name, 0,
++						  cpg->reg + reg, shift, 4, 0,
++						  table, &cpg->lock);
++	}
 +}
 +
-+static inline u32 irq_reg_readl(struct irq_chip_generic *gc,
-+				int reg_offset)
++static void __init sh73a0_cpg_clocks_init(struct device_node *np)
 +{
-+	return readl(gc->reg_base + reg_offset);
-+}
++	struct sh73a0_cpg *cpg;
++	struct clk **clks;
++	unsigned int i;
++	int num_clks;
 +
- #endif /* _LINUX_IRQ_H */
-diff --git a/kernel/irq/generic-chip.c b/kernel/irq/generic-chip.c
-index cf80e7b..db458c6 100644
---- a/kernel/irq/generic-chip.c
-+++ b/kernel/irq/generic-chip.c
-@@ -39,7 +39,7 @@ void irq_gc_mask_disable_reg(struct irq_data *d)
- 	u32 mask = d->mask;
- 
- 	irq_gc_lock(gc);
--	irq_reg_writel(mask, gc->reg_base + ct->regs.disable);
-+	irq_reg_writel(gc, mask, ct->regs.disable);
- 	*ct->mask_cache &= ~mask;
- 	irq_gc_unlock(gc);
- }
-@@ -59,7 +59,7 @@ void irq_gc_mask_set_bit(struct irq_data *d)
- 
- 	irq_gc_lock(gc);
- 	*ct->mask_cache |= mask;
--	irq_reg_writel(*ct->mask_cache, gc->reg_base + ct->regs.mask);
-+	irq_reg_writel(gc, *ct->mask_cache, ct->regs.mask);
- 	irq_gc_unlock(gc);
- }
- EXPORT_SYMBOL_GPL(irq_gc_mask_set_bit);
-@@ -79,7 +79,7 @@ void irq_gc_mask_clr_bit(struct irq_data *d)
- 
- 	irq_gc_lock(gc);
- 	*ct->mask_cache &= ~mask;
--	irq_reg_writel(*ct->mask_cache, gc->reg_base + ct->regs.mask);
-+	irq_reg_writel(gc, *ct->mask_cache, ct->regs.mask);
- 	irq_gc_unlock(gc);
- }
- EXPORT_SYMBOL_GPL(irq_gc_mask_clr_bit);
-@@ -98,7 +98,7 @@ void irq_gc_unmask_enable_reg(struct irq_data *d)
- 	u32 mask = d->mask;
- 
- 	irq_gc_lock(gc);
--	irq_reg_writel(mask, gc->reg_base + ct->regs.enable);
-+	irq_reg_writel(gc, mask, ct->regs.enable);
- 	*ct->mask_cache |= mask;
- 	irq_gc_unlock(gc);
- }
-@@ -114,7 +114,7 @@ void irq_gc_ack_set_bit(struct irq_data *d)
- 	u32 mask = d->mask;
- 
- 	irq_gc_lock(gc);
--	irq_reg_writel(mask, gc->reg_base + ct->regs.ack);
-+	irq_reg_writel(gc, mask, ct->regs.ack);
- 	irq_gc_unlock(gc);
- }
- EXPORT_SYMBOL_GPL(irq_gc_ack_set_bit);
-@@ -130,7 +130,7 @@ void irq_gc_ack_clr_bit(struct irq_data *d)
- 	u32 mask = ~d->mask;
- 
- 	irq_gc_lock(gc);
--	irq_reg_writel(mask, gc->reg_base + ct->regs.ack);
-+	irq_reg_writel(gc, mask, ct->regs.ack);
- 	irq_gc_unlock(gc);
- }
- 
-@@ -145,8 +145,8 @@ void irq_gc_mask_disable_reg_and_ack(struct irq_data *d)
- 	u32 mask = d->mask;
- 
- 	irq_gc_lock(gc);
--	irq_reg_writel(mask, gc->reg_base + ct->regs.mask);
--	irq_reg_writel(mask, gc->reg_base + ct->regs.ack);
-+	irq_reg_writel(gc, mask, ct->regs.mask);
-+	irq_reg_writel(gc, mask, ct->regs.ack);
- 	irq_gc_unlock(gc);
- }
- 
-@@ -161,7 +161,7 @@ void irq_gc_eoi(struct irq_data *d)
- 	u32 mask = d->mask;
- 
- 	irq_gc_lock(gc);
--	irq_reg_writel(mask, gc->reg_base + ct->regs.eoi);
-+	irq_reg_writel(gc, mask, ct->regs.eoi);
- 	irq_gc_unlock(gc);
- }
- 
-@@ -245,7 +245,7 @@ irq_gc_init_mask_cache(struct irq_chip_generic *gc, enum irq_gc_flags flags)
- 		}
- 		ct[i].mask_cache = mskptr;
- 		if (flags & IRQ_GC_INIT_MASK_CACHE)
--			*mskptr = irq_reg_readl(gc->reg_base + mskreg);
-+			*mskptr = irq_reg_readl(gc, mskreg);
- 	}
- }
- 
++	num_clks = of_property_count_strings(np, "clock-output-names");
++	if (num_clks < 0) {
++		pr_err("%s: failed to count clocks\n", __func__);
++		return;
++	}
++
++	cpg = kzalloc(sizeof(*cpg), GFP_KERNEL);
++	clks = kcalloc(num_clks, sizeof(*clks), GFP_KERNEL);
++	if (cpg = NULL || clks = NULL) {
++		/* We're leaking memory on purpose, there's no point in cleaning
++		 * up as the system won't boot anyway.
++		 */
++		return;
++	}
++
++	spin_lock_init(&cpg->lock);
++
++	cpg->data.clks = clks;
++	cpg->data.clk_num = num_clks;
++
++	cpg->reg = of_iomap(np, 0);
++	if (WARN_ON(cpg->reg = NULL))
++		return;
++
++	/* Set SDHI clocks to a known state */
++	clk_writel(0x108, cpg->reg + CPG_SD0CKCR);
++	clk_writel(0x108, cpg->reg + CPG_SD1CKCR);
++	clk_writel(0x108, cpg->reg + CPG_SD2CKCR);
++
++	for (i = 0; i < num_clks; ++i) {
++		const char *name;
++		struct clk *clk;
++
++		of_property_read_string_index(np, "clock-output-names", i,
++					      &name);
++
++		clk = sh73a0_cpg_register_clock(np, cpg, name);
++		if (IS_ERR(clk))
++			pr_err("%s: failed to register %s %s clock (%ld)\n",
++			       __func__, np->name, name, PTR_ERR(clk));
++		else
++			cpg->data.clks[i] = clk;
++	}
++
++	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
++}
++CLK_OF_DECLARE(sh73a0_cpg_clks, "renesas,sh73a0-cpg-clocks",
++	       sh73a0_cpg_clocks_init);
 -- 
-2.1.1
+1.8.4.5
 
