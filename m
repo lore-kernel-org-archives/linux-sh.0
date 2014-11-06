@@ -1,168 +1,124 @@
-From: Julia Lawall <Julia.Lawall@lip6.fr>
-Date: Sun, 23 Nov 2014 13:11:13 +0000
-Subject: [PATCH 0/5] fix error return code
-Message-Id: <1416748278-22881-1-git-send-email-Julia.Lawall@lip6.fr>
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Thu, 06 Nov 2014 16:43:26 +0000
+Subject: [PATCH v5 42/48] sh: Register with kernel power-off handler
+Message-Id: <1415292213-28652-43-git-send-email-linux@roeck-us.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1415292213-28652-1-git-send-email-linux@roeck-us.net>
+In-Reply-To: <1415292213-28652-1-git-send-email-linux@roeck-us.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
-Cc: kernel-janitors@vger.kernel.org, linux-samsung-soc@vger.kernel.org, linux-arm-kernel@lists.infradead.org, dri-devel@lists.freedesktop.org, linux-kernel@vger.kernel.org, MPT-FusionLinux.pdl@avagotech.com, linux-scsi@vger.kernel.org, linux-pcmcia@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@vger.kernel.org
+Cc: linux-pm@vger.kernel.org, Guenter Roeck <linux@roeck-us.net>, linux-sh@vger.kernel.org
 
-The complate semantic patch that finds this problem is as follows:
-(http://coccinelle.lip6.fr/)
+Register with kernel power-off handler instead of setting pm_power_off
+directly.
 
-// <smpl>
-@ok exists@
-identifier f,ret,i;
-expression e;
-constant c;
-@@
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+---
+v5:
+- Rebase to v3.18-rc3
+v4:
+- No change
+v3:
+- Replace poweroff in all newly introduced variables and in text
+  with power_off or power-off as appropriate
+- Replace POWEROFF_PRIORITY_xxx with POWER_OFF_PRIORITY_xxx
+v2:
+- Use defines to specify poweroff handler priorities
 
-// identify a function that returns a negative return value at least once.
-f(...) {
-... when any
-(
-return -c@i;
-|
-ret =3D -c@i;
-... when !=3D ret =3D e
-return ret;
-|
-if (ret < 0) { ... return ret; }
-)
-... when any
-}
+ arch/sh/boards/board-sh7785lcr.c       | 3 ++-
+ arch/sh/boards/board-urquell.c         | 3 ++-
+ arch/sh/boards/mach-highlander/setup.c | 3 ++-
+ arch/sh/boards/mach-landisk/setup.c    | 3 ++-
+ arch/sh/boards/mach-r2d/setup.c        | 3 ++-
+ arch/sh/boards/mach-sdk7786/setup.c    | 3 ++-
+ 6 files changed, 12 insertions(+), 6 deletions(-)
 
-@r exists@
-identifier ret,ok.f,fn;
-expression e1,e2,e3,e4,e5,e6,x;
-statement S,S1;
-position p1,p2,p3;
-@@
-
-// identify a case where the return variable is set to a non-negative value
-// and then returned in error-handling code
-f(...) {
-... when any
-(
-if@p1 (\(ret < 0\|ret !=3D 0\))
- { ... return ret; }
-|
-ret@p1 =3D 0
-)
-... when !=3D \(ret =3D e1\|ret++\|ret--\|ret+=E1\|ret-=E1\)
-    when !=3D &ret
-    when any
-(
- if (<+... ret =3D e5 ...+>) S1
-|
- if (<+... &ret ...+>) S1
-|
-if@p2(<+...x =3D fn(...)...+>)
+diff --git a/arch/sh/boards/board-sh7785lcr.c b/arch/sh/boards/board-sh7785lcr.c
+index 2c4771e..f7d2ffb 100644
+--- a/arch/sh/boards/board-sh7785lcr.c
++++ b/arch/sh/boards/board-sh7785lcr.c
+@@ -332,7 +332,8 @@ static void __init sh7785lcr_setup(char **cmdline_p)
+ 
+ 	printk(KERN_INFO "Renesas Technology Corp. R0P7785LC0011RL support.\n");
+ 
+-	pm_power_off = sh7785lcr_power_off;
++	register_power_off_handler_simple(sh7785lcr_power_off,
++					  POWER_OFF_PRIORITY_DEFAULT);
+ 
+ 	/* sm501 DRAM configuration */
+ 	sm501_reg = ioremap_nocache(SM107_REG_ADDR, SM501_DRAM_CONTROL);
+diff --git a/arch/sh/boards/board-urquell.c b/arch/sh/boards/board-urquell.c
+index b52abcc..8f44256 100644
+--- a/arch/sh/boards/board-urquell.c
++++ b/arch/sh/boards/board-urquell.c
+@@ -204,7 +204,8 @@ static void __init urquell_setup(char **cmdline_p)
  {
-  ... when !=3D ret =3D e6
-      when forall
- return@p3 ret;
-}
-|
-break;
-|
-x =3D fn(...)
-... when !=3D \(ret =3D e4\|ret++\|ret--\|ret+=E4\|ret-=E4\)
-    when !=3D &ret
-(
- if (<+... ret =3D e3 ...+>) S
-|
- if (<+... &ret ...+>) S
-|
-if@p2(<+...\(x !=3D 0\|x < 0\|x =3D NULL\|IS_ERR(x)\)...+>)
- {
-  ... when !=3D ret =3D e2
-      when forall
- return@p3 ret;
-}
-)
-)
-... when any
-}
-
-@printer depends on r@
-position p;
-identifier ok.f,pr;
-constant char [] c;
-@@
-
-f(...) { <...pr@p(...,c,...)...> }
-
-@bad0 exists@
-identifier r.ret,ok.f,g !=3D {ERR_PTR,IS_ERR};
-position p !=3D printer.p;
-@@
-
-f(...) { ... when any
-g@p(...,ret,...)
-... when any
+ 	printk(KERN_INFO "Renesas Technology Corp. Urquell support.\n");
+ 
+-	pm_power_off = urquell_power_off;
++	register_power_off_handler_simple(urquell_power_off,
++					  POWER_OFF_PRIORITY_DEFAULT);
+ 
+ 	register_smp_ops(&shx3_smp_ops);
  }
-
-@bad depends on !bad0 exists@
-position r.p1,r.p2;
-statement S1,S2;
-identifier r.ret;
-expression e1;
-@@
-
-// ignore the above if there is some path where the variable is set to
-// something else
-(
-if@p1 (\(ret < 0\|ret !=3D 0\)) S1
-|
-ret@p1 =3D 0
-)
-... when any
- \(ret =3D e1\|ret++\|ret--\|ret+=E1\|ret-=E1\|&ret\)
-... when any
-if@p2(...) S2
-
-@bad1 depends on !bad0 && !bad exists@
-position r.p2;
-statement S2;
-identifier r.ret;
-expression e1;
-constant c;
-@@
-
-ret =3D -c
-... when !=3D \(ret =3D e1\|ret++\|ret--\|ret+=E1\|ret-=E1\)
-    when !=3D &ret
-    when any
-if@p2(...) S2
-
-@bad2 depends on !bad0 && !bad && !bad1 exists@
-position r.p1,r.p2;
-identifier r.ret;
-expression e1;
-statement S2;
-constant c;
-@@
-
-// likewise ignore it if there has been an intervening return
-ret@p1 =3D 0
-... when !=3D if (...) { ... ret =3D e1 ... return ret; }
-    when !=3D if (...) { ... return -c; }
-    when any
-if@p2(...) S2
-
-
-@script:python depends on !bad0 && !bad && !bad1 && !bad2@
-p1 << r.p1;
-p2 << r.p2;
-p3 << r.p3;
-@@
-
-cocci.print_main("",p1)
-cocci.print_secs("",p2)
-cocci.print_secs("",p3)
-
-// </smpl>
+diff --git a/arch/sh/boards/mach-highlander/setup.c b/arch/sh/boards/mach-highlander/setup.c
+index 4a52590..fc9110a 100644
+--- a/arch/sh/boards/mach-highlander/setup.c
++++ b/arch/sh/boards/mach-highlander/setup.c
+@@ -385,7 +385,8 @@ static void __init highlander_setup(char **cmdline_p)
+ 
+ 	__raw_writew(__raw_readw(PA_IVDRCTL) | 0x01, PA_IVDRCTL);	/* Si13112 */
+ 
+-	pm_power_off = r7780rp_power_off;
++	register_power_off_handler_simple(r7780rp_power_off,
++					  POWER_OFF_PRIORITY_DEFAULT);
+ }
+ 
+ static unsigned char irl2irq[HL_NR_IRL];
+diff --git a/arch/sh/boards/mach-landisk/setup.c b/arch/sh/boards/mach-landisk/setup.c
+index f1147ca..56adabc 100644
+--- a/arch/sh/boards/mach-landisk/setup.c
++++ b/arch/sh/boards/mach-landisk/setup.c
+@@ -89,7 +89,8 @@ static void __init landisk_setup(char **cmdline_p)
+ 	__raw_writeb(__raw_readb(PA_LED) | 0x03, PA_LED);
+ 
+ 	printk(KERN_INFO "I-O DATA DEVICE, INC. \"LANDISK Series\" support.\n");
+-	pm_power_off = landisk_power_off;
++	register_power_off_handler_simple(landisk_power_off,
++					  POWER_OFF_PRIORITY_DEFAULT);
+ }
+ 
+ /*
+diff --git a/arch/sh/boards/mach-r2d/setup.c b/arch/sh/boards/mach-r2d/setup.c
+index 4b98a52..4a23bce 100644
+--- a/arch/sh/boards/mach-r2d/setup.c
++++ b/arch/sh/boards/mach-r2d/setup.c
+@@ -279,7 +279,8 @@ static void __init rts7751r2d_setup(char **cmdline_p)
+ 					(ver >> 4) & 0xf, ver & 0xf);
+ 
+ 	__raw_writew(0x0000, PA_OUTPORT);
+-	pm_power_off = rts7751r2d_power_off;
++	register_power_off_handler_simple(rts7751r2d_power_off,
++					  POWER_OFF_PRIORITY_DEFAULT);
+ 
+ 	/* sm501 dram configuration:
+ 	 * ColSizeX = 11 - External Memory Column Size: 256 words.
+diff --git a/arch/sh/boards/mach-sdk7786/setup.c b/arch/sh/boards/mach-sdk7786/setup.c
+index c29268b..2d77760 100644
+--- a/arch/sh/boards/mach-sdk7786/setup.c
++++ b/arch/sh/boards/mach-sdk7786/setup.c
+@@ -252,7 +252,8 @@ static void __init sdk7786_setup(char **cmdline_p)
+ 	pr_info("\tPCB revision:\t%d\n", fpga_read_reg(PCBRR) & 0xf);
+ 
+ 	machine_ops.restart = sdk7786_restart;
+-	pm_power_off = sdk7786_power_off;
++	register_power_off_handler_simple(sdk7786_power_off,
++					  POWER_OFF_PRIORITY_DEFAULT);
+ 
+ 	register_smp_ops(&shx3_smp_ops);
+ }
+-- 
+1.9.1
 
