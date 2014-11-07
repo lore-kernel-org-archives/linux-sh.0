@@ -1,70 +1,41 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Thu, 06 Nov 2014 16:50:35 +0000
-Subject: [PATCH v4 0/6] sh73a0 common clock framework implementation
-Message-Id: <1415292641-30331-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 07 Nov 2014 14:20:04 +0000
+Subject: Re: [PATCH v4 0/6] sh73a0 common clock framework implementation
+Message-Id: <CAMuHMdV8=gmEZFRWG+asusgCqCy+pPwxiYVHUmQAhA=o-TAbpA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1415292641-30331-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1415292641-30331-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi!
+Hi Ulrich
 
-This integrates the consistency fixes suggested by Laurent and omits the
-ethernet clock hack.
+With this series applied (also with the previous version), kzm9g-multiplatform
+(with sh73a0-kzm9g-reference.dtb) locks up after initializing ttySC4, i.e.
+after printing
 
-CU
-Uli
+    sh-sci e6c80000.serial: ttySC4 at MMIO 0xe6c80000 (irq = 110,
+base_baud = 0) is a scifa
 
+If I comment out the "clocks" property of scifa4 in the dtsi, it continues
+(without any serial output, of course).
 
-Changes since v3:
-- fixed bindings to match the implementation
-- handle extal division in CPG driver, dump extal?_div2_clk
-- added acks
-- dropped eth clock hack
+Do you have any clue?
 
-Changes since v2:
-- split CCF DT description
-- tabbed constants in CPG bits header file
-- reordered patches to avoid need for shmobile_clk_workaround()
-- removed said workaround
-- squashed unmerged remains of CMT1 DT description into MSTP clocks patch
-- renamed clock zb1 to zb
-- removed DIV6 stuff, will be a separate series
+I'm also using the scif early debug patch, else I don't see any serial output
+at all.
 
-Changes since v1:
-- div6 patch replaced with v4
-- split off div6 extended clocks
-- added cmt1 DT description
-- added MSTP clock assignments
-- reordered according to dependencies
-- removed dummy frequencies in extal2, extcki
-- removed enable_on_init on zb1 and flctlck
-- added missing tpu4 in mstp3_clks
-- use c->parent in cpg driver
-- fix some style issues
+Thanks!
 
+Gr{oetje,eeting}s,
 
-Ulrich Hecht (6):
-  clk: shmobile: sh73a0 common clock framework implementation
-  ARM: shmobile: sh73a0: Add CPG register bits header
-  ARM: shmobile: sh73a0: Common clock framework DT description
-  ARM: shmobile: kzm9g-reference: Common clock framework DT description
-  ARM: shmobile: sh73a0: add MSTP clock assignments to DT
-  ARM: shmobile: sh73a0: disable legacy clock initialization
+                        Geert
 
- .../bindings/clock/renesas,sh73a0-cpg-clocks.txt   |  35 ++
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts       |   4 +
- arch/arm/boot/dts/sh73a0.dtsi                      | 358 +++++++++++++++++++++
- arch/arm/mach-shmobile/setup-sh73a0.c              |   5 +-
- drivers/clk/shmobile/Makefile                      |   1 +
- drivers/clk/shmobile/clk-sh73a0.c                  | 204 ++++++++++++
- include/dt-bindings/clock/sh73a0-clock.h           |  79 +++++
- 7 files changed, 685 insertions(+), 1 deletion(-)
- create mode 100644 Documentation/devicetree/bindings/clock/renesas,sh73a0-cpg-clocks.txt
- create mode 100644 drivers/clk/shmobile/clk-sh73a0.c
- create mode 100644 include/dt-bindings/clock/sh73a0-clock.h
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
--- 
-1.8.4.5
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
