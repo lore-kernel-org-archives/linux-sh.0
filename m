@@ -1,76 +1,73 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 28 Nov 2014 11:09:02 +0000
-Subject: Re: [PATCH] ARM: shmobile: dts: koelsch: Fix flash partition label and size
-Message-Id: <547857CE.1090408@cogentembedded.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Fri, 07 Nov 2014 09:23:39 +0000
+Subject: [PATCH] gpio: rcar: Add r8a7793 and r8a7794 support
+Message-Id: <1415352219-26644-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416960805-15185-1-git-send-email-horms+renesas@verge.net.au>
- <5475CCA5.2020300@cogentembedded.com> <20141128002718.GF30850@verge.net.au>
-In-Reply-To: <20141128002718.GF30850@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-gpio@vger.kernel.org
+Cc: Linus Walleij <linus.walleij@linaro.org>, Alexandre Courbot <gnurou@gmail.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Hello.
+From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
 
-On 11/28/2014 3:27 AM, Simon Horman wrote:
+The device tree probing for R-Car M2-N (r8a7793) and R-Car E2 (r8a7794)
+is added.
 
->>> Update the size and names of flash partitions to match the
->>> expectations of the loader which are as follows:
+Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
 
->>> "loader"---0x0000_0000-0x0008_0000 [loader program (readonly)]
->>> "user"  ---0x0008_0000-0x0060_0000 [U-Boot + bootargs + dt + uImage (readonly)]
->>> "flash" ---0x0060_0000-0x0400_0000 [filesystem and free (read/write)]
+This patch is based on for-next branch of Linus Walleij's gpio tree.
 
->>> ["user"'s assumed breakdown]
->>> U-boot+ bootargs(0x0008_0000-0x0010_0000) 512KB
->>> Device tree     (0x0010_0000-0x0014_0000) 256KB
->>> uImage          (0x0014_0000-0x0060_0000) 4.75MB
+ Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt |  4 +++-
+ drivers/gpio/gpio-rcar.c                                     | 11 +++++++++++
+ 2 files changed, 14 insertions(+), 1 deletion(-)
 
->>> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
->>> ---
-
->>> This replaces a patch that I previously posted, "shmobile: koelsch: Fix
->>> flash partition label and size in device tree", which has the same aim but
->>> does so for an older version of the loader which to my knowledge is not
->>> found in the wild.
-
->>> I plan to post a similar patch for Lager if this one goes well.
-
->>> I have been informed that the flash layout should also be the same
->>> for Alt (which currently does not have flash in its dts file in mainline).
-
->>> Based on the renesas-devel-20141125-v3.18-rc6 tag of my renesas tree.
->>> ---
->>>   arch/arm/boot/dts/r8a7791-koelsch.dts | 12 ++++++------
->>>   1 file changed, 6 insertions(+), 6 deletions(-)
-
->>> diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
->>> index 990af16..9a4e714 100644
->>> --- a/arch/arm/boot/dts/r8a7791-koelsch.dts
->>> +++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
->>> @@ -451,14 +451,14 @@
->>>   			reg = <0x00000000 0x00080000>;
->>>   			read-only;
->>>   		};
->>> -		partition@80000 {
->>> -			label = "bootenv";
->>> -			reg = <0x00080000 0x00080000>;
->>> +		partition@40000 {
->>> +			label = "user";
->>> +			reg = <0x00080000 0x00580000>;
-
->>     The "reg" prop doesn't match the <unit-address> pat of the name.
-
-> Are you suggesting this?
-
-> 			reg = <0x00080000 0x00600000>;
-
-    No, I'm suggesting to change the <unit-address> part of the node name to 
-match the offset in the "reg" property (given it's correct).
-
-[...]
-
-WBR, Sergei
+diff --git a/Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt b/Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt
+index 941a26a..38fb86f 100644
+--- a/Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt
++++ b/Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt
+@@ -6,7 +6,9 @@ Required Properties:
+     - "renesas,gpio-r8a7778": for R8A7778 (R-Mobile M1) compatible GPIO controller.
+     - "renesas,gpio-r8a7779": for R8A7779 (R-Car H1) compatible GPIO controller.
+     - "renesas,gpio-r8a7790": for R8A7790 (R-Car H2) compatible GPIO controller.
+-    - "renesas,gpio-r8a7791": for R8A7791 (R-Car M2) compatible GPIO controller.
++    - "renesas,gpio-r8a7791": for R8A7791 (R-Car M2-W) compatible GPIO controller.
++    - "renesas,gpio-r8a7793": for R8A7793 (R-Car M2-N) compatible GPIO controller.
++    - "renesas,gpio-r8a7794": for R8A7794 (R-Car E2) compatible GPIO controller.
+     - "renesas,gpio-rcar": for generic R-Car GPIO controller.
+ 
+   - reg: Base address and length of each memory resource used by the GPIO
+diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
+index ef71ca8..947654e 100644
+--- a/drivers/gpio/gpio-rcar.c
++++ b/drivers/gpio/gpio-rcar.c
+@@ -1,6 +1,7 @@
+ /*
+  * Renesas R-Car GPIO Support
+  *
++ *  Copyright (C) 2014 Renesas Electronics Corporation
+  *  Copyright (C) 2013 Magnus Damm
+  *
+  * This program is free software; you can redistribute it and/or modify
+@@ -327,6 +328,16 @@ static const struct of_device_id gpio_rcar_of_table[] = {
+ 			.has_both_edge_trigger = true,
+ 		},
+ 	}, {
++		.compatible = "renesas,gpio-r8a7793",
++		.data = (void *)&(const struct gpio_rcar_info) {
++			.has_both_edge_trigger = true,
++		},
++	}, {
++		.compatible = "renesas,gpio-r8a7794",
++		.data = (void *)&(const struct gpio_rcar_info) {
++			.has_both_edge_trigger = true,
++		},
++	}, {
+ 		.compatible = "renesas,gpio-rcar",
+ 		.data = (void *)&(const struct gpio_rcar_info) {
+ 			.has_both_edge_trigger = false,
+-- 
+1.9.1
 
