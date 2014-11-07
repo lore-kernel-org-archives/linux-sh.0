@@ -1,54 +1,36 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 10 Nov 2014 11:02:44 +0000
-Subject: [PATCH 1/4] usb: renesas_usbhs: change d{0,1}fifo to dfifo array
-Message-Id: <1415617367-3828-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 07 Nov 2014 15:49:27 +0000
+Subject: [PATCH v5 4/6] ARM: shmobile: kzm9g-reference: Common clock framework DT description
+Message-Id: <1415375369-15209-5-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-To extend DnFIFOs in the future, this patch changes d{0,1}fifo of
-usbhs_fifo_info to dfifo array.
+KZM9G-specific clock overrides.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/usb/renesas_usbhs/fifo.c |    4 ++--
- drivers/usb/renesas_usbhs/fifo.h |    4 ++--
- 2 files changed, 4 insertions(+), 4 deletions(-)
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
-index 9b48384..341508a 100644
---- a/drivers/usb/renesas_usbhs/fifo.c
-+++ b/drivers/usb/renesas_usbhs/fifo.c
-@@ -21,8 +21,8 @@
- #include "pipe.h"
- 
- #define usbhsf_get_cfifo(p)	(&((p)->fifo_info.cfifo))
--#define usbhsf_get_d0fifo(p)	(&((p)->fifo_info.d0fifo))
--#define usbhsf_get_d1fifo(p)	(&((p)->fifo_info.d1fifo))
-+#define usbhsf_get_d0fifo(p)	(&((p)->fifo_info.dfifo[0]))
-+#define usbhsf_get_d1fifo(p)	(&((p)->fifo_info.dfifo[1]))
- #define usbhsf_is_cfifo(p, f)	(usbhsf_get_cfifo(p) = f)
- 
- #define usbhsf_fifo_is_busy(f)	((f)->pipe) /* see usbhs_pipe_select_fifo */
-diff --git a/drivers/usb/renesas_usbhs/fifo.h b/drivers/usb/renesas_usbhs/fifo.h
-index 79ad5f9..e1e51c6 100644
---- a/drivers/usb/renesas_usbhs/fifo.h
-+++ b/drivers/usb/renesas_usbhs/fifo.h
-@@ -38,10 +38,10 @@ struct usbhs_fifo {
- 	struct sh_dmae_slave	rx_slave;
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 8c913d9..737a732 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -178,6 +178,10 @@
+ 	status = "ok";
  };
  
-+#define USBHS_MAX_NUM_DFIFO	2
- struct usbhs_fifo_info {
- 	struct usbhs_fifo cfifo;
--	struct usbhs_fifo d0fifo;
--	struct usbhs_fifo d1fifo;
-+	struct usbhs_fifo dfifo[USBHS_MAX_NUM_DFIFO];
- };
- 
- struct usbhs_pkt_handle;
++&extal2_clk {
++	clock-frequency = <48000000>;
++};
++
+ &i2c0 {
+ 	status = "okay";
+ 	as3711@40 {
 -- 
-1.7.9.5
+1.8.4.5
 
