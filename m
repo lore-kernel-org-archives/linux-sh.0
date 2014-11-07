@@ -1,44 +1,46 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Nov 2014 00:54:31 +0000
-Subject: [PATCH 05/29] ARM: shmobile: r8a7791: Add Audio DMAC peri peri devices to DT
-Message-Id: <40c6d9f0e7745012c9e19c955e22d4809104359c.1416476366.git.horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 07 Nov 2014 15:49:29 +0000
+Subject: [PATCH v5 6/6] ARM: shmobile: sh73a0: disable legacy clock initialization
+Message-Id: <1415375369-15209-7-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1416476366.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Disables sh73a0_clock_init() if CCF is enabled.
 
-Instantiate the Audio DMAC peri peri controllers
-in the r8a7791 device tree.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 7 +++++++
- 1 file changed, 7 insertions(+)
+ arch/arm/mach-shmobile/setup-sh73a0.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index b54af74..379e1a5 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -357,6 +357,13 @@
- 		dma-channels = <13>;
- 	};
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 2955a08..3134bc1 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -742,7 +742,9 @@ void __init __weak sh73a0_register_twd(void) { }
+ void __init sh73a0_earlytimer_init(void)
+ {
+ 	shmobile_init_delay();
++#ifndef CONFIG_COMMON_CLK
+ 	sh73a0_clock_init();
++#endif
+ 	shmobile_earlytimer_init();
+ 	sh73a0_register_twd();
+ }
+@@ -761,8 +763,9 @@ void __init sh73a0_add_early_devices(void)
+ void __init sh73a0_add_standard_devices_dt(void)
+ {
+ 	/* clocks are setup late during boot in the case of DT */
++#ifndef CONFIG_COMMON_CLK
+ 	sh73a0_clock_init();
+-
++#endif
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
  
-+	audmapp: dma-controller@ec740000 {
-+		compatible = "renesas,rcar-audmapp";
-+		#dma-cells = <1>;
-+
-+		reg = <0 0xec740000 0 0x200>;
-+	};
-+
- 	/* The memory map in the User's Manual maps the cores to bus numbers */
- 	i2c0: i2c@e6508000 {
- 		#address-cells = <1>;
 -- 
-2.1.1
+1.8.4.5
 
