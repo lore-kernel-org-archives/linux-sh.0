@@ -1,55 +1,49 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sun, 02 Nov 2014 21:53:59 +0000
-Subject: Re: [RFC 0/3] i2c: sh_mobile: add DMA support
-Message-Id: <20141102215359.GA1278@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="FL5UXtIhxfXey3p5"
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 07 Nov 2014 13:46:33 +0000
+Subject: [PATCH 2/2] ARM: shmobile: sh73a0: Add restart callback
+Message-Id: <1415367993-31033-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414752678-26078-1-git-send-email-wsa@the-dreams.de>
- <21770791.t5tSlWMt1c@avalon>
-In-Reply-To: <21770791.t5tSlWMt1c@avalon>
-To: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
-Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+Port the sh73a0 restart handling from the kzm9g-legacy board code to the
+generic sh73a0 code.
 
---FL5UXtIhxfXey3p5
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Tested on kzm9g-multiplatform
 
+ arch/arm/mach-shmobile/setup-sh73a0.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-> > Here is my RFC to support DMA with the i2c-sh_mobile core. DMA works ni=
-cely
-> > with my tests so far and we save 1 interrupt per transferred byte, yay!
->=20
-> Do we have an idea of how much power (or CPU time ?) DMA support could sa=
-ve ?
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 179c2b65be9f6829..73b25f999a98ab0a 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -786,6 +786,13 @@ void __init sh73a0_add_standard_devices_dt(void)
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
++#define RESCNT2 IOMEM(0xe6188020)
++static void sh73a0_restart(enum reboot_mode mode, const char *cmd)
++{
++	/* Do soft power on reset */
++	writel((1 << 31), RESCNT2);
++}
++
+ static const char *sh73a0_boards_compat_dt[] __initdata = {
+ 	"renesas,sh73a0",
+ 	NULL,
+@@ -797,6 +804,7 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
+ 	.init_early	= shmobile_init_delay,
+ 	.init_machine	= sh73a0_add_standard_devices_dt,
+ 	.init_late	= shmobile_init_late,
++	.restart	= sh73a0_restart,
+ 	.dt_compat	= sh73a0_boards_compat_dt,
+ MACHINE_END
+ #endif /* CONFIG_USE_OF */
+-- 
+1.9.1
 
-I have some numbers from the function tracer, but I don't trust them.
-According to them, DMA is always better (50us per interrupt vs. 23us for
-DMA setup). This is why I say the threshold is still under test.
-
-
---FL5UXtIhxfXey3p5
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJUVqf3AAoJEBQN5MwUoCm2umsQAK1STsWyrmIz7ktNrJgCB+mn
-pKsBs2wV+8v6uQU7BUbByc4kLq7WVgoIgTKrSVuGXPoC0shuL0SCXMzshg90VyUk
-+ZRuQADtylTPmzznVobDIzCsOElaY/x03Yo9Mvl2G6feu/d9XESueu7HPhOdYrLL
-mrdZAfMpwvD7atzvILhpSHhP56outoiddj3lKgE2qCHCc3iOdHBvYU64if4u0QmA
-/l+cx+OJLEBO+XdthbpHQCbydDAVNbkadz38ih+z3a91OmNtfUTdiHTPk+gK5WfK
-SmxyEo8uHC7FtbGSm9a+pimAIIthzSN/AQ6b5dVbKvpf0bR+1zMw7rlO3s4Wzufp
-eYZISE3qmGJ9ih471pwZG6xbLHcU0u5JJq3c9U4oCs2eYVSguAWwdT65J6ETD63X
-mXh6wvsfZGOtxsy9AkOcWPCCtX3oVq8BsrBS3t/OodiDB+6xaZmzgKwG6Ji2dzQs
-ISyrnAP9wXUd0/Bl3GJxabW9QuXMtjK2FbwXmjvMItHxBGFuZ/bETxcU2lTBnz94
-iKNVtIir0X80PnpTK3ErayAbWkaKJhWrAMGt8fGxETGKiLaYkmoTaQUb2ytoN706
-slMTZ4W2aZBeR9w0L/JH8UU84FKgyDGNY/DZJI87QnhLIhi7V1rjs1MSdlveZzve
-6q22XjIlIKC1BsGtS3wu
-=a316
------END PGP SIGNATURE-----
-
---FL5UXtIhxfXey3p5--
