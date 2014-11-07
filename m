@@ -1,60 +1,43 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Nov 2014 01:20:06 +0000
-Subject: [PATCH 15/25] ARM: shmobile: lager: Sound DMA support via DVC on DTS
-Message-Id: <3aab5b10403698b6c5bebd2bd4b40e674c759a13.1415755881.git.horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 07 Nov 2014 15:51:58 +0000
+Subject: [PATCH 0/6] r8a73a4 common clock framework implementation
+Message-Id: <1415375524-15468-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415755881.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415755881.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi!
 
-DMA transfer uses DVC
+Here's the CCF implementation for r8a73a4; unlike the sh73a0 series, this
+includes multi-parent DIV6 clocks and thus depends on the "clk: shmobile:
+DIV6 clock variable parent support" patch set.
 
-     DMA               DMApp
-[MEM] -> [SRC] -> [DVC] -> [SSIU] -> [SSI]
+CU
+Uli
 
-     DMA               DMApp
-[MEM] <- [DVC] <- [SRC] <- [SSIU] <- [SSI]
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7790-lager.dts | 11 +++++++++--
- 1 file changed, 9 insertions(+), 2 deletions(-)
+Ulrich Hecht (6):
+  clk: shmobile: r8a73a4 common clock framework implementation
+  clk: shmobile: Add r8a73a4 SoC to MSTP bindings
+  ARM: shmobile: r8a73a4: Add CPG register bits header
+  ARM: shmobile: r8a73a4: Common clock framework DT description
+  ARM: shmobile: ape6evm: disable legacy clock initialization
+  ARM: shmobile: r8a73a4: add MSTP clock assignments to DT
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index a249270..2f91740 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -19,6 +19,13 @@
-  * This command is required when Playback/Capture
-  *
-  *	amixer set "LINEOUT Mixer DACL" on
-+ *	amixer set "DVC Out" 100%
-+ *	amixer set "DVC In" 100%
-+ *
-+ * You can use Mute
-+ *
-+ *	amixer set "DVC Out Mute" on
-+ *	amixer set "DVC In Mute" on
-  */
- 
- /dts-v1/;
-@@ -569,8 +576,8 @@
- 
- 	rcar_sound,dai {
- 		dai0 {
--			playback = <&ssi0 &src2>;
--			capture  = <&ssi1 &src3>;
-+			playback = <&ssi0 &src2 &dvc0>;
-+			capture  = <&ssi1 &src3 &dvc1>;
- 		};
- 	};
- };
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |   1 +
+ .../bindings/clock/renesas,r8a73a4-cpg-clocks.txt  |  33 ++
+ arch/arm/boot/dts/r8a73a4.dtsi                     | 340 +++++++++++++++++++++
+ arch/arm/mach-shmobile/board-ape6evm-reference.c   |   3 +-
+ drivers/clk/shmobile/Makefile                      |   1 +
+ drivers/clk/shmobile/clk-r8a73a4.c                 | 242 +++++++++++++++
+ include/dt-bindings/clock/r8a73a4-clock.h          |  62 ++++
+ 7 files changed, 681 insertions(+), 1 deletion(-)
+ create mode 100644 Documentation/devicetree/bindings/clock/renesas,r8a73a4-cpg-clocks.txt
+ create mode 100644 drivers/clk/shmobile/clk-r8a73a4.c
+ create mode 100644 include/dt-bindings/clock/r8a73a4-clock.h
+
 -- 
-2.1.1
+1.8.4.5
 
