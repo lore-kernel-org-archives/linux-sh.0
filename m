@@ -1,40 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:50:35 +0000
-Subject: [PATCH 05/34] ARM: shmobile: koelsch: enable USB PHY
-Message-Id: <dc80d8bcac7c2eb0421b19cb7c2e297fbaf76da7.1415059587.git.horms+renesas@verge.net.au>
+From: Kevin Cernekee <cernekee@gmail.com>
+Date: Fri, 07 Nov 2014 06:44:23 +0000
+Subject: [PATCH V4 08/14] irqchip: bcm7120-l2: Make sure all register accesses use base+offset
+Message-Id: <1415342669-30640-9-git-send-email-cernekee@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415059587.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415059587.git.horms+renesas@verge.net.au>
+References: <1415342669-30640-1-git-send-email-cernekee@gmail.com>
+In-Reply-To: <1415342669-30640-1-git-send-email-cernekee@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: tglx@linutronix.de, jason@lakedaemon.net, linux-sh@vger.kernel.org
+Cc: arnd@arndb.de, f.fainelli@gmail.com, ralf@linux-mips.org, sergei.shtylyov@cogentembedded.com, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, mbizon@freebox.fr, jogo@openwrt.org, linux-mips@linux-mips.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+A couple of accesses to IRQEN (base+0x00) just used "base" directly, so
+they would break if IRQEN ever became nonzero.  Make sure that all
+reads/writes specify the register offset constant.
 
-Enable USB PHY device for the Koelsch board.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
+Acked-by: Florian Fainelli <f.fainelli@gmail.com>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 4 ++++
- 1 file changed, 4 insertions(+)
+ drivers/irqchip/irq-bcm7120-l2.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 5e4d833..0402c49 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -474,6 +474,10 @@
- 	pinctrl-names = "default";
- };
+diff --git a/drivers/irqchip/irq-bcm7120-l2.c b/drivers/irqchip/irq-bcm7120-l2.c
+index 7086fe0..22d3fa1 100644
+--- a/drivers/irqchip/irq-bcm7120-l2.c
++++ b/drivers/irqchip/irq-bcm7120-l2.c
+@@ -66,10 +66,10 @@ static void bcm7120_l2_intc_suspend(struct irq_data *d)
  
-+&usbphy {
-+	status = "okay";
-+};
-+
- &pcie_bus_clk {
- 	status = "okay";
- };
+ 	irq_gc_lock(gc);
+ 	/* Save the current mask and the interrupt forward mask */
+-	b->saved_mask = __raw_readl(b->base) | b->irq_fwd_mask;
++	b->saved_mask = __raw_readl(b->base + IRQEN) | b->irq_fwd_mask;
+ 	if (b->can_wake) {
+ 		reg = b->saved_mask | gc->wake_active;
+-		__raw_writel(reg, b->base);
++		__raw_writel(reg, b->base + IRQEN);
+ 	}
+ 	irq_gc_unlock(gc);
+ }
+@@ -81,7 +81,7 @@ static void bcm7120_l2_intc_resume(struct irq_data *d)
+ 
+ 	/* Restore the saved mask */
+ 	irq_gc_lock(gc);
+-	__raw_writel(b->saved_mask, b->base);
++	__raw_writel(b->saved_mask, b->base + IRQEN);
+ 	irq_gc_unlock(gc);
+ }
+ 
 -- 
 2.1.1
 
