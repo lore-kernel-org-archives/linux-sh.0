@@ -1,63 +1,49 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 11 Nov 2014 00:16:28 +0000
-Subject: Re: [PATCH 03/03] ARM: shmobile: kzm9g: Build DTS for Multiplatform
-Message-Id: <20141111001627.GC29665@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 07 Nov 2014 10:11:42 +0000
+Subject: [PATCH 3/5] i2c: sh_mobile: improve success message
+Message-Id: <1415355104-2031-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140904022905.26216.71286.sendpatchset@w520>
-In-Reply-To: <20140904022905.26216.71286.sendpatchset@w520>
+References: <1415355104-2031-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1415355104-2031-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>
 
-On Mon, Nov 10, 2014 at 10:08:31AM +0100, Geert Uytterhoeven wrote:
-> Hi Magnus,
-> 
-> On Thu, Sep 4, 2014 at 4:29 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> > From: Magnus Damm <damm+renesas@opensource.se>
-> >
-> > Build the sh73a0 KZM9G board DTB in case of Multiplatform.
-> > The DT reference case will be removed in the future and
-> > can be ignored for now.
-> >
-> > Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> > ---
-> >
-> >  arch/arm/boot/dts/Makefile |    3 ++-
-> >  1 file changed, 2 insertions(+), 1 deletion(-)
-> >
-> > --- 0001/arch/arm/boot/dts/Makefile
-> > +++ work/arch/arm/boot/dts/Makefile     2014-09-04 11:05:49.000000000 +0900
-> > @@ -375,7 +375,8 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += eme
-> >         r8a7791-henninger.dtb \
-> >         r8a7791-koelsch.dtb \
-> >         r8a7790-lager.dtb \
-> > -       r8a7779-marzen.dtb
-> > +       r8a7779-marzen.dtb \
-> > +       sh73a0-kzm9g.dtb
-> 
-> But for now we do want to use sh73a0-kzm9g-reference.dtb, as it contains
-> more meat?
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-My recollection is that for other boards this has been handled by first
-syncing the dtb files.
+No user needs magic hex values, makes this debug output. Add DMA info.
 
-> >  dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
-> >         socfpga_cyclone5_socdk.dtb \
-> >         socfpga_cyclone5_sockit.dtb \
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/busses/i2c-sh_mobile.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
+index 1e0aa597dd04..903bb22aa5b4 100644
+--- a/drivers/i2c/busses/i2c-sh_mobile.c
++++ b/drivers/i2c/busses/i2c-sh_mobile.c
+@@ -293,6 +293,7 @@ static int sh_mobile_i2c_init(struct sh_mobile_i2c_data *pd)
+ 	else
+ 		pd->icic &= ~ICIC_ICCHB8;
+ 
++	dev_dbg(pd->dev, "timing values: L/H=0x%x/0x%x\n", pd->iccl, pd->icch);
+ 	return 0;
+ }
+ 
+@@ -937,9 +938,8 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
+ 		return ret;
+ 	}
+ 
+-	dev_info(&dev->dev,
+-		 "I2C adapter %d with bus speed %lu Hz (L/H=0x%x/0x%x)\n",
+-		 adap->nr, pd->bus_speed, pd->iccl, pd->icch);
++	dev_info(&dev->dev, "I2C adapter %d, bus speed %lu Hz, DMA=%c\n",
++		 adap->nr, pd->bus_speed, (pd->dma_rx || pd->dma_tx) ? 'y' : 'n');
+ 
+ 	return 0;
+ }
+-- 
+2.1.1
+
