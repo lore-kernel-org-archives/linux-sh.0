@@ -1,34 +1,67 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Tue, 04 Nov 2014 22:46:07 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC DT Clocksource Updates for v3.19
-Message-Id: <20141104224607.GK5908@quad.lixom.net>
+From: Kevin Cernekee <cernekee@gmail.com>
+Date: Fri, 07 Nov 2014 06:44:25 +0000
+Subject: [PATCH V4 10/14] irqchip: bcm7120-l2: Use gc->mask_cache to simplify suspend/resume functions
+Message-Id: <1415342669-30640-11-git-send-email-cernekee@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1414629281.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1414629281.git.horms+renesas@verge.net.au>
+References: <1415342669-30640-1-git-send-email-cernekee@gmail.com>
+In-Reply-To: <1415342669-30640-1-git-send-email-cernekee-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, jason-NLaQJdtUoK4Be96aLqz0jA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: arnd-r2nGTMty4D4@public.gmane.org, f.fainelli-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, ralf-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mbizon-MmRyKUhfbQ9GWvitb5QawA@public.gmane.org, jogo-p3rKhJxN3npAfugRpC6u6w@public.gmane.org, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org
 
-On Thu, Oct 30, 2014 at 10:50:49AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these Renesas ARM based SoC DT clocksource updates for v3.19.
-> 
-> 
-> The following changes since commit f114040e3ea6e07372334ade75d1ee0775c355e1:
-> 
->   Linux 3.18-rc1 (2014-10-19 18:08:38 -0700)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-clocksource-for-v3.19
-> 
-> for you to fetch changes up to d5153cd734dd6c1243bb3dc98065be99b10d049f:
-> 
->   clocksource: sh_mtu2: Drop incorrect SoC family name (2014-10-27 10:00:36 +0900)
+The cached value already incorporates irq_fwd_mask, and was saved the
+last time an IRQ was enabled/disabled.
 
-Applied. These could probably have been a single patch.
+Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
+Acked-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ drivers/irqchip/irq-bcm7120-l2.c | 11 +++--------
+ 1 file changed, 3 insertions(+), 8 deletions(-)
 
+diff --git a/drivers/irqchip/irq-bcm7120-l2.c b/drivers/irqchip/irq-bcm7120-l2.c
+index b70679f8..9841121 100644
+--- a/drivers/irqchip/irq-bcm7120-l2.c
++++ b/drivers/irqchip/irq-bcm7120-l2.c
+@@ -37,7 +37,6 @@ struct bcm7120_l2_intc_data {
+ 	bool can_wake;
+ 	u32 irq_fwd_mask;
+ 	u32 irq_map_mask;
+-	u32 saved_mask;
+ };
+ 
+ static void bcm7120_l2_intc_irq_handle(unsigned int irq, struct irq_desc *desc)
+@@ -62,14 +61,11 @@ static void bcm7120_l2_intc_suspend(struct irq_data *d)
+ {
+ 	struct irq_chip_generic *gc = irq_data_get_irq_chip_data(d);
+ 	struct bcm7120_l2_intc_data *b = gc->private;
+-	u32 reg;
+ 
+ 	irq_gc_lock(gc);
+-	/* Save the current mask and the interrupt forward mask */
+-	b->saved_mask = __raw_readl(b->base + IRQEN) | b->irq_fwd_mask;
+ 	if (b->can_wake) {
+-		reg = b->saved_mask | gc->wake_active;
+-		__raw_writel(reg, b->base + IRQEN);
++		__raw_writel(gc->mask_cache | gc->wake_active,
++			     b->base + IRQEN);
+ 	}
+ 	irq_gc_unlock(gc);
+ }
+@@ -77,11 +73,10 @@ static void bcm7120_l2_intc_suspend(struct irq_data *d)
+ static void bcm7120_l2_intc_resume(struct irq_data *d)
+ {
+ 	struct irq_chip_generic *gc = irq_data_get_irq_chip_data(d);
+-	struct bcm7120_l2_intc_data *b = gc->private;
+ 
+ 	/* Restore the saved mask */
+ 	irq_gc_lock(gc);
+-	__raw_writel(b->saved_mask, b->base + IRQEN);
++	__raw_writel(gc->mask_cache, b->base + IRQEN);
+ 	irq_gc_unlock(gc);
+ }
+ 
+-- 
+2.1.1
 
--Olof
