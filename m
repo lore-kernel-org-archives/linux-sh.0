@@ -1,43 +1,46 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:49:49 +0000
-Subject: [PATCH 01/11] ARM: shmobile: r8a7740: Add missing A3SP pm domain devices
-Message-Id: <80f643b39346768878317eb04bd4b1deb4551537.1415058794.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 07 Nov 2014 10:11:39 +0000
+Subject: [PATCH 0/5] i2c: sh_mobile: add DMA support
+Message-Id: <1415355104-2031-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415058794.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415058794.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Here is v1 of the patch series to support DMA with the i2c-sh_mobile core. DMA
+works nicely with my tests so far and we save 1 interrupt per transferred byte,
+yay! DMA is opt-in, so if setting it up fails, we will fall back to PIO. The
+threshold for selecting DMA is still under test, but probably good enough
+already. Since the RFC, I learned about dma_request_slave_channel_reason() and
+deferred probing with DMA channels, so the major show stopper is gone now and
+this should be ready for inclusion IMO. The other open issues (best threshold
+value, ensure DMA capable buffers) can later be done incrementally.
 
-Commit 802a5639aa7041b2 ("ARM: shmobile: r8a7740: add A3SP pm domain
-support") added the A3SP power domain, but forgot to hook up the IPPMU,
-DMAC0/1/2, and USBDMAC hardware blocks.
+Please test, review, comment. The series is based on
+renesas-devel-20141030-v3.18-rc2 with Laurent's series "[PATCH v4 0/5] R-Car
+Gen2 DMA Controller driver" on top of it. A git tree can be found here:
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/setup-r8a7740.c | 5 +++++
- 1 file changed, 5 insertions(+)
+git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/i2c-shmobile-dma-experimental
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 8894e1b..6992d40 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -756,6 +756,11 @@ void __init r8a7740_add_standard_devices(void)
- 		{ "A3SP", &scif7_device },
- 		{ "A3SP", &scif8_device },
- 		{ "A3SP", &i2c1_device },
-+		{ "A3SP", &ipmmu_device },
-+		{ "A3SP", &dma0_device },
-+		{ "A3SP", &dma1_device },
-+		{ "A3SP", &dma2_device },
-+		{ "A3SP", &usb_dma_device },
- 	};
- 
- 	/* I2C work-around */
+Thanks to Geert and Laurent for reviewing the RFC!
+
+   Wolfram
+
+Wolfram Sang (5):
+  i2c: sh_mobile: sort includes alphabetically
+  i2c: sh_mobile: add DMA support
+  i2c: sh_mobile: improve success message
+  ARM: shmobile: r8a7790: add DMA nodes for IIC
+  ARM: shmobile: r8a7791: add DMA nodes for IIC
+
+ .../devicetree/bindings/i2c/i2c-sh_mobile.txt      |   5 +
+ arch/arm/boot/dts/r8a7790.dtsi                     |   8 +
+ arch/arm/boot/dts/r8a7791.dtsi                     |   6 +
+ drivers/i2c/busses/i2c-sh_mobile.c                 | 219 ++++++++++++++++++---
+ 4 files changed, 216 insertions(+), 22 deletions(-)
+
 -- 
 2.1.1
 
