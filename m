@@ -1,79 +1,58 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 06 Nov 2014 11:52:09 +0000
-Subject: [PATCH 4/5] ARM: shmobile: sh73a0 dtsi: Add SoC-specific IIC compatible properties
-Message-Id: <1415274730-310-5-git-send-email-geert+renesas@glider.be>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 07 Nov 2014 05:25:33 +0000
+Subject: Re: [PATCH 4/5] ARM: shmobile: sh73a0 dtsi: Add SoC-specific IIC compatible properties
+Message-Id: <20141107052533.GB1278@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="mojUlQ0s9EVzWg2t"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1415274730-310-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1415274730-310-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+ <1415274730-310-5-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1415274730-310-5-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+To: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-The IIC nodes used the generic compatible properties only.
-This causes the driver to fail when using Standard Speed, as the
-operational clock is driven by the 104 MHz HP clock:
 
-    i2c-sh_mobile e6820000.i2c: timing values out of range: L/H=0x208/0x1bf
-    i2c-sh_mobile: probe of e6820000.i2c failed with error -22
+--mojUlQ0s9EVzWg2t
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Add the SoC-specific compatible property to fix this.
+On Thu, Nov 06, 2014 at 12:52:09PM +0100, Geert Uytterhoeven wrote:
+> The IIC nodes used the generic compatible properties only.
+> This causes the driver to fail when using Standard Speed, as the
+> operational clock is driven by the 104 MHz HP clock:
+>=20
+>     i2c-sh_mobile e6820000.i2c: timing values out of range: L/H=3D0x208/0=
+x1bf
+>     i2c-sh_mobile: probe of e6820000.i2c failed with error -22
+>=20
+> Add the SoC-specific compatible property to fix this.
+>=20
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/boot/dts/sh73a0.dtsi | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+Reviewed-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 030a5920312fa19b..d8def5a529da2882 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -138,7 +138,7 @@
- 	i2c0: i2c@e6820000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
- 		reg = <0xe6820000 0x425>;
- 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH
- 			      0 168 IRQ_TYPE_LEVEL_HIGH
-@@ -150,7 +150,7 @@
- 	i2c1: i2c@e6822000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
- 		reg = <0xe6822000 0x425>;
- 		interrupts = <0 51 IRQ_TYPE_LEVEL_HIGH
- 			      0 52 IRQ_TYPE_LEVEL_HIGH
-@@ -162,7 +162,7 @@
- 	i2c2: i2c@e6824000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
- 		reg = <0xe6824000 0x425>;
- 		interrupts = <0 171 IRQ_TYPE_LEVEL_HIGH
- 			      0 172 IRQ_TYPE_LEVEL_HIGH
-@@ -174,7 +174,7 @@
- 	i2c3: i2c@e6826000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
- 		reg = <0xe6826000 0x425>;
- 		interrupts = <0 183 IRQ_TYPE_LEVEL_HIGH
- 			      0 184 IRQ_TYPE_LEVEL_HIGH
-@@ -186,7 +186,7 @@
- 	i2c4: i2c@e6828000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
- 		reg = <0xe6828000 0x425>;
- 		interrupts = <0 187 IRQ_TYPE_LEVEL_HIGH
- 			      0 188 IRQ_TYPE_LEVEL_HIGH
--- 
-1.9.1
 
+--mojUlQ0s9EVzWg2t
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJUXFfNAAoJEBQN5MwUoCm2jHMP/iiAi09MU17gTYMmC4Equ2Rm
+29tQ7INkdrpOIGT5Waw0vzIpMcJd8fB/wQYCdD+tcYDPRyBvZfKc5sNBM0vPmvEh
+6vEr9J7TGbXwAlhhxPs1nhrW63RvxHAmmZqFRpRm3Uzzc3ffYkThmUs/L0RDEV2a
+uVhAED3D50QYDRg3wJOZvZ9tMt0g2BzfFC71jiKITkT0U86UPMGRdt/y8enUkCyu
+RrwjGvAvM2jxBSaokr+/XXWFqfMrHIMxF/W5X/bOkQnzv0uq9iPQ3KCEFGjMwm0v
+D9pPzFPp1H+asQaWRQ8EuATfQRe1jIc/MK1Hh5gB9HxPag+3uFSLGN1sBQfBbdl9
+DKp/ykyywymsrxnRn4ysS1zHrS8Vfu5dKOoviJMcibL1bkqpMizQai9R7OH2CaLZ
+H6Mw6X6P1zj8644FA4XO6XZhig6PbVorfLGEAGL6DZtC9uUJ8V9bK1sWi+tsSq84
+35sMfe+dHFWbnbGnPFn+hcodtZpC623iuMzolpQFR0ubRxahHtGgLbJXuNzqZpSS
+M4slgX0DS8lu/mk+GdObJeMSwwgIwhDzfzucZHJi3rO5cRNkzW9ewrqB/TUkaSMS
+McJbe7mzZ9md/N0goW/gSrkGorkFGgg4kdVI2ehE8JqueoYUfEgbdYpqQ1yPpi+q
+DsYWQMGo9eJI09t7cpuu
+=2Sbz
+-----END PGP SIGNATURE-----
+
+--mojUlQ0s9EVzWg2t--
