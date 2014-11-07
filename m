@@ -1,59 +1,56 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 06 Nov 2014 11:52:07 +0000
-Subject: [PATCH 2/5] i2c: sh_mobile: Add support for r8a73a4 and sh73a0
-Message-Id: <1415274730-310-3-git-send-email-geert+renesas@glider.be>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 07 Nov 2014 17:53:23 +0000
+Subject: Re: [PATCH 2/5] i2c: sh_mobile: Add support for r8a73a4 and sh73a0
+Message-Id: <20141107175323.GD3656@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="VV4b6MQE+OnNyhkM"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1415274730-310-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1415274730-310-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+ <1415274730-310-3-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1415274730-310-3-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+To: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Add support for r8a73a4 (R-Mobile APE6) and sh73a0 (SH-Mobile AG5).
-On these SoCs, the operating clock runs faster that on previous SoCs,
-and the internal SCL clock counter gets incremented every 2 clocks of
-the operating clock, just like on R-Car Gen2.
 
-Cfr. the "/2" in the calculation of ICCL/ICCH in section "I2C Bus
-Interface (IIC)", subsection "Transfer Rate" of the datasheets.
+--VV4b6MQE+OnNyhkM
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- drivers/i2c/busses/i2c-sh_mobile.c | 14 ++++++++------
- 1 file changed, 8 insertions(+), 6 deletions(-)
+On Thu, Nov 06, 2014 at 12:52:07PM +0100, Geert Uytterhoeven wrote:
+> Add support for r8a73a4 (R-Mobile APE6) and sh73a0 (SH-Mobile AG5).
+> On these SoCs, the operating clock runs faster that on previous SoCs,
+> and the internal SCL clock counter gets incremented every 2 clocks of
+> the operating clock, just like on R-Car Gen2.
+>=20
+> Cfr. the "/2" in the calculation of ICCL/ICCH in section "I2C Bus
+> Interface (IIC)", subsection "Transfer Rate" of the datasheets.
+>=20
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
-index 8b5e79cb4468a87f..8ac36e4ff40a09bb 100644
---- a/drivers/i2c/busses/i2c-sh_mobile.c
-+++ b/drivers/i2c/busses/i2c-sh_mobile.c
-@@ -626,17 +626,19 @@ static const struct sh_mobile_dt_config default_dt_config = {
- 	.clks_per_count = 1,
- };
- 
--static const struct sh_mobile_dt_config rcar_gen2_dt_config = {
-+static const struct sh_mobile_dt_config fast_clock_dt_config = {
- 	.clks_per_count = 2,
- };
- 
- static const struct of_device_id sh_mobile_i2c_dt_ids[] = {
- 	{ .compatible = "renesas,rmobile-iic", .data = &default_dt_config },
--	{ .compatible = "renesas,iic-r8a7790", .data = &rcar_gen2_dt_config },
--	{ .compatible = "renesas,iic-r8a7791", .data = &rcar_gen2_dt_config },
--	{ .compatible = "renesas,iic-r8a7792", .data = &rcar_gen2_dt_config },
--	{ .compatible = "renesas,iic-r8a7793", .data = &rcar_gen2_dt_config },
--	{ .compatible = "renesas,iic-r8a7794", .data = &rcar_gen2_dt_config },
-+	{ .compatible = "renesas,iic-r8a73a4", .data = &fast_clock_dt_config },
-+	{ .compatible = "renesas,iic-r8a7790", .data = &fast_clock_dt_config },
-+	{ .compatible = "renesas,iic-r8a7791", .data = &fast_clock_dt_config },
-+	{ .compatible = "renesas,iic-r8a7792", .data = &fast_clock_dt_config },
-+	{ .compatible = "renesas,iic-r8a7793", .data = &fast_clock_dt_config },
-+	{ .compatible = "renesas,iic-r8a7794", .data = &fast_clock_dt_config },
-+	{ .compatible = "renesas,iic-sh73a0", .data = &fast_clock_dt_config },
- 	{},
- };
- MODULE_DEVICE_TABLE(of, sh_mobile_i2c_dt_ids);
--- 
-1.9.1
+Applied to for-next, thanks!
 
+
+--VV4b6MQE+OnNyhkM
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJUXQcTAAoJEBQN5MwUoCm2jH4P/2dP04mLCaa1eghhcgN4hplT
+0OBGXidOscuRVoHI+np8XrpQmpr93v8rvMOS5Txt1YmsW+NlurxsgOSd3UGeLqNa
+mmn+C67gQ2JTjwR2xPybKk7Wj9aNh893Mp+K5mNqi0sHt43Elisi1IDqzEaXmaNg
+1W5YsFwTW4Ab8p38fsV+W+caO8cjDZ2WWS3OtvDlDy1OkgOqo2yy01Sy2uTuhLUW
+3zKZt0oppPgDAYMB9cEmxqOKMUxwDmOTFokdp8xjXTq9ijKmAZ9Pc96a5ZhVPwQp
+fUxriASAqR6uDNFUiq21iAFZERq57F7Iv5m++y0+OROQe9HqeWhAtdJJrf9poVZX
+7S4K5bUts478wHUBKG7nwTPSNjNpNE1sSL3di89ptrDtJusB2nxhiRCYgpB4H9cp
+YlGiAQ47y5ifVSVH6/5xXzgBrI9RDDkIhHViKoN8lKaZkRq1SwO2NSeFZS2I90CY
+kOuh/0oF9zmk2v1oQw99t1ges1TkaHkzYn++GEANODRvtGBbiuo5iRf2PNAJSAz7
+sz87oJuqrs2bXEOGU0gh7Q+ke1mRdYMlatEJUFR9BqfcWqITRzg1FCgy6F7zs5tU
+E6+GpdbG5fgciG6Qhw9HfJSpHBURo5WBCnTIbao7tmrWxn9fteVpG3ipPOj7FUFn
+L8xkIfNunPxa+pAbLGvk
+=ZyDk
+-----END PGP SIGNATURE-----
+
+--VV4b6MQE+OnNyhkM--
