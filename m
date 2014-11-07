@@ -1,114 +1,54 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 06 Nov 2014 11:52:10 +0000
-Subject: [PATCH 5/5] ARM: shmobile: r8a73a4 dtsi: Add SoC-specific IIC compatible properties
-Message-Id: <1415274730-310-6-git-send-email-geert+renesas@glider.be>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 07 Nov 2014 05:26:16 +0000
+Subject: Re: [PATCH 5/5] ARM: shmobile: r8a73a4 dtsi: Add SoC-specific IIC compatible properties
+Message-Id: <20141107052616.GC1278@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="eHhjakXzOLJAF9wJ"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1415274730-310-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1415274730-310-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+ <1415274730-310-6-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1415274730-310-6-git-send-email-geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-i2c@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
 
-The IIC nodes used the generic compatible properties only.
-This may cause the driver to fail when using Standard Speed on IIC
-masters where the operational clock is driven by the 130 MHz HP clock.
 
-Add the SoC-specific compatible property to fix this.
+--eHhjakXzOLJAF9wJ
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-Untested due to lack of hardware
+On Thu, Nov 06, 2014 at 12:52:10PM +0100, Geert Uytterhoeven wrote:
+> The IIC nodes used the generic compatible properties only.
+> This may cause the driver to fail when using Standard Speed on IIC
+> masters where the operational clock is driven by the 130 MHz HP clock.
+>=20
+> Add the SoC-specific compatible property to fix this.
+>=20
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
- arch/arm/boot/dts/r8a73a4.dtsi | 18 +++++++++---------
- 1 file changed, 9 insertions(+), 9 deletions(-)
+Reviewed-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index 7f57dc7f392aad30..5ac57babc3b95c99 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -106,7 +106,7 @@
- 	i2c5: i2c@e60b0000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe60b0000 0 0x428>;
- 		interrupts = <0 179 IRQ_TYPE_LEVEL_HIGH>;
- 
-@@ -205,7 +205,7 @@
- 	i2c0: i2c@e6500000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6500000 0 0x428>;
- 		interrupts = <0 174 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
-@@ -214,7 +214,7 @@
- 	i2c1: i2c@e6510000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6510000 0 0x428>;
- 		interrupts = <0 175 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
-@@ -223,7 +223,7 @@
- 	i2c2: i2c@e6520000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6520000 0 0x428>;
- 		interrupts = <0 176 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
-@@ -232,7 +232,7 @@
- 	i2c3: i2c@e6530000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6530000 0 0x428>;
- 		interrupts = <0 177 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
-@@ -241,7 +241,7 @@
- 	i2c4: i2c@e6540000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6540000 0 0x428>;
- 		interrupts = <0 178 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
-@@ -250,7 +250,7 @@
- 	i2c6: i2c@e6550000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6550000 0 0x428>;
- 		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
-@@ -259,7 +259,7 @@
- 	i2c7: i2c@e6560000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6560000 0 0x428>;
- 		interrupts = <0 185 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
-@@ -268,7 +268,7 @@
- 	i2c8: i2c@e6570000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6570000 0 0x428>;
- 		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
--- 
-1.9.1
 
+--eHhjakXzOLJAF9wJ
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJUXFf4AAoJEBQN5MwUoCm22uMP/2574bStl0HXV/Bov1+H9cyN
+b//44WOHH+I0o2vExRS/v916frRWGJ3nHGfaPSLHRSj2EIUXgEJcFccx35WJssmO
+8lPBvrSs8cAbhx4KumnVNmrcKNHpQzaYBDh2NCvS5V7RANFEgYgmQDMk3TUyjCD8
+QG3wH6IfszacB/oc7Jj30aT/W20ksShSVK7kY9I+lte7KkFfsT7hHvguaRwJtXaC
+HiDUixn/aY3n5N98jVC98FpIcwqyeKjmRg6Ixp6ux6nCN8pn8tw7giLI4LBlFkBy
+tdMqMS6EV/L/0phpzYgxUSgCR6ZT3i32JsmDemWelfG0CcbfKDjI0DIm/SeW4Z/v
+RXZE6XzLxsLDT8gvm//i5HsbTfVCAYfUwrWgcDV2KZjMQNfl4B9A70REPm+34vhs
+5cum5kZYBRVH72ycHVm/XDhg9OlxYlzxweN5tZK8Pw3GvBiaZany1HajwaB5uTOM
+jICe42LaejbJAqyebGN7h26fNCe7VFJCvWOTVGQpgDm2vCf+zjhvDezDtg3areKp
+ZI2Q7RVSPMA30kLXe/IqvXyo47PUdwr2lLT10Atf5yBKu2voNrhUg6j6G+2bf1hd
+MbvVX7x0RHLYpr3t1NmmmCag1k50zfqxvdp7Svzy942jKNCiKQppEJ1VaS63yJJc
+U8s/YT/N8DKasYV+3tTJ
+=1kke
+-----END PGP SIGNATURE-----
+
+--eHhjakXzOLJAF9wJ--
