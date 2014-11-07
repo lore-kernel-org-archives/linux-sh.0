@@ -1,76 +1,342 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 26 Nov 2014 12:49:01 +0000
-Subject: Re: [PATCH 2/3] i2c: slave-eeprom: add eeprom simulator driver
-Message-Id: <20141126124901.GB4397@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="TakKZr9L6Hm6aLOc"
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 07 Nov 2014 15:52:02 +0000
+Subject: [PATCH 4/6] ARM: shmobile: r8a73a4: Common clock framework DT description
+Message-Id: <1415375524-15468-5-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416326695-13083-1-git-send-email-wsa@the-dreams.de>
- <1416326695-13083-3-git-send-email-wsa@the-dreams.de>
- <CAOY=C6FSXWn2AKn9gp0oU69U8VkkyJAE7MMUTZsToy0P_Tf6AA@mail.gmail.com>
- <20141122181229.GB9698@katana>
- <2A7C987F-15E0-46FD-A711-E7F5BA9893FC@gmail.com>
-In-Reply-To: <2A7C987F-15E0-46FD-A711-E7F5BA9893FC@gmail.com>
-To: linux-arm-kernel@lists.infradead.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+Declares all r8a73a4 clocks supported by the legacy clock framework.
 
---TakKZr9L6Hm6aLOc
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/boot/dts/r8a73a4.dtsi | 310 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 310 insertions(+)
 
-On Wed, Nov 26, 2014 at 03:25:29PM +0300, Alexander Kochetkov wrote:
->=20
-> 22 =D0=BD=D0=BE=D1=8F=D0=B1. 2014 =D0=B3., =D0=B2 21:12, Wolfram Sang <ws=
-a@the-dreams.de> =D0=BD=D0=B0=D0=BF=D0=B8=D1=81=D0=B0=D0=BB(=D0=B0):
->=20
-> > IMO a repeated start is to ensure that two messages arrive at the slave
-> > without interruption from another master. I can't think why a slave
-> > should know which type of start that was. In fact, if it does that would
-> > raise an eyebrow for me. Do you have an example?
->=20
-> It is used to implement Device ID reading.
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index 7f57dc7..c93eada 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -9,6 +9,7 @@
+  * kind, whether express or implied.
+  */
+ 
++#include <dt-bindings/clock/r8a73a4-clock.h>
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+ 
+@@ -367,4 +368,313 @@
+ 			<0 0xf1006000 0 0x2000>;
+ 		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
+ 	};
++
++	clocks {
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		/* External root clocks */
++		extalr_clk: extalr_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <32768>;
++			clock-output-names = "extalr";
++		};
++		extal1_clk: extal1_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <25000000>;
++			clock-output-names = "extal1";
++		};
++		extal2_clk: extal2_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <48000000>;
++			clock-output-names = "extal2";
++		};
++		fsiack_clk: fsiack_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			/* This value must be overridden by the board. */
++			clock-frequency = <0>;
++			clock-output-names = "fsiack";
++		};
++		fsibck_clk: fsibck_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			/* This value must be overridden by the board. */
++			clock-frequency = <0>;
++			clock-output-names = "fsibck";
++		};
++
++		/* Special CPG clocks */
++		cpg_clocks: cpg_clocks@e6150000 {
++			compatible = "renesas,r8a73a4-cpg-clocks";
++			reg = <0 0xe6150000 0 0x10000>;
++			clocks = <&extal1_clk>, <&extal2_clk>;
++			#clock-cells = <1>;
++			clock-output-names = "main", "pll0", "pll1", "pll2",
++					     "pll2s", "pll2h", "z", "z2",
++					     "i", "m3", "b", "m1", "m2",
++					     "zx", "zs", "hp";
++		};
++
++		/* Variable factor clocks (DIV6) */
++		zb_clk: zb_clk@e6150010 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150010 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <0>, <0>;
++			#clock-cells = <0>;
++			clock-output-names = "zb";
++		};
++		sdhi0_clk: sdhi0_clk@e6150074 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150074 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <0>, <&extal2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "sdhi0ck";
++		};
++		sdhi1_clk: sdhi1_clk@e6150078 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150078 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <0>, <&extal2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "sdhi1ck";
++		};
++		sdhi2_clk: sdhi2_clk@e615007c {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe615007c 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <0>, <&extal2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "sdhi2ck";
++		};
++		mmc0_clk: mmc0_clk@e6150240 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150240 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <0>, <&extal2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "mmc0";
++		};
++		mmc1_clk: mmc1_clk@e6150244 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150244 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <0>, <&extal2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "mmc1";
++		};
++		vclk1_clk: vclk1_clk@e6150008 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150008 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <0>, <&extal2_clk>, <&main_div2_clk>,
++				 <&extalr_clk>, <0>, <0>;
++			#clock-cells = <0>;
++			clock-output-names = "vclk1";
++		};
++		vclk2_clk: vclk2_clk@e615000c {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe615000c 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <0>, <&extal2_clk>, <&main_div2_clk>,
++				 <&extalr_clk>, <0>, <0>;
++			#clock-cells = <0>;
++			clock-output-names = "vclk2";
++		};
++		vclk3_clk: vclk3_clk@e615001c {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe615001c 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <0>, <&extal2_clk>, <&main_div2_clk>,
++				 <&extalr_clk>, <0>, <0>;
++			#clock-cells = <0>;
++			clock-output-names = "vclk3";
++		};
++		vclk4_clk: vclk4_clk@e6150014 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150014 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <0>, <&extal2_clk>, <&main_div2_clk>,
++				 <&extalr_clk>, <0>, <0>;
++			#clock-cells = <0>;
++			clock-output-names = "vclk4";
++		};
++		vclk5_clk: vclk5_clk@e6150034 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150034 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <0>, <&extal2_clk>, <&main_div2_clk>,
++				 <&extalr_clk>, <0>, <0>;
++			#clock-cells = <0>;
++			clock-output-names = "vclk5";
++		};
++		fsia_clk: fsia_clk@e6150018 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150018 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <&fsiack_clk>, <0>;
++			#clock-cells = <0>;
++			clock-output-names = "fsia";
++		};
++		fsib_clk: fsib_clk@e6150090 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150090 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <&fsibck_clk>, <0>;
++			#clock-cells = <0>;
++			clock-output-names = "fsib";
++		};
++		mp_clk: mp_clk@e6150080 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150080 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <&extal2_clk>, <&extal2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "mp";
++		};
++		m4_clk: m4_clk@e6150098 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150098 0 4>;
++			clocks = <&cpg_clocks R8A73A4_CLK_PLL2S>;
++			#clock-cells = <0>;
++			clock-output-names = "m4";
++		};
++		hsi_clk: hsi_clk@e615026c {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe615026c 0 4>;
++			clocks = <&cpg_clocks R8A73A4_CLK_PLL2H>, <&pll1_div2_clk>,
++				 <&cpg_clocks R8A73A4_CLK_PLL2S>, <0>;
++			#clock-cells = <0>;
++			clock-output-names = "hsi";
++		};
++		spuv_clk: spuv_clk@e6150094 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150094 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <&extal2_clk>, <&extal2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "spuv";
++		};
++
++		/* Fixed factor clocks */
++		main_div2_clk: main_div2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A73A4_CLK_MAIN>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "main_div2";
++		};
++		pll0_div2_clk: pll0_div2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A73A4_CLK_PLL0>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "pll0_div2";
++		};
++		pll1_div2_clk: pll1_div2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A73A4_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "pll1_div2";
++		};
++		extal1_div2_clk: extal1_div2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&extal1_clk>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "extal1_div2";
++		};
++		extal2_div2_clk: extal2_div2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&extal2_clk>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "extal2_div2";
++		};
++		extal2_div4_clk: extal1_div4_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&extal2_clk>;
++			#clock-cells = <0>;
++			clock-div = <4>;
++			clock-mult = <1>;
++			clock-output-names = "extal2_div4";
++		};
++
++		/* Gate clocks */
++		mstp2_clks: mstp2_clks@e6150138 {
++			compatible = "renesas,r8a73a4-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150138 0 4>, <0 0xe6150040 0 4>;
++			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
++				 <&mp_clk>, <&mp_clk>, <&cpg_clocks R8A73A4_CLK_HP>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A73A4_CLK_SCIFA0 R8A73A4_CLK_SCIFA1
++				R8A73A4_CLK_SCIFB0 R8A73A4_CLK_SCIFB1
++				R8A73A4_CLK_SCIFB2 R8A73A4_CLK_SCIFB3
++				R8A73A4_CLK_DMAC
++			>;
++			clock-output-names +				"scifa0", "scifa1", "scifb0", "scifb1",
++				"scifb2", "scifb3", "dmac";
++		};
++		mstp3_clks: mstp3_clks@e615013c {
++			compatible = "renesas,r8a73a4-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
++			clocks = <&cpg_clocks R8A73A4_CLK_HP>, <&mmc1_clk>,
++				 <&sdhi2_clk>, <&sdhi1_clk>, <&sdhi0_clk>,
++				 <&mmc0_clk>, <&cpg_clocks R8A73A4_CLK_HP>,
++				 <&cpg_clocks R8A73A4_CLK_HP>, <&cpg_clocks
++				 R8A73A4_CLK_HP>, <&cpg_clocks
++				 R8A73A4_CLK_HP>, <&extalr_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A73A4_CLK_IIC2 R8A73A4_CLK_MMCIF1
++				R8A73A4_CLK_SDHI2 R8A73A4_CLK_SDHI1
++				R8A73A4_CLK_SDHI0 R8A73A4_CLK_MMCIF0
++				R8A73A4_CLK_IIC6 R8A73A4_CLK_IIC7
++				R8A73A4_CLK_IIC0 R8A73A4_CLK_IIC1
++				R8A73A4_CLK_CMT1
++			>;
++			clock-output-names +				"iic2", "mmcif1", "sdhi2", "sdhi1", "sdhi0",
++				"mmcif0", "iic6", "iic7", "iic0", "iic1",
++				"cmt1";
++		};
++		mstp4_clks: mstp4_clks@e6150140 {
++			compatible = "renesas,r8a73a4-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150140 0 4>, <0 0xe615004c 0 4>;
++			clocks = <&main_div2_clk>, <&cpg_clocks R8A73A4_CLK_HP>,
++				 <&cpg_clocks R8A73A4_CLK_HP>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A73A4_CLK_IIC5 R8A73A4_CLK_IIC4
++				R8A73A4_CLK_IIC3
++			>;
++			clock-output-names +				"iic5", "iic4", "iic3";
++		};
++		mstp5_clks: mstp5_clks@e6150144 {
++			compatible = "renesas,r8a73a4-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
++			clocks = <&extal2_clk>, <&cpg_clocks R8A73A4_CLK_HP>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A73A4_CLK_THERMAL R8A73A4_CLK_IIC8
++			>;
++			clock-output-names +				"thermal", "iic8";
++		};
++	};
+ };
+-- 
+1.8.4.5
 
-Yes and no, I'd say :) Technically, it needs repeated start. But really,
-the hardware should handle this (and I know one IP core which has
-support for it). One could try to simulate the behaviour in the bus
-driver IF a second slave address AND detection of repeated start is
-available, but I doubt this combination exists.
-
-Still, all the _slave driver_ needs to handle is an
-I2C_SLAVE_EVENT_DEVICE_ID which should return the apropriate value.
-
-That being said, I have never seen querying Device ID in action.
-
-> Not sure, that the feature is really needed for the first release.
-
-I am sure it is not :D
-
-Thanks,
-
-   Wolfram
-
-
---TakKZr9L6Hm6aLOc
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJUdcw9AAoJEBQN5MwUoCm2qxoQAIl08hAkuy5kOMxeI4dU/Q6y
-hi1BQhXGh0dkdmFYChU5czJKLlN0OJNLxSJOE5RWV4w1n4XxoOTQn8i9uDhRrj3F
-yfYe7achb8kPbRUl//VeV1oo9isAY7hEbCe0V0vNlsjoxKac8/Xceg1Fs0qA4vOE
-hoQA+cZsXvJtfzj4axmMFOYpwUtoVomF1XF6OgrV/Bs0d595w28CwGeeiWQvn1Bo
-daY2adI7VwfPt3xu39YdjFlOdyfmZY4s7UmjDu63nF5lgwmDTPBnJSXsKhvYa61Q
-+CLZORfua/0HhUKGH+NFMIhgg5+2XnqWW7z+tW+n7oNX05oMmmEWuFLZWdWjHJua
-atMLHRjIeMXXxeD+JC9F/aDnw5TnvnNSFbm737QbZ2rJLvEr/0P2YIkL8h7W9ejk
-iTFpbqPQGEONowq3+kSYIcb22YPaPyG5U0K+DdRfX46LJahAkiey7Cq4eOi9WbjD
-fZgDDvIQUT55LrpBjrf0RfhkqZlL64C2wmlUFP6Ia8NIM3rnq1R6ZKicpToNmlRu
-NdLfV+YRL4fIwgLs6i4oLtGc/rWTDqFz7T1PbF6RVXpXddNL3R3AoWqQI6ZYx8+7
-s8sIbO2cytAnJRZu7hYptJIF99QY1zdiJRLKP76YxKKq72syfN/XO/IUUtXCnX4L
-zuCs7DtbhsO1MpDbZWVd
-=DsTe
------END PGP SIGNATURE-----
-
---TakKZr9L6Hm6aLOc--
