@@ -1,365 +1,105 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 17 Nov 2014 13:30:42 +0000
-Subject: [PATCH v5 6/8] ARM: shmobile: R-Mobile: Add DT support for PM domains
-Message-Id: <1416231044-1903-7-git-send-email-geert+renesas@glider.be>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 07 Nov 2014 15:49:25 +0000
+Subject: [PATCH v5 2/6] ARM: shmobile: sh73a0: Add CPG register bits header
+Message-Id: <1415375369-15209-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416231044-1903-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1416231044-1903-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Populate the PM domains from DT, and provide support to hook up devices
-to their respective PM domain.
-
-The always-on power area (e.g. C5 on r8a7740) is created as a PM domain
-without software control, to allow Run-Time management of module clocks
-for hardware blocks inside this area.
-
-Power-on/off latencies are supported.
-
-Special cases like PM domains containing CPUs, the console device, or
-Coresight-ETM, are handled by scanning the DT topology.
-
-As long as the ARM debug/perf code doesn't use resource management with
-runtime PM support, the power area containing Coresight-ETM (e.g. D4 on
-r8a7740) must be kept powered to avoid a crash during resume from s2ram
-(dbg_cpu_pm_notify() calls reset_ctrl_regs() unconditionally, causing an
-undefined instruction oops).
-
-Initialization is done from core_initcall(), as the
-"renesas,intc-irqpin" driver uses postcore_initcall().
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
-v5:
-  - No changes,
-v4:
-  - Always keep D4 powered, until the new Coresight code handles runtime
-    PM,
-v3:
-  - Remove limitations, as fixes for the interrupt storm (A4MP) and
-    crash (D4) are available,
-  - Scan DT topology to identify special PM domains,
-  - Add dependency on chosen/stdout-path,
-v2:
-  - Fix typo "CPU is _not_ in use",
-  - Include build glue,
-  - Remove paragraph about missing functionality compared to the legacy
-    case, as it is no longer missing (runtime management of module
-    clocks, device latencies).
----
- arch/arm/mach-shmobile/Kconfig      |   3 +-
- arch/arm/mach-shmobile/pm-rmobile.c | 220 +++++++++++++++++++++++++++++++++++-
- arch/arm/mach-shmobile/pm-rmobile.h |   2 +-
- 3 files changed, 221 insertions(+), 4 deletions(-)
+ include/dt-bindings/clock/sh73a0-clock.h | 79 ++++++++++++++++++++++++++++++++
+ 1 file changed, 79 insertions(+)
+ create mode 100644 include/dt-bindings/clock/sh73a0-clock.h
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 1b4fafe524ffeb41..76b80e512f7a8ebb 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -7,6 +7,7 @@ config PM_RCAR
- 
- config PM_RMOBILE
- 	bool
-+	select PM_GENERIC_DOMAINS
- 
- config ARCH_RCAR_GEN1
- 	bool
-@@ -23,7 +24,7 @@ config ARCH_RCAR_GEN2
- 
- config ARCH_RMOBILE
- 	bool
--	select PM_RMOBILE if PM && !ARCH_SHMOBILE_MULTI
-+	select PM_RMOBILE if PM
- 	select SYS_SUPPORTS_SH_CMT
- 	select SYS_SUPPORTS_SH_TMU
- 
-diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
-index 0258b00aacc94c8f..5e01a28110e24034 100644
---- a/arch/arm/mach-shmobile/pm-rmobile.c
-+++ b/arch/arm/mach-shmobile/pm-rmobile.c
-@@ -3,6 +3,7 @@
-  *
-  * Copyright (C) 2012  Renesas Solutions Corp.
-  * Copyright (C) 2012  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ * Copyright (C) 2014  Glider bvba
-  *
-  * based on pm-sh7372.c
-  *  Copyright (C) 2011 Magnus Damm
-@@ -13,10 +14,16 @@
-  */
- #include <linux/console.h>
- #include <linux/delay.h>
-+#include <linux/of.h>
-+#include <linux/of_address.h>
-+#include <linux/of_platform.h>
- #include <linux/platform_device.h>
- #include <linux/pm.h>
- #include <linux/pm_clock.h>
-+#include <linux/slab.h>
+diff --git a/include/dt-bindings/clock/sh73a0-clock.h b/include/dt-bindings/clock/sh73a0-clock.h
+new file mode 100644
+index 0000000..1dd3eb2
+--- /dev/null
++++ b/include/dt-bindings/clock/sh73a0-clock.h
+@@ -0,0 +1,79 @@
++/*
++ * Copyright 2014 Ulrich Hecht
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
 +
- #include <asm/io.h>
++#ifndef __DT_BINDINGS_CLOCK_SH73A0_H__
++#define __DT_BINDINGS_CLOCK_SH73A0_H__
 +
- #include "pm-rmobile.h"
- 
- /* SYSC */
-@@ -30,8 +37,12 @@
- static int rmobile_pd_power_down(struct generic_pm_domain *genpd)
- {
- 	struct rmobile_pm_domain *rmobile_pd = to_rmobile_pd(genpd);
--	unsigned int mask = 1 << rmobile_pd->bit_shift;
-+	unsigned int mask;
++/* CPG */
++#define SH73A0_CLK_MAIN		0
++#define SH73A0_CLK_PLL0		1
++#define SH73A0_CLK_PLL1		2
++#define SH73A0_CLK_PLL2		3
++#define SH73A0_CLK_PLL3		4
++#define SH73A0_CLK_DSI0PHY	5
++#define SH73A0_CLK_DSI1PHY	6
++#define SH73A0_CLK_ZG		7
++#define SH73A0_CLK_M3		8
++#define SH73A0_CLK_B		9
++#define SH73A0_CLK_M1		10
++#define SH73A0_CLK_M2		11
++#define SH73A0_CLK_Z		12
++#define SH73A0_CLK_ZX		13
++#define SH73A0_CLK_HP		14
 +
-+	if (rmobile_pd->bit_shift = ~0)
-+		return -EBUSY;
- 
-+	mask = 1 << rmobile_pd->bit_shift;
- 	if (rmobile_pd->suspend) {
- 		int ret = rmobile_pd->suspend();
- 
-@@ -61,10 +72,14 @@ static int rmobile_pd_power_down(struct generic_pm_domain *genpd)
- static int __rmobile_pd_power_up(struct rmobile_pm_domain *rmobile_pd,
- 				 bool do_resume)
- {
--	unsigned int mask = 1 << rmobile_pd->bit_shift;
-+	unsigned int mask;
- 	unsigned int retry_count;
- 	int ret = 0;
- 
-+	if (rmobile_pd->bit_shift = ~0)
-+		return 0;
++/* MSTP0 */
++#define SH73A0_CLK_IIC2	1
 +
-+	mask = 1 << rmobile_pd->bit_shift;
- 	if (__raw_readl(rmobile_pd->base + PSTR) & mask)
- 		goto out;
- 
-@@ -157,6 +172,8 @@ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
- 	__rmobile_pd_power_up(rmobile_pd, false);
- }
- 
-+#ifdef CONFIG_ARCH_SHMOBILE_LEGACY
++/* MSTP1 */
++#define SH73A0_CLK_CEU1		29
++#define SH73A0_CLK_CSI2_RX1	28
++#define SH73A0_CLK_CEU0		27
++#define SH73A0_CLK_CSI2_RX0	26
++#define SH73A0_CLK_TMU0		25
++#define SH73A0_CLK_DSITX0	18
++#define SH73A0_CLK_IIC0		16
++#define SH73A0_CLK_SGX		12
++#define SH73A0_CLK_LCDC0	0
 +
- void rmobile_init_domains(struct rmobile_pm_domain domains[], int num)
- {
- 	int j;
-@@ -189,3 +206,202 @@ void rmobile_add_devices_to_domains(struct pm_domain_device data[],
- 		rmobile_add_device_to_domain_td(data[j].domain_name,
- 						data[j].pdev, &latencies);
- }
++/* MSTP2 */
++#define SH73A0_CLK_SCIFA7	19
++#define SH73A0_CLK_SY_DMAC	18
++#define SH73A0_CLK_MP_DMAC	17
++#define SH73A0_CLK_SCIFA5	7
++#define SH73A0_CLK_SCIFB	6
++#define SH73A0_CLK_SCIFA0	4
++#define SH73A0_CLK_SCIFA1	3
++#define SH73A0_CLK_SCIFA2	2
++#define SH73A0_CLK_SCIFA3	1
++#define SH73A0_CLK_SCIFA4	0
 +
-+#else /* !CONFIG_ARCH_SHMOBILE_LEGACY */
++/* MSTP3 */
++#define SH73A0_CLK_SCIFA6	31
++#define SH73A0_CLK_CMT1		29
++#define SH73A0_CLK_FSI		28
++#define SH73A0_CLK_IRDA		25
++#define SH73A0_CLK_IIC1		23
++#define SH73A0_CLK_USB		22
++#define SH73A0_CLK_FLCTL	15
++#define SH73A0_CLK_SDHI0	14
++#define SH73A0_CLK_SDHI1	13
++#define SH73A0_CLK_MMCIF0	12
++#define SH73A0_CLK_SDHI2	11
++#define SH73A0_CLK_TPU0		4
++#define SH73A0_CLK_TPU1		3
++#define SH73A0_CLK_TPU2		2
++#define SH73A0_CLK_TPU3		1
++#define SH73A0_CLK_TPU4		0
 +
-+static int rmobile_pd_suspend_cpu(void)
-+{
-+	/*
-+	 * This domain contains the CPU core and therefore it should
-+	 * only be turned off if the CPU is not in use.
-+	 */
-+	return -EBUSY;
-+}
++/* MSTP4 */
++#define SH73A0_CLK_IIC3		11
++#define SH73A0_CLK_IIC4		10
++#define SH73A0_CLK_KEYSC	3
 +
-+static int rmobile_pd_suspend_console(void)
-+{
-+	/*
-+	 * Serial consoles make use of SCIF hardware located in this domain,
-+	 * hence keep the power domain on if "no_console_suspend" is set.
-+	 */
-+	return console_suspend_enabled ? 0 : -EBUSY;
-+}
-+
-+static int rmobile_pd_suspend_debug(void)
-+{
-+	/*
-+	 * This domain contains the Coresight-ETM hardware block and
-+	 * therefore it should only be turned off if the debug module is
-+	 * not in use.
-+	 */
-+	return -EBUSY;
-+}
-+
-+#define MAX_NUM_CPU_PDS		8
-+
-+static unsigned int num_cpu_pds __initdata;
-+static struct device_node *cpu_pds[MAX_NUM_CPU_PDS] __initdata;
-+static struct device_node *console_pd __initdata;
-+static struct device_node *debug_pd __initdata;
-+
-+static void __init get_special_pds(void)
-+{
-+	struct device_node *np, *pd;
-+	unsigned int i;
-+
-+	/* PM domains containing CPUs */
-+	for_each_node_by_type(np, "cpu") {
-+		pd = of_parse_phandle(np, "power-domains", 0);
-+		if (!pd)
-+			continue;
-+
-+		for (i = 0; i < num_cpu_pds; i++)
-+			if (pd = cpu_pds[i])
-+				break;
-+
-+		if (i < num_cpu_pds) {
-+			of_node_put(pd);
-+			continue;
-+		}
-+
-+		if (num_cpu_pds = MAX_NUM_CPU_PDS) {
-+			pr_warn("Too many CPU PM domains\n");
-+			of_node_put(pd);
-+			continue;
-+		}
-+
-+		cpu_pds[num_cpu_pds++] = pd;
-+	}
-+
-+	/* PM domain containing console */
-+	if (of_stdout)
-+		console_pd = of_parse_phandle(of_stdout, "power-domains", 0);
-+
-+	/* PM domain containing Coresight-ETM */
-+	np = of_find_compatible_node(NULL, NULL, "arm,coresight-etm3x");
-+	if (np)
-+		debug_pd = of_parse_phandle(np, "power-domains", 0);
-+}
-+
-+static void __init put_special_pds(void)
-+{
-+	unsigned int i;
-+
-+	for (i = 0; i < num_cpu_pds; i++)
-+		of_node_put(cpu_pds[i]);
-+	of_node_put(console_pd);
-+	of_node_put(debug_pd);
-+}
-+
-+static bool __init pd_contains_cpu(const struct device_node *pd)
-+{
-+	unsigned int i;
-+
-+	for (i = 0; i < num_cpu_pds; i++)
-+		if (pd = cpu_pds[i])
-+			return true;
-+
-+	return false;
-+}
-+
-+static void __init rmobile_setup_pm_domain(struct device_node *np,
-+					   struct rmobile_pm_domain *pd)
-+{
-+	const char *name = pd->genpd.name;
-+
-+	if (pd_contains_cpu(np)) {
-+		pr_debug("PM domain %s contains CPU\n", name);
-+		pd->gov = &pm_domain_always_on_gov;
-+		pd->suspend = rmobile_pd_suspend_cpu;
-+	} else if (np = console_pd) {
-+		pr_debug("PM domain %s contains serial console\n", name);
-+		pd->gov = &pm_domain_always_on_gov;
-+		pd->suspend = rmobile_pd_suspend_console;
-+	} else if (np = debug_pd) {
-+		pr_debug("PM domain %s contains Coresight-ETM\n", name);
-+		pd->gov = &pm_domain_always_on_gov;
-+		pd->suspend = rmobile_pd_suspend_debug;
-+	}
-+
-+	rmobile_init_pm_domain(pd);
-+}
-+
-+static int __init rmobile_add_pm_domains(void __iomem *base,
-+					 struct device_node *parent,
-+					 struct generic_pm_domain *genpd_parent)
-+{
-+	struct device_node *np;
-+
-+	for_each_child_of_node(parent, np) {
-+		struct rmobile_pm_domain *pd;
-+		u32 idx = ~0;
-+		u32 latency;
-+
-+		if (of_property_read_u32(np, "reg", &idx)) {
-+			/* always-on domain */
-+		}
-+
-+		pd = kzalloc(sizeof(*pd), GFP_KERNEL);
-+		if (!pd)
-+			return -ENOMEM;
-+
-+		pd->genpd.name = np->name;
-+		if (!of_property_read_u32(np, "power-on-latency", &latency))
-+			pd->genpd.power_on_latency_ns = latency;
-+		if (!of_property_read_u32(np, "power-off-latency", &latency))
-+			pd->genpd.power_off_latency_ns = latency;
-+		pd->base = base;
-+		pd->bit_shift = idx;
-+
-+		rmobile_setup_pm_domain(np, pd);
-+		if (genpd_parent)
-+			pm_genpd_add_subdomain(genpd_parent, &pd->genpd);
-+		of_genpd_add_provider_simple(np, &pd->genpd);
-+
-+		rmobile_add_pm_domains(base, np, &pd->genpd);
-+	}
-+	return 0;
-+}
-+
-+static int __init rmobile_init_pm_domains(void)
-+{
-+	struct device_node *np, *pmd;
-+	bool scanned = false;
-+	void __iomem *base;
-+	int ret = 0;
-+
-+	for_each_compatible_node(np, NULL, "renesas,sysc-rmobile") {
-+		base = of_iomap(np, 0);
-+		if (!base) {
-+			pr_warn("%s cannot map reg 0\n", np->full_name);
-+			continue;
-+		}
-+
-+		pmd = of_find_node_by_name(np, "pm-domains");
-+		if (!pmd) {
-+			pr_warn("%s lacks pm-domains node\n", np->full_name);
-+			continue;
-+		}
-+
-+		if (!scanned) {
-+			/* Find PM domains containing special blocks */
-+			get_special_pds();
-+			scanned = true;
-+		}
-+
-+		ret = rmobile_add_pm_domains(base, pmd, NULL);
-+		of_node_put(pmd);
-+		if (ret) {
-+			of_node_put(np);
-+			break;
-+		}
-+	}
-+
-+	put_special_pds();
-+
-+	return ret;
-+}
-+
-+core_initcall(rmobile_init_pm_domains);
-+
-+#endif /* !CONFIG_ARCH_SHMOBILE_LEGACY */
-diff --git a/arch/arm/mach-shmobile/pm-rmobile.h b/arch/arm/mach-shmobile/pm-rmobile.h
-index 0602130bb260c31d..53219786f539fa24 100644
---- a/arch/arm/mach-shmobile/pm-rmobile.h
-+++ b/arch/arm/mach-shmobile/pm-rmobile.h
-@@ -37,7 +37,7 @@ struct pm_domain_device {
- 	struct platform_device *pdev;
- };
- 
--#ifdef CONFIG_PM_RMOBILE
-+#if defined(CONFIG_PM_RMOBILE) && defined(CONFIG_ARCH_SHMOBILE_LEGACY)
- extern void rmobile_init_domains(struct rmobile_pm_domain domains[], int num);
- extern void rmobile_add_device_to_domain_td(const char *domain_name,
- 					    struct platform_device *pdev,
++#endif
 -- 
-1.9.1
+1.8.4.5
 
