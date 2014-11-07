@@ -1,326 +1,100 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 03 Nov 2014 23:44:57 +0000
-Subject: Re: [PATCH] v4l: vsp1: Remove support for platform data
-Message-Id: <20141103234457.GA8941@verge.net.au>
+From: Kevin Cernekee <cernekee@gmail.com>
+Date: Fri, 07 Nov 2014 06:44:28 +0000
+Subject: [PATCH V4 13/14] irqchip: bcm7120-l2: Convert driver to use irq_reg_{readl,writel}
+Message-Id: <1415342669-30640-14-git-send-email-cernekee@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414678153-11676-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1414678153-11676-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1415342669-30640-1-git-send-email-cernekee@gmail.com>
+In-Reply-To: <1415342669-30640-1-git-send-email-cernekee@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-media@vger.kernel.org, linux-sh@vger.kernel.org
+To: tglx@linutronix.de, jason@lakedaemon.net, linux-sh@vger.kernel.org
+Cc: arnd@arndb.de, f.fainelli@gmail.com, ralf@linux-mips.org, sergei.shtylyov@cogentembedded.com, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, mbizon@freebox.fr, jogo@openwrt.org, linux-mips@linux-mips.org
 
-On Thu, Oct 30, 2014 at 04:09:13PM +0200, Laurent Pinchart wrote:
-> Now that all platforms instantiate the VSP1 through DT, platform data
-> support isn't needed anymore.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+On BE MIPS systems this needs to use the new IRQ_GC_BE_IO gc_flag.  In
+all other cases it will use the standard readl/writel accessors.
 
-Very nice :)
+The initial irq_fwd_mask setup runs before "gc" is initialized, so it
+is unchanged for now.  This could potentially be a problem on an ARM
+system that boots in LE mode but runs a BE kernel, but currently none
+of the supported ARM platforms are ever expected to run BE.
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
+---
+ drivers/irqchip/irq-bcm7120-l2.c | 24 ++++++++++++++----------
+ 1 file changed, 14 insertions(+), 10 deletions(-)
 
-> ---
->  drivers/media/platform/Kconfig         |  2 +-
->  drivers/media/platform/vsp1/vsp1.h     | 14 +++++-
->  drivers/media/platform/vsp1/vsp1_drv.c | 81 ++++++++++++----------------------
->  drivers/media/platform/vsp1/vsp1_wpf.c |  2 +-
->  include/linux/platform_data/vsp1.h     | 27 ------------
->  5 files changed, 43 insertions(+), 83 deletions(-)
->  delete mode 100644 include/linux/platform_data/vsp1.h
-> 
-> diff --git a/drivers/media/platform/Kconfig b/drivers/media/platform/Kconfig
-> index 0c61155699f7..0c301d8ded7f 100644
-> --- a/drivers/media/platform/Kconfig
-> +++ b/drivers/media/platform/Kconfig
-> @@ -231,7 +231,7 @@ config VIDEO_SH_VEU
->  config VIDEO_RENESAS_VSP1
->  	tristate "Renesas VSP1 Video Processing Engine"
->  	depends on VIDEO_V4L2 && VIDEO_V4L2_SUBDEV_API && HAS_DMA
-> -	depends on ARCH_SHMOBILE || COMPILE_TEST
-> +	depends on (ARCH_SHMOBILE && OF) || COMPILE_TEST
->  	select VIDEOBUF2_DMA_CONTIG
->  	---help---
->  	  This is a V4L2 driver for the Renesas VSP1 video processing engine.
-> diff --git a/drivers/media/platform/vsp1/vsp1.h b/drivers/media/platform/vsp1/vsp1.h
-> index 12467191dff4..989e96f7e360 100644
-> --- a/drivers/media/platform/vsp1/vsp1.h
-> +++ b/drivers/media/platform/vsp1/vsp1.h
-> @@ -16,7 +16,6 @@
->  #include <linux/io.h>
->  #include <linux/list.h>
->  #include <linux/mutex.h>
-> -#include <linux/platform_data/vsp1.h>
->  
->  #include <media/media-device.h>
->  #include <media/v4l2-device.h>
-> @@ -40,9 +39,20 @@ struct vsp1_uds;
->  #define VSP1_MAX_UDS		3
->  #define VSP1_MAX_WPF		4
->  
-> +#define VSP1_HAS_LIF		(1 << 0)
-> +#define VSP1_HAS_LUT		(1 << 1)
-> +#define VSP1_HAS_SRU		(1 << 2)
-> +
-> +struct vsp1_platform_data {
-> +	unsigned int features;
-> +	unsigned int rpf_count;
-> +	unsigned int uds_count;
-> +	unsigned int wpf_count;
-> +};
-> +
->  struct vsp1_device {
->  	struct device *dev;
-> -	struct vsp1_platform_data *pdata;
-> +	struct vsp1_platform_data pdata;
->  
->  	void __iomem *mmio;
->  	struct clk *clock;
-> diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
-> index 3e6601b5b4de..d1911f8f1d55 100644
-> --- a/drivers/media/platform/vsp1/vsp1_drv.c
-> +++ b/drivers/media/platform/vsp1/vsp1_drv.c
-> @@ -40,7 +40,7 @@ static irqreturn_t vsp1_irq_handler(int irq, void *data)
->  	irqreturn_t ret = IRQ_NONE;
->  	unsigned int i;
->  
-> -	for (i = 0; i < vsp1->pdata->wpf_count; ++i) {
-> +	for (i = 0; i < vsp1->pdata.wpf_count; ++i) {
->  		struct vsp1_rwpf *wpf = vsp1->wpf[i];
->  		struct vsp1_pipeline *pipe;
->  		u32 status;
-> @@ -181,7 +181,7 @@ static int vsp1_create_entities(struct vsp1_device *vsp1)
->  
->  	list_add_tail(&vsp1->hst->entity.list_dev, &vsp1->entities);
->  
-> -	if (vsp1->pdata->features & VSP1_HAS_LIF) {
-> +	if (vsp1->pdata.features & VSP1_HAS_LIF) {
->  		vsp1->lif = vsp1_lif_create(vsp1);
->  		if (IS_ERR(vsp1->lif)) {
->  			ret = PTR_ERR(vsp1->lif);
-> @@ -191,7 +191,7 @@ static int vsp1_create_entities(struct vsp1_device *vsp1)
->  		list_add_tail(&vsp1->lif->entity.list_dev, &vsp1->entities);
->  	}
->  
-> -	if (vsp1->pdata->features & VSP1_HAS_LUT) {
-> +	if (vsp1->pdata.features & VSP1_HAS_LUT) {
->  		vsp1->lut = vsp1_lut_create(vsp1);
->  		if (IS_ERR(vsp1->lut)) {
->  			ret = PTR_ERR(vsp1->lut);
-> @@ -201,7 +201,7 @@ static int vsp1_create_entities(struct vsp1_device *vsp1)
->  		list_add_tail(&vsp1->lut->entity.list_dev, &vsp1->entities);
->  	}
->  
-> -	for (i = 0; i < vsp1->pdata->rpf_count; ++i) {
-> +	for (i = 0; i < vsp1->pdata.rpf_count; ++i) {
->  		struct vsp1_rwpf *rpf;
->  
->  		rpf = vsp1_rpf_create(vsp1, i);
-> @@ -214,7 +214,7 @@ static int vsp1_create_entities(struct vsp1_device *vsp1)
->  		list_add_tail(&rpf->entity.list_dev, &vsp1->entities);
->  	}
->  
-> -	if (vsp1->pdata->features & VSP1_HAS_SRU) {
-> +	if (vsp1->pdata.features & VSP1_HAS_SRU) {
->  		vsp1->sru = vsp1_sru_create(vsp1);
->  		if (IS_ERR(vsp1->sru)) {
->  			ret = PTR_ERR(vsp1->sru);
-> @@ -224,7 +224,7 @@ static int vsp1_create_entities(struct vsp1_device *vsp1)
->  		list_add_tail(&vsp1->sru->entity.list_dev, &vsp1->entities);
->  	}
->  
-> -	for (i = 0; i < vsp1->pdata->uds_count; ++i) {
-> +	for (i = 0; i < vsp1->pdata.uds_count; ++i) {
->  		struct vsp1_uds *uds;
->  
->  		uds = vsp1_uds_create(vsp1, i);
-> @@ -237,7 +237,7 @@ static int vsp1_create_entities(struct vsp1_device *vsp1)
->  		list_add_tail(&uds->entity.list_dev, &vsp1->entities);
->  	}
->  
-> -	for (i = 0; i < vsp1->pdata->wpf_count; ++i) {
-> +	for (i = 0; i < vsp1->pdata.wpf_count; ++i) {
->  		struct vsp1_rwpf *wpf;
->  
->  		wpf = vsp1_wpf_create(vsp1, i);
-> @@ -261,7 +261,7 @@ static int vsp1_create_entities(struct vsp1_device *vsp1)
->  			goto done;
->  	}
->  
-> -	if (vsp1->pdata->features & VSP1_HAS_LIF) {
-> +	if (vsp1->pdata.features & VSP1_HAS_LIF) {
->  		ret = media_entity_create_link(
->  			&vsp1->wpf[0]->entity.subdev.entity, RWPF_PAD_SOURCE,
->  			&vsp1->lif->entity.subdev.entity, LIF_PAD_SINK, 0);
-> @@ -294,7 +294,7 @@ static int vsp1_device_init(struct vsp1_device *vsp1)
->  	/* Reset any channel that might be running. */
->  	status = vsp1_read(vsp1, VI6_STATUS);
->  
-> -	for (i = 0; i < vsp1->pdata->wpf_count; ++i) {
-> +	for (i = 0; i < vsp1->pdata.wpf_count; ++i) {
->  		unsigned int timeout;
->  
->  		if (!(status & VI6_STATUS_SYS_ACT(i)))
-> @@ -318,10 +318,10 @@ static int vsp1_device_init(struct vsp1_device *vsp1)
->  	vsp1_write(vsp1, VI6_CLK_DCSWT, (8 << VI6_CLK_DCSWT_CSTPW_SHIFT) |
->  		   (8 << VI6_CLK_DCSWT_CSTRW_SHIFT));
->  
-> -	for (i = 0; i < vsp1->pdata->rpf_count; ++i)
-> +	for (i = 0; i < vsp1->pdata.rpf_count; ++i)
->  		vsp1_write(vsp1, VI6_DPR_RPF_ROUTE(i), VI6_DPR_NODE_UNUSED);
->  
-> -	for (i = 0; i < vsp1->pdata->uds_count; ++i)
-> +	for (i = 0; i < vsp1->pdata.uds_count; ++i)
->  		vsp1_write(vsp1, VI6_DPR_UDS_ROUTE(i), VI6_DPR_NODE_UNUSED);
->  
->  	vsp1_write(vsp1, VI6_DPR_SRU_ROUTE, VI6_DPR_NODE_UNUSED);
-> @@ -428,28 +428,36 @@ static const struct dev_pm_ops vsp1_pm_ops = {
->   * Platform Driver
->   */
->  
-> -static int vsp1_validate_platform_data(struct platform_device *pdev,
-> -				       struct vsp1_platform_data *pdata)
-> +static int vsp1_parse_dt(struct vsp1_device *vsp1)
->  {
-> -	if (pdata = NULL) {
-> -		dev_err(&pdev->dev, "missing platform data\n");
-> -		return -EINVAL;
-> -	}
-> +	struct device_node *np = vsp1->dev->of_node;
-> +	struct vsp1_platform_data *pdata = &vsp1->pdata;
-> +
-> +	if (of_property_read_bool(np, "renesas,has-lif"))
-> +		pdata->features |= VSP1_HAS_LIF;
-> +	if (of_property_read_bool(np, "renesas,has-lut"))
-> +		pdata->features |= VSP1_HAS_LUT;
-> +	if (of_property_read_bool(np, "renesas,has-sru"))
-> +		pdata->features |= VSP1_HAS_SRU;
-> +
-> +	of_property_read_u32(np, "renesas,#rpf", &pdata->rpf_count);
-> +	of_property_read_u32(np, "renesas,#uds", &pdata->uds_count);
-> +	of_property_read_u32(np, "renesas,#wpf", &pdata->wpf_count);
->  
->  	if (pdata->rpf_count <= 0 || pdata->rpf_count > VSP1_MAX_RPF) {
-> -		dev_err(&pdev->dev, "invalid number of RPF (%u)\n",
-> +		dev_err(vsp1->dev, "invalid number of RPF (%u)\n",
->  			pdata->rpf_count);
->  		return -EINVAL;
->  	}
->  
->  	if (pdata->uds_count <= 0 || pdata->uds_count > VSP1_MAX_UDS) {
-> -		dev_err(&pdev->dev, "invalid number of UDS (%u)\n",
-> +		dev_err(vsp1->dev, "invalid number of UDS (%u)\n",
->  			pdata->uds_count);
->  		return -EINVAL;
->  	}
->  
->  	if (pdata->wpf_count <= 0 || pdata->wpf_count > VSP1_MAX_WPF) {
-> -		dev_err(&pdev->dev, "invalid number of WPF (%u)\n",
-> +		dev_err(vsp1->dev, "invalid number of WPF (%u)\n",
->  			pdata->wpf_count);
->  		return -EINVAL;
->  	}
-> @@ -457,33 +465,6 @@ static int vsp1_validate_platform_data(struct platform_device *pdev,
->  	return 0;
->  }
->  
-> -static struct vsp1_platform_data *
-> -vsp1_get_platform_data(struct platform_device *pdev)
-> -{
-> -	struct device_node *np = pdev->dev.of_node;
-> -	struct vsp1_platform_data *pdata;
-> -
-> -	if (!IS_ENABLED(CONFIG_OF) || np = NULL)
-> -		return pdev->dev.platform_data;
-> -
-> -	pdata = devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
-> -	if (pdata = NULL)
-> -		return NULL;
-> -
-> -	if (of_property_read_bool(np, "renesas,has-lif"))
-> -		pdata->features |= VSP1_HAS_LIF;
-> -	if (of_property_read_bool(np, "renesas,has-lut"))
-> -		pdata->features |= VSP1_HAS_LUT;
-> -	if (of_property_read_bool(np, "renesas,has-sru"))
-> -		pdata->features |= VSP1_HAS_SRU;
-> -
-> -	of_property_read_u32(np, "renesas,#rpf", &pdata->rpf_count);
-> -	of_property_read_u32(np, "renesas,#uds", &pdata->uds_count);
-> -	of_property_read_u32(np, "renesas,#wpf", &pdata->wpf_count);
-> -
-> -	return pdata;
-> -}
-> -
->  static int vsp1_probe(struct platform_device *pdev)
->  {
->  	struct vsp1_device *vsp1;
-> @@ -499,11 +480,7 @@ static int vsp1_probe(struct platform_device *pdev)
->  	mutex_init(&vsp1->lock);
->  	INIT_LIST_HEAD(&vsp1->entities);
->  
-> -	vsp1->pdata = vsp1_get_platform_data(pdev);
-> -	if (vsp1->pdata = NULL)
-> -		return -ENODEV;
-> -
-> -	ret = vsp1_validate_platform_data(pdev, vsp1->pdata);
-> +	ret = vsp1_parse_dt(vsp1);
->  	if (ret < 0)
->  		return ret;
->  
-> diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
-> index 6e057762c933..b1089d05583a 100644
-> --- a/drivers/media/platform/vsp1/vsp1_wpf.c
-> +++ b/drivers/media/platform/vsp1/vsp1_wpf.c
-> @@ -280,7 +280,7 @@ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index)
->  	 * except for the WPF0 source link if a LIF is present.
->  	 */
->  	flags = MEDIA_LNK_FL_ENABLED;
-> -	if (!(vsp1->pdata->features & VSP1_HAS_LIF) || index != 0)
-> +	if (!(vsp1->pdata.features & VSP1_HAS_LIF) || index != 0)
->  		flags |= MEDIA_LNK_FL_IMMUTABLE;
->  
->  	ret = media_entity_create_link(&wpf->entity.subdev.entity,
-> diff --git a/include/linux/platform_data/vsp1.h b/include/linux/platform_data/vsp1.h
-> deleted file mode 100644
-> index 63170e2614b3..000000000000
-> --- a/include/linux/platform_data/vsp1.h
-> +++ /dev/null
-> @@ -1,27 +0,0 @@
-> -/*
-> - * vsp1.h  --  R-Car VSP1 Platform Data
-> - *
-> - * Copyright (C) 2013 Renesas Corporation
-> - *
-> - * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
-> - *
-> - * This program is free software; you can redistribute it and/or modify
-> - * it under the terms of the GNU General Public License as published by
-> - * the Free Software Foundation; either version 2 of the License, or
-> - * (at your option) any later version.
-> - */
-> -#ifndef __PLATFORM_VSP1_H__
-> -#define __PLATFORM_VSP1_H__
-> -
-> -#define VSP1_HAS_LIF		(1 << 0)
-> -#define VSP1_HAS_LUT		(1 << 1)
-> -#define VSP1_HAS_SRU		(1 << 2)
-> -
-> -struct vsp1_platform_data {
-> -	unsigned int features;
-> -	unsigned int rpf_count;
-> -	unsigned int uds_count;
-> -	unsigned int wpf_count;
-> -};
-> -
-> -#endif /* __PLATFORM_VSP1_H__ */
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/drivers/irqchip/irq-bcm7120-l2.c b/drivers/irqchip/irq-bcm7120-l2.c
+index e53a3a6..e7c6155 100644
+--- a/drivers/irqchip/irq-bcm7120-l2.c
++++ b/drivers/irqchip/irq-bcm7120-l2.c
+@@ -13,6 +13,7 @@
+ #include <linux/init.h>
+ #include <linux/slab.h>
+ #include <linux/module.h>
++#include <linux/kconfig.h>
+ #include <linux/platform_device.h>
+ #include <linux/of.h>
+ #include <linux/of_irq.h>
+@@ -60,8 +61,7 @@ static void bcm7120_l2_intc_irq_handle(unsigned int irq, struct irq_desc *desc)
+ 		int hwirq;
+ 
+ 		irq_gc_lock(gc);
+-		pending = __raw_readl(b->base[idx] + IRQSTAT) &
+-			  gc->mask_cache;
++		pending = irq_reg_readl(gc, IRQSTAT) & gc->mask_cache;
+ 		irq_gc_unlock(gc);
+ 
+ 		for_each_set_bit(hwirq, &pending, IRQS_PER_WORD) {
+@@ -79,10 +79,8 @@ static void bcm7120_l2_intc_suspend(struct irq_data *d)
+ 	struct bcm7120_l2_intc_data *b = gc->private;
+ 
+ 	irq_gc_lock(gc);
+-	if (b->can_wake) {
+-		__raw_writel(gc->mask_cache | gc->wake_active,
+-			     gc->reg_base + IRQEN);
+-	}
++	if (b->can_wake)
++		irq_reg_writel(gc, gc->mask_cache | gc->wake_active, IRQEN);
+ 	irq_gc_unlock(gc);
+ }
+ 
+@@ -92,7 +90,7 @@ static void bcm7120_l2_intc_resume(struct irq_data *d)
+ 
+ 	/* Restore the saved mask */
+ 	irq_gc_lock(gc);
+-	__raw_writel(gc->mask_cache, gc->reg_base + IRQEN);
++	irq_reg_writel(gc, gc->mask_cache, IRQEN);
+ 	irq_gc_unlock(gc);
+ }
+ 
+@@ -132,7 +130,7 @@ int __init bcm7120_l2_intc_of_init(struct device_node *dn,
+ 	const __be32 *map_mask;
+ 	int num_parent_irqs;
+ 	int ret = 0, len;
+-	unsigned int idx, irq;
++	unsigned int idx, irq, flags;
+ 
+ 	data = kzalloc(sizeof(*data), GFP_KERNEL);
+ 	if (!data)
+@@ -195,9 +193,15 @@ int __init bcm7120_l2_intc_of_init(struct device_node *dn,
+ 		goto out_unmap;
+ 	}
+ 
++	/* MIPS chips strapped for BE will automagically configure the
++	 * peripheral registers for CPU-native byte order.
++	 */
++	flags = IRQ_GC_INIT_MASK_CACHE;
++	if (IS_ENABLED(CONFIG_MIPS) && IS_ENABLED(CONFIG_CPU_BIG_ENDIAN))
++		flags |= IRQ_GC_BE_IO;
++
+ 	ret = irq_alloc_domain_generic_chips(data->domain, IRQS_PER_WORD, 1,
+-				dn->full_name, handle_level_irq, clr, 0,
+-				IRQ_GC_INIT_MASK_CACHE);
++				dn->full_name, handle_level_irq, clr, 0, flags);
+ 	if (ret) {
+ 		pr_err("failed to allocate generic irq chip\n");
+ 		goto out_free_domain;
+-- 
+2.1.1
+
