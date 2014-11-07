@@ -1,33 +1,50 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 24 Nov 2014 21:43:10 +0000
-Subject: Re: [PATCH/RFC 2/3] ARM: shmobile: kzm9g-reference dts: Move Ethernet node to BSC
-Message-Id: <CAMuHMdW3WNywUPwOk=JEX5EURr28xgjojmO8E6tBL+uvkukkJA@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 07 Nov 2014 13:46:32 +0000
+Subject: [PATCH 1/2] ARM: shmobile: kzm9g-reference: Add restart callback
+Message-Id: <1415367993-31033-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416859808-18503-1-git-send-email-geert+renesas@glider.be>
-	<1416859808-18503-3-git-send-email-geert+renesas@glider.be>
-	<54739F0C.7040802@cogentembedded.com>
-In-Reply-To: <54739F0C.7040802@cogentembedded.com>
+References: <1385428879-26849-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385428879-26849-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, "Rafael J. Wysocki" <rjw@rjwysocki.net>, Ulf Hansson <ulf.hansson@linaro.org>, Grant Likely <grant.likely@linaro.org>, Arnd Bergmann <arnd@arndb.de>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Linux PM list <linux-pm@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Mon, Nov 24, 2014 at 10:11 PM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
->> Also rename the node's name from "lan9220" to "ethernet", to confirm to
->
->    s/confirm/comply/, you mean?
+Port the sh73a0 restart handling from the kzm9g-legacy board code to the
+kzm9g-reference board code.
 
-Sorry, conform.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Tested on kzm9g-reference
 
-Gr{oetje,eeting}s,
+ arch/arm/mach-shmobile/board-kzm9g-reference.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-                        Geert
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index f2ef759b6e969cc8..2e82e44ab85258b7 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -39,6 +39,13 @@ static void __init kzm_init(void)
+ #endif
+ }
+ 
++#define RESCNT2 IOMEM(0xe6188020)
++static void kzm9g_restart(enum reboot_mode mode, const char *cmd)
++{
++	/* Do soft power on reset */
++	writel((1 << 31), RESCNT2);
++}
++
+ static const char *kzm9g_boards_compat_dt[] __initdata = {
+ 	"renesas,kzm9g-reference",
+ 	NULL,
+@@ -50,5 +57,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
+ 	.init_early	= shmobile_init_delay,
+ 	.init_machine	= kzm_init,
+ 	.init_late	= shmobile_init_late,
++	.restart	= kzm9g_restart,
+ 	.dt_compat	= kzm9g_boards_compat_dt,
+ MACHINE_END
+-- 
+1.9.1
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
