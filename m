@@ -1,35 +1,48 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 10 Nov 2014 01:32:11 +0000
-Subject: [PATCH 3/4] ARM: shmobile: multiplatform: add Audo DMAC peri peri support on defconfig
-Message-Id: <2315f9fce4da7df9362e4baeb5250d14ea48bf63.1415582943.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 07 Nov 2014 13:38:26 +0000
+Subject: [PATCH/RFC 2/2] ARM: shmobile: kzm9g-reference dts: Declare the full 512 MiB of RAM
+Message-Id: <1415367506-8713-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415582943.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415582943.git.horms+renesas@verge.net.au>
+References: <1415367506-8713-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1415367506-8713-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Traditionally, the first 16 MiB of RAM was reserved for the RT
+processor.  However, this is incompatible with CONFIG_AUTO_ZRELADDR=y,
+which requires that the start address of physical memory is a multiple
+of 128 MiB.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+As CONFIG_AUTO_ZRELADDR=y is enabled for multi-platform kernels, declare
+RAM to start at 0x40000000.
+
+While at it, reclaim the last 8 MiB of RAM, too, so the full 512 MiB is
+available.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/configs/shmobile_defconfig | 1 +
- 1 file changed, 1 insertion(+)
+Questions:
+  - Why was the last 8 MiB of RAM not used?
+  - Is it an option to fix CONFIG_AUTO_ZRELADDR instead?
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index 87469ca..8a39a46 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -146,6 +146,7 @@ CONFIG_RTC_CLASS=y
- CONFIG_RTC_DRV_S35390A=y
- CONFIG_DMADEVICES=y
- CONFIG_SH_DMAE=y
-+CONFIG_RCAR_AUDMAC_PP=y
- CONFIG_RCAR_DMAC=y
- # CONFIG_IOMMU_SUPPORT is not set
- CONFIG_PWM=y
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 0a34c90105e9fcd6..f01b8f53e27c0b42 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -45,7 +45,7 @@
+ 
+ 	memory {
+ 		device_type = "memory";
+-		reg = <0x41000000 0x1e800000>;
++		reg = <0x40000000 0x20000000>;
+ 	};
+ 
+ 	reg_1p8v: regulator@0 {
 -- 
-2.1.1
+1.9.1
 
