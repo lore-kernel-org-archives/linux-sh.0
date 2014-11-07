@@ -1,176 +1,62 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 18 Nov 2014 16:04:53 +0000
-Subject: [PATCH 1/3] i2c: core changes for slave support
-Message-Id: <1416326695-13083-2-git-send-email-wsa@the-dreams.de>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 07 Nov 2014 15:51:08 +0000
+Subject: [PATCH v7 2/2] clk: shmobile: document DIV6 clock parent bindings
+Message-Id: <1415375468-15378-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416326695-13083-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1416326695-13083-1-git-send-email-wsa@the-dreams.de>
+References: <1415375468-15378-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1415375468-15378-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: horms@verge.net.au, mturquette@linaro.org, geert@linux-m68k.org, laurent.pinchart+renesas@ideasonboard.com
+Cc: linux-sh@vger.kernel.org, magnus.damm@gmail.com, devicetree@vger.kernel.org, mark.rutland@arm.com, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Describes how to specify the parents for clocks with EXSRC bits.
 
-Finally(!), make Linux support being an I2C slave. Most of the existing
-infrastructure is reused. We mainly add i2c_slave_register/unregister()
-calls which tells i2c bus drivers to activate the slave mode. Then, they
-also get a callback to report slave events to.
-
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
+ .../bindings/clock/renesas,cpg-div6-clocks.txt         | 18 ++++++++++++------
+ 1 file changed, 12 insertions(+), 6 deletions(-)
 
-Changes since RFC:
-* add slave mode kernel doc
-* lock adapter around slave registration
-* inline i2c_slave_event
-
- drivers/i2c/i2c-core.c | 49 +++++++++++++++++++++++++++++++++++++++++++++++++
- include/linux/i2c.h    | 29 +++++++++++++++++++++++++++++
- 2 files changed, 78 insertions(+)
-
-diff --git a/drivers/i2c/i2c-core.c b/drivers/i2c/i2c-core.c
-index f43b4e11647a..bbcf427bf123 100644
---- a/drivers/i2c/i2c-core.c
-+++ b/drivers/i2c/i2c-core.c
-@@ -24,6 +24,7 @@
-    (c) 2013  Wolfram Sang <wsa@the-dreams.de>
-    I2C ACPI code Copyright (C) 2014 Intel Corp
-    Author: Lan Tianyu <tianyu.lan@intel.com>
-+   I2C slave support (c) 2014 by Wolfram Sang <wsa@sang-engineering.com> 
-  */
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
+index 952e373..054f65f 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
+@@ -7,11 +7,16 @@ to 64.
+ Required Properties:
  
- #include <linux/module.h>
-@@ -2902,6 +2903,54 @@ trace:
- }
- EXPORT_SYMBOL(i2c_smbus_xfer);
+   - compatible: Must be one of the following
++    - "renesas,r8a73a4-div6-clock" for R8A73A4 (R-Mobile APE6) DIV6 clocks
++    - "renesas,r8a7740-div6-clock" for R8A7740 (R-Mobile A1) DIV6 clocks
+     - "renesas,r8a7790-div6-clock" for R8A7790 (R-Car H2) DIV6 clocks
+     - "renesas,r8a7791-div6-clock" for R8A7791 (R-Car M2) DIV6 clocks
++    - "renesas,sh73a0-div6-clock" for SH73A0 (SH-Mobile AG5) DIV6 clocks
+     - "renesas,cpg-div6-clock" for generic DIV6 clocks
+   - reg: Base address and length of the memory resource used by the DIV6 clock
+-  - clocks: Reference to the parent clock
++  - clocks: Reference to the parent clock(s); either one, four, or eight
++    clocks must be specified.  For clocks with multiple parents, invalid
++    settings must be specified as "<0>".
+   - #clock-cells: Must be 0
+   - clock-output-names: The name of the clock as a free-form string
  
-+int i2c_slave_register(struct i2c_client *client, i2c_slave_cb_t slave_cb)
-+{
-+	int ret;
-+
-+	if (!client || !slave_cb)
-+		return -EINVAL;
-+
-+	if (!(client->flags & I2C_CLIENT_TEN)) {
-+		/* Enforce stricter address checking */
-+		ret = i2c_check_addr_validity(client->addr);
-+		if (ret)
-+			return ret;
-+	}
-+
-+	if (!client->adapter->algo->reg_slave)
-+		return -EOPNOTSUPP;
-+
-+	client->slave_cb = slave_cb;
-+
-+	i2c_lock_adapter(client->adapter);
-+	ret = client->adapter->algo->reg_slave(client);
-+	i2c_unlock_adapter(client->adapter);
-+
-+	if (ret)
-+		client->slave_cb = NULL;
-+
-+	return ret;
-+}
-+EXPORT_SYMBOL_GPL(i2c_slave_register);
-+
-+int i2c_slave_unregister(struct i2c_client *client)
-+{
-+	int ret;
-+
-+	if (!client->adapter->algo->unreg_slave)
-+		return -EOPNOTSUPP;
-+
-+	i2c_lock_adapter(client->adapter);
-+	ret = client->adapter->algo->unreg_slave(client);
-+	i2c_unlock_adapter(client->adapter);
-+
-+	if (ret = 0)
-+		client->slave_cb = NULL;
-+
-+	return ret;
-+}
-+EXPORT_SYMBOL_GPL(i2c_slave_unregister);
-+
- MODULE_AUTHOR("Simon G. Vogl <simon@tk.uni-linz.ac.at>");
- MODULE_DESCRIPTION("I2C-Bus main module");
- MODULE_LICENSE("GPL");
-diff --git a/include/linux/i2c.h b/include/linux/i2c.h
-index b556e0ab946f..0f1c5a61c931 100644
---- a/include/linux/i2c.h
-+++ b/include/linux/i2c.h
-@@ -46,6 +46,8 @@ struct i2c_client;
- struct i2c_driver;
- union i2c_smbus_data;
- struct i2c_board_info;
-+enum i2c_slave_event;
-+typedef int (*i2c_slave_cb_t)(struct i2c_client *, enum i2c_slave_event, u8 *);
+@@ -19,10 +24,11 @@ Required Properties:
+ Example
+ -------
  
- struct module;
- 
-@@ -209,6 +211,8 @@ struct i2c_driver {
-  * @irq: indicates the IRQ generated by this device (if any)
-  * @detected: member of an i2c_driver.clients list or i2c-core's
-  *	userspace_devices list
-+ * @slave_cb: Callback when I2C slave mode of an adapter is used. The adapter
-+ * 	calls it to pass on slave events to the slave driver.
-  *
-  * An i2c_client identifies a single device (i.e. chip) connected to an
-  * i2c bus. The behaviour exposed to Linux is defined by the driver
-@@ -224,6 +228,7 @@ struct i2c_client {
- 	struct device dev;		/* the device structure		*/
- 	int irq;			/* irq issued by device		*/
- 	struct list_head detected;
-+	i2c_slave_cb_t slave_cb;	/* callback for slave mode	*/
- };
- #define to_i2c_client(d) container_of(d, struct i2c_client, dev)
- 
-@@ -246,6 +251,25 @@ static inline void i2c_set_clientdata(struct i2c_client *dev, void *data)
- 	dev_set_drvdata(&dev->dev, data);
- }
- 
-+/* I2C slave support */
-+
-+enum i2c_slave_event {
-+	I2C_SLAVE_REQ_READ_START,
-+	I2C_SLAVE_REQ_READ_END,
-+	I2C_SLAVE_REQ_WRITE_START,
-+	I2C_SLAVE_REQ_WRITE_END,
-+	I2C_SLAVE_STOP,
-+};
-+
-+extern int i2c_slave_register(struct i2c_client *client, i2c_slave_cb_t slave_cb);
-+extern int i2c_slave_unregister(struct i2c_client *client);
-+
-+static inline int i2c_slave_event(struct i2c_client *client,
-+				  enum i2c_slave_event event, u8 *val)
-+{
-+	return client->slave_cb(client, event, val);
-+}
-+
- /**
-  * struct i2c_board_info - template for device creation
-  * @type: chip type, to initialize i2c_client.name
-@@ -352,6 +376,8 @@ i2c_register_board_info(int busnum, struct i2c_board_info const *info,
-  *   into I2C transfers instead.
-  * @functionality: Return the flags that this algorithm/adapter pair supports
-  *   from the I2C_FUNC_* flags.
-+ * @reg_slave: Register given client to I2C slave mode of this adapter
-+ * @unreg_slave: Unregister given client from I2C slave mode of this adapter
-  *
-  * The following structs are for those who like to implement new bus drivers:
-  * i2c_algorithm is the interface to a class of hardware solutions which can
-@@ -377,6 +403,9 @@ struct i2c_algorithm {
- 
- 	/* To determine what the adapter supports */
- 	u32 (*functionality) (struct i2c_adapter *);
-+
-+	int (*reg_slave)(struct i2c_client *client);
-+	int (*unreg_slave)(struct i2c_client *client);
- };
- 
- /**
+-	sd2_clk: sd2_clk@e6150078 {
+-		compatible = "renesas,r8a7790-div6-clock", "renesas,cpg-div6-clock";
+-		reg = <0 0xe6150078 0 4>;
+-		clocks = <&pll1_div2_clk>;
++	sdhi2_clk: sdhi2_clk@e615007c {
++		compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++		reg = <0 0xe615007c 0 4>;
++		clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++			 <0>, <&extal2_clk>;
+ 		#clock-cells = <0>;
+-		clock-output-names = "sd2";
++		clock-output-names = "sdhi2ck";
+ 	};
 -- 
-2.1.1
+1.8.4.5
 
