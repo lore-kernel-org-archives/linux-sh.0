@@ -1,37 +1,72 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:50:45 +0000
-Subject: [PATCH 5/7] MAINTAINERS: Remove reference to shmobile / koelsch_defconfig
-Message-Id: <b33a8e137ef62ad8280a58c4aeadd1ffcae89598.1415059146.git.horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 07 Nov 2014 15:49:23 +0000
+Subject: [PATCH v5 0/6] sh73a0 common clock framework implementation
+Message-Id: <1415375369-15209-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415059146.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415059146.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Hi!
 
-koelsch_defconfig has been removed.
+Now with clocks right after interrupts.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- MAINTAINERS | 1 -
- 1 file changed, 1 deletion(-)
+CU
+Uli
 
-diff --git a/MAINTAINERS b/MAINTAINERS
-index a20df9b..3f73fb3 100644
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -1381,7 +1381,6 @@ F:	arch/arm/boot/dts/sh*
- F:	arch/arm/configs/ape6evm_defconfig
- F:	arch/arm/configs/armadillo800eva_defconfig
- F:	arch/arm/configs/bockw_defconfig
--F:	arch/arm/configs/koelsch_defconfig
- F:	arch/arm/configs/kzm9g_defconfig
- F:	arch/arm/configs/lager_defconfig
- F:	arch/arm/configs/mackerel_defconfig
+
+Changes since v4:
+- reordered MSTP clock assignments to directly follow interrupts property
+
+Changes since v3:
+- fixed bindings to match the implementation
+- handle extal division in CPG driver, dump extal?_div2_clk
+- added acks
+- dropped eth clock hack
+
+Changes since v2:
+- split CCF DT description
+- tabbed constants in CPG bits header file
+- reordered patches to avoid need for shmobile_clk_workaround()
+- removed said workaround
+- squashed unmerged remains of CMT1 DT description into MSTP clocks patch
+- renamed clock zb1 to zb
+- removed DIV6 stuff, will be a separate series
+
+Changes since v1:
+- div6 patch replaced with v4
+- split off div6 extended clocks
+- added cmt1 DT description
+- added MSTP clock assignments
+- reordered according to dependencies
+- removed dummy frequencies in extal2, extcki
+- removed enable_on_init on zb1 and flctlck
+- added missing tpu4 in mstp3_clks
+- use c->parent in cpg driver
+- fix some style issues
+
+
+Ulrich Hecht (6):
+  clk: shmobile: sh73a0 common clock framework implementation
+  ARM: shmobile: sh73a0: Add CPG register bits header
+  ARM: shmobile: sh73a0: Common clock framework DT description
+  ARM: shmobile: kzm9g-reference: Common clock framework DT description
+  ARM: shmobile: sh73a0: add MSTP clock assignments to DT
+  ARM: shmobile: sh73a0: disable legacy clock initialization
+
+ .../bindings/clock/renesas,sh73a0-cpg-clocks.txt   |  35 ++
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts       |   4 +
+ arch/arm/boot/dts/sh73a0.dtsi                      | 358 +++++++++++++++++++++
+ arch/arm/mach-shmobile/setup-sh73a0.c              |   5 +-
+ drivers/clk/shmobile/Makefile                      |   1 +
+ drivers/clk/shmobile/clk-sh73a0.c                  | 204 ++++++++++++
+ include/dt-bindings/clock/sh73a0-clock.h           |  79 +++++
+ 7 files changed, 685 insertions(+), 1 deletion(-)
+ create mode 100644 Documentation/devicetree/bindings/clock/renesas,sh73a0-cpg-clocks.txt
+ create mode 100644 drivers/clk/shmobile/clk-sh73a0.c
+ create mode 100644 include/dt-bindings/clock/sh73a0-clock.h
+
 -- 
-2.1.1
+1.8.4.5
 
