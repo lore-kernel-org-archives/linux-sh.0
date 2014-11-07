@@ -1,56 +1,41 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:49:55 +0000
-Subject: [PATCH 07/11] ARM: shmobile: r8a7740/armadillo legacy: Add A4MP pm domain support
-Message-Id: <77192e1e25a57a519df30015b29c046bd6a769fc.1415058794.git.horms+renesas@verge.net.au>
+From: Kevin Cernekee <cernekee@gmail.com>
+Date: Fri, 07 Nov 2014 06:44:24 +0000
+Subject: [PATCH V4 09/14] irqchip: bcm7120-l2: Fix missing nibble in gc->unused mask
+Message-Id: <1415342669-30640-10-git-send-email-cernekee@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415058794.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415058794.git.horms+renesas@verge.net.au>
+References: <1415342669-30640-1-git-send-email-cernekee@gmail.com>
+In-Reply-To: <1415342669-30640-1-git-send-email-cernekee@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: tglx@linutronix.de, jason@lakedaemon.net, linux-sh@vger.kernel.org
+Cc: arnd@arndb.de, f.fainelli@gmail.com, ralf@linux-mips.org, sergei.shtylyov@cogentembedded.com, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, mbizon@freebox.fr, jogo@openwrt.org, linux-mips@linux-mips.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+This mask should have been 0xffff_ffff, not 0x0fff_ffff.
 
-Add support for the A4MP power domain, and hook up the HDMI-Link and FSI
-hardware blocks.
-This domain also contains the SPU2, FMSI, and BBIF2 hardware blocks,
-but these are currently not used by any driver.
+The change should not have an effect on current users (STB) because bits
+31:27 are unused.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+Acked-by: Florian Fainelli <f.fainelli@gmail.com>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 2 ++
- arch/arm/mach-shmobile/pm-r8a7740.c            | 3 +++
- 2 files changed, 5 insertions(+)
+ drivers/irqchip/irq-bcm7120-l2.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 0aa5bbd..e064443 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1234,6 +1234,8 @@ static void __init eva_init(void)
- 	static struct pm_domain_device domain_devices[] __initdata = {
- 		{ "A4LC", &lcdc0_device },
- 		{ "A4LC", &hdmi_lcdc_device },
-+		{ "A4MP", &hdmi_device },
-+		{ "A4MP", &fsi_device },
- 		{ "A4S",  &sh_eth_device },
- 		{ "A3SP", &pwm_device },
- 		{ "A3SP", &sdhi0_device },
-diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
-index 932c2a6..081a4f9 100644
---- a/arch/arm/mach-shmobile/pm-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7740.c
-@@ -37,6 +37,9 @@ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
- 		.genpd.name	= "A4LC",
- 		.bit_shift	= 1,
- 	}, {
-+		.genpd.name	= "A4MP",
-+		.bit_shift	= 2,
-+	}, {
- 		.genpd.name	= "A3RV",
- 		.bit_shift	= 6,
- 	}, {
+diff --git a/drivers/irqchip/irq-bcm7120-l2.c b/drivers/irqchip/irq-bcm7120-l2.c
+index 22d3fa1..b70679f8 100644
+--- a/drivers/irqchip/irq-bcm7120-l2.c
++++ b/drivers/irqchip/irq-bcm7120-l2.c
+@@ -171,7 +171,7 @@ int __init bcm7120_l2_intc_of_init(struct device_node *dn,
+ 	}
+ 
+ 	gc = irq_get_domain_generic_chip(data->domain, 0);
+-	gc->unused = 0xfffffff & ~data->irq_map_mask;
++	gc->unused = 0xffffffff & ~data->irq_map_mask;
+ 	gc->reg_base = data->base;
+ 	gc->private = data;
+ 	ct = gc->chip_types;
 -- 
 2.1.1
 
