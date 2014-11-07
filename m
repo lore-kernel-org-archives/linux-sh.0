@@ -1,54 +1,41 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 27 Nov 2014 10:57:16 +0000
-Subject: [PATCH 1/4] ARM: shmobile: r8a7791: Correct mask for GIC PPI interrupts
-Message-Id: <1417085839-22836-2-git-send-email-geert+renesas@glider.be>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 07 Nov 2014 15:52:03 +0000
+Subject: [PATCH 5/6] ARM: shmobile: ape6evm: disable legacy clock initialization
+Message-Id: <1415375524-15468-6-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1417085839-22836-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1417085839-22836-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-R-Car M2-W (r8a7791) contains two Cortex-A15 cores, hence the second
-interrupt specifier cell for Private Peripheral Interrupts should use
-"GIC_CPU_MASK_SIMPLE(2)".
+Disables r8a73a4_clock_init() if CCF is enabled.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
-Tested on koelsch
----
- arch/arm/boot/dts/r8a7791.dtsi | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+ arch/arm/mach-shmobile/board-ape6evm-reference.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 77c0beeb8d7c984c..6293d3aaf23822bc 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -78,7 +78,7 @@
- 			<0 0xf1002000 0 0x1000>,
- 			<0 0xf1004000 0 0x2000>,
- 			<0 0xf1006000 0 0x2000>;
--		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
-+		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_HIGH)>;
- 	};
+diff --git a/arch/arm/mach-shmobile/board-ape6evm-reference.c b/arch/arm/mach-shmobile/board-ape6evm-reference.c
+index 3b68370..dd5bc63 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm-reference.c
++++ b/arch/arm/mach-shmobile/board-ape6evm-reference.c
+@@ -29,7 +29,7 @@
  
- 	gpio0: gpio@e6050000 {
-@@ -186,10 +186,10 @@
+ static void __init ape6evm_add_standard_devices(void)
+ {
+-
++#ifndef CONFIG_COMMON_CLK
+ 	struct clk *parent;
+ 	struct clk *mp;
  
- 	timer {
- 		compatible = "arm,armv7-timer";
--		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
--			     <1 14 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
--			     <1 11 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
--			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
-+		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>,
-+			     <1 14 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>,
-+			     <1 11 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>,
-+			     <1 10 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>;
- 	};
+@@ -43,6 +43,7 @@ static void __init ape6evm_add_standard_devices(void)
+ 	clk_set_parent(mp, parent);
+ 	clk_put(parent);
+ 	clk_put(mp);
++#endif
  
- 	cmt0: timer@ffca0000 {
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
 -- 
-1.9.1
+1.8.4.5
 
