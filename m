@@ -1,65 +1,70 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Nov 2014 00:54:48 +0000
-Subject: [PATCH 22/29] ARM: shmobile: r8a7790: add DMA nodes for IIC
-Message-Id: <0d73ca41e8bb3b06c6c1a3a9a5d2aba908929d44.1416476366.git.horms+renesas@verge.net.au>
+From: Kevin Cernekee <cernekee@gmail.com>
+Date: Fri, 07 Nov 2014 06:44:18 +0000
+Subject: [PATCH V4 03/14] genirq: Generic chip: Allow irqchip drivers to override irq_reg_{readl,writel}
+Message-Id: <1415342669-30640-4-git-send-email-cernekee@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1416476366.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
+References: <1415342669-30640-1-git-send-email-cernekee@gmail.com>
+In-Reply-To: <1415342669-30640-1-git-send-email-cernekee@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: tglx@linutronix.de, jason@lakedaemon.net, linux-sh@vger.kernel.org
+Cc: arnd@arndb.de, f.fainelli@gmail.com, ralf@linux-mips.org, sergei.shtylyov@cogentembedded.com, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, mbizon@freebox.fr, jogo@openwrt.org, linux-mips@linux-mips.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Currently, these I/O accessors always assume little endian 32-bit
+registers (readl/writel).  On some systems the IRQ registers need to be
+accessed in BE mode or using 16-bit loads/stores, so we will provide a
+way to override the default behavior.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ include/linux/irq.h | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 146f918..3afd071 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -423,6 +423,8 @@
- 		reg = <0 0xe6500000 0 0x425>;
- 		interrupts = <0 174 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_IIC0>;
-+		dmas = <&dmac0 0x61>, <&dmac0 0x62>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
+diff --git a/include/linux/irq.h b/include/linux/irq.h
+index ed1135d..0fecd95 100644
+--- a/include/linux/irq.h
++++ b/include/linux/irq.h
+@@ -686,6 +686,8 @@ struct irq_chip_type {
+  * struct irq_chip_generic - Generic irq chip data structure
+  * @lock:		Lock to protect register and cache data access
+  * @reg_base:		Register base address (virtual)
++ * @reg_readl:		Alternate I/O accessor (defaults to readl if NULL)
++ * @reg_writel:		Alternate I/O accessor (defaults to writel if NULL)
+  * @irq_base:		Interrupt base nr for this chip
+  * @irq_cnt:		Number of interrupts handled by this chip
+  * @mask_cache:		Cached mask register shared between all chip types
+@@ -710,6 +712,8 @@ struct irq_chip_type {
+ struct irq_chip_generic {
+ 	raw_spinlock_t		lock;
+ 	void __iomem		*reg_base;
++	u32			(*reg_readl)(void __iomem *addr);
++	void			(*reg_writel)(u32 val, void __iomem *addr);
+ 	unsigned int		irq_base;
+ 	unsigned int		irq_cnt;
+ 	u32			mask_cache;
+@@ -818,13 +822,19 @@ static inline void irq_gc_unlock(struct irq_chip_generic *gc) { }
+ static inline void irq_reg_writel(struct irq_chip_generic *gc,
+ 				  u32 val, int reg_offset)
+ {
+-	writel(val, gc->reg_base + reg_offset);
++	if (gc->reg_writel)
++		gc->reg_writel(val, gc->reg_base + reg_offset);
++	else
++		writel(val, gc->reg_base + reg_offset);
+ }
  
-@@ -433,6 +435,8 @@
- 		reg = <0 0xe6510000 0 0x425>;
- 		interrupts = <0 175 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_IIC1>;
-+		dmas = <&dmac0 0x65>, <&dmac0 0x66>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
+ static inline u32 irq_reg_readl(struct irq_chip_generic *gc,
+ 				int reg_offset)
+ {
+-	return readl(gc->reg_base + reg_offset);
++	if (gc->reg_readl)
++		return gc->reg_readl(gc->reg_base + reg_offset);
++	else
++		return readl(gc->reg_base + reg_offset);
+ }
  
-@@ -443,6 +447,8 @@
- 		reg = <0 0xe6520000 0 0x425>;
- 		interrupts = <0 176 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_IIC2>;
-+		dmas = <&dmac0 0x69>, <&dmac0 0x6a>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -453,6 +459,8 @@
- 		reg = <0 0xe60b0000 0 0x425>;
- 		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7790_CLK_IICDVFS>;
-+		dmas = <&dmac0 0x77>, <&dmac0 0x78>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
+ #endif /* _LINUX_IRQ_H */
 -- 
 2.1.1
 
