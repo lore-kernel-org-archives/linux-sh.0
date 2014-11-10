@@ -1,48 +1,36 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:50:09 +0000
-Subject: [PATCH 4/4] ARM: shmobile: Select CONFIG_ZONE_DMA when CONFIG_ARM_LPAE is enabled
-Message-Id: <3794705aeb318c431c07072f04380c78cc5a84ac.1415058939.git.horms+renesas@verge.net.au>
+Date: Mon, 10 Nov 2014 01:32:21 +0000
+Subject: [PATCH 4/8] ARM: shmobile: r8a7790 dtsi: Drop bogus 0x unit-address prefix
+Message-Id: <83b4fb6d9034b989075b4887d86b80bd41884d85.1415582842.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415058939.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415058939.git.horms+renesas@verge.net.au>
+References: <cover.1415582842.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415582842.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Most IP cores on ARM Renesas platforms can only address 32 bits of
-physical memory for DMA. Without CONFIG_ZONE_DMA enabled and with the
-recent CMA highmem allocation support, the default CMA zone is reserved
-above the 4GiB limit when LPAE is enabled, resulting in various driver
-failures.
-
-Fix the problem by selecting CONFIG_ZONE_DMA. Other options to
-investigate in the future would be to either enable IOMMU support or use
-custom CMA reservations for peripherals not supporting LPAE.
-
-While not a strict dependency, the "[PATCH 0/4] Low/high memory CMA
-reservation fixes" series is also required to fix a different but related CMA
-allocation problem.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Kconfig | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/r8a7790.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 21f457b..6bc018f 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -1,5 +1,6 @@
- config ARCH_SHMOBILE
- 	bool
-+	select ZONE_DMA if ARM_LPAE
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 2be9122..77b7f76 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1151,7 +1151,7 @@
+ 		status = "disabled";
+ 	};
  
- config PM_RCAR
- 	bool
+-	rcar_sound: rcar_sound@0xec500000 {
++	rcar_sound: rcar_sound@ec500000 {
+ 		#sound-dai-cells = <1>;
+ 		compatible =  "renesas,rcar_sound-r8a7790", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
+ 		reg =	<0 0xec500000 0 0x1000>, /* SCU */
 -- 
 2.1.1
 
