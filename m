@@ -1,54 +1,36 @@
-From: Kevin Cernekee <cernekee@gmail.com>
-Date: Fri, 07 Nov 2014 06:44:16 +0000
-Subject: [PATCH V4 01/14] sh: Eliminate unused irq_reg_{readl,writel} accessors
-Message-Id: <1415342669-30640-2-git-send-email-cernekee@gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 10 Nov 2014 08:13:49 +0000
+Subject: Re: [PATCH V4 01/14] sh: Eliminate unused irq_reg_{readl,writel} accessors
+Message-Id: <CAMuHMdW+L8YbE8Z8jrtnm8xWk63sRGaFdM7TPM6MmrDg9XwHuQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1415342669-30640-1-git-send-email-cernekee@gmail.com>
-In-Reply-To: <1415342669-30640-1-git-send-email-cernekee@gmail.com>
+	<1415342669-30640-2-git-send-email-cernekee@gmail.com>
+In-Reply-To: <1415342669-30640-2-git-send-email-cernekee@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: tglx@linutronix.de, jason@lakedaemon.net, linux-sh@vger.kernel.org
-Cc: arnd@arndb.de, f.fainelli@gmail.com, ralf@linux-mips.org, sergei.shtylyov@cogentembedded.com, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, mbizon@freebox.fr, jogo@openwrt.org, linux-mips@linux-mips.org
+To: Kevin Cernekee <cernekee@gmail.com>
+Cc: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Linux-sh list <linux-sh@vger.kernel.org>, Arnd Bergmann <arnd@arndb.de>, Florian Fainelli <f.fainelli@gmail.com>, Ralf Baechle <ralf@linux-mips.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Maxime Bizon <mbizon@freebox.fr>, Jonas Gorski <jogo@openwrt.org>, Linux MIPS Mailing List <linux-mips@linux-mips.org>
 
-Defining these macros way down in arch/sh/.../irq.c doesn't cause
-kernel/irq/generic-chip.c to use them.  As far as I can tell this code
-has no effect.
+On Fri, Nov 7, 2014 at 7:44 AM, Kevin Cernekee <cernekee@gmail.com> wrote:
+> Defining these macros way down in arch/sh/.../irq.c doesn't cause
+> kernel/irq/generic-chip.c to use them.  As far as I can tell this code
+> has no effect.
+>
+> Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
 
-Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
----
- arch/sh/boards/mach-se/7343/irq.c | 3 ---
- arch/sh/boards/mach-se/7722/irq.c | 3 ---
- 2 files changed, 6 deletions(-)
+Compared preprocessor and asm output before and after, no difference
+except for line numbers, so
 
-diff --git a/arch/sh/boards/mach-se/7343/irq.c b/arch/sh/boards/mach-se/7343/irq.c
-index 7646bf0..1087dba 100644
---- a/arch/sh/boards/mach-se/7343/irq.c
-+++ b/arch/sh/boards/mach-se/7343/irq.c
-@@ -14,9 +14,6 @@
- #define DRV_NAME "SE7343-FPGA"
- #define pr_fmt(fmt) DRV_NAME ": " fmt
- 
--#define irq_reg_readl	ioread16
--#define irq_reg_writel	iowrite16
--
- #include <linux/init.h>
- #include <linux/irq.h>
- #include <linux/interrupt.h>
-diff --git a/arch/sh/boards/mach-se/7722/irq.c b/arch/sh/boards/mach-se/7722/irq.c
-index f5e2af1..00e6992 100644
---- a/arch/sh/boards/mach-se/7722/irq.c
-+++ b/arch/sh/boards/mach-se/7722/irq.c
-@@ -11,9 +11,6 @@
- #define DRV_NAME "SE7722-FPGA"
- #define pr_fmt(fmt) DRV_NAME ": " fmt
- 
--#define irq_reg_readl	ioread16
--#define irq_reg_writel	iowrite16
--
- #include <linux/init.h>
- #include <linux/irq.h>
- #include <linux/interrupt.h>
--- 
-2.1.1
+Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
