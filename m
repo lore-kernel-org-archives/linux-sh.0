@@ -1,45 +1,40 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 04 Nov 2014 01:45:58 +0000
-Subject: [PATCH 03/23 v3] ARM: shmobile: r8a7790: Add Audio DMAC peri peri devices to DT
-Message-Id: <87vbmv91r4.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 10 Nov 2014 01:32:25 +0000
+Subject: [PATCH 8/8] ARM: shmobile: alt dts: Drop console= bootargs parameter
+Message-Id: <89aeff9989e87bb2d9d652994010bc18c68675d9.1415582842.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1415582842.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415582842.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Alt is booted from DT, so chosen/stdout-path is
+always used, and we can drop the "console=" parameter from chosen/bootargs.
 
-Instantiate the Audio DMAC peri peri controllers
-in the r8a7790 device tree.
+This change has a side-effect of changing the console speed from 38400
+to 115200. This is intentional as 115200 is consistently used on
+all other shmobile boards.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2 -> v3
+ arch/arm/boot/dts/r8a7794-alt.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- - audio-dma-pp -> dma-controller
-
- arch/arm/boot/dts/r8a7790.dtsi |    7 +++++++
- 1 file changed, 7 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index a46574b..dcb74a5 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -369,6 +369,13 @@
- 		dma-channels = <13>;
+diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
+index 8aec512..f2cf757 100644
+--- a/arch/arm/boot/dts/r8a7794-alt.dts
++++ b/arch/arm/boot/dts/r8a7794-alt.dts
+@@ -20,7 +20,7 @@
  	};
  
-+	audmapp: dma-controller@ec740000 {
-+		compatible = "renesas,rcar-audmapp";
-+		#dma-cells = <1>;
-+
-+		reg = <0 0xec740000 0 0x200>;
-+	};
-+
- 	i2c0: i2c@e6508000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
+ 	chosen {
+-		bootargs = "console=ttySC0,38400 ignore_loglevel rw root=/dev/nfs ip=dhcp";
++		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
+ 		stdout-path = &scif2;
+ 	};
+ 
 -- 
-1.7.9.5
+2.1.1
 
