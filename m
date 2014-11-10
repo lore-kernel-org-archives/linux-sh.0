@@ -1,49 +1,62 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 17 Nov 2014 13:53:05 +0000
-Subject: [PATCH 1/4] ARM: shmobile: r8a7740 dtsi: Add cache-controller node
-Message-Id: <1416232388-2611-2-git-send-email-geert+renesas@glider.be>
+Date: Mon, 10 Nov 2014 18:49:36 +0000
+Subject: [PATCH v2 3/6] ARM: shmobile: r8a7779 dtsi: Change to using clock-indices
+Message-Id: <1415645379-3366-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416232388-2611-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1416232388-2611-1-git-send-email-geert+renesas@glider.be>
+References: <1415645379-3366-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1415645379-3366-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mike Turquette <mturquette@linaro.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Ben Dooks <ben.dooks@codethink.co.uk>, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Add the missing cache-controller node. This will allow migration to the
-generic l2c OF initialization.
+With the addition of clock-indices in commit 8e33f91a0b84ae19 ("clk:
+shmobile: clk-mstp: change to using clock-indices"), we can change the
+DTSes to use the generic property instead of the deprecated
+vendor-specific property.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: devicetree@vger.kernel.org
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
-Note: This depends on "[PATCH v5 7/8] ARM: shmobile: r8a7740 dtsi: Add
-      PM domain support" due to the pd_a3sm reference.
+v2:
+  - Add Acked-by
 ---
- arch/arm/boot/dts/r8a7740.dtsi | 11 +++++++++++
- 1 file changed, 11 insertions(+)
+ arch/arm/boot/dts/r8a7779.dtsi | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index e2c9496c2c325a1f..a9c7a986c0e9eca6 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -37,6 +37,17 @@
- 		      <0xc2000000 0x1000>;
- 	};
- 
-+	L2: cache-controller {
-+		compatible = "arm,pl310-cache";
-+		reg = <0xf0100000 0x1000>;
-+		interrupts = <84>;
-+		power-domains = <&pd_a3sm>;
-+		arm,data-latency = <3 3 3>;
-+		arm,tag-latency = <2 2 2>;
-+		cache-unified;
-+		cache-level = <2>;
-+	};
-+
- 	pmu {
- 		compatible = "arm,cortex-a9-pmu";
- 		interrupts = <0 83 IRQ_TYPE_LEVEL_HIGH>;
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index ede9a29e4bc601ae..e3846af833e1d532 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -475,7 +475,7 @@
+ 				 <&cpg_clocks R8A7779_CLK_P>,
+ 				 <&cpg_clocks R8A7779_CLK_P>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7779_CLK_HSPI R8A7779_CLK_TMU2
+ 				R8A7779_CLK_TMU1 R8A7779_CLK_TMU0
+ 				R8A7779_CLK_HSCIF1 R8A7779_CLK_HSCIF0
+@@ -506,7 +506,7 @@
+ 				 <&cpg_clocks R8A7779_CLK_P>,
+ 				 <&cpg_clocks R8A7779_CLK_S>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7779_CLK_USB01 R8A7779_CLK_USB2
+ 				R8A7779_CLK_DU R8A7779_CLK_VIN2
+ 				R8A7779_CLK_VIN1 R8A7779_CLK_VIN0
+@@ -527,7 +527,7 @@
+ 			clocks = <&s4_clk>, <&s4_clk>, <&s4_clk>, <&s4_clk>,
+ 				 <&s4_clk>, <&s4_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7779_CLK_SDHI3 R8A7779_CLK_SDHI2
+ 				R8A7779_CLK_SDHI1 R8A7779_CLK_SDHI0
+ 				R8A7779_CLK_MMC1 R8A7779_CLK_MMC0
 -- 
 1.9.1
 
