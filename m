@@ -1,53 +1,37 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 03 Nov 2014 15:34:56 +0000
-Subject: [PATCH v4 9/9] drivers: sh: Disable PM runtime for multi-platform r8a7740 with genpd
-Message-Id: <1415028896-9005-10-git-send-email-geert+renesas@glider.be>
+Date: Mon, 10 Nov 2014 19:00:41 +0000
+Subject: [PATCH 2/5] ARM: shmobile: sh73a0 dtsi: Add SoC-specific FSI2 compatible property
+Message-Id: <1415646044-4168-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415028896-9005-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1415028896-9005-1-git-send-email-geert+renesas@glider.be>
+References: <1415646044-4168-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1415646044-4168-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: alsa-devel@alsa-project.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-If the default PM domain using PM_CLK is used for PM runtime, the real PM
-domain(s) cannot be registered from DT later.
-
-Hence do not enable it when running a multi-platform kernel with genpd
-support on an r8a7740. The R-Mobile PM domain driver will take care of
-PM runtime management of the module clocks.
-
-The default PM domain is still needed for:
-  - platforms without genpd support,
-  - the legacy (non-DT) case, where genpd may take over later, except
-    for the C5 "always on" PM domain.
+The FSI2 sound node used the generic compatible property only.
+Add the SoC-specific one, to make it future proof.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v4:
-  - No changes,
-v3:
-  - Reword,
-v2:
-  - New.
----
- drivers/sh/pm_runtime.c | 2 ++
- 1 file changed, 2 insertions(+)
+ arch/arm/boot/dts/sh73a0.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index fe2c2d595f599b2f..85cc89fd3e7d7cb7 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -81,7 +81,9 @@ static int __init sh_pm_runtime_init(void)
- 		if (!of_machine_is_compatible("renesas,emev2") &&
- 		    !of_machine_is_compatible("renesas,r7s72100") &&
- 		    !of_machine_is_compatible("renesas,r8a73a4") &&
-+#ifndef CONFIG_PM_GENERIC_DOMAINS_OF
- 		    !of_machine_is_compatible("renesas,r8a7740") &&
-+#endif
- 		    !of_machine_is_compatible("renesas,r8a7778") &&
- 		    !of_machine_is_compatible("renesas,r8a7779") &&
- 		    !of_machine_is_compatible("renesas,r8a7790") &&
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index ccb2b2c54d4711c4..f2f39b9dc8afa25f 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -347,7 +347,7 @@
+ 
+ 	sh_fsi2: sound@ec230000 {
+ 		#sound-dai-cells = <1>;
+-		compatible = "renesas,sh_fsi2";
++		compatible = "renesas,fsi2-sh73a0", "renesas,sh_fsi2";
+ 		reg = <0xec230000 0x400>;
+ 		interrupts = <0 146 0x4>;
+ 		status = "disabled";
 -- 
 1.9.1
 
