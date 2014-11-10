@@ -1,48 +1,69 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 07 Nov 2014 13:38:26 +0000
-Subject: [PATCH/RFC 2/2] ARM: shmobile: kzm9g-reference dts: Declare the full 512 MiB of RAM
-Message-Id: <1415367506-8713-2-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 10 Nov 2014 01:32:19 +0000
+Subject: [PATCH 2/8] ARM: shmobile: r8a7779 dtsi: Remove unnecessary MMC options
+Message-Id: <92e044aed5aede573ffa1ba2c99212024356e851.1415582842.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415367506-8713-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1415367506-8713-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1415582842.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415582842.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Traditionally, the first 16 MiB of RAM was reserved for the RT
-processor.  However, this is incompatible with CONFIG_AUTO_ZRELADDR=y,
-which requires that the start address of physical memory is a multiple
-of 128 MiB.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-As CONFIG_AUTO_ZRELADDR=y is enabled for multi-platform kernels, declare
-RAM to start at 0x40000000.
+As of commit 81bbbc7278fa109f ("mmc: sdhi: update sh_mobile_sdhi_of_data
+for r8a7779"), the driver takes care of r8a7779 specific MMC options.
+Hence they can be removed from the dtsi.
 
-While at it, reclaim the last 8 MiB of RAM, too, so the full 512 MiB is
-available.
-
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+[geert: Rebased, reworded, added reference]
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Questions:
-  - Why was the last 8 MiB of RAM not used?
-  - Is it an option to fix CONFIG_AUTO_ZRELADDR instead?
+ arch/arm/boot/dts/r8a7779.dtsi | 8 --------
+ 1 file changed, 8 deletions(-)
 
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index 0a34c90105e9fcd6..f01b8f53e27c0b42 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -45,7 +45,7 @@
- 
- 	memory {
- 		device_type = "memory";
--		reg = <0x41000000 0x1e800000>;
-+		reg = <0x40000000 0x20000000>;
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 7cfba9a..ad83e47 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -314,8 +314,6 @@
+ 		reg = <0xffe4c000 0x100>;
+ 		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7779_CLK_SDHI0>;
+-		cap-sd-highspeed;
+-		cap-sdio-irq;
+ 		status = "disabled";
  	};
  
- 	reg_1p8v: regulator@0 {
+@@ -324,8 +322,6 @@
+ 		reg = <0xffe4d000 0x100>;
+ 		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7779_CLK_SDHI1>;
+-		cap-sd-highspeed;
+-		cap-sdio-irq;
+ 		status = "disabled";
+ 	};
+ 
+@@ -334,8 +330,6 @@
+ 		reg = <0xffe4e000 0x100>;
+ 		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7779_CLK_SDHI2>;
+-		cap-sd-highspeed;
+-		cap-sdio-irq;
+ 		status = "disabled";
+ 	};
+ 
+@@ -344,8 +338,6 @@
+ 		reg = <0xffe4f000 0x100>;
+ 		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7779_CLK_SDHI3>;
+-		cap-sd-highspeed;
+-		cap-sdio-irq;
+ 		status = "disabled";
+ 	};
+ 
 -- 
-1.9.1
+2.1.1
 
