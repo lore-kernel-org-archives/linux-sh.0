@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 10 Nov 2014 01:32:24 +0000
-Subject: [GIT PULL] Second Round of Renesas ARM Based SoC DT Cleanups for v3.19
-Message-Id: <cover.1415582842.git.horms+renesas@verge.net.au>
+Date: Mon, 10 Nov 2014 01:32:34 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Soc Updates for v3.19
+Message-Id: <cover.1415581286.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1381222967.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
@@ -12,55 +12,44 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hi Olof, Hi Kevin, Hi Arnd,
 
-Please consider these second round of Renesas ARM based SoC DT cleanups for v3.19.
+Please consider these second round of Renesas ARM based SoC soc updates for v3.19.
 
 This pull request is based on the previous round of
-such requests, tagged as renesas-dt-cleanups-for-v3.19,
+such requests, tagged as renesas-soc-for-v3.19,
 which I have already sent a pull-request for.
 
 
-The following changes since commit 120f038cf04b95dc895cba503a7516ff75561438:
+The following changes since commit 3794705aeb318c431c07072f04380c78cc5a84ac:
 
-  ARM: shmobile: kzm9d dts: Add chosen/stdout-path (2014-10-24 10:44:10 +0900)
+  ARM: shmobile: Select CONFIG_ZONE_DMA when CONFIG_ARM_LPAE is enabled (2014-10-28 08:43:03 +0900)
 
 are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-cleanups2-for-v3.19
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc2-for-v3.19
 
-for you to fetch changes up to 89aeff9989e87bb2d9d652994010bc18c68675d9:
+for you to fetch changes up to 950a3f0e7dd32c372c9957d5c050b08de7ec9e56:
 
-  ARM: shmobile: alt dts: Drop console= bootargs parameter (2014-11-05 14:54:10 +0900)
-
-----------------------------------------------------------------
-Second Round of Renesas ARM Based SoC DT Cleanups for v3.19
-
-* Drop console= bootargs parameter on alt
-* Correct scifb* naming on r8a73a4
-* Drop 0x unit-address prefixes
-* Remove unnecessary MMC options
+  ARM: shmobile: Enable PCI domains for R-Car Gen2 devices (2014-11-05 14:50:17 +0900)
 
 ----------------------------------------------------------------
-Geert Uytterhoeven (3):
-      ARM: shmobile: r8a7790 dtsi: Drop bogus 0x unit-address prefix
-      ARM: shmobile: r8a7791 dtsi: Drop bogus 0x unit-address prefix
-      ARM: shmobile: kzm9g-reference dts: Drop bogus 0x unit-address prefix
+Second Round of Renesas ARM Based SoC Soc Updates for v3.19
 
-Kuninori Morimoto (3):
-      ARM: shmobile: r8a7778 dtsi: Remove unnecessary MMC options
-      ARM: shmobile: r8a7779 dtsi: Remove unnecessary MMC options
-      ARM: shmobile: r8a7790 dtsi: Remove unnecessary MMC options
+* Enable PCI domains for R-Car Gen2 devices
+* Make APMU resource code SoC-specific
 
-Simon Horman (1):
-      ARM: shmobile: alt dts: Drop console= bootargs parameter
+----------------------------------------------------------------
+Hisashi Nakamura (2):
+      ARM: shmobile: Separate APMU resource data into CPU dependant part
+      ARM: shmobile: r8a7791: Correct number of CPU cores
 
-Ulrich Hecht (1):
-      ARM: shmobile: r8a73a4: fix scifb* naming
+Phil Edworthy (1):
+      ARM: shmobile: Enable PCI domains for R-Car Gen2 devices
 
- arch/arm/boot/dts/r8a73a4.dtsi               | 8 ++++----
- arch/arm/boot/dts/r8a7778.dtsi               | 6 ------
- arch/arm/boot/dts/r8a7779.dtsi               | 8 --------
- arch/arm/boot/dts/r8a7790.dtsi               | 6 +-----
- arch/arm/boot/dts/r8a7791.dtsi               | 2 +-
- arch/arm/boot/dts/r8a7794-alt.dts            | 2 +-
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 2 +-
- 7 files changed, 8 insertions(+), 26 deletions(-)
+ arch/arm/mach-shmobile/Kconfig        |  1 +
+ arch/arm/mach-shmobile/common.h       |  5 -----
+ arch/arm/mach-shmobile/platsmp-apmu.c | 27 +++++++++------------------
+ arch/arm/mach-shmobile/platsmp-apmu.h | 32 ++++++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/smp-r8a7790.c  | 16 +++++++++++++++-
+ arch/arm/mach-shmobile/smp-r8a7791.c  | 12 +++++++++++-
+ 6 files changed, 68 insertions(+), 25 deletions(-)
+ create mode 100644 arch/arm/mach-shmobile/platsmp-apmu.h
