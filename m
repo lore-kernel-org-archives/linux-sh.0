@@ -1,41 +1,51 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 04 Nov 2014 01:47:46 +0000
-Subject: [PATCH 09/23 v3] ARM: shmobile: lager: fixup IIC2 clock frequency
-Message-Id: <87mw8791o5.wl%kuninori.morimoto.gx@gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 10 Nov 2014 11:02:46 +0000
+Subject: [PATCH 3/4] usb: renesas_usbhs: add a new macro for extending DnFIFOs
+Message-Id: <1415617367-3828-4-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To extend DnFIFOs in the future, this patch adds a new macro because
+some SoCs don't the "port" address for DnFIFOs.
 
-Current Lager IIC2 is using default clock frequency,
-but, ak4643 audio codec chip needs 100kHz
-This patch clarifies IIC2 clock frequency as 100kHz.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
-v2 -> v3
+ drivers/usb/renesas_usbhs/fifo.c |    9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
 
- - new patch
-
- arch/arm/boot/dts/r8a7790-lager.dts |    2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 830f2e8..86fb2ee 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -429,6 +429,8 @@
- 	pinctrl-0 = <&iic2_pins>;
- 	pinctrl-names = "default";
+diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
+index 6c775b7..bc9a050 100644
+--- a/drivers/usb/renesas_usbhs/fifo.c
++++ b/drivers/usb/renesas_usbhs/fifo.c
+@@ -1201,11 +1201,11 @@ void usbhs_fifo_quit(struct usbhs_priv *priv)
+ 	mod->irq_brdysts	= 0;
+ }
  
-+	clock-frequency = <100000>;
+-#define USBHS_DFIFO_INIT(priv, fifo, channel)				\
++#define __USBHS_DFIFO_INIT(priv, fifo, channel, fifo_port)		\
+ do {									\
+ 	fifo = usbhsf_get_dnfifo(priv, channel);			\
+ 	fifo->name	= "D"#channel"FIFO";				\
+-	fifo->port	= D##channel##FIFO;				\
++	fifo->port	= fifo_port;					\
+ 	fifo->sel	= D##channel##FIFOSEL;				\
+ 	fifo->ctr	= D##channel##FIFOCTR;				\
+ 	fifo->tx_slave.shdma_slave.slave_id =				\
+@@ -1215,6 +1215,11 @@ do {									\
+ 	usbhsf_dma_init(priv, fifo);					\
+ } while (0)
+ 
++#define USBHS_DFIFO_INIT(priv, fifo, channel)				\
++		__USBHS_DFIFO_INIT(priv, fifo, channel, D##channel##FIFO)
++#define USBHS_DFIFO_INIT_NO_PORT(priv, fifo, channel)			\
++		__USBHS_DFIFO_INIT(priv, fifo, channel, 0)
 +
- 	composite-in@20 {
- 		compatible = "adi,adv7180";
- 		reg = <0x20>;
+ int usbhs_fifo_probe(struct usbhs_priv *priv)
+ {
+ 	struct usbhs_fifo *fifo;
 -- 
 1.7.9.5
 
