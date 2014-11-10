@@ -1,39 +1,58 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Tue, 04 Nov 2014 22:43:44 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Cleanup for v3.19
-Message-Id: <20141104224344.GJ5908@quad.lixom.net>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 10 Nov 2014 19:00:42 +0000
+Subject: [PATCH 3/5] ASoC: rsnd: Document SoC-specific bindings
+Message-Id: <1415646044-4168-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1414629163.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1414629163.git.horms+renesas@verge.net.au>
+References: <1415646044-4168-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1415646044-4168-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: alsa-devel@alsa-project.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Thu, Oct 30, 2014 at 10:50:30AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these Renesas ARM based SoC cleanup for v3.19.
-> 
-> 
-> The following changes since commit f114040e3ea6e07372334ade75d1ee0775c355e1:
-> 
->   Linux 3.18-rc1 (2014-10-19 18:08:38 -0700)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup-for-v3.19
-> 
-> for you to fetch changes up to 335204dfb83b3105cf4a666d1ad024917831cbdc:
-> 
->   ARM: shmobile: Remove FSF address from copyright headers (2014-10-27 09:48:07 +0900)
-> 
-> ----------------------------------------------------------------
-> Renesas ARM Based SoC Cleanup for v3.19
-> 
-> * Remove FSF address from copyright headers
+The documentation only mentioned the generic fallback compatible
+property.
+Add the missing SoC-specific compatible properties, which are already in
+use.
 
-Merged into next/cleanup.
+Also drop a bogus 0x unit-address prefix while we're at it.
 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ Documentation/devicetree/bindings/sound/renesas,rsnd.txt | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
 
--Olof
+diff --git a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
+index aa697abf337e7aa6..2dd690bc19cc6436 100644
+--- a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
++++ b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
+@@ -1,8 +1,12 @@
+ Renesas R-Car sound
+ 
+ Required properties:
+-- compatible			: "renesas,rcar_sound-gen1" if generation1
++- compatible			: "renesas,rcar_sound-<soctype>", fallbacks
++				  "renesas,rcar_sound-gen1" if generation1, and
+ 				  "renesas,rcar_sound-gen2" if generation2
++				  Examples with soctypes are:
++				    - "renesas,rcar_sound-r8a7790" (R-Car H2)
++				    - "renesas,rcar_sound-r8a7791" (R-Car M2-W)
+ - reg				: Should contain the register physical address.
+ 				  required register is
+ 				   SRU/ADG/SSI      if generation1
+@@ -35,9 +39,9 @@ DAI subnode properties:
+ 
+ Example:
+ 
+-rcar_sound: rcar_sound@0xffd90000 {
++rcar_sound: rcar_sound@ec500000 {
+ 	#sound-dai-cells = <1>;
+-	compatible = "renesas,rcar_sound-gen2";
++	compatible = "renesas,rcar_sound-r8a7791", "renesas,rcar_sound-gen2";
+ 	reg =	<0 0xec500000 0 0x1000>, /* SCU */
+ 		<0 0xec5a0000 0 0x100>,  /* ADG */
+ 		<0 0xec540000 0 0x1000>, /* SSIU */
+-- 
+1.9.1
+
