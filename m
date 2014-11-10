@@ -1,38 +1,37 @@
-From: Soren Brinkmann <soren.brinkmann@xilinx.com>
-Date: Mon, 03 Nov 2014 19:05:30 +0000
-Subject: [PATCH 6/7] ARM: zynq: Enable pinctrl
-Message-Id: <1415041531-15520-7-git-send-email-soren.brinkmann@xilinx.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 10 Nov 2014 01:32:12 +0000
+Subject: [PATCH 4/4] ARM: shmobile: multiplatform: add AK4642 support on defconfig
+Message-Id: <ccde0fbd4fe88151c8d3a93a3e3a939a0a1753b2.1415582943.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415041531-15520-1-git-send-email-soren.brinkmann@xilinx.com>
-In-Reply-To: <1415041531-15520-1-git-send-email-soren.brinkmann@xilinx.com>
+References: <cover.1415582943.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415582943.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Select pinctrl and the Zynq pinctrl driver.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Soren Brinkmann <soren.brinkmann@xilinx.com>
----
-Changes since RFC v2:
- - separate mach-zynq changes in their own patch
----
- arch/arm/mach-zynq/Kconfig | 2 ++
- 1 file changed, 2 insertions(+)
+AK4642 is well used audio codec on Renesas reference board
 
-diff --git a/arch/arm/mach-zynq/Kconfig b/arch/arm/mach-zynq/Kconfig
-index aaa5162c1509..78e5e007f52d 100644
---- a/arch/arm/mach-zynq/Kconfig
-+++ b/arch/arm/mach-zynq/Kconfig
-@@ -9,6 +9,8 @@ config ARCH_ZYNQ
- 	select HAVE_ARM_TWD if SMP
- 	select ICST
- 	select MFD_SYSCON
-+	select PINCTRL
-+	select PINCTRL_ZYNQ
- 	select SOC_BUS
- 	help
- 	  Support for Xilinx Zynq ARM Cortex A9 Platform
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/configs/shmobile_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 8a39a46..cc67508 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -126,6 +126,7 @@ CONFIG_SND=y
+ CONFIG_SND_SOC=y
+ CONFIG_SND_SOC_SH4_FSI=y
+ CONFIG_SND_SOC_RCAR=y
++CONFIG_SND_SOC_AK4642=y
+ CONFIG_SND_SOC_WM8978=y
+ CONFIG_USB=y
+ CONFIG_USB_EHCI_HCD=y
 -- 
-1.9.1
+2.1.1
 
