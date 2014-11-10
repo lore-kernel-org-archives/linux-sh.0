@@ -1,27 +1,51 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 21 Nov 2014 12:03:03 +0000
-Subject: Re: [GIT PULL v2] Second Round of Renesas ARM Based SoC DT Updates for v3.19
-Message-Id: <4476306.DjvrofP07o@wuerfel>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 10 Nov 2014 19:00:40 +0000
+Subject: [PATCH 1/5] ASoC: sh: fsi: Document SoC-specific bindings
+Message-Id: <1415646044-4168-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1416476366.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
+References: <1415646044-4168-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1415646044-4168-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: alsa-devel@alsa-project.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Friday 21 November 2014 09:54:37 Simon Horman wrote:
-> Second Round of Renesas ARM Based SoC DT Updates for v3.19
-> 
-> * Add labels for LEDs on kzm9g-reference and koelsch
-> * Add Sound support to r8a7790/lager and r8a7791/koelsch
-> * Add IIC DMA nodes to r8a7790 and r8a7791
-> * Use SoC-specific IIC compatible properties on sh73a0 and r8a73a4
-> * Add SGX, MMP and VSP1 clocks to r8a7794
-> * Add USBDMAC{0,1} clocks to r8a7790 and r8a7791
-> 
-> 
+The documentation only mentioned the generic fallback compatible
+property.
+Add the missing SoC-specific compatible properties, some of which are
+already in use.
 
-Pulled into next/dt, thanks!
+Also fix a small typo, while we're at it.
 
-	Arnd
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ Documentation/devicetree/bindings/sound/renesas,fsi.txt | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/sound/renesas,fsi.txt b/Documentation/devicetree/bindings/sound/renesas,fsi.txt
+index c5be003f413e3aa3..0d0ab51105b01ece 100644
+--- a/Documentation/devicetree/bindings/sound/renesas,fsi.txt
++++ b/Documentation/devicetree/bindings/sound/renesas,fsi.txt
+@@ -1,11 +1,16 @@
+ Renesas FSI
+ 
+ Required properties:
+-- compatible			: "renesas,sh_fsi2" or "renesas,sh_fsi"
++- compatible			: "renesas,fsi2-<soctype>",
++				  "renesas,sh_fsi2" or "renesas,sh_fsi" as
++				  fallback.
++				  Examples with soctypes are:
++				    - "renesas,fsi2-r8a7740" (R-Mobile A1)
++				    - "renesas,fsi2-sh73a0" (SH-Mobile AG5)
+ - reg				: Should contain the register physical address and length
+ - interrupts			: Should contain FSI interrupt
+ 
+-- fsia,spdif-connection		: FSI is connected by S/PDFI
++- fsia,spdif-connection		: FSI is connected by S/PDIF
+ - fsia,stream-mode-support	: FSI supports 16bit stream mode.
+ - fsia,use-internal-clock	: FSI uses internal clock when master mode.
+ 
+-- 
+1.9.1
+
