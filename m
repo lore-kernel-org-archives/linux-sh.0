@@ -1,64 +1,57 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 12 Nov 2014 16:11:47 +0000
-Subject: Re: [PATCH 2/5] i2c: sh_mobile: add DMA support
-Message-Id: <20141112161146.GE4031@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="ep0oHQY+/Gbo/zt0"
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 10 Nov 2014 18:49:33 +0000
+Subject: [PATCH v2 0/6] ARM: shmobile: Change to using clock-indices
+Message-Id: <1415645379-3366-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415355104-2031-1-git-send-email-wsa@the-dreams.de>
- <1415355104-2031-3-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1415355104-2031-3-git-send-email-wsa@the-dreams.de>
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Mike Turquette <mturquette@linaro.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Ben Dooks <ben.dooks@codethink.co.uk>, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
+	Hi Mike, Simon, Magnus,
 
---ep0oHQY+/Gbo/zt0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+This patch series finalizes the conversion from the vendor-specific
+"renesas,clock-indices" to the generic "clock-indices", started by Ben Dooks.
 
-On Fri, Nov 07, 2014 at 11:11:41AM +0100, Wolfram Sang wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
->=20
-> Make it possible to transfer i2c message buffers via DMA.
-> Start/Stop/Sending_Slave_Adress is still handled using the old state
-> machine, it is sending the actual data that is done via DMA. This is
-> least intrusive and allows us to work with the message buffers directly
-> instead of preparing a custom buffer which involves copying the data
-> around.
->=20
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> ---
+The patches for r8a7790 and r8a7791 were extracted from a patch that Ben sent
+before ("[PATCH 2/3] renesas: change to using clock-indices"), but it was never
+split/updated.
 
-Applied to for-next, thanks!
+Changes in v2:
+  - Drop the reference to "renesas,clock-indices" completely,
+  - Add Acked-by.
 
-One minor change:
+Thanks for applying!
 
--			i2c_op(pd, OP_TX_STOP, data);
-+			i2c_op(pd, OP_TX_STOP, 0);
+Ben Dooks (2):
+  ARM: shmobile: r8a7790 dtsi: Change to using clock-indices
+  ARM: shmobile: r8a7791 dtsi: Change to using clock-indices
 
-To prevent uninitialzed var usage.
+Geert Uytterhoeven (4):
+  clk: shmobile: Deprecate renesas,clock-indices
+  ARM: shmobile: r8a7740 dtsi: Change to using clock-indices
+  ARM: shmobile: r8a7779 dtsi: Change to using clock-indices
+  ARM: shmobile: r8a7794 dtsi: Change to using clock-indices
 
---ep0oHQY+/Gbo/zt0
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |  8 ++++----
+ arch/arm/boot/dts/r8a7740.dtsi                     | 10 +++++-----
+ arch/arm/boot/dts/r8a7779.dtsi                     |  6 +++---
+ arch/arm/boot/dts/r8a7790.dtsi                     | 20 +++++++++++---------
+ arch/arm/boot/dts/r8a7791.dtsi                     | 22 ++++++++++++----------
+ arch/arm/boot/dts/r8a7794.dtsi                     | 14 +++++++-------
+ 6 files changed, 42 insertions(+), 38 deletions(-)
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+-- 
+1.9.1
 
-iQIcBAEBAgAGBQJUY4bCAAoJEBQN5MwUoCm2i4YP+wbsfz+IBdb6tdASw0SKkngI
-QkR/vC5+uGdJXevFqV8s9U/1JaTKRioaLjCr5hhxl16axNDmNBkfDvg+puAsohRB
-z3JIAfLiy8zAY7pVlYOBEHLWBmx9r6kiD9G3RGzdAIWfKyuzz+Auos9832mr7w6Z
-ca3yeC2BHAKpC5+ScXVDD1LlqV6keUmgK8dyrb5JdKKgeFyRVc/aJ3G5VYAKsWgS
-rg42UlYJEUQVEhl0ss7i51Jn0/bzHiFs97Gy7LRjH17H4Rb//sL4n9eyjhgFZLvh
-thmLm6zhcSjSLsJc+/hVX2cu5oZILzE/d2FXA2i+0/YZYLbrjzvSN1oNJdSz4ox5
-nFr5hpGusYyAvEHfnKL8gK5LYrdbTRPzCcJmLTsie6Ru6FqURol2Srcpmtc1H56y
-D4bildpdj9UUs+YS3fWDhjx9pExZ5t1OKZLhxgUpN3Jls2ytlZeYAILjOayVcPjX
-O+LDt1NOngXSW3jSQNlXQPp02dAedd1otTPv0IfdkPfBKoQrXlyHVJ7f3wbxF+Oe
-TXEbIH7RzCgX306M6KHdhYqf/hfzJ+td7+Cw12iUdwkuirnE0RacB0/su7tPx97O
-4TuW3I0eCcZvVt4bDgO/h2jG4vA06Dje/7Q0fEuMEJvNzEw/YRbzNm31UnFKtmJH
-vplgtQP9BBbmWZPctPt3
-=FP49
------END PGP SIGNATURE-----
+Gr{oetje,eeting}s,
 
---ep0oHQY+/Gbo/zt0--
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
