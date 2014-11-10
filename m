@@ -1,86 +1,55 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:50:43 +0000
-Subject: [PATCH 13/34] ARM: shmobile: r8a7790: Add MMP clock to device tree
-Message-Id: <4ba8f2468ce346642b4ace3cdf4bdd8d29175011.1415059587.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 10 Nov 2014 18:42:29 +0000
+Subject: [PATCH v2 1/2] sata_rcar: Add clocks to sata_rcar bindings
+Message-Id: <1415644950-2983-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415059587.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415059587.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Tejun Heo <tj@kernel.org>
+Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>, linux-ide@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
 
-Signed-off-by: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Now that the clocks are available in the R-Car Gen2 DT,
+add clocks property description to the sata_rcar bindings.
+The clocks have been tested on r8a7791 so we use that
+as an example of the R-Car SATA node.
+
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+[geert: Reworded clocks property]
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi            | 22 ++++++++++++++--------
- include/dt-bindings/clock/r8a7790-clock.h | 11 ++++++++++-
- 2 files changed, 24 insertions(+), 9 deletions(-)
+v2:
+  - Add Acked-by
+---
+ Documentation/devicetree/bindings/ata/sata_rcar.txt | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 602a46a..050e608 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -977,18 +977,24 @@
- 		mstp1_clks: mstp1_clks@e6150134 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
--			clocks = <&m2_clk>, <&p_clk>, <&zg_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
--				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>,
--				 <&zs_clk>;
-+			clocks = <&zs_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>, <&m2_clk>,
-+				 <&zs_clk>, <&p_clk>, <&zg_clk>, <&zs_clk>, <&zs_clk>,
-+				 <&zs_clk>, <&zs_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
-+				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
--				R8A7790_CLK_JPU R8A7790_CLK_TMU1 R8A7790_CLK_3DG
--				R8A7790_CLK_TMU3 R8A7790_CLK_TMU2
--				R8A7790_CLK_CMT0 R8A7790_CLK_TMU0 R8A7790_CLK_VSP1_DU1
--				R8A7790_CLK_VSP1_DU0 R8A7790_CLK_VSP1_R R8A7790_CLK_VSP1_S
-+				R8A7790_CLK_VCP1 R8A7790_CLK_VCP0 R8A7790_CLK_VPC1
-+				R8A7790_CLK_VPC0 R8A7790_CLK_JPU R8A7790_CLK_SSP1
-+				R8A7790_CLK_TMU1 R8A7790_CLK_3DG R8A7790_CLK_2DDMAC
-+				R8A7790_CLK_FDP1_2 R8A7790_CLK_FDP1_1 R8A7790_CLK_FDP1_0
-+				R8A7790_CLK_TMU3 R8A7790_CLK_TMU2 R8A7790_CLK_CMT0
-+				R8A7790_CLK_TMU0 R8A7790_CLK_VSP1_DU1 R8A7790_CLK_VSP1_DU0
-+				R8A7790_CLK_VSP1_R R8A7790_CLK_VSP1_S
- 			>;
- 			clock-output-names -				"jpu", "tmu1", "3dg", "tmu3", "tmu2", "cmt0", "tmu0",
-+				"vcp1", "vcp0", "vpc1", "vpc0", "jpu", "ssp1",
-+				"tmu1", "3dg", "2ddmac", "fdp1-2", "fdp1-1",
-+				"fdp1-0", "tmu3", "tmu2", "cmt0", "tmu0",
- 				"vsp1-du1", "vsp1-du0", "vsp1-rt", "vsp1-sy";
- 		};
- 		mstp2_clks: mstp2_clks@e6150138 {
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-index 14a3f12..e3a3fb8 100644
---- a/include/dt-bindings/clock/r8a7790-clock.h
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -26,9 +26,18 @@
- #define R8A7790_CLK_MSIOF0		0
+diff --git a/Documentation/devicetree/bindings/ata/sata_rcar.txt b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+index 80ae87a0784bdba8..f09c1ee260ba1d10 100644
+--- a/Documentation/devicetree/bindings/ata/sata_rcar.txt
++++ b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+@@ -9,12 +9,14 @@ Required properties:
+ 			  - "renesas,sata-r8a7793" for R-Car M2-N
+ - reg			: address and length of the SATA registers;
+ - interrupts		: must consist of one interrupt specifier.
++- clocks		: must contain a reference to the functional clock.
  
- /* MSTP1 */
--#define R8A7790_CLK_JPU		6
-+#define R8A7790_CLK_VCP1		0
-+#define R8A7790_CLK_VCP0		1
-+#define R8A7790_CLK_VPC1		2
-+#define R8A7790_CLK_VPC0		3
-+#define R8A7790_CLK_JPU			6
-+#define R8A7790_CLK_SSP1		9
- #define R8A7790_CLK_TMU1		11
- #define R8A7790_CLK_3DG			12
-+#define R8A7790_CLK_2DDMAC		15
-+#define R8A7790_CLK_FDP1_2		17
-+#define R8A7790_CLK_FDP1_1		18
-+#define R8A7790_CLK_FDP1_0		19
- #define R8A7790_CLK_TMU3		21
- #define R8A7790_CLK_TMU2		22
- #define R8A7790_CLK_CMT0		24
+ Example:
+ 
+-sata: sata@fc600000 {
+-	compatible = "renesas,sata-r8a7779";
+-	reg = <0xfc600000 0x2000>;
++sata0: sata@ee300000 {
++	compatible = "renesas,sata-r8a7791";
++	reg = <0 0xee300000 0 0x2000>;
+ 	interrupt-parent = <&gic>;
+-	interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
++	interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
++	clocks = <&mstp8_clks R8A7791_CLK_SATA0>;
+ };
 -- 
-2.1.1
+1.9.1
 
