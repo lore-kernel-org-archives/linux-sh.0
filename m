@@ -1,38 +1,31 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 14 Nov 2014 00:43:58 +0000
-Subject: Re: [PATCH 1/3] sh_eth: Remove redundant alignment adjustment
-Message-Id: <20141114004358.GN14971@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 11 Nov 2014 04:36:00 +0000
+Subject: [PATCH 0/2] ARM: shmobile: lager/koelsh: add Volume Ramp usage on comment
+Message-Id: <87fvdq2w2b.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415862301-28032-1-git-send-email-ykaneko0929@gmail.com>
- <1415862301-28032-2-git-send-email-ykaneko0929@gmail.com>
- <546532A2.80509@cogentembedded.com>
-In-Reply-To: <546532A2.80509@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Yoshihiro Kaneko <ykaneko0929@gmail.com>, netdev@vger.kernel.org, "David S. Miller" <davem@davemloft.net>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Nov 14, 2014 at 01:37:22AM +0300, Sergei Shtylyov wrote:
-> On 11/13/2014 10:04 AM, Yoshihiro Kaneko wrote:
-> 
-> >From: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
-> 
-> >PTR_ALIGN macro after skb_reserve is redundant, because skb_reserve
-> >function adjusts the alignment of skb->data.
-> 
->    OK, but where is the bug? There must be one if you base this patch on the
-> 'net' tree...
 
-I suppose this patch would be more appropriate for the net-next tree.
+Hi Simon
 
-> >Signed-off-by: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
-> >Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> 
-> WBR, Sergei
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+ALSA SoC maintainer accepted "Volume Ramp" support for R-Car sound driver.
+3539cacff2031f6d47881c5f3a4932b0ad5ec224
+(ASoC: rsnd: Add Volume Ramp support)
+These patches add usage for it on DTS comment area.
+# above patches are not merged to Simon's branch
+# but, these are just comment, no problem ?
+
+Kuninori Morimoto (2):
+      ARM: shmobile: lager: add Volume Ramp usage on comment
+      ARM: shmobile: koelsch: add Volume Ramp usage on comment
+
+ arch/arm/boot/dts/r8a7790-lager.dts   |    9 +++++++++
+ arch/arm/boot/dts/r8a7791-koelsch.dts |    9 +++++++++
+ 2 files changed, 18 insertions(+)
+
+Best regards
+---
+Kuninori Morimoto
