@@ -1,51 +1,22 @@
-From: Soren Brinkmann <soren.brinkmann@xilinx.com>
-Date: Mon, 03 Nov 2014 19:05:25 +0000
-Subject: [PATCH 1/7] pinctrl: pinconf-generic: Declare dt_params/conf_items const
-Message-Id: <1415041531-15520-2-git-send-email-soren.brinkmann@xilinx.com>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Tue, 11 Nov 2014 12:00:45 +0000
+Subject: Re: [PATCH 1/7] pinctrl: pinconf-generic: Declare dt_params/conf_items const
+Message-Id: <CACRpkdaXmtgVXs2OFWEKn3Dt9-i_sEOrVamg0r2uFPK6i91xSQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1415041531-15520-1-git-send-email-soren.brinkmann@xilinx.com>
-In-Reply-To: <1415041531-15520-1-git-send-email-soren.brinkmann@xilinx.com>
+ <1415041531-15520-2-git-send-email-soren.brinkmann@xilinx.com>
+In-Reply-To: <1415041531-15520-2-git-send-email-soren.brinkmann@xilinx.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Soren Brinkmann <soren.brinkmann@xilinx.com>
----
- drivers/pinctrl/pinconf-generic.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+On Mon, Nov 3, 2014 at 8:05 PM, Soren Brinkmann
+<soren.brinkmann@xilinx.com> wrote:
 
-diff --git a/drivers/pinctrl/pinconf-generic.c b/drivers/pinctrl/pinconf-generic.c
-index e28ef957ca2d..f78b416d7984 100644
---- a/drivers/pinctrl/pinconf-generic.c
-+++ b/drivers/pinctrl/pinconf-generic.c
-@@ -38,7 +38,7 @@ struct pin_config_item {
- #define PCONFDUMP(a, b, c, d) { .param = a, .display = b, .format = c, \
- 				.has_arg = d }
- 
--static struct pin_config_item conf_items[] = {
-+static const struct pin_config_item conf_items[] = {
- 	PCONFDUMP(PIN_CONFIG_BIAS_DISABLE, "input bias disabled", NULL, false),
- 	PCONFDUMP(PIN_CONFIG_BIAS_HIGH_IMPEDANCE, "input bias high impedance", NULL, false),
- 	PCONFDUMP(PIN_CONFIG_BIAS_BUS_HOLD, "input bias bus hold", NULL, false),
-@@ -159,7 +159,7 @@ struct pinconf_generic_dt_params {
- 	u32 default_value;
- };
- 
--static struct pinconf_generic_dt_params dt_params[] = {
-+static const struct pinconf_generic_dt_params dt_params[] = {
- 	{ "bias-disable", PIN_CONFIG_BIAS_DISABLE, 0 },
- 	{ "bias-high-impedance", PIN_CONFIG_BIAS_HIGH_IMPEDANCE, 0 },
- 	{ "bias-bus-hold", PIN_CONFIG_BIAS_BUS_HOLD, 0 },
-@@ -209,7 +209,7 @@ int pinconf_generic_parse_dt_config(struct device_node *np,
- 		return -ENOMEM;
- 
- 	for (i = 0; i < ARRAY_SIZE(dt_params); i++) {
--		struct pinconf_generic_dt_params *par = &dt_params[i];
-+		const struct pinconf_generic_dt_params *par = &dt_params[i];
- 		ret = of_property_read_u32(np, par->property, &val);
- 
- 		/* property not found */
--- 
-1.9.1
+> Signed-off-by: Soren Brinkmann <soren.brinkmann@xilinx.com>
 
+Patch applied.
+
+Yours,
+Linus Walleij
