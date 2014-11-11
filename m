@@ -1,60 +1,67 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Thu, 27 Nov 2014 11:26:39 +0000
-Subject: Re: [PATCH v2] sh_eth: Fix skb alloc size and alignment adjust rule.
-Message-Id: <CAH1o70+iTTPDebguJMg_gLC=zJgPHxaYU9tSta1rX=VkX+9XHw@mail.gmail.com>
+From: Boris Brezillon <boris.brezillon@free-electrons.com>
+Date: Tue, 11 Nov 2014 13:33:36 +0000
+Subject: [PATCH] irqchip: atmel-aic: fix irqdomain initialization
+Message-Id: <1415712816-9202-1-git-send-email-boris.brezillon@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416479721-23089-1-git-send-email-ykaneko0929@gmail.com>
-	<20141121.150544.2240809721107766779.davem@davemloft.net>
-In-Reply-To: <20141121.150544.2240809721107766779.davem@davemloft.net>
+References: <20141110230301.GV4068@piout.net>
+In-Reply-To: <20141110230301.GV4068@piout.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: David Miller <davem@davemloft.net>
-Cc: netdev@vger.kernel.org, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Kevin Cernekee <cernekee@gmail.com>
+Cc: Alexandre Belloni <alexandre.belloni@free-electrons.com>, Kevin Hilman <khilman@kernel.org>, Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, linux-sh@vger.kernel.org, Florian Fainelli <f.fainelli@gmail.com>, Ralf Baechle <ralf@linux-mips.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, Maxime Bizon <mbizon@freebox.fr>, Jonas Gorski <jogo@openwrt.org>, linux-mips@linux-mips.org, Nicolas Ferre <nicolas.ferre@atmel.com>, Olof Johansson <olof@lixom.net>, Arnd Bergmann <arnd@arndb.de>, Boris Brezillon <boris.brezillon@free-electrons.com>
 
-Hello David,
+First of all IRQCHIP_SKIP_SET_WAKE is not a valid irq_gc_flags and thus
+should not be passed as the last argument of
+irq_alloc_domain_generic_chips.
 
-I'm very sorry for the late response.
+Then pass the correct handler (handle_fasteoi_irq) to
+irq_alloc_domain_generic_chips instead of manually re-setting it in the
+initialization loop.
 
-2014-11-22 5:05 GMT+09:00 David Miller <davem@davemloft.net>:
-> From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> Date: Thu, 20 Nov 2014 19:35:21 +0900
->
->> From: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
->>
->> In the current driver, allocation size of skb does not care the alignment
->> adjust after allocation.
->> And also, in the current implementation, buffer alignment method by
->> sh_eth_set_receive_align function has a bug that this function displace
->> buffer start address forcedly when the alignment is corrected.
->> In the result, tail of the skb will exceed allocated area and kernel panic
->> will be occurred.
->> This patch fix this issue.
->>
->> Signed-off-by: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
->> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->> ---
->>
->> The previous version of this patch was a part of the patch series as follows:
->> [PATCH 2/3] sh_eth: Fix skb alloc size and alignment adjust rule.
->>
->> This series is based on net tree.
->>
->> v2 [Yoshihiro Kaneko]
->> * Update as suggested by Sergei Shtylyov
->>   - Fixed the coding style
->>   - Corrected the comment
->>   - Removed {SH2_SH3|SH4}_SKB_RX_ALIGN
->
-> Please compile test your changes on 64-bit platforms:
->
-> drivers/net/ethernet/renesas/sh_eth.c: In function ‘sh_eth_set_receive_align’:
-> drivers/net/ethernet/renesas/sh_eth.c:922:16: warning: cast from pointer to integer of different size [-Wpointer-to-int-cast]
+And eventually initialize default irq flags to the pseudo standard:
+IRQ_REQUEST | IRQ_PROBE | IRQ_AUTOEN.
 
-I have never seen that warning message because I had done compile test
-for ARM platform.
-I saw the warning after I do compile test for x86_64.
-I'll post the new version of this patch.
+Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
+---
+Hello Kevin,
 
-Thanks,
-Kaneko
+This patch has not been tested yet but it should solve the issue you've
+experienced with the IRQ_GC_BE_IO flag and the atmel-aic driver.
+
+I'll test it tomorrow and let you know if it actually works.
+
+Regards,
+
+Boris
+
+ drivers/irqchip/irq-atmel-aic-common.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/irqchip/irq-atmel-aic-common.c b/drivers/irqchip/irq-atmel-aic-common.c
+index 656cfe3..d111ac7 100644
+--- a/drivers/irqchip/irq-atmel-aic-common.c
++++ b/drivers/irqchip/irq-atmel-aic-common.c
+@@ -243,8 +243,9 @@ struct irq_domain *__init aic_common_of_init(struct device_node *node,
+ 	}
+ 
+ 	ret = irq_alloc_domain_generic_chips(domain, 32, 1, name,
+-					     handle_level_irq, 0, 0,
+-					     IRQCHIP_SKIP_SET_WAKE);
++					     handle_fasteoi_irq,
++					     IRQ_NOREQUEST | IRQ_NOPROBE |
++					     IRQ_NOAUTOEN, 0, 0);
+ 	if (ret)
+ 		goto err_domain_remove;
+ 
+@@ -256,7 +257,6 @@ struct irq_domain *__init aic_common_of_init(struct device_node *node,
+ 		gc->unused = 0;
+ 		gc->wake_enabled = ~0;
+ 		gc->chip_types[0].type = IRQ_TYPE_SENSE_MASK;
+-		gc->chip_types[0].handler = handle_fasteoi_irq;
+ 		gc->chip_types[0].chip.irq_eoi = irq_gc_eoi;
+ 		gc->chip_types[0].chip.irq_set_wake = irq_gc_set_wake;
+ 		gc->chip_types[0].chip.irq_shutdown = aic_common_shutdown;
+-- 
+1.9.1
+
