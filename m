@@ -1,149 +1,57 @@
-From: =?utf-8?B?U8O2cmVu?= Brinkmann <soren.brinkmann@xilinx.com>
-Date: Wed, 05 Nov 2014 17:07:37 +0000
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Tue, 11 Nov 2014 15:00:15 +0000
 Subject: Re: [PATCH 4/7] pinctrl: zynq: Document DT binding
-Message-Id: <bd330b9362414af486fedccacbfe5ba1@BN1BFFO11FD018.protection.gbl>
+Message-Id: <CACRpkdazagbSZdMvHTggQuAFm9uObn2ARoCwcyM-sspuLTXqkQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1415041531-15520-1-git-send-email-soren.brinkmann@xilinx.com>
  <1415041531-15520-5-git-send-email-soren.brinkmann@xilinx.com>
- <54599AF6.1030404@suse.de>
-In-Reply-To: <54599AF6.1030404@suse.de>
+In-Reply-To: <1415041531-15520-5-git-send-email-soren.brinkmann@xilinx.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, 2014-11-05 at 04:35AM +0100, Andreas Färber wrote:
-> Am 03.11.2014 um 20:05 schrieb Soren Brinkmann:
-> > Add documentation for the devicetree binding for the Zynq pincontroller.
-> > 
-> > Signed-off-by: Soren Brinkmann <soren.brinkmann@xilinx.com>
-> > ---
-> >  .../bindings/pinctrl/xlnx,zynq-pinctrl.txt         | 90 ++++++++++++++++++++++
-> >  1 file changed, 90 insertions(+)
-> >  create mode 100644 Documentation/devicetree/bindings/pinctrl/xlnx,zynq-pinctrl.txt
-> > 
-> > diff --git a/Documentation/devicetree/bindings/pinctrl/xlnx,zynq-pinctrl.txt b/Documentation/devicetree/bindings/pinctrl/xlnx,zynq-pinctrl.txt
-> > new file mode 100644
-> > index 000000000000..86a86b644e6c
-> > --- /dev/null
-> > +++ b/Documentation/devicetree/bindings/pinctrl/xlnx,zynq-pinctrl.txt
-> > @@ -0,0 +1,90 @@
-> > +	Binding for Xilinx Zynq Pinctrl
-> > +
-> > +Required properties:
-> > +- compatible: "xlnx,zynq-pinctrl"
-> > +- syscon: phandle to SLCR
-> > +- reg: Offset and length of pinctrl space in SLCR
-> > +
-> > +Please refer to pinctrl-bindings.txt in this directory for details of the
-> > +common pinctrl bindings used by client devices, including the meaning of the
-> > +phrase "pin configuration node".
-> > +
-> > +Zynq's pin configuration nodes act as a container for an abitrary number of
-> 
-> "arbitrary"
+On Mon, Nov 3, 2014 at 8:05 PM, Soren Brinkmann
+<soren.brinkmann@xilinx.com> wrote:
 
-I'll fix that.
+> Add documentation for the devicetree binding for the Zynq pincontroller.
+>
+> Signed-off-by: Soren Brinkmann <soren.brinkmann@xilinx.com>
+(...)
+> +Example:
+> +       pinctrl0: pinctrl@700 {
+> +               compatible = "xlnx,pinctrl-zynq";
+> +               reg = <0x700 0x200>;
+> +               syscon = <&slcr>;
+> +
+> +               pinctrl_uart1_default: pinctrl-uart1-default {
+> +                       common {
+> +                               groups = "uart1_10_grp";
+> +                               function = "uart1";
+> +                               slew-rate = <0>;
+> +                               io-standard = <1>;
+> +                       };
 
-> 
-> > +subnodes. Each of these subnodes represents some desired configuration for a
-> > +pin, a group, or a list of pins or groups. This configuration can include the
-> > +mux function to select on those pin(s)/group(s), and various pin configuration
-> > +parameters, such as pull-up, slew rate, etc.
-> > +
-> > +The name of each subnode is not important; all subnodes should be enumerated
-> > +and processed purely based on their content.
-> > +
-> > +Each subnode only affects those parameters that are explicitly listed. In
-> > +other words, a subnode that lists a mux function but no pin configuration
-> > +parameters implies no information about any pin configuration parameters.
-> > +Similarly, a pin subnode that describes a pullup parameter implies no
-> > +information about e.g. the mux function.
-> > +
-> > +
-> > +The following generic properties as defined in pinctrl-bindings.txt are valid
-> > +to specify in a pin configuration subnode:
-> > + groups, pins, function, bias-disable, bias-high-impedance, bias-pull-up,
-> > + slew-rate, low-power-disable, low-power-enable
-> > +
-> > + Valid arguments for 'slew-rate' are '0' and '1' to select between slow and fast
-> > + respectively.
-> > +
-> > + Valid values for groups are:
-> > +   ethernet0_0_grp, ethernet1_0_grp, mdio0_0_grp, mdio1_0_grp,
-> > +   qspi0_0_grp, qspi1_0_grp, qspi_fbclk, qspi_cs1_grp, spi0_0_grp,
-> > +   spi0_1_grp - spi0_2_grp, spi1_0_grp - spi1_3_grp, sdio0_0_grp - sdio0_2_grp,
-> > +   sdio1_0_grp - sdio1_3_grp, sdio0_emio_wp, sdio0_emio_cd, sdio1_emio_wp,
-> > +   sdio1_emio_cd, smc0_nor, smc0_nor_cs1_grp, smc0_nor_addr25_grp, smc0_nand,
-> > +   can0_0_grp - can0_10_grp, can1_0_grp - can1_11_grp, uart0_0_grp - uart0_10_grp,
-> > +   uart1_0_grp - uart1_11_grp, i2c0_0_grp - i2c0_10_grp, i2c1_0_grp - i2c1_10_grp,
-> > +   ttc0_0_grp - ttc0_2_grp, ttc1_0_grp - ttc1_2_grp, swdt0_0_grp - swdt0_4_grp,
-> > +   gpio0_0_grp - gpio0_53_grp
-> > +
-> > + Valid values for pins are:
-> > +   MIO0 - MIO53
-> 
-> What about the four EMIO_SD* pins?
+I don't really like that you mix multiplexing and config in the
+same node. I would prefer if the generic bindings say we have
+muxing nodes and config nodes, and those are disparate.
 
-You can't do any pinconf on those and the config_(set|get) return some
-error code when you pass anything but the 54 MIO pins to those
-functions. So, they are actually not valid for PINs. They are only used
-as group for pinmuxing where the respective group needs to be used.
+Can't you just split this:
 
-> 
-> > +
-> > + Valid values for function are:
-> > +   ethernet0, ethernet1, mdio0, mdio1, qspi0, qspi1, qspi_fbclk, qspi_cs1,
-> > +   spi0, spi1, sdio0, sdio0_pc, sdio0_cd, sdio0_wp,
-> > +   sdio1, sdio1_pc, sdio1_cd, sdio1_wp,
-> > +   smc0_nor, smc0_nor_cs1, smc0_nor_addr25, smc0_nand, can0, can1, uart0, uart1,
-> > +   i2c0, i2c1, ttc0, ttc1, swdt0, gpio0
-> > +
-> > +The following driver-specific properties as defined here are valid to specify in
-> > +a pin configuration subnode:
-> > + - io-standard: Configure the pin to use the selected IO standard according to
-> > +   this mapping:
-> > +    1: LVCMOS18
-> > +    2: LVCMOS25
-> > +    3: LVCMOS33
-> > +    4: HSTL
-> > +
-> > +Example:
-> > +	pinctrl0: pinctrl@700 {
-> > +		compatible = "xlnx,pinctrl-zynq";
-> > +		reg = <0x700 0x200>;
-> > +		syscon = <&slcr>;
-> > +
-> > +		pinctrl_uart1_default: pinctrl-uart1-default {
-> 
-> Nit: Is it really necessary to prefix subnodes of "pinctrl@700" with
-> "pinctrl-", here and in .dts?
+common-mux {
+    groups = "uart1_10_grp";
+    function = "uart1";
+};
 
-Guess not. Is there any best practice for naming pinctrl-state nodes?
-I might shorten it.
+common-config {
+    groups = "uart1_10_grp";
+    slew-rate = <0>;
+    io-standard = <1>;
+};
 
-> 
-> > +			common {
-> > +				groups = "uart1_10_grp";
-> > +				function = "uart1";
-> > +				slew-rate = <0>;
-> > +				io-standard = <1>;
-> > +			};
-> > +
-> > +			rx {
-> > +				pins = "MIO49";
-> > +				bias-high-impedance;
-> > +			};
-> > +
-> > +			tx {
-> > +				pins = "MIO48";
-> > +				bias-disable;
-> > +			};
-> > +		};
-> > +	};
-> 
-> Otherwise looks good.
+That way we can identify nodes as mux nodes (have "function")
+or config nodes (have "groups" or "pins" but not "function") which
+I think makes things easier to read.
 
-Thanks for reviewing.
-
-	Sören
+Yours,
+Linus Walleij
