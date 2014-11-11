@@ -1,52 +1,56 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 05 Nov 2014 18:17:38 +0000
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Tue, 11 Nov 2014 12:29:36 +0000
 Subject: Re: [PATCH 2/7] pinctrl: pinconf-generic: Infer map type from DT property
-Message-Id: <1417202.djDaFURS6d@avalon>
+Message-Id: <CACRpkdZH9b_KB9Mz8r5vj=KGqr0bJeKMRgODUbNeBDVNr=tsCg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1415041531-15520-1-git-send-email-soren.brinkmann@xilinx.com>
+ <1415041531-15520-3-git-send-email-soren.brinkmann@xilinx.com>
  <21124316.ibhe1N9UZS@avalon>
- <d0c8876b424049059acab000d07ffa4b@BN1AFFO11FD053.protection.gbl>
-In-Reply-To: <d0c8876b424049059acab000d07ffa4b@BN1AFFO11FD053.protection.gbl>
+In-Reply-To: <21124316.ibhe1N9UZS@avalon>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi S=F6ren,
+On Wed, Nov 5, 2014 at 2:56 PM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> On Monday 03 November 2014 11:05:26 Soren Brinkmann wrote:
+>> With the new 'groups' property, the DT parser can infer the map type
+>> from the fact whether 'pins' or 'groups' is used to specify the pin
+>> group to work on.
+>> To maintain backwards compatibitliy with current usage of the DT
+>> binding, this is only done when an invalid map type is passed to the
+>> parsing function.
+>
+> The Renesas PFC implements similar bindings with using the vendor-specific
+> properties "renesas,pins" and "renesas,groups" (bindings and implementation
+> available at Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
+> and drivers/pinctrl/sh-pfc/pinctrl.c respectively).
+>
+> The Renesas implementation is a bit more generic in that it allows both pins
+> and groups to be specified in a single subnode. Do you think that feature
+> would make sense for pinconf-generic as well ?
 
-On Wednesday 05 November 2014 10:09:35 S=F6ren Brinkmann wrote:
-> On Wed, 2014-11-05 at 03:56PM +0200, Laurent Pinchart wrote:
-> > On Monday 03 November 2014 11:05:26 Soren Brinkmann wrote:
-> > > With the new 'groups' property, the DT parser can infer the map type
-> > > from the fact whether 'pins' or 'groups' is used to specify the pin
-> > > group to work on.
-> > > To maintain backwards compatibitliy with current usage of the DT
-> > > binding, this is only done when an invalid map type is passed to the
-> > > parsing function.
-> >=20
-> > The Renesas PFC implements similar bindings with using the vendor-speci=
-fic
-> > properties "renesas,pins" and "renesas,groups" (bindings and
-> > implementation available at
-> > Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt and
-> > drivers/pinctrl/sh-pfc/pinctrl.c respectively).
-> >=20
-> > The Renesas implementation is a bit more generic in that it allows both
-> > pins and groups to be specified in a single subnode. Do you think that
-> > feature would make sense for pinconf-generic as well ?
->=20
-> I don't have a use-case for that. I guess if somebody needs this kind of
-> functionality it could be added later. I would like to avoid blocking
-> pinctrl-zynq on adding more features here.
+I think for generic pin controllers either nodes with:
 
-I'm fine with that, as long as the changes won't require breaking the DT AB=
-I.=20
-I don't think they would but I wanted to raise the issue in case I would ha=
-ve=20
-missed a potential issue.
+{
+    function = "foo";
+    pins = "A0", "A1", "A2";
+}
 
---=20
-Regards,
+or
 
-Laurent Pinchart
+{
+    function = "foo";
+    groups = "bar", "baz";
+}
 
+In parsing this it's easy to just look for "function" then see if
+we're mapping to groups or pins.
+
+It'd be nice if we could then centralize parsing of functions/pins/groups
+and add the non-renesas-prefixed configs as alternatives to genericized
+the bindings, while keeping backward compatibility.
+
+Yours,
+Linus Walleij
