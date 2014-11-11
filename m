@@ -1,46 +1,71 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 25 Nov 2014 00:59:40 +0000
-Subject: Re: [PATCH 08/25] ARM: shmobile: r8a7790: sound enables Audio DMAC peri peri entry on DTSI
-Message-Id: <87mw7gumbj.wl%kuninori.morimoto.gx@renesas.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Tue, 11 Nov 2014 06:42:22 +0000
+Subject: [PATCH/RFC] mmc: sh_mmcif: Increase MMCIF clock rate to 97.5MHz
+Message-Id: <1415688142-20023-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415755881.git.horms+renesas@verge.net.au>
- <1877842.49FtTfL2eK@wuerfel>
- <87a93pxtlr.wl%kuninori.morimoto.gx@renesas.com>
- <15076656.0HaaBPou9k@wuerfel>
-In-Reply-To: <15076656.0HaaBPou9k@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: Chris Ball <chris@printf.net>, Ulf Hansson <ulf.hansson@linaro.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, linux-sh@vger.kernel.org
 
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-Hi Arnd
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
 
-> > > >                                 "mem_src6",     "src6_mem",
-> > > >                                 "mem_src7",     "src7_mem",
-> > > >                                 "mem_src8",     "src8_mem",
-> > > > -                               "mem_src9",     "src9_mem";
-> > > > +                               "mem_src9",     "src9_mem",
-> > > > +
-> > > > +                               "src0_ssiu0",           "src1_ssiu0",           "src2_ssiu0",           "src3_ssiu0",           "src4_ssiu0",
-> > > > +                               "src0_ssiu1",           "src1_ssiu1",           "src2_ssiu1",           "src3_ssiu1",           "src4_ssiu1",
-> > > > +                               "src0_ssiu2",           "src1_ssiu2",           "src2_ssiu2",           "src3_ssiu2",           "src4_ssiu2",
-(snip)
-> It sounds like you have some device-to-device DMAs here, which isn't
-> supported by the generic dmaengine binding at all, and I don't think
-> the driver currently attempts to use them.
-> 
-> Is that correct? Could you try to remove those from the binding and
-> just leave the device-to-memory and memory-to-device channels there?
-> If we ever want to support those, we probably have to extend the
-> dmaengine binding first, and then the driver binding would also look
-> different.
+This patch is based on mmc-next branch of Chris Ball's mmc tree.
 
-Indeed it is needed for device-to-device DMA transfer,
-but, it is using generic dmaengine style.
-(see linux/sound/soc/sh/rcar/core.c, linux/drivers/dma/sh/rcar-audmapp.c)
-If I exchange dmaengine binding style for device-to-device,
-I need to change both dmaengine driver and sound driver.
-But, I want to know why I should do it ?
-Indeed it needs many DMA binding entries now, but, it is using normal dmaengine bindings.
+ drivers/mmc/host/sh_mmcif.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 656fbba..fe9a8b7 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -1,6 +1,7 @@
+ /*
+  * MMCIF eMMC driver.
+  *
++ * Copyright (C) 2014 Renesas Electronics Corporation
+  * Copyright (C) 2010 Renesas Solutions Corp.
+  * Yusuke Goda <yusuke.goda.sx@renesas.com>
+  *
+@@ -57,6 +58,7 @@
+ #include <linux/mmc/slot-gpio.h>
+ #include <linux/mod_devicetable.h>
+ #include <linux/mutex.h>
++#include <linux/of_device.h>
+ #include <linux/pagemap.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_qos.h>
+@@ -1371,6 +1373,8 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 	struct resource *res;
+ 	void __iomem *reg;
+ 	const char *name;
++	struct device_node *np = pdev->dev.of_node;
++	int clk_rate;
+ 
+ 	irq[0] = platform_get_irq(pdev, 0);
+ 	irq[1] = platform_get_irq(pdev, 1);
+@@ -1433,6 +1437,16 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 		dev_err(&pdev->dev, "cannot get clock: %d\n", ret);
+ 		goto eclkget;
+ 	}
++
++	if (np && !of_property_read_u32(np, "renesas,clk-rate", &clk_rate)) {
++		if (clk_rate) {
++			ret = clk_set_rate(host->hclk, clk_rate);
++			if (ret < 0)
++				dev_err(&pdev->dev,
++					"cannot set clock rate: %d\n", ret);
++		}
++	}
++
+ 	ret = sh_mmcif_clk_update(host);
+ 	if (ret < 0)
+ 		goto eclkupdate;
+-- 
+1.9.1
 
