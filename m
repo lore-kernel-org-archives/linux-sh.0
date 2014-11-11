@@ -1,133 +1,59 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:50:08 +0000
-Subject: [PATCH 3/4] ARM: shmobile: rcar-gen2: Add CA7 arch_timer initialization for r8a7794
-Message-Id: <9ce3fa6816c2fb59d128248c9b0509aef1c5dae7.1415058939.git.horms+renesas@verge.net.au>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 11 Nov 2014 18:27:24 +0000
+Subject: Re: [PATCH 3/4] ARM: shmobile: rcar-gen2: Add CA7 arch_timer initialization for r8a7794
+Message-Id: <5583214.HuX5EZ5Unx@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1415058939.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415058939.git.horms+renesas@verge.net.au>
+ <9ce3fa6816c2fb59d128248c9b0509aef1c5dae7.1415058939.git.horms+renesas@verge.net.au>
+In-Reply-To: <9ce3fa6816c2fb59d128248c9b0509aef1c5dae7.1415058939.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+On Tuesday 04 November 2014 10:50:08 Simon Horman wrote:
+> From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+> 
+> On E2, the arch timer is hooked up to a different clock, and the CA7's arch
+> timer CNTVOFF register must be initialized.
+> 
+> Based on work by Hisashi Nakamura.
+> 
+> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-On E2, the arch timer is hooked up to a different clock, and the CA7's arch
-timer CNTVOFF register must be initialized.
+This is one of the patches that broke allmodconfig in linux-next.
 
-Based on work by Hisashi Nakamura.
+Can you apply the patch below before sending it to arm-soc?
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Thanks,
+
+	Arnd
+
 ---
- arch/arm/mach-shmobile/setup-rcar-gen2.c | 72 ++++++++++++++++++++++----------
- 1 file changed, 49 insertions(+), 23 deletions(-)
+From 8bf0a4cae3137411498ff23ca46f693e4c22a25b Mon Sep 17 00:00:00 2001
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 11 Nov 2014 16:36:50 +0100
+Subject: [PATCH] ARM: shmobile: always build rcar setup for armv7
 
-diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-index 42d5b43..7ed9279 100644
---- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
-+++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-@@ -3,6 +3,7 @@
-  *
-  * Copyright (C) 2013  Renesas Solutions Corp.
-  * Copyright (C) 2013  Magnus Damm
-+ * Copyright (C) 2014  Ulrich Hecht
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-@@ -24,6 +25,7 @@
- #include <linux/dma-contiguous.h>
- #include <linux/io.h>
- #include <linux/kernel.h>
-+#include <linux/of.h>
- #include <linux/of_fdt.h>
- #include <asm/mach/arch.h>
- #include "common.h"
-@@ -54,37 +56,61 @@ void __init rcar_gen2_timer_init(void)
- {
- #if defined(CONFIG_ARM_ARCH_TIMER) || defined(CONFIG_COMMON_CLK)
- 	u32 mode = rcar_gen2_read_mode_pins();
-+	bool is_e2 = (bool)of_find_compatible_node(NULL, NULL,
-+		"renesas,r8a7794");
- #endif
- #ifdef CONFIG_ARM_ARCH_TIMER
- 	void __iomem *base;
- 	int extal_mhz = 0;
- 	u32 freq;
+In a combined ARMv6/v7 kernel, the setup-rcar-gen2.c cannot
+currently be compiled correctly because it uses the isb
+instruction that is not available on ARMv6. Adding the
+-march=armv7-a flag lets the compiler know that it is safe
+to build this file for ARMv7.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 7d68eba53be3..b55cac0e5b2b 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -35,6 +35,7 @@ cpu-y				:= platsmp.o headsmp.o
  
--	/* At Linux boot time the r8a7790 arch timer comes up
--	 * with the counter disabled. Moreover, it may also report
--	 * a potentially incorrect fixed 13 MHz frequency. To be
--	 * correct these registers need to be updated to use the
--	 * frequency EXTAL / 2 which can be determined by the MD pins.
--	 */
--
--	switch (mode & (MD(14) | MD(13))) {
--	case 0:
--		extal_mhz = 15;
--		break;
--	case MD(13):
--		extal_mhz = 20;
--		break;
--	case MD(14):
--		extal_mhz = 26;
--		break;
--	case MD(13) | MD(14):
--		extal_mhz = 30;
--		break;
-+	if (is_e2) {
-+		freq = 260000000 / 8;	/* ZS / 8 */
-+		/* CNTVOFF has to be initialized either from non-secure
-+		 * Hypervisor mode or secure Monitor mode with SCR.NS=1.
-+		 * If TrustZone is enabled then it should be handled by the
-+		 * secure code.
-+		 */
-+		asm volatile(
-+		"	cps	0x16\n"
-+		"	mrc	p15, 0, r1, c1, c1, 0\n"
-+		"	orr	r0, r1, #1\n"
-+		"	mcr	p15, 0, r0, c1, c1, 0\n"
-+		"	isb\n"
-+		"	mov	r0, #0\n"
-+		"	mcrr	p15, 4, r0, r0, c14\n"
-+		"	isb\n"
-+		"	mcr	p15, 0, r1, c1, c1, 0\n"
-+		"	isb\n"
-+		"	cps	0x13\n"
-+			: : : "r0", "r1");
-+	} else {
-+		/* At Linux boot time the r8a7790 arch timer comes up
-+		 * with the counter disabled. Moreover, it may also report
-+		 * a potentially incorrect fixed 13 MHz frequency. To be
-+		 * correct these registers need to be updated to use the
-+		 * frequency EXTAL / 2 which can be determined by the MD pins.
-+		 */
-+
-+		switch (mode & (MD(14) | MD(13))) {
-+		case 0:
-+			extal_mhz = 15;
-+			break;
-+		case MD(13):
-+			extal_mhz = 20;
-+			break;
-+		case MD(14):
-+			extal_mhz = 26;
-+			break;
-+		case MD(13) | MD(14):
-+			extal_mhz = 30;
-+			break;
-+		}
-+
-+		/* The arch timer frequency equals EXTAL / 2 */
-+		freq = extal_mhz * (1000000 / 2);
- 	}
+ # Shared SoC family objects
+ obj-$(CONFIG_ARCH_RCAR_GEN2)	+= setup-rcar-gen2.o platsmp-apmu.o $(cpu-y)
++CFLAGS_setup-rcar-gen2.o	+= -march=armv7-a
  
--	/* The arch timer frequency equals EXTAL / 2 */
--	freq = extal_mhz * (1000000 / 2);
--
- 	/* Remap "armgcnt address map" space */
- 	base = ioremap(0xe6080000, PAGE_SIZE);
- 
--- 
-2.1.1
+ # SMP objects
+ smp-y				:= $(cpu-y)
 
