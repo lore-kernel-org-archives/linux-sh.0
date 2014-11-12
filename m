@@ -1,29 +1,66 @@
-From: Guenter Roeck <linux@roeck-us.net>
-Date: Sat, 01 Nov 2014 17:02:58 +0000
-Subject: Re: [PATCH 33/44] avr32: atngw100: Register with kernel poweroff handler
-Message-Id: <54551242.2020604@roeck-us.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 12 Nov 2014 08:55:56 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: r8a7794: Add SGX clock to device tree
+Message-Id: <1415782557-29550-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412659726-29957-1-git-send-email-linux@roeck-us.net> <1412659726-29957-34-git-send-email-linux@roeck-us.net> <20141101101637.GA5765@samfundet.no>
-In-Reply-To: <20141101101637.GA5765@samfundet.no>
+References: <1415782557-29550-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1415782557-29550-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Hans-Christian Egtvedt <egtvedt@samfundet.no>
-Cc: linux-kernel@vger.kernel.org, adi-buildroot-devel@lists.sourceforge.net, devel@driverdev.osuosl.org, devicetree@vger.kernel.org, lguest@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-alpha@vger.kernel.org, linux-am33-list@redhat.com, linux-cris-kernel@axis.com, linux-efi@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-m32r-ja@ml.linux-m32r.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-tegra@vger.kernel.org, linux-xtensa@linux-xtensa.org, openipmi-developer@lists.sourceforge.net, user-mode-linux-devel@lists.sourceforge.net, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-metag@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, xen-devel@lists.xenproject.org, Haavard
+To: linux-arm-kernel@lists.infradead.org
 
-On 11/01/2014 03:16 AM, Hans-Christian Egtvedt wrote:
-> Around Mon 06 Oct 2014 22:28:35 -0700 or thereabout, Guenter Roeck wrote:
->> Register with kernel poweroff handler instead of setting pm_power_off
->> directly.
->>
->> Cc: Haavard Skinnemoen <hskinnemoen@gmail.com>
->> Cc: Hans-Christian Egtvedt <egtvedt@samfundet.no>
->> Signed-off-by: Guenter Roeck <linux@roeck-us.net>
->
-> Acked-by: Hans-Christian Egtvedt <egtvedt@samfundet.no>
->
+From: Kouei Abe <kouei.abe.cp@renesas.com>
 
-Thanks!
+Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Guenter
+---
+v2
+* As suggested by Geert Uytterhoeven
+  - Use "3dg" for names
+---
+ arch/arm/boot/dts/r8a7794.dtsi            | 11 +++++------
+ include/dt-bindings/clock/r8a7794-clock.h |  1 +
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 95f656d..b6f8f45 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -461,16 +461,15 @@
+ 		mstp1_clks: mstp1_clks@e6150134 {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
+-			clocks = <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
+-				 <&cp_clk>,
+-				 <&zs_clk>, <&zs_clk>, <&zs_clk>;
++			clocks = <&p_clk>, <&zg_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
++				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+-				R8A7794_CLK_TMU1 R8A7794_CLK_TMU3 R8A7794_CLK_TMU2
+-				R8A7794_CLK_CMT0 R8A7794_CLK_TMU0
++				R8A7794_CLK_TMU1 R8A7794_CLK_3DG R8A7794_CLK_TMU3
++				R8A7794_CLK_TMU2 R8A7794_CLK_CMT0 R8A7794_CLK_TMU0
+ 			>;
+ 			clock-output-names -				"tmu1", "tmu3", "tmu2", "cmt0", "tmu0";
++				"tmu1", "3dg", "tmu3", "tmu2", "cmt0", "tmu0";
+ 		};
+ 		mstp2_clks: mstp2_clks@e6150138 {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
+index fd7cdee..9066213 100644
+--- a/include/dt-bindings/clock/r8a7794-clock.h
++++ b/include/dt-bindings/clock/r8a7794-clock.h
+@@ -27,6 +27,7 @@
+ 
+ /* MSTP1 */
+ #define R8A7794_CLK_TMU1		11
++#define R8A7794_CLK_3DG			12
+ #define R8A7794_CLK_TMU3		21
+ #define R8A7794_CLK_TMU2		22
+ #define R8A7794_CLK_CMT0		24
+-- 
+2.1.1
 
