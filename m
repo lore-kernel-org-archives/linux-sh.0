@@ -1,63 +1,64 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 25 Nov 2014 20:07:56 +0000
-Subject: Re: [PATCH 3/3] sh_eth: Fix dma mapping issue
-Message-Id: <5474E19C.1020108@cogentembedded.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 12 Nov 2014 08:19:14 +0000
+Subject: Re: [PATCH/RFC] ARM: shmobile: koelsch: Fix SPI mode of SPI-Flash into mode3
+Message-Id: <20141112081914.GS9007@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415862301-28032-1-git-send-email-ykaneko0929@gmail.com> <1415862301-28032-4-git-send-email-ykaneko0929@gmail.com> <54653948.5070606@cogentembedded.com> <20141117040935.GA10017@verge.net.au>
-In-Reply-To: <20141117040935.GA10017@verge.net.au>
+References: <1414648424-29688-1-git-send-email-horms+renesas@verge.net.au>
+ <CAMuHMdVpnoZatm8kCi=DLUWx9dDm9F8HkEtO4LKjj9J1KiKU=w@mail.gmail.com>
+In-Reply-To: <CAMuHMdVpnoZatm8kCi=DLUWx9dDm9F8HkEtO4LKjj9J1KiKU=w@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Yoshihiro Kaneko <ykaneko0929@gmail.com>, netdev@vger.kernel.org, "David S. Miller" <davem@davemloft.net>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+On Thu, Oct 30, 2014 at 10:11:59AM +0100, Geert Uytterhoeven wrote:
+> On Thu, Oct 30, 2014 at 6:53 AM, Simon Horman
+> <horms+renesas@verge.net.au> wrote:
+> > From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+> >
+> > In order to change into mode3, CPOL and CPHA bit of SPCMD register
+> > of MSIOF is changed. Mode3 can avoid intermediate voltage.
+> 
+> This is the QSPI node, not MSIOF?
 
-On 11/17/2014 07:09 AM, Simon Horman wrote:
+Indeed.
 
->>> From: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
+Nakamura-san's patch, which I up-ported, was against the QSPI node
+but the version I posted below is indeed against the MSIOF.
 
->>> When CONFIG_DMA_API_DEBUG=y, many DMA error messages reports.
->>> In order to use DMA debug, This patch fix following issues.
+Futhermore, I see that spi-cpol and spi-cpha are already present
+in the MSIOF node in mainline. I would like to withdraw this patch.
 
->>> Issue 1:
->>> If dma_mapping_error function is not called appropriately after
->>> DMA mapping, DMA debug will report error message when DMA unmap
->>> function is called.
-
->>> Issue 2:
->>> If skb_reserve function is called after DMA mapping, the relationship
->>> between mapping addr and mapping size will be broken.
->>> In this case, DMA debug will report error messages when DMA sync
->>> function and DMA unmap function are called.
-
->>> Issue 3:
->>> If the size of frame data is less than ETH_ZLEN, the size is resized
->>> to ETH_ZLEN after DMA map function is called.
->>> In the TX skb freeing function, dma unmap function is called with that
->>> resized value. So, unmap size error will reported.
-
->>> Issue 4:
->>> In the rx function, DMA map function is called without DMA unmap function
->>> is called for RX skb reallocating.
->>> It will case the DMA debug error that number of debug entry is full and
->>> DMA debug logic is stopped.
-
->>     The rule of thumb is "fix one issue per patch". Please split accordingly.
-
->>> Signed-off-by: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
->>> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-
->>     Thanks for beating me to it. Fixing these issues has been on my agenda
->> for a long time... :-)
-
-> as this patch is somewhat involved and as you have pointed out needs a bit
-> of work I'm wondering if you could take it over.
-
-    Perhaps I could... but I'm busy with other stuff... not sure when can I 
-get to it.
-
-[...]
-
-WBR, Sergei
-
+> > Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> > ---
+> > Based on the renesas-devel-20141030-v3.18-rc2 branch of my renesas tree
+> >
+> >  arch/arm/boot/dts/r8a7791-koelsch.dts | 2 ++
+> >  1 file changed, 2 insertions(+)
+> >
+> > diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+> > index 523ae4d..ced0738 100644
+> > --- a/arch/arm/boot/dts/r8a7791-koelsch.dts
+> > +++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+> > @@ -387,6 +387,8 @@
+> >                 spi-tx-bus-width = <4>;
+> >                 spi-rx-bus-width = <4>;
+> >                 m25p,fast-read;
+> > +               spi-cpol;
+> > +               spi-cpha;
+> >
+> >                 partition@0 {
+> >                         label = "loader";
+> 
+> Gr{oetje,eeting}s,
+> 
+>                         Geert
+> 
+> --
+> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+> 
+> In personal conversations with technical people, I call myself a hacker. But
+> when I'm talking to journalists I just say "programmer" or something like that.
+>                                 -- Linus Torvalds
+> 
