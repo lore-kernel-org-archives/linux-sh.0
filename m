@@ -1,56 +1,52 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 16 Nov 2014 09:34:41 +0000
-Subject: Re: [PATCH V4 01/14] sh: Eliminate unused irq_reg_{readl,writel} accessors
-Message-Id: <CAMuHMdXMsxhcD9C079YPc6Toxdo0e23oqM_9KeSG=NrFa4auRQ@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 12 Nov 2014 08:46:05 +0000
+Subject: Re: [PATCH 1/3] ARM: shmobile: r8a7794: Add SGX clock to device tree
+Message-Id: <20141112084605.GW9007@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415342669-30640-1-git-send-email-cernekee@gmail.com>
-	<1415342669-30640-2-git-send-email-cernekee@gmail.com>
-	<CAMuHMdW+L8YbE8Z8jrtnm8xWk63sRGaFdM7TPM6MmrDg9XwHuQ@mail.gmail.com>
-	<20141114163843.GH29662@linux-mips.org>
-	<20141114170525.GL3698@titan.lakedaemon.net>
-In-Reply-To: <20141114170525.GL3698@titan.lakedaemon.net>
+References: <1414648736-31412-1-git-send-email-horms+renesas@verge.net.au>
+ <1414648736-31412-2-git-send-email-horms+renesas@verge.net.au>
+ <CAMuHMdUkqmbuLTjGU5DxyrxroKXHKVYtn9dRfbOxho1Rr1_1rQ@mail.gmail.com>
+In-Reply-To: <CAMuHMdUkqmbuLTjGU5DxyrxroKXHKVYtn9dRfbOxho1Rr1_1rQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jason Cooper <jason@lakedaemon.net>
-Cc: Ralf Baechle <ralf@linux-mips.org>, Kevin Cernekee <cernekee@gmail.com>, Thomas Gleixner <tglx@linutronix.de>, Linux-sh list <linux-sh@vger.kernel.org>, Arnd Bergmann <arnd@arndb.de>, Florian Fainelli <f.fainelli@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Maxime Bizon <mbizon@freebox.fr>, Jonas Gorski <jogo@openwrt.org>, Linux MIPS Mailing List <linux-mips@linux-mips.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Jason,
+On Thu, Oct 30, 2014 at 10:54:04AM +0100, Geert Uytterhoeven wrote:
+> On Thu, Oct 30, 2014 at 6:58 AM, Simon Horman
+> <horms+renesas@verge.net.au> wrote:
+> > --- a/arch/arm/boot/dts/r8a7794.dtsi
+> > +++ b/arch/arm/boot/dts/r8a7794.dtsi
+> > @@ -461,16 +461,15 @@
+> >                 mstp1_clks: mstp1_clks@e6150134 {
+> >                         compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+> >                         reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
+> > -                       clocks = <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
+> > -                                <&cp_clk>,
+> > -                                <&zs_clk>, <&zs_clk>, <&zs_clk>;
+> > +                       clocks = <&p_clk>, <&zg_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
+> > +                                <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>;
+> >                         #clock-cells = <1>;
+> >                         renesas,clock-indices = <
+> > -                               R8A7794_CLK_TMU1 R8A7794_CLK_TMU3 R8A7794_CLK_TMU2
+> > -                               R8A7794_CLK_CMT0 R8A7794_CLK_TMU0
+> > +                               R8A7794_CLK_TMU1 R8A7794_CLK_PVRSRVKM R8A7794_CLK_TMU3
+> > +                               R8A7794_CLK_TMU2 R8A7794_CLK_CMT0 R8A7794_CLK_TMU0
+> >                         >;
+> >                         clock-output-names > > -                               "tmu1", "tmu3", "tmu2", "cmt0", "tmu0";
+> > +                               "tmu1", "pvrsrvkm", "tmu3", "tmu2", "cmt0", "tmu0";
+> 
+> "3dg"
+> 
+> > --- a/include/dt-bindings/clock/r8a7794-clock.h
+> > +++ b/include/dt-bindings/clock/r8a7794-clock.h
+> > @@ -27,6 +27,7 @@
+> >
+> >  /* MSTP1 */
+> >  #define R8A7794_CLK_TMU1               11
+> > +#define R8A7794_CLK_PVRSRVKM           12
+> 
+> R8A7794_CLK_3DG
 
-On Fri, Nov 14, 2014 at 6:05 PM, Jason Cooper <jason@lakedaemon.net> wrote:
-> On Fri, Nov 14, 2014 at 05:38:44PM +0100, Ralf Baechle wrote:
->> On Mon, Nov 10, 2014 at 09:13:49AM +0100, Geert Uytterhoeven wrote:
->>
->> > On Fri, Nov 7, 2014 at 7:44 AM, Kevin Cernekee <cernekee@gmail.com> wrote:
->> > > Defining these macros way down in arch/sh/.../irq.c doesn't cause
->> > > kernel/irq/generic-chip.c to use them.  As far as I can tell this code
->> > > has no effect.
->> > >
->> > > Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
->> >
->> > Compared preprocessor and asm output before and after, no difference
->> > except for line numbers, so
->> >
->> > Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
->>
->> I noticed the remainder of of this series is now in Jason Cooper's irqchip
->> tree.  Is anybody still taking care of SH?  If not I can funnel it
->> through the MIPS tree.
->
-> Are the SH maintainers active?  I admit I know very little about the
-> arch.  I'm more than happy to pick it up and keep it with the rest of
-> the series, I just didn't want to step on toes...
-
-SH is orphaned, so it would be great if you could pick it up.
-Thanks!
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Thanks, I will fix that.
+Sorry for missing it the first time around.
