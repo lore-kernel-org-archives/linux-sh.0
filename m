@@ -1,60 +1,60 @@
-From: Mike Turquette <mturquette@linaro.org>
-Date: Wed, 19 Nov 2014 19:21:04 +0000
-Subject: Re: [PATCH v2 1/6] clk: shmobile: Deprecate renesas,clock-indices
-Message-Id: <20141119192104.25314.14333@quantum>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 12 Nov 2014 08:31:11 +0000
+Subject: Re: [PATCH/RFC] ARM: shmobile: lager: Fix node name of GPIO keys
+Message-Id: <20141112083111.GV9007@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415645379-3366-1-git-send-email-geert+renesas@glider.be>
- <1415645379-3366-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1415645379-3366-2-git-send-email-geert+renesas@glider.be>
+References: <1414648571-30419-1-git-send-email-horms+renesas@verge.net.au>
+ <CAMuHMdXaq+VGBvMzxxaLxwv6x+97o3ZxKHops8pZ8hS1jkG6cg@mail.gmail.com>
+In-Reply-To: <CAMuHMdXaq+VGBvMzxxaLxwv6x+97o3ZxKHops8pZ8hS1jkG6cg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: Ben Dooks <ben.dooks@codethink.co.uk>, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-Quoting Geert Uytterhoeven (2014-11-10 10:49:34)
-> Commit 8e33f91a0b84ae19 ("clk: shmobile: clk-mstp: change to using
-> clock-indices") forgot to replace all occurrences of
-> "renesas,clock-indices" in the driver-specific binding documentation.
+On Thu, Oct 30, 2014 at 10:48:33AM +0100, Geert Uytterhoeven wrote:
+> On Thu, Oct 30, 2014 at 6:56 AM, Simon Horman
+> <horms+renesas@verge.net.au> wrote:
+> > From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+> >
+> > gpio_keys appears to be consistent with more dts files than gpio-keys
 > 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Acked-by: Simon Horman <horms+renesas@verge.net.au>
-> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-Applied to clk-next.
-
-Regards,
-Mike
-
-> ---
-> v2:
->   - Drop the reference to "renesas,clock-indices" completely,
->   - Add Acked-by.
-> ---
->  .../devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt         | 8 ++++----
->  1 file changed, 4 insertions(+), 4 deletions(-)
+> The closest match on page 17 of ePAPR is "keyboard".
+> Should we use that?
 > 
-> diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> index e566fb79af9e4d37..0a80fa70ca265c0f 100644
-> --- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> +++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> @@ -27,11 +27,11 @@ Required Properties:
->      must appear in the same order as the output clocks.
->    - #clock-cells: Must be 1
->    - clock-output-names: The name of the clocks as free-form strings
-> -  - renesas,clock-indices: Indices of the gate clocks into the group (0 to 31)
-> +  - clock-indices: Indices of the gate clocks into the group (0 to 31)
->  
-> -The clocks, clock-output-names and renesas,clock-indices properties contain one
-> -entry per gate clock. The MSTP groups are sparsely populated. Unimplemented
-> -gate clocks must not be declared.
-> +The clocks, clock-output-names and clock-indices properties contain one entry
-> +per gate clock. The MSTP groups are sparsely populated. Unimplemented gate
-> +clocks must not be declared.
->  
->  
->  Example
-> -- 
-> 1.9.1
+> https://www.power.org/wp-content/uploads/2012/06/Power_ePAPR_APPROVED_v1.1.pdf
+
+Sure. I will do a sweep to update that for all our boards.
+
+> > [simon: reworded changelog]
+> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> > ---
+> > Based on the renesas-devel-20141030-v3.18-rc2 branch of my renesas tree
+> >
+> >  arch/arm/boot/dts/r8a7790-lager.dts | 2 +-
+> >  1 file changed, 1 insertion(+), 1 deletion(-)
+> >
+> > diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+> > index 830f2e8..6c05644 100644
+> > --- a/arch/arm/boot/dts/r8a7790-lager.dts
+> > +++ b/arch/arm/boot/dts/r8a7790-lager.dts
+> > @@ -43,7 +43,7 @@
+> >                 #size-cells = <1>;
+> >         };
+> >
+> > -       gpio_keys {
+> > +       gpio-keys {
+> >                 compatible = "gpio-keys";
+> >
+> >                 button@1 {
+> 
+> Gr{oetje,eeting}s,
+> 
+>                         Geert
+> 
+> --
+> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+> 
+> In personal conversations with technical people, I call myself a hacker. But
+> when I'm talking to journalists I just say "programmer" or something like that.
+>                                 -- Linus Torvalds
 > 
