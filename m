@@ -1,29 +1,54 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Mon, 17 Nov 2014 14:23:14 +0000
-Subject: Re: [PATCH 2/4] ARM: shmobile: r8a7740: Migrate to generic l2c OF initialization
-Message-Id: <1829825.nytgIBNlTf@wuerfel>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 12 Nov 2014 14:02:29 +0000
+Subject: [git pull] clk/shmobile updates for v3.19
+Message-Id: <CAMuHMdX1U1YQ29gcveLq2YbdGohk60+pXbjjJU1bV+AM1ZxZFg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416232388-2611-1-git-send-email-geert+renesas@glider.be>
- <1416232388-2611-3-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1416232388-2611-3-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mike Turquette <mturquette@linaro.org>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Ulrich Hecht <ulrich.hecht@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-On Monday 17 November 2014 14:53:06 Geert Uytterhoeven wrote:
->  DT_MACHINE_START(R8A7740_DT, "Generic R8A7740 (Flattened Device Tree)")
-> +       /* Shared attribute override enable, 32K*8way */
-> +       .l2c_aux_val    = 0x00400000,
-> +       .l2c_aux_mask   = 0xc20f0fff,
->         .map_io         = r8a7740_map_io,
->         .init_early     = shmobile_init_delay,
->         .init_irq       = r8a7740_init_irq_of,
+Hi Mike,
 
-You are only now adding it to DT, so you should have enough freedom
-to put the correct values in it.
+This is my first pull request from renesas-drivers.
+If there's anything that can be improved, please let me know.
+Thanks!
 
-Please use the 0/0xffffffff settings here and use the generic
-code to set up the L2X0.
+The following changes since commit 206c5f60a3d902bc4b56dab2de3e88de5eb06108:
 
-	Arnd
+  Linux 3.18-rc4 (2014-11-09 14:55:29 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers.git
+div6-clk-for-3.19
+
+for you to fetch changes up to bfadcadf03a63bc841f69ed1c47e930b2ba2273d:
+
+  clk: shmobile: document DIV6 clock parent bindings (2014-11-12 14:24:08 +0100)
+
+Summary:
+  - clk: shmobile: DIV6 clock variable parent support (from Ulrich Hecht)
+
+Thanks for pulling!
+
+----------------------------------------------------------------
+Ulrich Hecht (2):
+      clk: shmobile: div6: support selectable-input clocks
+      clk: shmobile: document DIV6 clock parent bindings
+
+ .../bindings/clock/renesas,cpg-div6-clocks.txt     |  18 ++--
+ drivers/clk/shmobile/clk-div6.c                    | 113 ++++++++++++++++++---
+ 2 files changed, 113 insertions(+), 18 deletions(-)
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
