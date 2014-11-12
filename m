@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Mon, 10 Nov 2014 01:02:25 +0000
+Date: Wed, 12 Nov 2014 01:44:51 +0000
 Subject: Re: [PATCH 1/5] ARM: shmobile: kzm9g legacy: Set i2c clks_per_count to 2
-Message-Id: <20141110010225.GF16836@verge.net.au>
+Message-Id: <20141112014450.GC11597@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1415274730-310-1-git-send-email-geert+renesas@glider.be>
  <1415274730-310-2-git-send-email-geert+renesas@glider.be>
@@ -10,8 +10,8 @@ In-Reply-To: <20141107052420.GA1278@katana>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
-Cc: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Wolfram Sang <wsa@the-dreams.de>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Magnus Damm <magnus.damm@gmail.com>, linux-i2c@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
 
 On Fri, Nov 07, 2014 at 06:24:21AM +0100, Wolfram Sang wrote:
 > On Thu, Nov 06, 2014 at 12:52:06PM +0100, Geert Uytterhoeven wrote:
@@ -34,6 +34,25 @@ On Fri, Nov 07, 2014 at 06:24:21AM +0100, Wolfram Sang wrote:
 > > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 > 
 > Reviewed-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+> 
+> > ---
+> > Note that the L/H values still differ from the Transfer Rate Settings
+> > example in Table 19.3 of the datasheet, which suggests 0x121/0xe7.
+> 
+> Is the formula different or is it rounding errors?
 
-Thanks, I have queued this up.
+Hi Geert,
+
+As this appears to be a bug fix I would like to accompany this patch with
+some text describing when the problem was introduced and what its effects
+are. In short a rough guide to if it should be applied to -stable. To that
+end I prepared the following which I would appreciate your feedback on.
+
+* ARM: shmobile: kzm9g legacy: Set i2c clks_per_count
+
+  This problem appears to have been introduced when i2c shmobile support was
+  added to the sh73a9 by b028f94b76319e1b8 ("ARM: mach-shmobile: sh73a0
+  i2c_shmobile support.") in v2.6.37.
+
+  Without this fix i2c may not operate correctly on the sh73a0/kzm9g.
 
