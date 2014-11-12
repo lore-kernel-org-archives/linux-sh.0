@@ -1,69 +1,89 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 13 Nov 2014 22:27:51 +0000
-Subject: Re: [PATCH] sh_eth: Optimization for RX excess judgement
-Message-Id: <54653067.8040608@cogentembedded.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 12 Nov 2014 08:20:35 +0000
+Subject: Re: [PATCH/RFC] ARM: shmobile: koelsch: Add MSIOF1 support to device tree
+Message-Id: <20141112082034.GT9007@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415862031-27925-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1415862031-27925-1-git-send-email-ykaneko0929@gmail.com>
+References: <1414648385-29514-1-git-send-email-horms+renesas@verge.net.au>
+ <CAMuHMdWyFztuwoatq5mmTp8nifMq8OB6ckud=k-LjKPq6VAnVQ@mail.gmail.com>
+In-Reply-To: <CAMuHMdWyFztuwoatq5mmTp8nifMq8OB6ckud=k-LjKPq6VAnVQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>, netdev@vger.kernel.org
-Cc: "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 11/13/2014 10:00 AM, Yoshihiro Kaneko wrote:
+On Thu, Oct 30, 2014 at 10:21:43AM +0100, Geert Uytterhoeven wrote:
+> On Thu, Oct 30, 2014 at 6:53 AM, Simon Horman
+> <horms+renesas@verge.net.au> wrote:
+> > From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+> >
+> > MSIOF1 pin is selected and device is enabled.
+> >
+> > Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> > ---
+> > Based on the renesas-devel-20141030-v3.18-rc2 branch of my renesas tree
+> >
+> >  arch/arm/boot/dts/r8a7791-koelsch.dts | 13 +++++++++++++
+> >  1 file changed, 13 insertions(+)
+> >
+> > diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+> > index 523ae4d..2ad0e26 100644
+> > --- a/arch/arm/boot/dts/r8a7791-koelsch.dts
+> > +++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+> > @@ -286,6 +286,12 @@
+> >                 renesas,function = "msiof0";
+> >         };
+> >
+> > +       msiof1_pins: spi2 {
+> > +               renesas,groups = "msiof1_clk_c", "msiof1_sync_c", "msiof1_rx_c",
+> > +                                "msiof1_tx_c";
+> 
+> These are GPIO pins 2_15, 2_16, 2_17, 2_18, which are routed to EXIO
+> Connector B only. No SPI slave device is present on these pins without
+> connecting something to this connector.
+> 
+> So I'm wondering if this should be put in a separate .dtsi, cfr.
+> http://www.spinics.net/lists/linux-sh/msg36486.html?
+> 
+> What do you think?
 
-> From: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
+Good idea. Should I cook something up?
 
-> Both of 'boguscnt' and 'quota' have nearly meaning as the condition of
-> the reception loop.
-> In order to cut down redundant processing, this patch changes excess judgement.
-
-> Signed-off-by: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> ---
-
-> This patch is based on net tree.
-
->   drivers/net/ethernet/renesas/sh_eth.c | 15 +++++++++------
->   1 file changed, 9 insertions(+), 6 deletions(-)
-
-> diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-> index 60e9c2c..7d46326 100644
-> --- a/drivers/net/ethernet/renesas/sh_eth.c
-> +++ b/drivers/net/ethernet/renesas/sh_eth.c
-> @@ -1394,10 +1394,15 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
->
->   	int entry = mdp->cur_rx % mdp->num_rx_ring;
->   	int boguscnt = (mdp->dirty_rx + mdp->num_rx_ring) - mdp->cur_rx;
-> +	int limit = boguscnt;
->   	struct sk_buff *skb;
->   	u16 pkt_len = 0;
->   	u32 desc_status;
->
-> +	if (quota) {
-> +		boguscnt = min(boguscnt, *quota);
-> +		limit = boguscnt;
-> +	}
->   	rxdesc = &mdp->rx_ring[entry];
->   	while (!(rxdesc->status & cpu_to_edmac(mdp, RD_RACT))) {
->   		desc_status = edmac_to_cpu(mdp, rxdesc->status);
-[...]
-> @@ -1501,7 +1501,10 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
->   		sh_eth_write(ndev, EDRRR_R, EDRRR);
->   	}
->
-> -	return *quota <= 0;
-> +	if (quota)
-> +		*quota -= limit - (++boguscnt);
-
-    Just 'limit - boguscnt + 1'.
-
-> +
-> +	return (boguscnt <= 0);
-
-    Hm... why change the *return* statement at all? I'm not sure this is at 
-all correct.
-
-WBR, Sergei
-
+> > +               renesas,function = "msiof1";
+> > +       };
+> > +
+> >         usb0_pins: usb0 {
+> >                 renesas,groups = "usb0";
+> >                 renesas,function = "usb0";
+> > @@ -420,6 +426,13 @@
+> >         };
+> >  };
+> >
+> > +&msiof1 {
+> > +       pinctrl-0 = <&msiof1_pins>;
+> > +       pinctrl-names = "default";
+> > +
+> > +       status = "okay";
+> > +};
+> > +
+> >  &i2c2 {
+> >         pinctrl-0 = <&i2c2_pins>;
+> >         pinctrl-names = "default";
+> > --
+> > 2.1.1
+> 
+> Gr{oetje,eeting}s,
+> 
+>                         Geert
+> 
+> --
+> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+> 
+> In personal conversations with technical people, I call myself a hacker. But
+> when I'm talking to journalists I just say "programmer" or something like that.
+>                                 -- Linus Torvalds
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
