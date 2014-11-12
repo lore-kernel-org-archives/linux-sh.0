@@ -1,82 +1,34 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 19 Nov 2014 08:40:28 +0000
-Subject: Re: [git pull] clk/shmobile updates for v3.19
-Message-Id: <CAMuHMdXWXXsj6HXRwO+N4osFeOpeMscZSX0SaOrHdQ0i0fFjoQ@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 12 Nov 2014 08:55:55 +0000
+Subject: [PATCH v2 0/2] ARM: shmobile: r8a7794: Add SGX, MMP and VSP1 to device tree
+Message-Id: <1415782557-29550-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMuHMdX1U1YQ29gcveLq2YbdGohk60+pXbjjJU1bV+AM1ZxZFg@mail.gmail.com>
-	<20141118231239.25314.54610@quantum>
-In-Reply-To: <20141118231239.25314.54610@quantum>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Turquette <mturquette@linaro.org>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Ulrich Hecht <ulrich.hecht@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Mike,
+Hi,
 
-On Wed, Nov 19, 2014 at 12:12 AM, Mike Turquette <mturquette@linaro.org> wrote:
-> Quoting Geert Uytterhoeven (2014-11-12 06:02:29)
->> This is my first pull request from renesas-drivers.
->> If there's anything that can be improved, please let me know.
->> Thanks!
->
-> Hurray for new pull requests! They simplify things a lot.
+this short series adds SGX, MMP and VSP1 clocks to device
+tree for the r8a7794 SoC
 
-Good to hear you're happy ;-)
+Based on the renesas-devel-20141112-v3.18-rc4 tag of my renesas tree
 
->> The following changes since commit 206c5f60a3d902bc4b56dab2de3e88de5eb06108:
->>
->>   Linux 3.18-rc4 (2014-11-09 14:55:29 -0800)
->>
->> are available in the git repository at:
->>
->>   git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers.git
->> div6-clk-for-3.19
->
-> Minor nitpick: its easier for me to copy/paste the line above if it is
-> not wrapped.
+Changes between v1 and v2
+* Drop VIN patch which has been queued up
+* Address review by Geert Uytterhoeven as noted in per-patch changelogs
 
-Will not use the gmail web interface next time.
+Kouei Abe (1):
+  ARM: shmobile: r8a7794: Add SGX clock to device tree
 
->> for you to fetch changes up to bfadcadf03a63bc841f69ed1c47e930b2ba2273d:
->>
->>   clk: shmobile: document DIV6 clock parent bindings (2014-11-12 14:24:08 +0100)
->>
->> Summary:
->>   - clk: shmobile: DIV6 clock variable parent support (from Ulrich Hecht)
->>
->> Thanks for pulling!
->>
->> ----------------------------------------------------------------
->> Ulrich Hecht (2):
->>       clk: shmobile: div6: support selectable-input clocks
->>       clk: shmobile: document DIV6 clock parent bindings
->
-> So the move to generic clock-indices didn't make it in? See:
->
-> http://lkml.kernel.org/r/<1415645379-3366-1-git-send-email-geert+renesas@glider.be>
+Yoshifumi Hosoya (1):
+  ARM: shmobile: r8a7794: Add MMP and VSP1 clocks to device tree
 
-That would be a separate topic/branch.
+ arch/arm/boot/dts/r8a7794.dtsi            | 15 +++++++++------
+ include/dt-bindings/clock/r8a7794-clock.h |  7 +++++++
+ 2 files changed, 16 insertions(+), 6 deletions(-)
 
-However, as that series has only one patch for your tree, I hoped you could
-take "[PATCH v2 1/6] clk: shmobile: Deprecate renesas,clock-indices" manually?
-After that Simon can apply the .dtsi updates.
+-- 
+2.1.1
 
-Alternatively, you can give your ack and Simon can take the whole series?
-
-Or do you still prefer a pull request?
-
-> Anyways these changes look good to me and I've applied them to clk-next.
-
-Thanks!
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
