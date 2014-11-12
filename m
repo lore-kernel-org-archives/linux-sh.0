@@ -1,42 +1,36 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Mon, 17 Nov 2014 15:12:41 +0000
-Subject: Re: ARM: shmobile: sh73a0: CPU1 failed to come online (Re: [PATCH 0/4] ARM: shmobile: r8a7740/armadi
-Message-Id: <20141117151241.GR4042@n2100.arm.linux.org.uk>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 12 Nov 2014 08:59:36 +0000
+Subject: [PATCH 3/4] ARM: shmobile: koelsch: Use keyboard as gpio-keys node name
+Message-Id: <1415782777-4729-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMuHMdWyUJ81G2CLpYScm9qB0KMia0PReBQ8oXdu+Z2P6AWWNg@mail.gmail.com>
-In-Reply-To: <CAMuHMdWyUJ81G2CLpYScm9qB0KMia0PReBQ8oXdu+Z2P6AWWNg@mail.gmail.com>
+References: <1415782777-4729-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1415782777-4729-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Nov 17, 2014 at 02:57:46PM +0100, Geert Uytterhoeven wrote:
-> I tried to convert sh73a0, but it doesn't work, due to problems
-> bringing up the second
-> CPU core.
-> 
-> Details:
->   - l2x0_of_init() is called much earlier than l2x0_init().
->     When the L2 cache is enabled, initialization of the second CPU core of
->     sh73a0 (Dual-core Cortex-A9) fails.
+This appears to be the best match for ePAPR.
 
-Missing L2 cache flushes for (any) the secondary core data/trampoline?
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
->   - As jiffies are not yet incrementing at that point (they are on r8a7791?),
->     timeouts don't work, and the kernel hangs at the
->     wait_for_completion_timeout() call in arch/arm/kernel/smp.c:__cpu_up().
-
-That sounds bad:
-
-start_kernel() -> rest_init() -> kernel_thread(kernel_init)
-
-kernel_init() -> kernel_init_freeable() -> smp_init() -> (for each CPU) cpu_up()
-
-By the time we get to rest_init(), init_IRQ(), time_init(),
-local_irq_enable(), late_time_init(), calibrate_delay(), etc have all
-been called, so if jiffies is not incrementing in __cpu_up(), that's
-a big problem.
-
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 0551f13..732de56 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -63,7 +63,7 @@
+ 		#size-cells = <1>;
+ 	};
+ 
+-	gpio-keys {
++	keyboard {
+ 		compatible = "gpio-keys";
+ 
+ 		key-1 {
 -- 
-FTTC broadband for 0.8mile line: currently at 9.5Mbps down 400kbps up
-according to speedtest.net.
+2.1.1
+
