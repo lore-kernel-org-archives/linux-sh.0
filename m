@@ -1,40 +1,36 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 27 Nov 2014 14:17:41 +0000
-Subject: Re: [PATCH/RFC] gpio: em: Use dynamic allocation of GPIOs
-Message-Id: <CACRpkdZ-y1bgJBYSzBRLNxughMKS86QWfauzNYGreFG_uB-0uA@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 12 Nov 2014 08:59:34 +0000
+Subject: [PATCH 1/4] ARM: shmobile: armadillo800eva: Use keyboard as gpio-keys node name
+Message-Id: <1415782777-4729-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416234632-16166-1-git-send-email-geert+renesas@glider.be>
-	<CAAVeFuKGYM56KP8TOZAwSjDGWrVNoK1phpxoOdEJ=Ng9haSnmg@mail.gmail.com>
-In-Reply-To: <CAAVeFuKGYM56KP8TOZAwSjDGWrVNoK1phpxoOdEJ=Ng9haSnmg@mail.gmail.com>
+References: <1415782777-4729-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1415782777-4729-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Alexandre Courbot <gnurou@gmail.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Magnus Damm <magnus.damm@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-SH <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Nov 18, 2014 at 4:11 AM, Alexandre Courbot <gnurou@gmail.com> wrote:
-> On Mon, Nov 17, 2014 at 11:30 PM, Geert Uytterhoeven
-> <geert+renesas@glider.be> wrote:
+This appears to be the best match for ePAPR.
 
->> -               ret = of_alias_get_id(pdev->dev.of_node, "gpio");
->> -               if (ret < 0) {
->> -                       dev_err(&pdev->dev, "Couldn't get OF id\n");
->> -                       goto err0;
->> -               }
->> -               pdata->gpio_base = ret * 32; /* 32 GPIOs per instance */
->> +               pdata->gpio_base = -1;
->
-> User-space might break because of GPIO renumbering. Why not setting
-> gpio_base to -1 when the property is not present (instead of
-> triggering an error), keeping support for the property so existing
-> boards remain safe, and marking the property as deprecated in the
-> bindings documentation?
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-I don't like the way aliases are used here.
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+index 98504e0..d4af4d8 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+@@ -78,7 +78,7 @@
+ 		regulator-boot-on;
+ 	};
+ 
+-	gpio-keys {
++	keyboard {
+ 		compatible = "gpio-keys";
+ 
+ 		power-key {
+-- 
+2.1.1
 
-These bindings are undocumented by the way :( :( :(
-
-I've applied it to wait and see what happens instead.
-
-Yours,
-Linus Walleij
