@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Mon, 10 Nov 2014 00:57:46 +0000
+Date: Wed, 12 Nov 2014 00:57:02 +0000
 Subject: Re: [PATCH 2/2] ARM: shmobile: r8a7740 dtsi: Correct IIC0 parent clock
-Message-Id: <20141110005745.GD16836@verge.net.au>
+Message-Id: <20141112005701.GA11597@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1415181874-21549-2-git-send-email-geert+renesas@glider.be>
 In-Reply-To: <1415181874-21549-2-git-send-email-geert+renesas@glider.be>
@@ -10,12 +10,28 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Nov 05, 2014 at 11:04:34AM +0100, Geert Uytterhoeven wrote:
-> According to the datasheet, the operating clock for IIC0 is the HPP
-> (RT Peri) clock, not the SUB (Peri) clock. Both clocks run at the same
-> speed (50 Mhz).
+On Mon, Nov 10, 2014 at 09:57:46AM +0900, Simon Horman wrote:
+> On Wed, Nov 05, 2014 at 11:04:34AM +0100, Geert Uytterhoeven wrote:
+> > According to the datasheet, the operating clock for IIC0 is the HPP
+> > (RT Peri) clock, not the SUB (Peri) clock. Both clocks run at the same
+> > speed (50 Mhz).
+> > 
+> > This is consistent with IIC0 being located in the A4R PM domain, and
+> > IIC1 in the A3SP PM domain.
 > 
-> This is consistent with IIC0 being located in the A4R PM domain, and
-> IIC1 in the A3SP PM domain.
+> Thanks, I have queued this up.
 
-Thanks, I have queued this up.
+Hi Geert,
+
+As this appears to be a bug fix I would like to accompany this patch with
+some text describing when the problem was introduced and what its effects
+are. In short a rough guide to if it should be applied to -stable. To that
+end I prepared the following which I would appreciate your feedback on.
+
+* ARM: shmobile: r8a7740 dtsi: Correct IIC0 parent clock  
+
+  This problem was introduced when clock support was added DT for the
+  r8a7740 by d9ffd583bf345e2ea ("ARM: shmobile: r8a7740: add SoC clocks to
+  DTS") in v3.17.
+
+  I am not aware of any run-time effect of this problem.
