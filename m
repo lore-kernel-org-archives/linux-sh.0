@@ -1,7 +1,7 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 12 Nov 2014 09:09:55 +0000
+Date: Wed, 12 Nov 2014 11:04:01 +0000
 Subject: Re: [PATCH 2/2] ARM: shmobile: r8a7740 dtsi: Correct IIC0 parent clock
-Message-Id: <CAMuHMdXC1zqjBVkdrF5Hj17RMWEOoRTXRbGq1ODO2AYSSEa0JQ@mail.gmail.com>
+Message-Id: <CAMuHMdU0OhpbyKqNx811_N0HMT2dK+qRVA4ae+=L-OqXg2psNA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1415181874-21549-2-git-send-email-geert+renesas@glider.be>
 In-Reply-To: <1415181874-21549-2-git-send-email-geert+renesas@glider.be>
@@ -10,39 +10,17 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Simon,
-
-On Wed, Nov 12, 2014 at 3:25 AM, Simon Horman <horms@verge.net.au> wrote:
-> On Wed, Nov 12, 2014 at 09:57:02AM +0900, Simon Horman wrote:
->> On Mon, Nov 10, 2014 at 09:57:46AM +0900, Simon Horman wrote:
->> > On Wed, Nov 05, 2014 at 11:04:34AM +0100, Geert Uytterhoeven wrote:
->> > > According to the datasheet, the operating clock for IIC0 is the HPP
->> > > (RT Peri) clock, not the SUB (Peri) clock. Both clocks run at the same
->> > > speed (50 Mhz).
->> > >
->> > > This is consistent with IIC0 being located in the A4R PM domain, and
->> > > IIC1 in the A3SP PM domain.
->>
->> As this appears to be a bug fix I would like to accompany this patch with
->> some text describing when the problem was introduced and what its effects
->> are. In short a rough guide to if it should be applied to -stable. To that
->> end I prepared the following which I would appreciate your feedback on.
->>
->> * ARM: shmobile: r8a7740 dtsi: Correct IIC0 parent clock
->>
->>   This problem was introduced when clock support was added DT for the
->>   r8a7740 by d9ffd583bf345e2ea ("ARM: shmobile: r8a7740: add SoC clocks to
->>   DTS") in v3.17.
+On Wed, Nov 12, 2014 at 10:09 AM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+>>>   I am not aware of any run-time effect of this problem.
 >
-> s/v3.17/v3.18-rc1/
+> Indeed. Both clocks run at the same frequency, and TTBOMK the HPP clock
+> cannot be disabled (is that correct?), so the IIC0 clock cannot be inadvertently
+> be disabled because the common part is disabled through another clock.
 
-Correct, thanks!
-
->>   I am not aware of any run-time effect of this problem.
-
-Indeed. Both clocks run at the same frequency, and TTBOMK the HPP clock
-cannot be disabled (is that correct?), so the IIC0 clock cannot be inadvertently
-be disabled because the common part is disabled through another clock.
+I have to correct myself: this patch does fix something visible.
+With CONFIG_DEBUG_LL=y, there's no longer a periof of garbage output
+on the serial console, when the i2c driver disables the IIC0 clock.
 
 Gr{oetje,eeting}s,
 
