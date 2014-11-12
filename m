@@ -1,7 +1,7 @@
 From: =?utf-8?B?U8O2cmVu?= Brinkmann <soren.brinkmann@xilinx.com>
-Date: Wed, 12 Nov 2014 18:46:26 +0000
+Date: Wed, 12 Nov 2014 19:38:58 +0000
 Subject: Re: [PATCH 2/7] pinctrl: pinconf-generic: Infer map type from DT property
-Message-Id: <ce4400ac9091437aa7da16ea131c65cd@BN1BFFO11FD005.protection.gbl>
+Message-Id: <02ceb46374884cbeaf0335ac44b9ba45@BY2FFO11FD043.protection.gbl>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1415041531-15520-1-git-send-email-soren.brinkmann@xilinx.com>
  <1415041531-15520-3-git-send-email-soren.brinkmann@xilinx.com>
@@ -34,23 +34,13 @@ ction,
 > refactor the function signature and change the other callers over instead,
 > patch the drivers.
 
-As I said in my other email. I chose to maintain current behavior to
-avoid disturbing current users. If changing this the way you suggest,
-works for everybody that is clearly preferred.
+Just looking into this, one user besides those two drivers is
+pinconf-generic: pinconf_generic_dt_node_to_map() which is called from
+ pinconf_generic_dt_node_to_map_pin() and
+ pinconf_generic_dt_node_to_map_group()
 
->=20
-> Take this opportunity to add some kerneldoc above the
-> pinconf_generic_dt_subnode_to_map() and give the function a
-> reasonable signature.
-
-Yeah, didn't want to put too much effort into it without a confirmation
-of this being on the right track.
-
->=20
-> BTW: this is just for config settings for groups right? Not for muxing
-> I hope?
-
-Yep, when 'function' is found, the pins/groups are passed to
-pinctrl_utils_add_map_mux() which always uses mux group as type.
+And those would be a couple of more users. That's why I chose to not
+change the behavior since this adds another 4 drivers to the list of
+users that might depend on certain behavior.
 
 	S=C3=B6ren
