@@ -1,58 +1,64 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Thu, 13 Nov 2014 11:07:40 +0000
-Subject: Re: [PATCH][resend] of: Add vendor 2nd prefix for Asahi Kasei Corp
-Message-Id: <20141113110740.GE3815@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="uYGmg1LLWPQm165X"
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 12 Nov 2014 08:22:43 +0000
+Subject: Re: [PATCH/RFC] ARM: shmobile: lager: Fix SPI mode of SPI-Flash into mode3
+Message-Id: <20141112082242.GU9007@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5398AB07.4040304@wwwdotorg.org>
- <87sinbdk44.wl%kuninori.morimoto.gx@renesas.com>
- <878ulzx6hr.wl%kuninori.morimoto.gx@gmail.com>
- <20140922130026.GK3290@leverpostej>
- <CAMuHMdX22z97SbGS1HDiYfJ1PXxyEN2S8D7w4sr+4bUwD+mJZw@mail.gmail.com>
- <20140922132743.GM3290@leverpostej>
- <87y4rfhmgl.wl%kuninori.morimoto.gx@renesas.com>
- <1415845309.4269.6.camel@perches.com>
- <20141113025105.GA16652@verge.net.au>
- <87vbmjhj00.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87vbmjhj00.wl%kuninori.morimoto.gx@renesas.com>
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Simon Horman <horms@verge.net.au>, Joe Perches <joe@perches.com>, Mark Rutland <mark.rutland@arm.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Olof Johansson <olof@lixom.net>, Stephen Warren <swarren@wwwdotorg.org>, Rob Herring <robh@kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, ALSA Development Mailing List <alsa-devel@alsa-project.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, "grant.likely@linaro.org" <grant.likely@linaro.org>
+References: <1414648551-30318-1-git-send-email-horms+renesas@verge.net.au>
+ <CAMuHMdVQ0s35sW=kvf80c0s++R-5uNuJQtxMcX1R5ogxNwkp9w@mail.gmail.com>
+In-Reply-To: <CAMuHMdVQ0s35sW=kvf80c0s++R-5uNuJQtxMcX1R5ogxNwkp9w@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+On Thu, Oct 30, 2014 at 10:26:33AM +0100, Geert Uytterhoeven wrote:
+> On Thu, Oct 30, 2014 at 6:55 AM, Simon Horman
+> <horms+renesas@verge.net.au> wrote:
+> > From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+> >
+> > In order to change into mode3, CPOL and CPHA bit of SPCMD register
+> > of MSIOF is changed. Mode3 can avoid intermediate voltage.
+> 
+> This is the QSPI node, not MSIOF?
 
---uYGmg1LLWPQm165X
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Indeed.
 
-On Thu, Nov 13, 2014 at 03:33:38AM +0000, Kuninori Morimoto wrote:
+Nakamura-san's patch, which I up-ported, was against the QSPI node
+but the version I posted below is indeed against the MSIOF.
 
-> > I think that what Morimoto-san wanted to say was something like this:
+Furthermore, I see that spi-cpol and spi-cpha are already present
+in the MSIOF node in mainline. I would like to withdraw this patch.
 
-> >   I guess that removing the "ak" line from vendor-prefixes.txt would
-> >   be sufficient to cause checkpatch to generate a warning about
-> >   using the deprecated "ak" vendor prefix. Is that a good approach?
-
-> Yes, this is.
-> Thank you Simon, Sorry Joe.
-
-It'd be a bit nicer to be able to leave it there with a note saying it
-was legacy (if only so people don't try to add it back) but I don't mind
-too much.
-
---uYGmg1LLWPQm165X
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQEcBAEBAgAGBQJUZJD7AAoJECTWi3JdVIfQTcwH/iqbf8HyIXkT9aD8GTzeQF+E
-QjfY2W/KOY6HGjGPuCixw2+tvHCWg6oUzFLti0q0q3VJctk/S3nvynGcMujndTGi
-HsLHd7JZ/2fJkr8Ov1g5DXX8BzbklfE9uG2YzBa9blFyqI24QO16VJlVRsTigarz
-osaC9BPvGu96leqvXWdpwJDK+rRef27kuMKnaeb+3tqpRUMCCmmn55iaxWYIIvwz
-jbVXYbTBm1gdNi7Nf411YTJ3Hwe463qFemX2/XgVe32qjX7HF7mrEmBHbjGHeAWz
-F0j3dmSEoRsFvQm0yG5LuMoYGQtFss0dd/AyE+rokv6ykGZdl/OJRgpWvCPpjms=
-=ts6R
------END PGP SIGNATURE-----
-
---uYGmg1LLWPQm165X--
+> > Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> > ---
+> > Based on the renesas-devel-20141030-v3.18-rc2 branch of my renesas tree
+> >
+> >  arch/arm/boot/dts/r8a7790-lager.dts | 2 ++
+> >  1 file changed, 2 insertions(+)
+> >
+> > diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+> > index 830f2e8..1606fad 100644
+> > --- a/arch/arm/boot/dts/r8a7790-lager.dts
+> > +++ b/arch/arm/boot/dts/r8a7790-lager.dts
+> > @@ -343,6 +343,8 @@
+> >                 spi-tx-bus-width = <4>;
+> >                 spi-rx-bus-width = <4>;
+> >                 m25p,fast-read;
+> > +               spi-cpol;
+> > +               spi-cpha;
+> >
+> >                 partition@0 {
+> >                         label = "loader";
+> 
+> Gr{oetje,eeting}s,
+> 
+>                         Geert
+> 
+> --
+> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+> 
+> In personal conversations with technical people, I call myself a hacker. But
+> when I'm talking to journalists I just say "programmer" or something like that.
+>                                 -- Linus Torvalds
+> 
