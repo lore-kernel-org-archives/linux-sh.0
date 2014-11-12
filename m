@@ -1,68 +1,44 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Mon, 10 Nov 2014 00:48:10 +0000
+Date: Wed, 12 Nov 2014 00:33:08 +0000
 Subject: Re: [PATCH v2] ARM: shmobile: r8a7740 legacy: Add missing INTCA clock for irqpin module
-Message-Id: <20141110004809.GB16836@verge.net.au>
+Message-Id: <20141112003307.GA30454@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1415221174-29097-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1415221174-29097-1-git-send-email-geert+renesas@glider.be>
+ <20141110004809.GB16836@verge.net.au>
+In-Reply-To: <20141110004809.GB16836@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Nov 05, 2014 at 09:59:34PM +0100, Geert Uytterhoeven wrote:
-> This clock drives the irqpin controller modules.
-> Before, it was assumed enabled by the bootloader or reset state.
-> By making it available to the driver, we make sure it gets enabled when
-> needed, and allow it to be managed by system or runtime PM.
+On Mon, Nov 10, 2014 at 09:48:10AM +0900, Simon Horman wrote:
+> On Wed, Nov 05, 2014 at 09:59:34PM +0100, Geert Uytterhoeven wrote:
+> > This clock drives the irqpin controller modules.
+> > Before, it was assumed enabled by the bootloader or reset state.
+> > By making it available to the driver, we make sure it gets enabled when
+> > needed, and allow it to be managed by system or runtime PM.
+> > 
+> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 > 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Thanks Geert,
-
-I have queued this up after dropping the previous version.
-
-> ---
-> v2:
->   - Index div4_clks[] instead of div6_clks[] (i.e. squashed in "ARM:
->     shmobile: r8a7740 legacy: Fix INTCA clock parent"),
->   - Extend commit message.
-> ---
->  arch/arm/mach-shmobile/clock-r8a7740.c | 7 ++++++-
->  1 file changed, 6 insertions(+), 1 deletion(-)
+> Thanks Geert,
 > 
-> diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-> index 969e85dad09b3588..dbb0ab283e2fe91f 100644
-> --- a/arch/arm/mach-shmobile/clock-r8a7740.c
-> +++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-> @@ -451,7 +451,7 @@ enum {
->  	MSTP128, MSTP127, MSTP125,
->  	MSTP116, MSTP111, MSTP100, MSTP117,
->  
-> -	MSTP230,
-> +	MSTP230, MSTP229,
->  	MSTP222,
->  	MSTP218, MSTP217, MSTP216, MSTP214,
->  	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
-> @@ -475,6 +475,7 @@ static struct clk mstp_clks[MSTP_NR] = {
->  	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_B],	SMSTPCR1,  0, 0), /* LCDC0 */
->  
->  	[MSTP230] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR2, 30, 0), /* SCIFA6 */
-> +	[MSTP229] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR2, 29, 0), /* INTCA */
->  	[MSTP222] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR2, 22, 0), /* SCIFA7 */
->  	[MSTP218] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],  SMSTPCR2, 18, 0), /* DMAC1 */
->  	[MSTP217] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],  SMSTPCR2, 17, 0), /* DMAC2 */
-> @@ -571,6 +572,10 @@ static struct clk_lookup lookups[] = {
->  	CLKDEV_DEV_ID("sh-dma-engine.0",	&mstp_clks[MSTP218]),
->  	CLKDEV_DEV_ID("sh-sci.7",		&mstp_clks[MSTP222]),
->  	CLKDEV_DEV_ID("e6cd0000.serial",	&mstp_clks[MSTP222]),
-> +	CLKDEV_DEV_ID("renesas_intc_irqpin.0",	&mstp_clks[MSTP229]),
-> +	CLKDEV_DEV_ID("renesas_intc_irqpin.1",	&mstp_clks[MSTP229]),
-> +	CLKDEV_DEV_ID("renesas_intc_irqpin.2",	&mstp_clks[MSTP229]),
-> +	CLKDEV_DEV_ID("renesas_intc_irqpin.3",	&mstp_clks[MSTP229]),
->  	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
->  	CLKDEV_DEV_ID("e6cc0000.serial",	&mstp_clks[MSTP230]),
->  
-> -- 
-> 1.9.1
-> 
+> I have queued this up after dropping the previous version.
+
+Hi Geert,
+
+As this appears to be a bug fix I would like to accompany this patch with
+some text describing when the problem was introduced and what its effects
+are. In short a rough guide to if it should be applied to -stable. To that
+end I prepared the following which I would appreciate your feedback on.
+
+* Add missing INTCA clock for irqpin module for r8a7740
+
+  This problem appears to have been introduced when the r8a7740 started
+  using the irqpin driver, a change made by 0b7d7820226016205 ("ARM:    
+  shmobile: r8a7740: Migrate from INTC to GIC") in v3.9.
+  It may well have existed in a different form before then.
+
+  It is my understanding that the problem problem only manifests if either:
+  * uboot does not start the clock: in practice it does      
+  * The A4S pm domain is in use managed by system or runtime pm.
+    I believe this may only occur since v3.18-rc2   
