@@ -1,51 +1,64 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 20 Nov 2014 08:56:23 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Clock Fixes for v3.18
-Message-Id: <CAMuHMdXf2ndhmnx1c2jXp_QOrgibJPFvwVoxqndn=GFw=HV2aA@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 12 Nov 2014 08:59:49 +0000
+Subject: [PATCH] ARM: shmobile: r8a7790: add missing DVC DMA entry on DTSI
+Message-Id: <877fz0oku3.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415757100.git.horms+renesas@verge.net.au>
- <201411192220.20365.arnd@arndb.de>
-In-Reply-To: <201411192220.20365.arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Arnd,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Wed, Nov 19, 2014 at 10:20 PM, Arnd Bergmann <arnd@arndb.de> wrote:
-> On Thursday 13 November 2014, Simon Horman wrote:
->> Please consider these Renesas ARM based SoC clock fixes for v3.18.
->> Or alternatively for v3.19 if you feel they are too late for v3.18.
->
-> I've merged all three 'fixes' pull requests you had into the fixes
-> branch:
->
-> Renesas ARM Based SoC Clock Fixes for v3.18
-> Renesas ARM Based SoC DT Fixes for v3.18
-> Renesas ARM Based SoC Fixes for v3.18
->
-> I'm still waiting for a reply from Olof, since he seems to have
-> skipped them last week when he sent the fixes pull request to Linus.
-> If he had already decided to postpone the branches for 3.19, I'll
-> just undo the merge here and put it into next/fixes-non-critical
-> instead, I'm fine with it either way.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi |   26 ++++++++++++++++++++++++--
+ 1 file changed, 24 insertions(+), 2 deletions(-)
 
-I agree the first two are non-critical.
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index a17f563..52f495f 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1477,7 +1477,18 @@
+ 				<&audmapp 0x0f32>,	<&audmapp 0x0f33>,	<&audmapp 0x0f34>,	<&audmapp 0x0f35>,	<&audmapp 0x0f36>,
+ 				<&audmapp 0x1032>,	<&audmapp 0x1033>,	<&audmapp 0x1034>,	<&audmapp 0x1035>,	<&audmapp 0x1036>,
+ 				<&audmapp 0x1132>,	<&audmapp 0x1133>,	<&audmapp 0x1134>,	<&audmapp 0x1135>,	<&audmapp 0x1136>,
+-				<&audmapp 0x1232>,	<&audmapp 0x1233>,	<&audmapp 0x1234>,	<&audmapp 0x1235>,	<&audmapp 0x1236>;
++				<&audmapp 0x1232>,	<&audmapp 0x1233>,	<&audmapp 0x1234>,	<&audmapp 0x1235>,	<&audmapp 0x1236>,
++
++				<&audmapp 0x3700>,	<&audmapp 0x3800>,
++				<&audmapp 0x3704>,	<&audmapp 0x3804>,
++				<&audmapp 0x3708>,	<&audmapp 0x3808>,
++				<&audmapp 0x370c>,	<&audmapp 0x380c>,
++				<&audmapp 0x370d>,	<&audmapp 0x380d>,
++				<&audmapp 0x370e>,	<&audmapp 0x380e>,
++				<&audmapp 0x370f>,	<&audmapp 0x380f>,
++				<&audmapp 0x3710>,	<&audmapp 0x3810>,
++				<&audmapp 0x3711>,	<&audmapp 0x3811>,
++				<&audmapp 0x3712>,	<&audmapp 0x3812>;
+ 
+ 		dma-names =	"mem_ssi0",	"ssi0_mem",	"mem_ssiu0",	"ssiu0_mem",
+ 				"mem_ssi1",	"ssi1_mem",	"mem_ssiu1",	"ssiu1_mem",
+@@ -1543,7 +1554,18 @@
+ 				"ssiu6_src5",		"ssiu6_src6",		"ssiu6_src7",		"ssiu6_src8",		"ssiu6_src9",
+ 				"ssiu7_src5",		"ssiu7_src6",		"ssiu7_src7",		"ssiu7_src8",		"ssiu7_src9",
+ 				"ssiu8_src5",		"ssiu8_src6",		"ssiu8_src7",		"ssiu8_src8",		"ssiu8_src9",
+-				"ssiu9_src5",		"ssiu9_src6",		"ssiu9_src7",		"ssiu9_src8",		"ssiu9_src9";
++				"ssiu9_src5",		"ssiu9_src6",		"ssiu9_src7",		"ssiu9_src8",		"ssiu9_src9",
++
++				"dvc0_ssiu0",		"dvc1_ssiu0",
++				"dvc0_ssiu1",		"dvc1_ssiu1",
++				"dvc0_ssiu2",		"dvc1_ssiu2",
++				"dvc0_ssiu3",		"dvc1_ssiu3",
++				"dvc0_ssiu4",		"dvc1_ssiu4",
++				"dvc0_ssiu5",		"dvc1_ssiu5",
++				"dvc0_ssiu6",		"dvc1_ssiu6",
++				"dvc0_ssiu7",		"dvc1_ssiu7",
++				"dvc0_ssiu8",		"dvc1_ssiu8",
++				"dvc0_ssiu9",		"dvc1_ssiu9";
+ 
+ 		status = "disabled";
+ 
+-- 
+1.7.9.5
 
-The third, "Renesas ARM Based SoC Fixes for v3.18" may fix a regression
-introduced in v3.16. While the original problem with the i2c timings was
-indeed present in v2.6.37, the i2c bys most probably "just worked" (albeit with
-wrong timings), until the i2c-sh_mobile driver got more picky in commit
-7663ebefca8079ef ("i2c: sh_mobile: check timing parameters for valid range").
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
