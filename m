@@ -1,51 +1,94 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 24 Nov 2014 13:22:42 +0000
-Subject: DIV6 Bus State Controller clock on sh73a0/r8a73a4
-Message-Id: <CAMuHMdWwVsaaTTrgQ1jNFiy5uMuU3p30r+nLJaSS0vAtbb73pQ@mail.gmail.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 12 Nov 2014 08:35:17 +0000
+Subject: Re: next build: 355 warnings 7 failures (next/next-20141112)
+Message-Id: <2043641.Fxl9XYOHjL@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-While debugging an issue with the sh73a0's BSC (Bus State Controller) clock
-on kzm9g-multiplatform, I noticed it's running at the wrong frequency:
+On Wednesday 12 November 2014 00:05:05 Olof's autobuilder wrote:
+> 
+> 	arm.allmodconfig:
+> /tmp/ccHK7J0q.s:366: Error: selected processor does not support ARM mode `isb'
+> /tmp/ccHK7J0q.s:369: Error: selected processor does not support ARM mode `isb'
+> /tmp/ccHK7J0q.s:371: Error: selected processor does not support ARM mode `isb'
 
-# cat /sys/kernel/debug/clk/zb/clk_rate
-208000000
+I sent a patch yesterday to shmobile folks, got an Ack from Geert.
 
-According to the sh73a0 datasheet, the ZB clock runs at 104 MHz, not 208 MHz.
-Note that the ZB clock also has this wrong value when using the pre-CCF clock
-code.
+> drivers/crypto/talitos.c:96:2: error: implicit declaration of function 'setbits32' [-Werror=implicit-function-declaration]
+> drivers/crypto/talitos.c:98:2: error: implicit declaration of function 'in_be32' [-Werror=implicit-function-declaration]
+> drivers/crypto/talitos.c:233:2: error: implicit declaration of function 'out_be32' [-Werror=implicit-function-declaration]
 
-The divider value used for this clock is 2, which is the default value.
-Hence the DIV6 driver divides the pll1_div2 clock rate by 3 to get the BSC clock
-rate.
+IMX/LS1021A selects FSL_SOC, which enables powerpc-only drivers.
+Sent a patch to Shawn.
 
-# cat /sys/kernel/debug/clk/pll1_div2/clk_rate
-624000000
+> drivers/dma/fsldma.h:194:2: error: implicit declaration of function 'in_be32' [-Werror=implicit-function-declaration]
+> drivers/dma/fsldma.h:200:2: error: implicit declaration of function 'out_be32' [-Werror=implicit-function-declaration]
+> drivers/dma/fsldma.h:207:2: error: implicit declaration of function 'in_le32' [-Werror=implicit-function-declaration]
+> drivers/spi/spi-fsl-cpm.c:18:21: fatal error: asm/cpm.h: No such file or directory
+> drivers/spi/spi-fsl-lib.c:27:28: fatal error: sysdev/fsl_soc.h: No such file or directory
+> drivers/spi/spi-fsl-espi.c:24:28: fatal error: sysdev/fsl_soc.h: No such file or directory
+> drivers/net/ethernet/freescale/xgmac_mdio.c:57:2: error: implicit declaration of function 'spin_event_timeout' [-Werror=implicit-function-declaration]
+> drivers/net/ethernet/freescale/xgmac_mdio.c:58:3: error: implicit declaration of function 'in_be32' [-Werror=implicit-function-declaration]
+> drivers/virt/fsl_hypervisor.c:44:28: fatal error: asm/fsl_hcalls.h: No such file or directory
+> drivers/usb/host/ehci-fsl.c:120:3: error: implicit declaration of function 'setbits32' [-Werror=implicit-function-declaration]
+> drivers/usb/host/ehci-fsl.c:216:4: error: implicit declaration of function 'clrbits32' [-Werror=implicit-function-> drivers/usb/phy/phy-fsl-usb.c:277:23: error: 'struct usb_phy' has no member named 'state'
+> drivers/usb/phy/phy-fsl-usb.c:627:7: error: request for member 'state' in something not a structure or union
+>     otg.state = OTG_STATE_UNDEFINED;
+> drivers/usb/phy/phy-fsl-usb.c:685:14: error: request for member 'state' in something not a structure or union
+> drivers/video/fbdev/fsl-diu-fb.c:37:28: fatal error: sysdev/fsl_soc.h: No such file or directory
 
-However, the documentation for the "BSC Clock Frequency Control Register
-(ZBCKCR)" states (for both sh73a0 and r8a73a4):
+And lots more of the same.
+ 
+> 	arm.davinci_all_defconfig:
+> drivers/tty/vt/vt.c:2703:4: error: implicit declaration of function 'vt_get_kmsg_redirect' [-Werror=implicit-function-declaration]
 
-    The clock source specified by EXSRC is divided by the division ratio
-    of 1 / (2 *(setting + 1)).
+Haven't looked at that one yet.
 
-Note the "2". Other DIV6 clocks do not have this "2" there.
-As the driver cannot know about this without external input, I'm afraid the
-DIV6 bindings must be amended, e.g. by adding an additional property for a
-post-divider value?
+> 	arm.dove_defconfig:
+> arch/arm/plat-orion/gpio.c:509:12: error: too few arguments to function 'irq_reg_readl'
+> arch/arm/plat-orion/gpio.c:511:2: error: too few arguments to function 'irq_reg_writel'
+> arch/arm/plat-orion/gpio.c:523:12: error: too few arguments to function 'irq_reg_readl'
+> arch/arm/plat-orion/gpio.c:525:2: error: too few arguments to function 'irq_reg_writel'
 
-Fortunately there are no real ill effects of this, as nobody really uses
-(gets/sets) the rate of the BSC clock.
+This must be a result of the generic irqchip changes that Kevin Cernekee
+did clashing with Evgeniy's "ARM: orion: Fix for certain sequence of
+request_irq can cause irq storm". Jason applied both patches, so I'll let
+him figure out a solution. The necessary change should be trivial. Jason,
+I suspect it's best if you apply Evgeniy's patch to the irqchip tree instead
+of the mvebu/soc tree. Feel free to add my Ack when you do that.
 
-Gr{oetje,eeting}s,
+> 
+> Warnings:
+>       1 arch/arm64/kernel/efi.c:276:20: warning: 'free_end' may be used uninitialized in this function [-Wmaybe-uninitialized]
 
-                        Geert
+No idea. Maybe added by the compiler update?
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+>       1 arch/arm/include/asm/irqflags.h:152:2: warning: 'flags' may be used uninitialized in this function [-Wmaybe-uninitialized]
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Missing context, no idea where this came from.
+
+>       1 arch/arm/mach-cns3xxx/pcie.c:313:1: warning: the frame size of 1080 bytes is larger than 1024 bytes [-Wframe-larger-than=]
+
+Old, have a patch that I should submit.
+
+>       5 fs/binfmt_elf.c:718:13: warning: passing argument 1 of 'arch_elf_pt_proc' from incompatible pointer type
+>       5 fs/binfmt_elf.c:718:13: warning: passing argument 2 of 'arch_elf_pt_proc' from incompatible pointer type
+>       5 fs/binfmt_elf.c:747:14: warning: passing argument 1 of 'arch_elf_pt_proc' from incompatible pointer type
+>       5 fs/binfmt_elf.c:747:14: warning: passing argument 2 of 'arch_elf_pt_proc' from incompatible pointer type
+>       5 fs/binfmt_elf.c:761:11: warning: passing argument 1 of 'arch_check_elf' from incompatible pointer type
+>     127 include/linux/elf.h:84:15: warning: its scope is only this definition or declaration, which is probably not what you want
+>     127 include/linux/elf.h:84:15: warning: 'struct file' declared inside parameter list
+
+These look new, let's hope for them to get noticed.
+
+> Section mismatches:
+>       1 multi_lpae_defconfig WARNING: vmlinux.o(.text+0x238e68): Section mismatch in reference from the function brcmstb_gisb_arb_probe() to the function .init.text:hook_fault_code()
+>       1 multi_v7_defconfig WARNING: vmlinux.o(.text+0x238e68): Section mismatch in reference from the function brcmstb_gisb_arb_probe() to the function .init.text:hook_fault_code()
+
+Introduced by the bcma bus driver we just merged.
+
+	Arnd
+
