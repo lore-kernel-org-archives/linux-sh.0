@@ -1,47 +1,48 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Wed, 12 Nov 2014 08:53:45 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 12 Nov 2014 09:14:25 +0000
 Subject: Re: [PATCH 3/4] ARM: shmobile: rcar-gen2: Add CA7 arch_timer initialization for r8a7794
-Message-Id: <2020527.4axRFYCiLW@wuerfel>
+Message-Id: <20141112091425.GB9007@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1415058939.git.horms+renesas@verge.net.au>
  <CAMuHMdUek9RA-tpVJbXKx1MENk47-E2s+437+SYNR9KbaO62dQ@mail.gmail.com>
- <20141111235954.GA12594@verge.net.au>
-In-Reply-To: <20141111235954.GA12594@verge.net.au>
+ <20141111235954.GA12594@verge.net.au> <2020527.4axRFYCiLW@wuerfel>
+In-Reply-To: <2020527.4axRFYCiLW@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wednesday 12 November 2014 08:59:55 Simon Horman wrote:
-> > > From 8bf0a4cae3137411498ff23ca46f693e4c22a25b Mon Sep 17 00:00:00 2001
-> > > From: Arnd Bergmann <arnd@arndb.de>
-> > > Date: Tue, 11 Nov 2014 16:36:50 +0100
-> > > Subject: [PATCH] ARM: shmobile: always build rcar setup for armv7
-> > >
-> > > In a combined ARMv6/v7 kernel, the setup-rcar-gen2.c cannot
-> > > currently be compiled correctly because it uses the isb
-> > > instruction that is not available on ARMv6. Adding the
-> > > -march=armv7-a flag lets the compiler know that it is safe
-> > > to build this file for ARMv7.
-> > >
-> > > Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+On Wed, Nov 12, 2014 at 09:53:45AM +0100, Arnd Bergmann wrote:
+> On Wednesday 12 November 2014 08:59:55 Simon Horman wrote:
+> > > > From 8bf0a4cae3137411498ff23ca46f693e4c22a25b Mon Sep 17 00:00:00 2001
+> > > > From: Arnd Bergmann <arnd@arndb.de>
+> > > > Date: Tue, 11 Nov 2014 16:36:50 +0100
+> > > > Subject: [PATCH] ARM: shmobile: always build rcar setup for armv7
+> > > >
+> > > > In a combined ARMv6/v7 kernel, the setup-rcar-gen2.c cannot
+> > > > currently be compiled correctly because it uses the isb
+> > > > instruction that is not available on ARMv6. Adding the
+> > > > -march=armv7-a flag lets the compiler know that it is safe
+> > > > to build this file for ARMv7.
+> > > >
+> > > > Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+> > > 
+> > > Thanks, this is a better solution than "[RFT] ARM: shmobile: rcar-gen2:
+> > > Fix build breakage" (https://lkml.org/lkml/2014/10/31/338).
+> > > 
+> > > Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 > > 
-> > Thanks, this is a better solution than "[RFT] ARM: shmobile: rcar-gen2:
-> > Fix build breakage" (https://lkml.org/lkml/2014/10/31/338).
+> > Agreed.
 > > 
-> > Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> > Acked-by: Simon Horman <horms+renesas@verge.net.au>
+> > 
+> > Arnd, what is the best way to get this patch merged?
+> > Do you plan to take it or should I?
 > 
-> Agreed.
-> 
-> Acked-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> Arnd, what is the best way to get this patch merged?
-> Do you plan to take it or should I?
+> I believe the problem only exists in your tree at the moment, not in arm-soc,
+> so please apply it on top of the branch that introduced the build error
+> before sending it to arm-soc. If you have already sent a pull request
+> but we haven't taken it yet, send an updated pull request that adds
+> this patch.
 
-I believe the problem only exists in your tree at the moment, not in arm-soc,
-so please apply it on top of the branch that introduced the build error
-before sending it to arm-soc. If you have already sent a pull request
-but we haven't taken it yet, send an updated pull request that adds
-this patch.
-
-	Arnd
+Sure, will do.
