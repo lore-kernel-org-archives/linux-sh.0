@@ -1,81 +1,80 @@
-From: Yijing Wang <wangyijing@huawei.com>
-Date: Thu, 20 Nov 2014 01:49:05 +0000
-Subject: Re: [PATCH 5/5] PCI: Rip out pci_bus_add_devices() from pci_scan_root_bus()
-Message-Id: <546D4891.80503@huawei.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 12 Nov 2014 08:55:57 +0000
+Subject: [PATCH v2 2/2] ARM: shmobile: r8a7794: Add MMP and VSP1 clocks to device tree
+Message-Id: <1415782557-29550-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416382369-13587-1-git-send-email-wangyijing@huawei.com>
- <1416382369-13587-6-git-send-email-wangyijing@huawei.com>
- <1645037.uypArjN50l@wuerfel>
-In-Reply-To: <1645037.uypArjN50l@wuerfel>
+References: <1415782557-29550-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1415782557-29550-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
->> diff --git a/arch/alpha/kernel/pci.c b/arch/alpha/kernel/pci.c
->> index 076c35c..97f9730 100644
->> --- a/arch/alpha/kernel/pci.c
->> +++ b/arch/alpha/kernel/pci.c
->> @@ -334,6 +334,8 @@ common_init_pci(void)
->>  
->>  		bus = pci_scan_root_bus(NULL, next_busno, alpha_mv.pci_ops,
->>  					hose, &resources);
->> +		if (bus)
->> +			pci_bus_add_devices(bus);
->>  		hose->bus = bus;
->>  		hose->need_domain_info = need_domain_info;
->>  		next_busno = bus->busn_res.end + 1;
-> 
-> How about making pci_bus_add_devices() handle a NULL argument to save
-> the if() here and elsewhere?
+From: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
 
-This make sense, will update it, thanks!
+Signed-off-by: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
->> diff --git a/arch/mips/pci/pci.c b/arch/mips/pci/pci.c
->> index 1bf60b1..f083688 100644
->> --- a/arch/mips/pci/pci.c
->> +++ b/arch/mips/pci/pci.c
->> @@ -113,6 +113,7 @@ static void pcibios_scanbus(struct pci_controller *hose)
->>  		if (!pci_has_flag(PCI_PROBE_ONLY)) {
->>  			pci_bus_size_bridges(bus);
->>  			pci_bus_assign_resources(bus);
->> +			pci_bus_add_devices(bus);
->>  		}
->>  	}
->>  }
-> 
-> This one looks wrong, I think you still want to call pci_bus_add_devices()
-> even with PCI_PROBE_ONLY set.
+---
+v2
+* As suggested by Geert Uytterhoeven
+  - Use "2ddmac" and "fdp1-0" for names
+---
+ arch/arm/boot/dts/r8a7794.dtsi            | 14 +++++++++-----
+ include/dt-bindings/clock/r8a7794-clock.h |  6 ++++++
+ 2 files changed, 15 insertions(+), 5 deletions(-)
 
-Yes, this is my mistake, :(
-
-> 
->> diff --git a/arch/tile/kernel/pci.c b/arch/tile/kernel/pci.c
->> index 1f80a88..007466e 100644
->> --- a/arch/tile/kernel/pci.c
->> +++ b/arch/tile/kernel/pci.c
->> @@ -308,6 +308,8 @@ int __init pcibios_init(void)
->>  			pci_add_resource(&resources, &iomem_resource);
->>  			bus = pci_scan_root_bus(NULL, 0, controller->ops,
->>  						controller, &resources);
->> +			if (bus)
->> +				pci_bus_add_devices(bus);
->>  			controller->root_bus = bus;
->>  			controller->last_busno = bus->busn_res.end;
->>  		}
-> 
-> Should the pci_bus_add_devices come after setting the bus numbers here?
-
-I think it's doesn't matter, but move it backward is ok to me.
-
-> 
-> 	Arnd
-> 
-> .
-> 
-
-
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index b6f8f45..19c9de3 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -461,15 +461,19 @@
+ 		mstp1_clks: mstp1_clks@e6150134 {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
+-			clocks = <&p_clk>, <&zg_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
+-				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>;
++			clocks = <&zs_clk>, <&zs_clk>, <&p_clk>, <&zg_clk>, <&zs_clk>,
++				 <&zs_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>, <&cp_clk>,
++				 <&zs_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+-				R8A7794_CLK_TMU1 R8A7794_CLK_3DG R8A7794_CLK_TMU3
+-				R8A7794_CLK_TMU2 R8A7794_CLK_CMT0 R8A7794_CLK_TMU0
++				R8A7794_CLK_VCP0 R8A7794_CLK_VPC0 R8A7794_CLK_TMU1
++				R8A7794_CLK_3DG R8A7794_CLK_2DDMAC R8A7794_CLK_FDP1_0
++				R8A7794_CLK_TMU3 R8A7794_CLK_TMU2 R8A7794_CLK_CMT0
++				R8A7794_CLK_TMU0 R8A7794_CLK_VSP1_DU0 R8A7794_CLK_VSP1_S
+ 			>;
+ 			clock-output-names -				"tmu1", "3dg", "tmu3", "tmu2", "cmt0", "tmu0";
++				"vcp0", "vpc0", "tmu1", "3dg", "2ddmac", "fdp1-0",
++				"tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du0", "vsps";
+ 		};
+ 		mstp2_clks: mstp2_clks@e6150138 {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
+index 9066213..aa9c286 100644
+--- a/include/dt-bindings/clock/r8a7794-clock.h
++++ b/include/dt-bindings/clock/r8a7794-clock.h
+@@ -26,12 +26,18 @@
+ #define R8A7794_CLK_MSIOF0		0
+ 
+ /* MSTP1 */
++#define R8A7794_CLK_VCP0		1
++#define R8A7794_CLK_VPC0		3
+ #define R8A7794_CLK_TMU1		11
+ #define R8A7794_CLK_3DG			12
++#define R8A7794_CLK_2DDMAC		15
++#define R8A7794_CLK_FDP1_0		19
+ #define R8A7794_CLK_TMU3		21
+ #define R8A7794_CLK_TMU2		22
+ #define R8A7794_CLK_CMT0		24
+ #define R8A7794_CLK_TMU0		25
++#define R8A7794_CLK_VSP1_DU0		28
++#define R8A7794_CLK_VSP1_S		31
+ 
+ /* MSTP2 */
+ #define R8A7794_CLK_SCIFA2		2
 -- 
-Thanks!
-Yijing
+2.1.1
 
