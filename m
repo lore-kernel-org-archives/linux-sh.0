@@ -1,49 +1,64 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 04 Nov 2014 01:49:12 +0000
-Subject: [PATCH 17/23 v3] ARM: shmobile: koelsch: Sound DMA support on DTS
-Message-Id: <87bnon91lr.wl%kuninori.morimoto.gx@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 12 Nov 2014 14:04:57 +0000
+Subject: renesas-drivers-2014-11-12-v3.18-rc4
+Message-Id: <1415801097-26807-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+I've pushed renesas-drivers-2014-11-12-v3.18-rc4 to
+https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+This tree is meant to ease development of platform support and drivers for
+Renesas ARM ("shmobile") SoCs. It's created by merging (a) branches with
+driver code submitted to maintainers and (b) the for-next branches of various
+subsystem trees into the development branch of Simon Horman's renesas.git tree.
 
-DMA transfer to/from SSI
+Today's version is based on renesas-devel-20141112-v3.18-rc4.
 
-     DMA
-[MEM] -> [SSI]
+Included branches with driver code:
+  - div6-clk-for-3.19 (clk: shmobile: DIV6 clock variable parent support (from
+    Ulrich Hecht)
 
-     DMA
-[MEM] <- [SSI]
+Included subsystem trees:
+  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
+  - git://git.linaro.org/people/mturquette/linux.git#clk-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
+  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
+  - git://gitorious.org/linux-can/linux-can-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
+  - git://people.freedesktop.org/~airlied/linux#drm-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
+  - git://linuxtv.org/mchehab/media-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
+  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
+  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
+  - git://git.infradead.org/users/vkoul/slave-dma.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
+  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
+  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v2 -> v3
+Gr{oetje,eeting}s,
 
- - no change
+						Geert
 
- arch/arm/boot/dts/r8a7791-koelsch.dts |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 90433a7..0ceb6c6 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -576,10 +576,10 @@
- };
- 
- &ssi0 {
--	pio-transfer;
-+	no-busif;
- };
- 
- &ssi1 {
--	pio-transfer;
-+	no-busif;
- 	shared-pin;
- };
--- 
-1.7.9.5
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
