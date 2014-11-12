@@ -1,44 +1,50 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 12 Nov 2014 00:33:08 +0000
+Date: Wed, 12 Nov 2014 02:33:16 +0000
 Subject: Re: [PATCH v2] ARM: shmobile: r8a7740 legacy: Add missing INTCA clock for irqpin module
-Message-Id: <20141112003307.GA30454@verge.net.au>
+Message-Id: <20141112023315.GI11597@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1415221174-29097-1-git-send-email-geert+renesas@glider.be>
  <20141110004809.GB16836@verge.net.au>
-In-Reply-To: <20141110004809.GB16836@verge.net.au>
+ <20141112003307.GA30454@verge.net.au>
+In-Reply-To: <20141112003307.GA30454@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Nov 10, 2014 at 09:48:10AM +0900, Simon Horman wrote:
-> On Wed, Nov 05, 2014 at 09:59:34PM +0100, Geert Uytterhoeven wrote:
-> > This clock drives the irqpin controller modules.
-> > Before, it was assumed enabled by the bootloader or reset state.
-> > By making it available to the driver, we make sure it gets enabled when
-> > needed, and allow it to be managed by system or runtime PM.
+On Wed, Nov 12, 2014 at 09:33:08AM +0900, Simon Horman wrote:
+> On Mon, Nov 10, 2014 at 09:48:10AM +0900, Simon Horman wrote:
+> > On Wed, Nov 05, 2014 at 09:59:34PM +0100, Geert Uytterhoeven wrote:
+> > > This clock drives the irqpin controller modules.
+> > > Before, it was assumed enabled by the bootloader or reset state.
+> > > By making it available to the driver, we make sure it gets enabled when
+> > > needed, and allow it to be managed by system or runtime PM.
+> > > 
+> > > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 > > 
-> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> > Thanks Geert,
+> > 
+> > I have queued this up after dropping the previous version.
 > 
-> Thanks Geert,
+> Hi Geert,
 > 
-> I have queued this up after dropping the previous version.
+> As this appears to be a bug fix I would like to accompany this patch with
+> some text describing when the problem was introduced and what its effects
+> are. In short a rough guide to if it should be applied to -stable. To that
+> end I prepared the following which I would appreciate your feedback on.
+> 
+> * Add missing INTCA clock for irqpin module for r8a7740
+> 
+>   This problem appears to have been introduced when the r8a7740 started
+>   using the irqpin driver, a change made by 0b7d7820226016205 ("ARM:    
+>   shmobile: r8a7740: Migrate from INTC to GIC") in v3.9.
+>   It may well have existed in a different form before then.
+> 
+>   It is my understanding that the problem problem only manifests if either:
+>   * uboot does not start the clock: in practice it does      
+>   * The A4S pm domain is in use managed by system or runtime pm.
+>     I believe this may only occur since v3.18-rc2   
 
-Hi Geert,
+I think the above line should read
 
-As this appears to be a bug fix I would like to accompany this patch with
-some text describing when the problem was introduced and what its effects
-are. In short a rough guide to if it should be applied to -stable. To that
-end I prepared the following which I would appreciate your feedback on.
-
-* Add missing INTCA clock for irqpin module for r8a7740
-
-  This problem appears to have been introduced when the r8a7740 started
-  using the irqpin driver, a change made by 0b7d7820226016205 ("ARM:    
-  shmobile: r8a7740: Migrate from INTC to GIC") in v3.9.
-  It may well have existed in a different form before then.
-
-  It is my understanding that the problem problem only manifests if either:
-  * uboot does not start the clock: in practice it does      
-  * The A4S pm domain is in use managed by system or runtime pm.
-    I believe this may only occur since v3.18-rc2   
+     I believe this may only occur with patches queued up for v3.19.
