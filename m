@@ -1,44 +1,60 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Tue, 04 Nov 2014 22:39:37 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Soc Cleanups for v3.19
-Message-Id: <20141104223937.GG5908@quad.lixom.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Nov 2014 01:20:12 +0000
+Subject: [PATCH 21/25] ARM: shmobile: koelsch: Sound DMA support via DVC on DTS
+Message-Id: <be97956cd25198ec99298afb05446423ccb25bbc.1415755881.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1414556645.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1414556645.git.horms+renesas@verge.net.au>
+References: <cover.1415755881.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415755881.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Oct 29, 2014 at 02:00:05PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these Renesas ARM based SoC soc cleanups for v3.19.
-> 
-> 
-> The following changes since commit f114040e3ea6e07372334ade75d1ee0775c355e1:
-> 
->   Linux 3.18-rc1 (2014-10-19 18:08:38 -0700)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-cleanups-for-v3.19
-> 
-> for you to fetch changes up to dac95365dc2683df55c4e221e2f669a056863307:
-> 
->   ARM: shmobile: sh73a0: Remove wrapper sh73a0_init_delay() (2014-10-24 13:07:01 +0900)
-> 
-> ----------------------------------------------------------------
-> Renesas ARM Based SoC Soc Cleanups for v3.19
-> 
-> * Remove sh73a0_init_delay and r8a7778_init_delay wrappers
-> 
-> ----------------------------------------------------------------
-> Geert Uytterhoeven (2):
->       ARM: shmobile: r8a7778: Remove wrapper r8a7778_init_delay()
->       ARM: shmobile: sh73a0: Remove wrapper sh73a0_init_delay()
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Merged.
+DMA transfer uses DVC
 
+     DMA               DMApp
+[MEM] -> [SRC] -> [DVC] -> [SSIU] -> [SSI]
 
--Olof
+     DMA               DMApp
+[MEM] <- [DVC] <- [SRC] <- [SSIU] <- [SSI]
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index d2fe677..f056e64 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -20,6 +20,13 @@
+  * This command is required when Playback/Capture
+  *
+  *	amixer set "LINEOUT Mixer DACL" on
++ *	amixer set "DVC Out" 100%
++ *	amixer set "DVC In" 100%
++ *
++ * You can use Mute
++ *
++ *	amixer set "DVC Out Mute" on
++ *	amixer set "DVC In Mute" on
+  */
+ 
+ /dts-v1/;
+@@ -569,8 +576,8 @@
+ 
+ 	rcar_sound,dai {
+ 		dai0 {
+-			playback = <&ssi0 &src2>;
+-			capture  = <&ssi1 &src3>;
++			playback = <&ssi0 &src2 &dvc0>;
++			capture  = <&ssi1 &src3 &dvc1>;
+ 		};
+ 	};
+ };
+-- 
+2.1.1
+
