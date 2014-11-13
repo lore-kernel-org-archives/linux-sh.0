@@ -1,40 +1,48 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Nov 2014 01:20:04 +0000
-Subject: [PATCH 1/2] ARM: shmobile: r8a7790: Fix SD3CKCR address to device tree
-Message-Id: <edd7b938637701567a54306adb27cfb4345fedc5.1415756961.git.horms+renesas@verge.net.au>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Thu, 13 Nov 2014 06:54:05 +0000
+Subject: [PATCH] net: sh_eth: Add RMII mode setting in probe
+Message-Id: <1415861645-27685-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415756961.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415756961.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
 
-Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+When using RMMI mode, it is necessary to change in probe.
+
+Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index d0e1773..e20affe 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -666,9 +666,9 @@
- 			#clock-cells = <0>;
- 			clock-output-names = "sd2";
- 		};
--		sd3_clk: sd3_clk@e615007c {
-+		sd3_clk: sd3_clk@e615026c {
- 			compatible = "renesas,r8a7790-div6-clock", "renesas,cpg-div6-clock";
--			reg = <0 0xe615007c 0 4>;
-+			reg = <0 0xe615026c 0 4>;
- 			clocks = <&pll1_div2_clk>;
- 			#clock-cells = <0>;
- 			clock-output-names = "sd3";
+This patch is based on net-next tree.
+
+ drivers/net/ethernet/renesas/sh_eth.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index dbe8606..1f79ed6 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1,5 +1,6 @@
+ /*  SuperH Ethernet device driver
+  *
++ *  Copyright (C) 2014  Renesas Electronics Corporation
+  *  Copyright (C) 2006-2012 Nobuhiro Iwamatsu
+  *  Copyright (C) 2008-2014 Renesas Solutions Corp.
+  *  Copyright (C) 2013-2014 Cogent Embedded, Inc.
+@@ -2883,6 +2884,9 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+ 		}
+ 	}
+ 
++	if (mdp->cd->rmiimode)
++		sh_eth_write(ndev, 0x1, RMIIMODE);
++
+ 	/* MDIO bus init */
+ 	ret = sh_mdio_init(mdp, pd);
+ 	if (ret) {
 -- 
-2.1.1
+1.9.1
 
