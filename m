@@ -1,151 +1,123 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 10 Nov 2014 01:10:56 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: r8a7791: Spelling s/audamc1/audmac1/
-Message-Id: <20141110011056.GK16836@verge.net.au>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Thu, 13 Nov 2014 07:05:01 +0000
+Subject: [PATCH 3/3] sh_eth: Fix dma mapping issue
+Message-Id: <1415862301-28032-4-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415278089-1842-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1415278089-1842-2-git-send-email-geert+renesas@glider.be>
+References: <1415862301-28032-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1415862301-28032-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org
+Cc: "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Thu, Nov 06, 2014 at 01:48:09PM +0100, Geert Uytterhoeven wrote:
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
->  arch/arm/boot/dts/r8a7791.dtsi | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-> index 1a586233c856ebe3..142c3ed5fb7a4d68 100644
-> --- a/arch/arm/boot/dts/r8a7791.dtsi
-> +++ b/arch/arm/boot/dts/r8a7791.dtsi
-> @@ -1120,7 +1120,7 @@
->  			#clock-cells = <1>;
->  			renesas,clock-indices = <R8A7791_CLK_AUDIO_DMAC0 R8A7791_CLK_AUDIO_DMAC1
->  						 R8A7791_CLK_THERMAL R8A7791_CLK_PWM>;
-> -			clock-output-names = "audmac0", "audamc1", "thermal", "pwm";
-> +			clock-output-names = "audmac0", "audmac1", "thermal", "pwm";
->  		};
->  		mstp7_clks: mstp7_clks@e615014c {
->  			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-> -- 
-> 1.9.1
+From: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
 
-I have taken the liberty of squashing this patch into the one
-that added the spelling error. The result is as follows:
+When CONFIG_DMA_API_DEBUG=y, many DMA error messages reports.
+In order to use DMA debug, This patch fix following issues.
 
+Issue 1:
+If dma_mapping_error function is not called appropriately after
+DMA mapping, DMA debug will report error message when DMA unmap
+function is called.
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Issue 2:
+If skb_reserve function is called after DMA mapping, the relationship
+between mapping addr and mapping size will be broken.
+In this case, DMA debug will report error messages when DMA sync
+function and DMA unmap function are called.
 
-[PATCH] ARM: shmobile: r8a7791: Add Audio DMAC devices to DT
+Issue 3:
+If the size of frame data is less than ETH_ZLEN, the size is resized
+to ETH_ZLEN after DMA map function is called.
+In the TX skb freeing function, dma unmap function is called with that
+resized value. So, unmap size error will reported.
 
-Instantiate the two Audio DMA controllers in the r8a7791 device tree.
+Issue 4:
+In the rx function, DMA map function is called without DMA unmap function
+is called for RX skb reallocating.
+It will case the DMA debug error that number of debug entry is full and
+DMA debug logic is stopped.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-[geert: corrected spelling of audmac1]
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi            | 63 +++++++++++++++++++++++++++++--
- include/dt-bindings/clock/r8a7791-clock.h |  2 +
- 2 files changed, 62 insertions(+), 3 deletions(-)
+ drivers/net/ethernet/renesas/sh_eth.c | 26 +++++++++++++++++++++++---
+ 1 file changed, 23 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index a862243..b54af74 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -301,6 +301,62 @@
- 		dma-channels = <15>;
- 	};
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 0e4a407..23318cf 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1136,6 +1136,11 @@ static void sh_eth_ring_format(struct net_device *ndev)
+ 		dma_map_single(&ndev->dev, skb->data, rxdesc->buffer_length,
+ 			       DMA_FROM_DEVICE);
+ 		rxdesc->addr = virt_to_phys(skb->data);
++		if (dma_mapping_error(&ndev->dev, rxdesc->addr)) {
++			dev_kfree_skb(mdp->rx_skbuff[i]);
++			mdp->rx_skbuff[i] = NULL;
++			break;
++		}
+ 		rxdesc->status = cpu_to_edmac(mdp, RD_RACT | RD_RFP);
  
-+	audma0: dma-controller@ec700000 {
-+		compatible = "renesas,rcar-dmac";
-+		reg = <0 0xec700000 0 0x10000>;
-+		interrupts =	<0 346 IRQ_TYPE_LEVEL_HIGH
-+				 0 320 IRQ_TYPE_LEVEL_HIGH
-+				 0 321 IRQ_TYPE_LEVEL_HIGH
-+				 0 322 IRQ_TYPE_LEVEL_HIGH
-+				 0 323 IRQ_TYPE_LEVEL_HIGH
-+				 0 324 IRQ_TYPE_LEVEL_HIGH
-+				 0 325 IRQ_TYPE_LEVEL_HIGH
-+				 0 326 IRQ_TYPE_LEVEL_HIGH
-+				 0 327 IRQ_TYPE_LEVEL_HIGH
-+				 0 328 IRQ_TYPE_LEVEL_HIGH
-+				 0 329 IRQ_TYPE_LEVEL_HIGH
-+				 0 330 IRQ_TYPE_LEVEL_HIGH
-+				 0 331 IRQ_TYPE_LEVEL_HIGH
-+				 0 332 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "error",
-+				"ch0", "ch1", "ch2", "ch3",
-+				"ch4", "ch5", "ch6", "ch7",
-+				"ch8", "ch9", "ch10", "ch11",
-+				"ch12";
-+		clocks = <&mstp5_clks R8A7791_CLK_AUDIO_DMAC0>;
-+		clock-names = "fck";
-+		#dma-cells = <1>;
-+		dma-channels = <13>;
-+	};
-+
-+	audma1: dma-controller@ec720000 {
-+		compatible = "renesas,rcar-dmac";
-+		reg = <0 0xec720000 0 0x10000>;
-+		interrupts =	<0 347 IRQ_TYPE_LEVEL_HIGH
-+				 0 333 IRQ_TYPE_LEVEL_HIGH
-+				 0 334 IRQ_TYPE_LEVEL_HIGH
-+				 0 335 IRQ_TYPE_LEVEL_HIGH
-+				 0 336 IRQ_TYPE_LEVEL_HIGH
-+				 0 337 IRQ_TYPE_LEVEL_HIGH
-+				 0 338 IRQ_TYPE_LEVEL_HIGH
-+				 0 339 IRQ_TYPE_LEVEL_HIGH
-+				 0 340 IRQ_TYPE_LEVEL_HIGH
-+				 0 341 IRQ_TYPE_LEVEL_HIGH
-+				 0 342 IRQ_TYPE_LEVEL_HIGH
-+				 0 343 IRQ_TYPE_LEVEL_HIGH
-+				 0 344 IRQ_TYPE_LEVEL_HIGH
-+				 0 345 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "error",
-+				"ch0", "ch1", "ch2", "ch3",
-+				"ch4", "ch5", "ch6", "ch7",
-+				"ch8", "ch9", "ch10", "ch11",
-+				"ch12";
-+		clocks = <&mstp5_clks R8A7791_CLK_AUDIO_DMAC1>;
-+		clock-names = "fck";
-+		#dma-cells = <1>;
-+		dma-channels = <13>;
-+	};
-+
- 	/* The memory map in the User's Manual maps the cores to bus numbers */
- 	i2c0: i2c@e6508000 {
- 		#address-cells = <1>;
-@@ -1053,10 +1109,11 @@
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
--			clocks = <&extal_clk>, <&p_clk>;
-+			clocks = <&hp_clk>, <&hp_clk>, <&extal_clk>, <&p_clk>;
- 			#clock-cells = <1>;
--			renesas,clock-indices = <R8A7791_CLK_THERMAL R8A7791_CLK_PWM>;
--			clock-output-names = "thermal", "pwm";
-+			renesas,clock-indices = <R8A7791_CLK_AUDIO_DMAC0 R8A7791_CLK_AUDIO_DMAC1
-+						 R8A7791_CLK_THERMAL R8A7791_CLK_PWM>;
-+			clock-output-names = "audmac0", "audmac1", "thermal", "pwm";
- 		};
- 		mstp7_clks: mstp7_clks@e615014c {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index dcececd..3ea2bbc 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -69,6 +69,8 @@
- #define R8A7791_CLK_USBDMAC1		31
+ 		/* Rx descriptor address set */
+@@ -1364,7 +1369,7 @@ static int sh_eth_txfree(struct net_device *ndev)
+ 		if (mdp->tx_skbuff[entry]) {
+ 			dma_unmap_single(&ndev->dev, txdesc->addr,
+ 					 txdesc->buffer_length, DMA_TO_DEVICE);
+-			dev_kfree_skb_irq(mdp->tx_skbuff[entry]);
++			dev_kfree_skb_any(mdp->tx_skbuff[entry]);
+ 			mdp->tx_skbuff[entry] = NULL;
+ 			free_num++;
+ 		}
+@@ -1466,11 +1471,19 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
+ 			if (skb = NULL)
+ 				break;	/* Better luck next round. */
+ 			sh_eth_set_receive_align(skb);
++			dma_unmap_single(&ndev->dev, rxdesc->addr,
++					 rxdesc->buffer_length,
++					 DMA_FROM_DEVICE);
+ 			dma_map_single(&ndev->dev, skb->data,
+ 				       rxdesc->buffer_length, DMA_FROM_DEVICE);
  
- /* MSTP5 */
-+#define R8A7791_CLK_AUDIO_DMAC1		1
-+#define R8A7791_CLK_AUDIO_DMAC0		2
- #define R8A7791_CLK_THERMAL		22
- #define R8A7791_CLK_PWM			23
+ 			skb_checksum_none_assert(skb);
+ 			rxdesc->addr = virt_to_phys(skb->data);
++			if (dma_mapping_error(&ndev->dev, rxdesc->addr)) {
++				dev_kfree_skb_any(mdp->rx_skbuff[entry]);
++				mdp->rx_skbuff[entry] = NULL;
++				break;
++			}
+ 		}
+ 		if (entry >= mdp->num_rx_ring - 1)
+ 			rxdesc->status |@@ -2104,12 +2117,18 @@ static int sh_eth_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+ 	if (!mdp->cd->hw_swap)
+ 		sh_eth_soft_swap(phys_to_virt(ALIGN(txdesc->addr, 4)),
+ 				 skb->len + 2);
+-	txdesc->addr = dma_map_single(&ndev->dev, skb->data, skb->len,
+-				      DMA_TO_DEVICE);
+ 	if (skb->len < ETH_ZLEN)
+ 		txdesc->buffer_length = ETH_ZLEN;
+ 	else
+ 		txdesc->buffer_length = skb->len;
++	txdesc->addr = dma_map_single(&ndev->dev, skb->data,
++				      txdesc->buffer_length,
++				      DMA_TO_DEVICE);
++	if (dma_mapping_error(&ndev->dev, txdesc->addr)) {
++		dev_kfree_skb_any(mdp->tx_skbuff[entry]);
++		mdp->tx_skbuff[entry] = NULL;
++		goto out;
++	}
+ 
+ 	if (entry >= mdp->num_tx_ring - 1)
+ 		txdesc->status |= cpu_to_edmac(mdp, TD_TACT | TD_TDLE);
+@@ -2121,6 +2140,7 @@ static int sh_eth_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+ 	if (!(sh_eth_read(ndev, EDTRR) & sh_eth_get_edtrr_trns(mdp)))
+ 		sh_eth_write(ndev, sh_eth_get_edtrr_trns(mdp), EDTRR);
+ 
++out:
+ 	return NETDEV_TX_OK;
+ }
  
 -- 
-2.1.1
+1.9.1
 
