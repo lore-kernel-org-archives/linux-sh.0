@@ -1,36 +1,43 @@
-From: Joe Perches <joe@perches.com>
-Date: Thu, 13 Nov 2014 02:21:49 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 13 Nov 2014 02:51:09 +0000
 Subject: Re: [PATCH][resend] of: Add vendor 2nd prefix for Asahi Kasei Corp
-Message-Id: <1415845309.4269.6.camel@perches.com>
+Message-Id: <20141113025105.GA16652@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140611165410.GK5099@sirena.org.uk>
-	 <CAMuHMdUT0hEBGbN+W-Oz5zJ0N8S2VDMndqtDO=EtWF3jG2MEew@mail.gmail.com>
-	 <20140611170233.GL5099@sirena.org.uk> <5398A53D.3020706@wwwdotorg.org>
-	 <20140611190444.GN5099@sirena.org.uk> <5398AB07.4040304@wwwdotorg.org>
-	 <87sinbdk44.wl%kuninori.morimoto.gx@renesas.com>
-	 <878ulzx6hr.wl%kuninori.morimoto.gx@gmail.com>
-	 <20140922130026.GK3290@leverpostej>
-	 <CAMuHMdX22z97SbGS1HDiYfJ1PXxyEN2S8D7w4sr+4bUwD+mJZw@mail.gmail.com>
-	 <20140922132743.GM3290@leverpostej>
-	 <87y4rfhmgl.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87y4rfhmgl.wl%kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+References: <5398A53D.3020706@wwwdotorg.org>
+ <20140611190444.GN5099@sirena.org.uk>
+ <5398AB07.4040304@wwwdotorg.org>
+ <87sinbdk44.wl%kuninori.morimoto.gx@renesas.com>
+ <878ulzx6hr.wl%kuninori.morimoto.gx@gmail.com>
+ <20140922130026.GK3290@leverpostej>
+ <CAMuHMdX22z97SbGS1HDiYfJ1PXxyEN2S8D7w4sr+4bUwD+mJZw@mail.gmail.com>
+ <20140922132743.GM3290@leverpostej>
+ <87y4rfhmgl.wl%kuninori.morimoto.gx@renesas.com>
+ <1415845309.4269.6.camel@perches.com>
+In-Reply-To: <1415845309.4269.6.camel@perches.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
-Cc: Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Olof Johansson <olof-nZhT3qVonbNeoWH0uzbU5w@public.gmane.org>, Stephen Warren <swarren-3lzwWm7+Weoh9ZMKESR00Q@public.gmane.org>, Rob Herring <robh-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, ALSA Development Mailing List <alsa-devel-K7yf7f+aM1XWsZ/bQMPhNw@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, "grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org" <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>
+To: Joe Perches <joe@perches.com>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Mark Rutland <mark.rutland@arm.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Olof Johansson <olof@lixom.net>, Stephen Warren <swarren@wwwdotorg.org>, Rob Herring <robh@kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Mark Brown <broonie@kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, ALSA Development Mailing List <alsa-devel@alsa-project.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, "grant.likely@linaro.org" <grant.likely@linaro.org>
 
-On Thu, 2014-11-13 at 02:18 +0000, Kuninori Morimoto wrote:
-> > > Still missing is an update for checkpatch to warn when a deprecated
-> > > vendor prefix is used.
+On Wed, Nov 12, 2014 at 06:21:49PM -0800, Joe Perches wrote:
+> On Thu, 2014-11-13 at 02:18 +0000, Kuninori Morimoto wrote:
+> > > > Still missing is an update for checkpatch to warn when a deprecated
+> > > > vendor prefix is used.
+> > > 
+> > > Marking it deprecated and warning with checkpatch is certainly
+> > > preferable.
 > > 
-> > Marking it deprecated and warning with checkpatch is certainly
-> > preferable.
+> > I guess removing "ak" line from vendor-prefixes.txt is very enough
+> > for warn for a deprecated vendor prefix on checkpatch ?
 > 
-> I guess removing "ak" line from vendor-prefixes.txt is very enough
-> for warn for a deprecated vendor prefix on checkpatch ?
+> Huh?  No idea what you mean.
+> What are you suggesting about checkpatch?
 
-Huh?  No idea what you mean.
-What are you suggesting about checkpatch?
+Hi Joe,
 
+I think that what Morimoto-san wanted to say was something like this:
 
+  I guess that removing the "ak" line from vendor-prefixes.txt would
+  be sufficient to cause checkpatch to generate a warning about
+  using the deprecated "ak" vendor prefix. Is that a good approach?
