@@ -1,50 +1,148 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 17 Nov 2014 02:45:16 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC Fixes for v3.18
-Message-Id: <cover.1416192055.git.horms+renesas@verge.net.au>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Thu, 13 Nov 2014 07:05:00 +0000
+Subject: [PATCH 2/3] sh_eth: Fix skb alloc size and alignment adjust rule.
+Message-Id: <1415862301-28032-3-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1389321620.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1389321620.git.horms+renesas@verge.net.au>
+References: <1415862301-28032-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1415862301-28032-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+From: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
 
-Please consider these Renesas ARM based SoC fixes for v3.18.
-Or alternatively for v3.19 if you feel they are too late for v3.18.
+In the current driver, allocation size of skb does not care the alignment
+adjust after allocation.
+And also, in the current implementation, buffer alignment method by
+sh_eth_set_receive_align function has a bug that this function displace
+buffer start address forcedly when the alignment is corrected.
+In the result, tail of the skb will exceed allocated area and kernel panic
+will be occurred.
+This patch fix this issue.
 
+Signed-off-by: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 35 ++++++++++++++---------------------
+ drivers/net/ethernet/renesas/sh_eth.h |  2 ++
+ 2 files changed, 16 insertions(+), 21 deletions(-)
 
-* ARM: shmobile: kzm9g legacy: Set i2c clks_per_count
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 49e963e..0e4a407 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -917,21 +917,12 @@ static int sh_eth_reset(struct net_device *ndev)
+ 	return ret;
+ }
+ 
+-#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARCH_SHMOBILE)
+ static void sh_eth_set_receive_align(struct sk_buff *skb)
+ {
+-	int reserve;
+-
+-	reserve = SH4_SKB_RX_ALIGN - ((u32)skb->data & (SH4_SKB_RX_ALIGN - 1));
++	u32 reserve = (u32)skb->data & (SH_ETH_RX_ALIGN - 1);
+ 	if (reserve)
+-		skb_reserve(skb, reserve);
+-}
+-#else
+-static void sh_eth_set_receive_align(struct sk_buff *skb)
+-{
+-	skb_reserve(skb, SH2_SH3_SKB_RX_ALIGN);
++		skb_reserve(skb, SH_ETH_RX_ALIGN - reserve);
+ }
+-#endif
+ 
+ 
+ /* CPU <-> EDMAC endian convert */
+@@ -1119,6 +1110,7 @@ static void sh_eth_ring_format(struct net_device *ndev)
+ 	struct sh_eth_txdesc *txdesc = NULL;
+ 	int rx_ringsize = sizeof(*rxdesc) * mdp->num_rx_ring;
+ 	int tx_ringsize = sizeof(*txdesc) * mdp->num_tx_ring;
++	int skbuff_size = mdp->rx_buf_sz + SH_ETH_RX_ALIGN - 1;
+ 
+ 	mdp->cur_rx = 0;
+ 	mdp->cur_tx = 0;
+@@ -1131,21 +1123,21 @@ static void sh_eth_ring_format(struct net_device *ndev)
+ 	for (i = 0; i < mdp->num_rx_ring; i++) {
+ 		/* skb */
+ 		mdp->rx_skbuff[i] = NULL;
+-		skb = netdev_alloc_skb(ndev, mdp->rx_buf_sz);
++		skb = netdev_alloc_skb(ndev, skbuff_size);
+ 		mdp->rx_skbuff[i] = skb;
+ 		if (skb = NULL)
+ 			break;
+-		dma_map_single(&ndev->dev, skb->data, mdp->rx_buf_sz,
+-			       DMA_FROM_DEVICE);
+ 		sh_eth_set_receive_align(skb);
+ 
+ 		/* RX descriptor */
+ 		rxdesc = &mdp->rx_ring[i];
++		/* The size of the buffer is 16 byte boundary. */
++		rxdesc->buffer_length = ALIGN(mdp->rx_buf_sz, 16);
++		dma_map_single(&ndev->dev, skb->data, rxdesc->buffer_length,
++			       DMA_FROM_DEVICE);
+ 		rxdesc->addr = virt_to_phys(skb->data);
+ 		rxdesc->status = cpu_to_edmac(mdp, RD_RACT | RD_RFP);
+ 
+-		/* The size of the buffer is 16 byte boundary. */
+-		rxdesc->buffer_length = ALIGN(mdp->rx_buf_sz, 16);
+ 		/* Rx descriptor address set */
+ 		if (i = 0) {
+ 			sh_eth_write(ndev, mdp->rx_desc_dma, RDLAR);
+@@ -1397,6 +1389,7 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
+ 	struct sk_buff *skb;
+ 	u16 pkt_len = 0;
+ 	u32 desc_status;
++	int skbuff_size = mdp->rx_buf_sz + SH_ETH_RX_ALIGN - 1;
+ 
+ 	rxdesc = &mdp->rx_ring[entry];
+ 	while (!(rxdesc->status & cpu_to_edmac(mdp, RD_RACT))) {
+@@ -1448,8 +1441,8 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
+ 			if (mdp->cd->rpadir)
+ 				skb_reserve(skb, NET_IP_ALIGN);
+ 			dma_sync_single_for_cpu(&ndev->dev, rxdesc->addr,
+-						mdp->rx_buf_sz,
+-						DMA_FROM_DEVICE);
++					ALIGN(mdp->rx_buf_sz, 16),
++					DMA_FROM_DEVICE);
+ 			skb_put(skb, pkt_len);
+ 			skb->protocol = eth_type_trans(skb, ndev);
+ 			netif_receive_skb(skb);
+@@ -1468,13 +1461,13 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
+ 		rxdesc->buffer_length = ALIGN(mdp->rx_buf_sz, 16);
+ 
+ 		if (mdp->rx_skbuff[entry] = NULL) {
+-			skb = netdev_alloc_skb(ndev, mdp->rx_buf_sz);
++			skb = netdev_alloc_skb(ndev, skbuff_size);
+ 			mdp->rx_skbuff[entry] = skb;
+ 			if (skb = NULL)
+ 				break;	/* Better luck next round. */
+-			dma_map_single(&ndev->dev, skb->data, mdp->rx_buf_sz,
+-				       DMA_FROM_DEVICE);
+ 			sh_eth_set_receive_align(skb);
++			dma_map_single(&ndev->dev, skb->data,
++				       rxdesc->buffer_length, DMA_FROM_DEVICE);
+ 
+ 			skb_checksum_none_assert(skb);
+ 			rxdesc->addr = virt_to_phys(skb->data);
+diff --git a/drivers/net/ethernet/renesas/sh_eth.h b/drivers/net/ethernet/renesas/sh_eth.h
+index b37c427..d138ebe 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.h
++++ b/drivers/net/ethernet/renesas/sh_eth.h
+@@ -163,8 +163,10 @@ enum {
+ /* Driver's parameters */
+ #if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARCH_SHMOBILE)
+ #define SH4_SKB_RX_ALIGN	32
++#define SH_ETH_RX_ALIGN		(SH4_SKB_RX_ALIGN)
+ #else
+ #define SH2_SH3_SKB_RX_ALIGN	2
++#define SH_ETH_RX_ALIGN		(SH2_SH3_SKB_RX_ALIGN)
+ #endif
+ 
+ /* Register's bits
+-- 
+1.9.1
 
-  This problem appears to have been introduced when i2c shmobile support was
-  added to the sh73a0 by b028f94b76319e1b8 ("ARM: mach-shmobile: sh73a0
-  i2c_shmobile support.") in v2.6.37.
-
-  Without this fix i2c may not operate correctly on the sh73a0/kzm9g.
-
-
-The following changes since commit f114040e3ea6e07372334ade75d1ee0775c355e1:
-
-  Linux 3.18-rc1 (2014-10-19 18:08:38 -0700)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-fixes-for-v3.18
-
-for you to fetch changes up to b207422bb92f17f4f892a9b8737d44b37fece25b:
-
-  ARM: shmobile: kzm9g legacy: Set i2c clks_per_count to 2 (2014-11-12 10:38:30 +0900)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC Fixes for v3.18
-
-* Set i2c clks_per_count to 2 on kzm9g
-
-----------------------------------------------------------------
-Geert Uytterhoeven (1):
-      ARM: shmobile: kzm9g legacy: Set i2c clks_per_count to 2
-
- arch/arm/mach-shmobile/setup-sh73a0.c | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
