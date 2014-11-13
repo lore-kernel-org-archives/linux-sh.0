@@ -1,46 +1,54 @@
-From: gsantosh@codeaurora.org
-Date: Thu, 13 Nov 2014 03:02:04 +0000
-Subject: Question on Compressed offload session
-Message-Id: <85499f52ebd29581bf58b9cafbae6864.squirrel@www.codeaurora.org>
+From: Pierre-Louis Bossart <pierre-louis.bossart@linux.intel.com>
+Date: Thu, 13 Nov 2014 15:27:30 +0000
+Subject: Re: [alsa-devel] Question on Compressed offload session
+Message-Id: <5464CDE2.2070406@linux.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <85499f52ebd29581bf58b9cafbae6864.squirrel@www.codeaurora.org>
+In-Reply-To: <85499f52ebd29581bf58b9cafbae6864.squirrel@www.codeaurora.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: alsa-devel-bounces@alsa-project.org
-Cc: Mark Rutland <mark.rutland@arm.com>, Rob Herring <robh@kernel.org>, ALSA Development Mailing List <alsa-devel@alsa-project.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Stephen Warren <swarren@wwwdotorg.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, grant.likely@linaro.org, devicetree@vger.kernel.org, Mark Brown <broonie@kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, Olof Johansson <olof@lixom.net>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+To: gsantosh@codeaurora.org, alsa-devel-bounces@alsa-project.org
+Cc: Mark Rutland <mark.rutland@arm.com>, Rob Herring <robh@kernel.org>, ALSA Development Mailing List <alsa-devel@alsa-project.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>, Stephen Warren <swarren@wwwdotorg.org>, Magnus <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Olof Johansson <olof@lixom.net>, devicetree@vger.kernel.org, Mark Brown <broonie@kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, grant.likely@linaro.org, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
-Hi All,
+On 11/12/14, 9:02 PM, gsantosh@codeaurora.org wrote:
+> Hi All,
+>
+> The Question is for the compressed offload session.
+>
+> For a generic codec driver during the startup function it will set some of
+> the hw_constraints rule similarly like this.
+>
+>          snd_pcm_hw_constraint_list(substream->runtime, 0,
+>                      SNDRV_PCM_HW_PARAM_RATE,
+>                      &constraints_12_24);
+>
+> pcm_lib.c will try to add the rule to the runtime structure by accessing
+> the pointers which will be initialized during opening of the session,
+> as The Constraints added by the codec driver will be updated in the
+>
+> struct snd_pcm_hw_constraints of runtime structure which will be part of
+> substream handle.
+>
+> But for the compressed offload I do not see the initialization done for HW
+> constraints, as done in pcm session
+>
+> 2092int snd_pcm_open_substream(struct snd_pcm *pcm, int stream,
+> 2093			   struct file *file,
+> 2094			   struct snd_pcm_substream **rsubstream)
+>
+> most of the existing drivers which has the hw_constraint_list code will
+> not be applicable for compress offload session, how to solve this?
 
-The Question is for the compressed offload session.
-
-For a generic codec driver during the startup function it will set some of
-the hw_constraints rule similarly like this.
-
-        snd_pcm_hw_constraint_list(substream->runtime, 0,
-                    SNDRV_PCM_HW_PARAM_RATE,
-                    &constraints_12_24);
-
-pcm_lib.c will try to add the rule to the runtime structure by accessing
-the pointers which will be initialized during opening of the session,
-as The Constraints added by the codec driver will be updated in the
-
-struct snd_pcm_hw_constraints of runtime structure which will be part of
-substream handle.
-
-But for the compressed offload I do not see the initialization done for HW
-constraints, as done in pcm session
-
-2092int snd_pcm_open_substream(struct snd_pcm *pcm, int stream,
-2093			   struct file *file,
-2094			   struct snd_pcm_substream **rsubstream)
-
-most of the existing drivers which has the hw_constraint_list code will
-not be applicable for compress offload session, how to solve this?
-
-Regards,
-Santosh M G.
-Qualcomm Innovation Center, Inc.
-The Qualcomm Innovation Center, Inc. is a member of the Code Aurora
-Forum,a Linux Foundation Collaborative Project
-
+You can't directly link physical output/input with the decoder/encoder 
+in general.
+For decoders, the sample-rate may not always be known ahead of time, 
+e.g. with AAC-SBR implicit signaling. There is no way to add constraints 
+on open, there is an assumption that a sample-rate converter is part of 
+the chain to take care of the difference between the output of the 
+offloaded decoder and the back-end actual sampling frequency (same with 
+number of channels and bit-width btw).
+Likewise if you encode the frequency may not be the same as what the 
+backend provides and some SRC might be needed.
+-Pierre
 
