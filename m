@@ -1,84 +1,52 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 04 Nov 2014 01:05:44 +0000
-Subject: [PATCH v6 3/4] usb: renesas_usbhs: fix the timing of dcp_control_transfer_done
-Message-Id: <1415063145-4200-4-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Nov 2014 01:20:11 +0000
+Subject: [PATCH 20/25] ARM: shmobile: koelsch: Sound DMA support via SRC on DTS
+Message-Id: <145d21fce60314ea492ba3c83d05c443532229a3.1415755881.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1415755881.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415755881.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-According to the datasheet, this driver should clear the INTSTS0.CTRT
-bit before this controller detects the next stage transition. Otherwise,
-the driver may not be able to clear the bit after the controller went to
-the next stage transition. After that, the driver will not be able to
-clear the INTSTS0.VALID, and a usb control transfer will not finish
-finally.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-If we use the testusb tool, it is easy to reproduce this issue:
+DMA transfer to/from SRC
 
- # testusb -a -t 10
+     DMA      DMApp
+[MEM] -> [SRC] -> [SSIU] -> [SSI]
 
-Since the previous code handled a data stage and a status stage in
-the usbhsf_pio_try_push(), it may not clear the INTSTS0.CTRT at the
-right timing.
-So, this patch change the timing of usbhs_dcp_control_transfer_done()
-to the usbhsg_irq_ctrl_stage().
+     DMA      DMApp
+[MEM] <- [SRC] <- [SSIU] <- [SSI]
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Current sound driver is supporting
+SSI/SRC random connection.
+So, this patch is tring
+SSI0 -> SRC2
+SSI1 <- SRC3
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/usb/renesas_usbhs/fifo.c       |   16 ----------------
- drivers/usb/renesas_usbhs/mod_gadget.c |    3 +++
- 2 files changed, 3 insertions(+), 16 deletions(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
-index b0c97a3..0e07925 100644
---- a/drivers/usb/renesas_usbhs/fifo.c
-+++ b/drivers/usb/renesas_usbhs/fifo.c
-@@ -577,14 +577,6 @@ static int usbhsf_pio_try_push(struct usbhs_pkt *pkt, int *is_done)
- 		usbhs_pipe_number(pipe),
- 		pkt->length, pkt->actual, *is_done, pkt->zero);
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 5bc675f..d2fe677 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -569,8 +569,8 @@
  
--	/*
--	 * Transmission end
--	 */
--	if (*is_done) {
--		if (usbhs_pipe_is_dcp(pipe))
--			usbhs_dcp_control_transfer_done(pipe);
--	}
--
- 	usbhsf_fifo_unselect(pipe, fifo);
- 
- 	return 0;
-@@ -722,14 +714,6 @@ usbhs_fifo_read_end:
- 		usbhs_pipe_number(pipe),
- 		pkt->length, pkt->actual, *is_done, pkt->zero);
- 
--	/*
--	 * Transmission end
--	 */
--	if (*is_done) {
--		if (usbhs_pipe_is_dcp(pipe))
--			usbhs_dcp_control_transfer_done(pipe);
--	}
--
- usbhs_fifo_read_busy:
- 	usbhsf_fifo_unselect(pipe, fifo);
- 
-diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
-index b27b2bc..9cf07c0 100644
---- a/drivers/usb/renesas_usbhs/mod_gadget.c
-+++ b/drivers/usb/renesas_usbhs/mod_gadget.c
-@@ -485,6 +485,9 @@ static int usbhsg_irq_ctrl_stage(struct usbhs_priv *priv,
- 	case NODATA_STATUS_STAGE:
- 		pipe->handler = &usbhs_ctrl_stage_end_handler;
- 		break;
-+	case READ_STATUS_STAGE:
-+	case WRITE_STATUS_STAGE:
-+		usbhs_dcp_control_transfer_done(pipe);
- 	default:
- 		return ret;
- 	}
+ 	rcar_sound,dai {
+ 		dai0 {
+-			playback = <&ssi0>;
+-			capture  = <&ssi1>;
++			playback = <&ssi0 &src2>;
++			capture  = <&ssi1 &src3>;
+ 		};
+ 	};
+ };
 -- 
-1.7.9.5
+2.1.1
 
