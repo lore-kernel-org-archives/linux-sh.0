@@ -1,97 +1,43 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 18 Nov 2014 00:30:20 +0000
-Subject: [PATCH v5] of: replace Asahi Kasei Corp vendor prefix
-Message-Id: <877fytxsde.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Nov 2014 01:19:55 +0000
+Subject: [PATCH 3/3] ARM: shmobile: r8a7740 legacy: Correct IIC0 parent clock
+Message-Id: <4f37828d4d69a46830e0525a065da9847fc7a819.1415757100.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <878ulzx6hr.wl%kuninori.morimoto.gx@gmail.com>
-	<20140922130026.GK3290@leverpostej>
-	<CAMuHMdX22z97SbGS1HDiYfJ1PXxyEN2S8D7w4sr+4bUwD+mJZw@mail.gmail.com>
-	<20140922132743.GM3290@leverpostej>
-	<87y4rfhmgl.wl%kuninori.morimoto.gx@renesas.com>
-	<1415845309.4269.6.camel@perches.com>
-	<20141113025105.GA16652@verge.net.au>
-	<87vbmjhj00.wl%kuninori.morimoto.gx@renesas.com>
-	<20141113110740.GE3815@sirena.org.uk>
-	<87k32yd0bd.wl%kuninori.morimoto.gx@renesas.com>
-	<20141114093554.GC3810@ulmo>
-	<87y4ra8xac.wl%kuninori.morimoto.gx@renesas.com>
-	<5469CD47.3040409@cogentembedded.com>
-In-Reply-To: <5469CD47.3040409@cogentembedded.com>
+References: <cover.1415757100.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415757100.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rob Herring <robh@kernel.org>
-Cc: Mark Brown <broonie@kernel.org>, Mark Rutland <mark.rutland@arm.com>, Thierry Reding <thierry.reding@gmail.com>, ALSA Development Mailing List <alsa-devel@alsa-project.org>, linux-tegra@vger.kernel.org, Stephen Warren <swarren@wwwdotorg.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Olof Johansson <olof@lixom.net>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>, Joe Perches <joe@perches.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-arm-kernel@lists.infradead.org, "grant.likely@linaro.org" <grant.likely@linaro.org>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Current vendor-prefixes.txt already has "ak" prefix for Asahi Kasei Corp
-by ae8c4209af2c(of: Add vendor prefix for Asahi Kasei Corp.)
+According to the datasheet, the operating clock for IIC0 is the HPP
+(RT Peri) clock, not the SUB (Peri) clock. Both clocks run at the same
+speed (50 Mhz).
 
-It went through the appropriate review process. But, almost all
-Asahi Kasei chip drivers are using "asahi-kasei" prefix today.
-(arch/arm/boot/dts/tegra20-seaboard.dts only is using "ak,ak8975",
- but there are instances of "asahi-kasei,ak8975" in other dts files.
- And drivers/iio/magnetometer/ak8975.c doesn't support "ak,ak8975" prefix)
-So, we made a mistake there.
+This is consistent with IIC0 being located in the A4R PM domain, and
+IIC1 in the A3SP PM domain.
 
-In addition, checkpatch.pl reports WARNING if it is using "asahi-kasei"
-prerfix in DT file.
-(DT compatible string vendor "asahi-kasei" appears un-documented)
-
-Marking it deprecated and warning with checkpatch is certainly
-preferable. So, this patch replace "ak" to "asahi-kasei" in
-vendor-prefixes.txt. (and fixup tegra20-seaboard)
-
-OTOH, Asahi Kasei is usually referred to as "AKM", but this patch
-doesn't care about it. Because no DT is using that today.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Thierry Reding <treding@nvidia.com>
-Acked-by: Alexandre Courbot <acourbot@nvidia.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v4 -> v5
+ arch/arm/mach-shmobile/clock-r8a7740.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- - venter -> vendor on Subject
- - fixup Acked-by ordering
-
- .../devicetree/bindings/vendor-prefixes.txt        |    2 +-
- arch/arm/boot/dts/tegra20-seaboard.dts             |    2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
-index 723999d..ddcb4cd 100644
---- a/Documentation/devicetree/bindings/vendor-prefixes.txt
-+++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
-@@ -9,7 +9,6 @@ ad	Avionic Design GmbH
- adapteva	Adapteva, Inc.
- adi	Analog Devices, Inc.
- aeroflexgaisler	Aeroflex Gaisler AB
--ak	Asahi Kasei Corp.
- allwinner	Allwinner Technology Co., Ltd.
- altr	Altera Corp.
- amcc	Applied Micro Circuits Corporation (APM, formally AMCC)
-@@ -20,6 +19,7 @@ amstaos	AMS-Taos Inc.
- apm	Applied Micro Circuits Corporation (APM)
- arm	ARM Ltd.
- armadeus	ARMadeus Systems SARL
-+asahi-kasei	Asahi Kasei Corp.
- atmel	Atmel Corporation
- auo	AU Optronics Corporation
- avago	Avago Technologies
-diff --git a/arch/arm/boot/dts/tegra20-seaboard.dts b/arch/arm/boot/dts/tegra20-seaboard.dts
-index a1d4bf9..7f5cf80 100644
---- a/arch/arm/boot/dts/tegra20-seaboard.dts
-+++ b/arch/arm/boot/dts/tegra20-seaboard.dts
-@@ -405,7 +405,7 @@
- 		clock-frequency = <400000>;
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 16a6b7c..19df9cb 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -474,7 +474,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP127] = SH_CLK_MSTP32(&div4_clks[DIV4_S],	SMSTPCR1, 27, 0), /* CEU20 */
+ 	[MSTP125] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR1, 25, 0), /* TMU0 */
+ 	[MSTP117] = SH_CLK_MSTP32(&div4_clks[DIV4_B],	SMSTPCR1, 17, 0), /* LCDC1 */
+-	[MSTP116] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR1, 16, 0), /* IIC0 */
++	[MSTP116] = SH_CLK_MSTP32(&div4_clks[DIV4_HPP],	SMSTPCR1, 16, 0), /* IIC0 */
+ 	[MSTP111] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR1, 11, 0), /* TMU1 */
+ 	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_B],	SMSTPCR1,  0, 0), /* LCDC0 */
  
- 		magnetometer@c {
--			compatible = "ak,ak8975";
-+			compatible = "asahi-kasei,ak8975";
- 			reg = <0xc>;
- 			interrupt-parent = <&gpio>;
- 			interrupts = <TEGRA_GPIO(N, 5) IRQ_TYPE_LEVEL_HIGH>;
 -- 
-1.7.9.5
+2.1.1
 
