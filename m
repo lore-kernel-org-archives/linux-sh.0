@@ -1,49 +1,47 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 24 Nov 2014 20:10:06 +0000
-Subject: [PATCH/RFC 1/3] ARM: shmobile: sh73a0 dtsi: Add Bus State Controller node
-Message-Id: <1416859808-18503-2-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Nov 2014 01:20:04 +0000
+Subject: [PATCH 13/25] ARM: shmobile: lager: Sound DMA support via BUSIF on DTS
+Message-Id: <59bd80f145e21ed9eca2648d8c59b1983a1bd74f.1415755881.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416859808-18503-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1416859808-18503-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1415755881.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415755881.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Ulf Hansson <ulf.hansson@linaro.org>, Grant Likely <grant.likely@linaro.org>, Arnd Bergmann <arnd@arndb.de>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-pm@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-Add a node for the Bus State Controller (BSC) on sh73a0, to which
-multiple external devices can be connected.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-The BSC is driven by the ZB clock, and located in PM domain A4S.
+DMA transfer to/from SSIU
 
-For now no device tree bindings have been defined yet. All of its
-properties follow standard conventions.
+     DMA
+[MEM] -> [SSIU] -> [SSI]
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+     DMA
+[MEM] <- [SSIU] <- [SSI]
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/sh73a0.dtsi | 11 +++++++++++
- 1 file changed, 11 insertions(+)
+ arch/arm/boot/dts/r8a7790-lager.dts | 5 -----
+ 1 file changed, 5 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 87e7d5ef904bde89..b8d4c557c85eca0c 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -997,4 +997,15 @@
- 				"intca0";
- 		};
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 93630d0..0634fff 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -575,11 +575,6 @@
  	};
-+
-+	bsc: bus@fec10000 {
-+		compatible = "renesas,bsc-sh73a0", "renesas,bsc", "simple-bus";
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		reg = <0xfec10000 0x400>;
-+		ranges = <0 0 0x20000000>;
-+		interrupts = <0 39 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&zb_clk>;
-+		power-domains = <&pd_a4s>;
-+	};
+ };
+ 
+-&ssi0 {
+-	no-busif;
+-};
+-
+ &ssi1 {
+-	no-busif;
+ 	shared-pin;
  };
 -- 
-1.9.1
+2.1.1
 
