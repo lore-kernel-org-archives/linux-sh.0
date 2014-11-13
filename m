@@ -1,24 +1,26 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Thu, 13 Nov 2014 07:02:13 +0000
-Subject: [PATCH 0/2] Fix sleeping function called from invalid context
-Message-Id: <1415862135-27972-1-git-send-email-ykaneko0929@gmail.com>
+From: David Miller <davem@davemloft.net>
+Date: Thu, 13 Nov 2014 20:05:37 +0000
+Subject: Re: [PATCH 0/2] Fix sleeping function called from invalid context
+Message-Id: <20141113.150537.1456498824246847470.davem@davemloft.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1415862135-27972-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1415862135-27972-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: ykaneko0929@gmail.com
+Cc: netdev@vger.kernel.org, horms@verge.net.au, magnus.damm@gmail.com, linux-sh@vger.kernel.org
 
-This series is based on net tree.
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Thu, 13 Nov 2014 16:02:13 +0900
 
-Mitsuhiro Kimura (2):
-  sh_eth: Fix sleeping function called from invalid context
-  sh_eth: Fix asynchronous external abort
+> This series is based on net tree.
 
- drivers/net/ethernet/renesas/sh_eth.c | 70 ++++++++++++++++++++---------------
- drivers/net/ethernet/renesas/sh_eth.h |  1 +
- 2 files changed, 42 insertions(+), 29 deletions(-)
+A header posting is supposed to explain things, at a high level,
+about the patch series.
 
--- 
-1.9.1
+For example, what is the patch series doing, and why.  What is the
+context of the changes, is it meant to fix a specific bug report,
+and if so which one?
 
+Both of your sh_eth patch series have this problem.
