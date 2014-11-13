@@ -1,93 +1,60 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 19 Nov 2014 15:27:00 +0000
-Subject: [PATCH 2/2] ARM: shmobile: sh73a0 dtsi: Add missing INTCA0 clock for irqpin module
-Message-Id: <1416410820-30020-3-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Nov 2014 01:20:06 +0000
+Subject: [PATCH 15/25] ARM: shmobile: lager: Sound DMA support via DVC on DTS
+Message-Id: <3aab5b10403698b6c5bebd2bd4b40e674c759a13.1415755881.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416410820-30020-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1416410820-30020-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1415755881.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415755881.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This clock drives the irqpin controller modules.
-Before, it was assumed enabled by the bootloader or reset state.
-By making it available to the driver, we make sure it gets enabled when
-needed, and allow it to be managed by system or runtime PM.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: devicetree@vger.kernel.org
----
-This depends on the series "[PATCH v5 0/6] sh73a0 common clock framework
-implementation".
----
- arch/arm/boot/dts/sh73a0.dtsi            | 15 +++++++++++++++
- include/dt-bindings/clock/sh73a0-clock.h |  3 +++
- 2 files changed, 18 insertions(+)
+DMA transfer uses DVC
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 0853a6fe2209a48a..c7ab55e55e23f8cb 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -78,6 +78,7 @@
- 			      0 6 IRQ_TYPE_LEVEL_HIGH
- 			      0 7 IRQ_TYPE_LEVEL_HIGH
- 			      0 8 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp5_clks SH73A0_CLK_INTCA0>;
- 	};
+     DMA               DMApp
+[MEM] -> [SRC] -> [DVC] -> [SSIU] -> [SSI]
+
+     DMA               DMApp
+[MEM] <- [DVC] <- [SRC] <- [SSIU] <- [SSI]
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index a249270..2f91740 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -19,6 +19,13 @@
+  * This command is required when Playback/Capture
+  *
+  *	amixer set "LINEOUT Mixer DACL" on
++ *	amixer set "DVC Out" 100%
++ *	amixer set "DVC In" 100%
++ *
++ * You can use Mute
++ *
++ *	amixer set "DVC Out Mute" on
++ *	amixer set "DVC In Mute" on
+  */
  
- 	irqpin1: irqpin@e6900004 {
-@@ -97,6 +98,7 @@
- 			      0 14 IRQ_TYPE_LEVEL_HIGH
- 			      0 15 IRQ_TYPE_LEVEL_HIGH
- 			      0 16 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp5_clks SH73A0_CLK_INTCA0>;
- 		control-parent;
- 	};
+ /dts-v1/;
+@@ -569,8 +576,8 @@
  
-@@ -117,6 +119,7 @@
- 			      0 22 IRQ_TYPE_LEVEL_HIGH
- 			      0 23 IRQ_TYPE_LEVEL_HIGH
- 			      0 24 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp5_clks SH73A0_CLK_INTCA0>;
- 	};
- 
- 	irqpin3: irqpin@e690000c {
-@@ -136,6 +139,7 @@
- 			      0 30 IRQ_TYPE_LEVEL_HIGH
- 			      0 31 IRQ_TYPE_LEVEL_HIGH
- 			      0 32 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp5_clks SH73A0_CLK_INTCA0>;
- 	};
- 
- 	i2c0: i2c@e6820000 {
-@@ -705,5 +709,16 @@
- 			clock-output-names  				"iic3", "iic4", "keysc";
+ 	rcar_sound,dai {
+ 		dai0 {
+-			playback = <&ssi0 &src2>;
+-			capture  = <&ssi1 &src3>;
++			playback = <&ssi0 &src2 &dvc0>;
++			capture  = <&ssi1 &src3 &dvc1>;
  		};
-+		mstp5_clks: mstp5_clks@e6150144 {
-+			compatible = "renesas,sh73a0-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0xe6150144 4>, <0xe615003c 4>;
-+			clocks = <&cpg_clocks SH73A0_CLK_HP>;
-+			#clock-cells = <1>;
-+			clock-indices = <
-+				SH73A0_CLK_INTCA0
-+			>;
-+			clock-output-names +				"intca0";
-+		};
  	};
  };
-diff --git a/include/dt-bindings/clock/sh73a0-clock.h b/include/dt-bindings/clock/sh73a0-clock.h
-index 1dd3eb2b7d902afd..53369568c24c5dc6 100644
---- a/include/dt-bindings/clock/sh73a0-clock.h
-+++ b/include/dt-bindings/clock/sh73a0-clock.h
-@@ -76,4 +76,7 @@
- #define SH73A0_CLK_IIC4		10
- #define SH73A0_CLK_KEYSC	3
- 
-+/* MSTP5 */
-+#define SH73A0_CLK_INTCA0	8
-+
- #endif
 -- 
-1.9.1
+2.1.1
 
