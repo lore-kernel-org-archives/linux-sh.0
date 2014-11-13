@@ -1,54 +1,129 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 19 Nov 2014 15:57:33 +0000
-Subject: [PATCH 6/7] drivers: sh: Disable PM runtime for multi-platform sh73a0 with genpd
-Message-Id: <1416412654-6508-7-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Nov 2014 01:20:02 +0000
+Subject: [PATCH 11/25] ARM: shmobile: lager: Sound PIO support on DTS
+Message-Id: <ef57ca3fc4ea44ccc24efc98f0562c198d5037c2.1415755881.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416412654-6508-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1416412654-6508-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1415755881.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415755881.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-If the default PM domain using PM_CLK is used for PM runtime, the real PM
-domain(s) cannot be registered from DT later.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Hence do not enable it when running a multi-platform kernel with genpd
-support on an sh73a0. The R-Mobile PM domain driver will take care of
-PM runtime management of the module clocks.
-
-The default PM domain is still needed for:
-  - platforms without genpd support,
-  - the legacy (non-DT) case, where genpd may take over later, except
-    for the C5 "always on" PM domain.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/sh/pm_runtime.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7790-lager.dts | 70 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 70 insertions(+)
 
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index 85cc89fd3e7d7cb7..2e6f1efadedca1b0 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -83,6 +83,7 @@ static int __init sh_pm_runtime_init(void)
- 		    !of_machine_is_compatible("renesas,r8a73a4") &&
- #ifndef CONFIG_PM_GENERIC_DOMAINS_OF
- 		    !of_machine_is_compatible("renesas,r8a7740") &&
-+		    !of_machine_is_compatible("renesas,sh73a0") &&
- #endif
- 		    !of_machine_is_compatible("renesas,r8a7778") &&
- 		    !of_machine_is_compatible("renesas,r8a7779") &&
-@@ -91,8 +92,7 @@ static int __init sh_pm_runtime_init(void)
- 		    !of_machine_is_compatible("renesas,r8a7792") &&
- 		    !of_machine_is_compatible("renesas,r8a7793") &&
- 		    !of_machine_is_compatible("renesas,r8a7794") &&
--		    !of_machine_is_compatible("renesas,sh7372") &&
--		    !of_machine_is_compatible("renesas,sh73a0"))
-+		    !of_machine_is_compatible("renesas,sh7372"))
- 			return 0;
- 	}
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 86fb2ee..c2b4f65 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -9,6 +9,18 @@
+  * kind, whether express or implied.
+  */
  
++/*
++ * SSI-AK4643
++ *
++ * SW1: 1: AK4643
++ *      2: CN22
++ *      3: ADV7511
++ *
++ * This command is required when Playback/Capture
++ *
++ *	amixer set "LINEOUT Mixer DACL" on
++ */
++
+ /dts-v1/;
+ #include "r8a7790.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
+@@ -146,6 +158,23 @@
+ 			  1800000 0>;
+ 	};
+ 
++	sound {
++		compatible = "simple-audio-card";
++
++		simple-audio-card,format = "left_j";
++		simple-audio-card,bitclock-master = <&sndcodec>;
++		simple-audio-card,frame-master = <&sndcodec>;
++
++		sndcpu: simple-audio-card,cpu {
++			sound-dai = <&rcar_sound>;
++		};
++
++		sndcodec: simple-audio-card,codec {
++			sound-dai = <&ak4643>;
++			system-clock-frequency = <11289600>;
++		};
++	};
++
+ 	vga-encoder {
+ 		compatible = "adi,adv7123";
+ 
+@@ -292,6 +321,16 @@
+ 		renesas,groups = "vin1_data8", "vin1_clk";
+ 		renesas,function = "vin1";
+ 	};
++
++	sound_pins: sound {
++		renesas,groups = "ssi0129_ctrl", "ssi0_data", "ssi1_data";
++		renesas,function = "ssi";
++	};
++
++	sound_clk_pins: sound_clk {
++		renesas,groups = "audio_clk_a";
++		renesas,function = "audio_clk";
++	};
+ };
+ 
+ &ether {
+@@ -431,6 +470,12 @@
+ 
+ 	clock-frequency = <100000>;
+ 
++	ak4643: sound-codec@12 {
++		compatible = "asahi-kasei,ak4643";
++		#sound-dai-cells = <0>;
++		reg = <0x12>;
++	};
++
+ 	composite-in@20 {
+ 		compatible = "adi,adv7180";
+ 		reg = <0x20>;
+@@ -513,3 +558,28 @@
+ 		};
+ 	};
+ };
++
++&rcar_sound {
++	pinctrl-0 = <&sound_pins &sound_clk_pins>;
++	pinctrl-names = "default";
++
++	#sound-dai-cells = <0>;
++
++	status = "okay";
++
++	rcar_sound,dai {
++		dai0 {
++			playback = <&ssi0>;
++			capture  = <&ssi1>;
++		};
++	};
++};
++
++&ssi0 {
++	pio-transfer;
++};
++
++&ssi1 {
++	pio-transfer;
++	shared-pin;
++};
 -- 
-1.9.1
+2.1.1
 
