@@ -1,34 +1,42 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 10 Nov 2014 01:32:09 +0000
-Subject: [PATCH 1/4] ARM: shmobile: ape6evm: Enable PM Runtime in defconfig
-Message-Id: <c5940e115e188051f34a88ee705c5f81c6bf0e54.1415582943.git.horms+renesas@verge.net.au>
+Date: Thu, 13 Nov 2014 01:20:27 +0000
+Subject: [PATCH 2/2] ARM: shmobile: always build rcar setup for armv7
+Message-Id: <e3d163329753b3b473f40c9be71561ed8eb98aea.1415841454.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415582943.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415582943.git.horms+renesas@verge.net.au>
+References: <cover.1415841454.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415841454.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This is consistent with other shmobile defconfigs.
+From: Arnd Bergmann <arnd@arndb.de>
 
+In a combined ARMv6/v7 kernel, the setup-rcar-gen2.c cannot
+currently be compiled correctly because it uses the isb
+instruction that is not available on ARMv6. Adding the
+-march=armv7-a flag lets the compiler know that it is safe
+to build this file for ARMv7.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/ape6evm_defconfig | 1 +
+ arch/arm/mach-shmobile/Makefile | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/configs/ape6evm_defconfig b/arch/arm/configs/ape6evm_defconfig
-index b54b28f..db81d8c 100644
---- a/arch/arm/configs/ape6evm_defconfig
-+++ b/arch/arm/configs/ape6evm_defconfig
-@@ -33,6 +33,7 @@ CONFIG_ARM_APPENDED_DTB=y
- CONFIG_VFP=y
- CONFIG_NEON=y
- CONFIG_BINFMT_MISC=y
-+CONFIG_PM_RUNTIME=y
- CONFIG_NET=y
- CONFIG_PACKET=y
- CONFIG_UNIX=y
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index e20f278..71e68ca 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -36,6 +36,7 @@ cpu-y				:= platsmp.o headsmp.o
+ 
+ # Shared SoC family objects
+ obj-$(CONFIG_ARCH_RCAR_GEN2)	+= setup-rcar-gen2.o platsmp-apmu.o $(cpu-y)
++CFLAGS_setup-rcar-gen2.o	+= -march=armv7-a
+ 
+ # SMP objects
+ smp-y				:= $(cpu-y)
 -- 
 2.1.1
 
