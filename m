@@ -1,67 +1,60 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 04 Nov 2014 00:10:10 +0000
-Subject: Re: [PATCH 2/3] ARM: shmobile: r8a7794: Add VIN clock to device tree
-Message-Id: <20141104001010.GA20174@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Nov 2014 01:19:54 +0000
+Subject: [PATCH 2/3] ARM: shmobile: r8a7740 legacy: Add missing INTCA clock for irqpin module
+Message-Id: <85eb968e84686faa507daa3c5cfdfbfefc7eda95.1415757100.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414648736-31412-1-git-send-email-horms+renesas@verge.net.au>
- <1414648736-31412-3-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1414648736-31412-3-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1415757100.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415757100.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Oct 30, 2014 at 02:58:55PM +0900, Simon Horman wrote:
-> From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-> 
-> Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> ---
->  arch/arm/boot/dts/r8a7794.dtsi            | 6 +++---
->  include/dt-bindings/clock/r8a7794-clock.h | 2 ++
->  2 files changed, 5 insertions(+), 3 deletions(-)
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-I have queued up this patch (but not the other twi in the series).
+This clock drives the irqpin controller modules.
+Before, it was assumed enabled by the bootloader or reset state.
+By making it available to the driver, we make sure it gets enabled when
+needed, and allow it to be managed by system or runtime PM.
 
-> 
-> diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-> index d348dee..08c50c8 100644
-> --- a/arch/arm/boot/dts/r8a7794.dtsi
-> +++ b/arch/arm/boot/dts/r8a7794.dtsi
-> @@ -516,13 +516,13 @@
->  		mstp8_clks: mstp8_clks@e6150990 {
->  			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
->  			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
-> -			clocks = <&p_clk>;
-> +			clocks = <&zg_clk>, <&zg_clk>, <&p_clk>;
->  			#clock-cells = <1>;
->  			renesas,clock-indices = <
-> -				R8A7794_CLK_ETHER
-> +				R8A7794_CLK_VIN1 R8A7794_CLK_VIN0 R8A7794_CLK_ETHER
->  			>;
->  			clock-output-names > -				"ether";
-> +				"vin1", "vin0", "ether";
->  		};
->  		mstp11_clks: mstp11_clks@e615099c {
->  			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
-> diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
-> index 29a6789..7d49531 100644
-> --- a/include/dt-bindings/clock/r8a7794-clock.h
-> +++ b/include/dt-bindings/clock/r8a7794-clock.h
-> @@ -62,6 +62,8 @@
->  #define R8A7794_CLK_SCIF0		21
->  
->  /* MSTP8 */
-> +#define R8A7794_CLK_VIN1		10
-> +#define R8A7794_CLK_VIN0		11
->  #define R8A7794_CLK_ETHER		13
->  
->  /* MSTP9 */
-> -- 
-> 2.1.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a7740.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 0794f04..16a6b7c 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -455,7 +455,7 @@ enum {
+ 	MSTP128, MSTP127, MSTP125,
+ 	MSTP116, MSTP111, MSTP100, MSTP117,
+ 
+-	MSTP230,
++	MSTP230, MSTP229,
+ 	MSTP222,
+ 	MSTP218, MSTP217, MSTP216, MSTP214,
+ 	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
+@@ -479,6 +479,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_B],	SMSTPCR1,  0, 0), /* LCDC0 */
+ 
+ 	[MSTP230] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR2, 30, 0), /* SCIFA6 */
++	[MSTP229] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR2, 29, 0), /* INTCA */
+ 	[MSTP222] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR2, 22, 0), /* SCIFA7 */
+ 	[MSTP218] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],  SMSTPCR2, 18, 0), /* DMAC1 */
+ 	[MSTP217] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],  SMSTPCR2, 17, 0), /* DMAC2 */
+@@ -575,6 +576,10 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-dma-engine.0",	&mstp_clks[MSTP218]),
+ 	CLKDEV_DEV_ID("sh-sci.7",		&mstp_clks[MSTP222]),
+ 	CLKDEV_DEV_ID("e6cd0000.serial",	&mstp_clks[MSTP222]),
++	CLKDEV_DEV_ID("renesas_intc_irqpin.0",	&mstp_clks[MSTP229]),
++	CLKDEV_DEV_ID("renesas_intc_irqpin.1",	&mstp_clks[MSTP229]),
++	CLKDEV_DEV_ID("renesas_intc_irqpin.2",	&mstp_clks[MSTP229]),
++	CLKDEV_DEV_ID("renesas_intc_irqpin.3",	&mstp_clks[MSTP229]),
+ 	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
+ 	CLKDEV_DEV_ID("e6cc0000.serial",	&mstp_clks[MSTP230]),
+ 
+-- 
+2.1.1
+
