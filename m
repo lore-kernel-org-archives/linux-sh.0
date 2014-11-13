@@ -1,56 +1,115 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:50:34 +0000
-Subject: [PATCH 04/34] ARM: shmobile: r8a7791: add USB PHY DT support
-Message-Id: <3b7e530d28db276b596251bbd435a058e27810f1.1415059587.git.horms+renesas@verge.net.au>
+Date: Thu, 13 Nov 2014 01:20:13 +0000
+Subject: [PATCH 22/25] ARM: shmobile: r8a73a4 dtsi: Add SoC-specific IIC compatible properties
+Message-Id: <9ebe389f1929b39af162b9c0053311000b8b309d.1415755881.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415059587.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415059587.git.horms+renesas@verge.net.au>
+References: <cover.1415755881.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415755881.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Define the R8A7791 generic part of the USB PHY device node. It is up to the
-board file to enable the device.
+The IIC nodes used the generic compatible properties only.
+This may cause the driver to fail when using Standard Speed on IIC
+masters where the operational clock is driven by the 130 MHz HP clock.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Add the SoC-specific compatible property to fix this.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 19 +++++++++++++++++++
- 1 file changed, 19 insertions(+)
+ arch/arm/boot/dts/r8a73a4.dtsi | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index e4a7170..49f6b99 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -613,6 +613,25 @@
- 		status = "disabled";
- 	};
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index b5ead84..01373ee 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -106,7 +106,7 @@
+ 	i2c5: i2c@e60b0000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
+ 		reg = <0 0xe60b0000 0 0x428>;
+ 		interrupts = <0 179 IRQ_TYPE_LEVEL_HIGH>;
  
-+	usbphy: usb-phy@e6590100 {
-+		compatible = "renesas,usb-phy-r8a7791";
-+		reg = <0 0xe6590100 0 0x100>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		clocks = <&mstp7_clks R8A7791_CLK_HSUSB>;
-+		clock-names = "usbhs";
-+		status = "disabled";
-+
-+		usb0: usb-channel@0 {
-+			reg = <0>;
-+			#phy-cells = <1>;
-+		};
-+		usb2: usb-channel@2 {
-+			reg = <2>;
-+			#phy-cells = <1>;
-+		};
-+	};
-+
- 	vin0: video@e6ef0000 {
- 		compatible = "renesas,vin-r8a7791";
- 		clocks = <&mstp8_clks R8A7791_CLK_VIN0>;
+@@ -205,7 +205,7 @@
+ 	i2c0: i2c@e6500000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
+ 		reg = <0 0xe6500000 0 0x428>;
+ 		interrupts = <0 174 IRQ_TYPE_LEVEL_HIGH>;
+ 		status = "disabled";
+@@ -214,7 +214,7 @@
+ 	i2c1: i2c@e6510000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
+ 		reg = <0 0xe6510000 0 0x428>;
+ 		interrupts = <0 175 IRQ_TYPE_LEVEL_HIGH>;
+ 		status = "disabled";
+@@ -223,7 +223,7 @@
+ 	i2c2: i2c@e6520000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
+ 		reg = <0 0xe6520000 0 0x428>;
+ 		interrupts = <0 176 IRQ_TYPE_LEVEL_HIGH>;
+ 		status = "disabled";
+@@ -232,7 +232,7 @@
+ 	i2c3: i2c@e6530000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
+ 		reg = <0 0xe6530000 0 0x428>;
+ 		interrupts = <0 177 IRQ_TYPE_LEVEL_HIGH>;
+ 		status = "disabled";
+@@ -241,7 +241,7 @@
+ 	i2c4: i2c@e6540000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
+ 		reg = <0 0xe6540000 0 0x428>;
+ 		interrupts = <0 178 IRQ_TYPE_LEVEL_HIGH>;
+ 		status = "disabled";
+@@ -250,7 +250,7 @@
+ 	i2c6: i2c@e6550000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
+ 		reg = <0 0xe6550000 0 0x428>;
+ 		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
+ 		status = "disabled";
+@@ -259,7 +259,7 @@
+ 	i2c7: i2c@e6560000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
+ 		reg = <0 0xe6560000 0 0x428>;
+ 		interrupts = <0 185 IRQ_TYPE_LEVEL_HIGH>;
+ 		status = "disabled";
+@@ -268,7 +268,7 @@
+ 	i2c8: i2c@e6570000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
+ 		reg = <0 0xe6570000 0 0x428>;
+ 		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>;
+ 		status = "disabled";
 -- 
 2.1.1
 
