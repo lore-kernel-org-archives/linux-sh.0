@@ -1,7 +1,7 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 13 Nov 2014 22:09:06 +0000
+Date: Thu, 13 Nov 2014 22:27:51 +0000
 Subject: Re: [PATCH] sh_eth: Optimization for RX excess judgement
-Message-Id: <54652C02.4070703@cogentembedded.com>
+Message-Id: <54653067.8040608@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1415862031-27925-1-git-send-email-ykaneko0929@gmail.com>
 In-Reply-To: <1415862031-27925-1-git-send-email-ykaneko0929@gmail.com>
@@ -10,8 +10,6 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Yoshihiro Kaneko <ykaneko0929@gmail.com>, netdev@vger.kernel.org
 Cc: "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
-
-Hello.
 
 On 11/13/2014 10:00 AM, Yoshihiro Kaneko wrote:
 
@@ -26,8 +24,6 @@ On 11/13/2014 10:00 AM, Yoshihiro Kaneko wrote:
 > ---
 
 > This patch is based on net tree.
-
-    This is clearly 'net-next' material.
 
 >   drivers/net/ethernet/renesas/sh_eth.c | 15 +++++++++------
 >   1 file changed, 9 insertions(+), 6 deletions(-)
@@ -46,9 +42,6 @@ On 11/13/2014 10:00 AM, Yoshihiro Kaneko wrote:
 >   	u32 desc_status;
 >
 > +	if (quota) {
-
-    I don't see what's the point in checking -- quota is always non-NULL.
-
 > +		boguscnt = min(boguscnt, *quota);
 > +		limit = boguscnt;
 > +	}
@@ -62,16 +55,15 @@ On 11/13/2014 10:00 AM, Yoshihiro Kaneko wrote:
 >
 > -	return *quota <= 0;
 > +	if (quota)
-
-    Again, seeing no sense in this check.
-
 > +		*quota -= limit - (++boguscnt);
+
+    Just 'limit - boguscnt + 1'.
+
 > +
 > +	return (boguscnt <= 0);
 
-    Parens not needed.
-
-[...]
+    Hm... why change the *return* statement at all? I'm not sure this is at 
+all correct.
 
 WBR, Sergei
 
