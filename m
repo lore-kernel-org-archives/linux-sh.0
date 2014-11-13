@@ -1,50 +1,129 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:51:02 +0000
-Subject: [PATCH 32/34] ARM: shmobile: r8a7790: Reference DMA channels in MMCIF DT nodes
-Message-Id: <108216c1e08db6c69a54ba7ee593335eceea2077.1415059587.git.horms+renesas@verge.net.au>
+Date: Thu, 13 Nov 2014 01:20:08 +0000
+Subject: [PATCH 17/25] ARM: shmobile: koelsch: Sound PIO support on DTS
+Message-Id: <f8ca4ab637727b13d9bb6ebc505a30389b272591.1415755881.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415059587.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415059587.git.horms+renesas@verge.net.au>
+References: <cover.1415755881.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415755881.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Add references to the transmit and receive DMA channels in the two
-MMCIF nodes.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 4 ++++
- 1 file changed, 4 insertions(+)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 70 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 70 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 63922a1..52c2156 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -397,6 +397,8 @@
- 		reg = <0 0xee200000 0 0x80>;
- 		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_MMCIF0>;
-+		dmas = <&dmac0 0xd1>, <&dmac0 0xd2>;
-+		dma-names = "tx", "rx";
- 		reg-io-width = <4>;
- 		status = "disabled";
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 59e4251..c92d0d7 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -10,6 +10,18 @@
+  * kind, whether express or implied.
+  */
+ 
++/*
++ * SSI-AK4643
++ *
++ * SW1: 1: AK4643
++ *      2: CN22
++ *      3: ADV7511
++ *
++ * This command is required when Playback/Capture
++ *
++ *	amixer set "LINEOUT Mixer DACL" on
++ */
++
+ /dts-v1/;
+ #include "r8a7791.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
+@@ -210,6 +222,23 @@
+ 		states = <3300000 1
+ 			  1800000 0>;
  	};
-@@ -406,6 +408,8 @@
- 		reg = <0 0xee220000 0 0x80>;
- 		interrupts = <0 170 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_MMCIF1>;
-+		dmas = <&dmac0 0xe1>, <&dmac0 0xe2>;
-+		dma-names = "tx", "rx";
- 		reg-io-width = <4>;
- 		status = "disabled";
++
++	sound {
++		compatible = "simple-audio-card";
++
++		simple-audio-card,format = "left_j";
++		simple-audio-card,bitclock-master = <&sndcodec>;
++		simple-audio-card,frame-master = <&sndcodec>;
++
++		sndcpu: simple-audio-card,cpu {
++			sound-dai = <&rcar_sound>;
++		};
++
++		sndcodec: simple-audio-card,codec {
++			sound-dai = <&ak4643>;
++			system-clock-frequency = <11289600>;
++		};
++	};
+ };
+ 
+ &du {
+@@ -300,6 +329,16 @@
+ 		renesas,groups = "vin1_data8", "vin1_clk";
+ 		renesas,function = "vin1";
  	};
++
++	sound_pins: sound {
++		renesas,groups = "ssi0129_ctrl", "ssi0_data", "ssi1_data";
++		renesas,function = "ssi";
++	};
++
++	sound_clk_pins: sound_clk {
++		renesas,groups = "audio_clk_a";
++		renesas,function = "audio_clk";
++	};
+ };
+ 
+ &ether {
+@@ -427,6 +466,12 @@
+ 	status = "okay";
+ 	clock-frequency = <100000>;
+ 
++	ak4643: sound-codec@12 {
++		compatible = "asahi-kasei,ak4643";
++		#sound-dai-cells = <0>;
++		reg = <0x12>;
++	};
++
+ 	composite-in@20 {
+ 		compatible = "adi,adv7180";
+ 		reg = <0x20>;
+@@ -513,3 +558,28 @@
+ 		};
+ 	};
+ };
++
++&rcar_sound {
++	pinctrl-0 = <&sound_pins &sound_clk_pins>;
++	pinctrl-names = "default";
++
++	#sound-dai-cells = <0>;
++
++	status = "okay";
++
++	rcar_sound,dai {
++		dai0 {
++			playback = <&ssi0>;
++			capture  = <&ssi1>;
++		};
++	};
++};
++
++&ssi0 {
++	pio-transfer;
++};
++
++&ssi1 {
++	pio-transfer;
++	shared-pin;
++};
 -- 
 2.1.1
 
