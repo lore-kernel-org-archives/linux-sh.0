@@ -1,28 +1,25 @@
-From: Andreas Schwab <schwab@linux-m68k.org>
-Date: Mon, 03 Nov 2014 18:15:04 +0000
-Subject: Re: [PATCH v4 1/9] PM / Domains: Change prototype for the ->attach_dev() callback
-Message-Id: <8761ewduc7.fsf@igel.home>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Thu, 13 Nov 2014 07:04:58 +0000
+Subject: [PATCH 0/3] sh_eth: Remove redundant alignment adjustment
+Message-Id: <1415862301-28032-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415028896-9005-1-git-send-email-geert+renesas@glider.be>
- <1415028896-9005-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1415028896-9005-2-git-send-email-geert+renesas@glider.be> (Geert
- Uytterhoeven's message of "Mon, 3 Nov 2014 16:34:48 +0100")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Geert Uytterhoeven <geert+renesas@glider.be> writes:
+This series is based on net tree.
 
-> From: Ulf Hansson <ulf.hansson@linaro.org>
->
-> Convert the prototype to return and int. This is just an initial step,
+Mitsuhiro Kimura (3):
+  sh_eth: Remove redundant alignment adjustment
+  sh_eth: Fix skb alloc size and alignment adjust rule.
+  sh_eth: Fix dma mapping issue
 
-s/and/an/
-
-Andreas.
+ drivers/net/ethernet/renesas/sh_eth.c | 65 +++++++++++++++++++++--------------
+ drivers/net/ethernet/renesas/sh_eth.h |  2 ++
+ 2 files changed, 41 insertions(+), 26 deletions(-)
 
 -- 
-Andreas Schwab, schwab@linux-m68k.org
-GPG Key fingerprint = 58CA 54C7 6D53 942B 1756  01D3 44D5 214B 8276 4ED5
-"And now for something completely different."
+1.9.1
+
