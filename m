@@ -1,24 +1,55 @@
-From: David Miller <davem@davemloft.net>
-Date: Thu, 13 Nov 2014 20:04:22 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 13 Nov 2014 22:20:06 +0000
 Subject: Re: [PATCH] net: sh_eth: Add RMII mode setting in probe
-Message-Id: <20141113.150422.1549343079603819822.davem@davemloft.net>
+Message-Id: <54652E96.2060100@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1415861645-27685-1-git-send-email-ykaneko0929@gmail.com>
 In-Reply-To: <1415861645-27685-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: ykaneko0929@gmail.com
-Cc: netdev@vger.kernel.org, horms@verge.net.au, magnus.damm@gmail.com, linux-sh@vger.kernel.org
+To: Yoshihiro Kaneko <ykaneko0929@gmail.com>, netdev@vger.kernel.org
+Cc: "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Thu, 13 Nov 2014 15:54:05 +0900
+Hello.
+
+On 11/13/2014 09:54 AM, Yoshihiro Kaneko wrote:
 
 > From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-> 
+
 > When using RMMI mode, it is necessary to change in probe.
-> 
+
+    I'd like this need to be explained in more detail.
+
 > Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
 > Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+> ---
 
-Applied.
+> This patch is based on net-next tree.
+
+>   drivers/net/ethernet/renesas/sh_eth.c | 4 ++++
+>   1 file changed, 4 insertions(+)
+>
+> diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+> index dbe8606..1f79ed6 100644
+> --- a/drivers/net/ethernet/renesas/sh_eth.c
+> +++ b/drivers/net/ethernet/renesas/sh_eth.c
+> @@ -1,5 +1,6 @@
+>   /*  SuperH Ethernet device driver
+>    *
+> + *  Copyright (C) 2014  Renesas Electronics Corporation
+>    *  Copyright (C) 2006-2012 Nobuhiro Iwamatsu
+>    *  Copyright (C) 2008-2014 Renesas Solutions Corp.
+>    *  Copyright (C) 2013-2014 Cogent Embedded, Inc.
+> @@ -2883,6 +2884,9 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+>   		}
+>   	}
+>
+> +	if (mdp->cd->rmiimode)
+> +		sh_eth_write(ndev, 0x1, RMIIMODE);
+> +
+
+    Does not such code need to be removed from sh_eth_dev_init() then?
+
+WBR, Sergei
+
