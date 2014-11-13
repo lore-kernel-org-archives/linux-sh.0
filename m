@@ -1,50 +1,82 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:50:55 +0000
-Subject: [PATCH 25/34] ARM: shmobile: r8a7791: add HS-USB device node
-Message-Id: <1c1fee7cbba99023a11d4d2991b56c99a3174bd4.1415059587.git.horms+renesas@verge.net.au>
+Date: Thu, 13 Nov 2014 01:20:14 +0000
+Subject: [PATCH 23/25] ARM: shmobile: sh73a0 dtsi: Add SoC-specific IIC compatible properties
+Message-Id: <ba15de4d6a7976fdcb18fd31c2f840737be6f660.1415755881.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415059587.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415059587.git.horms+renesas@verge.net.au>
+References: <cover.1415755881.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415755881.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Define the R8A7791 generic part of the HS-USB device node. It is up to the board
-file to enable the device.
+The IIC nodes used the generic compatible properties only.
+This causes the driver to fail when using Standard Speed, as the
+operational clock is driven by the 104 MHz HP clock:
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-[Sergei: fixed summary, added changelog]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+    i2c-sh_mobile e6820000.i2c: timing values out of range: L/H=0x208/0x1bf
+    i2c-sh_mobile: probe of e6820000.i2c failed with error -22
+
+Add the SoC-specific compatible property to fix this.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 11 +++++++++++
- 1 file changed, 11 insertions(+)
+ arch/arm/boot/dts/sh73a0.dtsi | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index d55335e..c815313 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -613,6 +613,17 @@
- 		status = "disabled";
- 	};
- 
-+	hsusb: usb@e6590000 {
-+		compatible = "renesas,usbhs-r8a7791";
-+		reg = <0 0xe6590000 0 0x100>;
-+		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7791_CLK_HSUSB>;
-+		renesas,buswait = <4>;
-+		phys = <&usb0 1>;
-+		phy-names = "usb";
-+		status = "disabled";
-+	};
-+
- 	usbphy: usb-phy@e6590100 {
- 		compatible = "renesas,usb-phy-r8a7791";
- 		reg = <0 0xe6590100 0 0x100>;
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 030a592..d8def5a 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -138,7 +138,7 @@
+ 	i2c0: i2c@e6820000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
+ 		reg = <0xe6820000 0x425>;
+ 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH
+ 			      0 168 IRQ_TYPE_LEVEL_HIGH
+@@ -150,7 +150,7 @@
+ 	i2c1: i2c@e6822000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
+ 		reg = <0xe6822000 0x425>;
+ 		interrupts = <0 51 IRQ_TYPE_LEVEL_HIGH
+ 			      0 52 IRQ_TYPE_LEVEL_HIGH
+@@ -162,7 +162,7 @@
+ 	i2c2: i2c@e6824000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
+ 		reg = <0xe6824000 0x425>;
+ 		interrupts = <0 171 IRQ_TYPE_LEVEL_HIGH
+ 			      0 172 IRQ_TYPE_LEVEL_HIGH
+@@ -174,7 +174,7 @@
+ 	i2c3: i2c@e6826000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
+ 		reg = <0xe6826000 0x425>;
+ 		interrupts = <0 183 IRQ_TYPE_LEVEL_HIGH
+ 			      0 184 IRQ_TYPE_LEVEL_HIGH
+@@ -186,7 +186,7 @@
+ 	i2c4: i2c@e6828000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
+ 		reg = <0xe6828000 0x425>;
+ 		interrupts = <0 187 IRQ_TYPE_LEVEL_HIGH
+ 			      0 188 IRQ_TYPE_LEVEL_HIGH
 -- 
 2.1.1
 
