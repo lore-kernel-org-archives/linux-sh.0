@@ -1,30 +1,73 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 21 Nov 2014 10:57:28 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7790 CCI configuration
-Message-Id: <3843244.eEnPgu6iEl@wuerfel>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Thu, 13 Nov 2014 07:00:31 +0000
+Subject: [PATCH] sh_eth: Optimization for RX excess judgement
+Message-Id: <1415862031-27925-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416542986-26846-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1416542986-26846-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Friday 21 November 2014 13:09:46 Simon Horman wrote:
-> +       writel_relaxed(readl_relaxed(p + CCI_SLAVE4 + CCI_SNOOP) | 0x3,
-> +               p + CCI_SLAVE4 + CCI_SNOOP);    /* ca7 */
-> +       while (__raw_readl(p + CCI_STATUS));
-> +       /* wait for pending bit low */
-> 
+From: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
 
-Why are you using __raw_readl for the last access? I would make that
-readl_relaxed() like the other ones for consistency.
+Both of 'boguscnt' and 'quota' have nearly meaning as the condition of
+the reception loop.
+In order to cut down redundant processing, this patch changes excess judgement.
 
-Also, a better way to express waiting for the register read is to
-put the ';' on the next line, or add a cpu_relax() statement:
+Signed-off-by: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
 
-	while (readl_relaxed(p + CCI_STATUS))
-		cpu_relax();
+This patch is based on net tree.
 
+ drivers/net/ethernet/renesas/sh_eth.c | 15 +++++++++------
+ 1 file changed, 9 insertions(+), 6 deletions(-)
 
-	Arnd
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 60e9c2c..7d46326 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1394,10 +1394,15 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
+ 
+ 	int entry = mdp->cur_rx % mdp->num_rx_ring;
+ 	int boguscnt = (mdp->dirty_rx + mdp->num_rx_ring) - mdp->cur_rx;
++	int limit = boguscnt;
+ 	struct sk_buff *skb;
+ 	u16 pkt_len = 0;
+ 	u32 desc_status;
+ 
++	if (quota) {
++		boguscnt = min(boguscnt, *quota);
++		limit = boguscnt;
++	}
+ 	rxdesc = &mdp->rx_ring[entry];
+ 	while (!(rxdesc->status & cpu_to_edmac(mdp, RD_RACT))) {
+ 		desc_status = edmac_to_cpu(mdp, rxdesc->status);
+@@ -1406,11 +1411,6 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
+ 		if (--boguscnt < 0)
+ 			break;
+ 
+-		if (*quota <= 0)
+-			break;
+-
+-		(*quota)--;
+-
+ 		if (!(desc_status & RDFEND))
+ 			ndev->stats.rx_length_errors++;
+ 
+@@ -1501,7 +1501,10 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
+ 		sh_eth_write(ndev, EDRRR_R, EDRRR);
+ 	}
+ 
+-	return *quota <= 0;
++	if (quota)
++		*quota -= limit - (++boguscnt);
++
++	return (boguscnt <= 0);
+ }
+ 
+ static void sh_eth_rcv_snd_disable(struct net_device *ndev)
+-- 
+1.9.1
+
