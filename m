@@ -1,73 +1,30 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Thu, 13 Nov 2014 07:00:31 +0000
-Subject: [PATCH] sh_eth: Optimization for RX excess judgement
-Message-Id: <1415862031-27925-1-git-send-email-ykaneko0929@gmail.com>
+From: David Miller <davem@davemloft.net>
+Date: Thu, 13 Nov 2014 20:04:43 +0000
+Subject: Re: [PATCH] sh_eth: Optimization for RX excess judgement
+Message-Id: <20141113.150443.289073124712490803.davem@davemloft.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1415862031-27925-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1415862031-27925-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: ykaneko0929@gmail.com
+Cc: netdev@vger.kernel.org, horms@verge.net.au, magnus.damm@gmail.com, linux-sh@vger.kernel.org
 
-From: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Thu, 13 Nov 2014 16:00:31 +0900
 
-Both of 'boguscnt' and 'quota' have nearly meaning as the condition of
-the reception loop.
-In order to cut down redundant processing, this patch changes excess judgement.
+> From: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
+> 
+> Both of 'boguscnt' and 'quota' have nearly meaning as the condition of
+> the reception loop.
+> In order to cut down redundant processing, this patch changes excess judgement.
+> 
+> Signed-off-by: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
+> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+> ---
+> 
+> This patch is based on net tree.
 
-Signed-off-by: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
----
-
-This patch is based on net tree.
-
- drivers/net/ethernet/renesas/sh_eth.c | 15 +++++++++------
- 1 file changed, 9 insertions(+), 6 deletions(-)
-
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index 60e9c2c..7d46326 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -1394,10 +1394,15 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
- 
- 	int entry = mdp->cur_rx % mdp->num_rx_ring;
- 	int boguscnt = (mdp->dirty_rx + mdp->num_rx_ring) - mdp->cur_rx;
-+	int limit = boguscnt;
- 	struct sk_buff *skb;
- 	u16 pkt_len = 0;
- 	u32 desc_status;
- 
-+	if (quota) {
-+		boguscnt = min(boguscnt, *quota);
-+		limit = boguscnt;
-+	}
- 	rxdesc = &mdp->rx_ring[entry];
- 	while (!(rxdesc->status & cpu_to_edmac(mdp, RD_RACT))) {
- 		desc_status = edmac_to_cpu(mdp, rxdesc->status);
-@@ -1406,11 +1411,6 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
- 		if (--boguscnt < 0)
- 			break;
- 
--		if (*quota <= 0)
--			break;
--
--		(*quota)--;
--
- 		if (!(desc_status & RDFEND))
- 			ndev->stats.rx_length_errors++;
- 
-@@ -1501,7 +1501,10 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
- 		sh_eth_write(ndev, EDRRR_R, EDRRR);
- 	}
- 
--	return *quota <= 0;
-+	if (quota)
-+		*quota -= limit - (++boguscnt);
-+
-+	return (boguscnt <= 0);
- }
- 
- static void sh_eth_rcv_snd_disable(struct net_device *ndev)
--- 
-1.9.1
-
+On what basis is an optimization like this appropriate for 'net'?  I really
+don't think it is.
