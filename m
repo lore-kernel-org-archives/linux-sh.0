@@ -1,114 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 05 Nov 2014 16:00:23 +0000
-Subject: Re: [PATCH v3 2/7] ARM: shmobile: sh73a0: Add CPG register bits header
-Message-Id: <283042635.p3MImJO7hQ@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Nov 2014 01:20:16 +0000
+Subject: [PATCH 25/25] ARM: shmobile: kzm9g-reference dts: Add labels for the LEDs
+Message-Id: <2887bd4265cfbec6ccdd099c1728f82b4bebb69b.1415755881.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1415755881.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415755881.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Ulrich,
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Thank you for the patch.
+The LEDs on the kzm9g board are labeled using upper-case characters.
 
-On Tuesday 28 October 2014 18:02:11 Ulrich Hecht wrote:
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
->  include/dt-bindings/clock/sh73a0-clock.h | 79 +++++++++++++++++++++++++++++
->  1 file changed, 79 insertions(+)
->  create mode 100644 include/dt-bindings/clock/sh73a0-clock.h
-> 
-> diff --git a/include/dt-bindings/clock/sh73a0-clock.h
-> b/include/dt-bindings/clock/sh73a0-clock.h new file mode 100644
-> index 0000000..1dd3eb2
-> --- /dev/null
-> +++ b/include/dt-bindings/clock/sh73a0-clock.h
-> @@ -0,0 +1,79 @@
-> +/*
-> + * Copyright 2014 Ulrich Hecht
-> + *
-> + * This program is free software; you can redistribute it and/or modify
-> + * it under the terms of the GNU General Public License as published by
-> + * the Free Software Foundation; either version 2 of the License, or
-> + * (at your option) any later version.
-> + */
-> +
-> +#ifndef __DT_BINDINGS_CLOCK_SH73A0_H__
-> +#define __DT_BINDINGS_CLOCK_SH73A0_H__
-> +
-> +/* CPG */
-> +#define SH73A0_CLK_MAIN		0
-> +#define SH73A0_CLK_PLL0		1
-> +#define SH73A0_CLK_PLL1		2
-> +#define SH73A0_CLK_PLL2		3
-> +#define SH73A0_CLK_PLL3		4
-> +#define SH73A0_CLK_DSI0PHY	5
-> +#define SH73A0_CLK_DSI1PHY	6
-> +#define SH73A0_CLK_ZG		7
-> +#define SH73A0_CLK_M3		8
-> +#define SH73A0_CLK_B		9
-> +#define SH73A0_CLK_M1		10
-> +#define SH73A0_CLK_M2		11
-> +#define SH73A0_CLK_Z		12
-> +#define SH73A0_CLK_ZX		13
-> +#define SH73A0_CLK_HP		14
-> +
-> +/* MSTP0 */
-> +#define SH73A0_CLK_IIC2	1
-> +
-> +/* MSTP1 */
-> +#define SH73A0_CLK_CEU1		29
-> +#define SH73A0_CLK_CSI2_RX1	28
-> +#define SH73A0_CLK_CEU0		27
-> +#define SH73A0_CLK_CSI2_RX0	26
-> +#define SH73A0_CLK_TMU0		25
-> +#define SH73A0_CLK_DSITX0	18
-> +#define SH73A0_CLK_IIC0		16
-> +#define SH73A0_CLK_SGX		12
-> +#define SH73A0_CLK_LCDC0	0
-> +
-> +/* MSTP2 */
-> +#define SH73A0_CLK_SCIFA7	19
-> +#define SH73A0_CLK_SY_DMAC	18
-> +#define SH73A0_CLK_MP_DMAC	17
-> +#define SH73A0_CLK_SCIFA5	7
-> +#define SH73A0_CLK_SCIFB	6
-> +#define SH73A0_CLK_SCIFA0	4
-> +#define SH73A0_CLK_SCIFA1	3
-> +#define SH73A0_CLK_SCIFA2	2
-> +#define SH73A0_CLK_SCIFA3	1
-> +#define SH73A0_CLK_SCIFA4	0
-> +
-> +/* MSTP3 */
-> +#define SH73A0_CLK_SCIFA6	31
-> +#define SH73A0_CLK_CMT1		29
-> +#define SH73A0_CLK_FSI		28
-> +#define SH73A0_CLK_IRDA		25
-> +#define SH73A0_CLK_IIC1		23
-> +#define SH73A0_CLK_USB		22
-> +#define SH73A0_CLK_FLCTL	15
-> +#define SH73A0_CLK_SDHI0	14
-> +#define SH73A0_CLK_SDHI1	13
-> +#define SH73A0_CLK_MMCIF0	12
-> +#define SH73A0_CLK_SDHI2	11
-> +#define SH73A0_CLK_TPU0		4
-> +#define SH73A0_CLK_TPU1		3
-> +#define SH73A0_CLK_TPU2		2
-> +#define SH73A0_CLK_TPU3		1
-> +#define SH73A0_CLK_TPU4		0
-> +
-> +/* MSTP4 */
-> +#define SH73A0_CLK_IIC3		11
-> +#define SH73A0_CLK_IIC4		10
-> +#define SH73A0_CLK_KEYSC	3
-> +
-> +#endif
-
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 0dac0e6..e59e674 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -101,15 +101,19 @@
+ 		compatible = "gpio-leds";
+ 		led1 {
+ 			gpios = <&pfc 20 GPIO_ACTIVE_LOW>;
++			label = "LED1";
+ 		};
+ 		led2 {
+ 			gpios = <&pfc 21 GPIO_ACTIVE_LOW>;
++			label = "LED2";
+ 		};
+ 		led3 {
+ 			gpios = <&pfc 22 GPIO_ACTIVE_LOW>;
++			label = "LED3";
+ 		};
+ 		led4 {
+ 			gpios = <&pfc 23 GPIO_ACTIVE_LOW>;
++			label = "LED4";
+ 		};
+ 	};
+ 
 -- 
-Regards,
+2.1.1
 
-Laurent Pinchart
