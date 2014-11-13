@@ -1,41 +1,47 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Fri, 07 Nov 2014 15:52:03 +0000
-Subject: [PATCH 5/6] ARM: shmobile: ape6evm: disable legacy clock initialization
-Message-Id: <1415375524-15468-6-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Nov 2014 01:20:10 +0000
+Subject: [PATCH 19/25] ARM: shmobile: koelsch: Sound DMA support via BUSIF on DTS
+Message-Id: <b8dc9ae0f12259edf7d73c77daf1a7019e3830b4.1415755881.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1415755881.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415755881.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Disables r8a73a4_clock_init() if CCF is enabled.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+DMA transfer to/from SSIU
+
+     DMA
+[MEM] -> [SSIU] -> [SSI]
+
+     DMA
+[MEM] <- [SSIU] <- [SSI]
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-ape6evm-reference.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 5 -----
+ 1 file changed, 5 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ape6evm-reference.c b/arch/arm/mach-shmobile/board-ape6evm-reference.c
-index 3b68370..dd5bc63 100644
---- a/arch/arm/mach-shmobile/board-ape6evm-reference.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm-reference.c
-@@ -29,7 +29,7 @@
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 68628cf..5bc675f 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -575,11 +575,6 @@
+ 	};
+ };
  
- static void __init ape6evm_add_standard_devices(void)
- {
+-&ssi0 {
+-	no-busif;
+-};
 -
-+#ifndef CONFIG_COMMON_CLK
- 	struct clk *parent;
- 	struct clk *mp;
- 
-@@ -43,6 +43,7 @@ static void __init ape6evm_add_standard_devices(void)
- 	clk_set_parent(mp, parent);
- 	clk_put(parent);
- 	clk_put(mp);
-+#endif
- 
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
+ &ssi1 {
+-	no-busif;
+ 	shared-pin;
+ };
 -- 
-1.8.4.5
+2.1.1
 
