@@ -1,55 +1,62 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 17 Nov 2014 01:27:26 +0000
-Subject: Re: [PATCH v4 0/2] ARM: shmobile: Add early debugging support using SCIF(A)
-Message-Id: <20141117012726.GI11143@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Nov 2014 01:20:04 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC DT Fixes for v3.18
+Message-Id: <cover.1415756961.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415980187-12683-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1415980187-12683-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Nov 14, 2014 at 04:49:45PM +0100, Geert Uytterhoeven wrote:
-> 	Hi Simon, Magnus, Arnd,
-> 
-> This patch series adds serial port debug macros for the SCIF(A) serial ports.
-> This includes all supported shmobile SoCs, except for EMEV2.
-> 
-> It contains 2 patches, which are two alternative versions:
->   - The first patch keeps on using the identity mapping set up by .map_io()
->     on platforms I cannot test myself (sh7372 and r8a7779),
->   - The second one converts the remaining platforms to use debug_ll_io_init(),
->     which allowed to get rid of the #ifdef in renesas-scif.S, and consolidate
->     more config options.
-> 
-> Both versions work fine on r8a7791/koelsch (multiplatform), r8a7740/armadillo
-> (legacy and reference), and sh73a0/kzm9g (legacy, reference, and
-> multiplatform), also with a multiplatform kernel based on shmobile_defconfig.
-> 
-> I'd appreciate if you could test the second one on sh7372 and r8a7779,
-> and if it works, apply it.
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Done. I have satisfied myself that 4b works on those SoCs and have
-queued-up 4b accordingly.
+Please consider these Renesas ARM based SoC DT fixes for v3.18.
+Or alternatively for v3.19 if you feel they are too late for v3.18.
 
-> Else, please apply the first version. We can do incremental conversions later,
-> as discussed before.
-> 
-> Thanks!
-> 
-> Gr{oetje,eeting}s,
-> 
-> 						Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
-> 							    -- Linus Torvalds
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+
+* ARM: shmobile: r8a7740 dtsi: Correct IIC0 parent clock
+
+  This problem was introduced when clock support was added DT for the
+  r8a7740 by d9ffd583bf345e2ea ("ARM: shmobile: r8a7740: add SoC clocks to
+  DTS") in v3.18-rc1.
+
+  I am not aware of any run-time effect of this problem.
+
+* ARM: shmobile: r8a7790: Fix SD3CKCR address to device tree
+
+  This problem was introduced when clock support was added DT for the
+  r8a7790 by 22a1f59547e1e63cd ("ARM: shmobile: r8a7790: Add clocks")
+  in v3.13.
+
+  As there is no SD card slot for SDHI3 on the lager board there is no
+  run-time effect of this problem on boards supported in mainline.
+
+
+The following changes since commit f114040e3ea6e07372334ade75d1ee0775c355e1:
+
+  Linux 3.18-rc1 (2014-10-19 18:08:38 -0700)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-fixes-for-v3.18
+
+for you to fetch changes up to b89ff7c3c2dee189489a5f45eb8d72e106179299:
+
+  ARM: shmobile: r8a7740 dtsi: Correct IIC0 parent clock (2014-11-10 09:56:01 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC DT Fixes for v3.18
+
+* Correct IIC0 parent clock on r8a7740
+* Correct SD3CKCR address to device tree on r8a7790
+
+----------------------------------------------------------------
+Geert Uytterhoeven (1):
+      ARM: shmobile: r8a7740 dtsi: Correct IIC0 parent clock
+
+Shinobu Uehara (1):
+      ARM: shmobile: r8a7790: Fix SD3CKCR address to device tree
+
+ arch/arm/boot/dts/r8a7740.dtsi | 2 +-
+ arch/arm/boot/dts/r8a7790.dtsi | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
