@@ -1,25 +1,65 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 14 Nov 2014 00:42:20 +0000
-Subject: Re: [PATCH 0/4] ARM: shmobile: Use keyboard as gpio-keys node name
-Message-Id: <20141114004220.GM14971@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Nov 2014 01:20:26 +0000
+Subject: [GIT PULL] Third Round of Renesas ARM Based Soc Updates for v3.19
+Message-Id: <cover.1415841454.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415782777-4729-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1415782777-4729-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1378362045.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1378362045.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Nov 12, 2014 at 05:59:33PM +0900, Simon Horman wrote:
-> Hi,
-> 
-> this trivial series updates shmobile dts files to use use keyboard as the
-> gpio-keys node name. This appears to be the best match for ePAPR.
-> 
-> Simon Horman (4):
->   ARM: shmobile: armadillo800eva: Use keyboard as gpio-keys node name
->   ARM: shmobile: lager: Use keyboard as gpio-keys node name
->   ARM: shmobile: koelsch: Use keyboard as gpio-keys node name
->   ARM: shmobile: kzm9g-reference: Use keyboard as gpio-keys node name
+Hi Olof, Hi Kevin, Hi Arnd,
 
-I have queued up this series.
+Please consider these third round of Renesas ARM based soc updates for v3.19.
+
+This pull request is based on the previous round of
+such requests, tagged as renesas-soc2-for-v3.19,
+which I have already sent a pull-request for.
+
+This pull request is based on the previous round of
+such requests, tagged as renesas-soc2-for-v3.19,
+which I have already sent a pull-request for.
+
+Please note that "ARM: shmobile: always build rcar setup for armv7"
+corrects a build failure in allmodconfig caused by "ARM: shmobile:
+rcar-gen2: Add CA7 arch_timer initialization for r8a7794" which
+is included in the first round of Renesas ARM Based SoC Soc Updates for
+v3.19, tagged as renesas-soc2-for-v3.19, which I have previously sent
+a pull-request for.
+
+To be clear, this pull request is based on renesas-soc2-for-v3.19 which
+is in turn based on renesas-soc2-for-v3.19.
+
+
+The following changes since commit 950a3f0e7dd32c372c9957d5c050b08de7ec9e56:
+
+  ARM: shmobile: Enable PCI domains for R-Car Gen2 devices (2014-11-05 14:50:17 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc3-for-v3.19
+
+for you to fetch changes up to e3d163329753b3b473f40c9be71561ed8eb98aea:
+
+  ARM: shmobile: always build rcar setup for armv7 (2014-11-12 18:14:42 +0900)
+
+----------------------------------------------------------------
+Third Round of Renesas ARM Based Soc Updates for v3.19
+
+* Always build rcar setup for armv7
+  - Fixes allmodconfig build fauilre caused by
+    "ARM: shmobile: always build rcar setup for armv7"
+* Add restart callback to sh73a0
+
+----------------------------------------------------------------
+Arnd Bergmann (1):
+      ARM: shmobile: always build rcar setup for armv7
+
+Geert Uytterhoeven (1):
+      ARM: shmobile: sh73a0: Add restart callback
+
+ arch/arm/mach-shmobile/Makefile       | 1 +
+ arch/arm/mach-shmobile/setup-sh73a0.c | 8 ++++++++
+ 2 files changed, 9 insertions(+)
