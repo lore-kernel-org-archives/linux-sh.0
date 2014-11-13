@@ -1,113 +1,124 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 04 Nov 2014 01:05:43 +0000
-Subject: [PATCH v6 2/4] usb: renesas_usbhs: gadget: fix the behavior of pullup
-Message-Id: <1415063145-4200-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Nov 2014 01:19:53 +0000
+Subject: [PATCH 02/25] ARM: shmobile: r8a7790: Add Audio DMAC devices to DT
+Message-Id: <ba3240beae340bc84dad16f2b67590f32d25d5a6.1415755881.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1415755881.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415755881.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This patch fixes an issue that this driver always enable the D+ pullup
-after it detected the VBUS connection even though this usb controller
-can control the D+ pullup timing by software. So, this driver should
-enable the D+ pullup after a gadget driver called usb_gadget_connect().
+Instantiate the two Audio DMA controllers in the r8a7790 device tree.
 
-Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+[geert: corrected spelling of audmac1]
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/usb/renesas_usbhs/common.c     |    6 ++++--
- drivers/usb/renesas_usbhs/mod_gadget.c |   30 +++++++++++++++++++++++++++++-
- 2 files changed, 33 insertions(+), 3 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi            | 64 +++++++++++++++++++++++++++++--
+ include/dt-bindings/clock/r8a7790-clock.h |  2 +
+ 2 files changed, 63 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/usb/renesas_usbhs/common.c b/drivers/usb/renesas_usbhs/common.c
-index b3b6813..7099f17 100644
---- a/drivers/usb/renesas_usbhs/common.c
-+++ b/drivers/usb/renesas_usbhs/common.c
-@@ -126,13 +126,15 @@ void usbhs_sys_host_ctrl(struct usbhs_priv *priv, int enable)
- void usbhs_sys_function_ctrl(struct usbhs_priv *priv, int enable)
- {
- 	u16 mask = DCFM | DRPD | DPRPU | HSE | USBE;
--	u16 val  = DPRPU | HSE | USBE;
-+	u16 val  = HSE | USBE;
- 
- 	/*
- 	 * if enable
- 	 *
- 	 * - select Function mode
--	 * - D+ Line Pull-up
-+	 * - D+ Line Pull-up is disabled
-+	 *      When D+ Line Pull-up is enabled,
-+	 *      calling usbhs_sys_function_pullup(,1)
- 	 */
- 	usbhs_bset(priv, SYSCFG, mask, enable ? val : 0);
- }
-diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
-index 294d43c..b27b2bc 100644
---- a/drivers/usb/renesas_usbhs/mod_gadget.c
-+++ b/drivers/usb/renesas_usbhs/mod_gadget.c
-@@ -56,6 +56,7 @@ struct usbhsg_gpriv {
- #define USBHSG_STATUS_REGISTERD		(1 << 1)
- #define USBHSG_STATUS_WEDGE		(1 << 2)
- #define USBHSG_STATUS_SELF_POWERED	(1 << 3)
-+#define USBHSG_STATUS_SOFT_CONNECT	(1 << 4)
- };
- 
- struct usbhsg_recip_handle {
-@@ -726,6 +727,25 @@ static struct usb_ep_ops usbhsg_ep_ops = {
- };
- 
- /*
-+ *		pullup control
-+ */
-+static int usbhsg_can_pullup(struct usbhs_priv *priv)
-+{
-+	struct usbhsg_gpriv *gpriv = usbhsg_priv_to_gpriv(priv);
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 52c2156..2e01d49 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -312,6 +312,63 @@
+ 		#dma-cells = <1>;
+ 		dma-channels = <15>;
+ 	};
 +
-+	return gpriv->driver &&
-+	       usbhsg_status_has(gpriv, USBHSG_STATUS_SOFT_CONNECT);
-+}
++	audma0: dma-controller@ec700000 {
++		compatible = "renesas,rcar-dmac";
++		reg = <0 0xec700000 0 0x10000>;
++		interrupts =	<0 346 IRQ_TYPE_LEVEL_HIGH
++				 0 320 IRQ_TYPE_LEVEL_HIGH
++				 0 321 IRQ_TYPE_LEVEL_HIGH
++				 0 322 IRQ_TYPE_LEVEL_HIGH
++				 0 323 IRQ_TYPE_LEVEL_HIGH
++				 0 324 IRQ_TYPE_LEVEL_HIGH
++				 0 325 IRQ_TYPE_LEVEL_HIGH
++				 0 326 IRQ_TYPE_LEVEL_HIGH
++				 0 327 IRQ_TYPE_LEVEL_HIGH
++				 0 328 IRQ_TYPE_LEVEL_HIGH
++				 0 329 IRQ_TYPE_LEVEL_HIGH
++				 0 330 IRQ_TYPE_LEVEL_HIGH
++				 0 331 IRQ_TYPE_LEVEL_HIGH
++				 0 332 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error",
++				"ch0", "ch1", "ch2", "ch3",
++				"ch4", "ch5", "ch6", "ch7",
++				"ch8", "ch9", "ch10", "ch11",
++				"ch12";
++		clocks = <&mstp5_clks R8A7790_CLK_AUDIO_DMAC0>;
++		clock-names = "fck";
++		#dma-cells = <1>;
++		dma-channels = <13>;
++	};
 +
-+static void usbhsg_update_pullup(struct usbhs_priv *priv)
-+{
-+	if (usbhsg_can_pullup(priv))
-+		usbhs_sys_function_pullup(priv, 1);
-+	else
-+		usbhs_sys_function_pullup(priv, 0);
-+}
++	audma1: dma-controller@ec720000 {
++		compatible = "renesas,rcar-dmac";
++		reg = <0 0xec720000 0 0x10000>;
++		interrupts =	<0 347 IRQ_TYPE_LEVEL_HIGH
++				 0 333 IRQ_TYPE_LEVEL_HIGH
++				 0 334 IRQ_TYPE_LEVEL_HIGH
++				 0 335 IRQ_TYPE_LEVEL_HIGH
++				 0 336 IRQ_TYPE_LEVEL_HIGH
++				 0 337 IRQ_TYPE_LEVEL_HIGH
++				 0 338 IRQ_TYPE_LEVEL_HIGH
++				 0 339 IRQ_TYPE_LEVEL_HIGH
++				 0 340 IRQ_TYPE_LEVEL_HIGH
++				 0 341 IRQ_TYPE_LEVEL_HIGH
++				 0 342 IRQ_TYPE_LEVEL_HIGH
++				 0 343 IRQ_TYPE_LEVEL_HIGH
++				 0 344 IRQ_TYPE_LEVEL_HIGH
++				 0 345 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error",
++				"ch0", "ch1", "ch2", "ch3",
++				"ch4", "ch5", "ch6", "ch7",
++				"ch8", "ch9", "ch10", "ch11",
++				"ch12";
++		clocks = <&mstp5_clks R8A7790_CLK_AUDIO_DMAC1>;
++		clock-names = "fck";
++		#dma-cells = <1>;
++		dma-channels = <13>;
++	};
 +
-+/*
-  *		usb module start/end
-  */
- static int usbhsg_try_start(struct usbhs_priv *priv, u32 status)
-@@ -775,6 +795,7 @@ static int usbhsg_try_start(struct usbhs_priv *priv, u32 status)
- 	 * - usb module
- 	 */
- 	usbhs_sys_function_ctrl(priv, 1);
-+	usbhsg_update_pullup(priv);
+ 	i2c0: i2c@e6508000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -1050,10 +1107,11 @@
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
+-			clocks = <&extal_clk>, <&p_clk>;
++			clocks = <&hp_clk>, <&hp_clk>, <&extal_clk>, <&p_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <R8A7790_CLK_THERMAL R8A7790_CLK_PWM>;
+-			clock-output-names = "thermal", "pwm";
++			renesas,clock-indices = <R8A7790_CLK_AUDIO_DMAC0 R8A7790_CLK_AUDIO_DMAC1
++						 R8A7790_CLK_THERMAL R8A7790_CLK_PWM>;
++			clock-output-names = "audmac0", "audmac1", "thermal", "pwm";
+ 		};
+ 		mstp7_clks: mstp7_clks@e615014c {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index e3a3fb8..c27b3b5 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -78,6 +78,8 @@
+ #define R8A7790_CLK_USBDMAC1		31
  
- 	/*
- 	 * enable irq callback
-@@ -881,8 +902,15 @@ static int usbhsg_pullup(struct usb_gadget *gadget, int is_on)
- {
- 	struct usbhsg_gpriv *gpriv = usbhsg_gadget_to_gpriv(gadget);
- 	struct usbhs_priv *priv = usbhsg_gpriv_to_priv(gpriv);
-+	unsigned long flags;
+ /* MSTP5 */
++#define R8A7790_CLK_AUDIO_DMAC1		1
++#define R8A7790_CLK_AUDIO_DMAC0		2
+ #define R8A7790_CLK_THERMAL		22
+ #define R8A7790_CLK_PWM			23
  
--	usbhs_sys_function_pullup(priv, is_on);
-+	usbhs_lock(priv, flags);
-+	if (is_on)
-+		usbhsg_status_set(gpriv, USBHSG_STATUS_SOFT_CONNECT);
-+	else
-+		usbhsg_status_clr(gpriv, USBHSG_STATUS_SOFT_CONNECT);
-+	usbhsg_update_pullup(priv);
-+	usbhs_unlock(priv, flags);
- 
- 	return 0;
- }
 -- 
-1.7.9.5
+2.1.1
 
