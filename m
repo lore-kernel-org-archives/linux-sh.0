@@ -1,67 +1,52 @@
-From: Kevin Cernekee <cernekee@gmail.com>
-Date: Sun, 02 Nov 2014 01:03:57 +0000
-Subject: [PATCH V3 10/14] irqchip: bcm7120-l2: Use gc->mask_cache to simplify suspend/resume functions
-Message-Id: <1414890241-9938-11-git-send-email-cernekee@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Nov 2014 01:20:26 +0000
+Subject: [PATCH 1/2] ARM: shmobile: sh73a0: Add restart callback
+Message-Id: <cad900819fba01760833c6c6ed89f464f9c93690.1415841454.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414890241-9938-1-git-send-email-cernekee@gmail.com>
-In-Reply-To: <1414890241-9938-1-git-send-email-cernekee@gmail.com>
+References: <cover.1415841454.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415841454.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: arnd@arndb.de, f.fainelli@gmail.com, tglx@linutronix.de, jason@lakedaemon.net, ralf@linux-mips.org
-Cc: linux-sh@vger.kernel.org, sergei.shtylyov@cogentembedded.com, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, mbizon@freebox.fr, jogo@openwrt.org, linux-mips@linux-mips.org
+To: linux-arm-kernel@lists.infradead.org
 
-The cached value already incorporates irq_fwd_mask, and was saved the
-last time an IRQ was enabled/disabled.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
-Acked-by: Florian Fainelli <f.fainelli@gmail.com>
+Port the sh73a0 restart handling from the kzm9g-legacy board code to the
+generic sh73a0 code.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/irqchip/irq-bcm7120-l2.c | 11 +++--------
- 1 file changed, 3 insertions(+), 8 deletions(-)
+ arch/arm/mach-shmobile/setup-sh73a0.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/drivers/irqchip/irq-bcm7120-l2.c b/drivers/irqchip/irq-bcm7120-l2.c
-index b70679f8..9841121 100644
---- a/drivers/irqchip/irq-bcm7120-l2.c
-+++ b/drivers/irqchip/irq-bcm7120-l2.c
-@@ -37,7 +37,6 @@ struct bcm7120_l2_intc_data {
- 	bool can_wake;
- 	u32 irq_fwd_mask;
- 	u32 irq_map_mask;
--	u32 saved_mask;
- };
- 
- static void bcm7120_l2_intc_irq_handle(unsigned int irq, struct irq_desc *desc)
-@@ -62,14 +61,11 @@ static void bcm7120_l2_intc_suspend(struct irq_data *d)
- {
- 	struct irq_chip_generic *gc = irq_data_get_irq_chip_data(d);
- 	struct bcm7120_l2_intc_data *b = gc->private;
--	u32 reg;
- 
- 	irq_gc_lock(gc);
--	/* Save the current mask and the interrupt forward mask */
--	b->saved_mask = __raw_readl(b->base + IRQEN) | b->irq_fwd_mask;
- 	if (b->can_wake) {
--		reg = b->saved_mask | gc->wake_active;
--		__raw_writel(reg, b->base + IRQEN);
-+		__raw_writel(gc->mask_cache | gc->wake_active,
-+			     b->base + IRQEN);
- 	}
- 	irq_gc_unlock(gc);
- }
-@@ -77,11 +73,10 @@ static void bcm7120_l2_intc_suspend(struct irq_data *d)
- static void bcm7120_l2_intc_resume(struct irq_data *d)
- {
- 	struct irq_chip_generic *gc = irq_data_get_irq_chip_data(d);
--	struct bcm7120_l2_intc_data *b = gc->private;
- 
- 	/* Restore the saved mask */
- 	irq_gc_lock(gc);
--	__raw_writel(b->saved_mask, b->base + IRQEN);
-+	__raw_writel(gc->mask_cache, b->base + IRQEN);
- 	irq_gc_unlock(gc);
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index b7bd8e5..3447ca7 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -775,6 +775,13 @@ void __init sh73a0_add_standard_devices_dt(void)
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
  }
  
++#define RESCNT2 IOMEM(0xe6188020)
++static void sh73a0_restart(enum reboot_mode mode, const char *cmd)
++{
++	/* Do soft power on reset */
++	writel((1 << 31), RESCNT2);
++}
++
+ static const char *sh73a0_boards_compat_dt[] __initdata = {
+ 	"renesas,sh73a0",
+ 	NULL,
+@@ -786,6 +793,7 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
+ 	.init_early	= sh73a0_init_delay,
+ 	.init_machine	= sh73a0_add_standard_devices_dt,
+ 	.init_late	= shmobile_init_late,
++	.restart	= sh73a0_restart,
+ 	.dt_compat	= sh73a0_boards_compat_dt,
+ MACHINE_END
+ #endif /* CONFIG_USE_OF */
 -- 
 2.1.1
 
