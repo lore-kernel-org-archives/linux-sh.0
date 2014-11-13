@@ -1,111 +1,58 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 27 Nov 2014 00:07:50 +0000
-Subject: Re: [PATCH] dmaengine: rcar-dmac: Handle hardware descriptor allocation failure
-Message-Id: <1695373.od5H2ihtGp@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 13 Nov 2014 02:18:53 +0000
+Subject: Re: [PATCH][resend] of: Add vendor 2nd prefix for Asahi Kasei Corp
+Message-Id: <87y4rfhmgl.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416924617-15939-1-git-send-email-j@bitron.ch>
-In-Reply-To: <1416924617-15939-1-git-send-email-j@bitron.ch>
+References: <20140611165410.GK5099@sirena.org.uk>
+	<CAMuHMdUT0hEBGbN+W-Oz5zJ0N8S2VDMndqtDO=EtWF3jG2MEew@mail.gmail.com>
+	<20140611170233.GL5099@sirena.org.uk>
+	<5398A53D.3020706@wwwdotorg.org>
+	<20140611190444.GN5099@sirena.org.uk>
+	<5398AB07.4040304@wwwdotorg.org>
+	<87sinbdk44.wl%kuninori.morimoto.gx@renesas.com>
+	<878ulzx6hr.wl%kuninori.morimoto.gx@gmail.com>
+	<20140922130026.GK3290@leverpostej>
+	<CAMuHMdX22z97SbGS1HDiYfJ1PXxyEN2S8D7w4sr+4bUwD+mJZw@mail.gmail.com>
+	<20140922132743.GM3290@leverpostej>
+In-Reply-To: <20140922132743.GM3290@leverpostej>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: =?ISO-8859-1?Q?J=FCrg?= Billeter <j@bitron.ch>, Simon Horman <horms+renesas@verge.net.au>
-Cc: Magnus Damm <damm+renesas@opensource.se>, Vinod Koul <vinod.koul@intel.com>, Phil Edworthy <phil.edworthy@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, dmaengine@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Mark Rutland <mark.rutland@arm.com>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Olof Johansson <olof@lixom.net>, Stephen Warren <swarren@wwwdotorg.org>, Rob Herring <robh@kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Mark Brown <broonie@kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, ALSA Development Mailing List <alsa-devel@alsa-project.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, Simon <horms@verge.net.au>, "grant.likely@linaro.org" <grant.likely@linaro.org>
 
-Hi J=FCrg,
 
-Thank you for the patch.
+Hi Mark, Geert
 
-On Tuesday 25 November 2014 15:10:17 J=FCrg Billeter wrote:
-> If the atomic DMA coherent pool is too small, disable use of hardware
-> descriptor lists instead of crashing the system:
->=20
-> ERROR: 256 KiB atomic DMA coherent pool is too small!
-> Please increase it with coherent_pool=3D kernel parameter!
->=20
-> Unable to handle kernel NULL pointer dereference at virtual address 00000=
-004
-> Internal error: Oops: a07 [#1] PREEMPT SMP ARM
->=20
-> PC is at rcar_dmac_chan_reinit+0x3c/0x160
-> LR is at _raw_spin_lock_irqsave+0x18/0x5c
->=20
-> [<802132c0>] (rcar_dmac_chan_reinit) from [<80214818>]
-> (rcar_dmac_isr_error+0x84/0xa0) [<80214818>] (rcar_dmac_isr_error) from
-> [<80060484>] (handle_irq_event_percpu+0x50/0x150) [<80060484>]
-> (handle_irq_event_percpu) from [<800605c0>] (handle_irq_event+0x3c/0x5c)
-> [<800605c0>] (handle_irq_event) from [<8006350c>]
-> (handle_fasteoi_irq+0xb8/0x198) [<8006350c>] (handle_fasteoi_irq) from
-> [<8005fdb0>] (generic_handle_irq+0x20/0x30) [<8005fdb0>]
-> (generic_handle_irq) from [<8000fcd0>] (handle_IRQ+0x50/0xc4) [<8000fcd0>]
-> (handle_IRQ) from [<800092cc>] (gic_handle_irq+0x28/0x5c) [<800092cc>]
-> (gic_handle_irq) from [<80012700>] (__irq_svc+0x40/0x70)
->=20
-> Kernel panic - not syncing: Fatal exception in interrupt
->=20
-> Signed-off-by: J=FCrg Billeter <j@bitron.ch>
+Sorry for my super late response about this
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> > > Given all that, I think we should get rid of the "ak" prefix entirely,
+> > > fix up the seaboard dts, and leave the legacy matching for "ak,ak8975"
+> > > up to the i2c framework. However, that would imply deleting from
+> > > vendor-prefixes.txt (if we want people to be warned on use of "ak"), and
+> > > that's not a good precedent to set.
+> > 
+> > Instead of deleting, we can deprecate, like was done for powervr:
+> > 
+> > powervr PowerVR (deprecated, use img)
+> 
+> Ah. I tried to see if we had any deprecated bindings, but I somehow
+> failed to search correctly and missed powervr.
+> 
+> > Still missing is an update for checkpatch to warn when a deprecated
+> > vendor prefix is used.
+> 
+> Marking it deprecated and warning with checkpatch is certainly
+> preferable.
 
-and applied to my tree.
+I guess removing "ak" line from vendor-prefixes.txt is very enough
+for warn for a deprecated vendor prefix on checkpatch ?
 
-> ---
->  drivers/dma/sh/rcar-dmac.c | 14 +++++++++-----
->  1 file changed, 9 insertions(+), 5 deletions(-)
->=20
-> diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
-> index f8f70eb..f18b1b6 100644
-> --- a/drivers/dma/sh/rcar-dmac.c
-> +++ b/drivers/dma/sh/rcar-dmac.c
-> @@ -679,8 +679,8 @@ static void rcar_dmac_realloc_hwdesc(struct
-> rcar_dmac_chan *chan, desc->hwdescs.size =3D size;
->  }
->=20
-> -static void rcar_dmac_fill_hwdesc(struct rcar_dmac_chan *chan,
-> -				  struct rcar_dmac_desc *desc)
-> +static int rcar_dmac_fill_hwdesc(struct rcar_dmac_chan *chan,
-> +				 struct rcar_dmac_desc *desc)
->  {
->  	struct rcar_dmac_xfer_chunk *chunk;
->  	struct rcar_dmac_hw_desc *hwdesc;
-> @@ -689,7 +689,7 @@ static void rcar_dmac_fill_hwdesc(struct rcar_dmac_ch=
-an
-> *chan,
->=20
->  	hwdesc =3D desc->hwdescs.mem;
->  	if (!hwdesc)
-> -		return;
-> +		return -ENOMEM;
->=20
->  	list_for_each_entry(chunk, &desc->chunks, node) {
->  		hwdesc->sar =3D chunk->src_addr;
-> @@ -697,6 +697,8 @@ static void rcar_dmac_fill_hwdesc(struct rcar_dmac_ch=
-an
-> *chan, hwdesc->tcr =3D chunk->size >> desc->xfer_shift;
->  		hwdesc++;
->  	}
-> +
-> +	return 0;
->  }
->=20
->  /* ---------------------------------------------------------------------=
+  ...
+- ak	Asahi Kasei Corp.
+  ...
++ asahi-kasei	Asahi Kasei Corp.
+
+Best regards
 ---
->  @@ -933,8 +935,10 @@ rcar_dmac_chan_prep_sg(struct rcar_dmac_chan *chan,
-> struct scatterlist *sgl, * additional complexity remains to be
-> investigated.
->  	 */
->  	desc->hwdescs.use =3D !highmem && nchunks > 1;
-> -	if (desc->hwdescs.use)
-> -		rcar_dmac_fill_hwdesc(chan, desc);
-> +	if (desc->hwdescs.use) {
-> +		if (rcar_dmac_fill_hwdesc(chan, desc) < 0)
-> +			desc->hwdescs.use =3D false;
-> +	}
->=20
->  	return &desc->async_tx;
->  }
-
---=20
-Regards,
-
-Laurent Pinchart
-
+Kuninori Morimoto
