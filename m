@@ -1,41 +1,51 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 13 Nov 2014 21:59:37 +0000
-Subject: Re: [PATCH] sh_eth: r8a779x: Enable automatically fetch receive descriptor
-Message-Id: <546529C9.3080907@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Nov 2014 01:19:46 +0000
+Subject: [PATCH] ARM: shmobile: kzm9g-reference: Add restart callback
+Message-Id: <534547c036afad3f23d49d8352896f5d05709685.1415756816.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415861819-27812-1-git-send-email-ykaneko0929@gmail.com> <20141113.150311.1961794581032201784.davem@davemloft.net>
-In-Reply-To: <20141113.150311.1961794581032201784.davem@davemloft.net>
+References: <cover.1415756816.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415756816.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Miller <davem@davemloft.net>, ykaneko0929@gmail.com
-Cc: netdev@vger.kernel.org, horms@verge.net.au, magnus.damm@gmail.com, linux-sh@vger.kernel.org, grant.likely@linaro.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-On 11/13/2014 11:03 PM, David Miller wrote:
+Port the sh73a0 restart handling from the kzm9g-legacy board code to the
+kzm9g-reference board code.
 
->> From: Kouei Abe <kouei.abe.cp@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-kzm9g-reference.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
->> HDMAC automatically fetches the receive descriptor and receives frames.
->> Continuous reception of multiple frames is possible.
-
->> Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
->> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->> ---
->>
->> This patch is based on net-next tree.
->
-> This doesn't even compile, or, it depends upon another patch which you have
-> not mentioned.
-
-    This patch is just very outdated -- this issue has been fixed for all SoCs 
-before.
-
-> Because sh_eth_cpu_data does not have an rmcr_value field.
-
-     Right, it was removed by the above mentioned patch (based on your 
-feedback BTW ;-).
-
-WBR, Sergei
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index d9cdf9a..0e1de74 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -43,6 +43,13 @@ static void __init kzm_init(void)
+ #endif
+ }
+ 
++#define RESCNT2 IOMEM(0xe6188020)
++static void kzm9g_restart(enum reboot_mode mode, const char *cmd)
++{
++	/* Do soft power on reset */
++	writel((1 << 31), RESCNT2);
++}
++
+ static const char *kzm9g_boards_compat_dt[] __initdata = {
+ 	"renesas,kzm9g-reference",
+ 	NULL,
+@@ -54,5 +61,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
+ 	.init_early	= shmobile_init_delay,
+ 	.init_machine	= kzm_init,
+ 	.init_late	= shmobile_init_late,
++	.restart	= kzm9g_restart,
+ 	.dt_compat	= kzm9g_boards_compat_dt,
+ MACHINE_END
+-- 
+2.1.1
 
