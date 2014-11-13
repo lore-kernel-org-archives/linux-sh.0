@@ -1,55 +1,46 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 10 Nov 2014 01:15:29 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: sh73a0: Add restart callback
-Message-Id: <20141110011528.GO16836@verge.net.au>
+From: gsantosh@codeaurora.org
+Date: Thu, 13 Nov 2014 03:02:04 +0000
+Subject: Question on Compressed offload session
+Message-Id: <85499f52ebd29581bf58b9cafbae6864.squirrel@www.codeaurora.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415367993-31033-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1415367993-31033-2-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: alsa-devel-bounces@alsa-project.org
+Cc: Mark Rutland <mark.rutland@arm.com>, Rob Herring <robh@kernel.org>, ALSA Development Mailing List <alsa-devel@alsa-project.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Stephen Warren <swarren@wwwdotorg.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, grant.likely@linaro.org, devicetree@vger.kernel.org, Mark Brown <broonie@kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, Olof Johansson <olof@lixom.net>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
-On Fri, Nov 07, 2014 at 02:46:33PM +0100, Geert Uytterhoeven wrote:
-> Port the sh73a0 restart handling from the kzm9g-legacy board code to the
-> generic sh73a0 code.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> Tested on kzm9g-multiplatform
+Hi All,
 
-Thanks, I have queued this up.
+The Question is for the compressed offload session.
 
-> 
->  arch/arm/mach-shmobile/setup-sh73a0.c | 8 ++++++++
->  1 file changed, 8 insertions(+)
-> 
-> diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-> index 179c2b65be9f6829..73b25f999a98ab0a 100644
-> --- a/arch/arm/mach-shmobile/setup-sh73a0.c
-> +++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-> @@ -786,6 +786,13 @@ void __init sh73a0_add_standard_devices_dt(void)
->  	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
->  }
->  
-> +#define RESCNT2 IOMEM(0xe6188020)
-> +static void sh73a0_restart(enum reboot_mode mode, const char *cmd)
-> +{
-> +	/* Do soft power on reset */
-> +	writel((1 << 31), RESCNT2);
-> +}
-> +
->  static const char *sh73a0_boards_compat_dt[] __initdata = {
->  	"renesas,sh73a0",
->  	NULL,
-> @@ -797,6 +804,7 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
->  	.init_early	= shmobile_init_delay,
->  	.init_machine	= sh73a0_add_standard_devices_dt,
->  	.init_late	= shmobile_init_late,
-> +	.restart	= sh73a0_restart,
->  	.dt_compat	= sh73a0_boards_compat_dt,
->  MACHINE_END
->  #endif /* CONFIG_USE_OF */
-> -- 
-> 1.9.1
-> 
+For a generic codec driver during the startup function it will set some of
+the hw_constraints rule similarly like this.
+
+        snd_pcm_hw_constraint_list(substream->runtime, 0,
+                    SNDRV_PCM_HW_PARAM_RATE,
+                    &constraints_12_24);
+
+pcm_lib.c will try to add the rule to the runtime structure by accessing
+the pointers which will be initialized during opening of the session,
+as The Constraints added by the codec driver will be updated in the
+
+struct snd_pcm_hw_constraints of runtime structure which will be part of
+substream handle.
+
+But for the compressed offload I do not see the initialization done for HW
+constraints, as done in pcm session
+
+2092int snd_pcm_open_substream(struct snd_pcm *pcm, int stream,
+2093			   struct file *file,
+2094			   struct snd_pcm_substream **rsubstream)
+
+most of the existing drivers which has the hw_constraint_list code will
+not be applicable for compress offload session, how to solve this?
+
+Regards,
+Santosh M G.
+Qualcomm Innovation Center, Inc.
+The Qualcomm Innovation Center, Inc. is a member of the Code Aurora
+Forum,a Linux Foundation Collaborative Project
+
+
