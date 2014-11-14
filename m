@@ -1,33 +1,31 @@
-From: David Miller <davem@davemloft.net>
-Date: Mon, 24 Nov 2014 21:42:04 +0000
-Subject: Re: [PATCH] net/smsc911x: Add minimal runtime PM support
-Message-Id: <20141124.164204.382324382412456341.davem@davemloft.net>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 14 Nov 2014 16:07:06 +0000
+Subject: [PATCH 2/3] ARM: shmobile: sh7372: Spelling/grammar s/entity map/identity mapping/
+Message-Id: <1415981227-13580-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416855497-6479-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1416855497-6479-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: geert+renesas@glider.be
-Cc: steve.glendinning@shawell.net, netdev@vger.kernel.org, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 24 Nov 2014 19:58:17 +0100
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-shmobile/setup-sh7372.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> Add minimal runtime PM support (enable on probe, disable on remove), to
-> ensure proper operation with a parent device that uses runtime PM.
-> 
-> This is needed on systems where the external bus controller module of
-> the SoC is contained in a PM domain and/or has a gateable functional
-> clock. In such cases, before accessing any device connected to the
-> external bus, the PM domain must be powered up, and/or the functional
-> clock must be enabled, which is typically handled through runtime PM by
-> the bus controller driver.
-> 
-> An example of this is the kzm9g development board, where an smsc9220
-> Ethernet controller is connected to the Bus State Controller (BSC) of a
-> Renesas sh73a0 SoC.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 68fbae51279d7108..458a2cfad4173ca7 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -43,7 +43,7 @@
+ #include "sh7372.h"
+ 
+ static struct map_desc sh7372_io_desc[] __initdata = {
+-	/* create a 1:1 entity map for 0xe6xxxxxx
++	/* create a 1:1 identity mapping for 0xe6xxxxxx
+ 	 * used by CPGA, INTC and PFC.
+ 	 */
+ 	{
+-- 
+1.9.1
 
-Applied to net-next, thanks!
