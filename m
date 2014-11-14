@@ -1,28 +1,38 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 13 Nov 2014 22:37:22 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 14 Nov 2014 00:43:58 +0000
 Subject: Re: [PATCH 1/3] sh_eth: Remove redundant alignment adjustment
-Message-Id: <546532A2.80509@cogentembedded.com>
+Message-Id: <20141114004358.GN14971@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415862301-28032-1-git-send-email-ykaneko0929@gmail.com> <1415862301-28032-2-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1415862301-28032-2-git-send-email-ykaneko0929@gmail.com>
+References: <1415862301-28032-1-git-send-email-ykaneko0929@gmail.com>
+ <1415862301-28032-2-git-send-email-ykaneko0929@gmail.com>
+ <546532A2.80509@cogentembedded.com>
+In-Reply-To: <546532A2.80509@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>, netdev@vger.kernel.org
-Cc: "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: Yoshihiro Kaneko <ykaneko0929@gmail.com>, netdev@vger.kernel.org, "David S. Miller" <davem@davemloft.net>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On 11/13/2014 10:04 AM, Yoshihiro Kaneko wrote:
+On Fri, Nov 14, 2014 at 01:37:22AM +0300, Sergei Shtylyov wrote:
+> On 11/13/2014 10:04 AM, Yoshihiro Kaneko wrote:
+> 
+> >From: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
+> 
+> >PTR_ALIGN macro after skb_reserve is redundant, because skb_reserve
+> >function adjusts the alignment of skb->data.
+> 
+>    OK, but where is the bug? There must be one if you base this patch on the
+> 'net' tree...
 
-> From: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
+I suppose this patch would be more appropriate for the net-next tree.
 
-> PTR_ALIGN macro after skb_reserve is redundant, because skb_reserve
-> function adjusts the alignment of skb->data.
-
-    OK, but where is the bug? There must be one if you base this patch on the 
-'net' tree...
-
-> Signed-off-by: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-
-WBR, Sergei
-
+> >Signed-off-by: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
+> >Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+> 
+> WBR, Sergei
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
