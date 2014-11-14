@@ -1,52 +1,48 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 12 Nov 2014 16:10:46 +0000
-Subject: Re: [PATCH 1/5] i2c: sh_mobile: sort includes alphabetically
-Message-Id: <20141112161046.GD4031@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="P+33d92oIH25kiaB"
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 14 Nov 2014 16:07:05 +0000
+Subject: [PATCH 1/3] ARM: shmobile: r8a7779: Spelling/grammar s/entity/identity/, s/map/mapping/
+Message-Id: <1415981227-13580-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415355104-2031-1-git-send-email-wsa@the-dreams.de>
- <1415355104-2031-2-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1415355104-2031-2-git-send-email-wsa@the-dreams.de>
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-shmobile/setup-r8a7779.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
---P+33d92oIH25kiaB
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 9452dd4ea925a093..6156d172cf3108d7 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -48,14 +48,14 @@
+ #include "r8a7779.h"
+ 
+ static struct map_desc r8a7779_io_desc[] __initdata = {
+-	/* 2M entity map for 0xf0000000 (MPCORE) */
++	/* 2M identity mapping for 0xf0000000 (MPCORE) */
+ 	{
+ 		.virtual	= 0xf0000000,
+ 		.pfn		= __phys_to_pfn(0xf0000000),
+ 		.length		= SZ_2M,
+ 		.type		= MT_DEVICE_NONSHARED
+ 	},
+-	/* 16M entity map for 0xfexxxxxx (DMAC-S/HPBREG/INTC2/LRAM/DBSC) */
++	/* 16M identity mapping for 0xfexxxxxx (DMAC-S/HPBREG/INTC2/LRAM/DBSC) */
+ 	{
+ 		.virtual	= 0xfe000000,
+ 		.pfn		= __phys_to_pfn(0xfe000000),
+@@ -680,7 +680,7 @@ void __init r8a7779_add_early_devices(void)
+ 
+ 	/* Early serial console setup is not included here due to
+ 	 * memory map collisions. The SCIF serial ports in r8a7779
+-	 * are difficult to entity map 1:1 due to collision with the
++	 * are difficult to identity map 1:1 due to collision with the
+ 	 * virtual memory range used by the coherent DMA code on ARM.
+ 	 *
+ 	 * Anyone wanting to debug early can remove UPF_IOREMAP from
+-- 
+1.9.1
 
-On Fri, Nov 07, 2014 at 11:11:40AM +0100, Wolfram Sang wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
->=20
-> Improves readability and reduces chances of duplicates.
->=20
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-
-Applied to for-next, thanks!
-
-
---P+33d92oIH25kiaB
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJUY4aGAAoJEBQN5MwUoCm2r34QAKsPhPCp9KGn7whMMN0UE4+M
-6VVAUvEcxvT/BE3tS+UwkHkEyxbHUDtGiz4OAEHgDnojudfEfrSjfNTpp6WnPm1a
-xEWpRnzFPdov5It+Bt29DFxPgXbiTIOh/HpN7MfjrqhKLpkstZt3O6832Zg3mFUQ
-E9v2S+XjYDYMG4Ima9X5Pm2wGeG5ofLND3kkH4u4UJuOm3m/Q4Xp59UyDG753c7W
-i3bAokohqIG2O/YOGliVmu3Pdu8l2hkYMdA412cH0+Ys/Ynaq4juWI5CDGBcftoN
-rjDtKFrhXW+mk2xc3DWG8qhUVzOoLBqdiqFH0yqmDqnC4GgZ3h3t/ANH3MIBZfVb
-O3CAU/zoDt5Zl54VaNvGYWc3Ai1g1zFGVVXz5SX2qhvKrlhrN8ELUAB0dtjCdVeC
-9EEoKYzjMmTV4TOtdxP7ZW3zFjFnbCnS2c0sxYwRs2re4qB7URqCqJUd3bV9n2ph
-XhRCP91FaUBC9EykKt1yKj/+oUJXCnLZWEFlh4HCyFJ/foMG88mmJi4lVue5+tnK
-UE9iw4jgCLIBwle6ZCysiQz24+oGkuushmg3RxUgkmeQPRHK4psVyUU62RdUl6vY
-ZP1bNXLjS1pZp2AsujxFv6b5YwPQTXbWNZdZwBAUQCPBt82288hlggYzT+Q5JbWr
-zflEojrU0nkH2gqvmykj
-=K/Vy
------END PGP SIGNATURE-----
-
---P+33d92oIH25kiaB--
