@@ -1,58 +1,45 @@
-From: =?utf-8?B?U8O2cmVu?= Brinkmann <soren.brinkmann@xilinx.com>
-Date: Thu, 06 Nov 2014 04:13:12 +0000
-Subject: Re: [PATCH 0/7] Pinctrl support for Zynq
-Message-Id: <149f300f05ec4a28bed74212a7b01529@BY2FFO11FD005.protection.gbl>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 14 Nov 2014 03:02:36 +0000
+Subject: Re: [PATCH 3/3] ARM: shmobile: koelsch dts: Drop console= bootargs parameter
+Message-Id: <20141114030235.GA28000@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415041531-15520-1-git-send-email-soren.brinkmann@xilinx.com>
- <5459BC1C.3000807@suse.de>
- <44de30f0237545c6b62871d6c0480a67@BY2FFO11FD050.protection.gbl>
- <545AF05A.1040300@suse.de>
-In-Reply-To: <545AF05A.1040300@suse.de>
+References: <1414592918-25138-1-git-send-email-geert+renesas@glider.be>
+ <1414592918-25138-4-git-send-email-geert+renesas@glider.be>
+ <42870768.kOpZNjp1qs@avalon>
+ <CAMuHMdUOX845FFaNkEan9c+fRrsSk4q0gXUeknTn-MK5JAYWGg@mail.gmail.com>
+In-Reply-To: <CAMuHMdUOX845FFaNkEan9c+fRrsSk4q0gXUeknTn-MK5JAYWGg@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-On Thu, 2014-11-06 at 04:51AM +0100, Andreas Färber wrote:
-> Am 05.11.2014 um 18:03 schrieb Sören Brinkmann:
-> > On Wed, 2014-11-05 at 06:56AM +0100, Andreas Färber wrote:
-> >> I've tracked down all 54 MIO pins of the Parallella and cooked up the
-> >> equivalent DT patch. [...] For testing purposes I've configured a
-> >> heartbeat trigger for the USER_LED (CR10).
-> >>
-> >> To my disappointment these pinctrl additions did not fix one issue:
-> >> Whenever a write access to be handled by the bitstream (0x808f0f04) is
-> >> performed, the board hangs and the heartbeat stops. Would a bug in the
-> >> bitstream allow this to happen, or are more drivers missing to actually
-> >> make use of the PL in general? With a downstream ADI/Xilinx 3.12 kernel
-> >> that problem does not surface.
-> > 
-> > This doesn't sound like being related to pinctrl at all.
-> > Devices in the PL are just memory mapped on the AXI bus. There is
-> > nothing needed to access those. Hangs do in most cases indicate that the
-> > IP does not respond (properly). In my experience this is mostly caused
-> > by 
-> >  - level shifters not enabled
-> >  - IP kept in reset
-> >  - IP is clock gated
-> > With the clock gating being the culprit in most cases. Did you check
-> > those things?
+On Thu, Oct 30, 2014 at 12:03:22PM +0100, Geert Uytterhoeven wrote:
+> On Thu, Oct 30, 2014 at 11:44 AM, Laurent Pinchart
+> <laurent.pinchart@ideasonboard.com> wrote:
+> > On Wednesday 29 October 2014 15:28:38 Geert Uytterhoeven wrote:
+> >> Since commit 595c6a4bb77f0096 ("ARM: shmobile: koelsch: Remove legacy C
+> >> board code"), koelsch is restricted to booting from DT, so
+> >> chosen/stdout-path is always used, and we can drop the "console="
+> >> parameter from chosen/bootargs.
+> >
+> > I'm curious, how is the baud rate now selected ?
 > 
-> Figured it out: zynq-7000.dtsi sets fclk-enable = <0>, i.e., all PL
-> clocks are disabled by default. When overriding that tiny property with
-> 0xf it suddenly works as expected! I'll send a patch later in the day.
+> >From an earlier response for kzm9d:
 > 
-> Are boards expected to use clocks = <&clkc 15>, ...; on individual nodes
-> relying on the PL? Or does enabling those clocks require actually
-> loading a bitstream so that it is not being done by default?
+> "I forgot emev is the only supported SoC not using sh-sci.
+>  drivers/tty/serial/sh-sci.c:serial_console_setup() defaults to 115200 baud,
+>  while serial8250_console_setup() defaults to 9600 baud."
 
-Clocks are under control of drivers. Drivers are supposed to
-use the clock framework to enable the clocks they use. The fclk-enable
-is just a work around to enable driver-less IP and similar.
+Hi Geert,
 
-So, if your FPGA part has proper drivers, you should add the appropriate
-description in DT and the drivers would need to use the CCF to enable
-the clocks. Otherwise you can work around this by specifying
-fclk-enable.
+while backporting this and similar changes for other boards
+to v3.14/LTSI-3.14 I noticed that koelsch, alt and ape6evm-reference
+come up without a console. Which is not ideal.
 
-	Sören
+I am wondering if you have any thoughts on why this may occur.
+My wild stab in the dark is some interaction with PM.
+
+For reference my backport is the backport/v3.14.23/snapshot2.wip1 tag in my
+renesas-backports tree. At the very top it includes reversions of the
+backports of the troublesome patches.
