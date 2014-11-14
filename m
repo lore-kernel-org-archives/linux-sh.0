@@ -1,43 +1,29 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 10 Nov 2014 18:42:30 +0000
-Subject: [PATCH v2 2/2] sata_rcar: Document deprecated "renesas,rcar-sata"
-Message-Id: <1415644950-2983-2-git-send-email-geert+renesas@glider.be>
+From: Tejun Heo <tj@kernel.org>
+Date: Fri, 14 Nov 2014 17:36:39 +0000
+Subject: Re: [PATCH v2 2/2] sata_rcar: Document deprecated "renesas,rcar-sata"
+Message-Id: <20141114173639.GF25889@htj.dyndns.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1415644950-2983-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1415644950-2983-1-git-send-email-geert+renesas@glider.be>
+ <1415644950-2983-2-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1415644950-2983-2-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Tejun Heo <tj@kernel.org>
-Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>, linux-ide@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>, linux-ide@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
 
-Commit e67adb4e669db834 ("sata_rcar: Add R-Car Gen2 SATA PHY support")
-deprecated "renesas,rcar-sata" in favor of "renesas,sata-r8a7779", but
-the deprecated value was never documented in the binding documentation,
-while it is still in active use.
+On Mon, Nov 10, 2014 at 07:42:30PM +0100, Geert Uytterhoeven wrote:
+> Commit e67adb4e669db834 ("sata_rcar: Add R-Car Gen2 SATA PHY support")
+> deprecated "renesas,rcar-sata" in favor of "renesas,sata-r8a7779", but
+> the deprecated value was never documented in the binding documentation,
+> while it is still in active use.
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
----
-v2:
-  - Add Acked-by,
-  - Rebased on top of libata/for-next
----
- Documentation/devicetree/bindings/ata/sata_rcar.txt | 1 +
- 1 file changed, 1 insertion(+)
+Applied to libata/for-3.19.
 
-diff --git a/Documentation/devicetree/bindings/ata/sata_rcar.txt b/Documentation/devicetree/bindings/ata/sata_rcar.txt
-index f09c1ee260ba1d10..2493a5a316551de8 100644
---- a/Documentation/devicetree/bindings/ata/sata_rcar.txt
-+++ b/Documentation/devicetree/bindings/ata/sata_rcar.txt
-@@ -3,6 +3,7 @@
- Required properties:
- - compatible		: should contain one of the following:
- 			  - "renesas,sata-r8a7779" for R-Car H1
-+			    ("renesas,rcar-sata" is deprecated)
- 			  - "renesas,sata-r8a7790-es1" for R-Car H2 ES1
- 			  - "renesas,sata-r8a7790" for R-Car H2 other than ES1
- 			  - "renesas,sata-r8a7791" for R-Car M2-W
+Thanks.
+
 -- 
-1.9.1
-
+tejun
