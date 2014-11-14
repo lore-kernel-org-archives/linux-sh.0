@@ -1,88 +1,35 @@
-From: Alexandre Courbot <acourbot@nvidia.com>
-Date: Fri, 14 Nov 2014 08:38:58 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 14 Nov 2014 09:16:18 +0000
 Subject: Re: [PATCH v3] of: replace Asahi Kasei Corp venter prefix
-Message-Id: <5465BFA2.9050706@nvidia.com>
+Message-Id: <2984171.bo9yu8oQT6@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5398AB07.4040304@wwwdotorg.org>	<87sinbdk44.wl%kuninori.morimoto.gx@renesas.com>	<878ulzx6hr.wl%kuninori.morimoto.gx@gmail.com>	<20140922130026.GK3290@leverpostej>	<CAMuHMdX22z97SbGS1HDiYfJ1PXxyEN2S8D7w4sr+4bUwD+mJZw@mail.gmail.com>	<20140922132743.GM3290@leverpostej>	<87y4rfhmgl.wl%kuninori.morimoto.gx@renesas.com>	<1415845309.4269.6.camel@perches.com>	<20141113025105.GA16652@verge.net.au>	<87vbmjhj00.wl%kuninori.morimoto.gx@renesas.com>	<20141113110740.GE3815@sirena.org.uk> <87k32yd0bd.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87k32yd0bd.wl%kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+References: <5398AB07.4040304@wwwdotorg.org> <87k32yd0bd.wl%kuninori.morimoto.gx@renesas.com> <5465BFA2.9050706@nvidia.com>
+In-Reply-To: <5465BFA2.9050706@nvidia.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>
-Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Joe Perches <joe-6d6DIl74uiNBDgjK7y7TUQ@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Olof Johansson <olof-nZhT3qVonbNeoWH0uzbU5w@public.gmane.org>, Stephen Warren <swarren-3lzwWm7+Weoh9ZMKESR00Q@public.gmane.org>, Rob Herring <robh-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, ALSA Development Mailing List <alsa-devel-K7yf7f+aM1XWsZ/bQMPhNw@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org" <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-tegra-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Alexandre Courbot <acourbot@nvidia.com>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Mark Brown <broonie@kernel.org>, Mark Rutland <mark.rutland@arm.com>, Simon Horman <horms@verge.net.au>, Joe Perches <joe@perches.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Olof Johansson <olof@lixom.net>, Stephen Warren <swarren@wwwdotorg.org>, Rob Herring <robh@kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, ALSA Development Mailing List <alsa-devel@alsa-project.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, "grant.likely@linaro.org" <grant.likely@linaro.org>, linux-arm-kernel@lists.infradead.org, linux-tegra@vger.kernel.org
 
-On 11/14/2014 10:43 AM, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->
-> Current vendor-prefixes.txt already has
-> "ak" prefix for Asahi Kasei Corp by
-> ae8c4209af2cec065fef15d200a42a04130799f7
-> (of: Add vendor prefix for Asahi Kasei Corp.)
->
-> It went through the appropriate review process.
-> But, almost all Asahi Kasei chip drivers are
-> using "asahi-kasei" prefix today.
-> (arch/arm/boot/dts/tegra20-seaboard.dts only is
-> using "ak,ak8975", but there are instances of
-> "asahi-kasei,ak8975" in other dts files.
-> And drivers/iio/magnetometer/ak8975.c
-> doesn't support "ak,ak8975")
-> So, we made a mistake there.
->
-> In addition, checkpatch.pl reports WARNING
-> if it is using "asahi-kasei" prerfix in DT file.
-> (DT compatible string vendor "asahi-kasei" appears un-documented)
->
-> Marking it deprecated and warning with checkpatch
-> is certainly preferable.
-> So, this patch replace "ak" to "asahi-kasei" in
-> vendor-prefixes.txt. (and fixup tegra20-seaboard)
->
-> OTOH, Asahi Kasei is usually referred to as "AKM",
-> but this patch doesn't care about it.
-> Because no DT is using that today.
->
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->   .../devicetree/bindings/vendor-prefixes.txt        |    2 +-
->   arch/arm/boot/dts/tegra20-seaboard.dts             |    2 +-
->   2 files changed, 2 insertions(+), 2 deletions(-)
->
-> diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
-> index 723999d..ddcb4cd 100644
-> --- a/Documentation/devicetree/bindings/vendor-prefixes.txt
-> +++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
-> @@ -9,7 +9,6 @@ ad	Avionic Design GmbH
->   adapteva	Adapteva, Inc.
->   adi	Analog Devices, Inc.
->   aeroflexgaisler	Aeroflex Gaisler AB
-> -ak	Asahi Kasei Corp.
->   allwinner	Allwinner Technology Co., Ltd.
->   altr	Altera Corp.
->   amcc	Applied Micro Circuits Corporation (APM, formally AMCC)
-> @@ -20,6 +19,7 @@ amstaos	AMS-Taos Inc.
->   apm	Applied Micro Circuits Corporation (APM)
->   arm	ARM Ltd.
->   armadeus	ARMadeus Systems SARL
-> +asahi-kasei	Asahi Kasei Corp.
->   atmel	Atmel Corporation
->   auo	AU Optronics Corporation
->   avago	Avago Technologies
-> diff --git a/arch/arm/boot/dts/tegra20-seaboard.dts b/arch/arm/boot/dts/tegra20-seaboard.dts
-> index a1d4bf9..7f5cf80 100644
-> --- a/arch/arm/boot/dts/tegra20-seaboard.dts
-> +++ b/arch/arm/boot/dts/tegra20-seaboard.dts
-> @@ -405,7 +405,7 @@
->   		clock-frequency = <400000>;
->
->   		magnetometer@c {
-> -			compatible = "ak,ak8975";
-> +			compatible = "asahi-kasei,ak8975";
+On Friday 14 November 2014 17:38:58 Alexandre Courbot wrote:
+> > diff --git a/arch/arm/boot/dts/tegra20-seaboard.dts b/arch/arm/boot/dts/tegra20-seaboard.dts
+> > index a1d4bf9..7f5cf80 100644
+> > --- a/arch/arm/boot/dts/tegra20-seaboard.dts
+> > +++ b/arch/arm/boot/dts/tegra20-seaboard.dts
+> > @@ -405,7 +405,7 @@
+> >               clock-frequency = <400000>;
+> >
+> >               magnetometer@c {
+> > -                     compatible = "ak,ak8975";
+> > +                     compatible = "asahi-kasei,ak8975";
+> 
+> Mmm. So does this mean this device was never probed because the driver 
+> did not recognize its compatible property? I cannot find "ak,ak8975" 
+> anywhere else in the kernel.
+> 
 
-Mmm. So does this mean this device was never probed because the driver 
-did not recognize its compatible property? I cannot find "ak,ak8975" 
-anywhere else in the kernel.
+No, the i2c bus behaves in a special way by matching the "ak8975"
+i2c driver name with any "*,ak8975" DT compatible string. Both
+of the above will work with existing kernels.
 
-If so,
-
-Acked-by: Alexandre Courbot <acourbot@nvidia.com>
+	Arnd
