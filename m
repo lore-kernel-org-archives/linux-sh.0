@@ -1,80 +1,54 @@
-From: Pierre-Louis Bossart <pierre-louis.bossart@linux.intel.com>
-Date: Fri, 14 Nov 2014 16:28:54 +0000
+From: Mark Brown <broonie@kernel.org>
+Date: Fri, 14 Nov 2014 17:06:50 +0000
 Subject: Re: [alsa-devel] Question on Compressed offload session
-Message-Id: <54662DC6.7070302@linux.intel.com>
+Message-Id: <20141114170650.GG3815@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="6cotLj5rESeNB5ig"
 List-Id: <linux-sh.vger.kernel.org>
-References: <85499f52ebd29581bf58b9cafbae6864.squirrel@www.codeaurora.org> <5464CDE2.2070406@linux.intel.com> <fd33d16f31eb73cc6f0585c192601d9e.squirrel@www.codeaurora.org>
-In-Reply-To: <fd33d16f31eb73cc6f0585c192601d9e.squirrel@www.codeaurora.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: gsantosh@codeaurora.org
-Cc: Mark Rutland <mark.rutland@arm.com>, Rob Herring <robh@kernel.org>, ALSA Development Mailing List <alsa-devel@alsa-project.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Stephen Warren <swarren@wwwdotorg.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Olof Johansson <olof@lixom.net>, devicetree@vger.kernel.org, Mark Brown <broonie@kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, grant.likely@linaro.org, alsa-devel-bounces@alsa-project.org, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+References: <85499f52ebd29581bf58b9cafbae6864.squirrel@www.codeaurora.org>
+ <5464CDE2.2070406@linux.intel.com>
+ <fd33d16f31eb73cc6f0585c192601d9e.squirrel@www.codeaurora.org>
+ <54662DC6.7070302@linux.intel.com>
+In-Reply-To: <54662DC6.7070302@linux.intel.com>
+To: Pierre-Louis Bossart <pierre-louis.bossart@linux.intel.com>
+Cc: gsantosh@codeaurora.org, Mark Rutland <mark.rutland@arm.com>, Rob Herring <robh@kernel.org>, ALSA Development Mailing List <alsa-devel@alsa-project.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Stephen Warren <swarren@wwwdotorg.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Olof Johansson <olof@lixom.net>, devicetree@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, grant.likely@linaro.org, alsa-devel-bounces@alsa-project.org, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
-On 11/13/14, 10:08 PM, gsantosh@codeaurora.org wrote:
->> On 11/12/14, 9:02 PM, gsantosh@codeaurora.org wrote:
->>> Hi All,
->>>
->>> The Question is for the compressed offload session.
->>>
->>> For a generic codec driver during the startup function it will set some
->>> of
->>> the hw_constraints rule similarly like this.
->>>
->>>           snd_pcm_hw_constraint_list(substream->runtime, 0,
->>>                       SNDRV_PCM_HW_PARAM_RATE,
->>>                       &constraints_12_24);
->>>
->>> pcm_lib.c will try to add the rule to the runtime structure by accessing
->>> the pointers which will be initialized during opening of the session,
->>> as The Constraints added by the codec driver will be updated in the
->>>
->>> struct snd_pcm_hw_constraints of runtime structure which will be part of
->>> substream handle.
->>>
->>> But for the compressed offload I do not see the initialization done for
->>> HW
->>> constraints, as done in pcm session
->>>
->>> 2092int snd_pcm_open_substream(struct snd_pcm *pcm, int stream,
->>> 2093			   struct file *file,
->>> 2094			   struct snd_pcm_substream **rsubstream)
->>>
->>> most of the existing drivers which has the hw_constraint_list code will
->>> not be applicable for compress offload session, how to solve this?
->>
->> You can't directly link physical output/input with the decoder/encoder
->> in general.
->> For decoders, the sample-rate may not always be known ahead of time,
->> e.g. with AAC-SBR implicit signaling. There is no way to add constraints
->> on open, there is an assumption that a sample-rate converter is part of
->> the chain to take care of the difference between the output of the
->> offloaded decoder and the back-end actual sampling frequency (same with
->> number of channels and bit-width btw).
->> Likewise if you encode the frequency may not be the same as what the
->> backend provides and some SRC might be needed.
->> -Pierre
->>
->
-> I Agree we cannot have a direct link between physical output  / input with
-> decoder / encoder, during compressed playback.
-> My concern here is, if we have a legacy codec driver which is used for the
-> PCM out, and in the start up of this codec driver it is adding
-> hw_constraints list, now the same codec driver is used for the compressed
-> session FE or PCM session FE,
-> If the routing is such that compressed FE -> codec the hw_constraints
-> added by this driver is not valid here,
-> and legacy drivers needs to be changed,
-> Now the question comes how to change this drivers?
-> I can think of following things
-> if the routing is done for Compressed FE -> codec
->
-> 1) in Codec driver avoid adding hw_constraint during startup if compressed
-> session is routed, this recommend for codec driver to know that compress
-> session is routed to codec which I feel not the correct way to handle this
->
-> I was checking how to handle this situation in much better way.
 
-What exactly do you call a 'legacy codec'? If there is a DAI i am not 
-sure I understand the problem.
+--6cotLj5rESeNB5ig
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
+On Fri, Nov 14, 2014 at 10:28:54AM -0600, Pierre-Louis Bossart wrote:
+> On 11/13/14, 10:08 PM, gsantosh@codeaurora.org wrote:
+
+> >1) in Codec driver avoid adding hw_constraint during startup if compressed
+> >session is routed, this recommend for codec driver to know that compress
+> >session is routed to codec which I feel not the correct way to handle this
+
+> >I was checking how to handle this situation in much better way.
+
+> What exactly do you call a 'legacy codec'? If there is a DAI i am not sure I
+> understand the problem.
+
+I think what he's trying to say is that there's nothing automatic which
+will ensure that constraints on the back end set by the CODEC driver
+will be paid attention to.  This is true, it's pretty much entirely up
+to the machine driver to make sure it gets the back end links right.
+
+--6cotLj5rESeNB5ig
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQEcBAEBAgAGBQJUZjaqAAoJECTWi3JdVIfQuFAH/13RyikXZ58DwaCl7jN85TQ8
+BV4EwR+3FqqXVcXw4fX8JLkRyNmUnkv4GSQyFTNEICL2qoHHKSlnd1fbow1tOWdn
+NGuhgFL1yqraNjguNS8/bBKfbwFOZ2OwhQruKXWuZdeOyKJ6qZ+GffsR/ov/7LY4
+Ggrfl4PqjPowCWMulNgwCkCfdy84/E1tzPOfInBj6YXDeORs+Ros6kgnOiyAyXHf
+UVUnExmdreqnqHpnVeBS4TT68hM2Wnh8A7jmWISM6taB6bHe9BAiXpiqtEOx6DBq
+6Kwqjn8w0jZ1jfVUuof+cJs6t/C+MYSabOLn+M6brV8ZY5Z1P7AZvW4W2PmBkC8=
+=hWv8
+-----END PGP SIGNATURE-----
+
+--6cotLj5rESeNB5ig--
