@@ -1,124 +1,44 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 20 Nov 2014 01:45:47 +0000
-Subject: Re: [PATCH] media: soc_camera: rcar_vin: Fix alignment of clipping size
-Message-Id: <20141120014547.GA29752@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 14 Nov 2014 15:49:45 +0000
+Subject: [PATCH v4 0/2] ARM: shmobile: Add early debugging support using SCIF(A)
+Message-Id: <1415980187-12683-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414746610-23194-1-git-send-email-ykaneko0929@gmail.com>
- <5453915E.3020100@cogentembedded.com>
-In-Reply-To: <5453915E.3020100@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Yoshihiro Kaneko <ykaneko0929@gmail.com>, linux-media@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+	Hi Simon, Magnus, Arnd,
 
-On Fri, Oct 31, 2014 at 04:40:46PM +0300, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 10/31/2014 12:10 PM, Yoshihiro Kaneko wrote:
-> 
-> >From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-> 
-> >Since the Start Line Pre-Clip register, the Start Pixel Pre-Clip
-> >register and the End Line Post-Clip register do not have restriction
-> 
->    Hm, my R-Car H1 manual says to specify an even number for the Start Pixel
-> Pre-Clip Register.
+This patch series adds serial port debug macros for the SCIF(A) serial ports.
+This includes all supported shmobile SoCs, except for EMEV2.
 
-Thanks. I have confirmed with Matsuoka-san that you are correct.
+It contains 2 patches, which are two alternative versions:
+  - The first patch keeps on using the identity mapping set up by .map_io()
+    on platforms I cannot test myself (sh7372 and r8a7779),
+  - The second one converts the remaining platforms to use debug_ll_io_init(),
+    which allowed to get rid of the #ifdef in renesas-scif.S, and consolidate
+    more config options.
 
-It seems to me that the following portion of the patch should be removed
-accordingly.
+Both versions work fine on r8a7791/koelsch (multiplatform), r8a7740/armadillo
+(legacy and reference), and sh73a0/kzm9g (legacy, reference, and
+multiplatform), also with a multiplatform kernel based on shmobile_defconfig.
 
---- a/drivers/media/platform/soc_camera/rcar_vin.c
-+++ b/drivers/media/platform/soc_camera/rcar_vin.c
-@@ -1558,8 +1558,8 @@ static int rcar_vin_set_crop(struct soc_camera_device *icd,
-        cam->width = mf.width;
-        cam->height = mf.height;
+I'd appreciate if you could test the second one on sh7372 and r8a7779,
+and if it works, apply it.
 
--       cam->vin_left = rect->left & ~1;
--       cam->vin_top = rect->top & ~1;
-+       cam->vin_left = rect->left;
-+       cam->vin_top = rect->top;
+Else, please apply the first version. We can do incremental conversions later,
+as discussed before.
 
-        /* Use VIN cropping to crop to the new window. */
-        ret = rcar_vin_set_rect(icd);
+Thanks!
 
-> >of H/W to a setting value, the processing of alignment is unnecessary.
-> >This patch corrects so that processing of alignment is not performed.
-> 
-> >However, the End Pixel Post-Clip register has restriction
-> >of H/W which must be an even number value at the time of the
-> >output of YCbCr-422 format. By this patch, the processing of
-> >alignment to an even number value is added on the above-mentioned
-> >conditions.
-> 
->    Well, the R-Car H1/M1A manuals don't specify such restriction.
+Gr{oetje,eeting}s,
 
-Thanks, I have confirmed with Matsuoka-san that the above text
-is somewhat misleading. And I think it should read something more like this:
+						Geert
 
-	In the case where YCbCr-422 is used and
-	(End pixel post clip) - (Start pixel post clip) is
-	odd one will be added by the hardware to round it up
-	to an even number.
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-I see this in section 26.2.11 Video n End Pixel Post-Clip Register (VnEPPoC)
-if the R-Car Gen 2 manual.
-
-> >The variable set to a register is as follows.
-> 
-> >  - Start Line Pre-Clip register
-> >    cam->vin_top
-> >  - Start Pixel Pre-Clip register
-> >    cam->vin_left
-> >  - End Line Post-Clip register
-> >    pix->height
-> >  - End Pixel Post-Clip register
-> >    pix->width
-> 
-> >Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-> >Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> >---
-> >  drivers/media/platform/soc_camera/rcar_vin.c | 18 ++++++++++++++----
-> >  1 file changed, 14 insertions(+), 4 deletions(-)
-> 
-> >diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-> >index d3d2f7d..1934e15 100644
-> >--- a/drivers/media/platform/soc_camera/rcar_vin.c
-> >+++ b/drivers/media/platform/soc_camera/rcar_vin.c
-> [...]
-> >@@ -1761,8 +1761,18 @@ static int rcar_vin_try_fmt(struct soc_camera_device *icd,
-> >  	}
-> >
-> >  	/* FIXME: calculate using depth and bus width */
-> >-	v4l_bound_align_image(&pix->width, 2, VIN_MAX_WIDTH, 1,
-> >-			      &pix->height, 4, VIN_MAX_HEIGHT, 2, 0);
-> >+	/*
-> >+	 * When performing a YCbCr-422 format output, even if it performs
-> >+	 * odd number clipping by pixel post clip processing, it is outputted
-> 
->    s/outputted/output/ -- it's an irregular verb.
-> 
-> >+	 * to a memory per even pixels.
-> >+	 */
-> >+	if ((pixfmt = V4L2_PIX_FMT_NV16) || (pixfmt = V4L2_PIX_FMT_YUYV) ||
-> >+		(pixfmt = V4L2_PIX_FMT_UYVY))
-> 
->    This is certainly asking to be a *switch* statement instead...
-> 
-> >+		v4l_bound_align_image(&pix->width, 5, VIN_MAX_WIDTH, 1,
-> >+				      &pix->height, 2, VIN_MAX_HEIGHT, 0, 0);
-> >+	else
-> >+		v4l_bound_align_image(&pix->width, 5, VIN_MAX_WIDTH, 0,
-> >+				      &pix->height, 2, VIN_MAX_HEIGHT, 0, 0);
-> 
-> WBR, Sergei
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
