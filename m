@@ -1,28 +1,50 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 05 Nov 2014 05:48:43 +0000
-Subject: Re: [PATCH 00/23 v3] Lager/Koelsch sound support v3
-Message-Id: <20141105054841.GA32680@verge.net.au>
+From: Dmitry Torokhov <dtor@chromium.org>
+Date: Fri, 14 Nov 2014 22:21:53 +0000
+Subject: [PATCH] PCI: rcar: fix error handling of irq_of_parse_and_map
+Message-Id: <20141114222153.GA39494@dtor-ws>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87zjc791v2.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87zjc791v2.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>
+Cc: Bjorn Helgaas <bhelgaas@google.com>, Phil Edworthy <phil.edworthy@renesas.com>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Mon, Nov 03, 2014 at 05:43:36PM -0800, Kuninori Morimoto wrote:
-> 
-> Hi Simon
-> 
-> These are v3 sound support (= PIO/DMA) patches,
-> I merged both Lager/Koelsch board support in this patch-set.
-> 
-> These are based on Laurent's R-Car DMA driver patch-set +
-> renesas-devel-20141030-v3.18-rc2
-> I added I2C clock frequency fixup patch on 9) and 15)
-> 1) - 8) are r8a7790/r8a7791 patches for DMA.
-> We can share around this code in the future (?).
+Return value of irq_of_parse_and_map() is unsigned int, with 0
+indicating failure, so testing for negative result never works.
 
-Maybe ! :)
+Signed-off-by: Dmitry Torokhov <dtor@chromium.org>
+---
 
-I have queued up this series.
+Not tested, found by casual code inspection.
+
+ drivers/pci/host/pcie-rcar.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
+index 9b356c3..6ca976f 100644
+--- a/drivers/pci/host/pcie-rcar.c
++++ b/drivers/pci/host/pcie-rcar.c
+@@ -764,7 +764,7 @@ static int rcar_pcie_get_resources(struct platform_device *pdev,
+ 		goto err_map_reg;
+ 
+ 	i = irq_of_parse_and_map(pdev->dev.of_node, 0);
+-	if (i < 0) {
++	if (!i) {
+ 		dev_err(pcie->dev, "cannot get platform resources for msi interrupt\n");
+ 		err = -ENOENT;
+ 		goto err_map_reg;
+@@ -772,7 +772,7 @@ static int rcar_pcie_get_resources(struct platform_device *pdev,
+ 	pcie->msi.irq1 = i;
+ 
+ 	i = irq_of_parse_and_map(pdev->dev.of_node, 1);
+-	if (i < 0) {
++	if (!i) {
+ 		dev_err(pcie->dev, "cannot get platform resources for msi interrupt\n");
+ 		err = -ENOENT;
+ 		goto err_map_reg;
+-- 
+2.1.0.rc2.206.gedb03e5
+
+
+-- 
+Dmitry
