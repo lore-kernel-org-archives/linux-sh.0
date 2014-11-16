@@ -1,75 +1,97 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Nov 2014 00:54:53 +0000
-Subject: [PATCH 27/29] ARM: shmobile: r8a7794: Add MMP and VSP1 clocks to device tree
-Message-Id: <dc3cf93d89c525dcaebf4460109196fd9752c706.1416476366.git.horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Sun, 16 Nov 2014 15:17:13 +0000
+Subject: Re: [PATCH v3 3/3] media: soc_camera: rcar_vin: Add NV16 horizontal scaling-up support
+Message-Id: <Pine.LNX.4.64.1411161609420.21527@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1416476366.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
+References: <1413868229-22205-1-git-send-email-ykaneko0929@gmail.com>
+ <1413868229-22205-4-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1413868229-22205-4-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Cc: linux-media@vger.kernel.org, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-From: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
+Hi Kaneko-san,
 
-Signed-off-by: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7794.dtsi            | 14 +++++++++-----
- include/dt-bindings/clock/r8a7794-clock.h |  6 ++++++
- 2 files changed, 15 insertions(+), 5 deletions(-)
+On Tue, 21 Oct 2014, Yoshihiro Kaneko wrote:
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index b6f8f45..19c9de3 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -461,15 +461,19 @@
- 		mstp1_clks: mstp1_clks@e6150134 {
- 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
--			clocks = <&p_clk>, <&zg_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
--				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>;
-+			clocks = <&zs_clk>, <&zs_clk>, <&p_clk>, <&zg_clk>, <&zs_clk>,
-+				 <&zs_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>, <&cp_clk>,
-+				 <&zs_clk>, <&zs_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
--				R8A7794_CLK_TMU1 R8A7794_CLK_3DG R8A7794_CLK_TMU3
--				R8A7794_CLK_TMU2 R8A7794_CLK_CMT0 R8A7794_CLK_TMU0
-+				R8A7794_CLK_VCP0 R8A7794_CLK_VPC0 R8A7794_CLK_TMU1
-+				R8A7794_CLK_3DG R8A7794_CLK_2DDMAC R8A7794_CLK_FDP1_0
-+				R8A7794_CLK_TMU3 R8A7794_CLK_TMU2 R8A7794_CLK_CMT0
-+				R8A7794_CLK_TMU0 R8A7794_CLK_VSP1_DU0 R8A7794_CLK_VSP1_S
- 			>;
- 			clock-output-names -				"tmu1", "3dg", "tmu3", "tmu2", "cmt0", "tmu0";
-+				"vcp0", "vpc0", "tmu1", "3dg", "2ddmac", "fdp1-0",
-+				"tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du0", "vsps";
- 		};
- 		mstp2_clks: mstp2_clks@e6150138 {
- 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
-index 9066213..aa9c286 100644
---- a/include/dt-bindings/clock/r8a7794-clock.h
-+++ b/include/dt-bindings/clock/r8a7794-clock.h
-@@ -26,12 +26,18 @@
- #define R8A7794_CLK_MSIOF0		0
- 
- /* MSTP1 */
-+#define R8A7794_CLK_VCP0		1
-+#define R8A7794_CLK_VPC0		3
- #define R8A7794_CLK_TMU1		11
- #define R8A7794_CLK_3DG			12
-+#define R8A7794_CLK_2DDMAC		15
-+#define R8A7794_CLK_FDP1_0		19
- #define R8A7794_CLK_TMU3		21
- #define R8A7794_CLK_TMU2		22
- #define R8A7794_CLK_CMT0		24
- #define R8A7794_CLK_TMU0		25
-+#define R8A7794_CLK_VSP1_DU0		28
-+#define R8A7794_CLK_VSP1_S		31
- 
- /* MSTP2 */
- #define R8A7794_CLK_SCIFA2		2
--- 
-2.1.1
+> From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+> 
+> Up until now scaling has been forbidden for the NV16 capture format.
+> This patch adds support for horizontal scaling-up for NV16. Vertical
+> scaling-up for NV16 is forbidden by the H/W specification.
 
+Here and also in the subject - what do you mean by "scaling-up?" Do you 
+really mean increasing sizes, i.e. scaling from smaller sizes to larger 
+ones? Is down-scaling not supported? Maybe someone with a better English 
+knowledge, then myself, could advise - is "add scaling-up support" ok or 
+would "add up-scaling support" or, if we don't really mean increasing, 
+just "add scaling support" be better?
+
+> 
+> Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+> ---
+> v3 [Yoshihiro Kaneko]
+> * no changes
+> 
+> v2 [Yoshihiro Kaneko]
+> * Updated change log text from Simon Horman
+> * Code-style fixes as suggested by Sergei Shtylyov
+> 
+>  drivers/media/platform/soc_camera/rcar_vin.c | 17 +++++++++++++----
+>  1 file changed, 13 insertions(+), 4 deletions(-)
+> 
+> diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+> index ecdbd48..fd2207a 100644
+> --- a/drivers/media/platform/soc_camera/rcar_vin.c
+> +++ b/drivers/media/platform/soc_camera/rcar_vin.c
+> @@ -644,7 +644,7 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+>  	/* output format */
+>  	switch (icd->current_fmt->host_fmt->fourcc) {
+>  	case V4L2_PIX_FMT_NV16:
+> -		iowrite32(ALIGN(ALIGN(cam->width, 0x20) * cam->height, 0x80),
+> +		iowrite32(ALIGN((cam->out_width * cam->out_height), 0x80),
+>  			  priv->base + VNUVAOF_REG);
+>  		dmr = VNDMR_DTMD_YCSEP;
+>  		output_is_yuv = true;
+> @@ -1614,9 +1614,17 @@ static int rcar_vin_set_fmt(struct soc_camera_device *icd,
+>  	 * At the time of NV16 capture format, the user has to specify the
+>  	 * width of the multiple of 32 for H/W specification.
+>  	 */
+> -	if ((pixfmt = V4L2_PIX_FMT_NV16) && (pix->width & 0x1F)) {
+> -		dev_err(icd->parent, "Specified width error in NV16 format.\n");
+> -		return -EINVAL;
+> +	if (pixfmt = V4L2_PIX_FMT_NV16) {
+> +		if (pix->width & 0x1F) {
+> +			dev_err(icd->parent,
+> +				"Specified width error in NV16 format. Please specify the multiple of 32.\n");
+> +			return -EINVAL;
+> +		}
+> +		if (pix->height != cam->height) {
+> +			dev_err(icd->parent,
+> +				"Vertical scaling-up error in NV16 format. Please specify input height size.\n");
+> +			return -EINVAL;
+> +		}
+
+Similar to the previous patch - shouldn't this new test be added to 
+_try_fmt() and there you would just fix the size instead of erroring out?
+
+Thanks
+Guennadi
+
+>  	}
+>  
+>  	switch (pix->field) {
+> @@ -1661,6 +1669,7 @@ static int rcar_vin_set_fmt(struct soc_camera_device *icd,
+>  	case V4L2_PIX_FMT_YUYV:
+>  	case V4L2_PIX_FMT_RGB565:
+>  	case V4L2_PIX_FMT_RGB555X:
+> +	case V4L2_PIX_FMT_NV16: /* horizontal scaling-up only is supported */
+>  		can_scale = true;
+>  		break;
+>  	default:
+> -- 
+> 1.9.1
+> 
