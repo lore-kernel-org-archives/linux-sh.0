@@ -1,82 +1,73 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Nov 2014 00:54:45 +0000
-Subject: [PATCH 19/29] ARM: shmobile: sh73a0 dtsi: Add SoC-specific IIC compatible properties
-Message-Id: <dd4dc874d16b87944e6803f41dc9477c3c6f09d6.1416476366.git.horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Sun, 16 Nov 2014 15:08:12 +0000
+Subject: Re: [PATCH v3 2/3] media: soc_camera: rcar_vin: Add capture width check for NV16 format
+Message-Id: <Pine.LNX.4.64.1411161605490.21527@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1416476366.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
+References: <1413868229-22205-1-git-send-email-ykaneko0929@gmail.com>
+ <1413868229-22205-3-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1413868229-22205-3-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Cc: linux-media@vger.kernel.org, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Hi Kaneko-san,
 
-The IIC nodes used the generic compatible properties only.
-This causes the driver to fail when using Standard Speed, as the
-operational clock is driven by the 104 MHz HP clock:
+On Tue, 21 Oct 2014, Yoshihiro Kaneko wrote:
 
-    i2c-sh_mobile e6820000.i2c: timing values out of range: L/H=0x208/0x1bf
-    i2c-sh_mobile: probe of e6820000.i2c failed with error -22
+> From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+> 
+> At the time of NV16 capture format, the user has to specify the
+> capture output width of the multiple of 32 for H/W specification.
+> At the time of using NV16 format by ioctl of VIDIOC_S_FMT,
+> this patch adds align check and the error handling to forbid
+> specification of the capture output width which is not a multiple of 32.
+> 
+> Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+> ---
+> 
+> v3 [Yoshihiro Kaneko]
+> * fixes some code-style and remove useless error flag as suggested by
+>   Sergei Shtylyov
+> 
+> v2 [Yoshihiro Kaneko]
+> * use u32 instead of unsigned long
+> 
+>  drivers/media/platform/soc_camera/rcar_vin.c | 18 ++++++++++++++++--
+>  1 file changed, 16 insertions(+), 2 deletions(-)
+> 
+> diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+> index dd6daab..ecdbd48 100644
+> --- a/drivers/media/platform/soc_camera/rcar_vin.c
+> +++ b/drivers/media/platform/soc_camera/rcar_vin.c
 
-Add the SoC-specific compatible property to fix this.
+[snip]
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/sh73a0.dtsi | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+> @@ -1605,6 +1610,15 @@ static int rcar_vin_set_fmt(struct soc_camera_device *icd,
+>  	dev_dbg(dev, "S_FMT(pix=0x%x, %ux%u)\n",
+>  		pixfmt, pix->width, pix->height);
+>  
+> +	/*
+> +	 * At the time of NV16 capture format, the user has to specify the
+> +	 * width of the multiple of 32 for H/W specification.
+> +	 */
+> +	if ((pixfmt = V4L2_PIX_FMT_NV16) && (pix->width & 0x1F)) {
+> +		dev_err(icd->parent, "Specified width error in NV16 format.\n");
+> +		return -EINVAL;
+> +	}
+> +
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 030a592..d8def5a 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -138,7 +138,7 @@
- 	i2c0: i2c@e6820000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
- 		reg = <0xe6820000 0x425>;
- 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH
- 			      0 168 IRQ_TYPE_LEVEL_HIGH
-@@ -150,7 +150,7 @@
- 	i2c1: i2c@e6822000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
- 		reg = <0xe6822000 0x425>;
- 		interrupts = <0 51 IRQ_TYPE_LEVEL_HIGH
- 			      0 52 IRQ_TYPE_LEVEL_HIGH
-@@ -162,7 +162,7 @@
- 	i2c2: i2c@e6824000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
- 		reg = <0xe6824000 0x425>;
- 		interrupts = <0 171 IRQ_TYPE_LEVEL_HIGH
- 			      0 172 IRQ_TYPE_LEVEL_HIGH
-@@ -174,7 +174,7 @@
- 	i2c3: i2c@e6826000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
- 		reg = <0xe6826000 0x425>;
- 		interrupts = <0 183 IRQ_TYPE_LEVEL_HIGH
- 			      0 184 IRQ_TYPE_LEVEL_HIGH
-@@ -186,7 +186,7 @@
- 	i2c4: i2c@e6828000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
- 		reg = <0xe6828000 0x425>;
- 		interrupts = <0 187 IRQ_TYPE_LEVEL_HIGH
- 			      0 188 IRQ_TYPE_LEVEL_HIGH
--- 
-2.1.1
+Shouldn't these checks go into rcar_vin_try_fmt() and then just adjust the 
+width instead of erroring out?
 
+Thanks
+Guennadi
+
+>  	switch (pix->field) {
+>  	default:
+>  		pix->field = V4L2_FIELD_NONE;
+> -- 
+> 1.9.1
+> 
