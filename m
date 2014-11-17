@@ -1,37 +1,50 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Wed, 12 Nov 2014 10:56:51 +0000
-Subject: Re: [PATCH] dmaengine: shdma: fix a race condition in __ld_cleanup()
-Message-Id: <20141112105705.GG24582@intel.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 17 Nov 2014 02:45:16 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Fixes for v3.18
+Message-Id: <cover.1416192055.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412820540-4892-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1412820540-4892-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <cover.1389321620.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1389321620.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Oct 09, 2014 at 11:09:00AM +0900, Yoshihiro Shimoda wrote:
-> This patch fixes a race condition about a list of shdma-base driver.
-> If we don't apply this patch, a dma slave driver (especially a usb
-> peripheral driver) may not be able to start the transfer.
-> 
-> If a dma slave driver has a callback, __ld_cleanup() will call
-> the callback before this driver removes the list. After the callback,
-> since the return value of __ld_cleanup() is not zero,
-> shdma_chan_ld_cleanup() calls __ld_cleanup() again. And, __ld_clean()
-> will removes the list.
-> 
-> At this time, if a dma slave driver calls dmaengine_submit() before
-> this driver removes the list, this driver will set schan->pm_state
-> to SHDMA_PM_PENDING in shdma_tx_submit(). And then, even if a dma
-> slave driver calls dma_async_issue_pending(), this driver don't
-> start the transfer because the schan->pm_state is SHDMA_PM_PENDING
-> in shdma_issue_pending().
-> 
-> So, this patch adds a new condition in __ld_clean() to check if the
-> schan->pm_state is SHDMA_PM_PENDING or not.
-Applied, thanks
+Hi Olof, Hi Kevin, Hi Arnd,
 
--- 
-~Vinod
+Please consider these Renesas ARM based SoC fixes for v3.18.
+Or alternatively for v3.19 if you feel they are too late for v3.18.
 
+
+* ARM: shmobile: kzm9g legacy: Set i2c clks_per_count
+
+  This problem appears to have been introduced when i2c shmobile support was
+  added to the sh73a0 by b028f94b76319e1b8 ("ARM: mach-shmobile: sh73a0
+  i2c_shmobile support.") in v2.6.37.
+
+  Without this fix i2c may not operate correctly on the sh73a0/kzm9g.
+
+
+The following changes since commit f114040e3ea6e07372334ade75d1ee0775c355e1:
+
+  Linux 3.18-rc1 (2014-10-19 18:08:38 -0700)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-fixes-for-v3.18
+
+for you to fetch changes up to b207422bb92f17f4f892a9b8737d44b37fece25b:
+
+  ARM: shmobile: kzm9g legacy: Set i2c clks_per_count to 2 (2014-11-12 10:38:30 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC Fixes for v3.18
+
+* Set i2c clks_per_count to 2 on kzm9g
+
+----------------------------------------------------------------
+Geert Uytterhoeven (1):
+      ARM: shmobile: kzm9g legacy: Set i2c clks_per_count to 2
+
+ arch/arm/mach-shmobile/setup-sh73a0.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
