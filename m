@@ -1,44 +1,55 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Nov 2014 01:19:56 +0000
-Subject: [PATCH 05/25] ARM: shmobile: r8a7791: Add Audio DMAC peri peri devices to DT
-Message-Id: <40c6d9f0e7745012c9e19c955e22d4809104359c.1415755881.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 17 Nov 2014 13:30:40 +0000
+Subject: [PATCH v5 4/8] ARM: shmobile: R-Mobile: Enable module clocks if !CONFIG_PM_RUNTIME
+Message-Id: <1416231044-1903-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415755881.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415755881.git.horms+renesas@verge.net.au>
+References: <1416231044-1903-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1416231044-1903-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+If CONFIG_PM_RUNTIME is not set, the clocks must be enabled before the
+devices can be used.
 
-Instantiate the Audio DMAC peri peri controllers
-in the r8a7791 device tree.
+Currently these clocks are enabled by the !CONFIG_PM_RUNTIME version of
+pm_clk_notify, activated by the hack in drivers/sh/pm_runtime.c, but
+this will go away soon (at least for DT).
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+On detach, disabling the clocks is already handled by pm_clk_destroy().
+On system suspend/resume, disabling/enabling clocks is already handled
+from the genpd->dev_ops.{start,stop}() callbacks.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 7 +++++++
- 1 file changed, 7 insertions(+)
+v5:
+  - No changes,
+v4:
+  - New.
+---
+ arch/arm/mach-shmobile/pm-rmobile.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index b54af74..379e1a5 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -357,6 +357,13 @@
- 		dma-channels = <13>;
- 	};
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index 168046c355fc8368..6d912ce801aa88bd 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -118,6 +118,14 @@ static int rmobile_pd_attach_dev(struct generic_pm_domain *domain,
+ 		goto fail;
+ 	}
  
-+	audmapp: dma-controller@ec740000 {
-+		compatible = "renesas,rcar-audmapp";
-+		#dma-cells = <1>;
++	if (!IS_ENABLED(CONFIG_PM_RUNTIME)) {
++		error = pm_clk_resume(dev);
++		if (error) {
++			dev_err(dev, "pm_clk_resume failed %d\n", error);
++			goto fail;
++		}
++	}
 +
-+		reg = <0 0xec740000 0 0x200>;
-+	};
-+
- 	/* The memory map in the User's Manual maps the cores to bus numbers */
- 	i2c0: i2c@e6508000 {
- 		#address-cells = <1>;
+ 	return 0;
+ 
+ fail:
 -- 
-2.1.1
+1.9.1
 
