@@ -1,67 +1,98 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 03 Nov 2014 15:34:49 +0000
-Subject: [PATCH v4 2/9] PM / Domains: Add DT bindings for power-on/off latencies
-Message-Id: <1415028896-9005-3-git-send-email-geert+renesas@glider.be>
+Date: Mon, 17 Nov 2014 13:30:39 +0000
+Subject: [PATCH v5 3/8] ARM: shmobile: R-Mobile: Use generic_pm_domain.attach_dev() for pm_clk setup
+Message-Id: <1416231044-1903-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415028896-9005-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1415028896-9005-1-git-send-email-geert+renesas@glider.be>
+References: <1416231044-1903-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1416231044-1903-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-PM domain power on/off-latencies are properties of the hardware.
-In legacy code, they're specified from platform code.
-On DT platforms, their values should come from DT.
+Use the just introduced genpd attach/detach callbacks to register the
+devices' module clocks, instead of doing it directly, to make it
+DT-proof.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Kevin Hilman <khilman@linaro.org>
 Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
+v5:
+  - Update for {at,de}tach_dev() taking a generic_pm_domain pointer
+    again,
 v4:
   - Add Reviewed-by,
-  - Replace single latency value by list of latencies,
+  - Add missing pm_clk_create()/pm_clk_destroy() calls,
+  - Update for attach_dev() returning an error code again,
 v3:
-  - No changes,
+  - Update for callback signature changes,
 v2:
-  - Add Acked-by.
----
- Documentation/devicetree/bindings/power/power_domain.txt | 14 ++++++++++++--
- 1 file changed, 12 insertions(+), 2 deletions(-)
+  - New.
 
-diff --git a/Documentation/devicetree/bindings/power/power_domain.txt b/Documentation/devicetree/bindings/power/power_domain.txt
-index 98c16672ab5f49e0..c4a4afb2ac3b0500 100644
---- a/Documentation/devicetree/bindings/power/power_domain.txt
-+++ b/Documentation/devicetree/bindings/power/power_domain.txt
-@@ -19,16 +19,26 @@ Required properties:
-    providing multiple PM domains (e.g. power controllers), but can be any value
-    as specified by device tree binding documentation of particular provider.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-shmobile/pm-rmobile.c | 34 ++++++++++++++++++++++++++++++++--
+ 1 file changed, 32 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index 717e6413d29cb998..168046c355fc8368 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -101,6 +101,36 @@ static bool rmobile_pd_active_wakeup(struct device *dev)
+ 	return true;
+ }
  
-+Optional properties:
-+ - power-on-latency: List of power-on latencies (in ns), one for each PM
-+   domain. If all power-on latencies are identical, the list may be shortened
-+   to a single value.
-+ - power-off-latency: List of power-off latencies (in ns), one for each PM
-+   domain. If all power-off latencies are identical, the list may be shortened
-+   to a single value.
++static int rmobile_pd_attach_dev(struct generic_pm_domain *domain,
++				 struct device *dev)
++{
++	int error;
 +
- Example:
++	error = pm_clk_create(dev);
++	if (error) {
++		dev_err(dev, "pm_clk_create failed %d\n", error);
++		return error;
++	}
++
++	error = pm_clk_add(dev, NULL);
++	if (error) {
++		dev_err(dev, "pm_clk_add failed %d\n", error);
++		goto fail;
++	}
++
++	return 0;
++
++fail:
++	pm_clk_destroy(dev);
++	return error;
++}
++
++static void rmobile_pd_detach_dev(struct generic_pm_domain *domain,
++				  struct device *dev)
++{
++	pm_clk_destroy(dev);
++}
++
+ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
+ {
+ 	struct generic_pm_domain *genpd = &rmobile_pd->genpd;
+@@ -112,6 +142,8 @@ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
+ 	genpd->dev_ops.active_wakeup	= rmobile_pd_active_wakeup;
+ 	genpd->power_off		= rmobile_pd_power_down;
+ 	genpd->power_on			= rmobile_pd_power_up;
++	genpd->attach_dev		= rmobile_pd_attach_dev;
++	genpd->detach_dev		= rmobile_pd_detach_dev;
+ 	__rmobile_pd_power_up(rmobile_pd, false);
+ }
  
- 	power: power-controller@12340000 {
- 		compatible = "foo,power-controller";
- 		reg = <0x12340000 0x1000>;
- 		#power-domain-cells = <1>;
-+		power-on-latency = <250000 400000 180000>;
-+		power-off-latency = <250000 400000 300000>;
- 	};
+@@ -130,8 +162,6 @@ void rmobile_add_device_to_domain_td(const char *domain_name,
+ 	struct device *dev = &pdev->dev;
  
--The node above defines a power controller that is a PM domain provider and
--expects one cell as its phandle argument.
-+The node above defines a power controller that is a PM domain provider for
-+3 PM domains, and expects one cell as its phandle argument.
+ 	__pm_genpd_name_add_device(domain_name, dev, td);
+-	if (pm_clk_no_clocks(dev))
+-		pm_clk_add(dev, NULL);
+ }
  
- =PM domain consumers=
- 
+ void rmobile_add_devices_to_domains(struct pm_domain_device data[],
 -- 
 1.9.1
 
