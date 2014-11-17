@@ -1,46 +1,28 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 17 Nov 2014 09:25:25 +0000
-Subject: [PATCH] ARM: shmobile: r8a7791: add USBDMAC{0,1} clocks to device tree
-Message-Id: <5469BF05.2010103@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 17 Nov 2014 09:37:20 +0000
+Subject: Re: [PATCH] ARM: shmobile: r8a7791: add USBDMAC{0,1} clocks to device tree
+Message-Id: <CAMuHMdVLsUeJ82V7AdYMcRjrET2Oihumqz9nuRWXG_n4EN671A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <5469BF05.2010103@renesas.com>
+In-Reply-To: <5469BF05.2010103@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- At the moment, usb-dmac driver for r8a7791 doesn't exist. But I would like
- to enable these clock settings for future development.
+On Mon, Nov 17, 2014 at 10:25 AM, Yoshihiro Shimoda
+<yoshihiro.shimoda.uh@renesas.com> wrote:
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
- arch/arm/boot/dts/r8a7791.dtsi |    7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index ba18030..d1d77d7 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1108,16 +1108,19 @@
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
- 			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7791_CLK_SD0>,
--				 <&mmc0_clk>, <&hp_clk>, <&mp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
-+				 <&mmc0_clk>, <&hp_clk>, <&mp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>,
-+				 <&hp_clk>, <&hp_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
- 				R8A7791_CLK_TPU0 R8A7791_CLK_SDHI2 R8A7791_CLK_SDHI1 R8A7791_CLK_SDHI0
- 				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_PCIEC R8A7791_CLK_IIC1
- 				R8A7791_CLK_SSUSB R8A7791_CLK_CMT1
-+				R8A7791_CLK_USBDMAC0 R8A7791_CLK_USBDMAC1
- 			>;
- 			clock-output-names  				"tpu0", "sdhi2", "sdhi1", "sdhi0",
--				"mmcif0", "i2c7", "pciec", "i2c8", "ssusb", "cmt1";
-+				"mmcif0", "i2c7", "pciec", "i2c8", "ssusb", "cmt1",
-+				"usbdmac0", "usbdmac1";
- 		};
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
--- 
-1.7.9.5
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
