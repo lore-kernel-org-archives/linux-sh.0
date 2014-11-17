@@ -1,45 +1,42 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 17 Nov 2014 13:57:46 +0000
-Subject: ARM: shmobile: sh73a0: CPU1 failed to come online (Re: [PATCH 0/4] ARM: shmobile: r8a7740/armadillo:
-Message-Id: <CAMuHMdWyUJ81G2CLpYScm9qB0KMia0PReBQ8oXdu+Z2P6AWWNg@mail.gmail.com>
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Mon, 17 Nov 2014 15:12:41 +0000
+Subject: Re: ARM: shmobile: sh73a0: CPU1 failed to come online (Re: [PATCH 0/4] ARM: shmobile: r8a7740/armadi
+Message-Id: <20141117151241.GR4042@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <CAMuHMdWyUJ81G2CLpYScm9qB0KMia0PReBQ8oXdu+Z2P6AWWNg@mail.gmail.com>
+In-Reply-To: <CAMuHMdWyUJ81G2CLpYScm9qB0KMia0PReBQ8oXdu+Z2P6AWWNg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Nov 17, 2014 at 2:53 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
-> This patch series migrates the DT-based generic r8a7740 platform and the
-> armadillo legacy platform from calling l2x0_of_init() to the generic l2c OF
-> initialization.
->
-> Note that this conversion should be applied to sh73a0, r8a7778, and r8a7779,
-> too. More about sh73a0 later.
+On Mon, Nov 17, 2014 at 02:57:46PM +0100, Geert Uytterhoeven wrote:
+> I tried to convert sh73a0, but it doesn't work, due to problems
+> bringing up the second
+> CPU core.
+> 
+> Details:
+>   - l2x0_of_init() is called much earlier than l2x0_init().
+>     When the L2 cache is enabled, initialization of the second CPU core of
+>     sh73a0 (Dual-core Cortex-A9) fails.
 
-I tried to convert sh73a0, but it doesn't work, due to problems
-bringing up the second
-CPU core.
+Missing L2 cache flushes for (any) the secondary core data/trampoline?
 
-Details:
-  - l2x0_of_init() is called much earlier than l2x0_init().
-    When the L2 cache is enabled, initialization of the second CPU core of
-    sh73a0 (Dual-core Cortex-A9) fails.
-  - As jiffies are not yet incrementing at that point (they are on r8a7791?),
-    timeouts don't work, and the kernel hangs at the
-    wait_for_completion_timeout() call in arch/arm/kernel/smp.c:__cpu_up().
-  - This may be related to the intermittent failure to bring up the second
-    CPU core when resuming from s2ram:
+>   - As jiffies are not yet incrementing at that point (they are on r8a7791?),
+>     timeouts don't work, and the kernel hangs at the
+>     wait_for_completion_timeout() call in arch/arm/kernel/smp.c:__cpu_up().
 
-        CPU1: failed to come online
+That sounds bad:
 
-Gr{oetje,eeting}s,
+start_kernel() -> rest_init() -> kernel_thread(kernel_init)
 
-                        Geert
+kernel_init() -> kernel_init_freeable() -> smp_init() -> (for each CPU) cpu_up()
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+By the time we get to rest_init(), init_IRQ(), time_init(),
+local_irq_enable(), late_time_init(), calibrate_delay(), etc have all
+been called, so if jiffies is not incrementing in __cpu_up(), that's
+a big problem.
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+-- 
+FTTC broadband for 0.8mile line: currently at 9.5Mbps down 400kbps up
+according to speedtest.net.
