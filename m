@@ -1,37 +1,108 @@
-From: Kevin Cernekee <cernekee@gmail.com>
-Date: Fri, 07 Nov 2014 06:44:22 +0000
-Subject: [PATCH V4 07/14] irqchip: bcm7120-l2, brcmstb-l2: Remove ARM Kconfig dependency
-Message-Id: <1415342669-30640-8-git-send-email-cernekee@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 17 Nov 2014 02:45:22 +0000
+Subject: [PATCH] ARM: shmobile: kzm9g legacy: Set i2c clks_per_count to 2
+Message-Id: <b207422bb92f17f4f892a9b8737d44b37fece25b.1416192055.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415342669-30640-1-git-send-email-cernekee@gmail.com>
-In-Reply-To: <1415342669-30640-1-git-send-email-cernekee@gmail.com>
+References: <cover.1416192055.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1416192055.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: tglx@linutronix.de, jason@lakedaemon.net, linux-sh@vger.kernel.org
-Cc: arnd@arndb.de, f.fainelli@gmail.com, ralf@linux-mips.org, sergei.shtylyov@cogentembedded.com, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, mbizon@freebox.fr, jogo@openwrt.org, linux-mips@linux-mips.org
+To: linux-arm-kernel@lists.infradead.org
 
-This can compile for MIPS (or anything else) now.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
-Acked-by: Florian Fainelli <f.fainelli@gmail.com>
+On sh73a0/kzm9g-legacy, probing of the i2c masters fails with:
+
+    i2c-sh_mobile i2c-sh_mobile.0: timing values out of range: L/H=0x208/0x1bf
+    sh_mobile: probe of i2c-sh_mobile.0 failed with error -22
+
+According to the datasheet, the transfer rate is derived from the HP
+clock (which runs at 104 MHz) divided by two. Hence
+i2c_sh_mobile_platform_data.clks_per_count should be set to two.
+
+Now probing succeeds, and i2c works:
+
+    i2c-sh_mobile i2c-sh_mobile.0: I2C adapter 0 with bus speed 100000 Hz (L/H=0x104/0xe0)
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/irqchip/Kconfig | 1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/mach-shmobile/setup-sh73a0.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
-diff --git a/drivers/irqchip/Kconfig b/drivers/irqchip/Kconfig
-index b21f12f..09c79d1 100644
---- a/drivers/irqchip/Kconfig
-+++ b/drivers/irqchip/Kconfig
-@@ -50,7 +50,6 @@ config ATMEL_AIC5_IRQ
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index b7bd8e5..328657d 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -26,6 +26,7 @@
+ #include <linux/of_platform.h>
+ #include <linux/delay.h>
+ #include <linux/input.h>
++#include <linux/i2c/i2c-sh_mobile.h>
+ #include <linux/io.h>
+ #include <linux/serial_sci.h>
+ #include <linux/sh_dma.h>
+@@ -192,11 +193,18 @@ static struct resource i2c4_resources[] = {
+ 	},
+ };
  
- config BRCMSTB_L2_IRQ
- 	bool
--	depends on ARM
- 	select GENERIC_IRQ_CHIP
- 	select IRQ_DOMAIN
++static struct i2c_sh_mobile_platform_data i2c_platform_data = {
++	.clks_per_count	= 2,
++};
++
+ static struct platform_device i2c0_device = {
+ 	.name		= "i2c-sh_mobile",
+ 	.id		= 0,
+ 	.resource	= i2c0_resources,
+ 	.num_resources	= ARRAY_SIZE(i2c0_resources),
++	.dev		= {
++		.platform_data	= &i2c_platform_data,
++	},
+ };
  
+ static struct platform_device i2c1_device = {
+@@ -204,6 +212,9 @@ static struct platform_device i2c1_device = {
+ 	.id		= 1,
+ 	.resource	= i2c1_resources,
+ 	.num_resources	= ARRAY_SIZE(i2c1_resources),
++	.dev		= {
++		.platform_data	= &i2c_platform_data,
++	},
+ };
+ 
+ static struct platform_device i2c2_device = {
+@@ -211,6 +222,9 @@ static struct platform_device i2c2_device = {
+ 	.id		= 2,
+ 	.resource	= i2c2_resources,
+ 	.num_resources	= ARRAY_SIZE(i2c2_resources),
++	.dev		= {
++		.platform_data	= &i2c_platform_data,
++	},
+ };
+ 
+ static struct platform_device i2c3_device = {
+@@ -218,6 +232,9 @@ static struct platform_device i2c3_device = {
+ 	.id		= 3,
+ 	.resource	= i2c3_resources,
+ 	.num_resources	= ARRAY_SIZE(i2c3_resources),
++	.dev		= {
++		.platform_data	= &i2c_platform_data,
++	},
+ };
+ 
+ static struct platform_device i2c4_device = {
+@@ -225,6 +242,9 @@ static struct platform_device i2c4_device = {
+ 	.id		= 4,
+ 	.resource	= i2c4_resources,
+ 	.num_resources	= ARRAY_SIZE(i2c4_resources),
++	.dev		= {
++		.platform_data	= &i2c_platform_data,
++	},
+ };
+ 
+ static const struct sh_dmae_slave_config sh73a0_dmae_slaves[] = {
 -- 
 2.1.1
 
