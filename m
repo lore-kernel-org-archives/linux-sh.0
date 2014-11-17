@@ -1,50 +1,47 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 10 Nov 2014 19:00:39 +0000
-Subject: [PATCH 0/5] ARM: shmobile: Sound binding updates
-Message-Id: <1415646044-4168-1-git-send-email-geert+renesas@glider.be>
+Date: Mon, 17 Nov 2014 13:53:08 +0000
+Subject: [PATCH 4/4] ARM: shmobile: r8a7740: Remove mapping of L2 cache controller registers
+Message-Id: <1416232388-2611-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1416232388-2611-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1416232388-2611-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: alsa-devel@alsa-project.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-	Hi Mark, Liam, Simon, Magnus, Morimoto-san,
+Now all r8a7740-based platforms have been migrated to the generic l2c OF
+initialization, it's no longer needed to map the L2 cache controller
+registers from .map_io().
 
-THis patch series add SoC-specific binding to the shmobile sound bindings,
-and updates/cleans up the affected dtsi files.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-shmobile/setup-r8a7740.c | 12 ------------
+ 1 file changed, 12 deletions(-)
 
-Patches 1 and 3 are meant for the ASoC tree.
-Patches 2, 4, 5 and are meant for the shmobile tree.
-
-Thanks!
-
-Geert Uytterhoeven (5):
-  ASoC: sh: fsi: Document SoC-specific bindings
-  ARM: shmobile: sh73a0 dtsi: Add SoC-specific FSI2 compatible property
-  ASoC: rsnd: Document SoC-specific bindings
-  ARM: shmobile: r8a7790 dtsi: Drop "renesas,rcar_sound" compatible
-    value
-  ARM: shmobile: r8a7791 dtsi: Drop "renesas,rcar_sound" compatible
-    value
-
- Documentation/devicetree/bindings/sound/renesas,fsi.txt  |  9 +++++++--
- Documentation/devicetree/bindings/sound/renesas,rsnd.txt | 10 +++++++---
- arch/arm/boot/dts/r8a7790.dtsi                           |  2 +-
- arch/arm/boot/dts/r8a7791.dtsi                           |  2 +-
- arch/arm/boot/dts/sh73a0.dtsi                            |  2 +-
- 5 files changed, 17 insertions(+), 8 deletions(-)
-
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index f4a2997f55c0c4a4..e872b8ea99badbce 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -50,18 +50,6 @@ static struct map_desc r8a7740_io_desc[] __initdata = {
+ 		.length		= 160 << 20,
+ 		.type		= MT_DEVICE_NONSHARED
+ 	},
+-#ifdef CONFIG_CACHE_L2X0
+-	/*
+-	 * for l2x0_init()
+-	 * 0xf0100000-0xf0101000 -> 0xf0002000-0xf0003000
+-	 */
+-	{
+-		.virtual	= 0xf0002000,
+-		.pfn		= __phys_to_pfn(0xf0100000),
+-		.length		= PAGE_SIZE,
+-		.type		= MT_DEVICE_NONSHARED
+-	},
+-#endif
+ };
+ 
+ void __init r8a7740_map_io(void)
 -- 
 1.9.1
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
