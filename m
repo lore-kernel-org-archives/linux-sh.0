@@ -1,7 +1,7 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 14 Nov 2014 16:23:41 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 17 Nov 2014 01:27:26 +0000
 Subject: Re: [PATCH v4 0/2] ARM: shmobile: Add early debugging support using SCIF(A)
-Message-Id: <1602253.050FQygs2a@wuerfel>
+Message-Id: <20141117012726.GI11143@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1415980187-12683-1-git-send-email-geert+renesas@glider.be>
 In-Reply-To: <1415980187-12683-1-git-send-email-geert+renesas@glider.be>
@@ -10,8 +10,8 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Friday 14 November 2014 16:49:45 Geert Uytterhoeven wrote:
->         Hi Simon, Magnus, Arnd,
+On Fri, Nov 14, 2014 at 04:49:45PM +0100, Geert Uytterhoeven wrote:
+> 	Hi Simon, Magnus, Arnd,
 > 
 > This patch series adds serial port debug macros for the SCIF(A) serial ports.
 > This includes all supported shmobile SoCs, except for EMEV2.
@@ -29,16 +29,27 @@ On Friday 14 November 2014 16:49:45 Geert Uytterhoeven wrote:
 > 
 > I'd appreciate if you could test the second one on sh7372 and r8a7779,
 > and if it works, apply it.
-> 
+
+Done. I have satisfied myself that 4b works on those SoCs and have
+queued-up 4b accordingly.
+
 > Else, please apply the first version. We can do incremental conversions later,
 > as discussed before.
-
-Both versions look good to me,
-
-Acked-by: Arnd Bergmann <arnd@arndb.de>
-
-I do notice that strictly speaking you break alphabetical ordering by putting
-DEBUG_R8A* and DEBUG_RCAR* after DEBUG_RK*, but it does seem way more reasonable
-like this.
-
-	Arnd
+> 
+> Thanks!
+> 
+> Gr{oetje,eeting}s,
+> 
+> 						Geert
+> 
+> --
+> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+> 
+> In personal conversations with technical people, I call myself a hacker. But
+> when I'm talking to journalists I just say "programmer" or something like that.
+> 							    -- Linus Torvalds
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
