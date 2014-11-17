@@ -1,46 +1,47 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 28 Nov 2014 00:35:08 +0000
-Subject: Re: [PATCH] ARM: shmobile: kzm9g_defconfig: Update AK8975 config option
-Message-Id: <20141128003508.GG30850@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 17 Nov 2014 09:25:13 +0000
+Subject: [PATCH] ARM: shmobile: r8a7790: add USBDMAC{0,1} clocks to device tree
+Message-Id: <5469BEF9.4010504@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416929099-29282-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1416929099-29282-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Nov 25, 2014 at 04:24:59PM +0100, Geert Uytterhoeven wrote:
-> CONFIG_SENSORS_AK8975 was renamed to CONFIG_AK8975 in commit
-> 2fc72cd8354e3e9c ("iio:magnetometer:ak8975 move driver out of staging")
-> in v3.10.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ At the moment, usb-dmac driver for r8a7790 doesn't exist. But I would like
+ to enable these clock settings for future development.
 
-Thanks. I have queued this up for v3.20.
+ arch/arm/boot/dts/r8a7790.dtsi |    7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
-I choose not to queue it up as a fix as it seems to not have
-been noticed for almost 8 kernel releases and thus is low priority.
-I am happy to change this approach if you wish.
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 14df425..d4ac978 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1103,17 +1103,20 @@
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+ 			clocks = <&hp_clk>, <&cp_clk>, <&mmc1_clk>, <&sd3_clk>,
+ 				 <&sd2_clk>, <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks R8A7790_CLK_SD0>, <&mmc0_clk>,
+-				 <&hp_clk>, <&mp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
++				 <&hp_clk>, <&mp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>,
++				 <&hp_clk>, <&hp_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7790_CLK_IIC2 R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
+ 				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0 R8A7790_CLK_MMCIF0
+ 				R8A7790_CLK_IIC0 R8A7790_CLK_PCIEC R8A7790_CLK_IIC1 R8A7790_CLK_SSUSB R8A7790_CLK_CMT1
++				R8A7790_CLK_USBDMAC0 R8A7790_CLK_USBDMAC1
+ 			>;
+ 			clock-output-names  				"iic2", "tpu0", "mmcif1", "sdhi3",
+ 				"sdhi2", "sdhi1", "sdhi0", "mmcif0",
+-				"iic0", "pciec", "iic1", "ssusb", "cmt1";
++				"iic0", "pciec", "iic1", "ssusb", "cmt1",
++				"usbdmac0", "usbdmac1";
+ 		};
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+-- 
+1.7.9.5
 
-> ---
->  arch/arm/configs/kzm9g_defconfig | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
-> index 8cb115d74fdf4e37..bfe568847503ff5f 100644
-> --- a/arch/arm/configs/kzm9g_defconfig
-> +++ b/arch/arm/configs/kzm9g_defconfig
-> @@ -126,8 +126,8 @@ CONFIG_DMADEVICES=y
->  CONFIG_SH_DMAE=y
->  CONFIG_ASYNC_TX_DMA=y
->  CONFIG_STAGING=y
-> -CONFIG_SENSORS_AK8975=y
->  CONFIG_IIO=y
-> +CONFIG_AK8975=y
->  # CONFIG_DNOTIFY is not set
->  CONFIG_VFAT_FS=y
->  CONFIG_TMPFS=y
-> -- 
-> 1.9.1
-> 
