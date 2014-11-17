@@ -1,39 +1,54 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Wed, 19 Nov 2014 21:39:45 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Defconfig Updates for v3.19
-Message-Id: <201411192239.45853.arnd@arndb.de>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 17 Nov 2014 11:43:00 +0000
+Subject: [PATCH] i2c: core: Fix probing of i2c slaves without interrupts
+Message-Id: <1416224580-4782-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415582943.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415582943.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
+Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-On Monday 10 November 2014, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these Renesas ARM based SoC defconfig updates for v3.19.
-> 
-> 
-> The following changes since commit f114040e3ea6e07372334ade75d1ee0775c355e1:
-> 
->   Linux 3.18-rc1 (2014-10-19 18:08:38 -0700)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig-for-v3.19
-> 
-> for you to fetch changes up to ccde0fbd4fe88151c8d3a93a3e3a939a0a1753b2:
-> 
->   ARM: shmobile: multiplatform: add AK4642 support on defconfig (2014-11-05 14:47:56 +0900)
-> 
-> ----------------------------------------------------------------
-> Renesas ARM Based SoC Defconfig Updates for v3.19
-> 
-> * Enable AK4642, Audo DMAC peri peri and R-Car DMAC in shmobile defconrig
-> * Enable PM Runtime in ape6evm defconfig
+Since commit 2fd36c55264926e2 ("i2c: core: Map OF IRQ at probe time"),
+i2c slaves without interrupts (e.g. da9210 and at24 on r8a7791/koelsch)
+fail to probe:
 
-Pulled into next/defconfig, thanks!
+    at24: probe of 2-0050 failed with error -22
 
-	Arnd
+    da9210: probe of 6-0068 failed with error -22
+
+This happens because the call to of_irq_get() in i2c_device_probe()
+returns -EINVAL.
+
+If a device node does not have an "interrupts" property,
+of_irq_parse_one() fails. Unlike irq_of_parse_and_map(), of_irq_get()
+does not ignore errors from of_irq_parse_one(), but forwards them.
+
+Make i2c_device_probe() ignore all errors but -EPROBE_DEFER to fix this,
+just like platform_get_irq() and platform_get_irq_byname() already do.
+
+Fixes: 2fd36c55264926e2 ("i2c: core: Map OF IRQ at probe time")
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/i2c/i2c-core.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/i2c/i2c-core.c b/drivers/i2c/i2c-core.c
+index a0768d6dffc28aae..cf830915713b387a 100644
+--- a/drivers/i2c/i2c-core.c
++++ b/drivers/i2c/i2c-core.c
+@@ -629,8 +629,10 @@ static int i2c_device_probe(struct device *dev)
+ 	if (!client->irq && dev->of_node) {
+ 		int irq = of_irq_get(dev->of_node, 0);
+ 
+-		if (irq < 0)
++		if (irq = -EPROBE_DEFER)
+ 			return irq;
++		if (irq < 0)
++			irq = 0;
+ 
+ 		client->irq = irq;
+ 	}
+-- 
+1.9.1
+
