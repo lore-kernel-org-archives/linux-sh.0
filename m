@@ -1,99 +1,51 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 14 Nov 2014 00:32:30 +0000
-Subject: Re: [GIT PULL] Third Round of Renesas ARM Based Soc Updates for v3.19
-Message-Id: <20141114003228.GL14971@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 18 Nov 2014 00:51:12 +0000
+Subject: [GIT PULL] Third Round of Renesas ARM Based SoC DT Cleanups for v3.19
+Message-Id: <cover.1416271777.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415841454.git.horms+renesas@verge.net.au>
- <5464FD6E.1090404@cogentembedded.com>
-In-Reply-To: <5464FD6E.1090404@cogentembedded.com>
+References: <cover.1378362045.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1378362045.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Nov 13, 2014 at 09:50:22PM +0300, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 11/13/2014 04:20 AM, Simon Horman wrote:
-> 
-> >Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> >Please consider these third round of Renesas ARM based soc updates for v3.19.
-> 
-> >This pull request is based on the previous round of
-> >such requests, tagged as renesas-soc2-for-v3.19,
-> >which I have already sent a pull-request for.
-> 
-> >This pull request is based on the previous round of
-> >such requests, tagged as renesas-soc2-for-v3.19,
-> >which I have already sent a pull-request for.
-> 
->    OK, but we've got it the first time. :-)
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Sorry, that was an editing artifact.
+Please consider these third round of Renesas ARM based SoC DT cleanups for
+v3.19.
 
-> >Please note that "ARM: shmobile: always build rcar setup for armv7"
-> >corrects a build failure in allmodconfig caused by "ARM: shmobile:
-> >rcar-gen2: Add CA7 arch_timer initialization for r8a7794" which
-> >is included in the first round of Renesas ARM Based SoC Soc Updates for
-> >v3.19, tagged as renesas-soc2-for-v3.19, which I have previously sent
-> >a pull-request for.
-> 
->    This is a third time you're repeating that. :-)
-
-I wanted to make sure it was clear.
-Actually, I had more text which I deleted for fear of being too repetitive :)
-
-> >To be clear, this pull request is based on renesas-soc2-for-v3.19 which
-> >is in turn based on renesas-soc2-for-v3.19.
-> 
->    Based on itself? :-)
-
-The second instance of renesas-soc2-for-v3.19 should have been
-renesas-soc-for-v3.19..
-
-> 
-> >The following changes since commit 950a3f0e7dd32c372c9957d5c050b08de7ec9e56:
-> 
-> >   ARM: shmobile: Enable PCI domains for R-Car Gen2 devices (2014-11-05 14:50:17 +0900)
-> 
-> >are available in the git repository at:
-> 
-> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc3-for-v3.19
-> 
-> >for you to fetch changes up to e3d163329753b3b473f40c9be71561ed8eb98aea:
-> 
-> >   ARM: shmobile: always build rcar setup for armv7 (2014-11-12 18:14:42 +0900)
-> 
-> >----------------------------------------------------------------
-> >Third Round of Renesas ARM Based Soc Updates for v3.19
-> 
-> >* Always build rcar setup for armv7
-> >   - Fixes allmodconfig build fauilre caused by
-> 
->    Failure.
-> 
-> >     "ARM: shmobile: always build rcar setup for armv7"
-> 
->    Caused by itself? :-)
-
-Sorry about that, it is caused by "ARM: shmobile: rcar-gen2: Add CA7
-arch_timer initialization for r8a7794".
+This pull request is based on the previous round of
+such requests, tagged as renesas-dt-cleanups2-for-v3.19,
+which I have already sent a pull-request for.
 
 
-> 
-> >* Add restart callback to sh73a0
-> 
-> >----------------------------------------------------------------
-> >Arnd Bergmann (1):
-> >       ARM: shmobile: always build rcar setup for armv7
-> 
-> >Geert Uytterhoeven (1):
-> >       ARM: shmobile: sh73a0: Add restart callback
-> 
-> >  arch/arm/mach-shmobile/Makefile       | 1 +
-> >  arch/arm/mach-shmobile/setup-sh73a0.c | 8 ++++++++
-> >  2 files changed, 9 insertions(+)
-> 
-> WBR, Sergei
-> 
+The following changes since commit 89aeff9989e87bb2d9d652994010bc18c68675d9:
+
+  ARM: shmobile: alt dts: Drop console= bootargs parameter (2014-11-05 14:54:10 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-cleanups3-for-v3.19
+
+for you to fetch changes up to 61f1fb47bdbcf145dd539d29cfa7f3294bd5e958:
+
+  ARM: shmobile: kzm9g-reference: Use keyboard as gpio-keys node name (2014-11-14 09:39:47 +0900)
+
+----------------------------------------------------------------
+Third Round of Renesas ARM Based SoC DT Cleanups for v3.19
+
+* Use keyboard as gpio-keys node name
+
+----------------------------------------------------------------
+Simon Horman (4):
+      ARM: shmobile: armadillo800eva: Use keyboard as gpio-keys node name
+      ARM: shmobile: lager: Use keyboard as gpio-keys node name
+      ARM: shmobile: koelsch: Use keyboard as gpio-keys node name
+      ARM: shmobile: kzm9g-reference: Use keyboard as gpio-keys node name
+
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts | 2 +-
+ arch/arm/boot/dts/r8a7790-lager.dts           | 2 +-
+ arch/arm/boot/dts/r8a7791-koelsch.dts         | 2 +-
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts  | 2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
