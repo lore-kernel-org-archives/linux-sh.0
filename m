@@ -1,20 +1,17 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 18 Nov 2014 00:50:40 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 18 Nov 2014 12:54:12 +0000
 Subject: Re: [PATCH 08/25] ARM: shmobile: r8a7790: sound enables Audio DMAC peri peri entry on DTSI
-Message-Id: <20141118005037.GE21518@verge.net.au>
+Message-Id: <15076656.0HaaBPou9k@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1415755881.git.horms+renesas@verge.net.au>
- <cbfc0b77b0c5ac11282882bfd734716e47d20b45.1415755881.git.horms+renesas@verge.net.au>
- <1877842.49FtTfL2eK@wuerfel>
- <87a93pxtlr.wl%kuninori.morimoto.gx@renesas.com>
+ <1877842.49FtTfL2eK@wuerfel> <87a93pxtlr.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87a93pxtlr.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Nov 18, 2014 at 12:03:50AM +0000, Kuninori Morimoto wrote:
-> 
+On Tuesday 18 November 2014 00:03:50 Kuninori Morimoto wrote:
 > Hi Arnd
 > 
 > > >                                 "mem_src6",     "src6_mem",
@@ -44,7 +41,14 @@ On Tue, Nov 18, 2014 at 12:03:50AM +0000, Kuninori Morimoto wrote:
 > Indeed binding itself was not documented yet.
 > I will add it ASAP.
 
-Hi Arnd,
+It sounds like you have some device-to-device DMAs here, which isn't
+supported by the generic dmaengine binding at all, and I don't think
+the driver currently attempts to use them.
 
-please let me know if a revised pull-request is in order.
-v3.18-rc6 is getting awfully close.
+Is that correct? Could you try to remove those from the binding and
+just leave the device-to-memory and memory-to-device channels there?
+If we ever want to support those, we probably have to extend the
+dmaengine binding first, and then the driver binding would also look
+different.
+
+	Arnd
