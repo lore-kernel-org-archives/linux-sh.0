@@ -1,76 +1,60 @@
-From: Takanari Hayama <taki@igel.co.jp>
-Date: Thu, 27 Nov 2014 01:01:47 +0000
-Subject: Re: [PATCH 2/2] v4l: vsp1: Always enable virtual RPF when BRU is in use
-Message-Id: <547677FB.10901@igel.co.jp>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 19 Nov 2014 15:26:59 +0000
+Subject: [PATCH 1/2] ARM: shmobile: sh73a0 legacy/reference: Add missing INTCA0 clock for irqpin module
+Message-Id: <1416410820-30020-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416982792-11917-1-git-send-email-taki@igel.co.jp> <1416982792-11917-3-git-send-email-taki@igel.co.jp> <5475CDD2.1010104@cogentembedded.com>
-In-Reply-To: <5475CDD2.1010104@cogentembedded.com>
+References: <1416410820-30020-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1416410820-30020-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Sergei,
+This clock drives the irqpin controller modules.
+Before, it was assumed enabled by the bootloader or reset state.
+By making it available to the driver, we make sure it gets enabled when
+needed, and allow it to be managed by system or runtime PM.
 
-On 11/26/14, 9:55 PM, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 11/26/2014 9:19 AM, Takanari Hayama wrote:
-> 
->> Regardless of a number of inputs, we should always enable virtual RPF
->> when BRU is used. This allows the case when there's only one input to
->> BRU, and a size of the input is smaller than a size of an output of BRU.
-> 
->> Signed-off-by: Takanari Hayama <taki@igel.co.jp>
->> ---
->>   drivers/media/platform/vsp1/vsp1_wpf.c | 11 ++++++-----
->>   1 file changed, 6 insertions(+), 5 deletions(-)
-> 
->> diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c
->> b/drivers/media/platform/vsp1/vsp1_wpf.c
->> index 6e05776..29ea28b 100644
->> --- a/drivers/media/platform/vsp1/vsp1_wpf.c
->> +++ b/drivers/media/platform/vsp1/vsp1_wpf.c
->> @@ -92,19 +92,20 @@ static int wpf_s_stream(struct v4l2_subdev
->> *subdev, int enable)
->>           return 0;
->>       }
->>
->> -    /* Sources. If the pipeline has a single input configure it as the
->> -     * master layer. Otherwise configure all inputs as sub-layers and
->> -     * select the virtual RPF as the master layer.
->> +    /* Sources. If the pipeline has a single input and BRU is not used,
->> +     * configure it as the master layer. Otherwise configure all
->> +     * inputs as sub-layers and select the virtual RPF as the master
->> +     * layer.
->>        */
->>       for (i = 0; i < pipe->num_inputs; ++i) {
->>           struct vsp1_rwpf *input = pipe->inputs[i];
->>
->> -        srcrpf |= pipe->num_inputs = 1
->> +        srcrpf |= ((!pipe->bru) && (pipe->num_inputs = 1))
-> 
->    Inner parens not needed, especially in the first case.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-shmobile/clock-sh73a0.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-Ok. Will fix it.
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 6b4c1f313cc987c1..3855fb024fdbb1ca 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -553,6 +553,7 @@ enum { MSTP001,
+ 	MSTP314, MSTP313, MSTP312, MSTP311,
+ 	MSTP304, MSTP303, MSTP302, MSTP301, MSTP300,
+ 	MSTP411, MSTP410, MSTP403,
++	MSTP508,
+ 	MSTP_NR };
+ 
+ #define MSTP(_parent, _reg, _bit, _flags) \
+@@ -597,6 +598,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP411] = MSTP(&div4_clks[DIV4_HP], SMSTPCR4, 11, 0), /* IIC3 */
+ 	[MSTP410] = MSTP(&div4_clks[DIV4_HP], SMSTPCR4, 10, 0), /* IIC4 */
+ 	[MSTP403] = MSTP(&r_clk, SMSTPCR4, 3, 0), /* KEYSC */
++	[MSTP508] = MSTP(&div4_clks[DIV4_HP], SMSTPCR5, 8, 0), /* INTCA0 */
+ };
+ 
+ /* The lookups structure below includes duplicate entries for some clocks
+@@ -677,6 +679,14 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.4", &mstp_clks[MSTP410]), /* I2C4 */
+ 	CLKDEV_DEV_ID("e6828000.i2c", &mstp_clks[MSTP410]), /* I2C4 */
+ 	CLKDEV_DEV_ID("sh_keysc.0", &mstp_clks[MSTP403]), /* KEYSC */
++	CLKDEV_DEV_ID("renesas_intc_irqpin.0",	&mstp_clks[MSTP508]), /* INTCA0 */
++	CLKDEV_DEV_ID("e6900000.irqpin",	&mstp_clks[MSTP508]), /* INTCA0 */
++	CLKDEV_DEV_ID("renesas_intc_irqpin.1",	&mstp_clks[MSTP508]), /* INTCA0 */
++	CLKDEV_DEV_ID("e6900004.irqpin",	&mstp_clks[MSTP508]), /* INTCA0 */
++	CLKDEV_DEV_ID("renesas_intc_irqpin.2",	&mstp_clks[MSTP508]), /* INTCA0 */
++	CLKDEV_DEV_ID("e6900008.irqpin",	&mstp_clks[MSTP508]), /* INTCA0 */
++	CLKDEV_DEV_ID("renesas_intc_irqpin.3",	&mstp_clks[MSTP508]), /* INTCA0 */
++	CLKDEV_DEV_ID("e690000c.irqpin",	&mstp_clks[MSTP508]), /* INTCA0 */
+ 
+ 	/* ICK */
+ 	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSIT]),
+-- 
+1.9.1
 
->>               ? VI6_WPF_SRCRPF_RPF_ACT_MST(input->entity.index)
->>               : VI6_WPF_SRCRPF_RPF_ACT_SUB(input->entity.index);
->>       }
->>
->> -    if (pipe->num_inputs > 1)
->> +    if ((pipe->bru) || (pipe->num_inputs > 1))
-> 
->    Likewise.
-
-Here too. Thanks!
-
-> [...]
-> 
-> WBR, Sergei
-
-Cheers,
-Takanari Hayama, Ph.D. (taki@igel.co.jp)
-IGEL Co.,Ltd.
-http://www.igel.co.jp/
