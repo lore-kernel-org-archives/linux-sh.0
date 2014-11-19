@@ -1,98 +1,34 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 17 Nov 2014 13:30:39 +0000
-Subject: [PATCH v5 3/8] ARM: shmobile: R-Mobile: Use generic_pm_domain.attach_dev() for pm_clk setup
-Message-Id: <1416231044-1903-4-git-send-email-geert+renesas@glider.be>
+Date: Wed, 19 Nov 2014 15:57:28 +0000
+Subject: [PATCH 1/7] PM / Domains: Document SH-Mobile AG5 (sh73a0) binding
+Message-Id: <1416412654-6508-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416231044-1903-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1416231044-1903-1-git-send-email-geert+renesas@glider.be>
+References: <1416412654-6508-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1416412654-6508-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Use the just introduced genpd attach/detach callbacks to register the
-devices' module clocks, instead of doing it directly, to make it
-DT-proof.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
----
-v5:
-  - Update for {at,de}tach_dev() taking a generic_pm_domain pointer
-    again,
-v4:
-  - Add Reviewed-by,
-  - Add missing pm_clk_create()/pm_clk_destroy() calls,
-  - Update for attach_dev() returning an error code again,
-v3:
-  - Update for callback signature changes,
-v2:
-  - New.
+SH-Mobile AG5 (sh73a0) can be handled by the existing bindings.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/pm-rmobile.c | 34 ++++++++++++++++++++++++++++++++--
- 1 file changed, 32 insertions(+), 2 deletions(-)
+ Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
-index 717e6413d29cb998..168046c355fc8368 100644
---- a/arch/arm/mach-shmobile/pm-rmobile.c
-+++ b/arch/arm/mach-shmobile/pm-rmobile.c
-@@ -101,6 +101,36 @@ static bool rmobile_pd_active_wakeup(struct device *dev)
- 	return true;
- }
- 
-+static int rmobile_pd_attach_dev(struct generic_pm_domain *domain,
-+				 struct device *dev)
-+{
-+	int error;
-+
-+	error = pm_clk_create(dev);
-+	if (error) {
-+		dev_err(dev, "pm_clk_create failed %d\n", error);
-+		return error;
-+	}
-+
-+	error = pm_clk_add(dev, NULL);
-+	if (error) {
-+		dev_err(dev, "pm_clk_add failed %d\n", error);
-+		goto fail;
-+	}
-+
-+	return 0;
-+
-+fail:
-+	pm_clk_destroy(dev);
-+	return error;
-+}
-+
-+static void rmobile_pd_detach_dev(struct generic_pm_domain *domain,
-+				  struct device *dev)
-+{
-+	pm_clk_destroy(dev);
-+}
-+
- static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
- {
- 	struct generic_pm_domain *genpd = &rmobile_pd->genpd;
-@@ -112,6 +142,8 @@ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
- 	genpd->dev_ops.active_wakeup	= rmobile_pd_active_wakeup;
- 	genpd->power_off		= rmobile_pd_power_down;
- 	genpd->power_on			= rmobile_pd_power_up;
-+	genpd->attach_dev		= rmobile_pd_attach_dev;
-+	genpd->detach_dev		= rmobile_pd_detach_dev;
- 	__rmobile_pd_power_up(rmobile_pd, false);
- }
- 
-@@ -130,8 +162,6 @@ void rmobile_add_device_to_domain_td(const char *domain_name,
- 	struct device *dev = &pdev->dev;
- 
- 	__pm_genpd_name_add_device(domain_name, dev, td);
--	if (pm_clk_no_clocks(dev))
--		pm_clk_add(dev, NULL);
- }
- 
- void rmobile_add_devices_to_domains(struct pm_domain_device data[],
+diff --git a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
+index 89ca3f35aec69750..061971bb387f7b27 100644
+--- a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
++++ b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
+@@ -12,6 +12,7 @@ Required properties:
+ 	      fallback.
+ 	      Examples with soctypes are:
+ 		- "renesas,sysc-r8a7740" (R-Mobile A1)
++		- "renesas,sysc-sh73a0" (SH-Mobile AG5)
+ - reg: Two address start and address range blocks for the device:
+          - The first block refers to the normally accessible registers,
+          - the second block refers to the registers protected by the HPB
 -- 
 1.9.1
 
