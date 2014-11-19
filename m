@@ -1,60 +1,49 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Nov 2014 01:19:54 +0000
-Subject: [PATCH 2/3] ARM: shmobile: r8a7740 legacy: Add missing INTCA clock for irqpin module
-Message-Id: <85eb968e84686faa507daa3c5cfdfbfefc7eda95.1415757100.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 19 Nov 2014 15:57:34 +0000
+Subject: [PATCH 7/7] [RFC] ARM: shmobile: r8a7740 dtsi: Add missing memory-controller node
+Message-Id: <1416412654-6508-8-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415757100.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415757100.git.horms+renesas@verge.net.au>
+References: <1416412654-6508-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1416412654-6508-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Add a memory-controller node for the DDR3 Bus State Controller (DBSC3),
+which lies in the A4S PM domain.
+There are no documented bindings for the DBSC3 yet (so far there's still
+no need for a driver), but all of its properties follow the standard
+conventions.
 
-This clock drives the irqpin controller modules.
-Before, it was assumed enabled by the bootloader or reset state.
-By making it available to the driver, we make sure it gets enabled when
-needed, and allow it to be managed by system or runtime PM.
+This has no visible effect for now, as A4S is never turned off because
+its child domain A3SM contains the CPU core.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7740.c | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+Question: Should I make dbsc3 a minimal node for now, i.e. retain only
+	  its "compatible" and "power-domains" properties?
+---
+ arch/arm/boot/dts/r8a7740.dtsi | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index 0794f04..16a6b7c 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -455,7 +455,7 @@ enum {
- 	MSTP128, MSTP127, MSTP125,
- 	MSTP116, MSTP111, MSTP100, MSTP117,
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 95723764431a3e5d..173d4340bba1c4fa 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -37,6 +37,12 @@
+ 		      <0xc2000000 0x1000>;
+ 	};
  
--	MSTP230,
-+	MSTP230, MSTP229,
- 	MSTP222,
- 	MSTP218, MSTP217, MSTP216, MSTP214,
- 	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
-@@ -479,6 +479,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_B],	SMSTPCR1,  0, 0), /* LCDC0 */
- 
- 	[MSTP230] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR2, 30, 0), /* SCIFA6 */
-+	[MSTP229] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR2, 29, 0), /* INTCA */
- 	[MSTP222] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR2, 22, 0), /* SCIFA7 */
- 	[MSTP218] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],  SMSTPCR2, 18, 0), /* DMAC1 */
- 	[MSTP217] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],  SMSTPCR2, 17, 0), /* DMAC2 */
-@@ -575,6 +576,10 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-dma-engine.0",	&mstp_clks[MSTP218]),
- 	CLKDEV_DEV_ID("sh-sci.7",		&mstp_clks[MSTP222]),
- 	CLKDEV_DEV_ID("e6cd0000.serial",	&mstp_clks[MSTP222]),
-+	CLKDEV_DEV_ID("renesas_intc_irqpin.0",	&mstp_clks[MSTP229]),
-+	CLKDEV_DEV_ID("renesas_intc_irqpin.1",	&mstp_clks[MSTP229]),
-+	CLKDEV_DEV_ID("renesas_intc_irqpin.2",	&mstp_clks[MSTP229]),
-+	CLKDEV_DEV_ID("renesas_intc_irqpin.3",	&mstp_clks[MSTP229]),
- 	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
- 	CLKDEV_DEV_ID("e6cc0000.serial",	&mstp_clks[MSTP230]),
- 
++	dbsc3: memory-controller@fe400000 {
++		compatible = "renesas,dbsc3-r8a7740";
++		reg = <0xfe400000 0x400>;
++		power-domains = <&pd_a4s>;
++	};
++
+ 	pmu {
+ 		compatible = "arm,cortex-a9-pmu";
+ 		interrupts = <0 83 IRQ_TYPE_LEVEL_HIGH>;
 -- 
-2.1.1
+1.9.1
 
