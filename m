@@ -1,74 +1,68 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:50:45 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC Koelsch Board Removal Updates for v3.19
-Message-Id: <cover.1415059146.git.horms+renesas@verge.net.au>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 19 Nov 2014 22:06:43 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC Koelsch Board Removal Updates for v3.19
+Message-Id: <201411192306.43386.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1415059146.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415059146.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+On Tuesday 04 November 2014, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
+> 
+> Please consider these Renesas ARM based SoC koelsch board removal updates for v3.19.
+> 
+> This pull request is based on a merge of:
+> 
+> * "Renesas ARM Based SoC DT DU Updates for v3.19",
+>   tagged as renesas-dt-du-for-v3.19.
+> 
+> * "Renesas ARM Based SoC DT Cleanups Updates for v3.19",
+>   tagged as renesas-dt-cleanups-for-v3.19.
+> 
+> Both of which I have also sent a pull-request for.
+> 
+> 
+> The following changes since commit 11886d1158e0dc123283891b662381f629ab47a0:
+> 
+>   Merge tag 'renesas-dt-cleanups-for-v3.19' into koelsch-board-removal-for-v3.19.base (2014-10-30 10:14:38 +0900)
+> 
+> are available in the git repository at:
+> 	
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-koelsch-board-removal-for-v3.19
+> 
+> for you to fetch changes up to 79e69d179cb3391040a3693fca8bc12ec03c05fc:
+> 
+>   ARM: shmobile: koelsch dts: Drop console= bootargs parameter (2014-10-30 10:18:31 +0900)
+> 
+> ----------------------------------------------------------------
+> Renesas ARM Based SoC Koelsch Board Removal Updates for v3.19
+> 
+> * Remove lecacy C koelsh board support
 
-Please consider these Renesas ARM based SoC koelsch board removal updates for v3.19.
+I've tried merging this one in two ways, but I'm not too happy about either one:
 
-This pull request is based on a merge of:
+- we could put it into next/boards, but I don't think there will be anything
+  else in that branch and I was considering not to have one at all.
 
-* "Renesas ARM Based SoC DT DU Updates for v3.19",
-  tagged as renesas-dt-du-for-v3.19.
+- it would also fit into next/cleanup, but then we already have
+  renesas-dt-cleanups-for-v3.19 categorized as "next/dt" rather than
+  "next/cleanup". Moving that one into cleanups solves the problem
+  nicely, but it's rather large and my feeling is that Olof's decision
+  to put it into next/dt was better.
 
-* "Renesas ARM Based SoC DT Cleanups Updates for v3.19",
-  tagged as renesas-dt-cleanups-for-v3.19.
+I think you are trying too hard to avoid merge conflicts, as I can't see any
+true dependency on renesas-dt-cleanups-for-v3.19, and I'd be happier if
+you could rebase it onto renesas-dt-du-for-v3.19 by itself. There is
+a trivial merge conflict that I have to resolve, but it seems more
+sensible that way.
 
-Both of which I have also sent a pull-request for.
+Any other thoughts?
 
+Clearly the changes in this branch are great and I definitely want to have
+them in 3.19.
 
-The following changes since commit 11886d1158e0dc123283891b662381f629ab47a0:
-
-  Merge tag 'renesas-dt-cleanups-for-v3.19' into koelsch-board-removal-for-v3.19.base (2014-10-30 10:14:38 +0900)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-koelsch-board-removal-for-v3.19
-
-for you to fetch changes up to 79e69d179cb3391040a3693fca8bc12ec03c05fc:
-
-  ARM: shmobile: koelsch dts: Drop console= bootargs parameter (2014-10-30 10:18:31 +0900)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC Koelsch Board Removal Updates for v3.19
-
-* Remove lecacy C koelsh board support
-
-----------------------------------------------------------------
-Geert Uytterhoeven (3):
-      MAINTAINERS: Remove reference to shmobile / koelsch_defconfig
-      ARM: dts: koelsch: Stop building r8a7791-koelsch.dtb in legacy builds
-      ARM: shmobile: koelsch dts: Drop console= bootargs parameter
-
-Laurent Pinchart (4):
-      ARM: shmobile: Remove shmobile_clk_workaround() implementation
-      ARM: shmobile: koelsch: Remove legacy C board code
-      ARM: shmobile: r8a7791: Remove legacy code
-      ARM: shmobile: koelsch: Remove reference board code
-
- MAINTAINERS                                      |   1 -
- arch/arm/boot/dts/Makefile                       |   1 -
- arch/arm/boot/dts/r8a7791-koelsch.dts            |   2 +-
- arch/arm/configs/koelsch_defconfig               | 113 -----
- arch/arm/configs/shmobile_defconfig              |   1 -
- arch/arm/mach-shmobile/Kconfig                   |  19 -
- arch/arm/mach-shmobile/Makefile                  |   5 +-
- arch/arm/mach-shmobile/Makefile.boot             |   1 -
- arch/arm/mach-shmobile/board-koelsch-reference.c |  40 --
- arch/arm/mach-shmobile/board-koelsch.c           | 523 -----------------------
- arch/arm/mach-shmobile/clock-r8a7791.c           | 338 ---------------
- arch/arm/mach-shmobile/clock.c                   |  32 +-
- arch/arm/mach-shmobile/clock.h                   |  14 -
- arch/arm/mach-shmobile/r8a7791.h                 |   3 -
- arch/arm/mach-shmobile/setup-r8a7791.c           | 181 +-------
- 15 files changed, 6 insertions(+), 1268 deletions(-)
- delete mode 100644 arch/arm/configs/koelsch_defconfig
- delete mode 100644 arch/arm/mach-shmobile/board-koelsch-reference.c
- delete mode 100644 arch/arm/mach-shmobile/board-koelsch.c
- delete mode 100644 arch/arm/mach-shmobile/clock-r8a7791.c
+	Arnd
