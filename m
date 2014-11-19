@@ -1,61 +1,88 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 04 Nov 2014 01:49:45 +0000
-Subject: [PATCH 20/23 v3] ARM: shmobile: koelsch: Sound DMA support via DVC on DTS
-Message-Id: <877fzb91kt.wl%kuninori.morimoto.gx@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 19 Nov 2014 15:57:29 +0000
+Subject: [PATCH 2/7] ARM: shmobile: R-Mobile: Consolidate rmobile_pd_suspend_*()
+Message-Id: <1416412654-6508-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1416412654-6508-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1416412654-6508-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Consolidate the identical rmobile_pd_suspend_*() routines that just
+return -EBUSY to prevent a PM domain from being powered down into a
+single rmobile_pd_suspend_busy().
 
-DMA transfer uses DVC
-
-     DMA               DMApp
-[MEM] -> [SRC] -> [DVC] -> [SSIU] -> [SSI]
-
-     DMA               DMApp
-[MEM] <- [DVC] <- [SRC] <- [SSIU] <- [SSI]
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v2 -> v3
+ arch/arm/mach-shmobile/pm-rmobile.c | 28 +++++++++++++---------------
+ 1 file changed, 13 insertions(+), 15 deletions(-)
 
- - no change
-
- arch/arm/boot/dts/r8a7791-koelsch.dts |   11 +++++++++--
- 1 file changed, 9 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 2f975a1..df283d2 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -20,6 +20,13 @@
-  * This command is required when Playback/Capture
-  *
-  *	amixer set "LINEOUT Mixer DACL" on
-+ *	amixer set "DVC Out" 100%
-+ *	amixer set "DVC In" 100%
-+ *
-+ * You can use Mute
-+ *
-+ *	amixer set "DVC Out Mute" on
-+ *	amixer set "DVC In Mute" on
-  */
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index 5e01a28110e24034..3d383d3dcd4ec640 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -209,11 +209,10 @@ void rmobile_add_devices_to_domains(struct pm_domain_device data[],
  
- /dts-v1/;
-@@ -569,8 +576,8 @@
+ #else /* !CONFIG_ARCH_SHMOBILE_LEGACY */
  
- 	rcar_sound,dai {
- 		dai0 {
--			playback = <&ssi0 &src2>;
--			capture  = <&ssi1 &src3>;
-+			playback = <&ssi0 &src2 &dvc0>;
-+			capture  = <&ssi1 &src3 &dvc1>;
- 		};
- 	};
- };
+-static int rmobile_pd_suspend_cpu(void)
++static int rmobile_pd_suspend_busy(void)
+ {
+ 	/*
+-	 * This domain contains the CPU core and therefore it should
+-	 * only be turned off if the CPU is not in use.
++	 * This domain should not be turned off.
+ 	 */
+ 	return -EBUSY;
+ }
+@@ -227,16 +226,6 @@ static int rmobile_pd_suspend_console(void)
+ 	return console_suspend_enabled ? 0 : -EBUSY;
+ }
+ 
+-static int rmobile_pd_suspend_debug(void)
+-{
+-	/*
+-	 * This domain contains the Coresight-ETM hardware block and
+-	 * therefore it should only be turned off if the debug module is
+-	 * not in use.
+-	 */
+-	return -EBUSY;
+-}
+-
+ #define MAX_NUM_CPU_PDS		8
+ 
+ static unsigned int num_cpu_pds __initdata;
+@@ -310,17 +299,26 @@ static void __init rmobile_setup_pm_domain(struct device_node *np,
+ 	const char *name = pd->genpd.name;
+ 
+ 	if (pd_contains_cpu(np)) {
++		/*
++		 * This domain contains the CPU core and therefore it should
++		 * only be turned off if the CPU is not in use.
++		 */
+ 		pr_debug("PM domain %s contains CPU\n", name);
+ 		pd->gov = &pm_domain_always_on_gov;
+-		pd->suspend = rmobile_pd_suspend_cpu;
++		pd->suspend = rmobile_pd_suspend_busy;
+ 	} else if (np = console_pd) {
+ 		pr_debug("PM domain %s contains serial console\n", name);
+ 		pd->gov = &pm_domain_always_on_gov;
+ 		pd->suspend = rmobile_pd_suspend_console;
+ 	} else if (np = debug_pd) {
++		/*
++		 * This domain contains the Coresight-ETM hardware block and
++		 * therefore it should only be turned off if the debug module is
++		 * not in use.
++		 */
+ 		pr_debug("PM domain %s contains Coresight-ETM\n", name);
+ 		pd->gov = &pm_domain_always_on_gov;
+-		pd->suspend = rmobile_pd_suspend_debug;
++		pd->suspend = rmobile_pd_suspend_busy;
+ 	}
+ 
+ 	rmobile_init_pm_domain(pd);
 -- 
-1.7.9.5
+1.9.1
 
