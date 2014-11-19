@@ -1,63 +1,195 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:50:45 +0000
-Subject: [PATCH 15/34] ARM: shmobile: r8a7740 dtsi: Add TMU0 and TMU1 device nodes
-Message-Id: <600363334de89169a8dbbb1db874777d46fc239e.1415059587.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 19 Nov 2014 15:57:30 +0000
+Subject: [PATCH 3/7] ARM: shmobile: R-Mobile: Generalize adding/looking up special PM domains
+Message-Id: <1416412654-6508-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415059587.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415059587.git.horms+renesas@verge.net.au>
+References: <1416412654-6508-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1416412654-6508-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Make adding special PM domains to an array, and looking them up
+later, more generic, so it can be used for all special hardware blocks.
+The type of PM domain is also stored, so rmobile_setup_pm_domain() can
+use a switch() statement instead of a chain of if/else statements.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740.dtsi | 28 ++++++++++++++++++++++++++++
- 1 file changed, 28 insertions(+)
+ arch/arm/mach-shmobile/pm-rmobile.c | 107 ++++++++++++++++++++++--------------
+ 1 file changed, 67 insertions(+), 40 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 559bd39..aec8da8 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -335,6 +335,34 @@
- 		status = "disabled";
- 	};
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index 3d383d3dcd4ec640..774a8e276049a202 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -226,71 +226,89 @@ static int rmobile_pd_suspend_console(void)
+ 	return console_suspend_enabled ? 0 : -EBUSY;
+ }
  
-+	tmu0: timer@fff80000 {
-+		compatible = "renesas,tmu-r8a7740", "renesas,tmu";
-+		reg = <0xfff80000 0x2c>;
-+		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 199 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 200 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7740_CLK_TMU0>;
-+		clock-names = "fck";
+-#define MAX_NUM_CPU_PDS		8
++enum pd_types {
++	PD_NORMAL,
++	PD_CPU,
++	PD_CONSOLE,
++	PD_DEBUG,
++};
+ 
+-static unsigned int num_cpu_pds __initdata;
+-static struct device_node *cpu_pds[MAX_NUM_CPU_PDS] __initdata;
+-static struct device_node *console_pd __initdata;
+-static struct device_node *debug_pd __initdata;
++#define MAX_NUM_SPECIAL_PDS	16
+ 
+-static void __init get_special_pds(void)
++static struct special_pd {
++	struct device_node *pd;
++	enum pd_types type;
++} special_pds[MAX_NUM_SPECIAL_PDS] __initdata;
 +
-+		#renesas,channels = <3>;
++static unsigned int num_special_pds __initdata;
 +
-+		status = "disabled";
-+	};
++static void __init add_special_pd(struct device_node *np, enum pd_types type)
+ {
+-	struct device_node *np, *pd;
+ 	unsigned int i;
++	struct device_node *pd;
+ 
+-	/* PM domains containing CPUs */
+-	for_each_node_by_type(np, "cpu") {
+-		pd = of_parse_phandle(np, "power-domains", 0);
+-		if (!pd)
+-			continue;
++	pd = of_parse_phandle(np, "power-domains", 0);
++	if (!pd)
++		return;
+ 
+-		for (i = 0; i < num_cpu_pds; i++)
+-			if (pd = cpu_pds[i])
+-				break;
+-
+-		if (i < num_cpu_pds) {
+-			of_node_put(pd);
+-			continue;
+-		}
++	for (i = 0; i < num_special_pds; i++)
++		if (pd = special_pds[i].pd && type = special_pds[i].type)
++			break;
+ 
+-		if (num_cpu_pds = MAX_NUM_CPU_PDS) {
+-			pr_warn("Too many CPU PM domains\n");
+-			of_node_put(pd);
+-			continue;
+-		}
++	if (i < num_special_pds) {
++		of_node_put(pd);
++		return;
++	}
+ 
+-		cpu_pds[num_cpu_pds++] = pd;
++	if (num_special_pds = ARRAY_SIZE(special_pds)) {
++		pr_warn("Too many special PM domains\n");
++		of_node_put(pd);
++		return;
+ 	}
+ 
++	pr_debug("Special PM domain %s type %d for %s\n", pd->name, type,
++		 np->full_name);
 +
-+	tmu1: timer@fff90000 {
-+		compatible = "renesas,tmu-r8a7740", "renesas,tmu";
-+		reg = <0xfff90000 0x2c>;
-+		interrupts = <0 170 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 171 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 172 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7740_CLK_TMU1>;
-+		clock-names = "fck";
++	special_pds[num_special_pds].pd = pd;
++	special_pds[num_special_pds].type = type;
++	num_special_pds++;
++}
 +
-+		#renesas,channels = <3>;
++static void __init get_special_pds(void)
++{
++	struct device_node *np;
 +
-+		status = "disabled";
-+	};
++	/* PM domains containing CPUs */
++	for_each_node_by_type(np, "cpu")
++		add_special_pd(np, PD_CPU);
 +
- 	clocks {
- 		#address-cells = <1>;
- 		#size-cells = <1>;
+ 	/* PM domain containing console */
+ 	if (of_stdout)
+-		console_pd = of_parse_phandle(of_stdout, "power-domains", 0);
++		add_special_pd(of_stdout, PD_CONSOLE);
+ 
+ 	/* PM domain containing Coresight-ETM */
+ 	np = of_find_compatible_node(NULL, NULL, "arm,coresight-etm3x");
+ 	if (np)
+-		debug_pd = of_parse_phandle(np, "power-domains", 0);
++		add_special_pd(np, PD_DEBUG);
+ }
+ 
+ static void __init put_special_pds(void)
+ {
+ 	unsigned int i;
+ 
+-	for (i = 0; i < num_cpu_pds; i++)
+-		of_node_put(cpu_pds[i]);
+-	of_node_put(console_pd);
+-	of_node_put(debug_pd);
++	for (i = 0; i < num_special_pds; i++)
++		of_node_put(special_pds[i].pd);
+ }
+ 
+-static bool __init pd_contains_cpu(const struct device_node *pd)
++static enum pd_types __init pd_type(const struct device_node *pd)
+ {
+ 	unsigned int i;
+ 
+-	for (i = 0; i < num_cpu_pds; i++)
+-		if (pd = cpu_pds[i])
+-			return true;
++	for (i = 0; i < num_special_pds; i++)
++		if (pd = special_pds[i].pd)
++			return special_pds[i].type;
+ 
+-	return false;
++	return PD_NORMAL;
+ }
+ 
+ static void __init rmobile_setup_pm_domain(struct device_node *np,
+@@ -298,7 +316,8 @@ static void __init rmobile_setup_pm_domain(struct device_node *np,
+ {
+ 	const char *name = pd->genpd.name;
+ 
+-	if (pd_contains_cpu(np)) {
++	switch (pd_type(np)) {
++	case PD_CPU:
+ 		/*
+ 		 * This domain contains the CPU core and therefore it should
+ 		 * only be turned off if the CPU is not in use.
+@@ -306,11 +325,15 @@ static void __init rmobile_setup_pm_domain(struct device_node *np,
+ 		pr_debug("PM domain %s contains CPU\n", name);
+ 		pd->gov = &pm_domain_always_on_gov;
+ 		pd->suspend = rmobile_pd_suspend_busy;
+-	} else if (np = console_pd) {
++		break;
++
++	case PD_CONSOLE:
+ 		pr_debug("PM domain %s contains serial console\n", name);
+ 		pd->gov = &pm_domain_always_on_gov;
+ 		pd->suspend = rmobile_pd_suspend_console;
+-	} else if (np = debug_pd) {
++		break;
++
++	case PD_DEBUG:
+ 		/*
+ 		 * This domain contains the Coresight-ETM hardware block and
+ 		 * therefore it should only be turned off if the debug module is
+@@ -319,6 +342,10 @@ static void __init rmobile_setup_pm_domain(struct device_node *np,
+ 		pr_debug("PM domain %s contains Coresight-ETM\n", name);
+ 		pd->gov = &pm_domain_always_on_gov;
+ 		pd->suspend = rmobile_pd_suspend_busy;
++		break;
++
++	case PD_NORMAL:
++		break;
+ 	}
+ 
+ 	rmobile_init_pm_domain(pd);
 -- 
-2.1.1
+1.9.1
 
