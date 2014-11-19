@@ -1,31 +1,47 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 03 Nov 2014 09:04:44 +0000
-Subject: Re: [RFC 2/3] ARM: shmobile: r8a7790: add DMA nodes for IIC
-Message-Id: <CAMuHMdV11X6tb1neraiSBS2jkw0HCRwqzytkFFMJH_tJ2pPtJQ@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 19 Nov 2014 15:15:46 +0000
+Subject: [PATCH] dmaengine: shdma: Runtime-resume device in .shutdown()
+Message-Id: <1416410146-29652-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414752678-26078-1-git-send-email-wsa@the-dreams.de>
-	<1414752678-26078-3-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1414752678-26078-3-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: Linux I2C <linux-i2c@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: Vinod Koul <vinod.koul@intel.com>, Dan Williams <dan.j.williams@intel.com>
+Cc: dmaengine@vger.kernel.org, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Fri, Oct 31, 2014 at 11:51 AM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
->
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+During system reboot, the sh-dma-engine device may be runtime-suspended,
+causing a crash:
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+    Unhandled fault: imprecise external abort (0x1406) at 0x0002c02c
+    Internal error: : 1406 [#1] SMP ARM
+    ...
+    PC is at sh_dmae_ctl_stop+0x28/0x64
+    LR is at sh_dmae_ctl_stop+0x24/0x64
 
-Gr{oetje,eeting}s,
+If the sh-dma-engine is runtime-suspended, its module clock is turned
+off, and its registers cannot be accessed. Runtime-resume the device in
+the driver's .shutdown() callback to fix this.
 
-                        Geert
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/dma/sh/shdmac.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
+index b65317c6ea4e722c..a13c6ba7468f12a6 100644
+--- a/drivers/dma/sh/shdmac.c
++++ b/drivers/dma/sh/shdmac.c
+@@ -585,7 +585,10 @@ static void sh_dmae_chan_remove(struct sh_dmae_device *shdev)
+ static void sh_dmae_shutdown(struct platform_device *pdev)
+ {
+ 	struct sh_dmae_device *shdev = platform_get_drvdata(pdev);
++
++	pm_runtime_get_sync(&pdev->dev);
+ 	sh_dmae_ctl_stop(shdev);
++	pm_runtime_put(&pdev->dev);
+ }
+ 
+ static int sh_dmae_runtime_suspend(struct device *dev)
+-- 
+1.9.1
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
