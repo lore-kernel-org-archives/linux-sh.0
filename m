@@ -1,36 +1,49 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Fri, 07 Nov 2014 15:49:27 +0000
-Subject: [PATCH v5 4/6] ARM: shmobile: kzm9g-reference: Common clock framework DT description
-Message-Id: <1415375369-15209-5-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 19 Nov 2014 15:26:58 +0000
+Subject: [PATCH 0/2] ARM: shmobile: sh73a0 legacy: Add missing INTCA0 clock
+Message-Id: <1416410820-30020-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-KZM9G-specific clock overrides.
+	Hi Simon, Magnus,
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
----
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 4 ++++
- 1 file changed, 4 insertions(+)
+This patch series adds the missing INTCA0 clock on sh73a0 SoCs, for both
+legacy/reference and multi-platform builds.
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index 8c913d9..737a732 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -178,6 +178,10 @@
- 	status = "ok";
- };
- 
-+&extal2_clk {
-+	clock-frequency = <48000000>;
-+};
-+
- &i2c0 {
- 	status = "okay";
- 	as3711@40 {
+The INTCA0 clock drives the irqpin controller modules.
+Before, it was assumed enabled by the bootloader or reset state.
+By making it available to the driver, we make sure it gets enabled when
+needed, and allow it to be managed by system or runtime PM.
+
+The first patch can be applied now.
+The second patch depends on the series "[PATCH v5 0/6] sh73a0 common clock
+framework implementation".
+
+Thanks!
+
+Geert Uytterhoeven (2):
+  ARM: shmobile: sh73a0 legacy: Add missing INTCA0 clock for irqpin
+    module
+  ARM: shmobile: sh73a0 dtsi: Add missing INTCA0 clock for irqpin module
+
+ arch/arm/boot/dts/sh73a0.dtsi            | 15 +++++++++++++++
+ arch/arm/mach-shmobile/clock-sh73a0.c    | 10 ++++++++++
+ include/dt-bindings/clock/sh73a0-clock.h |  3 +++
+ 3 files changed, 28 insertions(+)
+
 -- 
-1.8.4.5
+1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
