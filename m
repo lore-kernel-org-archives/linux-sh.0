@@ -1,76 +1,33 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Nov 2014 01:19:53 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC Clock Fixes for v3.18
-Message-Id: <cover.1415757100.git.horms+renesas@verge.net.au>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 19 Nov 2014 21:20:20 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC Clock Fixes for v3.18
+Message-Id: <201411192220.20365.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1408926048.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1408926048.git.horms+renesas@verge.net.au>
+References: <cover.1415757100.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1415757100.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+On Thursday 13 November 2014, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
+> 
+> Please consider these Renesas ARM based SoC clock fixes for v3.18.
+> Or alternatively for v3.19 if you feel they are too late for v3.18.
+> 
 
-Please consider these Renesas ARM based SoC clock fixes for v3.18.
-Or alternatively for v3.19 if you feel they are too late for v3.18.
+I've merged all three 'fixes' pull requests you had into the fixes
+branch:
 
-
-* ARM: shmobile: r8a7740 legacy: Add missing INTCA clock for irqpin module
-
-  This problem appears to have been introduced when the r8a7740 started
-  using the irqpin driver, a change made by 0b7d7820226016205 ("ARM:
-  shmobile: r8a7740: Migrate from INTC to GIC") in v3.9.
-  It may well have existed in a different form before then.
-
-  It is my understanding that the problem problem only manifests if
-  uboot does not start the clock: in practice it does.
-
-* ARM: shmobile: r8a7740 legacy: Correct IIC0 parent clock
-
-  This problem appears to have been introduced when IIC0 support was
-  added to the r8a7740 by commit 6c01ba445cecb2d8 ("ARM: mach-shmobile:
-  R-Mobile A1 support.") in v3.3.
-
-  I am not aware of any run-time effect of this problem.
-
-* ARM: shmobile: r8a7790: Fix SD3CKCR address
-
-  This problem was introduced when div6 clock support was added to the
-  r8a7790 by 46632512c4b6ed9d5 ("ARM: shmobile: r8a7790: add div6 clocks")
-  in v3.10.
-
-  As there is no SD card slot for SDHI3 on the lager board there is no
-  run-time effect of this problem on boards supported in mainline.
-
-
-The following changes since commit f114040e3ea6e07372334ade75d1ee0775c355e1:
-
-  Linux 3.18-rc1 (2014-10-19 18:08:38 -0700)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clock-fixes-for-v3.18
-
-for you to fetch changes up to 4f37828d4d69a46830e0525a065da9847fc7a819:
-
-  ARM: shmobile: r8a7740 legacy: Correct IIC0 parent clock (2014-11-10 09:54:12 +0900)
-
-----------------------------------------------------------------
 Renesas ARM Based SoC Clock Fixes for v3.18
+Renesas ARM Based SoC DT Fixes for v3.18
+Renesas ARM Based SoC Fixes for v3.18
 
-* Correct IIC0 parent clock for r8a7740
-* Add missing INTCA clock for irqpin module for r8a7740
-* Correct SD3CKCR address on r8a7790
+I'm still waiting for a reply from Olof, since he seems to have
+skipped them last week when he sent the fixes pull request to Linus.
+If he had already decided to postpone the branches for 3.19, I'll
+just undo the merge here and put it into next/fixes-non-critical
+instead, I'm fine with it either way.
 
-----------------------------------------------------------------
-Geert Uytterhoeven (2):
-      ARM: shmobile: r8a7740 legacy: Add missing INTCA clock for irqpin module
-      ARM: shmobile: r8a7740 legacy: Correct IIC0 parent clock
-
-Shinobu Uehara (1):
-      ARM: shmobile: r8a7790: Fix SD3CKCR address
-
- arch/arm/mach-shmobile/clock-r8a7740.c | 9 +++++++--
- arch/arm/mach-shmobile/clock-r8a7790.c | 2 +-
- 2 files changed, 8 insertions(+), 3 deletions(-)
+	Arnd
