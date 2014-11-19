@@ -1,45 +1,73 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Nov 2014 00:54:46 +0000
-Subject: [PATCH 20/29] ARM: shmobile: koelsch dts: Add labels for the LEDs
-Message-Id: <352faa5fedbc9f84faa849ce612ab2633c4db0ec.1416476366.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 19 Nov 2014 15:57:27 +0000
+Subject: [PATCH RFC 0/7] ARM: shmobile: sh73a0: DT PM domain support
+Message-Id: <1416412654-6508-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1416476366.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+	Hi Simon, Magnus,
 
-The LEDs on the koelsch board are labeled using upper-case characters.
+This patch series enables DT support for PM domains on the Renesas SH-Mobile
+AG5 (sh73a0) SoC.  It is marked "RFC" due to the addition of memory-controllers
+nodes without bindings in patch [5/7] and [7/7].
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7791-koelsch.dts | 3 +++
- 1 file changed, 3 insertions(+)
+This series builds further on the series "[PATCH v5 0/8] ARM: shmobile:
+R-Mobile: DT PM domain support", which added similar support for R-Mobile A1
+(r8a7740).  Due to the similarity of the SYSC System-Controller on the various
+SH-Mobile/R-Mobile SoCs, and the abstraction of PM domains in DT, the same
+driver can handle sh73a0 after some small modifications, without changing the
+DT bindings.
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index f056e64..a10f534 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -149,12 +149,15 @@
- 		compatible = "gpio-leds";
- 		led6 {
- 			gpios = <&gpio2 19 GPIO_ACTIVE_HIGH>;
-+			label = "LED6";
- 		};
- 		led7 {
- 			gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
-+			label = "LED7";
- 		};
- 		led8 {
- 			gpios = <&gpio2 21 GPIO_ACTIVE_HIGH>;
-+			label = "LED8";
- 		};
- 	};
- 
+Compared to r8a7740, the only significant change is the move of the
+memory-controller(s) to separate PM domains on sh73a0 (and also on R-Mobile
+APE6 (r8a73a4)). Hence a provision must be made to not turn off these PM
+domains inadvertently. Please see patch [5/7] ("[RFC] ARM: shmobile: sh73a0
+dtsi: Add PM domain support"), and the follow-up patch for r8a7740 [7/7]
+("[RFC] ARM: shmobile: r8a7740 dtsi: Add missing memory-controller node") for
+more details.
+
+This was tested on kzm9g-multiplatform.
+Functionality-wise, it behaves the same as the legacy (non-DT) version (modulo
+missing DT support in some device drivers).
+
+Thanks for your comments!
+
+Dependencies:
+  - [PATCH v5 0/8] ARM: shmobile: R-Mobile: DT PM domain support,
+  - [[PATCH v5 0/6] sh73a0 common clock framework implementation,
+  - [PATCH 2/2] ARM: shmobile: sh73a0 dtsi: Add missing INTCA0 clock for
+    irqpin module.
+
+Geert Uytterhoeven (7):
+  PM / Domains: Document SH-Mobile AG5 (sh73a0) binding
+  ARM: shmobile: R-Mobile: Consolidate rmobile_pd_suspend_*()
+  ARM: shmobile: R-Mobile: Generalize adding/looking up special PM
+    domains
+  ARM: shmobile: R-Mobile: Special-case PM domains containing SBSCs
+  [RFC] ARM: shmobile: sh73a0 dtsi: Add PM domain support
+  drivers: sh: Disable PM runtime for multi-platform sh73a0 with genpd
+  [RFC] ARM: shmobile: r8a7740 dtsi: Add missing memory-controller node
+
+ .../bindings/power/renesas,sysc-rmobile.txt        |   1 +
+ arch/arm/boot/dts/r8a7740.dtsi                     |   6 +
+ arch/arm/boot/dts/sh73a0.dtsi                      | 159 ++++++++++++++++++++-
+ arch/arm/mach-shmobile/pm-rmobile.c                | 159 +++++++++++++--------
+ drivers/sh/pm_runtime.c                            |   4 +-
+ 5 files changed, 268 insertions(+), 61 deletions(-)
+
 -- 
-2.1.1
+1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
