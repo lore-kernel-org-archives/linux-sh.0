@@ -1,43 +1,87 @@
-From: Peter Hurley <peter@hurleysoftware.com>
-Date: Tue, 04 Nov 2014 03:38:48 +0000
-Subject: Re: CMA: test_pages_isolated failures in alloc_contig_range
-Message-Id: <54584A48.9000409@hurleysoftware.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 20 Nov 2014 16:21:33 +0000
+Subject: [PATCH v2 3/6] ARM: shmobile: r8a73a4: Add CPG register bits header
+Message-Id: <1416500496-21024-4-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2457604.k03RC2Mv4q@avalon> <xa1tsii8l683.fsf@mina86.com> <544F9EAA.5010404@hurleysoftware.com> <xa1tfve8ku7q.fsf@mina86.com>
-In-Reply-To: <xa1tfve8ku7q.fsf@mina86.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Michal Nazarewicz <mina86@mina86.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-mm@kvack.org
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Minchan Kim <minchan@kernel.org>, Andrew Morton <akpm@linux-foundation.org>
+To: linux-sh@vger.kernel.org
 
-On 10/28/2014 12:57 PM, Michal Nazarewicz wrote:
->> On 10/28/2014 08:38 AM, Michal Nazarewicz wrote:
->>> Like Laura wrote, the message is not (should not be) a problem in
->>> itself:
->>
->> [...]
->>
->>> So as you can see cma_alloc will try another part of the cma region if
->>> test_pages_isolated fails.
->>>
->>> Obviously, if CMA region is fragmented or there's enough space for only
->>> one allocation of required size isolation failures will cause allocation
->>> failures, so it's best to avoid them, but they are not always avoidable.
->>>
->>> To debug you would probably want to add more debug information about the
->>> page (i.e. data from struct page) that failed isolation after the
->>> pr_warn in alloc_contig_range.
-> 
-> On Tue, Oct 28 2014, Peter Hurley <peter@hurleysoftware.com> wrote:
->> If the message does not indicate an actual problem, then its printk level is
->> too high. These messages have been reported when using 3.16+ distro kernels.
-> 
-> I think it could be argued both ways.  The condition is not an error,
-> since in many cases cma_alloc will be able to continue, but it *is* an
-> undesired state.  As such it's not an error but feels to me a bit more
-> then just information, hence a warning.  I don't care either way, though.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ include/dt-bindings/clock/r8a73a4-clock.h | 62 +++++++++++++++++++++++++++++++
+ 1 file changed, 62 insertions(+)
+ create mode 100644 include/dt-bindings/clock/r8a73a4-clock.h
 
-This "undesired state" is trivially reproducible on 3.16.y on the x86 arch;
-a smattering of these will show up just building a distro kernel.
+diff --git a/include/dt-bindings/clock/r8a73a4-clock.h b/include/dt-bindings/clock/r8a73a4-clock.h
+new file mode 100644
+index 0000000..cbc1abf
+--- /dev/null
++++ b/include/dt-bindings/clock/r8a73a4-clock.h
+@@ -0,0 +1,62 @@
++/*
++ * Copyright 2014 Ulrich Hecht
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++
++#ifndef __DT_BINDINGS_CLOCK_R8A73A4_H__
++#define __DT_BINDINGS_CLOCK_R8A73A4_H__
++
++/* CPG */
++#define R8A73A4_CLK_PLL0	0
++#define R8A73A4_CLK_PLL1	1
++#define R8A73A4_CLK_PLL2	2
++#define R8A73A4_CLK_PLL2S	3
++#define R8A73A4_CLK_PLL2H	4
++#define R8A73A4_CLK_MAIN	5
++#define R8A73A4_CLK_Z		6
++#define R8A73A4_CLK_Z2		7
++#define R8A73A4_CLK_I		8
++#define R8A73A4_CLK_M3		9
++#define R8A73A4_CLK_B		10
++#define R8A73A4_CLK_M1		11
++#define R8A73A4_CLK_M2		12
++#define R8A73A4_CLK_ZX		13
++#define R8A73A4_CLK_ZS		14
++#define R8A73A4_CLK_HP		15
++
++/* MSTP2 */
++#define R8A73A4_CLK_SCIFA0	4
++#define R8A73A4_CLK_SCIFA1	3
++#define R8A73A4_CLK_SCIFB0	6
++#define R8A73A4_CLK_SCIFB1	7
++#define R8A73A4_CLK_SCIFB2	16
++#define R8A73A4_CLK_SCIFB3	17
++#define R8A73A4_CLK_DMAC	18
++
++/* MSTP3 */
++#define R8A73A4_CLK_IIC2	0
++#define R8A73A4_CLK_MMCIF1	5
++#define R8A73A4_CLK_SDHI2	12
++#define R8A73A4_CLK_SDHI1	13
++#define R8A73A4_CLK_SDHI0	14
++#define R8A73A4_CLK_MMCIF0	15
++#define R8A73A4_CLK_IIC6	16
++#define R8A73A4_CLK_IIC7	17
++#define R8A73A4_CLK_IIC0	18
++#define R8A73A4_CLK_IIC1	23
++#define R8A73A4_CLK_CMT1	29
++
++/* MSTP4 */
++#define R8A73A4_CLK_IIC5	9
++#define R8A73A4_CLK_IIC4	10
++#define R8A73A4_CLK_IIC3	11
++
++/* MSTP5 */
++#define R8A73A4_CLK_THERMAL	22
++#define R8A73A4_CLK_IIC8	15
++
++#endif /* __DT_BINDINGS_CLOCK_R8A73A4_H__ */
+-- 
+1.8.4.5
 
