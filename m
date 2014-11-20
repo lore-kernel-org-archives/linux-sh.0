@@ -1,355 +1,326 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 25 Nov 2014 09:46:48 +0000
-Subject: Re: [PATCH v2 1/6] clk: shmobile: r8a73a4 common clock framework implementation
-Message-Id: <1446682.EVXDK81pE8@avalon>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 20 Nov 2014 16:21:34 +0000
+Subject: [PATCH v2 4/6] ARM: shmobile: r8a73a4: Common clock framework DT description
+Message-Id: <1416500496-21024-5-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416500496-21024-2-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1416500496-21024-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Ulrich,
+Declares all r8a73a4 clocks supported by the legacy clock framework.
 
-Thank you for the patch. It looks good to me overall (I've quickly verified 
-the various numerical values for correctness), I just have a couple of small 
-comments.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/boot/dts/r8a73a4.dtsi | 294 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 294 insertions(+)
 
-On Thursday 20 November 2014 17:21:31 Ulrich Hecht wrote:
-> Driver for the R8A73A4's clocks that are too specific to be supported by a
-> generic driver.
-> 
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> ---
->  .../bindings/clock/renesas,r8a73a4-cpg-clocks.txt  |  33 +++
->  drivers/clk/shmobile/Makefile                      |   1 +
->  drivers/clk/shmobile/clk-r8a73a4.c                 | 242 ++++++++++++++++++
->  3 files changed, 276 insertions(+)
->  create mode 100644
-> Documentation/devicetree/bindings/clock/renesas,r8a73a4-cpg-clocks.txt
-> create mode 100644 drivers/clk/shmobile/clk-r8a73a4.c
-> 
-> diff --git
-> a/Documentation/devicetree/bindings/clock/renesas,r8a73a4-cpg-clocks.txt
-> b/Documentation/devicetree/bindings/clock/renesas,r8a73a4-cpg-clocks.txt
-> new file mode 100644
-> index 0000000..ece9239
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/clock/renesas,r8a73a4-cpg-clocks.txt
-> @@ -0,0 +1,33 @@
-> +* Renesas R8A73A4 Clock Pulse Generator (CPG)
-> +
-> +The CPG generates core clocks for the R8A73A4 SoC. It includes five PLLs
-> +and several fixed ratio dividers.
-> +
-> +Required Properties:
-> +
-> +  - compatible: Must be "renesas,r8a73a4-cpg-clocks"
-> +
-> +  - reg: Base address and length of the memory resource used by the CPG
-> +
-> +  - clocks: Reference to the parent clocks ("extal1" and "extal2")
-> +
-> +  - #clock-cells: Must be 1
-> +
-> +  - clock-output-names: The names of the clocks. Supported clocks are
-> "main", +    "pll0", "pll1", "pll2", "pll2s", "pll2h", "z", "z2", "i",
-> "m3", "b", +    "m1", "m2", "zx", "zs", and "hp".
-> +
-> +
-> +Example
-> +-------
-> +
-> +        cpg_clocks: cpg_clocks@e6150000 {
-> +                compatible = "renesas,r8a73a4-cpg-clocks";
-> +                reg = <0 0xe6150000 0 0x10000>;
-> +                clocks = <&extal1_clk>, <&extal2_clk>;
-> +                #clock-cells = <1>;
-> +                clock-output-names = "main", "pll0", "pll1", "pll2",
-> +                                     "pll2s", "pll2h", "z", "z2",
-> +                                     "i", "m3", "b", "m1", "m2",
-> +                                     "zx", "zs", "hp";
-> +        };
-> diff --git a/drivers/clk/shmobile/Makefile b/drivers/clk/shmobile/Makefile
-> index 960bf22..949a0fa 100644
-> --- a/drivers/clk/shmobile/Makefile
-> +++ b/drivers/clk/shmobile/Makefile
-> @@ -2,6 +2,7 @@ obj-$(CONFIG_ARCH_EMEV2)		+= clk-emev2.o
->  obj-$(CONFIG_ARCH_R7S72100)		+= clk-rz.o
->  obj-$(CONFIG_ARCH_R8A7740)		+= clk-r8a7740.o
->  obj-$(CONFIG_ARCH_R8A7779)		+= clk-r8a7779.o
-> +obj-$(CONFIG_ARCH_R8A73A4)		+= clk-r8a73a4.o
-
-Could you please keep those lines sorted by SoC number ?
-
->  obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o
->  obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o
->  obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o
-> diff --git a/drivers/clk/shmobile/clk-r8a73a4.c
-> b/drivers/clk/shmobile/clk-r8a73a4.c new file mode 100644
-> index 0000000..e23d518
-> --- /dev/null
-> +++ b/drivers/clk/shmobile/clk-r8a73a4.c
-> @@ -0,0 +1,242 @@
-> +/*
-> + * r8a73a4 Core CPG Clocks
-> + *
-> + * Copyright (C) 2014  Ulrich Hecht
-> + *
-> + * This program is free software; you can redistribute it and/or modify
-> + * it under the terms of the GNU General Public License as published by
-> + * the Free Software Foundation; version 2 of the License.
-> + */
-> +
-> +#include <linux/clk-provider.h>
-> +#include <linux/clkdev.h>
-> +#include <linux/clk/shmobile.h>
-> +#include <linux/init.h>
-> +#include <linux/kernel.h>
-> +#include <linux/of.h>
-> +#include <linux/of_address.h>
-> +#include <linux/spinlock.h>
-> +
-> +struct r8a73a4_cpg {
-> +	struct clk_onecell_data data;
-> +	spinlock_t lock;
-> +	void __iomem *reg;
-> +};
-> +
-> +#define CPG_CKSCR	0xc0
-> +#define CPG_FRQCRA	0x00
-> +#define CPG_FRQCRB	0x04
-> +#define CPG_FRQCRC	0xe0
-> +#define CPG_PLL0CR	0xd8
-> +#define CPG_PLL1CR	0x28
-> +#define CPG_PLL2CR	0x2c
-> +#define CPG_PLL2HCR	0xe4
-> +#define CPG_PLL2SCR	0xf4
-> +
-> +#define CLK_ENABLE_ON_INIT BIT(0)
-> +
-> +struct div4_clk {
-> +	const char *name;
-> +	unsigned int reg;
-> +	unsigned int shift;
-> +	unsigned int mask;
-> +	int flags;
-> +};
-> +
-> +static struct div4_clk div4_clks[] = {
-> +	{ "i",	CPG_FRQCRA, 20, 0x0dff, CLK_ENABLE_ON_INIT },
-> +	{ "m3", CPG_FRQCRA, 12, 0x1dff, CLK_ENABLE_ON_INIT },
-> +	{ "b",	CPG_FRQCRA,  8, 0x0dff, CLK_ENABLE_ON_INIT },
-> +	{ "m1", CPG_FRQCRA,  4, 0x1dff, CLK_ENABLE_ON_INIT },
-> +	{ "m2", CPG_FRQCRA,  0, 0x1dff, 0 },
-> +	{ "zx", CPG_FRQCRB, 12, 0x0dff, 0 },
-> +	{ "zs", CPG_FRQCRB,  8, 0x0dff, 0 },
-> +	{ "hp", CPG_FRQCRB,  4, 0x0dff, 0 },
-
-The mask and flags fields are unused in the code below. The mask is a bit 
-bothersome, as it's a needed feature, but not supported by the CCF core at the 
-moment. Adding a clk_register_divider_table_mask() should be trivial though.
-
-> +	{ NULL, 0, 0, 0 },
-> +};
-> +
-> +static const struct clk_div_table div4_div_table[] = {
-> +	{ 0, 2 }, { 1, 3 }, { 2, 4 }, { 3, 6 }, { 4, 8 }, { 5, 12 },
-> +	{ 6, 16 }, { 7, 18 }, { 8, 24 }, { 10, 36 }, { 11, 48 },
-> +	{ 12, 10 }, { 0, 0 }
-> +};
-> +
-> +static struct clk * __init
-> +r8a73a4_cpg_register_clock(struct device_node *np, struct r8a73a4_cpg *cpg,
-> +			     const char *name)
-> +{
-> +	const struct clk_div_table *table = NULL;
-> +	const char *parent_name;
-> +	unsigned int shift, reg;
-> +	unsigned int mult = 1;
-> +	unsigned int div = 1;
-> +
-> +
-> +	if (!strcmp(name, "main")) {
-> +		u32 ckscr = clk_readl(cpg->reg + CPG_CKSCR);
-> +
-> +		switch ((ckscr >> 28) & 3) {
-> +		case 0:	/* extal1 */
-> +			parent_name = of_clk_get_parent_name(np, 0);
-> +			break;
-> +		case 1:	/* extal1 / 2 */
-> +			parent_name = of_clk_get_parent_name(np, 0);
-> +			div = 2;
-> +			break;
-> +		case 2: /* extal2 */
-> +			parent_name = of_clk_get_parent_name(np, 1);
-> +			break;
-> +		case 3: /* extal2 / 2 */
-> +			parent_name = of_clk_get_parent_name(np, 1);
-> +			div = 2;
-> +			break;
-> +		}
-> +	} else if (!strcmp(name, "pll0")) {
-> +		/* PLL0/1 are configurable multiplier clocks. Register them as
-> +		 * fixed factor clocks for now as there's no generic multiplier
-> +		 * clock implementation and we currently have no need to change
-> +		 * the multiplier value.
-> +		 */
-> +		u32 value = clk_readl(cpg->reg + CPG_PLL0CR);
-> +
-> +		parent_name = "main";
-> +		mult = ((value >> 24) & 0x7f) + 1;
-> +		if (value & BIT(20))
-> +			div = 2;
-> +	} else if (!strcmp(name, "pll1")) {
-> +		u32 value = clk_readl(cpg->reg + CPG_PLL1CR);
-> +
-> +		parent_name = "main";
-> +		/* XXX: enable bit? */
-> +		mult = ((value >> 24) & 0x7f) + 1;
-> +		if (value & BIT(7))
-> +			div = 2;
-> +	} else if (!strncmp(name, "pll2", 4)) {
-> +		u32 value, cr;
-> +
-> +		switch (name[4]) {
-> +		case 0:
-> +			cr = CPG_PLL2CR;
-> +			break;
-> +		case 's':
-> +			cr = CPG_PLL2SCR;
-> +			break;
-> +		case 'h':
-> +			cr = CPG_PLL2HCR;
-> +			break;
-> +		default:
-> +			return ERR_PTR(-EINVAL);
-> +		}
-> +		value = clk_readl(cpg->reg + cr);
-> +		switch ((value >> 5) & 7) {
-> +		case 0:
-> +			parent_name = "main";
-> +			div = 2;
-> +			break;
-> +		case 1:
-> +			parent_name = "extal2";
-> +			div = 2;
-> +			break;
-> +		case 3:
-> +			parent_name = "extal2";
-> +			div = 4;
-> +			break;
-> +		case 4:
-> +			parent_name = "main";
-> +			break;
-> +		case 5:
-> +			parent_name = "extal2";
-> +			break;
-> +		default:
-> +			pr_warn("%s: unexpected parent of %s\n", __func__,
-> +				name);
-> +			return ERR_PTR(-EINVAL);
-> +		}
-> +		/* XXX: enable bit? */
-> +		mult = ((value >> 24) & 0x7f) + 1;
-> +	} else if (!strcmp(name, "z") || !strcmp(name, "z2")) {
-> +		u32 shift = 8;
-> +
-> +		parent_name = "pll0";
-> +		if (name[1] = '2') {
-> +			div = 2;
-> +			shift = 0;
-> +		}
-
-Shouldn't div be multiplied by 32 here ? According to the datasheet the FRQCRC 
-Z and Z2 ratios range from 1/32 to 32/32.
-
-> +		mult = 0x20 - ((clk_readl(cpg->reg + CPG_FRQCRC) >> shift)
-> +		       & 0x1f);
-> +	} else {
-> +		struct div4_clk *c;
-> +
-> +		for (c = div4_clks; c->name; c++) {
-> +			if (!strcmp(name, c->name)) {
-> +				parent_name = "pll1";
-> +				table = div4_div_table;
-> +				reg = c->reg;
-> +				shift = c->shift;
-
-Nitpicking, you could move those 4 lines out of the for loop after the !c-
->name check.
-
-> +				break;
-> +			}
-> +		}
-> +		if (!c->name)
-> +			return ERR_PTR(-EINVAL);
-> +	}
-> +
-> +	if (!table) {
-> +		return clk_register_fixed_factor(NULL, name, parent_name, 0,
-> +						 mult, div);
-> +	} else {
-> +		return clk_register_divider_table(NULL, name, parent_name, 0,
-> +						  cpg->reg + reg, shift, 4, 0,
-> +						  table, &cpg->lock);
-> +	}
-> +}
-> +
-> +static void __init r8a73a4_cpg_clocks_init(struct device_node *np)
-> +{
-> +	struct r8a73a4_cpg *cpg;
-> +	struct clk **clks;
-> +	unsigned int i;
-> +	int num_clks;
-> +
-> +	num_clks = of_property_count_strings(np, "clock-output-names");
-> +	if (num_clks < 0) {
-> +		pr_err("%s: failed to count clocks\n", __func__);
-> +		return;
-> +	}
-> +
-> +	cpg = kzalloc(sizeof(*cpg), GFP_KERNEL);
-> +	clks = kcalloc(num_clks, sizeof(*clks), GFP_KERNEL);
-> +	if (cpg = NULL || clks = NULL) {
-> +		/* We're leaking memory on purpose, there's no point in cleaning
-> +		 * up as the system won't boot anyway.
-> +		 */
-> +		return;
-> +	}
-> +
-> +	spin_lock_init(&cpg->lock);
-> +
-> +	cpg->data.clks = clks;
-> +	cpg->data.clk_num = num_clks;
-> +
-> +	cpg->reg = of_iomap(np, 0);
-> +	if (WARN_ON(cpg->reg = NULL))
-> +		return;
-> +
-> +	for (i = 0; i < num_clks; ++i) {
-> +		const char *name;
-> +		struct clk *clk;
-> +
-> +		of_property_read_string_index(np, "clock-output-names", i,
-> +					      &name);
-> +
-> +		clk = r8a73a4_cpg_register_clock(np, cpg, name);
-> +		if (IS_ERR(clk))
-> +			pr_err("%s: failed to register %s %s clock (%ld)\n",
-> +			       __func__, np->name, name, PTR_ERR(clk));
-> +		else
-> +			cpg->data.clks[i] = clk;
-> +	}
-> +
-> +	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
-> +}
-> +CLK_OF_DECLARE(r8a73a4_cpg_clks, "renesas,r8a73a4-cpg-clocks",
-> +	       r8a73a4_cpg_clocks_init);
-
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index 5ac57ba..20eae88 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -9,6 +9,7 @@
+  * kind, whether express or implied.
+  */
+ 
++#include <dt-bindings/clock/r8a73a4-clock.h>
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+ 
+@@ -367,4 +368,297 @@
+ 			<0 0xf1006000 0 0x2000>;
+ 		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
+ 	};
++
++	clocks {
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		/* External root clocks */
++		extalr_clk: extalr_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <32768>;
++			clock-output-names = "extalr";
++		};
++		extal1_clk: extal1_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <25000000>;
++			clock-output-names = "extal1";
++		};
++		extal2_clk: extal2_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <48000000>;
++			clock-output-names = "extal2";
++		};
++		fsiack_clk: fsiack_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			/* This value must be overridden by the board. */
++			clock-frequency = <0>;
++			clock-output-names = "fsiack";
++		};
++		fsibck_clk: fsibck_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			/* This value must be overridden by the board. */
++			clock-frequency = <0>;
++			clock-output-names = "fsibck";
++		};
++
++		/* Special CPG clocks */
++		cpg_clocks: cpg_clocks@e6150000 {
++			compatible = "renesas,r8a73a4-cpg-clocks";
++			reg = <0 0xe6150000 0 0x10000>;
++			clocks = <&extal1_clk>, <&extal2_clk>;
++			#clock-cells = <1>;
++			clock-output-names = "main", "pll0", "pll1", "pll2",
++					     "pll2s", "pll2h", "z", "z2",
++					     "i", "m3", "b", "m1", "m2",
++					     "zx", "zs", "hp";
++		};
++
++		/* Variable factor clocks (DIV6) */
++		zb_clk: zb_clk@e6150010 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150010 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <0>, <0>;
++			#clock-cells = <0>;
++			clock-output-names = "zb";
++		};
++		sdhi0_clk: sdhi0_clk@e6150074 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150074 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <0>, <&extal2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "sdhi0ck";
++		};
++		sdhi1_clk: sdhi1_clk@e6150078 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150078 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <0>, <&extal2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "sdhi1ck";
++		};
++		sdhi2_clk: sdhi2_clk@e615007c {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe615007c 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <0>, <&extal2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "sdhi2ck";
++		};
++		mmc0_clk: mmc0_clk@e6150240 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150240 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <0>, <&extal2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "mmc0";
++		};
++		mmc1_clk: mmc1_clk@e6150244 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150244 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <0>, <&extal2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "mmc1";
++		};
++		vclk1_clk: vclk1_clk@e6150008 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150008 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <0>, <&extal2_clk>, <&main_div2_clk>,
++				 <&extalr_clk>, <0>, <0>;
++			#clock-cells = <0>;
++			clock-output-names = "vclk1";
++		};
++		vclk2_clk: vclk2_clk@e615000c {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe615000c 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <0>, <&extal2_clk>, <&main_div2_clk>,
++				 <&extalr_clk>, <0>, <0>;
++			#clock-cells = <0>;
++			clock-output-names = "vclk2";
++		};
++		vclk3_clk: vclk3_clk@e615001c {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe615001c 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <0>, <&extal2_clk>, <&main_div2_clk>,
++				 <&extalr_clk>, <0>, <0>;
++			#clock-cells = <0>;
++			clock-output-names = "vclk3";
++		};
++		vclk4_clk: vclk4_clk@e6150014 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150014 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <0>, <&extal2_clk>, <&main_div2_clk>,
++				 <&extalr_clk>, <0>, <0>;
++			#clock-cells = <0>;
++			clock-output-names = "vclk4";
++		};
++		vclk5_clk: vclk5_clk@e6150034 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150034 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <0>, <&extal2_clk>, <&main_div2_clk>,
++				 <&extalr_clk>, <0>, <0>;
++			#clock-cells = <0>;
++			clock-output-names = "vclk5";
++		};
++		fsia_clk: fsia_clk@e6150018 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150018 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <&fsiack_clk>, <0>;
++			#clock-cells = <0>;
++			clock-output-names = "fsia";
++		};
++		fsib_clk: fsib_clk@e6150090 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150090 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <&fsibck_clk>, <0>;
++			#clock-cells = <0>;
++			clock-output-names = "fsib";
++		};
++		mp_clk: mp_clk@e6150080 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150080 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <&extal2_clk>, <&extal2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "mp";
++		};
++		m4_clk: m4_clk@e6150098 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150098 0 4>;
++			clocks = <&cpg_clocks R8A73A4_CLK_PLL2S>;
++			#clock-cells = <0>;
++			clock-output-names = "m4";
++		};
++		hsi_clk: hsi_clk@e615026c {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe615026c 0 4>;
++			clocks = <&cpg_clocks R8A73A4_CLK_PLL2H>, <&pll1_div2_clk>,
++				 <&cpg_clocks R8A73A4_CLK_PLL2S>, <0>;
++			#clock-cells = <0>;
++			clock-output-names = "hsi";
++		};
++		spuv_clk: spuv_clk@e6150094 {
++			compatible = "renesas,r8a73a4-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150094 0 4>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks R8A73A4_CLK_PLL2S>,
++				 <&extal2_clk>, <&extal2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "spuv";
++		};
++
++		/* Fixed factor clocks */
++		main_div2_clk: main_div2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A73A4_CLK_MAIN>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "main_div2";
++		};
++		pll0_div2_clk: pll0_div2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A73A4_CLK_PLL0>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "pll0_div2";
++		};
++		pll1_div2_clk: pll1_div2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A73A4_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "pll1_div2";
++		};
++		extal1_div2_clk: extal1_div2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&extal1_clk>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "extal1_div2";
++		};
++
++		/* Gate clocks */
++		mstp2_clks: mstp2_clks@e6150138 {
++			compatible = "renesas,r8a73a4-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150138 0 4>, <0 0xe6150040 0 4>;
++			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
++				 <&mp_clk>, <&mp_clk>, <&cpg_clocks R8A73A4_CLK_HP>;
++			#clock-cells = <1>;
++			clock-indices = <
++				R8A73A4_CLK_SCIFA0 R8A73A4_CLK_SCIFA1
++				R8A73A4_CLK_SCIFB0 R8A73A4_CLK_SCIFB1
++				R8A73A4_CLK_SCIFB2 R8A73A4_CLK_SCIFB3
++				R8A73A4_CLK_DMAC
++			>;
++			clock-output-names +				"scifa0", "scifa1", "scifb0", "scifb1",
++				"scifb2", "scifb3", "dmac";
++		};
++		mstp3_clks: mstp3_clks@e615013c {
++			compatible = "renesas,r8a73a4-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
++			clocks = <&cpg_clocks R8A73A4_CLK_HP>, <&mmc1_clk>,
++				 <&sdhi2_clk>, <&sdhi1_clk>, <&sdhi0_clk>,
++				 <&mmc0_clk>, <&cpg_clocks R8A73A4_CLK_HP>,
++				 <&cpg_clocks R8A73A4_CLK_HP>, <&cpg_clocks
++				 R8A73A4_CLK_HP>, <&cpg_clocks
++				 R8A73A4_CLK_HP>, <&extalr_clk>;
++			#clock-cells = <1>;
++			clock-indices = <
++				R8A73A4_CLK_IIC2 R8A73A4_CLK_MMCIF1
++				R8A73A4_CLK_SDHI2 R8A73A4_CLK_SDHI1
++				R8A73A4_CLK_SDHI0 R8A73A4_CLK_MMCIF0
++				R8A73A4_CLK_IIC6 R8A73A4_CLK_IIC7
++				R8A73A4_CLK_IIC0 R8A73A4_CLK_IIC1
++				R8A73A4_CLK_CMT1
++			>;
++			clock-output-names +				"iic2", "mmcif1", "sdhi2", "sdhi1", "sdhi0",
++				"mmcif0", "iic6", "iic7", "iic0", "iic1",
++				"cmt1";
++		};
++		mstp4_clks: mstp4_clks@e6150140 {
++			compatible = "renesas,r8a73a4-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150140 0 4>, <0 0xe615004c 0 4>;
++			clocks = <&main_div2_clk>, <&cpg_clocks R8A73A4_CLK_HP>,
++				 <&cpg_clocks R8A73A4_CLK_HP>;
++			#clock-cells = <1>;
++			clock-indices = <
++				R8A73A4_CLK_IIC5 R8A73A4_CLK_IIC4
++				R8A73A4_CLK_IIC3
++			>;
++			clock-output-names +				"iic5", "iic4", "iic3";
++		};
++		mstp5_clks: mstp5_clks@e6150144 {
++			compatible = "renesas,r8a73a4-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
++			clocks = <&extal2_clk>, <&cpg_clocks R8A73A4_CLK_HP>;
++			#clock-cells = <1>;
++			clock-indices = <
++				R8A73A4_CLK_THERMAL R8A73A4_CLK_IIC8
++			>;
++			clock-output-names +				"thermal", "iic8";
++		};
++	};
+ };
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.4.5
 
