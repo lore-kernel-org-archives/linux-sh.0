@@ -1,29 +1,76 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 10 Nov 2014 01:04:47 +0000
-Subject: Re: [PATCH 5/5] ARM: shmobile: r8a73a4 dtsi: Add SoC-specific IIC compatible properties
-Message-Id: <20141110010447.GG16836@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 20 Nov 2014 16:20:57 +0000
+Subject: [PATCH v6 0/6] sh73a0 common clock framework implementation
+Message-Id: <1416500463-20965-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415274730-310-1-git-send-email-geert+renesas@glider.be>
- <1415274730-310-6-git-send-email-geert+renesas@glider.be>
- <20141107052616.GC1278@katana>
-In-Reply-To: <20141107052616.GC1278@katana>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Magnus Damm <magnus.damm@gmail.com>, linux-i2c@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Nov 07, 2014 at 06:26:16AM +0100, Wolfram Sang wrote:
-> On Thu, Nov 06, 2014 at 12:52:10PM +0100, Geert Uytterhoeven wrote:
-> > The IIC nodes used the generic compatible properties only.
-> > This may cause the driver to fail when using Standard Speed on IIC
-> > masters where the operational clock is driven by the 130 MHz HP clock.
-> > 
-> > Add the SoC-specific compatible property to fix this.
-> > 
-> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> 
-> Reviewed-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Hi!
 
-Thanks, I have queued this up.
+This uses clock-indices instead of renesas,clock-indices and adds Geert's
+Tested-by.  Who wants to pick this up, Geert, Mike, Simon?
+
+CU
+Uli
+
+
+Changes since v5:
+- use clock-indices instead of renesas,clock-indices
+- added Tested-by
+
+Changes since v4:
+- reordered MSTP clock assignments to directly follow interrupts property
+
+Changes since v3:
+- fixed bindings to match the implementation
+- handle extal division in CPG driver, dump extal?_div2_clk
+- added acks
+- dropped eth clock hack
+
+Changes since v2:
+- split CCF DT description
+- tabbed constants in CPG bits header file
+- reordered patches to avoid need for shmobile_clk_workaround()
+- removed said workaround
+- squashed unmerged remains of CMT1 DT description into MSTP clocks patch
+- renamed clock zb1 to zb
+- removed DIV6 stuff, will be a separate series
+
+Changes since v1:
+- div6 patch replaced with v4
+- split off div6 extended clocks
+- added cmt1 DT description
+- added MSTP clock assignments
+- reordered according to dependencies
+- removed dummy frequencies in extal2, extcki
+- removed enable_on_init on zb1 and flctlck
+- added missing tpu4 in mstp3_clks
+- use c->parent in cpg driver
+- fix some style issues
+
+Ulrich Hecht (6):
+  clk: shmobile: sh73a0 common clock framework implementation
+  ARM: shmobile: sh73a0: Add CPG register bits header
+  ARM: shmobile: sh73a0: Common clock framework DT description
+  ARM: shmobile: kzm9g-reference: Common clock framework DT description
+  ARM: shmobile: sh73a0: add MSTP clock assignments to DT
+  ARM: shmobile: sh73a0: disable legacy clock initialization
+
+ .../bindings/clock/renesas,sh73a0-cpg-clocks.txt   |  35 ++
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts       |   4 +
+ arch/arm/boot/dts/sh73a0.dtsi                      | 358 +++++++++++++++++++++
+ arch/arm/mach-shmobile/setup-sh73a0.c              |   5 +-
+ drivers/clk/shmobile/Makefile                      |   1 +
+ drivers/clk/shmobile/clk-sh73a0.c                  | 204 ++++++++++++
+ include/dt-bindings/clock/sh73a0-clock.h           |  79 +++++
+ 7 files changed, 685 insertions(+), 1 deletion(-)
+ create mode 100644 Documentation/devicetree/bindings/clock/renesas,sh73a0-cpg-clocks.txt
+ create mode 100644 drivers/clk/shmobile/clk-sh73a0.c
+ create mode 100644 include/dt-bindings/clock/sh73a0-clock.h
+
+-- 
+1.8.4.5
 
