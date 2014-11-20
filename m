@@ -1,52 +1,24 @@
-From: Kevin Cernekee <cernekee@gmail.com>
-Date: Sun, 02 Nov 2014 01:03:55 +0000
-Subject: [PATCH V3 08/14] irqchip: bcm7120-l2: Make sure all register accesses use base+offset
-Message-Id: <1414890241-9938-9-git-send-email-cernekee@gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 20 Nov 2014 00:50:34 +0000
+Subject: [ANNOUNCE] renesas tree closed for v3.19
+Message-Id: <20141120005034.GE5065@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414890241-9938-1-git-send-email-cernekee@gmail.com>
-In-Reply-To: <1414890241-9938-1-git-send-email-cernekee@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: arnd@arndb.de, f.fainelli@gmail.com, tglx@linutronix.de, jason@lakedaemon.net, ralf@linux-mips.org
-Cc: linux-sh@vger.kernel.org, sergei.shtylyov@cogentembedded.com, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, mbizon@freebox.fr, jogo@openwrt.org, linux-mips@linux-mips.org
+To: linux-sh@vger.kernel.org
 
-A couple of accesses to IRQEN (base+0x00) just used "base" directly, so
-they would break if IRQEN ever became nonzero.  Make sure that all
-reads/writes specify the register offset constant.
+Hi,
 
-Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
-Acked-by: Florian Fainelli <f.fainelli@gmail.com>
----
- drivers/irqchip/irq-bcm7120-l2.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+As v3.18-rc6 is looming, which is my deadline for pull-request submissions
+to ARM SoC, I am no longer taking any non-fix patches for v3.19.
 
-diff --git a/drivers/irqchip/irq-bcm7120-l2.c b/drivers/irqchip/irq-bcm7120-l2.c
-index 7086fe0..22d3fa1 100644
---- a/drivers/irqchip/irq-bcm7120-l2.c
-+++ b/drivers/irqchip/irq-bcm7120-l2.c
-@@ -66,10 +66,10 @@ static void bcm7120_l2_intc_suspend(struct irq_data *d)
- 
- 	irq_gc_lock(gc);
- 	/* Save the current mask and the interrupt forward mask */
--	b->saved_mask = __raw_readl(b->base) | b->irq_fwd_mask;
-+	b->saved_mask = __raw_readl(b->base + IRQEN) | b->irq_fwd_mask;
- 	if (b->can_wake) {
- 		reg = b->saved_mask | gc->wake_active;
--		__raw_writel(reg, b->base);
-+		__raw_writel(reg, b->base + IRQEN);
- 	}
- 	irq_gc_unlock(gc);
- }
-@@ -81,7 +81,7 @@ static void bcm7120_l2_intc_resume(struct irq_data *d)
- 
- 	/* Restore the saved mask */
- 	irq_gc_lock(gc);
--	__raw_writel(b->saved_mask, b->base);
-+	__raw_writel(b->saved_mask, b->base + IRQEN);
- 	irq_gc_unlock(gc);
- }
- 
--- 
-2.1.1
+I apologise for not announcing this intention a little earlier.
 
+I plan to start queuing-up patches for v3.20 shortly.  These will appear in
+the devel branch of the renesas tree and migrate over to the next branch
+after being rebased on v3.19-rc1 once it has been released.
+
+The next branch is merged into the devel branch so patches available in the
+next branch are also available in the devel branch but not the other way
+around.
