@@ -1,36 +1,52 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 10 Nov 2014 01:32:22 +0000
-Subject: [PATCH 5/8] ARM: shmobile: r8a7791 dtsi: Drop bogus 0x unit-address prefix
-Message-Id: <6b83dc1d03348ec1b1c6879515de1216e060005c.1415582842.git.horms+renesas@verge.net.au>
+Date: Fri, 21 Nov 2014 00:54:42 +0000
+Subject: [PATCH 16/29] ARM: shmobile: koelsch: Sound DMA support via SRC on DTS
+Message-Id: <664de6feea5978b9518a0bc4f8185e1f607be344.1416476366.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415582842.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415582842.git.horms+renesas@verge.net.au>
+References: <cover.1416476366.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+DMA transfer to/from SRC
+
+     DMA      DMApp
+[MEM] -> [SRC] -> [SSIU] -> [SSI]
+
+     DMA      DMApp
+[MEM] <- [SRC] <- [SSIU] <- [SSI]
+
+Current sound driver is supporting
+SSI/SRC random connection.
+So, this patch is tring
+SSI0 -> SRC2
+SSI1 <- SRC3
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index e06c11f..35b8a75 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1153,7 +1153,7 @@
- 		status = "disabled";
- 	};
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 5bc675f..d2fe677 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -569,8 +569,8 @@
  
--	rcar_sound: rcar_sound@0xec500000 {
-+	rcar_sound: rcar_sound@ec500000 {
- 		#sound-dai-cells = <1>;
- 		compatible =  "renesas,rcar_sound-r8a7791", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
- 		reg =	<0 0xec500000 0 0x1000>, /* SCU */
+ 	rcar_sound,dai {
+ 		dai0 {
+-			playback = <&ssi0>;
+-			capture  = <&ssi1>;
++			playback = <&ssi0 &src2>;
++			capture  = <&ssi1 &src3>;
+ 		};
+ 	};
+ };
 -- 
 2.1.1
 
