@@ -1,41 +1,65 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Nov 2014 01:20:07 +0000
-Subject: [PATCH 16/25] ARM: shmobile: koelsch: fixup I2C2 clock frequency
-Message-Id: <091fffde6d5a41e388ba7823e51151144da8ced5.1415755881.git.horms+renesas@verge.net.au>
+Date: Fri, 21 Nov 2014 00:54:48 +0000
+Subject: [PATCH 22/29] ARM: shmobile: r8a7790: add DMA nodes for IIC
+Message-Id: <0d73ca41e8bb3b06c6c1a3a9a5d2aba908929d44.1416476366.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415755881.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415755881.git.horms+renesas@verge.net.au>
+References: <cover.1416476366.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Current Koelsch I2C2 has 400kHz settings,
-but, ak4643 audio codec chip which is connected to I2C2 can't
-work such frequency.
-Fixup I2C2 clock frequency to 100kHz.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 191f32b..59e4251 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -425,7 +425,7 @@
- 	pinctrl-names = "default";
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 146f918..3afd071 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -423,6 +423,8 @@
+ 		reg = <0 0xe6500000 0 0x425>;
+ 		interrupts = <0 174 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_IIC0>;
++		dmas = <&dmac0 0x61>, <&dmac0 0x62>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
  
- 	status = "okay";
--	clock-frequency = <400000>;
-+	clock-frequency = <100000>;
+@@ -433,6 +435,8 @@
+ 		reg = <0 0xe6510000 0 0x425>;
+ 		interrupts = <0 175 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_IIC1>;
++		dmas = <&dmac0 0x65>, <&dmac0 0x66>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
  
- 	composite-in@20 {
- 		compatible = "adi,adv7180";
+@@ -443,6 +447,8 @@
+ 		reg = <0 0xe6520000 0 0x425>;
+ 		interrupts = <0 176 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_IIC2>;
++		dmas = <&dmac0 0x69>, <&dmac0 0x6a>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
+ 
+@@ -453,6 +459,8 @@
+ 		reg = <0 0xe60b0000 0 0x425>;
+ 		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7790_CLK_IICDVFS>;
++		dmas = <&dmac0 0x77>, <&dmac0 0x78>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
+ 
 -- 
 2.1.1
 
