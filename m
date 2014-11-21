@@ -1,56 +1,56 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Mon, 03 Nov 2014 16:01:34 +0000
-Subject: [PATCH v6 0/2] clk: shmobile: DIV6 clock variable parent support
-Message-Id: <1415030496-26054-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 21 Nov 2014 00:54:49 +0000
+Subject: [PATCH 23/29] ARM: shmobile: r8a7791: add DMA nodes for IIC
+Message-Id: <3f58c54bd027b42099d59e5ea0521f7b39d82e15.1416476366.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1416476366.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au, mturquette@linaro.org, geert@linux-m68k.org, laurent.pinchart+renesas@ideasonboard.com
-Cc: linux-sh@vger.kernel.org, magnus.damm@gmail.com, devicetree@vger.kernel.org, mark.rutland@arm.com, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi!
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Another shot, this time without introducing new DT properties, and with a
-few coding issues fixed.  Thanks to Geert and Laurent for the review.
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-CU
-Uli
-
-
-Changes since v5:
-- straighten types
-- don't use hw->init outside cpg_div6_clock_init()
-- drop superfluous allocation error messages
-- drop renesas,src-* properties, can be inferred
-
-Changes since v4:
-- implement .get_parent, .set_parent
-- improve bindings documentation
-
-Changes since v3:
-- note that renesas,src-shift and renesas,src-width depend on each other
-- clarified description
-- minor coding style fixes
-
-Changes since v2:
-- add r8a73a4 to bindings
-- use u32 where appropriate
-- don't split error message
-
-Changes since v1:
-- make sure unrelated register bits are preserved
-- use the plural for the clocks property in bindings
-
-
-Ulrich Hecht (2):
-  clk: shmobile: div6: support selectable-input clocks
-  clk: shmobile: document DIV6 clock parent bindings
-
- .../bindings/clock/renesas,cpg-div6-clocks.txt     |  19 ++--
- drivers/clk/shmobile/clk-div6.c                    | 110 ++++++++++++++++++---
- 2 files changed, 109 insertions(+), 20 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 379e1a5..cfea2eca 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -434,6 +434,8 @@
+ 		reg = <0 0xe60b0000 0 0x425>;
+ 		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7791_CLK_IICDVFS>;
++		dmas = <&dmac0 0x77>, <&dmac0 0x78>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
+ 
+@@ -444,6 +446,8 @@
+ 		reg = <0 0xe6500000 0 0x425>;
+ 		interrupts = <0 174 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7791_CLK_IIC0>;
++		dmas = <&dmac0 0x61>, <&dmac0 0x62>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
+ 
+@@ -454,6 +458,8 @@
+ 		reg = <0 0xe6510000 0 0x425>;
+ 		interrupts = <0 175 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7791_CLK_IIC1>;
++		dmas = <&dmac0 0x65>, <&dmac0 0x66>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
+ 
 -- 
-1.8.4.5
+2.1.1
 
