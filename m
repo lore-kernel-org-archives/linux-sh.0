@@ -1,108 +1,61 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 27 Nov 2014 15:19:12 +0000
-Subject: [PATCH 1/2] ARM: shmobile: lager: Remove DU platform device
-Message-Id: <1417101553-5233-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 21 Nov 2014 00:54:52 +0000
+Subject: [PATCH 26/29] ARM: shmobile: r8a7794: Add SGX clock to device tree
+Message-Id: <3e58a5424c8325df8b62f1de175dc95c7373bfe1.1416476366.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1417101553-5233-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1417101553-5233-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1416476366.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org
-Cc: Simon Horman <horms@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-Platform data support has been removed from the DU driver, drop DU
-support from the legacy Lager board file. The multiplatform DT-based
-Lager support should be used instead.
+From: Kouei Abe <kouei.abe.cp@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-lager.c | 58 ------------------------------------
- 1 file changed, 58 deletions(-)
+ arch/arm/boot/dts/r8a7794.dtsi            | 11 +++++------
+ include/dt-bindings/clock/r8a7794-clock.h |  1 +
+ 2 files changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index b47262afb240..f8197eb6e566 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -32,7 +32,6 @@
- #include <linux/pinctrl/machine.h>
- #include <linux/platform_data/camera-rcar.h>
- #include <linux/platform_data/gpio-rcar.h>
--#include <linux/platform_data/rcar-du.h>
- #include <linux/platform_data/usb-rcar-gen2-phy.h>
- #include <linux/platform_device.h>
- #include <linux/phy.h>
-@@ -83,61 +82,6 @@
-  *
-  */
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 95f656d..b6f8f45 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -461,16 +461,15 @@
+ 		mstp1_clks: mstp1_clks@e6150134 {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
+-			clocks = <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
+-				 <&cp_clk>,
+-				 <&zs_clk>, <&zs_clk>, <&zs_clk>;
++			clocks = <&p_clk>, <&zg_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
++				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+-				R8A7794_CLK_TMU1 R8A7794_CLK_TMU3 R8A7794_CLK_TMU2
+-				R8A7794_CLK_CMT0 R8A7794_CLK_TMU0
++				R8A7794_CLK_TMU1 R8A7794_CLK_3DG R8A7794_CLK_TMU3
++				R8A7794_CLK_TMU2 R8A7794_CLK_CMT0 R8A7794_CLK_TMU0
+ 			>;
+ 			clock-output-names -				"tmu1", "tmu3", "tmu2", "cmt0", "tmu0";
++				"tmu1", "3dg", "tmu3", "tmu2", "cmt0", "tmu0";
+ 		};
+ 		mstp2_clks: mstp2_clks@e6150138 {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
+index fd7cdee..9066213 100644
+--- a/include/dt-bindings/clock/r8a7794-clock.h
++++ b/include/dt-bindings/clock/r8a7794-clock.h
+@@ -27,6 +27,7 @@
  
--/* DU */
--static struct rcar_du_encoder_data lager_du_encoders[] = {
--	{
--		.type = RCAR_DU_ENCODER_VGA,
--		.output = RCAR_DU_OUTPUT_DPAD0,
--	}, {
--		.type = RCAR_DU_ENCODER_NONE,
--		.output = RCAR_DU_OUTPUT_LVDS1,
--		.connector.lvds.panel = {
--			.width_mm = 210,
--			.height_mm = 158,
--			.mode = {
--				.pixelclock = 65000000,
--				.hactive = 1024,
--				.hfront_porch = 20,
--				.hback_porch = 160,
--				.hsync_len = 136,
--				.vactive = 768,
--				.vfront_porch = 3,
--				.vback_porch = 29,
--				.vsync_len = 6,
--			},
--		},
--	},
--};
--
--static const struct rcar_du_platform_data lager_du_pdata __initconst = {
--	.encoders = lager_du_encoders,
--	.num_encoders = ARRAY_SIZE(lager_du_encoders),
--};
--
--static const struct resource du_resources[] __initconst = {
--	DEFINE_RES_MEM(0xfeb00000, 0x70000),
--	DEFINE_RES_MEM_NAMED(0xfeb90000, 0x1c, "lvds.0"),
--	DEFINE_RES_MEM_NAMED(0xfeb94000, 0x1c, "lvds.1"),
--	DEFINE_RES_IRQ(gic_spi(256)),
--	DEFINE_RES_IRQ(gic_spi(268)),
--	DEFINE_RES_IRQ(gic_spi(269)),
--};
--
--static void __init lager_add_du_device(void)
--{
--	struct platform_device_info info = {
--		.name = "rcar-du-r8a7790",
--		.id = -1,
--		.res = du_resources,
--		.num_res = ARRAY_SIZE(du_resources),
--		.data = &lager_du_pdata,
--		.size_data = sizeof(lager_du_pdata),
--		.dma_mask = DMA_BIT_MASK(32),
--	};
--
--	platform_device_register_full(&info);
--}
--
- /* LEDS */
- static struct gpio_led lager_leds[] = {
- 	{
-@@ -800,8 +744,6 @@ static void __init lager_add_standard_devices(void)
- 
- 	platform_device_register_full(&ether_info);
- 
--	lager_add_du_device();
--
- 	platform_device_register_resndata(NULL, "qspi", 0,
- 					  qspi_resources,
- 					  ARRAY_SIZE(qspi_resources),
+ /* MSTP1 */
+ #define R8A7794_CLK_TMU1		11
++#define R8A7794_CLK_3DG			12
+ #define R8A7794_CLK_TMU3		21
+ #define R8A7794_CLK_TMU2		22
+ #define R8A7794_CLK_CMT0		24
 -- 
-2.0.4
+2.1.1
 
