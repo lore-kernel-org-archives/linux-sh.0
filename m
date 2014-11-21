@@ -1,222 +1,82 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Mon, 03 Nov 2014 16:01:35 +0000
-Subject: [PATCH v6 1/2] clk: shmobile: div6: support selectable-input clocks
-Message-Id: <1415030496-26054-2-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 21 Nov 2014 00:54:45 +0000
+Subject: [PATCH 19/29] ARM: shmobile: sh73a0 dtsi: Add SoC-specific IIC compatible properties
+Message-Id: <dd4dc874d16b87944e6803f41dc9477c3c6f09d6.1416476366.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415030496-26054-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1415030496-26054-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <cover.1416476366.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au, mturquette@linaro.org, geert@linux-m68k.org, laurent.pinchart+renesas@ideasonboard.com
-Cc: linux-sh@vger.kernel.org, magnus.damm@gmail.com, devicetree@vger.kernel.org, mark.rutland@arm.com, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Support for setting the parent at initialization time based on the current
-hardware configuration in DIV6 clocks with selectable parents as found in
-the r8a73a4, r8a7740, sh73a0, and other SoCs.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+The IIC nodes used the generic compatible properties only.
+This causes the driver to fail when using Standard Speed, as the
+operational clock is driven by the 104 MHz HP clock:
+
+    i2c-sh_mobile e6820000.i2c: timing values out of range: L/H=0x208/0x1bf
+    i2c-sh_mobile: probe of e6820000.i2c failed with error -22
+
+Add the SoC-specific compatible property to fix this.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/clk/shmobile/clk-div6.c | 110 +++++++++++++++++++++++++++++++++++-----
- 1 file changed, 96 insertions(+), 14 deletions(-)
+ arch/arm/boot/dts/sh73a0.dtsi | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/clk/shmobile/clk-div6.c b/drivers/clk/shmobile/clk-div6.c
-index f065f69..91ca1fd 100644
---- a/drivers/clk/shmobile/clk-div6.c
-+++ b/drivers/clk/shmobile/clk-div6.c
-@@ -32,6 +32,9 @@ struct div6_clock {
- 	struct clk_hw hw;
- 	void __iomem *reg;
- 	unsigned int div;
-+	u32 src_shift;
-+	u32 src_width;
-+	u8 *parents;
- };
- 
- #define to_div6_clock(_hw) container_of(_hw, struct div6_clock, hw)
-@@ -39,8 +42,11 @@ struct div6_clock {
- static int cpg_div6_clock_enable(struct clk_hw *hw)
- {
- 	struct div6_clock *clock = to_div6_clock(hw);
-+	u32 val;
- 
--	clk_writel(CPG_DIV6_DIV(clock->div - 1), clock->reg);
-+	val = (clk_readl(clock->reg) & ~(CPG_DIV6_DIV_MASK | CPG_DIV6_CKSTP))
-+	    | CPG_DIV6_DIV(clock->div - 1);
-+	clk_writel(val, clock->reg);
- 
- 	return 0;
- }
-@@ -52,7 +58,7 @@ static void cpg_div6_clock_disable(struct clk_hw *hw)
- 	/* DIV6 clocks require the divisor field to be non-zero when stopping
- 	 * the clock.
- 	 */
--	clk_writel(CPG_DIV6_CKSTP | CPG_DIV6_DIV(CPG_DIV6_DIV_MASK),
-+	clk_writel(clk_readl(clock->reg) | CPG_DIV6_CKSTP | CPG_DIV6_DIV_MASK,
- 		   clock->reg);
- }
- 
-@@ -94,12 +100,53 @@ static int cpg_div6_clock_set_rate(struct clk_hw *hw, unsigned long rate,
- {
- 	struct div6_clock *clock = to_div6_clock(hw);
- 	unsigned int div = cpg_div6_clock_calc_div(rate, parent_rate);
-+	u32 val;
- 
- 	clock->div = div;
- 
-+	val = clk_readl(clock->reg) & ~CPG_DIV6_DIV_MASK;
- 	/* Only program the new divisor if the clock isn't stopped. */
--	if (!(clk_readl(clock->reg) & CPG_DIV6_CKSTP))
--		clk_writel(CPG_DIV6_DIV(clock->div - 1), clock->reg);
-+	if (!(val & CPG_DIV6_CKSTP))
-+		clk_writel(val | CPG_DIV6_DIV(clock->div - 1), clock->reg);
-+
-+	return 0;
-+}
-+
-+static u8 cpg_div6_clock_get_parent(struct clk_hw *hw)
-+{
-+	struct div6_clock *clock = to_div6_clock(hw);
-+	unsigned int i;
-+	u8 hw_index;
-+
-+	if (clock->src_width = 0)
-+		return 0;
-+
-+	hw_index = (clk_readl(clock->reg) >> clock->src_shift) &
-+		   (BIT(clock->src_width) - 1);
-+	for (i = 0; i < __clk_get_num_parents(hw->clk); i++) {
-+		if (clock->parents[i] = hw_index)
-+			return i;
-+	}
-+
-+	pr_err("%s: %s DIV6 clock set to invalid parent %u\n",
-+	       __func__, __clk_get_name(hw->clk), hw_index);
-+	return 0;
-+}
-+
-+static int cpg_div6_clock_set_parent(struct clk_hw *hw, u8 index)
-+{
-+	struct div6_clock *clock = to_div6_clock(hw);
-+	u8 hw_index;
-+	u32 mask;
-+
-+	if (index >= __clk_get_num_parents(hw->clk))
-+		return -EINVAL;
-+
-+	mask = ~((BIT(clock->src_width) - 1) << clock->src_shift);
-+	hw_index = clock->parents[index];
-+
-+	clk_writel((clk_readl(clock->reg) & mask) |
-+		(hw_index << clock->src_shift), clock->reg);
- 
- 	return 0;
- }
-@@ -108,6 +155,8 @@ static const struct clk_ops cpg_div6_clock_ops = {
- 	.enable = cpg_div6_clock_enable,
- 	.disable = cpg_div6_clock_disable,
- 	.is_enabled = cpg_div6_clock_is_enabled,
-+	.get_parent = cpg_div6_clock_get_parent,
-+	.set_parent = cpg_div6_clock_set_parent,
- 	.recalc_rate = cpg_div6_clock_recalc_rate,
- 	.round_rate = cpg_div6_clock_round_rate,
- 	.set_rate = cpg_div6_clock_set_rate,
-@@ -115,20 +164,33 @@ static const struct clk_ops cpg_div6_clock_ops = {
- 
- static void __init cpg_div6_clock_init(struct device_node *np)
- {
-+	unsigned int num_parents, valid_parents;
-+	const char **parent_names;
- 	struct clk_init_data init;
- 	struct div6_clock *clock;
--	const char *parent_name;
- 	const char *name;
- 	struct clk *clk;
-+	unsigned int i;
- 	int ret;
- 
- 	clock = kzalloc(sizeof(*clock), GFP_KERNEL);
--	if (!clock) {
--		pr_err("%s: failed to allocate %s DIV6 clock\n",
-+	if (!clock)
-+		return;
-+
-+	num_parents = of_clk_get_parent_count(np);
-+	if (num_parents < 1) {
-+		pr_err("%s: no parent found for %s DIV6 clock\n",
- 		       __func__, np->name);
- 		return;
- 	}
- 
-+	clock->parents = kmalloc_array(num_parents, sizeof(*clock->parents),
-+		GFP_KERNEL);
-+	parent_names = kmalloc_array(num_parents, sizeof(*parent_names),
-+				GFP_KERNEL);
-+	if (!parent_names)
-+		return;
-+
- 	/* Remap the clock register and read the divisor. Disabling the
- 	 * clock overwrites the divisor, so we need to cache its value for the
- 	 * enable operation.
-@@ -150,19 +212,37 @@ static void __init cpg_div6_clock_init(struct device_node *np)
- 		goto error;
- 	}
- 
--	parent_name = of_clk_get_parent_name(np, 0);
--	if (parent_name = NULL) {
--		pr_err("%s: failed to get %s DIV6 clock parent name\n",
--		       __func__, np->name);
--		goto error;
-+
-+	for (i = 0, valid_parents = 0; i < num_parents; i++) {
-+		const char *name = of_clk_get_parent_name(np, i);
-+
-+		if (name) {
-+			parent_names[valid_parents] = name;
-+			clock->parents[valid_parents] = i;
-+			valid_parents++;
-+		}
- 	}
- 
-+	if (num_parents > 4) {
-+		/* VCLK with EXSRC bits 12-14 */
-+		clock->src_shift = 12;
-+		clock->src_width = 3;
-+	} else if (num_parents > 1) {
-+		/* clock with EXSRC bits 6-7 */
-+		clock->src_shift = 6;
-+		clock->src_width = 2;
-+	} else {
-+		/* fixed parent clock */
-+		clock->src_shift = clock->src_width = 0;
-+	}
-+
-+
- 	/* Register the clock. */
- 	init.name = name;
- 	init.ops = &cpg_div6_clock_ops;
- 	init.flags = CLK_IS_BASIC;
--	init.parent_names = &parent_name;
--	init.num_parents = 1;
-+	init.parent_names = parent_names;
-+	init.num_parents = valid_parents;
- 
- 	clock->hw.init = &init;
- 
-@@ -175,11 +255,13 @@ static void __init cpg_div6_clock_init(struct device_node *np)
- 
- 	of_clk_add_provider(np, of_clk_src_simple_get, clk);
- 
-+	kfree(parent_names);
- 	return;
- 
- error:
- 	if (clock->reg)
- 		iounmap(clock->reg);
-+	kfree(parent_names);
- 	kfree(clock);
- }
- CLK_OF_DECLARE(cpg_div6_clk, "renesas,cpg-div6-clock", cpg_div6_clock_init);
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 030a592..d8def5a 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -138,7 +138,7 @@
+ 	i2c0: i2c@e6820000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
+ 		reg = <0xe6820000 0x425>;
+ 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH
+ 			      0 168 IRQ_TYPE_LEVEL_HIGH
+@@ -150,7 +150,7 @@
+ 	i2c1: i2c@e6822000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
+ 		reg = <0xe6822000 0x425>;
+ 		interrupts = <0 51 IRQ_TYPE_LEVEL_HIGH
+ 			      0 52 IRQ_TYPE_LEVEL_HIGH
+@@ -162,7 +162,7 @@
+ 	i2c2: i2c@e6824000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
+ 		reg = <0xe6824000 0x425>;
+ 		interrupts = <0 171 IRQ_TYPE_LEVEL_HIGH
+ 			      0 172 IRQ_TYPE_LEVEL_HIGH
+@@ -174,7 +174,7 @@
+ 	i2c3: i2c@e6826000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
+ 		reg = <0xe6826000 0x425>;
+ 		interrupts = <0 183 IRQ_TYPE_LEVEL_HIGH
+ 			      0 184 IRQ_TYPE_LEVEL_HIGH
+@@ -186,7 +186,7 @@
+ 	i2c4: i2c@e6828000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-sh73a0", "renesas,rmobile-iic";
+ 		reg = <0xe6828000 0x425>;
+ 		interrupts = <0 187 IRQ_TYPE_LEVEL_HIGH
+ 			      0 188 IRQ_TYPE_LEVEL_HIGH
 -- 
-1.8.4.5
+2.1.1
 
