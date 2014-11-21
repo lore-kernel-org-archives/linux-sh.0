@@ -1,55 +1,41 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 17 Nov 2014 13:53:04 +0000
-Subject: [PATCH 0/4] ARM: shmobile: r8a7740/armadillo: Migrate to generic l2c OF
-Message-Id: <1416232388-2611-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 21 Nov 2014 00:54:38 +0000
+Subject: [PATCH 12/29] ARM: shmobile: koelsch: fixup I2C2 clock frequency
+Message-Id: <a8d943ed902bdbef05b64b7ad7ed8878a967a286.1416476366.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1416476366.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-	Hi Simon, Magnus,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This patch series migrates the DT-based generic r8a7740 platform and the
-armadillo legacy platform from calling l2x0_of_init() to the generic l2c OF
-initialization.
+Current Koelsch I2C2 has 400kHz settings,
+but, ak4643 audio codec chip which is connected to I2C2 can't
+work such frequency.
+Fixup I2C2 clock frequency to 100kHz.
 
-Dependencies:
-  - The first patch depends on "[PATCH v5 7/8] ARM: shmobile: r8a7740 dtsi: Add
-    PM domain support", due to the pd_a3sm reference.
-    However, that line can just be removed if the dependency is postponed.
-  - Although there are separate patches for dtsi, SoC code, and board code,
-    there are dependencies among the individual patches: patches 2 and 3 depend
-    on patch 1, and patch 4 depends on patches 2 and 3 (and thus 1).
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Note that this conversion should be applied to sh73a0, r8a7778, and r8a7779,
-too. More about sh73a0 later.
-
-Thanks!
-	    
-Geert Uytterhoeven (4):
-  ARM: shmobile: r8a7740 dtsi: Add cache-controller node
-  ARM: shmobile: r8a7740: Migrate to generic l2c OF initialization
-  ARM: shmobile: armadillo legacy: Migrate to generic l2c OF
-    initialization
-  ARM: shmobile: r8a7740: Remove mapping of L2 cache controller
-    registers
-
- arch/arm/boot/dts/r8a7740.dtsi                 | 11 +++++++++++
- arch/arm/mach-shmobile/board-armadillo800eva.c | 10 +++-------
- arch/arm/mach-shmobile/setup-r8a7740.c         | 20 +++-----------------
- 3 files changed, 17 insertions(+), 24 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 191f32b..59e4251 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -425,7 +425,7 @@
+ 	pinctrl-names = "default";
+ 
+ 	status = "okay";
+-	clock-frequency = <400000>;
++	clock-frequency = <100000>;
+ 
+ 	composite-in@20 {
+ 		compatible = "adi,adv7180";
 -- 
-1.9.1
+2.1.1
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
