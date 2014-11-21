@@ -1,49 +1,51 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 05 Nov 2014 21:01:50 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Clocks Updates for v3.19
-Message-Id: <CAMuHMdVSSfUjKbfXJUvjYYidUE2Y4ht9f_Rd4Jd1jyHwCUqhQg@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 21 Nov 2014 00:55:16 +0000
+Subject: [GIT PULL] Fourth Round of Renesas ARM Based SoC Updates for v3.19
+Message-Id: <cover.1416531087.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1414558424.git.horms+renesas@verge.net.au>
- <20141104223054.GB5908@quad.lixom.net>
- <CAMuHMdV-h2p5wcPdYL6GPMkO7GafXs9B9h+4hjOPQmfJ37LTXQ@mail.gmail.com>
- <CAOesGMhQfUTb_R5EqfH9SCh67bO3UhufPbxR-mf+o1h1G55q0g@mail.gmail.com>
-In-Reply-To: <CAOesGMhQfUTb_R5EqfH9SCh67bO3UhufPbxR-mf+o1h1G55q0g@mail.gmail.com>
+References: <cover.1394080829.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1394080829.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof,
+Hi Olof, Hi Kevin, Hi Arnd,
 
-On Wed, Nov 5, 2014 at 8:14 PM, Olof Johansson <olof@lixom.net> wrote:
->>>> Geert Uytterhoeven (1):
->>>>       ARM: shmobile: r8a7740 legacy: Add missing INTCA clock for irqpin module
->>>
->>> I'm trying to categorize this patch and it's hard. Is it a fix for a
->>> bug? Support for new firmware that doesn't enable this clock? How does
->>> the breakage show itself, and in what circumstances? Essentially, the
->>> patch description doesn't describe why it's needed and what it fixes.
->>>
->>> Which means I don't know where to merge it to.
->>
->> Unfortunately I've just discovered a stupid typo in that patch.
->> I've sent a fix ("[PATCH] ARM: shmobile: r8a7740 legacy: Fix INTCA
->> clock parent").
->>
->> If you prefer a complete new patch including the fix, just let me know.
->
-> Since I haven't applied it yet, feel free to squash it in and send a
-> fresh pull request. That way you can revisit the commit message too!
+Please consider these fourth round of Renesas ARM based SoC updates for v3.19.
 
-Sent v2.
+This pull request is based on the previous round of
+such requests, tagged as renesas-soc3-for-v3.19,
+which I have already sent a pull-request for.
 
-Gr{oetje,eeting}s,
 
-                        Geert
+The following changes since commit e3d163329753b3b473f40c9be71561ed8eb98aea:
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+  ARM: shmobile: always build rcar setup for armv7 (2014-11-12 18:14:42 +0900)
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc4-for-v3.19
+
+for you to fetch changes up to 7a2071c58f36450fbf44a27d2e5d371c18534a25:
+
+  ARM: shmobile: Add early debugging support using SCIF(A) (2014-11-17 10:29:58 +0900)
+
+----------------------------------------------------------------
+Fourth Round of Renesas ARM Based SoC Updates for v3.19
+
+* Add early debugging support using SCIF(A)
+
+----------------------------------------------------------------
+Geert Uytterhoeven (1):
+      ARM: shmobile: Add early debugging support using SCIF(A)
+
+ MAINTAINERS                            |  1 +
+ arch/arm/Kconfig.debug                 | 80 +++++++++++++++++++++++++++++++++-
+ arch/arm/include/debug/renesas-scif.S  | 52 ++++++++++++++++++++++
+ arch/arm/mach-shmobile/setup-r8a7740.c |  1 +
+ arch/arm/mach-shmobile/setup-r8a7779.c |  1 +
+ arch/arm/mach-shmobile/setup-sh7372.c  |  1 +
+ arch/arm/mach-shmobile/setup-sh73a0.c  |  1 +
+ 7 files changed, 136 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/include/debug/renesas-scif.S
