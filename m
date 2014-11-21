@@ -1,118 +1,50 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 04 Nov 2014 01:05:45 +0000
-Subject: [PATCH v6 4/4] usb: renesas_usbhs: fix usbhs_pipe_clear() for DCP PIPE
-Message-Id: <1415063145-4200-5-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 21 Nov 2014 00:54:54 +0000
+Subject: [PATCH 28/29] ARM: shmobile: r8a7790: add USBDMAC{0,1} clocks to device tree
+Message-Id: <b02ce79fbd5cb822a557e401cfc80d9ce813331e.1416476366.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1416476366.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Since the DCPCTR doesn't have the ACLRM bit, the usbus_pipe_clear()
-should not call the usbhsp_pipectrl_set() with ACLRM.
-So, this patch fixes this issue to add the usbhs_fifo_clear_dcp()
-in fifo.c because the controller needs the CFIFO to clear the
-the DCP PIPE.
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
 Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/usb/renesas_usbhs/fifo.c       |   18 ++++++++++++++++++
- drivers/usb/renesas_usbhs/fifo.h       |    1 +
- drivers/usb/renesas_usbhs/mod_gadget.c |    2 +-
- drivers/usb/renesas_usbhs/mod_host.c   |    2 +-
- drivers/usb/renesas_usbhs/pipe.c       |    8 ++++++--
- 5 files changed, 27 insertions(+), 4 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
-index 0e07925..9b48384 100644
---- a/drivers/usb/renesas_usbhs/fifo.c
-+++ b/drivers/usb/renesas_usbhs/fifo.c
-@@ -1160,6 +1160,24 @@ static void usbhsf_dma_complete(void *arg)
- 			usbhs_pipe_number(pipe), ret);
- }
- 
-+void usbhs_fifo_clear_dcp(struct usbhs_pipe *pipe)
-+{
-+	struct usbhs_priv *priv = usbhs_pipe_to_priv(pipe);
-+	struct usbhs_fifo *fifo = usbhsf_get_cfifo(priv); /* CFIFO */
-+
-+	/* clear DCP FIFO of transmission */
-+	if (usbhsf_fifo_select(pipe, fifo, 1) < 0)
-+		return;
-+	usbhsf_fifo_clear(pipe, fifo);
-+	usbhsf_fifo_unselect(pipe, fifo);
-+
-+	/* clear DCP FIFO of reception */
-+	if (usbhsf_fifo_select(pipe, fifo, 0) < 0)
-+		return;
-+	usbhsf_fifo_clear(pipe, fifo);
-+	usbhsf_fifo_unselect(pipe, fifo);
-+}
-+
- /*
-  *		fifo init
-  */
-diff --git a/drivers/usb/renesas_usbhs/fifo.h b/drivers/usb/renesas_usbhs/fifo.h
-index a168a17..79ad5f9 100644
---- a/drivers/usb/renesas_usbhs/fifo.h
-+++ b/drivers/usb/renesas_usbhs/fifo.h
-@@ -74,6 +74,7 @@ int usbhs_fifo_probe(struct usbhs_priv *priv);
- void usbhs_fifo_remove(struct usbhs_priv *priv);
- void usbhs_fifo_init(struct usbhs_priv *priv);
- void usbhs_fifo_quit(struct usbhs_priv *priv);
-+void usbhs_fifo_clear_dcp(struct usbhs_pipe *pipe);
- 
- /*
-  * packet info
-diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
-index 9cf07c0..a916082 100644
---- a/drivers/usb/renesas_usbhs/mod_gadget.c
-+++ b/drivers/usb/renesas_usbhs/mod_gadget.c
-@@ -782,9 +782,9 @@ static int usbhsg_try_start(struct usbhs_priv *priv, u32 status)
- 	/*
- 	 * pipe initialize and enable DCP
- 	 */
-+	usbhs_fifo_init(priv);
- 	usbhs_pipe_init(priv,
- 			usbhsg_dma_map_ctrl);
--	usbhs_fifo_init(priv);
- 
- 	/* dcp init instead of usbhsg_ep_enable() */
- 	dcp->pipe		= usbhs_dcp_malloc(priv);
-diff --git a/drivers/usb/renesas_usbhs/mod_host.c b/drivers/usb/renesas_usbhs/mod_host.c
-index 10e1ded..f0d3231 100644
---- a/drivers/usb/renesas_usbhs/mod_host.c
-+++ b/drivers/usb/renesas_usbhs/mod_host.c
-@@ -1474,9 +1474,9 @@ static int usbhsh_start(struct usbhs_priv *priv)
- 	/*
- 	 * pipe initialize and enable DCP
- 	 */
-+	usbhs_fifo_init(priv);
- 	usbhs_pipe_init(priv,
- 			usbhsh_dma_map_ctrl);
--	usbhs_fifo_init(priv);
- 	usbhsh_pipe_init_for_host(priv);
- 
- 	/*
-diff --git a/drivers/usb/renesas_usbhs/pipe.c b/drivers/usb/renesas_usbhs/pipe.c
-index 040bcef..007f45a 100644
---- a/drivers/usb/renesas_usbhs/pipe.c
-+++ b/drivers/usb/renesas_usbhs/pipe.c
-@@ -618,8 +618,12 @@ void usbhs_pipe_data_sequence(struct usbhs_pipe *pipe, int sequence)
- 
- void usbhs_pipe_clear(struct usbhs_pipe *pipe)
- {
--	usbhsp_pipectrl_set(pipe, ACLRM, ACLRM);
--	usbhsp_pipectrl_set(pipe, ACLRM, 0);
-+	if (usbhs_pipe_is_dcp(pipe)) {
-+		usbhs_fifo_clear_dcp(pipe);
-+	} else {
-+		usbhsp_pipectrl_set(pipe, ACLRM, ACLRM);
-+		usbhsp_pipectrl_set(pipe, ACLRM, 0);
-+	}
- }
- 
- static struct usbhs_pipe *usbhsp_get_pipe(struct usbhs_priv *priv, u32 type)
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 3afd071..64f610f 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1107,17 +1107,20 @@
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+ 			clocks = <&hp_clk>, <&cp_clk>, <&mmc1_clk>, <&sd3_clk>,
+ 				 <&sd2_clk>, <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks R8A7790_CLK_SD0>, <&mmc0_clk>,
+-				 <&hp_clk>, <&mp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
++				 <&hp_clk>, <&mp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>,
++				 <&hp_clk>, <&hp_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7790_CLK_IIC2 R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
+ 				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0 R8A7790_CLK_MMCIF0
+ 				R8A7790_CLK_IIC0 R8A7790_CLK_PCIEC R8A7790_CLK_IIC1 R8A7790_CLK_SSUSB R8A7790_CLK_CMT1
++				R8A7790_CLK_USBDMAC0 R8A7790_CLK_USBDMAC1
+ 			>;
+ 			clock-output-names  				"iic2", "tpu0", "mmcif1", "sdhi3",
+ 				"sdhi2", "sdhi1", "sdhi0", "mmcif0",
+-				"iic0", "pciec", "iic1", "ssusb", "cmt1";
++				"iic0", "pciec", "iic1", "ssusb", "cmt1",
++				"usbdmac0", "usbdmac1";
+ 		};
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
 -- 
-1.7.9.5
+2.1.1
 
