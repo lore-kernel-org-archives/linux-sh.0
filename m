@@ -1,72 +1,49 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:50:47 +0000
-Subject: [PATCH 17/34] ARM: shmobile: r8a7778: Add TMU nodes
-Message-Id: <2109b5a28d27a593ab5afa7179fbef2f6a7cabcd.1415059587.git.horms+renesas@verge.net.au>
+Date: Fri, 21 Nov 2014 00:54:47 +0000
+Subject: [PATCH 21/29] ARM: shmobile: kzm9g-reference dts: Add labels for the LEDs
+Message-Id: <8ee63b3a9fcad86d7485b03bbea5bc5d2d072568.1416476366.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415059587.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415059587.git.horms+renesas@verge.net.au>
+References: <cover.1416476366.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This describes all of the TMU hardware of the r8a7778.
-Each node is disabled and may be enabled as necessary
-by board DTS files.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+The LEDs on the kzm9g board are labeled using upper-case characters.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7778.dtsi | 36 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 315ec62..1e80e4c 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -162,6 +162,42 @@
- 		status = "disabled";
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 0dac0e6..e59e674 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -101,15 +101,19 @@
+ 		compatible = "gpio-leds";
+ 		led1 {
+ 			gpios = <&pfc 20 GPIO_ACTIVE_LOW>;
++			label = "LED1";
+ 		};
+ 		led2 {
+ 			gpios = <&pfc 21 GPIO_ACTIVE_LOW>;
++			label = "LED2";
+ 		};
+ 		led3 {
+ 			gpios = <&pfc 22 GPIO_ACTIVE_LOW>;
++			label = "LED3";
+ 		};
+ 		led4 {
+ 			gpios = <&pfc 23 GPIO_ACTIVE_LOW>;
++			label = "LED4";
+ 		};
  	};
  
-+	tmu0: timer@ffd80000 {
-+		compatible = "renesas,tmu";
-+		reg = <0xffd80000 0x30>;
-+		interrupts = <0 32 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 33 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 34 IRQ_TYPE_LEVEL_HIGH>;
-+
-+		#renesas,channels = <3>;
-+
-+		status = "disabled";
-+	};
-+
-+	tmu1: timer@ffd81000 {
-+		compatible = "renesas,tmu";
-+		reg = <0xffd81000 0x30>;
-+		interrupts = <0 36 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 37 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 38 IRQ_TYPE_LEVEL_HIGH>;
-+
-+		#renesas,channels = <3>;
-+
-+		status = "disabled";
-+	};
-+
-+	tmu2: timer@ffd82000 {
-+		compatible = "renesas,tmu";
-+		reg = <0xffd82000 0x30>;
-+		interrupts = <0 40 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 41 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 42 IRQ_TYPE_LEVEL_HIGH>;
-+
-+		#renesas,channels = <3>;
-+
-+		status = "disabled";
-+	};
-+
- 	scif0: serial@ffe40000 {
- 		compatible = "renesas,scif-r8a7778", "renesas,scif";
- 		reg = <0xffe40000 0x100>;
 -- 
 2.1.1
 
