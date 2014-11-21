@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Nov 2014 00:54:33 +0000
-Subject: [PATCH 07/29] ARM: shmobile: lager: Sound PIO support on DTS
-Message-Id: <8ea7a44a98d6c992ffc0013f7a83d9829121292d.1416476366.git.horms+renesas@verge.net.au>
+Date: Fri, 21 Nov 2014 00:54:50 +0000
+Subject: [PATCH 24/29] ARM: shmobile: lager: add Volume Ramp usage on comment
+Message-Id: <bd2e4a62ef68b3c5a8542026533bd87c631c544d.1416476366.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1416476366.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
@@ -15,115 +15,29 @@ From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 70 +++++++++++++++++++++++++++++++++++++
- 1 file changed, 70 insertions(+)
+ arch/arm/boot/dts/r8a7790-lager.dts | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
 diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 86fb2ee..c2b4f65 100644
+index 2f91740..a235158 100644
 --- a/arch/arm/boot/dts/r8a7790-lager.dts
 +++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -9,6 +9,18 @@
-  * kind, whether express or implied.
+@@ -26,6 +26,15 @@
+  *
+  *	amixer set "DVC Out Mute" on
+  *	amixer set "DVC In Mute" on
++ *
++ * You can use Volume Ramp
++ *
++ *	amixer set "DVC Out Ramp Up Rate"   "0.125 dB/64 steps"
++ *	amixer set "DVC Out Ramp Down Rate" "0.125 dB/512 steps"
++ *	amixer set "DVC Out Ramp" on
++ *	aplay xxx.wav &
++ *	amixer set "DVC Out"  80%  // Volume Down
++ *	amixer set "DVC Out" 100%  // Volume Up
   */
  
-+/*
-+ * SSI-AK4643
-+ *
-+ * SW1: 1: AK4643
-+ *      2: CN22
-+ *      3: ADV7511
-+ *
-+ * This command is required when Playback/Capture
-+ *
-+ *	amixer set "LINEOUT Mixer DACL" on
-+ */
-+
  /dts-v1/;
- #include "r8a7790.dtsi"
- #include <dt-bindings/gpio/gpio.h>
-@@ -146,6 +158,23 @@
- 			  1800000 0>;
- 	};
- 
-+	sound {
-+		compatible = "simple-audio-card";
-+
-+		simple-audio-card,format = "left_j";
-+		simple-audio-card,bitclock-master = <&sndcodec>;
-+		simple-audio-card,frame-master = <&sndcodec>;
-+
-+		sndcpu: simple-audio-card,cpu {
-+			sound-dai = <&rcar_sound>;
-+		};
-+
-+		sndcodec: simple-audio-card,codec {
-+			sound-dai = <&ak4643>;
-+			system-clock-frequency = <11289600>;
-+		};
-+	};
-+
- 	vga-encoder {
- 		compatible = "adi,adv7123";
- 
-@@ -292,6 +321,16 @@
- 		renesas,groups = "vin1_data8", "vin1_clk";
- 		renesas,function = "vin1";
- 	};
-+
-+	sound_pins: sound {
-+		renesas,groups = "ssi0129_ctrl", "ssi0_data", "ssi1_data";
-+		renesas,function = "ssi";
-+	};
-+
-+	sound_clk_pins: sound_clk {
-+		renesas,groups = "audio_clk_a";
-+		renesas,function = "audio_clk";
-+	};
- };
- 
- &ether {
-@@ -431,6 +470,12 @@
- 
- 	clock-frequency = <100000>;
- 
-+	ak4643: sound-codec@12 {
-+		compatible = "asahi-kasei,ak4643";
-+		#sound-dai-cells = <0>;
-+		reg = <0x12>;
-+	};
-+
- 	composite-in@20 {
- 		compatible = "adi,adv7180";
- 		reg = <0x20>;
-@@ -513,3 +558,28 @@
- 		};
- 	};
- };
-+
-+&rcar_sound {
-+	pinctrl-0 = <&sound_pins &sound_clk_pins>;
-+	pinctrl-names = "default";
-+
-+	#sound-dai-cells = <0>;
-+
-+	status = "okay";
-+
-+	rcar_sound,dai {
-+		dai0 {
-+			playback = <&ssi0>;
-+			capture  = <&ssi1>;
-+		};
-+	};
-+};
-+
-+&ssi0 {
-+	pio-transfer;
-+};
-+
-+&ssi1 {
-+	pio-transfer;
-+	shared-pin;
-+};
 -- 
 2.1.1
 
