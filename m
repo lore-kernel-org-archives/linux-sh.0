@@ -1,42 +1,43 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:49:50 +0000
-Subject: [PATCH 02/11] ARM: shmobile: r8a7740: Add missing A4S pm domain devices
-Message-Id: <3b358cb8b7c73304ea2c634afc644cfad37adbdc.1415058794.git.horms+renesas@verge.net.au>
+Date: Fri, 21 Nov 2014 00:54:51 +0000
+Subject: [PATCH 25/29] ARM: shmobile: koelsch: add Volume Ramp usage on comment
+Message-Id: <ce47481652106e955296651a1b76c0dd4561cfbc.1416476366.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415058794.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415058794.git.horms+renesas@verge.net.au>
+References: <cover.1416476366.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Commit 8459293c27bcd13a ("ARM: shmobile: r8a7740: add A4S pm domain
-support") added the A4S power domain, but forgot to hook up the INTCA
-hardware block.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7740.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 6992d40..dbf8a93 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -746,6 +746,10 @@ static void r8a7740_i2c_workaround(struct platform_device *pdev)
- void __init r8a7740_add_standard_devices(void)
- {
- 	static struct pm_domain_device domain_devices[] __initdata = {
-+		{ "A4S",  &irqpin0_device },
-+		{ "A4S",  &irqpin1_device },
-+		{ "A4S",  &irqpin2_device },
-+		{ "A4S",  &irqpin3_device },
- 		{ "A3SP", &scif0_device },
- 		{ "A3SP", &scif1_device },
- 		{ "A3SP", &scif2_device },
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index a10f534..487fc99 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -27,6 +27,15 @@
+  *
+  *	amixer set "DVC Out Mute" on
+  *	amixer set "DVC In Mute" on
++ *
++ * You can use Volume Ramp
++ *
++ *	amixer set "DVC Out Ramp Up Rate"   "0.125 dB/64 steps"
++ *	amixer set "DVC Out Ramp Down Rate" "0.125 dB/512 steps"
++ *	amixer set "DVC Out Ramp" on
++ *	aplay xxx.wav &
++ *	amixer set "DVC Out"  80%  // Volume Down
++ *	amixer set "DVC Out" 100%  // Volume Up
+  */
+ 
+ /dts-v1/;
 -- 
 2.1.1
 
