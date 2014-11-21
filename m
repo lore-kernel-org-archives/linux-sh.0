@@ -1,55 +1,53 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 05 Nov 2014 15:49:11 +0000
-Subject: Re: [PATCH v3 6/7] ARM: shmobile: sh73a0: disable legacy clock initialization
-Message-Id: <1543605.yENia7DqG9@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 21 Nov 2014 00:55:10 +0000
+Subject: [PATCH 3/3] ARM: shmobile: r8a7779: Spelling/grammar s/entity/identity/, s/map/mapping/
+Message-Id: <3e940958ed3625187704f41129801800f70c2169.1416530979.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1416530979.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1416530979.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Ulrich,
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Thank you for the patch.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-r8a7779.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-On Tuesday 28 October 2014 18:02:15 Ulrich Hecht wrote:
-> Disables sh73a0_clock_init() if CCF is enabled.
-> 
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
->  arch/arm/mach-shmobile/setup-sh73a0.c | 5 ++++-
->  1 file changed, 4 insertions(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c
-> b/arch/arm/mach-shmobile/setup-sh73a0.c index 2955a08..3134bc1 100644
-> --- a/arch/arm/mach-shmobile/setup-sh73a0.c
-> +++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-> @@ -742,7 +742,9 @@ void __init __weak sh73a0_register_twd(void) { }
->  void __init sh73a0_earlytimer_init(void)
->  {
->  	shmobile_init_delay();
-> +#ifndef CONFIG_COMMON_CLK
->  	sh73a0_clock_init();
-> +#endif
->  	shmobile_earlytimer_init();
->  	sh73a0_register_twd();
->  }
-> @@ -761,8 +763,9 @@ void __init sh73a0_add_early_devices(void)
->  void __init sh73a0_add_standard_devices_dt(void)
->  {
->  	/* clocks are setup late during boot in the case of DT */
-> +#ifndef CONFIG_COMMON_CLK
->  	sh73a0_clock_init();
-> -
-> +#endif
->  	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
->  }
-
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 136078a..65635b1 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -52,14 +52,14 @@
+ #include "r8a7779.h"
+ 
+ static struct map_desc r8a7779_io_desc[] __initdata = {
+-	/* 2M entity map for 0xf0000000 (MPCORE) */
++	/* 2M identity mapping for 0xf0000000 (MPCORE) */
+ 	{
+ 		.virtual	= 0xf0000000,
+ 		.pfn		= __phys_to_pfn(0xf0000000),
+ 		.length		= SZ_2M,
+ 		.type		= MT_DEVICE_NONSHARED
+ 	},
+-	/* 16M entity map for 0xfexxxxxx (DMAC-S/HPBREG/INTC2/LRAM/DBSC) */
++	/* 16M identity mapping for 0xfexxxxxx (DMAC-S/HPBREG/INTC2/LRAM/DBSC) */
+ 	{
+ 		.virtual	= 0xfe000000,
+ 		.pfn		= __phys_to_pfn(0xfe000000),
+@@ -683,7 +683,7 @@ void __init r8a7779_add_early_devices(void)
+ 
+ 	/* Early serial console setup is not included here due to
+ 	 * memory map collisions. The SCIF serial ports in r8a7779
+-	 * are difficult to entity map 1:1 due to collision with the
++	 * are difficult to identity map 1:1 due to collision with the
+ 	 * virtual memory range used by the coherent DMA code on ARM.
+ 	 *
+ 	 * Anyone wanting to debug early can remove UPF_IOREMAP from
 -- 
-Regards,
-
-Laurent Pinchart
+2.1.1
 
