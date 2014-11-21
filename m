@@ -1,62 +1,40 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:50:25 +0000
-Subject: [PATCH 02/10] ARM: shmobile: r8a7779: Add DU node to device tree
-Message-Id: <1f08bbe8ac737a728812df88cbb3049842df7b84.1415058552.git.horms+renesas@verge.net.au>
+Date: Fri, 21 Nov 2014 00:54:32 +0000
+Subject: [PATCH 06/29] ARM: shmobile: lager: fixup IIC2 clock frequency
+Message-Id: <177d8bea33899cef3989a2d0b4ea7213b5f34d0a.1416476366.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415058552.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415058552.git.horms+renesas@verge.net.au>
+References: <cover.1416476366.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Add the DU device with a disabled state. Boards that want to enable the
-DU need to specify the output topology
+Current Lager IIC2 is using default clock frequency,
+but, ak4643 audio codec chip needs 100kHz
+This patch clarifies IIC2 clock frequency as 100kHz.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-[horms+renesas@verge.net.au: resolved minor conflict]
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7779.dtsi | 24 ++++++++++++++++++++++++
- 1 file changed, 24 insertions(+)
+ arch/arm/boot/dts/r8a7790-lager.dts | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 7cfba9a..fda814e 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -379,6 +379,30 @@
- 		status = "disabled";
- 	};
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 830f2e8..86fb2ee 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -429,6 +429,8 @@
+ 	pinctrl-0 = <&iic2_pins>;
+ 	pinctrl-names = "default";
  
-+	du: display@fff80000 {
-+		compatible = "renesas,du-r8a7779";
-+		reg = <0 0xfff80000 0 0x40000>;
-+		interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7779_CLK_DU>;
-+		status = "disabled";
++	clock-frequency = <100000>;
 +
-+		ports {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+
-+			port@0 {
-+				reg = <0>;
-+				du_out_rgb0: endpoint {
-+				};
-+			};
-+			port@1 {
-+				reg = <1>;
-+				du_out_rgb1: endpoint {
-+				};
-+			};
-+		};
-+	};
-+
- 	clocks {
- 		#address-cells = <1>;
- 		#size-cells = <1>;
+ 	composite-in@20 {
+ 		compatible = "adi,adv7180";
+ 		reg = <0x20>;
 -- 
 2.1.1
 
