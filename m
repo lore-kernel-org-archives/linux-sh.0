@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Nov 2014 00:54:27 +0000
-Subject: [PATCH 01/29] ARM: shmobile: r8a7794: Add VIN clock to device tree
-Message-Id: <148ebf479aa207406f8208466b3e446f9cd25f4b.1416476366.git.horms+renesas@verge.net.au>
+Date: Fri, 21 Nov 2014 00:54:46 +0000
+Subject: [PATCH 20/29] ARM: shmobile: koelsch dts: Add labels for the LEDs
+Message-Id: <352faa5fedbc9f84faa849ce612ab2633c4db0ec.1416476366.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1416476366.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
@@ -10,48 +10,36 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+The LEDs on the koelsch board are labeled using upper-case characters.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7794.dtsi            | 6 +++---
- include/dt-bindings/clock/r8a7794-clock.h | 2 ++
- 2 files changed, 5 insertions(+), 3 deletions(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 088e79c..95f656d 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -517,13 +517,13 @@
- 		mstp8_clks: mstp8_clks@e6150990 {
- 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
--			clocks = <&p_clk>;
-+			clocks = <&zg_clk>, <&zg_clk>, <&p_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
--				R8A7794_CLK_ETHER
-+				R8A7794_CLK_VIN1 R8A7794_CLK_VIN0 R8A7794_CLK_ETHER
- 			>;
- 			clock-output-names -				"ether";
-+				"vin1", "vin0", "ether";
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index f056e64..a10f534 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -149,12 +149,15 @@
+ 		compatible = "gpio-leds";
+ 		led6 {
+ 			gpios = <&gpio2 19 GPIO_ACTIVE_HIGH>;
++			label = "LED6";
  		};
- 		mstp11_clks: mstp11_clks@e615099c {
- 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
-index 9ac1043..fd7cdee 100644
---- a/include/dt-bindings/clock/r8a7794-clock.h
-+++ b/include/dt-bindings/clock/r8a7794-clock.h
-@@ -61,6 +61,8 @@
- #define R8A7794_CLK_SCIF0		21
+ 		led7 {
+ 			gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
++			label = "LED7";
+ 		};
+ 		led8 {
+ 			gpios = <&gpio2 21 GPIO_ACTIVE_HIGH>;
++			label = "LED8";
+ 		};
+ 	};
  
- /* MSTP8 */
-+#define R8A7794_CLK_VIN1		10
-+#define R8A7794_CLK_VIN0		11
- #define R8A7794_CLK_ETHER		13
- 
- /* MSTP9 */
 -- 
 2.1.1
 
