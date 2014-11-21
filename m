@@ -1,37 +1,60 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 10 Nov 2014 19:00:44 +0000
-Subject: [PATCH 5/5] ARM: shmobile: r8a7791 dtsi: Drop "renesas,rcar_sound" compatible value
-Message-Id: <1415646044-4168-6-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 21 Nov 2014 00:54:43 +0000
+Subject: [PATCH 17/29] ARM: shmobile: koelsch: Sound DMA support via DVC on DTS
+Message-Id: <5c6d4b947aeca23e10f7d4ddf2041eda51b0ded2.1416476366.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415646044-4168-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1415646044-4168-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1416476366.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: alsa-devel@alsa-project.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-The "renesas,rcar_sound" compatible property value was never processed
-nor documented.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+DMA transfer uses DVC
+
+     DMA               DMApp
+[MEM] -> [SRC] -> [DVC] -> [SSIU] -> [SSI]
+
+     DMA               DMApp
+[MEM] <- [DVC] <- [SRC] <- [SSIU] <- [SSI]
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index feb6b9a26e1ce73f..54643a2f5240376f 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1375,7 +1375,7 @@
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index d2fe677..f056e64 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -20,6 +20,13 @@
+  * This command is required when Playback/Capture
+  *
+  *	amixer set "LINEOUT Mixer DACL" on
++ *	amixer set "DVC Out" 100%
++ *	amixer set "DVC In" 100%
++ *
++ * You can use Mute
++ *
++ *	amixer set "DVC Out Mute" on
++ *	amixer set "DVC In Mute" on
+  */
  
- 	rcar_sound: rcar_sound@ec500000 {
- 		#sound-dai-cells = <1>;
--		compatible =  "renesas,rcar_sound-r8a7791", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
-+		compatible =  "renesas,rcar_sound-r8a7791", "renesas,rcar_sound-gen2";
- 		reg =	<0 0xec500000 0 0x1000>, /* SCU */
- 			<0 0xec5a0000 0 0x100>,  /* ADG */
- 			<0 0xec540000 0 0x1000>, /* SSIU */
+ /dts-v1/;
+@@ -569,8 +576,8 @@
+ 
+ 	rcar_sound,dai {
+ 		dai0 {
+-			playback = <&ssi0 &src2>;
+-			capture  = <&ssi1 &src3>;
++			playback = <&ssi0 &src2 &dvc0>;
++			capture  = <&ssi1 &src3 &dvc1>;
+ 		};
+ 	};
+ };
 -- 
-1.9.1
+2.1.1
 
