@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Nov 2014 00:54:32 +0000
-Subject: [PATCH 06/29] ARM: shmobile: lager: fixup IIC2 clock frequency
-Message-Id: <177d8bea33899cef3989a2d0b4ea7213b5f34d0a.1416476366.git.horms+renesas@verge.net.au>
+Date: Fri, 21 Nov 2014 00:54:34 +0000
+Subject: [PATCH 08/29] ARM: shmobile: lager: Sound DMA support on DTS
+Message-Id: <67e8877d52e73e4cc73ebc84c41c73717d391da0.1416476366.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1416476366.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1416476366.git.horms+renesas@verge.net.au>
@@ -12,29 +12,37 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Current Lager IIC2 is using default clock frequency,
-but, ak4643 audio codec chip needs 100kHz
-This patch clarifies IIC2 clock frequency as 100kHz.
+DMA transfer to/from SSI
+
+     DMA
+[MEM] -> [SSI]
+
+     DMA
+[MEM] <- [SSI]
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 2 ++
- 1 file changed, 2 insertions(+)
+ arch/arm/boot/dts/r8a7790-lager.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 830f2e8..86fb2ee 100644
+index c2b4f65..93630d0 100644
 --- a/arch/arm/boot/dts/r8a7790-lager.dts
 +++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -429,6 +429,8 @@
- 	pinctrl-0 = <&iic2_pins>;
- 	pinctrl-names = "default";
+@@ -576,10 +576,10 @@
+ };
  
-+	clock-frequency = <100000>;
-+
- 	composite-in@20 {
- 		compatible = "adi,adv7180";
- 		reg = <0x20>;
+ &ssi0 {
+-	pio-transfer;
++	no-busif;
+ };
+ 
+ &ssi1 {
+-	pio-transfer;
++	no-busif;
+ 	shared-pin;
+ };
 -- 
 2.1.1
 
