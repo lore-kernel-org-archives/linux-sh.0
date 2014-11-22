@@ -1,162 +1,151 @@
-From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=  <u.kleine-koenig@pengutronix.de>
-Date: Fri, 21 Nov 2014 14:16:24 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sat, 22 Nov 2014 18:12:29 +0000
 Subject: Re: [PATCH 2/3] i2c: slave-eeprom: add eeprom simulator driver
-Message-Id: <20141121141624.GT27002@pengutronix.de>
+Message-Id: <20141122181229.GB9698@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="s2ZSL+KKDSLx8OML"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1416326695-13083-1-git-send-email-wsa@the-dreams.de>
  <1416326695-13083-3-git-send-email-wsa@the-dreams.de>
- <20141121071941.GK27002@pengutronix.de>
-In-Reply-To: <20141121071941.GK27002@pengutronix.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+ <CAOY=C6FSXWn2AKn9gp0oU69U8VkkyJAE7MMUTZsToy0P_Tf6AA@mail.gmail.com>
+In-Reply-To: <CAOY=C6FSXWn2AKn9gp0oU69U8VkkyJAE7MMUTZsToy0P_Tf6AA@mail.gmail.com>
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Nov 21, 2014 at 08:19:41AM +0100, Uwe Kleine-K=F6nig wrote:
-> Hello Wolfram,
->=20
-> this mail is thematically more a reply to patch 1 and maybe just serves
-> my understanding of the slave support.
->=20
-> On Tue, Nov 18, 2014 at 05:04:54PM +0100, Wolfram Sang wrote:
-> > From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> >=20
-> > The first user of the i2c-slave interface is an eeprom simulator. It is
-> > a shared memory which can be accessed by the remote master via I2C and
-> > locally via sysfs.
-> >=20
-> > Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> > ---
-> >=20
-> > Changes since RFC:
-> > * fix build error for modules
-> > * don't hardcode size
-> > * add boundary checks for sysfs access
-> > * use a spinlock
-> > * s/at24s/eeprom/g
-> > * add some docs
-> > * clean up exit paths
-> > * use size-variable instead of driver_data
-> >=20
-> >  drivers/i2c/Kconfig            |  10 +++
-> >  drivers/i2c/Makefile           |   1 +
-> >  drivers/i2c/i2c-slave-eeprom.c | 170 +++++++++++++++++++++++++++++++++=
-++++++++
-> >  3 files changed, 181 insertions(+)
-> >  create mode 100644 drivers/i2c/i2c-slave-eeprom.c
-> >=20
-> > diff --git a/drivers/i2c/Kconfig b/drivers/i2c/Kconfig
-> > index b51a402752c4..8c9e619f3026 100644
-> > --- a/drivers/i2c/Kconfig
-> > +++ b/drivers/i2c/Kconfig
-> > @@ -110,6 +110,16 @@ config I2C_STUB
-> > =20
-> >  	  If you don't know what to do here, definitely say N.
-> > =20
-> > +config I2C_SLAVE
-> > +	bool "I2C slave support"
-> > +
-> > +if I2C_SLAVE
-> > +
-> > +config I2C_SLAVE_EEPROM
-> > +	tristate "I2C eeprom slave driver"
-> > +
-> > +endif
-> > +
-> >  config I2C_DEBUG_CORE
-> >  	bool "I2C Core debugging messages"
-> >  	help
-> > diff --git a/drivers/i2c/Makefile b/drivers/i2c/Makefile
-> > index 1722f50f2473..45095b3d16a9 100644
-> > --- a/drivers/i2c/Makefile
-> > +++ b/drivers/i2c/Makefile
-> > @@ -9,6 +9,7 @@ obj-$(CONFIG_I2C_CHARDEV)	+=3D i2c-dev.o
-> >  obj-$(CONFIG_I2C_MUX)		+=3D i2c-mux.o
-> >  obj-y				+=3D algos/ busses/ muxes/
-> >  obj-$(CONFIG_I2C_STUB)		+=3D i2c-stub.o
-> > +obj-$(CONFIG_I2C_SLAVE_EEPROM)	+=3D i2c-slave-eeprom.o
-> > =20
-> >  ccflags-$(CONFIG_I2C_DEBUG_CORE) :=3D -DDEBUG
-> >  CFLAGS_i2c-core.o :=3D -Wno-deprecated-declarations
-> > diff --git a/drivers/i2c/i2c-slave-eeprom.c b/drivers/i2c/i2c-slave-eep=
-rom.c
-> > new file mode 100644
-> > index 000000000000..6631400b5f02
-> > --- /dev/null
-> > +++ b/drivers/i2c/i2c-slave-eeprom.c
-> > @@ -0,0 +1,170 @@
-> > +/*
-> > + * I2C slave mode EEPROM simulator
-> > + *
-> > + * Copyright (C) 2014 by Wolfram Sang, Sang Engineering <wsa@sang-engi=
-neering.com>
-> > + * Copyright (C) 2014 by Renesas Electronics Corporation
-> > + *
-> > + * This program is free software; you can redistribute it and/or modif=
-y it
-> > + * under the terms of the GNU General Public License as published by t=
-he
-> > + * Free Software Foundation; version 2 of the License.
-> > + *
-> > + * Because most IP blocks can only detect one I2C slave address anyhow=
-, this
-> > + * driver does not support simulating EEPROM types which take more tha=
-n one
-> > + * address. It is prepared to simulate bigger EEPROMs with an internal=
- 16 bit
-> > + * pointer, yet implementation is deferred until the need actually ari=
-ses.
-> > + */
-> > +
-> > +#include <linux/i2c.h>
-> > +#include <linux/init.h>
-> > +#include <linux/module.h>
-> > +#include <linux/of.h>
-> > +#include <linux/slab.h>
-> > +#include <linux/spinlock.h>
-> > +#include <linux/sysfs.h>
-> > +
-> > +struct eeprom_data {
-> > +	struct bin_attribute bin;
-> > +	bool first_write;
-> > +	spinlock_t buffer_lock;
-> > +	u8 buffer_idx;
-> > +	u8 buffer[];
-> > +};
-> > +
+
+--s2ZSL+KKDSLx8OML
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+Hi,
+
+Please quote only relevant parts of the message (like I did). This
+improves readability a lot.
+
 > > +static int i2c_slave_eeprom_slave_cb(struct i2c_client *client,
-> > +				     enum i2c_slave_event event, u8 *val)
+> > +                                    enum i2c_slave_event event, u8 *va=
+l)
 > > +{
-> > +	struct eeprom_data *eeprom =3D i2c_get_clientdata(client);
+> > +       struct eeprom_data *eeprom =3D i2c_get_clientdata(client);
 > > +
-> > +	switch (event) {
-> > +	case I2C_SLAVE_REQ_WRITE_END:
-> > +		if (eeprom->first_write) {
-> > +			eeprom->buffer_idx =3D *val;
-> > +			eeprom->first_write =3D false;
-> > +		} else {
-> > +			spin_lock(&eeprom->buffer_lock);
-> > +			eeprom->buffer[eeprom->buffer_idx++] =3D *val;
-> > +			spin_unlock(&eeprom->buffer_lock);
-> > +		}
-> > +		break;
+> > +       switch (event) {
+> > +       case I2C_SLAVE_REQ_WRITE_END:
+> > +               if (eeprom->first_write) {
+> > +                       eeprom->buffer_idx =3D *val;
+> > +                       eeprom->first_write =3D false;
+> > +               } else {
+> > +                       spin_lock(&eeprom->buffer_lock);
+> > +                       eeprom->buffer[eeprom->buffer_idx++] =3D *val;
+> > +                       spin_unlock(&eeprom->buffer_lock);
+> > +               }
+> > +               break;
 > > +
-> > +	case I2C_SLAVE_REQ_READ_START:
-> > +		spin_lock(&eeprom->buffer_lock);
-> > +		*val =3D eeprom->buffer[eeprom->buffer_idx];
-> > +		spin_unlock(&eeprom->buffer_lock);
-> > +		break;
+> > +       case I2C_SLAVE_REQ_READ_START:
+> > +               spin_lock(&eeprom->buffer_lock);
+> > +               *val =3D eeprom->buffer[eeprom->buffer_idx];
+> > +               spin_unlock(&eeprom->buffer_lock);
+> > +               break;
 > > +
-> > +	case I2C_SLAVE_REQ_READ_END:
-> > +		eeprom->buffer_idx++;
-> You don't check here for buffer_idx >=3D ARRAY_SIZE(buffer)?
-> Ditto in the I2C_SLAVE_REQ_WRITE_END case.
-I just noticed that buffer_idx is an u8, so it overflows at 255+1. So
-the probe routine should error out if size is bigger than 256.
+> > +       case I2C_SLAVE_REQ_READ_END:
+> > +               eeprom->buffer_idx++;
+> > +               break;
+> > +
+> > +       case I2C_SLAVE_STOP:
+> > +               eeprom->first_write =3D true;
+> > +               break;
+> > +
+> > +       default:
+> > +               break;
+> > +       }
+> > +
+> > +       return 0;
+> > +}
+>=20
+>=20
+> Would it make sense to have:
+> WRITE_START
+> WRITE_NEXT
+> WRITE_STOP
+> WRITE_REPEAT_START
+> READ_START
+> READ_NEXT
+> READ_STOP
+> READ_REPEAT_START
+>=20
+> Some devices may want different behavior for subsequent
+> reads when they are separate transactions, compared to
+> a single larger transaction.
 
-Best regards
-Uwe
+This can all be handled with I2C_SLAVE_STOP.
 
---=20
-Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+> e.g. a single transaction may wraparound inside a >8bit
+> register (e.g. for 16bit: msb, lsb, msb, lsb, ...), but step
+> to the next register when a separate read/write is issued.
+> Alternatively, a WRITE/READ_NEXT may be implemented
+> more efficiently. This may not matter for current systems
+> compared to the low-frequency bus, but who knows what
+> IoT devices may bring to the table.
+
+Let's start simple until we have more use cases. WRITE_NEXT may be
+useful when you have an internal u8 pointer to be set before actually
+sending data, but already less useful if this is u16. Also, slaves may
+decide to handle stops at unexpected places differently. Furthermore, my
+feeling is that slave drivers will be more robust if they handle those
+simple primitives properly.
+
+What I could imagine, though, is that somewhen the eeprom simulator will
+be able to get data via other means than the shared memory, maybe via
+some callback. Then, the callback really only has to deal with "read
+this byte" or "write that byte" while for the outer world we have a
+proper well-known EEPROM like I2C interface.
+
+That being said, the list of I2C_SLAVE_* events is extensible, of
+course. Though, I rather see low-level stuff there like "General Call
+Adress received".
+
+>=20
+> Also, behavior may be different for repeat start versus
+> stop/start, although a repeat start could be a start
+> without a previous stop as well...
+
+IMO a repeated start is to ensure that two messages arrive at the slave
+without interruption from another master. I can't think why a slave
+should know which type of start that was. In fact, if it does that would
+raise an eyebrow for me. Do you have an example?
+
+> Of course, if an I2C adapter cannot distinguish these
+> events, this is probably a futile attempt at adding
+> semantics that will silently break depending on the
+> actual hardware/driver used.
+
+That as well. I have not seen an I2C adapter which could provide this
+information so far.
+
+Thanks,
+
+   Wolfram
+
+
+--s2ZSL+KKDSLx8OML
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJUcNIMAAoJEBQN5MwUoCm2PugQAKjjIK4D8pzc1nECdCwUflEO
+B/sWORvZHHq+PUiJwf5j/f2lNR/pJ9UMizTGi2apZwTmpurRsgZh6GtSlpSjoPco
+pTF3nsfNH4LYiTqCUU5tnIjjLriIy+TjMSceR+laEFF78a5/1DqGAL+Gcb9CfbOj
+A8myWHpGx+5NcDoQLr438SjOBun6h7JWCM2zaAGl7MUwMkTirvN+3scOFurj7lI4
+Cs0qMhCnT7kZmp4XAUbTUXo9Zp9N4VbhlCRmyLo7jx1c4fkAFk9yZeMVqgS6ErRN
+pEXf6Abun5zsrrPuOYhIXgex10MkJs17Y1zhHfyHV7BuOXVqJOwpAE+sTpT27B5U
+7iy3OeZBhFXKyb5w8lGA6663gRl9e6+juHd6J+8ks2xUPMNfzd1xHFyrBifWwGA4
+4MqSxSBjc26CyJ4irwvgW4K0lwWAiHcXl6YBMFe21D/jPdUaVhJp1N/x6BMHVDYR
+BAcHjWcgcLnFAN2fwBWIxV7/3mQbCnIhuwKzR+yzcrTVDwuW5UGN+I57ScPa/DY4
+8k5i7VA0v39bTS7CFgzYXMW8+9kMOVWLQBknBidfa+h2y2btHec2KijcAkTeM2Eu
+/6wouYgOxBtC2itPdvTaVgNLnDnlXNrQ3Nwy2zCGl1R084Qt3oINjW3FWLSbPmTp
+2CFGdOsjd/r6sraa3k11
+=0dAB
+-----END PGP SIGNATURE-----
+
+--s2ZSL+KKDSLx8OML--
