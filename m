@@ -1,66 +1,60 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Tue, 18 Nov 2014 10:43:36 +0000
-Subject: RE: [PATCH] PCI: rcar: fix error handling of irq_of_parse_and_map
-Message-Id: <af1a2829f9084caf86f3ec22ebdea77d@SIXPR06MB0639.apcprd06.prod.outlook.com>
+From: Julia Lawall <Julia.Lawall@lip6.fr>
+Date: Sun, 23 Nov 2014 13:11:17 +0000
+Subject: [PATCH 4/5] drm/rcar-du: fix error return code
+Message-Id: <1416748278-22881-5-git-send-email-Julia.Lawall@lip6.fr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20141114222153.GA39494@dtor-ws>
-In-Reply-To: <20141114222153.GA39494@dtor-ws>
+References: <1416748278-22881-1-git-send-email-Julia.Lawall@lip6.fr>
+In-Reply-To: <1416748278-22881-1-git-send-email-Julia.Lawall@lip6.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Dmitry Torokhov <dtor@chromium.org>, Simon Horman <horms@verge.net.au>
-Cc: Bjorn Helgaas <bhelgaas@google.com>, "linux-pci@vger.kernel.org" <linux-pci@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: kernel-janitors@vger.kernel.org, David Airlie <airlied@linux.ie>, dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hi Dmitry,
+From: Julia Lawall <Julia.Lawall@lip6.fr>
 
-On 14 November 2014 22:22, Dmitry wrote:
-> 
-> Return value of irq_of_parse_and_map() is unsigned int, with 0
-> indicating failure, so testing for negative result never works.
-> 
-> Signed-off-by: Dmitry Torokhov <dtor@chromium.org>
+Propagate the error code on failure.
 
-Acked-by: Phil Edworthy <phil.edworthy@renesas.com>
+A simplified version of the semantic match that finds this problem is as
+follows: (http://coccinelle.lip6.fr/)
 
-Thanks
-Phil
+// <smpl>
+@@
+identifier ret; expression e1,e2;
+@@
+(
+if (\(ret < 0\|ret != 0\))
+ { ... return ret; }
+|
+ret = 0
+)
+... when != ret = e1
+    when != &ret
+*if(...)
+{
+  ... when != ret = e2
+      when forall
+ return ret;
+}
+// </smpl>
 
-> ---
-> 
-> Not tested, found by casual code inspection.
-> 
->  drivers/pci/host/pcie-rcar.c | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
-> index 9b356c3..6ca976f 100644
-> --- a/drivers/pci/host/pcie-rcar.c
-> +++ b/drivers/pci/host/pcie-rcar.c
-> @@ -764,7 +764,7 @@ static int rcar_pcie_get_resources(struct platform_device
-> *pdev,
->  		goto err_map_reg;
-> 
->  	i = irq_of_parse_and_map(pdev->dev.of_node, 0);
-> -	if (i < 0) {
-> +	if (!i) {
->  		dev_err(pcie->dev, "cannot get platform resources for msi
-> interrupt\n");
->  		err = -ENOENT;
->  		goto err_map_reg;
-> @@ -772,7 +772,7 @@ static int rcar_pcie_get_resources(struct platform_device
-> *pdev,
->  	pcie->msi.irq1 = i;
-> 
->  	i = irq_of_parse_and_map(pdev->dev.of_node, 1);
-> -	if (i < 0) {
-> +	if (!i) {
->  		dev_err(pcie->dev, "cannot get platform resources for msi
-> interrupt\n");
->  		err = -ENOENT;
->  		goto err_map_reg;
-> --
-> 2.1.0.rc2.206.gedb03e5
-> 
-> 
-> --
-> Dmitry
+Signed-off-by: Julia Lawall <Julia.Lawall@lip6.fr>
+
+---
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+index 088bfd8..23cc910 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+@@ -586,7 +586,7 @@ int rcar_du_crtc_create(struct rcar_du_group *rgrp, unsigned int index)
+ 
+ 	if (irq < 0) {
+ 		dev_err(rcdu->dev, "no IRQ for CRTC %u\n", index);
+-		return ret;
++		return irq;
+ 	}
+ 
+ 	ret = devm_request_irq(rcdu->dev, irq, rcar_du_crtc_irq, irqflags,
+
