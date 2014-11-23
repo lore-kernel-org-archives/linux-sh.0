@@ -1,73 +1,168 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:50:42 +0000
-Subject: [PATCH 12/34] ARM: shmobile: r8a7791: Add SGX clock to device tree
-Message-Id: <e4d2fd9eb43d12e9b6a7ab842bf6986b4dd75a1d.1415059587.git.horms+renesas@verge.net.au>
+From: Julia Lawall <Julia.Lawall@lip6.fr>
+Date: Sun, 23 Nov 2014 13:11:13 +0000
+Subject: [PATCH 0/5] fix error return code
+Message-Id: <1416748278-22881-1-git-send-email-Julia.Lawall@lip6.fr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415059587.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415059587.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
+Cc: kernel-janitors@vger.kernel.org, linux-samsung-soc@vger.kernel.org, linux-arm-kernel@lists.infradead.org, dri-devel@lists.freedesktop.org, linux-kernel@vger.kernel.org, MPT-FusionLinux.pdl@avagotech.com, linux-scsi@vger.kernel.org, linux-pcmcia@lists.infradead.org
 
-From: Kouei Abe <kouei.abe.cp@renesas.com>
+The complate semantic patch that finds this problem is as follows:
+(http://coccinelle.lip6.fr/)
 
-Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7791.dtsi            | 11 ++++++-----
- include/dt-bindings/clock/r8a7791-clock.h |  1 +
- 2 files changed, 7 insertions(+), 5 deletions(-)
+// <smpl>
+@ok exists@
+identifier f,ret,i;
+expression e;
+constant c;
+@@
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 1c58ce0..98c1b8b 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1,7 +1,7 @@
- /*
-  * Device Tree Source for the r8a7791 SoC
-  *
-- * Copyright (C) 2013 Renesas Electronics Corporation
-+ * Copyright (C) 2013-2014 Renesas Electronics Corporation
-  * Copyright (C) 2013-2014 Renesas Solutions Corp.
-  * Copyright (C) 2014 Cogent Embedded Inc.
-  *
-@@ -977,17 +977,18 @@
- 		mstp1_clks: mstp1_clks@e6150134 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
--			clocks = <&m2_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
-+			clocks = <&m2_clk>, <&p_clk>, <&zg_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
- 				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
--				R8A7791_CLK_JPU R8A7791_CLK_TMU1 R8A7791_CLK_TMU3 R8A7791_CLK_TMU2
-+				R8A7791_CLK_JPU R8A7791_CLK_TMU1 R8A7791_CLK_3DG
-+				R8A7791_CLK_TMU3 R8A7791_CLK_TMU2
- 				R8A7791_CLK_CMT0 R8A7791_CLK_TMU0 R8A7791_CLK_VSP1_DU1
- 				R8A7791_CLK_VSP1_DU0 R8A7791_CLK_VSP1_S
- 			>;
- 			clock-output-names -				"jpu", "tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
--				"vsp1-du0", "vsp1-sy";
-+				"jpu", "tmu1", "3dg", "tmu3", "tmu2", "cmt0", "tmu0",
-+				"vsp1-du1", "vsp1-du0", "vsp1-sy";
- 		};
- 		mstp2_clks: mstp2_clks@e6150138 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index 58c3f49..9570b7c 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -27,6 +27,7 @@
- /* MSTP1 */
- #define R8A7791_CLK_JPU		6
- #define R8A7791_CLK_TMU1		11
-+#define R8A7791_CLK_3DG			12
- #define R8A7791_CLK_TMU3		21
- #define R8A7791_CLK_TMU2		22
- #define R8A7791_CLK_CMT0		24
--- 
-2.1.1
+// identify a function that returns a negative return value at least once.
+f(...) {
+... when any
+(
+return -c@i;
+|
+ret =3D -c@i;
+... when !=3D ret =3D e
+return ret;
+|
+if (ret < 0) { ... return ret; }
+)
+... when any
+}
+
+@r exists@
+identifier ret,ok.f,fn;
+expression e1,e2,e3,e4,e5,e6,x;
+statement S,S1;
+position p1,p2,p3;
+@@
+
+// identify a case where the return variable is set to a non-negative value
+// and then returned in error-handling code
+f(...) {
+... when any
+(
+if@p1 (\(ret < 0\|ret !=3D 0\))
+ { ... return ret; }
+|
+ret@p1 =3D 0
+)
+... when !=3D \(ret =3D e1\|ret++\|ret--\|ret+=E1\|ret-=E1\)
+    when !=3D &ret
+    when any
+(
+ if (<+... ret =3D e5 ...+>) S1
+|
+ if (<+... &ret ...+>) S1
+|
+if@p2(<+...x =3D fn(...)...+>)
+ {
+  ... when !=3D ret =3D e6
+      when forall
+ return@p3 ret;
+}
+|
+break;
+|
+x =3D fn(...)
+... when !=3D \(ret =3D e4\|ret++\|ret--\|ret+=E4\|ret-=E4\)
+    when !=3D &ret
+(
+ if (<+... ret =3D e3 ...+>) S
+|
+ if (<+... &ret ...+>) S
+|
+if@p2(<+...\(x !=3D 0\|x < 0\|x =3D NULL\|IS_ERR(x)\)...+>)
+ {
+  ... when !=3D ret =3D e2
+      when forall
+ return@p3 ret;
+}
+)
+)
+... when any
+}
+
+@printer depends on r@
+position p;
+identifier ok.f,pr;
+constant char [] c;
+@@
+
+f(...) { <...pr@p(...,c,...)...> }
+
+@bad0 exists@
+identifier r.ret,ok.f,g !=3D {ERR_PTR,IS_ERR};
+position p !=3D printer.p;
+@@
+
+f(...) { ... when any
+g@p(...,ret,...)
+... when any
+ }
+
+@bad depends on !bad0 exists@
+position r.p1,r.p2;
+statement S1,S2;
+identifier r.ret;
+expression e1;
+@@
+
+// ignore the above if there is some path where the variable is set to
+// something else
+(
+if@p1 (\(ret < 0\|ret !=3D 0\)) S1
+|
+ret@p1 =3D 0
+)
+... when any
+ \(ret =3D e1\|ret++\|ret--\|ret+=E1\|ret-=E1\|&ret\)
+... when any
+if@p2(...) S2
+
+@bad1 depends on !bad0 && !bad exists@
+position r.p2;
+statement S2;
+identifier r.ret;
+expression e1;
+constant c;
+@@
+
+ret =3D -c
+... when !=3D \(ret =3D e1\|ret++\|ret--\|ret+=E1\|ret-=E1\)
+    when !=3D &ret
+    when any
+if@p2(...) S2
+
+@bad2 depends on !bad0 && !bad && !bad1 exists@
+position r.p1,r.p2;
+identifier r.ret;
+expression e1;
+statement S2;
+constant c;
+@@
+
+// likewise ignore it if there has been an intervening return
+ret@p1 =3D 0
+... when !=3D if (...) { ... ret =3D e1 ... return ret; }
+    when !=3D if (...) { ... return -c; }
+    when any
+if@p2(...) S2
+
+
+@script:python depends on !bad0 && !bad && !bad1 && !bad2@
+p1 << r.p1;
+p2 << r.p2;
+p3 << r.p3;
+@@
+
+cocci.print_main("",p1)
+cocci.print_secs("",p2)
+cocci.print_secs("",p3)
+
+// </smpl>
 
