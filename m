@@ -1,49 +1,75 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 25 Nov 2014 09:47:30 +0000
-Subject: Re: [PATCH v2 2/6] clk: shmobile: Add r8a73a4 SoC to MSTP bindings
-Message-Id: <23617478.HoWsKhnPQ3@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 24 Nov 2014 18:58:17 +0000
+Subject: [PATCH] net/smsc911x: Add minimal runtime PM support
+Message-Id: <1416855497-6479-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416500496-21024-3-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1416500496-21024-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Steve Glendinning <steve.glendinning@shawell.net>, "David S. Miller" <davem@davemloft.net>
+Cc: netdev@vger.kernel.org, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Ulrich,
+Add minimal runtime PM support (enable on probe, disable on remove), to
+ensure proper operation with a parent device that uses runtime PM.
 
-Thank you for the patch.
+This is needed on systems where the external bus controller module of
+the SoC is contained in a PM domain and/or has a gateable functional
+clock. In such cases, before accessing any device connected to the
+external bus, the PM domain must be powered up, and/or the functional
+clock must be enabled, which is typically handled through runtime PM by
+the bus controller driver.
 
-On Thursday 20 November 2014 17:21:32 Ulrich Hecht wrote:
+An example of this is the kzm9g development board, where an smsc9220
+Ethernet controller is connected to the Bus State Controller (BSC) of a
+Renesas sh73a0 SoC.
 
-A commit message would be nice.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/net/ethernet/smsc/smsc911x.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
->  Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git
-> a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt index
-> a5f5223..e566fb7 100644
-> --- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> +++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> @@ -11,6 +11,7 @@ Required Properties:
-> 
->    - compatible: Must be one of the following
->      - "renesas,r7s72100-mstp-clocks" for R7S72100 (RZ) MSTP gate clocks
-> +    - "renesas,r8a73a4-mstp-clocks" for R8A73A4 (R-Mobile APE6) MSTP gate
-> clocks - "renesas,r8a7740-mstp-clocks" for R8A7740 (R-Mobile A1) MSTP gate
-> clocks - "renesas,r8a7779-mstp-clocks" for R8A7779 (R-Car H1) MSTP gate
-> clocks - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate
-> clocks
-
+diff --git a/drivers/net/ethernet/smsc/smsc911x.c b/drivers/net/ethernet/smsc/smsc911x.c
+index 77ed74561e5fe815..f9c87624a0afb08b 100644
+--- a/drivers/net/ethernet/smsc/smsc911x.c
++++ b/drivers/net/ethernet/smsc/smsc911x.c
+@@ -59,6 +59,8 @@
+ #include <linux/of_device.h>
+ #include <linux/of_gpio.h>
+ #include <linux/of_net.h>
++#include <linux/pm_runtime.h>
++
+ #include "smsc911x.h"
+ 
+ #define SMSC_CHIPNAME		"smsc911x"
+@@ -2338,6 +2340,9 @@ static int smsc911x_drv_remove(struct platform_device *pdev)
+ 
+ 	free_netdev(dev);
+ 
++	pm_runtime_put(&pdev->dev);
++	pm_runtime_disable(&pdev->dev);
++
+ 	return 0;
+ }
+ 
+@@ -2491,6 +2496,9 @@ static int smsc911x_drv_probe(struct platform_device *pdev)
+ 	if (pdata->config.shift)
+ 		pdata->ops = &shifted_smsc911x_ops;
+ 
++	pm_runtime_enable(&pdev->dev);
++	pm_runtime_get_sync(&pdev->dev);
++
+ 	retval = smsc911x_init(dev);
+ 	if (retval < 0)
+ 		goto out_disable_resources;
+@@ -2572,6 +2580,8 @@ out_unregister_netdev_5:
+ out_free_irq:
+ 	free_irq(dev->irq, dev);
+ out_disable_resources:
++	pm_runtime_put(&pdev->dev);
++	pm_runtime_disable(&pdev->dev);
+ 	(void)smsc911x_disable_resources(pdev);
+ out_enable_resources_fail:
+ 	smsc911x_free_resources(pdev);
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
