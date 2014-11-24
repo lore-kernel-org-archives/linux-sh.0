@@ -1,55 +1,51 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 27 Nov 2014 10:57:19 +0000
-Subject: [PATCH/RFC 4/4] ARM: shmobile: r8a73a4: Correct mask for GIC PPI interrupts
-Message-Id: <1417085839-22836-5-git-send-email-geert+renesas@glider.be>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 24 Nov 2014 13:22:42 +0000
+Subject: DIV6 Bus State Controller clock on sh73a0/r8a73a4
+Message-Id: <CAMuHMdWwVsaaTTrgQ1jNFiy5uMuU3p30r+nLJaSS0vAtbb73pQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1417085839-22836-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1417085839-22836-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-R-Mobile APE6 (r8a73a4) contains four Cortex-A15 and four Cortex-A7
-cores, hence the second interrupt specifier cell for Private Peripheral
-Interrupts should use "GIC_CPU_MASK_SIMPLE(8)".
+While debugging an issue with the sh73a0's BSC (Bus State Controller) clock
+on kzm9g-multiplatform, I noticed it's running at the wrong frequency:
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-Untested.
-Is this correct? Or should the interrupts be delivered to the four
-Cortex-A15 cores only by default?
----
- arch/arm/boot/dts/r8a73a4.dtsi | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+# cat /sys/kernel/debug/clk/zb/clk_rate
+208000000
 
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index 5ac57babc3b95c99..6291a57fe8bf440f 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -32,10 +32,10 @@
- 
- 	timer {
- 		compatible = "arm,armv7-timer";
--		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
--			     <1 14 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
--			     <1 11 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
--			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
-+		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
-+			     <1 14 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
-+			     <1 11 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
-+			     <1 10 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>;
- 	};
- 
- 	dmac: dma-multiplexer {
-@@ -365,6 +365,6 @@
- 			<0 0xf1002000 0 0x1000>,
- 			<0 0xf1004000 0 0x2000>,
- 			<0 0xf1006000 0 0x2000>;
--		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
-+		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_HIGH)>;
- 	};
- };
--- 
-1.9.1
+According to the sh73a0 datasheet, the ZB clock runs at 104 MHz, not 208 MHz.
+Note that the ZB clock also has this wrong value when using the pre-CCF clock
+code.
 
+The divider value used for this clock is 2, which is the default value.
+Hence the DIV6 driver divides the pll1_div2 clock rate by 3 to get the BSC clock
+rate.
+
+# cat /sys/kernel/debug/clk/pll1_div2/clk_rate
+624000000
+
+However, the documentation for the "BSC Clock Frequency Control Register
+(ZBCKCR)" states (for both sh73a0 and r8a73a4):
+
+    The clock source specified by EXSRC is divided by the division ratio
+    of 1 / (2 *(setting + 1)).
+
+Note the "2". Other DIV6 clocks do not have this "2" there.
+As the driver cannot know about this without external input, I'm afraid the
+DIV6 bindings must be amended, e.g. by adding an additional property for a
+post-divider value?
+
+Fortunately there are no real ill effects of this, as nobody really uses
+(gets/sets) the rate of the BSC clock.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
