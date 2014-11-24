@@ -1,97 +1,108 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 04 Nov 2014 00:44:13 +0000
-Subject: Re: [PATCH v2 2/2] ARM: shmobile: lager: enable USB3.0
-Message-Id: <20141104004413.GC22891@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 24 Nov 2014 20:10:05 +0000
+Subject: [PATCH RFC 0/3] Add "Simple" / Renesas Bus State Controller Driver
+Message-Id: <1416859808-18503-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414147307-4584-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <1414147307-4584-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <CANqRtoQTBd23z4uVK-EB7JJuJ_K0GkV6ueVfnywShqe6Dx0T5w@mail.gmail.com>
- <5450CD42.9070101@renesas.com>
- <20141029235748.GD4599@verge.net.au>
- <2b89f66c72894bdf8bdce7aab7c69281@HKNPR06MB322.apcprd06.prod.outlook.com>
- <20141031050422.GC10619@verge.net.au>
- <9cedf0445a5a4f67abf5e6e1b8aac631@HKNPR06MB322.apcprd06.prod.outlook.com>
-In-Reply-To: <9cedf0445a5a4f67abf5e6e1b8aac631@HKNPR06MB322.apcprd06.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, "ijc+devicetree@hellion.org.uk" <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, Russell King - ARM Linux <linux@arm.linux.org.uk>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-USB <linux-usb@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Ulf Hansson <ulf.hansson@linaro.org>, Grant Likely <grant.likely@linaro.org>, Arnd Bergmann <arnd@arndb.de>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-pm@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Fri, Oct 31, 2014 at 01:22:22PM +0000, yoshihiro shimoda wrote:
-> Hi Simon-san,
-> 
-> > On Fri, Oct 31, 2014 at 02:06:14AM +0000, yoshihiro shimoda wrote:
-> > > Hi Simon-san,
-> > >
-> > > > On Wed, Oct 29, 2014 at 08:19:30PM +0900, Yoshihiro Shimoda wrote:
-> > > > > Hi Magnus-san,
-> > > > >
-> > > > > (2014/10/29 15:53), Magnus Damm wrote:
-> > > < snip >
-> > > > > >
-> > > > > > Hi Shimoda-san,
-> > > > > >
-> > > > > > Thanks for your patch. I'm fine with this patch as a first step,
-> > > > > > but I'm wondering what the reason is to prioritize USB 2.0 over USB 3.0?
-> > > > >
-> > > > > I investigated this reason today, and I found the reason is
-> > > > > request_firmware().  I checked the following environments:
-> > > > >
-> > > > > Case 1: xHCI and EHCI and OHCI are enabled "=y"
-> > > > > Case 2: xHCI and EHCI and OHCI are loadable modules "=m"
-> > > > > Case 3: xHCI and EHCI and OHCI are enabled "=y",
-> > > > >         and CONFIG_EXTRA_FIRMWARE is enabled
-> > > > >
-> > > > > The results are:
-> > > > > - In "Case 1", EHCI and OHCI are probed first because xHCI didn't find the firmware.
-> > > > > - In "Case 2" and "Case 3", xHCI is probed first.
-> > > > >
-> > > > > > Is the current order just based on device init order? In my mind
-> > > > > > the expected behavior would be to always use USB 3.0 if it
-> > > > > > happens to be available in the hardware, specified in the DTS,
-> > > > > > enabled by the kernel configuration and firmware is loadable. Or
-> > > > > > does some case exist where it is better to use USB 2.0? I suspect no.
-> > > > >
-> > > > > I agree with you.
-> > > > >
-> > > > > > So I wonder if you have any plans how to make USB 3.0 enabled by
-> > > > > > default on Lager?
-> > > > >
-> > > > > It depends on a kernel config. I'm not sure of the
-> > > > > shmobile_defconfig strategy.  But, in my opinion, one of a
-> > > > > solution is kernel modules (this means the "Case 2".)
-> > > >
-> > > > It sounds like we should enable CONFIG_EXTRA_FIRMWARE in
-> > > > shmobile_defconfig. I wonder what if any fallout we can foresee occurring if we do that.
-> > >
-> > > According to the firmware/README.AddingFirmware, we are unable to add a new firmware image to the firmware directory
-> > now.
-> > > So, if we enable CONFIG_EXTRA_FIRMWARE with the xHCI firmware, we will not build kernel because the xHCI firmware doesn't
-> > exist in the linux.git.
-> > >
-> > > == from  firmware/README.AddingFirmware
-> > > ==================> > > This directory is _NOT_ for adding arbitrary new firmware images. The
-> > > place to add those is the separate linux-firmware repository:
-> > >
-> > >
-> > > git://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.
-> > > git
-> > > ===================================
-> > > ====
-> > 
-> > Thanks. It seems that EXTRA_FIRMWARE is not an option from a mainline point of view after all.
-> > 
-> > Is the problem in case 1 that the firmware can't be found because userspace does exist yet and thus can't be loaded from
-> > there?
-> 
-> That's correct.
-> If EXTRA_FIRMWARE is not set, the following error happens:
-> 
-> xhci-hcd ee000000.usb: Direct firmware load for r8a779x_usb3_v1.dlmem failed with error -2
-> xhci-hcd ee000000.usb: can't setup: -2
-> xhci-hcd ee000000.usb: USB bus 1 deregistered
-> xhci-hcd: probe of ee000000.usb failed with error -2
+	Hi all,
 
-At the risk of adding noise to this discussion:
-It seems like case 2 with a fallback to case 3 is the way to go.
+The Renesas Bus State Controller (BSC) provides an external bus for
+connecting multiple external devices to an SoC, driving several chip
+select lines, for e.g. NOR FLASH, Ethernet and USB.
+On the kzm9g development board, an smsc9220 Ethernet controller is
+connnected to the BSC of the SH-Mobile AG5 (sh73a0) SoC.
+
+The BSC is a fairly simple memory-mapped bus, hence a "simple-bus"
+compatibility seems suitable.  However, the BSC is special in two ways:
+  1. It is part of a PM domain (A4S),
+  2. It has a gateable functional clock (ZB).
+Before a device connected to the BSC can be accessed, the PM domain
+containing the BSC must be powered on, and the functional clock driving
+the BSC must be enabled.
+
+Both special properties can be described in DT in a standardized way
+("power-domains = <&pd_a4s>" and "clocks = <&zb_clk>", cfr. patch 1).
+Externally connected devices are described as children of the BSC node
+(cfr. patch 2).
+
+Unfortunately this doesn't mean everything will work out-of-the-box.
+There are two problems:
+  1. Without a device driver bound to the BSC device, this device is not
+     attached to the PM domain. And although a child device is present
+     and active, the PM domain may be powered down, as it's considered
+     unused by the PM domain core.
+  2. Without a device driver calling pm_runtime_enable(), its functional
+     clock is not enabled. Once runtime PM is enabled, the R-Mobile PM
+     domain platform driver manages the functional clock using runtime
+     PM.
+
+Hence patch 3 adds a very simple BSC driver, matching against
+"renesas-bsc", and enabling runtime PM for the BSC device.
+
+Due to the child-parent relationship of devices connected to the BSC, as
+long as the device drivers for the child devices are runtime PM enabled
+(see dependency 1), the BSC's PM domain will be powered, and the BSC's
+clock will be enabled automatically when needed.
+If any child device driver lacks runtime PM support, the BSC driver also
+has to call pm_runtime_get_sync() in its .probe() function.
+System suspend and resume (s2ram) also works fine.
+
+As this minimal BSC driver isn't hardware-specific at all, I'm wondering
+if there's a simpler way to do this?
+  - Should the driver be renamed to "simple-bus", and match "simple-bus"?
+  - Should this be moved to core code, without an explicit driver for
+    "simple-bus"? I.e. should the driver core just enable runtime PM for
+    all devices not bound to a driver, as they may represent buses with
+    child devices that do rely on runtime PM?
+
+Thanks for your comments and suggestions!
+
+Dependencies:
+  1. [PATCH] net/smsc911x: Add minimal runtime PM support
+     (https://lkml.org/lkml/2014/11/24/610),
+  2. [PATCH] clk: shmobile: div6: Avoid changing divisor in .disable()
+     (http://marc.info/?l=linux-sh&m1684607012727&w=2),
+  3. [PATCH v6 0/6] sh73a0 common clock framework implementation
+     (http://marc.info/?l=linux-sh&m1650048308960&w=2),
+  4. sh73a0 DT PM domain support (not yet posted),
+  5. Alphabetical sorting of drivers/bus/{Kconfig,Makefile) (not yet
+     posted).
+
+References:
+  1. [PATCH v3 7/7] ARM: shmobile: kzm9g-reference: require ZB clock for
+     Ethernet controller (http://www.spinics.net/lists/linux-sh/msg36601.html)
+     is an earlier workaround for getting the functional clock enabled, by
+     letting the smc911x driver handle it. This predates sh73a0 PM domain
+     support.
+
+Patches:
+  1. ARM: shmobile: sh73a0 dtsi: Add Bus State Controller node
+  2. ARM: shmobile: kzm9g-reference dts: Move Ethernet node to BSC
+  3. drivers: bus: Add Renesas Bus State Controller Driver
+
+ arch/arm/boot/dts/sh73a0-kzm9g.dts | 28 +++++++++++----------
+ arch/arm/boot/dts/sh73a0.dtsi      | 11 ++++++++
+ drivers/bus/Kconfig                |  8 ++++++
+ drivers/bus/Makefile               |  1 +
+ drivers/bus/renesas-bsc.c          | 51 ++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 86 insertions(+), 13 deletions(-)
+ create mode 100644 drivers/bus/renesas-bsc.c
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
