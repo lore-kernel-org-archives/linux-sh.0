@@ -1,139 +1,157 @@
-From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=  <u.kleine-koenig@pengutronix.de>
-Date: Sun, 23 Nov 2014 20:20:08 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 24 Nov 2014 20:40:01 +0000
 Subject: Re: [PATCH 2/3] i2c: slave-eeprom: add eeprom simulator driver
-Message-Id: <20141123202008.GE4431@pengutronix.de>
+Message-Id: <20141124204001.GB26751@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="s2ZSL+KKDSLx8OML"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1416326695-13083-1-git-send-email-wsa@the-dreams.de>
  <1416326695-13083-3-git-send-email-wsa@the-dreams.de>
  <20141121071941.GK27002@pengutronix.de>
  <20141122182630.GD9698@katana>
-In-Reply-To: <20141122182630.GD9698@katana>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+ <20141123202008.GE4431@pengutronix.de>
+In-Reply-To: <20141123202008.GE4431@pengutronix.de>
 To: linux-arm-kernel@lists.infradead.org
 
-Hello Wolfram,
 
-On Sat, Nov 22, 2014 at 07:26:30PM +0100, Wolfram Sang wrote:
+--s2ZSL+KKDSLx8OML
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+
+> > > When the eeprom driver is probed and the adapter driver notices a read
+> > > request for the respective i2c address, this callback is called with
+> > > event=3DI2C_SLAVE_REQ_READ_START. Returning 0 here and provide the fi=
+rst
+> > > byte to send make the adapter ack the read request and send the data
+> > > provided. If something !=3D 0 is returned a NAK is sent?
+> >=20
+> > We only send NAK on write requests (I use read/write from the master
+> I don't understand this. Who is "we" in this case?=20
+
+We as the slave serving the request of a remote master.
+
+> > No single call. I had this first, but my experiments showed that it is
+> > important for the EEPROM driver to only increase the internal pointer
+> > when the byte was ACKed. Otherwise, I was off-by-one.
+> Sure, the driver has to know how his read response was received by the
+> master. But assuming I understand your abstraction right there is some
+> redundancy. There are only three cases on a read request (well plus error
+> handling):
 >=20
-> > this mail is thematically more a reply to patch 1 and maybe just serves
-> > my understanding of the slave support.
+>  - master sends ACK, reads next byte
+>    in this case the slave must provide another word
+>    In your abstraction this implies
+>      callback(I2C_SLAVE_REQ_READ_END); <-- this is redundant
+
+Well, in the way that a new start of something means automatically the
+end of the previous something, like some closing html tags which can be
+left out. However, I think being explicit here isn't much of a drawback.
+You lose a little bit of performance and gain flexibility. A sensor-like
+device could decide that on READ_END it is safe to discard the old value
+and start acquiring the new one, so it will be available on next
+READ_START. Be aware that the master decides how much time there will be
+between END and START (although it will be very close in most cases).
+
+>      callback(I2C_SLAVE_REQ_READ_START);
 >=20
-> Sure. This shows how badly needed the documentation is :)
+>  - master sends ACK, then P or Sr
+>      callback(I2C_SLAVE_REQ_READ_END);
+>      maybe callback(I2C_SLAVE_STOP)
 >=20
-> ...
-> > > +		break;
-> > > +
-> > > +	case I2C_SLAVE_STOP:
-> > > +		eeprom->first_write =3D true;
-> > > +		break;
-> > > +
-> > > +	default:
-> > > +		break;
-> > > +	}
-> > > +
-> > > +	return 0;
-> > > +}
-> > This is the most interesting function here because it uses the new
-> > interface, the functions below are only to update and show the simulated
-> > eeprom contents and driver boilerplate, right?
+>  - master sends NACK
+>    in this case the message ends and the master has to send Sr or P.
+>    In your case this results in:
+>      nothing for the NACK?
+>      maybe callback(I2C_SLAVE_STOP)
 >=20
-> Yes.
+> The situations where the slave has to react are:
 >=20
-> > When the eeprom driver is probed and the adapter driver notices a read
-> > request for the respective i2c address, this callback is called with
-> > event=3DI2C_SLAVE_REQ_READ_START. Returning 0 here and provide the first
-> > byte to send make the adapter ack the read request and send the data
-> > provided. If something !=3D 0 is returned a NAK is sent?
+>  - slave was addressed with R
+>    input: address
+>    output: NAK or (ACK + data byte)
+>  - slave was addressed with #W:
+>    input: address
+>    output: NAK or ACK
+
+On most slave IP cores I have seen so far, there is nothing to do for a
+slave driver for those two. Address recognition and sending ACK are all
+done by the hardware and you are notified of that by an interrupt. For
+the read case, you have to deliver the first byte, of course.
+
+
+>  - data sent by slave-transmitter was acked
+>    output: next data byte (maybe unused because master sends Sr or P)
+
+The driver I modified in the next patch cannot know if the master
+acked/nacked something. It just knows if the output buffer is empty or
+if a stop was signalled (which really should come after NAK from the
+master). So, we can't depend on this difference.
+
+>  - data sent by slave-transmitter was nacked
+>    output: void (unless we want to support IGNORE_NAK :-)
+
+:)
+
+>  - slave received a data byte (write)
+>    input: data
+>    output: NAK or ACK
 >=20
-> We only send NAK on write requests (I use read/write from the master
-I don't understand this. Who is "we" in this case?=20
+> This looks like a better model in my eyes. In this model the slave
+> driver doesn't even need to be informed about P. Not entirely sure about
+> "data sent by slave-transmitter was nacked".
 
-> perspective). Then, we have to say if the received byte was successfully
-> processed. When reading, the master has to ack the successful reception
-> of the byte.
-Right, I got this wrong in my question. On a read request (as seen from
-the master) the master has to ack.
-=20
-> > How is the next byte requested from the slave driver? I assume with two
-> > additional calls to the callback, first with
-> > event=3DI2C_SLAVE_REQ_READ_END, then event=3DI2C_SLAVE_REQ_READ_START o=
-nce
-> > more. Would it make sense to reduce this to a single call? Does the
-> > driver at READ_END time already know if its write got acked? If so, how?
+I think we definately need a STOP notification. Devices might want to do
+something like reducing power etc after stop.
+
+What I like about my version is that it reflects pretty closely what
+happens on the bus. I can't currently tell what somebody could do with
+WRITE_START (precharging something?). But it feels better to me to
+directly reflect what a real slave device would see, too, for
+flexibility.
+
 >=20
-> No single call. I had this first, but my experiments showed that it is
-> important for the EEPROM driver to only increase the internal pointer
-> when the byte was ACKed. Otherwise, I was off-by-one.
-Sure, the driver has to know how his read response was received by the
-master. But assuming I understand your abstraction right there is some
-redundancy. There are only three cases on a read request (well plus error
-handling):
+> > For DMA, I haven't seen DMA slave support yet. Makes sense to me, we
+> haha, there is only a single slave driver yet and you're the author.
 
- - master sends ACK, reads next byte
-   in this case the slave must provide another word
-   In your abstraction this implies
-     callback(I2C_SLAVE_REQ_READ_END); <-- this is redundant
-     callback(I2C_SLAVE_REQ_READ_START);
+I meant IP cores here which support DMA for slave transmissions.
 
- - master sends ACK, then P or Sr
-     callback(I2C_SLAVE_REQ_READ_END);
-     maybe callback(I2C_SLAVE_STOP)
+Regardings buffers: I wouldn't like all bus drivers to have code
+handling the buffer when all they have to do is to put one byte on the
+bus. So, buffer handling should go into the core then probably. So,
+there'd be still one level of indirection?
 
- - master sends NACK
-   in this case the message ends and the master has to send Sr or P.
-   In your case this results in:
-     nothing for the NACK?
-     maybe callback(I2C_SLAVE_STOP)
+Also, since we don't know when the master will collect the data, there
+is a chance it might get stale?
 
-The situations where the slave has to react are:
+To me that sounds like too much complexity for too litle gain. At this
+moment, at least.
 
- - slave was addressed with R
-   input: address
-   output: NAK or (ACK + data byte)
- - slave was addressed with #W:
-   input: address
-   output: NAK or ACK
- - data sent by slave-transmitter was acked
-   output: next data byte (maybe unused because master sends Sr or P)
- - data sent by slave-transmitter was nacked
-   output: void (unless we want to support IGNORE_NAK :-)
- - slave received a data byte (write)
-   input: data
-   output: NAK or ACK
+Regards,
 
-This looks like a better model in my eyes. In this model the slave
-driver doesn't even need to be informed about P. Not entirely sure about
-"data sent by slave-transmitter was nacked".
+   Wolfram
 
-> Ideally, I2C_SLAVE_REQ_READ_END should be used when the master ACKed the
-> byte, right. However, the rcar hardware doesn't have an interrupt for
-> this, so I imply that the start of a new read request ends the old one.
-> I probably should add a comment for that.
->=20
-> > This means that for each byte the callback is called. Would it make
-> > sense to make the API more flexible and allow the slave driver to return
-> > a buffer? This would remove some callback overhead and might allow to
-> > let the adapter driver make use of its DMA mechanism.
->=20
-> For DMA, I haven't seen DMA slave support yet. Makes sense to me, we
-haha, there is only a single slave driver yet and you're the author.
+--s2ZSL+KKDSLx8OML
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-> wouldn't know the transfer size, since the master can send a stop
-> anytime. This makes possible gains of using a buffer also speculative.
-> Also, I2C is still a low-bandwith bus, so usually we have a high number
-> of small transfers.
->=20
-> For now, I'd skip this idea. As I said in another thread, we need more
-> use cases. If the need arises, we can come up with something. I don't
-> think the current design prevents such an addition?
-It would change the API, but starting to get experience with byte
-banging is probably OK.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
-Best regards
-Uwe
+iQIcBAEBAgAGBQJUc5ehAAoJEBQN5MwUoCm2HCUP/jO3XmHXLnMZhSe5AwYp+pAM
+S6km7UmFvCeM77iUg4ESExJ9eHYKqgNk6gW4lL0fmFVO8IRQ+UuOxpVumWpo2DeR
+epWS/+CI4kqozcjgEzh498fH+RGKZ4f7T/Ps4PUE/cNxXkv9iua+FbP0HpqpucFf
+OZlAYB2iYecTs42XAXFWi7cU0BWE66ofKFxNtzcqVaZK1Kufq2Sr1eoMqsX2txE5
+dStLUMZLpiKBQDzEFw762ZfpWltY0XYidUu4uGKuY8U95kcWTRH3OxWU7xhUX02l
+L1tkhDN2/jip8nT/j5lYuvOBSmddK+vyBkcmfCJv2nA+wZPIy38/NQpYhnMZYDoO
+Rla4dmwf3X2cXSdLqsgC+QrAwekdOLjVOwk9eO8cm2HUTRX+gt8po2ANn6XA4Ki1
+XbmSo4RvvtfR27IJXdVZNja3Nw37tZpvoUTVy0mYEoFXZtgtaU+vDTEZjqHa03+M
+F9mla2fToE9IBDgJ7Rm/IjyDg/+8rhn0o4jdFKU7iRQfSr1FvDzY6wE+I6DyllW2
+RBKCsmXOrC5514Yh385dqIN6ibevNQO+hPo260AyhkVJ1guID5Yov4XEYNicGfk2
+QArWe6NUl3ynnu+rg5bWp/qXRmMJqj7fJP2U04Z6TG6KOfAAaczep964ld4kAeBA
+0257R3z48Y0FvHrKDA/u
+=yTTI
+-----END PGP SIGNATURE-----
 
---=20
-Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+--s2ZSL+KKDSLx8OML--
