@@ -1,80 +1,55 @@
-From: Daniel Lezcano <daniel.lezcano@linaro.org>
-Date: Tue, 25 Nov 2014 22:23:04 +0000
-Subject: Re: (bisected) Lock up on sh73a0/kzm9g on cpuidle initialization
-Message-Id: <54750148.207@linaro.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 24 Nov 2014 16:20:48 +0000
+Subject: [PATCH] clk: shmobile: div6: Avoid changing divisor in .disable()
+Message-Id: <1416846048-3821-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMuHMdXaaa2t6+sH2egGacVxkAPeTUkAgwdYsOnMnEPnuLdB5Q@mail.gmail.com>	<545BE1DE.6060900@linaro.org>	<CAMuHMdXQr65g4He0D0ZRN923OJ2A7WNgwbiTru_1dGWnvbvCJA@mail.gmail.com>	<CAMuHMdUjYMC8i2F9n6fWdPBOQVSohKA3ZxJJyq8h808Z9tEypw@mail.gmail.com>	<20141125180159.GI5050@linux.vnet.ibm.com>
- <CAMuHMdUMpmdYe+ED=M8FVvMMWNmrs8o4WzQ-uc2nFHNdL99HNQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdUMpmdYe+ED=M8FVvMMWNmrs8o4WzQ-uc2nFHNdL99HNQ@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-On 11/25/2014 10:27 PM, Geert Uytterhoeven wrote:
+While DIV6 clocks require the divisor field to be non-zero when stopping
+the clock, some clocks (e.g. ZB on sh73a0) fail to be re-enabled later
+if the divisor field is changed when stopping the clock.
 
-[ ... ]
+To fix this, do not touch the divisor field if it's already non-zero.
 
->> Does any sort of system activity (keyboard, network, etc.) unstick the
->> system?
->
-> Thanks! Unfortunately none of the above helped.
->
-> However, I found the culprit. It turned out to be a platform issue, not an
-> issue in the generic cpu idle or RCU code. Read on below if you're
-> interested in the gory details. Else just skip, and sleep well again toni=
-ght ;-)
->
->> If you have tried all those things without good effect, could you please
->> send along your .config and an alt-sysrq-t dump of all tasks' stacks?
->
-> As I didn't manage to trigger a sysrq dump over the serial console,
-> I just called __handle_sysrq() right before the wait_for_completion(), af=
-ter
-> a small delay. The dump didn't show anything suspicious. Everything
-> looked the same as on the dual-core Cortex A15, where the problem
-> doesn't manifest.
->
-> Then I noticed the sched debug output on the A15, which was missing
-> on the CA9 build. Enabling it on the A9 gave:
->
-> Sched Debug Version: v0.11,
-> 3.18.0-rc6-kzm9g-reference-04913-gedc89a2a2059c7ff-dirty #101
-> ktime                                   : 0.000000
-> sched_clk                               : 0.000000
-> cpu_clk                                 : 0.000000
-> jiffies                                 : 4294928896
->
-> Oops, time is not advancing?
->
-> Dmesg also shows (early):
->
->      clocksource_of_init: no matching clocksources found
->
-> and the timer is only initialized much later, after cpu idle initializati=
-on:
->
->      sh_cmt e6138000.timer: ch0: used for periodic clock events
->
-> Hacking up a timer node for "arm,cortex-a9-twd-timer" in sh73a0.dtsi
-> (with some "guessed" values) made it work.
->
-> Thanks!
->
-> Gr{oetje,eeting}s,
+On kzm9g, the smsc911x Ethernet controller is connected to the sh73a0
+Bus State Controller, which is clocked by the ZB clock. Without this
+fix, if the ZB clock is disabled during system suspend, and re-enabled
+during resume, the kernel locks up when the smsc911x driver tries to
+access the Ethernet registers.
 
-Hi Geert,
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/clk/shmobile/clk-div6.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
 
-thanks for sharing this information.
-
-   -- Daniel
-
-
---=20
-  <http://www.linaro.org/> Linaro.org =E2=94=82 Open source software for AR=
-M SoCs
-
-Follow Linaro:  <http://www.facebook.com/pages/Linaro> Facebook |
-<http://twitter.com/#!/linaroorg> Twitter |
-<http://www.linaro.org/linaro-blog/> Blog
+diff --git a/drivers/clk/shmobile/clk-div6.c b/drivers/clk/shmobile/clk-div6.c
+index 639241e31e03ec24..905bf98a74fcfb1e 100644
+--- a/drivers/clk/shmobile/clk-div6.c
++++ b/drivers/clk/shmobile/clk-div6.c
+@@ -54,12 +54,17 @@ static int cpg_div6_clock_enable(struct clk_hw *hw)
+ static void cpg_div6_clock_disable(struct clk_hw *hw)
+ {
+ 	struct div6_clock *clock = to_div6_clock(hw);
++	u32 val;
+ 
+-	/* DIV6 clocks require the divisor field to be non-zero when stopping
++	val = clk_readl(clock->reg);
++	val |= CPG_DIV6_CKSTP;
++	/*
++	 * DIV6 clocks require the divisor field to be non-zero when stopping
+ 	 * the clock.
+ 	 */
+-	clk_writel(clk_readl(clock->reg) | CPG_DIV6_CKSTP | CPG_DIV6_DIV_MASK,
+-		   clock->reg);
++	if (!(val & CPG_DIV6_DIV_MASK))
++		val |= CPG_DIV6_DIV_MASK;
++	clk_writel(val, clock->reg);
+ }
+ 
+ static int cpg_div6_clock_is_enabled(struct clk_hw *hw)
+-- 
+1.9.1
 
