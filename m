@@ -1,75 +1,34 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 24 Nov 2014 20:10:07 +0000
-Subject: [PATCH/RFC 2/3] ARM: shmobile: kzm9g-reference dts: Move Ethernet node to BSC
-Message-Id: <1416859808-18503-3-git-send-email-geert+renesas@glider.be>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 24 Nov 2014 21:11:40 +0000
+Subject: Re: [PATCH/RFC 2/3] ARM: shmobile: kzm9g-reference dts: Move Ethernet node to BSC
+Message-Id: <54739F0C.7040802@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416859808-18503-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1416859808-18503-1-git-send-email-geert+renesas@glider.be>
+References: <1416859808-18503-1-git-send-email-geert+renesas@glider.be> <1416859808-18503-3-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1416859808-18503-3-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Ulf Hansson <ulf.hansson@linaro.org>, Grant Likely <grant.likely@linaro.org>, Arnd Bergmann <arnd@arndb.de>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-pm@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Ulf Hansson <ulf.hansson@linaro.org>, Grant Likely <grant.likely@linaro.org>, Arnd Bergmann <arnd@arndb.de>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-pm@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Move the Ethernet node from the root of the device tree to the BSC node,
-as it is connected to the Bus State Controller.  This allows the system
-to know the right position of the Ethernet node in the clock and PM
-domain hierarchy.
+Hello.
 
-Also rename the node's name from "lan9220" to "ethernet", to confirm to
-ePAPR generic name recomendations.
+On 11/24/2014 11:10 PM, Geert Uytterhoeven wrote:
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/boot/dts/sh73a0-kzm9g.dts | 28 +++++++++++++++-------------
- 1 file changed, 15 insertions(+), 13 deletions(-)
+> Move the Ethernet node from the root of the device tree to the BSC node,
+> as it is connected to the Bus State Controller.  This allows the system
+> to know the right position of the Ethernet node in the clock and PM
+> domain hierarchy.
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index 45e2bc60ba9676ff..f80d411696da6b40 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -84,19 +84,6 @@
- 		enable-active-high;
- 	};
- 
--	lan9220@10000000 {
--		compatible = "smsc,lan9220", "smsc,lan9115";
--		reg = <0x10000000 0x100>;
--		phy-mode = "mii";
--		interrupt-parent = <&irqpin0>;
--		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
--		reg-io-width = <4>;
--		smsc,irq-push-pull;
--		smsc,save-mac-address;
--		vddvario-supply = <&reg_1p8v>;
--		vdd33a-supply = <&reg_3p3v>;
--	};
--
- 	leds {
- 		compatible = "gpio-leds";
- 		led1 {
-@@ -179,6 +166,21 @@
- 	};
- };
- 
-+&bsc {
-+	ethernet@10000000 {
-+		compatible = "smsc,lan9220", "smsc,lan9115";
-+		reg = <0x10000000 0x100>;
-+		phy-mode = "mii";
-+		interrupt-parent = <&irqpin0>;
-+		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
-+		reg-io-width = <4>;
-+		smsc,irq-push-pull;
-+		smsc,save-mac-address;
-+		vddvario-supply = <&reg_1p8v>;
-+		vdd33a-supply = <&reg_3p3v>;
-+	};
-+};
-+
- &cmt1 {
- 	status = "ok";
- };
--- 
-1.9.1
+> Also rename the node's name from "lan9220" to "ethernet", to confirm to
+
+    s/confirm/comply/, you mean?
+
+> ePAPR generic name recomendations.
+
+    Thank you, I've never found the time to rename those device nodes.
+
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+WBR, Sergei
 
