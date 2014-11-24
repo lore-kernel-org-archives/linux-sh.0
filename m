@@ -1,34 +1,33 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 24 Nov 2014 21:11:40 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 24 Nov 2014 21:43:10 +0000
 Subject: Re: [PATCH/RFC 2/3] ARM: shmobile: kzm9g-reference dts: Move Ethernet node to BSC
-Message-Id: <54739F0C.7040802@cogentembedded.com>
+Message-Id: <CAMuHMdW3WNywUPwOk=JEX5EURr28xgjojmO8E6tBL+uvkukkJA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416859808-18503-1-git-send-email-geert+renesas@glider.be> <1416859808-18503-3-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1416859808-18503-3-git-send-email-geert+renesas@glider.be>
+References: <1416859808-18503-1-git-send-email-geert+renesas@glider.be>
+	<1416859808-18503-3-git-send-email-geert+renesas@glider.be>
+	<54739F0C.7040802@cogentembedded.com>
+In-Reply-To: <54739F0C.7040802@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Ulf Hansson <ulf.hansson@linaro.org>, Grant Likely <grant.likely@linaro.org>, Arnd Bergmann <arnd@arndb.de>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-pm@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, "Rafael J. Wysocki" <rjw@rjwysocki.net>, Ulf Hansson <ulf.hansson@linaro.org>, Grant Likely <grant.likely@linaro.org>, Arnd Bergmann <arnd@arndb.de>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Linux PM list <linux-pm@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-Hello.
+On Mon, Nov 24, 2014 at 10:11 PM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+>> Also rename the node's name from "lan9220" to "ethernet", to confirm to
+>
+>    s/confirm/comply/, you mean?
 
-On 11/24/2014 11:10 PM, Geert Uytterhoeven wrote:
+Sorry, conform.
 
-> Move the Ethernet node from the root of the device tree to the BSC node,
-> as it is connected to the Bus State Controller.  This allows the system
-> to know the right position of the Ethernet node in the clock and PM
-> domain hierarchy.
+Gr{oetje,eeting}s,
 
-> Also rename the node's name from "lan9220" to "ethernet", to confirm to
+                        Geert
 
-    s/confirm/comply/, you mean?
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-> ePAPR generic name recomendations.
-
-    Thank you, I've never found the time to rename those device nodes.
-
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-WBR, Sergei
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
