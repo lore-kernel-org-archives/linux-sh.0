@@ -1,129 +1,39 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Nov 2014 01:20:02 +0000
-Subject: [PATCH 11/25] ARM: shmobile: lager: Sound PIO support on DTS
-Message-Id: <ef57ca3fc4ea44ccc24efc98f0562c198d5037c2.1415755881.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 25 Nov 2014 15:08:54 +0000
+Subject: Re: [PATCH 1/2] ARM: multi_v7_defconfig: Enable shmobile platforms
+Message-Id: <CAMuHMdUWg3zDTyCGKOGxmtJxAd-y7mCz_911FnSGWSAPe=CQSQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415755881.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415755881.git.horms+renesas@verge.net.au>
+References: <1409234429-1916-1-git-send-email-geert+renesas@glider.be>
+ <20140910004812.GB28662@verge.net.au>
+In-Reply-To: <20140910004812.GB28662@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Wed, Sep 10, 2014 at 2:48 AM, Simon Horman <horms@verge.net.au> wrote:
+> On Thu, Aug 28, 2014 at 04:00:28PM +0200, Geert Uytterhoeven wrote:
+>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>> ---
+>> Based on next-20140828
+>> For now excluding r8a7740/armadillo, as it fails to boot on armadillo
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7790-lager.dts | 70 +++++++++++++++++++++++++++++++++++++
- 1 file changed, 70 insertions(+)
+Armadillo failures are an issue with the bootloader (hermit), it works when
+using kexec.
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 86fb2ee..c2b4f65 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -9,6 +9,18 @@
-  * kind, whether express or implied.
-  */
- 
-+/*
-+ * SSI-AK4643
-+ *
-+ * SW1: 1: AK4643
-+ *      2: CN22
-+ *      3: ADV7511
-+ *
-+ * This command is required when Playback/Capture
-+ *
-+ *	amixer set "LINEOUT Mixer DACL" on
-+ */
-+
- /dts-v1/;
- #include "r8a7790.dtsi"
- #include <dt-bindings/gpio/gpio.h>
-@@ -146,6 +158,23 @@
- 			  1800000 0>;
- 	};
- 
-+	sound {
-+		compatible = "simple-audio-card";
-+
-+		simple-audio-card,format = "left_j";
-+		simple-audio-card,bitclock-master = <&sndcodec>;
-+		simple-audio-card,frame-master = <&sndcodec>;
-+
-+		sndcpu: simple-audio-card,cpu {
-+			sound-dai = <&rcar_sound>;
-+		};
-+
-+		sndcodec: simple-audio-card,codec {
-+			sound-dai = <&ak4643>;
-+			system-clock-frequency = <11289600>;
-+		};
-+	};
-+
- 	vga-encoder {
- 		compatible = "adi,adv7123";
- 
-@@ -292,6 +321,16 @@
- 		renesas,groups = "vin1_data8", "vin1_clk";
- 		renesas,function = "vin1";
- 	};
-+
-+	sound_pins: sound {
-+		renesas,groups = "ssi0129_ctrl", "ssi0_data", "ssi1_data";
-+		renesas,function = "ssi";
-+	};
-+
-+	sound_clk_pins: sound_clk {
-+		renesas,groups = "audio_clk_a";
-+		renesas,function = "audio_clk";
-+	};
- };
- 
- &ether {
-@@ -431,6 +470,12 @@
- 
- 	clock-frequency = <100000>;
- 
-+	ak4643: sound-codec@12 {
-+		compatible = "asahi-kasei,ak4643";
-+		#sound-dai-cells = <0>;
-+		reg = <0x12>;
-+	};
-+
- 	composite-in@20 {
- 		compatible = "adi,adv7180";
- 		reg = <0x20>;
-@@ -513,3 +558,28 @@
- 		};
- 	};
- };
-+
-+&rcar_sound {
-+	pinctrl-0 = <&sound_pins &sound_clk_pins>;
-+	pinctrl-names = "default";
-+
-+	#sound-dai-cells = <0>;
-+
-+	status = "okay";
-+
-+	rcar_sound,dai {
-+		dai0 {
-+			playback = <&ssi0>;
-+			capture  = <&ssi1>;
-+		};
-+	};
-+};
-+
-+&ssi0 {
-+	pio-transfer;
-+};
-+
-+&ssi1 {
-+	pio-transfer;
-+	shared-pin;
-+};
--- 
-2.1.1
+> r8a7794 SoC support is now queued up for v3.18.
+> So I think could also be added to multi_v7_defconfig too.
+> Let me know if you want an incremental patch.
 
+Adding r8a7794 and other recent additions to shmobile_defconfig.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
