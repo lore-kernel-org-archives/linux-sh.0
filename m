@@ -1,157 +1,118 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Mon, 24 Nov 2014 20:40:01 +0000
+From: Stijn Devriendt <highguy@gmail.com>
+Date: Tue, 25 Nov 2014 22:07:38 +0000
 Subject: Re: [PATCH 2/3] i2c: slave-eeprom: add eeprom simulator driver
-Message-Id: <20141124204001.GB26751@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="s2ZSL+KKDSLx8OML"
+Message-Id: <CAOY=C6F6TMyeDvNneBV6K5hVjoG+qk-1Y_R3oJkEiGxhLOoQ0A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1416326695-13083-1-git-send-email-wsa@the-dreams.de>
  <1416326695-13083-3-git-send-email-wsa@the-dreams.de>
- <20141121071941.GK27002@pengutronix.de>
- <20141122182630.GD9698@katana>
- <20141123202008.GE4431@pengutronix.de>
-In-Reply-To: <20141123202008.GE4431@pengutronix.de>
+ <CAOY=C6FSXWn2AKn9gp0oU69U8VkkyJAE7MMUTZsToy0P_Tf6AA@mail.gmail.com>
+ <20141122181229.GB9698@katana>
+In-Reply-To: <20141122181229.GB9698@katana>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+On Sat, Nov 22, 2014 at 7:12 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
+> Hi,
+>
+> Please quote only relevant parts of the message (like I did). This
+> improves readability a lot.
+>
 
---s2ZSL+KKDSLx8OML
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+My bad, will minimize the overhead in the future.
 
+>>
+>> Would it make sense to have:
+>> WRITE_START
+>> WRITE_NEXT
+>> WRITE_STOP
+>> WRITE_REPEAT_START
+>> READ_START
+>> READ_NEXT
+>> READ_STOP
+>> READ_REPEAT_START
+>>
+>> Some devices may want different behavior for subsequent
+>> reads when they are separate transactions, compared to
+>> a single larger transaction.
+>
+> This can all be handled with I2C_SLAVE_STOP.
+>
 
-> > > When the eeprom driver is probed and the adapter driver notices a read
-> > > request for the respective i2c address, this callback is called with
-> > > event=3DI2C_SLAVE_REQ_READ_START. Returning 0 here and provide the fi=
-rst
-> > > byte to send make the adapter ack the read request and send the data
-> > > provided. If something !=3D 0 is returned a NAK is sent?
-> >=20
-> > We only send NAK on write requests (I use read/write from the master
-> I don't understand this. Who is "we" in this case?=20
+I think the goal is probably better covered by Uwe's idea for
+returning a buffer. See below...
 
-We as the slave serving the request of a remote master.
+>> e.g. a single transaction may wraparound inside a >8bit
+>> register (e.g. for 16bit: msb, lsb, msb, lsb, ...), but step
+>> to the next register when a separate read/write is issued.
+>> Alternatively, a WRITE/READ_NEXT may be implemented
+>> more efficiently. This may not matter for current systems
+>> compared to the low-frequency bus, but who knows what
+>> IoT devices may bring to the table.
+>
+> Let's start simple until we have more use cases. WRITE_NEXT may be
+> useful when you have an internal u8 pointer to be set before actually
+> sending data, but already less useful if this is u16. Also, slaves may
+> decide to handle stops at unexpected places differently. Furthermore, my
+> feeling is that slave drivers will be more robust if they handle those
+> simple primitives properly.
+>
 
-> > No single call. I had this first, but my experiments showed that it is
-> > important for the EEPROM driver to only increase the internal pointer
-> > when the byte was ACKed. Otherwise, I was off-by-one.
-> Sure, the driver has to know how his read response was received by the
-> master. But assuming I understand your abstraction right there is some
-> redundancy. There are only three cases on a read request (well plus error
-> handling):
->=20
->  - master sends ACK, reads next byte
->    in this case the slave must provide another word
->    In your abstraction this implies
->      callback(I2C_SLAVE_REQ_READ_END); <-- this is redundant
+I think usable semantics could be that a slave driver can indicate at any
+point during an I2C read transaction that the next X bytes should be
+returned from a buffer and for a write transaction, that the next X bytes
+should be buffered before passed on to the driver. When the transaction
+ends or the adapter reaches the end of the buffer, it indicates this to
+the driver which can then either cleanup or otherwise act accordingly.
+For the EEPROM driver, this could mean that after the address is received,
+the driver can pass the pointer + remaining size and have the adapter
+driver take care of transmit. Upon end-of-buffer, it could just handle the
+wraparound and let the adapter take care of the rest.
 
-Well, in the way that a new start of something means automatically the
-end of the previous something, like some closing html tags which can be
-left out. However, I think being explicit here isn't much of a drawback.
-You lose a little bit of performance and gain flexibility. A sensor-like
-device could decide that on READ_END it is safe to discard the old value
-and start acquiring the new one, so it will be available on next
-READ_START. Be aware that the master decides how much time there will be
-between END and START (although it will be very close in most cases).
+But as you say, this can be added later on when the need arises.
 
->      callback(I2C_SLAVE_REQ_READ_START);
->=20
->  - master sends ACK, then P or Sr
->      callback(I2C_SLAVE_REQ_READ_END);
->      maybe callback(I2C_SLAVE_STOP)
->=20
->  - master sends NACK
->    in this case the message ends and the master has to send Sr or P.
->    In your case this results in:
->      nothing for the NACK?
->      maybe callback(I2C_SLAVE_STOP)
->=20
-> The situations where the slave has to react are:
->=20
->  - slave was addressed with R
->    input: address
->    output: NAK or (ACK + data byte)
->  - slave was addressed with #W:
->    input: address
->    output: NAK or ACK
+> What I could imagine, though, is that somewhen the eeprom simulator will
+> be able to get data via other means than the shared memory, maybe via
+> some callback. Then, the callback really only has to deal with "read
+> this byte" or "write that byte" while for the outer world we have a
+> proper well-known EEPROM like I2C interface.
+>
+> That being said, the list of I2C_SLAVE_* events is extensible, of
+> course. Though, I rather see low-level stuff there like "General Call
+> Adress received".
+>
+>>
+>> Also, behavior may be different for repeat start versus
+>> stop/start, although a repeat start could be a start
+>> without a previous stop as well...
+>
+> IMO a repeated start is to ensure that two messages arrive at the slave
+> without interruption from another master. I can't think why a slave
+> should know which type of start that was. In fact, if it does that would
+> raise an eyebrow for me. Do you have an example?
+>
 
-On most slave IP cores I have seen so far, there is nothing to do for a
-slave driver for those two. Address recognition and sending ACK are all
-done by the hardware and you are notified of that by an interrupt. For
-the read case, you have to deliver the first byte, of course.
+No, I'll have to pass on that one. Plenty of odd I2C behavior, but that's
+not one of them. You're right on repeat start, so it would be quite
+erratic behavior. But even if, it can probably be added later on.
 
+>> Of course, if an I2C adapter cannot distinguish these
+>> events, this is probably a futile attempt at adding
+>> semantics that will silently break depending on the
+>> actual hardware/driver used.
+>
+> That as well. I have not seen an I2C adapter which could provide this
+> information so far.
+>
 
->  - data sent by slave-transmitter was acked
->    output: next data byte (maybe unused because master sends Sr or P)
-
-The driver I modified in the next patch cannot know if the master
-acked/nacked something. It just knows if the output buffer is empty or
-if a stop was signalled (which really should come after NAK from the
-master). So, we can't depend on this difference.
-
->  - data sent by slave-transmitter was nacked
->    output: void (unless we want to support IGNORE_NAK :-)
-
-:)
-
->  - slave received a data byte (write)
->    input: data
->    output: NAK or ACK
->=20
-> This looks like a better model in my eyes. In this model the slave
-> driver doesn't even need to be informed about P. Not entirely sure about
-> "data sent by slave-transmitter was nacked".
-
-I think we definately need a STOP notification. Devices might want to do
-something like reducing power etc after stop.
-
-What I like about my version is that it reflects pretty closely what
-happens on the bus. I can't currently tell what somebody could do with
-WRITE_START (precharging something?). But it feels better to me to
-directly reflect what a real slave device would see, too, for
-flexibility.
-
->=20
-> > For DMA, I haven't seen DMA slave support yet. Makes sense to me, we
-> haha, there is only a single slave driver yet and you're the author.
-
-I meant IP cores here which support DMA for slave transmissions.
-
-Regardings buffers: I wouldn't like all bus drivers to have code
-handling the buffer when all they have to do is to put one byte on the
-bus. So, buffer handling should go into the core then probably. So,
-there'd be still one level of indirection?
-
-Also, since we don't know when the master will collect the data, there
-is a chance it might get stale?
-
-To me that sounds like too much complexity for too litle gain. At this
-moment, at least.
+Just checked components we're using and stop/repeated-start both
+transition into the same state.
 
 Regards,
+Stijn
 
-   Wolfram
-
---s2ZSL+KKDSLx8OML
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJUc5ehAAoJEBQN5MwUoCm2HCUP/jO3XmHXLnMZhSe5AwYp+pAM
-S6km7UmFvCeM77iUg4ESExJ9eHYKqgNk6gW4lL0fmFVO8IRQ+UuOxpVumWpo2DeR
-epWS/+CI4kqozcjgEzh498fH+RGKZ4f7T/Ps4PUE/cNxXkv9iua+FbP0HpqpucFf
-OZlAYB2iYecTs42XAXFWi7cU0BWE66ofKFxNtzcqVaZK1Kufq2Sr1eoMqsX2txE5
-dStLUMZLpiKBQDzEFw762ZfpWltY0XYidUu4uGKuY8U95kcWTRH3OxWU7xhUX02l
-L1tkhDN2/jip8nT/j5lYuvOBSmddK+vyBkcmfCJv2nA+wZPIy38/NQpYhnMZYDoO
-Rla4dmwf3X2cXSdLqsgC+QrAwekdOLjVOwk9eO8cm2HUTRX+gt8po2ANn6XA4Ki1
-XbmSo4RvvtfR27IJXdVZNja3Nw37tZpvoUTVy0mYEoFXZtgtaU+vDTEZjqHa03+M
-F9mla2fToE9IBDgJ7Rm/IjyDg/+8rhn0o4jdFKU7iRQfSr1FvDzY6wE+I6DyllW2
-RBKCsmXOrC5514Yh385dqIN6ibevNQO+hPo260AyhkVJ1guID5Yov4XEYNicGfk2
-QArWe6NUl3ynnu+rg5bWp/qXRmMJqj7fJP2U04Z6TG6KOfAAaczep964ld4kAeBA
-0257R3z48Y0FvHrKDA/u
-=yTTI
------END PGP SIGNATURE-----
-
---s2ZSL+KKDSLx8OML--
+> Thanks,
+>
+>    Wolfram
+>
