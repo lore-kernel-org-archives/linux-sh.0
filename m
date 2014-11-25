@@ -1,54 +1,66 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 07 Nov 2014 07:59:25 +0000
+Date: Tue, 25 Nov 2014 17:49:16 +0000
 Subject: Re: (bisected) Lock up on sh73a0/kzm9g on cpuidle initialization
-Message-Id: <CAMuHMdXQr65g4He0D0ZRN923OJ2A7WNgwbiTru_1dGWnvbvCJA@mail.gmail.com>
+Message-Id: <CAMuHMdUjYMC8i2F9n6fWdPBOQVSohKA3ZxJJyq8h808Z9tEypw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <CAMuHMdXaaa2t6+sH2egGacVxkAPeTUkAgwdYsOnMnEPnuLdB5Q@mail.gmail.com>
  <545BE1DE.6060900@linaro.org>
-In-Reply-To: <545BE1DE.6060900@linaro.org>
+ <CAMuHMdXQr65g4He0D0ZRN923OJ2A7WNgwbiTru_1dGWnvbvCJA@mail.gmail.com>
+In-Reply-To: <CAMuHMdXQr65g4He0D0ZRN923OJ2A7WNgwbiTru_1dGWnvbvCJA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Daniel,
-
-On Thu, Nov 6, 2014 at 10:02 PM, Daniel Lezcano
-<daniel.lezcano@linaro.org> wrote:
-> On 11/06/2014 09:38 PM, Geert Uytterhoeven wrote:
->> When CONFIG_CPU_IDLE=y, the kernel locks up during cpuidle initialization
->> on Renesas sh73a0/kzm9g-reference, which has a dual-core Cortex-A9.
+On Fri, Nov 7, 2014 at 8:59 AM, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+> On Thu, Nov 6, 2014 at 10:02 PM, Daniel Lezcano
+> <daniel.lezcano@linaro.org> wrote:
+>> On 11/06/2014 09:38 PM, Geert Uytterhoeven wrote:
+>>> When CONFIG_CPU_IDLE=y, the kernel locks up during cpuidle initialization
+>>> on Renesas sh73a0/kzm9g-reference, which has a dual-core Cortex-A9.
+>>>
+>>> Last message is:
+>>>
+>>>      DMA: preallocated 256 KiB pool for atomic coherent allocations
+>>>
+>>> After this it's supposed to print:
+>>>
+>>>      cpuidle: using governor ladder
+>>>      cpuidle: using governor menu
+>>>
+>>> I've bisected this to commit 442bf3aaf55a91ebfec71da46a4ee10a3c905bcc
+>>> ("sched: Let the scheduler see CPU idle states").
+>>>
+>>> Reverting that commit, and commit 83a0a96a5f26d974580fd7251043ff70c8f1823d
+>>> ("sched/fair: Leverage the idle state info when choosing the "idlest"
+>>> cpu") which
+>>> depends on it, fixes the problem.
+>>>
+>>> I saw the discussion "lockdep splat in CPU hotplug", so I enabled lockdep
+>>> debugging, but didn't see a lockdep splat.
 >>
->> Last message is:
+>> Did you try the fix attached ?
 >>
->>      DMA: preallocated 256 KiB pool for atomic coherent allocations
->>
->> After this it's supposed to print:
->>
->>      cpuidle: using governor ladder
->>      cpuidle: using governor menu
->>
->> I've bisected this to commit 442bf3aaf55a91ebfec71da46a4ee10a3c905bcc
->> ("sched: Let the scheduler see CPU idle states").
->>
->> Reverting that commit, and commit 83a0a96a5f26d974580fd7251043ff70c8f1823d
->> ("sched/fair: Leverage the idle state info when choosing the "idlest"
->> cpu") which
->> depends on it, fixes the problem.
->>
->> I saw the discussion "lockdep splat in CPU hotplug", so I enabled lockdep
->> debugging, but didn't see a lockdep splat.
+>> https://lkml.org/lkml/2014/10/22/722
 >
-> Did you try the fix attached ?
+> Thanks, I didn't try that.
 >
-> https://lkml.org/lkml/2014/10/22/722
+> However, this patch seems to be in v3.18-rc3, so I'm already using it.
+> Hence it doesn't fix the problem for me.
+>
+> On another board, with a dual Cortex-A15, the problem doesn't show up.
 
-Thanks, I didn't try that.
+This problem (regression introduced in v3.18-rc1) is still present in v3.18-rc6.
 
-However, this patch seems to be in v3.18-rc3, so I'm already using it.
-Hence it doesn't fix the problem for me.
+I did some more investigations, and it's hanging in the call to
+synchronize_rcu() in cpuidle_uninstall_idle_handler(), which was added in
+commit 442bf3aaf55a91ebfec71da46a4ee10a3c905bcc.
+More specificailly, it's blocked on the wait_for_completion(&rcu.completion)
+in kernel/rcu/update.c:void wait_rcu_gp(call_rcu_func_t crf).
 
-On another board, with a dual Cortex-A15, the problem doesn't show up.
+Anyone with a clue?
+
+Thanks again!
 
 Gr{oetje,eeting}s,
 
