@@ -1,70 +1,164 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 13 Nov 2014 00:30:29 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7791: add missing DVC DMA entry on DTSI
-Message-Id: <20141113003026.GD14971@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 25 Nov 2014 23:47:27 +0000
+Subject: [PATCH v4 6/9] drm: Decouple EDID parsing from I2C adapter
+Message-Id: <1416959247-23132-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <878ujgokun.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <878ujgokun.wl%kuninori.morimoto.gx@renesas.com>
+References: <1414337068-28664-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1414337068-28664-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-On Wed, Nov 12, 2014 at 08:59:29AM +0000, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Lars-Peter Clausen <lars@metafoo.de>
 
-Thanks, I have queued this up.
+The drm_get_edid() function performs direct I2C accesses to read EDID
+blocks, assuming that the monitor DDC interface is directly connected to
+the I2C bus. It can't thus be used with HDMI encoders that control the
+DDC bus and expose EDID blocks through a different interface.
 
-> ---
->  arch/arm/boot/dts/r8a7791.dtsi |   26 ++++++++++++++++++++++++--
->  1 file changed, 24 insertions(+), 2 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-> index 142c3ed..960223c 100644
-> --- a/arch/arm/boot/dts/r8a7791.dtsi
-> +++ b/arch/arm/boot/dts/r8a7791.dtsi
-> @@ -1463,7 +1463,18 @@
->  				<&audmapp 0x0f32>,	<&audmapp 0x0f33>,	<&audmapp 0x0f34>,	<&audmapp 0x0f35>,	<&audmapp 0x0f36>,
->  				<&audmapp 0x1032>,	<&audmapp 0x1033>,	<&audmapp 0x1034>,	<&audmapp 0x1035>,	<&audmapp 0x1036>,
->  				<&audmapp 0x1132>,	<&audmapp 0x1133>,	<&audmapp 0x1134>,	<&audmapp 0x1135>,	<&audmapp 0x1136>,
-> -				<&audmapp 0x1232>,	<&audmapp 0x1233>,	<&audmapp 0x1234>,	<&audmapp 0x1235>,	<&audmapp 0x1236>;
-> +				<&audmapp 0x1232>,	<&audmapp 0x1233>,	<&audmapp 0x1234>,	<&audmapp 0x1235>,	<&audmapp 0x1236>,
-> +
-> +				<&audmapp 0x3700>,	<&audmapp 0x3800>,
-> +				<&audmapp 0x3704>,	<&audmapp 0x3804>,
-> +				<&audmapp 0x3708>,	<&audmapp 0x3808>,
-> +				<&audmapp 0x370c>,	<&audmapp 0x380c>,
-> +				<&audmapp 0x370d>,	<&audmapp 0x380d>,
-> +				<&audmapp 0x370e>,	<&audmapp 0x380e>,
-> +				<&audmapp 0x370f>,	<&audmapp 0x380f>,
-> +				<&audmapp 0x3710>,	<&audmapp 0x3810>,
-> +				<&audmapp 0x3711>,	<&audmapp 0x3811>,
-> +				<&audmapp 0x3712>,	<&audmapp 0x3812>;
->  
->  		dma-names =	"mem_ssi0",	"ssi0_mem",	"mem_ssiu0",	"ssiu0_mem",
->  				"mem_ssi1",	"ssi1_mem",	"mem_ssiu1",	"ssiu1_mem",
-> @@ -1529,7 +1540,18 @@
->  				"ssiu6_src5",		"ssiu6_src6",		"ssiu6_src7",		"ssiu6_src8",		"ssiu6_src9",
->  				"ssiu7_src5",		"ssiu7_src6",		"ssiu7_src7",		"ssiu7_src8",		"ssiu7_src9",
->  				"ssiu8_src5",		"ssiu8_src6",		"ssiu8_src7",		"ssiu8_src8",		"ssiu8_src9",
-> -				"ssiu9_src5",		"ssiu9_src6",		"ssiu9_src7",		"ssiu9_src8",		"ssiu9_src9";
-> +				"ssiu9_src5",		"ssiu9_src6",		"ssiu9_src7",		"ssiu9_src8",		"ssiu9_src9",
-> +
-> +				"dvc0_ssiu0",		"dvc1_ssiu0",
-> +				"dvc0_ssiu1",		"dvc1_ssiu1",
-> +				"dvc0_ssiu2",		"dvc1_ssiu2",
-> +				"dvc0_ssiu3",		"dvc1_ssiu3",
-> +				"dvc0_ssiu4",		"dvc1_ssiu4",
-> +				"dvc0_ssiu5",		"dvc1_ssiu5",
-> +				"dvc0_ssiu6",		"dvc1_ssiu6",
-> +				"dvc0_ssiu7",		"dvc1_ssiu7",
-> +				"dvc0_ssiu8",		"dvc1_ssiu8",
-> +				"dvc0_ssiu9",		"dvc1_ssiu9";
->  
->  		status = "disabled";
->  
-> -- 
-> 1.7.9.5
-> 
+Refactor drm_do_get_edid() to take a block read callback function
+instead of an I2C adapter, and export it for direct use by drivers.
+
+As in the general case the DDC bus is accessible by the kernel at the
+I2C level, drivers must make all reasonable efforts to expose it as an
+I2C adapter and use drm_get_edid() instead of abusing this function.
+
+Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/gpu/drm/drm_edid.c | 43 ++++++++++++++++++++++++++++++-------------
+ include/drm/drm_edid.h     |  5 +++++
+ 2 files changed, 35 insertions(+), 13 deletions(-)
+
+Daniel, could you please review and hopefully ack this ? If this new version is
+acceptable I'd like to send an updated pull request for R-Car DU HDMI support
+for v3.19, so time is running short.
+
+Changes since v3:
+
+- Add kerneldoc for the new exported drm_do_get_edid function
+
+diff --git a/drivers/gpu/drm/drm_edid.c b/drivers/gpu/drm/drm_edid.c
+index 3bf999134bcc..1a77a49d2695 100644
+--- a/drivers/gpu/drm/drm_edid.c
++++ b/drivers/gpu/drm/drm_edid.c
+@@ -1125,9 +1125,9 @@ EXPORT_SYMBOL(drm_edid_is_valid);
+  * Return: 0 on success or -1 on failure.
+  */
+ static int
+-drm_do_probe_ddc_edid(struct i2c_adapter *adapter, unsigned char *buf,
+-		      int block, int len)
++drm_do_probe_ddc_edid(void *data, u8 *buf, unsigned int block, size_t len)
+ {
++	struct i2c_adapter *adapter = data;
+ 	unsigned char start = block * EDID_LENGTH;
+ 	unsigned char segment = block >> 1;
+ 	unsigned char xfers = segment ? 3 : 2;
+@@ -1184,8 +1184,26 @@ static bool drm_edid_is_zero(u8 *in_edid, int length)
+ 	return true;
+ }
+ 
+-static u8 *
+-drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
++/**
++ * drm_do_get_edid - get EDID data using a custom EDID block read function
++ * @connector: connector we're probing
++ * @get_edid_block: EDID block read function
++ * @data: private data passed to the block read function
++ *
++ * When the I2C adapter connected to the DDC bus is hidden behind a device that
++ * exposes a different interface to read EDID blocks this function can be used
++ * to get EDID data using a custom block read function.
++ *
++ * As in the general case the DDC bus is accessible by the kernel at the I2C
++ * level, drivers must make all reasonable efforts to expose it as an I2C
++ * adapter and use drm_get_edid() instead of abusing this function.
++ *
++ * Return: Pointer to valid EDID or NULL if we couldn't find any.
++ */
++struct edid *drm_do_get_edid(struct drm_connector *connector,
++	int (*get_edid_block)(void *data, u8 *buf, unsigned int block,
++			      size_t len),
++	void *data)
+ {
+ 	int i, j = 0, valid_extensions = 0;
+ 	u8 *block, *new;
+@@ -1196,7 +1214,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
+ 
+ 	/* base block fetch */
+ 	for (i = 0; i < 4; i++) {
+-		if (drm_do_probe_ddc_edid(adapter, block, 0, EDID_LENGTH))
++		if (get_edid_block(data, block, 0, EDID_LENGTH))
+ 			goto out;
+ 		if (drm_edid_block_valid(block, 0, print_bad_edid))
+ 			break;
+@@ -1210,7 +1228,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
+ 
+ 	/* if there's no extensions, we're done */
+ 	if (block[0x7e] = 0)
+-		return block;
++		return (struct edid *)block;
+ 
+ 	new = krealloc(block, (block[0x7e] + 1) * EDID_LENGTH, GFP_KERNEL);
+ 	if (!new)
+@@ -1219,7 +1237,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
+ 
+ 	for (j = 1; j <= block[0x7e]; j++) {
+ 		for (i = 0; i < 4; i++) {
+-			if (drm_do_probe_ddc_edid(adapter,
++			if (get_edid_block(data,
+ 				  block + (valid_extensions + 1) * EDID_LENGTH,
+ 				  j, EDID_LENGTH))
+ 				goto out;
+@@ -1247,7 +1265,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
+ 		block = new;
+ 	}
+ 
+-	return block;
++	return (struct edid *)block;
+ 
+ carp:
+ 	if (print_bad_edid) {
+@@ -1260,6 +1278,7 @@ out:
+ 	kfree(block);
+ 	return NULL;
+ }
++EXPORT_SYMBOL_GPL(drm_do_get_edid);
+ 
+ /**
+  * drm_probe_ddc() - probe DDC presence
+@@ -1289,12 +1308,10 @@ EXPORT_SYMBOL(drm_probe_ddc);
+ struct edid *drm_get_edid(struct drm_connector *connector,
+ 			  struct i2c_adapter *adapter)
+ {
+-	struct edid *edid = NULL;
+-
+-	if (drm_probe_ddc(adapter))
+-		edid = (struct edid *)drm_do_get_edid(connector, adapter);
++	if (!drm_probe_ddc(adapter))
++		return NULL;
+ 
+-	return edid;
++	return drm_do_get_edid(connector, drm_do_probe_ddc_edid, adapter);
+ }
+ EXPORT_SYMBOL(drm_get_edid);
+ 
+diff --git a/include/drm/drm_edid.h b/include/drm/drm_edid.h
+index c2f1bfa22010..d59240ffb1f7 100644
+--- a/include/drm/drm_edid.h
++++ b/include/drm/drm_edid.h
+@@ -381,4 +381,9 @@ static inline int drm_eld_size(const uint8_t *eld)
+ 	return DRM_ELD_HEADER_BLOCK_SIZE + eld[DRM_ELD_BASELINE_ELD_LEN] * 4;
+ }
+ 
++struct edid *drm_do_get_edid(struct drm_connector *connector,
++	int (*get_edid_block)(void *data, u8 *buf, unsigned int block,
++			      size_t len),
++	void *data);
++
+ #endif /* __DRM_EDID_H__ */
+-- 
+2.0.4
+
