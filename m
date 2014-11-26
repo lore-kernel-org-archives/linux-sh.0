@@ -1,31 +1,55 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Wed, 19 Nov 2014 21:02:25 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Runtime PM Updates for v3.19
-Message-Id: <201411192202.25641.arnd@arndb.de>
+From: Takanari Hayama <taki@igel.co.jp>
+Date: Wed, 26 Nov 2014 06:19:52 +0000
+Subject: [PATCH 2/2] v4l: vsp1: Always enable virtual RPF when BRU is in use
+Message-Id: <1416982792-11917-3-git-send-email-taki@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415058794.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415058794.git.horms+renesas@verge.net.au>
+References: <1416982792-11917-1-git-send-email-taki@igel.co.jp>
+In-Reply-To: <1416982792-11917-1-git-send-email-taki@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-On Tuesday 04 November 2014, Simon Horman wrote:
-> Please consider these Renesas ARM based SoC runtime PM updates for v3.19.
-> 
-> 
-> The following changes since commit f114040e3ea6e07372334ade75d1ee0775c355e1:
-> 
->   Linux 3.18-rc1 (2014-10-19 18:08:38 -0700)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-runtime-pm-for-v3.19
-> 
-> for you to fetch changes up to dc4470e177973feedd82596969d86468a1695b1e:
-> 
->   ARM: shmobile: r8a7740: Add A3SM pm domain support (2014-10-28 08:40:18 +0900)
+Regardless of a number of inputs, we should always enable virtual RPF
+when BRU is used. This allows the case when there's only one input to
+BRU, and a size of the input is smaller than a size of an output of BRU.
 
-Pulled into soc branch now, sorry for the delay.
+Signed-off-by: Takanari Hayama <taki@igel.co.jp>
+---
+ drivers/media/platform/vsp1/vsp1_wpf.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
 
-	Arnd
+diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
+index 6e05776..29ea28b 100644
+--- a/drivers/media/platform/vsp1/vsp1_wpf.c
++++ b/drivers/media/platform/vsp1/vsp1_wpf.c
+@@ -92,19 +92,20 @@ static int wpf_s_stream(struct v4l2_subdev *subdev, int enable)
+ 		return 0;
+ 	}
+ 
+-	/* Sources. If the pipeline has a single input configure it as the
+-	 * master layer. Otherwise configure all inputs as sub-layers and
+-	 * select the virtual RPF as the master layer.
++	/* Sources. If the pipeline has a single input and BRU is not used,
++	 * configure it as the master layer. Otherwise configure all
++	 * inputs as sub-layers and select the virtual RPF as the master
++	 * layer.
+ 	 */
+ 	for (i = 0; i < pipe->num_inputs; ++i) {
+ 		struct vsp1_rwpf *input = pipe->inputs[i];
+ 
+-		srcrpf |= pipe->num_inputs = 1
++		srcrpf |= ((!pipe->bru) && (pipe->num_inputs = 1))
+ 			? VI6_WPF_SRCRPF_RPF_ACT_MST(input->entity.index)
+ 			: VI6_WPF_SRCRPF_RPF_ACT_SUB(input->entity.index);
+ 	}
+ 
+-	if (pipe->num_inputs > 1)
++	if ((pipe->bru) || (pipe->num_inputs > 1))
+ 		srcrpf |= VI6_WPF_SRCRPF_VIRACT_MST;
+ 
+ 	vsp1_wpf_write(wpf, VI6_WPF_SRCRPF, srcrpf);
+-- 
+1.8.0
+
