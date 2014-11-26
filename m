@@ -1,36 +1,69 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 27 Nov 2014 14:01:59 +0000
-Subject: Re: [PATCH] gpio-rcar: .irq_set_wake() support to work with suspend_device_irqs()
-Message-Id: <CACRpkdZAmrKkWNOyeV+7h+NshQzbBacwi_ticGdLB6Lj12i4ng@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 26 Nov 2014 00:13:25 +0000
+Subject: [PATCH] ARM: shmobile: dts: koelsch: Fix flash partition label and size
+Message-Id: <1416960805-15185-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415352165-26597-1-git-send-email-ykaneko0929@gmail.com>
-	<CACRpkdaUxtB1zrvH3B=P6+Vis-KEts50h8U=nOgTpDwp5wNKQQ@mail.gmail.com>
-	<CANqRtoTKKuKnfFN4VYhnt1M8jb-2o+PTaivQvu3ELR32c9DhHQ@mail.gmail.com>
-	<CAMuHMdUFPVBDbvaMNdPNGG-a9i1d8dAEK5WsREX40iSGVJk8+w@mail.gmail.com>
-In-Reply-To: <CAMuHMdUFPVBDbvaMNdPNGG-a9i1d8dAEK5WsREX40iSGVJk8+w@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Alexandre Courbot <gnurou@gmail.com>, Simon Horman <horms@verge.net.au>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Nov 17, 2014 at 1:05 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
+Update the size and names of flash partitions to match the
+expectations of the loader which are as follows:
 
-> I can confirm resume from s2ram works without and with this patch.
-> So unless this patch is meant to fix something else (is it?), I think it can be
-> dropped.
+"loader"---0x0000_0000-0x0008_0000 [loader program (readonly)]
+"user"  ---0x0008_0000-0x0060_0000 [U-Boot + bootargs + dt + uImage (readonly)]
+"flash" ---0x0060_0000-0x0400_0000 [filesystem and free (read/write)]
 
-OK patch is dropped from my queue.
+["user"'s assumed breakdown]
+U-boot+ bootargs(0x0008_0000-0x0010_0000) 512KB
+Device tree     (0x0010_0000-0x0014_0000) 256KB
+uImage          (0x0014_0000-0x0060_0000) 4.75MB
 
->>> This driver should be simple to convert to GPIOLIB_IRQCHIP and get
->>> rid of some code overhead.
->>
->> Perhaps Geert [CC:ed] can have a look at this in the not so distant future?
->
-> Sure. Will do.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-THANKS!
+---
 
-Yours,
-Linus Walleij
+This replaces a patch that I previously posted, "shmobile: koelsch: Fix
+flash partition label and size in device tree", which has the same aim but
+does so for an older version of the loader which to my knowledge is not
+found in the wild.
+
+I plan to post a similar patch for Lager if this one goes well.
+
+I have been informed that the flash layout should also be the same
+for Alt (which currently does not have flash in its dts file in mainline).
+
+Based on the renesas-devel-20141125-v3.18-rc6 tag of my renesas tree.
+---
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 990af16..9a4e714 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -451,14 +451,14 @@
+ 			reg = <0x00000000 0x00080000>;
+ 			read-only;
+ 		};
+-		partition@80000 {
+-			label = "bootenv";
+-			reg = <0x00080000 0x00080000>;
++		partition@40000 {
++			label = "user";
++			reg = <0x00080000 0x00580000>;
+ 			read-only;
+ 		};
+-		partition@100000 {
+-			label = "data";
+-			reg = <0x00100000 0x03f00000>;
++		partition@440000 {
++			label = "flash";
++			reg = <0x00600000 0x03a00000>;
+ 		};
+ 	};
+ };
+-- 
+2.1.3
+
