@@ -1,118 +1,90 @@
-From: Stijn Devriendt <highguy@gmail.com>
-Date: Tue, 25 Nov 2014 22:07:38 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 26 Nov 2014 12:22:50 +0000
 Subject: Re: [PATCH 2/3] i2c: slave-eeprom: add eeprom simulator driver
-Message-Id: <CAOY=C6F6TMyeDvNneBV6K5hVjoG+qk-1Y_R3oJkEiGxhLOoQ0A@mail.gmail.com>
+Message-Id: <20141126122250.GA4397@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="d6Gm4EdcadzBjdND"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1416326695-13083-1-git-send-email-wsa@the-dreams.de>
  <1416326695-13083-3-git-send-email-wsa@the-dreams.de>
  <CAOY=C6FSXWn2AKn9gp0oU69U8VkkyJAE7MMUTZsToy0P_Tf6AA@mail.gmail.com>
  <20141122181229.GB9698@katana>
-In-Reply-To: <20141122181229.GB9698@katana>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+ <CAOY=C6F6TMyeDvNneBV6K5hVjoG+qk-1Y_R3oJkEiGxhLOoQ0A@mail.gmail.com>
+In-Reply-To: <CAOY=C6F6TMyeDvNneBV6K5hVjoG+qk-1Y_R3oJkEiGxhLOoQ0A@mail.gmail.com>
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Nov 22, 2014 at 7:12 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> Hi,
->
-> Please quote only relevant parts of the message (like I did). This
-> improves readability a lot.
->
 
-My bad, will minimize the overhead in the future.
+--d6Gm4EdcadzBjdND
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
->>
->> Would it make sense to have:
->> WRITE_START
->> WRITE_NEXT
->> WRITE_STOP
->> WRITE_REPEAT_START
->> READ_START
->> READ_NEXT
->> READ_STOP
->> READ_REPEAT_START
->>
->> Some devices may want different behavior for subsequent
->> reads when they are separate transactions, compared to
->> a single larger transaction.
->
-> This can all be handled with I2C_SLAVE_STOP.
->
 
-I think the goal is probably better covered by Uwe's idea for
-returning a buffer. See below...
+> My bad, will minimize the overhead in the future.
 
->> e.g. a single transaction may wraparound inside a >8bit
->> register (e.g. for 16bit: msb, lsb, msb, lsb, ...), but step
->> to the next register when a separate read/write is issued.
->> Alternatively, a WRITE/READ_NEXT may be implemented
->> more efficiently. This may not matter for current systems
->> compared to the low-frequency bus, but who knows what
->> IoT devices may bring to the table.
->
-> Let's start simple until we have more use cases. WRITE_NEXT may be
-> useful when you have an internal u8 pointer to be set before actually
-> sending data, but already less useful if this is u16. Also, slaves may
-> decide to handle stops at unexpected places differently. Furthermore, my
-> feeling is that slave drivers will be more robust if they handle those
-> simple primitives properly.
->
+Thanks!
 
-I think usable semantics could be that a slave driver can indicate at any
-point during an I2C read transaction that the next X bytes should be
-returned from a buffer and for a write transaction, that the next X bytes
-should be buffered before passed on to the driver. When the transaction
-ends or the adapter reaches the end of the buffer, it indicates this to
-the driver which can then either cleanup or otherwise act accordingly.
-For the EEPROM driver, this could mean that after the address is received,
-the driver can pass the pointer + remaining size and have the adapter
-driver take care of transmit. Upon end-of-buffer, it could just handle the
-wraparound and let the adapter take care of the rest.
+> I think usable semantics could be that a slave driver can indicate at any
+> point during an I2C read transaction that the next X bytes should be
+> returned from a buffer and for a write transaction, that the next X bytes
+> should be buffered before passed on to the driver. When the transaction
 
-But as you say, this can be added later on when the need arises.
+Yes, if we have something like that it should definately be that the
+slave driver offers a buffer and the bus driver may accept the buffer or
+not. Buffers should be opt-in and slave drivers will always have to
+support byte-based transactions as the ultimate fallback because this is
+how the vast majority of HW works (at least those I checked).
 
-> What I could imagine, though, is that somewhen the eeprom simulator will
-> be able to get data via other means than the shared memory, maybe via
-> some callback. Then, the callback really only has to deal with "read
-> this byte" or "write that byte" while for the outer world we have a
-> proper well-known EEPROM like I2C interface.
->
-> That being said, the list of I2C_SLAVE_* events is extensible, of
-> course. Though, I rather see low-level stuff there like "General Call
-> Adress received".
->
->>
->> Also, behavior may be different for repeat start versus
->> stop/start, although a repeat start could be a start
->> without a previous stop as well...
->
-> IMO a repeated start is to ensure that two messages arrive at the slave
-> without interruption from another master. I can't think why a slave
-> should know which type of start that was. In fact, if it does that would
-> raise an eyebrow for me. Do you have an example?
->
+That makes me really wonder if there will be a case where performance is
+so important that buffer handling is coded on top of the always needed
+byte based handling?
 
-No, I'll have to pass on that one. Plenty of odd I2C behavior, but that's
-not one of them. You're right on repeat start, so it would be quite
-erratic behavior. But even if, it can probably be added later on.
+More so, I'd think most slaves will have stuff like registers. So,
+buffered writes usually won't make sense because setting bits should
+cause an action immediately. And reading bits will have the problem of
+data getting stale. I'd think this is the biggest use case of I2C.
+Except for reading an EEPROM _once_ ;)
 
->> Of course, if an I2C adapter cannot distinguish these
->> events, this is probably a futile attempt at adding
->> semantics that will silently break depending on the
->> actual hardware/driver used.
->
-> That as well. I have not seen an I2C adapter which could provide this
-> information so far.
->
+> ends or the adapter reaches the end of the buffer, it indicates this to
+> the driver which can then either cleanup or otherwise act accordingly.
 
-Just checked components we're using and stop/repeated-start both
-transition into the same state.
+Or the adapter encounters an unexpected STOP. Cleanups need to handle
+interrupted transactions as well. I'd think this is a bit more error
+prone, because people would need to check a return value and compare it
+to the number of bytes they wanted. Not a show stopper, but also nothing
+I want to throw in too easily.
 
-Regards,
-Stijn
+> But as you say, this can be added later on when the need arises.
 
-> Thanks,
->
->    Wolfram
->
+I'd really say so.
+
+> Just checked components we're using and stop/repeated-start both
+> transition into the same state.
+
+Good, thanks for checking! May I ask which components you are using?
+
+   Wolfram
+
+
+--d6Gm4EdcadzBjdND
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJUdcYaAAoJEBQN5MwUoCm2Ut8P/jSG+L8qB4j4mF7C6yNtd3nR
+xYbGz0te3282ritSJONOtP4GXVkz2v8TL3/1ZkEvmVyaZAclMTceFRoyIyVUrNxn
+4t1tnJxDqM2+8fYq7OWhIAAVPjynWcNxM7EkJs4sSRzrfQyc6A+s8rGUYc8Ol37L
+VEVCW76tlhwiBLohZAD8QF8/s9q9NAXmMBeXYfw5lVeUS02Cuvmmdsf697HrkWOr
+OGd6wSPjXT9SZKFLY1D7MxvUnbEDZK0vU8GGDMDsQJjO91/rJb+0ptpB5yHEFF+/
+TMoVMIpf/nheH/gRQP9bbQrS9mslun3bZ+26zcPDnX0Ao59N1zScXYiFCKfqKcR3
+HczLZzBWGeS6oY+9Y03dmqD9aQ6Ix+O3BwYe8RZ66YANuiIUIq36WBtrCLZoUI3x
+jPZLDFlFEsvQWZkWMkFWc8udKbHV7EHlaNj8Ce7g3VVqCakcIJBvaLkMmy0DmZMb
+gUhj/vz8fdZQkT2VwwKq6TrlZExJ1cL7H2KasKNxoHd7ki+Tlz/Np8zd7xWOH28C
+GylIwCsd9JU4kHuumvF+brCVV0nBTtvpNBgIznPZ4YkJ0VEbu8mUiyQUegszyUyA
+1Z6BChvQhMROl0DJIEG56HbBMeE8RxjkXRE3x6ylP3aocaOobJCLmIXl8dHa0FVd
+dAvlShGnoRlikm9aV+bI
+=+RhW
+-----END PGP SIGNATURE-----
+
+--d6Gm4EdcadzBjdND--
