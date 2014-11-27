@@ -1,46 +1,30 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:51:01 +0000
-Subject: [PATCH 31/34] ARM: shmobile: r8a7791: Add MMCIF0 DT node
-Message-Id: <8edae499162c30af16f0b8a77d394c19791ae372.1415059587.git.horms+renesas@verge.net.au>
+From: Takanari Hayama <taki@igel.co.jp>
+Date: Thu, 27 Nov 2014 01:25:00 +0000
+Subject: [PATCH v2 0/2] v4l: vsp1: crop and a single input issues
+Message-Id: <1417051502-30169-1-git-send-email-taki@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415059587.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415059587.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Hi,
 
-Add the MMCIF0 device to the r8a7791 device tree.
+I've updated patches to reflect comments from Geert and Sergei.
+Hope this version could be given a go.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7791.dtsi | 9 +++++++++
- 1 file changed, 9 insertions(+)
+Takanari Hayama (2):
+  v4l: vsp1: Reset VSP1 RPF source address
+  v4l: vsp1: Always enable virtual RPF when BRU is in use
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index c815313..8459fe6 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -400,6 +400,15 @@
- 		#gpio-range-cells = <3>;
- 	};
- 
-+	mmcif0: mmc@ee200000 {
-+		compatible = "renesas,mmcif-r8a7791", "renesas,sh-mmcif";
-+		reg = <0 0xee200000 0 0x80>;
-+		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7791_CLK_MMCIF0>;
-+		reg-io-width = <4>;
-+		status = "disabled";
-+	};
-+
- 	sdhi0: sd@ee100000 {
- 		compatible = "renesas,sdhi-r8a7791";
- 		reg = <0 0xee100000 0 0x200>;
+ drivers/media/platform/vsp1/vsp1_rpf.c  | 15 +++++++++++++++
+ drivers/media/platform/vsp1/vsp1_rwpf.h |  2 ++
+ drivers/media/platform/vsp1/vsp1_wpf.c  | 11 ++++++-----
+ 3 files changed, 23 insertions(+), 5 deletions(-)
+
+Best Regards,
+Takanari Hayama
 -- 
-2.1.1
+1.8.0
 
