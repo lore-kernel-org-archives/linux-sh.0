@@ -1,53 +1,64 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 04 Nov 2014 01:49:33 +0000
-Subject: [PATCH 19/23 v3] ARM: shmobile: koelsch: Sound DMA support via SRC on DTS
-Message-Id: <878ujr91l5.wl%kuninori.morimoto.gx@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 27 Nov 2014 12:49:07 +0000
+Subject: [PATCH] drm: rcar-du: Fix NULL encoder pointer dereference
+Message-Id: <1417092547-28224-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: dri-devel@lists.freedesktop.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The DRM connector's encoder pointer is managed internally by the DRM
+core and set to NULL when the DRM connector is disconnected from the
+CRTC it was attached to. This results in a NULL pointer dereference in
+the HDMI connector functions when trying to call the associated slave
+encoder's operations.
 
-DMA transfer to/from SRC
+Fix this by retrieving the slave encoder pointer from the R-Car
+connector structure instead of the DRM connector structure.
 
-     DMA      DMApp
-[MEM] -> [SRC] -> [SSIU] -> [SSI]
-
-     DMA      DMApp
-[MEM] <- [SRC] <- [SSIU] <- [SSI]
-
-Current sound driver is supporting
-SSI/SRC random connection.
-So, this patch is tring
-SSI0 -> SRC2
-SSI1 <- SRC3
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v2 -> v3
+ drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
- - no change
-
- arch/arm/boot/dts/r8a7791-koelsch.dts |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index a49369b..2f975a1 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -569,8 +569,8 @@
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c b/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
+index 8abaaf258f45..4d7d4dd46d26 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
+@@ -25,7 +25,8 @@
  
- 	rcar_sound,dai {
- 		dai0 {
--			playback = <&ssi0>;
--			capture  = <&ssi1>;
-+			playback = <&ssi0 &src2>;
-+			capture  = <&ssi1 &src3>;
- 		};
- 	};
- };
+ static int rcar_du_hdmi_connector_get_modes(struct drm_connector *connector)
+ {
+-	struct drm_encoder *encoder = connector->encoder;
++	struct rcar_du_connector *con = to_rcar_connector(connector);
++	struct drm_encoder *encoder = rcar_encoder_to_drm_encoder(con->encoder);
+ 	struct drm_encoder_slave_funcs *sfuncs = to_slave_funcs(encoder);
+ 
+ 	if (sfuncs->get_modes = NULL)
+@@ -37,7 +38,8 @@ static int rcar_du_hdmi_connector_get_modes(struct drm_connector *connector)
+ static int rcar_du_hdmi_connector_mode_valid(struct drm_connector *connector,
+ 					     struct drm_display_mode *mode)
+ {
+-	struct drm_encoder *encoder = connector->encoder;
++	struct rcar_du_connector *con = to_rcar_connector(connector);
++	struct drm_encoder *encoder = rcar_encoder_to_drm_encoder(con->encoder);
+ 	struct drm_encoder_slave_funcs *sfuncs = to_slave_funcs(encoder);
+ 
+ 	if (sfuncs->mode_valid = NULL)
+@@ -61,7 +63,8 @@ static void rcar_du_hdmi_connector_destroy(struct drm_connector *connector)
+ static enum drm_connector_status
+ rcar_du_hdmi_connector_detect(struct drm_connector *connector, bool force)
+ {
+-	struct drm_encoder *encoder = connector->encoder;
++	struct rcar_du_connector *con = to_rcar_connector(connector);
++	struct drm_encoder *encoder = rcar_encoder_to_drm_encoder(con->encoder);
+ 	struct drm_encoder_slave_funcs *sfuncs = to_slave_funcs(encoder);
+ 
+ 	if (sfuncs->detect = NULL)
 -- 
-1.7.9.5
+Regards,
+
+Laurent Pinchart
 
