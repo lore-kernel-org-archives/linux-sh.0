@@ -1,120 +1,64 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Sun, 16 Nov 2014 12:38:52 +0000
-Subject: Re: [PATCH] media: soc_camera: Fix VIDIOC_S_CROP ioctl miscalculation
-Message-Id: <Pine.LNX.4.64.1411161322100.18616@axis700.grange>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 27 Nov 2014 10:57:15 +0000
+Subject: [PATCH/RFC 0/4] ARM: shmobile: Correct masks for GIC PPI interrupts
+Message-Id: <1417085839-22836-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1413267924-8273-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1413267924-8273-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Cc: linux-media@vger.kernel.org, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Kaneko-san,
+	Hi all,
 
-Sorry for a long delay.
+This patch series corrects the masks in the second interrupt cells for
+Private Peripheral Interrupts in dtsi files for the shmobile family of
+SoCs.
 
-On Tue, 14 Oct 2014, Yoshihiro Kaneko wrote:
+It's my understanding this mask should reflect the actual number of CPU
+cores the interrupt is wired too.
+Is that correct?
 
-> From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-> 
-> This patch corrects the miscalculation of the capture buffer
-> size and clipping data update in VIDIOC_S_CROP sequence.
-> 
-> Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> ---
-> 
-> This patch is against master branch of linuxtv.org/media_tree.git.
-> 
->  drivers/media/platform/soc_camera/rcar_vin.c       | 5 -----
->  drivers/media/platform/soc_camera/soc_scale_crop.c | 6 ++++--
->  2 files changed, 4 insertions(+), 7 deletions(-)
-> 
-> diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-> index 61c36b0..5196c81 100644
-> --- a/drivers/media/platform/soc_camera/rcar_vin.c
-> +++ b/drivers/media/platform/soc_camera/rcar_vin.c
-> @@ -1119,9 +1119,6 @@ static int rcar_vin_set_crop(struct soc_camera_device *icd,
->  	cam->width = mf.width;
->  	cam->height = mf.height;
->  
-> -	icd->user_width  = cam->width;
-> -	icd->user_height = cam->height;
-> -
+  - Hence it should be "GIC_CPU_MASK_SIMPLE(2)" on dual-core CPUs, like
+    r8a7791 and r8a7794 (the first two patches),
+  - Should it be "GIC_CPU_MASK_SIMPLE(8)" on big.LITTLE configurations
+    with four Cortex-A15 cores and four Cortex-A7 cores?
+    Or should the interrupts be delivered to the four Cortex-A15 cores
+    only by default?
+    The last two RFC-patches implement the former for r8a7790 and
+    r8a73a4.
 
-Why are you removing these two? Is this related to your other patch, 
-adding scaling to rcar_vin? If so, maybe this should go into that patch? 
-Or at least these two patches should be in a patch series, if one depends 
-on the other?
+Note that incorrect masks for GIC PPI interrupts are not limited to
+shmobile. Presumably the interrupt specifiers got copied around a lot,
+cfr. the proliferation of "GIC_CPU_MASK_SIMPLE(4)" (and the older
+hardcoded "0xf0x" variant) in various dtsi files, not always limited to
+quad-core CPUs.
 
->  	cam->vin_left = rect->left & ~1;
->  	cam->vin_top = rect->top & ~1;
->  
-> @@ -1130,8 +1127,6 @@ static int rcar_vin_set_crop(struct soc_camera_device *icd,
->  	if (ret < 0)
->  		return ret;
->  
-> -	cam->subrect = *rect;
-> -
+This was tested on r8a7791/koelsch, which uses the arch timer interrupt.
 
-You remove this, probably, because you added assignments to 
-soc_scale_crop.c below, right?
+Thanks for your feedback!
 
->  	dev_dbg(dev, "VIN cropped to %ux%u@%u:%u\n",
->  		icd->user_width, icd->user_height,
->  		cam->vin_left, cam->vin_top);
-> diff --git a/drivers/media/platform/soc_camera/soc_scale_crop.c b/drivers/media/platform/soc_camera/soc_scale_crop.c
-> index 8e74fb7..7a1951a 100644
-> --- a/drivers/media/platform/soc_camera/soc_scale_crop.c
-> +++ b/drivers/media/platform/soc_camera/soc_scale_crop.c
-> @@ -74,14 +74,14 @@ static void update_subrect(struct v4l2_rect *rect, struct v4l2_rect *subrect)
->  
->  	if (rect->left > subrect->left)
->  		subrect->left = rect->left;
-> -	else if (rect->left + rect->width >
-> +	else if (rect->left + rect->width <
->  		 subrect->left + subrect->width)
->  		subrect->left = rect->left + rect->width -
->  			subrect->width;
->  
->  	if (rect->top > subrect->top)
->  		subrect->top = rect->top;
-> -	else if (rect->top + rect->height >
-> +	else if (rect->top + rect->height <
->  		 subrect->top + subrect->height)
->  		subrect->top = rect->top + rect->height -
->  			subrect->height;
+Geert Uytterhoeven (4):
+  ARM: shmobile: r8a7791: Correct mask for GIC PPI interrupts
+  ARM: shmobile: r8a7794: Correct mask for GIC PPI interrupts
+  [RFC] ARM: shmobile: r8a7790: Correct mask for GIC PPI interrupts
+  [RFC] ARM: shmobile: r8a73a4: Correct mask for GIC PPI interrupts
 
-The above two are correct, I think.
+ arch/arm/boot/dts/r8a73a4.dtsi | 10 +++++-----
+ arch/arm/boot/dts/r8a7790.dtsi | 10 +++++-----
+ arch/arm/boot/dts/r8a7791.dtsi | 10 +++++-----
+ arch/arm/boot/dts/r8a7794.dtsi | 10 +++++-----
+ 4 files changed, 20 insertions(+), 20 deletions(-)
 
-> @@ -117,6 +117,7 @@ int soc_camera_client_s_crop(struct v4l2_subdev *sd,
->  		dev_dbg(dev, "Camera S_CROP successful for %dx%d@%d:%d\n",
->  			rect->width, rect->height, rect->left, rect->top);
->  		*target_rect = *cam_rect;
-> +		*subrect = *rect;
->  		return 0;
->  	}
->  
-> @@ -204,6 +205,7 @@ int soc_camera_client_s_crop(struct v4l2_subdev *sd,
->  
->  	if (!ret) {
->  		*target_rect = *cam_rect;
-> +		*subrect = *rect;
->  		update_subrect(target_rect, subrect);
->  	}
+-- 
+1.9.1
 
-The above two don't seem to be correct to me. Please, see 
-Documentation/video4linux/sh_mobile_ceu_camera.txt for an explanation of 
-the cropping and scaling algorithms. "subrect" is a result of both 
-cropping and scaling, and mapping the camera host (DMA engine) output 
-window back onto the camera sensor plane.
+Gr{oetje,eeting}s,
 
-Thanks
-Guennadi
+						Geert
 
->  
-> -- 
-> 1.9.1
-> 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
