@@ -1,82 +1,108 @@
-From: Kevin Cernekee <cernekee@gmail.com>
-Date: Fri, 07 Nov 2014 06:44:27 +0000
-Subject: [PATCH V4 12/14] irqchip: bcm7120-l2: Decouple driver from brcmstb-l2
-Message-Id: <1415342669-30640-13-git-send-email-cernekee@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 27 Nov 2014 15:19:12 +0000
+Subject: [PATCH 1/2] ARM: shmobile: lager: Remove DU platform device
+Message-Id: <1417101553-5233-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415342669-30640-1-git-send-email-cernekee@gmail.com>
-In-Reply-To: <1415342669-30640-1-git-send-email-cernekee@gmail.com>
+References: <1417101553-5233-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1417101553-5233-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: tglx@linutronix.de, jason@lakedaemon.net, linux-sh@vger.kernel.org
-Cc: arnd@arndb.de, f.fainelli@gmail.com, ralf@linux-mips.org, sergei.shtylyov@cogentembedded.com, linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, mbizon@freebox.fr, jogo@openwrt.org, linux-mips@linux-mips.org
+To: dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org
+Cc: Simon Horman <horms@verge.net.au>
 
-Some chips, such as BCM6328, only require bcm7120-l2.  Some BCM7xxx STB
-configurations only require brcmstb-l2.  Treat them as two separate
-entities, and update the mach-bcm dependencies to reflect the change.
+Platform data support has been removed from the DU driver, drop DU
+support from the legacy Lager board file. The multiplatform DT-based
+Lager support should be used instead.
 
-Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
-Acked-by: Florian Fainelli <f.fainelli@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-bcm/Kconfig        | 1 +
- drivers/irqchip/Kconfig          | 5 +++++
- drivers/irqchip/Makefile         | 4 ++--
- drivers/irqchip/irq-bcm7120-l2.c | 2 +-
- 4 files changed, 9 insertions(+), 3 deletions(-)
+ arch/arm/mach-shmobile/board-lager.c | 58 ------------------------------------
+ 1 file changed, 58 deletions(-)
 
-diff --git a/arch/arm/mach-bcm/Kconfig b/arch/arm/mach-bcm/Kconfig
-index 2abad74..bf47eb0 100644
---- a/arch/arm/mach-bcm/Kconfig
-+++ b/arch/arm/mach-bcm/Kconfig
-@@ -125,6 +125,7 @@ config ARCH_BRCMSTB
- 	select HAVE_ARM_ARCH_TIMER
- 	select BRCMSTB_GISB_ARB
- 	select BRCMSTB_L2_IRQ
-+	select BCM7120_L2_IRQ
- 	help
- 	  Say Y if you intend to run the kernel on a Broadcom ARM-based STB
- 	  chipset.
-diff --git a/drivers/irqchip/Kconfig b/drivers/irqchip/Kconfig
-index 09c79d1..afdc1f3 100644
---- a/drivers/irqchip/Kconfig
-+++ b/drivers/irqchip/Kconfig
-@@ -48,6 +48,11 @@ config ATMEL_AIC5_IRQ
- 	select MULTI_IRQ_HANDLER
- 	select SPARSE_IRQ
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index b47262afb240..f8197eb6e566 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -32,7 +32,6 @@
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/camera-rcar.h>
+ #include <linux/platform_data/gpio-rcar.h>
+-#include <linux/platform_data/rcar-du.h>
+ #include <linux/platform_data/usb-rcar-gen2-phy.h>
+ #include <linux/platform_device.h>
+ #include <linux/phy.h>
+@@ -83,61 +82,6 @@
+  *
+  */
  
-+config BCM7120_L2_IRQ
-+	bool
-+	select GENERIC_IRQ_CHIP
-+	select IRQ_DOMAIN
-+
- config BRCMSTB_L2_IRQ
- 	bool
- 	select GENERIC_IRQ_CHIP
-diff --git a/drivers/irqchip/Makefile b/drivers/irqchip/Makefile
-index 173bb5f..f0909d0 100644
---- a/drivers/irqchip/Makefile
-+++ b/drivers/irqchip/Makefile
-@@ -35,6 +35,6 @@ obj-$(CONFIG_TB10X_IRQC)		+= irq-tb10x.o
- obj-$(CONFIG_XTENSA)			+= irq-xtensa-pic.o
- obj-$(CONFIG_XTENSA_MX)			+= irq-xtensa-mx.o
- obj-$(CONFIG_IRQ_CROSSBAR)		+= irq-crossbar.o
--obj-$(CONFIG_BRCMSTB_L2_IRQ)		+= irq-brcmstb-l2.o \
--					   irq-bcm7120-l2.o
-+obj-$(CONFIG_BCM7120_L2_IRQ)		+= irq-bcm7120-l2.o
-+obj-$(CONFIG_BRCMSTB_L2_IRQ)		+= irq-brcmstb-l2.o
- obj-$(CONFIG_KEYSTONE_IRQ)		+= irq-keystone.o
-diff --git a/drivers/irqchip/irq-bcm7120-l2.c b/drivers/irqchip/irq-bcm7120-l2.c
-index ef4d32c..e53a3a6 100644
---- a/drivers/irqchip/irq-bcm7120-l2.c
-+++ b/drivers/irqchip/irq-bcm7120-l2.c
-@@ -247,5 +247,5 @@ out_unmap:
- 	kfree(data);
- 	return ret;
- }
--IRQCHIP_DECLARE(brcmstb_l2_intc, "brcm,bcm7120-l2-intc",
-+IRQCHIP_DECLARE(bcm7120_l2_intc, "brcm,bcm7120-l2-intc",
- 		bcm7120_l2_intc_of_init);
+-/* DU */
+-static struct rcar_du_encoder_data lager_du_encoders[] = {
+-	{
+-		.type = RCAR_DU_ENCODER_VGA,
+-		.output = RCAR_DU_OUTPUT_DPAD0,
+-	}, {
+-		.type = RCAR_DU_ENCODER_NONE,
+-		.output = RCAR_DU_OUTPUT_LVDS1,
+-		.connector.lvds.panel = {
+-			.width_mm = 210,
+-			.height_mm = 158,
+-			.mode = {
+-				.pixelclock = 65000000,
+-				.hactive = 1024,
+-				.hfront_porch = 20,
+-				.hback_porch = 160,
+-				.hsync_len = 136,
+-				.vactive = 768,
+-				.vfront_porch = 3,
+-				.vback_porch = 29,
+-				.vsync_len = 6,
+-			},
+-		},
+-	},
+-};
+-
+-static const struct rcar_du_platform_data lager_du_pdata __initconst = {
+-	.encoders = lager_du_encoders,
+-	.num_encoders = ARRAY_SIZE(lager_du_encoders),
+-};
+-
+-static const struct resource du_resources[] __initconst = {
+-	DEFINE_RES_MEM(0xfeb00000, 0x70000),
+-	DEFINE_RES_MEM_NAMED(0xfeb90000, 0x1c, "lvds.0"),
+-	DEFINE_RES_MEM_NAMED(0xfeb94000, 0x1c, "lvds.1"),
+-	DEFINE_RES_IRQ(gic_spi(256)),
+-	DEFINE_RES_IRQ(gic_spi(268)),
+-	DEFINE_RES_IRQ(gic_spi(269)),
+-};
+-
+-static void __init lager_add_du_device(void)
+-{
+-	struct platform_device_info info = {
+-		.name = "rcar-du-r8a7790",
+-		.id = -1,
+-		.res = du_resources,
+-		.num_res = ARRAY_SIZE(du_resources),
+-		.data = &lager_du_pdata,
+-		.size_data = sizeof(lager_du_pdata),
+-		.dma_mask = DMA_BIT_MASK(32),
+-	};
+-
+-	platform_device_register_full(&info);
+-}
+-
+ /* LEDS */
+ static struct gpio_led lager_leds[] = {
+ 	{
+@@ -800,8 +744,6 @@ static void __init lager_add_standard_devices(void)
+ 
+ 	platform_device_register_full(&ether_info);
+ 
+-	lager_add_du_device();
+-
+ 	platform_device_register_resndata(NULL, "qspi", 0,
+ 					  qspi_resources,
+ 					  ARRAY_SIZE(qspi_resources),
 -- 
-2.1.1
+2.0.4
 
