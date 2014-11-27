@@ -1,29 +1,55 @@
-From: Tejun Heo <tj@kernel.org>
-Date: Fri, 14 Nov 2014 17:36:39 +0000
-Subject: Re: [PATCH v2 2/2] sata_rcar: Document deprecated "renesas,rcar-sata"
-Message-Id: <20141114173639.GF25889@htj.dyndns.org>
+From: Takanari Hayama <taki@igel.co.jp>
+Date: Thu, 27 Nov 2014 01:25:02 +0000
+Subject: [PATCH v2 2/2] v4l: vsp1: Always enable virtual RPF when BRU is in use
+Message-Id: <1417051502-30169-3-git-send-email-taki@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415644950-2983-1-git-send-email-geert+renesas@glider.be>
- <1415644950-2983-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1415644950-2983-2-git-send-email-geert+renesas@glider.be>
+References: <1417051502-30169-1-git-send-email-taki@igel.co.jp>
+In-Reply-To: <1417051502-30169-1-git-send-email-taki@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>, linux-ide@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-On Mon, Nov 10, 2014 at 07:42:30PM +0100, Geert Uytterhoeven wrote:
-> Commit e67adb4e669db834 ("sata_rcar: Add R-Car Gen2 SATA PHY support")
-> deprecated "renesas,rcar-sata" in favor of "renesas,sata-r8a7779", but
-> the deprecated value was never documented in the binding documentation,
-> while it is still in active use.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Regardless of a number of inputs, we should always enable virtual RPF
+when BRU is used. This allows the case when there's only one input to
+BRU, and a size of the input is smaller than a size of an output of BRU.
 
-Applied to libata/for-3.19.
+Signed-off-by: Takanari Hayama <taki@igel.co.jp>
+---
+ drivers/media/platform/vsp1/vsp1_wpf.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
 
-Thanks.
-
+diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
+index 6e05776..cb17c4d 100644
+--- a/drivers/media/platform/vsp1/vsp1_wpf.c
++++ b/drivers/media/platform/vsp1/vsp1_wpf.c
+@@ -92,19 +92,20 @@ static int wpf_s_stream(struct v4l2_subdev *subdev, int enable)
+ 		return 0;
+ 	}
+ 
+-	/* Sources. If the pipeline has a single input configure it as the
+-	 * master layer. Otherwise configure all inputs as sub-layers and
+-	 * select the virtual RPF as the master layer.
++	/* Sources. If the pipeline has a single input and BRU is not used,
++	 * configure it as the master layer. Otherwise configure all
++	 * inputs as sub-layers and select the virtual RPF as the master
++	 * layer.
+ 	 */
+ 	for (i = 0; i < pipe->num_inputs; ++i) {
+ 		struct vsp1_rwpf *input = pipe->inputs[i];
+ 
+-		srcrpf |= pipe->num_inputs = 1
++		srcrpf |= (!pipe->bru && pipe->num_inputs = 1)
+ 			? VI6_WPF_SRCRPF_RPF_ACT_MST(input->entity.index)
+ 			: VI6_WPF_SRCRPF_RPF_ACT_SUB(input->entity.index);
+ 	}
+ 
+-	if (pipe->num_inputs > 1)
++	if (pipe->bru || pipe->num_inputs > 1)
+ 		srcrpf |= VI6_WPF_SRCRPF_VIRACT_MST;
+ 
+ 	vsp1_wpf_write(wpf, VI6_WPF_SRCRPF, srcrpf);
 -- 
-tejun
+1.8.0
+
