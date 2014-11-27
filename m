@@ -1,38 +1,60 @@
-From: David Miller <davem@davemloft.net>
-Date: Fri, 21 Nov 2014 20:05:44 +0000
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Thu, 27 Nov 2014 11:26:39 +0000
 Subject: Re: [PATCH v2] sh_eth: Fix skb alloc size and alignment adjust rule.
-Message-Id: <20141121.150544.2240809721107766779.davem@davemloft.net>
+Message-Id: <CAH1o70+iTTPDebguJMg_gLC=zJgPHxaYU9tSta1rX=VkX+9XHw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1416479721-23089-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1416479721-23089-1-git-send-email-ykaneko0929@gmail.com>
+	<20141121.150544.2240809721107766779.davem@davemloft.net>
+In-Reply-To: <20141121.150544.2240809721107766779.davem@davemloft.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: ykaneko0929@gmail.com
-Cc: netdev@vger.kernel.org, horms@verge.net.au, magnus.damm@gmail.com, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: David Miller <davem@davemloft.net>
+Cc: netdev@vger.kernel.org, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
 
-RnJvbTogWW9zaGloaXJvIEthbmVrbyA8eWthbmVrbzA5MjlAZ21haWwuY29tPg0KRGF0ZTogVGh1
-LCAyMCBOb3YgMjAxNCAxOTozNToyMSArMDkwMA0KDQo+IEZyb206IE1pdHN1aGlybyBLaW11cmEg
-PG1pdHN1aGlyby5raW11cmEua2NAcmVuZXNhcy5jb20+DQo+IA0KPiBJbiB0aGUgY3VycmVudCBk
-cml2ZXIsIGFsbG9jYXRpb24gc2l6ZSBvZiBza2IgZG9lcyBub3QgY2FyZSB0aGUgYWxpZ25tZW50
-DQo+IGFkanVzdCBhZnRlciBhbGxvY2F0aW9uLg0KPiBBbmQgYWxzbywgaW4gdGhlIGN1cnJlbnQg
-aW1wbGVtZW50YXRpb24sIGJ1ZmZlciBhbGlnbm1lbnQgbWV0aG9kIGJ5DQo+IHNoX2V0aF9zZXRf
-cmVjZWl2ZV9hbGlnbiBmdW5jdGlvbiBoYXMgYSBidWcgdGhhdCB0aGlzIGZ1bmN0aW9uIGRpc3Bs
-YWNlDQo+IGJ1ZmZlciBzdGFydCBhZGRyZXNzIGZvcmNlZGx5IHdoZW4gdGhlIGFsaWdubWVudCBp
-cyBjb3JyZWN0ZWQuDQo+IEluIHRoZSByZXN1bHQsIHRhaWwgb2YgdGhlIHNrYiB3aWxsIGV4Y2Vl
-ZCBhbGxvY2F0ZWQgYXJlYSBhbmQga2VybmVsIHBhbmljDQo+IHdpbGwgYmUgb2NjdXJyZWQuDQo+
-IFRoaXMgcGF0Y2ggZml4IHRoaXMgaXNzdWUuDQo+IA0KPiBTaWduZWQtb2ZmLWJ5OiBNaXRzdWhp
-cm8gS2ltdXJhIDxtaXRzdWhpcm8ua2ltdXJhLmtjQHJlbmVzYXMuY29tPg0KPiBTaWduZWQtb2Zm
-LWJ5OiBZb3NoaWhpcm8gS2FuZWtvIDx5a2FuZWtvMDkyOUBnbWFpbC5jb20+DQo+IC0tLQ0KPiAN
-Cj4gVGhlIHByZXZpb3VzIHZlcnNpb24gb2YgdGhpcyBwYXRjaCB3YXMgYSBwYXJ0IG9mIHRoZSBw
-YXRjaCBzZXJpZXMgYXMgZm9sbG93czoNCj4gW1BBVENIIDIvM10gc2hfZXRoOiBGaXggc2tiIGFs
-bG9jIHNpemUgYW5kIGFsaWdubWVudCBhZGp1c3QgcnVsZS4NCj4gDQo+IFRoaXMgc2VyaWVzIGlz
-IGJhc2VkIG9uIG5ldCB0cmVlLg0KPiANCj4gdjIgW1lvc2hpaGlybyBLYW5la29dDQo+ICogVXBk
-YXRlIGFzIHN1Z2dlc3RlZCBieSBTZXJnZWkgU2h0eWx5b3YNCj4gICAtIEZpeGVkIHRoZSBjb2Rp
-bmcgc3R5bGUNCj4gICAtIENvcnJlY3RlZCB0aGUgY29tbWVudA0KPiAgIC0gUmVtb3ZlZCB7U0gy
-X1NIM3xTSDR9X1NLQl9SWF9BTElHTg0KDQpQbGVhc2UgY29tcGlsZSB0ZXN0IHlvdXIgY2hhbmdl
-cyBvbiA2NC1iaXQgcGxhdGZvcm1zOg0KDQpkcml2ZXJzL25ldC9ldGhlcm5ldC9yZW5lc2FzL3No
-X2V0aC5jOiBJbiBmdW5jdGlvbiChc2hfZXRoX3NldF9yZWNlaXZlX2FsaWduojoNCmRyaXZlcnMv
-bmV0L2V0aGVybmV0L3JlbmVzYXMvc2hfZXRoLmM6OTIyOjE2OiB3YXJuaW5nOiBjYXN0IGZyb20g
-cG9pbnRlciB0byBpbnRlZ2VyIG9mIGRpZmZlcmVudCBzaXplIFstV3BvaW50ZXItdG8taW50LWNh
-c3RdDQo
+Hello David,
+
+I'm very sorry for the late response.
+
+2014-11-22 5:05 GMT+09:00 David Miller <davem@davemloft.net>:
+> From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+> Date: Thu, 20 Nov 2014 19:35:21 +0900
+>
+>> From: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
+>>
+>> In the current driver, allocation size of skb does not care the alignment
+>> adjust after allocation.
+>> And also, in the current implementation, buffer alignment method by
+>> sh_eth_set_receive_align function has a bug that this function displace
+>> buffer start address forcedly when the alignment is corrected.
+>> In the result, tail of the skb will exceed allocated area and kernel panic
+>> will be occurred.
+>> This patch fix this issue.
+>>
+>> Signed-off-by: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
+>> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+>> ---
+>>
+>> The previous version of this patch was a part of the patch series as follows:
+>> [PATCH 2/3] sh_eth: Fix skb alloc size and alignment adjust rule.
+>>
+>> This series is based on net tree.
+>>
+>> v2 [Yoshihiro Kaneko]
+>> * Update as suggested by Sergei Shtylyov
+>>   - Fixed the coding style
+>>   - Corrected the comment
+>>   - Removed {SH2_SH3|SH4}_SKB_RX_ALIGN
+>
+> Please compile test your changes on 64-bit platforms:
+>
+> drivers/net/ethernet/renesas/sh_eth.c: In function ‘sh_eth_set_receive_align’:
+> drivers/net/ethernet/renesas/sh_eth.c:922:16: warning: cast from pointer to integer of different size [-Wpointer-to-int-cast]
+
+I have never seen that warning message because I had done compile test
+for ARM platform.
+I saw the warning after I do compile test for x86_64.
+I'll post the new version of this patch.
+
+Thanks,
+Kaneko
