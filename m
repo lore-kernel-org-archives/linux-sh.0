@@ -1,124 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Nov 2014 01:19:53 +0000
-Subject: [PATCH 02/25] ARM: shmobile: r8a7790: Add Audio DMAC devices to DT
-Message-Id: <ba3240beae340bc84dad16f2b67590f32d25d5a6.1415755881.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 27 Nov 2014 00:15:04 +0000
+Subject: [GIT PULL FOR v3.19] R-Car DMA engine driver
+Message-Id: <3453038.BtMDKhPqev@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415755881.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415755881.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi Vinod,
 
-Instantiate the two Audio DMA controllers in the r8a7790 device tree.
+The following changes since commit 9d3cc3e584296b83351f41c72ea7faf439d03e4a:
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-[geert: corrected spelling of audmac1]
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7790.dtsi            | 64 +++++++++++++++++++++++++++++--
- include/dt-bindings/clock/r8a7790-clock.h |  2 +
- 2 files changed, 63 insertions(+), 3 deletions(-)
+  Merge branch 'topic/at_xdmac' into next (2014-11-17 14:07:35 +0530)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 52c2156..2e01d49 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -312,6 +312,63 @@
- 		#dma-cells = <1>;
- 		dma-channels = <15>;
- 	};
-+
-+	audma0: dma-controller@ec700000 {
-+		compatible = "renesas,rcar-dmac";
-+		reg = <0 0xec700000 0 0x10000>;
-+		interrupts =	<0 346 IRQ_TYPE_LEVEL_HIGH
-+				 0 320 IRQ_TYPE_LEVEL_HIGH
-+				 0 321 IRQ_TYPE_LEVEL_HIGH
-+				 0 322 IRQ_TYPE_LEVEL_HIGH
-+				 0 323 IRQ_TYPE_LEVEL_HIGH
-+				 0 324 IRQ_TYPE_LEVEL_HIGH
-+				 0 325 IRQ_TYPE_LEVEL_HIGH
-+				 0 326 IRQ_TYPE_LEVEL_HIGH
-+				 0 327 IRQ_TYPE_LEVEL_HIGH
-+				 0 328 IRQ_TYPE_LEVEL_HIGH
-+				 0 329 IRQ_TYPE_LEVEL_HIGH
-+				 0 330 IRQ_TYPE_LEVEL_HIGH
-+				 0 331 IRQ_TYPE_LEVEL_HIGH
-+				 0 332 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "error",
-+				"ch0", "ch1", "ch2", "ch3",
-+				"ch4", "ch5", "ch6", "ch7",
-+				"ch8", "ch9", "ch10", "ch11",
-+				"ch12";
-+		clocks = <&mstp5_clks R8A7790_CLK_AUDIO_DMAC0>;
-+		clock-names = "fck";
-+		#dma-cells = <1>;
-+		dma-channels = <13>;
-+	};
-+
-+	audma1: dma-controller@ec720000 {
-+		compatible = "renesas,rcar-dmac";
-+		reg = <0 0xec720000 0 0x10000>;
-+		interrupts =	<0 347 IRQ_TYPE_LEVEL_HIGH
-+				 0 333 IRQ_TYPE_LEVEL_HIGH
-+				 0 334 IRQ_TYPE_LEVEL_HIGH
-+				 0 335 IRQ_TYPE_LEVEL_HIGH
-+				 0 336 IRQ_TYPE_LEVEL_HIGH
-+				 0 337 IRQ_TYPE_LEVEL_HIGH
-+				 0 338 IRQ_TYPE_LEVEL_HIGH
-+				 0 339 IRQ_TYPE_LEVEL_HIGH
-+				 0 340 IRQ_TYPE_LEVEL_HIGH
-+				 0 341 IRQ_TYPE_LEVEL_HIGH
-+				 0 342 IRQ_TYPE_LEVEL_HIGH
-+				 0 343 IRQ_TYPE_LEVEL_HIGH
-+				 0 344 IRQ_TYPE_LEVEL_HIGH
-+				 0 345 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "error",
-+				"ch0", "ch1", "ch2", "ch3",
-+				"ch4", "ch5", "ch6", "ch7",
-+				"ch8", "ch9", "ch10", "ch11",
-+				"ch12";
-+		clocks = <&mstp5_clks R8A7790_CLK_AUDIO_DMAC1>;
-+		clock-names = "fck";
-+		#dma-cells = <1>;
-+		dma-channels = <13>;
-+	};
-+
- 	i2c0: i2c@e6508000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -1050,10 +1107,11 @@
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
--			clocks = <&extal_clk>, <&p_clk>;
-+			clocks = <&hp_clk>, <&hp_clk>, <&extal_clk>, <&p_clk>;
- 			#clock-cells = <1>;
--			renesas,clock-indices = <R8A7790_CLK_THERMAL R8A7790_CLK_PWM>;
--			clock-output-names = "thermal", "pwm";
-+			renesas,clock-indices = <R8A7790_CLK_AUDIO_DMAC0 R8A7790_CLK_AUDIO_DMAC1
-+						 R8A7790_CLK_THERMAL R8A7790_CLK_PWM>;
-+			clock-output-names = "audmac0", "audmac1", "thermal", "pwm";
- 		};
- 		mstp7_clks: mstp7_clks@e615014c {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-index e3a3fb8..c27b3b5 100644
---- a/include/dt-bindings/clock/r8a7790-clock.h
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -78,6 +78,8 @@
- #define R8A7790_CLK_USBDMAC1		31
- 
- /* MSTP5 */
-+#define R8A7790_CLK_AUDIO_DMAC1		1
-+#define R8A7790_CLK_AUDIO_DMAC0		2
- #define R8A7790_CLK_THERMAL		22
- #define R8A7790_CLK_PWM			23
- 
--- 
-2.1.1
+are available in the git repository at:
+
+  git://linuxtv.org/pinchartl/fbdev.git dma/next
+
+for you to fetch changes up to ecb5e83101a23b0ad86c92342639ffcc74a06761:
+
+  dmaengine: rcar-dmac: Handle hardware descriptor allocation failure=20
+(2014-11-27 02:12:55 +0200)
+
+----------------------------------------------------------------
+J=FCrg Billeter (1):
+      dmaengine: rcar-dmac: Handle hardware descriptor allocation failure
+
+Laurent Pinchart (5):
+      dmaengine: Add 16 bytes, 32 bytes and 64 bytes bus widths
+      dmaengine: rcar-dmac: Remove duplicate sentence from DT bindings
+      dmaengine: rcar-dmac: Add Renesas R-Car Gen2 DMA Controller (DMAC)=20
+driver
+      dmaengine: rcar-dmac: Implement support for hardware descriptor lists
+      dmaengine: rcar-dmac: Cache hardware descriptors memory
+
+ .../devicetree/bindings/dma/renesas,rcar-dmac.txt       |    3 -
+ drivers/dma/Makefile                                    |    2 +-
+ drivers/dma/sh/Kconfig                                  |   14 +-
+ drivers/dma/sh/Makefile                                 |    1 +
+ drivers/dma/sh/rcar-dmac.c                              | 1777 +++++++++++=
++++
+ include/linux/dmaengine.h                               |    3 +
+ 6 files changed, 1795 insertions(+), 5 deletions(-)
+ create mode 100644 drivers/dma/sh/rcar-dmac.c
+
+--=20
+Regards,
+
+Laurent Pinchart
 
