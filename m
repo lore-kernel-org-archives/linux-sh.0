@@ -1,61 +1,56 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 04 Nov 2014 01:48:38 +0000
-Subject: [PATCH 14/23 v3] ARM: shmobile: lager: Sound DMA support via DVC on DTS
-Message-Id: <87fvdz91mo.wl%kuninori.morimoto.gx@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 27 Nov 2014 10:57:18 +0000
+Subject: [PATCH/RFC 3/4] ARM: shmobile: r8a7790: Correct mask for GIC PPI interrupts
+Message-Id: <1417085839-22836-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1417085839-22836-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1417085839-22836-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+R-Car H2 (r8a7790) contains four Cortex-A15 and four Cortex-A7 cores,
+hence the second interrupt specifier cell for Private Peripheral
+Interrupts should use "GIC_CPU_MASK_SIMPLE(8)".
 
-DMA transfer uses DVC
-
-     DMA               DMApp
-[MEM] -> [SRC] -> [DVC] -> [SSIU] -> [SSI]
-
-     DMA               DMApp
-[MEM] <- [DVC] <- [SRC] <- [SSIU] <- [SSI]
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v2 -> v3
+Untested.
+Is this correct? Or should the interrupts be delivered to the four
+Cortex-A15 cores only by default?
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
- - no change
-
- arch/arm/boot/dts/r8a7790-lager.dts |   11 +++++++++--
- 1 file changed, 9 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index a249270..2f91740 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -19,6 +19,13 @@
-  * This command is required when Playback/Capture
-  *
-  *	amixer set "LINEOUT Mixer DACL" on
-+ *	amixer set "DVC Out" 100%
-+ *	amixer set "DVC In" 100%
-+ *
-+ * You can use Mute
-+ *
-+ *	amixer set "DVC Out Mute" on
-+ *	amixer set "DVC In Mute" on
-  */
- 
- /dts-v1/;
-@@ -569,8 +576,8 @@
- 
- 	rcar_sound,dai {
- 		dai0 {
--			playback = <&ssi0 &src2>;
--			capture  = <&ssi1 &src3>;
-+			playback = <&ssi0 &src2 &dvc0>;
-+			capture  = <&ssi1 &src3 &dvc1>;
- 		};
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index af7e255f629e3273..8774181c4169b035 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -120,7 +120,7 @@
+ 			<0 0xf1002000 0 0x1000>,
+ 			<0 0xf1004000 0 0x2000>,
+ 			<0 0xf1006000 0 0x2000>;
+-		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
++		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_HIGH)>;
  	};
- };
+ 
+ 	gpio0: gpio@e6050000 {
+@@ -204,10 +204,10 @@
+ 
+ 	timer {
+ 		compatible = "arm,armv7-timer";
+-		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+-			     <1 14 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+-			     <1 11 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+-			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
++		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
++			     <1 14 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
++			     <1 11 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
++			     <1 10 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>;
+ 	};
+ 
+ 	cmt0: timer@ffca0000 {
 -- 
-1.7.9.5
+1.9.1
 
