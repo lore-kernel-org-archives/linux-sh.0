@@ -1,29 +1,44 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Wed, 19 Nov 2014 21:05:56 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 27 Nov 2014 20:48:12 +0000
 Subject: Re: [GIT PULL] Renesas ARM Based SoC Soc Updates for v3.19
-Message-Id: <201411192205.57149.arnd@arndb.de>
+Message-Id: <2367916.IecTPygCF4@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1415058939.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415058939.git.horms+renesas@verge.net.au>
+ <201411192205.57149.arnd@arndb.de>
+In-Reply-To: <201411192205.57149.arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tuesday 04 November 2014, Simon Horman wrote:
-> ----------------------------------------------------------------
-> Renesas ARM Based SoC Soc Updates for v3.19
+Hi Arnd,
+
+On Wednesday 19 November 2014 22:05:56 Arnd Bergmann wrote:
+> On Tuesday 04 November 2014, Simon Horman wrote:
+> > ----------------------------------------------------------------
+> > Renesas ARM Based SoC Soc Updates for v3.19
+> > 
+> > * Select CONFIG_ZONE_DMA when CONFIG_ARM_LPAE is enabled
+> > * Add CA7 arch_timer initialization for r8a7794
+> > * Handle CA7 arch timer delay
+> > * Add shmobile_init_late() to sh7372
+> > 
+> >   - This is consistent with other shmobile SoCs
 > 
-> * Select CONFIG_ZONE_DMA when CONFIG_ARM_LPAE is enabled
-> * Add CA7 arch_timer initialization for r8a7794
-> * Handle CA7 arch timer delay
-> * Add shmobile_init_late() to sh7372
->   - This is consistent with other shmobile SoCs
+> Pulled into next/soc.
+> 
+> Note that the CONFIG_ZONE_DMA change might not be the best solution, we
+> should probably have CONFIG_ZONE_DMA32 instead as some other architectures
+> do, so you can use the entire lowmem area for DMA allocations.
 
-Pulled into next/soc.
+I might be mistaken, but if the machine description doesn't set the 
+dma_zone_size field, arm_dma_zone_size and arm_dma_limit are set to 0 and 
+0xffffffff respectively. This results in MAX_DMA_ADDRESS being set to 
+0xffffffff. Doesn't that allow using the entire lowmem area for DMA 
+allocations ?
 
-Note that the CONFIG_ZONE_DMA change might not be the best solution, we should
-probably have CONFIG_ZONE_DMA32 instead as some other architectures do, so
-you can use the entire lowmem area for DMA allocations.
+-- 
+Regards,
 
-	Arnd
+Laurent Pinchart
+
