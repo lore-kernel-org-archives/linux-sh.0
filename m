@@ -1,34 +1,79 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 21 Nov 2014 04:09:10 +0000
-Subject: Re: [PATCH/RFC] mmc: sh_mmcif: Increase MMCIF clock rate to 97.5MHz
-Message-Id: <20141121040907.GA31076@verge.net.au>
+From: Takanari Hayama <taki@igel.co.jp>
+Date: Thu, 27 Nov 2014 01:25:01 +0000
+Subject: [PATCH v2 1/2] v4l: vsp1: Reset VSP1 RPF source address
+Message-Id: <1417051502-30169-2-git-send-email-taki@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415688142-20023-1-git-send-email-ykaneko0929@gmail.com>
- <87sihoklaj.wl%kuninori.morimoto.gx@renesas.com>
- <20141113002446.GB9195@verge.net.au>
- <87zjbvhoj0.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87zjbvhoj0.wl%kuninori.morimoto.gx@renesas.com>
+References: <1417051502-30169-1-git-send-email-taki@igel.co.jp>
+In-Reply-To: <1417051502-30169-1-git-send-email-taki@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Yoshihiro Kaneko <ykaneko0929@gmail.com>, linux-mmc@vger.kernel.org, Chris Ball <chris@printf.net>, Ulf Hansson <ulf.hansson@linaro.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-On Thu, Nov 13, 2014 at 01:34:13AM +0000, Kuninori Morimoto wrote:
-> 
-> Hi Simon
-> 
-> > you are correct in assuming that this patch came from the BSP.
-> > 
-> > Is your opinion that a) changing the clock rate is good but
-> > b) it needs to be done using a standard method?
-> > 
-> > If so, is the main change required to use a standard binding string
-> > rather than "renesas,clk-rate"? Is the driver change above needed at all?
-> 
-> I'm not 100% understand, but, maybe these settings are required for
-> MMC/SHDI's good performance.
-> I guess we can use CCF method for it ?
+Source address of VSP1 RPF needs to be reset whenever crop offsets are
+recalculated.
 
-That does sound like an idea worth investigating.
-I wonder what the best way is to move this forwards.
+This correctly reflects a crop setting even VIDIOC_QBUF is called
+before VIDIOIC_STREAMON is called.
+
+Signed-off-by: Takanari Hayama <taki@igel.co.jp>
+---
+ drivers/media/platform/vsp1/vsp1_rpf.c  | 15 +++++++++++++++
+ drivers/media/platform/vsp1/vsp1_rwpf.h |  2 ++
+ 2 files changed, 17 insertions(+)
+
+diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
+index d14d26b..79c0db8 100644
+--- a/drivers/media/platform/vsp1/vsp1_rpf.c
++++ b/drivers/media/platform/vsp1/vsp1_rpf.c
+@@ -106,11 +106,22 @@ static int rpf_s_stream(struct v4l2_subdev *subdev, int enable)
+ 			+ crop->left * fmtinfo->bpp[0] / 8;
+ 	pstride = format->plane_fmt[0].bytesperline
+ 		<< VI6_RPF_SRCM_PSTRIDE_Y_SHIFT;
++
++	vsp1_rpf_write(rpf, VI6_RPF_SRCM_ADDR_Y,
++		       rpf->buf_addr[0] + rpf->offsets[0]);
++
+ 	if (format->num_planes > 1) {
+ 		rpf->offsets[1] = crop->top * format->plane_fmt[1].bytesperline
+ 				+ crop->left * fmtinfo->bpp[1] / 8;
+ 		pstride |= format->plane_fmt[1].bytesperline
+ 			<< VI6_RPF_SRCM_PSTRIDE_C_SHIFT;
++
++		vsp1_rpf_write(rpf, VI6_RPF_SRCM_ADDR_C0,
++			       rpf->buf_addr[1] + rpf->offsets[1]);
++
++		if (format->num_planes > 2)
++			vsp1_rpf_write(rpf, VI6_RPF_SRCM_ADDR_C1,
++				       rpf->buf_addr[2] + rpf->offsets[1]);
+ 	}
+ 
+ 	vsp1_rpf_write(rpf, VI6_RPF_SRCM_PSTRIDE, pstride);
+@@ -179,6 +190,10 @@ static void rpf_vdev_queue(struct vsp1_video *video,
+ 			   struct vsp1_video_buffer *buf)
+ {
+ 	struct vsp1_rwpf *rpf = container_of(video, struct vsp1_rwpf, video);
++	int i;
++
++	for (i = 0; i < 3; i++)
++		rpf->buf_addr[i] = buf->addr[i];
+ 
+ 	vsp1_rpf_write(rpf, VI6_RPF_SRCM_ADDR_Y,
+ 		       buf->addr[0] + rpf->offsets[0]);
+diff --git a/drivers/media/platform/vsp1/vsp1_rwpf.h b/drivers/media/platform/vsp1/vsp1_rwpf.h
+index 28dd9e7..1c793bc 100644
+--- a/drivers/media/platform/vsp1/vsp1_rwpf.h
++++ b/drivers/media/platform/vsp1/vsp1_rwpf.h
+@@ -39,6 +39,8 @@ struct vsp1_rwpf {
+ 	struct v4l2_rect crop;
+ 
+ 	unsigned int offsets[2];
++
++	dma_addr_t buf_addr[3];
+ };
+ 
+ static inline struct vsp1_rwpf *to_rwpf(struct v4l2_subdev *subdev)
+-- 
+1.8.0
+
