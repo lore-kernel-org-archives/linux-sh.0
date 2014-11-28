@@ -1,319 +1,93 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 25 Nov 2014 12:04:15 +0000
-Subject: Re: [PATCH v6 1/6] clk: shmobile: sh73a0 common clock framework implementation
-Message-Id: <4500133.s0Msy3tJmU@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 28 Nov 2014 00:22:41 +0000
+Subject: [PATCH v5][resend] of: replace Asahi Kasei Corp venter prefix
+Message-Id: <87egsob2cl.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416500463-20965-2-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1416500463-20965-2-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <878ulzx6hr.wl%kuninori.morimoto.gx@gmail.com>
+	<20140922130026.GK3290@leverpostej>
+	<CAMuHMdX22z97SbGS1HDiYfJ1PXxyEN2S8D7w4sr+4bUwD+mJZw@mail.gmail.com>
+	<20140922132743.GM3290@leverpostej>
+	<87y4rfhmgl.wl%kuninori.morimoto.gx@renesas.com>
+	<1415845309.4269.6.camel@perches.com>
+	<20141113025105.GA16652@verge.net.au>
+	<87vbmjhj00.wl%kuninori.morimoto.gx@renesas.com>
+	<20141113110740.GE3815@sirena.org.uk>
+	<87k32yd0bd.wl%kuninori.morimoto.gx@renesas.com>
+	<20141114093554.GC3810@ulmo>
+	<87y4ra8xac.wl%kuninori.morimoto.gx@renesas.com>
+	<5469CD47.3040409@cogentembedded.com>
+	<877fytxsde.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <877fytxsde.wl%kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Matthias Brugger <matthias.bgg-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Jason Cooper <jason-NLaQJdtUoK4Be96aLqz0jA@public.gmane.org>, Heiko Stuebner <heiko-4mtYJXux2i+zQB+pC5nmwQ@public.gmane.org>, Shawn Guo <shawn.guo-KZfg59tc24xl57MIdRCFDg@public.gmane.org>, Florian Vaussard <florian.vaussard-p8DiymsW2f8@public.gmane.org>, Rob Herring <robh-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Thierry Reding <thierry.reding-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, ALSA Development Mailing List <alsa-devel-K7yf7f+aM1XWsZ/bQMPhNw@public.gmane.org>, linux-tegra-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Stephen Warren <swarren-3lzwWm7+Weoh9ZMKESR00Q@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Olof Johansson <olof-nZhT3qVonbNeoWH0uzbU5w@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Joe Perches <joe-6d6DIl74uiNBDgjK7y7TUQ@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, "grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org" <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>
 
-Hi Ulrich,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thank you for the patch. Most of the comments I've sent for "[PATCH v2 1/6] 
-clk: shmobile: r8a73a4 common clock framework implementation" apply here too. 
-Let's discuss them in the r8a73a4 mail thread. Please see below for additional 
-comments.
+Current vendor-prefixes.txt already has "ak" prefix for Asahi Kasei Corp
+by ae8c4209af2c(of: Add vendor prefix for Asahi Kasei Corp.)
 
-On Thursday 20 November 2014 17:20:58 Ulrich Hecht wrote:
-> Driver for the SH73A0's clocks that are too specific to be supported by a
-> generic driver.
-> 
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> Acked-by: Mike Turquette <mturquette@linaro.org>
-> Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
->  .../bindings/clock/renesas,sh73a0-cpg-clocks.txt   |  35 ++++
->  drivers/clk/shmobile/Makefile                      |   1 +
->  drivers/clk/shmobile/clk-sh73a0.c                  | 204 ++++++++++++++++++
->  3 files changed, 240 insertions(+)
->  create mode 100644
-> Documentation/devicetree/bindings/clock/renesas,sh73a0-cpg-clocks.txt
-> create mode 100644 drivers/clk/shmobile/clk-sh73a0.c
-> 
-> diff --git
-> a/Documentation/devicetree/bindings/clock/renesas,sh73a0-cpg-clocks.txt
-> b/Documentation/devicetree/bindings/clock/renesas,sh73a0-cpg-clocks.txt new
-> file mode 100644
-> index 0000000..a8978ec
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/clock/renesas,sh73a0-cpg-clocks.txt
-> @@ -0,0 +1,35 @@
-> +These bindings should be considered EXPERIMENTAL for now.
-> +
-> +* Renesas SH73A0 Clock Pulse Generator (CPG)
-> +
-> +The CPG generates core clocks for the SH73A0 SoC. It includes four PLLs
-> +and several fixed ratio dividers.
-> +
-> +Required Properties:
-> +
-> +  - compatible: Must be "renesas,sh73a0-cpg-clocks"
-> +
-> +  - reg: Base address and length of the memory resource used by the CPG
-> +
-> +  - clocks: Reference to the parent clocks ("extal1" and "extal2")
-> +
-> +  - #clock-cells: Must be 1
-> +
-> +  - clock-output-names: The names of the clocks. Supported clocks are
-> "main", +    "pll0", "pll1", "pll2", "pll3", "dsi0phy", "dsi1phy", "zg",
-> "m3", "b", +    "m1", "m2", "z", "zx", and "hp".
-> +
-> +
-> +Example
-> +-------
-> +
-> +        cpg_clocks: cpg_clocks@e6150000 {
-> +                compatible = "renesas,sh73a0-cpg-clocks";
-> +                reg = <0 0xe6150000 0 0x10000>;
-> +                clocks = <&extal1_clk>, <&extal2_clk>;
-> +                #clock-cells = <1>;
-> +                clock-output-names = "main", "pll0", "pll1", "pll2",
-> +                                     "pll3", "dsi0phy", "dsi1phy",
-> +                                     "zg", "m3", "b", "m1", "m2",
-> +                                     "z", "zx", "hp";
-> +        };
-> diff --git a/drivers/clk/shmobile/Makefile b/drivers/clk/shmobile/Makefile
-> index 960bf22..f83980f 100644
-> --- a/drivers/clk/shmobile/Makefile
-> +++ b/drivers/clk/shmobile/Makefile
-> @@ -5,5 +5,6 @@ obj-$(CONFIG_ARCH_R8A7779)		+= clk-r8a7779.o
->  obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o
->  obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o
->  obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o
-> +obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o
->  obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-div6.o
->  obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-mstp.o
-> diff --git a/drivers/clk/shmobile/clk-sh73a0.c
-> b/drivers/clk/shmobile/clk-sh73a0.c new file mode 100644
-> index 0000000..ebd51d1
-> --- /dev/null
-> +++ b/drivers/clk/shmobile/clk-sh73a0.c
-> @@ -0,0 +1,204 @@
-> +/*
-> + * sh73a0 Core CPG Clocks
-> + *
-> + * Copyright (C) 2014  Ulrich Hecht
-> + *
-> + * This program is free software; you can redistribute it and/or modify
-> + * it under the terms of the GNU General Public License as published by
-> + * the Free Software Foundation; version 2 of the License.
-> + */
-> +
-> +#include <linux/clk-provider.h>
-> +#include <linux/clkdev.h>
-> +#include <linux/clk/shmobile.h>
-> +#include <linux/init.h>
-> +#include <linux/kernel.h>
-> +#include <linux/of.h>
-> +#include <linux/of_address.h>
-> +#include <linux/spinlock.h>
-> +
-> +struct sh73a0_cpg {
-> +	struct clk_onecell_data data;
-> +	spinlock_t lock;
-> +	void __iomem *reg;
-> +};
-> +
-> +#define CPG_FRQCRA	0x00
-> +#define CPG_FRQCRB	0x04
-> +#define CPG_SD0CKCR	0x74
-> +#define CPG_SD1CKCR	0x78
-> +#define CPG_SD2CKCR	0x7c
-> +#define CPG_PLLECR	0xd0
-> +#define CPG_PLL0CR	0xd8
-> +#define CPG_PLL1CR	0x28
-> +#define CPG_PLL2CR	0x2c
-> +#define CPG_PLL3CR	0xdc
-> +#define CPG_CKSCR	0xc0
-> +#define CPG_DSI0PHYCR	0x6c
-> +#define CPG_DSI1PHYCR	0x70
-> +
-> +#define CLK_ENABLE_ON_INIT BIT(0)
-> +
-> +struct div4_clk {
-> +	const char *name;
-> +	const char *parent;
-> +	unsigned int reg;
-> +	unsigned int shift;
-> +	unsigned int mask;
-> +	int flags;
-> +};
-> +
-> +static struct div4_clk div4_clks[] = {
-> +	{ "zg", "pll0", CPG_FRQCRA, 16, 0x0d7f, CLK_ENABLE_ON_INIT },
+It went through the appropriate review process. But, almost all
+Asahi Kasei chip drivers are using "asahi-kasei" prefix today.
+(arch/arm/boot/dts/tegra20-seaboard.dts only is using "ak,ak8975",
+ but there are instances of "asahi-kasei,ak8975" in other dts files.
+ And drivers/iio/magnetometer/ak8975.c doesn't support "ak,ak8975" prefix)
+So, we made a mistake there.
 
-According to the datasheet the ZGFC value 1010 results in a x1/5 factor, which 
-doesn't match the value in the div4_div_table below. I wonder if it could be 
-an error in the datasheet though.
+In addition, checkpatch.pl reports WARNING if it is using "asahi-kasei"
+prerfix in DT file.
+(DT compatible string vendor "asahi-kasei" appears un-documented)
 
-> +	{ "m3", "pll1", CPG_FRQCRA, 12, 0x1dff, CLK_ENABLE_ON_INIT },
-> +	{ "b",  "pll1", CPG_FRQCRA,  8, 0x0dff, CLK_ENABLE_ON_INIT },
-> +	{ "m1", "pll1", CPG_FRQCRA,  4, 0x1dff, 0 },
-> +	{ "m2", "pll1", CPG_FRQCRA,  0, 0x1dff, 0 },
-> +	{ "z",  "pll0", CPG_FRQCRB, 24, 0x097f, 0 },
-> +	{ "zx", "pll1", CPG_FRQCRB, 12, 0x0dff, 0 },
-> +	{ "hp", "pll1", CPG_FRQCRB,  4, 0x0dff, 0 },
-> +	{ NULL, 0, 0, 0, 0 },
-> +};
-> +
-> +static const struct clk_div_table div4_div_table[] = {
-> +	{ 0, 2 }, { 1, 3 }, { 2, 4 }, { 3, 6 }, { 4, 8 }, { 5, 12 },
-> +	{ 6, 16 }, { 7, 18 }, { 8, 24 }, { 10, 36 }, { 11, 48 },
-> +	{ 12, 7 }, { 0, 0 }
-> +};
-> +
-> +static struct clk * __init
-> +sh73a0_cpg_register_clock(struct device_node *np, struct sh73a0_cpg *cpg,
-> +			     const char *name)
-> +{
-> +	const struct clk_div_table *table = NULL;
-> +	const char *parent_name;
-> +	unsigned int shift, reg;
-> +	unsigned int mult = 1;
-> +	unsigned int div = 1;
-> +
-> +	if (!strcmp(name, "main")) {
-> +		/* extal1, extal1_div2, extal2, extal2_div2 */
-> +		u32 parent_idx = (clk_readl(cpg->reg + CPG_CKSCR) >> 28) & 3;
-> +
-> +		parent_name = of_clk_get_parent_name(np, parent_idx >> 1);
-> +		div = (parent_idx & 1) + 1;
-> +	} else if (!strncmp(name, "pll", 3)) {
-> +		void __iomem *enable_reg = cpg->reg;
-> +		u32 enable_bit = name[3] - '0';
-> +
-> +		parent_name = "main";
-> +		switch (enable_bit) {
-> +		case 0:
-> +			enable_reg += CPG_PLL0CR;
-> +			break;
-> +		case 1:
-> +			enable_reg += CPG_PLL1CR;
-> +			break;
-> +		case 2:
-> +			enable_reg += CPG_PLL2CR;
-> +			break;
-> +		case 3:
-> +			enable_reg += CPG_PLL3CR;
-> +			break;
-> +		default:
-> +			return ERR_PTR(-EINVAL);
-> +		}
-> +		if (clk_readl(cpg->reg + CPG_PLLECR) & BIT(enable_bit)) {
-> +			mult = ((clk_readl(enable_reg) >> 24) & 0x3f) + 1;
-> +			/* handle CFG bit for PLL1 and PLL2 */
-> +			if (enable_bit = 1 || enable_bit = 2)
-> +				if (clk_readl(enable_reg) & BIT(20))
+Marking it deprecated and warning with checkpatch is certainly
+preferable. So, this patch replace "ak" to "asahi-kasei" in
+vendor-prefixes.txt. (and fixup tegra20-seaboard)
 
-Nitpicking, I would have cached the enable_reg value.
+OTOH, Asahi Kasei is usually referred to as "AKM", but this patch
+doesn't care about it. Because no DT is using that today.
 
-> +					mult *= 2;
-> +		}
-> +	} else if (!strcmp(name, "dsi0phy") || !strcmp(name, "dsi1phy")) {
-> +		u32 phy_no = name[3] - '0';
-> +		void __iomem *dsi_reg = cpg->reg +
-> +			(phy_no ? CPG_DSI1PHYCR : CPG_DSI0PHYCR);
-> +
-> +		parent_name = phy_no ? "dsi1pck" : "dsi0pck";
-> +		div = __raw_readl(dsi_reg);
-> +		if (!(div & 0xb8000))
+Acked-by: Thierry Reding <treding@nvidia.com>
+Acked-by: Alexandre Courbot <acourbot@nvidia.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ .../devicetree/bindings/vendor-prefixes.txt        |    2 +-
+ arch/arm/boot/dts/tegra20-seaboard.dts             |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-If I'm not mistaken the PLL is disabled if the MANUAL bit is set and the BYPSL 
-is clear. The above check would consider the PLL to be enabled.
-
-> +			div = 1;
-> +		else
-> +			div = (div & 0x3f) + 1;
-> +	} else {
-> +		struct div4_clk *c;
-> +
-> +		for (c = div4_clks; c->name; c++) {
-> +			if (!strcmp(name, c->name)) {
-> +				parent_name = c->parent;
-> +				table = div4_div_table;
-> +				reg = c->reg;
-> +				shift = c->shift;
-> +				break;
-> +			}
-> +		}
-> +		if (!c->name)
-> +			return ERR_PTR(-EINVAL);
-> +	}
-> +
-> +	if (!table) {
-> +		return clk_register_fixed_factor(NULL, name, parent_name, 0,
-> +						 mult, div);
-> +	} else {
-> +		return clk_register_divider_table(NULL, name, parent_name, 0,
-> +						  cpg->reg + reg, shift, 4, 0,
-> +						  table, &cpg->lock);
-> +	}
-> +}
-> +
-> +static void __init sh73a0_cpg_clocks_init(struct device_node *np)
-> +{
-> +	struct sh73a0_cpg *cpg;
-> +	struct clk **clks;
-> +	unsigned int i;
-> +	int num_clks;
-> +
-> +	num_clks = of_property_count_strings(np, "clock-output-names");
-> +	if (num_clks < 0) {
-> +		pr_err("%s: failed to count clocks\n", __func__);
-> +		return;
-> +	}
-> +
-> +	cpg = kzalloc(sizeof(*cpg), GFP_KERNEL);
-> +	clks = kcalloc(num_clks, sizeof(*clks), GFP_KERNEL);
-> +	if (cpg = NULL || clks = NULL) {
-> +		/* We're leaking memory on purpose, there's no point in cleaning
-> +		 * up as the system won't boot anyway.
-> +		 */
-> +		return;
-> +	}
-> +
-> +	spin_lock_init(&cpg->lock);
-> +
-> +	cpg->data.clks = clks;
-> +	cpg->data.clk_num = num_clks;
-> +
-> +	cpg->reg = of_iomap(np, 0);
-> +	if (WARN_ON(cpg->reg = NULL))
-> +		return;
-> +
-> +	/* Set SDHI clocks to a known state */
-> +	clk_writel(0x108, cpg->reg + CPG_SD0CKCR);
-> +	clk_writel(0x108, cpg->reg + CPG_SD1CKCR);
-> +	clk_writel(0x108, cpg->reg + CPG_SD2CKCR);
-
-Why is this needed ?
-
-> +	for (i = 0; i < num_clks; ++i) {
-> +		const char *name;
-> +		struct clk *clk;
-> +
-> +		of_property_read_string_index(np, "clock-output-names", i,
-> +					      &name);
-> +
-> +		clk = sh73a0_cpg_register_clock(np, cpg, name);
-> +		if (IS_ERR(clk))
-> +			pr_err("%s: failed to register %s %s clock (%ld)\n",
-> +			       __func__, np->name, name, PTR_ERR(clk));
-> +		else
-> +			cpg->data.clks[i] = clk;
-> +	}
-> +
-> +	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
-> +}
-> +CLK_OF_DECLARE(sh73a0_cpg_clks, "renesas,sh73a0-cpg-clocks",
-> +	       sh73a0_cpg_clocks_init);
-
+diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
+index 723999d..ddcb4cd 100644
+--- a/Documentation/devicetree/bindings/vendor-prefixes.txt
++++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
+@@ -9,7 +9,6 @@ ad	Avionic Design GmbH
+ adapteva	Adapteva, Inc.
+ adi	Analog Devices, Inc.
+ aeroflexgaisler	Aeroflex Gaisler AB
+-ak	Asahi Kasei Corp.
+ allwinner	Allwinner Technology Co., Ltd.
+ altr	Altera Corp.
+ amcc	Applied Micro Circuits Corporation (APM, formally AMCC)
+@@ -20,6 +19,7 @@ amstaos	AMS-Taos Inc.
+ apm	Applied Micro Circuits Corporation (APM)
+ arm	ARM Ltd.
+ armadeus	ARMadeus Systems SARL
++asahi-kasei	Asahi Kasei Corp.
+ atmel	Atmel Corporation
+ auo	AU Optronics Corporation
+ avago	Avago Technologies
+diff --git a/arch/arm/boot/dts/tegra20-seaboard.dts b/arch/arm/boot/dts/tegra20-seaboard.dts
+index a1d4bf9..7f5cf80 100644
+--- a/arch/arm/boot/dts/tegra20-seaboard.dts
++++ b/arch/arm/boot/dts/tegra20-seaboard.dts
+@@ -405,7 +405,7 @@
+ 		clock-frequency = <400000>;
+ 
+ 		magnetometer@c {
+-			compatible = "ak,ak8975";
++			compatible = "asahi-kasei,ak8975";
+ 			reg = <0xc>;
+ 			interrupt-parent = <&gpio>;
+ 			interrupts = <TEGRA_GPIO(N, 5) IRQ_TYPE_LEVEL_HIGH>;
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
