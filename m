@@ -1,356 +1,74 @@
-From: Mathieu Poirier <mathieu.poirier@linaro.org>
-Date: Mon, 03 Nov 2014 21:24:46 +0000
-Subject: Re: [PATCH v4 8/9] ARM: shmobile: r8a7740 dtsi: Add PM domain support
-Message-Id: <CANLsYkxQCcMCiDiLrda_vbHNcgMZYpvF-Scd58vcX6Ln1t2B4Q@mail.gmail.com>
+From: Soren Brinkmann <soren.brinkmann@xilinx.com>
+Date: Fri, 28 Nov 2014 01:26:26 +0000
+Subject: [PATCH v2 0/7] Pinctrl support for Zynq
+Message-Id: <1417137993-8337-1-git-send-email-soren.brinkmann@xilinx.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415028896-9005-1-git-send-email-geert+renesas@glider.be>
- <1415028896-9005-9-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1415028896-9005-9-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On 3 November 2014 08:34, Geert Uytterhoeven <geert+renesas@glider.be> wrote:
-> Add a device node for the System Controller, with subnodes that
-> represent the hardware power area hierarchy.
-> Hook up all devices to their respective PM domains.
->
-> Add a minimal device node for the Coresight-ETM hardware block, and hook
-> it up to the D4 PM domain, so the R-Mobile System Controller driver can
-> keep the domain powered, until the new Coresight code handles runtime
-> PM.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> v4:
->   - Remove power-domains properties from clocks, as these will not be
->     instantiated as platform devices,
->   - Fix indentation of power-domains property in pfc node,
->   - Add minimal node for Coresight-ETM,
->   - Add power-domains properties to the recently added TMU nodes,
-> v3:
->   - Move power-on/off latencies to a separate patch,
->   - Add dependencies,
-> v2:
->   - Insert power-domains property after clock-names property in the cmt1
->     node.
-> ---
->  arch/arm/boot/dts/r8a7740.dtsi | 99 ++++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 99 insertions(+)
->
-> diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-> index aec8da89ef9ac766..20d2b56773fbf069 100644
-> --- a/arch/arm/boot/dts/r8a7740.dtsi
-> +++ b/arch/arm/boot/dts/r8a7740.dtsi
-> @@ -25,6 +25,7 @@
->                         device_type = "cpu";
->                         reg = <0x0>;
->                         clock-frequency = <800000000>;
-> +                       power-domains = <&pd_a3sm>;
+Hi all,
 
-Perfect - I'm taking the same approach on TC2 for coresight.  That way
-the system doesn't crash when accessing the coresight registers of an
-ETM/PTM belonging to a CPU in a powered down cluster.
+here is v2 of this series. On the functional side, adding the support
+for USB mux groups is probably the biggest change. Most other changes
+are mostly cosmetic (typos, function names, documentation, ...).
+More detailed changelogs are included with the respective patches.
 
->                 };
->         };
->
-> @@ -41,12 +42,18 @@
->                 interrupts = <0 83 IRQ_TYPE_LEVEL_HIGH>;
->         };
->
-> +       ptm {
-> +               compatible = "arm,coresight-etm3x";
-> +               power-domains = <&pd_d4>;
-> +       };
-> +
->         cmt1: timer@e6138000 {
->                 compatible = "renesas,cmt-48-r8a7740", "renesas,cmt-48";
->                 reg = <0xe6138000 0x170>;
->                 interrupts = <0 58 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp3_clks R8A7740_CLK_CMT1>;
->                 clock-names = "fck";
-> +               power-domains = <&pd_c5>;
->
->                 renesas,channels-mask = <0x3f>;
->
-> @@ -72,6 +79,7 @@
->                               0 149 IRQ_TYPE_LEVEL_HIGH
->                               0 149 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
-> +               power-domains = <&pd_a4s>;
->         };
->
->         /* irqpin1: IRQ8 - IRQ15 */
-> @@ -93,6 +101,7 @@
->                               0 149 IRQ_TYPE_LEVEL_HIGH
->                               0 149 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
-> +               power-domains = <&pd_a4s>;
->         };
->
->         /* irqpin2: IRQ16 - IRQ23 */
-> @@ -114,6 +123,7 @@
->                               0 149 IRQ_TYPE_LEVEL_HIGH
->                               0 149 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
-> +               power-domains = <&pd_a4s>;
->         };
->
->         /* irqpin3: IRQ24 - IRQ31 */
-> @@ -135,6 +145,7 @@
->                               0 149 IRQ_TYPE_LEVEL_HIGH
->                               0 149 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
-> +               power-domains = <&pd_a4s>;
->         };
->
->         ether: ethernet@e9a00000 {
-> @@ -143,6 +154,7 @@
->                       <0xe9a01800 0x800>;
->                 interrupts = <0 110 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp3_clks R8A7740_CLK_GETHER>;
-> +               power-domains = <&pd_a4s>;
->                 phy-mode = "mii";
->                 #address-cells = <1>;
->                 #size-cells = <0>;
-> @@ -159,6 +171,7 @@
->                               0 203 IRQ_TYPE_LEVEL_HIGH
->                               0 204 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp1_clks R8A7740_CLK_IIC0>;
-> +               power-domains = <&pd_a4r>;
->                 status = "disabled";
->         };
->
-> @@ -172,6 +185,7 @@
->                               0 72 IRQ_TYPE_LEVEL_HIGH
->                               0 73 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp3_clks R8A7740_CLK_IIC1>;
-> +               power-domains = <&pd_a3sp>;
->                 status = "disabled";
->         };
->
-> @@ -181,6 +195,7 @@
->                 interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp2_clks R8A7740_CLK_SCIFA0>;
->                 clock-names = "sci_ick";
-> +               power-domains = <&pd_a3sp>;
->                 status = "disabled";
->         };
->
-> @@ -190,6 +205,7 @@
->                 interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp2_clks R8A7740_CLK_SCIFA1>;
->                 clock-names = "sci_ick";
-> +               power-domains = <&pd_a3sp>;
->                 status = "disabled";
->         };
->
-> @@ -199,6 +215,7 @@
->                 interrupts = <0 102 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp2_clks R8A7740_CLK_SCIFA2>;
->                 clock-names = "sci_ick";
-> +               power-domains = <&pd_a3sp>;
->                 status = "disabled";
->         };
->
-> @@ -208,6 +225,7 @@
->                 interrupts = <0 103 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp2_clks R8A7740_CLK_SCIFA3>;
->                 clock-names = "sci_ick";
-> +               power-domains = <&pd_a3sp>;
->                 status = "disabled";
->         };
->
-> @@ -217,6 +235,7 @@
->                 interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp2_clks R8A7740_CLK_SCIFA4>;
->                 clock-names = "sci_ick";
-> +               power-domains = <&pd_a3sp>;
->                 status = "disabled";
->         };
->
-> @@ -226,6 +245,7 @@
->                 interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp2_clks R8A7740_CLK_SCIFA5>;
->                 clock-names = "sci_ick";
-> +               power-domains = <&pd_a3sp>;
->                 status = "disabled";
->         };
->
-> @@ -235,6 +255,7 @@
->                 interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp2_clks R8A7740_CLK_SCIFA6>;
->                 clock-names = "sci_ick";
-> +               power-domains = <&pd_a3sp>;
->                 status = "disabled";
->         };
->
-> @@ -244,6 +265,7 @@
->                 interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp2_clks R8A7740_CLK_SCIFA7>;
->                 clock-names = "sci_ick";
-> +               power-domains = <&pd_a3sp>;
->                 status = "disabled";
->         };
->
-> @@ -253,6 +275,7 @@
->                 interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp2_clks R8A7740_CLK_SCIFB>;
->                 clock-names = "sci_ick";
-> +               power-domains = <&pd_a3sp>;
->                 status = "disabled";
->         };
->
-> @@ -271,12 +294,14 @@
->                         <&irqpin2 4 0>, <&irqpin2 5 0>, <&irqpin2 6 0>, <&irqpin2 7 0>,
->                         <&irqpin3 0 0>, <&irqpin3 1 0>, <&irqpin3 2 0>, <&irqpin3 3 0>,
->                         <&irqpin3 4 0>, <&irqpin3 5 0>, <&irqpin3 6 0>, <&irqpin3 7 0>;
-> +               power-domains = <&pd_c5>;
->         };
->
->         tpu: pwm@e6600000 {
->                 compatible = "renesas,tpu-r8a7740", "renesas,tpu";
->                 reg = <0xe6600000 0x100>;
->                 clocks = <&mstp3_clks R8A7740_CLK_TPU0>;
-> +               power-domains = <&pd_a3sp>;
->                 status = "disabled";
->                 #pwm-cells = <3>;
->         };
-> @@ -287,6 +312,7 @@
->                 interrupts = <0 56 IRQ_TYPE_LEVEL_HIGH
->                               0 57 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp3_clks R8A7740_CLK_MMC>;
-> +               power-domains = <&pd_a3sp>;
->                 status = "disabled";
->         };
->
-> @@ -297,6 +323,7 @@
->                               0 118 IRQ_TYPE_LEVEL_HIGH
->                               0 119 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp3_clks R8A7740_CLK_SDHI0>;
-> +               power-domains = <&pd_a3sp>;
->                 cap-sd-highspeed;
->                 cap-sdio-irq;
->                 status = "disabled";
-> @@ -309,6 +336,7 @@
->                               0 122 IRQ_TYPE_LEVEL_HIGH
->                               0 123 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp3_clks R8A7740_CLK_SDHI1>;
-> +               power-domains = <&pd_a3sp>;
->                 cap-sd-highspeed;
->                 cap-sdio-irq;
->                 status = "disabled";
-> @@ -321,6 +349,7 @@
->                               0 126 IRQ_TYPE_LEVEL_HIGH
->                               0 127 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp4_clks R8A7740_CLK_SDHI2>;
-> +               power-domains = <&pd_a3sp>;
->                 cap-sd-highspeed;
->                 cap-sdio-irq;
->                 status = "disabled";
-> @@ -332,6 +361,7 @@
->                 reg = <0xfe1f0000 0x400>;
->                 interrupts = <0 9 0x4>;
->                 clocks = <&mstp3_clks R8A7740_CLK_FSI>;
-> +               power-domains = <&pd_a4mp>;
->                 status = "disabled";
->         };
->
-> @@ -343,6 +373,7 @@
->                              <0 200 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp1_clks R8A7740_CLK_TMU0>;
->                 clock-names = "fck";
-> +               power-domains = <&pd_a4r>;
->
->                 #renesas,channels = <3>;
->
-> @@ -357,6 +388,7 @@
->                              <0 172 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp1_clks R8A7740_CLK_TMU1>;
->                 clock-names = "fck";
-> +               power-domains = <&pd_a4r>;
->
->                 #renesas,channels = <3>;
->
-> @@ -543,4 +575,71 @@
->                                 "usbhost", "sdhi2", "usbfunc", "usphy";
->                 };
->         };
-> +
-> +       sysc: system-controller@e6180000 {
-> +               compatible = "renesas,sysc-r8a7740", "renesas,sysc-rmobile";
-> +               reg = <0xe6180000 8000>, <0xe6188000 8000>;
-> +
-> +               pm-domains {
-> +                       pd_c5: c5 {
-> +                               #address-cells = <1>;
-> +                               #size-cells = <0>;
-> +                               #power-domain-cells = <0>;
-> +
-> +                               pd_a4lc: a4lc@1 {
-> +                                       reg = <1>;
-> +                                       #power-domain-cells = <0>;
-> +                               };
-> +
-> +                               pd_a4mp: a4mp@2 {
-> +                                       reg = <2>;
-> +                                       #power-domain-cells = <0>;
-> +                               };
-> +
-> +                               pd_d4: d4@3 {
-> +                                       reg = <3>;
-> +                                       #power-domain-cells = <0>;
-> +                               };
-> +
-> +                               pd_a4r: a4r@5 {
-> +                                       reg = <5>;
-> +                                       #address-cells = <1>;
-> +                                       #size-cells = <0>;
-> +                                       #power-domain-cells = <0>;
-> +
-> +                                       pd_a3rv: a3rv@6 {
-> +                                               reg = <6>;
-> +                                               #power-domain-cells = <0>;
-> +                                       };
-> +                               };
-> +
-> +                               pd_a4s: a4s@10 {
-> +                                       reg = <10>;
-> +                                       #address-cells = <1>;
-> +                                       #size-cells = <0>;
-> +                                       #power-domain-cells = <0>;
-> +
-> +                                       pd_a3sp: a3sp@11 {
-> +                                               reg = <11>;
-> +                                               #power-domain-cells = <0>;
-> +                                       };
-> +
-> +                                       pd_a3sm: a3sm@12 {
-> +                                               reg = <12>;
-> +                                               #power-domain-cells = <0>;
-> +                                       };
-> +
-> +                                       pd_a3sg: a3sg@13 {
-> +                                               reg = <13>;
-> +                                               #power-domain-cells = <0>;
-> +                                       };
-> +                               };
-> +
-> +                               pd_a4su: a4su@20 {
-> +                                       reg = <20>;
-> +                                       #power-domain-cells = <0>;
-> +                               };
-> +                       };
-> +               };
-> +       };
->  };
-> --
-> 1.9.1
->
->
-> _______________________________________________
-> linux-arm-kernel mailing list
-> linux-arm-kernel@lists.infradead.org
-> http://lists.infradead.org/mailman/listinfo/linux-arm-kernel
+Regarding DT, I separated pinconf from pinmux nodes and updated
+documentation accordingly to enforce that separation.
+The parser, though, still handles everything in order to not break
+backwards compatibility.
+
+And finally, as Linus requested, I patched one of the Qualcomm drivers
+to use the features added in 'pinctrl: pinconf-generic: Allow driver to
+specify DT params'. I don't have that HW so, that is compile tested only
+and may take some more work to work on HW.
+
+So much for the changes. What didn't change? I left the parts that have
+been described as "kludgy" as they were, in order to maintain backwards
+compatibility and not break current users of pinconf-generic
+functionality.
+
+The audience is again limited to pinctrl stakeholders.
+
+	Thanks,
+	S=C3=B6ren
+
+Soren Brinkmann (7):
+  pinctrl: pinconf-generic: Infer map type from DT property
+  pinctrl: pinconf-generic: Allow driver to specify DT params
+  pinctrl: zynq: Document DT binding
+  pinctrl: Add driver for Zynq
+  ARM: zynq: Enable pinctrl
+  ARM: zynq: DT: Add pinctrl information
+  pinctrl: qcom-spmi-gpio: Migrate to pinconf-generic
+
+ .../bindings/pinctrl/xlnx,zynq-pinctrl.txt         |  104 ++
+ arch/arm/boot/dts/zynq-7000.dtsi                   |    8 +-
+ arch/arm/boot/dts/zynq-zc702.dts                   |  181 +++
+ arch/arm/boot/dts/zynq-zc706.dts                   |  152 +++
+ arch/arm/mach-zynq/Kconfig                         |    2 +
+ drivers/pinctrl/Kconfig                            |    8 +
+ drivers/pinctrl/Makefile                           |    1 +
+ drivers/pinctrl/nomadik/pinctrl-abx500.c           |    2 +-
+ drivers/pinctrl/pinconf-generic.c                  |  199 ++--
+ drivers/pinctrl/pinconf.c                          |    4 +-
+ drivers/pinctrl/pinconf.h                          |   22 +-
+ drivers/pinctrl/pinctrl-rockchip.c                 |    2 +-
+ drivers/pinctrl/pinctrl-tz1090-pdc.c               |    2 +-
+ drivers/pinctrl/pinctrl-tz1090.c                   |    2 +-
+ drivers/pinctrl/pinctrl-zynq.c                     | 1176 ++++++++++++++++=
+++++
+ drivers/pinctrl/qcom/pinctrl-spmi-gpio.c           |  125 +--
+ drivers/pinctrl/sh-pfc/pinctrl.c                   |    2 +-
+ include/linux/pinctrl/pinconf-generic.h            |   25 +
+ include/linux/pinctrl/pinctrl.h                    |    9 +
+ 19 files changed, 1804 insertions(+), 222 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/pinctrl/xlnx,zynq-pin=
+ctrl.txt
+ create mode 100644 drivers/pinctrl/pinctrl-zynq.c
+
+--=20
+2.1.3.1.ge241007
+
