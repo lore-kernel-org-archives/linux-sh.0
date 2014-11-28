@@ -1,154 +1,467 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 17 Nov 2014 13:30:38 +0000
-Subject: [PATCH v5 2/8] PM / Domains: Add DT bindings for the R-Mobile System Controller
-Message-Id: <1416231044-1903-3-git-send-email-geert+renesas@glider.be>
+From: Soren Brinkmann <soren.brinkmann@xilinx.com>
+Date: Fri, 28 Nov 2014 01:26:32 +0000
+Subject: [PATCH v2 6/7] ARM: zynq: DT: Add pinctrl information
+Message-Id: <1417137993-8337-7-git-send-email-soren.brinkmann@xilinx.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416231044-1903-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1416231044-1903-1-git-send-email-geert+renesas@glider.be>
+References: <1417137993-8337-1-git-send-email-soren.brinkmann@xilinx.com>
+In-Reply-To: <1417137993-8337-1-git-send-email-soren.brinkmann@xilinx.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-The Renesas R-Mobile System Controller provides a.o. power management
-support, following the generic PM domain bindings in
-Documentation/devicetree/bindings/power/power_domain.txt.
+Add pinctrl descriptions to the zc702 and zc706 device trees.
 
-For now this supports the R-Mobile A1 (r8a7740) only, but it should be
-sufficiently generic to handle other members of the SH-Mobile/R-Mobile
-family in the future.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
+Signed-off-by: Soren Brinkmann <soren.brinkmann@xilinx.com>
+Tested-by: Andreas F=C3=A4rber <afaerber@suse.de>
 ---
-v5:
-  - No changes,
-v4:
-  - Drop device save/restore state latencies, as they're Linux driver-specific,
-  - Drop PM QoS device latencies, as they're put on hold,
-v3:
-  - Reword,
-v2:
-  - Fix copy-and-paste s/#address-cells/#size-cells/,
-  - Add optional PM QoS device latencies.
----
- .../bindings/power/renesas,sysc-rmobile.txt        | 107 +++++++++++++++++++++
- 1 file changed, 107 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
+Changes since v1:
+ - remove 'pinctrl-' prefix for pinctrl sub-nodes
+ - separate config and mux nodes
 
-diff --git a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-new file mode 100644
-index 0000000000000000..89ca3f35aec69750
---- /dev/null
-+++ b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-@@ -0,0 +1,107 @@
-+DT bindings for the Renesas R-Mobile System Controller
+Changes since RFC v2:
+ - add pinconf properties to zc702 mdio node
+ - remove arguments from bias-related props
+
+Changes since RFC v1:
+ - separate DT changes into their own patch
+---
+ arch/arm/boot/dts/zynq-7000.dtsi |   8 +-
+ arch/arm/boot/dts/zynq-zc702.dts | 181 +++++++++++++++++++++++++++++++++++=
+++++
+ arch/arm/boot/dts/zynq-zc706.dts | 152 ++++++++++++++++++++++++++++++++
+ 3 files changed, 340 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/zynq-7000.dtsi b/arch/arm/boot/dts/zynq-7000=
+.dtsi
+index 24036c440440..37d7fe36a129 100644
+--- a/arch/arm/boot/dts/zynq-7000.dtsi
++++ b/arch/arm/boot/dts/zynq-7000.dtsi
+@@ -238,7 +238,7 @@
+ 		slcr: slcr@f8000000 {
+ 			#address-cells =3D <1>;
+ 			#size-cells =3D <1>;
+-			compatible =3D "xlnx,zynq-slcr", "syscon";
++			compatible =3D "xlnx,zynq-slcr", "syscon", "simple-bus";
+ 			reg =3D <0xF8000000 0x1000>;
+ 			ranges;
+ 			clkc: clkc@100 {
+@@ -259,6 +259,12 @@
+ 						"dbg_trc", "dbg_apb";
+ 				reg =3D <0x100 0x100>;
+ 			};
 +
-+= System Controller Node =
-+
-+The R-Mobile System Controller provides the following functions:
-+  - Boot mode management,
-+  - Reset generation,
-+  - Power management.
-+
-+Required properties:
-+- compatible: Should be "renesas,sysc-<soctype>", "renesas,sysc-rmobile" as
-+	      fallback.
-+	      Examples with soctypes are:
-+		- "renesas,sysc-r8a7740" (R-Mobile A1)
-+- reg: Two address start and address range blocks for the device:
-+         - The first block refers to the normally accessible registers,
-+         - the second block refers to the registers protected by the HPB
-+	   semaphore.
-+
-+Optional nodes:
-+- pm-domains: This node contains a hierarchy of PM domain nodes, which should
-+  match the Power Area Hierarchy in the Power Domain Specifications section of
-+  the device's datasheet.
-+
-+
-+= PM Domain Nodes =
-+
-+Each of the PM domain nodes represents a PM domain, as documented by the
-+generic PM domain bindings in
-+Documentation/devicetree/bindings/power/power_domain.txt.
-+
-+The nodes should be named by the real power area names, and thus their names
-+should be unique.
-+
-+Required properties:
-+  - #power-domain-cells: Must be 0.
-+
-+Optional properties:
-+- reg: If the PM domain is not always-on, this property must contain the bit
-+       index number for the corresponding power area in the various Power
-+       Control and Status Registers. The parent's node must contain the
-+       following two properties:
-+	 - #address-cells: Must be 1,
-+	 - #size-cells: Must be 0.
-+       If the PM domain is always-on, this property must be omitted.
-+- power-on-latency: Power-on latency of the PM domain, in ns,
-+- power-off-latency: Power-off latency of the PM domain, in ns.
-+
-+
-+Example:
-+
-+This shows a subset of the r8a7740 PM domain hierarchy, containing the
-+C5 "always-on" domain, 2 of its subdomains (A4S and A4SU), and the A3SP domain,
-+which is a subdomain of A4S.
-+
-+	sysc: system-controller@e6180000 {
-+		compatible = "renesas,sysc-r8a7740", "renesas,sysc-rmobile";
-+		reg = <0xe6180000 8000>, <0xe6188000 8000>;
-+
-+		pm-domains {
-+			pd_c5: c5 {
-+				#address-cells = <1>;
-+				#size-cells = <0>;
-+				#power-domain-cells = <0>;
-+
-+				pd_a4s: a4s@10 {
-+					reg = <10>;
-+					#address-cells = <1>;
-+					#size-cells = <0>;
-+					#power-domain-cells = <0>;
-+					power-on-latency = <250000>;
-+					power-off-latency = <250000>;
-+
-+					pd_a3sp: a3sp@11 {
-+						reg = <11>;
-+						#power-domain-cells = <0>;
-+						power-on-latency = <250000>;
-+						power-off-latency = <250000>;
-+					};
-+				};
-+
-+				pd_a4su: a4su@20 {
-+					reg = <20>;
-+					#power-domain-cells = <0>;
-+					power-on-latency = <250000>;
-+					power-off-latency = <250000>;
-+				};
++			pinctrl0: pinctrl@700 {
++				compatible =3D "xlnx,pinctrl-zynq";
++				reg =3D <0x700 0x200>;
++				syscon =3D <&slcr>;
 +			};
+ 		};
+=20
+ 		dmac_s: dmac@f8003000 {
+diff --git a/arch/arm/boot/dts/zynq-zc702.dts b/arch/arm/boot/dts/zynq-zc70=
+2.dts
+index 94e2cda6f9b6..1e3d800e5b2e 100644
+--- a/arch/arm/boot/dts/zynq-zc702.dts
++++ b/arch/arm/boot/dts/zynq-zc702.dts
+@@ -40,21 +40,32 @@
+=20
+ &can0 {
+ 	status =3D "okay";
++	pinctrl-names =3D "default";
++	pinctrl-0 =3D <&pinctrl_can0_default>;
+ };
+=20
+ &gem0 {
+ 	status =3D "okay";
+ 	phy-mode =3D "rgmii-id";
+ 	phy-handle =3D <&ethernet_phy>;
++	pinctrl-names =3D "default";
++	pinctrl-0 =3D <&pinctrl_gem0_default>;
+=20
+ 	ethernet_phy: ethernet-phy@7 {
+ 		reg =3D <7>;
+ 	};
+ };
+=20
++&gpio0 {
++	pinctrl-names =3D "default";
++	pinctrl-0 =3D <&pinctrl_gpio0_default>;
++};
++
+ &i2c0 {
+ 	status =3D "okay";
+ 	clock-frequency =3D <400000>;
++	pinctrl-names =3D "default";
++	pinctrl-0 =3D <&pinctrl_i2c0_default>;
+=20
+ 	i2cswitch@74 {
+ 		compatible =3D "nxp,pca9548";
+@@ -128,10 +139,180 @@
+ 	};
+ };
+=20
++&pinctrl0 {
++	pinctrl_can0_default: can0-default {
++		mux {
++			function =3D "can0";
++			groups =3D "can0_9_grp";
++		};
++
++		conf {
++			groups =3D "can0_9_grp";
++			slew-rate =3D <0>;
++			io-standard =3D <1>;
++		};
++
++		conf-rx {
++			pins =3D "MIO46";
++			bias-high-impedance;
++		};
++
++		conf-tx {
++			pins =3D "MIO47";
++			bias-disable;
 +		};
 +	};
 +
++	pinctrl_gem0_default: gem0-default {
++		mux {
++			function =3D "ethernet0";
++			groups =3D "ethernet0_0_grp";
++		};
 +
-+= PM Domain Consumers =
++		conf {
++			groups =3D "ethernet0_0_grp";
++			slew-rate =3D <0>;
++			io-standard =3D <4>;
++		};
 +
-+Hardware blocks belonging to a PM domain should contain a "power-domains"
-+property that is a phandle pointing to the corresponding PM domain node,
-+and optional PM QoS device latencies:
++		conf-rx {
++			pins =3D "MIO22", "MIO23", "MIO24", "MIO25", "MIO26", "MIO27";
++			bias-high-impedance;
++			low-power-disable;
++		};
 +
-+Example:
++		conf-tx {
++			pins =3D "MIO16", "MIO17", "MIO18", "MIO19", "MIO20", "MIO21";
++			bias-disable;
++			low-power-enable;
++		};
 +
-+	tpu: pwm@e6600000 {
-+		compatible = "renesas,tpu-r8a7740", "renesas,tpu";
-+		reg = <0xe6600000 0x100>;
-+		clocks = <&mstp3_clks R8A7740_CLK_TPU0>;
-+		power-domains = <&pd_a3sp>;
-+		#pwm-cells = <3>;
++		mux-mdio {
++			function =3D "mdio0";
++			groups =3D "mdio0_0_grp";
++		};
++
++		conf-mdio {
++			groups =3D "mdio0_0_grp";
++			slew-rate =3D <0>;
++			io-standard =3D <1>;
++			bias-disable;
++		};
 +	};
--- 
-1.9.1
++
++	pinctrl_gpio0_default: gpio0-default {
++		mux {
++			function =3D "gpio0";
++			groups =3D "gpio0_7_grp", "gpio0_8_grp", "gpio0_9_grp",
++				 "gpio0_10_grp", "gpio0_11_grp", "gpio0_12_grp",
++				 "gpio0_13_grp", "gpio0_14_grp";
++		};
++
++		conf {
++			groups =3D "gpio0_7_grp", "gpio0_8_grp", "gpio0_9_grp",
++				 "gpio0_10_grp", "gpio0_11_grp", "gpio0_12_grp",
++				 "gpio0_13_grp", "gpio0_14_grp";
++			slew-rate =3D <0>;
++			io-standard =3D <1>;
++		};
++
++		conf-pull-up {
++			pins =3D "MIO9", "MIO10", "MIO11", "MIO12", "MIO13", "MIO14";
++			bias-pull-up;
++		};
++
++		conf-pull-none {
++			pins =3D "MIO7", "MIO8";
++			bias-disable;
++		};
++	};
++
++	pinctrl_i2c0_default: i2c0-default {
++		mux {
++			groups =3D "i2c0_10_grp";
++			function =3D "i2c0";
++		};
++
++		conf {
++			groups =3D "i2c0_10_grp";
++			bias-pull-up;
++			slew-rate =3D <0>;
++			io-standard =3D <1>;
++		};
++	};
++
++	pinctrl_sdhci0_default: sdhci0-default {
++		mux {
++			groups =3D "sdio0_2_grp";
++			function =3D "sdio0";
++		};
++
++		conf {
++			groups =3D "sdio0_2_grp";
++			slew-rate =3D <0>;
++			io-standard =3D <1>;
++			bias-disable;
++		};
++
++		mux-cd {
++			groups =3D "gpio0_0_grp";
++			function =3D "sdio0_cd";
++		};
++
++		conf-cd {
++			groups =3D "gpio0_0_grp";
++			bias-high-impedance;
++			bias-pull-up;
++			slew-rate =3D <0>;
++			io-standard =3D <1>;
++		};
++
++		mux-wp {
++			groups =3D "gpio0_15_grp";
++			function =3D "sdio0_wp";
++		};
++
++		conf-wp {
++			groups =3D "gpio0_15_grp";
++			bias-high-impedance;
++			bias-pull-up;
++			slew-rate =3D <0>;
++			io-standard =3D <1>;
++		};
++	};
++
++	pinctrl_uart1_default: uart1-default {
++		mux {
++			groups =3D "uart1_10_grp";
++			function =3D "uart1";
++		};
++
++		conf {
++			groups =3D "uart1_10_grp";
++			slew-rate =3D <0>;
++			io-standard =3D <1>;
++		};
++
++		conf-rx {
++			pins =3D "MIO49";
++			bias-high-impedance;
++		};
++
++		conf-tx {
++			pins =3D "MIO48";
++			bias-disable =3D <0>;
++		};
++	};
++};
++
+ &sdhci0 {
+ 	status =3D "okay";
++	pinctrl-names =3D "default";
++	pinctrl-0 =3D <&pinctrl_sdhci0_default>;
+ };
+=20
+ &uart1 {
+ 	status =3D "okay";
++	pinctrl-names =3D "default";
++	pinctrl-0 =3D <&pinctrl_uart1_default>;
+ };
+diff --git a/arch/arm/boot/dts/zynq-zc706.dts b/arch/arm/boot/dts/zynq-zc70=
+6.dts
+index a8bbdfbc7093..1ae78766d926 100644
+--- a/arch/arm/boot/dts/zynq-zc706.dts
++++ b/arch/arm/boot/dts/zynq-zc706.dts
+@@ -33,15 +33,24 @@
+ 	status =3D "okay";
+ 	phy-mode =3D "rgmii-id";
+ 	phy-handle =3D <&ethernet_phy>;
++	pinctrl-names =3D "default";
++	pinctrl-0 =3D <&pinctrl_gem0_default>;
+=20
+ 	ethernet_phy: ethernet-phy@7 {
+ 		reg =3D <7>;
+ 	};
+ };
+=20
++&gpio0 {
++	pinctrl-names =3D "default";
++	pinctrl-0 =3D <&pinctrl_gpio0_default>;
++};
++
+ &i2c0 {
+ 	status =3D "okay";
+ 	clock-frequency =3D <400000>;
++	pinctrl-names =3D "default";
++	pinctrl-0 =3D <&pinctrl_i2c0_default>;
+=20
+ 	i2cswitch@74 {
+ 		compatible =3D "nxp,pca9548";
+@@ -107,10 +116,153 @@
+ 	};
+ };
+=20
++&pinctrl0 {
++	pinctrl_gem0_default: gem0-default {
++		mux {
++			function =3D "ethernet0";
++			groups =3D "ethernet0_0_grp";
++		};
++
++		conf {
++			groups =3D "ethernet0_0_grp";
++			slew-rate =3D <0>;
++			io-standard =3D <4>;
++		};
++
++		conf-rx {
++			pins =3D "MIO22", "MIO23", "MIO24", "MIO25", "MIO26", "MIO27";
++			bias-high-impedance;
++			low-power-disable;
++		};
++
++		conf-tx {
++			pins =3D "MIO16", "MIO17", "MIO18", "MIO19", "MIO20", "MIO21";
++			low-power-enable;
++			bias-disable;
++		};
++
++		mux-mdio {
++			function =3D "mdio0";
++			groups =3D "mdio0_0_grp";
++		};
++
++		conf-mdio {
++			groups =3D "mdio0_0_grp";
++			slew-rate =3D <0>;
++			io-standard =3D <1>;
++			bias-disable;
++		};
++	};
++
++	pinctrl_gpio0_default: gpio0-default {
++		mux {
++			function =3D "gpio0";
++			groups =3D "gpio0_7_grp", "gpio0_46_grp", "gpio0_47_grp";
++		};
++
++		conf {
++			groups =3D "gpio0_7_grp", "gpio0_46_grp", "gpio0_47_grp";
++			slew-rate =3D <0>;
++			io-standard =3D <1>;
++		};
++
++		conf-pull-up {
++			pins =3D "MIO46", "MIO47";
++			bias-pull-up;
++		};
++
++		conf-pull-none {
++			pins =3D "MIO7";
++			bias-disable;
++		};
++	};
++
++	pinctrl_i2c0_default: i2c0-default {
++		mux {
++			groups =3D "i2c0_10_grp";
++			function =3D "i2c0";
++		};
++
++		conf {
++			groups =3D "i2c0_10_grp";
++			bias-pull-up;
++			slew-rate =3D <0>;
++			io-standard =3D <1>;
++		};
++	};
++
++	pinctrl_sdhci0_default: sdhci0-default {
++		mux {
++			groups =3D "sdio0_2_grp";
++			function =3D "sdio0";
++		};
++
++		conf {
++			groups =3D "sdio0_2_grp";
++			slew-rate =3D <0>;
++			io-standard =3D <1>;
++			bias-disable;
++		};
++
++		mux-cd {
++			groups =3D "gpio0_14_grp";
++			function =3D "sdio0_cd";
++		};
++
++		conf-cd {
++			groups =3D "gpio0_14_grp";
++			bias-high-impedance;
++			bias-pull-up;
++			slew-rate =3D <0>;
++			io-standard =3D <1>;
++		};
++
++		mux-wp {
++			groups =3D "gpio0_15_grp";
++			function =3D "sdio0_wp";
++		};
++
++		conf-wp {
++			groups =3D "gpio0_15_grp";
++			bias-high-impedance;
++			bias-pull-up;
++			slew-rate =3D <0>;
++			io-standard =3D <1>;
++		};
++	};
++
++	pinctrl_uart1_default: uart1-default {
++		mux {
++			groups =3D "uart1_10_grp";
++			function =3D "uart1";
++		};
++
++		conf {
++			groups =3D "uart1_10_grp";
++			slew-rate =3D <0>;
++			io-standard =3D <1>;
++		};
++
++		conf-rx {
++			pins =3D "MIO49";
++			bias-high-impedance;
++		};
++
++		conf-tx {
++			pins =3D "MIO48";
++			bias-disable;
++		};
++	};
++};
++
+ &sdhci0 {
+ 	status =3D "okay";
++	pinctrl-names =3D "default";
++	pinctrl-0 =3D <&pinctrl_sdhci0_default>;
+ };
+=20
+ &uart1 {
+ 	status =3D "okay";
++	pinctrl-names =3D "default";
++	pinctrl-0 =3D <&pinctrl_uart1_default>;
+ };
+--=20
+2.1.3.1.ge241007
 
