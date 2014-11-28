@@ -1,64 +1,99 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 12 Nov 2014 08:19:14 +0000
-Subject: Re: [PATCH/RFC] ARM: shmobile: koelsch: Fix SPI mode of SPI-Flash into mode3
-Message-Id: <20141112081914.GS9007@verge.net.au>
+From: Soren Brinkmann <soren.brinkmann@xilinx.com>
+Date: Fri, 28 Nov 2014 01:26:27 +0000
+Subject: [PATCH v2 1/7] pinctrl: pinconf-generic: Infer map type from DT property
+Message-Id: <1417137993-8337-2-git-send-email-soren.brinkmann@xilinx.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414648424-29688-1-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdVpnoZatm8kCi=DLUWx9dDm9F8HkEtO4LKjj9J1KiKU=w@mail.gmail.com>
-In-Reply-To: <CAMuHMdVpnoZatm8kCi=DLUWx9dDm9F8HkEtO4LKjj9J1KiKU=w@mail.gmail.com>
+References: <1417137993-8337-1-git-send-email-soren.brinkmann@xilinx.com>
+In-Reply-To: <1417137993-8337-1-git-send-email-soren.brinkmann@xilinx.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Oct 30, 2014 at 10:11:59AM +0100, Geert Uytterhoeven wrote:
-> On Thu, Oct 30, 2014 at 6:53 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-> >
-> > In order to change into mode3, CPOL and CPHA bit of SPCMD register
-> > of MSIOF is changed. Mode3 can avoid intermediate voltage.
-> 
-> This is the QSPI node, not MSIOF?
+With the new 'groups' property, the DT parser can infer the map type
+from the fact whether 'pins' or 'groups' is used to specify the pin
+group to work on.
+To maintain backwards compatibitliy with current usage of the DT
+binding, this is only done when an invalid map type is passed to the
+parsing function.
 
-Indeed.
+Signed-off-by: Soren Brinkmann <soren.brinkmann@xilinx.com>
+Tested-by: Andreas F=C3=A4rber <afaerber@suse.de>
+---
+Changes since RFC v2:
+ - none
+---
+ drivers/pinctrl/pinconf-generic.c       | 17 ++++++++++++++---
+ include/linux/pinctrl/pinconf-generic.h |  7 +++++++
+ 2 files changed, 21 insertions(+), 3 deletions(-)
 
-Nakamura-san's patch, which I up-ported, was against the QSPI node
-but the version I posted below is indeed against the MSIOF.
+diff --git a/drivers/pinctrl/pinconf-generic.c b/drivers/pinctrl/pinconf-ge=
+neric.c
+index f78b416d7984..1e782a0d6e48 100644
+--- a/drivers/pinctrl/pinconf-generic.c
++++ b/drivers/pinctrl/pinconf-generic.c
+@@ -264,6 +264,7 @@ int pinconf_generic_dt_subnode_to_map(struct pinctrl_de=
+v *pctldev,
+ 	unsigned reserve;
+ 	struct property *prop;
+ 	const char *group;
++	const char *dt_pin_specifier =3D "pins";
+=20
+ 	ret =3D of_property_read_string(np, "function", &function);
+ 	if (ret < 0) {
+@@ -284,10 +285,20 @@ int pinconf_generic_dt_subnode_to_map(struct pinctrl_=
+dev *pctldev,
+ 		reserve++;
+ 	if (num_configs)
+ 		reserve++;
++
+ 	ret =3D of_property_count_strings(np, "pins");
+ 	if (ret < 0) {
+-		dev_err(dev, "could not parse property pins\n");
+-		goto exit;
++		ret =3D of_property_count_strings(np, "groups");
++		if (ret < 0) {
++			dev_err(dev, "could not parse property pins/groups\n");
++			goto exit;
++		}
++		if (type =3D PIN_MAP_TYPE_INVALID)
++			type =3D PIN_MAP_TYPE_CONFIGS_GROUP;
++		dt_pin_specifier =3D "groups";
++	} else {
++		if (type =3D PIN_MAP_TYPE_INVALID)
++			type =3D PIN_MAP_TYPE_CONFIGS_PIN;
+ 	}
+ 	reserve *=3D ret;
+=20
+@@ -296,7 +307,7 @@ int pinconf_generic_dt_subnode_to_map(struct pinctrl_de=
+v *pctldev,
+ 	if (ret < 0)
+ 		goto exit;
+=20
+-	of_property_for_each_string(np, "pins", prop, group) {
++	of_property_for_each_string(np, dt_pin_specifier, prop, group) {
+ 		if (function) {
+ 			ret =3D pinctrl_utils_add_map_mux(pctldev, map,
+ 					reserved_maps, num_maps, group,
+diff --git a/include/linux/pinctrl/pinconf-generic.h b/include/linux/pinctr=
+l/pinconf-generic.h
+index d578a60eff23..b6dedfbfce69 100644
+--- a/include/linux/pinctrl/pinconf-generic.h
++++ b/include/linux/pinctrl/pinconf-generic.h
+@@ -174,6 +174,13 @@ static inline int pinconf_generic_dt_node_to_map_pin(
+ 			PIN_MAP_TYPE_CONFIGS_PIN);
+ }
+=20
++static inline int pinconf_generic_dt_node_to_map_all(
++		struct pinctrl_dev *pctldev, struct device_node *np_config,
++		struct pinctrl_map **map, unsigned *num_maps)
++{
++	return pinconf_generic_dt_node_to_map(pctldev, np_config, map, num_maps,
++			PIN_MAP_TYPE_INVALID);
++}
+ #endif
+=20
+ #endif /* CONFIG_GENERIC_PINCONF */
+--=20
+2.1.3.1.ge241007
 
-Futhermore, I see that spi-cpol and spi-cpha are already present
-in the MSIOF node in mainline. I would like to withdraw this patch.
-
-> > Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > ---
-> > Based on the renesas-devel-20141030-v3.18-rc2 branch of my renesas tree
-> >
-> >  arch/arm/boot/dts/r8a7791-koelsch.dts | 2 ++
-> >  1 file changed, 2 insertions(+)
-> >
-> > diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-> > index 523ae4d..ced0738 100644
-> > --- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-> > +++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-> > @@ -387,6 +387,8 @@
-> >                 spi-tx-bus-width = <4>;
-> >                 spi-rx-bus-width = <4>;
-> >                 m25p,fast-read;
-> > +               spi-cpol;
-> > +               spi-cpha;
-> >
-> >                 partition@0 {
-> >                         label = "loader";
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
-> 
