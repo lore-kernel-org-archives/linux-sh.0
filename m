@@ -1,40 +1,39 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Nov 2014 01:51:00 +0000
-Subject: [PATCH 30/34] ARM: shmobile: r8a7790: Rename mmcif node to mmc
-Message-Id: <22c2b78d3131cd161599be7a9f320523969b23c4.1415059587.git.horms+renesas@verge.net.au>
+From: Soren Brinkmann <soren.brinkmann@xilinx.com>
+Date: Fri, 28 Nov 2014 01:26:31 +0000
+Subject: [PATCH v2 5/7] ARM: zynq: Enable pinctrl
+Message-Id: <1417137993-8337-6-git-send-email-soren.brinkmann@xilinx.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415059587.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1415059587.git.horms+renesas@verge.net.au>
+References: <1417137993-8337-1-git-send-email-soren.brinkmann@xilinx.com>
+In-Reply-To: <1417137993-8337-1-git-send-email-soren.brinkmann@xilinx.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Select pinctrl and the Zynq pinctrl driver.
 
-Node names should describe the function of the device, not its IP core
-name.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Soren Brinkmann <soren.brinkmann@xilinx.com>
+Tested-by: Andreas F=C3=A4rber <afaerber@suse.de>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Changes since RFC v2:
+ - separate mach-zynq changes in their own patch
+---
+ arch/arm/mach-zynq/Kconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index a2f2c7f..63922a1 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -392,7 +392,7 @@
- 		status = "disabled";
- 	};
- 
--	mmcif0: mmcif@ee200000 {
-+	mmcif0: mmc@ee200000 {
- 		compatible = "renesas,mmcif-r8a7790", "renesas,sh-mmcif";
- 		reg = <0 0xee200000 0 0x80>;
- 		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
--- 
-2.1.1
+diff --git a/arch/arm/mach-zynq/Kconfig b/arch/arm/mach-zynq/Kconfig
+index aaa5162c1509..78e5e007f52d 100644
+--- a/arch/arm/mach-zynq/Kconfig
++++ b/arch/arm/mach-zynq/Kconfig
+@@ -9,6 +9,8 @@ config ARCH_ZYNQ
+ 	select HAVE_ARM_TWD if SMP
+ 	select ICST
+ 	select MFD_SYSCON
++	select PINCTRL
++	select PINCTRL_ZYNQ
+ 	select SOC_BUS
+ 	help
+ 	  Support for Xilinx Zynq ARM Cortex A9 Platform
+--=20
+2.1.3.1.ge241007
 
