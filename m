@@ -1,39 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 10 Dec 2014 23:42:07 +0000
-Subject: [PATCH 07/15] drm: rcar-du: Output HSYNC instead of CSYNC
-Message-Id: <1418254935-13536-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 01 Dec 2014 09:36:24 +0000
+Subject: Re: [PATCH V3 3/3] ARM: shmobile: Convert to genpd flags for PM clocks for R-mobile
+Message-Id: <CAMuHMdVntNxw+zciOQfayfJbMMV+AqOyZMqeB2FY=Q5eA=r0rw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418254935-13536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1418254935-13536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1417163403-7070-1-git-send-email-ulf.hansson@linaro.org>
+ <1417163403-7070-4-git-send-email-ulf.hansson@linaro.org>
+In-Reply-To: <1417163403-7070-4-git-send-email-ulf.hansson@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The DU outputs by default a composite sync signal (XOR of the horizontal
-and vertical sync signals) on the HSYNC output pin. As this can confuse
-devices and isn't needed by any of the supported encoders, configure the
-HSYNC pin to output the horizontal sync signal.
+On Fri, Nov 28, 2014 at 9:30 AM, Ulf Hansson <ulf.hansson@linaro.org> wrote:
+> Instead of using the dev_ops ->stop|start() callbacks for genpd, let's
+> convert to use genpd's flag field and set it to GENPD_PM_CLK.
+>
+> Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/gpu/drm/rcar-du/rcar_du_crtc.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-index ce280bd390a9..25b762b58765 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-@@ -144,7 +144,7 @@ static void rcar_du_crtc_set_display_timing(struct rcar_du_crtc *rcrtc)
- 	/* Signal polarities */
- 	value = ((mode->flags & DRM_MODE_FLAG_PVSYNC) ? 0 : DSMR_VSL)
- 	      | ((mode->flags & DRM_MODE_FLAG_PHSYNC) ? 0 : DSMR_HSL)
--	      | DSMR_DIPM_DE;
-+	      | DSMR_DIPM_DE | DSMR_CSPM;
- 	rcar_du_crtc_write(rcrtc, DSMR, value);
- 
- 	/* Display timings */
--- 
-2.0.4
+(tested on r8a7740/armadillo-multiplatform and sh73a0/kzm9g-multiplatform).
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
