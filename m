@@ -1,37 +1,16 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Wed, 10 Dec 2014 14:45:25 +0000
-Subject: [PATCH v7 4/6] ARM: shmobile: kzm9g-reference: Common clock framework DT description
-Message-Id: <1418222727-19888-5-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: "Quan Han" <quanhan46@aliyun.com>
+Date: Mon, 01 Dec 2014 13:02:14 +0000
+Subject: Re:
+Message-Id: <20141201134259.646C8162C40@mail.primeltd.ru>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-KZM9G-specific clock overrides.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 4 ++++
- 1 file changed, 4 insertions(+)
+Hello,
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index 939be12..3d912ea 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -182,6 +182,10 @@
- 	status = "ok";
- };
- 
-+&extal2_clk {
-+	clock-frequency = <48000000>;
-+};
-+
- &i2c0 {
- 	status = "okay";
- 	as3711@40 {
--- 
-1.8.4.5
-
+Compliments of the day to you and I believe all is well. My name is Mr. Quan Han and I work in bank of china. I have a transaction that I believe will be of mutual benefits to both of us. It involves an investment portfolio worth(eight million,three hundred and seventy thousand USD) which I like to acquire with your help and assistance. 
+Yours sincerely,
+Quan Han.
