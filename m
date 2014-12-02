@@ -1,43 +1,39 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 29 Dec 2014 01:43:40 +0000
-Subject: [PATCH 6/7] ARM: shmobile: alt dts: Replace status value "ok" by "okay"
-Message-Id: <38e02908f3a4bf261c618893649e88bc92197566.1419809027.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 02 Dec 2014 17:39:48 +0000
+Subject: [PATCH] ARM: shmobile: lager dts: Drop console= bootargs parameter
+Message-Id: <1417541988-28799-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1419809027.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1419809027.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-
-While the DT parsing code recognizes "ok" as a valid value for the
-"status" property, ePAPR v1.1 doesn't mention it in the list of valid
-values.
+Since commit FIXME ("ARM: shmobile: lager: Remove legacy board support"),
+lager is restricted to booting from DT, so chosen/stdout-path is always
+used, and we can drop the "console=" parameter from chosen/bootargs.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7794-alt.dts | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+This depends on "[PATCH 2/5] ARM: shmobile: lager: Remove legacy board
+support" by Laurent Pinchart, and allows to simplify his "[PATCH 4/5] ARM:
+shmobile: lager: Rename SCIFA[01] serial ports to ttySC[01]".
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
-index f2cf757..0d848e6 100644
---- a/arch/arm/boot/dts/r8a7794-alt.dts
-+++ b/arch/arm/boot/dts/r8a7794-alt.dts
-@@ -40,9 +40,9 @@
- };
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 636d53bb87a27062..7301d029b39d5d9b 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -52,7 +52,7 @@
+ 	};
  
- &cmt0 {
--	status = "ok";
-+	status = "okay";
- };
+ 	chosen {
+-		bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
++		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
+ 		stdout-path = &scifa0;
+ 	};
  
- &scif2 {
--	status = "ok";
-+	status = "okay";
- };
 -- 
-2.1.3
+1.9.1
 
