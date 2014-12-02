@@ -1,61 +1,37 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 29 Dec 2014 01:43:44 +0000
-Subject: [PATCH 13/30] ARM: shmobile: r8a7791: Add IPMMU-SGX clock to device tree
-Message-Id: <ce85ad47882fe375dcb3f7cce6c10ae800ac2d9c.1419812186.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 02 Dec 2014 16:35:46 +0000
+Subject: [PATCH 5/5] ARM: shmobile: koelsch: Rename SCIF[01] serial ports to ttySC[01]
+Message-Id: <1417538146-23350-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1419812185.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+There's no reason to name the only two available serial ports on the
+board ttySC6 and ttySC7 (apart from confusing userspace, which we should
+try to avoid).
 
-Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
-[horms: resolved conflicts]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi            | 8 +++++---
- include/dt-bindings/clock/r8a7791-clock.h | 1 +
- 2 files changed, 6 insertions(+), 3 deletions(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 958a69b..78d6371 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1154,15 +1154,17 @@
- 		mstp8_clks: mstp8_clks@e6150990 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
--			clocks = <&zg_clk>, <&zg_clk>, <&zg_clk>, <&p_clk>, <&zs_clk>,
--				 <&zs_clk>;
-+			clocks = <&zg_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>, <&p_clk>,
-+				 <&zs_clk>, <&zs_clk>;
- 			#clock-cells = <1>;
- 			clock-indices = <
-+				R8A7791_CLK_IPMMU_SGX
- 				R8A7791_CLK_VIN2 R8A7791_CLK_VIN1 R8A7791_CLK_VIN0
- 				R8A7791_CLK_ETHER R8A7791_CLK_SATA1 R8A7791_CLK_SATA0
- 			>;
- 			clock-output-names -				"vin2", "vin1", "vin0", "ether", "sata1", "sata0";
-+				"ipmmu_sgx", "vin2", "vin1", "vin0", "ether", "sata1",
-+				"sata0";
- 		};
- 		mstp9_clks: mstp9_clks@e6150994 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index 3ea2bbc..ee9bb944 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -91,6 +91,7 @@
- #define R8A7791_CLK_LVDS0		26
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 990af167c551..bf58c79a6554 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -48,8 +48,8 @@
+ 	compatible = "renesas,koelsch", "renesas,r8a7791";
  
- /* MSTP8 */
-+#define R8A7791_CLK_IPMMU_SGX		0
- #define R8A7791_CLK_VIN2		9
- #define R8A7791_CLK_VIN1		10
- #define R8A7791_CLK_VIN0		11
+ 	aliases {
+-		serial6 = &scif0;
+-		serial7 = &scif1;
++		serial0 = &scif0;
++		serial1 = &scif1;
+ 	};
+ 
+ 	chosen {
 -- 
-2.1.3
+2.0.4
 
