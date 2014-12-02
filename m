@@ -1,53 +1,47 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 29 Dec 2014 01:47:06 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC Updates for v3.20
-Message-Id: <cover.1419810196.git.horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 02 Dec 2014 08:36:43 +0000
+Subject: [PATCH v3 0/6] r8a73a4 common clock framework implementation
+Message-Id: <1417509409-31638-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1397627619.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1397627619.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+Hi!
 
-Please consider these Renesas ARM based SoC updates for v3.20.
+Version 3 of the CCF implementation for r8a73a4.  Again, this includes
+multi-parent DIV6 clocks and thus depends on the "clk: shmobile: DIV6 clock
+variable parent support" patch set from the clk-next tree.
+
+This version fixes three real issues acutely spotted by Laurent and Geert,
+adds a number of acks, and includes the usual reformatting routine.  See
+below for details.
+
+CU
+Uli
 
 
-The following changes since commit 97bf6af1f928216fd6c5a66e8a57bfa95a659672:
+Ulrich Hecht (6):
+  clk: shmobile: r8a73a4 common clock framework implementation
+  clk: shmobile: Add r8a73a4 SoC to MSTP bindings
+  ARM: shmobile: r8a73a4: Add CPG register bits header
+  ARM: shmobile: r8a73a4: Common clock framework DT description
+  ARM: shmobile: ape6evm: disable legacy clock initialization
+  ARM: shmobile: r8a73a4: add MSTP clock assignments to DT
 
-  Linux 3.19-rc1 (2014-12-20 17:08:50 -0800)
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |   1 +
+ .../bindings/clock/renesas,r8a73a4-cpg-clocks.txt  |  33 +++
+ arch/arm/boot/dts/r8a73a4.dtsi                     | 324 +++++++++++++++++++++
+ arch/arm/mach-shmobile/board-ape6evm-reference.c   |   3 +-
+ drivers/clk/shmobile/Makefile                      |   1 +
+ drivers/clk/shmobile/clk-r8a73a4.c                 | 244 ++++++++++++++++
+ include/dt-bindings/clock/r8a73a4-clock.h          |  62 ++++
+ 7 files changed, 667 insertions(+), 1 deletion(-)
+ create mode 100644 Documentation/devicetree/bindings/clock/renesas,r8a73a4-cpg-clocks.txt
+ create mode 100644 drivers/clk/shmobile/clk-r8a73a4.c
+ create mode 100644 include/dt-bindings/clock/r8a73a4-clock.h
 
-are available in the git repository at:
+-- 
+1.8.4.5
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-for-v3.20
-
-for you to fetch changes up to 39695882d3d642a73bca551e682426e4e3bcd158:
-
-  ARM: shmobile: r8a73a4: Multiplatform support (2014-12-21 17:11:22 +0900)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC Updates for v3.20
-
-* Multiplatform support for r8a73a4
-* No TWD setup in C for Multiplatform on r8a7779
-* Fix is_e2 warning in generic R-Car Gen2 SoC setup code
-* Add missing Add missing legacy INTCA0 clock for irqpin module on sh73a0
-
-----------------------------------------------------------------
-Geert Uytterhoeven (1):
-      ARM: shmobile: sh73a0 legacy/reference: Add missing INTCA0 clock for irqpin module
-
-Magnus Damm (2):
-      ARM: shmobile: Fix is_e2 warning
-      ARM: shmobile: r8a7779: No TWD setup in C for Multiplatform
-
-Ulrich Hecht (1):
-      ARM: shmobile: r8a73a4: Multiplatform support
-
- arch/arm/mach-shmobile/Kconfig           |  5 +++++
- arch/arm/mach-shmobile/clock-sh73a0.c    | 10 ++++++++++
- arch/arm/mach-shmobile/setup-rcar-gen2.c |  4 +---
- arch/arm/mach-shmobile/smp-r8a7779.c     |  2 +-
- 4 files changed, 17 insertions(+), 4 deletions(-)
