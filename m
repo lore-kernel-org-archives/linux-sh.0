@@ -1,339 +1,186 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 17 Dec 2014 16:29:21 +0000
-Subject: Re: [PATCH v4 1/6] clk: shmobile: r8a73a4 common clock framework implementation
-Message-Id: <2038003.FQXJtoRcbU@avalon>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 02 Dec 2014 13:27:57 +0000
+Subject: Re: [PATCH v8 1/4] irqchip: gic: Support hierarchy irq domain.
+Message-Id: <CAMuHMdWj0Z66fya=7oN=ZUoz0TQOHFxBe0wyHmkDDVzU8Lafog@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418833134-7863-2-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1418833134-7863-2-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1416902662-19281-1-git-send-email-yingjoe.chen@mediatek.com>
+ <1416902662-19281-2-git-send-email-yingjoe.chen@mediatek.com>
+In-Reply-To: <1416902662-19281-2-git-send-email-yingjoe.chen@mediatek.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Ulrich,
+On Tue, Nov 25, 2014 at 9:04 AM, Yingjoe Chen <yingjoe.chen@mediatek.com> wrote:
+> Add support to use gic as a parent for stacked irq domain.
+>
+> Signed-off-by: Yingjoe Chen <yingjoe.chen@mediatek.com>
 
-Thank you for the patch.
+This change (which is now in -next as commit 9a1091ef0017c40a) breaks
+booting on r8a7740/armadillo-legacy.
 
-On Wednesday 17 December 2014 17:18:49 Ulrich Hecht wrote:
-> Driver for the R8A73A4's clocks that are too specific to be supported by a
-> generic driver.
-> 
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+It hangs because the timers cannot get their interrupts:
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+console [tty0] enabled
+ sh-tmu.0: ch0: used for clock events
+ sh-tmu.0: ch0: used for periodic clock events
+ sh-tmu.0: ch0: failed to request irq 230
+ sh-tmu.0: ch1: used as clock source
+ sh-cmt-48.1: ch0: failed to request irq 90
+ sh-cmt-48.1: ch0: registration failed
+earlytimer: unable to probe sh-cmt-48 early.
+Calibrating delay loop...
 
 > ---
->  .../bindings/clock/renesas,r8a73a4-cpg-clocks.txt  |  33 +++
->  drivers/clk/shmobile/Makefile                      |   1 +
->  drivers/clk/shmobile/clk-r8a73a4.c                 | 241 ++++++++++++++++++
->  3 files changed, 275 insertions(+)
->  create mode 100644
-> Documentation/devicetree/bindings/clock/renesas,r8a73a4-cpg-clocks.txt
-> create mode 100644 drivers/clk/shmobile/clk-r8a73a4.c
-> 
-> diff --git
-> a/Documentation/devicetree/bindings/clock/renesas,r8a73a4-cpg-clocks.txt
-> b/Documentation/devicetree/bindings/clock/renesas,r8a73a4-cpg-clocks.txt
-> new file mode 100644
-> index 0000000..ece9239
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/clock/renesas,r8a73a4-cpg-clocks.txt
-> @@ -0,0 +1,33 @@
-> +* Renesas R8A73A4 Clock Pulse Generator (CPG)
-> +
-> +The CPG generates core clocks for the R8A73A4 SoC. It includes five PLLs
-> +and several fixed ratio dividers.
-> +
-> +Required Properties:
-> +
-> +  - compatible: Must be "renesas,r8a73a4-cpg-clocks"
-> +
-> +  - reg: Base address and length of the memory resource used by the CPG
-> +
-> +  - clocks: Reference to the parent clocks ("extal1" and "extal2")
-> +
-> +  - #clock-cells: Must be 1
-> +
-> +  - clock-output-names: The names of the clocks. Supported clocks are
-> "main", +    "pll0", "pll1", "pll2", "pll2s", "pll2h", "z", "z2", "i",
-> "m3", "b", +    "m1", "m2", "zx", "zs", and "hp".
-> +
-> +
-> +Example
-> +-------
-> +
-> +        cpg_clocks: cpg_clocks@e6150000 {
-> +                compatible = "renesas,r8a73a4-cpg-clocks";
-> +                reg = <0 0xe6150000 0 0x10000>;
-> +                clocks = <&extal1_clk>, <&extal2_clk>;
-> +                #clock-cells = <1>;
-> +                clock-output-names = "main", "pll0", "pll1", "pll2",
-> +                                     "pll2s", "pll2h", "z", "z2",
-> +                                     "i", "m3", "b", "m1", "m2",
-> +                                     "zx", "zs", "hp";
-> +        };
-> diff --git a/drivers/clk/shmobile/Makefile b/drivers/clk/shmobile/Makefile
-> index 960bf22..f48c144 100644
-> --- a/drivers/clk/shmobile/Makefile
-> +++ b/drivers/clk/shmobile/Makefile
-> @@ -1,5 +1,6 @@
->  obj-$(CONFIG_ARCH_EMEV2)		+= clk-emev2.o
->  obj-$(CONFIG_ARCH_R7S72100)		+= clk-rz.o
-> +obj-$(CONFIG_ARCH_R8A73A4)		+= clk-r8a73a4.o
->  obj-$(CONFIG_ARCH_R8A7740)		+= clk-r8a7740.o
->  obj-$(CONFIG_ARCH_R8A7779)		+= clk-r8a7779.o
->  obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o
-> diff --git a/drivers/clk/shmobile/clk-r8a73a4.c
-> b/drivers/clk/shmobile/clk-r8a73a4.c new file mode 100644
-> index 0000000..29b9a0b
-> --- /dev/null
-> +++ b/drivers/clk/shmobile/clk-r8a73a4.c
-> @@ -0,0 +1,241 @@
-> +/*
-> + * r8a73a4 Core CPG Clocks
-> + *
-> + * Copyright (C) 2014  Ulrich Hecht
-> + *
-> + * This program is free software; you can redistribute it and/or modify
-> + * it under the terms of the GNU General Public License as published by
-> + * the Free Software Foundation; version 2 of the License.
-> + */
-> +
-> +#include <linux/clk-provider.h>
-> +#include <linux/clkdev.h>
-> +#include <linux/clk/shmobile.h>
-> +#include <linux/init.h>
-> +#include <linux/kernel.h>
-> +#include <linux/of.h>
-> +#include <linux/of_address.h>
-> +#include <linux/spinlock.h>
-> +
-> +struct r8a73a4_cpg {
-> +	struct clk_onecell_data data;
-> +	spinlock_t lock;
-> +	void __iomem *reg;
-> +};
-> +
-> +#define CPG_CKSCR	0xc0
-> +#define CPG_FRQCRA	0x00
-> +#define CPG_FRQCRB	0x04
-> +#define CPG_FRQCRC	0xe0
-> +#define CPG_PLL0CR	0xd8
-> +#define CPG_PLL1CR	0x28
-> +#define CPG_PLL2CR	0x2c
-> +#define CPG_PLL2HCR	0xe4
-> +#define CPG_PLL2SCR	0xf4
-> +
-> +#define CLK_ENABLE_ON_INIT BIT(0)
-> +
-> +struct div4_clk {
-> +	const char *name;
-> +	unsigned int reg;
-> +	unsigned int shift;
-> +};
-> +
-> +static struct div4_clk div4_clks[] = {
-> +	{ "i",	CPG_FRQCRA, 20 },
-> +	{ "m3", CPG_FRQCRA, 12 },
-> +	{ "b",	CPG_FRQCRA,  8 },
-> +	{ "m1", CPG_FRQCRA,  4 },
-> +	{ "m2", CPG_FRQCRA,  0 },
-> +	{ "zx", CPG_FRQCRB, 12 },
-> +	{ "zs", CPG_FRQCRB,  8 },
-> +	{ "hp", CPG_FRQCRB,  4 },
-> +	{ NULL, 0, 0 },
-> +};
-> +
-> +static const struct clk_div_table div4_div_table[] = {
-> +	{ 0, 2 }, { 1, 3 }, { 2, 4 }, { 3, 6 }, { 4, 8 }, { 5, 12 },
-> +	{ 6, 16 }, { 7, 18 }, { 8, 24 }, { 10, 36 }, { 11, 48 },
-> +	{ 12, 10 }, { 0, 0 }
-> +};
-> +
-> +static struct clk * __init
-> +r8a73a4_cpg_register_clock(struct device_node *np, struct r8a73a4_cpg *cpg,
-> +			     const char *name)
+>  drivers/irqchip/Kconfig   |  1 +
+>  drivers/irqchip/irq-gic.c | 77 ++++++++++++++++++++++++++++++++---------------
+>  2 files changed, 54 insertions(+), 24 deletions(-)
+>
+> diff --git a/drivers/irqchip/Kconfig b/drivers/irqchip/Kconfig
+> index b21f12f..7f34138 100644
+> --- a/drivers/irqchip/Kconfig
+> +++ b/drivers/irqchip/Kconfig
+> @@ -5,6 +5,7 @@ config IRQCHIP
+>  config ARM_GIC
+>         bool
+>         select IRQ_DOMAIN
+> +       select IRQ_DOMAIN_HIERARCHY
+>         select MULTI_IRQ_HANDLER
+>
+>  config GIC_NON_BANKED
+> diff --git a/drivers/irqchip/irq-gic.c b/drivers/irqchip/irq-gic.c
+> index 38493ff..ab6069b 100644
+> --- a/drivers/irqchip/irq-gic.c
+> +++ b/drivers/irqchip/irq-gic.c
+> @@ -788,17 +788,16 @@ static int gic_irq_domain_map(struct irq_domain *d, unsigned int irq,
+>  {
+>         if (hw < 32) {
+>                 irq_set_percpu_devid(irq);
+> -               irq_set_chip_and_handler(irq, &gic_chip,
+> -                                        handle_percpu_devid_irq);
+> +               irq_domain_set_info(d, irq, hw, &gic_chip, d->host_data,
+> +                                   handle_percpu_devid_irq, NULL, NULL);
+>                 set_irq_flags(irq, IRQF_VALID | IRQF_NOAUTOEN);
+>         } else {
+> -               irq_set_chip_and_handler(irq, &gic_chip,
+> -                                        handle_fasteoi_irq);
+> +               irq_domain_set_info(d, irq, hw, &gic_chip, d->host_data,
+> +                                   handle_fasteoi_irq, NULL, NULL);
+>                 set_irq_flags(irq, IRQF_VALID | IRQF_PROBE);
+>
+>                 gic_routable_irq_domain_ops->map(d, irq, hw);
+>         }
+> -       irq_set_chip_data(irq, d->host_data);
+>         return 0;
+>  }
+>
+> @@ -858,6 +857,31 @@ static struct notifier_block gic_cpu_notifier = {
+>  };
+>  #endif
+>
+> +static int gic_irq_domain_alloc(struct irq_domain *domain, unsigned int virq,
+> +                               unsigned int nr_irqs, void *arg)
 > +{
-> +	const struct clk_div_table *table = NULL;
-> +	const char *parent_name;
-> +	unsigned int shift, reg;
-> +	unsigned int mult = 1;
-> +	unsigned int div = 1;
+> +       int i, ret;
+> +       irq_hw_number_t hwirq;
+> +       unsigned int type = IRQ_TYPE_NONE;
+> +       struct of_phandle_args *irq_data = arg;
 > +
+> +       ret = gic_irq_domain_xlate(domain, irq_data->np, irq_data->args,
+> +                                  irq_data->args_count, &hwirq, &type);
+> +       if (ret)
+> +               return ret;
 > +
-> +	if (!strcmp(name, "main")) {
-> +		u32 ckscr = clk_readl(cpg->reg + CPG_CKSCR);
+> +       for (i = 0; i < nr_irqs; i++)
+> +               gic_irq_domain_map(domain, virq + i, hwirq + i);
 > +
-> +		switch ((ckscr >> 28) & 3) {
-> +		case 0:	/* extal1 */
-> +			parent_name = of_clk_get_parent_name(np, 0);
-> +			break;
-> +		case 1:	/* extal1 / 2 */
-> +			parent_name = of_clk_get_parent_name(np, 0);
-> +			div = 2;
-> +			break;
-> +		case 2: /* extal2 */
-> +			parent_name = of_clk_get_parent_name(np, 1);
-> +			break;
-> +		case 3: /* extal2 / 2 */
-> +			parent_name = of_clk_get_parent_name(np, 1);
-> +			div = 2;
-> +			break;
-> +		}
-> +	} else if (!strcmp(name, "pll0")) {
-> +		/* PLL0/1 are configurable multiplier clocks. Register them as
-> +		 * fixed factor clocks for now as there's no generic multiplier
-> +		 * clock implementation and we currently have no need to change
-> +		 * the multiplier value.
-> +		 */
-> +		u32 value = clk_readl(cpg->reg + CPG_PLL0CR);
-> +
-> +		parent_name = "main";
-> +		mult = ((value >> 24) & 0x7f) + 1;
-> +		if (value & BIT(20))
-> +			div = 2;
-> +	} else if (!strcmp(name, "pll1")) {
-> +		u32 value = clk_readl(cpg->reg + CPG_PLL1CR);
-> +
-> +		parent_name = "main";
-> +		/* XXX: enable bit? */
-> +		mult = ((value >> 24) & 0x7f) + 1;
-> +		if (value & BIT(7))
-> +			div = 2;
-> +	} else if (!strncmp(name, "pll2", 4)) {
-> +		u32 value, cr;
-> +
-> +		switch (name[4]) {
-> +		case 0:
-> +			cr = CPG_PLL2CR;
-> +			break;
-> +		case 's':
-> +			cr = CPG_PLL2SCR;
-> +			break;
-> +		case 'h':
-> +			cr = CPG_PLL2HCR;
-> +			break;
-> +		default:
-> +			return ERR_PTR(-EINVAL);
-> +		}
-> +		value = clk_readl(cpg->reg + cr);
-> +		switch ((value >> 5) & 7) {
-> +		case 0:
-> +			parent_name = "main";
-> +			div = 2;
-> +			break;
-> +		case 1:
-> +			parent_name = "extal2";
-> +			div = 2;
-> +			break;
-> +		case 3:
-> +			parent_name = "extal2";
-> +			div = 4;
-> +			break;
-> +		case 4:
-> +			parent_name = "main";
-> +			break;
-> +		case 5:
-> +			parent_name = "extal2";
-> +			break;
-> +		default:
-> +			pr_warn("%s: unexpected parent of %s\n", __func__,
-> +				name);
-> +			return ERR_PTR(-EINVAL);
-> +		}
-> +		/* XXX: enable bit? */
-> +		mult = ((value >> 24) & 0x7f) + 1;
-> +	} else if (!strcmp(name, "z") || !strcmp(name, "z2")) {
-> +		u32 shift = 8;
-> +
-> +		parent_name = "pll0";
-> +		if (name[1] = '2') {
-> +			div = 2;
-> +			shift = 0;
-> +		}
-> +		div *= 32;
-> +		mult = 0x20 - ((clk_readl(cpg->reg + CPG_FRQCRC) >> shift)
-> +		       & 0x1f);
-> +	} else {
-> +		struct div4_clk *c;
-> +
-> +		for (c = div4_clks; c->name; c++) {
-> +			if (!strcmp(name, c->name))
-> +				break;
-> +		}
-> +		if (!c->name)
-> +			return ERR_PTR(-EINVAL);
-> +
-> +		parent_name = "pll1";
-> +		table = div4_div_table;
-> +		reg = c->reg;
-> +		shift = c->shift;
-> +	}
-> +
-> +	if (!table) {
-> +		return clk_register_fixed_factor(NULL, name, parent_name, 0,
-> +						 mult, div);
-> +	} else {
-> +		return clk_register_divider_table(NULL, name, parent_name, 0,
-> +						  cpg->reg + reg, shift, 4, 0,
-> +						  table, &cpg->lock);
-> +	}
+> +       return 0;
 > +}
 > +
-> +static void __init r8a73a4_cpg_clocks_init(struct device_node *np)
-> +{
-> +	struct r8a73a4_cpg *cpg;
-> +	struct clk **clks;
-> +	unsigned int i;
-> +	int num_clks;
+> +static const struct irq_domain_ops gic_irq_domain_hierarchy_ops = {
+> +       .xlate = gic_irq_domain_xlate,
+> +       .alloc = gic_irq_domain_alloc,
+> +       .free = irq_domain_free_irqs_top,
+> +};
 > +
-> +	num_clks = of_property_count_strings(np, "clock-output-names");
-> +	if (num_clks < 0) {
-> +		pr_err("%s: failed to count clocks\n", __func__);
-> +		return;
-> +	}
+>  static const struct irq_domain_ops gic_irq_domain_ops = {
+>         .map = gic_irq_domain_map,
+>         .unmap = gic_irq_domain_unmap,
+> @@ -948,18 +972,6 @@ void __init gic_init_bases(unsigned int gic_nr, int irq_start,
+>                 gic_cpu_map[i] = 0xff;
+>
+>         /*
+> -        * For primary GICs, skip over SGIs.
+> -        * For secondary GICs, skip over PPIs, too.
+> -        */
+> -       if (gic_nr = 0 && (irq_start & 31) > 0) {
+> -               hwirq_base = 16;
+> -               if (irq_start != -1)
+> -                       irq_start = (irq_start & ~31) + 16;
+> -       } else {
+> -               hwirq_base = 32;
+> -       }
+> -
+> -       /*
+>          * Find out how many interrupts are supported.
+>          * The GIC only supports up to 1020 interrupt sources.
+>          */
+> @@ -969,10 +981,31 @@ void __init gic_init_bases(unsigned int gic_nr, int irq_start,
+>                 gic_irqs = 1020;
+>         gic->gic_irqs = gic_irqs;
+>
+> -       gic_irqs -= hwirq_base; /* calculate # of irqs to allocate */
+> +       if (node) {             /* DT case */
+> +               const struct irq_domain_ops *ops = &gic_irq_domain_hierarchy_ops;
 > +
-> +	cpg = kzalloc(sizeof(*cpg), GFP_KERNEL);
-> +	clks = kcalloc(num_clks, sizeof(*clks), GFP_KERNEL);
-> +	if (cpg = NULL || clks = NULL) {
-> +		/* We're leaking memory on purpose, there's no point in cleaning
-> +		 * up as the system won't boot anyway.
-> +		 */
-> +		return;
-> +	}
+> +               if (!of_property_read_u32(node, "arm,routable-irqs",
+> +                                         &nr_routable_irqs)) {
+> +                       ops = &gic_irq_domain_ops;
+> +                       gic_irqs = nr_routable_irqs;
+> +               }
 > +
-> +	spin_lock_init(&cpg->lock);
+> +               gic->domain = irq_domain_add_linear(node, gic_irqs, ops, gic);
+> +       } else {                /* Non-DT case */
+> +               /*
+> +                * For primary GICs, skip over SGIs.
+> +                * For secondary GICs, skip over PPIs, too.
+> +                */
+> +               if (gic_nr = 0 && (irq_start & 31) > 0) {
+> +                       hwirq_base = 16;
+> +                       if (irq_start != -1)
+> +                               irq_start = (irq_start & ~31) + 16;
+> +               } else {
+> +                       hwirq_base = 32;
+> +               }
 > +
-> +	cpg->data.clks = clks;
-> +	cpg->data.clk_num = num_clks;
-> +
-> +	cpg->reg = of_iomap(np, 0);
-> +	if (WARN_ON(cpg->reg = NULL))
-> +		return;
-> +
-> +	for (i = 0; i < num_clks; ++i) {
-> +		const char *name;
-> +		struct clk *clk;
-> +
-> +		of_property_read_string_index(np, "clock-output-names", i,
-> +					      &name);
-> +
-> +		clk = r8a73a4_cpg_register_clock(np, cpg, name);
-> +		if (IS_ERR(clk))
-> +			pr_err("%s: failed to register %s %s clock (%ld)\n",
-> +			       __func__, np->name, name, PTR_ERR(clk));
-> +		else
-> +			cpg->data.clks[i] = clk;
-> +	}
-> +
-> +	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
-> +}
-> +CLK_OF_DECLARE(r8a73a4_cpg_clks, "renesas,r8a73a4-cpg-clocks",
-> +	       r8a73a4_cpg_clocks_init);
+> +               gic_irqs -= hwirq_base; /* calculate # of irqs to allocate */
+>
+> -       if (of_property_read_u32(node, "arm,routable-irqs",
+> -                                &nr_routable_irqs)) {
+>                 irq_base = irq_alloc_descs(irq_start, 16, gic_irqs,
+>                                            numa_node_id());
+>                 if (IS_ERR_VALUE(irq_base)) {
+> @@ -983,10 +1016,6 @@ void __init gic_init_bases(unsigned int gic_nr, int irq_start,
+>
+>                 gic->domain = irq_domain_add_legacy(node, gic_irqs, irq_base,
+>                                         hwirq_base, &gic_irq_domain_ops, gic);
+> -       } else {
+> -               gic->domain = irq_domain_add_linear(node, nr_routable_irqs,
+> -                                                   &gic_irq_domain_ops,
+> -                                                   gic);
+>         }
+>
+>         if (WARN_ON(!gic->domain))
+> --
+> 1.8.1.1.dirty
 
--- 
-Regards,
+Gr{oetje,eeting}s,
 
-Laurent Pinchart
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
