@@ -1,148 +1,42 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 03 Dec 2014 13:41:41 +0000
-Subject: [PATCH v6 1/7] PM / Domains: Add DT bindings for the R-Mobile System Controller
-Message-Id: <1417614107-5985-2-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 02 Dec 2014 16:35:45 +0000
+Subject: [PATCH 4/5] ARM: shmobile: lager: Rename SCIFA[01] serial ports to ttySC[01]
+Message-Id: <1417538146-23350-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1417614107-5985-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1417614107-5985-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The Renesas R-Mobile System Controller provides a.o. power management
-support, following the generic PM domain bindings in
-Documentation/devicetree/bindings/power/power_domain.txt.
+There's no reason to name the only two available serial ports on the
+board ttySC6 and ttySC7 (apart from confusing userspace, which we should
+try to avoid).
 
-For now this supports the R-Mobile A1 (r8a7740) only, but it should be
-sufficiently generic to handle other members of the SH-Mobile/R-Mobile
-family in the future.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v6:
-  - Drop power-on/off latencies, as they're put on hold,
-  - Remove leftover sentence about PM QoS device latencies,
-v5:
-  - No changes,
-v4:
-  - Drop device save/restore state latencies, as they're Linux driver-specific,
-  - Drop PM QoS device latencies, as they're put on hold,
-v3:
-  - Reword,
-v2:
-  - Fix copy-and-paste s/#address-cells/#size-cells/,
-  - Add optional PM QoS device latencies.
----
- .../bindings/power/renesas,sysc-rmobile.txt        | 98 ++++++++++++++++++++++
- 1 file changed, 98 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
+ arch/arm/boot/dts/r8a7790-lager.dts | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-new file mode 100644
-index 0000000000000000..5887cbae313481cc
---- /dev/null
-+++ b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-@@ -0,0 +1,98 @@
-+DT bindings for the Renesas R-Mobile System Controller
-+
-+= System Controller Node =
-+
-+The R-Mobile System Controller provides the following functions:
-+  - Boot mode management,
-+  - Reset generation,
-+  - Power management.
-+
-+Required properties:
-+- compatible: Should be "renesas,sysc-<soctype>", "renesas,sysc-rmobile" as
-+	      fallback.
-+	      Examples with soctypes are:
-+		- "renesas,sysc-r8a7740" (R-Mobile A1)
-+- reg: Two address start and address range blocks for the device:
-+         - The first block refers to the normally accessible registers,
-+         - the second block refers to the registers protected by the HPB
-+	   semaphore.
-+
-+Optional nodes:
-+- pm-domains: This node contains a hierarchy of PM domain nodes, which should
-+  match the Power Area Hierarchy in the Power Domain Specifications section of
-+  the device's datasheet.
-+
-+
-+= PM Domain Nodes =
-+
-+Each of the PM domain nodes represents a PM domain, as documented by the
-+generic PM domain bindings in
-+Documentation/devicetree/bindings/power/power_domain.txt.
-+
-+The nodes should be named by the real power area names, and thus their names
-+should be unique.
-+
-+Required properties:
-+  - #power-domain-cells: Must be 0.
-+
-+Optional properties:
-+- reg: If the PM domain is not always-on, this property must contain the bit
-+       index number for the corresponding power area in the various Power
-+       Control and Status Registers. The parent's node must contain the
-+       following two properties:
-+	 - #address-cells: Must be 1,
-+	 - #size-cells: Must be 0.
-+       If the PM domain is always-on, this property must be omitted.
-+
-+
-+Example:
-+
-+This shows a subset of the r8a7740 PM domain hierarchy, containing the
-+C5 "always-on" domain, 2 of its subdomains (A4S and A4SU), and the A3SP domain,
-+which is a subdomain of A4S.
-+
-+	sysc: system-controller@e6180000 {
-+		compatible = "renesas,sysc-r8a7740", "renesas,sysc-rmobile";
-+		reg = <0xe6180000 8000>, <0xe6188000 8000>;
-+
-+		pm-domains {
-+			pd_c5: c5 {
-+				#address-cells = <1>;
-+				#size-cells = <0>;
-+				#power-domain-cells = <0>;
-+
-+				pd_a4s: a4s@10 {
-+					reg = <10>;
-+					#address-cells = <1>;
-+					#size-cells = <0>;
-+					#power-domain-cells = <0>;
-+
-+					pd_a3sp: a3sp@11 {
-+						reg = <11>;
-+						#power-domain-cells = <0>;
-+					};
-+				};
-+
-+				pd_a4su: a4su@20 {
-+					reg = <20>;
-+					#power-domain-cells = <0>;
-+				};
-+			};
-+		};
-+	};
-+
-+
-+= PM Domain Consumers =
-+
-+Hardware blocks belonging to a PM domain should contain a "power-domains"
-+property that is a phandle pointing to the corresponding PM domain node.
-+
-+Example:
-+
-+	tpu: pwm@e6600000 {
-+		compatible = "renesas,tpu-r8a7740", "renesas,tpu";
-+		reg = <0xe6600000 0x100>;
-+		clocks = <&mstp3_clks R8A7740_CLK_TPU0>;
-+		power-domains = <&pd_a3sp>;
-+		#pwm-cells = <3>;
-+	};
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 636d53bb87a2..ec843192d653 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -47,12 +47,12 @@
+ 	compatible = "renesas,lager", "renesas,r8a7790";
+ 
+ 	aliases {
+-		serial6 = &scifa0;
+-		serial7 = &scifa1;
++		serial0 = &scifa0;
++		serial1 = &scifa1;
+ 	};
+ 
+ 	chosen {
+-		bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
++		bootargs = "console=ttySC0,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
+ 		stdout-path = &scifa0;
+ 	};
+ 
 -- 
-1.9.1
+2.0.4
 
