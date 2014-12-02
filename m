@@ -1,40 +1,112 @@
-From: Marc Zyngier <marc.zyngier@arm.com>
-Date: Tue, 02 Dec 2014 13:37:59 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 02 Dec 2014 13:55:13 +0000
 Subject: Re: [PATCH v8 1/4] irqchip: gic: Support hierarchy irq domain.
-Message-Id: <547DC0B7.6050600@arm.com>
+Message-Id: <CAMuHMdVkH_qshTfpXBcHx1FiEzL8055s1TiJqayWLXeFUf97NQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416902662-19281-1-git-send-email-yingjoe.chen@mediatek.com>	<1416902662-19281-2-git-send-email-yingjoe.chen@mediatek.com>
+References: <1416902662-19281-1-git-send-email-yingjoe.chen@mediatek.com>
+ <1416902662-19281-2-git-send-email-yingjoe.chen@mediatek.com>
  <CAMuHMdWj0Z66fya=7oN=ZUoz0TQOHFxBe0wyHmkDDVzU8Lafog@mail.gmail.com>
-In-Reply-To: <CAMuHMdWj0Z66fya=7oN=ZUoz0TQOHFxBe0wyHmkDDVzU8Lafog@mail.gmail.com>
+ <547DC0B7.6050600@arm.com>
+In-Reply-To: <547DC0B7.6050600@arm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 02/12/14 13:27, Geert Uytterhoeven wrote:
-> On Tue, Nov 25, 2014 at 9:04 AM, Yingjoe Chen <yingjoe.chen@mediatek.com> wrote:
->> Add support to use gic as a parent for stacked irq domain.
+Hi Marc,
+
+On Tue, Dec 2, 2014 at 2:37 PM, Marc Zyngier <marc.zyngier@arm.com> wrote:
+> On 02/12/14 13:27, Geert Uytterhoeven wrote:
+>> On Tue, Nov 25, 2014 at 9:04 AM, Yingjoe Chen <yingjoe.chen@mediatek.com> wrote:
+>>> Add support to use gic as a parent for stacked irq domain.
+>>>
+>>> Signed-off-by: Yingjoe Chen <yingjoe.chen@mediatek.com>
 >>
->> Signed-off-by: Yingjoe Chen <yingjoe.chen@mediatek.com>
-> 
-> This change (which is now in -next as commit 9a1091ef0017c40a) breaks
-> booting on r8a7740/armadillo-legacy.
-> 
-> It hangs because the timers cannot get their interrupts:
-> 
-> console [tty0] enabled
->  sh-tmu.0: ch0: used for clock events
->  sh-tmu.0: ch0: used for periodic clock events
->  sh-tmu.0: ch0: failed to request irq 230
->  sh-tmu.0: ch1: used as clock source
->  sh-cmt-48.1: ch0: failed to request irq 90
->  sh-cmt-48.1: ch0: registration failed
-> earlytimer: unable to probe sh-cmt-48 early.
-> Calibrating delay loop...
+>> This change (which is now in -next as commit 9a1091ef0017c40a) breaks
+>> booting on r8a7740/armadillo-legacy.
+>>
+>> It hangs because the timers cannot get their interrupts:
+>>
+>> console [tty0] enabled
+>>  sh-tmu.0: ch0: used for clock events
+>>  sh-tmu.0: ch0: used for periodic clock events
+>>  sh-tmu.0: ch0: failed to request irq 230
+>>  sh-tmu.0: ch1: used as clock source
+>>  sh-cmt-48.1: ch0: failed to request irq 90
+>>  sh-cmt-48.1: ch0: registration failed
+>> earlytimer: unable to probe sh-cmt-48 early.
+>> Calibrating delay loop...
+>
+> Grmbl... Are you, by any (lack of) chance, using a setup where the GIC
+> is probed via DT, but the timers have their IRQs hardcoded?
 
-Grmbl... Are you, by any (lack of) chance, using a setup where the GIC
-is probed via DT, but the timers have their IRQs hardcoded?
+Yes, the GIC is declared in arch/arm/boot/dts/r8a7740.dtsi:
 
-	M.
--- 
-Jazz is not dead. It just smells funny...
+        gic: interrupt-controller@c2800000 {
+                compatible = "arm,cortex-a9-gic";
+                #interrupt-cells = <3>;
+                interrupt-controller;
+                reg = <0xc2800000 0x1000>,
+                      <0xc2000000 0x1000>;
+        };
+
+The timers come from legacy C board code in
+arch/arm/mach-shmobile/setup-r8a7740.c:
+
+/* CMT */
+static struct sh_timer_config cmt1_platform_data = {
+        .channels_mask = 0x3f,
+};
+
+static struct resource cmt1_resources[] = {
+        DEFINE_RES_MEM(0xe6138000, 0x170),
+        DEFINE_RES_IRQ(gic_spi(58)),
+};
+
+static struct platform_device cmt1_device = {
+        .name           = "sh-cmt-48",
+        .id             = 1,
+        .dev = {
+                .platform_data  = &cmt1_platform_data,
+        },
+        .resource       = cmt1_resources,
+        .num_resources  = ARRAY_SIZE(cmt1_resources),
+};
+
+/* TMU */
+static struct sh_timer_config tmu0_platform_data = {
+        .channels_mask = 7,
+};
+
+static struct resource tmu0_resources[] = {
+        DEFINE_RES_MEM(0xfff80000, 0x2c),
+        DEFINE_RES_IRQ(gic_spi(198)),
+        DEFINE_RES_IRQ(gic_spi(199)),
+        DEFINE_RES_IRQ(gic_spi(200)),
+};
+
+static struct platform_device tmu0_device = {
+        .name           = "sh-tmu",
+        .id             = 0,
+        .dev = {
+                .platform_data  = &tmu0_platform_data,
+        },
+        .resource       = tmu0_resources,
+        .num_resources  = ARRAY_SIZE(tmu0_resources),
+};
+
+The corresponding r8a7740/armadillo-multiplatform works fine.
+
+Still, I'm wondering why sh73a0/kzm9g-legacy is not impacted by this
+change...
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
