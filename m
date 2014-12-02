@@ -1,66 +1,79 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Wed, 10 Dec 2014 11:25:13 +0000
-Subject: Re: [PATCH] clk: shmobile: Add r8a7793 support
-Message-Id: <CAH1o70JPLfcso4pA2Oe-b+mbr3r=B1rcj17K85qjymDPk9uqXw@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 02 Dec 2014 08:37:07 +0000
+Subject: [PATCH 3/3] ARM: shmobile: ape6evm-reference: Add keypad to the device tree
+Message-Id: <1417509427-31690-4-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418035363-3678-1-git-send-email-ykaneko0929@gmail.com>
- <CAMuHMdVDA4PwUZ8A0WPumEN9nYrQyX+UNYp7Dt=0TxO9nCuZrg@mail.gmail.com>
- <CAH1o70JgXPfRVQ+EyeQVA6Sa9irDb3hVBn7vAbDDuu7k=Z7x3w@mail.gmail.com>
- <CAMuHMdVdFii0rxO8NrdcWiCO0HWQYrv-y3W0Dh6zt_31tTG81g@mail.gmail.com>
- <20141209002338.GB8897@verge.net.au>
- <CAH1o70+_STscpCiAxh3=26fyNkU-S4W9RiftJktA+EO9anZWvw@mail.gmail.com>
- <20141210001823.GA9690@verge.net.au>
-In-Reply-To: <20141210001823.GA9690@verge.net.au>
+References: <1375342881-2155-4-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1375342881-2155-4-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-2014-12-10 9:18 GMT+09:00 Simon Horman <horms@verge.net.au>:
-> On Tue, Dec 09, 2014 at 09:26:09PM +0900, Yoshihiro Kaneko wrote:
->> Hi Simon-san,
->>
->> 2014-12-09 9:23 GMT+09:00 Simon Horman <horms@verge.net.au>:
->> > On Mon, Dec 08, 2014 at 02:30:14PM +0100, Geert Uytterhoeven wrote:
->> >> Hi Kaneko-san,
->> >>
->> >> On Mon, Dec 8, 2014 at 12:53 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
->> >> > 2014-12-08 20:13 GMT+09:00 Geert Uytterhoeven <geert@linux-m68k.org>:
->> >> >> On Mon, Dec 8, 2014 at 11:42 AM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
->> >> >>> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
->> >> >>>
->> >> >>> R-Car M2N (r8a7793) clock is handled in R-Car Gen2 clock driver.
->> >> >>
->> >> >> Thanks for your patch!
->> >> >>
->> >> >>> Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
->> >> >>> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->> >> >>
->> >> >> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
->> >> >>
->> >> >> Can you please also send a patch to update the binding documentation in
->> >> >> Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt?
->> >> >
->> >> > This patch updates Makefile only, not added dtsi for r8a7793.
->> >> > Is the update of the document necessary?
->> >>
->> >> Not at this moment. I was just trying to be proactive ;-)
->> >
->> > Kaneko-san,
->> >
->> > I think that the update to renesas,rcar-gen2-cpg-clocks.txt should be a
->> > one line change. I can prepare a patch if you prefer not to.
->>
->> Yes, I know that the update is very small.
->> But "renesas,r8a7793-cpg-clocks" which will be added to the documentation
->> was not found anywhere in the source tree. For example,
->> "renesas,r8a7794-cpg-clocks"
->> is found in arch/arm/boot/dts/r8a7794.dtsi.
->> Is r8a7793.dtsi not necessary to update the document?
->
-> In theory (though not always in practice) bindings should
-> be documented before they are used. So unless I misunderstand things,
-> yes, I think renesas,rcar-gen2-cpg-clocks.txt should be updated
-> even though arch/arm/boot/dts/r8a7794.dtsi is (not yet) updated.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts | 41 +++++++++++++++++++++++++
+ 1 file changed, 41 insertions(+)
 
-I got it. I can prepare a patch which updates the binding document.
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+index a2c73c4..e214589 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+@@ -11,6 +11,7 @@
+ /dts-v1/;
+ #include "r8a73a4.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
+ 
+ / {
+ 	model = "APE6EVM";
+@@ -110,6 +111,46 @@
+ 			label = "bbresetout";
+ 		};
+ 	};
++
++	keyboard {
++		compatible = "gpio-keys";
++
++		zero-key {
++			gpios = <&pfc 324 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_0>;
++			label = "S16";
++		};
++
++		menu-key {
++			gpios = <&pfc 325 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_MENU>;
++			label = "S17";
++		};
++
++		home-key {
++			gpios = <&pfc 326 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_HOME>;
++			label = "S18";
++		};
++
++		back-key {
++			gpios = <&pfc 327 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_BACK>;
++			label = "S19";
++		};
++
++		volup-key {
++			gpios = <&pfc 328 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_VOLUMEUP>;
++			label = "S20";
++		};
++
++		voldown-key {
++			gpios = <&pfc 329 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_VOLUMEDOWN>;
++			label = "S21";
++		};
++	};
+ };
+ 
+ &i2c5 {
+-- 
+1.8.4.5
+
