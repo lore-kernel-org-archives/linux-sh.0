@@ -1,107 +1,127 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 02 Dec 2014 13:01:34 +0000
-Subject: Re: [PATCH v3 3/6] ARM: shmobile: r8a73a4: Add CPG register bits header
-Message-Id: <2234539.9ugGykYzcZ@avalon>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 02 Dec 2014 10:32:20 +0000
+Subject: Re: [PATCH] gpio: remove gpio_descs global array
+Message-Id: <CAMuHMdUQ+rPasUWuGCc0AnV-g6J9zf9HbozuodHaYpy36Khcpg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1417509409-31638-4-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1417509409-31638-4-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1416383487-15993-1-git-send-email-acourbot@nvidia.com>
+	<CACRpkdZV-nQPXDnxiBgPTZTpyQ2eiKNL8qJY9jRq=A5foc-xmw@mail.gmail.com>
+In-Reply-To: <CACRpkdZV-nQPXDnxiBgPTZTpyQ2eiKNL8qJY9jRq=A5foc-xmw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Walleij <linus.walleij@linaro.org>, Alexandre Courbot <acourbot@nvidia.com>
+Cc: "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Alexandre Courbot <gnurou@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
 
-On Tuesday 02 December 2014 15:56:11 Sergei Shtylyov wrote:
-> On 12/2/2014 3:20 PM, Laurent Pinchart wrote:
-> 
-> [...]
-> 
-> >> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> >> ---
-> >> 
-> >>   include/dt-bindings/clock/r8a73a4-clock.h | 62 ++++++++++++++++++++++++
-> >>   1 file changed, 62 insertions(+)
-> >>   create mode 100644 include/dt-bindings/clock/r8a73a4-clock.h
-> >> 
-> >> diff --git a/include/dt-bindings/clock/r8a73a4-clock.h
-> >> b/include/dt-bindings/clock/r8a73a4-clock.h new file mode 100644
-> >> index 0000000..9a4b4c9
-> >> --- /dev/null
-> >> +++ b/include/dt-bindings/clock/r8a73a4-clock.h
-> >> @@ -0,0 +1,62 @@
-> >> +/*
-> >> + * Copyright 2014 Ulrich Hecht
-> >> + *
-> >> + * This program is free software; you can redistribute it and/or modify
-> >> + * it under the terms of the GNU General Public License as published by
-> >> + * the Free Software Foundation; either version 2 of the License, or
-> >> + * (at your option) any later version.
-> >> + */
-> >> +
-> >> +#ifndef __DT_BINDINGS_CLOCK_R8A73A4_H__
-> >> +#define __DT_BINDINGS_CLOCK_R8A73A4_H__
-> >> +
-> >> +/* CPG */
-> >> +#define R8A73A4_CLK_MAIN	0
-> >> +#define R8A73A4_CLK_PLL0	1
-> >> +#define R8A73A4_CLK_PLL1	2
-> >> +#define R8A73A4_CLK_PLL2	3
-> >> +#define R8A73A4_CLK_PLL2S	4
-> >> +#define R8A73A4_CLK_PLL2H	5
-> >> +#define R8A73A4_CLK_Z		6
-> >> +#define R8A73A4_CLK_Z2		7
-> >> +#define R8A73A4_CLK_I		8
-> >> +#define R8A73A4_CLK_M3		9
-> >> +#define R8A73A4_CLK_B		10
-> >> +#define R8A73A4_CLK_M1		11
-> >> +#define R8A73A4_CLK_M2		12
-> >> +#define R8A73A4_CLK_ZX		13
-> >> +#define R8A73A4_CLK_ZS		14
-> >> +#define R8A73A4_CLK_HP		15
-> >> +
-> >> +/* MSTP2 */
-> >> +#define R8A73A4_CLK_DMAC	18
-> >> +#define R8A73A4_CLK_SCIFB3	17
-> >> +#define R8A73A4_CLK_SCIFB2	16
-> >> +#define R8A73A4_CLK_SCIFB1	7
-> >> +#define R8A73A4_CLK_SCIFB0	6
-> >> +#define R8A73A4_CLK_SCIFA0	4
-> >> +#define R8A73A4_CLK_SCIFA1	3
-> >> +
-> >> +/* MSTP3 */
-> >> +#define R8A73A4_CLK_CMT1	29
-> >> +#define R8A73A4_CLK_IIC1	23
-> >> +#define R8A73A4_CLK_IIC0	18
-> >> +#define R8A73A4_CLK_IIC7	17
-> >> +#define R8A73A4_CLK_IIC6	16
-> >> +#define R8A73A4_CLK_MMCIF0	15
-> >> +#define R8A73A4_CLK_SDHI0	14
-> >> +#define R8A73A4_CLK_SDHI1	13
-> >> +#define R8A73A4_CLK_SDHI2	12
-> >> +#define R8A73A4_CLK_MMCIF1	5
-> >> +#define R8A73A4_CLK_IIC2	0
-> >> +
-> >> +/* MSTP4 */
-> >> +#define R8A73A4_CLK_IIC3	11
-> >> +#define R8A73A4_CLK_IIC4	10
-> >> +#define R8A73A4_CLK_IIC5	9
-> >> +
-> >> +/* MSTP5 */
-> >> +#define R8A73A4_CLK_THERMAL	22
-> >> +#define R8A73A4_CLK_IIC8	15
-> > 
-> > You've sorted the MSTP clocks by increasing indices,
-> > except for MSTP5. With this fixed,
-> 
-> Actually, only CPG clocks are sorted that way, all MSTPn clocks are sorted
-> by decreasing indices. :-)
+Hi Linus, Alexandre,
 
-OK, that's a new one, I was looking at v2 to replied to v3 :-) Please ignore 
-my comment, v3 is fine.
+On Fri, Nov 28, 2014 at 11:29 AM, Linus Walleij
+<linus.walleij@linaro.org> wrote:
+> On Wed, Nov 19, 2014 at 8:51 AM, Alexandre Courbot <acourbot@nvidia.com> wrote:
+>> Replace the ARCH_NR_GPIOS-sized static array of GPIO descriptors by
+>> dynamically-allocated arrays for each GPIO chip.
+>>
+>> This change makes gpio_to_desc() perform in O(n) (where n is the number
+>> of GPIO chips registered) instead of O(1), however since n is rarely
+>> bigger than 1 or 2 no noticeable performance issue is expected.
+>> Besides this provides more incentive for GPIO consumers to move to the
+>> gpiod interface. One could use a O(log(n)) structure to link the GPIO
+>> chips together, but considering the low limit of n the hypothetical
+>> performance benefit is probably not worth the added complexity.
+>>
+>> This patch uses kcalloc() in gpiochip_add(), which removes the ability
+>> to add a chip before kcalloc() can operate. I am not aware of such
+>> cases, but if someone bisects up to this patch then I will be proven
+>> wrong...
+>>
+>> Signed-off-by: Alexandre Courbot <acourbot@nvidia.com>
+>
+> OK patch applied. Let's see if the world explodes.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+This patch changes a return value from -EPROBE_DEFER to -EINVAL in
+regulator-gpio when a GPIO cannot be found yet, causing probe failures
+on r8a7791/koelsch:
 
--- 
-Regards,
+ of_get_named_gpiod_flags: can't parse 'enable-gpio' property of node
+'/regulator@1[0]'
+ of_get_named_gpiod_flags: parsed 'gpios' property of node
+'/regulator@1[0]' - status (-517)
+-gpio-0 (?): gpiod_request: status -517
+-gpio-regulator regulator@1: Could not obtain regulator setting GPIOs: -517
+-platform regulator@1: Driver gpio-regulator requests probe deferral
++------------[ cut here ]------------
++WARNING: CPU: 0 PID: 1 at
+/scratch/geert/linux/linux-renesas/drivers/gpio/gpiolib.c:80
+gpio_to_desc+0x94/0xac()
++invalid GPIO 0
++Modules linked in:
++CPU: 0 PID: 1 Comm: swapper/0 Not tainted
+3.18.0-rc7-koelsch-05803-ge7a5d822abfc727e #634
++Hardware name: Generic R8A7791 (Flattened Device Tree)
++Backtrace:
++[<c0012118>] (dump_backtrace) from [<c0012338>] (show_stack+0x18/0x1c)
++ r6:c04608f7 r5:00000009 r4:00000000 r3:00200040
++[<c0012320>] (show_stack) from [<c0386e48>] (dump_stack+0x78/0x94)
++[<c0386dd0>] (dump_stack) from [<c0026b84>] (warn_slowpath_common+0x70/0x94)
++ r4:eec53d10 r3:c04f3390
++[<c0026b14>] (warn_slowpath_common) from [<c0026be0>]
+(warn_slowpath_fmt+0x38/0x40)
++ r8:eed4a600 r7:00000001 r6:00000000 r5:00000000 r4:c04f9430
++[<c0026bac>] (warn_slowpath_fmt) from [<c01dd700>] (gpio_to_desc+0x94/0xac)
++ r3:00000000 r2:c0460931
++[<c01dd66c>] (gpio_to_desc) from [<c01df200>] (gpio_request_one+0x18/0xc4)
++ r5:00000000 r4:00000000
++[<c01df1e8>] (gpio_request_one) from [<c01df2d4>]
+(gpio_request_array+0x28/0x60)
++ r6:00000004 r5:00000000 r4:eed5a4c0 r3:00000002
++[<c01df2ac>] (gpio_request_array) from [<c0201b20>]
+(gpio_regulator_probe+0x424/0x5a4)
++ r7:eed4a610 r6:00000004 r5:eed464d0 r4:eed5a5d0
++[<c02016fc>] (gpio_regulator_probe) from [<c022a81c>]
+(platform_drv_probe+0x50/0xa0)
++ r10:00000000 r9:c0509f80 r8:c04fa648 r7:00000000 r6:c04fa648 r5:eed4a610
++ r4:ffffffed
++[<c022a7cc>] (platform_drv_probe) from [<c0229000>]
+(driver_probe_device+0xc0/0x204)
++ r6:00000000 r5:c054ae0c r4:eed4a610 r3:c022a7cc
++[<c0228f40>] (driver_probe_device) from [<c0229200>]
+(__driver_attach+0x70/0x94)
++ r8:c04ee560 r7:c04fe4b0 r6:c04fa648 r5:eed4a644 r4:eed4a610 r3:00000000
++[<c0229190>] (__driver_attach) from [<c02276bc>] (bus_for_each_dev+0x74/0x98)
++ r6:c0229190 r5:c04fa648 r4:00000000 r3:00000001
++[<c0227648>] (bus_for_each_dev) from [<c0228b5c>] (driver_attach+0x20/0x28)
++ r6:eed52300 r5:00000000 r4:c04fa648
++[<c0228b3c>] (driver_attach) from [<c02287f4>] (bus_add_driver+0xe8/0x1d0)
++[<c022870c>] (bus_add_driver) from [<c022989c>] (driver_register+0xa4/0xe8)
++ r7:c04ee560 r6:00000000 r5:c04c0498 r4:c04fa648
++[<c02297f8>] (driver_register) from [<c022a750>]
+(__platform_driver_register+0x50/0x64)
++ r5:c04c0498 r4:eed5a800
++[<c022a700>] (__platform_driver_register) from [<c04c04b0>]
+(gpio_regulator_init+0x18/0x20)
++[<c04c0498>] (gpio_regulator_init) from [<c0009778>]
+(do_one_initcall+0x108/0x1b8)
++[<c0009670>] (do_one_initcall) from [<c04a9e10>]
+(kernel_init_freeable+0x11c/0x1e4)
++ r9:c0509f80 r8:c0509f80 r7:c04dfcf0 r6:c04d7c2c r5:0000006d r4:00000004
++[<c04a9cf4>] (kernel_init_freeable) from [<c0384538>] (kernel_init+0x10/0xec)
++ r9:00000000 r8:00000000 r7:00000000 r6:00000000 r5:c0384528 r4:00000000
++[<c0384528>] (kernel_init) from [<c000ee58>] (ret_from_fork+0x14/0x3c)
++ r4:00000000 r3:eec52000
++---[ end trace e95579bdd1fdbe74 ]---
++gpiod_request: invalid GPIO
++gpio-regulator regulator@1: Could not obtain regulator setting GPIOs: -22
++gpio-regulator: probe of regulator@1 failed with error -22
 
-Laurent Pinchart
+Reverting commit 14e85c0e69d5c7fdbd963edbbec1dc5cdd385200
+("gpio: remove gpio_descs global array") fixes the issue.
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
