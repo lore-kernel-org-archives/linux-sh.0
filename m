@@ -1,40 +1,93 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 29 Dec 2014 01:43:35 +0000
-Subject: [PATCH 1/7] ARM: shmobile: genmai dts: Replace status value "ok" by "okay"
-Message-Id: <5f61ffb5cfd516c62bae69535e28b0085210b3ae.1419809027.git.horms+renesas@verge.net.au>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Tue, 02 Dec 2014 15:01:35 +0000
+Subject: Re: [PATCH v2 1/7] pinctrl: pinconf-generic: Infer map type from DT property
+Message-Id: <CACRpkdbd2cAD5osYnwKTg4d1MwSjNF9i3Y+6ryjc_qLsg46Wtg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1419809027.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1419809027.git.horms+renesas@verge.net.au>
+References: <1417137993-8337-1-git-send-email-soren.brinkmann@xilinx.com>
+ <1417137993-8337-2-git-send-email-soren.brinkmann@xilinx.com>
+In-Reply-To: <1417137993-8337-2-git-send-email-soren.brinkmann@xilinx.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+On Fri, Nov 28, 2014 at 2:26 AM, Soren Brinkmann
+<soren.brinkmann@xilinx.com> wrote:
 
-While the DT parsing code recognizes "ok" as a valid value for the
-"status" property, ePAPR v1.1 doesn't mention it in the list of valid
-values.
+> With the new 'groups' property, the DT parser can infer the map type
+> from the fact whether 'pins' or 'groups' is used to specify the pin
+> group to work on.
+> To maintain backwards compatibitliy with current usage of the DT
+> binding, this is only done when an invalid map type is passed to the
+> parsing function.
+>
+> Signed-off-by: Soren Brinkmann <soren.brinkmann@xilinx.com>
+> Tested-by: Andreas F=C3=A4rber <afaerber@suse.de>
+> ---
+> Changes since RFC v2:
+>  - none
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r7s72100-genmai.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+OK there are problems with this.
 
-diff --git a/arch/arm/boot/dts/r7s72100-genmai.dts b/arch/arm/boot/dts/r7s72100-genmai.dts
-index 1518c5b..a9da7a8 100644
---- a/arch/arm/boot/dts/r7s72100-genmai.dts
-+++ b/arch/arm/boot/dts/r7s72100-genmai.dts
-@@ -45,7 +45,7 @@
- };
- 
- &mtu2 {
--	status = "ok";
-+	status = "okay";
- };
- 
- &i2c2 {
--- 
-2.1.3
+> @@ -264,6 +264,7 @@ int pinconf_generic_dt_subnode_to_map(struct pinctrl_=
+dev *pctldev,
+>         unsigned reserve;
+>         struct property *prop;
+>         const char *group;
+> +       const char *dt_pin_specifier =3D "pins";
 
+Something called "dt_pin_specifier" contains the string "pins"...
+
+>
+>         ret =3D of_property_read_string(np, "function", &function);
+>         if (ret < 0) {
+> @@ -284,10 +285,20 @@ int pinconf_generic_dt_subnode_to_map(struct pinctr=
+l_dev *pctldev,
+>                 reserve++;
+>         if (num_configs)
+>                 reserve++;
+> +
+>         ret =3D of_property_count_strings(np, "pins");
+>         if (ret < 0) {
+> -               dev_err(dev, "could not parse property pins\n");
+> -               goto exit;
+> +               ret =3D of_property_count_strings(np, "groups");
+> +               if (ret < 0) {
+> +                       dev_err(dev, "could not parse property pins/group=
+s\n");
+> +                       goto exit;
+> +               }
+> +               if (type =3D PIN_MAP_TYPE_INVALID)
+> +                       type =3D PIN_MAP_TYPE_CONFIGS_GROUP;
+> +               dt_pin_specifier =3D "groups";
+
+Then suddenly "groups".
+
+The pointer variable should be named something like "subnode_target_type"
+or so.
+
+> +++ b/include/linux/pinctrl/pinconf-generic.h
+> @@ -174,6 +174,13 @@ static inline int pinconf_generic_dt_node_to_map_pin(
+>                         PIN_MAP_TYPE_CONFIGS_PIN);
+>  }
+>
+> +static inline int pinconf_generic_dt_node_to_map_all(
+> +               struct pinctrl_dev *pctldev, struct device_node *np_confi=
+g,
+> +               struct pinctrl_map **map, unsigned *num_maps)
+> +{
+> +       return pinconf_generic_dt_node_to_map(pctldev, np_config, map, nu=
+m_maps,
+> +                       PIN_MAP_TYPE_INVALID);
+> +}
+
+First add some comment describing what happens here and why
+INVALID is specified.
+
+Then what does this have to do with the $subject?
+
+Atleast mention in the commit text that a new helper is added, though unuse=
+d.
+
+Yours,
+Linus Walleij
