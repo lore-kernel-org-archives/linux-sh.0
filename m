@@ -1,137 +1,140 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 29 Dec 2014 01:43:48 +0000
-Subject: [PATCH 1/6] PM / Domains: Add DT bindings for the R-Mobile System Controller
-Message-Id: <8f11ca0e0355dc8cdae31a71e06d628e0e95f588.1419809198.git.horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 02 Dec 2014 08:37:17 +0000
+Subject: [PATCH 3/5] ARM: shmobile: ape6evm reference: Remove C board code
+Message-Id: <1417509439-31739-4-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1419809198.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1419809198.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Now that the r8a73a4 generic multiplatform case has the same features as the
+APE6EVM DT reference board code, we get rid of the latter.  DT reference
+code in the future shall make use of the r8a73a4 multiplatform support code
+with the generic SoC machine vector.
 
-The Renesas R-Mobile System Controller provides a.o. power management
-support, following the generic PM domain bindings in
-Documentation/devicetree/bindings/power/power_domain.txt.
-
-For now this supports the R-Mobile A1 (r8a7740) only, but it should be
-sufficiently generic to handle other members of the SH-Mobile/R-Mobile
-family in the future.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
- .../bindings/power/renesas,sysc-rmobile.txt        | 98 ++++++++++++++++++++++
- 1 file changed, 98 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
+ arch/arm/mach-shmobile/Kconfig                   | 12 -----
+ arch/arm/mach-shmobile/Makefile                  |  1 -
+ arch/arm/mach-shmobile/Makefile.boot             |  1 -
+ arch/arm/mach-shmobile/board-ape6evm-reference.c | 61 ------------------------
+ 4 files changed, 75 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/board-ape6evm-reference.c
 
-diff --git a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-new file mode 100644
-index 0000000..2460476
---- /dev/null
-+++ b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-@@ -0,0 +1,98 @@
-+DT bindings for the Renesas R-Mobile System Controller
-+
-+= System Controller Node =
-+
-+The R-Mobile System Controller provides the following functions:
-+  - Boot mode management,
-+  - Reset generation,
-+  - Power management.
-+
-+Required properties:
-+- compatible: Should be "renesas,sysc-<soctype>", "renesas,sysc-rmobile" as
-+	      fallback.
-+	      Examples with soctypes are:
-+		- "renesas,sysc-r8a7740" (R-Mobile A1)
-+- reg: Two address start and address range blocks for the device:
-+         - The first block refers to the normally accessible registers,
-+         - the second block refers to the registers protected by the HPB
-+	   semaphore.
-+
-+Optional nodes:
-+- pm-domains: This node contains a hierarchy of PM domain nodes, which should
-+  match the Power Area Hierarchy in the Power Domain Specifications section of
-+  the device's datasheet.
-+
-+
-+= PM Domain Nodes =
-+
-+Each of the PM domain nodes represents a PM domain, as documented by the
-+generic PM domain bindings in
-+Documentation/devicetree/bindings/power/power_domain.txt.
-+
-+The nodes should be named by the real power area names, and thus their names
-+should be unique.
-+
-+Required properties:
-+  - #power-domain-cells: Must be 0.
-+
-+Optional properties:
-+- reg: If the PM domain is not always-on, this property must contain the bit
-+       index number for the corresponding power area in the various Power
-+       Control and Status Registers. The parent's node must contain the
-+       following two properties:
-+	 - #address-cells: Must be 1,
-+	 - #size-cells: Must be 0.
-+       If the PM domain is always-on, this property must be omitted.
-+
-+
-+Example:
-+
-+This shows a subset of the r8a7740 PM domain hierarchy, containing the
-+C5 "always-on" domain, 2 of its subdomains (A4S and A4SU), and the A3SP domain,
-+which is a subdomain of A4S.
-+
-+	sysc: system-controller@e6180000 {
-+		compatible = "renesas,sysc-r8a7740", "renesas,sysc-rmobile";
-+		reg = <0xe6180000 0x8000>, <0xe6188000 0x8000>;
-+
-+		pm-domains {
-+			pd_c5: c5 {
-+				#address-cells = <1>;
-+				#size-cells = <0>;
-+				#power-domain-cells = <0>;
-+
-+				pd_a4s: a4s@10 {
-+					reg = <10>;
-+					#address-cells = <1>;
-+					#size-cells = <0>;
-+					#power-domain-cells = <0>;
-+
-+					pd_a3sp: a3sp@11 {
-+						reg = <11>;
-+						#power-domain-cells = <0>;
-+					};
-+				};
-+
-+				pd_a4su: a4su@20 {
-+					reg = <20>;
-+					#power-domain-cells = <0>;
-+				};
-+			};
-+		};
-+	};
-+
-+
-+= PM Domain Consumers =
-+
-+Hardware blocks belonging to a PM domain should contain a "power-domains"
-+property that is a phandle pointing to the corresponding PM domain node.
-+
-+Example:
-+
-+	tpu: pwm@e6600000 {
-+		compatible = "renesas,tpu-r8a7740", "renesas,tpu";
-+		reg = <0xe6600000 0x100>;
-+		clocks = <&mstp3_clks R8A7740_CLK_TPU0>;
-+		power-domains = <&pd_a3sp>;
-+		#pwm-cells = <3>;
-+	};
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index d107b93..1d56a8f 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -154,18 +154,6 @@ config MACH_APE6EVM
+ 	select SMSC_PHY if SMSC911X
+ 	select USE_OF
+ 
+-config MACH_APE6EVM_REFERENCE
+-	bool "APE6EVM board - Reference Device Tree Implementation"
+-	depends on ARCH_R8A73A4
+-	select SMSC_PHY if SMSC911X
+-	select USE_OF
+-	---help---
+-	   Use reference implementation of APE6EVM board support
+-	   which makes a greater use of device tree at the expense
+-	   of not supporting a number of devices.
+-
+-	   This is intended to aid developers
+-
+ config MACH_MACKEREL
+ 	bool "mackerel board"
+ 	depends on ARCH_SH7372
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index b55cac0..7f045a3 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -61,7 +61,6 @@ obj-$(CONFIG_MACH_LAGER)	+= board-lager-reference.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen-reference.o
+ else
+ obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
+-obj-$(CONFIG_MACH_APE6EVM_REFERENCE)	+= board-ape6evm-reference.o
+ obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
+ obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
+ obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
+diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
+index 57d00ed..60efb23 100644
+--- a/arch/arm/mach-shmobile/Makefile.boot
++++ b/arch/arm/mach-shmobile/Makefile.boot
+@@ -1,7 +1,6 @@
+ # per-board load address for uImage
+ loadaddr-y	: loadaddr-$(CONFIG_MACH_APE6EVM) += 0x40008000
+-loadaddr-$(CONFIG_MACH_APE6EVM_REFERENCE) += 0x40008000
+ loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
+ loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
+ loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
+diff --git a/arch/arm/mach-shmobile/board-ape6evm-reference.c b/arch/arm/mach-shmobile/board-ape6evm-reference.c
+deleted file mode 100644
+index dd5bc63..0000000
+--- a/arch/arm/mach-shmobile/board-ape6evm-reference.c
++++ /dev/null
+@@ -1,61 +0,0 @@
+-/*
+- * APE6EVM board support
+- *
+- * Copyright (C) 2013  Renesas Solutions Corp.
+- * Copyright (C) 2013  Magnus Damm
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; version 2 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- */
+-
+-#include <linux/gpio.h>
+-#include <linux/kernel.h>
+-#include <linux/of_platform.h>
+-#include <linux/pinctrl/machine.h>
+-#include <linux/platform_device.h>
+-#include <linux/sh_clk.h>
+-
+-#include <asm/mach-types.h>
+-#include <asm/mach/arch.h>
+-
+-#include "common.h"
+-#include "r8a73a4.h"
+-
+-static void __init ape6evm_add_standard_devices(void)
+-{
+-#ifndef CONFIG_COMMON_CLK
+-	struct clk *parent;
+-	struct clk *mp;
+-
+-	r8a73a4_clock_init();
+-
+-	/* MP clock parent = extal2 */
+-	parent      = clk_get(NULL, "extal2");
+-	mp          = clk_get(NULL, "mp");
+-	BUG_ON(IS_ERR(parent) || IS_ERR(mp));
+-
+-	clk_set_parent(mp, parent);
+-	clk_put(parent);
+-	clk_put(mp);
+-#endif
+-
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-}
+-
+-static const char *ape6evm_boards_compat_dt[] __initdata = {
+-	"renesas,ape6evm-reference",
+-	NULL,
+-};
+-
+-DT_MACHINE_START(APE6EVM_DT, "ape6evm")
+-	.init_early	= shmobile_init_delay,
+-	.init_machine	= ape6evm_add_standard_devices,
+-	.init_late	= shmobile_init_late,
+-	.dt_compat	= ape6evm_boards_compat_dt,
+-MACHINE_END
 -- 
-2.1.3
+1.8.4.5
 
