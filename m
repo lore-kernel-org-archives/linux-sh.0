@@ -1,48 +1,48 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Tue, 02 Dec 2014 08:37:14 +0000
-Subject: [PATCH 0/5] ARM: shmobile: ape6evm: multiplatform support
-Message-Id: <1417509439-31739-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 02 Dec 2014 21:20:01 +0000
+Subject: Re: [PATCH 0/5] ARM: shmobile: ape6evm: multiplatform support
+Message-Id: <CAMuHMdWjDfhV6jhnpQn34fcDpi3NQUXkUADpanyhtO6VR+z8Yg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1417509439-31739-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1417509439-31739-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi!
+Hi Ulrich,
 
-This series implements multiplatform support for the APE6EVM board, and
-eliminates both legacy platforms.  Suggestions on how to sequence these
-changes in a more attractive fashion are welcome.
+On Tue, Dec 2, 2014 at 9:37 AM, Ulrich Hecht
+<ulrich.hecht+renesas@gmail.com> wrote:
+> This series implements multiplatform support for the APE6EVM board, and
+> eliminates both legacy platforms.  Suggestions on how to sequence these
+> changes in a more attractive fashion are welcome.
 
-This depends on the patch sets "r8a73a4 common clock framework
-implementation" and "ARM: shmobile: ape6evm-reference: add missing devices".
+Thanks for your series!
 
-CU
-Uli
+Attractive sequencing can be complicated, if you want to split up at
+SoC / board / DTS boundaries.
 
+Probably [4/5] should be squashed into [3/5], though?
 
-Ulrich Hecht (5):
-  ARM: shmobile: r8a73a4: Multiplatform support
-  ARM: shmobile: r8a73a4: Add r8a73a4-ape6evm-reference.dtb to
-    ARCH_SHMOBILE_MULTI
-  ARM: shmobile: ape6evm reference: Remove C board code
-  ARM: shmobile: r8a73a4: Remove r8a73a4-ape6evm-reference.dtb from
-    ARCH_SHMOBILE_LEGACY
-  ARM: shmobile: r8a73a4: ape6evm: replace legacy with multiplatform
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
- arch/arm/boot/dts/Makefile                       |   3 +-
- arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts  | 240 -------------------
- arch/arm/boot/dts/r8a73a4-ape6evm.dts            | 169 +++++++++++++-
- arch/arm/mach-shmobile/Kconfig                   |  17 +-
- arch/arm/mach-shmobile/Makefile                  |   1 -
- arch/arm/mach-shmobile/Makefile.boot             |   1 -
- arch/arm/mach-shmobile/board-ape6evm-reference.c |  61 -----
- arch/arm/mach-shmobile/board-ape6evm.c           | 286 -----------------------
- 8 files changed, 170 insertions(+), 608 deletions(-)
- delete mode 100644 arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
- delete mode 100644 arch/arm/mach-shmobile/board-ape6evm-reference.c
- delete mode 100644 arch/arm/mach-shmobile/board-ape6evm.c
+> Ulrich Hecht (5):
+>   ARM: shmobile: r8a73a4: Multiplatform support
+>   ARM: shmobile: r8a73a4: Add r8a73a4-ape6evm-reference.dtb to
+>     ARCH_SHMOBILE_MULTI
+>   ARM: shmobile: ape6evm reference: Remove C board code
+>   ARM: shmobile: r8a73a4: Remove r8a73a4-ape6evm-reference.dtb from
+>     ARCH_SHMOBILE_LEGACY
+>   ARM: shmobile: r8a73a4: ape6evm: replace legacy with multiplatform
 
--- 
-1.8.4.5
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
