@@ -1,65 +1,48 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 16 Dec 2014 05:42:11 +0000
-Subject: Re: [PATCH/RFC] serial: sh-sci: Add hardware flow control support of R-Car HSCIF
-Message-Id: <CANqRtoSEGxczvGQAcBBz1bE64xfRd9U7qmmn=9wGTbyb-9-Z_w@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 02 Dec 2014 08:37:14 +0000
+Subject: [PATCH 0/5] ARM: shmobile: ape6evm: multiplatform support
+Message-Id: <1417509439-31739-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418652846-6821-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1418652846-6821-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Cc: linux-serial@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, SH-Linux <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Hi Kaneko-san,
+Hi!
 
-On Mon, Dec 15, 2014 at 11:14 PM, Yoshihiro Kaneko
-<ykaneko0929@gmail.com> wrote:
-> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
->
-> TIOCM_CTS is enabled to use hardware flow control of HSCIF.
-> And hardware flow control of HSCIF is handled by device tree.
->
-> Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> ---
->
-> This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
-> tree.
->
->  drivers/tty/serial/sh-sci.c | 8 +++++++-
->  1 file changed, 7 insertions(+), 1 deletion(-)
->
-> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-> index bcec10a..6744702 100644
-> --- a/drivers/tty/serial/sh-sci.c
-> +++ b/drivers/tty/serial/sh-sci.c
-> @@ -1216,7 +1216,11 @@ static unsigned int sci_get_mctrl(struct uart_port *port)
->          * CTS/RTS is handled in hardware when supported, while nothing
->          * else is wired up. Keep it simple and simply assert DSR/CAR.
->          */
-> -       return TIOCM_DSR | TIOCM_CAR;
-> +       unsigned int mctrl = TIOCM_DSR | TIOCM_CAR;
-> +
-> +       if (port->type = PORT_HSCIF)
-> +               mctrl |= TIOCM_CTS;
-> +       return mctrl;
->  }
->
->  #ifdef CONFIG_SERIAL_SH_SCI_DMA
+This series implements multiplatform support for the APE6EVM board, and
+eliminates both legacy platforms.  Suggestions on how to sequence these
+changes in a more attractive fashion are welcome.
 
-Thanks for the patch. I suspect that a bit more work is needed to
-enable CTS handling as expected in this driver...
+This depends on the patch sets "r8a73a4 common clock framework
+implementation" and "ARM: shmobile: ape6evm-reference: add missing devices".
 
-> @@ -2611,6 +2615,8 @@ sci_parse_dt(struct platform_device *pdev, unsigned int *dev_id)
->         p->type = info->type;
->         p->regtype = info->regtype;
->         p->scscr = SCSCR_RE | SCSCR_TE;
-> +       if (of_property_read_bool(np, "ctsrts"))
-> +               p->capabilities = SCIx_HAVE_RTSCTS;
+CU
+Uli
 
-Also, for this particular DT property, perhaps we need to document it somehow?
 
-Thanks,
+Ulrich Hecht (5):
+  ARM: shmobile: r8a73a4: Multiplatform support
+  ARM: shmobile: r8a73a4: Add r8a73a4-ape6evm-reference.dtb to
+    ARCH_SHMOBILE_MULTI
+  ARM: shmobile: ape6evm reference: Remove C board code
+  ARM: shmobile: r8a73a4: Remove r8a73a4-ape6evm-reference.dtb from
+    ARCH_SHMOBILE_LEGACY
+  ARM: shmobile: r8a73a4: ape6evm: replace legacy with multiplatform
 
-/ magnus
+ arch/arm/boot/dts/Makefile                       |   3 +-
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts  | 240 -------------------
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts            | 169 +++++++++++++-
+ arch/arm/mach-shmobile/Kconfig                   |  17 +-
+ arch/arm/mach-shmobile/Makefile                  |   1 -
+ arch/arm/mach-shmobile/Makefile.boot             |   1 -
+ arch/arm/mach-shmobile/board-ape6evm-reference.c |  61 -----
+ arch/arm/mach-shmobile/board-ape6evm.c           | 286 -----------------------
+ 8 files changed, 170 insertions(+), 608 deletions(-)
+ delete mode 100644 arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+ delete mode 100644 arch/arm/mach-shmobile/board-ape6evm-reference.c
+ delete mode 100644 arch/arm/mach-shmobile/board-ape6evm.c
+
+-- 
+1.8.4.5
+
