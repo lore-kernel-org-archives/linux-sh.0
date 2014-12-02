@@ -1,54 +1,37 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 04 Dec 2014 09:03:02 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: sh73a0 legacy: Add PM domain support
-Message-Id: <CAMuHMdU5WrO+mqDMAwLAJxTtqXXsf776XdROx+mHRqcrLn9oBw@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 02 Dec 2014 08:37:15 +0000
+Subject: [PATCH 1/5] ARM: shmobile: r8a73a4: Multiplatform support
+Message-Id: <1417509439-31739-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1417616421-6968-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1417616421-6968-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Simon,
+Enable r8a73a4 Multiplatform support for the generic r8a73a4
+machine vector.
 
-On Thu, Dec 4, 2014 at 8:36 AM, Simon Horman <horms@verge.net.au> wrote:
-> On Wed, Dec 03, 2014 at 03:20:21PM +0100, Geert Uytterhoeven wrote:
->> Add all hierarchical PM domains that exist on SH-Mobile AG5 (sh730a),
->> and register all platform devices to the appropriate PM domains.
->>
->> Special handling is required for the following PM domains:
->>   - A4BC0 and A4BC1 contain the SDRAM Bus State Controllers, and thus
->>     should not be turned off,
->>   - A3SP contains the serial console, and should not be turned off if
->>     no_console_suspend is set,
->>   - A2SL contains the CPU core, and should not be turned off if the CPU
->>     is in use.
->>
->> Note that PM domain D4 can be powered down without ill effects on s2ram
->> behavior, just like on SH-Mobile AP4 (sh7372), but unlike on R-Mobile A1
->> (r8a7740).
->>
->> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->> ---
->> v2:
->>   - The smsc911x is not located in A4S (the Bus State Controller it is
->>     connected to is, but we don't cover that device in legacy code),
->>   - Move domain_devices[] next to tables with platform devices.
->
-> In general I'm not adding new legacy board support.
-> I'm happy to make exceptions but its not obvious to me that this should
-> be one.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/mach-shmobile/Kconfig | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-So please just ignore this one.
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 1b4fafe..d107b93 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -51,6 +51,11 @@ config ARCH_R7S72100
+ 	bool "RZ/A1H (R7S72100)"
+ 	select SYS_SUPPORTS_SH_MTU2
+ 
++config ARCH_R8A73A4
++	bool "R-Mobile APE6 (R8A73A40)"
++	select ARCH_RMOBILE
++	select RENESAS_IRQC
++
+ config ARCH_R8A7740
+ 	bool "R-Mobile A1 (R8A77400)"
+ 	select ARCH_RMOBILE
+-- 
+1.8.4.5
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
