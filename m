@@ -1,73 +1,97 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 10 Dec 2014 14:19:12 +0000
-Subject: Re: [RFC 0/2] i2c: sh_mobile: don't regress on deferred probing
-Message-Id: <20141210141912.GA8247@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="5mCyUwZo2JvN/JJP"
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 03 Dec 2014 14:17:04 +0000
+Subject: [PATCH 1/4] ARM: shmobile: R-Mobile: Add SYSC restart handler
+Message-Id: <1417616227-6715-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418217709-26392-1-git-send-email-wsa@the-dreams.de>
- <CAMuHMdUwsUakz7S_7xCob4__wR-PXcdpZKTGx0i_6ZatDeSvXg@mail.gmail.com>
-In-Reply-To: <CAMuHMdUwsUakz7S_7xCob4__wR-PXcdpZKTGx0i_6ZatDeSvXg@mail.gmail.com>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Linux I2C <linux-i2c@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+References: <1417616227-6715-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1417616227-6715-1-git-send-email-geert+renesas@glider.be>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+Extend the PM domain platform driver for the R-Mobile System
+Controller (SYSC) to register a restart handler, to be used on various
+Renesas ARM SoCs (e.g. R-Mobile A1 (r8a7740) and APE6 (r8a73a4), and
+SH-Mobile AP4 (sh7372) and AG5 (sh73a0)).
 
---5mCyUwZo2JvN/JJP
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Note that this supports DT-based platforms only.
 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-shmobile/pm-rmobile.c | 48 ++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 47 insertions(+), 1 deletion(-)
 
-> On Wed, Dec 10, 2014 at 2:21 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> > Okay, here is my take on solving the problem found by Geert. I still do=
-n't like
-> > it much but it is not as bad as I expected it to be ;) Let me know what=
- you
-> > think.
->=20
-> Thanks, it's indeed less ugly than I would have expected ;-)
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index f540096c05f6eabd..b82da04c7210a98d 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -23,14 +23,22 @@
+ #include <linux/slab.h>
+ 
+ #include <asm/io.h>
++#include <asm/system_misc.h>
+ 
+ #include "pm-rmobile.h"
+ 
+-/* SYSC */
++/* SYSC Register Bank 1 */
+ #define SPDCR		0x08	/* SYS Power Down Control Register */
+ #define SWUCR		0x14	/* SYS Wakeup Control Register */
+ #define PSTR		0x80	/* Power Status Register */
+ 
++/* SYSC Register Bank 2 */
++#define RESCNT2		0x20	/* Reset Control Register 2 */
++
++/* Reset Control Register 2 */
++#define RESCNT2_PRES	0x80000000	/* Soft power-on reset */
++
++
+ #define PSTR_RETRIES	100
+ #define PSTR_DELAY_US	10
+ 
+@@ -400,3 +408,41 @@ static int __init rmobile_init_pm_domains(void)
+ core_initcall(rmobile_init_pm_domains);
+ 
+ #endif /* !CONFIG_ARCH_SHMOBILE_LEGACY */
++
++
++static void __iomem *sysc_base2;
++
++static void rmobile_sysc_restart(enum reboot_mode reboot_mode, const char *cmd)
++{
++	pr_debug("%s %u/%s\n", __func__, reboot_mode, cmd);
++
++	writel(RESCNT2_PRES, sysc_base2 + RESCNT2);
++}
++
++static int rmobile_sysc_probe(struct platform_device *pdev)
++{
++	dev_dbg(&pdev->dev, "%s\n", __func__);
++
++	sysc_base2 = of_iomap(pdev->dev.of_node, 1);
++	if (!sysc_base2)
++		return -ENODEV;
++
++	arm_pm_restart = rmobile_sysc_restart;
++
++	return 0;
++}
++
++static const struct of_device_id rmobile_sysc_of_match[] = {
++	{ .compatible = "renesas,sysc-rmobile", },
++	{ /* sentinel */ }
++};
++
++static struct platform_driver rmobile_sysc_driver = {
++	.probe = rmobile_sysc_probe,
++	.driver = {
++		.name = "rmobile_sysc",
++		.of_match_table = rmobile_sysc_of_match,
++	},
++};
++
++module_platform_driver(rmobile_sysc_driver);
+-- 
+1.9.1
 
-:D
-
-> Note that in spi-rspi.c and spi-sh-msiof, any error returned by *_request=
-_dma()
-> is considered an error, and -EPROBE_DEFER is not handled specially.
-> So it won't retry if the DMA engine driver isn't available, but just use =
-PIO
-> (until unbind/bind).
-
-For historic reasons, i2c-sh_mobile uses subsys_initcall() and at that
-time, DMA is never available. Converting to module_init() will just
-create its own set of potential regressions :(
-
-> Now we have a nice sample implementation, perhaps I should port it to
-> spi-rspi and spi-sh-msiof, too?
->=20
-> Let's wait and see for other comments...
-
-Yeah, let's see first...
-
-
---5mCyUwZo2JvN/JJP
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJUiFZgAAoJEBQN5MwUoCm2Q7sP/1YTHDqpbZaOprideN33fcwy
-PJuVEfA8i8o859rmpDi/uNB4/BxKd9QDXTsDlRAbM020NLf5Q/d/JhDQ2AcvXz89
-WORrW/PkOKPg4hCJnIRTc9gR+35/l9A2BAP7GmhnfBbLAlMZHdm1H5I1NrMTcWGC
-xYtwvvevFDfDdexE5WkRdOvBknYgrYANNTAt6MS1fXTA4K9UsQPhjj0+swCVBirT
-uBmNQY8Le9/PHROCd6h0CiQz2gNEosdV+OFKU6GT6Xjc9KoAA6mVa3Bhnp4h6Qzw
-V/EcQJz43r2T70zdLo6AFz/0u0B4EtfpuH4u88Wg+C8haNnnkxoU4rIB4U5hnR84
-xLPteVQcg9glvc8dwtUO7jwUDYNs/MUK3jewoRZY0T+mbMB0K0TgJ1nwSaVjao5j
-TpBp2ZBhAmlzGOAc9/5HUUmKmwLBtWKrFYA1+3bXl/4asU6LyEQEZ2l2MY5nxN5W
-MJkaeSlRT/cTplKaFXycN2AIqVGECxH+3pOcCWsd20dCnik77nnEfSA0lZPpr47Y
-sC3vG0tiXRSOlGnINWGZuv2M3IUQgNgHRkNMwOasr0UlaM1ZLsf7+2UOwy6/JkPC
-CkvFjBByqETCN1/Vk2iTDCfiW/1H6SMHFZGR5RttRwCa5rliWiJjKTUzRpKb+hj7
-Gh/9iVcbl3sl8i4FLjuh
-=nFbs
------END PGP SIGNATURE-----
-
---5mCyUwZo2JvN/JJP--
