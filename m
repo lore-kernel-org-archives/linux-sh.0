@@ -1,57 +1,89 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 17 Dec 2014 18:29:15 +0000
-Subject: Re: [PATCH] i2c: sh_mobile: I2C_SH_MOBILE should depend on HAS_DMA
-Message-Id: <20141217182915.GE3981@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="mR8QP4gmHujQHb1c"
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 03 Dec 2014 09:30:06 +0000
+Subject: Re: [PATCH RFC 0/3] Add "Simple" / Renesas Bus State Controller Driver
+Message-Id: <CAMuHMdWCGQwLVb1K5jRxWToe-de8T_A5n08FsjEiv8z1B9Q4oA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418650624-28174-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1418650624-28174-1-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+References: <1416859808-18503-1-git-send-email-geert+renesas@glider.be>
+	<6261300.I132f1jLqB@wuerfel>
+	<CAMuHMdVjpL-QgS0aAdMo4EHXibhpKCJC73yY+HDY=+Ae=LMigA@mail.gmail.com>
+	<7h4mtlen8f.fsf@deeprootsystems.com>
+In-Reply-To: <7h4mtlen8f.fsf@deeprootsystems.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Kevin Hilman <khilman@kernel.org>, Arnd Bergmann <arnd@arndb.de>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, "Rafael J. Wysocki" <rjw@rjwysocki.net>, Ulf Hansson <ulf.hansson@linaro.org>, Grant Likely <grant.likely@linaro.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Linux PM list <linux-pm@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
+Hi Kevin, Arnd,
 
---mR8QP4gmHujQHb1c
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+I've been giving this some more thoughts...
 
-On Mon, Dec 15, 2014 at 02:37:04PM +0100, Geert Uytterhoeven wrote:
-> If NO_DMA=3Dy:
->=20
-> drivers/built-in.o: In function `sh_mobile_i2c_dma_unmap':
-> i2c-sh_mobile.c:(.text+0x60de42): undefined reference to `dma_unmap_singl=
-e'
-> drivers/built-in.o: In function `sh_mobile_i2c_xfer_dma':
-> i2c-sh_mobile.c:(.text+0x60df22): undefined reference to `dma_map_single'
-> i2c-sh_mobile.c:(.text+0x60df2e): undefined reference to `dma_mapping_err=
-or'
->=20
-> Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
+On Wed, Nov 26, 2014 at 9:11 PM, Kevin Hilman <khilman@kernel.org> wrote:
+> Geert Uytterhoeven <geert@linux-m68k.org> writes:
+>> On Mon, Nov 24, 2014 at 9:15 PM, Arnd Bergmann <arnd@arndb.de> wrote:
+>>> On Monday 24 November 2014 21:10:05 Geert Uytterhoeven wrote:
+>>>> As this minimal BSC driver isn't hardware-specific at all, I'm wondering
+>>>> if there's a simpler way to do this?
+>>>>   - Should the driver be renamed to "simple-bus", and match "simple-bus"?
+>>>>   - Should this be moved to core code, without an explicit driver for
+>>>>     "simple-bus"? I.e. should the driver core just enable runtime PM for
+>>>>     all devices not bound to a driver, as they may represent buses with
+>>>>     child devices that do rely on runtime PM?
+>>>>
+>>>> Thanks for your comments and suggestions!
+>>>
+>>> My understanding of simple-bus is that it's something that does
+>>> not have any power-management capabilities, and I'd rather not
+>>> add clocks or interrupts to it.
 
-Applied to for-current, thanks!
+Should I not add the interrupt to the device node, even though I do
+know the hardware block has an interrupt?
+Of course, to make use of the interrupt, you do need a hardware-specific
+driver that binds to the specific compatible name. But for now such a
+driver is overkill, as I do not need to use the interrupt.
 
+Power domains (and clocks used for power management) are different,
+as they are platform features: they may appear in any device node, even if
+the bindings for the device node don't mention them.
+Else I cannot add them to a node that's compatible with e.g. "arm,cortex-a15"
+or "arm,pl310-cache", without adding (or completely replacing them with)
+compatible names like "renesas,r8a73a4-cortex-a15" resp.
+"renesas,sh73a0-pl310-cache"?
+Hence I think they should be allowed in "simple-bus" nodes, too.
 
---mR8QP4gmHujQHb1c
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+>>> What I think makes more sense is to have a bus driver for it
+>>> in drivers/bus, remove the "simple-bus" compatibility value
+>>> and have the driver take care of registering the power domain
+>>> and probing the child devices using of_platform_populate on
+>>> itself.
+>>
+>> Registering power domains is already handled by the core code.
+>>
+>> So compared to my RFC code, I only have to
+>>   1. Drop "simple-bus" from the compatible property in the .dtsi,
+>>   2. Call of_platform_populate() from renesas_bsc_probe(), to
+>>      register the child devices, now the core code no longer does that.
+>>
+>> I find it a bit strange having to add _more_ code, as the core code handles
+>> registering child devices fine. Doing it from my bus driver only protects
+>> against people trying to run a kernel without my bus driver included
+>> (which currently works fine, as long as no PM domain or clock is involved,
+>>  e.g. if the clock is forgotten in the SoC's .dtsi :-).
+>
+> I actually rather like the simple bus driver in it's current form, where
+> the device and pm-domain registration is taken care of by the
+> core. Since it's really not HW specific at all, maybe just rename it
+> simple-pm-bus or something like that?
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+That means writing bindings for a new bus type "simple-pm-bus"?
 
-iQIcBAEBAgAGBQJUkct7AAoJEBQN5MwUoCm2kHIP/08aq8IEDCGmfnuAn5A+3a6t
-C1fspkLXZ5MXGVM2Pygtu24CT5cmJ+CLGBQrNDu6zIShq1nRCtZOrXAqaNTWCadO
-vzQyE1RRXIeh9dlQdKx3q75P+4KB8c5C1AL7OEwqNMM6W90vARmZf8NAwMSi4scC
-lLDUqZttEdyL+CQ7bUcVjyYvUhPIbFFQ10daPo/71xC2VyB/EyP+AkOL5MiCbKQW
-i9AhKSKoK321VTB7c+9BPJTvSty/lA6mJ93PDVlhuGQ7iF3b5/0Omnv34o9FNBRh
-8bfjehmfnJAZ8JvJut4Ptf2m20TzQ5CQj9oiop3lHqaXTH2DGPebNvaHrJPUzX38
-7ndwUEkt9vOAI48d7dY2fIqCJE/xKJNL71j1kqSzDIUkq7tDn0vWfat3A0Yqdnf/
-IP8aIRFmEhHhROF8aym5mcmkBRBwj5COAQEyDB/oHwyIomaVOcYK9TzmWaGnw8lQ
-xV7EqLziKOxrepLm3DC8a3Xid3uZ8G8UqrcrR1lUlehNRUNlqpjwrhhlXL/kvrGs
-mYMaahW7efwdjWThkAY4Dh8mnJQPY9RUz6wWKUzel5vP+agChxdfhzV0CEswdeFG
-4+83E7H0djKVIGj1ydS/ETxPkrZ2+/DKZZSVABTgEhDVeQ2mYRME94R0uPcq5pm0
-BcwOzvy3pJp3y1wQeGm+
-=ilcy
------END PGP SIGNATURE-----
+Gr{oetje,eeting}s,
 
---mR8QP4gmHujQHb1c--
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
