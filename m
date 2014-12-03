@@ -1,71 +1,51 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 19 Dec 2014 00:39:33 +0000
-Subject: [PATCH/RFC] ARM: shmobile: r8a7794: Add Audio DMAC, PWM and Thermal clocks to device tree
-Message-Id: <1418949573-24211-1-git-send-email-horms+renesas@verge.net.au>
+From: Dan Carpenter <dan.carpenter@oracle.com>
+Date: Wed, 03 Dec 2014 12:39:55 +0000
+Subject: re: sh: Support for multiple nodes.
+Message-Id: <20141203123954.GA16105@mwanda>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This is based on the MSTP5 clocks in the r8a7791 device tree.
-The main difference being that the r8a7794 does not have an Audio DMAC1
-clock.
+Hello Paul Mundt,
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+The patch b241cb0c885e: "sh: Support for multiple nodes." from Jun 6,
+2007, leads to the following static checker warning:
 
----
-Based on the renesas-devel-20141217-v3.18 tag of my renesas tree.
+	arch/sh/mm/numa.c:47 setup_bootmem_node()
+	error: buffer overflow 'node_data' 1024 <= 1024
 
-N.B: The R-Car Gen2 v1.8.0 BSP uses zs_clk whereas this patch uses hp_clk
-     as the parent clock for the Audio DMAC clock.
+arch/sh/mm/numa.c
+    27  void __init setup_bootmem_node(int nid, unsigned long start, unsigned long end)
+    28  {
+    29          unsigned long bootmap_pages;
+    30          unsigned long start_pfn, end_pfn;
+    31          unsigned long bootmem_paddr;
+    32  
+    33          /* Don't allow bogus node assignment */
+    34          BUG_ON(nid > MAX_NUMNODES || nid <= 0);
+                       ^^^^^^^^^^^^^^^^^^
 
-     In that regard this patch follows the pattern used in mainline for the
-     r8a7790 and r8a7791 SoCs.
+It's not very important but this check is off by one so static checkers
+complain.
 
-     The BSP's parent clock is consistent for the r8a7790, r8a7791, r8a7793
-     and r8a7794 SoCs.
+    35  
+    36          start_pfn = start >> PAGE_SHIFT;
+    37          end_pfn = end >> PAGE_SHIFT;
+    38  
+    39          pmb_bolt_mapping((unsigned long)__va(start), start, end - start,
+    40                           PAGE_KERNEL);
+    41  
+    42          memblock_add(start, end - start);
+    43  
+    44          __add_active_range(nid, start_pfn, end_pfn);
+    45  
+    46          /* Node-local pgdat */
+    47          NODE_DATA(nid) = __va(memblock_alloc_base(sizeof(struct pglist_data),
+    48                                               SMP_CACHE_BYTES, end));
+    49          memset(NODE_DATA(nid), 0, sizeof(struct pglist_data));
+    50  
 
-     Support for the r8a7793 SoC is not present in mainline.
----
- arch/arm/boot/dts/r8a7794.dtsi            | 11 +++++++++++
- include/dt-bindings/clock/r8a7794-clock.h |  1 +
- 2 files changed, 12 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 063bf56..7a03166 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -530,6 +530,17 @@
- 			        "sdhi2", "sdhi1", "sdhi0",
- 				"mmcif0", "cmt1", "usbdmac0", "usbdmac1";
- 		};
-+		mstp5_clks: mstp5_clks@e6150144 {
-+			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
-+			clocks = <&hp_clk>, <&extal_clk>, <&p_clk>;
-+			#clock-cells = <1>;
-+			clock-indices = <
-+				R8A7794_CLK_AUDIO_DMAC0
-+				R8A7794_CLK_THERMAL R8A7794_CLK_PWM
-+			>;
-+			clock-output-names = "audmac0", "thermal", "pwm";
-+		};
- 		mstp7_clks: mstp7_clks@e615014c {
- 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
-diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
-index d5cfe62..58fa44d 100644
---- a/include/dt-bindings/clock/r8a7794-clock.h
-+++ b/include/dt-bindings/clock/r8a7794-clock.h
-@@ -61,6 +61,7 @@
- #define R8A7794_CLK_USBDMAC1		31
- 
- /* MSTP5 */
-+#define R8A7794_CLK_AUDIO_DMAC0		2
- #define R8A7794_CLK_THERMAL		22
- #define R8A7794_CLK_PWM			23
- 
--- 
-2.1.3
-
+regards,
+dan carpenter
