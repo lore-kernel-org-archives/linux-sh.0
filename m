@@ -1,41 +1,22 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 29 Dec 2014 01:43:32 +0000
-Subject: [PATCH 01/30] ARM: shmobile: ape6evm-reference: Correct BSC bus range
-Message-Id: <b5c107f03b65e14a70d86654cf2427bdc7e4afe6.1419812185.git.horms+renesas@verge.net.au>
+From: "Ivan T. Ivanov" <iivanov@mm-sol.com>
+Date: Wed, 03 Dec 2014 12:51:43 +0000
+Subject: Re: [PATCH v2 0/7] Pinctrl support for Zynq
+Message-Id: <1417611103.30615.25.camel@mm-sol.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1419812185.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
+References: <1417137993-8337-1-git-send-email-soren.brinkmann@xilinx.com>
+In-Reply-To: <1417137993-8337-1-git-send-email-soren.brinkmann@xilinx.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-The address space for the r8a73a4 Bus State Controller covers the first
-512 MiB, not the first 2 GiB.
-Correct the size in the "ranges" property to reflect this, and to no
-longer overlap with PCI Express Memory.
+On Thu, 2014-11-27 at 17:26 -0800, Soren Brinkmann wrote:
+> Hi all,
+> 
+> here is v2 of this series. 
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Which tree did you use as a base for these patches?
+Tried with pinctrl/devel and linus/master didn't apply.
 
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-index 84e05f7..b3d8f84 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-@@ -67,7 +67,7 @@
- 		compatible = "simple-bus";
- 		#address-cells = <1>;
- 		#size-cells = <1>;
--		ranges = <0 0 0 0x80000000>;
-+		ranges = <0 0 0 0x20000000>;
- 	};
- };
- 
--- 
-2.1.3
-
+Ivan
