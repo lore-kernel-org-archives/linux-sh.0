@@ -1,50 +1,55 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 29 Dec 2014 01:47:05 +0000
-Subject: [PATCH 2/4] ARM: shmobile: Fix is_e2 warning
-Message-Id: <95abc9de7896bf65e67bf781d709ec453f1f5f84.1419810196.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 03 Dec 2014 14:17:06 +0000
+Subject: [PATCH 3/4] ARM: shmobile: sh73a0: Remove restart callback
+Message-Id: <1417616227-6715-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1419810196.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1419810196.git.horms+renesas@verge.net.au>
+References: <1417616227-6715-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1417616227-6715-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Remove the restart handling hack from the sh73a0 generic multiplatform
+case.
 
-Fix "is_e2" warning introduced by:
+Restart on DT-based sh73a0 platforms is now handled through the restart
+handler registered by the R-Mobile System Controller (SYSC) driver.
 
-9ce3fa6 ARM: shmobile: rcar-gen2: Add CA7 arch_timer initialization for r8a7794
+This reverts commit cad900819fba0176 ("ARM: shmobile: sh73a0: Add
+restart callback").
 
-Only triggers on kernel configurations that have ARCH_ARM_TIMER=n.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/setup-rcar-gen2.c | 4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
+ arch/arm/mach-shmobile/setup-sh73a0.c | 8 --------
+ 1 file changed, 8 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-index 3dd6edd..c35b91d 100644
---- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
-+++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-@@ -52,15 +52,13 @@ void __init rcar_gen2_timer_init(void)
- {
- #if defined(CONFIG_ARM_ARCH_TIMER) || defined(CONFIG_COMMON_CLK)
- 	u32 mode = rcar_gen2_read_mode_pins();
--	bool is_e2 = (bool)of_find_compatible_node(NULL, NULL,
--		"renesas,r8a7794");
- #endif
- #ifdef CONFIG_ARM_ARCH_TIMER
- 	void __iomem *base;
- 	int extal_mhz = 0;
- 	u32 freq;
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 2ec702c51dd25050..9e5e5ebbd1af641d 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -818,13 +818,6 @@ void __init sh73a0_add_standard_devices_dt(void)
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
  
--	if (is_e2) {
-+	if (of_machine_is_compatible("renesas,r8a7794")) {
- 		freq = 260000000 / 8;	/* ZS / 8 */
- 		/* CNTVOFF has to be initialized either from non-secure
- 		 * Hypervisor mode or secure Monitor mode with SCR.NS=1.
+-#define RESCNT2 IOMEM(0xe6188020)
+-static void sh73a0_restart(enum reboot_mode mode, const char *cmd)
+-{
+-	/* Do soft power on reset */
+-	writel((1 << 31), RESCNT2);
+-}
+-
+ static const char *sh73a0_boards_compat_dt[] __initdata = {
+ 	"renesas,sh73a0",
+ 	NULL,
+@@ -836,7 +829,6 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
+ 	.init_early	= shmobile_init_delay,
+ 	.init_machine	= sh73a0_add_standard_devices_dt,
+ 	.init_late	= shmobile_init_late,
+-	.restart	= sh73a0_restart,
+ 	.dt_compat	= sh73a0_boards_compat_dt,
+ MACHINE_END
+ #endif /* CONFIG_USE_OF */
 -- 
-2.1.3
+1.9.1
 
