@@ -1,27 +1,58 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 10 Dec 2014 00:26:22 +0000
-Subject: Re: [PATCH] ARM: shmobile: koelsch: Fix QSPI mode of SPI-Flash into mode3
-Message-Id: <20141210002622.GE9690@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 03 Dec 2014 14:37:34 +0000
+Subject: [PATCH] [RFC] ARM: shmobile: sh73a0 dtsi: Add Cortex-A9 TWD node
+Message-Id: <1417617454-14533-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418085432-20374-1-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdXj9N3tL_9ttw+jU7fxjC8x=JJwXQynMkjOAJp38=L4ww@mail.gmail.com>
-In-Reply-To: <CAMuHMdXj9N3tL_9ttw+jU7fxjC8x=JJwXQynMkjOAJp38=L4ww@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Dec 09, 2014 at 09:53:04AM +0100, Geert Uytterhoeven wrote:
-> On Tue, Dec 9, 2014 at 1:37 AM, Simon Horman <horms+renesas@verge.net.au> wrote:
-> > From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-> >
-> > In order to change into mode3, CPOL and CPHA bit of SPCMD register
-> > of QSPI is changed. Mode3 can avoid intermediate voltage.
-> >
-> > Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-> > [horms: Updated changelog and re-ordered properties]
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Add a node for the Private Timer and Watchdog, as found in the Cortex-A9
+MPCore.
 
-Thanks, I have queued this up.
+Without this, there's no clocksource available during early kernel
+initialization, before cmt1 is initialized, leading to a lock-up if
+CONFIG_CPU_IDLE=y.
+
+FIXME The clock should be the PERIPH clock, but the sh73a0 CPG driver
+      doesn't have support for that clock yet. Hence we use the ZG
+      clock, which runs at the same frequency.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Unlike "arm,armv7-timer" (used on R-Car Gen2), "arm,cortex-a9-twd-time"
+does require a clock, which is not documented in its bindings?
+---
+ arch/arm/boot/dts/sh73a0.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index cca22ec59a2edd63..c53b19f40ae0977f 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -11,6 +11,7 @@
+ /include/ "skeleton.dtsi"
+ 
+ #include <dt-bindings/clock/sh73a0-clock.h>
++#include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+ 
+ / {
+@@ -43,6 +44,13 @@
+ 		      <0xf0000100 0x100>;
+ 	};
+ 
++	timer@f0000600 {
++		compatible = "arm,cortex-a9-twd-timer";
++		reg = <0xf0000600 0x20>;
++		interrupts = <GIC_PPI 13 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_HIGH)>;
++		clocks = <&cpg_clocks SH73A0_CLK_ZG>;	// FIXME CLK_PERIPH
++	};
++
+ 	pmu {
+ 		compatible = "arm,cortex-a9-pmu";
+ 		interrupts = <0 55 IRQ_TYPE_LEVEL_HIGH>,
+-- 
+1.9.1
+
