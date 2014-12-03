@@ -1,76 +1,275 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 10 Dec 2014 23:42:00 +0000
-Subject: [PATCH 00/15] R-Car DU fixes and enhancements (including interlaced support)
-Message-Id: <1418254935-13536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 03 Dec 2014 13:41:44 +0000
+Subject: [PATCH v6 4/7] ARM: shmobile: R-Mobile: Store SYSC base address in rmobile_pm_domain
+Message-Id: <1417614107-5985-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1417614107-5985-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1417614107-5985-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+Replace the hardcoded addresses for accessing the SYSC PM domain
+registers by register offsets, relative to the SYSC base address stored
+in struct rmobile_pm_domain.
 
-This patch series fixes several bugs in the R-Car DU driver and adds support
-for new features, namely LVDS-HDMI encoders chaining, external pixel clock and
-interlaced modes.
+In the future, the SYSC base address will come from DT.
 
-The last 5 patches enable HDMI output in the Lager and Koelsch DT files and
-add external pixel clocks to the three currently supported boards (Marzen,
-Lager and Koelsch).
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
+---
+v6:
+  - No changes,
+v5:
+  - No changes,
+v4:
+  - Add Reviewed-by,
+  - Restore SYSC register definition alignment,
+v3:
+  - No changes,
+v2:
+  - No changes.
+---
+ arch/arm/mach-shmobile/pm-r8a7740.c | 14 ++++++++++++++
+ arch/arm/mach-shmobile/pm-rmobile.c | 24 +++++++++++++-----------
+ arch/arm/mach-shmobile/pm-rmobile.h |  1 +
+ arch/arm/mach-shmobile/pm-sh7372.c  | 11 +++++++++++
+ 4 files changed, 39 insertions(+), 11 deletions(-)
 
-All DT changes except "ARM: shmobile: lager: Add DU HDMI output support" can
-be merged independently of the code as there is no runtime dependency. The DT
-bindings extensions to support external pixel clocks should be acked first
-though.
-
-Patch 11/15 ("ARM: shmobile: lager: Add DU HDMI output support") depends on at
-least patch 02/15 ("drm: rcar-du: Don't fail probe in case of partial encoder
-init error").
-
-I plan to send a pull request for patches 01/15 to 10/15 to get them merged
-through the DRM tree. At the same time I plan to send a pull request for
-patches 12/15 to 15/15 to get them merged through the linux-sh tree. Unless
-someone wants to get it merged first, patch 11/15 can wait for v3.21.
-
-Laurent Pinchart (15):
-  drm: adv7511: Remove interlaced mode check
-  drm: rcar-du: Don't fail probe in case of partial encoder init error
-  drm: rcar-du: Configure pitch for chroma plane of multiplanar formats
-  drm: rcar-du: Remove LVDS and HDMI encoders chaining restriction
-  drm: rcar-du: Refactor DEFR8 feature
-  drm: rcar-du: Add support for external pixel clock
-  drm: rcar-du: Output HSYNC instead of CSYNC
-  drm: rcar-du: Enable hotplug detection on HDMI connector
-  drm: rcar-du: Clamp DPMS states to on and off
-  drm: rcar-du: Implement support for interlaced modes
-  ARM: shmobile: lager: Add DU HDMI output support
-  ARM: shmobile: koelsch: Add DU HDMI output support
-  ARM: shmobile: marzen: Add DU external pixel clock to DT
-  ARM: shmobile: lager: Add DU external pixel clocks to DT
-  ARM: shmobile: koelsch: Add DU external pixel clocks to DT
-
- .../devicetree/bindings/video/renesas,du.txt       |  4 +
- arch/arm/boot/dts/r8a7779-marzen.dts               |  9 ++
- arch/arm/boot/dts/r8a7790-lager.dts                | 69 ++++++++++++++++
- arch/arm/boot/dts/r8a7791-koelsch.dts              | 69 +++++++++++++++-
- drivers/gpu/drm/i2c/adv7511.c                      |  3 -
- drivers/gpu/drm/rcar-du/rcar_du_crtc.c             | 95 ++++++++++++++++++----
- drivers/gpu/drm/rcar-du/rcar_du_crtc.h             |  1 +
- drivers/gpu/drm/rcar-du/rcar_du_drv.c              |  6 +-
- drivers/gpu/drm/rcar-du/rcar_du_drv.h              |  2 +-
- drivers/gpu/drm/rcar-du/rcar_du_encoder.c          | 34 +++++---
- drivers/gpu/drm/rcar-du/rcar_du_group.c            | 21 ++++-
- drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c          |  2 +
- drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c          | 18 ++++
- drivers/gpu/drm/rcar-du/rcar_du_kms.c              | 15 +++-
- drivers/gpu/drm/rcar-du/rcar_du_plane.c            | 20 ++++-
- drivers/gpu/drm/rcar-du/rcar_du_regs.h             |  5 +-
- drivers/gpu/drm/rcar-du/rcar_du_vgacon.c           |  1 +
- 17 files changed, 326 insertions(+), 48 deletions(-)
-
+diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
+index ac2eecd6f5ea5d9f..34608fcf064808b8 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7740.c
++++ b/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -9,10 +9,14 @@
+  * for more details.
+  */
+ #include <linux/console.h>
++#include <linux/io.h>
+ #include <linux/suspend.h>
++
+ #include "common.h"
+ #include "pm-rmobile.h"
+ 
++#define SYSC_BASE	IOMEM(0xe6180000)
++
+ #if defined(CONFIG_PM) && !defined(CONFIG_ARCH_MULTIPLATFORM)
+ static int r8a7740_pd_a3sm_suspend(void)
+ {
+@@ -45,41 +49,51 @@ static int r8a7740_pd_d4_suspend(void)
+ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
+ 	{
+ 		.genpd.name	= "A4LC",
++		.base		= SYSC_BASE,
+ 		.bit_shift	= 1,
+ 	}, {
+ 		.genpd.name	= "A4MP",
++		.base		= SYSC_BASE,
+ 		.bit_shift	= 2,
+ 	}, {
+ 		.genpd.name	= "D4",
++		.base		= SYSC_BASE,
+ 		.bit_shift	= 3,
+ 		.gov		= &pm_domain_always_on_gov,
+ 		.suspend	= r8a7740_pd_d4_suspend,
+ 	}, {
+ 		.genpd.name	= "A4R",
++		.base		= SYSC_BASE,
+ 		.bit_shift	= 5,
+ 	}, {
+ 		.genpd.name	= "A3RV",
++		.base		= SYSC_BASE,
+ 		.bit_shift	= 6,
+ 	}, {
+ 		.genpd.name	= "A4S",
++		.base		= SYSC_BASE,
+ 		.bit_shift	= 10,
+ 		.no_debug	= true,
+ 	}, {
+ 		.genpd.name	= "A3SP",
++		.base		= SYSC_BASE,
+ 		.bit_shift	= 11,
+ 		.gov		= &pm_domain_always_on_gov,
+ 		.no_debug	= true,
+ 		.suspend	= r8a7740_pd_a3sp_suspend,
+ 	}, {
+ 		.genpd.name	= "A3SM",
++		.base		= SYSC_BASE,
+ 		.bit_shift	= 12,
+ 		.gov		= &pm_domain_always_on_gov,
+ 		.suspend	= r8a7740_pd_a3sm_suspend,
+ 	}, {
+ 		.genpd.name	= "A3SG",
++		.base		= SYSC_BASE,
+ 		.bit_shift	= 13,
+ 	}, {
+ 		.genpd.name	= "A4SU",
++		.base		= SYSC_BASE,
+ 		.bit_shift	= 20,
+ 	},
+ };
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index 6d912ce801aa88bd..0258b00aacc94c8f 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -20,9 +20,9 @@
+ #include "pm-rmobile.h"
+ 
+ /* SYSC */
+-#define SPDCR		IOMEM(0xe6180008)
+-#define SWUCR		IOMEM(0xe6180014)
+-#define PSTR		IOMEM(0xe6180080)
++#define SPDCR		0x08	/* SYS Power Down Control Register */
++#define SWUCR		0x14	/* SYS Wakeup Control Register */
++#define PSTR		0x80	/* Power Status Register */
+ 
+ #define PSTR_RETRIES	100
+ #define PSTR_DELAY_US	10
+@@ -39,12 +39,12 @@ static int rmobile_pd_power_down(struct generic_pm_domain *genpd)
+ 			return ret;
+ 	}
+ 
+-	if (__raw_readl(PSTR) & mask) {
++	if (__raw_readl(rmobile_pd->base + PSTR) & mask) {
+ 		unsigned int retry_count;
+-		__raw_writel(mask, SPDCR);
++		__raw_writel(mask, rmobile_pd->base + SPDCR);
+ 
+ 		for (retry_count = PSTR_RETRIES; retry_count; retry_count--) {
+-			if (!(__raw_readl(SPDCR) & mask))
++			if (!(__raw_readl(rmobile_pd->base + SPDCR) & mask))
+ 				break;
+ 			cpu_relax();
+ 		}
+@@ -52,7 +52,8 @@ static int rmobile_pd_power_down(struct generic_pm_domain *genpd)
+ 
+ 	if (!rmobile_pd->no_debug)
+ 		pr_debug("%s: Power off, 0x%08x -> PSTR = 0x%08x\n",
+-			 genpd->name, mask, __raw_readl(PSTR));
++			 genpd->name, mask,
++			 __raw_readl(rmobile_pd->base + PSTR));
+ 
+ 	return 0;
+ }
+@@ -64,13 +65,13 @@ static int __rmobile_pd_power_up(struct rmobile_pm_domain *rmobile_pd,
+ 	unsigned int retry_count;
+ 	int ret = 0;
+ 
+-	if (__raw_readl(PSTR) & mask)
++	if (__raw_readl(rmobile_pd->base + PSTR) & mask)
+ 		goto out;
+ 
+-	__raw_writel(mask, SWUCR);
++	__raw_writel(mask, rmobile_pd->base + SWUCR);
+ 
+ 	for (retry_count = 2 * PSTR_RETRIES; retry_count; retry_count--) {
+-		if (!(__raw_readl(SWUCR) & mask))
++		if (!(__raw_readl(rmobile_pd->base + SWUCR) & mask))
+ 			break;
+ 		if (retry_count > PSTR_RETRIES)
+ 			udelay(PSTR_DELAY_US);
+@@ -82,7 +83,8 @@ static int __rmobile_pd_power_up(struct rmobile_pm_domain *rmobile_pd,
+ 
+ 	if (!rmobile_pd->no_debug)
+ 		pr_debug("%s: Power on, 0x%08x -> PSTR = 0x%08x\n",
+-			 rmobile_pd->genpd.name, mask, __raw_readl(PSTR));
++			 rmobile_pd->genpd.name, mask,
++			 __raw_readl(rmobile_pd->base + PSTR));
+ 
+ out:
+ 	if (ret = 0 && rmobile_pd->resume && do_resume)
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.h b/arch/arm/mach-shmobile/pm-rmobile.h
+index 8f66b343162b0411..0602130bb260c31d 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.h
++++ b/arch/arm/mach-shmobile/pm-rmobile.h
+@@ -21,6 +21,7 @@ struct rmobile_pm_domain {
+ 	struct dev_power_governor *gov;
+ 	int (*suspend)(void);
+ 	void (*resume)(void);
++	void __iomem *base;
+ 	unsigned int bit_shift;
+ 	bool no_debug;
+ };
+diff --git a/arch/arm/mach-shmobile/pm-sh7372.c b/arch/arm/mach-shmobile/pm-sh7372.c
+index 0e37da654ed5dfe2..c0293ae4b01389e1 100644
+--- a/arch/arm/mach-shmobile/pm-sh7372.c
++++ b/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -45,6 +45,8 @@
+ #define PLLC01STPCR IOMEM(0xe61500c8)
+ 
+ /* SYSC */
++#define SYSC_BASE IOMEM(0xe6180000)
++
+ #define SBAR IOMEM(0xe6180020)
+ #define WUPRMSK IOMEM(0xe6180028)
+ #define WUPSMSK IOMEM(0xe618002c)
+@@ -118,24 +120,28 @@ static struct rmobile_pm_domain sh7372_pm_domains[] = {
+ 		.genpd.name = "A4LC",
+ 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+ 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
++		.base = SYSC_BASE,
+ 		.bit_shift = 1,
+ 	},
+ 	{
+ 		.genpd.name = "A4MP",
+ 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+ 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
++		.base = SYSC_BASE,
+ 		.bit_shift = 2,
+ 	},
+ 	{
+ 		.genpd.name = "D4",
+ 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+ 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
++		.base = SYSC_BASE,
+ 		.bit_shift = 3,
+ 	},
+ 	{
+ 		.genpd.name = "A4R",
+ 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+ 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
++		.base = SYSC_BASE,
+ 		.bit_shift = 5,
+ 		.suspend = sh7372_a4r_pd_suspend,
+ 		.resume = sh7372_intcs_resume,
+@@ -144,18 +150,21 @@ static struct rmobile_pm_domain sh7372_pm_domains[] = {
+ 		.genpd.name = "A3RV",
+ 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+ 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
++		.base = SYSC_BASE,
+ 		.bit_shift = 6,
+ 	},
+ 	{
+ 		.genpd.name = "A3RI",
+ 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+ 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
++		.base = SYSC_BASE,
+ 		.bit_shift = 8,
+ 	},
+ 	{
+ 		.genpd.name = "A4S",
+ 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+ 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
++		.base = SYSC_BASE,
+ 		.bit_shift = 10,
+ 		.gov = &pm_domain_always_on_gov,
+ 		.no_debug = true,
+@@ -166,6 +175,7 @@ static struct rmobile_pm_domain sh7372_pm_domains[] = {
+ 		.genpd.name = "A3SP",
+ 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+ 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
++		.base = SYSC_BASE,
+ 		.bit_shift = 11,
+ 		.gov = &pm_domain_always_on_gov,
+ 		.no_debug = true,
+@@ -175,6 +185,7 @@ static struct rmobile_pm_domain sh7372_pm_domains[] = {
+ 		.genpd.name = "A3SG",
+ 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+ 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
++		.base = SYSC_BASE,
+ 		.bit_shift = 13,
+ 	},
+ };
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
