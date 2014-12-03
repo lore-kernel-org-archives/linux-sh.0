@@ -1,22 +1,31 @@
-From: "Ivan T. Ivanov" <iivanov@mm-sol.com>
-Date: Wed, 03 Dec 2014 12:51:43 +0000
+From: =?utf-8?B?U8O2cmVu?= Brinkmann <soren.brinkmann@xilinx.com>
+Date: Wed, 03 Dec 2014 17:59:50 +0000
 Subject: Re: [PATCH v2 0/7] Pinctrl support for Zynq
-Message-Id: <1417611103.30615.25.camel@mm-sol.com>
+Message-Id: <d1b90be2a67942e8a058e27b4cd38e66@BY2FFO11FD036.protection.gbl>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1417137993-8337-1-git-send-email-soren.brinkmann@xilinx.com>
-In-Reply-To: <1417137993-8337-1-git-send-email-soren.brinkmann@xilinx.com>
+ <1417611103.30615.25.camel@mm-sol.com>
+In-Reply-To: <1417611103.30615.25.camel@mm-sol.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
+On Wed, 2014-12-03 at 02:51PM +0200, Ivan T. Ivanov wrote:
+>=20
+> On Thu, 2014-11-27 at 17:26 -0800, Soren Brinkmann wrote:
+> > Hi all,
+> >=20
+> > here is v2 of this series.=20
+>=20
+> Which tree did you use as a base for these patches?
+> Tried with pinctrl/devel and linus/master didn't apply.
 
-On Thu, 2014-11-27 at 17:26 -0800, Soren Brinkmann wrote:
-> Hi all,
-> 
-> here is v2 of this series. 
+It's supposed to be pinctrl/devel. And that seems to be mostly true. I
+just saw there are two rockchip patches in my branch which shouldn't be.
+Guess some rebase went wrong (or the devel branch was rewritten?).
+I pushed the series here:
+https://github.com/sorenb-xlnx/linux-xlnx/commits/pinctrl
 
-Which tree did you use as a base for these patches?
-Tried with pinctrl/devel and linus/master didn't apply.
-
-Ivan
+	Thanks,
+	S=C3=B6ren
