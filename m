@@ -1,73 +1,53 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 22 Dec 2014 00:06:21 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7791: add MLB+ clock
-Message-Id: <20141222000620.GH29188@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 03 Dec 2014 14:17:07 +0000
+Subject: [PATCH 4/4] ARM: shmobile: kzm9g-reference: Remove restart callback
+Message-Id: <1417616227-6715-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <7846462.yepFC759KH@wasted.cogentembedded.com>
-In-Reply-To: <7846462.yepFC759KH@wasted.cogentembedded.com>
+References: <1417616227-6715-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1417616227-6715-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Dec 18, 2014 at 11:43:03PM +0300, Sergei Shtylyov wrote:
-> From: Andrey Gusakov <andrey.gusakov@cogentembedded.com>
-> 
-> Add MLB+ clock to R8A7791 device tree.
-> 
-> Signed-off-by: Andrey Gusakov <andrey.gusakov@cogentembedded.com>
-> [Sergei: rebased, renamed, added changelog]
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> ---
-> This patch is against 'renesas-devel-20141218-v3.18' tag of Simon Horman's
-> 'renesas.git' repo.
+Remove the restart handling hack from the kzm9g-reference case.
 
-Thanks, I have queued this up.
+Restart on DT-based sh73a0 platforms is now handled through the restart
+handler registered by the R-Mobile System Controller (SYSC) driver.
 
->  arch/arm/boot/dts/r8a7791.dtsi            |   10 +++++-----
->  include/dt-bindings/clock/r8a7791-clock.h |    1 +
->  2 files changed, 6 insertions(+), 5 deletions(-)
-> 
-> Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
-> =================================> --- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
-> +++ renesas/arch/arm/boot/dts/r8a7791.dtsi
-> @@ -1154,17 +1154,17 @@
->  		mstp8_clks: mstp8_clks@e6150990 {
->  			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
->  			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
-> -			clocks = <&zg_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>, <&p_clk>,
-> -				 <&zs_clk>, <&zs_clk>;
-> +			clocks = <&hp_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>,
-> +			         <&zg_clk>, <&p_clk>, <&zs_clk>, <&zs_clk>;
->  			#clock-cells = <1>;
->  			clock-indices = <
-> -				R8A7791_CLK_IPMMU_SGX
-> +				R8A7791_CLK_IPMMU_SGX R8A7791_CLK_MLB
->  				R8A7791_CLK_VIN2 R8A7791_CLK_VIN1 R8A7791_CLK_VIN0
->  				R8A7791_CLK_ETHER R8A7791_CLK_SATA1 R8A7791_CLK_SATA0
->  			>;
->  			clock-output-names > -				"ipmmu_sgx", "vin2", "vin1", "vin0", "ether", "sata1",
-> -				"sata0";
-> +				"ipmmu_sgx", "mlb", "vin2", "vin1", "vin0", "ether",
-> +				"sata1", "sata0";
->  		};
->  		mstp9_clks: mstp9_clks@e6150994 {
->  			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-> Index: renesas/include/dt-bindings/clock/r8a7791-clock.h
-> =================================> --- renesas.orig/include/dt-bindings/clock/r8a7791-clock.h
-> +++ renesas/include/dt-bindings/clock/r8a7791-clock.h
-> @@ -92,6 +92,7 @@
->  
->  /* MSTP8 */
->  #define R8A7791_CLK_IPMMU_SGX		0
-> +#define R8A7791_CLK_MLB			2
->  #define R8A7791_CLK_VIN2		9
->  #define R8A7791_CLK_VIN1		10
->  #define R8A7791_CLK_VIN0		11
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+This reverts commit 534547c036afad3f ("ARM: shmobile: kzm9g-reference:
+Add restart callback").
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-shmobile/board-kzm9g-reference.c | 8 --------
+ 1 file changed, 8 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index 2e82e44ab85258b7..f2ef759b6e969cc8 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -39,13 +39,6 @@ static void __init kzm_init(void)
+ #endif
+ }
+ 
+-#define RESCNT2 IOMEM(0xe6188020)
+-static void kzm9g_restart(enum reboot_mode mode, const char *cmd)
+-{
+-	/* Do soft power on reset */
+-	writel((1 << 31), RESCNT2);
+-}
+-
+ static const char *kzm9g_boards_compat_dt[] __initdata = {
+ 	"renesas,kzm9g-reference",
+ 	NULL,
+@@ -57,6 +50,5 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
+ 	.init_early	= shmobile_init_delay,
+ 	.init_machine	= kzm_init,
+ 	.init_late	= shmobile_init_late,
+-	.restart	= kzm9g_restart,
+ 	.dt_compat	= kzm9g_boards_compat_dt,
+ MACHINE_END
+-- 
+1.9.1
+
