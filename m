@@ -1,67 +1,63 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 17 Dec 2014 08:13:39 +0000
-Subject: Re: [PATCH 1/2] gpio: pcf857x: Propagate wake-up setting to parent irq controller
-Message-Id: <CAMuHMdU1dmD5zTNmBEgCuJLY2LkZMKATVJ8RvUOv-gtzQGpdTw@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 03 Dec 2014 14:17:03 +0000
+Subject: [PATCH 0/4] ARM: shmobile: R-Mobile: Add SYSC restart handler
+Message-Id: <1417616227-6715-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418218575-17694-1-git-send-email-geert+renesas@glider.be>
-	<CAAVeFuLSq8w_9LoRNni1jiqtY=PjLn7xu2xFxvgSg4Ay=PHjDw@mail.gmail.com>
-In-Reply-To: <CAAVeFuLSq8w_9LoRNni1jiqtY=PjLn7xu2xFxvgSg4Ay=PHjDw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Alexandre Courbot <gnurou@gmail.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Linus Walleij <linus.walleij@linaro.org>, Thomas Gleixner <tglx@linutronix.de>, Santosh Shilimkar <santosh.shilimkar@ti.com>, Ingo Molnar <mingo@redhat.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Linux-SH <linux-sh@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Alexandre,
+	Hi Simon, Magnus, Arnd,
 
-On Wed, Dec 17, 2014 at 7:01 AM, Alexandre Courbot <gnurou@gmail.com> wrote:
-> On Wed, Dec 10, 2014 at 10:36 PM, Geert Uytterhoeven
-> <geert+renesas@glider.be> wrote:
->> The pcf857x GPIO and interrupt controller uses dummy_irq_chip, which
->> does not implement irq_chip.irq_set_wake() and does not set
->> IRQCHIP_SKIP_SET_WAKE.
->>
->> This causes two s2ram issues if wake-up is enabled for the pcf857x GPIO
->> pins:
->>   1. During resume from s2ram, the following warning is printed:
->>
->>      WARNING: CPU: 0 PID: 1046 at kernel/irq/manage.c:537 irq_set_irq_wake+0x9c/0xf8()
->>      Unbalanced IRQ 113 wake disable
->>
->>   2. Wake-up through the pcf857x GPIO pins may fail, as the parent
->>      interrupt controller may be suspended.
->>
->> Migrate the pcf857x GPIO and interrupt controller from dummy_irq_chip to
->> its own irq_chip. This irq chip implements irq_chip.irq_set_wake() to
->> propagate its wake-up setting to the parent interrupt controller.
->>
->> This fixes wake-up through gpio-keys on sh73a0/kzm9g, where the pcf857x
->> interrupt is cascaded to irq-renesas-intc-irqpin, and the latter must
->> not be suspended when wake-up is enabled.
->
-> I am not very familiar with the IRQ subsystem, but wouldn't it be
-> possible (and better) to try and fix/adapt dummy_irq_chip so it
-> displays the right behavior? At least your first point looks like an
-> issue with it.
+This patch series extends the PM domain platform driver for the R-Mobile
+System Controller (SYSC) to register a restart handler, and removes the
+restart handler hacks on DT-based R-Mobile A1 (r8a7740) and SH-Mobile AG5
+(sh73a0) platforms.
 
-I fixed dummy_irq_chip in the second patch of the series ("[PATCH 2/2] [RFC]
-genirq: Set IRQCHIP_SKIP_SET_WAKE for no_irq_chip and dummy_irq_chip:).
-But please note that that would fix the warning (issue 1) only.
+Note that this supports DT-based platforms only. Legacy platforms keep
+on using the restart callback in struct machine_desc.
 
-Pcf857x still needs to propagate the wake-up setting to the parent interrupt
-controller to avoid the parent from being suspended if wake-up is enabled
-(issue 2). That cannot be done in dummy_irq_chip, as dummy_irq_chip doesn't
-know it is cascaded to a parent interrupt controller, nor about the interrupt
-number that is used for the cascade. That information is specific to the child
-driver.
+This was tested on r8a7740/armadillo-multiplatform,
+sh73a0/kzm9g-reference, and sh73a0/kzm9g-multiplatform.
+
+Arnd: is this what you had in mind in your response to "[GIT PULL] Third
+Round of Renesas ARM Based Soc Updates for v3.19"
+(http://www.spinics.net/lists/arm-kernel/msg379348.html)?
+
+Dependencies:
+  - The first two patches depend on the series "[PATCH v6 0/7] ARM:
+    shmobile: R-Mobile: DT PM domain support", as that series adds the
+    SYSC PM domain platform driver for DT-based platforms and adds the
+    SYSC device node to r8a7740.dtsi,
+  - The last two patches also depend on the series "[PATCH RFC 0/7] ARM:
+    shmobile: sh73a0: DT PM domain support", as that series adds the
+    SYSC device node to sh73a0.dtsi.
+
+Thanks!
+
+Geert Uytterhoeven (4):
+  ARM: shmobile: R-Mobile: Add SYSC restart handler
+  ARM: shmobile: r8a7740: Remove restart callback
+  ARM: shmobile: sh73a0: Remove restart callback
+  ARM: shmobile: kzm9g-reference: Remove restart callback
+
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |  8 -----
+ arch/arm/mach-shmobile/pm-rmobile.c            | 48 +++++++++++++++++++++++++-
+ arch/arm/mach-shmobile/setup-r8a7740.c         |  8 -----
+ arch/arm/mach-shmobile/setup-sh73a0.c          |  8 -----
+ 4 files changed, 47 insertions(+), 25 deletions(-)
+
+-- 
+1.9.1
 
 Gr{oetje,eeting}s,
 
-                        Geert
+						Geert
 
 --
 Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
 In personal conversations with technical people, I call myself a hacker. But
 when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+							    -- Linus Torvalds
