@@ -1,63 +1,148 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 17 Dec 2014 06:12:02 +0000
-Subject: [PATCH 2/2] ARM: shmobile: r8a7791: tidyup #sound-dai-cells settings
-Message-Id: <877fxq3iux.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 03 Dec 2014 13:41:41 +0000
+Subject: [PATCH v6 1/7] PM / Domains: Add DT bindings for the R-Mobile System Controller
+Message-Id: <1417614107-5985-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1417614107-5985-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1417614107-5985-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The Renesas R-Mobile System Controller provides a.o. power management
+support, following the generic PM domain bindings in
+Documentation/devicetree/bindings/power/power_domain.txt.
 
-Renesas sound driver needs #sound-dai-cells settings, but, this usage
-is a little bit confusable. It came from ALSA SoC historical reasons.
-The sound DAI naming method is different between Single/Multi DAI in
-the ALSA framework, and it is used for sound card matching.
-And this #sound-dai-cells has relationship to it.
-Current SoC dtsi has #sound-dai-cells = <1> as default settings
-(= it is assuming that board/platform has multi DAI), and
-board/platform side needs to overwrite it if board/platform was single
-DAI. This style is more confusable for users.
-This patch removes SoC side default settings, and force to set it by
-board/platform side.
+For now this supports the R-Mobile A1 (r8a7740) only, but it should be
+sufficiently generic to handle other members of the SH-Mobile/R-Mobile
+family in the future.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts |    1 +
- arch/arm/boot/dts/r8a7791.dtsi        |    7 ++++++-
- 2 files changed, 7 insertions(+), 1 deletion(-)
+v6:
+  - Drop power-on/off latencies, as they're put on hold,
+  - Remove leftover sentence about PM QoS device latencies,
+v5:
+  - No changes,
+v4:
+  - Drop device save/restore state latencies, as they're Linux driver-specific,
+  - Drop PM QoS device latencies, as they're put on hold,
+v3:
+  - Reword,
+v2:
+  - Fix copy-and-paste s/#address-cells/#size-cells/,
+  - Add optional PM QoS device latencies.
+---
+ .../bindings/power/renesas,sysc-rmobile.txt        | 98 ++++++++++++++++++++++
+ 1 file changed, 98 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index bf95454..3b79c5f 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -591,6 +591,7 @@
- 	pinctrl-0 = <&sound_pins &sound_clk_pins>;
- 	pinctrl-names = "default";
- 
-+	/* Single DAI */
- 	#sound-dai-cells = <0>;
- 
- 	status = "okay";
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 78d6371..9697726 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1385,7 +1385,12 @@
- 	};
- 
- 	rcar_sound: rcar_sound@ec500000 {
--		#sound-dai-cells = <1>;
-+		/*
-+		 * #sound-dai-cells is required
-+		 *
-+		 * Single DAI : #sound-dai-cells = <0>;		<&rcar_sound>;
-+		 * Multi  DAI : #sound-dai-cells = <1>;		<&rcar_sound N>;
-+		 */
- 		compatible =  "renesas,rcar_sound-r8a7791", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
- 		reg =	<0 0xec500000 0 0x1000>, /* SCU */
- 			<0 0xec5a0000 0 0x100>,  /* ADG */
+diff --git a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
+new file mode 100644
+index 0000000000000000..5887cbae313481cc
+--- /dev/null
++++ b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
+@@ -0,0 +1,98 @@
++DT bindings for the Renesas R-Mobile System Controller
++
++= System Controller Node =
++
++The R-Mobile System Controller provides the following functions:
++  - Boot mode management,
++  - Reset generation,
++  - Power management.
++
++Required properties:
++- compatible: Should be "renesas,sysc-<soctype>", "renesas,sysc-rmobile" as
++	      fallback.
++	      Examples with soctypes are:
++		- "renesas,sysc-r8a7740" (R-Mobile A1)
++- reg: Two address start and address range blocks for the device:
++         - The first block refers to the normally accessible registers,
++         - the second block refers to the registers protected by the HPB
++	   semaphore.
++
++Optional nodes:
++- pm-domains: This node contains a hierarchy of PM domain nodes, which should
++  match the Power Area Hierarchy in the Power Domain Specifications section of
++  the device's datasheet.
++
++
++= PM Domain Nodes =
++
++Each of the PM domain nodes represents a PM domain, as documented by the
++generic PM domain bindings in
++Documentation/devicetree/bindings/power/power_domain.txt.
++
++The nodes should be named by the real power area names, and thus their names
++should be unique.
++
++Required properties:
++  - #power-domain-cells: Must be 0.
++
++Optional properties:
++- reg: If the PM domain is not always-on, this property must contain the bit
++       index number for the corresponding power area in the various Power
++       Control and Status Registers. The parent's node must contain the
++       following two properties:
++	 - #address-cells: Must be 1,
++	 - #size-cells: Must be 0.
++       If the PM domain is always-on, this property must be omitted.
++
++
++Example:
++
++This shows a subset of the r8a7740 PM domain hierarchy, containing the
++C5 "always-on" domain, 2 of its subdomains (A4S and A4SU), and the A3SP domain,
++which is a subdomain of A4S.
++
++	sysc: system-controller@e6180000 {
++		compatible = "renesas,sysc-r8a7740", "renesas,sysc-rmobile";
++		reg = <0xe6180000 8000>, <0xe6188000 8000>;
++
++		pm-domains {
++			pd_c5: c5 {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				#power-domain-cells = <0>;
++
++				pd_a4s: a4s@10 {
++					reg = <10>;
++					#address-cells = <1>;
++					#size-cells = <0>;
++					#power-domain-cells = <0>;
++
++					pd_a3sp: a3sp@11 {
++						reg = <11>;
++						#power-domain-cells = <0>;
++					};
++				};
++
++				pd_a4su: a4su@20 {
++					reg = <20>;
++					#power-domain-cells = <0>;
++				};
++			};
++		};
++	};
++
++
++= PM Domain Consumers =
++
++Hardware blocks belonging to a PM domain should contain a "power-domains"
++property that is a phandle pointing to the corresponding PM domain node.
++
++Example:
++
++	tpu: pwm@e6600000 {
++		compatible = "renesas,tpu-r8a7740", "renesas,tpu";
++		reg = <0xe6600000 0x100>;
++		clocks = <&mstp3_clks R8A7740_CLK_TPU0>;
++		power-domains = <&pd_a3sp>;
++		#pwm-cells = <3>;
++	};
 -- 
-1.7.9.5
+1.9.1
 
