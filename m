@@ -1,44 +1,55 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Mon, 15 Dec 2014 20:20:13 +0000
-Subject: [RFC 0/4] prototype: switch I2C IP cores at runtime
-Message-Id: <1418674817-12809-1-git-send-email-wsa@the-dreams.de>
+From: "Rafael J. Wysocki" <rjw@rjwysocki.net>
+Date: Thu, 04 Dec 2014 01:24:22 +0000
+Subject: [PATCH] drivers: sh / PM: Replace CONFIG_PM_RUNTIME with CONFIG_PM
+Message-Id: <3463511.sXIeyHdjYI@vostro.rjw.lan>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Linux PM list <linux-pm@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
 
-Some SoC (like Renesas RCar Gen2) have different I2C IP cores with different
-feature sets. This is an experimental patch series to let those different IP
-cores access the same I2C bus at runtime. Finally, we have some code to talk
-about :) Unlike previous sketched versions, this one does not require a
-remove/probe-cycle of I2C bus drivers which would mean complete
-reinitialization of all connected I2C clients. However, the first two patches
-need serious discussion. So, have a look if you are interested...
+From: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
 
-These patches are only sent to the sh-list for now. I'd like to have consensus
-here before involving people from the outside.
+After commit b2b49ccbdd54 (PM: Kconfig: Set PM_RUNTIME if PM_SLEEP is
+selected) PM_RUNTIME is always set if PM is set, so #ifdef blocks
+depending on CONFIG_PM_RUNTIME may now be changed to depend on
+CONFIG_PM.
 
+Replace CONFIG_PM_RUNTIME with CONFIG_PM in drivers/sh/pm_runtime.c.
 
-Wolfram Sang (4):
-  pinctrl: allow to unselect a state
-  i2c: mux: add function to reparent a mux
-  ARM: shmobile: r8a7790: lager: add i2c-demuxer to dts
-  i2c: mux: demux-pinctrl: add driver
+Signed-off-by: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
+---
 
- .../devicetree/bindings/i2c/i2c-demux-pinctrl.txt  |  65 ++++++++
- arch/arm/boot/dts/r8a7790-lager.dts                |  54 ++++--
- drivers/i2c/i2c-mux.c                              |   8 +
- drivers/i2c/muxes/Kconfig                          |   6 +
- drivers/i2c/muxes/Makefile                         |   2 +
- drivers/i2c/muxes/i2c-demux-pinctrl.c              | 183 +++++++++++++++++++++
- drivers/pinctrl/core.c                             |  34 ++--
- include/linux/i2c-mux.h                            |   2 +
- include/linux/pinctrl/consumer.h                   |   5 +
- 9 files changed, 334 insertions(+), 25 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/i2c/i2c-demux-pinctrl.txt
- create mode 100644 drivers/i2c/muxes/i2c-demux-pinctrl.c
+Note: This depends on commit b2b49ccbdd54 (PM: Kconfig: Set PM_RUNTIME if
+PM_SLEEP is selected) which is only in linux-next at the moment (via the
+linux-pm tree).
 
--- 
-2.1.3
+Please let me know if it is OK to take this one into linux-pm.
+
+---
+ drivers/sh/pm_runtime.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+Index: linux-pm/drivers/sh/pm_runtime.c
+=================================--- linux-pm.orig/drivers/sh/pm_runtime.c
++++ linux-pm/drivers/sh/pm_runtime.c
+@@ -20,7 +20,7 @@
+ #include <linux/bitmap.h>
+ #include <linux/slab.h>
+ 
+-#ifdef CONFIG_PM_RUNTIME
++#ifdef CONFIG_PM
+ static int sh_pm_runtime_suspend(struct device *dev)
+ {
+ 	int ret;
+@@ -68,7 +68,7 @@ static struct dev_pm_domain default_pm_d
+ 
+ #define DEFAULT_PM_DOMAIN_PTR	NULL
+ 
+-#endif /* CONFIG_PM_RUNTIME */
++#endif /* CONFIG_PM */
+ 
+ static struct pm_clk_notifier_block platform_bus_notifier = {
+ 	.pm_domain = DEFAULT_PM_DOMAIN_PTR,
 
