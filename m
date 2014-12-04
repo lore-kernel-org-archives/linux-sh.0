@@ -1,70 +1,52 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 04 Dec 2014 03:58:00 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 04 Dec 2014 09:01:34 +0000
 Subject: Re: [PATCH] drivers: sh / PM: Replace CONFIG_PM_RUNTIME with CONFIG_PM
-Message-Id: <20141204035758.GA6346@verge.net.au>
+Message-Id: <CAMuHMdVG2ZR4X4pYSAZYP12x+oMfCEd_7ciuHqBjGQqSumNYzQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <3463511.sXIeyHdjYI@vostro.rjw.lan>
-In-Reply-To: <3463511.sXIeyHdjYI@vostro.rjw.lan>
+	<20141204035758.GA6346@verge.net.au>
+In-Reply-To: <20141204035758.GA6346@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@rjwysocki.net>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Linux PM list <linux-pm@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+To: Simon Horman <horms@verge.net.au>
+Cc: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Linux PM list <linux-pm@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
 
-On Thu, Dec 04, 2014 at 02:24:22AM +0100, Rafael J. Wysocki wrote:
-> From: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
-> 
-> After commit b2b49ccbdd54 (PM: Kconfig: Set PM_RUNTIME if PM_SLEEP is
-> selected) PM_RUNTIME is always set if PM is set, so #ifdef blocks
-> depending on CONFIG_PM_RUNTIME may now be changed to depend on
-> CONFIG_PM.
-> 
-> Replace CONFIG_PM_RUNTIME with CONFIG_PM in drivers/sh/pm_runtime.c.
-> 
-> Signed-off-by: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
-> ---
-> 
-> Note: This depends on commit b2b49ccbdd54 (PM: Kconfig: Set PM_RUNTIME if
-> PM_SLEEP is selected) which is only in linux-next at the moment (via the
-> linux-pm tree).
-> 
-> Please let me know if it is OK to take this one into linux-pm.
+On Thu, Dec 4, 2014 at 4:58 AM, Simon Horman <horms@verge.net.au> wrote:
+> On Thu, Dec 04, 2014 at 02:24:22AM +0100, Rafael J. Wysocki wrote:
+>> From: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
+>>
+>> After commit b2b49ccbdd54 (PM: Kconfig: Set PM_RUNTIME if PM_SLEEP is
+>> selected) PM_RUNTIME is always set if PM is set, so #ifdef blocks
+>> depending on CONFIG_PM_RUNTIME may now be changed to depend on
+>> CONFIG_PM.
+>>
+>> Replace CONFIG_PM_RUNTIME with CONFIG_PM in drivers/sh/pm_runtime.c.
+>>
+>> Signed-off-by: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
+>> ---
+>>
+>> Note: This depends on commit b2b49ccbdd54 (PM: Kconfig: Set PM_RUNTIME if
+>> PM_SLEEP is selected) which is only in linux-next at the moment (via the
+>> linux-pm tree).
+>>
+>> Please let me know if it is OK to take this one into linux-pm.
+>
+> Hi Rafael,
+>
+> That is fine by me if it is fine by Geert.
+>
+> Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
-Hi Rafael,
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-That is fine by me if it is fine by Geert.
+Gr{oetje,eeting}s,
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+                        Geert
 
-> 
-> ---
->  drivers/sh/pm_runtime.c |    4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> Index: linux-pm/drivers/sh/pm_runtime.c
-> =================================> --- linux-pm.orig/drivers/sh/pm_runtime.c
-> +++ linux-pm/drivers/sh/pm_runtime.c
-> @@ -20,7 +20,7 @@
->  #include <linux/bitmap.h>
->  #include <linux/slab.h>
->  
-> -#ifdef CONFIG_PM_RUNTIME
-> +#ifdef CONFIG_PM
->  static int sh_pm_runtime_suspend(struct device *dev)
->  {
->  	int ret;
-> @@ -68,7 +68,7 @@ static struct dev_pm_domain default_pm_d
->  
->  #define DEFAULT_PM_DOMAIN_PTR	NULL
->  
-> -#endif /* CONFIG_PM_RUNTIME */
-> +#endif /* CONFIG_PM */
->  
->  static struct pm_clk_notifier_block platform_bus_notifier = {
->  	.pm_domain = DEFAULT_PM_DOMAIN_PTR,
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
