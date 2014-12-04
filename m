@@ -1,82 +1,34 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 26 Dec 2014 23:18:41 +0000
-Subject: [PATCH v4 1/3] ARM: shmobile: r8a7791: add CAN clocks
-Message-Id: <2098987.LzjA3c0AUx@wasted.cogentembedded.com>
+From: Dan Carpenter <dan.carpenter@oracle.com>
+Date: Thu, 04 Dec 2014 11:01:10 +0000
+Subject: [patch] sh: off by one BUG_ON() in setup_bootmem_node()
+Message-Id: <20141204110110.GD22643@mwanda>
 List-Id: <linux-sh.vger.kernel.org>
-References: <6830301.90YaDPuTpx@wasted.cogentembedded.com>
-In-Reply-To: <6830301.90YaDPuTpx@wasted.cogentembedded.com>
+In-Reply-To: <CAMuHMdVxCUYkaC5wzHi-o6knD6ugFudTdh3PJz5JCwv-std3GA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, Paul Mundt <lethal@linux-sh.org>
 
-The R-Car CAN controllers can derive the CAN bus clock not only from their
-peripheral clock input (clkp1) but also from the other internal clock (clkp2)
-and external clock fed on CAN_CLK pin.  Describe those clocks in the device
-tree,  along with  the USB_EXTAL clock  from which clkp2 is derived.
+This off by one bug is harmless but it upsets the static checkers and
+the code is obvious so it doesn't hurt to fix it.  The Smatch warning
+is:
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+	arch/sh/mm/numa.c:47 setup_bootmem_node()
+	error: buffer overflow 'node_data' 1024 <= 1024
 
----
-Changes in version 4:
-- refreshed the patch.
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
 
-Changes in version 3:
-- new patch.
-
- arch/arm/boot/dts/r8a7791.dtsi            |   23 +++++++++++++++++++++--
- include/dt-bindings/clock/r8a7791-clock.h |    1 +
- 2 files changed, 22 insertions(+), 2 deletions(-)
-
-Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7791.dtsi
-@@ -862,15 +862,34 @@
- 			status = "disabled";
- 		};
+diff --git a/arch/sh/mm/numa.c b/arch/sh/mm/numa.c
+index 3d85225..bce52ba 100644
+--- a/arch/sh/mm/numa.c
++++ b/arch/sh/mm/numa.c
+@@ -31,7 +31,7 @@ void __init setup_bootmem_node(int nid, unsigned long start, unsigned long end)
+ 	unsigned long bootmem_paddr;
  
-+		/* External USB clock - can be overridden by the board */
-+		usb_extal_clk: usb_extal_clk {
-+			compatible = "fixed-clock";
-+			#clock-cells = <0>;
-+			clock-frequency = <48000000>;
-+			clock-output-names = "usb_extal";
-+		};
-+
-+		/* External CAN clock */
-+		can_clk: can_clk {
-+			compatible = "fixed-clock";
-+			#clock-cells = <0>;
-+			/* This value must be overriden by the board. */
-+			clock-frequency = <0>;
-+			clock-output-names = "can_clk";
-+			status = "disabled";
-+		};
-+
- 		/* Special CPG clocks */
- 		cpg_clocks: cpg_clocks@e6150000 {
- 			compatible = "renesas,r8a7791-cpg-clocks",
- 				     "renesas,rcar-gen2-cpg-clocks";
- 			reg = <0 0xe6150000 0 0x1000>;
--			clocks = <&extal_clk>;
-+			clocks = <&extal_clk &usb_extal_clk>;
- 			#clock-cells = <1>;
- 			clock-output-names = "main", "pll0", "pll1", "pll3",
--					     "lb", "qspi", "sdh", "sd0", "z";
-+					     "lb", "qspi", "sdh", "sd0", "z",
-+					     "rcan";
- 		};
+ 	/* Don't allow bogus node assignment */
+-	BUG_ON(nid > MAX_NUMNODES || nid <= 0);
++	BUG_ON(nid >= MAX_NUMNODES || nid <= 0);
  
- 		/* Variable factor clocks */
-Index: renesas/include/dt-bindings/clock/r8a7791-clock.h
-=================================--- renesas.orig/include/dt-bindings/clock/r8a7791-clock.h
-+++ renesas/include/dt-bindings/clock/r8a7791-clock.h
-@@ -20,6 +20,7 @@
- #define R8A7791_CLK_SDH			6
- #define R8A7791_CLK_SD0			7
- #define R8A7791_CLK_Z			8
-+#define R8A7791_CLK_RCAN		9
- 
- /* MSTP0 */
- #define R8A7791_CLK_MSIOF0		0
-
+ 	start_pfn = start >> PAGE_SHIFT;
+ 	end_pfn = end >> PAGE_SHIFT;
