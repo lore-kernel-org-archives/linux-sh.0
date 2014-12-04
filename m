@@ -1,46 +1,168 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 19 Dec 2014 00:11:25 +0000
-Subject: Re: [PATCH] ARM: shmobile: ape6evm: Fix LAN9220 VDDVARIO voltage
-Message-Id: <20141219001125.GC29188@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 04 Dec 2014 15:33:21 +0000
+Subject: [PATCH v2] power: reset: Add reset driver for R-Mobile platforms
+Message-Id: <1417707201-589-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418771845-12191-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1418771845-12191-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Sebastian Reichel <sre@kernel.org>, Dmitry Eremin-Solenikov <dbaryshkov@gmail.com>, David Woodhouse <dwmw2@infradead.org>
+Cc: Simon Horman <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>, Guenter Roeck <linux@roeck-us.net>, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Thu, Dec 18, 2014 at 04:30:12AM +0200, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Thursday 18 December 2014 09:43:56 Simon Horman wrote:
-> > On Wed, Dec 17, 2014 at 02:30:08AM +0200, Laurent Pinchart wrote:
-> > > On Wednesday 17 December 2014 09:26:55 Simon Horman wrote:
-> > > > On Wed, Dec 17, 2014 at 01:17:25AM +0200, Laurent Pinchart wrote:
-> > > > > The LAN9220 VDDVARIO supply is powered by a 1.8V source, not 3.3V. Fix
-> > > > > it in the device tree.
-> > > > > 
-> > > > > Signed-off-by: Laurent Pinchart
-> > > > > <laurent.pinchart+renesas@ideasonboard.com>
-> > > > > ---
-> > > > > 
-> > > > >  arch/arm/boot/dts/r8a73a4-ape6evm.dts | 14 +++++++++++---
-> > > > >  1 file changed, 11 insertions(+), 3 deletions(-)
-> > > > > 
-> > > > > This patch is based on top of Ulrich's "[PATCH v2 0/7] ARM: shmobile:
-> > > > > ape6evm: multiplatform support" series, but it could easily be rebased
-> > > > > to apply without that dependency.
-> > > > 
-> > > > My preference is to take this fix before Ulrich's series.
-> > > > But I am happy to negotiate if others have a different preference.
-> > > 
-> > > Just for the record I have no preference given that this fix doesn't have
-> > > any influence on the system.
-> > 
-> > Thanks, in that case I don't feel strongly about it either.
-> > But lets try not to let it slip through the cracks.
-> 
-> Given that you've just merged the dependencies I think you can merge this 
-> patch :-)
+Add a reset driver for Renesas R-Mobile and SH-Mobile SoCs. It registers
+a restart handler to trigger a soft power-on reset through the R-Mobile
+System Controller.
+The priority of this restart handler is 192, to allow a watchdog driver
+to use priority 128.
 
-Indeed, done :)
+Note that we do not use syscon-reboot, as the HPB (Peripheral Bus
+Bridge) semaphore should be acquired on systems where both the ARM and
+SH core are in use. The driver can be extended later to support this,
+when needed.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Tested on R-Mobile A1 (r8a7740) and SH-Mobile AG5 (sh73a0).
+
+This can be considered v2 of "[PATCH 1/4] ARM: shmobile: R-Mobile: Add
+SYSC restart handler"
+(http://www.spinics.net/lists/arm-kernel/msg383402.html).
+
+Changes:
+  - Move to a standalone driver under drivers/power/reset that can be
+    modular,
+  - Use register_restart_handler() instead of setting arm_pm_restart,
+---
+ drivers/power/reset/Kconfig         |  6 +++
+ drivers/power/reset/Makefile        |  1 +
+ drivers/power/reset/rmobile-reset.c | 93 +++++++++++++++++++++++++++++++++++++
+ 3 files changed, 100 insertions(+)
+ create mode 100644 drivers/power/reset/rmobile-reset.c
+
+diff --git a/drivers/power/reset/Kconfig b/drivers/power/reset/Kconfig
+index 028e765045196f89..d743145e0001f466 100644
+--- a/drivers/power/reset/Kconfig
++++ b/drivers/power/reset/Kconfig
+@@ -159,5 +159,11 @@ config POWER_RESET_SYSCON
+ 	help
+ 	  Reboot support for generic SYSCON mapped register reset.
+ 
++config POWER_RESET_RMOBILE
++	tristate "Renesas R-Mobile reset driver"
++	depends on ARCH_RMOBILE || COMPILE_TEST
++	help
++	  Reboot support for Renesas R-Mobile and SH-Mobile SoCs.
++
+ endif
+ 
+diff --git a/drivers/power/reset/Makefile b/drivers/power/reset/Makefile
+index 1d4804d6b3237c1c..1631652009acc32d 100644
+--- a/drivers/power/reset/Makefile
++++ b/drivers/power/reset/Makefile
+@@ -18,3 +18,4 @@ obj-$(CONFIG_POWER_RESET_VEXPRESS) += vexpress-poweroff.o
+ obj-$(CONFIG_POWER_RESET_XGENE) += xgene-reboot.o
+ obj-$(CONFIG_POWER_RESET_KEYSTONE) += keystone-reset.o
+ obj-$(CONFIG_POWER_RESET_SYSCON) += syscon-reboot.o
++obj-$(CONFIG_POWER_RESET_RMOBILE) += rmobile-reset.o
+diff --git a/drivers/power/reset/rmobile-reset.c b/drivers/power/reset/rmobile-reset.c
+new file mode 100644
+index 0000000000000000..ff3bbcfd03d1e7b4
+--- /dev/null
++++ b/drivers/power/reset/rmobile-reset.c
+@@ -0,0 +1,93 @@
++/*
++ * Renesas R-Mobile Reset Driver
++ *
++ * Copyright (C) 2014 Glider bvba
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++
++#include <linux/io.h>
++#include <linux/module.h>
++#include <linux/notifier.h>
++#include <linux/of_address.h>
++#include <linux/platform_device.h>
++#include <linux/printk.h>
++#include <linux/reboot.h>
++
++
++/* SYSC Register Bank 2 */
++#define RESCNT2		0x20		/* Reset Control Register 2 */
++
++/* Reset Control Register 2 */
++#define RESCNT2_PRES	0x80000000	/* Soft power-on reset */
++
++
++static void __iomem *sysc_base2;
++
++static int rmobile_reset_handler(struct notifier_block *this,
++				 unsigned long mode, void *cmd)
++{
++	pr_debug("%s %lu\n", __func__, mode);
++
++	/* Let's assume we have acquired the HPB semaphore */
++	writel(RESCNT2_PRES, sysc_base2 + RESCNT2);
++
++	return NOTIFY_DONE;
++}
++
++static struct notifier_block rmobile_reset_nb = {
++	.notifier_call = rmobile_reset_handler,
++	.priority = 192,
++};
++
++static int rmobile_reset_probe(struct platform_device *pdev)
++{
++	int error;
++
++	sysc_base2 = of_iomap(pdev->dev.of_node, 1);
++	if (!sysc_base2)
++		return -ENODEV;
++
++	error = register_restart_handler(&rmobile_reset_nb);
++	if (error) {
++		dev_err(&pdev->dev,
++			"cannot register restart handler (err=%d)\n", error);
++		goto fail_unmap;
++	}
++
++	return 0;
++
++fail_unmap:
++	iounmap(sysc_base2);
++	return error;
++}
++
++static int rmobile_reset_remove(struct platform_device *pdev)
++{
++	unregister_restart_handler(&rmobile_reset_nb);
++	iounmap(sysc_base2);
++	return 0;
++}
++
++static const struct of_device_id rmobile_reset_of_match[] = {
++	{ .compatible = "renesas,sysc-rmobile", },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, rmobile_reset_of_match);
++
++static struct platform_driver rmobile_reset_driver = {
++	.probe = rmobile_reset_probe,
++	.remove = rmobile_reset_remove,
++	.driver = {
++		.name = "rmobile_reset",
++		.of_match_table = rmobile_reset_of_match,
++	},
++};
++
++module_platform_driver(rmobile_reset_driver);
++
++MODULE_DESCRIPTION("Renesas R-Mobile Reset Driver");
++MODULE_AUTHOR("Geert Uytterhoeven <geert+renesas@glider.be>");
++MODULE_LICENSE("GPL v2");
+-- 
+1.9.1
+
