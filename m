@@ -1,7 +1,7 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 02 Dec 2014 20:52:48 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 04 Dec 2014 12:20:22 +0000
 Subject: Re: [PATCH] ARM: shmobile: lager dts: Drop console= bootargs parameter
-Message-Id: <3742534.JME8MNrVrt@avalon>
+Message-Id: <20141204122021.GC21778@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1417541988-28799-1-git-send-email-geert+renesas@glider.be>
 In-Reply-To: <1417541988-28799-1-git-send-email-geert+renesas@glider.be>
@@ -10,46 +10,25 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Geert,
-
-Thank you for the patch.
-
-On Tuesday 02 December 2014 18:39:48 Geert Uytterhoeven wrote:
-> Since commit FIXME ("ARM: shmobile: lager: Remove legacy board support"),
-> lager is restricted to booting from DT, so chosen/stdout-path is always
-> used, and we can drop the "console=" parameter from chosen/bootargs.
+On Tue, Dec 02, 2014 at 10:52:48PM +0200, Laurent Pinchart wrote:
+> Hi Geert,
 > 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-> ---
-> This depends on "[PATCH 2/5] ARM: shmobile: lager: Remove legacy board
-> support" by Laurent Pinchart, and allows to simplify his "[PATCH 4/5] ARM:
-> shmobile: lager: Rename SCIFA[01] serial ports to ttySC[01]".
-
-Does it imply your ack on the series ? :-)
-
-> ---
->  arch/arm/boot/dts/r8a7790-lager.dts | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
+> Thank you for the patch.
 > 
-> diff --git a/arch/arm/boot/dts/r8a7790-lager.dts
-> b/arch/arm/boot/dts/r8a7790-lager.dts index
-> 636d53bb87a27062..7301d029b39d5d9b 100644
-> --- a/arch/arm/boot/dts/r8a7790-lager.dts
-> +++ b/arch/arm/boot/dts/r8a7790-lager.dts
-> @@ -52,7 +52,7 @@
->  	};
+> On Tuesday 02 December 2014 18:39:48 Geert Uytterhoeven wrote:
+> > Since commit FIXME ("ARM: shmobile: lager: Remove legacy board support"),
+> > lager is restricted to booting from DT, so chosen/stdout-path is always
+> > used, and we can drop the "console=" parameter from chosen/bootargs.
+> > 
+> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 > 
->  	chosen {
-> -		bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs
-> ip=dhcp"; +		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
->  		stdout-path = &scifa0;
->  	};
+> Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> 
+> > ---
+> > This depends on "[PATCH 2/5] ARM: shmobile: lager: Remove legacy board
+> > support" by Laurent Pinchart, and allows to simplify his "[PATCH 4/5] ARM:
+> > shmobile: lager: Rename SCIFA[01] serial ports to ttySC[01]".
+> 
+> Does it imply your ack on the series ? :-)
 
--- 
-Regards,
-
-Laurent Pinchart
-
+I have queued up the version of this patch which Laurent rebased.
