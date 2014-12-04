@@ -1,38 +1,66 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 18 Dec 2014 03:24:40 +0000
-Subject: Re: [PATCH 1/4] ARM: shmobile: sh73a0: Set control-parent for all irqpin nodes
-Message-Id: <2812373.rqVbtG7F7j@avalon>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 04 Dec 2014 16:20:49 +0000
+Subject: [PATCH] i2c: sh_mobile: optimize irq entry
+Message-Id: <1417710049-6894-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418869570-13529-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1418869570-13529-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 
-Hi Magnus,
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-On Thursday 18 December 2014 12:17:16 Magnus Damm wrote:
-> On Thu, Dec 18, 2014 at 11:26 AM, Laurent Pinchart wrote:
-> > The sh73a0 INTC can't mask interrupts properly most likely due to a
-> > hardware bug. Set the control-parent property to delegate masking to the
-> > parent interrupt controller.
-> 
-> Thanks for your patch. Are you sure it is needed for all interrupts?
+We can simply pass the pointer to the private structure to the irq
+routine instead of passing the platform device and looking up its
+driver_data.
 
-I'm not as I can't test all interrupts, but given that it's needed for two 
-interrupts on two different INTC instances (well, two different INTC DT nodes, 
-but it's really the same IP core) I'm pretty confident that the workaround is 
-needed for all INTC interrupts on sh73a0.
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/busses/i2c-sh_mobile.c | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
 
-> If so, perhaps it we should consider to enable this in the driver based on
-> the SoC compat string?
-
-I was thinking about that. We could then remove the property from the DT 
-bindings.
-
+diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
+index c2362a4bec25..429778280b6d 100644
+--- a/drivers/i2c/busses/i2c-sh_mobile.c
++++ b/drivers/i2c/busses/i2c-sh_mobile.c
+@@ -470,8 +470,7 @@ static int sh_mobile_i2c_isr_rx(struct sh_mobile_i2c_data *pd)
+ 
+ static irqreturn_t sh_mobile_i2c_isr(int irq, void *dev_id)
+ {
+-	struct platform_device *dev = dev_id;
+-	struct sh_mobile_i2c_data *pd = platform_get_drvdata(dev);
++	struct sh_mobile_i2c_data *pd = dev_id;
+ 	unsigned char sr;
+ 	int wakeup = 0;
+ 
+@@ -806,7 +805,7 @@ static void sh_mobile_i2c_release_dma(struct sh_mobile_i2c_data *pd)
+ 	}
+ }
+ 
+-static int sh_mobile_i2c_hook_irqs(struct platform_device *dev)
++static int sh_mobile_i2c_hook_irqs(struct platform_device *dev, struct sh_mobile_i2c_data *pd)
+ {
+ 	struct resource *res;
+ 	resource_size_t n;
+@@ -815,7 +814,7 @@ static int sh_mobile_i2c_hook_irqs(struct platform_device *dev)
+ 	while ((res = platform_get_resource(dev, IORESOURCE_IRQ, k))) {
+ 		for (n = res->start; n <= res->end; n++) {
+ 			ret = devm_request_irq(&dev->dev, n, sh_mobile_i2c_isr,
+-					  0, dev_name(&dev->dev), dev);
++					  0, dev_name(&dev->dev), pd);
+ 			if (ret) {
+ 				dev_err(&dev->dev, "cannot request IRQ %pa\n", &n);
+ 				return ret;
+@@ -846,7 +845,7 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
+ 		return PTR_ERR(pd->clk);
+ 	}
+ 
+-	ret = sh_mobile_i2c_hook_irqs(dev);
++	ret = sh_mobile_i2c_hook_irqs(dev, pd);
+ 	if (ret)
+ 		return ret;
+ 
 -- 
-Regards,
-
-Laurent Pinchart
+2.1.3
 
