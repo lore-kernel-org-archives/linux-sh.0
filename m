@@ -1,42 +1,39 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 02 Dec 2014 16:35:45 +0000
-Subject: [PATCH 4/5] ARM: shmobile: lager: Rename SCIFA[01] serial ports to ttySC[01]
-Message-Id: <1417538146-23350-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 04 Dec 2014 12:31:37 +0000
+Subject: [PATCH 1/2] PM / Domains: R-Mobile SYSC: Add missing 0x prefixes to example
+Message-Id: <1417696298-27740-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1417696298-27740-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1417696298-27740-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-There's no reason to name the only two available serial ports on the
-board ttySC6 and ttySC7 (apart from confusing userspace, which we should
-try to avoid).
+The register lengths in the example were supposed to be 0x8000, not
+8000.
+This doesn't cause any problems for now, but at least the second range
+is documented to cover the full 32 KiB on R-Mobile A1 (r8a7740).
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 636d53bb87a2..ec843192d653 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -47,12 +47,12 @@
- 	compatible = "renesas,lager", "renesas,r8a7790";
+diff --git a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
+index 5887cbae313481cc..2460476808e9333e 100644
+--- a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
++++ b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
+@@ -53,7 +53,7 @@ which is a subdomain of A4S.
  
- 	aliases {
--		serial6 = &scifa0;
--		serial7 = &scifa1;
-+		serial0 = &scifa0;
-+		serial1 = &scifa1;
- 	};
+ 	sysc: system-controller@e6180000 {
+ 		compatible = "renesas,sysc-r8a7740", "renesas,sysc-rmobile";
+-		reg = <0xe6180000 8000>, <0xe6188000 8000>;
++		reg = <0xe6180000 0x8000>, <0xe6188000 0x8000>;
  
- 	chosen {
--		bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
-+		bootargs = "console=ttySC0,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
- 		stdout-path = &scifa0;
- 	};
- 
+ 		pm-domains {
+ 			pd_c5: c5 {
 -- 
-2.0.4
+1.9.1
 
