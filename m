@@ -1,68 +1,46 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 04 Dec 2014 07:52:14 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 04 Dec 2014 09:19:54 +0000
 Subject: Re: [PATCH 02/02] ARM: shmobile: marzen-reference: Remove IRLM workaround
-Message-Id: <20141204075213.GQ25806@verge.net.au>
+Message-Id: <CAMuHMdW=-yXKUKQPc2rU0P2PQgjqnYzSZxZCPXLVYJjai+L04w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20141203121753.5936.36253.sendpatchset@w520>
- <20141203121813.5936.17433.sendpatchset@w520>
- <20141204072153.GE25806@verge.net.au>
- <CANqRtoRq5j6q=XGd1eJUH5TzSAGmZjyxnnSs+p_jum50zZn0Wg@mail.gmail.com>
+	<20141203121813.5936.17433.sendpatchset@w520>
+	<20141204072153.GE25806@verge.net.au>
+	<CANqRtoRq5j6q=XGd1eJUH5TzSAGmZjyxnnSs+p_jum50zZn0Wg@mail.gmail.com>
 In-Reply-To: <CANqRtoRq5j6q=XGd1eJUH5TzSAGmZjyxnnSs+p_jum50zZn0Wg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: Magnus Damm <magnus.damm@gmail.com>
-Cc: SH-Linux <linux-sh@vger.kernel.org>, linux-kernel <linux-kernel@vger.kernel.org>, Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>
+Cc: Simon Horman <horms@verge.net.au>, SH-Linux <linux-sh@vger.kernel.org>, linux-kernel <linux-kernel@vger.kernel.org>, Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>
 
-On Thu, Dec 04, 2014 at 04:33:25PM +0900, Magnus Damm wrote:
-> Hi Simon,
->=20
-> On Thu, Dec 4, 2014 at 4:21 PM, Simon Horman <horms@verge.net.au> wrote:
-> > Hi Magnus,
-> >
-> > On Wed, Dec 03, 2014 at 09:18:13PM +0900, Magnus Damm wrote:
-> >> From: Magnus Damm <damm+renesas@opensource.se>
-> >>
-> >> Adjust the r8a7779 SoC DTS and the Marzen Reference
-> >> C board code to use DTS only for INTC-IRQPIN IRLM setup.
-> >>
-> >> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> >> ---
-> >>
-> >>  Written on top of renesas-devel-20141202-v3.18-rc7 and
-> >>  [PATCH] ARM: shmobile: r8a7779 CCF DTS update
-> >>
-> >>  Has a runtime dependency on:
-> >>  [PATCH 01/02] irqchip: renesas-intc-irqpin: r8a7779 IRLM setup support
-> >>
-> >>  arch/arm/boot/dts/r8a7779.dtsi                  |    5 +++--
-> >>  arch/arm/mach-shmobile/board-marzen-reference.c |    7 -------
-> >>  2 files changed, 3 insertions(+), 9 deletions(-)
-> >>
-> >> --- 0002/arch/arm/boot/dts/r8a7779.dtsi
-> >> +++ work/arch/arm/boot/dts/r8a7779.dtsi       2014-12-03 20:27:49.0000=
-00000 +0900
-> >> @@ -139,7 +139,7 @@
-> >>               interrupt-controller;
-> >>       };
-> >>
-> >> -     irqpin0: irqpin@fe780010 {
-> >> +     irqpin0: irqpin@fe780000 {
-> >>               compatible =3D "renesas,intc-irqpin-r8a7779", "renesas,i=
-ntc-irqpin";
-> >>               #interrupt-cells =3D <2>;
-> >>               status =3D "disabled";
-> >> @@ -148,7 +148,8 @@
-> >>                       <0xfe780010 4>,
-> >>                       <0xfe780024 4>,
-> >>                       <0xfe780044 4>,
-> >> -                     <0xfe780064 4>;
-> >> +                     <0xfe780064 4>,
-> >> +                     <0xfe780000 4>;
-> >
-> > Is there any order implied by the above list?
-> > Na=C3=AFvely I would expect it to be sorted numerically.
->=20
+Hi Magnus,
+
+On Thu, Dec 4, 2014 at 8:33 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+>>> --- 0002/arch/arm/boot/dts/r8a7779.dtsi
+>>> +++ work/arch/arm/boot/dts/r8a7779.dtsi       2014-12-03 20:27:49.00000=
+0000 +0900
+>>> @@ -139,7 +139,7 @@
+>>>               interrupt-controller;
+>>>       };
+>>>
+>>> -     irqpin0: irqpin@fe780010 {
+>>> +     irqpin0: irqpin@fe780000 {
+>>>               compatible =3D "renesas,intc-irqpin-r8a7779", "renesas,in=
+tc-irqpin";
+>>>               #interrupt-cells =3D <2>;
+>>>               status =3D "disabled";
+>>> @@ -148,7 +148,8 @@
+>>>                       <0xfe780010 4>,
+>>>                       <0xfe780024 4>,
+>>>                       <0xfe780044 4>,
+>>> -                     <0xfe780064 4>;
+>>> +                     <0xfe780064 4>,
+>>> +                     <0xfe780000 4>;
+>>
+>> Is there any order implied by the above list?
+>> Na=C3=AFvely I would expect it to be sorted numerically.
+>
 > Yes, the driver assumes the register banks to be passed in a certain
 > order. In the case of r8a7779 we add one more register bank at the end
 > for IRLM setup. Register detail (base address, access size, order and
@@ -70,4 +48,20 @@ ntc-irqpin";
 > at different addresses depending on SoC, but the driver wants it at
 > the end of the list.
 
-Thanks, if it is intentional then that is fine by me.
+As these are all individual registers, and there are that many, I think
+it's worth adding a reg-names property to identify the registers.
+Of course the driver still has to support the old anonymous order
+for backwards compatibility.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
+.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like t=
+hat.
+                                -- Linus Torvalds
