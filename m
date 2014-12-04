@@ -1,41 +1,49 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 29 Dec 2014 01:43:46 +0000
-Subject: [PATCH 15/30] ARM: shmobile: lager: Fix QSPI mode of SPI-Flash into mode3
-Message-Id: <cbf41168339adcb48de6a3537f88d4e85285db99.1419812186.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 04 Dec 2014 12:31:36 +0000
+Subject: [PATCH 0/2] ARM: shmobile: R-mobile: Fix SYSC register lengths
+Message-Id: <1417696298-27740-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1419812185.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+	Hi Simon, Magnus,
 
-In order to change into mode3, CPOL and CPHA bit of SPCMD register
-of QSPI is changed. Mode3 can avoid intermediate voltage.
+This patch series fixes the register lengths of the SYSC device nodes, by
+adding the missing 0x prefixes. They were really intended to be 0x8000, not
+8000.
+This doesn't cause any problems for now, but at least the second range
+is documented to cover the full 32 KiB on R-Mobile A1 (r8a7740).
+Sorry for not noticing before.
 
-Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-[horms: Updated changelog and re-ordered properties]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/boot/dts/r8a7790-lager.dts | 2 ++
- 1 file changed, 2 insertions(+)
+Perhaps these can still be folded into the commits that introduced the bugs?
+  - commit 0f3dad1d6c519ddf ("PM / Domains: Add DT bindings for the R-Mobile
+    System Controller"),
+  - commit 2f49e6f2721c4344 ("ARM: shmobile: r8a7740 dtsi: Add PM domain
+    support").
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 636d53b..bc257e8 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -397,6 +397,8 @@
- 		spi-max-frequency = <30000000>;
- 		spi-tx-bus-width = <4>;
- 		spi-rx-bus-width = <4>;
-+		spi-cpha;
-+		spi-cpol;
- 		m25p,fast-read;
- 
- 		partition@0 {
+Thanks!
+
+Geert Uytterhoeven (2):
+  PM / Domains: R-Mobile SYSC: Add missing 0x prefixes to example
+  ARM: shmobile: r8a7740 dtsi: Add missing 0x prefix to SYSC reg lengths
+
+ Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt | 2 +-
+ arch/arm/boot/dts/r8a7740.dtsi                                   | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
 -- 
-2.1.3
+1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
