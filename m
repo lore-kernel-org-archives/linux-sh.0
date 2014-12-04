@@ -1,31 +1,43 @@
-From: =?utf-8?B?U8O2cmVu?= Brinkmann <soren.brinkmann@xilinx.com>
-Date: Wed, 03 Dec 2014 17:59:50 +0000
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Thu, 04 Dec 2014 09:44:52 +0000
 Subject: Re: [PATCH v2 0/7] Pinctrl support for Zynq
-Message-Id: <d1b90be2a67942e8a058e27b4cd38e66@BY2FFO11FD036.protection.gbl>
+Message-Id: <CACRpkdbYPmMksbqciiXv4hHBqx9=b8toA5MgCwGSLteUh+NkZA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1417137993-8337-1-git-send-email-soren.brinkmann@xilinx.com>
- <1417611103.30615.25.camel@mm-sol.com>
-In-Reply-To: <1417611103.30615.25.camel@mm-sol.com>
+In-Reply-To: <1417137993-8337-1-git-send-email-soren.brinkmann@xilinx.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, 2014-12-03 at 02:51PM +0200, Ivan T. Ivanov wrote:
->=20
-> On Thu, 2014-11-27 at 17:26 -0800, Soren Brinkmann wrote:
-> > Hi all,
-> >=20
-> > here is v2 of this series.=20
->=20
-> Which tree did you use as a base for these patches?
-> Tried with pinctrl/devel and linus/master didn't apply.
+On Fri, Nov 28, 2014 at 2:26 AM, Soren Brinkmann
+<soren.brinkmann@xilinx.com> wrote:
 
-It's supposed to be pinctrl/devel. And that seems to be mostly true. I
-just saw there are two rockchip patches in my branch which shouldn't be.
-Guess some rebase went wrong (or the devel branch was rewritten?).
-I pushed the series here:
-https://github.com/sorenb-xlnx/linux-xlnx/commits/pinctrl
+> here is v2 of this series. On the functional side, adding the support
+> for USB mux groups is probably the biggest change. Most other changes
+> are mostly cosmetic (typos, function names, documentation, ...).
+> More detailed changelogs are included with the respective patches.
 
-	Thanks,
-	S=C3=B6ren
+Unfortunately we are late in the merge cycle.
+
+But I am *very* fond of this series, and I appreciate your patches
+as *lot* S=C3=B6ren.
+
+So my plan is to merge your v3 patch set after the merge window
+or whenever you have it ready, with the Zynq driver on top and
+the dependent AMlogic driver too.
+
+Then we spend the next kernel cycle hashing this out and
+putting some polished generic code in place so we get some
+order.
+
+This will likely set the pattern for how we expect ACPI pin controllers
+to behave too, so it is work of great importance.
+
+I hope I can count on you to hang in there and keep driving
+those patches!
+
+I'll try to provide a deeper look at the indivudual patches now.
+
+Yours,
+Linus Walleij
