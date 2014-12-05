@@ -1,63 +1,75 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 23 Dec 2014 00:23:53 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7790: add MLB+ clock
-Message-Id: <20141223002353.GD2817@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 05 Dec 2014 02:28:28 +0000
+Subject: [PATCH v2] ARM: shmobile: dts: koelsch: Fix flash partition label and size
+Message-Id: <1417746508-14557-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2277336.BnuIY8UiP8@wasted.cogentembedded.com>
- <20141222000610.GG29188@verge.net.au>
- <54989071.2060509@cogentembedded.com>
-In-Reply-To: <54989071.2060509@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Sergei,
+Update the size and names of flash partitions to match the
+expectations of the loader which are as follows:
 
-On Tue, Dec 23, 2014 at 12:43:13AM +0300, Sergei Shtylyov wrote:
-> On 12/22/2014 03:06 AM, Simon Horman wrote:
-> 
-> >>From: Andrey Gusakov <andrey.gusakov@cogentembedded.com>
-> 
-> >>Add MLB+ clock to R8A7790 device tree.
-> 
-> >>Signed-off-by: Andrey Gusakov <andrey.gusakov@cogentembedded.com>
-> >>[Sergei: rebased, renamed, added changelog]
-> >>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> >>---
-> >>This patch is against 'renesas-devel-20141218-v3.18' tag of Simon Horman's
-> >>'renesas.git' repo.
-> 
-> >Thanks, I have queued this up.
-> 
->    Oops, just saw a formatting issue in this patch...
-> 
-> [...]
-> >>Index: renesas/include/dt-bindings/clock/r8a7790-clock.h
-> >>=================================> >>--- renesas.orig/include/dt-bindings/clock/r8a7790-clock.h
-> >>+++ renesas/include/dt-bindings/clock/r8a7790-clock.h
-> >>@@ -97,6 +97,7 @@
-> >>  #define R8A7790_CLK_LVDS0		26
-> >>
-> >>  /* MSTP8 */
-> >>+#define R8A7790_CLK_MLB		2
-> 
->    Need one more tab here.
-> 
-> >>  #define R8A7790_CLK_VIN3		8
-> >>  #define R8A7790_CLK_VIN2		9
-> >>  #define R8A7790_CLK_VIN1		10
-> 
->    Perhaps you still can fix it up, or I can resend? I'm not seeing this
-> patch in the 'devel' branch yet...
+"loader"---0x0000_0000-0x0008_0000 [loader program (readonly)]
+"user"  ---0x0008_0000-0x0060_0000 [U-Boot + bootargs + dt + uImage (readonly)]
+"flash" ---0x0060_0000-0x0400_0000 [filesystem and free (read/write)]
 
-Thanks for following up on this.
+["user"'s assumed breakdown]
+U-boot       (0x0008_0000-0x000c_0000) 256KiB
+bootargs     (0x000c_0000-0x0010_0000) 256KiB
+Device tree  (0x0010_0000-0x0014_0000) 256KiB
+zImage       (0x0014_0000-0x0060_0000) 4.75MiB
 
-I had the patch queued up locally but it seems that I forgot to push them.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-I have fixed up this patch by adding an extra tab and pushed the result.
-The result should be in renesas-devel-20141223-v3.19-rc1
-(But kernel.org seems slow today).
+---
 
-Please let me know if I messed things up somehow.
+v2
+* As suggested by Geert Uytterhoeven
+  - Break out U-boot and bootargs into separate areas within the user
+    partition description in the changelog
+  - Refer to zImage rather than uImage in the changelog
+* As suggested by Sergei Shtylyov
+  - Correct base address of partition nodes to match the base address of
+    their register
+
+This replaces a patch that I previously posted, "shmobile: koelsch: Fix
+flash partition label and size in device tree", which has the same aim but
+does so for an older version of the loader which to my knowledge is not
+found in the wild.
+
+I plan to post a similar patch for Lager if this one goes well.
+
+I have been informed that the flash layout should also be the same
+for Alt (which currently does not have flash in its dts file in mainline).
+---
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index bf58c79..6938377 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -452,13 +452,13 @@
+ 			read-only;
+ 		};
+ 		partition@80000 {
+-			label = "bootenv";
+-			reg = <0x00080000 0x00080000>;
++			label = "user";
++			reg = <0x00080000 0x00580000>;
+ 			read-only;
+ 		};
+-		partition@100000 {
+-			label = "data";
+-			reg = <0x00100000 0x03f00000>;
++		partition@600000 {
++			label = "flash";
++			reg = <0x00600000 0x03a00000>;
+ 		};
+ 	};
+ };
+-- 
+2.1.3
+
