@@ -1,63 +1,31 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 05 Dec 2014 03:01:12 +0000
-Subject: [PATCH] ARM: shmobile: r8a7794: Add USB clocks to device tree
-Message-Id: <1417748472-23700-1-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 05 Dec 2014 10:01:46 +0000
+Subject: Re: [PATCH] ARM: shmobile: r8a7794: Add USB clocks to device tree
+Message-Id: <CAMuHMdWeBK9wwEnm=t99mnQbOabznZr_+xW86p208iG6rrrvww@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1417748472-23700-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1417748472-23700-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+On Fri, Dec 5, 2014 at 4:01 AM, Simon Horman <horms+renesas@verge.net.au> wrote:
+> From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+>
+> Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+> [horms: resolved conflicts]
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-[horms: resolved conflicts]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7794.dtsi            | 5 ++++-
- include/dt-bindings/clock/r8a7794-clock.h | 2 ++
- 2 files changed, 6 insertions(+), 1 deletion(-)
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Based on the renesas-devel-20141205-v3.18-rc7 tag
-of my renesas tree.
+Gr{oetje,eeting}s,
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 1801bb4..7fd40f3 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -504,16 +504,19 @@
- 		mstp7_clks: mstp7_clks@e615014c {
- 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
--			clocks = <&zs_clk>, <&p_clk>, <&p_clk>, <&zs_clk>,
-+			clocks = <&mp_clk>, <&mp_clk>,
-+				 <&zs_clk>, <&p_clk>, <&p_clk>, <&zs_clk>,
- 				 <&zs_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
- 			#clock-cells = <1>;
- 			clock-indices = <
-+				R8A7794_CLK_EHCI R8A7794_CLK_HSUSB
- 				R8A7794_CLK_HSCIF2 R8A7794_CLK_SCIF5
- 				R8A7794_CLK_SCIF4 R8A7794_CLK_HSCIF1 R8A7794_CLK_HSCIF0
- 				R8A7794_CLK_SCIF3 R8A7794_CLK_SCIF2 R8A7794_CLK_SCIF1
- 				R8A7794_CLK_SCIF0
- 			>;
- 			clock-output-names +				"ehci", "hsusb",
- 				"hscif2", "scif5", "scif4", "hscif1", "hscif0",
- 				"scif3", "scif2", "scif1", "scif0";
- 		};
-diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
-index aa9c286..94e2bbf 100644
---- a/include/dt-bindings/clock/r8a7794-clock.h
-+++ b/include/dt-bindings/clock/r8a7794-clock.h
-@@ -57,6 +57,8 @@
- #define R8A7794_CLK_PWM			23
- 
- /* MSTP7 */
-+#define R8A7794_CLK_EHCI		3
-+#define R8A7794_CLK_HSUSB		4
- #define R8A7794_CLK_HSCIF2		13
- #define R8A7794_CLK_SCIF5		14
- #define R8A7794_CLK_SCIF4		15
--- 
-2.1.3
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
