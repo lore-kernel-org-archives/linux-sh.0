@@ -1,75 +1,41 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 29 Dec 2014 01:43:53 +0000
-Subject: [PATCH 22/30] ARM: shmobile: r8a7794: Add MMCIF clock to device tree
-Message-Id: <deac150c2d141c16c4814972c25c2a3aacae8d57.1419812186.git.horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 08 Dec 2014 18:11:16 +0000
+Subject: Re: [PATCH v6 1/6] clk: shmobile: sh73a0 common clock framework implementation
+Message-Id: <CAO3366xz4KJY=XM5jCJAvOQ7TEg+Vb6CqCZopp446Led6ZE4Qw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1419812185.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
+References: <1416500463-20965-2-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1416500463-20965-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+On Tue, Nov 25, 2014 at 1:04 PM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> On Thursday 20 November 2014 17:20:58 Ulrich Hecht wrote:
+[...]
+>> +                                     mult *= 2;
+>> +             }
+>> +     } else if (!strcmp(name, "dsi0phy") || !strcmp(name, "dsi1phy")) {
+>> +             u32 phy_no = name[3] - '0';
+>> +             void __iomem *dsi_reg = cpg->reg +
+>> +                     (phy_no ? CPG_DSI1PHYCR : CPG_DSI0PHYCR);
+>> +
+>> +             parent_name = phy_no ? "dsi1pck" : "dsi0pck";
+>> +             div = __raw_readl(dsi_reg);
+>> +             if (!(div & 0xb8000))
+>
+> If I'm not mistaken the PLL is disabled if the MANUAL bit is set and the BYPSL
+> is clear. The above check would consider the PLL to be enabled.
 
-Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-[horms: omitted device node; only add clock]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7794.dtsi            | 15 +++++++++++----
- include/dt-bindings/clock/r8a7794-clock.h |  1 +
- 2 files changed, 12 insertions(+), 4 deletions(-)
+That is a translation of the corresponding part of the legacy driver,
+where it is appropriately labeled "/* FIXME */"...
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index c376676..8f78da5 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -308,6 +308,13 @@
- 			#clock-cells = <0>;
- 			clock-output-names = "sd2";
- 		};
-+		mmc0_clk: mmc0_clk@e6150240 {
-+			compatible = "renesas,r8a7794-div6-clock", "renesas,cpg-div6-clock";
-+			reg = <0 0xe6150240 0 4>;
-+			clocks = <&pll1_div2_clk>;
-+			#clock-cells = <0>;
-+			clock-output-names = "mmc0";
-+		};
- 
- 		/* Fixed factor clocks */
- 		pll1_div2_clk: pll1_div2_clk {
-@@ -512,16 +519,16 @@
- 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
- 			clocks = <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7794_CLK_SD0>,
--			         <&rclk_clk>, <&hp_clk>, <&hp_clk>;
-+			         <&mmc0_clk>, <&rclk_clk>, <&hp_clk>, <&hp_clk>;
- 			#clock-cells = <1>;
- 			clock-indices = <
- 			        R8A7794_CLK_SDHI2 R8A7794_CLK_SDHI1 R8A7794_CLK_SDHI0
--				R8A7794_CLK_CMT1 R8A7794_CLK_USBDMAC0
--				R8A7794_CLK_USBDMAC1
-+				R8A7794_CLK_MMCIF0 R8A7794_CLK_CMT1
-+				R8A7794_CLK_USBDMAC0 R8A7794_CLK_USBDMAC1
- 			>;
- 			clock-output-names  			        "sdhi2", "sdhi1", "sdhi0",
--				"cmt1", "usbdmac0", "usbdmac1";
-+				"mmcif0", "cmt1", "usbdmac0", "usbdmac1";
- 		};
- 		mstp7_clks: mstp7_clks@e615014c {
- 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
-index ccd5667..d633230 100644
---- a/include/dt-bindings/clock/r8a7794-clock.h
-+++ b/include/dt-bindings/clock/r8a7794-clock.h
-@@ -55,6 +55,7 @@
- #define R8A7794_CLK_SDHI2		11
- #define R8A7794_CLK_SDHI1		12
- #define R8A7794_CLK_SDHI0		14
-+#define R8A7794_CLK_MMCIF0		15
- #define R8A7794_CLK_CMT1		29
- #define R8A7794_CLK_USBDMAC0		30
- #define R8A7794_CLK_USBDMAC1		31
--- 
-2.1.3
+I think it is sufficient to examine PLLE here.  We don't really care
+why the PLL is on or off at this point.
 
+More embarrassing is the fact that that should be "mult" up there...
+(This error also exists in the legacy driver.)
+
+CU
+Uli
