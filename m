@@ -1,63 +1,83 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 29 Dec 2014 01:43:56 +0000
-Subject: [PATCH 25/30] ARM: shmobile: ape6evm: Add LEDs to the device tree
-Message-Id: <b742257dd5ec574a35950ebcf4a3d77a0f01355f.1419812186.git.horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 08 Dec 2014 00:31:05 +0000
+Subject: Re: [PATCH/RFC] ARM: shmobile: lager: Fix SPI mode of SPI-Flash into mode3
+Message-Id: <20141208003105.GC7420@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1419812185.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
+References: <1414648551-30318-1-git-send-email-horms+renesas@verge.net.au>
+ <CAMuHMdVQ0s35sW=kvf80c0s++R-5uNuJQtxMcX1R5ogxNwkp9w@mail.gmail.com>
+ <20141112082242.GU9007@verge.net.au>
+In-Reply-To: <20141112082242.GU9007@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+On Wed, Nov 12, 2014 at 05:22:43PM +0900, Simon Horman wrote:
+> On Thu, Oct 30, 2014 at 10:26:33AM +0100, Geert Uytterhoeven wrote:
+> > On Thu, Oct 30, 2014 at 6:55 AM, Simon Horman
+> > <horms+renesas@verge.net.au> wrote:
+> > > From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+> > >
+> > > In order to change into mode3, CPOL and CPHA bit of SPCMD register
+> > > of MSIOF is changed. Mode3 can avoid intermediate voltage.
+> > 
+> > This is the QSPI node, not MSIOF?
+> 
+> Indeed.
+> 
+> Nakamura-san's patch, which I up-ported, was against the QSPI node
+> but the version I posted below is indeed against the MSIOF.
+> 
+> Furthermore, I see that spi-cpol and spi-cpha are already present
+> in the MSIOF node in mainline. I would like to withdraw this patch.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a73a4-ape6evm.dts | 28 ++++++++++++++++++++++++++++
- 1 file changed, 28 insertions(+)
+Hi Geert,
 
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-index c98cd14..b939a37 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-@@ -82,6 +82,34 @@
- 			vddvario-supply = <&ape6evm_fixed_3v3>;
- 		};
- 	};
-+
-+	leds {
-+		compatible = "gpio-leds";
-+		led1 {
-+			gpios = <&pfc 28 GPIO_ACTIVE_LOW>;
-+			label = "GNSS_EN";
-+		};
-+		led2 {
-+			gpios = <&pfc 126 GPIO_ACTIVE_LOW>;
-+			label = "NFC_NRST";
-+		};
-+		led3 {
-+			gpios = <&pfc 132 GPIO_ACTIVE_LOW>;
-+			label = "GNSS_NRST";
-+		};
-+		led4 {
-+			gpios = <&pfc 232 GPIO_ACTIVE_LOW>;
-+			label = "BT_WAKEUP";
-+		};
-+		led5 {
-+			gpios = <&pfc 250 GPIO_ACTIVE_LOW>;
-+			label = "STROBE";
-+		};
-+		led6 {
-+			gpios = <&pfc 288 GPIO_ACTIVE_LOW>;
-+			label = "BBRESETOUT";
-+		};
-+	};
- };
- 
- &i2c5 {
--- 
-2.1.3
+coming back to this I'm a little confused.
 
+I believe that the patch below is for the QSPI node and that was
+intended by it. Is such a change appropriate for mainline?
+Should I confirm some details with Nakamura-san?
+
+In mainline spi-cpol and spi-cpha are currently set in the
+MSIOF node but not the QSPI node. I believe the same holds for koelsch too.
+
+> 
+> > > Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+> > > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> > > ---
+> > > Based on the renesas-devel-20141030-v3.18-rc2 branch of my renesas tree
+> > >
+> > >  arch/arm/boot/dts/r8a7790-lager.dts | 2 ++
+> > >  1 file changed, 2 insertions(+)
+> > >
+> > > diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+> > > index 830f2e8..1606fad 100644
+> > > --- a/arch/arm/boot/dts/r8a7790-lager.dts
+> > > +++ b/arch/arm/boot/dts/r8a7790-lager.dts
+> > > @@ -343,6 +343,8 @@
+> > >                 spi-tx-bus-width = <4>;
+> > >                 spi-rx-bus-width = <4>;
+> > >                 m25p,fast-read;
+> > > +               spi-cpol;
+> > > +               spi-cpha;
+> > >
+> > >                 partition@0 {
+> > >                         label = "loader";
+> > 
+> > Gr{oetje,eeting}s,
+> > 
+> >                         Geert
+> > 
+> > --
+> > Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+> > 
+> > In personal conversations with technical people, I call myself a hacker. But
+> > when I'm talking to journalists I just say "programmer" or something like that.
+> >                                 -- Linus Torvalds
+> > 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
