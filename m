@@ -1,39 +1,64 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 03 Dec 2014 12:17:53 +0000
-Subject: [PATCH 00/02] r8a7779 renesas-intc-irqpin IRLM configuration patches
-Message-Id: <20141203121753.5936.36253.sendpatchset@w520>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 08 Dec 2014 11:41:03 +0000
+Subject: renesas-drivers-2014-12-08-v3.18
+Message-Id: <1418038863-3516-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
-Cc: horms@verge.net.au, tglx@linutronix.de, linux-kernel@vger.kernel.org, jason@lakedaemon.net
+To: linux-sh@vger.kernel.org
 
-r8a7779 renesas-intc-irqpin IRLM configuration patches
+I've pushed renesas-drivers-2014-12-08-v3.18 to
+https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+This tree is meant to ease development of platform support and drivers for
+Renesas ARM ("shmobile") SoCs. It's created by merging (a) branches with
+driver code submitted to maintainers and (b) the for-next branches of various
+subsystem trees into the development branch of Simon Horman's renesas.git tree.
 
-[PATCH 01/02] irqchip: renesas-intc-irqpin: r8a7779 IRLM setup support
-[PATCH 02/02] ARM: shmobile: marzen-reference: Remove IRLM workaround
+Today's version is based on renesas-devel-20141208-v3.18.
 
-These patches extend the INTC-IRQPIN driver with r8a7779 specific
-register support code that configures "Individual IRQ mode" from
-the driver instead of workaround in arch/arm/mach-shmobile.
+Included fixes:
+  - "thermal: Add missing drivers/thermal/int340x_thermal/Kconfig"
 
-With this in place we are one step closer to get rid of C board
-code for the r8a7779 SoC.
+Included subsystem trees:
+  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
+  - git://git.linaro.org/people/mturquette/linux.git#clk-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
+  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
+  - git://gitorious.org/linux-can/linux-can-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
+  - git://people.freedesktop.org/~airlied/linux#drm-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
+  - git://linuxtv.org/mchehab/media-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
+  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
+  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
+  - git://git.infradead.org/users/vkoul/slave-dma.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
+  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
+  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
+  - git://git.infradead.org/battery-2.6.git#master
 
-There are no build dependencies between the two patches, however
-for correct runtime operation patch 1 needs to be applied before
-patch 2. I suggest merging patch 1 through the IRQCHIP tree and
-adding patch 1 to mach-shmobile when the first patch hits -rc1.
+Gr{oetje,eeting}s,
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
+						Geert
 
- Built on top of renesas-devel-20141202-v3.18-rc7 and
- "[PATCH] ARM: shmobile: r8a7779 CCF DTS update"
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
- Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt |    5 +
- arch/arm/boot/dts/r8a7779.dtsi                                                 |    5 -
- arch/arm/mach-shmobile/board-marzen-reference.c                                |    7 -
- drivers/irqchip/irq-renesas-intc-irqpin.c                                      |   50 ++++++++--
- 4 files changed, 49 insertions(+), 18 deletions(-)
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
