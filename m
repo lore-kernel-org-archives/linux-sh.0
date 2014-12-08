@@ -1,25 +1,58 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 16 Dec 2014 05:34:27 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7779: Use R8A7779_CLK_P as SCIF parent clock
-Message-Id: <20141216053427.GB12455@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 08 Dec 2014 04:37:03 +0000
+Subject: Re: [PATCH 11/12 v2] ARM: shmobile: multiplatform: add Audo DMAC peri peri support on defconfig
+Message-Id: <87y4qiahah.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20141215050034.357.93456.sendpatchset@w520>
-In-Reply-To: <20141215050034.357.93456.sendpatchset@w520>
+References: <87h9yl2ie3.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87h9yl2ie3.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Dec 15, 2014 at 03:00:53PM +0100, Geert Uytterhoeven wrote:
-> On Mon, Dec 15, 2014 at 6:00 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> > From: Magnus Damm <damm+renesas@opensource.se>
-> >
-> > Use R8A7779_CLK_P as parent clock for SCIF devices on r8a7779.
-> > With this change in place the SCIF CCF handling matches the
-> > legacy clock code. Also, this matches the data sheet.
-> >
-> > Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> 
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Thanks, I have queued this up.
+Hi Simon
+
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> 
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> ---
+> v1 -> v2
+> 
+> - no change
+> 
+>  arch/arm/configs/shmobile_defconfig |    1 +
+>  1 file changed, 1 insertion(+)
+> 
+> diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+> index b32afae..a2de58e 100644
+> --- a/arch/arm/configs/shmobile_defconfig
+> +++ b/arch/arm/configs/shmobile_defconfig
+> @@ -145,6 +145,7 @@ CONFIG_RTC_CLASS=y
+>  CONFIG_RTC_DRV_S35390A=y
+>  CONFIG_DMADEVICES=y
+>  CONFIG_SH_DMAE=y
+> +CONFIG_RCAR_AUDMAC_PP=y
+>  CONFIG_RCAR_DMAC=y
+>  # CONFIG_IOMMU_SUPPORT is not set
+>  CONFIG_PWM=y
+
+Is it possible to revert this patch from defconfig ?
+Current upstreamed Audio DMAC peri peri driver is based on SH_DMAE_BASE,
+but, it breaks DMAEngine handling.
+
+I fix-uped this issue on below patch, but it is not yet accepted.
+
+	Subject: [PATCH][resend] dmaengine: rcar-audmapp: independent from SH_DMAE_BASE
+	Date: Fri, 28 Nov 2014 00:17:59 +0000
+
+Above patches need this order
+[1/2] : dmaengine: rcar-audmapp: independent from SH_DMAE_BASE
+[2/2] : ARM: shmobile: multiplatform: add Audo DMAC peri peri support on defconfig
+
+It seems that I2C driver is broken by this patch.
+I will re-send it if missing DMAEngine patch was accepted.
+
+Best regards
+---
+Kuninori Morimoto
