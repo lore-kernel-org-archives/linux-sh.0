@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 08 Dec 2014 17:03:33 +0000
+From: Kevin Hilman <khilman@kernel.org>
+Date: Mon, 08 Dec 2014 17:17:45 +0000
 Subject: Re: stable boot: 93 boots: 92 pass, 1 fail (v3.17.6)
-Message-Id: <CAMuHMdVjo=t31DZaQe6cph34Af8hxgreP1LWpKhZO0j7-ucOxQ@mail.gmail.com>
+Message-Id: <7hlhmiukli.fsf@deeprootsystems.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <2553650.3KSUKtTdo3@wuerfel>
 In-Reply-To: <2553650.3KSUKtTdo3@wuerfel>
@@ -10,61 +10,52 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Kevin,
+Geert Uytterhoeven <geert@linux-m68k.org> writes:
 
-On Mon, Dec 8, 2014 at 5:45 PM, Kevin Hilman <khilman@kernel.org> wrote:
-> Arnd Bergmann <arnd@arndb.de> writes:
->> On Monday 08 December 2014 14:48:20 Geert Uytterhoeven wrote:
->>> On Mon, Dec 8, 2014 at 12:35 PM, Arnd Bergmann <arnd@arndb.de> wrote:
->>> > On Sunday 07 December 2014 21:49:05 Kevin's boot bot wrote:
->>> >> Full Build report: http://status.armcloud.us/build/stable/kernel/v3.17.6/
->>> >> Full Boot report:  http://status.armcloud.us/boot/all/job/stable/kernel/v3.17.6/
->>> >>
->>> >> Tree/Branch: stable
->>> >> Git describe: v3.17.6
->>> >>
->>> >> Failed boot tests
->>> >> ========>>> >>                      emev2-kzm9d:     FAIL:    arm-shmobile_defconfig
->>> >>                                       http://storage.armcloud.us/kernel-ci/stable/v3.17.6/arm-shmobile_defconfig/boot-emev2-kzm9d.html
-
-> I figured it out.
+> Hi Kevin,
 >
-> The problem is that my DHCP is no longer giving out a default root-path,
-> and I neglected to update the commandline for this board.  I'd forgotten
-> that the shmobile_defconfig doesn't have initrd support in v3.17, so it
-> can't boot from a ramdisk like all my other boards.
-
-Good to hear that!
-
-> Geert, Simon, any objections to enabling initrd support in v3.17 stable?
-> Probably just asking Greg to cherry-pick mainline commit which does
-> this[1] should suffice.
-
-Personally, I have no objections.
-It's just stretching stable-kernel-rules a little bit ;-)
-
-> Kevin
+> On Mon, Dec 8, 2014 at 5:45 PM, Kevin Hilman <khilman@kernel.org> wrote:
+>> Arnd Bergmann <arnd@arndb.de> writes:
+>>> On Monday 08 December 2014 14:48:20 Geert Uytterhoeven wrote:
+>>>> On Mon, Dec 8, 2014 at 12:35 PM, Arnd Bergmann <arnd@arndb.de> wrote:
+>>>> > On Sunday 07 December 2014 21:49:05 Kevin's boot bot wrote:
+>>>> >> Full Build report: http://status.armcloud.us/build/stable/kernel/v3.17.6/
+>>>> >> Full Boot report:  http://status.armcloud.us/boot/all/job/stable/kernel/v3.17.6/
+>>>> >>
+>>>> >> Tree/Branch: stable
+>>>> >> Git describe: v3.17.6
+>>>> >>
+>>>> >> Failed boot tests
+>>>> >> ========>>>> >>                      emev2-kzm9d:     FAIL:    arm-shmobile_defconfig
+>>>> >>                                       http://storage.armcloud.us/kernel-ci/stable/v3.17.6/arm-shmobile_defconfig/boot-emev2-kzm9d.html
 >
-> [1]
-> commit 874ee23c83d888f8824305c277e047c7799f30b9
-> Author: Kevin Hilman <khilman@linaro.org>
-> Date:   Wed Aug 13 17:07:15 2014 -0700
+>> I figured it out.
+>>
+>> The problem is that my DHCP is no longer giving out a default root-path,
+>> and I neglected to update the commandline for this board.  I'd forgotten
+>> that the shmobile_defconfig doesn't have initrd support in v3.17, so it
+>> can't boot from a ramdisk like all my other boards.
 >
->     ARM: shmobile: defconfig: enable initrd
+> Good to hear that!
 >
->     Enable initrd support.
+>> Geert, Simon, any objections to enabling initrd support in v3.17 stable?
+>> Probably just asking Greg to cherry-pick mainline commit which does
+>> this[1] should suffice.
 >
->     Signed-off-by: Kevin Hilman <khilman@linaro.org>
->     [horms+renesas@verge.net.au: dropped enabling atag dtb compat]
->     Signed-off-by: Simon Horman <horms+renesas@verge.net.au>2H
+> Personally, I have no objections.
+> It's just stretching stable-kernel-rules a little bit ;-)
 
-Gr{oetje,eeting}s,
+Yeah, but since it's just defconfig, and very platform specific, I think
+Greg would accept it if it's coming from the platform maintainer.  So
+I guess it's up to Simon to decide.
 
-                        Geert
+Kevin
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+P.S. I reran the v3.17.6 stable tree for this board, and the reports and
+boot logs reflect the working state
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+http://status.armcloud.us/boot/emev2-kzm9d/job/stable/kernel/v3.17.6/defconfig/shmobile_defconfig/lab/lab-khilman/?_idT85bd0c59b51457be3bc9a5
+
+Kevin
+
+
