@@ -1,30 +1,36 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 04 Dec 2014 09:48:28 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: defconfig: cleanup by savedefconfig
-Message-Id: <87tx1b7nk6.wl%kuninori.morimoto.gx@renesas.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Mon, 08 Dec 2014 11:35:41 +0000
+Subject: Re: stable boot: 93 boots: 92 pass, 1 fail (v3.17.6)
+Message-Id: <2553650.3KSUKtTdo3@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
-References: <878uio83sx.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <878uio83sx.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+On Sunday 07 December 2014 21:49:05 Kevin's boot bot wrote:
+> Full Build report: http://status.armcloud.us/build/stable/kernel/v3.17.6/
+> Full Boot report:  http://status.armcloud.us/boot/all/job/stable/kernel/v3.17.6/
+> 
+> Tree/Branch: stable
+> Git describe: v3.17.6
+> 
+> Failed boot tests
+> ========>                      emev2-kzm9d:     FAIL:    arm-shmobile_defconfig
+>                                       http://storage.armcloud.us/kernel-ci/stable/v3.17.6/arm-shmobile_defconfig/boot-emev2-kzm9d.html
+> 
 
-Hi Geert
+I tried to look at the reports, but the links don't work. Going
+back in the archive, I see that it was still working until v3.17.2,
+broken in v3.17.4/.5/.6 and the boot report for v3.17.3 seemed to run
+into an unrelated issue. Mainline was always fine since 3.17, only
+the stable kernels had problems:
 
-> Note that you best keep your old .config generated from shmobile_defconfig
-> and run "make oldconfig". That will catch cases where a "select" was
-> dropped from a Kconfig file. When just running "make shmobile_defconfig",
-> you may end up with a .config where some option is suddenly disabled
-> because it's no longer selected automatically.
+http://storage.armcloud.us/kernel-ci/stable/v3.17.2/arm-shmobile_defconfig/boot-emev2-kzm9d.html
+http://storage.armcloud.us/kernel-ci/stable/v3.17.3/arm-shmobile_defconfig/boot-emev2-kzm9d.html
+http://storage.armcloud.us/kernel-ci/stable/v3.17.4/arm-shmobile_defconfig/boot-emev2-kzm9d.html
 
-Thanks ! I didn't know that.
+It may be worth having the sh team investigate the problem some more,
+to see if a bad patch made it into stable kernels.
 
-# I tried "shmobile_defconfig + oldconfig" on latest tree.
-# and there is no difference between nomal "shmobile_defconfig" and above.
-# I guess 1/1 patch was OK this time.
-
-Best regards
----
-Kuninori Morimoto
+	Arnd
