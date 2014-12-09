@@ -1,44 +1,37 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Thu, 04 Dec 2014 12:52:46 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Soc Updates for v3.19
-Message-Id: <2399706.M2S78W9JTO@wuerfel>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 09 Dec 2014 11:25:05 +0000
+Subject: [PATCH 7/7] ARM: shmobile: kzm9g-reference dts: Replace status value "ok" by "okay"
+Message-Id: <1418124305-7445-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1415058939.git.horms+renesas@verge.net.au>
- <201411192205.57149.arnd@arndb.de> <2367916.IecTPygCF4@avalon>
-In-Reply-To: <2367916.IecTPygCF4@avalon>
+References: <1418124305-7445-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1418124305-7445-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thursday 27 November 2014 22:48:12 Laurent Pinchart wrote:
-> Hi Arnd,
-> 
-> On Wednesday 19 November 2014 22:05:56 Arnd Bergmann wrote:
-> > On Tuesday 04 November 2014, Simon Horman wrote:
-> > > ----------------------------------------------------------------
-> > > Renesas ARM Based SoC Soc Updates for v3.19
-> > > 
-> > > * Select CONFIG_ZONE_DMA when CONFIG_ARM_LPAE is enabled
-> > > * Add CA7 arch_timer initialization for r8a7794
-> > > * Handle CA7 arch timer delay
-> > > * Add shmobile_init_late() to sh7372
-> > > 
-> > >   - This is consistent with other shmobile SoCs
-> > 
-> > Pulled into next/soc.
-> > 
-> > Note that the CONFIG_ZONE_DMA change might not be the best solution, we
-> > should probably have CONFIG_ZONE_DMA32 instead as some other architectures
-> > do, so you can use the entire lowmem area for DMA allocations.
-> 
-> I might be mistaken, but if the machine description doesn't set the 
-> dma_zone_size field, arm_dma_zone_size and arm_dma_limit are set to 0 and 
-> 0xffffffff respectively. This results in MAX_DMA_ADDRESS being set to 
-> 0xffffffff. Doesn't that allow using the entire lowmem area for DMA 
-> allocations ?
+While the DT parsing code recognizes "ok" as a valid value for the
+"status" property, ePAPR v1.1 doesn't mention it in the list of valid
+values.
 
-Sorry for the late reply. I hadn't actually looked at the details this
-far, and I would assume that you are right.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-	Arnd
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 939be1299ca6ca34..863dc4c7d7f67762 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -179,7 +179,7 @@
+ };
+ 
+ &cmt1 {
+-	status = "ok";
++	status = "okay";
+ };
+ 
+ &i2c0 {
+-- 
+1.9.1
+
