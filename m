@@ -1,45 +1,40 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 04 Dec 2014 11:50:03 +0000
-Subject: Re: [PATCH v2 0/6] ARM: shmobile: Change to using clock-indices
-Message-Id: <20141204115003.GE19465@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 09 Dec 2014 11:25:04 +0000
+Subject: [PATCH 6/7] ARM: shmobile: alt dts: Replace status value "ok" by "okay"
+Message-Id: <1418124305-7445-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415645379-3366-1-git-send-email-geert+renesas@glider.be>
- <CAMuHMdX+EfnjZvnDyUprtuQ05Ekpnr7bxgTZA=2_CHMFTq1Y9A@mail.gmail.com>
- <20141204041144.GA9241@verge.net.au>
- <20141204070043.GA25806@verge.net.au>
- <CAMuHMdWXiMEEGXb3o+oo=H912o5wCgLD7WCWQMpRDueD6FxphQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdWXiMEEGXb3o+oo=H912o5wCgLD7WCWQMpRDueD6FxphQ@mail.gmail.com>
+References: <1418124305-7445-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1418124305-7445-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Mike Turquette <mturquette@linaro.org>, Magnus Damm <magnus.damm@gmail.com>, Ben Dooks <ben.dooks@codethink.co.uk>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Dec 04, 2014 at 11:22:04AM +0100, Geert Uytterhoeven wrote:
-> Hi Simon,
-> 
-> On Thu, Dec 4, 2014 at 8:00 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Thu, Dec 04, 2014 at 01:11:44PM +0900, Simon Horman wrote:
-> >> On Wed, Dec 03, 2014 at 12:27:13PM +0100, Geert Uytterhoeven wrote:
-> >> > On Mon, Nov 10, 2014 at 7:49 PM, Geert Uytterhoeven
-> >> > <geert+renesas@glider.be> wrote:
-> >> > > This patch series finalizes the conversion from the vendor-specific
-> >> > > "renesas,clock-indices" to the generic "clock-indices", started by Ben Dooks.
-> >> > >
-> >> > > The patches for r8a7790 and r8a7791 were extracted from a patch that Ben sent
-> >> > > before ("[PATCH 2/3] renesas: change to using clock-indices"), but it was never
-> >> > > split/updated.
-> >> >
-> >> > As Mike has accepted the bindings update in clk-next, can you please apply
-> >> > the dtsi updates?
-> >>
-> >> Sure, I will look into doing so; most likely tomorrow.
-> >
-> > Thanks, I have now done so.
-> >
-> > There was some fuzz when applying most of the patches,
-> > I'd appreciate it if you could check that I got things right.
-> 
-> Thanks, the result looks fine, both in devel and dt-for-v3.20.
+While the DT parsing code recognizes "ok" as a valid value for the
+"status" property, ePAPR v1.1 doesn't mention it in the list of valid
+values.
 
-Thanks for checking.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a7794-alt.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
+index f2cf7576bf3f5a0b..0d848e60507172ef 100644
+--- a/arch/arm/boot/dts/r8a7794-alt.dts
++++ b/arch/arm/boot/dts/r8a7794-alt.dts
+@@ -40,9 +40,9 @@
+ };
+ 
+ &cmt0 {
+-	status = "ok";
++	status = "okay";
+ };
+ 
+ &scif2 {
+-	status = "ok";
++	status = "okay";
+ };
+-- 
+1.9.1
+
