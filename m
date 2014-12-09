@@ -1,67 +1,42 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 11 Dec 2014 03:21:14 +0000
-Subject: [PATCH v2] ARM: shmobile: r8a7794: Add QSPI clock to device tree
-Message-Id: <1418268074-32501-1-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 09 Dec 2014 11:22:49 +0000
+Subject: [PATCH 4/4] ARM: shmobile: Enable DA9063 watchdog in multiplatform defconfig
+Message-Id: <1418124169-7123-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1418124169-7123-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1418124169-7123-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Wim Van Sebroeck <wim-IQzOog9fTRqzQB+pC5nmwQ@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Support Opensource <support.opensource-WBD+wuPFNBhBDgjK7y7TUQ@public.gmane.org>, Guenter Roeck <linux-0h96xk9xTtrk1uMJSBkQmQ@public.gmane.org>, Lee Jones <lee.jones-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, linux-watchdog-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+This allows to restart koelsch on watchdog timeout or manual system
+restart request.
 
-Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-[horms: omitted device node and alias; only add clock]
-[horms: use clock-indicies instead of renesas,clock-indicies]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-Based on the renesas-devel-20141211-v3.18 tag of my renesas tree
-
-v2 [Simon Horman]
-* As suggested by Kuninori Morimoto
-  - Use clock-indicies instead of renesas,clock-indicies
-
-v1 [Simon Horman]
-* Removed portions of patch which add device node and alias
-* Renamed patch from
-  "ARM: shmobile: r8a7794: Add QSPI clock and device to device tree" to
-  "ARM: shmobile: r8a7794: Add QSPI clock to device tree"
+Restart by watchdog timeout is working now.
+Manual system restart depends on "[PATCH 1/4] watchdog: da9063: Add restart
+handler support".
 ---
- arch/arm/boot/dts/r8a7794.dtsi            | 8 ++++++++
- include/dt-bindings/clock/r8a7794-clock.h | 1 +
- 2 files changed, 9 insertions(+)
+ arch/arm/configs/shmobile_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 6d95638..068ca09 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -535,6 +535,14 @@
- 			clock-output-names  				"vin1", "vin0", "ether";
- 		};
-+		mstp9_clks: mstp9_clks@e6150994 {
-+			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
-+			clocks = <&cpg_clocks R8A7794_CLK_QSPI>;
-+			#clock-cells = <1>;
-+			clock-indices = <R8A7794_CLK_QSPI_MOD>;
-+			clock-output-names = "qspi_mod";
-+		};
- 		mstp11_clks: mstp11_clks@e615099c {
- 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe615099c 0 4>, <0 0xe61509ac 0 4>;
-diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
-index c0bd14a5..fba89a4 100644
---- a/include/dt-bindings/clock/r8a7794-clock.h
-+++ b/include/dt-bindings/clock/r8a7794-clock.h
-@@ -86,6 +86,7 @@
- #define R8A7794_CLK_GPIO2		10
- #define R8A7794_CLK_GPIO1		11
- #define R8A7794_CLK_GPIO0		12
-+#define R8A7794_CLK_QSPI_MOD		17
- 
- /* MSTP11 */
- #define R8A7794_CLK_SCIFA3		6
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index dfc1efcb4a866ef3..5863128b06be8551 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -106,6 +106,9 @@ CONFIG_GPIO_RCAR=y
+ CONFIG_THERMAL=y
+ CONFIG_CPU_THERMAL=y
+ CONFIG_RCAR_THERMAL=y
++CONFIG_WATCHDOG=y
++CONFIG_DA9063_WATCHDOG=y
++CONFIG_MFD_DA9063=y
+ CONFIG_REGULATOR=y
+ CONFIG_REGULATOR_DA9210=y
+ CONFIG_REGULATOR_GPIO=y
 -- 
-2.1.3
+1.9.1
 
