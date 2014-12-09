@@ -1,38 +1,39 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 09 Dec 2014 11:22:47 +0000
-Subject: [PATCH 2/4] DT: i2c: Add devices handled by the da9063 MFD driver
-Message-Id: <1418124169-7123-3-git-send-email-geert+renesas@glider.be>
+From: "Opensource [Steve Twiss]" <stwiss.opensource@diasemi.com>
+Date: Tue, 09 Dec 2014 12:40:16 +0000
+Subject: RE: [PATCH 2/4] DT: i2c: Add devices handled by the da9063 MFD driver
+Message-Id: <6ED8E3B22081A4459DAC7699F3695FB7D0B4C12B@SW-EX-MBX02.diasemi.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1418124169-7123-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1418124169-7123-1-git-send-email-geert+renesas@glider.be>
+ <1418124169-7123-3-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1418124169-7123-3-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Wim Van Sebroeck <wim@iguana.be>, Wolfram Sang <wsa@the-dreams.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: Support Opensource <support.opensource@diasemi.com>, Guenter Roeck <linux@roeck-us.net>, Lee Jones <lee.jones@linaro.org>, linux-watchdog@vger.kernel.org, linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, devicetree@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Geert Uytterhoeven <geert+renesas@glider.be>, Wim Van Sebroeck <wim@iguana.be>, Wolfram Sang <wsa@the-dreams.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Support Opensource <Support.Opensource@diasemi.com>, Guenter Roeck <linux@roeck-us.net>, Lee Jones <lee.jones@linaro.org>, "linux-watchdog@vger.kernel.org" <linux-watchdog@vger.kernel.org>, "linux-i2c@vger.kernel.org" <linux-i2c@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-This allows checkpatch to validate more DTSes.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: devicetree@vger.kernel.org
----
- Documentation/devicetree/bindings/i2c/trivial-devices.txt | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/Documentation/devicetree/bindings/i2c/trivial-devices.txt b/Do=
-cumentation/devicetree/bindings/i2c/trivial-devices.txt
-index e0beef4f8cff5cdf..3bc4ea3c5c4842ff 100644
---- a/Documentation/devicetree/bindings/i2c/trivial-devices.txt
-+++ b/Documentation/devicetree/bindings/i2c/trivial-devices.txt
-@@ -47,6 +47,7 @@ dallas,ds3232		Extremely Accurate I=C2=B2C RTC with Integ=
-rated Crystal and SRAM
- dallas,ds4510		CPU Supervisor with Nonvolatile Memory and Programmable I/O
- dallas,ds75		Digital Thermometer and Thermostat
- dlg,da9053		DA9053: flexible system level PMIC with multicore support
-+dlg,da9063		DA9063: system PMIC for quad-core application processors
- epson,rx8025		High-Stability. I2C-Bus INTERFACE REAL TIME CLOCK MODULE
- epson,rx8581		I2C-BUS INTERFACE REAL TIME CLOCK MODULE
- fsl,mag3110		MAG3110: Xtrinsic High Accuracy, 3D Magnetometer
---=20
-1.9.1
-
+T24gMDkgRGVjZW1iZXIgMjAxNCAxMToyMywgR2VlcnQgVXl0dGVyaG9ldmVuIHdyb3RlIA0KDQo+
+IFN1YmplY3Q6IFtQQVRDSCAyLzRdIERUOiBpMmM6IEFkZCBkZXZpY2VzIGhhbmRsZWQgYnkgdGhl
+IGRhOTA2MyBNRkQgZHJpdmVyDQo+IA0KPiBUaGlzIGFsbG93cyBjaGVja3BhdGNoIHRvIHZhbGlk
+YXRlIG1vcmUgRFRTZXMuDQo+IA0KPiBTaWduZWQtb2ZmLWJ5OiBHZWVydCBVeXR0ZXJob2V2ZW4g
+PGdlZXJ0K3JlbmVzYXNAZ2xpZGVyLmJlPg0KPiBDYzogZGV2aWNldHJlZUB2Z2VyLmtlcm5lbC5v
+cmcNCj4gLS0tDQo+ICBEb2N1bWVudGF0aW9uL2RldmljZXRyZWUvYmluZGluZ3MvaTJjL3RyaXZp
+YWwtZGV2aWNlcy50eHQgfCAxICsNCj4gIDEgZmlsZSBjaGFuZ2VkLCAxIGluc2VydGlvbigrKQ0K
+PiANCj4gZGlmZiAtLWdpdCBhL0RvY3VtZW50YXRpb24vZGV2aWNldHJlZS9iaW5kaW5ncy9pMmMv
+dHJpdmlhbC1kZXZpY2VzLnR4dA0KPiBiL0RvY3VtZW50YXRpb24vZGV2aWNldHJlZS9iaW5kaW5n
+cy9pMmMvdHJpdmlhbC1kZXZpY2VzLnR4dA0KPiBpbmRleCBlMGJlZWY0ZjhjZmY1Y2RmLi4zYmM0
+ZWEzYzVjNDg0MmZmIDEwMDY0NA0KPiAtLS0gYS9Eb2N1bWVudGF0aW9uL2RldmljZXRyZWUvYmlu
+ZGluZ3MvaTJjL3RyaXZpYWwtZGV2aWNlcy50eHQNCj4gKysrIGIvRG9jdW1lbnRhdGlvbi9kZXZp
+Y2V0cmVlL2JpbmRpbmdzL2kyYy90cml2aWFsLWRldmljZXMudHh0DQo+IEBAIC00Nyw2ICs0Nyw3
+IEBAIGRhbGxhcyxkczMyMzIJCUV4dHJlbWVseSBBY2N1cmF0ZSBJwrJDIFJUQw0KPiB3aXRoIElu
+dGVncmF0ZWQgQ3J5c3RhbCBhbmQgU1JBTQ0KPiAgZGFsbGFzLGRzNDUxMAkJQ1BVIFN1cGVydmlz
+b3Igd2l0aCBOb252b2xhdGlsZSBNZW1vcnkgYW5kDQo+IFByb2dyYW1tYWJsZSBJL08NCj4gIGRh
+bGxhcyxkczc1CQlEaWdpdGFsIFRoZXJtb21ldGVyIGFuZCBUaGVybW9zdGF0DQo+ICBkbGcsZGE5
+MDUzCQlEQTkwNTM6IGZsZXhpYmxlIHN5c3RlbSBsZXZlbCBQTUlDIHdpdGggbXVsdGljb3JlDQo+
+IHN1cHBvcnQNCj4gK2RsZyxkYTkwNjMJCURBOTA2Mzogc3lzdGVtIFBNSUMgZm9yIHF1YWQtY29y
+ZSBhcHBsaWNhdGlvbg0KPiBwcm9jZXNzb3JzDQo+ICBlcHNvbixyeDgwMjUJCUhpZ2gtU3RhYmls
+aXR5LiBJMkMtQnVzIElOVEVSRkFDRSBSRUFMIFRJTUUgQ0xPQ0sNCj4gTU9EVUxFDQo+ICBlcHNv
+bixyeDg1ODEJCUkyQy1CVVMgSU5URVJGQUNFIFJFQUwgVElNRSBDTE9DSyBNT0RVTEUNCj4gIGZz
+bCxtYWczMTEwCQlNQUczMTEwOiBYdHJpbnNpYyBIaWdoIEFjY3VyYWN5LCAzRCBNYWduZXRvbWV0
+ZXINCg0KQWNrZWQtYnk6IFN0ZXZlIFR3aXNzIDxzdHdpc3Mub3BlbnNvdXJjZUBkaWFzZW1pLmNv
+bT4NCg=
