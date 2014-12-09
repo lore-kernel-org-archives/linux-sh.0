@@ -1,62 +1,46 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 29 Dec 2014 01:43:34 +0000
-Subject: [PATCH 03/30] ARM: shmobile: r8a7779 dtsi: Change to using clock-indices
-Message-Id: <64530fc2ce234e2ba227e24a149c73ef91dbfae5.1419812185.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 09 Dec 2014 11:25:02 +0000
+Subject: [PATCH 4/7] ARM: shmobile: henninger dts: Replace status value "ok" by "okay"
+Message-Id: <1418124305-7445-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1419812185.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
+References: <1418124305-7445-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1418124305-7445-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-
-With the addition of clock-indices in commit 8e33f91a0b84ae19 ("clk:
-shmobile: clk-mstp: change to using clock-indices"), we can change the
-DTSes to use the generic property instead of the deprecated
-vendor-specific property.
+While the DT parsing code recognizes "ok" as a valid value for the
+"status" property, ePAPR v1.1 doesn't mention it in the list of valid
+values.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7779.dtsi | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ arch/arm/boot/dts/r8a7791-henninger.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index ede9a29..e3846af 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -475,7 +475,7 @@
- 				 <&cpg_clocks R8A7779_CLK_P>,
- 				 <&cpg_clocks R8A7779_CLK_P>;
- 			#clock-cells = <1>;
--			renesas,clock-indices = <
-+			clock-indices = <
- 				R8A7779_CLK_HSPI R8A7779_CLK_TMU2
- 				R8A7779_CLK_TMU1 R8A7779_CLK_TMU0
- 				R8A7779_CLK_HSCIF1 R8A7779_CLK_HSCIF0
-@@ -506,7 +506,7 @@
- 				 <&cpg_clocks R8A7779_CLK_P>,
- 				 <&cpg_clocks R8A7779_CLK_S>;
- 			#clock-cells = <1>;
--			renesas,clock-indices = <
-+			clock-indices = <
- 				R8A7779_CLK_USB01 R8A7779_CLK_USB2
- 				R8A7779_CLK_DU R8A7779_CLK_VIN2
- 				R8A7779_CLK_VIN1 R8A7779_CLK_VIN0
-@@ -527,7 +527,7 @@
- 			clocks = <&s4_clk>, <&s4_clk>, <&s4_clk>, <&s4_clk>,
- 				 <&s4_clk>, <&s4_clk>;
- 			#clock-cells = <1>;
--			renesas,clock-indices = <
-+			clock-indices = <
- 				R8A7779_CLK_SDHI3 R8A7779_CLK_SDHI2
- 				R8A7779_CLK_SDHI1 R8A7779_CLK_SDHI0
- 				R8A7779_CLK_MMC1 R8A7779_CLK_MMC0
+diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
+index 740e38678032a7ac..d2ebf11f98814ab5 100644
+--- a/arch/arm/boot/dts/r8a7791-henninger.dts
++++ b/arch/arm/boot/dts/r8a7791-henninger.dts
+@@ -156,7 +156,7 @@
+ 
+ 	phy-handle = <&phy1>;
+ 	renesas,ether-link-active-low;
+-	status = "ok";
++	status = "okay";
+ 
+ 	phy1: ethernet-phy@1 {
+ 		reg = <1>;
+@@ -293,7 +293,7 @@
+ 
+ /* composite video input */
+ &vin0 {
+-	status = "ok";
++	status = "okay";
+ 	pinctrl-0 = <&vin0_pins>;
+ 	pinctrl-names = "default";
+ 
 -- 
-2.1.3
+1.9.1
 
