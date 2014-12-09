@@ -1,33 +1,60 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 08 Dec 2014 00:09:43 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: dts: koelsch: Fix flash partition label and size
-Message-Id: <20141208000942.GB7420@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 09 Dec 2014 11:22:45 +0000
+Subject: [PATCH 0/4] ARM: shmobile: koelsch: Add DA9063 watchdog restart support
+Message-Id: <1418124169-7123-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1417746508-14557-1-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdUMSioEew4UiH3y=qEDuGjG81uw73ajbGiPNSP_OtRkVQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdUMSioEew4UiH3y=qEDuGjG81uw73ajbGiPNSP_OtRkVQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Wim Van Sebroeck <wim@iguana.be>, Wolfram Sang <wsa@the-dreams.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Support Opensource <support.opensource@diasemi.com>, Guenter Roeck <linux@roeck-us.net>, Lee Jones <lee.jones@linaro.org>, linux-watchdog@vger.kernel.org, linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Fri, Dec 05, 2014 at 10:51:33AM +0100, Geert Uytterhoeven wrote:
-> On Fri, Dec 5, 2014 at 3:28 AM, Simon Horman <horms+renesas@verge.net.au> wrote:
-> > Update the size and names of flash partitions to match the
-> > expectations of the loader which are as follows:
-> >
-> > "loader"---0x0000_0000-0x0008_0000 [loader program (readonly)]
-> > "user"  ---0x0008_0000-0x0060_0000 [U-Boot + bootargs + dt + uImage (readonly)]
-> > "flash" ---0x0060_0000-0x0400_0000 [filesystem and free (read/write)]
-> >
-> > ["user"'s assumed breakdown]
-> > U-boot       (0x0008_0000-0x000c_0000) 256KiB
-> > bootargs     (0x000c_0000-0x0010_0000) 256KiB
-> > Device tree  (0x0010_0000-0x0014_0000) 256KiB
-> > zImage       (0x0014_0000-0x0060_0000) 4.75MiB
-> >
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+	Hi Wim, Wolfram, Simon, Magnus,
 
-Thanks, I have queued this up.
+This patch series add restart support for r8a7791/koelsch through the watchdog
+in the DA9063 PMIC. Restart can be triggered in two ways:
+  1. Timeout of the watchdog timer,
+  2. Manual system restart, shutting down the DA9063.
+
+Dependencies:
+  - There are no strict merge order dependencies,
+  - While manual restart depends on patch 1, patches 3 and 4 can be merged
+    now, as restart on watchdog timeout works without patch 1.
+
+Patches:
+  - Patch 1 is intended for the watchdog tree (based on watchdog/next),
+  - Patch 2 is intended for the i2c tree (based on i2c/next),
+  - Patches 3 and 4 are intended for the shmobile tree (based on
+    renesas-devel-20141209-v3.18).
+
+This was tested on r8a7791/koelsch.
+I expect this restart method to be usable on r8a7791/lager and r8a7794/alt,
+too.
+
+Thanks!
+
+Geert Uytterhoeven (4):
+  watchdog: da9063: Add restart handler support
+  DT: i2c: Add devices handled by the da9063 MFD driver
+  ARM: shmobile: koelsch: Add DA9063 PMIC device node for system restart
+  ARM: shmobile: Enable DA9063 watchdog in multiplatform defconfig
+
+ .../devicetree/bindings/i2c/trivial-devices.txt    |  1 +
+ arch/arm/boot/dts/r8a7791-koelsch.dts              |  7 +++++
+ arch/arm/configs/shmobile_defconfig                |  3 ++
+ drivers/watchdog/da9063_wdt.c                      | 32 +++++++++++++++++++++-
+ 4 files changed, 42 insertions(+), 1 deletion(-)
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
