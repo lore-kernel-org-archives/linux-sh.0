@@ -1,79 +1,57 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Tue, 02 Dec 2014 08:37:07 +0000
-Subject: [PATCH 3/3] ARM: shmobile: ape6evm-reference: Add keypad to the device tree
-Message-Id: <1417509427-31690-4-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Bjorn Helgaas <bhelgaas@google.com>
+Date: Tue, 09 Dec 2014 22:38:46 +0000
+Subject: Re: [PATCH] PCI: rcar: fix error handling of irq_of_parse_and_map
+Message-Id: <20141209223846.GC6692@google.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375342881-2155-4-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1375342881-2155-4-git-send-email-g.liakhovetski@gmx.de>
+References: <20141114222153.GA39494@dtor-ws>
+In-Reply-To: <20141114222153.GA39494@dtor-ws>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Dmitry Torokhov <dtor@chromium.org>
+Cc: Simon Horman <horms@verge.net.au>, Phil Edworthy <phil.edworthy@renesas.com>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
----
- arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts | 41 +++++++++++++++++++++++++
- 1 file changed, 41 insertions(+)
+On Fri, Nov 14, 2014 at 02:21:53PM -0800, Dmitry Torokhov wrote:
+> Return value of irq_of_parse_and_map() is unsigned int, with 0
+> indicating failure, so testing for negative result never works.
+> 
+> Signed-off-by: Dmitry Torokhov <dtor@chromium.org>
 
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-index a2c73c4..e214589 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-@@ -11,6 +11,7 @@
- /dts-v1/;
- #include "r8a73a4.dtsi"
- #include <dt-bindings/gpio/gpio.h>
-+#include <dt-bindings/input/input.h>
- 
- / {
- 	model = "APE6EVM";
-@@ -110,6 +111,46 @@
- 			label = "bbresetout";
- 		};
- 	};
-+
-+	keyboard {
-+		compatible = "gpio-keys";
-+
-+		zero-key {
-+			gpios = <&pfc 324 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_0>;
-+			label = "S16";
-+		};
-+
-+		menu-key {
-+			gpios = <&pfc 325 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_MENU>;
-+			label = "S17";
-+		};
-+
-+		home-key {
-+			gpios = <&pfc 326 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_HOME>;
-+			label = "S18";
-+		};
-+
-+		back-key {
-+			gpios = <&pfc 327 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_BACK>;
-+			label = "S19";
-+		};
-+
-+		volup-key {
-+			gpios = <&pfc 328 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_VOLUMEUP>;
-+			label = "S20";
-+		};
-+
-+		voldown-key {
-+			gpios = <&pfc 329 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_VOLUMEDOWN>;
-+			label = "S21";
-+		};
-+	};
- };
- 
- &i2c5 {
--- 
-1.8.4.5
+Applied with Phil's ack to next-pci/host-rcar for v3.19.  This branch will
+be rebased to v3.19-rc1.
 
+> ---
+> 
+> Not tested, found by casual code inspection.
+> 
+>  drivers/pci/host/pcie-rcar.c | 4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
+> 
+> diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
+> index 9b356c3..6ca976f 100644
+> --- a/drivers/pci/host/pcie-rcar.c
+> +++ b/drivers/pci/host/pcie-rcar.c
+> @@ -764,7 +764,7 @@ static int rcar_pcie_get_resources(struct platform_device *pdev,
+>  		goto err_map_reg;
+>  
+>  	i = irq_of_parse_and_map(pdev->dev.of_node, 0);
+> -	if (i < 0) {
+> +	if (!i) {
+>  		dev_err(pcie->dev, "cannot get platform resources for msi interrupt\n");
+>  		err = -ENOENT;
+>  		goto err_map_reg;
+> @@ -772,7 +772,7 @@ static int rcar_pcie_get_resources(struct platform_device *pdev,
+>  	pcie->msi.irq1 = i;
+>  
+>  	i = irq_of_parse_and_map(pdev->dev.of_node, 1);
+> -	if (i < 0) {
+> +	if (!i) {
+>  		dev_err(pcie->dev, "cannot get platform resources for msi interrupt\n");
+>  		err = -ENOENT;
+>  		goto err_map_reg;
+> -- 
+> 2.1.0.rc2.206.gedb03e5
+> 
+> 
+> -- 
+> Dmitry
