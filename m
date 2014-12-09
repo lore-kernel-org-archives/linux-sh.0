@@ -1,47 +1,49 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 04 Dec 2014 12:53:52 +0000
-Subject: Re: [PATCH 1/4] ARM: shmobile: R-Mobile: Add SYSC restart handler
-Message-Id: <CAMuHMdXqY79KkrmEvnG4qqDaw5x8raxRs2eKBM6E-+DyZwFt-A@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 09 Dec 2014 00:37:12 +0000
+Subject: [PATCH] ARM: shmobile: koelsch: Fix QSPI mode of SPI-Flash into mode3
+Message-Id: <1418085432-20374-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1417616227-6715-1-git-send-email-geert+renesas@glider.be>
- <1417616227-6715-2-git-send-email-geert+renesas@glider.be>
- <3671800.E1ZjeAe67g@wuerfel>
- <CAMuHMdWeFceyn3_TkgsuwakK9UOVUszBFqEv-uRqRC+2a=5XGA@mail.gmail.com>
-In-Reply-To: <CAMuHMdWeFceyn3_TkgsuwakK9UOVUszBFqEv-uRqRC+2a=5XGA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Arnd,
+From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
 
-On Thu, Dec 4, 2014 at 12:47 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
->> This clearly looks much better than the previous implementation, so that
->> is great. If you can decouple it from the rest of this file, either through
->> syscon or by asserting that sysc_base2 is not going to be needed for
->> anything else, how about moving the new code to a standalon driver in
->> drivers/power/reset?
->
-> Yes, sysc_base2 is used for reset control only (I don't think we need to read
-> the mode strap pins).
->
-> So unless there's a simple solution to the regmap problem, I think moving
-> this driver part to  drivers/power/reset is the most viable option.
+In order to change into mode3, CPOL and CPHA bit of SPCMD register
+of QSPI is changed. Mode3 can avoid intermediate voltage.
 
-There's another reasone for having a separate driver: if both the SH core and
-the ARM core are in use, the second register bank can only be accessed after
-acquiring the HPB (Peripheral Bus Bridge) semaphore.
-While we don't actively support running anything on the SH core, we don't
-want to prevent users from doing that.
+Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+[horms: Updated changelog and re-ordered properties]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Gr{oetje,eeting}s,
+---
 
-                        Geert
+Based on the renesas-devel-20141208-v3.18 tag of my renesas tree
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+* Changes by Simon Horman as suggested by Geert Uytterhoeven
+- Changed name from
+  "ARM: shmobile: koelsch: Fix SPI mode of SPI-Flash into mode3" to
+  "ARM: shmobile: koelsch: Fix QSPI mode of SPI-Flash into mode3"
+- Updated changelog to refer to QSPI instead of MSIOF
+- Grouped spi-* properties
+---
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 2 ++
+ 1 file changed, 2 insertions(+)
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 6938377..a9a6e37 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -444,6 +444,8 @@
+ 		spi-max-frequency = <30000000>;
+ 		spi-tx-bus-width = <4>;
+ 		spi-rx-bus-width = <4>;
++		spi-cpha;
++		spi-cpol;
+ 		m25p,fast-read;
+ 
+ 		partition@0 {
+-- 
+2.1.3
+
