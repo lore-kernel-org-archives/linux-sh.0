@@ -1,60 +1,83 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 09 Dec 2014 00:27:03 +0000
-Subject: Re: stable boot: 93 boots: 92 pass, 1 fail (v3.17.6)
-Message-Id: <20141209002703.GC8897@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Wed, 10 Dec 2014 14:45:21 +0000
+Subject: [PATCH v7 0/6] sh73a0 common clock framework implementation
+Message-Id: <1418222727-19888-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2553650.3KSUKtTdo3@wuerfel>
-In-Reply-To: <2553650.3KSUKtTdo3@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Dec 08, 2014 at 09:35:49AM -0800, Kevin Hilman wrote:
-> On Mon, Dec 8, 2014 at 9:17 AM, Kevin Hilman <khilman@kernel.org> wrote:
-> > Geert Uytterhoeven <geert@linux-m68k.org> writes:
-> >
-> >> Hi Kevin,
-> >>
-> >> On Mon, Dec 8, 2014 at 5:45 PM, Kevin Hilman <khilman@kernel.org> wrote:
-> >>> Arnd Bergmann <arnd@arndb.de> writes:
-> >>>> On Monday 08 December 2014 14:48:20 Geert Uytterhoeven wrote:
-> >>>>> On Mon, Dec 8, 2014 at 12:35 PM, Arnd Bergmann <arnd@arndb.de> wrote:
-> >>>>> > On Sunday 07 December 2014 21:49:05 Kevin's boot bot wrote:
-> >>>>> >> Full Build report: http://status.armcloud.us/build/stable/kernel/v3.17.6/
-> >>>>> >> Full Boot report:  http://status.armcloud.us/boot/all/job/stable/kernel/v3.17.6/
-> >>>>> >>
-> >>>>> >> Tree/Branch: stable
-> >>>>> >> Git describe: v3.17.6
-> >>>>> >>
-> >>>>> >> Failed boot tests
-> >>>>> >> ========> >>>>> >>                      emev2-kzm9d:     FAIL:    arm-shmobile_defconfig
-> >>>>> >>                                       http://storage.armcloud.us/kernel-ci/stable/v3.17.6/arm-shmobile_defconfig/boot-emev2-kzm9d.html
-> >>
-> >>> I figured it out.
-> >>>
-> >>> The problem is that my DHCP is no longer giving out a default root-path,
-> >>> and I neglected to update the commandline for this board.  I'd forgotten
-> >>> that the shmobile_defconfig doesn't have initrd support in v3.17, so it
-> >>> can't boot from a ramdisk like all my other boards.
-> >>
-> >> Good to hear that!
-> >>
-> >>> Geert, Simon, any objections to enabling initrd support in v3.17 stable?
-> >>> Probably just asking Greg to cherry-pick mainline commit which does
-> >>> this[1] should suffice.
-> >>
-> >> Personally, I have no objections.
-> >> It's just stretching stable-kernel-rules a little bit ;-)
-> >
-> > Yeah, but since it's just defconfig, and very platform specific, I think
-> > Greg would accept it if it's coming from the platform maintainer.  So
-> > I guess it's up to Simon to decide.
-> 
-> FWIW, Just to be sure, I double-checked and verified that
-> cherry-picking that shmobile_defconfig patch from mainline gets
-> ramdisk booting working again on v3.17.y stable.
+Hi!
 
-Personally I am not entirely convinced that the change really is stable
-material. However, if you feel strongly about it I would be happy for
-you to submit it to stable: I'll Ack it if you do so.
+Here's the sh73a0 CCF driver with two fixes for issues in the frequency
+calculation for the z and dsi?phy clocks found by Geert and Laurent.
+
+CU
+Uli
+
+
+Changes since v6:
+- removed unused divider masks and flags
+- consider FRQCRB:ZSEL when calculating z clock
+- fixed dsi?phy PLL frequency calculation
+- added Acked-by
+
+Changes since v5:
+- use clock-indices instead of renesas,clock-indices
+- added Tested-by
+
+Changes since v4:
+- reordered MSTP clock assignments to directly follow interrupts property
+
+Changes since v3:
+- fixed bindings to match the implementation
+- handle extal division in CPG driver, dump extal?_div2_clk
+- added acks
+- dropped eth clock hack
+
+Changes since v2:
+- split CCF DT description
+- tabbed constants in CPG bits header file
+- reordered patches to avoid need for shmobile_clk_workaround()
+- removed said workaround
+- squashed unmerged remains of CMT1 DT description into MSTP clocks patch
+- renamed clock zb1 to zb
+- removed DIV6 stuff, will be a separate series
+
+Changes since v1:
+- div6 patch replaced with v4
+- split off div6 extended clocks
+- added cmt1 DT description
+- added MSTP clock assignments
+- reordered according to dependencies
+- removed dummy frequencies in extal2, extcki
+- removed enable_on_init on zb1 and flctlck
+- added missing tpu4 in mstp3_clks
+- use c->parent in cpg driver
+- fix some style issues
+
+
+Ulrich Hecht (6):
+  clk: shmobile: sh73a0 common clock framework implementation
+  ARM: shmobile: sh73a0: Add CPG register bits header
+  ARM: shmobile: sh73a0: Common clock framework DT description
+  ARM: shmobile: kzm9g-reference: Common clock framework DT description
+  ARM: shmobile: sh73a0: add MSTP clock assignments to DT
+  ARM: shmobile: sh73a0: disable legacy clock initialization
+
+ .../bindings/clock/renesas,sh73a0-cpg-clocks.txt   |  35 ++
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts       |   4 +
+ arch/arm/boot/dts/sh73a0.dtsi                      | 358 +++++++++++++++++++++
+ arch/arm/mach-shmobile/setup-sh73a0.c              |   5 +-
+ drivers/clk/shmobile/Makefile                      |   1 +
+ drivers/clk/shmobile/clk-sh73a0.c                  | 218 +++++++++++++
+ include/dt-bindings/clock/sh73a0-clock.h           |  79 +++++
+ 7 files changed, 699 insertions(+), 1 deletion(-)
+ create mode 100644 Documentation/devicetree/bindings/clock/renesas,sh73a0-cpg-clocks.txt
+ create mode 100644 drivers/clk/shmobile/clk-sh73a0.c
+ create mode 100644 include/dt-bindings/clock/sh73a0-clock.h
+
+-- 
+1.8.4.5
+
