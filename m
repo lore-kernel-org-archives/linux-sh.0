@@ -1,89 +1,68 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Wed, 17 Dec 2014 16:18:51 +0000
-Subject: [PATCH v4 3/6] ARM: shmobile: r8a73a4: Add CPG register bits header
-Message-Id: <1418833134-7863-4-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 10 Dec 2014 13:36:15 +0000
+Subject: [PATCH 2/2] [RFC] genirq: Set IRQCHIP_SKIP_SET_WAKE for no_irq_chip and dummy_irq_chip
+Message-Id: <1418218575-17694-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1418218575-17694-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1418218575-17694-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Walleij <linus.walleij@linaro.org>, Alexandre Courbot <gnurou@gmail.com>, Thomas Gleixner <tglx@linutronix.de>
+Cc: Santosh Shilimkar <santosh.shilimkar@ti.com>, Ingo Molnar <mingo@redhat.com>, linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+If no_irq_chip or dummy_irq_chip are used for wake up (e.g. gpio-keys
+with a simple GPIO controller), the following warning is printed on
+resume from s2ram:
+
+    WANING: CPU: 0 PID: 1046 at kernel/irq/manage.c:537 irq_set_irq_wake+0x9c/0xf8()
+    Unbalanced IRQ 113 wake disable
+
+This happens because no_irq_chip and dummy_irq_chip do not implement
+irq_chip.irq_set_wake(), causing set_irq_wake_real() to return -ENXIO,
+and irq_set_irq_wake() to reset the wake_depth to zero.
+
+Set IRQCHIP_SKIP_SET_WAKE to indicate that irq_chip.irq_set_wake() is
+not implemented.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- include/dt-bindings/clock/r8a73a4-clock.h | 62 +++++++++++++++++++++++++++++++
- 1 file changed, 62 insertions(+)
- create mode 100644 include/dt-bindings/clock/r8a73a4-clock.h
+Alternatively, can't we remove IRQCHIP_SKIP_SET_WAKE, and just check for
+the presence of irq_chip.irq_set_wake()?
+I'll be happy to send a patch to do that instead...
 
-diff --git a/include/dt-bindings/clock/r8a73a4-clock.h b/include/dt-bindings/clock/r8a73a4-clock.h
-new file mode 100644
-index 0000000..9a4b4c9
---- /dev/null
-+++ b/include/dt-bindings/clock/r8a73a4-clock.h
-@@ -0,0 +1,62 @@
-+/*
-+ * Copyright 2014 Ulrich Hecht
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ */
-+
-+#ifndef __DT_BINDINGS_CLOCK_R8A73A4_H__
-+#define __DT_BINDINGS_CLOCK_R8A73A4_H__
-+
-+/* CPG */
-+#define R8A73A4_CLK_MAIN	0
-+#define R8A73A4_CLK_PLL0	1
-+#define R8A73A4_CLK_PLL1	2
-+#define R8A73A4_CLK_PLL2	3
-+#define R8A73A4_CLK_PLL2S	4
-+#define R8A73A4_CLK_PLL2H	5
-+#define R8A73A4_CLK_Z		6
-+#define R8A73A4_CLK_Z2		7
-+#define R8A73A4_CLK_I		8
-+#define R8A73A4_CLK_M3		9
-+#define R8A73A4_CLK_B		10
-+#define R8A73A4_CLK_M1		11
-+#define R8A73A4_CLK_M2		12
-+#define R8A73A4_CLK_ZX		13
-+#define R8A73A4_CLK_ZS		14
-+#define R8A73A4_CLK_HP		15
-+
-+/* MSTP2 */
-+#define R8A73A4_CLK_DMAC	18
-+#define R8A73A4_CLK_SCIFB3	17
-+#define R8A73A4_CLK_SCIFB2	16
-+#define R8A73A4_CLK_SCIFB1	7
-+#define R8A73A4_CLK_SCIFB0	6
-+#define R8A73A4_CLK_SCIFA0	4
-+#define R8A73A4_CLK_SCIFA1	3
-+
-+/* MSTP3 */
-+#define R8A73A4_CLK_CMT1	29
-+#define R8A73A4_CLK_IIC1	23
-+#define R8A73A4_CLK_IIC0	18
-+#define R8A73A4_CLK_IIC7	17
-+#define R8A73A4_CLK_IIC6	16
-+#define R8A73A4_CLK_MMCIF0	15
-+#define R8A73A4_CLK_SDHI0	14
-+#define R8A73A4_CLK_SDHI1	13
-+#define R8A73A4_CLK_SDHI2	12
-+#define R8A73A4_CLK_MMCIF1	5
-+#define R8A73A4_CLK_IIC2	0
-+
-+/* MSTP4 */
-+#define R8A73A4_CLK_IIC3	11
-+#define R8A73A4_CLK_IIC4	10
-+#define R8A73A4_CLK_IIC5	9
-+
-+/* MSTP5 */
-+#define R8A73A4_CLK_THERMAL	22
-+#define R8A73A4_CLK_IIC8	15
-+
-+#endif /* __DT_BINDINGS_CLOCK_R8A73A4_H__ */
+Is there anything that relies on this -ENXIO error code?
+All irq_chip implementations that set IRQCHIP_SKIP_SET_WAKE do not
+implement irq_chip.irq_set_wake(). There are probably more of them that
+forgot to set IRQCHIP_SKIP_SET_WAKE though.
+Am I missing something?
+Commit 60f96b41f71d2a13 ("genirq: Add IRQCHIP_SKIP_SET_WAKE flag")
+doesn't explain why adding the flag was chosen.
+
+Thanks!
+---
+ kernel/irq/dummychip.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/kernel/irq/dummychip.c b/kernel/irq/dummychip.c
+index 988dc58e8847f6eb..326a67f2410bf95c 100644
+--- a/kernel/irq/dummychip.c
++++ b/kernel/irq/dummychip.c
+@@ -42,6 +42,7 @@ struct irq_chip no_irq_chip = {
+ 	.irq_enable	= noop,
+ 	.irq_disable	= noop,
+ 	.irq_ack	= ack_bad,
++	.flags		= IRQCHIP_SKIP_SET_WAKE,
+ };
+ 
+ /*
+@@ -57,5 +58,6 @@ struct irq_chip dummy_irq_chip = {
+ 	.irq_ack	= noop,
+ 	.irq_mask	= noop,
+ 	.irq_unmask	= noop,
++	.flags		= IRQCHIP_SKIP_SET_WAKE,
+ };
+ EXPORT_SYMBOL_GPL(dummy_irq_chip);
 -- 
-1.8.4.5
+1.9.1
 
