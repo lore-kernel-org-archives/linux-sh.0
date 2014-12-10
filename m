@@ -1,41 +1,64 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 11 Dec 2014 08:51:34 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7793: document CPG clock support
-Message-Id: <CAMuHMdU=tEaQBt6f633J9UWU_SWovpCHQnkwv6Gx9QrN9u0Tfw@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 10 Dec 2014 01:21:12 +0000
+Subject: [PATCH] ARM: shmobile: r8a7794: Add SYS-DMAC clocks to device tree
+Message-Id: <1418174472-1034-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418212502-19905-1-git-send-email-ykaneko0929@gmail.com>
- <CAMuHMdWEF05vrTQRjrEUb=_hemBqJh2qdXOmbivP9jP8zb2ngQ@mail.gmail.com>
- <20141211003427.GD513@verge.net.au>
-In-Reply-To: <20141211003427.GD513@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+From: Hiroyuki Yokoyama <hiroyuki.yokoyama.vx@renesas.com>
 
-On Thu, Dec 11, 2014 at 1:34 AM, Simon Horman <horms@verge.net.au> wrote:
-> On Wed, Dec 10, 2014 at 01:00:02PM +0100, Geert Uytterhoeven wrote:
->> On Wed, Dec 10, 2014 at 12:55 PM, Yoshihiro Kaneko
->> <ykaneko0929@gmail.com> wrote:
->> > Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->>
->> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
->
-> Acked-by: Simon Horman <horms+renesas@verge.net.au>
->
-> Geert, will you handle passing this on to Mike Turquette?
-> If not please advise Kaneko-san how to move forwards.
+Signed-off-by: Hiroyuki Yokoyama <hiroyuki.yokoyama.vx@renesas.com>
+[horms: resolved conflicts]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Sure, I will take care of it.
+---
+Based on the renesas-devel-20141210-v3.18 tag of my renesas tree.
+---
+ arch/arm/boot/dts/r8a7794.dtsi            | 7 +++++--
+ include/dt-bindings/clock/r8a7794-clock.h | 2 ++
+ 2 files changed, 7 insertions(+), 2 deletions(-)
 
-Gr{oetje,eeting}s,
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 13e4a8d..6d95638 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -479,16 +479,19 @@
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150138 0 4>, <0 0xe6150040 0 4>;
+ 			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
+-				 <&mp_clk>, <&mp_clk>, <&mp_clk>;
++				 <&mp_clk>, <&mp_clk>, <&mp_clk>,
++				 <&zs_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
+ 				R8A7794_CLK_SCIFA2 R8A7794_CLK_SCIFA1 R8A7794_CLK_SCIFA0
+ 				R8A7794_CLK_MSIOF2 R8A7794_CLK_SCIFB0 R8A7794_CLK_SCIFB1
+ 				R8A7794_CLK_MSIOF1 R8A7794_CLK_SCIFB2
++				R8A7794_CLK_SYS_DMAC1 R8A7794_CLK_SYS_DMAC0
+ 			>;
+ 			clock-output-names  				"scifa2", "scifa1", "scifa0", "msiof2", "scifb0",
+-				"scifb1", "msiof1", "scifb2";
++				"scifb1", "msiof1", "scifb2",
++				"sys-dmac1", "sys-dmac0";
+ 		};
+ 		mstp3_clks: mstp3_clks@e615013c {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
+index 52492d8..c0bd14a5 100644
+--- a/include/dt-bindings/clock/r8a7794-clock.h
++++ b/include/dt-bindings/clock/r8a7794-clock.h
+@@ -48,6 +48,8 @@
+ #define R8A7794_CLK_SCIFB1		7
+ #define R8A7794_CLK_MSIOF1		8
+ #define R8A7794_CLK_SCIFB2		16
++#define R8A7794_CLK_SYS_DMAC1		18
++#define R8A7794_CLK_SYS_DMAC0		19
+ 
+ /* MSTP3 */
+ #define R8A7794_CLK_CMT1		29
+-- 
+2.1.3
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
