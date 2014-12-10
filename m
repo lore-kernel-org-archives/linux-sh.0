@@ -1,53 +1,51 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 03 Dec 2014 14:17:07 +0000
-Subject: [PATCH 4/4] ARM: shmobile: kzm9g-reference: Remove restart callback
-Message-Id: <1417616227-6715-5-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 10 Dec 2014 02:30:27 +0000
+Subject: [PATCH] ARM: shmobile: lager: Fix QSPI mode of SPI-Flash into mode3
+Message-Id: <1418178627-24424-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1417616227-6715-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1417616227-6715-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Remove the restart handling hack from the kzm9g-reference case.
+From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
 
-Restart on DT-based sh73a0 platforms is now handled through the restart
-handler registered by the R-Mobile System Controller (SYSC) driver.
+In order to change into mode3, CPOL and CPHA bit of SPCMD register
+of QSPI is changed. Mode3 can avoid intermediate voltage.
 
-This reverts commit 534547c036afad3f ("ARM: shmobile: kzm9g-reference:
-Add restart callback").
+Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+[horms: Updated changelog and re-ordered properties]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/board-kzm9g-reference.c | 8 --------
- 1 file changed, 8 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-index 2e82e44ab85258b7..f2ef759b6e969cc8 100644
---- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-@@ -39,13 +39,6 @@ static void __init kzm_init(void)
- #endif
- }
+Based on the renesas-devel-20141210-v3.18 tag of my renesas tree
+
+* Changes by Simon Horman as suggested by Geert Uytterhoeven
+- Changed name from
+  "ARM: shmobile: lager: Fix SPI mode of SPI-Flash into mode3" to
+  "ARM: shmobile: lager: Fix QSPI mode of SPI-Flash into mode3"
+- Updated changelog to refer to QSPI instead of MSIOF
+- Grouped spi-* properties
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 59365bc..b33ebcb 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -397,6 +397,8 @@
+ 		spi-max-frequency = <30000000>;
+ 		spi-tx-bus-width = <4>;
+ 		spi-rx-bus-width = <4>;
++		spi-cpha;
++		spi-cpol;
+ 		m25p,fast-read;
  
--#define RESCNT2 IOMEM(0xe6188020)
--static void kzm9g_restart(enum reboot_mode mode, const char *cmd)
--{
--	/* Do soft power on reset */
--	writel((1 << 31), RESCNT2);
--}
--
- static const char *kzm9g_boards_compat_dt[] __initdata = {
- 	"renesas,kzm9g-reference",
- 	NULL,
-@@ -57,6 +50,5 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
- 	.init_early	= shmobile_init_delay,
- 	.init_machine	= kzm_init,
- 	.init_late	= shmobile_init_late,
--	.restart	= kzm9g_restart,
- 	.dt_compat	= kzm9g_boards_compat_dt,
- MACHINE_END
+ 		partition@0 {
 -- 
-1.9.1
+2.1.3
 
