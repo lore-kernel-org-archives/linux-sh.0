@@ -1,106 +1,121 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Wed, 10 Dec 2014 14:45:23 +0000
-Subject: [PATCH v7 2/6] ARM: shmobile: sh73a0: Add CPG register bits header
-Message-Id: <1418222727-19888-3-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 10 Dec 2014 23:42:02 +0000
+Subject: [PATCH 02/15] drm: rcar-du: Don't fail probe in case of partial encoder init error
+Message-Id: <1418254935-13536-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1418254935-13536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1418254935-13536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+If an encoder fails to initialize the device can still be used without
+the failed encoder. Don't propagate the error out of the probe function
+but just skip the failed encoder.
+
+As a special case a deferred probe request from the encoder is still
+propagated out of the probe function in order not to break the deferred
+probing mechanism.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- include/dt-bindings/clock/sh73a0-clock.h | 79 ++++++++++++++++++++++++++++++++
- 1 file changed, 79 insertions(+)
- create mode 100644 include/dt-bindings/clock/sh73a0-clock.h
+ drivers/gpu/drm/rcar-du/rcar_du_encoder.c | 28 +++++++++++++++++++++-------
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c     | 15 +++++++++++++--
+ 2 files changed, 34 insertions(+), 9 deletions(-)
 
-diff --git a/include/dt-bindings/clock/sh73a0-clock.h b/include/dt-bindings/clock/sh73a0-clock.h
-new file mode 100644
-index 0000000..1dd3eb2
---- /dev/null
-+++ b/include/dt-bindings/clock/sh73a0-clock.h
-@@ -0,0 +1,79 @@
-+/*
-+ * Copyright 2014 Ulrich Hecht
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ */
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
+index 34a122a39664..7c74ecf2ca67 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
+@@ -193,32 +193,46 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
+ 		if (renc->lvds) {
+ 			dev_err(rcdu->dev,
+ 				"Chaining LVDS and HDMI encoders not supported\n");
+-			return -EINVAL;
++			ret = -EINVAL;
++			goto done;
+ 		}
+ 
+ 		ret = rcar_du_hdmienc_init(rcdu, renc, enc_node);
+ 		if (ret < 0)
+-			return ret;
++			goto done;
+ 	} else {
+ 		ret = drm_encoder_init(rcdu->ddev, encoder, &encoder_funcs,
+ 				       encoder_type);
+ 		if (ret < 0)
+-			return ret;
++			goto done;
+ 
+ 		drm_encoder_helper_add(encoder, &encoder_helper_funcs);
+ 	}
+ 
+ 	switch (encoder_type) {
+ 	case DRM_MODE_ENCODER_LVDS:
+-		return rcar_du_lvds_connector_init(rcdu, renc, con_node);
++		ret = rcar_du_lvds_connector_init(rcdu, renc, con_node);
++		break;
+ 
+ 	case DRM_MODE_ENCODER_DAC:
+-		return rcar_du_vga_connector_init(rcdu, renc);
++		ret = rcar_du_vga_connector_init(rcdu, renc);
++		break;
+ 
+ 	case DRM_MODE_ENCODER_TMDS:
+-		return rcar_du_hdmi_connector_init(rcdu, renc);
++		ret = rcar_du_hdmi_connector_init(rcdu, renc);
++		break;
+ 
+ 	default:
+-		return -EINVAL;
++		ret = -EINVAL;
++		break;
+ 	}
 +
-+#ifndef __DT_BINDINGS_CLOCK_SH73A0_H__
-+#define __DT_BINDINGS_CLOCK_SH73A0_H__
++done:
++	if (ret < 0) {
++		if (encoder->name)
++			encoder->funcs->destroy(encoder);
++		devm_kfree(rcdu->dev, renc);
++	}
 +
-+/* CPG */
-+#define SH73A0_CLK_MAIN		0
-+#define SH73A0_CLK_PLL0		1
-+#define SH73A0_CLK_PLL1		2
-+#define SH73A0_CLK_PLL2		3
-+#define SH73A0_CLK_PLL3		4
-+#define SH73A0_CLK_DSI0PHY	5
-+#define SH73A0_CLK_DSI1PHY	6
-+#define SH73A0_CLK_ZG		7
-+#define SH73A0_CLK_M3		8
-+#define SH73A0_CLK_B		9
-+#define SH73A0_CLK_M1		10
-+#define SH73A0_CLK_M2		11
-+#define SH73A0_CLK_Z		12
-+#define SH73A0_CLK_ZX		13
-+#define SH73A0_CLK_HP		14
++	return ret;
+ }
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+index 0c5ee616b5a3..cc9136e8ee9c 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+@@ -346,8 +346,14 @@ static int rcar_du_encoders_init(struct rcar_du_device *rcdu)
+ 		/* Process the output pipeline. */
+ 		ret = rcar_du_encoders_init_one(rcdu, output, &ep);
+ 		if (ret < 0) {
+-			of_node_put(ep_node);
+-			return ret;
++			if (ret = -EPROBE_DEFER) {
++				of_node_put(ep_node);
++				return ret;
++			}
 +
-+/* MSTP0 */
-+#define SH73A0_CLK_IIC2	1
++			dev_info(rcdu->dev,
++				 "encoder initialization failed, skipping\n");
++			continue;
+ 		}
+ 
+ 		num_encoders += ret;
+@@ -413,6 +419,11 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
+ 	if (ret < 0)
+ 		return ret;
+ 
++	if (ret = 0) {
++		dev_err(rcdu->dev, "error: no encoder could be initialized\n");
++		return -EINVAL;
++	}
 +
-+/* MSTP1 */
-+#define SH73A0_CLK_CEU1		29
-+#define SH73A0_CLK_CSI2_RX1	28
-+#define SH73A0_CLK_CEU0		27
-+#define SH73A0_CLK_CSI2_RX0	26
-+#define SH73A0_CLK_TMU0		25
-+#define SH73A0_CLK_DSITX0	18
-+#define SH73A0_CLK_IIC0		16
-+#define SH73A0_CLK_SGX		12
-+#define SH73A0_CLK_LCDC0	0
-+
-+/* MSTP2 */
-+#define SH73A0_CLK_SCIFA7	19
-+#define SH73A0_CLK_SY_DMAC	18
-+#define SH73A0_CLK_MP_DMAC	17
-+#define SH73A0_CLK_SCIFA5	7
-+#define SH73A0_CLK_SCIFB	6
-+#define SH73A0_CLK_SCIFA0	4
-+#define SH73A0_CLK_SCIFA1	3
-+#define SH73A0_CLK_SCIFA2	2
-+#define SH73A0_CLK_SCIFA3	1
-+#define SH73A0_CLK_SCIFA4	0
-+
-+/* MSTP3 */
-+#define SH73A0_CLK_SCIFA6	31
-+#define SH73A0_CLK_CMT1		29
-+#define SH73A0_CLK_FSI		28
-+#define SH73A0_CLK_IRDA		25
-+#define SH73A0_CLK_IIC1		23
-+#define SH73A0_CLK_USB		22
-+#define SH73A0_CLK_FLCTL	15
-+#define SH73A0_CLK_SDHI0	14
-+#define SH73A0_CLK_SDHI1	13
-+#define SH73A0_CLK_MMCIF0	12
-+#define SH73A0_CLK_SDHI2	11
-+#define SH73A0_CLK_TPU0		4
-+#define SH73A0_CLK_TPU1		3
-+#define SH73A0_CLK_TPU2		2
-+#define SH73A0_CLK_TPU3		1
-+#define SH73A0_CLK_TPU4		0
-+
-+/* MSTP4 */
-+#define SH73A0_CLK_IIC3		11
-+#define SH73A0_CLK_IIC4		10
-+#define SH73A0_CLK_KEYSC	3
-+
-+#endif
+ 	num_encoders = ret;
+ 
+ 	/* Set the possible CRTCs and possible clones. There's always at least
 -- 
-1.8.4.5
+2.0.4
 
