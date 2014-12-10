@@ -1,73 +1,30 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 29 Dec 2014 17:00:03 +0000
-Subject: Re: ape6evm boot problem in v3.19-rc2
-Message-Id: <CAMuHMdWTpLHpxn5PR1v_uLy_0JTSYzEfJ2Y6JdQh7t+vMoAQeg@mail.gmail.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Wed, 10 Dec 2014 11:55:02 +0000
+Subject: [PATCH] ARM: shmobile: r8a7793: document CPG clock support
+Message-Id: <1418212502-19905-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20141229030621.GA25439@verge.net.au>
-In-Reply-To: <20141229030621.GA25439@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Dec 29, 2014 at 4:06 AM, Simon Horman <horms@verge.net.au> wrote:
-> I have observed a possible regression when booting the APE6EVM board using
-> ape6evm_defconfig on v3.19-rc2. This also appears to be present in
-> v3.19-rc1 but not v3.18.
->
-> At this time I have not bisected the problem or otherwise investigated
-> further.
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
+ Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-> renesas_irqc renesas_irqc.0: failed to request IRQ
-> renesas_irqc: probe of renesas_irqc.0 failed with error -2
+diff --git a/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
+index e6ad35b..fc7ef99 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
+@@ -8,6 +8,7 @@ Required Properties:
+   - compatible: Must be one of
+     - "renesas,r8a7790-cpg-clocks" for the r8a7790 CPG
+     - "renesas,r8a7791-cpg-clocks" for the r8a7791 CPG
++    - "renesas,r8a7793-cpg-clocks" for the r8a7793 CPG
+     - "renesas,r8a7794-cpg-clocks" for the r8a7794 CPG
+     - "renesas,rcar-gen2-cpg-clocks" for the generic R-Car Gen2 CPG
+ 
+-- 
+1.9.1
 
-Looks like another victim of 9a1091ef0017c40a ("irqchip: gic: Support
-hierarchy irq domain."). On armadillo it was fixed in
-
-commit d034f53cc6c5c09a4e10cb9716986f3844c58514
-Author: Geert Uytterhoeven <geert+renesas@glider.be>
-Date:   Wed Dec 17 14:40:42 2014 +0100
-
-    ARM: shmobile: r8a7740: Instantiate GIC from C board code in legacy builds
-
-    As of commit 9a1091ef0017c40a ("irqchip: gic: Support hierarchy irq
-    domain."), armadillo-legacy hangs during boot with:
-
-         sh-tmu.0: ch0: used for clock events
-         sh-tmu.0: ch0: used for periodic clock events
-         sh-tmu.0: ch0: failed to request irq 230
-         sh-tmu.0: ch1: used as clock source
-         sh-cmt-48.1: ch0: failed to request irq 90
-         sh-cmt-48.1: ch0: registration failed
-        earlytimer: unable to probe sh-cmt-48 early.
-        Calibrating delay loop...
-
-    This happens because the IRQ numbers of the GIC are now virtual, and no
-    longer match the hardcoded hardware IRQ numbers in the platform board
-    code.
-    To fix this, instantiate the GIC from platform board code when compiling
-    a legacy kernel, like is done on sh73a0 for kzm9g-legacy.
-
-    Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-    Acked-by: Marc Zyngier <marc.zyngier@arm.com>
-    Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
-On r8a73a4, irqchip_init() is not called explicitly, but by the ARM core
-code, as r8a73a4 does not provide machine_desc.init_irq().
-So it probably just needs its own machine_desc.init_irq() and register
-the GIC from C code in the legacy case.
-
-BTW, I expect kzm9g-reference to start suffering from this too, after Magnus'
-multiplatform patch is applied and intc-sh73a0.c is no longer used for
--reference.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
