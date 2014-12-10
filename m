@@ -1,91 +1,108 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 17 Dec 2014 12:52:46 +0000
-Subject: [PATCH 01/05] serial: sh-sci: Break out default CTS/RTS pin setup
-Message-Id: <20141217125246.14480.41876.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 10 Dec 2014 23:42:12 +0000
+Subject: [PATCH 12/15] ARM: shmobile: koelsch: Add DU HDMI output support
+Message-Id: <1418254935-13536-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20141217125236.14480.78833.sendpatchset@w520>
-In-Reply-To: <20141217125236.14480.78833.sendpatchset@w520>
+References: <1418254935-13536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1418254935-13536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: gregkh@linuxfoundation.org, Magnus Damm <magnus.damm@gmail.com>, jslaby@suse.cz, linux-serial@vger.kernel.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Add DT nodes for the ADV7511 HDMI encoder and its HDMI output connector
+and configure the DISP pin group that drives the HDMI transmitter DE
+pin.
 
-Break out CTS/RTS pin setup for the default case. We only
-care about those pins in case SCIx_HAVE_RTSCTS is set.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 50 ++++++++++++++++++++++++++++++++++-
+ 1 file changed, 49 insertions(+), 1 deletion(-)
 
- drivers/tty/serial/sh-sci.c |   45 +++++++++++++++++++++++++++++--------------
- 1 file changed, 31 insertions(+), 14 deletions(-)
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 495056e317e3..926a2ded55bc 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -258,6 +258,17 @@
+ 			system-clock-frequency = <11289600>;
+ 		};
+ 	};
++
++	hdmi-out {
++		compatible = "hdmi-connector";
++		type = "a";
++
++		port {
++			hdmi_con: endpoint {
++				remote-endpoint = <&adv7511_out>;
++			};
++		};
++	};
+ };
+ 
+ &du {
+@@ -266,6 +277,11 @@
+ 	status = "okay";
+ 
+ 	ports {
++		port@0 {
++			endpoint {
++				remote-endpoint = <&adv7511_in>;
++			};
++		};
+ 		port@1 {
+ 			lvds_connector: endpoint {
+ 			};
+@@ -284,7 +300,7 @@
+ 	};
+ 
+ 	du_pins: du {
+-		renesas,groups = "du_rgb666", "du_sync", "du_clk_out_0";
++		renesas,groups = "du_rgb666", "du_sync", "du_disp", "du_clk_out_0";
+ 		renesas,function = "du";
+ 	};
+ 
+@@ -506,6 +522,38 @@
+ 		};
+ 	};
+ 
++	hdmi@39 {
++		compatible = "adi,adv7511w";
++		reg = <0x39>;
++		interrupt-parent = <&gpio3>;
++		interrupts = <29 IRQ_TYPE_EDGE_FALLING>;
++
++		adi,input-depth = <8>;
++		adi,input-colorspace = "rgb";
++		adi,input-clock = "1x";
++		adi,input-style = <1>;
++		adi,input-justification = "evenly";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				adv7511_in: endpoint {
++					remote-endpoint = <&du_out_rgb>;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				adv7511_out: endpoint {
++					remote-endpoint = <&hdmi_con>;
++				};
++			};
++		};
++	};
++
+ 	eeprom@50 {
+ 		compatible = "renesas,24c02";
+ 		reg = <0x50>;
+-- 
+2.0.4
 
---- 0001/drivers/tty/serial/sh-sci.c
-+++ work/drivers/tty/serial/sh-sci.c	2014-12-16 14:40:31.000000000 +0900
-@@ -509,10 +509,29 @@ static void sci_poll_put_char(struct uar
- }
- #endif /* CONFIG_CONSOLE_POLL || CONFIG_SERIAL_SH_SCI_CONSOLE */
- 
--static void sci_init_pins(struct uart_port *port, unsigned int cflag)
-+static void sci_init_pins_default(struct uart_port *port, bool hwflow_enabled)
- {
- 	struct sci_port *s = to_sci_port(port);
- 	struct plat_sci_reg *reg = sci_regmap[s->cfg->regtype] + SCSPTR;
-+	unsigned short status;
-+
-+	/* If no SCSPTR register exists then skip. Same if hardware flow
-+	 * control has been enabled, in such case SCFCR.MCE will be set
-+	 * and the SCSPTR configuration is assumed to be overridden.
-+	 */
-+	if (!reg->size || hwflow_enabled)
-+		return;
-+
-+	status = serial_port_in(port, SCSPTR);
-+	status &= ~SCSPTR_CTSIO;
-+	status |= SCSPTR_RTSIO;
-+	serial_port_out(port, SCSPTR, status); /* Set RTS = 1 */
-+}
-+
-+static void sci_init_pins(struct uart_port *port, unsigned int cflag)
-+{
-+	struct sci_port *s = to_sci_port(port);
-+	bool hwflow_enabled = cflag & CRTSCTS;
- 
- 	/*
- 	 * Use port-specific handler if provided.
-@@ -522,22 +541,20 @@ static void sci_init_pins(struct uart_po
- 		return;
- 	}
- 
--	/*
--	 * For the generic path SCSPTR is necessary. Bail out if that's
--	 * unavailable, too.
-+	/* SCIF hardware with RTS/CTS support needs special setup below.
-+	 *
-+	 * Please note that if RTS/CTS is available for the hardware
-+	 * platform depends on the particular SCIF channel on a certain
-+	 * SoC, and how this channel has been hooked up on the actual board.
-+	 *
-+	 * If the RTS/CTS signals will be used or not depends on what user
-+	 * space requests. In case RTS/CTS is available but not requested
-+	 * by user space we still need to configure the pins somehow.
- 	 */
--	if (!reg->size)
-+	if (!(s->cfg->capabilities & SCIx_HAVE_RTSCTS))
- 		return;
- 
--	if ((s->cfg->capabilities & SCIx_HAVE_RTSCTS) &&
--	    ((!(cflag & CRTSCTS)))) {
--		unsigned short status;
--
--		status = serial_port_in(port, SCSPTR);
--		status &= ~SCSPTR_CTSIO;
--		status |= SCSPTR_RTSIO;
--		serial_port_out(port, SCSPTR, status); /* Set RTS = 1 */
--	}
-+	sci_init_pins_default(port, hwflow_enabled);
- }
- 
- static int sci_txfill(struct uart_port *port)
