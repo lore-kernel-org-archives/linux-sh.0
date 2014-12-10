@@ -1,23 +1,31 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 29 Dec 2014 22:03:10 +0000
-Subject: [PATCH 0/2] Add R8A7790 CAN DT support
-Message-Id: <2616635.bsb7mLynhA@wasted.cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 10 Dec 2014 04:33:26 +0000
+Subject: Re: [PATCH 0/2 v2] dmaengine: rcar-audmapp: independent from SH_DMAE_BASE
+Message-Id: <87y4qgnmxm.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hello.
 
-   Here's the set of 2 patches against Simon Horman's 'renesas.git' repo,
-'renesas-devel-20141229-v3.19-rc2' tag. Here we add the CAN device tree support
-for the R8A7790 SoC (unfortunately, it's impossible to test CAN on the Lager
-board). It depends on the clk driver RCAN clock patch posted recently in order
-to work.
+Hi Vinod
 
-[1/2] ARM: shmobile: r8a7790: add CAN clocks
-[2/2] ARM: shmobile: r8a7790: add CAN DT support
+These patches are for new R-Car Audio DMAC peri peri driver.
+Upstream kernel already has this driver which is based on
+SH-DMA-BASE. but it has DMAEngine handling issue if multi DMAEngines
+are probed from DT boot.
+If we modify SH-DMA-BASE driver, it is very difficult to keeping compatibility
+for non-DT / DT.
 
-WBR, Sergei
+Thus, 1st patch simply removed current driver, and 2nd patch adds new driver.
+
+Kuninori Morimoto (2):
+      dmaengine: rcar-audmapp: independent from SH_DMAE_BASE v1
+      dmaengine: rcar-audmapp: independent from SH_DMAE_BASE v2
+
+ drivers/dma/sh/Kconfig                         |    3 +-
+ drivers/dma/sh/rcar-audmapp.c                  |  406 +++++++++++-------------
+ include/linux/platform_data/dma-rcar-audmapp.h |   34 --
+ 3 files changed, 186 insertions(+), 257 deletions(-)
 
