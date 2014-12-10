@@ -1,78 +1,96 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 17 Dec 2014 18:49:11 +0000
-Subject: [PATCH 6/8] ARM: shmobile: kzm9g dts: Move Ethernet node to BSC
-Message-Id: <1418842153-17113-7-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 10 Dec 2014 23:42:11 +0000
+Subject: [PATCH 11/15] ARM: shmobile: lager: Add DU HDMI output support
+Message-Id: <1418254935-13536-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418842153-17113-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1418842153-17113-1-git-send-email-geert+renesas@glider.be>
+References: <1418254935-13536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1418254935-13536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-Move the Ethernet node from the root of the device tree to the BSC node,
-as its connected to the Bus State Controller.  This allows the system to
-know the right position of the Ethernet node in the clock and PM domain
-hierarchy, and manage the clock and PM domain appropriately.
+Add DT nodes for the ADV7511 HDMI encoder and its HDMI output connector.
 
-Also rename the node's name from "lan9220" to "ethernet", to conform to
-ePAPR generic name recomendations.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v2:
-  - s/confirm/conform/
-  - Moved from kzm9g-reference to kzm9g
----
- arch/arm/boot/dts/sh73a0-kzm9g.dts | 28 +++++++++++++++-------------
- 1 file changed, 15 insertions(+), 13 deletions(-)
+ arch/arm/boot/dts/r8a7790-lager.dts | 48 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 48 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-index fce37b96394d0ee3..3e8aacb6ca1f2d06 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-@@ -84,19 +84,6 @@
- 		enable-active-high;
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 59365bccc945..749fe841aa09 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -222,6 +222,17 @@
+ 			};
+ 		};
  	};
- 
--	lan9220@10000000 {
--		compatible = "smsc,lan9220", "smsc,lan9115";
--		reg = <0x10000000 0x100>;
--		phy-mode = "mii";
--		interrupt-parent = <&irqpin0>;
--		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
--		reg-io-width = <4>;
--		smsc,irq-push-pull;
--		smsc,save-mac-address;
--		vddvario-supply = <&reg_1p8v>;
--		vdd33a-supply = <&reg_3p3v>;
--	};
--
- 	leds {
- 		compatible = "gpio-leds";
- 		led1 {
-@@ -178,6 +165,21 @@
- 	};
- };
- 
-+&bsc {
-+	ethernet@10000000 {
-+		compatible = "smsc,lan9220", "smsc,lan9115";
-+		reg = <0x10000000 0x100>;
-+		phy-mode = "mii";
-+		interrupt-parent = <&irqpin0>;
-+		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
-+		reg-io-width = <4>;
-+		smsc,irq-push-pull;
-+		smsc,save-mac-address;
-+		vddvario-supply = <&reg_1p8v>;
-+		vdd33a-supply = <&reg_3p3v>;
-+	};
-+};
 +
- &cmt1 {
- 	status = "okay";
++	hdmi-out {
++		compatible = "hdmi-connector";
++		type = "a";
++
++		port {
++			hdmi_con: endpoint {
++				remote-endpoint = <&adv7511_out>;
++			};
++		};
++	};
  };
+ 
+ &du {
+@@ -235,6 +246,11 @@
+ 				remote-endpoint = <&adv7123_in>;
+ 			};
+ 		};
++		port@1 {
++			endpoint {
++				remote-endpoint = <&adv7511_in>;
++			};
++		};
+ 		port@2 {
+ 			lvds_connector: endpoint {
+ 			};
+@@ -504,6 +520,38 @@
+ 			};
+ 		};
+ 	};
++
++	hdmi@39 {
++		compatible = "adi,adv7511w";
++		reg = <0x39>;
++		interrupt-parent = <&gpio1>;
++		interrupts = <15 IRQ_TYPE_EDGE_FALLING>;
++
++		adi,input-depth = <8>;
++		adi,input-colorspace = "rgb";
++		adi,input-clock = "1x";
++		adi,input-style = <1>;
++		adi,input-justification = "evenly";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				adv7511_in: endpoint {
++					remote-endpoint = <&du_out_lvds0>;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				adv7511_out: endpoint {
++					remote-endpoint = <&hdmi_con>;
++				};
++			};
++		};
++	};
+ };
+ 
+ &iic3 {
 -- 
-1.9.1
+2.0.4
 
