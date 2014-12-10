@@ -1,100 +1,215 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 25 Dec 2014 03:55:52 +0000
-Subject: [PATCH v5][resend v6] of: replace Asahi Kasei Corp vendor prefix
-Message-Id: <87a92cwff9.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 10 Dec 2014 23:42:06 +0000
+Subject: [PATCH 06/15] drm: rcar-du: Add support for external pixel clock
+Message-Id: <1418254935-13536-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <878ulzx6hr.wl%kuninori.morimoto.gx@gmail.com>
-	<20140922130026.GK3290@leverpostej>
-	<CAMuHMdX22z97SbGS1HDiYfJ1PXxyEN2S8D7w4sr+4bUwD+mJZw@mail.gmail.com>
-	<20140922132743.GM3290@leverpostej>
-	<87y4rfhmgl.wl%kuninori.morimoto.gx@renesas.com>
-	<1415845309.4269.6.camel@perches.com>	<20141113025105.GA16652@verge.net.au>
-	<87vbmjhj00.wl%kuninori.morimoto.gx@renesas.com>
-	<20141113110740.GE3815@sirena.org.uk>
-	<87k32yd0bd.wl%kuninori.morimoto.gx@renesas.com>	<20141114093554.GC3810@ulmo>
-	<87y4ra8xac.wl%kuninori.morimoto.gx@renesas.com>
-	<5469CD47.3040409@cogentembedded.com>
-	<877fytxsde.wl%kuninori.morimoto.gx@renesas.com>
-	<87egsob2cl.wl%kuninori.morimoto.gx@renesas.com>
-	<5478603D.1080404@cogentembedded.com>
-	<87d282sl6w.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87d282sl6w.wl%kuninori.morimoto.gx@renesas.com>
+References: <1418254935-13536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1418254935-13536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>, Rob Herring <robh@kernel.org>, Mark Brown <broonie@kernel.org>, Simon Horman <horms@verge.net.au>
-Cc: ALSA Development Mailing List <alsa-devel@alsa-project.org>, linux-tegra@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The DU uses the module functional clock as the default pixel clock, but
+supports using an externally supplied pixel clock instead. Support this
+by adding the external pixel clock to the DT bindings, and selecting the
+clock automatically at runtime based on the requested mode pixel
+frequency.
 
-Current vendor-prefixes.txt already has "ak" prefix for Asahi Kasei Corp
-by ae8c4209af2c(of: Add vendor prefix for Asahi Kasei Corp.)
+The input clock pins to DU channels routing is configurable, but
+currently hardcoded to connect input clock i to channel i.
 
-It went through the appropriate review process. But, almost all
-Asahi Kasei chip drivers are using "asahi-kasei" prefix today.
-(arch/arm/boot/dts/tegra20-seaboard.dts only is using "ak,ak8975",
- but there are instances of "asahi-kasei,ak8975" in other dts files.
- And drivers/iio/magnetometer/ak8975.c doesn't support "ak,ak8975" prefix)
-So, we made a mistake there.
-
-In addition, checkpatch.pl reports WARNING if it is using "asahi-kasei"
-prerfix in DT file.
-(DT compatible string vendor "asahi-kasei" appears un-documented)
-
-Marking it deprecated and warning with checkpatch is certainly
-preferable. So, this patch replace "ak" to "asahi-kasei" in
-vendor-prefixes.txt. (and fixup tegra20-seaboard)
-
-OTOH, Asahi Kasei is usually referred to as "AKM", but this patch
-doesn't care about it. Because no DT is using that today.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Thierry Reding <treding@nvidia.com>
-Acked-by: Alexandre Courbot <acourbot@nvidia.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
->> Linus, Rob, Mark, Simon
+ .../devicetree/bindings/video/renesas,du.txt       |  4 ++
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.c             | 60 +++++++++++++++++++---
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.h             |  1 +
+ drivers/gpu/drm/rcar-du/rcar_du_group.c            | 14 ++++-
+ drivers/gpu/drm/rcar-du/rcar_du_regs.h             |  4 +-
+ 5 files changed, 74 insertions(+), 9 deletions(-)
 
-I resend this patch many times, but, there is still no response.
-Please, please check this patch, and give me some feedback.
-
-
- .../devicetree/bindings/vendor-prefixes.txt        |    2 +-
- arch/arm/boot/dts/tegra20-seaboard.dts             |    2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
-index 723999d..ddcb4cd 100644
---- a/Documentation/devicetree/bindings/vendor-prefixes.txt
-+++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
-@@ -9,7 +9,6 @@ ad	Avionic Design GmbH
- adapteva	Adapteva, Inc.
- adi	Analog Devices, Inc.
- aeroflexgaisler	Aeroflex Gaisler AB
--ak	Asahi Kasei Corp.
- allwinner	Allwinner Technology Co., Ltd.
- altr	Altera Corp.
- amcc	Applied Micro Circuits Corporation (APM, formally AMCC)
-@@ -20,6 +19,7 @@ amstaos	AMS-Taos Inc.
- apm	Applied Micro Circuits Corporation (APM)
- arm	ARM Ltd.
- armadeus	ARMadeus Systems SARL
-+asahi-kasei	Asahi Kasei Corp.
- atmel	Atmel Corporation
- auo	AU Optronics Corporation
- avago	Avago Technologies
-diff --git a/arch/arm/boot/dts/tegra20-seaboard.dts b/arch/arm/boot/dts/tegra20-seaboard.dts
-index a1d4bf9..7f5cf80 100644
---- a/arch/arm/boot/dts/tegra20-seaboard.dts
-+++ b/arch/arm/boot/dts/tegra20-seaboard.dts
-@@ -405,7 +405,7 @@
- 		clock-frequency = <400000>;
+diff --git a/Documentation/devicetree/bindings/video/renesas,du.txt b/Documentation/devicetree/bindings/video/renesas,du.txt
+index 5102830f2760..c902323928f7 100644
+--- a/Documentation/devicetree/bindings/video/renesas,du.txt
++++ b/Documentation/devicetree/bindings/video/renesas,du.txt
+@@ -26,6 +26,10 @@ Required Properties:
+       per LVDS encoder. The functional clocks must be named "du.x" with "x"
+       being the channel numerical index. The LVDS clocks must be named
+       "lvds.x" with "x" being the LVDS encoder numerical index.
++    - In addition to the functional and encoder clocks, all DU versions also
++      support externally supplied pixel clocks. Those clocks are optional.
++      When supplied they must be named "dclkin.x" with "x" being the input
++      clock numerical index.
  
- 		magnetometer@c {
--			compatible = "ak,ak8975";
-+			compatible = "asahi-kasei,ak8975";
- 			reg = <0xc>;
- 			interrupt-parent = <&gpio>;
- 			interrupts = <TEGRA_GPIO(N, 5) IRQ_TYPE_LEVEL_HIGH>;
+ Required nodes:
+ 
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+index cf0dca13264f..ce280bd390a9 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+@@ -74,33 +74,71 @@ static int rcar_du_crtc_get(struct rcar_du_crtc *rcrtc)
+ 	if (ret < 0)
+ 		return ret;
+ 
++	ret = clk_prepare_enable(rcrtc->extclock);
++	if (ret < 0)
++		goto error_clock;
++
+ 	ret = rcar_du_group_get(rcrtc->group);
+ 	if (ret < 0)
+-		clk_disable_unprepare(rcrtc->clock);
++		goto error_group;
++
++	return 0;
+ 
++error_group:
++	clk_disable_unprepare(rcrtc->extclock);
++error_clock:
++	clk_disable_unprepare(rcrtc->clock);
+ 	return ret;
+ }
+ 
+ static void rcar_du_crtc_put(struct rcar_du_crtc *rcrtc)
+ {
+ 	rcar_du_group_put(rcrtc->group);
++
++	clk_disable_unprepare(rcrtc->extclock);
+ 	clk_disable_unprepare(rcrtc->clock);
+ }
+ 
+ static void rcar_du_crtc_set_display_timing(struct rcar_du_crtc *rcrtc)
+ {
+ 	const struct drm_display_mode *mode = &rcrtc->crtc.mode;
++	unsigned long mode_clock = mode->clock * 1000;
+ 	unsigned long clk;
+ 	u32 value;
++	u32 escr;
+ 	u32 div;
+ 
+-	/* Dot clock */
++	/* Compute the clock divisor and select the internal or external dot
++	 * clock based on the requested frequency.
++	 */
+ 	clk = clk_get_rate(rcrtc->clock);
+-	div = DIV_ROUND_CLOSEST(clk, mode->clock * 1000);
++	div = DIV_ROUND_CLOSEST(clk, mode_clock);
+ 	div = clamp(div, 1U, 64U) - 1;
++	escr = div | ESCR_DCLKSEL_CLKS;
++
++	if (rcrtc->extclock) {
++		unsigned long extclk;
++		unsigned long extrate;
++		unsigned long rate;
++		u32 extdiv;
++
++		extclk = clk_get_rate(rcrtc->extclock);
++		extdiv = DIV_ROUND_CLOSEST(extclk, mode_clock);
++		extdiv = clamp(extdiv, 1U, 64U) - 1;
++
++		rate = clk / (div + 1);
++		extrate = extclk / (extdiv + 1);
++
++		if (abs((long)extrate - (long)mode_clock) <
++		    abs((long)rate - (long)mode_clock)) {
++			dev_dbg(rcrtc->group->dev->dev,
++				"crtc%u: using external clock\n", rcrtc->index);
++			escr = extdiv | ESCR_DCLKSEL_DCLKIN;
++		}
++	}
+ 
+ 	rcar_du_group_write(rcrtc->group, rcrtc->index % 2 ? ESCR2 : ESCR,
+-			    ESCR_DCLKSEL_CLKS | div);
++			    escr);
+ 	rcar_du_group_write(rcrtc->group, rcrtc->index % 2 ? OTAR2 : OTAR, 0);
+ 
+ 	/* Signal polarities */
+@@ -543,12 +581,13 @@ int rcar_du_crtc_create(struct rcar_du_group *rgrp, unsigned int index)
+ 	struct rcar_du_crtc *rcrtc = &rcdu->crtcs[index];
+ 	struct drm_crtc *crtc = &rcrtc->crtc;
+ 	unsigned int irqflags;
+-	char clk_name[5];
++	struct clk *clk;
++	char clk_name[9];
+ 	char *name;
+ 	int irq;
+ 	int ret;
+ 
+-	/* Get the CRTC clock. */
++	/* Get the CRTC clock and the optional external clock. */
+ 	if (rcar_du_has(rcdu, RCAR_DU_FEATURE_CRTC_IRQ_CLOCK)) {
+ 		sprintf(clk_name, "du.%u", index);
+ 		name = clk_name;
+@@ -562,6 +601,15 @@ int rcar_du_crtc_create(struct rcar_du_group *rgrp, unsigned int index)
+ 		return PTR_ERR(rcrtc->clock);
+ 	}
+ 
++	sprintf(clk_name, "dclkin.%u", index);
++	clk = devm_clk_get(rcdu->dev, clk_name);
++	if (!IS_ERR(clk)) {
++		rcrtc->extclock = clk;
++	} else if (PTR_ERR(rcrtc->clock) = -EPROBE_DEFER) {
++		dev_info(rcdu->dev, "can't get external clock %u\n", index);
++		return -EPROBE_DEFER;
++	}
++
+ 	rcrtc->group = rgrp;
+ 	rcrtc->mmio_offset = mmio_offsets[index];
+ 	rcrtc->index = index;
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.h b/drivers/gpu/drm/rcar-du/rcar_du_crtc.h
+index 984e6083699f..d2f89f7d2e5e 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.h
+@@ -26,6 +26,7 @@ struct rcar_du_crtc {
+ 	struct drm_crtc crtc;
+ 
+ 	struct clk *clock;
++	struct clk *extclock;
+ 	unsigned int mmio_offset;
+ 	unsigned int index;
+ 	bool started;
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.c b/drivers/gpu/drm/rcar-du/rcar_du_group.c
+index 7b6428234252..1bdc0ee0c248 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_group.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_group.c
+@@ -66,9 +66,21 @@ static void rcar_du_group_setup(struct rcar_du_group *rgrp)
+ 	rcar_du_group_write(rgrp, DEFR4, DEFR4_CODE);
+ 	rcar_du_group_write(rgrp, DEFR5, DEFR5_CODE | DEFR5_DEFE5);
+ 
+-	if (rcar_du_has(rgrp->dev, RCAR_DU_FEATURE_EXT_CTRL_REGS))
++	if (rcar_du_has(rgrp->dev, RCAR_DU_FEATURE_EXT_CTRL_REGS)) {
+ 		rcar_du_group_setup_defr8(rgrp);
+ 
++		/* Configure input dot clock routing. We currently hardcode the
++		 * configuration to routing DOTCLKINn to DUn.
++		 */
++		rcar_du_group_write(rgrp, DIDSR, DIDSR_CODE |
++				    DIDSR_LCDS_DCLKIN(2) |
++				    DIDSR_LCDS_DCLKIN(1) |
++				    DIDSR_LCDS_DCLKIN(0) |
++				    DIDSR_PDCS_CLK(2, 0) |
++				    DIDSR_PDCS_CLK(1, 0) |
++				    DIDSR_PDCS_CLK(0, 0));
++	}
++
+ 	/* Use DS1PR and DS2PR to configure planes priorities and connects the
+ 	 * superposition 0 to DU0 pins. DU1 pins will be configured dynamically.
+ 	 */
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_regs.h b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
+index 73f7347f740b..c3639d1db28b 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_regs.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
+@@ -256,8 +256,8 @@
+ #define DIDSR_LCDS_LVDS0(n)	(2 << (8 + (n) * 2))
+ #define DIDSR_LCDS_LVDS1(n)	(3 << (8 + (n) * 2))
+ #define DIDSR_LCDS_MASK(n)	(3 << (8 + (n) * 2))
+-#define DIDSR_PCDS_CLK(n, clk)	(clk << ((n) * 2))
+-#define DIDSR_PCDS_MASK(n)	(3 << ((n) * 2))
++#define DIDSR_PDCS_CLK(n, clk)	(clk << ((n) * 2))
++#define DIDSR_PDCS_MASK(n)	(3 << ((n) * 2))
+ 
+ /* -----------------------------------------------------------------------------
+  * Display Timing Generation Registers
 -- 
-1.7.9.5
+2.0.4
 
