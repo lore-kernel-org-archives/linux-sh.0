@@ -1,51 +1,35 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 10 Dec 2014 02:30:27 +0000
-Subject: [PATCH] ARM: shmobile: lager: Fix QSPI mode of SPI-Flash into mode3
-Message-Id: <1418178627-24424-1-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 10 Dec 2014 10:11:01 +0000
+Subject: Re: [PATCH] ARM: shmobile: lager: Fix QSPI mode of SPI-Flash into mode3
+Message-Id: <CAMuHMdXv-12uVasSkLQs6gPYgfaS+O+dBQvDyCswDCTuffvp7g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1418178627-24424-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1418178627-24424-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+On Wed, Dec 10, 2014 at 3:30 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+>
+> In order to change into mode3, CPOL and CPHA bit of SPCMD register
+> of QSPI is changed. Mode3 can avoid intermediate voltage.
+>
+> Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+> [horms: Updated changelog and re-ordered properties]
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-In order to change into mode3, CPOL and CPHA bit of SPCMD register
-of QSPI is changed. Mode3 can avoid intermediate voltage.
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-[horms: Updated changelog and re-ordered properties]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Gr{oetje,eeting}s,
 
----
+                        Geert
 
-Based on the renesas-devel-20141210-v3.18 tag of my renesas tree
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-* Changes by Simon Horman as suggested by Geert Uytterhoeven
-- Changed name from
-  "ARM: shmobile: lager: Fix SPI mode of SPI-Flash into mode3" to
-  "ARM: shmobile: lager: Fix QSPI mode of SPI-Flash into mode3"
-- Updated changelog to refer to QSPI instead of MSIOF
-- Grouped spi-* properties
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7790-lager.dts | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 59365bc..b33ebcb 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -397,6 +397,8 @@
- 		spi-max-frequency = <30000000>;
- 		spi-tx-bus-width = <4>;
- 		spi-rx-bus-width = <4>;
-+		spi-cpha;
-+		spi-cpol;
- 		m25p,fast-read;
- 
- 		partition@0 {
--- 
-2.1.3
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
