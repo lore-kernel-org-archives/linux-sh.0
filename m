@@ -1,30 +1,28 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Wed, 10 Dec 2014 11:55:02 +0000
-Subject: [PATCH] ARM: shmobile: r8a7793: document CPG clock support
-Message-Id: <1418212502-19905-1-git-send-email-ykaneko0929@gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 10 Dec 2014 12:00:02 +0000
+Subject: Re: [PATCH] ARM: shmobile: r8a7793: document CPG clock support
+Message-Id: <CAMuHMdWEF05vrTQRjrEUb=_hemBqJh2qdXOmbivP9jP8zb2ngQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1418212502-19905-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1418212502-19905-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
----
- Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt | 1 +
- 1 file changed, 1 insertion(+)
+On Wed, Dec 10, 2014 at 12:55 PM, Yoshihiro Kaneko
+<ykaneko0929@gmail.com> wrote:
+> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
-index e6ad35b..fc7ef99 100644
---- a/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
-@@ -8,6 +8,7 @@ Required Properties:
-   - compatible: Must be one of
-     - "renesas,r8a7790-cpg-clocks" for the r8a7790 CPG
-     - "renesas,r8a7791-cpg-clocks" for the r8a7791 CPG
-+    - "renesas,r8a7793-cpg-clocks" for the r8a7793 CPG
-     - "renesas,r8a7794-cpg-clocks" for the r8a7794 CPG
-     - "renesas,rcar-gen2-cpg-clocks" for the generic R-Car Gen2 CPG
- 
--- 
-1.9.1
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
