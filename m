@@ -1,68 +1,38 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 10 Dec 2014 13:36:15 +0000
-Subject: [PATCH 2/2] [RFC] genirq: Set IRQCHIP_SKIP_SET_WAKE for no_irq_chip and dummy_irq_chip
-Message-Id: <1418218575-17694-2-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 11 Dec 2014 02:33:35 +0000
+Subject: [PATCH] Revert "ARM: shmobile: multiplatform: add Audo DMAC peri peri support on defconfig"
+Message-Id: <b6f6383b98092a1759d19893875bba90c8d9f446.1418265122.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418218575-17694-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1418218575-17694-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1418265122.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1418265122.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>, Alexandre Courbot <gnurou@gmail.com>, Thomas Gleixner <tglx@linutronix.de>
-Cc: Santosh Shilimkar <santosh.shilimkar@ti.com>, Ingo Molnar <mingo@redhat.com>, linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-If no_irq_chip or dummy_irq_chip are used for wake up (e.g. gpio-keys
-with a simple GPIO controller), the following warning is printed on
-resume from s2ram:
+This reverts commit 2315f9fce4da7df9362e4baeb5250d14ea48bf63.
 
-    WANING: CPU: 0 PID: 1046 at kernel/irq/manage.c:537 irq_set_irq_wake+0x9c/0xf8()
-    Unbalanced IRQ 113 wake disable
+Unfortunately enabling RCAR_AUDMAC_PP support this patch breaks dmaengine
+support on R-Car Gen2 boards. This should be resolved by driver updates
+in v3.20. But v3.19 was too early for this defconfig change.
 
-This happens because no_irq_chip and dummy_irq_chip do not implement
-irq_chip.irq_set_wake(), causing set_irq_wake_real() to return -ENXIO,
-and irq_set_irq_wake() to reset the wake_depth to zero.
-
-Set IRQCHIP_SKIP_SET_WAKE to indicate that irq_chip.irq_set_wake() is
-not implemented.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Alternatively, can't we remove IRQCHIP_SKIP_SET_WAKE, and just check for
-the presence of irq_chip.irq_set_wake()?
-I'll be happy to send a patch to do that instead...
+ arch/arm/configs/shmobile_defconfig | 1 -
+ 1 file changed, 1 deletion(-)
 
-Is there anything that relies on this -ENXIO error code?
-All irq_chip implementations that set IRQCHIP_SKIP_SET_WAKE do not
-implement irq_chip.irq_set_wake(). There are probably more of them that
-forgot to set IRQCHIP_SKIP_SET_WAKE though.
-Am I missing something?
-Commit 60f96b41f71d2a13 ("genirq: Add IRQCHIP_SKIP_SET_WAKE flag")
-doesn't explain why adding the flag was chosen.
-
-Thanks!
----
- kernel/irq/dummychip.c | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/kernel/irq/dummychip.c b/kernel/irq/dummychip.c
-index 988dc58e8847f6eb..326a67f2410bf95c 100644
---- a/kernel/irq/dummychip.c
-+++ b/kernel/irq/dummychip.c
-@@ -42,6 +42,7 @@ struct irq_chip no_irq_chip = {
- 	.irq_enable	= noop,
- 	.irq_disable	= noop,
- 	.irq_ack	= ack_bad,
-+	.flags		= IRQCHIP_SKIP_SET_WAKE,
- };
- 
- /*
-@@ -57,5 +58,6 @@ struct irq_chip dummy_irq_chip = {
- 	.irq_ack	= noop,
- 	.irq_mask	= noop,
- 	.irq_unmask	= noop,
-+	.flags		= IRQCHIP_SKIP_SET_WAKE,
- };
- EXPORT_SYMBOL_GPL(dummy_irq_chip);
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index cc67508..302faab 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -147,7 +147,6 @@ CONFIG_RTC_CLASS=y
+ CONFIG_RTC_DRV_S35390A=y
+ CONFIG_DMADEVICES=y
+ CONFIG_SH_DMAE=y
+-CONFIG_RCAR_AUDMAC_PP=y
+ CONFIG_RCAR_DMAC=y
+ # CONFIG_IOMMU_SUPPORT is not set
+ CONFIG_PWM=y
 -- 
-1.9.1
+2.1.3
 
