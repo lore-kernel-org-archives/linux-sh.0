@@ -1,52 +1,29 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 04 Dec 2014 09:01:34 +0000
-Subject: Re: [PATCH] drivers: sh / PM: Replace CONFIG_PM_RUNTIME with CONFIG_PM
-Message-Id: <CAMuHMdVG2ZR4X4pYSAZYP12x+oMfCEd_7ciuHqBjGQqSumNYzQ@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 11 Dec 2014 01:22:34 +0000
+Subject: [PATCH 0/2 v3] dmaengine: rcar-audmapp: independent from SH_DMAE_BASE
+Message-Id: <87ppbr9dzq.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <3463511.sXIeyHdjYI@vostro.rjw.lan>
-	<20141204035758.GA6346@verge.net.au>
-In-Reply-To: <20141204035758.GA6346@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Linux PM list <linux-pm@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Thu, Dec 4, 2014 at 4:58 AM, Simon Horman <horms@verge.net.au> wrote:
-> On Thu, Dec 04, 2014 at 02:24:22AM +0100, Rafael J. Wysocki wrote:
->> From: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
->>
->> After commit b2b49ccbdd54 (PM: Kconfig: Set PM_RUNTIME if PM_SLEEP is
->> selected) PM_RUNTIME is always set if PM is set, so #ifdef blocks
->> depending on CONFIG_PM_RUNTIME may now be changed to depend on
->> CONFIG_PM.
->>
->> Replace CONFIG_PM_RUNTIME with CONFIG_PM in drivers/sh/pm_runtime.c.
->>
->> Signed-off-by: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
->> ---
->>
->> Note: This depends on commit b2b49ccbdd54 (PM: Kconfig: Set PM_RUNTIME if
->> PM_SLEEP is selected) which is only in linux-next at the moment (via the
->> linux-pm tree).
->>
->> Please let me know if it is OK to take this one into linux-pm.
->
-> Hi Rafael,
->
-> That is fine by me if it is fine by Geert.
->
-> Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Hi Vinod
 
-Gr{oetje,eeting}s,
+These are v3 of rcar-audmapp rework patches.
+rcar-audmapp is very simple DMAC.
+ - usage is very limited
+ - no interrupt
+rcar-audmapp works with rcar-dma, and almost all settings
+are done under rcar-dma side.
+These are based on topic/slave_caps_device_control_fix
 
-                        Geert
+Kuninori Morimoto (2):
+      dmaengine: rcar-audmapp: independent from SH_DMAE_BASE v1
+      dmaengine: rcar-audmapp: independent from SH_DMAE_BASE v2
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+ drivers/dma/sh/Kconfig                         |    3 +-
+ drivers/dma/sh/rcar-audmapp.c                  |  416 +++++++++++-------------
+ include/linux/platform_data/dma-rcar-audmapp.h |   34 --
+ 3 files changed, 196 insertions(+), 257 deletions(-)
