@@ -1,37 +1,34 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Tue, 02 Dec 2014 08:37:15 +0000
-Subject: [PATCH 1/5] ARM: shmobile: r8a73a4: Multiplatform support
-Message-Id: <1417509439-31739-2-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 11 Dec 2014 12:31:13 +0000
+Subject: Re: [PATCH 1/5] ARM: shmobile: r8a73a4: Multiplatform support
+Message-Id: <CANqRtoRCaAiMWDU8d0RV2cF2wMWMLfm4vHutU3jesFFcoF8Ydw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1417509439-31739-2-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1417509439-31739-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Enable r8a73a4 Multiplatform support for the generic r8a73a4
-machine vector.
+Hi Ulrich,
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
----
- arch/arm/mach-shmobile/Kconfig | 5 +++++
- 1 file changed, 5 insertions(+)
+On Tue, Dec 2, 2014 at 5:37 PM, Ulrich Hecht
+<ulrich.hecht+renesas@gmail.com> wrote:
+> Enable r8a73a4 Multiplatform support for the generic r8a73a4
+> machine vector.
+>
+> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 1b4fafe..d107b93 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -51,6 +51,11 @@ config ARCH_R7S72100
- 	bool "RZ/A1H (R7S72100)"
- 	select SYS_SUPPORTS_SH_MTU2
- 
-+config ARCH_R8A73A4
-+	bool "R-Mobile APE6 (R8A73A40)"
-+	select ARCH_RMOBILE
-+	select RENESAS_IRQC
-+
- config ARCH_R8A7740
- 	bool "R-Mobile A1 (R8A77400)"
- 	select ARCH_RMOBILE
--- 
-1.8.4.5
+This for your efforts. This particular patch is fine with me.
 
+Acked-by: Magnus Damm <damm+renesas@opensource.se>
+
+Regarding the other patches, as discussed over chat please consider
+optimising the patch order to allow merge of multiplatform merge
+independently of board removal and renaming of files. Basically I
+think you can add multiplatform support using the non-reference DT
+file directly and not making use of any C board code.
+
+Cheers,
+
+/ magnus
