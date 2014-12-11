@@ -1,49 +1,48 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 02 Dec 2014 22:58:11 +0000
-Subject: Re: [PATCH 5/5] ARM: shmobile: koelsch: Rename SCIF[01] serial ports to ttySC[01]
-Message-Id: <CAMuHMdUM1f2oUtmKis0cksNK0RQmH66qLSO677_XW7E7sCfHaw@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 11 Dec 2014 02:33:15 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Defconfig Fixes for v3.19
+Message-Id: <cover.1418265122.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1417538146-23350-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1417538146-23350-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1364877094-1508-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364877094-1508-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Laurent,
+Hi Olof, Hi Kevin, Hi Arnd,
 
-On Tue, Dec 2, 2014 at 10:34 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> On Tuesday 02 December 2014 22:11:52 Geert Uytterhoeven wrote:
->> On Tue, Dec 2, 2014 at 10:06 PM, Laurent Pinchart wrote:
->> >> >         aliases {
->> >> >
->> >> > -               serial6 = &scif0;
->> >> > -               serial7 = &scif1;
->> >> > +               serial0 = &scif0;
->> >> > +               serial1 = &scif1;
->> >>
->> >> Actually the labels on my Koelsch read "debug0" and "debug1".
->> >> Do we care?
->> >
->> > I thought serial port aliases were required to be named "serial" ?
->>
->> ePAPR v1.1 only mentions up to 31 characters out of [a-z0-9-].
->> Nothing about rgeneric names like with node names.
->
-> The sh-sci driver calls of_alias_get_id(np, "serial") to retrieve the port
-> number. The alias must then start by "serial" unless I'm missing something.
+Please consider these Renesas ARM based SoC defconfig fixes for v3.19.
 
-OK, then we're stuck with "serial%u" (some drivers use "uart%u" or even
-"ttyAS%u"!).
+This pull request is based on the previous round of
+such requests, tagged as defconfig-for-v3.19,
+which I have already sent a pull-request for.
 
-Gr{oetje,eeting}s,
 
-                        Geert
+The following changes since commit ccde0fbd4fe88151c8d3a93a3e3a939a0a1753b2:
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+  ARM: shmobile: multiplatform: add AK4642 support on defconfig (2014-11-05 14:47:56 +0900)
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig-fixes-for-v3.19
+
+for you to fetch changes up to b6f6383b98092a1759d19893875bba90c8d9f446:
+
+  Revert "ARM: shmobile: multiplatform: add Audo DMAC peri peri support on defconfig" (2014-12-10 11:33:24 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC Defconfig Fixes for v3.19
+
+* Revert change enabling RCAR_AUDMAC_PP in shmobile_defconfig
+
+  Unfortunately enabling RCAR_AUDMAC_PP support this patch breaks dmaengine
+  support on R-Car Gen2 boards. This should be resolved by driver updates
+  in v3.20. But v3.19 was too early for this defconfig change.
+
+----------------------------------------------------------------
+Simon Horman (1):
+      Revert "ARM: shmobile: multiplatform: add Audo DMAC peri peri support on defconfig"
+
+ arch/arm/configs/shmobile_defconfig | 1 -
+ 1 file changed, 1 deletion(-)
