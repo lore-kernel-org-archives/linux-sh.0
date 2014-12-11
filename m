@@ -1,30 +1,39 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 11 Dec 2014 09:07:15 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 11 Dec 2014 12:47:32 +0000
 Subject: Re: [PATCH] extcon: add MAX3355 driver
-Message-Id: <CAMuHMdWu2jnzVKVWzEd-Kde0P+YM6yg99Pix+FFVZv1shgAQyQ@mail.gmail.com>
+Message-Id: <54899264.30009@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <14631865.01KLlU2iKL@wasted.cogentembedded.com>
-	<5488F775.1030304@samsung.com>
+References: <14631865.01KLlU2iKL@wasted.cogentembedded.com> <5488F775.1030304@samsung.com>
 In-Reply-To: <5488F775.1030304@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Chanwoo Choi <cw00.choi@samsung.com>
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, MyungJoo Ham <myungjoo.ham@samsung.com>, Grant Likely <grant.likely@linaro.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, USB list <linux-usb@vger.kernel.org>
+Cc: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, myungjoo.ham@samsung.com, grant.likely@linaro.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-usb@vger.kernel.org
 
-On Thu, Dec 11, 2014 at 2:46 AM, Chanwoo Choi <cw00.choi@samsung.com> wrote:
+Hello.
+
+On 12/11/2014 4:46 AM, Chanwoo Choi wrote:
+
+> I reviewed this patch quickly. This driver has just two gpio without any registers for IP.
+
+    Because there are no registers.
+
+> I wonder whether MAX3355E is separate chip to detect external connector
+
+    Yes. I thought my description has made that clear...
+
+> or just use gpio of AP.
+
+    What do you mean by AP?
+    MAX3355 is indeed partly connected to GPIOs and partly to the USB pins.
+
 > Could you send the datasheet of MAX3355E to me?
 
-First Google hit:
-http://datasheets.maximintegrated.com/en/ds/MAX3355E.pdf
+    Looks like Geert has beaten me to it. :-)
 
-Gr{oetje,eeting}s,
+> Thanks,
+> Chanwoo Choi
 
-                        Geert
+WBR, Sergei
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
