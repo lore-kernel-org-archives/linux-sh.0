@@ -1,75 +1,67 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 15 Dec 2014 02:28:05 +0000
-Subject: [PATCH 2/7] mmc: tmio: enable SoC specific DMA buswidth settings
-Message-Id: <87bnn5ve7t.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 11 Dec 2014 03:21:14 +0000
+Subject: [PATCH v2] ARM: shmobile: r8a7794: Add QSPI clock to device tree
+Message-Id: <1418268074-32501-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87egs1ve96.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87egs1ve96.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>
-Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
 
-Renesas SDHI which is based on TMIO driver has 2 type SoC. 1st one is
-used as SH-Mobile series, and 2nd is R-Car series. R-Car series SoC has
-DMA buswidth setting register which enables 32bit access.
-This patch adds .dma_buswidth and enables it.
+Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+[horms: omitted device node and alias; only add clock]
+[horms: use clock-indicies instead of renesas,clock-indicies]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/mmc/host/tmio_mmc_dma.c |    8 ++++++--
- include/linux/mfd/tmio.h        |    2 ++
- 2 files changed, 8 insertions(+), 2 deletions(-)
+Based on the renesas-devel-20141211-v3.18 tag of my renesas tree
 
-diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
-index f0bf6df..be82257 100644
---- a/drivers/mmc/host/tmio_mmc_dma.c
-+++ b/drivers/mmc/host/tmio_mmc_dma.c
-@@ -295,7 +295,9 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
- 			cfg.slave_id = pdata->dma->slave_id_tx;
- 		cfg.direction = DMA_MEM_TO_DEV;
- 		cfg.dst_addr = res->start + (CTL_SD_DATA_PORT << host->pdata->bus_shift);
--		cfg.dst_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
-+		cfg.dst_addr_width = host->pdata->dma_buswidth;
-+		if (!cfg.dst_addr_width)
-+			cfg.dst_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
- 		cfg.src_addr = 0;
- 		ret = dmaengine_slave_config(host->chan_tx, &cfg);
- 		if (ret < 0)
-@@ -314,7 +316,9 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
- 			cfg.slave_id = pdata->dma->slave_id_rx;
- 		cfg.direction = DMA_DEV_TO_MEM;
- 		cfg.src_addr = cfg.dst_addr + pdata->dma->dma_rx_offset;
--		cfg.src_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
-+		cfg.src_addr_width = host->pdata->dma_buswidth;
-+		if (!cfg.src_addr_width)
-+			cfg.src_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
- 		cfg.dst_addr = 0;
- 		ret = dmaengine_slave_config(host->chan_rx, &cfg);
- 		if (ret < 0)
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index 6788f9b..85bd65b 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -2,6 +2,7 @@
- #define MFD_TMIO_H
+v2 [Simon Horman]
+* As suggested by Kuninori Morimoto
+  - Use clock-indicies instead of renesas,clock-indicies
+
+v1 [Simon Horman]
+* Removed portions of patch which add device node and alias
+* Renamed patch from
+  "ARM: shmobile: r8a7794: Add QSPI clock and device to device tree" to
+  "ARM: shmobile: r8a7794: Add QSPI clock to device tree"
+---
+ arch/arm/boot/dts/r8a7794.dtsi            | 8 ++++++++
+ include/dt-bindings/clock/r8a7794-clock.h | 1 +
+ 2 files changed, 9 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 6d95638..068ca09 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -535,6 +535,14 @@
+ 			clock-output-names  				"vin1", "vin0", "ether";
+ 		};
++		mstp9_clks: mstp9_clks@e6150994 {
++			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
++			clocks = <&cpg_clocks R8A7794_CLK_QSPI>;
++			#clock-cells = <1>;
++			clock-indices = <R8A7794_CLK_QSPI_MOD>;
++			clock-output-names = "qspi_mod";
++		};
+ 		mstp11_clks: mstp11_clks@e615099c {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615099c 0 4>, <0 0xe61509ac 0 4>;
+diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
+index c0bd14a5..fba89a4 100644
+--- a/include/dt-bindings/clock/r8a7794-clock.h
++++ b/include/dt-bindings/clock/r8a7794-clock.h
+@@ -86,6 +86,7 @@
+ #define R8A7794_CLK_GPIO2		10
+ #define R8A7794_CLK_GPIO1		11
+ #define R8A7794_CLK_GPIO0		12
++#define R8A7794_CLK_QSPI_MOD		17
  
- #include <linux/device.h>
-+#include <linux/dmaengine.h>
- #include <linux/fb.h>
- #include <linux/io.h>
- #include <linux/jiffies.h>
-@@ -133,6 +134,7 @@ struct tmio_mmc_data {
- 	unsigned long			capabilities2;
- 	unsigned long			flags;
- 	unsigned long			bus_shift;
-+	enum dma_slave_buswidth		dma_buswidth;
- 	u32				ocr_mask;	/* available voltages */
- 	struct tmio_mmc_dma		*dma;
- 	struct device			*dev;
+ /* MSTP11 */
+ #define R8A7794_CLK_SCIFA3		6
 -- 
-1.7.9.5
+2.1.3
 
