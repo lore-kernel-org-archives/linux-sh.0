@@ -1,67 +1,39 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sat, 20 Dec 2014 19:07:33 +0000
-Subject: Re: [PING] [PATCH FOR v3.19 - v2] iommu/ipmmu-vmsa: change IOMMU_EXEC to IOMMU_NOEXEC
-Message-Id: <7279717.KWmNDRjuSk@avalon>
+From: =?UTF-8?q?Niklas=20S=C3=B6derlund?= <niso@kth.se>
+Date: Fri, 12 Dec 2014 20:01:34 +0000
+Subject: [PATCH 1/4] sh-pfc: add macro to define pinmux without function
+Message-Id: <1418414497-23741-2-git-send-email-niso@kth.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418668873-5091-1-git-send-email-laurent.pinchart@ideasonboard.com>
-In-Reply-To: <1418668873-5091-1-git-send-email-laurent.pinchart@ideasonboard.com>
+References: <1418414497-23741-1-git-send-email-niso@kth.se>
+In-Reply-To: <1418414497-23741-1-git-send-email-niso-UNjuZkX4dYU@public.gmane.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org
+Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, =?UTF-8?q?Niklas=20S=C3=B6derlund?= <niso-UNjuZkX4dYU@public.gmane.org>
 
-Hi Joerg,
+Used to define pinmux configurations where the pinmux function have no
+representation in the configuration registers but instead solely depends
+on a group selection.
 
-Ping ?
+Signed-off-by: Niklas S=C3=B6derlund <niso@kth.se>
+---
+ drivers/pinctrl/sh-pfc/sh_pfc.h | 2 ++
+ 1 file changed, 2 insertions(+)
 
-On Monday 15 December 2014 20:41:13 Laurent Pinchart wrote:
-> From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> Commit a720b41c41f5a7e4 ("iommu/arm-smmu: change IOMMU_EXEC to
-> IOMMU_NOEXEC") has inverted and replaced the IOMMU_EXEC flag with
-> IOMMU_NOEXEC. Update the driver accordingly.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->  drivers/iommu/ipmmu-vmsa.c | 6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
-> 
-> Changes since v1:
-> 
-> - Rewrote the commit message
-> 
-> Joerg, this is a compilation breakage fix for v3.19. Could you please take
-> it in your tree and submit it early during the -rc cycle ?
-> 
-> diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
-> index 68dfb0f..7486931 100644
-> --- a/drivers/iommu/ipmmu-vmsa.c
-> +++ b/drivers/iommu/ipmmu-vmsa.c
-> @@ -558,7 +558,7 @@ static pmd_t *ipmmu_alloc_pmd(struct ipmmu_vmsa_device
-> *mmu, pgd_t *pgd,
-> 
->  static u64 ipmmu_page_prot(unsigned int prot, u64 type)
->  {
-> -	u64 pgprot = ARM_VMSA_PTE_XN | ARM_VMSA_PTE_nG | ARM_VMSA_PTE_AF
-> +	u64 pgprot = ARM_VMSA_PTE_nG | ARM_VMSA_PTE_AF
-> 
->  		   | ARM_VMSA_PTE_SH_IS | ARM_VMSA_PTE_AP_UNPRIV
->  		   | ARM_VMSA_PTE_NS | type;
-> 
-> @@ -568,8 +568,8 @@ static u64 ipmmu_page_prot(unsigned int prot, u64 type)
->  	if (prot & IOMMU_CACHE)
->  		pgprot |= IMMAIR_ATTR_IDX_WBRWA << ARM_VMSA_PTE_ATTRINDX_SHIFT;
-> 
-> -	if (prot & IOMMU_EXEC)
-> -		pgprot &= ~ARM_VMSA_PTE_XN;
-> +	if (prot & IOMMU_NOEXEC)
-> +		pgprot |= ARM_VMSA_PTE_XN;
->  	else if (!(prot & (IOMMU_READ | IOMMU_WRITE)))
->  		/* If no access create a faulting entry to avoid TLB fills. */
->  		pgprot &= ~ARM_VMSA_PTE_PAGE;
-
--- 
-Regards,
-
-Laurent Pinchart
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pf=
+c.h
+index 5b72831..c837286 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -167,6 +167,8 @@ struct sh_pfc_soc_info {
+ 	PINMUX_DATA(fn##_MARK, FN_##fn, FN_##ipsr)
+ #define PINMUX_IPSR_NOGM(ispr, fn, ms)					\
+ 	PINMUX_DATA(fn##_MARK, FN_##fn, FN_##ms)
++#define PINMUX_IPSR_NOFN(ipsr, fn, ms)					\
++	PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##ms)
+ #define PINMUX_IPSR_MSEL(ipsr, fn, ms)					\
+ 	PINMUX_DATA(fn##_MARK, FN_##fn, FN_##ipsr, FN_##ms)
+ #define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms)				\
+--=20
+2.1.3
 
