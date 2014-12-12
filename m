@@ -1,55 +1,47 @@
-From: =?utf-8?B?U8O2cmVu?= Brinkmann <soren.brinkmann@xilinx.com>
-Date: Thu, 04 Dec 2014 17:28:17 +0000
-Subject: Re: [PATCH v2 0/7] Pinctrl support for Zynq
-Message-Id: <053edb05cd874daf9232cd5e4930df92@BN1BFFO11FD042.protection.gbl>
+From: Nishanth Menon <nm@ti.com>
+Date: Fri, 12 Dec 2014 17:18:58 +0000
+Subject: [PATCH] ARM: omap2plus_defconfig: use CONFIG_CPUFREQ_DT
+Message-Id: <1418404738-19124-1-git-send-email-nm@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1417137993-8337-1-git-send-email-soren.brinkmann@xilinx.com>
- <CACRpkdbYPmMksbqciiXv4hHBqx9=b8toA5MgCwGSLteUh+NkZA@mail.gmail.com>
-In-Reply-To: <CACRpkdbYPmMksbqciiXv4hHBqx9=b8toA5MgCwGSLteUh+NkZA@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Linus,
+CONFIG_GENERIC_CPUFREQ_CPU0 disappeared with commit bbcf071969b20f
+("cpufreq: cpu0: rename driver and internals to 'cpufreq_dt'")
 
-On Thu, 2014-12-04 at 10:44AM +0100, Linus Walleij wrote:
-> On Fri, Nov 28, 2014 at 2:26 AM, Soren Brinkmann
-> <soren.brinkmann@xilinx.com> wrote:
-> 
-> > here is v2 of this series. On the functional side, adding the support
-> > for USB mux groups is probably the biggest change. Most other changes
-> > are mostly cosmetic (typos, function names, documentation, ...).
-> > More detailed changelogs are included with the respective patches.
-> 
-> Unfortunately we are late in the merge cycle.
-> 
-> But I am *very* fond of this series, and I appreciate your patches
-> as *lot* Sören.
-> 
-> So my plan is to merge your v3 patch set after the merge window
-> or whenever you have it ready, with the Zynq driver on top and
-> the dependent AMlogic driver too.
-> 
-> Then we spend the next kernel cycle hashing this out and
-> putting some polished generic code in place so we get some
-> order.
-> 
-> This will likely set the pattern for how we expect ACPI pin controllers
-> to behave too, so it is work of great importance.
-> 
-> I hope I can count on you to hang in there and keep driving
-> those patches!
-> 
-> I'll try to provide a deeper look at the indivudual patches now.
+Use the renamed CONFIG_CPUFREQ_DT generic driver. It looks like with
+v3.18-rc1, commit bbcf071969b20f and fdc509b15eb3eb came in via
+different trees causing the resultant v3.18-rc1 to be non-functional for
+cpufreq as default supported with omap2plus_defconfig.
 
-Sounds great! After bringing it so far, I wasn't planning of giving up
-now :)
+Fixes: fdc509b15eb3eb ("ARM: omap2plus_defconfig: Add cpufreq to defconfig")
+Signed-off-by: Nishanth Menon <nm@ti.com>
+---
 
-The approach you chose sounds good to me. I was currently waiting to see
-whether there are a few more change requests coming before sending v3.
-The few comments that came in so far I have already fixed up. Since it's
-not going to make it into this merge window there may be some more time
-now, but in general, I could send v3 any time.
+NOTE: as of v3.18 tag, The following still need to be fixed - I do not have all
+the platforms impacted to make a generic change, so CCying folks who might be interested
 
-	Sören
+arch/arm/configs/shmobile_defconfig:CONFIG_GENERIC_CPUFREQ_CPU0=y
+arch/arm/configs/multi_v7_defconfig:CONFIG_GENERIC_CPUFREQ_CPU0=y
+
+ arch/arm/configs/omap2plus_defconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/omap2plus_defconfig b/arch/arm/configs/omap2plus_defconfig
+index 3e09286..5fc0dbe 100644
+--- a/arch/arm/configs/omap2plus_defconfig
++++ b/arch/arm/configs/omap2plus_defconfig
+@@ -68,7 +68,7 @@ CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMAND=y
+ CONFIG_CPU_FREQ_GOV_POWERSAVE=y
+ CONFIG_CPU_FREQ_GOV_USERSPACE=y
+ CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y
+-CONFIG_GENERIC_CPUFREQ_CPU0=y
++CONFIG_CPUFREQ_DT=y
+ # CONFIG_ARM_OMAP2PLUS_CPUFREQ is not set
+ CONFIG_CPU_IDLE=y
+ CONFIG_BINFMT_MISC=y
+-- 
+1.7.9.5
+
