@@ -1,39 +1,79 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 29 Dec 2014 01:47:06 +0000
-Subject: [PATCH 3/4] ARM: shmobile: r8a7779: No TWD setup in C for Multiplatform
-Message-Id: <1dc13eee3a5c60131657482aa88c997e5fa8b50c.1419810196.git.horms+renesas@verge.net.au>
+From: =?UTF-8?q?Niklas=20S=C3=B6derlund?= <niso@kth.se>
+Date: Fri, 12 Dec 2014 20:01:36 +0000
+Subject: [PATCH 3/4] ARM: shmobile: emev2: Add PFC information to emev2.dtsi
+Message-Id: <1418414497-23741-4-git-send-email-niso@kth.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1419810196.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1419810196.git.horms+renesas@verge.net.au>
+References: <1418414497-23741-1-git-send-email-niso@kth.se>
+In-Reply-To: <1418414497-23741-1-git-send-email-niso@kth.se>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-kernel@vger.kernel.org, laurent.pinchart@ideasonboard.com, linus.walleij@linaro.org
+Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, magnus.damm@gmail.com, =?UTF-8?q?Niklas=20S=C3=B6derlund?= <niso@kth.se>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+With this information all GPIOs can make use of the PFC functionality.
 
-Skip the TWD setup in C for r8a7779 Multiplatform.
-We should use DTS for the TWD device anyway.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Niklas S=C3=B6derlund <niso@kth.se>
 ---
- arch/arm/mach-shmobile/smp-r8a7779.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/emev2.dtsi | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
-index 3f761f8..9fc280e 100644
---- a/arch/arm/mach-shmobile/smp-r8a7779.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7779.c
-@@ -56,7 +56,7 @@ static struct rcar_sysc_ch *r8a7779_ch_cpu[4] = {
- 	[3] = &r8a7779_ch_cpu3,
- };
- 
--#ifdef CONFIG_HAVE_ARM_TWD
-+#if defined(CONFIG_HAVE_ARM_TWD) && !defined(CONFIG_ARCH_MULTIPLATFORM)
- static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, R8A7779_SCU_BASE + 0x600, 29);
- void __init r8a7779_register_twd(void)
- {
--- 
+diff --git a/arch/arm/boot/dts/emev2.dtsi b/arch/arm/boot/dts/emev2.dtsi
+index cc7bfe0..518b7fa 100644
+--- a/arch/arm/boot/dts/emev2.dtsi
++++ b/arch/arm/boot/dts/emev2.dtsi
+@@ -169,12 +169,19 @@
+ 		clock-names =3D "sclk";
+ 	};
+=20
++	pfc: pfc@e0140200 {
++		compatible =3D "renesas,pfc-emev2";
++		reg =3D <0xe0140200 0x14>, <0xe0140284 0xc>,
++			<0xe0140294 0x8>, <0xe01402a8 0x4>;
++	};
++
+ 	gpio0: gpio@e0050000 {
+ 		compatible =3D "renesas,em-gio";
+ 		reg =3D <0xe0050000 0x2c>, <0xe0050040 0x20>;
+ 		interrupts =3D <0 67 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 68 IRQ_TYPE_LEVEL_HIGH>;
+ 		gpio-controller;
++		gpio-ranges =3D <&pfc 0 0 32>;
+ 		#gpio-cells =3D <2>;
+ 		ngpios =3D <32>;
+ 		interrupt-controller;
+@@ -186,6 +193,7 @@
+ 		interrupts =3D <0 69 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 70 IRQ_TYPE_LEVEL_HIGH>;
+ 		gpio-controller;
++		gpio-ranges =3D <&pfc 0 32 32>;
+ 		#gpio-cells =3D <2>;
+ 		ngpios =3D <32>;
+ 		interrupt-controller;
+@@ -197,6 +205,7 @@
+ 		interrupts =3D <0 71 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 72 IRQ_TYPE_LEVEL_HIGH>;
+ 		gpio-controller;
++		gpio-ranges =3D <&pfc 0 64 32>;
+ 		#gpio-cells =3D <2>;
+ 		ngpios =3D <32>;
+ 		interrupt-controller;
+@@ -208,6 +217,7 @@
+ 		interrupts =3D <0 73 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 74 IRQ_TYPE_LEVEL_HIGH>;
+ 		gpio-controller;
++		gpio-ranges =3D <&pfc 0 96 32>;
+ 		#gpio-cells =3D <2>;
+ 		ngpios =3D <32>;
+ 		interrupt-controller;
+@@ -219,6 +229,7 @@
+ 		interrupts =3D <0 75 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 76 IRQ_TYPE_LEVEL_HIGH>;
+ 		gpio-controller;
++		gpio-ranges =3D <&pfc 0 128 32>;
+ 		#gpio-cells =3D <2>;
+ 		ngpios =3D <31>;
+ 		interrupt-controller;
+--=20
 2.1.3
 
