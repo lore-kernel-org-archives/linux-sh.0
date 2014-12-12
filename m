@@ -1,68 +1,111 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 17 Dec 2014 09:42:24 +0000
-Subject: [PATCH v2 02/05] ARM: shmobile: sh73a0: Introduce generic setup callback
-Message-Id: <20141217094224.7039.64925.sendpatchset@w520>
+From: Soren Brinkmann <soren.brinkmann@xilinx.com>
+Date: Fri, 12 Dec 2014 16:34:52 +0000
+Subject: [PATCH v3 1/7] pinctrl: pinconf-generic: Infer map type from DT property
+Message-Id: <9a21e4de1eac4c3e81a860b69ae99713@BL2FFO11FD060.protection.gbl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1418402098-3811-1-git-send-email-soren.brinkmann@xilinx.com>
+In-Reply-To: <1418402098-3811-1-git-send-email-soren.brinkmann@xilinx.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+With the new 'groups' property, the DT parser can infer the map type
+from the fact whether 'pins' or 'groups' is used to specify the pin
+group to work on.
+To maintain backwards compatibitliy with current usage of the DT
+binding, this is only done when PIN_MAP_TYPE_INVALID is passed to the
+parsing function as type.
+Also, a new helper 'pinconf_generic_dt_node_to_map_all()' is introduced,
+which can be used by drivers as generic callback for dt_node_to_map() to
+leverage the new feature.
 
-Add a generic sh73a0 machine setup callback for the upcoming
-sh73a0 multiplatform case. Cache needs to be configured, and
-legacy clocks must be omitted.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Soren Brinkmann <soren.brinkmann@xilinx.com>
+Tested-by: Andreas F=C3=A4rber <afaerber@suse.de>
 ---
+Changes since v2:
+ - rename dt_pin_specifier to subnode_target_type
+ - add additional comment in header file explaining passing an invalid
+   map type
+ - mention map_all() helper in commit message
+Changes since RFC v2:
+ - none
+---
+ drivers/pinctrl/pinconf-generic.c       | 17 ++++++++++++++---
+ include/linux/pinctrl/pinconf-generic.h | 11 +++++++++++
+ 2 files changed, 25 insertions(+), 3 deletions(-)
 
- arch/arm/mach-shmobile/setup-sh73a0.c |   16 +++++++++++++---
- 1 file changed, 13 insertions(+), 3 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ work/arch/arm/mach-shmobile/setup-sh73a0.c	2014-12-16 19:10:22.000000000 +0900
-@@ -30,6 +30,7 @@
- #include <linux/platform_data/sh_ipmmu.h>
- #include <linux/platform_data/irq-renesas-intc-irqpin.h>
- 
-+#include <asm/hardware/cache-l2x0.h>
- #include <asm/mach-types.h>
- #include <asm/mach/map.h>
- #include <asm/mach/arch.h>
-@@ -777,8 +778,6 @@ void __init sh73a0_add_early_devices(voi
- 	shmobile_setup_console();
- }
- 
--#ifdef CONFIG_USE_OF
--
- void __init sh73a0_add_standard_devices_dt(void)
- {
- 	/* clocks are setup late during boot in the case of DT */
-@@ -794,6 +793,17 @@ static void sh73a0_restart(enum reboot_m
- 	writel((1 << 31), RESCNT2);
- }
- 
-+#ifdef CONFIG_USE_OF
+diff --git a/drivers/pinctrl/pinconf-generic.c b/drivers/pinctrl/pinconf-ge=
+neric.c
+index f78b416d7984..21b3d90ebb2d 100644
+--- a/drivers/pinctrl/pinconf-generic.c
++++ b/drivers/pinctrl/pinconf-generic.c
+@@ -264,6 +264,7 @@ int pinconf_generic_dt_subnode_to_map(struct pinctrl_de=
+v *pctldev,
+ 	unsigned reserve;
+ 	struct property *prop;
+ 	const char *group;
++	const char *subnode_target_type =3D "pins";
+=20
+ 	ret =3D of_property_read_string(np, "function", &function);
+ 	if (ret < 0) {
+@@ -284,10 +285,20 @@ int pinconf_generic_dt_subnode_to_map(struct pinctrl_=
+dev *pctldev,
+ 		reserve++;
+ 	if (num_configs)
+ 		reserve++;
 +
-+static void __init sh73a0_generic_init(void)
+ 	ret =3D of_property_count_strings(np, "pins");
+ 	if (ret < 0) {
+-		dev_err(dev, "could not parse property pins\n");
+-		goto exit;
++		ret =3D of_property_count_strings(np, "groups");
++		if (ret < 0) {
++			dev_err(dev, "could not parse property pins/groups\n");
++			goto exit;
++		}
++		if (type =3D PIN_MAP_TYPE_INVALID)
++			type =3D PIN_MAP_TYPE_CONFIGS_GROUP;
++		subnode_target_type =3D "groups";
++	} else {
++		if (type =3D PIN_MAP_TYPE_INVALID)
++			type =3D PIN_MAP_TYPE_CONFIGS_PIN;
+ 	}
+ 	reserve *=3D ret;
+=20
+@@ -296,7 +307,7 @@ int pinconf_generic_dt_subnode_to_map(struct pinctrl_de=
+v *pctldev,
+ 	if (ret < 0)
+ 		goto exit;
+=20
+-	of_property_for_each_string(np, "pins", prop, group) {
++	of_property_for_each_string(np, subnode_target_type, prop, group) {
+ 		if (function) {
+ 			ret =3D pinctrl_utils_add_map_mux(pctldev, map,
+ 					reserved_maps, num_maps, group,
+diff --git a/include/linux/pinctrl/pinconf-generic.h b/include/linux/pinctr=
+l/pinconf-generic.h
+index d578a60eff23..83c89f5ab705 100644
+--- a/include/linux/pinctrl/pinconf-generic.h
++++ b/include/linux/pinctrl/pinconf-generic.h
+@@ -174,6 +174,17 @@ static inline int pinconf_generic_dt_node_to_map_pin(
+ 			PIN_MAP_TYPE_CONFIGS_PIN);
+ }
+=20
++static inline int pinconf_generic_dt_node_to_map_all(
++		struct pinctrl_dev *pctldev, struct device_node *np_config,
++		struct pinctrl_map **map, unsigned *num_maps)
 +{
-+#ifdef CONFIG_CACHE_L2X0
-+	/* Shared attribute override enable, 64K*8way */
-+	l2x0_init(IOMEM(0xf0100000), 0x00400000, 0xc20f0fff);
-+#endif
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++	/*
++	 * passing the type as PIN_MAP_TYPE_INVALID causes the underlying parser
++	 * to infer the map type from the DT properties used.
++	 */
++	return pinconf_generic_dt_node_to_map(pctldev, np_config, map, num_maps,
++			PIN_MAP_TYPE_INVALID);
 +}
-+
- static const char *sh73a0_boards_compat_dt[] __initdata = {
- 	"renesas,sh73a0",
- 	NULL,
-@@ -803,7 +813,7 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH7
- 	.smp		= smp_ops(sh73a0_smp_ops),
- 	.map_io		= sh73a0_map_io,
- 	.init_early	= shmobile_init_delay,
--	.init_machine	= sh73a0_add_standard_devices_dt,
-+	.init_machine	= sh73a0_generic_init,
- 	.init_late	= shmobile_init_late,
- 	.restart	= sh73a0_restart,
- 	.dt_compat	= sh73a0_boards_compat_dt,
+ #endif
+=20
+ #endif /* CONFIG_GENERIC_PINCONF */
+--=20
+2.2.0.1.g9ee0458
+
