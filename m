@@ -1,49 +1,44 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 29 Dec 2014 01:43:36 +0000
-Subject: [PATCH 2/7] ARM: shmobile: armadillo800eva dts: Replace status value "ok" by "okay"
-Message-Id: <16d3b8845ef3934a0586df5662254d54785d7741.1419809027.git.horms+renesas@verge.net.au>
+From: =?UTF-8?q?Niklas=20S=C3=B6derlund?= <niso@kth.se>
+Date: Fri, 12 Dec 2014 20:01:33 +0000
+Subject: [PATCH 0/4] sh-pfc: Add emev2 pinmux support
+Message-Id: <1418414497-23741-1-git-send-email-niso@kth.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1419809027.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1419809027.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-kernel@vger.kernel.org, laurent.pinchart@ideasonboard.com, linus.walleij@linaro.org
+Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, magnus.damm@gmail.com, =?UTF-8?q?Niklas=20S=C3=B6derlund?= <niso@kth.se>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Greetings,
 
-While the DT parsing code recognizes "ok" as a valid value for the
-"status" property, ePAPR v1.1 doesn't mention it in the list of valid
-values.
+This patchset introduces pinmux support for the EMMA Mobile EV2 board to
+the sh-pfc pin-controller driver. Devicetree bindings for gpio and the
+populated serial connector are also defined in 3/4 and 4/4.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7740-armadillo800eva.dts | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+Comments are welcome!
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-index d4af4d8..9bd0cb4 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-@@ -172,7 +172,7 @@
- 	pinctrl-names = "default";
- 
- 	phy-handle = <&phy0>;
--	status = "ok";
-+	status = "okay";
- 
- 	phy0: ethernet-phy@0 {
- 		reg = <0>;
-@@ -193,7 +193,7 @@
- };
- 
- &cmt1 {
--	status = "ok";
-+	status = "okay";
- };
- 
- &i2c0 {
--- 
+Regards
+// Niklas
+
+Niklas S=C3=B6derlund (4):
+  sh-pfc: add macro to define pinmux without function
+  sh-pfc: Add emev2 pinmux support
+  ARM: shmobile: emev2: Add PFC information to emev2.dtsi
+  ARM: shmobile: emev2-kzm9d: Add PFC information for uart1
+
+ .../bindings/pinctrl/renesas,pfc-pinctrl.txt       |    1 +
+ arch/arm/boot/dts/emev2-kzm9d.dts                  |   13 +
+ arch/arm/boot/dts/emev2.dtsi                       |   11 +
+ drivers/pinctrl/sh-pfc/Kconfig                     |    5 +
+ drivers/pinctrl/sh-pfc/Makefile                    |    1 +
+ drivers/pinctrl/sh-pfc/core.c                      |    9 +
+ drivers/pinctrl/sh-pfc/core.h                      |    1 +
+ drivers/pinctrl/sh-pfc/pfc-emev2.c                 | 1915 ++++++++++++++++=
+++++
+ drivers/pinctrl/sh-pfc/sh_pfc.h                    |    2 +
+ 9 files changed, 1958 insertions(+)
+ create mode 100644 drivers/pinctrl/sh-pfc/pfc-emev2.c
+
+--
 2.1.3
 
