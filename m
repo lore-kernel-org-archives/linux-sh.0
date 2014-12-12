@@ -1,7 +1,7 @@
 From: =?utf-8?B?U8O2cmVu?= Brinkmann <soren.brinkmann@xilinx.com>
-Date: Fri, 05 Dec 2014 17:37:03 +0000
+Date: Fri, 12 Dec 2014 16:21:03 +0000
 Subject: Re: [PATCH v2 7/7] pinctrl: qcom-spmi-gpio: Migrate to pinconf-generic
-Message-Id: <40e6a2a0c9f54ba4805871cf33373561@BN1BFFO11FD003.protection.gbl>
+Message-Id: <f754e0fd1e704d18913a5d89c607e57f@BN1BFFO11FD030.protection.gbl>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1417137993-8337-1-git-send-email-soren.brinkmann@xilinx.com>
  <1417137993-8337-8-git-send-email-soren.brinkmann@xilinx.com>
@@ -37,45 +37,22 @@ On Fri, 2014-12-05 at 09:08AM -0800, Sören Brinkmann wrote:
 > I suppose bad things :) You're right, that should probably be checked
 > somewhere. Let me see whether I find a good place to put such a check.
 
-Looking at it, it's not that straight forward. We only pass one size to
-the core, so the core cannot really check that the number of entries in
-both arrays are equal. And passing the size of both looks a little
-redundant to me.
-That would put the driver in charge of making sure these arrays are
-aligned.
+I looked at merging these arrays. Unfortunately that doesn't work that
+easy.
+There are two arrays. The first one establishes a mapping from
+strings used in DT to specify pinconf parameters to a pinconf parameter.
+This array has some entries which map to the same pinconf parameter.
+E.g. 'input-enable' and 'input-disable', the only difference in those
+entries is the resulting value of the parameter.
 
-With the change given below, it would at least trigger a compiler
-warning. I'll add that to the next iteration of this series.
-Longer term, merging those arrays, as you suggested, may be a better
-solution.
+The second array establishes a debugfs representation for each pinconf
+parameter.
+So, for the core parameters, the number of entries in these arrays
+differ.
+
+For this patch, I was assuming that these arrays match in size. I'd keep
+it the way it is now and if it turns out that this is not sufficient,
+passing the size of the second array too is an easy addition.
 
 	Thanks,
 	Sören
-
--------------8<-------------8<-------------------8<------------------------8<---
-diff --git a/drivers/pinctrl/pinctrl-zynq.c b/drivers/pinctrl/pinctrl-zynq.c
-index 29b75134771f..5942af4c2e67 100644
---- a/drivers/pinctrl/pinctrl-zynq.c
-+++ b/drivers/pinctrl/pinctrl-zynq.c
-@@ -924,7 +924,7 @@ static const struct pinconf_generic_dt_params zynq_dt_params[] = {
-        { "io-standard", PIN_CONFIG_IOSTANDARD, zynq_iostd_lvcmos18},
- };
- 
--static const struct pin_config_item zynq_conf_items[] = {
-+static const struct pin_config_item zynq_conf_items[ARRAY_SIZE(zynq_dt_params)] = {
-        PCONFDUMP(PIN_CONFIG_IOSTANDARD, "IO-standard", NULL, true),
- };
- 
-diff --git a/drivers/pinctrl/qcom/pinctrl-spmi-gpio.c b/drivers/pinctrl/qcom/pinctrl-spmi-gpio.c
-index c612aaa653d5..17f811c9c2c0 100644
---- a/drivers/pinctrl/qcom/pinctrl-spmi-gpio.c
-+++ b/drivers/pinctrl/qcom/pinctrl-spmi-gpio.c
-@@ -136,7 +136,7 @@ static const struct pinconf_generic_dt_params pmic_gpio_bindings[] = {
-        {"qcom,drive-strength",         PMIC_GPIO_CONF_STRENGTH,        0},
- };
- 
--static const struct pin_config_item pmic_conf_items[] = {
-+static const struct pin_config_item pmic_conf_items[ARRAY_SIZE(pmic_gpio_bindings)] = {
-        PCONFDUMP(PMIC_GPIO_CONF_PULL_UP,  "pull up strength", NULL, true),
-        PCONFDUMP(PMIC_GPIO_CONF_STRENGTH, "drive-strength", NULL, true),
- };
