@@ -1,61 +1,94 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 18 Dec 2014 01:33:22 +0000
-Subject: Re: [PATCH v2 0/7] ARM: shmobile: ape6evm: multiplatform support
-Message-Id: <CANqRtoRr0qOd4KVG2D07hou7piB+JR4SfFQEtVh2Fb-t7qvNOA@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 12 Dec 2014 03:43:33 +0000
+Subject: [PATCH v2] ARM: shmobile: r8a7794: Add SDHI clocks to device tree
+Message-Id: <1418355813-16577-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418747163-21729-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1418747163-21729-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-On Thu, Dec 18, 2014 at 10:25 AM, Simon Horman <horms@verge.net.au> wrote:
-> On Thu, Dec 18, 2014 at 10:22:00AM +0900, Magnus Damm wrote:
->> Hi Simon,
->>
->> On Thu, Dec 18, 2014 at 9:19 AM, Simon Horman <horms@verge.net.au> wrote:
->> > On Wed, Dec 17, 2014 at 05:20:15PM +0100, Ulrich Hecht wrote:
->> >> On Wed, Dec 17, 2014 at 2:23 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
->> >> > Hi Ulrich and Simon,
->> >> >
->> >> > On Wed, Dec 17, 2014 at 1:25 AM, Ulrich Hecht
->> >> > <ulrich.hecht+renesas@gmail.com> wrote:
->> >> >> It is split in such a way that the first five patches can be merged without
->> >> >> breaking either of the two legacy platforms.  Simon, please pick those up.
->> >> >> (Or the first three, if adding a multiplatform target that does not build is
->> >> >> a problem.) Thank you.
->> >> >
->> >> > The first patch seems to have some issue reported by Laurent. It needs
->> >> > to be reworked.
->> >> >
->> >> > Patch 2-5 should be possible to merge as-is unless I'm mistaken.
->> >> >
->> >> > Simon, if you don't mind, can you please consider picking up 2-5 before 1, 6-7?
->> >>
->> >> I respun the series following Laurent's suggestions, there should be
->> >> no need for special-casing anymore.
->> >>
->> >> > As for patch 6-7 and the sh73a4 legacy removal code by Laurent, I
->> >> > think the main blocker there is the r8a73a4 CCF support patch. I don't
->> >> > want to remove legacy code before reference is at least half-complete.
->> >> >
->> >> > How can we move forward on the r8a73a4 CCF bits?
->> >>
->> >> For starters I have sent a new version of the series with the last
->> >> remaining trivialities fixed.
->> >
->> > Thanks, that seems clean to me. And I see that Laurent has Acked the
->> > changes. I will queue those up.
->>
->> Thanks. I assume you guys work out the CCF vs the shmobile ordering
->> and keep at least one DT-reference implementation working at any given
->> time.
->
-> Yes, that is the assumption that I am working on.
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+[horms: omitted device nodes; only add clock]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Great, thank you!
+---
+Based on the renesas-devel-20141212-v3.18 tag of my renesas tree
 
-/ magnus
+v2 [Simon Horman]
+* As suggested by Magnus Damm
+  - Added missing sdhi0 portions
+    (this was an error on my part when rebasing Uehara-san's patch)
+
+v1 [Simon Horman]
+* Removed portions of patch which add device nodes
+* Renamed patch from
+  "ARM: shmobile: r8a7794: Add SDHI clocks and devices to device tree" to
+  "ARM: shmobile: r8a7794: Add SDHI clocks to device tree"
+---
+ arch/arm/boot/dts/r8a7794.dtsi            | 20 +++++++++++++++++++-
+ include/dt-bindings/clock/r8a7794-clock.h |  3 +++
+ 2 files changed, 22 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 068ca09..8794df8 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -293,6 +293,21 @@
+ 			clock-output-names = "main", "pll0", "pll1", "pll3",
+ 					     "lb", "qspi", "sdh", "sd0", "z";
+ 		};
++		/* Variable factor clocks */
++		sd1_clk: sd2_clk@e6150078 {
++			compatible = "renesas,r8a7794-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150078 0 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "sd1";
++		};
++		sd2_clk: sd3_clk@e615007c {
++			compatible = "renesas,r8a7794-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe615007c 0 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "sd2";
++		};
+ 
+ 		/* Fixed factor clocks */
+ 		pll1_div2_clk: pll1_div2_clk {
+@@ -496,13 +511,16 @@
+ 		mstp3_clks: mstp3_clks@e615013c {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+-			clocks = <&rclk_clk>, <&hp_clk>, <&hp_clk>;
++			clocks = <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7794_CLK_SD0>,
++			         <&rclk_clk>, <&hp_clk>, <&hp_clk>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
++			        R8A7794_CLK_SDHI2 R8A7794_CLK_SDHI1 R8A7794_CLK_SDHI0
+ 				R8A7794_CLK_CMT1 R8A7794_CLK_USBDMAC0
+ 				R8A7794_CLK_USBDMAC1
+ 			>;
+ 			clock-output-names +			        "sdhi2", "sdhi1", "sdhi0",
+ 				"cmt1", "usbdmac0", "usbdmac1";
+ 		};
+ 		mstp7_clks: mstp7_clks@e615014c {
+diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
+index fba89a4..f013cdc 100644
+--- a/include/dt-bindings/clock/r8a7794-clock.h
++++ b/include/dt-bindings/clock/r8a7794-clock.h
+@@ -52,6 +52,9 @@
+ #define R8A7794_CLK_SYS_DMAC0		19
+ 
+ /* MSTP3 */
++#define R8A7794_CLK_SDHI2		11
++#define R8A7794_CLK_SDHI1		12
++#define R8A7794_CLK_SDHI0		14
+ #define R8A7794_CLK_CMT1		29
+ #define R8A7794_CLK_USBDMAC0		30
+ #define R8A7794_CLK_USBDMAC1		31
+-- 
+2.1.3
+
