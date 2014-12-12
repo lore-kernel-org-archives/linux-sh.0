@@ -1,51 +1,90 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 29 Dec 2014 01:43:48 +0000
-Subject: [PATCH 17/30] ARM: shmobile: r8a7779: Use R8A7779_CLK_P as SCIF parent clock
-Message-Id: <c6ce3cdfce6c0214f178fbad73d138dd1f1b04f6.1419812186.git.horms+renesas@verge.net.au>
+Date: Fri, 12 Dec 2014 00:47:15 +0000
+Subject: [PATCH] ARM: shmobile: r8a7794: Add SDHI clocks to device tree
+Message-Id: <1418345235-15096-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1419812185.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-Use R8A7779_CLK_P as parent clock for SCIF devices on r8a7779.
-With this change in place the SCIF CCF handling matches the
-legacy clock code. Also, this matches the data sheet.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+[horms: omitted device nodes; only add clock]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7779.dtsi | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index e3846af..ee3bb3e 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -464,12 +464,12 @@
- 				 <&cpg_clocks R8A7779_CLK_P>,
- 				 <&cpg_clocks R8A7779_CLK_S>,
- 				 <&cpg_clocks R8A7779_CLK_S>,
--				 <&cpg_clocks R8A7779_CLK_S1>,
--				 <&cpg_clocks R8A7779_CLK_S1>,
--				 <&cpg_clocks R8A7779_CLK_S1>,
--				 <&cpg_clocks R8A7779_CLK_S1>,
--				 <&cpg_clocks R8A7779_CLK_S1>,
--				 <&cpg_clocks R8A7779_CLK_S1>,
-+				 <&cpg_clocks R8A7779_CLK_P>,
-+				 <&cpg_clocks R8A7779_CLK_P>,
-+				 <&cpg_clocks R8A7779_CLK_P>,
-+				 <&cpg_clocks R8A7779_CLK_P>,
-+				 <&cpg_clocks R8A7779_CLK_P>,
-+				 <&cpg_clocks R8A7779_CLK_P>,
- 				 <&cpg_clocks R8A7779_CLK_P>,
- 				 <&cpg_clocks R8A7779_CLK_P>,
- 				 <&cpg_clocks R8A7779_CLK_P>,
+---
+Based on the renesas-devel-20141211-v3.18 tag of my renesas tree
+
+v1 [Simon Horman]
+* Removed portions of patch which add device nodes
+* Renamed patch from
+  "ARM: shmobile: r8a7794: Add SDHI clocks and devices to device tree" to
+  "ARM: shmobile: r8a7794: Add SDHI clocks to device tree"
+---
+ arch/arm/boot/dts/r8a7794.dtsi            | 21 +++++++++++++++++++--
+ include/dt-bindings/clock/r8a7794-clock.h |  3 +++
+ 2 files changed, 22 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 6d95638..f5a3319 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -293,6 +293,21 @@
+ 			clock-output-names = "main", "pll0", "pll1", "pll3",
+ 					     "lb", "qspi", "sdh", "sd0", "z";
+ 		};
++		/* Variable factor clocks */
++		sd1_clk: sd2_clk@e6150078 {
++			compatible = "renesas,r8a7794-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150078 0 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "sd1";
++		};
++		sd2_clk: sd3_clk@e615007c {
++			compatible = "renesas,r8a7794-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe615007c 0 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "sd2";
++		};
+ 
+ 		/* Fixed factor clocks */
+ 		pll1_div2_clk: pll1_div2_clk {
+@@ -496,14 +511,16 @@
+ 		mstp3_clks: mstp3_clks@e615013c {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+-			clocks = <&rclk_clk>, <&hp_clk>, <&hp_clk>;
++			clocks = <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7794_CLK_SD0>
++			         <&rclk_clk>, <&hp_clk>, <&hp_clk>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
++			        R8A7794_CLK_SDHI2 R8A7794_CLK_SDHI1
+ 				R8A7794_CLK_CMT1 R8A7794_CLK_USBDMAC0
+ 				R8A7794_CLK_USBDMAC1
+ 			>;
+ 			clock-output-names -				"cmt1", "usbdmac0", "usbdmac1";
++			        "sdhi2", "sdhi1", "cmt1", "usbdmac0", "usbdmac1";
+ 		};
+ 		mstp7_clks: mstp7_clks@e615014c {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
+index c0bd14a5..6032d9f 100644
+--- a/include/dt-bindings/clock/r8a7794-clock.h
++++ b/include/dt-bindings/clock/r8a7794-clock.h
+@@ -52,6 +52,9 @@
+ #define R8A7794_CLK_SYS_DMAC0		19
+ 
+ /* MSTP3 */
++#define R8A7794_CLK_SDHI2		11
++#define R8A7794_CLK_SDHI1		12
++#define R8A7794_CLK_SDHI0		14
+ #define R8A7794_CLK_CMT1		29
+ #define R8A7794_CLK_USBDMAC0		30
+ #define R8A7794_CLK_USBDMAC1		31
 -- 
 2.1.3
 
