@@ -1,7 +1,7 @@
-From: Viresh Kumar <viresh.kumar@linaro.org>
-Date: Mon, 15 Dec 2014 04:35:01 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 15 Dec 2014 10:42:28 +0000
 Subject: Re: [PATCH] ARM: omap2plus_defconfig: use CONFIG_CPUFREQ_DT
-Message-Id: <CAOh2x=mTg8O-cqjkPPL6hSS3Jspk8h8xrdHGCR04iPNMYEK-Gw@mail.gmail.com>
+Message-Id: <CAMuHMdW4CQz_n8b4-JOogDvc6ggBjWrFWcqr4Tezojj+mJD6pw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1418404738-19124-1-git-send-email-nm@ti.com>
 In-Reply-To: <1418404738-19124-1-git-send-email-nm@ti.com>
@@ -10,7 +10,7 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Dec 12, 2014 at 10:48 PM, Nishanth Menon <nm@ti.com> wrote:
+On Fri, Dec 12, 2014 at 6:18 PM, Nishanth Menon <nm@ti.com> wrote:
 > CONFIG_GENERIC_CPUFREQ_CPU0 disappeared with commit bbcf071969b20f
 > ("cpufreq: cpu0: rename driver and internals to 'cpufreq_dt'")
 >
@@ -21,37 +21,26 @@ On Fri, Dec 12, 2014 at 10:48 PM, Nishanth Menon <nm@ti.com> wrote:
 >
 > Fixes: fdc509b15eb3eb ("ARM: omap2plus_defconfig: Add cpufreq to defconfig")
 > Signed-off-by: Nishanth Menon <nm@ti.com>
-
-Whomsoever applies it, please add:
-
-Cc: <stable@vger.kernel.org>        # 3.18
-
 > ---
 >
 > NOTE: as of v3.18 tag, The following still need to be fixed - I do not have all
 > the platforms impacted to make a generic change, so CCying folks who might be interested
 >
 > arch/arm/configs/shmobile_defconfig:CONFIG_GENERIC_CPUFREQ_CPU0=y
+
+Thanks!
+
+FTR: this has been fixed in Simon's defconfig-for-v3.20 branch.
+
 > arch/arm/configs/multi_v7_defconfig:CONFIG_GENERIC_CPUFREQ_CPU0=y
 
-I have fixed them now.
+Gr{oetje,eeting}s,
 
->
->  arch/arm/configs/omap2plus_defconfig |    2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->
-> diff --git a/arch/arm/configs/omap2plus_defconfig b/arch/arm/configs/omap2plus_defconfig
-> index 3e09286..5fc0dbe 100644
-> --- a/arch/arm/configs/omap2plus_defconfig
-> +++ b/arch/arm/configs/omap2plus_defconfig
-> @@ -68,7 +68,7 @@ CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMAND=y
->  CONFIG_CPU_FREQ_GOV_POWERSAVE=y
->  CONFIG_CPU_FREQ_GOV_USERSPACE=y
->  CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y
-> -CONFIG_GENERIC_CPUFREQ_CPU0=y
-> +CONFIG_CPUFREQ_DT=y
->  # CONFIG_ARM_OMAP2PLUS_CPUFREQ is not set
->  CONFIG_CPU_IDLE=y
->  CONFIG_BINFMT_MISC=y
+                        Geert
 
-Acked-by: Viresh Kumar <viresh.kumar@linaro.org>
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
