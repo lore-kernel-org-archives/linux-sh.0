@@ -1,391 +1,57 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 17 Dec 2014 09:42:43 +0000
-Subject: [PATCH v2 04/05] ARM: shmobile: kzm9g: Sync with DT reference
-Message-Id: <20141217094243.7039.35603.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Mon, 15 Dec 2014 18:41:13 +0000
+Subject: [PATCH FOR v3.19 - v2] iommu/ipmmu-vmsa: change IOMMU_EXEC to IOMMU_NOEXEC
+Message-Id: <1418668873-5091-1-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Sync the two DTS for the KZM9G board. The target is the file
-"sh73a0-kzm9g.dts" and it is made identical to the DT reference
-case with the exception of the compatbile string. In the future
-the DT reference file will go away.
+Commit a720b41c41f5a7e4 ("iommu/arm-smmu: change IOMMU_EXEC to
+IOMMU_NOEXEC") has inverted and replaced the IOMMU_EXEC flag with
+IOMMU_NOEXEC. Update the driver accordingly.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/iommu/ipmmu-vmsa.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
- arch/arm/boot/dts/sh73a0-kzm9g.dts |  342 +++++++++++++++++++++++++++++++++++-
- 1 file changed, 341 insertions(+), 1 deletion(-)
+Changes since v1:
 
---- 0001/arch/arm/boot/dts/sh73a0-kzm9g.dts
-+++ work/arch/arm/boot/dts/sh73a0-kzm9g.dts	2014-12-17 16:49:43.000000000 +0900
-@@ -1,6 +1,9 @@
- /*
-  * Device Tree Source for the KZM-A9-GT board
-  *
-+ * Copyright (C) 2012 Horms Solutions Ltd.
-+ *
-+ * Based on sh73a0-kzm9g.dts
-  * Copyright (C) 2012 Renesas Solutions Corp.
-  *
-  * This file is licensed under the terms of the GNU General Public License
-@@ -10,17 +13,354 @@
+- Rewrote the commit message
+
+Joerg, this is a compilation breakage fix for v3.19. Could you please take it
+in your tree and submit it early during the -rc cycle ?
+
+diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
+index 68dfb0f..7486931 100644
+--- a/drivers/iommu/ipmmu-vmsa.c
++++ b/drivers/iommu/ipmmu-vmsa.c
+@@ -558,7 +558,7 @@ static pmd_t *ipmmu_alloc_pmd(struct ipmmu_vmsa_device *mmu, pgd_t *pgd,
  
- /dts-v1/;
- #include "sh73a0.dtsi"
-+#include <dt-bindings/gpio/gpio.h>
-+#include <dt-bindings/input/input.h>
-+#include <dt-bindings/interrupt-controller/irq.h>
+ static u64 ipmmu_page_prot(unsigned int prot, u64 type)
+ {
+-	u64 pgprot = ARM_VMSA_PTE_XN | ARM_VMSA_PTE_nG | ARM_VMSA_PTE_AF
++	u64 pgprot = ARM_VMSA_PTE_nG | ARM_VMSA_PTE_AF
+ 		   | ARM_VMSA_PTE_SH_IS | ARM_VMSA_PTE_AP_UNPRIV
+ 		   | ARM_VMSA_PTE_NS | type;
  
- / {
- 	model = "KZM-A9-GT";
- 	compatible = "renesas,kzm9g", "renesas,sh73a0";
+@@ -568,8 +568,8 @@ static u64 ipmmu_page_prot(unsigned int prot, u64 type)
+ 	if (prot & IOMMU_CACHE)
+ 		pgprot |= IMMAIR_ATTR_IDX_WBRWA << ARM_VMSA_PTE_ATTRINDX_SHIFT;
  
-+	aliases {
-+		serial4 = &scifa4;
-+	};
-+
-+	cpus {
-+		cpu@0 {
-+			cpu0-supply = <&vdd_dvfs>;
-+			operating-points = <
-+				/* kHz  uV */
-+				1196000 1315000
-+				 598000 1175000
-+				 398667 1065000
-+			>;
-+			voltage-tolerance = <1>; /* 1% */
-+		};
-+	};
-+
- 	chosen {
--		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200 rw";
-+		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel rw";
-+		stdout-path = &scifa4;
- 	};
- 
- 	memory {
- 		device_type = "memory";
- 		reg = <0x41000000 0x1e800000>;
- 	};
-+
-+	reg_1p8v: regulator@0 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-1.8V";
-+		regulator-min-microvolt = <1800000>;
-+		regulator-max-microvolt = <1800000>;
-+		regulator-always-on;
-+		regulator-boot-on;
-+	};
-+
-+	reg_3p3v: regulator@1 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-3.3V";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		regulator-always-on;
-+		regulator-boot-on;
-+	};
-+
-+	vmmc_sdhi0: regulator@2 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "SDHI0 Vcc";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		gpio = <&pfc 15 GPIO_ACTIVE_HIGH>;
-+		enable-active-high;
-+	};
-+
-+	vmmc_sdhi2: regulator@3 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "SDHI2 Vcc";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		gpio = <&pfc 14 GPIO_ACTIVE_HIGH>;
-+		enable-active-high;
-+	};
-+
-+	lan9220@10000000 {
-+		compatible = "smsc,lan9220", "smsc,lan9115";
-+		reg = <0x10000000 0x100>;
-+		phy-mode = "mii";
-+		interrupt-parent = <&irqpin0>;
-+		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
-+		reg-io-width = <4>;
-+		smsc,irq-push-pull;
-+		smsc,save-mac-address;
-+		vddvario-supply = <&reg_1p8v>;
-+		vdd33a-supply = <&reg_3p3v>;
-+	};
-+
-+	leds {
-+		compatible = "gpio-leds";
-+		led1 {
-+			gpios = <&pfc 20 GPIO_ACTIVE_LOW>;
-+			label = "LED1";
-+		};
-+		led2 {
-+			gpios = <&pfc 21 GPIO_ACTIVE_LOW>;
-+			label = "LED2";
-+		};
-+		led3 {
-+			gpios = <&pfc 22 GPIO_ACTIVE_LOW>;
-+			label = "LED3";
-+		};
-+		led4 {
-+			gpios = <&pfc 23 GPIO_ACTIVE_LOW>;
-+			label = "LED4";
-+		};
-+	};
-+
-+	keyboard {
-+		compatible = "gpio-keys";
-+
-+		back-key {
-+			gpios = <&pcf8575 8 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_BACK>;
-+			label = "SW3";
-+		};
-+
-+		right-key {
-+			gpios = <&pcf8575 9 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_RIGHT>;
-+			label = "SW2-R";
-+		};
-+
-+		left-key {
-+			gpios = <&pcf8575 10 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_LEFT>;
-+			label = "SW2-L";
-+		};
-+
-+		enter-key {
-+			gpios = <&pcf8575 11 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_ENTER>;
-+			label = "SW2-P";
-+		};
-+
-+		up-key {
-+			gpios = <&pcf8575 12 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_UP>;
-+			label = "SW2-U";
-+		};
-+
-+		down-key {
-+			gpios = <&pcf8575 13 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_DOWN>;
-+			label = "SW2-D";
-+		};
-+
-+		home-key {
-+			gpios = <&pcf8575 14 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_HOME>;
-+			label = "SW1";
-+		};
-+	};
-+
-+	sound {
-+		compatible = "simple-audio-card";
-+		simple-audio-card,format = "left_j";
-+		simple-audio-card,cpu {
-+			sound-dai = <&sh_fsi2 0>;
-+		};
-+		simple-audio-card,codec {
-+			sound-dai = <&ak4648>;
-+			bitclock-master;
-+			frame-master;
-+			system-clock-frequency = <11289600>;
-+		};
-+	};
-+};
-+
-+&cmt1 {
-+	status = "okay";
-+};
-+
-+&extal2_clk {
-+	clock-frequency = <48000000>;
-+};
-+
-+&i2c0 {
-+	status = "okay";
-+	as3711@40 {
-+		compatible = "ams,as3711";
-+		reg = <0x40>;
-+
-+		regulators {
-+			vdd_dvfs: sd1 {
-+				regulator-name = "1.315V CPU";
-+				regulator-min-microvolt = <1050000>;
-+				regulator-max-microvolt = <1350000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+			sd2 {
-+				regulator-name = "1.8V";
-+				regulator-min-microvolt = <1800000>;
-+				regulator-max-microvolt = <1800000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+			sd4 {
-+				regulator-name = "1.215V";
-+				regulator-min-microvolt = <1215000>;
-+				regulator-max-microvolt = <1235000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+			ldo2 {
-+				regulator-name = "2.8V CPU";
-+				regulator-min-microvolt = <2800000>;
-+				regulator-max-microvolt = <2800000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+			ldo3 {
-+				regulator-name = "3.0V CPU";
-+				regulator-min-microvolt = <3000000>;
-+				regulator-max-microvolt = <3000000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+			ldo4 {
-+				regulator-name = "2.8V";
-+				regulator-min-microvolt = <2800000>;
-+				regulator-max-microvolt = <2800000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+			ldo5 {
-+				regulator-name = "2.8V #2";
-+				regulator-min-microvolt = <2800000>;
-+				regulator-max-microvolt = <2800000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+			ldo7 {
-+				regulator-name = "1.15V CPU";
-+				regulator-min-microvolt = <1150000>;
-+				regulator-max-microvolt = <1150000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+			ldo8 {
-+				regulator-name = "1.15V CPU #2";
-+				regulator-min-microvolt = <1150000>;
-+				regulator-max-microvolt = <1150000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+		};
-+	};
-+
-+	ak4648: ak4648@12 {
-+		#sound-dai-cells = <0>;
-+		compatible = "asahi-kasei,ak4648";
-+		reg = <0x12>;
-+	};
-+};
-+
-+&i2c3 {
-+	pinctrl-0 = <&i2c3_pins>;
-+	pinctrl-names = "default";
-+	status = "okay";
-+
-+	pcf8575: gpio@20 {
-+		compatible = "nxp,pcf8575";
-+		reg = <0x20>;
-+		interrupt-parent = <&irqpin2>;
-+		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+		interrupt-controller;
-+		#interrupt-cells = <2>;
-+	};
-+};
-+
-+&mmcif {
-+	pinctrl-0 = <&mmcif_pins>;
-+	pinctrl-names = "default";
-+
-+	bus-width = <8>;
-+	vmmc-supply = <&reg_1p8v>;
-+	status = "okay";
-+};
-+
-+&pfc {
-+	i2c3_pins: i2c3 {
-+		renesas,groups = "i2c3_1";
-+		renesas,function = "i2c3";
-+	};
-+
-+	mmcif_pins: mmc {
-+		mux {
-+			renesas,groups = "mmc0_data8_0", "mmc0_ctrl_0";
-+			renesas,function = "mmc0";
-+		};
-+		cfg {
-+			renesas,groups = "mmc0_data8_0";
-+			renesas,pins = "PORT279";
-+			bias-pull-up;
-+		};
-+	};
-+
-+	scifa4_pins: serial4 {
-+		renesas,groups = "scifa4_data", "scifa4_ctrl";
-+		renesas,function = "scifa4";
-+	};
-+
-+	sdhi0_pins: sd0 {
-+		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd", "sdhi0_wp";
-+		renesas,function = "sdhi0";
-+	};
-+
-+	sdhi2_pins: sd2 {
-+		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
-+		renesas,function = "sdhi2";
-+	};
-+
-+	fsia_pins: sounda {
-+		renesas,groups = "fsia_mclk_in", "fsia_sclk_in",
-+				 "fsia_data_in", "fsia_data_out";
-+		renesas,function = "fsia";
-+	};
-+};
-+
-+&scifa4 {
-+	pinctrl-0 = <&scifa4_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+};
-+
-+&sdhi0 {
-+	pinctrl-0 = <&sdhi0_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&vmmc_sdhi0>;
-+	bus-width = <4>;
-+	status = "okay";
-+};
-+
-+&sdhi2 {
-+	pinctrl-0 = <&sdhi2_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&vmmc_sdhi2>;
-+	bus-width = <4>;
-+	broken-cd;
-+	status = "okay";
-+};
-+
-+&sh_fsi2 {
-+	pinctrl-0 = <&fsia_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
- };
+-	if (prot & IOMMU_EXEC)
+-		pgprot &= ~ARM_VMSA_PTE_XN;
++	if (prot & IOMMU_NOEXEC)
++		pgprot |= ARM_VMSA_PTE_XN;
+ 	else if (!(prot & (IOMMU_READ | IOMMU_WRITE)))
+ 		/* If no access create a faulting entry to avoid TLB fills. */
+ 		pgprot &= ~ARM_VMSA_PTE_PAGE;
+-- 
+Regards,
+
+Laurent Pinchart
+
