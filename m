@@ -1,64 +1,130 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 02 Dec 2014 16:26:19 +0000
-Subject: renesas-drivers-2014-12-02-v3.18-rc7
-Message-Id: <1417537579-25410-1-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 15 Dec 2014 02:28:47 +0000
+Subject: [PATCH 6/7] mmc: sh_mobile: enable 32bit DMA access
+Message-Id: <8761ddve6l.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87egs1ve96.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87egs1ve96.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>
+Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-I've pushed renesas-drivers-2014-12-02-v3.18-rc7 to
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
-This tree is meant to ease development of platform support and drivers for
-Renesas ARM ("shmobile") SoCs. It's created by merging (a) branches with
-driver code submitted to maintainers and (b) the for-next branches of various
-subsystem trees into the development branch of Simon Horman's renesas.git tree.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Today's version is based on renesas-devel-20141202-v3.18-rc7.
+Now, sh_mobile_sdhi can use 32bit DMA access in R-Cer Gen2.
+Let's use it.
 
-Included fixes:
-  - gpio: fix deferred probe detection for legacy API
-  - Revert "irqchip: gic: Support hierarchy irq domain."
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c |   44 +++++++++++++++++++++++++++++--------
+ 1 file changed, 35 insertions(+), 9 deletions(-)
 
-Included subsystem trees:
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
-  - git://git.linaro.org/people/mturquette/linux.git#clk-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
-  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
-  - git://gitorious.org/linux-can/linux-can-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
-  - git://people.freedesktop.org/~airlied/linux#drm-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
-  - git://linuxtv.org/mchehab/media-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
-  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
-  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
-  - git://git.infradead.org/users/vkoul/slave-dma.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
-  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
-  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 0bec741..9d65fae 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -41,6 +41,7 @@ struct sh_mobile_sdhi_of_data {
+ 	unsigned long tmio_flags;
+ 	unsigned long capabilities;
+ 	unsigned long capabilities2;
++	enum dma_slave_buswidth dma_buswidth;
+ 	dma_addr_t dma_rx_offset;
+ };
+ 
+@@ -60,6 +61,7 @@ static const struct sh_mobile_sdhi_of_data of_rcar_gen2_compatible = {
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE |
+ 			  TMIO_MMC_CLK_ACTUAL,
+ 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
++	.dma_buswidth	= DMA_SLAVE_BUSWIDTH_4_BYTES,
+ 	.dma_rx_offset	= 0x2000,
+ };
+ 
+@@ -86,6 +88,31 @@ struct sh_mobile_sdhi {
+ 	struct tmio_mmc_dma dma_priv;
+ };
+ 
++static void rcar_sdhi_sdbuf_width(struct tmio_mmc_host *host, int width)
++{
++	u32 val;
++
++	/*
++	 * see also
++	 *	sh_mobile_sdhi_of_data :: dma_buswidth
++	 */
++	switch (sd_ctrl_read16(host, CTL_VERSION)) {
++	case 0x490C:
++		val = (width = 32) ? 0x0001 : 0x0000;
++		break;
++	case 0xCB0D:
++		val = (width = 32) ? 0x0000 : 0x0001;
++		break;
++	default:
++		/*
++		 * SH-Mobile. nothing to do
++		 */
++		return;
++	}
++
++	sd_ctrl_write16(host, EXT_ACC, val);
++}
++
+ static int sh_mobile_sdhi_clk_enable(struct platform_device *pdev, unsigned int *f)
+ {
+ 	struct mmc_host *mmc = platform_get_drvdata(pdev);
+@@ -96,6 +123,10 @@ static int sh_mobile_sdhi_clk_enable(struct platform_device *pdev, unsigned int
+ 		return ret;
+ 
+ 	*f = clk_get_rate(priv->clk);
++
++	/* enable 16bit data access on SDBUF as default */
++	rcar_sdhi_sdbuf_width(host, 16);
++
+ 	return 0;
+ }
+ 
+@@ -161,6 +192,9 @@ static int sh_mobile_sdhi_multi_io_quirk(struct mmc_card *card,
+ static void sh_mobile_sdhi_enable_dma(struct tmio_mmc_host *host, bool enable)
+ {
+ 	sd_ctrl_write16(host, CTL_DMA_ENABLE, enable ? 2 : 0);
++
++	/* enable 32bit access if DMA mode if possibile */
++	rcar_sdhi_sdbuf_width(host, enable ? 32 : 16);
+ }
+ 
+ static void sh_mobile_sdhi_cd_wakeup(const struct platform_device *pdev)
+@@ -184,7 +218,6 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	int irq, ret, i = 0;
+ 	bool multiplexed_isr = true;
+ 	struct tmio_mmc_dma *dma_priv;
+-	u16 ver;
+ 
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (!res)
+@@ -276,6 +309,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		mmc_data->flags |= of_data->tmio_flags;
+ 		mmc_data->capabilities |= of_data->capabilities;
+ 		mmc_data->capabilities2 |= of_data->capabilities2;
++		mmc_data->dma_buswidth = of_data->dma_buswidth;
+ 		dma_priv->dma_rx_offset = of_data->dma_rx_offset;
+ 	}
+ 
+@@ -290,14 +324,6 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		goto eprobe;
+ 
+ 	/*
+-	 * FIXME:
+-	 * this Workaround can be more clever method
+-	 */
+-	ver = sd_ctrl_read16(host, CTL_VERSION);
+-	if (ver = 0xCB0D)
+-		sd_ctrl_write16(host, EXT_ACC, 1);
+-
+-	/*
+ 	 * Allow one or more specific (named) ISRs or
+ 	 * one or more multiplexed (un-named) ISRs.
+ 	 */
+-- 
+1.7.9.5
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
