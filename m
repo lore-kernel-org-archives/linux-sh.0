@@ -1,87 +1,39 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Tue, 23 Dec 2014 08:20:04 +0000
-Subject: Re: [PATCH/RFC] v4l: vsp1: Add format for Mem2Mem Playback
-Message-Id: <CAH1o70+dMGdHPx1BqS_jk4nY85cxh2=sobqRo96zyQ6bOf6avw@mail.gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 15 Dec 2014 13:37:04 +0000
+Subject: [PATCH] i2c: sh_mobile: I2C_SH_MOBILE should depend on HAS_DMA
+Message-Id: <1418650624-28174-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1419084963-18832-1-git-send-email-ykaneko0929@gmail.com>
-	<2411607.P54SbLLsL0@avalon>
-In-Reply-To: <2411607.P54SbLLsL0@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, Mauro Carvalho Chehab <m.chehab@samsung.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
+Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 
-Hi Laurent-san,
+If NO_DMA=y:
 
-Thanks for your comment.
+drivers/built-in.o: In function `sh_mobile_i2c_dma_unmap':
+i2c-sh_mobile.c:(.text+0x60de42): undefined reference to `dma_unmap_single'
+drivers/built-in.o: In function `sh_mobile_i2c_xfer_dma':
+i2c-sh_mobile.c:(.text+0x60df22): undefined reference to `dma_map_single'
+i2c-sh_mobile.c:(.text+0x60df2e): undefined reference to `dma_mapping_error'
 
-2014-12-21 3:35 GMT+09:00 Laurent Pinchart <laurent.pinchart@ideasonboard.com>:
-> Hello Kaneko-san,
->
-> Thank you for the patch.
->
->
-> On Saturday 20 December 2014 23:16:03 Yoshihiro Kaneko wrote:
->> From: Hiroki Negishi <hiroki.negishi.zr@hitachi-solutions.com>
->>
->> Signed-off-by: Hiroki Negishi <hiroki.negishi.zr@hitachi-solutions.com>
->> Signed-off-by: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
->> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->> ---
->>
->> This patch is based on the master branch of linuxtv.org/media_tree.git.
->>
->>  drivers/media/platform/vsp1/vsp1_video.c | 3 +++
->>  include/uapi/linux/videodev2.h           | 3 +++
->>  2 files changed, 6 insertions(+)
->>
->> diff --git a/drivers/media/platform/vsp1/vsp1_video.c
->> b/drivers/media/platform/vsp1/vsp1_video.c index e512336..9bbc02a 100644
->> --- a/drivers/media/platform/vsp1/vsp1_video.c
->> +++ b/drivers/media/platform/vsp1/vsp1_video.c
->> @@ -130,6 +130,9 @@ static const struct vsp1_format_info
->> vsp1_video_formats[] = { VI6_FMT_Y_U_V_420, VI6_RPF_DSWAP_P_LLS |
->> VI6_RPF_DSWAP_P_LWS | VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
->>         3, { 8, 8, 8 }, false, false, 2, 2, false },
->> +     { V4L2_PIX_FMT_RGB32S, MEDIA_BUS_FMT_ARGB8888_1X32,
->> +       VI6_FMT_ARGB_8888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS,
->> +       1, { 32, 0, 0 }, false, false, 1, 1, false },
->>  };
->>
->>  /*
->> diff --git a/include/uapi/linux/videodev2.h b/include/uapi/linux/videodev2.h
->> index d279c1b..f22e167 100644
->> --- a/include/uapi/linux/videodev2.h
->> +++ b/include/uapi/linux/videodev2.h
->> @@ -396,6 +396,9 @@ struct v4l2_pix_format {
->>  #define V4L2_PIX_FMT_ARGB32  v4l2_fourcc('B', 'A', '2', '4') /* 32
->> ARGB-8-8-8-8  */ #define V4L2_PIX_FMT_XRGB32  v4l2_fourcc('B', 'X', '2',
->> '4') /* 32  XRGB-8-8-8-8  */
->>
->> +/* RGB formats for memory output */
->> +#define V4L2_PIX_FMT_RGB32S  v4l2_fourcc('R', 'G', '4', 'S') /* 32
->> RGB-8-8-8-8 */ +
->
-> When adding a new format V4L2 also requires a documentation update to describe
-> the format. I assume your format falls in the category of packed RGB formats,
-> could you thus please update Documentation/DocBook/media/v4l/pixfmt-packed-
-> rgb.xml in this patch as well ?
+Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
+---
+ drivers/i2c/busses/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-Thank you very much for your advice.
-I'll look into the documentation and update this patch.
+diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
+index c1351d9fb35bbc8d..f08dd20f625c184d 100644
+--- a/drivers/i2c/busses/Kconfig
++++ b/drivers/i2c/busses/Kconfig
+@@ -753,6 +753,7 @@ config I2C_SH7760
+ 
+ config I2C_SH_MOBILE
+ 	tristate "SuperH Mobile I2C Controller"
++	depends on HAS_DMA
+ 	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
+ 	help
+ 	  If you say yes to this option, support will be included for the
+-- 
+1.9.1
 
-Thanks,
-Kaneko
-
->
->>  /* Grey formats */
->>  #define V4L2_PIX_FMT_GREY    v4l2_fourcc('G', 'R', 'E', 'Y') /*  8
->> Greyscale     */ #define V4L2_PIX_FMT_Y4      v4l2_fourcc('Y', '0', '4', '
->> ') /*  4  Greyscale     */
->
-> --
-> Regards,
->
-> Laurent Pinchart
->
