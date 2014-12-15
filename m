@@ -1,216 +1,58 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Wed, 17 Dec 2014 16:18:54 +0000
-Subject: [PATCH v4 6/6] ARM: shmobile: r8a73a4: add MSTP clock assignments to DT
-Message-Id: <1418833134-7863-7-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 15 Dec 2014 02:28:25 +0000
+Subject: [PATCH 4/7] mmc: sh_mobile_sdhi: add new macro for mmc_host to sh_mobile_sdhi
+Message-Id: <878ui9ve78.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87egs1ve96.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87egs1ve96.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>
+Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-Assigns clocks to dmac, i2c*, cmt1, thermal, scif*, sdhi*, and mmcif*.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+getting struct sh_mobile_sdhi from struct mmc_host needs to use
+complex container_of(). This patch adds new host_to_priv macro to
+get it easily.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a73a4.dtsi | 30 ++++++++++++++++++++++++++++++
- 1 file changed, 30 insertions(+)
+ drivers/mmc/host/sh_mobile_sdhi.c |    6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index 503b46c..590a18e 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -78,6 +78,7 @@
- 					"ch8", "ch9", "ch10", "ch11",
- 					"ch12", "ch13", "ch14", "ch15",
- 					"ch16", "ch17", "ch18", "ch19";
-+			clocks = <&mstp2_clks R8A73A4_CLK_DMAC>;
- 		};
- 	};
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 1c1e919..c0ef63b 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -35,6 +35,8 @@
  
-@@ -110,6 +111,7 @@
- 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe60b0000 0 0x428>;
- 		interrupts = <0 179 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp4_clks R8A73A4_CLK_IIC5>;
+ #define EXT_ACC           0xe4
  
- 		status = "disabled";
- 	};
-@@ -118,6 +120,8 @@
- 		compatible = "renesas,cmt-48-r8a73a4", "renesas,cmt-48-gen2";
- 		reg = <0 0xe6130000 0 0x1004>;
- 		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A73A4_CLK_CMT1>;
-+		clock-names = "fck";
++#define host_to_priv(host) container_of((host)->pdata, struct sh_mobile_sdhi, mmc_data)
++
+ struct sh_mobile_sdhi_of_data {
+ 	unsigned long tmio_flags;
+ 	unsigned long capabilities;
+@@ -88,7 +90,7 @@ static int sh_mobile_sdhi_clk_enable(struct platform_device *pdev, unsigned int
+ {
+ 	struct mmc_host *mmc = platform_get_drvdata(pdev);
+ 	struct tmio_mmc_host *host = mmc_priv(mmc);
+-	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
++	struct sh_mobile_sdhi *priv = host_to_priv(host);
+ 	int ret = clk_prepare_enable(priv->clk);
+ 	if (ret < 0)
+ 		return ret;
+@@ -101,7 +103,7 @@ static void sh_mobile_sdhi_clk_disable(struct platform_device *pdev)
+ {
+ 	struct mmc_host *mmc = platform_get_drvdata(pdev);
+ 	struct tmio_mmc_host *host = mmc_priv(mmc);
+-	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
++	struct sh_mobile_sdhi *priv = host_to_priv(host);
+ 	clk_disable_unprepare(priv->clk);
+ }
  
- 		renesas,channels-mask = <0xff>;
- 
-@@ -201,6 +205,7 @@
- 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>,
- 			 <0 0xe61f0200 0 0x38>, <0 0xe61f0300 0 0x38>;
- 		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp5_clks R8A73A4_CLK_THERMAL>;
- 	};
- 
- 	i2c0: i2c@e6500000 {
-@@ -209,6 +214,7 @@
- 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6500000 0 0x428>;
- 		interrupts = <0 174 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A73A4_CLK_IIC0>;
- 		status = "disabled";
- 	};
- 
-@@ -218,6 +224,7 @@
- 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6510000 0 0x428>;
- 		interrupts = <0 175 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A73A4_CLK_IIC1>;
- 		status = "disabled";
- 	};
- 
-@@ -227,6 +234,7 @@
- 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6520000 0 0x428>;
- 		interrupts = <0 176 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A73A4_CLK_IIC2>;
- 		status = "disabled";
- 	};
- 
-@@ -236,6 +244,7 @@
- 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6530000 0 0x428>;
- 		interrupts = <0 177 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp4_clks R8A73A4_CLK_IIC3>;
- 		status = "disabled";
- 	};
- 
-@@ -245,6 +254,7 @@
- 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6540000 0 0x428>;
- 		interrupts = <0 178 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp4_clks R8A73A4_CLK_IIC4>;
- 		status = "disabled";
- 	};
- 
-@@ -254,6 +264,7 @@
- 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6550000 0 0x428>;
- 		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A73A4_CLK_IIC6>;
- 		status = "disabled";
- 	};
- 
-@@ -263,6 +274,7 @@
- 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6560000 0 0x428>;
- 		interrupts = <0 185 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A73A4_CLK_IIC7>;
- 		status = "disabled";
- 	};
- 
-@@ -272,6 +284,7 @@
- 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
- 		reg = <0 0xe6570000 0 0x428>;
- 		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp5_clks R8A73A4_CLK_IIC8>;
- 		status = "disabled";
- 	};
- 
-@@ -279,6 +292,8 @@
- 		compatible = "renesas,scifb-r8a73a4", "renesas,scifb";
- 		reg = <0 0xe6c20000 0 0x100>;
- 		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A73A4_CLK_SCIFB0>;
-+		clock-names = "sci_ick";
- 		status = "disabled";
- 	};
- 
-@@ -286,6 +301,8 @@
- 		compatible = "renesas,scifb-r8a73a4", "renesas,scifb";
- 		reg = <0 0xe6c30000 0 0x100>;
- 		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A73A4_CLK_SCIFB1>;
-+		clock-names = "sci_ick";
- 		status = "disabled";
- 	};
- 
-@@ -293,6 +310,8 @@
- 		compatible = "renesas,scifa-r8a73a4", "renesas,scifa";
- 		reg = <0 0xe6c40000 0 0x100>;
- 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A73A4_CLK_SCIFA0>;
-+		clock-names = "sci_ick";
- 		status = "disabled";
- 	};
- 
-@@ -300,6 +319,8 @@
- 		compatible = "renesas,scifa-r8a73a4", "renesas,scifa";
- 		reg = <0 0xe6c50000 0 0x100>;
- 		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A73A4_CLK_SCIFA1>;
-+		clock-names = "sci_ick";
- 		status = "disabled";
- 	};
- 
-@@ -307,6 +328,8 @@
- 		compatible = "renesas,scifb-r8a73a4", "renesas,scifb";
- 		reg = <0 0xe6ce0000 0 0x100>;
- 		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A73A4_CLK_SCIFB2>;
-+		clock-names = "sci_ick";
- 		status = "disabled";
- 	};
- 
-@@ -314,6 +337,8 @@
- 		compatible = "renesas,scifb-r8a73a4", "renesas,scifb";
- 		reg = <0 0xe6cf0000 0 0x100>;
- 		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A73A4_CLK_SCIFB3>;
-+		clock-names = "sci_ick";
- 		status = "disabled";
- 	};
- 
-@@ -321,6 +346,7 @@
- 		compatible = "renesas,sdhi-r8a73a4";
- 		reg = <0 0xee100000 0 0x100>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A73A4_CLK_SDHI0>;
- 		cap-sd-highspeed;
- 		status = "disabled";
- 	};
-@@ -329,6 +355,7 @@
- 		compatible = "renesas,sdhi-r8a73a4";
- 		reg = <0 0xee120000 0 0x100>;
- 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A73A4_CLK_SDHI1>;
- 		cap-sd-highspeed;
- 		status = "disabled";
- 	};
-@@ -337,6 +364,7 @@
- 		compatible = "renesas,sdhi-r8a73a4";
- 		reg = <0 0xee140000 0 0x100>;
- 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A73A4_CLK_SDHI2>;
- 		cap-sd-highspeed;
- 		status = "disabled";
- 	};
-@@ -345,6 +373,7 @@
- 		compatible = "renesas,sh-mmcif";
- 		reg = <0 0xee200000 0 0x80>;
- 		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A73A4_CLK_MMCIF0>;
- 		reg-io-width = <4>;
- 		status = "disabled";
- 	};
-@@ -353,6 +382,7 @@
- 		compatible = "renesas,sh-mmcif";
- 		reg = <0 0xee220000 0 0x80>;
- 		interrupts = <0 170 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A73A4_CLK_MMCIF1>;
- 		reg-io-width = <4>;
- 		status = "disabled";
- 	};
 -- 
-1.8.4.5
+1.7.9.5
 
