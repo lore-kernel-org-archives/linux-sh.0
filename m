@@ -1,101 +1,70 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 15 Dec 2014 08:31:01 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 15 Dec 2014 09:06:28 +0000
 Subject: Re: [PATCH 2/5] i2c: sh_mobile: add DMA support
-Message-Id: <CAMuHMdWsUkQN-+h07Zf2snbD9bEw49_+rasY4zS8QcvqA+aXUQ@mail.gmail.com>
+Message-Id: <20141215090628.GB1031@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="0ntfKIWw70PvrIHh"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1415355104-2031-1-git-send-email-wsa@the-dreams.de>
-	<2462101.Er8OZg9N24@avalon>
-	<20141211214732.GC21482@katana>
-	<1729516.HWbfnj3Cpn@avalon>
-	<20141215064306.GN16827@intel.com>
-In-Reply-To: <20141215064306.GN16827@intel.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Wolfram Sang <wsa@the-dreams.de>, Magnus Damm <magnus.damm@gmail.com>, Linux I2C <linux-i2c@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Simon Horman <horms@verge.net.au>, dmaengine@vger.kernel.org
+ <2462101.Er8OZg9N24@avalon>
+ <20141211214732.GC21482@katana>
+ <1729516.HWbfnj3Cpn@avalon>
+ <20141215064306.GN16827@intel.com>
+ <CAMuHMdWsUkQN-+h07Zf2snbD9bEw49_+rasY4zS8QcvqA+aXUQ@mail.gmail.com>
+In-Reply-To: <CAMuHMdWsUkQN-+h07Zf2snbD9bEw49_+rasY4zS8QcvqA+aXUQ@mail.gmail.com>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Vinod Koul <vinod.koul@intel.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, Linux I2C <linux-i2c@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Simon Horman <horms@verge.net.au>, dmaengine@vger.kernel.org
 
-Hi Vinod,
 
-On Mon, Dec 15, 2014 at 7:43 AM, Vinod Koul <vinod.koul@intel.com> wrote:
-> On Thu, Dec 11, 2014 at 11:52:10PM +0200, Laurent Pinchart wrote:
->> On Thursday 11 December 2014 22:47:32 Wolfram Sang wrote:
->> > > > Note that the I2C drives uses subsys_initcall() for historic reasons,
->> > > > while the DMA driver uses module_init(). This is hard to revert without
->> > > > introducing potential regressions on older boards. So, the I2C DMA
->> > > > support needs to handle deferred probe definately. I am with Laurent, I
->> > > > don't see any other way, but I'd be glad to be enlightened...
->> > >
->> > > While I believe that requesting the channel at transfer time is the good
->> > > solution, I think we should still try to move to module initcalls where
->> > > possible. The risk of regressions is real so proper testing is needed. My
->> > > question is, have you tried it ?
->> >
->> > I would need to test all boards using this driver to not fail booting.
->> > Usually I2C drivers are moved to subsys_initcall because they need
->> > access to something critical (PMIC, GPIOs...) early. I don't see a sane
->> > way to do that testing.
->>
->> Still, I would like to get a better view on the problems we should expect, by
->> testing this on the latest boards for instance.
->>
->> > Other than that, even if we move to module_init, we reduce the chance of
->> > getting a deferred probe, but we do not eliminate it...
->>
->> Sure, but reducing the chance of deferred probe is a good idea in my opinion
->> :-)
-> Okay so what is the issue here, this statement is a bit worrying. Why do
-> you guys want to reduce the chance of deferred probe? I assumed that issue was
-> the channels availability...
+--0ntfKIWw70PvrIHh
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Please let me summarize...
 
-During probe of a DMA client driver, the DMA engine driver may not be available,
-causing dma_request_slave_channel*() to return -EPROBE-DEFER.
-There are actually two different reasons that the DMA engine driver may not
-be available:
-  1. The DMA engine driver hasn't been initialized yet, due to probe order.
-     This is more likely to happen with i2c client drivers, as they
-are initialized
-     from subsys_initcall() instead of module_init() (E.g. I never saw
-it with the
-     spi-rspi driver).
-     => The DMA client driver wants to return -EPROBE_DEFER too, and
-       retry later.
-  2. The DMA engine driver is not included in the kernel build.
-     => The DMA client driver wants to fall back to PIO.
+> Please let me summarize...
 
-Now, how to distinguish between the two cases above?
+Thanks for the summary, Geert!
 
-Currently, e.g. i2c-sh_mobile always returns -EPROBE_DEFER, never falling
-back to PIO, breaking case 2. While e.g. spi-rspi always falls back to PIO,
-which is suboptimal in case 1 (but I never encountered that case with spi).
+> Solutions under consideration:
+>   1. Wolfram posted a patch to make i2c-sh_mobile fall back to PIO,
+>   and retry DMA initialization in every request, so it will switch to
+>   DMA when it becomes available. But this is suboptimal, as it adds
+>   overhead to every request (and DMA may never become available in
+>   case 2).
 
-Solutions under consideration:
-  1. Wolfram posted a patch to make i2c-sh_mobile fall back to PIO, and retry
-     DMA initialization in every request, so it will switch to DMA
-when it becomes
-     available. But this is suboptimal, as it adds overhead to every
-request (and
-     DMA may never become available in case 2).
+Still, I'd think I should repost my patches with your comments
+addressed. It does add a bit of overhead IF the dmaengine core is
+compiled in AND the driver for the DMA hardware is not. Well, yeah. On
+the other hand, it fixes the regression that the driver is not even
+loaded in that case (because it currently will be deferred endlessly).
 
-  2. Delay i2c initialization, by moving from subsys_initcall() to
-module_init(),
-      in the hope the i2c client driver will be initialized after the
-DMA engine.
-     This is being discussed in the thread you quoted above.
+What do you think?
 
-I hope this explains the problem well.
+All the best,
 
-Thanks!
+   Wolfram
 
-Gr{oetje,eeting}s,
 
-                        Geert
+--0ntfKIWw70PvrIHh
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+iQIcBAEBAgAGBQJUjqSTAAoJEBQN5MwUoCm2xNoP/iCI34P9DZZazNsKw88i8e5n
+r2XgUeNF7xqFtk+Poh9MkEQ8IazZvWm7LCdukrII+pjoeU9Iwa8TZfKf9MrWeEQu
+vmCzvRlH3LMTWk0PnVG31Zp6ARw3dH+HXl/v+7ygxLqOvCkcNN8G2+SM6oPnE7xa
+TzGVnRffk3wOUpr+pJ1+0erAdXuQtjD2/RRNdJ2B5TTIqPJWxfF1lNXB90kmYyCc
+2A7BUygqlKuaXtTFKDOd4BMthmHB7ds6RxZYAGvTqeyRz0uo+bK9naM3uvawlgrE
+HJNPAeSH1x2dGpODJa8FBRBOnoJt4vYhMwIRlbQxYiMiuatxj8d7h702AGfwuxCO
+/9alGafNTXzRYAjEXAx8OqqHGDTN0G4dfC3FH7KRIveXnslhjJiutrLtFVPwcUrd
+BThbTfmmcGppQx2+ZJbRf4OeRRcfH2nODQ5UE2/yphZmb1EgsLCSDhzOvX30odz8
+ffDcbyT1RmYIOxh3zixmA3WD6FciqOlpONhJUw/oCZrfHPQmEhCiXfA9YFj7HqQ5
++aUGaEoj0GatTTNa1PRNbcaMT7Uot52sCxau+t9Hq+FQ4uBpuQrX1RcOTQsuSgel
+eyjrZdqHFuUIJfwswURsJB/52Cy0Ny84RFGdzCVOCkVgyOpwel0S/++JlROM2Wla
+sDEwYo4lHrekwQLI95Ef
+=INy4
+-----END PGP SIGNATURE-----
+
+--0ntfKIWw70PvrIHh--
