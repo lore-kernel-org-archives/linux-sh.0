@@ -1,102 +1,92 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Mon, 15 Dec 2014 20:20:16 +0000
-Subject: [RFC 3/4] ARM: shmobile: r8a7790: lager: add i2c-demuxer to dts
-Message-Id: <1418674817-12809-4-git-send-email-wsa@the-dreams.de>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 15 Dec 2014 22:42:13 +0000
+Subject: [PATCH] renesas_usbhs: add OTG ID signal sensing
+Message-Id: <7850767.LfC2Jrg0a5@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+On the Renesas R8A7791 SoC based boards there's MAX3355 USB OTG chip and mini-AB
+USB connector corresponding to USB port 0 driven either by EHCI/OHCI or  Renesas
+USBHS gadget controller. And we'd like the host/gadget  drivers to work based on
+the cable type connected. An 'extcon' driver for MAX3355 has been written, so we
+only need to bind  to it via device tree which I'm doing in this patch.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+(Perhaps, it would also make sense to use OTG HNP when the USBHS host mode is
+active and a B-cable is connected but I don't have access to host-capable USBHS,
+so  wouldn't be able to test it.)
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 54 +++++++++++++++++++++++++++----------
- 1 file changed, 40 insertions(+), 14 deletions(-)
+This patch is against the 'next'  branch of Felipe Balbi's 'usb.git' repo.
+It needs the recent 'extcon' core in  order to properly handle probe deferral.  
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 69098b906b39..4895eabc502d 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -144,6 +144,34 @@
- 		states = <3300000 1
- 			  1800000 0>;
- 	};
-+
-+	i2c-demux {
-+
-+		compatible = "i2c-demux-pinctrl";
-+		i2c-parent = <&iic2>, <&i2c2>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		i2c@2 {
-+			reg = <0>;
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+
-+			composite-in@20 {
-+				compatible = "adi,adv7180";
-+				reg = <0x20>;
-+				remote = <&vin1>;
-+
-+				port {
-+					adv7180: endpoint {
-+						bus-width = <8>;
-+						remote-endpoint = <&vin1ep0>;
-+					};
-+				};
-+			};
-+		};
-+	};
-+
- };
+ drivers/usb/renesas_usbhs/common.c |   17 +++++++++++++++++
+ drivers/usb/renesas_usbhs/common.h |    3 +++
+ 2 files changed, 20 insertions(+)
+
+Index: usb/drivers/usb/renesas_usbhs/common.c
+=================================--- usb.orig/drivers/usb/renesas_usbhs/common.c
++++ usb/drivers/usb/renesas_usbhs/common.c
+@@ -363,6 +363,7 @@ static void usbhsc_hotplug(struct usbhs_
+ 	struct usbhs_mod *mod = usbhs_mod_get_current(priv);
+ 	int id;
+ 	int enable;
++	int cable;
+ 	int ret;
  
- &extal_clk {
-@@ -210,6 +238,11 @@
- 		renesas,function = "iic1";
- 	};
+ 	/*
+@@ -376,6 +377,16 @@ static void usbhsc_hotplug(struct usbhs_
+ 	id = usbhs_platform_call(priv, get_id, pdev);
  
-+	i2c2_pins: i2c2 {
-+		renesas,groups = "i2c2";
-+		renesas,function = "i2c2";
-+	};
+ 	if (enable && !mod) {
++		if (priv->edev) {
++			cable = extcon_get_cable_state(priv->edev, "USB-HOST");
++			if ((cable > 0 && id != USBHS_HOST) ||
++			    (!cable && id != USBHS_GADGET)) {
++				dev_info(&pdev->dev,
++					 "USB cable plugged in doesn't match the selected role!\n");
++				return;
++			}
++		}
 +
- 	iic2_pins: iic2 {
- 		renesas,groups = "iic2";
- 		renesas,function = "iic2";
-@@ -371,23 +404,16 @@
- 	pinctrl-names = "default";
- };
+ 		ret = usbhs_mod_change(priv, id);
+ 		if (ret < 0)
+ 			return;
+@@ -514,6 +525,12 @@ static int usbhs_probe(struct platform_d
+ 	if (IS_ERR(priv->base))
+ 		return PTR_ERR(priv->base);
  
-+&i2c2	{
-+	status = "ok";
-+	pinctrl-0 = <&i2c2_pins>;
-+	pinctrl-names = "active";
-+};
++	if (of_property_read_bool(pdev->dev.of_node, "extcon")) {
++		priv->edev = extcon_get_edev_by_phandle(&pdev->dev, 0);
++		if (IS_ERR(priv->edev))
++			return PTR_ERR(priv->edev);
++	}
 +
- &iic2	{
- 	status = "ok";
- 	pinctrl-0 = <&iic2_pins>;
--	pinctrl-names = "default";
--
--	composite-in@20 {
--		compatible = "adi,adv7180";
--		reg = <0x20>;
--		remote = <&vin1>;
--
--		port {
--			adv7180: endpoint {
--				bus-width = <8>;
--				remote-endpoint = <&vin1ep0>;
--			};
--		};
--	};
-+	pinctrl-names = "active";
- };
+ 	/*
+ 	 * care platform info
+ 	 */
+Index: usb/drivers/usb/renesas_usbhs/common.h
+=================================--- usb.orig/drivers/usb/renesas_usbhs/common.h
++++ usb/drivers/usb/renesas_usbhs/common.h
+@@ -17,6 +17,7 @@
+ #ifndef RENESAS_USB_DRIVER_H
+ #define RENESAS_USB_DRIVER_H
  
- &iic3 {
--- 
-2.1.3
++#include <linux/extcon.h>
+ #include <linux/platform_device.h>
+ #include <linux/usb/renesas_usbhs.h>
+ 
+@@ -254,6 +255,8 @@ struct usbhs_priv {
+ 	struct delayed_work notify_hotplug_work;
+ 	struct platform_device *pdev;
+ 
++	struct extcon_dev *edev;
++
+ 	spinlock_t		lock;
+ 
+ 	u32 flags;
 
