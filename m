@@ -1,188 +1,125 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Wed, 10 Dec 2014 14:45:26 +0000
-Subject: [PATCH v7 5/6] ARM: shmobile: sh73a0: add MSTP clock assignments to DT
-Message-Id: <1418222727-19888-6-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Mon, 15 Dec 2014 21:33:09 +0000
+Subject: [PATCH RFC 1/5] pci: add pci_iomap_range
+Message-Id: <1418679168-1011-2-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1418679168-1011-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1418679168-1011-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-arch@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, virtualization@lists.linux-foundation.org, Michael S Tsirkin <mst@redhat.com>
 
-Assigns clocks to cmt1, i2c*, mmcif, sdhi*, and scif*.
+From: Michael S Tsirkin <mst@redhat.com>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Virtio drivers should map the part of the BAR they need, not necessarily
+all of it.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Signed-off-by: Rusty Russell <rusty@rustcorp.com.au>
 ---
- arch/arm/boot/dts/sh73a0.dtsi | 29 +++++++++++++++++++++++++++++
- 1 file changed, 29 insertions(+)
+ include/asm-generic/pci_iomap.h | 10 ++++++++++
+ lib/pci_iomap.c                 | 35 ++++++++++++++++++++++++++++++-----
+ 2 files changed, 40 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 3f21b32..cca22ec 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -56,6 +56,8 @@
+diff --git a/include/asm-generic/pci_iomap.h b/include/asm-generic/pci_iomap.h
+index ce37349..7389c87 100644
+--- a/include/asm-generic/pci_iomap.h
++++ b/include/asm-generic/pci_iomap.h
+@@ -15,6 +15,9 @@ struct pci_dev;
+ #ifdef CONFIG_PCI
+ /* Create a virtual mapping cookie for a PCI BAR (memory or IO) */
+ extern void __iomem *pci_iomap(struct pci_dev *dev, int bar, unsigned long max);
++extern void __iomem *pci_iomap_range(struct pci_dev *dev, int bar,
++				     unsigned long offset,
++				     unsigned long maxlen);
+ /* Create a virtual mapping cookie for a port on a given PCI device.
+  * Do not call this directly, it exists to make it easier for architectures
+  * to override */
+@@ -30,6 +33,13 @@ static inline void __iomem *pci_iomap(struct pci_dev *dev, int bar, unsigned lon
+ {
+ 	return NULL;
+ }
++
++static inline void __iomem *pci_iomap_range(struct pci_dev *dev, int bar,
++					    unsigned long offset,
++					    unsigned long maxlen)
++{
++	return NULL;
++}
+ #endif
  
- 		renesas,channels-mask = <0x3f>;
+ #endif /* __ASM_GENERIC_IO_H */
+diff --git a/lib/pci_iomap.c b/lib/pci_iomap.c
+index 0d83ea8..bcce5f1 100644
+--- a/lib/pci_iomap.c
++++ b/lib/pci_iomap.c
+@@ -10,10 +10,11 @@
  
-+		clocks = <&mstp3_clks SH73A0_CLK_CMT1>;
-+		clock-names = "fck";
- 		status = "disabled";
- 	};
+ #ifdef CONFIG_PCI
+ /**
+- * pci_iomap - create a virtual mapping cookie for a PCI BAR
++ * pci_iomap_range - create a virtual mapping cookie for a PCI BAR
+  * @dev: PCI device that owns the BAR
+  * @bar: BAR number
+- * @maxlen: length of the memory to map
++ * @offset: map memory at the given offset in BAR
++ * @maxlen: max length of the memory to map
+  *
+  * Using this function you will get a __iomem address to your device BAR.
+  * You can access it using ioread*() and iowrite*(). These functions hide
+@@ -21,16 +22,21 @@
+  * you expect from them in the correct way.
+  *
+  * @maxlen specifies the maximum length to map. If you want to get access to
+- * the complete BAR without checking for its length first, pass %0 here.
++ * the complete BAR from offset to the end, pass %0 here.
+  * */
+-void __iomem *pci_iomap(struct pci_dev *dev, int bar, unsigned long maxlen)
++void __iomem *pci_iomap_range(struct pci_dev *dev,
++			      int bar,
++			      unsigned long offset,
++			      unsigned long maxlen)
+ {
+ 	resource_size_t start = pci_resource_start(dev, bar);
+ 	resource_size_t len = pci_resource_len(dev, bar);
+ 	unsigned long flags = pci_resource_flags(dev, bar);
  
-@@ -145,6 +147,7 @@
- 			      0 168 IRQ_TYPE_LEVEL_HIGH
- 			      0 169 IRQ_TYPE_LEVEL_HIGH
- 			      0 170 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks SH73A0_CLK_IIC0>;
- 		status = "disabled";
- 	};
+-	if (!len || !start)
++	if (len <= offset || !start)
+ 		return NULL;
++	len -= offset;
++	start += offset;
+ 	if (maxlen && len > maxlen)
+ 		len = maxlen;
+ 	if (flags & IORESOURCE_IO)
+@@ -43,6 +49,25 @@ void __iomem *pci_iomap(struct pci_dev *dev, int bar, unsigned long maxlen)
+ 	/* What? */
+ 	return NULL;
+ }
++EXPORT_SYMBOL(pci_iomap_range);
  
-@@ -157,6 +160,7 @@
- 			      0 52 IRQ_TYPE_LEVEL_HIGH
- 			      0 53 IRQ_TYPE_LEVEL_HIGH
- 			      0 54 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks SH73A0_CLK_IIC1>;
- 		status = "disabled";
- 	};
- 
-@@ -169,6 +173,7 @@
- 			      0 172 IRQ_TYPE_LEVEL_HIGH
- 			      0 173 IRQ_TYPE_LEVEL_HIGH
- 			      0 174 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks SH73A0_CLK_IIC2>;
- 		status = "disabled";
- 	};
- 
-@@ -181,6 +186,7 @@
- 			      0 184 IRQ_TYPE_LEVEL_HIGH
- 			      0 185 IRQ_TYPE_LEVEL_HIGH
- 			      0 186 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp4_clks SH73A0_CLK_IIC3>;
- 		status = "disabled";
- 	};
- 
-@@ -193,6 +199,7 @@
- 			      0 188 IRQ_TYPE_LEVEL_HIGH
- 			      0 189 IRQ_TYPE_LEVEL_HIGH
- 			      0 190 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp4_clks SH73A0_CLK_IIC4>;
- 		status = "disabled";
- 	};
- 
-@@ -201,6 +208,7 @@
- 		reg = <0xe6bd0000 0x100>;
- 		interrupts = <0 140 IRQ_TYPE_LEVEL_HIGH
- 			      0 141 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks SH73A0_CLK_MMCIF0>;
- 		reg-io-width = <4>;
- 		status = "disabled";
- 	};
-@@ -211,6 +219,7 @@
- 		interrupts = <0 83 IRQ_TYPE_LEVEL_HIGH
- 			      0 84 IRQ_TYPE_LEVEL_HIGH
- 			      0 85 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks SH73A0_CLK_SDHI0>;
- 		cap-sd-highspeed;
- 		status = "disabled";
- 	};
-@@ -221,6 +230,7 @@
- 		reg = <0xee120000 0x100>;
- 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH
- 			      0 89 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks SH73A0_CLK_SDHI1>;
- 		toshiba,mmc-wrprotect-disable;
- 		cap-sd-highspeed;
- 		status = "disabled";
-@@ -231,6 +241,7 @@
- 		reg = <0xee140000 0x100>;
- 		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH
- 			      0 105 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks SH73A0_CLK_SDHI2>;
- 		toshiba,mmc-wrprotect-disable;
- 		cap-sd-highspeed;
- 		status = "disabled";
-@@ -240,6 +251,8 @@
- 		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
- 		reg = <0xe6c40000 0x100>;
- 		interrupts = <0 72 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks SH73A0_CLK_SCIFA0>;
-+		clock-names = "sci_ick";
- 		status = "disabled";
- 	};
- 
-@@ -247,6 +260,8 @@
- 		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
- 		reg = <0xe6c50000 0x100>;
- 		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks SH73A0_CLK_SCIFA1>;
-+		clock-names = "sci_ick";
- 		status = "disabled";
- 	};
- 
-@@ -254,6 +269,8 @@
- 		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
- 		reg = <0xe6c60000 0x100>;
- 		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks SH73A0_CLK_SCIFA2>;
-+		clock-names = "sci_ick";
- 		status = "disabled";
- 	};
- 
-@@ -261,6 +278,8 @@
- 		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
- 		reg = <0xe6c70000 0x100>;
- 		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks SH73A0_CLK_SCIFA3>;
-+		clock-names = "sci_ick";
- 		status = "disabled";
- 	};
- 
-@@ -268,6 +287,8 @@
- 		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
- 		reg = <0xe6c80000 0x100>;
- 		interrupts = <0 78 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks SH73A0_CLK_SCIFA4>;
-+		clock-names = "sci_ick";
- 		status = "disabled";
- 	};
- 
-@@ -275,6 +296,8 @@
- 		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
- 		reg = <0xe6cb0000 0x100>;
- 		interrupts = <0 79 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks SH73A0_CLK_SCIFA5>;
-+		clock-names = "sci_ick";
- 		status = "disabled";
- 	};
- 
-@@ -282,6 +305,8 @@
- 		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
- 		reg = <0xe6cc0000 0x100>;
- 		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks SH73A0_CLK_SCIFA6>;
-+		clock-names = "sci_ick";
- 		status = "disabled";
- 	};
- 
-@@ -289,6 +314,8 @@
- 		compatible = "renesas,scifa-sh73a0", "renesas,scifa";
- 		reg = <0xe6cd0000 0x100>;
- 		interrupts = <0 143 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks SH73A0_CLK_SCIFA7>;
-+		clock-names = "sci_ick";
- 		status = "disabled";
- 	};
- 
-@@ -296,6 +323,8 @@
- 		compatible = "renesas,scifb-sh73a0", "renesas,scifb";
- 		reg = <0xe6c30000 0x100>;
- 		interrupts = <0 80 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks SH73A0_CLK_SCIFB>;
-+		clock-names = "sci_ick";
- 		status = "disabled";
- 	};
- 
++/**
++ * pci_iomap - create a virtual mapping cookie for a PCI BAR
++ * @dev: PCI device that owns the BAR
++ * @bar: BAR number
++ * @maxlen: length of the memory to map
++ *
++ * Using this function you will get a __iomem address to your device BAR.
++ * You can access it using ioread*() and iowrite*(). These functions hide
++ * the details if this is a MMIO or PIO address space and will just do what
++ * you expect from them in the correct way.
++ *
++ * @maxlen specifies the maximum length to map. If you want to get access to
++ * the complete BAR without checking for its length first, pass %0 here.
++ * */
++void __iomem *pci_iomap(struct pci_dev *dev, int bar, unsigned long maxlen)
++{
++	return pci_iomap_range(dev, bar, 0, maxlen);
++}
+ EXPORT_SYMBOL(pci_iomap);
+ #endif /* CONFIG_PCI */
 -- 
-1.8.4.5
+MST
 
