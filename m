@@ -1,36 +1,81 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 10 Dec 2014 23:42:08 +0000
-Subject: [PATCH 08/15] drm: rcar-du: Enable hotplug detection on HDMI connector
-Message-Id: <1418254935-13536-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 15 Dec 2014 00:13:48 +0000
+Subject: [PATCH 09/10] ARM: shmobile: r8a7790: Add IPMMU DT nodes
+Message-Id: <1418602429-11276-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418254935-13536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1418254935-13536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1418602429-11276-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1418602429-11276-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
+To: iommu@lists.linux-foundation.org
 Cc: linux-sh@vger.kernel.org
 
-As HDMI support hotplug detection, enable HPD-based poll on HDMI
-connectors.
+Add the six IPMMU instances found in the r8a7790 to DT with a disabled
+status.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/r8a7790.dtsi | 48 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 48 insertions(+)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c b/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
-index 4d7d4dd46d26..322b7208171a 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
-@@ -95,6 +95,7 @@ int rcar_du_hdmi_connector_init(struct rcar_du_device *rcdu,
- 	connector = &rcon->connector;
- 	connector->display_info.width_mm = 0;
- 	connector->display_info.height_mm = 0;
-+	connector->polled = DRM_CONNECTOR_POLL_HPD;
- 
- 	ret = drm_connector_init(rcdu->ddev, connector, &connector_funcs,
- 				 DRM_MODE_CONNECTOR_HDMIA);
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index ffeff98fa16e..430bb67216fd 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1459,4 +1459,52 @@
+ 			ssi9: ssi@9 { interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>; };
+ 		};
+ 	};
++
++	ipmmu_sy0: mmu@e6280800 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xe6280800 0 0x800>;
++		interrupts = <0 223 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_sy1: mmu@e6290800 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xe6290800 0 0x800>;
++		interrupts = <0 225 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_ds: mmu@e6740800 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xe6740800 0 0x800>;
++		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_mp: mmu@ec680800 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xec680800 0 0x800>;
++		interrupts = <0 226 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_mx: mmu@fe951800 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xfe951800 0 0x800>;
++		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_rt: mmu@ffc80800 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xffc80800 0 0x800>;
++		interrupts = <0 307 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
+ };
 -- 
 2.0.4
 
