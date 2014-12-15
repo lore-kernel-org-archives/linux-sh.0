@@ -1,55 +1,75 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 29 Dec 2014 16:46:00 +0000
-Subject: [PATCH] ARM: shmobile: R-Mobile: Remove !CONFIG_PM_RUNTIME section
-Message-Id: <1419871560-8623-1-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 15 Dec 2014 00:13:41 +0000
+Subject: [PATCH 02/10] iommu/ipmmu-vmsa: Flush P[UM]D entry before freeing the child page table
+Message-Id: <1418602429-11276-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1418602429-11276-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1418602429-11276-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: iommu@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org
 
-As of commit b2b49ccbdd547135 ("PM: Kconfig: Set PM_RUNTIME if PM_SLEEP
-is selected"), CONFIG_PM_RUNTIME is always enabled if CONFIG_PM is
-enabled, so this section is no longer needed.
+When clearing PUD or PMD entries the child page table (if any) is freed
+and the PUD or PMD entry is then cleared. This result in a small race
+condition window during which a free page table could be accessed by the
+IPMMU.
 
-As of commit 464ed18ebdb6236f ("PM: Eliminate CONFIG_PM_RUNTIME"),
-CONFIG_PM_RUNTIME no longer exists, and this section will always be
-executed, which may enable clocks that are not needed.
+Fix it by clearing and flushing the PUD or PMD entry before freeing the
+child page table.
 
-This reverts commit 64b0089e0c486736 ("ARM: shmobile: R-Mobile: Enable
-module clocks if !CONFIG_PM_RUNTIME").
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Commit 64b0089e0c486736 is in renesas-dt-pm-for-v3.20
-("[GIT PULL] Renesas ARM Based SoC DT PM Updates for v3.20")
+ drivers/iommu/ipmmu-vmsa.c | 19 +++++++++++--------
+ 1 file changed, 11 insertions(+), 8 deletions(-)
 
-On r8a7740/armadillo, without this patch the MSTP clocks for CEU20, FSI,
-IIC[01], LCDC1, SCIFA[02-7], SCIFB, SY_DMAC[1-3], TPU0, and USB_DMAC are kept
-running.
----
- arch/arm/mach-shmobile/pm-rmobile.c | 8 --------
- 1 file changed, 8 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
-index 3b9c8dd2a9cf3151..07fb4ea4d8e94258 100644
---- a/arch/arm/mach-shmobile/pm-rmobile.c
-+++ b/arch/arm/mach-shmobile/pm-rmobile.c
-@@ -135,14 +135,6 @@ static int rmobile_pd_attach_dev(struct generic_pm_domain *domain,
- 		goto fail;
- 	}
+diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
+index f7036adb5634..fcb603d8b041 100644
+--- a/drivers/iommu/ipmmu-vmsa.c
++++ b/drivers/iommu/ipmmu-vmsa.c
+@@ -678,30 +678,33 @@ done:
  
--	if (!IS_ENABLED(CONFIG_PM_RUNTIME)) {
--		error = pm_clk_resume(dev);
--		if (error) {
--			dev_err(dev, "pm_clk_resume failed %d\n", error);
--			goto fail;
--		}
+ static void ipmmu_clear_pud(struct ipmmu_vmsa_device *mmu, pud_t *pud)
+ {
+-	/* Free the page table. */
+ 	pgtable_t table = pud_pgtable(*pud);
+-	__free_page(table);
+ 
+ 	/* Clear the PUD. */
+ 	*pud = __pud(0);
+ 	ipmmu_flush_pgtable(mmu, pud, sizeof(*pud));
++
++	/* Free the page table. */
++	__free_page(table);
+ }
+ 
+ static void ipmmu_clear_pmd(struct ipmmu_vmsa_device *mmu, pud_t *pud,
+ 			    pmd_t *pmd)
+ {
++	pmd_t pmdval = *pmd;
+ 	unsigned int i;
+ 
+-	/* Free the page table. */
+-	if (pmd_table(*pmd)) {
+-		pgtable_t table = pmd_pgtable(*pmd);
+-		__free_page(table);
 -	}
 -
- 	return 0;
+ 	/* Clear the PMD. */
+ 	*pmd = __pmd(0);
+ 	ipmmu_flush_pgtable(mmu, pmd, sizeof(*pmd));
  
- fail:
++	/* Free the page table. */
++	if (pmd_table(pmdval)) {
++		pgtable_t table = pmd_pgtable(pmdval);
++
++		__free_page(table);
++	}
++
+ 	/* Check whether the PUD is still needed. */
+ 	pmd = pmd_offset(pud, 0);
+ 	for (i = 0; i < IPMMU_PTRS_PER_PMD; ++i) {
 -- 
-1.9.1
+2.0.4
 
