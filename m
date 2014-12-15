@@ -1,52 +1,44 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Mon, 15 Dec 2014 14:01:11 +0000
-Subject: [PATCH/RFC] spi: sh-msiof: Add runtime PM lock in initializing
-Message-Id: <1418652071-6396-1-git-send-email-ykaneko0929@gmail.com>
+From: Mark Brown <broonie@kernel.org>
+Date: Mon, 15 Dec 2014 17:39:05 +0000
+Subject: Re: [PATCH/RFC] spi: sh-msiof: Add runtime PM lock in initializing
+Message-Id: <20141215173905.GJ11764@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="8PmjN3crGoJ4VbbS"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+References: <1418652071-6396-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1418652071-6396-1-git-send-email-ykaneko0929-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Yoshihiro Kaneko <ykaneko0929-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
 
-SH-MSIOF driver is enabled autosuspend API of spi framework.
-But autosuspend framework doesn't work during initializing.
-So runtime PM lock is added in SH-MSIOF driver initializing.
+--8PmjN3crGoJ4VbbS
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
----
+On Mon, Dec 15, 2014 at 11:01:11PM +0900, Yoshihiro Kaneko wrote:
+> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+>=20
+> SH-MSIOF driver is enabled autosuspend API of spi framework.
+> But autosuspend framework doesn't work during initializing.
+> So runtime PM lock is added in SH-MSIOF driver initializing.
 
-This patch is based on the for-next branch of Mark Brown's spi tree.
+Applied, thanks.
 
- drivers/spi/spi-sh-msiof.c | 5 +++++
- 1 file changed, 5 insertions(+)
+--8PmjN3crGoJ4VbbS
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 3f36540..1405293 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -480,6 +480,8 @@ static int sh_msiof_spi_setup(struct spi_device *spi)
- 	struct device_node	*np = spi->master->dev.of_node;
- 	struct sh_msiof_spi_priv *p = spi_master_get_devdata(spi->master);
- 
-+	pm_runtime_get_sync(&p->pdev->dev);
-+
- 	if (!np) {
- 		/*
- 		 * Use spi->controller_data for CS (same strategy as spi_gpio),
-@@ -498,6 +500,9 @@ static int sh_msiof_spi_setup(struct spi_device *spi)
- 	if (spi->cs_gpio >= 0)
- 		gpio_set_value(spi->cs_gpio, !(spi->mode & SPI_CS_HIGH));
- 
-+
-+	pm_runtime_put_sync(&p->pdev->dev);
-+
- 	return 0;
- }
- 
--- 
-1.9.1
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
 
+iQEcBAEBAgAGBQJUjxy4AAoJECTWi3JdVIfQ4SkH/R04TeN+1x2Z7Or82bFfDq8+
+eTX+Xhsf0+Czh7Z8pFnAuYiI9PtwJUiC6pMxzsxMwQL4ZpdeXUyh04XSRcDtTrsW
+naG+amW9vN8FjTqzu+MCUtkgXdy+nR4mMHYEjIA9K6SHhnJKh6eKvJ36hGUrAXua
+9qeZQsYwVG2Sh0/K7Tl0p9FAMEsOI7tESf40c1hy9JDW/vDZwOw1fFWv6HnBYcuL
+APhVw0Kt/+e+VktfvNQe8Y1sUivs2nO7gVZlbJWGtmzqlrxAqhkhiZIOP+9xeYXV
+3pcessZy1YPWvEayKsZl8nAG8Y+8ez7O1dKX7aU+IFn1/yibFAQKouynzStuolE=
+=xh7h
+-----END PGP SIGNATURE-----
+
+--8PmjN3crGoJ4VbbS--
