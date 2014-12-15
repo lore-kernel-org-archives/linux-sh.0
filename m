@@ -1,63 +1,106 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 29 Dec 2014 01:43:38 +0000
-Subject: [PATCH 07/30] ARM: shmobile: r8a7794: Add USB clocks to device tree
-Message-Id: <c7bab9f929e5176169de2cee529ec203ca7f1584.1419812185.git.horms+renesas@verge.net.au>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Mon, 15 Dec 2014 21:33:13 +0000
+Subject: [PATCH RFC 2/5] s390: add pci_iomap_range
+Message-Id: <1418679168-1011-3-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1419812185.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
+References: <1418679168-1011-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1418679168-1011-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: Rusty Russell <rusty@rustcorp.com.au>, virtualization@lists.linux-foundation.org, linux-sh@vger.kernel.org, cornelia.huck@de.ibm.com, Michael S Tsirkin <mst@redhat.com>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux390@de.ibm.com, Sebastian Ott <sebott@linux.vnet.ibm.com>, Gerald Schaefer <gerald.schaefer@de.ibm.com>, linux-s390@vger.kernel.org
 
-From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+From: Michael S Tsirkin <mst@redhat.com>
 
-Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-[horms: resolved conflicts]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Virtio drivers should map the part of the range they need, not
+necessarily all of it.
+To this end, support mapping ranges within BAR on s390.
+Since multiple ranges can now be mapped within a BAR, we keep track of
+the number of mappings created, and only clear out the mapping for a BAR
+when this number reaches 0.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
 ---
- arch/arm/boot/dts/r8a7794.dtsi            | 5 ++++-
- include/dt-bindings/clock/r8a7794-clock.h | 2 ++
- 2 files changed, 6 insertions(+), 1 deletion(-)
+ arch/s390/include/asm/pci_io.h |  1 +
+ arch/s390/pci/pci.c            | 34 +++++++++++++++++++++++++++-------
+ 2 files changed, 28 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 1801bb4..7fd40f3 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -504,16 +504,19 @@
- 		mstp7_clks: mstp7_clks@e615014c {
- 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
--			clocks = <&zs_clk>, <&p_clk>, <&p_clk>, <&zs_clk>,
-+			clocks = <&mp_clk>, <&mp_clk>,
-+				 <&zs_clk>, <&p_clk>, <&p_clk>, <&zs_clk>,
- 				 <&zs_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
- 			#clock-cells = <1>;
- 			clock-indices = <
-+				R8A7794_CLK_EHCI R8A7794_CLK_HSUSB
- 				R8A7794_CLK_HSCIF2 R8A7794_CLK_SCIF5
- 				R8A7794_CLK_SCIF4 R8A7794_CLK_HSCIF1 R8A7794_CLK_HSCIF0
- 				R8A7794_CLK_SCIF3 R8A7794_CLK_SCIF2 R8A7794_CLK_SCIF1
- 				R8A7794_CLK_SCIF0
- 			>;
- 			clock-output-names +				"ehci", "hsusb",
- 				"hscif2", "scif5", "scif4", "hscif1", "hscif0",
- 				"scif3", "scif2", "scif1", "scif0";
- 		};
-diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
-index aa9c286..94e2bbf 100644
---- a/include/dt-bindings/clock/r8a7794-clock.h
-+++ b/include/dt-bindings/clock/r8a7794-clock.h
-@@ -57,6 +57,8 @@
- #define R8A7794_CLK_PWM			23
+diff --git a/arch/s390/include/asm/pci_io.h b/arch/s390/include/asm/pci_io.h
+index d194d54..25228b3 100644
+--- a/arch/s390/include/asm/pci_io.h
++++ b/arch/s390/include/asm/pci_io.h
+@@ -16,6 +16,7 @@
+ struct zpci_iomap_entry {
+ 	u32 fh;
+ 	u8 bar;
++	u16 count;
+ };
  
- /* MSTP7 */
-+#define R8A7794_CLK_EHCI		3
-+#define R8A7794_CLK_HSUSB		4
- #define R8A7794_CLK_HSCIF2		13
- #define R8A7794_CLK_SCIF5		14
- #define R8A7794_CLK_SCIF4		15
+ extern struct zpci_iomap_entry *zpci_iomap_start;
+diff --git a/arch/s390/pci/pci.c b/arch/s390/pci/pci.c
+index 2fa7b14..51cb653 100644
+--- a/arch/s390/pci/pci.c
++++ b/arch/s390/pci/pci.c
+@@ -259,7 +259,10 @@ void __iowrite64_copy(void __iomem *to, const void *from, size_t count)
+ }
+ 
+ /* Create a virtual mapping cookie for a PCI BAR */
+-void __iomem *pci_iomap(struct pci_dev *pdev, int bar, unsigned long max)
++void __iomem *pci_iomap_range(struct pci_dev *pdev,
++			      int bar,
++			      unsigned long offset,
++			      unsigned long max)
+ {
+ 	struct zpci_dev *zdev =	get_zdev(pdev);
+ 	u64 addr;
+@@ -270,14 +273,27 @@ void __iomem *pci_iomap(struct pci_dev *pdev, int bar, unsigned long max)
+ 
+ 	idx = zdev->bars[bar].map_idx;
+ 	spin_lock(&zpci_iomap_lock);
+-	zpci_iomap_start[idx].fh = zdev->fh;
+-	zpci_iomap_start[idx].bar = bar;
++	if (zpci_iomap_start[idx].count++) {
++		BUG_ON(zpci_iomap_start[idx].fh != zdev->fh ||
++		       zpci_iomap_start[idx].bar != bar);
++	} else {
++		zpci_iomap_start[idx].fh = zdev->fh;
++		zpci_iomap_start[idx].bar = bar;
++	}
++	/* Detect overrun */
++	BUG_ON(!zpci_iomap_start[idx].count);
+ 	spin_unlock(&zpci_iomap_lock);
+ 
+ 	addr = ZPCI_IOMAP_ADDR_BASE | ((u64) idx << 48);
+-	return (void __iomem *) addr;
++	return (void __iomem *) addr + offset;
+ }
+-EXPORT_SYMBOL_GPL(pci_iomap);
++EXPORT_SYMBOL_GPL(pci_iomap_range);
++
++void __iomem *pci_iomap(struct pci_dev *dev, int bar, unsigned long maxlen)
++{
++	return pci_iomap_range(dev, bar, 0, maxlen);
++}
++EXPORT_SYMBOL(pci_iomap);
+ 
+ void pci_iounmap(struct pci_dev *pdev, void __iomem *addr)
+ {
+@@ -285,8 +301,12 @@ void pci_iounmap(struct pci_dev *pdev, void __iomem *addr)
+ 
+ 	idx = (((__force u64) addr) & ~ZPCI_IOMAP_ADDR_BASE) >> 48;
+ 	spin_lock(&zpci_iomap_lock);
+-	zpci_iomap_start[idx].fh = 0;
+-	zpci_iomap_start[idx].bar = 0;
++	/* Detect underrun */
++	BUG_ON(!zpci_iomap_start[idx].count);
++	if (!--zpci_iomap_start[idx].count) {
++		zpci_iomap_start[idx].fh = 0;
++		zpci_iomap_start[idx].bar = 0;
++	}
+ 	spin_unlock(&zpci_iomap_lock);
+ }
+ EXPORT_SYMBOL_GPL(pci_iounmap);
 -- 
-2.1.3
+MST
 
