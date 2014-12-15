@@ -1,69 +1,123 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Mon, 15 Dec 2014 14:50:29 +0000
-Subject: Re: [PATCH 2/5] i2c: sh_mobile: add DMA support
-Message-Id: <20141215145022.GS16827@intel.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="SdvjNjn6lL3tIsv0"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 15 Dec 2014 00:21:48 +0000
+Subject: [PATCH] ARM: shmobile: r8a7794: Add I2C clocks to device tree
+Message-Id: <1418602908-5370-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415355104-2031-1-git-send-email-wsa@the-dreams.de>
- <2462101.Er8OZg9N24@avalon>
- <20141211214732.GC21482@katana>
- <1729516.HWbfnj3Cpn@avalon>
- <20141215064306.GN16827@intel.com>
- <CAMuHMdWsUkQN-+h07Zf2snbD9bEw49_+rasY4zS8QcvqA+aXUQ@mail.gmail.com>
- <20141215091314.GQ16827@intel.com>
- <20141215094533.GA3510@katana>
-In-Reply-To: <20141215094533.GA3510@katana>
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, Linux I2C <linux-i2c@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Simon Horman <horms@verge.net.au>, dmaengine@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
 
---SdvjNjn6lL3tIsv0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+[horms: omitted device nodes and aliases; only add clocks]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-On Mon, Dec 15, 2014 at 10:45:33AM +0100, Wolfram Sang wrote:
->=20
-> > Quite right, this is a good question. Today we cannot distinguish betwe=
-en the
-> > two. Should we improve the deferred probe to tell us when the init
-> > is complete and all the modules have been initialized? If we ever have =
-such
-> > a mechanism to check then we know no modules are to be inserted then we=
- can
-> > fall back to PIO mode.
->=20
-> Well, the user can load modules from userspace. And I could imagine
-> there are people wanting to defer things until they load a module
-> manually. And surely there will be a case where, for some reason, the
-> deferred code has to be built-in. I trust Murphy's law here...
-in a dev system yes, but in a production system there wont be manual step!
+---
+Based on the renesas-devel-20141212-v3.18 tag of my renesas tree
 
---=20
-~Vinod
+v1 [Simon Horman]
+* Removed portion of patch which adds device nodes and aliases
+* Renamed patch from
+  "ARM: shmobile: r8a7794: Add I2C driver to device tree" to
+  "ARM: shmobile: r8a7794: Add I2C clocks to device tree"
 
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 8794df8..fd8a19c 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -308,6 +308,13 @@
+ 			#clock-cells = <0>;
+ 			clock-output-names = "sd2";
+ 		};
++		mmc0_clk: mmc0_clk@e6150240 {
++			compatible = "renesas,r8a7794-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150240 0 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "mmc0";
++		};
 
---SdvjNjn6lL3tIsv0
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+ 		/* Fixed factor clocks */
+ 		pll1_div2_clk: pll1_div2_clk {
+@@ -512,16 +519,16 @@
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+ 			clocks = <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7794_CLK_SD0>,
+-			         <&rclk_clk>, <&hp_clk>, <&hp_clk>;
++			         <&mmc0_clk>, <&rclk_clk>, <&hp_clk>, <&hp_clk>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
+ 			        R8A7794_CLK_SDHI2 R8A7794_CLK_SDHI1 R8A7794_CLK_SDHI0
+-				R8A7794_CLK_CMT1 R8A7794_CLK_USBDMAC0
+-				R8A7794_CLK_USBDMAC1
++				R8A7794_CLK_CMT1 R8A7794_CLK_MMCIF0
++				R8A7794_CLK_USBDMAC0 R8A7794_CLK_USBDMAC1
+ 			>;
+ 			clock-output-names  			        "sdhi2", "sdhi1", "sdhi0",
+-				"cmt1", "usbdmac0", "usbdmac1";
++				"mmcif0", "cmt1", "usbdmac0", "usbdmac1";
+ 		};
+ 		mstp7_clks: mstp7_clks@e615014c {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
+index f013cdc..4555b0f 100644
+--- a/include/dt-bindings/clock/r8a7794-clock.h
++++ b/include/dt-bindings/clock/r8a7794-clock.h
+@@ -55,6 +55,7 @@
+ #define R8A7794_CLK_SDHI2		11
+ #define R8A7794_CLK_SDHI1		12
+ #define R8A7794_CLK_SDHI0		14
++#define R8A7794_CLK_MMCIF0		15
+ #define R8A7794_CLK_CMT1		29
+ #define R8A7794_CLK_USBDMAC0		30
+ #define R8A7794_CLK_USBDMAC1		31
+---
+ arch/arm/boot/dts/r8a7794.dtsi            | 12 +++++++++---
+ include/dt-bindings/clock/r8a7794-clock.h |  6 ++++++
+ 2 files changed, 15 insertions(+), 3 deletions(-)
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 068ca09..728d719 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -538,10 +538,16 @@
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
+-			clocks = <&cpg_clocks R8A7794_CLK_QSPI>;
++			clocks = <&cpg_clocks R8A7794_CLK_QSPI>, <&hp_clk>, <&hp_clk>,
++				<&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
+ 			#clock-cells = <1>;
+-			clock-indices = <R8A7794_CLK_QSPI_MOD>;
+-			clock-output-names = "qspi_mod";
++			clock-indices = <
++				R8A7794_CLK_QSPI_MOD R8A7794_CLK_I2C5 R8A7794_CLK_I2C4
++				R8A7794_CLK_I2C3 R8A7794_CLK_I2C2 R8A7794_CLK_I2C1
++				R8A7794_CLK_I2C0
++			>;
++			clock-output-names +				"qspi_mod", "i2c5", "i2c4", "i2c3", "i2c2", "i2c1", "i2c0";
+ 		};
+ 		mstp11_clks: mstp11_clks@e615099c {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
+index fba89a4..94d9618 100644
+--- a/include/dt-bindings/clock/r8a7794-clock.h
++++ b/include/dt-bindings/clock/r8a7794-clock.h
+@@ -87,6 +87,12 @@
+ #define R8A7794_CLK_GPIO1		11
+ #define R8A7794_CLK_GPIO0		12
+ #define R8A7794_CLK_QSPI_MOD		17
++#define R8A7794_CLK_I2C5		25
++#define R8A7794_CLK_I2C4		27
++#define R8A7794_CLK_I2C3		28
++#define R8A7794_CLK_I2C2		29
++#define R8A7794_CLK_I2C1		30
++#define R8A7794_CLK_I2C0		31
+ 
+ /* MSTP11 */
+ #define R8A7794_CLK_SCIFA3		6
+-- 
+2.1.3
 
-iQIcBAEBAgAGBQJUjvUuAAoJEHwUBw8lI4NHy7cP/3pjT1M3yGT0R8QZfbp9/LR/
-eGFicsfJvqXvLj30adWctO/fWuirhGm3srjDN5Of2fptxEFTrEbY6L80JhY48zXo
-W8eFJKNZc3GB9CAI0AXBz1B6mp7vpIOp5DtEIYrCQj/WNqww1jAsnOUpWbTtr28Q
-IZtQzOyVpUtRm2drkR1fUpHzepcw8C2zbK6kWME7RbuXTjJKNMNyQbLqvLMwvr1R
-ytkL9zyaGg8UYJMqFQ4q2yM/zqvj/WPShQMImhMI/hMWbf2tpe0GlQl4zjvlczrv
-0E7zIHwpq58T5zqSUHgYYIQjgiJPe6GBoDOqi6W/3CpwITK33IUUdlN3bViLkltD
-CS3mXeBaH2TcfFacjJs7vxLGQLgCSuGHUdS0rOQDGc42E42c0t88BDDsE8faQWzi
-jeTmha90TrE4/SQ6MmnVTaXaDlX3rDHzJDrMLOqzRCt3mNjUdDziUhyCj/pas83L
-5lHsFQlkWVow4Peqv647BjunwMoq8/S3Om/eQbcTFo0MLt96Osrt0aOB/qIghMjl
-U+37yqI9k9yw0TvT6qZaLpOAepPE4oN/cwtSAZ8aUZXbXRnUxUEoDaVa/Vmu6vi+
-iksXt8iicCNUaMI9ppupTOE0whWIxBBeCWm0008IdzAh0Zl++ie3vIoo0wILzEo0
-PF4VqNtAoEdZ18ljyYgJ
-=USSY
------END PGP SIGNATURE-----
-
---SdvjNjn6lL3tIsv0--
