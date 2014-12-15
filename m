@@ -1,75 +1,75 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 15 Dec 2014 00:13:41 +0000
-Subject: [PATCH 02/10] iommu/ipmmu-vmsa: Flush P[UM]D entry before freeing the child page table
-Message-Id: <1418602429-11276-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 15 Dec 2014 02:28:05 +0000
+Subject: [PATCH 2/7] mmc: tmio: enable SoC specific DMA buswidth settings
+Message-Id: <87bnn5ve7t.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418602429-11276-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1418602429-11276-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <87egs1ve96.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87egs1ve96.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>
+Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-When clearing PUD or PMD entries the child page table (if any) is freed
-and the PUD or PMD entry is then cleared. This result in a small race
-condition window during which a free page table could be accessed by the
-IPMMU.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Fix it by clearing and flushing the PUD or PMD entry before freeing the
-child page table.
+Renesas SDHI which is based on TMIO driver has 2 type SoC. 1st one is
+used as SH-Mobile series, and 2nd is R-Car series. R-Car series SoC has
+DMA buswidth setting register which enables 32bit access.
+This patch adds .dma_buswidth and enables it.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/iommu/ipmmu-vmsa.c | 19 +++++++++++--------
- 1 file changed, 11 insertions(+), 8 deletions(-)
+ drivers/mmc/host/tmio_mmc_dma.c |    8 ++++++--
+ include/linux/mfd/tmio.h        |    2 ++
+ 2 files changed, 8 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
-index f7036adb5634..fcb603d8b041 100644
---- a/drivers/iommu/ipmmu-vmsa.c
-+++ b/drivers/iommu/ipmmu-vmsa.c
-@@ -678,30 +678,33 @@ done:
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index f0bf6df..be82257 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -295,7 +295,9 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 			cfg.slave_id = pdata->dma->slave_id_tx;
+ 		cfg.direction = DMA_MEM_TO_DEV;
+ 		cfg.dst_addr = res->start + (CTL_SD_DATA_PORT << host->pdata->bus_shift);
+-		cfg.dst_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
++		cfg.dst_addr_width = host->pdata->dma_buswidth;
++		if (!cfg.dst_addr_width)
++			cfg.dst_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
+ 		cfg.src_addr = 0;
+ 		ret = dmaengine_slave_config(host->chan_tx, &cfg);
+ 		if (ret < 0)
+@@ -314,7 +316,9 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 			cfg.slave_id = pdata->dma->slave_id_rx;
+ 		cfg.direction = DMA_DEV_TO_MEM;
+ 		cfg.src_addr = cfg.dst_addr + pdata->dma->dma_rx_offset;
+-		cfg.src_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
++		cfg.src_addr_width = host->pdata->dma_buswidth;
++		if (!cfg.src_addr_width)
++			cfg.src_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
+ 		cfg.dst_addr = 0;
+ 		ret = dmaengine_slave_config(host->chan_rx, &cfg);
+ 		if (ret < 0)
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 6788f9b..85bd65b 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -2,6 +2,7 @@
+ #define MFD_TMIO_H
  
- static void ipmmu_clear_pud(struct ipmmu_vmsa_device *mmu, pud_t *pud)
- {
--	/* Free the page table. */
- 	pgtable_t table = pud_pgtable(*pud);
--	__free_page(table);
- 
- 	/* Clear the PUD. */
- 	*pud = __pud(0);
- 	ipmmu_flush_pgtable(mmu, pud, sizeof(*pud));
-+
-+	/* Free the page table. */
-+	__free_page(table);
- }
- 
- static void ipmmu_clear_pmd(struct ipmmu_vmsa_device *mmu, pud_t *pud,
- 			    pmd_t *pmd)
- {
-+	pmd_t pmdval = *pmd;
- 	unsigned int i;
- 
--	/* Free the page table. */
--	if (pmd_table(*pmd)) {
--		pgtable_t table = pmd_pgtable(*pmd);
--		__free_page(table);
--	}
--
- 	/* Clear the PMD. */
- 	*pmd = __pmd(0);
- 	ipmmu_flush_pgtable(mmu, pmd, sizeof(*pmd));
- 
-+	/* Free the page table. */
-+	if (pmd_table(pmdval)) {
-+		pgtable_t table = pmd_pgtable(pmdval);
-+
-+		__free_page(table);
-+	}
-+
- 	/* Check whether the PUD is still needed. */
- 	pmd = pmd_offset(pud, 0);
- 	for (i = 0; i < IPMMU_PTRS_PER_PMD; ++i) {
+ #include <linux/device.h>
++#include <linux/dmaengine.h>
+ #include <linux/fb.h>
+ #include <linux/io.h>
+ #include <linux/jiffies.h>
+@@ -133,6 +134,7 @@ struct tmio_mmc_data {
+ 	unsigned long			capabilities2;
+ 	unsigned long			flags;
+ 	unsigned long			bus_shift;
++	enum dma_slave_buswidth		dma_buswidth;
+ 	u32				ocr_mask;	/* available voltages */
+ 	struct tmio_mmc_dma		*dma;
+ 	struct device			*dev;
 -- 
-2.0.4
+1.7.9.5
 
