@@ -1,41 +1,65 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 18 Dec 2014 23:46:36 +0000
-Subject: Re: [PATCH v2 01/05] ARM: shmobile: kzm9g-reference: 0x48008000 load address
-Message-Id: <20141218234630.GA29188@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 15 Dec 2014 02:27:54 +0000
+Subject: [PATCH 1/7] mmc: tmio: add .enable_dma
+Message-Id: <87d27lve84.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20141217094214.7039.68681.sendpatchset@w520>
-In-Reply-To: <20141217094214.7039.68681.sendpatchset@w520>
+References: <87egs1ve96.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87egs1ve96.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>
+Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-On Thu, Dec 18, 2014 at 10:31:29AM +0900, Magnus Damm wrote:
-> Hi Simon,
-> 
-> On Wed, Dec 17, 2014 at 6:42 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> > From: Magnus Damm <damm+renesas@opensource.se>
-> >
-> > Adjust the load address for the KZM9G DT reference case
-> > to make it compatible with upcoming sh73a0 Multiplatform
-> > and CONFIG_AUTO_ZRELADDR=y.
-> >
-> > Without the not-yet-merged sh73a0 multiplatform support
-> > the KZM9G uImage can be built without any special care,
-> > but once we go DTS-only then the Makefile.boot entry will
-> > disappear and the Multiplatform image will be built using
-> > CONFIG_AUTO_ZRELADDR=y. To generate an uImage for KZM9G
-> > the following example can be followed:
-> >
-> > $ make ARCH=arm LOADADDR=0x48008000 uImage
-> >
-> > For now simply adjust the non-multiplatform KZM9G DT
-> > reference implementation to be compatible with ZRELADDR.
-> >
-> > Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> > ---
-> 
-> Simon, this seems to work for both Geert and Laurent. Can you please pick up?
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-More discussion between yourself and Geert seems to have followed.
-I'd like some consensus reached there.
+Some controllers need DMA special register/setting.
+This patch adds new .enable_dma callback for it.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/mmc/host/tmio_mmc_dma.c |    3 +++
+ include/linux/mfd/tmio.h        |    4 ++--
+ 2 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index 7d07738..f0bf6df 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -30,6 +30,9 @@ void tmio_mmc_enable_dma(struct tmio_mmc_host *host, bool enable)
+ 
+ 	if (host->pdata->flags & TMIO_MMC_HAVE_CTL_DMA_REG)
+ 		sd_ctrl_write16(host, CTL_DMA_ENABLE, enable ? 2 : 0);
++
++	if (host->pdata->dma->enable)
++		host->pdata->dma->enable(host, enable);
+ }
+ 
+ void tmio_mmc_abort_dma(struct tmio_mmc_host *host)
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 5738817..6788f9b 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -111,6 +111,7 @@ void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
+ void tmio_core_mmc_clk_div(void __iomem *cnf, int shift, int state);
+ 
+ struct dma_chan;
++struct tmio_mmc_host;
+ 
+ struct tmio_mmc_dma {
+ 	void *chan_priv_tx;
+@@ -120,10 +121,9 @@ struct tmio_mmc_dma {
+ 	int alignment_shift;
+ 	dma_addr_t dma_rx_offset;
+ 	bool (*filter)(struct dma_chan *chan, void *arg);
++	void (*enable)(struct tmio_mmc_host *host, bool enable);
+ };
+ 
+-struct tmio_mmc_host;
+-
+ /*
+  * data for the MMC controller
+  */
+-- 
+1.7.9.5
+
