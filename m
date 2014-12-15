@@ -1,47 +1,33 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 15 Dec 2014 04:57:52 +0000
-Subject: [PATCH] ARM: shmobile: r8a7779: Use R8A7779_CLK_P as SCIF parent clock
-Message-Id: <20141215050034.357.93456.sendpatchset@w520>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 15 Dec 2014 14:00:53 +0000
+Subject: Re: [PATCH] ARM: shmobile: r8a7779: Use R8A7779_CLK_P as SCIF parent clock
+Message-Id: <CAMuHMdUs2gri8r6eEJLWCERwz7Q-CFhQkEVpqEwyYcXkUU4uyA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20141215050034.357.93456.sendpatchset@w520>
+In-Reply-To: <20141215050034.357.93456.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+On Mon, Dec 15, 2014 at 6:00 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> From: Magnus Damm <damm+renesas@opensource.se>
+>
+> Use R8A7779_CLK_P as parent clock for SCIF devices on r8a7779.
+> With this change in place the SCIF CCF handling matches the
+> legacy clock code. Also, this matches the data sheet.
+>
+> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 
-Use R8A7779_CLK_P as parent clock for SCIF devices on r8a7779.
-With this change in place the SCIF CCF handling matches the
-legacy clock code. Also, this matches the data sheet.
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
+Gr{oetje,eeting}s,
 
- Written on top of renesas-devel-20141211-v3.18
- Broken out from previously submitted
- [PATCH] ARM: shmobile: r8a7779 CCF DTS update
+                        Geert
 
- arch/arm/boot/dts/r8a7779.dtsi |   12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
---- 0002/arch/arm/boot/dts/r8a7779.dtsi
-+++ work/arch/arm/boot/dts/r8a7779.dtsi	2014-12-15 12:31:16.000000000 +0900
-@@ -464,12 +464,12 @@
- 				 <&cpg_clocks R8A7779_CLK_P>,
- 				 <&cpg_clocks R8A7779_CLK_S>,
- 				 <&cpg_clocks R8A7779_CLK_S>,
--				 <&cpg_clocks R8A7779_CLK_S1>,
--				 <&cpg_clocks R8A7779_CLK_S1>,
--				 <&cpg_clocks R8A7779_CLK_S1>,
--				 <&cpg_clocks R8A7779_CLK_S1>,
--				 <&cpg_clocks R8A7779_CLK_S1>,
--				 <&cpg_clocks R8A7779_CLK_S1>,
-+				 <&cpg_clocks R8A7779_CLK_P>,
-+				 <&cpg_clocks R8A7779_CLK_P>,
-+				 <&cpg_clocks R8A7779_CLK_P>,
-+				 <&cpg_clocks R8A7779_CLK_P>,
-+				 <&cpg_clocks R8A7779_CLK_P>,
-+				 <&cpg_clocks R8A7779_CLK_P>,
- 				 <&cpg_clocks R8A7779_CLK_P>,
- 				 <&cpg_clocks R8A7779_CLK_P>,
- 				 <&cpg_clocks R8A7779_CLK_P>,
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
