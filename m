@@ -1,49 +1,47 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 15 Dec 2014 18:19:59 +0000
-Subject: Re: [PATCH/RFC] spi: sh-msiof: Add runtime PM lock in initializing
-Message-Id: <548F264F.5000901@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 15 Dec 2014 04:57:52 +0000
+Subject: [PATCH] ARM: shmobile: r8a7779: Use R8A7779_CLK_P as SCIF parent clock
+Message-Id: <20141215050034.357.93456.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418652071-6396-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1418652071-6396-1-git-send-email-ykaneko0929-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-On 12/15/2014 05:01 PM, Yoshihiro Kaneko wrote:
+Use R8A7779_CLK_P as parent clock for SCIF devices on r8a7779.
+With this change in place the SCIF CCF handling matches the
+legacy clock code. Also, this matches the data sheet.
 
-> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-> SH-MSIOF driver is enabled autosuspend API of spi framework.
-> But autosuspend framework doesn't work during initializing.
-> So runtime PM lock is added in SH-MSIOF driver initializing.
+ Written on top of renesas-devel-20141211-v3.18
+ Broken out from previously submitted
+ [PATCH] ARM: shmobile: r8a7779 CCF DTS update
 
-> Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> ---
+ arch/arm/boot/dts/r8a7779.dtsi |   12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-> This patch is based on the for-next branch of Mark Brown's spi tree.
-
->   drivers/spi/spi-sh-msiof.c | 5 +++++
->   1 file changed, 5 insertions(+)
-
-> diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-> index 3f36540..1405293 100644
-> --- a/drivers/spi/spi-sh-msiof.c
-> +++ b/drivers/spi/spi-sh-msiof.c
-[...]
-> @@ -498,6 +500,9 @@ static int sh_msiof_spi_setup(struct spi_device *spi)
->   	if (spi->cs_gpio >= 0)
->   		gpio_set_value(spi->cs_gpio, !(spi->mode & SPI_CS_HIGH));
->
-> +
-> +	pm_runtime_put_sync(&p->pdev->dev);
-> +
-
-    Do you really need the sync version here?
-
-WBR, Sergei
-
+--- 0002/arch/arm/boot/dts/r8a7779.dtsi
++++ work/arch/arm/boot/dts/r8a7779.dtsi	2014-12-15 12:31:16.000000000 +0900
+@@ -464,12 +464,12 @@
+ 				 <&cpg_clocks R8A7779_CLK_P>,
+ 				 <&cpg_clocks R8A7779_CLK_S>,
+ 				 <&cpg_clocks R8A7779_CLK_S>,
+-				 <&cpg_clocks R8A7779_CLK_S1>,
+-				 <&cpg_clocks R8A7779_CLK_S1>,
+-				 <&cpg_clocks R8A7779_CLK_S1>,
+-				 <&cpg_clocks R8A7779_CLK_S1>,
+-				 <&cpg_clocks R8A7779_CLK_S1>,
+-				 <&cpg_clocks R8A7779_CLK_S1>,
++				 <&cpg_clocks R8A7779_CLK_P>,
++				 <&cpg_clocks R8A7779_CLK_P>,
++				 <&cpg_clocks R8A7779_CLK_P>,
++				 <&cpg_clocks R8A7779_CLK_P>,
++				 <&cpg_clocks R8A7779_CLK_P>,
++				 <&cpg_clocks R8A7779_CLK_P>,
+ 				 <&cpg_clocks R8A7779_CLK_P>,
+ 				 <&cpg_clocks R8A7779_CLK_P>,
+ 				 <&cpg_clocks R8A7779_CLK_P>,
