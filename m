@@ -1,99 +1,75 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 22 Dec 2014 08:42:18 +0000
-Subject: Re: Build regressions/improvements in v3.19-rc1
-Message-Id: <CAMuHMdU0ym7PLkEcdmDnxvDVBn879QWkOm=-zUXFaQMh2FHfrQ@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 15 Dec 2014 00:35:50 +0000
+Subject: [PATCH v2] ARM: shmobile: r8a7794: Add I2C clocks to device tree
+Message-Id: <1418603750-9771-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1419237118-9712-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1419237118-9712-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-Cc: Miao Steven <realmz6@gmail.com>, "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>, "adi-buildroot-devel@lists.sourceforge.net" <adi-buildroot-devel@lists.sourceforge.net>, Cris <linux-cris-kernel@axis.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Dec 22, 2014 at 9:31 AM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> Below is the list of build error/warning regressions/improvements in
-> v3.19-rc1[1] compared to v3.18[2].
->
-> Summarized:
->   - build errors: +24/-16
+From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
 
-  + /home/kisskb/slave/src/arch/powerpc/xmon/xmon.c: error: unused
-variable 'badaddr' [-Werror=unused-variable]:  => 1185:13
-  + /home/kisskb/slave/src/arch/powerpc/xmon/xmon.c: error: unused
-variable 'mode' [-Werror=unused-variable]:  => 1183:6
+Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+[horms: omitted device nodes and aliases; only add clocks]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-powerpc-randconfig
+---
+Based on the renesas-devel-20141212-v3.18 tag of my renesas tree
 
-  + /home/kisskb/slave/src/arch/sh/boards/mach-se/7343/irq.c: error:
-too few arguments to function 'ioread16':  => 44:2
-  + /home/kisskb/slave/src/arch/sh/boards/mach-se/7343/irq.c: error:
-too few arguments to function 'iowrite16':  => 123:2
+v2 [Simon Horman]
+* Trimmed trailing garbage from changelog
 
-sh4/se7343_defconfig
+v1 [Simon Horman]
+* Removed portion of patch which adds device nodes and aliases
+* Renamed patch from
+  "ARM: shmobile: r8a7794: Add I2C driver to device tree" to
+  "ARM: shmobile: r8a7794: Add I2C clocks to device tree"
+---
+ arch/arm/boot/dts/r8a7794.dtsi            | 12 +++++++++---
+ include/dt-bindings/clock/r8a7794-clock.h |  6 ++++++
+ 2 files changed, 15 insertions(+), 3 deletions(-)
 
-  + /home/kisskb/slave/src/arch/sh/boards/mach-se/7722/irq.c: error:
-too few arguments to function 'ioread16':  => 43:2
-  + /home/kisskb/slave/src/arch/sh/boards/mach-se/7722/irq.c: error:
-too few arguments to function 'iowrite16':  => 116:2
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 068ca09..728d719 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -538,10 +538,16 @@
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
+-			clocks = <&cpg_clocks R8A7794_CLK_QSPI>;
++			clocks = <&cpg_clocks R8A7794_CLK_QSPI>, <&hp_clk>, <&hp_clk>,
++				<&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
+ 			#clock-cells = <1>;
+-			clock-indices = <R8A7794_CLK_QSPI_MOD>;
+-			clock-output-names = "qspi_mod";
++			clock-indices = <
++				R8A7794_CLK_QSPI_MOD R8A7794_CLK_I2C5 R8A7794_CLK_I2C4
++				R8A7794_CLK_I2C3 R8A7794_CLK_I2C2 R8A7794_CLK_I2C1
++				R8A7794_CLK_I2C0
++			>;
++			clock-output-names +				"qspi_mod", "i2c5", "i2c4", "i2c3", "i2c2", "i2c1", "i2c0";
+ 		};
+ 		mstp11_clks: mstp11_clks@e615099c {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
+index fba89a4..94d9618 100644
+--- a/include/dt-bindings/clock/r8a7794-clock.h
++++ b/include/dt-bindings/clock/r8a7794-clock.h
+@@ -87,6 +87,12 @@
+ #define R8A7794_CLK_GPIO1		11
+ #define R8A7794_CLK_GPIO0		12
+ #define R8A7794_CLK_QSPI_MOD		17
++#define R8A7794_CLK_I2C5		25
++#define R8A7794_CLK_I2C4		27
++#define R8A7794_CLK_I2C3		28
++#define R8A7794_CLK_I2C2		29
++#define R8A7794_CLK_I2C1		30
++#define R8A7794_CLK_I2C0		31
+ 
+ /* MSTP11 */
+ #define R8A7794_CLK_SCIFA3		6
+-- 
+2.1.3
 
-sh4/se7722_defconfig
-
-  + /home/kisskb/slave/src/drivers/usb/musb/blackfin.c: error:
-'bfin_writel' undeclared here (not in a function):  => 476:13
-
-bfin/BF527-EZKIT-V2_defconfig
-
-  + /home/kisskb/slave/src/drivers/usb/musb/musb_debugfs.c: error:
-'MUSB_BABBLE_CTL' undeclared here (not in a function):  => 67:17
-  + /home/kisskb/slave/src/drivers/usb/musb/musb_debugfs.c: error:
-'MUSB_CONFIGDATA' undeclared here (not in a function):  => 62:18
-  + /home/kisskb/slave/src/drivers/usb/musb/musb_debugfs.c: error:
-'MUSB_EPINFO' undeclared here (not in a function):  => 74:14
-  + /home/kisskb/slave/src/drivers/usb/musb/musb_debugfs.c: error:
-'MUSB_RAMINFO' undeclared here (not in a function):  => 75:15
-  + /home/kisskb/slave/src/drivers/usb/musb/musb_debugfs.c: error:
-'MUSB_RXFIFOADD' undeclared here (not in a function):  => 71:17
-  + /home/kisskb/slave/src/drivers/usb/musb/musb_debugfs.c: error:
-'MUSB_RXFIFOSZ' undeclared here (not in a function):  => 69:16
-  + /home/kisskb/slave/src/drivers/usb/musb/musb_debugfs.c: error:
-'MUSB_TXFIFOADD' undeclared here (not in a function):  => 70:17
-  + /home/kisskb/slave/src/drivers/usb/musb/musb_debugfs.c: error:
-'MUSB_TXFIFOSZ' undeclared here (not in a function):  => 68:16
-
-bfin/BF527-EZKIT_defconfig
-bfin/BF527-EZKIT-V2_defconfig
-bfin/BF548-EZKIT_defconfig
-bfin/CM-BF548_defconfig
-bfin/CM-BF527_defconfig
-
-  + /home/kisskb/slave/src/include/linux/irq.h: error: conflicting
-types for 'ioread16':  => 856:19
-  + /home/kisskb/slave/src/include/linux/irq.h: error: conflicting
-types for 'iowrite16':  => 847:20
-
-sh4/se7343_defconfig
-sh4/se7722_defconfig
-
-  + error: "csum_partial_copy_nocheck" [net/ipv6/ipv6.ko] undefined!:  => N/A
-
-cris/cris-allmodconfig
-
-  + error: No rule to make target include/config/auto.conf:  => N/A
-
-arm/arm-randconfig
-
-> [1] http://kisskb.ellerman.id.au/kisskb/head/8241/ (262 out of 262 configs)
-> [2] http://kisskb.ellerman.id.au/kisskb/head/8168/ (262 out of 262 configs)
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
