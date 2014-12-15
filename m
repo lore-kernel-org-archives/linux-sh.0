@@ -1,46 +1,91 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 17 Dec 2014 16:25:47 +0000
-Subject: Re: [PATCH v3 1/9] ARM: shmobile: ape6evm: fix compatible string for Ethernet controller
-Message-Id: <1593486.m3eUU0Zveh@avalon>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 15 Dec 2014 00:13:49 +0000
+Subject: [PATCH 10/10] ARM: shmobile: r8a7791: Add IPMMU DT nodes
+Message-Id: <1418602429-11276-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418833101-7774-2-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1418833101-7774-2-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1418602429-11276-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1418602429-11276-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: iommu@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org
 
-Hi Ulrich,
+Add the seven IPMMU instances found in the r8a7791 to DT with a disabled
+status.
 
-Thank you for the patch.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 56 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 56 insertions(+)
 
-On Wednesday 17 December 2014 17:18:13 Ulrich Hecht wrote:
-> It's a 9220, not a 9118.
-> 
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
->  arch/arm/boot/dts/r8a73a4-ape6evm.dts | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> b/arch/arm/boot/dts/r8a73a4-ape6evm.dts index ce085fa..baca8f8 100644
-> --- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> +++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> @@ -43,7 +43,7 @@
->  		#size-cells = <1>;
-> 
->  		ethernet@8000000 {
-> -			compatible = "smsc,lan9118", "smsc,lan9115";
-> +			compatible = "smsc,lan9220", "smsc,lan9115";
->  			reg = <0x08000000 0x1000>;
->  			interrupt-parent = <&irqc1>;
->  			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
-
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 78d637135e77..fb4803084742 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1384,6 +1384,62 @@
+ 		status = "disabled";
+ 	};
+ 
++	ipmmu_sy0: mmu@e6280800 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xe6280800 0 0x800>;
++		interrupts = <0 223 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_sy1: mmu@e6290800 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xe6290800 0 0x800>;
++		interrupts = <0 225 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_ds: mmu@e6740800 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xe6740800 0 0x800>;
++		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_mp: mmu@ec680800 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xec680800 0 0x800>;
++		interrupts = <0 226 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_mx: mmu@fe951800 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xfe951800 0 0x800>;
++		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_rt: mmu@ffc80800 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xffc80800 0 0x800>;
++		interrupts = <0 307 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_gp: mmu@e62a0800 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xe62a0800 0 0x800>;
++		interrupts = <0 260 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
+ 	rcar_sound: rcar_sound@ec500000 {
+ 		#sound-dai-cells = <1>;
+ 		compatible =  "renesas,rcar_sound-r8a7791", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
 -- 
-Regards,
-
-Laurent Pinchart
+2.0.4
 
