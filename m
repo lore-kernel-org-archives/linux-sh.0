@@ -1,41 +1,55 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 29 Dec 2014 01:43:43 +0000
-Subject: [PATCH 12/30] ARM: shmobile: koelsch: Fix QSPI mode of SPI-Flash into mode3
-Message-Id: <9c5becce21af35e59c7313d3603af1d620fffd05.1419812186.git.horms+renesas@verge.net.au>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Mon, 15 Dec 2014 14:14:06 +0000
+Subject: [PATCH/RFC] serial: sh-sci: Add hardware flow control support of R-Car HSCIF
+Message-Id: <1418652846-6821-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1419812185.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-serial@vger.kernel.org
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
 From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
 
-In order to change into mode3, CPOL and CPHA bit of SPCMD register
-of QSPI is changed. Mode3 can avoid intermediate voltage.
+TIOCM_CTS is enabled to use hardware flow control of HSCIF.
+And hardware flow control of HSCIF is handled by device tree.
 
 Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-[horms: Updated changelog and re-ordered properties]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 2 ++
- 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 1e5f8d2..691e4c6 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -444,6 +444,8 @@
- 		spi-max-frequency = <30000000>;
- 		spi-tx-bus-width = <4>;
- 		spi-rx-bus-width = <4>;
-+		spi-cpha;
-+		spi-cpol;
- 		m25p,fast-read;
+This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
+tree.
+
+ drivers/tty/serial/sh-sci.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index bcec10a..6744702 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1216,7 +1216,11 @@ static unsigned int sci_get_mctrl(struct uart_port *port)
+ 	 * CTS/RTS is handled in hardware when supported, while nothing
+ 	 * else is wired up. Keep it simple and simply assert DSR/CAR.
+ 	 */
+-	return TIOCM_DSR | TIOCM_CAR;
++	unsigned int mctrl = TIOCM_DSR | TIOCM_CAR;
++
++	if (port->type = PORT_HSCIF)
++		mctrl |= TIOCM_CTS;
++	return mctrl;
+ }
  
- 		partition@0 {
+ #ifdef CONFIG_SERIAL_SH_SCI_DMA
+@@ -2611,6 +2615,8 @@ sci_parse_dt(struct platform_device *pdev, unsigned int *dev_id)
+ 	p->type = info->type;
+ 	p->regtype = info->regtype;
+ 	p->scscr = SCSCR_RE | SCSCR_TE;
++	if (of_property_read_bool(np, "ctsrts"))
++		p->capabilities = SCIx_HAVE_RTSCTS;
+ 
+ 	return p;
+ }
 -- 
-2.1.3
+1.9.1
 
