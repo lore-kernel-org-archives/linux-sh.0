@@ -1,96 +1,102 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 10 Dec 2014 23:42:11 +0000
-Subject: [PATCH 11/15] ARM: shmobile: lager: Add DU HDMI output support
-Message-Id: <1418254935-13536-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 15 Dec 2014 03:53:21 +0000
+Subject: [PATCH v5][resend v2] of: replace Asahi Kasei Corp vendor prefix
+Message-Id: <87zjaptvp8.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418254935-13536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1418254935-13536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <878ulzx6hr.wl%kuninori.morimoto.gx@gmail.com>
+	<20140922130026.GK3290@leverpostej>
+	<CAMuHMdX22z97SbGS1HDiYfJ1PXxyEN2S8D7w4sr+4bUwD+mJZw@mail.gmail.com>
+	<20140922132743.GM3290@leverpostej>
+	<87y4rfhmgl.wl%kuninori.morimoto.gx@renesas.com>
+	<1415845309.4269.6.camel@perches.com>
+	<20141113025105.GA16652@verge.net.au>
+	<87vbmjhj00.wl%kuninori.morimoto.gx@renesas.com>
+	<20141113110740.GE3815@sirena.org.uk>
+	<87k32yd0bd.wl%kuninori.morimoto.gx@renesas.com>
+	<20141114093554.GC3810@ulmo>
+	<87y4ra8xac.wl%kuninori.morimoto.gx@renesas.com>
+	<5469CD47.3040409@cogentembedded.com>
+	<877fytxsde.wl%kuninori.morimoto.gx@renesas.com>
+	<87egsob2cl.wl%kuninori.morimoto.gx@renesas.com>
+	<5478603D.1080404@cogentembedded.com>
+	<87d282sl6w.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87d282sl6w.wl%kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: Matthias Brugger <matthias.bgg-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Rob Herring <robh-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Jason Cooper <jason-NLaQJdtUoK4Be96aLqz0jA@public.gmane.org>, Heiko Stuebner <heiko-4mtYJXux2i+zQB+pC5nmwQ@public.gmane.org>, Shawn Guo <shawn.guo-KZfg59tc24xl57MIdRCFDg@public.gmane.org>, Florian Vaussard <florian.vaussard-p8DiymsW2f8@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Thierry Reding <thierry.reding-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, ALSA Development Mailing List <alsa-devel-K7yf7f+aM1XWsZ/bQMPhNw@public.gmane.org>, linux-tegra-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Stephen Warren <swarren-3lzwWm7+Weoh9ZMKESR00Q@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Olof Johansson <olof-nZhT3qVonbNeoWH0uzbU5w@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Joe Perches <joe-6d6DIl74uiNBDgjK7y7TUQ@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, "grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org" <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>
 
-Add DT nodes for the ADV7511 HDMI encoder and its HDMI output connector.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Current vendor-prefixes.txt already has "ak" prefix for Asahi Kasei Corp
+by ae8c4209af2c(of: Add vendor prefix for Asahi Kasei Corp.)
+
+It went through the appropriate review process. But, almost all
+Asahi Kasei chip drivers are using "asahi-kasei" prefix today.
+(arch/arm/boot/dts/tegra20-seaboard.dts only is using "ak,ak8975",
+ but there are instances of "asahi-kasei,ak8975" in other dts files.
+ And drivers/iio/magnetometer/ak8975.c doesn't support "ak,ak8975" prefix)
+So, we made a mistake there.
+
+In addition, checkpatch.pl reports WARNING if it is using "asahi-kasei"
+prerfix in DT file.
+(DT compatible string vendor "asahi-kasei" appears un-documented)
+
+Marking it deprecated and warning with checkpatch is certainly
+preferable. So, this patch replace "ak" to "asahi-kasei" in
+vendor-prefixes.txt. (and fixup tegra20-seaboard)
+
+OTOH, Asahi Kasei is usually referred to as "AKM", but this patch
+doesn't care about it. Because no DT is using that today.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Thierry Reding <treding@nvidia.com>
+Acked-by: Alexandre Courbot <acourbot@nvidia.com>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 48 +++++++++++++++++++++++++++++++++++++
- 1 file changed, 48 insertions(+)
+Rob, Mark
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 59365bccc945..749fe841aa09 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -222,6 +222,17 @@
- 			};
- 		};
- 	};
-+
-+	hdmi-out {
-+		compatible = "hdmi-connector";
-+		type = "a";
-+
-+		port {
-+			hdmi_con: endpoint {
-+				remote-endpoint = <&adv7511_out>;
-+			};
-+		};
-+	};
- };
+There is no response about this patch.
+Mark, is it possible to care about this patch ?
+It has relationship to ASoC.
+
+ .../devicetree/bindings/vendor-prefixes.txt        |    2 +-
+ arch/arm/boot/dts/tegra20-seaboard.dts             |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
+index 723999d..ddcb4cd 100644
+--- a/Documentation/devicetree/bindings/vendor-prefixes.txt
++++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
+@@ -9,7 +9,6 @@ ad	Avionic Design GmbH
+ adapteva	Adapteva, Inc.
+ adi	Analog Devices, Inc.
+ aeroflexgaisler	Aeroflex Gaisler AB
+-ak	Asahi Kasei Corp.
+ allwinner	Allwinner Technology Co., Ltd.
+ altr	Altera Corp.
+ amcc	Applied Micro Circuits Corporation (APM, formally AMCC)
+@@ -20,6 +19,7 @@ amstaos	AMS-Taos Inc.
+ apm	Applied Micro Circuits Corporation (APM)
+ arm	ARM Ltd.
+ armadeus	ARMadeus Systems SARL
++asahi-kasei	Asahi Kasei Corp.
+ atmel	Atmel Corporation
+ auo	AU Optronics Corporation
+ avago	Avago Technologies
+diff --git a/arch/arm/boot/dts/tegra20-seaboard.dts b/arch/arm/boot/dts/tegra20-seaboard.dts
+index a1d4bf9..7f5cf80 100644
+--- a/arch/arm/boot/dts/tegra20-seaboard.dts
++++ b/arch/arm/boot/dts/tegra20-seaboard.dts
+@@ -405,7 +405,7 @@
+ 		clock-frequency = <400000>;
  
- &du {
-@@ -235,6 +246,11 @@
- 				remote-endpoint = <&adv7123_in>;
- 			};
- 		};
-+		port@1 {
-+			endpoint {
-+				remote-endpoint = <&adv7511_in>;
-+			};
-+		};
- 		port@2 {
- 			lvds_connector: endpoint {
- 			};
-@@ -504,6 +520,38 @@
- 			};
- 		};
- 	};
-+
-+	hdmi@39 {
-+		compatible = "adi,adv7511w";
-+		reg = <0x39>;
-+		interrupt-parent = <&gpio1>;
-+		interrupts = <15 IRQ_TYPE_EDGE_FALLING>;
-+
-+		adi,input-depth = <8>;
-+		adi,input-colorspace = "rgb";
-+		adi,input-clock = "1x";
-+		adi,input-style = <1>;
-+		adi,input-justification = "evenly";
-+
-+		ports {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+
-+			port@0 {
-+				reg = <0>;
-+				adv7511_in: endpoint {
-+					remote-endpoint = <&du_out_lvds0>;
-+				};
-+			};
-+
-+			port@1 {
-+				reg = <1>;
-+				adv7511_out: endpoint {
-+					remote-endpoint = <&hdmi_con>;
-+				};
-+			};
-+		};
-+	};
- };
- 
- &iic3 {
+ 		magnetometer@c {
+-			compatible = "ak,ak8975";
++			compatible = "asahi-kasei,ak8975";
+ 			reg = <0xc>;
+ 			interrupt-parent = <&gpio>;
+ 			interrupts = <TEGRA_GPIO(N, 5) IRQ_TYPE_LEVEL_HIGH>;
 -- 
-2.0.4
+1.7.9.5
 
