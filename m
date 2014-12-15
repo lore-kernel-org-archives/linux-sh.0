@@ -1,57 +1,45 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 03 Dec 2014 13:41:47 +0000
-Subject: [PATCH v6 7/7] drivers: sh: Disable PM runtime for multi-platform r8a7740 with genpd
-Message-Id: <1417614107-5985-8-git-send-email-geert+renesas@glider.be>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Mon, 15 Dec 2014 21:33:06 +0000
+Subject: [PATCH RFC 0/5] virtio pci: virtio 1.0 support
+Message-Id: <1418679168-1011-1-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1417614107-5985-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1417614107-5985-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: Rusty Russell <rusty@rustcorp.com.au>, virtualization@lists.linux-foundation.org, linux-sh@vger.kernel.org, cornelia.huck@de.ibm.com
 
-If the default PM domain using PM_CLK is used for PM runtime, the real PM
-domain(s) cannot be registered from DT later.
+This is on top of 3.19 master + my bugfix patches, and adds virtio 1.0 support
+to virtio pci.
+This is 3.20 material I think.
 
-Hence do not enable it when running a multi-platform kernel with genpd
-support on an r8a7740. The R-Mobile PM domain driver will take care of
-PM runtime management of the module clocks.
+Would like to get feedback on s390 change as it's untested.
 
-The default PM domain is still needed for:
-  - platforms without genpd support,
-  - the legacy (non-DT) case, where genpd may take over later, except
-    for the C5 "always on" PM domain.
+Michael S Tsirkin (2):
+  pci: add pci_iomap_range
+  s390: add pci_iomap_range
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-v6:
-  - No changes,
-v5:
-  - No changes,
-v4:
-  - No changes,
-v3:
-  - Reword,
-v2:
-  - New.
----
- drivers/sh/pm_runtime.c | 2 ++
- 1 file changed, 2 insertions(+)
+Michael S. Tsirkin (2):
+  virtio_pci: modern driver
+  virtio_pci: macros for PCI layout offsets.
 
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index fe2c2d595f599b2f..85cc89fd3e7d7cb7 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -81,7 +81,9 @@ static int __init sh_pm_runtime_init(void)
- 		if (!of_machine_is_compatible("renesas,emev2") &&
- 		    !of_machine_is_compatible("renesas,r7s72100") &&
- 		    !of_machine_is_compatible("renesas,r8a73a4") &&
-+#ifndef CONFIG_PM_GENERIC_DOMAINS_OF
- 		    !of_machine_is_compatible("renesas,r8a7740") &&
-+#endif
- 		    !of_machine_is_compatible("renesas,r8a7778") &&
- 		    !of_machine_is_compatible("renesas,r8a7779") &&
- 		    !of_machine_is_compatible("renesas,r8a7790") &&
+Rusty Russell (1):
+  virtio-pci: define layout for virtio 1.0
+
+ arch/s390/include/asm/pci_io.h     |   1 +
+ drivers/virtio/virtio_pci_common.h |  29 +-
+ include/asm-generic/pci_iomap.h    |  10 +
+ include/uapi/linux/virtio_pci.h    |  92 +++++
+ tools/virtio/linux/virtio_config.h |  45 +++
+ arch/s390/pci/pci.c                |  34 +-
+ drivers/virtio/virtio_pci_common.c |  13 +-
+ drivers/virtio/virtio_pci_modern.c | 684 +++++++++++++++++++++++++++++++++++++
+ lib/pci_iomap.c                    |  35 +-
+ tools/virtio/virtio_test.c         |   1 +
+ drivers/virtio/Makefile            |   2 +-
+ 11 files changed, 929 insertions(+), 17 deletions(-)
+ create mode 100644 drivers/virtio/virtio_pci_modern.c
+
 -- 
-1.9.1
+MST
 
