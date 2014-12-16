@@ -1,72 +1,138 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 10 Dec 2014 23:42:09 +0000
-Subject: [PATCH 09/15] drm: rcar-du: Clamp DPMS states to on and off
-Message-Id: <1418254935-13536-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 16 Dec 2014 13:44:13 +0000
+Subject: [PATCH v2 06/10] iommu/ipmmu-vmsa: Add device tree support
+Message-Id: <1418737457-22042-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418254935-13536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1418254935-13536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1418737457-22042-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1418737457-22042-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: iommu@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org
 
-The intermediate DPMS standby and suspend states are a thing from the
-past. They only matter in practice for VGA CRT monitors, and are just a
-power saving vs. resume time optimization. Given that they have never
-been implemented properly in the rcar-du driver and that the Intel
-driver has dropped them on the vga port years ago, it's safe to only
-care about the on and off states.
+Make platform data optional when the device is instantiated from DT and
+look up the micro-TLB number in the bus master DT node.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_crtc.c    | 3 +++
- drivers/gpu/drm/rcar-du/rcar_du_encoder.c | 3 +++
- drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c | 3 +++
- 3 files changed, 9 insertions(+)
+ drivers/iommu/ipmmu-vmsa.c | 55 +++++++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 47 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-index 25b762b58765..86766cc6360a 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-@@ -347,6 +347,9 @@ static void rcar_du_crtc_dpms(struct drm_crtc *crtc, int mode)
- {
- 	struct rcar_du_crtc *rcrtc = to_rcar_crtc(crtc);
+Cc: devicetree@vger.kernel.org
+
+Changes compared to v1:
+
+- Update to the v2 DT bindings
+
+diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
+index 70bb5ba2aa51..8d9b3e79f05c 100644
+--- a/drivers/iommu/ipmmu-vmsa.c
++++ b/drivers/iommu/ipmmu-vmsa.c
+@@ -16,6 +16,7 @@
+ #include <linux/io.h>
+ #include <linux/iommu.h>
+ #include <linux/module.h>
++#include <linux/of.h>
+ #include <linux/platform_data/ipmmu-vmsa.h>
+ #include <linux/platform_device.h>
+ #include <linux/sizes.h>
+@@ -58,6 +59,8 @@ static LIST_HEAD(ipmmu_devices);
+  * Registers Definition
+  */
  
-+	if (mode != DRM_MODE_DPMS_ON)
-+		mode = DRM_MODE_DPMS_OFF;
++#define IM_NS_ALIAS_OFFSET		0x800
 +
- 	if (rcrtc->dpms = mode)
- 		return;
+ #define IM_CTX_SIZE			0x40
  
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-index 243aba8d4dd2..279167f783f6 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-@@ -46,6 +46,9 @@ static void rcar_du_encoder_dpms(struct drm_encoder *encoder, int mode)
+ #define IMCTR				0x0000
+@@ -1002,16 +1005,33 @@ static phys_addr_t ipmmu_iova_to_phys(struct iommu_domain *io_domain,
+ 
+ static int ipmmu_find_utlb(struct ipmmu_vmsa_device *mmu, struct device *dev)
  {
- 	struct rcar_du_encoder *renc = to_rcar_encoder(encoder);
- 
-+	if (mode != DRM_MODE_DPMS_ON)
-+		mode = DRM_MODE_DPMS_OFF;
+-	const struct ipmmu_vmsa_master *master = mmu->pdata->masters;
+-	const char *devname = dev_name(dev);
+-	unsigned int i;
++	struct of_phandle_args args;
++	int ret;
 +
- 	if (renc->lvds)
- 		rcar_du_lvdsenc_dpms(renc->lvds, encoder->crtc, mode);
++	if (mmu->pdata) {
++		const struct ipmmu_vmsa_master *master = mmu->pdata->masters;
++		const char *devname = dev_name(dev);
++		unsigned int i;
+ 
+-	for (i = 0; i < mmu->pdata->num_masters; ++i, ++master) {
+-		if (strcmp(master->name, devname) = 0)
+-			return master->utlb;
++		for (i = 0; i < mmu->pdata->num_masters; ++i, ++master) {
++			if (strcmp(master->name, devname) = 0)
++				return master->utlb;
++		}
++
++		return -1;
+ 	}
+ 
+-	return -1;
++	ret = of_parse_phandle_with_args(dev->of_node, "iommus",
++					 "#iommu-cells", 0, &args);
++	if (ret < 0)
++		return -1;
++
++	of_node_put(args.np);
++
++	if (args.np != mmu->dev->of_node || args.args_count != 1)
++		return -1;
++
++	return args.args[0];
  }
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c b/drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c
-index 0d774a937e79..221f0a17fd6a 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c
-@@ -37,6 +37,9 @@ static void rcar_du_hdmienc_dpms(struct drm_encoder *encoder, int mode)
- 	struct rcar_du_hdmienc *hdmienc = to_rcar_hdmienc(encoder);
- 	struct drm_encoder_slave_funcs *sfuncs = to_slave_funcs(encoder);
  
-+	if (mode != DRM_MODE_DPMS_ON)
-+		mode = DRM_MODE_DPMS_OFF;
+ static int ipmmu_add_device(struct device *dev)
+@@ -1156,7 +1176,7 @@ static int ipmmu_probe(struct platform_device *pdev)
+ 	int irq;
+ 	int ret;
+ 
+-	if (!pdev->dev.platform_data) {
++	if (!IS_ENABLED(CONFIG_OF) && !pdev->dev.platform_data) {
+ 		dev_err(&pdev->dev, "missing platform data\n");
+ 		return -EINVAL;
+ 	}
+@@ -1177,6 +1197,20 @@ static int ipmmu_probe(struct platform_device *pdev)
+ 	if (IS_ERR(mmu->base))
+ 		return PTR_ERR(mmu->base);
+ 
++	/*
++	 * The IPMMU has two register banks, for secure and non-secure modes.
++	 * The bank mapped at the beginning of the IPMMU address space
++	 * corresponds to the running mode of the CPU. When running in secure
++	 * mode the non-secure register bank is also available at an offset.
++	 *
++	 * Secure mode operation isn't clearly documented and is thus currently
++	 * not implemented in the driver. Furthermore, preliminary tests of
++	 * non-secure operation with the main register bank were not successful.
++	 * Offset the registers base unconditionally to point to the non-secure
++	 * alias space for now.
++	 */
++	mmu->base += IM_NS_ALIAS_OFFSET;
 +
- 	if (hdmienc->dpms = mode)
- 		return;
+ 	irq = platform_get_irq(pdev, 0);
+ 	if (irq < 0) {
+ 		dev_err(&pdev->dev, "no IRQ found\n");
+@@ -1222,10 +1256,15 @@ static int ipmmu_remove(struct platform_device *pdev)
+ 	return 0;
+ }
  
++static const struct of_device_id ipmmu_of_ids[] = {
++	{ .compatible = "renesas,ipmmu-vmsa", },
++};
++
+ static struct platform_driver ipmmu_driver = {
+ 	.driver = {
+ 		.owner = THIS_MODULE,
+ 		.name = "ipmmu-vmsa",
++		.of_match_table = of_match_ptr(ipmmu_of_ids),
+ 	},
+ 	.probe = ipmmu_probe,
+ 	.remove	= ipmmu_remove,
 -- 
 2.0.4
 
