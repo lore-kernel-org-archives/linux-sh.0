@@ -1,40 +1,47 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 29 Dec 2014 01:43:41 +0000
-Subject: [PATCH 7/7] ARM: shmobile: kzm9g-reference dts: Replace status value "ok" by "okay"
-Message-Id: <338d1f0b5e877eae51c885da81d86b0efd6373e7.1419809027.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 16 Dec 2014 13:44:10 +0000
+Subject: [PATCH v2 03/10] iommu/ipmmu-vmsa: Invalidate TLB after unmapping
+Message-Id: <1418737457-22042-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1419809027.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1419809027.git.horms+renesas@verge.net.au>
+References: <1418737457-22042-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1418737457-22042-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: iommu@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+The TLB must be invalidated after unmapping memory to remove stale TLB
+entries. this was supposed to be performed already, but a bug in the
+driver prevented the TLB invalidate function from being called. Fix it.
 
-While the DT parsing code recognizes "ok" as a valid value for the
-"status" property, ePAPR v1.1 doesn't mention it in the list of valid
-values.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/iommu/ipmmu-vmsa.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index 939be12..863dc4c 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -179,7 +179,7 @@
- };
+diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
+index fcb603d8b041..9838d119045d 100644
+--- a/drivers/iommu/ipmmu-vmsa.c
++++ b/drivers/iommu/ipmmu-vmsa.c
+@@ -785,7 +785,6 @@ static int ipmmu_clear_mapping(struct ipmmu_vmsa_domain *domain,
+ 	pud_t *pud;
+ 	pmd_t *pmd;
+ 	pte_t *pte;
+-	int ret = 0;
  
- &cmt1 {
--	status = "ok";
-+	status = "okay";
- };
+ 	if (!pgd)
+ 		return -EINVAL;
+@@ -847,8 +846,7 @@ static int ipmmu_clear_mapping(struct ipmmu_vmsa_domain *domain,
+ done:
+ 	spin_unlock_irqrestore(&domain->lock, flags);
  
- &i2c0 {
+-	if (ret)
+-		ipmmu_tlb_invalidate(domain);
++	ipmmu_tlb_invalidate(domain);
+ 
+ 	return 0;
+ }
 -- 
-2.1.3
+2.0.4
 
