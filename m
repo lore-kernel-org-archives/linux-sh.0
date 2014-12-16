@@ -1,57 +1,99 @@
-From: Bjorn Helgaas <bhelgaas@google.com>
-Date: Tue, 09 Dec 2014 22:38:46 +0000
-Subject: Re: [PATCH] PCI: rcar: fix error handling of irq_of_parse_and_map
-Message-Id: <20141209223846.GC6692@google.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 16 Dec 2014 13:44:17 +0000
+Subject: [PATCH v2 10/10] ARM: shmobile: r8a7791: Add IPMMU DT nodes
+Message-Id: <1418737457-22042-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20141114222153.GA39494@dtor-ws>
-In-Reply-To: <20141114222153.GA39494@dtor-ws>
+References: <1418737457-22042-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1418737457-22042-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Dmitry Torokhov <dtor@chromium.org>
-Cc: Simon Horman <horms@verge.net.au>, Phil Edworthy <phil.edworthy@renesas.com>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: iommu@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org
 
-On Fri, Nov 14, 2014 at 02:21:53PM -0800, Dmitry Torokhov wrote:
-> Return value of irq_of_parse_and_map() is unsigned int, with 0
-> indicating failure, so testing for negative result never works.
-> 
-> Signed-off-by: Dmitry Torokhov <dtor@chromium.org>
+Add the seven IPMMU instances found in the r8a7791 to DT with a disabled
+status.
 
-Applied with Phil's ack to next-pci/host-rcar for v3.19.  This branch will
-be rebased to v3.19-rc1.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 60 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 60 insertions(+)
 
-> ---
-> 
-> Not tested, found by casual code inspection.
-> 
->  drivers/pci/host/pcie-rcar.c | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
-> index 9b356c3..6ca976f 100644
-> --- a/drivers/pci/host/pcie-rcar.c
-> +++ b/drivers/pci/host/pcie-rcar.c
-> @@ -764,7 +764,7 @@ static int rcar_pcie_get_resources(struct platform_device *pdev,
->  		goto err_map_reg;
->  
->  	i = irq_of_parse_and_map(pdev->dev.of_node, 0);
-> -	if (i < 0) {
-> +	if (!i) {
->  		dev_err(pcie->dev, "cannot get platform resources for msi interrupt\n");
->  		err = -ENOENT;
->  		goto err_map_reg;
-> @@ -772,7 +772,7 @@ static int rcar_pcie_get_resources(struct platform_device *pdev,
->  	pcie->msi.irq1 = i;
->  
->  	i = irq_of_parse_and_map(pdev->dev.of_node, 1);
-> -	if (i < 0) {
-> +	if (!i) {
->  		dev_err(pcie->dev, "cannot get platform resources for msi interrupt\n");
->  		err = -ENOENT;
->  		goto err_map_reg;
-> -- 
-> 2.1.0.rc2.206.gedb03e5
-> 
-> 
-> -- 
-> Dmitry
+Changes compared to v1:
+
+- Update to the v2 DT bindings
+
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 78d637135e77..392548ba1cd3 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1384,6 +1384,66 @@
+ 		status = "disabled";
+ 	};
+ 
++	ipmmu_sy0: mmu@e6280000 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xe6280000 0 0x1000>;
++		interrupts = <0 223 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 224 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_sy1: mmu@e6290000 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xe6290000 0 0x1000>;
++		interrupts = <0 225 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_ds: mmu@e6740000 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xe6740000 0 0x1000>;
++		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 199 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_mp: mmu@ec680000 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xec680000 0 0x1000>;
++		interrupts = <0 226 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_mx: mmu@fe951000 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xfe951000 0 0x1000>;
++		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 221 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_rt: mmu@ffc80000 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xffc80000 0 0x1000>;
++		interrupts = <0 307 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_gp: mmu@e62a0000 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xe62a0000 0 0x1000>;
++		interrupts = <0 260 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 261 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
+ 	rcar_sound: rcar_sound@ec500000 {
+ 		#sound-dai-cells = <1>;
+ 		compatible =  "renesas,rcar_sound-r8a7791", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
+-- 
+2.0.4
+
