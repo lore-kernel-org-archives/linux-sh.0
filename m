@@ -1,43 +1,77 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 23 Dec 2014 00:15:06 +0000
-Subject: Re: [PATCH v2 03/05] ARM: shmobile: sh73a0: Add Multiplatform support
-Message-Id: <20141223001506.GC2817@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 16 Dec 2014 13:44:12 +0000
+Subject: [PATCH v2 05/10] iommu/ipmmu-vmsa: Add device tree bindings documentation
+Message-Id: <1418737457-22042-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20141217094234.7039.79623.sendpatchset@w520>
-In-Reply-To: <20141217094234.7039.79623.sendpatchset@w520>
+References: <1418737457-22042-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1418737457-22042-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: iommu@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org
 
-On Tue, Dec 23, 2014 at 09:12:34AM +0900, Simon Horman wrote:
-> On Mon, Dec 22, 2014 at 11:10:26AM +0100, Geert Uytterhoeven wrote:
-> > On Wed, Dec 17, 2014 at 10:42 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> > >
-> > > --- 0001/arch/arm/mach-shmobile/Kconfig
-> > > +++ work/arch/arm/mach-shmobile/Kconfig 2014-12-16 19:11:36.000000000 +0900
-> > > @@ -52,6 +52,11 @@ config ARCH_R7S72100
-> > >         bool "RZ/A1H (R7S72100)"
-> > >         select SYS_SUPPORTS_SH_MTU2
-> > >
-> > > +config ARCH_SH73A0
-> > > +       bool "SH-Mobile AG5 (R8A73A00)"
-> > > +       select ARCH_RMOBILE
-> > > +       select RENESAS_INTC_IRQPIN
-> > > +
-> > >  config ARCH_R8A7740
-> > >         bool "R-Mobile A1 (R8A77400)"
-> > >         select ARCH_RMOBILE
-> > 
-> > Shall we keep this sorted?
-> > That does mean the entries for the old SH73xx are at the end of the
-> > list, though.
-> 
-> Sorting it is nice. But are other entries out of order?
-> In either case, feel free to submit a cleanup.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ .../bindings/iommu/renesas,ipmmu-vmsa.txt          | 41 ++++++++++++++++++++++
+ 1 file changed, 41 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt
 
-Sorry, for some reason I thought I had queued up the above patch.
+Cc: devicetree@vger.kernel.org
 
-I think sorting makes sense. And it looks like the other entries are already
-sorted. So adjusting this patch seems like a good idea to me. But I'll
-let Magnus decide.
+Changes compared to v1:
+
+- Extend the register range over both the base registers bank and the
+  non-secure aliases
+- Specify both the secure and non-secure interrupt, when applicable
+
+diff --git a/Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt b/Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt
+new file mode 100644
+index 000000000000..ba225a091dcf
+--- /dev/null
++++ b/Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt
+@@ -0,0 +1,41 @@
++* Renesas VMSA-Compatible IOMMU
++
++The IPMMU is an IOMMU implementation compatible with the ARM VMSA page tables.
++It provides address translation for bus masters outside of the CPU, each
++connected to the IPMMU through a port called micro-TLB.
++
++
++Required Properties:
++
++  - compatible: Must contain "renesas,ipmmu-vmsa".
++  - reg: Base address and size of the IPMMU registers.
++  - interrupts: Specifiers for the MMU fault interrupts. For instances that
++    support secure mode two interrupts must be specified, for non-secure and
++    secure mode, in that order. For instances that don't support secure mode a
++    single interrupt must be specified.
++
++  - #iommu-cells: Must be 1.
++
++Each bus master connected to an IPMMU must reference the IPMMU in its device
++node with the following property:
++
++  - iommus: A reference to the IPMMU in two cells. The first cell is a phandle
++    to the IPMMU and the second cell the number of the micro-TLB that the
++    device is connected to.
++
++
++Example: R8A7791 IPMMU-MX and VSP1-D0 bus master
++
++	ipmmu_mx: mmu@fe951800 {
++		compatible = "renasas,ipmmu-vmsa";
++		reg = <0 0xfe951000 0 0x1000>;
++		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 221 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++	};
++
++	vsp1@fe928000 {
++		...
++		iommus = <&ipmmu_mx 13>;
++		...
++	};
+-- 
+2.0.4
+
