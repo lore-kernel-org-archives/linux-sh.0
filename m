@@ -1,78 +1,49 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Tue, 16 Dec 2014 16:25:59 +0000
-Subject: [PATCH v2 3/7] ARM: shmobile: ape6evm: Add keypad to the device tree
-Message-Id: <1418747163-21729-4-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 16 Dec 2014 09:39:41 +0000
+Subject: [PATCH 02/02] ARM: shmobile: r8a7779: Add TWD device to DTS
+Message-Id: <20141216093941.14252.13361.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/boot/dts/r8a73a4-ape6evm.dts | 41 +++++++++++++++++++++++++++++++++++
- 1 file changed, 41 insertions(+)
+From: Magnus Damm <damm+renesas@opensource.se>
 
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-index b939a37..6b7bc1f 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-@@ -11,6 +11,7 @@
- /dts-v1/;
- #include "r8a73a4.dtsi"
- #include <dt-bindings/gpio/gpio.h>
-+#include <dt-bindings/input/input.h>
+Now when r8a7779 CCF is in place we can hook up
+the ARM Cortex-A9 TWD timer via DTS.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ Built on top of renesas-devel-20141216v2-v3.18
+ No special dependencies
+
+ arch/arm/boot/dts/r8a7779.dtsi |    9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- 0001/arch/arm/boot/dts/r8a7779.dtsi
++++ work/arch/arm/boot/dts/r8a7779.dtsi	2014-12-16 18:19:23.000000000 +0900
+@@ -12,6 +12,7 @@
+ /include/ "skeleton.dtsi"
+ 
+ #include <dt-bindings/clock/r8a7779-clock.h>
++#include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
  
  / {
- 	model = "APE6EVM";
-@@ -110,6 +111,46 @@
- 			label = "BBRESETOUT";
- 		};
+@@ -62,6 +63,14 @@
+ 		      <0xf0000100 0x100>;
  	};
-+
-+	keyboard {
-+		compatible = "gpio-keys";
-+
-+		zero-key {
-+			gpios = <&pfc 324 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_0>;
-+			label = "S16";
-+		};
-+
-+		menu-key {
-+			gpios = <&pfc 325 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_MENU>;
-+			label = "S17";
-+		};
-+
-+		home-key {
-+			gpios = <&pfc 326 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_HOME>;
-+			label = "S18";
-+		};
-+
-+		back-key {
-+			gpios = <&pfc 327 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_BACK>;
-+			label = "S19";
-+		};
-+
-+		volup-key {
-+			gpios = <&pfc 328 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_VOLUMEUP>;
-+			label = "S20";
-+		};
-+
-+		voldown-key {
-+			gpios = <&pfc 329 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_VOLUMEDOWN>;
-+			label = "S21";
-+		};
-+	};
- };
  
- &i2c5 {
--- 
-1.8.4.5
-
++	timer@f0000600 {
++		compatible = "arm,cortex-a9-twd-timer";
++		reg = <0xf0000600 0x20>;
++		interrupts = <GIC_PPI 13
++			(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
++		clocks = <&cpg_clocks R8A7779_CLK_ZS>;
++	};
++
+ 	gpio0: gpio@ffc40000 {
+ 		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
+ 		reg = <0xffc40000 0x2c>;
