@@ -1,38 +1,32 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 11 Dec 2014 02:33:35 +0000
-Subject: [PATCH] Revert "ARM: shmobile: multiplatform: add Audo DMAC peri peri support on defconfig"
-Message-Id: <b6f6383b98092a1759d19893875bba90c8d9f446.1418265122.git.horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 16 Dec 2014 16:26:01 +0000
+Subject: [PATCH v2 5/7] ARM: shmobile: r8a73a4: Add r8a73a4-ape6evm.dtb to ARCH_SHMOBILE_MULTI
+Message-Id: <1418747163-21729-6-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1418265122.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1418265122.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This reverts commit 2315f9fce4da7df9362e4baeb5250d14ea48bf63.
+Makes sure the dtb is built for multiplatform builds.
 
-Unfortunately enabling RCAR_AUDMAC_PP support this patch breaks dmaengine
-support on R-Car Gen2 boards. This should be resolved by driver updates
-in v3.20. But v3.19 was too early for this defconfig change.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
- arch/arm/configs/shmobile_defconfig | 1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/boot/dts/Makefile | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index cc67508..302faab 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -147,7 +147,6 @@ CONFIG_RTC_CLASS=y
- CONFIG_RTC_DRV_S35390A=y
- CONFIG_DMADEVICES=y
- CONFIG_SH_DMAE=y
--CONFIG_RCAR_AUDMAC_PP=y
- CONFIG_RCAR_DMAC=y
- # CONFIG_IOMMU_SUPPORT is not set
- CONFIG_PWM=y
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index b5a237e..d4d78e7 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -388,6 +388,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += \
+ 	sh73a0-kzm9g-reference.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
+ 	r7s72100-genmai.dtb \
++	r8a73a4-ape6evm.dtb \
+ 	r8a7740-armadillo800eva.dtb \
+ 	r8a7779-marzen.dtb \
+ 	r8a7790-lager.dtb \
 -- 
-2.1.3
+1.8.4.5
 
