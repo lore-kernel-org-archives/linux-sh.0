@@ -1,77 +1,48 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 16 Dec 2014 13:44:12 +0000
-Subject: [PATCH v2 05/10] iommu/ipmmu-vmsa: Add device tree bindings documentation
-Message-Id: <1418737457-22042-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 16 Dec 2014 13:52:39 +0000
+Subject: Re: [PATCH v2 05/10] iommu/ipmmu-vmsa: Add device tree bindings documentation
+Message-Id: <CAMuHMdXC8C7BuTdK8-RkqaQ6dqi1bxRHFz1CttGQi3u9w6QD7Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1418737457-22042-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1418737457-22042-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+	<1418737457-22042-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1418737457-22042-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: iommu@lists.linux-foundation.org, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- .../bindings/iommu/renesas,ipmmu-vmsa.txt          | 41 ++++++++++++++++++++++
- 1 file changed, 41 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt
+Hi Laurent,
 
-Cc: devicetree@vger.kernel.org
+On Tue, Dec 16, 2014 at 2:44 PM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Changes compared to v1:
+Thanks!
 
-- Extend the register range over both the base registers bank and the
-  non-secure aliases
-- Specify both the secure and non-secure interrupt, when applicable
+Apart from the minor nit below:
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-diff --git a/Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt b/Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt
-new file mode 100644
-index 000000000000..ba225a091dcf
---- /dev/null
-+++ b/Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt
-@@ -0,0 +1,41 @@
-+* Renesas VMSA-Compatible IOMMU
-+
-+The IPMMU is an IOMMU implementation compatible with the ARM VMSA page tables.
-+It provides address translation for bus masters outside of the CPU, each
-+connected to the IPMMU through a port called micro-TLB.
-+
-+
-+Required Properties:
-+
-+  - compatible: Must contain "renesas,ipmmu-vmsa".
-+  - reg: Base address and size of the IPMMU registers.
-+  - interrupts: Specifiers for the MMU fault interrupts. For instances that
-+    support secure mode two interrupts must be specified, for non-secure and
-+    secure mode, in that order. For instances that don't support secure mode a
-+    single interrupt must be specified.
-+
-+  - #iommu-cells: Must be 1.
-+
-+Each bus master connected to an IPMMU must reference the IPMMU in its device
-+node with the following property:
-+
-+  - iommus: A reference to the IPMMU in two cells. The first cell is a phandle
-+    to the IPMMU and the second cell the number of the micro-TLB that the
-+    device is connected to.
-+
-+
-+Example: R8A7791 IPMMU-MX and VSP1-D0 bus master
-+
-+	ipmmu_mx: mmu@fe951800 {
-+		compatible = "renasas,ipmmu-vmsa";
-+		reg = <0 0xfe951000 0 0x1000>;
-+		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 221 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+	};
-+
-+	vsp1@fe928000 {
-+		...
-+		iommus = <&ipmmu_mx 13>;
-+		...
-+	};
--- 
-2.0.4
+> +       ipmmu_mx: mmu@fe951800 {
 
+fe951000
+
+(yes, having to put the same information in two places will cause discrepancies)
+
+> +               compatible = "renasas,ipmmu-vmsa";
+> +               reg = <0 0xfe951000 0 0x1000>;
+> +               interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>,
+> +                            <0 221 IRQ_TYPE_LEVEL_HIGH>;
+> +               #iommu-cells = <1>;
+> +       };
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
