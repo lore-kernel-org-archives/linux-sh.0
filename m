@@ -1,99 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 16 Dec 2014 13:44:17 +0000
-Subject: [PATCH v2 10/10] ARM: shmobile: r8a7791: Add IPMMU DT nodes
-Message-Id: <1418737457-22042-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 16 Dec 2014 14:15:43 +0000
+Subject: Re: [PATCH v2 10/10] ARM: shmobile: r8a7791: Add IPMMU DT nodes
+Message-Id: <CAMuHMdUDN6FjV5B3Jb5GP-LYMgXD9ARjmM_Sc25ONo9=a4hngg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1418737457-22042-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1418737457-22042-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+	<1418737457-22042-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1418737457-22042-11-git-send-email-laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-sh@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
+Cc: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Add the seven IPMMU instances found in the r8a7791 to DT with a disabled
-status.
+On Tue, Dec 16, 2014 at 2:44 PM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
+> Add the seven IPMMU instances found in the r8a7791 to DT with a disabled
+> status.
+>
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/r8a7791.dtsi | 60 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 60 insertions(+)
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Changes compared to v1:
+Gr{oetje,eeting}s,
 
-- Update to the v2 DT bindings
+                        Geert
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 78d637135e77..392548ba1cd3 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1384,6 +1384,66 @@
- 		status = "disabled";
- 	};
- 
-+	ipmmu_sy0: mmu@e6280000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xe6280000 0 0x1000>;
-+		interrupts = <0 223 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 224 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+		status = "disabled";
-+	};
-+
-+	ipmmu_sy1: mmu@e6290000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xe6290000 0 0x1000>;
-+		interrupts = <0 225 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+		status = "disabled";
-+	};
-+
-+	ipmmu_ds: mmu@e6740000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xe6740000 0 0x1000>;
-+		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 199 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+		status = "disabled";
-+	};
-+
-+	ipmmu_mp: mmu@ec680000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xec680000 0 0x1000>;
-+		interrupts = <0 226 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+		status = "disabled";
-+	};
-+
-+	ipmmu_mx: mmu@fe951000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xfe951000 0 0x1000>;
-+		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 221 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+		status = "disabled";
-+	};
-+
-+	ipmmu_rt: mmu@ffc80000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xffc80000 0 0x1000>;
-+		interrupts = <0 307 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+		status = "disabled";
-+	};
-+
-+	ipmmu_gp: mmu@e62a0000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xe62a0000 0 0x1000>;
-+		interrupts = <0 260 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 261 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+		status = "disabled";
-+	};
-+
- 	rcar_sound: rcar_sound@ec500000 {
- 		#sound-dai-cells = <1>;
- 		compatible =  "renesas,rcar_sound-r8a7791", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
--- 
-2.0.4
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
