@@ -1,45 +1,75 @@
-From: =?UTF-8?q?Niklas=20S=C3=B6derlund?= <niso@kth.se>
-Date: Fri, 12 Dec 2014 20:01:37 +0000
-Subject: [PATCH 4/4] ARM: shmobile: emev2-kzm9d: Add PFC information for uart1
-Message-Id: <1418414497-23741-5-git-send-email-niso@kth.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 16 Dec 2014 13:44:09 +0000
+Subject: [PATCH v2 02/10] iommu/ipmmu-vmsa: Flush P[UM]D entry before freeing the child page table
+Message-Id: <1418737457-22042-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418414497-23741-1-git-send-email-niso@kth.se>
-In-Reply-To: <1418414497-23741-1-git-send-email-niso@kth.se>
+References: <1418737457-22042-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1418737457-22042-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-kernel@vger.kernel.org, laurent.pinchart@ideasonboard.com, linus.walleij@linaro.org
-Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, magnus.damm@gmail.com, =?UTF-8?q?Niklas=20S=C3=B6derlund?= <niso@kth.se>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: iommu@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org
 
-Configure the pinmux on kzm9d to use the serial connector for uart1.
+When clearing PUD or PMD entries the child page table (if any) is freed
+and the PUD or PMD entry is then cleared. This result in a small race
+condition window during which a free page table could be accessed by the
+IPMMU.
 
-Signed-off-by: Niklas S=C3=B6derlund <niso@kth.se>
+Fix it by clearing and flushing the PUD or PMD entry before freeing the
+child page table.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/emev2-kzm9d.dts | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ drivers/iommu/ipmmu-vmsa.c | 19 +++++++++++--------
+ 1 file changed, 11 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts b/arch/arm/boot/dts/emev2-kz=
-m9d.dts
-index 667d323..daf19bf 100644
---- a/arch/arm/boot/dts/emev2-kzm9d.dts
-+++ b/arch/arm/boot/dts/emev2-kzm9d.dts
-@@ -94,3 +94,16 @@
- 		vdd33a-supply =3D <&reg_3p3v>;
- 	};
- };
+diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
+index f7036adb5634..fcb603d8b041 100644
+--- a/drivers/iommu/ipmmu-vmsa.c
++++ b/drivers/iommu/ipmmu-vmsa.c
+@@ -678,30 +678,33 @@ done:
+ 
+ static void ipmmu_clear_pud(struct ipmmu_vmsa_device *mmu, pud_t *pud)
+ {
+-	/* Free the page table. */
+ 	pgtable_t table = pud_pgtable(*pud);
+-	__free_page(table);
+ 
+ 	/* Clear the PUD. */
+ 	*pud = __pud(0);
+ 	ipmmu_flush_pgtable(mmu, pud, sizeof(*pud));
 +
-+&pfc {
-+	uart1_pins: uart@e1030000 {
-+		renesas,groups =3D "uart1_rx", "uart1_tx", "uart1_ctsb", "uart1_rtsb";
-+		renesas,function =3D "uart1";
-+	};
-+};
++	/* Free the page table. */
++	__free_page(table);
+ }
+ 
+ static void ipmmu_clear_pmd(struct ipmmu_vmsa_device *mmu, pud_t *pud,
+ 			    pmd_t *pmd)
+ {
++	pmd_t pmdval = *pmd;
+ 	unsigned int i;
+ 
+-	/* Free the page table. */
+-	if (pmd_table(*pmd)) {
+-		pgtable_t table = pmd_pgtable(*pmd);
+-		__free_page(table);
+-	}
+-
+ 	/* Clear the PMD. */
+ 	*pmd = __pmd(0);
+ 	ipmmu_flush_pgtable(mmu, pmd, sizeof(*pmd));
+ 
++	/* Free the page table. */
++	if (pmd_table(pmdval)) {
++		pgtable_t table = pmd_pgtable(pmdval);
 +
-+&uart1 {
-+	pinctrl-0 =3D <&uart1_pins>;
-+	pinctrl-names =3D "default";
-+	status =3D "okay";
-+};
---=20
-2.1.3
++		__free_page(table);
++	}
++
+ 	/* Check whether the PUD is still needed. */
+ 	pmd = pmd_offset(pud, 0);
+ 	for (i = 0; i < IPMMU_PTRS_PER_PMD; ++i) {
+-- 
+2.0.4
 
