@@ -1,106 +1,116 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 12 Dec 2014 19:32:10 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7779 CCF DTS update
-Message-Id: <1856870.T34OBLmrvO@avalon>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 16 Dec 2014 12:31:25 +0000
+Subject: [PATCH 1/2] i2c: sh_mobile: refactor DMA setup
+Message-Id: <1418733086-26324-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20141203115145.5889.72521.sendpatchset@w520>
-In-Reply-To: <20141203115145.5889.72521.sendpatchset@w520>
+References: <1418733086-26324-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1418733086-26324-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Vinod Koul <vinod.koul-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
 
-Hi Magnus,
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-On Thursday 04 December 2014 13:37:10 Magnus Damm wrote:
-> On Wed, Dec 3, 2014 at 9:56 PM, Geert Uytterhoeven wrote:
-> > On Wed, Dec 3, 2014 at 1:52 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> >> On Wed, Dec 3, 2014 at 9:25 PM, Geert Uytterhoeven wrote:
-> >>> On Wed, Dec 3, 2014 at 12:51 PM, Magnus Damm wrote:
-> >>>> Update the r8a7779 CCF DTS with the following fixes:
-> >>>>  - Use MSTP0 for SCIF clock control
-> >>>>  - Use R8A7779_CLK_P as parent clock for SCIF (same as legacy code)
-> >>>>  - Use "clock-indicies" instead of "renesas,clock-indices"
-> >>> 
-> >>> We already have
-> >>> "[PATCH v2 3/6] ARM: shmobile: r8a7779 dtsi: Change to using
-> >>> clock-indices"
-> >>> (http://www.spinics.net/lists/linux-sh/msg37285.html) for the latter.
-> >> 
-> >> Yes, I noticed that too late I'm afraid. =)
-> >> 
-> >> Are you aware of any outstanding issue for that series?
-> > 
-> > Not that I'm aware of. As Mike merged the bindings update, I had pinged
-> > Simon about the rest of the series, just before you sent your patch.
-> 
-> Thanks, sounds like I should make a V2 of this patch once Simon has
-> merged patch 3/6 above.
-> 
-> >>>> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> >>>> ---
-> >>>> 
-> >>>>  Written on top of renesas-devel-20141202-v3.18-rc7
-> >>>>  
-> >>>>  arch/arm/boot/dts/r8a7779.dtsi |   30 +++++++++++++++---------------
-> >>>>  1 file changed, 15 insertions(+), 15 deletions(-)
-> >>>> 
-> >>>> --- 0001/arch/arm/boot/dts/r8a7779.dtsi
-> >>>> +++ work/arch/arm/boot/dts/r8a7779.dtsi 2014-12-03 20:22:26.000000000
-> >>>> +0900
-> >>>> @@ -200,7 +200,7 @@
-> >>>>                 compatible = "renesas,scif-r8a7779", "renesas,scif";
-> >>>>                 reg = <0xffe40000 0x100>;
-> >>>>                 interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
-> >>>> -               clocks = <&cpg_clocks R8A7779_CLK_P>;
-> >>>> +               clocks = <&mstp0_clks R8A7779_CLK_SCIF0>;
-> >>>>                 clock-names = "sci_ick";
-> >>>>                 status = "disabled";
-> >>>>         };
-> >>> 
-> >>> According to the datasheet, the SCIF can use both S1 and "SCIF_CLK" (I
-> >>> assume that's the MSTP clock output for SCIF?) as clock input,
-> >>> selectable using the XIN bit of the Clock Select Register (CKS).
-> >>> Do you have more information?
-> >> 
-> >> I suspect that you may look at the left side of the r8a7779 SCIF
-> >> overview page near the BRG where there is a "clks1" and the external
-> >> SCIF_CLK. I'm looking at the right side and the "baud rate generator"
-> >> where clkp is hooked up.
-> > 
-> > Oh right, that "clkp" is really "clkp through MSTP bit X"?
-> 
-> Yes, this is how we historically have hooked up the SCIF clocks. It is
-> however not entirely clear from the documentation how the MSTP bit is
-> connected, so the assumption may be wrong. And the SCIF driver has
-> support for interface clocks as well.
+Refactor DMA setup to keep the errno so we can implement better
+deferred probe support in the next step.
 
-I've studied this extensively over the SH and ARM SoCs and my conclusion was 
-that the SCIF has a functional clock and several optional baud rate clocks, 
-but no interface clock. References to the interface clock in the driver and DT 
-bindings are leftovers of historical mistakes.
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/busses/i2c-sh_mobile.c | 35 ++++++++++++++++-------------------
+ 1 file changed, 16 insertions(+), 19 deletions(-)
 
-> The "clkp through MSTP bit X" implementation seems better than the current
-> code at least.
-> 
-> >> The SCIF driver today has relatively limited support for the BRG
-> >> (which confusingly enough is a second baud rate generator, how many do
-> >> one need?). With the "regular" baud rate generator and the BRG unit
-> >> some of the SCIF variants can be configured to use many different
-> >> clocks.
-> >> 
-> >> We currently lack code for the following:
-> >> A) Describe all the clocks hooked up to the SCIF
-> >> B) Select the best clock for any given baud rate
-> >> 
-> >> So with this patch we simply ignore the BRG.
-> > 
-> > OK. Fair enough.
-> > 
-> > Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
+diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
+index b9c8cf2aac2c..2eccbb55dab2 100644
+--- a/drivers/i2c/busses/i2c-sh_mobile.c
++++ b/drivers/i2c/busses/i2c-sh_mobile.c
+@@ -552,7 +552,7 @@ static void sh_mobile_i2c_xfer_dma(struct sh_mobile_i2c_data *pd)
+ 	dma_addr_t dma_addr;
+ 	dma_cookie_t cookie;
+ 
+-	if (!chan)
++	if (IS_ERR(chan))
+ 		return;
+ 
+ 	dma_addr = dma_map_single(chan->device->dev, pd->msg->buf, pd->msg->len, dir);
+@@ -749,21 +749,18 @@ static const struct of_device_id sh_mobile_i2c_dt_ids[] = {
+ };
+ MODULE_DEVICE_TABLE(of, sh_mobile_i2c_dt_ids);
+ 
+-static int sh_mobile_i2c_request_dma_chan(struct device *dev, enum dma_transfer_direction dir,
+-					  dma_addr_t port_addr, struct dma_chan **chan_ptr)
++static struct dma_chan *sh_mobile_i2c_request_dma_chan(struct device *dev,
++				enum dma_transfer_direction dir, dma_addr_t port_addr)
+ {
+ 	struct dma_chan *chan;
+ 	struct dma_slave_config cfg;
+ 	char *chan_name = dir = DMA_MEM_TO_DEV ? "tx" : "rx";
+ 	int ret;
+ 
+-	*chan_ptr = NULL;
+-
+ 	chan = dma_request_slave_channel_reason(dev, chan_name);
+ 	if (IS_ERR(chan)) {
+-		ret = PTR_ERR(chan);
+ 		dev_dbg(dev, "request_channel failed for %s (%d)\n", chan_name, ret);
+-		return ret;
++		return chan;
+ 	}
+ 
+ 	memset(&cfg, 0, sizeof(cfg));
+@@ -780,25 +777,23 @@ static int sh_mobile_i2c_request_dma_chan(struct device *dev, enum dma_transfer_
+ 	if (ret) {
+ 		dev_dbg(dev, "slave_config failed for %s (%d)\n", chan_name, ret);
+ 		dma_release_channel(chan);
+-		return ret;
++		return ERR_PTR(ret);
+ 	}
+ 
+-	*chan_ptr = chan;
+-
+ 	dev_dbg(dev, "got DMA channel for %s\n", chan_name);
+-	return 0;
++	return chan;
+ }
+ 
+ static void sh_mobile_i2c_release_dma(struct sh_mobile_i2c_data *pd)
+ {
+-	if (pd->dma_tx) {
++	if (!IS_ERR(pd->dma_tx)) {
+ 		dma_release_channel(pd->dma_tx);
+-		pd->dma_tx = NULL;
++		pd->dma_tx = ERR_PTR(-EPROBE_DEFER);
+ 	}
+ 
+-	if (pd->dma_rx) {
++	if (!IS_ERR(pd->dma_rx)) {
+ 		dma_release_channel(pd->dma_rx);
+-		pd->dma_rx = NULL;
++		pd->dma_rx = ERR_PTR(-EPROBE_DEFER);
+ 	}
+ }
+ 
+@@ -891,13 +886,15 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
+ 	/* Init DMA */
+ 	sg_init_table(&pd->sg, 1);
+ 	pd->dma_direction = DMA_NONE;
+-	ret = sh_mobile_i2c_request_dma_chan(pd->dev, DMA_DEV_TO_MEM,
+-					     res->start + ICDR, &pd->dma_rx);
++	pd->dma_rx = sh_mobile_i2c_request_dma_chan(pd->dev, DMA_DEV_TO_MEM,
++						    res->start + ICDR);
++	ret = PTR_ERR(pd->dma_rx);
+ 	if (ret = -EPROBE_DEFER)
+ 		return ret;
+ 
+-	ret = sh_mobile_i2c_request_dma_chan(pd->dev, DMA_MEM_TO_DEV,
+-					     res->start + ICDR, &pd->dma_tx);
++	pd->dma_tx = sh_mobile_i2c_request_dma_chan(pd->dev, DMA_MEM_TO_DEV,
++						    res->start + ICDR);
++	ret = PTR_ERR(pd->dma_tx);
+ 	if (ret = -EPROBE_DEFER) {
+ 		sh_mobile_i2c_release_dma(pd);
+ 		return ret;
 -- 
-Regards,
-
-Laurent Pinchart
+2.1.3
 
