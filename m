@@ -1,125 +1,54 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Mon, 15 Dec 2014 21:33:09 +0000
-Subject: [PATCH RFC 1/5] pci: add pci_iomap_range
-Message-Id: <1418679168-1011-2-git-send-email-mst@redhat.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 16 Dec 2014 09:59:17 +0000
+Subject: [PATCH] pinctrl: consumer: use correct retval for placeholder functions
+Message-Id: <1418723959-10253-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418679168-1011-1-git-send-email-mst@redhat.com>
-In-Reply-To: <1418679168-1011-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-arch@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, virtualization@lists.linux-foundation.org, Michael S Tsirkin <mst@redhat.com>
+To: Linus Walleij <linus.walleij@linaro.org>, linux-gpio@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Michael S Tsirkin <mst@redhat.com>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Virtio drivers should map the part of the BAR they need, not necessarily
-all of it.
+These functions are supposed to return an error pointer, not NULL.
 
-Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
-Signed-off-by: Rusty Russell <rusty@rustcorp.com.au>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- include/asm-generic/pci_iomap.h | 10 ++++++++++
- lib/pci_iomap.c                 | 35 ++++++++++++++++++++++++++++++-----
- 2 files changed, 40 insertions(+), 5 deletions(-)
+ include/linux/pinctrl/consumer.h | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/include/asm-generic/pci_iomap.h b/include/asm-generic/pci_iomap.h
-index ce37349..7389c87 100644
---- a/include/asm-generic/pci_iomap.h
-+++ b/include/asm-generic/pci_iomap.h
-@@ -15,6 +15,9 @@ struct pci_dev;
- #ifdef CONFIG_PCI
- /* Create a virtual mapping cookie for a PCI BAR (memory or IO) */
- extern void __iomem *pci_iomap(struct pci_dev *dev, int bar, unsigned long max);
-+extern void __iomem *pci_iomap_range(struct pci_dev *dev, int bar,
-+				     unsigned long offset,
-+				     unsigned long maxlen);
- /* Create a virtual mapping cookie for a port on a given PCI device.
-  * Do not call this directly, it exists to make it easier for architectures
-  * to override */
-@@ -30,6 +33,13 @@ static inline void __iomem *pci_iomap(struct pci_dev *dev, int bar, unsigned lon
+diff --git a/include/linux/pinctrl/consumer.h b/include/linux/pinctrl/consumer.h
+index e96eea7a835c..5e949122529d 100644
+--- a/include/linux/pinctrl/consumer.h
++++ b/include/linux/pinctrl/consumer.h
+@@ -83,7 +83,7 @@ static inline int pinctrl_gpio_direction_output(unsigned gpio)
+ 
+ static inline struct pinctrl * __must_check pinctrl_get(struct device *dev)
  {
- 	return NULL;
+-	return NULL;
++	return ERR_PTR(-ENOSYS);
  }
-+
-+static inline void __iomem *pci_iomap_range(struct pci_dev *dev, int bar,
-+					    unsigned long offset,
-+					    unsigned long maxlen)
-+{
-+	return NULL;
-+}
- #endif
  
- #endif /* __ASM_GENERIC_IO_H */
-diff --git a/lib/pci_iomap.c b/lib/pci_iomap.c
-index 0d83ea8..bcce5f1 100644
---- a/lib/pci_iomap.c
-+++ b/lib/pci_iomap.c
-@@ -10,10 +10,11 @@
- 
- #ifdef CONFIG_PCI
- /**
-- * pci_iomap - create a virtual mapping cookie for a PCI BAR
-+ * pci_iomap_range - create a virtual mapping cookie for a PCI BAR
-  * @dev: PCI device that owns the BAR
-  * @bar: BAR number
-- * @maxlen: length of the memory to map
-+ * @offset: map memory at the given offset in BAR
-+ * @maxlen: max length of the memory to map
-  *
-  * Using this function you will get a __iomem address to your device BAR.
-  * You can access it using ioread*() and iowrite*(). These functions hide
-@@ -21,16 +22,21 @@
-  * you expect from them in the correct way.
-  *
-  * @maxlen specifies the maximum length to map. If you want to get access to
-- * the complete BAR without checking for its length first, pass %0 here.
-+ * the complete BAR from offset to the end, pass %0 here.
-  * */
--void __iomem *pci_iomap(struct pci_dev *dev, int bar, unsigned long maxlen)
-+void __iomem *pci_iomap_range(struct pci_dev *dev,
-+			      int bar,
-+			      unsigned long offset,
-+			      unsigned long maxlen)
+ static inline void pinctrl_put(struct pinctrl *p)
+@@ -94,7 +94,7 @@ static inline struct pinctrl_state * __must_check pinctrl_lookup_state(
+ 							struct pinctrl *p,
+ 							const char *name)
  {
- 	resource_size_t start = pci_resource_start(dev, bar);
- 	resource_size_t len = pci_resource_len(dev, bar);
- 	unsigned long flags = pci_resource_flags(dev, bar);
- 
--	if (!len || !start)
-+	if (len <= offset || !start)
- 		return NULL;
-+	len -= offset;
-+	start += offset;
- 	if (maxlen && len > maxlen)
- 		len = maxlen;
- 	if (flags & IORESOURCE_IO)
-@@ -43,6 +49,25 @@ void __iomem *pci_iomap(struct pci_dev *dev, int bar, unsigned long maxlen)
- 	/* What? */
- 	return NULL;
+-	return NULL;
++	return ERR_PTR(-ENOSYS);
  }
-+EXPORT_SYMBOL(pci_iomap_range);
  
-+/**
-+ * pci_iomap - create a virtual mapping cookie for a PCI BAR
-+ * @dev: PCI device that owns the BAR
-+ * @bar: BAR number
-+ * @maxlen: length of the memory to map
-+ *
-+ * Using this function you will get a __iomem address to your device BAR.
-+ * You can access it using ioread*() and iowrite*(). These functions hide
-+ * the details if this is a MMIO or PIO address space and will just do what
-+ * you expect from them in the correct way.
-+ *
-+ * @maxlen specifies the maximum length to map. If you want to get access to
-+ * the complete BAR without checking for its length first, pass %0 here.
-+ * */
-+void __iomem *pci_iomap(struct pci_dev *dev, int bar, unsigned long maxlen)
-+{
-+	return pci_iomap_range(dev, bar, 0, maxlen);
-+}
- EXPORT_SYMBOL(pci_iomap);
- #endif /* CONFIG_PCI */
+ static inline int pinctrl_select_state(struct pinctrl *p,
+@@ -109,7 +109,7 @@ static inline void pinctrl_deselect_state(struct pinctrl *p)
+ 
+ static inline struct pinctrl * __must_check devm_pinctrl_get(struct device *dev)
+ {
+-	return NULL;
++	return ERR_PTR(-ENOSYS);
+ }
+ 
+ static inline void devm_pinctrl_put(struct pinctrl *p)
 -- 
-MST
+2.1.3
 
