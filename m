@@ -1,71 +1,77 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 16 Dec 2014 11:25:16 +0000
+From: Daniel Lezcano <daniel.lezcano@linaro.org>
+Date: Tue, 16 Dec 2014 11:29:12 +0000
 Subject: Re: [PATCH] clocksource: sh_tmu: Set cpu_possible_mask to fix SMP broadcast
-Message-Id: <2386590.FyHSg4Va0o@avalon>
+Message-Id: <54901788.7020307@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20141216094854.22639.69181.sendpatchset@w520> <54901420.50403@linaro.org> <1418731028.WfBPmyK53y@avalon>
 In-Reply-To: <1418731028.WfBPmyK53y@avalon>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Daniel Lezcano <daniel.lezcano@linaro.org>
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Cc: Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, horms@verge.net.au, geert@linux-m68k.org, tglx@linutronix.de
 
-Hi Magnus,
-
-On Tuesday 16 December 2014 13:20:56 Laurent Pinchart wrote:
+On 12/16/2014 12:20 PM, Laurent Pinchart wrote:
+> Hi Daniel,
+>
 > On Tuesday 16 December 2014 12:14:40 Daniel Lezcano wrote:
-> > On 12/16/2014 10:48 AM, Magnus Damm wrote:
-> > > From: Magnus Damm <damm+renesas@opensource.se>
-> > > 
-> > > Update the TMU driver to use cpu_possible_mask as cpumask to make
-> > > r8a7779 SMP work as expected with or without the ARM TWD timer.
-> > > 
-> > > Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> > 
-> > Applied as a 3.18 fix.
-> 
+>> On 12/16/2014 10:48 AM, Magnus Damm wrote:
+>>> From: Magnus Damm <damm+renesas@opensource.se>
+>>>
+>>> Update the TMU driver to use cpu_possible_mask as cpumask to make
+>>> r8a7779 SMP work as expected with or without the ARM TWD timer.
+>>>
+>>> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+>>
+>> Applied as a 3.18 fix.
+>
 > You're a bit too fast, I haven't had time to review the patch yet.
-> 
-> > ps: May I suggest to use the CLOCK_EVT_FEAT_DYNIRQ flag for this driver ?
-> > 
-> > > ---
-> > > 
-> > >   drivers/clocksource/sh_tmu.c |    2 +-
-> > >   1 file changed, 1 insertion(+), 1 deletion(-)
-> > > 
-> > > --- 0001/drivers/clocksource/sh_tmu.c
-> > > +++ work/drivers/clocksource/sh_tmu.c	2014-12-16 17:49:49.000000000
-> > > +0900
-> > > @@ -428,7 +428,7 @@ static void sh_tmu_register_clockevent(s
-> > > 
-> > >   	ced->features = CLOCK_EVT_FEAT_PERIODIC;
-> > >   	ced->features |= CLOCK_EVT_FEAT_ONESHOT;
-> > >   	ced->rating = 200;
-> > > 
-> > > -	ced->cpumask = cpumask_of(0);
-> > > +	ced->cpumask = cpu_possible_mask;
-> 
-> Magnus, how thoroughly have you tested this ? The TMU is indeed usable by
-> all CPUs, so setting the CPU mask to cpu_possible_mask makes sense, but
-> last time I've tried that it broke the broadcast timer due to the
-> heuristics used by the clock events core code.
-> 
+
+Ah, ok. Hanging on then :)
+
+ >
+>> ps: May I suggest to use the CLOCK_EVT_FEAT_DYNIRQ flag for this driver ?
+>>
+>>> ---
+>>>
+>>>    drivers/clocksource/sh_tmu.c |    2 +-
+>>>    1 file changed, 1 insertion(+), 1 deletion(-)
+>>>
+>>> --- 0001/drivers/clocksource/sh_tmu.c
+>>> +++ work/drivers/clocksource/sh_tmu.c	2014-12-16 17:49:49.000000000 +09=
+00
+>>> @@ -428,7 +428,7 @@ static void sh_tmu_register_clockevent(s
+>>>
+>>>    	ced->features =3D CLOCK_EVT_FEAT_PERIODIC;
+>>>    	ced->features |=3D CLOCK_EVT_FEAT_ONESHOT;
+>>>    	ced->rating =3D 200;
+>>> -	ced->cpumask =3D cpumask_of(0);
+>>> +	ced->cpumask =3D cpu_possible_mask;
+>
+> Magnus, how thoroughly have you tested this ? The TMU is indeed usable by=
+ all
+> CPUs, so setting the CPU mask to cpu_possible_mask makes sense, but last =
+time
+> I've tried that it broke the broadcast timer due to the heuristics used b=
+y the
+> clock events core code.
+>
 > Could you please confirm that you've tested both CONFIG_PREEMPT_NONE and
-> CONFIG_PREEMPT with and without the ARM TWD times, and that you've booted to
+> CONFIG_PREEMPT with and without the ARM TWD times, and that you've booted=
+ to
 > userspace and tested timer broadcast on all CPUs ?
+>
+>>>    	ced->set_next_event =3D sh_tmu_clock_event_next;
+>>>    	ced->set_mode =3D sh_tmu_clock_event_mode;
+>>>    	ced->suspend =3D sh_tmu_clock_event_suspend;
+>
 
-I forgot to mention that this should be tested on R8A7740 with TMU only and 
-both TMU and CMT, and on r8A7779 with TMU only both TMU and TWD.
 
-Without getting test results I'm afraid I must NACK the patch.
+--=20
+  <http://www.linaro.org/> Linaro.org =E2=94=82 Open source software for AR=
+M SoCs
 
-> > >   	ced->set_next_event = sh_tmu_clock_event_next;
-> > >   	ced->set_mode = sh_tmu_clock_event_mode;
-> > >   	ced->suspend = sh_tmu_clock_event_suspend;
-
--- 
-Regards,
-
-Laurent Pinchart
+Follow Linaro:  <http://www.facebook.com/pages/Linaro> Facebook |
+<http://twitter.com/#!/linaroorg> Twitter |
+<http://www.linaro.org/linaro-blog/> Blog
 
