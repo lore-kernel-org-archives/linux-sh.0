@@ -1,72 +1,27 @@
-From: =?utf-8?B?U8O2cmVu?= Brinkmann <soren.brinkmann@xilinx.com>
-Date: Fri, 12 Dec 2014 16:37:53 +0000
-Subject: Re: [PATCH v3 0/7] Pinctrl support for Zynq
-Message-Id: <4d544fe425694a4e8043ddbf604db062@BN1AFFO11FD033.protection.gbl>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 16 Dec 2014 09:39:21 +0000
+Subject: [PATCH 00/02] r8a7779 TWD update
+Message-Id: <20141216093921.14252.42200.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1d59c0972da04ec89dec6c09724986a1@BY2FFO11FD010.protection.gbl>
-In-Reply-To: <1d59c0972da04ec89dec6c09724986a1@BY2FFO11FD010.protection.gbl>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-Argh, this went through the wrong SMTP. I suspect threading is broken
-due to that. Let me know if you want me to resend this with intact
-threading.
-My apologies.
+r8a7779 TWD update
 
-	Thanks,
-	Sören
+[PATCH 01/02] ARM: shmobile: r8a7779: No TWD setup in C for Multiplatform
+[PATCH 02/02] ARM: shmobile: r8a7779: Add TWD device to DTS
 
-On Fri, 2014-12-12 at 08:34AM -0800, Soren Brinkmann wrote:
-> Hi,
-> 
-> I made those few adjustments that came up in the v2 review. Other than
-> those, these are the same patches as before.
-> The series is based on pinctrl-v3.19-1, the current pinctrl/devel
-> branch.
-> A branch with these changes is available at
-> https://github.com/sorenb-xlnx/linux-xlnx/commits/pinctrl
-> 
-> 	Thanks,
-> 	Sören
-> 
-> Soren Brinkmann (7):
->   pinctrl: pinconf-generic: Infer map type from DT property
->   pinctrl: pinconf-generic: Allow driver to specify DT params
->   pinctrl: zynq: Document DT binding
->   pinctrl: Add driver for Zynq
->   ARM: zynq: Enable pinctrl
->   ARM: zynq: DT: Add pinctrl information
->   pinctrl: qcom-spmi-gpio: Migrate to pinconf-generic
-> 
->  .../bindings/pinctrl/xlnx,zynq-pinctrl.txt         |  104 ++
->  arch/arm/boot/dts/zynq-7000.dtsi                   |    8 +-
->  arch/arm/boot/dts/zynq-zc702.dts                   |  181 +++
->  arch/arm/boot/dts/zynq-zc706.dts                   |  152 +++
->  arch/arm/mach-zynq/Kconfig                         |    2 +
->  drivers/pinctrl/Kconfig                            |    8 +
->  drivers/pinctrl/Makefile                           |    1 +
->  drivers/pinctrl/nomadik/pinctrl-abx500.c           |    2 +-
->  drivers/pinctrl/pinconf-generic.c                  |  199 ++--
->  drivers/pinctrl/pinconf.c                          |    4 +-
->  drivers/pinctrl/pinconf.h                          |   22 +-
->  drivers/pinctrl/pinctrl-rockchip.c                 |    2 +-
->  drivers/pinctrl/pinctrl-tz1090-pdc.c               |    2 +-
->  drivers/pinctrl/pinctrl-tz1090.c                   |    2 +-
->  drivers/pinctrl/pinctrl-zynq.c                     | 1176 ++++++++++++++++++++
->  drivers/pinctrl/qcom/pinctrl-spmi-gpio.c           |  125 +--
->  drivers/pinctrl/sh-pfc/pinctrl.c                   |    2 +-
->  include/linux/pinctrl/pinconf-generic.h            |   29 +
->  include/linux/pinctrl/pinctrl.h                    |    9 +
->  19 files changed, 1808 insertions(+), 222 deletions(-)
->  create mode 100644 Documentation/devicetree/bindings/pinctrl/xlnx,zynq-pinctrl.txt
->  create mode 100644 drivers/pinctrl/pinctrl-zynq.c
-> 
-> -- 
-> 2.2.0.1.g9ee0458
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe devicetree" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+These patches fix up r8a7779 TWD support in case of Multiplatform.
+With these in place we are one step closer to r8a7779 SMP support.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ Built on top of renesas-devel-20141216v2-v3.18
+ No special dependencies
+
+ arch/arm/boot/dts/r8a7779.dtsi       |    9 +++++++++
+ arch/arm/mach-shmobile/smp-r8a7779.c |    2 +-
+ 2 files changed, 10 insertions(+), 1 deletion(-)
