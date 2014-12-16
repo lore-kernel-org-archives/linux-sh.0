@@ -1,37 +1,60 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 16 Dec 2014 15:16:36 +0000
-Subject: Re: [PATCH v2 10/10] ARM: shmobile: r8a7791: Add IPMMU DT nodes
-Message-Id: <4237225.cjDincHuNb@avalon>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 16 Dec 2014 16:25:56 +0000
+Subject: [PATCH v2 0/7] ARM: shmobile: ape6evm: multiplatform support
+Message-Id: <1418747163-21729-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418737457-22042-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-	<1418737457-22042-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-	<CAMuHMdUDN6FjV5B3Jb5GP-LYMgXD9ARjmM_Sc25ONo9=a4hngg@mail.gmail.com>
-In-Reply-To: <CAMuHMdUDN6FjV5B3Jb5GP-LYMgXD9ARjmM_Sc25ONo9=a4hngg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-sh@vger.kernel.org
 
-Hi Geert,
+Hi!
 
-On Tuesday 16 December 2014 15:15:43 Geert Uytterhoeven wrote:
-> On Tue, Dec 16, 2014 at 2:44 PM, Laurent Pinchart
-> 
-> <laurent.pinchart+renesas@ideasonboard.com> wrote:
-> > Add the seven IPMMU instances found in the r8a7791 to DT with a disabled
-> > status.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+This series implements multiplatform support for the APE6EVM board, and
+eliminates both legacy platforms.
 
-Thank you. Is this for the whole series, or just for patch 10/10 ? If for 
-10/10 only, could I ask you to review and ack 09/10 as well ? :-)
+This version incorporates the "ARM: shmobile: ape6evm-reference: add missing
+devices" series.  As suggested by Magnus, it synchronizes the ape6evm and
+ape6evm-reference dts files first, eliminating the big renaming at the end.
+
+It is split in such a way that the first five patches can be merged without
+breaking either of the two legacy platforms.  Simon, please pick those up. 
+(Or the first three, if adding a multiplatform target that does not build is
+a problem.) Thank you.
+
+CU
+Uli
+
+
+Changes since v1:
+- merged with "ARM: shmobile: ape6evm-reference: add missing devices"
+- resequenced for merging without CCF support
+- removed a few leftover Kconfig and Makefile targets
+- added Acked-Bys
+
+
+Ulrich Hecht (7):
+  ARM: shmobile: ape6evm: synchronize dts with reference platform
+  ARM: shmobile: ape6evm: Add LEDs to the device tree
+  ARM: shmobile: ape6evm: Add keypad to the device tree
+  ARM: shmobile: r8a73a4: Multiplatform support
+  ARM: shmobile: r8a73a4: Add r8a73a4-ape6evm.dtb to ARCH_SHMOBILE_MULTI
+  ARM: shmobile: ape6evm-reference: Remove board C code and DT file
+  ARM: shmobile: r8a73a4: ape6evm: remove legacy platform
+
+ arch/arm/boot/dts/Makefile                       |   3 +-
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts  | 156 -------------
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts            | 163 ++++++++++++-
+ arch/arm/mach-shmobile/Kconfig                   |  30 +--
+ arch/arm/mach-shmobile/Makefile                  |   2 -
+ arch/arm/mach-shmobile/Makefile.boot             |   2 -
+ arch/arm/mach-shmobile/board-ape6evm-reference.c |  61 -----
+ arch/arm/mach-shmobile/board-ape6evm.c           | 286 -----------------------
+ 8 files changed, 166 insertions(+), 537 deletions(-)
+ delete mode 100644 arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+ delete mode 100644 arch/arm/mach-shmobile/board-ape6evm-reference.c
+ delete mode 100644 arch/arm/mach-shmobile/board-ape6evm.c
 
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.4.5
 
