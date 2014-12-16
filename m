@@ -1,37 +1,35 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 15 Dec 2014 02:27:17 +0000
-Subject: [PATCH 0/7]: mmc: shmobile: DMA cleanup
-Message-Id: <87egs1ve96.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 16 Dec 2014 09:39:31 +0000
+Subject: [PATCH 01/02] ARM: shmobile: r8a7779: No TWD setup in C for Multiplatform
+Message-Id: <20141216093931.14252.89982.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>
-Cc: Simon <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Hi Ulf, Chris, and Simon
+Skip the TWD setup in C for r8a7779 Multiplatform.
+We should use DTS for the TWD device anyway.
 
-These are DMA cleanup patches for SH-Mobile SDHI.
-5) is based on 1).
-6) is based on 2).
-
-Kuninori Morimoto (7):
-      1) mmc: tmio: add .enable_dma
-      2) mmc: tmio: enable SoC specific DMA buswidth settings
-      3) mmc: sh_mobile_sdhi: tidyup mmc_data->bus_shift for latest SoC
-      4) mmc: sh_mobile_sdhi: add new macro for mmc_host to sh_mobile_sdhi
-      5) mmc: sh_mobile_sdhi: use .enable_dma
-      6) mmc: sh_mobile: enable 32bit DMA access
-      7) mmc: remove TMIO_MMC_HAVE_CTL_DMA_REG flag
-
- drivers/mmc/host/sh_mobile_sdhi.c |   66 +++++++++++++++++++++++++++----------
- drivers/mmc/host/tmio_mmc_dma.c   |   12 ++++---
- include/linux/mfd/tmio.h          |   11 +++----
- 3 files changed, 61 insertions(+), 28 deletions(-)
-
-
-
-Best regards
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
-Kuninori Morimoto
+
+ Built on top of renesas-devel-20141216v2-v3.18
+ No special dependencies
+
+ arch/arm/mach-shmobile/smp-r8a7779.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- 0001/arch/arm/mach-shmobile/smp-r8a7779.c
++++ work/arch/arm/mach-shmobile/smp-r8a7779.c	2014-12-16 18:24:44.000000000 +0900
+@@ -56,7 +56,7 @@ static struct rcar_sysc_ch *r8a7779_ch_c
+ 	[3] = &r8a7779_ch_cpu3,
+ };
+ 
+-#ifdef CONFIG_HAVE_ARM_TWD
++#if defined(CONFIG_HAVE_ARM_TWD) && !defined(CONFIG_ARCH_MULTIPLATFORM)
+ static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, R8A7779_SCU_BASE + 0x600, 29);
+ void __init r8a7779_register_twd(void)
+ {
