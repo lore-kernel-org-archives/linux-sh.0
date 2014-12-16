@@ -1,104 +1,68 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 15 Dec 2014 00:13:45 +0000
-Subject: [PATCH 06/10] iommu/ipmmu-vmsa: Add device tree support
-Message-Id: <1418602429-11276-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 16 Dec 2014 13:44:07 +0000
+Subject: [PATCH v2 00/10] Renesas IPMMU-VMSA fixes and DT support
+Message-Id: <1418737457-22042-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418602429-11276-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1418602429-11276-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: iommu@lists.linux-foundation.org
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Joerg Roedel <joro@8bytes.org>, Simon Horman <horms@verge.net.au>
 
-Make platform data optional when the device is instantiated from DT and
-look up the micro-TLB number in the bus master DT node.
+Hello,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/iommu/ipmmu-vmsa.c | 39 +++++++++++++++++++++++++++++++--------
- 1 file changed, 31 insertions(+), 8 deletions(-)
+This patch fixes several small issues with the Renesas IPMMU-VMSA driver and
+then implements DT support.
 
-Cc: devicetree@vger.kernel.org
+Patches 01/10 to 04/10 are small bug fixes. Please see the individual patches
+for more information.
 
-diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
-index 70bb5ba2aa51..dbbdb76d5a6b 100644
---- a/drivers/iommu/ipmmu-vmsa.c
-+++ b/drivers/iommu/ipmmu-vmsa.c
-@@ -16,6 +16,7 @@
- #include <linux/io.h>
- #include <linux/iommu.h>
- #include <linux/module.h>
-+#include <linux/of.h>
- #include <linux/platform_data/ipmmu-vmsa.h>
- #include <linux/platform_device.h>
- #include <linux/sizes.h>
-@@ -1002,16 +1003,33 @@ static phys_addr_t ipmmu_iova_to_phys(struct iommu_domain *io_domain,
- 
- static int ipmmu_find_utlb(struct ipmmu_vmsa_device *mmu, struct device *dev)
- {
--	const struct ipmmu_vmsa_master *master = mmu->pdata->masters;
--	const char *devname = dev_name(dev);
--	unsigned int i;
-+	struct of_phandle_args args;
-+	int ret;
-+
-+	if (mmu->pdata) {
-+		const struct ipmmu_vmsa_master *master = mmu->pdata->masters;
-+		const char *devname = dev_name(dev);
-+		unsigned int i;
- 
--	for (i = 0; i < mmu->pdata->num_masters; ++i, ++master) {
--		if (strcmp(master->name, devname) = 0)
--			return master->utlb;
-+		for (i = 0; i < mmu->pdata->num_masters; ++i, ++master) {
-+			if (strcmp(master->name, devname) = 0)
-+				return master->utlb;
-+		}
-+
-+		return -1;
- 	}
- 
--	return -1;
-+	ret = of_parse_phandle_with_args(dev->of_node, "iommus",
-+					 "#iommu-cells", 0, &args);
-+	if (ret < 0)
-+		return -1;
-+
-+	of_node_put(args.np);
-+
-+	if (args.np != mmu->dev->of_node || args.args_count != 1)
-+		return -1;
-+
-+	return args.args[0];
- }
- 
- static int ipmmu_add_device(struct device *dev)
-@@ -1156,7 +1174,7 @@ static int ipmmu_probe(struct platform_device *pdev)
- 	int irq;
- 	int ret;
- 
--	if (!pdev->dev.platform_data) {
-+	if (!IS_ENABLED(CONFIG_OF) && !pdev->dev.platform_data) {
- 		dev_err(&pdev->dev, "missing platform data\n");
- 		return -EINVAL;
- 	}
-@@ -1222,10 +1240,15 @@ static int ipmmu_remove(struct platform_device *pdev)
- 	return 0;
- }
- 
-+static const struct of_device_id ipmmu_of_ids[] = {
-+	{ .compatible = "renesas,ipmmu-vmsa", },
-+};
-+
- static struct platform_driver ipmmu_driver = {
- 	.driver = {
- 		.owner = THIS_MODULE,
- 		.name = "ipmmu-vmsa",
-+		.of_match_table = of_match_ptr(ipmmu_of_ids),
- 	},
- 	.probe = ipmmu_probe,
- 	.remove	= ipmmu_remove,
+Patches 05/10 and 06/10 define DT bindings and implement DT support. Patches
+07/10 and 08/10 then add support for multiple micro TLBs per device and remove
+platform data support. Finally patches 09/10 and 10/10 add the IPMMU DT nodes
+for the R-Car H2 and M2.
+
+Joerg, as the patches have all been sent to public mailing lists previously I
+will send you a pull request for patches 01/10 to 08/10 for v3.20 when the
+v3.19 merge window closes. Patches 09/10 and 10/10 can then be merged
+independently through the Renesas tree.
+
+Compared to v1, the DT bindings have been updated to
+
+- extend the register range over both the base registers bank and the
+  non-secure aliases ; and
+- specify both the secure and non-secure interrupt, when applicable.
+
+Cc: Joerg Roedel <joro@8bytes.org>
+Cc: Simon Horman <horms@verge.net.au>
+
+Axel Lin (1):
+  iommu/ipmmu-vmsa: Return proper error if devm_request_irq fails
+
+Laurent Pinchart (9):
+  iommu/ipmmu-vmsa: Cleanup failures of ARM mapping creation or
+    attachment
+  iommu/ipmmu-vmsa: Flush P[UM]D entry before freeing the child page
+    table
+  iommu/ipmmu-vmsa: Invalidate TLB after unmapping
+  iommu/ipmmu-vmsa: Add device tree bindings documentation
+  iommu/ipmmu-vmsa: Add device tree support
+  iommu/ipmmu-vmsa: Support multiple micro TLBs per device
+  iommu/ipmmu-vmsa: Remove platform data support
+  ARM: shmobile: r8a7790: Add IPMMU DT nodes
+  ARM: shmobile: r8a7791: Add IPMMU DT nodes
+
+ .../bindings/iommu/renesas,ipmmu-vmsa.txt          |  41 ++++++
+ arch/arm/boot/dts/r8a7790.dtsi                     |  51 +++++++
+ arch/arm/boot/dts/r8a7791.dtsi                     |  60 ++++++++
+ drivers/iommu/ipmmu-vmsa.c                         | 153 +++++++++++++++------
+ include/linux/platform_data/ipmmu-vmsa.h           |  24 ----
+ 5 files changed, 266 insertions(+), 63 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt
+ delete mode 100644 include/linux/platform_data/ipmmu-vmsa.h
+
 -- 
-2.0.4
+Regards,
+
+Laurent Pinchart
 
