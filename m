@@ -1,66 +1,155 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Wed, 24 Dec 2014 05:47:44 +0000
-Subject: Re: [GIT PULL FOR v3.20] R-Car DMA engine driver
-Message-Id: <20141224053544.GT16827@intel.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 16 Dec 2014 16:25:57 +0000
+Subject: [PATCH v2 1/7] ARM: shmobile: ape6evm: synchronize dts with reference platform
+Message-Id: <1418747163-21729-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <25808042.z3ylOLx5GF@avalon>
-In-Reply-To: <25808042.z3ylOLx5GF@avalon>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Dec 23, 2014 at 11:16:52AM +0200, Laurent Pinchart wrote:
-> Hi Vinod,
->=20
-> The following changes since commit fbde286783f7c1e55e6c33575fa1a56f8ea77c=
-90:
->=20
->   dmaengine: nbpfaxi: update the driver comments (2014-12-22 20:28:04 +05=
-30)
->=20
-> are available in the git repository at:
->=20
->   git://linuxtv.org/pinchartl/fbdev.git dma/next
->=20
-> for you to fetch changes up to ee4b876bbee2c5c53518110849f23c117eec099c:
->=20
->   dmaengine: rcar-dmac: Handle hardware descriptor allocation failure=20
-> (2014-12-23 11:13:03 +0200)
-Merged now, Thanks
+This moves everything to the legacy dts that is missing there in
+preparation for the switch to multiplatform.
 
---=20
-~Vinod
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts | 94 +++++++++++++++++++++++++++++++++--
+ 1 file changed, 91 insertions(+), 3 deletions(-)
 
->=20
-> ----------------------------------------------------------------
-> J=FCrg Billeter (1):
->       dmaengine: rcar-dmac: Handle hardware descriptor allocation failure
->=20
-> Laurent Pinchart (5):
->       dmaengine: Add 16 bytes, 32 bytes and 64 bytes bus widths
->       dmaengine: rcar-dmac: Remove duplicate sentence from DT bindings
->       dmaengine: rcar-dmac: Add Renesas R-Car Gen2 DMA Controller (DMAC) =
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+index ce085fa..c98cd14 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+@@ -10,14 +10,19 @@
+ 
+ /dts-v1/;
+ #include "r8a73a4.dtsi"
+-#include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "APE6EVM";
+ 	compatible = "renesas,ape6evm", "renesas,r8a73a4";
+ 
++	aliases {
++		serial0 = &scifa0;
++	};
++
+ 	chosen {
+ 		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
++		stdout-path = &scifa0;
+ 	};
+ 
+ 	memory@40000000 {
+@@ -30,7 +35,27 @@
+ 		reg = <2 0x00000000 0 0x40000000>;
+ 	};
+ 
+-	ape6evm_fixed_3v3: fixedregulator@0 {
++	vcc_mmc0: regulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "MMC0 Vcc";
++		regulator-min-microvolt = <2800000>;
++		regulator-max-microvolt = <2800000>;
++		regulator-always-on;
++	};
++
++	vcc_sdhi0: regulator@1 {
++		compatible = "regulator-fixed";
++
++		regulator-name = "SDHI0 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpio = <&pfc 76 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	/* Common 3.3V rail, used by several devices on APE6EVM */
++	ape6evm_fixed_3v3: regulator@2 {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "3V3";
+ 		regulator-min-microvolt = <3300000>;
+@@ -39,11 +64,13 @@
+ 	};
+ 
+ 	lbsc {
++		compatible = "simple-bus";
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
++		ranges = <0 0 0 0x20000000>;
+ 
+ 		ethernet@8000000 {
+-			compatible = "smsc,lan9118", "smsc,lan9115";
++			compatible = "smsc,lan9220", "smsc,lan9115";
+ 			reg = <0x08000000 0x1000>;
+ 			interrupt-parent = <&irqc1>;
+ 			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
+@@ -79,3 +106,64 @@
+ 	>;
+ 	voltage-tolerance = <1>; /* 1% */
+ };
++
++&cmt1 {
++	status = "okay";
++};
++
++&pfc {
++	scifa0_pins: serial0 {
++		renesas,groups = "scifa0_data";
++		renesas,function = "scifa0";
++	};
++
++	mmc0_pins: mmc {
++		renesas,groups = "mmc0_data8", "mmc0_ctrl";
++		renesas,function = "mmc0";
++	};
++
++	sdhi0_pins: sd0 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
++		renesas,function = "sdhi0";
++	};
++
++	sdhi1_pins: sd1 {
++		renesas,groups = "sdhi1_data4", "sdhi1_ctrl";
++		renesas,function = "sdhi1";
++	};
++};
++
++&mmcif0 {
++	vmmc-supply = <&vcc_mmc0>;
++	bus-width = <8>;
++	non-removable;
++	pinctrl-names = "default";
++	pinctrl-0 = <&mmc0_pins>;
++	status = "okay";
++};
++
++&scifa0 {
++	pinctrl-0 = <&scifa0_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
++&sdhi0 {
++	vmmc-supply = <&vcc_sdhi0>;
++	bus-width = <4>;
++	toshiba,mmc-wrprotect-disable;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdhi0_pins>;
++	status = "okay";
++};
++
++&sdhi1 {
++	vmmc-supply = <&ape6evm_fixed_3v3>;
++	bus-width = <4>;
++	broken-cd;
++	toshiba,mmc-wrprotect-disable;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdhi1_pins>;
++	status = "okay";
++};
+-- 
+1.8.4.5
 
-> driver
->       dmaengine: rcar-dmac: Implement support for hardware descriptor lis=
-ts
->       dmaengine: rcar-dmac: Cache hardware descriptors memory
->=20
->  .../devicetree/bindings/dma/renesas,rcar-dmac.txt       |    3 -
->  drivers/dma/Makefile                                    |    2 +-
->  drivers/dma/sh/Kconfig                                  |   14 +-
->  drivers/dma/sh/Makefile                                 |    1 +
->  drivers/dma/sh/rcar-dmac.c                              | 1747 +++++++++=
-+++++
->  include/linux/dmaengine.h                               |    3 +
->  6 files changed, 1765 insertions(+), 5 deletions(-)
->  create mode 100644 drivers/dma/sh/rcar-dmac.c
->=20
-> --=20
-> Regards,
->=20
-> Laurent Pinchart
->=20
-
---=20
