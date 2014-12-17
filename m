@@ -1,110 +1,105 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 17 Dec 2014 12:14:45 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 17 Dec 2014 13:23:15 +0000
 Subject: Re: [PATCH] clocksource: sh_tmu: Set cpu_possible_mask to fix SMP broadcast
-Message-Id: <3609260.PRRMTOaV5U@avalon>
+Message-Id: <CANqRtoR7Jn_r7DfSwq30ZVB7jdt9SY+7mEDqf5bduXBRX8N9Zw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20141216094854.22639.69181.sendpatchset@w520> <4785362.yhOOf0IjKV@avalon> <CAMuHMdXu0mcdUREuXuYhJATqZPrSvbhCX4iKqn3+VczUkkg_nw@mail.gmail.com>
-In-Reply-To: <CAMuHMdXu0mcdUREuXuYhJATqZPrSvbhCX4iKqn3+VczUkkg_nw@mail.gmail.com>
+References: <20141216094854.22639.69181.sendpatchset@w520>
+	<CAMuHMdUzys9pbEjUybyDP-3=uemLZuP5WgXeyONxGmADUJJL4A@mail.gmail.com>
+	<CANqRtoRTcC_ixjY_Qr1T=2Jhh9qu_5+=Z3YRBDUJX8HWHP6Nog@mail.gmail.com>
+	<2855304.l47b4KVhTf@avalon>
+In-Reply-To: <2855304.l47b4KVhTf@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Daniel Lezcano <daniel.lezcano@linaro.org>, linux-kernel <linux-kernel@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, "Simon Horman [Horms]" <horms@verge.net.au>, Thomas Gleixner <tglx@linutronix.de>
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Daniel Lezcano <daniel.lezcano@linaro.org>, linux-kernel <linux-kernel@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, "Simon Horman [Horms]" <horms@verge.net.au>, Thomas Gleixner <tglx@linutronix.de>
 
-Hi Geert,
+Hi Laurent,
 
-On Wednesday 17 December 2014 13:11:05 Geert Uytterhoeven wrote:
-> On Wed, Dec 17, 2014 at 1:04 PM, Laurent Pinchart wrote:
-> > On Wednesday 17 December 2014 10:42:52 Geert Uytterhoeven wrote:
-> >> On Wed, Dec 17, 2014 at 9:30 AM, Geert Uytterhoeven wrote:
-> >> > On Wed, Dec 17, 2014 at 3:08 AM, Laurent Pinchart wrote:
-> >> >>>> Kzm9g-reference still hangs at "Calibrating local timer..." (it did
-> >> >>>> work at some point in the past).
-> >> >> 
-> >> >> kzm9g-reference boots for me with kzm9g_defconfig on Simon's devel
-> >> >> branch with
-> >> > 
-> >> > OK.
-> >> > 
-> >> > I had expected the breakage to be something in my tree, either an issue
-> >> > in a -next branch I'm using, an interaction with the CCF patches or so,
-> >> > or a config issue (e.g. CONFIG_CPU_IDLE became broken lately if the TWD
-> >> > is not in DT).
-> >> 
-> >> Kzm9g-reference hangs at "Calibrating local timer..." because I added the
-> >> TWD to sh73a0.dtsi
-> >> (http://www.spinics.net/lists/arm-kernel/msg383413.html).
-> >> 
-> >> As twd_get_clock() does
-> >> 
-> >>         if (np)
-> >>                 twd_clk = of_clk_get(np, 0);
-> >>         else
-> >>                 twd_clk = clk_get_sys("smp_twd", NULL);
-> >> 
-> >> it's not DT-without-CCF proof, and kzm9g-reference cannot get its clock
-> >> :-(
-> >> 
-> >> So the TWD node should be in sh73a0-kzm9g-multiplatform.dts, and we need
-> >> more dts files instead of less...
-> >> 
-> >> Note that I added the TWD node to DT to fix a hang on kzm9g-multiplatform
-> >> with CONFIG_CPU_IDLE=y (recently introduced "regression" in core code)
-> >> after:
-> >> 
-> >>      DMA: preallocated 256 KiB pool for atomic coherent allocations
-> >> 
-> >> On kzm9g-legacy the TWD is instantiated from C board code
-> >> (machine_desc.init_time = sh73a0_earlytimer_init), so CONFIG_CPU_IDLE=y
-> >> does not hang. Despite https://lkml.org/lkml/2014/12/2/339.
-> >> 
-> >> On kzm9g-reference, the TWD is not instantiated, causing the same hang.
-> >> If I instantiate the TWD from C board code there, it fails with
-> >> 
-> >>     twd: can't register interrupt 29 (-22)
-> >> 
-> >> which looks like a symptom of https://lkml.org/lkml/2014/12/2/339
-> >> 
-> >> So no cookies for users of several -legacy and -reference platforms in
-> >> v3.19-rc1 this Monday...
-> > 
-> > I'm not sure if fixing that would be worth it. Should we instead try to
-> > replace kzm9g-legacy and kzm9g-reference by kzm9g-multiplatform in v3.20 ?
-> 
-> v3.20 is reasonable. Except that some breakage will arrive in v3.19-rc1.
-> So there will be a brokenness window for the kzm9g platform between
-> v3.18 and v3.20.
+On Wed, Dec 17, 2014 at 11:08 AM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> Hi Magnus and Geert,
+>
+> On Wednesday 17 December 2014 10:30:33 Magnus Damm wrote:
+>> On Tue, Dec 16, 2014 at 9:40 PM, Geert Uytterhoeven wrote:
+>> > On Tue, Dec 16, 2014 at 12:46 PM, Magnus Damm wrote:
+>> >>> Could you please confirm that you've tested both CONFIG_PREEMPT_NONE and
+>> >>> CONFIG_PREEMPT with and without the ARM TWD times, and that you've
+>> >>> booted to userspace and tested timer broadcast on all CPUs ?
+>> >>
+>> >> No I have not. I've booted to user space in initramfs with DT-based
+>> >> TWD on Multiplatform for r8a7779. Without this fix (and other r8a7779
+>> >> TWD bits) I see a lot of breakage. For instance, TWD and SMP boot is
+>> >> broken on r8a7779 - both legacy and non-legacy. I have not gotten to
+>> >> sh73a0 yet, but I assume it is busted too.
+>> >
+>> > FWIW, I applied this patch, and booted the result successfully and without
+>> >
+>> > any user-visible changes on:
+>> >   - koelsch
+>> >   - armadillo-multiplatform
+>> >   - kzm9g-legacy
+>> >   - kzm9g-multiplatform
+>>
+>> Thanks for testing - now let us wait and see what Laurent says.
+>>
+>> > Armadillo-legacy is broken, and probably won't come back (cfr.
+>> > https://lkml.org/lkml/2014/12/2/339).
+>> >
+>> > Kzm9g-reference still hangs at "Calibrating local timer..." (it did work
+>> > at some point in the past).
+>
+> kzm9g-reference boots for me with kzm9g_defconfig on Simon's devel branch with
+> CONFIG_PREEMPT_NONE but fails to boot with CONFIG_PREEMPT. The platform
+> doesn't instantiate the TMU at the moment anyway, so it's unrelated to this
+> patch.
 
-I know, and that's unfortunate, but I wonder if we should really spend time on 
-fixing that if we can get multiplatform support merged in v3.20. We could 
-consider multiplatform to be a regression fix and get it merged in v3.19, but 
-that might be a bit far-fetched :-)
+Ok, thanks for testing. That makes sense.
 
-> > What are we missing ?
-> > 
-> > - The DIV6 multiparent series has been merged by Mike, and the sh73a0 CCF
-> > is nearly ready.
-> 
-> Yep.
-> 
-> > - We need proper BSC support to get LAN working, although it could be
-> > worked around temporarily by specifying the BSC clock in the LAN node if
-> > I recall correctly.
-> 
-> Working on that. I hope to send out v2 later today...
-> 
-> > - Accelerometer and RTC have no DT bindings, but they should work with the
-> > I2C core OF match support.
-> 
-> I have RTC in my DTS, and it works.
+> Given that kzm9g-legacy works for me regardless of the preempt configuration
+> and on the TMU cpumask, that kzm9g-reference doesn't use TMU, and that you've
+> tested kzm9g-multiplaform successfully, I think we can consider that this
+> patch is safe from a kzm9g point of view.
 
-Great.
+I think so too.
 
-I can help with at least some of the remaining pieces if you share your 
-working branch.
+> (By the way, how have you tested kzm9g-multiplatform given that none of
+> renesas-drivers-2014-12-08-v3.18, renesas-devel-20141212-v3.18 or today's
+> upstream support multiplatform kernels for sh73a0 ?)
 
--- 
-Regards,
+My recently posted patch set:
+[PATCH v2 00/05] ARM: shmobile: sh73a0 and kzm9g Multiplatform revisit
 
-Laurent Pinchart
+> Magnus, you have told me that you've performed tests on Marzen with
+> CONFIG_PREEMPT_NONE and with both TWD enabled and disabled. If you could
+> perform the same tests with CONFIG_PREEMPT instead without noticing any
+> regression I think we can merge your patch. Whatever breakage it has caused in
+> the past is likely hidden somewhere beyond eyesight.
 
+Sorry, but I have not had any time to test this today. What I can tell
+from yesterday is that legacy Marzen seemed busted and without my
+patch(es) (including this one) multiplatform Marzen was busted as
+well.
+
+I'll most likely be buried in paper work tomorrow, but I'll see if I
+can find time dealing with Marzen legacy tomorrow. In general I find
+legacy upkeep rather time consuming since it seems to degrade rather
+quickly, so I much rather spend time fixing up multiplatform.
+
+>> When the time allows I'd like us to try to fix up these somehow. At
+>> least I'll give it a go - I guess Armadillo is difficult without any
+>> board.
+>
+> I'd like that very much. Let's get rid of r8a73a4 legacy (Ulrich's patches
+> should be ready) first, and possible sh73a0 and r8a7740 as well, and then
+> retest our various timers configurations. We should test both CONFIG_PREEMPT
+> and CONFIG_PREEMPT none, with all combination of the CMT, TMU, MTU2, TWD and
+> ARM architected timer enabled.
+
+Sure, those are the ones I usually care about. From my side I find the
+TWD and arch timer upkeep to be heavy enough as-is without considering
+the preempt case. But you're right - we should cover all of them.
+
+Thanks,
+
+/ magnus
