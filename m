@@ -1,54 +1,151 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 23 Dec 2014 09:14:21 +0000
-Subject: Re: [PATCH] dmaengine: rcar-dmac: Handle hardware descriptor allocation failure
-Message-Id: <3101076.RYFhQ4RW4Z@avalon>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Wed, 17 Dec 2014 16:18:14 +0000
+Subject: [PATCH v3 2/9] ARM: shmobile: ape6evm: synchronize dts with reference platform
+Message-Id: <1418833101-7774-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416924617-15939-1-git-send-email-j@bitron.ch> <20141217125406.GD16827@intel.com> <20141222150219.GI16827@intel.com>
-In-Reply-To: <20141222150219.GI16827@intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Simon Horman <horms+renesas@verge.net.au>, =?ISO-8859-1?Q?J=FCrg?= Billeter <j@bitron.ch>, Magnus Damm <damm+renesas@opensource.se>, Phil Edworthy <phil.edworthy@renesas.com>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, dmaengine@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Vinod,
+This moves everything to the legacy dts that is missing there in
+preparation for the switch to multiplatform.
 
-On Monday 22 December 2014 20:32:19 Vinod Koul wrote:
-> On Wed, Dec 17, 2014 at 06:24:06PM +0530, Vinod Koul wrote:
-> > On Wed, Dec 17, 2014 at 01:57:30AM +0200, Laurent Pinchart wrote:
-> >> Do you mean that every Intel employee needs to resubscribe to all vger
-> >> mailing list once a year ? :-o
-> > 
-> > Unfortuntely yes... :( I need to set my infradead account up again now for
-> > backup..
-> > 
-> >>>> I suppose I have no choice anyway. Please provide me with a v3.20
-> >>>> development branch on which I can rebase the patch set, I don't want
-> >>>> to rebase it twice.
-> >>> 
-> >>> Please use topic/slave_caps_device_control_fix. I am going to rebase
-> >>> this once rc1 is declared (eow i guess). It would plain git rebase, so
-> >>> shouldn't impact you.
-> >> 
-> >> Done. I'll rebase it once again when you will have rebased your branch,
-> >> and will then send a pull request. Could you please rebase your branch
-> >> early after the -rc1 release ?
-> > 
-> > Sure, within a day or so of its release it should be done.
-> > 
-> > Do note that am out during Christmas and the weekend with no email access,
-> > will be lucky if my phone works, email very unlikely and I think you guys
-> > will be out too.
-> > 
-> > But if your patches are done, feel free to send them
-> 
-> And I have rebased and pushed. These should be linux-next for tomorrow
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts | 92 ++++++++++++++++++++++++++++++++++-
+ 1 file changed, 90 insertions(+), 2 deletions(-)
 
-Thank you. I've rebased my branch, I'm testing it, and will send you a pull 
-request right afterwards.
-
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+index baca8f8..c98cd14 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+@@ -10,14 +10,19 @@
+ 
+ /dts-v1/;
+ #include "r8a73a4.dtsi"
+-#include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "APE6EVM";
+ 	compatible = "renesas,ape6evm", "renesas,r8a73a4";
+ 
++	aliases {
++		serial0 = &scifa0;
++	};
++
+ 	chosen {
+ 		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
++		stdout-path = &scifa0;
+ 	};
+ 
+ 	memory@40000000 {
+@@ -30,7 +35,27 @@
+ 		reg = <2 0x00000000 0 0x40000000>;
+ 	};
+ 
+-	ape6evm_fixed_3v3: fixedregulator@0 {
++	vcc_mmc0: regulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "MMC0 Vcc";
++		regulator-min-microvolt = <2800000>;
++		regulator-max-microvolt = <2800000>;
++		regulator-always-on;
++	};
++
++	vcc_sdhi0: regulator@1 {
++		compatible = "regulator-fixed";
++
++		regulator-name = "SDHI0 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpio = <&pfc 76 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	/* Common 3.3V rail, used by several devices on APE6EVM */
++	ape6evm_fixed_3v3: regulator@2 {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "3V3";
+ 		regulator-min-microvolt = <3300000>;
+@@ -39,8 +64,10 @@
+ 	};
+ 
+ 	lbsc {
++		compatible = "simple-bus";
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
++		ranges = <0 0 0 0x20000000>;
+ 
+ 		ethernet@8000000 {
+ 			compatible = "smsc,lan9220", "smsc,lan9115";
+@@ -79,3 +106,64 @@
+ 	>;
+ 	voltage-tolerance = <1>; /* 1% */
+ };
++
++&cmt1 {
++	status = "okay";
++};
++
++&pfc {
++	scifa0_pins: serial0 {
++		renesas,groups = "scifa0_data";
++		renesas,function = "scifa0";
++	};
++
++	mmc0_pins: mmc {
++		renesas,groups = "mmc0_data8", "mmc0_ctrl";
++		renesas,function = "mmc0";
++	};
++
++	sdhi0_pins: sd0 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
++		renesas,function = "sdhi0";
++	};
++
++	sdhi1_pins: sd1 {
++		renesas,groups = "sdhi1_data4", "sdhi1_ctrl";
++		renesas,function = "sdhi1";
++	};
++};
++
++&mmcif0 {
++	vmmc-supply = <&vcc_mmc0>;
++	bus-width = <8>;
++	non-removable;
++	pinctrl-names = "default";
++	pinctrl-0 = <&mmc0_pins>;
++	status = "okay";
++};
++
++&scifa0 {
++	pinctrl-0 = <&scifa0_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
++&sdhi0 {
++	vmmc-supply = <&vcc_sdhi0>;
++	bus-width = <4>;
++	toshiba,mmc-wrprotect-disable;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdhi0_pins>;
++	status = "okay";
++};
++
++&sdhi1 {
++	vmmc-supply = <&ape6evm_fixed_3v3>;
++	bus-width = <4>;
++	broken-cd;
++	toshiba,mmc-wrprotect-disable;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdhi1_pins>;
++	status = "okay";
++};
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.4.5
 
