@@ -1,42 +1,63 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 09 Dec 2014 11:22:49 +0000
-Subject: [PATCH 4/4] ARM: shmobile: Enable DA9063 watchdog in multiplatform defconfig
-Message-Id: <1418124169-7123-5-git-send-email-geert+renesas@glider.be>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 17 Dec 2014 12:52:36 +0000
+Subject: [PATCH 00/05] serial: sh-sci: Hardware flow control update
+Message-Id: <20141217125236.14480.78833.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418124169-7123-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1418124169-7123-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wim Van Sebroeck <wim-IQzOog9fTRqzQB+pC5nmwQ@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Support Opensource <support.opensource-WBD+wuPFNBhBDgjK7y7TUQ@public.gmane.org>, Guenter Roeck <linux-0h96xk9xTtrk1uMJSBkQmQ@public.gmane.org>, Lee Jones <lee.jones-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, linux-watchdog-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+To: linux-sh@vger.kernel.org
+Cc: gregkh@linuxfoundation.org, Magnus Damm <magnus.damm@gmail.com>, jslaby@suse.cz, linux-serial@vger.kernel.org
 
-This allows to restart koelsch on watchdog timeout or manual system
-restart request.
+serial: sh-sci: Hardware flow control update
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+[PATCH 01/05] serial: sh-sci: Break out default CTS/RTS pin setup
+[PATCH 02/05] serial: sh-sci: Fix default RTS handling
+[PATCH 03/05] serial: sh-sci: Expose default CTS pin
+[PATCH 04/05] serial: sh-sci: Add SCIFA/SCIFB CTS/RTS pin setup
+[PATCH 05/05] serial: sh-sci: Expose SCIFA/SCIFB CTS pin
+
+These patches are my first stab at improving CTS/RTS pin handling in
+the SCIF driver. The goal for these patches is to improve the default
+hardware flow control handling and also add CTS/RTS support for SCIFA/SCIFB.
+
+The SCIF hardware does not provide any interrupt driven delta monitoring
+of any modem control signals such as CTS. Instead the different SCIF types
+tend to include "automatic" hardware handling of the CTS and RTS signals.
+
+Things like CTS/RTS pin setup, RTS trigger level and FIFO size seem to
+vary with each SCIF variant, but the actual harware flow control logic
+should be the same if you trust the documentation. The hardware flow control
+support can be enabled by setting the SCFCR.MCE bit in the hardware which
+will enable the following behavior:
+
+CTS: TX FIFO contents are sent as long as CTS remains asserted.
+RTS: RTS is asserted as long as enough space remains in the RX FIFO.
+
+Depending on SCIF variant it may be theoretically possible to enable hardware
+handling of only one of the signals in the SCIF device. In other cases the pin
+control hardware in the SoC may be used to disable handling of a certain pin.
+
+Most embedded boards using SCIF tend to only hook up RX and TX signals while
+some special cases like KZM9G have the SCIFA console port connected with CTS
+and RTS signals available as well.
+
+Getting support for CTS/RTS on a particular board involves the following:
+- The SCIF variant on the SoC that has CTS/RTS support for the channel.
+- The target board must enable all SCIF pins in the pin control hardware.
+- The driver instance must be marked as CTS/RTS capable with SCIx_HAVE_RTSCTS.
+- User space should signal that it wants to use CTS/RTS via CRTSCTS.
+- In case CRTSCTS is not desired then the CTS/RTS pins need to be setup anyway.
+
+At this point UPF_HARD_FLOW is not used by the driver.
+
+Lightly tested with local SCIx_HAVE_RTSCTS enablement on the KZM9G board.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
-Restart by watchdog timeout is working now.
-Manual system restart depends on "[PATCH 1/4] watchdog: da9063: Add restart
-handler support".
----
- arch/arm/configs/shmobile_defconfig | 3 +++
- 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index dfc1efcb4a866ef3..5863128b06be8551 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -106,6 +106,9 @@ CONFIG_GPIO_RCAR=y
- CONFIG_THERMAL=y
- CONFIG_CPU_THERMAL=y
- CONFIG_RCAR_THERMAL=y
-+CONFIG_WATCHDOG=y
-+CONFIG_DA9063_WATCHDOG=y
-+CONFIG_MFD_DA9063=y
- CONFIG_REGULATOR=y
- CONFIG_REGULATOR_DA9210=y
- CONFIG_REGULATOR_GPIO=y
--- 
-1.9.1
+ Built on top of renesas-devel-20141217-v3.18
 
+ drivers/tty/serial/sh-sci.c |  147 +++++++++++++++++++++++++++++++++++++------
+ include/linux/serial_sci.h  |    4 +
+ 2 files changed, 132 insertions(+), 19 deletions(-)
