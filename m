@@ -1,50 +1,32 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 15 Dec 2014 00:13:40 +0000
-Subject: [PATCH 01/10] iommu/ipmmu-vmsa: Cleanup failures of ARM mapping creation or attachment
-Message-Id: <1418602429-11276-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Wed, 17 Dec 2014 16:18:50 +0000
+Subject: [PATCH v4 2/6] clk: shmobile: Add r8a73a4 SoC to MSTP bindings
+Message-Id: <1418833134-7863-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418602429-11276-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1418602429-11276-1-git-send-email-laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-sh@vger.kernel.org
 
-The ARM IOMMU mapping needs to be released when attaching the device
-fails. Add arm_iommu_release_mapping() to the error code path. This is
-safe to call with a NULL mapping, so no specific check is needed.
-
-Cleanup is also missing when failing to create a mapping. Jump to the
-error code path in that case instead of returning immediately.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/iommu/ipmmu-vmsa.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
-index 7dab5cbcc775..f7036adb5634 100644
---- a/drivers/iommu/ipmmu-vmsa.c
-+++ b/drivers/iommu/ipmmu-vmsa.c
-@@ -1090,7 +1090,8 @@ static int ipmmu_add_device(struct device *dev)
- 						   SZ_1G, SZ_2G);
- 		if (IS_ERR(mapping)) {
- 			dev_err(mmu->dev, "failed to create ARM IOMMU mapping\n");
--			return PTR_ERR(mapping);
-+			ret = PTR_ERR(mapping);
-+			goto error;
- 		}
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+index a5f5223..e566fb7 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+@@ -11,6 +11,7 @@ Required Properties:
  
- 		mmu->mapping = mapping;
-@@ -1106,6 +1107,7 @@ static int ipmmu_add_device(struct device *dev)
- 	return 0;
- 
- error:
-+	arm_iommu_release_mapping(mmu->mapping);
- 	kfree(dev->archdata.iommu);
- 	dev->archdata.iommu = NULL;
- 	iommu_group_remove_device(dev);
+   - compatible: Must be one of the following
+     - "renesas,r7s72100-mstp-clocks" for R7S72100 (RZ) MSTP gate clocks
++    - "renesas,r8a73a4-mstp-clocks" for R8A73A4 (R-Mobile APE6) MSTP gate clocks
+     - "renesas,r8a7740-mstp-clocks" for R8A7740 (R-Mobile A1) MSTP gate clocks
+     - "renesas,r8a7779-mstp-clocks" for R8A7779 (R-Car H1) MSTP gate clocks
+     - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
 -- 
-2.0.4
+1.8.4.5
 
