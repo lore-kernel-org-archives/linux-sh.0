@@ -1,76 +1,51 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 17 Dec 2014 12:53:05 +0000
-Subject: [PATCH 03/05] serial: sh-sci: Expose default CTS pin
-Message-Id: <20141217125305.14480.3038.sendpatchset@w520>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 17 Dec 2014 18:49:12 +0000
+Subject: [PATCH 7/8] ARM: shmobile: r8a73a4 dtsi: Add Bus State Controller node
+Message-Id: <1418842153-17113-8-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20141217125236.14480.78833.sendpatchset@w520>
-In-Reply-To: <20141217125236.14480.78833.sendpatchset@w520>
+References: <1418842153-17113-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1418842153-17113-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: gregkh@linuxfoundation.org, Magnus Damm <magnus.damm@gmail.com>, jslaby@suse.cz, linux-serial@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Add a node for the Bus State Controller (BSC) on r8a73a4, to which
+multiple external devices can be connected.
 
-Expose the CTS pin to the ->get_mctrl() callback for the
-default case. Without this patch the serial core can not
-retrieve the CTS pin state from the SCIF driver.
+The BSC is driven by the ZB clock, and located in PM domain C4.
+A reference to the latter will be added later.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+Untested
 
- drivers/tty/serial/sh-sci.c |   20 +++++++++++++++++++-
- include/linux/serial_sci.h  |    1 +
- 2 files changed, 20 insertions(+), 1 deletion(-)
+v2:
+  - New
+---
+ arch/arm/boot/dts/r8a73a4.dtsi | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
---- 0021/drivers/tty/serial/sh-sci.c
-+++ work/drivers/tty/serial/sh-sci.c	2014-12-17 18:44:31.000000000 +0900
-@@ -509,6 +509,17 @@ static void sci_poll_put_char(struct uar
- }
- #endif /* CONFIG_CONSOLE_POLL || CONFIG_SERIAL_SH_SCI_CONSOLE */
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index d0b81bd64e439174..960a810456bd7e26 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -399,6 +399,15 @@
+ 		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_HIGH)>;
+ 	};
  
-+static bool sci_cts_asserted_default(struct uart_port *port)
-+{
-+	struct sci_port *s = to_sci_port(port);
-+	struct plat_sci_reg *reg = sci_regmap[s->cfg->regtype] + SCSPTR;
++	bsc: bus@fec10000 {
++		compatible = "renesas,bsc-r8a73a4", "renesas,bsc", "simple-bus";
++		#address-cells = <1>;
++		#size-cells = <1>;
++		reg = <0 0xfec10000 0 0x400>;
++		ranges = <0 0 0 0x20000000>;
++		clocks = <&zb_clk>;
++	};
 +
-+	if (reg->size)
-+		return !(serial_port_in(port, SCSPTR) & SCSPTR_CTSDT);
-+
-+	return false;
-+}
-+
- static void sci_init_pins_default(struct uart_port *port, bool hwflow_enabled)
- {
- 	struct sci_port *s = to_sci_port(port);
-@@ -1227,11 +1238,18 @@ static void sci_set_mctrl(struct uart_po
- 
- static unsigned int sci_get_mctrl(struct uart_port *port)
- {
-+	struct sci_port *s = to_sci_port(port);
-+	bool cts_asserted = false;
-+
- 	/*
- 	 * CTS/RTS is handled in hardware when supported, while nothing
- 	 * else is wired up. Keep it simple and simply assert DSR/CAR.
- 	 */
--	return TIOCM_DSR | TIOCM_CAR;
-+
-+	if (s->cfg->capabilities & SCIx_HAVE_RTSCTS)
-+		cts_asserted = sci_cts_asserted_default(port);
-+
-+	return TIOCM_DSR | TIOCM_CAR | (cts_asserted ? TIOCM_CTS : 0);
- }
- 
- #ifdef CONFIG_SERIAL_SH_SCI_DMA
---- 0021/include/linux/serial_sci.h
-+++ work/include/linux/serial_sci.h	2014-12-17 17:52:55.000000000 +0900
-@@ -59,6 +59,7 @@
- #define SCSPTR_RTSIO	(1 << 7)	/* Serial Port RTS Pin Input/Output */
- #define SCSPTR_RTSDT	(1 << 6)	/* Serial Port RTS Pin Data */
- #define SCSPTR_CTSIO	(1 << 5)	/* Serial Port CTS Pin Input/Output */
-+#define SCSPTR_CTSDT	(1 << 4)	/* Serial Port CTS Pin Data */
- #define SCSPTR_SPB2IO	(1 << 1)	/* Serial Port Break Input/Output */
- #define SCSPTR_SPB2DT	(1 << 0)	/* Serial Port Break Data */
- 
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
+-- 
+1.9.1
+
