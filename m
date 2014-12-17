@@ -1,62 +1,60 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 26 Dec 2014 23:20:28 +0000
-Subject: [PATCH v4 2/3] ARM: shmobile: r8a7791: add CAN DT support
-Message-Id: <2080620.GIKTJkNfbk@wasted.cogentembedded.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Wed, 17 Dec 2014 16:18:48 +0000
+Subject: [PATCH v4 0/6] clk: shmobile: r8a73a4 common clock framework implementation
+Message-Id: <1418833134-7863-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <6830301.90YaDPuTpx@wasted.cogentembedded.com>
-In-Reply-To: <6830301.90YaDPuTpx@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Define the generic R8A7791 parts of the CAN0/1 device nodes.
+Hi!
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Version 4 of the CCF implementation for r8a73a4.  This version removes some
+unused bits from the CPG driver and adds a few acks.  Suggestions on how to
+proceed with this are highly appreciated.
 
----
-Changes in version 4:
-- refreshed the patch.
+CU
+Uli
 
-Changes in version 3:
-- added 2 more CAN clocks along with "clock-names" property in the CAN0/1 device
-  nodes;
-- refreshed the patch.
 
-Changes in version 2:
-- fixed the "compatible" property in the CAN device nodes.
+Changes since v3:
+- CPG: removed unused divider mask and flags, superflous braces
+- added Acked-bys
 
- arch/arm/boot/dts/r8a7791.dtsi |   20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+Changes since v2:
+- fixed zb parents
+- fixed CPG clock order in header file
+- multiply divider by 32 for z and z2 clocks
+- added acks by Mike and Laurent
+- fixed various formatting issues
 
-Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7791.dtsi
-@@ -816,6 +816,26 @@
- 		};
- 	};
- 
-+	can0: can@e6e80000 {
-+		compatible = "renesas,can-r8a7791";
-+		reg = <0 0xe6e80000 0 0x1000>;
-+		interrupts = <0 186 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7791_CLK_RCAN0>,
-+		       	 <&cpg_clocks R8A7791_CLK_RCAN>, <&can_clk>;
-+		clock-names = "clkp1", "clkp2", "can_clk";
-+		status = "disabled";
-+	};
-+
-+	can1: can@e6e88000 {
-+		compatible = "renesas,can-r8a7791";
-+		reg = <0 0xe6e88000 0 0x1000>;
-+		interrupts = <0 187 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7791_CLK_RCAN1>,
-+		       	 <&cpg_clocks R8A7791_CLK_RCAN>, <&can_clk>;
-+		clock-names = "clkp1", "clkp2", "can_clk";
-+		status = "disabled";
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
+Changes since v1:
+- use clock-indices instead of renesas,clock-indices
+- dump unused extal2_div2_clk and extal2_div4_clk
+- move mstp2 clocks property below interrupt-names
+
+
+Ulrich Hecht (6):
+  clk: shmobile: r8a73a4 common clock framework implementation
+  clk: shmobile: Add r8a73a4 SoC to MSTP bindings
+  ARM: shmobile: r8a73a4: Add CPG register bits header
+  ARM: shmobile: r8a73a4: Common clock framework DT description
+  ARM: shmobile: ape6evm: disable legacy clock initialization
+  ARM: shmobile: r8a73a4: add MSTP clock assignments to DT
+
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |   1 +
+ .../bindings/clock/renesas,r8a73a4-cpg-clocks.txt  |  33 +++
+ arch/arm/boot/dts/r8a73a4.dtsi                     | 324 +++++++++++++++++++++
+ arch/arm/mach-shmobile/board-ape6evm-reference.c   |   3 +-
+ drivers/clk/shmobile/Makefile                      |   1 +
+ drivers/clk/shmobile/clk-r8a73a4.c                 | 241 +++++++++++++++
+ include/dt-bindings/clock/r8a73a4-clock.h          |  62 ++++
+ 7 files changed, 664 insertions(+), 1 deletion(-)
+ create mode 100644 Documentation/devicetree/bindings/clock/renesas,r8a73a4-cpg-clocks.txt
+ create mode 100644 drivers/clk/shmobile/clk-r8a73a4.c
+ create mode 100644 include/dt-bindings/clock/r8a73a4-clock.h
+
+-- 
+1.8.4.5
 
