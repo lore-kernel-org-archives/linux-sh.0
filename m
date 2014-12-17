@@ -1,77 +1,76 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 11 Dec 2014 21:26:32 +0000
-Subject: Re: [PATCH 0/3] i2c: slave support framework for Linux devices
-Message-Id: <20141211212632.GA21482@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="PEIAKu/WMn1b1Hv9"
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 17 Dec 2014 12:53:05 +0000
+Subject: [PATCH 03/05] serial: sh-sci: Expose default CTS pin
+Message-Id: <20141217125305.14480.3038.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416326695-13083-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1416326695-13083-1-git-send-email-wsa@the-dreams.de>
-To: linux-arm-kernel@lists.infradead.org
+References: <20141217125236.14480.78833.sendpatchset@w520>
+In-Reply-To: <20141217125236.14480.78833.sendpatchset@w520>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
+Cc: gregkh@linuxfoundation.org, Magnus Damm <magnus.damm@gmail.com>, jslaby@suse.cz, linux-serial@vger.kernel.org
 
+From: Magnus Damm <damm+renesas@opensource.se>
 
---PEIAKu/WMn1b1Hv9
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Expose the CTS pin to the ->get_mctrl() callback for the
+default case. Without this patch the serial core can not
+retrieve the CTS pin state from the SCIF driver.
 
-On Tue, Nov 18, 2014 at 05:04:52PM +0100, Wolfram Sang wrote:
-> Finally, here is my take on the often desired feature that Linux can not =
-only
-> be an I2C master, but also an I2C slave. Since RFC, most open issues have=
- been
-> dealt with. Find details in the patch descriptions. Documentation is still
-> missing and will come later this or next week, but surely early enough for
-> the 3.19 release which this series wants to go in. Yet, I'd like to encou=
-rage
-> code-review and build-testing already.
->=20
-> Basically, an I2C slave is a standard I2C client providing a callback fun=
-ction.
-> When registering as a slave, the connection to the I2C adapter is made wh=
-ich
-> uses the callback when a slave event happens. That splits the HW support
-> (enabling slave mode on the adapter) and SW support (here a generic eeprom
-> simulator) nicely IMO.
->=20
-> The patches have been tested with a Renesas R8A7790 based Lager board. Th=
-ey are
-> based on top of 3.18-rc5, but will easily apply to renesas/devel. A git t=
-ree
-> can be found here:
->=20
-> git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git i2c/slave-sup=
-port
->=20
-> Comments welcome! Thanks,
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-This series applied to for-next (with some typos corrected)!
+ drivers/tty/serial/sh-sci.c |   20 +++++++++++++++++++-
+ include/linux/serial_sci.h  |    1 +
+ 2 files changed, 20 insertions(+), 1 deletion(-)
 
-I think I have an idea to improve the API thanks to Uwe's comments.
-Still, I'd like to send out my pull request soonish and fix this
-later. It won't be a massive overhaul, so I think it is okay.
-
-
---PEIAKu/WMn1b1Hv9
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJUigwIAAoJEBQN5MwUoCm2IS8P/RWVO7Ax6TIkYIsrC8TscGar
-0ENgFTLZfldrqyREWVu36lz16JhsxnrBPcrboBe0BpFpVmgLIweaVyVcUFmhi4u5
-Z8ZlAvH233j/yG0tyse3qWvhy/1yWkHPzLaTybhp7kr4iaGvRc7s8RxOiQNzYpAt
-qk8EZeI9FrIRJ1iUUfT14vClB7Xi2DJl0qqC/rFrPIKVSVyOsNma+tW/wxuibSmd
-M1PMYZdMJIuBOp6QibWaOxrkNOGwIU+aD30WWZsAcqGY9JvbpPTG9Ii8DoE4f8D9
-eZAB4/yEFCVfVkSdzHgAosnN3sqcEkJ3L470nHz7ukVTUDn6sTooDKWrQOGhXpGl
-S9/cuU67Zcsqgl1BUBzwKvgB5QzH2lButf8HuAdHb+s5SKIm465AtBADuj5TbNCc
-rdDvnZUSZ/A07whh/KuWuraOxetfAQ4EMDwgFW+N67bg6ZXD1dPCyS8u9NU94XBC
-D0ODP70T4QhT7prQXsTSbTjuRhf2DAldY+iMgmwefVTcDfxM5Z8YJnDiBSA2rzZb
-RIuCQUJr78447O+OqVAELBDzBspWIaN6dHfywZ7RC0+7flbmCgI9Up/Oh24XziTZ
-+iDA+jtd3/fmzAskDDPeok8dV/qUy5K1BNlaUgIz5wNjstyons2SzLsPq+vDfL/7
-FhLkeFKOiUNMPKRcAc6O
-=QLBs
------END PGP SIGNATURE-----
-
---PEIAKu/WMn1b1Hv9--
+--- 0021/drivers/tty/serial/sh-sci.c
++++ work/drivers/tty/serial/sh-sci.c	2014-12-17 18:44:31.000000000 +0900
+@@ -509,6 +509,17 @@ static void sci_poll_put_char(struct uar
+ }
+ #endif /* CONFIG_CONSOLE_POLL || CONFIG_SERIAL_SH_SCI_CONSOLE */
+ 
++static bool sci_cts_asserted_default(struct uart_port *port)
++{
++	struct sci_port *s = to_sci_port(port);
++	struct plat_sci_reg *reg = sci_regmap[s->cfg->regtype] + SCSPTR;
++
++	if (reg->size)
++		return !(serial_port_in(port, SCSPTR) & SCSPTR_CTSDT);
++
++	return false;
++}
++
+ static void sci_init_pins_default(struct uart_port *port, bool hwflow_enabled)
+ {
+ 	struct sci_port *s = to_sci_port(port);
+@@ -1227,11 +1238,18 @@ static void sci_set_mctrl(struct uart_po
+ 
+ static unsigned int sci_get_mctrl(struct uart_port *port)
+ {
++	struct sci_port *s = to_sci_port(port);
++	bool cts_asserted = false;
++
+ 	/*
+ 	 * CTS/RTS is handled in hardware when supported, while nothing
+ 	 * else is wired up. Keep it simple and simply assert DSR/CAR.
+ 	 */
+-	return TIOCM_DSR | TIOCM_CAR;
++
++	if (s->cfg->capabilities & SCIx_HAVE_RTSCTS)
++		cts_asserted = sci_cts_asserted_default(port);
++
++	return TIOCM_DSR | TIOCM_CAR | (cts_asserted ? TIOCM_CTS : 0);
+ }
+ 
+ #ifdef CONFIG_SERIAL_SH_SCI_DMA
+--- 0021/include/linux/serial_sci.h
++++ work/include/linux/serial_sci.h	2014-12-17 17:52:55.000000000 +0900
+@@ -59,6 +59,7 @@
+ #define SCSPTR_RTSIO	(1 << 7)	/* Serial Port RTS Pin Input/Output */
+ #define SCSPTR_RTSDT	(1 << 6)	/* Serial Port RTS Pin Data */
+ #define SCSPTR_CTSIO	(1 << 5)	/* Serial Port CTS Pin Input/Output */
++#define SCSPTR_CTSDT	(1 << 4)	/* Serial Port CTS Pin Data */
+ #define SCSPTR_SPB2IO	(1 << 1)	/* Serial Port Break Input/Output */
+ #define SCSPTR_SPB2DT	(1 << 0)	/* Serial Port Break Data */
+ 
