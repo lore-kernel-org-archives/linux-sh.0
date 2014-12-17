@@ -1,143 +1,189 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 17 Dec 2014 18:49:09 +0000
-Subject: [PATCH 4/8] drivers: bus: Add Simple Power-Managed Bus Driver
-Message-Id: <1418842153-17113-5-git-send-email-geert+renesas@glider.be>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 17 Dec 2014 12:53:15 +0000
+Subject: [PATCH 04/05] serial: sh-sci: Add SCIFA/SCIFB CTS/RTS pin setup
+Message-Id: <20141217125315.14480.15475.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418842153-17113-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1418842153-17113-1-git-send-email-geert+renesas@glider.be>
+References: <20141217125236.14480.78833.sendpatchset@w520>
+In-Reply-To: <20141217125236.14480.78833.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: gregkh@linuxfoundation.org, Magnus Damm <magnus.damm@gmail.com>, jslaby@suse.cz, linux-serial@vger.kernel.org
 
-Add a driver for transparent busses that don't need a real driver (think
-"simple-bus"), where the bus controller is part of a PM domain, or under
-the control of a functional clock.  Typically, the bus controller's
-PM domain and/or clock must be enabled for child devices connected to
-the bus (either on-SoC or externally) to function.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Hence the sole purpose of this driver is to enable its clock and PM
-domain (if exist(s)), which are specified in the DT and managed from
-platform and PM domain code.
+Add SCIFA/SCIFB pin setup code for CTS/RTS pins to handle
+both cases of hardware flow control enabled or disabled.
 
-Due to the child-parent relationship with devices connected to the bus,
-PM domain and clock state transitions are handled in the correct order.
-
-Currently this driver handles the Renesas Bus State Controller (BSC,
-sometimes called "LBSC within Bus Bridge", or "External Bus Interface")
-found on several Renesas ARM SoCs. Support for other bus controllers can
-easily be added by adding more compatible values.
-
-Note that this driver cannot just bind against "simple-bus", as that
-may prevent a device-specific driver from taking precedence.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
-v2:
-  - Rename from "Renesas Bus State Controller Driver" (renesas-bsc) to
-    "Simple Power-Managed Bus Driver" (simple-pm-bus),
-  - Change module license to GPL v2,
-  - Change email address to geert+renesas@glider.be.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- drivers/bus/Kconfig         | 13 ++++++++++++
- drivers/bus/Makefile        |  1 +
- drivers/bus/simple-pm-bus.c | 51 +++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 65 insertions(+)
- create mode 100644 drivers/bus/simple-pm-bus.c
+ drivers/tty/serial/sh-sci.c |   60 ++++++++++++++++++++++++++++++++++++++++++-
+ include/linux/serial_sci.h  |    2 +
+ 2 files changed, 61 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/bus/Kconfig b/drivers/bus/Kconfig
-index 626960819e6df16c..1addb707bf8100e3 100644
---- a/drivers/bus/Kconfig
-+++ b/drivers/bus/Kconfig
-@@ -58,6 +58,19 @@ config OMAP_OCP2SCP
- 	  OCP2SCP and in OMAP5, both USB PHY and SATA PHY is connected via
- 	  OCP2SCP.
+--- 0006/drivers/tty/serial/sh-sci.c
++++ work/drivers/tty/serial/sh-sci.c	2014-12-16 16:10:18.000000000 +0900
+@@ -168,6 +168,8 @@ static struct plat_sci_reg sci_regmap[SC
+ 		[SCSPTR]	= sci_reg_invalid,
+ 		[SCLSR]		= sci_reg_invalid,
+ 		[HSSRR]		= sci_reg_invalid,
++		[SCPCR]		= sci_reg_invalid,
++		[SCPDR]		= sci_reg_invalid,
+ 	},
  
-+config SIMPLE_PM_BUS
-+	bool "Simple Power-Managed Bus Driver"
-+	depends on OF && PM
-+	depends on ARCH_SHMOBILE || COMPILE_TEST
-+	help
-+	  Driver for transparent busses that don't need a real driver (think
-+	  "simple-bus"), where the bus controller is part of a PM domain, or
-+	  under the control of a functional clock, and thus relies on runtime
-+	  PM for managing this PM domain and/or clock.
-+	  An example of such a bus controller is the Renesas Bus State
-+	  Controller (BSC, sometimes called "LBSC within Bus Bridge", or
-+	  "External Bus Interface") as found on several Renesas ARM SoCs.
-+
- config VEXPRESS_CONFIG
- 	bool "Versatile Express configuration bus"
- 	default y if ARCH_VEXPRESS
-diff --git a/drivers/bus/Makefile b/drivers/bus/Makefile
-index 3cfaf2c7f25ac4f0..e023a2bec664d900 100644
---- a/drivers/bus/Makefile
-+++ b/drivers/bus/Makefile
-@@ -14,4 +14,5 @@ obj-$(CONFIG_MVEBU_MBUS) 	+= mvebu-mbus.o
- obj-$(CONFIG_OMAP_INTERCONNECT)	+= omap_l3_smx.o omap_l3_noc.o
+ 	/*
+@@ -188,6 +190,8 @@ static struct plat_sci_reg sci_regmap[SC
+ 		[SCSPTR]	= sci_reg_invalid,
+ 		[SCLSR]		= sci_reg_invalid,
+ 		[HSSRR]		= sci_reg_invalid,
++		[SCPCR]		= sci_reg_invalid,
++		[SCPDR]		= sci_reg_invalid,
+ 	},
  
- obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
-+obj-$(CONFIG_SIMPLE_PM_BUS)	+= simple-pm-bus.o
- obj-$(CONFIG_VEXPRESS_CONFIG)	+= vexpress-config.o
-diff --git a/drivers/bus/simple-pm-bus.c b/drivers/bus/simple-pm-bus.c
-new file mode 100644
-index 0000000000000000..e55872d2695bd551
---- /dev/null
-+++ b/drivers/bus/simple-pm-bus.c
-@@ -0,0 +1,51 @@
-+/*
-+ * Simple Power-Managed Bus Driver
-+ *
-+ * Copyright (C) 2014 Glider bvba
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
-+
-+#include <linux/module.h>
-+#include <linux/platform_device.h>
-+#include <linux/pm_runtime.h>
-+
-+
-+static int simple_pm_bus_probe(struct platform_device *pdev)
+ 	/*
+@@ -207,6 +211,8 @@ static struct plat_sci_reg sci_regmap[SC
+ 		[SCSPTR]	= sci_reg_invalid,
+ 		[SCLSR]		= sci_reg_invalid,
+ 		[HSSRR]		= sci_reg_invalid,
++		[SCPCR]		= { 0x30, 16 },
++		[SCPDR]		= { 0x34, 16 },
+ 	},
+ 
+ 	/*
+@@ -226,6 +232,8 @@ static struct plat_sci_reg sci_regmap[SC
+ 		[SCSPTR]	= sci_reg_invalid,
+ 		[SCLSR]		= sci_reg_invalid,
+ 		[HSSRR]		= sci_reg_invalid,
++		[SCPCR]		= { 0x30, 16 },
++		[SCPDR]		= { 0x34, 16 },
+ 	},
+ 
+ 	/*
+@@ -246,6 +254,8 @@ static struct plat_sci_reg sci_regmap[SC
+ 		[SCSPTR]	= { 0x20, 16 },
+ 		[SCLSR]		= { 0x24, 16 },
+ 		[HSSRR]		= sci_reg_invalid,
++		[SCPCR]		= sci_reg_invalid,
++		[SCPDR]		= sci_reg_invalid,
+ 	},
+ 
+ 	/*
+@@ -265,6 +275,8 @@ static struct plat_sci_reg sci_regmap[SC
+ 		[SCSPTR]	= sci_reg_invalid,
+ 		[SCLSR]		= sci_reg_invalid,
+ 		[HSSRR]		= sci_reg_invalid,
++		[SCPCR]		= sci_reg_invalid,
++		[SCPDR]		= sci_reg_invalid,
+ 	},
+ 
+ 	/*
+@@ -284,6 +296,8 @@ static struct plat_sci_reg sci_regmap[SC
+ 		[SCSPTR]	= { 0x20, 16 },
+ 		[SCLSR]		= { 0x24, 16 },
+ 		[HSSRR]		= sci_reg_invalid,
++		[SCPCR]		= sci_reg_invalid,
++		[SCPDR]		= sci_reg_invalid,
+ 	},
+ 
+ 	/*
+@@ -303,6 +317,8 @@ static struct plat_sci_reg sci_regmap[SC
+ 		[SCSPTR]	= { 0x20, 16 },
+ 		[SCLSR]		= { 0x24, 16 },
+ 		[HSSRR]		= { 0x40, 16 },
++		[SCPCR]		= sci_reg_invalid,
++		[SCPDR]		= sci_reg_invalid,
+ 	},
+ 
+ 	/*
+@@ -323,6 +339,8 @@ static struct plat_sci_reg sci_regmap[SC
+ 		[SCSPTR]	= sci_reg_invalid,
+ 		[SCLSR]		= { 0x24, 16 },
+ 		[HSSRR]		= sci_reg_invalid,
++		[SCPCR]		= sci_reg_invalid,
++		[SCPDR]		= sci_reg_invalid,
+ 	},
+ 
+ 	/*
+@@ -343,6 +361,8 @@ static struct plat_sci_reg sci_regmap[SC
+ 		[SCSPTR]	= { 0x24, 16 },
+ 		[SCLSR]		= { 0x28, 16 },
+ 		[HSSRR]		= sci_reg_invalid,
++		[SCPCR]		= sci_reg_invalid,
++		[SCPDR]		= sci_reg_invalid,
+ 	},
+ 
+ 	/*
+@@ -363,6 +383,8 @@ static struct plat_sci_reg sci_regmap[SC
+ 		[SCSPTR]	= sci_reg_invalid,
+ 		[SCLSR]		= sci_reg_invalid,
+ 		[HSSRR]		= sci_reg_invalid,
++		[SCPCR]		= sci_reg_invalid,
++		[SCPDR]		= sci_reg_invalid,
+ 	},
+ };
+ 
+@@ -542,6 +564,34 @@ static void sci_init_pins_default(struct
+ 	serial_port_out(port, SCSPTR, status); /* Set RTS = 1 */
+ }
+ 
++static void sci_init_pins_scifab(struct uart_port *port, bool hwflow_enabled)
 +{
-+	dev_dbg(&pdev->dev, "%s\n", __func__);
++	unsigned short control, data;
 +
-+	pm_runtime_enable(&pdev->dev);
-+	return 0;
++	/* SCIFA/SCIFB CTS/RTS pin configuration depends on user space.
++	 *
++	 * In case of CTS - (SCPDR.CTSD is always accessible):
++	 * - Hardware flow control enabled: "CTS pin function"
++	 * - Hardware flow control disabled: "Input port"
++	 *
++	 * In case of RTS:
++	 * - Hardware flow control enabled: "RTS pin function"
++	 * - Hardware flow control disabled: "Output port" with value 1
++	 */
++	control = serial_port_in(port, SCPCR);
++	data = serial_port_in(port, SCPDR);
++
++	if (hwflow_enabled) {
++		control &= ~(BIT(4) | BIT(3));
++	} else {
++		control |= BIT(4) | BIT(3);
++		data |= BIT(4);
++	}
++
++	serial_port_out(port, SCPDR, data);
++	serial_port_out(port, SCPCR, control);
 +}
 +
-+static int simple_pm_bus_remove(struct platform_device *pdev)
-+{
-+	dev_dbg(&pdev->dev, "%s\n", __func__);
+ static void sci_init_pins(struct uart_port *port, unsigned int cflag)
+ {
+ 	struct sci_port *s = to_sci_port(port);
+@@ -568,7 +618,15 @@ static void sci_init_pins(struct uart_po
+ 	if (!(s->cfg->capabilities & SCIx_HAVE_RTSCTS))
+ 		return;
+ 
+-	sci_init_pins_default(port, hwflow_enabled);
++	switch (s->cfg->type) {
++	case PORT_SCIFA:
++	case PORT_SCIFB:
++		sci_init_pins_scifab(port, hwflow_enabled);
++		break;
++	default:
++		sci_init_pins_default(port, hwflow_enabled);
++	}
 +
-+	pm_runtime_disable(&pdev->dev);
-+	return 0;
-+}
-+
-+static const struct of_device_id simple_pm_bus_of_match[] = {
-+	{ .compatible = "renesas,bsc", },
-+	{ /* sentinel */ }
-+};
-+MODULE_DEVICE_TABLE(of, simple_pm_bus_of_match);
-+
-+static struct platform_driver simple_pm_bus_driver = {
-+	.probe = simple_pm_bus_probe,
-+	.remove = simple_pm_bus_remove,
-+	.driver = {
-+		.name = "simple-pm-bus",
-+		.of_match_table = simple_pm_bus_of_match,
-+	},
-+};
-+
-+module_platform_driver(simple_pm_bus_driver);
-+
-+MODULE_DESCRIPTION("Simple Power-Managed Bus Driver");
-+MODULE_AUTHOR("Geert Uytterhoeven <geert+renesas@glider.be>");
-+MODULE_LICENSE("GPL v2");
--- 
-1.9.1
-
+ }
+ 
+ static int sci_txfill(struct uart_port *port)
+--- 0006/include/linux/serial_sci.h
++++ work/include/linux/serial_sci.h	2014-12-16 16:10:18.000000000 +0900
+@@ -102,6 +102,8 @@ enum {
+ 	SCRFDR,				/* Receive FIFO Data Count Register */
+ 	SCSPTR,				/* Serial Port Register */
+ 	HSSRR,				/* Sampling Rate Register */
++	SCPCR,				/* Serial Port Control Register */
++	SCPDR,				/* Serial Port Data Register */
+ 
+ 	SCIx_NR_REGS,
+ };
