@@ -1,50 +1,83 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 15 Dec 2014 02:28:39 +0000
-Subject: [PATCH 5/7] mmc: sh_mobile_sdhi: use .enable_dma
-Message-Id: <877fxtve6v.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 17 Dec 2014 18:49:13 +0000
+Subject: [PATCH 8/8] ARM: shmobile: ape6evm dts: Move Ethernet node to BSC
+Message-Id: <1418842153-17113-9-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87egs1ve96.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87egs1ve96.wl%kuninori.morimoto.gx@renesas.com>
+References: <1418842153-17113-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1418842153-17113-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>
-Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Move the Ethernet node from the ad-hoc lbsc node to the BSC node,
+as its connected to the Bus State Controller.  This allows the system to
+know the right position of the Ethernet node in the clock and PM domain
+hierarchy, and manage the clock and PM domain appropriately.
 
-tmio_mmc_data has .enable_dma callback now.
-let's use it.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |    6 ++++++
- 1 file changed, 6 insertions(+)
+Untested
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index c0ef63b..0bec741 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -158,6 +158,11 @@ static int sh_mobile_sdhi_multi_io_quirk(struct mmc_card *card,
- 	return blk_size;
- }
+v2:
+  - New
+---
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts | 35 +++++++++++++++--------------------
+ 1 file changed, 15 insertions(+), 20 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+index 0d50bef0123449f5..44c4cac1820a4dfe 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+@@ -72,26 +72,6 @@
+ 		regulator-always-on;
+ 	};
  
-+static void sh_mobile_sdhi_enable_dma(struct tmio_mmc_host *host, bool enable)
-+{
-+	sd_ctrl_write16(host, CTL_DMA_ENABLE, enable ? 2 : 0);
-+}
+-	lbsc {
+-		compatible = "simple-bus";
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+-		ranges = <0 0 0 0x20000000>;
+-
+-		ethernet@8000000 {
+-			compatible = "smsc,lan9220", "smsc,lan9115";
+-			reg = <0x08000000 0x1000>;
+-			interrupt-parent = <&irqc1>;
+-			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
+-			phy-mode = "mii";
+-			reg-io-width = <4>;
+-			smsc,irq-active-high;
+-			smsc,irq-push-pull;
+-			vdd33a-supply = <&ape6evm_fixed_3v3>;
+-			vddvario-supply = <&ape6evm_fixed_1v8>;
+-		};
+-	};
+-
+ 	leds {
+ 		compatible = "gpio-leds";
+ 		led1 {
+@@ -184,6 +164,21 @@
+ 	voltage-tolerance = <1>; /* 1% */
+ };
+ 
++&bsc {
++	ethernet@8000000 {
++		compatible = "smsc,lan9220", "smsc,lan9115";
++		reg = <0x08000000 0x1000>;
++		interrupt-parent = <&irqc1>;
++		interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
++		phy-mode = "mii";
++		reg-io-width = <4>;
++		smsc,irq-active-high;
++		smsc,irq-push-pull;
++		vdd33a-supply = <&ape6evm_fixed_3v3>;
++		vddvario-supply = <&ape6evm_fixed_1v8>;
++	};
++};
 +
- static void sh_mobile_sdhi_cd_wakeup(const struct platform_device *pdev)
- {
- 	mmc_detect_change(platform_get_drvdata(pdev), msecs_to_jiffies(100));
-@@ -236,6 +241,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 
- 	dma_priv->alignment_shift = 1; /* 2-byte alignment */
- 	dma_priv->filter = shdma_chan_filter;
-+	dma_priv->enable = sh_mobile_sdhi_enable_dma;
- 
- 	mmc_data->dma = dma_priv;
- 
+ &cmt1 {
+ 	status = "okay";
+ };
 -- 
-1.7.9.5
+1.9.1
 
