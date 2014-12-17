@@ -1,120 +1,39 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Mon, 15 Dec 2014 21:33:24 +0000
-Subject: [PATCH RFC 5/5] virtio_pci: macros for PCI layout offsets.
-Message-Id: <1418679168-1011-6-git-send-email-mst@redhat.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Wed, 17 Dec 2014 16:18:17 +0000
+Subject: [PATCH v3 5/9] ARM: shmobile: r8a73a4: Multiplatform support
+Message-Id: <1418833101-7774-6-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418679168-1011-1-git-send-email-mst@redhat.com>
-In-Reply-To: <1418679168-1011-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Rusty Russell <rusty@rustcorp.com.au>, virtualization@lists.linux-foundation.org, linux-sh@vger.kernel.org, cornelia.huck@de.ibm.com, linux-api@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-QEMU wants it, so why not?  Trust, but verify.
+Enable r8a73a4 Multiplatform support for the generic r8a73a4
+machine vector.
 
-Signed-off-by: Rusty Russell <rusty@rustcorp.com.au>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- include/uapi/linux/virtio_pci.h    | 30 ++++++++++++++++++
- drivers/virtio/virtio_pci_modern.c | 63 ++++++++++++++++++++++++++++++++++++++
- 2 files changed, 93 insertions(+)
+ arch/arm/mach-shmobile/Kconfig | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/include/uapi/linux/virtio_pci.h b/include/uapi/linux/virtio_pci.h
-index 28c2ce0..5d546c6 100644
---- a/include/uapi/linux/virtio_pci.h
-+++ b/include/uapi/linux/virtio_pci.h
-@@ -159,6 +159,36 @@ struct virtio_pci_common_cfg {
- 	__le32 queue_used_hi;		/* read-write */
- };
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index e55b686..2f36c85 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -52,6 +52,11 @@ config ARCH_R7S72100
+ 	bool "RZ/A1H (R7S72100)"
+ 	select SYS_SUPPORTS_SH_MTU2
  
-+/* Macro versions of offsets for the Old Timers! */
-+#define VIRTIO_PCI_CAP_VNDR		0
-+#define VIRTIO_PCI_CAP_NEXT		1
-+#define VIRTIO_PCI_CAP_LEN		2
-+#define VIRTIO_PCI_CAP_TYPE_AND_BAR	3
-+#define VIRTIO_PCI_CAP_OFFSET		4
-+#define VIRTIO_PCI_CAP_LENGTH		8
++config ARCH_R8A73A4
++	bool "R-Mobile APE6 (R8A73A40)"
++	select ARCH_RMOBILE
++	select RENESAS_IRQC
 +
-+#define VIRTIO_PCI_NOTIFY_CAP_MULT	12
-+
-+#define VIRTIO_PCI_COMMON_DFSELECT	0
-+#define VIRTIO_PCI_COMMON_DF		4
-+#define VIRTIO_PCI_COMMON_GFSELECT	8
-+#define VIRTIO_PCI_COMMON_GF		12
-+#define VIRTIO_PCI_COMMON_MSIX		16
-+#define VIRTIO_PCI_COMMON_NUMQ		18
-+#define VIRTIO_PCI_COMMON_STATUS	20
-+#define VIRTIO_PCI_COMMON_CFGGENERATION	21
-+#define VIRTIO_PCI_COMMON_Q_SELECT	22
-+#define VIRTIO_PCI_COMMON_Q_SIZE	24
-+#define VIRTIO_PCI_COMMON_Q_MSIX	26
-+#define VIRTIO_PCI_COMMON_Q_ENABLE	28
-+#define VIRTIO_PCI_COMMON_Q_NOFF	30
-+#define VIRTIO_PCI_COMMON_Q_DESCLO	32
-+#define VIRTIO_PCI_COMMON_Q_DESCHI	36
-+#define VIRTIO_PCI_COMMON_Q_AVAILLO	40
-+#define VIRTIO_PCI_COMMON_Q_AVAILHI	44
-+#define VIRTIO_PCI_COMMON_Q_USEDLO	48
-+#define VIRTIO_PCI_COMMON_Q_USEDHI	52
-+
- #endif /* VIRTIO_PCI_NO_MODERN */
- 
- #endif
-diff --git a/drivers/virtio/virtio_pci_modern.c b/drivers/virtio/virtio_pci_modern.c
-index 636666c..5b0c012 100644
---- a/drivers/virtio/virtio_pci_modern.c
-+++ b/drivers/virtio/virtio_pci_modern.c
-@@ -446,6 +446,67 @@ static inline int virtio_pci_find_capability(struct pci_dev *dev, u8 cfg_type,
- 	return 0;
- }
- 
-+/* This is part of the ABI.  Don't screw with it. */
-+static inline void check_offsets(void)
-+{
-+	/* Note: disk space was harmed in compilation of this function. */
-+	BUILD_BUG_ON(VIRTIO_PCI_CAP_VNDR !+		     offsetof(struct virtio_pci_cap, cap_vndr));
-+	BUILD_BUG_ON(VIRTIO_PCI_CAP_NEXT !+		     offsetof(struct virtio_pci_cap, cap_next));
-+	BUILD_BUG_ON(VIRTIO_PCI_CAP_LEN !+		     offsetof(struct virtio_pci_cap, cap_len));
-+	BUILD_BUG_ON(VIRTIO_PCI_CAP_TYPE_AND_BAR !+		     offsetof(struct virtio_pci_cap, type_and_bar));
-+	BUILD_BUG_ON(VIRTIO_PCI_CAP_OFFSET !+		     offsetof(struct virtio_pci_cap, offset));
-+	BUILD_BUG_ON(VIRTIO_PCI_CAP_LENGTH !+		     offsetof(struct virtio_pci_cap, length));
-+	BUILD_BUG_ON(VIRTIO_PCI_NOTIFY_CAP_MULT !+		     offsetof(struct virtio_pci_notify_cap,
-+			      notify_off_multiplier));
-+	BUILD_BUG_ON(VIRTIO_PCI_COMMON_DFSELECT !+		     offsetof(struct virtio_pci_common_cfg,
-+			      device_feature_select));
-+	BUILD_BUG_ON(VIRTIO_PCI_COMMON_DF !+		     offsetof(struct virtio_pci_common_cfg, device_feature));
-+	BUILD_BUG_ON(VIRTIO_PCI_COMMON_GFSELECT !+		     offsetof(struct virtio_pci_common_cfg,
-+			      guest_feature_select));
-+	BUILD_BUG_ON(VIRTIO_PCI_COMMON_GF !+		     offsetof(struct virtio_pci_common_cfg, guest_feature));
-+	BUILD_BUG_ON(VIRTIO_PCI_COMMON_MSIX !+		     offsetof(struct virtio_pci_common_cfg, msix_config));
-+	BUILD_BUG_ON(VIRTIO_PCI_COMMON_NUMQ !+		     offsetof(struct virtio_pci_common_cfg, num_queues));
-+	BUILD_BUG_ON(VIRTIO_PCI_COMMON_STATUS !+		     offsetof(struct virtio_pci_common_cfg, device_status));
-+	BUILD_BUG_ON(VIRTIO_PCI_COMMON_CFGGENERATION !+		     offsetof(struct virtio_pci_common_cfg, config_generation));
-+	BUILD_BUG_ON(VIRTIO_PCI_COMMON_Q_SELECT !+		     offsetof(struct virtio_pci_common_cfg, queue_select));
-+	BUILD_BUG_ON(VIRTIO_PCI_COMMON_Q_SIZE !+		     offsetof(struct virtio_pci_common_cfg, queue_size));
-+	BUILD_BUG_ON(VIRTIO_PCI_COMMON_Q_MSIX !+		     offsetof(struct virtio_pci_common_cfg, queue_msix_vector));
-+	BUILD_BUG_ON(VIRTIO_PCI_COMMON_Q_ENABLE !+		     offsetof(struct virtio_pci_common_cfg, queue_enable));
-+	BUILD_BUG_ON(VIRTIO_PCI_COMMON_Q_NOFF !+		     offsetof(struct virtio_pci_common_cfg, queue_notify_off));
-+	BUILD_BUG_ON(VIRTIO_PCI_COMMON_Q_DESCLO !+		     offsetof(struct virtio_pci_common_cfg, queue_desc_lo));
-+	BUILD_BUG_ON(VIRTIO_PCI_COMMON_Q_DESCHI !+		     offsetof(struct virtio_pci_common_cfg, queue_desc_hi));
-+	BUILD_BUG_ON(VIRTIO_PCI_COMMON_Q_AVAILLO !+		     offsetof(struct virtio_pci_common_cfg, queue_avail_lo));
-+	BUILD_BUG_ON(VIRTIO_PCI_COMMON_Q_AVAILHI !+		     offsetof(struct virtio_pci_common_cfg, queue_avail_hi));
-+	BUILD_BUG_ON(VIRTIO_PCI_COMMON_Q_USEDLO !+		     offsetof(struct virtio_pci_common_cfg, queue_used_lo));
-+	BUILD_BUG_ON(VIRTIO_PCI_COMMON_Q_USEDHI !+		     offsetof(struct virtio_pci_common_cfg, queue_used_hi));
-+}
-+
- /* the PCI probing function */
- int virtio_pci_modern_probe(struct pci_dev *pci_dev,
- 			    const struct pci_device_id *id)
-@@ -455,6 +516,8 @@ int virtio_pci_modern_probe(struct pci_dev *pci_dev,
- 	struct virtio_device_id virtio_id;
- 	u32 notify_length;
- 
-+	check_offsets();
-+
- 	/* We only own devices >= 0x1000 and <= 0x107f: leave the rest. */
- 	if (pci_dev->device < 0x1000 || pci_dev->device > 0x107f)
- 		return -ENODEV;
+ config ARCH_R8A7740
+ 	bool "R-Mobile A1 (R8A77400)"
+ 	select ARCH_RMOBILE
 -- 
-MST
+1.8.4.5
 
