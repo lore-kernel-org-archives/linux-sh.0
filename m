@@ -1,60 +1,49 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Tue, 16 Dec 2014 16:25:56 +0000
-Subject: [PATCH v2 0/7] ARM: shmobile: ape6evm: multiplatform support
-Message-Id: <1418747163-21729-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 17 Dec 2014 01:23:39 +0000
+Subject: Re: [PATCH v2 0/7] ARM: shmobile: ape6evm: multiplatform support
+Message-Id: <CANqRtoReend1FmC2QOWD3666t=meVtaBUhaenhTk_OLvYpQvCQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1418747163-21729-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1418747163-21729-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi!
+Hi Ulrich and Simon,
 
-This series implements multiplatform support for the APE6EVM board, and
-eliminates both legacy platforms.
+On Wed, Dec 17, 2014 at 1:25 AM, Ulrich Hecht
+<ulrich.hecht+renesas@gmail.com> wrote:
+> Hi!
+>
+> This series implements multiplatform support for the APE6EVM board, and
+> eliminates both legacy platforms.
+>
+> This version incorporates the "ARM: shmobile: ape6evm-reference: add missing
+> devices" series.  As suggested by Magnus, it synchronizes the ape6evm and
+> ape6evm-reference dts files first, eliminating the big renaming at the end.
 
-This version incorporates the "ARM: shmobile: ape6evm-reference: add missing
-devices" series.  As suggested by Magnus, it synchronizes the ape6evm and
-ape6evm-reference dts files first, eliminating the big renaming at the end.
+Thanks for resending following this style. It is easy to understand -
+at least for me!
 
-It is split in such a way that the first five patches can be merged without
-breaking either of the two legacy platforms.  Simon, please pick those up. 
-(Or the first three, if adding a multiplatform target that does not build is
-a problem.) Thank you.
+> It is split in such a way that the first five patches can be merged without
+> breaking either of the two legacy platforms.  Simon, please pick those up.
+> (Or the first three, if adding a multiplatform target that does not build is
+> a problem.) Thank you.
 
-CU
-Uli
+The first patch seems to have some issue reported by Laurent. It needs
+to be reworked.
 
+Patch 2-5 should be possible to merge as-is unless I'm mistaken.
 
-Changes since v1:
-- merged with "ARM: shmobile: ape6evm-reference: add missing devices"
-- resequenced for merging without CCF support
-- removed a few leftover Kconfig and Makefile targets
-- added Acked-Bys
+Simon, if you don't mind, can you please consider picking up 2-5 before 1, 6-7?
 
+As for patch 6-7 and the sh73a4 legacy removal code by Laurent, I
+think the main blocker there is the r8a73a4 CCF support patch. I don't
+want to remove legacy code before reference is at least half-complete.
 
-Ulrich Hecht (7):
-  ARM: shmobile: ape6evm: synchronize dts with reference platform
-  ARM: shmobile: ape6evm: Add LEDs to the device tree
-  ARM: shmobile: ape6evm: Add keypad to the device tree
-  ARM: shmobile: r8a73a4: Multiplatform support
-  ARM: shmobile: r8a73a4: Add r8a73a4-ape6evm.dtb to ARCH_SHMOBILE_MULTI
-  ARM: shmobile: ape6evm-reference: Remove board C code and DT file
-  ARM: shmobile: r8a73a4: ape6evm: remove legacy platform
+How can we move forward on the r8a73a4 CCF bits?
 
- arch/arm/boot/dts/Makefile                       |   3 +-
- arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts  | 156 -------------
- arch/arm/boot/dts/r8a73a4-ape6evm.dts            | 163 ++++++++++++-
- arch/arm/mach-shmobile/Kconfig                   |  30 +--
- arch/arm/mach-shmobile/Makefile                  |   2 -
- arch/arm/mach-shmobile/Makefile.boot             |   2 -
- arch/arm/mach-shmobile/board-ape6evm-reference.c |  61 -----
- arch/arm/mach-shmobile/board-ape6evm.c           | 286 -----------------------
- 8 files changed, 166 insertions(+), 537 deletions(-)
- delete mode 100644 arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
- delete mode 100644 arch/arm/mach-shmobile/board-ape6evm-reference.c
- delete mode 100644 arch/arm/mach-shmobile/board-ape6evm.c
+Cheers,
 
--- 
-1.8.4.5
-
+/ magnus
