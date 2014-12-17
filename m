@@ -1,56 +1,216 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 17 Dec 2014 12:53:25 +0000
-Subject: [PATCH 05/05] serial: sh-sci: Expose SCIFA/SCIFB CTS pin
-Message-Id: <20141217125325.14480.79285.sendpatchset@w520>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Wed, 17 Dec 2014 16:18:54 +0000
+Subject: [PATCH v4 6/6] ARM: shmobile: r8a73a4: add MSTP clock assignments to DT
+Message-Id: <1418833134-7863-7-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20141217125236.14480.78833.sendpatchset@w520>
-In-Reply-To: <20141217125236.14480.78833.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: gregkh@linuxfoundation.org, Magnus Damm <magnus.damm@gmail.com>, jslaby@suse.cz, linux-serial@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Assigns clocks to dmac, i2c*, cmt1, thermal, scif*, sdhi*, and mmcif*.
 
-Expose CTS pin to serial core for the SCIFA/SCIFB case.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+ arch/arm/boot/dts/r8a73a4.dtsi | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
 
- drivers/tty/serial/sh-sci.c |   17 +++++++++++++++--
- 1 file changed, 15 insertions(+), 2 deletions(-)
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index 503b46c..590a18e 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -78,6 +78,7 @@
+ 					"ch8", "ch9", "ch10", "ch11",
+ 					"ch12", "ch13", "ch14", "ch15",
+ 					"ch16", "ch17", "ch18", "ch19";
++			clocks = <&mstp2_clks R8A73A4_CLK_DMAC>;
+ 		};
+ 	};
+ 
+@@ -110,6 +111,7 @@
+ 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
+ 		reg = <0 0xe60b0000 0 0x428>;
+ 		interrupts = <0 179 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R8A73A4_CLK_IIC5>;
+ 
+ 		status = "disabled";
+ 	};
+@@ -118,6 +120,8 @@
+ 		compatible = "renesas,cmt-48-r8a73a4", "renesas,cmt-48-gen2";
+ 		reg = <0 0xe6130000 0 0x1004>;
+ 		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A73A4_CLK_CMT1>;
++		clock-names = "fck";
+ 
+ 		renesas,channels-mask = <0xff>;
+ 
+@@ -201,6 +205,7 @@
+ 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>,
+ 			 <0 0xe61f0200 0 0x38>, <0 0xe61f0300 0 0x38>;
+ 		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp5_clks R8A73A4_CLK_THERMAL>;
+ 	};
+ 
+ 	i2c0: i2c@e6500000 {
+@@ -209,6 +214,7 @@
+ 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
+ 		reg = <0 0xe6500000 0 0x428>;
+ 		interrupts = <0 174 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A73A4_CLK_IIC0>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -218,6 +224,7 @@
+ 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
+ 		reg = <0 0xe6510000 0 0x428>;
+ 		interrupts = <0 175 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A73A4_CLK_IIC1>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -227,6 +234,7 @@
+ 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
+ 		reg = <0 0xe6520000 0 0x428>;
+ 		interrupts = <0 176 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A73A4_CLK_IIC2>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -236,6 +244,7 @@
+ 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
+ 		reg = <0 0xe6530000 0 0x428>;
+ 		interrupts = <0 177 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R8A73A4_CLK_IIC3>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -245,6 +254,7 @@
+ 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
+ 		reg = <0 0xe6540000 0 0x428>;
+ 		interrupts = <0 178 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R8A73A4_CLK_IIC4>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -254,6 +264,7 @@
+ 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
+ 		reg = <0 0xe6550000 0 0x428>;
+ 		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A73A4_CLK_IIC6>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -263,6 +274,7 @@
+ 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
+ 		reg = <0 0xe6560000 0 0x428>;
+ 		interrupts = <0 185 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A73A4_CLK_IIC7>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -272,6 +284,7 @@
+ 		compatible = "renesas,iic-r8a73a4", "renesas,rmobile-iic";
+ 		reg = <0 0xe6570000 0 0x428>;
+ 		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp5_clks R8A73A4_CLK_IIC8>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -279,6 +292,8 @@
+ 		compatible = "renesas,scifb-r8a73a4", "renesas,scifb";
+ 		reg = <0 0xe6c20000 0 0x100>;
+ 		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A73A4_CLK_SCIFB0>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -286,6 +301,8 @@
+ 		compatible = "renesas,scifb-r8a73a4", "renesas,scifb";
+ 		reg = <0 0xe6c30000 0 0x100>;
+ 		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A73A4_CLK_SCIFB1>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -293,6 +310,8 @@
+ 		compatible = "renesas,scifa-r8a73a4", "renesas,scifa";
+ 		reg = <0 0xe6c40000 0 0x100>;
+ 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A73A4_CLK_SCIFA0>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -300,6 +319,8 @@
+ 		compatible = "renesas,scifa-r8a73a4", "renesas,scifa";
+ 		reg = <0 0xe6c50000 0 0x100>;
+ 		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A73A4_CLK_SCIFA1>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -307,6 +328,8 @@
+ 		compatible = "renesas,scifb-r8a73a4", "renesas,scifb";
+ 		reg = <0 0xe6ce0000 0 0x100>;
+ 		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A73A4_CLK_SCIFB2>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -314,6 +337,8 @@
+ 		compatible = "renesas,scifb-r8a73a4", "renesas,scifb";
+ 		reg = <0 0xe6cf0000 0 0x100>;
+ 		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A73A4_CLK_SCIFB3>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -321,6 +346,7 @@
+ 		compatible = "renesas,sdhi-r8a73a4";
+ 		reg = <0 0xee100000 0 0x100>;
+ 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A73A4_CLK_SDHI0>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+@@ -329,6 +355,7 @@
+ 		compatible = "renesas,sdhi-r8a73a4";
+ 		reg = <0 0xee120000 0 0x100>;
+ 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A73A4_CLK_SDHI1>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+@@ -337,6 +364,7 @@
+ 		compatible = "renesas,sdhi-r8a73a4";
+ 		reg = <0 0xee140000 0 0x100>;
+ 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A73A4_CLK_SDHI2>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+@@ -345,6 +373,7 @@
+ 		compatible = "renesas,sh-mmcif";
+ 		reg = <0 0xee200000 0 0x80>;
+ 		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A73A4_CLK_MMCIF0>;
+ 		reg-io-width = <4>;
+ 		status = "disabled";
+ 	};
+@@ -353,6 +382,7 @@
+ 		compatible = "renesas,sh-mmcif";
+ 		reg = <0 0xee220000 0 0x80>;
+ 		interrupts = <0 170 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A73A4_CLK_MMCIF1>;
+ 		reg-io-width = <4>;
+ 		status = "disabled";
+ 	};
+-- 
+1.8.4.5
 
---- 0023/drivers/tty/serial/sh-sci.c
-+++ work/drivers/tty/serial/sh-sci.c	2014-12-17 18:46:44.000000000 +0900
-@@ -564,6 +564,11 @@ static void sci_init_pins_default(struct
- 	serial_port_out(port, SCSPTR, status); /* Set RTS = 1 */
- }
- 
-+static bool sci_cts_asserted_scifab(struct uart_port *port)
-+{
-+	return !(serial_port_in(port, SCPDR) & BIT(3));
-+}
-+
- static void sci_init_pins_scifab(struct uart_port *port, bool hwflow_enabled)
- {
- 	unsigned short control, data;
-@@ -1304,8 +1309,16 @@ static unsigned int sci_get_mctrl(struct
- 	 * else is wired up. Keep it simple and simply assert DSR/CAR.
- 	 */
- 
--	if (s->cfg->capabilities & SCIx_HAVE_RTSCTS)
--		cts_asserted = sci_cts_asserted_default(port);
-+ 	if (s->cfg->capabilities & SCIx_HAVE_RTSCTS) {
-+		switch (s->cfg->type) {
-+		case PORT_SCIFA:
-+		case PORT_SCIFB:
-+			cts_asserted = sci_cts_asserted_scifab(port);
-+			break;
-+		default:
-+			cts_asserted = sci_cts_asserted_default(port);
-+		}
-+ 	}
- 
- 	return TIOCM_DSR | TIOCM_CAR | (cts_asserted ? TIOCM_CTS : 0);
- }
