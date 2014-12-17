@@ -1,467 +1,143 @@
-From: Soren Brinkmann <soren.brinkmann@xilinx.com>
-Date: Fri, 12 Dec 2014 16:34:57 +0000
-Subject: [PATCH v3 6/7] ARM: zynq: DT: Add pinctrl information
-Message-Id: <25c5e4f404e449ceb0f61645013f9645@BY2FFO11FD022.protection.gbl>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 17 Dec 2014 18:49:09 +0000
+Subject: [PATCH 4/8] drivers: bus: Add Simple Power-Managed Bus Driver
+Message-Id: <1418842153-17113-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418402098-3811-1-git-send-email-soren.brinkmann@xilinx.com>
-In-Reply-To: <1418402098-3811-1-git-send-email-soren.brinkmann@xilinx.com>
+References: <1418842153-17113-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1418842153-17113-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add pinctrl descriptions to the zc702 and zc706 device trees.
+Add a driver for transparent busses that don't need a real driver (think
+"simple-bus"), where the bus controller is part of a PM domain, or under
+the control of a functional clock.  Typically, the bus controller's
+PM domain and/or clock must be enabled for child devices connected to
+the bus (either on-SoC or externally) to function.
 
-Signed-off-by: Soren Brinkmann <soren.brinkmann@xilinx.com>
-Tested-by: Andreas F=C3=A4rber <afaerber@suse.de>
+Hence the sole purpose of this driver is to enable its clock and PM
+domain (if exist(s)), which are specified in the DT and managed from
+platform and PM domain code.
+
+Due to the child-parent relationship with devices connected to the bus,
+PM domain and clock state transitions are handled in the correct order.
+
+Currently this driver handles the Renesas Bus State Controller (BSC,
+sometimes called "LBSC within Bus Bridge", or "External Bus Interface")
+found on several Renesas ARM SoCs. Support for other bus controllers can
+easily be added by adding more compatible values.
+
+Note that this driver cannot just bind against "simple-bus", as that
+may prevent a device-specific driver from taking precedence.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-Changes since v1:
- - remove 'pinctrl-' prefix for pinctrl sub-nodes
- - separate config and mux nodes
+v2:
+  - Rename from "Renesas Bus State Controller Driver" (renesas-bsc) to
+    "Simple Power-Managed Bus Driver" (simple-pm-bus),
+  - Change module license to GPL v2,
+  - Change email address to geert+renesas@glider.be.
 
-Changes since RFC v2:
- - add pinconf properties to zc702 mdio node
- - remove arguments from bias-related props
-
-Changes since RFC v1:
- - separate DT changes into their own patch
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/zynq-7000.dtsi |   8 +-
- arch/arm/boot/dts/zynq-zc702.dts | 181 +++++++++++++++++++++++++++++++++++=
-++++
- arch/arm/boot/dts/zynq-zc706.dts | 152 ++++++++++++++++++++++++++++++++
- 3 files changed, 340 insertions(+), 1 deletion(-)
+ drivers/bus/Kconfig         | 13 ++++++++++++
+ drivers/bus/Makefile        |  1 +
+ drivers/bus/simple-pm-bus.c | 51 +++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 65 insertions(+)
+ create mode 100644 drivers/bus/simple-pm-bus.c
 
-diff --git a/arch/arm/boot/dts/zynq-7000.dtsi b/arch/arm/boot/dts/zynq-7000=
-.dtsi
-index 24036c440440..37d7fe36a129 100644
---- a/arch/arm/boot/dts/zynq-7000.dtsi
-+++ b/arch/arm/boot/dts/zynq-7000.dtsi
-@@ -238,7 +238,7 @@
- 		slcr: slcr@f8000000 {
- 			#address-cells =3D <1>;
- 			#size-cells =3D <1>;
--			compatible =3D "xlnx,zynq-slcr", "syscon";
-+			compatible =3D "xlnx,zynq-slcr", "syscon", "simple-bus";
- 			reg =3D <0xF8000000 0x1000>;
- 			ranges;
- 			clkc: clkc@100 {
-@@ -259,6 +259,12 @@
- 						"dbg_trc", "dbg_apb";
- 				reg =3D <0x100 0x100>;
- 			};
+diff --git a/drivers/bus/Kconfig b/drivers/bus/Kconfig
+index 626960819e6df16c..1addb707bf8100e3 100644
+--- a/drivers/bus/Kconfig
++++ b/drivers/bus/Kconfig
+@@ -58,6 +58,19 @@ config OMAP_OCP2SCP
+ 	  OCP2SCP and in OMAP5, both USB PHY and SATA PHY is connected via
+ 	  OCP2SCP.
+ 
++config SIMPLE_PM_BUS
++	bool "Simple Power-Managed Bus Driver"
++	depends on OF && PM
++	depends on ARCH_SHMOBILE || COMPILE_TEST
++	help
++	  Driver for transparent busses that don't need a real driver (think
++	  "simple-bus"), where the bus controller is part of a PM domain, or
++	  under the control of a functional clock, and thus relies on runtime
++	  PM for managing this PM domain and/or clock.
++	  An example of such a bus controller is the Renesas Bus State
++	  Controller (BSC, sometimes called "LBSC within Bus Bridge", or
++	  "External Bus Interface") as found on several Renesas ARM SoCs.
 +
-+			pinctrl0: pinctrl@700 {
-+				compatible =3D "xlnx,pinctrl-zynq";
-+				reg =3D <0x700 0x200>;
-+				syscon =3D <&slcr>;
-+			};
- 		};
-=20
- 		dmac_s: dmac@f8003000 {
-diff --git a/arch/arm/boot/dts/zynq-zc702.dts b/arch/arm/boot/dts/zynq-zc70=
-2.dts
-index 94e2cda6f9b6..1e3d800e5b2e 100644
---- a/arch/arm/boot/dts/zynq-zc702.dts
-+++ b/arch/arm/boot/dts/zynq-zc702.dts
-@@ -40,21 +40,32 @@
-=20
- &can0 {
- 	status =3D "okay";
-+	pinctrl-names =3D "default";
-+	pinctrl-0 =3D <&pinctrl_can0_default>;
- };
-=20
- &gem0 {
- 	status =3D "okay";
- 	phy-mode =3D "rgmii-id";
- 	phy-handle =3D <&ethernet_phy>;
-+	pinctrl-names =3D "default";
-+	pinctrl-0 =3D <&pinctrl_gem0_default>;
-=20
- 	ethernet_phy: ethernet-phy@7 {
- 		reg =3D <7>;
- 	};
- };
-=20
-+&gpio0 {
-+	pinctrl-names =3D "default";
-+	pinctrl-0 =3D <&pinctrl_gpio0_default>;
+ config VEXPRESS_CONFIG
+ 	bool "Versatile Express configuration bus"
+ 	default y if ARCH_VEXPRESS
+diff --git a/drivers/bus/Makefile b/drivers/bus/Makefile
+index 3cfaf2c7f25ac4f0..e023a2bec664d900 100644
+--- a/drivers/bus/Makefile
++++ b/drivers/bus/Makefile
+@@ -14,4 +14,5 @@ obj-$(CONFIG_MVEBU_MBUS) 	+= mvebu-mbus.o
+ obj-$(CONFIG_OMAP_INTERCONNECT)	+= omap_l3_smx.o omap_l3_noc.o
+ 
+ obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
++obj-$(CONFIG_SIMPLE_PM_BUS)	+= simple-pm-bus.o
+ obj-$(CONFIG_VEXPRESS_CONFIG)	+= vexpress-config.o
+diff --git a/drivers/bus/simple-pm-bus.c b/drivers/bus/simple-pm-bus.c
+new file mode 100644
+index 0000000000000000..e55872d2695bd551
+--- /dev/null
++++ b/drivers/bus/simple-pm-bus.c
+@@ -0,0 +1,51 @@
++/*
++ * Simple Power-Managed Bus Driver
++ *
++ * Copyright (C) 2014 Glider bvba
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
++
++
++static int simple_pm_bus_probe(struct platform_device *pdev)
++{
++	dev_dbg(&pdev->dev, "%s\n", __func__);
++
++	pm_runtime_enable(&pdev->dev);
++	return 0;
++}
++
++static int simple_pm_bus_remove(struct platform_device *pdev)
++{
++	dev_dbg(&pdev->dev, "%s\n", __func__);
++
++	pm_runtime_disable(&pdev->dev);
++	return 0;
++}
++
++static const struct of_device_id simple_pm_bus_of_match[] = {
++	{ .compatible = "renesas,bsc", },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, simple_pm_bus_of_match);
++
++static struct platform_driver simple_pm_bus_driver = {
++	.probe = simple_pm_bus_probe,
++	.remove = simple_pm_bus_remove,
++	.driver = {
++		.name = "simple-pm-bus",
++		.of_match_table = simple_pm_bus_of_match,
++	},
 +};
 +
- &i2c0 {
- 	status =3D "okay";
- 	clock-frequency =3D <400000>;
-+	pinctrl-names =3D "default";
-+	pinctrl-0 =3D <&pinctrl_i2c0_default>;
-=20
- 	i2cswitch@74 {
- 		compatible =3D "nxp,pca9548";
-@@ -128,10 +139,180 @@
- 	};
- };
-=20
-+&pinctrl0 {
-+	pinctrl_can0_default: can0-default {
-+		mux {
-+			function =3D "can0";
-+			groups =3D "can0_9_grp";
-+		};
++module_platform_driver(simple_pm_bus_driver);
 +
-+		conf {
-+			groups =3D "can0_9_grp";
-+			slew-rate =3D <0>;
-+			io-standard =3D <1>;
-+		};
-+
-+		conf-rx {
-+			pins =3D "MIO46";
-+			bias-high-impedance;
-+		};
-+
-+		conf-tx {
-+			pins =3D "MIO47";
-+			bias-disable;
-+		};
-+	};
-+
-+	pinctrl_gem0_default: gem0-default {
-+		mux {
-+			function =3D "ethernet0";
-+			groups =3D "ethernet0_0_grp";
-+		};
-+
-+		conf {
-+			groups =3D "ethernet0_0_grp";
-+			slew-rate =3D <0>;
-+			io-standard =3D <4>;
-+		};
-+
-+		conf-rx {
-+			pins =3D "MIO22", "MIO23", "MIO24", "MIO25", "MIO26", "MIO27";
-+			bias-high-impedance;
-+			low-power-disable;
-+		};
-+
-+		conf-tx {
-+			pins =3D "MIO16", "MIO17", "MIO18", "MIO19", "MIO20", "MIO21";
-+			bias-disable;
-+			low-power-enable;
-+		};
-+
-+		mux-mdio {
-+			function =3D "mdio0";
-+			groups =3D "mdio0_0_grp";
-+		};
-+
-+		conf-mdio {
-+			groups =3D "mdio0_0_grp";
-+			slew-rate =3D <0>;
-+			io-standard =3D <1>;
-+			bias-disable;
-+		};
-+	};
-+
-+	pinctrl_gpio0_default: gpio0-default {
-+		mux {
-+			function =3D "gpio0";
-+			groups =3D "gpio0_7_grp", "gpio0_8_grp", "gpio0_9_grp",
-+				 "gpio0_10_grp", "gpio0_11_grp", "gpio0_12_grp",
-+				 "gpio0_13_grp", "gpio0_14_grp";
-+		};
-+
-+		conf {
-+			groups =3D "gpio0_7_grp", "gpio0_8_grp", "gpio0_9_grp",
-+				 "gpio0_10_grp", "gpio0_11_grp", "gpio0_12_grp",
-+				 "gpio0_13_grp", "gpio0_14_grp";
-+			slew-rate =3D <0>;
-+			io-standard =3D <1>;
-+		};
-+
-+		conf-pull-up {
-+			pins =3D "MIO9", "MIO10", "MIO11", "MIO12", "MIO13", "MIO14";
-+			bias-pull-up;
-+		};
-+
-+		conf-pull-none {
-+			pins =3D "MIO7", "MIO8";
-+			bias-disable;
-+		};
-+	};
-+
-+	pinctrl_i2c0_default: i2c0-default {
-+		mux {
-+			groups =3D "i2c0_10_grp";
-+			function =3D "i2c0";
-+		};
-+
-+		conf {
-+			groups =3D "i2c0_10_grp";
-+			bias-pull-up;
-+			slew-rate =3D <0>;
-+			io-standard =3D <1>;
-+		};
-+	};
-+
-+	pinctrl_sdhci0_default: sdhci0-default {
-+		mux {
-+			groups =3D "sdio0_2_grp";
-+			function =3D "sdio0";
-+		};
-+
-+		conf {
-+			groups =3D "sdio0_2_grp";
-+			slew-rate =3D <0>;
-+			io-standard =3D <1>;
-+			bias-disable;
-+		};
-+
-+		mux-cd {
-+			groups =3D "gpio0_0_grp";
-+			function =3D "sdio0_cd";
-+		};
-+
-+		conf-cd {
-+			groups =3D "gpio0_0_grp";
-+			bias-high-impedance;
-+			bias-pull-up;
-+			slew-rate =3D <0>;
-+			io-standard =3D <1>;
-+		};
-+
-+		mux-wp {
-+			groups =3D "gpio0_15_grp";
-+			function =3D "sdio0_wp";
-+		};
-+
-+		conf-wp {
-+			groups =3D "gpio0_15_grp";
-+			bias-high-impedance;
-+			bias-pull-up;
-+			slew-rate =3D <0>;
-+			io-standard =3D <1>;
-+		};
-+	};
-+
-+	pinctrl_uart1_default: uart1-default {
-+		mux {
-+			groups =3D "uart1_10_grp";
-+			function =3D "uart1";
-+		};
-+
-+		conf {
-+			groups =3D "uart1_10_grp";
-+			slew-rate =3D <0>;
-+			io-standard =3D <1>;
-+		};
-+
-+		conf-rx {
-+			pins =3D "MIO49";
-+			bias-high-impedance;
-+		};
-+
-+		conf-tx {
-+			pins =3D "MIO48";
-+			bias-disable =3D <0>;
-+		};
-+	};
-+};
-+
- &sdhci0 {
- 	status =3D "okay";
-+	pinctrl-names =3D "default";
-+	pinctrl-0 =3D <&pinctrl_sdhci0_default>;
- };
-=20
- &uart1 {
- 	status =3D "okay";
-+	pinctrl-names =3D "default";
-+	pinctrl-0 =3D <&pinctrl_uart1_default>;
- };
-diff --git a/arch/arm/boot/dts/zynq-zc706.dts b/arch/arm/boot/dts/zynq-zc70=
-6.dts
-index a8bbdfbc7093..1ae78766d926 100644
---- a/arch/arm/boot/dts/zynq-zc706.dts
-+++ b/arch/arm/boot/dts/zynq-zc706.dts
-@@ -33,15 +33,24 @@
- 	status =3D "okay";
- 	phy-mode =3D "rgmii-id";
- 	phy-handle =3D <&ethernet_phy>;
-+	pinctrl-names =3D "default";
-+	pinctrl-0 =3D <&pinctrl_gem0_default>;
-=20
- 	ethernet_phy: ethernet-phy@7 {
- 		reg =3D <7>;
- 	};
- };
-=20
-+&gpio0 {
-+	pinctrl-names =3D "default";
-+	pinctrl-0 =3D <&pinctrl_gpio0_default>;
-+};
-+
- &i2c0 {
- 	status =3D "okay";
- 	clock-frequency =3D <400000>;
-+	pinctrl-names =3D "default";
-+	pinctrl-0 =3D <&pinctrl_i2c0_default>;
-=20
- 	i2cswitch@74 {
- 		compatible =3D "nxp,pca9548";
-@@ -107,10 +116,153 @@
- 	};
- };
-=20
-+&pinctrl0 {
-+	pinctrl_gem0_default: gem0-default {
-+		mux {
-+			function =3D "ethernet0";
-+			groups =3D "ethernet0_0_grp";
-+		};
-+
-+		conf {
-+			groups =3D "ethernet0_0_grp";
-+			slew-rate =3D <0>;
-+			io-standard =3D <4>;
-+		};
-+
-+		conf-rx {
-+			pins =3D "MIO22", "MIO23", "MIO24", "MIO25", "MIO26", "MIO27";
-+			bias-high-impedance;
-+			low-power-disable;
-+		};
-+
-+		conf-tx {
-+			pins =3D "MIO16", "MIO17", "MIO18", "MIO19", "MIO20", "MIO21";
-+			low-power-enable;
-+			bias-disable;
-+		};
-+
-+		mux-mdio {
-+			function =3D "mdio0";
-+			groups =3D "mdio0_0_grp";
-+		};
-+
-+		conf-mdio {
-+			groups =3D "mdio0_0_grp";
-+			slew-rate =3D <0>;
-+			io-standard =3D <1>;
-+			bias-disable;
-+		};
-+	};
-+
-+	pinctrl_gpio0_default: gpio0-default {
-+		mux {
-+			function =3D "gpio0";
-+			groups =3D "gpio0_7_grp", "gpio0_46_grp", "gpio0_47_grp";
-+		};
-+
-+		conf {
-+			groups =3D "gpio0_7_grp", "gpio0_46_grp", "gpio0_47_grp";
-+			slew-rate =3D <0>;
-+			io-standard =3D <1>;
-+		};
-+
-+		conf-pull-up {
-+			pins =3D "MIO46", "MIO47";
-+			bias-pull-up;
-+		};
-+
-+		conf-pull-none {
-+			pins =3D "MIO7";
-+			bias-disable;
-+		};
-+	};
-+
-+	pinctrl_i2c0_default: i2c0-default {
-+		mux {
-+			groups =3D "i2c0_10_grp";
-+			function =3D "i2c0";
-+		};
-+
-+		conf {
-+			groups =3D "i2c0_10_grp";
-+			bias-pull-up;
-+			slew-rate =3D <0>;
-+			io-standard =3D <1>;
-+		};
-+	};
-+
-+	pinctrl_sdhci0_default: sdhci0-default {
-+		mux {
-+			groups =3D "sdio0_2_grp";
-+			function =3D "sdio0";
-+		};
-+
-+		conf {
-+			groups =3D "sdio0_2_grp";
-+			slew-rate =3D <0>;
-+			io-standard =3D <1>;
-+			bias-disable;
-+		};
-+
-+		mux-cd {
-+			groups =3D "gpio0_14_grp";
-+			function =3D "sdio0_cd";
-+		};
-+
-+		conf-cd {
-+			groups =3D "gpio0_14_grp";
-+			bias-high-impedance;
-+			bias-pull-up;
-+			slew-rate =3D <0>;
-+			io-standard =3D <1>;
-+		};
-+
-+		mux-wp {
-+			groups =3D "gpio0_15_grp";
-+			function =3D "sdio0_wp";
-+		};
-+
-+		conf-wp {
-+			groups =3D "gpio0_15_grp";
-+			bias-high-impedance;
-+			bias-pull-up;
-+			slew-rate =3D <0>;
-+			io-standard =3D <1>;
-+		};
-+	};
-+
-+	pinctrl_uart1_default: uart1-default {
-+		mux {
-+			groups =3D "uart1_10_grp";
-+			function =3D "uart1";
-+		};
-+
-+		conf {
-+			groups =3D "uart1_10_grp";
-+			slew-rate =3D <0>;
-+			io-standard =3D <1>;
-+		};
-+
-+		conf-rx {
-+			pins =3D "MIO49";
-+			bias-high-impedance;
-+		};
-+
-+		conf-tx {
-+			pins =3D "MIO48";
-+			bias-disable;
-+		};
-+	};
-+};
-+
- &sdhci0 {
- 	status =3D "okay";
-+	pinctrl-names =3D "default";
-+	pinctrl-0 =3D <&pinctrl_sdhci0_default>;
- };
-=20
- &uart1 {
- 	status =3D "okay";
-+	pinctrl-names =3D "default";
-+	pinctrl-0 =3D <&pinctrl_uart1_default>;
- };
---=20
-2.2.0.1.g9ee0458
++MODULE_DESCRIPTION("Simple Power-Managed Bus Driver");
++MODULE_AUTHOR("Geert Uytterhoeven <geert+renesas@glider.be>");
++MODULE_LICENSE("GPL v2");
+-- 
+1.9.1
 
