@@ -1,7 +1,7 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 17 Dec 2014 08:40:58 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 17 Dec 2014 08:54:49 +0000
 Subject: Re: [PATCH v7 0/6] sh73a0 common clock framework implementation
-Message-Id: <CANqRtoSuqmECcDipRSy-8tTJvUfS8f8PKNch=Axv-Zi=o8w1yg@mail.gmail.com>
+Message-Id: <CAMuHMdV5maLNa-WC7VSTp+3AKLK+H0gkaM0RycB_pyE3gFJ0Gw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1418222727-19888-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 In-Reply-To: <1418222727-19888-1-git-send-email-ulrich.hecht+renesas@gmail.com>
@@ -10,39 +10,59 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Geert,
+Hi Magnus,
 
-On Wed, Dec 17, 2014 at 5:01 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> Hi Magnus,
+On Wed, Dec 17, 2014 at 9:40 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> On Wed, Dec 17, 2014 at 5:01 PM, Geert Uytterhoeven
+> <geert@linux-m68k.org> wrote:
+>> On Wed, Dec 17, 2014 at 8:54 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+>>> This series looks like it has been receiving both plenty of review and
+>>> testing. What's your plan regarding merge?
+>>
+>> I plan to collect all clk-related patches in a branch, and ask Mike to pull it
+>> (after New year).
+>>
+>> Is that OK?
 >
-> On Wed, Dec 17, 2014 at 8:54 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
->> This series looks like it has been receiving both plenty of review and
->> testing. What's your plan regarding merge?
+> That's fine with me - I guess that includes the DIV6 bits too. I saw
+> some pull request related to clocks from you earlier, but that got
+> dropped I suppose?
+
+The DIV6 bits have been pulled by Mike, and are in clk/clk-next, but I have
+the impression Mike hasn't sent a pull request for 3.19 to Linus yet?
+
+New stuff will be in 3.20.
+
+> How do we handle integration patches in the mean time? I saw that you
+> had hundreds of patches in your queue, but for me it is enough with
+> just a couple of series to stack up to go nuts when I'm attempting to
+> add sh73a0 multiplatform. =)
+
+I am going nuts with all those patches ;-)
+
+Now, we cannot integrate multiplatform support for sh73a0/r8a73a4 without
+a (stable) branch with CCF first.
+
+>> Note that there were still some comments on [PATCH 1/6].
 >
-> I plan to collect all clk-related patches in a branch, and ask Mike to pull it
-> (after New year).
+> Sure, but perhaps those can be handled incrementally?
+
+OK.
+
+>> And I have to repost a new version of the renesas,bsc series first, as we
+>> need to for working Ethernet with CCF on kzm9g.
 >
-> Is that OK?
+> That's a good idea.
 
-That's fine with me - I guess that includes the DIV6 bits too. I saw
-some pull request related to clocks from you earlier, but that got
-dropped I suppose?
+And also on ape6evm, if I'm not mistaken.
 
-How do we handle integration patches in the mean time? I saw that you
-had hundreds of patches in your queue, but for me it is enough with
-just a couple of series to stack up to go nuts when I'm attempting to
-add sh73a0 multiplatform. =)
+Gr{oetje,eeting}s,
 
-> Note that there were still some comments on [PATCH 1/6].
+                        Geert
 
-Sure, but perhaps those can be handled incrementally?
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-> And I have to repost a new version of the renesas,bsc series first, as we
-> need to for working Ethernet with CCF on kzm9g.
-
-That's a good idea.
-
-Thanks,
-
-/ magnus
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
