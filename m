@@ -1,79 +1,391 @@
-From: =?UTF-8?q?Niklas=20S=C3=B6derlund?= <niso@kth.se>
-Date: Fri, 12 Dec 2014 20:01:36 +0000
-Subject: [PATCH 3/4] ARM: shmobile: emev2: Add PFC information to emev2.dtsi
-Message-Id: <1418414497-23741-4-git-send-email-niso@kth.se>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 17 Dec 2014 09:42:43 +0000
+Subject: [PATCH v2 04/05] ARM: shmobile: kzm9g: Sync with DT reference
+Message-Id: <20141217094243.7039.35603.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418414497-23741-1-git-send-email-niso@kth.se>
-In-Reply-To: <1418414497-23741-1-git-send-email-niso@kth.se>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-kernel@vger.kernel.org, laurent.pinchart@ideasonboard.com, linus.walleij@linaro.org
-Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, magnus.damm@gmail.com, =?UTF-8?q?Niklas=20S=C3=B6derlund?= <niso@kth.se>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-With this information all GPIOs can make use of the PFC functionality.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Niklas S=C3=B6derlund <niso@kth.se>
+Sync the two DTS for the KZM9G board. The target is the file
+"sh73a0-kzm9g.dts" and it is made identical to the DT reference
+case with the exception of the compatbile string. In the future
+the DT reference file will go away.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/boot/dts/emev2.dtsi | 11 +++++++++++
- 1 file changed, 11 insertions(+)
 
-diff --git a/arch/arm/boot/dts/emev2.dtsi b/arch/arm/boot/dts/emev2.dtsi
-index cc7bfe0..518b7fa 100644
---- a/arch/arm/boot/dts/emev2.dtsi
-+++ b/arch/arm/boot/dts/emev2.dtsi
-@@ -169,12 +169,19 @@
- 		clock-names =3D "sclk";
- 	};
-=20
-+	pfc: pfc@e0140200 {
-+		compatible =3D "renesas,pfc-emev2";
-+		reg =3D <0xe0140200 0x14>, <0xe0140284 0xc>,
-+			<0xe0140294 0x8>, <0xe01402a8 0x4>;
+ arch/arm/boot/dts/sh73a0-kzm9g.dts |  342 +++++++++++++++++++++++++++++++++++-
+ 1 file changed, 341 insertions(+), 1 deletion(-)
+
+--- 0001/arch/arm/boot/dts/sh73a0-kzm9g.dts
++++ work/arch/arm/boot/dts/sh73a0-kzm9g.dts	2014-12-17 16:49:43.000000000 +0900
+@@ -1,6 +1,9 @@
+ /*
+  * Device Tree Source for the KZM-A9-GT board
+  *
++ * Copyright (C) 2012 Horms Solutions Ltd.
++ *
++ * Based on sh73a0-kzm9g.dts
+  * Copyright (C) 2012 Renesas Solutions Corp.
+  *
+  * This file is licensed under the terms of the GNU General Public License
+@@ -10,17 +13,354 @@
+ 
+ /dts-v1/;
+ #include "sh73a0.dtsi"
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
++#include <dt-bindings/interrupt-controller/irq.h>
+ 
+ / {
+ 	model = "KZM-A9-GT";
+ 	compatible = "renesas,kzm9g", "renesas,sh73a0";
+ 
++	aliases {
++		serial4 = &scifa4;
 +	};
 +
- 	gpio0: gpio@e0050000 {
- 		compatible =3D "renesas,em-gio";
- 		reg =3D <0xe0050000 0x2c>, <0xe0050040 0x20>;
- 		interrupts =3D <0 67 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 68 IRQ_TYPE_LEVEL_HIGH>;
- 		gpio-controller;
-+		gpio-ranges =3D <&pfc 0 0 32>;
- 		#gpio-cells =3D <2>;
- 		ngpios =3D <32>;
- 		interrupt-controller;
-@@ -186,6 +193,7 @@
- 		interrupts =3D <0 69 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 70 IRQ_TYPE_LEVEL_HIGH>;
- 		gpio-controller;
-+		gpio-ranges =3D <&pfc 0 32 32>;
- 		#gpio-cells =3D <2>;
- 		ngpios =3D <32>;
- 		interrupt-controller;
-@@ -197,6 +205,7 @@
- 		interrupts =3D <0 71 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 72 IRQ_TYPE_LEVEL_HIGH>;
- 		gpio-controller;
-+		gpio-ranges =3D <&pfc 0 64 32>;
- 		#gpio-cells =3D <2>;
- 		ngpios =3D <32>;
- 		interrupt-controller;
-@@ -208,6 +217,7 @@
- 		interrupts =3D <0 73 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 74 IRQ_TYPE_LEVEL_HIGH>;
- 		gpio-controller;
-+		gpio-ranges =3D <&pfc 0 96 32>;
- 		#gpio-cells =3D <2>;
- 		ngpios =3D <32>;
- 		interrupt-controller;
-@@ -219,6 +229,7 @@
- 		interrupts =3D <0 75 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 76 IRQ_TYPE_LEVEL_HIGH>;
- 		gpio-controller;
-+		gpio-ranges =3D <&pfc 0 128 32>;
- 		#gpio-cells =3D <2>;
- 		ngpios =3D <31>;
- 		interrupt-controller;
---=20
-2.1.3
-
++	cpus {
++		cpu@0 {
++			cpu0-supply = <&vdd_dvfs>;
++			operating-points = <
++				/* kHz  uV */
++				1196000 1315000
++				 598000 1175000
++				 398667 1065000
++			>;
++			voltage-tolerance = <1>; /* 1% */
++		};
++	};
++
+ 	chosen {
+-		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200 rw";
++		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel rw";
++		stdout-path = &scifa4;
+ 	};
+ 
+ 	memory {
+ 		device_type = "memory";
+ 		reg = <0x41000000 0x1e800000>;
+ 	};
++
++	reg_1p8v: regulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-1.8V";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++		regulator-always-on;
++		regulator-boot-on;
++	};
++
++	reg_3p3v: regulator@1 {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-3.3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++		regulator-boot-on;
++	};
++
++	vmmc_sdhi0: regulator@2 {
++		compatible = "regulator-fixed";
++		regulator-name = "SDHI0 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		gpio = <&pfc 15 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	vmmc_sdhi2: regulator@3 {
++		compatible = "regulator-fixed";
++		regulator-name = "SDHI2 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		gpio = <&pfc 14 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	lan9220@10000000 {
++		compatible = "smsc,lan9220", "smsc,lan9115";
++		reg = <0x10000000 0x100>;
++		phy-mode = "mii";
++		interrupt-parent = <&irqpin0>;
++		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
++		reg-io-width = <4>;
++		smsc,irq-push-pull;
++		smsc,save-mac-address;
++		vddvario-supply = <&reg_1p8v>;
++		vdd33a-supply = <&reg_3p3v>;
++	};
++
++	leds {
++		compatible = "gpio-leds";
++		led1 {
++			gpios = <&pfc 20 GPIO_ACTIVE_LOW>;
++			label = "LED1";
++		};
++		led2 {
++			gpios = <&pfc 21 GPIO_ACTIVE_LOW>;
++			label = "LED2";
++		};
++		led3 {
++			gpios = <&pfc 22 GPIO_ACTIVE_LOW>;
++			label = "LED3";
++		};
++		led4 {
++			gpios = <&pfc 23 GPIO_ACTIVE_LOW>;
++			label = "LED4";
++		};
++	};
++
++	keyboard {
++		compatible = "gpio-keys";
++
++		back-key {
++			gpios = <&pcf8575 8 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_BACK>;
++			label = "SW3";
++		};
++
++		right-key {
++			gpios = <&pcf8575 9 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_RIGHT>;
++			label = "SW2-R";
++		};
++
++		left-key {
++			gpios = <&pcf8575 10 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_LEFT>;
++			label = "SW2-L";
++		};
++
++		enter-key {
++			gpios = <&pcf8575 11 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_ENTER>;
++			label = "SW2-P";
++		};
++
++		up-key {
++			gpios = <&pcf8575 12 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_UP>;
++			label = "SW2-U";
++		};
++
++		down-key {
++			gpios = <&pcf8575 13 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_DOWN>;
++			label = "SW2-D";
++		};
++
++		home-key {
++			gpios = <&pcf8575 14 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_HOME>;
++			label = "SW1";
++		};
++	};
++
++	sound {
++		compatible = "simple-audio-card";
++		simple-audio-card,format = "left_j";
++		simple-audio-card,cpu {
++			sound-dai = <&sh_fsi2 0>;
++		};
++		simple-audio-card,codec {
++			sound-dai = <&ak4648>;
++			bitclock-master;
++			frame-master;
++			system-clock-frequency = <11289600>;
++		};
++	};
++};
++
++&cmt1 {
++	status = "okay";
++};
++
++&extal2_clk {
++	clock-frequency = <48000000>;
++};
++
++&i2c0 {
++	status = "okay";
++	as3711@40 {
++		compatible = "ams,as3711";
++		reg = <0x40>;
++
++		regulators {
++			vdd_dvfs: sd1 {
++				regulator-name = "1.315V CPU";
++				regulator-min-microvolt = <1050000>;
++				regulator-max-microvolt = <1350000>;
++				regulator-always-on;
++				regulator-boot-on;
++			};
++			sd2 {
++				regulator-name = "1.8V";
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <1800000>;
++				regulator-always-on;
++				regulator-boot-on;
++			};
++			sd4 {
++				regulator-name = "1.215V";
++				regulator-min-microvolt = <1215000>;
++				regulator-max-microvolt = <1235000>;
++				regulator-always-on;
++				regulator-boot-on;
++			};
++			ldo2 {
++				regulator-name = "2.8V CPU";
++				regulator-min-microvolt = <2800000>;
++				regulator-max-microvolt = <2800000>;
++				regulator-always-on;
++				regulator-boot-on;
++			};
++			ldo3 {
++				regulator-name = "3.0V CPU";
++				regulator-min-microvolt = <3000000>;
++				regulator-max-microvolt = <3000000>;
++				regulator-always-on;
++				regulator-boot-on;
++			};
++			ldo4 {
++				regulator-name = "2.8V";
++				regulator-min-microvolt = <2800000>;
++				regulator-max-microvolt = <2800000>;
++				regulator-always-on;
++				regulator-boot-on;
++			};
++			ldo5 {
++				regulator-name = "2.8V #2";
++				regulator-min-microvolt = <2800000>;
++				regulator-max-microvolt = <2800000>;
++				regulator-always-on;
++				regulator-boot-on;
++			};
++			ldo7 {
++				regulator-name = "1.15V CPU";
++				regulator-min-microvolt = <1150000>;
++				regulator-max-microvolt = <1150000>;
++				regulator-always-on;
++				regulator-boot-on;
++			};
++			ldo8 {
++				regulator-name = "1.15V CPU #2";
++				regulator-min-microvolt = <1150000>;
++				regulator-max-microvolt = <1150000>;
++				regulator-always-on;
++				regulator-boot-on;
++			};
++		};
++	};
++
++	ak4648: ak4648@12 {
++		#sound-dai-cells = <0>;
++		compatible = "asahi-kasei,ak4648";
++		reg = <0x12>;
++	};
++};
++
++&i2c3 {
++	pinctrl-0 = <&i2c3_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++
++	pcf8575: gpio@20 {
++		compatible = "nxp,pcf8575";
++		reg = <0x20>;
++		interrupt-parent = <&irqpin2>;
++		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
++		gpio-controller;
++		#gpio-cells = <2>;
++		interrupt-controller;
++		#interrupt-cells = <2>;
++	};
++};
++
++&mmcif {
++	pinctrl-0 = <&mmcif_pins>;
++	pinctrl-names = "default";
++
++	bus-width = <8>;
++	vmmc-supply = <&reg_1p8v>;
++	status = "okay";
++};
++
++&pfc {
++	i2c3_pins: i2c3 {
++		renesas,groups = "i2c3_1";
++		renesas,function = "i2c3";
++	};
++
++	mmcif_pins: mmc {
++		mux {
++			renesas,groups = "mmc0_data8_0", "mmc0_ctrl_0";
++			renesas,function = "mmc0";
++		};
++		cfg {
++			renesas,groups = "mmc0_data8_0";
++			renesas,pins = "PORT279";
++			bias-pull-up;
++		};
++	};
++
++	scifa4_pins: serial4 {
++		renesas,groups = "scifa4_data", "scifa4_ctrl";
++		renesas,function = "scifa4";
++	};
++
++	sdhi0_pins: sd0 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd", "sdhi0_wp";
++		renesas,function = "sdhi0";
++	};
++
++	sdhi2_pins: sd2 {
++		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
++		renesas,function = "sdhi2";
++	};
++
++	fsia_pins: sounda {
++		renesas,groups = "fsia_mclk_in", "fsia_sclk_in",
++				 "fsia_data_in", "fsia_data_out";
++		renesas,function = "fsia";
++	};
++};
++
++&scifa4 {
++	pinctrl-0 = <&scifa4_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
++&sdhi0 {
++	pinctrl-0 = <&sdhi0_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&vmmc_sdhi0>;
++	bus-width = <4>;
++	status = "okay";
++};
++
++&sdhi2 {
++	pinctrl-0 = <&sdhi2_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&vmmc_sdhi2>;
++	bus-width = <4>;
++	broken-cd;
++	status = "okay";
++};
++
++&sh_fsi2 {
++	pinctrl-0 = <&fsia_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
+ };
