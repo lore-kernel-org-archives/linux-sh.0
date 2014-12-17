@@ -1,89 +1,62 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 17 Dec 2014 02:08:56 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 17 Dec 2014 08:25:19 +0000
 Subject: Re: [PATCH] clocksource: sh_tmu: Set cpu_possible_mask to fix SMP broadcast
-Message-Id: <2855304.l47b4KVhTf@avalon>
+Message-Id: <CAMuHMdVDHX4PAvNKaxBDm4n2gjHgi4qv9Ui_FgiCgLPdKAXxcw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20141216094854.22639.69181.sendpatchset@w520> <CAMuHMdUzys9pbEjUybyDP-3=uemLZuP5WgXeyONxGmADUJJL4A@mail.gmail.com> <CANqRtoRTcC_ixjY_Qr1T=2Jhh9qu_5+=Z3YRBDUJX8HWHP6Nog@mail.gmail.com>
+References: <20141216094854.22639.69181.sendpatchset@w520>
+	<54901420.50403@linaro.org>
+	<1418731028.WfBPmyK53y@avalon>
+	<CANqRtoTpSadrrpeBxA-ym4MZBfhY_BEyTPr_sfau8dZGCKttOQ@mail.gmail.com>
+	<CAMuHMdUzys9pbEjUybyDP-3=uemLZuP5WgXeyONxGmADUJJL4A@mail.gmail.com>
+	<CANqRtoRTcC_ixjY_Qr1T=2Jhh9qu_5+=Z3YRBDUJX8HWHP6Nog@mail.gmail.com>
 In-Reply-To: <CANqRtoRTcC_ixjY_Qr1T=2Jhh9qu_5+=Z3YRBDUJX8HWHP6Nog@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Daniel Lezcano <daniel.lezcano@linaro.org>, linux-kernel <linux-kernel@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, "Simon Horman [Horms]" <horms@verge.net.au>, Thomas Gleixner <tglx@linutronix.de>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Daniel Lezcano <daniel.lezcano@linaro.org>, linux-kernel <linux-kernel@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, "Simon Horman [Horms]" <horms@verge.net.au>, Thomas Gleixner <tglx@linutronix.de>
 
-Hi Magnus and Geert,
+Hi Magnus,
 
-On Wednesday 17 December 2014 10:30:33 Magnus Damm wrote:
-> On Tue, Dec 16, 2014 at 9:40 PM, Geert Uytterhoeven wrote:
-> > On Tue, Dec 16, 2014 at 12:46 PM, Magnus Damm wrote:
-> >>> Could you please confirm that you've tested both CONFIG_PREEMPT_NONE and
-> >>> CONFIG_PREEMPT with and without the ARM TWD times, and that you've
-> >>> booted to userspace and tested timer broadcast on all CPUs ?
-> >> 
-> >> No I have not. I've booted to user space in initramfs with DT-based
-> >> TWD on Multiplatform for r8a7779. Without this fix (and other r8a7779
-> >> TWD bits) I see a lot of breakage. For instance, TWD and SMP boot is
-> >> broken on r8a7779 - both legacy and non-legacy. I have not gotten to
-> >> sh73a0 yet, but I assume it is busted too.
-> > 
-> > FWIW, I applied this patch, and booted the result successfully and without
-> > 
-> > any user-visible changes on:
-> >   - koelsch
-> >   - armadillo-multiplatform
-> >   - kzm9g-legacy
-> >   - kzm9g-multiplatform
-> 
-> Thanks for testing - now let us wait and see what Laurent says.
-> 
-> > Armadillo-legacy is broken, and probably won't come back (cfr.
-> > https://lkml.org/lkml/2014/12/2/339).
-> > 
-> > Kzm9g-reference still hangs at "Calibrating local timer..." (it did work
-> > at some point in the past).
-
-kzm9g-reference boots for me with kzm9g_defconfig on Simon's devel branch with 
-CONFIG_PREEMPT_NONE but fails to boot with CONFIG_PREEMPT. The platform 
-doesn't instantiate the TMU at the moment anyway, so it's unrelated to this 
-patch.
-
-Given that kzm9g-legacy works for me regardless of the preempt configuration 
-and on the TMU cpumask, that kzm9g-reference doesn't use TMU, and that you've 
-tested kzm9g-multiplaform successfully, I think we can consider that this 
-patch is safe from a kzm9g point of view.
-
-(By the way, how have you tested kzm9g-multiplatform given that none of 
-renesas-drivers-2014-12-08-v3.18, renesas-devel-20141212-v3.18 or today's 
-upstream support multiplatform kernels for sh73a0 ?)
-
-Magnus, you have told me that you've performed tests on Marzen with 
-CONFIG_PREEMPT_NONE and with both TWD enabled and disabled. If you could 
-perform the same tests with CONFIG_PREEMPT instead without noticing any 
-regression I think we can merge your patch. Whatever breakage it has caused in 
-the past is likely hidden somewhere beyond eyesight.
-
+On Wed, Dec 17, 2014 at 2:30 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+>> Armadillo-legacy is broken, and probably won't come back (cfr.
+>> https://lkml.org/lkml/2014/12/2/339).
+>>
+>> Kzm9g-reference still hangs at "Calibrating local timer..." (it did work
+>> at some point in the past).
+>
 > When the time allows I'd like us to try to fix up these somehow. At
 > least I'll give it a go - I guess Armadillo is difficult without any
 > board.
 
-I'd like that very much. Let's get rid of r8a73a4 legacy (Ulrich's patches 
-should be ready) first, and possible sh73a0 and r8a7740 as well, and then 
-retest our various timers configurations. We should test both CONFIG_PREEMPT 
-and CONFIG_PREEMPT none, with all combination of the CMT, TMU, MTU2, TWD and 
-ARM architected timer enabled.
+To fix Armadillo, we have to instantiate the GIC from C code, which is
+a step backwards.
 
-> > Note that my local tree is based on renesas-drivers-2014-12-08-v3.18,
-> > renesas-devel-20141212-v3.18, and yesterday's upstream, with CCF,
-> > PM domain, TWD, and lots of WIP patches from the kitchen sink applied.
-> 
+>> Note that my local tree is based on renesas-drivers-2014-12-08-v3.18,
+>> renesas-devel-20141212-v3.18, and yesterday's upstream, with CCF,
+>> PM domain, TWD, and lots of WIP patches from the kitchen sink applied.
+>
 > The TWD portion above - is it driver code or integration stuff? If the
 > latter - is there any reason why these can't be picked up by Simon and
 > merged right away.
-> 
+
+Integration stuff. Basically it's
+http://www.spinics.net/lists/arm-kernel/msg383413.html
+
+In the mean time, I found the right clock, but I still have to repost that
+(sorry, recovering from being ill --- merge windows don't help much ;-)
+
 > My plan is to dig into sh73a0 (maybe including TWD) later today.
 
--- 
-Regards,
+Okay, thanks!
 
-Laurent Pinchart
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
