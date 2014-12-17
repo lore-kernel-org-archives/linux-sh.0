@@ -1,60 +1,58 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 23 Dec 2014 10:03:34 +0000
-Subject: [GIT PULL FOR v3.20] R-Car DU fixes and enhancements
-Message-Id: <2195818.kbPWsnQAkp@avalon>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Wed, 17 Dec 2014 16:18:15 +0000
+Subject: [PATCH v3 3/9] ARM: shmobile: ape6evm: Add LEDs to the device tree
+Message-Id: <1418833101-7774-4-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: airlied@gmail.com
-Cc: dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Dave,
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
 
-The following changes since commit 4e0cd68115620bc3236ff4e58e4c073948629b41:
-
-  drm: sti: fix module compilation issue (2014-12-15 17:07:57 +1000)
-
-are available in the git repository at:
-
-  git://linuxtv.org/pinchartl/fbdev.git drm/next/du
-
-for you to fetch changes up to 906eff7fcada4186cde54eb89572fb774ab294a0:
-
-  drm: rcar-du: Implement support for interlaced modes (2014-12-23 12:01:52 
-+0200)
-
-----------------------------------------------------------------
-Laurent Pinchart (10):
-      drm: adv7511: Remove interlaced mode check
-      drm: rcar-du: Don't fail probe in case of partial encoder init error
-      drm: rcar-du: Configure pitch for chroma plane of multiplanar formats
-      drm: rcar-du: Remove LVDS and HDMI encoders chaining restriction
-      drm: rcar-du: Refactor DEFR8 feature
-      drm: rcar-du: Add support for external pixel clock
-      drm: rcar-du: Output HSYNC instead of CSYNC
-      drm: rcar-du: Enable hotplug detection on HDMI connector
-      drm: rcar-du: Clamp DPMS states to on and off
-      drm: rcar-du: Implement support for interlaced modes
-
- Documentation/devicetree/bindings/video/renesas,du.txt |  4 ++
- drivers/gpu/drm/i2c/adv7511.c                          |  3 -
- drivers/gpu/drm/rcar-du/rcar_du_crtc.c                 | 95 +++++++++++++----
- drivers/gpu/drm/rcar-du/rcar_du_crtc.h                 |  1 +
- drivers/gpu/drm/rcar-du/rcar_du_drv.c                  |  6 +-
- drivers/gpu/drm/rcar-du/rcar_du_drv.h                  |  2 +-
- drivers/gpu/drm/rcar-du/rcar_du_encoder.c              | 34 +++++----
- drivers/gpu/drm/rcar-du/rcar_du_group.c                | 21 ++++--
- drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c              |  2 +
- drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c              | 18 +++++
- drivers/gpu/drm/rcar-du/rcar_du_kms.c                  | 15 +++-
- drivers/gpu/drm/rcar-du/rcar_du_plane.c                | 20 +++++-
- drivers/gpu/drm/rcar-du/rcar_du_regs.h                 |  5 +-
- drivers/gpu/drm/rcar-du/rcar_du_vgacon.c               |  1 +
- 14 files changed, 180 insertions(+), 47 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+index c98cd14..b939a37 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+@@ -82,6 +82,34 @@
+ 			vddvario-supply = <&ape6evm_fixed_3v3>;
+ 		};
+ 	};
++
++	leds {
++		compatible = "gpio-leds";
++		led1 {
++			gpios = <&pfc 28 GPIO_ACTIVE_LOW>;
++			label = "GNSS_EN";
++		};
++		led2 {
++			gpios = <&pfc 126 GPIO_ACTIVE_LOW>;
++			label = "NFC_NRST";
++		};
++		led3 {
++			gpios = <&pfc 132 GPIO_ACTIVE_LOW>;
++			label = "GNSS_NRST";
++		};
++		led4 {
++			gpios = <&pfc 232 GPIO_ACTIVE_LOW>;
++			label = "BT_WAKEUP";
++		};
++		led5 {
++			gpios = <&pfc 250 GPIO_ACTIVE_LOW>;
++			label = "STROBE";
++		};
++		led6 {
++			gpios = <&pfc 288 GPIO_ACTIVE_LOW>;
++			label = "BBRESETOUT";
++		};
++	};
+ };
+ 
+ &i2c5 {
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.4.5
 
