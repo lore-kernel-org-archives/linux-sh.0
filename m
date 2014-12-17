@@ -1,7 +1,7 @@
 From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Tue, 16 Dec 2014 16:26:01 +0000
-Subject: [PATCH v2 5/7] ARM: shmobile: r8a73a4: Add r8a73a4-ape6evm.dtb to ARCH_SHMOBILE_MULTI
-Message-Id: <1418747163-21729-6-git-send-email-ulrich.hecht+renesas@gmail.com>
+Date: Wed, 17 Dec 2014 16:18:18 +0000
+Subject: [PATCH v3 6/9] ARM: shmobile: r8a73a4: Add r8a73a4-ape6evm.dtb to ARCH_SHMOBILE_MULTI
+Message-Id: <1418833101-7774-7-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
