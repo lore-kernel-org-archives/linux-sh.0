@@ -1,43 +1,56 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 12 Dec 2014 19:53:18 +0000
-Subject: [PATCH] renesas_usbhs: kill dead code in usbhs_probe()
-Message-Id: <1712999.cba28NOnAE@wasted.cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 17 Dec 2014 12:53:25 +0000
+Subject: [PATCH 05/05] serial: sh-sci: Expose SCIFA/SCIFB CTS pin
+Message-Id: <20141217125325.14480.79285.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20141217125236.14480.78833.sendpatchset@w520>
+In-Reply-To: <20141217125236.14480.78833.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: gregkh@linuxfoundation.org, Magnus Damm <magnus.damm@gmail.com>, jslaby@suse.cz, linux-serial@vger.kernel.org
 
-usbhsc_drvcllbck_notify_hotplug() always returns 0, so it's rather pointless to
-store and check its result for being < 0.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Expose CTS pin to serial core for the SCIFA/SCIFB case.
 
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
-This patch is against the 'next' branch of Felipe Balbi's 'usb.git' repo.
 
- drivers/usb/renesas_usbhs/common.c |    6 +-----
- 1 file changed, 1 insertion(+), 5 deletions(-)
+ drivers/tty/serial/sh-sci.c |   17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
 
-Index: usb/drivers/usb/renesas_usbhs/common.c
-=================================--- usb.orig/drivers/usb/renesas_usbhs/common.c
-+++ usb/drivers/usb/renesas_usbhs/common.c
-@@ -632,16 +632,12 @@ static int usbhs_probe(struct platform_d
- 	/*
- 	 * manual call notify_hotplug for cold plug
+--- 0023/drivers/tty/serial/sh-sci.c
++++ work/drivers/tty/serial/sh-sci.c	2014-12-17 18:46:44.000000000 +0900
+@@ -564,6 +564,11 @@ static void sci_init_pins_default(struct
+ 	serial_port_out(port, SCSPTR, status); /* Set RTS = 1 */
+ }
+ 
++static bool sci_cts_asserted_scifab(struct uart_port *port)
++{
++	return !(serial_port_in(port, SCPDR) & BIT(3));
++}
++
+ static void sci_init_pins_scifab(struct uart_port *port, bool hwflow_enabled)
+ {
+ 	unsigned short control, data;
+@@ -1304,8 +1309,16 @@ static unsigned int sci_get_mctrl(struct
+ 	 * else is wired up. Keep it simple and simply assert DSR/CAR.
  	 */
--	ret = usbhsc_drvcllbck_notify_hotplug(pdev);
--	if (ret < 0)
--		goto probe_end_call_remove;
-+	usbhsc_drvcllbck_notify_hotplug(pdev);
  
- 	dev_info(&pdev->dev, "probed\n");
+-	if (s->cfg->capabilities & SCIx_HAVE_RTSCTS)
+-		cts_asserted = sci_cts_asserted_default(port);
++ 	if (s->cfg->capabilities & SCIx_HAVE_RTSCTS) {
++		switch (s->cfg->type) {
++		case PORT_SCIFA:
++		case PORT_SCIFB:
++			cts_asserted = sci_cts_asserted_scifab(port);
++			break;
++		default:
++			cts_asserted = sci_cts_asserted_default(port);
++		}
++ 	}
  
- 	return ret;
- 
--probe_end_call_remove:
--	usbhs_platform_call(priv, hardware_exit, pdev);
- probe_end_mod_exit:
- 	usbhs_mod_remove(priv);
- probe_end_fifo_exit:
-
+ 	return TIOCM_DSR | TIOCM_CAR | (cts_asserted ? TIOCM_CTS : 0);
+ }
