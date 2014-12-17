@@ -1,42 +1,91 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 15 Dec 2014 02:28:15 +0000
-Subject: [PATCH 3/7] mmc: sh_mobile_sdhi: tidyup mmc_data->bus_shift for latest SoC
-Message-Id: <87a92pve7i.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 17 Dec 2014 12:52:46 +0000
+Subject: [PATCH 01/05] serial: sh-sci: Break out default CTS/RTS pin setup
+Message-Id: <20141217125246.14480.41876.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87egs1ve96.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87egs1ve96.wl%kuninori.morimoto.gx@renesas.com>
+References: <20141217125236.14480.78833.sendpatchset@w520>
+In-Reply-To: <20141217125236.14480.78833.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>
-Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-sh@vger.kernel.org
+Cc: gregkh@linuxfoundation.org, Magnus Damm <magnus.damm@gmail.com>, jslaby@suse.cz, linux-serial@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Latest SDHI on Renesas has expand register mapping.
-update mmc_data->bus_shift for it.
+Break out CTS/RTS pin setup for the default case. We only
+care about those pins in case SCIx_HAVE_RTSCTS is set.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |    5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 00c8ebd..1c1e919 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -272,7 +272,10 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ drivers/tty/serial/sh-sci.c |   45 +++++++++++++++++++++++++++++--------------
+ 1 file changed, 31 insertions(+), 14 deletions(-)
+
+--- 0001/drivers/tty/serial/sh-sci.c
++++ work/drivers/tty/serial/sh-sci.c	2014-12-16 14:40:31.000000000 +0900
+@@ -509,10 +509,29 @@ static void sci_poll_put_char(struct uar
+ }
+ #endif /* CONFIG_CONSOLE_POLL || CONFIG_SERIAL_SH_SCI_CONSOLE */
+ 
+-static void sci_init_pins(struct uart_port *port, unsigned int cflag)
++static void sci_init_pins_default(struct uart_port *port, bool hwflow_enabled)
+ {
+ 	struct sci_port *s = to_sci_port(port);
+ 	struct plat_sci_reg *reg = sci_regmap[s->cfg->regtype] + SCSPTR;
++	unsigned short status;
++
++	/* If no SCSPTR register exists then skip. Same if hardware flow
++	 * control has been enabled, in such case SCFCR.MCE will be set
++	 * and the SCSPTR configuration is assumed to be overridden.
++	 */
++	if (!reg->size || hwflow_enabled)
++		return;
++
++	status = serial_port_in(port, SCSPTR);
++	status &= ~SCSPTR_CTSIO;
++	status |= SCSPTR_RTSIO;
++	serial_port_out(port, SCSPTR, status); /* Set RTS = 1 */
++}
++
++static void sci_init_pins(struct uart_port *port, unsigned int cflag)
++{
++	struct sci_port *s = to_sci_port(port);
++	bool hwflow_enabled = cflag & CRTSCTS;
+ 
+ 	/*
+ 	 * Use port-specific handler if provided.
+@@ -522,22 +541,20 @@ static void sci_init_pins(struct uart_po
+ 		return;
  	}
  
- 	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
--	mmc_data->bus_shift = resource_size(res) >> 9;
-+	if (resource_size(res) > 0x100)
-+		mmc_data->bus_shift = 1;
-+	else
-+		mmc_data->bus_shift = 0;
+-	/*
+-	 * For the generic path SCSPTR is necessary. Bail out if that's
+-	 * unavailable, too.
++	/* SCIF hardware with RTS/CTS support needs special setup below.
++	 *
++	 * Please note that if RTS/CTS is available for the hardware
++	 * platform depends on the particular SCIF channel on a certain
++	 * SoC, and how this channel has been hooked up on the actual board.
++	 *
++	 * If the RTS/CTS signals will be used or not depends on what user
++	 * space requests. In case RTS/CTS is available but not requested
++	 * by user space we still need to configure the pins somehow.
+ 	 */
+-	if (!reg->size)
++	if (!(s->cfg->capabilities & SCIx_HAVE_RTSCTS))
+ 		return;
  
- 	ret = tmio_mmc_host_probe(&host, pdev, mmc_data);
- 	if (ret < 0)
--- 
-1.7.9.5
-
+-	if ((s->cfg->capabilities & SCIx_HAVE_RTSCTS) &&
+-	    ((!(cflag & CRTSCTS)))) {
+-		unsigned short status;
+-
+-		status = serial_port_in(port, SCSPTR);
+-		status &= ~SCSPTR_CTSIO;
+-		status |= SCSPTR_RTSIO;
+-		serial_port_out(port, SCSPTR, status); /* Set RTS = 1 */
+-	}
++	sci_init_pins_default(port, hwflow_enabled);
+ }
+ 
+ static int sci_txfill(struct uart_port *port)
