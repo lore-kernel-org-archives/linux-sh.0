@@ -1,54 +1,61 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 17 Dec 2014 08:25:19 +0000
+Date: Wed, 17 Dec 2014 08:30:57 +0000
 Subject: Re: [PATCH] clocksource: sh_tmu: Set cpu_possible_mask to fix SMP broadcast
-Message-Id: <CAMuHMdVDHX4PAvNKaxBDm4n2gjHgi4qv9Ui_FgiCgLPdKAXxcw@mail.gmail.com>
+Message-Id: <CAMuHMdWT+yytt1mRZPLvzyXACcw638Sf4DBjHUTf_+iPjsNzbA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20141216094854.22639.69181.sendpatchset@w520>
-	<54901420.50403@linaro.org>
-	<1418731028.WfBPmyK53y@avalon>
-	<CANqRtoTpSadrrpeBxA-ym4MZBfhY_BEyTPr_sfau8dZGCKttOQ@mail.gmail.com>
 	<CAMuHMdUzys9pbEjUybyDP-3=uemLZuP5WgXeyONxGmADUJJL4A@mail.gmail.com>
 	<CANqRtoRTcC_ixjY_Qr1T=2Jhh9qu_5+=Z3YRBDUJX8HWHP6Nog@mail.gmail.com>
-In-Reply-To: <CANqRtoRTcC_ixjY_Qr1T=2Jhh9qu_5+=Z3YRBDUJX8HWHP6Nog@mail.gmail.com>
+	<2855304.l47b4KVhTf@avalon>
+In-Reply-To: <2855304.l47b4KVhTf@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Daniel Lezcano <daniel.lezcano@linaro.org>, linux-kernel <linux-kernel@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, "Simon Horman [Horms]" <horms@verge.net.au>, Thomas Gleixner <tglx@linutronix.de>
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Daniel Lezcano <daniel.lezcano@linaro.org>, linux-kernel <linux-kernel@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, "Simon Horman [Horms]" <horms@verge.net.au>, Thomas Gleixner <tglx@linutronix.de>
 
-Hi Magnus,
+Hi Laurent,
 
-On Wed, Dec 17, 2014 at 2:30 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
->> Armadillo-legacy is broken, and probably won't come back (cfr.
->> https://lkml.org/lkml/2014/12/2/339).
->>
->> Kzm9g-reference still hangs at "Calibrating local timer..." (it did work
->> at some point in the past).
+On Wed, Dec 17, 2014 at 3:08 AM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+>> > Kzm9g-reference still hangs at "Calibrating local timer..." (it did work
+>> > at some point in the past).
 >
-> When the time allows I'd like us to try to fix up these somehow. At
-> least I'll give it a go - I guess Armadillo is difficult without any
-> board.
+> kzm9g-reference boots for me with kzm9g_defconfig on Simon's devel branch with
 
-To fix Armadillo, we have to instantiate the GIC from C code, which is
-a step backwards.
+OK.
 
->> Note that my local tree is based on renesas-drivers-2014-12-08-v3.18,
->> renesas-devel-20141212-v3.18, and yesterday's upstream, with CCF,
->> PM domain, TWD, and lots of WIP patches from the kitchen sink applied.
+I had expected the breakage to be something in my tree, either an issue in
+a -next branch I'm using, an interaction with the CCF patches or so, or a
+config issue (e.g. CONFIG_CPU_IDLE became broken lately if the TWD is
+not in DT).
+
+> (By the way, how have you tested kzm9g-multiplatform given that none of
+> renesas-drivers-2014-12-08-v3.18, renesas-devel-20141212-v3.18 or today's
+> upstream support multiplatform kernels for sh73a0 ?)
+
+As I said, my local tree contains lots of extra patches (erhm... 233).
+
+> Magnus, you have told me that you've performed tests on Marzen with
+> CONFIG_PREEMPT_NONE and with both TWD enabled and disabled. If you could
+> perform the same tests with CONFIG_PREEMPT instead without noticing any
+> regression I think we can merge your patch. Whatever breakage it has caused in
+> the past is likely hidden somewhere beyond eyesight.
 >
-> The TWD portion above - is it driver code or integration stuff? If the
-> latter - is there any reason why these can't be picked up by Simon and
-> merged right away.
+>> When the time allows I'd like us to try to fix up these somehow. At
+>> least I'll give it a go - I guess Armadillo is difficult without any
+>> board.
 
-Integration stuff. Basically it's
-http://www.spinics.net/lists/arm-kernel/msg383413.html
+I do have an Armadillo.
 
-In the mean time, I found the right clock, but I still have to repost that
-(sorry, recovering from being ill --- merge windows don't help much ;-)
+> I'd like that very much. Let's get rid of r8a73a4 legacy (Ulrich's patches
+> should be ready) first, and possible sh73a0 and r8a7740 as well, and then
+> retest our various timers configurations. We should test both CONFIG_PREEMPT
+> and CONFIG_PREEMPT none, with all combination of the CMT, TMU, MTU2, TWD and
+> ARM architected timer enabled.
 
-> My plan is to dig into sh73a0 (maybe including TWD) later today.
-
-Okay, thanks!
+Yes, getting rid of more legacy is good. It's just a pity for the Penguin on the
+Armadillo's LCD, which doesn't want to visit armadillo-multiplatform.
 
 Gr{oetje,eeting}s,
 
