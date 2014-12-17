@@ -1,65 +1,55 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 31 Dec 2014 06:14:36 +0000
-Subject: Re: [PATCH 21/30] ARM: shmobile: r8a7794: Add SDHI clocks to device tree
-Message-Id: <20141231061436.GE22191@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 17 Dec 2014 13:40:42 +0000
+Subject: [PATCH] ARM: shmobile: r8a7740: Instantiate GIC from C board code in legacy builds
+Message-Id: <1418823642-28154-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1419812185.git.horms+renesas@verge.net.au>
- <8e181633e6ca960491ac502ccd4a4aac482c3ff9.1419812186.git.horms+renesas@verge.net.au>
- <54A13791.2060201@cogentembedded.com>
-In-Reply-To: <54A13791.2060201@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Dec 29, 2014 at 02:14:25PM +0300, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 12/29/2014 4:43 AM, Simon Horman wrote:
-> 
-> >From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-> 
-> >Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-> >[horms: omitted device nodes; only add clock]
-> >Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >---
-> >  arch/arm/boot/dts/r8a7794.dtsi            | 20 +++++++++++++++++++-
-> >  include/dt-bindings/clock/r8a7794-clock.h |  3 +++
-> >  2 files changed, 22 insertions(+), 1 deletion(-)
-> 
-> >diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-> >index 728d719..c376676 100644
-> >--- a/arch/arm/boot/dts/r8a7794.dtsi
-> >+++ b/arch/arm/boot/dts/r8a7794.dtsi
-> >@@ -293,6 +293,21 @@
-> >  			clock-output-names = "main", "pll0", "pll1", "pll3",
-> >  					     "lb", "qspi", "sdh", "sd0", "z";
-> >  		};
-> >+		/* Variable factor clocks */
-> >+		sd1_clk: sd2_clk@e6150078 {
-> 
->    So is it SD1 or SD2 clock?
-> 
-> >+			compatible = "renesas,r8a7794-div6-clock", "renesas,cpg-div6-clock";
-> >+			reg = <0 0xe6150078 0 4>;
-> >+			clocks = <&pll1_div2_clk>;
-> >+			#clock-cells = <0>;
-> >+			clock-output-names = "sd1";
-> >+		};
-> >+		sd2_clk: sd3_clk@e615007c {
-> 
->    Same question...
-> 
-> >+			compatible = "renesas,r8a7794-div6-clock", "renesas,cpg-div6-clock";
-> >+			reg = <0 0xe615007c 0 4>;
-> >+			clocks = <&pll1_div2_clk>;
-> >+			#clock-cells = <0>;
-> >+			clock-output-names = "sd2";
-> >+		};
-> [...]
+As of commit 9a1091ef0017c40a ("irqchip: gic: Support hierarchy irq
+domain."), armadillo-legacy hangs during boot with:
 
-Thanks, and sorry for letting that slip through.
-e6150078 should be sd1_clk and e615007c should be sd2_clk.
-And for reference sd3_clk is e615026c.
+     sh-tmu.0: ch0: used for clock events
+     sh-tmu.0: ch0: used for periodic clock events
+     sh-tmu.0: ch0: failed to request irq 230
+     sh-tmu.0: ch1: used as clock source
+     sh-cmt-48.1: ch0: failed to request irq 90
+     sh-cmt-48.1: ch0: registration failed
+    earlytimer: unable to probe sh-cmt-48 early.
+    Calibrating delay loop...
 
-I'll send an incremental patch to fix this problem.
+This happens because the IRQ numbers of the GIC are now virtual, and no
+longer match the hardcoded hardware IRQ numbers in the platform board
+code.
+To fix this, instantiate the GIC from platform board code when compiling
+a legacy kernel, like is done on sh73a0 for kzm9g-legacy.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-shmobile/setup-r8a7740.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 79ad93dfdae4ee70..d191cf4197313482 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -800,7 +800,14 @@ void __init r8a7740_init_irq_of(void)
+ 	void __iomem *intc_msk_base = ioremap_nocache(0xe6900040, 0x10);
+ 	void __iomem *pfc_inta_ctrl = ioremap_nocache(0xe605807c, 0x4);
+ 
++#ifdef CONFIG_ARCH_SHMOBILE_LEGACY
++	void __iomem *gic_dist_base = ioremap_nocache(0xc2800000, 0x1000);
++	void __iomem *gic_cpu_base = ioremap_nocache(0xc2000000, 0x1000);
++
++	gic_init(0, 29, gic_dist_base, gic_cpu_base);
++#else
+ 	irqchip_init();
++#endif
+ 
+ 	/* route signals to GIC */
+ 	iowrite32(0x0, pfc_inta_ctrl);
+-- 
+1.9.1
+
