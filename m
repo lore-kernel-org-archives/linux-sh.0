@@ -1,57 +1,51 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 15 Dec 2014 18:41:13 +0000
-Subject: [PATCH FOR v3.19 - v2] iommu/ipmmu-vmsa: change IOMMU_EXEC to IOMMU_NOEXEC
-Message-Id: <1418668873-5091-1-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 17 Dec 2014 18:49:07 +0000
+Subject: [PATCH 2/8] drivers: bus: Sort Makefile entries alphabetically
+Message-Id: <1418842153-17113-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1418842153-17113-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1418842153-17113-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-Commit a720b41c41f5a7e4 ("iommu/arm-smmu: change IOMMU_EXEC to
-IOMMU_NOEXEC") has inverted and replaced the IOMMU_EXEC flag with
-IOMMU_NOEXEC. Update the driver accordingly.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/iommu/ipmmu-vmsa.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+v2:
+  - New
+---
+ drivers/bus/Makefile | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
 
-Changes since v1:
-
-- Rewrote the commit message
-
-Joerg, this is a compilation breakage fix for v3.19. Could you please take it
-in your tree and submit it early during the -rc cycle ?
-
-diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
-index 68dfb0f..7486931 100644
---- a/drivers/iommu/ipmmu-vmsa.c
-+++ b/drivers/iommu/ipmmu-vmsa.c
-@@ -558,7 +558,7 @@ static pmd_t *ipmmu_alloc_pmd(struct ipmmu_vmsa_device *mmu, pgd_t *pgd,
+diff --git a/drivers/bus/Makefile b/drivers/bus/Makefile
+index 2973c18cbcc27816..3cfaf2c7f25ac4f0 100644
+--- a/drivers/bus/Makefile
++++ b/drivers/bus/Makefile
+@@ -2,16 +2,16 @@
+ # Makefile for the bus drivers.
+ #
  
- static u64 ipmmu_page_prot(unsigned int prot, u64 type)
- {
--	u64 pgprot = ARM_VMSA_PTE_XN | ARM_VMSA_PTE_nG | ARM_VMSA_PTE_AF
-+	u64 pgprot = ARM_VMSA_PTE_nG | ARM_VMSA_PTE_AF
- 		   | ARM_VMSA_PTE_SH_IS | ARM_VMSA_PTE_AP_UNPRIV
- 		   | ARM_VMSA_PTE_NS | type;
++# Interconnect bus drivers for ARM platforms
++obj-$(CONFIG_ARM_CCI)		+= arm-cci.o
++obj-$(CONFIG_ARM_CCN)		+= arm-ccn.o
++
+ obj-$(CONFIG_BRCMSTB_GISB_ARB)	+= brcmstb_gisb.o
+-obj-$(CONFIG_IMX_WEIM)	+= imx-weim.o
+-obj-$(CONFIG_MVEBU_MBUS) += mvebu-mbus.o
+-obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
++obj-$(CONFIG_IMX_WEIM)		+= imx-weim.o
++obj-$(CONFIG_MVEBU_MBUS) 	+= mvebu-mbus.o
  
-@@ -568,8 +568,8 @@ static u64 ipmmu_page_prot(unsigned int prot, u64 type)
- 	if (prot & IOMMU_CACHE)
- 		pgprot |= IMMAIR_ATTR_IDX_WBRWA << ARM_VMSA_PTE_ATTRINDX_SHIFT;
+ # Interconnect bus driver for OMAP SoCs.
+ obj-$(CONFIG_OMAP_INTERCONNECT)	+= omap_l3_smx.o omap_l3_noc.o
  
--	if (prot & IOMMU_EXEC)
--		pgprot &= ~ARM_VMSA_PTE_XN;
-+	if (prot & IOMMU_NOEXEC)
-+		pgprot |= ARM_VMSA_PTE_XN;
- 	else if (!(prot & (IOMMU_READ | IOMMU_WRITE)))
- 		/* If no access create a faulting entry to avoid TLB fills. */
- 		pgprot &= ~ARM_VMSA_PTE_PAGE;
+-# Interconnect bus drivers for ARM platforms
+-obj-$(CONFIG_ARM_CCI)		+= arm-cci.o
+-obj-$(CONFIG_ARM_CCN)		+= arm-ccn.o
+-
++obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
+ obj-$(CONFIG_VEXPRESS_CONFIG)	+= vexpress-config.o
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
