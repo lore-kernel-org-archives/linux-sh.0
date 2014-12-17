@@ -1,10 +1,10 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 17 Dec 2014 11:31:14 +0000
+Date: Wed, 17 Dec 2014 12:04:55 +0000
 Subject: Re: [PATCH] clocksource: sh_tmu: Set cpu_possible_mask to fix SMP broadcast
-Message-Id: <1479998.RpvOtHlbHE@avalon>
+Message-Id: <4785362.yhOOf0IjKV@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20141216094854.22639.69181.sendpatchset@w520> <2855304.l47b4KVhTf@avalon> <CAMuHMdWT+yytt1mRZPLvzyXACcw638Sf4DBjHUTf_+iPjsNzbA@mail.gmail.com>
-In-Reply-To: <CAMuHMdWT+yytt1mRZPLvzyXACcw638Sf4DBjHUTf_+iPjsNzbA@mail.gmail.com>
+References: <20141216094854.22639.69181.sendpatchset@w520> <CAMuHMdWT+yytt1mRZPLvzyXACcw638Sf4DBjHUTf_+iPjsNzbA@mail.gmail.com> <CAMuHMdXmzah7xZMb+y_0HHE5aeOr_efCv9GZhPutjWxb39WCCw@mail.gmail.com>
+In-Reply-To: <CAMuHMdXmzah7xZMb+y_0HHE5aeOr_efCv9GZhPutjWxb39WCCw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -13,52 +13,83 @@ Cc: Magnus Damm <magnus.damm@gmail.com>, Daniel Lezcano <daniel.lezcano@linaro.o
 
 Hi Geert,
 
-On Wednesday 17 December 2014 09:30:57 Geert Uytterhoeven wrote:
-> On Wed, Dec 17, 2014 at 3:08 AM, Laurent Pinchart wrote:
-> >> > Kzm9g-reference still hangs at "Calibrating local timer..." (it did
-> >> > work at some point in the past).
+On Wednesday 17 December 2014 10:42:52 Geert Uytterhoeven wrote:
+> On Wed, Dec 17, 2014 at 9:30 AM, Geert Uytterhoeven wrote:
+> > On Wed, Dec 17, 2014 at 3:08 AM, Laurent Pinchart wrote:
+> >>>> Kzm9g-reference still hangs at "Calibrating local timer..." (it did
+> >>>> work at some point in the past).
+> >> 
+> >> kzm9g-reference boots for me with kzm9g_defconfig on Simon's devel branch
+> >> with
+> >>
+> > OK.
 > > 
-> > kzm9g-reference boots for me with kzm9g_defconfig on Simon's devel branch
-> > with
->
-> OK.
+> > I had expected the breakage to be something in my tree, either an issue in
+> > a -next branch I'm using, an interaction with the CCF patches or so, or a
+> > config issue (e.g. CONFIG_CPU_IDLE became broken lately if the TWD is
+> > not in DT).
 > 
-> I had expected the breakage to be something in my tree, either an issue in
-> a -next branch I'm using, an interaction with the CCF patches or so, or a
-> config issue (e.g. CONFIG_CPU_IDLE became broken lately if the TWD is
-> not in DT).
+> Kzm9g-reference hangs at "Calibrating local timer..." because I added the
+> TWD to sh73a0.dtsi (http://www.spinics.net/lists/arm-kernel/msg383413.html).
 > 
-> > (By the way, how have you tested kzm9g-multiplatform given that none of
-> > renesas-drivers-2014-12-08-v3.18, renesas-devel-20141212-v3.18 or today's
-> > upstream support multiplatform kernels for sh73a0 ?)
+> As twd_get_clock() does
 > 
-> As I said, my local tree contains lots of extra patches (erhm... 233).
+>         if (np)
+>                 twd_clk = of_clk_get(np, 0);
+>         else
+>                 twd_clk = clk_get_sys("smp_twd", NULL);
+> 
+> it's not DT-without-CCF proof, and kzm9g-reference cannot get its clock :-(
+> 
+> So the TWD node should be in sh73a0-kzm9g-multiplatform.dts, and we need
+> more dts files instead of less...
+> 
+> Note that I added the TWD node to DT to fix a hang on kzm9g-multiplatform
+> with CONFIG_CPU_IDLE=y (recently introduced "regression" in core code)
+> after:
+> 
+>      DMA: preallocated 256 KiB pool for atomic coherent allocations
+> 
+> On kzm9g-legacy the TWD is instantiated from C board code
+> (machine_desc.init_time = sh73a0_earlytimer_init), so CONFIG_CPU_IDLE=y
+> does not hang. Despite https://lkml.org/lkml/2014/12/2/339.
+> 
+> On kzm9g-reference, the TWD is not instantiated, causing the same hang.
+> If I instantiate the TWD from C board code there, it fails with
+> 
+>     twd: can't register interrupt 29 (-22)
+> 
+> which looks like a symptom of https://lkml.org/lkml/2014/12/2/339
+> 
+> So no cookies for users of several -legacy and -reference platforms in
+> v3.19-rc1 this Monday...
 
-We should probably synchronize at some point and get pending patches merged, 
-or you'll loose sanity :-)
+I'm not sure if fixing that would be worth it. Should we instead try to 
+replace kzm9g-legacy and kzm9g-reference by kzm9g-multiplatform in v3.20 ? 
+What are we missing ?
 
-What multiplatform support patches do you plan to submit for v3.20 ?
+- The DIV6 multiparent series has been merged by Mike, and the sh73a0 CCF is 
+nearly ready.
 
-> > Magnus, you have told me that you've performed tests on Marzen with
-> > CONFIG_PREEMPT_NONE and with both TWD enabled and disabled. If you could
-> > perform the same tests with CONFIG_PREEMPT instead without noticing any
-> > regression I think we can merge your patch. Whatever breakage it has
-> > caused in the past is likely hidden somewhere beyond eyesight.
-> > 
-> >> When the time allows I'd like us to try to fix up these somehow. At
-> >> least I'll give it a go - I guess Armadillo is difficult without any
-> >> board.
-> 
-> I do have an Armadillo.
-> 
-> > I'd like that very much. Let's get rid of r8a73a4 legacy (Ulrich's patches
-> > should be ready) first, and possible sh73a0 and r8a7740 as well, and then
-> > retest our various timers configurations. We should test both
-> > CONFIG_PREEMPT and CONFIG_PREEMPT none, with all combination of the CMT,
-> > TMU, MTU2, TWD and ARM architected timer enabled.
-> 
-> Yes, getting rid of more legacy is good. It's just a pity for the Penguin on
-> the Armadillo's LCD, which doesn't want to visit armadillo-multiplatform.
+- We need proper BSC support to get LAN working, although it could be worked 
+around temporarily by specifying the BSC clock in the LAN node if I recall 
+correctly.
+
+- MMCIF and SDHI are present.
+
+- Sound support is there as far as I can tell, but possibly without DMA.
+
+- Touchscreen and magnetometer have DT bindings but are not instantiated in 
+the dts at the moment. That should be easy to fix.
+
+- Accelerometer and RTC have no DT bindings, but they should work with the I2C 
+core OF match support.
+
+- We're loosing USBHS (driver supports OF but doesn't cover sh73a0), USB host 
+(no OF support in driver) and LCDC (no OF support in driver).
+
+All but USBHS, USB host and LCDC should be possible to support in v3.20 
+without too much issues, depending on the effort we can put in this.
 
 -- 
 Regards,
