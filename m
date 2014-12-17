@@ -1,111 +1,101 @@
-From: Soren Brinkmann <soren.brinkmann@xilinx.com>
-Date: Fri, 12 Dec 2014 16:34:52 +0000
-Subject: [PATCH v3 1/7] pinctrl: pinconf-generic: Infer map type from DT property
-Message-Id: <9a21e4de1eac4c3e81a860b69ae99713@BL2FFO11FD060.protection.gbl>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 17 Dec 2014 02:33:15 +0000
+Subject: [PATCH v5][resend v3] of: replace Asahi Kasei Corp vendor prefix
+Message-Id: <87lhm7t37l.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418402098-3811-1-git-send-email-soren.brinkmann@xilinx.com>
-In-Reply-To: <1418402098-3811-1-git-send-email-soren.brinkmann@xilinx.com>
+References: <878ulzx6hr.wl%kuninori.morimoto.gx@gmail.com>
+	<20140922130026.GK3290@leverpostej>
+	<CAMuHMdX22z97SbGS1HDiYfJ1PXxyEN2S8D7w4sr+4bUwD+mJZw@mail.gmail.com>
+	<20140922132743.GM3290@leverpostej>
+	<87y4rfhmgl.wl%kuninori.morimoto.gx@renesas.com>
+	<1415845309.4269.6.camel@perches.com>	<20141113025105.GA16652@verge.net.au>
+	<87vbmjhj00.wl%kuninori.morimoto.gx@renesas.com>
+	<20141113110740.GE3815@sirena.org.uk>
+	<87k32yd0bd.wl%kuninori.morimoto.gx@renesas.com>	<20141114093554.GC3810@ulmo>
+	<87y4ra8xac.wl%kuninori.morimoto.gx@renesas.com>
+	<5469CD47.3040409@cogentembedded.com>
+	<877fytxsde.wl%kuninori.morimoto.gx@renesas.com>
+	<87egsob2cl.wl%kuninori.morimoto.gx@renesas.com>
+	<5478603D.1080404@cogentembedded.com>
+	<87d282sl6w.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87d282sl6w.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Matthias Brugger <matthias.bgg@gmail.com>, Rob Herring <robh@kernel.org>, Mark Brown <broonie@kernel.org>, ALSA Development Mailing List <alsa-devel@alsa-project.org>, linux-tegra@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-arm-kernel@lists.infradead.org
 
-With the new 'groups' property, the DT parser can infer the map type
-from the fact whether 'pins' or 'groups' is used to specify the pin
-group to work on.
-To maintain backwards compatibitliy with current usage of the DT
-binding, this is only done when PIN_MAP_TYPE_INVALID is passed to the
-parsing function as type.
-Also, a new helper 'pinconf_generic_dt_node_to_map_all()' is introduced,
-which can be used by drivers as generic callback for dt_node_to_map() to
-leverage the new feature.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Soren Brinkmann <soren.brinkmann@xilinx.com>
-Tested-by: Andreas F=C3=A4rber <afaerber@suse.de>
+Current vendor-prefixes.txt already has "ak" prefix for Asahi Kasei Corp
+by ae8c4209af2c(of: Add vendor prefix for Asahi Kasei Corp.)
+
+It went through the appropriate review process. But, almost all
+Asahi Kasei chip drivers are using "asahi-kasei" prefix today.
+(arch/arm/boot/dts/tegra20-seaboard.dts only is using "ak,ak8975",
+ but there are instances of "asahi-kasei,ak8975" in other dts files.
+ And drivers/iio/magnetometer/ak8975.c doesn't support "ak,ak8975" prefix)
+So, we made a mistake there.
+
+In addition, checkpatch.pl reports WARNING if it is using "asahi-kasei"
+prerfix in DT file.
+(DT compatible string vendor "asahi-kasei" appears un-documented)
+
+Marking it deprecated and warning with checkpatch is certainly
+preferable. So, this patch replace "ak" to "asahi-kasei" in
+vendor-prefixes.txt. (and fixup tegra20-seaboard)
+
+OTOH, Asahi Kasei is usually referred to as "AKM", but this patch
+doesn't care about it. Because no DT is using that today.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Thierry Reding <treding@nvidia.com>
+Acked-by: Alexandre Courbot <acourbot@nvidia.com>
 ---
-Changes since v2:
- - rename dt_pin_specifier to subnode_target_type
- - add additional comment in header file explaining passing an invalid
-   map type
- - mention map_all() helper in commit message
-Changes since RFC v2:
- - none
----
- drivers/pinctrl/pinconf-generic.c       | 17 ++++++++++++++---
- include/linux/pinctrl/pinconf-generic.h | 11 +++++++++++
- 2 files changed, 25 insertions(+), 3 deletions(-)
+>> Linus
 
-diff --git a/drivers/pinctrl/pinconf-generic.c b/drivers/pinctrl/pinconf-ge=
-neric.c
-index f78b416d7984..21b3d90ebb2d 100644
---- a/drivers/pinctrl/pinconf-generic.c
-+++ b/drivers/pinctrl/pinconf-generic.c
-@@ -264,6 +264,7 @@ int pinconf_generic_dt_subnode_to_map(struct pinctrl_de=
-v *pctldev,
- 	unsigned reserve;
- 	struct property *prop;
- 	const char *group;
-+	const char *subnode_target_type =3D "pins";
-=20
- 	ret =3D of_property_read_string(np, "function", &function);
- 	if (ret < 0) {
-@@ -284,10 +285,20 @@ int pinconf_generic_dt_subnode_to_map(struct pinctrl_=
-dev *pctldev,
- 		reserve++;
- 	if (num_configs)
- 		reserve++;
-+
- 	ret =3D of_property_count_strings(np, "pins");
- 	if (ret < 0) {
--		dev_err(dev, "could not parse property pins\n");
--		goto exit;
-+		ret =3D of_property_count_strings(np, "groups");
-+		if (ret < 0) {
-+			dev_err(dev, "could not parse property pins/groups\n");
-+			goto exit;
-+		}
-+		if (type =3D PIN_MAP_TYPE_INVALID)
-+			type =3D PIN_MAP_TYPE_CONFIGS_GROUP;
-+		subnode_target_type =3D "groups";
-+	} else {
-+		if (type =3D PIN_MAP_TYPE_INVALID)
-+			type =3D PIN_MAP_TYPE_CONFIGS_PIN;
- 	}
- 	reserve *=3D ret;
-=20
-@@ -296,7 +307,7 @@ int pinconf_generic_dt_subnode_to_map(struct pinctrl_de=
-v *pctldev,
- 	if (ret < 0)
- 		goto exit;
-=20
--	of_property_for_each_string(np, "pins", prop, group) {
-+	of_property_for_each_string(np, subnode_target_type, prop, group) {
- 		if (function) {
- 			ret =3D pinctrl_utils_add_map_mux(pctldev, map,
- 					reserved_maps, num_maps, group,
-diff --git a/include/linux/pinctrl/pinconf-generic.h b/include/linux/pinctr=
-l/pinconf-generic.h
-index d578a60eff23..83c89f5ab705 100644
---- a/include/linux/pinctrl/pinconf-generic.h
-+++ b/include/linux/pinctrl/pinconf-generic.h
-@@ -174,6 +174,17 @@ static inline int pinconf_generic_dt_node_to_map_pin(
- 			PIN_MAP_TYPE_CONFIGS_PIN);
- }
-=20
-+static inline int pinconf_generic_dt_node_to_map_all(
-+		struct pinctrl_dev *pctldev, struct device_node *np_config,
-+		struct pinctrl_map **map, unsigned *num_maps)
-+{
-+	/*
-+	 * passing the type as PIN_MAP_TYPE_INVALID causes the underlying parser
-+	 * to infer the map type from the DT properties used.
-+	 */
-+	return pinconf_generic_dt_node_to_map(pctldev, np_config, map, num_maps,
-+			PIN_MAP_TYPE_INVALID);
-+}
- #endif
-=20
- #endif /* CONFIG_GENERIC_PINCONF */
---=20
-2.2.0.1.g9ee0458
+I had sent this patch to Linux ML and Maintainers many times,
+but, no-one cares about it.
+Can you please check and apply it ?
+
+
+ .../devicetree/bindings/vendor-prefixes.txt        |    2 +-
+ arch/arm/boot/dts/tegra20-seaboard.dts             |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
+index 723999d..ddcb4cd 100644
+--- a/Documentation/devicetree/bindings/vendor-prefixes.txt
++++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
+@@ -9,7 +9,6 @@ ad	Avionic Design GmbH
+ adapteva	Adapteva, Inc.
+ adi	Analog Devices, Inc.
+ aeroflexgaisler	Aeroflex Gaisler AB
+-ak	Asahi Kasei Corp.
+ allwinner	Allwinner Technology Co., Ltd.
+ altr	Altera Corp.
+ amcc	Applied Micro Circuits Corporation (APM, formally AMCC)
+@@ -20,6 +19,7 @@ amstaos	AMS-Taos Inc.
+ apm	Applied Micro Circuits Corporation (APM)
+ arm	ARM Ltd.
+ armadeus	ARMadeus Systems SARL
++asahi-kasei	Asahi Kasei Corp.
+ atmel	Atmel Corporation
+ auo	AU Optronics Corporation
+ avago	Avago Technologies
+diff --git a/arch/arm/boot/dts/tegra20-seaboard.dts b/arch/arm/boot/dts/tegra20-seaboard.dts
+index a1d4bf9..7f5cf80 100644
+--- a/arch/arm/boot/dts/tegra20-seaboard.dts
++++ b/arch/arm/boot/dts/tegra20-seaboard.dts
+@@ -405,7 +405,7 @@
+ 		clock-frequency = <400000>;
+ 
+ 		magnetometer@c {
+-			compatible = "ak,ak8975";
++			compatible = "asahi-kasei,ak8975";
+ 			reg = <0xc>;
+ 			interrupt-parent = <&gpio>;
+ 			interrupts = <TEGRA_GPIO(N, 5) IRQ_TYPE_LEVEL_HIGH>;
+-- 
+1.7.9.5
 
