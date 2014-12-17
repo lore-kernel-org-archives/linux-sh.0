@@ -1,43 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 29 Dec 2014 01:46:57 +0000
-Subject: [PATCH 4/6] ARM: shmobile: kzm9g-reference: Common clock framework DT description
-Message-Id: <1a9a658113c33235ca12e622d91331dd91c61035.1419809955.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 17 Dec 2014 12:52:55 +0000
+Subject: [PATCH 02/05] serial: sh-sci: Fix default RTS handling
+Message-Id: <20141217125255.14480.64174.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1419809955.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1419809955.git.horms+renesas@verge.net.au>
+References: <20141217125236.14480.78833.sendpatchset@w520>
+In-Reply-To: <20141217125236.14480.78833.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: gregkh@linuxfoundation.org, Magnus Damm <magnus.damm@gmail.com>, jslaby@suse.cz, linux-serial@vger.kernel.org
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-KZM9G-specific clock overrides.
+Fix the default SCIF handling in case CTS/RTS is available
+on the target board but disabled by user space. Without
+this patch the RTS output value is not set.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 4 ++++
- 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index 939be12..3d912ea 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -182,6 +182,10 @@
- 	status = "ok";
- };
+ drivers/tty/serial/sh-sci.c |    5 ++++-
+ include/linux/serial_sci.h  |    1 +
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+--- 0004/drivers/tty/serial/sh-sci.c
++++ work/drivers/tty/serial/sh-sci.c	2014-12-16 14:31:53.000000000 +0900
+@@ -522,9 +522,12 @@ static void sci_init_pins_default(struct
+ 	if (!reg->size || hwflow_enabled)
+ 		return;
  
-+&extal2_clk {
-+	clock-frequency = <48000000>;
-+};
-+
- &i2c0 {
- 	status = "okay";
- 	as3711@40 {
--- 
-2.1.3
-
++	/* Setup CTS/RTS in the case hardware flow is disabled by user space.
++	 * The CTS signal is setup as input and RTS as output with value 1.
++	 */
+ 	status = serial_port_in(port, SCSPTR);
+ 	status &= ~SCSPTR_CTSIO;
+-	status |= SCSPTR_RTSIO;
++	status |= SCSPTR_RTSIO | SCSPTR_RTSDT;
+ 	serial_port_out(port, SCSPTR, status); /* Set RTS = 1 */
+ }
+ 
+--- 0001/include/linux/serial_sci.h
++++ work/include/linux/serial_sci.h	2014-12-16 14:25:40.000000000 +0900
+@@ -57,6 +57,7 @@
+ 
+ /* SCSPTR (Serial Port Register), optional */
+ #define SCSPTR_RTSIO	(1 << 7)	/* Serial Port RTS Pin Input/Output */
++#define SCSPTR_RTSDT	(1 << 6)	/* Serial Port RTS Pin Data */
+ #define SCSPTR_CTSIO	(1 << 5)	/* Serial Port CTS Pin Input/Output */
+ #define SCSPTR_SPB2IO	(1 << 1)	/* Serial Port Break Input/Output */
+ #define SCSPTR_SPB2DT	(1 << 0)	/* Serial Port Break Data */
