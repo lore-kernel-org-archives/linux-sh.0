@@ -1,29 +1,63 @@
-From: Kevin Hilman <khilman@kernel.org>
-Date: Tue, 02 Dec 2014 01:10:32 +0000
-Subject: Re: [PATCH] PM / Kconfig: Do not select PM directly from Kconfig files
-Message-Id: <7h388y501j.fsf@deeprootsystems.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 18 Dec 2014 20:43:03 +0000
+Subject: [PATCH] ARM: shmobile: r8a7791: add MLB+ clock
+Message-Id: <7846462.yepFC759KH@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4088467.A4Xd3YfMSv@vostro.rjw.lan>
-In-Reply-To: <4088467.A4Xd3YfMSv@vostro.rjw.lan> (Rafael J. Wysocki's message
-	of "Sat, 29 Nov 2014 02:03:48 +0100")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@rjwysocki.net>
-Cc: Linux PM list <linux-pm@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Tony Luck <tony.luck@intel.com>, linux-sh@vger.kernel.org, Fenghua Yu <fenghua.yu@intel.com>, linux-ia64@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-"Rafael J. Wysocki" <rjw@rjwysocki.net> writes:
+From: Andrey Gusakov <andrey.gusakov@cogentembedded.com>
 
-> From: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
->
-> It is not valid to select CONFIG_PM directly without selecting
-> CONFIG_PM_SLEEP or CONFIG_PM_RUNTIME too, because that breaks
-> dependencies (ia64 does that) and it is not necessary to select
-> CONFIG_PM directly if CONFIG_PM_SLEEP or CONFIG_PM_RUNTIME is
-> set, because it will be set automatically then (sh does that).
->
-> Fix those mistakes.
->
-> Signed-off-by: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
+Add MLB+ clock to R8A7791 device tree.
 
-Reviewed-by: Kevin Hilman <khilman@linaro.org>
+Signed-off-by: Andrey Gusakov <andrey.gusakov@cogentembedded.com>
+[Sergei: rebased, renamed, added changelog]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+This patch is against 'renesas-devel-20141218-v3.18' tag of Simon Horman's
+'renesas.git' repo.
+
+ arch/arm/boot/dts/r8a7791.dtsi            |   10 +++++-----
+ include/dt-bindings/clock/r8a7791-clock.h |    1 +
+ 2 files changed, 6 insertions(+), 5 deletions(-)
+
+Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
++++ renesas/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1154,17 +1154,17 @@
+ 		mstp8_clks: mstp8_clks@e6150990 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
+-			clocks = <&zg_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>, <&p_clk>,
+-				 <&zs_clk>, <&zs_clk>;
++			clocks = <&hp_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>,
++			         <&zg_clk>, <&p_clk>, <&zs_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
+-				R8A7791_CLK_IPMMU_SGX
++				R8A7791_CLK_IPMMU_SGX R8A7791_CLK_MLB
+ 				R8A7791_CLK_VIN2 R8A7791_CLK_VIN1 R8A7791_CLK_VIN0
+ 				R8A7791_CLK_ETHER R8A7791_CLK_SATA1 R8A7791_CLK_SATA0
+ 			>;
+ 			clock-output-names -				"ipmmu_sgx", "vin2", "vin1", "vin0", "ether", "sata1",
+-				"sata0";
++				"ipmmu_sgx", "mlb", "vin2", "vin1", "vin0", "ether",
++				"sata1", "sata0";
+ 		};
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+Index: renesas/include/dt-bindings/clock/r8a7791-clock.h
+=================================--- renesas.orig/include/dt-bindings/clock/r8a7791-clock.h
++++ renesas/include/dt-bindings/clock/r8a7791-clock.h
+@@ -92,6 +92,7 @@
+ 
+ /* MSTP8 */
+ #define R8A7791_CLK_IPMMU_SGX		0
++#define R8A7791_CLK_MLB			2
+ #define R8A7791_CLK_VIN2		9
+ #define R8A7791_CLK_VIN1		10
+ #define R8A7791_CLK_VIN0		11
+
