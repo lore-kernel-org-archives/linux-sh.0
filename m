@@ -1,45 +1,42 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Mon, 15 Dec 2014 21:33:06 +0000
-Subject: [PATCH RFC 0/5] virtio pci: virtio 1.0 support
-Message-Id: <1418679168-1011-1-git-send-email-mst@redhat.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 18 Dec 2014 02:26:08 +0000
+Subject: [PATCH 2/4] ARM: shmobile: sh73a0: kzm9g: Add touchscreen controller to DT
+Message-Id: <1418869570-13529-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Rusty Russell <rusty@rustcorp.com.au>, virtualization@lists.linux-foundation.org, linux-sh@vger.kernel.org, cornelia.huck@de.ibm.com
+To: linux-sh@vger.kernel.org
 
-This is on top of 3.19 master + my bugfix patches, and adds virtio 1.0 support
-to virtio pci.
-This is 3.20 material I think.
+Enable the kzm9g touchscreen controller in the board's DT file.
 
-Would like to get feedback on s390 change as it's untested.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/sh73a0-kzm9g.dts | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-Michael S Tsirkin (2):
-  pci: add pci_iomap_range
-  s390: add pci_iomap_range
-
-Michael S. Tsirkin (2):
-  virtio_pci: modern driver
-  virtio_pci: macros for PCI layout offsets.
-
-Rusty Russell (1):
-  virtio-pci: define layout for virtio 1.0
-
- arch/s390/include/asm/pci_io.h     |   1 +
- drivers/virtio/virtio_pci_common.h |  29 +-
- include/asm-generic/pci_iomap.h    |  10 +
- include/uapi/linux/virtio_pci.h    |  92 +++++
- tools/virtio/linux/virtio_config.h |  45 +++
- arch/s390/pci/pci.c                |  34 +-
- drivers/virtio/virtio_pci_common.c |  13 +-
- drivers/virtio/virtio_pci_modern.c | 684 +++++++++++++++++++++++++++++++++++++
- lib/pci_iomap.c                    |  35 +-
- tools/virtio/virtio_test.c         |   1 +
- drivers/virtio/Makefile            |   2 +-
- 11 files changed, 929 insertions(+), 17 deletions(-)
- create mode 100644 drivers/virtio/virtio_pci_modern.c
-
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+index ec787696c2d7..2118692895ff 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+@@ -290,6 +290,17 @@
+ 	};
+ };
+ 
++&i2c1 {
++	status = "okay";
++
++	touchscreen@55 {
++		compatible = "sitronix,st1232";
++		reg = <0x55>;
++		interrupt-parent = <&irqpin1>;
++		interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
++	};
++};
++
+ &i2c3 {
+ 	pinctrl-0 = <&i2c3_pins>;
+ 	pinctrl-names = "default";
 -- 
-MST
+2.0.4
 
