@@ -1,54 +1,64 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 29 Dec 2014 22:13:17 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7791: add ADSP clocks
-Message-Id: <54A1D1FD.7010006@cogentembedded.com>
+Date: Thu, 18 Dec 2014 20:41:52 +0000
+Subject: [PATCH] ARM: shmobile: r8a7790: add MLB+ clock
+Message-Id: <2277336.BnuIY8UiP8@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1937156.Ii2YrGkOFy@wasted.cogentembedded.com>	<CAMuHMdUqC5v-d95Sk2NewSE-EBKS49vn7jPKpixF2djg6NOmVw@mail.gmail.com>	<54A1BABF.5070208@cogentembedded.com>
- <CAMuHMdWwx3So77Zuz7JrpJbBZe2oKN3YnkZL3m0gUCHZGu6SEg@mail.gmail.com>
-In-Reply-To: <CAMuHMdWwx3So77Zuz7JrpJbBZe2oKN3YnkZL3m0gUCHZGu6SEg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 12/30/2014 12:23 AM, Geert Uytterhoeven wrote:
+From: Andrey Gusakov <andrey.gusakov@cogentembedded.com>
 
->>>> --- renesas.orig/include/dt-bindings/clock/r8a7791-clock.h
->>>> +++ renesas/include/dt-bindings/clock/r8a7791-clock.h
+Add MLB+ clock to R8A7790 device tree.
 
->>>> -#define R8A7791_CLK_RCAN               9
->>>> +#define R8A7791_CLK_ADSP               9
->>>> +#define R8A7791_CLK_RCAN               10
+Signed-off-by: Andrey Gusakov <andrey.gusakov@cogentembedded.com>
+[Sergei: rebased, renamed, added changelog]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
->>> R8A7791_CLK_RCAN is changed?
+---
+This patch is against 'renesas-devel-20141218-v3.18' tag of Simon Horman's
+'renesas.git' repo.
 
->>     Yes. It shouldn't be?
+ arch/arm/boot/dts/r8a7790.dtsi            |   13 +++++++------
+ include/dt-bindings/clock/r8a7790-clock.h |    1 +
+ 2 files changed, 8 insertions(+), 6 deletions(-)
 
-> All definitions in include/dt-bindings/ are part of the DT ABI, and cannot be
-> changed without breaking the DT binding.
-
-> Hence when adding new entries, they must be added at the end of the list,
-> using a new available value.
-
-    Oh, OK...
-
-> Apart from that, what happens if you boot a new DTS on a kernel with an old
-> clk-rcar-gen2 driver that doesn't know about the new CPG clock?
-> Does it just fail to initialize and find that single clock,
-
-    Yes, exactly. The driver will cuss loudly but will continue to work.
-
-> or does the whole CPG driver fail?
-
-    No.
-
-> I wanted to check that after seeing the RCAN CPG patch, but haven't gotten to it
-> yet due to Xmas and NY holidays.
-
-    No holidays yet here. There will be long holidays starting from January 1st...
-
-> Gr{oetje,eeting}s,
->                          Geert
-
-WBR, Sergei
+Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
++++ renesas/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1149,16 +1149,17 @@
+ 		mstp8_clks: mstp8_clks@e6150990 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
+-			clocks = <&zg_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>, <&p_clk>,
+-				 <&zs_clk>, <&zs_clk>;
++			clocks = <&hp_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>,
++			         <&zg_clk>, <&p_clk>, <&zs_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
+-				R8A7790_CLK_VIN3 R8A7790_CLK_VIN2 R8A7790_CLK_VIN1
+-				R8A7790_CLK_VIN0 R8A7790_CLK_ETHER R8A7790_CLK_SATA1
+-				R8A7790_CLK_SATA0
++				R8A7790_CLK_MLB R8A7790_CLK_VIN3 R8A7790_CLK_VIN2
++				R8A7790_CLK_VIN1 R8A7790_CLK_VIN0 R8A7790_CLK_ETHER
++				R8A7790_CLK_SATA1 R8A7790_CLK_SATA0
+ 			>;
+ 			clock-output-names -				"vin3", "vin2", "vin1", "vin0", "ether", "sata1", "sata0";
++				"mlb", "vin3", "vin2", "vin1", "vin0", "ether",
++				"sata1", "sata0";
+ 		};
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+Index: renesas/include/dt-bindings/clock/r8a7790-clock.h
+=================================--- renesas.orig/include/dt-bindings/clock/r8a7790-clock.h
++++ renesas/include/dt-bindings/clock/r8a7790-clock.h
+@@ -97,6 +97,7 @@
+ #define R8A7790_CLK_LVDS0		26
+ 
+ /* MSTP8 */
++#define R8A7790_CLK_MLB		2
+ #define R8A7790_CLK_VIN3		8
+ #define R8A7790_CLK_VIN2		9
+ #define R8A7790_CLK_VIN1		10
 
