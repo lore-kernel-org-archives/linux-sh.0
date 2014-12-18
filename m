@@ -1,7 +1,7 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 18 Dec 2014 03:17:16 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 18 Dec 2014 03:24:40 +0000
 Subject: Re: [PATCH 1/4] ARM: shmobile: sh73a0: Set control-parent for all irqpin nodes
-Message-Id: <CANqRtoQB9fJUF-xq84r8YJYS0O68oizPEPxOF2=0=jj6jF5dnw@mail.gmail.com>
+Message-Id: <2812373.rqVbtG7F7j@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1418869570-13529-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1418869570-13529-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -10,18 +10,29 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Laurent,
+Hi Magnus,
 
-On Thu, Dec 18, 2014 at 11:26 AM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
-> The sh73a0 INTC can't mask interrupts properly most likely due to a
-> hardware bug. Set the control-parent property to delegate masking to the
-> parent interrupt controller.
+On Thursday 18 December 2014 12:17:16 Magnus Damm wrote:
+> On Thu, Dec 18, 2014 at 11:26 AM, Laurent Pinchart wrote:
+> > The sh73a0 INTC can't mask interrupts properly most likely due to a
+> > hardware bug. Set the control-parent property to delegate masking to the
+> > parent interrupt controller.
+> 
+> Thanks for your patch. Are you sure it is needed for all interrupts?
 
-Thanks for your patch. Are you sure it is needed for all interrupts?
-If so, perhaps it we should consider to enable this in the driver
-based on the SoC compat string?
+I'm not as I can't test all interrupts, but given that it's needed for two 
+interrupts on two different INTC instances (well, two different INTC DT nodes, 
+but it's really the same IP core) I'm pretty confident that the workaround is 
+needed for all INTC interrupts on sh73a0.
 
-Cheers,
+> If so, perhaps it we should consider to enable this in the driver based on
+> the SoC compat string?
 
-/ magnus
+I was thinking about that. We could then remove the property from the DT 
+bindings.
+
+-- 
+Regards,
+
+Laurent Pinchart
+
