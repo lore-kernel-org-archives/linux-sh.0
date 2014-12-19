@@ -1,78 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 18 Dec 2014 03:29:28 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 19 Dec 2014 00:03:00 +0000
 Subject: Re: [PATCH] clocksource: sh_tmu: Set cpu_possible_mask to fix SMP broadcast
-Message-Id: <4884130.U1r5Ds8DlI@avalon>
+Message-Id: <CANqRtoQbtp_vgmcooiWpUvBMP7txGeYVGT-oLkRfMiM6Y51BQg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20141216094854.22639.69181.sendpatchset@w520>
-In-Reply-To: <20141216094854.22639.69181.sendpatchset@w520>
+	<CAMuHMdUzys9pbEjUybyDP-3=uemLZuP5WgXeyONxGmADUJJL4A@mail.gmail.com>
+	<CANqRtoRTcC_ixjY_Qr1T=2Jhh9qu_5+=Z3YRBDUJX8HWHP6Nog@mail.gmail.com>
+	<2855304.l47b4KVhTf@avalon>
+In-Reply-To: <2855304.l47b4KVhTf@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Daniel Lezcano <daniel.lezcano@linaro.org>, linux-kernel <linux-kernel@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, "Simon Horman [Horms]" <horms@verge.net.au>, Thomas Gleixner <tglx@linutronix.de>
 
-Hi Magnus,
+Hi Laurent,
 
-On Thursday 18 December 2014 00:46:59 Magnus Damm wrote:
-> On Wed, Dec 17, 2014 at 11:43 PM, Laurent Pinchart wrote:
-> > On Wednesday 17 December 2014 14:59:21 Geert Uytterhoeven wrote:
-> >> On Wed, Dec 17, 2014 at 1:14 PM, Laurent Pinchart wrote:
-> >> >>> What are we missing ?
-> >> >>> 
-> >> >>> - The DIV6 multiparent series has been merged by Mike, and the sh73a0
-> >> >>> CCF is nearly ready.
-> >> >> 
-> >> >> Yep.
-> >> >> 
-> >> >>> - We need proper BSC support to get LAN working, although it could be
-> >> >>> worked around temporarily by specifying the BSC clock in the LAN node
-> >> >>> if I recall correctly.
-> >> >> 
-> >> >> Working on that. I hope to send out v2 later today...
-> >> >> 
-> >> >>> - Accelerometer and RTC have no DT bindings, but they should work
-> >> >>> with the I2C core OF match support.
-> >> >> 
-> >> >> I have RTC in my DTS, and it works.
-> >> > 
-> >> > Great.
-> >> > 
-> >> > I can help with at least some of the remaining pieces if you share your
-> >> > working branch.
-> >> 
-> >> I pushed my local working branch to
-> >> https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git/lo
-> >> g/? h=wip
-> >> 
-> >> Please wear sun glasses, and keep the kbuild test robot away ;-)
-> > 
-> > I will :-) Thank you. Is there a way to selectively keep kbuild away from
-> > branches by the way ?
-> > 
-> > Do avoid duplicating work, what do you plan to work on in the context of
-> > multiplatform kzm9g ?
-> > 
-> > Magnus, how much time do you think would be worth spending on DT support
-> > for the lcdc drm driver ?
-> 
-> Not much, but perhaps it is good to have a working separate reference
-> implementation if it can be done with little effort.
-> 
-> I guess if you can re-use the LCDC driver between sh73a0 and r8a7740
-> then there may be _some_ point,
+On Wed, Dec 17, 2014 at 11:08 AM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> Magnus, you have told me that you've performed tests on Marzen with
+> CONFIG_PREEMPT_NONE and with both TWD enabled and disabled. If you could
+> perform the same tests with CONFIG_PREEMPT instead without noticing any
+> regression I think we can merge your patch. Whatever breakage it has caused in
+> the past is likely hidden somewhere beyond eyesight.
 
-The driver should be usable on both platforms, yes.
+I've now successfully boot tested the different PREEMPT settings on
+r8a7779 Marzen multiplatform. Everything seems to work as expected.
 
-> but unless I'm mistaken the sh73a0 has the LCDC interrupt only routed to
-> INTCS which in turn lacks DT support.
+Compared to before I've been a bit more lazy, so I've kept the timer
+config to default which means TWD and TMU enabled. The kernel tree is
+renesas-devel-20141218-v3.18 which is v3.18 plus local integration
+stuff including TWD DT. I've applied this patch too.
 
-You're correct :-( It shouldn't be difficult to implement a proper INTCS 
-irqchip driver. As usual, it's a matter of time. I'm afraid I won't be able to 
-tackle that in the very near future.
+Thanks,
 
-> Not sure if r8a7740 is any better - at least it has the GIC together with
-> the Cortex-A9.
-
--- 
-Regards,
-
-Laurent Pinchart
+/ magnus
