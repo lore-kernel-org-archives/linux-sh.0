@@ -1,102 +1,67 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 15 Dec 2014 03:53:21 +0000
-Subject: [PATCH v5][resend v2] of: replace Asahi Kasei Corp vendor prefix
-Message-Id: <87zjaptvp8.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sat, 20 Dec 2014 19:07:33 +0000
+Subject: Re: [PING] [PATCH FOR v3.19 - v2] iommu/ipmmu-vmsa: change IOMMU_EXEC to IOMMU_NOEXEC
+Message-Id: <7279717.KWmNDRjuSk@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <878ulzx6hr.wl%kuninori.morimoto.gx@gmail.com>
-	<20140922130026.GK3290@leverpostej>
-	<CAMuHMdX22z97SbGS1HDiYfJ1PXxyEN2S8D7w4sr+4bUwD+mJZw@mail.gmail.com>
-	<20140922132743.GM3290@leverpostej>
-	<87y4rfhmgl.wl%kuninori.morimoto.gx@renesas.com>
-	<1415845309.4269.6.camel@perches.com>
-	<20141113025105.GA16652@verge.net.au>
-	<87vbmjhj00.wl%kuninori.morimoto.gx@renesas.com>
-	<20141113110740.GE3815@sirena.org.uk>
-	<87k32yd0bd.wl%kuninori.morimoto.gx@renesas.com>
-	<20141114093554.GC3810@ulmo>
-	<87y4ra8xac.wl%kuninori.morimoto.gx@renesas.com>
-	<5469CD47.3040409@cogentembedded.com>
-	<877fytxsde.wl%kuninori.morimoto.gx@renesas.com>
-	<87egsob2cl.wl%kuninori.morimoto.gx@renesas.com>
-	<5478603D.1080404@cogentembedded.com>
-	<87d282sl6w.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87d282sl6w.wl%kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+References: <1418668873-5091-1-git-send-email-laurent.pinchart@ideasonboard.com>
+In-Reply-To: <1418668873-5091-1-git-send-email-laurent.pinchart@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Matthias Brugger <matthias.bgg-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Rob Herring <robh-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Jason Cooper <jason-NLaQJdtUoK4Be96aLqz0jA@public.gmane.org>, Heiko Stuebner <heiko-4mtYJXux2i+zQB+pC5nmwQ@public.gmane.org>, Shawn Guo <shawn.guo-KZfg59tc24xl57MIdRCFDg@public.gmane.org>, Florian Vaussard <florian.vaussard-p8DiymsW2f8@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Thierry Reding <thierry.reding-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, ALSA Development Mailing List <alsa-devel-K7yf7f+aM1XWsZ/bQMPhNw@public.gmane.org>, linux-tegra-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Stephen Warren <swarren-3lzwWm7+Weoh9ZMKESR00Q@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Olof Johansson <olof-nZhT3qVonbNeoWH0uzbU5w@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Joe Perches <joe-6d6DIl74uiNBDgjK7y7TUQ@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, "grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org" <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi Joerg,
 
-Current vendor-prefixes.txt already has "ak" prefix for Asahi Kasei Corp
-by ae8c4209af2c(of: Add vendor prefix for Asahi Kasei Corp.)
+Ping ?
 
-It went through the appropriate review process. But, almost all
-Asahi Kasei chip drivers are using "asahi-kasei" prefix today.
-(arch/arm/boot/dts/tegra20-seaboard.dts only is using "ak,ak8975",
- but there are instances of "asahi-kasei,ak8975" in other dts files.
- And drivers/iio/magnetometer/ak8975.c doesn't support "ak,ak8975" prefix)
-So, we made a mistake there.
+On Monday 15 December 2014 20:41:13 Laurent Pinchart wrote:
+> From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> 
+> Commit a720b41c41f5a7e4 ("iommu/arm-smmu: change IOMMU_EXEC to
+> IOMMU_NOEXEC") has inverted and replaced the IOMMU_EXEC flag with
+> IOMMU_NOEXEC. Update the driver accordingly.
+> 
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> ---
+>  drivers/iommu/ipmmu-vmsa.c | 6 +++---
+>  1 file changed, 3 insertions(+), 3 deletions(-)
+> 
+> Changes since v1:
+> 
+> - Rewrote the commit message
+> 
+> Joerg, this is a compilation breakage fix for v3.19. Could you please take
+> it in your tree and submit it early during the -rc cycle ?
+> 
+> diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
+> index 68dfb0f..7486931 100644
+> --- a/drivers/iommu/ipmmu-vmsa.c
+> +++ b/drivers/iommu/ipmmu-vmsa.c
+> @@ -558,7 +558,7 @@ static pmd_t *ipmmu_alloc_pmd(struct ipmmu_vmsa_device
+> *mmu, pgd_t *pgd,
+> 
+>  static u64 ipmmu_page_prot(unsigned int prot, u64 type)
+>  {
+> -	u64 pgprot = ARM_VMSA_PTE_XN | ARM_VMSA_PTE_nG | ARM_VMSA_PTE_AF
+> +	u64 pgprot = ARM_VMSA_PTE_nG | ARM_VMSA_PTE_AF
+> 
+>  		   | ARM_VMSA_PTE_SH_IS | ARM_VMSA_PTE_AP_UNPRIV
+>  		   | ARM_VMSA_PTE_NS | type;
+> 
+> @@ -568,8 +568,8 @@ static u64 ipmmu_page_prot(unsigned int prot, u64 type)
+>  	if (prot & IOMMU_CACHE)
+>  		pgprot |= IMMAIR_ATTR_IDX_WBRWA << ARM_VMSA_PTE_ATTRINDX_SHIFT;
+> 
+> -	if (prot & IOMMU_EXEC)
+> -		pgprot &= ~ARM_VMSA_PTE_XN;
+> +	if (prot & IOMMU_NOEXEC)
+> +		pgprot |= ARM_VMSA_PTE_XN;
+>  	else if (!(prot & (IOMMU_READ | IOMMU_WRITE)))
+>  		/* If no access create a faulting entry to avoid TLB fills. */
+>  		pgprot &= ~ARM_VMSA_PTE_PAGE;
 
-In addition, checkpatch.pl reports WARNING if it is using "asahi-kasei"
-prerfix in DT file.
-(DT compatible string vendor "asahi-kasei" appears un-documented)
-
-Marking it deprecated and warning with checkpatch is certainly
-preferable. So, this patch replace "ak" to "asahi-kasei" in
-vendor-prefixes.txt. (and fixup tegra20-seaboard)
-
-OTOH, Asahi Kasei is usually referred to as "AKM", but this patch
-doesn't care about it. Because no DT is using that today.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Thierry Reding <treding@nvidia.com>
-Acked-by: Alexandre Courbot <acourbot@nvidia.com>
----
-Rob, Mark
-
-There is no response about this patch.
-Mark, is it possible to care about this patch ?
-It has relationship to ASoC.
-
- .../devicetree/bindings/vendor-prefixes.txt        |    2 +-
- arch/arm/boot/dts/tegra20-seaboard.dts             |    2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
-index 723999d..ddcb4cd 100644
---- a/Documentation/devicetree/bindings/vendor-prefixes.txt
-+++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
-@@ -9,7 +9,6 @@ ad	Avionic Design GmbH
- adapteva	Adapteva, Inc.
- adi	Analog Devices, Inc.
- aeroflexgaisler	Aeroflex Gaisler AB
--ak	Asahi Kasei Corp.
- allwinner	Allwinner Technology Co., Ltd.
- altr	Altera Corp.
- amcc	Applied Micro Circuits Corporation (APM, formally AMCC)
-@@ -20,6 +19,7 @@ amstaos	AMS-Taos Inc.
- apm	Applied Micro Circuits Corporation (APM)
- arm	ARM Ltd.
- armadeus	ARMadeus Systems SARL
-+asahi-kasei	Asahi Kasei Corp.
- atmel	Atmel Corporation
- auo	AU Optronics Corporation
- avago	Avago Technologies
-diff --git a/arch/arm/boot/dts/tegra20-seaboard.dts b/arch/arm/boot/dts/tegra20-seaboard.dts
-index a1d4bf9..7f5cf80 100644
---- a/arch/arm/boot/dts/tegra20-seaboard.dts
-+++ b/arch/arm/boot/dts/tegra20-seaboard.dts
-@@ -405,7 +405,7 @@
- 		clock-frequency = <400000>;
- 
- 		magnetometer@c {
--			compatible = "ak,ak8975";
-+			compatible = "asahi-kasei,ak8975";
- 			reg = <0xc>;
- 			interrupt-parent = <&gpio>;
- 			interrupts = <TEGRA_GPIO(N, 5) IRQ_TYPE_LEVEL_HIGH>;
 -- 
-1.7.9.5
+Regards,
+
+Laurent Pinchart
 
