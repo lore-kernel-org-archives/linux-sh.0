@@ -1,24 +1,34 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 16 Dec 2014 02:21:41 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7779: Use MSTP for SCIF clocks
-Message-Id: <20141216022138.GA4244@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sat, 20 Dec 2014 08:36:42 +0000
+Subject: [PATCH] i2c: sh_mobile: fix uninitialized var when debug is enabled
+Message-Id: <1419064602-8529-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20141215045608.316.71001.sendpatchset@w520>
-In-Reply-To: <20141215045608.316.71001.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>
 
-On Mon, Dec 15, 2014 at 02:58:56PM +0100, Geert Uytterhoeven wrote:
-> On Mon, Dec 15, 2014 at 5:56 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> > From: Magnus Damm <damm+renesas@opensource.se>
-> >
-> > Hook up MSTP clocks to SCIF devices on r8a7779 to allow
-> > clock gating to work as expected.
-> >
-> > Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> 
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Thanks, I have queued this up.
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
+---
+ drivers/i2c/busses/i2c-sh_mobile.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
+index a12297e7680a..440d5dbc8b5f 100644
+--- a/drivers/i2c/busses/i2c-sh_mobile.c
++++ b/drivers/i2c/busses/i2c-sh_mobile.c
+@@ -550,6 +550,7 @@ static struct dma_chan *sh_mobile_i2c_request_dma_chan(struct device *dev,
+ 
+ 	chan = dma_request_slave_channel_reason(dev, chan_name);
+ 	if (IS_ERR(chan)) {
++		ret = PTR_ERR(chan);
+ 		dev_dbg(dev, "request_channel failed for %s (%d)\n", chan_name, ret);
+ 		return chan;
+ 	}
+-- 
+2.1.3
+
