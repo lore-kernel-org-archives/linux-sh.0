@@ -1,53 +1,91 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 02 Dec 2014 21:23:48 +0000
-Subject: Re: [PATCH 2/3] ARM: shmobile: ape6evm-reference: Add LEDs to the device tree
-Message-Id: <CAMuHMdW-81-NXspS3s0r1y-=eXK7zywJHZgcAODype6BfSWQPg@mail.gmail.com>
+Date: Mon, 22 Dec 2014 08:42:18 +0000
+Subject: Re: Build regressions/improvements in v3.19-rc1
+Message-Id: <CAMuHMdU0ym7PLkEcdmDnxvDVBn879QWkOm=-zUXFaQMh2FHfrQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1417509427-31690-3-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1417509427-31690-3-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1419237118-9712-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1419237118-9712-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Cc: Miao Steven <realmz6@gmail.com>, "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>, "adi-buildroot-devel@lists.sourceforge.net" <adi-buildroot-devel@lists.sourceforge.net>, Cris <linux-cris-kernel@axis.com>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Hi Ulrich,
+On Mon, Dec 22, 2014 at 9:31 AM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> Below is the list of build error/warning regressions/improvements in
+> v3.19-rc1[1] compared to v3.18[2].
+>
+> Summarized:
+>   - build errors: +24/-16
 
-On Tue, Dec 2, 2014 at 9:37 AM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> --- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-> +++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-> @@ -82,6 +82,34 @@
->                         vdd33a-supply = <&ape6evm_fixed_3v3>;
->                 };
->         };
-> +
-> +       leds {
-> +               compatible = "gpio-leds";
-> +               led1 {
-> +                       gpios = <&pfc 28 GPIO_ACTIVE_LOW>;
-> +                       label = "gnss-en";
-> +               };
-> +               led2 {
-> +                       gpios = <&pfc 126 GPIO_ACTIVE_LOW>;
-> +                       label = "nfc-nrst";
-> +               };
-> +               led3 {
-> +                       gpios = <&pfc 132 GPIO_ACTIVE_LOW>;
-> +                       label = "gnss-nrst";
-> +               };
-> +               led4 {
-> +                       gpios = <&pfc 232 GPIO_ACTIVE_LOW>;
-> +                       label = "bt-wakeup";
-> +               };
-> +               led5 {
-> +                       gpios = <&pfc 250 GPIO_ACTIVE_LOW>;
-> +                       label = "strobe";
-> +               };
-> +               led6 {
-> +                       gpios = <&pfc 288 GPIO_ACTIVE_LOW>;
-> +                       label = "bbresetout";
+  + /home/kisskb/slave/src/arch/powerpc/xmon/xmon.c: error: unused
+variable 'badaddr' [-Werror=unused-variable]:  => 1185:13
+  + /home/kisskb/slave/src/arch/powerpc/xmon/xmon.c: error: unused
+variable 'mode' [-Werror=unused-variable]:  => 1183:6
 
-Are the labels in lower or upper case?
+powerpc-randconfig
+
+  + /home/kisskb/slave/src/arch/sh/boards/mach-se/7343/irq.c: error:
+too few arguments to function 'ioread16':  => 44:2
+  + /home/kisskb/slave/src/arch/sh/boards/mach-se/7343/irq.c: error:
+too few arguments to function 'iowrite16':  => 123:2
+
+sh4/se7343_defconfig
+
+  + /home/kisskb/slave/src/arch/sh/boards/mach-se/7722/irq.c: error:
+too few arguments to function 'ioread16':  => 43:2
+  + /home/kisskb/slave/src/arch/sh/boards/mach-se/7722/irq.c: error:
+too few arguments to function 'iowrite16':  => 116:2
+
+sh4/se7722_defconfig
+
+  + /home/kisskb/slave/src/drivers/usb/musb/blackfin.c: error:
+'bfin_writel' undeclared here (not in a function):  => 476:13
+
+bfin/BF527-EZKIT-V2_defconfig
+
+  + /home/kisskb/slave/src/drivers/usb/musb/musb_debugfs.c: error:
+'MUSB_BABBLE_CTL' undeclared here (not in a function):  => 67:17
+  + /home/kisskb/slave/src/drivers/usb/musb/musb_debugfs.c: error:
+'MUSB_CONFIGDATA' undeclared here (not in a function):  => 62:18
+  + /home/kisskb/slave/src/drivers/usb/musb/musb_debugfs.c: error:
+'MUSB_EPINFO' undeclared here (not in a function):  => 74:14
+  + /home/kisskb/slave/src/drivers/usb/musb/musb_debugfs.c: error:
+'MUSB_RAMINFO' undeclared here (not in a function):  => 75:15
+  + /home/kisskb/slave/src/drivers/usb/musb/musb_debugfs.c: error:
+'MUSB_RXFIFOADD' undeclared here (not in a function):  => 71:17
+  + /home/kisskb/slave/src/drivers/usb/musb/musb_debugfs.c: error:
+'MUSB_RXFIFOSZ' undeclared here (not in a function):  => 69:16
+  + /home/kisskb/slave/src/drivers/usb/musb/musb_debugfs.c: error:
+'MUSB_TXFIFOADD' undeclared here (not in a function):  => 70:17
+  + /home/kisskb/slave/src/drivers/usb/musb/musb_debugfs.c: error:
+'MUSB_TXFIFOSZ' undeclared here (not in a function):  => 68:16
+
+bfin/BF527-EZKIT_defconfig
+bfin/BF527-EZKIT-V2_defconfig
+bfin/BF548-EZKIT_defconfig
+bfin/CM-BF548_defconfig
+bfin/CM-BF527_defconfig
+
+  + /home/kisskb/slave/src/include/linux/irq.h: error: conflicting
+types for 'ioread16':  => 856:19
+  + /home/kisskb/slave/src/include/linux/irq.h: error: conflicting
+types for 'iowrite16':  => 847:20
+
+sh4/se7343_defconfig
+sh4/se7722_defconfig
+
+  + error: "csum_partial_copy_nocheck" [net/ipv6/ipv6.ko] undefined!:  => N/A
+
+cris/cris-allmodconfig
+
+  + error: No rule to make target include/config/auto.conf:  => N/A
+
+arm/arm-randconfig
+
+> [1] http://kisskb.ellerman.id.au/kisskb/head/8241/ (262 out of 262 configs)
+> [2] http://kisskb.ellerman.id.au/kisskb/head/8168/ (262 out of 262 configs)
 
 Gr{oetje,eeting}s,
 
