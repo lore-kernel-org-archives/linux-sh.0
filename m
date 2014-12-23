@@ -1,46 +1,52 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 12 Dec 2014 07:07:40 +0000
-Subject: Re: [PATCH 1/5] ARM: shmobile: r8a73a4: Multiplatform support
-Message-Id: <20141212070739.GB3362@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 23 Dec 2014 09:16:52 +0000
+Subject: [GIT PULL FOR v3.20] R-Car DMA engine driver
+Message-Id: <25808042.z3ylOLx5GF@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1417509439-31739-2-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1417509439-31739-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-On Fri, Dec 12, 2014 at 09:51:43AM +0900, Magnus Damm wrote:
-> Hi Simon,
-> 
-> On Fri, Dec 12, 2014 at 9:13 AM, Simon Horman <horms@verge.net.au> wrote:
-> > Hi Magnus, Hi Ulrich,
-> >
-> > On Thu, Dec 11, 2014 at 09:31:13PM +0900, Magnus Damm wrote:
-> >> Hi Ulrich,
-> >>
-> >> On Tue, Dec 2, 2014 at 5:37 PM, Ulrich Hecht
-> >> <ulrich.hecht+renesas@gmail.com> wrote:
-> >> > Enable r8a73a4 Multiplatform support for the generic r8a73a4
-> >> > machine vector.
-> >> >
-> >> > Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> >>
-> >> This for your efforts. This particular patch is fine with me.
-> >>
-> >> Acked-by: Magnus Damm <damm+renesas@opensource.se>
-> >>
-> >> Regarding the other patches, as discussed over chat please consider
-> >> optimising the patch order to allow merge of multiplatform merge
-> >> independently of board removal and renaming of files. Basically I
-> >> think you can add multiplatform support using the non-reference DT
-> >> file directly and not making use of any C board code.
-> >
-> > Would you like me to queue up this patch now?
-> 
-> Thanks for the offer, but I think we should wait for Ulrich to rework
-> this series first. Once a couple of patches are OK as-is then it would
-> be nice to merge them before the CCF bits are in place. But I guess it
-> much depends on how Ulrich will split the code.
+Hi Vinod,
 
-Thanks, I will immediately do nothing.
+The following changes since commit fbde286783f7c1e55e6c33575fa1a56f8ea77c90:
+
+  dmaengine: nbpfaxi: update the driver comments (2014-12-22 20:28:04 +0530)
+
+are available in the git repository at:
+
+  git://linuxtv.org/pinchartl/fbdev.git dma/next
+
+for you to fetch changes up to ee4b876bbee2c5c53518110849f23c117eec099c:
+
+  dmaengine: rcar-dmac: Handle hardware descriptor allocation failure=20
+(2014-12-23 11:13:03 +0200)
+
+----------------------------------------------------------------
+J=FCrg Billeter (1):
+      dmaengine: rcar-dmac: Handle hardware descriptor allocation failure
+
+Laurent Pinchart (5):
+      dmaengine: Add 16 bytes, 32 bytes and 64 bytes bus widths
+      dmaengine: rcar-dmac: Remove duplicate sentence from DT bindings
+      dmaengine: rcar-dmac: Add Renesas R-Car Gen2 DMA Controller (DMAC)=20
+driver
+      dmaengine: rcar-dmac: Implement support for hardware descriptor lists
+      dmaengine: rcar-dmac: Cache hardware descriptors memory
+
+ .../devicetree/bindings/dma/renesas,rcar-dmac.txt       |    3 -
+ drivers/dma/Makefile                                    |    2 +-
+ drivers/dma/sh/Kconfig                                  |   14 +-
+ drivers/dma/sh/Makefile                                 |    1 +
+ drivers/dma/sh/rcar-dmac.c                              | 1747 +++++++++++=
++++
+ include/linux/dmaengine.h                               |    3 +
+ 6 files changed, 1765 insertions(+), 5 deletions(-)
+ create mode 100644 drivers/dma/sh/rcar-dmac.c
+
+--=20
+Regards,
+
+Laurent Pinchart
+
