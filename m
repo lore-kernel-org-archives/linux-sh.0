@@ -1,111 +1,60 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 17 Dec 2014 00:20:05 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7794: Add MMCIF clock to device tree
-Message-Id: <20141217002004.GC23321@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 23 Dec 2014 22:59:32 +0000
+Subject: Re: [PATCH] clk-rcar-gen2: RCAN clock support
+Message-Id: <5499F3D4.6040302@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418429364-5547-1-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdVnYa0GQx2C8rVZe2zFiPY56hxYJrE96YesL=M0dkyECQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdVnYa0GQx2C8rVZe2zFiPY56hxYJrE96YesL=M0dkyECQ@mail.gmail.com>
+References: <201407310023.43605.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201407310023.43605.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: mturquette@linaro.org, linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, vksavl@gmail.com
 
-On Mon, Dec 15, 2014 at 11:52:16AM +0100, Geert Uytterhoeven wrote:
-> On Sat, Dec 13, 2014 at 1:09 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-> >
-> > Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-> > [horms: omitted device node; only add clock]
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >
-> > ---
-> > Based on the renesas-devel-20141212-v3.18 tag of my renesas tree
-> >
-> > Depends on
-> > "[PATCH v2] ARM: shmobile: r8a7794: Add SDHI clocks to device tree"
-> > to apply cleanly.
-> >
-> > v1 [Simon Horman]
-> > * Removed portion of patch which adds device node
-> > * Renamed patch from
-> >   "ARM: shmobile: r8a7794: Add MMCIF clock and device to device tree" to
-> >   "ARM: shmobile: r8a7794: Add MMCIF clock to device tree"
-> > ---
-> >  arch/arm/boot/dts/r8a7794.dtsi            | 15 +++++++++++----
-> >  include/dt-bindings/clock/r8a7794-clock.h |  1 +
-> >  2 files changed, 12 insertions(+), 4 deletions(-)
-> >
-> > diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-> > index 8794df8..fd8a19c 100644
-> > --- a/arch/arm/boot/dts/r8a7794.dtsi
-> > +++ b/arch/arm/boot/dts/r8a7794.dtsi
-> > @@ -308,6 +308,13 @@
-> >                         #clock-cells = <0>;
-> >                         clock-output-names = "sd2";
-> >                 };
-> > +               mmc0_clk: mmc0_clk@e6150240 {
-> > +                       compatible = "renesas,r8a7794-div6-clock", "renesas,cpg-div6-clock";
-> > +                       reg = <0 0xe6150240 0 4>;
-> > +                       clocks = <&pll1_div2_clk>;
-> > +                       #clock-cells = <0>;
-> > +                       clock-output-names = "mmc0";
-> > +               };
-> >
-> >                 /* Fixed factor clocks */
-> >                 pll1_div2_clk: pll1_div2_clk {
-> > @@ -512,16 +519,16 @@
-> >                         compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
-> >                         reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
-> >                         clocks = <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7794_CLK_SD0>,
-> > -                                <&rclk_clk>, <&hp_clk>, <&hp_clk>;
-> > +                                <&mmc0_clk>, <&rclk_clk>, <&hp_clk>, <&hp_clk>;
-> >                         #clock-cells = <1>;
-> >                         clock-indices = <
-> >                                 R8A7794_CLK_SDHI2 R8A7794_CLK_SDHI1 R8A7794_CLK_SDHI0
-> > -                               R8A7794_CLK_CMT1 R8A7794_CLK_USBDMAC0
-> > -                               R8A7794_CLK_USBDMAC1
-> > +                               R8A7794_CLK_CMT1 R8A7794_CLK_MMCIF0
-> 
-> R8A7794_CLK_MMCIF0 R8A7794_CLK_CMT1
+Hello.
 
-Thanks, I have queued up this patch after making that change.
+On 07/31/2014 12:23 AM, Sergei Shtylyov wrote:
 
-> 
-> > +                               R8A7794_CLK_USBDMAC0 R8A7794_CLK_USBDMAC1
-> >                         >;
-> >                         clock-output-names > >                                 "sdhi2", "sdhi1", "sdhi0",
-> > -                               "cmt1", "usbdmac0", "usbdmac1";
-> > +                               "mmcif0", "cmt1", "usbdmac0", "usbdmac1";
-> >                 };
-> >                 mstp7_clks: mstp7_clks@e615014c {
-> >                         compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
-> > diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
-> > index f013cdc..4555b0f 100644
-> > --- a/include/dt-bindings/clock/r8a7794-clock.h
-> > +++ b/include/dt-bindings/clock/r8a7794-clock.h
-> > @@ -55,6 +55,7 @@
-> >  #define R8A7794_CLK_SDHI2              11
-> >  #define R8A7794_CLK_SDHI1              12
-> >  #define R8A7794_CLK_SDHI0              14
-> > +#define R8A7794_CLK_MMCIF0             15
-> >  #define R8A7794_CLK_CMT1               29
-> >  #define R8A7794_CLK_USBDMAC0           30
-> >  #define R8A7794_CLK_USBDMAC1           31
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+> Add RCAN clock support to the R-Car generation 2 CPG driver. This clock gets
+> derived from the USB_EXTAL clock by dividing it by 6. The layout of RCANCKCR
+> register is close to those of the clocks supported by the 'clk-div6'  driver
+> but has no divider field, and so can't be supported by that driver...
+
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+> ---
+> The patch is against the 'clk-next' branch of Mike Turquette's 'linux.git' repo.
+>
+>   drivers/clk/shmobile/clk-rcar-gen2.c |   99 +++++++++++++++++++++++++++++++++++
+>   1 file changed, 99 insertions(+)
+
+> Index: linux/drivers/clk/shmobile/clk-rcar-gen2.c
+> =================================> --- linux.orig/drivers/clk/shmobile/clk-rcar-gen2.c
+> +++ linux/drivers/clk/shmobile/clk-rcar-gen2.c
+[...]
+> +static struct clk * __init cpg_rcan_clk_register(struct rcar_gen2_cpg *cpg,
+> +						 struct device_node *np)
+> +{
+> +	static const char *parent_name;
+
+    No need for this *static*...
+
+> +	struct clk_init_data init;
+> +	struct cpg_rcan_clk *rcanclk;
+> +	struct clk *clk;
+> +
+> +	rcanclk = kzalloc(sizeof(*rcanclk), GFP_KERNEL);
+> +	if (!rcanclk)
+> +		return ERR_PTR(-ENOMEM);
+> +
+> +	parent_name = of_clk_get_parent_name(np, 1);
+> +
+> +	init.name = "rcan";
+> +	init.ops = &cpg_rcan_clk_ops;
+> +	init.parent_names = &parent_name;
+> +	init.num_parents = 1;
+
+    Ugh, forgot to clear the 'init.flags', so that it has some random value...
+
+WBR, Sergei
+
