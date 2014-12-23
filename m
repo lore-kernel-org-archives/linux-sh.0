@@ -1,51 +1,60 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 19 Dec 2014 12:46:41 +0000
+From: Felipe Balbi <balbi@ti.com>
+Date: Tue, 23 Dec 2014 19:16:42 +0000
 Subject: Re: [PATCH v2] renesas_usbhs: fix platform init error message
-Message-Id: <54941E31.1020607@cogentembedded.com>
+Message-Id: <20141223191642.GB28059@saruman>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="IrhDeMKUP4DT/M7F"
 List-Id: <linux-sh.vger.kernel.org>
 References: <5384843.KGcHOMgQLi@wasted.cogentembedded.com>
 In-Reply-To: <5384843.KGcHOMgQLi@wasted.cogentembedded.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello.
+--IrhDeMKUP4DT/M7F
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On 12/19/2014 4:33 AM, yoshihiro shimoda wrote:
+On Fri, Dec 12, 2014 at 10:45:26PM +0300, Sergei Shtylyov wrote:
+> Hello.
+>=20
+> On 11/05/2014 01:53 AM, Felipe Balbi wrote:
+>=20
+> >>There is a typo ("prove" instead of "probe") in the error message print=
+ed when
+> >>the platform initialization fails. Replace that word with more fitting =
+"init".
+>=20
+> >>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+>=20
+> >this actually goes through me, I'll take it in a bit.
+>=20
+>    Felipe, I'm not seeing this patch anywhere in your tree. :-(
 
-[...]
+it's now on testing/next
 
->>>>>>> There is a typo ("prove" instead of "probe") in the error message printed when
->>>>>>> the platform initialization fails. Replace that word with more fitting "init".
+--=20
+balbi
 
->>>>>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+--IrhDeMKUP4DT/M7F
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
->>>>>> this actually goes through me, I'll take it in a bit.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
->>>>>      Er, OK. Could you update MAINTAINERS?
+iQIcBAEBAgAGBQJUmb+aAAoJEIaOsuA1yqREqbIP/jERsSWuh18btPFjg1jnw6Af
+M24tyxxd0gGTmvuyfec+AudKYFGMY2s5jBCHAWxHS+0aBP7BuMF6ATFY+y1vZvqC
+mn8nI/KjxnfrPVwe51fvMtEA608oa+DB4HUDzMlCa1oAqDebAS1xTMNXWh5P+z2m
+Op8kscsLFn+kcPP6F5jwoTfe1AFexq9hQTWjS9asga3576M+s1C0G6AAlYNxFvr9
+LFZhJgKY23tHY2gWv/l3nKbHj5pQ+Ww19niS68/pPm0WqvijRF2HEBnNvksRSGOS
+NcyZyRHpsOvDxEZUUu3QAqHqcp2Ls5NDIswEmV+zP3smVsUawYfQ67SB1Wnbfef5
+bAdM+uFFHZTY8gtjQrfoDw1hO+X2JscMj6N83BvAxixGEtZ7CxOu3r8qk8bS/mFB
+Xnh6kpVTWEV4m54dQrC3nOwe6dUHqZMAMQfbthVEWM2UHk+BSLwtam3Ifu+IZAtD
+Dbwjn8ezl3gDLBtmeONIpgZHd4YPbId7iTJaoC+KXD2nEvqSJnHFnta1/KtAAfpG
+O7+IYfj/W9WIEJiscpDF1wZvuCqJOCSM2RyDvbLkbT2mAdYSoXaf2fq+f6bpWBTG
+SnW1Hyy9/5e7D+A6ujhHpnC4vx2pUKHA9+xP5yupWIpHew1U37uh2YZyV9Thbyaz
+nda7spYB35o6P/qtVp9l
+=298o
+-----END PGP SIGNATURE-----
 
->>>> there is no entry for renesas driver in MAINTAINERS.
-
->>>> Shimoda-san, care to send a patch adding yourself or Morimoto-san as
->>>> maintainers for Renesas driver and pointing to my tree in kernel.org ?
-
->>> I would like to move the renesas_usbhs driver to drivers/usb/gadget/udc somehow.
->>> Because the driver is almost used for a gadget driver.
->>> The driver has a host driver support now. But, it is not used recently.
-
->>> After that, this MAINTAINERS issue becomes clear, I think.
->>> Felipe-san and Sergei-san, what do you think?
-
->>      I'm against such move.
-
-> Thank you for the reply. But, I would like to know why you are against such move.
-
-    Because we still need the host mode; RZ/A1H (R7S72100) SoC should need it 
-soon), and bi-modal USBHS hardware is better placed in its own directory.
-
-> Best regards,
-> Yoshihiro Shimoda
-
-WBR, Sergei
-
+--IrhDeMKUP4DT/M7F--
