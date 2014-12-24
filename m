@@ -1,40 +1,40 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 19 Dec 2014 00:46:37 +0000
-Subject: Re: [PATCH] clocksource: sh_tmu: Set cpu_possible_mask to fix SMP broadcast
-Message-Id: <2833437.mUHC45LYXV@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 24 Dec 2014 14:43:27 +0000
+Subject: [PATCH] clk-gate: fix bit # check in clk_register_gate()
+Message-Id: <2500887.6mMDBajo0S@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20141216094854.22639.69181.sendpatchset@w520> <2855304.l47b4KVhTf@avalon> <CANqRtoQbtp_vgmcooiWpUvBMP7txGeYVGT-oLkRfMiM6Y51BQg@mail.gmail.com>
-In-Reply-To: <CANqRtoQbtp_vgmcooiWpUvBMP7txGeYVGT-oLkRfMiM6Y51BQg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Daniel Lezcano <daniel.lezcano@linaro.org>, linux-kernel <linux-kernel@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, "Simon Horman [Horms]" <horms@verge.net.au>, Thomas Gleixner <tglx@linutronix.de>
+To: mturquette@linaro.org, linux-kernel@vger.kernel.org, sboyd@codeaurora.org
+Cc: linux-sh@vger.kernel.org
 
-Hi Magnus,
+In case CLK_GATE_HIWORD_MASK flag is passed to clk_register_gate(), the bit #
+should be no higher than 15, however the corresponding check is obviously off-
+by-one.
 
-On Friday 19 December 2014 09:03:00 Magnus Damm wrote:
-> On Wed, Dec 17, 2014 at 11:08 AM, Laurent Pinchart wrote:
-> > Magnus, you have told me that you've performed tests on Marzen with
-> > CONFIG_PREEMPT_NONE and with both TWD enabled and disabled. If you could
-> > perform the same tests with CONFIG_PREEMPT instead without noticing any
-> > regression I think we can merge your patch. Whatever breakage it has
-> > caused in the past is likely hidden somewhere beyond eyesight.
-> 
-> I've now successfully boot tested the different PREEMPT settings on
-> r8a7779 Marzen multiplatform. Everything seems to work as expected.
-> 
-> Compared to before I've been a bit more lazy, so I've kept the timer
-> config to default which means TWD and TMU enabled.
+Fixes: 045779942c04 ("clk: gate: add CLK_GATE_HIWORD_MASK")
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-If your test setup is still around could you quickly test PREEMPT + TMU 
-without TWD ?
+---
+The patch is against Linus' repo because the 'clk-fixes' branch  in  Mike
+Turquette's 'linux.git' repo at Linaro seems very outdated. BTW, the repo
+at kernel.org specified by the MAINTAINERS file doesn't seem to exist --
+can something be done about that?
 
-> The kernel tree is renesas-devel-20141218-v3.18 which is v3.18 plus local
-> integration stuff including TWD DT. I've applied this patch too.
+ drivers/clk/clk-gate.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
--- 
-Regards,
-
-Laurent Pinchart
+Index: linux/drivers/clk/clk-gate.c
+=================================--- linux.orig/drivers/clk/clk-gate.c
++++ linux/drivers/clk/clk-gate.c
+@@ -128,7 +128,7 @@ struct clk *clk_register_gate(struct dev
+ 	struct clk_init_data init;
+ 
+ 	if (clk_gate_flags & CLK_GATE_HIWORD_MASK) {
+-		if (bit_idx > 16) {
++		if (bit_idx > 15) {
+ 			pr_err("gate bit exceeds LOWORD field\n");
+ 			return ERR_PTR(-EINVAL);
+ 		}
 
