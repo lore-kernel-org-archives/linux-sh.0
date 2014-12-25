@@ -1,8 +1,10 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 11 Dec 2014 01:23:26 +0000
+Date: Thu, 25 Dec 2014 03:26:43 +0000
 Subject: [PATCH 1/2 v3] dmaengine: rcar-audmapp: independent from SH_DMAE_BASE v1
-Message-Id: <87oarb9dy8.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <87d278wgru.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87oarb9dy8.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87oarb9dy8.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -37,7 +39,7 @@ Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
 v2 -> v3
 
- - no change
+ - based on vinod/topic/rcar
 
  drivers/dma/sh/Kconfig                         |    6 -
  drivers/dma/sh/Makefile                        |    1 -
@@ -48,28 +50,32 @@ v2 -> v3
  delete mode 100644 include/linux/platform_data/dma-rcar-audmapp.h
 
 diff --git a/drivers/dma/sh/Kconfig b/drivers/dma/sh/Kconfig
-index 0349125..0c43210 100644
+index 8190ad2..725f6b4 100644
 --- a/drivers/dma/sh/Kconfig
 +++ b/drivers/dma/sh/Kconfig
-@@ -46,9 +46,3 @@ config RCAR_HPB_DMAE
- 	depends on SH_DMAE_BASE
+@@ -51,12 +51,6 @@ config RCAR_HPB_DMAE
  	help
  	  Enable support for the Renesas R-Car series DMA controllers.
--
+ 
 -config RCAR_AUDMAC_PP
 -	tristate "Renesas R-Car Audio DMAC Peripheral Peripheral support"
 -	depends on SH_DMAE_BASE
 -	help
 -	  Enable support for the Renesas R-Car Audio DMAC Peripheral Peripheral controllers.
+-
+ config RCAR_DMAC
+ 	tristate "Renesas R-Car Gen2 DMA Controller"
+ 	depends on ARCH_SHMOBILE || COMPILE_TEST
 diff --git a/drivers/dma/sh/Makefile b/drivers/dma/sh/Makefile
-index 0a5cfdb..aede7db 100644
+index 2852f9d..489609b 100644
 --- a/drivers/dma/sh/Makefile
 +++ b/drivers/dma/sh/Makefile
-@@ -15,4 +15,3 @@ obj-$(CONFIG_SH_DMAE) += shdma.o
+@@ -15,5 +15,4 @@ obj-$(CONFIG_SH_DMAE) += shdma.o
  
  obj-$(CONFIG_SUDMAC) += sudmac.o
  obj-$(CONFIG_RCAR_HPB_DMAE) += rcar-hpbdma.o
 -obj-$(CONFIG_RCAR_AUDMAC_PP) += rcar-audmapp.o
+ obj-$(CONFIG_RCAR_DMAC) += rcar-dmac.o
 diff --git a/drivers/dma/sh/rcar-audmapp.c b/drivers/dma/sh/rcar-audmapp.c
 deleted file mode 100644
 index d95bbdd..0000000
