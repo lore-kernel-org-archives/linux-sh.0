@@ -1,83 +1,100 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 17 Dec 2014 18:49:13 +0000
-Subject: [PATCH 8/8] ARM: shmobile: ape6evm dts: Move Ethernet node to BSC
-Message-Id: <1418842153-17113-9-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 25 Dec 2014 03:55:52 +0000
+Subject: [PATCH v5][resend v6] of: replace Asahi Kasei Corp vendor prefix
+Message-Id: <87a92cwff9.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418842153-17113-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1418842153-17113-1-git-send-email-geert+renesas@glider.be>
+References: <878ulzx6hr.wl%kuninori.morimoto.gx@gmail.com>
+	<20140922130026.GK3290@leverpostej>
+	<CAMuHMdX22z97SbGS1HDiYfJ1PXxyEN2S8D7w4sr+4bUwD+mJZw@mail.gmail.com>
+	<20140922132743.GM3290@leverpostej>
+	<87y4rfhmgl.wl%kuninori.morimoto.gx@renesas.com>
+	<1415845309.4269.6.camel@perches.com>	<20141113025105.GA16652@verge.net.au>
+	<87vbmjhj00.wl%kuninori.morimoto.gx@renesas.com>
+	<20141113110740.GE3815@sirena.org.uk>
+	<87k32yd0bd.wl%kuninori.morimoto.gx@renesas.com>	<20141114093554.GC3810@ulmo>
+	<87y4ra8xac.wl%kuninori.morimoto.gx@renesas.com>
+	<5469CD47.3040409@cogentembedded.com>
+	<877fytxsde.wl%kuninori.morimoto.gx@renesas.com>
+	<87egsob2cl.wl%kuninori.morimoto.gx@renesas.com>
+	<5478603D.1080404@cogentembedded.com>
+	<87d282sl6w.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87d282sl6w.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linus Torvalds <torvalds@linux-foundation.org>, Rob Herring <robh@kernel.org>, Mark Brown <broonie@kernel.org>, Simon Horman <horms@verge.net.au>
+Cc: ALSA Development Mailing List <alsa-devel@alsa-project.org>, linux-tegra@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, linux-arm-kernel@lists.infradead.org
 
-Move the Ethernet node from the ad-hoc lbsc node to the BSC node,
-as its connected to the Bus State Controller.  This allows the system to
-know the right position of the Ethernet node in the clock and PM domain
-hierarchy, and manage the clock and PM domain appropriately.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Current vendor-prefixes.txt already has "ak" prefix for Asahi Kasei Corp
+by ae8c4209af2c(of: Add vendor prefix for Asahi Kasei Corp.)
+
+It went through the appropriate review process. But, almost all
+Asahi Kasei chip drivers are using "asahi-kasei" prefix today.
+(arch/arm/boot/dts/tegra20-seaboard.dts only is using "ak,ak8975",
+ but there are instances of "asahi-kasei,ak8975" in other dts files.
+ And drivers/iio/magnetometer/ak8975.c doesn't support "ak,ak8975" prefix)
+So, we made a mistake there.
+
+In addition, checkpatch.pl reports WARNING if it is using "asahi-kasei"
+prerfix in DT file.
+(DT compatible string vendor "asahi-kasei" appears un-documented)
+
+Marking it deprecated and warning with checkpatch is certainly
+preferable. So, this patch replace "ak" to "asahi-kasei" in
+vendor-prefixes.txt. (and fixup tegra20-seaboard)
+
+OTOH, Asahi Kasei is usually referred to as "AKM", but this patch
+doesn't care about it. Because no DT is using that today.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Thierry Reding <treding@nvidia.com>
+Acked-by: Alexandre Courbot <acourbot@nvidia.com>
 ---
-Untested
+>> Linus, Rob, Mark, Simon
 
-v2:
-  - New
----
- arch/arm/boot/dts/r8a73a4-ape6evm.dts | 35 +++++++++++++++--------------------
- 1 file changed, 15 insertions(+), 20 deletions(-)
+I resend this patch many times, but, there is still no response.
+Please, please check this patch, and give me some feedback.
 
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-index 0d50bef0123449f5..44c4cac1820a4dfe 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-@@ -72,26 +72,6 @@
- 		regulator-always-on;
- 	};
+
+ .../devicetree/bindings/vendor-prefixes.txt        |    2 +-
+ arch/arm/boot/dts/tegra20-seaboard.dts             |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
+index 723999d..ddcb4cd 100644
+--- a/Documentation/devicetree/bindings/vendor-prefixes.txt
++++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
+@@ -9,7 +9,6 @@ ad	Avionic Design GmbH
+ adapteva	Adapteva, Inc.
+ adi	Analog Devices, Inc.
+ aeroflexgaisler	Aeroflex Gaisler AB
+-ak	Asahi Kasei Corp.
+ allwinner	Allwinner Technology Co., Ltd.
+ altr	Altera Corp.
+ amcc	Applied Micro Circuits Corporation (APM, formally AMCC)
+@@ -20,6 +19,7 @@ amstaos	AMS-Taos Inc.
+ apm	Applied Micro Circuits Corporation (APM)
+ arm	ARM Ltd.
+ armadeus	ARMadeus Systems SARL
++asahi-kasei	Asahi Kasei Corp.
+ atmel	Atmel Corporation
+ auo	AU Optronics Corporation
+ avago	Avago Technologies
+diff --git a/arch/arm/boot/dts/tegra20-seaboard.dts b/arch/arm/boot/dts/tegra20-seaboard.dts
+index a1d4bf9..7f5cf80 100644
+--- a/arch/arm/boot/dts/tegra20-seaboard.dts
++++ b/arch/arm/boot/dts/tegra20-seaboard.dts
+@@ -405,7 +405,7 @@
+ 		clock-frequency = <400000>;
  
--	lbsc {
--		compatible = "simple-bus";
--		#address-cells = <1>;
--		#size-cells = <1>;
--		ranges = <0 0 0 0x20000000>;
--
--		ethernet@8000000 {
--			compatible = "smsc,lan9220", "smsc,lan9115";
--			reg = <0x08000000 0x1000>;
--			interrupt-parent = <&irqc1>;
--			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
--			phy-mode = "mii";
--			reg-io-width = <4>;
--			smsc,irq-active-high;
--			smsc,irq-push-pull;
--			vdd33a-supply = <&ape6evm_fixed_3v3>;
--			vddvario-supply = <&ape6evm_fixed_1v8>;
--		};
--	};
--
- 	leds {
- 		compatible = "gpio-leds";
- 		led1 {
-@@ -184,6 +164,21 @@
- 	voltage-tolerance = <1>; /* 1% */
- };
- 
-+&bsc {
-+	ethernet@8000000 {
-+		compatible = "smsc,lan9220", "smsc,lan9115";
-+		reg = <0x08000000 0x1000>;
-+		interrupt-parent = <&irqc1>;
-+		interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
-+		phy-mode = "mii";
-+		reg-io-width = <4>;
-+		smsc,irq-active-high;
-+		smsc,irq-push-pull;
-+		vdd33a-supply = <&ape6evm_fixed_3v3>;
-+		vddvario-supply = <&ape6evm_fixed_1v8>;
-+	};
-+};
-+
- &cmt1 {
- 	status = "okay";
- };
+ 		magnetometer@c {
+-			compatible = "ak,ak8975";
++			compatible = "asahi-kasei,ak8975";
+ 			reg = <0xc>;
+ 			interrupt-parent = <&gpio>;
+ 			interrupts = <TEGRA_GPIO(N, 5) IRQ_TYPE_LEVEL_HIGH>;
 -- 
-1.9.1
+1.7.9.5
 
