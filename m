@@ -1,51 +1,49 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 17 Dec 2014 18:49:07 +0000
-Subject: [PATCH 2/8] drivers: bus: Sort Makefile entries alphabetically
-Message-Id: <1418842153-17113-3-git-send-email-geert+renesas@glider.be>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Thu, 25 Dec 2014 09:29:22 +0000
+Subject: [PATCH repost 13/16] sh/uaccess: fix sparse errors
+Message-Id: <1419499661-8566-14-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418842153-17113-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1418842153-17113-1-git-send-email-geert+renesas@glider.be>
+References: <1419499661-8566-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1419499661-8566-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, linux-sh@vger.kernel.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-v2:
-  - New
----
- drivers/bus/Makefile | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+virtio wants to read bitwise types from userspace using get_user.  At the
+moment this triggers sparse errors, since the value is passed through an
+integer.
 
-diff --git a/drivers/bus/Makefile b/drivers/bus/Makefile
-index 2973c18cbcc27816..3cfaf2c7f25ac4f0 100644
---- a/drivers/bus/Makefile
-+++ b/drivers/bus/Makefile
-@@ -2,16 +2,16 @@
- # Makefile for the bus drivers.
- #
+Fix that up using __force.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ arch/sh/include/asm/uaccess.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/sh/include/asm/uaccess.h b/arch/sh/include/asm/uaccess.h
+index 9486376..484b1f9 100644
+--- a/arch/sh/include/asm/uaccess.h
++++ b/arch/sh/include/asm/uaccess.h
+@@ -60,7 +60,7 @@ struct __large_struct { unsigned long buf[100]; };
+ 	const __typeof__(*(ptr)) __user *__gu_addr = (ptr);	\
+ 	__chk_user_ptr(ptr);					\
+ 	__get_user_size(__gu_val, __gu_addr, (size), __gu_err);	\
+-	(x) = (__typeof__(*(ptr)))__gu_val;			\
++	(x) = (__force __typeof__(*(ptr)))__gu_val;			\
+ 	__gu_err;						\
+ })
  
-+# Interconnect bus drivers for ARM platforms
-+obj-$(CONFIG_ARM_CCI)		+= arm-cci.o
-+obj-$(CONFIG_ARM_CCN)		+= arm-ccn.o
-+
- obj-$(CONFIG_BRCMSTB_GISB_ARB)	+= brcmstb_gisb.o
--obj-$(CONFIG_IMX_WEIM)	+= imx-weim.o
--obj-$(CONFIG_MVEBU_MBUS) += mvebu-mbus.o
--obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
-+obj-$(CONFIG_IMX_WEIM)		+= imx-weim.o
-+obj-$(CONFIG_MVEBU_MBUS) 	+= mvebu-mbus.o
+@@ -71,7 +71,7 @@ struct __large_struct { unsigned long buf[100]; };
+ 	const __typeof__(*(ptr)) *__gu_addr = (ptr);			\
+ 	if (likely(access_ok(VERIFY_READ, __gu_addr, (size))))		\
+ 		__get_user_size(__gu_val, __gu_addr, (size), __gu_err);	\
+-	(x) = (__typeof__(*(ptr)))__gu_val;				\
++	(x) = (__force __typeof__(*(ptr)))__gu_val;				\
+ 	__gu_err;							\
+ })
  
- # Interconnect bus driver for OMAP SoCs.
- obj-$(CONFIG_OMAP_INTERCONNECT)	+= omap_l3_smx.o omap_l3_noc.o
- 
--# Interconnect bus drivers for ARM platforms
--obj-$(CONFIG_ARM_CCI)		+= arm-cci.o
--obj-$(CONFIG_ARM_CCN)		+= arm-ccn.o
--
-+obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
- obj-$(CONFIG_VEXPRESS_CONFIG)	+= vexpress-config.o
 -- 
-1.9.1
+MST
 
