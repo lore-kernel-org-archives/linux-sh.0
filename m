@@ -1,58 +1,82 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 29 Dec 2014 01:43:59 +0000
-Subject: [PATCH 28/30] ARM: shmobile: ape6evm: Fix LAN9220 VDDVARIO voltage
-Message-Id: <09ee81da85b10e0ca876977d333c8761441ecc78.1419812186.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 26 Dec 2014 23:18:41 +0000
+Subject: [PATCH v4 1/3] ARM: shmobile: r8a7791: add CAN clocks
+Message-Id: <2098987.LzjA3c0AUx@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1419812185.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
+References: <6830301.90YaDPuTpx@wasted.cogentembedded.com>
+In-Reply-To: <6830301.90YaDPuTpx@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The R-Car CAN controllers can derive the CAN bus clock not only from their
+peripheral clock input (clkp1) but also from the other internal clock (clkp2)
+and external clock fed on CAN_CLK pin.  Describe those clocks in the device
+tree,  along with  the USB_EXTAL clock  from which clkp2 is derived.
 
-The LAN9220 VDDVARIO supply is powered by a 1.8V source, not 3.3V. Fix
-it in the device tree.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a73a4-ape6evm.dts | 14 +++++++++++---
- 1 file changed, 11 insertions(+), 3 deletions(-)
+Changes in version 4:
+- refreshed the patch.
 
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-index 6b7bc1f..0d50bef 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-@@ -55,8 +55,16 @@
- 		enable-active-high;
- 	};
- 
--	/* Common 3.3V rail, used by several devices on APE6EVM */
--	ape6evm_fixed_3v3: regulator@2 {
-+	/* Common 1.8V and 3.3V rails, used by several devices on APE6EVM */
-+	ape6evm_fixed_1v8: regulator@2 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "1V8";
-+		regulator-min-microvolt = <1800000>;
-+		regulator-max-microvolt = <1800000>;
-+		regulator-always-on;
-+	};
-+
-+	ape6evm_fixed_3v3: regulator@3 {
- 		compatible = "regulator-fixed";
- 		regulator-name = "3V3";
- 		regulator-min-microvolt = <3300000>;
-@@ -80,7 +88,7 @@
- 			smsc,irq-active-high;
- 			smsc,irq-push-pull;
- 			vdd33a-supply = <&ape6evm_fixed_3v3>;
--			vddvario-supply = <&ape6evm_fixed_3v3>;
-+			vddvario-supply = <&ape6evm_fixed_1v8>;
+Changes in version 3:
+- new patch.
+
+ arch/arm/boot/dts/r8a7791.dtsi            |   23 +++++++++++++++++++++--
+ include/dt-bindings/clock/r8a7791-clock.h |    1 +
+ 2 files changed, 22 insertions(+), 2 deletions(-)
+
+Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
++++ renesas/arch/arm/boot/dts/r8a7791.dtsi
+@@ -862,15 +862,34 @@
+ 			status = "disabled";
  		};
- 	};
  
--- 
-2.1.3
++		/* External USB clock - can be overridden by the board */
++		usb_extal_clk: usb_extal_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <48000000>;
++			clock-output-names = "usb_extal";
++		};
++
++		/* External CAN clock */
++		can_clk: can_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			/* This value must be overriden by the board. */
++			clock-frequency = <0>;
++			clock-output-names = "can_clk";
++			status = "disabled";
++		};
++
+ 		/* Special CPG clocks */
+ 		cpg_clocks: cpg_clocks@e6150000 {
+ 			compatible = "renesas,r8a7791-cpg-clocks",
+ 				     "renesas,rcar-gen2-cpg-clocks";
+ 			reg = <0 0xe6150000 0 0x1000>;
+-			clocks = <&extal_clk>;
++			clocks = <&extal_clk &usb_extal_clk>;
+ 			#clock-cells = <1>;
+ 			clock-output-names = "main", "pll0", "pll1", "pll3",
+-					     "lb", "qspi", "sdh", "sd0", "z";
++					     "lb", "qspi", "sdh", "sd0", "z",
++					     "rcan";
+ 		};
+ 
+ 		/* Variable factor clocks */
+Index: renesas/include/dt-bindings/clock/r8a7791-clock.h
+=================================--- renesas.orig/include/dt-bindings/clock/r8a7791-clock.h
++++ renesas/include/dt-bindings/clock/r8a7791-clock.h
+@@ -20,6 +20,7 @@
+ #define R8A7791_CLK_SDH			6
+ #define R8A7791_CLK_SD0			7
+ #define R8A7791_CLK_Z			8
++#define R8A7791_CLK_RCAN		9
+ 
+ /* MSTP0 */
+ #define R8A7791_CLK_MSIOF0		0
 
