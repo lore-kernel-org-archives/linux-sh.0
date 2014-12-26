@@ -1,112 +1,55 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 15 Dec 2014 00:13:47 +0000
-Subject: [PATCH 08/10] iommu/ipmmu-vmsa: Remove platform data support
-Message-Id: <1418602429-11276-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 26 Dec 2014 23:21:56 +0000
+Subject: [PATCH v4 3/3] ARM: shmobile: henninger: add CAN0 DT support
+Message-Id: <8071243.02TkQ9xbCu@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418602429-11276-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1418602429-11276-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <6830301.90YaDPuTpx@wasted.cogentembedded.com>
+In-Reply-To: <6830301.90YaDPuTpx@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-No board file instantiates the IPMMU using platform data. Now that we
-have DT support, get rid of platform data.
+Define the Henninger board dependent part of the CAN0 device node.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- drivers/iommu/ipmmu-vmsa.c               | 24 ------------------------
- include/linux/platform_data/ipmmu-vmsa.h | 24 ------------------------
- 2 files changed, 48 deletions(-)
- delete mode 100644 include/linux/platform_data/ipmmu-vmsa.h
+Changes in version 4:
+- refreshed the patch.
 
-diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
-index 5a99fad5c30f..aa44a93e8a17 100644
---- a/drivers/iommu/ipmmu-vmsa.c
-+++ b/drivers/iommu/ipmmu-vmsa.c
-@@ -17,7 +17,6 @@
- #include <linux/iommu.h>
- #include <linux/module.h>
- #include <linux/of.h>
--#include <linux/platform_data/ipmmu-vmsa.h>
- #include <linux/platform_device.h>
- #include <linux/sizes.h>
- #include <linux/slab.h>
-@@ -30,7 +29,6 @@ struct ipmmu_vmsa_device {
- 	void __iomem *base;
- 	struct list_head list;
+Changes in version 3:
+- changed "can0_data_a" to "can0_data", removed "can_clk_d" in the
+  "renesas,groups" property;
+- moved CAN0 node to go after all others;
+- refreshed the patch.
+
+ arch/arm/boot/dts/r8a7791-henninger.dts |   11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7791-henninger.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-henninger.dts
++++ renesas/arch/arm/boot/dts/r8a7791-henninger.dts
+@@ -147,6 +147,11 @@
+ 		renesas,groups = "vin0_data8", "vin0_clk";
+ 		renesas,function = "vin0";
+ 	};
++
++	can0_pins: can0 {
++		renesas,groups = "can0_data";
++		renesas,function = "can0";
++	};
+ };
  
--	const struct ipmmu_vmsa_platform_data *pdata;
- 	unsigned int num_utlbs;
- 
- 	struct dma_iommu_mapping *mapping;
-@@ -1013,27 +1011,6 @@ static int ipmmu_find_utlbs(struct ipmmu_vmsa_device *mmu, struct device *dev,
- 	unsigned int i;
- 	int count;
- 
--	if (mmu->pdata) {
--		const struct ipmmu_vmsa_master *master = mmu->pdata->masters;
--		const char *devname = dev_name(dev);
--		unsigned int i;
--
--		for (i = 0; i < mmu->pdata->num_masters; ++i, ++master) {
--			if (strcmp(master->name, devname) = 0) {
--				utlbs = kmalloc(sizeof(*utlbs), GFP_KERNEL);
--				if (!utlbs)
--					return -ENOMEM;
--
--				utlbs[0] = master->utlb;
--
--				*_utlbs = utlbs;
--				return 1;
--			}
--		}
--
--		return -EINVAL;
--	}
--
- 	count = of_count_phandle_with_args(dev->of_node, "iommus",
- 					   "#iommu-cells");
- 	if (count < 0)
-@@ -1243,7 +1220,6 @@ static int ipmmu_probe(struct platform_device *pdev)
- 	}
- 
- 	mmu->dev = &pdev->dev;
--	mmu->pdata = pdev->dev.platform_data;
- 	mmu->num_utlbs = 32;
- 
- 	/* Map I/O memory and request IRQ. */
-diff --git a/include/linux/platform_data/ipmmu-vmsa.h b/include/linux/platform_data/ipmmu-vmsa.h
-deleted file mode 100644
-index 5275b3ac6d37..000000000000
---- a/include/linux/platform_data/ipmmu-vmsa.h
-+++ /dev/null
-@@ -1,24 +0,0 @@
--/*
-- * IPMMU VMSA Platform Data
-- *
-- * Copyright (C) 2014 Renesas Electronics Corporation
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; version 2 of the License.
-- */
--
--#ifndef __IPMMU_VMSA_H__
--#define __IPMMU_VMSA_H__
--
--struct ipmmu_vmsa_master {
--	const char *name;
--	unsigned int utlb;
--};
--
--struct ipmmu_vmsa_platform_data {
--	const struct ipmmu_vmsa_master *masters;
--	unsigned int num_masters;
--};
--
--#endif /* __IPMMU_VMSA_H__ */
--- 
-2.0.4
+ &scif0 {
+@@ -321,3 +326,9 @@
+ 		};
+ 	};
+ };
++
++&can0 {
++	pinctrl-0 = <&can0_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++};
 
