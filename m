@@ -1,211 +1,62 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 17 Dec 2014 21:58:01 +0000
-Subject: Re: [PATCH] extcon: add MAX3355 driver
-Message-Id: <5491FC69.7090203@cogentembedded.com>
+Date: Fri, 26 Dec 2014 23:20:28 +0000
+Subject: [PATCH v4 2/3] ARM: shmobile: r8a7791: add CAN DT support
+Message-Id: <2080620.GIKTJkNfbk@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <14631865.01KLlU2iKL@wasted.cogentembedded.com> <5490CEE2.1030900@samsung.com>
-In-Reply-To: <5490CEE2.1030900-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
+References: <6830301.90YaDPuTpx@wasted.cogentembedded.com>
+In-Reply-To: <6830301.90YaDPuTpx@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Chanwoo Choi <cw00.choi-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
-Cc: robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org, myungjoo.ham-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org, grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Define the generic R8A7791 parts of the CAN0/1 device nodes.
 
-On 12/17/2014 03:31 AM, Chanwoo Choi wrote:
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
->> MAX3355E chip integrates a charge pump and comparators to enable a system with
->> an integrated USB OTG dual-role transceiver to function as a USB OTG dual-role
->> device. In addition to sensing/controlling Vbus, the chip also passes thru the
->> ID signal from the USB OTG connector.  On some Renesas boards, this signal  is
->> just  fed into the SoC thru a GPIO pin -- there's no real OTG controller, only
->> host and gadget USB controllers sharing the same USB bus; however,  we'd  like
->> to allow host or gadget drivers to be loaded depending on the cable type, hence
->> the need for the MAX3355 extcon driver. The Vbus status signals are also wired
->> to GPIOs (however, we're not currently intested in them), the  OFFVBUS# signal
->> is controlled  by the host controllers, there's also the SHDN# signal wired to
->> GPIO, which should be high for normal operation.
+---
+Changes in version 4:
+- refreshed the patch.
 
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Changes in version 3:
+- added 2 more CAN clocks along with "clock-names" property in the CAN0/1 device
+  nodes;
+- refreshed the patch.
 
->> ---
->> The patch is against the 'extcon-next' branch of the 'extcon.git' repo.
+Changes in version 2:
+- fixed the "compatible" property in the CAN device nodes.
 
->>   Documentation/devicetree/bindings/extcon/extcon-max3355.txt |   21 ++
->>   drivers/extcon/Kconfig                                      |    6
->>   drivers/extcon/Makefile                                     |    1
->>   drivers/extcon/extcon-max3355.c                             |  122 ++++++++++++
->>   4 files changed, 150 insertions(+)
+ arch/arm/boot/dts/r8a7791.dtsi |   20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
->> Index: extcon/Documentation/devicetree/bindings/extcon/extcon-max3355.txt
->> =================================>> --- /dev/null
->> +++ extcon/Documentation/devicetree/bindings/extcon/extcon-max3355.txt
->> @@ -0,0 +1,21 @@
->> +MAX3355 USB OTG chip
-
-> Need manufactor information as following :
->    -> Maxim MAX3355
-
-    Would be Maxim enough? Or perhaps I should use Maxim Integrated [Products]?
-
->> +--------------------
->> +
->> +MAX3355 integrates a charge pump and comparators to enable a system with an
->> +integrated USB OTG dual-role transceiver to function as a USB OTG dual-role
->> +device.
->> +
->> +Required properties:
->> +- compatible: should be "maxim,max3355";
->> +- maxim,shdn-gpio: should contain a phandle and GPIO specifier for the GPIO pin
->> +  connected to the MAX3355's SHDN# pin;
->> +- maxim,id-gpio: should contain a phandle and GPIO specifier for the GPIO pin
->> +  connected to the MAX3355's ID_OUT pin.
->> +
->> +Example (Koelsch board):
->> +
->> +	usb-otg {
->> +		compatible = "maxim,max3355";
->> +		maxim,shdn-gpio = <&gpio2 4 GPIO_ACTIVE_LOW>;
->> +		maxim,id-gpio = <&gpio5 31 GPIO_ACTIVE_HIGH>;
-
-> Kernel already supported the gpio helper function to get gpio from devicetree.
-> I prefer use follwoing style by using of_get_gpio()/of_get_gpio_flags() in include/linux/of_gpio.h.
-
-> 		gpios = <&gpio2 4 GPIO_ACTIVE_LOW>, <&gpio5 31 GPIO_ACTIVE_HIGH>;
-
-    OK, though Documentation/devicetree/bindings/gpio/gpio.txt does not seem 
-to insist on using this one...
-
-[...]
-
->> Index: extcon/drivers/extcon/extcon-max3355.c
->> =================================>> --- /dev/null
->> +++ extcon/drivers/extcon/extcon-max3355.c
->> @@ -0,0 +1,122 @@
->> +/*
->> + * MAX3355 USB OTG chip extcon driver
-
-> ditto.
-
-    OK, though the other Maxim extcon drivers don't serve as a good example 
-here...
-
-[...]
->> +static irqreturn_t max3355_id_irq(int irq, void *dev_id)
->> +{
->> +	struct max3355_data *data = dev_id;
->> +	int id = gpio_get_value(data->id_gpio);
->> +
->> +	extcon_set_cable_state(data->edev, "USB-HOST", !id);
-
-> You have to get the gpio flag in the devicetree by using of_get_gpio_flags() function
-> and then you would set the cable state according to gpio state and flag.
-
-    I'm sorry but I just don't see why I have to do it. This is not a generic 
-GPIO driver, and the polarities of the GPIOs are determined solely by the 
-MAX3355 specs.
-
-[...]
->> +static int max3355_probe(struct platform_device *pdev)
->> +{
->> +	struct device_node *np = pdev->dev.of_node;
->> +	struct max3355_data *data;
->> +	int gpio, irq, ret;
->> +
->> +	data = devm_kzalloc(&pdev->dev, sizeof(struct max3355_data),
->> +			    GFP_KERNEL);
->> +	if (!data)
->> +		return -ENOMEM;
->> +
->> +	data->edev = devm_extcon_dev_allocate(&pdev->dev, max3355_cable);
->> +	if (IS_ERR(data->edev)) {
->> +		dev_err(&pdev->dev, "failed to allocate extcon device\n");
->> +		return PTR_ERR(data->edev);
->> +	}
->> +	data->edev->name = kstrdup(np->name, GFP_KERNEL);
->> +
->> +	gpio = of_get_named_gpio(np, "maxim,id-gpio", 0);
-
-> Use of_get_gpio() or of_get_gpio_flags().
-
-    OK, I'll use the first one.
-
-> "maxim,id-gpio" property has strong dependency on this driver and it is not standard.
-
-    I indented it to be Maxim specific. Not sure what using the standard 
-property buys...
-
->> +	if (gpio < 0)
->> +		return gpio;
-
-> Need to add error message.
-
-    OK for all cases; extcon-gpio.c was probably a bad example...
-
-[...]
-
->> +
->> +	ret = devm_gpio_request_one(&pdev->dev, gpio, GPIOF_DIR_OUT |
->> +				    GPIOF_INIT_HIGH, pdev->name);
->> +	if (ret < 0)
->> +		return ret;
-
-> Need to add error message.
-
->> +
->> +	ret = devm_gpio_request_one(&pdev->dev, data->id_gpio, GPIOF_DIR_IN,
->> +				    pdev->name);
-
-> Why do you use same name for two gpio when devm_gpio_request_one?
-> I prefer to use other name because two gpio is different.
-
-    And you're absolutely right here. Mindlessly copy-pasted the code from 
-extcon-gpio.c...
-
-[...]
-
->> +
->> +	ret = devm_request_threaded_irq(&pdev->dev, irq, NULL, max3355_id_irq,
->> +					IRQF_TRIGGER_RISING |
->> +					IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
-
-> Is it right to add both RISING and FALLING trigger?
-
-    How else I'm supposed to know when the OTG ID signal goes low and high?
-
-> and need to add IRQF_NO_SUSPEND to wakeup from suspend state when interrupt happen.
-
-    Hm, are you sure we want to wake up on plugging another kind of USB cable?
-
-[...]
->> +static struct platform_driver max3355_driver = {
->> +	.probe		= max3355_probe,
->> +	.driver		= {
->> +		.name	= "extcon-max3355",
->> +		.of_match_table = max3355_match_table,
->> +		.owner	= THIS_MODULE,
->> +	},
->> +};
->> +
->> +module_platform_driver(max3355_driver);
->> +
-
-> Don't need un-used blank line.
-
-    I don't understand. There's empty line in such case in extcon-gpio.c...
-
->> +MODULE_AUTHOR("Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>");
->> +MODULE_DESCRIPTION("MAX3355 extcon driver");
-
-> Maxim MAX3355.
-
-    OK, seeing it in the other Maxim drivers.
-
->> +MODULE_LICENSE("GPL v2");
-
-> Thanks,
-> Chanwoo Choi
-
-WBR, Sergei
+Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
++++ renesas/arch/arm/boot/dts/r8a7791.dtsi
+@@ -816,6 +816,26 @@
+ 		};
+ 	};
+ 
++	can0: can@e6e80000 {
++		compatible = "renesas,can-r8a7791";
++		reg = <0 0xe6e80000 0 0x1000>;
++		interrupts = <0 186 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7791_CLK_RCAN0>,
++		       	 <&cpg_clocks R8A7791_CLK_RCAN>, <&can_clk>;
++		clock-names = "clkp1", "clkp2", "can_clk";
++		status = "disabled";
++	};
++
++	can1: can@e6e88000 {
++		compatible = "renesas,can-r8a7791";
++		reg = <0 0xe6e88000 0 0x1000>;
++		interrupts = <0 187 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7791_CLK_RCAN1>,
++		       	 <&cpg_clocks R8A7791_CLK_RCAN>, <&can_clk>;
++		clock-names = "clkp1", "clkp2", "can_clk";
++		status = "disabled";
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 
