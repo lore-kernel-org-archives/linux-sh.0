@@ -1,31 +1,41 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Tue, 02 Dec 2014 08:36:45 +0000
-Subject: [PATCH v3 2/6] clk: shmobile: Add r8a73a4 SoC to MSTP bindings
-Message-Id: <1417509409-31638-3-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:20 +0000
+Subject: [PATCH 3/5] ARM: shmobile: defconfig: add MTD_BLOCK
+Message-Id: <1df3396bd09baf4093f82a49f8a1a523277fdf82.1419808942.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1419808942.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419808942.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+MTD_BLOOK is needed for accessing to SPI-FLASH
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Reported-by: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Reported-by: Bui Duc Phuc ( Fukuda ) <bd-phuc@jinso.co.jp>
+Reported-by: Nguyen Xuan Nui <nx-nui@jinso.co.jp>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 1 +
+ arch/arm/configs/shmobile_defconfig | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-index a5f5223..e566fb7 100644
---- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-@@ -11,6 +11,7 @@ Required Properties:
- 
-   - compatible: Must be one of the following
-     - "renesas,r7s72100-mstp-clocks" for R7S72100 (RZ) MSTP gate clocks
-+    - "renesas,r8a73a4-mstp-clocks" for R8A73A4 (R-Mobile APE6) MSTP gate clocks
-     - "renesas,r8a7740-mstp-clocks" for R8A7740 (R-Mobile A1) MSTP gate clocks
-     - "renesas,r8a7779-mstp-clocks" for R8A7779 (R-Car H1) MSTP gate clocks
-     - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index ad52868..a936a2e 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -56,6 +56,7 @@ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+ CONFIG_MTD=y
++CONFIG_MTD_BLOCK=y
+ CONFIG_MTD_M25P80=y
+ CONFIG_MTD_SPI_NOR=y
+ CONFIG_EEPROM_AT24=y
 -- 
-1.8.4.5
+2.1.3
 
