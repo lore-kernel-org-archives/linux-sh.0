@@ -1,32 +1,40 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Wed, 17 Dec 2014 16:18:50 +0000
-Subject: [PATCH v4 2/6] clk: shmobile: Add r8a73a4 SoC to MSTP bindings
-Message-Id: <1418833134-7863-3-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:22 +0000
+Subject: [PATCH 5/5] ARM: shmobile: Enable DA9063 watchdog in multiplatform defconfig
+Message-Id: <db54d850b686c2ca81c10dd3582e98ee089a0e3a.1419808942.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1419808942.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419808942.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+
+This allows to restart koelsch on watchdog timeout or manual system
+restart request.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/configs/shmobile_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-index a5f5223..e566fb7 100644
---- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-@@ -11,6 +11,7 @@ Required Properties:
- 
-   - compatible: Must be one of the following
-     - "renesas,r7s72100-mstp-clocks" for R7S72100 (RZ) MSTP gate clocks
-+    - "renesas,r8a73a4-mstp-clocks" for R8A73A4 (R-Mobile APE6) MSTP gate clocks
-     - "renesas,r8a7740-mstp-clocks" for R8A7740 (R-Mobile A1) MSTP gate clocks
-     - "renesas,r8a7779-mstp-clocks" for R8A7779 (R-Car H1) MSTP gate clocks
-     - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index a9a1b0af..99e1226 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -108,6 +108,9 @@ CONFIG_GPIO_RCAR=y
+ CONFIG_THERMAL=y
+ CONFIG_CPU_THERMAL=y
+ CONFIG_RCAR_THERMAL=y
++CONFIG_WATCHDOG=y
++CONFIG_DA9063_WATCHDOG=y
++CONFIG_MFD_DA9063=y
+ CONFIG_REGULATOR=y
+ CONFIG_REGULATOR_DA9210=y
+ CONFIG_REGULATOR_GPIO=y
 -- 
-1.8.4.5
+2.1.3
 
