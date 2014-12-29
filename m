@@ -1,60 +1,82 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 17 Dec 2014 18:29:06 +0000
-Subject: Re: [PATCH 2/2] i2c: sh_mobile: rework deferred probing
-Message-Id: <20141217182905.GD3981@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Xm/fll+QQv+hsKip"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:52 +0000
+Subject: [PATCH 21/30] ARM: shmobile: r8a7794: Add SDHI clocks to device tree
+Message-Id: <8e181633e6ca960491ac502ccd4a4aac482c3ff9.1419812186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418733086-26324-1-git-send-email-wsa@the-dreams.de>
- <1418733086-26324-3-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1418733086-26324-3-git-send-email-wsa@the-dreams.de>
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, dmaengine@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>
+References: <cover.1419812185.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
---Xm/fll+QQv+hsKip
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+[horms: omitted device nodes; only add clock]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7794.dtsi            | 20 +++++++++++++++++++-
+ include/dt-bindings/clock/r8a7794-clock.h |  3 +++
+ 2 files changed, 22 insertions(+), 1 deletion(-)
 
-On Tue, Dec 16, 2014 at 01:31:26PM +0100, Wolfram Sang wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
->=20
-> DMA is opt-in for this driver. So, we can't use deferred probing for
-> requesting DMA channels in probe, because our driver would get endlessly
-> deferred if DMA support is compiled in AND the DMA driver is missing.
-> Because we can't know when the DMA driver might show up, we always try
-> again when a DMA transfer would be possible. The downside is that there
-> is more overhead for setting up PIO transfers under the above scenario.
-> But well, having DMA enabled and the proper DMA driver missing looks
-> like a broken or test config anyhow.
->=20
-> Reported-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 728d719..c376676 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -293,6 +293,21 @@
+ 			clock-output-names = "main", "pll0", "pll1", "pll3",
+ 					     "lb", "qspi", "sdh", "sd0", "z";
+ 		};
++		/* Variable factor clocks */
++		sd1_clk: sd2_clk@e6150078 {
++			compatible = "renesas,r8a7794-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150078 0 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "sd1";
++		};
++		sd2_clk: sd3_clk@e615007c {
++			compatible = "renesas,r8a7794-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe615007c 0 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "sd2";
++		};
+ 
+ 		/* Fixed factor clocks */
+ 		pll1_div2_clk: pll1_div2_clk {
+@@ -496,13 +511,16 @@
+ 		mstp3_clks: mstp3_clks@e615013c {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+-			clocks = <&rclk_clk>, <&hp_clk>, <&hp_clk>;
++			clocks = <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7794_CLK_SD0>,
++			         <&rclk_clk>, <&hp_clk>, <&hp_clk>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
++			        R8A7794_CLK_SDHI2 R8A7794_CLK_SDHI1 R8A7794_CLK_SDHI0
+ 				R8A7794_CLK_CMT1 R8A7794_CLK_USBDMAC0
+ 				R8A7794_CLK_USBDMAC1
+ 			>;
+ 			clock-output-names +			        "sdhi2", "sdhi1", "sdhi0",
+ 				"cmt1", "usbdmac0", "usbdmac1";
+ 		};
+ 		mstp7_clks: mstp7_clks@e615014c {
+diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
+index 94d9618..ccd5667 100644
+--- a/include/dt-bindings/clock/r8a7794-clock.h
++++ b/include/dt-bindings/clock/r8a7794-clock.h
+@@ -52,6 +52,9 @@
+ #define R8A7794_CLK_SYS_DMAC0		19
+ 
+ /* MSTP3 */
++#define R8A7794_CLK_SDHI2		11
++#define R8A7794_CLK_SDHI1		12
++#define R8A7794_CLK_SDHI0		14
+ #define R8A7794_CLK_CMT1		29
+ #define R8A7794_CLK_USBDMAC0		30
+ #define R8A7794_CLK_USBDMAC1		31
+-- 
+2.1.3
 
-Applied to for-current, thanks!
-
-
---Xm/fll+QQv+hsKip
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJUkctxAAoJEBQN5MwUoCm2y2IP+wZ5bw+HGMG8Zy9F5JNPU5T2
-IPmrdf2sqd5+YDOj5oiZJO3yxco+8X/oBpGKY40hN/DAg7khq0Bx8RFf6QYjAeeY
-yjIzcNkK51V+3iNjv9TtESL/3R0z/lXL1Ex4xFC5AXvxDs9XKwKn1cvIYQSjXfu8
-B3GmGQP2KEu7P+7ruo8/6CdkK/e03sd8v/iZQClmsYE4R6HznjlNuald2ARlID5z
-4NGk+/QioidFq5vQ6GpHTYs8AIJ6R/w1xRLXG9HssCXK2Ji5JbtdoE7Mj9exDzuC
-Ynr92I3LC/KCCoI4CfhGW6xhJumHnjzkpyMp8IvdkfcJWkbNZS8ZDFBFn6wZ+agC
-J/xo11Fgs93p9MnT3U76mkfZryqNmMENTZypHmHoN3idWO5/fRQv8J2RK0xfgiGs
-1FmXmyOiL4KpYKroEG9Kwti/+gLSvVZv6azZx2kSmRENDOr6Q/JRAdGiN5xHuOOi
-bPtKQG/GrM6KGkUHwUhklTS0oETv6Y2sy1VzIg6XFUqg7Cc4A/9qo4PVKeDRB0mp
-zaoQb75vnv0g0uQxG1RV70kdUVeXlVUorOr4WE4cECqpgY9oNfZWwa3QpZZ5ZR9n
-46iK9J4EldRk60eYe/rH3rheJg/y3fnZe1yKJSJXdb6Hx06dvklAxSaqZQOi5fWb
-tHmwvJ8ypOwsSqT9qc9s
-=lDfV
------END PGP SIGNATURE-----
-
---Xm/fll+QQv+hsKip--
