@@ -1,36 +1,85 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 18 Dec 2014 19:23:46 +0000
-Subject: Re: [PATCH] input: adxl34x: Add OF match support
-Message-Id: <10011053.aypz0IuTJG@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:49 +0000
+Subject: [PATCH 18/30] ARM: shmobile: r8a7779: Use MSTP for SCIF clocks
+Message-Id: <631324cf83a04cbfcc81a21801f321679493a072.1419812186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418868923-13411-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1492007.8cQN1myWLD@avalon> <CAMuHMdXcfe0JQhZzGSAoqjKR346-QJrvyi=afHF7cAaHKa56pw@mail.gmail.com>
-In-Reply-To: <CAMuHMdXcfe0JQhZzGSAoqjKR346-QJrvyi=afHF7cAaHKa56pw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+References: <cover.1419812185.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, "linux-input-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-input-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux I2C <linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+From: Magnus Damm <damm+renesas@opensource.se>
 
-On Thursday 18 December 2014 14:03:18 Geert Uytterhoeven wrote:
-> On Thu, Dec 18, 2014 at 1:49 PM, Laurent Pinchart wrote:
-> > There are three compatible strings defined for the ADXL345 and ADXL346 in
-> > Documentation/devicetree/bindings/i2c/trivial-devices.txt: "adi,adxl345",
-> > "adi,adxl346", "adi,adxl34x". Given that the last one is a fallback for
-> > the first two I don't see a need to add the specific compatible strings to
-> > the driver for now. If a new totally incompatible chip named ADXL347 comes
-> > out we will need a new driver which won't be allowed to use the
-> > "adi,adxl34x" compatible string.
-> 
-> FWIW, I'm the evil person who added the adxl entries to that file...
+Hook up MSTP clocks to SCIF devices on r8a7779 to allow
+clock gating to work as expected.
 
-git-blame had already reported you.
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7779.dtsi | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-Do you think we should remove that compatible string ?
-
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index ee3bb3e..d9e1abf 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -200,7 +200,7 @@
+ 		compatible = "renesas,scif-r8a7779", "renesas,scif";
+ 		reg = <0xffe40000 0x100>;
+ 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&cpg_clocks R8A7779_CLK_P>;
++		clocks = <&mstp0_clks R8A7779_CLK_SCIF0>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+@@ -209,7 +209,7 @@
+ 		compatible = "renesas,scif-r8a7779", "renesas,scif";
+ 		reg = <0xffe41000 0x100>;
+ 		interrupts = <0 89 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&cpg_clocks R8A7779_CLK_P>;
++		clocks = <&mstp0_clks R8A7779_CLK_SCIF1>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+@@ -218,7 +218,7 @@
+ 		compatible = "renesas,scif-r8a7779", "renesas,scif";
+ 		reg = <0xffe42000 0x100>;
+ 		interrupts = <0 90 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&cpg_clocks R8A7779_CLK_P>;
++		clocks = <&mstp0_clks R8A7779_CLK_SCIF2>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+@@ -227,7 +227,7 @@
+ 		compatible = "renesas,scif-r8a7779", "renesas,scif";
+ 		reg = <0xffe43000 0x100>;
+ 		interrupts = <0 91 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&cpg_clocks R8A7779_CLK_P>;
++		clocks = <&mstp0_clks R8A7779_CLK_SCIF3>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+@@ -236,7 +236,7 @@
+ 		compatible = "renesas,scif-r8a7779", "renesas,scif";
+ 		reg = <0xffe44000 0x100>;
+ 		interrupts = <0 92 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&cpg_clocks R8A7779_CLK_P>;
++		clocks = <&mstp0_clks R8A7779_CLK_SCIF4>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+@@ -245,7 +245,7 @@
+ 		compatible = "renesas,scif-r8a7779", "renesas,scif";
+ 		reg = <0xffe45000 0x100>;
+ 		interrupts = <0 93 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&cpg_clocks R8A7779_CLK_P>;
++		clocks = <&mstp0_clks R8A7779_CLK_SCIF5>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
 -- 
-Regards,
-
-Laurent Pinchart
+2.1.3
 
