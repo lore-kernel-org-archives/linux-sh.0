@@ -1,167 +1,63 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 17 Dec 2014 16:26:15 +0000
-Subject: Re: [PATCH v3 2/9] ARM: shmobile: ape6evm: synchronize dts with reference platform
-Message-Id: <1442812.6nv1umLhvs@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:56 +0000
+Subject: [PATCH 25/30] ARM: shmobile: ape6evm: Add LEDs to the device tree
+Message-Id: <b742257dd5ec574a35950ebcf4a3d77a0f01355f.1419812186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418833101-7774-3-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1418833101-7774-3-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <cover.1419812185.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Ulrich,
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Thank you for the patch.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
 
-On Wednesday 17 December 2014 17:18:14 Ulrich Hecht wrote:
-> This moves everything to the legacy dts that is missing there in
-> preparation for the switch to multiplatform.
-> 
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
->  arch/arm/boot/dts/r8a73a4-ape6evm.dts | 92 +++++++++++++++++++++++++++++++-
->  1 file changed, 90 insertions(+), 2 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> b/arch/arm/boot/dts/r8a73a4-ape6evm.dts index baca8f8..c98cd14 100644
-> --- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> +++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> @@ -10,14 +10,19 @@
-> 
->  /dts-v1/;
->  #include "r8a73a4.dtsi"
-> -#include <dt-bindings/interrupt-controller/irq.h>
-> +#include <dt-bindings/gpio/gpio.h>
-> 
->  / {
->  	model = "APE6EVM";
->  	compatible = "renesas,ape6evm", "renesas,r8a73a4";
-> 
-> +	aliases {
-> +		serial0 = &scifa0;
-> +	};
-> +
->  	chosen {
->  		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs 
-ip=dhcp
-> rw"; +		stdout-path = &scifa0;
->  	};
-> 
->  	memory@40000000 {
-> @@ -30,7 +35,27 @@
->  		reg = <2 0x00000000 0 0x40000000>;
->  	};
-> 
-> -	ape6evm_fixed_3v3: fixedregulator@0 {
-> +	vcc_mmc0: regulator@0 {
-> +		compatible = "regulator-fixed";
-> +		regulator-name = "MMC0 Vcc";
-> +		regulator-min-microvolt = <2800000>;
-> +		regulator-max-microvolt = <2800000>;
-> +		regulator-always-on;
-> +	};
-> +
-> +	vcc_sdhi0: regulator@1 {
-> +		compatible = "regulator-fixed";
-> +
-> +		regulator-name = "SDHI0 Vcc";
-> +		regulator-min-microvolt = <3300000>;
-> +		regulator-max-microvolt = <3300000>;
-> +
-> +		gpio = <&pfc 76 GPIO_ACTIVE_HIGH>;
-> +		enable-active-high;
-> +	};
-> +
-> +	/* Common 3.3V rail, used by several devices on APE6EVM */
-> +	ape6evm_fixed_3v3: regulator@2 {
->  		compatible = "regulator-fixed";
->  		regulator-name = "3V3";
->  		regulator-min-microvolt = <3300000>;
-> @@ -39,8 +64,10 @@
->  	};
-> 
->  	lbsc {
-> +		compatible = "simple-bus";
->  		#address-cells = <1>;
->  		#size-cells = <1>;
-> +		ranges = <0 0 0 0x20000000>;
-> 
->  		ethernet@8000000 {
->  			compatible = "smsc,lan9220", "smsc,lan9115";
-> @@ -79,3 +106,64 @@
-> 
->  	>;
-> 
->  	voltage-tolerance = <1>; /* 1% */
->  };
-> +
-> +&cmt1 {
-> +	status = "okay";
-> +};
-> +
-> +&pfc {
-> +	scifa0_pins: serial0 {
-> +		renesas,groups = "scifa0_data";
-> +		renesas,function = "scifa0";
-> +	};
-> +
-> +	mmc0_pins: mmc {
-> +		renesas,groups = "mmc0_data8", "mmc0_ctrl";
-> +		renesas,function = "mmc0";
-> +	};
-> +
-> +	sdhi0_pins: sd0 {
-> +		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
-> +		renesas,function = "sdhi0";
-> +	};
-> +
-> +	sdhi1_pins: sd1 {
-> +		renesas,groups = "sdhi1_data4", "sdhi1_ctrl";
-> +		renesas,function = "sdhi1";
-> +	};
-> +};
-> +
-> +&mmcif0 {
-> +	vmmc-supply = <&vcc_mmc0>;
-> +	bus-width = <8>;
-> +	non-removable;
-> +	pinctrl-names = "default";
-> +	pinctrl-0 = <&mmc0_pins>;
-> +	status = "okay";
-> +};
-> +
-> +&scifa0 {
-> +	pinctrl-0 = <&scifa0_pins>;
-> +	pinctrl-names = "default";
-> +
-> +	status = "okay";
-> +};
-> +
-> +&sdhi0 {
-> +	vmmc-supply = <&vcc_sdhi0>;
-> +	bus-width = <4>;
-> +	toshiba,mmc-wrprotect-disable;
-> +	pinctrl-names = "default";
-> +	pinctrl-0 = <&sdhi0_pins>;
-> +	status = "okay";
-> +};
-> +
-> +&sdhi1 {
-> +	vmmc-supply = <&ape6evm_fixed_3v3>;
-> +	bus-width = <4>;
-> +	broken-cd;
-> +	toshiba,mmc-wrprotect-disable;
-> +	pinctrl-names = "default";
-> +	pinctrl-0 = <&sdhi1_pins>;
-> +	status = "okay";
-> +};
-
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+index c98cd14..b939a37 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+@@ -82,6 +82,34 @@
+ 			vddvario-supply = <&ape6evm_fixed_3v3>;
+ 		};
+ 	};
++
++	leds {
++		compatible = "gpio-leds";
++		led1 {
++			gpios = <&pfc 28 GPIO_ACTIVE_LOW>;
++			label = "GNSS_EN";
++		};
++		led2 {
++			gpios = <&pfc 126 GPIO_ACTIVE_LOW>;
++			label = "NFC_NRST";
++		};
++		led3 {
++			gpios = <&pfc 132 GPIO_ACTIVE_LOW>;
++			label = "GNSS_NRST";
++		};
++		led4 {
++			gpios = <&pfc 232 GPIO_ACTIVE_LOW>;
++			label = "BT_WAKEUP";
++		};
++		led5 {
++			gpios = <&pfc 250 GPIO_ACTIVE_LOW>;
++			label = "STROBE";
++		};
++		led6 {
++			gpios = <&pfc 288 GPIO_ACTIVE_LOW>;
++			label = "BBRESETOUT";
++		};
++	};
+ };
+ 
+ &i2c5 {
 -- 
-Regards,
-
-Laurent Pinchart
+2.1.3
 
