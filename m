@@ -1,166 +1,87 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 10 Dec 2014 23:42:10 +0000
-Subject: [PATCH 10/15] drm: rcar-du: Implement support for interlaced modes
-Message-Id: <1418254935-13536-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:49 +0000
+Subject: [PATCH 2/6] ARM: shmobile: R-Mobile: Use generic_pm_domain.attach_dev() for pm_clk setup
+Message-Id: <280410aaf0aacc8445d06399f8b4ce72cef9639f.1419809198.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418254935-13536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1418254935-13536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1419809198.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419809198.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Accept interlaced modes on the VGA and HDMI connectors and configure the
-hardware accordingly.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Use the just introduced genpd attach/detach callbacks to register the
+devices' module clocks, instead of doing it directly, to make it
+DT-proof.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_crtc.c    | 23 +++++++++++++++--------
- drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c |  1 +
- drivers/gpu/drm/rcar-du/rcar_du_plane.c   | 18 +++++++++++++++---
- drivers/gpu/drm/rcar-du/rcar_du_regs.h    |  1 +
- drivers/gpu/drm/rcar-du/rcar_du_vgacon.c  |  1 +
- 5 files changed, 33 insertions(+), 11 deletions(-)
+ arch/arm/mach-shmobile/pm-rmobile.c | 34 ++++++++++++++++++++++++++++++++--
+ 1 file changed, 32 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-index 86766cc6360a..25c7a998fc2c 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-@@ -155,12 +155,15 @@ static void rcar_du_crtc_set_display_timing(struct rcar_du_crtc *rcrtc)
- 					mode->hsync_start - 1);
- 	rcar_du_crtc_write(rcrtc, HCR,  mode->htotal - 1);
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index 6f7d56e..4ea458d 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -101,6 +101,36 @@ static bool rmobile_pd_active_wakeup(struct device *dev)
+ 	return true;
+ }
  
--	rcar_du_crtc_write(rcrtc, VDSR, mode->vtotal - mode->vsync_end - 2);
--	rcar_du_crtc_write(rcrtc, VDER, mode->vtotal - mode->vsync_end +
--					mode->vdisplay - 2);
--	rcar_du_crtc_write(rcrtc, VSPR, mode->vtotal - mode->vsync_end +
--					mode->vsync_start - 1);
--	rcar_du_crtc_write(rcrtc, VCR,  mode->vtotal - 1);
-+	rcar_du_crtc_write(rcrtc, VDSR, mode->crtc_vtotal -
-+					mode->crtc_vsync_end - 2);
-+	rcar_du_crtc_write(rcrtc, VDER, mode->crtc_vtotal -
-+					mode->crtc_vsync_end +
-+					mode->crtc_vdisplay - 2);
-+	rcar_du_crtc_write(rcrtc, VSPR, mode->crtc_vtotal -
-+					mode->crtc_vsync_end +
-+					mode->crtc_vsync_start - 1);
-+	rcar_du_crtc_write(rcrtc, VCR,  mode->crtc_vtotal - 1);
- 
- 	rcar_du_crtc_write(rcrtc, DESR,  mode->htotal - mode->hsync_start);
- 	rcar_du_crtc_write(rcrtc, DEWR,  mode->hdisplay);
-@@ -256,6 +259,7 @@ void rcar_du_crtc_update_planes(struct drm_crtc *crtc)
- static void rcar_du_crtc_start(struct rcar_du_crtc *rcrtc)
- {
- 	struct drm_crtc *crtc = &rcrtc->crtc;
-+	bool interlaced;
- 	unsigned int i;
- 
- 	if (rcrtc->started)
-@@ -291,7 +295,10 @@ static void rcar_du_crtc_start(struct rcar_du_crtc *rcrtc)
- 	 * sync mode (with the HSYNC and VSYNC signals configured as outputs and
- 	 * actively driven).
- 	 */
--	rcar_du_crtc_clr_set(rcrtc, DSYSR, DSYSR_TVM_MASK, DSYSR_TVM_MASTER);
-+	interlaced = rcrtc->crtc.mode.flags & DRM_MODE_FLAG_INTERLACE;
-+	rcar_du_crtc_clr_set(rcrtc, DSYSR, DSYSR_TVM_MASK | DSYSR_SCM_MASK,
-+			     (interlaced ? DSYSR_SCM_INT_VIDEO : 0) |
-+			     DSYSR_TVM_MASTER);
- 
- 	rcar_du_group_start_stop(rcrtc->group, true);
- 
-@@ -528,7 +535,7 @@ static irqreturn_t rcar_du_crtc_irq(int irq, void *arg)
- 	status = rcar_du_crtc_read(rcrtc, DSSR);
- 	rcar_du_crtc_write(rcrtc, DSRCR, status & DSRCR_MASK);
- 
--	if (status & DSSR_VBK) {
-+	if (status & DSSR_FRM) {
- 		drm_handle_vblank(rcrtc->crtc.dev, rcrtc->index);
- 		rcar_du_crtc_finish_page_flip(rcrtc);
- 		ret = IRQ_HANDLED;
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c b/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
-index 322b7208171a..ca94b029ac80 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
-@@ -95,6 +95,7 @@ int rcar_du_hdmi_connector_init(struct rcar_du_device *rcdu,
- 	connector = &rcon->connector;
- 	connector->display_info.width_mm = 0;
- 	connector->display_info.height_mm = 0;
-+	connector->interlace_allowed = true;
- 	connector->polled = DRM_CONNECTOR_POLL_HPD;
- 
- 	ret = drm_connector_init(rcdu->ddev, connector, &connector_funcs,
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-index fb3ea4f95d4a..50f2f2b20d39 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-@@ -104,14 +104,22 @@ void rcar_du_plane_update_base(struct rcar_du_plane *plane)
- {
- 	struct rcar_du_group *rgrp = plane->group;
- 	unsigned int index = plane->hwindex;
-+	bool interlaced;
- 	u32 mwr;
- 
--	/* Memory pitch (expressed in pixels) */
-+	interlaced = plane->crtc->mode.flags & DRM_MODE_FLAG_INTERLACE;
++static int rmobile_pd_attach_dev(struct generic_pm_domain *domain,
++				 struct device *dev)
++{
++	int error;
 +
-+	/* Memory pitch (expressed in pixels). Must be doubled for interlaced
-+	 * operation with 32bpp formats.
-+	 */
- 	if (plane->format->planes = 2)
- 		mwr = plane->pitch;
- 	else
- 		mwr = plane->pitch * 8 / plane->format->bpp;
- 
-+	if (interlaced && plane->format->bpp = 32)
-+		mwr *= 2;
++	error = pm_clk_create(dev);
++	if (error) {
++		dev_err(dev, "pm_clk_create failed %d\n", error);
++		return error;
++	}
 +
- 	rcar_du_plane_write(rgrp, index, PnMWR, mwr);
++	error = pm_clk_add(dev, NULL);
++	if (error) {
++		dev_err(dev, "pm_clk_add failed %d\n", error);
++		goto fail;
++	}
++
++	return 0;
++
++fail:
++	pm_clk_destroy(dev);
++	return error;
++}
++
++static void rmobile_pd_detach_dev(struct generic_pm_domain *domain,
++				  struct device *dev)
++{
++	pm_clk_destroy(dev);
++}
++
+ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
+ {
+ 	struct generic_pm_domain *genpd = &rmobile_pd->genpd;
+@@ -111,6 +141,8 @@ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
+ 	genpd->dev_ops.active_wakeup	= rmobile_pd_active_wakeup;
+ 	genpd->power_off		= rmobile_pd_power_down;
+ 	genpd->power_on			= rmobile_pd_power_up;
++	genpd->attach_dev		= rmobile_pd_attach_dev;
++	genpd->detach_dev		= rmobile_pd_detach_dev;
+ 	__rmobile_pd_power_up(rmobile_pd, false);
+ }
  
- 	/* The Y position is expressed in raster line units and must be doubled
-@@ -119,12 +127,16 @@ void rcar_du_plane_update_base(struct rcar_du_plane *plane)
- 	 * doubling the Y position is found in the R8A7779 datasheet, but the
- 	 * rule seems to apply there as well.
- 	 *
-+	 * Despite not being documented, doubling seem not to be needed when
-+	 * operating in interlaced mode.
-+	 *
- 	 * Similarly, for the second plane, NV12 and NV21 formats seem to
--	 * require a halved Y position value.
-+	 * require a halved Y position value, in both progressive and interlaced
-+	 * modes.
- 	 */
- 	rcar_du_plane_write(rgrp, index, PnSPXR, plane->src_x);
- 	rcar_du_plane_write(rgrp, index, PnSPYR, plane->src_y *
--			    (plane->format->bpp = 32 ? 2 : 1));
-+			    (!interlaced && plane->format->bpp = 32 ? 2 : 1));
- 	rcar_du_plane_write(rgrp, index, PnDSA0R, plane->dma[0]);
+@@ -129,8 +161,6 @@ void rmobile_add_device_to_domain_td(const char *domain_name,
+ 	struct device *dev = &pdev->dev;
  
- 	if (plane->format->planes = 2) {
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_regs.h b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
-index c3639d1db28b..70fcbc471ebd 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_regs.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
-@@ -34,6 +34,7 @@
- #define DSYSR_SCM_INT_NONE	(0 << 4)
- #define DSYSR_SCM_INT_SYNC	(2 << 4)
- #define DSYSR_SCM_INT_VIDEO	(3 << 4)
-+#define DSYSR_SCM_MASK		(3 << 4)
+ 	__pm_genpd_name_add_device(domain_name, dev, td);
+-	if (pm_clk_no_clocks(dev))
+-		pm_clk_add(dev, NULL);
+ }
  
- #define DSMR			0x00004
- #define DSMR_VSPM		(1 << 28)
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
-index 752747a5e920..9d4879921cc7 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
-@@ -64,6 +64,7 @@ int rcar_du_vga_connector_init(struct rcar_du_device *rcdu,
- 	connector = &rcon->connector;
- 	connector->display_info.width_mm = 0;
- 	connector->display_info.height_mm = 0;
-+	connector->interlace_allowed = true;
- 
- 	ret = drm_connector_init(rcdu->ddev, connector, &connector_funcs,
- 				 DRM_MODE_CONNECTOR_VGA);
+ void rmobile_add_devices_to_domains(struct pm_domain_device data[],
 -- 
-2.0.4
+2.1.3
 
