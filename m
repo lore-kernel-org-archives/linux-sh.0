@@ -1,92 +1,40 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 15 Dec 2014 22:42:13 +0000
-Subject: [PATCH] renesas_usbhs: add OTG ID signal sensing
-Message-Id: <7850767.LfC2Jrg0a5@wasted.cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:21 +0000
+Subject: [PATCH 4/5] ARM: shmobile: Enable MICREL_PHY in shmobile_defconfig
+Message-Id: <174b7a54c925a068161222fadb45732453bd7efa.1419808942.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1419808942.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419808942.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On the Renesas R8A7791 SoC based boards there's MAX3355 USB OTG chip and mini-AB
-USB connector corresponding to USB port 0 driven either by EHCI/OHCI or  Renesas
-USBHS gadget controller. And we'd like the host/gadget  drivers to work based on
-the cable type connected. An 'extcon' driver for MAX3355 has been written, so we
-only need to bind  to it via device tree which I'm doing in this patch.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-(Perhaps, it would also make sense to use OTG HNP when the USBHS host mode is
-active and a B-cable is connected but I don't have access to host-capable USBHS,
-so  wouldn't be able to test it.)
+commit 1c9106cb783cd227 ("ARM: shmobile: lager-reference: DTS-only board
+support"), dropped the MACH_LAGER Kconfig section, which did "select
+MICREL_PHY if SH_ETH". Hence we now have to enable MICREL_PHY explicitly
+in shmobile_defconfig.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-This patch is against the 'next'  branch of Felipe Balbi's 'usb.git' repo.
-It needs the recent 'extcon' core in  order to properly handle probe deferral.  
+ arch/arm/configs/shmobile_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
- drivers/usb/renesas_usbhs/common.c |   17 +++++++++++++++++
- drivers/usb/renesas_usbhs/common.h |    3 +++
- 2 files changed, 20 insertions(+)
-
-Index: usb/drivers/usb/renesas_usbhs/common.c
-=================================--- usb.orig/drivers/usb/renesas_usbhs/common.c
-+++ usb/drivers/usb/renesas_usbhs/common.c
-@@ -363,6 +363,7 @@ static void usbhsc_hotplug(struct usbhs_
- 	struct usbhs_mod *mod = usbhs_mod_get_current(priv);
- 	int id;
- 	int enable;
-+	int cable;
- 	int ret;
- 
- 	/*
-@@ -376,6 +377,16 @@ static void usbhsc_hotplug(struct usbhs_
- 	id = usbhs_platform_call(priv, get_id, pdev);
- 
- 	if (enable && !mod) {
-+		if (priv->edev) {
-+			cable = extcon_get_cable_state(priv->edev, "USB-HOST");
-+			if ((cable > 0 && id != USBHS_HOST) ||
-+			    (!cable && id != USBHS_GADGET)) {
-+				dev_info(&pdev->dev,
-+					 "USB cable plugged in doesn't match the selected role!\n");
-+				return;
-+			}
-+		}
-+
- 		ret = usbhs_mod_change(priv, id);
- 		if (ret < 0)
- 			return;
-@@ -514,6 +525,12 @@ static int usbhs_probe(struct platform_d
- 	if (IS_ERR(priv->base))
- 		return PTR_ERR(priv->base);
- 
-+	if (of_property_read_bool(pdev->dev.of_node, "extcon")) {
-+		priv->edev = extcon_get_edev_by_phandle(&pdev->dev, 0);
-+		if (IS_ERR(priv->edev))
-+			return PTR_ERR(priv->edev);
-+	}
-+
- 	/*
- 	 * care platform info
- 	 */
-Index: usb/drivers/usb/renesas_usbhs/common.h
-=================================--- usb.orig/drivers/usb/renesas_usbhs/common.h
-+++ usb/drivers/usb/renesas_usbhs/common.h
-@@ -17,6 +17,7 @@
- #ifndef RENESAS_USB_DRIVER_H
- #define RENESAS_USB_DRIVER_H
- 
-+#include <linux/extcon.h>
- #include <linux/platform_device.h>
- #include <linux/usb/renesas_usbhs.h>
- 
-@@ -254,6 +255,8 @@ struct usbhs_priv {
- 	struct delayed_work notify_hotplug_work;
- 	struct platform_device *pdev;
- 
-+	struct extcon_dev *edev;
-+
- 	spinlock_t		lock;
- 
- 	u32 flags;
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index a936a2e..a9a1b0af 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -80,6 +80,7 @@ CONFIG_SMSC911X=y
+ # CONFIG_NET_VENDOR_VIA is not set
+ # CONFIG_NET_VENDOR_WIZNET is not set
+ CONFIG_SMSC_PHY=y
++CONFIG_MICREL_PHY=y
+ # CONFIG_INPUT_MOUSEDEV_PSAUX is not set
+ CONFIG_KEYBOARD_GPIO=y
+ # CONFIG_INPUT_MOUSE is not set
+-- 
+2.1.3
 
