@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 29 Dec 2014 01:44:00 +0000
-Subject: [PATCH 29/30] ARM: shmobile: r8a7790: add MLB+ clock
-Message-Id: <f6b5dd4088d082b53eb135e1d6b4b213bf5ce127.1419812186.git.horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:46 +0000
+Subject: [PATCH 15/30] ARM: shmobile: lager: Fix QSPI mode of SPI-Flash into mode3
+Message-Id: <cbf41168339adcb48de6a3537f88d4e85285db99.1419812186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1419812185.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
@@ -10,59 +10,32 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Andrey Gusakov <andrey.gusakov@cogentembedded.com>
+From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
 
-Add MLB+ clock to R8A7790 device tree.
+In order to change into mode3, CPOL and CPHA bit of SPCMD register
+of QSPI is changed. Mode3 can avoid intermediate voltage.
 
-Signed-off-by: Andrey Gusakov <andrey.gusakov@cogentembedded.com>
-[Sergei: rebased, renamed, added changelog]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+[horms: Updated changelog and re-ordered properties]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7790.dtsi            | 13 +++++++------
- include/dt-bindings/clock/r8a7790-clock.h |  1 +
- 2 files changed, 8 insertions(+), 6 deletions(-)
+ arch/arm/boot/dts/r8a7790-lager.dts | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index ffeff98..af30c24 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1149,16 +1149,17 @@
- 		mstp8_clks: mstp8_clks@e6150990 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
--			clocks = <&zg_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>, <&p_clk>,
--				 <&zs_clk>, <&zs_clk>;
-+			clocks = <&hp_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>,
-+			         <&zg_clk>, <&p_clk>, <&zs_clk>, <&zs_clk>;
- 			#clock-cells = <1>;
- 			clock-indices = <
--				R8A7790_CLK_VIN3 R8A7790_CLK_VIN2 R8A7790_CLK_VIN1
--				R8A7790_CLK_VIN0 R8A7790_CLK_ETHER R8A7790_CLK_SATA1
--				R8A7790_CLK_SATA0
-+				R8A7790_CLK_MLB R8A7790_CLK_VIN3 R8A7790_CLK_VIN2
-+				R8A7790_CLK_VIN1 R8A7790_CLK_VIN0 R8A7790_CLK_ETHER
-+				R8A7790_CLK_SATA1 R8A7790_CLK_SATA0
- 			>;
- 			clock-output-names -				"vin3", "vin2", "vin1", "vin0", "ether", "sata1", "sata0";
-+				"mlb", "vin3", "vin2", "vin1", "vin0", "ether",
-+				"sata1", "sata0";
- 		};
- 		mstp9_clks: mstp9_clks@e6150994 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-index c27b3b5..9194027 100644
---- a/include/dt-bindings/clock/r8a7790-clock.h
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -97,6 +97,7 @@
- #define R8A7790_CLK_LVDS0		26
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 636d53b..bc257e8 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -397,6 +397,8 @@
+ 		spi-max-frequency = <30000000>;
+ 		spi-tx-bus-width = <4>;
+ 		spi-rx-bus-width = <4>;
++		spi-cpha;
++		spi-cpol;
+ 		m25p,fast-read;
  
- /* MSTP8 */
-+#define R8A7790_CLK_MLB			2
- #define R8A7790_CLK_VIN3		8
- #define R8A7790_CLK_VIN2		9
- #define R8A7790_CLK_VIN1		10
+ 		partition@0 {
 -- 
 2.1.3
 
