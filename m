@@ -1,75 +1,39 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 15 Dec 2014 02:28:57 +0000
-Subject: [PATCH 7/7] mmc: remove TMIO_MMC_HAVE_CTL_DMA_REG flag
-Message-Id: <874msxve6d.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:47:06 +0000
+Subject: [PATCH 3/4] ARM: shmobile: r8a7779: No TWD setup in C for Multiplatform
+Message-Id: <1dc13eee3a5c60131657482aa88c997e5fa8b50c.1419810196.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87egs1ve96.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87egs1ve96.wl%kuninori.morimoto.gx@renesas.com>
+References: <cover.1419810196.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419810196.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>
-Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-tmio_mmc_host has .enable_dma callback now.
-We don't need TMIO_MMC_HAVE_CTL_DMA_REG anymore.
-Let's remove it
+Skip the TWD setup in C for r8a7779 Multiplatform.
+We should use DTS for the TWD device anyway.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |    5 -----
- drivers/mmc/host/tmio_mmc_dma.c   |    3 ---
- include/linux/mfd/tmio.h          |    5 -----
- 3 files changed, 13 deletions(-)
+ arch/arm/mach-shmobile/smp-r8a7779.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 9d65fae..e2c520e 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -299,11 +299,6 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	 */
- 	mmc_data->flags |= TMIO_MMC_SDIO_STATUS_QUIRK;
+diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
+index 3f761f8..9fc280e 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7779.c
++++ b/arch/arm/mach-shmobile/smp-r8a7779.c
+@@ -56,7 +56,7 @@ static struct rcar_sysc_ch *r8a7779_ch_cpu[4] = {
+ 	[3] = &r8a7779_ch_cpu3,
+ };
  
--	/*
--	 * All SDHI have DMA control register
--	 */
--	mmc_data->flags |= TMIO_MMC_HAVE_CTL_DMA_REG;
--
- 	if (of_id && of_id->data) {
- 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
- 		mmc_data->flags |= of_data->tmio_flags;
-diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
-index be82257..c2226cc 100644
---- a/drivers/mmc/host/tmio_mmc_dma.c
-+++ b/drivers/mmc/host/tmio_mmc_dma.c
-@@ -28,9 +28,6 @@ void tmio_mmc_enable_dma(struct tmio_mmc_host *host, bool enable)
- 	if (!host->chan_tx || !host->chan_rx)
- 		return;
- 
--	if (host->pdata->flags & TMIO_MMC_HAVE_CTL_DMA_REG)
--		sd_ctrl_write16(host, CTL_DMA_ENABLE, enable ? 2 : 0);
--
- 	if (host->pdata->dma->enable)
- 		host->pdata->dma->enable(host, enable);
- }
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index 85bd65b..ff2eb93 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -97,11 +97,6 @@
- #define TMIO_MMC_SDIO_STATUS_QUIRK	(1 << 8)
- 
- /*
-- * Some controllers have DMA enable/disable register
-- */
--#define TMIO_MMC_HAVE_CTL_DMA_REG	(1 << 9)
--
--/*
-  * Some controllers allows to set SDx actual clock
-  */
- #define TMIO_MMC_CLK_ACTUAL		(1 << 10)
+-#ifdef CONFIG_HAVE_ARM_TWD
++#if defined(CONFIG_HAVE_ARM_TWD) && !defined(CONFIG_ARCH_MULTIPLATFORM)
+ static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, R8A7779_SCU_BASE + 0x600, 29);
+ void __init r8a7779_register_twd(void)
+ {
 -- 
-1.7.9.5
+2.1.3
 
