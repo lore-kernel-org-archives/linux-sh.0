@@ -1,70 +1,40 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 15 Dec 2014 18:37:18 +0000
-Subject: Re: [PATCH] iommu/ipmmu-vmsa: change IOMMU_EXEC to IOMMU_NOEXEC
-Message-Id: <4684279.HqCnjf9iNv@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:54 +0000
+Subject: [PATCH 23/30] ARM: shmobile: ape6evm: fix compatible string for Ethernet controller
+Message-Id: <6cdaa63f9e2b3ea0ac57a71a43f96cf626500d35.1419812186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418518503-20250-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <CAMuHMdW9s+VKqz=TWV0H+cqNGY8amZsHAwHHSvM9q033sh-j3Q@mail.gmail.com>
-In-Reply-To: <CAMuHMdW9s+VKqz=TWV0H+cqNGY8amZsHAwHHSvM9q033sh-j3Q@mail.gmail.com>
+References: <cover.1419812185.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-On Monday 15 December 2014 11:45:27 Geert Uytterhoeven wrote:
-> On Sun, Dec 14, 2014 at 1:55 AM, Laurent Pinchart wrote:
-> > The IOMMU_EXEC flag has been renamed to IOMMU_NOEXEC by commit
-> 
-> ... inverted and replaced by ...
-> 
-> At first I hadn't noticed this, and was wondering about the seemingly
-> unrelated change in the first hunk.
+It's a 9220, not a 9118.
 
-Good point. I'll submit a v2.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> > a720b41c41f5a7e4 ("iommu/arm-smmu: change IOMMU_EXEC to IOMMU_NOEXEC").
-> > Update the driver accordingly.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> > 
-> >  drivers/iommu/ipmmu-vmsa.c | 6 +++---
-> >  1 file changed, 3 insertions(+), 3 deletions(-)
-> > 
-> > This fixes a build breakage in Linus' master branch introduce by the
-> > commit mentioned above.
-> > 
-> > diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
-> > index e5ed0216929f..7a1bcf6627b6 100644
-> > --- a/drivers/iommu/ipmmu-vmsa.c
-> > +++ b/drivers/iommu/ipmmu-vmsa.c
-> > @@ -558,7 +558,7 @@ static pmd_t *ipmmu_alloc_pmd(struct ipmmu_vmsa_device
-> > *mmu, pgd_t *pgd,
-> >  static u64 ipmmu_page_prot(unsigned int prot, u64 type)
-> >  {
-> > -       u64 pgprot = ARM_VMSA_PTE_XN | ARM_VMSA_PTE_nG | ARM_VMSA_PTE_AF
-> > +       u64 pgprot = ARM_VMSA_PTE_nG | ARM_VMSA_PTE_AF
-> >                    | ARM_VMSA_PTE_SH_IS | ARM_VMSA_PTE_AP_UNPRIV
-> >                    | ARM_VMSA_PTE_NS | type;
-> > @@ -568,8 +568,8 @@ static u64 ipmmu_page_prot(unsigned int prot, u64
-> > type)
-> >         if (prot & IOMMU_CACHE)
-> >                 pgprot |= IMMAIR_ATTR_IDX_WBRWA <<
-> >                 ARM_VMSA_PTE_ATTRINDX_SHIFT;
-> > -       if (prot & IOMMU_EXEC)
-> > -               pgprot &= ~ARM_VMSA_PTE_XN;
-> > +       if (prot & IOMMU_NOEXEC)
-> > +               pgprot |= ARM_VMSA_PTE_XN;
-> >         else if (!(prot & (IOMMU_READ | IOMMU_WRITE)))
-> >                 /* If no access create a faulting entry to avoid TLB
-> >                 fills. */
-> >                 pgprot &= ~ARM_VMSA_PTE_PAGE;
-
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+index ce085fa..baca8f8 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+@@ -43,7 +43,7 @@
+ 		#size-cells = <1>;
+ 
+ 		ethernet@8000000 {
+-			compatible = "smsc,lan9118", "smsc,lan9115";
++			compatible = "smsc,lan9220", "smsc,lan9115";
+ 			reg = <0x08000000 0x1000>;
+ 			interrupt-parent = <&irqc1>;
+ 			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
 -- 
-Regards,
-
-Laurent Pinchart
+2.1.3
 
