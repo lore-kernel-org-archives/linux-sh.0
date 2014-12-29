@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 29 Dec 2014 01:43:45 +0000
-Subject: [PATCH 14/30] ARM: shmobile: r8a7794: Add SYS-DMAC clocks to device tree
-Message-Id: <be16cd385c08dce7efa406704b5aa420ef6d1992.1419812186.git.horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:42 +0000
+Subject: [PATCH 11/30] ARM: shmobile: r8a7794: Add USBDMAC[01] clocks to device tree
+Message-Id: <22a9b44fc17e83417fa890123a33164ea37fc10c.1419812186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1419812185.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
@@ -10,55 +10,51 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Hiroyuki Yokoyama <hiroyuki.yokoyama.vx@renesas.com>
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-Signed-off-by: Hiroyuki Yokoyama <hiroyuki.yokoyama.vx@renesas.com>
-[horms: resolved conflicts]
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+[horms: merged per-clock patches]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7794.dtsi            | 7 +++++--
+ arch/arm/boot/dts/r8a7794.dtsi            | 7 ++++---
  include/dt-bindings/clock/r8a7794-clock.h | 2 ++
- 2 files changed, 7 insertions(+), 2 deletions(-)
+ 2 files changed, 6 insertions(+), 3 deletions(-)
 
 diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 13e4a8d..6d95638 100644
+index e537654..13e4a8d 100644
 --- a/arch/arm/boot/dts/r8a7794.dtsi
 +++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -479,16 +479,19 @@
- 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150138 0 4>, <0 0xe6150040 0 4>;
- 			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
--				 <&mp_clk>, <&mp_clk>, <&mp_clk>;
-+				 <&mp_clk>, <&mp_clk>, <&mp_clk>,
-+				 <&zs_clk>, <&zs_clk>;
- 			#clock-cells = <1>;
- 			clock-indices = <
- 				R8A7794_CLK_SCIFA2 R8A7794_CLK_SCIFA1 R8A7794_CLK_SCIFA0
- 				R8A7794_CLK_MSIOF2 R8A7794_CLK_SCIFB0 R8A7794_CLK_SCIFB1
- 				R8A7794_CLK_MSIOF1 R8A7794_CLK_SCIFB2
-+				R8A7794_CLK_SYS_DMAC1 R8A7794_CLK_SYS_DMAC0
- 			>;
- 			clock-output-names  				"scifa2", "scifa1", "scifa0", "msiof2", "scifb0",
--				"scifb1", "msiof1", "scifb2";
-+				"scifb1", "msiof1", "scifb2",
-+				"sys-dmac1", "sys-dmac0";
- 		};
+@@ -493,13 +493,14 @@
  		mstp3_clks: mstp3_clks@e615013c {
  			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+-			clocks = <&rclk_clk>;
++			clocks = <&rclk_clk>, <&hp_clk>, <&hp_clk>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
+-				R8A7794_CLK_CMT1
++				R8A7794_CLK_CMT1 R8A7794_CLK_USBDMAC0
++				R8A7794_CLK_USBDMAC1
+ 			>;
+ 			clock-output-names -				"cmt1";
++				"cmt1", "usbdmac0", "usbdmac1";
+ 		};
+ 		mstp7_clks: mstp7_clks@e615014c {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
 diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
-index 52492d8..c0bd14a5 100644
+index 94e2bbf..52492d8 100644
 --- a/include/dt-bindings/clock/r8a7794-clock.h
 +++ b/include/dt-bindings/clock/r8a7794-clock.h
-@@ -48,6 +48,8 @@
- #define R8A7794_CLK_SCIFB1		7
- #define R8A7794_CLK_MSIOF1		8
- #define R8A7794_CLK_SCIFB2		16
-+#define R8A7794_CLK_SYS_DMAC1		18
-+#define R8A7794_CLK_SYS_DMAC0		19
+@@ -51,6 +51,8 @@
  
  /* MSTP3 */
  #define R8A7794_CLK_CMT1		29
++#define R8A7794_CLK_USBDMAC0		30
++#define R8A7794_CLK_USBDMAC1		31
+ 
+ /* MSTP5 */
+ #define R8A7794_CLK_THERMAL		22
 -- 
 2.1.3
 
