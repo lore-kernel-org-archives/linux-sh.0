@@ -1,41 +1,96 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 18 Dec 2014 02:26:10 +0000
-Subject: [PATCH 4/4] ARM: shmobile: sh73a0: kzm9g: Specify the ak8975 interrupt
-Message-Id: <1418869570-13529-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:19 +0000
+Subject: [PATCH 2/5] ARM: shmobile: defconfig: cleanup by savedefconfig
+Message-Id: <ff550a37cda1f8ef9f383b456a9403c9e636fc9e.1419808942.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1419808942.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419808942.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Specify the device interrupt to avoid polling for end of conversion.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-While at it rename the DT node to compass@c to describe the device's
-function instead of its model.
+Current shmobile_defconfig is not created from savedefconfig.
+Therefore, next defconfig patch will be unreadable. this patch
+tidyup this issue by below command
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+ > make shmobile_defconfig
+ > make savedefconfig
+ > cp defconfig ${LINUX}/arch/arm/config/shmobile_defconfig
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+[horms: Resolved conflicts; in particular leaving CONFIG_CPUFREQ_DT enabled]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g.dts | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+ arch/arm/configs/shmobile_defconfig | 25 +++++++++----------------
+ 1 file changed, 9 insertions(+), 16 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-index de39c92287da..bf2f4edd96ea 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-@@ -192,10 +192,11 @@
- &i2c0 {
- 	status = "okay";
- 
--	ak8975@c {
-+	compass@c {
- 		compatible = "asahi-kasei,ak8975";
- 		reg = <0x0c>;
--		// FIXME gpios = <...>;	// irq_pin(28), /* IRQ28 */
-+		interrupt-parent = <&irqpin3>;
-+		interrupts = <4 IRQ_TYPE_EDGE_FALLING>;
- 	};
- 
- 	ak4648: ak4648@12 {
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 3df6ca0..ad52868 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -19,7 +19,6 @@ CONFIG_ARCH_R8A7791=y
+ CONFIG_ARCH_R8A7794=y
+ CONFIG_MACH_LAGER=y
+ CONFIG_MACH_MARZEN=y
+-# CONFIG_SWP_EMULATE is not set
+ CONFIG_CPU_BPREDICT_DISABLE=y
+ CONFIG_PL310_ERRATA_588369=y
+ CONFIG_ARM_ERRATA_754322=y
+@@ -36,6 +35,13 @@ CONFIG_ZBOOT_ROM_TEXT=0x0
+ CONFIG_ZBOOT_ROM_BSS=0x0
+ CONFIG_ARM_APPENDED_DTB=y
+ CONFIG_KEXEC=y
++CONFIG_CPU_FREQ=y
++CONFIG_CPU_FREQ_STAT_DETAILS=y
++CONFIG_CPU_FREQ_GOV_POWERSAVE=y
++CONFIG_CPU_FREQ_GOV_USERSPACE=y
++CONFIG_CPU_FREQ_GOV_ONDEMAND=y
++CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y
++CONFIG_CPUFREQ_DT=y
+ CONFIG_VFP=y
+ CONFIG_NEON=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+@@ -98,9 +104,10 @@ CONFIG_GPIO_EM=y
+ CONFIG_GPIO_RCAR=y
+ # CONFIG_HWMON is not set
+ CONFIG_THERMAL=y
++CONFIG_CPU_THERMAL=y
+ CONFIG_RCAR_THERMAL=y
+ CONFIG_REGULATOR=y
+-CONFIG_REGULATOR_FIXED_VOLTAGE=y
++CONFIG_REGULATOR_DA9210=y
+ CONFIG_REGULATOR_GPIO=y
+ CONFIG_MEDIA_SUPPORT=y
+ CONFIG_MEDIA_CAMERA_SUPPORT=y
+@@ -154,7 +161,6 @@ CONFIG_PWM_RENESAS_TPU=y
+ CONFIG_MSDOS_FS=y
+ CONFIG_VFAT_FS=y
+ CONFIG_TMPFS=y
+-CONFIG_CONFIGFS_FS=y
+ # CONFIG_MISC_FILESYSTEMS is not set
+ CONFIG_NFS_FS=y
+ CONFIG_NFS_V3_ACL=y
+@@ -166,16 +172,3 @@ CONFIG_NLS_ISO8859_1=y
+ # CONFIG_ENABLE_WARN_DEPRECATED is not set
+ # CONFIG_ENABLE_MUST_CHECK is not set
+ # CONFIG_ARM_UNWIND is not set
+-CONFIG_CPU_FREQ=y
+-CONFIG_CPU_FREQ_GOV_COMMON=y
+-CONFIG_CPU_FREQ_STAT=y
+-CONFIG_CPU_FREQ_STAT_DETAILS=y
+-CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE=y
+-CONFIG_CPU_FREQ_GOV_PERFORMANCE=y
+-CONFIG_CPU_FREQ_GOV_POWERSAVE=y
+-CONFIG_CPU_FREQ_GOV_USERSPACE=y
+-CONFIG_CPU_FREQ_GOV_ONDEMAND=y
+-CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y
+-CONFIG_CPU_THERMAL=y
+-CONFIG_CPUFREQ_DT=y
+-CONFIG_REGULATOR_DA9210=y
 -- 
-2.0.4
+2.1.3
 
