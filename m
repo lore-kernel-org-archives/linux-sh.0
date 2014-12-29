@@ -1,64 +1,63 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 16 Dec 2014 11:54:50 +0000
-Subject: Re: [PATCH 10/10] ARM: shmobile: r8a7791: Add IPMMU DT nodes
-Message-Id: <CANqRtoT6uBZAThYsKH0pmpd2zCzi5k0AheCDOC8Br27czSx-cw@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:38 +0000
+Subject: [PATCH 07/30] ARM: shmobile: r8a7794: Add USB clocks to device tree
+Message-Id: <c7bab9f929e5176169de2cee529ec203ca7f1584.1419812185.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418602429-11276-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-	<1521122.WC5DkGVrBt@avalon>
-	<CANqRtoSYX10aaWu0r9GOPe+EvO2NkS4UJdLbST-aoHrv4XjG4A@mail.gmail.com>
-	<13017667.c6lii1vn0L@avalon>
-In-Reply-To: <13017667.c6lii1vn0L@avalon>
+References: <cover.1419812185.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, iommu@lists.linux-foundation.org, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Laurent,
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-On Tue, Dec 16, 2014 at 8:16 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> Hi Magnus,
->
-> On Tuesday 16 December 2014 07:44:32 Magnus Damm wrote:
->> On Tue, Dec 16, 2014 at 3:44 AM, Laurent Pinchart wrote:
->> > On Monday 15 December 2014 14:07:52 Geert Uytterhoeven wrote:
->> >> On Mon, Dec 15, 2014 at 1:13 AM, Laurent Pinchart wrote:
->> >> > Add the seven IPMMU instances found in the r8a7791 to DT with a
->> >> > disabled status.
->> >> >
->> >> > Signed-off-by: Laurent Pinchart
->> >> > <laurent.pinchart+renesas@ideasonboard.com>
->> >>
->> >> The addresses and interrupt numbers look OK to me.
->> >> However, my comment about the "0x800" offset is still valid.
->> >> Shouldn't we have two register blocks, and let the driver use only the
->> >> second one?
->> >>
->> >> If you ignore, feel free to add my
->> >> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
->> >
->> > I don't want to ignore your comment, but I don't know what to do here :-/
->> > The datasheet lacks detailed information about secure vs. non-secure mode
->> > and how the two register sets are supposed to interoperate and be handled
->> > by the operating system.
->>
->> I don't know about that either.
->>
->> But how about differences within R-Car Gen2 series so far? If there
->> are known differences then perhaps we should use part number in the
->> compatible string?
->
-> I haven't noticed differences between H2 and M2. V2 and E2 are extended with
-> IOMMU performance monitoring registers, so a specific compatible string is
-> needed.
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+[horms: resolved conflicts]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a7794.dtsi            | 5 ++++-
+ include/dt-bindings/clock/r8a7794-clock.h | 2 ++
+ 2 files changed, 6 insertions(+), 1 deletion(-)
 
-Ok!
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 1801bb4..7fd40f3 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -504,16 +504,19 @@
+ 		mstp7_clks: mstp7_clks@e615014c {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
+-			clocks = <&zs_clk>, <&p_clk>, <&p_clk>, <&zs_clk>,
++			clocks = <&mp_clk>, <&mp_clk>,
++				 <&zs_clk>, <&p_clk>, <&p_clk>, <&zs_clk>,
+ 				 <&zs_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
++				R8A7794_CLK_EHCI R8A7794_CLK_HSUSB
+ 				R8A7794_CLK_HSCIF2 R8A7794_CLK_SCIF5
+ 				R8A7794_CLK_SCIF4 R8A7794_CLK_HSCIF1 R8A7794_CLK_HSCIF0
+ 				R8A7794_CLK_SCIF3 R8A7794_CLK_SCIF2 R8A7794_CLK_SCIF1
+ 				R8A7794_CLK_SCIF0
+ 			>;
+ 			clock-output-names +				"ehci", "hsusb",
+ 				"hscif2", "scif5", "scif4", "hscif1", "hscif0",
+ 				"scif3", "scif2", "scif1", "scif0";
+ 		};
+diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
+index aa9c286..94e2bbf 100644
+--- a/include/dt-bindings/clock/r8a7794-clock.h
++++ b/include/dt-bindings/clock/r8a7794-clock.h
+@@ -57,6 +57,8 @@
+ #define R8A7794_CLK_PWM			23
+ 
+ /* MSTP7 */
++#define R8A7794_CLK_EHCI		3
++#define R8A7794_CLK_HSUSB		4
+ #define R8A7794_CLK_HSCIF2		13
+ #define R8A7794_CLK_SCIF5		14
+ #define R8A7794_CLK_SCIF4		15
+-- 
+2.1.3
 
-> "renesas,ipmmu-vmsa" should be the default fallback compatible string. I was
-> thinking about playing with the newer SoCs first to see how the IOMMU react
-> and then most likely add SoC-specific compatible strings.
-
-Sounds good, thanks!
-
-/ magnus
