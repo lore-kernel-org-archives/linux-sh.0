@@ -1,82 +1,57 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Mon, 08 Dec 2014 12:16:19 +0000
-Subject: Re: [PATCH v2] sh_eth: Optimization for RX excess judgement
-Message-Id: <CAH1o70LYFfU6X1+01hfnmzoyNKEGTCNFrKbVzGPwPd7PJQ4o1w@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:47 +0000
+Subject: [PATCH 16/30] ARM: shmobile: r8a7794: Add QSPI clock to device tree
+Message-Id: <3281480b70ceb9889b71f7b8a7bf54db3c05d40e.1419812186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418035701-3871-1-git-send-email-ykaneko0929@gmail.com>
-	<54858FCD.3080206@cogentembedded.com>
-In-Reply-To: <54858FCD.3080206@cogentembedded.com>
+References: <cover.1419812185.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: netdev@vger.kernel.org, "David S. Miller" <davem@davemloft.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hello Sergei,
+From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
 
-2014-12-08 20:47 GMT+09:00 Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>:
-> Hello.
->
-> On 12/8/2014 1:48 PM, Yoshihiro Kaneko wrote:
->
->> From: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
->
->
->> Both of 'boguscnt' and 'quota' have nearly meaning as the condition of
->> the reception loop.
->> In order to cut down redundant processing, this patch changes excess
->> judgement.
->
->
->> Signed-off-by: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
->> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->> ---
->
->
->> This patch is based on net-next tree.
->
->
->> v2 [Yoshihiro Kaneko]
->> * re-spin for net-next.
->> * remove unneeded check of "quota".
->
->
->    This is not a complete list. :-/
+Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+[horms: omitted device node and alias; only add clock]
+[horms: use clock-indicies instead of renesas,clock-indicies]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a7794.dtsi            | 8 ++++++++
+ include/dt-bindings/clock/r8a7794-clock.h | 1 +
+ 2 files changed, 9 insertions(+)
 
-Sorry, I'll update on the next time.
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 6d95638..068ca09 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -535,6 +535,14 @@
+ 			clock-output-names  				"vin1", "vin0", "ether";
+ 		};
++		mstp9_clks: mstp9_clks@e6150994 {
++			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
++			clocks = <&cpg_clocks R8A7794_CLK_QSPI>;
++			#clock-cells = <1>;
++			clock-indices = <R8A7794_CLK_QSPI_MOD>;
++			clock-output-names = "qspi_mod";
++		};
+ 		mstp11_clks: mstp11_clks@e615099c {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615099c 0 4>, <0 0xe61509ac 0 4>;
+diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
+index c0bd14a5..fba89a4 100644
+--- a/include/dt-bindings/clock/r8a7794-clock.h
++++ b/include/dt-bindings/clock/r8a7794-clock.h
+@@ -86,6 +86,7 @@
+ #define R8A7794_CLK_GPIO2		10
+ #define R8A7794_CLK_GPIO1		11
+ #define R8A7794_CLK_GPIO0		12
++#define R8A7794_CLK_QSPI_MOD		17
+ 
+ /* MSTP11 */
+ #define R8A7794_CLK_SCIFA3		6
+-- 
+2.1.3
 
->
->>   drivers/net/ethernet/renesas/sh_eth.c | 10 +++++-----
->>   1 file changed, 5 insertions(+), 5 deletions(-)
->
->
->> diff --git a/drivers/net/ethernet/renesas/sh_eth.c
->> b/drivers/net/ethernet/renesas/sh_eth.c
->> index dbe8606..266c9b2 100644
->> --- a/drivers/net/ethernet/renesas/sh_eth.c
->> +++ b/drivers/net/ethernet/renesas/sh_eth.c
->
-> [...]
->>
->> @@ -1501,6 +1499,8 @@ static int sh_eth_rx(struct net_device *ndev, u32
->> intr_status, int *quota)
->>                 sh_eth_write(ndev, EDRRR_R, EDRRR);
->>         }
->>
->> +       *quota -= limit - boguscnt + 1;
->> +
->
->
->    Sorry for the wrong previous suggestion, it clearly should have been -1,
-> not +1. :-<
-
-Oh, I agree.
-
-Thanks,
-Kaneko
-
->
-> [...]
->
-> WBR, Sergei
->
