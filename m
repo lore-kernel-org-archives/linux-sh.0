@@ -1,26 +1,29 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 09 Dec 2014 11:25:01 +0000
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:37 +0000
 Subject: [PATCH 3/7] ARM: shmobile: lager dts: Replace status value "ok" by "okay"
-Message-Id: <1418124305-7445-3-git-send-email-geert+renesas@glider.be>
+Message-Id: <fd7a8cbf0eec4a4f4191a22c879e2f8258257ca6.1419809027.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418124305-7445-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1418124305-7445-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1419809027.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419809027.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
+
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
 While the DT parsing code recognizes "ok" as a valid value for the
 "status" property, ePAPR v1.1 doesn't mention it in the list of valid
 values.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
  arch/arm/boot/dts/r8a7790-lager.dts | 12 ++++++------
  1 file changed, 6 insertions(+), 6 deletions(-)
 
 diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 4118030f366dfa7d..59365bccc9450c6c 100644
+index 636d53b..56e66bb 100644
 --- a/arch/arm/boot/dts/r8a7790-lager.dts
 +++ b/arch/arm/boot/dts/r8a7790-lager.dts
 @@ -355,7 +355,7 @@
@@ -72,5 +75,5 @@ index 4118030f366dfa7d..59365bccc9450c6c 100644
  	port {
  		#address-cells = <1>;
 -- 
-1.9.1
+2.1.3
 
