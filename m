@@ -1,32 +1,48 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Tue, 02 Dec 2014 08:37:18 +0000
-Subject: [PATCH 4/5] ARM: shmobile: r8a73a4: Remove r8a73a4-ape6evm-reference.dtb from ARCH_SHMOBILE_LEGACY
-Message-Id: <1417509439-31739-5-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:46:46 +0000
+Subject: [PATCH 4/6] ARM: shmobile: lager: Rename SCIFA[01] serial ports to ttySC[01]
+Message-Id: <78c11ec2e0c63262bae78c99872d4df81fb6d1e6.1419809774.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1419809774.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419809774.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-No longer needed thanks to multiplatform support.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+There's no reason to name the only two available serial ports on the
+board ttySC6 and ttySC7 (apart from confusing userspace, which we should
+try to avoid).
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/Makefile | 1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/boot/dts/r8a7790-lager.dts | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index bfcf6c2..d8ab74e 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -378,7 +378,6 @@ dtb-$(CONFIG_ARCH_S5PV210) += s5pv210-aquila.dtb \
- 	s5pv210-torbreck.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += \
- 	r8a73a4-ape6evm.dtb \
--	r8a73a4-ape6evm-reference.dtb \
- 	r8a7740-armadillo800eva.dtb \
- 	r8a7778-bockw.dtb \
- 	r8a7778-bockw-reference.dtb \
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 636d53b..ec84319 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -47,12 +47,12 @@
+ 	compatible = "renesas,lager", "renesas,r8a7790";
+ 
+ 	aliases {
+-		serial6 = &scifa0;
+-		serial7 = &scifa1;
++		serial0 = &scifa0;
++		serial1 = &scifa1;
+ 	};
+ 
+ 	chosen {
+-		bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
++		bootargs = "console=ttySC0,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
+ 		stdout-path = &scifa0;
+ 	};
+ 
 -- 
-1.8.4.5
+2.1.3
 
