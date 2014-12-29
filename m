@@ -1,33 +1,50 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 01 Dec 2014 09:36:24 +0000
-Subject: Re: [PATCH V3 3/3] ARM: shmobile: Convert to genpd flags for PM clocks for R-mobile
-Message-Id: <CAMuHMdVntNxw+zciOQfayfJbMMV+AqOyZMqeB2FY=Q5eA=r0rw@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:47:05 +0000
+Subject: [PATCH 2/4] ARM: shmobile: Fix is_e2 warning
+Message-Id: <95abc9de7896bf65e67bf781d709ec453f1f5f84.1419810196.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1417163403-7070-1-git-send-email-ulf.hansson@linaro.org>
- <1417163403-7070-4-git-send-email-ulf.hansson@linaro.org>
-In-Reply-To: <1417163403-7070-4-git-send-email-ulf.hansson@linaro.org>
+References: <cover.1419810196.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419810196.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Nov 28, 2014 at 9:30 AM, Ulf Hansson <ulf.hansson@linaro.org> wrote:
-> Instead of using the dev_ops ->stop|start() callbacks for genpd, let's
-> convert to use genpd's flag field and set it to GENPD_PM_CLK.
->
-> Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Fix "is_e2" warning introduced by:
 
-(tested on r8a7740/armadillo-multiplatform and sh73a0/kzm9g-multiplatform).
+9ce3fa6 ARM: shmobile: rcar-gen2: Add CA7 arch_timer initialization for r8a7794
 
-Gr{oetje,eeting}s,
+Only triggers on kernel configurations that have ARCH_ARM_TIMER=n.
 
-                        Geert
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+index 3dd6edd..c35b91d 100644
+--- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+@@ -52,15 +52,13 @@ void __init rcar_gen2_timer_init(void)
+ {
+ #if defined(CONFIG_ARM_ARCH_TIMER) || defined(CONFIG_COMMON_CLK)
+ 	u32 mode = rcar_gen2_read_mode_pins();
+-	bool is_e2 = (bool)of_find_compatible_node(NULL, NULL,
+-		"renesas,r8a7794");
+ #endif
+ #ifdef CONFIG_ARM_ARCH_TIMER
+ 	void __iomem *base;
+ 	int extal_mhz = 0;
+ 	u32 freq;
+ 
+-	if (is_e2) {
++	if (of_machine_is_compatible("renesas,r8a7794")) {
+ 		freq = 260000000 / 8;	/* ZS / 8 */
+ 		/* CNTVOFF has to be initialized either from non-secure
+ 		 * Hypervisor mode or secure Monitor mode with SCR.NS=1.
+-- 
+2.1.3
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
