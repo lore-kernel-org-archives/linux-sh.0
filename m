@@ -1,26 +1,29 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 09 Dec 2014 11:25:03 +0000
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:39 +0000
 Subject: [PATCH 5/7] ARM: shmobile: koelsch dts: Replace status value "ok" by "okay"
-Message-Id: <1418124305-7445-5-git-send-email-geert+renesas@glider.be>
+Message-Id: <815446d624f692b197ec5dde00cf341196513e03.1419809027.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418124305-7445-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1418124305-7445-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1419809027.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419809027.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
+
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
 While the DT parsing code recognizes "ok" as a valid value for the
 "status" property, ePAPR v1.1 doesn't mention it in the list of valid
 values.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
  arch/arm/boot/dts/r8a7791-koelsch.dts | 6 +++---
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index a400c27a813f1a8b..18b8bff5d2e67421 100644
+index 990af16..e2faa62 100644
 --- a/arch/arm/boot/dts/r8a7791-koelsch.dts
 +++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
 @@ -366,7 +366,7 @@
@@ -41,7 +44,7 @@ index a400c27a813f1a8b..18b8bff5d2e67421 100644
  };
  
  &sata0 {
-@@ -570,7 +570,7 @@
+@@ -563,7 +563,7 @@
  
  /* composite video input */
  &vin1 {
@@ -51,5 +54,5 @@ index a400c27a813f1a8b..18b8bff5d2e67421 100644
  	pinctrl-names = "default";
  
 -- 
-1.9.1
+2.1.3
 
