@@ -1,79 +1,78 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 30 Dec 2014 20:21:45 +0000
-Subject: [PATCH] ARM: shmobile: r8a7790: add ADSP clocks
-Message-Id: <1909663.BCLINDXhVH@wasted.cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:46:47 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Lager Board Removal for v3.20
+Message-Id: <cover.1419809774.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1365668326-22518-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1365668326-22518-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add the ADSP clocks to the CPG and MSTP5 nodes of the R8A7790 device tree.
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Based on the original patch by Konstantin Kozhevnikov
-<konstantin.kozhevnikov@cogentembedded.com>.
+Please consider these Renesas ARM based SoC lager board removal for v3.20.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+The serial port rename changes are not strictly related to lager board
+removal from a feature point of view. But the lager portion of this change
+depends on board removal to avoid a regression of booting using that code,
+And thus it seems to make sense to put here. And it seems best to put the
+koelsch and lager serial port rename changes in the same branch.
 
----
-The patch is against 'renesas-devel-20141229-v3.19-rc2' tag of Simon Horman's
-'renesas.git' repo plus the R8A7790 CAN patches posted earlier. It depends on
-the patch adding the ADSP clock support to the 'clk-rcar-gen2' driver in order
-to work.
+Likewise the removal of bootargs from lager DT depends on removing lager
+board code to avoid a regression when using it and thus I have included
+it in the same branch.
 
- arch/arm/boot/dts/r8a7790.dtsi            |   11 +++++++----
- include/dt-bindings/clock/r8a7790-clock.h |    2 ++
- 2 files changed, 9 insertions(+), 4 deletions(-)
 
-Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7790.dtsi
-@@ -885,7 +885,7 @@
- 			#clock-cells = <1>;
- 			clock-output-names = "main", "pll0", "pll1", "pll3",
- 					     "lb", "qspi", "sdh", "sd0", "sd1",
--					     "z", "rcan";
-+					     "z", "rcan", "adsp";
- 		};
- 
- 		/* Variable factor clocks */
-@@ -1159,13 +1159,16 @@
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
--			clocks = <&hp_clk>, <&hp_clk>, <&extal_clk>, <&p_clk>;
-+			clocks = <&hp_clk>, <&hp_clk>, <&cpg_clocks R8A7790_CLK_ADSP>,
-+				 <&extal_clk>, <&p_clk>;
- 			#clock-cells = <1>;
- 			clock-indices = <
- 				R8A7790_CLK_AUDIO_DMAC0 R8A7790_CLK_AUDIO_DMAC1
--				R8A7790_CLK_THERMAL R8A7790_CLK_PWM
-+				R8A7790_CLK_ADSP_MOD R8A7790_CLK_THERMAL
-+				R8A7790_CLK_PWM
- 			>;
--			clock-output-names = "audmac0", "audmac1", "thermal", "pwm";
-+			clock-output-names = "audmac0", "audmac1", "adsp_mod",
-+					     "thermal", "pwm";
- 		};
- 		mstp7_clks: mstp7_clks@e615014c {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-Index: renesas/include/dt-bindings/clock/r8a7790-clock.h
-=================================--- renesas.orig/include/dt-bindings/clock/r8a7790-clock.h
-+++ renesas/include/dt-bindings/clock/r8a7790-clock.h
-@@ -22,6 +22,7 @@
- #define R8A7790_CLK_SD1			8
- #define R8A7790_CLK_Z			9
- #define R8A7790_CLK_RCAN		10
-+#define R8A7790_CLK_ADSP		11
- 
- /* MSTP0 */
- #define R8A7790_CLK_MSIOF0		0
-@@ -81,6 +82,7 @@
- /* MSTP5 */
- #define R8A7790_CLK_AUDIO_DMAC1		1
- #define R8A7790_CLK_AUDIO_DMAC0		2
-+#define R8A7790_CLK_ADSP_MOD		6
- #define R8A7790_CLK_THERMAL		22
- #define R8A7790_CLK_PWM			23
- 
+The following changes since commit 97bf6af1f928216fd6c5a66e8a57bfa95a659672:
 
+  Linux 3.19-rc1 (2014-12-20 17:08:50 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-lager-board-removal-for-v3.20
+
+for you to fetch changes up to 569dd56c9971c699472d3b270e988baf7f6de8c9:
+
+  ARM: shmobile: lager dts: Drop console= bootargs parameter (2014-12-21 17:03:53 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC Lager Board Removal for v3.20
+
+* Remove legacy r8a7790 SoC and its Lager board code
+* Update serial port names on koelsch and lager boards
+* Remove console bootargs parameter from lager DT
+
+----------------------------------------------------------------
+Geert Uytterhoeven (1):
+      ARM: shmobile: lager dts: Drop console= bootargs parameter
+
+Laurent Pinchart (3):
+      ARM: shmobile: r8a7790: Remove legacy code
+      ARM: shmobile: lager: Rename SCIFA[01] serial ports to ttySC[01]
+      ARM: shmobile: koelsch: Rename SCIF[01] serial ports to ttySC[01]
+
+Magnus Damm (2):
+      ARM: shmobile: lager-reference: DTS-only board support
+      ARM: shmobile: lager: Remove legacy board support
+
+ MAINTAINERS                                    |   1 -
+ arch/arm/boot/dts/Makefile                     |   1 -
+ arch/arm/boot/dts/r8a7790-lager.dts            |   6 +-
+ arch/arm/boot/dts/r8a7791-koelsch.dts          |   4 +-
+ arch/arm/configs/lager_defconfig               | 150 -----
+ arch/arm/configs/shmobile_defconfig            |   1 -
+ arch/arm/mach-shmobile/Kconfig                 |  20 -
+ arch/arm/mach-shmobile/Makefile                |   3 -
+ arch/arm/mach-shmobile/Makefile.boot           |   1 -
+ arch/arm/mach-shmobile/board-lager-reference.c |  39 --
+ arch/arm/mach-shmobile/board-lager.c           | 827 -------------------------
+ arch/arm/mach-shmobile/clock-r8a7790.c         | 459 --------------
+ arch/arm/mach-shmobile/r8a7790.h               |  28 -
+ arch/arm/mach-shmobile/setup-r8a7790.c         | 284 +--------
+ 14 files changed, 6 insertions(+), 1818 deletions(-)
+ delete mode 100644 arch/arm/configs/lager_defconfig
+ delete mode 100644 arch/arm/mach-shmobile/board-lager-reference.c
+ delete mode 100644 arch/arm/mach-shmobile/board-lager.c
+ delete mode 100644 arch/arm/mach-shmobile/clock-r8a7790.c
