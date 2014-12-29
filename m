@@ -1,91 +1,64 @@
-From: Viresh Kumar <viresh.kumar@linaro.org>
-Date: Fri, 05 Dec 2014 05:29:59 +0000
-Subject: Re: [PATCH v3] cpufreq: dt: disable unsupported OPPs
-Message-Id: <CAKohpokjgNEhEzq6-Pkkn_nt0=TxgK4Q4oDqa7LdL62rqfwe-g@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:45 +0000
+Subject: [PATCH 14/30] ARM: shmobile: r8a7794: Add SYS-DMAC clocks to device tree
+Message-Id: <be16cd385c08dce7efa406704b5aa420ef6d1992.1419812186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414155955-13640-1-git-send-email-l.stach@pengutronix.de>
-In-Reply-To: <1414155955-13640-1-git-send-email-l.stach@pengutronix.de>
+References: <cover.1419812185.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Lucas Stach <l.stach@pengutronix.de>
-Cc: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Linux PM list <linux-pm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, Mark Brown <broonie@kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Lucas,
+From: Hiroyuki Yokoyama <hiroyuki.yokoyama.vx@renesas.com>
 
-On 24 October 2014 at 18:35, Lucas Stach <l.stach@pengutronix.de> wrote:
+Signed-off-by: Hiroyuki Yokoyama <hiroyuki.yokoyama.vx@renesas.com>
+[horms: resolved conflicts]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a7794.dtsi            | 7 +++++--
+ include/dt-bindings/clock/r8a7794-clock.h | 2 ++
+ 2 files changed, 7 insertions(+), 2 deletions(-)
 
-> diff --git a/drivers/cpufreq/cpufreq-dt.c b/drivers/cpufreq/cpufreq-dt.c
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 13e4a8d..6d95638 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -479,16 +479,19 @@
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150138 0 4>, <0 0xe6150040 0 4>;
+ 			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
+-				 <&mp_clk>, <&mp_clk>, <&mp_clk>;
++				 <&mp_clk>, <&mp_clk>, <&mp_clk>,
++				 <&zs_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
+ 				R8A7794_CLK_SCIFA2 R8A7794_CLK_SCIFA1 R8A7794_CLK_SCIFA0
+ 				R8A7794_CLK_MSIOF2 R8A7794_CLK_SCIFB0 R8A7794_CLK_SCIFB1
+ 				R8A7794_CLK_MSIOF1 R8A7794_CLK_SCIFB2
++				R8A7794_CLK_SYS_DMAC1 R8A7794_CLK_SYS_DMAC0
+ 			>;
+ 			clock-output-names  				"scifa2", "scifa1", "scifa0", "msiof2", "scifb0",
+-				"scifb1", "msiof1", "scifb2";
++				"scifb1", "msiof1", "scifb2",
++				"sys-dmac1", "sys-dmac0";
+ 		};
+ 		mstp3_clks: mstp3_clks@e615013c {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
+index 52492d8..c0bd14a5 100644
+--- a/include/dt-bindings/clock/r8a7794-clock.h
++++ b/include/dt-bindings/clock/r8a7794-clock.h
+@@ -48,6 +48,8 @@
+ #define R8A7794_CLK_SCIFB1		7
+ #define R8A7794_CLK_MSIOF1		8
+ #define R8A7794_CLK_SCIFB2		16
++#define R8A7794_CLK_SYS_DMAC1		18
++#define R8A7794_CLK_SYS_DMAC0		19
+ 
+ /* MSTP3 */
+ #define R8A7794_CLK_CMT1		29
+-- 
+2.1.3
 
->         if (!IS_ERR(cpu_reg)) {
-> -               struct dev_pm_opp *opp;
-> -               unsigned long min_uV, max_uV;
-> -               int i;
-> +               unsigned long opp_freq = 0;
->
->                 /*
-> -                * OPP is maintained in order of increasing frequency, and
-> -                * freq_table initialised from OPP is therefore sorted in the
-> -                * same order.
-> +                * Disable any OPPs where the connected regulator isn't able to
-> +                * provide the specified voltage and record minimum and maximum
-> +                * voltage levels.
->                  */
-> -               for (i = 0; freq_table[i].frequency != CPUFREQ_TABLE_END; i++)
-> -                       ;
-> -               rcu_read_lock();
-> -               opp = dev_pm_opp_find_freq_exact(cpu_dev,
-> -                               freq_table[0].frequency * 1000, true);
-> -               min_uV = dev_pm_opp_get_voltage(opp);
-> -               opp = dev_pm_opp_find_freq_exact(cpu_dev,
-> -                               freq_table[i-1].frequency * 1000, true);
-> -               max_uV = dev_pm_opp_get_voltage(opp);
-> -               rcu_read_unlock();
-> +               while (1) {
-> +                       struct dev_pm_opp *opp;
-> +                       unsigned long opp_uV, tol_uV;
-> +
-> +                       rcu_read_lock();
-> +                       opp = dev_pm_opp_find_freq_ceil(cpu_dev, &opp_freq);
-> +                       if (IS_ERR(opp)) {
-> +                               rcu_read_unlock();
-> +                               break;
-> +                       }
-> +                       opp_uV = dev_pm_opp_get_voltage(opp);
-> +                       rcu_read_unlock();
-> +
-> +                       tol_uV = opp_uV * priv->voltage_tolerance / 100;
-> +                       if (regulator_is_supported_voltage(cpu_reg, opp_uV,
-> +                                                          opp_uV + tol_uV)) {
-
-Sorry for opening an relatively old thread. Shouldn't we instead do this here:
-
-                       if (regulator_is_supported_voltage(cpu_reg,
-opp_uV - tol_uV,
-                                                          opp_uV + tol_uV)) {
-
-??
-
-Because the minimum voltage we will try to set is: min_uV - tol_uV (as we
-do it with help of: regulator_set_voltage_tol())..
-
-> +                               if (opp_uV < min_uV)
-> +                                       min_uV = opp_uV;
-> +                               if (opp_uV > max_uV)
-> +                                       max_uV = opp_uV;
-
-Also the min/max _uV we are using here to calculate latency *may* also
-include the tolerance voltage ? i.e. min_uV = min_uV - tol_uV and
-max_uV = max_uV + tol_volt ??
-
-> +                       } else {
-> +                               dev_pm_opp_disable(cpu_dev, opp_freq);
-> +                       }
-> +
-> +                       opp_freq++;
-> +               }
-> +
->                 ret = regulator_set_voltage_time(cpu_reg, min_uV, max_uV);
->                 if (ret > 0)
->                         transition_latency += ret * 1000;
->         }
