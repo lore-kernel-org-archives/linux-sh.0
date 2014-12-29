@@ -1,502 +1,873 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 22 Dec 2014 11:23:58 +0000
-Subject: sh_cmt: possible circular locking dependency detected
-Message-Id: <CAMuHMdUmstuuf7f6ppm+QP-ik3Bi4CUJQ195t2Lag7_2CAKoWQ@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:46:45 +0000
+Subject: [PATCH 3/6] ARM: shmobile: r8a7790: Remove legacy code
+Message-Id: <e042681894b62d60f3a8704999d7700ebcdb9117.1419809774.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1419809774.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419809774.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-With CONFIG_PROVE_LOCKING=y, I get the following on both armadillo and
-kzm9g:
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Freeing unused kernel memory: 160K (c0504000 - c052c000)
-sh-eth e9a00000.ethernet eth0: Link is Up - 100Mbps/Full - flow control rx/tx
-systemd-udevd[133]: starting version 215
-random: udevd urandom read with 73 bits of entropy available
-random: nonblocking pool is initialized
+All r8a7790 boards are now used with multiplatform kernels only. We can
+remove all the unused r8a7790 legacy device and clock registration code.
 
-===========================
-[ INFO: possible circular locking dependency detected ]
-3.19.0-rc1-armadillo-multiplatform-00258-g85f5ee22d89dad78 #401 Not tainted
--------------------------------------------------------
-ntpdate/797 is trying to acquire lock:
- (tk_core){----..}, at: [<c0058138>] __hrtimer_start_range_ns+0x64/0xf4
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/Kconfig         |   8 -
+ arch/arm/mach-shmobile/Makefile        |   1 -
+ arch/arm/mach-shmobile/clock-r8a7790.c | 459 ---------------------------------
+ arch/arm/mach-shmobile/r8a7790.h       |  28 --
+ arch/arm/mach-shmobile/setup-r8a7790.c | 284 +-------------------
+ 5 files changed, 1 insertion(+), 779 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/clock-r8a7790.c
 
-but task is already holding lock:
- (hrtimer_bases.lock){-.-...}, at: [<c00580fc>]
-__hrtimer_start_range_ns+0x28/0xf4
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index d4211cb..bb3d0750 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -128,14 +128,6 @@ config ARCH_R8A7779
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 
+-config ARCH_R8A7790
+-	bool "R-Car H2 (R8A77900)"
+-	select ARCH_RCAR_GEN2
+-	select ARCH_WANT_OPTIONAL_GPIOLIB
+-	select ARM_GIC
+-	select MIGHT_HAVE_PCI
+-	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
+-
+ comment "Renesas ARM SoCs Board Type"
+ 
+ config MACH_APE6EVM
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 3eefe7d..d53996e 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -27,7 +27,6 @@ obj-$(CONFIG_ARCH_R8A73A4)	+= clock-r8a73a4.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= clock-r8a7740.o
+ obj-$(CONFIG_ARCH_R8A7778)	+= clock-r8a7778.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= clock-r8a7779.o
+-obj-$(CONFIG_ARCH_R8A7790)	+= clock-r8a7790.o
+ endif
+ 
+ # CPU reset vector handling objects
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+deleted file mode 100644
+index f9bbc5f..0000000
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ /dev/null
+@@ -1,459 +0,0 @@
+-/*
+- * r8a7790 clock framework support
+- *
+- * Copyright (C) 2013  Renesas Solutions Corp.
+- * Copyright (C) 2013  Magnus Damm
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; version 2 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- */
+-#include <linux/init.h>
+-#include <linux/io.h>
+-#include <linux/kernel.h>
+-#include <linux/sh_clk.h>
+-#include <linux/clkdev.h>
+-
+-#include "clock.h"
+-#include "common.h"
+-#include "r8a7790.h"
+-#include "rcar-gen2.h"
+-
+-/*
+- *   MD		EXTAL		PLL0	PLL1	PLL3
+- * 14 13 19	(MHz)		*1	*1
+- *---------------------------------------------------
+- * 0  0  0	15 x 1		x172/2	x208/2	x106
+- * 0  0  1	15 x 1		x172/2	x208/2	x88
+- * 0  1  0	20 x 1		x130/2	x156/2	x80
+- * 0  1  1	20 x 1		x130/2	x156/2	x66
+- * 1  0  0	26 / 2		x200/2	x240/2	x122
+- * 1  0  1	26 / 2		x200/2	x240/2	x102
+- * 1  1  0	30 / 2		x172/2	x208/2	x106
+- * 1  1  1	30 / 2		x172/2	x208/2	x88
+- *
+- * *1 :	Table 7.6 indicates VCO ouput (PLLx = VCO/2)
+- *	see "p1 / 2" on R8A7790_CLOCK_ROOT() below
+- */
+-
+-#define CPG_BASE	0xe6150000
+-#define CPG_LEN		0x1000
+-
+-#define SMSTPCR1	0xe6150134
+-#define SMSTPCR2	0xe6150138
+-#define SMSTPCR3	0xe615013c
+-#define SMSTPCR5	0xe6150144
+-#define SMSTPCR7	0xe615014c
+-#define SMSTPCR8	0xe6150990
+-#define SMSTPCR9	0xe6150994
+-#define SMSTPCR10	0xe6150998
+-
+-#define MSTPSR1		IOMEM(0xe6150038)
+-#define MSTPSR2		IOMEM(0xe6150040)
+-#define MSTPSR3		IOMEM(0xe6150048)
+-#define MSTPSR5		IOMEM(0xe615003c)
+-#define MSTPSR7		IOMEM(0xe61501c4)
+-#define MSTPSR8		IOMEM(0xe61509a0)
+-#define MSTPSR9		IOMEM(0xe61509a4)
+-#define MSTPSR10	IOMEM(0xe61509a8)
+-
+-#define SDCKCR		0xE6150074
+-#define SD2CKCR		0xE6150078
+-#define SD3CKCR		0xE615026C
+-#define MMC0CKCR	0xE6150240
+-#define MMC1CKCR	0xE6150244
+-#define SSPCKCR		0xE6150248
+-#define SSPRSCKCR	0xE615024C
+-
+-static struct clk_mapping cpg_mapping = {
+-	.phys   = CPG_BASE,
+-	.len    = CPG_LEN,
+-};
+-
+-static struct clk extal_clk = {
+-	/* .rate will be updated on r8a7790_clock_init() */
+-	.mapping	= &cpg_mapping,
+-};
+-
+-static struct sh_clk_ops followparent_clk_ops = {
+-	.recalc	= followparent_recalc,
+-};
+-
+-static struct clk main_clk = {
+-	/* .parent will be set r8a7790_clock_init */
+-	.ops	= &followparent_clk_ops,
+-};
+-
+-static struct clk audio_clk_a = {
+-};
+-
+-static struct clk audio_clk_b = {
+-};
+-
+-static struct clk audio_clk_c = {
+-};
+-
+-/*
+- * clock ratio of these clock will be updated
+- * on r8a7790_clock_init()
+- */
+-SH_FIXED_RATIO_CLK_SET(pll1_clk,		main_clk,	1, 1);
+-SH_FIXED_RATIO_CLK_SET(pll3_clk,		main_clk,	1, 1);
+-SH_FIXED_RATIO_CLK_SET(lb_clk,			pll1_clk,	1, 1);
+-SH_FIXED_RATIO_CLK_SET(qspi_clk,		pll1_clk,	1, 1);
+-
+-/* fixed ratio clock */
+-SH_FIXED_RATIO_CLK_SET(extal_div2_clk,		extal_clk,	1, 2);
+-SH_FIXED_RATIO_CLK_SET(cp_clk,			extal_clk,	1, 2);
+-
+-SH_FIXED_RATIO_CLK_SET(pll1_div2_clk,		pll1_clk,	1, 2);
+-SH_FIXED_RATIO_CLK_SET(zg_clk,			pll1_clk,	1, 3);
+-SH_FIXED_RATIO_CLK_SET(zx_clk,			pll1_clk,	1, 3);
+-SH_FIXED_RATIO_CLK_SET(zs_clk,			pll1_clk,	1, 6);
+-SH_FIXED_RATIO_CLK_SET(hp_clk,			pll1_clk,	1, 12);
+-SH_FIXED_RATIO_CLK_SET(i_clk,			pll1_clk,	1, 2);
+-SH_FIXED_RATIO_CLK_SET(b_clk,			pll1_clk,	1, 12);
+-SH_FIXED_RATIO_CLK_SET(p_clk,			pll1_clk,	1, 24);
+-SH_FIXED_RATIO_CLK_SET(cl_clk,			pll1_clk,	1, 48);
+-SH_FIXED_RATIO_CLK_SET(m2_clk,			pll1_clk,	1, 8);
+-SH_FIXED_RATIO_CLK_SET(imp_clk,			pll1_clk,	1, 4);
+-SH_FIXED_RATIO_CLK_SET(rclk_clk,		pll1_clk,	1, (48 * 1024));
+-SH_FIXED_RATIO_CLK_SET(oscclk_clk,		pll1_clk,	1, (12 * 1024));
+-
+-SH_FIXED_RATIO_CLK_SET(zb3_clk,			pll3_clk,	1, 4);
+-SH_FIXED_RATIO_CLK_SET(zb3d2_clk,		pll3_clk,	1, 8);
+-SH_FIXED_RATIO_CLK_SET(ddr_clk,			pll3_clk,	1, 8);
+-SH_FIXED_RATIO_CLK_SET(mp_clk,			pll1_div2_clk,	1, 15);
+-
+-static struct clk *main_clks[] = {
+-	&audio_clk_a,
+-	&audio_clk_b,
+-	&audio_clk_c,
+-	&extal_clk,
+-	&extal_div2_clk,
+-	&main_clk,
+-	&pll1_clk,
+-	&pll1_div2_clk,
+-	&pll3_clk,
+-	&lb_clk,
+-	&qspi_clk,
+-	&zg_clk,
+-	&zx_clk,
+-	&zs_clk,
+-	&hp_clk,
+-	&i_clk,
+-	&b_clk,
+-	&p_clk,
+-	&cl_clk,
+-	&m2_clk,
+-	&imp_clk,
+-	&rclk_clk,
+-	&oscclk_clk,
+-	&zb3_clk,
+-	&zb3d2_clk,
+-	&ddr_clk,
+-	&mp_clk,
+-	&cp_clk,
+-};
+-
+-/* SDHI (DIV4) clock */
+-static int divisors[] = { 2, 3, 4, 6, 8, 12, 16, 18, 24, 0, 36, 48, 10 };
+-
+-static struct clk_div_mult_table div4_div_mult_table = {
+-	.divisors = divisors,
+-	.nr_divisors = ARRAY_SIZE(divisors),
+-};
+-
+-static struct clk_div4_table div4_table = {
+-	.div_mult_table = &div4_div_mult_table,
+-};
+-
+-enum {
+-	DIV4_SDH, DIV4_SD0, DIV4_SD1, DIV4_NR
+-};
+-
+-static struct clk div4_clks[DIV4_NR] = {
+-	[DIV4_SDH] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 8, 0x0dff, CLK_ENABLE_ON_INIT),
+-	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1df0, CLK_ENABLE_ON_INIT),
+-	[DIV4_SD1] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 0, 0x1df0, CLK_ENABLE_ON_INIT),
+-};
+-
+-/* DIV6 clocks */
+-enum {
+-	DIV6_SD2, DIV6_SD3,
+-	DIV6_MMC0, DIV6_MMC1,
+-	DIV6_SSP, DIV6_SSPRS,
+-	DIV6_NR
+-};
+-
+-static struct clk div6_clks[DIV6_NR] = {
+-	[DIV6_SD2]	= SH_CLK_DIV6(&pll1_div2_clk, SD2CKCR, 0),
+-	[DIV6_SD3]	= SH_CLK_DIV6(&pll1_div2_clk, SD3CKCR, 0),
+-	[DIV6_MMC0]	= SH_CLK_DIV6(&pll1_div2_clk, MMC0CKCR, 0),
+-	[DIV6_MMC1]	= SH_CLK_DIV6(&pll1_div2_clk, MMC1CKCR, 0),
+-	[DIV6_SSP]	= SH_CLK_DIV6(&pll1_div2_clk, SSPCKCR, 0),
+-	[DIV6_SSPRS]	= SH_CLK_DIV6(&pll1_div2_clk, SSPRSCKCR, 0),
+-};
+-
+-/* MSTP */
+-enum {
+-	MSTP1017, /* parent of SCU */
+-
+-	MSTP1031, MSTP1030,
+-	MSTP1029, MSTP1028, MSTP1027, MSTP1026, MSTP1025, MSTP1024, MSTP1023, MSTP1022,
+-	MSTP1015, MSTP1014, MSTP1013, MSTP1012, MSTP1011, MSTP1010,
+-	MSTP1009, MSTP1008, MSTP1007, MSTP1006, MSTP1005,
+-	MSTP931, MSTP930, MSTP929, MSTP928,
+-	MSTP917,
+-	MSTP815, MSTP814,
+-	MSTP813,
+-	MSTP811, MSTP810, MSTP809, MSTP808,
+-	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
+-	MSTP717, MSTP716,
+-	MSTP704, MSTP703,
+-	MSTP522,
+-	MSTP502, MSTP501,
+-	MSTP315, MSTP314, MSTP313, MSTP312, MSTP311, MSTP305, MSTP304,
+-	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,
+-	MSTP124,
+-	MSTP_NR
+-};
+-
+-static struct clk mstp_clks[MSTP_NR] = {
+-	[MSTP1031] = SH_CLK_MSTP32_STS(&mstp_clks[MSTP1017], SMSTPCR10, 31, MSTPSR10, 0), /* SCU0 */
+-	[MSTP1030] = SH_CLK_MSTP32_STS(&mstp_clks[MSTP1017], SMSTPCR10, 30, MSTPSR10, 0), /* SCU1 */
+-	[MSTP1029] = SH_CLK_MSTP32_STS(&mstp_clks[MSTP1017], SMSTPCR10, 29, MSTPSR10, 0), /* SCU2 */
+-	[MSTP1028] = SH_CLK_MSTP32_STS(&mstp_clks[MSTP1017], SMSTPCR10, 28, MSTPSR10, 0), /* SCU3 */
+-	[MSTP1027] = SH_CLK_MSTP32_STS(&mstp_clks[MSTP1017], SMSTPCR10, 27, MSTPSR10, 0), /* SCU4 */
+-	[MSTP1026] = SH_CLK_MSTP32_STS(&mstp_clks[MSTP1017], SMSTPCR10, 26, MSTPSR10, 0), /* SCU5 */
+-	[MSTP1025] = SH_CLK_MSTP32_STS(&mstp_clks[MSTP1017], SMSTPCR10, 25, MSTPSR10, 0), /* SCU6 */
+-	[MSTP1024] = SH_CLK_MSTP32_STS(&mstp_clks[MSTP1017], SMSTPCR10, 24, MSTPSR10, 0), /* SCU7 */
+-	[MSTP1023] = SH_CLK_MSTP32_STS(&mstp_clks[MSTP1017], SMSTPCR10, 23, MSTPSR10, 0), /* SCU8 */
+-	[MSTP1022] = SH_CLK_MSTP32_STS(&mstp_clks[MSTP1017], SMSTPCR10, 22, MSTPSR10, 0), /* SCU9 */
+-	[MSTP1017] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 17, MSTPSR10, 0), /* SCU */
+-	[MSTP1015] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 15, MSTPSR10, 0), /* SSI0 */
+-	[MSTP1014] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 14, MSTPSR10, 0), /* SSI1 */
+-	[MSTP1013] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 13, MSTPSR10, 0), /* SSI2 */
+-	[MSTP1012] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 12, MSTPSR10, 0), /* SSI3 */
+-	[MSTP1011] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 11, MSTPSR10, 0), /* SSI4 */
+-	[MSTP1010] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 10, MSTPSR10, 0), /* SSI5 */
+-	[MSTP1009] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 9, MSTPSR10, 0), /* SSI6 */
+-	[MSTP1008] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 8, MSTPSR10, 0), /* SSI7 */
+-	[MSTP1007] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 7, MSTPSR10, 0), /* SSI8 */
+-	[MSTP1006] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 6, MSTPSR10, 0), /* SSI9 */
+-	[MSTP1005] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 5, MSTPSR10, 0), /* SSI ALL */
+-	[MSTP931] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 31, MSTPSR9, 0), /* I2C0 */
+-	[MSTP930] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 30, MSTPSR9, 0), /* I2C1 */
+-	[MSTP929] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 29, MSTPSR9, 0), /* I2C2 */
+-	[MSTP928] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
+-	[MSTP917] = SH_CLK_MSTP32_STS(&qspi_clk, SMSTPCR9, 17, MSTPSR9, 0), /* QSPI */
+-	[MSTP815] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 15, MSTPSR8, 0), /* SATA0 */
+-	[MSTP814] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 14, MSTPSR8, 0), /* SATA1 */
+-	[MSTP813] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR8, 13, MSTPSR8, 0), /* Ether */
+-	[MSTP811] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8, 11, MSTPSR8, 0), /* VIN0 */
+-	[MSTP810] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8, 10, MSTPSR8, 0), /* VIN1 */
+-	[MSTP809] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8,  9, MSTPSR8, 0), /* VIN2 */
+-	[MSTP808] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8,  8, MSTPSR8, 0), /* VIN3 */
+-	[MSTP726] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 26, MSTPSR7, 0), /* LVDS0 */
+-	[MSTP725] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 25, MSTPSR7, 0), /* LVDS1 */
+-	[MSTP724] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 24, MSTPSR7, 0), /* DU0 */
+-	[MSTP723] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 23, MSTPSR7, 0), /* DU1 */
+-	[MSTP722] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 22, MSTPSR7, 0), /* DU2 */
+-	[MSTP721] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 21, MSTPSR7, 0), /* SCIF0 */
+-	[MSTP720] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 20, MSTPSR7, 0), /* SCIF1 */
+-	[MSTP717] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR7, 17, MSTPSR7, 0), /* HSCIF0 */
+-	[MSTP716] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR7, 16, MSTPSR7, 0), /* HSCIF1 */
+-	[MSTP704] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 4, MSTPSR7, 0), /* HSUSB */
+-	[MSTP703] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 3, MSTPSR7, 0), /* EHCI */
+-	[MSTP522] = SH_CLK_MSTP32_STS(&extal_clk, SMSTPCR5, 22, MSTPSR5, 0), /* Thermal */
+-	[MSTP502] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR5, 2, MSTPSR5, 0), /* Audio-DMAC low */
+-	[MSTP501] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR5, 1, MSTPSR5, 0), /* Audio-DMAC hi */
+-	[MSTP315] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_MMC0], SMSTPCR3, 15, MSTPSR3, 0), /* MMC0 */
+-	[MSTP314] = SH_CLK_MSTP32_STS(&div4_clks[DIV4_SD0], SMSTPCR3, 14, MSTPSR3, 0), /* SDHI0 */
+-	[MSTP313] = SH_CLK_MSTP32_STS(&div4_clks[DIV4_SD1], SMSTPCR3, 13, MSTPSR3, 0), /* SDHI1 */
+-	[MSTP312] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD2], SMSTPCR3, 12, MSTPSR3, 0), /* SDHI2 */
+-	[MSTP311] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD3], SMSTPCR3, 11, MSTPSR3, 0), /* SDHI3 */
+-	[MSTP305] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_MMC1], SMSTPCR3, 5, MSTPSR3, 0), /* MMC1 */
+-	[MSTP304] = SH_CLK_MSTP32_STS(&cp_clk, SMSTPCR3, 4, MSTPSR3, 0), /* TPU0 */
+-	[MSTP216] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 16, MSTPSR2, 0), /* SCIFB2 */
+-	[MSTP207] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 7, MSTPSR2, 0), /* SCIFB1 */
+-	[MSTP206] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 6, MSTPSR2, 0), /* SCIFB0 */
+-	[MSTP204] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 4, MSTPSR2, 0), /* SCIFA0 */
+-	[MSTP203] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 3, MSTPSR2, 0), /* SCIFA1 */
+-	[MSTP202] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 2, MSTPSR2, 0), /* SCIFA2 */
+-	[MSTP124] = SH_CLK_MSTP32_STS(&rclk_clk, SMSTPCR1, 24, MSTPSR1, 0), /* CMT0 */
+-};
+-
+-static struct clk_lookup lookups[] = {
+-
+-	/* main clocks */
+-	CLKDEV_CON_ID("extal",		&extal_clk),
+-	CLKDEV_CON_ID("extal_div2",	&extal_div2_clk),
+-	CLKDEV_CON_ID("main",		&main_clk),
+-	CLKDEV_CON_ID("pll1",		&pll1_clk),
+-	CLKDEV_CON_ID("pll1_div2",	&pll1_div2_clk),
+-	CLKDEV_CON_ID("pll3",		&pll3_clk),
+-	CLKDEV_CON_ID("zg",		&zg_clk),
+-	CLKDEV_CON_ID("zx",		&zx_clk),
+-	CLKDEV_CON_ID("zs",		&zs_clk),
+-	CLKDEV_CON_ID("hp",		&hp_clk),
+-	CLKDEV_CON_ID("i",		&i_clk),
+-	CLKDEV_CON_ID("b",		&b_clk),
+-	CLKDEV_CON_ID("lb",		&lb_clk),
+-	CLKDEV_CON_ID("p",		&p_clk),
+-	CLKDEV_CON_ID("cl",		&cl_clk),
+-	CLKDEV_CON_ID("m2",		&m2_clk),
+-	CLKDEV_CON_ID("imp",		&imp_clk),
+-	CLKDEV_CON_ID("rclk",		&rclk_clk),
+-	CLKDEV_CON_ID("oscclk",		&oscclk_clk),
+-	CLKDEV_CON_ID("zb3",		&zb3_clk),
+-	CLKDEV_CON_ID("zb3d2",		&zb3d2_clk),
+-	CLKDEV_CON_ID("ddr",		&ddr_clk),
+-	CLKDEV_CON_ID("mp",		&mp_clk),
+-	CLKDEV_CON_ID("qspi",		&qspi_clk),
+-	CLKDEV_CON_ID("cp",		&cp_clk),
+-
+-	/* DIV4 */
+-	CLKDEV_CON_ID("sdh",		&div4_clks[DIV4_SDH]),
+-
+-	/* DIV6 */
+-	CLKDEV_CON_ID("ssp",		&div6_clks[DIV6_SSP]),
+-	CLKDEV_CON_ID("ssprs",		&div6_clks[DIV6_SSPRS]),
+-
+-	/* MSTP */
+-	CLKDEV_DEV_ID("rcar_sound", &mstp_clks[MSTP1005]),
+-	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
+-	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
+-	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]),
+-	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP207]),
+-	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP216]),
+-	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP202]),
+-	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP721]),
+-	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
+-	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
+-	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
+-	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
+-	CLKDEV_DEV_ID("i2c-rcar_gen2.1", &mstp_clks[MSTP930]),
+-	CLKDEV_DEV_ID("i2c-rcar_gen2.2", &mstp_clks[MSTP929]),
+-	CLKDEV_DEV_ID("i2c-rcar_gen2.3", &mstp_clks[MSTP928]),
+-	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
+-	CLKDEV_DEV_ID("r8a7790-vin.0", &mstp_clks[MSTP811]),
+-	CLKDEV_DEV_ID("r8a7790-vin.1", &mstp_clks[MSTP810]),
+-	CLKDEV_DEV_ID("r8a7790-vin.2", &mstp_clks[MSTP809]),
+-	CLKDEV_DEV_ID("r8a7790-vin.3", &mstp_clks[MSTP808]),
+-	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+-	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP502]),
+-	CLKDEV_DEV_ID("sh-dma-engine.1", &mstp_clks[MSTP501]),
+-	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
+-	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
+-	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]),
+-	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP312]),
+-	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP311]),
+-	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
+-	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
+-	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
+-	CLKDEV_DEV_ID("pci-rcar-gen2.0", &mstp_clks[MSTP703]),
+-	CLKDEV_DEV_ID("pci-rcar-gen2.1", &mstp_clks[MSTP703]),
+-	CLKDEV_DEV_ID("pci-rcar-gen2.2", &mstp_clks[MSTP703]),
+-	CLKDEV_DEV_ID("sata-r8a7790.0", &mstp_clks[MSTP815]),
+-	CLKDEV_DEV_ID("sata-r8a7790.1", &mstp_clks[MSTP814]),
+-
+-	/* ICK */
+-	CLKDEV_ICK_ID("fck", "sh-cmt-48-gen2.0", &mstp_clks[MSTP124]),
+-	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
+-	CLKDEV_ICK_ID("lvds.0", "rcar-du-r8a7790", &mstp_clks[MSTP726]),
+-	CLKDEV_ICK_ID("lvds.1", "rcar-du-r8a7790", &mstp_clks[MSTP725]),
+-	CLKDEV_ICK_ID("du.0", "rcar-du-r8a7790", &mstp_clks[MSTP724]),
+-	CLKDEV_ICK_ID("du.1", "rcar-du-r8a7790", &mstp_clks[MSTP723]),
+-	CLKDEV_ICK_ID("du.2", "rcar-du-r8a7790", &mstp_clks[MSTP722]),
+-	CLKDEV_ICK_ID("clk_a", "rcar_sound", &audio_clk_a),
+-	CLKDEV_ICK_ID("clk_b", "rcar_sound", &audio_clk_b),
+-	CLKDEV_ICK_ID("clk_c", "rcar_sound", &audio_clk_c),
+-	CLKDEV_ICK_ID("clk_i", "rcar_sound", &m2_clk),
+-	CLKDEV_ICK_ID("src.0", "rcar_sound", &mstp_clks[MSTP1031]),
+-	CLKDEV_ICK_ID("src.1", "rcar_sound", &mstp_clks[MSTP1030]),
+-	CLKDEV_ICK_ID("src.2", "rcar_sound", &mstp_clks[MSTP1029]),
+-	CLKDEV_ICK_ID("src.3", "rcar_sound", &mstp_clks[MSTP1028]),
+-	CLKDEV_ICK_ID("src.4", "rcar_sound", &mstp_clks[MSTP1027]),
+-	CLKDEV_ICK_ID("src.5", "rcar_sound", &mstp_clks[MSTP1026]),
+-	CLKDEV_ICK_ID("src.6", "rcar_sound", &mstp_clks[MSTP1025]),
+-	CLKDEV_ICK_ID("src.7", "rcar_sound", &mstp_clks[MSTP1024]),
+-	CLKDEV_ICK_ID("src.8", "rcar_sound", &mstp_clks[MSTP1023]),
+-	CLKDEV_ICK_ID("src.9", "rcar_sound", &mstp_clks[MSTP1022]),
+-	CLKDEV_ICK_ID("ssi.0", "rcar_sound", &mstp_clks[MSTP1015]),
+-	CLKDEV_ICK_ID("ssi.1", "rcar_sound", &mstp_clks[MSTP1014]),
+-	CLKDEV_ICK_ID("ssi.2", "rcar_sound", &mstp_clks[MSTP1013]),
+-	CLKDEV_ICK_ID("ssi.3", "rcar_sound", &mstp_clks[MSTP1012]),
+-	CLKDEV_ICK_ID("ssi.4", "rcar_sound", &mstp_clks[MSTP1011]),
+-	CLKDEV_ICK_ID("ssi.5", "rcar_sound", &mstp_clks[MSTP1010]),
+-	CLKDEV_ICK_ID("ssi.6", "rcar_sound", &mstp_clks[MSTP1009]),
+-	CLKDEV_ICK_ID("ssi.7", "rcar_sound", &mstp_clks[MSTP1008]),
+-	CLKDEV_ICK_ID("ssi.8", "rcar_sound", &mstp_clks[MSTP1007]),
+-	CLKDEV_ICK_ID("ssi.9", "rcar_sound", &mstp_clks[MSTP1006]),
+-
+-};
+-
+-#define R8A7790_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
+-	extal_clk.rate	= e * 1000 * 1000;			\
+-	main_clk.parent	= m;					\
+-	SH_CLK_SET_RATIO(&pll1_clk_ratio, p1 / 2, 1);		\
+-	if (mode & MD(19))					\
+-		SH_CLK_SET_RATIO(&pll3_clk_ratio, p31, 1);	\
+-	else							\
+-		SH_CLK_SET_RATIO(&pll3_clk_ratio, p30, 1)
+-
+-
+-void __init r8a7790_clock_init(void)
+-{
+-	u32 mode = rcar_gen2_read_mode_pins();
+-	int k, ret = 0;
+-
+-	switch (mode & (MD(14) | MD(13))) {
+-	case 0:
+-		R8A7790_CLOCK_ROOT(15, &extal_clk, 172, 208, 106, 88);
+-		break;
+-	case MD(13):
+-		R8A7790_CLOCK_ROOT(20, &extal_clk, 130, 156, 80, 66);
+-		break;
+-	case MD(14):
+-		R8A7790_CLOCK_ROOT(26 / 2, &extal_div2_clk, 200, 240, 122, 102);
+-		break;
+-	case MD(13) | MD(14):
+-		R8A7790_CLOCK_ROOT(30 / 2, &extal_div2_clk, 172, 208, 106, 88);
+-		break;
+-	}
+-
+-	if (mode & (MD(18)))
+-		SH_CLK_SET_RATIO(&lb_clk_ratio, 1, 36);
+-	else
+-		SH_CLK_SET_RATIO(&lb_clk_ratio, 1, 24);
+-
+-	if ((mode & (MD(3) | MD(2) | MD(1))) = MD(2))
+-		SH_CLK_SET_RATIO(&qspi_clk_ratio, 1, 16);
+-	else
+-		SH_CLK_SET_RATIO(&qspi_clk_ratio, 1, 20);
+-
+-	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
+-		ret = clk_register(main_clks[k]);
+-
+-	if (!ret)
+-		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
+-
+-	if (!ret)
+-		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
+-
+-	if (!ret)
+-		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+-
+-	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+-
+-	if (!ret)
+-		shmobile_clk_init();
+-	else
+-		panic("failed to setup r8a7790 clocks\n");
+-}
+diff --git a/arch/arm/mach-shmobile/r8a7790.h b/arch/arm/mach-shmobile/r8a7790.h
+index 388f051..bf73a85 100644
+--- a/arch/arm/mach-shmobile/r8a7790.h
++++ b/arch/arm/mach-shmobile/r8a7790.h
+@@ -1,34 +1,6 @@
+ #ifndef __ASM_R8A7790_H__
+ #define __ASM_R8A7790_H__
+ 
+-/* DMA slave IDs */
+-enum {
+-	RCAR_DMA_SLAVE_INVALID,
+-	AUDIO_DMAC_SLAVE_SSI0_TX,
+-	AUDIO_DMAC_SLAVE_SSI0_RX,
+-	AUDIO_DMAC_SLAVE_SSI1_TX,
+-	AUDIO_DMAC_SLAVE_SSI1_RX,
+-	AUDIO_DMAC_SLAVE_SSI2_TX,
+-	AUDIO_DMAC_SLAVE_SSI2_RX,
+-	AUDIO_DMAC_SLAVE_SSI3_TX,
+-	AUDIO_DMAC_SLAVE_SSI3_RX,
+-	AUDIO_DMAC_SLAVE_SSI4_TX,
+-	AUDIO_DMAC_SLAVE_SSI4_RX,
+-	AUDIO_DMAC_SLAVE_SSI5_TX,
+-	AUDIO_DMAC_SLAVE_SSI5_RX,
+-	AUDIO_DMAC_SLAVE_SSI6_TX,
+-	AUDIO_DMAC_SLAVE_SSI6_RX,
+-	AUDIO_DMAC_SLAVE_SSI7_TX,
+-	AUDIO_DMAC_SLAVE_SSI7_RX,
+-	AUDIO_DMAC_SLAVE_SSI8_TX,
+-	AUDIO_DMAC_SLAVE_SSI8_RX,
+-	AUDIO_DMAC_SLAVE_SSI9_TX,
+-	AUDIO_DMAC_SLAVE_SSI9_RX,
+-};
+-
+-void r8a7790_add_standard_devices(void);
+-void r8a7790_clock_init(void);
+-void r8a7790_pinmux_init(void);
+ void r8a7790_pm_init(void);
+ extern struct smp_operations r8a7790_smp_ops;
+ 
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index ec7d97d..3a18af4 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -14,295 +14,14 @@
+  * GNU General Public License for more details.
+  */
+ 
+-#include <linux/irq.h>
+-#include <linux/kernel.h>
+-#include <linux/of_platform.h>
+-#include <linux/platform_data/gpio-rcar.h>
+-#include <linux/platform_data/irq-renesas-irqc.h>
+-#include <linux/serial_sci.h>
+-#include <linux/sh_dma.h>
+-#include <linux/sh_timer.h>
++#include <linux/init.h>
+ 
+ #include <asm/mach/arch.h>
+ 
+ #include "common.h"
+-#include "dma-register.h"
+-#include "irqs.h"
+ #include "r8a7790.h"
+ #include "rcar-gen2.h"
+ 
+-/* Audio-DMAC */
+-#define AUDIO_DMAC_SLAVE(_id, _addr, t, r)			\
+-{								\
+-	.slave_id	= AUDIO_DMAC_SLAVE_## _id ##_TX,	\
+-	.addr		= _addr + 0x8,				\
+-	.chcr		= CHCR_TX(XMIT_SZ_32BIT),		\
+-	.mid_rid	= t,					\
+-}, {								\
+-	.slave_id	= AUDIO_DMAC_SLAVE_## _id ##_RX,	\
+-	.addr		= _addr + 0xc,				\
+-	.chcr		= CHCR_RX(XMIT_SZ_32BIT),		\
+-	.mid_rid	= r,					\
+-}
+-
+-static const struct sh_dmae_slave_config r8a7790_audio_dmac_slaves[] = {
+-	AUDIO_DMAC_SLAVE(SSI0, 0xec241000, 0x01, 0x02),
+-	AUDIO_DMAC_SLAVE(SSI1, 0xec241040, 0x03, 0x04),
+-	AUDIO_DMAC_SLAVE(SSI2, 0xec241080, 0x05, 0x06),
+-	AUDIO_DMAC_SLAVE(SSI3, 0xec2410c0, 0x07, 0x08),
+-	AUDIO_DMAC_SLAVE(SSI4, 0xec241100, 0x09, 0x0a),
+-	AUDIO_DMAC_SLAVE(SSI5, 0xec241140, 0x0b, 0x0c),
+-	AUDIO_DMAC_SLAVE(SSI6, 0xec241180, 0x0d, 0x0e),
+-	AUDIO_DMAC_SLAVE(SSI7, 0xec2411c0, 0x0f, 0x10),
+-	AUDIO_DMAC_SLAVE(SSI8, 0xec241200, 0x11, 0x12),
+-	AUDIO_DMAC_SLAVE(SSI9, 0xec241240, 0x13, 0x14),
+-};
+-
+-#define DMAE_CHANNEL(a, b)			\
+-{						\
+-	.offset		= (a) - 0x20,		\
+-	.dmars		= (a) - 0x20 + 0x40,	\
+-	.chclr_bit	= (b),			\
+-	.chclr_offset	= 0x80 - 0x20,		\
+-}
+-
+-static const struct sh_dmae_channel r8a7790_audio_dmac_channels[] = {
+-	DMAE_CHANNEL(0x8000, 0),
+-	DMAE_CHANNEL(0x8080, 1),
+-	DMAE_CHANNEL(0x8100, 2),
+-	DMAE_CHANNEL(0x8180, 3),
+-	DMAE_CHANNEL(0x8200, 4),
+-	DMAE_CHANNEL(0x8280, 5),
+-	DMAE_CHANNEL(0x8300, 6),
+-	DMAE_CHANNEL(0x8380, 7),
+-	DMAE_CHANNEL(0x8400, 8),
+-	DMAE_CHANNEL(0x8480, 9),
+-	DMAE_CHANNEL(0x8500, 10),
+-	DMAE_CHANNEL(0x8580, 11),
+-	DMAE_CHANNEL(0x8600, 12),
+-};
+-
+-static struct sh_dmae_pdata r8a7790_audio_dmac_platform_data = {
+-	.slave		= r8a7790_audio_dmac_slaves,
+-	.slave_num	= ARRAY_SIZE(r8a7790_audio_dmac_slaves),
+-	.channel	= r8a7790_audio_dmac_channels,
+-	.channel_num	= ARRAY_SIZE(r8a7790_audio_dmac_channels),
+-	.ts_low_shift	= TS_LOW_SHIFT,
+-	.ts_low_mask	= TS_LOW_BIT << TS_LOW_SHIFT,
+-	.ts_high_shift	= TS_HI_SHIFT,
+-	.ts_high_mask	= TS_HI_BIT << TS_HI_SHIFT,
+-	.ts_shift	= dma_ts_shift,
+-	.ts_shift_num	= ARRAY_SIZE(dma_ts_shift),
+-	.dmaor_init	= DMAOR_DME,
+-	.chclr_present	= 1,
+-	.chclr_bitwise	= 1,
+-};
+-
+-static struct resource r8a7790_audio_dmac_resources[] = {
+-	/* Channel registers and DMAOR for low */
+-	DEFINE_RES_MEM(0xec700020, 0x8663 - 0x20),
+-	DEFINE_RES_IRQ(gic_spi(346)),
+-	DEFINE_RES_NAMED(gic_spi(320), 13, NULL, IORESOURCE_IRQ),
+-
+-	/* Channel registers and DMAOR for hi */
+-	DEFINE_RES_MEM(0xec720020, 0x8663 - 0x20), /* hi */
+-	DEFINE_RES_IRQ(gic_spi(347)),
+-	DEFINE_RES_NAMED(gic_spi(333), 13, NULL, IORESOURCE_IRQ),
+-};
+-
+-#define r8a7790_register_audio_dmac(id)				\
+-	platform_device_register_resndata(			\
+-		NULL, "sh-dma-engine", id,			\
+-		&r8a7790_audio_dmac_resources[id * 3],	3,	\
+-		&r8a7790_audio_dmac_platform_data,		\
+-		sizeof(r8a7790_audio_dmac_platform_data))
+-
+-static const struct resource pfc_resources[] __initconst = {
+-	DEFINE_RES_MEM(0xe6060000, 0x250),
+-};
+-
+-#define r8a7790_register_pfc()						\
+-	platform_device_register_simple("pfc-r8a7790", -1, pfc_resources, \
+-					ARRAY_SIZE(pfc_resources))
+-
+-#define R8A7790_GPIO(idx)						\
+-static const struct resource r8a7790_gpio##idx##_resources[] __initconst = { \
+-	DEFINE_RES_MEM(0xe6050000 + 0x1000 * (idx), 0x50),		\
+-	DEFINE_RES_IRQ(gic_spi(4 + (idx))),				\
+-};									\
+-									\
+-static const struct gpio_rcar_config					\
+-r8a7790_gpio##idx##_platform_data __initconst = {			\
+-	.gpio_base	= 32 * (idx),					\
+-	.irq_base	= 0,						\
+-	.number_of_pins	= 32,						\
+-	.pctl_name	= "pfc-r8a7790",				\
+-	.has_both_edge_trigger = 1,					\
+-};									\
+-
+-R8A7790_GPIO(0);
+-R8A7790_GPIO(1);
+-R8A7790_GPIO(2);
+-R8A7790_GPIO(3);
+-R8A7790_GPIO(4);
+-R8A7790_GPIO(5);
+-
+-#define r8a7790_register_gpio(idx)					\
+-	platform_device_register_resndata(NULL, "gpio_rcar", idx,	\
+-		r8a7790_gpio##idx##_resources,				\
+-		ARRAY_SIZE(r8a7790_gpio##idx##_resources),		\
+-		&r8a7790_gpio##idx##_platform_data,			\
+-		sizeof(r8a7790_gpio##idx##_platform_data))
+-
+-static struct resource i2c_resources[] __initdata = {
+-	/* I2C0 */
+-	DEFINE_RES_MEM(0xE6508000, 0x40),
+-	DEFINE_RES_IRQ(gic_spi(287)),
+-	/* I2C1 */
+-	DEFINE_RES_MEM(0xE6518000, 0x40),
+-	DEFINE_RES_IRQ(gic_spi(288)),
+-	/* I2C2 */
+-	DEFINE_RES_MEM(0xE6530000, 0x40),
+-	DEFINE_RES_IRQ(gic_spi(286)),
+-	/* I2C3 */
+-	DEFINE_RES_MEM(0xE6540000, 0x40),
+-	DEFINE_RES_IRQ(gic_spi(290)),
+-
+-};
+-
+-#define r8a7790_register_i2c(idx)		\
+-	platform_device_register_simple(	\
+-		"i2c-rcar_gen2", idx,		\
+-		i2c_resources + (2 * idx), 2);	\
+-
+-void __init r8a7790_pinmux_init(void)
+-{
+-	r8a7790_register_pfc();
+-	r8a7790_register_gpio(0);
+-	r8a7790_register_gpio(1);
+-	r8a7790_register_gpio(2);
+-	r8a7790_register_gpio(3);
+-	r8a7790_register_gpio(4);
+-	r8a7790_register_gpio(5);
+-}
+-
+-#define __R8A7790_SCIF(scif_type, _scscr, index, baseaddr, irq)		\
+-static struct plat_sci_port scif##index##_platform_data = {		\
+-	.type		= scif_type,					\
+-	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
+-	.scscr		= _scscr,					\
+-};									\
+-									\
+-static struct resource scif##index##_resources[] = {			\
+-	DEFINE_RES_MEM(baseaddr, 0x100),				\
+-	DEFINE_RES_IRQ(irq),						\
+-}
+-
+-#define R8A7790_SCIF(index, baseaddr, irq)				\
+-	__R8A7790_SCIF(PORT_SCIF, SCSCR_RE | SCSCR_TE,			\
+-		       index, baseaddr, irq)
+-
+-#define R8A7790_SCIFA(index, baseaddr, irq)				\
+-	__R8A7790_SCIF(PORT_SCIFA, SCSCR_RE | SCSCR_TE | SCSCR_CKE0,	\
+-		       index, baseaddr, irq)
+-
+-#define R8A7790_SCIFB(index, baseaddr, irq)				\
+-	__R8A7790_SCIF(PORT_SCIFB, SCSCR_RE | SCSCR_TE,			\
+-		       index, baseaddr, irq)
+-
+-#define R8A7790_HSCIF(index, baseaddr, irq)				\
+-	__R8A7790_SCIF(PORT_HSCIF, SCSCR_RE | SCSCR_TE,			\
+-		       index, baseaddr, irq)
+-
+-R8A7790_SCIFA(0, 0xe6c40000, gic_spi(144)); /* SCIFA0 */
+-R8A7790_SCIFA(1, 0xe6c50000, gic_spi(145)); /* SCIFA1 */
+-R8A7790_SCIFB(2, 0xe6c20000, gic_spi(148)); /* SCIFB0 */
+-R8A7790_SCIFB(3, 0xe6c30000, gic_spi(149)); /* SCIFB1 */
+-R8A7790_SCIFB(4, 0xe6ce0000, gic_spi(150)); /* SCIFB2 */
+-R8A7790_SCIFA(5, 0xe6c60000, gic_spi(151)); /* SCIFA2 */
+-R8A7790_SCIF(6,  0xe6e60000, gic_spi(152)); /* SCIF0 */
+-R8A7790_SCIF(7,  0xe6e68000, gic_spi(153)); /* SCIF1 */
+-R8A7790_HSCIF(8, 0xe62c0000, gic_spi(154)); /* HSCIF0 */
+-R8A7790_HSCIF(9, 0xe62c8000, gic_spi(155)); /* HSCIF1 */
+-
+-#define r8a7790_register_scif(index)					       \
+-	platform_device_register_resndata(NULL, "sh-sci", index,  	       \
+-					  scif##index##_resources,	       \
+-					  ARRAY_SIZE(scif##index##_resources), \
+-					  &scif##index##_platform_data,	       \
+-					  sizeof(scif##index##_platform_data))
+-
+-static const struct renesas_irqc_config irqc0_data __initconst = {
+-	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
+-};
+-
+-static const struct resource irqc0_resources[] __initconst = {
+-	DEFINE_RES_MEM(0xe61c0000, 0x200), /* IRQC Event Detector Block_0 */
+-	DEFINE_RES_IRQ(gic_spi(0)), /* IRQ0 */
+-	DEFINE_RES_IRQ(gic_spi(1)), /* IRQ1 */
+-	DEFINE_RES_IRQ(gic_spi(2)), /* IRQ2 */
+-	DEFINE_RES_IRQ(gic_spi(3)), /* IRQ3 */
+-};
+-
+-#define r8a7790_register_irqc(idx)					\
+-	platform_device_register_resndata(NULL, "renesas_irqc",		\
+-					  idx, irqc##idx##_resources,	\
+-					  ARRAY_SIZE(irqc##idx##_resources), \
+-					  &irqc##idx##_data,		\
+-					  sizeof(struct renesas_irqc_config))
+-
+-static const struct resource thermal_resources[] __initconst = {
+-	DEFINE_RES_MEM(0xe61f0000, 0x14),
+-	DEFINE_RES_MEM(0xe61f0100, 0x38),
+-	DEFINE_RES_IRQ(gic_spi(69)),
+-};
+-
+-#define r8a7790_register_thermal()					\
+-	platform_device_register_simple("rcar_thermal", -1,		\
+-					thermal_resources,		\
+-					ARRAY_SIZE(thermal_resources))
+-
+-static struct sh_timer_config cmt0_platform_data = {
+-	.channels_mask = 0x60,
+-};
+-
+-static struct resource cmt0_resources[] = {
+-	DEFINE_RES_MEM(0xffca0000, 0x1004),
+-	DEFINE_RES_IRQ(gic_spi(142)),
+-};
+-
+-#define r8a7790_register_cmt(idx)					\
+-	platform_device_register_resndata(NULL, "sh-cmt-48-gen2",	\
+-					  idx, cmt##idx##_resources,	\
+-					  ARRAY_SIZE(cmt##idx##_resources), \
+-					  &cmt##idx##_platform_data,	\
+-					  sizeof(struct sh_timer_config))
+-
+-void __init r8a7790_add_standard_devices(void)
+-{
+-	r8a7790_register_scif(0);
+-	r8a7790_register_scif(1);
+-	r8a7790_register_scif(2);
+-	r8a7790_register_scif(3);
+-	r8a7790_register_scif(4);
+-	r8a7790_register_scif(5);
+-	r8a7790_register_scif(6);
+-	r8a7790_register_scif(7);
+-	r8a7790_register_scif(8);
+-	r8a7790_register_scif(9);
+-	r8a7790_register_cmt(0);
+-	r8a7790_register_irqc(0);
+-	r8a7790_register_thermal();
+-	r8a7790_register_i2c(0);
+-	r8a7790_register_i2c(1);
+-	r8a7790_register_i2c(2);
+-	r8a7790_register_i2c(3);
+-	r8a7790_register_audio_dmac(0);
+-	r8a7790_register_audio_dmac(1);
+-}
+-
+-#ifdef CONFIG_USE_OF
+-
+ static const char * const r8a7790_boards_compat_dt[] __initconst = {
+ 	"renesas,r8a7790",
+ 	NULL,
+@@ -316,4 +35,3 @@ DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
+ 	.reserve	= rcar_gen2_reserve,
+ 	.dt_compat	= r8a7790_boards_compat_dt,
+ MACHINE_END
+-#endif /* CONFIG_USE_OF */
+-- 
+2.1.3
 
-which lock already depends on the new lock.
-
-
-the existing dependency chain (in reverse order) is:
-
--> #6 (hrtimer_bases.lock){-.-...}:
-       [<c03ae088>] _raw_spin_lock_irqsave+0x44/0x58
-       [<c00580fc>] __hrtimer_start_range_ns+0x28/0xf4
-       [<c003ab60>] start_bandwidth_timer+0x5c/0x68
-       [<c003fa70>] enqueue_task_rt+0x114/0x148
-       [<c003ac04>] enqueue_task+0x34/0x38
-       [<c003ae6c>] activate_task+0x30/0x34
-       [<c003afa4>] try_to_wake_up+0x5c/0x168
-       [<c003b0e8>] wake_up_process+0x38/0x40
-       [<c0050c0c>] __setup_irq+0x3d0/0x4c0
-       [<c0050e54>] request_threaded_irq+0xd0/0x11c
-       [<c0052b08>] devm_request_threaded_irq+0x5c/0x94
-       [<c026319c>] st1232_ts_probe+0x1a8/0x220
-       [<c0267020>] i2c_device_probe+0xf8/0x120
-       [<c02021a8>] driver_probe_device+0xc0/0x208
-       [<c02023b4>] __driver_attach+0x78/0x9c
-       [<c0200820>] bus_for_each_dev+0x74/0x98
-       [<c0201cf0>] driver_attach+0x20/0x28
-       [<c0201980>] bus_add_driver+0xe8/0x1d0
-       [<c0202a44>] driver_register+0xa4/0xe8
-       [<c02687c4>] i2c_register_driver+0x48/0xb8
-       [<c0518f08>] st1232_ts_driver_init+0x18/0x20
-       [<c000890c>] do_one_initcall+0x108/0x1bc
-       [<c0504d70>] kernel_init_freeable+0xfc/0x1c0
-       [<c03a72a0>] kernel_init+0x10/0xec
-       [<c000df68>] ret_from_fork+0x14/0x2c
-
--> #5 (&rt_b->rt_runtime_lock){-.....}:
-       [<c03adf5c>] _raw_spin_lock+0x34/0x44
-       [<c003fa64>] enqueue_task_rt+0x108/0x148
-       [<c003ac04>] enqueue_task+0x34/0x38
-       [<c003ae6c>] activate_task+0x30/0x34
-       [<c003afa4>] try_to_wake_up+0x5c/0x168
-       [<c003b0e8>] wake_up_process+0x38/0x40
-       [<c0050c0c>] __setup_irq+0x3d0/0x4c0
-       [<c0050e54>] request_threaded_irq+0xd0/0x11c
-       [<c0052b08>] devm_request_threaded_irq+0x5c/0x94
-       [<c026319c>] st1232_ts_probe+0x1a8/0x220
-       [<c0267020>] i2c_device_probe+0xf8/0x120
-       [<c02021a8>] driver_probe_device+0xc0/0x208
-       [<c02023b4>] __driver_attach+0x78/0x9c
-       [<c0200820>] bus_for_each_dev+0x74/0x98
-       [<c0201cf0>] driver_attach+0x20/0x28
-       [<c0201980>] bus_add_driver+0xe8/0x1d0
-       [<c0202a44>] driver_register+0xa4/0xe8
-       [<c02687c4>] i2c_register_driver+0x48/0xb8
-       [<c0518f08>] st1232_ts_driver_init+0x18/0x20
-       [<c000890c>] do_one_initcall+0x108/0x1bc
-       [<c0504d70>] kernel_init_freeable+0xfc/0x1c0
-       [<c03a72a0>] kernel_init+0x10/0xec
-       [<c000df68>] ret_from_fork+0x14/0x2c
-
--> #4 (&rq->lock){-.-.-.}:
-       [<c03adf5c>] _raw_spin_lock+0x34/0x44
-       [<c003b528>] wake_up_new_task+0x50/0xcc
-       [<c001ed28>] do_fork+0x160/0x3b8
-       [<c001efb4>] kernel_thread+0x34/0x3c
-       [<c03a71e0>] rest_init+0x24/0xd4
-       [<c0504c1c>] start_kernel+0x2e0/0x338
-       [<40008070>] 0x40008070
-
--> #3 (&p->pi_lock){-.-...}:
-       [<c03ae088>] _raw_spin_lock_irqsave+0x44/0x58
-       [<c003af6c>] try_to_wake_up+0x24/0x168
-       [<c003b0e8>] wake_up_process+0x38/0x40
-       [<c0031f64>] create_worker+0x118/0x16c
-       [<c050b698>] init_workqueues+0xc4/0x310
-       [<c000890c>] do_one_initcall+0x108/0x1bc
-       [<c0504cd4>] kernel_init_freeable+0x60/0x1c0
-       [<c03a72a0>] kernel_init+0x10/0xec
-       [<c000df68>] ret_from_fork+0x14/0x2c
-
--> #2 (&(&pool->lock)->rlock){..-...}:
-       [<c03adf5c>] _raw_spin_lock+0x34/0x44
-       [<c0030860>] __queue_work+0x168/0x22c
-       [<c0030980>] queue_work_on+0x5c/0x80
-       [<c0209c0c>] rpm_idle+0xac/0x124
-       [<c0209cbc>] __pm_runtime_idle+0x38/0x7c
-       [<c02b85e8>] sh_cmt_stop+0x9c/0xcc
-       [<c02b864c>] sh_cmt_clock_event_mode+0x34/0xb4
-       [<c0062e34>] clockevents_set_mode+0x30/0x64
-       [<c00631b4>] clockevents_exchange_device+0x3c/0xb0
-       [<c00637cc>] tick_check_new_device+0x6c/0x7c
-       [<c0062da8>] clockevents_register_device+0x68/0xc4
-       [<c00630b4>] clockevents_config_and_register+0x24/0x28
-       [<c02b93d8>] sh_tmu_probe+0x25c/0x528
-       [<c02039d0>] platform_drv_probe+0x50/0xa0
-       [<c02021a8>] driver_probe_device+0xc0/0x208
-       [<c02023b4>] __driver_attach+0x78/0x9c
-       [<c0200820>] bus_for_each_dev+0x74/0x98
-       [<c0201cf0>] driver_attach+0x20/0x28
-       [<c0201980>] bus_add_driver+0xe8/0x1d0
-       [<c0202a44>] driver_register+0xa4/0xe8
-       [<c0203904>] __platform_driver_register+0x50/0x64
-       [<c0519f0c>] sh_tmu_init+0x18/0x20
-       [<c000890c>] do_one_initcall+0x108/0x1bc
-       [<c0504d70>] kernel_init_freeable+0xfc/0x1c0
-       [<c03a72a0>] kernel_init+0x10/0xec
-       [<c000df68>] ret_from_fork+0x14/0x2c
-
--> #1 (&(&dev->power.lock)->rlock){..-...}:
-       [<c03ae088>] _raw_spin_lock_irqsave+0x44/0x58
-       [<c020a140>] __pm_runtime_resume+0x44/0x6c
-       [<c02b97f8>] sh_tmu_enable.part.3+0x24/0x44
-       [<c02b994c>] sh_tmu_clocksource_enable+0x48/0x74
-       [<c005da94>] timekeeping_notify+0xbc/0x140
-       [<c005fc8c>] __clocksource_select+0xcc/0xf8
-       [<c050d594>] clocksource_done_booting+0x38/0x50
-       [<c000890c>] do_one_initcall+0x108/0x1bc
-       [<c0504d70>] kernel_init_freeable+0xfc/0x1c0
-       [<c03a72a0>] kernel_init+0x10/0xec
-       [<c000df68>] ret_from_fork+0x14/0x2c
-
--> #0 (tk_core){----..}:
-       [<c0046b5c>] lock_acquire+0x74/0x94
-       [<c005c85c>] ktime_get+0x68/0x154
-       [<c0058138>] __hrtimer_start_range_ns+0x64/0xf4
-       [<c0058228>] hrtimer_start+0x2c/0x34
-       [<c0058bc0>] do_setitimer+0x190/0x1a4
-       [<c0058d10>] SyS_setitimer+0xc4/0x128
-       [<c000dea0>] ret_fast_syscall+0x0/0x48
-
-other info that might help us debug this:
-
-Chain exists of:
-  tk_core --> &rt_b->rt_runtime_lock --> hrtimer_bases.lock
-
- Possible unsafe locking scenario:
-
-       CPU0                    CPU1
-       ----                    ----
-  lock(hrtimer_bases.lock);
-                               lock(&rt_b->rt_runtime_lock);
-                               lock(hrtimer_bases.lock);
-  lock(tk_core);
-
- *** DEADLOCK ***
-
-2 locks held by ntpdate/797:
- #0:  (&(&sighand->siglock)->rlock){......}, at: [<c0058abc>]
-do_setitimer+0x8c/0x1a4
- #1:  (hrtimer_bases.lock){-.-...}, at: [<c00580fc>]
-__hrtimer_start_range_ns+0x28/0xf4
-
-stack backtrace:
-CPU: 0 PID: 797 Comm: ntpdate Not tainted
-3.19.0-rc1-armadillo-multiplatform-00258-g85f5ee22d89dad78 #401
-Hardware name: Generic R8A7740 (Flattened Device Tree)
-Backtrace:
-[<c001130c>] (dump_backtrace) from [<c001152c>] (show_stack+0x18/0x1c)
- r6:c06a1b0c r5:c069006c r4:c06905bc r3:00400100
-[<c0011514>] (show_stack) from [<c03a936c>] (dump_stack+0x20/0x28)
-[<c03a934c>] (dump_stack) from [<c03a870c>] (print_circular_bug+0x264/0x2b8)
-[<c03a84a8>] (print_circular_bug) from [<c0045d00>]
-(__lock_acquire+0x12d8/0x1a28)
- r10:00000002 r9:c068ec3c r8:00000002 r7:00000002 r6:df6c59d0 r5:df6c59e8
- r4:df6c55c0 r3:df6c59d0
-[<c0044a28>] (__lock_acquire) from [<c0046b5c>] (lock_acquire+0x74/0x94)
- r10:00000000 r9:c0d31dc0 r8:c0058138 r7:00000001 r6:00000001 r5:60070093
- r4:00000000
-[<c0046ae8>] (lock_acquire) from [<c005c85c>] (ktime_get+0x68/0x154)
- r6:60070093 r5:df76fee8 r4:c0d31dc0
-[<c005c7f4>] (ktime_get) from [<c0058138>] (__hrtimer_start_range_ns+0x64/0xf4)
- r10:00000000 r9:20070093 r8:00000000 r7:00000000 r6:05f5e100 r5:c0540698
- r4:df722178
-[<c00580d4>] (__hrtimer_start_range_ns) from [<c0058228>]
-(hrtimer_start+0x2c/0x34)
- r9:df76e000 r8:00000000 r7:df722178 r6:df6c55c0 r5:00000000 r4:df76ff70
-[<c00581fc>] (hrtimer_start) from [<c0058bc0>] (do_setitimer+0x190/0x1a4)
-[<c0058a30>] (do_setitimer) from [<c0058d10>] (SyS_setitimer+0xc4/0x128)
- r8:c000e064 r7:00000068 r6:00000f7c r5:00000000 r4:00000000
-[<c0058c4c>] (SyS_setitimer) from [<c000dea0>] (ret_fast_syscall+0x0/0x48)
- r5:0002e1dc r4:00000000
-
-===============
-
-sh_cmt e6138000.timer: ch0: used for clock events
-sh_cmt e6138000.timer: ch1: used as clock source
-Advanced Linux Sound Architecture Driver Initialized.
-NET: Registered protocol family 23
-Switched to clocksource e6138000.timer
-
-===========================
-[ INFO: possible circular locking dependency detected ]
-3.19.0-rc1-kzm9g-multiplatform-00258-g85f5ee22d89dad78 #285 Not tainted
--------------------------------------------------------
-swapper/0/1 is trying to acquire lock:
- (&ch->lock){-.-...}, at: [<c02c4248>] sh_cmt_clocksource_read+0x24/0x6c
-
-but task is already holding lock:
- (hrtimer_bases.lock){-.-...}, at: [<c0077c10>]
-lock_hrtimer_base.isra.24+0x28/0x50
-
-which lock already depends on the new lock.
-
-
-the existing dependency chain (in reverse order) is:
-
--> #6 (hrtimer_bases.lock){-.-...}:
-       [<c03dde58>] _raw_spin_lock_irqsave+0x44/0x58
-       [<c0077c10>] lock_hrtimer_base.isra.24+0x28/0x50
-       [<c0077e40>] __hrtimer_start_range_ns+0x2c/0x360
-       [<c0047e94>] start_bandwidth_timer+0x68/0x74
-       [<c00572c0>] enqueue_task_rt+0x198/0x1f4
-       [<c0047f2c>] enqueue_task+0x34/0x38
-       [<c00483d4>] activate_task+0x30/0x34
-       [<c0048678>] ttwu_do_activate.constprop.71+0x30/0x64
-       [<c004c30c>] try_to_wake_up+0x270/0x2bc
-       [<c004c390>] wake_up_process+0x38/0x40
-       [<c006c400>] __setup_irq+0x3c4/0x4bc
-       [<c006c650>] request_threaded_irq+0xd0/0x11c
-       [<c006e3e0>] devm_request_threaded_irq+0x5c/0x94
-       [<c01f42e8>] pcf857x_probe+0x14c/0x348
-       [<c029f4d8>] i2c_device_probe+0xf8/0x120
-       [<c0237ad8>] driver_probe_device+0xc0/0x208
-       [<c0237c50>] __device_attach+0x30/0x4c
-       [<c0236224>] bus_for_each_drv+0x8c/0x9c
-       [<c02379cc>] device_attach+0x70/0x94
-       [<c023705c>] bus_probe_device+0x30/0xa4
-       [<c02354ec>] device_add+0x3c8/0x4d8
-       [<c0235618>] device_register+0x1c/0x20
-       [<c02a0ce4>] i2c_new_device+0x124/0x198
-       [<c02a120c>] i2c_register_adapter+0x304/0x424
-       [<c02a1434>] i2c_add_adapter+0x90/0xa8
-       [<c02a1468>] i2c_add_numbered_adapter+0x1c/0x28
-       [<c02a2ac0>] sh_mobile_i2c_probe+0x3c0/0x454
-       [<c0239300>] platform_drv_probe+0x50/0xa0
-       [<c0237ad8>] driver_probe_device+0xc0/0x208
-       [<c0237ce4>] __driver_attach+0x78/0x9c
-       [<c0236150>] bus_for_each_dev+0x74/0x98
-       [<c0237620>] driver_attach+0x20/0x28
-       [<c02372b0>] bus_add_driver+0xe8/0x1d0
-       [<c0238374>] driver_register+0xa4/0xe8
-       [<c0239234>] __platform_driver_register+0x50/0x64
-       [<c05413f0>] sh_mobile_i2c_adap_init+0x18/0x20
-       [<c00097d8>] do_one_initcall+0x108/0x1bc
-       [<c052adb4>] kernel_init_freeable+0x11c/0x1e4
-       [<c03d602c>] kernel_init+0x10/0xec
-       [<c000ee88>] ret_from_fork+0x14/0x2c
-
--> #5 (&rt_b->rt_runtime_lock){......}:
-       [<c03ddd2c>] _raw_spin_lock+0x34/0x44
-       [<c00557fc>] rq_online_rt+0x84/0xdc
-       [<c00478a4>] set_rq_online.part.55+0x48/0x58
-       [<c004c630>] migration_call+0xb8/0x2a8
-       [<c0044018>] notifier_call_chain+0x88/0xb4
-       [<c0044060>] __raw_notifier_call_chain+0x1c/0x24
-       [<c0027260>] __cpu_notify+0x34/0x50
-       [<c0027294>] cpu_notify+0x18/0x1c
-       [<c002771c>] _cpu_up+0x108/0x144
-       [<c00277c4>] cpu_up+0x6c/0x88
-       [<c053577c>] smp_init+0xa0/0xb4
-       [<c052ad1c>] kernel_init_freeable+0x84/0x1e4
-       [<c03d602c>] kernel_init+0x10/0xec
-       [<c000ee88>] ret_from_fork+0x14/0x2c
-
--> #4 (&rq->lock){-.-...}:
-       [<c03ddd2c>] _raw_spin_lock+0x34/0x44
-       [<c004c4bc>] wake_up_new_task+0xf4/0x1b0
-       [<c0026198>] do_fork+0x160/0x568
-       [<c00265d4>] kernel_thread+0x34/0x3c
-       [<c03d5ee0>] rest_init+0x24/0x160
-       [<c052ac40>] start_kernel+0x304/0x35c
-       [<40008074>] 0x40008074
-
--> #3 (&p->pi_lock){-.-...}:
-       [<c03dde58>] _raw_spin_lock_irqsave+0x44/0x58
-       [<c004c0c8>] try_to_wake_up+0x2c/0x2bc
-       [<c004c390>] wake_up_process+0x38/0x40
-       [<c003cb24>] create_worker+0x118/0x16c
-       [<c05322b8>] init_workqueues+0x18c/0x3d8
-       [<c00097d8>] do_one_initcall+0x108/0x1bc
-       [<c052ad14>] kernel_init_freeable+0x7c/0x1e4
-       [<c03d602c>] kernel_init+0x10/0xec
-       [<c000ee88>] ret_from_fork+0x14/0x2c
-
--> #2 (&(&pool->lock)->rlock){......}:
-       [<c03ddd2c>] _raw_spin_lock+0x34/0x44
-       [<c003ceb8>] __queue_work+0x190/0x258
-       [<c003cfd0>] queue_work_on+0x50/0x74
-       [<c023fd4c>] rpm_idle+0xb0/0x128
-       [<c023fdfc>] __pm_runtime_idle+0x38/0x84
-       [<c0237bf0>] driver_probe_device+0x1d8/0x208
-       [<c0237ce4>] __driver_attach+0x78/0x9c
-       [<c0236150>] bus_for_each_dev+0x74/0x98
-       [<c0237620>] driver_attach+0x20/0x28
-       [<c02372b0>] bus_add_driver+0xe8/0x1d0
-       [<c0238374>] driver_register+0xa4/0xe8
-       [<c0239234>] __platform_driver_register+0x50/0x64
-       [<c0541b9c>] sh_cmt_init+0x18/0x20
-       [<c00097d8>] do_one_initcall+0x108/0x1bc
-       [<c052adb4>] kernel_init_freeable+0x11c/0x1e4
-       [<c03d602c>] kernel_init+0x10/0xec
-       [<c000ee88>] ret_from_fork+0x14/0x2c
-
--> #1 (&(&dev->power.lock)->rlock){......}:
-       [<c03dde58>] _raw_spin_lock_irqsave+0x44/0x58
-       [<c0240284>] __pm_runtime_resume+0x44/0x6c
-       [<c02c4534>] sh_cmt_start+0x44/0x220
-       [<c02c50e0>] sh_cmt_clocksource_enable+0x40/0x6c
-       [<c007ddc8>] change_clocksource+0xa4/0x108
-       [<c0092370>] multi_cpu_stop+0xbc/0x134
-       [<c00925fc>] cpu_stopper_thread+0x78/0x104
-       [<c00468ac>] smpboot_thread_fn+0x16c/0x184
-       [<c004306c>] kthread+0xe0/0xf4
-       [<c000ee88>] ret_from_fork+0x14/0x2c
-
--> #0 (&ch->lock){-.-...}:
-       [<c0061538>] lock_acquire+0x74/0x94
-       [<c03dde58>] _raw_spin_lock_irqsave+0x44/0x58
-       [<c02c4248>] sh_cmt_clocksource_read+0x24/0x6c
-       [<c007d33c>] ktime_get+0xbc/0x15c
-       [<c0084330>] clockevents_program_event+0x98/0x130
-       [<c0086420>] tick_program_event+0x3c/0x48
-       [<c00780e0>] __hrtimer_start_range_ns+0x2cc/0x360
-       [<c00781a0>] hrtimer_start_range_ns+0x2c/0x34
-       [<c0087550>] tick_setup_sched_timer+0x11c/0x174
-       [<c0078960>] hrtimer_run_pending+0xd8/0x110
-       [<c00770a0>] run_timer_softirq+0x24/0x1f8
-       [<c002a98c>] __do_softirq+0x130/0x29c
-       [<c002adec>] irq_exit+0x8c/0x118
-       [<c006a580>] __handle_domain_irq+0x98/0xbc
-       [<c00093e8>] gic_handle_irq+0x40/0x64
-       [<c0013244>] __irq_svc+0x44/0x5c
-       [<c0090230>] get_symbol_offset+0x2c/0x50
-       [<c009086c>] kallsyms_lookup+0x50/0x88
-       [<c00908dc>] __sprint_symbol+0x38/0xcc
-       [<c00909d4>] sprint_symbol_no_offset+0x18/0x1c
-       [<c01d84f0>] symbol_string.isra.12+0x54/0x80
-       [<c01d98dc>] pointer.isra.19+0x158/0x458
-       [<c01d9638>] vsnprintf+0x214/0x360
-       [<c01db598>] kvasprintf+0x64/0x70
-       [<c01db5c8>] kasprintf+0x24/0x2c
-       [<c0009704>] do_one_initcall+0x34/0x1bc
-       [<c052adb4>] kernel_init_freeable+0x11c/0x1e4
-       [<c03d602c>] kernel_init+0x10/0xec
-       [<c000ee88>] ret_from_fork+0x14/0x2c
-
-other info that might help us debug this:
-
-Chain exists of:
-  &ch->lock --> &rt_b->rt_runtime_lock --> hrtimer_bases.lock
-
- Possible unsafe locking scenario:
-
-       CPU0                    CPU1
-       ----                    ----
-  lock(hrtimer_bases.lock);
-                               lock(&rt_b->rt_runtime_lock);
-                               lock(hrtimer_bases.lock);
-  lock(&ch->lock);
-
- *** DEADLOCK ***
-
-1 lock held by swapper/0/1:
- #0:  (hrtimer_bases.lock){-.-...}, at: [<c0077c10>]
-lock_hrtimer_base.isra.24+0x28/0x50
-
-stack backtrace:
-CPU: 0 PID: 1 Comm: swapper/0 Not tainted
-3.19.0-rc1-kzm9g-multiplatform-00258-g85f5ee22d89dad78 #285
-Hardware name: Generic SH73A0 (Flattened Device Tree)
-Backtrace:
-[<c00124e4>] (dump_backtrace) from [<c0012704>] (show_stack+0x18/0x1c)
- r6:c06ca810 r5:c06d1f10 r4:00000000 r3:00200040
-[<c00126ec>] (show_stack) from [<c03d87ec>] (dump_stack+0x78/0x94)
-[<c03d8774>] (dump_stack) from [<c005d72c>] (print_circular_bug+0x278/0x2cc)
- r4:c06c60e0 r3:00000002
-[<c005d4b4>] (print_circular_bug) from [<c006067c>]
-(__lock_acquire+0x134c/0x1ac4)
- r10:00000001 r9:c06c3aa0 r8:00000001 r7:00000001 r6:df445820 r5:df445838
- r4:df4453c0 r3:df445820
-[<c005f330>] (__lock_acquire) from [<c0061538>] (lock_acquire+0x74/0x94)
- r10:0000001e r9:c0d66c80 r8:c0084330 r7:00000001 r6:00000001 r5:60000193
- r4:00000000
-[<c00614c4>] (lock_acquire) from [<c03dde58>] (_raw_spin_lock_irqsave+0x44/0x58)
- r6:c02c4248 r5:60000193 r4:df4281ec
-[<c03dde14>] (_raw_spin_lock_irqsave) from [<c02c4248>]
-(sh_cmt_clocksource_read+0x24/0x6c)
- r6:df4281ec r5:df4281c0 r4:df4282c0
-[<c02c4224>] (sh_cmt_clocksource_read) from [<c007d33c>] (ktime_get+0xbc/0x15c)
- r8:c0084330 r7:00000001 r6:60000193 r5:df447a00 r4:c0d66c80
-[<c007d280>] (ktime_get) from [<c0084330>]
-(clockevents_program_event+0x98/0x130)
- r10:00000000 r9:00000000 r8:08583b00 r7:00000000 r6:08583b00 r5:00000000
- r4:dfbce5c0
-[<c0084298>] (clockevents_program_event) from [<c0086420>]
-(tick_program_event+0x3c/0x48)
- r7:00000000 r6:dfbca3e8 r5:00000000 r4:08583b00
-[<c00863e4>] (tick_program_event) from [<c00780e0>]
-(__hrtimer_start_range_ns+0x2cc/0x360)
- r5:dfbca440 r4:dfbca758
-[<c0077e14>] (__hrtimer_start_range_ns) from [<c00781a0>]
-(hrtimer_start_range_ns+0x2c/0x34)
- r10:c0596ec0 r9:df447b60 r8:c0d670c0 r7:00000000 r6:07ce8b32 r5:dfbca758
- r4:00000002
-[<c0078174>] (hrtimer_start_range_ns) from [<c0087550>]
-(tick_setup_sched_timer+0x11c/0x174)
-[<c0087434>] (tick_setup_sched_timer) from [<c0078960>]
-(hrtimer_run_pending+0xd8/0x110)
- r8:00000000 r7:00000000 r6:00000000 r5:60000113 r4:dfbca508
-[<c0078888>] (hrtimer_run_pending) from [<c00770a0>]
-(run_timer_softirq+0x24/0x1f8)
- r8:c0560084 r7:00000100 r6:00000282 r5:c0560100 r4:c0d65140 r3:c055a3e0
-[<c007707c>] (run_timer_softirq) from [<c002a98c>] (__do_softirq+0x130/0x29c)
- r10:c0596ec0 r9:df447b60 r8:c0560084 r7:00000100 r6:00000282 r5:df446000
- r4:40000001
-[<c002a85c>] (__do_softirq) from [<c002adec>] (irq_exit+0x8c/0x118)
- r10:00000008 r9:c053e11c r8:df406000 r7:00000010 r6:c055acb8 r5:00000000
- r4:00000000
-[<c002ad60>] (irq_exit) from [<c006a580>] (__handle_domain_irq+0x98/0xbc)
- r4:00000000 r3:0000006b
-[<c006a4e8>] (__handle_domain_irq) from [<c00093e8>] (gic_handle_irq+0x40/0x64)
- r8:df447cb4 r7:df447c4c r6:df447c18 r5:c05669f4 r4:e0802100 r3:df447c18
-[<c00093a8>] (gic_handle_irq) from [<c0013244>] (__irq_svc+0x44/0x5c)
-Exception stack(0xdf447c18 to 0xdf447c60)
-7c00:                                                       000000f0 0000001e
-7c20: c0446680 c04a974a df447cf1 df447cac 00000000 df447cb0 df447cb4 c053e11c
-7c40: 00000008 df447c6c 0000000f df447c60 c009086c c0090230 80000113 ffffffff
- r6:ffffffff r5:80000113 r4:c0090230 r3:df4453c0
-[<c0090204>] (get_symbol_offset) from [<c009086c>] (kallsyms_lookup+0x50/0x88)
-[<c009081c>] (kallsyms_lookup) from [<c00908dc>] (__sprint_symbol+0x38/0xcc)
- r9:00000010 r8:ffffffff r7:00000000 r6:00000000 r5:df447cf1 r4:c053e11c
-[<c00908a4>] (__sprint_symbol) from [<c00909d4>]
-(sprint_symbol_no_offset+0x18/0x1c)
- r7:df4cb3d0 r6:df4cb3c0 r5:df4cb3d0 r4:00000000
-[<c00909bc>] (sprint_symbol_no_offset) from [<c01d84f0>]
-(symbol_string.isra.12+0x54/0x80)
-[<c01d849c>] (symbol_string.isra.12) from [<c01d98dc>]
-(pointer.isra.19+0x158/0x458)
- r6:00000000 r5:ffffffff r4:df4cb3c0
-[<c01d9784>] (pointer.isra.19) from [<c01d9638>] (vsnprintf+0x214/0x360)
- r10:c03fa598 r9:00000010 r8:c04c8b99 r7:df4cb3c0 r6:df4cb3d0 r5:df4cb3c0
- r4:df447ee0
-[<c01d9424>] (vsnprintf) from [<c01db598>] (kvasprintf+0x64/0x70)
- r10:00000000 r9:c0596500 r8:000000d0 r7:df4cb3c0 r6:00000010 r5:c04c8b98
- r4:df447ee0
-[<c01db534>] (kvasprintf) from [<c01db5c8>] (kasprintf+0x24/0x2c)
- r8:c0596500 r7:c05592f4 r6:00000000 r5:c053e11c r4:00000005
-[<c01db5a8>] (kasprintf) from [<c0009704>] (do_one_initcall+0x34/0x1bc)
- r3:df446000 r2:c053e11c r1:c04c8b98
-[<c00096d0>] (do_one_initcall) from [<c052adb4>]
-(kernel_init_freeable+0x11c/0x1e4)
- r9:c0596500 r8:c0596500 r7:c05592f4 r6:c05507ec r5:00000078 r4:00000005
-[<c052ac98>] (kernel_init_freeable) from [<c03d602c>] (kernel_init+0x10/0xec)
- r9:00000000 r8:00000000 r7:00000000 r6:00000000 r5:c03d601c r4:00000000
-[<c03d601c>] (kernel_init) from [<c000ee88>] (ret_from_fork+0x14/0x2c)
- r4:00000000 r3:00000000
-NET: Registered protocol family 2
-TCP established hash table entries: 4096 (order: 2, 16384 bytes)
-TCP bind hash table entries: 4096 (order: 5, 147456 bytes)
-TCP: Hash tables configured (established 4096 bind 4096)
-TCP: reno registered
-UDP hash table entries: 256 (order: 2, 20480 bytes)
-UDP-Lite hash table entries: 256 (order: 2, 20480 bytes)
-
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
