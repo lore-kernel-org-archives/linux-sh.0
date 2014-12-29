@@ -1,41 +1,66 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Mon, 08 Dec 2014 18:11:16 +0000
-Subject: Re: [PATCH v6 1/6] clk: shmobile: sh73a0 common clock framework implementation
-Message-Id: <CAO3366xz4KJY=XM5jCJAvOQ7TEg+Vb6CqCZopp446Led6ZE4Qw@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:51 +0000
+Subject: [PATCH 20/30] ARM: shmobile: r8a7794: Add I2C clocks to device tree
+Message-Id: <c5d82c9996f68491375de47c208a41bcb150dfad.1419812186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416500463-20965-2-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1416500463-20965-2-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <cover.1419812185.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Nov 25, 2014 at 1:04 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> On Thursday 20 November 2014 17:20:58 Ulrich Hecht wrote:
-[...]
->> +                                     mult *= 2;
->> +             }
->> +     } else if (!strcmp(name, "dsi0phy") || !strcmp(name, "dsi1phy")) {
->> +             u32 phy_no = name[3] - '0';
->> +             void __iomem *dsi_reg = cpg->reg +
->> +                     (phy_no ? CPG_DSI1PHYCR : CPG_DSI0PHYCR);
->> +
->> +             parent_name = phy_no ? "dsi1pck" : "dsi0pck";
->> +             div = __raw_readl(dsi_reg);
->> +             if (!(div & 0xb8000))
->
-> If I'm not mistaken the PLL is disabled if the MANUAL bit is set and the BYPSL
-> is clear. The above check would consider the PLL to be enabled.
+From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
 
-That is a translation of the corresponding part of the legacy driver,
-where it is appropriately labeled "/* FIXME */"...
+Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+[horms: omitted device nodes and aliases; only add clocks]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a7794.dtsi            | 12 +++++++++---
+ include/dt-bindings/clock/r8a7794-clock.h |  6 ++++++
+ 2 files changed, 15 insertions(+), 3 deletions(-)
 
-I think it is sufficient to examine PLLE here.  We don't really care
-why the PLL is on or off at this point.
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 068ca09..728d719 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -538,10 +538,16 @@
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
+-			clocks = <&cpg_clocks R8A7794_CLK_QSPI>;
++			clocks = <&cpg_clocks R8A7794_CLK_QSPI>, <&hp_clk>, <&hp_clk>,
++				<&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
+ 			#clock-cells = <1>;
+-			clock-indices = <R8A7794_CLK_QSPI_MOD>;
+-			clock-output-names = "qspi_mod";
++			clock-indices = <
++				R8A7794_CLK_QSPI_MOD R8A7794_CLK_I2C5 R8A7794_CLK_I2C4
++				R8A7794_CLK_I2C3 R8A7794_CLK_I2C2 R8A7794_CLK_I2C1
++				R8A7794_CLK_I2C0
++			>;
++			clock-output-names +				"qspi_mod", "i2c5", "i2c4", "i2c3", "i2c2", "i2c1", "i2c0";
+ 		};
+ 		mstp11_clks: mstp11_clks@e615099c {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
+index fba89a4..94d9618 100644
+--- a/include/dt-bindings/clock/r8a7794-clock.h
++++ b/include/dt-bindings/clock/r8a7794-clock.h
+@@ -87,6 +87,12 @@
+ #define R8A7794_CLK_GPIO1		11
+ #define R8A7794_CLK_GPIO0		12
+ #define R8A7794_CLK_QSPI_MOD		17
++#define R8A7794_CLK_I2C5		25
++#define R8A7794_CLK_I2C4		27
++#define R8A7794_CLK_I2C3		28
++#define R8A7794_CLK_I2C2		29
++#define R8A7794_CLK_I2C1		30
++#define R8A7794_CLK_I2C0		31
+ 
+ /* MSTP11 */
+ #define R8A7794_CLK_SCIFA3		6
+-- 
+2.1.3
 
-More embarrassing is the fact that that should be "mult" up there...
-(This error also exists in the legacy driver.)
-
-CU
-Uli
