@@ -1,25 +1,76 @@
-From: David Miller <davem@davemloft.net>
-Date: Tue, 09 Dec 2014 23:05:57 +0000
-Subject: Re: [PATCH v2] sh_eth: Remove redundant alignment adjustment
-Message-Id: <20141209.180557.368241481301484599.davem@davemloft.net>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 29 Dec 2014 22:04:49 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7790: add CAN clocks
+Message-Id: <7045264.74zTCWbb7p@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418035581-3805-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1418035581-3805-1-git-send-email-ykaneko0929@gmail.com>
+References: <2616635.bsb7mLynhA@wasted.cogentembedded.com>
+In-Reply-To: <2616635.bsb7mLynhA@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: ykaneko0929@gmail.com
-Cc: netdev@vger.kernel.org, horms@verge.net.au, magnus.damm@gmail.com, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Mon,  8 Dec 2014 19:46:21 +0900
+The R-Car CAN controllers can derive the CAN bus clock not only from their
+peripheral clock input (clkp1) but also from the other internal clock (clkp2)
+and external clock fed on CAN_CLK pin.  Describe those clocks in the device
+tree,  along with  the USB_EXTAL clock  from which clkp2 is derived.
 
-> From: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
-> 
-> PTR_ALIGN macro after skb_reserve is redundant, because skb_reserve
-> function adjusts the alignment of skb->data.
-> 
-> Signed-off-by: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Applied.
+---
+ arch/arm/boot/dts/r8a7790.dtsi            |   22 ++++++++++++++++++++--
+ include/dt-bindings/clock/r8a7790-clock.h |    1 +
+ 2 files changed, 21 insertions(+), 2 deletions(-)
+
+Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
++++ renesas/arch/arm/boot/dts/r8a7790.dtsi
+@@ -838,16 +838,34 @@
+ 			clock-output-names = "audio_clk_c";
+ 		};
+ 
++		/* External USB clock - can be overridden by the board */
++		usb_extal_clk: usb_extal_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <48000000>;
++			clock-output-names = "usb_extal";
++		};
++
++		/* External CAN clock */
++		can_clk: can_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			/* This value must be overriden by the board. */
++			clock-frequency = <0>;
++			clock-output-names = "can_clk";
++			status = "disabled";
++		};
++
+ 		/* Special CPG clocks */
+ 		cpg_clocks: cpg_clocks@e6150000 {
+ 			compatible = "renesas,r8a7790-cpg-clocks",
+ 				     "renesas,rcar-gen2-cpg-clocks";
+ 			reg = <0 0xe6150000 0 0x1000>;
+-			clocks = <&extal_clk>;
++			clocks = <&extal_clk &usb_extal_clk>;
+ 			#clock-cells = <1>;
+ 			clock-output-names = "main", "pll0", "pll1", "pll3",
+ 					     "lb", "qspi", "sdh", "sd0", "sd1",
+-					     "z";
++					     "z", "rcan";
+ 		};
+ 
+ 		/* Variable factor clocks */
+Index: renesas/include/dt-bindings/clock/r8a7790-clock.h
+=================================--- renesas.orig/include/dt-bindings/clock/r8a7790-clock.h
++++ renesas/include/dt-bindings/clock/r8a7790-clock.h
+@@ -21,6 +21,7 @@
+ #define R8A7790_CLK_SD0			7
+ #define R8A7790_CLK_SD1			8
+ #define R8A7790_CLK_Z			9
++#define R8A7790_CLK_RCAN		10
+ 
+ /* MSTP0 */
+ #define R8A7790_CLK_MSIOF0		0
+
