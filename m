@@ -1,105 +1,122 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 17 Dec 2014 00:21:51 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: r8a7794: Add SDHI clocks to device tree
-Message-Id: <20141217002151.GE23321@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:36 +0000
+Subject: [PATCH 05/30] ARM: shmobile: r8a7791 dtsi: Change to using clock-indices
+Message-Id: <cb0bf8512353aef2105e0ddfcc6da5bb4c91cf25.1419812185.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418355813-16577-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1418355813-16577-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1419812185.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Dec 12, 2014 at 12:43:33PM +0900, Simon Horman wrote:
-> From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-> 
-> Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-> [horms: omitted device nodes; only add clock]
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-I have queued up this patch.
+With the addition of clock-indices in commit 8e33f91a0b84ae19 ("clk:
+shmobile: clk-mstp: change to using clock-indices"), we can change the
+DTSes to use the generic property instead of the deprecated
+vendor-specific property.
 
-> 
-> ---
-> Based on the renesas-devel-20141212-v3.18 tag of my renesas tree
-> 
-> v2 [Simon Horman]
-> * As suggested by Magnus Damm
->   - Added missing sdhi0 portions
->     (this was an error on my part when rebasing Uehara-san's patch)
-> 
-> v1 [Simon Horman]
-> * Removed portions of patch which add device nodes
-> * Renamed patch from
->   "ARM: shmobile: r8a7794: Add SDHI clocks and devices to device tree" to
->   "ARM: shmobile: r8a7794: Add SDHI clocks to device tree"
-> ---
->  arch/arm/boot/dts/r8a7794.dtsi            | 20 +++++++++++++++++++-
->  include/dt-bindings/clock/r8a7794-clock.h |  3 +++
->  2 files changed, 22 insertions(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-> index 068ca09..8794df8 100644
-> --- a/arch/arm/boot/dts/r8a7794.dtsi
-> +++ b/arch/arm/boot/dts/r8a7794.dtsi
-> @@ -293,6 +293,21 @@
->  			clock-output-names = "main", "pll0", "pll1", "pll3",
->  					     "lb", "qspi", "sdh", "sd0", "z";
->  		};
-> +		/* Variable factor clocks */
-> +		sd1_clk: sd2_clk@e6150078 {
-> +			compatible = "renesas,r8a7794-div6-clock", "renesas,cpg-div6-clock";
-> +			reg = <0 0xe6150078 0 4>;
-> +			clocks = <&pll1_div2_clk>;
-> +			#clock-cells = <0>;
-> +			clock-output-names = "sd1";
-> +		};
-> +		sd2_clk: sd3_clk@e615007c {
-> +			compatible = "renesas,r8a7794-div6-clock", "renesas,cpg-div6-clock";
-> +			reg = <0 0xe615007c 0 4>;
-> +			clocks = <&pll1_div2_clk>;
-> +			#clock-cells = <0>;
-> +			clock-output-names = "sd2";
-> +		};
->  
->  		/* Fixed factor clocks */
->  		pll1_div2_clk: pll1_div2_clk {
-> @@ -496,13 +511,16 @@
->  		mstp3_clks: mstp3_clks@e615013c {
->  			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
->  			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
-> -			clocks = <&rclk_clk>, <&hp_clk>, <&hp_clk>;
-> +			clocks = <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7794_CLK_SD0>,
-> +			         <&rclk_clk>, <&hp_clk>, <&hp_clk>;
->  			#clock-cells = <1>;
->  			clock-indices = <
-> +			        R8A7794_CLK_SDHI2 R8A7794_CLK_SDHI1 R8A7794_CLK_SDHI0
->  				R8A7794_CLK_CMT1 R8A7794_CLK_USBDMAC0
->  				R8A7794_CLK_USBDMAC1
->  			>;
->  			clock-output-names > +			        "sdhi2", "sdhi1", "sdhi0",
->  				"cmt1", "usbdmac0", "usbdmac1";
->  		};
->  		mstp7_clks: mstp7_clks@e615014c {
-> diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
-> index fba89a4..f013cdc 100644
-> --- a/include/dt-bindings/clock/r8a7794-clock.h
-> +++ b/include/dt-bindings/clock/r8a7794-clock.h
-> @@ -52,6 +52,9 @@
->  #define R8A7794_CLK_SYS_DMAC0		19
->  
->  /* MSTP3 */
-> +#define R8A7794_CLK_SDHI2		11
-> +#define R8A7794_CLK_SDHI1		12
-> +#define R8A7794_CLK_SDHI0		14
->  #define R8A7794_CLK_CMT1		29
->  #define R8A7794_CLK_USBDMAC0		30
->  #define R8A7794_CLK_USBDMAC1		31
-> -- 
-> 2.1.3
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+[geert: Extracted r8a7791-specific part, rebased, reworded]
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 22 ++++++++++++----------
+ 1 file changed, 12 insertions(+), 10 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 77c0bee..7fabea2 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1062,7 +1062,7 @@
+ 			reg = <0 0xe6150130 0 4>, <0 0xe6150030 0 4>;
+ 			clocks = <&mp_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <R8A7791_CLK_MSIOF0>;
++			clock-indices = <R8A7791_CLK_MSIOF0>;
+ 			clock-output-names = "msiof0";
+ 		};
+ 		mstp1_clks: mstp1_clks@e6150134 {
+@@ -1073,7 +1073,7 @@
+ 				 <&p_clk>, <&rclk_clk>, <&cp_clk>, <&zs_clk>, <&zs_clk>,
+ 				 <&zs_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7791_CLK_VCP0 R8A7791_CLK_VPC0 R8A7791_CLK_JPU
+ 				R8A7791_CLK_SSP1 R8A7791_CLK_TMU1 R8A7791_CLK_3DG
+ 				R8A7791_CLK_2DDMAC R8A7791_CLK_FDP1_1 R8A7791_CLK_FDP1_0
+@@ -1093,7 +1093,7 @@
+ 				 <&mp_clk>, <&mp_clk>, <&mp_clk>,
+ 				 <&zs_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7791_CLK_SCIFA2 R8A7791_CLK_SCIFA1 R8A7791_CLK_SCIFA0
+ 				R8A7791_CLK_MSIOF2 R8A7791_CLK_SCIFB0 R8A7791_CLK_SCIFB1
+ 				R8A7791_CLK_MSIOF1 R8A7791_CLK_SCIFB2
+@@ -1111,7 +1111,7 @@
+ 				 <&mmc0_clk>, <&hp_clk>, <&mp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>,
+ 				 <&hp_clk>, <&hp_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7791_CLK_TPU0 R8A7791_CLK_SDHI2 R8A7791_CLK_SDHI1 R8A7791_CLK_SDHI0
+ 				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_PCIEC R8A7791_CLK_IIC1
+ 				R8A7791_CLK_SSUSB R8A7791_CLK_CMT1
+@@ -1127,8 +1127,10 @@
+ 			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
+ 			clocks = <&hp_clk>, <&hp_clk>, <&extal_clk>, <&p_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <R8A7791_CLK_AUDIO_DMAC0 R8A7791_CLK_AUDIO_DMAC1
+-						 R8A7791_CLK_THERMAL R8A7791_CLK_PWM>;
++			clock-indices = <
++				R8A7791_CLK_AUDIO_DMAC0 R8A7791_CLK_AUDIO_DMAC1
++				R8A7791_CLK_THERMAL R8A7791_CLK_PWM
++			>;
+ 			clock-output-names = "audmac0", "audmac1", "thermal", "pwm";
+ 		};
+ 		mstp7_clks: mstp7_clks@e615014c {
+@@ -1138,7 +1140,7 @@
+ 				 <&zs_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
+ 				 <&zx_clk>, <&zx_clk>, <&zx_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7791_CLK_EHCI R8A7791_CLK_HSUSB R8A7791_CLK_HSCIF2 R8A7791_CLK_SCIF5
+ 				R8A7791_CLK_SCIF4 R8A7791_CLK_HSCIF1 R8A7791_CLK_HSCIF0
+ 				R8A7791_CLK_SCIF3 R8A7791_CLK_SCIF2 R8A7791_CLK_SCIF1
+@@ -1155,7 +1157,7 @@
+ 			clocks = <&zg_clk>, <&zg_clk>, <&zg_clk>, <&p_clk>, <&zs_clk>,
+ 				 <&zs_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7791_CLK_VIN2 R8A7791_CLK_VIN1 R8A7791_CLK_VIN0
+ 				R8A7791_CLK_ETHER R8A7791_CLK_SATA1 R8A7791_CLK_SATA0
+ 			>;
+@@ -1171,7 +1173,7 @@
+ 				 <&cp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>,
+ 				 <&hp_clk>, <&hp_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7791_CLK_GPIO7 R8A7791_CLK_GPIO6 R8A7791_CLK_GPIO5 R8A7791_CLK_GPIO4
+ 				R8A7791_CLK_GPIO3 R8A7791_CLK_GPIO2 R8A7791_CLK_GPIO1 R8A7791_CLK_GPIO0
+ 				R8A7791_CLK_RCAN1 R8A7791_CLK_RCAN0 R8A7791_CLK_QSPI_MOD R8A7791_CLK_I2C5
+@@ -1221,7 +1223,7 @@
+ 			reg = <0 0xe615099c 0 4>, <0 0xe61509ac 0 4>;
+ 			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7791_CLK_SCIFA3 R8A7791_CLK_SCIFA4 R8A7791_CLK_SCIFA5
+ 			>;
+ 			clock-output-names = "scifa3", "scifa4", "scifa5";
+-- 
+2.1.3
+
