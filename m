@@ -1,23 +1,44 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 26 Dec 2014 23:16:26 +0000
-Subject: [PATCH v4 0/3] Add R8A7791/Henninger board CAN DT support
-Message-Id: <6830301.90YaDPuTpx@wasted.cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:47:07 +0000
+Subject: [PATCH 4/4] ARM: shmobile: r8a73a4: Multiplatform support
+Message-Id: <39695882d3d642a73bca551e682426e4e3bcd158.1419810196.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1419810196.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419810196.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-   Here's the set of 3 patches against Simon Horman's 'renesas.git' repo,
-'renesas-devel-20141223-v3.19-rc1' tag. Here we add the CAN device tree support
-for the R8A7791-based Henninger board. It depends on the clk driver RCAN clock
-patch posted recently in order to work.
+Enable r8a73a4 Multiplatform support for the generic r8a73a4
+machine vector.
 
-[1/3] ARM: shmobile: r8a7791: add CAN clocks
-[2/3] ARM: shmobile: r8a7791: add CAN DT support
-[3/3] ARM: shmobile: henninger: add CAN0 DT support
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/Kconfig | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-WBR, Sergei
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 1b4fafe..d107b93 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -51,6 +51,11 @@ config ARCH_R7S72100
+ 	bool "RZ/A1H (R7S72100)"
+ 	select SYS_SUPPORTS_SH_MTU2
+ 
++config ARCH_R8A73A4
++	bool "R-Mobile APE6 (R8A73A40)"
++	select ARCH_RMOBILE
++	select RENESAS_IRQC
++
+ config ARCH_R8A7740
+ 	bool "R-Mobile A1 (R8A77400)"
+ 	select ARCH_RMOBILE
+-- 
+2.1.3
 
