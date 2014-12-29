@@ -1,39 +1,113 @@
-From: "Opensource [Steve Twiss]" <stwiss.opensource@diasemi.com>
-Date: Tue, 09 Dec 2014 12:40:16 +0000
-Subject: RE: [PATCH 2/4] DT: i2c: Add devices handled by the da9063 MFD driver
-Message-Id: <6ED8E3B22081A4459DAC7699F3695FB7D0B4C12B@SW-EX-MBX02.diasemi.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:44:01 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC DT Updates for v3.20
+Message-Id: <cover.1419812185.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418124169-7123-1-git-send-email-geert+renesas@glider.be>
- <1418124169-7123-3-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1418124169-7123-3-git-send-email-geert+renesas@glider.be>
+References: <cover.1398216022.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>, Wim Van Sebroeck <wim@iguana.be>, Wolfram Sang <wsa@the-dreams.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: Support Opensource <Support.Opensource@diasemi.com>, Guenter Roeck <linux@roeck-us.net>, Lee Jones <lee.jones@linaro.org>, "linux-watchdog@vger.kernel.org" <linux-watchdog@vger.kernel.org>, "linux-i2c@vger.kernel.org" <linux-i2c@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-T24gMDkgRGVjZW1iZXIgMjAxNCAxMToyMywgR2VlcnQgVXl0dGVyaG9ldmVuIHdyb3RlIA0KDQo+
-IFN1YmplY3Q6IFtQQVRDSCAyLzRdIERUOiBpMmM6IEFkZCBkZXZpY2VzIGhhbmRsZWQgYnkgdGhl
-IGRhOTA2MyBNRkQgZHJpdmVyDQo+IA0KPiBUaGlzIGFsbG93cyBjaGVja3BhdGNoIHRvIHZhbGlk
-YXRlIG1vcmUgRFRTZXMuDQo+IA0KPiBTaWduZWQtb2ZmLWJ5OiBHZWVydCBVeXR0ZXJob2V2ZW4g
-PGdlZXJ0K3JlbmVzYXNAZ2xpZGVyLmJlPg0KPiBDYzogZGV2aWNldHJlZUB2Z2VyLmtlcm5lbC5v
-cmcNCj4gLS0tDQo+ICBEb2N1bWVudGF0aW9uL2RldmljZXRyZWUvYmluZGluZ3MvaTJjL3RyaXZp
-YWwtZGV2aWNlcy50eHQgfCAxICsNCj4gIDEgZmlsZSBjaGFuZ2VkLCAxIGluc2VydGlvbigrKQ0K
-PiANCj4gZGlmZiAtLWdpdCBhL0RvY3VtZW50YXRpb24vZGV2aWNldHJlZS9iaW5kaW5ncy9pMmMv
-dHJpdmlhbC1kZXZpY2VzLnR4dA0KPiBiL0RvY3VtZW50YXRpb24vZGV2aWNldHJlZS9iaW5kaW5n
-cy9pMmMvdHJpdmlhbC1kZXZpY2VzLnR4dA0KPiBpbmRleCBlMGJlZWY0ZjhjZmY1Y2RmLi4zYmM0
-ZWEzYzVjNDg0MmZmIDEwMDY0NA0KPiAtLS0gYS9Eb2N1bWVudGF0aW9uL2RldmljZXRyZWUvYmlu
-ZGluZ3MvaTJjL3RyaXZpYWwtZGV2aWNlcy50eHQNCj4gKysrIGIvRG9jdW1lbnRhdGlvbi9kZXZp
-Y2V0cmVlL2JpbmRpbmdzL2kyYy90cml2aWFsLWRldmljZXMudHh0DQo+IEBAIC00Nyw2ICs0Nyw3
-IEBAIGRhbGxhcyxkczMyMzIJCUV4dHJlbWVseSBBY2N1cmF0ZSBJwrJDIFJUQw0KPiB3aXRoIElu
-dGVncmF0ZWQgQ3J5c3RhbCBhbmQgU1JBTQ0KPiAgZGFsbGFzLGRzNDUxMAkJQ1BVIFN1cGVydmlz
-b3Igd2l0aCBOb252b2xhdGlsZSBNZW1vcnkgYW5kDQo+IFByb2dyYW1tYWJsZSBJL08NCj4gIGRh
-bGxhcyxkczc1CQlEaWdpdGFsIFRoZXJtb21ldGVyIGFuZCBUaGVybW9zdGF0DQo+ICBkbGcsZGE5
-MDUzCQlEQTkwNTM6IGZsZXhpYmxlIHN5c3RlbSBsZXZlbCBQTUlDIHdpdGggbXVsdGljb3JlDQo+
-IHN1cHBvcnQNCj4gK2RsZyxkYTkwNjMJCURBOTA2Mzogc3lzdGVtIFBNSUMgZm9yIHF1YWQtY29y
-ZSBhcHBsaWNhdGlvbg0KPiBwcm9jZXNzb3JzDQo+ICBlcHNvbixyeDgwMjUJCUhpZ2gtU3RhYmls
-aXR5LiBJMkMtQnVzIElOVEVSRkFDRSBSRUFMIFRJTUUgQ0xPQ0sNCj4gTU9EVUxFDQo+ICBlcHNv
-bixyeDg1ODEJCUkyQy1CVVMgSU5URVJGQUNFIFJFQUwgVElNRSBDTE9DSyBNT0RVTEUNCj4gIGZz
-bCxtYWczMTEwCQlNQUczMTEwOiBYdHJpbnNpYyBIaWdoIEFjY3VyYWN5LCAzRCBNYWduZXRvbWV0
-ZXINCg0KQWNrZWQtYnk6IFN0ZXZlIFR3aXNzIDxzdHdpc3Mub3BlbnNvdXJjZUBkaWFzZW1pLmNv
-bT4NCg=
+Hi Olof, Hi Kevin, Hi Arnd,
+
+Please consider these Renesas ARM based SoC DT updates for v3.20.
+
+
+The following changes since commit 97bf6af1f928216fd6c5a66e8a57bfa95a659672:
+
+  Linux 3.19-rc1 (2014-12-20 17:08:50 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-for-v3.20
+
+for you to fetch changes up to 7408d3061d2f04181820902fae6e92e4a73d5cc0:
+
+  ARM: shmobile: r8a7791: add MLB+ clock (2014-12-23 09:18:23 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC DT Updates for v3.20
+
+* Use clock-indices instead of deprecated renesas,clock-indices
+* Prepare for r8a73a4 multiplatform support
+* Increase clock coverage for r8a779[014]
+* Correct r8a7779 clock usage
+* Correct LAN9220 VDDVARIO voltage on ape6evm
+* Correct QSPI SPI-Flash mode of lager and koelsch
+* Correct flash partition label and size on koelsch
+* Correct mask for GIC PPI interrupts on r8a779[14]
+* Correct BSC bus range on ape6evm-reference
+
+----------------------------------------------------------------
+Andrey Gusakov (2):
+      ARM: shmobile: r8a7790: add MLB+ clock
+      ARM: shmobile: r8a7791: add MLB+ clock
+
+Ben Dooks (2):
+      ARM: shmobile: r8a7790 dtsi: Change to using clock-indices
+      ARM: shmobile: r8a7791 dtsi: Change to using clock-indices
+
+Geert Uytterhoeven (6):
+      ARM: shmobile: ape6evm-reference: Correct BSC bus range
+      ARM: shmobile: r8a7740 dtsi: Change to using clock-indices
+      ARM: shmobile: r8a7779 dtsi: Change to using clock-indices
+      ARM: shmobile: r8a7794 dtsi: Change to using clock-indices
+      ARM: shmobile: r8a7791: Correct mask for GIC PPI interrupts
+      ARM: shmobile: r8a7794: Correct mask for GIC PPI interrupts
+
+Hiroyuki Yokoyama (1):
+      ARM: shmobile: r8a7794: Add SYS-DMAC clocks to device tree
+
+Hisashi Nakamura (3):
+      ARM: shmobile: koelsch: Fix QSPI mode of SPI-Flash into mode3
+      ARM: shmobile: lager: Fix QSPI mode of SPI-Flash into mode3
+      ARM: shmobile: r8a7794: Add QSPI clock to device tree
+
+Kazuya Mizuguchi (1):
+      ARM: shmobile: r8a7794: Add USBDMAC[01] clocks to device tree
+
+Koji Matsuoka (1):
+      ARM: shmobile: r8a7794: Add I2C clocks to device tree
+
+Laurent Pinchart (1):
+      ARM: shmobile: ape6evm: Fix LAN9220 VDDVARIO voltage
+
+Magnus Damm (3):
+      ARM: shmobile: r8a7779: Use R8A7779_CLK_P as SCIF parent clock
+      ARM: shmobile: r8a7779: Use MSTP for SCIF clocks
+      ARM: shmobile: r8a7779: Add TWD device to DTS
+
+Ryo Kataoka (1):
+      ARM: shmobile: r8a7791: Add IPMMU-SGX clock to device tree
+
+Shinobu Uehara (3):
+      ARM: shmobile: r8a7794: Add USB clocks to device tree
+      ARM: shmobile: r8a7794: Add SDHI clocks to device tree
+      ARM: shmobile: r8a7794: Add MMCIF clock to device tree
+
+Simon Horman (1):
+      ARM: shmobile: dts: koelsch: Fix flash partition label and size
+
+Ulrich Hecht (5):
+      ARM: shmobile: ape6evm: fix compatible string for Ethernet controller
+      ARM: shmobile: ape6evm: synchronize dts with reference platform
+      ARM: shmobile: ape6evm: Add LEDs to the device tree
+      ARM: shmobile: ape6evm: Add keypad to the device tree
+      ARM: shmobile: r8a73a4: Add r8a73a4-ape6evm.dtb to ARCH_SHMOBILE_MULTI
+
+ arch/arm/boot/dts/Makefile                      |   1 +
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts |   2 +-
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts           | 173 +++++++++++++++++++++++-
+ arch/arm/boot/dts/r8a7740.dtsi                  |  10 +-
+ arch/arm/boot/dts/r8a7779.dtsi                  |  39 ++++--
+ arch/arm/boot/dts/r8a7790-lager.dts             |   2 +
+ arch/arm/boot/dts/r8a7790.dtsi                  |  33 +++--
+ arch/arm/boot/dts/r8a7791-koelsch.dts           |  12 +-
+ arch/arm/boot/dts/r8a7791.dtsi                  |  40 +++---
+ arch/arm/boot/dts/r8a7794.dtsi                  |  82 ++++++++---
+ include/dt-bindings/clock/r8a7790-clock.h       |   1 +
+ include/dt-bindings/clock/r8a7791-clock.h       |   2 +
+ include/dt-bindings/clock/r8a7794-clock.h       |  17 +++
+ 13 files changed, 333 insertions(+), 81 deletions(-)
