@@ -1,42 +1,51 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 05 Dec 2014 00:13:32 +0000
-Subject: Re: [PATCH 0/2] ARM: shmobile: R-mobile: Fix SYSC register lengths
-Message-Id: <20141205001332.GA8790@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:52 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC DT PM Updates for v3.20
+Message-Id: <cover.1419809198.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1417696298-27740-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1417696298-27740-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Dec 04, 2014 at 01:31:36PM +0100, Geert Uytterhoeven wrote:
-> 	Hi Simon, Magnus,
-> 
-> This patch series fixes the register lengths of the SYSC device nodes, by
-> adding the missing 0x prefixes. They were really intended to be 0x8000, not
-> 8000.
-> This doesn't cause any problems for now, but at least the second range
-> is documented to cover the full 32 KiB on R-Mobile A1 (r8a7740).
-> Sorry for not noticing before.
-> 
-> Perhaps these can still be folded into the commits that introduced the bugs?
->   - commit 0f3dad1d6c519ddf ("PM / Domains: Add DT bindings for the R-Mobile
->     System Controller"),
->   - commit 2f49e6f2721c4344 ("ARM: shmobile: r8a7740 dtsi: Add PM domain
->     support").
-> 
-> Thanks!
-> 
-> Geert Uytterhoeven (2):
->   PM / Domains: R-Mobile SYSC: Add missing 0x prefixes to example
->   ARM: shmobile: r8a7740 dtsi: Add missing 0x prefix to SYSC reg lengths
-> 
->  Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt | 2 +-
->  arch/arm/boot/dts/r8a7740.dtsi                                   | 2 +-
->  2 files changed, 2 insertions(+), 2 deletions(-)
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Thanks Geert,
+Please consider these Renesas ARM based SoC DT PM updates for v3.20.
 
-I will squash these changes into the patches that added the problems.
+
+The following changes since commit 97bf6af1f928216fd6c5a66e8a57bfa95a659672:
+
+  Linux 3.19-rc1 (2014-12-20 17:08:50 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-pm-for-v3.20
+
+for you to fetch changes up to 73e844408c4e344aaece455a4bfa9d845e4d8425:
+
+  ARM: shmobile: r8a7740 dtsi: Add PM domain support (2014-12-21 16:59:10 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC DT PM Updates for v3.20
+
+* DT support from PM domains
+* Enable DT support for PM domains on r8a7740
+
+----------------------------------------------------------------
+Geert Uytterhoeven (6):
+      PM / Domains: Add DT bindings for the R-Mobile System Controller
+      ARM: shmobile: R-Mobile: Use generic_pm_domain.attach_dev() for pm_clk setup
+      ARM: shmobile: R-Mobile: Enable module clocks if !CONFIG_PM_RUNTIME
+      ARM: shmobile: R-Mobile: Store SYSC base address in rmobile_pm_domain
+      ARM: shmobile: R-Mobile: Add DT support for PM domains
+      ARM: shmobile: r8a7740 dtsi: Add PM domain support
+
+ .../bindings/power/renesas,sysc-rmobile.txt        |  98 +++++++
+ arch/arm/boot/dts/r8a7740.dtsi                     |  99 ++++++++
+ arch/arm/mach-shmobile/Kconfig                     |   3 +-
+ arch/arm/mach-shmobile/pm-r8a7740.c                |  14 +
+ arch/arm/mach-shmobile/pm-rmobile.c                | 281 +++++++++++++++++++--
+ arch/arm/mach-shmobile/pm-rmobile.h                |   3 +-
+ arch/arm/mach-shmobile/pm-sh7372.c                 |  11 +
+ 7 files changed, 492 insertions(+), 17 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
