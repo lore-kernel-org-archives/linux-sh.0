@@ -1,94 +1,55 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Mon, 15 Dec 2014 14:14:43 +0000
-Subject: [PATCH/RFC] serial: sh-sci: Fix R-Car SCIF and HSCIF overrun handling
-Message-Id: <1418652883-6884-1-git-send-email-ykaneko0929@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:41 +0000
+Subject: [PATCH 10/30] ARM: shmobile: r8a7794: Correct mask for GIC PPI interrupts
+Message-Id: <00add867b802b3023b49433b9002fba79f042acc.1419812186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1419812185.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-serial@vger.kernel.org
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-When fifo overrun happened, the interrupt status refers to
-SCLSR register in R-Car SCIF and HSCIF.
-Thus, overrun handling takes SCLSR register into account.
+R-Car E2 (r8a7794) contains two Cortex-A7 cores, hence the second
+interrupt specifier cell for Private Peripheral Interrupts should use
+"GIC_CPU_MASK_SIMPLE(2)".
 
-Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a7794.dtsi | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
-tree.
-
- drivers/tty/serial/sh-sci.c | 18 +++++++++++++-----
- 1 file changed, 13 insertions(+), 5 deletions(-)
-
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 1110523..ff549a8 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -793,8 +793,6 @@ static int sci_handle_errors(struct uart_port *port)
- 		/* overrun error */
- 		if (tty_insert_flip_char(tport, 0, TTY_OVERRUN))
- 			copied++;
--
--		dev_notice(port->dev, "overrun error\n");
- 	}
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 7fd40f3..e537654 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -47,7 +47,7 @@
+ 			<0 0xf1002000 0 0x1000>,
+ 			<0 0xf1004000 0 0x2000>,
+ 			<0 0xf1006000 0 0x2000>;
+-		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
++		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_HIGH)>;
+ 	};
  
- 	if (status & SCxSR_FER(port)) {
-@@ -835,8 +833,6 @@ static int sci_handle_errors(struct uart_port *port)
+ 	cmt0: timer@ffca0000 {
+@@ -84,10 +84,10 @@
  
- 		if (tty_insert_flip_char(tport, 0, TTY_PARITY))
- 			copied++;
--
--		dev_notice(port->dev, "parity error\n");
- 	}
+ 	timer {
+ 		compatible = "arm,armv7-timer";
+-		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+-			     <1 14 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+-			     <1 11 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+-			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
++		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>,
++			     <1 14 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>,
++			     <1 11 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>,
++			     <1 10 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>;
+ 	};
  
- 	if (copied)
-@@ -1002,12 +998,15 @@ static inline unsigned long port_rx_irq_mask(struct uart_port *port)
- static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
- {
- 	unsigned short ssr_status, scr_status, err_enabled;
-+	unsigned short slr_status = 0;
- 	struct uart_port *port = ptr;
- 	struct sci_port *s = to_sci_port(port);
- 	irqreturn_t ret = IRQ_NONE;
- 
- 	ssr_status = serial_port_in(port, SCxSR);
- 	scr_status = serial_port_in(port, SCSCR);
-+	if (port->type = PORT_SCIF || port->type = PORT_HSCIF)
-+		slr_status = serial_port_in(port, SCLSR);
- 	err_enabled = scr_status & port_rx_irq_mask(port);
- 
- 	/* Tx Interrupt */
-@@ -1020,8 +1019,11 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
- 	 * DR flags
- 	 */
- 	if (((ssr_status & SCxSR_RDxF(port)) || s->chan_rx) &&
--	    (scr_status & SCSCR_RIE))
-+	    (scr_status & SCSCR_RIE)) {
-+		if (port->type = PORT_SCIF || port->type = PORT_HSCIF)
-+			sci_handle_fifo_overrun(port);
- 		ret = sci_rx_interrupt(irq, ptr);
-+	}
- 
- 	/* Error Interrupt */
- 	if ((ssr_status & SCxSR_ERRORS(port)) && err_enabled)
-@@ -1031,6 +1033,12 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
- 	if ((ssr_status & SCxSR_BRK(port)) && err_enabled)
- 		ret = sci_br_interrupt(irq, ptr);
- 
-+	/* Overrun Interrupt */
-+	if (port->type = PORT_SCIF || port->type = PORT_HSCIF) {
-+		if ((slr_status & 0x01))
-+			sci_handle_fifo_overrun(port);
-+	}
-+
- 	return ret;
- }
- 
+ 	irqc0: interrupt-controller@e61c0000 {
 -- 
-1.9.1
+2.1.3
 
