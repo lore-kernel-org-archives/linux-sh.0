@@ -1,46 +1,58 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Sun, 07 Dec 2014 11:53:21 +0000
-Subject: Re: [PATCH] dmaengine: shdma: Runtime-resume device in .shutdown()
-Message-Id: <20141207115344.GZ3411@intel.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:59 +0000
+Subject: [PATCH 28/30] ARM: shmobile: ape6evm: Fix LAN9220 VDDVARIO voltage
+Message-Id: <09ee81da85b10e0ca876977d333c8761441ecc78.1419812186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416410146-29652-1-git-send-email-geert+renesas@glider.be>
- <20141205174754.GV3411@intel.com>
- <CAMuHMdW+zQontjNcG+MGxFec4CZFFzcDAwY=zNMNKCZLJh9whQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdW+zQontjNcG+MGxFec4CZFFzcDAwY=zNMNKCZLJh9whQ@mail.gmail.com>
+References: <cover.1419812185.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Dan Williams <dan.j.williams@intel.com>, dmaengine@vger.kernel.org, Linux PM list <linux-pm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Dec 07, 2014 at 11:35:21AM +0100, Geert Uytterhoeven wrote:
-> >>  static void sh_dmae_shutdown(struct platform_device *pdev)
-> >>  {
-> >>       struct sh_dmae_device *shdev = platform_get_drvdata(pdev);
-> >> +
-> >> +     pm_runtime_get_sync(&pdev->dev);
-> >>       sh_dmae_ctl_stop(shdev);
-> >> +     pm_runtime_put(&pdev->dev);
-> > but if you are runtime_suspended, then why should you even proceed to stop
-> > the clock. Why not just cleanup and return when runtime suspended
-> 
-> sh_dmae_ctl_stop() stops the DMA engine, not the clock.
-> Accessing the DMA engine cannot be done while the module clock is stopped.
-> 
-> If pm_runtime_suspended() returns true, I can indeed just return (no new
-> request can come in while .shutdown() is called).
-> However, if pm_runtime_suspended() returns false, the device may still
-> become runtime suspended in between the check for pm_runtime_suspended()
-> and accessing the DMA engine registers in sh_dmae_ctl_stop(), as runtime
-> suspend is an asynchronous operation, right?
-> 
-> So I think adding a check for pm_runtime_suspended() can only serve as
-> an optimization, the pm_runtime_{get_sync,put}() has to stay to prevent a
-> race condition.
-You are quite right in your observations, but this solution though correct
-seems bit heavy for case like shutdown. can't we can use driver lock to
-prevent race.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
+The LAN9220 VDDVARIO supply is powered by a 1.8V source, not 3.3V. Fix
+it in the device tree.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+index 6b7bc1f..0d50bef 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+@@ -55,8 +55,16 @@
+ 		enable-active-high;
+ 	};
+ 
+-	/* Common 3.3V rail, used by several devices on APE6EVM */
+-	ape6evm_fixed_3v3: regulator@2 {
++	/* Common 1.8V and 3.3V rails, used by several devices on APE6EVM */
++	ape6evm_fixed_1v8: regulator@2 {
++		compatible = "regulator-fixed";
++		regulator-name = "1V8";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++		regulator-always-on;
++	};
++
++	ape6evm_fixed_3v3: regulator@3 {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "3V3";
+ 		regulator-min-microvolt = <3300000>;
+@@ -80,7 +88,7 @@
+ 			smsc,irq-active-high;
+ 			smsc,irq-push-pull;
+ 			vdd33a-supply = <&ape6evm_fixed_3v3>;
+-			vddvario-supply = <&ape6evm_fixed_3v3>;
++			vddvario-supply = <&ape6evm_fixed_1v8>;
+ 		};
+ 	};
+ 
 -- 
-~Vinod
+2.1.3
 
