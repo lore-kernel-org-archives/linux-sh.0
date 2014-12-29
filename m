@@ -1,51 +1,158 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 29 Dec 2014 22:06:07 +0000
-Subject: [PATCH 2/2] ARM: shmobile: r8a7790: add CAN DT support
-Message-Id: <5498306.nhRks3sT7k@wasted.cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:55 +0000
+Subject: [PATCH 24/30] ARM: shmobile: ape6evm: synchronize dts with reference platform
+Message-Id: <326baa8029706ba6fbba9dd40f2310f718bfab4b.1419812186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2616635.bsb7mLynhA@wasted.cogentembedded.com>
-In-Reply-To: <2616635.bsb7mLynhA@wasted.cogentembedded.com>
+References: <cover.1419812185.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Define the generic R8A7790 parts of the CAN0/1 device nodes.
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+This moves everything to the legacy dts that is missing there in
+preparation for the switch to multiplatform.
 
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi |   20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts | 92 ++++++++++++++++++++++++++++++++++-
+ 1 file changed, 90 insertions(+), 2 deletions(-)
 
-Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7790.dtsi
-@@ -792,6 +792,26 @@
- 		};
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+index baca8f8..c98cd14 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+@@ -10,14 +10,19 @@
+ 
+ /dts-v1/;
+ #include "r8a73a4.dtsi"
+-#include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "APE6EVM";
+ 	compatible = "renesas,ape6evm", "renesas,r8a73a4";
+ 
++	aliases {
++		serial0 = &scifa0;
++	};
++
+ 	chosen {
+ 		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
++		stdout-path = &scifa0;
  	};
  
-+	can0: can@e6e80000 {
-+		compatible = "renesas,can-r8a7790";
-+		reg = <0 0xe6e80000 0 0x1000>;
-+		interrupts = <0 186 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7790_CLK_RCAN0>,
-+		       	 <&cpg_clocks R8A7790_CLK_RCAN>, <&can_clk>;
-+		clock-names = "clkp1", "clkp2", "can_clk";
-+		status = "disabled";
+ 	memory@40000000 {
+@@ -30,7 +35,27 @@
+ 		reg = <2 0x00000000 0 0x40000000>;
+ 	};
+ 
+-	ape6evm_fixed_3v3: fixedregulator@0 {
++	vcc_mmc0: regulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "MMC0 Vcc";
++		regulator-min-microvolt = <2800000>;
++		regulator-max-microvolt = <2800000>;
++		regulator-always-on;
 +	};
 +
-+	can1: can@e6e88000 {
-+		compatible = "renesas,can-r8a7790";
-+		reg = <0 0xe6e88000 0 0x1000>;
-+		interrupts = <0 187 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7790_CLK_RCAN1>,
-+		       	 <&cpg_clocks R8A7790_CLK_RCAN>, <&can_clk>;
-+		clock-names = "clkp1", "clkp2", "can_clk";
-+		status = "disabled";
++	vcc_sdhi0: regulator@1 {
++		compatible = "regulator-fixed";
++
++		regulator-name = "SDHI0 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpio = <&pfc 76 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
 +	};
 +
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
++	/* Common 3.3V rail, used by several devices on APE6EVM */
++	ape6evm_fixed_3v3: regulator@2 {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "3V3";
+ 		regulator-min-microvolt = <3300000>;
+@@ -39,8 +64,10 @@
+ 	};
+ 
+ 	lbsc {
++		compatible = "simple-bus";
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
++		ranges = <0 0 0 0x20000000>;
+ 
+ 		ethernet@8000000 {
+ 			compatible = "smsc,lan9220", "smsc,lan9115";
+@@ -79,3 +106,64 @@
+ 	>;
+ 	voltage-tolerance = <1>; /* 1% */
+ };
++
++&cmt1 {
++	status = "okay";
++};
++
++&pfc {
++	scifa0_pins: serial0 {
++		renesas,groups = "scifa0_data";
++		renesas,function = "scifa0";
++	};
++
++	mmc0_pins: mmc {
++		renesas,groups = "mmc0_data8", "mmc0_ctrl";
++		renesas,function = "mmc0";
++	};
++
++	sdhi0_pins: sd0 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
++		renesas,function = "sdhi0";
++	};
++
++	sdhi1_pins: sd1 {
++		renesas,groups = "sdhi1_data4", "sdhi1_ctrl";
++		renesas,function = "sdhi1";
++	};
++};
++
++&mmcif0 {
++	vmmc-supply = <&vcc_mmc0>;
++	bus-width = <8>;
++	non-removable;
++	pinctrl-names = "default";
++	pinctrl-0 = <&mmc0_pins>;
++	status = "okay";
++};
++
++&scifa0 {
++	pinctrl-0 = <&scifa0_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
++&sdhi0 {
++	vmmc-supply = <&vcc_sdhi0>;
++	bus-width = <4>;
++	toshiba,mmc-wrprotect-disable;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdhi0_pins>;
++	status = "okay";
++};
++
++&sdhi1 {
++	vmmc-supply = <&ape6evm_fixed_3v3>;
++	bus-width = <4>;
++	broken-cd;
++	toshiba,mmc-wrprotect-disable;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdhi1_pins>;
++	status = "okay";
++};
+-- 
+2.1.3
 
