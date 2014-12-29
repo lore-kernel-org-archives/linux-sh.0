@@ -1,36 +1,55 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 17 Dec 2014 11:35:30 +0000
-Subject: Re: [PATCH] usb: hcd: add OTG ID signal sensing
-Message-Id: <54916A82.4010105@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:40 +0000
+Subject: [PATCH 09/30] ARM: shmobile: r8a7791: Correct mask for GIC PPI interrupts
+Message-Id: <aa5404fc74c31491c8087a9ed546a94dee60aac1.1419812185.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <3663198.HSrURZGche@wasted.cogentembedded.com> <BN3PR0301MB08495DD76B65E14BDE460E42816D0@BN3PR0301MB0849.namprd03.prod.outlook.com>
-In-Reply-To: <BN3PR0301MB08495DD76B65E14BDE460E42816D0@BN3PR0301MB0849.namprd03.prod.outlook.com>
+References: <cover.1419812185.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Peter Chen <Peter.Chen@freescale.com>, "gregkh@linuxfoundation.org" <gregkh@linuxfoundation.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>
-Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-On 12/17/2014 5:08 AM, Peter Chen wrote:
+R-Car M2-W (r8a7791) contains two Cortex-A15 cores, hence the second
+interrupt specifier cell for Private Peripheral Interrupts should use
+"GIC_CPU_MASK_SIMPLE(2)".
 
->> On the Renesas R8A7791 SoC based boards there's MAX3355 USB OTG chip and
->> mini-AB USB connector corresponding to USB port 0 driven either by EHCI/OHCI
->> or  Renesas USBHS gadget controller. And we'd like the  host/gadget drivers to
->> work based on the cable type connected. An 'extcon' driver for MAX3355 has
->> been written, so we only need to bind  to it via device tree which I'm doing in
->> this patch.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
->> I wasn't able to find a solution better than checking the cable type at the host
->> driver probe time and refusing to drive a host if B-cable is connected.
-
-> You may need a dual-role/otg driver to do it, which can enable host/device function
-> according to ID pin.
-
-    It would have been too good if I had a dual-role controller. :-)
-    But I have what I have. IIUC, such configuration (OHCI and UDC sharing a 
-USB port) has been used on OMAP1.
-
-WBR, Sergei
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 7fabea2..958a69b 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -78,7 +78,7 @@
+ 			<0 0xf1002000 0 0x1000>,
+ 			<0 0xf1004000 0 0x2000>,
+ 			<0 0xf1006000 0 0x2000>;
+-		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
++		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_HIGH)>;
+ 	};
+ 
+ 	gpio0: gpio@e6050000 {
+@@ -186,10 +186,10 @@
+ 
+ 	timer {
+ 		compatible = "arm,armv7-timer";
+-		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+-			     <1 14 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+-			     <1 11 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+-			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
++		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>,
++			     <1 14 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>,
++			     <1 11 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>,
++			     <1 10 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>;
+ 	};
+ 
+ 	cmt0: timer@ffca0000 {
+-- 
+2.1.3
 
