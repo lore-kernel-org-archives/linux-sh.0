@@ -1,60 +1,51 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 23 Dec 2014 22:59:32 +0000
-Subject: Re: [PATCH] clk-rcar-gen2: RCAN clock support
-Message-Id: <5499F3D4.6040302@cogentembedded.com>
+Date: Mon, 29 Dec 2014 22:06:07 +0000
+Subject: [PATCH 2/2] ARM: shmobile: r8a7790: add CAN DT support
+Message-Id: <5498306.nhRks3sT7k@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201407310023.43605.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201407310023.43605.sergei.shtylyov@cogentembedded.com>
+References: <2616635.bsb7mLynhA@wasted.cogentembedded.com>
+In-Reply-To: <2616635.bsb7mLynhA@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: mturquette@linaro.org, linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, vksavl@gmail.com
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Define the generic R8A7790 parts of the CAN0/1 device nodes.
 
-On 07/31/2014 12:23 AM, Sergei Shtylyov wrote:
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-> Add RCAN clock support to the R-Car generation 2 CPG driver. This clock gets
-> derived from the USB_EXTAL clock by dividing it by 6. The layout of RCANCKCR
-> register is close to those of the clocks supported by the 'clk-div6'  driver
-> but has no divider field, and so can't be supported by that driver...
+---
+ arch/arm/boot/dts/r8a7790.dtsi |   20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
-> ---
-> The patch is against the 'clk-next' branch of Mike Turquette's 'linux.git' repo.
->
->   drivers/clk/shmobile/clk-rcar-gen2.c |   99 +++++++++++++++++++++++++++++++++++
->   1 file changed, 99 insertions(+)
-
-> Index: linux/drivers/clk/shmobile/clk-rcar-gen2.c
-> =================================> --- linux.orig/drivers/clk/shmobile/clk-rcar-gen2.c
-> +++ linux/drivers/clk/shmobile/clk-rcar-gen2.c
-[...]
-> +static struct clk * __init cpg_rcan_clk_register(struct rcar_gen2_cpg *cpg,
-> +						 struct device_node *np)
-> +{
-> +	static const char *parent_name;
-
-    No need for this *static*...
-
-> +	struct clk_init_data init;
-> +	struct cpg_rcan_clk *rcanclk;
-> +	struct clk *clk;
-> +
-> +	rcanclk = kzalloc(sizeof(*rcanclk), GFP_KERNEL);
-> +	if (!rcanclk)
-> +		return ERR_PTR(-ENOMEM);
-> +
-> +	parent_name = of_clk_get_parent_name(np, 1);
-> +
-> +	init.name = "rcan";
-> +	init.ops = &cpg_rcan_clk_ops;
-> +	init.parent_names = &parent_name;
-> +	init.num_parents = 1;
-
-    Ugh, forgot to clear the 'init.flags', so that it has some random value...
-
-WBR, Sergei
+Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
++++ renesas/arch/arm/boot/dts/r8a7790.dtsi
+@@ -792,6 +792,26 @@
+ 		};
+ 	};
+ 
++	can0: can@e6e80000 {
++		compatible = "renesas,can-r8a7790";
++		reg = <0 0xe6e80000 0 0x1000>;
++		interrupts = <0 186 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7790_CLK_RCAN0>,
++		       	 <&cpg_clocks R8A7790_CLK_RCAN>, <&can_clk>;
++		clock-names = "clkp1", "clkp2", "can_clk";
++		status = "disabled";
++	};
++
++	can1: can@e6e88000 {
++		compatible = "renesas,can-r8a7790";
++		reg = <0 0xe6e88000 0 0x1000>;
++		interrupts = <0 187 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7790_CLK_RCAN1>,
++		       	 <&cpg_clocks R8A7790_CLK_RCAN>, <&can_clk>;
++		clock-names = "clkp1", "clkp2", "can_clk";
++		status = "disabled";
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 
