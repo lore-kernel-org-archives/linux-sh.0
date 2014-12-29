@@ -1,57 +1,68 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 04 Dec 2014 07:13:51 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: Fix is_e2 warning
-Message-Id: <20141204071349.GB25806@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:44:00 +0000
+Subject: [PATCH 29/30] ARM: shmobile: r8a7790: add MLB+ clock
+Message-Id: <f6b5dd4088d082b53eb135e1d6b4b213bf5ce127.1419812186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20141203114804.5871.51568.sendpatchset@w520>
-In-Reply-To: <20141203114804.5871.51568.sendpatchset@w520>
+References: <cover.1419812185.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Dec 03, 2014 at 08:48:04PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
-> 
-> Fix "is_e2" warning introduced by:
-> 
-> 9ce3fa6 ARM: shmobile: rcar-gen2: Add CA7 arch_timer initialization for r8a7794
-> 
-> Only triggers on kernel configurations that have ARCH_ARM_TIMER=n.
-> 
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> ---
+From: Andrey Gusakov <andrey.gusakov@cogentembedded.com>
 
-Thanks Magnus,
+Add MLB+ clock to R8A7790 device tree.
 
-I have queued this up.
+Signed-off-by: Andrey Gusakov <andrey.gusakov@cogentembedded.com>
+[Sergei: rebased, renamed, added changelog]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
->  Changes since V1:
->  - Use of_machine_is_compatible()
-> 
->  arch/arm/mach-shmobile/setup-rcar-gen2.c |    4 +---
->  1 file changed, 1 insertion(+), 3 deletions(-)
-> 
-> --- 0001/arch/arm/mach-shmobile/setup-rcar-gen2.c
-> +++ work/arch/arm/mach-shmobile/setup-rcar-gen2.c	2014-11-28 12:55:44.000000000 +0900
-> @@ -52,15 +52,13 @@ void __init rcar_gen2_timer_init(void)
->  {
->  #if defined(CONFIG_ARM_ARCH_TIMER) || defined(CONFIG_COMMON_CLK)
->  	u32 mode = rcar_gen2_read_mode_pins();
-> -	bool is_e2 = (bool)of_find_compatible_node(NULL, NULL,
-> -		"renesas,r8a7794");
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790.dtsi            | 13 +++++++------
+ include/dt-bindings/clock/r8a7790-clock.h |  1 +
+ 2 files changed, 8 insertions(+), 6 deletions(-)
 
-One less cast in the world, awesome!!!
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index ffeff98..af30c24 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1149,16 +1149,17 @@
+ 		mstp8_clks: mstp8_clks@e6150990 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
+-			clocks = <&zg_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>, <&p_clk>,
+-				 <&zs_clk>, <&zs_clk>;
++			clocks = <&hp_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>,
++			         <&zg_clk>, <&p_clk>, <&zs_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
+-				R8A7790_CLK_VIN3 R8A7790_CLK_VIN2 R8A7790_CLK_VIN1
+-				R8A7790_CLK_VIN0 R8A7790_CLK_ETHER R8A7790_CLK_SATA1
+-				R8A7790_CLK_SATA0
++				R8A7790_CLK_MLB R8A7790_CLK_VIN3 R8A7790_CLK_VIN2
++				R8A7790_CLK_VIN1 R8A7790_CLK_VIN0 R8A7790_CLK_ETHER
++				R8A7790_CLK_SATA1 R8A7790_CLK_SATA0
+ 			>;
+ 			clock-output-names -				"vin3", "vin2", "vin1", "vin0", "ether", "sata1", "sata0";
++				"mlb", "vin3", "vin2", "vin1", "vin0", "ether",
++				"sata1", "sata0";
+ 		};
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index c27b3b5..9194027 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -97,6 +97,7 @@
+ #define R8A7790_CLK_LVDS0		26
+ 
+ /* MSTP8 */
++#define R8A7790_CLK_MLB			2
+ #define R8A7790_CLK_VIN3		8
+ #define R8A7790_CLK_VIN2		9
+ #define R8A7790_CLK_VIN1		10
+-- 
+2.1.3
 
->  #endif
->  #ifdef CONFIG_ARM_ARCH_TIMER
->  	void __iomem *base;
->  	int extal_mhz = 0;
->  	u32 freq;
->  
-> -	if (is_e2) {
-> +	if (of_machine_is_compatible("renesas,r8a7794")) {
->  		freq = 260000000 / 8;	/* ZS / 8 */
->  		/* CNTVOFF has to be initialized either from non-secure
->  		 * Hypervisor mode or secure Monitor mode with SCR.NS=1.
-> 
