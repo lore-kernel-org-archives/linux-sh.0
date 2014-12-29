@@ -1,63 +1,53 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 17 Dec 2014 06:11:52 +0000
-Subject: [PATCH 1/2] ARM: shmobile: r8a7790: tidyup #sound-dai-cells settings
-Message-Id: <878ui63iv8.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:50 +0000
+Subject: [PATCH 3/6] ARM: shmobile: R-Mobile: Enable module clocks if !CONFIG_PM_RUNTIME
+Message-Id: <64b0089e0c4867365b66973f3d844843e403d2a3.1419809198.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1419809198.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419809198.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Renesas sound driver needs #sound-dai-cells settings, but, this usage
-is a little bit confusable. It came from ALSA SoC historical reasons.
-The sound DAI naming method is different between Single/Multi DAI in
-the ALSA framework, and it is used for sound card matching.
-And this #sound-dai-cells has relationship to it.
-Current SoC dtsi has #sound-dai-cells = <1> as default settings
-(= it is assuming that board/platform has multi DAI), and
-board/platform side needs to overwrite it if board/platform was single
-DAI. This style is more confusable for users.
-This patch removes SoC side default settings, and force to set it by
-board/platform side.
+If CONFIG_PM_RUNTIME is not set, the clocks must be enabled before the
+devices can be used.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Currently these clocks are enabled by the !CONFIG_PM_RUNTIME version of
+pm_clk_notify, activated by the hack in drivers/sh/pm_runtime.c, but
+this will go away soon (at least for DT).
+
+On detach, disabling the clocks is already handled by pm_clk_destroy().
+On system suspend/resume, disabling/enabling clocks is already handled
+from the genpd->dev_ops.{start,stop}() callbacks.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts |    1 +
- arch/arm/boot/dts/r8a7790.dtsi      |    7 ++++++-
- 2 files changed, 7 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/pm-rmobile.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index b33ebcb..0c3b678 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -581,6 +581,7 @@
- 	pinctrl-0 = <&sound_pins &sound_clk_pins>;
- 	pinctrl-names = "default";
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index 4ea458d..9b685a8 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -118,6 +118,14 @@ static int rmobile_pd_attach_dev(struct generic_pm_domain *domain,
+ 		goto fail;
+ 	}
  
-+	/* Single DAI */
- 	#sound-dai-cells = <0>;
++	if (!IS_ENABLED(CONFIG_PM_RUNTIME)) {
++		error = pm_clk_resume(dev);
++		if (error) {
++			dev_err(dev, "pm_clk_resume failed %d\n", error);
++			goto fail;
++		}
++	}
++
+ 	return 0;
  
- 	status = "okay";
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index ffeff98..7c7b08b 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1399,7 +1399,12 @@
- 	};
- 
- 	rcar_sound: rcar_sound@ec500000 {
--		#sound-dai-cells = <1>;
-+		/*
-+		 * #sound-dai-cells is required
-+		 *
-+		 * Single DAI : #sound-dai-cells = <0>;		<&rcar_sound>;
-+		 * Multi  DAI : #sound-dai-cells = <1>;		<&rcar_sound N>;
-+		 */
- 		compatible =  "renesas,rcar_sound-r8a7790", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
- 		reg =	<0 0xec500000 0 0x1000>, /* SCU */
- 			<0 0xec5a0000 0 0x100>,  /* ADG */
+ fail:
 -- 
-1.7.9.5
+2.1.3
 
