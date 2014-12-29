@@ -1,112 +1,119 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 29 Dec 2014 01:46:55 +0000
-Subject: [PATCH 2/6] ARM: shmobile: sh73a0: Add CPG register bits header
-Message-Id: <4452164e7b2ab8c4e9e978dd5508865592f13258.1419809955.git.horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:46:43 +0000
+Subject: [PATCH 1/6] ARM: shmobile: lager-reference: DTS-only board support
+Message-Id: <be2902416cc6f26d05a9b7308b78d093ad69062c.1419809774.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1419809955.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1419809955.git.horms+renesas@verge.net.au>
+References: <cover.1419809774.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419809774.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Remove redundant C board code for Lager Multiplatform,
+everything is supported via DT these days anyway so it
+is fine to rely on the MACHINE_START in setup-r8a7790.c.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+[Remove CONFIG_MACH_LAGER from shmobile_defconfig]
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- include/dt-bindings/clock/sh73a0-clock.h | 79 ++++++++++++++++++++++++++++++++
- 1 file changed, 79 insertions(+)
- create mode 100644 include/dt-bindings/clock/sh73a0-clock.h
+ arch/arm/configs/shmobile_defconfig            |  1 -
+ arch/arm/mach-shmobile/Kconfig                 |  5 ----
+ arch/arm/mach-shmobile/Makefile                |  1 -
+ arch/arm/mach-shmobile/board-lager-reference.c | 39 --------------------------
+ 4 files changed, 46 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/board-lager-reference.c
 
-diff --git a/include/dt-bindings/clock/sh73a0-clock.h b/include/dt-bindings/clock/sh73a0-clock.h
-new file mode 100644
-index 0000000..1dd3eb2
---- /dev/null
-+++ b/include/dt-bindings/clock/sh73a0-clock.h
-@@ -0,0 +1,79 @@
-+/*
-+ * Copyright 2014 Ulrich Hecht
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ */
-+
-+#ifndef __DT_BINDINGS_CLOCK_SH73A0_H__
-+#define __DT_BINDINGS_CLOCK_SH73A0_H__
-+
-+/* CPG */
-+#define SH73A0_CLK_MAIN		0
-+#define SH73A0_CLK_PLL0		1
-+#define SH73A0_CLK_PLL1		2
-+#define SH73A0_CLK_PLL2		3
-+#define SH73A0_CLK_PLL3		4
-+#define SH73A0_CLK_DSI0PHY	5
-+#define SH73A0_CLK_DSI1PHY	6
-+#define SH73A0_CLK_ZG		7
-+#define SH73A0_CLK_M3		8
-+#define SH73A0_CLK_B		9
-+#define SH73A0_CLK_M1		10
-+#define SH73A0_CLK_M2		11
-+#define SH73A0_CLK_Z		12
-+#define SH73A0_CLK_ZX		13
-+#define SH73A0_CLK_HP		14
-+
-+/* MSTP0 */
-+#define SH73A0_CLK_IIC2	1
-+
-+/* MSTP1 */
-+#define SH73A0_CLK_CEU1		29
-+#define SH73A0_CLK_CSI2_RX1	28
-+#define SH73A0_CLK_CEU0		27
-+#define SH73A0_CLK_CSI2_RX0	26
-+#define SH73A0_CLK_TMU0		25
-+#define SH73A0_CLK_DSITX0	18
-+#define SH73A0_CLK_IIC0		16
-+#define SH73A0_CLK_SGX		12
-+#define SH73A0_CLK_LCDC0	0
-+
-+/* MSTP2 */
-+#define SH73A0_CLK_SCIFA7	19
-+#define SH73A0_CLK_SY_DMAC	18
-+#define SH73A0_CLK_MP_DMAC	17
-+#define SH73A0_CLK_SCIFA5	7
-+#define SH73A0_CLK_SCIFB	6
-+#define SH73A0_CLK_SCIFA0	4
-+#define SH73A0_CLK_SCIFA1	3
-+#define SH73A0_CLK_SCIFA2	2
-+#define SH73A0_CLK_SCIFA3	1
-+#define SH73A0_CLK_SCIFA4	0
-+
-+/* MSTP3 */
-+#define SH73A0_CLK_SCIFA6	31
-+#define SH73A0_CLK_CMT1		29
-+#define SH73A0_CLK_FSI		28
-+#define SH73A0_CLK_IRDA		25
-+#define SH73A0_CLK_IIC1		23
-+#define SH73A0_CLK_USB		22
-+#define SH73A0_CLK_FLCTL	15
-+#define SH73A0_CLK_SDHI0	14
-+#define SH73A0_CLK_SDHI1	13
-+#define SH73A0_CLK_MMCIF0	12
-+#define SH73A0_CLK_SDHI2	11
-+#define SH73A0_CLK_TPU0		4
-+#define SH73A0_CLK_TPU1		3
-+#define SH73A0_CLK_TPU2		2
-+#define SH73A0_CLK_TPU3		1
-+#define SH73A0_CLK_TPU4		0
-+
-+/* MSTP4 */
-+#define SH73A0_CLK_IIC3		11
-+#define SH73A0_CLK_IIC4		10
-+#define SH73A0_CLK_KEYSC	3
-+
-+#endif
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 3df6ca0..e4a6c5e 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -17,7 +17,6 @@ CONFIG_ARCH_R8A7779=y
+ CONFIG_ARCH_R8A7790=y
+ CONFIG_ARCH_R8A7791=y
+ CONFIG_ARCH_R8A7794=y
+-CONFIG_MACH_LAGER=y
+ CONFIG_MACH_MARZEN=y
+ # CONFIG_SWP_EMULATE is not set
+ CONFIG_CPU_BPREDICT_DISABLE=y
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 1b4fafe..859f391 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -74,11 +74,6 @@ config ARCH_R8A7794
+ 
+ comment "Renesas ARM SoCs Board Type"
+ 
+-config MACH_LAGER
+-	bool "Lager board"
+-	depends on ARCH_R8A7790
+-	select MICREL_PHY if SH_ETH
+-
+ config MACH_MARZEN
+ 	bool "MARZEN board"
+ 	depends on ARCH_R8A7779
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index b55cac0..85692c9a 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -57,7 +57,6 @@ obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o sleep-sh7372.o
+ 
+ # Board objects
+ ifdef CONFIG_ARCH_SHMOBILE_MULTI
+-obj-$(CONFIG_MACH_LAGER)	+= board-lager-reference.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen-reference.o
+ else
+ obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+deleted file mode 100644
+index fa06bdb..0000000
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ /dev/null
+@@ -1,39 +0,0 @@
+-/*
+- * Lager board support - Reference DT implementation
+- *
+- * Copyright (C) 2013  Renesas Solutions Corp.
+- * Copyright (C) 2013  Simon Horman
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; version 2 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- */
+-
+-#include <linux/init.h>
+-#include <linux/of_platform.h>
+-
+-#include <asm/mach/arch.h>
+-
+-#include "common.h"
+-#include "r8a7790.h"
+-#include "rcar-gen2.h"
+-
+-static const char *lager_boards_compat_dt[] __initdata = {
+-	"renesas,lager",
+-	"renesas,lager-reference",
+-	NULL,
+-};
+-
+-DT_MACHINE_START(LAGER_DT, "lager")
+-	.smp		= smp_ops(r8a7790_smp_ops),
+-	.init_early	= shmobile_init_delay,
+-	.init_time	= rcar_gen2_timer_init,
+-	.init_late	= shmobile_init_late,
+-	.reserve	= rcar_gen2_reserve,
+-	.dt_compat	= lager_boards_compat_dt,
+-MACHINE_END
 -- 
 2.1.3
 
