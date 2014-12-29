@@ -1,78 +1,53 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Wed, 17 Dec 2014 16:18:16 +0000
-Subject: [PATCH v3 4/9] ARM: shmobile: ape6evm: Add keypad to the device tree
-Message-Id: <1418833101-7774-5-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:46:59 +0000
+Subject: [PATCH 6/6] ARM: shmobile: sh73a0: disable legacy clock initialization
+Message-Id: <09bd745b555c262d1e2c851777317f3adf3cf3d4.1419809955.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1419809955.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419809955.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
+
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+
+Disables sh73a0_clock_init() if CCF is enabled.
 
 Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a73a4-ape6evm.dts | 41 +++++++++++++++++++++++++++++++++++
- 1 file changed, 41 insertions(+)
+ arch/arm/mach-shmobile/setup-sh73a0.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-index b939a37..6b7bc1f 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-@@ -11,6 +11,7 @@
- /dts-v1/;
- #include "r8a73a4.dtsi"
- #include <dt-bindings/gpio/gpio.h>
-+#include <dt-bindings/input/input.h>
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 93ebe34..354cab1 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -763,7 +763,9 @@ void __init __weak sh73a0_register_twd(void) { }
+ void __init sh73a0_earlytimer_init(void)
+ {
+ 	shmobile_init_delay();
++#ifndef CONFIG_COMMON_CLK
+ 	sh73a0_clock_init();
++#endif
+ 	shmobile_earlytimer_init();
+ 	sh73a0_register_twd();
+ }
+@@ -782,8 +784,9 @@ void __init sh73a0_add_early_devices(void)
+ void __init sh73a0_add_standard_devices_dt(void)
+ {
+ 	/* clocks are setup late during boot in the case of DT */
++#ifndef CONFIG_COMMON_CLK
+ 	sh73a0_clock_init();
+-
++#endif
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
  
- / {
- 	model = "APE6EVM";
-@@ -110,6 +111,46 @@
- 			label = "BBRESETOUT";
- 		};
- 	};
-+
-+	keyboard {
-+		compatible = "gpio-keys";
-+
-+		zero-key {
-+			gpios = <&pfc 324 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_0>;
-+			label = "S16";
-+		};
-+
-+		menu-key {
-+			gpios = <&pfc 325 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_MENU>;
-+			label = "S17";
-+		};
-+
-+		home-key {
-+			gpios = <&pfc 326 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_HOME>;
-+			label = "S18";
-+		};
-+
-+		back-key {
-+			gpios = <&pfc 327 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_BACK>;
-+			label = "S19";
-+		};
-+
-+		volup-key {
-+			gpios = <&pfc 328 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_VOLUMEUP>;
-+			label = "S20";
-+		};
-+
-+		voldown-key {
-+			gpios = <&pfc 329 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_VOLUMEDOWN>;
-+			label = "S21";
-+		};
-+	};
- };
- 
- &i2c5 {
 -- 
-1.8.4.5
+2.1.3
 
