@@ -1,51 +1,62 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 10 Dec 2014 00:51:23 +0000
-Subject: Re: [PATCH][resend] dmaengine: rcar-audmapp: independent from SH_DMAE_BASE
-Message-Id: <877fy0pbs6.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 29 Dec 2014 01:43:34 +0000
+Subject: [PATCH 03/30] ARM: shmobile: r8a7779 dtsi: Change to using clock-indices
+Message-Id: <64530fc2ce234e2ba227e24a149c73ef91dbfae5.1419812185.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87fvd4b2kh.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87fvd4b2kh.wl%kuninori.morimoto.gx@renesas.com>
+References: <cover.1419812185.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Vinod
+With the addition of clock-indices in commit 8e33f91a0b84ae19 ("clk:
+shmobile: clk-mstp: change to using clock-indices"), we can change the
+DTSes to use the generic property instead of the deprecated
+vendor-specific property.
 
-> > > > Current Renesas Audio DMAC Peri Peri driver is for Renesas R-Car series,
-> > > > but it is based on SH_DMAE_BASE driver which is used for Renesas
-> > > > SH-Mobile. But it is not fully cared about DT.
-> > > > 
-> > > > For example, current SH_DMAE_BASE base driver will return non-matching
-> > > > DMA channel if some non-SH_DMAE_BASE drivers are probed.
-> > > > So, sound driver will get wrong DMA channel if Audio DMAC (= rcar-dma)
-> > > > was not probed and Audio DMAC Peri Peri (= SH_DMAE_BASE) was probed.
-> > > > 
-> > > > OTOH, many SH-Mobile series drivers are using SH_DMAE_BASE driver, and
-> > > > Renesas R-Car series will not use it anymore. Maintenance cost for fully
-> > > > cared DT support on SH_DMAE_BASE will be very high
-> > > > (and keeping compatibility will be very complex).
-> > > > 
-> > > > In addition, Audio DMAC Peri Peri itself is very simple device, and,
-> > > > no SoC/board is usign it from non-DT environment.
-> > > > 
-> > > > This patch remakes rcar-audmapp driver simply independents
-> > > > from SH_DMAE_BASE.
-> > > 
-> > > Hi Kuninori
-> > > 
-> > > Can you please split these changes into multiple smaller changes so that we
-> > > can review this propely...
-> Since this seems to be complet rewrite then remove old and add new driver
-> would be easier too
-
-Yes, this is complete rewrite patch.
-Ok, I will send like this
-
- [1/2]: remove old driver
- [2/2]: add new driver
-
-Best regards
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Kuninori Morimoto
+ arch/arm/boot/dts/r8a7779.dtsi | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index ede9a29..e3846af 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -475,7 +475,7 @@
+ 				 <&cpg_clocks R8A7779_CLK_P>,
+ 				 <&cpg_clocks R8A7779_CLK_P>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7779_CLK_HSPI R8A7779_CLK_TMU2
+ 				R8A7779_CLK_TMU1 R8A7779_CLK_TMU0
+ 				R8A7779_CLK_HSCIF1 R8A7779_CLK_HSCIF0
+@@ -506,7 +506,7 @@
+ 				 <&cpg_clocks R8A7779_CLK_P>,
+ 				 <&cpg_clocks R8A7779_CLK_S>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7779_CLK_USB01 R8A7779_CLK_USB2
+ 				R8A7779_CLK_DU R8A7779_CLK_VIN2
+ 				R8A7779_CLK_VIN1 R8A7779_CLK_VIN0
+@@ -527,7 +527,7 @@
+ 			clocks = <&s4_clk>, <&s4_clk>, <&s4_clk>, <&s4_clk>,
+ 				 <&s4_clk>, <&s4_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7779_CLK_SDHI3 R8A7779_CLK_SDHI2
+ 				R8A7779_CLK_SDHI1 R8A7779_CLK_SDHI0
+ 				R8A7779_CLK_MMC1 R8A7779_CLK_MMC0
+-- 
+2.1.3
+
