@@ -1,51 +1,84 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Wed, 21 Jan 2015 16:20:59 +0000
-Subject: [PATCH 08/11] ARM: shmobile: bockw: add USB, VIN pin descriptions to DT
-Message-Id: <1421857262-16607-9-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 05 Jan 2015 07:03:15 +0000
+Subject: [PATCH 5/9] mmc: tmio: tmio_mmc_host has .clk_disable
+Message-Id: <87sifpogiy.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
+Cc: Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Adds pin control info for USB host and video-in devices.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Current .clk_disable is implemented under tmio_mmc_data.
+It goes to tmio_mmc_host by this patch.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7778-bockw.dts | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+ drivers/mmc/host/sh_mobile_sdhi.c |    2 +-
+ drivers/mmc/host/tmio_mmc.h       |    1 +
+ drivers/mmc/host/tmio_mmc_pio.c   |    4 ++--
+ include/linux/mfd/tmio.h          |    3 +--
+ 4 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index 52086fe..ce40001 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -132,6 +132,26 @@
- 		renesas,groups = "hspi0_a";
- 		renesas,function = "hspi0";
- 	};
-+
-+	usb0_pins: usb0 {
-+		renesas,groups = "usb0";
-+		renesas,function = "usb0";
-+	};
-+
-+	usb1_pins: usb1 {
-+		renesas,groups = "usb1";
-+		renesas,function = "usb1";
-+	};
-+
-+	vin0_pins: vin0 {
-+		renesas,groups = "vin0_data8", "vin0_clk";
-+		renesas,function = "vin0";
-+	};
-+
-+	vin1_pins: vin1 {
-+		renesas,groups = "vin1_data8", "vin1_clk";
-+		renesas,function = "vin1";
-+	};
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 178ae0f..66951cc 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -214,8 +214,8 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	host->dma		= dma_priv;
+ 	host->write16_hook	= sh_mobile_sdhi_write16_hook;
+ 	host->clk_enable	= sh_mobile_sdhi_clk_enable;
++	host->clk_disable	= sh_mobile_sdhi_clk_disable;
+ 
+-	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
+ 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
+ 	mmc_data->multi_io_quirk = sh_mobile_sdhi_multi_io_quirk;
+ 	if (p) {
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index 0634a94..cdce015 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -97,6 +97,7 @@ struct tmio_mmc_host {
+ 
+ 	int (*write16_hook)(struct tmio_mmc_host *host, int addr);
+ 	int (*clk_enable)(struct platform_device *pdev, unsigned int *f);
++	void (*clk_disable)(struct platform_device *pdev);
  };
  
- &sdhi0 {
+ struct tmio_mmc_host* tmio_mmc_host_alloc(struct platform_device *pdev);
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 511ce96..84123d3 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -1248,8 +1248,8 @@ int tmio_mmc_host_runtime_suspend(struct device *dev)
+ 	if (host->clk_cache)
+ 		tmio_mmc_clk_stop(host);
+ 
+-	if (host->pdata->clk_disable)
+-		host->pdata->clk_disable(host->pdev);
++	if (host->clk_disable)
++		host->clk_disable(host->pdev);
+ 
+ 	return 0;
+ }
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 472587a..a3f78da 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -125,8 +125,7 @@ struct tmio_mmc_data {
+ 	unsigned int			cd_gpio;
+ 	void (*set_pwr)(struct platform_device *host, int state);
+ 	void (*set_clk_div)(struct platform_device *host, int state);
+-	/* clock management callbacks */
+-	void (*clk_disable)(struct platform_device *pdev);
++
+ 	int (*multi_io_quirk)(struct mmc_card *card,
+ 			      unsigned int direction, int blk_size);
+ };
 -- 
-2.2.2
+1.7.9.5
 
