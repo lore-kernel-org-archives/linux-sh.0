@@ -1,81 +1,221 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 14 Jan 2015 00:20:48 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Fixes for v3.19
-Message-Id: <20150114002046.GA30021@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 05 Jan 2015 07:02:28 +0000
+Subject: [PATCH 1/9] mmc: tmio: add tmio_mmc_host_alloc/free()
+Message-Id: <87y4phogk8.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421113695.git.horms+renesas@verge.net.au>
- <CAMuHMdU2nrftSAxZgwrT5_WP5WkeisxDkuZcAa7zH0LQyQ89jg@mail.gmail.com>
-In-Reply-To: <CAMuHMdU2nrftSAxZgwrT5_WP5WkeisxDkuZcAa7zH0LQyQ89jg@mail.gmail.com>
+References: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
+Cc: Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Tue, Jan 13, 2015 at 09:10:08AM +0100, Geert Uytterhoeven wrote:
-> On Tue, Jan 13, 2015 at 3:13 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> >
-> > Please consider these Renesas ARM based SoC fixes for v3.19.
-> >
-> > This pull request is based on the last round of SoC updates for v3.19,
-> > Fourth Round of Renesas ARM Based SoC Updates for v3.19, tagged as
-> > renesas-soc3-for-v3.19, merged into your next/soc branch and included in
-> > v3.19-rc1.
-> >
-> > * ARM: shmobile: r8a7740: Instantiate GIC from C board code in legacy builds
-> 
-> That's the description for the regression below.
-> Should have been: "Set .control_parent for all irqpin instances for sh73a0
-> SoC when booting using legacy C."
-> 
-> >   This fixes a long standing problem which has been present since
-> >   the sh73a0 SoC started using the INTC External IRQ pin driver.
-> >
-> >   The patch that introduced the problem is 341eb5465f67437a ("ARM:
-> >   shmobile: INTC External IRQ pin driver on sh73a0") which was included
-> >   in v3.10.
-> >
-> > * This fixes a regression in the r8a7740 SoC due to
-> >   9a1091ef0017c40a ("irqchip: gic: Support hierarchy irq domain.")
-> >   which was included in v3.18-rc2.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, I think the above text should have been:
+Current tmio_mmc driver is using tmio_mmc_data for driver/platform
+specific data/callback, and it is needed for tmio_mmc_host_probe()
+function. Because of this style, include/linux/mfd/tmio.h header has
+tmio driver/framework specific data which is not needed from platform.
 
-* Set .control_parent for all irqpin instances for sh73a0 SoC when
-  booting using legacy C
+This patch adds new tmio_mmc_host_alloc/free() as cleanup preparation.
+tmio driver specific data/callback will be implemented in tmio_mmc_host,
+and platform specific data/callback will be implemented in tmio_mmc_data
+in this cleanup.
 
-  This fixes a long standing problem which has been present since
-  the sh73a0 SoC started using the INTC External IRQ pin driver.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c |   12 ++++++++---
+ drivers/mmc/host/tmio_mmc.c       |   10 +++++++--
+ drivers/mmc/host/tmio_mmc.h       |    5 +++--
+ drivers/mmc/host/tmio_mmc_pio.c   |   42 ++++++++++++++++++++++++-------------
+ include/linux/mfd/tmio.h          |    1 -
+ 5 files changed, 47 insertions(+), 23 deletions(-)
 
-  The patch that introduced the problem is 341eb5465f67437a ("ARM:
-  shmobile: INTC External IRQ pin driver on sh73a0") which was included
-  in v3.10.
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 00c8ebd..b2cec5b 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -113,7 +113,7 @@ static int sh_mobile_sdhi_wait_idle(struct tmio_mmc_host *host)
+ 		udelay(1);
+ 
+ 	if (!timeout) {
+-		dev_warn(host->pdata->dev, "timeout waiting for SD bus idle\n");
++		dev_warn(&host->pdev->dev, "timeout waiting for SD bus idle\n");
+ 		return -EBUSY;
+ 	}
+ 
+@@ -207,6 +207,10 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		goto eclkget;
+ 	}
+ 
++	host = tmio_mmc_host_alloc(pdev);
++	if (!host)
++		goto eprobe;
++
+ 	mmc_data->clk_enable = sh_mobile_sdhi_clk_enable;
+ 	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
+ 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
+@@ -274,9 +278,9 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
+ 	mmc_data->bus_shift = resource_size(res) >> 9;
+ 
+-	ret = tmio_mmc_host_probe(&host, pdev, mmc_data);
++	ret = tmio_mmc_host_probe(host, mmc_data);
+ 	if (ret < 0)
+-		goto eprobe;
++		goto efree;
+ 
+ 	/*
+ 	 * FIXME:
+@@ -351,6 +355,8 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 
+ eirq:
+ 	tmio_mmc_host_remove(host);
++efree:
++	tmio_mmc_host_free(host);
+ eprobe:
+ eclkget:
+ 	if (p && p->cleanup)
+diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
+index 2616fdf..f47ae08 100644
+--- a/drivers/mmc/host/tmio_mmc.c
++++ b/drivers/mmc/host/tmio_mmc.c
+@@ -92,10 +92,14 @@ static int tmio_mmc_probe(struct platform_device *pdev)
+ 	pdata->bus_shift = resource_size(res) >> 10;
+ 	pdata->flags |= TMIO_MMC_HAVE_HIGH_REG;
+ 
+-	ret = tmio_mmc_host_probe(&host, pdev, pdata);
+-	if (ret)
++	host = tmio_mmc_host_alloc(pdev);
++	if (!host)
+ 		goto cell_disable;
+ 
++	ret = tmio_mmc_host_probe(host, pdata);
++	if (ret)
++		goto host_free;
++
+ 	ret = request_irq(irq, tmio_mmc_irq, IRQF_TRIGGER_FALLING,
+ 				dev_name(&pdev->dev), host);
+ 	if (ret)
+@@ -108,6 +112,8 @@ static int tmio_mmc_probe(struct platform_device *pdev)
+ 
+ host_remove:
+ 	tmio_mmc_host_remove(host);
++host_free:
++	tmio_mmc_host_free(host);
+ cell_disable:
+ 	if (cell->disable)
+ 		cell->disable(pdev);
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index a34ecbe..3d02a3c1 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -85,8 +85,9 @@ struct tmio_mmc_host {
+ 	bool			sdio_irq_enabled;
+ };
+ 
+-int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+-			struct platform_device *pdev,
++struct tmio_mmc_host* tmio_mmc_host_alloc(struct platform_device *pdev);
++void tmio_mmc_host_free(struct tmio_mmc_host *host);
++int tmio_mmc_host_probe(struct tmio_mmc_host *host,
+ 			struct tmio_mmc_data *pdata);
+ void tmio_mmc_host_remove(struct tmio_mmc_host *host);
+ void tmio_mmc_do_data_irq(struct tmio_mmc_host *host);
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 250bf8c..580d00b 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -1054,12 +1054,35 @@ static void tmio_mmc_of_parse(struct platform_device *pdev,
+ 		pdata->flags |= TMIO_MMC_WRPROTECT_DISABLE;
+ }
+ 
+-int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+-				  struct platform_device *pdev,
+-				  struct tmio_mmc_data *pdata)
++struct tmio_mmc_host*
++tmio_mmc_host_alloc(struct platform_device *pdev)
+ {
+-	struct tmio_mmc_host *_host;
++	struct tmio_mmc_host *host;
+ 	struct mmc_host *mmc;
++
++	mmc = mmc_alloc_host(sizeof(struct tmio_mmc_host), &pdev->dev);
++	if (!mmc)
++		return NULL;
++
++	host = mmc_priv(mmc);
++	host->mmc = mmc;
++	host->pdev = pdev;
++
++	return host;
++}
++
++void tmio_mmc_host_free(struct tmio_mmc_host *host)
++{
++	mmc_free_host(host->mmc);
++
++	host->mmc = NULL;
++}
++
++int tmio_mmc_host_probe(struct tmio_mmc_host *_host,
++			struct tmio_mmc_data *pdata)
++{
++	struct platform_device *pdev = _host->pdev;
++	struct mmc_host *mmc = _host->mmc;
+ 	struct resource *res_ctl;
+ 	int ret;
+ 	u32 irq_mask = TMIO_MASK_CMD;
+@@ -1073,19 +1096,11 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	if (!res_ctl)
+ 		return -EINVAL;
+ 
+-	mmc = mmc_alloc_host(sizeof(struct tmio_mmc_host), &pdev->dev);
+-	if (!mmc)
+-		return -ENOMEM;
+-
+ 	ret = mmc_of_parse(mmc);
+ 	if (ret < 0)
+ 		goto host_free;
+ 
+-	pdata->dev = &pdev->dev;
+-	_host = mmc_priv(mmc);
+ 	_host->pdata = pdata;
+-	_host->mmc = mmc;
+-	_host->pdev = pdev;
+ 	platform_set_drvdata(pdev, mmc);
+ 
+ 	_host->set_pwr = pdata->set_pwr;
+@@ -1192,8 +1207,6 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 		mmc_gpiod_request_cd_irq(mmc);
+ 	}
+ 
+-	*host = _host;
+-
+ 	return 0;
+ 
+ host_free:
+@@ -1222,7 +1235,6 @@ void tmio_mmc_host_remove(struct tmio_mmc_host *host)
+ 	pm_runtime_disable(&pdev->dev);
+ 
+ 	iounmap(host->ctl);
+-	mmc_free_host(mmc);
+ }
+ EXPORT_SYMBOL(tmio_mmc_host_remove);
+ 
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 5738817..c7d9af0 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -135,7 +135,6 @@ struct tmio_mmc_data {
+ 	unsigned long			bus_shift;
+ 	u32				ocr_mask;	/* available voltages */
+ 	struct tmio_mmc_dma		*dma;
+-	struct device			*dev;
+ 	unsigned int			cd_gpio;
+ 	void (*set_pwr)(struct platform_device *host, int state);
+ 	void (*set_clk_div)(struct platform_device *host, int state);
+-- 
+1.7.9.5
 
-* ARM: shmobile: r8a7740: Instantiate GIC from C board code in legacy builds
-
-  This fixes a regression in the r8a7740 SoC due to
-  9a1091ef0017c40a ("irqchip: gic: Support hierarchy irq domain.")
-  which was included in v3.18-rc2.
-
-> > ----------------------------------------------------------------
-> > Renesas ARM Based SoC Fixes for v3.19
-> >
-> > * Set .control_parent for all irqpin instances for sh73a0 SoC when booting
-> >   using legacy C
-> > * Instantiate GIC board for r8a7740 SoC when using legacy C
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
