@@ -1,50 +1,34 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 29 Jan 2015 01:02:16 +0000
-Subject: [PATCH 4/9 v4] mtd: sh_flctl: remove slave_id settings for DMAEngine
-Message-Id: <87fvautn3g.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 05 Jan 2015 13:30:55 +0000
+Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7790: add CAN clocks
+Message-Id: <CAMuHMdWq5+KNwV4K0gfiv0RFmJzfUktJdr=AKgsHZgkfDdQsjg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87y4ovlbk7.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87y4ovlbk7.wl%kuninori.morimoto.gx@renesas.com>
+References: <2616635.bsb7mLynhA@wasted.cogentembedded.com>
+ <7045264.74zTCWbb7p@wasted.cogentembedded.com>
+In-Reply-To: <7045264.74zTCWbb7p@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Arnd Bergmann <arnd@arndb.de>
+On Mon, Dec 29, 2014 at 11:04 PM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+> The R-Car CAN controllers can derive the CAN bus clock not only from their
+> peripheral clock input (clkp1) but also from the other internal clock (clkp2)
+> and external clock fed on CAN_CLK pin.  Describe those clocks in the device
+> tree,  along with  the USB_EXTAL clock  from which clkp2 is derived.
+>
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Current sh_flctl sets dma_slave_config :: slave_id field for DMAEngine,
-but it is no longer needed. Let's remove it.
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v3 -> v4
+Gr{oetje,eeting}s,
 
- - no change
+                        Geert
 
- drivers/mtd/nand/sh_flctl.c |    2 --
- 1 file changed, 2 deletions(-)
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
-index a21c378..c3ce81c 100644
---- a/drivers/mtd/nand/sh_flctl.c
-+++ b/drivers/mtd/nand/sh_flctl.c
-@@ -159,7 +159,6 @@ static void flctl_setup_dma(struct sh_flctl *flctl)
- 		return;
- 
- 	memset(&cfg, 0, sizeof(cfg));
--	cfg.slave_id = pdata->slave_id_fifo0_tx;
- 	cfg.direction = DMA_MEM_TO_DEV;
- 	cfg.dst_addr = (dma_addr_t)FLDTFIFO(flctl);
- 	cfg.src_addr = 0;
-@@ -175,7 +174,6 @@ static void flctl_setup_dma(struct sh_flctl *flctl)
- 	if (!flctl->chan_fifo0_rx)
- 		goto err;
- 
--	cfg.slave_id = pdata->slave_id_fifo0_rx;
- 	cfg.direction = DMA_DEV_TO_MEM;
- 	cfg.dst_addr = 0;
- 	cfg.src_addr = (dma_addr_t)FLDTFIFO(flctl);
--- 
-1.7.9.5
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
