@@ -1,108 +1,146 @@
-From: Lee Jones <lee.jones@linaro.org>
-Date: Tue, 20 Jan 2015 09:36:59 +0000
-Subject: Re: [PATCH 04/17] mmc: tmio: tmio_mmc_host has .clk_enable
-Message-Id: <20150120093659.GH5767@x1>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Mon, 05 Jan 2015 08:53:02 +0000
+Subject: Re: [PATCH v2] clk-rcar-gen2: RCAN clock support
+Message-Id: <1550804.XpyQtHjy2T@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
- <87oaq3uvif.wl%kuninori.morimoto.gx@renesas.com>
- <CAPDyKFqeQnUFNCzqzhZcve2djwV7sw4Ymf9SLpYGOm_+v5dFmA@mail.gmail.com>
-In-Reply-To: <CAPDyKFqeQnUFNCzqzhZcve2djwV7sw4Ymf9SLpYGOm_+v5dFmA@mail.gmail.com>
+References: <3007073.i0ghnTEhxV@wasted.cogentembedded.com>
+In-Reply-To: <3007073.i0ghnTEhxV@wasted.cogentembedded.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: Arnd Bergmann <arnd@arndb.de>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: mturquette@linaro.org, linux-kernel@vger.kernel.org, sboyd@codeaurora.org, linux-sh@vger.kernel.org, vksavl@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, devicetree@vger.kernel.org
 
-On Tue, 20 Jan 2015, Ulf Hansson wrote:
+Hi Sergei,
 
-> + MFD maintainer
->=20
-> On 13 January 2015 at 05:57, Kuninori Morimoto
-> <kuninori.morimoto.gx@renesas.com> wrote:
-> > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> >
-> > Current .clk_enable is implemented under tmio_mmc_data.
-> > It goes to tmio_mmc_host by this patch.
-> >
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > ---
-> >  drivers/mmc/host/sh_mobile_sdhi.c |    2 +-
-> >  drivers/mmc/host/tmio_mmc.h       |    1 +
-> >  drivers/mmc/host/tmio_mmc_pio.c   |    5 ++---
-> >  include/linux/mfd/tmio.h          |    1 -
+Thank you for the patch.
 
-Acked-by: Lee Jones <lee.jones@linaro.org>
+On Thursday 25 December 2014 01:17:29 Sergei Shtylyov wrote:
+> Add the RCAN clock support to the R-Car generation 2 CPG driver.  This clock
+> gets derived from  the USB_EXTAL clock, dividing  it by 6.  The layout of
+> the RCANCKCR register is similar to those of the clocks supported by the
+> 'clk-div6' driver but has no divider field, and so can't be supported by
+> that driver...
+> 
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> 
+> ---
+> The patch is against the 'clk-next' branch of Mike Turquette's 'linux.git'
+> repo.
+> 
+> Changes in version 2:
+> - switched to using the composite clock driver with the fixed factor and
+> gated clock component drivers;
+> - removed *static* from 'parent_name' definition, switching from assignment
+> to initializer;
+> - modified the binding document;
+> - modified the changelog.
+> 
+>  Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt | 
+>   5 -
+>  drivers/clk/shmobile/clk-rcar-gen2.c                      |   40 ++++++++++
 
-> >  4 files changed, 4 insertions(+), 5 deletions(-)
-> >
-> > diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mo=
-bile_sdhi.c
-> > index 77ff062..87af77d 100644
-> > --- a/drivers/mmc/host/sh_mobile_sdhi.c
-> > +++ b/drivers/mmc/host/sh_mobile_sdhi.c
-> > @@ -215,8 +215,8 @@ static int sh_mobile_sdhi_probe(struct platform_dev=
-ice *pdev)
-> >
-> >         host->dma               =3D dma_priv;
-> >         host->write16_hook      =3D sh_mobile_sdhi_write16_hook;
-> > +       host->clk_enable        =3D sh_mobile_sdhi_clk_enable;
-> >
-> > -       mmc_data->clk_enable =3D sh_mobile_sdhi_clk_enable;
-> >         mmc_data->clk_disable =3D sh_mobile_sdhi_clk_disable;
-> >         mmc_data->capabilities =3D MMC_CAP_MMC_HIGHSPEED;
-> >         mmc_data->multi_io_quirk =3D sh_mobile_sdhi_multi_io_quirk;
-> > diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-> > index 3fa96b1..5cd2986 100644
-> > --- a/drivers/mmc/host/tmio_mmc.h
-> > +++ b/drivers/mmc/host/tmio_mmc.h
-> > @@ -96,6 +96,7 @@ struct tmio_mmc_host {
-> >         bool                    sdio_irq_enabled;
-> >
-> >         int (*write16_hook)(struct tmio_mmc_host *host, int addr);
-> > +       int (*clk_enable)(struct platform_device *pdev, unsigned int *f=
-);
-> >  };
-> >
-> >  struct tmio_mmc_host *tmio_mmc_host_alloc(struct platform_device *pdev=
-);
-> > diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mm=
-c_pio.c
-> > index fe434cc..1528c88 100644
-> > --- a/drivers/mmc/host/tmio_mmc_pio.c
-> > +++ b/drivers/mmc/host/tmio_mmc_pio.c
-> > @@ -835,13 +835,12 @@ fail:
-> >  static int tmio_mmc_clk_update(struct tmio_mmc_host *host)
-> >  {
-> >         struct mmc_host *mmc =3D host->mmc;
-> > -       struct tmio_mmc_data *pdata =3D host->pdata;
-> >         int ret;
-> >
-> > -       if (!pdata->clk_enable)
-> > +       if (!host->clk_enable)
-> >                 return -ENOTSUPP;
-> >
-> > -       ret =3D pdata->clk_enable(host->pdev, &mmc->f_max);
-> > +       ret =3D host->clk_enable(host->pdev, &mmc->f_max);
-> >         if (!ret)
-> >                 mmc->f_min =3D mmc->f_max / 512;
-> >
-> > diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-> > index 0872ca1..472587a 100644
-> > --- a/include/linux/mfd/tmio.h
-> > +++ b/include/linux/mfd/tmio.h
-> > @@ -126,7 +126,6 @@ struct tmio_mmc_data {
-> >         void (*set_pwr)(struct platform_device *host, int state);
-> >         void (*set_clk_div)(struct platform_device *host, int state);
-> >         /* clock management callbacks */
-> > -       int (*clk_enable)(struct platform_device *pdev, unsigned int *f=
-);
-> >         void (*clk_disable)(struct platform_device *pdev);
-> >         int (*multi_io_quirk)(struct mmc_card *card,
-> >                               unsigned int direction, int blk_size);
-> >
+Could you please also add a #define for the RCAN clock in include/dt-
+bindings/clock/r8a779*-clock.h ? Same comment for the ADSP clock in "[PATCH] 
+clk-rcar-gen2: ADSP clock support".
 
---=20
-Lee Jones
-Linaro STMicroelectronics Landing Team Lead
-Linaro.org =E2=94=82 Open source software for ARM SoCs
-Follow Linaro: Facebook | Twitter | Blog
+>  2 files changed, 43 insertions(+), 2 deletions(-)
+> 
+> Index:
+> linux/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.
+> txt ================================== ---
+> linux.orig/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-cl
+> ocks.txt +++
+> linux/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.
+> txt @@ -16,7 +16,7 @@ Required Properties:
+>    - clocks: Reference to the parent clock
+>    - #clock-cells: Must be 1
+>    - clock-output-names: The names of the clocks. Supported clocks are
+> "main",
+> -    "pll0", "pll1", "pll3", "lb", "qspi", "sdh", "sd0", "sd1" and
+> "z"
+> +    "pll0", "pll1", "pll3", "lb", "qspi", "sdh", "sd0", "sd1", "z",
+> and "rcan"
+> 
+> 
+>  Example
+> @@ -29,5 +29,6 @@ Example
+>  		clocks = <&extal_clk>;
+>  		#clock-cells = <1>;
+>  		clock-output-names = "main", "pll0, "pll1", "pll3",
+> -				     "lb", "qspi", "sdh", "sd0", "sd1", "z";
+> +				     "lb", "qspi", "sdh", "sd0", "sd1", "z",
+> +				     "rcan";
+>  	};
+> Index: linux/drivers/clk/shmobile/clk-rcar-gen2.c
+> =================================> --- linux.orig/drivers/clk/shmobile/clk-rcar-gen2.c
+> +++ linux/drivers/clk/shmobile/clk-rcar-gen2.c
+> @@ -33,6 +33,7 @@ struct rcar_gen2_cpg {
+>  #define CPG_FRQCRC			0x000000e0
+>  #define CPG_FRQCRC_ZFC_MASK		(0x1f << 8)
+>  #define CPG_FRQCRC_ZFC_SHIFT		8
+> +#define CPG_RCANCKCR			0x00000270
+> 
+>  /*
+> ---------------------------------------------------------------------------
+> -- * Z Clock
+> @@ -161,6 +162,43 @@ static struct clk * __init cpg_z_clk_reg
+>  	return clk;
+>  }
+> 
+> +static struct clk * __init cpg_rcan_clk_register(struct rcar_gen2_cpg *cpg,
+> +						 struct device_node *np)
+> +{
+> +	const char *parent_name = of_clk_get_parent_name(np, 1);
+> +	struct clk_fixed_factor *fixed;
+> +	struct clk_gate *gate;
+> +	struct clk *clk;
+> +
+> +	fixed = kzalloc(sizeof(*fixed), GFP_KERNEL);
+> +	if (!fixed)
+> +		return ERR_PTR(-ENOMEM);
+> +
+> +	fixed->mult = 1;
+> +	fixed->div = 6;
+> +
+> +	gate = kzalloc(sizeof(*gate), GFP_KERNEL);
+> +	if (!gate) {
+> +		kfree(fixed);
+> +		return ERR_PTR(-ENOMEM);
+> +	}
+> +
+> +	gate->reg = cpg->reg + CPG_RCANCKCR;
+> +	gate->bit_idx = 8;
+> +	gate->flags = CLK_GATE_SET_TO_DISABLE;
+> +	gate->lock = &cpg->lock;
+> +
+> +	clk = clk_register_composite(NULL, "rcan", &parent_name, 1, NULL, NULL,
+> +				     &fixed->hw, &clk_fixed_factor_ops,
+> +				     &gate->hw, &clk_gate_ops, 0);
+> +	if (IS_ERR(clk)) {
+> +		kfree(gate);
+> +		kfree(fixed);
+> +	}
+> +
+> +	return clk;
+> +}
+> +
+>  /*
+> ---------------------------------------------------------------------------
+> -- * CPG Clock Data
+>   */
+> @@ -263,6 +301,8 @@ rcar_gen2_cpg_register_clock(struct devi
+>  		shift = 0;
+>  	} else if (!strcmp(name, "z")) {
+>  		return cpg_z_clk_register(cpg);
+> +	} else if (!strcmp(name, "rcan")) {
+> +		return cpg_rcan_clk_register(cpg, np);
+>  	} else {
+>  		return ERR_PTR(-EINVAL);
+>  	}
+
+-- 
+Regards,
+
+Laurent Pinchart
+
