@@ -1,221 +1,69 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 05 Jan 2015 07:02:28 +0000
-Subject: [PATCH 1/9] mmc: tmio: add tmio_mmc_host_alloc/free()
-Message-Id: <87y4phogk8.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 05 Jan 2015 08:35:53 +0000
+Subject: Re: [PATCH 1/9] mmc: tmio: add tmio_mmc_host_alloc/free()
+Message-Id: <CAMuHMdWdZDVeUmM2DatvFh5ghxk-EeEq96=nh63vPpRoKaCnfg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
+	<87y4phogk8.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87y4phogk8.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi Morimoto-san,
 
-Current tmio_mmc driver is using tmio_mmc_data for driver/platform
-specific data/callback, and it is needed for tmio_mmc_host_probe()
-function. Because of this style, include/linux/mfd/tmio.h header has
-tmio driver/framework specific data which is not needed from platform.
+On Mon, Jan 5, 2015 at 8:02 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+> --- a/drivers/mmc/host/tmio_mmc_pio.c
+> +++ b/drivers/mmc/host/tmio_mmc_pio.c
+> @@ -1054,12 +1054,35 @@ static void tmio_mmc_of_parse(struct platform_device *pdev,
+>                 pdata->flags |= TMIO_MMC_WRPROTECT_DISABLE;
+>  }
+>
+> -int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+> -                                 struct platform_device *pdev,
+> -                                 struct tmio_mmc_data *pdata)
+> +struct tmio_mmc_host*
+> +tmio_mmc_host_alloc(struct platform_device *pdev)
 
-This patch adds new tmio_mmc_host_alloc/free() as cleanup preparation.
-tmio driver specific data/callback will be implemented in tmio_mmc_host,
-and platform specific data/callback will be implemented in tmio_mmc_data
-in this cleanup.
+I think it would be better to match the naming in the mmc core layer, i.e.
+tmio_mmc_alloc_host().
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- drivers/mmc/host/sh_mobile_sdhi.c |   12 ++++++++---
- drivers/mmc/host/tmio_mmc.c       |   10 +++++++--
- drivers/mmc/host/tmio_mmc.h       |    5 +++--
- drivers/mmc/host/tmio_mmc_pio.c   |   42 ++++++++++++++++++++++++-------------
- include/linux/mfd/tmio.h          |    1 -
- 5 files changed, 47 insertions(+), 23 deletions(-)
+>  {
+> -       struct tmio_mmc_host *_host;
+> +       struct tmio_mmc_host *host;
+>         struct mmc_host *mmc;
+> +
+> +       mmc = mmc_alloc_host(sizeof(struct tmio_mmc_host), &pdev->dev);
+> +       if (!mmc)
+> +               return NULL;
+> +
+> +       host = mmc_priv(mmc);
+> +       host->mmc = mmc;
+> +       host->pdev = pdev;
+> +
+> +       return host;
+> +}
+> +
+> +void tmio_mmc_host_free(struct tmio_mmc_host *host)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 00c8ebd..b2cec5b 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -113,7 +113,7 @@ static int sh_mobile_sdhi_wait_idle(struct tmio_mmc_host *host)
- 		udelay(1);
- 
- 	if (!timeout) {
--		dev_warn(host->pdata->dev, "timeout waiting for SD bus idle\n");
-+		dev_warn(&host->pdev->dev, "timeout waiting for SD bus idle\n");
- 		return -EBUSY;
- 	}
- 
-@@ -207,6 +207,10 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		goto eclkget;
- 	}
- 
-+	host = tmio_mmc_host_alloc(pdev);
-+	if (!host)
-+		goto eprobe;
-+
- 	mmc_data->clk_enable = sh_mobile_sdhi_clk_enable;
- 	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
- 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
-@@ -274,9 +278,9 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
- 	mmc_data->bus_shift = resource_size(res) >> 9;
- 
--	ret = tmio_mmc_host_probe(&host, pdev, mmc_data);
-+	ret = tmio_mmc_host_probe(host, mmc_data);
- 	if (ret < 0)
--		goto eprobe;
-+		goto efree;
- 
- 	/*
- 	 * FIXME:
-@@ -351,6 +355,8 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 
- eirq:
- 	tmio_mmc_host_remove(host);
-+efree:
-+	tmio_mmc_host_free(host);
- eprobe:
- eclkget:
- 	if (p && p->cleanup)
-diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
-index 2616fdf..f47ae08 100644
---- a/drivers/mmc/host/tmio_mmc.c
-+++ b/drivers/mmc/host/tmio_mmc.c
-@@ -92,10 +92,14 @@ static int tmio_mmc_probe(struct platform_device *pdev)
- 	pdata->bus_shift = resource_size(res) >> 10;
- 	pdata->flags |= TMIO_MMC_HAVE_HIGH_REG;
- 
--	ret = tmio_mmc_host_probe(&host, pdev, pdata);
--	if (ret)
-+	host = tmio_mmc_host_alloc(pdev);
-+	if (!host)
- 		goto cell_disable;
- 
-+	ret = tmio_mmc_host_probe(host, pdata);
-+	if (ret)
-+		goto host_free;
-+
- 	ret = request_irq(irq, tmio_mmc_irq, IRQF_TRIGGER_FALLING,
- 				dev_name(&pdev->dev), host);
- 	if (ret)
-@@ -108,6 +112,8 @@ static int tmio_mmc_probe(struct platform_device *pdev)
- 
- host_remove:
- 	tmio_mmc_host_remove(host);
-+host_free:
-+	tmio_mmc_host_free(host);
- cell_disable:
- 	if (cell->disable)
- 		cell->disable(pdev);
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index a34ecbe..3d02a3c1 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -85,8 +85,9 @@ struct tmio_mmc_host {
- 	bool			sdio_irq_enabled;
- };
- 
--int tmio_mmc_host_probe(struct tmio_mmc_host **host,
--			struct platform_device *pdev,
-+struct tmio_mmc_host* tmio_mmc_host_alloc(struct platform_device *pdev);
-+void tmio_mmc_host_free(struct tmio_mmc_host *host);
-+int tmio_mmc_host_probe(struct tmio_mmc_host *host,
- 			struct tmio_mmc_data *pdata);
- void tmio_mmc_host_remove(struct tmio_mmc_host *host);
- void tmio_mmc_do_data_irq(struct tmio_mmc_host *host);
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 250bf8c..580d00b 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -1054,12 +1054,35 @@ static void tmio_mmc_of_parse(struct platform_device *pdev,
- 		pdata->flags |= TMIO_MMC_WRPROTECT_DISABLE;
- }
- 
--int tmio_mmc_host_probe(struct tmio_mmc_host **host,
--				  struct platform_device *pdev,
--				  struct tmio_mmc_data *pdata)
-+struct tmio_mmc_host*
-+tmio_mmc_host_alloc(struct platform_device *pdev)
- {
--	struct tmio_mmc_host *_host;
-+	struct tmio_mmc_host *host;
- 	struct mmc_host *mmc;
-+
-+	mmc = mmc_alloc_host(sizeof(struct tmio_mmc_host), &pdev->dev);
-+	if (!mmc)
-+		return NULL;
-+
-+	host = mmc_priv(mmc);
-+	host->mmc = mmc;
-+	host->pdev = pdev;
-+
-+	return host;
-+}
-+
-+void tmio_mmc_host_free(struct tmio_mmc_host *host)
-+{
-+	mmc_free_host(host->mmc);
-+
-+	host->mmc = NULL;
-+}
-+
-+int tmio_mmc_host_probe(struct tmio_mmc_host *_host,
-+			struct tmio_mmc_data *pdata)
-+{
-+	struct platform_device *pdev = _host->pdev;
-+	struct mmc_host *mmc = _host->mmc;
- 	struct resource *res_ctl;
- 	int ret;
- 	u32 irq_mask = TMIO_MASK_CMD;
-@@ -1073,19 +1096,11 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	if (!res_ctl)
- 		return -EINVAL;
- 
--	mmc = mmc_alloc_host(sizeof(struct tmio_mmc_host), &pdev->dev);
--	if (!mmc)
--		return -ENOMEM;
--
- 	ret = mmc_of_parse(mmc);
- 	if (ret < 0)
- 		goto host_free;
- 
--	pdata->dev = &pdev->dev;
--	_host = mmc_priv(mmc);
- 	_host->pdata = pdata;
--	_host->mmc = mmc;
--	_host->pdev = pdev;
- 	platform_set_drvdata(pdev, mmc);
- 
- 	_host->set_pwr = pdata->set_pwr;
-@@ -1192,8 +1207,6 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 		mmc_gpiod_request_cd_irq(mmc);
- 	}
- 
--	*host = _host;
--
- 	return 0;
- 
- host_free:
-@@ -1222,7 +1235,6 @@ void tmio_mmc_host_remove(struct tmio_mmc_host *host)
- 	pm_runtime_disable(&pdev->dev);
- 
- 	iounmap(host->ctl);
--	mmc_free_host(mmc);
- }
- EXPORT_SYMBOL(tmio_mmc_host_remove);
- 
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index 5738817..c7d9af0 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -135,7 +135,6 @@ struct tmio_mmc_data {
- 	unsigned long			bus_shift;
- 	u32				ocr_mask;	/* available voltages */
- 	struct tmio_mmc_dma		*dma;
--	struct device			*dev;
- 	unsigned int			cd_gpio;
- 	void (*set_pwr)(struct platform_device *host, int state);
- 	void (*set_clk_div)(struct platform_device *host, int state);
--- 
-1.7.9.5
+tmio_mmc_free_host
 
+> +{
+> +       mmc_free_host(host->mmc);
+> +
+> +       host->mmc = NULL;
+> +}
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
