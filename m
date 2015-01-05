@@ -1,53 +1,67 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 16 Jan 2015 01:10:49 +0000
-Subject: [PATCH 4/4] ARM: shmobile: r8a7791: add SDHI DMA channels on DTSI
-Message-Id: <87r3uvy1fe.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 05 Jan 2015 13:38:35 +0000
+Subject: Re: [PATCH 2/2] ARM: shmobile: r8a7790: add CAN DT support
+Message-Id: <CAMuHMdWridOCgiCgM79eV-K-Ry2sQk3vdB5f306fMqqme6Nnag@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389082976-22254-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1389082976-22254-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <2616635.bsb7mLynhA@wasted.cogentembedded.com>
+ <5498306.nhRks3sT7k@wasted.cogentembedded.com>
+In-Reply-To: <5498306.nhRks3sT7k@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Mon, Dec 29, 2014 at 11:06 PM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+> Define the generic R8A7790 parts of the CAN0/1 device nodes.
+>
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/boot/dts/r8a7791.dtsi |    6 ++++++
- 1 file changed, 6 insertions(+)
+Apart from the minor nit below
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index e6d89d6..8a2fc56 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -485,6 +485,8 @@
- 		reg = <0 0xee100000 0 0x328>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7791_CLK_SDHI0>;
-+		dmas = <&dmac1 0xcd>, <&dmac1 0xce>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -493,6 +495,8 @@
- 		reg = <0 0xee140000 0 0x100>;
- 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7791_CLK_SDHI1>;
-+		dmas = <&dmac1 0xc1>, <&dmac1 0xc2>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -501,6 +505,8 @@
- 		reg = <0 0xee160000 0 0x100>;
- 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7791_CLK_SDHI2>;
-+		dmas = <&dmac1 0xd3>, <&dmac1 0xd4>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
--- 
-1.7.9.5
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
+> --- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
+> +++ renesas/arch/arm/boot/dts/r8a7790.dtsi
+> @@ -792,6 +792,26 @@
+>                 };
+>         };
+>
+> +       can0: can@e6e80000 {
+> +               compatible = "renesas,can-r8a7790";
+> +               reg = <0 0xe6e80000 0 0x1000>;
+> +               interrupts = <0 186 IRQ_TYPE_LEVEL_HIGH>;
+> +               clocks = <&mstp9_clks R8A7790_CLK_RCAN0>,
+> +                        <&cpg_clocks R8A7790_CLK_RCAN>, <&can_clk>;
+
+.git/rebase-apply/patch:18: space before tab in indent.
+      <&cpg_clocks R8A7790_CLK_RCAN>, <&can_clk>;
+
+> +               clock-names = "clkp1", "clkp2", "can_clk";
+> +               status = "disabled";
+> +       };
+> +
+> +       can1: can@e6e88000 {
+> +               compatible = "renesas,can-r8a7790";
+> +               reg = <0 0xe6e88000 0 0x1000>;
+> +               interrupts = <0 187 IRQ_TYPE_LEVEL_HIGH>;
+> +               clocks = <&mstp9_clks R8A7790_CLK_RCAN1>,
+> +                        <&cpg_clocks R8A7790_CLK_RCAN>, <&can_clk>;
+
+.git/rebase-apply/patch:28: space before tab in indent.
+      <&cpg_clocks R8A7790_CLK_RCAN>, <&can_clk>;
+
+> +               clock-names = "clkp1", "clkp2", "can_clk";
+> +               status = "disabled";
+> +       };
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
