@@ -1,44 +1,83 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 26 Jan 2015 06:52:03 +0000
-Subject: [PATCH] dmaengine: rcar-hpbdma: tidyup residue_granularity
-Message-Id: <87y4oq9gok.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Mon, 05 Jan 2015 08:30:38 +0000
+Subject: Re: [PATCH/RFC] ARM: shmobile: r8a7794: Add Audio DMAC, PWM and Thermal clocks to device tree
+Message-Id: <8183635.VD1oYub01I@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87vbk0n3q3.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87vbk0n3q3.wl%kuninori.morimoto.gx@renesas.com>
+References: <1418949573-24211-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1418949573-24211-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi Simon,
 
-The driver doesn't support residue reporting at all.
-residue_granularity should be set to DMA_RESIDUE_GRANULARITY_DESCRIPTOR.
-Special thanks to Laurent
+On Friday 19 December 2014 09:39:33 Simon Horman wrote:
+> This is based on the MSTP5 clocks in the r8a7791 device tree.
+> The main difference being that the r8a7794 does not have an Audio DMAC1
+> clock.
+> 
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> 
+> ---
+> Based on the renesas-devel-20141217-v3.18 tag of my renesas tree.
+> 
+> N.B: The R-Car Gen2 v1.8.0 BSP uses zs_clk whereas this patch uses hp_clk
+>      as the parent clock for the Audio DMAC clock.
+> 
+>      In that regard this patch follows the pattern used in mainline for the
+>      r8a7790 and r8a7791 SoCs.
+> 
+>      The BSP's parent clock is consistent for the r8a7790, r8a7791, r8a7793
+>      and r8a7794 SoCs.
 
-Reported-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- drivers/dma/sh/rcar-hpbdma.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Does this mean the BSP uses hp_clk for all Gen2 SoCs while mainline uses 
+zs_clk ? Can't we find out which one is correct ?
 
-diff --git a/drivers/dma/sh/rcar-hpbdma.c b/drivers/dma/sh/rcar-hpbdma.c
-index 6fef1b9..749f26e 100644
---- a/drivers/dma/sh/rcar-hpbdma.c
-+++ b/drivers/dma/sh/rcar-hpbdma.c
-@@ -600,7 +600,7 @@ static int hpb_dmae_probe(struct platform_device *pdev)
- 	dma_dev->src_addr_widths = widths;
- 	dma_dev->dst_addr_widths = widths;
- 	dma_dev->directions = BIT(DMA_MEM_TO_DEV) | BIT(DMA_DEV_TO_MEM);
--	dma_dev->residue_granularity = DMA_RESIDUE_GRANULARITY_BURST;
-+	dma_dev->residue_granularity = DMA_RESIDUE_GRANULARITY_DESCRIPTOR;
- 
- 	hpbdev->shdma_dev.ops = &hpb_dmae_ops;
- 	hpbdev->shdma_dev.desc_size = sizeof(struct hpb_desc);
+>      Support for the r8a7793 SoC is not present in mainline.
+> ---
+>  arch/arm/boot/dts/r8a7794.dtsi            | 11 +++++++++++
+>  include/dt-bindings/clock/r8a7794-clock.h |  1 +
+>  2 files changed, 12 insertions(+)
+> 
+> diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+> index 063bf56..7a03166 100644
+> --- a/arch/arm/boot/dts/r8a7794.dtsi
+> +++ b/arch/arm/boot/dts/r8a7794.dtsi
+> @@ -530,6 +530,17 @@
+>  			        "sdhi2", "sdhi1", "sdhi0",
+>  				"mmcif0", "cmt1", "usbdmac0", "usbdmac1";
+>  		};
+> +		mstp5_clks: mstp5_clks@e6150144 {
+> +			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-
+clocks";
+> +			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
+> +			clocks = <&hp_clk>, <&extal_clk>, <&p_clk>;
+> +			#clock-cells = <1>;
+> +			clock-indices = <
+> +				R8A7794_CLK_AUDIO_DMAC0
+> +				R8A7794_CLK_THERMAL R8A7794_CLK_PWM
+> +			>;
+> +			clock-output-names = "audmac0", "thermal", "pwm";
+> +		};
+>  		mstp7_clks: mstp7_clks@e615014c {
+>  			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-
+clocks";
+>  			reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
+> diff --git a/include/dt-bindings/clock/r8a7794-clock.h
+> b/include/dt-bindings/clock/r8a7794-clock.h index d5cfe62..58fa44d 100644
+> --- a/include/dt-bindings/clock/r8a7794-clock.h
+> +++ b/include/dt-bindings/clock/r8a7794-clock.h
+> @@ -61,6 +61,7 @@
+>  #define R8A7794_CLK_USBDMAC1		31
+> 
+>  /* MSTP5 */
+> +#define R8A7794_CLK_AUDIO_DMAC0		2
+>  #define R8A7794_CLK_THERMAL		22
+>  #define R8A7794_CLK_PWM			23
+
 -- 
-1.7.9.5
+Regards,
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Laurent Pinchart
+
