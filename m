@@ -1,125 +1,334 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 09 Jan 2015 13:13:55 +0000
-Subject: [PATCH 3/4] ARM: shmobile: Enable kzm9g board in multiplatform defconfig
-Message-Id: <1420809236-4105-3-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 05 Jan 2015 03:52:23 +0000
+Subject: [PATCH 5/5] ARM: shmobile: r8a7740 dtsi: Add PM domain support
+Message-Id: <b21cadc64dc34fb531ad49d462021c2b6a14cfff.1420429758.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420809236-4105-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1420809236-4105-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1420429758.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1420429758.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/configs/shmobile_defconfig | 19 ++++++++++++++++---
- 1 file changed, 16 insertions(+), 3 deletions(-)
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index adaa7aaf9178c4dc..e365c31e9dd513f3 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -17,6 +17,7 @@ CONFIG_ARCH_R8A7779=y
- CONFIG_ARCH_R8A7790=y
- CONFIG_ARCH_R8A7791=y
- CONFIG_ARCH_R8A7794=y
-+CONFIG_ARCH_SH73A0=y
- CONFIG_MACH_MARZEN=y
- CONFIG_CPU_BPREDICT_DISABLE=y
- CONFIG_PL310_ERRATA_588369=y
-@@ -44,7 +45,6 @@ CONFIG_CPUFREQ_DT=y
- CONFIG_VFP=y
- CONFIG_NEON=y
- # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
--CONFIG_PM=y
- CONFIG_NET=y
- CONFIG_PACKET=y
- CONFIG_UNIX=y
-@@ -54,6 +54,7 @@ CONFIG_IP_PNP_DHCP=y
- CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
- CONFIG_DEVTMPFS=y
- CONFIG_DEVTMPFS_MOUNT=y
-+CONFIG_SIMPLE_PM_BUS=y
- CONFIG_MTD=y
- CONFIG_MTD_BLOCK=y
- CONFIG_MTD_M25P80=y
-@@ -81,10 +82,13 @@ CONFIG_SMSC911X=y
- CONFIG_SMSC_PHY=y
- CONFIG_MICREL_PHY=y
- # CONFIG_INPUT_MOUSEDEV_PSAUX is not set
-+CONFIG_INPUT_EVDEV=y
- CONFIG_KEYBOARD_GPIO=y
- # CONFIG_INPUT_MOUSE is not set
- CONFIG_INPUT_TOUCHSCREEN=y
- CONFIG_TOUCHSCREEN_ST1232=y
-+CONFIG_INPUT_MISC=y
-+CONFIG_INPUT_ADXL34X=y
- # CONFIG_LEGACY_PTYS is not set
- CONFIG_SERIAL_8250=y
- CONFIG_SERIAL_8250_CONSOLE=y
-@@ -93,6 +97,7 @@ CONFIG_SERIAL_8250_EM=y
- CONFIG_SERIAL_SH_SCI=y
- CONFIG_SERIAL_SH_SCI_NR_UARTS 
- CONFIG_SERIAL_SH_SCI_CONSOLE=y
-+CONFIG_I2C_CHARDEV=y
- CONFIG_I2C_GPIO=y
- CONFIG_I2C_RIIC=y
- CONFIG_I2C_SH_MOBILE=y
-@@ -103,14 +108,16 @@ CONFIG_SPI_SH_MSIOF=y
- CONFIG_SPI_SH_HSPI=y
- CONFIG_GPIO_EM=y
- CONFIG_GPIO_RCAR=y
-+CONFIG_GPIO_PCF857X=y
- # CONFIG_HWMON is not set
- CONFIG_THERMAL=y
- CONFIG_CPU_THERMAL=y
- CONFIG_RCAR_THERMAL=y
- CONFIG_WATCHDOG=y
- CONFIG_DA9063_WATCHDOG=y
-+CONFIG_MFD_AS3711=y
- CONFIG_MFD_DA9063=y
--CONFIG_REGULATOR=y
-+CONFIG_REGULATOR_AS3711=y
- CONFIG_REGULATOR_DA9210=y
- CONFIG_REGULATOR_GPIO=y
- CONFIG_MEDIA_SUPPORT=y
-@@ -127,10 +134,12 @@ CONFIG_VIDEO_RENESAS_VSP1=y
- CONFIG_VIDEO_ADV7180=y
- CONFIG_DRM=y
- CONFIG_DRM_RCAR_DU=y
--CONFIG_BACKLIGHT_LCD_SUPPORT=y
-+CONFIG_FB_SH_MOBILE_LCDC=y
-+CONFIG_FB_SH_MOBILE_MERAM=y
- # CONFIG_LCD_CLASS_DEVICE is not set
- # CONFIG_BACKLIGHT_GENERIC is not set
- CONFIG_BACKLIGHT_PWM=y
-+CONFIG_BACKLIGHT_AS3711=y
- CONFIG_SOUND=y
- CONFIG_SND=y
- CONFIG_SND_SOC=y
-@@ -141,6 +150,7 @@ CONFIG_SND_SOC_WM8978=y
- CONFIG_USB=y
- CONFIG_USB_EHCI_HCD=y
- CONFIG_USB_OHCI_HCD=y
-+CONFIG_USB_R8A66597_HCD=y
- CONFIG_USB_RENESAS_USBHS=y
- CONFIG_USB_RCAR_PHY=y
- CONFIG_USB_RCAR_GEN2_PHY=y
-@@ -154,11 +164,14 @@ CONFIG_NEW_LEDS=y
- CONFIG_LEDS_CLASS=y
- CONFIG_LEDS_GPIO=y
- CONFIG_RTC_CLASS=y
-+CONFIG_RTC_DRV_RS5C372=y
- CONFIG_RTC_DRV_S35390A=y
- CONFIG_DMADEVICES=y
- CONFIG_SH_DMAE=y
- CONFIG_RCAR_DMAC=y
- # CONFIG_IOMMU_SUPPORT is not set
-+CONFIG_IIO=y
-+CONFIG_AK8975=y
- CONFIG_PWM=y
- CONFIG_PWM_RENESAS_TPU=y
- # CONFIG_DNOTIFY is not set
+Add a device node for the System Controller, with subnodes that
+represent the hardware power area hierarchy.
+Hook up all devices to their respective PM domains.
+
+Add a minimal device node for the Coresight-ETM hardware block, and hook
+it up to the D4 PM domain, so the R-Mobile System Controller driver can
+keep the domain powered, until the new Coresight code handles runtime
+PM.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7740.dtsi | 99 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 99 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index a8a674b..eea4ec6 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -25,6 +25,7 @@
+ 			device_type = "cpu";
+ 			reg = <0x0>;
+ 			clock-frequency = <800000000>;
++			power-domains = <&pd_a3sm>;
+ 		};
+ 	};
+ 
+@@ -41,12 +42,18 @@
+ 		interrupts = <0 83 IRQ_TYPE_LEVEL_HIGH>;
+ 	};
+ 
++	ptm {
++		compatible = "arm,coresight-etm3x";
++		power-domains = <&pd_d4>;
++	};
++
+ 	cmt1: timer@e6138000 {
+ 		compatible = "renesas,cmt-48-r8a7740", "renesas,cmt-48";
+ 		reg = <0xe6138000 0x170>;
+ 		interrupts = <0 58 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7740_CLK_CMT1>;
+ 		clock-names = "fck";
++		power-domains = <&pd_c5>;
+ 
+ 		renesas,channels-mask = <0x3f>;
+ 
+@@ -72,6 +79,7 @@
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
++		power-domains = <&pd_a4s>;
+ 	};
+ 
+ 	/* irqpin1: IRQ8 - IRQ15 */
+@@ -93,6 +101,7 @@
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
++		power-domains = <&pd_a4s>;
+ 	};
+ 
+ 	/* irqpin2: IRQ16 - IRQ23 */
+@@ -114,6 +123,7 @@
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
++		power-domains = <&pd_a4s>;
+ 	};
+ 
+ 	/* irqpin3: IRQ24 - IRQ31 */
+@@ -135,6 +145,7 @@
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
++		power-domains = <&pd_a4s>;
+ 	};
+ 
+ 	ether: ethernet@e9a00000 {
+@@ -143,6 +154,7 @@
+ 		      <0xe9a01800 0x800>;
+ 		interrupts = <0 110 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7740_CLK_GETHER>;
++		power-domains = <&pd_a4s>;
+ 		phy-mode = "mii";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -159,6 +171,7 @@
+ 			      0 203 IRQ_TYPE_LEVEL_HIGH
+ 			      0 204 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp1_clks R8A7740_CLK_IIC0>;
++		power-domains = <&pd_a4r>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -172,6 +185,7 @@
+ 			      0 72 IRQ_TYPE_LEVEL_HIGH
+ 			      0 73 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7740_CLK_IIC1>;
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -181,6 +195,7 @@
+ 		interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA0>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -190,6 +205,7 @@
+ 		interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA1>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -199,6 +215,7 @@
+ 		interrupts = <0 102 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA2>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -208,6 +225,7 @@
+ 		interrupts = <0 103 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA3>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -217,6 +235,7 @@
+ 		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA4>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -226,6 +245,7 @@
+ 		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA5>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -235,6 +255,7 @@
+ 		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA6>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -244,6 +265,7 @@
+ 		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA7>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -253,6 +275,7 @@
+ 		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7740_CLK_SCIFB>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -271,12 +294,14 @@
+ 			<&irqpin2 4 0>, <&irqpin2 5 0>, <&irqpin2 6 0>, <&irqpin2 7 0>,
+ 			<&irqpin3 0 0>, <&irqpin3 1 0>, <&irqpin3 2 0>, <&irqpin3 3 0>,
+ 			<&irqpin3 4 0>, <&irqpin3 5 0>, <&irqpin3 6 0>, <&irqpin3 7 0>;
++		power-domains = <&pd_c5>;
+ 	};
+ 
+ 	tpu: pwm@e6600000 {
+ 		compatible = "renesas,tpu-r8a7740", "renesas,tpu";
+ 		reg = <0xe6600000 0x100>;
+ 		clocks = <&mstp3_clks R8A7740_CLK_TPU0>;
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 		#pwm-cells = <3>;
+ 	};
+@@ -287,6 +312,7 @@
+ 		interrupts = <0 56 IRQ_TYPE_LEVEL_HIGH
+ 			      0 57 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7740_CLK_MMC>;
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -297,6 +323,7 @@
+ 			      0 118 IRQ_TYPE_LEVEL_HIGH
+ 			      0 119 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7740_CLK_SDHI0>;
++		power-domains = <&pd_a3sp>;
+ 		cap-sd-highspeed;
+ 		cap-sdio-irq;
+ 		status = "disabled";
+@@ -309,6 +336,7 @@
+ 			      0 122 IRQ_TYPE_LEVEL_HIGH
+ 			      0 123 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7740_CLK_SDHI1>;
++		power-domains = <&pd_a3sp>;
+ 		cap-sd-highspeed;
+ 		cap-sdio-irq;
+ 		status = "disabled";
+@@ -321,6 +349,7 @@
+ 			      0 126 IRQ_TYPE_LEVEL_HIGH
+ 			      0 127 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R8A7740_CLK_SDHI2>;
++		power-domains = <&pd_a3sp>;
+ 		cap-sd-highspeed;
+ 		cap-sdio-irq;
+ 		status = "disabled";
+@@ -332,6 +361,7 @@
+ 		reg = <0xfe1f0000 0x400>;
+ 		interrupts = <0 9 0x4>;
+ 		clocks = <&mstp3_clks R8A7740_CLK_FSI>;
++		power-domains = <&pd_a4mp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -343,6 +373,7 @@
+ 			     <0 200 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp1_clks R8A7740_CLK_TMU0>;
+ 		clock-names = "fck";
++		power-domains = <&pd_a4r>;
+ 
+ 		#renesas,channels = <3>;
+ 
+@@ -357,6 +388,7 @@
+ 			     <0 172 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp1_clks R8A7740_CLK_TMU1>;
+ 		clock-names = "fck";
++		power-domains = <&pd_a4r>;
+ 
+ 		#renesas,channels = <3>;
+ 
+@@ -543,4 +575,71 @@
+ 				"usbhost", "sdhi2", "usbfunc", "usphy";
+ 		};
+ 	};
++
++	sysc: system-controller@e6180000 {
++		compatible = "renesas,sysc-r8a7740", "renesas,sysc-rmobile";
++		reg = <0xe6180000 0x8000>, <0xe6188000 0x8000>;
++
++		pm-domains {
++			pd_c5: c5 {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				#power-domain-cells = <0>;
++
++				pd_a4lc: a4lc@1 {
++					reg = <1>;
++					#power-domain-cells = <0>;
++				};
++
++				pd_a4mp: a4mp@2 {
++					reg = <2>;
++					#power-domain-cells = <0>;
++				};
++
++				pd_d4: d4@3 {
++					reg = <3>;
++					#power-domain-cells = <0>;
++				};
++
++				pd_a4r: a4r@5 {
++					reg = <5>;
++					#address-cells = <1>;
++					#size-cells = <0>;
++					#power-domain-cells = <0>;
++
++					pd_a3rv: a3rv@6 {
++						reg = <6>;
++						#power-domain-cells = <0>;
++					};
++				};
++
++				pd_a4s: a4s@10 {
++					reg = <10>;
++					#address-cells = <1>;
++					#size-cells = <0>;
++					#power-domain-cells = <0>;
++
++					pd_a3sp: a3sp@11 {
++						reg = <11>;
++						#power-domain-cells = <0>;
++					};
++
++					pd_a3sm: a3sm@12 {
++						reg = <12>;
++						#power-domain-cells = <0>;
++					};
++
++					pd_a3sg: a3sg@13 {
++						reg = <13>;
++						#power-domain-cells = <0>;
++					};
++				};
++
++				pd_a4su: a4su@20 {
++					reg = <20>;
++					#power-domain-cells = <0>;
++				};
++			};
++		};
++	};
+ };
 -- 
-1.9.1
+2.1.3
 
