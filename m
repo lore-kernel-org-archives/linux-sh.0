@@ -1,58 +1,43 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 20 Jan 2015 11:58:20 +0000
-Subject: [PATCH 03/03] ARM: shmobile: Remove mach/uncompress.h
-Message-Id: <20150120115820.11479.4763.sendpatchset@little-apple>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 05 Jan 2015 13:53:23 +0000
+Subject: Re: [RFC 3/4] ARM: shmobile: r8a7790: lager: add i2c-demuxer to dts
+Message-Id: <CAMuHMdWf+TqOuMjsKh58yfM8_+6Q5y=2ud-gx393Rhq9E+=L0Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150120115750.11479.95109.sendpatchset@little-apple>
-In-Reply-To: <20150120115750.11479.95109.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+On Mon, Dec 15, 2014 at 9:20 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
+> --- a/arch/arm/boot/dts/r8a7790-lager.dts
+> +++ b/arch/arm/boot/dts/r8a7790-lager.dts
+> @@ -144,6 +144,34 @@
+>                 states = <3300000 1
+>                           1800000 0>;
+>         };
+> +
+> +       i2c-demux {
+> +
+> +               compatible = "i2c-demux-pinctrl";
+> +               i2c-parent = <&iic2>, <&i2c2>;
+> +               #address-cells = <1>;
+> +               #size-cells = <0>;
+> +
+> +               i2c@2 {
 
-Convert ARCH_SHMOBILE_LEGACY to make use of <debug/uncompress.h>
-and remove the now unused <mach/uncompress.h>.
+i2c@0
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
+(we really need a dtc that checks for this)
 
- arch/arm/Kconfig.debug                           |    3 ++-
- arch/arm/mach-shmobile/include/mach/uncompress.h |   19 -------------------
- 2 files changed, 2 insertions(+), 20 deletions(-)
+> +                       reg = <0>;
 
---- 0001/arch/arm/Kconfig.debug
-+++ work/arch/arm/Kconfig.debug	2015-01-20 20:26:10.527765900 +0900
-@@ -1441,7 +1441,8 @@ config DEBUG_UNCOMPRESS
- config UNCOMPRESS_INCLUDE
- 	string
- 	default "debug/uncompress.h" if ARCH_MULTIPLATFORM || ARCH_MSM || \
--					PLAT_SAMSUNG || ARCH_EFM32
-+					PLAT_SAMSUNG || ARCH_EFM32 || \
-+					ARCH_SHMOBILE_LEGACY
- 	default "mach/uncompress.h"
- 
- config EARLY_PRINTK
---- 0001/arch/arm/mach-shmobile/include/mach/uncompress.h
-+++ /dev/null	2015-01-13 15:44:39.280208949 +0900
-@@ -1,19 +0,0 @@
--#ifndef __ASM_MACH_UNCOMPRESS_H
--#define __ASM_MACH_UNCOMPRESS_H
--
--/*
-- * This does not append a newline
-- */
--static void putc(int c)
--{
--}
--
--static inline void flush(void)
--{
--}
--
--static void arch_decomp_setup(void)
--{
--}
--
--#endif /* __ASM_MACH_UNCOMPRESS_H */
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
