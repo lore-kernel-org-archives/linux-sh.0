@@ -1,65 +1,56 @@
-From: Michal Simek <michal.simek@xilinx.com>
-Date: Wed, 28 Jan 2015 14:22:55 +0000
-Subject: Re: [PATCH v4 6/7] ARM: zynq: DT: Add pinctrl information
-Message-Id: <41babf16a78d4d48855d80d61262e39a@BL2FFO11FD033.protection.gbl>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="g11hhdKa1kOVO1p0GTnEo7Gkr3KLNnS9k"
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 05 Jan 2015 21:34:42 +0000
+Subject: [PATCH v2 2/2] ARM: shmobile: r8a7790: add CAN DT support
+Message-Id: <2103349.lorm0h2Cbt@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420818231-13451-1-git-send-email-soren.brinkmann@xilinx.com>
- <1420818231-13451-7-git-send-email-soren.brinkmann@xilinx.com>
- <CACRpkdZ1jfTUqfLKonJxar2Jn25+4wTF-D4XUXOszSsoJrA07w@mail.gmail.com>
- <1a749692196d406a8229d4891f3563f4@BN1BFFO11FD016.protection.gbl>
- <54C6D510.6090105@suse.de>
-In-Reply-To: <54C6D510.6090105@suse.de>
+References: <28994794.h3WeokSSG3@wasted.cogentembedded.com>
+In-Reply-To: <28994794.h3WeokSSG3@wasted.cogentembedded.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
---g11hhdKa1kOVO1p0GTnEo7Gkr3KLNnS9k
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+Define the generic R8A7790 parts of the CAN0/1 device nodes.
 
-On 01/27/2015 01:00 AM, Andreas F=C3=A4rber wrote:
-> Am 12.01.2015 um 08:27 schrieb Michal Simek:
->> On 01/11/2015 10:38 PM, Linus Walleij wrote:
->>> On Fri, Jan 9, 2015 at 4:43 PM, Soren Brinkmann
->>> <soren.brinkmann@xilinx.com> wrote:
->>>
->>>> Add pinctrl descriptions to the zc702 and zc706 device trees.
->>>>
->>>> Signed-off-by: Soren Brinkmann <soren.brinkmann@xilinx.com>
->>>> Tested-by: Andreas F=C3=A4rber <afaerber@suse.de>
->>>
->>> Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
->>>
->>> Beautiful and in line with how I want things to look.
->>>
->>> Yours,
->>> Linus Walleij
->>>
->>
->> Applied to zynq/dt.
->=20
-> Did you maybe forget to push?
->=20
-> https://github.com/Xilinx/linux-xlnx/commits/zynq/dt doesn't have it.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Ah sorry - I have pushed it now.
+---
+Changes in version 2:
+- fixed whitespace errors/warnings given by checkpatch.pl;
+- added Geert's ACK.
 
-Thanks,
-Michal
+ arch/arm/boot/dts/r8a7790.dtsi |   20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
+Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
++++ renesas/arch/arm/boot/dts/r8a7790.dtsi
+@@ -792,6 +792,26 @@
+ 		};
+ 	};
+ 
++	can0: can@e6e80000 {
++		compatible = "renesas,can-r8a7790";
++		reg = <0 0xe6e80000 0 0x1000>;
++		interrupts = <0 186 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7790_CLK_RCAN0>,
++			 <&cpg_clocks R8A7790_CLK_RCAN>, <&can_clk>;
++		clock-names = "clkp1", "clkp2", "can_clk";
++		status = "disabled";
++	};
++
++	can1: can@e6e88000 {
++		compatible = "renesas,can-r8a7790";
++		reg = <0 0xe6e88000 0 0x1000>;
++		interrupts = <0 187 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7790_CLK_RCAN1>,
++			 <&cpg_clocks R8A7790_CLK_RCAN>, <&can_clk>;
++		clock-names = "clkp1", "clkp2", "can_clk";
++		status = "disabled";
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 
-
---g11hhdKa1kOVO1p0GTnEo7Gkr3KLNnS9k
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iEYEARECAAYFAlTI8L8ACgkQykllyylKDCF0DQCdHsx8Riz6BWAsBfKkzbn+Qats
-QuIAoJrLL3ZvczibjyujdweDn64rBb7w
-=0WFN
------END PGP SIGNATURE-----
-
---g11hhdKa1kOVO1p0GTnEo7Gkr3KLNnS9k--
