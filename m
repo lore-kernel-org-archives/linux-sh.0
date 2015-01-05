@@ -1,99 +1,344 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 22 Jan 2015 08:34:03 +0000
-Subject: [PATCH 1/5 v6] dmaengine: shdma-base: enable to be non multiplexed DMAEngine driver
-Message-Id: <87a91bkyc3.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 05 Jan 2015 03:52:22 +0000
+Subject: [PATCH 4/5] ARM: shmobile: R-Mobile: Add DT support for PM domains
+Message-Id: <0d8780dee23f1414457743ba1576d20a486ace8a.1420429758.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1420429758.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1420429758.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Arnd Bergmann <arnd@arndb.de>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Current shdma-base driver which was created originally for R-Mobile series
-is assuming that it is working as multiplexed DMAEngine.
-But, current Renesas SoC (= R-Car series) also uses non-multiplexed
-DMAEngine driver (= rcar-dmac). This case, shdma-base and rcar-dmac will
-have same ID on each drivers.
+Populate the PM domains from DT, and provide support to hook up devices
+to their respective PM domain.
 
-Then, dma_request_slave_channel_compat() will call __dma_request_channel(),
-and, shdma driver might return channel which was requested as rcar-dma channel if
-1) there are rcar-dmac driver user and shdma-base driver user in system
-2) user driver requests rcar-dmac side channel
-3) system compiles shdma-base driver only
-4) user driver uses dma_request_slave_channel_compat()
-5) user driver uses shdma_chan_filter in dma_request_slave_channel_compat()
+The always-on power area (e.g. C5 on r8a7740) is created as a PM domain
+without software control, to allow Run-Time management of module clocks
+for hardware blocks inside this area.
 
-This patch adds shdma_dev :: multiplexed as short term bugfix.
-rcar-audmapp will be trouble without this patch.
+Special cases like PM domains containing CPUs, the console device, or
+Coresight-ETM, are handled by scanning the DT topology.
 
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+As long as the ARM debug/perf code doesn't use resource management with
+runtime PM support, the power area containing Coresight-ETM (e.g. D4 on
+r8a7740) must be kept powered to avoid a crash during resume from s2ram
+(dbg_cpu_pm_notify() calls reset_ctrl_regs() unconditionally, causing an
+undefined instruction oops).
+
+Initialization is done from core_initcall(), as the
+"renesas,intc-irqpin" driver uses postcore_initcall().
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/dma/sh/rcar-hpbdma.c |    1 +
- drivers/dma/sh/shdma-base.c  |   11 +++++++++++
- drivers/dma/sh/shdmac.c      |    1 +
- include/linux/shdma-base.h   |    1 +
- 4 files changed, 14 insertions(+)
+ arch/arm/mach-shmobile/Kconfig      |   3 +-
+ arch/arm/mach-shmobile/pm-rmobile.c | 215 +++++++++++++++++++++++++++++++++++-
+ arch/arm/mach-shmobile/pm-rmobile.h |   2 +-
+ 3 files changed, 216 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/dma/sh/rcar-hpbdma.c b/drivers/dma/sh/rcar-hpbdma.c
-index 6fef1b9..dd171e5 100644
---- a/drivers/dma/sh/rcar-hpbdma.c
-+++ b/drivers/dma/sh/rcar-hpbdma.c
-@@ -602,6 +602,7 @@ static int hpb_dmae_probe(struct platform_device *pdev)
- 	dma_dev->directions = BIT(DMA_MEM_TO_DEV) | BIT(DMA_DEV_TO_MEM);
- 	dma_dev->residue_granularity = DMA_RESIDUE_GRANULARITY_BURST;
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 1b4fafe..76b80e5 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -7,6 +7,7 @@ config PM_RCAR
  
-+	hpbdev->shdma_dev.multiplexed = true;
- 	hpbdev->shdma_dev.ops = &hpb_dmae_ops;
- 	hpbdev->shdma_dev.desc_size = sizeof(struct hpb_desc);
- 	err = shdma_init(&pdev->dev, &hpbdev->shdma_dev, pdata->num_channels);
-diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
-index 8ee383d..359eaa6 100644
---- a/drivers/dma/sh/shdma-base.c
-+++ b/drivers/dma/sh/shdma-base.c
-@@ -293,6 +293,17 @@ bool shdma_chan_filter(struct dma_chan *chan, void *arg)
- 		return false;
+ config PM_RMOBILE
+ 	bool
++	select PM_GENERIC_DOMAINS
  
- 	sdev = to_shdma_dev(schan->dma_chan.device);
+ config ARCH_RCAR_GEN1
+ 	bool
+@@ -23,7 +24,7 @@ config ARCH_RCAR_GEN2
+ 
+ config ARCH_RMOBILE
+ 	bool
+-	select PM_RMOBILE if PM && !ARCH_SHMOBILE_MULTI
++	select PM_RMOBILE if PM
+ 	select SYS_SUPPORTS_SH_CMT
+ 	select SYS_SUPPORTS_SH_TMU
+ 
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index a4fcd2c..07fb4ea 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -3,6 +3,7 @@
+  *
+  * Copyright (C) 2012  Renesas Solutions Corp.
+  * Copyright (C) 2012  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ * Copyright (C) 2014  Glider bvba
+  *
+  * based on pm-sh7372.c
+  *  Copyright (C) 2011 Magnus Damm
+@@ -13,10 +14,16 @@
+  */
+ #include <linux/console.h>
+ #include <linux/delay.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/of_platform.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm.h>
+ #include <linux/pm_clock.h>
++#include <linux/slab.h>
 +
+ #include <asm/io.h>
++
+ #include "pm-rmobile.h"
+ 
+ /* SYSC */
+@@ -30,8 +37,12 @@
+ static int rmobile_pd_power_down(struct generic_pm_domain *genpd)
+ {
+ 	struct rmobile_pm_domain *rmobile_pd = to_rmobile_pd(genpd);
+-	unsigned int mask = 1 << rmobile_pd->bit_shift;
++	unsigned int mask;
++
++	if (rmobile_pd->bit_shift = ~0)
++		return -EBUSY;
+ 
++	mask = 1 << rmobile_pd->bit_shift;
+ 	if (rmobile_pd->suspend) {
+ 		int ret = rmobile_pd->suspend();
+ 
+@@ -61,10 +72,14 @@ static int rmobile_pd_power_down(struct generic_pm_domain *genpd)
+ static int __rmobile_pd_power_up(struct rmobile_pm_domain *rmobile_pd,
+ 				 bool do_resume)
+ {
+-	unsigned int mask = 1 << rmobile_pd->bit_shift;
++	unsigned int mask;
+ 	unsigned int retry_count;
+ 	int ret = 0;
+ 
++	if (rmobile_pd->bit_shift = ~0)
++		return 0;
++
++	mask = 1 << rmobile_pd->bit_shift;
+ 	if (__raw_readl(rmobile_pd->base + PSTR) & mask)
+ 		goto out;
+ 
+@@ -148,6 +163,8 @@ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
+ 	__rmobile_pd_power_up(rmobile_pd, false);
+ }
+ 
++#ifdef CONFIG_ARCH_SHMOBILE_LEGACY
++
+ void rmobile_init_domains(struct rmobile_pm_domain domains[], int num)
+ {
+ 	int j;
+@@ -180,3 +197,197 @@ void rmobile_add_devices_to_domains(struct pm_domain_device data[],
+ 		rmobile_add_device_to_domain_td(data[j].domain_name,
+ 						data[j].pdev, &latencies);
+ }
++
++#else /* !CONFIG_ARCH_SHMOBILE_LEGACY */
++
++static int rmobile_pd_suspend_cpu(void)
++{
 +	/*
-+	 * FIXME: this is short term bug fix
-+	 * dma_request_slave_channel_compat() will call
-+	 * __dma_request_channel() (ex DT case)
-+	 * sdhma / shdma_chan_filter doesn't have compatibility
-+	 * with non multiplexed DMAC (ex rcar-dmac)
++	 * This domain contains the CPU core and therefore it should
++	 * only be turned off if the CPU is not in use.
 +	 */
-+	if (!sdev->multiplexed)
-+		return false;
++	return -EBUSY;
++}
 +
- 	ret = sdev->ops->set_slave(schan, match, 0, true);
- 	if (ret < 0)
- 		return false;
-diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
-index aec8a84..d7b6ef8 100644
---- a/drivers/dma/sh/shdmac.c
-+++ b/drivers/dma/sh/shdmac.c
-@@ -754,6 +754,7 @@ static int sh_dmae_probe(struct platform_device *pdev)
- 	/* Default transfer size of 32 bytes requires 32-byte alignment */
- 	dma_dev->copy_align = LOG2_DEFAULT_XFER_SIZE;
- 
-+	shdev->shdma_dev.multiplexed = true;
- 	shdev->shdma_dev.ops = &sh_dmae_shdma_ops;
- 	shdev->shdma_dev.desc_size = sizeof(struct sh_dmae_desc);
- 	err = shdma_init(&pdev->dev, &shdev->shdma_dev,
-diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
-index abdf1f2..9a9319d 100644
---- a/include/linux/shdma-base.h
-+++ b/include/linux/shdma-base.h
-@@ -110,6 +110,7 @@ struct shdma_dev {
- 	struct shdma_chan **schan;
- 	const struct shdma_ops *ops;
- 	size_t desc_size;
-+	bool multiplexed;
++static int rmobile_pd_suspend_console(void)
++{
++	/*
++	 * Serial consoles make use of SCIF hardware located in this domain,
++	 * hence keep the power domain on if "no_console_suspend" is set.
++	 */
++	return console_suspend_enabled ? 0 : -EBUSY;
++}
++
++static int rmobile_pd_suspend_debug(void)
++{
++	/*
++	 * This domain contains the Coresight-ETM hardware block and
++	 * therefore it should only be turned off if the debug module is
++	 * not in use.
++	 */
++	return -EBUSY;
++}
++
++#define MAX_NUM_CPU_PDS		8
++
++static unsigned int num_cpu_pds __initdata;
++static struct device_node *cpu_pds[MAX_NUM_CPU_PDS] __initdata;
++static struct device_node *console_pd __initdata;
++static struct device_node *debug_pd __initdata;
++
++static void __init get_special_pds(void)
++{
++	struct device_node *np, *pd;
++	unsigned int i;
++
++	/* PM domains containing CPUs */
++	for_each_node_by_type(np, "cpu") {
++		pd = of_parse_phandle(np, "power-domains", 0);
++		if (!pd)
++			continue;
++
++		for (i = 0; i < num_cpu_pds; i++)
++			if (pd = cpu_pds[i])
++				break;
++
++		if (i < num_cpu_pds) {
++			of_node_put(pd);
++			continue;
++		}
++
++		if (num_cpu_pds = MAX_NUM_CPU_PDS) {
++			pr_warn("Too many CPU PM domains\n");
++			of_node_put(pd);
++			continue;
++		}
++
++		cpu_pds[num_cpu_pds++] = pd;
++	}
++
++	/* PM domain containing console */
++	if (of_stdout)
++		console_pd = of_parse_phandle(of_stdout, "power-domains", 0);
++
++	/* PM domain containing Coresight-ETM */
++	np = of_find_compatible_node(NULL, NULL, "arm,coresight-etm3x");
++	if (np)
++		debug_pd = of_parse_phandle(np, "power-domains", 0);
++}
++
++static void __init put_special_pds(void)
++{
++	unsigned int i;
++
++	for (i = 0; i < num_cpu_pds; i++)
++		of_node_put(cpu_pds[i]);
++	of_node_put(console_pd);
++	of_node_put(debug_pd);
++}
++
++static bool __init pd_contains_cpu(const struct device_node *pd)
++{
++	unsigned int i;
++
++	for (i = 0; i < num_cpu_pds; i++)
++		if (pd = cpu_pds[i])
++			return true;
++
++	return false;
++}
++
++static void __init rmobile_setup_pm_domain(struct device_node *np,
++					   struct rmobile_pm_domain *pd)
++{
++	const char *name = pd->genpd.name;
++
++	if (pd_contains_cpu(np)) {
++		pr_debug("PM domain %s contains CPU\n", name);
++		pd->gov = &pm_domain_always_on_gov;
++		pd->suspend = rmobile_pd_suspend_cpu;
++	} else if (np = console_pd) {
++		pr_debug("PM domain %s contains serial console\n", name);
++		pd->gov = &pm_domain_always_on_gov;
++		pd->suspend = rmobile_pd_suspend_console;
++	} else if (np = debug_pd) {
++		pr_debug("PM domain %s contains Coresight-ETM\n", name);
++		pd->gov = &pm_domain_always_on_gov;
++		pd->suspend = rmobile_pd_suspend_debug;
++	}
++
++	rmobile_init_pm_domain(pd);
++}
++
++static int __init rmobile_add_pm_domains(void __iomem *base,
++					 struct device_node *parent,
++					 struct generic_pm_domain *genpd_parent)
++{
++	struct device_node *np;
++
++	for_each_child_of_node(parent, np) {
++		struct rmobile_pm_domain *pd;
++		u32 idx = ~0;
++
++		if (of_property_read_u32(np, "reg", &idx)) {
++			/* always-on domain */
++		}
++
++		pd = kzalloc(sizeof(*pd), GFP_KERNEL);
++		if (!pd)
++			return -ENOMEM;
++
++		pd->genpd.name = np->name;
++		pd->base = base;
++		pd->bit_shift = idx;
++
++		rmobile_setup_pm_domain(np, pd);
++		if (genpd_parent)
++			pm_genpd_add_subdomain(genpd_parent, &pd->genpd);
++		of_genpd_add_provider_simple(np, &pd->genpd);
++
++		rmobile_add_pm_domains(base, np, &pd->genpd);
++	}
++	return 0;
++}
++
++static int __init rmobile_init_pm_domains(void)
++{
++	struct device_node *np, *pmd;
++	bool scanned = false;
++	void __iomem *base;
++	int ret = 0;
++
++	for_each_compatible_node(np, NULL, "renesas,sysc-rmobile") {
++		base = of_iomap(np, 0);
++		if (!base) {
++			pr_warn("%s cannot map reg 0\n", np->full_name);
++			continue;
++		}
++
++		pmd = of_find_node_by_name(np, "pm-domains");
++		if (!pmd) {
++			pr_warn("%s lacks pm-domains node\n", np->full_name);
++			continue;
++		}
++
++		if (!scanned) {
++			/* Find PM domains containing special blocks */
++			get_special_pds();
++			scanned = true;
++		}
++
++		ret = rmobile_add_pm_domains(base, pmd, NULL);
++		of_node_put(pmd);
++		if (ret) {
++			of_node_put(np);
++			break;
++		}
++	}
++
++	put_special_pds();
++
++	return ret;
++}
++
++core_initcall(rmobile_init_pm_domains);
++
++#endif /* !CONFIG_ARCH_SHMOBILE_LEGACY */
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.h b/arch/arm/mach-shmobile/pm-rmobile.h
+index 0602130..5321978 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.h
++++ b/arch/arm/mach-shmobile/pm-rmobile.h
+@@ -37,7 +37,7 @@ struct pm_domain_device {
+ 	struct platform_device *pdev;
  };
  
- #define shdma_for_each_chan(c, d, i) for (i = 0, c = (d)->schan[0]; \
+-#ifdef CONFIG_PM_RMOBILE
++#if defined(CONFIG_PM_RMOBILE) && defined(CONFIG_ARCH_SHMOBILE_LEGACY)
+ extern void rmobile_init_domains(struct rmobile_pm_domain domains[], int num);
+ extern void rmobile_add_device_to_domain_td(const char *domain_name,
+ 					    struct platform_device *pdev,
 -- 
-1.7.9.5
+2.1.3
 
