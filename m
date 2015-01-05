@@ -1,36 +1,73 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 21 Jan 2015 17:01:41 +0000
-Subject: Re: [PATCH 11/11] ARM: shmobile: r8a7778: enable multiplatform target
-Message-Id: <54BFDB75.9030901@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 05 Jan 2015 13:36:52 +0000
+Subject: Re: [PATCH v4 2/3] ARM: shmobile: r8a7791: add CAN DT support
+Message-Id: <CAMuHMdVuabRxKdpynaX0zaB-CvW8+dRb4TBtm7byT7znk6hxYQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421857262-16607-12-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1421857262-16607-12-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <6830301.90YaDPuTpx@wasted.cogentembedded.com>
+ <2080620.GIKTJkNfbk@wasted.cogentembedded.com>
+In-Reply-To: <2080620.GIKTJkNfbk@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 01/21/2015 07:21 PM, Ulrich Hecht wrote:
-
-> Adds config option and enables DTB building.
-
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-
-[...]
-
-> diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-> index 2d0387e..455eb4b 100644
-> --- a/arch/arm/mach-shmobile/Kconfig
-> +++ b/arch/arm/mach-shmobile/Kconfig
-> @@ -62,6 +62,10 @@ config ARCH_R8A7740
->   	select ARCH_RMOBILE
->   	select RENESAS_INTC_IRQPIN
+On Sat, Dec 27, 2014 at 12:20 AM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+> Define the generic R8A7791 parts of the CAN0/1 device nodes.
 >
-> +config ARCH_R8A7778
-> +	bool "R-Car M1 (R8A77780)"
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-    It's R-Car M1A (R8A77781), in fact. R8A77780 is a SH based SoC (R-Car M1S).
-Couldn't you simply copy from the existing Kconfig entry?
+Apart from the minor nit below:
 
-WBR, Sergei
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
+> --- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
+> +++ renesas/arch/arm/boot/dts/r8a7791.dtsi
+> @@ -816,6 +816,26 @@
+>                 };
+>         };
+>
+> +       can0: can@e6e80000 {
+> +               compatible = "renesas,can-r8a7791";
+> +               reg = <0 0xe6e80000 0 0x1000>;
+> +               interrupts = <0 186 IRQ_TYPE_LEVEL_HIGH>;
+> +               clocks = <&mstp9_clks R8A7791_CLK_RCAN0>,
+> +                        <&cpg_clocks R8A7791_CLK_RCAN>, <&can_clk>;
+
+.git/rebase-apply/patch:18: space before tab in indent.
+      <&cpg_clocks R8A7790_CLK_RCAN>, <&can_clk>;
+
+> +               clock-names = "clkp1", "clkp2", "can_clk";
+> +               status = "disabled";
+> +       };
+> +
+> +       can1: can@e6e88000 {
+> +               compatible = "renesas,can-r8a7791";
+> +               reg = <0 0xe6e88000 0 0x1000>;
+> +               interrupts = <0 187 IRQ_TYPE_LEVEL_HIGH>;
+> +               clocks = <&mstp9_clks R8A7791_CLK_RCAN1>,
+> +                        <&cpg_clocks R8A7791_CLK_RCAN>, <&can_clk>;
+
+.git/rebase-apply/patch:28: space before tab in indent.
+      <&cpg_clocks R8A7790_CLK_RCAN>, <&can_clk>;
+warning: 2 lines add whitespace errors.
+
+> +               clock-names = "clkp1", "clkp2", "can_clk";
+> +               status = "disabled";
+> +       };
+> +
+
+
+
+
+-- 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
