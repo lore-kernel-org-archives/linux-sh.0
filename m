@@ -1,128 +1,62 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 05 Jan 2015 07:03:56 +0000
-Subject: [PATCH 8/9] mmc: sh_mobile_sdhi: remove .init/.cleanup
-Message-Id: <87oaqdoghr.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 05 Jan 2015 09:02:02 +0000
+Subject: Re: [PATCH 8/9] mmc: sh_mobile_sdhi: remove .init/.cleanup
+Message-Id: <CAMuHMdVTQ1nsZYb7U07MaAt0OcmxKEBoD35NbP9TM7SE97tcQQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
+	<87oaqdoghr.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87oaqdoghr.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi Morimoto-san,
 
-No one is using .init/.cleanup callback function.
-Let's remove these.
+On Mon, Jan 5, 2015 at 8:03 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>
+> No one is using .init/.cleanup callback function.
+> Let's remove these.
+>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> ---
+>  drivers/mmc/host/sh_mobile_sdhi.c  |   26 +-------------------------
+>  include/linux/mmc/sh_mobile_sdhi.h |   15 ---------------
+>  2 files changed, 1 insertion(+), 40 deletions(-)
+>
+> diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+> index f8268b7..eae229f 100644
+> --- a/drivers/mmc/host/sh_mobile_sdhi.c
+> +++ b/drivers/mmc/host/sh_mobile_sdhi.c
+> @@ -156,15 +156,6 @@ static int sh_mobile_sdhi_multi_io_quirk(struct mmc_card *card,
+>         return blk_size;
+>  }
+>
+> -static void sh_mobile_sdhi_cd_wakeup(const struct platform_device *pdev)
+> -{
+> -       mmc_detect_change(platform_get_drvdata(pdev), msecs_to_jiffies(100));
+> -}
+> -
+> -static const struct sh_mobile_sdhi_ops sdhi_ops = {
+> -       .cd_wakeup = sh_mobile_sdhi_cd_wakeup,
+> -};
+> -
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- drivers/mmc/host/sh_mobile_sdhi.c  |   26 +-------------------------
- include/linux/mmc/sh_mobile_sdhi.h |   15 ---------------
- 2 files changed, 1 insertion(+), 40 deletions(-)
+Is this intentional?
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index f8268b7..eae229f 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -156,15 +156,6 @@ static int sh_mobile_sdhi_multi_io_quirk(struct mmc_card *card,
- 	return blk_size;
- }
- 
--static void sh_mobile_sdhi_cd_wakeup(const struct platform_device *pdev)
--{
--	mmc_detect_change(platform_get_drvdata(pdev), msecs_to_jiffies(100));
--}
--
--static const struct sh_mobile_sdhi_ops sdhi_ops = {
--	.cd_wakeup = sh_mobile_sdhi_cd_wakeup,
--};
--
- static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- {
- 	const struct of_device_id *of_id @@ -192,19 +183,11 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	mmc_data = &priv->mmc_data;
- 	dma_priv = &priv->dma_priv;
- 
--	if (p) {
--		if (p->init) {
--			ret = p->init(pdev, &sdhi_ops);
--			if (ret)
--				return ret;
--		}
--	}
--
- 	priv->clk = devm_clk_get(&pdev->dev, NULL);
- 	if (IS_ERR(priv->clk)) {
- 		ret = PTR_ERR(priv->clk);
- 		dev_err(&pdev->dev, "cannot get clock: %d\n", ret);
--		goto eclkget;
-+		goto eprobe;
- 	}
- 
- 	host = tmio_mmc_host_alloc(pdev);
-@@ -357,9 +340,6 @@ eirq:
- efree:
- 	tmio_mmc_host_free(host);
- eprobe:
--eclkget:
--	if (p && p->cleanup)
--		p->cleanup(pdev);
- 	return ret;
- }
- 
-@@ -367,13 +347,9 @@ static int sh_mobile_sdhi_remove(struct platform_device *pdev)
- {
- 	struct mmc_host *mmc = platform_get_drvdata(pdev);
- 	struct tmio_mmc_host *host = mmc_priv(mmc);
--	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
- 
- 	tmio_mmc_host_remove(host);
- 
--	if (p && p->cleanup)
--		p->cleanup(pdev);
--
- 	return 0;
- }
- 
-diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
-index 68927ae..da77e5e20 100644
---- a/include/linux/mmc/sh_mobile_sdhi.h
-+++ b/include/linux/mmc/sh_mobile_sdhi.h
-@@ -3,20 +3,10 @@
- 
- #include <linux/types.h>
- 
--struct platform_device;
--
- #define SH_MOBILE_SDHI_IRQ_CARD_DETECT	"card_detect"
- #define SH_MOBILE_SDHI_IRQ_SDCARD	"sdcard"
- #define SH_MOBILE_SDHI_IRQ_SDIO		"sdio"
- 
--/**
-- * struct sh_mobile_sdhi_ops - SDHI driver callbacks
-- * @cd_wakeup:		trigger a card-detection run
-- */
--struct sh_mobile_sdhi_ops {
--	void (*cd_wakeup)(const struct platform_device *pdev);
--};
--
- struct sh_mobile_sdhi_info {
- 	int dma_slave_tx;
- 	int dma_slave_rx;
-@@ -25,11 +15,6 @@ struct sh_mobile_sdhi_info {
- 	unsigned long tmio_caps2;
- 	u32 tmio_ocr_mask;	/* available MMC voltages */
- 	unsigned int cd_gpio;
--
--	/* callbacks for board specific setup code */
--	int (*init)(struct platform_device *pdev,
--		    const struct sh_mobile_sdhi_ops *ops);
--	void (*cleanup)(struct platform_device *pdev);
- };
- 
- #endif /* LINUX_MMC_SH_MOBILE_SDHI_H */
--- 
-1.7.9.5
+While .cd_wakeup looks indeed unused, you forgot to mention its removal in
+the patch description.
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
