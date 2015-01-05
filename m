@@ -1,53 +1,128 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 08 Jan 2015 01:55:15 +0000
-Subject: [PATCH 1/2] ARM: shmobile: r8a7790: add SRC interrupt number on DTSI
-Message-Id: <87fvbmt4ra.wl%kuninori.morimoto.gx@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 05 Jan 2015 20:10:43 +0000
+Subject: [PATCH v3] clk-rcar-gen2: RCAN clock support
+Message-Id: <1678262.gW7XrkflEf@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368173119-27345-2-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1368173119-27345-2-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: mturquette@linaro.org, linux-kernel@vger.kernel.org, sboyd@codeaurora.org
+Cc: linux-sh@vger.kernel.org, vksavl@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, devicetree@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Add the RCAN clock support to the R-Car generation 2 CPG driver.  This clock
+gets derived from  the USB_EXTAL clock, dividing  it by 6.  The layout of the
+RCANCKCR register is similar to those of the clocks supported by the 'clk-div6'
+driver but has no divider field, and so can't be supported by that driver...
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/boot/dts/r8a7790.dtsi |   20 ++++++++++----------
- 1 file changed, 10 insertions(+), 10 deletions(-)
+Changes in version 3:
+- added the USB_EXTAL clock reference to the binding document.
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index af30c24..637e4ee 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1435,16 +1435,16 @@
- 		};
+Changes in version 2:
+- switched to using the composite clock driver with the fixed factor and gated
+  clock component drivers;
+- removed *static* from 'parent_name' definition, switching from assignment to
+  initializer;
+- modified the binding document;
+- modified the changelog.
+
+ Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt |   10 +-
+ drivers/clk/shmobile/clk-rcar-gen2.c                                     |   40 ++++++++++
+ 2 files changed, 46 insertions(+), 4 deletions(-)
+
+Index: renesas/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
+=================================--- renesas.orig/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
++++ renesas/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
+@@ -13,10 +13,11 @@ Required Properties:
  
- 		rcar_sound,src {
--			src0: src@0 { };
--			src1: src@1 { };
--			src2: src@2 { };
--			src3: src@3 { };
--			src4: src@4 { };
--			src5: src@5 { };
--			src6: src@6 { };
--			src7: src@7 { };
--			src8: src@8 { };
--			src9: src@9 { };
-+			src0: src@0 { interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>; };
-+			src1: src@1 { interrupts = <0 353 IRQ_TYPE_LEVEL_HIGH>; };
-+			src2: src@2 { interrupts = <0 354 IRQ_TYPE_LEVEL_HIGH>; };
-+			src3: src@3 { interrupts = <0 355 IRQ_TYPE_LEVEL_HIGH>; };
-+			src4: src@4 { interrupts = <0 356 IRQ_TYPE_LEVEL_HIGH>; };
-+			src5: src@5 { interrupts = <0 357 IRQ_TYPE_LEVEL_HIGH>; };
-+			src6: src@6 { interrupts = <0 358 IRQ_TYPE_LEVEL_HIGH>; };
-+			src7: src@7 { interrupts = <0 359 IRQ_TYPE_LEVEL_HIGH>; };
-+			src8: src@8 { interrupts = <0 360 IRQ_TYPE_LEVEL_HIGH>; };
-+			src9: src@9 { interrupts = <0 361 IRQ_TYPE_LEVEL_HIGH>; };
- 		};
+   - reg: Base address and length of the memory resource used by the CPG
  
- 		rcar_sound,ssi {
--- 
-1.7.9.5
+-  - clocks: Reference to the parent clock
++  - clocks: References to the parent clocks: first to the EXTAL clock, second
++    to the USB_EXTAL clock
+   - #clock-cells: Must be 1
+   - clock-output-names: The names of the clocks. Supported clocks are "main",
+-    "pll0", "pll1", "pll3", "lb", "qspi", "sdh", "sd0", "sd1" and "z"
++    "pll0", "pll1", "pll3", "lb", "qspi", "sdh", "sd0", "sd1", "z", and "rcan"
+ 
+ 
+ Example
+@@ -26,8 +27,9 @@ Example
+ 		compatible = "renesas,r8a7790-cpg-clocks",
+ 			     "renesas,rcar-gen2-cpg-clocks";
+ 		reg = <0 0xe6150000 0 0x1000>;
+-		clocks = <&extal_clk>;
++		clocks = <&extal_clk &usb_extal_clk>;
+ 		#clock-cells = <1>;
+ 		clock-output-names = "main", "pll0, "pll1", "pll3",
+-				     "lb", "qspi", "sdh", "sd0", "sd1", "z";
++				     "lb", "qspi", "sdh", "sd0", "sd1", "z",
++				     "rcan";
+ 	};
+Index: renesas/drivers/clk/shmobile/clk-rcar-gen2.c
+=================================--- renesas.orig/drivers/clk/shmobile/clk-rcar-gen2.c
++++ renesas/drivers/clk/shmobile/clk-rcar-gen2.c
+@@ -33,6 +33,7 @@ struct rcar_gen2_cpg {
+ #define CPG_FRQCRC			0x000000e0
+ #define CPG_FRQCRC_ZFC_MASK		(0x1f << 8)
+ #define CPG_FRQCRC_ZFC_SHIFT		8
++#define CPG_RCANCKCR			0x00000270
+ 
+ /* -----------------------------------------------------------------------------
+  * Z Clock
+@@ -161,6 +162,43 @@ static struct clk * __init cpg_z_clk_reg
+ 	return clk;
+ }
+ 
++static struct clk * __init cpg_rcan_clk_register(struct rcar_gen2_cpg *cpg,
++						 struct device_node *np)
++{
++	const char *parent_name = of_clk_get_parent_name(np, 1);
++	struct clk_fixed_factor *fixed;
++	struct clk_gate *gate;
++	struct clk *clk;
++
++	fixed = kzalloc(sizeof(*fixed), GFP_KERNEL);
++	if (!fixed)
++		return ERR_PTR(-ENOMEM);
++
++	fixed->mult = 1;
++	fixed->div = 6;
++
++	gate = kzalloc(sizeof(*gate), GFP_KERNEL);
++	if (!gate) {
++		kfree(fixed);
++		return ERR_PTR(-ENOMEM);
++	}
++
++	gate->reg = cpg->reg + CPG_RCANCKCR;
++	gate->bit_idx = 8;
++	gate->flags = CLK_GATE_SET_TO_DISABLE;
++	gate->lock = &cpg->lock;
++
++	clk = clk_register_composite(NULL, "rcan", &parent_name, 1, NULL, NULL,
++				     &fixed->hw, &clk_fixed_factor_ops,
++				     &gate->hw, &clk_gate_ops, 0);
++	if (IS_ERR(clk)) {
++		kfree(gate);
++		kfree(fixed);
++	}
++
++	return clk;
++}
++
+ /* -----------------------------------------------------------------------------
+  * CPG Clock Data
+  */
+@@ -263,6 +301,8 @@ rcar_gen2_cpg_register_clock(struct devi
+ 		shift = 0;
+ 	} else if (!strcmp(name, "z")) {
+ 		return cpg_z_clk_register(cpg);
++	} else if (!strcmp(name, "rcan")) {
++		return cpg_rcan_clk_register(cpg, np);
+ 	} else {
+ 		return ERR_PTR(-EINVAL);
+ 	}
 
