@@ -1,44 +1,55 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 14 Jan 2015 23:55:10 +0000
-Subject: Re: [PATCH 0/4] ARM: shmobile: Add DT support for memory controllers
-Message-Id: <20150114235509.GD10479@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 05 Jan 2015 03:52:15 +0000
+Subject: [GIT PULL v2] Renesas ARM Based SoC DT PM Updates for v3.20
+Message-Id: <cover.1420429758.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421233982-15883-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1421233982-15883-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jan 14, 2015 at 12:12:58PM +0100, Geert Uytterhoeven wrote:
-> 	Hi Simon, Magnus,
-> 
-> This patch series adds DT binding documentation and devices nodes to
-> describe memory-controllers in R-Mobile and SH-Mobile SoCs.
-> 
-> Currently memory controller device nodes are used only to reference PM
-> domains, and prevent these PM domains from being powered down, which
-> would crash the system.
-> 
-> As such this series is a prerequisite for adding DT PM domain support to
-> sh73a0 (SH-Mobile AG5) and r7a73a4 (R-Mobile APE6).
-> For r8a7740 (R-Mobile A1), this wasn't a hard prerequisite for PM
-> domain support, as the A4S PM domain is never turned off anyway
-> because its child PM domain A3SM contains the CPU core.
-> 
-> The patches for sh73a0 and r8a7740 have been sent before as part of
-> (patches in) the series "[PATCH RFC 0/7] ARM: shmobile: sh73a0: DT PM
-> domain support" (https://lkml.org/lkml/2014/11/19/404).
-> 
-> "ARM: shmobile: r8a7740 dtsi: Add memory-controller node" depends on
-> the DT R-Mobile PM Domain support for r8a7740 that's queued up in
-> Simon's tree under tag renesas-dt-pm-for-v3.20, as the
-> memory-controller node already contains a power-domains property.
-> 
-> The two other dtsi patches do not add power-domains properties yet.
-> These will be added when adding PM domain support for sh73a0 resp.
-> r8a73a4.
-> 
-> Thanks!
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Thanks Geert, I have queued these up.
+Please consider these Renesas ARM based SoC DT PM updates for v3.20.
+
+
+As requested by Geert Uytterhoeven I have dropped
+"ARM: shmobile: R-Mobile: Enable module clocks if !CONFIG_PM_RUNTIME"
+from v2 of this pull-request.
+
+
+The following changes since commit 97bf6af1f928216fd6c5a66e8a57bfa95a659672:
+
+  Linux 3.19-rc1 (2014-12-20 17:08:50 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-pm-for-v3.20
+
+for you to fetch changes up to b21cadc64dc34fb531ad49d462021c2b6a14cfff:
+
+  ARM: shmobile: r8a7740 dtsi: Add PM domain support (2014-12-31 15:28:31 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC DT PM Updates for v3.20
+
+* DT support from PM domains
+* Enable DT support for PM domains on r8a7740
+
+----------------------------------------------------------------
+Geert Uytterhoeven (5):
+      PM / Domains: Add DT bindings for the R-Mobile System Controller
+      ARM: shmobile: R-Mobile: Use generic_pm_domain.attach_dev() for pm_clk setup
+      ARM: shmobile: R-Mobile: Store SYSC base address in rmobile_pm_domain
+      ARM: shmobile: R-Mobile: Add DT support for PM domains
+      ARM: shmobile: r8a7740 dtsi: Add PM domain support
+
+ .../bindings/power/renesas,sysc-rmobile.txt        |  98 ++++++++
+ arch/arm/boot/dts/r8a7740.dtsi                     |  99 ++++++++
+ arch/arm/mach-shmobile/Kconfig                     |   3 +-
+ arch/arm/mach-shmobile/pm-r8a7740.c                |  14 ++
+ arch/arm/mach-shmobile/pm-rmobile.c                | 273 +++++++++++++++++++--
+ arch/arm/mach-shmobile/pm-rmobile.h                |   3 +-
+ arch/arm/mach-shmobile/pm-sh7372.c                 |  11 +
+ 7 files changed, 484 insertions(+), 17 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
