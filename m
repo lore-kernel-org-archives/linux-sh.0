@@ -1,43 +1,57 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 26 Jan 2015 01:10:56 +0000
-Subject: Re: [PATCH 03/11] ARM: shmobile: r8a7778: Common clock framework DT description
-Message-Id: <87fvaybb1j.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 05 Jan 2015 10:46:29 +0000
+Subject: [PATCH v2] dmaengine: shdma: Runtime-resume device in .shutdown()
+Message-Id: <1420454789-11547-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421857262-16607-4-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1421857262-16607-4-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Vinod Koul <vinod.koul@intel.com>, Dan Williams <dan.j.williams@intel.com>
+Cc: dmaengine@vger.kernel.org, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
+During system reboot, the sh-dma-engine device may be runtime-suspended,
+causing a crash:
 
-Hi Geert
+    Unhandled fault: imprecise external abort (0x1406) at 0x0002c02c
+    Internal error: : 1406 [#1] SMP ARM
+    ...
+    PC is at sh_dmae_ctl_stop+0x28/0x64
+    LR is at sh_dmae_ctl_stop+0x24/0x64
 
-> >> > +                       clock-output-names > >> > +                               "i2c0", "i2c1", "i2c2", "i2c3", "scif0",
-> >> > +                               "scif1", "scif2", "scif3", "scif4", "scif5",
-> >> > +                               "tmu0", "tmu1", "tmu2", "ssi0", "ssi1",
-> >> > +                               "ssi2", "ssi3", "sru", "hspi";
-> >>
-> >> On r8a7790, we use "ssi%u", on r8a7791, we use "ssi.%u"?
-> > (snip)
-> >> > +                       clock-output-names > >> > +                               "scu0", "scu1", "scu2", "scu3", "scu4",
-> >> > +                               "scu5", "scu6", "scu7", "scu8";
-> >>
-> >> On r8a7790, we use "scu-src%u", on r8a7791, we use "src.%u"?
-> >>
-> >> Shall we use "sru-src%u" or "src.%u" here?
-> >
-> > I guess
-> >  mstp  node is using "ssi%u"  / "scu-src%u"
-> >  sound node is using "ssi.%u" / "src.%u"
-> 
-> Right, obviously I compared the wrong nodes. There are too many sound
-> parameters in DTS ;-)
-> 
-> So on r8a7778 it should be ssi%u"  / "sru-src%u", right?
+If the sh-dma-engine is runtime-suspended, its module clock is turned
+off, and its registers cannot be accessed.
 
-Thanks, I think so
+To fix this, change the driver's .shutdown() callback:
+  - If the device is runtime suspended, do nothing,
+  - Else, explicitly runtime-resume the device, to avoid the device from
+    being suspended while sh_dmae_ctl_stop() is being executed.
 
-Best regards
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-Kuninori Morimoto
+v2:
+  - Do nothing if we're runtime suspended.
+---
+ drivers/dma/sh/shdmac.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
+index aec8a84784a469d7..2de30e8e7d9290b9 100644
+--- a/drivers/dma/sh/shdmac.c
++++ b/drivers/dma/sh/shdmac.c
+@@ -585,7 +585,13 @@ static void sh_dmae_chan_remove(struct sh_dmae_device *shdev)
+ static void sh_dmae_shutdown(struct platform_device *pdev)
+ {
+ 	struct sh_dmae_device *shdev = platform_get_drvdata(pdev);
++
++	if (pm_runtime_suspended(&pdev->dev))
++		return;
++
++	pm_runtime_get_sync(&pdev->dev);
+ 	sh_dmae_ctl_stop(shdev);
++	pm_runtime_put(&pdev->dev);
+ }
+ 
+ static int sh_dmae_runtime_suspend(struct device *dev)
+-- 
+1.9.1
+
