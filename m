@@ -1,137 +1,102 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 05 Jan 2015 03:52:19 +0000
-Subject: [PATCH 1/5] PM / Domains: Add DT bindings for the R-Mobile System Controller
-Message-Id: <8f11ca0e0355dc8cdae31a71e06d628e0e95f588.1420429758.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 05 Jan 2015 07:02:52 +0000
+Subject: [PATCH 3/9] mmc: tmio: tmio_mmc_host has .write16_hook
+Message-Id: <87vbklogjl.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1420429758.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1420429758.git.horms+renesas@verge.net.au>
+References: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
+Cc: Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-The Renesas R-Mobile System Controller provides a.o. power management
-support, following the generic PM domain bindings in
-Documentation/devicetree/bindings/power/power_domain.txt.
+Current .write16_hook is implemented under tmio_mmc_data.
+It goes to tmio_mmc_host by this patch.
 
-For now this supports the R-Mobile A1 (r8a7740) only, but it should be
-sufficiently generic to handle other members of the SH-Mobile/R-Mobile
-family in the future.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- .../bindings/power/renesas,sysc-rmobile.txt        | 98 ++++++++++++++++++++++
- 1 file changed, 98 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
+ drivers/mmc/host/sh_mobile_sdhi.c |    2 +-
+ drivers/mmc/host/tmio_mmc.h       |    4 +++-
+ drivers/mmc/host/tmio_mmc_pio.c   |    2 +-
+ include/linux/mfd/tmio.h          |    3 ---
+ 4 files changed, 5 insertions(+), 6 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-new file mode 100644
-index 0000000..2460476
---- /dev/null
-+++ b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-@@ -0,0 +1,98 @@
-+DT bindings for the Renesas R-Mobile System Controller
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 1e13a1f..6ffd981 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -212,11 +212,11 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		goto eprobe;
+ 
+ 	host->dma		= dma_priv;
++	host->write16_hook	= sh_mobile_sdhi_write16_hook;
+ 
+ 	mmc_data->clk_enable = sh_mobile_sdhi_clk_enable;
+ 	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
+ 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
+-	mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
+ 	mmc_data->multi_io_quirk = sh_mobile_sdhi_multi_io_quirk;
+ 	if (p) {
+ 		mmc_data->flags = p->tmio_flags;
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index 4c5eda8..2fb87ea 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -94,6 +94,8 @@ struct tmio_mmc_host {
+ 	struct mutex		ios_lock;	/* protect set_ios() context */
+ 	bool			native_hotplug;
+ 	bool			sdio_irq_enabled;
 +
-+= System Controller Node =
-+
-+The R-Mobile System Controller provides the following functions:
-+  - Boot mode management,
-+  - Reset generation,
-+  - Power management.
-+
-+Required properties:
-+- compatible: Should be "renesas,sysc-<soctype>", "renesas,sysc-rmobile" as
-+	      fallback.
-+	      Examples with soctypes are:
-+		- "renesas,sysc-r8a7740" (R-Mobile A1)
-+- reg: Two address start and address range blocks for the device:
-+         - The first block refers to the normally accessible registers,
-+         - the second block refers to the registers protected by the HPB
-+	   semaphore.
-+
-+Optional nodes:
-+- pm-domains: This node contains a hierarchy of PM domain nodes, which should
-+  match the Power Area Hierarchy in the Power Domain Specifications section of
-+  the device's datasheet.
-+
-+
-+= PM Domain Nodes =
-+
-+Each of the PM domain nodes represents a PM domain, as documented by the
-+generic PM domain bindings in
-+Documentation/devicetree/bindings/power/power_domain.txt.
-+
-+The nodes should be named by the real power area names, and thus their names
-+should be unique.
-+
-+Required properties:
-+  - #power-domain-cells: Must be 0.
-+
-+Optional properties:
-+- reg: If the PM domain is not always-on, this property must contain the bit
-+       index number for the corresponding power area in the various Power
-+       Control and Status Registers. The parent's node must contain the
-+       following two properties:
-+	 - #address-cells: Must be 1,
-+	 - #size-cells: Must be 0.
-+       If the PM domain is always-on, this property must be omitted.
-+
-+
-+Example:
-+
-+This shows a subset of the r8a7740 PM domain hierarchy, containing the
-+C5 "always-on" domain, 2 of its subdomains (A4S and A4SU), and the A3SP domain,
-+which is a subdomain of A4S.
-+
-+	sysc: system-controller@e6180000 {
-+		compatible = "renesas,sysc-r8a7740", "renesas,sysc-rmobile";
-+		reg = <0xe6180000 0x8000>, <0xe6188000 0x8000>;
-+
-+		pm-domains {
-+			pd_c5: c5 {
-+				#address-cells = <1>;
-+				#size-cells = <0>;
-+				#power-domain-cells = <0>;
-+
-+				pd_a4s: a4s@10 {
-+					reg = <10>;
-+					#address-cells = <1>;
-+					#size-cells = <0>;
-+					#power-domain-cells = <0>;
-+
-+					pd_a3sp: a3sp@11 {
-+						reg = <11>;
-+						#power-domain-cells = <0>;
-+					};
-+				};
-+
-+				pd_a4su: a4su@20 {
-+					reg = <20>;
-+					#power-domain-cells = <0>;
-+				};
-+			};
-+		};
-+	};
-+
-+
-+= PM Domain Consumers =
-+
-+Hardware blocks belonging to a PM domain should contain a "power-domains"
-+property that is a phandle pointing to the corresponding PM domain node.
-+
-+Example:
-+
-+	tpu: pwm@e6600000 {
-+		compatible = "renesas,tpu-r8a7740", "renesas,tpu";
-+		reg = <0xe6600000 0x100>;
-+		clocks = <&mstp3_clks R8A7740_CLK_TPU0>;
-+		power-domains = <&pd_a3sp>;
-+		#pwm-cells = <3>;
-+	};
++	int (*write16_hook)(struct tmio_mmc_host *host, int addr);
+ };
+ 
+ struct tmio_mmc_host* tmio_mmc_host_alloc(struct platform_device *pdev);
+@@ -183,7 +185,7 @@ static inline void sd_ctrl_write16(struct tmio_mmc_host *host, int addr, u16 val
+ 	/* If there is a hook and it returns non-zero then there
+ 	 * is an error and the write should be skipped
+ 	 */
+-	if (host->pdata->write16_hook && host->pdata->write16_hook(host, addr))
++	if (host->write16_hook && host->write16_hook(host, addr))
+ 		return;
+ 	writew(val, host->ctl + (addr << host->pdata->bus_shift));
+ }
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 580d00b..8bc0c77 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -1090,7 +1090,7 @@ int tmio_mmc_host_probe(struct tmio_mmc_host *_host,
+ 	tmio_mmc_of_parse(pdev, pdata);
+ 
+ 	if (!(pdata->flags & TMIO_MMC_HAS_IDLE_WAIT))
+-		pdata->write16_hook = NULL;
++		_host->write16_hook = NULL;
+ 
+ 	res_ctl = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (!res_ctl)
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 8d708c7..0872ca1 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -112,8 +112,6 @@ void tmio_core_mmc_clk_div(void __iomem *cnf, int shift, int state);
+ 
+ struct dma_chan;
+ 
+-struct tmio_mmc_host;
+-
+ /*
+  * data for the MMC controller
+  */
+@@ -127,7 +125,6 @@ struct tmio_mmc_data {
+ 	unsigned int			cd_gpio;
+ 	void (*set_pwr)(struct platform_device *host, int state);
+ 	void (*set_clk_div)(struct platform_device *host, int state);
+-	int (*write16_hook)(struct tmio_mmc_host *host, int addr);
+ 	/* clock management callbacks */
+ 	int (*clk_enable)(struct platform_device *pdev, unsigned int *f);
+ 	void (*clk_disable)(struct platform_device *pdev);
 -- 
-2.1.3
+1.7.9.5
 
