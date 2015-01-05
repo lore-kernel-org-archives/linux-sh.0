@@ -1,197 +1,266 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 14 Jan 2015 12:11:21 +0000
-Subject: [PATCH v2 3/6] ARM: shmobile: R-Mobile: Generalize adding/looking up special PM domains
-Message-Id: <1421237484-16847-4-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 05 Jan 2015 03:52:21 +0000
+Subject: [PATCH 3/5] ARM: shmobile: R-Mobile: Store SYSC base address in rmobile_pm_domain
+Message-Id: <1208da38e78f54566c1f930ca59ac050e616ee80.1420429758.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421237484-16847-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1421237484-16847-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1420429758.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1420429758.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Make adding special PM domains to an array, and looking them up
-later, more generic, so it can be used for all special hardware blocks.
-The type of PM domain is also stored, so rmobile_setup_pm_domain() can
-use a switch() statement instead of a chain of if/else statements.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Replace the hardcoded addresses for accessing the SYSC PM domain
+registers by register offsets, relative to the SYSC base address stored
+in struct rmobile_pm_domain.
+
+In the future, the SYSC base address will come from DT.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2:
-  - Rebase on top of "ARM: shmobile: R-Mobile: Fix DT refcount bugs in
-    PM domain code",
-  - Merge "break" and "i < num_special_pds" block in add_special_pd().
----
- arch/arm/mach-shmobile/pm-rmobile.c | 102 ++++++++++++++++++++++--------------
- 1 file changed, 63 insertions(+), 39 deletions(-)
+ arch/arm/mach-shmobile/pm-r8a7740.c | 14 ++++++++++++++
+ arch/arm/mach-shmobile/pm-rmobile.c | 24 +++++++++++++-----------
+ arch/arm/mach-shmobile/pm-rmobile.h |  1 +
+ arch/arm/mach-shmobile/pm-sh7372.c  | 11 +++++++++++
+ 4 files changed, 39 insertions(+), 11 deletions(-)
 
+diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
+index ac2eecd..34608fc 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7740.c
++++ b/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -9,10 +9,14 @@
+  * for more details.
+  */
+ #include <linux/console.h>
++#include <linux/io.h>
+ #include <linux/suspend.h>
++
+ #include "common.h"
+ #include "pm-rmobile.h"
+ 
++#define SYSC_BASE	IOMEM(0xe6180000)
++
+ #if defined(CONFIG_PM) && !defined(CONFIG_ARCH_MULTIPLATFORM)
+ static int r8a7740_pd_a3sm_suspend(void)
+ {
+@@ -45,41 +49,51 @@ static int r8a7740_pd_d4_suspend(void)
+ static struct rmobile_pm_domain r8a7740_pm_domains[] = {
+ 	{
+ 		.genpd.name	= "A4LC",
++		.base		= SYSC_BASE,
+ 		.bit_shift	= 1,
+ 	}, {
+ 		.genpd.name	= "A4MP",
++		.base		= SYSC_BASE,
+ 		.bit_shift	= 2,
+ 	}, {
+ 		.genpd.name	= "D4",
++		.base		= SYSC_BASE,
+ 		.bit_shift	= 3,
+ 		.gov		= &pm_domain_always_on_gov,
+ 		.suspend	= r8a7740_pd_d4_suspend,
+ 	}, {
+ 		.genpd.name	= "A4R",
++		.base		= SYSC_BASE,
+ 		.bit_shift	= 5,
+ 	}, {
+ 		.genpd.name	= "A3RV",
++		.base		= SYSC_BASE,
+ 		.bit_shift	= 6,
+ 	}, {
+ 		.genpd.name	= "A4S",
++		.base		= SYSC_BASE,
+ 		.bit_shift	= 10,
+ 		.no_debug	= true,
+ 	}, {
+ 		.genpd.name	= "A3SP",
++		.base		= SYSC_BASE,
+ 		.bit_shift	= 11,
+ 		.gov		= &pm_domain_always_on_gov,
+ 		.no_debug	= true,
+ 		.suspend	= r8a7740_pd_a3sp_suspend,
+ 	}, {
+ 		.genpd.name	= "A3SM",
++		.base		= SYSC_BASE,
+ 		.bit_shift	= 12,
+ 		.gov		= &pm_domain_always_on_gov,
+ 		.suspend	= r8a7740_pd_a3sm_suspend,
+ 	}, {
+ 		.genpd.name	= "A3SG",
++		.base		= SYSC_BASE,
+ 		.bit_shift	= 13,
+ 	}, {
+ 		.genpd.name	= "A4SU",
++		.base		= SYSC_BASE,
+ 		.bit_shift	= 20,
+ 	},
+ };
 diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
-index e1be4b8919efe30e..e4c3f7de48e2ccf2 100644
+index 4ea458d..a4fcd2c 100644
 --- a/arch/arm/mach-shmobile/pm-rmobile.c
 +++ b/arch/arm/mach-shmobile/pm-rmobile.c
-@@ -217,50 +217,67 @@ static int rmobile_pd_suspend_console(void)
- 	return console_suspend_enabled ? 0 : -EBUSY;
- }
+@@ -20,9 +20,9 @@
+ #include "pm-rmobile.h"
  
--#define MAX_NUM_CPU_PDS		8
-+enum pd_types {
-+	PD_NORMAL,
-+	PD_CPU,
-+	PD_CONSOLE,
-+	PD_DEBUG,
-+};
+ /* SYSC */
+-#define SPDCR		IOMEM(0xe6180008)
+-#define SWUCR		IOMEM(0xe6180014)
+-#define PSTR		IOMEM(0xe6180080)
++#define SPDCR		0x08	/* SYS Power Down Control Register */
++#define SWUCR		0x14	/* SYS Wakeup Control Register */
++#define PSTR		0x80	/* Power Status Register */
  
--static unsigned int num_cpu_pds __initdata;
--static struct device_node *cpu_pds[MAX_NUM_CPU_PDS] __initdata;
--static struct device_node *console_pd __initdata;
--static struct device_node *debug_pd __initdata;
-+#define MAX_NUM_SPECIAL_PDS	16
+ #define PSTR_RETRIES	100
+ #define PSTR_DELAY_US	10
+@@ -39,12 +39,12 @@ static int rmobile_pd_power_down(struct generic_pm_domain *genpd)
+ 			return ret;
+ 	}
  
--static void __init get_special_pds(void)
--{
--	struct device_node *np, *pd;
--	unsigned int i;
-+static struct special_pd {
-+	struct device_node *pd;
-+	enum pd_types type;
-+} special_pds[MAX_NUM_SPECIAL_PDS] __initdata;
+-	if (__raw_readl(PSTR) & mask) {
++	if (__raw_readl(rmobile_pd->base + PSTR) & mask) {
+ 		unsigned int retry_count;
+-		__raw_writel(mask, SPDCR);
++		__raw_writel(mask, rmobile_pd->base + SPDCR);
  
--	/* PM domains containing CPUs */
--	for_each_node_by_type(np, "cpu") {
--		pd = of_parse_phandle(np, "power-domains", 0);
--		if (!pd)
--			continue;
-+static unsigned int num_special_pds __initdata;
- 
--		for (i = 0; i < num_cpu_pds; i++)
--			if (pd = cpu_pds[i])
--				break;
-+static void __init add_special_pd(struct device_node *np, enum pd_types type)
-+{
-+	unsigned int i;
-+	struct device_node *pd;
- 
--		if (i < num_cpu_pds) {
--			of_node_put(pd);
--			continue;
--		}
-+	pd = of_parse_phandle(np, "power-domains", 0);
-+	if (!pd)
-+		return;
- 
--		if (num_cpu_pds = MAX_NUM_CPU_PDS) {
--			pr_warn("Too many CPU PM domains\n");
-+	for (i = 0; i < num_special_pds; i++)
-+		if (pd = special_pds[i].pd && type = special_pds[i].type) {
- 			of_node_put(pd);
--			continue;
-+			return;
+ 		for (retry_count = PSTR_RETRIES; retry_count; retry_count--) {
+-			if (!(__raw_readl(SPDCR) & mask))
++			if (!(__raw_readl(rmobile_pd->base + SPDCR) & mask))
+ 				break;
+ 			cpu_relax();
  		}
+@@ -52,7 +52,8 @@ static int rmobile_pd_power_down(struct generic_pm_domain *genpd)
  
--		cpu_pds[num_cpu_pds++] = pd;
-+	if (num_special_pds = ARRAY_SIZE(special_pds)) {
-+		pr_warn("Too many special PM domains\n");
-+		of_node_put(pd);
-+		return;
- 	}
+ 	if (!rmobile_pd->no_debug)
+ 		pr_debug("%s: Power off, 0x%08x -> PSTR = 0x%08x\n",
+-			 genpd->name, mask, __raw_readl(PSTR));
++			 genpd->name, mask,
++			 __raw_readl(rmobile_pd->base + PSTR));
  
-+	pr_debug("Special PM domain %s type %d for %s\n", pd->name, type,
-+		 np->full_name);
-+
-+	special_pds[num_special_pds].pd = pd;
-+	special_pds[num_special_pds].type = type;
-+	num_special_pds++;
-+}
-+
-+static void __init get_special_pds(void)
-+{
-+	struct device_node *np;
-+
-+	/* PM domains containing CPUs */
-+	for_each_node_by_type(np, "cpu")
-+		add_special_pd(np, PD_CPU);
-+
- 	/* PM domain containing console */
- 	if (of_stdout)
--		console_pd = of_parse_phandle(of_stdout, "power-domains", 0);
-+		add_special_pd(of_stdout, PD_CONSOLE);
- 
- 	/* PM domain containing Coresight-ETM */
- 	np = of_find_compatible_node(NULL, NULL, "arm,coresight-etm3x");
- 	if (np) {
--		debug_pd = of_parse_phandle(np, "power-domains", 0);
-+		add_special_pd(np, PD_DEBUG);
- 		of_node_put(np);
- 	}
+ 	return 0;
  }
-@@ -269,21 +286,19 @@ static void __init put_special_pds(void)
- {
- 	unsigned int i;
+@@ -64,13 +65,13 @@ static int __rmobile_pd_power_up(struct rmobile_pm_domain *rmobile_pd,
+ 	unsigned int retry_count;
+ 	int ret = 0;
  
--	for (i = 0; i < num_cpu_pds; i++)
--		of_node_put(cpu_pds[i]);
--	of_node_put(console_pd);
--	of_node_put(debug_pd);
-+	for (i = 0; i < num_special_pds; i++)
-+		of_node_put(special_pds[i].pd);
- }
+-	if (__raw_readl(PSTR) & mask)
++	if (__raw_readl(rmobile_pd->base + PSTR) & mask)
+ 		goto out;
  
--static bool __init pd_contains_cpu(const struct device_node *pd)
-+static enum pd_types __init pd_type(const struct device_node *pd)
- {
- 	unsigned int i;
+-	__raw_writel(mask, SWUCR);
++	__raw_writel(mask, rmobile_pd->base + SWUCR);
  
--	for (i = 0; i < num_cpu_pds; i++)
--		if (pd = cpu_pds[i])
--			return true;
-+	for (i = 0; i < num_special_pds; i++)
-+		if (pd = special_pds[i].pd)
-+			return special_pds[i].type;
+ 	for (retry_count = 2 * PSTR_RETRIES; retry_count; retry_count--) {
+-		if (!(__raw_readl(SWUCR) & mask))
++		if (!(__raw_readl(rmobile_pd->base + SWUCR) & mask))
+ 			break;
+ 		if (retry_count > PSTR_RETRIES)
+ 			udelay(PSTR_DELAY_US);
+@@ -82,7 +83,8 @@ static int __rmobile_pd_power_up(struct rmobile_pm_domain *rmobile_pd,
  
--	return false;
-+	return PD_NORMAL;
- }
+ 	if (!rmobile_pd->no_debug)
+ 		pr_debug("%s: Power on, 0x%08x -> PSTR = 0x%08x\n",
+-			 rmobile_pd->genpd.name, mask, __raw_readl(PSTR));
++			 rmobile_pd->genpd.name, mask,
++			 __raw_readl(rmobile_pd->base + PSTR));
  
- static void __init rmobile_setup_pm_domain(struct device_node *np,
-@@ -291,7 +306,8 @@ static void __init rmobile_setup_pm_domain(struct device_node *np,
- {
- 	const char *name = pd->genpd.name;
+ out:
+ 	if (ret = 0 && rmobile_pd->resume && do_resume)
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.h b/arch/arm/mach-shmobile/pm-rmobile.h
+index 8f66b34..0602130 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.h
++++ b/arch/arm/mach-shmobile/pm-rmobile.h
+@@ -21,6 +21,7 @@ struct rmobile_pm_domain {
+ 	struct dev_power_governor *gov;
+ 	int (*suspend)(void);
+ 	void (*resume)(void);
++	void __iomem *base;
+ 	unsigned int bit_shift;
+ 	bool no_debug;
+ };
+diff --git a/arch/arm/mach-shmobile/pm-sh7372.c b/arch/arm/mach-shmobile/pm-sh7372.c
+index 0e37da6..c0293ae 100644
+--- a/arch/arm/mach-shmobile/pm-sh7372.c
++++ b/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -45,6 +45,8 @@
+ #define PLLC01STPCR IOMEM(0xe61500c8)
  
--	if (pd_contains_cpu(np)) {
-+	switch (pd_type(np)) {
-+	case PD_CPU:
- 		/*
- 		 * This domain contains the CPU core and therefore it should
- 		 * only be turned off if the CPU is not in use.
-@@ -299,11 +315,15 @@ static void __init rmobile_setup_pm_domain(struct device_node *np,
- 		pr_debug("PM domain %s contains CPU\n", name);
- 		pd->gov = &pm_domain_always_on_gov;
- 		pd->suspend = rmobile_pd_suspend_busy;
--	} else if (np = console_pd) {
-+		break;
+ /* SYSC */
++#define SYSC_BASE IOMEM(0xe6180000)
 +
-+	case PD_CONSOLE:
- 		pr_debug("PM domain %s contains serial console\n", name);
- 		pd->gov = &pm_domain_always_on_gov;
- 		pd->suspend = rmobile_pd_suspend_console;
--	} else if (np = debug_pd) {
-+		break;
-+
-+	case PD_DEBUG:
- 		/*
- 		 * This domain contains the Coresight-ETM hardware block and
- 		 * therefore it should only be turned off if the debug module
-@@ -312,6 +332,10 @@ static void __init rmobile_setup_pm_domain(struct device_node *np,
- 		pr_debug("PM domain %s contains Coresight-ETM\n", name);
- 		pd->gov = &pm_domain_always_on_gov;
- 		pd->suspend = rmobile_pd_suspend_busy;
-+		break;
-+
-+	case PD_NORMAL:
-+		break;
- 	}
- 
- 	rmobile_init_pm_domain(pd);
+ #define SBAR IOMEM(0xe6180020)
+ #define WUPRMSK IOMEM(0xe6180028)
+ #define WUPSMSK IOMEM(0xe618002c)
+@@ -118,24 +120,28 @@ static struct rmobile_pm_domain sh7372_pm_domains[] = {
+ 		.genpd.name = "A4LC",
+ 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+ 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
++		.base = SYSC_BASE,
+ 		.bit_shift = 1,
+ 	},
+ 	{
+ 		.genpd.name = "A4MP",
+ 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+ 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
++		.base = SYSC_BASE,
+ 		.bit_shift = 2,
+ 	},
+ 	{
+ 		.genpd.name = "D4",
+ 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+ 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
++		.base = SYSC_BASE,
+ 		.bit_shift = 3,
+ 	},
+ 	{
+ 		.genpd.name = "A4R",
+ 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+ 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
++		.base = SYSC_BASE,
+ 		.bit_shift = 5,
+ 		.suspend = sh7372_a4r_pd_suspend,
+ 		.resume = sh7372_intcs_resume,
+@@ -144,18 +150,21 @@ static struct rmobile_pm_domain sh7372_pm_domains[] = {
+ 		.genpd.name = "A3RV",
+ 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+ 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
++		.base = SYSC_BASE,
+ 		.bit_shift = 6,
+ 	},
+ 	{
+ 		.genpd.name = "A3RI",
+ 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+ 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
++		.base = SYSC_BASE,
+ 		.bit_shift = 8,
+ 	},
+ 	{
+ 		.genpd.name = "A4S",
+ 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+ 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
++		.base = SYSC_BASE,
+ 		.bit_shift = 10,
+ 		.gov = &pm_domain_always_on_gov,
+ 		.no_debug = true,
+@@ -166,6 +175,7 @@ static struct rmobile_pm_domain sh7372_pm_domains[] = {
+ 		.genpd.name = "A3SP",
+ 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+ 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
++		.base = SYSC_BASE,
+ 		.bit_shift = 11,
+ 		.gov = &pm_domain_always_on_gov,
+ 		.no_debug = true,
+@@ -175,6 +185,7 @@ static struct rmobile_pm_domain sh7372_pm_domains[] = {
+ 		.genpd.name = "A3SG",
+ 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+ 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
++		.base = SYSC_BASE,
+ 		.bit_shift = 13,
+ 	},
+ };
 -- 
-1.9.1
+2.1.3
 
