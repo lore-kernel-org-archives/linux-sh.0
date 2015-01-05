@@ -1,50 +1,81 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 22 Jan 2015 02:59:14 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: sh73a0 dtsi: Add Cortex-A9 TWD node
-Message-Id: <20150122025913.GK31170@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 05 Jan 2015 21:33:25 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: r8a7790: add CAN clocks
+Message-Id: <1948350.BT8VM0CPFC@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421406528-26704-1-git-send-email-geert+renesas@glider.be>
- <20150117003743.GB15403@verge.net.au>
- <20150117011309.GB397@verge.net.au>
-In-Reply-To: <20150117011309.GB397@verge.net.au>
+References: <28994794.h3WeokSSG3@wasted.cogentembedded.com>
+In-Reply-To: <28994794.h3WeokSSG3@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Jan 17, 2015 at 10:13:10AM +0900, Simon Horman wrote:
-> On Sat, Jan 17, 2015 at 09:37:44AM +0900, Simon Horman wrote:
-> > On Fri, Jan 16, 2015 at 12:08:48PM +0100, Geert Uytterhoeven wrote:
-> > > Add a node for the Private Timer and Watchdog, as found in the Cortex-A9
-> > > MPCore.
-> > > 
-> > > Without this, there's no clocksource available during early kernel
-> > > initialization, before cmt1 is initialized, leading to a lock-up if
-> > > CONFIG_CPU_IDLE=y.
-> > > 
-> > > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> > > ---
-> > > As the TWD driver does not support DT without CCF, this should NOT be
-> > > applied to a branch that still has kzm9g-reference support, as this
-> > > would lead to another lock-up.
-> > > Hence the first choice "dt-for-v3.20" is NOT OK.
-> > > "sh73a0-multiplatform-for-v3.20" is OK.
-> > > 
-> > > v2:
-> > >   - The clock is twd_clk
-> > 
-> > Thanks, for your detailed notes regarding branches.
-> > 
-> > I plan to push this a little later today. Please take a moment
-> > to check that I flowed your advice correctly.
-> 
-> For reference, I have pushed the above as part of
-> renesas-next-20150117-v3.19-rc1.
+The R-Car CAN controllers can derive the CAN bus clock not only from their
+peripheral clock input (clkp1) but also from the other internal clock (clkp2)
+and external clock fed on CAN_CLK pin.  Describe those clocks in the device
+tree,  along with  the USB_EXTAL clock  from which clkp2 is derived.
 
-For the record: Olof has asked for review comments for the BSC driver and
-binding patches. Accordingly I have dropped them, and these patches which
-depend on them, from next.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-This dependency may be due to the way the branches are arranged, rather
-than actual dependencies of the code. But regardless I am dropping all
-affected branches for now.
+---
+Changes in version 2:
+- fixed spelling in the comment to the CAN_CLK node;
+- added Geert's ACK.
+
+ arch/arm/boot/dts/r8a7790.dtsi            |   22 ++++++++++++++++++++--
+ include/dt-bindings/clock/r8a7790-clock.h |    1 +
+ 2 files changed, 21 insertions(+), 2 deletions(-)
+
+Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
++++ renesas/arch/arm/boot/dts/r8a7790.dtsi
+@@ -838,16 +838,34 @@
+ 			clock-output-names = "audio_clk_c";
+ 		};
+ 
++		/* External USB clock - can be overridden by the board */
++		usb_extal_clk: usb_extal_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <48000000>;
++			clock-output-names = "usb_extal";
++		};
++
++		/* External CAN clock */
++		can_clk: can_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			/* This value must be overridden by the board. */
++			clock-frequency = <0>;
++			clock-output-names = "can_clk";
++			status = "disabled";
++		};
++
+ 		/* Special CPG clocks */
+ 		cpg_clocks: cpg_clocks@e6150000 {
+ 			compatible = "renesas,r8a7790-cpg-clocks",
+ 				     "renesas,rcar-gen2-cpg-clocks";
+ 			reg = <0 0xe6150000 0 0x1000>;
+-			clocks = <&extal_clk>;
++			clocks = <&extal_clk &usb_extal_clk>;
+ 			#clock-cells = <1>;
+ 			clock-output-names = "main", "pll0", "pll1", "pll3",
+ 					     "lb", "qspi", "sdh", "sd0", "sd1",
+-					     "z";
++					     "z", "rcan";
+ 		};
+ 
+ 		/* Variable factor clocks */
+Index: renesas/include/dt-bindings/clock/r8a7790-clock.h
+=================================--- renesas.orig/include/dt-bindings/clock/r8a7790-clock.h
++++ renesas/include/dt-bindings/clock/r8a7790-clock.h
+@@ -21,6 +21,7 @@
+ #define R8A7790_CLK_SD0			7
+ #define R8A7790_CLK_SD1			8
+ #define R8A7790_CLK_Z			9
++#define R8A7790_CLK_RCAN		10
+ 
+ /* MSTP0 */
+ #define R8A7790_CLK_MSIOF0		0
+
