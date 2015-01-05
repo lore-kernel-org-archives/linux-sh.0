@@ -1,39 +1,70 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 06 Jan 2015 11:04:00 +0000
-Subject: [PATCH v2] spi: sh-msiof: fix MDR1_FLD_MASK value
-Message-Id: <1420542240-6548-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Mon, 05 Jan 2015 07:53:22 +0000
+Subject: Re: [PATCH 05/05] serial: sh-sci: Expose SCIFA/SCIFB CTS pin
+Message-Id: <6657739.eAlEu9S4Iu@avalon>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20141217125236.14480.78833.sendpatchset@w520> <20141217125325.14480.79285.sendpatchset@w520>
+In-Reply-To: <20141217125325.14480.79285.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org
-Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, gregkh@linuxfoundation.org, jslaby@suse.cz, linux-serial@vger.kernel.org
 
-Since the FLD bit field is bit[3:2], the MDR1_FLD_MASK value should
-be 0x0000000c.
+Hi Magnus,
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- Changes from v1:
-  - rebase top of spi/for-next branch.
-    (commit id = b47ed8d2ab075a700fd517c72b9d1729f94479ba)
+Thank you for the patch.
 
- drivers/spi/spi-sh-msiof.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+On Wednesday 17 December 2014 21:53:25 Magnus Damm wrote:
+> From: Magnus Damm <damm+renesas@opensource.se>
+> 
+> Expose CTS pin to serial core for the SCIFA/SCIFB case.
+> 
+> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+> ---
+> 
+>  drivers/tty/serial/sh-sci.c |   17 +++++++++++++++--
+>  1 file changed, 15 insertions(+), 2 deletions(-)
+> 
+> --- 0023/drivers/tty/serial/sh-sci.c
+> +++ work/drivers/tty/serial/sh-sci.c	2014-12-17 18:46:44.000000000 +0900
+> @@ -564,6 +564,11 @@ static void sci_init_pins_default(struct
+>  	serial_port_out(port, SCSPTR, status); /* Set RTS = 1 */
+>  }
+> 
+> +static bool sci_cts_asserted_scifab(struct uart_port *port)
+> +{
+> +	return !(serial_port_in(port, SCPDR) & BIT(3));
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 3f7ea2d..c58c249 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -84,7 +84,7 @@ struct sh_msiof_spi_priv {
- #define MDR1_BITLSB_SHIFT	 24 /* MSB/LSB First (1 = LSB first) */
- #define MDR1_DTDL_SHIFT		 20 /* Data Pin Bit Delay for MSIOF_SYNC */
- #define MDR1_SYNCDL_SHIFT	 16 /* Frame Sync Signal Timing Delay */
--#define MDR1_FLD_MASK	 0x000000c0 /* Frame Sync Signal Interval (0-3) */
-+#define MDR1_FLD_MASK	 0x0000000c /* Frame Sync Signal Interval (0-3) */
- #define MDR1_FLD_SHIFT		  2
- #define MDR1_XXSTP	 0x00000001 /* Transmission/Reception Stop on FIFO */
- /* TMDR1 */
+Could you please define SCPDR_CTSD to replace BIT(3) ?
+
+> +}
+> +
+>  static void sci_init_pins_scifab(struct uart_port *port, bool
+> hwflow_enabled) {
+>  	unsigned short control, data;
+> @@ -1304,8 +1309,16 @@ static unsigned int sci_get_mctrl(struct
+>  	 * else is wired up. Keep it simple and simply assert DSR/CAR.
+>  	 */
+> 
+> -	if (s->cfg->capabilities & SCIx_HAVE_RTSCTS)
+> -		cts_asserted = sci_cts_asserted_default(port);
+> + 	if (s->cfg->capabilities & SCIx_HAVE_RTSCTS) {
+> +		switch (s->cfg->type) {
+> +		case PORT_SCIFA:
+> +		case PORT_SCIFB:
+> +			cts_asserted = sci_cts_asserted_scifab(port);
+> +			break;
+> +		default:
+> +			cts_asserted = sci_cts_asserted_default(port);
+> +		}
+> + 	}
+> 
+>  	return TIOCM_DSR | TIOCM_CAR | (cts_asserted ? TIOCM_CTS : 0);
+>  }
+
 -- 
-1.7.9.5
+Regards,
+
+Laurent Pinchart
 
