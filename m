@@ -1,75 +1,68 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 13 Jan 2015 04:59:14 +0000
-Subject: [PATCH 11/17] mmc: tmio: enable SoC specific DMA buswidth settings
-Message-Id: <87egqzuvg4.wl%kuninori.morimoto.gx@renesas.com>
+Date: Mon, 05 Jan 2015 07:01:39 +0000
+Subject: [PATCH 0/9]: mmc: tmio header cleanup
+Message-Id: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: Arnd Bergmann <arnd@arndb.de>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>
+Cc: Simon <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Renesas SDHI which is based on TMIO driver has 2 type SoC. 1st one is
-used as SH-Mobile series, and 2nd is R-Car series. R-Car series SoC has
-DMA buswidth setting register which enables 32bit access.
-This patch adds .dma_buswidth and enables it.
+Hi Ulf, Chris, and Simon
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+These are tmio.h header cleanup patches.
+1) - 7) are main cleanups,
+8) - 9) are sh_mobile_sdhi specific cleanups.
+
+By these patches,
+tmio driver specific data/callbacks are implemented under tmio_mmc_host,
+platform    specific data/callbacks are implemented under tmio_mmc_data.
+
+I guess this is Ulf's wanted (?)
+Please let me know if it is not enough.
+I will re-send my previous sh_mobile_sdhi DMA cleanups patches
+if these are accepted.
+
+Simon, 8) - 9) are shmobile specific patches.
+Can you please give your Ack for these patches ?
+
+Kuninori Morimoto (9):
+      1) mmc: tmio: add tmio_mmc_host_alloc/free()
+      2) mmc: tmio: tmio_mmc_host has .dma
+      3) mmc: tmio: tmio_mmc_host has .write16_hook
+      4) mmc: tmio: tmio_mmc_host has .clk_enable
+      5) mmc: tmio: tmio_mmc_host has .clk_disable
+      6) mmc: tmio: tmio_mmc_host has .multi_io_quirk
+      7) mmc: tmio: tmio_mmc_host has .bus_shift
+      8) mmc: sh_mobile_sdhi: remove .init/.cleanup
+      9) mmc: sh_mobile_sdhi: remove sh_mobile_sdhi_info
+
+ arch/arm/mach-shmobile/board-ape6evm.c         |   12 ++---
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   12 ++---
+ arch/arm/mach-shmobile/board-bockw.c           |   10 ++--
+ arch/arm/mach-shmobile/board-kzm9g.c           |   12 ++---
+ arch/arm/mach-shmobile/board-lager.c           |   16 +++---
+ arch/arm/mach-shmobile/board-mackerel.c        |   14 +++---
+ arch/arm/mach-shmobile/board-marzen.c          |    6 +--
+ arch/sh/boards/board-sh7757lcr.c               |    5 +-
+ arch/sh/boards/mach-ap325rxa/setup.c           |    9 ++--
+ arch/sh/boards/mach-ecovec24/setup.c           |   12 ++---
+ arch/sh/boards/mach-kfr2r09/setup.c            |    6 +--
+ arch/sh/boards/mach-migor/setup.c              |    5 +-
+ arch/sh/boards/mach-se/7724/setup.c            |    9 ++--
+ drivers/mmc/host/sh_mobile_sdhi.c              |   64 ++++++++----------------
+ drivers/mmc/host/tmio_mmc.c                    |   15 ++++--
+ drivers/mmc/host/tmio_mmc.h                    |   41 +++++++++++----
+ drivers/mmc/host/tmio_mmc_dma.c                |   26 +++++-----
+ drivers/mmc/host/tmio_mmc_pio.c                |   58 ++++++++++++---------
+ include/linux/mfd/tmio.h                       |   23 +--------
+ include/linux/mmc/sh_mobile_sdhi.h             |   25 ---------
+ 20 files changed, 176 insertions(+), 204 deletions(-)
+
+
+
+Best regards
 ---
- drivers/mmc/host/tmio_mmc.h     |    2 ++
- drivers/mmc/host/tmio_mmc_dma.c |    8 ++++++--
- 2 files changed, 8 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index 0699edb..fc3805e 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -16,6 +16,7 @@
- #ifndef TMIO_MMC_H
- #define TMIO_MMC_H
- 
-+#include <linux/dmaengine.h>
- #include <linux/highmem.h>
- #include <linux/mmc/tmio.h>
- #include <linux/mutex.h>
-@@ -46,6 +47,7 @@ struct tmio_mmc_dma {
- 	void *chan_priv_rx;
- 	int slave_id_tx;
- 	int slave_id_rx;
-+	enum dma_slave_buswidth dma_buswidth;
- 	bool (*filter)(struct dma_chan *chan, void *arg);
- 	void (*enable)(struct tmio_mmc_host *host, bool enable);
- };
-diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
-index eb6b45c..aa5f4b6 100644
---- a/drivers/mmc/host/tmio_mmc_dma.c
-+++ b/drivers/mmc/host/tmio_mmc_dma.c
-@@ -293,7 +293,9 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
- 			cfg.slave_id = host->dma->slave_id_tx;
- 		cfg.direction = DMA_MEM_TO_DEV;
- 		cfg.dst_addr = res->start + (CTL_SD_DATA_PORT << host->bus_shift);
--		cfg.dst_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
-+		cfg.dst_addr_width = host->dma->dma_buswidth;
-+		if (!cfg.dst_addr_width)
-+			cfg.dst_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
- 		cfg.src_addr = 0;
- 		ret = dmaengine_slave_config(host->chan_tx, &cfg);
- 		if (ret < 0)
-@@ -312,7 +314,9 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
- 			cfg.slave_id = host->dma->slave_id_rx;
- 		cfg.direction = DMA_DEV_TO_MEM;
- 		cfg.src_addr = cfg.dst_addr + host->pdata->dma_rx_offset;
--		cfg.src_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
-+		cfg.src_addr_width = host->dma->dma_buswidth;
-+		if (!cfg.src_addr_width)
-+			cfg.src_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
- 		cfg.dst_addr = 0;
- 		ret = dmaengine_slave_config(host->chan_rx, &cfg);
- 		if (ret < 0)
--- 
-1.7.9.5
-
+Kuninori Morimoto
