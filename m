@@ -1,34 +1,160 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 21 Jan 2015 04:53:37 +0000
-Subject: [PATCH 04/13] ARM: shmobile: mackerel: Remove DT binding documentation
-Message-Id: <20150121045337.7648.33836.sendpatchset@little-apple>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 05 Jan 2015 07:03:36 +0000
+Subject: [PATCH 7/9] mmc: tmio: tmio_mmc_host has .bus_shift
+Message-Id: <87ppatogid.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150121045256.7648.7451.sendpatchset@little-apple>
-In-Reply-To: <20150121045256.7648.7451.sendpatchset@little-apple>
+References: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
+Cc: Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Remove the DT compatibile string documentation for the
-no longer supported Mackerel board.
+Current .bus_shift is implemented under tmio_mmc_data.
+It goes to tmio_mmc_host by this patch.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+ drivers/mmc/host/sh_mobile_sdhi.c |    5 ++---
+ drivers/mmc/host/tmio_mmc.c       |    5 +++--
+ drivers/mmc/host/tmio_mmc.h       |   17 +++++++++--------
+ drivers/mmc/host/tmio_mmc_dma.c   |    2 +-
+ include/linux/mfd/tmio.h          |    1 -
+ 5 files changed, 15 insertions(+), 15 deletions(-)
 
- Documentation/devicetree/bindings/arm/shmobile.txt |    2 --
- 1 file changed, 2 deletions(-)
-
---- 0001/Documentation/devicetree/bindings/arm/shmobile.txt
-+++ work/Documentation/devicetree/bindings/arm/shmobile.txt	2015-01-21 11:10:46.507575167 +0900
-@@ -57,8 +57,6 @@ Boards:
-     compatible = "renesas,kzm9g", "renesas,sh73a0"
-   - Lager (RTP0RC7790SEB00010S)
-     compatible = "renesas,lager", "renesas,r8a7790"
--  - Mackerel (R0P7372LC0016RL, AP4 EVM 2nd)
--    compatible = "renesas,mackerel"
-   - Marzen
-     compatible = "renesas,marzen", "renesas,r8a7779"
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 79206a6..f8268b7 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -216,6 +216,8 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	host->clk_enable	= sh_mobile_sdhi_clk_enable;
+ 	host->clk_disable	= sh_mobile_sdhi_clk_disable;
+ 	host->multi_io_quirk	= sh_mobile_sdhi_multi_io_quirk;
++	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
++	host->bus_shift		= resource_size(res) >> 9;
  
+ 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
+ 	if (p) {
+@@ -275,9 +277,6 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		dma_priv->dma_rx_offset = of_data->dma_rx_offset;
+ 	}
+ 
+-	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
+-	mmc_data->bus_shift = resource_size(res) >> 9;
+-
+ 	ret = tmio_mmc_host_probe(host, mmc_data);
+ 	if (ret < 0)
+ 		goto efree;
+diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
+index f47ae08..9e8723d 100644
+--- a/drivers/mmc/host/tmio_mmc.c
++++ b/drivers/mmc/host/tmio_mmc.c
+@@ -88,14 +88,15 @@ static int tmio_mmc_probe(struct platform_device *pdev)
+ 	if (!res)
+ 		return -EINVAL;
+ 
+-	/* SD control register space size is 0x200, 0x400 for bus_shift=1 */
+-	pdata->bus_shift = resource_size(res) >> 10;
+ 	pdata->flags |= TMIO_MMC_HAVE_HIGH_REG;
+ 
+ 	host = tmio_mmc_host_alloc(pdev);
+ 	if (!host)
+ 		goto cell_disable;
+ 
++	/* SD control register space size is 0x200, 0x400 for bus_shift=1 */
++	host->bus_shift = resource_size(res) >> 10;
++
+ 	ret = tmio_mmc_host_probe(host, pdata);
+ 	if (ret)
+ 		goto host_free;
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index c669801..fee7785 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -66,6 +66,7 @@ struct tmio_mmc_host {
+ 	struct scatterlist      *sg_orig;
+ 	unsigned int            sg_len;
+ 	unsigned int            sg_off;
++	unsigned long		bus_shift;
+ 
+ 	struct platform_device *pdev;
+ 	struct tmio_mmc_data *pdata;
+@@ -169,19 +170,19 @@ int tmio_mmc_host_runtime_resume(struct device *dev);
+ 
+ static inline u16 sd_ctrl_read16(struct tmio_mmc_host *host, int addr)
+ {
+-	return readw(host->ctl + (addr << host->pdata->bus_shift));
++	return readw(host->ctl + (addr << host->bus_shift));
+ }
+ 
+ static inline void sd_ctrl_read16_rep(struct tmio_mmc_host *host, int addr,
+ 		u16 *buf, int count)
+ {
+-	readsw(host->ctl + (addr << host->pdata->bus_shift), buf, count);
++	readsw(host->ctl + (addr << host->bus_shift), buf, count);
+ }
+ 
+ static inline u32 sd_ctrl_read32(struct tmio_mmc_host *host, int addr)
+ {
+-	return readw(host->ctl + (addr << host->pdata->bus_shift)) |
+-	       readw(host->ctl + ((addr + 2) << host->pdata->bus_shift)) << 16;
++	return readw(host->ctl + (addr << host->bus_shift)) |
++	       readw(host->ctl + ((addr + 2) << host->bus_shift)) << 16;
+ }
+ 
+ static inline void sd_ctrl_write16(struct tmio_mmc_host *host, int addr, u16 val)
+@@ -191,19 +192,19 @@ static inline void sd_ctrl_write16(struct tmio_mmc_host *host, int addr, u16 val
+ 	 */
+ 	if (host->write16_hook && host->write16_hook(host, addr))
+ 		return;
+-	writew(val, host->ctl + (addr << host->pdata->bus_shift));
++	writew(val, host->ctl + (addr << host->bus_shift));
+ }
+ 
+ static inline void sd_ctrl_write16_rep(struct tmio_mmc_host *host, int addr,
+ 		u16 *buf, int count)
+ {
+-	writesw(host->ctl + (addr << host->pdata->bus_shift), buf, count);
++	writesw(host->ctl + (addr << host->bus_shift), buf, count);
+ }
+ 
+ static inline void sd_ctrl_write32(struct tmio_mmc_host *host, int addr, u32 val)
+ {
+-	writew(val, host->ctl + (addr << host->pdata->bus_shift));
+-	writew(val >> 16, host->ctl + ((addr + 2) << host->pdata->bus_shift));
++	writew(val, host->ctl + (addr << host->bus_shift));
++	writew(val >> 16, host->ctl + ((addr + 2) << host->bus_shift));
+ }
+ 
+ 
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index 6c214d6..ee0131e 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -289,7 +289,7 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 		if (host->dma->chan_priv_tx)
+ 			cfg.slave_id = host->dma->slave_id_tx;
+ 		cfg.direction = DMA_MEM_TO_DEV;
+-		cfg.dst_addr = res->start + (CTL_SD_DATA_PORT << host->pdata->bus_shift);
++		cfg.dst_addr = res->start + (CTL_SD_DATA_PORT << host->bus_shift);
+ 		cfg.dst_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
+ 		cfg.src_addr = 0;
+ 		ret = dmaengine_slave_config(host->chan_tx, &cfg);
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 3edaa17..7a5c279 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -120,7 +120,6 @@ struct tmio_mmc_data {
+ 	unsigned long			capabilities;
+ 	unsigned long			capabilities2;
+ 	unsigned long			flags;
+-	unsigned long			bus_shift;
+ 	u32				ocr_mask;	/* available voltages */
+ 	unsigned int			cd_gpio;
+ 	void (*set_pwr)(struct platform_device *host, int state);
+-- 
+1.7.9.5
+
