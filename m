@@ -1,37 +1,44 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 17 Jan 2015 00:58:44 +0000
-Subject: [PATCH 11/11] PM / Domains: R-Mobile SYSC: Document SH-Mobile AG5 (sh73a0) binding
-Message-Id: <fbaa5e694a1240c5f6b829b1e17652e4e228ee12.1421380713.git.horms+renesas@verge.net.au>
+From: Tony Lindgren <tony@atomide.com>
+Date: Mon, 05 Jan 2015 19:17:45 +0000
+Subject: Re: [PATCH] ARM: omap2plus_defconfig: use CONFIG_CPUFREQ_DT
+Message-Id: <20150105191745.GI4081@atomide.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421380713.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421380713.git.horms+renesas@verge.net.au>
+References: <1418404738-19124-1-git-send-email-nm@ti.com>
+ <CAMuHMdW4CQz_n8b4-JOogDvc6ggBjWrFWcqr4Tezojj+mJD6pw@mail.gmail.com>
+In-Reply-To: <CAMuHMdW4CQz_n8b4-JOogDvc6ggBjWrFWcqr4Tezojj+mJD6pw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+* Geert Uytterhoeven <geert@linux-m68k.org> [141215 02:44]:
+> On Fri, Dec 12, 2014 at 6:18 PM, Nishanth Menon <nm@ti.com> wrote:
+> > CONFIG_GENERIC_CPUFREQ_CPU0 disappeared with commit bbcf071969b20f
+> > ("cpufreq: cpu0: rename driver and internals to 'cpufreq_dt'")
+> >
+> > Use the renamed CONFIG_CPUFREQ_DT generic driver. It looks like with
+> > v3.18-rc1, commit bbcf071969b20f and fdc509b15eb3eb came in via
+> > different trees causing the resultant v3.18-rc1 to be non-functional for
+> > cpufreq as default supported with omap2plus_defconfig.
+> >
+> > Fixes: fdc509b15eb3eb ("ARM: omap2plus_defconfig: Add cpufreq to defconfig")
+> > Signed-off-by: Nishanth Menon <nm@ti.com>
+> > ---
+> >
+> > NOTE: as of v3.18 tag, The following still need to be fixed - I do not have all
+> > the platforms impacted to make a generic change, so CCying folks who might be interested
+> >
+> > arch/arm/configs/shmobile_defconfig:CONFIG_GENERIC_CPUFREQ_CPU0=y
+> 
+> Thanks!
+> 
+> FTR: this has been fixed in Simon's defconfig-for-v3.20 branch.
+> 
+> > arch/arm/configs/multi_v7_defconfig:CONFIG_GENERIC_CPUFREQ_CPU0=y
 
-SH-Mobile AG5 (sh73a0) can be handled by the existing bindings.
+Oops looks like this is still missing from omap2plus_defconfig, so
+applying into omap-for-v3.19/fixes.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt | 1 +
- 1 file changed, 1 insertion(+)
+Regards,
 
-diff --git a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-index 2460476..cc3b1f0 100644
---- a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-+++ b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-@@ -12,6 +12,7 @@ Required properties:
- 	      fallback.
- 	      Examples with soctypes are:
- 		- "renesas,sysc-r8a7740" (R-Mobile A1)
-+		- "renesas,sysc-sh73a0" (SH-Mobile AG5)
- - reg: Two address start and address range blocks for the device:
-          - The first block refers to the normally accessible registers,
-          - the second block refers to the registers protected by the HPB
--- 
-2.1.4
-
+Tony
