@@ -1,48 +1,18 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 Jan 2015 02:35:21 +0000
-Subject: [PATCH 09/17] ARM: shmobile: kzm9g dts: Declare the full 512 MiB of RAM
-Message-Id: <a99196825162b0ac4d5fd68615d6756542da7eef.1421371996.git.horms+renesas@verge.net.au>
+From: Joerg Roedel <joro@8bytes.org>
+Date: Mon, 05 Jan 2015 10:53:03 +0000
+Subject: Re: [PATCH FOR v3.19 - v2] iommu/ipmmu-vmsa: change IOMMU_EXEC to IOMMU_NOEXEC
+Message-Id: <20150105105303.GA19590@8bytes.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421371996.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421371996.git.horms+renesas@verge.net.au>
+References: <1418668873-5091-1-git-send-email-laurent.pinchart@ideasonboard.com>
+In-Reply-To: <1418668873-5091-1-git-send-email-laurent.pinchart@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+On Mon, Dec 15, 2014 at 08:41:13PM +0200, Laurent Pinchart wrote:
+> Joerg, this is a compilation breakage fix for v3.19. Could you please take it
+> in your tree and submit it early during the -rc cycle ?
 
-Traditionally, the first 16 MiB of RAM was reserved for the RT
-processor.  However, this is incompatible with CONFIG_AUTO_ZRELADDR=y,
-which requires that the start address of physical memory is a multiple
-of 128 MiB.
-
-As CONFIG_AUTO_ZRELADDR=y is enabled for multi-platform kernels, declare
-RAM to start at 0x40000000.
-
-While at it, reclaim the last 8 MiB of RAM, too, so the full 512 MiB is
-available. Note that kzm9g_defconfig still has
-CONFIG_MEMORY_START=0x41000000 and CONFIG_MEMORY_SIZE=0x1f000000, so
-before the advent of DT we scribbled over the last 8 MiB, too.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/sh73a0-kzm9g.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-index 27c5f42..e7dae01 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-@@ -21,6 +21,6 @@
- 
- 	memory {
- 		device_type = "memory";
--		reg = <0x41000000 0x1e800000>;
-+		reg = <0x40000000 0x20000000>;
- 	};
- };
--- 
-2.1.4
+Patch applied, sorry for the delay.
 
