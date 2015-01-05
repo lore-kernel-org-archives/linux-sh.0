@@ -1,164 +1,128 @@
-From: Niklas =?iso-8859-1?Q?S=F6derlund?= <niso@kth.se>
-Date: Sat, 17 Jan 2015 18:11:59 +0000
-Subject: Re: [PATCH 2/4] sh-pfc: Add emev2 pinmux support
-Message-Id: <20150117181159.GA11372@bigcity.berto.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 05 Jan 2015 07:03:56 +0000
+Subject: [PATCH 8/9] mmc: sh_mobile_sdhi: remove .init/.cleanup
+Message-Id: <87oaqdoghr.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418414497-23741-1-git-send-email-niso@kth.se>
- <1418414497-23741-3-git-send-email-niso@kth.se>
- <4306343.ZxG2x6FY5Y@avalon>
-In-Reply-To: <4306343.ZxG2x6FY5Y@avalon>
+References: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-kernel@vger.kernel.org, linus.walleij@linaro.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, magnus.damm@gmail.com
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
+Cc: Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Hi Laurent,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks for your review. I will send a updated patch shortly.
+No one is using .init/.cleanup callback function.
+Let's remove these.
 
-Regards
-// Niklas
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c  |   26 +-------------------------
+ include/linux/mmc/sh_mobile_sdhi.h |   15 ---------------
+ 2 files changed, 1 insertion(+), 40 deletions(-)
 
-* Laurent Pinchart <laurent.pinchart@ideasonboard.com> [2015-01-13 16:27:06=
- +0200]:
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index f8268b7..eae229f 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -156,15 +156,6 @@ static int sh_mobile_sdhi_multi_io_quirk(struct mmc_card *card,
+ 	return blk_size;
+ }
+ 
+-static void sh_mobile_sdhi_cd_wakeup(const struct platform_device *pdev)
+-{
+-	mmc_detect_change(platform_get_drvdata(pdev), msecs_to_jiffies(100));
+-}
+-
+-static const struct sh_mobile_sdhi_ops sdhi_ops = {
+-	.cd_wakeup = sh_mobile_sdhi_cd_wakeup,
+-};
+-
+ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ {
+ 	const struct of_device_id *of_id @@ -192,19 +183,11 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	mmc_data = &priv->mmc_data;
+ 	dma_priv = &priv->dma_priv;
+ 
+-	if (p) {
+-		if (p->init) {
+-			ret = p->init(pdev, &sdhi_ops);
+-			if (ret)
+-				return ret;
+-		}
+-	}
+-
+ 	priv->clk = devm_clk_get(&pdev->dev, NULL);
+ 	if (IS_ERR(priv->clk)) {
+ 		ret = PTR_ERR(priv->clk);
+ 		dev_err(&pdev->dev, "cannot get clock: %d\n", ret);
+-		goto eclkget;
++		goto eprobe;
+ 	}
+ 
+ 	host = tmio_mmc_host_alloc(pdev);
+@@ -357,9 +340,6 @@ eirq:
+ efree:
+ 	tmio_mmc_host_free(host);
+ eprobe:
+-eclkget:
+-	if (p && p->cleanup)
+-		p->cleanup(pdev);
+ 	return ret;
+ }
+ 
+@@ -367,13 +347,9 @@ static int sh_mobile_sdhi_remove(struct platform_device *pdev)
+ {
+ 	struct mmc_host *mmc = platform_get_drvdata(pdev);
+ 	struct tmio_mmc_host *host = mmc_priv(mmc);
+-	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
+ 
+ 	tmio_mmc_host_remove(host);
+ 
+-	if (p && p->cleanup)
+-		p->cleanup(pdev);
+-
+ 	return 0;
+ }
+ 
+diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
+index 68927ae..da77e5e20 100644
+--- a/include/linux/mmc/sh_mobile_sdhi.h
++++ b/include/linux/mmc/sh_mobile_sdhi.h
+@@ -3,20 +3,10 @@
+ 
+ #include <linux/types.h>
+ 
+-struct platform_device;
+-
+ #define SH_MOBILE_SDHI_IRQ_CARD_DETECT	"card_detect"
+ #define SH_MOBILE_SDHI_IRQ_SDCARD	"sdcard"
+ #define SH_MOBILE_SDHI_IRQ_SDIO		"sdio"
+ 
+-/**
+- * struct sh_mobile_sdhi_ops - SDHI driver callbacks
+- * @cd_wakeup:		trigger a card-detection run
+- */
+-struct sh_mobile_sdhi_ops {
+-	void (*cd_wakeup)(const struct platform_device *pdev);
+-};
+-
+ struct sh_mobile_sdhi_info {
+ 	int dma_slave_tx;
+ 	int dma_slave_rx;
+@@ -25,11 +15,6 @@ struct sh_mobile_sdhi_info {
+ 	unsigned long tmio_caps2;
+ 	u32 tmio_ocr_mask;	/* available MMC voltages */
+ 	unsigned int cd_gpio;
+-
+-	/* callbacks for board specific setup code */
+-	int (*init)(struct platform_device *pdev,
+-		    const struct sh_mobile_sdhi_ops *ops);
+-	void (*cleanup)(struct platform_device *pdev);
+ };
+ 
+ #endif /* LINUX_MMC_SH_MOBILE_SDHI_H */
+-- 
+1.7.9.5
 
-> Hi Niklas,
->
-> Thank you for the patch.
->
-> On Friday 12 December 2014 21:01:35 Niklas S=F6derlund wrote:
-> > Add PFC support for the EMMA Mobile EV2 SoC including pin groups for
-> > on-chip devices.
-> >
-> > Signed-off-by: Niklas S=F6derlund <niso@kth.se>
-> > ---
-> >  .../bindings/pinctrl/renesas,pfc-pinctrl.txt       |    1 +
-> >  drivers/pinctrl/sh-pfc/Kconfig                     |    5 +
-> >  drivers/pinctrl/sh-pfc/Makefile                    |    1 +
-> >  drivers/pinctrl/sh-pfc/core.c                      |    9 +
-> >  drivers/pinctrl/sh-pfc/core.h                      |    1 +
-> >  drivers/pinctrl/sh-pfc/pfc-emev2.c                 | 1915 ++++++++++++=
-+++++
-> >  6 files changed, 1932 insertions(+)
-> >  create mode 100644 drivers/pinctrl/sh-pfc/pfc-emev2.c
->
-> [snip]
->
-> > diff --git a/drivers/pinctrl/sh-pfc/pfc-emev2.c
-> > b/drivers/pinctrl/sh-pfc/pfc-emev2.c new file mode 100644
-> > index 0000000..22c9e15
-> > --- /dev/null
-> > +++ b/drivers/pinctrl/sh-pfc/pfc-emev2.c
->
-> [snip]
->
-> > +#define CPU_ALL_PORT(fn, sfx)						\
-> > +	PORT_GP_32(0, fn, sfx),						\
-> > +	PORT_GP_32(1, fn, sfx),						\
-> > +	PORT_GP_32(2, fn, sfx),						\
-> > +	PORT_GP_32(3, fn, sfx),						\
-> > +	PORT_GP_32(4, fn, sfx)
->
-> GPIOs are numbered linearly in the datasheet, not using a bank number.
-> Shouldn't that be reflected here ? Additionally the chip has 159 GPIOs, a=
-nd
-> you define 160 of them.
->
-> [snip]
->
-> I'm afraid I can't review all the data tables, I'll trust you on that :-)
->
-> > +/* Pin numbers for pins without a corresponding GPIO port number are
-> > computed
-> > + * from the row and column numbers with a 1000 offset to avoid collisi=
-ons
-> > with
-> > + * GPIO port numbers. */
-> > +#define PIN_NUMBER(row, col)            (1000+((row)-1)*25+(col)-1)
->
-> The chip is an 23x23 BGA, shouldn't you multiply by 23 instead of 25 ?
->
-> [snip]
->
-> > +#define EMEV_MUX_PIN(name, pin, mark) \
-> > +	static const unsigned int name##_pins[] =3D { pin }; \
-> > +	static const unsigned int name##_mux[] =3D { mark##_MARK }
->
-> [snip]
->
-> > +/* =3D [ IIC ] =3D=3D=3D=3D=3D=3D=3D */
-> > +EMEV_MUX_PIN(iic0_scl, 44, IIC0_SCL);
-> > +EMEV_MUX_PIN(iic0_sda, 45, IIC0_SDA);
->
-> [snip]
->
-> > +static const struct sh_pfc_pin_group pinmux_groups[] =3D {
->
-> [snip]
->
-> > +	SH_PFC_PIN_GROUP(iic0_scl),
-> > +	SH_PFC_PIN_GROUP(iic0_sda),
->
-> [snip]
->
-> > +};
->
-> [snip]
->
-> > +static const char * const iic0_groups[] =3D {
-> > +	"iic0_scl",
-> > +	"iic0_sda",
-> > +};
->
-> (Taking IIC0 as an example)
->
-> You're defining one pin group per pin. While this isn't an invalid decisi=
-on,
-> the sh-pfc driver tried so far to group related pins in the same group. F=
-or
-> instance, with IIC0, SCL and SDA can't be used independently, so you alwa=
-ys
-> need to request both. They could thus be grouped together. Is there a rea=
-son
-> not to follow the same design for EMEV2 ?
->
-> [snip]
->
-> > +static const struct sh_pfc_function pinmux_functions[] =3D {
-> > +	SH_PFC_FUNCTION(jtag),
-> > +	SH_PFC_FUNCTION(lcd),
-> > +	SH_PFC_FUNCTION(yuv),
-> > +	SH_PFC_FUNCTION(tp33),
-> > +	SH_PFC_FUNCTION(iic0),
-> > +	SH_PFC_FUNCTION(iic1),
-> > +	SH_PFC_FUNCTION(uart1),
-> > +	SH_PFC_FUNCTION(uart2),
-> > +	SH_PFC_FUNCTION(uart3),
-> > +	SH_PFC_FUNCTION(sd),
-> > +	SH_PFC_FUNCTION(sdi0),
-> > +	SH_PFC_FUNCTION(sdi1),
-> > +	SH_PFC_FUNCTION(sdi2),
-> > +	SH_PFC_FUNCTION(ab),
-> > +	SH_PFC_FUNCTION(dtv),
-> > +	SH_PFC_FUNCTION(cf),
-> > +	SH_PFC_FUNCTION(usi0),
-> > +	SH_PFC_FUNCTION(usi1),
-> > +	SH_PFC_FUNCTION(usi2),
-> > +	SH_PFC_FUNCTION(usi3),
-> > +	SH_PFC_FUNCTION(usi4),
-> > +	SH_PFC_FUNCTION(usi5),
-> > +	SH_PFC_FUNCTION(ntsc),
-> > +	SH_PFC_FUNCTION(cam),
-> > +	SH_PFC_FUNCTION(hsi),
-> > +};
->
-> Could you please order the functions alphabetically, here and above ?
->
-> [snip]
->
-> --
-> Regards,
->
-> Laurent Pinchart
->
