@@ -1,39 +1,55 @@
-From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Date: Fri, 09 Jan 2015 21:42:22 +0000
-Subject: Re: [PATCH/RFC] serial: sh-sci: Remove overrun message
-Message-Id: <20150109214222.GB7952@kroah.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 05 Jan 2015 22:26:45 +0000
+Subject: [PATCH v5 3/3] ARM: shmobile: henninger: add CAN0 DT support
+Message-Id: <2483119.HjgsDbcomx@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418652793-6770-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1418652793-6770-1-git-send-email-ykaneko0929@gmail.com>
+References: <1652479.NHBlqJ9OaR@wasted.cogentembedded.com>
+In-Reply-To: <1652479.NHBlqJ9OaR@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Dec 15, 2014 at 11:13:13PM +0900, Yoshihiro Kaneko wrote:
-> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-> 
-> Since the driver cannot return from overrun error if characters
-> are output during overrun process, the error message of overrun
-> is removed.
-> 
-> Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> ---
-> 
-> This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
-> tree.
-> 
->  drivers/tty/serial/sh-sci.c | 1 -
->  1 file changed, 1 deletion(-)
+Define the Henninger board dependent part of the CAN0 device node.
 
-I don't apply "RFC" patches, as it is evident that you don't feel they
-should be applied.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Please resend anything without that marking if you want me to apply
-them.
+---
+Changes in version 4:
+- refreshed the patch.
 
-thanks,
+Changes in version 3:
+- changed "can0_data_a" to "can0_data", removed "can_clk_d" in the
+  "renesas,groups" property;
+- moved CAN0 node to go after all others;
+- refreshed the patch.
 
-greg k-h
+ arch/arm/boot/dts/r8a7791-henninger.dts |   11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7791-henninger.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-henninger.dts
++++ renesas/arch/arm/boot/dts/r8a7791-henninger.dts
+@@ -147,6 +147,11 @@
+ 		renesas,groups = "vin0_data8", "vin0_clk";
+ 		renesas,function = "vin0";
+ 	};
++
++	can0_pins: can0 {
++		renesas,groups = "can0_data";
++		renesas,function = "can0";
++	};
+ };
+ 
+ &scif0 {
+@@ -321,3 +326,9 @@
+ 		};
+ 	};
+ };
++
++&can0 {
++	pinctrl-0 = <&can0_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++};
+
