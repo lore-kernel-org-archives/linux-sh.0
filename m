@@ -1,37 +1,37 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Fri, 09 Jan 2015 10:57:57 +0000
-Subject: Re: [PATCH v2 0/8] Add Simple Power-Managed Bus Support
-Message-Id: <CAO3366x64phBJ=tHOK03P6Ok_6LxiyLyC9LhjcocuqTx=86cfA@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 06 Jan 2015 10:02:07 +0000
+Subject: [PATCH 1/2] thermal: rcar: fix ENR register value
+Message-Id: <1420538528-5236-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418842153-17113-1-git-send-email-geert+renesas@glider.be>
- <CAMuHMdVeEmKiqGTOmevaBDbJ=nBTbSi6d6Xrm0eyvbMTtyU=sA@mail.gmail.com>
-In-Reply-To: <CAMuHMdVeEmKiqGTOmevaBDbJ=nBTbSi6d6Xrm0eyvbMTtyU=sA@mail.gmail.com>
+References: <1420538528-5236-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1420538528-5236-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: rui.zhang@intel.com, edubezval@gmail.com
+Cc: linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-On Thu, Jan 8, 2015 at 8:28 PM, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
-> On Wed, Dec 17, 2014 at 7:49 PM, Geert Uytterhoeven
-> <geert+renesas@glider.be> wrote:
->> The Renesas Bus State Controller (BSC) provides an external bus for
->> connecting multiple external devices to an SoC, driving several chip
->> select lines, for e.g. NOR FLASH, Ethernet and USB.
->> On the kzm9g and ape6evm development boards, an smsc9220 Ethernet
->> controller is connnected to the BSC of an SH-Mobile AG5 (sh73a0) resp.
->> R-Mobile APE6 (r8a73a4) SoC.
->
-> [...]
->
->> This was tested on sh73a0/kzm9g-multiplatform. Without this, Ethernet
->> doesn't work, as the ZB clock is disabled by clk_disable_unused().
->> Testing on r8a73a4/ape6evm-multiplatform would be appreciated.
->
-> Has anyone tried this on r8a73a4/ape6evm-multiplatform?
+Since the write value should always be 0 for bit 31-4 of ENR register
+on R-Car H2, this patch fixes the value.
 
-Works like a charm.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ drivers/thermal/rcar_thermal.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index 8803e69..bbdf64e 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -409,7 +409,7 @@ static int rcar_thermal_probe(struct platform_device *pdev)
+ 			return PTR_ERR(common->base);
+ 
+ 		/* enable temperature comparation */
+-		rcar_thermal_common_write(common, ENR, 0x00030303);
++		rcar_thermal_common_write(common, ENR, 0x00000003);
+ 
+ 		idle = 0; /* polling delay is not needed */
+ 	}
+-- 
+1.7.9.5
 
-CU
-Uli
