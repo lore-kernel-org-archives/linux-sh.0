@@ -1,57 +1,51 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 14 Jan 2015 12:11:24 +0000
-Subject: [PATCH v2 6/6] drivers: sh: Disable PM runtime for multi-platform sh73a0 with genpd
-Message-Id: <1421237484-16847-7-git-send-email-geert+renesas@glider.be>
+Date: Tue, 06 Jan 2015 19:17:39 +0000
+Subject: [PATCH v2 2/2] ARM: shmobile: kzm9g-reference dts: Declare the full 512 MiB of RAM
+Message-Id: <1420571859-11655-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421237484-16847-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1421237484-16847-1-git-send-email-geert+renesas@glider.be>
+References: <1420571859-11655-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1420571859-11655-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-If the default PM domain using PM_CLK is used for PM runtime, the real PM
-domain(s) cannot be registered from DT later.
+Traditionally, the first 16 MiB of RAM was reserved for the RT
+processor.  However, this is incompatible with CONFIG_AUTO_ZRELADDR=y,
+which requires that the start address of physical memory is a multiple
+of 128 MiB.
 
-Hence do not enable it when running a multi-platform kernel with genpd
-support on an sh73a0. The R-Mobile PM domain driver will take care of
-PM runtime management of the module clocks.
+As CONFIG_AUTO_ZRELADDR=y is enabled for multi-platform kernels, declare
+RAM to start at 0x40000000.
 
-The default PM domain is still needed for:
-  - platforms without genpd support,
-  - the legacy (non-DT) case, where genpd may take over later, except
-    for the C5 "always on" PM domain.
+While at it, reclaim the last 8 MiB of RAM, too, so the full 512 MiB is
+available. Note that kzm9g_defconfig still has
+CONFIG_MEMORY_START=0x41000000 and CONFIG_MEMORY_SIZE=0x1f000000, so
+before the advent of DT we scribbled over the last 8 MiB, too.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
 v2:
-  - No changes
+  - Drop RFC status,
+  - We now know the last 8 MiB of RAM is _not_ used for a U-Boot
+    splash screen.
 ---
- drivers/sh/pm_runtime.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index cd4c293f0dd0d375..6b16a67ba618b793 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -83,6 +83,7 @@ static int __init sh_pm_runtime_init(void)
- 		    !of_machine_is_compatible("renesas,r8a73a4") &&
- #ifndef CONFIG_PM_GENERIC_DOMAINS_OF
- 		    !of_machine_is_compatible("renesas,r8a7740") &&
-+		    !of_machine_is_compatible("renesas,sh73a0") &&
- #endif
- 		    !of_machine_is_compatible("renesas,r8a7778") &&
- 		    !of_machine_is_compatible("renesas,r8a7779") &&
-@@ -91,8 +92,7 @@ static int __init sh_pm_runtime_init(void)
- 		    !of_machine_is_compatible("renesas,r8a7792") &&
- 		    !of_machine_is_compatible("renesas,r8a7793") &&
- 		    !of_machine_is_compatible("renesas,r8a7794") &&
--		    !of_machine_is_compatible("renesas,sh7372") &&
--		    !of_machine_is_compatible("renesas,sh73a0"))
-+		    !of_machine_is_compatible("renesas,sh7372"))
- 			return 0;
- 	}
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 6d32c87632d42fda..b6c292f839584343 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -45,7 +45,7 @@
  
+ 	memory {
+ 		device_type = "memory";
+-		reg = <0x41000000 0x1e800000>;
++		reg = <0x40000000 0x20000000>;
+ 	};
+ 
+ 	reg_1p8v: regulator@0 {
 -- 
 1.9.1
 
