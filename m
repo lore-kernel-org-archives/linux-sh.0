@@ -1,50 +1,50 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 27 Jan 2015 17:25:14 +0000
-Subject: [PATCH 4/6] dmaengine: rcar-dmac: Allocate hardware descriptors with DMAC device
-Message-Id: <1422379516-1633-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 06 Jan 2015 19:17:38 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: kzm9g dts: Declare the full 512 MiB of RAM
+Message-Id: <1420571859-11655-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1420571859-11655-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1420571859-11655-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-When wired to an IOMMU to access data, the DMAC accesses the hardware
-descriptors through the IOMMU as well. We're using the DMA mapping API
-to allocate the descriptors, but with a NULL device at the moment, which
-prevents IOMMU mappings from being created. Fix this by passing the DMAC
-device instead.
+Traditionally, the first 16 MiB of RAM was reserved for the RT
+processor.  However, this is incompatible with CONFIG_AUTO_ZRELADDR=y,
+which requires that the start address of physical memory is a multiple
+of 128 MiB.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+As CONFIG_AUTO_ZRELADDR=y is enabled for multi-platform kernels, declare
+RAM to start at 0x40000000.
+
+While at it, reclaim the last 8 MiB of RAM, too, so the full 512 MiB is
+available. Note that kzm9g_defconfig still has
+CONFIG_MEMORY_START=0x41000000 and CONFIG_MEMORY_SIZE=0x1f000000, so
+before the advent of DT we scribbled over the last 8 MiB, too.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/dma/sh/rcar-dmac.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+v2:
+  - Drop RFC status,
+  - We now know the last 8 MiB of RAM is _not_ used for a U-Boot
+    splash screen.
+---
+ arch/arm/boot/dts/sh73a0-kzm9g.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
-index e76f5e21f666..9daa7f59e7b0 100644
---- a/drivers/dma/sh/rcar-dmac.c
-+++ b/drivers/dma/sh/rcar-dmac.c
-@@ -655,8 +655,8 @@ static void rcar_dmac_realloc_hwdesc(struct rcar_dmac_chan *chan,
- 		return;
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+index 27c5f426d172f03d..e7dae01933a575f1 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+@@ -21,6 +21,6 @@
  
- 	if (desc->hwdescs.mem) {
--		dma_free_coherent(NULL, desc->hwdescs.size, desc->hwdescs.mem,
--				   desc->hwdescs.dma);
-+		dma_free_coherent(chan->chan.device->dev, desc->hwdescs.size,
-+				  desc->hwdescs.mem, desc->hwdescs.dma);
- 		desc->hwdescs.mem = NULL;
- 		desc->hwdescs.size = 0;
- 	}
-@@ -664,8 +664,8 @@ static void rcar_dmac_realloc_hwdesc(struct rcar_dmac_chan *chan,
- 	if (!size)
- 		return;
- 
--	desc->hwdescs.mem = dma_alloc_coherent(NULL, size, &desc->hwdescs.dma,
--					       GFP_NOWAIT);
-+	desc->hwdescs.mem = dma_alloc_coherent(chan->chan.device->dev, size,
-+					       &desc->hwdescs.dma, GFP_NOWAIT);
- 	if (!desc->hwdescs.mem)
- 		return;
- 
+ 	memory {
+ 		device_type = "memory";
+-		reg = <0x41000000 0x1e800000>;
++		reg = <0x40000000 0x20000000>;
+ 	};
+ };
 -- 
-2.0.5
+1.9.1
 
