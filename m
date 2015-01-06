@@ -1,52 +1,47 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 06 Jan 2015 10:53:02 +0000
-Subject: Re: [PATCH 1/2] thermal: rcar: fix ENR register value
-Message-Id: <CAMuHMdVRz5ys3u72M1+FnZsJ5qiEokO3KMzjhkWArme0zAR7mA@mail.gmail.com>
+From: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 06 Jan 2015 11:13:15 +0000
+Subject: RE: [PATCH 1/2] thermal: rcar: fix ENR register value
+Message-Id: <HKNPR06MB3222B99D5607F24B6BC31C3D8590@HKNPR06MB322.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1420538528-5236-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 	<1420538528-5236-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1420538528-5236-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+ <CAMuHMdVRz5ys3u72M1+FnZsJ5qiEokO3KMzjhkWArme0zAR7mA@mail.gmail.com>
+In-Reply-To: <CAMuHMdVRz5ys3u72M1+FnZsJ5qiEokO3KMzjhkWArme0zAR7mA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
 Cc: Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>, Linux PM list <linux-pm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Hi Shimoda-san,
-
-On Tue, Jan 6, 2015 at 11:02 AM, Yoshihiro Shimoda
-<yoshihiro.shimoda.uh@renesas.com> wrote:
-> Since the write value should always be 0 for bit 31-4 of ENR register
-> on R-Car H2, this patch fixes the value.
->
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> ---
->  drivers/thermal/rcar_thermal.c |    2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->
-> diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-> index 8803e69..bbdf64e 100644
-> --- a/drivers/thermal/rcar_thermal.c
-> +++ b/drivers/thermal/rcar_thermal.c
-> @@ -409,7 +409,7 @@ static int rcar_thermal_probe(struct platform_device *pdev)
->                         return PTR_ERR(common->base);
->
->                 /* enable temperature comparation */
-> -               rcar_thermal_common_write(common, ENR, 0x00030303);
-> +               rcar_thermal_common_write(common, ENR, 0x00000003);
-
-While your patch is correct for R-Car gen2, this driver is also used on
-R-Mobile APE6 (r8a73a4), which does have 3 thermal zones.
-So I think you should count the other I/O resource sets to calculate
-the correct mask.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+SGkgR2VlcnQtc2FuLA0KDQo+IEhpIFNoaW1vZGEtc2FuLA0KPiANCj4gT24gVHVlLCBKYW4gNiwg
+MjAxNSBhdCAxMTowMiBBTSwgWW9zaGloaXJvIFNoaW1vZGENCj4gPHlvc2hpaGlyby5zaGltb2Rh
+LnVoQHJlbmVzYXMuY29tPiB3cm90ZToNCj4gPiBTaW5jZSB0aGUgd3JpdGUgdmFsdWUgc2hvdWxk
+IGFsd2F5cyBiZSAwIGZvciBiaXQgMzEtNCBvZiBFTlIgcmVnaXN0ZXINCj4gPiBvbiBSLUNhciBI
+MiwgdGhpcyBwYXRjaCBmaXhlcyB0aGUgdmFsdWUuDQo+ID4NCj4gPiBTaWduZWQtb2ZmLWJ5OiBZ
+b3NoaWhpcm8gU2hpbW9kYSA8eW9zaGloaXJvLnNoaW1vZGEudWhAcmVuZXNhcy5jb20+DQo+ID4g
+LS0tDQo+ID4gIGRyaXZlcnMvdGhlcm1hbC9yY2FyX3RoZXJtYWwuYyB8ICAgIDIgKy0NCj4gPiAg
+MSBmaWxlIGNoYW5nZWQsIDEgaW5zZXJ0aW9uKCspLCAxIGRlbGV0aW9uKC0pDQo+ID4NCj4gPiBk
+aWZmIC0tZ2l0IGEvZHJpdmVycy90aGVybWFsL3JjYXJfdGhlcm1hbC5jIGIvZHJpdmVycy90aGVy
+bWFsL3JjYXJfdGhlcm1hbC5jDQo+ID4gaW5kZXggODgwM2U2OS4uYmJkZjY0ZSAxMDA2NDQNCj4g
+PiAtLS0gYS9kcml2ZXJzL3RoZXJtYWwvcmNhcl90aGVybWFsLmMNCj4gPiArKysgYi9kcml2ZXJz
+L3RoZXJtYWwvcmNhcl90aGVybWFsLmMNCj4gPiBAQCAtNDA5LDcgKzQwOSw3IEBAIHN0YXRpYyBp
+bnQgcmNhcl90aGVybWFsX3Byb2JlKHN0cnVjdCBwbGF0Zm9ybV9kZXZpY2UgKnBkZXYpDQo+ID4g
+ICAgICAgICAgICAgICAgICAgICAgICAgcmV0dXJuIFBUUl9FUlIoY29tbW9uLT5iYXNlKTsNCj4g
+Pg0KPiA+ICAgICAgICAgICAgICAgICAvKiBlbmFibGUgdGVtcGVyYXR1cmUgY29tcGFyYXRpb24g
+Ki8NCj4gPiAtICAgICAgICAgICAgICAgcmNhcl90aGVybWFsX2NvbW1vbl93cml0ZShjb21tb24s
+IEVOUiwgMHgwMDAzMDMwMyk7DQo+ID4gKyAgICAgICAgICAgICAgIHJjYXJfdGhlcm1hbF9jb21t
+b25fd3JpdGUoY29tbW9uLCBFTlIsIDB4MDAwMDAwMDMpOw0KPiANCj4gV2hpbGUgeW91ciBwYXRj
+aCBpcyBjb3JyZWN0IGZvciBSLUNhciBnZW4yLCB0aGlzIGRyaXZlciBpcyBhbHNvIHVzZWQgb24N
+Cj4gUi1Nb2JpbGUgQVBFNiAocjhhNzNhNCksIHdoaWNoIGRvZXMgaGF2ZSAzIHRoZXJtYWwgem9u
+ZXMuDQo+IFNvIEkgdGhpbmsgeW91IHNob3VsZCBjb3VudCB0aGUgb3RoZXIgSS9PIHJlc291cmNl
+IHNldHMgdG8gY2FsY3VsYXRlDQo+IHRoZSBjb3JyZWN0IG1hc2suDQoNClRoYW5rIHlvdSBmb3Ig
+dGhlIHJldmlldyBhbmQgc3VnZ2VzdGlvbiENCkFzIHlvdSBzYXksIEkgZGlkbid0IGNhcmUgYWJv
+dXQgUi1Nb2JpbGUgQVBFNi4NClNvLCBJIHdpbGwgbW9kaWZ5IHRoaXMgY29kZSB0b21vcnJvdy4N
+Cg0KQmVzdCByZWdhcmRzLA0KWW9zaGloaXJvIFNoaW1vZGENCg0KPiBHcntvZXRqZSxlZXRpbmd9
+cywNCj4gDQo+ICAgICAgICAgICAgICAgICAgICAgICAgIEdlZXJ0DQo+IA0KPiAtLQ0KPiBHZWVy
+dCBVeXR0ZXJob2V2ZW4gLS0gVGhlcmUncyBsb3RzIG9mIExpbnV4IGJleW9uZCBpYTMyIC0tIGdl
+ZXJ0QGxpbnV4LW02OGsub3JnDQo+IA0KPiBJbiBwZXJzb25hbCBjb252ZXJzYXRpb25zIHdpdGgg
+dGVjaG5pY2FsIHBlb3BsZSwgSSBjYWxsIG15c2VsZiBhIGhhY2tlci4gQnV0DQo+IHdoZW4gSSdt
+IHRhbGtpbmcgdG8gam91cm5hbGlzdHMgSSBqdXN0IHNheSAicHJvZ3JhbW1lciIgb3Igc29tZXRo
+aW5nIGxpa2UgdGhhdC4NCj4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAtLSBMaW51
+cyBUb3J2YWxkcw0K
