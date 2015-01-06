@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 05 Jan 2015 11:50:17 +0000
-Subject: Re: [PATCH v2] renesas_usbhs: fix platform init error message
-Message-Id: <CAMuHMdXS-N=fmajH9DoraneBs5CXpGXb7VpC6Gu4JWGkOo4pRw@mail.gmail.com>
+From: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 06 Jan 2015 08:20:51 +0000
+Subject: RE: [PATCH v2] renesas_usbhs: fix platform init error message
+Message-Id: <HKNPR06MB32277B6A388B433D6B612CFD8590@HKNPR06MB322.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <5384843.KGcHOMgQLi@wasted.cogentembedded.com>
 In-Reply-To: <5384843.KGcHOMgQLi@wasted.cogentembedded.com>
@@ -10,39 +10,35 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Shimoda-san,
-
-On Wed, Dec 24, 2014 at 11:02 AM, yoshihiro shimoda
-<yoshihiro.shimoda.uh@renesas.com> wrote:
->> > >>>>>     Er, OK. Could you update MAINTAINERS?
->> > >>>>there is no entry for renesas driver in MAINTAINERS.
->> > >>>>Shimoda-san, care to send a patch adding yourself or Morimoto-san as
->> > >>>>maintainers for Renesas driver and pointing to my tree in kernel.org ?
-
-> By the way, about a renesas_usbhs maintainer, I don't know clearly.
-> If I do as a renesas_usbhs maintainer:
-> - what should I do as the maintainer?
->  - I think I should check patches of renesas_usbhs
->  - And, do I just return  ACK or NACK to the patches?
-
-As a maintainer, you review all patches for renesas_usbhs, and of these patches
-will have to go through you.
-There are three ways to achieve that:
-  1. You collect all accepted patches, and forward them to GregKH with your
-     Signed-off-by added,
-  2. You collect all accepted ls -lpatches, publish them in a git tree, and
-     ask GregKH to pull a branch or tag from your git tree,
-  3. You ack all accepted patches, so GregKH knows which patches to apply.
-
-Which way to choose depends on the volume of patches.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+SGkgR3JlZXQtc2FuLA0KDQo+IA0KPiBIaSBTaGltb2RhLXNhbiwNCj4gDQo+IE9uIFdlZCwgRGVj
+IDI0LCAyMDE0IGF0IDExOjAyIEFNLCB5b3NoaWhpcm8gc2hpbW9kYQ0KPiA8eW9zaGloaXJvLnNo
+aW1vZGEudWhAcmVuZXNhcy5jb20+IHdyb3RlOg0KPiA+PiA+ID4+Pj4+ICAgICBFciwgT0suIENv
+dWxkIHlvdSB1cGRhdGUgTUFJTlRBSU5FUlM/DQo+ID4+ID4gPj4+PnRoZXJlIGlzIG5vIGVudHJ5
+IGZvciByZW5lc2FzIGRyaXZlciBpbiBNQUlOVEFJTkVSUy4NCj4gPj4gPiA+Pj4+U2hpbW9kYS1z
+YW4sIGNhcmUgdG8gc2VuZCBhIHBhdGNoIGFkZGluZyB5b3Vyc2VsZiBvciBNb3JpbW90by1zYW4g
+YXMNCj4gPj4gPiA+Pj4+bWFpbnRhaW5lcnMgZm9yIFJlbmVzYXMgZHJpdmVyIGFuZCBwb2ludGlu
+ZyB0byBteSB0cmVlIGluIGtlcm5lbC5vcmcgPw0KPiANCj4gPiBCeSB0aGUgd2F5LCBhYm91dCBh
+IHJlbmVzYXNfdXNiaHMgbWFpbnRhaW5lciwgSSBkb24ndCBrbm93IGNsZWFybHkuDQo+ID4gSWYg
+SSBkbyBhcyBhIHJlbmVzYXNfdXNiaHMgbWFpbnRhaW5lcjoNCj4gPiAtIHdoYXQgc2hvdWxkIEkg
+ZG8gYXMgdGhlIG1haW50YWluZXI/DQo+ID4gIC0gSSB0aGluayBJIHNob3VsZCBjaGVjayBwYXRj
+aGVzIG9mIHJlbmVzYXNfdXNiaHMNCj4gPiAgLSBBbmQsIGRvIEkganVzdCByZXR1cm4gIEFDSyBv
+ciBOQUNLIHRvIHRoZSBwYXRjaGVzPw0KPiANCj4gQXMgYSBtYWludGFpbmVyLCB5b3UgcmV2aWV3
+IGFsbCBwYXRjaGVzIGZvciByZW5lc2FzX3VzYmhzLCBhbmQgb2YgdGhlc2UgcGF0Y2hlcw0KPiB3
+aWxsIGhhdmUgdG8gZ28gdGhyb3VnaCB5b3UuDQo+IFRoZXJlIGFyZSB0aHJlZSB3YXlzIHRvIGFj
+aGlldmUgdGhhdDoNCj4gICAxLiBZb3UgY29sbGVjdCBhbGwgYWNjZXB0ZWQgcGF0Y2hlcywgYW5k
+IGZvcndhcmQgdGhlbSB0byBHcmVnS0ggd2l0aCB5b3VyDQo+ICAgICAgU2lnbmVkLW9mZi1ieSBh
+ZGRlZCwNCj4gICAyLiBZb3UgY29sbGVjdCBhbGwgYWNjZXB0ZWQgbHMgLWxwYXRjaGVzLCBwdWJs
+aXNoIHRoZW0gaW4gYSBnaXQgdHJlZSwgYW5kDQo+ICAgICAgYXNrIEdyZWdLSCB0byBwdWxsIGEg
+YnJhbmNoIG9yIHRhZyBmcm9tIHlvdXIgZ2l0IHRyZWUsDQo+ICAgMy4gWW91IGFjayBhbGwgYWNj
+ZXB0ZWQgcGF0Y2hlcywgc28gR3JlZ0tIIGtub3dzIHdoaWNoIHBhdGNoZXMgdG8gYXBwbHkuDQo+
+IA0KPiBXaGljaCB3YXkgdG8gY2hvb3NlIGRlcGVuZHMgb24gdGhlIHZvbHVtZSBvZiBwYXRjaGVz
+Lg0KDQpUaGFuayB5b3UgdmVyeSBtdWNoIGZvciB0aGUgcmVwbHkhDQpJIHVuZGVyc3Rvb2Qgd2hh
+dCBhIG1haW50YWluZXIgc2hvdWxkIGRvLg0KU28sIEkgd2lsbCBzdWJtaXQgYSBwYXRjaCBmb3Ig
+TUFJTlRBSU5FUlMgZmlsZS4NCg0KQmVzdCByZWdhcmRzLA0KWW9zaGloaXJvIFNoaW1vZGENCg0K
+PiBHcntvZXRqZSxlZXRpbmd9cywNCj4gDQo+ICAgICAgICAgICAgICAgICAgICAgICAgIEdlZXJ0
+DQo+IA0KPiAtLQ0KPiBHZWVydCBVeXR0ZXJob2V2ZW4gLS0gVGhlcmUncyBsb3RzIG9mIExpbnV4
+IGJleW9uZCBpYTMyIC0tIGdlZXJ0QGxpbnV4LW02OGsub3JnDQo+IA0KPiBJbiBwZXJzb25hbCBj
+b252ZXJzYXRpb25zIHdpdGggdGVjaG5pY2FsIHBlb3BsZSwgSSBjYWxsIG15c2VsZiBhIGhhY2tl
+ci4gQnV0DQo+IHdoZW4gSSdtIHRhbGtpbmcgdG8gam91cm5hbGlzdHMgSSBqdXN0IHNheSAicHJv
+Z3JhbW1lciIgb3Igc29tZXRoaW5nIGxpa2UgdGhhdC4NCj4gICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAtLSBMaW51cyBUb3J2YWxkcw0K
