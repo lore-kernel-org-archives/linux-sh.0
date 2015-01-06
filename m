@@ -1,84 +1,189 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Sun, 18 Jan 2015 20:32:07 +0000
-Subject: Re: [PATCH 2/4] media: rcar_vin: Ensure all in-flight buffers are returned to error state before sto
-Message-Id: <Pine.LNX.4.64.1501182125390.23540@axis700.grange>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 06 Jan 2015 09:39:51 +0000
+Subject: Re: Build regressions/improvements in v3.19-rc3
+Message-Id: <CAMuHMdXXw_GiaDrtwmBSExwyYQe2t2io5j3V0fCawAc64-tXrA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1404812474-7627-1-git-send-email-ian.molton@codethink.co.uk>
- <1404812474-7627-3-git-send-email-ian.molton@codethink.co.uk>
- <53DFF998.1020307@xs4all.nl>
-In-Reply-To: <53DFF998.1020307@xs4all.nl>
+References: <1420536979-31149-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1420536979-31149-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Hans Verkuil <hverkuil@xs4all.nl>
-Cc: Ian Molton <ian.molton@codethink.co.uk>, linux-media@vger.kernel.org, linux-kernel@lists.codethink.co.uk, m.chehab@samsung.com, vladimir.barinov@cogentembedded.com, magnus.damm@gmail.com, horms@verge.net.au, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Ian,
+On Tue, Jan 6, 2015 at 10:36 AM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> JFYI, when comparing v3.19-rc3[1] to v3.19-rc2[3], the summaries are:
+>   - build errors: +64/-9
 
-Apparently, I wasn't quite right in my reply to patch 1 from this series. 
-It seems to be related to this one and to Hans' comment below. Taking it 
-into account, it seems you shouldn't remove cancelled active buffers from 
-the list without calling vb2_buffer_done(&buf->vb, VB2_BUF_STATE_ERROR) 
-for them. So, I think you should modify your patch 1 to either leave those 
-buffers on the list and report them "done" here, or call "done" for them 
-when removing from the list. I think I'd rather go with the latter option 
-to not keep failed buffers on the list and rely, that the vb2 core will 
-stop streaming soon. Hans, do you agree?
+  + /home/kisskb/slave/src/arch/arm/mm/dma-mapping.c: error:
+'VM_ARM_DMA_CONSISTENT' undeclared (first use in this function):  =>
+1200:4, 1281:29, 1410:4
+  + /home/kisskb/slave/src/arch/arm/mm/dma-mapping.c: error:
+'atomic_pool' undeclared (first use in this function):  => 1264:31
+  + /home/kisskb/slave/src/arch/arm/mm/dma-mapping.c: error: implicit
+declaration of function '__in_atomic_pool'
+[-Werror=implicit-function-declaration]:  => 1274:2
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error:
+'L_PTE_MT_BUFFERABLE' undeclared here (not in a function):  => 81:10
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error:
+'L_PTE_MT_DEV_CACHED' undeclared here (not in a function):  => 117:10
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error:
+'L_PTE_MT_DEV_NONSHARED' undeclared here (not in a function):  =>
+108:10
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error:
+'L_PTE_MT_DEV_SHARED' undeclared here (not in a function):  => 103:10
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error:
+'L_PTE_MT_DEV_WC' undeclared here (not in a function):  => 113:10
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: 'L_PTE_MT_MASK'
+undeclared here (not in a function):  => 76:11
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error:
+'L_PTE_MT_MINICACHE' undeclared here (not in a function):  => 94:10
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error:
+'L_PTE_MT_UNCACHED' undeclared here (not in a function):  => 77:10
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error:
+'L_PTE_MT_WRITEALLOC' undeclared here (not in a function):  => 99:10
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error:
+'L_PTE_MT_WRITEBACK' undeclared here (not in a function):  => 89:10
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error:
+'L_PTE_MT_WRITETHROUGH' undeclared here (not in a function):  => 85:10
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: 'L_PTE_RDONLY'
+undeclared here (not in a function):  => 61:11
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: 'L_PTE_SHARED'
+undeclared here (not in a function):  => 71:11
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: 'L_PTE_USER'
+undeclared here (not in a function):  => 56:11
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: 'L_PTE_XN'
+undeclared here (not in a function):  => 66:11
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error:
+'PMD_SECT_AP_READ' undeclared here (not in a function):  => 153:13
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error:
+'PMD_SECT_AP_WRITE' undeclared here (not in a function):  => 153:32
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: 'PMD_SECT_S'
+undeclared here (not in a function):  => 175:11
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: 'PMD_SECT_XN'
+undeclared here (not in a function):  => 170:11
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: 'PMD_SIZE'
+undeclared (first use in this function):  => 279:22
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: 'PTRS_PER_PGD'
+undeclared (first use in this function):  => 319:23
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: 'PTRS_PER_PMD'
+undeclared (first use in this function):  => 278:18
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: 'PTRS_PER_PTE'
+undeclared (first use in this function):  => 266:18
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: 'SECTION_SIZE'
+undeclared (first use in this function):  => 285:7
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error:
+'USER_PGTABLES_CEILING' undeclared (first use in this function):  =>
+223:13, 311:23
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: (near
+initialization for 'section_bits[0].mask'):  => 153:3
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: (near
+initialization for 'section_bits[1].mask'):  => 157:3
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: (near
+initialization for 'section_bits[1].val'):  => 158:3
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: (near
+initialization for 'section_bits[2].mask'):  => 161:3
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: (near
+initialization for 'section_bits[2].val'):  => 162:3
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: (near
+initialization for 'section_bits[3].mask'):  => 165:3
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: (near
+initialization for 'section_bits[3].val'):  => 166:3
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: (near
+initialization for 'section_bits[4].mask'):  => 170:3
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: (near
+initialization for 'section_bits[4].val'):  => 171:3
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: (near
+initialization for 'section_bits[5].mask'):  => 175:3
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: (near
+initialization for 'section_bits[5].val'):  => 176:3
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: implicit
+declaration of function 'pmd_large'
+[-Werror=implicit-function-declaration]:  => 280:3
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: implicit
+declaration of function 'pmd_none'
+[-Werror=implicit-function-declaration]:  => 280:3
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: implicit
+declaration of function 'pmd_present'
+[-Werror=implicit-function-declaration]:  => 280:3
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: implicit
+declaration of function 'pte_offset_kernel'
+[-Werror=implicit-function-declaration]:  => 262:2
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: initializer
+element is not constant:  => 158:3, 162:3, 176:3, 170:3, 157:3, 175:3,
+161:3, 153:3, 171:3, 165:3, 166:3
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: invalid operands
+to binary * (have 'unsigned int' and 'const struct prot_bits *'):  =>
+279:20
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: invalid operands
+to binary / (have 'const struct prot_bits *' and 'long unsigned int'):
+ => 311:45
+  + /home/kisskb/slave/src/arch/arm/mm/dump.c: error: invalid operands
+to binary | (have 'const struct prot_bits *' and 'const struct
+prot_bits *'):  => 165:30, 153:30, 166:30, 157:30, 161:30
+  + /home/kisskb/slave/src/arch/arm/mm/init.c: error: 'SECTION_SIZE'
+undeclared (first use in this function):  => 733:2
+  + /home/kisskb/slave/src/arch/arm/mm/init.c: error: 'pmdval_t'
+undeclared here (not in a function):  => 633:12
+  + /home/kisskb/slave/src/arch/arm/mm/init.c: error: expected
+declaration specifiers or '...' before 'pmdval_t':  => 678:7, 677:55
+  + /home/kisskb/slave/src/arch/arm/mm/init.c: error: implicit
+declaration of function 'section_update'
+[-Werror=implicit-function-declaration]:  => 733:2
+  + /home/kisskb/slave/src/arch/arm/mm/init.c: error: unknown type
+name 'pmdval_t':  => 625:2, 623:2, 624:2
 
-Thanks
-Guennadi
+arm-randconfig (CONFIG_ARM_PTDUMP is broken?)
 
-On Mon, 4 Aug 2014, Hans Verkuil wrote:
+  + /home/kisskb/slave/src/drivers/coresight/coresight-etb10.c: error:
+implicit declaration of function 'of_get_coresight_platform_data'
+[-Werror=implicit-function-declaration]:  => 430:3
+  + /home/kisskb/slave/src/drivers/coresight/coresight-funnel.c:
+error: implicit declaration of function
+'of_get_coresight_platform_data'
+[-Werror=implicit-function-declaration]:  => 189:3
+  + /home/kisskb/slave/src/drivers/coresight/coresight-replicator.c:
+error: implicit declaration of function
+'of_get_coresight_platform_data'
+[-Werror=implicit-function-declaration]:  => 72:3
+  + /home/kisskb/slave/src/drivers/coresight/coresight-tmc.c: error:
+implicit declaration of function 'of_get_coresight_platform_data'
+[-Werror=implicit-function-declaration]:  => 625:3
+  + /home/kisskb/slave/src/drivers/coresight/coresight-tpiu.c: error:
+implicit declaration of function 'of_get_coresight_platform_data'
+[-Werror=implicit-function-declaration]:  => 131:3
 
-> On 07/08/2014 11:41 AM, Ian Molton wrote:
-> > Videobuf2 complains about buffers that are still marked ACTIVE (in use by the driver) following a call to stop_streaming().
-> > 
-> > This patch returns all active buffers to state ERROR prior to stopping.
-> > 
-> > Note: this introduces a (non fatal) race condition as the stream is not guaranteed to be stopped at this point.
-> > 
-> > Signed-off-by: Ian Molton <ian.molton@codethink.co.uk>
-> > Signed-off-by: William Towle <william.towle@codethink.co.uk>
-> > ---
-> >  drivers/media/platform/soc_camera/rcar_vin.c | 6 ++++++
-> >  1 file changed, 6 insertions(+)
-> > 
-> > diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-> > index 7154500..06ce705 100644
-> > --- a/drivers/media/platform/soc_camera/rcar_vin.c
-> > +++ b/drivers/media/platform/soc_camera/rcar_vin.c
-> > @@ -513,8 +513,14 @@ static void rcar_vin_stop_streaming(struct vb2_queue *vq)
-> >  	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
-> >  	struct rcar_vin_priv *priv = ici->priv;
-> >  	struct list_head *buf_head, *tmp;
-> > +	int i;
-> >  
-> >  	spin_lock_irq(&priv->lock);
-> > +
-> > +	for (i = 0; i < vq->num_buffers; ++i)
-> > +		if (vq->bufs[i]->state = VB2_BUF_STATE_ACTIVE)
-> > +			vb2_buffer_done(vq->bufs[i], VB2_BUF_STATE_ERROR);
-> > +
-> >  	list_for_each_safe(buf_head, tmp, &priv->capture)
-> >  		list_del_init(buf_head);
-> 
-> I'm assuming all buffers that are queued to the driver via buf_queue() are
-> linked into priv->capture. So you would typically call vb2_buffer_done
-> when you are walking that list:
-> 
->   	list_for_each_safe(buf_head, tmp, &priv->capture) {
-> 		// usually you go from buf_head to the real buffer struct
-> 		// containing a vb2_buffer struct
-> 		vb2_buffer_done(&buf->vb, VB2_BUF_STATE_ERROR);
->   		list_del_init(buf_head);
-> 	}
-> 
-> Please use this rather than looking into internal vb2_queue datastructures.
-> 
-> Regards,
-> 
-> 	Hans
-> 
-> >  	spin_unlock_irq(&priv->lock);
-> > 
-> 
+arm-randconfig
+
+  + /home/kisskb/slave/src/arch/sh/mm/cache-sh4.c: error:
+'cached_to_uncached' undeclared (first use in this function):  =>
+99:17
+  + /home/kisskb/slave/src/arch/sh/mm/cache-sh4.c: error: implicit
+declaration of function 'cpu_context'
+[-Werror=implicit-function-declaration]:  => 192:2
+
+sh-randconfig
+
+  + /home/kisskb/slave/src/kernel/bounds.c: error: -mcall-aixdesc must
+be big endian:  => 1:0
+  + /home/kisskb/slave/src/scripts/mod/devicetable-offsets.c: error:
+-mcall-aixdesc must be big endian:  => 1:0
+  + /home/kisskb/slave/src/scripts/mod/empty.c: error: -mcall-aixdesc
+must be big endian:  => 1:0
+  + <stdin>: error: -mcall-aixdesc must be big endian:  => 1:0
+
+powerpc-randconfig
+
+> [1] http://kisskb.ellerman.id.au/kisskb/head/8277/ (255 out of 262 configs)
+> [3] http://kisskb.ellerman.id.au/kisskb/head/8257/ (all 262 configs)
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
