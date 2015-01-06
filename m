@@ -1,37 +1,49 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 06 Jan 2015 19:42:08 +0000
-Subject: [PATCH 5/6] ARM: shmobile: kzm9g-reference dts: Add r2025sd rtc node
-Message-Id: <1420573329-12762-6-git-send-email-geert+renesas@glider.be>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Tue, 06 Jan 2015 15:44:14 +0000
+Subject: [PATCH v2 13/40] sh/uaccess: fix sparse errors
+Message-Id: <1420558883-10131-14-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1420558883-10131-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1420558883-10131-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, linux-sh@vger.kernel.org
 
-Add a DT node for the R2025D real-time clock, which is connected to
-i2c0.
+virtio wants to read bitwise types from userspace using get_user.  At the
+moment this triggers sparse errors, since the value is passed through an
+integer.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Fix that up using __force.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 5 +++++
- 1 file changed, 5 insertions(+)
+ arch/sh/include/asm/uaccess.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index 6f022c300f447afd..0b007ceae9e50cec 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -210,6 +210,11 @@
- 			     <3 IRQ_TYPE_LEVEL_HIGH>;
- 	};
+diff --git a/arch/sh/include/asm/uaccess.h b/arch/sh/include/asm/uaccess.h
+index 9486376..a49635c 100644
+--- a/arch/sh/include/asm/uaccess.h
++++ b/arch/sh/include/asm/uaccess.h
+@@ -60,7 +60,7 @@ struct __large_struct { unsigned long buf[100]; };
+ 	const __typeof__(*(ptr)) __user *__gu_addr = (ptr);	\
+ 	__chk_user_ptr(ptr);					\
+ 	__get_user_size(__gu_val, __gu_addr, (size), __gu_err);	\
+-	(x) = (__typeof__(*(ptr)))__gu_val;			\
++	(x) = (__force __typeof__(*(ptr)))__gu_val;		\
+ 	__gu_err;						\
+ })
  
-+	rtc@32 {
-+		compatible = "ricoh,r2025sd";
-+		reg = <0x32>;
-+	};
-+
- 	as3711@40 {
- 		compatible = "ams,as3711";
- 		reg = <0x40>;
+@@ -71,7 +71,7 @@ struct __large_struct { unsigned long buf[100]; };
+ 	const __typeof__(*(ptr)) *__gu_addr = (ptr);			\
+ 	if (likely(access_ok(VERIFY_READ, __gu_addr, (size))))		\
+ 		__get_user_size(__gu_val, __gu_addr, (size), __gu_err);	\
+-	(x) = (__typeof__(*(ptr)))__gu_val;				\
++	(x) = (__force __typeof__(*(ptr)))__gu_val;			\
+ 	__gu_err;							\
+ })
+ 
 -- 
-1.9.1
+MST
 
