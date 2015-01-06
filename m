@@ -1,67 +1,45 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 16 Jan 2015 15:37:04 +0000
-Subject: Re: [GIT PULL FOR v3.20] R-Car DU fixes and enhancements
-Message-Id: <4486086.1ppABuDUDI@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 06 Jan 2015 19:42:09 +0000
+Subject: [PATCH 6/6] ARM: shmobile: kzm9g-reference dts: Add st1232 touchscreen node
+Message-Id: <1420573329-12762-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2195818.kbPWsnQAkp@avalon>
-In-Reply-To: <2195818.kbPWsnQAkp@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: airlied@gmail.com
-Cc: dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Dave,
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Ping ?
+Enable the kzm9g touchscreen controller in the board's DT file.
 
-On Tuesday 23 December 2014 12:03:34 Laurent Pinchart wrote:
-> Hi Dave,
-> 
-> The following changes since commit 4e0cd68115620bc3236ff4e58e4c073948629b41:
-> 
->   drm: sti: fix module compilation issue (2014-12-15 17:07:57 +1000)
-> 
-> are available in the git repository at:
-> 
->   git://linuxtv.org/pinchartl/fbdev.git drm/next/du
-> 
-> for you to fetch changes up to 906eff7fcada4186cde54eb89572fb774ab294a0:
-> 
->   drm: rcar-du: Implement support for interlaced modes (2014-12-23 12:01:52
-> +0200)
-> 
-> ----------------------------------------------------------------
-> Laurent Pinchart (10):
->       drm: adv7511: Remove interlaced mode check
->       drm: rcar-du: Don't fail probe in case of partial encoder init error
->       drm: rcar-du: Configure pitch for chroma plane of multiplanar formats
->       drm: rcar-du: Remove LVDS and HDMI encoders chaining restriction
->       drm: rcar-du: Refactor DEFR8 feature
->       drm: rcar-du: Add support for external pixel clock
->       drm: rcar-du: Output HSYNC instead of CSYNC
->       drm: rcar-du: Enable hotplug detection on HDMI connector
->       drm: rcar-du: Clamp DPMS states to on and off
->       drm: rcar-du: Implement support for interlaced modes
-> 
->  Documentation/devicetree/bindings/video/renesas,du.txt |  4 ++
->  drivers/gpu/drm/i2c/adv7511.c                          |  3 -
->  drivers/gpu/drm/rcar-du/rcar_du_crtc.c                 | 95 +++++++++++----
->  drivers/gpu/drm/rcar-du/rcar_du_crtc.h                 |  1 +
->  drivers/gpu/drm/rcar-du/rcar_du_drv.c                  |  6 +-
->  drivers/gpu/drm/rcar-du/rcar_du_drv.h                  |  2 +-
->  drivers/gpu/drm/rcar-du/rcar_du_encoder.c              | 34 +++++----
->  drivers/gpu/drm/rcar-du/rcar_du_group.c                | 21 ++++--
->  drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c              |  2 +
->  drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c              | 18 +++++
->  drivers/gpu/drm/rcar-du/rcar_du_kms.c                  | 15 +++-
->  drivers/gpu/drm/rcar-du/rcar_du_plane.c                | 20 +++++-
->  drivers/gpu/drm/rcar-du/rcar_du_regs.h                 |  5 +-
->  drivers/gpu/drm/rcar-du/rcar_du_vgacon.c               |  1 +
->  14 files changed, 180 insertions(+), 47 deletions(-)
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 0b007ceae9e50cec..bf365f7fef47213a 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -287,6 +287,17 @@
+ 	};
+ };
+ 
++&i2c1 {
++	status = "okay";
++
++	touchscreen@55 {
++		compatible = "sitronix,st1232";
++		reg = <0x55>;
++		interrupt-parent = <&irqpin1>;
++		interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
++	};
++};
++
+ &i2c3 {
+ 	pinctrl-0 = <&i2c3_pins>;
+ 	pinctrl-names = "default";
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
