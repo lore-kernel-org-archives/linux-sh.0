@@ -1,42 +1,53 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 Jan 2015 02:35:26 +0000
-Subject: [PATCH 14/17] ARM: shmobile: kzm9g: Build DTS for Multiplatform
-Message-Id: <9ccba8abd0a7ceb4a2e1b2763d3964184ef8985d.1421371996.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 06 Jan 2015 19:42:05 +0000
+Subject: [PATCH 2/6] ARM: shmobile: kzm9g-reference dts: Sort i2c0 children by unit address
+Message-Id: <1420573329-12762-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421371996.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421371996.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+While at it rename the ak4648 node to "codec" to describe the device's
+function instead of its model, and move its device-specific property
+after its generic properties.
 
-Build the sh73a0 KZM9G board DTB in case of Multiplatform.
-The DT reference case will be removed in the future and
-can be ignored for now.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/Makefile | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 91bd5bd..7fa843a 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -421,7 +421,8 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
- 	r8a7790-lager.dtb \
- 	r8a7791-henninger.dtb \
- 	r8a7791-koelsch.dtb \
--	r8a7794-alt.dtb
-+	r8a7794-alt.dtb \
-+	sh73a0-kzm9g.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
- 	socfpga_arria10_socdk.dtb \
- 	socfpga_cyclone5_socdk.dtb \
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index b6c292f839584343..02fc265332e8fb84 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -188,6 +188,13 @@
+ 
+ &i2c0 {
+ 	status = "okay";
++
++	ak4648: codec@12 {
++		compatible = "asahi-kasei,ak4648";
++		reg = <0x12>;
++		#sound-dai-cells = <0>;
++	};
++
+ 	as3711@40 {
+ 		compatible = "ams,as3711";
+ 		reg = <0x40>;
+@@ -258,12 +265,6 @@
+ 			};
+ 		};
+ 	};
+-
+-	ak4648: ak4648@12 {
+-		#sound-dai-cells = <0>;
+-		compatible = "asahi-kasei,ak4648";
+-		reg = <0x12>;
+-	};
+ };
+ 
+ &i2c3 {
 -- 
-2.1.4
+1.9.1
 
