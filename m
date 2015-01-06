@@ -1,48 +1,61 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 20 Jan 2015 12:51:40 +0000
-Subject: [PATCH 3/9] ARM: shmobile: ape6evm: Disable legacy clock initialization
-Message-Id: <1421758306-24838-4-git-send-email-geert+renesas@glider.be>
+From: mathieu.poirier@linaro.org
+Date: Tue, 06 Jan 2015 17:54:12 +0000
+Subject: [PATCH] coresight: Fixing wrong #ifdef/#endif placement
+Message-Id: <1420566852-20816-1-git-send-email-mathieu.poirier@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421758306-24838-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1421758306-24838-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+From: Mathieu Poirier <mathieu.poirier@linaro.org>
 
-Disables r8a73a4_clock_init() if CCF is enabled.
+Fixing problem reported by:
+        https://lkml.org/lkml/2015/1/6/86
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+The #ifdef/#endif is wrong and prevents the stub of function
+of_get_coresight_platform_data() from being visible when
+CONFIG_OF is not defined.
+
+Moving CONFIG_OF condition out of CONFIG_CORESIGHT, making
+them both independent.
+
+Signed-off-by: Mathieu Poirier <mathieu.poirier@linaro.org>
 ---
- arch/arm/mach-shmobile/board-ape6evm-reference.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ include/linux/coresight.h | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ape6evm-reference.c b/arch/arm/mach-shmobile/board-ape6evm-reference.c
-index 3b68370b03a09ad1..dd5bc63aba421df2 100644
---- a/arch/arm/mach-shmobile/board-ape6evm-reference.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm-reference.c
-@@ -29,7 +29,7 @@
- 
- static void __init ape6evm_add_standard_devices(void)
- {
--
-+#ifndef CONFIG_COMMON_CLK
- 	struct clk *parent;
- 	struct clk *mp;
- 
-@@ -43,6 +43,7 @@ static void __init ape6evm_add_standard_devices(void)
- 	clk_set_parent(mp, parent);
- 	clk_put(parent);
- 	clk_put(mp);
+diff --git a/include/linux/coresight.h b/include/linux/coresight.h
+index 5d3c54311f7a..4404033ee879 100644
+--- a/include/linux/coresight.h
++++ b/include/linux/coresight.h
+@@ -239,10 +239,6 @@ extern void coresight_disable(struct coresight_device *csdev);
+ extern int coresight_is_bit_set(u32 val, int position, int value);
+ extern int coresight_timeout(void __iomem *addr, u32 offset,
+ 			     int position, int value);
+-#ifdef CONFIG_OF
+-extern struct coresight_platform_data *of_get_coresight_platform_data(
+-				struct device *dev, struct device_node *node);
+-#endif
+ #else
+ static inline struct coresight_device *
+ coresight_register(struct coresight_desc *desc) { return NULL; }
+@@ -254,10 +250,14 @@ static inline int coresight_is_bit_set(u32 val, int position, int value)
+ 					 { return 0; }
+ static inline int coresight_timeout(void __iomem *addr, u32 offset,
+ 				     int position, int value) { return 1; }
 +#endif
++
+ #ifdef CONFIG_OF
++extern struct coresight_platform_data *of_get_coresight_platform_data(
++				struct device *dev, struct device_node *node);
++#else
+ static inline struct coresight_platform_data *of_get_coresight_platform_data(
+ 	struct device *dev, struct device_node *node) { return NULL; }
+ #endif
+-#endif
  
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
+ #endif
 -- 
 1.9.1
 
