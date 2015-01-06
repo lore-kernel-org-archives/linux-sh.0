@@ -1,60 +1,59 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Tue, 20 Jan 2015 13:56:00 +0000
-Subject: Re: [PATCH/RFC] serial: sh-sci: Remove overrun message
-Message-Id: <CAH1o70+yLWodK1WbuKdyMMtP-6gLR6cTaEn8Xx=7CqqWs=6OSw@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 06 Jan 2015 19:17:37 +0000
+Subject: [PATCH v2 0/2] ARM: shmobile: kzm9g: Declare the full 512 MiB of RAM
+Message-Id: <1420571859-11655-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418652793-6770-1-git-send-email-ykaneko0929@gmail.com>
-	<CAMuHMdW6uLoVhyHahWnJrqOe31gfQU9jMipKP7Yrm-o=m=6D=Q@mail.gmail.com>
-	<20150120063516.GB22980@verge.net.au>
-In-Reply-To: <20150120063516.GB22980@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-2015-01-20 15:35 GMT+09:00 Simon Horman <horms@verge.net.au>:
-> On Tue, Jan 13, 2015 at 08:57:48AM +0100, Geert Uytterhoeven wrote:
->> On Mon, Dec 15, 2014 at 3:13 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
->> > From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
->> >
->> > Since the driver cannot return from overrun error if characters
->> > are output during overrun process, the error message of overrun
->> > is removed.
->> >
->> > Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
->> > Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->> > ---
->> >
->> > This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
->> > tree.
->> >
->> >  drivers/tty/serial/sh-sci.c | 1 -
->> >  1 file changed, 1 deletion(-)
->> >
->> > diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
->> > index fccebbd..fe2bb08 100644
->> > --- a/drivers/tty/serial/sh-sci.c
->> > +++ b/drivers/tty/serial/sh-sci.c
->> > @@ -858,7 +858,6 @@ static int sci_handle_fifo_overrun(struct uart_port *port)
->> >                 tty_insert_flip_char(tport, 0, TTY_OVERRUN);
->> >                 tty_flip_buffer_push(tport);
->> >
->> > -               dev_notice(port->dev, "overrun error\n");
->> >                 copied++;
->> >         }
->>
->> What about replacing it by a call to dev_dbg() instead?
->> That way it won't be printed during normal use, but depending on the
->> system's setting it can still be logged in syslog.
->>
->> Or do you think it's sufficient to have it in the statistics only?
->
-> I like the dev_dbg() idea.
->
-> Kaneko-san, could you see about respinning this patch accordingly?
+	Hi Simon, Magnus,
 
-Sure, will do!
+This patch series prepares kzm9g and kzm9g-reference dts for booting a
+multi-platform kernel.
 
-Thanks,
-Kaneko
+Traditionally, the first 16 MiB of RAM was reserved for the RT
+processor.  However, this is incompatible with CONFIG_AUTO_ZRELADDR=y,
+which requires that the start address of physical memory is a multiple
+of 128 MiB.
+
+As CONFIG_AUTO_ZRELADDR=y is enabled for multi-platform kernels, declare
+RAM to start at 0x40000000.
+
+While at it, reclaim the last 8 MiB of RAM, too, so the full 512 MiB is
+available. We don't know the exact reason why the last 8 MiB of RAM
+was reserved, but thanks to Simon we know it is not used for a U-Boot
+splash screen.  Note that kzm9g_defconfig still has
+CONFIG_MEMORY_START=0x41000000 and CONFIG_MEMORY_SIZE=0x1f000000, so
+before the advent of DT we scribbled over the last 8 MiB, too.
+
+This is an alternative solution for "[PATCH v2 01/05] ARM: shmobile:
+kzm9g-reference: 0x48008000 load address"
+(http://www.spinics.net/lists/linux-sh/msg38385.html), which
+(a) doesn't loose 112 MiB of RAM, and
+(b) doesn't force to switch from zImage to uImage.
+
+Thanks for applying!
+
+Geert Uytterhoeven (2):
+  ARM: shmobile: kzm9g dts: Declare the full 512 MiB of RAM
+  ARM: shmobile: kzm9g-reference dts: Declare the full 512 MiB of RAM
+
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 2 +-
+ arch/arm/boot/dts/sh73a0-kzm9g.dts           | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
