@@ -1,35 +1,36 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 06 Jan 2015 10:01:26 +0000
-Subject: [PATCH] spi: sh-msiof: fix MDR1_FLD_MASK value
-Message-Id: <1420538486-1420-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 06 Jan 2015 10:22:02 +0000
+Subject: Re: [PATCH] spi: sh-msiof: fix MDR1_FLD_MASK value
+Message-Id: <CAMuHMdV0ikyp2n9rVa7jLXM_eLSnbRp1o4_j2MZHGkXcKLaBgQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1420538486-1420-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1420538486-1420-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: broonie@kernel.org
-Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Cc: Mark Brown <broonie@kernel.org>, linux-spi <linux-spi@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Since the FLD bit field is bit[3:2], the MDR1_FLD_MASK value should
-be 0x0000000c.
+Hi Shimoda-san,
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- drivers/spi/spi-sh-msiof.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+On Tue, Jan 6, 2015 at 11:01 AM, Yoshihiro Shimoda
+<yoshihiro.shimoda.uh@renesas.com> wrote:
+> Since the FLD bit field is bit[3:2], the MDR1_FLD_MASK value should
+> be 0x0000000c.
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 96a5fc0..3ab7a21 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -82,7 +82,7 @@ struct sh_msiof_spi_priv {
- #define MDR1_SYNCMD_LR	 0x30000000 /*   L/R mode */
- #define MDR1_SYNCAC_SHIFT	 25 /* Sync Polarity (1 = Active-low) */
- #define MDR1_BITLSB_SHIFT	 24 /* MSB/LSB First (1 = LSB first) */
--#define MDR1_FLD_MASK	 0x000000c0 /* Frame Sync Signal Interval (0-3) */
-+#define MDR1_FLD_MASK	 0x0000000c /* Frame Sync Signal Interval (0-3) */
- #define MDR1_FLD_SHIFT		  2
- #define MDR1_XXSTP	 0x00000001 /* Transmission/Reception Stop on FIFO */
- /* TMDR1 */
--- 
-1.7.9.5
+Thanks, my mistake. Fortunately the definition is not used.
 
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
