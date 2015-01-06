@@ -1,198 +1,52 @@
-From: Lee Jones <lee.jones@linaro.org>
-Date: Tue, 20 Jan 2015 09:35:21 +0000
-Subject: Re: [PATCH 07/17] mmc: tmio: tmio_mmc_host has .bus_shift
-Message-Id: <20150120093521.GE5767@x1>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 06 Jan 2015 19:42:03 +0000
+Subject: [PATCH 0/6] ARM: shmobile: kzm9g-reference: Add missing i2c devices
+Message-Id: <1420573329-12762-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
- <87k30ruvhn.wl%kuninori.morimoto.gx@renesas.com>
- <CAPDyKFojRTY51FEe=0H072VVA8hCFGfuT+wJLvdKEJ8DWs-+2w@mail.gmail.com>
-In-Reply-To: <CAPDyKFojRTY51FEe=0H072VVA8hCFGfuT+wJLvdKEJ8DWs-+2w@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: Arnd Bergmann <arnd@arndb.de>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-On Tue, 20 Jan 2015, Ulf Hansson wrote:
+	Hi Simon, Magnus,
 
-> + MFD maintainer
->=20
-> On 13 January 2015 at 05:58, Kuninori Morimoto
-> <kuninori.morimoto.gx@renesas.com> wrote:
-> > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> >
-> > Current .bus_shift is implemented under tmio_mmc_data.
-> > It goes to tmio_mmc_host by this patch.
-> >
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > ---
-> >  drivers/mmc/host/sh_mobile_sdhi.c |    5 ++---
-> >  drivers/mmc/host/tmio_mmc.c       |    5 +++--
-> >  drivers/mmc/host/tmio_mmc.h       |   17 +++++++++--------
-> >  drivers/mmc/host/tmio_mmc_dma.c   |    2 +-
-> >  include/linux/mfd/tmio.h          |    1 -
+This patch series adds i2c devices that are supported by kzm9g-legacy
+but missing on kzm9g-reference (and -multiplatform).
 
-Acked-by: Lee Jones <lee.jones@linaro.org>
+The first patch ("ARM: shmobile: sh73a0 dtsi: Set control-parent for
+all irqpin nodes") is a prerequisite to avoid causing an interrupt
+storm when accessing the adxl345 accelerometer through
+/dev/input/event1, which requires a power-cycle to recover from.
 
-> >  5 files changed, 15 insertions(+), 15 deletions(-)
-> >
-> > diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mo=
-bile_sdhi.c
-> > index c92efe5..0db2a0a 100644
-> > --- a/drivers/mmc/host/sh_mobile_sdhi.c
-> > +++ b/drivers/mmc/host/sh_mobile_sdhi.c
-> > @@ -218,6 +218,8 @@ static int sh_mobile_sdhi_probe(struct platform_dev=
-ice *pdev)
-> >         host->clk_enable        =3D sh_mobile_sdhi_clk_enable;
-> >         host->clk_disable       =3D sh_mobile_sdhi_clk_disable;
-> >         host->multi_io_quirk    =3D sh_mobile_sdhi_multi_io_quirk;
-> > +       /* SD control register space size is 0x100, 0x200 for bus_shift=
-=3D1 */
-> > +       host->bus_shift         =3D resource_size(res) >> 9;
-> >
-> >         mmc_data->capabilities =3D MMC_CAP_MMC_HIGHSPEED;
-> >         if (p) {
-> > @@ -277,9 +279,6 @@ static int sh_mobile_sdhi_probe(struct platform_dev=
-ice *pdev)
-> >                 dma_priv->dma_rx_offset =3D of_data->dma_rx_offset;
-> >         }
-> >
-> > -       /* SD control register space size is 0x100, 0x200 for bus_shift=
-=3D1 */
-> > -       mmc_data->bus_shift =3D resource_size(res) >> 9;
-> > -
-> >         ret =3D tmio_mmc_host_probe(host, mmc_data);
-> >         if (ret < 0)
-> >                 goto efree;
-> > diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
-> > index f47ae08..9e8723d 100644
-> > --- a/drivers/mmc/host/tmio_mmc.c
-> > +++ b/drivers/mmc/host/tmio_mmc.c
-> > @@ -88,14 +88,15 @@ static int tmio_mmc_probe(struct platform_device *p=
-dev)
-> >         if (!res)
-> >                 return -EINVAL;
-> >
-> > -       /* SD control register space size is 0x200, 0x400 for bus_shift=
-=3D1 */
-> > -       pdata->bus_shift =3D resource_size(res) >> 10;
-> >         pdata->flags |=3D TMIO_MMC_HAVE_HIGH_REG;
-> >
-> >         host =3D tmio_mmc_host_alloc(pdev);
-> >         if (!host)
-> >                 goto cell_disable;
-> >
-> > +       /* SD control register space size is 0x200, 0x400 for bus_shift=
-=3D1 */
-> > +       host->bus_shift =3D resource_size(res) >> 10;
-> > +
-> >         ret =3D tmio_mmc_host_probe(host, pdata);
-> >         if (ret)
-> >                 goto host_free;
-> > diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-> > index 263256c..a5d30bf 100644
-> > --- a/drivers/mmc/host/tmio_mmc.h
-> > +++ b/drivers/mmc/host/tmio_mmc.h
-> > @@ -66,6 +66,7 @@ struct tmio_mmc_host {
-> >         struct scatterlist      *sg_orig;
-> >         unsigned int            sg_len;
-> >         unsigned int            sg_off;
-> > +       unsigned long           bus_shift;
-> >
-> >         struct platform_device *pdev;
-> >         struct tmio_mmc_data *pdata;
-> > @@ -169,19 +170,19 @@ int tmio_mmc_host_runtime_resume(struct device *d=
-ev);
-> >
-> >  static inline u16 sd_ctrl_read16(struct tmio_mmc_host *host, int addr)
-> >  {
-> > -       return readw(host->ctl + (addr << host->pdata->bus_shift));
-> > +       return readw(host->ctl + (addr << host->bus_shift));
-> >  }
-> >
-> >  static inline void sd_ctrl_read16_rep(struct tmio_mmc_host *host, int =
-addr,
-> >                 u16 *buf, int count)
-> >  {
-> > -       readsw(host->ctl + (addr << host->pdata->bus_shift), buf, count=
-);
-> > +       readsw(host->ctl + (addr << host->bus_shift), buf, count);
-> >  }
-> >
-> >  static inline u32 sd_ctrl_read32(struct tmio_mmc_host *host, int addr)
-> >  {
-> > -       return readw(host->ctl + (addr << host->pdata->bus_shift)) |
-> > -              readw(host->ctl + ((addr + 2) << host->pdata->bus_shift)=
-) << 16;
-> > +       return readw(host->ctl + (addr << host->bus_shift)) |
-> > +              readw(host->ctl + ((addr + 2) << host->bus_shift)) << 16;
-> >  }
-> >
-> >  static inline void sd_ctrl_write16(struct tmio_mmc_host *host, int add=
-r, u16 val)
-> > @@ -191,19 +192,19 @@ static inline void sd_ctrl_write16(struct tmio_mm=
-c_host *host, int addr, u16 val
-> >          */
-> >         if (host->write16_hook && host->write16_hook(host, addr))
-> >                 return;
-> > -       writew(val, host->ctl + (addr << host->pdata->bus_shift));
-> > +       writew(val, host->ctl + (addr << host->bus_shift));
-> >  }
-> >
-> >  static inline void sd_ctrl_write16_rep(struct tmio_mmc_host *host, int=
- addr,
-> >                 u16 *buf, int count)
-> >  {
-> > -       writesw(host->ctl + (addr << host->pdata->bus_shift), buf, coun=
-t);
-> > +       writesw(host->ctl + (addr << host->bus_shift), buf, count);
-> >  }
-> >
-> >  static inline void sd_ctrl_write32(struct tmio_mmc_host *host, int add=
-r, u32 val)
-> >  {
-> > -       writew(val, host->ctl + (addr << host->pdata->bus_shift));
-> > -       writew(val >> 16, host->ctl + ((addr + 2) << host->pdata->bus_s=
-hift));
-> > +       writew(val, host->ctl + (addr << host->bus_shift));
-> > +       writew(val >> 16, host->ctl + ((addr + 2) << host->bus_shift));
-> >  }
-> >
-> >
-> > diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mm=
-c_dma.c
-> > index 6c214d6..ee0131e 100644
-> > --- a/drivers/mmc/host/tmio_mmc_dma.c
-> > +++ b/drivers/mmc/host/tmio_mmc_dma.c
-> > @@ -289,7 +289,7 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *hos=
-t, struct tmio_mmc_data *pdat
-> >                 if (host->dma->chan_priv_tx)
-> >                         cfg.slave_id =3D host->dma->slave_id_tx;
-> >                 cfg.direction =3D DMA_MEM_TO_DEV;
-> > -               cfg.dst_addr =3D res->start + (CTL_SD_DATA_PORT << host=
-->pdata->bus_shift);
-> > +               cfg.dst_addr =3D res->start + (CTL_SD_DATA_PORT << host=
-->bus_shift);
-> >                 cfg.dst_addr_width =3D DMA_SLAVE_BUSWIDTH_2_BYTES;
-> >                 cfg.src_addr =3D 0;
-> >                 ret =3D dmaengine_slave_config(host->chan_tx, &cfg);
-> > diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-> > index 3edaa17..7a5c279 100644
-> > --- a/include/linux/mfd/tmio.h
-> > +++ b/include/linux/mfd/tmio.h
-> > @@ -120,7 +120,6 @@ struct tmio_mmc_data {
-> >         unsigned long                   capabilities;
-> >         unsigned long                   capabilities2;
-> >         unsigned long                   flags;
-> > -       unsigned long                   bus_shift;
-> >         u32                             ocr_mask;       /* available vo=
-ltages */
-> >         unsigned int                    cd_gpio;
-> >         void (*set_pwr)(struct platform_device *host, int state);
-> >
+Parts of this series and of the individual patches were written by
+Laurent Pinchart.
 
---=20
-Lee Jones
-Linaro STMicroelectronics Landing Team Lead
-Linaro.org =E2=94=82 Open source software for ARM SoCs
-Follow Linaro: Facebook | Twitter | Blog
+Thanks for applying!
+
+Geert Uytterhoeven (4):
+  ARM: shmobile: kzm9g-reference dts: Sort i2c0 children by unit address
+  ARM: shmobile: kzm9g-reference dts: Add ak8975 magnetometer node
+  ARM: shmobile: kzm9g-reference dts: Add adxl345 accelerometer node
+  ARM: shmobile: kzm9g-reference dts: Add r2025sd rtc node
+
+Laurent Pinchart (2):
+  ARM: shmobile: sh73a0 dtsi: Set control-parent for all irqpin nodes
+  ARM: shmobile: kzm9g-reference dts: Add st1232 touchscreen node
+
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 40 +++++++++++++++++++++++++---
+ arch/arm/boot/dts/sh73a0.dtsi                |  3 +++
+ 2 files changed, 39 insertions(+), 4 deletions(-)
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
