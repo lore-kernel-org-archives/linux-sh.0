@@ -1,18 +1,32 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sun, 18 Jan 2015 23:52:11 +0000
-Subject: [ANNOUNCE] renesas tree closing for v3.20
-Message-Id: <20150118235211.GA2306@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 06 Jan 2015 12:53:33 +0000
+Subject: Re: [PATCH 2/4] ARM: shmobile: sh73a0: kzm9g: Add touchscreen controller to DT
+Message-Id: <CAMuHMdVnBeD+aEk0x=1cUGdcUdNM+OtHP=qbi-2QA1kE2usFbw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi,
+Hi Laurent,
 
-I would like to wind down accepting non-bug-fix patches for v3.20 and get
-the last pull requests posted by the end of next week, ideally as per what
-is present in the renesas-next-20150117-v3.19-rc1 tag. This is in order for
-them to be sent before the release of v3.17-rc6.  As patches should ideally
-progress from the renesas tree into linux-next before sending pull requests
-there is a few days lead time involved.
+On Thu, Dec 18, 2014 at 3:26 AM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
+> Enable the kzm9g touchscreen controller in the board's DT file.
+
+Thanks!
+
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
