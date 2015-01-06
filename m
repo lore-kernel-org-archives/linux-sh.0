@@ -1,69 +1,40 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 22 Jan 2015 04:08:58 +0000
-Subject: [PATCH 1/4 v3] ARM: shmobile: r8a7790: Reference DMA channels in SDHI DT nodes
-Message-Id: <87oaprlalp.wl%kuninori.morimoto.gx@renesas.com>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Tue, 06 Jan 2015 15:45:42 +0000
+Subject: [PATCH v2 39/40] sh: macro whitespace fixes
+Message-Id: <1420558883-10131-40-git-send-email-mst@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1420558883-10131-1-git-send-email-mst@redhat.com>
+In-Reply-To: <1420558883-10131-1-git-send-email-mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+While working on arch/sh/include/asm/uaccess.h, I noticed
+that one macro within this header is made harder to read because it
+violates a coding style rule: space is missing after comma.
 
-Add references to the transmit and receive DMA channels in the four
-SDHI nodes.
+Fix it up.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
 ---
-v2 -> v3
+ arch/sh/include/asm/segment.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- - use Laurent's original patch
-
- arch/arm/boot/dts/r8a7790.dtsi |    8 ++++++++
- 1 file changed, 8 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 4b38fc9..3c12f78 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -496,6 +496,8 @@
- 		reg = <0 0xee100000 0 0x200>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
-+		dmas = <&dmac1 0xcd>, <&dmac1 0xce>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
+diff --git a/arch/sh/include/asm/segment.h b/arch/sh/include/asm/segment.h
+index 5e2725f..ff795d3 100644
+--- a/arch/sh/include/asm/segment.h
++++ b/arch/sh/include/asm/segment.h
+@@ -23,7 +23,7 @@ typedef struct {
+ #define USER_DS		KERNEL_DS
+ #endif
  
-@@ -504,6 +506,8 @@
- 		reg = <0 0xee120000 0 0x200>;
- 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
-+		dmas = <&dmac1 0xc9>, <&dmac1 0xca>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
+-#define segment_eq(a,b)	((a).seg = (b).seg)
++#define segment_eq(a, b) ((a).seg = (b).seg)
  
-@@ -512,6 +516,8 @@
- 		reg = <0 0xee140000 0 0x100>;
- 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
-+		dmas = <&dmac1 0xc1>, <&dmac1 0xc2>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -520,6 +526,8 @@
- 		reg = <0 0xee160000 0 0x100>;
- 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI3>;
-+		dmas = <&dmac1 0xd3>, <&dmac1 0xd4>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
+ #define get_ds()	(KERNEL_DS)
  
 -- 
-1.7.9.5
+MST
 
