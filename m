@@ -1,63 +1,92 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 13 Jan 2015 02:13:28 +0000
-Subject: [PATCH 2/2] ARM: shmobile: sh73a0 legacy: Set .control_parent for all irqpin instances
-Message-Id: <b0ddb319db3d7a1943445f0de0a45c07a7f3457a.1421113695.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 06 Jan 2015 19:56:05 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: sh73a0 dtsi: Add missing INTCA0 clock for irqpin module
+Message-Id: <1420574166-14979-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421113695.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421113695.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-
-The sh73a0 INTC can't mask interrupts properly most likely due to a
-hardware bug. Set the .control_parent flag to delegate masking to the
-parent interrupt controller, like was already done for irqpin1.
-
-Without this, accessing the three-axis digital accelerometer ADXL345
-on kzm9g through /dev/input/event1 causes an interrupt storm, which
-requires a power-cycle to recover from.
-
-This was inspired by a patch for arch/arm/boot/dts/sh73a0.dtsi from
-Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>.
+This clock drives the irqpin controller modules.
+Before, it was assumed enabled by the bootloader or reset state.
+By making it available to the driver, we make sure it gets enabled when
+needed, and allow it to be managed by system or runtime PM.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Fixes: 341eb5465f67437a ("ARM: shmobile: INTC External IRQ pin driver on sh73a0")
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-sh73a0.c | 3 +++
- 1 file changed, 3 insertions(+)
+v2:
+  - Rebased. This now depends on "ARM: shmobile: sh73a0 dtsi: Set
+    control-parent for all irqpin nodes", which is fix for a crash and
+    thus had higher priority.
+---
+ arch/arm/boot/dts/sh73a0.dtsi            | 15 +++++++++++++++
+ include/dt-bindings/clock/sh73a0-clock.h |  3 +++
+ 2 files changed, 18 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index fa7cab8..b5d0cf5 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -579,6 +579,7 @@ static struct platform_device ipmmu_device = {
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 1cd7b58cb586da6e..ac660c468f38c46a 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -78,6 +78,7 @@
+ 			      0 6 IRQ_TYPE_LEVEL_HIGH
+ 			      0 7 IRQ_TYPE_LEVEL_HIGH
+ 			      0 8 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp5_clks SH73A0_CLK_INTCA0>;
+ 		control-parent;
+ 	};
  
- static struct renesas_intc_irqpin_config irqpin0_platform_data = {
- 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ7 */
-+	.control_parent = true,
+@@ -98,6 +99,7 @@
+ 			      0 14 IRQ_TYPE_LEVEL_HIGH
+ 			      0 15 IRQ_TYPE_LEVEL_HIGH
+ 			      0 16 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp5_clks SH73A0_CLK_INTCA0>;
+ 		control-parent;
+ 	};
+ 
+@@ -118,6 +120,7 @@
+ 			      0 22 IRQ_TYPE_LEVEL_HIGH
+ 			      0 23 IRQ_TYPE_LEVEL_HIGH
+ 			      0 24 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp5_clks SH73A0_CLK_INTCA0>;
+ 		control-parent;
+ 	};
+ 
+@@ -138,6 +141,7 @@
+ 			      0 30 IRQ_TYPE_LEVEL_HIGH
+ 			      0 31 IRQ_TYPE_LEVEL_HIGH
+ 			      0 32 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp5_clks SH73A0_CLK_INTCA0>;
+ 		control-parent;
+ 	};
+ 
+@@ -682,5 +686,16 @@
+ 			clock-output-names  				"iic3", "iic4", "keysc";
+ 		};
++		mstp5_clks: mstp5_clks@e6150144 {
++			compatible = "renesas,sh73a0-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xe6150144 4>, <0xe615003c 4>;
++			clocks = <&cpg_clocks SH73A0_CLK_HP>;
++			#clock-cells = <1>;
++			clock-indices = <
++				SH73A0_CLK_INTCA0
++			>;
++			clock-output-names +				"intca0";
++		};
+ 	};
  };
+diff --git a/include/dt-bindings/clock/sh73a0-clock.h b/include/dt-bindings/clock/sh73a0-clock.h
+index 1dd3eb2b7d902afd..53369568c24c5dc6 100644
+--- a/include/dt-bindings/clock/sh73a0-clock.h
++++ b/include/dt-bindings/clock/sh73a0-clock.h
+@@ -76,4 +76,7 @@
+ #define SH73A0_CLK_IIC4		10
+ #define SH73A0_CLK_KEYSC	3
  
- static struct resource irqpin0_resources[] = {
-@@ -640,6 +641,7 @@ static struct platform_device irqpin1_device = {
- 
- static struct renesas_intc_irqpin_config irqpin2_platform_data = {
- 	.irq_base = irq_pin(16), /* IRQ16 -> IRQ23 */
-+	.control_parent = true,
- };
- 
- static struct resource irqpin2_resources[] = {
-@@ -670,6 +672,7 @@ static struct platform_device irqpin2_device = {
- 
- static struct renesas_intc_irqpin_config irqpin3_platform_data = {
- 	.irq_base = irq_pin(24), /* IRQ24 -> IRQ31 */
-+	.control_parent = true,
- };
- 
- static struct resource irqpin3_resources[] = {
++/* MSTP5 */
++#define SH73A0_CLK_INTCA0	8
++
+ #endif
 -- 
-2.1.4
+1.9.1
 
