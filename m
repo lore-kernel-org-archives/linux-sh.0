@@ -1,43 +1,44 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 06 Jan 2015 02:38:53 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 06 Jan 2015 13:19:19 +0000
 Subject: Re: [PATCH 2/9] mmc: tmio: tmio_mmc_host has .dma
-Message-Id: <87tx04vdi7.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <1500078.pT8EpI6Sos@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
-	<4405974.QQJ6fqAfNe@wuerfel>
-	<87bnmdo9hk.wl%kuninori.morimoto.gx@renesas.com>
-	<7306460.62PqiTEhxi@wuerfel>
-In-Reply-To: <7306460.62PqiTEhxi@wuerfel>
+References: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com> <7306460.62PqiTEhxi@wuerfel> <87tx04vdi7.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87tx04vdi7.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Cc: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-
-Hi Arnd again
-
-> > > The alignment_shift and dma_rx_offset values seem to always be
-> > > the same for all users (at least the remaining ones, possibly there
-> > > were others originally), so you could hardcode those in tmio_mmc_dma.c
-> > > and remove the tmio_mmc_dma structure entirely.
-> > 
-> > Unfortunately, alignment_shift and dma_rx_offset value are based on SoC.
-> > we can't hardcode these.
+On Tuesday 06 January 2015 02:38:53 Kuninori Morimoto wrote:
+> Hi Arnd again
 > 
-> Which SoCs use a different value here? Both of these look like
-> implementation details of the tmio_mmc, not of the integration
-> into the SoC, so they could just be keyed off the device identification.
+> > > > The alignment_shift and dma_rx_offset values seem to always be
+> > > > the same for all users (at least the remaining ones, possibly there
+> > > > were others originally), so you could hardcode those in tmio_mmc_dma.c
+> > > > and remove the tmio_mmc_dma structure entirely.
+> > > 
+> > > Unfortunately, alignment_shift and dma_rx_offset value are based on SoC.
+> > > we can't hardcode these.
+> > 
+> > Which SoCs use a different value here? Both of these look like
+> > implementation details of the tmio_mmc, not of the integration
+> > into the SoC, so they could just be keyed off the device identification.
+> 
+> About .alignment_shift, it is not implemented today, but our new SoC
+> want to use different value (= .alignment_shift = 5).
 
-About .alignment_shift, it is not implemented today, but our new SoC
-want to use different value (= .alignment_shift = 5).
-About .dma_rx_offset, please check this
-  ${LINUX}/drivers/mmc/host/sh_mobile_sdhi.c :: of_rcar_gen1_compatible
-  ${LINUX}/drivers/mmc/host/sh_mobile_sdhi.c :: of_rcar_gen2_compatible
-or
-384b2cbd56a02efb16358ed7c0c039e4afca5ed0
-(mmc: tmio: care about DMA tx/rx addr offset)
+Ok, I see.
 
-Best regards
----
-Kuninori Morimoto
+> About .dma_rx_offset, please check this
+>   ${LINUX}/drivers/mmc/host/sh_mobile_sdhi.c :: of_rcar_gen1_compatible
+>   ${LINUX}/drivers/mmc/host/sh_mobile_sdhi.c :: of_rcar_gen2_compatible
+> or
+> 384b2cbd56a02efb16358ed7c0c039e4afca5ed0
+> (mmc: tmio: care about DMA tx/rx addr offset)
+
+Right. How about moving these two into tmio_mmc_data then along with
+the other members of tmio_mmc_dma?
+
+	Arnd
