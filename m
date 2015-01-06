@@ -1,36 +1,51 @@
-From: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 06 Jan 2015 10:57:32 +0000
-Subject: RE: [PATCH] spi: sh-msiof: fix MDR1_FLD_MASK value
-Message-Id: <HKNPR06MB322387C2B14F90694CA90A8D8590@HKNPR06MB322.apcprd06.prod.outlook.com>
+From: Mark Brown <broonie@kernel.org>
+Date: Tue, 06 Jan 2015 11:08:31 +0000
+Subject: Re: [PATCH] spi: sh-msiof: fix MDR1_FLD_MASK value
+Message-Id: <20150106110831.GV2634@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="IgDDV5QArAYIxtdK"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1420538486-1420-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
  <CAMuHMdUjor__TCQwDcHAR9-vH54=qB-_E5AM2a4hp2B+wE9c4Q@mail.gmail.com>
-In-Reply-To: <CAMuHMdUjor__TCQwDcHAR9-vH54=qB-_E5AM2a4hp2B+wE9c4Q-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+ <HKNPR06MB322387C2B14F90694CA90A8D8590@HKNPR06MB322.apcprd06.prod.outlook.com>
+In-Reply-To: <HKNPR06MB322387C2B14F90694CA90A8D8590-xIjp3w5QIjwsJtb0Mgt7d79PrO6axcR4XA4E9RH9d+qIuWR1G4zioA@public.gmane.org>
+To: yoshihiro shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+Cc: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-SGkgR2VlcnQtc2FuLA0KDQo+IEhpIFNoaW1vZGEtc2FuLA0KPiANCj4gT24gVHVlLCBKYW4gNiwg
-MjAxNSBhdCAxMTowMSBBTSwgWW9zaGloaXJvIFNoaW1vZGENCj4gPHlvc2hpaGlyby5zaGltb2Rh
-LnVoQHJlbmVzYXMuY29tPiB3cm90ZToNCj4gPiBTaW5jZSB0aGUgRkxEIGJpdCBmaWVsZCBpcyBi
-aXRbMzoyXSwgdGhlIE1EUjFfRkxEX01BU0sgdmFsdWUgc2hvdWxkDQo+ID4gYmUgMHgwMDAwMDAw
-Yy4NCj4gDQo+IFRoaXMgcGF0Y2ggZG9lc24ndCBhcHBseSwgc2luY2UgTWFyayBoYXMgYXBwbGll
-ZCB5b3VyIG90aGVyIHBhdGNoDQo+ICJzcGk6IHNoLW1zaW9mOiBDb25maWd1cmUgTVNJT0Ygc3lu
-YyBzaWduYWwgdGltaW5nIGluIGRldmljZSB0cmVlIi4NCj4gDQo+IFBsZWFzZSByZWJhc2Ugb24g
-dG9wIG9mIHNwaS9mb3ItbmV4dCAob3IgcmVuZXNhcy1kcml2ZXJzLTIwMTUtMDEtMDYtdjMuMTkt
-cmMzKS4NCg0KT29wcy4gVGhhbmsgeW91IGZvciB0aGUgcG9pbnQuDQpJIHVzZWQgc3BpL2Zvci1s
-aW51eCBicmFuY2guIFNvLCBJIHdpbGwgcmViYXNlIG9uIHRvcCBvZiBzcGkvZm9yLW5leHQuDQoN
-CkJlc3QgcmVnYXJkcywNCllvc2hpaGlybyBTaGltb2RhDQoNCj4gVGhhbmtzIQ0KPiANCj4gR3J7
-b2V0amUsZWV0aW5nfXMsDQo+IA0KPiAgICAgICAgICAgICAgICAgICAgICAgICBHZWVydA0KPiAN
-Cj4gLS0NCj4gR2VlcnQgVXl0dGVyaG9ldmVuIC0tIFRoZXJlJ3MgbG90cyBvZiBMaW51eCBiZXlv
-bmQgaWEzMiAtLSBnZWVydEBsaW51eC1tNjhrLm9yZw0KPiANCj4gSW4gcGVyc29uYWwgY29udmVy
-c2F0aW9ucyB3aXRoIHRlY2huaWNhbCBwZW9wbGUsIEkgY2FsbCBteXNlbGYgYSBoYWNrZXIuIEJ1
-dA0KPiB3aGVuIEknbSB0YWxraW5nIHRvIGpvdXJuYWxpc3RzIEkganVzdCBzYXkgInByb2dyYW1t
-ZXIiIG9yIHNvbWV0aGluZyBsaWtlIHRoYXQuDQo+ICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgLS0gTGludXMgVG9ydmFsZHMNCj4gLS0NCj4gVG8gdW5zdWJzY3JpYmUgZnJvbSB0aGlz
-IGxpc3Q6IHNlbmQgdGhlIGxpbmUgInVuc3Vic2NyaWJlIGxpbnV4LXNoIiBpbg0KPiB0aGUgYm9k
-eSBvZiBhIG1lc3NhZ2UgdG8gbWFqb3Jkb21vQHZnZXIua2VybmVsLm9yZw0KPiBNb3JlIG1ham9y
-ZG9tbyBpbmZvIGF0ICBodHRwOi8vdmdlci5rZXJuZWwub3JnL21ham9yZG9tby1pbmZvLmh0bWwN
-Cg=
+
+--IgDDV5QArAYIxtdK
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+On Tue, Jan 06, 2015 at 10:57:32AM +0000, yoshihiro shimoda wrote:
+
+> > This patch doesn't apply, since Mark has applied your other patch
+> > "spi: sh-msiof: Configure MSIOF sync signal timing in device tree".
+> >=20
+> > Please rebase on top of spi/for-next (or renesas-drivers-2015-01-06-v3.=
+19-rc3).
+
+> Oops. Thank you for the point.
+> I used spi/for-linux branch. So, I will rebase on top of spi/for-next.
+
+Actually since it's a fix I applied it on a fix branch anyway and
+merged.
+
+--IgDDV5QArAYIxtdK
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQEcBAEBAgAGBQJUq8IuAAoJECTWi3JdVIfQQpUH/iS1WucBWhLHb5kwi3e4gOI5
+YxU5nJ+wCDlELImiUpQ7IJvH25T5pFJSxHhL/ETBIstgXxu4FZkEpt932/KjL3FD
+hxtXW3w/TX6T6fGgznZP7DUia4LoaEiBHpR4vHeU5WT1y51S7huFy06/AO9juJhP
+d+KFPeQvAUElDvuxo0J2GIESv9aXAQiU5+1yUMK3Xi1j61jtaFbnmX6zsGYsMcXV
+2+t75dopWs1BygwGJp9wPVt1lW4PQYYpziNpwUF7jgzB811nA6g6ynGzhIc92N8U
+xdthXx6sx5Tv5xn9Ro7sk7FlILtid4p0/XANmMfi70CE9F7rtjg3TOf07SpH4BY=
+=iZAU
+-----END PGP SIGNATURE-----
+
+--IgDDV5QArAYIxtdK--
