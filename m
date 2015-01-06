@@ -1,7 +1,7 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 06 Jan 2015 10:22:02 +0000
+Date: Tue, 06 Jan 2015 10:47:06 +0000
 Subject: Re: [PATCH] spi: sh-msiof: fix MDR1_FLD_MASK value
-Message-Id: <CAMuHMdV0ikyp2n9rVa7jLXM_eLSnbRp1o4_j2MZHGkXcKLaBgQ@mail.gmail.com>
+Message-Id: <CAMuHMdUjor__TCQwDcHAR9-vH54=qB-_E5AM2a4hp2B+wE9c4Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1420538486-1420-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 In-Reply-To: <1420538486-1420-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
@@ -18,11 +18,12 @@ On Tue, Jan 6, 2015 at 11:01 AM, Yoshihiro Shimoda
 > Since the FLD bit field is bit[3:2], the MDR1_FLD_MASK value should
 > be 0x0000000c.
 
-Thanks, my mistake. Fortunately the definition is not used.
+This patch doesn't apply, since Mark has applied your other patch
+"spi: sh-msiof: Configure MSIOF sync signal timing in device tree".
 
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Please rebase on top of spi/for-next (or renesas-drivers-2015-01-06-v3.19-rc3).
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Thanks!
 
 Gr{oetje,eeting}s,
 
