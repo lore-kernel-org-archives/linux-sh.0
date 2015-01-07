@@ -1,27 +1,40 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 29 Jan 2015 08:53:30 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7791: Correct SDHI clock labels and output-names
-Message-Id: <20150129085330.GB21851@verge.net.au>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Wed, 07 Jan 2015 05:35:47 +0000
+Subject: [PATCH] sh_eth: Fix access to TRSCER register
+Message-Id: <1420608947-6861-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1422496038-3915-1-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdXktWqe_+HhORN0iWEMLm=y2fS52PFtPK4RzAHQMHLYXw@mail.gmail.com>
-In-Reply-To: <CAMuHMdXktWqe_+HhORN0iWEMLm=y2fS52PFtPK4RzAHQMHLYXw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: yoshihiro.shimoda.uh@renesas.com, linux-sh@vger.kernel.org, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-On Thu, Jan 29, 2015 at 09:05:15AM +0100, Geert Uytterhoeven wrote:
-> On Thu, Jan 29, 2015 at 2:47 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > There appears to have been some inconsistency and confusion here as on
-> > the r8a7790 these clocks are referred to as SD(HI)1 and SD(HI)2 while on
-> > the r8a7791 and r8a7794 they are referred to as SD(HI)2 and SD(HI)3.
-> >
-> > Fixes: 59e79895b95892863 ("ARM: shmobile: r8a7791: Add clocks")
-> > Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+TRSCER register is configured differently by SoCs. TRSCER of R-Car is
+RINT8 bit only valid, other bits are reserved bits.
+This removes access to TRSCER register reserve bit.
 
-Thanks, I have queued this up.
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index c29ba80..59ee457 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1294,7 +1294,11 @@ static int sh_eth_dev_init(struct net_device *ndev, bool start)
+ 	/* Frame recv control (enable multiple-packets per rx irq) */
+ 	sh_eth_write(ndev, RMCR_RNC, RMCR);
+ 
+-	sh_eth_write(ndev, DESC_I_RINT8 | DESC_I_RINT5 | DESC_I_TINT2, TRSCER);
++	if (mdp->cd->register_type = SH_ETH_REG_FAST_RCAR)
++		sh_eth_write(ndev, DESC_I_RINT8, TRSCER);
++	else
++		sh_eth_write(ndev, DESC_I_RINT8 | DESC_I_RINT5 | DESC_I_TINT2,
++			     TRSCER);
+ 
+ 	if (mdp->cd->bculr)
+ 		sh_eth_write(ndev, 0x800, BCULR);	/* Burst sycle set */
+-- 
+2.1.3
+
