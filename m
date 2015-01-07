@@ -1,41 +1,29 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 12 Jan 2015 09:25:06 +0000
-Subject: Re: [PATCH 13/16] pci/host: rcar-gen2: convert to use generic config accesses
-Message-Id: <CAMuHMdX0om4EjS35YKUxo+-W-YLXQ0uJRyr-PLC9VYm=Jcu+TQ@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 07 Jan 2015 01:13:09 +0000
+Subject: [PATCH v2 0/2] thermal: rcar: minor fixes
+Message-Id: <1420593191-3736-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420857290-8373-1-git-send-email-robh@kernel.org>
-	<1420857290-8373-14-git-send-email-robh@kernel.org>
-In-Reply-To: <1420857290-8373-14-git-send-email-robh@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rob Herring <robh@kernel.org>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Arnd Bergmann <arnd@arndb.de>, linux-pci <linux-pci@vger.kernel.org>, Bjorn Helgaas <bhelgaas@google.com>, Simon Horman <horms@verge.net.au>, Linux-sh list <linux-sh@vger.kernel.org>, Valentine <valentine.barshak@cogentembedded.com>
+To: rui.zhang@intel.com, edubezval@gmail.com
+Cc: linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-On Sat, Jan 10, 2015 at 3:34 AM, Rob Herring <robh@kernel.org> wrote:
-> Convert the rcar-gen2 host PCI driver to use the generic config access
-> functions.
->
-> This changes the i/o accessors from io(read|write)X to readX/writeX
-> variants which are equivalent on ARM.
->
-> Signed-off-by: Rob Herring <robh@kernel.org>
-> Cc: Simon Horman <horms@verge.net.au>
-> Cc: Bjorn Helgaas <bhelgaas@google.com>
-> Cc: linux-pci@vger.kernel.org
-> Cc: linux-sh@vger.kernel.org
+This patch series is based on linux-soc-thermal.git / fixes branch.
+(commit id = 5a723e81923410f0d3ae4c38974607b13befdda9)
 
-Thanks, look OK to me.
+Changes from v1:
+ - The driver calculate the ENR value using IO resource sets in patch 1.
+ - Update description about the helper variables 'old' and 'new' in patch 2.
+ - Add "Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>" in patch 2.
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Yoshihiro Shimoda (2):
+  thermal: rcar: fix ENR register value
+  thermal: rcar: change type of ctemp in rcar_thermal_update_temp()
 
-Gr{oetje,eeting}s,
+ drivers/thermal/rcar_thermal.c |   15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
 
-                        Geert
+-- 
+1.7.9.5
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
