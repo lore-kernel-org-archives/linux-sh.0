@@ -1,77 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 27 Jan 2015 17:25:16 +0000
-Subject: [PATCH 6/6] dmaengine: rcar-dmac: Disable channel 0 when using IOMMU
-Message-Id: <1422379516-1633-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 07 Jan 2015 01:13:11 +0000
+Subject: [PATCH v2 2/2] thermal: rcar: change type of ctemp in rcar_thermal_update_temp()
+Message-Id: <1420593191-3736-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1422379516-1633-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1422379516-1633-1-git-send-email-laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
+References: <1420593191-3736-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1420593191-3736-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: rui.zhang@intel.com, edubezval@gmail.com
+Cc: linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-A still unconfirmed hardware bug prevents the IPMMU microTLB 0 to be
-flushed correctly, resulting in memory corruption. DMAC 0 channel 0 is
-connected to microTLB 0 on currently supported platforms, so we can't
-use it with the IPMMU. As the IOMMU API operates at the device level we
-can't disable it selectively, so ignore channel 0 for now if the device
-is part of an IOMMU group.
+Since the ctemp is used for rcar_thermal_write() in
+rcar_thermal_update_temp(), the type of 'ctemp' should be "u32" instead
+of "int". This patch also changes type of the helper variables 'old'
+and 'new'.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/dma/sh/rcar-dmac.c | 17 ++++++++++++++++-
- 1 file changed, 16 insertions(+), 1 deletion(-)
+ drivers/thermal/rcar_thermal.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-As this patch works around an IOMMU bug in a DMA engine driver it would
-benefit from review from IOMMU developers.
-
-Cc: iommu@lists.linux-foundation.org
-Cc: Joerg Roedel <joro@8bytes.org>
-Cc: Magnus Damm <magnus.damm@gmail.com>
-
-diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
-index d345d3d81813..e0bf38a7284e 100644
---- a/drivers/dma/sh/rcar-dmac.c
-+++ b/drivers/dma/sh/rcar-dmac.c
-@@ -1595,6 +1595,7 @@ static int rcar_dmac_probe(struct platform_device *pdev)
- 		DMA_SLAVE_BUSWIDTH_2_BYTES | DMA_SLAVE_BUSWIDTH_4_BYTES |
- 		DMA_SLAVE_BUSWIDTH_8_BYTES | DMA_SLAVE_BUSWIDTH_16_BYTES |
- 		DMA_SLAVE_BUSWIDTH_32_BYTES | DMA_SLAVE_BUSWIDTH_64_BYTES;
-+	unsigned int channels_offset = 0;
- 	struct dma_device *engine;
- 	struct rcar_dmac *dmac;
- 	struct resource *mem;
-@@ -1614,6 +1615,19 @@ static int rcar_dmac_probe(struct platform_device *pdev)
- 	if (ret < 0)
- 		return ret;
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index 2f3b4ff..70bb02c 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -63,7 +63,7 @@ struct rcar_thermal_priv {
+ 	struct mutex lock;
+ 	struct list_head list;
+ 	int id;
+-	int ctemp;
++	u32 ctemp;
+ };
  
-+	/*
-+	 * A still unconfirmed hardware bug prevents the IPMMU microTLB 0 to be
-+	 * flushed correctly, resulting in memory corruption. DMAC 0 channel 0
-+	 * is connected to microTLB 0 on currently supported platforms, so we
-+	 * can't use it with the IPMMU. As the IOMMU API operates at the device
-+	 * level we can't disable it selectively, so ignore channel 0 for now if
-+	 * the device is part of an IOMMU group.
-+	 */
-+	if (pdev->dev.iommu_group) {
-+		dmac->n_channels--;
-+		channels_offset = 1;
-+	}
-+
- 	dmac->channels = devm_kcalloc(&pdev->dev, dmac->n_channels,
- 				      sizeof(*dmac->channels), GFP_KERNEL);
- 	if (!dmac->channels)
-@@ -1664,7 +1678,8 @@ static int rcar_dmac_probe(struct platform_device *pdev)
- 	INIT_LIST_HEAD(&dmac->engine.channels);
+ #define rcar_thermal_for_each_priv(pos, common)	\
+@@ -145,7 +145,7 @@ static int rcar_thermal_update_temp(struct rcar_thermal_priv *priv)
+ {
+ 	struct device *dev = rcar_priv_to_dev(priv);
+ 	int i;
+-	int ctemp, old, new;
++	u32 ctemp, old, new;
+ 	int ret = -EINVAL;
  
- 	for (i = 0; i < dmac->n_channels; ++i) {
--		ret = rcar_dmac_chan_probe(dmac, &dmac->channels[i], i);
-+		ret = rcar_dmac_chan_probe(dmac, &dmac->channels[i],
-+					   i + channels_offset);
- 		if (ret < 0)
- 			goto error;
- 	}
+ 	mutex_lock(&priv->lock);
 -- 
-2.0.5
+1.7.9.5
 
