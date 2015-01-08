@@ -1,34 +1,53 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 05 Jan 2015 13:30:55 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7790: add CAN clocks
-Message-Id: <CAMuHMdWq5+KNwV4K0gfiv0RFmJzfUktJdr=AKgsHZgkfDdQsjg@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 08 Jan 2015 01:55:15 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7790: add SRC interrupt number on DTSI
+Message-Id: <87fvbmt4ra.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2616635.bsb7mLynhA@wasted.cogentembedded.com>
- <7045264.74zTCWbb7p@wasted.cogentembedded.com>
-In-Reply-To: <7045264.74zTCWbb7p@wasted.cogentembedded.com>
+References: <1368173119-27345-2-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1368173119-27345-2-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Dec 29, 2014 at 11:04 PM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> The R-Car CAN controllers can derive the CAN bus clock not only from their
-> peripheral clock input (clkp1) but also from the other internal clock (clkp2)
-> and external clock fed on CAN_CLK pin.  Describe those clocks in the device
-> tree,  along with  the USB_EXTAL clock  from which clkp2 is derived.
->
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi |   20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
 
-Gr{oetje,eeting}s,
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index af30c24..637e4ee 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1435,16 +1435,16 @@
+ 		};
+ 
+ 		rcar_sound,src {
+-			src0: src@0 { };
+-			src1: src@1 { };
+-			src2: src@2 { };
+-			src3: src@3 { };
+-			src4: src@4 { };
+-			src5: src@5 { };
+-			src6: src@6 { };
+-			src7: src@7 { };
+-			src8: src@8 { };
+-			src9: src@9 { };
++			src0: src@0 { interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>; };
++			src1: src@1 { interrupts = <0 353 IRQ_TYPE_LEVEL_HIGH>; };
++			src2: src@2 { interrupts = <0 354 IRQ_TYPE_LEVEL_HIGH>; };
++			src3: src@3 { interrupts = <0 355 IRQ_TYPE_LEVEL_HIGH>; };
++			src4: src@4 { interrupts = <0 356 IRQ_TYPE_LEVEL_HIGH>; };
++			src5: src@5 { interrupts = <0 357 IRQ_TYPE_LEVEL_HIGH>; };
++			src6: src@6 { interrupts = <0 358 IRQ_TYPE_LEVEL_HIGH>; };
++			src7: src@7 { interrupts = <0 359 IRQ_TYPE_LEVEL_HIGH>; };
++			src8: src@8 { interrupts = <0 360 IRQ_TYPE_LEVEL_HIGH>; };
++			src9: src@9 { interrupts = <0 361 IRQ_TYPE_LEVEL_HIGH>; };
+ 		};
+ 
+ 		rcar_sound,ssi {
+-- 
+1.7.9.5
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
