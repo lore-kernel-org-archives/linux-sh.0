@@ -1,99 +1,74 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Fri, 30 Jan 2015 06:11:54 +0000
-Subject: [PATCH] spi: sh-msiof: Update calculation of frequency dividing
-Message-Id: <1422598314-6889-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 08 Jan 2015 15:41:58 +0000
+Subject: renesas-drivers-2015-01-08-v3.19-rc3
+Message-Id: <1420731718-12458-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421220335-22503-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
-In-Reply-To: <1421220335-22503-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: broonie@kernel.org
-Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, sergei.shtylyov@cogentembedded.com, geert@glider.be, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+To: linux-sh@vger.kernel.org
 
-sh-msiof of frequency dividing does not perform the calculation, driver have
-to manage setting value in the table. It is not possible to set frequency
-dividing value close to the actual data in this way. This changes from
-frequency dividing of table management to setting by calculation.
-This driver is able to set a value close to the actual data.
+I've pushed renesas-drivers-2015-01-08-v3.19-rc3 to
+https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+This tree is meant to ease development of platform support and drivers for
+Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next
+branches of various subsystem trees and (b) branches with driver code
+submitted or planned for submission to maintainers into the development
+branch of Simon Horman's renesas.git tree.
 
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
----
-v3:
- - Remove check of div maximum value.
- - Fix count of overrun by min_t.
-v2:
- - use u32 instead of unsigned long.
- - Fix loop.
- - Use SCR_BRPS instead of hoard code shift.
- - Add check of div maximum value.
+Today's version is based on renesas-devel-20150108v2-v3.19-rc3.
 
- drivers/spi/spi-sh-msiof.c | 36 ++++++++++++++++--------------------
- 1 file changed, 16 insertions(+), 20 deletions(-)
+Included branches with driver code:
+  - clk-shmobile-for-3.20
+      - clk: shmobile: div6: Avoid changing divisor in .disable()
+      - clk: shmobile: Add r8a7793 support
+      - clk: shmobile: r8a7793: document CPG clock support
+      - clk: shmobile: r8a73a4 common clock framework implementation
+      - clk: shmobile: Add r8a73a4 SoC to MSTP bindings
+      - clk: shmobile: Add R-Car Gen2 RCAN clock support
+      - clk: shmobile: Add R-Car Gen2 ADSP clock support
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 96a5fc0..bcc961f 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -241,42 +241,38 @@ static irqreturn_t sh_msiof_spi_irq(int irq, void *data)
- 
- static struct {
- 	unsigned short div;
--	unsigned short scr;
--} const sh_msiof_spi_clk_table[] = {
--	{ 1,	SCR_BRPS( 1) | SCR_BRDV_DIV_1 },
--	{ 2,	SCR_BRPS( 1) | SCR_BRDV_DIV_2 },
--	{ 4,	SCR_BRPS( 1) | SCR_BRDV_DIV_4 },
--	{ 8,	SCR_BRPS( 1) | SCR_BRDV_DIV_8 },
--	{ 16,	SCR_BRPS( 1) | SCR_BRDV_DIV_16 },
--	{ 32,	SCR_BRPS( 1) | SCR_BRDV_DIV_32 },
--	{ 64,	SCR_BRPS(32) | SCR_BRDV_DIV_2 },
--	{ 128,	SCR_BRPS(32) | SCR_BRDV_DIV_4 },
--	{ 256,	SCR_BRPS(32) | SCR_BRDV_DIV_8 },
--	{ 512,	SCR_BRPS(32) | SCR_BRDV_DIV_16 },
--	{ 1024,	SCR_BRPS(32) | SCR_BRDV_DIV_32 },
-+	unsigned short brdv;
-+} const sh_msiof_spi_div_table[] = {
-+	{ 1,	SCR_BRDV_DIV_1 },
-+	{ 2,	SCR_BRDV_DIV_2 },
-+	{ 4,	SCR_BRDV_DIV_4 },
-+	{ 8,	SCR_BRDV_DIV_8 },
-+	{ 16,	SCR_BRDV_DIV_16 },
-+	{ 32,	SCR_BRDV_DIV_32 },
- };
- 
- static void sh_msiof_spi_set_clk_regs(struct sh_msiof_spi_priv *p,
- 				      unsigned long parent_rate, u32 spi_hz)
- {
- 	unsigned long div = 1024;
-+	u32 brps, scr;
- 	size_t k;
- 
- 	if (!WARN_ON(!spi_hz || !parent_rate))
- 		div = DIV_ROUND_UP(parent_rate, spi_hz);
- 
--	/* TODO: make more fine grained */
--
--	for (k = 0; k < ARRAY_SIZE(sh_msiof_spi_clk_table); k++) {
--		if (sh_msiof_spi_clk_table[k].div >= div)
-+	for (k = 0; k < ARRAY_SIZE(sh_msiof_spi_div_table); k++) {
-+		brps = DIV_ROUND_UP(div, sh_msiof_spi_div_table[k].div);
-+		if (brps <= 32) /* max of brdv is 32 */
- 			break;
- 	}
- 
--	k = min_t(int, k, ARRAY_SIZE(sh_msiof_spi_clk_table) - 1);
-+	k = min_t(int, k, ARRAY_SIZE(sh_msiof_spi_div_table) - 1);
- 
--	sh_msiof_write(p, TSCR, sh_msiof_spi_clk_table[k].scr);
-+	scr = sh_msiof_spi_div_table[k].brdv | SCR_BRPS(brps);
-+	sh_msiof_write(p, TSCR, scr);
- 	if (!(p->chipdata->master_flags & SPI_MASTER_MUST_TX))
--		sh_msiof_write(p, RSCR, sh_msiof_spi_clk_table[k].scr);
-+		sh_msiof_write(p, RSCR, scr);
- }
- 
- static void sh_msiof_spi_set_pin_regs(struct sh_msiof_spi_priv *p,
--- 
-2.1.3
+Included subsystem trees:
+  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
+  - git://git.linaro.org/people/mturquette/linux.git#clk-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
+  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
+  - git://gitorious.org/linux-can/linux-can-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
+  - git://people.freedesktop.org/~airlied/linux#drm-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
+  - git://linuxtv.org/mchehab/media-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
+  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
+  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
+  - git://git.infradead.org/users/vkoul/slave-dma.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
+  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
+  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
+  - git://git.infradead.org/battery-2.6.git#master
+  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
