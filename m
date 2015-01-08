@@ -1,24 +1,41 @@
-From: David Miller <davem@davemloft.net>
-Date: Thu, 15 Jan 2015 19:46:30 +0000
-Subject: Re: [PATCH] net: sh_eth: Use u32 for 32-bit register data
-Message-Id: <20150115.144630.1562327486750379056.davem@davemloft.net>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 08 Jan 2015 19:28:45 +0000
+Subject: Re: [PATCH v2 0/8] Add Simple Power-Managed Bus Support
+Message-Id: <CAMuHMdVeEmKiqGTOmevaBDbJ=nBTbSi6d6Xrm0eyvbMTtyU=sA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421319268-22831-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1421319268-22831-1-git-send-email-geert+renesas@glider.be>
+References: <1418842153-17113-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1418842153-17113-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: geert+renesas@glider.be
-Cc: nobuhiro.iwamatsu.yj@renesas.com, yoshihiro.shimoda.uh@renesas.com, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 15 Jan 2015 11:54:28 +0100
+On Wed, Dec 17, 2014 at 7:49 PM, Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
+> The Renesas Bus State Controller (BSC) provides an external bus for
+> connecting multiple external devices to an SoC, driving several chip
+> select lines, for e.g. NOR FLASH, Ethernet and USB.
+> On the kzm9g and ape6evm development boards, an smsc9220 Ethernet
+> controller is connnected to the BSC of an SH-Mobile AG5 (sh73a0) resp.
+> R-Mobile APE6 (r8a73a4) SoC.
 
-> Replace "unsigned long" by "u32" when handling 32-bit register data.
-> 
-> A.o., this saves 11 * 36 bytes in the static sh_eth_cpu_data structures
-> when compiling for 64-bit.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+[...]
 
-Applied to net-next, thanks.
+> This was tested on sh73a0/kzm9g-multiplatform. Without this, Ethernet
+> doesn't work, as the ZB clock is disabled by clk_disable_unused().
+> Testing on r8a73a4/ape6evm-multiplatform would be appreciated.
+
+Has anyone tried this on r8a73a4/ape6evm-multiplatform?
+
+Thanks again!
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
