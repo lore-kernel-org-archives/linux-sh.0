@@ -1,49 +1,28 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 07 Jan 2015 01:13:11 +0000
-Subject: [PATCH v2 2/2] thermal: rcar: change type of ctemp in rcar_thermal_update_temp()
-Message-Id: <1420593191-3736-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 08 Jan 2015 03:33:29 +0000
+Subject: Re: [PATCH 0/2] ARM: shmobile: tidyup #sound-dai-cells settings
+Message-Id: <20150108033326.GB9644@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420593191-3736-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1420593191-3736-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: rui.zhang@intel.com, edubezval@gmail.com
-Cc: linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-sh@vger.kernel.org
 
-Since the ctemp is used for rcar_thermal_write() in
-rcar_thermal_update_temp(), the type of 'ctemp' should be "u32" instead
-of "int". This patch also changes type of the helper variables 'old'
-and 'new'.
+On Wed, Dec 17, 2014 at 06:11:23AM +0000, Kuninori Morimoto wrote:
+> 
+> Hi Simon
+> 
+> These patches tidyup #sound-dai-cells settings in r8a7790/r8a7791.
+> Because current setting style is very confusable for our customer
+> 
+> Kuninori Morimoto (2):
+>       ARM: shmobile: r8a7790: tidyup #sound-dai-cells settings
+>       ARM: shmobile: r8a7791: tidyup #sound-dai-cells settings
+> 
+>  arch/arm/boot/dts/r8a7790-lager.dts   |    1 +
+>  arch/arm/boot/dts/r8a7790.dtsi        |    7 ++++++-
+>  arch/arm/boot/dts/r8a7791-koelsch.dts |    1 +
+>  arch/arm/boot/dts/r8a7791.dtsi        |    7 ++++++-
+>  4 files changed, 14 insertions(+), 2 deletions(-)
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- drivers/thermal/rcar_thermal.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-index 2f3b4ff..70bb02c 100644
---- a/drivers/thermal/rcar_thermal.c
-+++ b/drivers/thermal/rcar_thermal.c
-@@ -63,7 +63,7 @@ struct rcar_thermal_priv {
- 	struct mutex lock;
- 	struct list_head list;
- 	int id;
--	int ctemp;
-+	u32 ctemp;
- };
- 
- #define rcar_thermal_for_each_priv(pos, common)	\
-@@ -145,7 +145,7 @@ static int rcar_thermal_update_temp(struct rcar_thermal_priv *priv)
- {
- 	struct device *dev = rcar_priv_to_dev(priv);
- 	int i;
--	int ctemp, old, new;
-+	u32 ctemp, old, new;
- 	int ret = -EINVAL;
- 
- 	mutex_lock(&priv->lock);
--- 
-1.7.9.5
-
+Thanks, I have queued these up.
