@@ -1,35 +1,29 @@
-From: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 07 Jan 2015 00:26:32 +0000
-Subject: RE: [PATCH 2/2] thermal: rcar: change type of ctemp in rcar_thermal_update_temp()
-Message-Id: <SIXPR06MB3338FB6C57D07E1133513A9D8460@SIXPR06MB333.apcprd06.prod.outlook.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 08 Jan 2015 01:54:34 +0000
+Subject: [PATCH 0/2] ARM: shmobile: r8a779x: add SRC interrupt number on DTSI
+Message-Id: <87h9w2t4sf.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420538528-5236-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <1420538528-5236-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <20150106130321.GA4661@developer>
-In-Reply-To: <20150106130321.GA4661@developer>
+References: <87wqc4o5mu.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87wqc4o5mu.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Eduardo Valentin <edubezval@gmail.com>
-Cc: "rui.zhang@intel.com" <rui.zhang@intel.com>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Hi Eduardo-san,
 
-> Shimoda-san,
-> 
-> On Tue, Jan 06, 2015 at 07:02:08PM +0900, Yoshihiro Shimoda wrote:
-> > Since the ctemp is used for rcar_thermal_write() in
-> > rcar_thermal_update_temp(), the type of ctemp should be "u32" instead
-> > of "int".
-> 
-> In your V2, can you please include in your description that you are also
-> updating the helper variables 'old' and 'new'?
-> 
-> The description does not mention it.
+Hi Simon
 
-Thank you for the point.
-I will fix this description in v2 patch set.
+These patches adds R-Car sound SRC's interrupt number on DTSI
 
-Best regards,
-Yoshihiro Shimoda
+Kuninori Morimoto (2):
+	ARM: shmobile: r8a7790: add SRC interrupt number on DTSI
+	ARM: shmobile: r8a7791: add SRC interrupt number on DTSI
 
+arch/arm/boot/dts/r8a7790.dtsi |   20 ++++++++++----------
+arch/arm/boot/dts/r8a7791.dtsi |   20 ++++++++++----------
+2 files changed, 20 insertions(+), 20 deletions(-)
+
+
+Best regards
+---
+Kuninori Morimoto
