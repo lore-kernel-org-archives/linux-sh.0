@@ -1,54 +1,70 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 08 Jan 2015 01:57:01 +0000
+Date: Thu, 08 Jan 2015 07:30:36 +0000
 Subject: Re: [PATCH 2/9] mmc: tmio: tmio_mmc_host has .dma
-Message-Id: <87d26qt4oc.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <87387lu3sv.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
 	<7306460.62PqiTEhxi@wuerfel>
 	<87bnmbpa3c.wl%kuninori.morimoto.gx@renesas.com>
 	<1538016.zLWF4l4JFj@wuerfel>
-In-Reply-To: <1538016.zLWF4l4JFj@wuerfel>
+	<87d26qt4oc.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87d26qt4oc.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: Arnd Bergmann <arnd@arndb.de>, Ulf Hansson <ulf.hansson@linaro.org>
+Cc: Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
 
-Hi Arnd
+Hi Arnd, Ulf
 
-> > > dmaengine: shdma: use normal interface for passing slave id
-> > > 
-> > > The shmobile platform is one of only two users of the slave_id field
-> > > in dma_slave_config, which is incompatible with the way that the
-> > > dmaengine API normally works.
-> > > 
-> > > I've had a closer look at the existing code now and found that all
-> > > slave drivers that pass a slave_id in dma_slave_config for SH do that
-> > > right after passing the same ID into shdma_chan_filter, so we can just
-> > > rely on that. However, the various shdma drivers currently do not
-> > > remember the slave ID that was passed into the filter function when
-> > > used in non-DT mode and only check the value to find a matching channel,
-> > > unlike all other drivers.
-> > > 
-> > > There might still be drivers that are not part of the kernel that rely
-> > > on setting the slave_id to some other value, so to be on the safe side,
-> > > this adds another 'real_slave_id' field to shdma_chan that remembers
-> > > the ID and uses it when a driver passes a zero slave_id in dma_slave_config,
-> > > like most drivers do.
-> > > 
-> > > Eventually, the real_slave_id and slave_id fields should just get merged
-> > > into one field, but that requires other changes.
-> > > 
-> > > Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-> > > ----
-(snip)
-> I was actually hoping that you could pick up my patch and send it as a
-> follow-up to your series once you have a working version. As I mentioned,
-> the driver changes to remove the slave_id assignment can be done either
-> together with the base patch or as a follow-up.
+> > > > dmaengine: shdma: use normal interface for passing slave id
+> > > > 
+> > > > The shmobile platform is one of only two users of the slave_id field
+> > > > in dma_slave_config, which is incompatible with the way that the
+> > > > dmaengine API normally works.
+> > > > 
+> > > > I've had a closer look at the existing code now and found that all
+> > > > slave drivers that pass a slave_id in dma_slave_config for SH do that
+> > > > right after passing the same ID into shdma_chan_filter, so we can just
+> > > > rely on that. However, the various shdma drivers currently do not
+> > > > remember the slave ID that was passed into the filter function when
+> > > > used in non-DT mode and only check the value to find a matching channel,
+> > > > unlike all other drivers.
+> > > > 
+> > > > There might still be drivers that are not part of the kernel that rely
+> > > > on setting the slave_id to some other value, so to be on the safe side,
+> > > > this adds another 'real_slave_id' field to shdma_chan that remembers
+> > > > the ID and uses it when a driver passes a zero slave_id in dma_slave_config,
+> > > > like most drivers do.
+> > > > 
+> > > > Eventually, the real_slave_id and slave_id fields should just get merged
+> > > > into one field, but that requires other changes.
+> > > > 
+> > > > Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+> > > > ----
+> (snip)
+> Either that or undo the change to the type. I originally planned to change the
+> sh_mmcif_plat_data to use a void* type already, but then didn't do that because
+> it conflicts with your other patch, and I failed to revert my earlier change
+> correctly.
 
-OK, I can do it if you want :)
+Hmm... indeed Arnd's patch and my patch-set conflicts.
+I have these patch / patch-set
+ 1) header cleanup for tmio
+ 2) slave_id cleanup for shdma
+ 3) add DMA feature for sh_mobile_sdhi
+
+1 ) and 2) conflicts here. one idea is like this
+ 1) header cleanup for tmio
+ 2) add DMA feature for sh_mobile_sdhi
+ 3) slave_id cleanup for shdma
+
+1) and 2) can be controled by Ulf with no-conflict.
+if these are merged correctly, I can send 3) to DMAEngine ML.
+Then, I can point the Ulf's branch as base branch.
+
+Arnd, Ulf what do you think ?
 
 Best regards
 ---
