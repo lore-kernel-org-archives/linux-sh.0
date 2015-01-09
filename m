@@ -1,49 +1,81 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 21 Jan 2015 04:16:03 +0000
-Subject: [PATCH 8/8 v3] ASoC: rsnd: remove slave_id settings for DMAEngine
-Message-Id: <874mrkojie.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 09 Jan 2015 13:13:54 +0000
+Subject: [PATCH 2/4] ARM: shmobile: kzm9g dts: Move Ethernet node to BSC
+Message-Id: <1420809236-4105-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1420809236-4105-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1420809236-4105-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Move the Ethernet node from the root of the device tree to the BSC node,
+as it's connected to the Bus State Controller.  This allows the system
+to know the right position of the Ethernet node in the clock and PM
+domain hierarchy, and manage the clock and PM domain appropriately.
 
-Current rsnd sets dma_slave_config :: slave_id field for DMAEngine,
-but it is no longer needed. Let's remove it.
+Also rename the node's name from "lan9220" to "ethernet", to conform to
+ePAPR generic name recomendations.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v2 -> v3
+v3:
+  - No changes,
 
- - Add Arnd's Acked-by
+v2:
+  - s/confirm/conform/,
+  - Moved from kzm9g-reference to kzm9g.
+---
+ arch/arm/boot/dts/sh73a0-kzm9g.dts | 28 +++++++++++++++-------------
+ 1 file changed, 15 insertions(+), 13 deletions(-)
 
- sound/soc/sh/rcar/core.c |    3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
-
-diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
-index f0bb137..1f7ff2a 100644
---- a/sound/soc/sh/rcar/core.c
-+++ b/sound/soc/sh/rcar/core.c
-@@ -316,7 +316,7 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma,
- 		  int is_play, int id)
- {
- 	struct device *dev = rsnd_priv_to_dev(priv);
--	struct dma_slave_config cfg;
-+	struct dma_slave_config cfg = {};
- 	struct rsnd_mod *mod_from;
- 	struct rsnd_mod *mod_to;
- 	char dma_name[DMA_NAME_SIZE];
-@@ -334,7 +334,6 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma,
- 	rsnd_dma_of_path(dma, is_play, &mod_from, &mod_to);
- 	rsnd_dma_of_name(mod_from, mod_to, dma_name);
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+index 6f00e6b680e8e0fa..022ba505f57339a9 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+@@ -84,19 +84,6 @@
+ 		enable-active-high;
+ 	};
  
--	cfg.slave_id	= id;
- 	cfg.direction	= is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
- 	cfg.src_addr	= rsnd_gen_dma_addr(priv, mod_from, is_play, 1);
- 	cfg.dst_addr	= rsnd_gen_dma_addr(priv, mod_to,   is_play, 0);
+-	lan9220@10000000 {
+-		compatible = "smsc,lan9220", "smsc,lan9115";
+-		reg = <0x10000000 0x100>;
+-		phy-mode = "mii";
+-		interrupt-parent = <&irqpin0>;
+-		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
+-		reg-io-width = <4>;
+-		smsc,irq-push-pull;
+-		smsc,save-mac-address;
+-		vddvario-supply = <&reg_1p8v>;
+-		vdd33a-supply = <&reg_3p3v>;
+-	};
+-
+ 	leds {
+ 		compatible = "gpio-leds";
+ 		led1 {
+@@ -178,6 +165,21 @@
+ 	};
+ };
+ 
++&bsc {
++	ethernet@10000000 {
++		compatible = "smsc,lan9220", "smsc,lan9115";
++		reg = <0x10000000 0x100>;
++		phy-mode = "mii";
++		interrupt-parent = <&irqpin0>;
++		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
++		reg-io-width = <4>;
++		smsc,irq-push-pull;
++		smsc,save-mac-address;
++		vddvario-supply = <&reg_1p8v>;
++		vdd33a-supply = <&reg_3p3v>;
++	};
++};
++
+ &cmt1 {
+ 	status = "okay";
+ };
 -- 
-1.7.9.5
+1.9.1
 
