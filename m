@@ -1,48 +1,125 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 21 Jan 2015 04:14:56 +0000
-Subject: [PATCH 4/8 v3] mtd: sh_flctl: remove slave_id settings for DMAEngine
-Message-Id: <87a91cojk7.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 09 Jan 2015 13:13:55 +0000
+Subject: [PATCH 3/4] ARM: shmobile: Enable kzm9g board in multiplatform defconfig
+Message-Id: <1420809236-4105-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1420809236-4105-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1420809236-4105-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Arnd Bergmann <arnd@arndb.de>
-
-Current sh_flctl sets dma_slave_config :: slave_id field for DMAEngine,
-but it is no longer needed. Let's remove it.
-
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v2 -> v3
+ arch/arm/configs/shmobile_defconfig | 19 ++++++++++++++++---
+ 1 file changed, 16 insertions(+), 3 deletions(-)
 
- - no change
-
- drivers/mtd/nand/sh_flctl.c |    2 --
- 1 file changed, 2 deletions(-)
-
-diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
-index a21c378..c3ce81c 100644
---- a/drivers/mtd/nand/sh_flctl.c
-+++ b/drivers/mtd/nand/sh_flctl.c
-@@ -159,7 +159,6 @@ static void flctl_setup_dma(struct sh_flctl *flctl)
- 		return;
- 
- 	memset(&cfg, 0, sizeof(cfg));
--	cfg.slave_id = pdata->slave_id_fifo0_tx;
- 	cfg.direction = DMA_MEM_TO_DEV;
- 	cfg.dst_addr = (dma_addr_t)FLDTFIFO(flctl);
- 	cfg.src_addr = 0;
-@@ -175,7 +174,6 @@ static void flctl_setup_dma(struct sh_flctl *flctl)
- 	if (!flctl->chan_fifo0_rx)
- 		goto err;
- 
--	cfg.slave_id = pdata->slave_id_fifo0_rx;
- 	cfg.direction = DMA_DEV_TO_MEM;
- 	cfg.dst_addr = 0;
- 	cfg.src_addr = (dma_addr_t)FLDTFIFO(flctl);
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index adaa7aaf9178c4dc..e365c31e9dd513f3 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -17,6 +17,7 @@ CONFIG_ARCH_R8A7779=y
+ CONFIG_ARCH_R8A7790=y
+ CONFIG_ARCH_R8A7791=y
+ CONFIG_ARCH_R8A7794=y
++CONFIG_ARCH_SH73A0=y
+ CONFIG_MACH_MARZEN=y
+ CONFIG_CPU_BPREDICT_DISABLE=y
+ CONFIG_PL310_ERRATA_588369=y
+@@ -44,7 +45,6 @@ CONFIG_CPUFREQ_DT=y
+ CONFIG_VFP=y
+ CONFIG_NEON=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+-CONFIG_PM=y
+ CONFIG_NET=y
+ CONFIG_PACKET=y
+ CONFIG_UNIX=y
+@@ -54,6 +54,7 @@ CONFIG_IP_PNP_DHCP=y
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
++CONFIG_SIMPLE_PM_BUS=y
+ CONFIG_MTD=y
+ CONFIG_MTD_BLOCK=y
+ CONFIG_MTD_M25P80=y
+@@ -81,10 +82,13 @@ CONFIG_SMSC911X=y
+ CONFIG_SMSC_PHY=y
+ CONFIG_MICREL_PHY=y
+ # CONFIG_INPUT_MOUSEDEV_PSAUX is not set
++CONFIG_INPUT_EVDEV=y
+ CONFIG_KEYBOARD_GPIO=y
+ # CONFIG_INPUT_MOUSE is not set
+ CONFIG_INPUT_TOUCHSCREEN=y
+ CONFIG_TOUCHSCREEN_ST1232=y
++CONFIG_INPUT_MISC=y
++CONFIG_INPUT_ADXL34X=y
+ # CONFIG_LEGACY_PTYS is not set
+ CONFIG_SERIAL_8250=y
+ CONFIG_SERIAL_8250_CONSOLE=y
+@@ -93,6 +97,7 @@ CONFIG_SERIAL_8250_EM=y
+ CONFIG_SERIAL_SH_SCI=y
+ CONFIG_SERIAL_SH_SCI_NR_UARTS 
+ CONFIG_SERIAL_SH_SCI_CONSOLE=y
++CONFIG_I2C_CHARDEV=y
+ CONFIG_I2C_GPIO=y
+ CONFIG_I2C_RIIC=y
+ CONFIG_I2C_SH_MOBILE=y
+@@ -103,14 +108,16 @@ CONFIG_SPI_SH_MSIOF=y
+ CONFIG_SPI_SH_HSPI=y
+ CONFIG_GPIO_EM=y
+ CONFIG_GPIO_RCAR=y
++CONFIG_GPIO_PCF857X=y
+ # CONFIG_HWMON is not set
+ CONFIG_THERMAL=y
+ CONFIG_CPU_THERMAL=y
+ CONFIG_RCAR_THERMAL=y
+ CONFIG_WATCHDOG=y
+ CONFIG_DA9063_WATCHDOG=y
++CONFIG_MFD_AS3711=y
+ CONFIG_MFD_DA9063=y
+-CONFIG_REGULATOR=y
++CONFIG_REGULATOR_AS3711=y
+ CONFIG_REGULATOR_DA9210=y
+ CONFIG_REGULATOR_GPIO=y
+ CONFIG_MEDIA_SUPPORT=y
+@@ -127,10 +134,12 @@ CONFIG_VIDEO_RENESAS_VSP1=y
+ CONFIG_VIDEO_ADV7180=y
+ CONFIG_DRM=y
+ CONFIG_DRM_RCAR_DU=y
+-CONFIG_BACKLIGHT_LCD_SUPPORT=y
++CONFIG_FB_SH_MOBILE_LCDC=y
++CONFIG_FB_SH_MOBILE_MERAM=y
+ # CONFIG_LCD_CLASS_DEVICE is not set
+ # CONFIG_BACKLIGHT_GENERIC is not set
+ CONFIG_BACKLIGHT_PWM=y
++CONFIG_BACKLIGHT_AS3711=y
+ CONFIG_SOUND=y
+ CONFIG_SND=y
+ CONFIG_SND_SOC=y
+@@ -141,6 +150,7 @@ CONFIG_SND_SOC_WM8978=y
+ CONFIG_USB=y
+ CONFIG_USB_EHCI_HCD=y
+ CONFIG_USB_OHCI_HCD=y
++CONFIG_USB_R8A66597_HCD=y
+ CONFIG_USB_RENESAS_USBHS=y
+ CONFIG_USB_RCAR_PHY=y
+ CONFIG_USB_RCAR_GEN2_PHY=y
+@@ -154,11 +164,14 @@ CONFIG_NEW_LEDS=y
+ CONFIG_LEDS_CLASS=y
+ CONFIG_LEDS_GPIO=y
+ CONFIG_RTC_CLASS=y
++CONFIG_RTC_DRV_RS5C372=y
+ CONFIG_RTC_DRV_S35390A=y
+ CONFIG_DMADEVICES=y
+ CONFIG_SH_DMAE=y
+ CONFIG_RCAR_DMAC=y
+ # CONFIG_IOMMU_SUPPORT is not set
++CONFIG_IIO=y
++CONFIG_AK8975=y
+ CONFIG_PWM=y
+ CONFIG_PWM_RENESAS_TPU=y
+ # CONFIG_DNOTIFY is not set
 -- 
-1.7.9.5
+1.9.1
 
