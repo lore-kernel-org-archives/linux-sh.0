@@ -1,81 +1,145 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 20 Jan 2015 01:45:47 +0000
-Subject: [PATCH 3/6 v5] ARM: shmobile: r8a7790: sound enables Audio DMAC entry on DTSI
-Message-Id: <87twzmb4w0.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 09 Jan 2015 13:12:35 +0000
+Subject: [PATCH v3 4/4] drivers: bus: Add Simple Power-Managed Bus Driver
+Message-Id: <1420809155-4015-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1420809155-4015-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1420809155-4015-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Add a driver for transparent busses that don't need a real driver (think
+"simple-bus"), where the bus controller is part of a PM domain, or under
+the control of a functional clock.  Typically, the bus controller's
+PM domain and/or clock must be enabled for child devices connected to
+the bus (either on-SoC or externally) to function.
 
-This patch adds Audio DMAC (= rcar-dmac) entry for sound
+Hence the sole purpose of this driver is to enable its clock and PM
+domain (if exist(s)), which are specified in the DT and managed from
+platform and PM domain code.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Due to the child-parent relationship with devices connected to the bus,
+PM domain and clock state transitions are handled in the correct order.
+
+Currently this driver handles the Renesas Bus State Controller (BSC,
+sometimes called "LBSC within Bus Bridge", or "External Bus Interface")
+found on several Renesas ARM SoCs. Support for other bus controllers can
+easily be added by adding more compatible values.
+
+Note that this driver cannot just bind against "simple-bus", as that
+may prevent a device-specific driver from taking precedence.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
-v4 -> v5
+v3:
+  - Add Tested-by,
 
- - Add SoC/platform side entry
+v2:
+  - Rename from "Renesas Bus State Controller Driver" (renesas-bsc) to
+    "Simple Power-Managed Bus Driver" (simple-pm-bus),
+  - Change module license to GPL v2,
+  - Change email address to geert+renesas@glider.be.
+---
+ drivers/bus/Kconfig         | 13 ++++++++++++
+ drivers/bus/Makefile        |  1 +
+ drivers/bus/simple-pm-bus.c | 51 +++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 65 insertions(+)
+ create mode 100644 drivers/bus/simple-pm-bus.c
 
- arch/arm/boot/dts/r8a7790.dtsi |   44 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 44 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 4b38fc9..70505ae 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1432,6 +1432,50 @@
- 				"dvc.0", "dvc.1",
- 				"clk_a", "clk_b", "clk_c", "clk_i";
+diff --git a/drivers/bus/Kconfig b/drivers/bus/Kconfig
+index 626960819e6df16c..1addb707bf8100e3 100644
+--- a/drivers/bus/Kconfig
++++ b/drivers/bus/Kconfig
+@@ -58,6 +58,19 @@ config OMAP_OCP2SCP
+ 	  OCP2SCP and in OMAP5, both USB PHY and SATA PHY is connected via
+ 	  OCP2SCP.
  
-+		dmas =		<&audma0 0x01>,	<&audma1 0x02>,	<&audma0 0x15>,	<&audma1 0x16>,
-+				<&audma0 0x03>,	<&audma1 0x04>,	<&audma0 0x49>,	<&audma1 0x4a>,
-+				<&audma0 0x05>,	<&audma1 0x06>,	<&audma0 0x63>,	<&audma1 0x64>,
-+				<&audma0 0x07>,	<&audma1 0x08>,	<&audma0 0x6f>,	<&audma1 0x70>,
-+				<&audma0 0x09>,	<&audma1 0x0a>,	<&audma0 0x71>,	<&audma1 0x72>,
-+				<&audma0 0x0b>,	<&audma1 0x0c>,	<&audma0 0x73>,	<&audma1 0x74>,
-+				<&audma0 0x0d>,	<&audma1 0x0e>,	<&audma0 0x75>,	<&audma1 0x76>,
-+				<&audma0 0x0f>,	<&audma1 0x10>,	<&audma0 0x79>,	<&audma1 0x7a>,
-+				<&audma0 0x11>,	<&audma1 0x12>,	<&audma0 0x7b>,	<&audma1 0x7c>,
-+				<&audma0 0x13>,	<&audma1 0x14>,	<&audma0 0x7d>,	<&audma1 0x7e>,
++config SIMPLE_PM_BUS
++	bool "Simple Power-Managed Bus Driver"
++	depends on OF && PM
++	depends on ARCH_SHMOBILE || COMPILE_TEST
++	help
++	  Driver for transparent busses that don't need a real driver (think
++	  "simple-bus"), where the bus controller is part of a PM domain, or
++	  under the control of a functional clock, and thus relies on runtime
++	  PM for managing this PM domain and/or clock.
++	  An example of such a bus controller is the Renesas Bus State
++	  Controller (BSC, sometimes called "LBSC within Bus Bridge", or
++	  "External Bus Interface") as found on several Renesas ARM SoCs.
 +
-+				<&audma0 0x85>,	<&audma1 0x9a>,	<&audma0 0xbc>,
-+				<&audma0 0x87>,	<&audma1 0x9c>,	<&audma0 0xbe>,
-+				<&audma0 0x89>,	<&audma1 0x9e>,
-+				<&audma0 0x8b>,	<&audma1 0xa0>,
-+				<&audma0 0x8d>,	<&audma1 0xb0>,
-+				<&audma0 0x8f>,	<&audma1 0xb2>,
-+				<&audma0 0x91>,	<&audma1 0xb4>,
-+				<&audma0 0x93>,	<&audma1 0xb6>,
-+				<&audma0 0x95>,	<&audma1 0xb8>,
-+				<&audma0 0x97>,	<&audma1 0xba>;
-+
-+		dma-names =	"mem_ssi0",	"ssi0_mem",	"mem_ssiu0",	"ssiu0_mem",
-+				"mem_ssi1",	"ssi1_mem",	"mem_ssiu1",	"ssiu1_mem",
-+				"mem_ssi2",	"ssi2_mem",	"mem_ssiu2",	"ssiu2_mem",
-+				"mem_ssi3",	"ssi3_mem",	"mem_ssiu3",	"ssiu3_mem",
-+				"mem_ssi4",	"ssi4_mem",	"mem_ssiu4",	"ssiu4_mem",
-+				"mem_ssi5",	"ssi5_mem",	"mem_ssiu5",	"ssiu5_mem",
-+				"mem_ssi6",	"ssi6_mem",	"mem_ssiu6",	"ssiu6_mem",
-+				"mem_ssi7",	"ssi7_mem",	"mem_ssiu7",	"ssiu7_mem",
-+				"mem_ssi8",	"ssi8_mem",	"mem_ssiu8",	"ssiu8_mem",
-+				"mem_ssi9",	"ssi9_mem",	"mem_ssiu9",	"ssiu9_mem",
-+
-+				"mem_src0",	"src0_mem",	"dvc0_mem",
-+				"mem_src1",	"src1_mem",	"dvc1_mem",
-+				"mem_src2",	"src2_mem",
-+				"mem_src3",	"src3_mem",
-+				"mem_src4",	"src4_mem",
-+				"mem_src5",	"src5_mem",
-+				"mem_src6",	"src6_mem",
-+				"mem_src7",	"src7_mem",
-+				"mem_src8",	"src8_mem",
-+				"mem_src9",	"src9_mem";
-+
- 		status = "disabled";
+ config VEXPRESS_CONFIG
+ 	bool "Versatile Express configuration bus"
+ 	default y if ARCH_VEXPRESS
+diff --git a/drivers/bus/Makefile b/drivers/bus/Makefile
+index 3cfaf2c7f25ac4f0..e023a2bec664d900 100644
+--- a/drivers/bus/Makefile
++++ b/drivers/bus/Makefile
+@@ -14,4 +14,5 @@ obj-$(CONFIG_MVEBU_MBUS) 	+= mvebu-mbus.o
+ obj-$(CONFIG_OMAP_INTERCONNECT)	+= omap_l3_smx.o omap_l3_noc.o
  
- 		rcar_sound,dvc {
+ obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
++obj-$(CONFIG_SIMPLE_PM_BUS)	+= simple-pm-bus.o
+ obj-$(CONFIG_VEXPRESS_CONFIG)	+= vexpress-config.o
+diff --git a/drivers/bus/simple-pm-bus.c b/drivers/bus/simple-pm-bus.c
+new file mode 100644
+index 0000000000000000..e55872d2695bd551
+--- /dev/null
++++ b/drivers/bus/simple-pm-bus.c
+@@ -0,0 +1,51 @@
++/*
++ * Simple Power-Managed Bus Driver
++ *
++ * Copyright (C) 2014 Glider bvba
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
++
++
++static int simple_pm_bus_probe(struct platform_device *pdev)
++{
++	dev_dbg(&pdev->dev, "%s\n", __func__);
++
++	pm_runtime_enable(&pdev->dev);
++	return 0;
++}
++
++static int simple_pm_bus_remove(struct platform_device *pdev)
++{
++	dev_dbg(&pdev->dev, "%s\n", __func__);
++
++	pm_runtime_disable(&pdev->dev);
++	return 0;
++}
++
++static const struct of_device_id simple_pm_bus_of_match[] = {
++	{ .compatible = "renesas,bsc", },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, simple_pm_bus_of_match);
++
++static struct platform_driver simple_pm_bus_driver = {
++	.probe = simple_pm_bus_probe,
++	.remove = simple_pm_bus_remove,
++	.driver = {
++		.name = "simple-pm-bus",
++		.of_match_table = simple_pm_bus_of_match,
++	},
++};
++
++module_platform_driver(simple_pm_bus_driver);
++
++MODULE_DESCRIPTION("Simple Power-Managed Bus Driver");
++MODULE_AUTHOR("Geert Uytterhoeven <geert+renesas@glider.be>");
++MODULE_LICENSE("GPL v2");
 -- 
-1.7.9.5
+1.9.1
 
