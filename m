@@ -1,76 +1,97 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 Jan 2015 02:35:23 +0000
-Subject: [PATCH 11/17] ARM: shmobile: sh73a0: Introduce generic setup callback
-Message-Id: <fcbd924a694351eb1583e8fa3671c7353b43b67d.1421371996.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 09 Jan 2015 13:12:32 +0000
+Subject: [PATCH v3 1/4] drivers: bus: Sort Kconfig entries alphabetically
+Message-Id: <1420809155-4015-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421371996.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421371996.git.horms+renesas@verge.net.au>
+References: <1420809155-4015-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1420809155-4015-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
-
-Add a generic sh73a0 machine setup callback for the upcoming
-sh73a0 multiplatform case. Cache needs to be configured, and
-legacy clocks must be omitted.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/setup-sh73a0.c | 16 +++++++++++++---
- 1 file changed, 13 insertions(+), 3 deletions(-)
+v3:
+  - Add Tested-by,
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 354cab1..34b5a78 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -30,6 +30,7 @@
- #include <linux/platform_data/sh_ipmmu.h>
- #include <linux/platform_data/irq-renesas-intc-irqpin.h>
+v2:
+  - New.
+---
+ drivers/bus/Kconfig | 44 ++++++++++++++++++++++----------------------
+ 1 file changed, 22 insertions(+), 22 deletions(-)
+
+diff --git a/drivers/bus/Kconfig b/drivers/bus/Kconfig
+index b99729e368608bda..626960819e6df16c 100644
+--- a/drivers/bus/Kconfig
++++ b/drivers/bus/Kconfig
+@@ -4,6 +4,21 @@
  
-+#include <asm/hardware/cache-l2x0.h>
- #include <asm/mach-types.h>
- #include <asm/mach/map.h>
- #include <asm/mach/arch.h>
-@@ -779,8 +780,6 @@ void __init sh73a0_add_early_devices(void)
- 	shmobile_setup_console();
- }
+ menu "Bus devices"
  
--#ifdef CONFIG_USE_OF
++config ARM_CCI
++	bool "ARM CCI driver support"
++	depends on ARM && OF && CPU_V7
++	help
++	  Driver supporting the CCI cache coherent interconnect for ARM
++	  platforms.
++
++config ARM_CCN
++	bool "ARM CCN driver support"
++	depends on ARM || ARM64
++	depends on PERF_EVENTS
++	help
++	  PMU (perf) driver supporting the ARM CCN (Cache Coherent Network)
++	  interconnect.
++
+ config BRCMSTB_GISB_ARB
+ 	bool "Broadcom STB GISB bus arbiter"
+ 	depends on ARM || MIPS
+@@ -27,15 +42,6 @@ config MVEBU_MBUS
+ 	  Driver needed for the MBus configuration on Marvell EBU SoCs
+ 	  (Kirkwood, Dove, Orion5x, MV78XX0 and Armada 370/XP).
+ 
+-config OMAP_OCP2SCP
+-	tristate "OMAP OCP2SCP DRIVER"
+-	depends on ARCH_OMAP2PLUS
+-	help
+-	  Driver to enable ocp2scp module which transforms ocp interface
+-	  protocol to scp protocol. In OMAP4, USB PHY is connected via
+-	  OCP2SCP and in OMAP5, both USB PHY and SATA PHY is connected via
+-	  OCP2SCP.
 -
- void __init sh73a0_add_standard_devices_dt(void)
- {
- 	/* clocks are setup late during boot in the case of DT */
-@@ -797,6 +796,17 @@ static void sh73a0_restart(enum reboot_mode mode, const char *cmd)
- 	writel((1 << 31), RESCNT2);
- }
+ config OMAP_INTERCONNECT
+ 	tristate "OMAP INTERCONNECT DRIVER"
+ 	depends on ARCH_OMAP2PLUS
+@@ -43,20 +49,14 @@ config OMAP_INTERCONNECT
+ 	help
+ 	  Driver to enable OMAP interconnect error handling driver.
  
-+#ifdef CONFIG_USE_OF
-+
-+static void __init sh73a0_generic_init(void)
-+{
-+#ifdef CONFIG_CACHE_L2X0
-+	/* Shared attribute override enable, 64K*8way */
-+	l2x0_init(IOMEM(0xf0100000), 0x00400000, 0xc20f0fff);
-+#endif
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
-+}
-+
- static const char *sh73a0_boards_compat_dt[] __initdata = {
- 	"renesas,sh73a0",
- 	NULL,
-@@ -806,7 +816,7 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
- 	.smp		= smp_ops(sh73a0_smp_ops),
- 	.map_io		= sh73a0_map_io,
- 	.init_early	= shmobile_init_delay,
--	.init_machine	= sh73a0_add_standard_devices_dt,
-+	.init_machine	= sh73a0_generic_init,
- 	.init_late	= shmobile_init_late,
- 	.restart	= sh73a0_restart,
- 	.dt_compat	= sh73a0_boards_compat_dt,
+-config ARM_CCI
+-	bool "ARM CCI driver support"
+-	depends on ARM && OF && CPU_V7
+-	help
+-	  Driver supporting the CCI cache coherent interconnect for ARM
+-	  platforms.
+-
+-config ARM_CCN
+-	bool "ARM CCN driver support"
+-	depends on ARM || ARM64
+-	depends on PERF_EVENTS
++config OMAP_OCP2SCP
++	tristate "OMAP OCP2SCP DRIVER"
++	depends on ARCH_OMAP2PLUS
+ 	help
+-	  PMU (perf) driver supporting the ARM CCN (Cache Coherent Network)
+-	  interconnect.
++	  Driver to enable ocp2scp module which transforms ocp interface
++	  protocol to scp protocol. In OMAP4, USB PHY is connected via
++	  OCP2SCP and in OMAP5, both USB PHY and SATA PHY is connected via
++	  OCP2SCP.
+ 
+ config VEXPRESS_CONFIG
+ 	bool "Versatile Express configuration bus"
 -- 
-2.1.4
+1.9.1
 
