@@ -1,56 +1,55 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 17 Jan 2015 00:58:43 +0000
-Subject: [PATCH 10/11] ARM: shmobile: sh73a0 dtsi: Add memory-controller nodes
-Message-Id: <29828c87560dbdb567e759e4e6bb4ad0febfcf21.1421380713.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 09 Jan 2015 13:12:33 +0000
+Subject: [PATCH v3 2/4] drivers: bus: Sort Makefile entries alphabetically
+Message-Id: <1420809155-4015-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421380713.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421380713.git.horms+renesas@verge.net.au>
+References: <1420809155-4015-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1420809155-4015-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Add device nodes for the two SDRAM Bus State Controllers.
-The SBSCs are located in the A4BC0 resp. A4BC1 PM domains, which must
-not be powered down, else the system will crash.
-
-References to the A4BC0 and A4BC1 PM domains will be added later.
-
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
- arch/arm/boot/dts/sh73a0.dtsi | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+v3:
+  - Add Tested-by,
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index d4cfb06..37c8a76 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -42,6 +42,22 @@
- 		      <0xf0000100 0x100>;
- 	};
+v2:
+  - New.
+---
+ drivers/bus/Makefile | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/bus/Makefile b/drivers/bus/Makefile
+index 2973c18cbcc27816..3cfaf2c7f25ac4f0 100644
+--- a/drivers/bus/Makefile
++++ b/drivers/bus/Makefile
+@@ -2,16 +2,16 @@
+ # Makefile for the bus drivers.
+ #
  
-+	sbsc2: memory-controller@fb400000 {
-+		compatible = "renesas,sbsc-sh73a0";
-+		reg = <0xfb400000 0x400>;
-+		interrupts = <0 37 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 38 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "sec", "temp";
-+	};
++# Interconnect bus drivers for ARM platforms
++obj-$(CONFIG_ARM_CCI)		+= arm-cci.o
++obj-$(CONFIG_ARM_CCN)		+= arm-ccn.o
 +
-+	sbsc1: memory-controller@fe400000 {
-+		compatible = "renesas,sbsc-sh73a0";
-+		reg = <0xfe400000 0x400>;
-+		interrupts = <0 35 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 36 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "sec", "temp";
-+	};
-+
- 	pmu {
- 		compatible = "arm,cortex-a9-pmu";
- 		interrupts = <0 55 IRQ_TYPE_LEVEL_HIGH>,
+ obj-$(CONFIG_BRCMSTB_GISB_ARB)	+= brcmstb_gisb.o
+-obj-$(CONFIG_IMX_WEIM)	+= imx-weim.o
+-obj-$(CONFIG_MVEBU_MBUS) += mvebu-mbus.o
+-obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
++obj-$(CONFIG_IMX_WEIM)		+= imx-weim.o
++obj-$(CONFIG_MVEBU_MBUS) 	+= mvebu-mbus.o
+ 
+ # Interconnect bus driver for OMAP SoCs.
+ obj-$(CONFIG_OMAP_INTERCONNECT)	+= omap_l3_smx.o omap_l3_noc.o
+ 
+-# Interconnect bus drivers for ARM platforms
+-obj-$(CONFIG_ARM_CCI)		+= arm-cci.o
+-obj-$(CONFIG_ARM_CCN)		+= arm-ccn.o
+-
++obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
+ obj-$(CONFIG_VEXPRESS_CONFIG)	+= vexpress-config.o
 -- 
-2.1.4
+1.9.1
 
