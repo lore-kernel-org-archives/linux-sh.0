@@ -1,104 +1,89 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 14 Jan 2015 12:11:22 +0000
-Subject: [PATCH v2 4/6] ARM: shmobile: R-Mobile: Special-case PM domains with memory-controllers
-Message-Id: <1421237484-16847-5-git-send-email-geert+renesas@glider.be>
+Date: Fri, 09 Jan 2015 13:12:34 +0000
+Subject: [PATCH v3 3/4] drivers: bus: Add Simple Power-Managed Bus DT Bindings
+Message-Id: <1420809155-4015-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421237484-16847-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1421237484-16847-1-git-send-email-geert+renesas@glider.be>
+References: <1420809155-4015-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1420809155-4015-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add a special case for PM domains containing a memory-controller.
-Such a PM domain must not be turned off if memory is in use.
-
-On sh73a0 PM domains A4BC0 and A4BC1 each contain an SDRAM Bus State
-Controller (SBSC). On r8a73a4 PM domain A3BC contains two DDR Bus
-Controllers (DBSC).  In both cases, there are no other devices in these
-PM domains, so they were eligible for power down, crashing the system.
-
-On r8a7740 the DDR3 Bus State Controller (DBSC3) is located in A4S,
-whose child domain A3SM contains the CPU core. Hence A4S is never turned
-off, and no crash happened.
-
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
-v2:
-  - Rename PD_SBSC to PD_MEMCTL,
-  - Reword code comments and patch description.
----
- arch/arm/mach-shmobile/pm-rmobile.c | 29 +++++++++++++++++++++++------
- 1 file changed, 23 insertions(+), 6 deletions(-)
+v3:
+  - Add Tested-by,
+  - Document required properties inherited from "simple-bus",
+  - Document required "reg" property for "renesas,bsc",
+  - Move "ranges" before "reg" in the example,
 
-diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
-index e4c3f7de48e2ccf2..95018209ff0b37cc 100644
---- a/arch/arm/mach-shmobile/pm-rmobile.c
-+++ b/arch/arm/mach-shmobile/pm-rmobile.c
-@@ -222,6 +222,7 @@ enum pd_types {
- 	PD_CPU,
- 	PD_CONSOLE,
- 	PD_DEBUG,
-+	PD_MEMCTL,
- };
- 
- #define MAX_NUM_SPECIAL_PDS	16
-@@ -233,6 +234,14 @@ static struct special_pd {
- 
- static unsigned int num_special_pds __initdata;
- 
-+static const struct of_device_id special_ids[] __initconst = {
-+	{ .compatible = "arm,coresight-etm3x", .data = (void *)PD_DEBUG },
-+	{ .compatible = "renesas,dbsc-r8a73a4", .data = (void *)PD_MEMCTL, },
-+	{ .compatible = "renesas,dbsc3-r8a7740", .data = (void *)PD_MEMCTL, },
-+	{ .compatible = "renesas,sbsc-sh73a0", .data = (void *)PD_MEMCTL, },
-+	{ /* sentinel */ },
-+};
+v2:
+  - New.
+---
+ .../devicetree/bindings/bus/simple-pm-bus.txt      | 52 ++++++++++++++++++++++
+ 1 file changed, 52 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/bus/simple-pm-bus.txt
+
+diff --git a/Documentation/devicetree/bindings/bus/simple-pm-bus.txt b/Documentation/devicetree/bindings/bus/simple-pm-bus.txt
+new file mode 100644
+index 0000000000000000..d03abf7fd8e3997a
+--- /dev/null
++++ b/Documentation/devicetree/bindings/bus/simple-pm-bus.txt
+@@ -0,0 +1,52 @@
++Simple Power-Managed Bus
++============
 +
- static void __init add_special_pd(struct device_node *np, enum pd_types type)
- {
- 	unsigned int i;
-@@ -265,6 +274,7 @@ static void __init add_special_pd(struct device_node *np, enum pd_types type)
- static void __init get_special_pds(void)
- {
- 	struct device_node *np;
-+	const struct of_device_id *id;
- 
- 	/* PM domains containing CPUs */
- 	for_each_node_by_type(np, "cpu")
-@@ -274,12 +284,9 @@ static void __init get_special_pds(void)
- 	if (of_stdout)
- 		add_special_pd(of_stdout, PD_CONSOLE);
- 
--	/* PM domain containing Coresight-ETM */
--	np = of_find_compatible_node(NULL, NULL, "arm,coresight-etm3x");
--	if (np) {
--		add_special_pd(np, PD_DEBUG);
--		of_node_put(np);
--	}
-+	/* PM domains containing other special devices */
-+	for_each_matching_node_and_match(np, special_ids, &id)
-+		add_special_pd(np, (enum pd_types)id->data);
- }
- 
- static void __init put_special_pds(void)
-@@ -334,6 +341,16 @@ static void __init rmobile_setup_pm_domain(struct device_node *np,
- 		pd->suspend = rmobile_pd_suspend_busy;
- 		break;
- 
-+	case PD_MEMCTL:
-+		/*
-+		 * This domain contains a memory-controller and therefore it
-+		 * should only be turned off if memory is not in use.
-+		 */
-+		pr_debug("PM domain %s contains MEMCTL\n", name);
-+		pd->gov = &pm_domain_always_on_gov;
-+		pd->suspend = rmobile_pd_suspend_busy;
-+		break;
++A Simple Power-Managed Bus is a transparent bus that doesn't need a real
++driver, as it's typically initialized by the boot loader.
 +
- 	case PD_NORMAL:
- 		break;
- 	}
++However, its bus controller is part of a PM domain, or under the control of a
++functional clock.  Hence, the bus controller's PM domain and/or clock must be
++enabled for child devices connected to the bus (either on-SoC or externally)
++to function.
++
++
++Generic compatible values and properties
++----------------------------------------
++
++Required properties:
++  - compatible: Must be at least one of the vendor-specific compatible values
++		from a vendor-specific section below, and "simple-bus" as a
++		fallback.
++  - #address-cells, #size-cells, ranges: Must describe the mapping between
++		parent address and child address spaces.
++
++Optional platform-specific properties for clock or PM domain control (at least
++one of them is required):
++  - clocks: Must contain a reference to the functional clock(s),
++  - power-domains: Must contain a reference to the PM domain.
++
++
++Vendor-specific compatible values and properties
++------------------------------------------------
++
++Renesas Bus State Controller (BSC):
++  - compatible: Must be an SoC-specific value, and "renesas,bsc" as a fallback.
++                SoC-specific values can be:
++		"renesas,bsc-r8a73a4" for R-Mobile APE6 (r8a73a4)
++		"renesas,bsc-sh73a0" for SH-Mobile AG5 (sh73a0)
++  - reg: Must contain the base address and length to access the bus controller.
++  - interrupts: Must contain a reference to the BSC interrupt, if available.
++
++
++Example:
++
++	bsc: bus@fec10000 {
++		compatible = "renesas,bsc-sh73a0", "renesas,bsc", "simple-bus";
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges = <0 0 0x20000000>;
++		reg = <0xfec10000 0x400>;
++		interrupts = <0 39 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&zb_clk>;
++		power-domains = <&pd_a4s>;
++	};
 -- 
 1.9.1
 
