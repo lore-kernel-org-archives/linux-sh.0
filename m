@@ -1,61 +1,164 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 16 Jan 2015 21:56:02 +0000
-Subject: [PATCH] sh-sci: extend PM methods
-Message-Id: <3390015.epzKE7eYAi@wasted.cogentembedded.com>
+From: Soren Brinkmann <soren.brinkmann@xilinx.com>
+Date: Fri, 09 Jan 2015 15:43:47 +0000
+Subject: [PATCH v4 3/7] pinctrl: zynq: Document DT binding
+Message-Id: <1420818231-13451-4-git-send-email-soren.brinkmann@xilinx.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1420818231-13451-1-git-send-email-soren.brinkmann@xilinx.com>
+In-Reply-To: <1420818231-13451-1-git-send-email-soren.brinkmann@xilinx.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: gregkh@linuxfoundation.org, jslaby@suse.cz, linux-serial@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-arm-kernel@lists.infradead.org
 
-In order to make it possible to restore from hibernation not only in Linux but
-also in e.g. U-Boot, we have to use sci_{suspend|remove}() for the PM {freeze|
-thaw|restore}() methods.  It's handy to achieve this by using SIMPLE_DEV_PM_OPS()
-macro, however we have to annotate sci_{suspend|remove}() with '__maybe_unused'
-in order to avoid compilation warnings when CONFIG_PM_SLEEP is undefined.
+Add documentation for the devicetree binding for the Zynq pincontroller.
 
-Based on orignal patch by Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Soren Brinkmann <soren.brinkmann@xilinx.com>
+Tested-by: Andreas F=C3=A4rber <afaerber@suse.de>
 ---
-This patch is against the 'tty-next' branch of GregKH's 'tty.git' repo.
+Changes since v1:
+ - fix typo
+ - add USB related documentation
+ - remove 'pinctrl-' prefix for pinctrl sub-nodes
+ - update documentation to enforce strict separation of pinmux
+   and pinconf nodes
+   - update example accordingly
+---
+ .../bindings/pinctrl/xlnx,zynq-pinctrl.txt         | 104 +++++++++++++++++=
+++++
+ 1 file changed, 104 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/pinctrl/xlnx,zynq-pin=
+ctrl.txt
 
- drivers/tty/serial/sh-sci.c |    9 +++------
- 1 file changed, 3 insertions(+), 6 deletions(-)
-
-Index: tty/drivers/tty/serial/sh-sci.c
-=================================--- tty.orig/drivers/tty/serial/sh-sci.c
-+++ tty/drivers/tty/serial/sh-sci.c
-@@ -2605,7 +2605,7 @@ static int sci_probe(struct platform_dev
- 	return 0;
- }
- 
--static int sci_suspend(struct device *dev)
-+static __maybe_unused int sci_suspend(struct device *dev)
- {
- 	struct sci_port *sport = dev_get_drvdata(dev);
- 
-@@ -2615,7 +2615,7 @@ static int sci_suspend(struct device *de
- 	return 0;
- }
- 
--static int sci_resume(struct device *dev)
-+static __maybe_unused int sci_resume(struct device *dev)
- {
- 	struct sci_port *sport = dev_get_drvdata(dev);
- 
-@@ -2625,10 +2625,7 @@ static int sci_resume(struct device *dev
- 	return 0;
- }
- 
--static const struct dev_pm_ops sci_dev_pm_ops = {
--	.suspend	= sci_suspend,
--	.resume		= sci_resume,
--};
-+static SIMPLE_DEV_PM_OPS(sci_dev_pm_ops, sci_suspend, sci_resume);
- 
- static struct platform_driver sci_driver = {
- 	.probe		= sci_probe,
+diff --git a/Documentation/devicetree/bindings/pinctrl/xlnx,zynq-pinctrl.tx=
+t b/Documentation/devicetree/bindings/pinctrl/xlnx,zynq-pinctrl.txt
+new file mode 100644
+index 000000000000..b7b55a964f65
+--- /dev/null
++++ b/Documentation/devicetree/bindings/pinctrl/xlnx,zynq-pinctrl.txt
+@@ -0,0 +1,104 @@
++	Binding for Xilinx Zynq Pinctrl
++
++Required properties:
++- compatible: "xlnx,zynq-pinctrl"
++- syscon: phandle to SLCR
++- reg: Offset and length of pinctrl space in SLCR
++
++Please refer to pinctrl-bindings.txt in this directory for details of the
++common pinctrl bindings used by client devices, including the meaning of t=
+he
++phrase "pin configuration node".
++
++Zynq's pin configuration nodes act as a container for an arbitrary number =
+of
++subnodes. Each of these subnodes represents some desired configuration for=
+ a
++pin, a group, or a list of pins or groups. This configuration can include =
+the
++mux function to select on those pin(s)/group(s), and various pin configura=
+tion
++parameters, such as pull-up, slew rate, etc.
++
++Each configuration node can consist of multiple nodes describing the pinmu=
+x and
++pinconf options. Those nodes can be pinmux nodes or pinconf nodes.
++
++The name of each subnode is not important; all subnodes should be enumerat=
+ed
++and processed purely based on their content.
++
++Required properties for pinmux nodes are:
++ - groups: A list of pinmux groups.
++ - function: The name of a pinmux function to activate for the specified s=
+et
++   of groups.
++
++Required properties for configuration nodes:
++One of:
++ - pins: a list of pin names
++ - groups: A list of pinmux groups.
++
++The following generic properties as defined in pinctrl-bindings.txt are va=
+lid
++to specify in a pinmux subnode:
++ groups, function
++
++The following generic properties as defined in pinctrl-bindings.txt are va=
+lid
++to specify in a pinconf subnode:
++ groups, pins, bias-disable, bias-high-impedance, bias-pull-up, slew-rate,
++ low-power-disable, low-power-enable
++
++ Valid arguments for 'slew-rate' are '0' and '1' to select between slow an=
+d fast
++ respectively.
++
++ Valid values for groups are:
++   ethernet0_0_grp, ethernet1_0_grp, mdio0_0_grp, mdio1_0_grp,
++   qspi0_0_grp, qspi1_0_grp, qspi_fbclk, qspi_cs1_grp, spi0_0_grp,
++   spi0_1_grp - spi0_2_grp, spi1_0_grp - spi1_3_grp, sdio0_0_grp - sdio0_2=
+_grp,
++   sdio1_0_grp - sdio1_3_grp, sdio0_emio_wp, sdio0_emio_cd, sdio1_emio_wp,
++   sdio1_emio_cd, smc0_nor, smc0_nor_cs1_grp, smc0_nor_addr25_grp, smc0_na=
+nd,
++   can0_0_grp - can0_10_grp, can1_0_grp - can1_11_grp, uart0_0_grp - uart0=
+_10_grp,
++   uart1_0_grp - uart1_11_grp, i2c0_0_grp - i2c0_10_grp, i2c1_0_grp - i2c1=
+_10_grp,
++   ttc0_0_grp - ttc0_2_grp, ttc1_0_grp - ttc1_2_grp, swdt0_0_grp - swdt0_4=
+_grp,
++   gpio0_0_grp - gpio0_53_grp, usb0_0_grp, usb1_0_grp
++
++ Valid values for pins are:
++   MIO0 - MIO53
++
++ Valid values for function are:
++   ethernet0, ethernet1, mdio0, mdio1, qspi0, qspi1, qspi_fbclk, qspi_cs1,
++   spi0, spi1, sdio0, sdio0_pc, sdio0_cd, sdio0_wp,
++   sdio1, sdio1_pc, sdio1_cd, sdio1_wp,
++   smc0_nor, smc0_nor_cs1, smc0_nor_addr25, smc0_nand, can0, can1, uart0, =
+uart1,
++   i2c0, i2c1, ttc0, ttc1, swdt0, gpio0, usb0, usb1
++
++The following driver-specific properties as defined here are valid to spec=
+ify in
++a pin configuration subnode:
++ - io-standard: Configure the pin to use the selected IO standard accordin=
+g to
++   this mapping:
++    1: LVCMOS18
++    2: LVCMOS25
++    3: LVCMOS33
++    4: HSTL
++
++Example:
++	pinctrl0: pinctrl@700 {
++		compatible =3D "xlnx,pinctrl-zynq";
++		reg =3D <0x700 0x200>;
++		syscon =3D <&slcr>;
++
++		pinctrl_uart1_default: uart1-default {
++			mux {
++				groups =3D "uart1_10_grp";
++				function =3D "uart1";
++			};
++
++			conf {
++				groups =3D "uart1_10_grp";
++				slew-rate =3D <0>;
++				io-standard =3D <1>;
++			};
++
++			conf-rx {
++				pins =3D "MIO49";
++				bias-high-impedance;
++			};
++
++			conf-tx {
++				pins =3D "MIO48";
++				bias-disable;
++			};
++		};
++	};
+--=20
+2.2.1.1.gb42cc81
 
