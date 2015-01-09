@@ -1,110 +1,114 @@
-From: Tomeu Vizoso <tomeu.vizoso@collabora.com>
-Date: Sat, 31 Jan 2015 18:36:22 +0000
-Subject: Re: [PATCH v13 4/6] clk: Add rate constraints to clocks
-Message-Id: <CAAObsKDxhV7Vveq5FizTUp9ur2Rsq1bM+YQa4uPksh5ntMQV3Q@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 09 Jan 2015 13:12:31 +0000
+Subject: [PATCH v3 0/4] drivers: bus: Add Simple Power-Managed Bus
+Message-Id: <1420809155-4015-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1422011024-32283-1-git-send-email-tomeu.vizoso@collabora.com>
- <1422011024-32283-5-git-send-email-tomeu.vizoso@collabora.com>
- <CAMuHMdUGgA70o2SgdJR3X6AkCcMssHU0POLfzppADT-O=BrYDw@mail.gmail.com>
- <54CA8662.7040008@codeaurora.org> <20150131013158.GA4323@codeaurora.org>
-In-Reply-To: <20150131013158.GA4323@codeaurora.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 31 January 2015 at 02:31, Stephen Boyd <sboyd@codeaurora.org> wrote:
-> On 01/29, Stephen Boyd wrote:
->> On 01/29/15 05:31, Geert Uytterhoeven wrote:
->> > Hi Tomeu, Mike,
->> >
->> > On Fri, Jan 23, 2015 at 12:03 PM, Tomeu Vizoso
->> > <tomeu.vizoso@collabora.com> wrote:
->> >> --- a/drivers/clk/clk.c
->> >> +++ b/drivers/clk/clk.c
->> >> @@ -2391,25 +2543,24 @@ int __clk_get(struct clk *clk)
->> >>         return 1;
->> >>  }
->> >>
->> >> -static void clk_core_put(struct clk_core *core)
->> >> +void __clk_put(struct clk *clk)
->> >>  {
->> >>         struct module *owner;
->> >>
->> >> -       owner = core->owner;
->> >> +       if (!clk || WARN_ON_ONCE(IS_ERR(clk)))
->> >> +               return;
->> >>
->> >>         clk_prepare_lock();
->> >> -       kref_put(&core->ref, __clk_release);
->> >> +
->> >> +       hlist_del(&clk->child_node);
->> >> +       clk_core_set_rate_nolock(clk->core, clk->core->req_rate);
->> > At this point, clk->core->req_rate is still zero, causing
->> > cpg_div6_clock_round_rate() to be called with a zero "rate" parameter,
->> > e.g. on r8a7791:
->>
->> Hmm.. I wonder if we should assign core->req_rate to be the same as
->> core->rate during __clk_init()? That would make this call to
->> clk_core_set_rate_nolock() a nop in this case.
->>
->
-> Here's a patch to do this
->
-> ---8<----
-> From: Stephen Boyd <sboyd@codeaurora.org>
-> Subject: [PATCH] clk: Assign a requested rate by default
->
-> We need to assign a requested rate here so that we avoid
-> requesting a rate of 0 on clocks when we remove clock consumers.
+	Hi Simon, Magnus,
 
-Hi, this looks good to me.
+The Renesas Bus State Controller (BSC) provides an external bus for
+connecting multiple external devices to an SoC, driving several chip
+select lines, for e.g. NOR FLASH, Ethernet and USB.
+On the kzm9g and ape6evm development boards, an smsc9220 Ethernet
+controller is connnected to the BSC of an SH-Mobile AG5 (sh73a0) resp.
+R-Mobile APE6 (r8a73a4) SoC.
 
-Reviewed-by: Tomeu Vizoso <tomeu.vizoso@collabora.com>
+The BSC is a fairly simple memory-mapped bus, hence a "simple-bus"
+compatibility seems suitable.  However, the BSC is special in two
+ways:
+  1. It is part of a PM domain (A4S),
+  2. It has a gateable functional clock (ZB).
+Before a device connected to the BSC can be accessed, the PM domain
+containing the BSC must be powered on, and the functional clock
+driving the BSC must be enabled.
 
-Thanks,
+Both special properties can be described in DT in a standardized way
+("power-domains = <&pd_a4s>" and "clocks = <&zb_clk>", cfr. the
+example in the DT binding documentation).  Externally connected
+devices are described as children of the BSC node.
 
-Tomeu
+Unfortunately this doesn't mean everything will work out-of-the-box.
+There are two problems:
+  1. Without a device driver bound to the bus device, this device is
+     not attached to the PM domain. And although a child device is
+     present and active, the PM domain may be powered down, as it's
+     considered unused by the PM domain core.
+  2. Without a device driver calling pm_runtime_enable(), its
+     functional clock is not enabled. Once runtime PM is enabled, the
+     R-Mobile PM domain platform driver manages the functional clock
+     using runtime PM.
 
-> Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
-> ---
->  drivers/clk/clk.c | 8 +++++---
->  1 file changed, 5 insertions(+), 3 deletions(-)
->
-> diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
-> index a29daf9edea4..8416ed1c40be 100644
-> --- a/drivers/clk/clk.c
-> +++ b/drivers/clk/clk.c
-> @@ -2142,6 +2142,7 @@ int __clk_init(struct device *dev, struct clk *clk_user)
->         struct clk_core *orphan;
->         struct hlist_node *tmp2;
->         struct clk_core *clk;
-> +       unsigned long rate;
->
->         if (!clk_user)
->                 return -EINVAL;
-> @@ -2266,12 +2267,13 @@ int __clk_init(struct device *dev, struct clk *clk_user)
->          * then rate is set to zero.
->          */
->         if (clk->ops->recalc_rate)
-> -               clk->rate = clk->ops->recalc_rate(clk->hw,
-> +               rate = clk->ops->recalc_rate(clk->hw,
->                                 clk_core_get_rate_nolock(clk->parent));
->         else if (clk->parent)
-> -               clk->rate = clk->parent->rate;
-> +               rate = clk->parent->rate;
->         else
-> -               clk->rate = 0;
-> +               rate = 0;
-> +       clk->rate = clk->req_rate = rate;
->
->         /*
->          * walk the list of orphan clocks and reparent any that are children of
-> --
-> Qualcomm Innovation Center, Inc. is a member of Code Aurora Forum,
-> a Linux Foundation Collaborative Project
->
-> _______________________________________________
-> linux-arm-kernel mailing list
-> linux-arm-kernel@lists.infradead.org
-> http://lists.infradead.org/mailman/listinfo/linux-arm-kernel
+As none of the above is really bus hardware-specific (PM domains and
+functional clocks in clock domains are handled from genpd and platform
+code), this series adds a Simple Power-Managed Bus driver for
+transparent busses, which just enables runtime PM for the bus device.
+Due to the child-parent relationship of devices connected to the bus,
+as long as the device drivers for the child devices are runtime PM
+enabled, the bus's PM domain will be powered, and the bus's clock will
+be enabled automatically when needed, for both runtime PM and s2ram.
+
+Currently this driver supports the Renesas Bus State Controller only,
+but support for other SoCs and other bus controllers can easily be
+added later by adding more compatible values.
+Note that this driver cannot just bind against "simple-bus", as that
+may prevent a device-specific driver from taking precedence.
+
+This was tested on sh73a0/kzm9g-multiplatform (by me), and on
+r8a73a4/ape6evm-multiplatform (by Ulrich Hecht). Without this,
+Ethernet doesn't work, as the ZB clock is disabled by
+clk_disable_unused().
+
+As drivers/bus doesn't have a maintainer, and this driver is needed to
+move two shmobile platforms away from legacy to multiplatform, I think
+this can go in through Simon's shmobile tree.  There are no conflicts
+with today's linux-next.
+
+Changes compared to v2:
+  - Document required properties inherited from "simple-bus",
+  - Document required "reg" property for "renesas,bsc",
+  - Move "ranges" before "reg" in the example,
+  - Add Tested-by,
+  - Split-off sh73a0/kzm9g and r8a73a4/ape6evm DTS updates.
+
+Changes compared to v1 (more detailed change logs in the individual
+patches):
+  - Added sorting of drivers/bus Kconfig and Makefile entries,
+  - Added DT binding documentation,
+  - Rename from "Renesas Bus State Controller Driver" (renesas-bsc) to
+    "Simple Power-Managed Bus Driver" (simple-pm-bus),
+  - Postponed adding power-domains properties to the dtsi,
+  - Added updates for r8a73a4/ape6evm.
+
+Thanks for applying!
+
+Geert Uytterhoeven (4):
+  drivers: bus: Sort Kconfig entries alphabetically
+  drivers: bus: Sort Makefile entries alphabetically
+  drivers: bus: Add Simple Power-Managed Bus DT Bindings
+  drivers: bus: Add Simple Power-Managed Bus Driver
+
+ .../devicetree/bindings/bus/simple-pm-bus.txt      | 52 +++++++++++++++++++++
+ drivers/bus/Kconfig                                | 53 ++++++++++++++--------
+ drivers/bus/Makefile                               | 15 +++---
+ drivers/bus/simple-pm-bus.c                        | 51 +++++++++++++++++++++
+ 4 files changed, 144 insertions(+), 27 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/bus/simple-pm-bus.txt
+ create mode 100644 drivers/bus/simple-pm-bus.c
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
