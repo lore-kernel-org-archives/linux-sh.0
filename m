@@ -1,40 +1,56 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 06 Jan 2015 13:02:31 +0000
-Subject: Re: [PATCH 1/4] ARM: shmobile: sh73a0: Set control-parent for all irqpin nodes
-Message-Id: <CAMuHMdWE+3hJQGyC2ENa=e8F8Jhxvxxcah2gHmbRmCa_+Zbr7w@mail.gmail.com>
+From: Soren Brinkmann <soren.brinkmann@xilinx.com>
+Date: Fri, 09 Jan 2015 15:43:44 +0000
+Subject: [PATCH v4 0/7] pinctrl support for Zynq
+Message-Id: <1420818231-13451-1-git-send-email-soren.brinkmann@xilinx.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418869570-13529-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1418869570-13529-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Laurent,
+Hi Linus,
 
-On Thu, Dec 18, 2014 at 3:26 AM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
-> The sh73a0 INTC can't mask interrupts properly most likely due to a
-> hardware bug. Set the control-parent property to delegate masking to the
-> parent interrupt controller.
+I rebased my branch onto your current pinctrl/devel. Other than that
+this should be exactly what has been sent out as v3. This time I'll use
+the gmail SMTP again, which hopefully resolves the encoding issue.
 
-Thanks a lot!
+	Thanks,
+	S=C3=B6ren
 
-Without this, accessing the three-axis digital accelerometer ADXL345
-through /dev/input/event0 causes an interrupt storm, which requires a
-power-cycle to recover from.
+Soren Brinkmann (7):
+  pinctrl: pinconf-generic: Infer map type from DT property
+  pinctrl: pinconf-generic: Allow driver to specify DT params
+  pinctrl: zynq: Document DT binding
+  pinctrl: Add driver for Zynq
+  ARM: zynq: Enable pinctrl
+  ARM: zynq: DT: Add pinctrl information
+  pinctrl: qcom-spmi-gpio: Migrate to pinconf-generic
 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+ .../bindings/pinctrl/xlnx,zynq-pinctrl.txt         |  104 ++
+ arch/arm/boot/dts/zynq-7000.dtsi                   |    8 +-
+ arch/arm/boot/dts/zynq-zc702.dts                   |  181 +++
+ arch/arm/boot/dts/zynq-zc706.dts                   |  152 +++
+ arch/arm/mach-zynq/Kconfig                         |    2 +
+ drivers/pinctrl/Kconfig                            |    8 +
+ drivers/pinctrl/Makefile                           |    1 +
+ drivers/pinctrl/nomadik/pinctrl-abx500.c           |    2 +-
+ drivers/pinctrl/pinconf-generic.c                  |  199 ++--
+ drivers/pinctrl/pinconf.c                          |    4 +-
+ drivers/pinctrl/pinconf.h                          |   22 +-
+ drivers/pinctrl/pinctrl-rockchip.c                 |    2 +-
+ drivers/pinctrl/pinctrl-tz1090-pdc.c               |    2 +-
+ drivers/pinctrl/pinctrl-tz1090.c                   |    2 +-
+ drivers/pinctrl/pinctrl-zynq.c                     | 1176 ++++++++++++++++=
+++++
+ drivers/pinctrl/qcom/pinctrl-spmi-gpio.c           |  125 +--
+ drivers/pinctrl/sh-pfc/pinctrl.c                   |    2 +-
+ include/linux/pinctrl/pinconf-generic.h            |   29 +
+ include/linux/pinctrl/pinctrl.h                    |    9 +
+ 19 files changed, 1808 insertions(+), 222 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/pinctrl/xlnx,zynq-pin=
+ctrl.txt
+ create mode 100644 drivers/pinctrl/pinctrl-zynq.c
 
-Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+--=20
+2.2.1.1.gb42cc81
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
