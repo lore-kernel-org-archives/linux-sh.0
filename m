@@ -1,23 +1,39 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 05 Jan 2015 21:31:33 +0000
-Subject: [PATCH v2 0/2] Add R8A7790 CAN DT support
-Message-Id: <28994794.h3WeokSSG3@wasted.cogentembedded.com>
+From: Soren Brinkmann <soren.brinkmann@xilinx.com>
+Date: Fri, 09 Jan 2015 15:43:49 +0000
+Subject: [PATCH v4 5/7] ARM: zynq: Enable pinctrl
+Message-Id: <1420818231-13451-6-git-send-email-soren.brinkmann@xilinx.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1420818231-13451-1-git-send-email-soren.brinkmann@xilinx.com>
+In-Reply-To: <1420818231-13451-1-git-send-email-soren.brinkmann@xilinx.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Select pinctrl and the Zynq pinctrl driver.
 
-   Here's the set of 2 patches against Simon Horman's 'renesas.git' repo,
-'renesas-devel-20141231-v3.19-rc2' tag. Here we add the CAN device tree support
-for the R8A7790 SoC (unfortunately, it's impossible to test CAN on the Lager
-board). It depends on the clk driver RCAN clock patch reposted today in order
-to work.
+Signed-off-by: Soren Brinkmann <soren.brinkmann@xilinx.com>
+Tested-by: Andreas F=C3=A4rber <afaerber@suse.de>
+---
+Changes since RFC v2:
+ - separate mach-zynq changes in their own patch
+---
+ arch/arm/mach-zynq/Kconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
-[1/2] ARM: shmobile: r8a7790: add CAN clocks
-[2/2] ARM: shmobile: r8a7790: add CAN DT support
-
-WBR, Sergei
+diff --git a/arch/arm/mach-zynq/Kconfig b/arch/arm/mach-zynq/Kconfig
+index aaa5162c1509..78e5e007f52d 100644
+--- a/arch/arm/mach-zynq/Kconfig
++++ b/arch/arm/mach-zynq/Kconfig
+@@ -9,6 +9,8 @@ config ARCH_ZYNQ
+ 	select HAVE_ARM_TWD if SMP
+ 	select ICST
+ 	select MFD_SYSCON
++	select PINCTRL
++	select PINCTRL_ZYNQ
+ 	select SOC_BUS
+ 	help
+ 	  Support for Xilinx Zynq ARM Cortex A9 Platform
+--=20
+2.2.1.1.gb42cc81
 
