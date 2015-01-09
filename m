@@ -1,55 +1,41 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 09 Jan 2015 13:12:33 +0000
-Subject: [PATCH v3 2/4] drivers: bus: Sort Makefile entries alphabetically
-Message-Id: <1420809155-4015-3-git-send-email-geert+renesas@glider.be>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 09 Jan 2015 13:32:32 +0000
+Subject: [SERIES 0/3] ARM: shmobile: sh73a0/kzm9g multiplatform
+Message-Id: <CAMuHMdWDsqYOPKqPmZ8oDuf28YrAtu+zcnikOhmehKFQNXfekQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420809155-4015-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1420809155-4015-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
----
-v3:
-  - Add Tested-by,
+Hi Simon, Magnus,
 
-v2:
-  - New.
----
- drivers/bus/Makefile | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+This is a meta cover letter for the three patch series I've just  sent:
+   - [PATCH 0/4] ARM: shmobile: sh73a0/kzm9g: Introduce multiplatform
+                 support
+   - [PATCH v3 0/4] drivers: bus: Add Simple Power-Managed Bus
+   - [PATCH 0/4] ARM: shmobile: sh73a0/kzm9g: Complete multiplatform
+                 support
 
-diff --git a/drivers/bus/Makefile b/drivers/bus/Makefile
-index 2973c18cbcc27816..3cfaf2c7f25ac4f0 100644
---- a/drivers/bus/Makefile
-+++ b/drivers/bus/Makefile
-@@ -2,16 +2,16 @@
- # Makefile for the bus drivers.
- #
- 
-+# Interconnect bus drivers for ARM platforms
-+obj-$(CONFIG_ARM_CCI)		+= arm-cci.o
-+obj-$(CONFIG_ARM_CCN)		+= arm-ccn.o
-+
- obj-$(CONFIG_BRCMSTB_GISB_ARB)	+= brcmstb_gisb.o
--obj-$(CONFIG_IMX_WEIM)	+= imx-weim.o
--obj-$(CONFIG_MVEBU_MBUS) += mvebu-mbus.o
--obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
-+obj-$(CONFIG_IMX_WEIM)		+= imx-weim.o
-+obj-$(CONFIG_MVEBU_MBUS) 	+= mvebu-mbus.o
- 
- # Interconnect bus driver for OMAP SoCs.
- obj-$(CONFIG_OMAP_INTERCONNECT)	+= omap_l3_smx.o omap_l3_noc.o
- 
--# Interconnect bus drivers for ARM platforms
--obj-$(CONFIG_ARM_CCI)		+= arm-cci.o
--obj-$(CONFIG_ARM_CCN)		+= arm-ccn.o
--
-+obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
- obj-$(CONFIG_VEXPRESS_CONFIG)	+= vexpress-config.o
--- 
-1.9.1
+After applying these series, kzm9g-multiplatform has the same feature
+set as current kzm9g-reference, and the latter is removed.
 
+Note that the third series depends functionally on the second. Without
+the second series, Ethernet will not work (this also applies to a future
+r8a73a4/ape6evm-multiplatform).
+
+It would be great if you could apply all three series, as I have more patches
+queued that depend on them.
+
+Thanks!
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
