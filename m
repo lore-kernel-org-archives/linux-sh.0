@@ -1,49 +1,38 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 22 Jan 2015 00:37:30 +0000
-Subject: Re: [PATCH 0/4 v2] ARM: shmobile: r8a779x: add SDHI DMA support
-Message-Id: <3516402.cADSecaofB@avalon>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Fri, 09 Jan 2015 08:45:52 +0000
+Subject: Re: [PATCH v3 0/7] Pinctrl support for Zynq
+Message-Id: <CACRpkdaKH21qz_RAcDtw6ycsw+5FD0RXQQs91_tZV53EuKVusQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <873874oj1q.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <873874oj1q.wl%kuninori.morimoto.gx@renesas.com>
+References: <1d59c0972da04ec89dec6c09724986a1@BY2FFO11FD010.protection.gbl>
+ <4d544fe425694a4e8043ddbf604db062@BN1AFFO11FD033.protection.gbl>
+In-Reply-To: <4d544fe425694a4e8043ddbf604db062@BN1AFFO11FD033.protection.gbl>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Morimoto-san,
+On Fri, Dec 12, 2014 at 5:37 PM, S=C3=B6ren Brinkmann
+<soren.brinkmann@xilinx.com> wrote:
 
-On Thursday 22 January 2015 00:28:44 Kuninori Morimoto wrote:
-> Hi Laurent
-> 
-> > > These are v2 of SDHI DMA support for r8a7790/r8a7791.
-> > > These are based on Ulf's
-> > > git.linaro.org/people/ulf.hansson/mmc.git tmio
-> > > 
-> > > Kuninori Morimoto (4):
-> > >       ARM: shmobile: r8a7790: tidyup SDHI register size on DTSI
-> > >       ARM: shmobile: r8a7791: tidyup SDHI register size on DTSI
-> > >       ARM: shmobile: r8a7790: add SDHI DMA channels on DTSI
-> > >       ARM: shmobile: r8a7791: add SDHI DMA channels on DTSI
-> > 
-> > I've already submitted patches 3 and 4 a few months ago, as
-> > 
-> > ARM: shmobile: r8a7790: Reference DMA channels in SDHI DT nodes
-> > ARM: shmobile: r8a7790: Reference DMA channels in SDHI DT nodes
-> > 
-> > You had tested them back then, and reported a performance regression. Has
-> > that been fixed ?
-> 
-> I think it was block device issue, and was fixed in upstream.
+> Argh, this went through the wrong SMTP. I suspect threading is broken
+> due to that. Let me know if you want me to resend this with intact
+> threading.
 
-That's nice to know.
+I don't care much about the threading, but all messages are quoted-printable
+which doesn't apply :(
 
-> I forgot to add your Signed-off-by on these patches.
-> Will send v3 patch soon
+i.e.:
 
-Thank you.
+Content-Transfer-Encoding: quoted-printable
+(...)
 
--- 
-Regards,
++ const char *subnode_target_type =3D "pins";
+=20
+(...)
 
-Laurent Pinchart
+Can you resent with more sane encoding? I don't know where this
+comes from but suspect the Microsoft Exchange SMTP server
+does this when you use diacritics and german letters...
 
+Yours,
+Linus Walleij
