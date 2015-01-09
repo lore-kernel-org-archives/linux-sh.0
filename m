@@ -1,63 +1,47 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 09 Jan 2015 13:55:40 +0000
+From: Mark Brown <broonie@kernel.org>
+Date: Fri, 09 Jan 2015 16:04:49 +0000
 Subject: Re: [PATCH v5][resend v4] of: replace Asahi Kasei Corp vendor prefix
-Message-Id: <5363275.ZK3ulH6EUO@wuerfel>
+Message-Id: <20150109160449.GG2634@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="Wa3xFDkrbo+Lac6I"
 List-Id: <linux-sh.vger.kernel.org>
 References: <878ulzx6hr.wl%kuninori.morimoto.gx@gmail.com>
  <871tn4uv0j.wl%kuninori.morimoto.gx@renesas.com>
  <CAL_Jsq+GjM+3M63amyh3Rvijkz7Lch_cdUt9vScc9wZeOubOPA@mail.gmail.com>
-In-Reply-To: <CAL_Jsq+GjM+3M63amyh3Rvijkz7Lch_cdUt9vScc9wZeOubOPA@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
-Cc: Rob Herring <robh@kernel.org>, ALSA Development Mailing List <alsa-devel@alsa-project.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Stephen Warren <swarren@wwwdotorg.org>, Olof Johansson <olof@lixom.net>, Mark Brown <broonie@kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Matthias Brugger <matthias.bgg@gmail.com>, Simon Horman <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>, "linux-tegra@vger.kernel.org" <linux-tegra@vger.kernel.org>, Simon Horman <horms+renesas@verge.net.au>, Andrew Morton <akpm@linux-foundation.org>, Linus Torvalds <torvalds@linux-foundation.org>
+ <5363275.ZK3ulH6EUO@wuerfel>
+In-Reply-To: <5363275.ZK3ulH6EUO@wuerfel>
+To: Arnd Bergmann <arnd@arndb.de>
+Cc: linux-arm-kernel@lists.infradead.org, Rob Herring <robh@kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Simon Horman <horms@verge.net.au>, ALSA Development Mailing List <alsa-devel@alsa-project.org>, "linux-tegra@vger.kernel.org" <linux-tegra@vger.kernel.org>, Stephen Warren <swarren@wwwdotorg.org>, SH-Linux <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Matthias Brugger <matthias.bgg@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Olof Johansson <olof@lixom.net>, Simon Horman <horms+renesas@verge.net.au>, Andrew Morton <akpm@linux-foundation.org>, Linus Torvalds <torvalds@linux-foundation.org>
 
-On Friday 09 January 2015 07:46:16 Rob Herring wrote:
-> On Fri, Jan 9, 2015 at 4:07 AM, Kuninori Morimoto
-> <kuninori.morimoto.gx@renesas.com> wrote:
-> >
-> > Hi Stephen
-> >
-> > Thank you for your feedback
-> >
-> >> > I'm sending this "of: replace Asahi Kasei Corp vendor prefix" during
-> >> > half-year (since Jun 2014) , many times. But, no-one care it.
-> >> > I don't know who is the best maintainer.
-> >> >  - Stephen : because it has Tegra ?
-> >> >  - Olof    : because it has Tegra (= ARM) ?
-> >> >  - Arnd    : because it has Tegra (= ARM) ?
-> >> >  - Matthias: because it has Tegra (= ARM SoC) ?
-> >> >  - Rob     : because DT ?
-> >> >  - Andrew  : Last chance ?
-> >> >
-> >> > But, could you please care this patch ?
-> >> > I will re-send it again
-> >>
-> >> It doesn't seem to be ack'd by any of the DT maintainers. Retro-actively
-> >> changing a DT vendor name would need that, I think.
-> >
-> > Rob ?
-> > I had sent this patch to him since half-years ago, many times...
-> > Or other maintainer ?
-> >
-> >> Thierry and Alex (both Tegra maintainers) appear to have ack'd it, so it
-> >> seems they expect it to go through some tree other than Tegra. Weren't
-> >> there a bunch of related patches along with this (e.g. updating relevant
-> >> drivers to support both prefixes?) so it was expected this patch would
-> >> be applied together with them?
-> >
-> > I guess they expected it goes to DT branch (?)
-> > This is only 1 patch. it doesn't have related patch-set
-> 
-> It is in my queue. If the users of it are fine with breaking things,
-> who am I to argue with them.
 
-It's an i2c device, so it won't break, based on the implementation
-we use in the kernel that ignores the vendor part when the part number
-matches the i2c driver name.
+--Wa3xFDkrbo+Lac6I
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-I also don't think we need to worry about any non-Linux operating
-systems on this board that might share the same dts file.
+On Fri, Jan 09, 2015 at 02:55:40PM +0100, Arnd Bergmann wrote:
 
-	Arnd
+> It's an i2c device, so it won't break, based on the implementation
+> we use in the kernel that ignores the vendor part when the part number
+> matches the i2c driver name.
+
+Plus this update is actually changing the board DT file have the ID
+which we've always had in the driver, the driver has always used the new
+string and never the ak, based one that the device tree is registering.
+
+--Wa3xFDkrbo+Lac6I
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQEcBAEBAgAGBQJUr/wgAAoJECTWi3JdVIfQ+nMH/Rulo4/Hc9qtxPbaFs+Rvvtb
+6BlpNHZzOskKWRqBDvu2Uy45o6ymjLP8jO5iC2C3C1IlN6NEn/7e6XngwnAFUIRb
+7ai38qiqZJWnRd8BZp0YBIL2eDBVC0GHvllGoXGdp/+8aVBQnkmm8Ixc6z77JREX
+i1VKyZMBiWlM+Zjucxn+n9jKKr8bYkyaTpK3h64axDmlg9JYmAqOPPANvvm+6QMj
+SgVaymyzHWJb5Wm2ePecLdkjdNdBcn7EVp/cw9RoHFpZSBNAcpEX2yOP4+AzCI1S
+uo4SrEaUXxde1VDtleJ3A5FTFAar1VjXsRQeb3QjBnvuD00Y4TZH1RHkVtmm1wU=
+=lkgW
+-----END PGP SIGNATURE-----
+
+--Wa3xFDkrbo+Lac6I--
