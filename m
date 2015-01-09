@@ -1,137 +1,80 @@
-From: Lars-Peter Clausen <lars@metafoo.de>
-Date: Wed, 21 Jan 2015 13:38:12 +0000
-Subject: [PATCH v2 3/3] ASoC: simple-card: Remove support for setting differing DAI formats
-Message-Id: <1421847492-8857-3-git-send-email-lars@metafoo.de>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 09 Jan 2015 13:08:50 +0000
+Subject: [PATCH 2/4] ARM: shmobile: sh73a0: Add Multiplatform support
+Message-Id: <1420808932-3899-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421847492-8857-1-git-send-email-lars@metafoo.de>
-In-Reply-To: <1421847492-8857-1-git-send-email-lars@metafoo.de>
+References: <1420808932-3899-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1420808932-3899-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>, Liam Girdwood <lgirdwood@gmail.com>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-arm-kernel@lists.infradead.org, alsa-devel@alsa-project.org, Lars-Peter Clausen <lars@metafoo.de>
+To: linux-arm-kernel@lists.infradead.org
 
-Having to set different formats on the CPU side and the CODEC side of a DAI
-link is usually indication that something is terribly wrong and in most
-cases is a result of a broken driver that implements a set_fmt() callback
-which does not follow the specification. In the past this feature has been
-used to work around broken drivers, rather than fixing them. We don't really
-want to encourage this, so remove support for setting different formats on
-both ends of the link.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Along the way switch to static DAI format setup by setting the the dai_fmt
-field of the snd_soc_dai_link rather than calling snd_soc_dai_fmt().
+Enable sh73a0 Multiplatform support for the generic sh73a0
+machine vector. No board support is enabled, and the board
+code for KZM9G DT Reference is left by itself.
 
-Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-Changes since v1:
-	* dev_dbg(dai_fmt)
----
- include/sound/simple_card.h     |  1 -
- sound/soc/generic/simple-card.c | 30 ++++++++----------------------
- 2 files changed, 8 insertions(+), 23 deletions(-)
+ arch/arm/mach-shmobile/Kconfig      | 5 +++++
+ arch/arm/mach-shmobile/Makefile     | 4 ++--
+ arch/arm/mach-shmobile/smp-sh73a0.c | 2 +-
+ 3 files changed, 8 insertions(+), 3 deletions(-)
 
-diff --git a/include/sound/simple_card.h b/include/sound/simple_card.h
-index 1255ddb..b9b4f28 100644
---- a/include/sound/simple_card.h
-+++ b/include/sound/simple_card.h
-@@ -16,7 +16,6 @@
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 2f36c85eec4b201e..8ee2f281f2a3dd6a 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -78,6 +78,11 @@ config ARCH_R8A7794
+ 	bool "R-Car E2 (R8A77940)"
+ 	select ARCH_RCAR_GEN2
  
- struct asoc_simple_dai {
- 	const char *name;
--	unsigned int fmt;
- 	unsigned int sysclk;
- 	int slots;
- 	int slot_width;
-diff --git a/sound/soc/generic/simple-card.c b/sound/soc/generic/simple-card.c
-index f7c6734..3efd947 100644
---- a/sound/soc/generic/simple-card.c
-+++ b/sound/soc/generic/simple-card.c
-@@ -125,14 +125,6 @@ static int __asoc_simple_card_dai_init(struct snd_soc_dai *dai,
- {
- 	int ret;
- 
--	if (set->fmt) {
--		ret = snd_soc_dai_set_fmt(dai, set->fmt);
--		if (ret && ret != -ENOTSUPP) {
--			dev_err(dai->dev, "simple-card: set_fmt error\n");
--			goto err;
--		}
--	}
--
- 	if (set->sysclk) {
- 		ret = snd_soc_dai_set_sysclk(dai, 0, set->sysclk, 0);
- 		if (ret && ret != -ENOTSUPP) {
-@@ -269,12 +261,10 @@ static int asoc_simple_card_parse_daifmt(struct device_node *node,
- 					 struct device_node *codec,
- 					 char *prefix, int idx)
- {
-+	struct snd_soc_dai_link *dai_link = simple_priv_to_link(priv, idx);
- 	struct device *dev = simple_priv_to_dev(priv);
- 	struct device_node *bitclkmaster = NULL;
- 	struct device_node *framemaster = NULL;
--	struct simple_dai_props *dai_props = simple_priv_to_props(priv, idx);
--	struct asoc_simple_dai *cpu_dai = &dai_props->cpu_dai;
--	struct asoc_simple_dai *codec_dai = &dai_props->codec_dai;
- 	unsigned int daifmt;
- 
- 	daifmt = snd_soc_of_parse_daifmt(node, prefix,
-@@ -289,8 +279,7 @@ static int asoc_simple_card_parse_daifmt(struct device_node *node,
- 		 */
- 		dev_dbg(dev, "Revert to legacy daifmt parsing\n");
- 
--		cpu_dai->fmt = codec_dai->fmt -			snd_soc_of_parse_daifmt(codec, NULL, NULL, NULL) |
-+		daifmt = snd_soc_of_parse_daifmt(codec, NULL, NULL, NULL) |
- 			(daifmt & ~SND_SOC_DAIFMT_CLOCK_MASK);
- 	} else {
- 		if (codec = bitclkmaster)
-@@ -299,11 +288,10 @@ static int asoc_simple_card_parse_daifmt(struct device_node *node,
- 		else
- 			daifmt |= (codec = framemaster) ?
- 				SND_SOC_DAIFMT_CBS_CFM : SND_SOC_DAIFMT_CBS_CFS;
--
--		cpu_dai->fmt	= daifmt;
--		codec_dai->fmt	= daifmt;
- 	}
- 
-+	dai_link->dai_fmt = daifmt;
++config ARCH_SH73A0
++	bool "SH-Mobile AG5 (R8A73A00)"
++	select ARCH_RMOBILE
++	select RENESAS_INTC_IRQPIN
 +
- 	of_node_put(bitclkmaster);
- 	of_node_put(framemaster);
+ comment "Renesas ARM SoCs Board Type"
  
-@@ -379,13 +367,12 @@ static int asoc_simple_card_dai_link_of(struct device_node *node,
- 	dai_link->init = asoc_simple_card_dai_init;
+ config MACH_MARZEN
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index d53996e6da970d8d..b400f5fe72c269af 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -7,7 +7,7 @@ obj-y				:= timer.o console.o
  
- 	dev_dbg(dev, "\tname : %s\n", dai_link->stream_name);
--	dev_dbg(dev, "\tcpu : %s / %04x / %d\n",
-+	dev_dbg(dev, "\tformat : %04x\n", dai_link->dai_fmt);
-+	dev_dbg(dev, "\tcpu : %s / %d\n",
- 		dai_link->cpu_dai_name,
--		dai_props->cpu_dai.fmt,
- 		dai_props->cpu_dai.sysclk);
--	dev_dbg(dev, "\tcodec : %s / %04x / %d\n",
-+	dev_dbg(dev, "\tcodec : %s / %d\n",
- 		dai_link->codec_dai_name,
--		dai_props->codec_dai.fmt,
- 		dai_props->codec_dai.sysclk);
+ # CPU objects
+ obj-$(CONFIG_ARCH_SH7372)	+= setup-sh7372.o intc-sh7372.o pm-sh7372.o
+-obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o intc-sh73a0.o pm-sh73a0.o
++obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o pm-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A73A4)	+= setup-r8a73a4.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o pm-r8a7740.o
+ obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
+@@ -65,7 +65,7 @@ obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
+ obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
+ obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
+-obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
++obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o intc-sh73a0.o
+ obj-$(CONFIG_MACH_KZM9G_REFERENCE)	+= board-kzm9g-reference.o
+ endif
  
- 	/*
-@@ -572,14 +559,13 @@ static int asoc_simple_card_probe(struct platform_device *pdev)
- 		dai_link->codec_name	= cinfo->codec;
- 		dai_link->cpu_dai_name	= cinfo->cpu_dai.name;
- 		dai_link->codec_dai_name = cinfo->codec_dai.name;
-+		dai_link->dai_fmt	= cinfo->daifmt;
- 		dai_link->init		= asoc_simple_card_dai_init;
- 		memcpy(&priv->dai_props->cpu_dai, &cinfo->cpu_dai,
- 					sizeof(priv->dai_props->cpu_dai));
- 		memcpy(&priv->dai_props->codec_dai, &cinfo->codec_dai,
- 					sizeof(priv->dai_props->codec_dai));
+diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
+index c16dbfe9836c527d..2106d6b76a069392 100644
+--- a/arch/arm/mach-shmobile/smp-sh73a0.c
++++ b/arch/arm/mach-shmobile/smp-sh73a0.c
+@@ -33,7 +33,7 @@
  
--		priv->dai_props->cpu_dai.fmt	|= cinfo->daifmt;
--		priv->dai_props->codec_dai.fmt	|= cinfo->daifmt;
- 	}
+ #define SH73A0_SCU_BASE 0xf0000000
  
- 	snd_soc_card_set_drvdata(&priv->snd_card, priv);
+-#ifdef CONFIG_HAVE_ARM_TWD
++#if defined(CONFIG_HAVE_ARM_TWD) && !defined(CONFIG_ARCH_MULTIPLATFORM)
+ static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, SH73A0_SCU_BASE + 0x600, 29);
+ void __init sh73a0_register_twd(void)
+ {
 -- 
-1.8.0
+1.9.1
 
