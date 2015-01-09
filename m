@@ -1,41 +1,47 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Thu, 08 Jan 2015 13:09:17 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 09 Jan 2015 09:44:25 +0000
 Subject: Re: [PATCH 2/9] mmc: tmio: tmio_mmc_host has .dma
-Message-Id: <9752854.8NpfY0BrAf@wuerfel>
+Message-Id: <874ms0uw2n.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com> <87d26qt4oc.wl%kuninori.morimoto.gx@renesas.com> <87387lu3sv.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87387lu3sv.wl%kuninori.morimoto.gx@renesas.com>
+References: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
+	<87d26qt4oc.wl%kuninori.morimoto.gx@renesas.com>
+	<87387lu3sv.wl%kuninori.morimoto.gx@renesas.com>
+	<9752854.8NpfY0BrAf@wuerfel>
+In-Reply-To: <9752854.8NpfY0BrAf@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: Arnd Bergmann <arnd@arndb.de>
 Cc: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-On Thursday 08 January 2015 07:30:36 Kuninori Morimoto wrote:
-> 
-> Hmm... indeed Arnd's patch and my patch-set conflicts.
-> I have these patch / patch-set
->  1) header cleanup for tmio
->  2) slave_id cleanup for shdma
->  3) add DMA feature for sh_mobile_sdhi
-> 
-> 1 ) and 2) conflicts here. one idea is like this
->  1) header cleanup for tmio
->  2) add DMA feature for sh_mobile_sdhi
->  3) slave_id cleanup for shdma
-> 
-> 1) and 2) can be controled by Ulf with no-conflict.
-> if these are merged correctly, I can send 3) to DMAEngine ML.
-> Then, I can point the Ulf's branch as base branch.
-> 
-> Arnd, Ulf what do you think ?
-> 
 
-Sounds good. You could also leave out the sh_mobile_sdhi part from
-3) patch to avoid the conflict, and add a comment in that place
-as part of 2), to say that the slave_id assignment can be removed
-once the other parts are done. That way, we know where we're at
-if we want to remove slave_id from dma_slave_config and it's still
-part of the sdhi driver.
+Hi Arnd, Ulf
 
-	Arnd
+> > Hmm... indeed Arnd's patch and my patch-set conflicts.
+> > I have these patch / patch-set
+> >  1) header cleanup for tmio
+> >  2) slave_id cleanup for shdma
+> >  3) add DMA feature for sh_mobile_sdhi
+> > 
+> > 1 ) and 2) conflicts here. one idea is like this
+> >  1) header cleanup for tmio
+> >  2) add DMA feature for sh_mobile_sdhi
+> >  3) slave_id cleanup for shdma
+> > 
+> > 1) and 2) can be controled by Ulf with no-conflict.
+> > if these are merged correctly, I can send 3) to DMAEngine ML.
+> > Then, I can point the Ulf's branch as base branch.
+> > 
+> > Arnd, Ulf what do you think ?
+> > 
+> 
+> Sounds good. You could also leave out the sh_mobile_sdhi part from
+> 3) patch to avoid the conflict, and add a comment in that place
+> as part of 2), to say that the slave_id assignment can be removed
+> once the other parts are done. That way, we know where we're at
+> if we want to remove slave_id from dma_slave_config and it's still
+> part of the sdhi driver.
+
+Thank you.
+I wait Ulf's opinion
+
