@@ -1,68 +1,52 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Wed, 07 Jan 2015 23:49:44 +0000
-Subject: Re: [PATCH] sh_eth: Fix access to TRSCER register
-Message-Id: <54ADC618.3060605@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 09 Jan 2015 13:08:48 +0000
+Subject: [PATCH 0/4] ARM: shmobile: sh73a0/kzm9g: Introduce multiplatform support
+Message-Id: <1420808932-3899-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420608947-6861-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com> <CAMuHMdUyJk+27BsGaZGh+TOqhA5qH4q_pL2hM=tp-Ktn=hkFnw@mail.gmail.com>
-In-Reply-To: <CAMuHMdUyJk+27BsGaZGh+TOqhA5qH4q_pL2hM=tp-Ktn=hkFnw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: "netdev@vger.kernel.org" <netdev@vger.kernel.org>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+	Hi Simon, Magnus,
 
-Thanks for youre review.
+This patch series (by Magnus) introduces multiplatform support for the
+sh73a0 platform. After this kzm9g can boot a sh73a0 multiplatform
+kernel fine, except for working Ethernet (the ZB clock is disabled by
+clk_disable_unused()).
 
-(2015/01/07 17:42), Geert Uytterhoeven wrote:
-> Hi Iwamatsu-san,
->
-> On Wed, Jan 7, 2015 at 6:35 AM, Nobuhiro Iwamatsu
-> <nobuhiro.iwamatsu.yj@renesas.com>  wrote:
->> TRSCER register is configured differently by SoCs. TRSCER of R-Car is
->> RINT8 bit only valid, other bits are reserved bits.
->> This removes access to TRSCER register reserve bit.
->>
->> Signed-off-by: Nobuhiro Iwamatsu<nobuhiro.iwamatsu.yj@renesas.com>
->> ---
->>   drivers/net/ethernet/renesas/sh_eth.c | 6 +++++-
->>   1 file changed, 5 insertions(+), 1 deletion(-)
->>
->> diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
->> index c29ba80..59ee457 100644
->> --- a/drivers/net/ethernet/renesas/sh_eth.c
->> +++ b/drivers/net/ethernet/renesas/sh_eth.c
->> @@ -1294,7 +1294,11 @@ static int sh_eth_dev_init(struct net_device *ndev, bool start)
->>          /* Frame recv control (enable multiple-packets per rx irq) */
->>          sh_eth_write(ndev, RMCR_RNC, RMCR);
->>
->> -       sh_eth_write(ndev, DESC_I_RINT8 | DESC_I_RINT5 | DESC_I_TINT2, TRSCER);
->> +       if (mdp->cd->register_type = SH_ETH_REG_FAST_RCAR)
->
-> This catches both the R-Car Gen1 and R-Car Gen2 cases.
-> According to the datasheets, r8a7778/9 do have the other bits?
-> Only R-Car Gen2 doesn't have them.
+This series has been sent before by Magnus as part of the series
+"[PATCH v2 00/05] ARM: shmobile: sh73a0 and kzm9g Multiplatform
+revisit" (http://www.spinics.net/lists/linux-sh/msg38384.html).
+I've updated the kzm9g DTS sync patch for recent changes to the
+kzm9g-reference DTS.
 
-I see. I checked mistake.
-I will resend about this patch.
+Thanks for applying!
 
->
->> +               sh_eth_write(ndev, DESC_I_RINT8, TRSCER);
->> +       else
->> +               sh_eth_write(ndev, DESC_I_RINT8 | DESC_I_RINT5 | DESC_I_TINT2,
->> +                            TRSCER);
->
-> Gr{oetje,eeting}s,
->
->                          Geert
->
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
->
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                  -- Linus Torvalds
+Magnus Damm (4):
+  ARM: shmobile: sh73a0: Introduce generic setup callback
+  ARM: shmobile: sh73a0: Add Multiplatform support
+  ARM: shmobile: kzm9g dts: Sync with kzm9g-reference dts
+  ARM: shmobile: kzm9g: Build DTS for Multiplatform
 
-Best regards,
-   Nobuhiro
+ arch/arm/boot/dts/Makefile            |   3 +-
+ arch/arm/boot/dts/sh73a0-kzm9g.dts    | 374 +++++++++++++++++++++++++++++++++-
+ arch/arm/mach-shmobile/Kconfig        |   5 +
+ arch/arm/mach-shmobile/Makefile       |   4 +-
+ arch/arm/mach-shmobile/setup-sh73a0.c |  16 +-
+ arch/arm/mach-shmobile/smp-sh73a0.c   |   2 +-
+ 6 files changed, 396 insertions(+), 8 deletions(-)
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
