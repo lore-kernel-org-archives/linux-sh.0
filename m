@@ -1,39 +1,133 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 16 Jan 2015 02:15:54 +0000
-Subject: Re: [PATCH v2 2/2] ARM: shmobile: r8a7790: Correct mask for GIC PPI interrupts
-Message-Id: <20150116021551.GA19790@verge.net.au>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Fri, 09 Jan 2015 00:28:41 +0000
+Subject: [PATCH] usb: renesas_usbhs: Add access control for INTSTS1 and INTENB1 register
+Message-Id: <1420763321-4868-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421329844-19707-1-git-send-email-geert+renesas@glider.be>
- <1421329844-19707-3-git-send-email-geert+renesas@glider.be>
- <CANqRtoQOs_VFku4+PKvyY1Gu0M56nfGXwratrP5qqVYxMCAMpA@mail.gmail.com>
-In-Reply-To: <CANqRtoQOs_VFku4+PKvyY1Gu0M56nfGXwratrP5qqVYxMCAMpA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Jan 16, 2015 at 10:49:33AM +0900, Magnus Damm wrote:
-> Hi Geert,
-> 
-> On Thu, Jan 15, 2015 at 10:50 PM, Geert Uytterhoeven
-> <geert+renesas@glider.be> wrote:
-> > R-Car H2 (r8a7790) contains four Cortex-A15 and four Cortex-A7 cores,
-> > hence the second interrupt specifier cell for Private Peripheral
-> > Interrupts should use "GIC_CPU_MASK_SIMPLE(8)", to make sure interrupts
-> > can be delivered to all 8 processor cores.
-> >
-> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> > ---
-> > Untested
-> >
-> > v2:
-> >   - Drop RFC status after receiving confirmation from Liviu Dudau.
-> 
-> Thanks for your work on this.
-> 
-> I see the "untested" word above which makes me think we should test
-> both Big and Little boot modes on r8a7790. The default "Big" mode
-> where CA15 is used usually gets a lot of attention, but little mode
-> with CA7 boot should also work with the same kernel image.
+INTSTS1 and INTENB1 register of renesas_usbhs can access only Host mode.
+This adds process of accessing INTSTS1 and INTENB1 only when renesas_usbhs
+is Host mode.
 
-For now I have marked these as deferred pending testing.
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+---
+ drivers/usb/renesas_usbhs/mod.c | 61 +++++++++++++++++++++++------------------
+ 1 file changed, 34 insertions(+), 27 deletions(-)
+
+diff --git a/drivers/usb/renesas_usbhs/mod.c b/drivers/usb/renesas_usbhs/mod.c
+index 9a705b1..e5ce6e6 100644
+--- a/drivers/usb/renesas_usbhs/mod.c
++++ b/drivers/usb/renesas_usbhs/mod.c
+@@ -218,10 +218,12 @@ static int usbhs_status_get_each_irq(struct usbhs_priv *priv,
+ 	/********************  spin lock ********************/
+ 	usbhs_lock(priv, flags);
+ 	state->intsts0 = usbhs_read(priv, INTSTS0);
+-	state->intsts1 = usbhs_read(priv, INTSTS1);
+-
+ 	intenb0 = usbhs_read(priv, INTENB0);
+-	intenb1 = usbhs_read(priv, INTENB1);
++
++	if (usbhs_mod_is_host(priv)) {
++		state->intsts1 = usbhs_read(priv, INTSTS1);
++		intenb1 = usbhs_read(priv, INTENB1);
++	}
+ 
+ 	/* mask */
+ 	if (mod) {
+@@ -275,7 +277,8 @@ static irqreturn_t usbhs_interrupt(int irq, void *data)
+ 	 *	   - Function :: VALID bit should 0
+ 	 */
+ 	usbhs_write(priv, INTSTS0, ~irq_state.intsts0 & INTSTS0_MAGIC);
+-	usbhs_write(priv, INTSTS1, ~irq_state.intsts1 & INTSTS1_MAGIC);
++	if (usbhs_mod_is_host(priv))
++		usbhs_write(priv, INTSTS1, ~irq_state.intsts1 & INTSTS1_MAGIC);
+ 
+ 	usbhs_write(priv, BRDYSTS, ~irq_state.brdysts);
+ 	usbhs_write(priv, NRDYSTS, ~irq_state.nrdysts);
+@@ -303,19 +306,20 @@ static irqreturn_t usbhs_interrupt(int irq, void *data)
+ 	if (irq_state.intsts0 & BRDY)
+ 		usbhs_mod_call(priv, irq_ready, priv, &irq_state);
+ 
+-	/* INTSTS1 */
+-	if (irq_state.intsts1 & ATTCH)
+-		usbhs_mod_call(priv, irq_attch, priv, &irq_state);
+-
+-	if (irq_state.intsts1 & DTCH)
+-		usbhs_mod_call(priv, irq_dtch, priv, &irq_state);
++	if (usbhs_mod_is_host(priv)) {
++		/* INTSTS1 */
++		if (irq_state.intsts1 & ATTCH)
++			usbhs_mod_call(priv, irq_attch, priv, &irq_state);
+ 
+-	if (irq_state.intsts1 & SIGN)
+-		usbhs_mod_call(priv, irq_sign, priv, &irq_state);
++		if (irq_state.intsts1 & DTCH)
++			usbhs_mod_call(priv, irq_dtch, priv, &irq_state);
+ 
+-	if (irq_state.intsts1 & SACK)
+-		usbhs_mod_call(priv, irq_sack, priv, &irq_state);
++		if (irq_state.intsts1 & SIGN)
++			usbhs_mod_call(priv, irq_sign, priv, &irq_state);
+ 
++		if (irq_state.intsts1 & SACK)
++			usbhs_mod_call(priv, irq_sack, priv, &irq_state);
++	}
+ 	return IRQ_HANDLED;
+ }
+ 
+@@ -334,7 +338,8 @@ void usbhs_irq_callback_update(struct usbhs_priv *priv, struct usbhs_mod *mod)
+ 	 *  - update INTSTS0
+ 	 */
+ 	usbhs_write(priv, INTENB0, 0);
+-	usbhs_write(priv, INTENB1, 0);
++	if (usbhs_mod_is_host(priv))
++		usbhs_write(priv, INTENB1, 0);
+ 
+ 	usbhs_write(priv, BEMPENB, 0);
+ 	usbhs_write(priv, BRDYENB, 0);
+@@ -368,25 +373,27 @@ void usbhs_irq_callback_update(struct usbhs_priv *priv, struct usbhs_mod *mod)
+ 			intenb0 |= BRDYE;
+ 		}
+ 
+-		/*
+-		 * INTSTS1
+-		 */
+-		if (mod->irq_attch)
+-			intenb1 |= ATTCHE;
++		if (usbhs_mod_is_host(priv)) {
++			/*
++			 * INTSTS1
++			 */
++			if (mod->irq_attch)
++				intenb1 |= ATTCHE;
+ 
+-		if (mod->irq_dtch)
+-			intenb1 |= DTCHE;
++			if (mod->irq_dtch)
++				intenb1 |= DTCHE;
+ 
+-		if (mod->irq_sign)
+-			intenb1 |= SIGNE;
++			if (mod->irq_sign)
++				intenb1 |= SIGNE;
+ 
+-		if (mod->irq_sack)
+-			intenb1 |= SACKE;
++			if (mod->irq_sack)
++				intenb1 |= SACKE;
++		}
+ 	}
+ 
+ 	if (intenb0)
+ 		usbhs_write(priv, INTENB0, intenb0);
+ 
+-	if (intenb1)
++	if (usbhs_mod_is_host(priv) && intenb1)
+ 		usbhs_write(priv, INTENB1, intenb1);
+ }
+-- 
+2.1.3
+
