@@ -1,77 +1,39 @@
-From: Lars-Peter Clausen <lars@metafoo.de>
-Date: Wed, 21 Jan 2015 13:38:11 +0000
-Subject: [PATCH v2 2/3] ASoC: sh: fsi: Fix clock inversion
-Message-Id: <1421847492-8857-2-git-send-email-lars@metafoo.de>
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Date: Fri, 09 Jan 2015 21:42:22 +0000
+Subject: Re: [PATCH/RFC] serial: sh-sci: Remove overrun message
+Message-Id: <20150109214222.GB7952@kroah.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421847492-8857-1-git-send-email-lars@metafoo.de>
-In-Reply-To: <1421847492-8857-1-git-send-email-lars@metafoo.de>
+References: <1418652793-6770-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1418652793-6770-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>, Liam Girdwood <lgirdwood@gmail.com>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-arm-kernel@lists.infradead.org, alsa-devel@alsa-project.org, Lars-Peter Clausen <lars@metafoo.de>
+To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-According to the sh7724 hardware user manual (Rev.2.00 Jan 2013) page 1851
-to 1856 the FSI bit-clock is inverted to the bit-clock as specified by the
-I2S standard. This means the bit clock inversion bit should be set for a
-normal I2S clock and should not be set for an inverted I2S clock.
+On Mon, Dec 15, 2014 at 11:13:13PM +0900, Yoshihiro Kaneko wrote:
+> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+> 
+> Since the driver cannot return from overrun error if characters
+> are output during overrun process, the error message of overrun
+> is removed.
+> 
+> Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+> ---
+> 
+> This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
+> tree.
+> 
+>  drivers/tty/serial/sh-sci.c | 1 -
+>  1 file changed, 1 deletion(-)
 
-Similarly when operating in left-justfied mode both the frame-clock and the
-bit-clock need to be inverted to be standards compliant.
+I don't apply "RFC" patches, as it is evident that you don't feel they
+should be applied.
 
-This means also that the exta clock inversion setting in the armadillo800eva
-machine driver for CPU component should now be removed.
+Please resend anything without that marking if you want me to apply
+them.
 
-Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
----
-I don't have the hardware but I'd like to get rid of the extra
-SND_SOC_DAIFMT_IB_NF in simple-card platform data, so we can remove the fmt
-field. Kuninori can you check if this works?
+thanks,
 
-Changes since v1:
-	* Fix whitespace
----
- arch/arm/mach-shmobile/board-armadillo800eva.c | 1 -
- sound/soc/sh/fsi.c                             | 7 +++++++
- 2 files changed, 7 insertions(+), 1 deletion(-)
-
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 75de26c..36aaeb1 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1015,7 +1015,6 @@ static struct asoc_simple_card_info fsi_wm8978_info = {
- 	.platform	= "sh_fsi2",
- 	.daifmt		= SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_CBM_CFM,
- 	.cpu_dai = {
--		.fmt	= SND_SOC_DAIFMT_IB_NF,
- 		.name	= "fsia-dai",
- 	},
- 	.codec_dai = {
-diff --git a/sound/soc/sh/fsi.c b/sound/soc/sh/fsi.c
-index b87b22e..6783d3f 100644
---- a/sound/soc/sh/fsi.c
-+++ b/sound/soc/sh/fsi.c
-@@ -1594,6 +1594,12 @@ static int fsi_dai_trigger(struct snd_pcm_substream *substream, int cmd,
- 
- static int fsi_set_fmt_dai(struct fsi_priv *fsi, unsigned int fmt)
- {
-+	/*
-+	 * FSI bit clock is inverted to the I2S specification, so we invert it
-+	 * when a non-inverted I2S clock was requested and vice versa.
-+	 */
-+	fsi->bit_clk_inv = !fsi->bit_clk_inv;
-+
- 	switch (fmt & SND_SOC_DAIFMT_FORMAT_MASK) {
- 	case SND_SOC_DAIFMT_I2S:
- 		fsi->fmt = CR_I2S;
-@@ -1602,6 +1608,7 @@ static int fsi_set_fmt_dai(struct fsi_priv *fsi, unsigned int fmt)
- 	case SND_SOC_DAIFMT_LEFT_J:
- 		fsi->fmt = CR_PCM;
- 		fsi->chan_num = 2;
-+		fsi->lr_clk_inv = !fsi->lr_clk_inv;
- 		break;
- 	default:
- 		return -EINVAL;
--- 
-1.8.0
-
+greg k-h
