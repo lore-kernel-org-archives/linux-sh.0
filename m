@@ -1,64 +1,59 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 20 Jan 2015 11:58:10 +0000
-Subject: [PATCH 02/03] ARM: shmobile: Remove mach/clkdev.h
-Message-Id: <20150120115810.11479.53290.sendpatchset@little-apple>
+From: Olof Johansson <olof@lixom.net>
+Date: Mon, 12 Jan 2015 22:24:57 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC DT Cleanups for v3.20
+Message-Id: <20150112222457.GH22090@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150120115750.11479.95109.sendpatchset@little-apple>
-In-Reply-To: <20150120115750.11479.95109.sendpatchset@little-apple>
+References: <cover.1419809027.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419809027.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+On Mon, Dec 29, 2014 at 10:43:39AM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
+> 
+> Please consider these Renesas ARM based SoC DT cleanups for v3.20.
+> 
+> 
+> The following changes since commit 97bf6af1f928216fd6c5a66e8a57bfa95a659672:
+> 
+>   Linux 3.19-rc1 (2014-12-20 17:08:50 -0800)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-cleanups-for-v3.20
+> 
+> for you to fetch changes up to 338d1f0b5e877eae51c885da81d86b0efd6373e7:
+> 
+>   ARM: shmobile: kzm9g-reference dts: Replace status value "ok" by "okay" (2014-12-21 16:55:32 +0900)
+> 
+> ----------------------------------------------------------------
+> Renesas ARM Based SoC DT Cleanups for v3.20
+> 
+> * Replace status value "ok" with "okay"
+> 
+> ----------------------------------------------------------------
+> Geert Uytterhoeven (7):
+>       ARM: shmobile: genmai dts: Replace status value "ok" by "okay"
+>       ARM: shmobile: armadillo800eva dts: Replace status value "ok" by "okay"
+>       ARM: shmobile: lager dts: Replace status value "ok" by "okay"
+>       ARM: shmobile: henninger dts: Replace status value "ok" by "okay"
+>       ARM: shmobile: koelsch dts: Replace status value "ok" by "okay"
+>       ARM: shmobile: alt dts: Replace status value "ok" by "okay"
+>       ARM: shmobile: kzm9g-reference dts: Replace status value "ok" by "okay"
+> 
+>  arch/arm/boot/dts/r7s72100-genmai.dts         |  2 +-
+>  arch/arm/boot/dts/r8a7740-armadillo800eva.dts |  4 ++--
+>  arch/arm/boot/dts/r8a7790-lager.dts           | 12 ++++++------
+>  arch/arm/boot/dts/r8a7791-henninger.dts       |  4 ++--
+>  arch/arm/boot/dts/r8a7791-koelsch.dts         |  6 +++---
+>  arch/arm/boot/dts/r8a7794-alt.dts             |  4 ++--
+>  arch/arm/boot/dts/sh73a0-kzm9g-reference.dts  |  2 +-
+>  7 files changed, 17 insertions(+), 17 deletions(-)
 
-Move over ARCH_SHMOBILE_LEGACY to use the default legacy ARM
-implementations of __clk_get() and __clk_put() in <asm/clkdev.h>
-by deselecting HAVE_MACH_CLKDEV. This has the nice side effect
-that <mach/clkdev.h> is no longer used and can be removed.
+Thanks. This would normally go into a next/cleanup branch but I'm suspecting
+that'll just be conflict prone so I merged this into next/dt this time.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
 
- arch/arm/Kconfig                             |    1 -
- arch/arm/mach-shmobile/clock.c               |   11 -----------
- arch/arm/mach-shmobile/include/mach/clkdev.h |    7 -------
- 3 files changed, 19 deletions(-)
-
---- 0001/arch/arm/Kconfig
-+++ work/arch/arm/Kconfig	2015-01-20 20:27:11.307765682 +0900
-@@ -644,7 +644,6 @@ config ARCH_SHMOBILE_LEGACY
- 	select GENERIC_CLOCKEVENTS
- 	select HAVE_ARM_SCU if SMP
- 	select HAVE_ARM_TWD if SMP
--	select HAVE_MACH_CLKDEV
- 	select HAVE_SMP
- 	select MIGHT_HAVE_CACHE_L2X0
- 	select MULTI_IRQ_HANDLER
---- 0001/arch/arm/mach-shmobile/clock.c
-+++ work/arch/arm/mach-shmobile/clock.c	2015-01-20 20:27:11.307765682 +0900
-@@ -45,14 +45,3 @@ int __init shmobile_clk_init(void)
- 
- 	return 0;
- }
--
--int __clk_get(struct clk *clk)
--{
--	return 1;
--}
--EXPORT_SYMBOL(__clk_get);
--
--void __clk_put(struct clk *clk)
--{
--}
--EXPORT_SYMBOL(__clk_put);
---- 0001/arch/arm/mach-shmobile/include/mach/clkdev.h
-+++ /dev/null	2015-01-13 15:44:39.280208949 +0900
-@@ -1,7 +0,0 @@
--#ifndef __ASM_MACH_CLKDEV_H
--#define __ASM_MACH_CLKDEV_H
--
--int __clk_get(struct clk *clk);
--void __clk_put(struct clk *clk);
--
--#endif /* __ASM_MACH_CLKDEV_H */
+-Olof
