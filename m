@@ -1,19 +1,21 @@
 From: Olof Johansson <olof@lixom.net>
-Date: Mon, 12 Jan 2015 22:24:45 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC DT Updates for v3.20
-Message-Id: <20150112222445.GG22090@quad.lixom.net>
+Date: Mon, 12 Jan 2015 22:37:28 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC Updates for v3.20
+Message-Id: <20150112223728.GK22090@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1419812185.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1419812185.git.horms+renesas@verge.net.au>
+References: <cover.1419810196.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419810196.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Dec 29, 2014 at 10:44:01AM +0900, Simon Horman wrote:
+Hi Simon,
+
+On Mon, Dec 29, 2014 at 10:47:06AM +0900, Simon Horman wrote:
 > Hi Olof, Hi Kevin, Hi Arnd,
 > 
-> Please consider these Renesas ARM based SoC DT updates for v3.20.
+> Please consider these Renesas ARM based SoC updates for v3.20.
 > 
 > 
 > The following changes since commit 97bf6af1f928216fd6c5a66e8a57bfa95a659672:
@@ -22,27 +24,39 @@ On Mon, Dec 29, 2014 at 10:44:01AM +0900, Simon Horman wrote:
 > 
 > are available in the git repository at:
 > 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-for-v3.20
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-for-v3.20
 > 
-> for you to fetch changes up to 7408d3061d2f04181820902fae6e92e4a73d5cc0:
+> for you to fetch changes up to 39695882d3d642a73bca551e682426e4e3bcd158:
 > 
->   ARM: shmobile: r8a7791: add MLB+ clock (2014-12-23 09:18:23 +0900)
+>   ARM: shmobile: r8a73a4: Multiplatform support (2014-12-21 17:11:22 +0900)
 > 
 > ----------------------------------------------------------------
-> Renesas ARM Based SoC DT Updates for v3.20
+> Renesas ARM Based SoC Updates for v3.20
 > 
-> * Use clock-indices instead of deprecated renesas,clock-indices
-> * Prepare for r8a73a4 multiplatform support
-> * Increase clock coverage for r8a779[014]
-> * Correct r8a7779 clock usage
-> * Correct LAN9220 VDDVARIO voltage on ape6evm
-> * Correct QSPI SPI-Flash mode of lager and koelsch
-> * Correct flash partition label and size on koelsch
-> * Correct mask for GIC PPI interrupts on r8a779[14]
-> * Correct BSC bus range on ape6evm-reference
+> * Multiplatform support for r8a73a4
+> * No TWD setup in C for Multiplatform on r8a7779
+> * Fix is_e2 warning in generic R-Car Gen2 SoC setup code
+> * Add missing Add missing legacy INTCA0 clock for irqpin module on sh73a0
 > 
+> ----------------------------------------------------------------
+> Geert Uytterhoeven (1):
+>       ARM: shmobile: sh73a0 legacy/reference: Add missing INTCA0 clock for irqpin module
+> 
+> Magnus Damm (2):
+>       ARM: shmobile: Fix is_e2 warning
+>       ARM: shmobile: r8a7779: No TWD setup in C for Multiplatform
+> 
+> Ulrich Hecht (1):
+>       ARM: shmobile: r8a73a4: Multiplatform support
 
-Thanks, merged into next/dt.
 
+This branch is a little odd. There are several fixes in here, but it's grouped
+as an SoC branch. I can see the multiplatform patch belonging here, but it
+seems that the three other patches could go in a fixes-non-critical branch.
+
+Anyway, I've merged this into next/soc now, but please try to keep some of
+these a little better sorted going forward.
+
+Thanks,
 
 -Olof
