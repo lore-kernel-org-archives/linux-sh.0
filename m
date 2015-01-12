@@ -1,171 +1,62 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 12 Jan 2015 15:57:25 +0000
-Subject: [PATCH v3] power: reset: Add reset driver for R-Mobile platforms
-Message-Id: <1421078245-5531-1-git-send-email-geert+renesas@glider.be>
+From: Sebastian Reichel <sre@kernel.org>
+Date: Mon, 12 Jan 2015 19:04:27 +0000
+Subject: Re: [PATCH v3] power: reset: Add reset driver for R-Mobile platforms
+Message-Id: <20150112190426.GA1714@earth.universe>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="h31gzZEtNLTqOjlF"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Sebastian Reichel <sre@kernel.org>, Dmitry Eremin-Solenikov <dbaryshkov@gmail.com>, David Woodhouse <dwmw2@infradead.org>
-Cc: Guenter Roeck <linux@roeck-us.net>, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+References: <1421078245-5531-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1421078245-5531-1-git-send-email-geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Dmitry Eremin-Solenikov <dbaryshkov@gmail.com>, David Woodhouse <dwmw2@infradead.org>, Guenter Roeck <linux@roeck-us.net>, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org
 
-Add a reset driver for Renesas R-Mobile and SH-Mobile SoCs. It registers
-a restart handler to trigger a soft power-on reset through the R-Mobile
-System Controller.
-As this is controlled by DT, the priority of this restart handler is 192,
-to allow a watchdog driver to use priority 128.
 
-Note that we do not use syscon-reboot, as the HPB (Peripheral Bus
-Bridge) semaphore should be acquired on systems where both the ARM and
-SH core are in use. The driver can be extended later to support this,
-when needed.
+--h31gzZEtNLTqOjlF
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Guenter Roeck <linux@roeck-us.net>
----
-Tested on R-Mobile A1 (r8a7740) and SH-Mobile AG5 (sh73a0).
+On Mon, Jan 12, 2015 at 04:57:25PM +0100, Geert Uytterhoeven wrote:
+> Add a reset driver for Renesas R-Mobile and SH-Mobile SoCs. It registers
+> a restart handler to trigger a soft power-on reset through the R-Mobile
+> System Controller.
+> As this is controlled by DT, the priority of this restart handler is 192,
+> to allow a watchdog driver to use priority 128.
+>=20
+> Note that we do not use syscon-reboot, as the HPB (Peripheral Bus
+> Bridge) semaphore should be acquired on systems where both the ARM and
+> SH core are in use. The driver can be extended later to support this,
+> when needed.
+>=20
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> Reviewed-by: Guenter Roeck <linux@roeck-us.net>
+> ---
+> Tested on R-Mobile A1 (r8a7740) and SH-Mobile AG5 (sh73a0).
 
-v3:
-  - Add DT priority explanation,
-  - Add Reviewed-by,
-v2:
-  - This can be considered v2 of "[PATCH 1/4] ARM: shmobile: R-Mobile: Add
-    SYSC restart handler"
-    (http://www.spinics.net/lists/arm-kernel/msg383402.html),
-  - Move to a standalone driver under drivers/power/reset that can be
-    modular,
-  - Use register_restart_handler() instead of setting arm_pm_restart,
----
- drivers/power/reset/Kconfig         |  6 +++
- drivers/power/reset/Makefile        |  1 +
- drivers/power/reset/rmobile-reset.c | 93 +++++++++++++++++++++++++++++++++++++
- 3 files changed, 100 insertions(+)
- create mode 100644 drivers/power/reset/rmobile-reset.c
+Please add DT binding documentation.
 
-diff --git a/drivers/power/reset/Kconfig b/drivers/power/reset/Kconfig
-index 028e765045196f89..d743145e0001f466 100644
---- a/drivers/power/reset/Kconfig
-+++ b/drivers/power/reset/Kconfig
-@@ -159,5 +159,11 @@ config POWER_RESET_SYSCON
- 	help
- 	  Reboot support for generic SYSCON mapped register reset.
- 
-+config POWER_RESET_RMOBILE
-+	tristate "Renesas R-Mobile reset driver"
-+	depends on ARCH_RMOBILE || COMPILE_TEST
-+	help
-+	  Reboot support for Renesas R-Mobile and SH-Mobile SoCs.
-+
- endif
- 
-diff --git a/drivers/power/reset/Makefile b/drivers/power/reset/Makefile
-index 1d4804d6b3237c1c..1631652009acc32d 100644
---- a/drivers/power/reset/Makefile
-+++ b/drivers/power/reset/Makefile
-@@ -18,3 +18,4 @@ obj-$(CONFIG_POWER_RESET_VEXPRESS) += vexpress-poweroff.o
- obj-$(CONFIG_POWER_RESET_XGENE) += xgene-reboot.o
- obj-$(CONFIG_POWER_RESET_KEYSTONE) += keystone-reset.o
- obj-$(CONFIG_POWER_RESET_SYSCON) += syscon-reboot.o
-+obj-$(CONFIG_POWER_RESET_RMOBILE) += rmobile-reset.o
-diff --git a/drivers/power/reset/rmobile-reset.c b/drivers/power/reset/rmobile-reset.c
-new file mode 100644
-index 0000000000000000..ff3bbcfd03d1e7b4
---- /dev/null
-+++ b/drivers/power/reset/rmobile-reset.c
-@@ -0,0 +1,93 @@
-+/*
-+ * Renesas R-Mobile Reset Driver
-+ *
-+ * Copyright (C) 2014 Glider bvba
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
-+
-+#include <linux/io.h>
-+#include <linux/module.h>
-+#include <linux/notifier.h>
-+#include <linux/of_address.h>
-+#include <linux/platform_device.h>
-+#include <linux/printk.h>
-+#include <linux/reboot.h>
-+
-+
-+/* SYSC Register Bank 2 */
-+#define RESCNT2		0x20		/* Reset Control Register 2 */
-+
-+/* Reset Control Register 2 */
-+#define RESCNT2_PRES	0x80000000	/* Soft power-on reset */
-+
-+
-+static void __iomem *sysc_base2;
-+
-+static int rmobile_reset_handler(struct notifier_block *this,
-+				 unsigned long mode, void *cmd)
-+{
-+	pr_debug("%s %lu\n", __func__, mode);
-+
-+	/* Let's assume we have acquired the HPB semaphore */
-+	writel(RESCNT2_PRES, sysc_base2 + RESCNT2);
-+
-+	return NOTIFY_DONE;
-+}
-+
-+static struct notifier_block rmobile_reset_nb = {
-+	.notifier_call = rmobile_reset_handler,
-+	.priority = 192,
-+};
-+
-+static int rmobile_reset_probe(struct platform_device *pdev)
-+{
-+	int error;
-+
-+	sysc_base2 = of_iomap(pdev->dev.of_node, 1);
-+	if (!sysc_base2)
-+		return -ENODEV;
-+
-+	error = register_restart_handler(&rmobile_reset_nb);
-+	if (error) {
-+		dev_err(&pdev->dev,
-+			"cannot register restart handler (err=%d)\n", error);
-+		goto fail_unmap;
-+	}
-+
-+	return 0;
-+
-+fail_unmap:
-+	iounmap(sysc_base2);
-+	return error;
-+}
-+
-+static int rmobile_reset_remove(struct platform_device *pdev)
-+{
-+	unregister_restart_handler(&rmobile_reset_nb);
-+	iounmap(sysc_base2);
-+	return 0;
-+}
-+
-+static const struct of_device_id rmobile_reset_of_match[] = {
-+	{ .compatible = "renesas,sysc-rmobile", },
-+	{ /* sentinel */ }
-+};
-+MODULE_DEVICE_TABLE(of, rmobile_reset_of_match);
-+
-+static struct platform_driver rmobile_reset_driver = {
-+	.probe = rmobile_reset_probe,
-+	.remove = rmobile_reset_remove,
-+	.driver = {
-+		.name = "rmobile_reset",
-+		.of_match_table = rmobile_reset_of_match,
-+	},
-+};
-+
-+module_platform_driver(rmobile_reset_driver);
-+
-+MODULE_DESCRIPTION("Renesas R-Mobile Reset Driver");
-+MODULE_AUTHOR("Geert Uytterhoeven <geert+renesas@glider.be>");
-+MODULE_LICENSE("GPL v2");
--- 
-1.9.1
+-- Sebastian
 
+--h31gzZEtNLTqOjlF
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBCgAGBQJUtBq4AAoJENju1/PIO/qaTIgP/1hYilrB6SrhdepJqJcB25x6
+BiBwDJr5sULGjH2ZEj3Whha4Uq1ZoAu5g4yJ7FiCrUAVhzJjqAYpZC3gOr5Mivtq
+2reoMmPjzbOLvp7VJBj3skyhKYbRGa3YdTNSCx7M9KWd9mTd/0UXWq+YZ9YLwe5l
+fy+IdrWeMAIC8fnJLqsGPmT6zPh0cx2Aw/LJCrjdigoDzvEbYzF5aiKvHlqfn5WW
+Wul+O3T+IffoH6ouNgNL/o2AbSqXWlhkXW6VOU/Fl1l/YIStCyQjUIlZmc40iqBa
+Ny3s2rUfMWth/PAz8NfjFXcY4wutserHyjGqtxJyNXtFPVEBNv5+RqVZI6plIdy+
+3/eg/mVu03eVd02kDZojjB42FLfvDx1a0KrwMGSPvPweM9ZhrAsVaOtKeaf561hl
+2LZ8VN/Hgb9Ss4PDzxZtO7vquaEWQv1TDGqLFCXmnJAQ6NU4cB9GtY6nDf9r6yjH
+Llbo1QVwmo2RO6RROlCm8MXL2B9SPH1/RbJsy+uAumE5+c3PQJAcPxSK7IAdmFOs
+6EfwaFOT7tAsO9vjbXC2kFUjS0FoFdr2Kaq/k1vXpwUrlT24n0r/G/i+DT2oONWn
+KhhknIiuOHWMFRt0JLRH6cax6GvqoZVQ9t8ES9EinEzm7SaU+P2owL8/pbADj5re
+/ws8kYrYPmfQZraKS/l3
+=/Oe2
+-----END PGP SIGNATURE-----
+
+--h31gzZEtNLTqOjlF--
