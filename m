@@ -1,86 +1,171 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 30 Jan 2015 00:43:37 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: r8a73a4: Instantiate GIC from C board code in legacy builds
-Message-Id: <20150130004337.GA5964@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 12 Jan 2015 15:57:25 +0000
+Subject: [PATCH v3] power: reset: Add reset driver for R-Mobile platforms
+Message-Id: <1421078245-5531-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150128124645.21199.99590.sendpatchset@little-apple>
-In-Reply-To: <20150128124645.21199.99590.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Sebastian Reichel <sre@kernel.org>, Dmitry Eremin-Solenikov <dbaryshkov@gmail.com>, David Woodhouse <dwmw2@infradead.org>
+Cc: Guenter Roeck <linux@roeck-us.net>, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Thu, Jan 29, 2015 at 03:42:29PM +0900, Simon Horman wrote:
-> On Thu, Jan 29, 2015 at 09:49:19AM +0900, Simon Horman wrote:
-> > On Thu, Jan 29, 2015 at 09:35:43AM +0900, Simon Horman wrote:
-> > > On Wed, Jan 28, 2015 at 02:34:43PM +0100, Geert Uytterhoeven wrote:
-> > > > Hi Magnus,
-> > > > 
-> > > > On Wed, Jan 28, 2015 at 1:46 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> > > > > From: Magnus Damm <damm+renesas@opensource.se>
-> > > > >
-> > > > > As of commit 9a1091ef0017c40a ("irqchip: gic: Support hierarchy irq
-> > > > > domain."), the APE6EVM legacy board support is known to be broken.
-> > > > >
-> > > > > The IRQ numbers of the GIC are now virtual, and no longer match the
-> > > > > hardcoded hardware IRQ numbers in the legacy platform board code.
-> > > > >
-> > > > > To fix this issue specific to non-muliplatform r8a73a4 and APE6EVM:
-> > > > >  1) Instantiate the GIC from platform board code and also
-> > > > >  2) Skip over the DT arch timer as well as
-> > > > >  3) Force delay setup based on DT CPU frequency
-> > > > >
-> > > > > With these 3 fixes in place interrupts on APE6EVM are now unbroken.
-> > > > >
-> > > > > Partially based on legacy GIC fix by Geert Uytterhoeven, thanks to
-> > > > > him for the initial work.
-> > > > >
-> > > > > Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> > > > 
-> > > > Thanks!
-> > > > 
-> > > > Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> > > 
-> > > Thanks, I have queued this up as a fix for v3.19.
-> > 
-> > Actually, perhaps I spoke a little soon there.
-> > 
-> > Although things seem a bit better booting ape6evm_defconfig still
-> > doesn't make it to userspace.
-> > 
-> > The bootlog is for renesas-next-20150126-v3.19-rc1 with your patch applied.
-> > A similar result seems to occur using v3.19-rc6 with your patch applied.
-> 
-> As discussed with Magnus on IRC this seems to be a separate issue:
-> which I am yet to have any luck bisecting.
-> 
-> So regardless of this issue I will queue this patch up as it seems to be a
-> valid fix for v3.19.
+Add a reset driver for Renesas R-Mobile and SH-Mobile SoCs. It registers
+a restart handler to trigger a soft power-on reset through the R-Mobile
+System Controller.
+As this is controlled by DT, the priority of this restart handler is 192,
+to allow a watchdog driver to use priority 128.
 
-To clarify:
+Note that we do not use syscon-reboot, as the HPB (Peripheral Bus
+Bridge) semaphore should be acquired on systems where both the ARM and
+SH core are in use. The driver can be extended later to support this,
+when needed.
 
-With this patch queued up the ape6evm now boots to a prompt using
-the ape6evm_defconfig with the following modifications:
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Guenter Roeck <linux@roeck-us.net>
+---
+Tested on R-Mobile A1 (r8a7740) and SH-Mobile AG5 (sh73a0).
 
-* Disabling CONFIG_BLOCK
-* Disabling CONFIG_NET
-* Enabling initrd (as NFS user-space is no longer possible due to the above)
+v3:
+  - Add DT priority explanation,
+  - Add Reviewed-by,
+v2:
+  - This can be considered v2 of "[PATCH 1/4] ARM: shmobile: R-Mobile: Add
+    SYSC restart handler"
+    (http://www.spinics.net/lists/arm-kernel/msg383402.html),
+  - Move to a standalone driver under drivers/power/reset that can be
+    modular,
+  - Use register_restart_handler() instead of setting arm_pm_restart,
+---
+ drivers/power/reset/Kconfig         |  6 +++
+ drivers/power/reset/Makefile        |  1 +
+ drivers/power/reset/rmobile-reset.c | 93 +++++++++++++++++++++++++++++++++++++
+ 3 files changed, 100 insertions(+)
+ create mode 100644 drivers/power/reset/rmobile-reset.c
 
-When booting such a configuration a long delay occurs after initialising
-the SDHI devices. This delay can be avoided by:
+diff --git a/drivers/power/reset/Kconfig b/drivers/power/reset/Kconfig
+index 028e765045196f89..d743145e0001f466 100644
+--- a/drivers/power/reset/Kconfig
++++ b/drivers/power/reset/Kconfig
+@@ -159,5 +159,11 @@ config POWER_RESET_SYSCON
+ 	help
+ 	  Reboot support for generic SYSCON mapped register reset.
+ 
++config POWER_RESET_RMOBILE
++	tristate "Renesas R-Mobile reset driver"
++	depends on ARCH_RMOBILE || COMPILE_TEST
++	help
++	  Reboot support for Renesas R-Mobile and SH-Mobile SoCs.
++
+ endif
+ 
+diff --git a/drivers/power/reset/Makefile b/drivers/power/reset/Makefile
+index 1d4804d6b3237c1c..1631652009acc32d 100644
+--- a/drivers/power/reset/Makefile
++++ b/drivers/power/reset/Makefile
+@@ -18,3 +18,4 @@ obj-$(CONFIG_POWER_RESET_VEXPRESS) += vexpress-poweroff.o
+ obj-$(CONFIG_POWER_RESET_XGENE) += xgene-reboot.o
+ obj-$(CONFIG_POWER_RESET_KEYSTONE) += keystone-reset.o
+ obj-$(CONFIG_POWER_RESET_SYSCON) += syscon-reboot.o
++obj-$(CONFIG_POWER_RESET_RMOBILE) += rmobile-reset.o
+diff --git a/drivers/power/reset/rmobile-reset.c b/drivers/power/reset/rmobile-reset.c
+new file mode 100644
+index 0000000000000000..ff3bbcfd03d1e7b4
+--- /dev/null
++++ b/drivers/power/reset/rmobile-reset.c
+@@ -0,0 +1,93 @@
++/*
++ * Renesas R-Mobile Reset Driver
++ *
++ * Copyright (C) 2014 Glider bvba
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++
++#include <linux/io.h>
++#include <linux/module.h>
++#include <linux/notifier.h>
++#include <linux/of_address.h>
++#include <linux/platform_device.h>
++#include <linux/printk.h>
++#include <linux/reboot.h>
++
++
++/* SYSC Register Bank 2 */
++#define RESCNT2		0x20		/* Reset Control Register 2 */
++
++/* Reset Control Register 2 */
++#define RESCNT2_PRES	0x80000000	/* Soft power-on reset */
++
++
++static void __iomem *sysc_base2;
++
++static int rmobile_reset_handler(struct notifier_block *this,
++				 unsigned long mode, void *cmd)
++{
++	pr_debug("%s %lu\n", __func__, mode);
++
++	/* Let's assume we have acquired the HPB semaphore */
++	writel(RESCNT2_PRES, sysc_base2 + RESCNT2);
++
++	return NOTIFY_DONE;
++}
++
++static struct notifier_block rmobile_reset_nb = {
++	.notifier_call = rmobile_reset_handler,
++	.priority = 192,
++};
++
++static int rmobile_reset_probe(struct platform_device *pdev)
++{
++	int error;
++
++	sysc_base2 = of_iomap(pdev->dev.of_node, 1);
++	if (!sysc_base2)
++		return -ENODEV;
++
++	error = register_restart_handler(&rmobile_reset_nb);
++	if (error) {
++		dev_err(&pdev->dev,
++			"cannot register restart handler (err=%d)\n", error);
++		goto fail_unmap;
++	}
++
++	return 0;
++
++fail_unmap:
++	iounmap(sysc_base2);
++	return error;
++}
++
++static int rmobile_reset_remove(struct platform_device *pdev)
++{
++	unregister_restart_handler(&rmobile_reset_nb);
++	iounmap(sysc_base2);
++	return 0;
++}
++
++static const struct of_device_id rmobile_reset_of_match[] = {
++	{ .compatible = "renesas,sysc-rmobile", },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, rmobile_reset_of_match);
++
++static struct platform_driver rmobile_reset_driver = {
++	.probe = rmobile_reset_probe,
++	.remove = rmobile_reset_remove,
++	.driver = {
++		.name = "rmobile_reset",
++		.of_match_table = rmobile_reset_of_match,
++	},
++};
++
++module_platform_driver(rmobile_reset_driver);
++
++MODULE_DESCRIPTION("Renesas R-Mobile Reset Driver");
++MODULE_AUTHOR("Geert Uytterhoeven <geert+renesas@glider.be>");
++MODULE_LICENSE("GPL v2");
+-- 
+1.9.1
 
-* Disabling CONFIG_REGULATOR
-
-With Magnus's patch things are better but we still have a partial
-regression.
-
-Given that we are working towards removing support for booting the ape6evm
-using legacy C and that the reason that the above configuration is needed
-to get to user-space is not know (at least to me) it seems unlikely to me
-that this problem or problems will receive more attention.
-
-The purpose of this email is to document the above.
-
-I would like to thank Magnus for the time he has spent on this problem for
-this and other SoCs. And the time he spent working with my to try to get
-the ape6evm in better shape; an effort that appears to have been in vain.
