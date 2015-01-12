@@ -1,145 +1,94 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 22 Jan 2015 09:34:13 +0000
-Subject: [PATCH v3/resend 4/4] drivers: bus: Add Simple Power-Managed Bus Driver
-Message-Id: <1421919253-4784-5-git-send-email-geert+renesas@glider.be>
+Date: Mon, 12 Jan 2015 16:04:30 +0000
+Subject: [PATCH resend 1/2] gpio: pcf857x: Propagate wake-up setting to parent irq controller
+Message-Id: <1421078671-5920-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421919253-4784-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1421919253-4784-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linus Walleij <linus.walleij@linaro.org>, Alexandre Courbot <gnurou@gmail.com>, Thomas Gleixner <tglx@linutronix.de>
+Cc: Santosh Shilimkar <ssantosh@kernel.org>, linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Add a driver for transparent busses that don't need a real driver (think
-"simple-bus"), where the bus controller is part of a PM domain, or under
-the control of a functional clock.  Typically, the bus controller's
-PM domain and/or clock must be enabled for child devices connected to
-the bus (either on-SoC or externally) to function.
+The pcf857x GPIO and interrupt controller uses dummy_irq_chip, which
+does not implement irq_chip.irq_set_wake() and does not set
+IRQCHIP_SKIP_SET_WAKE.
 
-Hence the sole purpose of this driver is to enable its clock and PM
-domain (if exist(s)), which are specified in the DT and managed from
-platform and PM domain code.
+This causes two s2ram issues if wake-up is enabled for the pcf857x GPIO
+pins:
+  1. During resume from s2ram, the following warning is printed:
 
-Due to the child-parent relationship with devices connected to the bus,
-PM domain and clock state transitions are handled in the correct order.
+     WARNING: CPU: 0 PID: 1046 at kernel/irq/manage.c:537 irq_set_irq_wake+0x9c/0xf8()
+     Unbalanced IRQ 113 wake disable
 
-Currently this driver handles the Renesas Bus State Controller (BSC,
-sometimes called "LBSC within Bus Bridge", or "External Bus Interface")
-found on several Renesas ARM SoCs. Support for other bus controllers can
-easily be added by adding more compatible values.
+  2. Wake-up through the pcf857x GPIO pins may fail, as the parent
+     interrupt controller may be suspended.
 
-Note that this driver cannot just bind against "simple-bus", as that
-may prevent a device-specific driver from taking precedence.
+Migrate the pcf857x GPIO and interrupt controller from dummy_irq_chip to
+its own irq_chip. This irq chip implements irq_chip.irq_set_wake() to
+propagate its wake-up setting to the parent interrupt controller.
+
+This fixes wake-up through gpio-keys on sh73a0/kzm9g, where the pcf857x
+interrupt is cascaded to irq-renesas-intc-irqpin, and the latter must
+not be suspended when wake-up is enabled.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
-v3:
-  - Add Tested-by,
+Resend: Use Santosh' new email address
 
-v2:
-  - Rename from "Renesas Bus State Controller Driver" (renesas-bsc) to
-    "Simple Power-Managed Bus Driver" (simple-pm-bus),
-  - Change module license to GPL v2,
-  - Change email address to geert+renesas@glider.be.
----
- drivers/bus/Kconfig         | 13 ++++++++++++
- drivers/bus/Makefile        |  1 +
- drivers/bus/simple-pm-bus.c | 51 +++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 65 insertions(+)
- create mode 100644 drivers/bus/simple-pm-bus.c
+ drivers/gpio/gpio-pcf857x.c | 33 ++++++++++++++++++++++++++++++++-
+ 1 file changed, 32 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/bus/Kconfig b/drivers/bus/Kconfig
-index 626960819e6df16c..1addb707bf8100e3 100644
---- a/drivers/bus/Kconfig
-+++ b/drivers/bus/Kconfig
-@@ -58,6 +58,19 @@ config OMAP_OCP2SCP
- 	  OCP2SCP and in OMAP5, both USB PHY and SATA PHY is connected via
- 	  OCP2SCP.
+diff --git a/drivers/gpio/gpio-pcf857x.c b/drivers/gpio/gpio-pcf857x.c
+index 236708ad0a5ba0ab..22dbecb004cf6c5b 100644
+--- a/drivers/gpio/gpio-pcf857x.c
++++ b/drivers/gpio/gpio-pcf857x.c
+@@ -218,14 +218,45 @@ static irqreturn_t pcf857x_irq(int irq, void *data)
+ 	return IRQ_HANDLED;
+ }
  
-+config SIMPLE_PM_BUS
-+	bool "Simple Power-Managed Bus Driver"
-+	depends on OF && PM
-+	depends on ARCH_SHMOBILE || COMPILE_TEST
-+	help
-+	  Driver for transparent busses that don't need a real driver (think
-+	  "simple-bus"), where the bus controller is part of a PM domain, or
-+	  under the control of a functional clock, and thus relies on runtime
-+	  PM for managing this PM domain and/or clock.
-+	  An example of such a bus controller is the Renesas Bus State
-+	  Controller (BSC, sometimes called "LBSC within Bus Bridge", or
-+	  "External Bus Interface") as found on several Renesas ARM SoCs.
-+
- config VEXPRESS_CONFIG
- 	bool "Versatile Express configuration bus"
- 	default y if ARCH_VEXPRESS
-diff --git a/drivers/bus/Makefile b/drivers/bus/Makefile
-index 3cfaf2c7f25ac4f0..e023a2bec664d900 100644
---- a/drivers/bus/Makefile
-+++ b/drivers/bus/Makefile
-@@ -14,4 +14,5 @@ obj-$(CONFIG_MVEBU_MBUS) 	+= mvebu-mbus.o
- obj-$(CONFIG_OMAP_INTERCONNECT)	+= omap_l3_smx.o omap_l3_noc.o
- 
- obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
-+obj-$(CONFIG_SIMPLE_PM_BUS)	+= simple-pm-bus.o
- obj-$(CONFIG_VEXPRESS_CONFIG)	+= vexpress-config.o
-diff --git a/drivers/bus/simple-pm-bus.c b/drivers/bus/simple-pm-bus.c
-new file mode 100644
-index 0000000000000000..e55872d2695bd551
---- /dev/null
-+++ b/drivers/bus/simple-pm-bus.c
-@@ -0,0 +1,51 @@
 +/*
-+ * Simple Power-Managed Bus Driver
-+ *
-+ * Copyright (C) 2014 Glider bvba
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
++ * NOP functions
 + */
++static void noop(struct irq_data *data) { }
 +
-+#include <linux/module.h>
-+#include <linux/platform_device.h>
-+#include <linux/pm_runtime.h>
-+
-+
-+static int simple_pm_bus_probe(struct platform_device *pdev)
++static unsigned int noop_ret(struct irq_data *data)
 +{
-+	dev_dbg(&pdev->dev, "%s\n", __func__);
-+
-+	pm_runtime_enable(&pdev->dev);
 +	return 0;
 +}
 +
-+static int simple_pm_bus_remove(struct platform_device *pdev)
++static int pcf857x_irq_set_wake(struct irq_data *data, unsigned int on)
 +{
-+	dev_dbg(&pdev->dev, "%s\n", __func__);
++	struct pcf857x *gpio = irq_data_get_irq_chip_data(data);
 +
-+	pm_runtime_disable(&pdev->dev);
++	irq_set_irq_wake(gpio->client->irq, on);
 +	return 0;
 +}
 +
-+static const struct of_device_id simple_pm_bus_of_match[] = {
-+	{ .compatible = "renesas,bsc", },
-+	{ /* sentinel */ }
-+};
-+MODULE_DEVICE_TABLE(of, simple_pm_bus_of_match);
-+
-+static struct platform_driver simple_pm_bus_driver = {
-+	.probe = simple_pm_bus_probe,
-+	.remove = simple_pm_bus_remove,
-+	.driver = {
-+		.name = "simple-pm-bus",
-+		.of_match_table = simple_pm_bus_of_match,
-+	},
++static struct irq_chip pcf857x_irq_chip = {
++	.name		= "pcf857x",
++	.irq_startup	= noop_ret,
++	.irq_shutdown	= noop,
++	.irq_enable	= noop,
++	.irq_disable	= noop,
++	.irq_ack	= noop,
++	.irq_mask	= noop,
++	.irq_unmask	= noop,
++	.irq_set_wake	= pcf857x_irq_set_wake,
 +};
 +
-+module_platform_driver(simple_pm_bus_driver);
-+
-+MODULE_DESCRIPTION("Simple Power-Managed Bus Driver");
-+MODULE_AUTHOR("Geert Uytterhoeven <geert+renesas@glider.be>");
-+MODULE_LICENSE("GPL v2");
+ static int pcf857x_irq_domain_map(struct irq_domain *domain, unsigned int irq,
+ 				 irq_hw_number_t hw)
+ {
+ 	struct pcf857x *gpio = domain->host_data;
+ 
+ 	irq_set_chip_and_handler(irq,
+-				 &dummy_irq_chip,
++				 &pcf857x_irq_chip,
+ 				 handle_level_irq);
++	irq_set_chip_data(irq, gpio);
+ #ifdef CONFIG_ARM
+ 	set_irq_flags(irq, IRQF_VALID);
+ #else
 -- 
 1.9.1
 
