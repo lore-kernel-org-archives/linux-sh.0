@@ -1,69 +1,39 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 27 Jan 2015 17:25:13 +0000
-Subject: [PATCH 3/6] dmaengine: rcar-dmac: Fix oops due to unintialized list in error ISR
-Message-Id: <1422379516-1633-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Rob Landley <rob@landley.net>
+Date: Mon, 12 Jan 2015 23:00:46 +0000
+Subject: [PATCH] Build superh without CONFIG_EXPERT.
+Message-Id: <54B4521E.4050507@landley.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <53700D71.1090201@landley.net>	<53767FB9.5040508@infradead.org> <CAMuHMdVnUqc+gyqok_OAUWT++K-O=9kRQkyUkHduPGxQUQ20oA@mail.gmail.com>
+In-Reply-To: <CAMuHMdVnUqc+gyqok_OAUWT++K-O=9kRQkyUkHduPGxQUQ20oA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Randy Dunlap <rdunlap@infradead.org>, Geert Uytterhoeven <geert@linux-m68k.org>
 
-The error interrupt handler stops and reinitializes all channels. This
-causes a crash for channels that have never been used, as their
-descriptor lists are uninitialized. Fix it by initializing the
-descriptor lists at probe time.
+From: Rob Landley <rob@landley.net>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+What sh4 actually wants is HAVE_PATA_PLATFORM, so select that instead.
+
+Signed-off-by: Rob Landley <rob@landley.net>
+Acked-by: Randy Dunlap <rdunlap@infradead.org>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
 ---
- drivers/dma/sh/rcar-dmac.c | 21 +++++++++++----------
- 1 file changed, 11 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
-index b7ff64557d6d..e76f5e21f666 100644
---- a/drivers/dma/sh/rcar-dmac.c
-+++ b/drivers/dma/sh/rcar-dmac.c
-@@ -930,11 +930,6 @@ static int rcar_dmac_alloc_chan_resources(struct dma_chan *chan)
- 	struct rcar_dmac_chan *rchan = to_rcar_dmac_chan(chan);
- 	int ret;
- 
--	INIT_LIST_HEAD(&rchan->desc.free);
--	INIT_LIST_HEAD(&rchan->desc.pending);
--	INIT_LIST_HEAD(&rchan->desc.active);
--	INIT_LIST_HEAD(&rchan->desc.done);
--	INIT_LIST_HEAD(&rchan->desc.wait);
- 	INIT_LIST_HEAD(&rchan->desc.chunks_free);
- 	INIT_LIST_HEAD(&rchan->desc.pages);
- 
-@@ -971,11 +966,11 @@ static void rcar_dmac_free_chan_resources(struct dma_chan *chan)
- 		rchan->mid_rid = -EINVAL;
- 	}
- 
--	list_splice(&rchan->desc.free, &list);
--	list_splice(&rchan->desc.pending, &list);
--	list_splice(&rchan->desc.active, &list);
--	list_splice(&rchan->desc.done, &list);
--	list_splice(&rchan->desc.wait, &list);
-+	list_splice_init(&rchan->desc.free, &list);
-+	list_splice_init(&rchan->desc.pending, &list);
-+	list_splice_init(&rchan->desc.active, &list);
-+	list_splice_init(&rchan->desc.done, &list);
-+	list_splice_init(&rchan->desc.wait, &list);
- 
- 	list_for_each_entry(desc, &list, node)
- 		rcar_dmac_realloc_hwdesc(rchan, desc, 0);
-@@ -1521,6 +1516,12 @@ static int rcar_dmac_chan_probe(struct rcar_dmac *dmac,
- 
- 	spin_lock_init(&rchan->lock);
- 
-+	INIT_LIST_HEAD(&rchan->desc.free);
-+	INIT_LIST_HEAD(&rchan->desc.pending);
-+	INIT_LIST_HEAD(&rchan->desc.active);
-+	INIT_LIST_HEAD(&rchan->desc.done);
-+	INIT_LIST_HEAD(&rchan->desc.wait);
-+
- 	/* Request the channel interrupt. */
- 	sprintf(pdev_irqname, "ch%u", index);
- 	irq = platform_get_irq_byname(pdev, pdev_irqname);
--- 
-2.0.5
+ arch/sh/Kconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
+A follow-up patch could simplify the defconfigs in arch/sh/configs...
+
+--- linux/arch/sh/Kconfig
++++ linux/arch/sh/Kconfig
+@@ -1,7 +1,7 @@
+ config SUPERH
+ 	def_bool y
+ 	select ARCH_MIGHT_HAVE_PC_PARPORT
+-	select EXPERT
++	select HAVE_PATA_PLATFORM
+ 	select CLKDEV_LOOKUP
+ 	select HAVE_IDE if HAS_IOPORT_MAP
+ 	select HAVE_MEMBLOCK
