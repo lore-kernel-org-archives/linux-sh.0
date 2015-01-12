@@ -1,89 +1,58 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 09 Jan 2015 13:12:34 +0000
-Subject: [PATCH v3 3/4] drivers: bus: Add Simple Power-Managed Bus DT Bindings
-Message-Id: <1420809155-4015-4-git-send-email-geert+renesas@glider.be>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 12 Jan 2015 20:40:21 +0000
+Subject: Re: [PATCH] ARM: shmobile: r8a7791: add MLB+ clock
+Message-Id: <54B43135.6000002@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420809155-4015-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1420809155-4015-1-git-send-email-geert+renesas@glider.be>
+References: <7846462.yepFC759KH@wasted.cogentembedded.com>
+In-Reply-To: <7846462.yepFC759KH@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
----
-v3:
-  - Add Tested-by,
-  - Document required properties inherited from "simple-bus",
-  - Document required "reg" property for "renesas,bsc",
-  - Move "ranges" before "reg" in the example,
+Hello.
 
-v2:
-  - New.
----
- .../devicetree/bindings/bus/simple-pm-bus.txt      | 52 ++++++++++++++++++++++
- 1 file changed, 52 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/bus/simple-pm-bus.txt
+On 12/18/2014 11:43 PM, Sergei Shtylyov wrote:
 
-diff --git a/Documentation/devicetree/bindings/bus/simple-pm-bus.txt b/Documentation/devicetree/bindings/bus/simple-pm-bus.txt
-new file mode 100644
-index 0000000000000000..d03abf7fd8e3997a
---- /dev/null
-+++ b/Documentation/devicetree/bindings/bus/simple-pm-bus.txt
-@@ -0,0 +1,52 @@
-+Simple Power-Managed Bus
-+============
-+
-+A Simple Power-Managed Bus is a transparent bus that doesn't need a real
-+driver, as it's typically initialized by the boot loader.
-+
-+However, its bus controller is part of a PM domain, or under the control of a
-+functional clock.  Hence, the bus controller's PM domain and/or clock must be
-+enabled for child devices connected to the bus (either on-SoC or externally)
-+to function.
-+
-+
-+Generic compatible values and properties
-+----------------------------------------
-+
-+Required properties:
-+  - compatible: Must be at least one of the vendor-specific compatible values
-+		from a vendor-specific section below, and "simple-bus" as a
-+		fallback.
-+  - #address-cells, #size-cells, ranges: Must describe the mapping between
-+		parent address and child address spaces.
-+
-+Optional platform-specific properties for clock or PM domain control (at least
-+one of them is required):
-+  - clocks: Must contain a reference to the functional clock(s),
-+  - power-domains: Must contain a reference to the PM domain.
-+
-+
-+Vendor-specific compatible values and properties
-+------------------------------------------------
-+
-+Renesas Bus State Controller (BSC):
-+  - compatible: Must be an SoC-specific value, and "renesas,bsc" as a fallback.
-+                SoC-specific values can be:
-+		"renesas,bsc-r8a73a4" for R-Mobile APE6 (r8a73a4)
-+		"renesas,bsc-sh73a0" for SH-Mobile AG5 (sh73a0)
-+  - reg: Must contain the base address and length to access the bus controller.
-+  - interrupts: Must contain a reference to the BSC interrupt, if available.
-+
-+
-+Example:
-+
-+	bsc: bus@fec10000 {
-+		compatible = "renesas,bsc-sh73a0", "renesas,bsc", "simple-bus";
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		ranges = <0 0 0x20000000>;
-+		reg = <0xfec10000 0x400>;
-+		interrupts = <0 39 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&zb_clk>;
-+		power-domains = <&pd_a4s>;
-+	};
--- 
-1.9.1
+> From: Andrey Gusakov <andrey.gusakov@cogentembedded.com>
+
+> Add MLB+ clock to R8A7791 device tree.
+
+> Signed-off-by: Andrey Gusakov <andrey.gusakov@cogentembedded.com>
+> [Sergei: rebased, renamed, added changelog]
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+> ---
+> This patch is against 'renesas-devel-20141218-v3.18' tag of Simon Horman's
+> 'renesas.git' repo.
+
+>   arch/arm/boot/dts/r8a7791.dtsi            |   10 +++++-----
+>   include/dt-bindings/clock/r8a7791-clock.h |    1 +
+>   2 files changed, 6 insertions(+), 5 deletions(-)
+
+> Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
+> =================================> --- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
+> +++ renesas/arch/arm/boot/dts/r8a7791.dtsi
+> @@ -1154,17 +1154,17 @@
+>   		mstp8_clks: mstp8_clks@e6150990 {
+>   			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+>   			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
+> -			clocks = <&zg_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>, <&p_clk>,
+> -				 <&zs_clk>, <&zs_clk>;
+> +			clocks = <&hp_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>,
+
+    Oops, the first two clocks need to be swapped. I'll send a fix (since this 
+patch has been merged already).
+
+> +			         <&zg_clk>, <&p_clk>, <&zs_clk>, <&zs_clk>;
+>   			#clock-cells = <1>;
+>   			clock-indices = <
+> -				R8A7791_CLK_IPMMU_SGX
+> +				R8A7791_CLK_IPMMU_SGX R8A7791_CLK_MLB
+>   				R8A7791_CLK_VIN2 R8A7791_CLK_VIN1 R8A7791_CLK_VIN0
+>   				R8A7791_CLK_ETHER R8A7791_CLK_SATA1 R8A7791_CLK_SATA0
+>   			>;
+[...]
+
+WBR, Sergei
 
