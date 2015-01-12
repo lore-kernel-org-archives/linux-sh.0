@@ -1,97 +1,82 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 12 Jan 2015 17:32:00 +0000
-Subject: Re: [PATCH resend 2/2] [RFC] genirq: Set IRQCHIP_SKIP_SET_WAKE for no_irq_chip and dummy_irq_chip
-Message-Id: <CAMuHMdXiSEJqJiMF=YGSgbqRGFLhvFhKfwTwGbkxo-xxC4=-Jg@mail.gmail.com>
+From: Olof Johansson <olof@lixom.net>
+Date: Mon, 12 Jan 2015 22:29:32 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC Lager Board Removal for v3.20
+Message-Id: <20150112222932.GI22090@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421078671-5920-1-git-send-email-geert+renesas@glider.be>
-	<1421078671-5920-2-git-send-email-geert+renesas@glider.be>
-	<54B3F849.30001@oracle.com>
-In-Reply-To: <54B3F849.30001@oracle.com>
+References: <cover.1419809774.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1419809774.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: santosh shilimkar <santosh.shilimkar@oracle.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Linus Walleij <linus.walleij@linaro.org>, Alexandre Courbot <gnurou@gmail.com>, Thomas Gleixner <tglx@linutronix.de>, Santosh Shilimkar <ssantosh@kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Santosh,
+On Mon, Dec 29, 2014 at 10:46:47AM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
+> 
+> Please consider these Renesas ARM based SoC lager board removal for v3.20.
+> 
+> The serial port rename changes are not strictly related to lager board
+> removal from a feature point of view. But the lager portion of this change
+> depends on board removal to avoid a regression of booting using that code,
+> And thus it seems to make sense to put here. And it seems best to put the
+> koelsch and lager serial port rename changes in the same branch.
+> 
+> Likewise the removal of bootargs from lager DT depends on removing lager
+> board code to avoid a regression when using it and thus I have included
+> it in the same branch.
+> 
+> 
+> The following changes since commit 97bf6af1f928216fd6c5a66e8a57bfa95a659672:
+> 
+>   Linux 3.19-rc1 (2014-12-20 17:08:50 -0800)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-lager-board-removal-for-v3.20
+> 
+> for you to fetch changes up to 569dd56c9971c699472d3b270e988baf7f6de8c9:
+> 
+>   ARM: shmobile: lager dts: Drop console= bootargs parameter (2014-12-21 17:03:53 +0900)
+> 
+> ----------------------------------------------------------------
+> Renesas ARM Based SoC Lager Board Removal for v3.20
+> 
+> * Remove legacy r8a7790 SoC and its Lager board code
+> * Update serial port names on koelsch and lager boards
+> * Remove console bootargs parameter from lager DT
+> 
+> ----------------------------------------------------------------
+> Geert Uytterhoeven (1):
+>       ARM: shmobile: lager dts: Drop console= bootargs parameter
+> 
+> Laurent Pinchart (3):
+>       ARM: shmobile: r8a7790: Remove legacy code
+>       ARM: shmobile: lager: Rename SCIFA[01] serial ports to ttySC[01]
+>       ARM: shmobile: koelsch: Rename SCIF[01] serial ports to ttySC[01]
+> 
+> Magnus Damm (2):
+>       ARM: shmobile: lager-reference: DTS-only board support
+>       ARM: shmobile: lager: Remove legacy board support
+> 
+>  MAINTAINERS                                    |   1 -
+>  arch/arm/boot/dts/Makefile                     |   1 -
+>  arch/arm/boot/dts/r8a7790-lager.dts            |   6 +-
+>  arch/arm/boot/dts/r8a7791-koelsch.dts          |   4 +-
+>  arch/arm/configs/lager_defconfig               | 150 -----
+>  arch/arm/configs/shmobile_defconfig            |   1 -
+>  arch/arm/mach-shmobile/Kconfig                 |  20 -
+>  arch/arm/mach-shmobile/Makefile                |   3 -
+>  arch/arm/mach-shmobile/Makefile.boot           |   1 -
+>  arch/arm/mach-shmobile/board-lager-reference.c |  39 --
+>  arch/arm/mach-shmobile/board-lager.c           | 827 -------------------------
+>  arch/arm/mach-shmobile/clock-r8a7790.c         | 459 --------------
+>  arch/arm/mach-shmobile/r8a7790.h               |  28 -
+>  arch/arm/mach-shmobile/setup-r8a7790.c         | 284 +--------
+>  14 files changed, 6 insertions(+), 1818 deletions(-)
 
-On Mon, Jan 12, 2015 at 5:37 PM, santosh shilimkar
-<santosh.shilimkar@oracle.com> wrote:
-> On 1/12/2015 8:04 AM, Geert Uytterhoeven wrote:
->>
->> If no_irq_chip or dummy_irq_chip are used for wake up (e.g. gpio-keys
->> with a simple GPIO controller), the following warning is printed on
->> resume from s2ram:
->>
->>      WANING: CPU: 0 PID: 1046 at kernel/irq/manage.c:537
->> irq_set_irq_wake+0x9c/0xf8()
->>      Unbalanced IRQ 113 wake disable
->>
->> This happens because no_irq_chip and dummy_irq_chip do not implement
->> irq_chip.irq_set_wake(), causing set_irq_wake_real() to return -ENXIO,
->> and irq_set_irq_wake() to reset the wake_depth to zero.
->>
->> Set IRQCHIP_SKIP_SET_WAKE to indicate that irq_chip.irq_set_wake() is
->> not implemented.
->>
->> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->> ---
->> Alternatively, can't we remove IRQCHIP_SKIP_SET_WAKE, and just check for
->> the presence of irq_chip.irq_set_wake()?
->> I'll be happy to send a patch to do that instead...
->>
->> Is there anything that relies on this -ENXIO error code?
->> All irq_chip implementations that set IRQCHIP_SKIP_SET_WAKE do not
->> implement irq_chip.irq_set_wake(). There are probably more of them that
->> forgot to set IRQCHIP_SKIP_SET_WAKE though.
->> Am I missing something?
->> Commit 60f96b41f71d2a13 ("genirq: Add IRQCHIP_SKIP_SET_WAKE flag")
->> doesn't explain why adding the flag was chosen.
->>
-> The flag was added to avoid dummy irq_set_wake() implementation
-> as described in the commit.
->
-> ------------------
-> commit 60f96b41f71d2a13d1c0a457b8b77958f77142d1
-> Author: Santosh Shilimkar <santosh.shilimkar@ti.com>
-> Date:   Fri Sep 9 13:59:35 2011 +0530
->
->     genirq: Add IRQCHIP_SKIP_SET_WAKE flag
->
->     Some irq chips need the irq_set_wake() functionality, but do not
->     require a irq_set_wake() callback. Instead of forcing an empty
->     callback to be implemented add a flag which notes this fact. Check for
->     the flag in set_irq_wake_real() and return success when set.
->
->     Signed-off-by: Santosh Shilimkar <santosh.shilimkar@ti.com>
->     Cc: Thomas Gleixner <tglx@linutronix.de>
-> ------------------
+Nice!!
 
-I had read that commit description.
+I've merged this into next/cleanup.
 
-> Here is the relevant thread.
-> http://lists.infradead.org/pipermail/linux-arm-kernel/2011-September/064590.html
->
-> As you can read from thread, the idea is to handle the need at
-> genirq level. Either with a flag or a dummy function.
 
-But it's not handled at genirq level. Every driver that doesn't implement the
-.irq_set_wake() method has to set the flag. Several of these don't, causing
-the warning.
-
-Instead of having to fix them all, can't we remove IRQCHIP_SKIP_SET_WAKE,
-and just check for the absence of irq_chip.irq_set_wake() instead?
-
-Is there ever a valid use case for a driver to not provide a .irq_set_wake(),
-and not set the flag?
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+-Olof
