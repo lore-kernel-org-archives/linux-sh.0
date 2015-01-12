@@ -1,52 +1,41 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 Jan 2015 02:35:05 +0000
-Subject: [PATCH 2/4] drivers: bus: Sort Makefile entries alphabetically
-Message-Id: <027a744f4c65a5a9e2cfc1bf7ec14e613e5d92c0.1421371868.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 12 Jan 2015 10:07:57 +0000
+Subject: [PATCH 0/2] gpio: rcar: Convert to use gpiolib irqchip
+Message-Id: <1421057279-16081-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421371868.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421371868.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linus Walleij <linus.walleij@linaro.org>, Alexandre Courbot <gnurou@gmail.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+	Hi Linus, Alexandre,
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- drivers/bus/Makefile | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+This patch series converts the Renesas R-Car Gen2 GPIO driver to use the
+gpiolib irqchip helpers.
 
-diff --git a/drivers/bus/Makefile b/drivers/bus/Makefile
-index 2973c18..3cfaf2c 100644
---- a/drivers/bus/Makefile
-+++ b/drivers/bus/Makefile
-@@ -2,16 +2,16 @@
- # Makefile for the bus drivers.
- #
- 
-+# Interconnect bus drivers for ARM platforms
-+obj-$(CONFIG_ARM_CCI)		+= arm-cci.o
-+obj-$(CONFIG_ARM_CCN)		+= arm-ccn.o
-+
- obj-$(CONFIG_BRCMSTB_GISB_ARB)	+= brcmstb_gisb.o
--obj-$(CONFIG_IMX_WEIM)	+= imx-weim.o
--obj-$(CONFIG_MVEBU_MBUS) += mvebu-mbus.o
--obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
-+obj-$(CONFIG_IMX_WEIM)		+= imx-weim.o
-+obj-$(CONFIG_MVEBU_MBUS) 	+= mvebu-mbus.o
- 
- # Interconnect bus driver for OMAP SoCs.
- obj-$(CONFIG_OMAP_INTERCONNECT)	+= omap_l3_smx.o omap_l3_noc.o
- 
--# Interconnect bus drivers for ARM platforms
--obj-$(CONFIG_ARM_CCI)		+= arm-cci.o
--obj-$(CONFIG_ARM_CCN)		+= arm-ccn.o
--
-+obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
- obj-$(CONFIG_VEXPRESS_CONFIG)	+= vexpress-config.o
+It was tested on r8a7791/koelsch.
+
+Thanks!
+
+Geert Uytterhoeven (2):
+  gpio: rcar: Fix error path for devm_kzalloc() failure
+  gpio: rcar: Switch to use gpiolib irqchip helpers
+
+ drivers/gpio/Kconfig     |  1 +
+ drivers/gpio/gpio-rcar.c | 75 ++++++++++++++++--------------------------------
+ 2 files changed, 26 insertions(+), 50 deletions(-)
+
 -- 
-2.1.4
+1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
