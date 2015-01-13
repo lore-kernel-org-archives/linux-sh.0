@@ -1,90 +1,77 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 08 Jan 2015 07:22:05 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7794: Correct SDHI clock node names
-Message-Id: <CAMuHMdU_6rq0pP0pHD21GLdyPzSJDW1-LUrKDUdeThgsRdu3sQ@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 13 Jan 2015 01:41:02 +0000
+Subject: [PATCH] ARM: shmobile: r8a7794: Correct SDHI base address, clock labels and output-names
+Message-Id: <1421113262-19433-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1420418648-7815-1-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdVX196P9u8zHyjWR_-6Pj7kqtOzR4pW2_qGigsSw-2BVQ@mail.gmail.com>
- <20150108003826.GF18943@verge.net.au>
-In-Reply-To: <20150108003826.GF18943@verge.net.au>
+In-Reply-To: <1420418648-7815-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+* Correct base address of SD3 div6 clk.
+* Update div6 labels and MSTP output names
+  There appears to have been some inconsistency and confusion here as on
+  the r8a7790 these clocks are referred to as SD(HI)1 and SD(HI)2 while on
+  the r8a7791 and r8a7794 they are referred to as SD(HI)2 and SD(HI)3.
 
-On Thu, Jan 8, 2015 at 1:38 AM, Simon Horman <horms@verge.net.au> wrote:
-> On Mon, Jan 05, 2015 at 10:41:14AM +0100, Geert Uytterhoeven wrote:
->> On Mon, Jan 5, 2015 at 1:44 AM, Simon Horman <horms+renesas@verge.net.au> wrote:
->> > diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
->> > index 8f78da5..9856e9c 100644
->> > --- a/arch/arm/boot/dts/r8a7794.dtsi
->> > +++ b/arch/arm/boot/dts/r8a7794.dtsi
->> > @@ -294,14 +294,14 @@
->> >                                              "lb", "qspi", "sdh", "sd0", "z";
->> >                 };
->> >                 /* Variable factor clocks */
->> > -               sd1_clk: sd2_clk@e6150078 {
->> > +               sd1_clk: sd1_clk@e6150078 {
->> >                         compatible = "renesas,r8a7794-div6-clock", "renesas,cpg-div6-clock";
->> >                         reg = <0 0xe6150078 0 4>;
->> >                         clocks = <&pll1_div2_clk>;
->> >                         #clock-cells = <0>;
->> >                         clock-output-names = "sd1";
->> >                 };
->> > -               sd2_clk: sd3_clk@e615007c {
->> > +               sd2_clk: sd2_clk@e615007c {
->> >                         compatible = "renesas,r8a7794-div6-clock", "renesas,cpg-div6-clock";
->> >                         reg = <0 0xe615007c 0 4>;
->> >                         clocks = <&pll1_div2_clk>;
->>
->> According to the documentation, SDCKCR is 0xe6150074, not ..78,
->> SD2CKCR is 0xe6150078, not ..7c.
->> For reference SD3CKCR is 0xe615026c.
->>
->> Note that r8a7791.dtsi also has the mismatches between the labels and node
->> names.
->>
->> The discrepancy is caused by the different number of SDHI modules in the
->> different SoCs of the R-Car Gen2 family.
->>
->>   - r8a7790 has hardware modules SDHI0, SDHI1, SDHI2, and SDHI3.
->>   - r8a7791 and r8a7794 have hardware modules SDHI0, SDHI2, and SDHI3,
->>     but call the last two instances SDHI1 and SDHI2, while the clock registers
->>     are not renumbered.
->>     So instance SDHI1 uses SD2CKCR, and instance SDHI2 uses SD3CKCR, right?
->
-> I had not noticed, but yes that does seem to be the case.
->
->> That means the node names are actually correct. But the register value and
->> unit address for the second clock are still wrong, they should be (0x)e615007c,
->
-> Ok, that makes sense. But in that the labels want updating, right?
+This has no run-time affect as the clock nodes are not currently used.
 
-Yes, if the labels are supposed to refer to the clk instance (and not the
-SDHI instance).
+Fixes: 8e181633e6ca96049 ("ARM: shmobile: r8a7794: Add SDHI clocks to device tree")
+Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
->> cfr. in r8a7791.dtsi.
->>
->> Note that IMHO the clock-output-names are wrong, for both r8a7791 and r8a7794,
->> as the hardware documentation calls these "sd2" and "sd3", not "sd1" and "sd2".
->
-> Excellent. I think we can easily change that for the r8a7794 as the
-> nodes aren't being consumed nor have been part of a release. But I'm
-> less sure about a path forward for the r8a7791. What are your thoughts?
+---
+* A similar change to update the div6 clock node names and labels,
+  and the MSTP clock output-names is required for the r8a7791.
+  The base addresses appear to be correct there.
+---
+ arch/arm/boot/dts/r8a7794.dtsi | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-While the clock names are user-visible through /sysfs, I don't think anything
-relies on them. Their users (in DT) refer to the labels in DT.
-Or am I missing something?
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 8f78da5..b98534e 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -294,16 +294,16 @@
+ 					     "lb", "qspi", "sdh", "sd0", "z";
+ 		};
+ 		/* Variable factor clocks */
+-		sd1_clk: sd2_clk@e6150078 {
++		sd2_clk: sd2_clk@e6150078 {
+ 			compatible = "renesas,r8a7794-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0 0xe6150078 0 4>;
+ 			clocks = <&pll1_div2_clk>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "sd1";
+ 		};
+-		sd2_clk: sd3_clk@e615007c {
++		sd3_clk: sd3_clk@e615026c {
+ 			compatible = "renesas,r8a7794-div6-clock", "renesas,cpg-div6-clock";
+-			reg = <0 0xe615007c 0 4>;
++			reg = <0 0xe615026c 0 4>;
+ 			clocks = <&pll1_div2_clk>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "sd2";
+@@ -518,7 +518,7 @@
+ 		mstp3_clks: mstp3_clks@e615013c {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+-			clocks = <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7794_CLK_SD0>,
++			clocks = <&sd3_clk>, <&sd2_clk>, <&cpg_clocks R8A7794_CLK_SD0>,
+ 			         <&mmc0_clk>, <&rclk_clk>, <&hp_clk>, <&hp_clk>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
+@@ -527,7 +527,7 @@
+ 				R8A7794_CLK_USBDMAC0 R8A7794_CLK_USBDMAC1
+ 			>;
+ 			clock-output-names -			        "sdhi2", "sdhi1", "sdhi0",
++			        "sdhi3", "sdhi2", "sdhi0",
+ 				"mmcif0", "cmt1", "usbdmac0", "usbdmac1";
+ 		};
+ 		mstp7_clks: mstp7_clks@e615014c {
+-- 
+2.1.4
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
