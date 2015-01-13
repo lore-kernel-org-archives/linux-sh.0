@@ -1,63 +1,56 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 13 Jan 2015 02:13:25 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC Fixes for v3.19
-Message-Id: <cover.1421113695.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 13 Jan 2015 08:10:08 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC Fixes for v3.19
+Message-Id: <CAMuHMdU2nrftSAxZgwrT5_WP5WkeisxDkuZcAa7zH0LQyQ89jg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1389321620.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1389321620.git.horms+renesas@verge.net.au>
+References: <cover.1421113695.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1421113695.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+On Tue, Jan 13, 2015 at 3:13 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+>
+> Please consider these Renesas ARM based SoC fixes for v3.19.
+>
+> This pull request is based on the last round of SoC updates for v3.19,
+> Fourth Round of Renesas ARM Based SoC Updates for v3.19, tagged as
+> renesas-soc3-for-v3.19, merged into your next/soc branch and included in
+> v3.19-rc1.
+>
+> * ARM: shmobile: r8a7740: Instantiate GIC from C board code in legacy builds
 
-Please consider these Renesas ARM based SoC fixes for v3.19.
+That's the description for the regression below.
+Should have been: "Set .control_parent for all irqpin instances for sh73a0
+SoC when booting using legacy C."
 
-This pull request is based on the last round of SoC updates for v3.19,
-Fourth Round of Renesas ARM Based SoC Updates for v3.19, tagged as
-renesas-soc3-for-v3.19, merged into your next/soc branch and included in
-v3.19-rc1.
+>   This fixes a long standing problem which has been present since
+>   the sh73a0 SoC started using the INTC External IRQ pin driver.
+>
+>   The patch that introduced the problem is 341eb5465f67437a ("ARM:
+>   shmobile: INTC External IRQ pin driver on sh73a0") which was included
+>   in v3.10.
+>
+> * This fixes a regression in the r8a7740 SoC due to
+>   9a1091ef0017c40a ("irqchip: gic: Support hierarchy irq domain.")
+>   which was included in v3.18-rc2.
 
+> ----------------------------------------------------------------
+> Renesas ARM Based SoC Fixes for v3.19
+>
+> * Set .control_parent for all irqpin instances for sh73a0 SoC when booting
+>   using legacy C
+> * Instantiate GIC board for r8a7740 SoC when using legacy C
 
-* ARM: shmobile: r8a7740: Instantiate GIC from C board code in legacy builds
+Gr{oetje,eeting}s,
 
-  This fixes a long standing problem which has been present since
-  the sh73a0 SoC started using the INTC External IRQ pin driver.
+                        Geert
 
-  The patch that introduced the problem is 341eb5465f67437a ("ARM:
-  shmobile: INTC External IRQ pin driver on sh73a0") which was included
-  in v3.10.
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-* This fixes a regression in the r8a7740 SoC due to
-  9a1091ef0017c40a ("irqchip: gic: Support hierarchy irq domain.")
-  which was included in v3.18-rc2.
-
-
-The following changes since commit 7a2071c58f36450fbf44a27d2e5d371c18534a25:
-
-  ARM: shmobile: Add early debugging support using SCIF(A) (2014-11-17 10:29:58 +0900)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-fixes-for-v3.19
-
-for you to fetch changes up to b0ddb319db3d7a1943445f0de0a45c07a7f3457a:
-
-  ARM: shmobile: sh73a0 legacy: Set .control_parent for all irqpin instances (2015-01-08 09:15:16 +0900)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC Fixes for v3.19
-
-* Set .control_parent for all irqpin instances for sh73a0 SoC when booting
-  using legacy C
-* Instantiate GIC board for r8a7740 SoC when using legacy C
-
-----------------------------------------------------------------
-Geert Uytterhoeven (2):
-      ARM: shmobile: r8a7740: Instantiate GIC from C board code in legacy builds
-      ARM: shmobile: sh73a0 legacy: Set .control_parent for all irqpin instances
-
- arch/arm/mach-shmobile/setup-r8a7740.c | 7 +++++++
- arch/arm/mach-shmobile/setup-sh73a0.c  | 3 +++
- 2 files changed, 10 insertions(+)
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
