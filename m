@@ -1,84 +1,61 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Tue, 20 Jan 2015 10:00:25 +0000
-Subject: Re: [PATCH 3/8 v2] mmc: tmio_mmc: remove slave_id settings for DMAEngine
-Message-Id: <CAPDyKFr1YX8MhcATYeGk-wcphzobuDA+_C+KxXKWGRPZK1j_yw@mail.gmail.com>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Tue, 13 Jan 2015 14:26:49 +0000
+Subject: Re: [PATCH 1/2] gpio: pcf857x: Propagate wake-up setting to parent irq controller
+Message-Id: <CACRpkdbcdMYXOvFSENZ1f7-4JV9Op+xSqz24UDApetK_LDrY0g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87h9vmaxxg.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87h9vmaxxg.wl%kuninori.morimoto.gx@renesas.com>
+References: <1418218575-17694-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1418218575-17694-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Alexandre Courbot <gnurou@gmail.com>, Thomas Gleixner <tglx@linutronix.de>, Santosh Shilimkar <santosh.shilimkar@ti.com>, Ingo Molnar <mingo@redhat.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-On 20 January 2015 at 05:16, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->
-> Current tmio_mmc sets dma_slave_config :: slave_id field for DMAEngine,
-> but it is no longer needed. Let's remove it.
->
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Wed, Dec 10, 2014 at 2:36 PM, Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
 
-Acked-by: Ulf Hansson <ulf.hansson@linaro.org>
+> The pcf857x GPIO and interrupt controller uses dummy_irq_chip, which
+> does not implement irq_chip.irq_set_wake() and does not set
+> IRQCHIP_SKIP_SET_WAKE.
+>
+> This causes two s2ram issues if wake-up is enabled for the pcf857x GPIO
+> pins:
+>   1. During resume from s2ram, the following warning is printed:
+>
+>      WARNING: CPU: 0 PID: 1046 at kernel/irq/manage.c:537 irq_set_irq_wake+0x9c/0xf8()
+>      Unbalanced IRQ 113 wake disable
+>
+>   2. Wake-up through the pcf857x GPIO pins may fail, as the parent
+>      interrupt controller may be suspended.
+>
+> Migrate the pcf857x GPIO and interrupt controller from dummy_irq_chip to
+> its own irq_chip. This irq chip implements irq_chip.irq_set_wake() to
+> propagate its wake-up setting to the parent interrupt controller.
+>
+> This fixes wake-up through gpio-keys on sh73a0/kzm9g, where the pcf857x
+> interrupt is cascaded to irq-renesas-intc-irqpin, and the latter must
+> not be suspended when wake-up is enabled.
+>
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+(...)
+> +static struct irq_chip pcf857x_irq_chip = {
+> +       .name           = "pcf857x",
+> +       .irq_startup    = noop_ret,
+> +       .irq_shutdown   = noop,
+> +       .irq_enable     = noop,
+> +       .irq_disable    = noop,
+> +       .irq_ack        = noop,
+> +       .irq_mask       = noop,
+> +       .irq_unmask     = noop,
+> +       .irq_set_wake   = pcf857x_irq_set_wake,
+> +};
 
-> ---
-> v1 -> v2
->
->  - separate into shdma and others
->
->  drivers/mmc/host/sh_mobile_sdhi.c |    2 --
->  drivers/mmc/host/tmio_mmc.h       |    2 --
->  drivers/mmc/host/tmio_mmc_dma.c   |    4 ----
->  3 files changed, 8 deletions(-)
->
-> diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-> index 6906a90..11991f5 100644
-> --- a/drivers/mmc/host/sh_mobile_sdhi.c
-> +++ b/drivers/mmc/host/sh_mobile_sdhi.c
-> @@ -261,8 +261,6 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
->                          */
->                         dma_priv->chan_priv_tx = (void *)p->dma_slave_tx;
->                         dma_priv->chan_priv_rx = (void *)p->dma_slave_rx;
-> -                       dma_priv->slave_id_tx = p->dma_slave_tx;
-> -                       dma_priv->slave_id_rx = p->dma_slave_rx;
->                 }
->         }
->         dma_priv->filter = shdma_chan_filter;
-> diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-> index fc3805e..1aea5c6 100644
-> --- a/drivers/mmc/host/tmio_mmc.h
-> +++ b/drivers/mmc/host/tmio_mmc.h
-> @@ -45,8 +45,6 @@ struct tmio_mmc_host;
->  struct tmio_mmc_dma {
->         void *chan_priv_tx;
->         void *chan_priv_rx;
-> -       int slave_id_tx;
-> -       int slave_id_rx;
->         enum dma_slave_buswidth dma_buswidth;
->         bool (*filter)(struct dma_chan *chan, void *arg);
->         void (*enable)(struct tmio_mmc_host *host, bool enable);
-> diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
-> index 331bb61..8dbd785 100644
-> --- a/drivers/mmc/host/tmio_mmc_dma.c
-> +++ b/drivers/mmc/host/tmio_mmc_dma.c
-> @@ -286,8 +286,6 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
->                 if (!host->chan_tx)
->                         return;
->
-> -               if (host->dma->chan_priv_tx)
-> -                       cfg.slave_id = host->dma->slave_id_tx;
->                 cfg.direction = DMA_MEM_TO_DEV;
->                 cfg.dst_addr = res->start + (CTL_SD_DATA_PORT << host->bus_shift);
->                 cfg.dst_addr_width = host->dma->dma_buswidth;
-> @@ -307,8 +305,6 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
->                 if (!host->chan_rx)
->                         goto ereqrx;
->
-> -               if (host->dma->chan_priv_rx)
-> -                       cfg.slave_id = host->dma->slave_id_rx;
->                 cfg.direction = DMA_DEV_TO_MEM;
->                 cfg.src_addr = cfg.dst_addr + host->pdata->dma_rx_offset;
->                 cfg.src_addr_width = host->dma->dma_buswidth;
-> --
-> 1.7.9.5
->
+Argh this is so simplistic ... any GPIO irqchip worthy of it's name
+shoult at least call gpiochip_lock_as_irq() in .irq_request_resources() and vice
+versa mutatis mutandis in .irq_release_resources().
+
+Isn't it possible to also migrate this to GPIOLIB_IRQCHIP when
+you're at it can also cut out a big chunk of rusty code?
+
+Yours,
+Linus Walleij
