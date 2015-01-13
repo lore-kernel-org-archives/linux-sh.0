@@ -1,62 +1,58 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 21 Jan 2015 04:53:27 +0000
-Subject: [PATCH 03/13] ARM: shmobile: mackerel dts: Remove Legacy DTS file
-Message-Id: <20150121045327.7648.77155.sendpatchset@little-apple>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 13 Jan 2015 04:59:43 +0000
+Subject: [PATCH 14/17] mmc: sh_mobile_sdhi: add new macro for mmc_host to sh_mobile_sdhi
+Message-Id: <87a91nuvfc.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150121045256.7648.7451.sendpatchset@little-apple>
-In-Reply-To: <20150121045256.7648.7451.sendpatchset@little-apple>
+References: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ulf Hansson <ulf.hansson@linaro.org>
+Cc: Arnd Bergmann <arnd@arndb.de>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Remove the DTS file for the no longer supported Mackerel board.
+getting struct sh_mobile_sdhi from struct mmc_host needs to use
+complex container_of(). This patch adds new host_to_priv macro to
+get it easily.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+ drivers/mmc/host/sh_mobile_sdhi.c |    6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
- arch/arm/boot/dts/Makefile            |    1 -
- arch/arm/boot/dts/sh7372-mackerel.dts |   26 --------------------------
- 2 files changed, 27 deletions(-)
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 26eeeb6..bcdadb9 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -35,6 +35,8 @@
+ 
+ #define EXT_ACC           0xe4
+ 
++#define host_to_priv(host) container_of((host)->pdata, struct sh_mobile_sdhi, mmc_data)
++
+ struct sh_mobile_sdhi_of_data {
+ 	unsigned long tmio_flags;
+ 	unsigned long capabilities;
+@@ -88,7 +90,7 @@ static int sh_mobile_sdhi_clk_enable(struct platform_device *pdev, unsigned int
+ {
+ 	struct mmc_host *mmc = platform_get_drvdata(pdev);
+ 	struct tmio_mmc_host *host = mmc_priv(mmc);
+-	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
++	struct sh_mobile_sdhi *priv = host_to_priv(host);
+ 	int ret = clk_prepare_enable(priv->clk);
+ 	if (ret < 0)
+ 		return ret;
+@@ -101,7 +103,7 @@ static void sh_mobile_sdhi_clk_disable(struct platform_device *pdev)
+ {
+ 	struct mmc_host *mmc = platform_get_drvdata(pdev);
+ 	struct tmio_mmc_host *host = mmc_priv(mmc);
+-	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
++	struct sh_mobile_sdhi *priv = host_to_priv(host);
+ 	clk_disable_unprepare(priv->clk);
+ }
+ 
+-- 
+1.7.9.5
 
---- 0001/arch/arm/boot/dts/Makefile
-+++ work/arch/arm/boot/dts/Makefile	2015-01-21 11:07:54.407575785 +0900
-@@ -408,7 +408,6 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += \
- 	r8a7778-bockw.dtb \
- 	r8a7778-bockw-reference.dtb \
- 	r8a7779-marzen.dtb \
--	sh7372-mackerel.dtb \
- 	sh73a0-kzm9g.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
- 	r7s72100-genmai.dtb \
---- 0001/arch/arm/boot/dts/sh7372-mackerel.dts
-+++ /dev/null	2015-01-13 15:44:39.280208949 +0900
-@@ -1,26 +0,0 @@
--/*
-- * Device Tree Source for the mackerel board
-- *
-- * Copyright (C) 2012 Renesas Solutions Corp.
-- *
-- * This file is licensed under the terms of the GNU General Public License
-- * version 2.  This program is licensed "as is" without any warranty of any
-- * kind, whether express or implied.
-- */
--
--/dts-v1/;
--#include "sh7372.dtsi"
--
--/ {
--	model = "Mackerel (AP4 EVM 2nd)";
--	compatible = "renesas,mackerel";
--
--	chosen {
--		bootargs = "console=tty0, console=ttySC0,115200 earlyprintk=sh-sci.0,115200 root=/dev/nfs nfsroot=,tcp,v3 ip=dhcp mem$0m rw";
--	};
--
--	memory {
--		device_type = "memory";
--		reg = <0x40000000 0x10000000>;
--	};
--};
