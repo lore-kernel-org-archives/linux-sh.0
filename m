@@ -1,40 +1,193 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 28 Jan 2015 06:48:23 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: r8a7794: alt: Enable ethernet controller
-Message-Id: <20150128064822.GC3581@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 13 Jan 2015 04:57:33 +0000
+Subject: [PATCH 02/17] mmc: tmio: tmio_mmc_host has .dma
+Message-Id: <87r3uzuviy.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1422348356-18675-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1422348356-18675-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>
+Cc: Arnd Bergmann <arnd@arndb.de>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-On Tue, Jan 27, 2015 at 10:55:22AM +0200, Laurent Pinchart wrote:
-> Hi Geert,
-> 
-> Thank you for the review.
-> 
-> On Tuesday 27 January 2015 09:53:25 Geert Uytterhoeven wrote:
-> > On Tue, Jan 27, 2015 at 9:45 AM, Laurent Pinchart wrote:
-> > > Enable the ethernet controller for the Alt board. Pin muxing entries are
-> > > currently left out as r8a7794 pin control support isn't available yet.
-> > > We thus rely on the boot loader to configure ethernet pins for now.
-> > > 
-> > > Signed-off-by: Laurent Pinchart
-> > > <laurent.pinchart+renesas@ideasonboard.com>
-> > 
-> > Looks OK (I don't have an Alt, nor schematics).
-> 
-> I only have a block diagram, no detailed schematics. I have however 
-> successfully tested the patch on Magnus' Alt board. It might depends on 
-> particular DIP switch settings, but it should be good enough to start with.
-> 
-> > Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, I have queued these up for v3.21.
+Current .dma is implemented under tmio_mmc_data.
+It goes to tmio_mmc_host by this patch.
 
-Geert, I took the Ack above to cover both patches in this series
-which has no cover letter. If that was not your intention
-please let me know.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c |    4 ++--
+ drivers/mmc/host/tmio_mmc.h       |   11 +++++++++++
+ drivers/mmc/host/tmio_mmc_dma.c   |   24 +++++++++++-------------
+ include/linux/mfd/tmio.h          |   11 -----------
+ 4 files changed, 24 insertions(+), 26 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index cf062c4..288e78d 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -213,6 +213,8 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		goto eprobe;
+ 	}
+ 
++	host->dma		= dma_priv;
++
+ 	mmc_data->clk_enable = sh_mobile_sdhi_clk_enable;
+ 	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
+ 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
+@@ -241,8 +243,6 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	dma_priv->alignment_shift = 1; /* 2-byte alignment */
+ 	dma_priv->filter = shdma_chan_filter;
+ 
+-	mmc_data->dma = dma_priv;
+-
+ 	/*
+ 	 * All SDHI blocks support 2-byte and larger block sizes in 4-bit
+ 	 * bus width mode.
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index 60d6747..49a2559 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -40,6 +40,16 @@
+ 
+ struct tmio_mmc_data;
+ 
++struct tmio_mmc_dma {
++	void *chan_priv_tx;
++	void *chan_priv_rx;
++	int slave_id_tx;
++	int slave_id_rx;
++	int alignment_shift;
++	dma_addr_t dma_rx_offset;
++	bool (*filter)(struct dma_chan *chan, void *arg);
++};
++
+ struct tmio_mmc_host {
+ 	void __iomem *ctl;
+ 	struct mmc_command      *cmd;
+@@ -59,6 +69,7 @@ struct tmio_mmc_host {
+ 
+ 	struct platform_device *pdev;
+ 	struct tmio_mmc_data *pdata;
++	struct tmio_mmc_dma	*dma;
+ 
+ 	/* DMA support */
+ 	bool			force_pio;
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index 7d07738..6c214d6 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -49,11 +49,10 @@ static void tmio_mmc_start_dma_rx(struct tmio_mmc_host *host)
+ 	struct scatterlist *sg = host->sg_ptr, *sg_tmp;
+ 	struct dma_async_tx_descriptor *desc = NULL;
+ 	struct dma_chan *chan = host->chan_rx;
+-	struct tmio_mmc_data *pdata = host->pdata;
+ 	dma_cookie_t cookie;
+ 	int ret, i;
+ 	bool aligned = true, multiple = true;
+-	unsigned int align = (1 << pdata->dma->alignment_shift) - 1;
++	unsigned int align = (1 << host->dma->alignment_shift) - 1;
+ 
+ 	for_each_sg(sg, sg_tmp, host->sg_len, i) {
+ 		if (sg_tmp->offset & align)
+@@ -126,11 +125,10 @@ static void tmio_mmc_start_dma_tx(struct tmio_mmc_host *host)
+ 	struct scatterlist *sg = host->sg_ptr, *sg_tmp;
+ 	struct dma_async_tx_descriptor *desc = NULL;
+ 	struct dma_chan *chan = host->chan_tx;
+-	struct tmio_mmc_data *pdata = host->pdata;
+ 	dma_cookie_t cookie;
+ 	int ret, i;
+ 	bool aligned = true, multiple = true;
+-	unsigned int align = (1 << pdata->dma->alignment_shift) - 1;
++	unsigned int align = (1 << host->dma->alignment_shift) - 1;
+ 
+ 	for_each_sg(sg, sg_tmp, host->sg_len, i) {
+ 		if (sg_tmp->offset & align)
+@@ -262,8 +260,8 @@ out:
+ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdata)
+ {
+ 	/* We can only either use DMA for both Tx and Rx or not use it at all */
+-	if (!pdata->dma || (!host->pdev->dev.of_node &&
+-		(!pdata->dma->chan_priv_tx || !pdata->dma->chan_priv_rx)))
++	if (!host->dma || (!host->pdev->dev.of_node &&
++		(!host->dma->chan_priv_tx || !host->dma->chan_priv_rx)))
+ 		return;
+ 
+ 	if (!host->chan_tx && !host->chan_rx) {
+@@ -280,7 +278,7 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 		dma_cap_set(DMA_SLAVE, mask);
+ 
+ 		host->chan_tx = dma_request_slave_channel_compat(mask,
+-					pdata->dma->filter, pdata->dma->chan_priv_tx,
++					host->dma->filter, host->dma->chan_priv_tx,
+ 					&host->pdev->dev, "tx");
+ 		dev_dbg(&host->pdev->dev, "%s: TX: got channel %p\n", __func__,
+ 			host->chan_tx);
+@@ -288,8 +286,8 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 		if (!host->chan_tx)
+ 			return;
+ 
+-		if (pdata->dma->chan_priv_tx)
+-			cfg.slave_id = pdata->dma->slave_id_tx;
++		if (host->dma->chan_priv_tx)
++			cfg.slave_id = host->dma->slave_id_tx;
+ 		cfg.direction = DMA_MEM_TO_DEV;
+ 		cfg.dst_addr = res->start + (CTL_SD_DATA_PORT << host->pdata->bus_shift);
+ 		cfg.dst_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
+@@ -299,7 +297,7 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 			goto ecfgtx;
+ 
+ 		host->chan_rx = dma_request_slave_channel_compat(mask,
+-					pdata->dma->filter, pdata->dma->chan_priv_rx,
++					host->dma->filter, host->dma->chan_priv_rx,
+ 					&host->pdev->dev, "rx");
+ 		dev_dbg(&host->pdev->dev, "%s: RX: got channel %p\n", __func__,
+ 			host->chan_rx);
+@@ -307,10 +305,10 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 		if (!host->chan_rx)
+ 			goto ereqrx;
+ 
+-		if (pdata->dma->chan_priv_rx)
+-			cfg.slave_id = pdata->dma->slave_id_rx;
++		if (host->dma->chan_priv_rx)
++			cfg.slave_id = host->dma->slave_id_rx;
+ 		cfg.direction = DMA_DEV_TO_MEM;
+-		cfg.src_addr = cfg.dst_addr + pdata->dma->dma_rx_offset;
++		cfg.src_addr = cfg.dst_addr + host->dma->dma_rx_offset;
+ 		cfg.src_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
+ 		cfg.dst_addr = 0;
+ 		ret = dmaengine_slave_config(host->chan_rx, &cfg);
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index c7d9af0..8d708c7 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -112,16 +112,6 @@ void tmio_core_mmc_clk_div(void __iomem *cnf, int shift, int state);
+ 
+ struct dma_chan;
+ 
+-struct tmio_mmc_dma {
+-	void *chan_priv_tx;
+-	void *chan_priv_rx;
+-	int slave_id_tx;
+-	int slave_id_rx;
+-	int alignment_shift;
+-	dma_addr_t dma_rx_offset;
+-	bool (*filter)(struct dma_chan *chan, void *arg);
+-};
+-
+ struct tmio_mmc_host;
+ 
+ /*
+@@ -134,7 +124,6 @@ struct tmio_mmc_data {
+ 	unsigned long			flags;
+ 	unsigned long			bus_shift;
+ 	u32				ocr_mask;	/* available voltages */
+-	struct tmio_mmc_dma		*dma;
+ 	unsigned int			cd_gpio;
+ 	void (*set_pwr)(struct platform_device *host, int state);
+ 	void (*set_clk_div)(struct platform_device *host, int state);
+-- 
+1.7.9.5
 
