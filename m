@@ -1,55 +1,58 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Thu, 29 Jan 2015 21:59:00 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Defconfig Fixes for v3.20
-Message-Id: <20150129215900.GF20785@quad.lixom.net>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 13 Jan 2015 07:57:48 +0000
+Subject: Re: [PATCH/RFC] serial: sh-sci: Remove overrun message
+Message-Id: <CAMuHMdW6uLoVhyHahWnJrqOe31gfQU9jMipKP7Yrm-o=m=6D=Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1422492899.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1422492899.git.horms+renesas@verge.net.au>
+References: <1418652793-6770-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1418652793-6770-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Cc: "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
 
-On Thu, Jan 29, 2015 at 10:31:22AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these Renesas ARM based SoC defconfig fixes for v3.20.
-> 
-> This pull request is based on "Second Round of Renesas ARM Based SoC
-> Defconfig Updates for v3.20", tagged as renesas-defconfig2-for-v3.20, which
-> you have previously pulled.
-> 
-> 
-> That pull-request was comprised of a single patch "ARM: shmobile: Enable
-> kzm9g board in multiplatform defconfig" which updated the mach_shmobile
-> based on the output of make savedefconfig run on a tree with sh73a0/kzm9g
-> multiplatform support present. And due to REGULATOR being indirectly
-> selected by Kconfig with that support prsent it was not present in the
-> resulting shmobile_defconfig.
-> 
-> However, sh73a0/kzm9g multiplatform supportsupport is no longer queued up
-> for v3.20 and thus is not enabled by make shmobile_defconfig resulting at
-> least in SDHI not working on boards based on R-Car Gen2 SoCs.
-> 
-> It may have been better if I had held off on the patch in question
-> until sh73a0/kzm9g multiplatform support was merged, something I expected
-> to occur for v3.20. But things being as they are this pull-request
-> provides a simple fix for the fallout.
-> 
-> 
-> The following changes since commit eb4513482d1c4882e3633528ccc48d77581b7bb1:
-> 
->   ARM: shmobile: Enable kzm9g board in multiplatform defconfig (2015-01-14 09:51:08 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig-fixes-for-v3.20
-> 
-> for you to fetch changes up to 30aca3c84bd79b48154908b6c1592347f4df3d53:
-> 
->   ARM: shmobile: Select CONFIG_REGULATOR in defconfig once again (2015-01-26 16:14:04 +0900)
+On Mon, Dec 15, 2014 at 3:13 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
+> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+>
+> Since the driver cannot return from overrun error if characters
+> are output during overrun process, the error message of overrun
+> is removed.
+>
+> Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+> ---
+>
+> This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
+> tree.
+>
+>  drivers/tty/serial/sh-sci.c | 1 -
+>  1 file changed, 1 deletion(-)
+>
+> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+> index fccebbd..fe2bb08 100644
+> --- a/drivers/tty/serial/sh-sci.c
+> +++ b/drivers/tty/serial/sh-sci.c
+> @@ -858,7 +858,6 @@ static int sci_handle_fifo_overrun(struct uart_port *port)
+>                 tty_insert_flip_char(tport, 0, TTY_OVERRUN);
+>                 tty_flip_buffer_push(tport);
+>
+> -               dev_notice(port->dev, "overrun error\n");
+>                 copied++;
+>         }
 
-Merged, thanks.
+What about replacing it by a call to dev_dbg() instead?
+That way it won't be printed during normal use, but depending on the
+system's setting it can still be logged in syslog.
 
+Or do you think it's sufficient to have it in the statistics only?
 
--Olof
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
