@@ -1,48 +1,75 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 23 Jan 2015 13:16:38 +0000
-Subject: Re: [PATCH 1/6 v5] dmaengine: rcar-audmapp: independent from SH_DMAE_BASE v1
-Message-Id: <6958556.TH4TtkM2f3@wuerfel>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 13 Jan 2015 05:00:39 +0000
+Subject: [PATCH 17/17] mmc: tmio: remove TMIO_MMC_HAVE_CTL_DMA_REG flag
+Message-Id: <8761cbuvdt.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87wq4ib4xw.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87wq4ib4xw.wl%kuninori.morimoto.gx@renesas.com>
+References: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>
+Cc: Arnd Bergmann <arnd@arndb.de>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-On Thursday 22 January 2015 23:25:49 Laurent Pinchart wrote:
-> 
-> Actually the R-Car platforms suffer from the same multiplexing issue. We have 
-> decided to implement a new R-Car DMAC driver due to the complexity of adding 
-> new features to the existing code base, aiming at a "start clean from scratch" 
-> approach.
-> 
-> Multiplexing isn't supported by the new driver. How to implement that properly 
-> will need to be discussed when and if needed.
-> 
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Ok, I see. Do these chips also multiplex between dma engine instances
-with different drivers, or only between similar dma engine IP blocks?
+tmio_mmc_host has .enable_dma callback now.
+We don't need TMIO_MMC_HAVE_CTL_DMA_REG anymore.
+Let's remove it
 
-When we created the generic dmaengine binding, we intentionally
-mandated the use of dma-names do allow you specify multiple connections
-in one property, and if they have the same name, the dmaengine core
-should be free to pick any of them.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c |    5 -----
+ drivers/mmc/host/tmio_mmc_dma.c   |    3 ---
+ include/linux/mfd/tmio.h          |    5 -----
+ 3 files changed, 13 deletions(-)
 
-I believe this was never implemented in Linux though, so the dmaengine
-core picks the first one with a matching name and does not try any
-others when it fails. We would need to come up with a good policy to
-decide in which order to try the channels, but implementing any scheme
-should not be too hard.
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 7dbcb57..6906a90 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -291,11 +291,6 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	 */
+ 	mmc_data->flags |= TMIO_MMC_SDIO_STATUS_QUIRK;
+ 
+-	/*
+-	 * All SDHI have DMA control register
+-	 */
+-	mmc_data->flags |= TMIO_MMC_HAVE_CTL_DMA_REG;
+-
+ 	if (of_id && of_id->data) {
+ 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
+ 		mmc_data->flags |= of_data->tmio_flags;
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index aa5f4b6..331bb61 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -28,9 +28,6 @@ void tmio_mmc_enable_dma(struct tmio_mmc_host *host, bool enable)
+ 	if (!host->chan_tx || !host->chan_rx)
+ 		return;
+ 
+-	if (host->pdata->flags & TMIO_MMC_HAVE_CTL_DMA_REG)
+-		sd_ctrl_write16(host, CTL_DMA_ENABLE, enable ? 2 : 0);
+-
+ 	if (host->dma->enable)
+ 		host->dma->enable(host, enable);
+ }
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 807ecfb..6058128 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -96,11 +96,6 @@
+ #define TMIO_MMC_SDIO_STATUS_QUIRK	(1 << 8)
+ 
+ /*
+- * Some controllers have DMA enable/disable register
+- */
+-#define TMIO_MMC_HAVE_CTL_DMA_REG	(1 << 9)
+-
+-/*
+  * Some controllers allows to set SDx actual clock
+  */
+ #define TMIO_MMC_CLK_ACTUAL		(1 << 10)
+-- 
+1.7.9.5
 
-The current shdma multiplexing driver with the "renesas,shdma-mux" binding
-implements a different scheme, but also incomplete: The binding documents
-that it multiplexes between the dmaengine devices that are children of
-the mux. The driver instead multiplexes between all dmaengine devices
-that are registered through shdma_init() regardless of their location
-in DT. Apparently this resulted in the correct behavior for all the
-traditional SoCs on which all the dmaengines are multiplexed together,
-but it broke for the r-car audmapp that is not multiplexed in the same
-way.
-
-	Arnd
