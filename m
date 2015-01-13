@@ -1,67 +1,92 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 29 Jan 2015 00:28:31 +0000
-Subject: Re: [PATCH 00/14 v2] ARM: shmobile: Remove sh7372/Mackerel and ZBOOT MMC/SDHI support V2
-Message-Id: <20150129002827.GA18731@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 13 Jan 2015 04:58:46 +0000
+Subject: [PATCH 08/17] mmc: tmio: tmio_mmc_data has .alignment_shift
+Message-Id: <87iogbuvgx.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150126061747.6848.9708.sendpatchset@little-apple>
- <20150127011707.GD29710@verge.net.au>
- <20150127035835.GA1145@verge.net.au>
- <CANqRtoRzvWMo9y_y80uz=kx=M5p-FzkgWPyZZ914sKHvQcM4Fg@mail.gmail.com>
-In-Reply-To: <CANqRtoRzvWMo9y_y80uz=kx=M5p-FzkgWPyZZ914sKHvQcM4Fg@mail.gmail.com>
+References: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Ulf Hansson <ulf.hansson@linaro.org>
+Cc: Arnd Bergmann <arnd@arndb.de>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-On Wed, Jan 28, 2015 at 02:53:29PM +0900, Magnus Damm wrote:
-> Hi Simon,
-> 
-> On Tue, Jan 27, 2015 at 12:58 PM, Simon Horman <horms@verge.net.au> wrote:
-> > On 火,  1月 27, 2015 at 10:17:09午前 +0900, Simon Horman wrote:
-> >> On Mon, Jan 26, 2015 at 03:17:47PM +0900, Magnus Damm wrote:
-> >> > ARM: shmobile: Remove sh7372/Mackerel and ZBOOT MMC/SDHI support V2
-> >> >
-> >> > [PATCH 01/14 v2] ARM: shmobile: mackerel: Remove ZBOOT code
-> >> > [PATCH 02/14 v2] ARM: shmobile: mackerel: Remove Legacy C board code
-> >> > [PATCH 03/14 v2] ARM: shmobile: mackerel dts: Remove Legacy DTS file
-> >> > [PATCH 04/14 v2] ARM: shmobile: mackerel: Remove DT binding documentation
-> >> > [PATCH 05/14 v2] ARM: shmobile: mackerel: Remove mach-type entry
-> >> > [PATCH 06/14 v2] ARM: shmobile: mackerel: Remove defconfig
-> >> > [PATCH 07/14 v2] ARM: shmobile: mackerel: Remove from MAINTAINERS
-> >> > [PATCH 08/14 v2] ARM: shmobile: sh7372: Remove ZBOOT MMC/SDHI support
-> >> > [PATCH 09/14 v2] ARM: shmobile: sh7372: Remove Legacy C SoC code
-> >> > [PATCH 10/14 v2] ARM: shmobile: sh7372: Remove DT binding documentation
-> >> > [PATCH 11/14 v2] ARM: shmobile: sh7372 dtsi: Remove Legacy DTSI file
-> >> > [PATCH 12/14 v2] Documentation: Remove ZBOOT MMC/SDHI utility and docs
-> >> > [PATCH 13/14 v2] pinctrl: sh-pfc: sh7372: Remove PFC support
-> >> > [PATCH 14/14 v2] pinctrl: sh-pfc: sh7372: Remove DT binding documentation
-> >> >
-> >> > Here is my latest attempt (V2) of legacy board and SoC support removal
-> >> > for Mackerel and sh7372. Both the ARM mach-shmobile code base and the
-> >> > PINCTRL subsystem is affected.
-> >> >
-> >> > Also get rid of the remaining ZBOOT MMC/SDHI code, documentation and
-> >> > utility that has no user once sh7372 is gone.
-> >> >
-> >> > The Cortex-A8 based sh7372 SoC is rather old and never went into mass
-> >> > production anyway, so these patches that remove SoC and board support
-> >> > will only affect a few selected developers.
-> >> >
-> >> > I wish we had some way to make use of the ZBOOT MMC/SDHI code, but
-> >> > without any board or SoC code it makes little sense to keep it.
-> >> >
-> >> > Thanks to Laurent and Geert for review!
-> >>
-> >> Sad to see all our hard work being deleted. But at the same
-> >> time its nice to be able to reduce our footprint by 8681 lines!
-> >>
-> >> I have queued up the first 12 patches of this series, that is the
-> >> non-pfc patches. They are queued up in a new sh7372-soc-removal-for-v3.21
-> >> branch which I intend to push as part of renesas-devel-20150127-v3.19-rc6 a
-> >> little later today.
-> >
-> > BTW, could you check that I queued up things correctly?
-> 
-> It looks fine to me. Thanks for your help!
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, for checking.
+Current .alignment_shift is implemented under tmio_mmc_dma.
+It goes to tmio_mmc_data by this patch.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c |    4 ++--
+ drivers/mmc/host/tmio_mmc.h       |    1 -
+ drivers/mmc/host/tmio_mmc_dma.c   |    4 ++--
+ include/linux/mfd/tmio.h          |    1 +
+ 4 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 0db2a0a..782d8cf 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -241,10 +241,10 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 			dma_priv->slave_id_rx = p->dma_slave_rx;
+ 		}
+ 	}
+-
+-	dma_priv->alignment_shift = 1; /* 2-byte alignment */
+ 	dma_priv->filter = shdma_chan_filter;
+ 
++	mmc_data->alignment_shift = 1; /* 2-byte alignment */
++
+ 	/*
+ 	 * All SDHI blocks support 2-byte and larger block sizes in 4-bit
+ 	 * bus width mode.
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index a5d30bf..9482abc 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -45,7 +45,6 @@ struct tmio_mmc_dma {
+ 	void *chan_priv_rx;
+ 	int slave_id_tx;
+ 	int slave_id_rx;
+-	int alignment_shift;
+ 	dma_addr_t dma_rx_offset;
+ 	bool (*filter)(struct dma_chan *chan, void *arg);
+ };
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index ee0131e..d2b02de 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -52,7 +52,7 @@ static void tmio_mmc_start_dma_rx(struct tmio_mmc_host *host)
+ 	dma_cookie_t cookie;
+ 	int ret, i;
+ 	bool aligned = true, multiple = true;
+-	unsigned int align = (1 << host->dma->alignment_shift) - 1;
++	unsigned int align = (1 << host->pdata->alignment_shift) - 1;
+ 
+ 	for_each_sg(sg, sg_tmp, host->sg_len, i) {
+ 		if (sg_tmp->offset & align)
+@@ -128,7 +128,7 @@ static void tmio_mmc_start_dma_tx(struct tmio_mmc_host *host)
+ 	dma_cookie_t cookie;
+ 	int ret, i;
+ 	bool aligned = true, multiple = true;
+-	unsigned int align = (1 << host->dma->alignment_shift) - 1;
++	unsigned int align = (1 << host->pdata->alignment_shift) - 1;
+ 
+ 	for_each_sg(sg, sg_tmp, host->sg_len, i) {
+ 		if (sg_tmp->offset & align)
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 7a5c279..28a12d1 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -122,6 +122,7 @@ struct tmio_mmc_data {
+ 	unsigned long			flags;
+ 	u32				ocr_mask;	/* available voltages */
+ 	unsigned int			cd_gpio;
++	int				alignment_shift;
+ 	void (*set_pwr)(struct platform_device *host, int state);
+ 	void (*set_clk_div)(struct platform_device *host, int state);
+ };
+-- 
+1.7.9.5
+
