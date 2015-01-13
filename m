@@ -1,39 +1,41 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Mon, 12 Jan 2015 22:34:15 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 13 Jan 2015 00:38:23 +0000
 Subject: Re: [GIT PULL] Renesas ARM Based SoC sh73a0 CCF Updates for v3.20
-Message-Id: <20150112223415.GJ22090@quad.lixom.net>
+Message-Id: <20150113003823.GC27284@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1419809955.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1419809955.git.horms+renesas@verge.net.au>
+ <20150112223415.GJ22090@quad.lixom.net>
+In-Reply-To: <20150112223415.GJ22090@quad.lixom.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Dec 29, 2014 at 10:46:58AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
+On Mon, Jan 12, 2015 at 02:34:15PM -0800, Olof Johansson wrote:
+> On Mon, Dec 29, 2014 at 10:46:58AM +0900, Simon Horman wrote:
+> > Hi Olof, Hi Kevin, Hi Arnd,
+> > 
+> > Please consider these Renesas ARM based SoC sh73a0 CCF updates for v3.20.
+> > 
+> > 
+> > The following changes since commit 97bf6af1f928216fd6c5a66e8a57bfa95a659672:
+> > 
+> >   Linux 3.19-rc1 (2014-12-20 17:08:50 -0800)
+> > 
+> > are available in the git repository at:
+> > 
+> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh73a0-ccf-for-v3.20
+> > 
+> > for you to fetch changes up to 09bd745b555c262d1e2c851777317f3adf3cf3d4:
+> > 
+> >   ARM: shmobile: sh73a0: disable legacy clock initialization (2014-12-21 17:09:25 +0900)
 > 
-> Please consider these Renesas ARM based SoC sh73a0 CCF updates for v3.20.
+> This could really have been sliced slightly differently with the drivers/clk
+> change going in a drivers branch, but that might be a bit too messy given that
+> this is better done as a mostly-atomic switch over.
 > 
-> 
-> The following changes since commit 97bf6af1f928216fd6c5a66e8a57bfa95a659672:
-> 
->   Linux 3.19-rc1 (2014-12-20 17:08:50 -0800)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh73a0-ccf-for-v3.20
-> 
-> for you to fetch changes up to 09bd745b555c262d1e2c851777317f3adf3cf3d4:
-> 
->   ARM: shmobile: sh73a0: disable legacy clock initialization (2014-12-21 17:09:25 +0900)
+> I've merged this into next/drivers as a whole now. Please be careful with
+> conflicts against this branch with other new additions this cycle.
 
-This could really have been sliced slightly differently with the drivers/clk
-change going in a drivers branch, but that might be a bit too messy given that
-this is better done as a mostly-atomic switch over.
-
-I've merged this into next/drivers as a whole now. Please be careful with
-conflicts against this branch with other new additions this cycle.
-
-
--Olof
+Thanks. The motivation for this branch arrangement was indeed
+the atomic switch over.
