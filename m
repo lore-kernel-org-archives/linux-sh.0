@@ -1,40 +1,129 @@
-From: "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
-Date: Fri, 30 Jan 2015 14:43:22 +0000
-Subject: [PATCH 13/19] sh: expose number of page table levels
-Message-Id: <1422629008-13689-14-git-send-email-kirill.shutemov@linux.intel.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 13 Jan 2015 04:59:24 +0000
+Subject: [PATCH 12/17] mmc: sh_mobile_sdhi: remove .init/.cleanup
+Message-Id: <87d26juvfu.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1422629008-13689-1-git-send-email-kirill.shutemov@linux.intel.com>
-In-Reply-To: <1422629008-13689-1-git-send-email-kirill.shutemov@linux.intel.com>
+References: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-mm@kvack.org, linux-kernel@vger.kernel.org, Guenter Roeck <linux@roeck-us.net>, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>
+Cc: Arnd Bergmann <arnd@arndb.de>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-We would want to use number of page table level to define mm_struct.
-Let's expose it as CONFIG_PGTABLE_LEVELS.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>
-Cc: linux-sh@vger.kernel.org
+No one is using .init/.cleanup callback function.
+Let's remove these.
+sdhi_ops and .cd_wakeup are also removed
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/sh/Kconfig | 4 ++++
- 1 file changed, 4 insertions(+)
+ drivers/mmc/host/sh_mobile_sdhi.c  |   26 +-------------------------
+ include/linux/mmc/sh_mobile_sdhi.h |   15 ---------------
+ 2 files changed, 1 insertion(+), 40 deletions(-)
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index eb4ef274ae9b..50057fed819d 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -162,6 +162,10 @@ config NEED_DMA_MAP_STATE
- config NEED_SG_DMA_LENGTH
- 	def_bool y
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index c06e93b..48a3be8 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -156,15 +156,6 @@ static int sh_mobile_sdhi_multi_io_quirk(struct mmc_card *card,
+ 	return blk_size;
+ }
  
-+config PGTABLE_LEVELS
-+	default 3 if X2TLB
-+	default 2
-+
- source "init/Kconfig"
+-static void sh_mobile_sdhi_cd_wakeup(const struct platform_device *pdev)
+-{
+-	mmc_detect_change(platform_get_drvdata(pdev), msecs_to_jiffies(100));
+-}
+-
+-static const struct sh_mobile_sdhi_ops sdhi_ops = {
+-	.cd_wakeup = sh_mobile_sdhi_cd_wakeup,
+-};
+-
+ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ {
+ 	const struct of_device_id *of_id @@ -192,19 +183,11 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	mmc_data = &priv->mmc_data;
+ 	dma_priv = &priv->dma_priv;
  
- source "kernel/Kconfig.freezer"
+-	if (p) {
+-		if (p->init) {
+-			ret = p->init(pdev, &sdhi_ops);
+-			if (ret)
+-				return ret;
+-		}
+-	}
+-
+ 	priv->clk = devm_clk_get(&pdev->dev, NULL);
+ 	if (IS_ERR(priv->clk)) {
+ 		ret = PTR_ERR(priv->clk);
+ 		dev_err(&pdev->dev, "cannot get clock: %d\n", ret);
+-		goto eclkget;
++		goto eprobe;
+ 	}
+ 
+ 	host = tmio_mmc_host_alloc(pdev);
+@@ -359,9 +342,6 @@ eirq:
+ efree:
+ 	tmio_mmc_host_free(host);
+ eprobe:
+-eclkget:
+-	if (p && p->cleanup)
+-		p->cleanup(pdev);
+ 	return ret;
+ }
+ 
+@@ -369,13 +349,9 @@ static int sh_mobile_sdhi_remove(struct platform_device *pdev)
+ {
+ 	struct mmc_host *mmc = platform_get_drvdata(pdev);
+ 	struct tmio_mmc_host *host = mmc_priv(mmc);
+-	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
+ 
+ 	tmio_mmc_host_remove(host);
+ 
+-	if (p && p->cleanup)
+-		p->cleanup(pdev);
+-
+ 	return 0;
+ }
+ 
+diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
+index 68927ae..da77e5e20 100644
+--- a/include/linux/mmc/sh_mobile_sdhi.h
++++ b/include/linux/mmc/sh_mobile_sdhi.h
+@@ -3,20 +3,10 @@
+ 
+ #include <linux/types.h>
+ 
+-struct platform_device;
+-
+ #define SH_MOBILE_SDHI_IRQ_CARD_DETECT	"card_detect"
+ #define SH_MOBILE_SDHI_IRQ_SDCARD	"sdcard"
+ #define SH_MOBILE_SDHI_IRQ_SDIO		"sdio"
+ 
+-/**
+- * struct sh_mobile_sdhi_ops - SDHI driver callbacks
+- * @cd_wakeup:		trigger a card-detection run
+- */
+-struct sh_mobile_sdhi_ops {
+-	void (*cd_wakeup)(const struct platform_device *pdev);
+-};
+-
+ struct sh_mobile_sdhi_info {
+ 	int dma_slave_tx;
+ 	int dma_slave_rx;
+@@ -25,11 +15,6 @@ struct sh_mobile_sdhi_info {
+ 	unsigned long tmio_caps2;
+ 	u32 tmio_ocr_mask;	/* available MMC voltages */
+ 	unsigned int cd_gpio;
+-
+-	/* callbacks for board specific setup code */
+-	int (*init)(struct platform_device *pdev,
+-		    const struct sh_mobile_sdhi_ops *ops);
+-	void (*cleanup)(struct platform_device *pdev);
+ };
+ 
+ #endif /* LINUX_MMC_SH_MOBILE_SDHI_H */
 -- 
-2.1.4
+1.7.9.5
 
