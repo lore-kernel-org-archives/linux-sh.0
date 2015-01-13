@@ -1,58 +1,51 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 30 Jan 2015 13:38:28 +0000
-Subject: Re: [PATCH] usb: renesas_usbhs: fix NULL pointer dereference in dma_release_channel()
-Message-Id: <20150130133828.GD31922@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 13 Jan 2015 10:15:41 +0000
+Subject: Re: [PATCH 2/4] DT: i2c: Add devices handled by the da9063 MFD driver
+Message-Id: <20150113101541.GH1059@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="boAH8PqvUi1v1f55"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1422601103-1144-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1422601103-1144-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+References: <1418124169-7123-1-git-send-email-geert+renesas@glider.be>
+ <1418124169-7123-3-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1418124169-7123-3-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+To: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+Cc: Wim Van Sebroeck <wim-IQzOog9fTRqzQB+pC5nmwQ@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Support Opensource <support.opensource-WBD+wuPFNBhBDgjK7y7TUQ@public.gmane.org>, Guenter Roeck <linux-0h96xk9xTtrk1uMJSBkQmQ@public.gmane.org>, Lee Jones <lee.jones-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, linux-watchdog-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Fri, Jan 30, 2015 at 03:58:23PM +0900, Yoshihiro Shimoda wrote:
-> This patch fixes an issue that the following commit causes NULL
-> pointer dereference in dma_release_channel().
->  "usb: renesas_usbhs: add support for requesting DT DMA"
->  (commit id abd2dbf6bb1b5f3a03a8c76b1a8879da1dd30caa)
-> 
-> The usbhsf_dma_init_dt() should set fifo->{t,r}x_chan to NULL if
-> dma_request_slave_channel_reason() returns IS_ERR value.
-> Otherwise, usbhsf_dma_quit() will call dma_release_channel(), and then
-> NULL pointer dereference happens.
-> 
-> Reported-by: Simon Horman <horms@verge.net.au>
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-I have tested this on the lager and koelsch boards using
-shmobile_defconfig and next-20150129 as a base. The environment
-where I originally observed the problem.
+--boAH8PqvUi1v1f55
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Tested-by: Simon Horman <horms+renesas@verge.net.au>
+On Tue, Dec 09, 2014 at 12:22:47PM +0100, Geert Uytterhoeven wrote:
+> This allows checkpatch to validate more DTSes.
+>=20
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> Cc: devicetree@vger.kernel.org
 
-> ---
-> This patch is based on Felipe's usb.git / testing/next branch.
-> (commit id }b3990cb707ff91cd6507d53a0a730afe97)
-> 
->  drivers/usb/renesas_usbhs/fifo.c |    4 ++++
->  1 file changed, 4 insertions(+)
-> 
-> diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
-> index 4c086b1..d891bff 100644
-> --- a/drivers/usb/renesas_usbhs/fifo.c
-> +++ b/drivers/usb/renesas_usbhs/fifo.c
-> @@ -1072,7 +1072,11 @@ static void usbhsf_dma_init_pdev(struct usbhs_fifo *fifo)
->  static void usbhsf_dma_init_dt(struct device *dev, struct usbhs_fifo *fifo)
->  {
->  	fifo->tx_chan = dma_request_slave_channel_reason(dev, "tx");
-> +	if (IS_ERR(fifo->tx_chan))
-> +		fifo->tx_chan = NULL;
->  	fifo->rx_chan = dma_request_slave_channel_reason(dev, "rx");
-> +	if (IS_ERR(fifo->rx_chan))
-> +		fifo->rx_chan = NULL;
->  }
->  
->  static void usbhsf_dma_init(struct usbhs_priv *priv,
-> -- 
-> 1.7.9.5
-> 
+Applied to for-next, thanks!
+
+
+--boAH8PqvUi1v1f55
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJUtPBNAAoJEBQN5MwUoCm2iNsP/AjtlWEndXDssxKgZY9COUGo
+hsqZakcXbQYM1HkFdVQ6ZVXSGzyy7BnzY1a/Z+v6TLtxlvFykhgVAC9ds311xi8u
+w/6Aei0eMPdJKJWnXSzkDx23B/fViQ6SbOyudZQdw/sm6XVVvoqx8RA7Mg0KyCg9
+Wh+rYYIBezK5/YkLtKqEgXQu4mopd6eMs4rniTsi0WnNJjKA5Dgjc7SSRwol/NLp
+N1j33IEFaI7h6SkMLXOYcwee/Bp94Q4ND/RRIsBgpYV7LK6p3CiM84JgAVuJ+36E
+dwFOOSR3Tv/n5L68z9ykhmdGKbhnnUARoaCRaagFUM4PguSDgGETQ/BRDvlE137m
+PuXz/1FBg+W4XjMDMIiEIiLrvYa0dyC68WLXQqhjcCkvFZdlNyh9jEkurOWv0WEM
+7EVL3rA5eblWb64PmgINL+XjMU8xusR5Lo/4vyaQEX7E1hj5KJXweq5+r7P/gtcM
+m1HO2eHUtTrtOyOlQ1c+7faIpZJbjO5avB3f+0EyXxxCp+T4A4RlGx5d2vOxqGql
+7j5AmPlhMPEqfV2eLUZdyOJbDLgGMaIW+UXt7VJKS2VJ89HECrMftdB2YjsDVe7Q
+cpxH+HM2F805OAZ6808S7NxwfofyYIN2S8n3Rs1mr7ZeTTV2aRxawbQbnExWr/dw
+IzIgeh7PHP3K0Vt8zyM9
+=bqzf
+-----END PGP SIGNATURE-----
+
+--boAH8PqvUi1v1f55--
