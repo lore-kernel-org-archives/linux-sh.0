@@ -1,56 +1,61 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 Jan 2015 02:35:13 +0000
-Subject: [PATCH 01/17] ARM: shmobile: sh73a0 dtsi: Set control-parent for all irqpin nodes
-Message-Id: <ac481d2ebdfa50761827f604dc224c5a5de0ad69.1421371996.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 13 Jan 2015 04:59:05 +0000
+Subject: [PATCH 10/17] mmc: tmio: add .enable_dma on tmio_mmc_data
+Message-Id: <87fvbfuvgd.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421371996.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421371996.git.horms+renesas@verge.net.au>
+References: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ulf Hansson <ulf.hansson@linaro.org>
+Cc: Arnd Bergmann <arnd@arndb.de>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-The sh73a0 INTC can't mask interrupts properly most likely due to a
-hardware bug. Set the control-parent property to delegate masking to the
-parent interrupt controller.
+Some controllers need DMA special register/setting.
+This patch adds new .enable_dma callback for it.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/sh73a0.dtsi | 3 +++
- 1 file changed, 3 insertions(+)
+ drivers/mmc/host/tmio_mmc.h     |    2 ++
+ drivers/mmc/host/tmio_mmc_dma.c |    3 +++
+ 2 files changed, 5 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index cca22ec..1cd7b58 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -78,6 +78,7 @@
- 			      0 6 IRQ_TYPE_LEVEL_HIGH
- 			      0 7 IRQ_TYPE_LEVEL_HIGH
- 			      0 8 IRQ_TYPE_LEVEL_HIGH>;
-+		control-parent;
- 	};
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index c9a8469..0699edb 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -39,6 +39,7 @@
+ #define TMIO_MASK_IRQ     (TMIO_MASK_READOP | TMIO_MASK_WRITEOP | TMIO_MASK_CMD)
  
- 	irqpin1: irqpin@e6900004 {
-@@ -117,6 +118,7 @@
- 			      0 22 IRQ_TYPE_LEVEL_HIGH
- 			      0 23 IRQ_TYPE_LEVEL_HIGH
- 			      0 24 IRQ_TYPE_LEVEL_HIGH>;
-+		control-parent;
- 	};
+ struct tmio_mmc_data;
++struct tmio_mmc_host;
  
- 	irqpin3: irqpin@e690000c {
-@@ -136,6 +138,7 @@
- 			      0 30 IRQ_TYPE_LEVEL_HIGH
- 			      0 31 IRQ_TYPE_LEVEL_HIGH
- 			      0 32 IRQ_TYPE_LEVEL_HIGH>;
-+		control-parent;
- 	};
+ struct tmio_mmc_dma {
+ 	void *chan_priv_tx;
+@@ -46,6 +47,7 @@ struct tmio_mmc_dma {
+ 	int slave_id_tx;
+ 	int slave_id_rx;
+ 	bool (*filter)(struct dma_chan *chan, void *arg);
++	void (*enable)(struct tmio_mmc_host *host, bool enable);
+ };
  
- 	i2c0: i2c@e6820000 {
+ struct tmio_mmc_host {
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index 634b2700c..eb6b45c 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -30,6 +30,9 @@ void tmio_mmc_enable_dma(struct tmio_mmc_host *host, bool enable)
+ 
+ 	if (host->pdata->flags & TMIO_MMC_HAVE_CTL_DMA_REG)
+ 		sd_ctrl_write16(host, CTL_DMA_ENABLE, enable ? 2 : 0);
++
++	if (host->dma->enable)
++		host->dma->enable(host, enable);
+ }
+ 
+ void tmio_mmc_abort_dma(struct tmio_mmc_host *host)
 -- 
-2.1.4
+1.7.9.5
 
