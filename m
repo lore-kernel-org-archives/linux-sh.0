@@ -1,92 +1,75 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 Jan 2015 02:35:19 +0000
-Subject: [PATCH 07/17] ARM: shmobile: sh73a0 dtsi: Add missing INTCA0 clock for irqpin module
-Message-Id: <7fc34183751b714814fa374092b8a7d92d453a1a.1421371996.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 13 Jan 2015 04:59:14 +0000
+Subject: [PATCH 11/17] mmc: tmio: enable SoC specific DMA buswidth settings
+Message-Id: <87egqzuvg4.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421371996.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421371996.git.horms+renesas@verge.net.au>
+References: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ulf Hansson <ulf.hansson@linaro.org>
+Cc: Arnd Bergmann <arnd@arndb.de>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This clock drives the irqpin controller modules.
-Before, it was assumed enabled by the bootloader or reset state.
-By making it available to the driver, we make sure it gets enabled when
-needed, and allow it to be managed by system or runtime PM.
+Renesas SDHI which is based on TMIO driver has 2 type SoC. 1st one is
+used as SH-Mobile series, and 2nd is R-Car series. R-Car series SoC has
+DMA buswidth setting register which enables 32bit access.
+This patch adds .dma_buswidth and enables it.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/sh73a0.dtsi            | 15 +++++++++++++++
- include/dt-bindings/clock/sh73a0-clock.h |  3 +++
- 2 files changed, 18 insertions(+)
+ drivers/mmc/host/tmio_mmc.h     |    2 ++
+ drivers/mmc/host/tmio_mmc_dma.c |    8 ++++++--
+ 2 files changed, 8 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 1cd7b58..ac660c4 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -78,6 +78,7 @@
- 			      0 6 IRQ_TYPE_LEVEL_HIGH
- 			      0 7 IRQ_TYPE_LEVEL_HIGH
- 			      0 8 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp5_clks SH73A0_CLK_INTCA0>;
- 		control-parent;
- 	};
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index 0699edb..fc3805e 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -16,6 +16,7 @@
+ #ifndef TMIO_MMC_H
+ #define TMIO_MMC_H
  
-@@ -98,6 +99,7 @@
- 			      0 14 IRQ_TYPE_LEVEL_HIGH
- 			      0 15 IRQ_TYPE_LEVEL_HIGH
- 			      0 16 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp5_clks SH73A0_CLK_INTCA0>;
- 		control-parent;
- 	};
- 
-@@ -118,6 +120,7 @@
- 			      0 22 IRQ_TYPE_LEVEL_HIGH
- 			      0 23 IRQ_TYPE_LEVEL_HIGH
- 			      0 24 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp5_clks SH73A0_CLK_INTCA0>;
- 		control-parent;
- 	};
- 
-@@ -138,6 +141,7 @@
- 			      0 30 IRQ_TYPE_LEVEL_HIGH
- 			      0 31 IRQ_TYPE_LEVEL_HIGH
- 			      0 32 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp5_clks SH73A0_CLK_INTCA0>;
- 		control-parent;
- 	};
- 
-@@ -682,5 +686,16 @@
- 			clock-output-names  				"iic3", "iic4", "keysc";
- 		};
-+		mstp5_clks: mstp5_clks@e6150144 {
-+			compatible = "renesas,sh73a0-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0xe6150144 4>, <0xe615003c 4>;
-+			clocks = <&cpg_clocks SH73A0_CLK_HP>;
-+			#clock-cells = <1>;
-+			clock-indices = <
-+				SH73A0_CLK_INTCA0
-+			>;
-+			clock-output-names +				"intca0";
-+		};
- 	};
++#include <linux/dmaengine.h>
+ #include <linux/highmem.h>
+ #include <linux/mmc/tmio.h>
+ #include <linux/mutex.h>
+@@ -46,6 +47,7 @@ struct tmio_mmc_dma {
+ 	void *chan_priv_rx;
+ 	int slave_id_tx;
+ 	int slave_id_rx;
++	enum dma_slave_buswidth dma_buswidth;
+ 	bool (*filter)(struct dma_chan *chan, void *arg);
+ 	void (*enable)(struct tmio_mmc_host *host, bool enable);
  };
-diff --git a/include/dt-bindings/clock/sh73a0-clock.h b/include/dt-bindings/clock/sh73a0-clock.h
-index 1dd3eb2..5336956 100644
---- a/include/dt-bindings/clock/sh73a0-clock.h
-+++ b/include/dt-bindings/clock/sh73a0-clock.h
-@@ -76,4 +76,7 @@
- #define SH73A0_CLK_IIC4		10
- #define SH73A0_CLK_KEYSC	3
- 
-+/* MSTP5 */
-+#define SH73A0_CLK_INTCA0	8
-+
- #endif
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index eb6b45c..aa5f4b6 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -293,7 +293,9 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 			cfg.slave_id = host->dma->slave_id_tx;
+ 		cfg.direction = DMA_MEM_TO_DEV;
+ 		cfg.dst_addr = res->start + (CTL_SD_DATA_PORT << host->bus_shift);
+-		cfg.dst_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
++		cfg.dst_addr_width = host->dma->dma_buswidth;
++		if (!cfg.dst_addr_width)
++			cfg.dst_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
+ 		cfg.src_addr = 0;
+ 		ret = dmaengine_slave_config(host->chan_tx, &cfg);
+ 		if (ret < 0)
+@@ -312,7 +314,9 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 			cfg.slave_id = host->dma->slave_id_rx;
+ 		cfg.direction = DMA_DEV_TO_MEM;
+ 		cfg.src_addr = cfg.dst_addr + host->pdata->dma_rx_offset;
+-		cfg.src_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
++		cfg.src_addr_width = host->dma->dma_buswidth;
++		if (!cfg.src_addr_width)
++			cfg.src_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
+ 		cfg.dst_addr = 0;
+ 		ret = dmaengine_slave_config(host->chan_rx, &cfg);
+ 		if (ret < 0)
 -- 
-2.1.4
+1.7.9.5
 
