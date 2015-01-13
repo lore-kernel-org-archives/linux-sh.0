@@ -1,87 +1,74 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 05 Jan 2015 07:03:03 +0000
-Subject: [PATCH 4/9] mmc: tmio: tmio_mmc_host has .clk_enable
-Message-Id: <87tx05ogj8.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 13 Jan 2015 09:58:15 +0000
+Subject: renesas-drivers-2015-01-13-v3.19-rc4
+Message-Id: <1421143095-17960-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+I've pushed renesas-drivers-2015-01-13-v3.19-rc4 to
+https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+This tree is meant to ease development of platform support and drivers for
+Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
+branches of various subsystem trees and (b) branches with driver code
+submitted or planned for submission to maintainers into the development
+branch of Simon Horman's renesas.git tree.
 
-Current .clk_enable is implemented under tmio_mmc_data.
-It goes to tmio_mmc_host by this patch.
+Today's version is based on renesas-devel-20150113-v3.19-rc4.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- drivers/mmc/host/sh_mobile_sdhi.c |    2 +-
- drivers/mmc/host/tmio_mmc.h       |    1 +
- drivers/mmc/host/tmio_mmc_pio.c   |    5 ++---
- include/linux/mfd/tmio.h          |    1 -
- 4 files changed, 4 insertions(+), 5 deletions(-)
+Included branches with driver code:
+  - clk-shmobile-for-3.20
+      - clk: shmobile: div6: Avoid changing divisor in .disable()
+      - clk: shmobile: Add r8a7793 support
+      - clk: shmobile: r8a7793: document CPG clock support
+      - clk: shmobile: r8a73a4 common clock framework implementation
+      - clk: shmobile: Add r8a73a4 SoC to MSTP bindings
+      - clk: shmobile: Add R-Car Gen2 RCAN clock support
+      - clk: shmobile: Add R-Car Gen2 ADSP clock support
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 6ffd981..178ae0f 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -213,8 +213,8 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 
- 	host->dma		= dma_priv;
- 	host->write16_hook	= sh_mobile_sdhi_write16_hook;
-+	host->clk_enable	= sh_mobile_sdhi_clk_enable;
- 
--	mmc_data->clk_enable = sh_mobile_sdhi_clk_enable;
- 	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
- 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
- 	mmc_data->multi_io_quirk = sh_mobile_sdhi_multi_io_quirk;
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index 2fb87ea..0634a94 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -96,6 +96,7 @@ struct tmio_mmc_host {
- 	bool			sdio_irq_enabled;
- 
- 	int (*write16_hook)(struct tmio_mmc_host *host, int addr);
-+	int (*clk_enable)(struct platform_device *pdev, unsigned int *f);
- };
- 
- struct tmio_mmc_host* tmio_mmc_host_alloc(struct platform_device *pdev);
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 8bc0c77..511ce96 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -835,13 +835,12 @@ fail:
- static int tmio_mmc_clk_update(struct tmio_mmc_host *host)
- {
- 	struct mmc_host *mmc = host->mmc;
--	struct tmio_mmc_data *pdata = host->pdata;
- 	int ret;
- 
--	if (!pdata->clk_enable)
-+	if (!host->clk_enable)
- 		return -ENOTSUPP;
- 
--	ret = pdata->clk_enable(host->pdev, &mmc->f_max);
-+	ret = host->clk_enable(host->pdev, &mmc->f_max);
- 	if (!ret)
- 		mmc->f_min = mmc->f_max / 512;
- 
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index 0872ca1..472587a 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -126,7 +126,6 @@ struct tmio_mmc_data {
- 	void (*set_pwr)(struct platform_device *host, int state);
- 	void (*set_clk_div)(struct platform_device *host, int state);
- 	/* clock management callbacks */
--	int (*clk_enable)(struct platform_device *pdev, unsigned int *f);
- 	void (*clk_disable)(struct platform_device *pdev);
- 	int (*multi_io_quirk)(struct mmc_card *card,
- 			      unsigned int direction, int blk_size);
--- 
-1.7.9.5
+Included subsystem trees:
+  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
+  - git://git.linaro.org/people/mturquette/linux.git#clk-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
+  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
+  - git://gitorious.org/linux-can/linux-can-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
+  - git://people.freedesktop.org/~airlied/linux#drm-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
+  - git://linuxtv.org/mchehab/media-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
+  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
+  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
+  - git://git.infradead.org/users/vkoul/slave-dma.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
+  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
+  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
+  - git://git.infradead.org/battery-2.6.git#master
+  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
