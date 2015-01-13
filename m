@@ -1,62 +1,79 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 16 Jan 2015 01:10:40 +0000
-Subject: [PATCH 3/4] ARM: shmobile: r8a7790: add SDHI DMA channels on DTSI
-Message-Id: <87sifby1fo.wl%kuninori.morimoto.gx@renesas.com>
+Date: Tue, 13 Jan 2015 04:58:56 +0000
+Subject: [PATCH 09/17] mmc: tmio: tmio_mmc_data has .dma_rx_offset
+Message-Id: <87h9vvuvgo.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87li0752rz.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87li0752rz.wl%kuninori.morimoto.gx@renesas.com>
+References: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>
+Cc: Arnd Bergmann <arnd@arndb.de>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
+Current .dma_rx_offset is implemented under tmio_mmc_dma.
+It goes to tmio_mmc_data by this patch.
+
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi |    8 ++++++++
- 1 file changed, 8 insertions(+)
+ drivers/mmc/host/sh_mobile_sdhi.c |    2 +-
+ drivers/mmc/host/tmio_mmc.h       |    1 -
+ drivers/mmc/host/tmio_mmc_dma.c   |    2 +-
+ include/linux/mfd/tmio.h          |    1 +
+ 4 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 0010600..56847bf 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -496,6 +496,8 @@
- 		reg = <0 0xee100000 0 0x328>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
-+		dmas = <&dmac1 0xcd>, <&dmac1 0xce>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 782d8cf..c06e93b 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -276,7 +276,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		mmc_data->flags |= of_data->tmio_flags;
+ 		mmc_data->capabilities |= of_data->capabilities;
+ 		mmc_data->capabilities2 |= of_data->capabilities2;
+-		dma_priv->dma_rx_offset = of_data->dma_rx_offset;
++		mmc_data->dma_rx_offset = of_data->dma_rx_offset;
+ 	}
  
-@@ -504,6 +506,8 @@
- 		reg = <0 0xee120000 0 0x328>;
- 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
-+		dmas = <&dmac1 0xc9>, <&dmac1 0xca>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
+ 	ret = tmio_mmc_host_probe(host, mmc_data);
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index 9482abc..c9a8469 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -45,7 +45,6 @@ struct tmio_mmc_dma {
+ 	void *chan_priv_rx;
+ 	int slave_id_tx;
+ 	int slave_id_rx;
+-	dma_addr_t dma_rx_offset;
+ 	bool (*filter)(struct dma_chan *chan, void *arg);
+ };
  
-@@ -512,6 +516,8 @@
- 		reg = <0 0xee140000 0 0x100>;
- 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
-+		dmas = <&dmac1 0xc1>, <&dmac1 0xc2>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -520,6 +526,8 @@
- 		reg = <0 0xee160000 0 0x100>;
- 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI3>;
-+		dmas = <&dmac1 0xd3>, <&dmac1 0xd4>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index d2b02de..634b2700c 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -308,7 +308,7 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 		if (host->dma->chan_priv_rx)
+ 			cfg.slave_id = host->dma->slave_id_rx;
+ 		cfg.direction = DMA_DEV_TO_MEM;
+-		cfg.src_addr = cfg.dst_addr + host->dma->dma_rx_offset;
++		cfg.src_addr = cfg.dst_addr + host->pdata->dma_rx_offset;
+ 		cfg.src_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
+ 		cfg.dst_addr = 0;
+ 		ret = dmaengine_slave_config(host->chan_rx, &cfg);
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 28a12d1..807ecfb 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -123,6 +123,7 @@ struct tmio_mmc_data {
+ 	u32				ocr_mask;	/* available voltages */
+ 	unsigned int			cd_gpio;
+ 	int				alignment_shift;
++	dma_addr_t			dma_rx_offset;
+ 	void (*set_pwr)(struct platform_device *host, int state);
+ 	void (*set_clk_div)(struct platform_device *host, int state);
+ };
 -- 
 1.7.9.5
 
