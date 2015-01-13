@@ -1,47 +1,87 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sat, 24 Jan 2015 23:16:34 +0000
-Subject: Re: [PATCH 04/11] ARM: shmobile: r8a7778: common clock framework CPG driver
-Message-Id: <7689709.OlM3GtWmty@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 13 Jan 2015 04:57:52 +0000
+Subject: [PATCH 04/17] mmc: tmio: tmio_mmc_host has .clk_enable
+Message-Id: <87oaq3uvif.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421857262-16607-5-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1421857262-16607-5-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>
+Cc: Arnd Bergmann <arnd@arndb.de>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-Hi Ulrich,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Friday 23 January 2015 18:00:02 Ulrich Hecht wrote:
-> On Thu, Jan 22, 2015 at 12:37 AM, Laurent Pinchart wrote:
-> >> +     if (!strcmp(name, "extal")) {
-> >> +             return clk_register_fixed_rate(NULL, "extal", NULL,
-> >> +                     CLK_IS_ROOT,
-> >> r8a7778_rates[cpg_mode_rates].extal_rate);
-> >
-> > As the external clock is an input to the CPG, shouldn't it be specified by
-> > a separate fixed-frequency clock DT node, and referenced by the CPG using
-> > the clocks attributes ? You could then remove the extal_rate field from
-> > the r8a7778_rates array above, and possibly rename the array to
-> > r8a7778_pll_mults or similar.
-> 
-> This is a translation of what the legacy clock driver does.  These
-> frequencies seem to be assumptions as to what input clocks would be
-> reasonable given the current mode bits.  If I interpret the schematics
-> correctly, the Bock-W board has a socketed oscillator, and the mode
-> bits are switchable, so it's up to the user to configure the board to
-> a sane setting.  To me, neither a fixed frequency nor this list of
-> educated guesses seems quite "right" under these circumstances...
+Current .clk_enable is implemented under tmio_mmc_data.
+It goes to tmio_mmc_host by this patch.
 
-A separate fixed frequency clock DT matches the board configuration, so I 
-think that's what should be used. It's true that the user could replace the 
-oscillator, and in that case the DT will need to be updated. There's not much 
-we can do for non-discoverable devices. Even if that solution isn't perfect, I 
-think it's better than making the CPG node provide the external clock source, 
-as it clearly doesn't from a hardware point of view.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c |    2 +-
+ drivers/mmc/host/tmio_mmc.h       |    1 +
+ drivers/mmc/host/tmio_mmc_pio.c   |    5 ++---
+ include/linux/mfd/tmio.h          |    1 -
+ 4 files changed, 4 insertions(+), 5 deletions(-)
 
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 77ff062..87af77d 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -215,8 +215,8 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 
+ 	host->dma		= dma_priv;
+ 	host->write16_hook	= sh_mobile_sdhi_write16_hook;
++	host->clk_enable	= sh_mobile_sdhi_clk_enable;
+ 
+-	mmc_data->clk_enable = sh_mobile_sdhi_clk_enable;
+ 	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
+ 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
+ 	mmc_data->multi_io_quirk = sh_mobile_sdhi_multi_io_quirk;
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index 3fa96b1..5cd2986 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -96,6 +96,7 @@ struct tmio_mmc_host {
+ 	bool			sdio_irq_enabled;
+ 
+ 	int (*write16_hook)(struct tmio_mmc_host *host, int addr);
++	int (*clk_enable)(struct platform_device *pdev, unsigned int *f);
+ };
+ 
+ struct tmio_mmc_host *tmio_mmc_host_alloc(struct platform_device *pdev);
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index fe434cc..1528c88 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -835,13 +835,12 @@ fail:
+ static int tmio_mmc_clk_update(struct tmio_mmc_host *host)
+ {
+ 	struct mmc_host *mmc = host->mmc;
+-	struct tmio_mmc_data *pdata = host->pdata;
+ 	int ret;
+ 
+-	if (!pdata->clk_enable)
++	if (!host->clk_enable)
+ 		return -ENOTSUPP;
+ 
+-	ret = pdata->clk_enable(host->pdev, &mmc->f_max);
++	ret = host->clk_enable(host->pdev, &mmc->f_max);
+ 	if (!ret)
+ 		mmc->f_min = mmc->f_max / 512;
+ 
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 0872ca1..472587a 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -126,7 +126,6 @@ struct tmio_mmc_data {
+ 	void (*set_pwr)(struct platform_device *host, int state);
+ 	void (*set_clk_div)(struct platform_device *host, int state);
+ 	/* clock management callbacks */
+-	int (*clk_enable)(struct platform_device *pdev, unsigned int *f);
+ 	void (*clk_disable)(struct platform_device *pdev);
+ 	int (*multi_io_quirk)(struct mmc_card *card,
+ 			      unsigned int direction, int blk_size);
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
