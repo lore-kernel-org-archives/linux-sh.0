@@ -1,73 +1,57 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 31 Jan 2015 04:17:34 +0000
-Subject: Re: [PATCH] ARM: shmobile: alt dts: Drop console= bootargs parameter
-Message-Id: <20150131041731.GA7605@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 13 Jan 2015 09:41:27 +0000
+Subject: Re: ARM: shmobile: sh73a0: CPU1 failed to come online (Re: [PATCH 0/4] ARM: shmobile: r8a7740/armadi
+Message-Id: <CAMuHMdVjE21YiC-wTpjePQCnA2XZYjJZeEe3iOy8J-vpuPmFjg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415075018-27529-1-git-send-email-horms+renesas@verge.net.au>
- <54CBFC63.4070808@cogentembedded.com>
-In-Reply-To: <54CBFC63.4070808@cogentembedded.com>
+References: <CAMuHMdWyUJ81G2CLpYScm9qB0KMia0PReBQ8oXdu+Z2P6AWWNg@mail.gmail.com>
+ <20141117151241.GR4042@n2100.arm.linux.org.uk>
+In-Reply-To: <20141117151241.GR4042@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Sergei,
+On Mon, Nov 17, 2014 at 4:12 PM, Russell King - ARM Linux
+<linux@arm.linux.org.uk> wrote:
+> On Mon, Nov 17, 2014 at 02:57:46PM +0100, Geert Uytterhoeven wrote:
+>> I tried to convert sh73a0, but it doesn't work, due to problems
+>> bringing up the second
+>> CPU core.
+>>
+>> Details:
+>>   - l2x0_of_init() is called much earlier than l2x0_init().
+>>     When the L2 cache is enabled, initialization of the second CPU core of
+>>     sh73a0 (Dual-core Cortex-A9) fails.
+>
+> Missing L2 cache flushes for (any) the secondary core data/trampoline?
 
-On Sat, Jan 31, 2015 at 12:49:23AM +0300, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 11/04/2014 07:23 AM, Simon Horman wrote:
-> 
-> >Alt is booted from DT, so chosen/stdout-path is
-> >always used, and we can drop the "console=" parameter from chosen/bootargs.
-> 
-> >This change has a side-effect of changing the console speed from 38400
-> >to 115200. This is intentional as 115200 is consistently used on
-> >all other shmobile boards.
-> 
->    I'd say it's not very practical to change the console's baud rate from
-> U-Boot's default
+Thanks, I added a few cache flushes, so far it didn't help...
 
-It is consistent with the handling of all other boards with
-renesas SoCs that are present in mainline.
+>>   - As jiffies are not yet incrementing at that point (they are on r8a7791?),
+>>     timeouts don't work, and the kernel hangs at the
+>>     wait_for_completion_timeout() call in arch/arm/kernel/smp.c:__cpu_up().
+>
+> That sounds bad:
+>
+> start_kernel() -> rest_init() -> kernel_thread(kernel_init)
+>
+> kernel_init() -> kernel_init_freeable() -> smp_init() -> (for each CPU) cpu_up()
+>
+> By the time we get to rest_init(), init_IRQ(), time_init(),
+> local_irq_enable(), late_time_init(), calibrate_delay(), etc have all
+> been called, so if jiffies is not incrementing in __cpu_up(), that's
+> a big problem.
 
-> (AFAIR changing baud rate in U-Boot didn't work)...
+That was due to the missing arm,cortex-a9-twd-timer timer, which also
+broke CONFIG_CPU_IDLE=y.
 
-Perhaps that relates to the version of built of uboot.
-On the board I have access to I see:
+Gr{oetje,eeting}s,
 
-ver=U-Boot 2013.01.01-g5df9446 (Oct 01 2014 - 14:59:23)
+                        Geert
 
-And the following setting altered the baud rate of u-boot (IIRC).
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-baudrate5200
-
-> >Cc: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> >Cc: Geert Uytterhoeven <geert+renesas@glider.be>
-> >Cc: devicetree@vger.kernel.org
-> >Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >---
-> >  arch/arm/boot/dts/r8a7794-alt.dts | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> >
-> >diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
-> >index 8aec512..f2cf757 100644
-> >--- a/arch/arm/boot/dts/r8a7794-alt.dts
-> >+++ b/arch/arm/boot/dts/r8a7794-alt.dts
-> >@@ -20,7 +20,7 @@
-> >  	};
-> >
-> >  	chosen {
-> >-		bootargs = "console=ttySC0,38400 ignore_loglevel rw root=/dev/nfs ip=dhcp";
-> >+		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
-> 
->    Hm, does this even work as intended? I've tried to boot another R8A7794
-> based board and I couldn't get any output with alike command line. Booting
-> with 'earlyprintk=serial' has shown that tty0 was enabled as a console which
-> is not what we wanted.
-
-If you are backporting this change then I believe it has some dependencies
-that I can follow up on if it is useful to you.
-
-If you are using mainline (e.g. next or renesas-next) then yes,
-it works. I have tested it numerous times since the patch was merged.
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
