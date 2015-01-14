@@ -1,49 +1,45 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 22 Jan 2015 02:05:26 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC sh73a0 DT PM Updates for v3.20
-Message-Id: <20150122020526.GC29564@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 14 Jan 2015 14:16:28 +0000
+Subject: [PATCH] dmaengine: of: bail out early if "dmas" property is not present
+Message-Id: <1421244988-11794-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421716413.git.horms+renesas@verge.net.au>
- <20150122013525.GE31815@quad.lixom.net>
-In-Reply-To: <20150122013525.GE31815@quad.lixom.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dmaengine@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Philipp Zabel <p.zabel@pengutronix.de>, Vinod Koul <vinod.koul@intel.com>, linux-kernel@vger.kernel.org
 
-On Wed, Jan 21, 2015 at 05:35:25PM -0800, Olof Johansson wrote:
-> On Tue, Jan 20, 2015 at 10:27:43AM +0900, Simon Horman wrote:
-> > Hi Olof, Hi Kevin, Hi Arnd,
-> > 
-> > Please consider these Renesas ARM based SoC sh73a0 DT PM updates for v3.20.
-> > 
-> > This pull request is based on a merge of:
-> > 
-> > * "[GIT PULL] Third Round of Renesas ARM Based SoC Updates for v3.20",
-> >   tagged as renesas-soc3-for-v3.20, which I have sent a pull request for.
-> > 
-> > * "[GIT PULL] Second Round of Renesas ARM Based SoC DT Updates for v3.20",
-> >   tagged as renesas-dt2-for-v3.20, which I have sent a pull request for.
-> > 
-> > My understanding from to Geert Uytterhoeven both of the above are required
-> > in order for the system to remain bootable.
-> > 
-> > 
-> > The following changes since commit 2e828caaf311b5990c652e281d0ffceea382ae16:
-> > 
-> >   Merge branch 'dt-for-v3.20' into sh73a0-dt-pm-for-v3.20.base (2015-01-16 11:07:31 +0900)
-> > 
-> > are available in the git repository at:
-> > 
-> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh73a0-dt-pm-for-v3.20
-> > 
-> > for you to fetch changes up to 61837def3c23ba2ac662fd26c77979e072deb2e0:
-> > 
-> >   ARM: shmobile: sh73a0 dtsi: Add PM domain support (2015-01-16 11:07:59 +0900)
-> 
-> Same here, tag gone, based on previous branch that we wanted redone. Just
-> replying so I know I looked at it, etc.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Thanks, I was just sending you an email about that.
-It depends indirectly on a pull-request you have asked
-for more work on, so I would like to withdraw this pull-request.
+And don't print an error: not configured is not an error.
+
+Reported-by: Philipp Zabel <p.zabel@pengutronix.de>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+
+In response to Philipp's patch silencing the warning in the driver:
+http://patchwork.ozlabs.org/patch/425696/
+
+I think this should be handled in the core.
+
+ drivers/dma/of-dma.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/dma/of-dma.c b/drivers/dma/of-dma.c
+index d5fbeaa1e7ba..ca31f1b45366 100644
+--- a/drivers/dma/of-dma.c
++++ b/drivers/dma/of-dma.c
+@@ -159,6 +159,10 @@ struct dma_chan *of_dma_request_slave_channel(struct device_node *np,
+ 		return ERR_PTR(-ENODEV);
+ 	}
+ 
++	/* Silently fail if there is not even the "dmas" property */
++	if (!of_find_property(np, "dmas", NULL))
++		return ERR_PTR(-ENODEV);
++
+ 	count = of_property_count_strings(np, "dma-names");
+ 	if (count < 0) {
+ 		pr_err("%s: dma-names property of node '%s' missing or empty\n",
+-- 
+2.1.3
+
