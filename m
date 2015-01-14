@@ -1,216 +1,197 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 21 Jan 2015 04:13:33 +0000
-Subject: [PATCH 1/8 v3] dmaengine: shdma: use normal interface for passing slave id
-Message-Id: <87egqoojmm.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 14 Jan 2015 12:11:21 +0000
+Subject: [PATCH v2 3/6] ARM: shmobile: R-Mobile: Generalize adding/looking up special PM domains
+Message-Id: <1421237484-16847-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1421237484-16847-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1421237484-16847-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Arnd Bergmann <arnd@arndb.de>
+Make adding special PM domains to an array, and looking them up
+later, more generic, so it can be used for all special hardware blocks.
+The type of PM domain is also stored, so rmobile_setup_pm_domain() can
+use a switch() statement instead of a chain of if/else statements.
 
-in dma_slave_config, which is incompatible with the way that the
-dmaengine API normally works.
-
-I've had a closer look at the existing code now and found that all
-slave drivers that pass a slave_id in dma_slave_config for SH do that
-right after passing the same ID into shdma_chan_filter, so we can just
-rely on that. However, the various shdma drivers currently do not
-remember the slave ID that was passed into the filter function when
-used in non-DT mode and only check the value to find a matching channel,
-unlike all other drivers.
-
-There might still be drivers that are not part of the kernel that rely
-on setting the slave_id to some other value, so to be on the safe side,
-this adds another 'real_slave_id' field to shdma_chan that remembers
-the ID and uses it when a driver passes a zero slave_id in dma_slave_config,
-like most drivers do.
-
-Eventually, the real_slave_id and slave_id fields should just get merged
-into one field, but that requires other changes.
-
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/dma/sh/shdma-base.c |   73 +++++++++++++++++++++++++++++++------------
- include/linux/shdma-base.h  |    1 +
- 2 files changed, 54 insertions(+), 20 deletions(-)
+v2:
+  - Rebase on top of "ARM: shmobile: R-Mobile: Fix DT refcount bugs in
+    PM domain code",
+  - Merge "break" and "i < num_special_pds" block in add_special_pd().
+---
+ arch/arm/mach-shmobile/pm-rmobile.c | 102 ++++++++++++++++++++++--------------
+ 1 file changed, 63 insertions(+), 39 deletions(-)
 
-diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
-index 8ee383d..10fcaba 100644
---- a/drivers/dma/sh/shdma-base.c
-+++ b/drivers/dma/sh/shdma-base.c
-@@ -171,8 +171,7 @@ static struct shdma_desc *shdma_get_desc(struct shdma_chan *schan)
- 	return NULL;
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index e1be4b8919efe30e..e4c3f7de48e2ccf2 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -217,50 +217,67 @@ static int rmobile_pd_suspend_console(void)
+ 	return console_suspend_enabled ? 0 : -EBUSY;
  }
  
--static int shdma_setup_slave(struct shdma_chan *schan, int slave_id,
--			     dma_addr_t slave_addr)
-+static int shdma_setup_slave(struct shdma_chan *schan, dma_addr_t slave_addr)
+-#define MAX_NUM_CPU_PDS		8
++enum pd_types {
++	PD_NORMAL,
++	PD_CPU,
++	PD_CONSOLE,
++	PD_DEBUG,
++};
+ 
+-static unsigned int num_cpu_pds __initdata;
+-static struct device_node *cpu_pds[MAX_NUM_CPU_PDS] __initdata;
+-static struct device_node *console_pd __initdata;
+-static struct device_node *debug_pd __initdata;
++#define MAX_NUM_SPECIAL_PDS	16
+ 
+-static void __init get_special_pds(void)
+-{
+-	struct device_node *np, *pd;
+-	unsigned int i;
++static struct special_pd {
++	struct device_node *pd;
++	enum pd_types type;
++} special_pds[MAX_NUM_SPECIAL_PDS] __initdata;
+ 
+-	/* PM domains containing CPUs */
+-	for_each_node_by_type(np, "cpu") {
+-		pd = of_parse_phandle(np, "power-domains", 0);
+-		if (!pd)
+-			continue;
++static unsigned int num_special_pds __initdata;
+ 
+-		for (i = 0; i < num_cpu_pds; i++)
+-			if (pd = cpu_pds[i])
+-				break;
++static void __init add_special_pd(struct device_node *np, enum pd_types type)
++{
++	unsigned int i;
++	struct device_node *pd;
+ 
+-		if (i < num_cpu_pds) {
+-			of_node_put(pd);
+-			continue;
+-		}
++	pd = of_parse_phandle(np, "power-domains", 0);
++	if (!pd)
++		return;
+ 
+-		if (num_cpu_pds = MAX_NUM_CPU_PDS) {
+-			pr_warn("Too many CPU PM domains\n");
++	for (i = 0; i < num_special_pds; i++)
++		if (pd = special_pds[i].pd && type = special_pds[i].type) {
+ 			of_node_put(pd);
+-			continue;
++			return;
+ 		}
+ 
+-		cpu_pds[num_cpu_pds++] = pd;
++	if (num_special_pds = ARRAY_SIZE(special_pds)) {
++		pr_warn("Too many special PM domains\n");
++		of_node_put(pd);
++		return;
+ 	}
+ 
++	pr_debug("Special PM domain %s type %d for %s\n", pd->name, type,
++		 np->full_name);
++
++	special_pds[num_special_pds].pd = pd;
++	special_pds[num_special_pds].type = type;
++	num_special_pds++;
++}
++
++static void __init get_special_pds(void)
++{
++	struct device_node *np;
++
++	/* PM domains containing CPUs */
++	for_each_node_by_type(np, "cpu")
++		add_special_pd(np, PD_CPU);
++
+ 	/* PM domain containing console */
+ 	if (of_stdout)
+-		console_pd = of_parse_phandle(of_stdout, "power-domains", 0);
++		add_special_pd(of_stdout, PD_CONSOLE);
+ 
+ 	/* PM domain containing Coresight-ETM */
+ 	np = of_find_compatible_node(NULL, NULL, "arm,coresight-etm3x");
+ 	if (np) {
+-		debug_pd = of_parse_phandle(np, "power-domains", 0);
++		add_special_pd(np, PD_DEBUG);
+ 		of_node_put(np);
+ 	}
+ }
+@@ -269,21 +286,19 @@ static void __init put_special_pds(void)
  {
- 	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
- 	const struct shdma_ops *ops = sdev->ops;
-@@ -183,25 +182,23 @@ static int shdma_setup_slave(struct shdma_chan *schan, int slave_id,
- 		ret = ops->set_slave(schan, match, slave_addr, true);
- 		if (ret < 0)
- 			return ret;
--
--		slave_id = schan->slave_id;
- 	} else {
--		match = slave_id;
-+		match = schan->real_slave_id;
- 	}
+ 	unsigned int i;
  
--	if (slave_id < 0 || slave_id >= slave_num)
-+	if (schan->real_slave_id < 0 || schan->real_slave_id >= slave_num)
- 		return -EINVAL;
- 
--	if (test_and_set_bit(slave_id, shdma_slave_used))
-+	if (test_and_set_bit(schan->real_slave_id, shdma_slave_used))
- 		return -EBUSY;
- 
- 	ret = ops->set_slave(schan, match, slave_addr, false);
- 	if (ret < 0) {
--		clear_bit(slave_id, shdma_slave_used);
-+		clear_bit(schan->real_slave_id, shdma_slave_used);
- 		return ret;
- 	}
- 
--	schan->slave_id = slave_id;
-+	schan->slave_id = schan->real_slave_id;
- 
- 	return 0;
+-	for (i = 0; i < num_cpu_pds; i++)
+-		of_node_put(cpu_pds[i]);
+-	of_node_put(console_pd);
+-	of_node_put(debug_pd);
++	for (i = 0; i < num_special_pds; i++)
++		of_node_put(special_pds[i].pd);
  }
-@@ -221,10 +218,12 @@ static int shdma_alloc_chan_resources(struct dma_chan *chan)
- 	 */
- 	if (slave) {
- 		/* Legacy mode: .private is set in filter */
--		ret = shdma_setup_slave(schan, slave->slave_id, 0);
-+		schan->real_slave_id = slave->slave_id;
-+		ret = shdma_setup_slave(schan, 0);
- 		if (ret < 0)
- 			goto esetslave;
- 	} else {
-+		/* Normal mode: real_slave_id was set by filter */
- 		schan->slave_id = -EINVAL;
- 	}
  
-@@ -258,11 +257,14 @@ esetslave:
- 
- /*
-  * This is the standard shdma filter function to be used as a replacement to the
-- * "old" method, using the .private pointer. If for some reason you allocate a
-- * channel without slave data, use something like ERR_PTR(-EINVAL) as a filter
-+ * "old" method, using the .private pointer.
-+ * You always have to pass a valid slave id as the argument, old drivers that
-+ * pass ERR_PTR(-EINVAL) as a filter parameter and set it up in dma_slave_config
-+ * need to be updated so we can remove the slave_id field from dma_slave_config.
-  * parameter. If this filter is used, the slave driver, after calling
-  * dma_request_channel(), will also have to call dmaengine_slave_config() with
-- * .slave_id, .direction, and either .src_addr or .dst_addr set.
-+ * .direction, and either .src_addr or .dst_addr set.
-+ *
-  * NOTE: this filter doesn't support multiple DMAC drivers with the DMA_SLAVE
-  * capability! If this becomes a requirement, hardware glue drivers, using this
-  * services would have to provide their own filters, which first would check
-@@ -276,7 +278,7 @@ bool shdma_chan_filter(struct dma_chan *chan, void *arg)
+-static bool __init pd_contains_cpu(const struct device_node *pd)
++static enum pd_types __init pd_type(const struct device_node *pd)
  {
- 	struct shdma_chan *schan;
- 	struct shdma_dev *sdev;
--	int match = (long)arg;
-+	int slave_id = (long)arg;
- 	int ret;
+ 	unsigned int i;
  
- 	/* Only support channels handled by this driver. */
-@@ -284,19 +286,39 @@ bool shdma_chan_filter(struct dma_chan *chan, void *arg)
- 	    shdma_alloc_chan_resources)
- 		return false;
+-	for (i = 0; i < num_cpu_pds; i++)
+-		if (pd = cpu_pds[i])
+-			return true;
++	for (i = 0; i < num_special_pds; i++)
++		if (pd = special_pds[i].pd)
++			return special_pds[i].type;
  
--	if (match < 0)
-+	schan = to_shdma_chan(chan);
-+	sdev = to_shdma_dev(chan->device);
-+
-+	/*
-+	 * For DT, the schan->slave_id field is generated by the
-+	 * set_slave function from the slave ID that is passed in
-+	 * from xlate. For the non-DT case, the slave ID is
-+	 * directly passed into the filter function by the driver
-+	 */
-+	if (schan->dev->of_node) {
-+		ret = sdev->ops->set_slave(schan, slave_id, 0, true);
-+		if (ret < 0)
-+			return false;
-+
-+		schan->real_slave_id = schan->slave_id;
-+		return true;
-+	}
-+
-+	if (slave_id < 0) {
- 		/* No slave requested - arbitrary channel */
-+		dev_warn(sdev->dma_dev.dev, "invalid slave ID passed to dma_request_slave\n");
- 		return true;
-+	}
- 
--	schan = to_shdma_chan(chan);
--	if (!schan->dev->of_node && match >= slave_num)
-+	if (slave_id >= slave_num)
- 		return false;
- 
--	sdev = to_shdma_dev(schan->dma_chan.device);
--	ret = sdev->ops->set_slave(schan, match, 0, true);
-+	ret = sdev->ops->set_slave(schan, slave_id, 0, true);
- 	if (ret < 0)
- 		return false;
- 
-+	schan->real_slave_id = slave_id;
-+
- 	return true;
+-	return false;
++	return PD_NORMAL;
  }
- EXPORT_SYMBOL(shdma_chan_filter);
-@@ -452,6 +474,8 @@ static void shdma_free_chan_resources(struct dma_chan *chan)
- 		chan->private = NULL;
+ 
+ static void __init rmobile_setup_pm_domain(struct device_node *np,
+@@ -291,7 +306,8 @@ static void __init rmobile_setup_pm_domain(struct device_node *np,
+ {
+ 	const char *name = pd->genpd.name;
+ 
+-	if (pd_contains_cpu(np)) {
++	switch (pd_type(np)) {
++	case PD_CPU:
+ 		/*
+ 		 * This domain contains the CPU core and therefore it should
+ 		 * only be turned off if the CPU is not in use.
+@@ -299,11 +315,15 @@ static void __init rmobile_setup_pm_domain(struct device_node *np,
+ 		pr_debug("PM domain %s contains CPU\n", name);
+ 		pd->gov = &pm_domain_always_on_gov;
+ 		pd->suspend = rmobile_pd_suspend_busy;
+-	} else if (np = console_pd) {
++		break;
++
++	case PD_CONSOLE:
+ 		pr_debug("PM domain %s contains serial console\n", name);
+ 		pd->gov = &pm_domain_always_on_gov;
+ 		pd->suspend = rmobile_pd_suspend_console;
+-	} else if (np = debug_pd) {
++		break;
++
++	case PD_DEBUG:
+ 		/*
+ 		 * This domain contains the Coresight-ETM hardware block and
+ 		 * therefore it should only be turned off if the debug module
+@@ -312,6 +332,10 @@ static void __init rmobile_setup_pm_domain(struct device_node *np,
+ 		pr_debug("PM domain %s contains Coresight-ETM\n", name);
+ 		pd->gov = &pm_domain_always_on_gov;
+ 		pd->suspend = rmobile_pd_suspend_busy;
++		break;
++
++	case PD_NORMAL:
++		break;
  	}
  
-+	schan->real_slave_id = 0;
-+
- 	spin_lock_irq(&schan->chan_lock);
- 
- 	list_splice_init(&schan->ld_free, &list);
-@@ -764,11 +788,20 @@ static int shdma_config(struct dma_chan *chan,
- 	 */
- 	if (!config)
- 		return -EINVAL;
-+
-+	/*
-+	 * overriding the slave_id through dma_slave_config is deprecated,
-+	 * but possibly some out-of-tree drivers still do it.
-+	 */
-+	if (WARN_ON_ONCE(config->slave_id &&
-+			 config->slave_id != schan->real_slave_id))
-+		schan->real_slave_id = config->slave_id;
-+
- 	/*
- 	 * We could lock this, but you shouldn't be configuring the
- 	 * channel, while using it...
- 	 */
--	return shdma_setup_slave(schan, config->slave_id,
-+	return shdma_setup_slave(schan,
- 				 config->direction = DMA_DEV_TO_MEM ?
- 				 config->src_addr : config->dst_addr);
- }
-diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
-index abdf1f2..dd0ba50 100644
---- a/include/linux/shdma-base.h
-+++ b/include/linux/shdma-base.h
-@@ -69,6 +69,7 @@ struct shdma_chan {
- 	int id;				/* Raw id of this channel */
- 	int irq;			/* Channel IRQ */
- 	int slave_id;			/* Client ID for slave DMA */
-+	int real_slave_id;		/* argument passed to filter function */
- 	int hw_req;			/* DMA request line for slave DMA - same
- 					 * as MID/RID, used with DT */
- 	enum shdma_pm_state pm_state;
+ 	rmobile_init_pm_domain(pd);
 -- 
-1.7.9.5
+1.9.1
 
