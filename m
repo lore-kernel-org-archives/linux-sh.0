@@ -1,40 +1,53 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 21 Jan 2015 22:18:44 +0000
-Subject: [PATCH 1/2] sh_eth: use SET_RUNTIME_PM_OPS()
-Message-Id: <1921430.9kt2FLVU1I@wasted.cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 14 Jan 2015 11:13:02 +0000
+Subject: [PATCH 4/4] ARM: shmobile: sh73a0 dtsi: Add memory-controller nodes
+Message-Id: <1421233982-15883-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5608250.lrFkJTjgSf@wasted.cogentembedded.com>
-In-Reply-To: <5608250.lrFkJTjgSf@wasted.cogentembedded.com>
+References: <1421233982-15883-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1421233982-15883-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, mikhail.ulyanov@cogentembedded.com
+To: linux-arm-kernel@lists.infradead.org
 
-From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+Add device nodes for the two SDRAM Bus State Controllers.
+The SBSCs are located in the A4BC0 resp. A4BC1 PM domains, which must
+not be powered down, else the system will crash.
 
-Use SET_RUNTIME_PM_OPS() macro to initialize the runtime PM method pointers in
-the 'struct dev_pm_ops'.
+References to the A4BC0 and A4BC1 PM domains will be added later.
 
-Signed-off-by: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
-[Sergei: renamed, added the changelog.]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/net/ethernet/renesas/sh_eth.c |    3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ arch/arm/boot/dts/sh73a0.dtsi | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -2960,8 +2960,7 @@ static int sh_eth_runtime_nop(struct dev
- }
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 46954ac26dd9fb41..8d9c2ce593745b1f 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -43,6 +43,22 @@
+ 		      <0xf0000100 0x100>;
+ 	};
  
- static const struct dev_pm_ops sh_eth_dev_pm_ops = {
--	.runtime_suspend = sh_eth_runtime_nop,
--	.runtime_resume = sh_eth_runtime_nop,
-+	SET_RUNTIME_PM_OPS(sh_eth_runtime_nop, sh_eth_runtime_nop, NULL)
- };
- #define SH_ETH_PM_OPS (&sh_eth_dev_pm_ops)
- #else
++	sbsc2: memory-controller@fb400000 {
++		compatible = "renesas,sbsc-sh73a0";
++		reg = <0xfb400000 0x400>;
++		interrupts = <0 37 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 38 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "sec", "temp";
++	};
++
++	sbsc1: memory-controller@fe400000 {
++		compatible = "renesas,sbsc-sh73a0";
++		reg = <0xfe400000 0x400>;
++		interrupts = <0 35 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 36 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "sec", "temp";
++	};
++
+ 	pmu {
+ 		compatible = "arm,cortex-a9-pmu";
+ 		interrupts = <0 55 IRQ_TYPE_LEVEL_HIGH>,
+-- 
+1.9.1
 
