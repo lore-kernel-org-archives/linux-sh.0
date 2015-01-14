@@ -1,77 +1,104 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 22 Jan 2015 08:34:33 +0000
-Subject: [PATCH 3/5] ARM: shmobile: r8a7791: sound enables Audio DMAC entry on DTSI
-Message-Id: <877fwfkyb2.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 14 Jan 2015 12:11:22 +0000
+Subject: [PATCH v2 4/6] ARM: shmobile: R-Mobile: Special-case PM domains with memory-controllers
+Message-Id: <1421237484-16847-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1421237484-16847-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1421237484-16847-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Add a special case for PM domains containing a memory-controller.
+Such a PM domain must not be turned off if memory is in use.
 
-This patch adds Audio DMAC (= rcar-dmac) entry for sound
+On sh73a0 PM domains A4BC0 and A4BC1 each contain an SDRAM Bus State
+Controller (SBSC). On r8a73a4 PM domain A3BC contains two DDR Bus
+Controllers (DBSC).  In both cases, there are no other devices in these
+PM domains, so they were eligible for power down, crashing the system.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On r8a7740 the DDR3 Bus State Controller (DBSC3) is located in A4S,
+whose child domain A3SM contains the CPU core. Hence A4S is never turned
+off, and no crash happened.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7791.dtsi |   44 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 44 insertions(+)
+v2:
+  - Rename PD_SBSC to PD_MEMCTL,
+  - Reword code comments and patch description.
+---
+ arch/arm/mach-shmobile/pm-rmobile.c | 29 +++++++++++++++++++++++------
+ 1 file changed, 23 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 8a2fc56..8df2190 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1423,6 +1423,50 @@
- 				"dvc.0", "dvc.1",
- 				"clk_a", "clk_b", "clk_c", "clk_i";
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index e4c3f7de48e2ccf2..95018209ff0b37cc 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -222,6 +222,7 @@ enum pd_types {
+ 	PD_CPU,
+ 	PD_CONSOLE,
+ 	PD_DEBUG,
++	PD_MEMCTL,
+ };
  
-+		dmas =		<&audma0 0x01>,	<&audma1 0x02>,	<&audma0 0x15>,	<&audma1 0x16>,
-+				<&audma0 0x03>,	<&audma1 0x04>,	<&audma0 0x49>,	<&audma1 0x4a>,
-+				<&audma0 0x05>,	<&audma1 0x06>,	<&audma0 0x63>,	<&audma1 0x64>,
-+				<&audma0 0x07>,	<&audma1 0x08>,	<&audma0 0x6f>,	<&audma1 0x70>,
-+				<&audma0 0x09>,	<&audma1 0x0a>,	<&audma0 0x71>,	<&audma1 0x72>,
-+				<&audma0 0x0b>,	<&audma1 0x0c>,	<&audma0 0x73>,	<&audma1 0x74>,
-+				<&audma0 0x0d>,	<&audma1 0x0e>,	<&audma0 0x75>,	<&audma1 0x76>,
-+				<&audma0 0x0f>,	<&audma1 0x10>,	<&audma0 0x79>,	<&audma1 0x7a>,
-+				<&audma0 0x11>,	<&audma1 0x12>,	<&audma0 0x7b>,	<&audma1 0x7c>,
-+				<&audma0 0x13>,	<&audma1 0x14>,	<&audma0 0x7d>,	<&audma1 0x7e>,
-+
-+				<&audma0 0x85>,	<&audma1 0x9a>,	<&audma0 0xbc>,
-+				<&audma0 0x87>,	<&audma1 0x9c>,	<&audma0 0xbe>,
-+				<&audma0 0x89>,	<&audma1 0x9e>,
-+				<&audma0 0x8b>,	<&audma1 0xa0>,
-+				<&audma0 0x8d>,	<&audma1 0xb0>,
-+				<&audma0 0x8f>,	<&audma1 0xb2>,
-+				<&audma0 0x91>,	<&audma1 0xb4>,
-+				<&audma0 0x93>,	<&audma1 0xb6>,
-+				<&audma0 0x95>,	<&audma1 0xb8>,
-+				<&audma0 0x97>,	<&audma1 0xba>;
-+
-+		dma-names =	"mem_ssi0",	"ssi0_mem",	"mem_ssiu0",	"ssiu0_mem",
-+				"mem_ssi1",	"ssi1_mem",	"mem_ssiu1",	"ssiu1_mem",
-+				"mem_ssi2",	"ssi2_mem",	"mem_ssiu2",	"ssiu2_mem",
-+				"mem_ssi3",	"ssi3_mem",	"mem_ssiu3",	"ssiu3_mem",
-+				"mem_ssi4",	"ssi4_mem",	"mem_ssiu4",	"ssiu4_mem",
-+				"mem_ssi5",	"ssi5_mem",	"mem_ssiu5",	"ssiu5_mem",
-+				"mem_ssi6",	"ssi6_mem",	"mem_ssiu6",	"ssiu6_mem",
-+				"mem_ssi7",	"ssi7_mem",	"mem_ssiu7",	"ssiu7_mem",
-+				"mem_ssi8",	"ssi8_mem",	"mem_ssiu8",	"ssiu8_mem",
-+				"mem_ssi9",	"ssi9_mem",	"mem_ssiu9",	"ssiu9_mem",
-+
-+				"mem_src0",	"src0_mem",	"dvc0_mem",
-+				"mem_src1",	"src1_mem",	"dvc1_mem",
-+				"mem_src2",	"src2_mem",
-+				"mem_src3",	"src3_mem",
-+				"mem_src4",	"src4_mem",
-+				"mem_src5",	"src5_mem",
-+				"mem_src6",	"src6_mem",
-+				"mem_src7",	"src7_mem",
-+				"mem_src8",	"src8_mem",
-+				"mem_src9",	"src9_mem";
-+
- 		status = "disabled";
+ #define MAX_NUM_SPECIAL_PDS	16
+@@ -233,6 +234,14 @@ static struct special_pd {
  
- 		rcar_sound,dvc {
+ static unsigned int num_special_pds __initdata;
+ 
++static const struct of_device_id special_ids[] __initconst = {
++	{ .compatible = "arm,coresight-etm3x", .data = (void *)PD_DEBUG },
++	{ .compatible = "renesas,dbsc-r8a73a4", .data = (void *)PD_MEMCTL, },
++	{ .compatible = "renesas,dbsc3-r8a7740", .data = (void *)PD_MEMCTL, },
++	{ .compatible = "renesas,sbsc-sh73a0", .data = (void *)PD_MEMCTL, },
++	{ /* sentinel */ },
++};
++
+ static void __init add_special_pd(struct device_node *np, enum pd_types type)
+ {
+ 	unsigned int i;
+@@ -265,6 +274,7 @@ static void __init add_special_pd(struct device_node *np, enum pd_types type)
+ static void __init get_special_pds(void)
+ {
+ 	struct device_node *np;
++	const struct of_device_id *id;
+ 
+ 	/* PM domains containing CPUs */
+ 	for_each_node_by_type(np, "cpu")
+@@ -274,12 +284,9 @@ static void __init get_special_pds(void)
+ 	if (of_stdout)
+ 		add_special_pd(of_stdout, PD_CONSOLE);
+ 
+-	/* PM domain containing Coresight-ETM */
+-	np = of_find_compatible_node(NULL, NULL, "arm,coresight-etm3x");
+-	if (np) {
+-		add_special_pd(np, PD_DEBUG);
+-		of_node_put(np);
+-	}
++	/* PM domains containing other special devices */
++	for_each_matching_node_and_match(np, special_ids, &id)
++		add_special_pd(np, (enum pd_types)id->data);
+ }
+ 
+ static void __init put_special_pds(void)
+@@ -334,6 +341,16 @@ static void __init rmobile_setup_pm_domain(struct device_node *np,
+ 		pd->suspend = rmobile_pd_suspend_busy;
+ 		break;
+ 
++	case PD_MEMCTL:
++		/*
++		 * This domain contains a memory-controller and therefore it
++		 * should only be turned off if memory is not in use.
++		 */
++		pr_debug("PM domain %s contains MEMCTL\n", name);
++		pd->gov = &pm_domain_always_on_gov;
++		pd->suspend = rmobile_pd_suspend_busy;
++		break;
++
+ 	case PD_NORMAL:
+ 		break;
+ 	}
 -- 
-1.7.9.5
+1.9.1
 
