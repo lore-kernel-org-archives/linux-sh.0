@@ -1,55 +1,62 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 27 Jan 2015 20:35:22 +0000
-Subject: Re: [PATCH v2 4/4] ARM: shmobile: emev2-kzm9d: Add PFC information for uart1
-Message-Id: <2057603.FzjFJsB71b@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 14 Jan 2015 10:50:48 +0000
+Subject: [PATCH] ARM: shmobile: R-Mobile: Fix DT refcount bugs in PM domain code
+Message-Id: <1421232648-15204-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421583604-27256-1-git-send-email-niso@kth.se> <1421583604-27256-5-git-send-email-niso@kth.se>
-In-Reply-To: <1421583604-27256-5-git-send-email-niso@kth.se>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Niklas =?ISO-8859-1?Q?S=F6derlund?= <niso@kth.se>
-Cc: linux-kernel@vger.kernel.org, linus.walleij@linaro.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, magnus.damm@gmail.com
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Niklas,
+Fix two DT refcount imbalances in the PM domain code that scans the DT
+topology:
 
-Thank you for the patch.
+  1. Add missing of_node_put() after of_find_compatible_node().
 
-On Sunday 18 January 2015 13:20:04 Niklas S=F6derlund wrote:
-> Configure the pinmux on kzm9d to use the serial connector for uart1.
->=20
-> Signed-off-by: Niklas S=F6derlund <niso@kth.se>
+  2. If CONFIG_OF_DYNAMIC=y:
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+	ERROR: Bad of_node_put() on /system-controller@e6180000
+	<backtrace>
 
-> ---
->  arch/arm/boot/dts/emev2-kzm9d.dts | 13 +++++++++++++
->  1 file changed, 13 insertions(+)
->=20
-> diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts
-> b/arch/arm/boot/dts/emev2-kzm9d.dts index 667d323..1944627 100644
-> --- a/arch/arm/boot/dts/emev2-kzm9d.dts
-> +++ b/arch/arm/boot/dts/emev2-kzm9d.dts
-> @@ -94,3 +94,16 @@
->  		vdd33a-supply =3D <&reg_3p3v>;
->  	};
->  };
-> +
-> +&pfc {
-> +	uart1_pins: uart@e1030000 {
-> +		renesas,groups =3D "uart1_ctrl", "uart1_data";
-> +		renesas,function =3D "uart1";
-> +	};
-> +};
-> +
-> +&uart1 {
-> +	pinctrl-0 =3D <&uart1_pins>;
-> +	pinctrl-names =3D "default";
-> +	status =3D "okay";
-> +};
+     of_find_node_by_name() calls of_node_put() on its "from" parameter,
+     which must not be done on the for_each_compatible_node() iterator,
+     as it causes a zero refcount later.
+     Use of_get_child_by_name() instead to fix this.
 
---=20
-Regards,
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Fixes: d7a3a10c8391fdcd ("ARM: shmobile: R-Mobile: Add DT support for PM domains")
+in Simon's git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
+tag renesas-dt-pm-for-v3.20
+---
+ arch/arm/mach-shmobile/pm-rmobile.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-Laurent Pinchart
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index 07fb4ea4d8e94258..85a7fdd9823bc5a6 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -270,8 +270,10 @@ static void __init get_special_pds(void)
+ 
+ 	/* PM domain containing Coresight-ETM */
+ 	np = of_find_compatible_node(NULL, NULL, "arm,coresight-etm3x");
+-	if (np)
++	if (np) {
+ 		debug_pd = of_parse_phandle(np, "power-domains", 0);
++		of_node_put(np);
++	}
+ }
+ 
+ static void __init put_special_pds(void)
+@@ -363,7 +365,7 @@ static int __init rmobile_init_pm_domains(void)
+ 			continue;
+ 		}
+ 
+-		pmd = of_find_node_by_name(np, "pm-domains");
++		pmd = of_get_child_by_name(np, "pm-domains");
+ 		if (!pmd) {
+ 			pr_warn("%s lacks pm-domains node\n", np->full_name);
+ 			continue;
+-- 
+1.9.1
 
