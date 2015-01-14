@@ -1,50 +1,66 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 17 Jan 2015 22:06:51 +0000
-Subject: Re: [PATCH] clk-gate: fix bit # check in clk_register_gate()
-Message-Id: <54BADCFB.5010805@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 14 Jan 2015 11:12:58 +0000
+Subject: [PATCH 0/4] ARM: shmobile: Add DT support for memory controllers
+Message-Id: <1421233982-15883-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2500887.6mMDBajo0S@wasted.cogentembedded.com> <20150117220116.22722.808@quantum>
-In-Reply-To: <20150117220116.22722.808@quantum>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Turquette <mturquette@linaro.org>, linux-kernel@vger.kernel.org, sboyd@codeaurora.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+	Hi Simon, Magnus,
 
-On 01/18/2015 01:01 AM, Mike Turquette wrote:
+This patch series adds DT binding documentation and devices nodes to
+describe memory-controllers in R-Mobile and SH-Mobile SoCs.
 
->> In case CLK_GATE_HIWORD_MASK flag is passed to clk_register_gate(), the bit #
->> should be no higher than 15, however the corresponding check is obviously off-
->> by-one.
+Currently memory controller device nodes are used only to reference PM
+domains, and prevent these PM domains from being powered down, which
+would crash the system.
 
->> Fixes: 045779942c04 ("clk: gate: add CLK_GATE_HIWORD_MASK")
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+As such this series is a prerequisite for adding DT PM domain support to
+sh73a0 (SH-Mobile AG5) and r7a73a4 (R-Mobile APE6).
+For r8a7740 (R-Mobile A1), this wasn't a hard prerequisite for PM
+domain support, as the A4S PM domain is never turned off anyway
+because its child PM domain A3SM contains the CPU core.
 
-> Applied to clk-next. Thanks! Is this causing a visible regression for
-> you? It is not a new bug so I'd prefer to send it though clk-next unless
-> something is blowing up on your end.
+The patches for sh73a0 and r8a7740 have been sent before as part of
+(patches in) the series "[PATCH RFC 0/7] ARM: shmobile: sh73a0: DT PM
+domain support" (https://lkml.org/lkml/2014/11/19/404).
 
-    No, nothing, I don't even call this function (was using composite clock). 
-Found by just looking at the code.
+"ARM: shmobile: r8a7740 dtsi: Add memory-controller node" depends on
+the DT R-Mobile PM Domain support for r8a7740 that's queued up in
+Simon's tree under tag renesas-dt-pm-for-v3.20, as the
+memory-controller node already contains a power-domains property.
 
->> ---
->> The patch is against Linus' repo because the 'clk-fixes' branch  in  Mike
->> Turquette's 'linux.git' repo at Linaro seems very outdated. BTW, the repo
->> at kernel.org specified by the MAINTAINERS file doesn't seem to exist --
->> can something be done about that?
+The two other dtsi patches do not add power-domains properties yet.
+These will be added when adding PM domain support for sh73a0 resp.
+r8a73a4.
 
-> The clk-fixes branch at git.linaro.org is now updated and the clk tree
-> at git.kernel.org is also live. Blame the holidays.
+Thanks!
 
-> For now they will mirror each other (and linux-next will continue to
-> reference the one at git.linaro.org until 3.19 is released).
+Geert Uytterhoeven (4):
+  ARM: shmobile: Add DT bindings for Renesas memory controllers
+  ARM: shmobile: r8a73a4 dtsi: Add memory-controller nodes
+  ARM: shmobile: r8a7740 dtsi: Add memory-controller node
+  ARM: shmobile: sh73a0 dtsi: Add memory-controller nodes
 
-    Thank you.
+ .../renesas-memory-controllers.txt                 | 44 ++++++++++++++++++++++
+ arch/arm/boot/dts/r8a73a4.dtsi                     | 10 +++++
+ arch/arm/boot/dts/r8a7740.dtsi                     |  6 +++
+ arch/arm/boot/dts/sh73a0.dtsi                      | 16 ++++++++
+ 4 files changed, 76 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/memory-controllers/renesas-memory-controllers.txt
 
-> Regards,
-> Mike
+-- 
+1.9.1
 
-WBR, Sergei
+Gr{oetje,eeting}s,
 
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
