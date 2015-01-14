@@ -1,42 +1,82 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Thu, 29 Jan 2015 11:32:35 +0000
-Subject: Re: [PATCH 7/9 v4] ASoC: rsnd: remove slave_id settings for DMAEngine
-Message-Id: <20150129113235.GZ21293@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="xNfoxAF6BY6VsG0y"
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 14 Jan 2015 12:11:18 +0000
+Subject: [PATCH v2 0/6] ARM: shmobile: sh73a0: DT PM domain support
+Message-Id: <1421237484-16847-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87twzjlbiv.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87twzjlbiv.wl%kuninori.morimoto.gx@renesas.com>
-To: linux-sh@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+	Hi Simon, Magnus,
 
---xNfoxAF6BY6VsG0y
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+This patch series enables DT support for PM domains on the Renesas
+SH-Mobile AG5 (sh73a0) SoC.
 
-On Thu, Jan 29, 2015 at 01:03:20AM +0000, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->=20
-> Current rsnd sets dma_slave_config :: slave_id field for DMAEngine,
-> but it is no longer needed. Let's remove it.
+This series builds further on the DT PM Domain support for R-Mobile A1
+(r8a7740).  Due to the similarity of the SYSC System-Controller on the
+various SH-Mobile/R-Mobile SoCs, and the abstraction of PM domains in
+DT, the same driver can handle sh73a0 after some small modifications,
+without changing the DT bindings.
 
-Acked-by: Mark Brown <broonie@kernel.org>
+Compared to r8a7740, the only significant change is the move of the
+memory-controller(s) to separate PM domains on sh73a0 (and also on
+R-Mobile APE6 (r8a73a4)). Hence a provision must be made to not turn off
+these PM domains inadvertently, cfr. the series "[PATCH 0/4] ARM:
+shmobile: Add DT support for memory controllers" I've just sent.
 
---xNfoxAF6BY6VsG0y
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+This series has been sent before, as part of the series "[PATCH RFC
+0/7] ARM: shmobile: sh73a0: DT PM domain support"
+(https://lkml.org/lkml/2014/11/19/404).
+Changes since v1 (more detailed changelogs in the individual patches):
+  - Factored out addition of the memory-controller in a separate
+    series.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
+Dependencies:
+  1. Patches 1-4 (DT binding doc, C code) depend on:
+       a. The R-Mobile DT PM Domain work for r8a7740, queued in tag
+          renesas-dt-pm-for-v3.20 of Simon's repository,
+       b. "ARM: shmobile: R-Mobile: Fix DT refcount bugs in PM domain
+	   code"
+	   (http://www.spinics.net/lists/arm-kernel/msg391084.html),
+  2. Patch 5 (dtsi) depends on:
+       a. The multiplatform work for sh73a0, queued in branch
+          sh73a0-multiplatform-for-v3.20 of Simon's repository,
+       b. Series "[PATCH 0/4] ARM: shmobile: Add DT support for memory
+          controllers"
+	  (http://marc.info/?l=linux-sh&m2123399414888).
+  3. Patch 6 (drivers/sh) depends on all of the above.
 
-iQEcBAEBCAAGBQJUyhpTAAoJECTWi3JdVIfQA50H/02O7f63ahqmNDVcloUtVGBb
-tWi6TvFW+c/1HyWJ5Md/fBnqQkimgtBtAxAwN5xn/xqDKl511rulDbBguP2fYw6M
-Q/TGrcBOcXXe2x3pSVIOKCy2mOs5eZKQ2FkyacXqEXSnegwi1d+3292d8gepqUuT
-6b3nE8gFfazgAQB620ulGp9YufuVhZEHTfsdsqKg3+Ui3RrsegQl63pS4qcIC3oB
-8RWdW+GIHoKXE1e3LS2o5SGwd6mEu2XK9Gtvu9iUudSqnR+RTbY6OZ/ZwMPIT2bi
-kQ2w4J5xxw31AhyKt00x3yYszuGxfRLmL6yxdlbPGmF2lAdbpHJliAgBj3j/MfA=
-=e+FL
------END PGP SIGNATURE-----
+This was tested on kzm9g-multiplatform.
 
---xNfoxAF6BY6VsG0y--
+Thanks!
+
+Geert Uytterhoeven (6):
+  PM / Domains: R-Mobile SYSC: Document SH-Mobile AG5 (sh73a0) binding
+  ARM: shmobile: R-Mobile: Consolidate rmobile_pd_suspend_*()
+  ARM: shmobile: R-Mobile: Generalize adding/looking up special PM
+    domains
+  ARM: shmobile: R-Mobile: Special-case PM domains with
+    memory-controllers
+  ARM: shmobile: sh73a0 dtsi: Add PM domain support
+  drivers: sh: Disable PM runtime for multi-platform sh73a0 with genpd
+
+ .../bindings/power/renesas,sysc-rmobile.txt        |   1 +
+ arch/arm/boot/dts/sh73a0.dtsi                      | 144 ++++++++++++++++++-
+ arch/arm/mach-shmobile/pm-rmobile.c                | 155 +++++++++++++--------
+ drivers/sh/pm_runtime.c                            |   4 +-
+ 4 files changed, 242 insertions(+), 62 deletions(-)
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
