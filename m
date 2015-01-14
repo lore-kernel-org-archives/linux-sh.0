@@ -1,37 +1,37 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 14 Jan 2015 19:00:19 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7791: fix MSTP8 input clocks
-Message-Id: <54B6BCC3.6040307@cogentembedded.com>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Wed, 14 Jan 2015 08:30:35 +0000
+Subject: Re: [PATCH] mmc: tmio: add missing EXPORT_SYMBOL for tmio_mmc_host_alloc/free
+Message-Id: <CAPDyKFrNFr493FcN3A3k_tGo9J801ga91ooL=sZT6DS0vFwVoQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4221957.7dd2kFrTHY@wasted.cogentembedded.com>
- <20150113003604.GB27284@verge.net.au>
-In-Reply-To: <20150113003604.GB27284@verge.net.au>
+References: <201501131902.WqokttpY%fengguang.wu@intel.com>
+	<87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>, "kbuild-all@01.org" <kbuild-all@01.org>
 
-Hello.
+On 14 January 2015 at 03:21, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>
+> tmio_mmc_host_alloc/free were added on tmio_mmc_pio.c,
+> but, it is missing EXPORT_SYMBOL for it.
+> Compile will be failed without this patch
+>
+>  ERROR: "tmio_mmc_host_free" [drivers/mmc/host/tmio_mmc.ko] undefined!
+>  ERROR: "tmio_mmc_host_alloc" [drivers/mmc/host/tmio_mmc.ko] undefined!
+>  ERROR: "tmio_mmc_host_free" [drivers/mmc/host/sh_mobile_sdhi.ko] undefined!
+>  ERROR: "tmio_mmc_host_alloc" [drivers/mmc/host/sh_mobile_sdhi.ko] undefined!
+>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On 01/13/2015 03:36 AM, Simon Horman wrote:
+Thanks!
 
->> I made  a mistake when rebasing Andrey Gusakov's patch adding MLB+ clock to the
->> R8A7791 device  tree, inserting <&hp_clk> into the "clocks"  property of the
->> MSTP8 node at a wrong position, so that the input clocks for MLB+ and IPMMU-SGX
->> got swapped...
+I decided to squashed this change into patch "mmc: tmio: add
+tmio_mmc_host_alloc/free()", which was the one adding the related
+functions.
 
->> Fixes: 7408d3061d2f ("ARM: shmobile: r8a7791: add MLB+ clock")
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
->> ---
->> The patch is against 'renesas-devel-20150108v2-v3.19-rc3' tag of Simon Horman's
->> 'renesas.git' repo.
-
-> Thanks, I have queued this up.
-
-    Thank you! I've just noticed that this patch was atop of several other 
-patches in my tree, so there might have been an offset when you applied it.
-Sorry about that... :-<
-
-WBR, Sergei
-
+Kind regards
+Uffe
