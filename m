@@ -1,68 +1,91 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 19 Jan 2015 19:13:25 +0000
-Subject: Re: [PATCH V4 01/14] sh: Eliminate unused irq_reg_{readl,writel} accessors
-Message-Id: <CAMuHMdUpxURV4ztpa3x0TORsSWtxiKxe6_EDO5QsO_vhedip0A@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 14 Jan 2015 12:11:20 +0000
+Subject: [PATCH v2 2/6] ARM: shmobile: R-Mobile: Consolidate rmobile_pd_suspend_*()
+Message-Id: <1421237484-16847-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1415342669-30640-1-git-send-email-cernekee@gmail.com>
-	<1415342669-30640-2-git-send-email-cernekee@gmail.com>
-	<CAMuHMdW+L8YbE8Z8jrtnm8xWk63sRGaFdM7TPM6MmrDg9XwHuQ@mail.gmail.com>
-	<20141114163843.GH29662@linux-mips.org>
-	<20141114170525.GL3698@titan.lakedaemon.net>
-	<CAMuHMdXMsxhcD9C079YPc6Toxdo0e23oqM_9KeSG=NrFa4auRQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdXMsxhcD9C079YPc6Toxdo0e23oqM_9KeSG=NrFa4auRQ@mail.gmail.com>
+References: <1421237484-16847-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1421237484-16847-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jason Cooper <jason@lakedaemon.net>
-Cc: Ralf Baechle <ralf@linux-mips.org>, Kevin Cernekee <cernekee@gmail.com>, Thomas Gleixner <tglx@linutronix.de>, Linux-sh list <linux-sh@vger.kernel.org>, Arnd Bergmann <arnd@arndb.de>, Florian Fainelli <f.fainelli@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Maxime Bizon <mbizon@freebox.fr>, Jonas Gorski <jogo@openwrt.org>, Linux MIPS Mailing List <linux-mips@linux-mips.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Jason,
+Consolidate the identical rmobile_pd_suspend_*() routines that just
+return -EBUSY to prevent a PM domain from being powered down into a
+single rmobile_pd_suspend_busy().
 
-On Sun, Nov 16, 2014 at 10:34 AM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> Hi Jason,
->
-> On Fri, Nov 14, 2014 at 6:05 PM, Jason Cooper <jason@lakedaemon.net> wrote:
->> On Fri, Nov 14, 2014 at 05:38:44PM +0100, Ralf Baechle wrote:
->>> On Mon, Nov 10, 2014 at 09:13:49AM +0100, Geert Uytterhoeven wrote:
->>>
->>> > On Fri, Nov 7, 2014 at 7:44 AM, Kevin Cernekee <cernekee@gmail.com> wrote:
->>> > > Defining these macros way down in arch/sh/.../irq.c doesn't cause
->>> > > kernel/irq/generic-chip.c to use them.  As far as I can tell this code
->>> > > has no effect.
->>> > >
->>> > > Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
->>> >
->>> > Compared preprocessor and asm output before and after, no difference
->>> > except for line numbers, so
->>> >
->>> > Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
->>>
->>> I noticed the remainder of of this series is now in Jason Cooper's irqchip
->>> tree.  Is anybody still taking care of SH?  If not I can funnel it
->>> through the MIPS tree.
->>
->> Are the SH maintainers active?  I admit I know very little about the
->> arch.  I'm more than happy to pick it up and keep it with the rest of
->> the series, I just didn't want to step on toes...
->
-> SH is orphaned, so it would be great if you could pick it up.
-> Thanks!
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2:
+  - Break long comment.
+---
+ arch/arm/mach-shmobile/pm-rmobile.c | 28 +++++++++++++---------------
+ 1 file changed, 13 insertions(+), 15 deletions(-)
 
-I think you forgot to pick it up, as se7343 and se7722 are still broken:
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index 85a7fdd9823bc5a6..e1be4b8919efe30e 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -200,11 +200,10 @@ void rmobile_add_devices_to_domains(struct pm_domain_device data[],
+ 
+ #else /* !CONFIG_ARCH_SHMOBILE_LEGACY */
+ 
+-static int rmobile_pd_suspend_cpu(void)
++static int rmobile_pd_suspend_busy(void)
+ {
+ 	/*
+-	 * This domain contains the CPU core and therefore it should
+-	 * only be turned off if the CPU is not in use.
++	 * This domain should not be turned off.
+ 	 */
+ 	return -EBUSY;
+ }
+@@ -218,16 +217,6 @@ static int rmobile_pd_suspend_console(void)
+ 	return console_suspend_enabled ? 0 : -EBUSY;
+ }
+ 
+-static int rmobile_pd_suspend_debug(void)
+-{
+-	/*
+-	 * This domain contains the Coresight-ETM hardware block and
+-	 * therefore it should only be turned off if the debug module is
+-	 * not in use.
+-	 */
+-	return -EBUSY;
+-}
+-
+ #define MAX_NUM_CPU_PDS		8
+ 
+ static unsigned int num_cpu_pds __initdata;
+@@ -303,17 +292,26 @@ static void __init rmobile_setup_pm_domain(struct device_node *np,
+ 	const char *name = pd->genpd.name;
+ 
+ 	if (pd_contains_cpu(np)) {
++		/*
++		 * This domain contains the CPU core and therefore it should
++		 * only be turned off if the CPU is not in use.
++		 */
+ 		pr_debug("PM domain %s contains CPU\n", name);
+ 		pd->gov = &pm_domain_always_on_gov;
+-		pd->suspend = rmobile_pd_suspend_cpu;
++		pd->suspend = rmobile_pd_suspend_busy;
+ 	} else if (np = console_pd) {
+ 		pr_debug("PM domain %s contains serial console\n", name);
+ 		pd->gov = &pm_domain_always_on_gov;
+ 		pd->suspend = rmobile_pd_suspend_console;
+ 	} else if (np = debug_pd) {
++		/*
++		 * This domain contains the Coresight-ETM hardware block and
++		 * therefore it should only be turned off if the debug module
++		 * is not in use.
++		 */
+ 		pr_debug("PM domain %s contains Coresight-ETM\n", name);
+ 		pd->gov = &pm_domain_always_on_gov;
+-		pd->suspend = rmobile_pd_suspend_debug;
++		pd->suspend = rmobile_pd_suspend_busy;
+ 	}
+ 
+ 	rmobile_init_pm_domain(pd);
+-- 
+1.9.1
 
-http://kisskb.ellerman.id.au/kisskb/buildresult/12346740/
-http://kisskb.ellerman.id.au/kisskb/buildresult/12346745/
-
-Will you still do so, or shall I forward the patch to Andrew Morton?
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
