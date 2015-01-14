@@ -1,53 +1,89 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Mon, 19 Jan 2015 13:44:08 +0000
-Subject: Re: [GIT PULL FOR v3.20] R-Car DMA engine driver
-Message-Id: <20150119133208.GB28763@intel.com>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Wed, 14 Jan 2015 07:25:35 +0000
+Subject: [PATCH] spi: sh-msiof: Update calculation of frequency dividing
+Message-Id: <1421220335-22503-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <25808042.z3ylOLx5GF@avalon>
-In-Reply-To: <25808042.z3ylOLx5GF@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, geert-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org, yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 
-On Mon, Jan 19, 2015 at 11:30:48AM +0100, Geert Uytterhoeven wrote:
-> Hi Vinod,
-> 
-> On Wed, Dec 24, 2014 at 6:35 AM, Vinod Koul <vinod.koul@intel.com> wrote:
-> > On Tue, Dec 23, 2014 at 11:16:52AM +0200, Laurent Pinchart wrote:
-> >> The following changes since commit fbde286783f7c1e55e6c33575fa1a56f8ea77c90:
-> >>
-> >>   dmaengine: nbpfaxi: update the driver comments (2014-12-22 20:28:04 +0530)
-> >>
-> >> are available in the git repository at:
-> >>
-> >>   git://linuxtv.org/pinchartl/fbdev.git dma/next
-> >>
-> >> for you to fetch changes up to ee4b876bbee2c5c53518110849f23c117eec099c:
-> >>
-> >>   dmaengine: rcar-dmac: Handle hardware descriptor allocation failure
-> >> (2014-12-23 11:13:03 +0200)
-> > Merged now, Thanks
-> 
-> The following commits seems to have been lost on today's slave-dma/next?
-> 
-> + 534a729866f9edc9264340c5b96cb94878ffda00 dmaengine: Add 16 bytes, 32
-> bytes and 64 bytes bus widths
-> + c4d7635280f24cfa8c3ef34c122600d148749030 dmaengine: rcar-dmac:
-> Remove duplicate sentence from DT bindings
-> + 87244fe5abdf1dbaf4e438d80cf641bf3c01d5cf dmaengine: rcar-dmac: Add
-> Renesas R-Car Gen2 DMA Controller (DMAC) driver
-> + ccadee9b1e90dc6d3d97a20ac96cb1a82e0d5a1d dmaengine: rcar-dmac:
-> Implement support for hardware descriptor lists
-> + 1ed1315f9b63c45f57f607e7ad2dac066b101f16 dmaengine: rcar-dmac: Cache
-> hardware descriptors memory
-> + ee4b876bbee2c5c53518110849f23c117eec099c dmaengine: rcar-dmac:
-> Handle hardware descriptor allocation failure
-My bad, I rebased -next of latest greates rc and missed mergic topic/rcar.
-Fixed and pushed now
+sh-msiof of frequency dividing does not perform the calculation, driver have
+to manage setting value in the table. It is not possible to set frequency
+dividing value close to the actual data in this way. This changes from
+frequency dividing of table management to setting by calculation.
+This driver is able to set a value close to the actual data.
 
-Thanks for reporting
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+---
+ drivers/spi/spi-sh-msiof.c | 39 +++++++++++++++++----------------------
+ 1 file changed, 17 insertions(+), 22 deletions(-)
 
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index 96a5fc0..58b1bfe 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -241,42 +241,37 @@ static irqreturn_t sh_msiof_spi_irq(int irq, void *data)
+ 
+ static struct {
+ 	unsigned short div;
+-	unsigned short scr;
+-} const sh_msiof_spi_clk_table[] = {
+-	{ 1,	SCR_BRPS( 1) | SCR_BRDV_DIV_1 },
+-	{ 2,	SCR_BRPS( 1) | SCR_BRDV_DIV_2 },
+-	{ 4,	SCR_BRPS( 1) | SCR_BRDV_DIV_4 },
+-	{ 8,	SCR_BRPS( 1) | SCR_BRDV_DIV_8 },
+-	{ 16,	SCR_BRPS( 1) | SCR_BRDV_DIV_16 },
+-	{ 32,	SCR_BRPS( 1) | SCR_BRDV_DIV_32 },
+-	{ 64,	SCR_BRPS(32) | SCR_BRDV_DIV_2 },
+-	{ 128,	SCR_BRPS(32) | SCR_BRDV_DIV_4 },
+-	{ 256,	SCR_BRPS(32) | SCR_BRDV_DIV_8 },
+-	{ 512,	SCR_BRPS(32) | SCR_BRDV_DIV_16 },
+-	{ 1024,	SCR_BRPS(32) | SCR_BRDV_DIV_32 },
++	unsigned short brdv;
++} const sh_msiof_spi_div_table[] = {
++	{ 1,	SCR_BRDV_DIV_1 },
++	{ 2,	SCR_BRDV_DIV_2 },
++	{ 4,	SCR_BRDV_DIV_4 },
++	{ 8,	SCR_BRDV_DIV_8 },
++	{ 16,	SCR_BRDV_DIV_16 },
++	{ 32,	SCR_BRDV_DIV_32 },
+ };
+ 
+ static void sh_msiof_spi_set_clk_regs(struct sh_msiof_spi_priv *p,
+ 				      unsigned long parent_rate, u32 spi_hz)
+ {
+ 	unsigned long div = 1024;
++	unsigned long brps, scr;
+ 	size_t k;
+ 
+ 	if (!WARN_ON(!spi_hz || !parent_rate))
+ 		div = DIV_ROUND_UP(parent_rate, spi_hz);
+ 
+-	/* TODO: make more fine grained */
+-
+-	for (k = 0; k < ARRAY_SIZE(sh_msiof_spi_clk_table); k++) {
+-		if (sh_msiof_spi_clk_table[k].div >= div)
+-			break;
++	for (k = 0; k < ARRAY_SIZE(sh_msiof_spi_div_table); k++) {
++		brps = DIV_ROUND_UP(div, sh_msiof_spi_div_table[k].div);
++		if (brps > 32) /* max of brsv is 32 */
++			continue;
++		break;
+ 	}
+ 
+-	k = min_t(int, k, ARRAY_SIZE(sh_msiof_spi_clk_table) - 1);
+-
+-	sh_msiof_write(p, TSCR, sh_msiof_spi_clk_table[k].scr);
++	scr = sh_msiof_spi_div_table[k].brdv | (brps -1) << 8;
++	sh_msiof_write(p, TSCR, scr);
+ 	if (!(p->chipdata->master_flags & SPI_MASTER_MUST_TX))
+-		sh_msiof_write(p, RSCR, sh_msiof_spi_clk_table[k].scr);
++		sh_msiof_write(p, RSCR, scr);
+ }
+ 
+ static void sh_msiof_spi_set_pin_regs(struct sh_msiof_spi_priv *p,
 -- 
-~Vinod
+2.1.3
 
