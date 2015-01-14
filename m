@@ -1,61 +1,37 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 13 Jan 2015 02:13:27 +0000
-Subject: [PATCH 1/2] ARM: shmobile: r8a7740: Instantiate GIC from C board code in legacy builds
-Message-Id: <d034f53cc6c5c09a4e10cb9716986f3844c58514.1421113695.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 14 Jan 2015 12:11:19 +0000
+Subject: [PATCH v2 1/6] PM / Domains: R-Mobile SYSC: Document SH-Mobile AG5 (sh73a0) binding
+Message-Id: <1421237484-16847-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421113695.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421113695.git.horms+renesas@verge.net.au>
+References: <1421237484-16847-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1421237484-16847-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-
-As of commit 9a1091ef0017c40a ("irqchip: gic: Support hierarchy irq
-domain."), armadillo-legacy hangs during boot with:
-
-     sh-tmu.0: ch0: used for clock events
-     sh-tmu.0: ch0: used for periodic clock events
-     sh-tmu.0: ch0: failed to request irq 230
-     sh-tmu.0: ch1: used as clock source
-     sh-cmt-48.1: ch0: failed to request irq 90
-     sh-cmt-48.1: ch0: registration failed
-    earlytimer: unable to probe sh-cmt-48 early.
-    Calibrating delay loop...
-
-This happens because the IRQ numbers of the GIC are now virtual, and no
-longer match the hardcoded hardware IRQ numbers in the platform board
-code.
-To fix this, instantiate the GIC from platform board code when compiling
-a legacy kernel, like is done on sh73a0 for kzm9g-legacy.
+SH-Mobile AG5 (sh73a0) can be handled by the existing bindings.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Marc Zyngier <marc.zyngier@arm.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7740.c | 7 +++++++
- 1 file changed, 7 insertions(+)
+v2:
+  - No changes
+---
+ Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 0bfe226..e76e2f8 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -793,7 +793,14 @@ void __init r8a7740_init_irq_of(void)
- 	void __iomem *intc_msk_base = ioremap_nocache(0xe6900040, 0x10);
- 	void __iomem *pfc_inta_ctrl = ioremap_nocache(0xe605807c, 0x4);
- 
-+#ifdef CONFIG_ARCH_SHMOBILE_LEGACY
-+	void __iomem *gic_dist_base = ioremap_nocache(0xc2800000, 0x1000);
-+	void __iomem *gic_cpu_base = ioremap_nocache(0xc2000000, 0x1000);
-+
-+	gic_init(0, 29, gic_dist_base, gic_cpu_base);
-+#else
- 	irqchip_init();
-+#endif
- 
- 	/* route signals to GIC */
- 	iowrite32(0x0, pfc_inta_ctrl);
+diff --git a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
+index 2460476808e9333e..cc3b1f0a9b1a2b75 100644
+--- a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
++++ b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
+@@ -12,6 +12,7 @@ Required properties:
+ 	      fallback.
+ 	      Examples with soctypes are:
+ 		- "renesas,sysc-r8a7740" (R-Mobile A1)
++		- "renesas,sysc-sh73a0" (SH-Mobile AG5)
+ - reg: Two address start and address range blocks for the device:
+          - The first block refers to the normally accessible registers,
+          - the second block refers to the registers protected by the HPB
 -- 
-2.1.4
+1.9.1
 
