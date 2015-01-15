@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 15 Jan 2015 09:47:45 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 15 Jan 2015 09:51:29 +0000
 Subject: Re: [PATCH] ARM: shmobile: No R-Car Gen2 CMA reservation when HIGHMEM=n
-Message-Id: <CAMuHMdX16fhTs3TuQHnbr2-qKNXDh+e8EfG86w+eQeEVDjCfNg@mail.gmail.com>
+Message-Id: <CANqRtoSGM3tAoMfbGsFZDZsgJEi2uV3FPTPQXOy5=ePF3i6aXw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20150115062446.452.7702.sendpatchset@little-apple>
 In-Reply-To: <20150115062446.452.7702.sendpatchset@little-apple>
@@ -10,65 +10,63 @@ Content-Type: text/plain; charset="windows-1252"
 Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-Hi Magnus,
+Hi Geert,
 
-On Thu, Jan 15, 2015 at 7:24 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
+On Thu, Jan 15, 2015 at 6:47 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> Hi Magnus,
 >
-> Allow R-Car Gen2 platforms to boot with CMA enabled
-> and HIGHMEM disabled. This patch adds code to check
-> if the R-Car Gen2 specific memory reservation window
-> is included in the kernel memory range or not. When
-> HIGHMEM is disabled the R-Car Gen2 reservation area is
-> outside the kernel memory range and in such case the
-> memory reservation is simply skipped over.
+> On Thu, Jan 15, 2015 at 7:24 AM, Magnus Damm <magnus.damm@gmail.com> wrot=
+e:
+>> From: Magnus Damm <damm+renesas@opensource.se>
+>>
+>> Allow R-Car Gen2 platforms to boot with CMA enabled
+>> and HIGHMEM disabled. This patch adds code to check
+>> if the R-Car Gen2 specific memory reservation window
+>> is included in the kernel memory range or not. When
+>> HIGHMEM is disabled the R-Car Gen2 reservation area is
+>> outside the kernel memory range and in such case the
+>> memory reservation is simply skipped over.
+>>
+>> Without this patch the kernel boot hangs when CMA is
+>> enabled and HIGHMEM is disabled on the r8a7791 Koelsch
+>> hardware platform.
 >
-> Without this patch the kernel boot hangs when CMA is
-> enabled and HIGHMEM is disabled on the r8a7791 Koelsch
-> hardware platform.
+> Please describe the failure mode in the description, so it becomes
+> Google-able. E.g.
+>
+>     WARNING: CPU: 1 PID: 1 at mm/cma.c:113 cma_init_reserved_areas+0x88/0=
+x1d4()
+>     ...
+>     WARNING: CPU: 1 PID: 1 at mm/cma.c:121 cma_init_reserved_areas+0xf8/0=
+x1d4()
+>     ...
+>     Unable to handle kernel NULL pointer dereference at virtual address 0=
+0000160
+>     pgd =3D c0003000
+>     [00000160] *pgd=80000040004003, *pmd=00000000
+>     Internal error: Oops: 206 [#1] SMP ARM
+>     Modules linked in:
+>     CPU: 1 PID: 1 Comm: swapper/0 Tainted: G        W
+> 3.19.0-rc4-koelsch-01450-g7f9b6075ce12c3ea-dirty #735
+>     Hardware name: Generic R8A7791 (Flattened Device Tree)
+>     task: edc553c0 ti: edc56000 task.ti: edc56000
+>     PC is at set_pfnblock_flags_mask+0x54/0xa0
+>     LR is at 0x440
 
-Please describe the failure mode in the description, so it becomes
-Google-able. E.g.
+Good idea, thanks for supplying additional information.
 
-    WARNING: CPU: 1 PID: 1 at mm/cma.c:113 cma_init_reserved_areas+0x88/0x1=
-d4()
-    ...
-    WARNING: CPU: 1 PID: 1 at mm/cma.c:121 cma_init_reserved_areas+0xf8/0x1=
-d4()
-    ...
-    Unable to handle kernel NULL pointer dereference at virtual address 000=
-00160
-    pgd =3D c0003000
-    [00000160] *pgd=80000040004003, *pmd=00000000
-    Internal error: Oops: 206 [#1] SMP ARM
-    Modules linked in:
-    CPU: 1 PID: 1 Comm: swapper/0 Tainted: G        W
-3.19.0-rc4-koelsch-01450-g7f9b6075ce12c3ea-dirty #735
-    Hardware name: Generic R8A7791 (Flattened Device Tree)
-    task: edc553c0 ti: edc56000 task.ti: edc56000
-    PC is at set_pfnblock_flags_mask+0x54/0xa0
-    LR is at 0x440
+>> In the current shmobile_defconfig HIGHMEM is enabled
+>> while CMA is disabled, so to trigger this the kernel
+>> configuration for both CMA and HIGHMEM needs to be
+>> adjusted.
+>
+> Thanks for fixing this!
+>
+>> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+>
+> Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-> In the current shmobile_defconfig HIGHMEM is enabled
-> while CMA is disabled, so to trigger this the kernel
-> configuration for both CMA and HIGHMEM needs to be
-> adjusted.
+Thanks!
 
-Thanks for fixing this!
-
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-
-Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
-.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like t=
-hat.
-                                -- Linus Torvalds
+/ magnus
