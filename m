@@ -1,80 +1,57 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 09 Jan 2015 13:08:50 +0000
-Subject: [PATCH 2/4] ARM: shmobile: sh73a0: Add Multiplatform support
-Message-Id: <1420808932-3899-3-git-send-email-geert+renesas@glider.be>
+Date: Thu, 15 Jan 2015 13:50:43 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: r8a73a4: Correct mask for GIC PPI interrupts
+Message-Id: <1421329844-19707-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420808932-3899-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1420808932-3899-1-git-send-email-geert+renesas@glider.be>
+References: <1421329844-19707-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1421329844-19707-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+R-Mobile APE6 (r8a73a4) contains four Cortex-A15 and four Cortex-A7
+cores, hence the second interrupt specifier cell for Private Peripheral
+Interrupts should use "GIC_CPU_MASK_SIMPLE(8)", so GIC interrupts are
+delivered to all 8 processor cores.
 
-Enable sh73a0 Multiplatform support for the generic sh73a0
-machine vector. No board support is enabled, and the board
-code for KZM9G DT Reference is left by itself.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/Kconfig      | 5 +++++
- arch/arm/mach-shmobile/Makefile     | 4 ++--
- arch/arm/mach-shmobile/smp-sh73a0.c | 2 +-
- 3 files changed, 8 insertions(+), 3 deletions(-)
+Untested
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 2f36c85eec4b201e..8ee2f281f2a3dd6a 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -78,6 +78,11 @@ config ARCH_R8A7794
- 	bool "R-Car E2 (R8A77940)"
- 	select ARCH_RCAR_GEN2
+v2:
+  - Drop RFC status after receiving confirmation from Liviu Dudau.
+---
+ arch/arm/boot/dts/r8a73a4.dtsi | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index 38136d9f6d95a16e..424c189640812c91 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -32,10 +32,10 @@
  
-+config ARCH_SH73A0
-+	bool "SH-Mobile AG5 (R8A73A00)"
-+	select ARCH_RMOBILE
-+	select RENESAS_INTC_IRQPIN
-+
- comment "Renesas ARM SoCs Board Type"
+ 	timer {
+ 		compatible = "arm,armv7-timer";
+-		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+-			     <1 14 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+-			     <1 11 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+-			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
++		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
++			     <1 14 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
++			     <1 11 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
++			     <1 10 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>;
+ 	};
  
- config MACH_MARZEN
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index d53996e6da970d8d..b400f5fe72c269af 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -7,7 +7,7 @@ obj-y				:= timer.o console.o
- 
- # CPU objects
- obj-$(CONFIG_ARCH_SH7372)	+= setup-sh7372.o intc-sh7372.o pm-sh7372.o
--obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o intc-sh73a0.o pm-sh73a0.o
-+obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o pm-sh73a0.o
- obj-$(CONFIG_ARCH_R8A73A4)	+= setup-r8a73a4.o
- obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o pm-r8a7740.o
- obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
-@@ -65,7 +65,7 @@ obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
- obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
--obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
-+obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o intc-sh73a0.o
- obj-$(CONFIG_MACH_KZM9G_REFERENCE)	+= board-kzm9g-reference.o
- endif
- 
-diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
-index c16dbfe9836c527d..2106d6b76a069392 100644
---- a/arch/arm/mach-shmobile/smp-sh73a0.c
-+++ b/arch/arm/mach-shmobile/smp-sh73a0.c
-@@ -33,7 +33,7 @@
- 
- #define SH73A0_SCU_BASE 0xf0000000
- 
--#ifdef CONFIG_HAVE_ARM_TWD
-+#if defined(CONFIG_HAVE_ARM_TWD) && !defined(CONFIG_ARCH_MULTIPLATFORM)
- static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, SH73A0_SCU_BASE + 0x600, 29);
- void __init sh73a0_register_twd(void)
- {
+ 	dbsc1: memory-controller@e6790000 {
+@@ -375,6 +375,6 @@
+ 			<0 0xf1002000 0 0x1000>,
+ 			<0 0xf1004000 0 0x2000>,
+ 			<0 0xf1006000 0 0x2000>;
+-		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
++		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_HIGH)>;
+ 	};
+ };
 -- 
 1.9.1
 
