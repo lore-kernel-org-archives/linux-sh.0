@@ -1,96 +1,36 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 20 Jan 2015 13:01:49 +0000
-Subject: Re: [PATCH 6/9] ARM: shmobile: ape6evm dts: Move Ethernet node to BSC
-Message-Id: <1868496.12FX9W9aLb@avalon>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 15 Jan 2015 14:54:13 +0000
+Subject: [PATCH v2 0/2] Fix OF match for adxl34x driver
+Message-Id: <1421333655-31029-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421758306-24838-1-git-send-email-geert+renesas@glider.be>
- <1421758306-24838-7-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1421758306-24838-7-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-input@vger.kernel.org
+Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>, Geert Uytterhoeven <geert@glider.be>
 
-Hi Geert,
+Hello,
 
-Thank you for the patch.
+This patch set fixes OF matching for the adxl34x driver when the DT node lists
+a device-specific "adi,adxl345" or "adi,adxl346" compatible value first.
 
-On Tuesday 20 January 2015 13:51:43 Geert Uytterhoeven wrote:
-> Move the Ethernet node from the ad-hoc lbsc node to the BSC node,
-> as its connected to the Bus State Controller.  This allows the system to
-> know the right position of the Ethernet node in the clock and PM domain
-> hierarchy, and manage the clock and PM domain appropriately.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+The first version (see http://www.spinics.net/lists/linux-i2c/msg18107.html)
+added an OF match entry for the "adi,adxl34x" compatible string. The
+discussion that followed concluded that that compatible string should be
+deprecated and that the driver should match the device-specific strings
+instead.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+The first patch thus deprecates the "adi,adxl34x" compatible string by
+removing it the DT trivial devices list, and the second patch then adds an OF
+match table to the adxl34x driver.
 
-> ---
-> v3:
->   - Add Tested-by,
-> 
-> v2:
->   - New.
-> ---
->  arch/arm/boot/dts/r8a73a4-ape6evm.dts | 35
-> +++++++++++++++-------------------- 1 file changed, 15 insertions(+), 20
-> deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> b/arch/arm/boot/dts/r8a73a4-ape6evm.dts index
-> 0d50bef0123449f5..44c4cac1820a4dfe 100644
-> --- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> +++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> @@ -72,26 +72,6 @@
->  		regulator-always-on;
->  	};
-> 
-> -	lbsc {
-> -		compatible = "simple-bus";
-> -		#address-cells = <1>;
-> -		#size-cells = <1>;
-> -		ranges = <0 0 0 0x20000000>;
-> -
-> -		ethernet@8000000 {
-> -			compatible = "smsc,lan9220", "smsc,lan9115";
-> -			reg = <0x08000000 0x1000>;
-> -			interrupt-parent = <&irqc1>;
-> -			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
-> -			phy-mode = "mii";
-> -			reg-io-width = <4>;
-> -			smsc,irq-active-high;
-> -			smsc,irq-push-pull;
-> -			vdd33a-supply = <&ape6evm_fixed_3v3>;
-> -			vddvario-supply = <&ape6evm_fixed_1v8>;
-> -		};
-> -	};
-> -
->  	leds {
->  		compatible = "gpio-leds";
->  		led1 {
-> @@ -184,6 +164,21 @@
->  	voltage-tolerance = <1>; /* 1% */
->  };
-> 
-> +&bsc {
-> +	ethernet@8000000 {
-> +		compatible = "smsc,lan9220", "smsc,lan9115";
-> +		reg = <0x08000000 0x1000>;
-> +		interrupt-parent = <&irqc1>;
-> +		interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
-> +		phy-mode = "mii";
-> +		reg-io-width = <4>;
-> +		smsc,irq-active-high;
-> +		smsc,irq-push-pull;
-> +		vdd33a-supply = <&ape6evm_fixed_3v3>;
-> +		vddvario-supply = <&ape6evm_fixed_1v8>;
-> +	};
-> +};
-> +
->  &cmt1 {
->  	status = "okay";
->  };
+Laurent Pinchart (2):
+  DT: i2c: Deprecate adi,adxl34x compatible string
+  input: adxl34x: Add OF match support
+
+ .../devicetree/bindings/i2c/trivial-devices.txt     |  3 +--
+ drivers/input/misc/adxl34x-i2c.c                    | 21 +++++++++++++++++++++
+ 2 files changed, 22 insertions(+), 2 deletions(-)
 
 -- 
 Regards,
