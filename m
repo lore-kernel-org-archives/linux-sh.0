@@ -1,43 +1,77 @@
-From: =?utf-8?B?U8O2cmVu?= Brinkmann <soren.brinkmann@xilinx.com>
-Date: Fri, 09 Jan 2015 15:25:02 +0000
-Subject: Re: [PATCH v3 0/7] Pinctrl support for Zynq
-Message-Id: <ba4ac5f77c7549f2a264a5a5b1318dc8@BN1BFFO11FD009.protection.gbl>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 15 Jan 2015 14:54:15 +0000
+Subject: [PATCH v2 2/2] input: adxl34x: Add OF match support
+Message-Id: <1421333655-31029-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1d59c0972da04ec89dec6c09724986a1@BY2FFO11FD010.protection.gbl>
- <4d544fe425694a4e8043ddbf604db062@BN1AFFO11FD033.protection.gbl>
- <CACRpkdaKH21qz_RAcDtw6ycsw+5FD0RXQQs91_tZV53EuKVusQ@mail.gmail.com>
-In-Reply-To: <CACRpkdaKH21qz_RAcDtw6ycsw+5FD0RXQQs91_tZV53EuKVusQ@mail.gmail.com>
+References: <1421333655-31029-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1421333655-31029-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-input@vger.kernel.org
+Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>, Geert Uytterhoeven <geert@glider.be>
 
-On Fri, 2015-01-09 at 09:45AM +0100, Linus Walleij wrote:
-> On Fri, Dec 12, 2014 at 5:37 PM, Sören Brinkmann
-> <soren.brinkmann@xilinx.com> wrote:
-> 
-> > Argh, this went through the wrong SMTP. I suspect threading is broken
-> > due to that. Let me know if you want me to resend this with intact
-> > threading.
-> 
-> I don't care much about the threading, but all messages are quoted-printable
-> which doesn't apply :(
-> 
-> i.e.:
-> 
-> Content-Transfer-Encoding: quoted-printable
-> (...)
-> 
-> + const char *subnode_target_type = "pins";
->  
-> (...)
-> 
-> Can you resent with more sane encoding? I don't know where this
-> comes from but suspect the Microsoft Exchange SMTP server
-> does this when you use diacritics and german letters...
+The I2C subsystem can match devices without explicit OF support based on
+the part of their compatible property after the comma. However, this
+mechanism uses the first compatible value only. For adxl34x OF device
+nodes the compatible property will contain the more specific
+"adi,adxl345" or "adi,adxl346" value first. This prevents the device
+node from being matched with the adxl34x driver.
 
-Okay, I'll rebase to the latest pinctrl/devel branch (if needed) and
-send an updated version bypassing exchange. I hope that works then.
+Fix this by adding an OF match table with an "adi,adxl345" compatible
+entry. There's no need to add the "adi,adxl346" entry as the ADXL346 is
+backward-compatible with the ADXL345 with differences handled by runtime
+detection of the device model.
 
-	Thanks,
-	Sören
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/input/misc/adxl34x-i2c.c | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+diff --git a/drivers/input/misc/adxl34x-i2c.c b/drivers/input/misc/adxl34x-i2c.c
+index 416f47ddcc90..1e028f1f221c 100644
+--- a/drivers/input/misc/adxl34x-i2c.c
++++ b/drivers/input/misc/adxl34x-i2c.c
+@@ -10,6 +10,7 @@
+ #include <linux/input.h>	/* BUS_I2C */
+ #include <linux/i2c.h>
+ #include <linux/module.h>
++#include <linux/of.h>
+ #include <linux/types.h>
+ #include <linux/pm.h>
+ #include "adxl34x.h"
+@@ -137,11 +138,31 @@ static const struct i2c_device_id adxl34x_id[] = {
+ 
+ MODULE_DEVICE_TABLE(i2c, adxl34x_id);
+ 
++#ifdef CONFIG_OF
++static const struct of_device_id adxl34x_of_id[] = {
++	/*
++	 * The ADXL346 is backward-compatible with the ADXL345. Differences are
++	 * handled by runtime detection of the device model, there's thus no
++	 * need for listing the "adi,adxl346" compatible value explicitly.
++	 */
++	{ .compatible = "adi,adxl345", },
++	/*
++	 * Deprecated, DT nodes should use one or more of the device-specific
++	 * compatible values "adi,adxl345" and "adi,adxl346".
++	 */
++	{ .compatible = "adi,adxl34x", },
++	{ }
++};
++
++MODULE_DEVICE_TABLE(of, adxl34x_of_id);
++#endif
++
+ static struct i2c_driver adxl34x_driver = {
+ 	.driver = {
+ 		.name = "adxl34x",
+ 		.owner = THIS_MODULE,
+ 		.pm = &adxl34x_i2c_pm,
++		.of_match_table = of_match_ptr(adxl34x_of_id),
+ 	},
+ 	.probe    = adxl34x_i2c_probe,
+ 	.remove   = adxl34x_i2c_remove,
+-- 
+2.0.5
+
