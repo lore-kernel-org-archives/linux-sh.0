@@ -1,58 +1,60 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 15 Jan 2015 17:51:26 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 15 Jan 2015 20:51:43 +0000
 Subject: Re: [PATCH v2 1/2] DT: i2c: Deprecate adi,adxl34x compatible string
-Message-Id: <CAMuHMdUwHde0EvbCD574L2tW6qqxLCtZwAb+0M-4QCjB9V6fmQ@mail.gmail.com>
+Message-Id: <16733840.6Wupp0rKhe@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421333655-31029-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-	<1421333655-31029-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-	<20150115170209.GA6342@katana>
-	<CAMuHMdW7ETcFGSPiE9BWA2dAE93477fzoyF-+_EaiPSDT9WMWA@mail.gmail.com>
-	<20150115174333.GC6342@katana>
+References: <1421333655-31029-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <CAMuHMdW7ETcFGSPiE9BWA2dAE93477fzoyF-+_EaiPSDT9WMWA@mail.gmail.com> <20150115174333.GC6342@katana>
 In-Reply-To: <20150115174333.GC6342@katana>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
-Cc: Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, "linux-input-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-input-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux I2C <linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Wolfram Sang <wsa@the-dreams.de>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, "linux-input@vger.kernel.org" <linux-input@vger.kernel.org>, Linux I2C <linux-i2c@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-On Thu, Jan 15, 2015 at 6:43 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
+Hi Wolfram,
+
+On Thursday 15 January 2015 18:43:33 Wolfram Sang wrote:
 > On Thu, Jan 15, 2015 at 06:32:31PM +0100, Geert Uytterhoeven wrote:
->> On Thu, Jan 15, 2015 at 6:02 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
->> >> --- a/Documentation/devicetree/bindings/i2c/trivial-devices.txt
->> >> +++ b/Documentation/devicetree/bindings/i2c/trivial-devices.txt
->> >> @@ -18,8 +18,7 @@ adi,adt7475         +/-1C TDM Extended Temp Range I.C
->> >>  adi,adt7476          +/-1C TDM Extended Temp Range I.C
->> >>  adi,adt7490          +/-1C TDM Extended Temp Range I.C
->> >>  adi,adxl345          Three-Axis Digital Accelerometer
->> >> -adi,adxl346          Three-Axis Digital Accelerometer
->> >> -adi,adxl34x          Three-Axis Digital Accelerometer
->> >> +adi,adxl346          Three-Axis Digital Accelerometer (backward-compatibility value "adi,adxl345" must be listed too)
->> >
->> > I'd rather drop 346 because there is no compatible for that one anywhere.
->> > No need to resend, I can fix it here...
->>
->> If you drop adi,adxl346, checkpatch will start complaining if it encounters
->> it in a .dts.
->
+> > On Thu, Jan 15, 2015 at 6:02 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
+> >>> --- a/Documentation/devicetree/bindings/i2c/trivial-devices.txt
+> >>> +++ b/Documentation/devicetree/bindings/i2c/trivial-devices.txt
+> >>> @@ -18,8 +18,7 @@ adi,adt7475         +/-1C TDM Extended Temp Range I.C
+> >>> 
+> >>>  adi,adt7476          +/-1C TDM Extended Temp Range I.C
+> >>>  adi,adt7490          +/-1C TDM Extended Temp Range I.C
+> >>>  adi,adxl345          Three-Axis Digital Accelerometer
+> >>> 
+> >>> -adi,adxl346          Three-Axis Digital Accelerometer
+> >>> -adi,adxl34x          Three-Axis Digital Accelerometer
+> >>> +adi,adxl346          Three-Axis Digital Accelerometer
+> >>> (backward-compatibility value "adi,adxl345" must be listed too)
+> >>
+> >> I'd rather drop 346 because there is no compatible for that one
+> >> anywhere. No need to resend, I can fix it here...
+> > 
+> > If you drop adi,adxl346, checkpatch will start complaining if it
+> > encounters it in a .dts.
+> 
 > Boah, this is annoying. That means we need an 346 entry even if it is
 > not different from 345 (which is fine by me).
-
-To be clear: you need the entry in the documentation. It can be omitted
-from the driver if it's not (yet) used for matching.
-
+> 
 > If checkpatch does it this way, that means the rule of thumb is to
 > *always* have a dedicated compatible entry? Can someone confirm this?
 
-All compatible values that are in use must be documented.
-Checkpatch just greps in Documentation/devicetree/bindings/.
+I believe we should register a new compatible entry for a device when the 
+device isn't identical, from a compatibility point of view, to an already 
+registered device. In this specific case the adxl346 offers addition features 
+compared to the adxl345. It thus qualify for its own compatible string. Its DT 
+nodes should list both the adi,adxl346 and adi,adxl345 compatible strings in 
+that order, as the chip is compatible with the adxl345. On the driver side, 
+given that we don't need to differentiate between the devices based on the 
+compatible string (as runtime model detection is possible) we don't need to 
+add a match entry for adi,adxl346.
 
-Gr{oetje,eeting}s,
+> Why did we discuss then? Now, I am confused as well...
 
-                        Geert
+-- 
+Regards,
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+Laurent Pinchart
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
