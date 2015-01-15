@@ -1,62 +1,57 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 20 Jan 2015 21:13:21 +0000
-Subject: [PATCH v2 2/2] shdmac: extend PM methods
-Message-Id: <1609993.2vNJXkESyr@wasted.cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 15 Jan 2015 13:50:42 +0000
+Subject: [PATCH v2 0/2] ARM: shmobile: r8a73a4: Correct mask for GIC PPI interrupts
+Message-Id: <1421329844-19707-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-In order to make it possible to restore from hibernation not only in Linux but
-also in e.g. U-Boot, we have to use sh_dmae_{suspend|resume}() for the {freeze|
-thaw|restore}() PM methods. It's handy to achieve this with SIMPLE_DEV_PM_OPS()
-macro; since  that macro doesn't do anything when CONFIG_PM_SLEEP  is undefined,
-we don't need to #define sh_dmae_{suspend|resume} NULL anymore but we'll have to
-enclose sh_dmae_{suspend|resume}() into the new #ifdef...
+	Hi Simon, Magnus,
 
-Based on original patch by Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>.
+This patch series corrects the masks in the second interrupt cells for
+Private Peripheral Interrupts in dtsi files for members of the
+shmobile family of SoCs containing big.LITTLE configurations.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+This mask should reflect the actual number of CPU cores the interrupt
+is wired too.  Hence on big.LITTLE configurations with four Cortex-A15
+cores and four Cortex-A7 cores, like r8a7790 and r8a73a4, it should be
+"GIC_CPU_MASK_SIMPLE(8)", not "GIC_CPU_MASK_SIMPLE(4)".
 
----
-The patch is against the 'next' branch of Vinod Koul's 'slave-dma.git' repo.
- 
-Changes in version 2:
-- enclosed sh_dmae_{suspend|resume}() into #ifdef CONFIG_PM_SLEEP, modified the
-  changelog accordingly;
-- fixed typo in the changelog.
+Note that incorrect masks for GIC PPI interrupts are not limited to
+shmobile. Presumably the interrupt specifiers got copied around a lot,
+cfr. the proliferation of "GIC_CPU_MASK_SIMPLE(4)" (and the older
+hardcoded "0xf0x" variant) in various dtsi files, not always limited to
+quad-core CPUs.
 
- drivers/dma/sh/shdmac.c |    8 +++-----
- 1 file changed, 3 insertions(+), 5 deletions(-)
+Changes compared to v1:
+  - Dropped patches for r8a7791 and r8a7794 that have been applied by
+    Simon,
+  - Dropped RFC status after receiving confirmation from Liviu Dudau.
 
-Index: slave-dma/drivers/dma/sh/shdmac.c
-=================================--- slave-dma.orig/drivers/dma/sh/shdmac.c
-+++ slave-dma/drivers/dma/sh/shdmac.c
-@@ -600,7 +600,9 @@ static int sh_dmae_runtime_resume(struct
- 
- 	return sh_dmae_rst(shdev);
- }
-+#endif
- 
-+#ifdef CONFIG_PM_SLEEP
- static int sh_dmae_suspend(struct device *dev)
- {
- 	return 0;
-@@ -632,14 +634,10 @@ static int sh_dmae_resume(struct device
- 
- 	return 0;
- }
--#else
--#define sh_dmae_suspend NULL
--#define sh_dmae_resume NULL
- #endif
- 
- static const struct dev_pm_ops sh_dmae_pm = {
--	.suspend		= sh_dmae_suspend,
--	.resume			= sh_dmae_resume,
-+	SET_SYSTEM_SLEEP_PM_OPS(sh_dmae_suspend, sh_dmae_resume)
- 	SET_RUNTIME_PM_OPS(sh_dmae_runtime_suspend, sh_dmae_runtime_resume,
- 			   NULL)
- };
+This was untested on real hardware.
 
+Thanks!
+
+Geert Uytterhoeven (2):
+  ARM: shmobile: r8a73a4: Correct mask for GIC PPI interrupts
+  ARM: shmobile: r8a7790: Correct mask for GIC PPI interrupts
+
+ arch/arm/boot/dts/r8a73a4.dtsi | 10 +++++-----
+ arch/arm/boot/dts/r8a7790.dtsi | 10 +++++-----
+ 2 files changed, 10 insertions(+), 10 deletions(-)
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
