@@ -1,49 +1,55 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 29 Jan 2015 23:59:36 +0000
-Subject: [PATCH v2 0/6] Renesas R-Car DMAC fixes
-Message-Id: <1422576013-7846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 15 Jan 2015 10:52:19 +0000
+Subject: [PATCH] sh_eth: Fix addition of .trscer_err_mask to wrong SoC data
+Message-Id: <1421319139-22655-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "David S. Miller" <davem@davemloft.net>
+Cc: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, netdev@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hello,
+commit b284fbe3b3ef9cf8 ("sh_eth: Fix access to TRSCER register") wanted
+to add a .trscer_err_mask value to the R-Car Gen2 family-specific data
+structure (r8a779x_data), but it was accidentally added to the
+SH7724-specific data structure (sh7724_data).
 
-Here are a couple of fixes for the rcar-dmac driver. They're based on the next
-branch of the dmaengine tree.
+Presumably this happened due to a patch conflict with commit
+d407bc0203539031 ("sh-eth: Set fdr_value of R-Car SoCs"), which added
+another field at the same position.
 
-The first four patches fix driver bugs, while the last two work around two
-hardware issues. Patch 5 works around a documented errata, while patch 6
-handles a data corruption issue that was noticed during test but not yet
-confirmed to be a hardware bug by Renesas. When more information about the
-issue will be available a better fix could possibly be developed.
+Move the field setting to fix this.
 
-The patches are available at
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Fixes: b284fbe3b3ef9cf8 ("sh_eth: Fix access to TRSCER register")
+---
+Commit b284fbe3b3ef9cf8 is in Linus' tree.
 
-	git://linuxtv.org/pinchartl/fbdev.git dma/upstream
+ drivers/net/ethernet/renesas/sh_eth.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-Vinod, is there still time for a v3.20 pull request ?
-
-Changes since v1:
-
-- Don't needlessly replace spin_lock by spin_lock_irqsave in IRQ handlers
-
-Cc: Vinod Koul <vinod.koul@intel.com>
-
-Laurent Pinchart (6):
-  dmaengine: rcar-dmac: Fix uninitialized variable usage
-  dmaengine: rcar-dmac: Fix spinlock issues in interrupt
-  dmaengine: rcar-dmac: Fix oops due to unintialized list in error ISR
-  dmaengine: rcar-dmac: Allocate hardware descriptors with DMAC device
-  dmaengine: rcar-dmac: Work around descriptor mode IOMMU errata
-  dmaengine: rcar-dmac: Disable channel 0 when using IOMMU
-
- drivers/dma/sh/rcar-dmac.c | 137 ++++++++++++++++++++++++++-------------------
- 1 file changed, 80 insertions(+), 57 deletions(-)
-
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 37583a9d88534346..8d227d919e194847 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -498,6 +498,8 @@ static struct sh_eth_cpu_data r8a779x_data = {
+ 			  EESR_ECI,
+ 	.fdr_value	= 0x00000f0f,
+ 
++	.trscer_err_mask = DESC_I_RINT8,
++
+ 	.apr		= 1,
+ 	.mpr		= 1,
+ 	.tpauser	= 1,
+@@ -538,8 +540,6 @@ static struct sh_eth_cpu_data sh7724_data = {
+ 			  EESR_RDE | EESR_RFRMER | EESR_TFE | EESR_TDE |
+ 			  EESR_ECI,
+ 
+-	.trscer_err_mask = DESC_I_RINT8,
+-
+ 	.apr		= 1,
+ 	.mpr		= 1,
+ 	.tpauser	= 1,
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
