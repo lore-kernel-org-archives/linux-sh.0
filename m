@@ -1,77 +1,61 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 15 Jan 2015 14:54:15 +0000
-Subject: [PATCH v2 2/2] input: adxl34x: Add OF match support
-Message-Id: <1421333655-31029-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 15 Jan 2015 16:55:56 +0000
+Subject: Re: [PATCH v2 2/2] input: adxl34x: Add OF match support
+Message-Id: <20150115165556.GA6272@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="YiEDa0DAkWCtVeE4"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1421333655-31029-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1421333655-31029-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-input@vger.kernel.org
-Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>, Geert Uytterhoeven <geert@glider.be>
+ <1421333655-31029-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1421333655-31029-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-input@vger.kernel.org, linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert@glider.be>
 
-The I2C subsystem can match devices without explicit OF support based on
-the part of their compatible property after the comma. However, this
-mechanism uses the first compatible value only. For adxl34x OF device
-nodes the compatible property will contain the more specific
-"adi,adxl345" or "adi,adxl346" value first. This prevents the device
-node from being matched with the adxl34x driver.
 
-Fix this by adding an OF match table with an "adi,adxl345" compatible
-entry. There's no need to add the "adi,adxl346" entry as the ADXL346 is
-backward-compatible with the ADXL345 with differences handled by runtime
-detection of the device model.
+--YiEDa0DAkWCtVeE4
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/input/misc/adxl34x-i2c.c | 21 +++++++++++++++++++++
- 1 file changed, 21 insertions(+)
+On Thu, Jan 15, 2015 at 04:54:15PM +0200, Laurent Pinchart wrote:
+> The I2C subsystem can match devices without explicit OF support based on
+> the part of their compatible property after the comma. However, this
+> mechanism uses the first compatible value only. For adxl34x OF device
+> nodes the compatible property will contain the more specific
+> "adi,adxl345" or "adi,adxl346" value first. This prevents the device
+> node from being matched with the adxl34x driver.
+>=20
+> Fix this by adding an OF match table with an "adi,adxl345" compatible
+> entry. There's no need to add the "adi,adxl346" entry as the ADXL346 is
+> backward-compatible with the ADXL345 with differences handled by runtime
+> detection of the device model.
+>=20
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.co=
+m>
 
-diff --git a/drivers/input/misc/adxl34x-i2c.c b/drivers/input/misc/adxl34x-i2c.c
-index 416f47ddcc90..1e028f1f221c 100644
---- a/drivers/input/misc/adxl34x-i2c.c
-+++ b/drivers/input/misc/adxl34x-i2c.c
-@@ -10,6 +10,7 @@
- #include <linux/input.h>	/* BUS_I2C */
- #include <linux/i2c.h>
- #include <linux/module.h>
-+#include <linux/of.h>
- #include <linux/types.h>
- #include <linux/pm.h>
- #include "adxl34x.h"
-@@ -137,11 +138,31 @@ static const struct i2c_device_id adxl34x_id[] = {
- 
- MODULE_DEVICE_TABLE(i2c, adxl34x_id);
- 
-+#ifdef CONFIG_OF
-+static const struct of_device_id adxl34x_of_id[] = {
-+	/*
-+	 * The ADXL346 is backward-compatible with the ADXL345. Differences are
-+	 * handled by runtime detection of the device model, there's thus no
-+	 * need for listing the "adi,adxl346" compatible value explicitly.
-+	 */
-+	{ .compatible = "adi,adxl345", },
-+	/*
-+	 * Deprecated, DT nodes should use one or more of the device-specific
-+	 * compatible values "adi,adxl345" and "adi,adxl346".
-+	 */
-+	{ .compatible = "adi,adxl34x", },
-+	{ }
-+};
-+
-+MODULE_DEVICE_TABLE(of, adxl34x_of_id);
-+#endif
-+
- static struct i2c_driver adxl34x_driver = {
- 	.driver = {
- 		.name = "adxl34x",
- 		.owner = THIS_MODULE,
- 		.pm = &adxl34x_i2c_pm,
-+		.of_match_table = of_match_ptr(adxl34x_of_id),
- 	},
- 	.probe    = adxl34x_i2c_probe,
- 	.remove   = adxl34x_i2c_remove,
--- 
-2.0.5
+Reviewed-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
+
+--YiEDa0DAkWCtVeE4
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJUt/EcAAoJEBQN5MwUoCm2eWoP+gO6Zxvw1DPp+xEhLtIi2+BA
+KIyvUV6z/d1dkm1WBwL2HlG9FI2/ah9HlAQRW9CXtchrxOPxqViQVeb8G7GYppE2
+Z4u6zWFZya7wDdQtFu1hiNNsoCBgkRQZf7zvjXy7DJMUXirCZhRtoCXa6o4/dfKn
+2YvnNBmIo2BNfttJsoYDESXtJOlIS4dP+u1wz2mZPNYTj4Ps6ArVA73dDX/oLyOM
++t4TS7uYlvBol/FmC1XtsnFY0unry1iJnk1Po41aU/Hm9Y7UR3TWGsuyxSbnjNXo
+6dfk9wknW44U0GzsPrJHxR8zZM5q8H4bqPlJtktAYWFHV7AKOClJEdsk2dAi6ULL
+WGy23EQcTUkiv+7km8GZFXv6s1HsaszygKe/ehTQ5ekGWVsH1yvhZRFAf0UN2g27
+ns91oSlhUeu2Y0Yqh5gRCdo6gqKClpEVPgrdoCutg6YBUDLwTXt2v5VEhTt4EzhW
+xx7WnpSrnM9rf/yx/MBfdZ7WiNb+6sd/IpOtZsJGRHHQvVrCw4yeo6j9xTWWwLQV
+6veLfDV08b9e7SsykalA477Aw9Nc1SFZ9bj0nuGxZCBZ7X2xm6VZgf4moJKGIqi0
+ZojurhYDL1rEIEAFxRriVh5XdGLS/9TA0oys9LPBIkpX21GSDGwmL+1w7Ilf4rPb
+3qMOaj+qNV+xwmsqOOIK
+=ZRzw
+-----END PGP SIGNATURE-----
+
+--YiEDa0DAkWCtVeE4--
