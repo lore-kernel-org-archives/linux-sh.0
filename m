@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 14 Jan 2015 14:20:59 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 15 Jan 2015 23:30:21 +0000
 Subject: Re: [PATCH] dmaengine: of: bail out early if "dmas" property is not present
-Message-Id: <CAMuHMdWw6mu1+Da6+HSPrAcrkDc84m2pe=fA+8nL6Zn=3AY=fA@mail.gmail.com>
+Message-Id: <2985582.KWahZ5isJS@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1421244988-11794-1-git-send-email-wsa@the-dreams.de>
 In-Reply-To: <1421244988-11794-1-git-send-email-wsa@the-dreams.de>
@@ -9,25 +9,52 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Wolfram Sang <wsa@the-dreams.de>
-Cc: dmaengine@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Philipp Zabel <p.zabel@pengutronix.de>, Vinod Koul <vinod.koul@intel.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Cc: dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>, Philipp Zabel <p.zabel@pengutronix.de>, Vinod Koul <vinod.koul@intel.com>, linux-kernel@vger.kernel.org
 
-On Wed, Jan 14, 2015 at 3:16 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
+Hi Wolfram,
+
+Thank you for the patch.
+
+On Wednesday 14 January 2015 15:16:28 Wolfram Sang wrote:
 > From: Wolfram Sang <wsa+renesas@sang-engineering.com>
->
+> 
 > And don't print an error: not configured is not an error.
->
+> 
 > Reported-by: Philipp Zabel <p.zabel@pengutronix.de>
 > Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+This looks good to me.
 
-Gr{oetje,eeting}s,
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-                        Geert
+> ---
+> 
+> In response to Philipp's patch silencing the warning in the driver:
+> http://patchwork.ozlabs.org/patch/425696/
+> 
+> I think this should be handled in the core.
+> 
+>  drivers/dma/of-dma.c | 4 ++++
+>  1 file changed, 4 insertions(+)
+> 
+> diff --git a/drivers/dma/of-dma.c b/drivers/dma/of-dma.c
+> index d5fbeaa1e7ba..ca31f1b45366 100644
+> --- a/drivers/dma/of-dma.c
+> +++ b/drivers/dma/of-dma.c
+> @@ -159,6 +159,10 @@ struct dma_chan *of_dma_request_slave_channel(struct
+> device_node *np, return ERR_PTR(-ENODEV);
+>  	}
+> 
+> +	/* Silently fail if there is not even the "dmas" property */
+> +	if (!of_find_property(np, "dmas", NULL))
+> +		return ERR_PTR(-ENODEV);
+> +
+>  	count = of_property_count_strings(np, "dma-names");
+>  	if (count < 0) {
+>  		pr_err("%s: dma-names property of node '%s' missing or empty\n",
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+-- 
+Regards,
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Laurent Pinchart
+
