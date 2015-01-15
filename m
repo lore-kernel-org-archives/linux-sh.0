@@ -1,74 +1,35 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 15 Jan 2015 17:43:33 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 15 Jan 2015 17:49:06 +0000
 Subject: Re: [PATCH v2 1/2] DT: i2c: Deprecate adi,adxl34x compatible string
-Message-Id: <20150115174333.GC6342@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="E/DnYTRukya0zdZ1"
+Message-Id: <CAMuHMdVQ=sDF__DgxSviH8=Q-4hN1wEL5DgUFoHoBRLCLB09rQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1421333655-31029-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1421333655-31029-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20150115170209.GA6342@katana>
- <CAMuHMdW7ETcFGSPiE9BWA2dAE93477fzoyF-+_EaiPSDT9WMWA@mail.gmail.com>
-In-Reply-To: <CAMuHMdW7ETcFGSPiE9BWA2dAE93477fzoyF-+_EaiPSDT9WMWA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, "linux-input-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-input-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux I2C <linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+	<1421333655-31029-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1421333655-31029-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: "linux-input@vger.kernel.org" <linux-input@vger.kernel.org>, Linux I2C <linux-i2c@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Wolfram Sang <wsa@the-dreams.de>
 
+On Thu, Jan 15, 2015 at 3:54 PM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
+> DT nodes should use the more specific adi,adxl345 and adi,adxl346
+> compatible values instead. As the ADXL346 is backward-compatible with
+> the ADXL345, ADXL346 nodes must list both adi,adxl346 and adi,adxl345,
+> in that order.
+>
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
---E/DnYTRukya0zdZ1
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Thu, Jan 15, 2015 at 06:32:31PM +0100, Geert Uytterhoeven wrote:
-> On Thu, Jan 15, 2015 at 6:02 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> >> --- a/Documentation/devicetree/bindings/i2c/trivial-devices.txt
-> >> +++ b/Documentation/devicetree/bindings/i2c/trivial-devices.txt
-> >> @@ -18,8 +18,7 @@ adi,adt7475         +/-1C TDM Extended Temp Range I.C
-> >>  adi,adt7476          +/-1C TDM Extended Temp Range I.C
-> >>  adi,adt7490          +/-1C TDM Extended Temp Range I.C
-> >>  adi,adxl345          Three-Axis Digital Accelerometer
-> >> -adi,adxl346          Three-Axis Digital Accelerometer
-> >> -adi,adxl34x          Three-Axis Digital Accelerometer
-> >> +adi,adxl346          Three-Axis Digital Accelerometer (backward-compa=
-tibility value "adi,adxl345" must be listed too)
-> >
-> > I'd rather drop 346 because there is no compatible for that one anywher=
-e.
-> > No need to resend, I can fix it here...
->=20
-> If you drop adi,adxl346, checkpatch will start complaining if it encounte=
-rs
-> it in a .dts.
+Gr{oetje,eeting}s,
 
-Boah, this is annoying. That means we need an 346 entry even if it is
-not different from 345 (which is fine by me).
+                        Geert
 
-If checkpatch does it this way, that means the rule of thumb is to
-*always* have a dedicated compatible entry? Can someone confirm this?
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-Why did we discuss then? Now, I am confused as well...
-
-
---E/DnYTRukya0zdZ1
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJUt/xFAAoJEBQN5MwUoCm2k5wP/1hCMgyCmq6Hd5gNycHDE54K
-Pq28xRysXAAsXkSCyMDug5Y2l98RNMgwuXsvgOrDpILpTYF5LB2sk21Aa6Ik5mss
-gahJqVof+jQxKXwxjtHmGZpXZCq95aF4wPw6+Tg6zTanWtdNcTB59uMyZC7ieLr5
-SXpUU75Xhg5V3svJs2En6fKTuboGE8iAVJbZyldKuDnNp2bvGkzmYTVnOdqoaR3u
-VeyeV+69eiq20qfEgzX8PrsuKeMns34xyZNETgWRdXy8raXFenzQhz29+p5tMSMu
-gRPun7f9OzHvRVCIOgFZvG3o7z0TOJBBWaumoVGCatiqhWvdYSVzorHxW2M+I0AX
-pX6QvDilZAlrWa1j1KJ/GYtulsiGrvUGanwztm9pUTXqbrY5zu72I1B4nlabioVt
-RxpT/81Y67IrwSvL/eK1Emrh2fo0SNEhHsNqKFctDn4hr3D9dzrq5cnntO8XQUyZ
-nvn4GFxvbzJRPtdrpzD2stEt2Rvd59OR/L6c17h0LCOA4A60SfmRJ9IxFtrxlUdr
-jMBDVIu1PLOnVbkGoVTAuhyeOMfKFTQaj/gfIG3jrp6wTBHo/3niKMUC8CyFh8ce
-FfO5DxlVGuMvUsJnICnZ/2HgFUR5avX/ADgWFH2D8vZkf0eFD7hduisRu73oiSRN
-LLfY8XyQdtH/LrzvYWKs
-=G0qK
------END PGP SIGNATURE-----
-
---E/DnYTRukya0zdZ1--
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
