@@ -1,45 +1,58 @@
-From: Lars-Peter Clausen <lars@metafoo.de>
-Date: Mon, 19 Jan 2015 09:54:55 +0000
-Subject: [PATCH 1/3] ARM: shmobile: armadillo800eva: Properly specify HDMI audio link format
-Message-Id: <1421661297-19654-1-git-send-email-lars@metafoo.de>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 15 Jan 2015 13:50:44 +0000
+Subject: [PATCH v2 2/2] ARM: shmobile: r8a7790: Correct mask for GIC PPI interrupts
+Message-Id: <1421329844-19707-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346808893-14124-2-git-send-email-horms@verge.net.au>
-In-Reply-To: <1346808893-14124-2-git-send-email-horms@verge.net.au>
+References: <1421329844-19707-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1421329844-19707-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>, Liam Girdwood <lgirdwood@gmail.com>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-arm-kernel@lists.infradead.org, alsa-devel@alsa-project.org, Lars-Peter Clausen <lars@metafoo.de>
+To: linux-arm-kernel@lists.infradead.org
 
-The DAI link format should be specified for the whole link rather than just
-one component on the link. So move the format specification for the HDMI
-audio link from the CPU component to the link itself.
+R-Car H2 (r8a7790) contains four Cortex-A15 and four Cortex-A7 cores,
+hence the second interrupt specifier cell for Private Peripheral
+Interrupts should use "GIC_CPU_MASK_SIMPLE(8)", to make sure interrupts
+can be delivered to all 8 processor cores.
 
-Since the sh-mobile-hdmi DAI driver doesn't implement the set_fmt() callback
-in this case there is no functional difference between only specifying the
-the format for the CPU side or for the whole link, but the later it will
-allow us to remove support for just specifying the format for one component.
-
-Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Untested
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 6d949f1..75de26c 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1040,9 +1040,9 @@ static struct asoc_simple_card_info fsi2_hdmi_info = {
- 	.card		= "FSI2B-HDMI",
- 	.codec		= "sh-mobile-hdmi",
- 	.platform	= "sh_fsi2",
-+	.daifmt		= SND_SOC_DAIFMT_CBS_CFS,
- 	.cpu_dai = {
- 		.name	= "fsib-dai",
--		.fmt	= SND_SOC_DAIFMT_CBS_CFS,
- 	},
- 	.codec_dai = {
- 		.name = "sh_mobile_hdmi-hifi",
+v2:
+  - Drop RFC status after receiving confirmation from Liviu Dudau.
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 4b38fc92011472e0..1405064ff0245f47 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -120,7 +120,7 @@
+ 			<0 0xf1002000 0 0x1000>,
+ 			<0 0xf1004000 0 0x2000>,
+ 			<0 0xf1006000 0 0x2000>;
+-		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
++		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_HIGH)>;
+ 	};
+ 
+ 	gpio0: gpio@e6050000 {
+@@ -204,10 +204,10 @@
+ 
+ 	timer {
+ 		compatible = "arm,armv7-timer";
+-		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+-			     <1 14 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+-			     <1 11 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+-			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
++		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
++			     <1 14 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
++			     <1 11 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
++			     <1 10 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>;
+ 	};
+ 
+ 	cmt0: timer@ffca0000 {
 -- 
-1.8.0
+1.9.1
 
