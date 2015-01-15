@@ -1,49 +1,56 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 27 Jan 2015 20:40:45 +0000
-Subject: Re: [RFC/PATCH] pinctrl: sh-pfc: Accept standard function, pins and groups properties
-Message-Id: <CAMuHMdW5Apvbe7+y2FW6O=JS7ZMUQsW6eFMc-ooiLvF3fqY0WA@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 15 Jan 2015 06:24:46 +0000
+Subject: [PATCH] ARM: shmobile: No R-Car Gen2 CMA reservation when HIGHMEM=n
+Message-Id: <20150115062446.452.7702.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CACRpkda4SBof0EaZVWtEYaeb6j_BGAVj39kje+mBz90eB3qAwQ@mail.gmail.com>
-	<1422390694-12389-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1422390694-12389-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: Linus Walleij <linus.walleij@linaro.org>, =?UTF-8?Q?Niklas_S=C3=B6derlund?= <niso@kth.se>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-On Tue, Jan 27, 2015 at 9:31 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
-> +               if (of_find_property(np, "groups", NULL) ||
-> +                   of_find_property(np, "pins", NULL)) {
-> +                       pmx->func_prop_name = "function";
-> +                       pmx->groups_prop_name = "groups";
-> +                       pmx->pins_prop_name = "pins";
-> +               } else {
-> +                       pmx->func_prop_name = "renesas,function";
-> +                       pmx->groups_prop_name = "renesas,groups";
-> +                       pmx->pins_prop_name = "renesas,pins";
-> +               }
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Do we want to be clever and save memory?
+Allow R-Car Gen2 platforms to boot with CMA enabled
+and HIGHMEM disabled. This patch adds code to check
+if the R-Car Gen2 specific memory reservation window
+is included in the kernel memory range or not. When
+HIGHMEM is disabled the R-Car Gen2 reservation area is
+outside the kernel memory range and in such case the
+memory reservation is simply skipped over.
 
-        pmx->func_prop_name = "renesas,function";
-        pmx->groups_prop_name = "renesas,groups";
-        pmx->pins_prop_name = "renesas,pins";
-        if (of_find_property(np, "groups", NULL) ||
-            of_find_property(np, "pins", NULL)) {
-                pmx->func_prop_name += strlen("renesas,");
-                pmx->groups_prop_name += strlen("renesas,");
-                pmx->pins_prop_name += strlen("renesas,");
-        }
+Without this patch the kernel boot hangs when CMA is
+enabled and HIGHMEM is disabled on the r8a7791 Koelsch
+hardware platform.
 
-Gr{oetje,eeting}s,
+In the current shmobile_defconfig HIGHMEM is enabled
+while CMA is disabled, so to trigger this the kernel
+configuration for both CMA and HIGHMEM needs to be
+adjusted.
 
-                        Geert
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+ Written on top of renesas-devel-20150114v2-v3.19-rc4
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+ arch/arm/mach-shmobile/setup-rcar-gen2.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- 0001/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ work/arch/arm/mach-shmobile/setup-rcar-gen2.c	2015-01-15 14:20:47.089397114 +0900
+@@ -21,6 +21,7 @@
+ #include <linux/dma-contiguous.h>
+ #include <linux/io.h>
+ #include <linux/kernel.h>
++#include <linux/memblock.h>
+ #include <linux/of.h>
+ #include <linux/of_fdt.h>
+ #include <asm/mach/arch.h>
+@@ -197,7 +198,7 @@ void __init rcar_gen2_reserve(void)
+ 
+ 	of_scan_flat_dt(rcar_gen2_scan_mem, &mrc);
+ #ifdef CONFIG_DMA_CMA
+-	if (mrc.size)
++	if (mrc.size && memblock_is_region_memory(mrc.base, mrc.size))
+ 		dma_contiguous_reserve_area(mrc.size, mrc.base, 0,
+ 					    &rcar_gen2_dma_contiguous, true);
+ #endif
