@@ -1,56 +1,40 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Fri, 30 Jan 2015 06:13:53 +0000
-Subject: Re: [PATCH v2] spi: sh-msiof: Update calculation of frequency dividing
-Message-Id: <54CB2121.4000607@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 15 Jan 2015 14:54:14 +0000
+Subject: [PATCH v2 1/2] DT: i2c: Deprecate adi,adxl34x compatible string
+Message-Id: <1421333655-31029-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421286613-8240-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com> <CAMuHMdWwXGaMYpuPJ2_429kc65D0p26dOL-wz7GpWxQAqdJpwQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdWwXGaMYpuPJ2_429kc65D0p26dOL-wz7GpWxQAqdJpwQ@mail.gmail.com>
+References: <1421333655-31029-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1421333655-31029-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: linux-spi <linux-spi@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-input@vger.kernel.org
+Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>, Geert Uytterhoeven <geert@glider.be>
 
-Hi,
+DT nodes should use the more specific adi,adxl345 and adi,adxl346
+compatible values instead. As the ADXL346 is backward-compatible with
+the ADXL345, ADXL346 nodes must list both adi,adxl346 and adi,adxl345,
+in that order.
 
-(2015/01/15 23:21), Geert Uytterhoeven wrote:
-> Hi Iwamatsu-san,
->
-> Thanks for the update!
->
-> On Thu, Jan 15, 2015 at 2:50 AM, Nobuhiro Iwamatsu
-> <nobuhiro.iwamatsu.yj@renesas.com>  wrote:
->> @@ -804,7 +803,9 @@ static int sh_msiof_transfer_one(struct spi_master *master,
->>          int ret;
->>
->>          /* setup clocks (clock already enabled in chipselect()) */
->> -       sh_msiof_spi_set_clk_regs(p, clk_get_rate(p->clk), t->speed_hz);
->> +       ret = sh_msiof_spi_set_clk_regs(p, clk_get_rate(p->clk), t->speed_hz);
->> +       if (ret)
->> +               return ret;
->
-> I think this can be handled by the core, if we fill in spi_master.min_speed_hz.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ Documentation/devicetree/bindings/i2c/trivial-devices.txt | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-I see. I removed this change.
-
->
-> BTW, you should also CC Mark Brown when sending SPI patches.
-
-OK, I will add him form next patch.
-
->
-> Gr{oetje,eeting}s,
->
->                          Geert
-
-Best regards,
-   Nobuhiro
-
->
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
->
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                  -- Linus Torvalds
+diff --git a/Documentation/devicetree/bindings/i2c/trivial-devices.txt b/Documentation/devicetree/bindings/i2c/trivial-devices.txt
+index 9f41d05be3be..757e42510517 100644
+--- a/Documentation/devicetree/bindings/i2c/trivial-devices.txt
++++ b/Documentation/devicetree/bindings/i2c/trivial-devices.txt
+@@ -18,8 +18,7 @@ adi,adt7475		+/-1C TDM Extended Temp Range I.C
+ adi,adt7476		+/-1C TDM Extended Temp Range I.C
+ adi,adt7490		+/-1C TDM Extended Temp Range I.C
+ adi,adxl345		Three-Axis Digital Accelerometer
+-adi,adxl346		Three-Axis Digital Accelerometer
+-adi,adxl34x		Three-Axis Digital Accelerometer
++adi,adxl346		Three-Axis Digital Accelerometer (backward-compatibility value "adi,adxl345" must be listed too)
+ at,24c08		i2c serial eeprom  (24cxx)
+ atmel,24c00		i2c serial eeprom  (24cxx)
+ atmel,24c01		i2c serial eeprom  (24cxx)
+-- 
+2.0.5
 
