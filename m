@@ -1,102 +1,42 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 05 Jan 2015 07:02:52 +0000
-Subject: [PATCH 3/9] mmc: tmio: tmio_mmc_host has .write16_hook
-Message-Id: <87vbklogjl.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 Jan 2015 02:35:26 +0000
+Subject: [PATCH 14/17] ARM: shmobile: kzm9g: Build DTS for Multiplatform
+Message-Id: <9ccba8abd0a7ceb4a2e1b2763d3964184ef8985d.1421371996.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
+References: <cover.1421371996.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1421371996.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Current .write16_hook is implemented under tmio_mmc_data.
-It goes to tmio_mmc_host by this patch.
+Build the sh73a0 KZM9G board DTB in case of Multiplatform.
+The DT reference case will be removed in the future and
+can be ignored for now.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |    2 +-
- drivers/mmc/host/tmio_mmc.h       |    4 +++-
- drivers/mmc/host/tmio_mmc_pio.c   |    2 +-
- include/linux/mfd/tmio.h          |    3 ---
- 4 files changed, 5 insertions(+), 6 deletions(-)
+ arch/arm/boot/dts/Makefile | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 1e13a1f..6ffd981 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -212,11 +212,11 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		goto eprobe;
- 
- 	host->dma		= dma_priv;
-+	host->write16_hook	= sh_mobile_sdhi_write16_hook;
- 
- 	mmc_data->clk_enable = sh_mobile_sdhi_clk_enable;
- 	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
- 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
--	mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
- 	mmc_data->multi_io_quirk = sh_mobile_sdhi_multi_io_quirk;
- 	if (p) {
- 		mmc_data->flags = p->tmio_flags;
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index 4c5eda8..2fb87ea 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -94,6 +94,8 @@ struct tmio_mmc_host {
- 	struct mutex		ios_lock;	/* protect set_ios() context */
- 	bool			native_hotplug;
- 	bool			sdio_irq_enabled;
-+
-+	int (*write16_hook)(struct tmio_mmc_host *host, int addr);
- };
- 
- struct tmio_mmc_host* tmio_mmc_host_alloc(struct platform_device *pdev);
-@@ -183,7 +185,7 @@ static inline void sd_ctrl_write16(struct tmio_mmc_host *host, int addr, u16 val
- 	/* If there is a hook and it returns non-zero then there
- 	 * is an error and the write should be skipped
- 	 */
--	if (host->pdata->write16_hook && host->pdata->write16_hook(host, addr))
-+	if (host->write16_hook && host->write16_hook(host, addr))
- 		return;
- 	writew(val, host->ctl + (addr << host->pdata->bus_shift));
- }
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 580d00b..8bc0c77 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -1090,7 +1090,7 @@ int tmio_mmc_host_probe(struct tmio_mmc_host *_host,
- 	tmio_mmc_of_parse(pdev, pdata);
- 
- 	if (!(pdata->flags & TMIO_MMC_HAS_IDLE_WAIT))
--		pdata->write16_hook = NULL;
-+		_host->write16_hook = NULL;
- 
- 	res_ctl = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	if (!res_ctl)
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index 8d708c7..0872ca1 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -112,8 +112,6 @@ void tmio_core_mmc_clk_div(void __iomem *cnf, int shift, int state);
- 
- struct dma_chan;
- 
--struct tmio_mmc_host;
--
- /*
-  * data for the MMC controller
-  */
-@@ -127,7 +125,6 @@ struct tmio_mmc_data {
- 	unsigned int			cd_gpio;
- 	void (*set_pwr)(struct platform_device *host, int state);
- 	void (*set_clk_div)(struct platform_device *host, int state);
--	int (*write16_hook)(struct tmio_mmc_host *host, int addr);
- 	/* clock management callbacks */
- 	int (*clk_enable)(struct platform_device *pdev, unsigned int *f);
- 	void (*clk_disable)(struct platform_device *pdev);
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 91bd5bd..7fa843a 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -421,7 +421,8 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
+ 	r8a7790-lager.dtb \
+ 	r8a7791-henninger.dtb \
+ 	r8a7791-koelsch.dtb \
+-	r8a7794-alt.dtb
++	r8a7794-alt.dtb \
++	sh73a0-kzm9g.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
+ 	socfpga_arria10_socdk.dtb \
+ 	socfpga_cyclone5_socdk.dtb \
 -- 
-1.7.9.5
+2.1.4
 
