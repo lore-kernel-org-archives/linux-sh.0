@@ -1,38 +1,52 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 06 Jan 2015 20:01:51 +0000
-Subject: [PATCH resend 1/3] ARM: shmobile: sh73a0 dtsi: Add SoC-specific FSI2 compatible property
-Message-Id: <1420574513-15135-2-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 Jan 2015 02:35:15 +0000
+Subject: [PATCH 03/17] ARM: shmobile: kzm9g-reference dts: Add ak8975 magnetometer node
+Message-Id: <578e52ea954d169d0da085f29d4f0d63ee8f9eb7.1421371996.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1421371996.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1421371996.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The FSI2 sound node used the generic compatible property only.
-Add the SoC-specific one, to make it future proof.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Add a DT node for the AK8975 magnetometer sensor, which is connected to
+i2c0.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-The binding documentation was updated in commit caaeb6a96f35af14 ("ASoC:
-sh: fsi: Document SoC-specific bindings"), which is upstream since
-v3.19-rc1.
----
- arch/arm/boot/dts/sh73a0.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index e187f167909a88b7..891ed9b6383f58fc 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -354,7 +354,7 @@
+Specify the device interrupt to avoid polling for end of conversion.
+
+While at it rename the DT node to compass@c to describe the device's
+function instead of its model.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 8cbff4c..dd82ce6 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -189,6 +189,13 @@
+ &i2c0 {
+ 	status = "okay";
  
- 	sh_fsi2: sound@ec230000 {
- 		#sound-dai-cells = <1>;
--		compatible = "renesas,sh_fsi2";
-+		compatible = "renesas,fsi2-sh73a0", "renesas,sh_fsi2";
- 		reg = <0xec230000 0x400>;
- 		interrupts = <0 146 0x4>;
- 		status = "disabled";
++	compass@c {
++		compatible = "asahi-kasei,ak8975";
++		reg = <0x0c>;
++		interrupt-parent = <&irqpin3>;
++		interrupts = <4 IRQ_TYPE_EDGE_FALLING>;
++	};
++
+ 	ak4648: codec@12 {
+ 		compatible = "asahi-kasei,ak4648";
+ 		reg = <0x12>;
 -- 
-1.9.1
+2.1.4
 
