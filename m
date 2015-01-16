@@ -1,52 +1,52 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 21 Jan 2015 04:55:09 +0000
-Subject: [PATCH 13/13] pinctrl: sh-pfc: sh7372: Remove DT binding documentation
-Message-Id: <20150121045509.7648.3018.sendpatchset@little-apple>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 Jan 2015 02:35:05 +0000
+Subject: [PATCH 2/4] drivers: bus: Sort Makefile entries alphabetically
+Message-Id: <027a744f4c65a5a9e2cfc1bf7ec14e613e5d92c0.1421371868.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150121045256.7648.7451.sendpatchset@little-apple>
-In-Reply-To: <20150121045256.7648.7451.sendpatchset@little-apple>
+References: <cover.1421371868.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1421371868.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Remove the DT compatible string entry for the now unsupported sh7372 SoC.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ drivers/bus/Makefile | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
 
- Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt |    8 +++-----
- 1 file changed, 3 insertions(+), 5 deletions(-)
+diff --git a/drivers/bus/Makefile b/drivers/bus/Makefile
+index 2973c18..3cfaf2c 100644
+--- a/drivers/bus/Makefile
++++ b/drivers/bus/Makefile
+@@ -2,16 +2,16 @@
+ # Makefile for the bus drivers.
+ #
+ 
++# Interconnect bus drivers for ARM platforms
++obj-$(CONFIG_ARM_CCI)		+= arm-cci.o
++obj-$(CONFIG_ARM_CCN)		+= arm-ccn.o
++
+ obj-$(CONFIG_BRCMSTB_GISB_ARB)	+= brcmstb_gisb.o
+-obj-$(CONFIG_IMX_WEIM)	+= imx-weim.o
+-obj-$(CONFIG_MVEBU_MBUS) += mvebu-mbus.o
+-obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
++obj-$(CONFIG_IMX_WEIM)		+= imx-weim.o
++obj-$(CONFIG_MVEBU_MBUS) 	+= mvebu-mbus.o
+ 
+ # Interconnect bus driver for OMAP SoCs.
+ obj-$(CONFIG_OMAP_INTERCONNECT)	+= omap_l3_smx.o omap_l3_noc.o
+ 
+-# Interconnect bus drivers for ARM platforms
+-obj-$(CONFIG_ARM_CCI)		+= arm-cci.o
+-obj-$(CONFIG_ARM_CCN)		+= arm-ccn.o
+-
++obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
+ obj-$(CONFIG_VEXPRESS_CONFIG)	+= vexpress-config.o
+-- 
+2.1.4
 
---- 0001/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
-+++ work/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt	2015-01-21 12:12:15.357561911 +0900
-@@ -1,7 +1,7 @@
- * Renesas Pin Function Controller (GPIO and Pin Mux/Config)
- 
--The Pin Function Controller (PFC) is a Pin Mux/Config controller. On SH7372,
--SH73A0, R8A73A4 and R8A7740 it also acts as a GPIO controller.
-+The Pin Function Controller (PFC) is a Pin Mux/Config controller. On SH73A0,
-+R8A73A4 and R8A7740 it also acts as a GPIO controller.
- 
- 
- Pin Control
-@@ -16,7 +16,6 @@ Required Properties:
-     - "renesas,pfc-r8a7779": for R8A7779 (R-Car H1) compatible pin-controller.
-     - "renesas,pfc-r8a7790": for R8A7790 (R-Car H2) compatible pin-controller.
-     - "renesas,pfc-r8a7791": for R8A7791 (R-Car M2) compatible pin-controller.
--    - "renesas,pfc-sh7372": for SH7372 (SH-Mobile AP4) compatible pin-controller.
-     - "renesas,pfc-sh73a0": for SH73A0 (SH-Mobile AG5) compatible pin-controller.
- 
-   - reg: Base address and length of each memory resource used by the pin
-@@ -75,8 +74,7 @@ bias-disable, bias-pull-up and bias-pull
- GPIO
- ----
- 
--On SH7372, SH73A0, R8A73A4 and R8A7740 the PFC node is also a GPIO controller
--node.
-+On SH73A0, R8A73A4 and R8A7740 the PFC node is also a GPIO controller node.
- 
- Required Properties:
- 
