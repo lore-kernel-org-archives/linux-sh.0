@@ -1,528 +1,210 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 05 Jan 2015 07:04:09 +0000
-Subject: [PATCH 9/9] mmc: sh_mobile_sdhi: remove sh_mobile_sdhi_info
-Message-Id: <87mw5xoghf.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 Jan 2015 02:35:20 +0000
+Subject: [PATCH 08/17] ARM: shmobile: sh73a0 dtsi: Add selectable sources to DIV6 clocks
+Message-Id: <a1bef10ef201c2e7fd59e9a2506caaaa90109141.1421371996.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
+References: <cover.1421371996.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1421371996.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Current sh_mobile_sdhi's platform data is set via sh_mobile_sdhi_info
-and it is just copied to tmio_mmc_data.
-Now, tmio mmc platform data is specified via tmio_mmc_data.
-This patch moves missing dma tx/rx ID from sh_mobile_sdhi_info to
-tmio_mmc_data, and removes sh_mobile_sdhi_info.
+Specifies clock sources and register bits.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+[geert: Drop renesas,src-shift/renesas,src-width, pad to 4 or 8 parents]
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-ape6evm.c         |   12 ++++++------
- arch/arm/mach-shmobile/board-armadillo800eva.c |   12 ++++++------
- arch/arm/mach-shmobile/board-bockw.c           |   10 +++++-----
- arch/arm/mach-shmobile/board-kzm9g.c           |   12 ++++++------
- arch/arm/mach-shmobile/board-lager.c           |   16 ++++++++--------
- arch/arm/mach-shmobile/board-mackerel.c        |   14 +++++++-------
- arch/arm/mach-shmobile/board-marzen.c          |    6 +++---
- arch/sh/boards/board-sh7757lcr.c               |    5 +++--
- arch/sh/boards/mach-ap325rxa/setup.c           |    9 +++++----
- arch/sh/boards/mach-ecovec24/setup.c           |   12 ++++++------
- arch/sh/boards/mach-kfr2r09/setup.c            |    6 +++---
- arch/sh/boards/mach-migor/setup.c              |    5 +++--
- arch/sh/boards/mach-se/7724/setup.c            |    9 +++++----
- drivers/mmc/host/sh_mobile_sdhi.c              |   11 ++++-------
- include/linux/mfd/tmio.h                       |    2 ++
- include/linux/mmc/sh_mobile_sdhi.h             |   10 ----------
- 16 files changed, 72 insertions(+), 79 deletions(-)
+ arch/arm/boot/dts/sh73a0.dtsi | 64 ++++++++++++++++++++++++++++++-------------
+ 1 file changed, 45 insertions(+), 19 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-index 66f6781..1b92aeb 100644
---- a/arch/arm/mach-shmobile/board-ape6evm.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm.c
-@@ -171,9 +171,9 @@ static const struct resource mmcif0_resources[] __initconst = {
- };
- 
- /* SDHI0 */
--static const struct sh_mobile_sdhi_info sdhi0_pdata __initconst = {
--	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
--	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
-+static const struct tmio_mmc_data sdhi0_pdata __initconst = {
-+	.flags		= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
-+	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
- };
- 
- static const struct resource sdhi0_resources[] __initconst = {
-@@ -182,9 +182,9 @@ static const struct resource sdhi0_resources[] __initconst = {
- };
- 
- /* SDHI1 */
--static const struct sh_mobile_sdhi_info sdhi1_pdata __initconst = {
--	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
--	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
-+static const struct tmio_mmc_data sdhi1_pdata __initconst = {
-+	.flags		= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
-+	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_NEEDS_POLL,
- };
- 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 6d949f1..b0b0eb7 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -754,12 +754,12 @@ static struct platform_device vcc_sdhi1 = {
- };
- 
- /* SDHI0 */
--static struct sh_mobile_sdhi_info sdhi0_info = {
-+static struct tmio_mmc_data sdhi0_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
--	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
-+	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
--	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
-+	.flags		= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
- 	.cd_gpio	= 167,
- };
- 
-@@ -796,12 +796,12 @@ static struct platform_device sdhi0_device = {
- };
- 
- /* SDHI1 */
--static struct sh_mobile_sdhi_info sdhi1_info = {
-+static struct tmio_mmc_data sdhi1_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
--	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
-+	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
--	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
-+	.flags		= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
- 	/* Port72 cannot generate IRQs, will be used in polling mode. */
- 	.cd_gpio	= 72,
- };
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index f27b5a8..a4ad559f 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -201,12 +201,12 @@ static struct rcar_phy_platform_data usb_phy_platform_data __initdata  
- 
- /* SDHI */
--static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
-+static struct tmio_mmc_data sdhi0_info __initdata = {
- 	.dma_slave_tx	= HPBDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx	= HPBDMA_SLAVE_SDHI0_RX,
--	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
--	.tmio_ocr_mask	= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
--	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
-+	.capabilities	= MMC_CAP_SD_HIGHSPEED,
-+	.ocr_mask	= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
-+	.flags		= TMIO_MMC_HAS_IDLE_WAIT,
- };
- 
- static struct resource sdhi0_resources[] __initdata = {
-@@ -683,7 +683,7 @@ static void __init bockw_init(void)
- 		platform_device_register_resndata(
- 			NULL, "sh_mobile_sdhi", 0,
- 			sdhi0_resources, ARRAY_SIZE(sdhi0_resources),
--			&sdhi0_info, sizeof(struct sh_mobile_sdhi_info));
-+			&sdhi0_info, sizeof(struct tmio_mmc_data));
- 	}
- 
- 	/* for Audio */
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 7c9b63b..e4e612d 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -442,11 +442,11 @@ static struct platform_device vcc_sdhi2 = {
- };
- 
- /* SDHI */
--static struct sh_mobile_sdhi_info sdhi0_info = {
-+static struct tmio_mmc_data sdhi0_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
--	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
--	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
-+	.flags		= TMIO_MMC_HAS_IDLE_WAIT,
-+	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
- };
- 
-@@ -484,13 +484,13 @@ static struct platform_device sdhi0_device = {
- };
- 
- /* Micro SD */
--static struct sh_mobile_sdhi_info sdhi2_info = {
-+static struct tmio_mmc_data sdhi2_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI2_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI2_RX,
--	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
-+	.flags		= TMIO_MMC_HAS_IDLE_WAIT |
- 			  TMIO_MMC_USE_GPIO_CD |
- 			  TMIO_MMC_WRPROTECT_DISABLE,
--	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_POWER_OFF_CARD,
-+	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_POWER_OFF_CARD,
- 	.cd_gpio	= 13,
- };
- 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index f8197eb..233161a 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -566,10 +566,10 @@ static void __init lager_add_rsnd_device(void)
- }
- 
- /* SDHI0 */
--static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
--	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
-+static struct tmio_mmc_data sdhi0_info __initdata = {
-+	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
--	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
-+	.flags		= TMIO_MMC_HAS_IDLE_WAIT |
- 			  TMIO_MMC_WRPROTECT_DISABLE,
- };
- 
-@@ -579,10 +579,10 @@ static struct resource sdhi0_resources[] __initdata = {
- };
- 
- /* SDHI2 */
--static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
--	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
-+static struct tmio_mmc_data sdhi2_info __initdata = {
-+	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
--	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
-+	.flags		= TMIO_MMC_HAS_IDLE_WAIT |
- 			  TMIO_MMC_WRPROTECT_DISABLE,
- };
- 
-@@ -777,10 +777,10 @@ static void __init lager_add_standard_devices(void)
- 
- 	platform_device_register_resndata(NULL, "sh_mobile_sdhi", 0,
- 					  sdhi0_resources, ARRAY_SIZE(sdhi0_resources),
--					  &sdhi0_info, sizeof(struct sh_mobile_sdhi_info));
-+					  &sdhi0_info, sizeof(struct tmio_mmc_data));
- 	platform_device_register_resndata(NULL, "sh_mobile_sdhi", 2,
- 					  sdhi2_resources, ARRAY_SIZE(sdhi2_resources),
--					  &sdhi2_info, sizeof(struct sh_mobile_sdhi_info));
-+					  &sdhi2_info, sizeof(struct tmio_mmc_data));
- }
- 
- /*
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index a1c1dfb..0f2dcb6 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -972,11 +972,11 @@ static struct platform_device nand_flash_device = {
- };
- 
- /* SDHI0 */
--static struct sh_mobile_sdhi_info sdhi0_info = {
-+static struct tmio_mmc_data sdhi0_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
--	.tmio_flags	= TMIO_MMC_USE_GPIO_CD,
--	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
-+	.flags		= TMIO_MMC_USE_GPIO_CD,
-+	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
- 	.cd_gpio	= 172,
- };
- 
-@@ -1011,11 +1011,11 @@ static struct platform_device sdhi0_device = {
- /* SDHI1 */
- 
- /* GPIO 41 can trigger IRQ8, but it is used by USBHS1, we have to poll */
--static struct sh_mobile_sdhi_info sdhi1_info = {
-+static struct tmio_mmc_data sdhi1_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
--	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_USE_GPIO_CD,
--	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
-+	.flags		= TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_USE_GPIO_CD,
-+	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_NEEDS_POLL,
- 	.cd_gpio	= 41,
- };
-@@ -1054,7 +1054,7 @@ static struct platform_device sdhi1_device = {
-  * The card detect pin of the top SD/MMC slot (CN23) is active low and is
-  * connected to GPIO SCIFB_SCK of SH7372 (GPIO 162).
-  */
--static struct sh_mobile_sdhi_info sdhi2_info = {
-+static struct tmio_mmc_data sdhi2_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI2_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI2_RX,
- 	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_USE_GPIO_CD,
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 598f704..d6f07a3 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -122,11 +122,11 @@ static struct resource sdhi0_resources[] = {
- 	},
- };
- 
--static struct sh_mobile_sdhi_info sdhi0_platform_data = {
-+static struct tmio_mmc_data sdhi0_platform_data = {
- 	.dma_slave_tx = HPBDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx = HPBDMA_SLAVE_SDHI0_RX,
--	.tmio_flags = TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HAS_IDLE_WAIT,
--	.tmio_caps = MMC_CAP_SD_HIGHSPEED,
-+	.flags        = TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HAS_IDLE_WAIT,
-+	.capabilities = MMC_CAP_SD_HIGHSPEED,
- };
- 
- static struct platform_device sdhi0_device = {
-diff --git a/arch/sh/boards/board-sh7757lcr.c b/arch/sh/boards/board-sh7757lcr.c
-index 669df51..2211ff5 100644
---- a/arch/sh/boards/board-sh7757lcr.c
-+++ b/arch/sh/boards/board-sh7757lcr.c
-@@ -17,6 +17,7 @@
- #include <linux/spi/spi.h>
- #include <linux/spi/flash.h>
- #include <linux/io.h>
-+#include <linux/mfd/tmio.h>
- #include <linux/mmc/host.h>
- #include <linux/mmc/sh_mmcif.h>
- #include <linux/mmc/sh_mobile_sdhi.h>
-@@ -243,10 +244,10 @@ static struct platform_device sh_mmcif_device = {
- };
- 
- /* SDHI0 */
--static struct sh_mobile_sdhi_info sdhi_info = {
-+static struct tmio_mmc_data sdhi_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI_RX,
--	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
-+	.capabilities	= MMC_CAP_SD_HIGHSPEED,
- };
- 
- static struct resource sdhi_resources[] = {
-diff --git a/arch/sh/boards/mach-ap325rxa/setup.c b/arch/sh/boards/mach-ap325rxa/setup.c
-index d4b01d4..cbd2a9f 100644
---- a/arch/sh/boards/mach-ap325rxa/setup.c
-+++ b/arch/sh/boards/mach-ap325rxa/setup.c
-@@ -18,6 +18,7 @@
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mtd/physmap.h>
- #include <linux/mtd/sh_flctl.h>
-+#include <linux/mfd/tmio.h>
- #include <linux/delay.h>
- #include <linux/i2c.h>
- #include <linux/regulator/fixed.h>
-@@ -447,8 +448,8 @@ static struct resource sdhi0_cn3_resources[] = {
- 	},
- };
- 
--static struct sh_mobile_sdhi_info sdhi0_cn3_data = {
--	.tmio_caps      = MMC_CAP_SDIO_IRQ,
-+static struct tmio_mmc_data sdhi0_cn3_data = {
-+	.capabilities	= MMC_CAP_SDIO_IRQ,
- };
- 
- static struct platform_device sdhi0_cn3_device = {
-@@ -474,8 +475,8 @@ static struct resource sdhi1_cn7_resources[] = {
- 	},
- };
- 
--static struct sh_mobile_sdhi_info sdhi1_cn7_data = {
--	.tmio_caps      = MMC_CAP_SDIO_IRQ,
-+static struct tmio_mmc_data sdhi1_cn7_data = {
-+	.capabilities	= MMC_CAP_SDIO_IRQ,
- };
- 
- static struct platform_device sdhi1_cn7_device = {
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index 0d30492..98cdd7e 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -601,12 +601,12 @@ static struct platform_device sdhi0_power = {
- 	},
- };
- 
--static struct sh_mobile_sdhi_info sdhi0_info = {
-+static struct tmio_mmc_data sdhi0_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
--	.tmio_caps      = MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD |
-+	.capabilities	= MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD |
- 			  MMC_CAP_NEEDS_POLL,
--	.tmio_flags	= TMIO_MMC_USE_GPIO_CD,
-+	.flags		= TMIO_MMC_USE_GPIO_CD,
- 	.cd_gpio	= GPIO_PTY7,
- };
- 
-@@ -635,12 +635,12 @@ static struct platform_device sdhi0_device = {
- 
- #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
- /* SDHI1 */
--static struct sh_mobile_sdhi_info sdhi1_info = {
-+static struct tmio_mmc_data sdhi1_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
--	.tmio_caps      = MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD |
-+	.capabilities	= MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD |
- 			  MMC_CAP_NEEDS_POLL,
--	.tmio_flags	= TMIO_MMC_USE_GPIO_CD,
-+	.flags		= TMIO_MMC_USE_GPIO_CD,
- 	.cd_gpio	= GPIO_PTW7,
- };
- 
-diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
-index 1df4398..00836ee 100644
---- a/arch/sh/boards/mach-kfr2r09/setup.c
-+++ b/arch/sh/boards/mach-kfr2r09/setup.c
-@@ -373,11 +373,11 @@ static struct resource kfr2r09_sh_sdhi0_resources[] = {
- 	},
- };
- 
--static struct sh_mobile_sdhi_info sh7724_sdhi0_data = {
-+static struct tmio_mmc_data sh7724_sdhi0_data = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
--	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
--	.tmio_caps      = MMC_CAP_SDIO_IRQ,
-+	.flags		= TMIO_MMC_WRPROTECT_DISABLE,
-+	.capabilities	= MMC_CAP_SDIO_IRQ,
- };
- 
- static struct platform_device kfr2r09_sh_sdhi0_device = {
-diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
-index 8b73194..ed1ba70 100644
---- a/arch/sh/boards/mach-migor/setup.c
-+++ b/arch/sh/boards/mach-migor/setup.c
-@@ -15,6 +15,7 @@
- #include <linux/mmc/host.h>
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mtd/physmap.h>
-+#include <linux/mfd/tmio.h>
- #include <linux/mtd/nand.h>
- #include <linux/i2c.h>
- #include <linux/regulator/fixed.h>
-@@ -408,10 +409,10 @@ static struct resource sdhi_cn9_resources[] = {
- 	},
- };
- 
--static struct sh_mobile_sdhi_info sh7724_sdhi_data = {
-+static struct tmio_mmc_data sh7724_sdhi_data = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
--	.tmio_caps      = MMC_CAP_SDIO_IRQ,
-+	.capabilities	= MMC_CAP_SDIO_IRQ,
- };
- 
- static struct platform_device sdhi_cn9_device = {
-diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
-index 1162bc6..d68e40f 100644
---- a/arch/sh/boards/mach-se/7724/setup.c
-+++ b/arch/sh/boards/mach-se/7724/setup.c
-@@ -16,6 +16,7 @@
- #include <linux/platform_device.h>
- #include <linux/mmc/host.h>
- #include <linux/mmc/sh_mobile_sdhi.h>
-+#include <linux/mfd/tmio.h>
- #include <linux/mtd/physmap.h>
- #include <linux/delay.h>
- #include <linux/regulator/fixed.h>
-@@ -468,10 +469,10 @@ static struct resource sdhi0_cn7_resources[] = {
- 	},
- };
- 
--static struct sh_mobile_sdhi_info sh7724_sdhi0_data = {
-+static struct tmio_mmc_data sh7724_sdhi0_data = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
--	.tmio_caps      = MMC_CAP_SDIO_IRQ,
-+	.capabilities	= MMC_CAP_SDIO_IRQ,
- };
- 
- static struct platform_device sdhi0_cn7_device = {
-@@ -497,10 +498,10 @@ static struct resource sdhi1_cn8_resources[] = {
- 	},
- };
- 
--static struct sh_mobile_sdhi_info sh7724_sdhi1_data = {
-+static struct tmio_mmc_data sh7724_sdhi1_data = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
--	.tmio_caps      = MMC_CAP_SDIO_IRQ,
-+	.capabilities	= MMC_CAP_SDIO_IRQ,
- };
- 
- static struct platform_device sdhi1_cn8_device = {
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index eae229f..1f70fca 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -162,7 +162,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		of_match_device(sh_mobile_sdhi_of_match, &pdev->dev);
- 	struct sh_mobile_sdhi *priv;
- 	struct tmio_mmc_data *mmc_data;
--	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
-+	struct tmio_mmc_data *p = pdev->dev.platform_data;
- 	struct tmio_mmc_host *host;
- 	struct resource *res;
- 	int irq, ret, i = 0;
-@@ -202,13 +202,8 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
- 	host->bus_shift		= resource_size(res) >> 9;
- 
--	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
- 	if (p) {
--		mmc_data->flags = p->tmio_flags;
--		mmc_data->ocr_mask = p->tmio_ocr_mask;
--		mmc_data->capabilities |= p->tmio_caps;
--		mmc_data->capabilities2 |= p->tmio_caps2;
--		mmc_data->cd_gpio = p->cd_gpio;
-+		*mmc_data = *p;
- 
- 		if (p->dma_slave_tx > 0 && p->dma_slave_rx > 0) {
- 			/*
-@@ -226,6 +221,8 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	dma_priv->alignment_shift = 1; /* 2-byte alignment */
- 	dma_priv->filter = shdma_chan_filter;
- 
-+	mmc_data->capabilities |= MMC_CAP_MMC_HIGHSPEED;
-+
- 	/*
- 	 * All SDHI blocks support 2-byte and larger block sizes in 4-bit
- 	 * bus width mode.
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index 7a5c279..8505039 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -116,6 +116,8 @@ struct dma_chan;
-  * data for the MMC controller
-  */
- struct tmio_mmc_data {
-+	int dma_slave_tx;
-+	int dma_slave_rx;
- 	unsigned int			hclk;
- 	unsigned long			capabilities;
- 	unsigned long			capabilities2;
-diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
-index da77e5e20..95d6f03 100644
---- a/include/linux/mmc/sh_mobile_sdhi.h
-+++ b/include/linux/mmc/sh_mobile_sdhi.h
-@@ -7,14 +7,4 @@
- #define SH_MOBILE_SDHI_IRQ_SDCARD	"sdcard"
- #define SH_MOBILE_SDHI_IRQ_SDIO		"sdio"
- 
--struct sh_mobile_sdhi_info {
--	int dma_slave_tx;
--	int dma_slave_rx;
--	unsigned long tmio_flags;
--	unsigned long tmio_caps;
--	unsigned long tmio_caps2;
--	u32 tmio_ocr_mask;	/* available MMC voltages */
--	unsigned int cd_gpio;
--};
--
- #endif /* LINUX_MMC_SH_MOBILE_SDHI_H */
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index ac660c4..e187f16 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -417,133 +417,159 @@
+ 		vclk1_clk: vclk1_clk@e6150008 {
+ 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0xe6150008 4>;
+-			clocks = <&pll1_div2_clk>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
++				 <&extcki_clk>, <&extal2_clk>, <&main_div2_clk>,
++				 <&extalr_clk>, <&cpg_clocks SH73A0_CLK_MAIN>,
++				 <0>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "vclk1";
+ 		};
+ 		vclk2_clk: vclk2_clk@e615000c {
+ 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0xe615000c 4>;
+-			clocks = <&pll1_div2_clk>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
++				 <&extcki_clk>, <&extal2_clk>, <&main_div2_clk>,
++				 <&extalr_clk>, <&cpg_clocks SH73A0_CLK_MAIN>,
++				 <0>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "vclk2";
+ 		};
+ 		vclk3_clk: vclk3_clk@e615001c {
+ 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0xe615001c 4>;
+-			clocks = <&pll1_div2_clk>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
++				 <&extcki_clk>, <&extal2_clk>, <&main_div2_clk>,
++				 <&extalr_clk>, <&cpg_clocks SH73A0_CLK_MAIN>,
++				 <0>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "vclk3";
+ 		};
+ 		zb_clk: zb_clk@e6150010 {
+ 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0xe6150010 4>;
+-			clocks = <&pll1_div2_clk>;
++			clocks = <&pll1_div2_clk>, <0>,
++				 <&cpg_clocks SH73A0_CLK_PLL2>, <0>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "zb";
+ 		};
+ 		flctl_clk: flctl_clk@e6150014 {
+ 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0xe6150014 4>;
+-			clocks = <&pll1_div2_clk>;
++			clocks = <&pll1_div2_clk>, <0>,
++				 <&cpg_clocks SH73A0_CLK_PLL2>, <0>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "flctlck";
+ 		};
+ 		sdhi0_clk: sdhi0_clk@e6150074 {
+ 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0xe6150074 4>;
+-			clocks = <&pll1_div2_clk>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
++				 <&pll1_div13_clk>, <0>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "sdhi0ck";
+ 		};
+ 		sdhi1_clk: sdhi1_clk@e6150078 {
+ 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0xe6150078 4>;
+-			clocks = <&pll1_div2_clk>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
++				 <&pll1_div13_clk>, <0>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "sdhi1ck";
+ 		};
+ 		sdhi2_clk: sdhi2_clk@e615007c {
+ 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0xe615007c 4>;
+-			clocks = <&pll1_div2_clk>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
++				 <&pll1_div13_clk>, <0>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "sdhi2ck";
+ 		};
+ 		fsia_clk: fsia_clk@e6150018 {
+ 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0xe6150018 4>;
+-			clocks = <&pll1_div2_clk>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
++				 <&fsiack_clk>, <&fsiack_clk>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "fsia";
+ 		};
+ 		fsib_clk: fsib_clk@e6150090 {
+ 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0xe6150090 4>;
+-			clocks = <&pll1_div2_clk>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
++				 <&fsibck_clk>, <&fsibck_clk>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "fsib";
+ 		};
+ 		sub_clk: sub_clk@e6150080 {
+ 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0xe6150080 4>;
+-			clocks = <&extal2_clk>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
++				 <&extal2_clk>, <&extal2_clk>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "sub";
+ 		};
+ 		spua_clk: spua_clk@e6150084 {
+ 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0xe6150084 4>;
+-			clocks = <&pll1_div2_clk>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
++				 <&extal2_clk>, <&extal2_clk>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "spua";
+ 		};
+ 		spuv_clk: spuv_clk@e6150094 {
+ 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0xe6150094 4>;
+-			clocks = <&pll1_div2_clk>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
++				 <&extal2_clk>, <&extal2_clk>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "spuv";
+ 		};
+ 		msu_clk: msu_clk@e6150088 {
+ 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0xe6150088 4>;
+-			clocks = <&pll1_div2_clk>;
++			clocks = <&pll1_div2_clk>, <0>,
++				 <&cpg_clocks SH73A0_CLK_PLL2>, <0>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "msu";
+ 		};
+ 		hsi_clk: hsi_clk@e615008c {
+ 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0xe615008c 4>;
+-			clocks = <&pll1_div2_clk>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
++				 <&pll1_div7_clk>, <0>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "hsi";
+ 		};
+ 		mfg1_clk: mfg1_clk@e6150098 {
+ 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0xe6150098 4>;
+-			clocks = <&pll1_div2_clk>;
++			clocks = <&pll1_div2_clk>, <0>,
++				 <&cpg_clocks SH73A0_CLK_PLL2>, <0>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "mfg1";
+ 		};
+ 		mfg2_clk: mfg2_clk@e615009c {
+ 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0xe615009c 4>;
+-			clocks = <&pll1_div2_clk>;
++			clocks = <&pll1_div2_clk>, <0>,
++				 <&cpg_clocks SH73A0_CLK_PLL2>, <0>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "mfg2";
+ 		};
+ 		dsit_clk: dsit_clk@e6150060 {
+ 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0xe6150060 4>;
+-			clocks = <&pll1_div2_clk>;
++			clocks = <&pll1_div2_clk>, <0>,
++				 <&cpg_clocks SH73A0_CLK_PLL2>, <0>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "dsit";
+ 		};
+ 		dsi0p_clk: dsi0p_clk@e6150064 {
+ 			compatible = "renesas,sh73a0-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0xe6150064 4>;
+-			clocks = <&pll1_div2_clk>;
++			clocks = <&pll1_div2_clk>, <&cpg_clocks SH73A0_CLK_PLL2>,
++				 <&cpg_clocks SH73A0_CLK_MAIN>, <&extal2_clk>,
++				 <&extcki_clk>, <0>, <0>, <0>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "dsi0pck";
+ 		};
 -- 
-1.7.9.5
+2.1.4
 
