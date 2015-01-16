@@ -1,48 +1,61 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 Jan 2015 02:35:18 +0000
-Subject: [PATCH 06/17] ARM: shmobile: kzm9g-reference dts: Add st1232 touchscreen node
-Message-Id: <4e5b572c8ddef78aeb10eb37ee32aa88188d3bdc.1421371996.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 16 Jan 2015 21:56:02 +0000
+Subject: [PATCH] sh-sci: extend PM methods
+Message-Id: <3390015.epzKE7eYAi@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421371996.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421371996.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: gregkh@linuxfoundation.org, jslaby@suse.cz, linux-serial@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+In order to make it possible to restore from hibernation not only in Linux but
+also in e.g. U-Boot, we have to use sci_{suspend|remove}() for the PM {freeze|
+thaw|restore}() methods.  It's handy to achieve this by using SIMPLE_DEV_PM_OPS()
+macro, however we have to annotate sci_{suspend|remove}() with '__maybe_unused'
+in order to avoid compilation warnings when CONFIG_PM_SLEEP is undefined.
 
-Enable the kzm9g touchscreen controller in the board's DT file.
+Based on orignal patch by Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 11 +++++++++++
- 1 file changed, 11 insertions(+)
+This patch is against the 'tty-next' branch of GregKH's 'tty.git' repo.
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index 8a1675a..20aae5d 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -287,6 +287,17 @@
- 	};
- };
+ drivers/tty/serial/sh-sci.c |    9 +++------
+ 1 file changed, 3 insertions(+), 6 deletions(-)
+
+Index: tty/drivers/tty/serial/sh-sci.c
+=================================--- tty.orig/drivers/tty/serial/sh-sci.c
++++ tty/drivers/tty/serial/sh-sci.c
+@@ -2605,7 +2605,7 @@ static int sci_probe(struct platform_dev
+ 	return 0;
+ }
  
-+&i2c1 {
-+	status = "okay";
-+
-+	touchscreen@55 {
-+		compatible = "sitronix,st1232";
-+		reg = <0x55>;
-+		interrupt-parent = <&irqpin1>;
-+		interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
-+	};
-+};
-+
- &i2c3 {
- 	pinctrl-0 = <&i2c3_pins>;
- 	pinctrl-names = "default";
--- 
-2.1.4
+-static int sci_suspend(struct device *dev)
++static __maybe_unused int sci_suspend(struct device *dev)
+ {
+ 	struct sci_port *sport = dev_get_drvdata(dev);
+ 
+@@ -2615,7 +2615,7 @@ static int sci_suspend(struct device *de
+ 	return 0;
+ }
+ 
+-static int sci_resume(struct device *dev)
++static __maybe_unused int sci_resume(struct device *dev)
+ {
+ 	struct sci_port *sport = dev_get_drvdata(dev);
+ 
+@@ -2625,10 +2625,7 @@ static int sci_resume(struct device *dev
+ 	return 0;
+ }
+ 
+-static const struct dev_pm_ops sci_dev_pm_ops = {
+-	.suspend	= sci_suspend,
+-	.resume		= sci_resume,
+-};
++static SIMPLE_DEV_PM_OPS(sci_dev_pm_ops, sci_suspend, sci_resume);
+ 
+ static struct platform_driver sci_driver = {
+ 	.probe		= sci_probe,
 
