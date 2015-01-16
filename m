@@ -1,40 +1,49 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 21 Jan 2015 04:15:19 +0000
-Subject: [PATCH 5/8 v3] spi: rspi: remove slave_id settings for DMAEngine
-Message-Id: <878ugwojjp.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 Jan 2015 02:35:22 +0000
+Subject: [PATCH 10/17] ARM: shmobile: kzm9g-reference dts: Declare the full 512 MiB of RAM
+Message-Id: <95c3d4f0e02182f5719d5a13f612d54dc3d8ed15.1421371996.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1421371996.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1421371996.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Arnd Bergmann <arnd@arndb.de>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Current rspi sets dma_slave_config :: slave_id field for DMAEngine,
-but it is no longer needed. Let's remove it.
+Traditionally, the first 16 MiB of RAM was reserved for the RT
+processor.  However, this is incompatible with CONFIG_AUTO_ZRELADDR=y,
+which requires that the start address of physical memory is a multiple
+of 128 MiB.
 
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+As CONFIG_AUTO_ZRELADDR=y is enabled for multi-platform kernels, declare
+RAM to start at 0x40000000.
+
+While at it, reclaim the last 8 MiB of RAM, too, so the full 512 MiB is
+available. Note that kzm9g_defconfig still has
+CONFIG_MEMORY_START=0x41000000 and CONFIG_MEMORY_SIZE=0x1f000000, so
+before the advent of DT we scribbled over the last 8 MiB, too.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2 -> v3
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- - no change
-
- drivers/spi/spi-rspi.c |    1 -
- 1 file changed, 1 deletion(-)
-
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 46ce470..3f41106 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -913,7 +913,6 @@ static struct dma_chan *rspi_request_dma_chan(struct device *dev,
- 	}
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 20aae5d..7ceaaa9 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -45,7 +45,7 @@
  
- 	memset(&cfg, 0, sizeof(cfg));
--	cfg.slave_id = id;
- 	cfg.direction = dir;
- 	if (dir = DMA_MEM_TO_DEV) {
- 		cfg.dst_addr = port_addr;
+ 	memory {
+ 		device_type = "memory";
+-		reg = <0x41000000 0x1e800000>;
++		reg = <0x40000000 0x20000000>;
+ 	};
+ 
+ 	reg_1p8v: regulator@0 {
 -- 
-1.7.9.5
+2.1.4
 
