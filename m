@@ -1,104 +1,68 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 28 Jan 2015 06:48:14 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7794: Add DMAC devices to DT
-Message-Id: <20150128064812.GA3581@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 16 Jan 2015 01:49:19 +0000
+Subject: ARM: shmobile: r8a7779: Instantiate GIC from C board code in legacy builds
+Message-Id: <20150116014919.30817.13079.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1422378737-1211-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1422378737-1211-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Jan 27, 2015 at 07:12:17PM +0200, Laurent Pinchart wrote:
-> Instantiate the two system DMA controllers in the r8a7794 device tree.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Thanks, I have queued this up for v3.21.
+As of commit 9a1091ef0017c40a ("irqchip: gic: Support hierarchy irq
+domain."), Marzen legacy hangs during boot with:
 
-> ---
->  arch/arm/boot/dts/r8a7794.dtsi | 60 ++++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 60 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-> index 8f78da5ef10b..74745356afe2 100644
-> --- a/arch/arm/boot/dts/r8a7794.dtsi
-> +++ b/arch/arm/boot/dts/r8a7794.dtsi
-> @@ -107,6 +107,66 @@
->  			     <0 17 IRQ_TYPE_LEVEL_HIGH>;
->  	};
->  
-> +	dmac0: dma-controller@e6700000 {
-> +		compatible = "renesas,rcar-dmac";
-> +		reg = <0 0xe6700000 0 0x20000>;
-> +		interrupts = <0 197 IRQ_TYPE_LEVEL_HIGH
-> +			      0 200 IRQ_TYPE_LEVEL_HIGH
-> +			      0 201 IRQ_TYPE_LEVEL_HIGH
-> +			      0 202 IRQ_TYPE_LEVEL_HIGH
-> +			      0 203 IRQ_TYPE_LEVEL_HIGH
-> +			      0 204 IRQ_TYPE_LEVEL_HIGH
-> +			      0 205 IRQ_TYPE_LEVEL_HIGH
-> +			      0 206 IRQ_TYPE_LEVEL_HIGH
-> +			      0 207 IRQ_TYPE_LEVEL_HIGH
-> +			      0 208 IRQ_TYPE_LEVEL_HIGH
-> +			      0 209 IRQ_TYPE_LEVEL_HIGH
-> +			      0 210 IRQ_TYPE_LEVEL_HIGH
-> +			      0 211 IRQ_TYPE_LEVEL_HIGH
-> +			      0 212 IRQ_TYPE_LEVEL_HIGH
-> +			      0 213 IRQ_TYPE_LEVEL_HIGH
-> +			      0 214 IRQ_TYPE_LEVEL_HIGH>;
-> +		interrupt-names = "error",
-> +				"ch0", "ch1", "ch2", "ch3",
-> +				"ch4", "ch5", "ch6", "ch7",
-> +				"ch8", "ch9", "ch10", "ch11",
-> +				"ch12", "ch13", "ch14";
-> +		clocks = <&mstp2_clks R8A7794_CLK_SYS_DMAC0>;
-> +		clock-names = "fck";
-> +		#dma-cells = <1>;
-> +		dma-channels = <15>;
-> +	};
-> +
-> +	dmac1: dma-controller@e6720000 {
-> +		compatible = "renesas,rcar-dmac";
-> +		reg = <0 0xe6720000 0 0x20000>;
-> +		interrupts = <0 220 IRQ_TYPE_LEVEL_HIGH
-> +			      0 216 IRQ_TYPE_LEVEL_HIGH
-> +			      0 217 IRQ_TYPE_LEVEL_HIGH
-> +			      0 218 IRQ_TYPE_LEVEL_HIGH
-> +			      0 219 IRQ_TYPE_LEVEL_HIGH
-> +			      0 308 IRQ_TYPE_LEVEL_HIGH
-> +			      0 309 IRQ_TYPE_LEVEL_HIGH
-> +			      0 310 IRQ_TYPE_LEVEL_HIGH
-> +			      0 311 IRQ_TYPE_LEVEL_HIGH
-> +			      0 312 IRQ_TYPE_LEVEL_HIGH
-> +			      0 313 IRQ_TYPE_LEVEL_HIGH
-> +			      0 314 IRQ_TYPE_LEVEL_HIGH
-> +			      0 315 IRQ_TYPE_LEVEL_HIGH
-> +			      0 316 IRQ_TYPE_LEVEL_HIGH
-> +			      0 317 IRQ_TYPE_LEVEL_HIGH
-> +			      0 318 IRQ_TYPE_LEVEL_HIGH>;
-> +		interrupt-names = "error",
-> +				"ch0", "ch1", "ch2", "ch3",
-> +				"ch4", "ch5", "ch6", "ch7",
-> +				"ch8", "ch9", "ch10", "ch11",
-> +				"ch12", "ch13", "ch14";
-> +		clocks = <&mstp2_clks R8A7794_CLK_SYS_DMAC1>;
-> +		clock-names = "fck";
-> +		#dma-cells = <1>;
-> +		dma-channels = <15>;
-> +	};
-> +
->  	scifa0: serial@e6c40000 {
->  		compatible = "renesas,scifa-r8a7794", "renesas,scifa";
->  		reg = <0 0xe6c40000 0 64>;
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+   Image Name:   'Linux-3.19.0-rc4'
+   Image Type:   ARM Linux Kernel Image (uncompressed)
+   Data Size:    3445880 Bytes = 3.3 MiB
+   Load Address: 60008000
+   Entry Point:  60008000
+   Verifying Checksum ... OK
+   Loading Kernel Image ... OK
+OK
+
+Starting kernel ...
+
+Enabling DEBUG_LL does not seem to change the situation, however this
+patch by itself fixes this issue and re-enables normal boot.
+
+This issue happens because the IRQ numbers of the GIC are now virtual,
+and no longer match the hardcoded hardware IRQ numbers in the platform
+board code.
+
+To fix this, instantiate the GIC from platform board code when compiling
+a legacy kernel, like is done for the sh73a0, r8a7740 and r8a7778 legacy code.
+
+Follows same style as the r8a7740 legacy GIC fix by Geert Uytterhoeven,
+thanks to him for the initial work.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ Written on top of renesas-devel-20150114v2-v3.19-rc4
+
+ arch/arm/mach-shmobile/setup-r8a7779.c |    9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+--- 0001/arch/arm/mach-shmobile/setup-r8a7779.c
++++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2015-01-15 18:48:00.969339495 +0900
+@@ -720,10 +720,17 @@ static int r8a7779_set_wake(struct irq_d
+ 
+ void __init r8a7779_init_irq_dt(void)
+ {
++#ifdef CONFIG_ARCH_SHMOBILE_LEGACY
++	void __iomem *gic_dist_base = ioremap_nocache(0xf0001000, 0x1000);
++	void __iomem *gic_cpu_base = ioremap_nocache(0xf0000100, 0x1000);
++#endif
+ 	gic_arch_extn.irq_set_wake = r8a7779_set_wake;
+ 
++#ifdef CONFIG_ARCH_SHMOBILE_LEGACY
++	gic_init(0, 29, gic_dist_base, gic_cpu_base);
++#else
+ 	irqchip_init();
+-
++#endif
+ 	/* route all interrupts to ARM */
+ 	__raw_writel(0xffffffff, INT2NTSR0);
+ 	__raw_writel(0x3fffffff, INT2NTSR1);
