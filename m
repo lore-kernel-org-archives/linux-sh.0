@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 Jan 2015 02:35:15 +0000
-Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Defconfig Updates for v3.20
-Message-Id: <cover.1421371751.git.horms+renesas@verge.net.au>
+Date: Fri, 16 Jan 2015 02:45:50 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Sh73a0 CCF Updates for v3.20
+Message-Id: <cover.1421376276.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1381222967.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
@@ -12,56 +12,33 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hi Olof, Hi Kevin, Hi Arnd,
 
-Please consider these second round of Renesas ARM based SoC defconfig updates for v3.20.
+Please consider these second round of Renesas ARM based SoC sh73a0 CCF updates for v3.20.
 
 This pull request is based on the previous round of
-such requests, tagged as renesas-defconfig-for-v3.20,
-which I have already sent a pull-request for.
-
-This pull request has a minor conflict in
-arch/arm/configs/shmobile_defconfig with the pull-request
-"Renesas ARM Based SoC Lager Board Removal for v3.20", tagged as
-renesas-lager-board-removal-for-v3.20, which you have pulled into the
-next/cleanup branch.
-
-A resolution for this conflict is in the renesas-next-20150114-v3.19-rc1
-tag of my renesas tree.
-
-In words the resolution is to add CONFIG_ARCH_SH73A0=y and
-remove CONFIG_MACH_LAGER=y.
-
-The resulting area of arch/arm/configs/shmobile_defconfig should look like
-this:
-
-CONFIG_ARCH_R8A7790=y
-CONFIG_ARCH_R8A7791=y
-CONFIG_ARCH_R8A7794=y
-CONFIG_ARCH_SH73A0=y
-CONFIG_MACH_MARZEN=y
-CONFIG_CPU_BPREDICT_DISABLE=y
-CONFIG_PL310_ERRATA_588369=y
+such requests, tagged as renesas-sh73a0-ccf-for-v3.20,
+which you have already pulled.
 
 
-The following changes since commit db54d850b686c2ca81c10dd3582e98ee089a0e3a:
+The following changes since commit 09bd745b555c262d1e2c851777317f3adf3cf3d4:
 
-  ARM: shmobile: Enable DA9063 watchdog in multiplatform defconfig (2014-12-21 16:53:36 +0900)
+  ARM: shmobile: sh73a0: disable legacy clock initialization (2014-12-21 17:09:25 +0900)
 
 are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig2-for-v3.20
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh73a0-ccf2-for-v3.20
 
-for you to fetch changes up to eb4513482d1c4882e3633528ccc48d77581b7bb1:
+for you to fetch changes up to 16bd794f9432b556ec797cbf16c5e575a18f7030:
 
-  ARM: shmobile: Enable kzm9g board in multiplatform defconfig (2015-01-14 09:51:08 +0900)
-
-----------------------------------------------------------------
-Second Round of Renesas ARM Based SoC Defconfig Updates for v3.20
-
-* Enable kzm9g board in multiplatform defconfig
+  clk: shmobile: fix sparse NULL pointer warning (2015-01-14 13:13:24 +0900)
 
 ----------------------------------------------------------------
-Geert Uytterhoeven (1):
-      ARM: shmobile: Enable kzm9g board in multiplatform defconfig
+Second Round of Renesas ARM Based SoC Sh73a0 CCF Updates for v3.20
 
- arch/arm/configs/shmobile_defconfig | 19 ++++++++++++++++---
- 1 file changed, 16 insertions(+), 3 deletions(-)
+* Fix sparse NULL pointer warning
+
+----------------------------------------------------------------
+Wei Yongjun (1):
+      clk: shmobile: fix sparse NULL pointer warning
+
+ drivers/clk/shmobile/clk-sh73a0.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
