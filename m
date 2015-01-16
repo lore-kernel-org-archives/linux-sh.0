@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 Jan 2015 02:34:44 +0000
-Subject: [GIT PULL] Second Round of Renesas ARM Based SoC DT Cleanups for v3.20
-Message-Id: <cover.1421371490.git.horms+renesas@verge.net.au>
+Date: Fri, 16 Jan 2015 02:35:15 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Defconfig Updates for v3.20
+Message-Id: <cover.1421371751.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1381222967.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
@@ -12,39 +12,56 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hi Olof, Hi Kevin, Hi Arnd,
 
-Please consider this second round of Renesas ARM based SoC DT cleanups for
-v3.20.
+Please consider these second round of Renesas ARM based SoC defconfig updates for v3.20.
+
+This pull request is based on the previous round of
+such requests, tagged as renesas-defconfig-for-v3.20,
+which I have already sent a pull-request for.
+
+This pull request has a minor conflict in
+arch/arm/configs/shmobile_defconfig with the pull-request
+"Renesas ARM Based SoC Lager Board Removal for v3.20", tagged as
+renesas-lager-board-removal-for-v3.20, which you have pulled into the
+next/cleanup branch.
+
+A resolution for this conflict is in the renesas-next-20150114-v3.19-rc1
+tag of my renesas tree.
+
+In words the resolution is to add CONFIG_ARCH_SH73A0=y and
+remove CONFIG_MACH_LAGER=y.
+
+The resulting area of arch/arm/configs/shmobile_defconfig should look like
+this:
+
+CONFIG_ARCH_R8A7790=y
+CONFIG_ARCH_R8A7791=y
+CONFIG_ARCH_R8A7794=y
+CONFIG_ARCH_SH73A0=y
+CONFIG_MACH_MARZEN=y
+CONFIG_CPU_BPREDICT_DISABLE=y
+CONFIG_PL310_ERRATA_588369=y
 
 
-The following changes since commit 97bf6af1f928216fd6c5a66e8a57bfa95a659672:
+The following changes since commit db54d850b686c2ca81c10dd3582e98ee089a0e3a:
 
-  Linux 3.19-rc1 (2014-12-20 17:08:50 -0800)
+  ARM: shmobile: Enable DA9063 watchdog in multiplatform defconfig (2014-12-21 16:53:36 +0900)
 
 are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-cleanups2-for-v3.20
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig2-for-v3.20
 
-for you to fetch changes up to d2b541c98f5402ebb49ee1c636ef5bc31462b4ca:
+for you to fetch changes up to eb4513482d1c4882e3633528ccc48d77581b7bb1:
 
-  ARM: shmobile: r8a7791: tidyup #sound-dai-cells settings (2015-01-13 11:01:55 +0900)
-
-----------------------------------------------------------------
-Second Round of Renesas ARM Based SoC DT Cleanups for v3.20
-
-* Tidy up #sound-dai-cells settings
-* Drop "renesas,rcar_sound" compatible value
+  ARM: shmobile: Enable kzm9g board in multiplatform defconfig (2015-01-14 09:51:08 +0900)
 
 ----------------------------------------------------------------
-Geert Uytterhoeven (2):
-      ARM: shmobile: r8a7790 dtsi: Drop "renesas,rcar_sound" compatible value
-      ARM: shmobile: r8a7791 dtsi: Drop "renesas,rcar_sound" compatible value
+Second Round of Renesas ARM Based SoC Defconfig Updates for v3.20
 
-Kuninori Morimoto (2):
-      ARM: shmobile: r8a7790: tidyup #sound-dai-cells settings
-      ARM: shmobile: r8a7791: tidyup #sound-dai-cells settings
+* Enable kzm9g board in multiplatform defconfig
 
- arch/arm/boot/dts/r8a7790-lager.dts   | 1 +
- arch/arm/boot/dts/r8a7790.dtsi        | 9 +++++++--
- arch/arm/boot/dts/r8a7791-koelsch.dts | 1 +
- arch/arm/boot/dts/r8a7791.dtsi        | 9 +++++++--
- 4 files changed, 16 insertions(+), 4 deletions(-)
+----------------------------------------------------------------
+Geert Uytterhoeven (1):
+      ARM: shmobile: Enable kzm9g board in multiplatform defconfig
+
+ arch/arm/configs/shmobile_defconfig | 19 ++++++++++++++++---
+ 1 file changed, 16 insertions(+), 3 deletions(-)
