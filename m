@@ -1,133 +1,27 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Fri, 09 Jan 2015 00:28:41 +0000
-Subject: [PATCH] usb: renesas_usbhs: Add access control for INTSTS1 and INTENB1 register
-Message-Id: <1420763321-4868-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+From: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 16 Jan 2015 10:10:27 +0000
+Subject: RE: [PATCH] usb: renesas_usbhs: Add access control for INTSTS1 and INTENB1 register
+Message-Id: <HKNPR06MB3229CE07FCD85BFC8247C93D84F0@HKNPR06MB322.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1420763321-4868-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+In-Reply-To: <1420763321-4868-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-INTSTS1 and INTENB1 register of renesas_usbhs can access only Host mode.
-This adds process of accessing INTSTS1 and INTENB1 only when renesas_usbhs
-is Host mode.
+Hi Iwamatsu-san,
 
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
----
- drivers/usb/renesas_usbhs/mod.c | 61 +++++++++++++++++++++++------------------
- 1 file changed, 34 insertions(+), 27 deletions(-)
+> INTSTS1 and INTENB1 register of renesas_usbhs can access only Host mode.
+> This adds process of accessing INTSTS1 and INTENB1 only when renesas_usbhs
+> is Host mode.
+> 
+> Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-diff --git a/drivers/usb/renesas_usbhs/mod.c b/drivers/usb/renesas_usbhs/mod.c
-index 9a705b1..e5ce6e6 100644
---- a/drivers/usb/renesas_usbhs/mod.c
-+++ b/drivers/usb/renesas_usbhs/mod.c
-@@ -218,10 +218,12 @@ static int usbhs_status_get_each_irq(struct usbhs_priv *priv,
- 	/********************  spin lock ********************/
- 	usbhs_lock(priv, flags);
- 	state->intsts0 = usbhs_read(priv, INTSTS0);
--	state->intsts1 = usbhs_read(priv, INTSTS1);
--
- 	intenb0 = usbhs_read(priv, INTENB0);
--	intenb1 = usbhs_read(priv, INTENB1);
-+
-+	if (usbhs_mod_is_host(priv)) {
-+		state->intsts1 = usbhs_read(priv, INTSTS1);
-+		intenb1 = usbhs_read(priv, INTENB1);
-+	}
- 
- 	/* mask */
- 	if (mod) {
-@@ -275,7 +277,8 @@ static irqreturn_t usbhs_interrupt(int irq, void *data)
- 	 *	   - Function :: VALID bit should 0
- 	 */
- 	usbhs_write(priv, INTSTS0, ~irq_state.intsts0 & INTSTS0_MAGIC);
--	usbhs_write(priv, INTSTS1, ~irq_state.intsts1 & INTSTS1_MAGIC);
-+	if (usbhs_mod_is_host(priv))
-+		usbhs_write(priv, INTSTS1, ~irq_state.intsts1 & INTSTS1_MAGIC);
- 
- 	usbhs_write(priv, BRDYSTS, ~irq_state.brdysts);
- 	usbhs_write(priv, NRDYSTS, ~irq_state.nrdysts);
-@@ -303,19 +306,20 @@ static irqreturn_t usbhs_interrupt(int irq, void *data)
- 	if (irq_state.intsts0 & BRDY)
- 		usbhs_mod_call(priv, irq_ready, priv, &irq_state);
- 
--	/* INTSTS1 */
--	if (irq_state.intsts1 & ATTCH)
--		usbhs_mod_call(priv, irq_attch, priv, &irq_state);
--
--	if (irq_state.intsts1 & DTCH)
--		usbhs_mod_call(priv, irq_dtch, priv, &irq_state);
-+	if (usbhs_mod_is_host(priv)) {
-+		/* INTSTS1 */
-+		if (irq_state.intsts1 & ATTCH)
-+			usbhs_mod_call(priv, irq_attch, priv, &irq_state);
- 
--	if (irq_state.intsts1 & SIGN)
--		usbhs_mod_call(priv, irq_sign, priv, &irq_state);
-+		if (irq_state.intsts1 & DTCH)
-+			usbhs_mod_call(priv, irq_dtch, priv, &irq_state);
- 
--	if (irq_state.intsts1 & SACK)
--		usbhs_mod_call(priv, irq_sack, priv, &irq_state);
-+		if (irq_state.intsts1 & SIGN)
-+			usbhs_mod_call(priv, irq_sign, priv, &irq_state);
- 
-+		if (irq_state.intsts1 & SACK)
-+			usbhs_mod_call(priv, irq_sack, priv, &irq_state);
-+	}
- 	return IRQ_HANDLED;
- }
- 
-@@ -334,7 +338,8 @@ void usbhs_irq_callback_update(struct usbhs_priv *priv, struct usbhs_mod *mod)
- 	 *  - update INTSTS0
- 	 */
- 	usbhs_write(priv, INTENB0, 0);
--	usbhs_write(priv, INTENB1, 0);
-+	if (usbhs_mod_is_host(priv))
-+		usbhs_write(priv, INTENB1, 0);
- 
- 	usbhs_write(priv, BEMPENB, 0);
- 	usbhs_write(priv, BRDYENB, 0);
-@@ -368,25 +373,27 @@ void usbhs_irq_callback_update(struct usbhs_priv *priv, struct usbhs_mod *mod)
- 			intenb0 |= BRDYE;
- 		}
- 
--		/*
--		 * INTSTS1
--		 */
--		if (mod->irq_attch)
--			intenb1 |= ATTCHE;
-+		if (usbhs_mod_is_host(priv)) {
-+			/*
-+			 * INTSTS1
-+			 */
-+			if (mod->irq_attch)
-+				intenb1 |= ATTCHE;
- 
--		if (mod->irq_dtch)
--			intenb1 |= DTCHE;
-+			if (mod->irq_dtch)
-+				intenb1 |= DTCHE;
- 
--		if (mod->irq_sign)
--			intenb1 |= SIGNE;
-+			if (mod->irq_sign)
-+				intenb1 |= SIGNE;
- 
--		if (mod->irq_sack)
--			intenb1 |= SACKE;
-+			if (mod->irq_sack)
-+				intenb1 |= SACKE;
-+		}
- 	}
- 
- 	if (intenb0)
- 		usbhs_write(priv, INTENB0, intenb0);
- 
--	if (intenb1)
-+	if (usbhs_mod_is_host(priv) && intenb1)
- 		usbhs_write(priv, INTENB1, intenb1);
- }
--- 
-2.1.3
+Thank you for the patch.
+
+Acked-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+
+Best regards,
+Yoshihiro Shimoda
 
