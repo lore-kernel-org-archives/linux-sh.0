@@ -1,43 +1,50 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Thu, 22 Jan 2015 09:43:28 +0000
-Subject: Re: [PATCH 7/8 v2] ASoC: fsi: remove slave_id settings for DMAEngine
-Message-Id: <6729046.kVru5mzNsg@wuerfel>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 Jan 2015 02:34:44 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM Based SoC DT Cleanups for v3.20
+Message-Id: <cover.1421371490.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87bnluaxtt.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87bnluaxtt.wl%kuninori.morimoto.gx@renesas.com>
+References: <cover.1381222967.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thursday 22 January 2015 01:24:04 Kuninori Morimoto wrote:
-> Hi Arnd, again
-> 
-> > > > Thank you for pointing it.
-> > > > But, unfortunately, this FSI driver is not used from DT.
-> > > > (It is supporting DT probe, but no one use it)
-> > > > So, it is assuming that dst_addr/src_addr fields are come
-> > > > from platform data.
-> > > 
-> > > I see. My patch would still be correct, right?
-> > > 
-> > > I think the way that Guennadi Liakhovetski started the conversion of
-> > > shmobile dmaengine drivers, each slave driver either uses a custom
-> > > filter function that relies on the platform data and will not work
-> > > with DT, or it uses dma_request_slave_channel_compat() which will
-> > > work on both, and then uses dmaengine_slave_config() to pass the
-> > > extra settings. This driver is the one exception you have since it
-> > > uses a combination of the two approaches.
-> > 
-> > I understand.
-> > will fix in v3 patch
-> 
-> I understand, but it is different feature patch.
-> I want to focus to "remove slave_id" on this patch series.
-> And, I send fixup above dst_addr/src_addr in other patch.
-> Is this OK ?
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Yes, good idea. I was mentioning it mainly so it does not
-get lost, but it is unrelated as you say.
+Please consider this second round of Renesas ARM based SoC DT cleanups for
+v3.20.
 
-	Arnd
+
+The following changes since commit 97bf6af1f928216fd6c5a66e8a57bfa95a659672:
+
+  Linux 3.19-rc1 (2014-12-20 17:08:50 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-cleanups2-for-v3.20
+
+for you to fetch changes up to d2b541c98f5402ebb49ee1c636ef5bc31462b4ca:
+
+  ARM: shmobile: r8a7791: tidyup #sound-dai-cells settings (2015-01-13 11:01:55 +0900)
+
+----------------------------------------------------------------
+Second Round of Renesas ARM Based SoC DT Cleanups for v3.20
+
+* Tidy up #sound-dai-cells settings
+* Drop "renesas,rcar_sound" compatible value
+
+----------------------------------------------------------------
+Geert Uytterhoeven (2):
+      ARM: shmobile: r8a7790 dtsi: Drop "renesas,rcar_sound" compatible value
+      ARM: shmobile: r8a7791 dtsi: Drop "renesas,rcar_sound" compatible value
+
+Kuninori Morimoto (2):
+      ARM: shmobile: r8a7790: tidyup #sound-dai-cells settings
+      ARM: shmobile: r8a7791: tidyup #sound-dai-cells settings
+
+ arch/arm/boot/dts/r8a7790-lager.dts   | 1 +
+ arch/arm/boot/dts/r8a7790.dtsi        | 9 +++++++--
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 1 +
+ arch/arm/boot/dts/r8a7791.dtsi        | 9 +++++++--
+ 4 files changed, 16 insertions(+), 4 deletions(-)
