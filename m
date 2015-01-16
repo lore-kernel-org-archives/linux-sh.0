@@ -1,53 +1,94 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 14 Jan 2015 11:13:02 +0000
-Subject: [PATCH 4/4] ARM: shmobile: sh73a0 dtsi: Add memory-controller nodes
-Message-Id: <1421233982-15883-5-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 Jan 2015 02:35:04 +0000
+Subject: [PATCH 1/4] drivers: bus: Sort Kconfig entries alphabetically
+Message-Id: <486fa3fd49607a7117474713f014fd06203fbbf8.1421371868.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421233982-15883-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1421233982-15883-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1421371868.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1421371868.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add device nodes for the two SDRAM Bus State Controllers.
-The SBSCs are located in the A4BC0 resp. A4BC1 PM domains, which must
-not be powered down, else the system will crash.
-
-References to the A4BC0 and A4BC1 PM domains will be added later.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/sh73a0.dtsi | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+ drivers/bus/Kconfig | 44 ++++++++++++++++++++++----------------------
+ 1 file changed, 22 insertions(+), 22 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 46954ac26dd9fb41..8d9c2ce593745b1f 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -43,6 +43,22 @@
- 		      <0xf0000100 0x100>;
- 	};
+diff --git a/drivers/bus/Kconfig b/drivers/bus/Kconfig
+index b99729e..6269608 100644
+--- a/drivers/bus/Kconfig
++++ b/drivers/bus/Kconfig
+@@ -4,6 +4,21 @@
  
-+	sbsc2: memory-controller@fb400000 {
-+		compatible = "renesas,sbsc-sh73a0";
-+		reg = <0xfb400000 0x400>;
-+		interrupts = <0 37 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 38 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "sec", "temp";
-+	};
+ menu "Bus devices"
+ 
++config ARM_CCI
++	bool "ARM CCI driver support"
++	depends on ARM && OF && CPU_V7
++	help
++	  Driver supporting the CCI cache coherent interconnect for ARM
++	  platforms.
 +
-+	sbsc1: memory-controller@fe400000 {
-+		compatible = "renesas,sbsc-sh73a0";
-+		reg = <0xfe400000 0x400>;
-+		interrupts = <0 35 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 36 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "sec", "temp";
-+	};
++config ARM_CCN
++	bool "ARM CCN driver support"
++	depends on ARM || ARM64
++	depends on PERF_EVENTS
++	help
++	  PMU (perf) driver supporting the ARM CCN (Cache Coherent Network)
++	  interconnect.
 +
- 	pmu {
- 		compatible = "arm,cortex-a9-pmu";
- 		interrupts = <0 55 IRQ_TYPE_LEVEL_HIGH>,
+ config BRCMSTB_GISB_ARB
+ 	bool "Broadcom STB GISB bus arbiter"
+ 	depends on ARM || MIPS
+@@ -27,15 +42,6 @@ config MVEBU_MBUS
+ 	  Driver needed for the MBus configuration on Marvell EBU SoCs
+ 	  (Kirkwood, Dove, Orion5x, MV78XX0 and Armada 370/XP).
+ 
+-config OMAP_OCP2SCP
+-	tristate "OMAP OCP2SCP DRIVER"
+-	depends on ARCH_OMAP2PLUS
+-	help
+-	  Driver to enable ocp2scp module which transforms ocp interface
+-	  protocol to scp protocol. In OMAP4, USB PHY is connected via
+-	  OCP2SCP and in OMAP5, both USB PHY and SATA PHY is connected via
+-	  OCP2SCP.
+-
+ config OMAP_INTERCONNECT
+ 	tristate "OMAP INTERCONNECT DRIVER"
+ 	depends on ARCH_OMAP2PLUS
+@@ -43,20 +49,14 @@ config OMAP_INTERCONNECT
+ 	help
+ 	  Driver to enable OMAP interconnect error handling driver.
+ 
+-config ARM_CCI
+-	bool "ARM CCI driver support"
+-	depends on ARM && OF && CPU_V7
+-	help
+-	  Driver supporting the CCI cache coherent interconnect for ARM
+-	  platforms.
+-
+-config ARM_CCN
+-	bool "ARM CCN driver support"
+-	depends on ARM || ARM64
+-	depends on PERF_EVENTS
++config OMAP_OCP2SCP
++	tristate "OMAP OCP2SCP DRIVER"
++	depends on ARCH_OMAP2PLUS
+ 	help
+-	  PMU (perf) driver supporting the ARM CCN (Cache Coherent Network)
+-	  interconnect.
++	  Driver to enable ocp2scp module which transforms ocp interface
++	  protocol to scp protocol. In OMAP4, USB PHY is connected via
++	  OCP2SCP and in OMAP5, both USB PHY and SATA PHY is connected via
++	  OCP2SCP.
+ 
+ config VEXPRESS_CONFIG
+ 	bool "Versatile Express configuration bus"
 -- 
-1.9.1
+2.1.4
 
