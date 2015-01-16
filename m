@@ -1,26 +1,48 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 15 Jan 2015 16:37:10 +0000
-Subject: Re: [PATCH] sh-pfc: r8a7790: add MLB+ pin group
-Message-Id: <CACRpkdZ3kBbWgokB0ckj_+wWkruyfEM=6o4cqBUYmTSr=KQ0Gw@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 16 Jan 2015 16:08:16 +0000
+Subject: [GIT PULL FOR v3.20] Renesas IPMMU driver
+Message-Id: <17336548.2pFUfTyJuB@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4254413.Ay0OtsgpoE@wasted.cogentembedded.com>
-In-Reply-To: <4254413.Ay0OtsgpoE@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
+To: Joerg Roedel <joro@8bytes.org>
+Cc: iommu@lists.linux-foundation.org, linux-sh@vger.kernel.org
 
-On Sat, Jan 10, 2015 at 7:20 PM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
+Hi Joerg,
 
-> Add MLB+ 3-pin mode pin group to R8A7790 PFC driver.
->
-> Based on original patch by Andrey Gusakov <andrey.gusakov@cogentembedded.com>.
->
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+The following changes since commit eaa27f34e91a14cdceed26ed6c6793ec1d186115:
 
-Patch applied with ACKs.
+  linux 3.19-rc4 (2015-01-11 12:44:53 -0800)
 
-Yours,
-Linus Walleij
+are available in the git repository at:
+
+  git://linuxtv.org/pinchartl/fbdev.git iommu/next
+
+for you to fetch changes up to 78e1f974dd351ac82d978e3aac2d27422013f914:
+
+  iommu/ipmmu-vmsa: Remove platform data support (2015-01-16 18:03:05 +0200)
+
+----------------------------------------------------------------
+Laurent Pinchart (7):
+      iommu/ipmmu-vmsa: Cleanup failures of ARM mapping creation or attachment
+      iommu/ipmmu-vmsa: Flush P[UM]D entry before freeing the child page table
+      iommu/ipmmu-vmsa: Invalidate TLB after unmapping
+      iommu/ipmmu-vmsa: Add device tree bindings documentation
+      iommu/ipmmu-vmsa: Add device tree support
+      iommu/ipmmu-vmsa: Support multiple micro TLBs per device
+      iommu/ipmmu-vmsa: Remove platform data support
+
+ .../devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt    |  41 +++++++
+ drivers/iommu/ipmmu-vmsa.c                              | 151 +++++++++++----
+ include/linux/platform_data/ipmmu-vmsa.h                |  24 ----
+ 3 files changed, 154 insertions(+), 62 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/iommu/renesas,ipmmu-
+vmsa.txt
+ delete mode 100644 include/linux/platform_data/ipmmu-vmsa.h
+
+-- 
+Regards,
+
+Laurent Pinchart
+
