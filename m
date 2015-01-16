@@ -1,82 +1,74 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Wed, 21 Jan 2015 08:11:46 +0000
-Subject: Re: [PATCH 2/8 v3] mmc: sh_mmcif: remove slave_id settings for DMAEngine
-Message-Id: <CAPDyKFpArNTdJ0kHFwgBo0qbPMVoQ0EEwFMGSgPp1bbViJvuUQ@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 16 Jan 2015 23:00:36 +0000
+Subject: [PATCH] sata_rcar: extend PM methods
+Message-Id: <2490673.vl8J86zUxO@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d268ojlk.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87d268ojlk.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: tj@kernel.org, linux-ide@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-On 21 January 2015 at 05:14, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->
-> Current sh_mmcif sets dma_slave_config :: slave_id field for DMAEngine,
-> but it is no longer needed. Let's remove it.
->
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Acked-by: Arnd Bergmann <arnd@arndb.de>
-> ---
-> v2 -> v3
->
->  - slave_data = NULL
->
->  drivers/mmc/host/sh_mmcif.c |   12 +++++-------
->  1 file changed, 5 insertions(+), 7 deletions(-)
->
-> diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-> index 7d9d6a3..e83b126 100644
-> --- a/drivers/mmc/host/sh_mmcif.c
-> +++ b/drivers/mmc/host/sh_mmcif.c
-> @@ -388,7 +388,7 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
->  {
->         struct dma_slave_config cfg = { 0, };
->         struct dma_chan *chan;
-> -       unsigned int slave_id;
-> +       void *slave_data;
+From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
 
-void *slave_data = NULL;
+In order to make it possible to restore from hibernation not only in Linux but
+also in e.g. U-Boot, we have to extend  sata_rcar_{suspend|resume}() to {freeze|
+thaw}() PM  methods and implement  the  restore() PM method.
 
->         struct resource *res;
->         dma_cap_mask_t mask;
->         int ret;
-> @@ -397,13 +397,13 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
->         dma_cap_set(DMA_SLAVE, mask);
->
->         if (pdata)
-> -               slave_id = direction = DMA_MEM_TO_DEV
-> -                        ? pdata->slave_id_tx : pdata->slave_id_rx;
-> +               slave_data = direction = DMA_MEM_TO_DEV
-> +                       ? (void *)pdata->slave_id_tx : (void *)pdata->slave_id_rx;
->         else
-> -               slave_id = 0;
-> +               slave_data = NULL;
+Signed-off-by: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+[Sergei: killed unused variable, changed the order of initializers, modified
+copyrights, renamed, modified changelog.]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Remove the "else".
+---
+This patch is against the 'for-next' branch of Tejun Heo's 'libata.git' repo.
 
->
->         chan = dma_request_slave_channel_compat(mask, shdma_chan_filter,
-> -                               (void *)(unsigned long)slave_id, &host->pd->dev,
-> +                               slave_data, &host->pd->dev,
->                                 direction = DMA_MEM_TO_DEV ? "tx" : "rx");
->
->         dev_dbg(&host->pd->dev, "%s: %s: got channel %p\n", __func__,
-> @@ -414,8 +414,6 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
->
->         res = platform_get_resource(host->pd, IORESOURCE_MEM, 0);
->
-> -       /* In the OF case the driver will get the slave ID from the DT */
-> -       cfg.slave_id = slave_id;
->         cfg.direction = direction;
->
->         if (direction = DMA_DEV_TO_MEM) {
-> --
-> 1.7.9.5
->
+ drivers/ata/sata_rcar.c |   25 +++++++++++++++++++++++--
+ 1 file changed, 23 insertions(+), 2 deletions(-)
 
+Index: libata/drivers/ata/sata_rcar.c
+=================================--- libata.orig/drivers/ata/sata_rcar.c
++++ libata/drivers/ata/sata_rcar.c
+@@ -2,8 +2,8 @@
+  * Renesas R-Car SATA driver
+  *
+  * Author: Vladimir Barinov <source@cogentembedded.com>
+- * Copyright (C) 2013 Cogent Embedded, Inc.
+- * Copyright (C) 2013 Renesas Solutions Corp.
++ * Copyright (C) 2013-2015 Cogent Embedded, Inc.
++ * Copyright (C) 2013-2015 Renesas Solutions Corp.
+  *
+  * This program is free software; you can redistribute  it and/or modify it
+  * under  the terms of  the GNU General  Public License as published by the
+@@ -992,9 +992,30 @@ static int sata_rcar_resume(struct devic
+ 	return 0;
+ }
+ 
++static int sata_rcar_restore(struct device *dev)
++{
++	struct ata_host *host = dev_get_drvdata(dev);
++	struct sata_rcar_priv *priv = host->private_data;
++
++	clk_prepare_enable(priv->clk);
++
++	sata_rcar_setup_port(host);
++
++	/* initialize host controller */
++	sata_rcar_init_controller(host);
++
++	ata_host_resume(host);
++
++	return 0;
++}
++
+ static const struct dev_pm_ops sata_rcar_pm_ops = {
+ 	.suspend	= sata_rcar_suspend,
+ 	.resume		= sata_rcar_resume,
++	.freeze		= sata_rcar_suspend,
++	.thaw		= sata_rcar_resume,
++	.poweroff	= sata_rcar_suspend,
++	.restore	= sata_rcar_restore,
+ };
+ #endif
+ 
 
-Kind regards
-Uffe
