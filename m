@@ -1,10 +1,10 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 20 Jan 2015 11:58:00 +0000
-Subject: [PATCH 01/03] ARM: shmobile: Remove mach/system.h
-Message-Id: <20150120115800.11479.87312.sendpatchset@little-apple>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 Jan 2015 02:35:24 +0000
+Subject: [PATCH 12/17] ARM: shmobile: sh73a0: Add Multiplatform support
+Message-Id: <cd2da4ef99846d240a86aa53e630012aa30f5674.1421371996.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150120115750.11479.95109.sendpatchset@little-apple>
-In-Reply-To: <20150120115750.11479.95109.sendpatchset@little-apple>
+References: <cover.1421371996.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1421371996.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,28 +12,70 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm+renesas@opensource.se>
 
-The file <mach/system.h> is no longer included from anywhere so
-clean up the code by removing mach-shmobile/include/mach/system.h
+Enable sh73a0 Multiplatform support for the generic sh73a0
+machine vector. No board support is enabled, and the board
+code for KZM9G DT Reference is left by itself.
 
 Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/Kconfig      | 5 +++++
+ arch/arm/mach-shmobile/Makefile     | 4 ++--
+ arch/arm/mach-shmobile/smp-sh73a0.c | 2 +-
+ 3 files changed, 8 insertions(+), 3 deletions(-)
 
- Applies to renesas-devel-20150119-v3.19-rc5
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 1b4fafe..08662eb 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -72,6 +72,11 @@ config ARCH_R8A7794
+ 	bool "R-Car E2 (R8A77940)"
+ 	select ARCH_RCAR_GEN2
+ 
++config ARCH_SH73A0
++	bool "SH-Mobile AG5 (R8A73A00)"
++	select ARCH_RMOBILE
++	select RENESAS_INTC_IRQPIN
++
+ comment "Renesas ARM SoCs Board Type"
+ 
+ config MACH_LAGER
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index b55cac0..8552c9d 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -7,7 +7,7 @@ obj-y				:= timer.o console.o
+ 
+ # CPU objects
+ obj-$(CONFIG_ARCH_SH7372)	+= setup-sh7372.o intc-sh7372.o pm-sh7372.o
+-obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o intc-sh73a0.o pm-sh73a0.o
++obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o pm-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A73A4)	+= setup-r8a73a4.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o pm-r8a7740.o
+ obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
+@@ -68,7 +68,7 @@ obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
+ obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
+ obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
+-obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
++obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o intc-sh73a0.o
+ obj-$(CONFIG_MACH_KZM9G_REFERENCE)	+= board-kzm9g-reference.o
+ endif
+ 
+diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
+index c16dbfe..2106d6b 100644
+--- a/arch/arm/mach-shmobile/smp-sh73a0.c
++++ b/arch/arm/mach-shmobile/smp-sh73a0.c
+@@ -33,7 +33,7 @@
+ 
+ #define SH73A0_SCU_BASE 0xf0000000
+ 
+-#ifdef CONFIG_HAVE_ARM_TWD
++#if defined(CONFIG_HAVE_ARM_TWD) && !defined(CONFIG_ARCH_MULTIPLATFORM)
+ static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, SH73A0_SCU_BASE + 0x600, 29);
+ void __init sh73a0_register_twd(void)
+ {
+-- 
+2.1.4
 
- arch/arm/mach-shmobile/include/mach/system.h |   11 -----------
- 1 file changed, 11 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/include/mach/system.h
-+++ /dev/null	2015-01-13 15:44:39.280208949 +0900
-@@ -1,11 +0,0 @@
--#ifndef __ASM_ARCH_SYSTEM_H
--#define __ASM_ARCH_SYSTEM_H
--
--#include <asm/system_misc.h>
--
--static inline void arch_reset(char mode, const char *cmd)
--{
--	soft_restart(0);
--}
--
--#endif
