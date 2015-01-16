@@ -1,79 +1,56 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 21 Jan 2015 22:19:48 +0000
-Subject: [PATCH 2/2] sh_eth: add more PM methods
-Message-Id: <2238953.qWhbSccAbj@wasted.cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 Jan 2015 02:35:13 +0000
+Subject: [PATCH 01/17] ARM: shmobile: sh73a0 dtsi: Set control-parent for all irqpin nodes
+Message-Id: <ac481d2ebdfa50761827f604dc224c5a5de0ad69.1421371996.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5608250.lrFkJTjgSf@wasted.cogentembedded.com>
-In-Reply-To: <5608250.lrFkJTjgSf@wasted.cogentembedded.com>
+References: <cover.1421371996.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1421371996.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, mikhail.ulyanov@cogentembedded.com
+To: linux-arm-kernel@lists.infradead.org
 
-From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Add sh_eth_{suspend|resume}() implementing {suspend|resume|freeze|thaw|poweroff|
-restore}() PM methods to make it possible to restore from hibernation not only
-in Linux  but also in e.g. U-Boot and  to have more determined state on resume/
-restore.
+The sh73a0 INTC can't mask interrupts properly most likely due to a
+hardware bug. Set the control-parent property to delegate masking to the
+parent interrupt controller.
 
-Signed-off-by: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
-[Sergei: moved sh_eth_{suspend|resume}() before sh_eth_runtime_nop(), enclosed
-them with #ifdef CONFIG_PM_SLEEP, reordered the local variables, got rid of
-*goto* and label, reordered macro invocations, renamed, modified the changelog.]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/net/ethernet/renesas/sh_eth.c |   31 +++++++++++++++++++++++++++++++
- 1 file changed, 31 insertions(+)
+ arch/arm/boot/dts/sh73a0.dtsi | 3 +++
+ 1 file changed, 3 insertions(+)
 
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -2947,6 +2947,36 @@ static int sh_eth_drv_remove(struct plat
- }
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index cca22ec..1cd7b58 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -78,6 +78,7 @@
+ 			      0 6 IRQ_TYPE_LEVEL_HIGH
+ 			      0 7 IRQ_TYPE_LEVEL_HIGH
+ 			      0 8 IRQ_TYPE_LEVEL_HIGH>;
++		control-parent;
+ 	};
  
- #ifdef CONFIG_PM
-+#ifdef CONFIG_PM_SLEEP
-+static int sh_eth_suspend(struct device *dev)
-+{
-+	struct net_device *ndev = dev_get_drvdata(dev);
-+	int ret = 0;
-+
-+	if (netif_running(ndev)) {
-+		netif_device_detach(ndev);
-+		ret = sh_eth_close(ndev);
-+	}
-+
-+	return ret;
-+}
-+
-+static int sh_eth_resume(struct device *dev)
-+{
-+	struct net_device *ndev = dev_get_drvdata(dev);
-+	int ret = 0;
-+
-+	if (netif_running(ndev)) {
-+		ret = sh_eth_open(ndev);
-+		if (ret < 0)
-+			return ret;
-+		netif_device_attach(ndev);
-+	}
-+
-+	return ret;
-+}
-+#endif
-+
- static int sh_eth_runtime_nop(struct device *dev)
- {
- 	/* Runtime PM callback shared between ->runtime_suspend()
-@@ -2960,6 +2990,7 @@ static int sh_eth_runtime_nop(struct dev
- }
+ 	irqpin1: irqpin@e6900004 {
+@@ -117,6 +118,7 @@
+ 			      0 22 IRQ_TYPE_LEVEL_HIGH
+ 			      0 23 IRQ_TYPE_LEVEL_HIGH
+ 			      0 24 IRQ_TYPE_LEVEL_HIGH>;
++		control-parent;
+ 	};
  
- static const struct dev_pm_ops sh_eth_dev_pm_ops = {
-+	SET_SYSTEM_SLEEP_PM_OPS(sh_eth_suspend, sh_eth_resume)
- 	SET_RUNTIME_PM_OPS(sh_eth_runtime_nop, sh_eth_runtime_nop, NULL)
- };
- #define SH_ETH_PM_OPS (&sh_eth_dev_pm_ops)
+ 	irqpin3: irqpin@e690000c {
+@@ -136,6 +138,7 @@
+ 			      0 30 IRQ_TYPE_LEVEL_HIGH
+ 			      0 31 IRQ_TYPE_LEVEL_HIGH
+ 			      0 32 IRQ_TYPE_LEVEL_HIGH>;
++		control-parent;
+ 	};
+ 
+ 	i2c0: i2c@e6820000 {
+-- 
+2.1.4
 
