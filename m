@@ -1,52 +1,60 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 19 Jan 2015 12:23:38 +0000
-Subject: Re: [PATCH 2/3] ASoC: sh: fsi: Fix clock inversion
-Message-Id: <54BCF74A.10106@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 16 Jan 2015 11:08:48 +0000
+Subject: [PATCH v2] ARM: shmobile: sh73a0 dtsi: Add Cortex-A9 TWD node
+Message-Id: <1421406528-26704-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421661297-19654-1-git-send-email-lars@metafoo.de> <1421661297-19654-2-git-send-email-lars@metafoo.de>
-In-Reply-To: <1421661297-19654-2-git-send-email-lars@metafoo.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Lars-Peter Clausen <lars@metafoo.de>, Mark Brown <broonie@kernel.org>, Liam Girdwood <lgirdwood@gmail.com>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-arm-kernel@lists.infradead.org, alsa-devel@alsa-project.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Add a node for the Private Timer and Watchdog, as found in the Cortex-A9
+MPCore.
 
-On 1/19/2015 12:54 PM, Lars-Peter Clausen wrote:
+Without this, there's no clocksource available during early kernel
+initialization, before cmt1 is initialized, leading to a lock-up if
+CONFIG_CPU_IDLE=y.
 
-> According to the sh7724 hardware user manual (Rev.2.00 Jan 2013) page 1851
-> to 1856 the FSI bit-clock is inverted to the bit-clock as specified by the
-> I2S standard. This means the bit clock inversion bit should be set for a
-> normal I2S clock and should not be set for an inverted I2S clock.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+As the TWD driver does not support DT without CCF, this should NOT be
+applied to a branch that still has kzm9g-reference support, as this
+would lead to another lock-up.
+Hence the first choice "dt-for-v3.20" is NOT OK.
+"sh73a0-multiplatform-for-v3.20" is OK.
 
-> Similarly when operating in left-justified mode both the frame-clock and the
-> bit-clock need to be inverted to be standards compliant.
+v2:
+  - The clock is twd_clk
+---
+ arch/arm/boot/dts/sh73a0.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-> This means also that the extra clock inversion setting in the
-> armadillo800eva machine driver for CPU component should now be removed.
-
-> Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
-
-[...]
-
-> diff --git a/sound/soc/sh/fsi.c b/sound/soc/sh/fsi.c
-> index b87b22e..dfb17f6 100644
-> --- a/sound/soc/sh/fsi.c
-> +++ b/sound/soc/sh/fsi.c
-> @@ -1594,6 +1594,12 @@ static int fsi_dai_trigger(struct snd_pcm_substream *substream, int cmd,
->
->   static int fsi_set_fmt_dai(struct fsi_priv *fsi, unsigned int fmt)
->   {
-> +	/*
-> +	 * FSI bit clock is inverted to the I2S specification, so we invert it
-> +	 * when a non-inverted I2S clock was requested and vice versa.
-> +	 */
-> +	 fsi->bit_clk_inv = !fsi->bit_clk_inv;
-
-    One space too many here. :-)
-
-[...]
-
-WBR, Sergei
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 121bbeba8f3f6695..9aa55d52b556b4b1 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -11,6 +11,7 @@
+ /include/ "skeleton.dtsi"
+ 
+ #include <dt-bindings/clock/sh73a0-clock.h>
++#include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+ 
+ / {
+@@ -37,6 +38,13 @@
+ 		};
+ 	};
+ 
++	timer@f0000600 {
++		compatible = "arm,cortex-a9-twd-timer";
++		reg = <0xf0000600 0x20>;
++		interrupts = <GIC_PPI 13 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_HIGH)>;
++		clocks = <&twd_clk>;
++	};
++
+ 	gic: interrupt-controller@f0001000 {
+ 		compatible = "arm,cortex-a9-gic";
+ 		#interrupt-cells = <3>;
+-- 
+1.9.1
 
