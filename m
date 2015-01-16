@@ -1,30 +1,38 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 22 Jan 2015 04:41:26 +0000
-Subject: Re: [PATCH 0/2] usb: renesas_usbhs: add support for requesting DT DMA
-Message-Id: <87iofzl93m.wl%kuninori.morimoto.gx@renesas.com>
+Date: Fri, 16 Jan 2015 01:09:04 +0000
+Subject: [PATCH 0/4] ARM: shmobile: r8a779x: add SDHI DMA support
+Message-Id: <87wq4ny1ig.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421639597-2784-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1421639597-2784-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
 
-Hi shimoda-san
+Hi Simon
+Cc Ulf
 
-> This patch series is based on Felipe's usb.git / testing/next branch.
-> (commit id = 05cf6e00b8ff2b80c8b2d1e69f07cdd6c830efe0)
-> 
-> Yoshihiro Shimoda (2):
->   usb: renesas_usbhs: add usbhsf_dma_init_pdev() function
->   usb: renesas_usbhs: add support for requesting DT DMA
-> 
->  .../devicetree/bindings/usb/renesas_usbhs.txt      |    2 ++
->  drivers/usb/renesas_usbhs/fifo.c                   |   21 +++++++++++++++++---
->  2 files changed, 20 insertions(+), 3 deletions(-)
+These are SDHI DMA support for r8a7790/r8a7791.
+These are based on Ulf's
+git://git.linaro.org/people/ulf.hansson/mmc.git :: next
 
-I guess we can (should ?) use dma_request_slave_channel_compat()
-instead of dma_request_slave_channel_reason().
-And, we can use shdma_chan_filter instead of original usbhsf_dma_filter()
+or, especially this commit
+5f04044fbb32cedef8cf0ea777a632882f065698
+(mmc: sh_mobile_sdhi: tidyup mmc_data->bus_shift for latest SoC)
 
+Ulf, please let us know if we need to based on other branch
+
+Kuninori Morimoto (4):
+      ARM: shmobile: r8a7790: tidyup SDHI register size on DTSI
+      ARM: shmobile: r8a7791: tidyup SDHI register size on DTSI
+      ARM: shmobile: r8a7790: add SDHI DMA channels on DTSI
+      ARM: shmobile: r8a7791: add SDHI DMA channels on DTSI
+
+ arch/arm/boot/dts/r8a7790.dtsi |   12 ++++++++++--
+ arch/arm/boot/dts/r8a7791.dtsi |    8 +++++++-
+ 2 files changed, 17 insertions(+), 3 deletions(-)
+
+
+Best regards
+---
+Kuninori Morimoto
