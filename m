@@ -1,26 +1,45 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 29 Jan 2015 09:44:24 +0000
-Subject: Re: [PATCH 14/14 v2] pinctrl: sh-pfc: sh7372: Remove DT binding documentation
-Message-Id: <CACRpkdYMRttcAqSPkK7fHk7r48cYqyi1DyMCn3K9vOLeAz79XQ@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 16 Jan 2015 01:10:15 +0000
+Subject: [PATCH 1/4] ARM: shmobile: r8a7790: tidyup SDHI register size on DTSI
+Message-Id: <87vbk7y1gh.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150126061747.6848.9708.sendpatchset@little-apple>
- <20150126062012.6848.20501.sendpatchset@little-apple>
-In-Reply-To: <20150126062012.6848.20501.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Jan 26, 2015 at 7:20 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-> From: Magnus Damm <damm+renesas@opensource.se>
->
-> Remove the DT compatible string entry for the now unsupported sh7372 SoC.
->
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+r8a7790 SDHI ch0/ch1 has SD_DMACR which is lacated in 0x324.
+This patch updates register size
 
-Patch applied.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-Yours,
-Linus Walleij
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 4b38fc9..0010600 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -493,7 +493,7 @@
+ 
+ 	sdhi0: sd@ee100000 {
+ 		compatible = "renesas,sdhi-r8a7790";
+-		reg = <0 0xee100000 0 0x200>;
++		reg = <0 0xee100000 0 0x328>;
+ 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
+ 		status = "disabled";
+@@ -501,7 +501,7 @@
+ 
+ 	sdhi1: sd@ee120000 {
+ 		compatible = "renesas,sdhi-r8a7790";
+-		reg = <0 0xee120000 0 0x200>;
++		reg = <0 0xee120000 0 0x328>;
+ 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
+ 		status = "disabled";
+-- 
+1.7.9.5
+
