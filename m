@@ -1,57 +1,67 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 21 Jan 2015 04:12:37 +0000
-Subject: [PATCH 0/8 v3] dmaengine: shdma: use normal interface for passing slave id
-Message-Id: <87fvb4ojo4.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 16 Jan 2015 15:37:04 +0000
+Subject: Re: [GIT PULL FOR v3.20] R-Car DU fixes and enhancements
+Message-Id: <4486086.1ppABuDUDI@avalon>
 List-Id: <linux-sh.vger.kernel.org>
+References: <2195818.kbPWsnQAkp@avalon>
+In-Reply-To: <2195818.kbPWsnQAkp@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: airlied@gmail.com
+Cc: dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org
 
+Hi Dave,
 
-Hi Vinod
-Cc Arnd, Ulf, Brian, Mark
+Ping ?
 
-These are v3 of shdma-base fixup patches.
-Original patch came from Arnd.
-I added Arnd/Ulf's Acked-by if it got it in v2 patch-set.
+On Tuesday 23 December 2014 12:03:34 Laurent Pinchart wrote:
+> Hi Dave,
+> 
+> The following changes since commit 4e0cd68115620bc3236ff4e58e4c073948629b41:
+> 
+>   drm: sti: fix module compilation issue (2014-12-15 17:07:57 +1000)
+> 
+> are available in the git repository at:
+> 
+>   git://linuxtv.org/pinchartl/fbdev.git drm/next/du
+> 
+> for you to fetch changes up to 906eff7fcada4186cde54eb89572fb774ab294a0:
+> 
+>   drm: rcar-du: Implement support for interlaced modes (2014-12-23 12:01:52
+> +0200)
+> 
+> ----------------------------------------------------------------
+> Laurent Pinchart (10):
+>       drm: adv7511: Remove interlaced mode check
+>       drm: rcar-du: Don't fail probe in case of partial encoder init error
+>       drm: rcar-du: Configure pitch for chroma plane of multiplanar formats
+>       drm: rcar-du: Remove LVDS and HDMI encoders chaining restriction
+>       drm: rcar-du: Refactor DEFR8 feature
+>       drm: rcar-du: Add support for external pixel clock
+>       drm: rcar-du: Output HSYNC instead of CSYNC
+>       drm: rcar-du: Enable hotplug detection on HDMI connector
+>       drm: rcar-du: Clamp DPMS states to on and off
+>       drm: rcar-du: Implement support for interlaced modes
+> 
+>  Documentation/devicetree/bindings/video/renesas,du.txt |  4 ++
+>  drivers/gpu/drm/i2c/adv7511.c                          |  3 -
+>  drivers/gpu/drm/rcar-du/rcar_du_crtc.c                 | 95 +++++++++++----
+>  drivers/gpu/drm/rcar-du/rcar_du_crtc.h                 |  1 +
+>  drivers/gpu/drm/rcar-du/rcar_du_drv.c                  |  6 +-
+>  drivers/gpu/drm/rcar-du/rcar_du_drv.h                  |  2 +-
+>  drivers/gpu/drm/rcar-du/rcar_du_encoder.c              | 34 +++++----
+>  drivers/gpu/drm/rcar-du/rcar_du_group.c                | 21 ++++--
+>  drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c              |  2 +
+>  drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c              | 18 +++++
+>  drivers/gpu/drm/rcar-du/rcar_du_kms.c                  | 15 +++-
+>  drivers/gpu/drm/rcar-du/rcar_du_plane.c                | 20 +++++-
+>  drivers/gpu/drm/rcar-du/rcar_du_regs.h                 |  5 +-
+>  drivers/gpu/drm/rcar-du/rcar_du_vgacon.c               |  1 +
+>  14 files changed, 180 insertions(+), 47 deletions(-)
 
-Mark
-	can you please check 3) 4) 7) 8) patches ?
+-- 
+Regards,
 
-5) 6) patches are based on Vinod's next branch + Ulf's
-	git.linaro.org/people/ulf.hansson/mmc.git tmio
+Laurent Pinchart
 
-Easy way to merge these are maybe...
- Pattern 1) Vinod merges Ulf's tmio branch, and merge all these pathces
- Pattern 2) Vinod merges non-mmc patches, and Ulf merge it and merge mmc patches
-
-Arnd Bergmann (4):
-      1) dmaengine: shdma: use normal interface for passing slave id
-      2) mtd: sh_flctl: remove slave_id settings for DMAEngine
-      3) spi: rspi: remove slave_id settings for DMAEngine
-      4) spi: sh-msiof: remove slave_id settings for DMAEngine
-
-Kuninori Morimoto (4):
-      5) mmc: sh_mmcif: remove slave_id settings for DMAEngine
-      6) mmc: tmio_mmc: remove slave_id settings for DMAEngine
-      7) ASoC: fsi: remove slave_id settings for DMAEngine
-      8) ASoC: rsnd: remove slave_id settings for DMAEngine
-
- drivers/dma/sh/shdma-base.c       |   73 +++++++++++++++++++++++++++----------
- drivers/mmc/host/sh_mmcif.c       |   12 +++---
- drivers/mmc/host/sh_mobile_sdhi.c |    2 -
- drivers/mmc/host/tmio_mmc.h       |    2 -
- drivers/mmc/host/tmio_mmc_dma.c   |    4 --
- drivers/mtd/nand/sh_flctl.c       |    2 -
- drivers/spi/spi-rspi.c            |    1 -
- drivers/spi/spi-sh-msiof.c        |    1 -
- include/linux/shdma-base.h        |    1 +
- sound/soc/sh/fsi.c                |    5 +--
- sound/soc/sh/rcar/core.c          |    3 +-
- 11 files changed, 61 insertions(+), 45 deletions(-)
-
-
-Best regards
----
-Kuninori Morimoto
