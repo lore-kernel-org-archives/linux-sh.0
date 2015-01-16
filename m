@@ -1,45 +1,30 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 16 Jan 2015 01:10:15 +0000
-Subject: [PATCH 1/4] ARM: shmobile: r8a7790: tidyup SDHI register size on DTSI
-Message-Id: <87vbk7y1gh.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 16 Jan 2015 09:18:24 +0000
+Subject: Re: [PATCH 1/4] ARM: shmobile: r8a7790: tidyup SDHI register size on DTSI
+Message-Id: <CAMuHMdU6pJ8b-PsR-EQ+YgbvF6gmA_1a5PvRR7SxPCgcJL1-KA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87vbk7y1gh.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87vbk7y1gh.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Fri, Jan 16, 2015 at 2:10 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+> r8a7790 SDHI ch0/ch1 has SD_DMACR which is lacated in 0x324.
 
-r8a7790 SDHI ch0/ch1 has SD_DMACR which is lacated in 0x324.
-This patch updates register size
+As you're gonna resend this next week: "located" (also in the r8a7791 patch).
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/boot/dts/r8a7790.dtsi |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+> This patch updates register size
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 4b38fc9..0010600 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -493,7 +493,7 @@
- 
- 	sdhi0: sd@ee100000 {
- 		compatible = "renesas,sdhi-r8a7790";
--		reg = <0 0xee100000 0 0x200>;
-+		reg = <0 0xee100000 0 0x328>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
- 		status = "disabled";
-@@ -501,7 +501,7 @@
- 
- 	sdhi1: sd@ee120000 {
- 		compatible = "renesas,sdhi-r8a7790";
--		reg = <0 0xee120000 0 0x200>;
-+		reg = <0 0xee120000 0 0x328>;
- 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
- 		status = "disabled";
--- 
-1.7.9.5
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
