@@ -1,86 +1,41 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Wed, 21 Jan 2015 16:21:00 +0000
-Subject: [PATCH 09/11] ARM: shmobile: r8a7778: add sound to DT
-Message-Id: <1421857262-16607-10-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 Jan 2015 02:45:51 +0000
+Subject: [PATCH] clk: shmobile: fix sparse NULL pointer warning
+Message-Id: <16bd794f9432b556ec797cbf16c5e575a18f7030.1421376276.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1421376276.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1421376276.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Adds an entry for an R-Car Gen. 1 sound controller.
+From: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Fixes the following sparse warnings:
+
+drivers/clk/shmobile/clk-sh73a0.c:57:17: warning:
+ Using plain integer as NULL pointer
+
+Signed-off-by: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7778.dtsi | 55 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 55 insertions(+)
+ drivers/clk/shmobile/clk-sh73a0.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 37c5efb..a456b35 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -207,6 +207,61 @@
- 		status = "disabled";
- 	};
+diff --git a/drivers/clk/shmobile/clk-sh73a0.c b/drivers/clk/shmobile/clk-sh73a0.c
+index 8574a6d..cd529cf 100644
+--- a/drivers/clk/shmobile/clk-sh73a0.c
++++ b/drivers/clk/shmobile/clk-sh73a0.c
+@@ -54,7 +54,7 @@ static struct div4_clk div4_clks[] = {
+ 	{ "m2", "pll1", CPG_FRQCRA,  0 },
+ 	{ "zx", "pll1", CPG_FRQCRB, 12 },
+ 	{ "hp", "pll1", CPG_FRQCRB,  4 },
+-	{ NULL, 0, 0, 0 },
++	{ NULL, NULL, 0, 0 },
+ };
  
-+	rcar_sound: rcar_sound@ffd90000 {
-+		#sound-dai-cells = <1>;
-+		compatible = "renesas,rcar_sound-r8a7778", "renesas,rcar_sound-gen1", "renesas,rcar_sound";
-+		reg =	<0xffd90000 0x1000>,	/* SRU */
-+			<0xffd91000 0x1240>,	/* SSI */
-+			<0xfffe0000 0x24>;	/* ADG */
-+		clocks = <&mstp3_clks R8A7778_CLK_SSI8>,
-+			<&mstp3_clks R8A7778_CLK_SSI7>,
-+			<&mstp3_clks R8A7778_CLK_SSI6>,
-+			<&mstp3_clks R8A7778_CLK_SSI5>,
-+			<&mstp3_clks R8A7778_CLK_SSI4>,
-+			<&mstp0_clks R8A7778_CLK_SSI3>,
-+			<&mstp0_clks R8A7778_CLK_SSI2>,
-+			<&mstp0_clks R8A7778_CLK_SSI1>,
-+			<&mstp0_clks R8A7778_CLK_SSI0>,
-+			<&mstp5_clks R8A7778_CLK_SCU8>,
-+			<&mstp5_clks R8A7778_CLK_SCU7>,
-+			<&mstp5_clks R8A7778_CLK_SCU6>,
-+			<&mstp5_clks R8A7778_CLK_SCU5>,
-+			<&mstp5_clks R8A7778_CLK_SCU4>,
-+			<&mstp5_clks R8A7778_CLK_SCU3>,
-+			<&mstp5_clks R8A7778_CLK_SCU2>,
-+			<&mstp5_clks R8A7778_CLK_SCU1>,
-+			<&mstp5_clks R8A7778_CLK_SCU0>,
-+			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>,
-+			<&cpg_clocks R8A7778_CLK_S1>;
-+		clock-names = "ssi.8", "ssi.7", "ssi.6", "ssi.5", "ssi.4",
-+			"ssi.3", "ssi.2", "ssi.1", "ssi.0",
-+			"src.8", "src.7", "src.6", "src.5", "src.4",
-+			"src.3", "src.2", "src.1", "src.0",
-+			"clk_a", "clk_b", "clk_c", "clk_i";
-+
-+		status = "disabled";
-+
-+		rcar_sound,src {
-+			src3: src@3 { };
-+			src4: src@4 { };
-+			src5: src@5 { };
-+			src6: src@6 { };
-+			src7: src@7 { };
-+			src8: src@8 { };
-+			src9: src@9 { };
-+		};
-+
-+		rcar_sound,ssi {
-+			ssi3: ssi@3 { interrupts = <0 0x85 IRQ_TYPE_LEVEL_HIGH>; };
-+			ssi4: ssi@4 { interrupts = <0 0x85 IRQ_TYPE_LEVEL_HIGH>; };
-+			ssi5: ssi@5 { interrupts = <0 0x86 IRQ_TYPE_LEVEL_HIGH>; };
-+			ssi6: ssi@6 { interrupts = <0 0x86 IRQ_TYPE_LEVEL_HIGH>; };
-+			ssi7: ssi@7 { interrupts = <0 0x86 IRQ_TYPE_LEVEL_HIGH>; };
-+			ssi8: ssi@8 { interrupts = <0 0x86 IRQ_TYPE_LEVEL_HIGH>; };
-+			ssi9: ssi@9 { interrupts = <0 0x86 IRQ_TYPE_LEVEL_HIGH>; };
-+		};
-+	};
-+
- 	scif0: serial@ffe40000 {
- 		compatible = "renesas,scif-r8a7778", "renesas,scif";
- 		reg = <0xffe40000 0x100>;
+ static const struct clk_div_table div4_div_table[] = {
 -- 
-2.2.2
+2.1.4
 
