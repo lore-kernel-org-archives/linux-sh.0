@@ -1,66 +1,87 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 26 Jan 2015 06:18:19 +0000
-Subject: [PATCH 03/14 v2] ARM: shmobile: mackerel dts: Remove Legacy DTS file
-Message-Id: <20150126061819.6848.91352.sendpatchset@little-apple>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sat, 17 Jan 2015 00:59:24 +0000
+Subject: [PATCH 1/3] ARM: shmobile: R-Mobile: Use generic_pm_domain.attach_dev() for pm_clk setup
+Message-Id: <4b9d62e02a0124d06fbbb9c4b01bd69f3c4dcd35.1421379958.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150126061747.6848.9708.sendpatchset@little-apple>
-In-Reply-To: <20150126061747.6848.9708.sendpatchset@little-apple>
+References: <cover.1421379958.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1421379958.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Remove the DTS file for the no longer supported Mackerel board.
+Use the just introduced genpd attach/detach callbacks to register the
+devices' module clocks, instead of doing it directly, to make it
+DT-proof.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/pm-rmobile.c | 34 ++++++++++++++++++++++++++++++++--
+ 1 file changed, 32 insertions(+), 2 deletions(-)
 
- Changes since V1:
- - Rebased and resolved conflicts
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index 6f7d56e..4ea458d 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -101,6 +101,36 @@ static bool rmobile_pd_active_wakeup(struct device *dev)
+ 	return true;
+ }
+ 
++static int rmobile_pd_attach_dev(struct generic_pm_domain *domain,
++				 struct device *dev)
++{
++	int error;
++
++	error = pm_clk_create(dev);
++	if (error) {
++		dev_err(dev, "pm_clk_create failed %d\n", error);
++		return error;
++	}
++
++	error = pm_clk_add(dev, NULL);
++	if (error) {
++		dev_err(dev, "pm_clk_add failed %d\n", error);
++		goto fail;
++	}
++
++	return 0;
++
++fail:
++	pm_clk_destroy(dev);
++	return error;
++}
++
++static void rmobile_pd_detach_dev(struct generic_pm_domain *domain,
++				  struct device *dev)
++{
++	pm_clk_destroy(dev);
++}
++
+ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
+ {
+ 	struct generic_pm_domain *genpd = &rmobile_pd->genpd;
+@@ -111,6 +141,8 @@ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
+ 	genpd->dev_ops.active_wakeup	= rmobile_pd_active_wakeup;
+ 	genpd->power_off		= rmobile_pd_power_down;
+ 	genpd->power_on			= rmobile_pd_power_up;
++	genpd->attach_dev		= rmobile_pd_attach_dev;
++	genpd->detach_dev		= rmobile_pd_detach_dev;
+ 	__rmobile_pd_power_up(rmobile_pd, false);
+ }
+ 
+@@ -129,8 +161,6 @@ void rmobile_add_device_to_domain_td(const char *domain_name,
+ 	struct device *dev = &pdev->dev;
+ 
+ 	__pm_genpd_name_add_device(domain_name, dev, td);
+-	if (pm_clk_no_clocks(dev))
+-		pm_clk_add(dev, NULL);
+ }
+ 
+ void rmobile_add_devices_to_domains(struct pm_domain_device data[],
+-- 
+2.1.4
 
- arch/arm/boot/dts/Makefile            |    1 -
- arch/arm/boot/dts/sh7372-mackerel.dts |   26 --------------------------
- 2 files changed, 27 deletions(-)
-
---- 0001/arch/arm/boot/dts/Makefile
-+++ work/arch/arm/boot/dts/Makefile	2015-01-26 13:30:37.155992584 +0900
-@@ -410,7 +410,6 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += \
- 	r8a7778-bockw.dtb \
- 	r8a7778-bockw-reference.dtb \
- 	r8a7779-marzen.dtb \
--	sh7372-mackerel.dtb \
- 	sh73a0-kzm9g.dtb \
- 	sh73a0-kzm9g-reference.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
---- 0001/arch/arm/boot/dts/sh7372-mackerel.dts
-+++ /dev/null	2015-01-13 15:44:39.280208949 +0900
-@@ -1,26 +0,0 @@
--/*
-- * Device Tree Source for the mackerel board
-- *
-- * Copyright (C) 2012 Renesas Solutions Corp.
-- *
-- * This file is licensed under the terms of the GNU General Public License
-- * version 2.  This program is licensed "as is" without any warranty of any
-- * kind, whether express or implied.
-- */
--
--/dts-v1/;
--#include "sh7372.dtsi"
--
--/ {
--	model = "Mackerel (AP4 EVM 2nd)";
--	compatible = "renesas,mackerel";
--
--	chosen {
--		bootargs = "console=tty0, console=ttySC0,115200 earlyprintk=sh-sci.0,115200 root=/dev/nfs nfsroot=,tcp,v3 ip=dhcp mem$0m rw";
--	};
--
--	memory {
--		device_type = "memory";
--		reg = <0x40000000 0x10000000>;
--	};
--};
