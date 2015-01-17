@@ -1,42 +1,58 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Thu, 29 Jan 2015 11:35:27 +0000
-Subject: Re: [PATCH 8/9 v4] ASoC: fsi: remove slave_id settings for DMAEngine
-Message-Id: <20150129113527.GA21293@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="F/AP0Ej8g8TT69LF"
+From: Mike Turquette <mturquette@linaro.org>
+Date: Sat, 17 Jan 2015 22:01:16 +0000
+Subject: Re: [PATCH] clk-gate: fix bit # check in clk_register_gate()
+Message-Id: <20150117220116.22722.808@quantum>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87sif3lbi7.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87sif3lbi7.wl%kuninori.morimoto.gx@renesas.com>
-To: linux-sh@vger.kernel.org
+References: <2500887.6mMDBajo0S@wasted.cogentembedded.com>
+In-Reply-To: <2500887.6mMDBajo0S@wasted.cogentembedded.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-kernel@vger.kernel.org, sboyd@codeaurora.org
+Cc: linux-sh@vger.kernel.org
 
+Quoting Sergei Shtylyov (2014-12-24 06:43:27)
+> In case CLK_GATE_HIWORD_MASK flag is passed to clk_register_gate(), the bit #
+> should be no higher than 15, however the corresponding check is obviously off-
+> by-one.
+> 
+> Fixes: 045779942c04 ("clk: gate: add CLK_GATE_HIWORD_MASK")
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
---F/AP0Ej8g8TT69LF
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Applied to clk-next. Thanks! Is this causing a visible regression for
+you? It is not a new bug so I'd prefer to send it though clk-next unless
+something is blowing up on your end.
 
-On Thu, Jan 29, 2015 at 01:03:42AM +0000, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->=20
-> Current fsi sets dma_slave_config :: slave_id field for DMAEngine,
-> but it is no longer needed. Let's remove it.
+> 
+> ---
+> The patch is against Linus' repo because the 'clk-fixes' branch  in  Mike
+> Turquette's 'linux.git' repo at Linaro seems very outdated. BTW, the repo
+> at kernel.org specified by the MAINTAINERS file doesn't seem to exist --
+> can something be done about that?
 
-Acked-by: Mark Brown <broonie@kernel.org>
+The clk-fixes branch at git.linaro.org is now updated and the clk tree
+at git.kernel.org is also live. Blame the holidays.
 
---F/AP0Ej8g8TT69LF
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+For now they will mirror each other (and linux-next will continue to
+reference the one at git.linaro.org until 3.19 is released).
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
+Regards,
+Mike
 
-iQEcBAEBCAAGBQJUyhr+AAoJECTWi3JdVIfQV9MH/j3RIzKO9qRYh5dGvRjMv5xi
-d9QyoT/GDB9AVWhHg7q4thPV0llRxSX67UwqKQH2fH3tQPm2Z1EJQ77uaBGQ78Xo
-OtMX7ZvsDv63sWKi0kDaqoNuL/PpT/oqT1v6oz99ck0qdEQQ8mvYpGecs3HzlDUa
-62nuLoAigfzYpd5t0u1XWfVuHtPLZoBeH5V4vYVrzlDORcJ87vU0T/vAkHMWZOhb
-defV2BNYwIIb8cXL35CUQuKnZOoM+PyDSRf9QQdyUiuKk+/P6ISGe4NJMJgTOp60
-+vq19Tm82+z+XU6tBuPXts+GFNIXhKDavVNM6JyEFMZZdKoxpHYte173bfxiexA=
-=WxqW
------END PGP SIGNATURE-----
-
---F/AP0Ej8g8TT69LF--
+> 
+>  drivers/clk/clk-gate.c |    2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> Index: linux/drivers/clk/clk-gate.c
+> =================================> --- linux.orig/drivers/clk/clk-gate.c
+> +++ linux/drivers/clk/clk-gate.c
+> @@ -128,7 +128,7 @@ struct clk *clk_register_gate(struct dev
+>         struct clk_init_data init;
+>  
+>         if (clk_gate_flags & CLK_GATE_HIWORD_MASK) {
+> -               if (bit_idx > 16) {
+> +               if (bit_idx > 15) {
+>                         pr_err("gate bit exceeds LOWORD field\n");
+>                         return ERR_PTR(-EINVAL);
+>                 }
+> 
