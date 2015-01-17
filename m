@@ -1,40 +1,78 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 20 Jan 2015 04:17:15 +0000
-Subject: [PATCH 5/8 v2] spi: rspi: remove slave_id settings for DMAEngine
-Message-Id: <87egqqaxvi.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sat, 17 Jan 2015 00:58:40 +0000
+Subject: [PATCH 07/11] ARM: shmobile: Add DT bindings for Renesas memory controllers
+Message-Id: <753b9c9cfdfeae57f956c55e1ccdfcf2d90e6196.1421380713.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1421380713.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1421380713.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Arnd Bergmann <arnd@arndb.de>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Current rspi sets dma_slave_config :: slave_id field for DMAEngine,
-but it is no longer needed. Let's remove it.
+Add DT bindings for Renesas R-Mobile and SH-Mobile memory controllers.
+Currently memory controller device nodes are used only to reference PM
+domains, and prevent these PM domains from being powered down, which
+would crash the system.
 
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v1 -> v2
+ .../renesas-memory-controllers.txt                 | 44 ++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/memory-controllers/renesas-memory-controllers.txt
 
- - separate into shdma and others
-
- drivers/spi/spi-rspi.c |    1 -
- 1 file changed, 1 deletion(-)
-
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 2071f78..6cbcdc0 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -918,7 +918,6 @@ static struct dma_chan *rspi_request_dma_chan(struct device *dev,
- 	}
- 
- 	memset(&cfg, 0, sizeof(cfg));
--	cfg.slave_id = id;
- 	cfg.direction = dir;
- 	if (dir = DMA_MEM_TO_DEV) {
- 		cfg.dst_addr = port_addr;
+diff --git a/Documentation/devicetree/bindings/memory-controllers/renesas-memory-controllers.txt b/Documentation/devicetree/bindings/memory-controllers/renesas-memory-controllers.txt
+new file mode 100644
+index 0000000..c64b792
+--- /dev/null
++++ b/Documentation/devicetree/bindings/memory-controllers/renesas-memory-controllers.txt
+@@ -0,0 +1,44 @@
++DT bindings for Renesas R-Mobile and SH-Mobile memory controllers
++================================+
++Renesas R-Mobile and SH-Mobile SoCs contain one or more memory controllers.
++These memory controllers differ from one SoC variant to another, and are called
++by different names ("DDR Bus Controller (DBSC)", "DDR3 Bus State Controller
++(DBSC3)", "SDRAM Bus State Controller (SBSC)").
++
++Currently memory controller device nodes are used only to reference PM
++domains, and prevent these PM domains from being powered down, which would
++crash the system.
++
++As there exist no actual drivers for these controllers yet, these bindings
++should be considered EXPERIMENTAL for now.
++
++Required properties:
++  - compatible: Must be one of the following SoC-specific values:
++		  - "renesas,dbsc-r8a73a4" (R-Mobile APE6)
++		  - "renesas,dbsc3-r8a7740" (R-Mobile A1)
++		  - "renesas,sbsc-sh73a0" (SH-Mobile AG5)
++  - reg: Must contain the base address and length of the memory controller's
++	 registers.
++
++Optional properties:
++  - interrupts: Must contain a list of interrupt specifiers for memory
++		controller interrupts, if available.
++  - interrupts-names: Must contain a list of interrupt names corresponding to
++		      the interrupts in the interrupts property, if available.
++		      Valid interrupt names are:
++			- "sec" (secure interrupt)
++			- "temp" (normal (temperature) interrupt)
++  - power-domains: Must contain a reference to the PM domain that the memory
++		   controller belongs to, if available.
++
++Example:
++
++	sbsc1: memory-controller@fe400000 {
++		compatible = "renesas,sbsc-sh73a0";
++		reg = <0xfe400000 0x400>;
++		interrupts = <0 35 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 36 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "sec", "temp";
++		power-domains = <&pd_a4bc0>;
++	};
 -- 
-1.7.9.5
+2.1.4
 
