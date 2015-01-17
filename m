@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 Jan 2015 02:45:50 +0000
-Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Sh73a0 CCF Updates for v3.20
-Message-Id: <cover.1421376276.git.horms+renesas@verge.net.au>
+Date: Sat, 17 Jan 2015 00:58:16 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM Based SoC DT Updates for v3.20
+Message-Id: <cover.1421380713.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1381222967.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
@@ -12,33 +12,60 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hi Olof, Hi Kevin, Hi Arnd,
 
-Please consider these second round of Renesas ARM based SoC sh73a0 CCF updates for v3.20.
+Please consider these second round of Renesas ARM based SoC DT updates for v3.20.
 
 This pull request is based on the previous round of
-such requests, tagged as renesas-sh73a0-ccf-for-v3.20,
-which you have already pulled.
+such requests, tagged as renesas-dt-for-v3.20,
+which you have previously pulled.
 
 
-The following changes since commit 09bd745b555c262d1e2c851777317f3adf3cf3d4:
+The following changes since commit 7408d3061d2f04181820902fae6e92e4a73d5cc0:
 
-  ARM: shmobile: sh73a0: disable legacy clock initialization (2014-12-21 17:09:25 +0900)
+  ARM: shmobile: r8a7791: add MLB+ clock (2014-12-23 09:18:23 +0900)
 
 are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh73a0-ccf2-for-v3.20
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt2-for-v3.20
 
-for you to fetch changes up to 16bd794f9432b556ec797cbf16c5e575a18f7030:
+for you to fetch changes up to fbaa5e694a1240c5f6b829b1e17652e4e228ee12:
 
-  clk: shmobile: fix sparse NULL pointer warning (2015-01-14 13:13:24 +0900)
-
-----------------------------------------------------------------
-Second Round of Renesas ARM Based SoC Sh73a0 CCF Updates for v3.20
-
-* Fix sparse NULL pointer warning
+  PM / Domains: R-Mobile SYSC: Document SH-Mobile AG5 (sh73a0) binding (2015-01-16 10:59:37 +0900)
 
 ----------------------------------------------------------------
-Wei Yongjun (1):
-      clk: shmobile: fix sparse NULL pointer warning
+Second Round of Renesas ARM Based SoC DT Updates for v3.20
 
- drivers/clk/shmobile/clk-sh73a0.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+* Support Renesas memory controllers
+* Add SRC interrupt number on r8a779~ and r8a7791 SoCs
+* Fix MSTP8 input clocks on r8a7791 SoC
+* Add PM domain support to r8a7740
+* Add DT bindings for the R-Mobile System Controller
+* Use Add sh73a0-specific FSI2 compatible property
+
+----------------------------------------------------------------
+Geert Uytterhoeven (8):
+      ARM: shmobile: sh73a0 dtsi: Add SoC-specific FSI2 compatible property
+      PM / Domains: Add DT bindings for the R-Mobile System Controller
+      ARM: shmobile: r8a7740 dtsi: Add PM domain support
+      ARM: shmobile: Add DT bindings for Renesas memory controllers
+      ARM: shmobile: r8a73a4 dtsi: Add memory-controller nodes
+      ARM: shmobile: r8a7740 dtsi: Add memory-controller node
+      ARM: shmobile: sh73a0 dtsi: Add memory-controller nodes
+      PM / Domains: R-Mobile SYSC: Document SH-Mobile AG5 (sh73a0) binding
+
+Kuninori Morimoto (2):
+      ARM: shmobile: r8a7790: add SRC interrupt number on DTSI
+      ARM: shmobile: r8a7791: add SRC interrupt number on DTSI
+
+Sergei Shtylyov (1):
+      ARM: shmobile: r8a7791: fix MSTP8 input clocks
+
+ .../renesas-memory-controllers.txt                 |  44 +++++++++
+ .../bindings/power/renesas,sysc-rmobile.txt        |  99 +++++++++++++++++++
+ arch/arm/boot/dts/r8a73a4.dtsi                     |  10 ++
+ arch/arm/boot/dts/r8a7740.dtsi                     | 105 +++++++++++++++++++++
+ arch/arm/boot/dts/r8a7790.dtsi                     |  20 ++--
+ arch/arm/boot/dts/r8a7791.dtsi                     |  22 ++---
+ arch/arm/boot/dts/sh73a0.dtsi                      |  18 +++-
+ 7 files changed, 296 insertions(+), 22 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/memory-controllers/renesas-memory-controllers.txt
+ create mode 100644 Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
