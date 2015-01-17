@@ -1,82 +1,42 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 19 Jan 2015 10:58:11 +0000
-Subject: renesas-drivers-2015-01-19-v3.19-rc5
-Message-Id: <1421665091-25258-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sat, 17 Jan 2015 00:58:37 +0000
+Subject: [PATCH 04/11] ARM: shmobile: r8a7791: fix MSTP8 input clocks
+Message-Id: <2fd4e094bbe6de0dc98355c4c387c433f6de525c.1421380713.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1421380713.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1421380713.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-I've pushed renesas-drivers-2015-01-19-v3.19-rc5 to
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
-This tree is meant to ease development of platform support and drivers for
-Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
-branches of various subsystem trees and (b) branches with driver code
-submitted or planned for submission to maintainers into the development
-branch of Simon Horman's renesas.git tree.
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Today's version is based on renesas-devel-20150119-v3.19-rc5.
+I made  a mistake when rebasing Andrey Gusakov's patch adding MLB+ clock to the
+R8A7791 device  tree, inserting <&hp_clk> into the "clocks"  property of the
+MSTP8 node at a wrong position, so that the input clocks for MLB+ and IPMMU-SGX
+got swapped...
 
-Included branches with driver code:
-  - clk-shmobile-for-3.20
-      - clk: shmobile: div6: Avoid changing divisor in .disable()
-      - clk: shmobile: Add r8a7793 support
-      - clk: shmobile: r8a7793: document CPG clock support
-      - clk: shmobile: r8a73a4 common clock framework implementation
-      - clk: shmobile: Add r8a73a4 SoC to MSTP bindings
-      - clk: shmobile: Add R-Car Gen2 RCAN clock support
-      - clk: shmobile: Add R-Car Gen2 ADSP clock support
+Fixes: 7408d3061d2f ("ARM: shmobile: r8a7791: add MLB+ clock")
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Included rcar-dmac which has been lost on today's slave-dma/next:
-  - dmaengine: rcar-dmac: Handle hardware descriptor allocation failure
-  - dmaengine: rcar-dmac: Cache hardware descriptors memory
-  - dmaengine: rcar-dmac: Implement support for hardware descriptor lists
-  - dmaengine: rcar-dmac: Add Renesas R-Car Gen2 DMA Controller (DMAC) driver
-  - dmaengine: rcar-dmac: Remove duplicate sentence from DT bindings
-  - dmaengine: Add 16 bytes, 32 bytes and 64 bytes bus widths
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 2810226..946cd3a 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1154,7 +1154,7 @@
+ 		mstp8_clks: mstp8_clks@e6150990 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
+-			clocks = <&hp_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>,
++			clocks = <&zg_clk>, <&hp_clk>, <&zg_clk>, <&zg_clk>,
+ 			         <&zg_clk>, <&p_clk>, <&zs_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
+-- 
+2.1.4
 
-Included subsystem trees:
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
-  - git://git.linaro.org/people/mturquette/linux.git#clk-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
-  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
-  - git://gitorious.org/linux-can/linux-can-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
-  - git://people.freedesktop.org/~airlied/linux#drm-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
-  - git://linuxtv.org/mchehab/media-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
-  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
-  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
-  - git://git.infradead.org/users/vkoul/slave-dma.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
-  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
-  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
-  - git://git.infradead.org/battery-2.6.git#master
-  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
