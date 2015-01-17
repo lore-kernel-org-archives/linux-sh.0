@@ -1,94 +1,37 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 20 Jan 2015 12:51:38 +0000
-Subject: [PATCH 1/9] ARM: shmobile: r8a73a4: Add CPG register bits header
-Message-Id: <1421758306-24838-2-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sat, 17 Jan 2015 00:58:44 +0000
+Subject: [PATCH 11/11] PM / Domains: R-Mobile SYSC: Document SH-Mobile AG5 (sh73a0) binding
+Message-Id: <fbaa5e694a1240c5f6b829b1e17652e4e228ee12.1421380713.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421758306-24838-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1421758306-24838-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1421380713.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1421380713.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+SH-Mobile AG5 (sh73a0) can be handled by the existing bindings.
+
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- include/dt-bindings/clock/r8a73a4-clock.h | 62 +++++++++++++++++++++++++++++++
- 1 file changed, 62 insertions(+)
- create mode 100644 include/dt-bindings/clock/r8a73a4-clock.h
+ Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/include/dt-bindings/clock/r8a73a4-clock.h b/include/dt-bindings/clock/r8a73a4-clock.h
-new file mode 100644
-index 0000000000000000..9a4b4c9ca44aba70
---- /dev/null
-+++ b/include/dt-bindings/clock/r8a73a4-clock.h
-@@ -0,0 +1,62 @@
-+/*
-+ * Copyright 2014 Ulrich Hecht
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ */
-+
-+#ifndef __DT_BINDINGS_CLOCK_R8A73A4_H__
-+#define __DT_BINDINGS_CLOCK_R8A73A4_H__
-+
-+/* CPG */
-+#define R8A73A4_CLK_MAIN	0
-+#define R8A73A4_CLK_PLL0	1
-+#define R8A73A4_CLK_PLL1	2
-+#define R8A73A4_CLK_PLL2	3
-+#define R8A73A4_CLK_PLL2S	4
-+#define R8A73A4_CLK_PLL2H	5
-+#define R8A73A4_CLK_Z		6
-+#define R8A73A4_CLK_Z2		7
-+#define R8A73A4_CLK_I		8
-+#define R8A73A4_CLK_M3		9
-+#define R8A73A4_CLK_B		10
-+#define R8A73A4_CLK_M1		11
-+#define R8A73A4_CLK_M2		12
-+#define R8A73A4_CLK_ZX		13
-+#define R8A73A4_CLK_ZS		14
-+#define R8A73A4_CLK_HP		15
-+
-+/* MSTP2 */
-+#define R8A73A4_CLK_DMAC	18
-+#define R8A73A4_CLK_SCIFB3	17
-+#define R8A73A4_CLK_SCIFB2	16
-+#define R8A73A4_CLK_SCIFB1	7
-+#define R8A73A4_CLK_SCIFB0	6
-+#define R8A73A4_CLK_SCIFA0	4
-+#define R8A73A4_CLK_SCIFA1	3
-+
-+/* MSTP3 */
-+#define R8A73A4_CLK_CMT1	29
-+#define R8A73A4_CLK_IIC1	23
-+#define R8A73A4_CLK_IIC0	18
-+#define R8A73A4_CLK_IIC7	17
-+#define R8A73A4_CLK_IIC6	16
-+#define R8A73A4_CLK_MMCIF0	15
-+#define R8A73A4_CLK_SDHI0	14
-+#define R8A73A4_CLK_SDHI1	13
-+#define R8A73A4_CLK_SDHI2	12
-+#define R8A73A4_CLK_MMCIF1	5
-+#define R8A73A4_CLK_IIC2	0
-+
-+/* MSTP4 */
-+#define R8A73A4_CLK_IIC3	11
-+#define R8A73A4_CLK_IIC4	10
-+#define R8A73A4_CLK_IIC5	9
-+
-+/* MSTP5 */
-+#define R8A73A4_CLK_THERMAL	22
-+#define R8A73A4_CLK_IIC8	15
-+
-+#endif /* __DT_BINDINGS_CLOCK_R8A73A4_H__ */
+diff --git a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
+index 2460476..cc3b1f0 100644
+--- a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
++++ b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
+@@ -12,6 +12,7 @@ Required properties:
+ 	      fallback.
+ 	      Examples with soctypes are:
+ 		- "renesas,sysc-r8a7740" (R-Mobile A1)
++		- "renesas,sysc-sh73a0" (SH-Mobile AG5)
+ - reg: Two address start and address range blocks for the device:
+          - The first block refers to the normally accessible registers,
+          - the second block refers to the registers protected by the HPB
 -- 
-1.9.1
+2.1.4
 
