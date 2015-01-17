@@ -1,35 +1,54 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 26 Jan 2015 06:19:00 +0000
-Subject: [PATCH 07/14 v2] ARM: shmobile: mackerel: Remove from MAINTAINERS
-Message-Id: <20150126061900.6848.23603.sendpatchset@little-apple>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sat, 17 Jan 2015 00:58:39 +0000
+Subject: [PATCH 06/11] ARM: shmobile: r8a7791: add SRC interrupt number on DTSI
+Message-Id: <8856102dd30897e608331521f4286163700c4d59.1421380713.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150126061747.6848.9708.sendpatchset@little-apple>
-In-Reply-To: <20150126061747.6848.9708.sendpatchset@little-apple>
+References: <cover.1421380713.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1421380713.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Remove the mackerel_defconfig from the MAINTAINERS file.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a7791.dtsi | 20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
 
- Changes since V1:
- - New patch
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 946cd3a..e3a60a2 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1420,16 +1420,16 @@
+ 		};
+ 
+ 		rcar_sound,src {
+-			src0: src@0 { };
+-			src1: src@1 { };
+-			src2: src@2 { };
+-			src3: src@3 { };
+-			src4: src@4 { };
+-			src5: src@5 { };
+-			src6: src@6 { };
+-			src7: src@7 { };
+-			src8: src@8 { };
+-			src9: src@9 { };
++			src0: src@0 { interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>; };
++			src1: src@1 { interrupts = <0 353 IRQ_TYPE_LEVEL_HIGH>; };
++			src2: src@2 { interrupts = <0 354 IRQ_TYPE_LEVEL_HIGH>; };
++			src3: src@3 { interrupts = <0 355 IRQ_TYPE_LEVEL_HIGH>; };
++			src4: src@4 { interrupts = <0 356 IRQ_TYPE_LEVEL_HIGH>; };
++			src5: src@5 { interrupts = <0 357 IRQ_TYPE_LEVEL_HIGH>; };
++			src6: src@6 { interrupts = <0 358 IRQ_TYPE_LEVEL_HIGH>; };
++			src7: src@7 { interrupts = <0 359 IRQ_TYPE_LEVEL_HIGH>; };
++			src8: src@8 { interrupts = <0 360 IRQ_TYPE_LEVEL_HIGH>; };
++			src9: src@9 { interrupts = <0 361 IRQ_TYPE_LEVEL_HIGH>; };
+ 		};
+ 
+ 		rcar_sound,ssi {
+-- 
+2.1.4
 
- MAINTAINERS |    1 -
- 1 file changed, 1 deletion(-)
-
---- 0001/MAINTAINERS
-+++ work/MAINTAINERS	2015-01-26 13:31:58.265992293 +0900
-@@ -1395,7 +1395,6 @@ F:	arch/arm/configs/ape6evm_defconfig
- F:	arch/arm/configs/armadillo800eva_defconfig
- F:	arch/arm/configs/bockw_defconfig
- F:	arch/arm/configs/kzm9g_defconfig
--F:	arch/arm/configs/mackerel_defconfig
- F:	arch/arm/configs/marzen_defconfig
- F:	arch/arm/configs/shmobile_defconfig
- F:	arch/arm/include/debug/renesas-scif.S
