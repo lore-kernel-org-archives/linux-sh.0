@@ -1,35 +1,40 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Sat, 17 Jan 2015 00:37:44 +0000
+Date: Sat, 17 Jan 2015 01:13:10 +0000
 Subject: Re: [PATCH v2] ARM: shmobile: sh73a0 dtsi: Add Cortex-A9 TWD node
-Message-Id: <20150117003743.GB15403@verge.net.au>
+Message-Id: <20150117011309.GB397@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1421406528-26704-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1421406528-26704-1-git-send-email-geert+renesas@glider.be>
+ <20150117003743.GB15403@verge.net.au>
+In-Reply-To: <20150117003743.GB15403@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jan 16, 2015 at 12:08:48PM +0100, Geert Uytterhoeven wrote:
-> Add a node for the Private Timer and Watchdog, as found in the Cortex-A9
-> MPCore.
+On Sat, Jan 17, 2015 at 09:37:44AM +0900, Simon Horman wrote:
+> On Fri, Jan 16, 2015 at 12:08:48PM +0100, Geert Uytterhoeven wrote:
+> > Add a node for the Private Timer and Watchdog, as found in the Cortex-A9
+> > MPCore.
+> > 
+> > Without this, there's no clocksource available during early kernel
+> > initialization, before cmt1 is initialized, leading to a lock-up if
+> > CONFIG_CPU_IDLE=y.
+> > 
+> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> > ---
+> > As the TWD driver does not support DT without CCF, this should NOT be
+> > applied to a branch that still has kzm9g-reference support, as this
+> > would lead to another lock-up.
+> > Hence the first choice "dt-for-v3.20" is NOT OK.
+> > "sh73a0-multiplatform-for-v3.20" is OK.
+> > 
+> > v2:
+> >   - The clock is twd_clk
 > 
-> Without this, there's no clocksource available during early kernel
-> initialization, before cmt1 is initialized, leading to a lock-up if
-> CONFIG_CPU_IDLE=y.
+> Thanks, for your detailed notes regarding branches.
 > 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> As the TWD driver does not support DT without CCF, this should NOT be
-> applied to a branch that still has kzm9g-reference support, as this
-> would lead to another lock-up.
-> Hence the first choice "dt-for-v3.20" is NOT OK.
-> "sh73a0-multiplatform-for-v3.20" is OK.
-> 
-> v2:
->   - The clock is twd_clk
+> I plan to push this a little later today. Please take a moment
+> to check that I flowed your advice correctly.
 
-Thanks, for your detailed notes regarding branches.
-
-I plan to push this a little later today. Please take a moment
-to check that I flowed your advice correctly.
+For reference, I have pushed the above as part of
+renesas-next-20150117-v3.19-rc1.
