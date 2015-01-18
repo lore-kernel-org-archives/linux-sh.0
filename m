@@ -1,51 +1,64 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 26 Jan 2015 03:57:47 +0000
-Subject: Re: [PATCH] ARM: shmobile: salvage lost CONFIG_REGULATOR
-Message-Id: <20150126035742.GB1215@verge.net.au>
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Sun, 18 Jan 2015 09:58:15 +0000
+Subject: Re: Bug#775611: [sh]: FTBFS due to unknown compiler option '-m32'
+Message-Id: <1421575095.31046.99.camel@decadent.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="=-n/x/CH6kQyL/6FhOz7Ps"
 List-Id: <linux-sh.vger.kernel.org>
-References: <87fvb2exr7.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87fvb2exr7.wl%kuninori.morimoto.gx@renesas.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Jan 26, 2015 at 02:28:26AM +0000, Kuninori Morimoto wrote:
-> 
-> Hi Simon
-> 
-> > I believe this problem is present in renesas-next-20150122-v3.19-rc1,
-> > but not in renesas-devel-20150123-v3.19-rc5 due to the presence there of
-> > the following in the latter:
-> (snip)
-> > It may have been better if the defconfig problem that Morimoto-san
-> > mentions below had not gone into next for v3.20 while the change above
-> > ended up being deferred for v3.21. But that is how things have
-> > played out. And the result seems to be that Morimoto-san's patch
-> > will resolve a regression that has been queued up for v3.20.
-> > 
-> > With the above in mind I plan to queue up the change below
-> > as a fix for v3.20.
-> 
-> Thank you for your help.
-> My patch is including below, because "make savedefconfig" did it
-> 
-> -CONFIG_ARCH_SH73A0=y
-> -CONFIG_SIMPLE_PM_BUS=y
-> -CONFIG_RCAR_DMAC=y
-> 
-> But, if these are based on merged branch (= Geert mentioned to it),
-> I think I should send v2 (which includes REGURALOR only),
-> otherwise, it will create other issues.
-> 
-> My patch was based on renesas-devel-20150122-v3.19-rc5.
-> but, can you show me best branch/tag for this issue ?
 
-renesas-next-20150122-v3.19-rc1
+--=-n/x/CH6kQyL/6FhOz7Ps
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-The config items above would probably also be removed by savedefconfig
-in renesas-next-20150122-v3.19-rc1 too. However, I think a minimal
-approach is best for a fix: just removing REGURALOR as you suggest.
+On Sun, 2015-01-18 at 00:35 +0100, John Paul Adrian Glaubitz wrote:
+> Package: linux
+> Version: 3.16.7-ckt4-1
+> Severity: normal
+> Tags: patch
+>=20
+> Hi!
+>=20
+> The kernel package currently fails to build from source on sh4 since
+> the build scripts try to pass the '-m32' compiler option on gcc which
+> is not available with gcc on sh4 (also according to the manpage).
+>=20
+> Selecting HAVE_C_RECORDMCOUNT in arch/sh/Kconfig (see attached patch
+> by Ben Hutchings) fixes the issues. However, I also suggest removing
+> the line "$cc .=3D " -m32";" for sh compiler options in scripts/
+> recordmcount.pl.
 
-As you (now) know I have sent a patch to do that, which
-I suppose crossed in-flight with your email.
+Steven and SH experts, what do you think of this?
+
+Ben.
+
+--=20
+Ben Hutchings
+The generation of random numbers is too important to be left to chance.
+                                                            - Robert Coveyo=
+u
+
+--=-n/x/CH6kQyL/6FhOz7Ps
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIVAwUAVLuDt+e/yOyVhhEJAQrk9A/+PdfFjKw4o82u4UbOSIST+Ht3Kaar7514
+dqDF+asouXT3XNvNmvmHBFaLezOymv81AWJbRZn3QNVbH85rFrboCfiAPdBQ8FIx
+H78UiZF2E0unX/U/G/Z5dY7uMLGeMUn/GBPHHuUWksgcaS3gN5EiWc7BWuxiQC3G
+G27ggnCC5Q/yc4Hj/3MCj+n6+h2U48G1SGsOTo1OUpSo2uTuR4y4JxDZl5MVSBU7
+jB8k+WRgaP2pfmXZOKWQzLLh74ZSF4OgnBSNx4aCVOlTfb5JB7dWp4KvpTr9ILPb
+q0t8mx+5ja2vYqY9wFHVlj4aAJlr97g2oiezzG83MCMxAEd04x+Pgg8v3nEkcaRP
+ZEDSnBIyEqYiscKhmK0RJj+ki1KjEN5gKVITd2Izc+XcC1lu+AnKYDk2A+nU2E6g
+vGQzGHQlBpAyhr12DU5RXySaAW6ZucfaAiX5RTkJNHv5XQw+5djiSNi2s+U9Bt6/
+h5b3irnQNN1t2cnzetsLHDWkrkI44UNcJ2E1JFcLWHH6VvSAAJbLVtejn+DO1EMf
+gJiRYGLC2vU05W5OELBbMDs8u8OgmJDJClaA3dteX0gPq2F/kbD+eKmXu0F3bekI
+ED/G/FihDgzzH4BjKjO2lYvumrilBZmW8EmJdqN17vpaM/XZ1jlv+u2uvpQW329k
+O7hEFVXowO0=
+=M/vF
+-----END PGP SIGNATURE-----
+
+--=-n/x/CH6kQyL/6FhOz7Ps--
