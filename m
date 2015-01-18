@@ -1,64 +1,87 @@
-From: Ben Hutchings <ben@decadent.org.uk>
-Date: Sun, 18 Jan 2015 09:58:15 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 18 Jan 2015 11:15:34 +0000
 Subject: Re: Bug#775611: [sh]: FTBFS due to unknown compiler option '-m32'
-Message-Id: <1421575095.31046.99.camel@decadent.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="=-n/x/CH6kQyL/6FhOz7Ps"
+Message-Id: <CAMuHMdXe=hRZ_i=9-JPgmyKFhnn4GTOkhEam+LaA5qn0YWFOoQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1421575095.31046.99.camel@decadent.org.uk>
+In-Reply-To: <1421575095.31046.99.camel@decadent.org.uk>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 To: linux-sh@vger.kernel.org
 
+On Sun, Jan 18, 2015 at 10:58 AM, Ben Hutchings <ben@decadent.org.uk> wrote:
+> On Sun, 2015-01-18 at 00:35 +0100, John Paul Adrian Glaubitz wrote:
+>> Package: linux
+>> Version: 3.16.7-ckt4-1
+>> Severity: normal
+>> Tags: patch
+>>
+>> Hi!
+>>
+>> The kernel package currently fails to build from source on sh4 since
+>> the build scripts try to pass the '-m32' compiler option on gcc which
+>> is not available with gcc on sh4 (also according to the manpage).
+>>
+>> Selecting HAVE_C_RECORDMCOUNT in arch/sh/Kconfig (see attached patch
+>> by Ben Hutchings) fixes the issues. However, I also suggest removing
+>> the line "$cc .= " -m32";" for sh compiler options in scripts/
+>> recordmcount.pl.
+>
+> Steven and SH experts, what do you think of this?
 
---=-n/x/CH6kQyL/6FhOz7Ps
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+It seems most compilers don't support -m32, unless they're biarch.
+On an Ubuntu 14.04 LTS box with lots of cross-compilers from korg/crosstool:
 
-On Sun, 2015-01-18 at 00:35 +0100, John Paul Adrian Glaubitz wrote:
-> Package: linux
-> Version: 3.16.7-ckt4-1
-> Severity: normal
-> Tags: patch
->=20
-> Hi!
->=20
-> The kernel package currently fails to build from source on sh4 since
-> the build scripts try to pass the '-m32' compiler option on gcc which
-> is not available with gcc on sh4 (also according to the manpage).
->=20
-> Selecting HAVE_C_RECORDMCOUNT in arch/sh/Kconfig (see attached patch
-> by Ben Hutchings) fixes the issues. However, I also suggest removing
-> the line "$cc .=3D " -m32";" for sh compiler options in scripts/
-> recordmcount.pl.
+/usr/bin/c89-gcc OK
+/usr/bin/c99-gcc OK
+/usr/bin/x86_64-linux-gnu-gcc OK
+/opt/cross/gcc-4.2.4-nolibc/avr32-linux/bin/avr32-linux-gcc cc1:
+error: unrecognized command line option "-m32"
+/opt/cross/gcc-4.8.0-nolibc/microblaze-linux/bin/microblaze-linux-gcc
+microblaze-linux-gcc: error: unrecognized command line option '-m32'
+/opt/cross/gcc-4.8.0-nolibc/powerpc64-linux/bin/powerpc64-linux-gcc OK
+/opt/cross/gcc-4.5.1-nolibc/or32-linux/bin/or32-linux-gcc cc1: error:
+unrecognized command line option "-m32"
+/opt/cross/gcc-4.6.3-nolibc/crisv32-linux/bin/crisv32-linux-gcc cc1:
+error: unrecognized command line option '-m32'
+/opt/cross/gcc-4.6.3-nolibc/frv-linux/bin/frv-linux-gcc cc1: error:
+unrecognized command line option '-m32'
+/opt/cross/gcc-4.6.3-nolibc/bfin-uclinux/bin/bfin-uclinux-gcc cc1:
+error: unrecognized command line option '-m32'
+/opt/cross/gcc-4.6.3-nolibc/sparc64-linux/bin/sparc64-linux-gcc OK
+/opt/cross/gcc-4.6.3-nolibc/m68k-linux/bin/m68k-linux-gcc cc1: error:
+unrecognized command line option '-m32'
+/opt/cross/gcc-4.6.3-nolibc/alpha-linux/bin/alpha-linux-gcc cc1:
+error: unrecognized command line option '-m32'
+/opt/cross/gcc-4.6.3-nolibc/sh4-linux/bin/sh4-linux-gcc cc1: error:
+unrecognized command line option '-m32'
+/opt/cross/gcc-4.6.3-nolibc/m32r-linux/bin/m32r-linux-gcc cc1: error:
+unrecognized command line option '-m32'
+/opt/cross/gcc-4.6.3-nolibc/ia64-linux/bin/ia64-linux-gcc cc1: error:
+unrecognized command line option '-m32'
+/opt/cross/gcc-4.6.3-nolibc/xtensa-linux/bin/xtensa-linux-gcc cc1:
+error: unrecognized command line option '-m32'
+/opt/cross/gcc-4.6.3-nolibc/arm-unknown-linux-gnueabi/bin/arm-unknown-linux-gnueabi-gcc
+cc1: error: unrecognized command line option '-m32'
+/opt/cross/gcc-4.6.3-nolibc/am33_2.0-linux/bin/am33_2.0-linux-gcc cc1:
+error: unrecognized command line option '-m32'
+/opt/cross/gcc-4.6.3-nolibc/mips64-linux/bin/mips64-linux-gcc cc1:
+error: unrecognized command line option '-m32'
+/opt/cross/gcc-4.6.3-nolibc/s390x-linux/bin/s390x-linux-gcc cc1:
+error: unrecognized command line option '-m32'
+/opt/cross/gcc-4.6.3-nolibc/hppa64-linux/bin/hppa64-linux-gcc cc1:
+error: unrecognized command line option '-m32'
+/opt/cross/gcc-linaro-aarch64-none-elf-4.8-2013.08_linux/bin/aarch64-none-elf-gcc
+aarch64-none-elf-gcc: error: unrecognized command line option ‘-m32’
 
-Steven and SH experts, what do you think of this?
+Gr{oetje,eeting}s,
 
-Ben.
+                        Geert
 
---=20
-Ben Hutchings
-The generation of random numbers is too important to be left to chance.
-                                                            - Robert Coveyo=
-u
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
---=-n/x/CH6kQyL/6FhOz7Ps
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIVAwUAVLuDt+e/yOyVhhEJAQrk9A/+PdfFjKw4o82u4UbOSIST+Ht3Kaar7514
-dqDF+asouXT3XNvNmvmHBFaLezOymv81AWJbRZn3QNVbH85rFrboCfiAPdBQ8FIx
-H78UiZF2E0unX/U/G/Z5dY7uMLGeMUn/GBPHHuUWksgcaS3gN5EiWc7BWuxiQC3G
-G27ggnCC5Q/yc4Hj/3MCj+n6+h2U48G1SGsOTo1OUpSo2uTuR4y4JxDZl5MVSBU7
-jB8k+WRgaP2pfmXZOKWQzLLh74ZSF4OgnBSNx4aCVOlTfb5JB7dWp4KvpTr9ILPb
-q0t8mx+5ja2vYqY9wFHVlj4aAJlr97g2oiezzG83MCMxAEd04x+Pgg8v3nEkcaRP
-ZEDSnBIyEqYiscKhmK0RJj+ki1KjEN5gKVITd2Izc+XcC1lu+AnKYDk2A+nU2E6g
-vGQzGHQlBpAyhr12DU5RXySaAW6ZucfaAiX5RTkJNHv5XQw+5djiSNi2s+U9Bt6/
-h5b3irnQNN1t2cnzetsLHDWkrkI44UNcJ2E1JFcLWHH6VvSAAJbLVtejn+DO1EMf
-gJiRYGLC2vU05W5OELBbMDs8u8OgmJDJClaA3dteX0gPq2F/kbD+eKmXu0F3bekI
-ED/G/FihDgzzH4BjKjO2lYvumrilBZmW8EmJdqN17vpaM/XZ1jlv+u2uvpQW329k
-O7hEFVXowO0=
-=M/vF
------END PGP SIGNATURE-----
-
---=-n/x/CH6kQyL/6FhOz7Ps--
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
