@@ -1,84 +1,56 @@
-From: Ben Hutchings <ben@decadent.org.uk>
-Date: Sun, 18 Jan 2015 11:52:48 +0000
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Date: Sun, 18 Jan 2015 12:59:39 +0000
 Subject: Re: Bug#775611: [sh]: FTBFS due to unknown compiler option '-m32'
-Message-Id: <1421581968.31046.131.camel@decadent.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="=-MhFOt0s7hIEQwpilLxsa"
+Message-Id: <54BBAE3B.8020708@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1421575095.31046.99.camel@decadent.org.uk>
 In-Reply-To: <1421575095.31046.99.camel@decadent.org.uk>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA256
 
---=-MhFOt0s7hIEQwpilLxsa
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+On 01/18/2015 12:52 PM, Ben Hutchings wrote:
+> The next question is whether recordmcount.c works properly for SH.
+> 
+> Adrian, can you check whether ftrace seems to work on the kernel
+> built with HAVE_C_RECORDMCOUNT selected?  (See
+> Documentation/trace/ftrace.txt and particularly the 'function'
+> example.)
 
-On Sun, 2015-01-18 at 12:15 +0100, Geert Uytterhoeven wrote:
-> On Sun, Jan 18, 2015 at 10:58 AM, Ben Hutchings <ben@decadent.org.uk> wro=
-te:
-> > On Sun, 2015-01-18 at 00:35 +0100, John Paul Adrian Glaubitz wrote:
-> >> Package: linux
-> >> Version: 3.16.7-ckt4-1
-> >> Severity: normal
-> >> Tags: patch
-> >>
-> >> Hi!
-> >>
-> >> The kernel package currently fails to build from source on sh4 since
-> >> the build scripts try to pass the '-m32' compiler option on gcc which
-> >> is not available with gcc on sh4 (also according to the manpage).
-> >>
-> >> Selecting HAVE_C_RECORDMCOUNT in arch/sh/Kconfig (see attached patch
-> >> by Ben Hutchings) fixes the issues. However, I also suggest removing
-> >> the line "$cc .=3D " -m32";" for sh compiler options in scripts/
-> >> recordmcount.pl.
-> >
-> > Steven and SH experts, what do you think of this?
->=20
-> It seems most compilers don't support -m32, unless they're biarch.
-> On an Ubuntu 14.04 LTS box with lots of cross-compilers from korg/crossto=
-ol:
-[...]
+I guess that involves also installing the kernel and running it? The
+reason why I ask is that I currently don't have physical access to
+any of the SH4 machines yet as I am still waiting for Nobuhiro Iwamatsu
+to send me one of the spare boards he has.
 
-Right.  It's also not mentioned at all in the documentation of SH
-options for gcc 4.9.  There appear to be multiple 32-bit modes and
-instruction encodings to choose from, so it wouldn't be very useful.
+Thus, if the kernel locks up the kernel for whatever reason, I am a
+bit lost until Nobuhiro can reset the machine. Having my own local
+SH4 machine would simplify things dramatically.
 
-The next question is whether recordmcount.c works properly for SH.
+Adrian
 
-Adrian, can you check whether ftrace seems to work on the kernel built
-with HAVE_C_RECORDMCOUNT selected?  (See Documentation/trace/ftrace.txt
-and particularly the 'function' example.)
-
-Ben.
-
---=20
-Ben Hutchings
-The generation of random numbers is too important to be left to chance.
-                                                            - Robert Coveyo=
-u
-
---=-MhFOt0s7hIEQwpilLxsa
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-
+- -- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer - glaubitz@debian.org
+`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
+Version: GnuPG v1
 
-iQIVAwUAVLuelee/yOyVhhEJAQoIKw/+P1ZyfL4Z0sAKPQ+lnj4VuefsCDO9aAA7
-DALD1T2aZ8lhhdK+RbBhSOYzXSLRzsLfwfQlJIxeQjkG8mvsRDhOYn8rlegUdZnd
-eg1G5NUWVudwku2TN4wxNIFt8Sbhsds/ITQXGQCi6qTkU/0s8mGP+reCdOBLQymK
-ASsd1stuKDbZ9ZRs9ojY21DujEs+uqLrEwPD9ocdG2HU08ieskQOmHmI+wlz+x/B
-yBpswestAP4YGgFm/taSEWAW5Acf2Kj9M79DDYvYr+/5S/C8p43oeoO17RP2zfWm
-FTa2uf12vmUtrwYokjhj2Z75rqgG20Ir5a4Dk7uesj4LjS2lEc08cVul3WsJDOKd
-2cbRW7+BAwejYPEm+5KZbU1kTh9JI4UJCF2I8F7ZE3pIvkjAzn9MKWIRJUouGZYh
-kJ8vLi9m+tbq2Q90I0LoEtLwDazq7Szn8LluCL/Be8K036hi6TbbgaG2j/iohDNH
-0OLGAcJqY0I6wf6KPyn+fbZ4ugxg4LPfrrJJJl4KV/uQjedHwnmN7N5p4ocsxQ1l
-/7RNunDK1onSkfsTOKcrvDT90rjDmJX8VjGeBjt7bbwtVJECtHupzJKKJA9MENzZ
-7poqGoOulrvrnV5IDlN2rS8bjLOCrziEqS1IamGhst5NnuY9lpI2MUODD28O4wwy
-Mwm9WAlbenY=
-=Jbvu
+iQIcBAEBCAAGBQJUu646AAoJEHQmOzf1tfkT7V4P/R13gZfztFdJhC2t7k5naDAh
+IcS5dwdeilCqRHEGm0Su5eGV7d6taZASplcKahDgw14VlQ/7tpSlMNQU2AYj8IKo
+bQ8xJfjmwznPOE3U/4p/dH2whfQWXowLoTKIO/Ayd06N/swP2kfMvwQMbVlxfbm6
+fy5BmDry7NQQO39cCfIA1GPo4Eme1VHLaG/mRRDvuXWaujX/CFA9aFdiiZ2ZRQjp
+achH6zIb/9TdflWVNdMbadusUaZZgkin7p3Ky4jC0kk9pWtcWRR4zZdBGoKFrr3N
+HsdPVJScNWZeaaH7G//3L9WNgITQHC+gjoxuBrVN4NuVU5TIoHitsdhQGdJ96wJZ
+TENKenPiCQxwwLwljSjJ6lV+V1B7YT1nOpOBwK5jePzqIUL3ymejigwPXNQqlwev
+LK4I2tGMWDyh1VwZz0lwmRLh+Nu1NdPFzlu6981OAWOO8rSpcxzGTp5ipNPPY3VY
+j2MC0nibwx74DJYHzgDGCUdGN5lvDe0qNtwkqyKgnKCjsVdNHKZVEynFOfdmPSLz
+2YfY8PZFRgmb5/Fb59990mvfEkY+No4o67yZP6k9jBcfAY7E/jTFjpzKQQjYdkhB
+q3hKl2M5fcvSKMCMrDWSOPEbC4By0arYvsDVVUecTvgecP/TGeBiJpPLVY9gLSAx
+JlAltcZjGayAdPYLgwFV
+=M5g3
 -----END PGP SIGNATURE-----
-
---=-MhFOt0s7hIEQwpilLxsa--
