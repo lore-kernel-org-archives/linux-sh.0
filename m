@@ -1,47 +1,45 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 22 Jan 2015 10:33:25 +0000
-Subject: Re: [PATCH 02/11] ARM: shmobile: r8a7778: add CPG register bits header
-Message-Id: <CAMuHMdVb2Rw5kP3ZLwjtjQsr-jh26GNm3scn44pUzNVr1e1ceg@mail.gmail.com>
+From: =?UTF-8?q?Niklas=20S=C3=B6derlund?= <niso@kth.se>
+Date: Sun, 18 Jan 2015 12:20:04 +0000
+Subject: [PATCH v2 4/4] ARM: shmobile: emev2-kzm9d: Add PFC information for uart1
+Message-Id: <1421583604-27256-5-git-send-email-niso@kth.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421857262-16607-3-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1421857262-16607-3-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1421583604-27256-1-git-send-email-niso@kth.se>
+In-Reply-To: <1421583604-27256-1-git-send-email-niso-UNjuZkX4dYU@public.gmane.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org
+Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, =?UTF-8?q?Niklas=20S=C3=B6derlund?= <niso-UNjuZkX4dYU@public.gmane.org>
 
-Hi Ulrich,
+Configure the pinmux on kzm9d to use the serial connector for uart1.
 
-On Wed, Jan 21, 2015 at 5:20 PM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> --- /dev/null
-> +++ b/include/dt-bindings/clock/r8a7778-clock.h
-> @@ -0,0 +1,72 @@
+Signed-off-by: Niklas S=C3=B6derlund <niso@kth.se>
+---
+ arch/arm/boot/dts/emev2-kzm9d.dts | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-> +/* MSTP5 */
-> +#define R8A7778_CLK_SCU0       31
-> +#define R8A7778_CLK_SCU1       30
-> +#define R8A7778_CLK_SCU2       29
-> +#define R8A7778_CLK_SCU3       28
-> +#define R8A7778_CLK_SCU4       27
-> +#define R8A7778_CLK_SCU5       26
-> +#define R8A7778_CLK_SCU6       25
-> +#define R8A7778_CLK_SCU7       24
-> +#define R8A7778_CLK_SCU8       23
+diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts b/arch/arm/boot/dts/emev2-kz=
+m9d.dts
+index 667d323..1944627 100644
+--- a/arch/arm/boot/dts/emev2-kzm9d.dts
++++ b/arch/arm/boot/dts/emev2-kzm9d.dts
+@@ -94,3 +94,16 @@
+ 		vdd33a-supply =3D <&reg_3p3v>;
+ 	};
+ };
++
++&pfc {
++	uart1_pins: uart@e1030000 {
++		renesas,groups =3D "uart1_ctrl", "uart1_data";
++		renesas,function =3D "uart1";
++	};
++};
++
++&uart1 {
++	pinctrl-0 =3D <&uart1_pins>;
++	pinctrl-names =3D "default";
++	status =3D "okay";
++};
+--=20
+2.2.1
 
-These are called "SRU (SRCx)" in the documentation, so I would use
-"R8A7778_CLK_SRU_SRCx" here.
-
-That's also similar to the R8A779x_CLK_SCU_SRCy used on R-Car Gen2 in
-include/dt-bindings/clock/r8a779?-clock.h
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
