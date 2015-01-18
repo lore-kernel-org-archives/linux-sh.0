@@ -1,61 +1,78 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Tue, 13 Jan 2015 14:26:49 +0000
-Subject: Re: [PATCH 1/2] gpio: pcf857x: Propagate wake-up setting to parent irq controller
-Message-Id: <CACRpkdbcdMYXOvFSENZ1f7-4JV9Op+xSqz24UDApetK_LDrY0g@mail.gmail.com>
+From: =?UTF-8?q?Niklas=20S=C3=B6derlund?= <niso@kth.se>
+Date: Sun, 18 Jan 2015 12:20:03 +0000
+Subject: [PATCH v2 3/4] ARM: shmobile: emev2: Add PFC information to emev2.dtsi
+Message-Id: <1421583604-27256-4-git-send-email-niso@kth.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418218575-17694-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1418218575-17694-1-git-send-email-geert+renesas@glider.be>
+References: <1421583604-27256-1-git-send-email-niso@kth.se>
+In-Reply-To: <1421583604-27256-1-git-send-email-niso@kth.se>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Alexandre Courbot <gnurou@gmail.com>, Thomas Gleixner <tglx@linutronix.de>, Santosh Shilimkar <santosh.shilimkar@ti.com>, Ingo Molnar <mingo@redhat.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-kernel@vger.kernel.org, laurent.pinchart@ideasonboard.com, linus.walleij@linaro.org
+Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, magnus.damm@gmail.com, =?UTF-8?q?Niklas=20S=C3=B6derlund?= <niso@kth.se>
 
-On Wed, Dec 10, 2014 at 2:36 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
+With this information all GPIOs can make use of the PFC functionality.
 
-> The pcf857x GPIO and interrupt controller uses dummy_irq_chip, which
-> does not implement irq_chip.irq_set_wake() and does not set
-> IRQCHIP_SKIP_SET_WAKE.
->
-> This causes two s2ram issues if wake-up is enabled for the pcf857x GPIO
-> pins:
->   1. During resume from s2ram, the following warning is printed:
->
->      WARNING: CPU: 0 PID: 1046 at kernel/irq/manage.c:537 irq_set_irq_wake+0x9c/0xf8()
->      Unbalanced IRQ 113 wake disable
->
->   2. Wake-up through the pcf857x GPIO pins may fail, as the parent
->      interrupt controller may be suspended.
->
-> Migrate the pcf857x GPIO and interrupt controller from dummy_irq_chip to
-> its own irq_chip. This irq chip implements irq_chip.irq_set_wake() to
-> propagate its wake-up setting to the parent interrupt controller.
->
-> This fixes wake-up through gpio-keys on sh73a0/kzm9g, where the pcf857x
-> interrupt is cascaded to irq-renesas-intc-irqpin, and the latter must
-> not be suspended when wake-up is enabled.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-(...)
-> +static struct irq_chip pcf857x_irq_chip = {
-> +       .name           = "pcf857x",
-> +       .irq_startup    = noop_ret,
-> +       .irq_shutdown   = noop,
-> +       .irq_enable     = noop,
-> +       .irq_disable    = noop,
-> +       .irq_ack        = noop,
-> +       .irq_mask       = noop,
-> +       .irq_unmask     = noop,
-> +       .irq_set_wake   = pcf857x_irq_set_wake,
-> +};
+Signed-off-by: Niklas S=C3=B6derlund <niso@kth.se>
+---
+ arch/arm/boot/dts/emev2.dtsi | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-Argh this is so simplistic ... any GPIO irqchip worthy of it's name
-shoult at least call gpiochip_lock_as_irq() in .irq_request_resources() and vice
-versa mutatis mutandis in .irq_release_resources().
+diff --git a/arch/arm/boot/dts/emev2.dtsi b/arch/arm/boot/dts/emev2.dtsi
+index cc7bfe0..bb45694 100644
+--- a/arch/arm/boot/dts/emev2.dtsi
++++ b/arch/arm/boot/dts/emev2.dtsi
+@@ -169,12 +169,18 @@
+ 		clock-names =3D "sclk";
+ 	};
+=20
++	pfc: pfc@e0140200 {
++		compatible =3D "renesas,pfc-emev2";
++		reg =3D <0xe0140200 0x100>;
++	};
++
+ 	gpio0: gpio@e0050000 {
+ 		compatible =3D "renesas,em-gio";
+ 		reg =3D <0xe0050000 0x2c>, <0xe0050040 0x20>;
+ 		interrupts =3D <0 67 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 68 IRQ_TYPE_LEVEL_HIGH>;
+ 		gpio-controller;
++		gpio-ranges =3D <&pfc 0 0 32>;
+ 		#gpio-cells =3D <2>;
+ 		ngpios =3D <32>;
+ 		interrupt-controller;
+@@ -186,6 +192,7 @@
+ 		interrupts =3D <0 69 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 70 IRQ_TYPE_LEVEL_HIGH>;
+ 		gpio-controller;
++		gpio-ranges =3D <&pfc 0 32 32>;
+ 		#gpio-cells =3D <2>;
+ 		ngpios =3D <32>;
+ 		interrupt-controller;
+@@ -197,6 +204,7 @@
+ 		interrupts =3D <0 71 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 72 IRQ_TYPE_LEVEL_HIGH>;
+ 		gpio-controller;
++		gpio-ranges =3D <&pfc 0 64 32>;
+ 		#gpio-cells =3D <2>;
+ 		ngpios =3D <32>;
+ 		interrupt-controller;
+@@ -208,6 +216,7 @@
+ 		interrupts =3D <0 73 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 74 IRQ_TYPE_LEVEL_HIGH>;
+ 		gpio-controller;
++		gpio-ranges =3D <&pfc 0 96 32>;
+ 		#gpio-cells =3D <2>;
+ 		ngpios =3D <32>;
+ 		interrupt-controller;
+@@ -219,6 +228,7 @@
+ 		interrupts =3D <0 75 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 76 IRQ_TYPE_LEVEL_HIGH>;
+ 		gpio-controller;
++		gpio-ranges =3D <&pfc 0 128 31>;
+ 		#gpio-cells =3D <2>;
+ 		ngpios =3D <31>;
+ 		interrupt-controller;
+--=20
+2.2.1
 
-Isn't it possible to also migrate this to GPIOLIB_IRQCHIP when
-you're at it can also cut out a big chunk of rusty code?
-
-Yours,
-Linus Walleij
