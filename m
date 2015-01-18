@@ -1,91 +1,32 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 14 Jan 2015 12:11:20 +0000
-Subject: [PATCH v2 2/6] ARM: shmobile: R-Mobile: Consolidate rmobile_pd_suspend_*()
-Message-Id: <1421237484-16847-3-git-send-email-geert+renesas@glider.be>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 18 Jan 2015 22:59:09 +0000
+Subject: [PATCH 21/23] renesas_usbhs: mod_host: use HUB_CHAR_*
+Message-Id: <6740241.zUR9nh3WrW@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421237484-16847-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1421237484-16847-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Consolidate the identical rmobile_pd_suspend_*() routines that just
-return -EBUSY to prevent a PM domain from being powered down into a
-single rmobile_pd_suspend_busy().
+Fix  using the  bare number  to set the 'wHubCharacteristics' field of the Hub
+Descriptor while the values are #define'd in <linux/usb/ch11.h>.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
-v2:
-  - Break long comment.
----
- arch/arm/mach-shmobile/pm-rmobile.c | 28 +++++++++++++---------------
- 1 file changed, 13 insertions(+), 15 deletions(-)
+ drivers/usb/renesas_usbhs/mod_host.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
-index 85a7fdd9823bc5a6..e1be4b8919efe30e 100644
---- a/arch/arm/mach-shmobile/pm-rmobile.c
-+++ b/arch/arm/mach-shmobile/pm-rmobile.c
-@@ -200,11 +200,10 @@ void rmobile_add_devices_to_domains(struct pm_domain_device data[],
- 
- #else /* !CONFIG_ARCH_SHMOBILE_LEGACY */
- 
--static int rmobile_pd_suspend_cpu(void)
-+static int rmobile_pd_suspend_busy(void)
- {
- 	/*
--	 * This domain contains the CPU core and therefore it should
--	 * only be turned off if the CPU is not in use.
-+	 * This domain should not be turned off.
- 	 */
- 	return -EBUSY;
- }
-@@ -218,16 +217,6 @@ static int rmobile_pd_suspend_console(void)
- 	return console_suspend_enabled ? 0 : -EBUSY;
- }
- 
--static int rmobile_pd_suspend_debug(void)
--{
--	/*
--	 * This domain contains the Coresight-ETM hardware block and
--	 * therefore it should only be turned off if the debug module is
--	 * not in use.
--	 */
--	return -EBUSY;
--}
--
- #define MAX_NUM_CPU_PDS		8
- 
- static unsigned int num_cpu_pds __initdata;
-@@ -303,17 +292,26 @@ static void __init rmobile_setup_pm_domain(struct device_node *np,
- 	const char *name = pd->genpd.name;
- 
- 	if (pd_contains_cpu(np)) {
-+		/*
-+		 * This domain contains the CPU core and therefore it should
-+		 * only be turned off if the CPU is not in use.
-+		 */
- 		pr_debug("PM domain %s contains CPU\n", name);
- 		pd->gov = &pm_domain_always_on_gov;
--		pd->suspend = rmobile_pd_suspend_cpu;
-+		pd->suspend = rmobile_pd_suspend_busy;
- 	} else if (np = console_pd) {
- 		pr_debug("PM domain %s contains serial console\n", name);
- 		pd->gov = &pm_domain_always_on_gov;
- 		pd->suspend = rmobile_pd_suspend_console;
- 	} else if (np = debug_pd) {
-+		/*
-+		 * This domain contains the Coresight-ETM hardware block and
-+		 * therefore it should only be turned off if the debug module
-+		 * is not in use.
-+		 */
- 		pr_debug("PM domain %s contains Coresight-ETM\n", name);
- 		pd->gov = &pm_domain_always_on_gov;
--		pd->suspend = rmobile_pd_suspend_debug;
-+		pd->suspend = rmobile_pd_suspend_busy;
- 	}
- 
- 	rmobile_init_pm_domain(pd);
--- 
-1.9.1
+Index: usb/drivers/usb/renesas_usbhs/mod_host.c
+=================================--- usb.orig/drivers/usb/renesas_usbhs/mod_host.c
++++ usb/drivers/usb/renesas_usbhs/mod_host.c
+@@ -1234,7 +1234,8 @@ static int __usbhsh_hub_get_status(struc
+ 		desc->bNbrPorts			= roothub_id;
+ 		desc->bDescLength		= 9;
+ 		desc->bPwrOn2PwrGood		= 0;
+-		desc->wHubCharacteristics	= cpu_to_le16(0x0011);
++		desc->wHubCharacteristics	+			cpu_to_le16(HUB_CHAR_INDV_PORT_LPSM | HUB_CHAR_NO_OCPM);
+ 		desc->u.hs.DeviceRemovable[0]	= (roothub_id << 1);
+ 		desc->u.hs.DeviceRemovable[1]	= ~0;
+ 		dev_dbg(dev, "%s :: GetHubDescriptor\n", __func__);
 
