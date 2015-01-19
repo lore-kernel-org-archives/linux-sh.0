@@ -1,32 +1,46 @@
-From: Michael Ellerman <mpe@ellerman.id.au>
-Date: Wed, 28 Jan 2015 01:04:34 +0000
-Subject: Re: [PATCH 0/4] defconfigs: cleanup obsolete MTD configs
-Message-Id: <1422407074.32234.2.camel@ellerman.id.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 19 Jan 2015 16:22:55 +0000
+Subject: [PATCH] i2c: slave-eeprom: fix boundary check when using sysfs
+Message-Id: <1421684575-6679-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1422117213-3130-1-git-send-email-semen.protsenko@globallogic.com>
- <1422118156.27947.7.camel@x220>
- <CAJOTznWHpRh8ysVxwSWyvZL1UAe-G9A64j=M6z0+zPeoycgkDg@mail.gmail.com>
-In-Reply-To: <CAJOTznWHpRh8ysVxwSWyvZL1UAe-G9A64j=M6z0+zPeoycgkDg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Sat, 2015-01-24 at 22:54 +0200, Sam Protsenko wrote:
-> > That's news for me. I thought they are silently ignored. Do you have an
-> > example of such a warning?
-> 
-> Not really. It was just assumption. It seems you are right, they are just
-> ignored silently. But item 2 is still relevant and it was actually confused
-> me when I tried to figure out MTD configuration for my platform.
-> Anyway, garbage should be taken out from time to time.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-The usual way that this gets dealt with is that arch maintainers (ir)regularly
-run make savedefconfig on all their defconfigs.
+Due to a copy&paste error, the last byte of the shared memory was not
+accessible via sysfs.
 
-As it happens we've done that on powerpc just recently, if you rebase onto next
-you should see that, so you can drop the powerpc hunks from your patches. 
+Reported-by: Debora Grosse <debora@mds.com>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/i2c-slave-eeprom.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-cheers
-
+diff --git a/drivers/i2c/i2c-slave-eeprom.c b/drivers/i2c/i2c-slave-eeprom.c
+index f432f81b0414..8f417e9054ac 100644
+--- a/drivers/i2c/i2c-slave-eeprom.c
++++ b/drivers/i2c/i2c-slave-eeprom.c
+@@ -74,7 +74,7 @@ static ssize_t i2c_slave_eeprom_bin_read(struct file *filp, struct kobject *kobj
+ 	struct eeprom_data *eeprom;
+ 	unsigned long flags;
+ 
+-	if (off + count >= attr->size)
++	if (off + count > attr->size)
+ 		return -EFBIG;
+ 
+ 	eeprom = dev_get_drvdata(container_of(kobj, struct device, kobj));
+@@ -92,7 +92,7 @@ static ssize_t i2c_slave_eeprom_bin_write(struct file *filp, struct kobject *kob
+ 	struct eeprom_data *eeprom;
+ 	unsigned long flags;
+ 
+-	if (off + count >= attr->size)
++	if (off + count > attr->size)
+ 		return -EFBIG;
+ 
+ 	eeprom = dev_get_drvdata(container_of(kobj, struct device, kobj));
+-- 
+2.1.3
 
