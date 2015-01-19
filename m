@@ -1,41 +1,24 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 07 Jan 2015 08:26:31 +0000
-Subject: Re: [PATCH v2 1/2] thermal: rcar: fix ENR register value
-Message-Id: <CAMuHMdX=cGJjqf79pQ_Snd6Oz1=WOXkHwka6EKQnxEvztDzyqw@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 19 Jan 2015 03:53:15 +0000
+Subject: [PATCH 0/2] usb: renesas_usbhs: add support for requesting DT DMA
+Message-Id: <1421639597-2784-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420593191-3736-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-	<1420593191-3736-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1420593191-3736-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Cc: Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>, Linux PM list <linux-pm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Wed, Jan 7, 2015 at 2:13 AM, Yoshihiro Shimoda
-<yoshihiro.shimoda.uh@renesas.com> wrote:
-> On R-Mobile APE6, since it has 3 thermal zones, ENR register
-> has enable bits in bit 19-16, bit 11-8 and bit 3-0.
->
-> However, on R-Car gen2, since it has 1 thermal zone, ENR register has
-> enable bits in bit 3-0. (In other words, the write value should always
-> be 0 for bit 31-4 of ENR register.)
->
-> So, this patch fixes the ENR register value using I/O resource sets.
->
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+This patch series is based on Felipe's usb.git / testing/next branch.
+(commit id = 05cf6e00b8ff2b80c8b2d1e69f07cdd6c830efe0)
 
-Thanks for the update!
+Yoshihiro Shimoda (2):
+  usb: renesas_usbhs: add usbhsf_dma_init_pdev() function
+  usb: renesas_usbhs: add support for requesting DT DMA
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+ .../devicetree/bindings/usb/renesas_usbhs.txt      |    2 ++
+ drivers/usb/renesas_usbhs/fifo.c                   |   21 +++++++++++++++++---
+ 2 files changed, 20 insertions(+), 3 deletions(-)
 
-Gr{oetje,eeting}s,
+-- 
+1.7.9.5
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
