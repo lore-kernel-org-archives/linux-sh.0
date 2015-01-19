@@ -1,40 +1,68 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 Jan 2015 02:34:54 +0000
-Subject: [PATCH 2/4] ARM: shmobile: r8a7791 dtsi: Drop "renesas,rcar_sound" compatible value
-Message-Id: <f49cd2b3d2caf075d78fa1948fda1d7ed246d1eb.1421371490.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 19 Jan 2015 19:13:25 +0000
+Subject: Re: [PATCH V4 01/14] sh: Eliminate unused irq_reg_{readl,writel} accessors
+Message-Id: <CAMuHMdUpxURV4ztpa3x0TORsSWtxiKxe6_EDO5QsO_vhedip0A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421371490.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421371490.git.horms+renesas@verge.net.au>
+References: <1415342669-30640-1-git-send-email-cernekee@gmail.com>
+	<1415342669-30640-2-git-send-email-cernekee@gmail.com>
+	<CAMuHMdW+L8YbE8Z8jrtnm8xWk63sRGaFdM7TPM6MmrDg9XwHuQ@mail.gmail.com>
+	<20141114163843.GH29662@linux-mips.org>
+	<20141114170525.GL3698@titan.lakedaemon.net>
+	<CAMuHMdXMsxhcD9C079YPc6Toxdo0e23oqM_9KeSG=NrFa4auRQ@mail.gmail.com>
+In-Reply-To: <CAMuHMdXMsxhcD9C079YPc6Toxdo0e23oqM_9KeSG=NrFa4auRQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Jason Cooper <jason@lakedaemon.net>
+Cc: Ralf Baechle <ralf@linux-mips.org>, Kevin Cernekee <cernekee@gmail.com>, Thomas Gleixner <tglx@linutronix.de>, Linux-sh list <linux-sh@vger.kernel.org>, Arnd Bergmann <arnd@arndb.de>, Florian Fainelli <f.fainelli@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Maxime Bizon <mbizon@freebox.fr>, Jonas Gorski <jogo@openwrt.org>, Linux MIPS Mailing List <linux-mips@linux-mips.org>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Hi Jason,
 
-The "renesas,rcar_sound" compatible property value was never processed
-nor documented.
+On Sun, Nov 16, 2014 at 10:34 AM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> Hi Jason,
+>
+> On Fri, Nov 14, 2014 at 6:05 PM, Jason Cooper <jason@lakedaemon.net> wrote:
+>> On Fri, Nov 14, 2014 at 05:38:44PM +0100, Ralf Baechle wrote:
+>>> On Mon, Nov 10, 2014 at 09:13:49AM +0100, Geert Uytterhoeven wrote:
+>>>
+>>> > On Fri, Nov 7, 2014 at 7:44 AM, Kevin Cernekee <cernekee@gmail.com> wrote:
+>>> > > Defining these macros way down in arch/sh/.../irq.c doesn't cause
+>>> > > kernel/irq/generic-chip.c to use them.  As far as I can tell this code
+>>> > > has no effect.
+>>> > >
+>>> > > Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
+>>> >
+>>> > Compared preprocessor and asm output before and after, no difference
+>>> > except for line numbers, so
+>>> >
+>>> > Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>>>
+>>> I noticed the remainder of of this series is now in Jason Cooper's irqchip
+>>> tree.  Is anybody still taking care of SH?  If not I can funnel it
+>>> through the MIPS tree.
+>>
+>> Are the SH maintainers active?  I admit I know very little about the
+>> arch.  I'm more than happy to pick it up and keep it with the rest of
+>> the series, I just didn't want to step on toes...
+>
+> SH is orphaned, so it would be great if you could pick it up.
+> Thanks!
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7791.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+I think you forgot to pick it up, as se7343 and se7722 are still broken:
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 77c0bee..7fdd1a6 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1382,7 +1382,7 @@
- 
- 	rcar_sound: rcar_sound@ec500000 {
- 		#sound-dai-cells = <1>;
--		compatible =  "renesas,rcar_sound-r8a7791", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
-+		compatible =  "renesas,rcar_sound-r8a7791", "renesas,rcar_sound-gen2";
- 		reg =	<0 0xec500000 0 0x1000>, /* SCU */
- 			<0 0xec5a0000 0 0x100>,  /* ADG */
- 			<0 0xec540000 0 0x1000>, /* SSIU */
--- 
-2.1.4
+http://kisskb.ellerman.id.au/kisskb/buildresult/12346740/
+http://kisskb.ellerman.id.au/kisskb/buildresult/12346745/
 
+Will you still do so, or shall I forward the patch to Andrew Morton?
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
