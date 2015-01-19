@@ -1,262 +1,45 @@
-From: Lee Jones <lee.jones@linaro.org>
-Date: Tue, 20 Jan 2015 09:38:42 +0000
-Subject: Re: [PATCH 01/17] mmc: tmio: add tmio_mmc_host_alloc/free()
-Message-Id: <20150120093842.GK5767@x1>
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Mon, 19 Jan 2015 09:54:55 +0000
+Subject: [PATCH 1/3] ARM: shmobile: armadillo800eva: Properly specify HDMI audio link format
+Message-Id: <1421661297-19654-1-git-send-email-lars@metafoo.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
- <87siffuvj8.wl%kuninori.morimoto.gx@renesas.com>
- <CAPDyKFpYQ5tHeWHiZMwS1zJpgrgP_qC8vbv3ExLkLTbn9X8MyQ@mail.gmail.com>
-In-Reply-To: <CAPDyKFpYQ5tHeWHiZMwS1zJpgrgP_qC8vbv3ExLkLTbn9X8MyQ@mail.gmail.com>
+References: <1346808893-14124-2-git-send-email-horms@verge.net.au>
+In-Reply-To: <1346808893-14124-2-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: Arnd Bergmann <arnd@arndb.de>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Mark Brown <broonie@kernel.org>, Liam Girdwood <lgirdwood@gmail.com>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-arm-kernel@lists.infradead.org, alsa-devel@alsa-project.org, Lars-Peter Clausen <lars@metafoo.de>
 
-On Tue, 20 Jan 2015, Ulf Hansson wrote:
+The DAI link format should be specified for the whole link rather than just
+one component on the link. So move the format specification for the HDMI
+audio link from the CPU component to the link itself.
 
-> + MFD maintainer
->=20
-> On 13 January 2015 at 05:57, Kuninori Morimoto
-> <kuninori.morimoto.gx@renesas.com> wrote:
-> > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> >
-> > Current tmio_mmc driver is using tmio_mmc_data for driver/platform
-> > specific data/callback, and it is needed for tmio_mmc_host_probe()
-> > function. Because of this style, include/linux/mfd/tmio.h header has
-> > tmio driver/framework specific data which is not needed from platform.
-> >
-> > This patch adds new tmio_mmc_host_alloc/free() as cleanup preparation.
-> > tmio driver specific data/callback will be implemented in tmio_mmc_host,
-> > and platform specific data/callback will be implemented in tmio_mmc_data
-> > in this cleanup.
-> >
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > ---
-> >  drivers/mmc/host/sh_mobile_sdhi.c |   14 +++++++++---
-> >  drivers/mmc/host/tmio_mmc.c       |   10 +++++++--
-> >  drivers/mmc/host/tmio_mmc.h       |    5 +++--
-> >  drivers/mmc/host/tmio_mmc_pio.c   |   43 +++++++++++++++++++++++------=
---------
-> >  include/linux/mfd/tmio.h          |    1 -
+Since the sh-mobile-hdmi DAI driver doesn't implement the set_fmt() callback
+in this case there is no functional difference between only specifying the
+the format for the CPU side or for the whole link, but the later it will
+allow us to remove support for just specifying the format for one component.
 
-Acked-by: Lee Jones <lee.jones@linaro.org>
+Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
+---
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> >  5 files changed, 49 insertions(+), 24 deletions(-)
-> >
-> > diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mo=
-bile_sdhi.c
-> > index 00c8ebd..cf062c4 100644
-> > --- a/drivers/mmc/host/sh_mobile_sdhi.c
-> > +++ b/drivers/mmc/host/sh_mobile_sdhi.c
-> > @@ -113,7 +113,7 @@ static int sh_mobile_sdhi_wait_idle(struct tmio_mmc=
-_host *host)
-> >                 udelay(1);
-> >
-> >         if (!timeout) {
-> > -               dev_warn(host->pdata->dev, "timeout waiting for SD bus =
-idle\n");
-> > +               dev_warn(&host->pdev->dev, "timeout waiting for SD bus =
-idle\n");
-> >                 return -EBUSY;
-> >         }
-> >
-> > @@ -207,6 +207,12 @@ static int sh_mobile_sdhi_probe(struct platform_de=
-vice *pdev)
-> >                 goto eclkget;
-> >         }
-> >
-> > +       host =3D tmio_mmc_host_alloc(pdev);
-> > +       if (!host) {
-> > +               ret =3D -ENOMEM;
-> > +               goto eprobe;
-> > +       }
-> > +
-> >         mmc_data->clk_enable =3D sh_mobile_sdhi_clk_enable;
-> >         mmc_data->clk_disable =3D sh_mobile_sdhi_clk_disable;
-> >         mmc_data->capabilities =3D MMC_CAP_MMC_HIGHSPEED;
-> > @@ -274,9 +280,9 @@ static int sh_mobile_sdhi_probe(struct platform_dev=
-ice *pdev)
-> >         /* SD control register space size is 0x100, 0x200 for bus_shift=
-=3D1 */
-> >         mmc_data->bus_shift =3D resource_size(res) >> 9;
-> >
-> > -       ret =3D tmio_mmc_host_probe(&host, pdev, mmc_data);
-> > +       ret =3D tmio_mmc_host_probe(host, mmc_data);
-> >         if (ret < 0)
-> > -               goto eprobe;
-> > +               goto efree;
-> >
-> >         /*
-> >          * FIXME:
-> > @@ -351,6 +357,8 @@ static int sh_mobile_sdhi_probe(struct platform_dev=
-ice *pdev)
-> >
-> >  eirq:
-> >         tmio_mmc_host_remove(host);
-> > +efree:
-> > +       tmio_mmc_host_free(host);
-> >  eprobe:
-> >  eclkget:
-> >         if (p && p->cleanup)
-> > diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
-> > index 2616fdf..f47ae08 100644
-> > --- a/drivers/mmc/host/tmio_mmc.c
-> > +++ b/drivers/mmc/host/tmio_mmc.c
-> > @@ -92,10 +92,14 @@ static int tmio_mmc_probe(struct platform_device *p=
-dev)
-> >         pdata->bus_shift =3D resource_size(res) >> 10;
-> >         pdata->flags |=3D TMIO_MMC_HAVE_HIGH_REG;
-> >
-> > -       ret =3D tmio_mmc_host_probe(&host, pdev, pdata);
-> > -       if (ret)
-> > +       host =3D tmio_mmc_host_alloc(pdev);
-> > +       if (!host)
-> >                 goto cell_disable;
-> >
-> > +       ret =3D tmio_mmc_host_probe(host, pdata);
-> > +       if (ret)
-> > +               goto host_free;
-> > +
-> >         ret =3D request_irq(irq, tmio_mmc_irq, IRQF_TRIGGER_FALLING,
-> >                                 dev_name(&pdev->dev), host);
-> >         if (ret)
-> > @@ -108,6 +112,8 @@ static int tmio_mmc_probe(struct platform_device *p=
-dev)
-> >
-> >  host_remove:
-> >         tmio_mmc_host_remove(host);
-> > +host_free:
-> > +       tmio_mmc_host_free(host);
-> >  cell_disable:
-> >         if (cell->disable)
-> >                 cell->disable(pdev);
-> > diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-> > index a34ecbe..60d6747 100644
-> > --- a/drivers/mmc/host/tmio_mmc.h
-> > +++ b/drivers/mmc/host/tmio_mmc.h
-> > @@ -85,8 +85,9 @@ struct tmio_mmc_host {
-> >         bool                    sdio_irq_enabled;
-> >  };
-> >
-> > -int tmio_mmc_host_probe(struct tmio_mmc_host **host,
-> > -                       struct platform_device *pdev,
-> > +struct tmio_mmc_host *tmio_mmc_host_alloc(struct platform_device *pdev=
-);
-> > +void tmio_mmc_host_free(struct tmio_mmc_host *host);
-> > +int tmio_mmc_host_probe(struct tmio_mmc_host *host,
-> >                         struct tmio_mmc_data *pdata);
-> >  void tmio_mmc_host_remove(struct tmio_mmc_host *host);
-> >  void tmio_mmc_do_data_irq(struct tmio_mmc_host *host);
-> > diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mm=
-c_pio.c
-> > index 250bf8c..1a9a13f 100644
-> > --- a/drivers/mmc/host/tmio_mmc_pio.c
-> > +++ b/drivers/mmc/host/tmio_mmc_pio.c
-> > @@ -1054,12 +1054,35 @@ static void tmio_mmc_of_parse(struct platform_d=
-evice *pdev,
-> >                 pdata->flags |=3D TMIO_MMC_WRPROTECT_DISABLE;
-> >  }
-> >
-> > -int tmio_mmc_host_probe(struct tmio_mmc_host **host,
-> > -                                 struct platform_device *pdev,
-> > -                                 struct tmio_mmc_data *pdata)
-> > +struct tmio_mmc_host*
-> > +tmio_mmc_host_alloc(struct platform_device *pdev)
-> >  {
-> > -       struct tmio_mmc_host *_host;
-> > +       struct tmio_mmc_host *host;
-> >         struct mmc_host *mmc;
-> > +
-> > +       mmc =3D mmc_alloc_host(sizeof(struct tmio_mmc_host), &pdev->dev=
-);
-> > +       if (!mmc)
-> > +               return NULL;
-> > +
-> > +       host =3D mmc_priv(mmc);
-> > +       host->mmc =3D mmc;
-> > +       host->pdev =3D pdev;
-> > +
-> > +       return host;
-> > +}
-> > +
-> > +void tmio_mmc_host_free(struct tmio_mmc_host *host)
-> > +{
-> > +       mmc_free_host(host->mmc);
-> > +
-> > +       host->mmc =3D NULL;
-> > +}
-> > +
-> > +int tmio_mmc_host_probe(struct tmio_mmc_host *_host,
-> > +                       struct tmio_mmc_data *pdata)
-> > +{
-> > +       struct platform_device *pdev =3D _host->pdev;
-> > +       struct mmc_host *mmc =3D _host->mmc;
-> >         struct resource *res_ctl;
-> >         int ret;
-> >         u32 irq_mask =3D TMIO_MASK_CMD;
-> > @@ -1073,19 +1096,11 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **=
-host,
-> >         if (!res_ctl)
-> >                 return -EINVAL;
-> >
-> > -       mmc =3D mmc_alloc_host(sizeof(struct tmio_mmc_host), &pdev->dev=
-);
-> > -       if (!mmc)
-> > -               return -ENOMEM;
-> > -
-> >         ret =3D mmc_of_parse(mmc);
-> >         if (ret < 0)
-> >                 goto host_free;
-> >
-> > -       pdata->dev =3D &pdev->dev;
-> > -       _host =3D mmc_priv(mmc);
-> >         _host->pdata =3D pdata;
-> > -       _host->mmc =3D mmc;
-> > -       _host->pdev =3D pdev;
-> >         platform_set_drvdata(pdev, mmc);
-> >
-> >         _host->set_pwr =3D pdata->set_pwr;
-> > @@ -1192,12 +1207,9 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **h=
-ost,
-> >                 mmc_gpiod_request_cd_irq(mmc);
-> >         }
-> >
-> > -       *host =3D _host;
-> > -
-> >         return 0;
-> >
-> >  host_free:
-> > -       mmc_free_host(mmc);
-> >
-> >         return ret;
-> >  }
-> > @@ -1222,7 +1234,6 @@ void tmio_mmc_host_remove(struct tmio_mmc_host *h=
-ost)
-> >         pm_runtime_disable(&pdev->dev);
-> >
-> >         iounmap(host->ctl);
-> > -       mmc_free_host(mmc);
-> >  }
-> >  EXPORT_SYMBOL(tmio_mmc_host_remove);
-> >
-> > diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-> > index 5738817..c7d9af0 100644
-> > --- a/include/linux/mfd/tmio.h
-> > +++ b/include/linux/mfd/tmio.h
-> > @@ -135,7 +135,6 @@ struct tmio_mmc_data {
-> >         unsigned long                   bus_shift;
-> >         u32                             ocr_mask;       /* available vo=
-ltages */
-> >         struct tmio_mmc_dma             *dma;
-> > -       struct device                   *dev;
-> >         unsigned int                    cd_gpio;
-> >         void (*set_pwr)(struct platform_device *host, int state);
-> >         void (*set_clk_div)(struct platform_device *host, int state);
-> >
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 6d949f1..75de26c 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1040,9 +1040,9 @@ static struct asoc_simple_card_info fsi2_hdmi_info = {
+ 	.card		= "FSI2B-HDMI",
+ 	.codec		= "sh-mobile-hdmi",
+ 	.platform	= "sh_fsi2",
++	.daifmt		= SND_SOC_DAIFMT_CBS_CFS,
+ 	.cpu_dai = {
+ 		.name	= "fsib-dai",
+-		.fmt	= SND_SOC_DAIFMT_CBS_CFS,
+ 	},
+ 	.codec_dai = {
+ 		.name = "sh_mobile_hdmi-hifi",
+-- 
+1.8.0
 
---=20
-Lee Jones
-Linaro STMicroelectronics Landing Team Lead
-Linaro.org =E2=94=82 Open source software for ARM SoCs
-Follow Linaro: Facebook | Twitter | Blog
