@@ -1,55 +1,56 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 05 Jan 2015 22:26:45 +0000
-Subject: [PATCH v5 3/3] ARM: shmobile: henninger: add CAN0 DT support
-Message-Id: <2483119.HjgsDbcomx@wasted.cogentembedded.com>
+Date: Mon, 19 Jan 2015 23:07:08 +0000
+Subject: [PATCH 1/2] shdmac: use SET_RUNTIME_PM_OPS()
+Message-Id: <5989517.sdHCdG66dc@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1652479.NHBlqJ9OaR@wasted.cogentembedded.com>
-In-Reply-To: <1652479.NHBlqJ9OaR@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Define the Henninger board dependent part of the CAN0 device node.
+Use SET_RUNTIME_PM_OPS() to initialize the runtime PM method pointers in the
+'struct dev_pm_ops';  since that macro doesn't  do anything  if CONFIG_PM is
+not defined, we have  to move #ifdef up to also cover the runtime PM methods
+in order to avoid compilation warnings.
+
+Based on orignal patch by Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>.
 
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
 ---
-Changes in version 4:
-- refreshed the patch.
+The patch is against the 'next' branch of Vinod Koul's 'slave-dma.git' repo.
+ 
+ drivers/dma/sh/shdmac.c |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-Changes in version 3:
-- changed "can0_data_a" to "can0_data", removed "can_clk_d" in the
-  "renesas,groups" property;
-- moved CAN0 node to go after all others;
-- refreshed the patch.
-
- arch/arm/boot/dts/r8a7791-henninger.dts |   11 +++++++++++
- 1 file changed, 11 insertions(+)
-
-Index: renesas/arch/arm/boot/dts/r8a7791-henninger.dts
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-henninger.dts
-+++ renesas/arch/arm/boot/dts/r8a7791-henninger.dts
-@@ -147,6 +147,11 @@
- 		renesas,groups = "vin0_data8", "vin0_clk";
- 		renesas,function = "vin0";
- 	};
-+
-+	can0_pins: can0 {
-+		renesas,groups = "can0_data";
-+		renesas,function = "can0";
-+	};
+Index: slave-dma/drivers/dma/sh/shdmac.c
+=================================--- slave-dma.orig/drivers/dma/sh/shdmac.c
++++ slave-dma/drivers/dma/sh/shdmac.c
+@@ -588,6 +588,7 @@ static void sh_dmae_shutdown(struct plat
+ 	sh_dmae_ctl_stop(shdev);
+ }
+ 
++#ifdef CONFIG_PM
+ static int sh_dmae_runtime_suspend(struct device *dev)
+ {
+ 	return 0;
+@@ -600,7 +601,6 @@ static int sh_dmae_runtime_resume(struct
+ 	return sh_dmae_rst(shdev);
+ }
+ 
+-#ifdef CONFIG_PM
+ static int sh_dmae_suspend(struct device *dev)
+ {
+ 	return 0;
+@@ -640,8 +640,8 @@ static int sh_dmae_resume(struct device
+ static const struct dev_pm_ops sh_dmae_pm = {
+ 	.suspend		= sh_dmae_suspend,
+ 	.resume			= sh_dmae_resume,
+-	.runtime_suspend	= sh_dmae_runtime_suspend,
+-	.runtime_resume		= sh_dmae_runtime_resume,
++	SET_RUNTIME_PM_OPS(sh_dmae_runtime_suspend, sh_dmae_runtime_resume,
++			   NULL)
  };
  
- &scif0 {
-@@ -321,3 +326,9 @@
- 		};
- 	};
- };
-+
-+&can0 {
-+	pinctrl-0 = <&can0_pins>;
-+	pinctrl-names = "default";
-+	status = "okay";
-+};
+ static dma_addr_t sh_dmae_slave_addr(struct shdma_chan *schan)
 
