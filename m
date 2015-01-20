@@ -1,48 +1,34 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 19 Jan 2015 23:07:59 +0000
-Subject: [PATCH 2/2] shdmac: extend PM methods
-Message-Id: <7124495.gOhk31Ctg5@wasted.cogentembedded.com>
+Date: Tue, 20 Jan 2015 19:41:44 +0000
+Subject: Re: [PATCH 2/2] shdmac: extend PM methods
+Message-Id: <54BEAF78.8060906@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <7124495.gOhk31Ctg5@wasted.cogentembedded.com>
+In-Reply-To: <7124495.gOhk31Ctg5@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-In order to make it possible to restore from hibernation not only in Linux but
-also in e.g. U-Boot, we have to use sh_dmae_{suspend|resume}() for the {freeze|
-thaw|restore}() PM methods. It's handy to achieve this with SIMPLE_DEV_PM_OPS()
-macro; since  that macro doesn't do anything when CONFIG_PM_SLEEP  is undefined,
-we don't need to #define sh_dmae_{suspend|resume} NULL anymore; it seems safe to
-leave the #ifdef CONFIG_PM alone  as this option  is selected by CONFIG_PM_SLEEP
-anyway...
+Hello.
 
-Based on orignal patch by Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>.
+On 01/20/2015 02:07 AM, Sergei Shtylyov wrote:
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> In order to make it possible to restore from hibernation not only in Linux but
+> also in e.g. U-Boot, we have to use sh_dmae_{suspend|resume}() for the {freeze|
+> thaw|restore}() PM methods. It's handy to achieve this with SIMPLE_DEV_PM_OPS()
+> macro; since  that macro doesn't do anything when CONFIG_PM_SLEEP  is undefined,
+> we don't need to #define sh_dmae_{suspend|resume} NULL anymore; it seems safe to
+> leave the #ifdef CONFIG_PM alone  as this option  is selected by CONFIG_PM_SLEEP
+> anyway...
 
----
-The patch is against the 'next' branch of Vinod Koul's 'slave-dma.git' repo.
- 
- drivers/dma/sh/shdmac.c |    6 +-----
- 1 file changed, 1 insertion(+), 5 deletions(-)
+    However, when CONFIG_PM is defined and CONFIG_PM_SLEEP is not, we'll still 
+get the function unused warnings... so I'm going to recast this patch 
+(actually, my first variant was correct).
 
-Index: slave-dma/drivers/dma/sh/shdmac.c
-=================================--- slave-dma.orig/drivers/dma/sh/shdmac.c
-+++ slave-dma/drivers/dma/sh/shdmac.c
-@@ -632,14 +632,10 @@ static int sh_dmae_resume(struct device
- 
- 	return 0;
- }
--#else
--#define sh_dmae_suspend NULL
--#define sh_dmae_resume NULL
- #endif
- 
- static const struct dev_pm_ops sh_dmae_pm = {
--	.suspend		= sh_dmae_suspend,
--	.resume			= sh_dmae_resume,
-+	SET_SYSTEM_SLEEP_PM_OPS(sh_dmae_suspend, sh_dmae_resume)
- 	SET_RUNTIME_PM_OPS(sh_dmae_runtime_suspend, sh_dmae_runtime_resume,
- 			   NULL)
- };
+> Based on orignal patch by Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>.
+
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+WBR, Sergei
 
