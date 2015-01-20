@@ -1,51 +1,48 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 06 Jan 2015 19:17:39 +0000
-Subject: [PATCH v2 2/2] ARM: shmobile: kzm9g-reference dts: Declare the full 512 MiB of RAM
-Message-Id: <1420571859-11655-3-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 20 Jan 2015 04:16:45 +0000
+Subject: [PATCH 4/8 v2] mtd: sh_flctl: remove slave_id settings for DMAEngine
+Message-Id: <87fvb6axwk.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420571859-11655-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1420571859-11655-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Traditionally, the first 16 MiB of RAM was reserved for the RT
-processor.  However, this is incompatible with CONFIG_AUTO_ZRELADDR=y,
-which requires that the start address of physical memory is a multiple
-of 128 MiB.
+From: Arnd Bergmann <arnd@arndb.de>
 
-As CONFIG_AUTO_ZRELADDR=y is enabled for multi-platform kernels, declare
-RAM to start at 0x40000000.
+Current sh_flctl sets dma_slave_config :: slave_id field for DMAEngine,
+but it is no longer needed. Let's remove it.
 
-While at it, reclaim the last 8 MiB of RAM, too, so the full 512 MiB is
-available. Note that kzm9g_defconfig still has
-CONFIG_MEMORY_START=0x41000000 and CONFIG_MEMORY_SIZE=0x1f000000, so
-before the advent of DT we scribbled over the last 8 MiB, too.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v2:
-  - Drop RFC status,
-  - We now know the last 8 MiB of RAM is _not_ used for a U-Boot
-    splash screen.
----
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+v1 -> v2
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index 6d32c87632d42fda..b6c292f839584343 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -45,7 +45,7 @@
+ - separate into shdma and others
+
+ drivers/mtd/nand/sh_flctl.c |    2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
+index a21c378..c3ce81c 100644
+--- a/drivers/mtd/nand/sh_flctl.c
++++ b/drivers/mtd/nand/sh_flctl.c
+@@ -159,7 +159,6 @@ static void flctl_setup_dma(struct sh_flctl *flctl)
+ 		return;
  
- 	memory {
- 		device_type = "memory";
--		reg = <0x41000000 0x1e800000>;
-+		reg = <0x40000000 0x20000000>;
- 	};
+ 	memset(&cfg, 0, sizeof(cfg));
+-	cfg.slave_id = pdata->slave_id_fifo0_tx;
+ 	cfg.direction = DMA_MEM_TO_DEV;
+ 	cfg.dst_addr = (dma_addr_t)FLDTFIFO(flctl);
+ 	cfg.src_addr = 0;
+@@ -175,7 +174,6 @@ static void flctl_setup_dma(struct sh_flctl *flctl)
+ 	if (!flctl->chan_fifo0_rx)
+ 		goto err;
  
- 	reg_1p8v: regulator@0 {
+-	cfg.slave_id = pdata->slave_id_fifo0_rx;
+ 	cfg.direction = DMA_DEV_TO_MEM;
+ 	cfg.dst_addr = 0;
+ 	cfg.src_addr = (dma_addr_t)FLDTFIFO(flctl);
 -- 
-1.9.1
+1.7.9.5
 
