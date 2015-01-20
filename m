@@ -1,96 +1,94 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 23 Jan 2015 11:19:21 +0000
-Subject: renesas-drivers-2015-01-23-v3.19-rc5
-Message-Id: <1422011961-17404-1-git-send-email-geert+renesas@glider.be>
+Date: Tue, 20 Jan 2015 12:51:38 +0000
+Subject: [PATCH 1/9] ARM: shmobile: r8a73a4: Add CPG register bits header
+Message-Id: <1421758306-24838-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1421758306-24838-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1421758306-24838-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-I've pushed renesas-drivers-2015-01-23-v3.19-rc5 to
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
-This tree is meant to ease development of platform support and drivers for
-Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
-branches of various subsystem trees and (b) branches with driver code
-submitted or planned for submission to maintainers into the development
-branch of Simon Horman's renesas.git tree.
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Today's version is based on renesas-devel-20150123-v3.19-rc5.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ include/dt-bindings/clock/r8a73a4-clock.h | 62 +++++++++++++++++++++++++++++++
+ 1 file changed, 62 insertions(+)
+ create mode 100644 include/dt-bindings/clock/r8a73a4-clock.h
 
-Included branches with driver code:
-  - clk-shmobile-for-3.20
-      - clk: shmobile: div6: Avoid changing divisor in .disable()
-      - clk: shmobile: Add r8a7793 support
-      - clk: shmobile: r8a7793: document CPG clock support
-      - clk: shmobile: r8a73a4 common clock framework implementation
-      - clk: shmobile: Add r8a73a4 SoC to MSTP bindings
-      - clk: shmobile: Add R-Car Gen2 RCAN clock support
-      - clk: shmobile: Add R-Car Gen2 ADSP clock support
+diff --git a/include/dt-bindings/clock/r8a73a4-clock.h b/include/dt-bindings/clock/r8a73a4-clock.h
+new file mode 100644
+index 0000000000000000..9a4b4c9ca44aba70
+--- /dev/null
++++ b/include/dt-bindings/clock/r8a73a4-clock.h
+@@ -0,0 +1,62 @@
++/*
++ * Copyright 2014 Ulrich Hecht
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++
++#ifndef __DT_BINDINGS_CLOCK_R8A73A4_H__
++#define __DT_BINDINGS_CLOCK_R8A73A4_H__
++
++/* CPG */
++#define R8A73A4_CLK_MAIN	0
++#define R8A73A4_CLK_PLL0	1
++#define R8A73A4_CLK_PLL1	2
++#define R8A73A4_CLK_PLL2	3
++#define R8A73A4_CLK_PLL2S	4
++#define R8A73A4_CLK_PLL2H	5
++#define R8A73A4_CLK_Z		6
++#define R8A73A4_CLK_Z2		7
++#define R8A73A4_CLK_I		8
++#define R8A73A4_CLK_M3		9
++#define R8A73A4_CLK_B		10
++#define R8A73A4_CLK_M1		11
++#define R8A73A4_CLK_M2		12
++#define R8A73A4_CLK_ZX		13
++#define R8A73A4_CLK_ZS		14
++#define R8A73A4_CLK_HP		15
++
++/* MSTP2 */
++#define R8A73A4_CLK_DMAC	18
++#define R8A73A4_CLK_SCIFB3	17
++#define R8A73A4_CLK_SCIFB2	16
++#define R8A73A4_CLK_SCIFB1	7
++#define R8A73A4_CLK_SCIFB0	6
++#define R8A73A4_CLK_SCIFA0	4
++#define R8A73A4_CLK_SCIFA1	3
++
++/* MSTP3 */
++#define R8A73A4_CLK_CMT1	29
++#define R8A73A4_CLK_IIC1	23
++#define R8A73A4_CLK_IIC0	18
++#define R8A73A4_CLK_IIC7	17
++#define R8A73A4_CLK_IIC6	16
++#define R8A73A4_CLK_MMCIF0	15
++#define R8A73A4_CLK_SDHI0	14
++#define R8A73A4_CLK_SDHI1	13
++#define R8A73A4_CLK_SDHI2	12
++#define R8A73A4_CLK_MMCIF1	5
++#define R8A73A4_CLK_IIC2	0
++
++/* MSTP4 */
++#define R8A73A4_CLK_IIC3	11
++#define R8A73A4_CLK_IIC4	10
++#define R8A73A4_CLK_IIC5	9
++
++/* MSTP5 */
++#define R8A73A4_CLK_THERMAL	22
++#define R8A73A4_CLK_IIC8	15
++
++#endif /* __DT_BINDINGS_CLOCK_R8A73A4_H__ */
+-- 
+1.9.1
 
-Included fixes:
-  - Simple Power-Managed Bus (resurrected for your convenience):
-      - drivers: bus: Sort Kconfig entries alphabetically
-      - drivers: bus: Sort Makefile entries alphabetically
-      - drivers: bus: Add Simple Power-Managed Bus DT Bindings
-      - drivers: bus: Add Simple Power-Managed Bus Driver
-  - sh73a0/kzm9g Multiplatform (resurrected for your convenience):
-      - ARM: shmobile: sh73a0 dtsi: Add Bus State Controller node
-      - ARM: shmobile: kzm9g dts: Move Ethernet node to BSC
-      - ARM: shmobile: kzm9g-reference: Remove board C code and DT file
-  - sh73a0/kzm9g PM domain (resurrected for your convenience):
-      - ARM: shmobile: sh73a0 dtsi: Add PM domain support
-      - drivers: sh: Disable PM runtime for multi-platform sh73a0 with genpd
-  - sh73a0 TWD (resurrected for your convenience):
-      - ARM: shmobile: sh73a0 dtsi: Add Cortex-A9 TWD node
-  - r8a73a4/ape6evm Multiplatform:
-      - ARM: shmobile: r8a73a4 dtsi: Add Bus State Controller node
-      - ARM: shmobile: ape6evm dts: Move Ethernet node to BSC
-      - ARM: shmobile: ape6evm-reference: Remove board C code and DT file
-      - ARM: shmobile: r8a73a4: ape6evm: Remove legacy platform
-      - ARM: shmobile: r8a73a4: Remove legacy code
-
-Included subsystem trees:
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
-  - git://git.linaro.org/people/mturquette/linux.git#clk-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
-  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
-  - git://gitorious.org/linux-can/linux-can-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
-  - git://people.freedesktop.org/~airlied/linux#drm-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
-  - git://linuxtv.org/mchehab/media-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
-  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
-  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
-  - git://git.infradead.org/users/vkoul/slave-dma.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
-  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
-  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
-  - git://git.infradead.org/battery-2.6.git#master
-  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
