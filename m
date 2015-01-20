@@ -1,41 +1,46 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 29 Jan 2015 10:12:56 +0000
-Subject: [PATCH] sh-pfc: emev2 - Fix mangled author name
-Message-Id: <1422526376-12146-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 20 Jan 2015 01:27:08 +0000
+Subject: [GIT PULL] Third Round of Renesas ARM Based SoC Updates for v3.20
+Message-Id: <cover.1421715134.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1378362045.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1378362045.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: =?UTF-8?q?Niklas=20S=C3=B6derlund?= <niso@kth.se>, linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Fixes: 1e7d5d849cf4f0c5 ("sh-pfc: Add emev2 pinmux support")
----
-Looks like the original UTF-8 was interpreted as ISO-8859-1, and the
-resulting characters being converted to UTF-8 again.
+Hi Olof, Hi Kevin, Hi Arnd,
 
-BTW, the same issue is present in the SoB-lines of both
-1e7d5d849cf4f0c5 ("sh-pfc: Add emev2 pinmux support") and
-4c9e473541c52453 ("sh-pfc: add macro to define pinmux without function")
-Perhaps they can still be fixed while squashing this in?
----
- drivers/pinctrl/sh-pfc/pfc-emev2.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Please consider these third round of Renesas ARM based SoC updates for v3.20.
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-emev2.c b/drivers/pinctrl/sh-pfc/pfc-emev2.c
-index 9b3ce5d1265b391f..849c6943ed308ee0 100644
---- a/drivers/pinctrl/sh-pfc/pfc-emev2.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-emev2.c
-@@ -1,7 +1,7 @@
- /*
-  * Pin Function Controller Support
-  *
-- * Copyright (C) 2015 Niklas SÃ¶derlund
-+ * Copyright (C) 2015 Niklas Söderlund
-  *
-  * This file is subject to the terms and conditions of the GNU General Public
-  * License.  See the file "COPYING" in the main directory of this archive
--- 
-1.9.1
+This pull request is based on the previous round of
+such requests, tagged as renesas-soc2-for-v3.20,
+which I have already sent a pull-request for.
 
+
+The following changes since commit 2173fc7cb681c38b9e5bc526211045caecf96e44:
+
+  ARM: shmobile: R-Mobile: Add DT support for PM domains (2015-01-15 08:38:14 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc3-for-v3.20
+
+for you to fetch changes up to 1632ff162f305f38667632c465e4bfaab8ef87a2:
+
+  ARM: shmobile: R-Mobile: Special-case PM domains with memory-controllers (2015-01-16 11:02:42 +0900)
+
+----------------------------------------------------------------
+Third Round of Renesas ARM Based SoC Updates for v3.20
+
+* Special-case PM domains with memory-controllers
+
+----------------------------------------------------------------
+Geert Uytterhoeven (3):
+      ARM: shmobile: R-Mobile: Consolidate rmobile_pd_suspend_*()
+      ARM: shmobile: R-Mobile: Generalize adding/looking up special PM domains
+      ARM: shmobile: R-Mobile: Special-case PM domains with memory-controllers
+
+ arch/arm/mach-shmobile/pm-rmobile.c | 155 ++++++++++++++++++++++--------------
+ 1 file changed, 97 insertions(+), 58 deletions(-)
