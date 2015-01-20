@@ -1,53 +1,85 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 30 Jan 2015 17:01:30 +0000
-Subject: Re: [PATCH] i2c: sh_mobile: terminate DMA reads properly
-Message-Id: <20150130170129.GA8476@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="/9DWx/yDrRhgMJTb"
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 20 Jan 2015 12:51:43 +0000
+Subject: [PATCH 6/9] ARM: shmobile: ape6evm dts: Move Ethernet node to BSC
+Message-Id: <1421758306-24838-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1422552796-11315-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1422552796-11315-1-git-send-email-wsa@the-dreams.de>
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>
+References: <1421758306-24838-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1421758306-24838-1-git-send-email-geert+renesas@glider.be>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+Move the Ethernet node from the ad-hoc lbsc node to the BSC node,
+as its connected to the Bus State Controller.  This allows the system to
+know the right position of the Ethernet node in the clock and PM domain
+hierarchy, and manage the clock and PM domain appropriately.
 
---/9DWx/yDrRhgMJTb
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+v3:
+  - Add Tested-by,
 
-On Thu, Jan 29, 2015 at 06:33:16PM +0100, Wolfram Sang wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
->=20
-> DMA read requests could miss proper termination, so two more bytes would
-> have been read via PIO overwriting the end of the buffer with wrong
-> data. Make DMA stop handling more readable while we are here.
->=20
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+v2:
+  - New.
+---
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts | 35 +++++++++++++++--------------------
+ 1 file changed, 15 insertions(+), 20 deletions(-)
 
-Applied to for-current, thanks!
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+index 0d50bef0123449f5..44c4cac1820a4dfe 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+@@ -72,26 +72,6 @@
+ 		regulator-always-on;
+ 	};
+ 
+-	lbsc {
+-		compatible = "simple-bus";
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+-		ranges = <0 0 0 0x20000000>;
+-
+-		ethernet@8000000 {
+-			compatible = "smsc,lan9220", "smsc,lan9115";
+-			reg = <0x08000000 0x1000>;
+-			interrupt-parent = <&irqc1>;
+-			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
+-			phy-mode = "mii";
+-			reg-io-width = <4>;
+-			smsc,irq-active-high;
+-			smsc,irq-push-pull;
+-			vdd33a-supply = <&ape6evm_fixed_3v3>;
+-			vddvario-supply = <&ape6evm_fixed_1v8>;
+-		};
+-	};
+-
+ 	leds {
+ 		compatible = "gpio-leds";
+ 		led1 {
+@@ -184,6 +164,21 @@
+ 	voltage-tolerance = <1>; /* 1% */
+ };
+ 
++&bsc {
++	ethernet@8000000 {
++		compatible = "smsc,lan9220", "smsc,lan9115";
++		reg = <0x08000000 0x1000>;
++		interrupt-parent = <&irqc1>;
++		interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
++		phy-mode = "mii";
++		reg-io-width = <4>;
++		smsc,irq-active-high;
++		smsc,irq-push-pull;
++		vdd33a-supply = <&ape6evm_fixed_3v3>;
++		vddvario-supply = <&ape6evm_fixed_1v8>;
++	};
++};
++
+ &cmt1 {
+ 	status = "okay";
+ };
+-- 
+1.9.1
 
-
---/9DWx/yDrRhgMJTb
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJUy7jpAAoJEBQN5MwUoCm2fzAQAIrIfLOI2Thp0kQMI8uw97mD
-zD5RvSpLkXOt1LDIrCMN/PVM4eD1Sxohn6hOH+ZQjpTAPMhjGSvsSkFDakQpQnBd
-sLtrMjc9OaYTLbXvh7kE3e8OsrHEDwPd3djuR7Z/oiNqZuwgZinSeM8b7aT3uYl+
-ghyQEJi6WBdpbWBDXFSdGkSdvXCsJ/e5AQINdnE61uvXIkmO6EQlUgG43wLY6ZEh
-LWpKyi7ZerYd8HI6nrkIDU2Zx3MKenvnSp7xJ7os4X/sMACDvQc0Ieq4lK9vHifc
-KKmR6iA1EMmJRMfuBA4i4cZQeP0romYWrxuoQpG9TG0QYXMapXhutcxOAtZ4tYtg
-zyMQBpN5o1bjKqMJWdvOQIj5aVwwa37nobSvSHki8pvW/36L/bPpe3iVW9foDTxz
-XzEihzlZFr4eALRMKisTUJ+/5IYshOly0Bm1lAhMTDXEj46UfU+IpaRYtpQdH1U5
-0wWz7BJqopwQ7U7d1u5JTBnSqUBC2lydtREG3wf33zallon3jGl1HVRv685Z/FVr
-9Ou9HK6EjaQ4xIyHCLUbzYpizzo1GDoR7DCFBmYKmQm7iU/hTnwk1Kx3OCil5JMz
-P50uZKivkpQUqFCtpOaVwLCPH5C3buJRnA9MVw3s/XB8JI9figMBAXH+a4aLUttk
-1isKyyp21k/yuN45LInr
-=y3kJ
------END PGP SIGNATURE-----
-
---/9DWx/yDrRhgMJTb--
