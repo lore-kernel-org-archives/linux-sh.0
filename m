@@ -1,67 +1,48 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Tue, 06 Jan 2015 15:44:41 +0000
-Subject: [PATCH v2 21/40] sh: fix put_user sparse errors
-Message-Id: <1420558883-10131-22-git-send-email-mst@redhat.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 20 Jan 2015 12:51:40 +0000
+Subject: [PATCH 3/9] ARM: shmobile: ape6evm: Disable legacy clock initialization
+Message-Id: <1421758306-24838-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420558883-10131-1-git-send-email-mst@redhat.com>
-In-Reply-To: <1420558883-10131-1-git-send-email-mst@redhat.com>
+References: <1421758306-24838-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1421758306-24838-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-virtio wants to write bitwise types to userspace using put_user.
-At the moment this triggers sparse errors, since the value is passed
-through an integer.
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-For example:
+Disables r8a73a4_clock_init() if CCF is enabled.
 
-	__le32 __user *p;
-	__le32 x;
-	put_user(x, p);
-
-is safe, but currently triggers a sparse warning.
-
-Fix that up using __force.
-
-Note: this does not suppress any useful sparse checks since caller
-assigns x to typeof(*p), which in turn forces all the necessary type
-checks.
-
-Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/sh/include/asm/uaccess_64.h | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/board-ape6evm-reference.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/sh/include/asm/uaccess_64.h b/arch/sh/include/asm/uaccess_64.h
-index 2e07e0f..c01376c 100644
---- a/arch/sh/include/asm/uaccess_64.h
-+++ b/arch/sh/include/asm/uaccess_64.h
-@@ -59,19 +59,19 @@ do {								\
- 	switch (size) {						\
- 	case 1:							\
- 		retval = __put_user_asm_b((void *)&x,		\
--					  (long)ptr);		\
-+					  (__force long)ptr);	\
- 		break;						\
- 	case 2:							\
- 		retval = __put_user_asm_w((void *)&x,		\
--					  (long)ptr);		\
-+					  (__force long)ptr);	\
- 		break;						\
- 	case 4:							\
- 		retval = __put_user_asm_l((void *)&x,		\
--					  (long)ptr);		\
-+					  (__force long)ptr);	\
- 		break;						\
- 	case 8:							\
- 		retval = __put_user_asm_q((void *)&x,		\
--					  (long)ptr);		\
-+					  (__force long)ptr);	\
- 		break;						\
- 	default:						\
- 		__put_user_unknown();				\
+diff --git a/arch/arm/mach-shmobile/board-ape6evm-reference.c b/arch/arm/mach-shmobile/board-ape6evm-reference.c
+index 3b68370b03a09ad1..dd5bc63aba421df2 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm-reference.c
++++ b/arch/arm/mach-shmobile/board-ape6evm-reference.c
+@@ -29,7 +29,7 @@
+ 
+ static void __init ape6evm_add_standard_devices(void)
+ {
+-
++#ifndef CONFIG_COMMON_CLK
+ 	struct clk *parent;
+ 	struct clk *mp;
+ 
+@@ -43,6 +43,7 @@ static void __init ape6evm_add_standard_devices(void)
+ 	clk_set_parent(mp, parent);
+ 	clk_put(parent);
+ 	clk_put(mp);
++#endif
+ 
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
 -- 
-MST
+1.9.1
 
