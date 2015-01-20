@@ -1,10 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 21 Jan 2015 04:54:27 +0000
-Subject: [PATCH 09/13] ARM: shmobile: sh7372: Remove DT binding documentation
-Message-Id: <20150121045427.7648.51202.sendpatchset@little-apple>
+Date: Tue, 20 Jan 2015 11:58:20 +0000
+Subject: [PATCH 03/03] ARM: shmobile: Remove mach/uncompress.h
+Message-Id: <20150120115820.11479.4763.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150121045256.7648.7451.sendpatchset@little-apple>
-In-Reply-To: <20150121045256.7648.7451.sendpatchset@little-apple>
+References: <20150120115750.11479.95109.sendpatchset@little-apple>
+In-Reply-To: <20150120115750.11479.95109.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,22 +12,47 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm+renesas@opensource.se>
 
-Remove DT compatible string documentation for the now removed sh7372 SoC.
+Convert ARCH_SHMOBILE_LEGACY to make use of <debug/uncompress.h>
+and remove the now unused <mach/uncompress.h>.
 
 Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
 
- Documentation/devicetree/bindings/arm/shmobile.txt |    2 --
- 1 file changed, 2 deletions(-)
+ arch/arm/Kconfig.debug                           |    3 ++-
+ arch/arm/mach-shmobile/include/mach/uncompress.h |   19 -------------------
+ 2 files changed, 2 insertions(+), 20 deletions(-)
 
---- 0005/Documentation/devicetree/bindings/arm/shmobile.txt
-+++ work/Documentation/devicetree/bindings/arm/shmobile.txt	2015-01-21 11:36:21.787569650 +0900
-@@ -7,8 +7,6 @@ SoCs:
-     compatible = "renesas,emev2"
-   - RZ/A1H (R7S72100)
-     compatible = "renesas,r7s72100"
--  - SH-Mobile AP4 (R8A73720/SH7372)
--    compatible = "renesas,sh7372"
-   - SH-Mobile AG5 (R8A73A00/SH73A0)
-     compatible = "renesas,sh73a0"
-   - R-Mobile APE6 (R8A73A40)
+--- 0001/arch/arm/Kconfig.debug
++++ work/arch/arm/Kconfig.debug	2015-01-20 20:26:10.527765900 +0900
+@@ -1441,7 +1441,8 @@ config DEBUG_UNCOMPRESS
+ config UNCOMPRESS_INCLUDE
+ 	string
+ 	default "debug/uncompress.h" if ARCH_MULTIPLATFORM || ARCH_MSM || \
+-					PLAT_SAMSUNG || ARCH_EFM32
++					PLAT_SAMSUNG || ARCH_EFM32 || \
++					ARCH_SHMOBILE_LEGACY
+ 	default "mach/uncompress.h"
+ 
+ config EARLY_PRINTK
+--- 0001/arch/arm/mach-shmobile/include/mach/uncompress.h
++++ /dev/null	2015-01-13 15:44:39.280208949 +0900
+@@ -1,19 +0,0 @@
+-#ifndef __ASM_MACH_UNCOMPRESS_H
+-#define __ASM_MACH_UNCOMPRESS_H
+-
+-/*
+- * This does not append a newline
+- */
+-static void putc(int c)
+-{
+-}
+-
+-static inline void flush(void)
+-{
+-}
+-
+-static void arch_decomp_setup(void)
+-{
+-}
+-
+-#endif /* __ASM_MACH_UNCOMPRESS_H */
