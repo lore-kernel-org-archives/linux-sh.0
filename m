@@ -1,48 +1,30 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 20 Jan 2015 04:18:35 +0000
-Subject: [PATCH 8/8 v2] ASoC: rsnd: remove slave_id settings for DMAEngine
-Message-Id: <87a91eaxtc.wl%kuninori.morimoto.gx@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 20 Jan 2015 11:23:59 +0000
+Subject: Re: [PATCH 8/8 v2] ASoC: rsnd: remove slave_id settings for DMAEngine
+Message-Id: <54BE3ACF.5090102@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87a91eaxtc.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87a91eaxtc.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hello.
 
-Current sh-msiof sets dma_slave_config :: slave_id field for DMAEngine,
-but it is no longer needed. Let's remove it.
+On 1/20/2015 7:18 AM, Kuninori Morimoto wrote:
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v1 -> v2
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
- - separate into shdma and others
+> Current sh-msiof sets dma_slave_config :: slave_id field for DMAEngine,
 
- sound/soc/sh/rcar/core.c |    3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+    sh-msiof? But this is ALSA patch! :-)
 
-diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
-index 75308bb..61473d9 100644
---- a/sound/soc/sh/rcar/core.c
-+++ b/sound/soc/sh/rcar/core.c
-@@ -316,7 +316,7 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma,
- 		  int is_play, int id)
- {
- 	struct device *dev = rsnd_priv_to_dev(priv);
--	struct dma_slave_config cfg;
-+	struct dma_slave_config cfg = {};
- 	struct rsnd_mod *mod_from;
- 	struct rsnd_mod *mod_to;
- 	char dma_name[DMA_NAME_SIZE];
-@@ -334,7 +334,6 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma,
- 	rsnd_dma_of_path(dma, is_play, &mod_from, &mod_to);
- 	rsnd_dma_of_name(mod_from, mod_to, dma_name);
- 
--	cfg.slave_id	= id;
- 	cfg.direction	= is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
- 	cfg.src_addr	= rsnd_gen_dma_addr(priv, mod_from, is_play, 1);
- 	cfg.dst_addr	= rsnd_gen_dma_addr(priv, mod_to,   is_play, 0);
--- 
-1.7.9.5
+> but it is no longer needed. Let's remove it.
+
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+[...]
+
+WBR, Sergei
 
