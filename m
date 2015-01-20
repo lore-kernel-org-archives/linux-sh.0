@@ -1,15 +1,17 @@
 From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Tue, 13 Jan 2015 09:35:55 +0000
+Date: Tue, 20 Jan 2015 09:09:53 +0000
 Subject: Re: [PATCH 0/17 v2] tmio: mmc: header cleanup / sh_mobile_cleanup
-Message-Id: <CAPDyKFpsVnFnM0Of23P-jbDNCuE6Ckng1hY3CFx-zowt2K5KGA@mail.gmail.com>
+Message-Id: <CAPDyKFpAgAJN6wnwzDA3p5u1L-+Wc44n1tmzpWMtt4PDfk3KCg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Arnd Bergmann <arnd@arndb.de>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: Lee Jones <lee.jones@linaro.org>
+Cc: Arnd Bergmann <arnd@arndb.de>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+
++ MFD maintainer
 
 On 13 January 2015 at 05:56, Kuninori Morimoto
 <kuninori.morimoto.gx@renesas.com> wrote:
@@ -56,16 +58,8 @@ On 13 January 2015 at 05:56, Kuninori Morimoto
 >  include/linux/mfd/tmio.h           |   28 +--------
 >  include/linux/mmc/sh_mobile_sdhi.h |   15 -----
 >  7 files changed, 164 insertions(+), 151 deletions(-)
-
-Thanks!
-
-I have applied this on a local branch called "tmio". That branch is
-merged into my next branch, to get some testing of these patches.
-Unless we encounter some issues, I will publish the tmio branch as an
-immutable branch in a few days.
-
-Also, I updated the commit message header of patch 10 and the commit
-message of patch 15.
-
-Kind regards
-Uffe
+>
+>
+> Best regards
+> ---
+> Kuninori Morimoto
