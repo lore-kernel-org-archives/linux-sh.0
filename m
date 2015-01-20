@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 20 Jan 2015 01:26:39 +0000
-Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Fixes for v3.19
-Message-Id: <cover.1421716614.git.horms+renesas@verge.net.au>
+Date: Tue, 20 Jan 2015 01:27:32 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM Based SoC sh73a0 Multiplatform Updates for v3.20
+Message-Id: <cover.1421716945.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1381222967.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
@@ -12,39 +12,36 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hi Olof, Hi Kevin, Hi Arnd,
 
-Please consider these second round of Renesas ARM based SoC fixes for v3.19.
+Please consider these second round of Renesas ARM based SoC sh73a0 multiplatform updates for v3.20.
 
 This pull request is based on the previous round of
-such requests, tagged as renesas-soc-fixes-for-v3.19,
-which you have already pulled into your fixes branch.
+such requests, tagged as renesas-sh73a0-multiplatform-for-v3.20,
+which I have already sent a pull-request for.
 
-This fixes a regression in the r8a7779 and r8a7779 SoCs due to
-9a1091ef0017c40a ("irqchip: gic: Support hierarchy irq domain.")
-which was included in v3.18-rc2.
+My understanding from Geert Uytterhoeven is that the above dependency
+is required to avoid a lock-up.
 
 
-The following changes since commit b0ddb319db3d7a1943445f0de0a45c07a7f3457a:
+The following changes since commit 93c9f0228a3d0a14640f86b3e8aeaf3c9b449bb7:
 
-  ARM: shmobile: sh73a0 legacy: Set .control_parent for all irqpin instances (2015-01-08 09:15:16 +0900)
+  ARM: shmobile: kzm9g-reference: Remove board C code and DT file (2015-01-14 09:46:48 +0900)
 
 are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-fixes2-for-v3.19
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh73a0-multiplatform2-for-v3.20
 
-for you to fetch changes up to f469cde20a7ee342070b4a459b6fce469a3186db:
+for you to fetch changes up to e42c8385cfec0579a103b365d61748f199bfe239:
 
-  ARM: shmobile: r8a7779: Instantiate GIC from C board code in legacy builds (2015-01-17 09:28:41 +0900)
-
-----------------------------------------------------------------
-Second Round of Renesas ARM Based SoC Fixes for v3.19
-
-* Instantiate GIC from C board code in legacy builds on r8a7778 and r8a7779
+  ARM: shmobile: sh73a0 dtsi: Add Cortex-A9 TWD node (2015-01-17 09:36:35 +0900)
 
 ----------------------------------------------------------------
-Magnus Damm (2):
-      ARM: shmobile: r8a7778: Instantiate GIC from C board code in legacy builds
-      ARM: shmobile: r8a7779: Instantiate GIC from C board code in legacy builds
+Second Round of Renesas ARM Based SoC sh73a0 Multiplatform Updates for v3.20
 
- arch/arm/mach-shmobile/setup-r8a7778.c | 9 ++++++++-
- arch/arm/mach-shmobile/setup-r8a7779.c | 9 ++++++++-
- 2 files changed, 16 insertions(+), 2 deletions(-)
+* Add Cortex-A9 TWD node
+
+----------------------------------------------------------------
+Geert Uytterhoeven (1):
+      ARM: shmobile: sh73a0 dtsi: Add Cortex-A9 TWD node
+
+ arch/arm/boot/dts/sh73a0.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
