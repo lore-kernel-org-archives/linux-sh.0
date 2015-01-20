@@ -1,87 +1,84 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 22 Jan 2015 02:19:14 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: No R-Car Gen2 CMA reservation when HIGHMEM=n
-Message-Id: <20150122021913.GA31170@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 20 Jan 2015 12:51:37 +0000
+Subject: [PATCH 0/9] ARM: shmobile: r8a73a4/ape6evm multiplatform
+Message-Id: <1421758306-24838-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150121050137.8410.36127.sendpatchset@little-apple>
-In-Reply-To: <20150121050137.8410.36127.sendpatchset@little-apple>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jan 21, 2015 at 02:01:37PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
->=20
-> Allow R-Car Gen2 platforms to boot with CMA enabled
-> and HIGHMEM disabled. This patch adds code to check
-> if the R-Car Gen2 specific memory reservation window
-> is included in the kernel memory range or not. When
-> HIGHMEM is disabled the R-Car Gen2 reservation area is
-> outside the kernel memory range and in such case the
-> memory reservation is simply skipped over.
->=20
-> Without this patch the kernel boot hangs when CMA is
-> enabled and HIGHMEM is disabled on the r8a7791 Koelsch
-> hardware platform:
->=20
->     WARNING: CPU: 1 PID: 1 at mm/cma.c:113 cma_init_reserved_areas+0x88/0=
-x1d4()
->     ...
->     WARNING: CPU: 1 PID: 1 at mm/cma.c:121 cma_init_reserved_areas+0xf8/0=
-x1d4()
->     ...
->     Unable to handle kernel NULL pointer dereference at virtual address 0=
-0000160
->     pgd =3D c0003000
->     [00000160] *pgd=80000040004003, *pmd=00000000
->     Internal error: Oops: 206 [#1] SMP ARM
->     Modules linked in:
->     CPU: 1 PID: 1 Comm: swapper/0 Tainted: G        W
-> 3.19.0-rc4-koelsch-01450-g7f9b6075ce12c3ea-dirty #735
->     Hardware name: Generic R8A7791 (Flattened Device Tree)
->     task: edc553c0 ti: edc56000 task.ti: edc56000
->     PC is at set_pfnblock_flags_mask+0x54/0xa0
->     LR is at 0x440
->=20
-> In the current shmobile_defconfig HIGHMEM is enabled
-> while CMA is disabled, so to trigger this the kernel
-> configuration for both CMA and HIGHMEM needs to be
-> adjusted.
->=20
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+	Hi Simon, Magnus,
 
-Thanks, I have queued this up for v3.21.
+This patch series transitions the r8a73a4/ape6evm platform to support
+multiplatform only:
+  - Add CCF information to DT,
+  - Disable legacy clock if CCF is used,
+  - Add Bus State Controller node, and move the Ethernet node to it,
+  - Remove ape6evm-reference,
+  - Remove ape6evm-legacy and legacy support code.
 
-> ---
->=20
->  Changes since V1:
->  - Included error log and Tested-by from Geert - thanks!
->=20
->  Written on top of renesas-devel-20150114v2-v3.19-rc4
-> =20
->  arch/arm/mach-shmobile/setup-rcar-gen2.c |    3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
->=20
-> --- 0001/arch/arm/mach-shmobile/setup-rcar-gen2.c
-> +++ work/arch/arm/mach-shmobile/setup-rcar-gen2.c	2015-01-15 14:20:47.089=
-397114 +0900
-> @@ -21,6 +21,7 @@
->  #include <linux/dma-contiguous.h>
->  #include <linux/io.h>
->  #include <linux/kernel.h>
-> +#include <linux/memblock.h>
->  #include <linux/of.h>
->  #include <linux/of_fdt.h>
->  #include <asm/mach/arch.h>
-> @@ -197,7 +198,7 @@ void __init rcar_gen2_reserve(void)
-> =20
->  	of_scan_flat_dt(rcar_gen2_scan_mem, &mrc);
->  #ifdef CONFIG_DMA_CMA
-> -	if (mrc.size)
-> +	if (mrc.size && memblock_is_region_memory(mrc.base, mrc.size))
->  		dma_contiguous_reserve_area(mrc.size, mrc.base, 0,
->  					    &rcar_gen2_dma_contiguous, true);
->  #endif
->=20
+This series is based on renesas-drivers-2015-01-19-v3.19-rc5.
+It depends on renesas-devel-20150119-v3.19-rc5 (code-wise) and
+clk-shmobile-for-3.20 (functionality-wise), for which I've sent a pull
+request to Mike Turquette yesterday.
+
+All of this was untested by me due to lack of hardware.
+As Mike had previously acked the r8a73a4 CCF implementation, it's safe
+to apply after testing.
+
+Thanks!
+
+Geert Uytterhoeven (2):
+  ARM: shmobile: r8a73a4 dtsi: Add Bus State Controller node
+  ARM: shmobile: ape6evm dts: Move Ethernet node to BSC
+
+Laurent Pinchart (1):
+  ARM: shmobile: r8a73a4: Remove legacy code
+
+Ulrich Hecht (6):
+  ARM: shmobile: r8a73a4: Add CPG register bits header
+  ARM: shmobile: r8a73a4: Common clock framework DT description
+  ARM: shmobile: ape6evm: Disable legacy clock initialization
+  ARM: shmobile: r8a73a4: Add MSTP clock assignments to DT
+  ARM: shmobile: ape6evm-reference: Remove board C code and DT file
+  ARM: shmobile: r8a73a4: ape6evm: Remove legacy platform
+
+ Documentation/devicetree/bindings/arm/shmobile.txt |   2 -
+ MAINTAINERS                                        |   1 -
+ arch/arm/boot/dts/Makefile                         |   2 -
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts    | 156 -----
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts              |  35 +-
+ arch/arm/boot/dts/r8a73a4.dtsi                     | 333 +++++++++++
+ arch/arm/configs/ape6evm_defconfig                 | 109 ----
+ arch/arm/mach-shmobile/Kconfig                     |  25 -
+ arch/arm/mach-shmobile/Makefile                    |   3 -
+ arch/arm/mach-shmobile/Makefile.boot               |   2 -
+ arch/arm/mach-shmobile/board-ape6evm-reference.c   |  60 --
+ arch/arm/mach-shmobile/board-ape6evm.c             | 286 ---------
+ arch/arm/mach-shmobile/clock-r8a73a4.c             | 659 ---------------------
+ arch/arm/mach-shmobile/r8a73a4.h                   |  17 -
+ arch/arm/mach-shmobile/setup-r8a73a4.c             | 273 +--------
+ include/dt-bindings/clock/r8a73a4-clock.h          |  62 ++
+ 16 files changed, 412 insertions(+), 1613 deletions(-)
+ delete mode 100644 arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+ delete mode 100644 arch/arm/configs/ape6evm_defconfig
+ delete mode 100644 arch/arm/mach-shmobile/board-ape6evm-reference.c
+ delete mode 100644 arch/arm/mach-shmobile/board-ape6evm.c
+ delete mode 100644 arch/arm/mach-shmobile/clock-r8a73a4.c
+ delete mode 100644 arch/arm/mach-shmobile/r8a73a4.h
+ create mode 100644 include/dt-bindings/clock/r8a73a4-clock.h
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
