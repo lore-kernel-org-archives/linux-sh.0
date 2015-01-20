@@ -1,41 +1,55 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Tue, 20 Jan 2015 09:49:08 +0000
-Subject: Re: [PATCH 0/4] ARM: shmobile: r8a779x: add SDHI DMA support
-Message-Id: <CAPDyKFrsgJcZ5od+uOyHNCcgEvg6bJTAk+JrG=iv2wu0y9aV5g@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 20 Jan 2015 21:09:46 +0000
+Subject: [PATCH v2 1/2] shdmac: use SET_RUNTIME_PM_OPS()
+Message-Id: <9005734.b9UuUHqyUV@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87wq4ny1ig.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87wq4ny1ig.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 16 January 2015 at 08:38, Ulf Hansson <ulf.hansson@linaro.org> wrote:
-> On 16 January 2015 at 02:09, Kuninori Morimoto
-> <kuninori.morimoto.gx@renesas.com> wrote:
->>
->> Hi Simon
->> Cc Ulf
->>
->> These are SDHI DMA support for r8a7790/r8a7791.
->> These are based on Ulf's
->> git://git.linaro.org/people/ulf.hansson/mmc.git :: next
->>
->> or, especially this commit
->> 5f04044fbb32cedef8cf0ea777a632882f065698
->> (mmc: sh_mobile_sdhi: tidyup mmc_data->bus_shift for latest SoC)
->>
->> Ulf, please let us know if we need to based on other branch
->
-> Please don't use my next branch, since I rebase it frequently.
->
-> I will share an immutable branch from mmc tree, called "tmio", It will
-> contain only your tmio fixes. I will do this early next week since I
-> want to base it on 3.19 rc5.
+Use SET_RUNTIME_PM_OPS() to initialize the runtime PM method pointers in the
+'struct dev_pm_ops';  since that macro doesn't  do anything  if CONFIG_PM is
+not defined, we have  to move #ifdef up to also cover the runtime PM methods
+in order to avoid compilation warnings.
 
-The immutable branch is available:
+Based on orignal patch by Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>.
 
-git.linaro.org/people/ulf.hansson/mmc.git tmio
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Kind regards
-Uffe
+---
+The patch is against the 'next' branch of Vinod Koul's 'slave-dma.git' repo.
+ 
+ drivers/dma/sh/shdmac.c |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+Index: slave-dma/drivers/dma/sh/shdmac.c
+=================================--- slave-dma.orig/drivers/dma/sh/shdmac.c
++++ slave-dma/drivers/dma/sh/shdmac.c
+@@ -588,6 +588,7 @@ static void sh_dmae_shutdown(struct plat
+ 	sh_dmae_ctl_stop(shdev);
+ }
+ 
++#ifdef CONFIG_PM
+ static int sh_dmae_runtime_suspend(struct device *dev)
+ {
+ 	return 0;
+@@ -600,7 +601,6 @@ static int sh_dmae_runtime_resume(struct
+ 	return sh_dmae_rst(shdev);
+ }
+ 
+-#ifdef CONFIG_PM
+ static int sh_dmae_suspend(struct device *dev)
+ {
+ 	return 0;
+@@ -640,8 +640,8 @@ static int sh_dmae_resume(struct device
+ static const struct dev_pm_ops sh_dmae_pm = {
+ 	.suspend		= sh_dmae_suspend,
+ 	.resume			= sh_dmae_resume,
+-	.runtime_suspend	= sh_dmae_runtime_suspend,
+-	.runtime_resume		= sh_dmae_runtime_resume,
++	SET_RUNTIME_PM_OPS(sh_dmae_runtime_suspend, sh_dmae_runtime_resume,
++			   NULL)
+ };
+ 
+ static dma_addr_t sh_dmae_slave_addr(struct shdma_chan *schan)
