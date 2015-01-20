@@ -1,70 +1,74 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 05 Jan 2015 07:53:22 +0000
-Subject: Re: [PATCH 05/05] serial: sh-sci: Expose SCIFA/SCIFB CTS pin
-Message-Id: <6657739.eAlEu9S4Iu@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 20 Jan 2015 01:26:41 +0000
+Subject: [PATCH 2/2] ARM: shmobile: r8a7779: Instantiate GIC from C board code in legacy builds
+Message-Id: <f469cde20a7ee342070b4a459b6fce469a3186db.1421716614.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20141217125236.14480.78833.sendpatchset@w520> <20141217125325.14480.79285.sendpatchset@w520>
-In-Reply-To: <20141217125325.14480.79285.sendpatchset@w520>
+References: <cover.1421716614.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1421716614.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, gregkh@linuxfoundation.org, jslaby@suse.cz, linux-serial@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Thank you for the patch.
+As of commit 9a1091ef0017c40a ("irqchip: gic: Support hierarchy irq
+domain."), Marzen legacy hangs during boot with:
 
-On Wednesday 17 December 2014 21:53:25 Magnus Damm wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
-> 
-> Expose CTS pin to serial core for the SCIFA/SCIFB case.
-> 
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> ---
-> 
->  drivers/tty/serial/sh-sci.c |   17 +++++++++++++++--
->  1 file changed, 15 insertions(+), 2 deletions(-)
-> 
-> --- 0023/drivers/tty/serial/sh-sci.c
-> +++ work/drivers/tty/serial/sh-sci.c	2014-12-17 18:46:44.000000000 +0900
-> @@ -564,6 +564,11 @@ static void sci_init_pins_default(struct
->  	serial_port_out(port, SCSPTR, status); /* Set RTS = 1 */
->  }
-> 
-> +static bool sci_cts_asserted_scifab(struct uart_port *port)
-> +{
-> +	return !(serial_port_in(port, SCPDR) & BIT(3));
+   Image Name:   'Linux-3.19.0-rc4'
+   Image Type:   ARM Linux Kernel Image (uncompressed)
+   Data Size:    3445880 Bytes = 3.3 MiB
+   Load Address: 60008000
+   Entry Point:  60008000
+   Verifying Checksum ... OK
+   Loading Kernel Image ... OK
+OK
 
-Could you please define SCPDR_CTSD to replace BIT(3) ?
+Starting kernel ...
 
-> +}
-> +
->  static void sci_init_pins_scifab(struct uart_port *port, bool
-> hwflow_enabled) {
->  	unsigned short control, data;
-> @@ -1304,8 +1309,16 @@ static unsigned int sci_get_mctrl(struct
->  	 * else is wired up. Keep it simple and simply assert DSR/CAR.
->  	 */
-> 
-> -	if (s->cfg->capabilities & SCIx_HAVE_RTSCTS)
-> -		cts_asserted = sci_cts_asserted_default(port);
-> + 	if (s->cfg->capabilities & SCIx_HAVE_RTSCTS) {
-> +		switch (s->cfg->type) {
-> +		case PORT_SCIFA:
-> +		case PORT_SCIFB:
-> +			cts_asserted = sci_cts_asserted_scifab(port);
-> +			break;
-> +		default:
-> +			cts_asserted = sci_cts_asserted_default(port);
-> +		}
-> + 	}
-> 
->  	return TIOCM_DSR | TIOCM_CAR | (cts_asserted ? TIOCM_CTS : 0);
->  }
+Enabling DEBUG_LL does not seem to change the situation, however this
+patch by itself fixes this issue and re-enables normal boot.
 
+This issue happens because the IRQ numbers of the GIC are now virtual,
+and no longer match the hardcoded hardware IRQ numbers in the platform
+board code.
+
+To fix this, instantiate the GIC from platform board code when compiling
+a legacy kernel, like is done for the sh73a0, r8a7740 and r8a7778 legacy code.
+
+Follows same style as the r8a7740 legacy GIC fix by Geert Uytterhoeven,
+thanks to him for the initial work.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-r8a7779.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 434d150..ca60683 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -724,10 +724,17 @@ static int r8a7779_set_wake(struct irq_data *data, unsigned int on)
+ 
+ void __init r8a7779_init_irq_dt(void)
+ {
++#ifdef CONFIG_ARCH_SHMOBILE_LEGACY
++	void __iomem *gic_dist_base = ioremap_nocache(0xf0001000, 0x1000);
++	void __iomem *gic_cpu_base = ioremap_nocache(0xf0000100, 0x1000);
++#endif
+ 	gic_arch_extn.irq_set_wake = r8a7779_set_wake;
+ 
++#ifdef CONFIG_ARCH_SHMOBILE_LEGACY
++	gic_init(0, 29, gic_dist_base, gic_cpu_base);
++#else
+ 	irqchip_init();
+-
++#endif
+ 	/* route all interrupts to ARM */
+ 	__raw_writel(0xffffffff, INT2NTSR0);
+ 	__raw_writel(0x3fffffff, INT2NTSR1);
 -- 
-Regards,
-
-Laurent Pinchart
+2.1.4
 
