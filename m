@@ -1,49 +1,62 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 21 Jan 2015 04:15:50 +0000
-Subject: [PATCH 7/8 v3] ASoC: fsi: remove slave_id settings for DMAEngine
-Message-Id: <8761c0ojiq.wl%kuninori.morimoto.gx@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 20 Jan 2015 21:13:21 +0000
+Subject: [PATCH v2 2/2] shdmac: extend PM methods
+Message-Id: <1609993.2vNJXkESyr@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+In order to make it possible to restore from hibernation not only in Linux but
+also in e.g. U-Boot, we have to use sh_dmae_{suspend|resume}() for the {freeze|
+thaw|restore}() PM methods. It's handy to achieve this with SIMPLE_DEV_PM_OPS()
+macro; since  that macro doesn't do anything when CONFIG_PM_SLEEP  is undefined,
+we don't need to #define sh_dmae_{suspend|resume} NULL anymore but we'll have to
+enclose sh_dmae_{suspend|resume}() into the new #ifdef...
 
-Current fsi sets dma_slave_config :: slave_id field for DMAEngine,
-but it is no longer needed. Let's remove it.
-This patch also removed 0 settings of cfg dst_addr/src_addr,
-because it is not used from DT (= it is assuming these settings
-are came from platform data).
+Based on original patch by Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
-v2 -> v3
-
- - add Arnd's Acked-by
-
- sound/soc/sh/fsi.c |    5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
-
-diff --git a/sound/soc/sh/fsi.c b/sound/soc/sh/fsi.c
-index b87b22e..0b6b383 100644
---- a/sound/soc/sh/fsi.c
-+++ b/sound/soc/sh/fsi.c
-@@ -1371,12 +1371,9 @@ static int fsi_dma_probe(struct fsi_priv *fsi, struct fsi_stream *io, struct dev
- 				shdma_chan_filter, (void *)io->dma_id,
- 				dev, is_play ? "tx" : "rx");
- 	if (io->chan) {
--		struct dma_slave_config cfg;
-+		struct dma_slave_config cfg = {};
- 		int ret;
+The patch is against the 'next' branch of Vinod Koul's 'slave-dma.git' repo.
  
--		cfg.slave_id	= io->dma_id;
--		cfg.dst_addr	= 0; /* use default addr */
--		cfg.src_addr	= 0; /* use default addr */
- 		cfg.direction	= is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
+Changes in version 2:
+- enclosed sh_dmae_{suspend|resume}() into #ifdef CONFIG_PM_SLEEP, modified the
+  changelog accordingly;
+- fixed typo in the changelog.
+
+ drivers/dma/sh/shdmac.c |    8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
+
+Index: slave-dma/drivers/dma/sh/shdmac.c
+=================================--- slave-dma.orig/drivers/dma/sh/shdmac.c
++++ slave-dma/drivers/dma/sh/shdmac.c
+@@ -600,7 +600,9 @@ static int sh_dmae_runtime_resume(struct
  
- 		ret = dmaengine_slave_config(io->chan, &cfg);
--- 
-1.7.9.5
+ 	return sh_dmae_rst(shdev);
+ }
++#endif
+ 
++#ifdef CONFIG_PM_SLEEP
+ static int sh_dmae_suspend(struct device *dev)
+ {
+ 	return 0;
+@@ -632,14 +634,10 @@ static int sh_dmae_resume(struct device
+ 
+ 	return 0;
+ }
+-#else
+-#define sh_dmae_suspend NULL
+-#define sh_dmae_resume NULL
+ #endif
+ 
+ static const struct dev_pm_ops sh_dmae_pm = {
+-	.suspend		= sh_dmae_suspend,
+-	.resume			= sh_dmae_resume,
++	SET_SYSTEM_SLEEP_PM_OPS(sh_dmae_suspend, sh_dmae_resume)
+ 	SET_RUNTIME_PM_OPS(sh_dmae_runtime_suspend, sh_dmae_runtime_resume,
+ 			   NULL)
+ };
 
