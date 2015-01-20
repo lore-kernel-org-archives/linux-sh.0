@@ -1,35 +1,50 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Tue, 20 Jan 2015 00:34:32 +0000
-Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC DT Cleanups for v3.20
-Message-Id: <20150120003432.GL16883@quad.lixom.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 20 Jan 2015 01:26:39 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Fixes for v3.19
+Message-Id: <cover.1421716614.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421371490.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421371490.git.horms+renesas@verge.net.au>
+References: <cover.1381222967.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jan 16, 2015 at 11:34:44AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider this second round of Renesas ARM based SoC DT cleanups for
-> v3.20.
-> 
-> 
-> The following changes since commit 97bf6af1f928216fd6c5a66e8a57bfa95a659672:
-> 
->   Linux 3.19-rc1 (2014-12-20 17:08:50 -0800)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-cleanups2-for-v3.20
-> 
-> for you to fetch changes up to d2b541c98f5402ebb49ee1c636ef5bc31462b4ca:
-> 
->   ARM: shmobile: r8a7791: tidyup #sound-dai-cells settings (2015-01-13 11:01:55 +0900)
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Merged, thanks.
+Please consider these second round of Renesas ARM based SoC fixes for v3.19.
+
+This pull request is based on the previous round of
+such requests, tagged as renesas-soc-fixes-for-v3.19,
+which you have already pulled into your fixes branch.
+
+This fixes a regression in the r8a7779 and r8a7779 SoCs due to
+9a1091ef0017c40a ("irqchip: gic: Support hierarchy irq domain.")
+which was included in v3.18-rc2.
 
 
--Olof
+The following changes since commit b0ddb319db3d7a1943445f0de0a45c07a7f3457a:
+
+  ARM: shmobile: sh73a0 legacy: Set .control_parent for all irqpin instances (2015-01-08 09:15:16 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-fixes2-for-v3.19
+
+for you to fetch changes up to f469cde20a7ee342070b4a459b6fce469a3186db:
+
+  ARM: shmobile: r8a7779: Instantiate GIC from C board code in legacy builds (2015-01-17 09:28:41 +0900)
+
+----------------------------------------------------------------
+Second Round of Renesas ARM Based SoC Fixes for v3.19
+
+* Instantiate GIC from C board code in legacy builds on r8a7778 and r8a7779
+
+----------------------------------------------------------------
+Magnus Damm (2):
+      ARM: shmobile: r8a7778: Instantiate GIC from C board code in legacy builds
+      ARM: shmobile: r8a7779: Instantiate GIC from C board code in legacy builds
+
+ arch/arm/mach-shmobile/setup-r8a7778.c | 9 ++++++++-
+ arch/arm/mach-shmobile/setup-r8a7779.c | 9 ++++++++-
+ 2 files changed, 16 insertions(+), 2 deletions(-)
