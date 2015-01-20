@@ -1,50 +1,35 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 17 Jan 2015 00:59:24 +0000
-Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Updates for v3.20
-Message-Id: <cover.1421379958.git.horms+renesas@verge.net.au>
+From: Olof Johansson <olof@lixom.net>
+Date: Tue, 20 Jan 2015 00:34:32 +0000
+Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC DT Cleanups for v3.20
+Message-Id: <20150120003432.GL16883@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381222967.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
+References: <cover.1421371490.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1421371490.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+On Fri, Jan 16, 2015 at 11:34:44AM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
+> 
+> Please consider this second round of Renesas ARM based SoC DT cleanups for
+> v3.20.
+> 
+> 
+> The following changes since commit 97bf6af1f928216fd6c5a66e8a57bfa95a659672:
+> 
+>   Linux 3.19-rc1 (2014-12-20 17:08:50 -0800)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-cleanups2-for-v3.20
+> 
+> for you to fetch changes up to d2b541c98f5402ebb49ee1c636ef5bc31462b4ca:
+> 
+>   ARM: shmobile: r8a7791: tidyup #sound-dai-cells settings (2015-01-13 11:01:55 +0900)
 
-Please consider these second round of Renesas ARM based SoC updates for v3.20.
-
-This pull request is based on the previous round of
-such requests, tagged as renesas-soc-for-v3.20,
-which you have already pulled.
+Merged, thanks.
 
 
-The following changes since commit 39695882d3d642a73bca551e682426e4e3bcd158:
-
-  ARM: shmobile: r8a73a4: Multiplatform support (2014-12-21 17:11:22 +0900)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc2-for-v3.20
-
-for you to fetch changes up to 2173fc7cb681c38b9e5bc526211045caecf96e44:
-
-  ARM: shmobile: R-Mobile: Add DT support for PM domains (2015-01-15 08:38:14 +0900)
-
-----------------------------------------------------------------
-Second Round of Renesas ARM Based SoC Updates for v3.20
-
-* Add DT support for PM domains
-
-----------------------------------------------------------------
-Geert Uytterhoeven (3):
-      ARM: shmobile: R-Mobile: Use generic_pm_domain.attach_dev() for pm_clk setup
-      ARM: shmobile: R-Mobile: Store SYSC base address in rmobile_pm_domain
-      ARM: shmobile: R-Mobile: Add DT support for PM domains
-
- arch/arm/mach-shmobile/Kconfig      |   3 +-
- arch/arm/mach-shmobile/pm-r8a7740.c |  14 ++
- arch/arm/mach-shmobile/pm-rmobile.c | 275 ++++++++++++++++++++++++++++++++++--
- arch/arm/mach-shmobile/pm-rmobile.h |   3 +-
- arch/arm/mach-shmobile/pm-sh7372.c  |  11 ++
- 5 files changed, 289 insertions(+), 17 deletions(-)
+-Olof
