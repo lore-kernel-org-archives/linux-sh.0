@@ -1,37 +1,40 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 26 Jan 2015 06:19:31 +0000
-Subject: [PATCH 10/14 v2] ARM: shmobile: sh7372: Remove DT binding documentation
-Message-Id: <20150126061931.6848.54934.sendpatchset@little-apple>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 20 Jan 2015 04:17:46 +0000
+Subject: [PATCH 6/8 v2] spi: sh-msiof: remove slave_id settings for DMAEngine
+Message-Id: <87d26aaxur.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150126061747.6848.9708.sendpatchset@little-apple>
-In-Reply-To: <20150126061747.6848.9708.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Arnd Bergmann <arnd@arndb.de>
 
-Remove DT compatible string documentation for the now removed sh7372 SoC.
+Current sh-msiof sets dma_slave_config :: slave_id field for DMAEngine,
+but it is no longer needed. Let's remove it.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+v1 -> v2
 
- Changes since V1:
- - None
+ - separate into shdma and others
 
- Documentation/devicetree/bindings/arm/shmobile.txt |    2 --
- 1 file changed, 2 deletions(-)
+ drivers/spi/spi-sh-msiof.c |    1 -
+ 1 file changed, 1 deletion(-)
 
---- 0005/Documentation/devicetree/bindings/arm/shmobile.txt
-+++ work/Documentation/devicetree/bindings/arm/shmobile.txt	2015-01-21 11:36:21.787569650 +0900
-@@ -7,8 +7,6 @@ SoCs:
-     compatible = "renesas,emev2"
-   - RZ/A1H (R7S72100)
-     compatible = "renesas,r7s72100"
--  - SH-Mobile AP4 (R8A73720/SH7372)
--    compatible = "renesas,sh7372"
-   - SH-Mobile AG5 (R8A73A00/SH73A0)
-     compatible = "renesas,sh73a0"
-   - R-Mobile APE6 (R8A73A40)
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index 239be7c..786ac9e 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -984,7 +984,6 @@ static struct dma_chan *sh_msiof_request_dma_chan(struct device *dev,
+ 	}
+ 
+ 	memset(&cfg, 0, sizeof(cfg));
+-	cfg.slave_id = id;
+ 	cfg.direction = dir;
+ 	if (dir = DMA_MEM_TO_DEV) {
+ 		cfg.dst_addr = port_addr;
+-- 
+1.7.9.5
+
