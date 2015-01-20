@@ -1,41 +1,67 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Tue, 20 Jan 2015 09:15:23 +0000
-Subject: Re: [PATCH] mmc: tmio: add missing EXPORT_SYMBOL for tmio_mmc_host_alloc/free
-Message-Id: <CAPDyKFp57T5ZNUofS1TxDe=xV7zCukNov1j21WmrZ8tRS52PDQ@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 20 Jan 2015 04:15:48 +0000
+Subject: [PATCH 2/8 v2] mmc: sh_mmcif: remove slave_id settings for DMAEngine
+Message-Id: <87iog2axxx.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201501131902.WqokttpY%fengguang.wu@intel.com>
-	<87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
-	<CAPDyKFrNFr493FcN3A3k_tGo9J801ga91ooL=sZT6DS0vFwVoQ@mail.gmail.com>
-In-Reply-To: <CAPDyKFrNFr493FcN3A3k_tGo9J801ga91ooL=sZT6DS0vFwVoQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Lee Jones <lee.jones@linaro.org>
-Cc: Chris Ball <cjb@laptop.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>, "kbuild-all@01.org" <kbuild-all@01.org>
+To: linux-sh@vger.kernel.org
 
-+ MFD maintainer
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On 14 January 2015 at 09:30, Ulf Hansson <ulf.hansson@linaro.org> wrote:
-> On 14 January 2015 at 03:21, Kuninori Morimoto
-> <kuninori.morimoto.gx@renesas.com> wrote:
->> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->>
->> tmio_mmc_host_alloc/free were added on tmio_mmc_pio.c,
->> but, it is missing EXPORT_SYMBOL for it.
->> Compile will be failed without this patch
->>
->>  ERROR: "tmio_mmc_host_free" [drivers/mmc/host/tmio_mmc.ko] undefined!
->>  ERROR: "tmio_mmc_host_alloc" [drivers/mmc/host/tmio_mmc.ko] undefined!
->>  ERROR: "tmio_mmc_host_free" [drivers/mmc/host/sh_mobile_sdhi.ko] undefined!
->>  ERROR: "tmio_mmc_host_alloc" [drivers/mmc/host/sh_mobile_sdhi.ko] undefined!
->>
->> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->
-> Thanks!
->
-> I decided to squashed this change into patch "mmc: tmio: add
-> tmio_mmc_host_alloc/free()", which was the one adding the related
-> functions.
->
-> Kind regards
-> Uffe
+Current sh_mmcif sets dma_slave_config :: slave_id field for DMAEngine,
+but it is no longer needed. Let's remove it.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
+
+ - separate into shdma and others
+
+ drivers/mmc/host/sh_mmcif.c |   12 +++++-------
+ 1 file changed, 5 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 7d9d6a3..5f1ba9c 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -388,7 +388,7 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
+ {
+ 	struct dma_slave_config cfg = { 0, };
+ 	struct dma_chan *chan;
+-	unsigned int slave_id;
++	void *slave_data;
+ 	struct resource *res;
+ 	dma_cap_mask_t mask;
+ 	int ret;
+@@ -397,13 +397,13 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
+ 	dma_cap_set(DMA_SLAVE, mask);
+ 
+ 	if (pdata)
+-		slave_id = direction = DMA_MEM_TO_DEV
+-			 ? pdata->slave_id_tx : pdata->slave_id_rx;
++		slave_data = direction = DMA_MEM_TO_DEV
++			? (void *)pdata->slave_id_tx : (void *)pdata->slave_id_rx;
+ 	else
+-		slave_id = 0;
++		slave_data = 0;
+ 
+ 	chan = dma_request_slave_channel_compat(mask, shdma_chan_filter,
+-				(void *)(unsigned long)slave_id, &host->pd->dev,
++				slave_data, &host->pd->dev,
+ 				direction = DMA_MEM_TO_DEV ? "tx" : "rx");
+ 
+ 	dev_dbg(&host->pd->dev, "%s: %s: got channel %p\n", __func__,
+@@ -414,8 +414,6 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
+ 
+ 	res = platform_get_resource(host->pd, IORESOURCE_MEM, 0);
+ 
+-	/* In the OF case the driver will get the slave ID from the DT */
+-	cfg.slave_id = slave_id;
+ 	cfg.direction = direction;
+ 
+ 	if (direction = DMA_DEV_TO_MEM) {
+-- 
+1.7.9.5
+
