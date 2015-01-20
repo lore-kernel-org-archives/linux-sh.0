@@ -1,94 +1,71 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 Jan 2015 02:35:04 +0000
-Subject: [PATCH 1/4] drivers: bus: Sort Kconfig entries alphabetically
-Message-Id: <486fa3fd49607a7117474713f014fd06203fbbf8.1421371868.git.horms+renesas@verge.net.au>
+Date: Tue, 20 Jan 2015 01:26:40 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7778: Instantiate GIC from C board code in legacy builds
+Message-Id: <1fbbc3f0c5440a4c674b3d6de0a9dd447666b508.1421716614.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421371868.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421371868.git.horms+renesas@verge.net.au>
+References: <cover.1421716614.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1421716614.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+As of commit 9a1091ef0017c40a ("irqchip: gic: Support hierarchy irq
+domain."), Bock-W legacy hangs during boot with:
+
+Unable to handle kernel paging request at virtual address cf86a128
+pgd = c0004000
+[cf86a128] *pgdo80041e(bad)
+Internal error: Oops: 8000000d [#1] SMP ARM
+CPU: 0 PID: 1 Comm: swapper/0 Not tainted 3.19.0-rc4 #1
+Hardware name: bockw
+task: cf823b40 ti: cf824000 task.ti: cf824000
+PC is at 0xcf86a128
+LR is at request_threaded_irq+0xbc/0x124
+
+This happens because the IRQ numbers of the GIC are now virtual, and no
+longer match the hardcoded hardware IRQ numbers in the platform board
+code.
+
+To fix this, instantiate the GIC from platform board code when compiling
+a legacy kernel, like is done for the sh73a0 and r8a7740 legacy code.
+
+Follows same style as the r8a7740 legacy GIC fix by Geert Uytterhoeven,
+thanks to him for the initial work.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/bus/Kconfig | 44 ++++++++++++++++++++++----------------------
- 1 file changed, 22 insertions(+), 22 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7778.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/bus/Kconfig b/drivers/bus/Kconfig
-index b99729e..6269608 100644
---- a/drivers/bus/Kconfig
-+++ b/drivers/bus/Kconfig
-@@ -4,6 +4,21 @@
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 85fe016..5d7a009 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -586,11 +586,18 @@ void __init r8a7778_init_delay(void)
+ void __init r8a7778_init_irq_dt(void)
+ {
+ 	void __iomem *base = ioremap_nocache(0xfe700000, 0x00100000);
++#ifdef CONFIG_ARCH_SHMOBILE_LEGACY
++	void __iomem *gic_dist_base = ioremap_nocache(0xfe438000, 0x1000);
++	void __iomem *gic_cpu_base = ioremap_nocache(0xfe430000, 0x1000);
++#endif
  
- menu "Bus devices"
+ 	BUG_ON(!base);
  
-+config ARM_CCI
-+	bool "ARM CCI driver support"
-+	depends on ARM && OF && CPU_V7
-+	help
-+	  Driver supporting the CCI cache coherent interconnect for ARM
-+	  platforms.
-+
-+config ARM_CCN
-+	bool "ARM CCN driver support"
-+	depends on ARM || ARM64
-+	depends on PERF_EVENTS
-+	help
-+	  PMU (perf) driver supporting the ARM CCN (Cache Coherent Network)
-+	  interconnect.
-+
- config BRCMSTB_GISB_ARB
- 	bool "Broadcom STB GISB bus arbiter"
- 	depends on ARM || MIPS
-@@ -27,15 +42,6 @@ config MVEBU_MBUS
- 	  Driver needed for the MBus configuration on Marvell EBU SoCs
- 	  (Kirkwood, Dove, Orion5x, MV78XX0 and Armada 370/XP).
- 
--config OMAP_OCP2SCP
--	tristate "OMAP OCP2SCP DRIVER"
--	depends on ARCH_OMAP2PLUS
--	help
--	  Driver to enable ocp2scp module which transforms ocp interface
--	  protocol to scp protocol. In OMAP4, USB PHY is connected via
--	  OCP2SCP and in OMAP5, both USB PHY and SATA PHY is connected via
--	  OCP2SCP.
++#ifdef CONFIG_ARCH_SHMOBILE_LEGACY
++	gic_init(0, 29, gic_dist_base, gic_cpu_base);
++#else
+ 	irqchip_init();
 -
- config OMAP_INTERCONNECT
- 	tristate "OMAP INTERCONNECT DRIVER"
- 	depends on ARCH_OMAP2PLUS
-@@ -43,20 +49,14 @@ config OMAP_INTERCONNECT
- 	help
- 	  Driver to enable OMAP interconnect error handling driver.
- 
--config ARM_CCI
--	bool "ARM CCI driver support"
--	depends on ARM && OF && CPU_V7
--	help
--	  Driver supporting the CCI cache coherent interconnect for ARM
--	  platforms.
--
--config ARM_CCN
--	bool "ARM CCN driver support"
--	depends on ARM || ARM64
--	depends on PERF_EVENTS
-+config OMAP_OCP2SCP
-+	tristate "OMAP OCP2SCP DRIVER"
-+	depends on ARCH_OMAP2PLUS
- 	help
--	  PMU (perf) driver supporting the ARM CCN (Cache Coherent Network)
--	  interconnect.
-+	  Driver to enable ocp2scp module which transforms ocp interface
-+	  protocol to scp protocol. In OMAP4, USB PHY is connected via
-+	  OCP2SCP and in OMAP5, both USB PHY and SATA PHY is connected via
-+	  OCP2SCP.
- 
- config VEXPRESS_CONFIG
- 	bool "Versatile Express configuration bus"
++#endif
+ 	/* route all interrupts to ARM */
+ 	__raw_writel(0x73ffffff, base + INT2NTSR0);
+ 	__raw_writel(0xffffffff, base + INT2NTSR1);
 -- 
 2.1.4
 
