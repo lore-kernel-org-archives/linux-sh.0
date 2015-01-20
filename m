@@ -1,49 +1,53 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 27 Jan 2015 01:17:14 +0000
-Subject: Re: [PATCH 04/14 v2] ARM: shmobile: mackerel: Remove DT binding documentation
-Message-Id: <20150127011713.GE29710@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 20 Jan 2015 01:22:48 +0000
+Subject: [PATCH v3] dmaengine:: rcar-hpbdma: add dma_dev->directions
+Message-Id: <87zj9eb5ya.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150126061747.6848.9708.sendpatchset@little-apple>
- <20150126061829.6848.75172.sendpatchset@little-apple>
-In-Reply-To: <20150126061829.6848.75172.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Jan 26, 2015 at 03:18:29PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
-> 
-> Remove the DT compatibile string documentation for the
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-I have taken the liberty of changing compatibile to compatible
-while queuing up this patch.
+ecc19d17868be9c9f8f00ed928791533c420f3e0
+(dmaengine: Add a warning for drivers not using the generic slave
+caps retrieval) added WARN() for DMA_SLAVE.
+Kernel will shows WARNING without this patch.
 
-> no longer supported Mackerel board.
-> 
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> ---
-> 
->  Changes since V1:
->  - None
-> 
->  Documentation/devicetree/bindings/arm/shmobile.txt |    2 --
->  1 file changed, 2 deletions(-)
-> 
-> --- 0001/Documentation/devicetree/bindings/arm/shmobile.txt
-> +++ work/Documentation/devicetree/bindings/arm/shmobile.txt	2015-01-21 11:10:46.507575167 +0900
-> @@ -57,8 +57,6 @@ Boards:
->      compatible = "renesas,kzm9g", "renesas,sh73a0"
->    - Lager (RTP0RC7790SEB00010S)
->      compatible = "renesas,lager", "renesas,r8a7790"
-> -  - Mackerel (R0P7372LC0016RL, AP4 EVM 2nd)
-> -    compatible = "renesas,mackerel"
->    - Marzen
->      compatible = "renesas,marzen", "renesas,r8a7779"
->  
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v2 -> v3
+
+ - dma -> dmaengine in Subject
+
+ drivers/dma/sh/rcar-hpbdma.c |    6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/dma/sh/rcar-hpbdma.c b/drivers/dma/sh/rcar-hpbdma.c
+index 20a6f6f..6fef1b9 100644
+--- a/drivers/dma/sh/rcar-hpbdma.c
++++ b/drivers/dma/sh/rcar-hpbdma.c
+@@ -534,6 +534,8 @@ static int hpb_dmae_chan_probe(struct hpb_dmae_device *hpbdev, int id)
+ 
+ static int hpb_dmae_probe(struct platform_device *pdev)
+ {
++	const enum dma_slave_buswidth widths = DMA_SLAVE_BUSWIDTH_1_BYTE |
++		DMA_SLAVE_BUSWIDTH_2_BYTES | DMA_SLAVE_BUSWIDTH_4_BYTES;
+ 	struct hpb_dmae_pdata *pdata = pdev->dev.platform_data;
+ 	struct hpb_dmae_device *hpbdev;
+ 	struct dma_device *dma_dev;
+@@ -595,6 +597,10 @@ static int hpb_dmae_probe(struct platform_device *pdev)
+ 
+ 	dma_cap_set(DMA_MEMCPY, dma_dev->cap_mask);
+ 	dma_cap_set(DMA_SLAVE, dma_dev->cap_mask);
++	dma_dev->src_addr_widths = widths;
++	dma_dev->dst_addr_widths = widths;
++	dma_dev->directions = BIT(DMA_MEM_TO_DEV) | BIT(DMA_DEV_TO_MEM);
++	dma_dev->residue_granularity = DMA_RESIDUE_GRANULARITY_BURST;
+ 
+ 	hpbdev->shdma_dev.ops = &hpb_dmae_ops;
+ 	hpbdev->shdma_dev.desc_size = sizeof(struct hpb_desc);
+-- 
+1.7.9.5
+
