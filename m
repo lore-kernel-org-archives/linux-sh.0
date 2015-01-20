@@ -1,72 +1,48 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 15 Jan 2015 09:51:29 +0000
-Subject: Re: [PATCH] ARM: shmobile: No R-Car Gen2 CMA reservation when HIGHMEM=n
-Message-Id: <CANqRtoSGM3tAoMfbGsFZDZsgJEi2uV3FPTPQXOy5=ePF3i6aXw@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 20 Jan 2015 04:18:35 +0000
+Subject: [PATCH 8/8 v2] ASoC: rsnd: remove slave_id settings for DMAEngine
+Message-Id: <87a91eaxtc.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150115062446.452.7702.sendpatchset@little-apple>
-In-Reply-To: <20150115062446.452.7702.sendpatchset@little-apple>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Geert,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Thu, Jan 15, 2015 at 6:47 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> Hi Magnus,
->
-> On Thu, Jan 15, 2015 at 7:24 AM, Magnus Damm <magnus.damm@gmail.com> wrot=
-e:
->> From: Magnus Damm <damm+renesas@opensource.se>
->>
->> Allow R-Car Gen2 platforms to boot with CMA enabled
->> and HIGHMEM disabled. This patch adds code to check
->> if the R-Car Gen2 specific memory reservation window
->> is included in the kernel memory range or not. When
->> HIGHMEM is disabled the R-Car Gen2 reservation area is
->> outside the kernel memory range and in such case the
->> memory reservation is simply skipped over.
->>
->> Without this patch the kernel boot hangs when CMA is
->> enabled and HIGHMEM is disabled on the r8a7791 Koelsch
->> hardware platform.
->
-> Please describe the failure mode in the description, so it becomes
-> Google-able. E.g.
->
->     WARNING: CPU: 1 PID: 1 at mm/cma.c:113 cma_init_reserved_areas+0x88/0=
-x1d4()
->     ...
->     WARNING: CPU: 1 PID: 1 at mm/cma.c:121 cma_init_reserved_areas+0xf8/0=
-x1d4()
->     ...
->     Unable to handle kernel NULL pointer dereference at virtual address 0=
-0000160
->     pgd =3D c0003000
->     [00000160] *pgd=80000040004003, *pmd=00000000
->     Internal error: Oops: 206 [#1] SMP ARM
->     Modules linked in:
->     CPU: 1 PID: 1 Comm: swapper/0 Tainted: G        W
-> 3.19.0-rc4-koelsch-01450-g7f9b6075ce12c3ea-dirty #735
->     Hardware name: Generic R8A7791 (Flattened Device Tree)
->     task: edc553c0 ti: edc56000 task.ti: edc56000
->     PC is at set_pfnblock_flags_mask+0x54/0xa0
->     LR is at 0x440
+Current sh-msiof sets dma_slave_config :: slave_id field for DMAEngine,
+but it is no longer needed. Let's remove it.
 
-Good idea, thanks for supplying additional information.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
->> In the current shmobile_defconfig HIGHMEM is enabled
->> while CMA is disabled, so to trigger this the kernel
->> configuration for both CMA and HIGHMEM needs to be
->> adjusted.
->
-> Thanks for fixing this!
->
->> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
->
-> Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+ - separate into shdma and others
 
-Thanks!
+ sound/soc/sh/rcar/core.c |    3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-/ magnus
+diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
+index 75308bb..61473d9 100644
+--- a/sound/soc/sh/rcar/core.c
++++ b/sound/soc/sh/rcar/core.c
+@@ -316,7 +316,7 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma,
+ 		  int is_play, int id)
+ {
+ 	struct device *dev = rsnd_priv_to_dev(priv);
+-	struct dma_slave_config cfg;
++	struct dma_slave_config cfg = {};
+ 	struct rsnd_mod *mod_from;
+ 	struct rsnd_mod *mod_to;
+ 	char dma_name[DMA_NAME_SIZE];
+@@ -334,7 +334,6 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma,
+ 	rsnd_dma_of_path(dma, is_play, &mod_from, &mod_to);
+ 	rsnd_dma_of_name(mod_from, mod_to, dma_name);
+ 
+-	cfg.slave_id	= id;
+ 	cfg.direction	= is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
+ 	cfg.src_addr	= rsnd_gen_dma_addr(priv, mod_from, is_play, 1);
+ 	cfg.dst_addr	= rsnd_gen_dma_addr(priv, mod_to,   is_play, 0);
+-- 
+1.7.9.5
+
