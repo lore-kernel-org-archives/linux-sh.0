@@ -1,47 +1,56 @@
-From: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 06 Jan 2015 11:13:15 +0000
-Subject: RE: [PATCH 1/2] thermal: rcar: fix ENR register value
-Message-Id: <HKNPR06MB3222B99D5607F24B6BC31C3D8590@HKNPR06MB322.apcprd06.prod.outlook.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 20 Jan 2015 01:27:34 +0000
+Subject: [PATCH] ARM: shmobile: sh73a0 dtsi: Add Cortex-A9 TWD node
+Message-Id: <e42c8385cfec0579a103b365d61748f199bfe239.1421716945.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420538528-5236-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-	<1420538528-5236-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <CAMuHMdVRz5ys3u72M1+FnZsJ5qiEokO3KMzjhkWArme0zAR7mA@mail.gmail.com>
-In-Reply-To: <CAMuHMdVRz5ys3u72M1+FnZsJ5qiEokO3KMzjhkWArme0zAR7mA@mail.gmail.com>
+References: <cover.1421716945.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1421716945.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>, Linux PM list <linux-pm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-SGkgR2VlcnQtc2FuLA0KDQo+IEhpIFNoaW1vZGEtc2FuLA0KPiANCj4gT24gVHVlLCBKYW4gNiwg
-MjAxNSBhdCAxMTowMiBBTSwgWW9zaGloaXJvIFNoaW1vZGENCj4gPHlvc2hpaGlyby5zaGltb2Rh
-LnVoQHJlbmVzYXMuY29tPiB3cm90ZToNCj4gPiBTaW5jZSB0aGUgd3JpdGUgdmFsdWUgc2hvdWxk
-IGFsd2F5cyBiZSAwIGZvciBiaXQgMzEtNCBvZiBFTlIgcmVnaXN0ZXINCj4gPiBvbiBSLUNhciBI
-MiwgdGhpcyBwYXRjaCBmaXhlcyB0aGUgdmFsdWUuDQo+ID4NCj4gPiBTaWduZWQtb2ZmLWJ5OiBZ
-b3NoaWhpcm8gU2hpbW9kYSA8eW9zaGloaXJvLnNoaW1vZGEudWhAcmVuZXNhcy5jb20+DQo+ID4g
-LS0tDQo+ID4gIGRyaXZlcnMvdGhlcm1hbC9yY2FyX3RoZXJtYWwuYyB8ICAgIDIgKy0NCj4gPiAg
-MSBmaWxlIGNoYW5nZWQsIDEgaW5zZXJ0aW9uKCspLCAxIGRlbGV0aW9uKC0pDQo+ID4NCj4gPiBk
-aWZmIC0tZ2l0IGEvZHJpdmVycy90aGVybWFsL3JjYXJfdGhlcm1hbC5jIGIvZHJpdmVycy90aGVy
-bWFsL3JjYXJfdGhlcm1hbC5jDQo+ID4gaW5kZXggODgwM2U2OS4uYmJkZjY0ZSAxMDA2NDQNCj4g
-PiAtLS0gYS9kcml2ZXJzL3RoZXJtYWwvcmNhcl90aGVybWFsLmMNCj4gPiArKysgYi9kcml2ZXJz
-L3RoZXJtYWwvcmNhcl90aGVybWFsLmMNCj4gPiBAQCAtNDA5LDcgKzQwOSw3IEBAIHN0YXRpYyBp
-bnQgcmNhcl90aGVybWFsX3Byb2JlKHN0cnVjdCBwbGF0Zm9ybV9kZXZpY2UgKnBkZXYpDQo+ID4g
-ICAgICAgICAgICAgICAgICAgICAgICAgcmV0dXJuIFBUUl9FUlIoY29tbW9uLT5iYXNlKTsNCj4g
-Pg0KPiA+ICAgICAgICAgICAgICAgICAvKiBlbmFibGUgdGVtcGVyYXR1cmUgY29tcGFyYXRpb24g
-Ki8NCj4gPiAtICAgICAgICAgICAgICAgcmNhcl90aGVybWFsX2NvbW1vbl93cml0ZShjb21tb24s
-IEVOUiwgMHgwMDAzMDMwMyk7DQo+ID4gKyAgICAgICAgICAgICAgIHJjYXJfdGhlcm1hbF9jb21t
-b25fd3JpdGUoY29tbW9uLCBFTlIsIDB4MDAwMDAwMDMpOw0KPiANCj4gV2hpbGUgeW91ciBwYXRj
-aCBpcyBjb3JyZWN0IGZvciBSLUNhciBnZW4yLCB0aGlzIGRyaXZlciBpcyBhbHNvIHVzZWQgb24N
-Cj4gUi1Nb2JpbGUgQVBFNiAocjhhNzNhNCksIHdoaWNoIGRvZXMgaGF2ZSAzIHRoZXJtYWwgem9u
-ZXMuDQo+IFNvIEkgdGhpbmsgeW91IHNob3VsZCBjb3VudCB0aGUgb3RoZXIgSS9PIHJlc291cmNl
-IHNldHMgdG8gY2FsY3VsYXRlDQo+IHRoZSBjb3JyZWN0IG1hc2suDQoNClRoYW5rIHlvdSBmb3Ig
-dGhlIHJldmlldyBhbmQgc3VnZ2VzdGlvbiENCkFzIHlvdSBzYXksIEkgZGlkbid0IGNhcmUgYWJv
-dXQgUi1Nb2JpbGUgQVBFNi4NClNvLCBJIHdpbGwgbW9kaWZ5IHRoaXMgY29kZSB0b21vcnJvdy4N
-Cg0KQmVzdCByZWdhcmRzLA0KWW9zaGloaXJvIFNoaW1vZGENCg0KPiBHcntvZXRqZSxlZXRpbmd9
-cywNCj4gDQo+ICAgICAgICAgICAgICAgICAgICAgICAgIEdlZXJ0DQo+IA0KPiAtLQ0KPiBHZWVy
-dCBVeXR0ZXJob2V2ZW4gLS0gVGhlcmUncyBsb3RzIG9mIExpbnV4IGJleW9uZCBpYTMyIC0tIGdl
-ZXJ0QGxpbnV4LW02OGsub3JnDQo+IA0KPiBJbiBwZXJzb25hbCBjb252ZXJzYXRpb25zIHdpdGgg
-dGVjaG5pY2FsIHBlb3BsZSwgSSBjYWxsIG15c2VsZiBhIGhhY2tlci4gQnV0DQo+IHdoZW4gSSdt
-IHRhbGtpbmcgdG8gam91cm5hbGlzdHMgSSBqdXN0IHNheSAicHJvZ3JhbW1lciIgb3Igc29tZXRo
-aW5nIGxpa2UgdGhhdC4NCj4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAtLSBMaW51
-cyBUb3J2YWxkcw0K
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Add a node for the Private Timer and Watchdog, as found in the Cortex-A9
+MPCore.
+
+Without this, there's no clocksource available during early kernel
+initialization, before cmt1 is initialized, leading to a lock-up if
+CONFIG_CPU_IDLE=y.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/sh73a0.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 0c9a357..2558bf4 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -11,6 +11,7 @@
+ /include/ "skeleton.dtsi"
+ 
+ #include <dt-bindings/clock/sh73a0-clock.h>
++#include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+ 
+ / {
+@@ -35,6 +36,13 @@
+ 		};
+ 	};
+ 
++	timer@f0000600 {
++		compatible = "arm,cortex-a9-twd-timer";
++		reg = <0xf0000600 0x20>;
++		interrupts = <GIC_PPI 13 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_HIGH)>;
++		clocks = <&twd_clk>;
++	};
++
+ 	gic: interrupt-controller@f0001000 {
+ 		compatible = "arm,cortex-a9-gic";
+ 		#interrupt-cells = <3>;
+-- 
+2.1.4
+
