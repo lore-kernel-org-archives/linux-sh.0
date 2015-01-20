@@ -1,67 +1,43 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 05 Jan 2015 13:38:35 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: r8a7790: add CAN DT support
-Message-Id: <CAMuHMdWridOCgiCgM79eV-K-Ry2sQk3vdB5f306fMqqme6Nnag@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 20 Jan 2015 04:18:17 +0000
+Subject: [PATCH 7/8 v2] ASoC: fsi: remove slave_id settings for DMAEngine
+Message-Id: <87bnluaxtt.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2616635.bsb7mLynhA@wasted.cogentembedded.com>
- <5498306.nhRks3sT7k@wasted.cogentembedded.com>
-In-Reply-To: <5498306.nhRks3sT7k@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Dec 29, 2014 at 11:06 PM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> Define the generic R8A7790 parts of the CAN0/1 device nodes.
->
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Apart from the minor nit below
+Current fsi sets dma_slave_config :: slave_id field for DMAEngine,
+but it is no longer needed. Let's remove it.
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-> --- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
-> +++ renesas/arch/arm/boot/dts/r8a7790.dtsi
-> @@ -792,6 +792,26 @@
->                 };
->         };
->
-> +       can0: can@e6e80000 {
-> +               compatible = "renesas,can-r8a7790";
-> +               reg = <0 0xe6e80000 0 0x1000>;
-> +               interrupts = <0 186 IRQ_TYPE_LEVEL_HIGH>;
-> +               clocks = <&mstp9_clks R8A7790_CLK_RCAN0>,
-> +                        <&cpg_clocks R8A7790_CLK_RCAN>, <&can_clk>;
+ - separate into shdma and others
 
-.git/rebase-apply/patch:18: space before tab in indent.
-      <&cpg_clocks R8A7790_CLK_RCAN>, <&can_clk>;
+ sound/soc/sh/fsi.c |    3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-> +               clock-names = "clkp1", "clkp2", "can_clk";
-> +               status = "disabled";
-> +       };
-> +
-> +       can1: can@e6e88000 {
-> +               compatible = "renesas,can-r8a7790";
-> +               reg = <0 0xe6e88000 0 0x1000>;
-> +               interrupts = <0 187 IRQ_TYPE_LEVEL_HIGH>;
-> +               clocks = <&mstp9_clks R8A7790_CLK_RCAN1>,
-> +                        <&cpg_clocks R8A7790_CLK_RCAN>, <&can_clk>;
+diff --git a/sound/soc/sh/fsi.c b/sound/soc/sh/fsi.c
+index 8869971..c4eb234 100644
+--- a/sound/soc/sh/fsi.c
++++ b/sound/soc/sh/fsi.c
+@@ -1374,10 +1374,9 @@ static int fsi_dma_probe(struct fsi_priv *fsi, struct fsi_stream *io, struct dev
+ 				shdma_chan_filter, (void *)io->dma_id,
+ 				dev, is_play ? "tx" : "rx");
+ 	if (io->chan) {
+-		struct dma_slave_config cfg;
++		struct dma_slave_config cfg = {};
+ 		int ret;
+ 
+-		cfg.slave_id	= io->dma_id;
+ 		cfg.dst_addr	= 0; /* use default addr */
+ 		cfg.src_addr	= 0; /* use default addr */
+ 		cfg.direction	= is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
+-- 
+1.7.9.5
 
-.git/rebase-apply/patch:28: space before tab in indent.
-      <&cpg_clocks R8A7790_CLK_RCAN>, <&can_clk>;
-
-> +               clock-names = "clkp1", "clkp2", "can_clk";
-> +               status = "disabled";
-> +       };
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
