@@ -1,77 +1,40 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 22 Jan 2015 08:34:22 +0000
-Subject: [PATCH 2/5] ARM: shmobile: r8a7790: sound enables Audio DMAC entry on DTSI
-Message-Id: <878ugvkybd.wl%kuninori.morimoto.gx@renesas.com>
+Date: Tue, 20 Jan 2015 04:17:15 +0000
+Subject: [PATCH 5/8 v2] spi: rspi: remove slave_id settings for DMAEngine
+Message-Id: <87egqqaxvi.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Arnd Bergmann <arnd@arndb.de>
 
-This patch adds Audio DMAC (= rcar-dmac) entry for sound
+Current rspi sets dma_slave_config :: slave_id field for DMAEngine,
+but it is no longer needed. Let's remove it.
 
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi |   44 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 44 insertions(+)
+v1 -> v2
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 56847bf..ca22009 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1440,6 +1440,50 @@
- 				"dvc.0", "dvc.1",
- 				"clk_a", "clk_b", "clk_c", "clk_i";
+ - separate into shdma and others
+
+ drivers/spi/spi-rspi.c |    1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 2071f78..6cbcdc0 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -918,7 +918,6 @@ static struct dma_chan *rspi_request_dma_chan(struct device *dev,
+ 	}
  
-+		dmas =		<&audma0 0x01>,	<&audma1 0x02>,	<&audma0 0x15>,	<&audma1 0x16>,
-+				<&audma0 0x03>,	<&audma1 0x04>,	<&audma0 0x49>,	<&audma1 0x4a>,
-+				<&audma0 0x05>,	<&audma1 0x06>,	<&audma0 0x63>,	<&audma1 0x64>,
-+				<&audma0 0x07>,	<&audma1 0x08>,	<&audma0 0x6f>,	<&audma1 0x70>,
-+				<&audma0 0x09>,	<&audma1 0x0a>,	<&audma0 0x71>,	<&audma1 0x72>,
-+				<&audma0 0x0b>,	<&audma1 0x0c>,	<&audma0 0x73>,	<&audma1 0x74>,
-+				<&audma0 0x0d>,	<&audma1 0x0e>,	<&audma0 0x75>,	<&audma1 0x76>,
-+				<&audma0 0x0f>,	<&audma1 0x10>,	<&audma0 0x79>,	<&audma1 0x7a>,
-+				<&audma0 0x11>,	<&audma1 0x12>,	<&audma0 0x7b>,	<&audma1 0x7c>,
-+				<&audma0 0x13>,	<&audma1 0x14>,	<&audma0 0x7d>,	<&audma1 0x7e>,
-+
-+				<&audma0 0x85>,	<&audma1 0x9a>,	<&audma0 0xbc>,
-+				<&audma0 0x87>,	<&audma1 0x9c>,	<&audma0 0xbe>,
-+				<&audma0 0x89>,	<&audma1 0x9e>,
-+				<&audma0 0x8b>,	<&audma1 0xa0>,
-+				<&audma0 0x8d>,	<&audma1 0xb0>,
-+				<&audma0 0x8f>,	<&audma1 0xb2>,
-+				<&audma0 0x91>,	<&audma1 0xb4>,
-+				<&audma0 0x93>,	<&audma1 0xb6>,
-+				<&audma0 0x95>,	<&audma1 0xb8>,
-+				<&audma0 0x97>,	<&audma1 0xba>;
-+
-+		dma-names =	"mem_ssi0",	"ssi0_mem",	"mem_ssiu0",	"ssiu0_mem",
-+				"mem_ssi1",	"ssi1_mem",	"mem_ssiu1",	"ssiu1_mem",
-+				"mem_ssi2",	"ssi2_mem",	"mem_ssiu2",	"ssiu2_mem",
-+				"mem_ssi3",	"ssi3_mem",	"mem_ssiu3",	"ssiu3_mem",
-+				"mem_ssi4",	"ssi4_mem",	"mem_ssiu4",	"ssiu4_mem",
-+				"mem_ssi5",	"ssi5_mem",	"mem_ssiu5",	"ssiu5_mem",
-+				"mem_ssi6",	"ssi6_mem",	"mem_ssiu6",	"ssiu6_mem",
-+				"mem_ssi7",	"ssi7_mem",	"mem_ssiu7",	"ssiu7_mem",
-+				"mem_ssi8",	"ssi8_mem",	"mem_ssiu8",	"ssiu8_mem",
-+				"mem_ssi9",	"ssi9_mem",	"mem_ssiu9",	"ssiu9_mem",
-+
-+				"mem_src0",	"src0_mem",	"dvc0_mem",
-+				"mem_src1",	"src1_mem",	"dvc1_mem",
-+				"mem_src2",	"src2_mem",
-+				"mem_src3",	"src3_mem",
-+				"mem_src4",	"src4_mem",
-+				"mem_src5",	"src5_mem",
-+				"mem_src6",	"src6_mem",
-+				"mem_src7",	"src7_mem",
-+				"mem_src8",	"src8_mem",
-+				"mem_src9",	"src9_mem";
-+
- 		status = "disabled";
- 
- 		rcar_sound,dvc {
+ 	memset(&cfg, 0, sizeof(cfg));
+-	cfg.slave_id = id;
+ 	cfg.direction = dir;
+ 	if (dir = DMA_MEM_TO_DEV) {
+ 		cfg.dst_addr = port_addr;
 -- 
 1.7.9.5
 
