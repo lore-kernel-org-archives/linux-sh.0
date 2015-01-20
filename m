@@ -1,88 +1,81 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 05 Jan 2015 07:03:26 +0000
-Subject: [PATCH 6/9] mmc: tmio: tmio_mmc_host has .multi_io_quirk
-Message-Id: <87r3v9ogin.wl%kuninori.morimoto.gx@renesas.com>
+Date: Tue, 20 Jan 2015 01:45:47 +0000
+Subject: [PATCH 3/6 v5] ARM: shmobile: r8a7790: sound enables Audio DMAC entry on DTSI
+Message-Id: <87twzmb4w0.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87zj9xogln.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-sh@vger.kernel.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Current .multi_io_quirk is implemented under tmio_mmc_data.
-It goes to tmio_mmc_host by this patch.
+This patch adds Audio DMAC (= rcar-dmac) entry for sound
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |    2 +-
- drivers/mmc/host/tmio_mmc.h       |    2 ++
- drivers/mmc/host/tmio_mmc_pio.c   |    5 ++---
- include/linux/mfd/tmio.h          |    3 ---
- 4 files changed, 5 insertions(+), 7 deletions(-)
+v4 -> v5
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 66951cc..79206a6 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -215,9 +215,9 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	host->write16_hook	= sh_mobile_sdhi_write16_hook;
- 	host->clk_enable	= sh_mobile_sdhi_clk_enable;
- 	host->clk_disable	= sh_mobile_sdhi_clk_disable;
-+	host->multi_io_quirk	= sh_mobile_sdhi_multi_io_quirk;
+ - Add SoC/platform side entry
+
+ arch/arm/boot/dts/r8a7790.dtsi |   44 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 4b38fc9..70505ae 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1432,6 +1432,50 @@
+ 				"dvc.0", "dvc.1",
+ 				"clk_a", "clk_b", "clk_c", "clk_i";
  
- 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
--	mmc_data->multi_io_quirk = sh_mobile_sdhi_multi_io_quirk;
- 	if (p) {
- 		mmc_data->flags = p->tmio_flags;
- 		mmc_data->ocr_mask = p->tmio_ocr_mask;
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index cdce015..c669801 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -98,6 +98,8 @@ struct tmio_mmc_host {
- 	int (*write16_hook)(struct tmio_mmc_host *host, int addr);
- 	int (*clk_enable)(struct platform_device *pdev, unsigned int *f);
- 	void (*clk_disable)(struct platform_device *pdev);
-+	int (*multi_io_quirk)(struct mmc_card *card,
-+			      unsigned int direction, int blk_size);
- };
++		dmas =		<&audma0 0x01>,	<&audma1 0x02>,	<&audma0 0x15>,	<&audma1 0x16>,
++				<&audma0 0x03>,	<&audma1 0x04>,	<&audma0 0x49>,	<&audma1 0x4a>,
++				<&audma0 0x05>,	<&audma1 0x06>,	<&audma0 0x63>,	<&audma1 0x64>,
++				<&audma0 0x07>,	<&audma1 0x08>,	<&audma0 0x6f>,	<&audma1 0x70>,
++				<&audma0 0x09>,	<&audma1 0x0a>,	<&audma0 0x71>,	<&audma1 0x72>,
++				<&audma0 0x0b>,	<&audma1 0x0c>,	<&audma0 0x73>,	<&audma1 0x74>,
++				<&audma0 0x0d>,	<&audma1 0x0e>,	<&audma0 0x75>,	<&audma1 0x76>,
++				<&audma0 0x0f>,	<&audma1 0x10>,	<&audma0 0x79>,	<&audma1 0x7a>,
++				<&audma0 0x11>,	<&audma1 0x12>,	<&audma0 0x7b>,	<&audma1 0x7c>,
++				<&audma0 0x13>,	<&audma1 0x14>,	<&audma0 0x7d>,	<&audma1 0x7e>,
++
++				<&audma0 0x85>,	<&audma1 0x9a>,	<&audma0 0xbc>,
++				<&audma0 0x87>,	<&audma1 0x9c>,	<&audma0 0xbe>,
++				<&audma0 0x89>,	<&audma1 0x9e>,
++				<&audma0 0x8b>,	<&audma1 0xa0>,
++				<&audma0 0x8d>,	<&audma1 0xb0>,
++				<&audma0 0x8f>,	<&audma1 0xb2>,
++				<&audma0 0x91>,	<&audma1 0xb4>,
++				<&audma0 0x93>,	<&audma1 0xb6>,
++				<&audma0 0x95>,	<&audma1 0xb8>,
++				<&audma0 0x97>,	<&audma1 0xba>;
++
++		dma-names =	"mem_ssi0",	"ssi0_mem",	"mem_ssiu0",	"ssiu0_mem",
++				"mem_ssi1",	"ssi1_mem",	"mem_ssiu1",	"ssiu1_mem",
++				"mem_ssi2",	"ssi2_mem",	"mem_ssiu2",	"ssiu2_mem",
++				"mem_ssi3",	"ssi3_mem",	"mem_ssiu3",	"ssiu3_mem",
++				"mem_ssi4",	"ssi4_mem",	"mem_ssiu4",	"ssiu4_mem",
++				"mem_ssi5",	"ssi5_mem",	"mem_ssiu5",	"ssiu5_mem",
++				"mem_ssi6",	"ssi6_mem",	"mem_ssiu6",	"ssiu6_mem",
++				"mem_ssi7",	"ssi7_mem",	"mem_ssiu7",	"ssiu7_mem",
++				"mem_ssi8",	"ssi8_mem",	"mem_ssiu8",	"ssiu8_mem",
++				"mem_ssi9",	"ssi9_mem",	"mem_ssiu9",	"ssiu9_mem",
++
++				"mem_src0",	"src0_mem",	"dvc0_mem",
++				"mem_src1",	"src1_mem",	"dvc1_mem",
++				"mem_src2",	"src2_mem",
++				"mem_src3",	"src3_mem",
++				"mem_src4",	"src4_mem",
++				"mem_src5",	"src5_mem",
++				"mem_src6",	"src6_mem",
++				"mem_src7",	"src7_mem",
++				"mem_src8",	"src8_mem",
++				"mem_src9",	"src9_mem";
++
+ 		status = "disabled";
  
- struct tmio_mmc_host* tmio_mmc_host_alloc(struct platform_device *pdev);
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 84123d3..c683384 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -1004,10 +1004,9 @@ static int tmio_multi_io_quirk(struct mmc_card *card,
- 			       unsigned int direction, int blk_size)
- {
- 	struct tmio_mmc_host *host = mmc_priv(card->host);
--	struct tmio_mmc_data *pdata = host->pdata;
- 
--	if (pdata->multi_io_quirk)
--		return pdata->multi_io_quirk(card, direction, blk_size);
-+	if (host->multi_io_quirk)
-+		return host->multi_io_quirk(card, direction, blk_size);
- 
- 	return blk_size;
- }
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index a3f78da..3edaa17 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -125,9 +125,6 @@ struct tmio_mmc_data {
- 	unsigned int			cd_gpio;
- 	void (*set_pwr)(struct platform_device *host, int state);
- 	void (*set_clk_div)(struct platform_device *host, int state);
--
--	int (*multi_io_quirk)(struct mmc_card *card,
--			      unsigned int direction, int blk_size);
- };
- 
- /*
+ 		rcar_sound,dvc {
 -- 
 1.7.9.5
 
