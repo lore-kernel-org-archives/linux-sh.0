@@ -1,54 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 17 Jan 2015 00:58:38 +0000
-Subject: [PATCH 05/11] ARM: shmobile: r8a7790: add SRC interrupt number on DTSI
-Message-Id: <d86a31101f7952870d50df96abb786bb983efa69.1421380713.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 21 Jan 2015 04:15:33 +0000
+Subject: [PATCH 6/8 v3] spi: sh-msiof: remove slave_id settings for DMAEngine
+Message-Id: <877fwgojj7.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421380713.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421380713.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Arnd Bergmann <arnd@arndb.de>
 
+Current sh-msiof sets dma_slave_config :: slave_id field for DMAEngine,
+but it is no longer needed. Let's remove it.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 20 ++++++++++----------
- 1 file changed, 10 insertions(+), 10 deletions(-)
+v2 -> v3
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index af30c24..637e4ee 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1435,16 +1435,16 @@
- 		};
+ - no change
+
+ drivers/spi/spi-sh-msiof.c |    1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index 9a884e6..fcf6984 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -1036,7 +1036,6 @@ static struct dma_chan *sh_msiof_request_dma_chan(struct device *dev,
+ 	}
  
- 		rcar_sound,src {
--			src0: src@0 { };
--			src1: src@1 { };
--			src2: src@2 { };
--			src3: src@3 { };
--			src4: src@4 { };
--			src5: src@5 { };
--			src6: src@6 { };
--			src7: src@7 { };
--			src8: src@8 { };
--			src9: src@9 { };
-+			src0: src@0 { interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>; };
-+			src1: src@1 { interrupts = <0 353 IRQ_TYPE_LEVEL_HIGH>; };
-+			src2: src@2 { interrupts = <0 354 IRQ_TYPE_LEVEL_HIGH>; };
-+			src3: src@3 { interrupts = <0 355 IRQ_TYPE_LEVEL_HIGH>; };
-+			src4: src@4 { interrupts = <0 356 IRQ_TYPE_LEVEL_HIGH>; };
-+			src5: src@5 { interrupts = <0 357 IRQ_TYPE_LEVEL_HIGH>; };
-+			src6: src@6 { interrupts = <0 358 IRQ_TYPE_LEVEL_HIGH>; };
-+			src7: src@7 { interrupts = <0 359 IRQ_TYPE_LEVEL_HIGH>; };
-+			src8: src@8 { interrupts = <0 360 IRQ_TYPE_LEVEL_HIGH>; };
-+			src9: src@9 { interrupts = <0 361 IRQ_TYPE_LEVEL_HIGH>; };
- 		};
- 
- 		rcar_sound,ssi {
+ 	memset(&cfg, 0, sizeof(cfg));
+-	cfg.slave_id = id;
+ 	cfg.direction = dir;
+ 	if (dir = DMA_MEM_TO_DEV) {
+ 		cfg.dst_addr = port_addr;
 -- 
-2.1.4
+1.7.9.5
 
