@@ -1,57 +1,48 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 13 Jan 2015 09:41:27 +0000
-Subject: Re: ARM: shmobile: sh73a0: CPU1 failed to come online (Re: [PATCH 0/4] ARM: shmobile: r8a7740/armadi
-Message-Id: <CAMuHMdVjE21YiC-wTpjePQCnA2XZYjJZeEe3iOy8J-vpuPmFjg@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Wed, 21 Jan 2015 16:21:02 +0000
+Subject: [PATCH 11/11] ARM: shmobile: r8a7778: enable multiplatform target
+Message-Id: <1421857262-16607-12-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMuHMdWyUJ81G2CLpYScm9qB0KMia0PReBQ8oXdu+Z2P6AWWNg@mail.gmail.com>
- <20141117151241.GR4042@n2100.arm.linux.org.uk>
-In-Reply-To: <20141117151241.GR4042@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Nov 17, 2014 at 4:12 PM, Russell King - ARM Linux
-<linux@arm.linux.org.uk> wrote:
-> On Mon, Nov 17, 2014 at 02:57:46PM +0100, Geert Uytterhoeven wrote:
->> I tried to convert sh73a0, but it doesn't work, due to problems
->> bringing up the second
->> CPU core.
->>
->> Details:
->>   - l2x0_of_init() is called much earlier than l2x0_init().
->>     When the L2 cache is enabled, initialization of the second CPU core of
->>     sh73a0 (Dual-core Cortex-A9) fails.
->
-> Missing L2 cache flushes for (any) the secondary core data/trampoline?
+Adds config option and enables DTB building.
 
-Thanks, I added a few cache flushes, so far it didn't help...
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/boot/dts/Makefile     | 1 +
+ arch/arm/mach-shmobile/Kconfig | 4 ++++
+ 2 files changed, 5 insertions(+)
 
->>   - As jiffies are not yet incrementing at that point (they are on r8a7791?),
->>     timeouts don't work, and the kernel hangs at the
->>     wait_for_completion_timeout() call in arch/arm/kernel/smp.c:__cpu_up().
->
-> That sounds bad:
->
-> start_kernel() -> rest_init() -> kernel_thread(kernel_init)
->
-> kernel_init() -> kernel_init_freeable() -> smp_init() -> (for each CPU) cpu_up()
->
-> By the time we get to rest_init(), init_IRQ(), time_init(),
-> local_irq_enable(), late_time_init(), calibrate_delay(), etc have all
-> been called, so if jiffies is not incrementing in __cpu_up(), that's
-> a big problem.
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 8eb4824..c751aed 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -414,6 +414,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
+ 	r7s72100-genmai.dtb \
+ 	r8a73a4-ape6evm.dtb \
+ 	r8a7740-armadillo800eva.dtb \
++	r8a7778-bockw.dtb \
+ 	r8a7779-marzen.dtb \
+ 	r8a7790-lager.dtb \
+ 	r8a7791-henninger.dtb \
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 2d0387e..455eb4b 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -62,6 +62,10 @@ config ARCH_R8A7740
+ 	select ARCH_RMOBILE
+ 	select RENESAS_INTC_IRQPIN
+ 
++config ARCH_R8A7778
++	bool "R-Car M1 (R8A77780)"
++	select ARCH_RCAR_GEN1
++
+ config ARCH_R8A7779
+ 	bool "R-Car H1 (R8A77790)"
+ 	select ARCH_RCAR_GEN1
+-- 
+2.2.2
 
-That was due to the missing arm,cortex-a9-twd-timer timer, which also
-broke CONFIG_CPU_IDLE=y.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
