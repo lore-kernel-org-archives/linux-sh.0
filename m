@@ -1,32 +1,40 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 21 Jan 2015 04:53:47 +0000
-Subject: [PATCH 05/13] ARM: shmobile: mackerel: Remove mach-type entry
-Message-Id: <20150121045347.7648.29318.sendpatchset@little-apple>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 21 Jan 2015 22:18:44 +0000
+Subject: [PATCH 1/2] sh_eth: use SET_RUNTIME_PM_OPS()
+Message-Id: <1921430.9kt2FLVU1I@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150121045256.7648.7451.sendpatchset@little-apple>
-In-Reply-To: <20150121045256.7648.7451.sendpatchset@little-apple>
+References: <5608250.lrFkJTjgSf@wasted.cogentembedded.com>
+In-Reply-To: <5608250.lrFkJTjgSf@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, mikhail.ulyanov@cogentembedded.com
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
 
-Remove the mackerel entry from the mach-types file.
+Use SET_RUNTIME_PM_OPS() macro to initialize the runtime PM method pointers in
+the 'struct dev_pm_ops'.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+[Sergei: renamed, added the changelog.]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
+ drivers/net/ethernet/renesas/sh_eth.c |    3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
- arch/arm/tools/mach-types |    1 -
- 1 file changed, 1 deletion(-)
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -2960,8 +2960,7 @@ static int sh_eth_runtime_nop(struct dev
+ }
+ 
+ static const struct dev_pm_ops sh_eth_dev_pm_ops = {
+-	.runtime_suspend = sh_eth_runtime_nop,
+-	.runtime_resume = sh_eth_runtime_nop,
++	SET_RUNTIME_PM_OPS(sh_eth_runtime_nop, sh_eth_runtime_nop, NULL)
+ };
+ #define SH_ETH_PM_OPS (&sh_eth_dev_pm_ops)
+ #else
 
---- 0001/arch/arm/tools/mach-types
-+++ work/arch/arm/tools/mach-types	2015-01-21 12:21:27.377559927 +0900
-@@ -526,7 +526,6 @@ ag5evm			MACH_AG5EVM		AG5EVM			3189
- ics_if_voip		MACH_ICS_IF_VOIP	ICS_IF_VOIP		3206
- wlf_cragg_6410		MACH_WLF_CRAGG_6410	WLF_CRAGG_6410		3207
- trimslice		MACH_TRIMSLICE		TRIMSLICE		3209
--mackerel		MACH_MACKEREL		MACKEREL		3211
- kaen			MACH_KAEN		KAEN			3217
- nokia_rm680		MACH_NOKIA_RM680	NOKIA_RM680		3220
- msm8960_sim		MACH_MSM8960_SIM	MSM8960_SIM		3230
