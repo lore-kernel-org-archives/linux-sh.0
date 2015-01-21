@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 20 Jan 2015 01:25:53 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 21 Jan 2015 13:02:31 +0000
 Subject: Re: [PATCH v3] ARM: multi_v7_defconfig: Enable shmobile platforms
-Message-Id: <20150120012550.GA22942@verge.net.au>
+Message-Id: <1467925.IxO001Hv1t@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1421684018-11894-1-git-send-email-geert+renesas@glider.be>
 In-Reply-To: <1421684018-11894-1-git-send-email-geert+renesas@glider.be>
@@ -10,7 +10,16 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Jan 19, 2015 at 05:13:38PM +0100, Geert Uytterhoeven wrote:
+Hi Geert,
+
+Thank you for the patch.
+
+To avoid bloating the kernel needlessly, couldn't at least some of the drivers 
+needed for the shmobile boards be compiled as modules ? Audio, USB, SATA, 
+touchscreen are possible candidates, depending on what we need to boot the 
+boards to userspace.
+
+On Monday 19 January 2015 17:13:38 Geert Uytterhoeven wrote:
 > Tested on:
 >   - r8a7740/armadillo (kexec works, hermit boot loader fails),
 >   - r8a7791/koelsch,
@@ -19,9 +28,6 @@ On Mon, Jan 19, 2015 at 05:13:38PM +0100, Geert Uytterhoeven wrote:
 >   - am335x/boneblack.
 > 
 > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-
 > ---
 > This is against today's arm-soc/for-next
 > 
@@ -36,11 +42,12 @@ Acked-by: Simon Horman <horms+renesas@verge.net.au>
 >   - Added r8a7740/armadillo, as this does work with kexec,
 >   - Synced with recent shmobile_defconfig updates (e.g. r8a7794).
 > ---
->  arch/arm/configs/multi_v7_defconfig | 81 ++++++++++++++++++++++++++++++++++---
+>  arch/arm/configs/multi_v7_defconfig | 81 +++++++++++++++++++++++++++++++---
 >  1 file changed, 76 insertions(+), 5 deletions(-)
 > 
-> diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
-> index bc525e3459cce519..38d56879d47799cb 100644
+> diff --git a/arch/arm/configs/multi_v7_defconfig
+> b/arch/arm/configs/multi_v7_defconfig index
+> bc525e3459cce519..38d56879d47799cb 100644
 > --- a/arch/arm/configs/multi_v7_defconfig
 > +++ b/arch/arm/configs/multi_v7_defconfig
 > @@ -61,6 +61,16 @@ CONFIG_MACH_SPEAR1310=y
@@ -324,11 +331,9 @@ Acked-by: Simon Horman <horms+renesas@verge.net.au>
 >  CONFIG_PWM_TEGRA=y
 >  CONFIG_PWM_VT8500=y
 >  CONFIG_PHY_HIX5HD2_SATA=y
-> -- 
-> 1.9.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+
+-- 
+Regards,
+
+Laurent Pinchart
+
