@@ -1,87 +1,33 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 17 Jan 2015 00:59:24 +0000
-Subject: [PATCH 1/3] ARM: shmobile: R-Mobile: Use generic_pm_domain.attach_dev() for pm_clk setup
-Message-Id: <4b9d62e02a0124d06fbbb9c4b01bd69f3c4dcd35.1421379958.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 21 Jan 2015 04:54:27 +0000
+Subject: [PATCH 09/13] ARM: shmobile: sh7372: Remove DT binding documentation
+Message-Id: <20150121045427.7648.51202.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421379958.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421379958.git.horms+renesas@verge.net.au>
+References: <20150121045256.7648.7451.sendpatchset@little-apple>
+In-Reply-To: <20150121045256.7648.7451.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Use the just introduced genpd attach/detach callbacks to register the
-devices' module clocks, instead of doing it directly, to make it
-DT-proof.
+Remove DT compatible string documentation for the now removed sh7372 SoC.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/mach-shmobile/pm-rmobile.c | 34 ++++++++++++++++++++++++++++++++--
- 1 file changed, 32 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
-index 6f7d56e..4ea458d 100644
---- a/arch/arm/mach-shmobile/pm-rmobile.c
-+++ b/arch/arm/mach-shmobile/pm-rmobile.c
-@@ -101,6 +101,36 @@ static bool rmobile_pd_active_wakeup(struct device *dev)
- 	return true;
- }
- 
-+static int rmobile_pd_attach_dev(struct generic_pm_domain *domain,
-+				 struct device *dev)
-+{
-+	int error;
-+
-+	error = pm_clk_create(dev);
-+	if (error) {
-+		dev_err(dev, "pm_clk_create failed %d\n", error);
-+		return error;
-+	}
-+
-+	error = pm_clk_add(dev, NULL);
-+	if (error) {
-+		dev_err(dev, "pm_clk_add failed %d\n", error);
-+		goto fail;
-+	}
-+
-+	return 0;
-+
-+fail:
-+	pm_clk_destroy(dev);
-+	return error;
-+}
-+
-+static void rmobile_pd_detach_dev(struct generic_pm_domain *domain,
-+				  struct device *dev)
-+{
-+	pm_clk_destroy(dev);
-+}
-+
- static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
- {
- 	struct generic_pm_domain *genpd = &rmobile_pd->genpd;
-@@ -111,6 +141,8 @@ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
- 	genpd->dev_ops.active_wakeup	= rmobile_pd_active_wakeup;
- 	genpd->power_off		= rmobile_pd_power_down;
- 	genpd->power_on			= rmobile_pd_power_up;
-+	genpd->attach_dev		= rmobile_pd_attach_dev;
-+	genpd->detach_dev		= rmobile_pd_detach_dev;
- 	__rmobile_pd_power_up(rmobile_pd, false);
- }
- 
-@@ -129,8 +161,6 @@ void rmobile_add_device_to_domain_td(const char *domain_name,
- 	struct device *dev = &pdev->dev;
- 
- 	__pm_genpd_name_add_device(domain_name, dev, td);
--	if (pm_clk_no_clocks(dev))
--		pm_clk_add(dev, NULL);
- }
- 
- void rmobile_add_devices_to_domains(struct pm_domain_device data[],
--- 
-2.1.4
+ Documentation/devicetree/bindings/arm/shmobile.txt |    2 --
+ 1 file changed, 2 deletions(-)
 
+--- 0005/Documentation/devicetree/bindings/arm/shmobile.txt
++++ work/Documentation/devicetree/bindings/arm/shmobile.txt	2015-01-21 11:36:21.787569650 +0900
+@@ -7,8 +7,6 @@ SoCs:
+     compatible = "renesas,emev2"
+   - RZ/A1H (R7S72100)
+     compatible = "renesas,r7s72100"
+-  - SH-Mobile AP4 (R8A73720/SH7372)
+-    compatible = "renesas,sh7372"
+   - SH-Mobile AG5 (R8A73A00/SH73A0)
+     compatible = "renesas,sh73a0"
+   - R-Mobile APE6 (R8A73A40)
