@@ -1,30 +1,68 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 16 Jan 2015 09:18:24 +0000
-Subject: Re: [PATCH 1/4] ARM: shmobile: r8a7790: tidyup SDHI register size on DTSI
-Message-Id: <CAMuHMdU6pJ8b-PsR-EQ+YgbvF6gmA_1a5PvRR7SxPCgcJL1-KA@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 21 Jan 2015 04:14:11 +0000
+Subject: [PATCH 2/8 v3] mmc: sh_mmcif: remove slave_id settings for DMAEngine
+Message-Id: <87d268ojlk.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87vbk7y1gh.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87vbk7y1gh.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Jan 16, 2015 at 2:10 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
-> r8a7790 SDHI ch0/ch1 has SD_DMACR which is lacated in 0x324.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-As you're gonna resend this next week: "located" (also in the r8a7791 patch).
+Current sh_mmcif sets dma_slave_config :: slave_id field for DMAEngine,
+but it is no longer needed. Let's remove it.
 
-> This patch updates register size
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+---
+v2 -> v3
 
-Gr{oetje,eeting}s,
+ - slave_data = NULL
 
-                        Geert
+ drivers/mmc/host/sh_mmcif.c |   12 +++++-------
+ 1 file changed, 5 insertions(+), 7 deletions(-)
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 7d9d6a3..e83b126 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -388,7 +388,7 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
+ {
+ 	struct dma_slave_config cfg = { 0, };
+ 	struct dma_chan *chan;
+-	unsigned int slave_id;
++	void *slave_data;
+ 	struct resource *res;
+ 	dma_cap_mask_t mask;
+ 	int ret;
+@@ -397,13 +397,13 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
+ 	dma_cap_set(DMA_SLAVE, mask);
+ 
+ 	if (pdata)
+-		slave_id = direction = DMA_MEM_TO_DEV
+-			 ? pdata->slave_id_tx : pdata->slave_id_rx;
++		slave_data = direction = DMA_MEM_TO_DEV
++			? (void *)pdata->slave_id_tx : (void *)pdata->slave_id_rx;
+ 	else
+-		slave_id = 0;
++		slave_data = NULL;
+ 
+ 	chan = dma_request_slave_channel_compat(mask, shdma_chan_filter,
+-				(void *)(unsigned long)slave_id, &host->pd->dev,
++				slave_data, &host->pd->dev,
+ 				direction = DMA_MEM_TO_DEV ? "tx" : "rx");
+ 
+ 	dev_dbg(&host->pd->dev, "%s: %s: got channel %p\n", __func__,
+@@ -414,8 +414,6 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
+ 
+ 	res = platform_get_resource(host->pd, IORESOURCE_MEM, 0);
+ 
+-	/* In the OF case the driver will get the slave ID from the DT */
+-	cfg.slave_id = slave_id;
+ 	cfg.direction = direction;
+ 
+ 	if (direction = DMA_DEV_TO_MEM) {
+-- 
+1.7.9.5
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
