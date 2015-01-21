@@ -1,38 +1,45 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 22 Jan 2015 04:09:41 +0000
-Subject: [PATCH 4/4] ARM: shmobile: r8a7791: tidyup SDHI register size on DTSI
-Message-Id: <87k30flakj.wl%kuninori.morimoto.gx@renesas.com>
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Wed, 21 Jan 2015 13:38:10 +0000
+Subject: [PATCH v2 1/3] ARM: shmobile: armadillo800eva: Properly specify HDMI audio link format
+Message-Id: <1421847492-8857-1-git-send-email-lars@metafoo.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d2b541c98f5402ebb49ee1c636ef5bc31462b4ca.1421371490.git.horms+renesas@verge.net.au>
-In-Reply-To: <d2b541c98f5402ebb49ee1c636ef5bc31462b4ca.1421371490.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie@kernel.org>, Liam Girdwood <lgirdwood@gmail.com>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-arm-kernel@lists.infradead.org, alsa-devel@alsa-project.org, Lars-Peter Clausen <lars@metafoo.de>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The DAI link format should be specified for the whole link rather than just
+one component on the link. So move the format specification for the HDMI
+audio link from the CPU component to the link itself.
 
-r8a7791 SDHI ch0/ch1 has SD_DMACR which is located in 0x324.
-This patch updates register size
+Since the sh-mobile-hdmi DAI driver doesn't implement the set_fmt() callback
+in this case there is no functional difference between only specifying the
+the format for the CPU side or for the whole link, but the later it will
+allow us to remove support for just specifying the format for one component.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
 ---
- arch/arm/boot/dts/r8a7791.dtsi |    2 +-
+No changes since v1.
+---
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 3c45d9b..8a2fc56 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -482,7 +482,7 @@
- 
- 	sdhi0: sd@ee100000 {
- 		compatible = "renesas,sdhi-r8a7791";
--		reg = <0 0xee100000 0 0x200>;
-+		reg = <0 0xee100000 0 0x328>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7791_CLK_SDHI0>;
- 		dmas = <&dmac1 0xcd>, <&dmac1 0xce>;
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 6d949f1..75de26c 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1040,9 +1040,9 @@ static struct asoc_simple_card_info fsi2_hdmi_info = {
+ 	.card		= "FSI2B-HDMI",
+ 	.codec		= "sh-mobile-hdmi",
+ 	.platform	= "sh_fsi2",
++	.daifmt		= SND_SOC_DAIFMT_CBS_CFS,
+ 	.cpu_dai = {
+ 		.name	= "fsib-dai",
+-		.fmt	= SND_SOC_DAIFMT_CBS_CFS,
+ 	},
+ 	.codec_dai = {
+ 		.name = "sh_mobile_hdmi-hifi",
 -- 
-1.7.9.5
+1.8.0
 
