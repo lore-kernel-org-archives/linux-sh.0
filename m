@@ -1,97 +1,227 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 28 Jan 2015 15:38:55 +0000
-Subject: Re: [PATCH v4 3/5] drivers: bus: Add Simple Power-Managed Bus DT Bindings
-Message-Id: <CAMuHMdXUQESzCggb6FsDQStVtCHgTCCKo7veXSdUTZcB9OAd_w@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Wed, 21 Jan 2015 16:20:54 +0000
+Subject: [PATCH 03/11] ARM: shmobile: r8a7778: Common clock framework DT description
+Message-Id: <1421857262-16607-4-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1422288977-20353-1-git-send-email-geert+renesas@glider.be>
- <1422288977-20353-4-git-send-email-geert+renesas@glider.be>
- <20150127181727.GO17721@leverpostej>
-In-Reply-To: <20150127181727.GO17721@leverpostej>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Mark,
+Declares all r8a7778 clocks supported by the legacy clock framework,
+plus tmu2.
 
-On Tue, Jan 27, 2015 at 7:17 PM, Mark Rutland <mark.rutland@arm.com> wrote:
->> --- /dev/null
->> +++ b/Documentation/devicetree/bindings/bus/simple-pm-bus.txt
->> @@ -0,0 +1,41 @@
->> +Simple Power-Managed Bus
->> +============
->> +
->> +A Simple Power-Managed Bus is a transparent bus that doesn't need a real
->> +driver, as it's typically initialized by the boot loader.
->> +
->> +However, its bus controller is part of a PM domain, or under the control of a
->> +functional clock.  Hence, the bus controller's PM domain and/or clock must be
->> +enabled for child devices connected to the bus (either on-SoC or externally)
->> +to function.
->> +
->> +The bindings for the Simple Power-Managed Bus extend the bindings for
->> +"simple-bus", as specified in ePAPR.
->
-> I would note that "simple-pm-bus" follows the "simple-bus" set of
-> properties, but is not an extension of "simple-bus".
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |   1 +
+ arch/arm/boot/dts/r8a7778.dtsi                     | 181 +++++++++++++++++++++
+ 2 files changed, 182 insertions(+)
 
-OK.
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+index 0a80fa7..e163092 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+@@ -13,6 +13,7 @@ Required Properties:
+     - "renesas,r7s72100-mstp-clocks" for R7S72100 (RZ) MSTP gate clocks
+     - "renesas,r8a73a4-mstp-clocks" for R8A73A4 (R-Mobile APE6) MSTP gate clocks
+     - "renesas,r8a7740-mstp-clocks" for R8A7740 (R-Mobile A1) MSTP gate clocks
++    - "renesas,r8a7778-mstp-clocks" for R8A7778 (R-Car M1) MSTP gate clocks
+     - "renesas,r8a7779-mstp-clocks" for R8A7779 (R-Car H1) MSTP gate clocks
+     - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
+     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index ef85339..0a5c5ad 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -16,6 +16,7 @@
+ 
+ /include/ "skeleton.dtsi"
+ 
++#include <dt-bindings/clock/r8a7778-clock.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+ 
+ / {
+@@ -294,4 +295,184 @@
+ 		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
++
++	clocks {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges;
++
++		/* Special CPG clocks */
++		cpg_clocks: cpg_clocks@ffc80000 {
++			compatible = "renesas,r8a7778-cpg-clocks";
++			reg = <0xffc80000 0x80>;
++			#clock-cells = <1>;
++			clock-output-names = "extal", "plla", "pllb", "b",
++					     "out", "p", "s", "s1";
++		};
++
++		/* Audio clocks; frequencies are set by boards if applicable. */
++		audio_clk_a: audio_clk_a {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-output-names = "audio_clk_a";
++		};
++		audio_clk_b: audio_clk_b {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-output-names = "audio_clk_b";
++		};
++		audio_clk_c: audio_clk_c {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-output-names = "audio_clk_c";
++		};
++
++		/* Fixed ratio clocks */
++		g_clk: g_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7778_CLK_PLLA>;
++			#clock-cells = <0>;
++			clock-div = <12>;
++			clock-mult = <1>;
++			clock-output-names = "g";
++		};
++		i_clk: i_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7778_CLK_PLLA>;
++			#clock-cells = <0>;
++			clock-div = <1>;
++			clock-mult = <1>;
++			clock-output-names = "i";
++		};
++		s3_clk: s3_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7778_CLK_PLLA>;
++			#clock-cells = <0>;
++			clock-div = <4>;
++			clock-mult = <1>;
++			clock-output-names = "s3";
++		};
++		s4_clk: s4_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7778_CLK_PLLA>;
++			#clock-cells = <0>;
++			clock-div = <8>;
++			clock-mult = <1>;
++			clock-output-names = "s4";
++		};
++		z_clk: z_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7778_CLK_PLLB>;
++			#clock-cells = <0>;
++			clock-div = <1>;
++			clock-mult = <1>;
++			clock-output-names = "z";
++		};
++
++		/* Gate clocks */
++		mstp0_clks: mstp0_clks@ffc80030 {
++			compatible = "renesas,r8a7778-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xffc80030 4>;
++			clocks = <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_S>;
++			#clock-cells = <1>;
++			clock-indices = <
++				R8A7778_CLK_I2C0 R8A7778_CLK_I2C1
++				R8A7778_CLK_I2C2 R8A7778_CLK_I2C3
++				R8A7778_CLK_SCIF0 R8A7778_CLK_SCIF1
++				R8A7778_CLK_SCIF2 R8A7778_CLK_SCIF3
++				R8A7778_CLK_SCIF4 R8A7778_CLK_SCIF5
++				R8A7778_CLK_TMU0 R8A7778_CLK_TMU1
++				R8A7778_CLK_TMU2 R8A7778_CLK_SSI0
++				R8A7778_CLK_SSI1 R8A7778_CLK_SSI2
++				R8A7778_CLK_SSI3 R8A7778_CLK_SRU
++				R8A7778_CLK_HSPI
++			>;
++			clock-output-names +				"i2c0", "i2c1", "i2c2", "i2c3", "scif0",
++				"scif1", "scif2", "scif3", "scif4", "scif5",
++				"tmu0", "tmu1", "tmu2", "ssi0", "ssi1",
++				"ssi2", "ssi3", "sru", "hspi";
++		};
++		mstp1_clks: mstp1_clks@ffc80034 {
++			compatible = "renesas,r8a7778-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xffc80034 4>, <0xffc80044 4>;
++			clocks = <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_S>,
++				 <&cpg_clocks R8A7778_CLK_S>,
++				 <&cpg_clocks R8A7778_CLK_P>;
++			#clock-cells = <1>;
++			clock-indices = <
++				R8A7778_CLK_ETHER R8A7778_CLK_VIN0
++				R8A7778_CLK_VIN1 R8A7778_CLK_USB
++			>;
++			clock-output-names +				"ether", "vin0", "vin1", "usb";
++		};
++		mstp3_clks: mstp3_clks@ffc8003c {
++			compatible = "renesas,r8a7778-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xffc8003c 4>;
++			clocks = <&s4_clk>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>;
++			#clock-cells = <1>;
++			clock-indices = <
++				R8A7778_CLK_MMC R8A7778_CLK_SDHI0
++				R8A7778_CLK_SDHI1 R8A7778_CLK_SDHI2
++				R8A7778_CLK_SSI4 R8A7778_CLK_SSI5
++				R8A7778_CLK_SSI6 R8A7778_CLK_SSI7
++				R8A7778_CLK_SSI8
++			>;
++			clock-output-names +				"mmc", "sdhi0", "sdhi1", "sdhi2", "ssi4",
++				"ssi5", "ssi6", "ssi7", "ssi8";
++		};
++		mstp5_clks: mstp5_clks@ffc80054 {
++			compatible = "renesas,r8a7778-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xffc80054 4>;
++			clocks = <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>;
++			#clock-cells = <1>;
++			clock-indices = <
++				R8A7778_CLK_SCU0 R8A7778_CLK_SCU1
++				R8A7778_CLK_SCU2 R8A7778_CLK_SCU3
++				R8A7778_CLK_SCU4 R8A7778_CLK_SCU5
++				R8A7778_CLK_SCU6 R8A7778_CLK_SCU7
++				R8A7778_CLK_SCU8
++			>;
++			clock-output-names +				"scu0", "scu1", "scu2", "scu3", "scu4",
++				"scu5", "scu6", "scu7", "scu8";
++		};
++	};
+ };
+-- 
+2.2.2
 
-> For the reasons I mentioned previously, I don't think that any
-> "simple-pm-bus" should be "simple-bus" compatible (and I believe we
-> should document that requirement below).
-
->> +Required properties:
->> +  - compatible: Must contain at least "simple-pm-bus".
-
-So you think I should add 'and must not contain "simple-bus"'?
-
->> +             It's recommended to let this be preceded by one or more
->> +             vendor-specific compatible values.
->> +  - #address-cells, #size-cells, ranges: Must describe the mapping between
->> +             parent address and child address spaces.
->> +
->> +Optional platform-specific properties for clock or PM domain control (at least
->> +one of them is required):
->> +  - clocks: Must contain a reference to the functional clock(s),
->
-> I'm a little worried about the clocks. What are the expectations on
-> their configuration?
-
-The clocks are highly platform-dependent. Hence the exact expectations
-belong in the binding documentation for the clock provider (and possibly
-the PM domain provider, too).
-
-> I don't see how we can generally rely on the clock configuration being
-> correct unless the input clocks only have on/off controls, and the OS
-> doesn't see any of the parent clock tree it could potentially change the
-> configuration of (beyond on/off).
-
-This is indeed not about generic programmable clock generators, but about
-clocks that are used solely to start/stop a hardware module by (un)gating
-a functional clock.
-
-> Otherwise we're relying on implicit behaviour elsewhere in Linux (which
-> _will_ break over time), and this ends up not being usable by anything
-> else.
->
-> I'm coming to the opinion that while we might be able to have common
-> driver in Linux, we can't have a common "simple-pm-bus" binding because
-> it implicitly assumes too much about the OS behaviour.
-
-If the bus controller is clocked from a generic programmable clock generator,
-it would need its own driver to configure e.g. the clock frequency, which
-could need more information from DT. This is not covered by "simple-pm-bus".
-
-Thanks for your comments!
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
