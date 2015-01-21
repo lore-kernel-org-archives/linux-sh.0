@@ -1,75 +1,51 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 09 Jan 2015 13:08:49 +0000
-Subject: [PATCH 1/4] ARM: shmobile: sh73a0: Introduce generic setup callback
-Message-Id: <1420808932-3899-2-git-send-email-geert+renesas@glider.be>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Wed, 21 Jan 2015 16:20:59 +0000
+Subject: [PATCH 08/11] ARM: shmobile: bockw: add USB, VIN pin descriptions to DT
+Message-Id: <1421857262-16607-9-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420808932-3899-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1420808932-3899-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Adds pin control info for USB host and video-in devices.
 
-Add a generic sh73a0 machine setup callback for the upcoming
-sh73a0 multiplatform case. Cache needs to be configured, and
-legacy clocks must be omitted.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/setup-sh73a0.c | 16 +++++++++++++---
- 1 file changed, 13 insertions(+), 3 deletions(-)
+ arch/arm/boot/dts/r8a7778-bockw.dts | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 613ce65184a6648c..ee86ca0a261c9d54 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -30,6 +30,7 @@
- #include <linux/platform_data/sh_ipmmu.h>
- #include <linux/platform_data/irq-renesas-intc-irqpin.h>
- 
-+#include <asm/hardware/cache-l2x0.h>
- #include <asm/mach-types.h>
- #include <asm/mach/map.h>
- #include <asm/mach/arch.h>
-@@ -782,8 +783,6 @@ void __init sh73a0_add_early_devices(void)
- 	shmobile_setup_console();
- }
- 
--#ifdef CONFIG_USE_OF
--
- void __init sh73a0_add_standard_devices_dt(void)
- {
- 	/* clocks are setup late during boot in the case of DT */
-@@ -800,6 +799,17 @@ static void sh73a0_restart(enum reboot_mode mode, const char *cmd)
- 	writel((1 << 31), RESCNT2);
- }
- 
-+#ifdef CONFIG_USE_OF
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 52086fe..ce40001 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -132,6 +132,26 @@
+ 		renesas,groups = "hspi0_a";
+ 		renesas,function = "hspi0";
+ 	};
 +
-+static void __init sh73a0_generic_init(void)
-+{
-+#ifdef CONFIG_CACHE_L2X0
-+	/* Shared attribute override enable, 64K*8way */
-+	l2x0_init(IOMEM(0xf0100000), 0x00400000, 0xc20f0fff);
-+#endif
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
-+}
++	usb0_pins: usb0 {
++		renesas,groups = "usb0";
++		renesas,function = "usb0";
++	};
 +
- static const char *sh73a0_boards_compat_dt[] __initdata = {
- 	"renesas,sh73a0",
- 	NULL,
-@@ -809,7 +819,7 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
- 	.smp		= smp_ops(sh73a0_smp_ops),
- 	.map_io		= sh73a0_map_io,
- 	.init_early	= shmobile_init_delay,
--	.init_machine	= sh73a0_add_standard_devices_dt,
-+	.init_machine	= sh73a0_generic_init,
- 	.init_late	= shmobile_init_late,
- 	.restart	= sh73a0_restart,
- 	.dt_compat	= sh73a0_boards_compat_dt,
++	usb1_pins: usb1 {
++		renesas,groups = "usb1";
++		renesas,function = "usb1";
++	};
++
++	vin0_pins: vin0 {
++		renesas,groups = "vin0_data8", "vin0_clk";
++		renesas,function = "vin0";
++	};
++
++	vin1_pins: vin1 {
++		renesas,groups = "vin1_data8", "vin1_clk";
++		renesas,function = "vin1";
++	};
+ };
+ 
+ &sdhi0 {
 -- 
-1.9.1
+2.2.2
 
