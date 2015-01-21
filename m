@@ -1,40 +1,32 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Tue, 06 Jan 2015 15:45:42 +0000
-Subject: [PATCH v2 39/40] sh: macro whitespace fixes
-Message-Id: <1420558883-10131-40-git-send-email-mst@redhat.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 21 Jan 2015 04:53:47 +0000
+Subject: [PATCH 05/13] ARM: shmobile: mackerel: Remove mach-type entry
+Message-Id: <20150121045347.7648.29318.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420558883-10131-1-git-send-email-mst@redhat.com>
-In-Reply-To: <1420558883-10131-1-git-send-email-mst@redhat.com>
+References: <20150121045256.7648.7451.sendpatchset@little-apple>
+In-Reply-To: <20150121045256.7648.7451.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-While working on arch/sh/include/asm/uaccess.h, I noticed
-that one macro within this header is made harder to read because it
-violates a coding style rule: space is missing after comma.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Fix it up.
+Remove the mackerel entry from the mach-types file.
 
-Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/sh/include/asm/segment.h | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/sh/include/asm/segment.h b/arch/sh/include/asm/segment.h
-index 5e2725f..ff795d3 100644
---- a/arch/sh/include/asm/segment.h
-+++ b/arch/sh/include/asm/segment.h
-@@ -23,7 +23,7 @@ typedef struct {
- #define USER_DS		KERNEL_DS
- #endif
- 
--#define segment_eq(a,b)	((a).seg = (b).seg)
-+#define segment_eq(a, b) ((a).seg = (b).seg)
- 
- #define get_ds()	(KERNEL_DS)
- 
--- 
-MST
+ arch/arm/tools/mach-types |    1 -
+ 1 file changed, 1 deletion(-)
 
+--- 0001/arch/arm/tools/mach-types
++++ work/arch/arm/tools/mach-types	2015-01-21 12:21:27.377559927 +0900
+@@ -526,7 +526,6 @@ ag5evm			MACH_AG5EVM		AG5EVM			3189
+ ics_if_voip		MACH_ICS_IF_VOIP	ICS_IF_VOIP		3206
+ wlf_cragg_6410		MACH_WLF_CRAGG_6410	WLF_CRAGG_6410		3207
+ trimslice		MACH_TRIMSLICE		TRIMSLICE		3209
+-mackerel		MACH_MACKEREL		MACKEREL		3211
+ kaen			MACH_KAEN		KAEN			3217
+ nokia_rm680		MACH_NOKIA_RM680	NOKIA_RM680		3220
+ msm8960_sim		MACH_MSM8960_SIM	MSM8960_SIM		3230
