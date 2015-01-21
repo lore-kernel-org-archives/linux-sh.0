@@ -1,30 +1,38 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 21 Jan 2015 10:12:10 +0000
-Subject: Re: [PATCH 3/4 v2] ARM: shmobile: r8a7790: add SDHI DMA channels on DTSI
-Message-Id: <CAMuHMdX-DJqFJeEQPVUgc72fex1Zrt7ZCnFGS71xxv-0wXzS8Q@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 21 Jan 2015 04:42:22 +0000
+Subject: [PATCH] dmaengine: rcar-hpbdma: tidyup residue_granularity
+Message-Id: <87vbk0n3q3.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87sj2wnqiv.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87sj2wnqiv.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Jan 21, 2015 at 5:27 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+The driver doesn't support residue reporting at all.
+residue_granularity should be set to DMA_RESIDUE_GRANULARITY_DESCRIPTOR.
+Special thanks to Laurent
 
-Gr{oetje,eeting}s,
+Reported-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/dma/sh/rcar-hpbdma.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-                        Geert
+diff --git a/drivers/dma/sh/rcar-hpbdma.c b/drivers/dma/sh/rcar-hpbdma.c
+index 6fef1b9..749f26e 100644
+--- a/drivers/dma/sh/rcar-hpbdma.c
++++ b/drivers/dma/sh/rcar-hpbdma.c
+@@ -600,7 +600,7 @@ static int hpb_dmae_probe(struct platform_device *pdev)
+ 	dma_dev->src_addr_widths = widths;
+ 	dma_dev->dst_addr_widths = widths;
+ 	dma_dev->directions = BIT(DMA_MEM_TO_DEV) | BIT(DMA_DEV_TO_MEM);
+-	dma_dev->residue_granularity = DMA_RESIDUE_GRANULARITY_BURST;
++	dma_dev->residue_granularity = DMA_RESIDUE_GRANULARITY_DESCRIPTOR;
+ 
+ 	hpbdev->shdma_dev.ops = &hpb_dmae_ops;
+ 	hpbdev->shdma_dev.desc_size = sizeof(struct hpb_desc);
+-- 
+1.7.9.5
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
