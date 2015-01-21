@@ -1,7 +1,7 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 20 Jan 2015 11:23:59 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 21 Jan 2015 01:28:26 +0000
 Subject: Re: [PATCH 8/8 v2] ASoC: rsnd: remove slave_id settings for DMAEngine
-Message-Id: <54BE3ACF.5090102@cogentembedded.com>
+Message-Id: <87iog0or9q.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87a91eaxtc.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87a91eaxtc.wl%kuninori.morimoto.gx@renesas.com>
@@ -10,21 +10,20 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello.
 
-On 1/20/2015 7:18 AM, Kuninori Morimoto wrote:
+Hi Sergei
 
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> 
+> > Current sh-msiof sets dma_slave_config :: slave_id field for DMAEngine,
+> 
+>     sh-msiof? But this is ALSA patch! :-)
+> 
+> > but it is no longer needed. Let's remove it.
 
-> Current sh-msiof sets dma_slave_config :: slave_id field for DMAEngine,
+Grr... Thank you for pointing it.
+will fix in v3 patch
 
-    sh-msiof? But this is ALSA patch! :-)
-
-> but it is no longer needed. Let's remove it.
-
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-[...]
-
-WBR, Sergei
-
+Best regards
+---
+Kuninori Morimoto
