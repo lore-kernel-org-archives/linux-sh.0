@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 16 Jan 2015 01:10:28 +0000
-Subject: [PATCH 2/4] ARM: shmobile: r8a7791: tidyup SDHI register size on DTSI
-Message-Id: <87twzry1fz.wl%kuninori.morimoto.gx@renesas.com>
+Date: Wed, 21 Jan 2015 04:15:50 +0000
+Subject: [PATCH 7/8 v3] ASoC: fsi: remove slave_id settings for DMAEngine
+Message-Id: <8761c0ojiq.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,27 +10,40 @@ To: linux-sh@vger.kernel.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-r8a7791 SDHI ch0 has SD_DMACR which is lacated in 0x324.
-This patch updates register size
+Current fsi sets dma_slave_config :: slave_id field for DMAEngine,
+but it is no longer needed. Let's remove it.
+This patch also removed 0 settings of cfg dst_addr/src_addr,
+because it is not used from DT (= it is assuming these settings
+are came from platform data).
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
 ---
- arch/arm/boot/dts/r8a7791.dtsi |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+v2 -> v3
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index e35812a..e6d89d6 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -482,7 +482,7 @@
+ - add Arnd's Acked-by
+
+ sound/soc/sh/fsi.c |    5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/sound/soc/sh/fsi.c b/sound/soc/sh/fsi.c
+index b87b22e..0b6b383 100644
+--- a/sound/soc/sh/fsi.c
++++ b/sound/soc/sh/fsi.c
+@@ -1371,12 +1371,9 @@ static int fsi_dma_probe(struct fsi_priv *fsi, struct fsi_stream *io, struct dev
+ 				shdma_chan_filter, (void *)io->dma_id,
+ 				dev, is_play ? "tx" : "rx");
+ 	if (io->chan) {
+-		struct dma_slave_config cfg;
++		struct dma_slave_config cfg = {};
+ 		int ret;
  
- 	sdhi0: sd@ee100000 {
- 		compatible = "renesas,sdhi-r8a7791";
--		reg = <0 0xee100000 0 0x200>;
-+		reg = <0 0xee100000 0 0x328>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7791_CLK_SDHI0>;
- 		status = "disabled";
+-		cfg.slave_id	= io->dma_id;
+-		cfg.dst_addr	= 0; /* use default addr */
+-		cfg.src_addr	= 0; /* use default addr */
+ 		cfg.direction	= is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
+ 
+ 		ret = dmaengine_slave_config(io->chan, &cfg);
 -- 
 1.7.9.5
 
