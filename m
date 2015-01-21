@@ -1,46 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 Jan 2015 02:35:06 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC Drivers Updates for v3.20
-Message-Id: <cover.1421371868.git.horms+renesas@verge.net.au>
+From: Olof Johansson <olof@lixom.net>
+Date: Wed, 21 Jan 2015 22:44:17 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC Drivers Updates for v3.20
+Message-Id: <20150121224417.GD24851@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1421371868.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1421371868.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+On Fri, Jan 16, 2015 at 11:35:06AM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
+> 
+> Please consider these Renesas ARM based SoC drivers updates for v3.20.
+> 
+> 
+> The following changes since commit 97bf6af1f928216fd6c5a66e8a57bfa95a659672:
+> 
+>   Linux 3.19-rc1 (2014-12-20 17:08:50 -0800)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-drivers-for-v3.20
 
-Please consider these Renesas ARM based SoC drivers updates for v3.20.
+Simon,
+
+Your emails are somewhat confusing, in that you have to: a handful of people
+individually, but not arm@kernel.org. It's clearer that you want us to merge
+this pull request if you do to: arm@kernel.org and keep the FYI recipients on
+cc.
 
 
-The following changes since commit 97bf6af1f928216fd6c5a66e8a57bfa95a659672:
+Now, about this branch: There's not a single review by anyone on the
+drivers/bus pieces, nor on the binding. Please collect some, especially since
+simple-bus is used by so many.
 
-  Linux 3.19-rc1 (2014-12-20 17:08:50 -0800)
 
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-drivers-for-v3.20
-
-for you to fetch changes up to ab9ff6fe6fdd225a92ae740eceb05e12daf00ce1:
-
-  drivers: bus: Add Simple Power-Managed Bus Driver (2015-01-14 09:38:24 +0900)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC Drivers Updates for v3.20
-
-* Add Simple Power-Managed Bus
-
-----------------------------------------------------------------
-Geert Uytterhoeven (4):
-      drivers: bus: Sort Kconfig entries alphabetically
-      drivers: bus: Sort Makefile entries alphabetically
-      drivers: bus: Add Simple Power-Managed Bus DT Bindings
-      drivers: bus: Add Simple Power-Managed Bus Driver
-
- .../devicetree/bindings/bus/simple-pm-bus.txt      | 52 +++++++++++++++++++++
- drivers/bus/Kconfig                                | 53 ++++++++++++++--------
- drivers/bus/Makefile                               | 15 +++---
- drivers/bus/simple-pm-bus.c                        | 51 +++++++++++++++++++++
- 4 files changed, 144 insertions(+), 27 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/bus/simple-pm-bus.txt
- create mode 100644 drivers/bus/simple-pm-bus.c
+-Olof
