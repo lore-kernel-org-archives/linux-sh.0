@@ -1,55 +1,149 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 27 Jan 2015 00:27:49 +0000
-Subject: Re: [PATCH] ARM: shmobile: R-Car Gen2: CONFIG_COMMON_CLK is always set
-Message-Id: <20150127002748.GA29710@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Wed, 21 Jan 2015 16:20:52 +0000
+Subject: [PATCH 01/11] ARM: shmobile: r8a7778: synchronize dts with reference platform
+Message-Id: <1421857262-16607-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1422289274-20605-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1422289274-20605-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Jan 26, 2015 at 05:21:14PM +0100, Geert Uytterhoeven wrote:
-> Since commit e042681894b62d60 ("ARM: shmobile: r8a7790: Remove legacy
-> code"), all R-Car Gen2 SoCs are supported by multiplatform kernels only.
-> As CONFIG_COMMON_CLK is always set for multiplatform kernels, we can
-> remove related #ifdefs in code specific to R-Car Gen2 SoCs.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> Depends on renesas-lager-board-removal-for-v3.20
+This moves everything to the legacy dts that is missing there to make it
+suitable for use with multiplatform.
 
-Thanks, I have queued this up in the soc-for-v3.21 branch.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/boot/dts/r8a7778-bockw.dts | 106 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 106 insertions(+)
 
-> ---
->  arch/arm/mach-shmobile/setup-rcar-gen2.c | 4 ----
->  1 file changed, 4 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-> index e2b9bb46393d898d..aa3339258d9c0232 100644
-> --- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
-> +++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-> @@ -51,9 +51,7 @@ u32 rcar_gen2_read_mode_pins(void)
->  
->  void __init rcar_gen2_timer_init(void)
->  {
-> -#if defined(CONFIG_ARM_ARCH_TIMER) || defined(CONFIG_COMMON_CLK)
->  	u32 mode = rcar_gen2_read_mode_pins();
-> -#endif
->  #ifdef CONFIG_ARM_ARCH_TIMER
->  	void __iomem *base;
->  	int extal_mhz = 0;
-> @@ -129,9 +127,7 @@ void __init rcar_gen2_timer_init(void)
->  	iounmap(base);
->  #endif /* CONFIG_ARM_ARCH_TIMER */
->  
-> -#ifdef CONFIG_COMMON_CLK
->  	rcar_gen2_clocks_init(mode);
-> -#endif
->  	clocksource_of_init();
->  }
->  
-> -- 
-> 1.9.1
-> 
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 46a884d..7347223 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -16,17 +16,123 @@
+ 
+ /dts-v1/;
+ #include "r8a7778.dtsi"
++#include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "bockw";
+ 	compatible = "renesas,bockw", "renesas,r8a7778";
+ 
++	aliases {
++		serial0 = &scif0;
++	};
++
+ 	chosen {
+ 		bootargs = "console=ttySC0,115200 ignore_loglevel ip=dhcp root=/dev/nfs rw";
++		stdout-path = &scif0;
+ 	};
+ 
+ 	memory {
+ 		device_type = "memory";
+ 		reg = <0x60000000 0x10000000>;
+ 	};
++
++	fixedregulator3v3: fixedregulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-3.3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++
++	ethernet@18300000 {
++		compatible = "smsc,lan9220", "smsc,lan9115";
++		reg = <0x18300000 0x1000>;
++
++		phy-mode = "mii";
++		interrupt-parent = <&irqpin>;
++		interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
++		reg-io-width = <4>;
++		vddvario-supply = <&fixedregulator3v3>;
++		vdd33a-supply = <&fixedregulator3v3>;
++	};
++};
++
++&mmcif {
++	pinctrl-0 = <&mmc_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&fixedregulator3v3>;
++	bus-width = <8>;
++	broken-cd;
++	status = "okay";
++};
++
++&irqpin {
++	status = "okay";
++};
++
++&tmu0 {
++	status = "okay";
++};
++
++&pfc {
++	scif0_pins: serial0 {
++		renesas,groups = "scif0_data_a", "scif0_ctrl";
++		renesas,function = "scif0";
++	};
++
++	mmc_pins: mmc {
++		renesas,groups = "mmc_data8", "mmc_ctrl";
++		renesas,function = "mmc";
++	};
++
++	sdhi0_pins: sd0 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
++				  "sdhi0_cd";
++		renesas,function = "sdhi0";
++	};
++
++	hspi0_pins: hspi0 {
++		renesas,groups = "hspi0_a";
++		renesas,function = "hspi0";
++	};
++};
++
++&sdhi0 {
++	pinctrl-0 = <&sdhi0_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&fixedregulator3v3>;
++	bus-width = <4>;
++	status = "okay";
++	wp-gpios = <&gpio3 18 GPIO_ACTIVE_HIGH>;
++};
++
++&hspi0 {
++	pinctrl-0 = <&hspi0_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++
++	flash: flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "spansion,s25fl008k";
++		reg = <0>;
++		spi-max-frequency = <104000000>;
++		m25p,fast-read;
++
++		partition@0 {
++			label = "data(spi)";
++			reg = <0x00000000 0x00100000>;
++		};
++	};
++};
++
++&scif0 {
++	pinctrl-0 = <&scif0_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
+ };
+-- 
+2.2.2
+
