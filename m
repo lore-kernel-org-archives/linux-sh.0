@@ -1,41 +1,62 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 Jan 2015 02:45:51 +0000
-Subject: [PATCH] clk: shmobile: fix sparse NULL pointer warning
-Message-Id: <16bd794f9432b556ec797cbf16c5e575a18f7030.1421376276.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 21 Jan 2015 04:53:27 +0000
+Subject: [PATCH 03/13] ARM: shmobile: mackerel dts: Remove Legacy DTS file
+Message-Id: <20150121045327.7648.77155.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421376276.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421376276.git.horms+renesas@verge.net.au>
+References: <20150121045256.7648.7451.sendpatchset@little-apple>
+In-Reply-To: <20150121045256.7648.7451.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Fixes the following sparse warnings:
+Remove the DTS file for the no longer supported Mackerel board.
 
-drivers/clk/shmobile/clk-sh73a0.c:57:17: warning:
- Using plain integer as NULL pointer
-
-Signed-off-by: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- drivers/clk/shmobile/clk-sh73a0.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/clk/shmobile/clk-sh73a0.c b/drivers/clk/shmobile/clk-sh73a0.c
-index 8574a6d..cd529cf 100644
---- a/drivers/clk/shmobile/clk-sh73a0.c
-+++ b/drivers/clk/shmobile/clk-sh73a0.c
-@@ -54,7 +54,7 @@ static struct div4_clk div4_clks[] = {
- 	{ "m2", "pll1", CPG_FRQCRA,  0 },
- 	{ "zx", "pll1", CPG_FRQCRB, 12 },
- 	{ "hp", "pll1", CPG_FRQCRB,  4 },
--	{ NULL, 0, 0, 0 },
-+	{ NULL, NULL, 0, 0 },
- };
- 
- static const struct clk_div_table div4_div_table[] = {
--- 
-2.1.4
+ arch/arm/boot/dts/Makefile            |    1 -
+ arch/arm/boot/dts/sh7372-mackerel.dts |   26 --------------------------
+ 2 files changed, 27 deletions(-)
 
+--- 0001/arch/arm/boot/dts/Makefile
++++ work/arch/arm/boot/dts/Makefile	2015-01-21 11:07:54.407575785 +0900
+@@ -408,7 +408,6 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += \
+ 	r8a7778-bockw.dtb \
+ 	r8a7778-bockw-reference.dtb \
+ 	r8a7779-marzen.dtb \
+-	sh7372-mackerel.dtb \
+ 	sh73a0-kzm9g.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
+ 	r7s72100-genmai.dtb \
+--- 0001/arch/arm/boot/dts/sh7372-mackerel.dts
++++ /dev/null	2015-01-13 15:44:39.280208949 +0900
+@@ -1,26 +0,0 @@
+-/*
+- * Device Tree Source for the mackerel board
+- *
+- * Copyright (C) 2012 Renesas Solutions Corp.
+- *
+- * This file is licensed under the terms of the GNU General Public License
+- * version 2.  This program is licensed "as is" without any warranty of any
+- * kind, whether express or implied.
+- */
+-
+-/dts-v1/;
+-#include "sh7372.dtsi"
+-
+-/ {
+-	model = "Mackerel (AP4 EVM 2nd)";
+-	compatible = "renesas,mackerel";
+-
+-	chosen {
+-		bootargs = "console=tty0, console=ttySC0,115200 earlyprintk=sh-sci.0,115200 root=/dev/nfs nfsroot=,tcp,v3 ip=dhcp mem$0m rw";
+-	};
+-
+-	memory {
+-		device_type = "memory";
+-		reg = <0x40000000 0x10000000>;
+-	};
+-};
