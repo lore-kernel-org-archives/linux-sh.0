@@ -1,266 +1,301 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 17 Jan 2015 00:59:25 +0000
-Subject: [PATCH 2/3] ARM: shmobile: R-Mobile: Store SYSC base address in rmobile_pm_domain
-Message-Id: <25717b857360760755b83b4e606d61e1fc38552f.1421379958.git.horms+renesas@verge.net.au>
+From: Yijing Wang <wangyijing@huawei.com>
+Date: Wed, 21 Jan 2015 00:30:02 +0000
+Subject: [PATCH v2 07/30] PCI: Pass PCI domain number combined with root bus number
+Message-Id: <1421800225-26230-8-git-send-email-wangyijing@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421379958.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421379958.git.horms+renesas@verge.net.au>
+References: <1421800225-26230-1-git-send-email-wangyijing@huawei.com>
+In-Reply-To: <1421800225-26230-1-git-send-email-wangyijing@huawei.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Now we could pass PCI domain combined with bus number
+in u32 argu. Because in arm/arm64, PCI domain number
+is assigned by pci_bus_assign_domain_nr(). So we leave
+pci_scan_root_bus() and pci_create_root_bus() in arm/arm64
+unchanged. A new function pci_host_assign_domain_nr()
+will be introduced for arm/arm64 to assign domain number
+in later patch.
 
-Replace the hardcoded addresses for accessing the SYSC PM domain
-registers by register offsets, relative to the SYSC base address stored
-in struct rmobile_pm_domain.
-
-In the future, the SYSC base address will come from DT.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Yijing Wang <wangyijing@huawei.com>
+CC: Richard Henderson <rth@twiddle.net>
+CC: Ivan Kokshaysky <ink@jurassic.park.msu.ru>
+CC: Matt Turner <mattst88@gmail.com>
+CC: Tony Luck <tony.luck@intel.com>
+CC: Fenghua Yu <fenghua.yu@intel.com>
+CC: Michal Simek <monstr@monstr.eu>
+CC: Ralf Baechle <ralf@linux-mips.org>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Michael Ellerman <mpe@ellerman.id.au>
+CC: Sebastian Ott <sebott@linux.vnet.ibm.com>
+CC: Gerald Schaefer <gerald.schaefer@de.ibm.com>
+CC: "David S. Miller" <davem@davemloft.net>
+CC: Chris Metcalf <cmetcalf@ezchip.com>
+CC: Thomas Gleixner <tglx@linutronix.de>
+CC: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>
+CC: linux-alpha@vger.kernel.org
+CC: linux-kernel@vger.kernel.org
+CC: linux-ia64@vger.kernel.org
+CC: linux-mips@linux-mips.org
+CC: linuxppc-dev@lists.ozlabs.org
+CC: linux-s390@vger.kernel.org
+CC: linux-sh@vger.kernel.org
+CC: sparclinux@vger.kernel.org
+CC: xen-devel@lists.xenproject.org
 ---
- arch/arm/mach-shmobile/pm-r8a7740.c | 14 ++++++++++++++
- arch/arm/mach-shmobile/pm-rmobile.c | 24 +++++++++++++-----------
- arch/arm/mach-shmobile/pm-rmobile.h |  1 +
- arch/arm/mach-shmobile/pm-sh7372.c  | 11 +++++++++++
- 4 files changed, 39 insertions(+), 11 deletions(-)
+ arch/alpha/kernel/pci.c          |    5 +++--
+ arch/alpha/kernel/sys_nautilus.c |    3 ++-
+ arch/ia64/pci/pci.c              |    4 ++--
+ arch/ia64/sn/kernel/io_init.c    |    5 +++--
+ arch/microblaze/pci/pci-common.c |    5 +++--
+ arch/mips/pci/pci.c              |    4 ++--
+ arch/powerpc/kernel/pci-common.c |    5 +++--
+ arch/s390/pci/pci.c              |    5 +++--
+ arch/sh/drivers/pci/pci.c        |    5 +++--
+ arch/sparc/kernel/pci.c          |    5 +++--
+ arch/tile/kernel/pci.c           |    4 ++--
+ arch/tile/kernel/pci_gx.c        |    5 +++--
+ arch/x86/pci/acpi.c              |    6 +++---
+ arch/x86/pci/common.c            |    3 ++-
+ drivers/pci/xen-pcifront.c       |    5 +++--
+ 15 files changed, 40 insertions(+), 29 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
-index ac2eecd..34608fc 100644
---- a/arch/arm/mach-shmobile/pm-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7740.c
-@@ -9,10 +9,14 @@
-  * for more details.
-  */
- #include <linux/console.h>
-+#include <linux/io.h>
- #include <linux/suspend.h>
-+
- #include "common.h"
- #include "pm-rmobile.h"
+diff --git a/arch/alpha/kernel/pci.c b/arch/alpha/kernel/pci.c
+index 97f9730..b15f9f2 100644
+--- a/arch/alpha/kernel/pci.c
++++ b/arch/alpha/kernel/pci.c
+@@ -332,8 +332,9 @@ common_init_pci(void)
+ 		pci_add_resource_offset(&resources, hose->mem_space,
+ 					hose->mem_space->start);
  
-+#define SYSC_BASE	IOMEM(0xe6180000)
-+
- #if defined(CONFIG_PM) && !defined(CONFIG_ARCH_MULTIPLATFORM)
- static int r8a7740_pd_a3sm_suspend(void)
- {
-@@ -45,41 +49,51 @@ static int r8a7740_pd_d4_suspend(void)
- static struct rmobile_pm_domain r8a7740_pm_domains[] = {
- 	{
- 		.genpd.name	= "A4LC",
-+		.base		= SYSC_BASE,
- 		.bit_shift	= 1,
- 	}, {
- 		.genpd.name	= "A4MP",
-+		.base		= SYSC_BASE,
- 		.bit_shift	= 2,
- 	}, {
- 		.genpd.name	= "D4",
-+		.base		= SYSC_BASE,
- 		.bit_shift	= 3,
- 		.gov		= &pm_domain_always_on_gov,
- 		.suspend	= r8a7740_pd_d4_suspend,
- 	}, {
- 		.genpd.name	= "A4R",
-+		.base		= SYSC_BASE,
- 		.bit_shift	= 5,
- 	}, {
- 		.genpd.name	= "A3RV",
-+		.base		= SYSC_BASE,
- 		.bit_shift	= 6,
- 	}, {
- 		.genpd.name	= "A4S",
-+		.base		= SYSC_BASE,
- 		.bit_shift	= 10,
- 		.no_debug	= true,
- 	}, {
- 		.genpd.name	= "A3SP",
-+		.base		= SYSC_BASE,
- 		.bit_shift	= 11,
- 		.gov		= &pm_domain_always_on_gov,
- 		.no_debug	= true,
- 		.suspend	= r8a7740_pd_a3sp_suspend,
- 	}, {
- 		.genpd.name	= "A3SM",
-+		.base		= SYSC_BASE,
- 		.bit_shift	= 12,
- 		.gov		= &pm_domain_always_on_gov,
- 		.suspend	= r8a7740_pd_a3sm_suspend,
- 	}, {
- 		.genpd.name	= "A3SG",
-+		.base		= SYSC_BASE,
- 		.bit_shift	= 13,
- 	}, {
- 		.genpd.name	= "A4SU",
-+		.base		= SYSC_BASE,
- 		.bit_shift	= 20,
- 	},
- };
-diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
-index 4ea458d..a4fcd2c 100644
---- a/arch/arm/mach-shmobile/pm-rmobile.c
-+++ b/arch/arm/mach-shmobile/pm-rmobile.c
-@@ -20,9 +20,9 @@
- #include "pm-rmobile.h"
+-		bus = pci_scan_root_bus(NULL, next_busno, alpha_mv.pci_ops,
+-					hose, &resources);
++		bus = pci_scan_root_bus(NULL,
++				PCI_DOMBUS(hose->index, next_busno), alpha_mv.pci_ops,
++				hose, &resources);
+ 		if (bus)
+ 			pci_bus_add_devices(bus);
+ 		hose->bus = bus;
+diff --git a/arch/alpha/kernel/sys_nautilus.c b/arch/alpha/kernel/sys_nautilus.c
+index 2c864bb..f7bfdf3 100644
+--- a/arch/alpha/kernel/sys_nautilus.c
++++ b/arch/alpha/kernel/sys_nautilus.c
+@@ -206,7 +206,8 @@ nautilus_init_pci(void)
+ 	unsigned long memtop = max_low_pfn << PAGE_SHIFT;
  
- /* SYSC */
--#define SPDCR		IOMEM(0xe6180008)
--#define SWUCR		IOMEM(0xe6180014)
--#define PSTR		IOMEM(0xe6180080)
-+#define SPDCR		0x08	/* SYS Power Down Control Register */
-+#define SWUCR		0x14	/* SYS Wakeup Control Register */
-+#define PSTR		0x80	/* Power Status Register */
+ 	/* Scan our single hose.  */
+-	bus = pci_scan_bus_legacy(0, alpha_mv.pci_ops, hose);
++	bus = pci_scan_bus_legacy(PCI_DOMBUS(hose->index, 0),
++			alpha_mv.pci_ops, hose);
+ 	hose->bus = bus;
+ 	pcibios_claim_one_bus(bus);
  
- #define PSTR_RETRIES	100
- #define PSTR_DELAY_US	10
-@@ -39,12 +39,12 @@ static int rmobile_pd_power_down(struct generic_pm_domain *genpd)
- 			return ret;
+diff --git a/arch/ia64/pci/pci.c b/arch/ia64/pci/pci.c
+index 291a582..e457015 100644
+--- a/arch/ia64/pci/pci.c
++++ b/arch/ia64/pci/pci.c
+@@ -465,8 +465,8 @@ struct pci_bus *pci_acpi_scan_root(struct acpi_pci_root *root)
+ 	 * should handle the case here, but it appears that IA64 hasn't
+ 	 * such quirk. So we just ignore the case now.
+ 	 */
+-	pbus = pci_create_root_bus(NULL, bus, &pci_root_ops, controller,
+-				   &info->resources);
++	pbus = pci_create_root_bus(NULL, PCI_DOMBUS(domain, bus),
++			&pci_root_ops, controller, &info->resources);
+ 	if (!pbus) {
+ 		pci_free_resource_list(&info->resources);
+ 		__release_pci_root_info(info);
+diff --git a/arch/ia64/sn/kernel/io_init.c b/arch/ia64/sn/kernel/io_init.c
+index 63b43a6..bcdc5b8 100644
+--- a/arch/ia64/sn/kernel/io_init.c
++++ b/arch/ia64/sn/kernel/io_init.c
+@@ -266,8 +266,9 @@ sn_pci_controller_fixup(int segment, int busnum, struct pci_bus *bus)
+ 	pci_add_resource_offset(&resources,	&res[1],
+ 			prom_bussoft_ptr->bs_legacy_mem);
+ 
+-	bus = pci_scan_root_bus(NULL, busnum, &pci_root_ops, controller,
+-				&resources);
++	bus = pci_scan_root_bus(NULL,
++			PCI_DOMBUS(controller->segment, busnum),
++			&pci_root_ops, controller, &resources);
+  	if (bus = NULL) {
+ 		kfree(res);
+ 		kfree(controller);
+diff --git a/arch/microblaze/pci/pci-common.c b/arch/microblaze/pci/pci-common.c
+index 009b271..890bd36 100644
+--- a/arch/microblaze/pci/pci-common.c
++++ b/arch/microblaze/pci/pci-common.c
+@@ -1339,8 +1339,9 @@ static void pcibios_scan_phb(struct pci_controller *hose)
+ 
+ 	pcibios_setup_phb_resources(hose, &resources);
+ 
+-	bus = pci_scan_root_bus(hose->parent, hose->first_busno,
+-				hose->ops, hose, &resources);
++	bus = pci_scan_root_bus(hose->parent,
++			PCI_DOMBUS(hose->global_number, hose->first_busno),
++			hose->ops, hose, &resources);
+ 	if (bus = NULL) {
+ 		pr_err("Failed to create bus for PCI domain %04x\n",
+ 		       hose->global_number);
+diff --git a/arch/mips/pci/pci.c b/arch/mips/pci/pci.c
+index 9eb54b5..980755a 100644
+--- a/arch/mips/pci/pci.c
++++ b/arch/mips/pci/pci.c
+@@ -92,8 +92,8 @@ static void pcibios_scanbus(struct pci_controller *hose)
+ 	pci_add_resource_offset(&resources,
+ 				hose->mem_resource, hose->mem_offset);
+ 	pci_add_resource_offset(&resources, hose->io_resource, hose->io_offset);
+-	bus = pci_scan_root_bus(NULL, next_busno, hose->pci_ops, hose,
+-				&resources);
++	bus = pci_scan_root_bus(NULL, PCI_DOMBUS(hose->index, next_busno),
++			hose->pci_ops, hose, &resources);
+ 	if (!bus)
+ 		pci_free_resource_list(&resources);
+ 
+diff --git a/arch/powerpc/kernel/pci-common.c b/arch/powerpc/kernel/pci-common.c
+index 37d512d..927c3dd 100644
+--- a/arch/powerpc/kernel/pci-common.c
++++ b/arch/powerpc/kernel/pci-common.c
+@@ -1602,8 +1602,9 @@ void pcibios_scan_phb(struct pci_controller *hose)
+ 	pci_add_resource(&resources, &hose->busn);
+ 
+ 	/* Create an empty bus for the toplevel */
+-	bus = pci_create_root_bus(hose->parent, hose->first_busno,
+-				  hose->ops, hose, &resources);
++	bus = pci_create_root_bus(hose->parent,
++			PCI_DOMBUS(hose->global_number, hose->first_busno),
++			hose->ops, hose, &resources);
+ 	if (bus = NULL) {
+ 		pr_err("Failed to create bus for PCI domain %04x\n",
+ 			hose->global_number);
+diff --git a/arch/s390/pci/pci.c b/arch/s390/pci/pci.c
+index 0b32769..612decf 100644
+--- a/arch/s390/pci/pci.c
++++ b/arch/s390/pci/pci.c
+@@ -750,8 +750,9 @@ static int zpci_scan_bus(struct zpci_dev *zdev)
+ 	if (ret)
+ 		return ret;
+ 
+-	zdev->bus = pci_scan_root_bus(NULL, ZPCI_BUS_NR, &pci_root_ops,
+-				      zdev, &resources);
++	zdev->bus = pci_scan_root_bus(NULL,
++			PCI_DOMBUS(zdev->domain, ZPCI_BUS_NR), &pci_root_ops,
++			zdev, &resources);
+ 	if (!zdev->bus) {
+ 		zpci_cleanup_bus_resources(zdev);
+ 		return -EIO;
+diff --git a/arch/sh/drivers/pci/pci.c b/arch/sh/drivers/pci/pci.c
+index efc1051..7ee0772 100644
+--- a/arch/sh/drivers/pci/pci.c
++++ b/arch/sh/drivers/pci/pci.c
+@@ -52,8 +52,9 @@ static void pcibios_scanbus(struct pci_channel *hose)
+ 		pci_add_resource_offset(&resources, res, offset);
  	}
  
--	if (__raw_readl(PSTR) & mask) {
-+	if (__raw_readl(rmobile_pd->base + PSTR) & mask) {
- 		unsigned int retry_count;
--		__raw_writel(mask, SPDCR);
-+		__raw_writel(mask, rmobile_pd->base + SPDCR);
+-	bus = pci_scan_root_bus(NULL, next_busno, hose->pci_ops, hose,
+-				&resources);
++	bus = pci_scan_root_bus(NULL,
++			PCI_DOMBUS(hose->index, next_busno),
++			hose->pci_ops, hose, &resources);
+ 	hose->bus = bus;
  
- 		for (retry_count = PSTR_RETRIES; retry_count; retry_count--) {
--			if (!(__raw_readl(SPDCR) & mask))
-+			if (!(__raw_readl(rmobile_pd->base + SPDCR) & mask))
- 				break;
- 			cpu_relax();
+ 	need_domain_info = need_domain_info || hose->index;
+diff --git a/arch/sparc/kernel/pci.c b/arch/sparc/kernel/pci.c
+index b36365f..d798b42 100644
+--- a/arch/sparc/kernel/pci.c
++++ b/arch/sparc/kernel/pci.c
+@@ -664,8 +664,9 @@ struct pci_bus *pci_scan_one_pbm(struct pci_pbm_info *pbm,
+ 	pbm->busn.end	= pbm->pci_last_busno;
+ 	pbm->busn.flags	= IORESOURCE_BUS;
+ 	pci_add_resource(&resources, &pbm->busn);
+-	bus = pci_create_root_bus(parent, pbm->pci_first_busno, pbm->pci_ops,
+-				  pbm, &resources);
++	bus = pci_create_root_bus(parent,
++			PCI_DOMBUS(pbm->index, pbm->pci_first_busno),
++			pbm->pci_ops, pbm, &resources);
+ 	if (!bus) {
+ 		printk(KERN_ERR "Failed to create bus for %s\n",
+ 		       node->full_name);
+diff --git a/arch/tile/kernel/pci.c b/arch/tile/kernel/pci.c
+index 83d3e30..2603db5 100644
+--- a/arch/tile/kernel/pci.c
++++ b/arch/tile/kernel/pci.c
+@@ -306,8 +306,8 @@ int __init pcibios_init(void)
+ 
+ 			pci_add_resource(&resources, &ioport_resource);
+ 			pci_add_resource(&resources, &iomem_resource);
+-			bus = pci_scan_root_bus(NULL, 0, controller->ops,
+-						controller, &resources);
++			bus = pci_scan_root_bus(NULL, PCI_DOMBUS(controller->index, 0),
++					controller->ops, controller, &resources);
+ 			controller->root_bus = bus;
+ 			controller->last_busno = bus->busn_res.end;
  		}
-@@ -52,7 +52,8 @@ static int rmobile_pd_power_down(struct generic_pm_domain *genpd)
+diff --git a/arch/tile/kernel/pci_gx.c b/arch/tile/kernel/pci_gx.c
+index d7a0729..1e6ff84 100644
+--- a/arch/tile/kernel/pci_gx.c
++++ b/arch/tile/kernel/pci_gx.c
+@@ -881,8 +881,9 @@ int __init pcibios_init(void)
+ 					controller->mem_offset);
+ 		pci_add_resource(&resources, &controller->io_space);
+ 		controller->first_busno = next_busno;
+-		bus = pci_scan_root_bus(NULL, next_busno, controller->ops,
+-					controller, &resources);
++		bus = pci_scan_root_bus(NULL,
++				PCI_DOMBUS(controller->index, next_busno),
++				controller->ops, controller, &resources);
+ 		controller->root_bus = bus;
+ 		next_busno = bus->busn_res.end + 1;
+ 	}
+diff --git a/arch/x86/pci/acpi.c b/arch/x86/pci/acpi.c
+index cfd1b13..8edea63 100644
+--- a/arch/x86/pci/acpi.c
++++ b/arch/x86/pci/acpi.c
+@@ -536,9 +536,9 @@ struct pci_bus *pci_acpi_scan_root(struct acpi_pci_root *root)
+ 		}
  
- 	if (!rmobile_pd->no_debug)
- 		pr_debug("%s: Power off, 0x%08x -> PSTR = 0x%08x\n",
--			 genpd->name, mask, __raw_readl(PSTR));
-+			 genpd->name, mask,
-+			 __raw_readl(rmobile_pd->base + PSTR));
+ 		if (!setup_mcfg_map(info, domain, (u8)root->secondary.start,
+-				    (u8)root->secondary.end, root->mcfg_addr))
+-			bus = pci_create_root_bus(NULL, busnum, &pci_root_ops,
+-						  sd, &resources);
++					(u8)root->secondary.end, root->mcfg_addr))
++			bus = pci_create_root_bus(NULL, PCI_DOMBUS(domain, busnum),
++					&pci_root_ops, sd, &resources);
  
- 	return 0;
- }
-@@ -64,13 +65,13 @@ static int __rmobile_pd_power_up(struct rmobile_pm_domain *rmobile_pd,
- 	unsigned int retry_count;
- 	int ret = 0;
+ 		if (bus) {
+ 			pci_scan_child_bus(bus);
+diff --git a/arch/x86/pci/common.c b/arch/x86/pci/common.c
+index 300d39e..d6879ee 100644
+--- a/arch/x86/pci/common.c
++++ b/arch/x86/pci/common.c
+@@ -470,7 +470,8 @@ void pcibios_scan_root(int busnum)
+ 	sd->node = x86_pci_root_bus_node(busnum);
+ 	x86_pci_root_bus_resources(busnum, &resources);
+ 	printk(KERN_DEBUG "PCI: Probing PCI hardware (bus %02x)\n", busnum);
+-	bus = pci_scan_root_bus(NULL, busnum, &pci_root_ops, sd, &resources);
++	bus = pci_scan_root_bus(NULL, PCI_DOMBUS(0, busnum),
++			&pci_root_ops, sd, &resources);
+ 	if (!bus) {
+ 		pci_free_resource_list(&resources);
+ 		kfree(sd);
+diff --git a/drivers/pci/xen-pcifront.c b/drivers/pci/xen-pcifront.c
+index 240ddbc..a010dfa 100644
+--- a/drivers/pci/xen-pcifront.c
++++ b/drivers/pci/xen-pcifront.c
+@@ -477,8 +477,9 @@ static int pcifront_scan_root(struct pcifront_device *pdev,
  
--	if (__raw_readl(PSTR) & mask)
-+	if (__raw_readl(rmobile_pd->base + PSTR) & mask)
- 		goto out;
+ 	pci_lock_rescan_remove();
  
--	__raw_writel(mask, SWUCR);
-+	__raw_writel(mask, rmobile_pd->base + SWUCR);
- 
- 	for (retry_count = 2 * PSTR_RETRIES; retry_count; retry_count--) {
--		if (!(__raw_readl(SWUCR) & mask))
-+		if (!(__raw_readl(rmobile_pd->base + SWUCR) & mask))
- 			break;
- 		if (retry_count > PSTR_RETRIES)
- 			udelay(PSTR_DELAY_US);
-@@ -82,7 +83,8 @@ static int __rmobile_pd_power_up(struct rmobile_pm_domain *rmobile_pd,
- 
- 	if (!rmobile_pd->no_debug)
- 		pr_debug("%s: Power on, 0x%08x -> PSTR = 0x%08x\n",
--			 rmobile_pd->genpd.name, mask, __raw_readl(PSTR));
-+			 rmobile_pd->genpd.name, mask,
-+			 __raw_readl(rmobile_pd->base + PSTR));
- 
- out:
- 	if (ret = 0 && rmobile_pd->resume && do_resume)
-diff --git a/arch/arm/mach-shmobile/pm-rmobile.h b/arch/arm/mach-shmobile/pm-rmobile.h
-index 8f66b34..0602130 100644
---- a/arch/arm/mach-shmobile/pm-rmobile.h
-+++ b/arch/arm/mach-shmobile/pm-rmobile.h
-@@ -21,6 +21,7 @@ struct rmobile_pm_domain {
- 	struct dev_power_governor *gov;
- 	int (*suspend)(void);
- 	void (*resume)(void);
-+	void __iomem *base;
- 	unsigned int bit_shift;
- 	bool no_debug;
- };
-diff --git a/arch/arm/mach-shmobile/pm-sh7372.c b/arch/arm/mach-shmobile/pm-sh7372.c
-index 0e37da6..c0293ae 100644
---- a/arch/arm/mach-shmobile/pm-sh7372.c
-+++ b/arch/arm/mach-shmobile/pm-sh7372.c
-@@ -45,6 +45,8 @@
- #define PLLC01STPCR IOMEM(0xe61500c8)
- 
- /* SYSC */
-+#define SYSC_BASE IOMEM(0xe6180000)
-+
- #define SBAR IOMEM(0xe6180020)
- #define WUPRMSK IOMEM(0xe6180028)
- #define WUPSMSK IOMEM(0xe618002c)
-@@ -118,24 +120,28 @@ static struct rmobile_pm_domain sh7372_pm_domains[] = {
- 		.genpd.name = "A4LC",
- 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
- 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
-+		.base = SYSC_BASE,
- 		.bit_shift = 1,
- 	},
- 	{
- 		.genpd.name = "A4MP",
- 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
- 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
-+		.base = SYSC_BASE,
- 		.bit_shift = 2,
- 	},
- 	{
- 		.genpd.name = "D4",
- 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
- 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
-+		.base = SYSC_BASE,
- 		.bit_shift = 3,
- 	},
- 	{
- 		.genpd.name = "A4R",
- 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
- 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
-+		.base = SYSC_BASE,
- 		.bit_shift = 5,
- 		.suspend = sh7372_a4r_pd_suspend,
- 		.resume = sh7372_intcs_resume,
-@@ -144,18 +150,21 @@ static struct rmobile_pm_domain sh7372_pm_domains[] = {
- 		.genpd.name = "A3RV",
- 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
- 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
-+		.base = SYSC_BASE,
- 		.bit_shift = 6,
- 	},
- 	{
- 		.genpd.name = "A3RI",
- 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
- 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
-+		.base = SYSC_BASE,
- 		.bit_shift = 8,
- 	},
- 	{
- 		.genpd.name = "A4S",
- 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
- 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
-+		.base = SYSC_BASE,
- 		.bit_shift = 10,
- 		.gov = &pm_domain_always_on_gov,
- 		.no_debug = true,
-@@ -166,6 +175,7 @@ static struct rmobile_pm_domain sh7372_pm_domains[] = {
- 		.genpd.name = "A3SP",
- 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
- 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
-+		.base = SYSC_BASE,
- 		.bit_shift = 11,
- 		.gov = &pm_domain_always_on_gov,
- 		.no_debug = true,
-@@ -175,6 +185,7 @@ static struct rmobile_pm_domain sh7372_pm_domains[] = {
- 		.genpd.name = "A3SG",
- 		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
- 		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
-+		.base = SYSC_BASE,
- 		.bit_shift = 13,
- 	},
- };
+-	b = pci_scan_root_bus(&pdev->xdev->dev, bus,
+-				  &pcifront_bus_ops, sd, &resources);
++	b = pci_scan_root_bus(&pdev->xdev->dev,
++			PCI_DOMBUS(sd->domain, bus),
++			&pcifront_bus_ops, sd, &resources);
+ 	if (!b) {
+ 		dev_err(&pdev->xdev->dev,
+ 			"Error creating PCI Frontend Bus!\n");
 -- 
-2.1.4
+1.7.1
 
