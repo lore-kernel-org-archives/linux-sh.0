@@ -1,36 +1,61 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 20 Jan 2015 09:42:48 +0000
-Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC Fixes for v3.19
-Message-Id: <CAMuHMdVGv7O=dk6Ahoko4Go4K5_2YDRMqvxcCiJwc6KU2oGY=Q@mail.gmail.com>
+From: Olof Johansson <olof@lixom.net>
+Date: Wed, 21 Jan 2015 22:52:26 +0000
+Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC Defconfig Updates for v3.20
+Message-Id: <20150121225226.GE24851@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421716614.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421716614.git.horms+renesas@verge.net.au>
+References: <cover.1421371751.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1421371751.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jan 20, 2015 at 2:26 AM, Simon Horman
-<horms+renesas@verge.net.au> wrote:
-> Please consider these second round of Renesas ARM based SoC fixes for v3.19.
->
+On Fri, Jan 16, 2015 at 11:35:15AM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
+> 
+> Please consider these second round of Renesas ARM based SoC defconfig updates for v3.20.
+> 
 > This pull request is based on the previous round of
-> such requests, tagged as renesas-soc-fixes-for-v3.19,
-> which you have already pulled into your fixes branch.
->
-> This fixes a regression in the r8a7779 and r8a7779 SoCs due to
-> 9a1091ef0017c40a ("irqchip: gic: Support hierarchy irq domain.")
-> which was included in v3.18-rc2.
+> such requests, tagged as renesas-defconfig-for-v3.20,
+> which I have already sent a pull-request for.
+> 
+> This pull request has a minor conflict in
+> arch/arm/configs/shmobile_defconfig with the pull-request
+> "Renesas ARM Based SoC Lager Board Removal for v3.20", tagged as
+> renesas-lager-board-removal-for-v3.20, which you have pulled into the
+> next/cleanup branch.
+> 
+> A resolution for this conflict is in the renesas-next-20150114-v3.19-rc1
+> tag of my renesas tree.
+> 
+> In words the resolution is to add CONFIG_ARCH_SH73A0=y and
+> remove CONFIG_MACH_LAGER=y.
+> 
+> The resulting area of arch/arm/configs/shmobile_defconfig should look like
+> this:
+> 
+> CONFIG_ARCH_R8A7790=y
+> CONFIG_ARCH_R8A7791=y
+> CONFIG_ARCH_R8A7794=y
+> CONFIG_ARCH_SH73A0=y
+> CONFIG_MACH_MARZEN=y
+> CONFIG_CPU_BPREDICT_DISABLE=y
+> CONFIG_PL310_ERRATA_588369=y
+> 
+> 
+> The following changes since commit db54d850b686c2ca81c10dd3582e98ee089a0e3a:
+> 
+>   ARM: shmobile: Enable DA9063 watchdog in multiplatform defconfig (2014-12-21 16:53:36 +0900)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig2-for-v3.20
+> 
+> for you to fetch changes up to eb4513482d1c4882e3633528ccc48d77581b7bb1:
+> 
+>   ARM: shmobile: Enable kzm9g board in multiplatform defconfig (2015-01-14 09:51:08 +0900)
 
-Before people start backporting to -stable: it was introduced in v3.19-rc1.
+Merged, thanks.
 
-Gr{oetje,eeting}s,
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+-Olof
