@@ -1,44 +1,58 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 08 Jan 2015 00:17:31 +0000
-Subject: Re: [PATCH] ARM: shmobile: sh73a0 legacy: Set .control_parent for all irqpin instances
-Message-Id: <20150108001731.GE18943@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Wed, 21 Jan 2015 16:20:57 +0000
+Subject: [PATCH 06/11] ARM: shmobile: bockw: add devices hooked up to i2c0 to DT
+Message-Id: <1421857262-16607-7-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420551550-27512-1-git-send-email-geert+renesas@glider.be>
- <4452252.suqURC1IYD@avalon>
- <CAMuHMdWLdYY+xwK0_0Qv1DV0T=3H-dMDgON78a01OC+nj4ZGzA@mail.gmail.com>
-In-Reply-To: <CAMuHMdWLdYY+xwK0_0Qv1DV0T=3H-dMDgON78a01OC+nj4ZGzA@mail.gmail.com>
+References: <1370593329-27559-7-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370593329-27559-7-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Jan 07, 2015 at 09:14:19AM +0100, Geert Uytterhoeven wrote:
-> Hi Laurent,
-> 
-> On Tue, Jan 6, 2015 at 3:14 PM, Laurent Pinchart
-> <laurent.pinchart@ideasonboard.com> wrote:
-> > On Tuesday 06 January 2015 14:39:10 Geert Uytterhoeven wrote:
-> >> The sh73a0 INTC can't mask interrupts properly most likely due to a
-> >> hardware bug. Set the .control_parent flag to delegate masking to the
-> >> parent interrupt controller, like was already done for irqpin1.
-> >>
-> >> Without this, accessing the three-axis digital accelerometer ADXL345
-> >> on kzm9g through /dev/input/event1 causes an interrupt storm, which
-> >> requires a power-cycle to recover from.
-> >>
-> >> This was inspired by a patch for arch/arm/boot/dts/sh73a0.dtsi from
-> >> Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>.
-> >
-> > This looks correct to me, but shouldn't we concentrate on getting rid of
-> > legacy code instead ?
-> 
-> Sure.
-> 
-> But this is a serious bug, which allows to crash the kernel from user space.
-> Worse, a simple reset is not sufficient to recover. You need to power-cycle
-> the board.
+Cameras, RTC, and ak4643 sound codec.
 
-With that in mind I have queued this up as a fix for v3.19.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/boot/dts/r8a7778-bockw.dts | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
 
-For (my) reference, 341eb5465f67437a ("ARM: shmobile: INTC External IRQ pin
-driver on sh73a0"), which this patch fixes, was part of v3.9.
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 7347223..280a922 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -59,6 +59,31 @@
+ 	};
+ };
+ 
++&i2c0 {
++	status = "okay";
++
++	ak4643: sound-codec@12 {
++		compatible = "asahi-kasei,ak4643";
++		#sound-dai-cells = <0>;
++		reg = <0x12>;
++	};
++
++	camera@41 {
++		compatible = "oki,ml86v7667";
++		reg = <0x41>;
++	};
++
++	camera@43 {
++		compatible = "oki,ml86v7667";
++		reg = <0x43>;
++	};
++
++	rx8581: rtc@51 {
++		compatible = "epson,rx8581";
++		reg = <0x51>;
++	};
++};
++
+ &mmcif {
+ 	pinctrl-0 = <&mmc_pins>;
+ 	pinctrl-names = "default";
+-- 
+2.2.2
+
