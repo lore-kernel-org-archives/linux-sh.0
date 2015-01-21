@@ -1,7 +1,7 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 21 Jan 2015 04:27:37 +0000
-Subject: [PATCH 3/4 v2] ARM: shmobile: r8a7790: add SDHI DMA channels on DTSI
-Message-Id: <87y4own4en.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 21 Jan 2015 10:12:10 +0000
+Subject: Re: [PATCH 3/4 v2] ARM: shmobile: r8a7790: add SDHI DMA channels on DTSI
+Message-Id: <CAMuHMdX-DJqFJeEQPVUgc72fex1Zrt7ZCnFGS71xxv-0wXzS8Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87sj2wnqiv.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87sj2wnqiv.wl%kuninori.morimoto.gx@renesas.com>
@@ -10,57 +10,21 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Wed, Jan 21, 2015 at 5:27 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v1 -> v2
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
- - no change
+Gr{oetje,eeting}s,
 
- arch/arm/boot/dts/r8a7790.dtsi |    8 ++++++++
- 1 file changed, 8 insertions(+)
+                        Geert
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 0010600..56847bf 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -496,6 +496,8 @@
- 		reg = <0 0xee100000 0 0x328>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
-+		dmas = <&dmac1 0xcd>, <&dmac1 0xce>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -504,6 +506,8 @@
- 		reg = <0 0xee120000 0 0x328>;
- 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
-+		dmas = <&dmac1 0xc9>, <&dmac1 0xca>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -512,6 +516,8 @@
- 		reg = <0 0xee140000 0 0x100>;
- 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
-+		dmas = <&dmac1 0xc1>, <&dmac1 0xc2>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -520,6 +526,8 @@
- 		reg = <0 0xee160000 0 0x100>;
- 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI3>;
-+		dmas = <&dmac1 0xd3>, <&dmac1 0xd4>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
--- 
-1.7.9.5
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
