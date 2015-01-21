@@ -1,47 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 17 Jan 2015 00:58:42 +0000
-Subject: [PATCH 09/11] ARM: shmobile: r8a7740 dtsi: Add memory-controller node
-Message-Id: <f4c6d004eac803cf90452c94ec5f3210c2d44c01.1421380713.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 21 Jan 2015 04:55:09 +0000
+Subject: [PATCH 13/13] pinctrl: sh-pfc: sh7372: Remove DT binding documentation
+Message-Id: <20150121045509.7648.3018.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421380713.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421380713.git.horms+renesas@verge.net.au>
+References: <20150121045256.7648.7451.sendpatchset@little-apple>
+In-Reply-To: <20150121045256.7648.7451.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Add a device node for the DDR3 Bus State Controller (DBSC3).
-The DBSC3 is located in the A4S PM domain, which must not be powered
-down, else the system will crash.
+Remove the DT compatible string entry for the now unsupported sh7372 SoC.
 
-This has no visible effect for now, as A4S was never turned off anyway
-because its child PM domain A3SM contains the CPU core.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/boot/dts/r8a7740.dtsi | 6 ++++++
- 1 file changed, 6 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 52f2cf4..8a09260 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -37,6 +37,12 @@
- 		      <0xc2000000 0x1000>;
- 	};
+ Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt |    8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
+
+--- 0001/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
++++ work/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt	2015-01-21 12:12:15.357561911 +0900
+@@ -1,7 +1,7 @@
+ * Renesas Pin Function Controller (GPIO and Pin Mux/Config)
  
-+	dbsc3: memory-controller@fe400000 {
-+		compatible = "renesas,dbsc3-r8a7740";
-+		reg = <0xfe400000 0x400>;
-+		power-domains = <&pd_a4s>;
-+	};
-+
- 	pmu {
- 		compatible = "arm,cortex-a9-pmu";
- 		interrupts = <0 83 IRQ_TYPE_LEVEL_HIGH>;
--- 
-2.1.4
-
+-The Pin Function Controller (PFC) is a Pin Mux/Config controller. On SH7372,
+-SH73A0, R8A73A4 and R8A7740 it also acts as a GPIO controller.
++The Pin Function Controller (PFC) is a Pin Mux/Config controller. On SH73A0,
++R8A73A4 and R8A7740 it also acts as a GPIO controller.
+ 
+ 
+ Pin Control
+@@ -16,7 +16,6 @@ Required Properties:
+     - "renesas,pfc-r8a7779": for R8A7779 (R-Car H1) compatible pin-controller.
+     - "renesas,pfc-r8a7790": for R8A7790 (R-Car H2) compatible pin-controller.
+     - "renesas,pfc-r8a7791": for R8A7791 (R-Car M2) compatible pin-controller.
+-    - "renesas,pfc-sh7372": for SH7372 (SH-Mobile AP4) compatible pin-controller.
+     - "renesas,pfc-sh73a0": for SH73A0 (SH-Mobile AG5) compatible pin-controller.
+ 
+   - reg: Base address and length of each memory resource used by the pin
+@@ -75,8 +74,7 @@ bias-disable, bias-pull-up and bias-pull
+ GPIO
+ ----
+ 
+-On SH7372, SH73A0, R8A73A4 and R8A7740 the PFC node is also a GPIO controller
+-node.
++On SH73A0, R8A73A4 and R8A7740 the PFC node is also a GPIO controller node.
+ 
+ Required Properties:
+ 
