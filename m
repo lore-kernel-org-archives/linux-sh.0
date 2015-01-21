@@ -1,57 +1,48 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 15 Jan 2015 13:50:43 +0000
-Subject: [PATCH v2 1/2] ARM: shmobile: r8a73a4: Correct mask for GIC PPI interrupts
-Message-Id: <1421329844-19707-2-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 21 Jan 2015 04:14:56 +0000
+Subject: [PATCH 4/8 v3] mtd: sh_flctl: remove slave_id settings for DMAEngine
+Message-Id: <87a91cojk7.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421329844-19707-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1421329844-19707-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-R-Mobile APE6 (r8a73a4) contains four Cortex-A15 and four Cortex-A7
-cores, hence the second interrupt specifier cell for Private Peripheral
-Interrupts should use "GIC_CPU_MASK_SIMPLE(8)", so GIC interrupts are
-delivered to all 8 processor cores.
+From: Arnd Bergmann <arnd@arndb.de>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Current sh_flctl sets dma_slave_config :: slave_id field for DMAEngine,
+but it is no longer needed. Let's remove it.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Untested
+v2 -> v3
 
-v2:
-  - Drop RFC status after receiving confirmation from Liviu Dudau.
----
- arch/arm/boot/dts/r8a73a4.dtsi | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+ - no change
 
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index 38136d9f6d95a16e..424c189640812c91 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -32,10 +32,10 @@
+ drivers/mtd/nand/sh_flctl.c |    2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
+index a21c378..c3ce81c 100644
+--- a/drivers/mtd/nand/sh_flctl.c
++++ b/drivers/mtd/nand/sh_flctl.c
+@@ -159,7 +159,6 @@ static void flctl_setup_dma(struct sh_flctl *flctl)
+ 		return;
  
- 	timer {
- 		compatible = "arm,armv7-timer";
--		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
--			     <1 14 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
--			     <1 11 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
--			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
-+		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
-+			     <1 14 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
-+			     <1 11 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
-+			     <1 10 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>;
- 	};
+ 	memset(&cfg, 0, sizeof(cfg));
+-	cfg.slave_id = pdata->slave_id_fifo0_tx;
+ 	cfg.direction = DMA_MEM_TO_DEV;
+ 	cfg.dst_addr = (dma_addr_t)FLDTFIFO(flctl);
+ 	cfg.src_addr = 0;
+@@ -175,7 +174,6 @@ static void flctl_setup_dma(struct sh_flctl *flctl)
+ 	if (!flctl->chan_fifo0_rx)
+ 		goto err;
  
- 	dbsc1: memory-controller@e6790000 {
-@@ -375,6 +375,6 @@
- 			<0 0xf1002000 0 0x1000>,
- 			<0 0xf1004000 0 0x2000>,
- 			<0 0xf1006000 0 0x2000>;
--		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
-+		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_HIGH)>;
- 	};
- };
+-	cfg.slave_id = pdata->slave_id_fifo0_rx;
+ 	cfg.direction = DMA_DEV_TO_MEM;
+ 	cfg.dst_addr = 0;
+ 	cfg.src_addr = (dma_addr_t)FLDTFIFO(flctl);
 -- 
-1.9.1
+1.7.9.5
 
