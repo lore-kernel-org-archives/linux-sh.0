@@ -1,57 +1,49 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 15 Jan 2015 13:50:42 +0000
-Subject: [PATCH v2 0/2] ARM: shmobile: r8a73a4: Correct mask for GIC PPI interrupts
-Message-Id: <1421329844-19707-1-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 21 Jan 2015 04:26:49 +0000
+Subject: [PATCH 1/4 v2] ARM: shmobile: r8a7790: tidyup SDHI register size on DTSI
+Message-Id: <871tmooj0g.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-	Hi Simon, Magnus,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This patch series corrects the masks in the second interrupt cells for
-Private Peripheral Interrupts in dtsi files for members of the
-shmobile family of SoCs containing big.LITTLE configurations.
+r8a7790 SDHI ch0/ch1 has SD_DMACR which is located in 0x324.
+This patch updates register size
 
-This mask should reflect the actual number of CPU cores the interrupt
-is wired too.  Hence on big.LITTLE configurations with four Cortex-A15
-cores and four Cortex-A7 cores, like r8a7790 and r8a73a4, it should be
-"GIC_CPU_MASK_SIMPLE(8)", not "GIC_CPU_MASK_SIMPLE(4)".
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-Note that incorrect masks for GIC PPI interrupts are not limited to
-shmobile. Presumably the interrupt specifiers got copied around a lot,
-cfr. the proliferation of "GIC_CPU_MASK_SIMPLE(4)" (and the older
-hardcoded "0xf0x" variant) in various dtsi files, not always limited to
-quad-core CPUs.
+ - lacated -> located
 
-Changes compared to v1:
-  - Dropped patches for r8a7791 and r8a7794 that have been applied by
-    Simon,
-  - Dropped RFC status after receiving confirmation from Liviu Dudau.
+ arch/arm/boot/dts/r8a7790.dtsi |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-This was untested on real hardware.
-
-Thanks!
-
-Geert Uytterhoeven (2):
-  ARM: shmobile: r8a73a4: Correct mask for GIC PPI interrupts
-  ARM: shmobile: r8a7790: Correct mask for GIC PPI interrupts
-
- arch/arm/boot/dts/r8a73a4.dtsi | 10 +++++-----
- arch/arm/boot/dts/r8a7790.dtsi | 10 +++++-----
- 2 files changed, 10 insertions(+), 10 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 4b38fc9..0010600 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -493,7 +493,7 @@
+ 
+ 	sdhi0: sd@ee100000 {
+ 		compatible = "renesas,sdhi-r8a7790";
+-		reg = <0 0xee100000 0 0x200>;
++		reg = <0 0xee100000 0 0x328>;
+ 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
+ 		status = "disabled";
+@@ -501,7 +501,7 @@
+ 
+ 	sdhi1: sd@ee120000 {
+ 		compatible = "renesas,sdhi-r8a7790";
+-		reg = <0 0xee120000 0 0x200>;
++		reg = <0 0xee120000 0 0x328>;
+ 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
+ 		status = "disabled";
 -- 
-1.9.1
+1.7.9.5
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
