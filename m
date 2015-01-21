@@ -1,129 +1,79 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 13 Jan 2015 04:59:24 +0000
-Subject: [PATCH 12/17] mmc: sh_mobile_sdhi: remove .init/.cleanup
-Message-Id: <87d26juvfu.wl%kuninori.morimoto.gx@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 21 Jan 2015 22:19:48 +0000
+Subject: [PATCH 2/2] sh_eth: add more PM methods
+Message-Id: <2238953.qWhbSccAbj@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
+References: <5608250.lrFkJTjgSf@wasted.cogentembedded.com>
+In-Reply-To: <5608250.lrFkJTjgSf@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: Arnd Bergmann <arnd@arndb.de>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, mikhail.ulyanov@cogentembedded.com
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
 
-No one is using .init/.cleanup callback function.
-Let's remove these.
-sdhi_ops and .cd_wakeup are also removed
+Add sh_eth_{suspend|resume}() implementing {suspend|resume|freeze|thaw|poweroff|
+restore}() PM methods to make it possible to restore from hibernation not only
+in Linux  but also in e.g. U-Boot and  to have more determined state on resume/
+restore.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+[Sergei: moved sh_eth_{suspend|resume}() before sh_eth_runtime_nop(), enclosed
+them with #ifdef CONFIG_PM_SLEEP, reordered the local variables, got rid of
+*goto* and label, reordered macro invocations, renamed, modified the changelog.]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- drivers/mmc/host/sh_mobile_sdhi.c  |   26 +-------------------------
- include/linux/mmc/sh_mobile_sdhi.h |   15 ---------------
- 2 files changed, 1 insertion(+), 40 deletions(-)
+ drivers/net/ethernet/renesas/sh_eth.c |   31 +++++++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index c06e93b..48a3be8 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -156,15 +156,6 @@ static int sh_mobile_sdhi_multi_io_quirk(struct mmc_card *card,
- 	return blk_size;
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -2947,6 +2947,36 @@ static int sh_eth_drv_remove(struct plat
  }
  
--static void sh_mobile_sdhi_cd_wakeup(const struct platform_device *pdev)
--{
--	mmc_detect_change(platform_get_drvdata(pdev), msecs_to_jiffies(100));
--}
--
--static const struct sh_mobile_sdhi_ops sdhi_ops = {
--	.cd_wakeup = sh_mobile_sdhi_cd_wakeup,
--};
--
- static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ #ifdef CONFIG_PM
++#ifdef CONFIG_PM_SLEEP
++static int sh_eth_suspend(struct device *dev)
++{
++	struct net_device *ndev = dev_get_drvdata(dev);
++	int ret = 0;
++
++	if (netif_running(ndev)) {
++		netif_device_detach(ndev);
++		ret = sh_eth_close(ndev);
++	}
++
++	return ret;
++}
++
++static int sh_eth_resume(struct device *dev)
++{
++	struct net_device *ndev = dev_get_drvdata(dev);
++	int ret = 0;
++
++	if (netif_running(ndev)) {
++		ret = sh_eth_open(ndev);
++		if (ret < 0)
++			return ret;
++		netif_device_attach(ndev);
++	}
++
++	return ret;
++}
++#endif
++
+ static int sh_eth_runtime_nop(struct device *dev)
  {
- 	const struct of_device_id *of_id @@ -192,19 +183,11 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	mmc_data = &priv->mmc_data;
- 	dma_priv = &priv->dma_priv;
- 
--	if (p) {
--		if (p->init) {
--			ret = p->init(pdev, &sdhi_ops);
--			if (ret)
--				return ret;
--		}
--	}
--
- 	priv->clk = devm_clk_get(&pdev->dev, NULL);
- 	if (IS_ERR(priv->clk)) {
- 		ret = PTR_ERR(priv->clk);
- 		dev_err(&pdev->dev, "cannot get clock: %d\n", ret);
--		goto eclkget;
-+		goto eprobe;
- 	}
- 
- 	host = tmio_mmc_host_alloc(pdev);
-@@ -359,9 +342,6 @@ eirq:
- efree:
- 	tmio_mmc_host_free(host);
- eprobe:
--eclkget:
--	if (p && p->cleanup)
--		p->cleanup(pdev);
- 	return ret;
+ 	/* Runtime PM callback shared between ->runtime_suspend()
+@@ -2960,6 +2990,7 @@ static int sh_eth_runtime_nop(struct dev
  }
  
-@@ -369,13 +349,9 @@ static int sh_mobile_sdhi_remove(struct platform_device *pdev)
- {
- 	struct mmc_host *mmc = platform_get_drvdata(pdev);
- 	struct tmio_mmc_host *host = mmc_priv(mmc);
--	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
- 
- 	tmio_mmc_host_remove(host);
- 
--	if (p && p->cleanup)
--		p->cleanup(pdev);
--
- 	return 0;
- }
- 
-diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
-index 68927ae..da77e5e20 100644
---- a/include/linux/mmc/sh_mobile_sdhi.h
-+++ b/include/linux/mmc/sh_mobile_sdhi.h
-@@ -3,20 +3,10 @@
- 
- #include <linux/types.h>
- 
--struct platform_device;
--
- #define SH_MOBILE_SDHI_IRQ_CARD_DETECT	"card_detect"
- #define SH_MOBILE_SDHI_IRQ_SDCARD	"sdcard"
- #define SH_MOBILE_SDHI_IRQ_SDIO		"sdio"
- 
--/**
-- * struct sh_mobile_sdhi_ops - SDHI driver callbacks
-- * @cd_wakeup:		trigger a card-detection run
-- */
--struct sh_mobile_sdhi_ops {
--	void (*cd_wakeup)(const struct platform_device *pdev);
--};
--
- struct sh_mobile_sdhi_info {
- 	int dma_slave_tx;
- 	int dma_slave_rx;
-@@ -25,11 +15,6 @@ struct sh_mobile_sdhi_info {
- 	unsigned long tmio_caps2;
- 	u32 tmio_ocr_mask;	/* available MMC voltages */
- 	unsigned int cd_gpio;
--
--	/* callbacks for board specific setup code */
--	int (*init)(struct platform_device *pdev,
--		    const struct sh_mobile_sdhi_ops *ops);
--	void (*cleanup)(struct platform_device *pdev);
+ static const struct dev_pm_ops sh_eth_dev_pm_ops = {
++	SET_SYSTEM_SLEEP_PM_OPS(sh_eth_suspend, sh_eth_resume)
+ 	SET_RUNTIME_PM_OPS(sh_eth_runtime_nop, sh_eth_runtime_nop, NULL)
  };
- 
- #endif /* LINUX_MMC_SH_MOBILE_SDHI_H */
--- 
-1.7.9.5
+ #define SH_ETH_PM_OPS (&sh_eth_dev_pm_ops)
 
