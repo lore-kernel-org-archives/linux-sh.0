@@ -1,77 +1,76 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 06 Jan 2015 20:07:25 +0000
-Subject: Re: [PATCH 3/6] ARM: shmobile: kzm9g-reference dts: Add ak8975 magnetometer node
-Message-Id: <CAMuHMdV16nHGYqgjYBtdSWvPFRjuQnzoqiLeBJzKOWLtz-8sGA@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 22 Jan 2015 03:49:46 +0000
+Subject: [PATCH 9/9 v4] ASoC: fsi: Configure DMA slave settings
+Message-Id: <87r3unlbhp.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420573329-12762-4-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1420573329-12762-4-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Jan 6, 2015 at 8:59 PM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> On 01/06/2015 10:53 PM, Geert Uytterhoeven wrote:
->
->>>> Add a DT node for the AK8975 magnetometer sensor, which is connected to
->>>> i2c0.
->
->>>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Part 1 ends here.
+Current FSI driver is assuming that dst_addr/src_addr of DMAEngine
+will be set by platform data. But it should be set via
+dmaengine_slave_config(). Special thanks to Arnd
 
->>>> Specify the device interrupt to avoid polling for end of conversion.
->
->>>> While at it rename the DT node to compass@c to describe the device's
->>>> function instead of its model.
->
->>>> Signed-off-by: Laurent Pinchart
->>>> <laurent.pinchart+renesas@ideasonboard.com>
->>>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reported-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v3 -> v4
 
-Part 2 ends here.
+ - new patch
 
->>>     You signed off on the patch twice?
->
->> Yep. I don't know a better way to squash other people's updates into
->> an earlier commit.
->
->    Hmm... it's still not clear to me whose changes are where. Whose patch
-> that was originally?
+ sound/soc/sh/fsi.c |   15 ++++++++++++---
+ 1 file changed, 12 insertions(+), 3 deletions(-)
 
-See above.
+diff --git a/sound/soc/sh/fsi.c b/sound/soc/sh/fsi.c
+index dc28b03..bb20550 100644
+--- a/sound/soc/sh/fsi.c
++++ b/sound/soc/sh/fsi.c
+@@ -250,6 +250,7 @@ struct fsi_clk {
+ 
+ struct fsi_priv {
+ 	void __iomem *base;
++	phys_addr_t phys;
+ 	struct fsi_master *master;
+ 
+ 	struct fsi_stream playback;
+@@ -1374,9 +1375,15 @@ static int fsi_dma_probe(struct fsi_priv *fsi, struct fsi_stream *io, struct dev
+ 		struct dma_slave_config cfg = {};
+ 		int ret;
+ 
+-		cfg.dst_addr	= 0; /* use default addr */
+-		cfg.src_addr	= 0; /* use default addr */
+-		cfg.direction	= is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
++		if (is_play) {
++			cfg.dst_addr		= fsi->phys + REG_DODT;
++			cfg.dst_addr_width	= DMA_SLAVE_BUSWIDTH_4_BYTES;
++			cfg.direction		= DMA_MEM_TO_DEV;
++		} else {
++			cfg.src_addr		= fsi->phys + REG_DIDT;
++			cfg.src_addr_width	= DMA_SLAVE_BUSWIDTH_4_BYTES;
++			cfg.direction		= DMA_DEV_TO_MEM;
++		}
+ 
+ 		ret = dmaengine_slave_config(io->chan, &cfg);
+ 		if (ret < 0) {
+@@ -1940,6 +1947,7 @@ static int fsi_probe(struct platform_device *pdev)
+ 	/* FSI A setting */
+ 	fsi		= &master->fsia;
+ 	fsi->base	= master->base;
++	fsi->phys	= res->start;
+ 	fsi->master	= master;
+ 	fsi_port_info_init(fsi, &info.port_a);
+ 	fsi_handler_init(fsi, &info.port_a);
+@@ -1952,6 +1960,7 @@ static int fsi_probe(struct platform_device *pdev)
+ 	/* FSI B setting */
+ 	fsi		= &master->fsib;
+ 	fsi->base	= master->base + 0x40;
++	fsi->phys	= res->start + 0x40;
+ 	fsi->master	= master;
+ 	fsi_port_info_init(fsi, &info.port_b);
+ 	fsi_handler_init(fsi, &info.port_b);
+-- 
+1.7.9.5
 
-> diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
->>>> b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
->>>> index 02fc265332e8fb84..beabc3fd013b9ff0 100644
->>>> --- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
->>>> +++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
->>>> @@ -189,6 +189,13 @@
->>>>    &i2c0 {
->>>>          status = "okay";
->>>>
->>>> +       compass@c {
->>>> +               compatible = "asahi-kasei,ak8975";
->>>> +               reg = <0x0c>;
->
->>>     Just 0xc?
->
->> Yep. This is an i2c bus.
->
->    Yeah, I do understand. I was suggesting to remove '0' after 'x'.
-
-Oh, I missed what you meant.
-
-I2c addresses are 7 bit, so always using a full byte sounds natural to me.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
