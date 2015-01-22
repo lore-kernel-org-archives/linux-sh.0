@@ -1,42 +1,40 @@
-From: =?utf-8?B?U8O2cmVu?= Brinkmann <soren.brinkmann@xilinx.com>
-Date: Sun, 11 Jan 2015 23:01:47 +0000
-Subject: Re: [PATCH v4 0/7] pinctrl support for Zynq
-Message-Id: <8b127d21cad948daafffcc449cd92e4b@BL2FFO11FD014.protection.gbl>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 22 Jan 2015 03:48:48 +0000
+Subject: [PATCH 6/9 v4] spi: sh-msiof: remove slave_id settings for DMAEngine
+Message-Id: <87vbjzlbjb.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420818231-13451-1-git-send-email-soren.brinkmann@xilinx.com>
- <b987f31220ab424285e27200bb187158@BY2FFO11FD012.protection.gbl>
- <CACRpkdYLHOHhSYSJZcggmATnMRg_7Pq8-fF3c2MJW9E69DiqJg@mail.gmail.com>
-In-Reply-To: <CACRpkdYLHOHhSYSJZcggmATnMRg_7Pq8-fF3c2MJW9E69DiqJg@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-On Sun, 2015-01-11 at 10:41PM +0100, Linus Walleij wrote:
-> On Fri, Jan 9, 2015 at 5:53 PM, Sören Brinkmann
-> <soren.brinkmann@xilinx.com> wrote:
-> > On Fri, 2015-01-09 at 07:43AM -0800, Soren Brinkmann wrote:
-> >> Hi Linus,
-> >>
-> >> I rebased my branch onto your current pinctrl/devel. Other than that
-> >> this should be exactly what has been sent out as v3. This time I'll use
-> >> the gmail SMTP again, which hopefully resolves the encoding issue.
-> >
-> > The transfer-encoding is again 'quoted-printable'. So, seems it is not
-> > exchange to blame. I tried to git am a patch from this series and it
-> > seems to work fine. I.e. send-email and am apparently to the right
-> > thing.
-> 
-> Yeah it works like a charm :)
-> 
-> All patches that affect the pin control tree are applied now. It is
-> looking *beautiful* especially your device trees look exactly as I
-> want them to look for a group/function type pin controller driver.
+From: Arnd Bergmann <arnd@arndb.de>
 
-Thanks a lot! This is great.
+Current sh-msiof sets dma_slave_config :: slave_id field for DMAEngine,
+but it is no longer needed. Let's remove it.
 
-@Michal: Could you please pick up the patches that go through the armsoc
-tree (5 and 6 in this series)?
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v3 -> v4
 
-	Thanks,
-	Sören
+ - no change
+
+ drivers/spi/spi-sh-msiof.c |    1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index 9a884e6..fcf6984 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -1036,7 +1036,6 @@ static struct dma_chan *sh_msiof_request_dma_chan(struct device *dev,
+ 	}
+ 
+ 	memset(&cfg, 0, sizeof(cfg));
+-	cfg.slave_id = id;
+ 	cfg.direction = dir;
+ 	if (dir = DMA_MEM_TO_DEV) {
+ 		cfg.dst_addr = port_addr;
+-- 
+1.7.9.5
+
