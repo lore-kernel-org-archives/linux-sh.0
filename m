@@ -1,49 +1,145 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 Jan 2015 02:35:22 +0000
-Subject: [PATCH 10/17] ARM: shmobile: kzm9g-reference dts: Declare the full 512 MiB of RAM
-Message-Id: <95c3d4f0e02182f5719d5a13f612d54dc3d8ed15.1421371996.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 22 Jan 2015 09:34:13 +0000
+Subject: [PATCH v3/resend 4/4] drivers: bus: Add Simple Power-Managed Bus Driver
+Message-Id: <1421919253-4784-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421371996.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421371996.git.horms+renesas@verge.net.au>
+References: <1421919253-4784-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1421919253-4784-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Add a driver for transparent busses that don't need a real driver (think
+"simple-bus"), where the bus controller is part of a PM domain, or under
+the control of a functional clock.  Typically, the bus controller's
+PM domain and/or clock must be enabled for child devices connected to
+the bus (either on-SoC or externally) to function.
 
-Traditionally, the first 16 MiB of RAM was reserved for the RT
-processor.  However, this is incompatible with CONFIG_AUTO_ZRELADDR=y,
-which requires that the start address of physical memory is a multiple
-of 128 MiB.
+Hence the sole purpose of this driver is to enable its clock and PM
+domain (if exist(s)), which are specified in the DT and managed from
+platform and PM domain code.
 
-As CONFIG_AUTO_ZRELADDR=y is enabled for multi-platform kernels, declare
-RAM to start at 0x40000000.
+Due to the child-parent relationship with devices connected to the bus,
+PM domain and clock state transitions are handled in the correct order.
 
-While at it, reclaim the last 8 MiB of RAM, too, so the full 512 MiB is
-available. Note that kzm9g_defconfig still has
-CONFIG_MEMORY_START=0x41000000 and CONFIG_MEMORY_SIZE=0x1f000000, so
-before the advent of DT we scribbled over the last 8 MiB, too.
+Currently this driver handles the Renesas Bus State Controller (BSC,
+sometimes called "LBSC within Bus Bridge", or "External Bus Interface")
+found on several Renesas ARM SoCs. Support for other bus controllers can
+easily be added by adding more compatible values.
+
+Note that this driver cannot just bind against "simple-bus", as that
+may prevent a device-specific driver from taking precedence.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+v3:
+  - Add Tested-by,
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index 20aae5d..7ceaaa9 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -45,7 +45,7 @@
+v2:
+  - Rename from "Renesas Bus State Controller Driver" (renesas-bsc) to
+    "Simple Power-Managed Bus Driver" (simple-pm-bus),
+  - Change module license to GPL v2,
+  - Change email address to geert+renesas@glider.be.
+---
+ drivers/bus/Kconfig         | 13 ++++++++++++
+ drivers/bus/Makefile        |  1 +
+ drivers/bus/simple-pm-bus.c | 51 +++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 65 insertions(+)
+ create mode 100644 drivers/bus/simple-pm-bus.c
+
+diff --git a/drivers/bus/Kconfig b/drivers/bus/Kconfig
+index 626960819e6df16c..1addb707bf8100e3 100644
+--- a/drivers/bus/Kconfig
++++ b/drivers/bus/Kconfig
+@@ -58,6 +58,19 @@ config OMAP_OCP2SCP
+ 	  OCP2SCP and in OMAP5, both USB PHY and SATA PHY is connected via
+ 	  OCP2SCP.
  
- 	memory {
- 		device_type = "memory";
--		reg = <0x41000000 0x1e800000>;
-+		reg = <0x40000000 0x20000000>;
- 	};
++config SIMPLE_PM_BUS
++	bool "Simple Power-Managed Bus Driver"
++	depends on OF && PM
++	depends on ARCH_SHMOBILE || COMPILE_TEST
++	help
++	  Driver for transparent busses that don't need a real driver (think
++	  "simple-bus"), where the bus controller is part of a PM domain, or
++	  under the control of a functional clock, and thus relies on runtime
++	  PM for managing this PM domain and/or clock.
++	  An example of such a bus controller is the Renesas Bus State
++	  Controller (BSC, sometimes called "LBSC within Bus Bridge", or
++	  "External Bus Interface") as found on several Renesas ARM SoCs.
++
+ config VEXPRESS_CONFIG
+ 	bool "Versatile Express configuration bus"
+ 	default y if ARCH_VEXPRESS
+diff --git a/drivers/bus/Makefile b/drivers/bus/Makefile
+index 3cfaf2c7f25ac4f0..e023a2bec664d900 100644
+--- a/drivers/bus/Makefile
++++ b/drivers/bus/Makefile
+@@ -14,4 +14,5 @@ obj-$(CONFIG_MVEBU_MBUS) 	+= mvebu-mbus.o
+ obj-$(CONFIG_OMAP_INTERCONNECT)	+= omap_l3_smx.o omap_l3_noc.o
  
- 	reg_1p8v: regulator@0 {
+ obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
++obj-$(CONFIG_SIMPLE_PM_BUS)	+= simple-pm-bus.o
+ obj-$(CONFIG_VEXPRESS_CONFIG)	+= vexpress-config.o
+diff --git a/drivers/bus/simple-pm-bus.c b/drivers/bus/simple-pm-bus.c
+new file mode 100644
+index 0000000000000000..e55872d2695bd551
+--- /dev/null
++++ b/drivers/bus/simple-pm-bus.c
+@@ -0,0 +1,51 @@
++/*
++ * Simple Power-Managed Bus Driver
++ *
++ * Copyright (C) 2014 Glider bvba
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
++
++
++static int simple_pm_bus_probe(struct platform_device *pdev)
++{
++	dev_dbg(&pdev->dev, "%s\n", __func__);
++
++	pm_runtime_enable(&pdev->dev);
++	return 0;
++}
++
++static int simple_pm_bus_remove(struct platform_device *pdev)
++{
++	dev_dbg(&pdev->dev, "%s\n", __func__);
++
++	pm_runtime_disable(&pdev->dev);
++	return 0;
++}
++
++static const struct of_device_id simple_pm_bus_of_match[] = {
++	{ .compatible = "renesas,bsc", },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, simple_pm_bus_of_match);
++
++static struct platform_driver simple_pm_bus_driver = {
++	.probe = simple_pm_bus_probe,
++	.remove = simple_pm_bus_remove,
++	.driver = {
++		.name = "simple-pm-bus",
++		.of_match_table = simple_pm_bus_of_match,
++	},
++};
++
++module_platform_driver(simple_pm_bus_driver);
++
++MODULE_DESCRIPTION("Simple Power-Managed Bus Driver");
++MODULE_AUTHOR("Geert Uytterhoeven <geert+renesas@glider.be>");
++MODULE_LICENSE("GPL v2");
 -- 
-2.1.4
+1.9.1
 
