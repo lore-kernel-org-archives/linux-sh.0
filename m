@@ -1,40 +1,69 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 20 Jan 2015 04:17:46 +0000
-Subject: [PATCH 6/8 v2] spi: sh-msiof: remove slave_id settings for DMAEngine
-Message-Id: <87d26aaxur.wl%kuninori.morimoto.gx@renesas.com>
+Date: Thu, 22 Jan 2015 04:08:58 +0000
+Subject: [PATCH 1/4 v3] ARM: shmobile: r8a7790: Reference DMA channels in SDHI DT nodes
+Message-Id: <87oaprlalp.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Arnd Bergmann <arnd@arndb.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Current sh-msiof sets dma_slave_config :: slave_id field for DMAEngine,
-but it is no longer needed. Let's remove it.
+Add references to the transmit and receive DMA channels in the four
+SDHI nodes.
 
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v1 -> v2
+v2 -> v3
 
- - separate into shdma and others
+ - use Laurent's original patch
 
- drivers/spi/spi-sh-msiof.c |    1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/boot/dts/r8a7790.dtsi |    8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 239be7c..786ac9e 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -984,7 +984,6 @@ static struct dma_chan *sh_msiof_request_dma_chan(struct device *dev,
- 	}
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 4b38fc9..3c12f78 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -496,6 +496,8 @@
+ 		reg = <0 0xee100000 0 0x200>;
+ 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
++		dmas = <&dmac1 0xcd>, <&dmac1 0xce>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
  
- 	memset(&cfg, 0, sizeof(cfg));
--	cfg.slave_id = id;
- 	cfg.direction = dir;
- 	if (dir = DMA_MEM_TO_DEV) {
- 		cfg.dst_addr = port_addr;
+@@ -504,6 +506,8 @@
+ 		reg = <0 0xee120000 0 0x200>;
+ 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
++		dmas = <&dmac1 0xc9>, <&dmac1 0xca>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
+ 
+@@ -512,6 +516,8 @@
+ 		reg = <0 0xee140000 0 0x100>;
+ 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
++		dmas = <&dmac1 0xc1>, <&dmac1 0xc2>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
+ 
+@@ -520,6 +526,8 @@
+ 		reg = <0 0xee160000 0 0x100>;
+ 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_SDHI3>;
++		dmas = <&dmac1 0xd3>, <&dmac1 0xd4>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
+ 
 -- 
 1.7.9.5
 
