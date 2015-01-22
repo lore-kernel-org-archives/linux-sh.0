@@ -1,848 +1,154 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 21 Jan 2015 04:54:07 +0000
-Subject: [PATCH 07/13] ARM: shmobile: sh7372: Remove ZBOOT MMC/SDHI support
-Message-Id: <20150121045407.7648.88225.sendpatchset@little-apple>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 22 Jan 2015 08:34:57 +0000
+Subject: [PATCH 5/5] ARM: shmobile: r8a7791: sound enables Audio DMAC peri peri entry on DTSI
+Message-Id: <874mrjkyae.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150121045256.7648.7451.sendpatchset@little-apple>
-In-Reply-To: <20150121045256.7648.7451.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Remove the sh7372 implementation and the shared ZBOOT MMC
-and SDHI support code from the compressed ARM boot loader.
+This patch adds Audio DMAC PeriPeri (= rcar-audmapp) entry for sound
 
-With this in place it is no longer possible to boot any
-self-contained kernel for sh7372 directly from Mask ROM
-via SDHI and MMCIF hardware.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+ arch/arm/boot/dts/r8a7791.dtsi |  114 +++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 112 insertions(+), 2 deletions(-)
 
- arch/arm/Kconfig                                  |   29 -
- arch/arm/boot/compressed/Makefile                 |   15 
- arch/arm/boot/compressed/head-shmobile.S          |   30 -
- arch/arm/boot/compressed/mmcif-sh7372.c           |   88 ----
- arch/arm/boot/compressed/sdhi-sh7372.c            |   95 ----
- arch/arm/boot/compressed/sdhi-shmobile.c          |  449 ---------------------
- arch/arm/boot/compressed/sdhi-shmobile.h          |   11 
- arch/arm/mach-shmobile/include/mach/mmc.h         |   11 
- arch/arm/mach-shmobile/include/mach/sdhi-sh7372.h |   21 
- arch/arm/mach-shmobile/include/mach/sdhi.h        |   16 
- 10 files changed, 765 deletions(-)
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 8df2190..891af22 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1443,7 +1443,62 @@
+ 				<&audma0 0x91>,	<&audma1 0xb4>,
+ 				<&audma0 0x93>,	<&audma1 0xb6>,
+ 				<&audma0 0x95>,	<&audma1 0xb8>,
+-				<&audma0 0x97>,	<&audma1 0xba>;
++				<&audma0 0x97>,	<&audma1 0xba>,
++
++				<&audmapp 0x2d00>,	<&audmapp 0x2e00>,	<&audmapp 0x2f00>,	<&audmapp 0x3000>,	<&audmapp 0x3100>,
++				<&audmapp 0x2d04>,	<&audmapp 0x2e04>,	<&audmapp 0x2f04>,	<&audmapp 0x3004>,	<&audmapp 0x3104>,
++				<&audmapp 0x2d08>,	<&audmapp 0x2e08>,	<&audmapp 0x2f08>,	<&audmapp 0x3008>,	<&audmapp 0x3108>,
++				<&audmapp 0x2d0c>,	<&audmapp 0x2e0c>,	<&audmapp 0x2f0c>,	<&audmapp 0x300c>,	<&audmapp 0x310c>,
++				<&audmapp 0x2d0d>,	<&audmapp 0x2e0d>,	<&audmapp 0x2f0d>,	<&audmapp 0x300d>,	<&audmapp 0x310d>,
++				<&audmapp 0x2d0e>,	<&audmapp 0x2e0e>,	<&audmapp 0x2f0e>,	<&audmapp 0x300e>,	<&audmapp 0x310e>,
++				<&audmapp 0x2d0f>,	<&audmapp 0x2e0f>,	<&audmapp 0x2f0f>,	<&audmapp 0x300f>,	<&audmapp 0x310f>,
++				<&audmapp 0x2d10>,	<&audmapp 0x2e10>,	<&audmapp 0x2f10>,	<&audmapp 0x3010>,	<&audmapp 0x3110>,
++				<&audmapp 0x2d11>,	<&audmapp 0x2e11>,	<&audmapp 0x2f11>,	<&audmapp 0x3011>,	<&audmapp 0x3111>,
++				<&audmapp 0x2d12>,	<&audmapp 0x2e12>,	<&audmapp 0x2f12>,	<&audmapp 0x3012>,	<&audmapp 0x3112>,
++
++				<&audmapp 0x3200>,	<&audmapp 0x3300>,	<&audmapp 0x3400>,	<&audmapp 0x3500>,	<&audmapp 0x3600>,
++				<&audmapp 0x3204>,	<&audmapp 0x3304>,	<&audmapp 0x3404>,	<&audmapp 0x3504>,	<&audmapp 0x3604>,
++				<&audmapp 0x3208>,	<&audmapp 0x3308>,	<&audmapp 0x3408>,	<&audmapp 0x3508>,	<&audmapp 0x3608>,
++				<&audmapp 0x320c>,	<&audmapp 0x330c>,	<&audmapp 0x340c>,	<&audmapp 0x350c>,	<&audmapp 0x360c>,
++				<&audmapp 0x320d>,	<&audmapp 0x330d>,	<&audmapp 0x340d>,	<&audmapp 0x350d>,	<&audmapp 0x360d>,
++				<&audmapp 0x320e>,	<&audmapp 0x330e>,	<&audmapp 0x340e>,	<&audmapp 0x350e>,	<&audmapp 0x360e>,
++				<&audmapp 0x320f>,	<&audmapp 0x330f>,	<&audmapp 0x340f>,	<&audmapp 0x350f>,	<&audmapp 0x360f>,
++				<&audmapp 0x3210>,	<&audmapp 0x3310>,	<&audmapp 0x3410>,	<&audmapp 0x3510>,	<&audmapp 0x3610>,
++				<&audmapp 0x3211>,	<&audmapp 0x3311>,	<&audmapp 0x3411>,	<&audmapp 0x3511>,	<&audmapp 0x3611>,
++				<&audmapp 0x3212>,	<&audmapp 0x3312>,	<&audmapp 0x3412>,	<&audmapp 0x3512>,	<&audmapp 0x3612>,
++
++				<&audmapp 0x002d>,	<&audmapp 0x002e>,	<&audmapp 0x002f>,	<&audmapp 0x0030>,	<&audmapp 0x0031>,
++				<&audmapp 0x042d>,	<&audmapp 0x042e>,	<&audmapp 0x042f>,	<&audmapp 0x0430>,	<&audmapp 0x0431>,
++				<&audmapp 0x082d>,	<&audmapp 0x082e>,	<&audmapp 0x082f>,	<&audmapp 0x0830>,	<&audmapp 0x0831>,
++				<&audmapp 0x0c2d>,	<&audmapp 0x0c2e>,	<&audmapp 0x0c2f>,	<&audmapp 0x0c30>,	<&audmapp 0x0c31>,
++				<&audmapp 0x0d2d>,	<&audmapp 0x0d2e>,	<&audmapp 0x0d2f>,	<&audmapp 0x0d30>,	<&audmapp 0x0d31>,
++				<&audmapp 0x0e2d>,	<&audmapp 0x0e2e>,	<&audmapp 0x0e2f>,	<&audmapp 0x0e30>,	<&audmapp 0x0e31>,
++				<&audmapp 0x0f2d>,	<&audmapp 0x0f2e>,	<&audmapp 0x0f2f>,	<&audmapp 0x0f30>,	<&audmapp 0x0f31>,
++				<&audmapp 0x102d>,	<&audmapp 0x102e>,	<&audmapp 0x102f>,	<&audmapp 0x1030>,	<&audmapp 0x1031>,
++				<&audmapp 0x112d>,	<&audmapp 0x112e>,	<&audmapp 0x112f>,	<&audmapp 0x1130>,	<&audmapp 0x1131>,
++				<&audmapp 0x122d>,	<&audmapp 0x122e>,	<&audmapp 0x122f>,	<&audmapp 0x1230>,	<&audmapp 0x1231>,
++
++				<&audmapp 0x0032>,	<&audmapp 0x0033>,	<&audmapp 0x0034>,	<&audmapp 0x0035>,	<&audmapp 0x0036>,
++				<&audmapp 0x0432>,	<&audmapp 0x0433>,	<&audmapp 0x0434>,	<&audmapp 0x0435>,	<&audmapp 0x0436>,
++				<&audmapp 0x0832>,	<&audmapp 0x0833>,	<&audmapp 0x0834>,	<&audmapp 0x0835>,	<&audmapp 0x0836>,
++				<&audmapp 0x0c32>,	<&audmapp 0x0c33>,	<&audmapp 0x0c34>,	<&audmapp 0x0c35>,	<&audmapp 0x0c36>,
++				<&audmapp 0x0d32>,	<&audmapp 0x0d33>,	<&audmapp 0x0d34>,	<&audmapp 0x0d35>,	<&audmapp 0x0d36>,
++				<&audmapp 0x0e32>,	<&audmapp 0x0e33>,	<&audmapp 0x0e34>,	<&audmapp 0x0e35>,	<&audmapp 0x0e36>,
++				<&audmapp 0x0f32>,	<&audmapp 0x0f33>,	<&audmapp 0x0f34>,	<&audmapp 0x0f35>,	<&audmapp 0x0f36>,
++				<&audmapp 0x1032>,	<&audmapp 0x1033>,	<&audmapp 0x1034>,	<&audmapp 0x1035>,	<&audmapp 0x1036>,
++				<&audmapp 0x1132>,	<&audmapp 0x1133>,	<&audmapp 0x1134>,	<&audmapp 0x1135>,	<&audmapp 0x1136>,
++				<&audmapp 0x1232>,	<&audmapp 0x1233>,	<&audmapp 0x1234>,	<&audmapp 0x1235>,	<&audmapp 0x1236>,
++
++				<&audmapp 0x3700>,	<&audmapp 0x3800>,
++				<&audmapp 0x3704>,	<&audmapp 0x3804>,
++				<&audmapp 0x3708>,	<&audmapp 0x3808>,
++				<&audmapp 0x370c>,	<&audmapp 0x380c>,
++				<&audmapp 0x370d>,	<&audmapp 0x380d>,
++				<&audmapp 0x370e>,	<&audmapp 0x380e>,
++				<&audmapp 0x370f>,	<&audmapp 0x380f>,
++				<&audmapp 0x3710>,	<&audmapp 0x3810>,
++				<&audmapp 0x3711>,	<&audmapp 0x3811>,
++				<&audmapp 0x3712>,	<&audmapp 0x3812>;
+ 
+ 		dma-names =	"mem_ssi0",	"ssi0_mem",	"mem_ssiu0",	"ssiu0_mem",
+ 				"mem_ssi1",	"ssi1_mem",	"mem_ssiu1",	"ssiu1_mem",
+@@ -1465,7 +1520,62 @@
+ 				"mem_src6",	"src6_mem",
+ 				"mem_src7",	"src7_mem",
+ 				"mem_src8",	"src8_mem",
+-				"mem_src9",	"src9_mem";
++				"mem_src9",	"src9_mem",
++
++				"src0_ssiu0",		"src1_ssiu0",		"src2_ssiu0",		"src3_ssiu0",		"src4_ssiu0",
++				"src0_ssiu1",		"src1_ssiu1",		"src2_ssiu1",		"src3_ssiu1",		"src4_ssiu1",
++				"src0_ssiu2",		"src1_ssiu2",		"src2_ssiu2",		"src3_ssiu2",		"src4_ssiu2",
++				"src0_ssiu3",		"src1_ssiu3",		"src2_ssiu3",		"src3_ssiu3",		"src4_ssiu3",
++				"src0_ssiu4",		"src1_ssiu4",		"src2_ssiu4",		"src3_ssiu4",		"src4_ssiu4",
++				"src0_ssiu5",		"src1_ssiu5",		"src2_ssiu5",		"src3_ssiu5",		"src4_ssiu5",
++				"src0_ssiu6",		"src1_ssiu6",		"src2_ssiu6",		"src3_ssiu6",		"src4_ssiu6",
++				"src0_ssiu7",		"src1_ssiu7",		"src2_ssiu7",		"src3_ssiu7",		"src4_ssiu7",
++				"src0_ssiu8",		"src1_ssiu8",		"src2_ssiu8",		"src3_ssiu8",		"src4_ssiu8",
++				"src0_ssiu9",		"src1_ssiu9",		"src2_ssiu9",		"src3_ssiu9",		"src4_ssiu9",
++
++				"src5_ssiu0",		"src6_ssiu0",		"src7_ssiu0",		"src8_ssiu0",		"src9_ssiu0",
++				"src5_ssiu1",		"src6_ssiu1",		"src7_ssiu1",		"src8_ssiu1",		"src9_ssiu1",
++				"src5_ssiu2",		"src6_ssiu2",		"src7_ssiu2",		"src8_ssiu2",		"src9_ssiu2",
++				"src5_ssiu3",		"src6_ssiu3",		"src7_ssiu3",		"src8_ssiu3",		"src9_ssiu3",
++				"src5_ssiu4",		"src6_ssiu4",		"src7_ssiu4",		"src8_ssiu4",		"src9_ssiu4",
++				"src5_ssiu5",		"src6_ssiu5",		"src7_ssiu5",		"src8_ssiu5",		"src9_ssiu5",
++				"src5_ssiu6",		"src6_ssiu6",		"src7_ssiu6",		"src8_ssiu6",		"src9_ssiu6",
++				"src5_ssiu7",		"src6_ssiu7",		"src7_ssiu7",		"src8_ssiu7",		"src9_ssiu7",
++				"src5_ssiu8",		"src6_ssiu8",		"src7_ssiu8",		"src8_ssiu8",		"src9_ssiu8",
++				"src5_ssiu9",		"src6_ssiu9",		"src7_ssiu9",		"src8_ssiu9",		"src9_ssiu9",
++
++				"ssiu0_src0",		"ssiu0_src1",		"ssiu0_src2",		"ssiu0_src3",		"ssiu0_src4",
++				"ssiu1_src0",		"ssiu1_src1",		"ssiu1_src2",		"ssiu1_src3",		"ssiu1_src4",
++				"ssiu2_src0",		"ssiu2_src1",		"ssiu2_src2",		"ssiu2_src3",		"ssiu2_src4",
++				"ssiu3_src0",		"ssiu3_src1",		"ssiu3_src2",		"ssiu3_src3",		"ssiu3_src4",
++				"ssiu4_src0",		"ssiu4_src1",		"ssiu4_src2",		"ssiu4_src3",		"ssiu4_src4",
++				"ssiu5_src0",		"ssiu5_src1",		"ssiu5_src2",		"ssiu5_src3",		"ssiu5_src4",
++				"ssiu6_src0",		"ssiu6_src1",		"ssiu6_src2",		"ssiu6_src3",		"ssiu6_src4",
++				"ssiu7_src0",		"ssiu7_src1",		"ssiu7_src2",		"ssiu7_src3",		"ssiu7_src4",
++				"ssiu8_src0",		"ssiu8_src1",		"ssiu8_src2",		"ssiu8_src3",		"ssiu8_src4",
++				"ssiu9_src0",		"ssiu9_src1",		"ssiu9_src2",		"ssiu9_src3",		"ssiu9_src4",
++
++				"ssiu0_src5",		"ssiu0_src6",		"ssiu0_src7",		"ssiu0_src8",		"ssiu0_src9",
++				"ssiu1_src5",		"ssiu1_src6",		"ssiu1_src7",		"ssiu1_src8",		"ssiu1_src9",
++				"ssiu2_src5",		"ssiu2_src6",		"ssiu2_src7",		"ssiu2_src8",		"ssiu2_src9",
++				"ssiu3_src5",		"ssiu3_src6",		"ssiu3_src7",		"ssiu3_src8",		"ssiu3_src9",
++				"ssiu4_src5",		"ssiu4_src6",		"ssiu4_src7",		"ssiu4_src8",		"ssiu4_src9",
++				"ssiu5_src5",		"ssiu5_src6",		"ssiu5_src7",		"ssiu5_src8",		"ssiu5_src9",
++				"ssiu6_src5",		"ssiu6_src6",		"ssiu6_src7",		"ssiu6_src8",		"ssiu6_src9",
++				"ssiu7_src5",		"ssiu7_src6",		"ssiu7_src7",		"ssiu7_src8",		"ssiu7_src9",
++				"ssiu8_src5",		"ssiu8_src6",		"ssiu8_src7",		"ssiu8_src8",		"ssiu8_src9",
++				"ssiu9_src5",		"ssiu9_src6",		"ssiu9_src7",		"ssiu9_src8",		"ssiu9_src9",
++
++				"dvc0_ssiu0",		"dvc1_ssiu0",
++				"dvc0_ssiu1",		"dvc1_ssiu1",
++				"dvc0_ssiu2",		"dvc1_ssiu2",
++				"dvc0_ssiu3",		"dvc1_ssiu3",
++				"dvc0_ssiu4",		"dvc1_ssiu4",
++				"dvc0_ssiu5",		"dvc1_ssiu5",
++				"dvc0_ssiu6",		"dvc1_ssiu6",
++				"dvc0_ssiu7",		"dvc1_ssiu7",
++				"dvc0_ssiu8",		"dvc1_ssiu8",
++				"dvc0_ssiu9",		"dvc1_ssiu9";
+ 
+ 		status = "disabled";
+ 
+-- 
+1.7.9.5
 
---- 0001/arch/arm/Kconfig
-+++ work/arch/arm/Kconfig	2015-01-21 11:17:13.377573776 +0900
-@@ -1840,35 +1840,6 @@ config ZBOOT_ROM
- 	  Say Y here if you intend to execute your compressed kernel image
- 	  (zImage) directly from ROM or flash.  If unsure, say N.
- 
--choice
--	prompt "Include SD/MMC loader in zImage (EXPERIMENTAL)"
--	depends on ZBOOT_ROM && ARCH_SH7372
--	default ZBOOT_ROM_NONE
--	help
--	  Include experimental SD/MMC loading code in the ROM-able zImage.
--	  With this enabled it is possible to write the ROM-able zImage
--	  kernel image to an MMC or SD card and boot the kernel straight
--	  from the reset vector. At reset the processor Mask ROM will load
--	  the first part of the ROM-able zImage which in turn loads the
--	  rest the kernel image to RAM.
--
--config ZBOOT_ROM_NONE
--	bool "No SD/MMC loader in zImage (EXPERIMENTAL)"
--	help
--	  Do not load image from SD or MMC
--
--config ZBOOT_ROM_MMCIF
--	bool "Include MMCIF loader in zImage (EXPERIMENTAL)"
--	help
--	  Load image from MMCIF hardware block.
--
--config ZBOOT_ROM_SH_MOBILE_SDHI
--	bool "Include SuperH Mobile SDHI loader in zImage (EXPERIMENTAL)"
--	help
--	  Load image from SDHI hardware block
--
--endchoice
--
- config ARM_APPENDED_DTB
- 	bool "Use appended device tree blob to zImage (EXPERIMENTAL)"
- 	depends on OF
---- 0001/arch/arm/boot/compressed/Makefile
-+++ work/arch/arm/boot/compressed/Makefile	2015-01-21 11:17:45.637573661 +0900
-@@ -6,21 +6,6 @@
- 
- OBJS		 
--# Ensure that MMCIF loader code appears early in the image
--# to minimise that number of bocks that have to be read in
--# order to load it.
--ifeq ($(CONFIG_ZBOOT_ROM_MMCIF),y)
--OBJS		+= mmcif-sh7372.o
--endif
--
--# Ensure that SDHI loader code appears early in the image
--# to minimise that number of bocks that have to be read in
--# order to load it.
--ifeq ($(CONFIG_ZBOOT_ROM_SH_MOBILE_SDHI),y)
--OBJS		+= sdhi-shmobile.o
--OBJS		+= sdhi-sh7372.o
--endif
--
- AFLAGS_head.o += -DTEXT_OFFSET=$(TEXT_OFFSET)
- HEAD	= head.o
- OBJS	+= misc.o decompress.o
---- 0001/arch/arm/boot/compressed/head-shmobile.S
-+++ work/arch/arm/boot/compressed/head-shmobile.S	2015-01-21 11:17:36.307573694 +0900
-@@ -25,36 +25,6 @@
- 	/* load board-specific initialization code */
- #include <mach/zboot.h>
- 
--#if defined(CONFIG_ZBOOT_ROM_MMCIF) || defined(CONFIG_ZBOOT_ROM_SH_MOBILE_SDHI)
--	/* Load image from MMC/SD */
--	adr	sp, __tmp_stack + 256
--	ldr	r0, __image_start
--	ldr	r1, __image_end
--	subs	r1, r1, r0
--	ldr	r0, __load_base
--	bl	mmc_loader
--
--	/* Jump to loaded code */
--	ldr	r0, __loaded
--	ldr	r1, __image_start
--	sub	r0, r0, r1
--	ldr	r1, __load_base
--	add	pc, r0, r1
--
--__image_start:
--	.long	_start
--__image_end:
--	.long	_got_end
--__load_base:
--	.long	MEMORY_START + 0x02000000 @ Load at 32Mb into SDRAM
--__loaded:
--	.long	__continue
--	.align
--__tmp_stack:
--	.space	256
--__continue:
--#endif /* CONFIG_ZBOOT_ROM_MMC || CONFIG_ZBOOT_ROM_SH_MOBILE_SDHI */
--
- 	adr	r0, dtb_info
- 	ldmia	r0, {r1, r3, r4, r5, r7}
- 
---- 0001/arch/arm/boot/compressed/mmcif-sh7372.c
-+++ /dev/null	2015-01-13 15:44:39.280208949 +0900
-@@ -1,88 +0,0 @@
--/*
-- * sh7372 MMCIF loader
-- *
-- * Copyright (C) 2010 Magnus Damm
-- * Copyright (C) 2010 Simon Horman
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-- */
--
--#include <linux/mmc/sh_mmcif.h>
--#include <linux/mmc/boot.h>
--#include <mach/mmc.h>
--
--#define MMCIF_BASE      (void __iomem *)0xe6bd0000
--
--#define PORT84CR	(void __iomem *)0xe6050054
--#define PORT85CR	(void __iomem *)0xe6050055
--#define PORT86CR	(void __iomem *)0xe6050056
--#define PORT87CR	(void __iomem *)0xe6050057
--#define PORT88CR	(void __iomem *)0xe6050058
--#define PORT89CR	(void __iomem *)0xe6050059
--#define PORT90CR	(void __iomem *)0xe605005a
--#define PORT91CR	(void __iomem *)0xe605005b
--#define PORT92CR	(void __iomem *)0xe605005c
--#define PORT99CR	(void __iomem *)0xe6050063
--
--#define SMSTPCR3	(void __iomem *)0xe615013c
--
--/* SH7372 specific MMCIF loader
-- *
-- * loads the zImage from an MMC card starting from block 1.
-- *
-- * The image must be start with a vrl4 header and
-- * the zImage must start at offset 512 of the image. That is,
-- * at block 2 (=byte 1024) on the media
-- *
-- * Use the following line to write the vrl4 formated zImage
-- * to an MMC card
-- * # dd if=vrl4.out of=/dev/sdx bsQ2 seek=1
-- */
--asmlinkage void mmc_loader(unsigned char *buf, unsigned long len)
--{
--	mmc_init_progress();
--	mmc_update_progress(MMC_PROGRESS_ENTER);
--
--	/* Initialise MMC
--	 * registers: PORT84CR-PORT92CR
--	 *            (MMCD0_0-MMCD0_7,MMCCMD0 Control)
--	 * value: 0x04 - select function 4
--	 */
--	 __raw_writeb(0x04, PORT84CR);
--	 __raw_writeb(0x04, PORT85CR);
--	 __raw_writeb(0x04, PORT86CR);
--	 __raw_writeb(0x04, PORT87CR);
--	 __raw_writeb(0x04, PORT88CR);
--	 __raw_writeb(0x04, PORT89CR);
--	 __raw_writeb(0x04, PORT90CR);
--	 __raw_writeb(0x04, PORT91CR);
--	 __raw_writeb(0x04, PORT92CR);
--
--	/* Initialise MMC
--	 * registers: PORT99CR (MMCCLK0 Control)
--	 * value: 0x10 | 0x04 - enable output | select function 4
--	 */
--	__raw_writeb(0x14, PORT99CR);
--
--	/* Enable clock to MMC hardware block */
--	__raw_writel(__raw_readl(SMSTPCR3) & ~(1 << 12), SMSTPCR3);
--
--	mmc_update_progress(MMC_PROGRESS_INIT);
--
--	/* setup MMCIF hardware */
--	sh_mmcif_boot_init(MMCIF_BASE);
--
--	mmc_update_progress(MMC_PROGRESS_LOAD);
--
--	/* load kernel via MMCIF interface */
--	sh_mmcif_boot_do_read(MMCIF_BASE, 2, /* Kernel is at block 2 */
--			      (len + SH_MMCIF_BBS - 1) / SH_MMCIF_BBS, buf);
--
--
--	/* Disable clock to MMC hardware block */
--	__raw_writel(__raw_readl(SMSTPCR3) | (1 << 12), SMSTPCR3);
--
--	mmc_update_progress(MMC_PROGRESS_DONE);
--}
---- 0001/arch/arm/boot/compressed/sdhi-sh7372.c
-+++ /dev/null	2015-01-13 15:44:39.280208949 +0900
-@@ -1,95 +0,0 @@
--/*
-- * SuperH Mobile SDHI
-- *
-- * Copyright (C) 2010 Magnus Damm
-- * Copyright (C) 2010 Kuninori Morimoto
-- * Copyright (C) 2010 Simon Horman
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-- *
-- * Parts inspired by u-boot
-- */
--
--#include <linux/io.h>
--#include <mach/mmc.h>
--#include <linux/mmc/boot.h>
--#include <linux/mmc/tmio.h>
--
--#include "sdhi-shmobile.h"
--
--#define PORT179CR       0xe60520b3
--#define PORT180CR       0xe60520b4
--#define PORT181CR       0xe60520b5
--#define PORT182CR       0xe60520b6
--#define PORT183CR       0xe60520b7
--#define PORT184CR       0xe60520b8
--
--#define SMSTPCR3        0xe615013c
--
--#define CR_INPUT_ENABLE 0x10
--#define CR_FUNCTION1    0x01
--
--#define SDHI1_BASE	(void __iomem *)0xe6860000
--#define SDHI_BASE	SDHI1_BASE
--
--/*  SuperH Mobile SDHI loader
-- *
-- * loads the zImage from an SD card starting from block 0
-- * on physical partition 1
-- *
-- * The image must be start with a vrl4 header and
-- * the zImage must start at offset 512 of the image. That is,
-- * at block 1 (=byte 512) of physical partition 1
-- *
-- * Use the following line to write the vrl4 formated zImage
-- * to an SD card
-- * # dd if=vrl4.out of=/dev/sdx bsQ2
-- */
--asmlinkage void mmc_loader(unsigned short *buf, unsigned long len)
--{
--	int high_capacity;
--
--	mmc_init_progress();
--
--	mmc_update_progress(MMC_PROGRESS_ENTER);
--        /* Initialise SDHI1 */
--        /* PORT184CR: GPIO_FN_SDHICMD1 Control */
--        __raw_writeb(CR_FUNCTION1, PORT184CR);
--        /* PORT179CR: GPIO_FN_SDHICLK1 Control */
--        __raw_writeb(CR_INPUT_ENABLE|CR_FUNCTION1, PORT179CR);
--        /* PORT181CR: GPIO_FN_SDHID1_3 Control */
--        __raw_writeb(CR_FUNCTION1, PORT183CR);
--        /* PORT182CR: GPIO_FN_SDHID1_2 Control */
--        __raw_writeb(CR_FUNCTION1, PORT182CR);
--        /* PORT183CR: GPIO_FN_SDHID1_1 Control */
--        __raw_writeb(CR_FUNCTION1, PORT181CR);
--        /* PORT180CR: GPIO_FN_SDHID1_0 Control */
--        __raw_writeb(CR_FUNCTION1, PORT180CR);
--
--        /* Enable clock to SDHI1 hardware block */
--        __raw_writel(__raw_readl(SMSTPCR3) & ~(1 << 13), SMSTPCR3);
--
--	/* setup SDHI hardware */
--	mmc_update_progress(MMC_PROGRESS_INIT);
--	high_capacity = sdhi_boot_init(SDHI_BASE);
--	if (high_capacity < 0)
--		goto err;
--
--	mmc_update_progress(MMC_PROGRESS_LOAD);
--	/* load kernel */
--	if (sdhi_boot_do_read(SDHI_BASE, high_capacity,
--			      0, /* Kernel is at block 1 */
--			      (len + TMIO_BBS - 1) / TMIO_BBS, buf))
--		goto err;
--
--        /* Disable clock to SDHI1 hardware block */
--        __raw_writel(__raw_readl(SMSTPCR3) | (1 << 13), SMSTPCR3);
--
--	mmc_update_progress(MMC_PROGRESS_DONE);
--
--	return;
--err:
--	for(;;);
--}
---- 0001/arch/arm/boot/compressed/sdhi-shmobile.c
-+++ /dev/null	2015-01-13 15:44:39.280208949 +0900
-@@ -1,449 +0,0 @@
--/*
-- * SuperH Mobile SDHI
-- *
-- * Copyright (C) 2010 Magnus Damm
-- * Copyright (C) 2010 Kuninori Morimoto
-- * Copyright (C) 2010 Simon Horman
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-- *
-- * Parts inspired by u-boot
-- */
--
--#include <linux/io.h>
--#include <linux/mmc/host.h>
--#include <linux/mmc/core.h>
--#include <linux/mmc/mmc.h>
--#include <linux/mmc/sd.h>
--#include <linux/mmc/tmio.h>
--#include <mach/sdhi.h>
--
--#define OCR_FASTBOOT		(1<<29)
--#define OCR_HCS			(1<<30)
--#define OCR_BUSY		(1<<31)
--
--#define RESP_CMD12		0x00000030
--
--static inline u16 sd_ctrl_read16(void __iomem *base, int addr)
--{
--        return __raw_readw(base + addr);
--}
--
--static inline u32 sd_ctrl_read32(void __iomem *base, int addr)
--{
--	return __raw_readw(base + addr) |
--	       __raw_readw(base + addr + 2) << 16;
--}
--
--static inline void sd_ctrl_write16(void __iomem *base, int addr, u16 val)
--{
--	__raw_writew(val, base + addr);
--}
--
--static inline void sd_ctrl_write32(void __iomem *base, int addr, u32 val)
--{
--	__raw_writew(val, base + addr);
--	__raw_writew(val >> 16, base + addr + 2);
--}
--
--#define ALL_ERROR (TMIO_STAT_CMD_IDX_ERR | TMIO_STAT_CRCFAIL |		\
--		   TMIO_STAT_STOPBIT_ERR | TMIO_STAT_DATATIMEOUT |	\
--		   TMIO_STAT_RXOVERFLOW | TMIO_STAT_TXUNDERRUN |	\
--		   TMIO_STAT_CMDTIMEOUT | TMIO_STAT_ILL_ACCESS |	\
--		   TMIO_STAT_ILL_FUNC)
--
--static int sdhi_intr(void __iomem *base)
--{
--	unsigned long state = sd_ctrl_read32(base, CTL_STATUS);
--
--	if (state & ALL_ERROR) {
--		sd_ctrl_write32(base, CTL_STATUS, ~ALL_ERROR);
--		sd_ctrl_write32(base, CTL_IRQ_MASK,
--				ALL_ERROR |
--				sd_ctrl_read32(base, CTL_IRQ_MASK));
--		return -EINVAL;
--	}
--	if (state & TMIO_STAT_CMDRESPEND) {
--		sd_ctrl_write32(base, CTL_STATUS, ~TMIO_STAT_CMDRESPEND);
--		sd_ctrl_write32(base, CTL_IRQ_MASK,
--				TMIO_STAT_CMDRESPEND |
--				sd_ctrl_read32(base, CTL_IRQ_MASK));
--		return 0;
--	}
--	if (state & TMIO_STAT_RXRDY) {
--		sd_ctrl_write32(base, CTL_STATUS, ~TMIO_STAT_RXRDY);
--		sd_ctrl_write32(base, CTL_IRQ_MASK,
--				TMIO_STAT_RXRDY | TMIO_STAT_TXUNDERRUN |
--				sd_ctrl_read32(base, CTL_IRQ_MASK));
--		return 0;
--	}
--	if (state & TMIO_STAT_DATAEND) {
--		sd_ctrl_write32(base, CTL_STATUS, ~TMIO_STAT_DATAEND);
--		sd_ctrl_write32(base, CTL_IRQ_MASK,
--				TMIO_STAT_DATAEND |
--				sd_ctrl_read32(base, CTL_IRQ_MASK));
--		return 0;
--	}
--
--	return -EAGAIN;
--}
--
--static int sdhi_boot_wait_resp_end(void __iomem *base)
--{
--	int err = -EAGAIN, timeout = 10000000;
--
--	while (timeout--) {
--		err = sdhi_intr(base);
--		if (err != -EAGAIN)
--			break;
--		udelay(1);
--	}
--
--	return err;
--}
--
--/* SDHI_CLK_CTRL */
--#define CLK_MMC_ENABLE                 (1 << 8)
--#define CLK_MMC_INIT                   (1 << 6)        /* clk / 256 */
--
--static void sdhi_boot_mmc_clk_stop(void __iomem *base)
--{
--	sd_ctrl_write16(base, CTL_CLK_AND_WAIT_CTL, 0x0000);
--	msleep(10);
--	sd_ctrl_write16(base, CTL_SD_CARD_CLK_CTL, ~CLK_MMC_ENABLE &
--		sd_ctrl_read16(base, CTL_SD_CARD_CLK_CTL));
--	msleep(10);
--}
--
--static void sdhi_boot_mmc_clk_start(void __iomem *base)
--{
--	sd_ctrl_write16(base, CTL_SD_CARD_CLK_CTL, CLK_MMC_ENABLE |
--		sd_ctrl_read16(base, CTL_SD_CARD_CLK_CTL));
--	msleep(10);
--	sd_ctrl_write16(base, CTL_CLK_AND_WAIT_CTL, CLK_MMC_ENABLE);
--	msleep(10);
--}
--
--static void sdhi_boot_reset(void __iomem *base)
--{
--	sd_ctrl_write16(base, CTL_RESET_SD, 0x0000);
--	msleep(10);
--	sd_ctrl_write16(base, CTL_RESET_SD, 0x0001);
--	msleep(10);
--}
--
--/* Set MMC clock / power.
-- * Note: This controller uses a simple divider scheme therefore it cannot
-- * run a MMC card at full speed (20MHz). The max clock is 24MHz on SD, but as
-- * MMC wont run that fast, it has to be clocked at 12MHz which is the next
-- * slowest setting.
-- */
--static int sdhi_boot_mmc_set_ios(void __iomem *base, struct mmc_ios *ios)
--{
--	if (sd_ctrl_read32(base, CTL_STATUS) & TMIO_STAT_CMD_BUSY)
--		return -EBUSY;
--
--	if (ios->clock)
--		sd_ctrl_write16(base, CTL_SD_CARD_CLK_CTL,
--				ios->clock | CLK_MMC_ENABLE);
--
--	/* Power sequence - OFF -> ON -> UP */
--	switch (ios->power_mode) {
--	case MMC_POWER_OFF: /* power down SD bus */
--		sdhi_boot_mmc_clk_stop(base);
--		break;
--	case MMC_POWER_ON: /* power up SD bus */
--		break;
--	case MMC_POWER_UP: /* start bus clock */
--		sdhi_boot_mmc_clk_start(base);
--		break;
--	}
--
--	switch (ios->bus_width) {
--	case MMC_BUS_WIDTH_1:
--		sd_ctrl_write16(base, CTL_SD_MEM_CARD_OPT, 0x80e0);
--	break;
--	case MMC_BUS_WIDTH_4:
--		sd_ctrl_write16(base, CTL_SD_MEM_CARD_OPT, 0x00e0);
--	break;
--	}
--
--	/* Let things settle. delay taken from winCE driver */
--	udelay(140);
--
--	return 0;
--}
--
--/* These are the bitmasks the tmio chip requires to implement the MMC response
-- * types. Note that R1 and R6 are the same in this scheme. */
--#define RESP_NONE      0x0300
--#define RESP_R1        0x0400
--#define RESP_R1B       0x0500
--#define RESP_R2        0x0600
--#define RESP_R3        0x0700
--#define DATA_PRESENT   0x0800
--#define TRANSFER_READ  0x1000
--
--static int sdhi_boot_request(void __iomem *base, struct mmc_command *cmd)
--{
--	int err, c = cmd->opcode;
--
--	switch (mmc_resp_type(cmd)) {
--	case MMC_RSP_NONE: c |= RESP_NONE; break;
--	case MMC_RSP_R1:   c |= RESP_R1;   break;
--	case MMC_RSP_R1B:  c |= RESP_R1B;  break;
--	case MMC_RSP_R2:   c |= RESP_R2;   break;
--	case MMC_RSP_R3:   c |= RESP_R3;   break;
--	default:
--		return -EINVAL;
--	}
--
--	/* No interrupts so this may not be cleared */
--	sd_ctrl_write32(base, CTL_STATUS, ~TMIO_STAT_CMDRESPEND);
--
--	sd_ctrl_write32(base, CTL_IRQ_MASK, TMIO_STAT_CMDRESPEND |
--			sd_ctrl_read32(base, CTL_IRQ_MASK));
--	sd_ctrl_write32(base, CTL_ARG_REG, cmd->arg);
--	sd_ctrl_write16(base, CTL_SD_CMD, c);
--
--
--	sd_ctrl_write32(base, CTL_IRQ_MASK,
--			~(TMIO_STAT_CMDRESPEND | ALL_ERROR) &
--			sd_ctrl_read32(base, CTL_IRQ_MASK));
--
--	err = sdhi_boot_wait_resp_end(base);
--	if (err)
--		return err;
--
--	cmd->resp[0] = sd_ctrl_read32(base, CTL_RESPONSE);
--
--	return 0;
--}
--
--static int sdhi_boot_do_read_single(void __iomem *base, int high_capacity,
--				    unsigned long block, unsigned short *buf)
--{
--	int err, i;
--
--	/* CMD17 - Read */
--	{
--		struct mmc_command cmd;
--
--		cmd.opcode = MMC_READ_SINGLE_BLOCK | \
--			     TRANSFER_READ | DATA_PRESENT;
--		if (high_capacity)
--			cmd.arg = block;
--		else
--			cmd.arg = block * TMIO_BBS;
--		cmd.flags = MMC_RSP_R1;
--		err = sdhi_boot_request(base, &cmd);
--		if (err)
--			return err;
--	}
--
--	sd_ctrl_write32(base, CTL_IRQ_MASK,
--			~(TMIO_STAT_DATAEND | TMIO_STAT_RXRDY |
--			  TMIO_STAT_TXUNDERRUN) &
--			sd_ctrl_read32(base, CTL_IRQ_MASK));
--	err = sdhi_boot_wait_resp_end(base);
--	if (err)
--		return err;
--
--	sd_ctrl_write16(base, CTL_SD_XFER_LEN, TMIO_BBS);
--	for (i = 0; i < TMIO_BBS / sizeof(*buf); i++)
--		*buf++ = sd_ctrl_read16(base, RESP_CMD12);
--
--	err = sdhi_boot_wait_resp_end(base);
--	if (err)
--		return err;
--
--	return 0;
--}
--
--int sdhi_boot_do_read(void __iomem *base, int high_capacity,
--		      unsigned long offset, unsigned short count,
--		      unsigned short *buf)
--{
--	unsigned long i;
--	int err = 0;
--
--	for (i = 0; i < count; i++) {
--		err = sdhi_boot_do_read_single(base, high_capacity, offset + i,
--					       buf + (i * TMIO_BBS /
--						      sizeof(*buf)));
--		if (err)
--			return err;
--	}
--
--	return 0;
--}
--
--#define VOLTAGES (MMC_VDD_32_33 | MMC_VDD_33_34)
--
--int sdhi_boot_init(void __iomem *base)
--{
--	bool sd_v2 = false, sd_v1_0 = false;
--	unsigned short cid;
--	int err, high_capacity = 0;
--
--	sdhi_boot_mmc_clk_stop(base);
--	sdhi_boot_reset(base);
--
--	/* mmc0: clock 400000Hz busmode 1 powermode 2 cs 0 Vdd 21 width 0 timing 0 */
--	{
--		struct mmc_ios ios;
--		ios.power_mode = MMC_POWER_ON;
--		ios.bus_width = MMC_BUS_WIDTH_1;
--		ios.clock = CLK_MMC_INIT;
--		err = sdhi_boot_mmc_set_ios(base, &ios);
--		if (err)
--			return err;
--	}
--
--	/* CMD0 */
--	{
--		struct mmc_command cmd;
--		msleep(1);
--		cmd.opcode = MMC_GO_IDLE_STATE;
--		cmd.arg = 0;
--		cmd.flags = MMC_RSP_NONE;
--		err = sdhi_boot_request(base, &cmd);
--		if (err)
--			return err;
--		msleep(2);
--	}
--
--	/* CMD8 - Test for SD version 2 */
--	{
--		struct mmc_command cmd;
--		cmd.opcode = SD_SEND_IF_COND;
--		cmd.arg = (VOLTAGES != 0) << 8 | 0xaa;
--		cmd.flags = MMC_RSP_R1;
--		err = sdhi_boot_request(base, &cmd); /* Ignore error */
--		if ((cmd.resp[0] & 0xff) = 0xaa)
--			sd_v2 = true;
--	}
--
--	/* CMD55 - Get OCR (SD) */
--	{
--		int timeout = 1000;
--		struct mmc_command cmd;
--
--		cmd.arg = 0;
--
--		do {
--			cmd.opcode = MMC_APP_CMD;
--			cmd.flags = MMC_RSP_R1;
--			cmd.arg = 0;
--			err = sdhi_boot_request(base, &cmd);
--			if (err)
--				break;
--
--			cmd.opcode = SD_APP_OP_COND;
--			cmd.flags = MMC_RSP_R3;
--			cmd.arg = (VOLTAGES & 0xff8000);
--			if (sd_v2)
--				cmd.arg |= OCR_HCS;
--			cmd.arg |= OCR_FASTBOOT;
--			err = sdhi_boot_request(base, &cmd);
--			if (err)
--				break;
--
--			msleep(1);
--		} while((!(cmd.resp[0] & OCR_BUSY)) && --timeout);
--
--		if (!err && timeout) {
--			if (!sd_v2)
--				sd_v1_0 = true;
--			high_capacity = (cmd.resp[0] & OCR_HCS) = OCR_HCS;
--		}
--	}
--
--	/* CMD1 - Get OCR (MMC) */
--	if (!sd_v2 && !sd_v1_0) {
--		int timeout = 1000;
--		struct mmc_command cmd;
--
--		do {
--			cmd.opcode = MMC_SEND_OP_COND;
--			cmd.arg = VOLTAGES | OCR_HCS;
--			cmd.flags = MMC_RSP_R3;
--			err = sdhi_boot_request(base, &cmd);
--			if (err)
--				return err;
--
--			msleep(1);
--		} while((!(cmd.resp[0] & OCR_BUSY)) && --timeout);
--
--		if (!timeout)
--			return -EAGAIN;
--
--		high_capacity = (cmd.resp[0] & OCR_HCS) = OCR_HCS;
--	}
--
--	/* CMD2 - Get CID */
--	{
--		struct mmc_command cmd;
--		cmd.opcode = MMC_ALL_SEND_CID;
--		cmd.arg = 0;
--		cmd.flags = MMC_RSP_R2;
--		err = sdhi_boot_request(base, &cmd);
--		if (err)
--			return err;
--	}
--
--	/* CMD3
--	 * MMC: Set the relative address
--	 * SD:  Get the relative address
--	 * Also puts the card into the standby state
--	 */
--	{
--		struct mmc_command cmd;
--		cmd.opcode = MMC_SET_RELATIVE_ADDR;
--		cmd.arg = 0;
--		cmd.flags = MMC_RSP_R1;
--		err = sdhi_boot_request(base, &cmd);
--		if (err)
--			return err;
--		cid = cmd.resp[0] >> 16;
--	}
--
--	/* CMD9 - Get CSD */
--	{
--		struct mmc_command cmd;
--		cmd.opcode = MMC_SEND_CSD;
--		cmd.arg = cid << 16;
--		cmd.flags = MMC_RSP_R2;
--		err = sdhi_boot_request(base, &cmd);
--		if (err)
--			return err;
--	}
--
--	/* CMD7 - Select the card */
--	{
--		struct mmc_command cmd;
--		cmd.opcode = MMC_SELECT_CARD;
--		//cmd.arg = rca << 16;
--		cmd.arg = cid << 16;
--		//cmd.flags = MMC_RSP_R1B;
--		cmd.flags = MMC_RSP_R1;
--		err = sdhi_boot_request(base, &cmd);
--		if (err)
--			return err;
--	}
--
--	/* CMD16 - Set the block size */
--	{
--		struct mmc_command cmd;
--		cmd.opcode = MMC_SET_BLOCKLEN;
--		cmd.arg = TMIO_BBS;
--		cmd.flags = MMC_RSP_R1;
--		err = sdhi_boot_request(base, &cmd);
--		if (err)
--			return err;
--	}
--
--	return high_capacity;
--}
---- 0001/arch/arm/boot/compressed/sdhi-shmobile.h
-+++ /dev/null	2015-01-13 15:44:39.280208949 +0900
-@@ -1,11 +0,0 @@
--#ifndef SDHI_MOBILE_H
--#define SDHI_MOBILE_H
--
--#include <linux/compiler.h>
--
--int sdhi_boot_do_read(void __iomem *base, int high_capacity,
--		      unsigned long offset, unsigned short count,
--		      unsigned short *buf);
--int sdhi_boot_init(void __iomem *base);
--
--#endif
---- 0002/arch/arm/mach-shmobile/include/mach/mmc.h
-+++ /dev/null	2015-01-13 15:44:39.280208949 +0900
-@@ -1,11 +0,0 @@
--#ifndef MMC_H
--#define MMC_H
--
--/**************************************************
-- *
-- *		board specific settings
-- *
-- **************************************************/
--
--#error "unsupported board."
--#endif /* MMC_H */
---- 0001/arch/arm/mach-shmobile/include/mach/sdhi-sh7372.h
-+++ /dev/null	2015-01-13 15:44:39.280208949 +0900
-@@ -1,21 +0,0 @@
--#ifndef SDHI_SH7372_H
--#define SDHI_SH7372_H
--
--#define SDGENCNTA       0xfe40009c
--
--/* The countdown of SDGENCNTA is controlled by
-- * ZB3D2CLK which runs at 149.5MHz.
-- * That is 149.5ticks/us. Approximate this as 150ticks/us.
-- */
--static void udelay(int us)
--{
--	__raw_writel(us * 150, SDGENCNTA);
--	while(__raw_readl(SDGENCNTA)) ;
--}
--
--static void msleep(int ms)
--{
--	udelay(ms * 1000);
--}
--
--#endif
---- 0001/arch/arm/mach-shmobile/include/mach/sdhi.h
-+++ /dev/null	2015-01-13 15:44:39.280208949 +0900
-@@ -1,16 +0,0 @@
--#ifndef SDHI_H
--#define SDHI_H
--
--/**************************************************
-- *
-- *		CPU specific settings
-- *
-- **************************************************/
--
--#ifdef CONFIG_ARCH_SH7372
--#include "mach/sdhi-sh7372.h"
--#else
--#error "unsupported CPU."
--#endif
--
--#endif /* SDHI_H */
