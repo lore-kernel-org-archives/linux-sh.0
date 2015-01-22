@@ -1,105 +1,97 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 29 Jan 2015 14:26:05 +0000
-Subject: [PATCH v2] watchdog: da9063: Add restart handler support
-Message-Id: <1422541565-19792-1-git-send-email-geert+renesas@glider.be>
+Date: Thu, 22 Jan 2015 09:34:10 +0000
+Subject: [PATCH v3/resend 1/4] drivers: bus: Sort Kconfig entries alphabetically
+Message-Id: <1421919253-4784-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1421919253-4784-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1421919253-4784-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Support Opensource <support.opensource@diasemi.com>, Wim Van Sebroeck <wim@iguana.be>
-Cc: linux-watchdog@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
-
-Register a restart handler for the da9063 watchdog.  System restart is
-triggered by sending the shutdown command to the PMIC.
-As more-suitable restart handlers may exist, the priority of the
-watchdog restart handler is set to 128.
-
-The actual restart method was inspired by a platform-specific patch from
-the BSP by Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>.
+To: linux-arm-kernel@lists.infradead.org
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Steve Twiss <stwiss.opensource@diasemi.com>
-Reviewed-by: Guenter Roeck <linux@roeck-us.net>
+Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
-Tested on r8a7791/koelsch
+v3:
+  - Add Tested-by,
 
 v2:
-  - Add Acked-by, Reviewed-by
+  - New.
 ---
- drivers/watchdog/da9063_wdt.c | 32 +++++++++++++++++++++++++++++++-
- 1 file changed, 31 insertions(+), 1 deletion(-)
+ drivers/bus/Kconfig | 44 ++++++++++++++++++++++----------------------
+ 1 file changed, 22 insertions(+), 22 deletions(-)
 
-diff --git a/drivers/watchdog/da9063_wdt.c b/drivers/watchdog/da9063_wdt.c
-index 2cd6b2c2dd2a6980..e2fe2ebdebd4d6bb 100644
---- a/drivers/watchdog/da9063_wdt.c
-+++ b/drivers/watchdog/da9063_wdt.c
-@@ -20,6 +20,7 @@
- #include <linux/delay.h>
- #include <linux/mfd/da9063/registers.h>
- #include <linux/mfd/da9063/core.h>
-+#include <linux/reboot.h>
- #include <linux/regmap.h>
+diff --git a/drivers/bus/Kconfig b/drivers/bus/Kconfig
+index b99729e368608bda..626960819e6df16c 100644
+--- a/drivers/bus/Kconfig
++++ b/drivers/bus/Kconfig
+@@ -4,6 +4,21 @@
  
- /*
-@@ -38,6 +39,7 @@ static const unsigned int wdt_timeout[] = { 0, 2, 4, 8, 16, 32, 65, 131 };
- struct da9063_watchdog {
- 	struct da9063 *da9063;
- 	struct watchdog_device wdtdev;
-+	struct notifier_block restart_handler;
- };
+ menu "Bus devices"
  
- static unsigned int da9063_wdt_timeout_to_sel(unsigned int secs)
-@@ -119,6 +121,23 @@ static int da9063_wdt_set_timeout(struct watchdog_device *wdd,
- 	return ret;
- }
- 
-+static int da9063_wdt_restart_handler(struct notifier_block *this,
-+				      unsigned long mode, void *cmd)
-+{
-+	struct da9063_watchdog *wdt = container_of(this,
-+						   struct da9063_watchdog,
-+						   restart_handler);
-+	int ret;
++config ARM_CCI
++	bool "ARM CCI driver support"
++	depends on ARM && OF && CPU_V7
++	help
++	  Driver supporting the CCI cache coherent interconnect for ARM
++	  platforms.
 +
-+	ret = regmap_write(wdt->da9063->regmap, DA9063_REG_CONTROL_F,
-+			   DA9063_SHUTDOWN);
-+	if (ret)
-+		dev_alert(wdt->da9063->dev, "Failed to shutdown (err = %d)\n",
-+			  ret);
++config ARM_CCN
++	bool "ARM CCN driver support"
++	depends on ARM || ARM64
++	depends on PERF_EVENTS
++	help
++	  PMU (perf) driver supporting the ARM CCN (Cache Coherent Network)
++	  interconnect.
 +
-+	return NOTIFY_DONE;
-+}
-+
- static const struct watchdog_info da9063_watchdog_info = {
- 	.options = WDIOF_SETTIMEOUT | WDIOF_KEEPALIVEPING,
- 	.identity = "DA9063 Watchdog",
-@@ -163,14 +182,25 @@ static int da9063_wdt_probe(struct platform_device *pdev)
- 	dev_set_drvdata(&pdev->dev, wdt);
+ config BRCMSTB_GISB_ARB
+ 	bool "Broadcom STB GISB bus arbiter"
+ 	depends on ARM || MIPS
+@@ -27,15 +42,6 @@ config MVEBU_MBUS
+ 	  Driver needed for the MBus configuration on Marvell EBU SoCs
+ 	  (Kirkwood, Dove, Orion5x, MV78XX0 and Armada 370/XP).
  
- 	ret = watchdog_register_device(&wdt->wdtdev);
-+	if (ret)
-+		return ret;
+-config OMAP_OCP2SCP
+-	tristate "OMAP OCP2SCP DRIVER"
+-	depends on ARCH_OMAP2PLUS
+-	help
+-	  Driver to enable ocp2scp module which transforms ocp interface
+-	  protocol to scp protocol. In OMAP4, USB PHY is connected via
+-	  OCP2SCP and in OMAP5, both USB PHY and SATA PHY is connected via
+-	  OCP2SCP.
+-
+ config OMAP_INTERCONNECT
+ 	tristate "OMAP INTERCONNECT DRIVER"
+ 	depends on ARCH_OMAP2PLUS
+@@ -43,20 +49,14 @@ config OMAP_INTERCONNECT
+ 	help
+ 	  Driver to enable OMAP interconnect error handling driver.
  
--	return ret;
-+	wdt->restart_handler.notifier_call = da9063_wdt_restart_handler;
-+	wdt->restart_handler.priority = 128;
-+	ret = register_restart_handler(&wdt->restart_handler);
-+	if (ret)
-+		dev_err(wdt->da9063->dev,
-+			"Failed to register restart handler (err = %d)\n", ret);
-+
-+	return 0;
- }
+-config ARM_CCI
+-	bool "ARM CCI driver support"
+-	depends on ARM && OF && CPU_V7
+-	help
+-	  Driver supporting the CCI cache coherent interconnect for ARM
+-	  platforms.
+-
+-config ARM_CCN
+-	bool "ARM CCN driver support"
+-	depends on ARM || ARM64
+-	depends on PERF_EVENTS
++config OMAP_OCP2SCP
++	tristate "OMAP OCP2SCP DRIVER"
++	depends on ARCH_OMAP2PLUS
+ 	help
+-	  PMU (perf) driver supporting the ARM CCN (Cache Coherent Network)
+-	  interconnect.
++	  Driver to enable ocp2scp module which transforms ocp interface
++	  protocol to scp protocol. In OMAP4, USB PHY is connected via
++	  OCP2SCP and in OMAP5, both USB PHY and SATA PHY is connected via
++	  OCP2SCP.
  
- static int da9063_wdt_remove(struct platform_device *pdev)
- {
- 	struct da9063_watchdog *wdt = dev_get_drvdata(&pdev->dev);
- 
-+	unregister_restart_handler(&wdt->restart_handler);
-+
- 	watchdog_unregister_device(&wdt->wdtdev);
- 
- 	return 0;
+ config VEXPRESS_CONFIG
+ 	bool "Versatile Express configuration bus"
 -- 
 1.9.1
 
