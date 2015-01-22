@@ -1,69 +1,36 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 31 Jan 2015 18:27:05 +0000
-Subject: Re: [PATCH] ARM: shmobile: silk: initial device tree
-Message-Id: <54CD1E79.6090700@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 22 Jan 2015 04:07:52 +0000
+Subject: [PATCH 0/4 v3] ARM: shmobile: r8a779x: add SDHI DMA support
+Message-Id: <87ppa7lanl.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
- <1608366.HtA9yBksdO@wasted.cogentembedded.com>
- <20150131042143.GB7605@verge.net.au>
-In-Reply-To: <20150131042143.GB7605@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hello.
 
-On 1/31/2015 7:21 AM, Simon Horman wrote:
+Hi Simon
 
->> Add the initial device tree for the R8A7794 SoC based SILK low cost board.
->> SCIF2 serial port support is included, so that the serial console can work.
+These are v3 of SDHI DMA support for r8a7790/r8a7791.
+These are based on Ulf's
+git.linaro.org/people/ulf.hansson/mmc.git tmio
 
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Kuninori Morimoto (2):
+      ARM: shmobile: r8a7790: tidyup SDHI register size on DTSI
+      ARM: shmobile: r8a7791: tidyup SDHI register size on DTSI
 
->> ---
->> This patch is against the 'renesas-devel-20150129-v3.19-rc6' tag of Simon
->> Horman's 'renesas.git' repo.
+Laurent Pinchart (2):
+      ARM: shmobile: r8a7790: Reference DMA channels in SDHI DT nodes
+      ARM: shmobile: r8a7791: Reference DMA channels in SDHI DT nodes
 
->>   arch/arm/boot/dts/Makefile         |    1
->>   arch/arm/boot/dts/r8a7794-silk.dts |   41 +++++++++++++++++++++++++++++++++++++
->>   2 files changed, 42 insertions(+)
+ arch/arm/boot/dts/r8a7790.dtsi |   12 ++++++++++--
+ arch/arm/boot/dts/r8a7791.dtsi |    8 +++++++-
+ 2 files changed, 17 insertions(+), 3 deletions(-)
 
-[...]
->> Index: renesas/arch/arm/boot/dts/r8a7794-silk.dts
->> =================================>> --- /dev/null
->> +++ renesas/arch/arm/boot/dts/r8a7794-silk.dts
->> @@ -0,0 +1,41 @@
->> +/*
->> + * Device Tree Source for the SILK board
->> + *
->> + * Copyright (C) 2014 Renesas Electronics Corporation
->> + * Copyright (C) 2014-2015 Renesas Solutions Corp.
->> + * Copyright (C) 2014-2015 Cogent Embedded, Inc.
->> + *
->> + * This file is licensed under the terms of the GNU General Public License
->> + * version 2.  This program is licensed "as is" without any warranty of any
->> + * kind, whether express or implied.
->> + */
->> +
->> +/dts-v1/;
->> +#include "r8a7794.dtsi"
->> +
->> +/ {
->> +	model = "SILK";
->> +	compatible = "renesas,silk", "renesas,r8a7794";
->> +
->> +	aliases {
->> +		serial0 = &scif2;
->> +	};
->> +
->> +	chosen {
->> +		bootargs = "console=ttySC0,38400 ignore_loglevel";
-
-> Please remove console= for consistency with other boards
-> based on Renesas SoCs.
-
-    I can't, there will be no console at all.
-
-WBR, Sergei
-
+Best regards
+---
+Kuninori Morimoto
+--
+To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
