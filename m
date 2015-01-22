@@ -1,50 +1,64 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 15 Jan 2015 14:38:16 +0000
-Subject: Re: [PATCH] input: adxl34x: Add OF match support
-Message-Id: <1546932.HT3eEIWcNh@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 22 Jan 2015 03:46:46 +0000
+Subject: [PATCH 0/9 v4] dmaengine: shdma: use normal interface for passing slave id
+Message-Id: <874mrjmq76.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418868923-13411-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <2445803.jDZCe1u2Wf@avalon> <20150115143637.GA5057@katana>
-In-Reply-To: <20150115143637.GA5057@katana>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: linux-input@vger.kernel.org, linux-sh@vger.kernel.org, linux-i2c@vger.kernel.org, Geert Uytterhoeven <geert@glider.be>
+To: linux-sh@vger.kernel.org
 
-On Thursday 15 January 2015 15:36:37 Wolfram Sang wrote:
-> >>> Been there, got bitten. We only found out too late, because one driver
-> >>> was in i2c and the other in GPIO (or LED even?), both using "953x" :(
-> >> 
-> >> That seems like a development, review and/or merge process failure to
-> >> me, I wouldn't avoid generic compatible strings for that reason only.
-> 
-> Well, I think different here, but let's skip this discussion as it is
-> not really needed right now...
-> 
-> >> As the ADXL346 is backward-compatible with the ADXL345, and as the
-> >> driver doesn't support the ADXL346-specific features, how about adding
-> >> only the adxl345 for now, and using compatible = "adi,adxl346",
-> >> "adi,adxl345"; for the ADXL346 ?
-> > 
-> > I spoke too fast. The driver supports ADXL346-specific features, but does
-> > so by detecting the device model at runtime.
-> > 
-> > I still believe it would make sense to list both the 346 and 345 models in
-> > DT for 346 devices, as they're compatible with the 345.
-> 
-> I agree.
-> 
-> >>> 2) also add "34x" as a compatible but mark it as deprecateed
-> >>> 3) delete "34x" from trivial devices
-> >> 
-> >> OK.
-> 
-> Yay :)
 
-I'll submit patches very soon.
+Hi Vinod, Mark
+Cc Arnd, Ulf, Brian
 
--- 
-Regards,
+These are v4 of shdma-base fixup patches.
+Original patch came from Arnd.
+I added Arnd/Ulf's Acked-by if it got it in v2 patch-set.
 
-Laurent Pinchart
+Mark
+	can you please check 3) 4) 7) 8) 9) patches ?
 
+5) 6) patches are based on Vinod's next branch + Ulf's
+	git.linaro.org/people/ulf.hansson/mmc.git tmio
+
+9) patch doesn't have relationship to "slave_id",
+but has relationship to dmaengine, so, I added it to here.
+
+Easy way to merge these are maybe...
+ Pattern 1) Vinod merges Ulf's tmio branch, and merge all these pathces
+ Pattern 2) Vinod merges non-mmc patches, and Ulf merge it and merge mmc patches
+
+Arnd Bergmann (4):
+      1) dmaengine: shdma: use normal interface for passing slave id
+      2) mtd: sh_flctl: remove slave_id settings for DMAEngine
+      3) spi: rspi: remove slave_id settings for DMAEngine
+      4) spi: sh-msiof: remove slave_id settings for DMAEngine
+
+Kuninori Morimoto (5):
+      5) mmc: sh_mmcif: remove slave_id settings for DMAEngine
+      6) mmc: tmio_mmc: remove slave_id settings for DMAEngine
+      7) ASoC: rsnd: remove slave_id settings for DMAEngine
+      8) ASoC: fsi: remove slave_id settings for DMAEngine
+      9) ASoC: fsi: Configure DMA slave settings
+
+ drivers/dma/sh/shdma-base.c       |   73 +++++++++++++++++++++++++++----------
+ drivers/mmc/host/sh_mmcif.c       |   13 +++----
+ drivers/mmc/host/sh_mobile_sdhi.c |    2 -
+ drivers/mmc/host/tmio_mmc.h       |    2 -
+ drivers/mmc/host/tmio_mmc_dma.c   |    4 --
+ drivers/mtd/nand/sh_flctl.c       |    2 -
+ drivers/spi/spi-rspi.c            |    1 -
+ drivers/spi/spi-sh-msiof.c        |    1 -
+ include/linux/shdma-base.h        |    1 +
+ sound/soc/sh/fsi.c                |   18 ++++++---
+ sound/soc/sh/rcar/core.c          |    3 +-
+ 11 files changed, 73 insertions(+), 47 deletions(-)
+
+Best regards
+---
+Kuninori Morimoto
+--
+To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
