@@ -1,59 +1,62 @@
-From: Sebastian Reichel <sre@kernel.org>
-Date: Wed, 21 Jan 2015 15:58:46 +0000
-Subject: Re: [PATCH v2] power: reset: Add reset driver for R-Mobile platforms
-Message-Id: <20150121155846.GE13715@earth.universe>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="LSp5EJdfMPwZcMS1"
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Thu, 22 Jan 2015 04:51:38 +0000
+Subject: Re: [PATCH/RFC] serial: sh-sci: Fix R-Car SCIF and HSCIF overrun handling
+Message-Id: <CABMQnV+Oh8Ctd9jM-7qaW4ZfuQJ_++fZkHYuKBL2ftQkrzAOjw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1417707201-589-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1417707201-589-1-git-send-email-geert+renesas@glider.be>
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Dmitry Eremin-Solenikov <dbaryshkov@gmail.com>, David Woodhouse <dwmw2@infradead.org>, Simon Horman <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>, Guenter Roeck <linux@roeck-us.net>, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org
-
-
---LSp5EJdfMPwZcMS1
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+References: <1418652883-6884-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1418652883-6884-1-git-send-email-ykaneko0929@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Cc: linux-serial@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh <linux-sh@vger.kernel.org>
 
 Hi,
 
-On Thu, Dec 04, 2014 at 04:33:21PM +0100, Geert Uytterhoeven wrote:
-> Add a reset driver for Renesas R-Mobile and SH-Mobile SoCs. It registers
-> a restart handler to trigger a soft power-on reset through the R-Mobile
-> System Controller.
-> The priority of this restart handler is 192, to allow a watchdog driver
-> to use priority 128.
->=20
-> Note that we do not use syscon-reboot, as the HPB (Peripheral Bus
-> Bridge) semaphore should be acquired on systems where both the ARM and
-> SH core are in use. The driver can be extended later to support this,
-> when needed.
+2014-12-15 23:14 GMT+09:00 Yoshihiro Kaneko <ykaneko0929@gmail.com>:
+> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+>
+> When fifo overrun happened, the interrupt status refers to
+> SCLSR register in R-Car SCIF and HSCIF.
+> Thus, overrun handling takes SCLSR register into account.
+>
+> Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+> ---
+>
+> This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
+> tree.
+>
+>  drivers/tty/serial/sh-sci.c | 18 +++++++++++++-----
+>  1 file changed, 13 insertions(+), 5 deletions(-)
+>
+> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+> index 1110523..ff549a8 100644
+> --- a/drivers/tty/serial/sh-sci.c
+> +++ b/drivers/tty/serial/sh-sci.c
+> @@ -793,8 +793,6 @@ static int sci_handle_errors(struct uart_port *port)
+>                 /* overrun error */
+>                 if (tty_insert_flip_char(tport, 0, TTY_OVERRUN))
+>                         copied++;
+> -
+> -               dev_notice(port->dev, "overrun error\n");
+>         }
+>
+>         if (status & SCxSR_FER(port)) {
+> @@ -835,8 +833,6 @@ static int sci_handle_errors(struct uart_port *port)
+>
+>                 if (tty_insert_flip_char(tport, 0, TTY_PARITY))
+>                         copied++;
+> -
+> -               dev_notice(port->dev, "parity error\n");
+>         }
 
-Applied with Reviewed-By from Guenter Roeck.
+I think that these fixis unrelated to support of HSCIF.
+Please split patch.
 
--- Sebastian
+Best regards,
+  Nobuhiro
 
---LSp5EJdfMPwZcMS1
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBCgAGBQJUv8yuAAoJENju1/PIO/qa3ZAP/im+KkTLmn41Z/SUdBT4wZSd
-v1R8kVWAc8Rf5ir9lxgaQToYqFQVPJOp6dIR1wMNgfNWUA//gT6XeC8UOUxxKE/m
-/w3RXzyKN6/DMYzFOtsrxoP5mzRmj33IXgNYY4JMEaclfy652J1NgOopF/3bgdrF
-9UYcqVoH2AoQ7gIwYhZFqrTzEMUYPvPPIoxdIe1EhmrxGTbA+bOTDEqAstRG3xCw
-M701RgoXSUPUYoAcBXX/LQHoL3arto2cTGkpkm/RX9bHZRwTXvhw2/EiSWf0e0jU
-mnbQRSBQbLBQ06mt2IJUhGih7EJq4s0U+f/ba84OpEmsQ9q5a049S+jNa2TlZSM/
-p7v9KvpjvtCjmK0iCub6Wa97fZCoFP5DduoyqVzmS/v1YdrhHzAMAO/BsY+XWiwv
-HuR/HpTd8yCahSLNM7B5clCjPUV7zjQkTQXFmnWUizbqtqVKCz6ENmJ/gNJBirPR
-QhtOBdN96nPEqMwGr61m18eVc+40XKS/tUHvdp8j1QE+JJrZZiRitP0LrcHterAt
-SvHx2LmXwMpXTST2r3YVlcLwyJQWu5lmnzrDARKJtcoFJHoOeOVt6WfxnTVTFTzj
-sJvvkLse0s/dGIdYYRkfMsmmx9xUw0c5hQYTHHWs5xZx/LtGGHWZbhCFr1fM9yZ6
-vVU9hkZV0AkeV5UW2BkJ
-=vnTs
------END PGP SIGNATURE-----
-
---LSp5EJdfMPwZcMS1--
+-- 
+Nobuhiro Iwamatsu
