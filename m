@@ -1,52 +1,42 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 22 Jan 2015 01:03:03 +0000
-Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC sh73a0 Multiplatform Updates for v3.20
-Message-Id: <20150122010303.GC25991@verge.net.au>
+From: Olof Johansson <olof@lixom.net>
+Date: Thu, 22 Jan 2015 01:16:51 +0000
+Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC Fixes for v3.19
+Message-Id: <20150122011651.GB31815@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421716945.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421716945.git.horms+renesas@verge.net.au>
+References: <cover.1421716614.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1421716614.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jan 20, 2015 at 10:27:32AM +0900, Simon Horman wrote:
+On Tue, Jan 20, 2015 at 10:26:39AM +0900, Simon Horman wrote:
 > Hi Olof, Hi Kevin, Hi Arnd,
 > 
-> Please consider these second round of Renesas ARM based SoC sh73a0 multiplatform updates for v3.20.
+> Please consider these second round of Renesas ARM based SoC fixes for v3.19.
 > 
 > This pull request is based on the previous round of
-> such requests, tagged as renesas-sh73a0-multiplatform-for-v3.20,
-> which I have already sent a pull-request for.
-
-As Olof has have asked for further work on the above I am withdrawing
-this pull-request.
-
-> My understanding from Geert Uytterhoeven is that the above dependency
-> is required to avoid a lock-up.
+> such requests, tagged as renesas-soc-fixes-for-v3.19,
+> which you have already pulled into your fixes branch.
+> 
+> This fixes a regression in the r8a7779 and r8a7779 SoCs due to
+> 9a1091ef0017c40a ("irqchip: gic: Support hierarchy irq domain.")
+> which was included in v3.18-rc2.
 > 
 > 
-> The following changes since commit 93c9f0228a3d0a14640f86b3e8aeaf3c9b449bb7:
+> The following changes since commit b0ddb319db3d7a1943445f0de0a45c07a7f3457a:
 > 
->   ARM: shmobile: kzm9g-reference: Remove board C code and DT file (2015-01-14 09:46:48 +0900)
+>   ARM: shmobile: sh73a0 legacy: Set .control_parent for all irqpin instances (2015-01-08 09:15:16 +0900)
 > 
 > are available in the git repository at:
 > 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh73a0-multiplatform2-for-v3.20
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-fixes2-for-v3.19
 > 
-> for you to fetch changes up to e42c8385cfec0579a103b365d61748f199bfe239:
+> for you to fetch changes up to f469cde20a7ee342070b4a459b6fce469a3186db:
 > 
->   ARM: shmobile: sh73a0 dtsi: Add Cortex-A9 TWD node (2015-01-17 09:36:35 +0900)
-> 
-> ----------------------------------------------------------------
-> Second Round of Renesas ARM Based SoC sh73a0 Multiplatform Updates for v3.20
-> 
-> * Add Cortex-A9 TWD node
-> 
-> ----------------------------------------------------------------
-> Geert Uytterhoeven (1):
->       ARM: shmobile: sh73a0 dtsi: Add Cortex-A9 TWD node
-> 
->  arch/arm/boot/dts/sh73a0.dtsi | 8 ++++++++
->  1 file changed, 8 insertions(+)
-> 
+>   ARM: shmobile: r8a7779: Instantiate GIC from C board code in legacy builds (2015-01-17 09:28:41 +0900)
+
+Merged, thanks.
+
+
+-Olof
