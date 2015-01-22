@@ -1,66 +1,47 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 Jan 2015 02:34:55 +0000
-Subject: [PATCH 3/4] ARM: shmobile: r8a7790: tidyup #sound-dai-cells settings
-Message-Id: <ad63241cdc328edbb0f879416ea7707bf0997f08.1421371490.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 22 Jan 2015 04:09:31 +0000
+Subject: [PATCH 3/4] ARM: shmobile: r8a7790: tidyup SDHI register size on DTSI
+Message-Id: <87lhkvlakr.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421371490.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421371490.git.horms+renesas@verge.net.au>
+References: <ad63241cdc328edbb0f879416ea7707bf0997f08.1421371490.git.horms+renesas@verge.net.au>
+In-Reply-To: <ad63241cdc328edbb0f879416ea7707bf0997f08.1421371490.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Renesas sound driver needs #sound-dai-cells settings, but, this usage
-is a little bit confusable. It came from ALSA SoC historical reasons.
-The sound DAI naming method is different between Single/Multi DAI in
-the ALSA framework, and it is used for sound card matching.
-And this #sound-dai-cells has relationship to it.
-Current SoC dtsi has #sound-dai-cells = <1> as default settings
-(= it is assuming that board/platform has multi DAI), and
-board/platform side needs to overwrite it if board/platform was single
-DAI. This style is more confusable for users.
-This patch removes SoC side default settings, and force to set it by
-board/platform side.
+r8a7790 SDHI ch0/ch1 has SD_DMACR which is located in 0x324.
+This patch updates register size
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 1 +
- arch/arm/boot/dts/r8a7790.dtsi      | 7 ++++++-
- 2 files changed, 7 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7790.dtsi |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 636d53b..2bc20e4 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -579,6 +579,7 @@
- 	pinctrl-0 = <&sound_pins &sound_clk_pins>;
- 	pinctrl-names = "default";
- 
-+	/* Single DAI */
- 	#sound-dai-cells = <0>;
- 
- 	status = "okay";
 diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 7cef4d9..1543fa5 100644
+index 3c12f78..56847bf 100644
 --- a/arch/arm/boot/dts/r8a7790.dtsi
 +++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1397,7 +1397,12 @@
- 	};
+@@ -493,7 +493,7 @@
  
- 	rcar_sound: rcar_sound@ec500000 {
--		#sound-dai-cells = <1>;
-+		/*
-+		 * #sound-dai-cells is required
-+		 *
-+		 * Single DAI : #sound-dai-cells = <0>;         <&rcar_sound>;
-+		 * Multi  DAI : #sound-dai-cells = <1>;         <&rcar_sound N>;
-+		 */
- 		compatible =  "renesas,rcar_sound-r8a7790", "renesas,rcar_sound-gen2";
- 		reg =	<0 0xec500000 0 0x1000>, /* SCU */
- 			<0 0xec5a0000 0 0x100>,  /* ADG */
+ 	sdhi0: sd@ee100000 {
+ 		compatible = "renesas,sdhi-r8a7790";
+-		reg = <0 0xee100000 0 0x200>;
++		reg = <0 0xee100000 0 0x328>;
+ 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
+ 		dmas = <&dmac1 0xcd>, <&dmac1 0xce>;
+@@ -503,7 +503,7 @@
+ 
+ 	sdhi1: sd@ee120000 {
+ 		compatible = "renesas,sdhi-r8a7790";
+-		reg = <0 0xee120000 0 0x200>;
++		reg = <0 0xee120000 0 0x328>;
+ 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
+ 		dmas = <&dmac1 0xc9>, <&dmac1 0xca>;
 -- 
-2.1.4
+1.7.9.5
 
