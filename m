@@ -1,47 +1,79 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Wed, 21 Jan 2015 13:15:40 +0000
-Subject: Re: [PATCH v3] ARM: multi_v7_defconfig: Enable shmobile platforms
-Message-Id: <1624861.F2XBvOBm9V@wuerfel>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 22 Jan 2015 03:48:00 +0000
+Subject: [PATCH 3/9 v4] mmc: tmio_mmc: remove slave_id settings for DMAEngine
+Message-Id: <87zj9blbkr.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421684018-11894-1-git-send-email-geert+renesas@glider.be>
- <1467925.IxO001Hv1t@avalon>
- <CAMuHMdWObPPnpDPQbrq1HRj9BSBFuNNusQkDhaDTxP+_16oMNg@mail.gmail.com>
-In-Reply-To: <CAMuHMdWObPPnpDPQbrq1HRj9BSBFuNNusQkDhaDTxP+_16oMNg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wednesday 21 January 2015 14:09:56 Geert Uytterhoeven wrote:
-> Hi Laurent,
-> 
-> On Wed, Jan 21, 2015 at 2:02 PM, Laurent Pinchart
-> <laurent.pinchart@ideasonboard.com> wrote:
-> > To avoid bloating the kernel needlessly, couldn't at least some of the drivers
-> > needed for the shmobile boards be compiled as modules ? Audio, USB, SATA,
-> > touchscreen are possible candidates, depending on what we need to boot the
-> > boards to userspace.
-> 
-> That's a possibility.
-> 
-> Note that currently there are almost no modules in multi_v7_defconfig:
-> CONFIG_INET6_AH=m
-> CONFIG_INET6_ESP=m
-> CONFIG_INET6_IPCOMP=m
-> CONFIG_IPV6_MIP6=m
-> CONFIG_IPV6_TUNNEL=m
-> CONFIG_CFG80211=m
-> CONFIG_MAC80211=m
-> CONFIG_BRCMFMAC=m
-> CONFIG_RT2X00=m
-> CONFIG_RT2800USB=m
-> 
-> Arnd, Olof: What do you prefer?
-> 
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-I think it would be nice to move to having more loadable modules. We
-haven't really asked people to do that in the past, but the size is
-starting to become a problem and we may end up having to change a lot
-of the '=y' to '=m' in the future.
+Current tmio_mmc sets dma_slave_config :: slave_id field for DMAEngine,
+but it is no longer needed. Let's remove it.
 
-	Arnd
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Ulf Hansson <ulf.hansson@linaro.org>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+---
+v3 -> v4
+
+ - no change
+
+ drivers/mmc/host/sh_mobile_sdhi.c |    2 --
+ drivers/mmc/host/tmio_mmc.h       |    2 --
+ drivers/mmc/host/tmio_mmc_dma.c   |    4 ----
+ 3 files changed, 8 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 6906a90..11991f5 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -261,8 +261,6 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 			 */
+ 			dma_priv->chan_priv_tx = (void *)p->dma_slave_tx;
+ 			dma_priv->chan_priv_rx = (void *)p->dma_slave_rx;
+-			dma_priv->slave_id_tx = p->dma_slave_tx;
+-			dma_priv->slave_id_rx = p->dma_slave_rx;
+ 		}
+ 	}
+ 	dma_priv->filter = shdma_chan_filter;
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index fc3805e..1aea5c6 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -45,8 +45,6 @@ struct tmio_mmc_host;
+ struct tmio_mmc_dma {
+ 	void *chan_priv_tx;
+ 	void *chan_priv_rx;
+-	int slave_id_tx;
+-	int slave_id_rx;
+ 	enum dma_slave_buswidth dma_buswidth;
+ 	bool (*filter)(struct dma_chan *chan, void *arg);
+ 	void (*enable)(struct tmio_mmc_host *host, bool enable);
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index 331bb61..8dbd785 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -286,8 +286,6 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 		if (!host->chan_tx)
+ 			return;
+ 
+-		if (host->dma->chan_priv_tx)
+-			cfg.slave_id = host->dma->slave_id_tx;
+ 		cfg.direction = DMA_MEM_TO_DEV;
+ 		cfg.dst_addr = res->start + (CTL_SD_DATA_PORT << host->bus_shift);
+ 		cfg.dst_addr_width = host->dma->dma_buswidth;
+@@ -307,8 +305,6 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 		if (!host->chan_rx)
+ 			goto ereqrx;
+ 
+-		if (host->dma->chan_priv_rx)
+-			cfg.slave_id = host->dma->slave_id_rx;
+ 		cfg.direction = DMA_DEV_TO_MEM;
+ 		cfg.src_addr = cfg.dst_addr + host->pdata->dma_rx_offset;
+ 		cfg.src_addr_width = host->dma->dma_buswidth;
+-- 
+1.7.9.5
+
