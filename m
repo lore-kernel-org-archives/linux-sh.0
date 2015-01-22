@@ -1,71 +1,154 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 20 Jan 2015 01:26:40 +0000
-Subject: [PATCH 1/2] ARM: shmobile: r8a7778: Instantiate GIC from C board code in legacy builds
-Message-Id: <1fbbc3f0c5440a4c674b3d6de0a9dd447666b508.1421716614.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 22 Jan 2015 08:34:47 +0000
+Subject: [PATCH 4/5] ARM: shmobile: r8a7790: sound enables Audio DMAC peri peri entry on DTSI
+Message-Id: <8761bzkyao.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421716614.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421716614.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-As of commit 9a1091ef0017c40a ("irqchip: gic: Support hierarchy irq
-domain."), Bock-W legacy hangs during boot with:
+This patch adds Audio DMAC PeriPeri (= rcar-audmapp) entry for sound
 
-Unable to handle kernel paging request at virtual address cf86a128
-pgd = c0004000
-[cf86a128] *pgdo80041e(bad)
-Internal error: Oops: 8000000d [#1] SMP ARM
-CPU: 0 PID: 1 Comm: swapper/0 Not tainted 3.19.0-rc4 #1
-Hardware name: bockw
-task: cf823b40 ti: cf824000 task.ti: cf824000
-PC is at 0xcf86a128
-LR is at request_threaded_irq+0xbc/0x124
-
-This happens because the IRQ numbers of the GIC are now virtual, and no
-longer match the hardcoded hardware IRQ numbers in the platform board
-code.
-
-To fix this, instantiate the GIC from platform board code when compiling
-a legacy kernel, like is done for the sh73a0 and r8a7740 legacy code.
-
-Follows same style as the r8a7740 legacy GIC fix by Geert Uytterhoeven,
-thanks to him for the initial work.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7778.c | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7790.dtsi |  114 +++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 112 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 85fe016..5d7a009 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -586,11 +586,18 @@ void __init r8a7778_init_delay(void)
- void __init r8a7778_init_irq_dt(void)
- {
- 	void __iomem *base = ioremap_nocache(0xfe700000, 0x00100000);
-+#ifdef CONFIG_ARCH_SHMOBILE_LEGACY
-+	void __iomem *gic_dist_base = ioremap_nocache(0xfe438000, 0x1000);
-+	void __iomem *gic_cpu_base = ioremap_nocache(0xfe430000, 0x1000);
-+#endif
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index ca22009..e69f185 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1460,7 +1460,62 @@
+ 				<&audma0 0x91>,	<&audma1 0xb4>,
+ 				<&audma0 0x93>,	<&audma1 0xb6>,
+ 				<&audma0 0x95>,	<&audma1 0xb8>,
+-				<&audma0 0x97>,	<&audma1 0xba>;
++				<&audma0 0x97>,	<&audma1 0xba>,
++
++				<&audmapp 0x2d00>,	<&audmapp 0x2e00>,	<&audmapp 0x2f00>,	<&audmapp 0x3000>,	<&audmapp 0x3100>,
++				<&audmapp 0x2d04>,	<&audmapp 0x2e04>,	<&audmapp 0x2f04>,	<&audmapp 0x3004>,	<&audmapp 0x3104>,
++				<&audmapp 0x2d08>,	<&audmapp 0x2e08>,	<&audmapp 0x2f08>,	<&audmapp 0x3008>,	<&audmapp 0x3108>,
++				<&audmapp 0x2d0c>,	<&audmapp 0x2e0c>,	<&audmapp 0x2f0c>,	<&audmapp 0x300c>,	<&audmapp 0x310c>,
++				<&audmapp 0x2d0d>,	<&audmapp 0x2e0d>,	<&audmapp 0x2f0d>,	<&audmapp 0x300d>,	<&audmapp 0x310d>,
++				<&audmapp 0x2d0e>,	<&audmapp 0x2e0e>,	<&audmapp 0x2f0e>,	<&audmapp 0x300e>,	<&audmapp 0x310e>,
++				<&audmapp 0x2d0f>,	<&audmapp 0x2e0f>,	<&audmapp 0x2f0f>,	<&audmapp 0x300f>,	<&audmapp 0x310f>,
++				<&audmapp 0x2d10>,	<&audmapp 0x2e10>,	<&audmapp 0x2f10>,	<&audmapp 0x3010>,	<&audmapp 0x3110>,
++				<&audmapp 0x2d11>,	<&audmapp 0x2e11>,	<&audmapp 0x2f11>,	<&audmapp 0x3011>,	<&audmapp 0x3111>,
++				<&audmapp 0x2d12>,	<&audmapp 0x2e12>,	<&audmapp 0x2f12>,	<&audmapp 0x3012>,	<&audmapp 0x3112>,
++
++				<&audmapp 0x3200>,	<&audmapp 0x3300>,	<&audmapp 0x3400>,	<&audmapp 0x3500>,	<&audmapp 0x3600>,
++				<&audmapp 0x3204>,	<&audmapp 0x3304>,	<&audmapp 0x3404>,	<&audmapp 0x3504>,	<&audmapp 0x3604>,
++				<&audmapp 0x3208>,	<&audmapp 0x3308>,	<&audmapp 0x3408>,	<&audmapp 0x3508>,	<&audmapp 0x3608>,
++				<&audmapp 0x320c>,	<&audmapp 0x330c>,	<&audmapp 0x340c>,	<&audmapp 0x350c>,	<&audmapp 0x360c>,
++				<&audmapp 0x320d>,	<&audmapp 0x330d>,	<&audmapp 0x340d>,	<&audmapp 0x350d>,	<&audmapp 0x360d>,
++				<&audmapp 0x320e>,	<&audmapp 0x330e>,	<&audmapp 0x340e>,	<&audmapp 0x350e>,	<&audmapp 0x360e>,
++				<&audmapp 0x320f>,	<&audmapp 0x330f>,	<&audmapp 0x340f>,	<&audmapp 0x350f>,	<&audmapp 0x360f>,
++				<&audmapp 0x3210>,	<&audmapp 0x3310>,	<&audmapp 0x3410>,	<&audmapp 0x3510>,	<&audmapp 0x3610>,
++				<&audmapp 0x3211>,	<&audmapp 0x3311>,	<&audmapp 0x3411>,	<&audmapp 0x3511>,	<&audmapp 0x3611>,
++				<&audmapp 0x3212>,	<&audmapp 0x3312>,	<&audmapp 0x3412>,	<&audmapp 0x3512>,	<&audmapp 0x3612>,
++
++				<&audmapp 0x002d>,	<&audmapp 0x002e>,	<&audmapp 0x002f>,	<&audmapp 0x0030>,	<&audmapp 0x0031>,
++				<&audmapp 0x042d>,	<&audmapp 0x042e>,	<&audmapp 0x042f>,	<&audmapp 0x0430>,	<&audmapp 0x0431>,
++				<&audmapp 0x082d>,	<&audmapp 0x082e>,	<&audmapp 0x082f>,	<&audmapp 0x0830>,	<&audmapp 0x0831>,
++				<&audmapp 0x0c2d>,	<&audmapp 0x0c2e>,	<&audmapp 0x0c2f>,	<&audmapp 0x0c30>,	<&audmapp 0x0c31>,
++				<&audmapp 0x0d2d>,	<&audmapp 0x0d2e>,	<&audmapp 0x0d2f>,	<&audmapp 0x0d30>,	<&audmapp 0x0d31>,
++				<&audmapp 0x0e2d>,	<&audmapp 0x0e2e>,	<&audmapp 0x0e2f>,	<&audmapp 0x0e30>,	<&audmapp 0x0e31>,
++				<&audmapp 0x0f2d>,	<&audmapp 0x0f2e>,	<&audmapp 0x0f2f>,	<&audmapp 0x0f30>,	<&audmapp 0x0f31>,
++				<&audmapp 0x102d>,	<&audmapp 0x102e>,	<&audmapp 0x102f>,	<&audmapp 0x1030>,	<&audmapp 0x1031>,
++				<&audmapp 0x112d>,	<&audmapp 0x112e>,	<&audmapp 0x112f>,	<&audmapp 0x1130>,	<&audmapp 0x1131>,
++				<&audmapp 0x122d>,	<&audmapp 0x122e>,	<&audmapp 0x122f>,	<&audmapp 0x1230>,	<&audmapp 0x1231>,
++
++				<&audmapp 0x0032>,	<&audmapp 0x0033>,	<&audmapp 0x0034>,	<&audmapp 0x0035>,	<&audmapp 0x0036>,
++				<&audmapp 0x0432>,	<&audmapp 0x0433>,	<&audmapp 0x0434>,	<&audmapp 0x0435>,	<&audmapp 0x0436>,
++				<&audmapp 0x0832>,	<&audmapp 0x0833>,	<&audmapp 0x0834>,	<&audmapp 0x0835>,	<&audmapp 0x0836>,
++				<&audmapp 0x0c32>,	<&audmapp 0x0c33>,	<&audmapp 0x0c34>,	<&audmapp 0x0c35>,	<&audmapp 0x0c36>,
++				<&audmapp 0x0d32>,	<&audmapp 0x0d33>,	<&audmapp 0x0d34>,	<&audmapp 0x0d35>,	<&audmapp 0x0d36>,
++				<&audmapp 0x0e32>,	<&audmapp 0x0e33>,	<&audmapp 0x0e34>,	<&audmapp 0x0e35>,	<&audmapp 0x0e36>,
++				<&audmapp 0x0f32>,	<&audmapp 0x0f33>,	<&audmapp 0x0f34>,	<&audmapp 0x0f35>,	<&audmapp 0x0f36>,
++				<&audmapp 0x1032>,	<&audmapp 0x1033>,	<&audmapp 0x1034>,	<&audmapp 0x1035>,	<&audmapp 0x1036>,
++				<&audmapp 0x1132>,	<&audmapp 0x1133>,	<&audmapp 0x1134>,	<&audmapp 0x1135>,	<&audmapp 0x1136>,
++				<&audmapp 0x1232>,	<&audmapp 0x1233>,	<&audmapp 0x1234>,	<&audmapp 0x1235>,	<&audmapp 0x1236>,
++
++				<&audmapp 0x3700>,	<&audmapp 0x3800>,
++				<&audmapp 0x3704>,	<&audmapp 0x3804>,
++				<&audmapp 0x3708>,	<&audmapp 0x3808>,
++				<&audmapp 0x370c>,	<&audmapp 0x380c>,
++				<&audmapp 0x370d>,	<&audmapp 0x380d>,
++				<&audmapp 0x370e>,	<&audmapp 0x380e>,
++				<&audmapp 0x370f>,	<&audmapp 0x380f>,
++				<&audmapp 0x3710>,	<&audmapp 0x3810>,
++				<&audmapp 0x3711>,	<&audmapp 0x3811>,
++				<&audmapp 0x3712>,	<&audmapp 0x3812>;
  
- 	BUG_ON(!base);
+ 		dma-names =	"mem_ssi0",	"ssi0_mem",	"mem_ssiu0",	"ssiu0_mem",
+ 				"mem_ssi1",	"ssi1_mem",	"mem_ssiu1",	"ssiu1_mem",
+@@ -1482,7 +1537,62 @@
+ 				"mem_src6",	"src6_mem",
+ 				"mem_src7",	"src7_mem",
+ 				"mem_src8",	"src8_mem",
+-				"mem_src9",	"src9_mem";
++				"mem_src9",	"src9_mem",
++
++				"src0_ssiu0",		"src1_ssiu0",		"src2_ssiu0",		"src3_ssiu0",		"src4_ssiu0",
++				"src0_ssiu1",		"src1_ssiu1",		"src2_ssiu1",		"src3_ssiu1",		"src4_ssiu1",
++				"src0_ssiu2",		"src1_ssiu2",		"src2_ssiu2",		"src3_ssiu2",		"src4_ssiu2",
++				"src0_ssiu3",		"src1_ssiu3",		"src2_ssiu3",		"src3_ssiu3",		"src4_ssiu3",
++				"src0_ssiu4",		"src1_ssiu4",		"src2_ssiu4",		"src3_ssiu4",		"src4_ssiu4",
++				"src0_ssiu5",		"src1_ssiu5",		"src2_ssiu5",		"src3_ssiu5",		"src4_ssiu5",
++				"src0_ssiu6",		"src1_ssiu6",		"src2_ssiu6",		"src3_ssiu6",		"src4_ssiu6",
++				"src0_ssiu7",		"src1_ssiu7",		"src2_ssiu7",		"src3_ssiu7",		"src4_ssiu7",
++				"src0_ssiu8",		"src1_ssiu8",		"src2_ssiu8",		"src3_ssiu8",		"src4_ssiu8",
++				"src0_ssiu9",		"src1_ssiu9",		"src2_ssiu9",		"src3_ssiu9",		"src4_ssiu9",
++
++				"src5_ssiu0",		"src6_ssiu0",		"src7_ssiu0",		"src8_ssiu0",		"src9_ssiu0",
++				"src5_ssiu1",		"src6_ssiu1",		"src7_ssiu1",		"src8_ssiu1",		"src9_ssiu1",
++				"src5_ssiu2",		"src6_ssiu2",		"src7_ssiu2",		"src8_ssiu2",		"src9_ssiu2",
++				"src5_ssiu3",		"src6_ssiu3",		"src7_ssiu3",		"src8_ssiu3",		"src9_ssiu3",
++				"src5_ssiu4",		"src6_ssiu4",		"src7_ssiu4",		"src8_ssiu4",		"src9_ssiu4",
++				"src5_ssiu5",		"src6_ssiu5",		"src7_ssiu5",		"src8_ssiu5",		"src9_ssiu5",
++				"src5_ssiu6",		"src6_ssiu6",		"src7_ssiu6",		"src8_ssiu6",		"src9_ssiu6",
++				"src5_ssiu7",		"src6_ssiu7",		"src7_ssiu7",		"src8_ssiu7",		"src9_ssiu7",
++				"src5_ssiu8",		"src6_ssiu8",		"src7_ssiu8",		"src8_ssiu8",		"src9_ssiu8",
++				"src5_ssiu9",		"src6_ssiu9",		"src7_ssiu9",		"src8_ssiu9",		"src9_ssiu9",
++
++				"ssiu0_src0",		"ssiu0_src1",		"ssiu0_src2",		"ssiu0_src3",		"ssiu0_src4",
++				"ssiu1_src0",		"ssiu1_src1",		"ssiu1_src2",		"ssiu1_src3",		"ssiu1_src4",
++				"ssiu2_src0",		"ssiu2_src1",		"ssiu2_src2",		"ssiu2_src3",		"ssiu2_src4",
++				"ssiu3_src0",		"ssiu3_src1",		"ssiu3_src2",		"ssiu3_src3",		"ssiu3_src4",
++				"ssiu4_src0",		"ssiu4_src1",		"ssiu4_src2",		"ssiu4_src3",		"ssiu4_src4",
++				"ssiu5_src0",		"ssiu5_src1",		"ssiu5_src2",		"ssiu5_src3",		"ssiu5_src4",
++				"ssiu6_src0",		"ssiu6_src1",		"ssiu6_src2",		"ssiu6_src3",		"ssiu6_src4",
++				"ssiu7_src0",		"ssiu7_src1",		"ssiu7_src2",		"ssiu7_src3",		"ssiu7_src4",
++				"ssiu8_src0",		"ssiu8_src1",		"ssiu8_src2",		"ssiu8_src3",		"ssiu8_src4",
++				"ssiu9_src0",		"ssiu9_src1",		"ssiu9_src2",		"ssiu9_src3",		"ssiu9_src4",
++
++				"ssiu0_src5",		"ssiu0_src6",		"ssiu0_src7",		"ssiu0_src8",		"ssiu0_src9",
++				"ssiu1_src5",		"ssiu1_src6",		"ssiu1_src7",		"ssiu1_src8",		"ssiu1_src9",
++				"ssiu2_src5",		"ssiu2_src6",		"ssiu2_src7",		"ssiu2_src8",		"ssiu2_src9",
++				"ssiu3_src5",		"ssiu3_src6",		"ssiu3_src7",		"ssiu3_src8",		"ssiu3_src9",
++				"ssiu4_src5",		"ssiu4_src6",		"ssiu4_src7",		"ssiu4_src8",		"ssiu4_src9",
++				"ssiu5_src5",		"ssiu5_src6",		"ssiu5_src7",		"ssiu5_src8",		"ssiu5_src9",
++				"ssiu6_src5",		"ssiu6_src6",		"ssiu6_src7",		"ssiu6_src8",		"ssiu6_src9",
++				"ssiu7_src5",		"ssiu7_src6",		"ssiu7_src7",		"ssiu7_src8",		"ssiu7_src9",
++				"ssiu8_src5",		"ssiu8_src6",		"ssiu8_src7",		"ssiu8_src8",		"ssiu8_src9",
++				"ssiu9_src5",		"ssiu9_src6",		"ssiu9_src7",		"ssiu9_src8",		"ssiu9_src9",
++
++				"dvc0_ssiu0",		"dvc1_ssiu0",
++				"dvc0_ssiu1",		"dvc1_ssiu1",
++				"dvc0_ssiu2",		"dvc1_ssiu2",
++				"dvc0_ssiu3",		"dvc1_ssiu3",
++				"dvc0_ssiu4",		"dvc1_ssiu4",
++				"dvc0_ssiu5",		"dvc1_ssiu5",
++				"dvc0_ssiu6",		"dvc1_ssiu6",
++				"dvc0_ssiu7",		"dvc1_ssiu7",
++				"dvc0_ssiu8",		"dvc1_ssiu8",
++				"dvc0_ssiu9",		"dvc1_ssiu9";
  
-+#ifdef CONFIG_ARCH_SHMOBILE_LEGACY
-+	gic_init(0, 29, gic_dist_base, gic_cpu_base);
-+#else
- 	irqchip_init();
--
-+#endif
- 	/* route all interrupts to ARM */
- 	__raw_writel(0x73ffffff, base + INT2NTSR0);
- 	__raw_writel(0xffffffff, base + INT2NTSR1);
+ 		status = "disabled";
+ 
 -- 
-2.1.4
+1.7.9.5
 
