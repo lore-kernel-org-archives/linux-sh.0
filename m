@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sat, 17 Jan 2015 14:12:19 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 22 Jan 2015 02:55:22 +0000
 Subject: Re: [PATCH v2 0/6] ARM: shmobile: sh73a0: DT PM domain support
-Message-Id: <CAMuHMdX40LTdKt_nBb_U4eXWMuPXSYfC0Q4PvA42grdocCZfAA@mail.gmail.com>
+Message-Id: <20150122025522.GJ31170@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1421237484-16847-1-git-send-email-geert+renesas@glider.be>
  <20150114235302.GC10479@verge.net.au>
@@ -11,32 +11,31 @@ References: <1421237484-16847-1-git-send-email-geert+renesas@glider.be>
  <CAMuHMdU4hj2p-N8abT-BSadznqF7=0-08o9F4_7+qjdvv6Whmw@mail.gmail.com>
  <20150116124502.GC6285@verge.net.au>
  <20150117011414.GC397@verge.net.au>
-In-Reply-To: <20150117011414.GC397@verge.net.au>
+ <CAMuHMdX40LTdKt_nBb_U4eXWMuPXSYfC0Q4PvA42grdocCZfAA@mail.gmail.com>
+In-Reply-To: <CAMuHMdX40LTdKt_nBb_U4eXWMuPXSYfC0Q4PvA42grdocCZfAA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+On Sat, Jan 17, 2015 at 03:12:19PM +0100, Geert Uytterhoeven wrote:
+> Hi Simon,
+> 
+> On Sat, Jan 17, 2015 at 2:14 AM, Simon Horman <horms@verge.net.au> wrote:
+> >> > If you add patch 6 to sh-drivers-for-v3.20 and merge it in -next,
+> >> > everything is fine!
+> >>
+> >> Thanks, I thought I had that one but I must have missed it somehow.
+> >
+> > I have made a second attempt and this time I hope that I haven't missed
+> > anything. Please see renesas-next-20150117-v3.19-rc1.
+> 
+> Thanks, looks better!
 
-On Sat, Jan 17, 2015 at 2:14 AM, Simon Horman <horms@verge.net.au> wrote:
->> > If you add patch 6 to sh-drivers-for-v3.20 and merge it in -next,
->> > everything is fine!
->>
->> Thanks, I thought I had that one but I must have missed it somehow.
->
-> I have made a second attempt and this time I hope that I haven't missed
-> anything. Please see renesas-next-20150117-v3.19-rc1.
+For the record: Olof has asked for review comments for the BSC driver and
+binding patches. Accordingly I have dropped them, and these patches which
+depend on them, from next.
 
-Thanks, looks better!
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+This dependency may be due to the way the branches are arranged, rather
+than actual dependencies of the code. But regardless I am dropping all
+effected branches for now.
