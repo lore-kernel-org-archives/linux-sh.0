@@ -1,32 +1,44 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 29 Jan 2015 01:32:28 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7794: Correct SDHI clock base address, labels and output-names
-Message-Id: <20150129013228.GA15358@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 22 Jan 2015 03:49:29 +0000
+Subject: [PATCH 8/9 v4] ASoC: fsi: remove slave_id settings for DMAEngine
+Message-Id: <87sif3lbi7.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1422406422-671-1-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdWzvwmX8uN+Do-1vZiSeqknLdgmv060GCvbZd1=x4YnXA@mail.gmail.com>
-In-Reply-To: <CAMuHMdWzvwmX8uN+Do-1vZiSeqknLdgmv060GCvbZd1=x4YnXA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Jan 28, 2015 at 10:14:53AM +0100, Geert Uytterhoeven wrote:
-> On Wed, Jan 28, 2015 at 1:53 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > * Correct base address of SD3 div6 clk.
-> > * Update div6 clock node labels
-> >   There appears to have been some inconsistency and confusion here as on
-> >   the r8a7790 these clocks are referred to as SD(HI)1 and SD(HI)2 while on
-> >   the r8a7791 and r8a7794 they are referred to as SD(HI)2 and SD(HI)3.
-> >
-> > This has no run-time affect as the clock nodes are not currently used.
-> >
-> > Fixes: 8e181633e6ca96049 ("ARM: shmobile: r8a7794: Add SDHI clocks to device tree")
-> > Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> > Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, I will queue this up.
+Current fsi sets dma_slave_config :: slave_id field for DMAEngine,
+but it is no longer needed. Let's remove it.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v3 -> v4
+
+ - removed slave_id only
+ - dst_addr/src_addr will be fixuped in next patch
+
+ sound/soc/sh/fsi.c |    3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/sound/soc/sh/fsi.c b/sound/soc/sh/fsi.c
+index b87b22e..dc28b03 100644
+--- a/sound/soc/sh/fsi.c
++++ b/sound/soc/sh/fsi.c
+@@ -1371,10 +1371,9 @@ static int fsi_dma_probe(struct fsi_priv *fsi, struct fsi_stream *io, struct dev
+ 				shdma_chan_filter, (void *)io->dma_id,
+ 				dev, is_play ? "tx" : "rx");
+ 	if (io->chan) {
+-		struct dma_slave_config cfg;
++		struct dma_slave_config cfg = {};
+ 		int ret;
+ 
+-		cfg.slave_id	= io->dma_id;
+ 		cfg.dst_addr	= 0; /* use default addr */
+ 		cfg.src_addr	= 0; /* use default addr */
+ 		cfg.direction	= is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
+-- 
+1.7.9.5
+
