@@ -1,338 +1,77 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 20 Jan 2015 12:51:44 +0000
-Subject: [PATCH 7/9] ARM: shmobile: ape6evm-reference: Remove board C code and DT file
-Message-Id: <1421758306-24838-8-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 22 Jan 2015 08:34:33 +0000
+Subject: [PATCH 3/5] ARM: shmobile: r8a7791: sound enables Audio DMAC entry on DTSI
+Message-Id: <877fwfkyb2.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421758306-24838-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1421758306-24838-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Now that the r8a73a4 generic multiplatform case has the same features as the
-APE6EVM DT reference board code, we get rid of the latter.  DT reference
-code in the future shall make use of the r8a73a4 multiplatform support code
-with the generic SoC machine vector.
+This patch adds Audio DMAC (= rcar-dmac) entry for sound
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-[geert: Update Documentation/devicetree/bindings/arm/shmobile.txt]
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- Documentation/devicetree/bindings/arm/shmobile.txt |   2 -
- arch/arm/boot/dts/Makefile                         |   1 -
- arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts    | 156 ---------------------
- arch/arm/mach-shmobile/Kconfig                     |  12 --
- arch/arm/mach-shmobile/Makefile                    |   1 -
- arch/arm/mach-shmobile/Makefile.boot               |   1 -
- arch/arm/mach-shmobile/board-ape6evm-reference.c   |  61 --------
- 7 files changed, 234 deletions(-)
- delete mode 100644 arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
- delete mode 100644 arch/arm/mach-shmobile/board-ape6evm-reference.c
+ arch/arm/boot/dts/r8a7791.dtsi |   44 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/arm/shmobile.txt b/Documentation/devicetree/bindings/arm/shmobile.txt
-index c69f127d27c3b974..1665013aa12abc11 100644
---- a/Documentation/devicetree/bindings/arm/shmobile.txt
-+++ b/Documentation/devicetree/bindings/arm/shmobile.txt
-@@ -37,8 +37,6 @@ Boards:
-     compatible = "renesas,alt", "renesas,r8a7794"
-   - APE6-EVM
-     compatible = "renesas,ape6evm", "renesas,r8a73a4"
--  - APE6-EVM - Reference Device Tree Implementation
--    compatible = "renesas,ape6evm-reference", "renesas,r8a73a4"
-   - Atmark Techno Armadillo-800 EVA
-     compatible = "renesas,armadillo800eva"
-   - BOCK-W
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 00a8897818c2a931..d5acdd2a5ec48624 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -457,7 +457,6 @@ dtb-$(CONFIG_ARCH_S5PV210) += \
- 	s5pv210-torbreck.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += \
- 	r8a73a4-ape6evm.dtb \
--	r8a73a4-ape6evm-reference.dtb \
- 	r8a7740-armadillo800eva.dtb \
- 	r8a7778-bockw.dtb \
- 	r8a7778-bockw-reference.dtb \
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-deleted file mode 100644
-index b3d8f844b57a8fc2..0000000000000000
---- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-+++ /dev/null
-@@ -1,156 +0,0 @@
--/*
-- * Device Tree Source for the APE6EVM board
-- *
-- * Copyright (C) 2013 Renesas Solutions Corp.
-- *
-- * This file is licensed under the terms of the GNU General Public License
-- * version 2.  This program is licensed "as is" without any warranty of any
-- * kind, whether express or implied.
-- */
--
--/dts-v1/;
--#include "r8a73a4.dtsi"
--#include <dt-bindings/gpio/gpio.h>
--
--/ {
--	model = "APE6EVM";
--	compatible = "renesas,ape6evm-reference", "renesas,r8a73a4";
--
--	aliases {
--		serial0 = &scifa0;
--	};
--
--	chosen {
--		bootargs = "ignore_loglevel rw";
--		stdout-path = &scifa0;
--	};
--
--	memory@40000000 {
--		device_type = "memory";
--		reg = <0 0x40000000 0 0x40000000>;
--	};
--
--	memory@200000000 {
--		device_type = "memory";
--		reg = <2 0x00000000 0 0x40000000>;
--	};
--
--	vcc_mmc0: regulator@0 {
--		compatible = "regulator-fixed";
--		regulator-name = "MMC0 Vcc";
--		regulator-min-microvolt = <2800000>;
--		regulator-max-microvolt = <2800000>;
--		regulator-always-on;
--	};
--
--	vcc_sdhi0: regulator@1 {
--		compatible = "regulator-fixed";
--
--		regulator-name = "SDHI0 Vcc";
--		regulator-min-microvolt = <3300000>;
--		regulator-max-microvolt = <3300000>;
--
--		gpio = <&pfc 76 GPIO_ACTIVE_HIGH>;
--		enable-active-high;
--	};
--
--	/* Common 3.3V rail, used by several devices on APE6EVM */
--	ape6evm_fixed_3v3: regulator@2 {
--		compatible = "regulator-fixed";
--		regulator-name = "3V3";
--		regulator-min-microvolt = <3300000>;
--		regulator-max-microvolt = <3300000>;
--		regulator-always-on;
--	};
--
--	lbsc {
--		compatible = "simple-bus";
--		#address-cells = <1>;
--		#size-cells = <1>;
--		ranges = <0 0 0 0x20000000>;
--	};
--};
--
--&i2c5 {
--	status = "okay";
--	vdd_dvfs: max8973@1b {
--		compatible = "maxim,max8973";
--		reg = <0x1b>;
--
--		regulator-min-microvolt = <935000>;
--		regulator-max-microvolt = <1200000>;
--		regulator-boot-on;
--		regulator-always-on;
--	};
--};
--
--&cpu0 {
--	cpu0-supply = <&vdd_dvfs>;
--	operating-points = <
--		/* kHz  uV */
--		1950000 1115000
--		1462500  995000
--	>;
--	voltage-tolerance = <1>; /* 1% */
--};
--
--&cmt1 {
--	status = "okay";
--};
--
--&pfc {
--	scifa0_pins: serial0 {
--		renesas,groups = "scifa0_data";
--		renesas,function = "scifa0";
--	};
--
--	mmc0_pins: mmc {
--		renesas,groups = "mmc0_data8", "mmc0_ctrl";
--		renesas,function = "mmc0";
--	};
--
--	sdhi0_pins: sd0 {
--		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
--		renesas,function = "sdhi0";
--	};
--
--	sdhi1_pins: sd1 {
--		renesas,groups = "sdhi1_data4", "sdhi1_ctrl";
--		renesas,function = "sdhi1";
--	};
--};
--
--&mmcif0 {
--	vmmc-supply = <&vcc_mmc0>;
--	bus-width = <8>;
--	non-removable;
--	pinctrl-names = "default";
--	pinctrl-0 = <&mmc0_pins>;
--	status = "okay";
--};
--
--&scifa0 {
--	pinctrl-0 = <&scifa0_pins>;
--	pinctrl-names = "default";
--
--	status = "okay";
--};
--
--&sdhi0 {
--	vmmc-supply = <&vcc_sdhi0>;
--	bus-width = <4>;
--	toshiba,mmc-wrprotect-disable;
--	pinctrl-names = "default";
--	pinctrl-0 = <&sdhi0_pins>;
--	status = "okay";
--};
--
--&sdhi1 {
--	vmmc-supply = <&ape6evm_fixed_3v3>;
--	bus-width = <4>;
--	broken-cd;
--	toshiba,mmc-wrprotect-disable;
--	pinctrl-names = "default";
--	pinctrl-0 = <&sdhi1_pins>;
--	status = "okay";
--};
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index f4108d85c03c6a0e..897d314850ba0857 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -147,18 +147,6 @@ config MACH_APE6EVM
- 	select SMSC_PHY if SMSC911X
- 	select USE_OF
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 8a2fc56..8df2190 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1423,6 +1423,50 @@
+ 				"dvc.0", "dvc.1",
+ 				"clk_a", "clk_b", "clk_c", "clk_i";
  
--config MACH_APE6EVM_REFERENCE
--	bool "APE6EVM board - Reference Device Tree Implementation"
--	depends on ARCH_R8A73A4
--	select SMSC_PHY if SMSC911X
--	select USE_OF
--	---help---
--	   Use reference implementation of APE6EVM board support
--	   which makes a greater use of device tree at the expense
--	   of not supporting a number of devices.
--
--	   This is intended to aid developers
--
- config MACH_MACKEREL
- 	bool "mackerel board"
- 	depends on ARCH_SH7372
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 7b9ed9e25e9bc954..c1d94b08b25fc206 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -59,7 +59,6 @@ ifdef CONFIG_ARCH_SHMOBILE_MULTI
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen-reference.o
- else
- obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
--obj-$(CONFIG_MACH_APE6EVM_REFERENCE)	+= board-ape6evm-reference.o
- obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
- obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
- obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
-diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
-index 6ef0e2b29a02440d..5cb50ff32c88bde2 100644
---- a/arch/arm/mach-shmobile/Makefile.boot
-+++ b/arch/arm/mach-shmobile/Makefile.boot
-@@ -1,7 +1,6 @@
- # per-board load address for uImage
- loadaddr-y	: loadaddr-$(CONFIG_MACH_APE6EVM) += 0x40008000
--loadaddr-$(CONFIG_MACH_APE6EVM_REFERENCE) += 0x40008000
- loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
- loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
- loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
-diff --git a/arch/arm/mach-shmobile/board-ape6evm-reference.c b/arch/arm/mach-shmobile/board-ape6evm-reference.c
-deleted file mode 100644
-index dd5bc63aba421df2..0000000000000000
---- a/arch/arm/mach-shmobile/board-ape6evm-reference.c
-+++ /dev/null
-@@ -1,61 +0,0 @@
--/*
-- * APE6EVM board support
-- *
-- * Copyright (C) 2013  Renesas Solutions Corp.
-- * Copyright (C) 2013  Magnus Damm
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; version 2 of the License.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- */
--
--#include <linux/gpio.h>
--#include <linux/kernel.h>
--#include <linux/of_platform.h>
--#include <linux/pinctrl/machine.h>
--#include <linux/platform_device.h>
--#include <linux/sh_clk.h>
--
--#include <asm/mach-types.h>
--#include <asm/mach/arch.h>
--
--#include "common.h"
--#include "r8a73a4.h"
--
--static void __init ape6evm_add_standard_devices(void)
--{
--#ifndef CONFIG_COMMON_CLK
--	struct clk *parent;
--	struct clk *mp;
--
--	r8a73a4_clock_init();
--
--	/* MP clock parent = extal2 */
--	parent      = clk_get(NULL, "extal2");
--	mp          = clk_get(NULL, "mp");
--	BUG_ON(IS_ERR(parent) || IS_ERR(mp));
--
--	clk_set_parent(mp, parent);
--	clk_put(parent);
--	clk_put(mp);
--#endif
--
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
--}
--
--static const char *ape6evm_boards_compat_dt[] __initdata = {
--	"renesas,ape6evm-reference",
--	NULL,
--};
--
--DT_MACHINE_START(APE6EVM_DT, "ape6evm")
--	.init_early	= shmobile_init_delay,
--	.init_machine	= ape6evm_add_standard_devices,
--	.init_late	= shmobile_init_late,
--	.dt_compat	= ape6evm_boards_compat_dt,
--MACHINE_END
++		dmas =		<&audma0 0x01>,	<&audma1 0x02>,	<&audma0 0x15>,	<&audma1 0x16>,
++				<&audma0 0x03>,	<&audma1 0x04>,	<&audma0 0x49>,	<&audma1 0x4a>,
++				<&audma0 0x05>,	<&audma1 0x06>,	<&audma0 0x63>,	<&audma1 0x64>,
++				<&audma0 0x07>,	<&audma1 0x08>,	<&audma0 0x6f>,	<&audma1 0x70>,
++				<&audma0 0x09>,	<&audma1 0x0a>,	<&audma0 0x71>,	<&audma1 0x72>,
++				<&audma0 0x0b>,	<&audma1 0x0c>,	<&audma0 0x73>,	<&audma1 0x74>,
++				<&audma0 0x0d>,	<&audma1 0x0e>,	<&audma0 0x75>,	<&audma1 0x76>,
++				<&audma0 0x0f>,	<&audma1 0x10>,	<&audma0 0x79>,	<&audma1 0x7a>,
++				<&audma0 0x11>,	<&audma1 0x12>,	<&audma0 0x7b>,	<&audma1 0x7c>,
++				<&audma0 0x13>,	<&audma1 0x14>,	<&audma0 0x7d>,	<&audma1 0x7e>,
++
++				<&audma0 0x85>,	<&audma1 0x9a>,	<&audma0 0xbc>,
++				<&audma0 0x87>,	<&audma1 0x9c>,	<&audma0 0xbe>,
++				<&audma0 0x89>,	<&audma1 0x9e>,
++				<&audma0 0x8b>,	<&audma1 0xa0>,
++				<&audma0 0x8d>,	<&audma1 0xb0>,
++				<&audma0 0x8f>,	<&audma1 0xb2>,
++				<&audma0 0x91>,	<&audma1 0xb4>,
++				<&audma0 0x93>,	<&audma1 0xb6>,
++				<&audma0 0x95>,	<&audma1 0xb8>,
++				<&audma0 0x97>,	<&audma1 0xba>;
++
++		dma-names =	"mem_ssi0",	"ssi0_mem",	"mem_ssiu0",	"ssiu0_mem",
++				"mem_ssi1",	"ssi1_mem",	"mem_ssiu1",	"ssiu1_mem",
++				"mem_ssi2",	"ssi2_mem",	"mem_ssiu2",	"ssiu2_mem",
++				"mem_ssi3",	"ssi3_mem",	"mem_ssiu3",	"ssiu3_mem",
++				"mem_ssi4",	"ssi4_mem",	"mem_ssiu4",	"ssiu4_mem",
++				"mem_ssi5",	"ssi5_mem",	"mem_ssiu5",	"ssiu5_mem",
++				"mem_ssi6",	"ssi6_mem",	"mem_ssiu6",	"ssiu6_mem",
++				"mem_ssi7",	"ssi7_mem",	"mem_ssiu7",	"ssiu7_mem",
++				"mem_ssi8",	"ssi8_mem",	"mem_ssiu8",	"ssiu8_mem",
++				"mem_ssi9",	"ssi9_mem",	"mem_ssiu9",	"ssiu9_mem",
++
++				"mem_src0",	"src0_mem",	"dvc0_mem",
++				"mem_src1",	"src1_mem",	"dvc1_mem",
++				"mem_src2",	"src2_mem",
++				"mem_src3",	"src3_mem",
++				"mem_src4",	"src4_mem",
++				"mem_src5",	"src5_mem",
++				"mem_src6",	"src6_mem",
++				"mem_src7",	"src7_mem",
++				"mem_src8",	"src8_mem",
++				"mem_src9",	"src9_mem";
++
+ 		status = "disabled";
+ 
+ 		rcar_sound,dvc {
 -- 
-1.9.1
+1.7.9.5
 
