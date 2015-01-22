@@ -1,34 +1,89 @@
-From: Joerg Roedel <joro@8bytes.org>
-Date: Mon, 19 Jan 2015 13:44:05 +0000
-Subject: Re: [GIT PULL FOR v3.20] Renesas IPMMU driver
-Message-Id: <20150119134405.GK6343@8bytes.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 22 Jan 2015 09:34:12 +0000
+Subject: [PATCH v3/resend 3/4] drivers: bus: Add Simple Power-Managed Bus DT Bindings
+Message-Id: <1421919253-4784-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <17336548.2pFUfTyJuB@avalon>
-In-Reply-To: <17336548.2pFUfTyJuB@avalon>
+References: <1421919253-4784-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1421919253-4784-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: iommu@lists.linux-foundation.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jan 16, 2015 at 06:08:16PM +0200, Laurent Pinchart wrote:
-> ----------------------------------------------------------------
-> Laurent Pinchart (7):
->       iommu/ipmmu-vmsa: Cleanup failures of ARM mapping creation or attachment
->       iommu/ipmmu-vmsa: Flush P[UM]D entry before freeing the child page table
->       iommu/ipmmu-vmsa: Invalidate TLB after unmapping
->       iommu/ipmmu-vmsa: Add device tree bindings documentation
->       iommu/ipmmu-vmsa: Add device tree support
->       iommu/ipmmu-vmsa: Support multiple micro TLBs per device
->       iommu/ipmmu-vmsa: Remove platform data support
-> 
->  .../devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt    |  41 +++++++
->  drivers/iommu/ipmmu-vmsa.c                              | 151 +++++++++++----
->  include/linux/platform_data/ipmmu-vmsa.h                |  24 ----
->  3 files changed, 154 insertions(+), 62 deletions(-)
->  create mode 100644 Documentation/devicetree/bindings/iommu/renesas,ipmmu-
-> vmsa.txt
->  delete mode 100644 include/linux/platform_data/ipmmu-vmsa.h
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+v3:
+  - Add Tested-by,
+  - Document required properties inherited from "simple-bus",
+  - Document required "reg" property for "renesas,bsc",
+  - Move "ranges" before "reg" in the example,
 
-Pulled, thanks Laurent.
+v2:
+  - New.
+---
+ .../devicetree/bindings/bus/simple-pm-bus.txt      | 52 ++++++++++++++++++++++
+ 1 file changed, 52 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/bus/simple-pm-bus.txt
+
+diff --git a/Documentation/devicetree/bindings/bus/simple-pm-bus.txt b/Documentation/devicetree/bindings/bus/simple-pm-bus.txt
+new file mode 100644
+index 0000000000000000..d03abf7fd8e3997a
+--- /dev/null
++++ b/Documentation/devicetree/bindings/bus/simple-pm-bus.txt
+@@ -0,0 +1,52 @@
++Simple Power-Managed Bus
++============
++
++A Simple Power-Managed Bus is a transparent bus that doesn't need a real
++driver, as it's typically initialized by the boot loader.
++
++However, its bus controller is part of a PM domain, or under the control of a
++functional clock.  Hence, the bus controller's PM domain and/or clock must be
++enabled for child devices connected to the bus (either on-SoC or externally)
++to function.
++
++
++Generic compatible values and properties
++----------------------------------------
++
++Required properties:
++  - compatible: Must be at least one of the vendor-specific compatible values
++		from a vendor-specific section below, and "simple-bus" as a
++		fallback.
++  - #address-cells, #size-cells, ranges: Must describe the mapping between
++		parent address and child address spaces.
++
++Optional platform-specific properties for clock or PM domain control (at least
++one of them is required):
++  - clocks: Must contain a reference to the functional clock(s),
++  - power-domains: Must contain a reference to the PM domain.
++
++
++Vendor-specific compatible values and properties
++------------------------------------------------
++
++Renesas Bus State Controller (BSC):
++  - compatible: Must be an SoC-specific value, and "renesas,bsc" as a fallback.
++                SoC-specific values can be:
++		"renesas,bsc-r8a73a4" for R-Mobile APE6 (r8a73a4)
++		"renesas,bsc-sh73a0" for SH-Mobile AG5 (sh73a0)
++  - reg: Must contain the base address and length to access the bus controller.
++  - interrupts: Must contain a reference to the BSC interrupt, if available.
++
++
++Example:
++
++	bsc: bus@fec10000 {
++		compatible = "renesas,bsc-sh73a0", "renesas,bsc", "simple-bus";
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges = <0 0 0x20000000>;
++		reg = <0xfec10000 0x400>;
++		interrupts = <0 39 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&zb_clk>;
++		power-domains = <&pd_a4s>;
++	};
+-- 
+1.9.1
 
