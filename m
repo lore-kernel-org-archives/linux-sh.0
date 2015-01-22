@@ -1,44 +1,68 @@
-From: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 06 Jan 2015 08:20:51 +0000
-Subject: RE: [PATCH v2] renesas_usbhs: fix platform init error message
-Message-Id: <HKNPR06MB32277B6A388B433D6B612CFD8590@HKNPR06MB322.apcprd06.prod.outlook.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 22 Jan 2015 03:47:40 +0000
+Subject: [PATCH 2/9 v4] mmc: sh_mmcif: remove slave_id settings for DMAEngine
+Message-Id: <871tmnmq5n.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5384843.KGcHOMgQLi@wasted.cogentembedded.com>
-In-Reply-To: <5384843.KGcHOMgQLi@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-SGkgR3JlZXQtc2FuLA0KDQo+IA0KPiBIaSBTaGltb2RhLXNhbiwNCj4gDQo+IE9uIFdlZCwgRGVj
-IDI0LCAyMDE0IGF0IDExOjAyIEFNLCB5b3NoaWhpcm8gc2hpbW9kYQ0KPiA8eW9zaGloaXJvLnNo
-aW1vZGEudWhAcmVuZXNhcy5jb20+IHdyb3RlOg0KPiA+PiA+ID4+Pj4+ICAgICBFciwgT0suIENv
-dWxkIHlvdSB1cGRhdGUgTUFJTlRBSU5FUlM/DQo+ID4+ID4gPj4+PnRoZXJlIGlzIG5vIGVudHJ5
-IGZvciByZW5lc2FzIGRyaXZlciBpbiBNQUlOVEFJTkVSUy4NCj4gPj4gPiA+Pj4+U2hpbW9kYS1z
-YW4sIGNhcmUgdG8gc2VuZCBhIHBhdGNoIGFkZGluZyB5b3Vyc2VsZiBvciBNb3JpbW90by1zYW4g
-YXMNCj4gPj4gPiA+Pj4+bWFpbnRhaW5lcnMgZm9yIFJlbmVzYXMgZHJpdmVyIGFuZCBwb2ludGlu
-ZyB0byBteSB0cmVlIGluIGtlcm5lbC5vcmcgPw0KPiANCj4gPiBCeSB0aGUgd2F5LCBhYm91dCBh
-IHJlbmVzYXNfdXNiaHMgbWFpbnRhaW5lciwgSSBkb24ndCBrbm93IGNsZWFybHkuDQo+ID4gSWYg
-SSBkbyBhcyBhIHJlbmVzYXNfdXNiaHMgbWFpbnRhaW5lcjoNCj4gPiAtIHdoYXQgc2hvdWxkIEkg
-ZG8gYXMgdGhlIG1haW50YWluZXI/DQo+ID4gIC0gSSB0aGluayBJIHNob3VsZCBjaGVjayBwYXRj
-aGVzIG9mIHJlbmVzYXNfdXNiaHMNCj4gPiAgLSBBbmQsIGRvIEkganVzdCByZXR1cm4gIEFDSyBv
-ciBOQUNLIHRvIHRoZSBwYXRjaGVzPw0KPiANCj4gQXMgYSBtYWludGFpbmVyLCB5b3UgcmV2aWV3
-IGFsbCBwYXRjaGVzIGZvciByZW5lc2FzX3VzYmhzLCBhbmQgb2YgdGhlc2UgcGF0Y2hlcw0KPiB3
-aWxsIGhhdmUgdG8gZ28gdGhyb3VnaCB5b3UuDQo+IFRoZXJlIGFyZSB0aHJlZSB3YXlzIHRvIGFj
-aGlldmUgdGhhdDoNCj4gICAxLiBZb3UgY29sbGVjdCBhbGwgYWNjZXB0ZWQgcGF0Y2hlcywgYW5k
-IGZvcndhcmQgdGhlbSB0byBHcmVnS0ggd2l0aCB5b3VyDQo+ICAgICAgU2lnbmVkLW9mZi1ieSBh
-ZGRlZCwNCj4gICAyLiBZb3UgY29sbGVjdCBhbGwgYWNjZXB0ZWQgbHMgLWxwYXRjaGVzLCBwdWJs
-aXNoIHRoZW0gaW4gYSBnaXQgdHJlZSwgYW5kDQo+ICAgICAgYXNrIEdyZWdLSCB0byBwdWxsIGEg
-YnJhbmNoIG9yIHRhZyBmcm9tIHlvdXIgZ2l0IHRyZWUsDQo+ICAgMy4gWW91IGFjayBhbGwgYWNj
-ZXB0ZWQgcGF0Y2hlcywgc28gR3JlZ0tIIGtub3dzIHdoaWNoIHBhdGNoZXMgdG8gYXBwbHkuDQo+
-IA0KPiBXaGljaCB3YXkgdG8gY2hvb3NlIGRlcGVuZHMgb24gdGhlIHZvbHVtZSBvZiBwYXRjaGVz
-Lg0KDQpUaGFuayB5b3UgdmVyeSBtdWNoIGZvciB0aGUgcmVwbHkhDQpJIHVuZGVyc3Rvb2Qgd2hh
-dCBhIG1haW50YWluZXIgc2hvdWxkIGRvLg0KU28sIEkgd2lsbCBzdWJtaXQgYSBwYXRjaCBmb3Ig
-TUFJTlRBSU5FUlMgZmlsZS4NCg0KQmVzdCByZWdhcmRzLA0KWW9zaGloaXJvIFNoaW1vZGENCg0K
-PiBHcntvZXRqZSxlZXRpbmd9cywNCj4gDQo+ICAgICAgICAgICAgICAgICAgICAgICAgIEdlZXJ0
-DQo+IA0KPiAtLQ0KPiBHZWVydCBVeXR0ZXJob2V2ZW4gLS0gVGhlcmUncyBsb3RzIG9mIExpbnV4
-IGJleW9uZCBpYTMyIC0tIGdlZXJ0QGxpbnV4LW02OGsub3JnDQo+IA0KPiBJbiBwZXJzb25hbCBj
-b252ZXJzYXRpb25zIHdpdGggdGVjaG5pY2FsIHBlb3BsZSwgSSBjYWxsIG15c2VsZiBhIGhhY2tl
-ci4gQnV0DQo+IHdoZW4gSSdtIHRhbGtpbmcgdG8gam91cm5hbGlzdHMgSSBqdXN0IHNheSAicHJv
-Z3JhbW1lciIgb3Igc29tZXRoaW5nIGxpa2UgdGhhdC4NCj4gICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAtLSBMaW51cyBUb3J2YWxkcw0K
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+Current sh_mmcif sets dma_slave_config :: slave_id field for DMAEngine,
+but it is no longer needed. Let's remove it.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+---
+v3 -> v4
+
+ - set default slave_data = NULL, and removed "else" case
+
+ drivers/mmc/host/sh_mmcif.c |   13 +++++--------
+ 1 file changed, 5 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 7d9d6a3..26b7889 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -388,7 +388,7 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
+ {
+ 	struct dma_slave_config cfg = { 0, };
+ 	struct dma_chan *chan;
+-	unsigned int slave_id;
++	void *slave_data = NULL;
+ 	struct resource *res;
+ 	dma_cap_mask_t mask;
+ 	int ret;
+@@ -397,13 +397,12 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
+ 	dma_cap_set(DMA_SLAVE, mask);
+ 
+ 	if (pdata)
+-		slave_id = direction = DMA_MEM_TO_DEV
+-			 ? pdata->slave_id_tx : pdata->slave_id_rx;
+-	else
+-		slave_id = 0;
++		slave_data = direction = DMA_MEM_TO_DEV ?
++			(void *)pdata->slave_id_tx :
++			(void *)pdata->slave_id_rx;
+ 
+ 	chan = dma_request_slave_channel_compat(mask, shdma_chan_filter,
+-				(void *)(unsigned long)slave_id, &host->pd->dev,
++				slave_data, &host->pd->dev,
+ 				direction = DMA_MEM_TO_DEV ? "tx" : "rx");
+ 
+ 	dev_dbg(&host->pd->dev, "%s: %s: got channel %p\n", __func__,
+@@ -414,8 +413,6 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
+ 
+ 	res = platform_get_resource(host->pd, IORESOURCE_MEM, 0);
+ 
+-	/* In the OF case the driver will get the slave ID from the DT */
+-	cfg.slave_id = slave_id;
+ 	cfg.direction = direction;
+ 
+ 	if (direction = DMA_DEV_TO_MEM) {
+-- 
+1.7.9.5
+
