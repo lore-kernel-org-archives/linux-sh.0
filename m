@@ -1,56 +1,49 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 16 Jan 2015 09:20:54 +0000
-Subject: Re: ARM: shmobile: r8a7779: Instantiate GIC from C board code in legacy builds
-Message-Id: <CAMuHMdU-BOdsJdcxHOcgUcEKhsqrugFnSim72f6wE75UQpP_rQ@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 22 Jan 2015 03:49:10 +0000
+Subject: [PATCH 7/9 v4] ASoC: rsnd: remove slave_id settings for DMAEngine
+Message-Id: <87twzjlbiv.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150116014919.30817.13079.sendpatchset@little-apple>
-In-Reply-To: <20150116014919.30817.13079.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Jan 16, 2015 at 2:49 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
->
-> As of commit 9a1091ef0017c40a ("irqchip: gic: Support hierarchy irq
-> domain."), Marzen legacy hangs during boot with:
->
->    Image Name:   'Linux-3.19.0-rc4'
->    Image Type:   ARM Linux Kernel Image (uncompressed)
->    Data Size:    3445880 Bytes = 3.3 MiB
->    Load Address: 60008000
->    Entry Point:  60008000
->    Verifying Checksum ... OK
->    Loading Kernel Image ... OK
-> OK
->
-> Starting kernel ...
->
-> Enabling DEBUG_LL does not seem to change the situation, however this
-> patch by itself fixes this issue and re-enables normal boot.
->
-> This issue happens because the IRQ numbers of the GIC are now virtual,
-> and no longer match the hardcoded hardware IRQ numbers in the platform
-> board code.
->
-> To fix this, instantiate the GIC from platform board code when compiling
-> a legacy kernel, like is done for the sh73a0, r8a7740 and r8a7778 legacy code.
->
-> Follows same style as the r8a7740 legacy GIC fix by Geert Uytterhoeven,
-> thanks to him for the initial work.
->
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Current rsnd sets dma_slave_config :: slave_id field for DMAEngine,
+but it is no longer needed. Let's remove it.
 
-Gr{oetje,eeting}s,
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+---
+v3 -> v4
 
-                        Geert
+ - no change
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+ sound/soc/sh/rcar/core.c |    3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
+index f0bb137..1f7ff2a 100644
+--- a/sound/soc/sh/rcar/core.c
++++ b/sound/soc/sh/rcar/core.c
+@@ -316,7 +316,7 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma,
+ 		  int is_play, int id)
+ {
+ 	struct device *dev = rsnd_priv_to_dev(priv);
+-	struct dma_slave_config cfg;
++	struct dma_slave_config cfg = {};
+ 	struct rsnd_mod *mod_from;
+ 	struct rsnd_mod *mod_to;
+ 	char dma_name[DMA_NAME_SIZE];
+@@ -334,7 +334,6 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma,
+ 	rsnd_dma_of_path(dma, is_play, &mod_from, &mod_to);
+ 	rsnd_dma_of_name(mod_from, mod_to, dma_name);
+ 
+-	cfg.slave_id	= id;
+ 	cfg.direction	= is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
+ 	cfg.src_addr	= rsnd_gen_dma_addr(priv, mod_from, is_play, 1);
+ 	cfg.dst_addr	= rsnd_gen_dma_addr(priv, mod_to,   is_play, 0);
+-- 
+1.7.9.5
+
