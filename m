@@ -1,57 +1,69 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 20 Jan 2015 00:11:34 +0000
-Subject: Re: [PATCH 3/3] ASoC: simple-card: Remove support for setting differing DAI formats
-Message-Id: <87a91ecntk.wl%kuninori.morimoto.gx@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 23 Jan 2015 20:37:05 +0000
+Subject: [PATCH] ARM: shmobile: henninger: rename board to Porter
+Message-Id: <2481726.lh33apx2TG@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421661297-19654-1-git-send-email-lars@metafoo.de>
-	<1421661297-19654-3-git-send-email-lars@metafoo.de>
-In-Reply-To: <1421661297-19654-3-git-send-email-lars@metafoo.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Lars-Peter Clausen <lars@metafoo.de>
-Cc: Mark Brown <broonie@kernel.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-arm-kernel@lists.infradead.org, alsa-devel@alsa-project.org
+To: linux-arm-kernel@lists.infradead.org
 
+Renesas has made some changes to the Henninger low cost board hardware and at
+the same time decided to  rename the board  to Porter.
 
-Hi Lars
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-> Having to set different formats on the CPU side and the CODEC side of a DAI
-> link is usually indication that something is terribly wrong and in most
-> cases is a result of a broken driver that implements a set_fmt() callback
-> which does not follow the specification. In the past this feature has been
-> used to work around broken drivers, rather than fixing them. We don't really
-> want to encourage this, so remove support for setting different formats on
-> both ends of the link.
-> 
-> Along the way switch to static DAI format setup by setting the the dai_fmt
-> field of the snd_soc_dai_link rather than calling snd_soc_dai_fmt().
-> 
-> Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
-> ---
-(snip)
-> +	dai_link->dai_fmt = daifmt;
-> +
->  	of_node_put(bitclkmaster);
->  	of_node_put(framemaster);
->  
-> @@ -379,13 +367,11 @@ static int asoc_simple_card_dai_link_of(struct device_node *node,
->  	dai_link->init = asoc_simple_card_dai_init;
->  
->  	dev_dbg(dev, "\tname : %s\n", dai_link->stream_name);
-> -	dev_dbg(dev, "\tcpu : %s / %04x / %d\n",
-> +	dev_dbg(dev, "\tcpu : %s / %d\n",
->  		dai_link->cpu_dai_name,
-> -		dai_props->cpu_dai.fmt,
->  		dai_props->cpu_dai.sysclk);
-> -	dev_dbg(dev, "\tcodec : %s / %04x / %d\n",
-> +	dev_dbg(dev, "\tcodec : %s / %d\n",
->  		dai_link->codec_dai_name,
-> -		dai_props->codec_dai.fmt,
->  		dai_props->codec_dai.sysclk);
-
-Can you please indicate dai_fmt here anyway ?
-I don't care "how to" or "where", but format information is useful for debugging
-
-Best regards
 ---
-Kuninori Morimoto
+This patch is against 'renesas-devel-20150123-v3.19-rc5' tag of Simon Horman's
+'renesas.git' repo.
+
+ arch/arm/boot/dts/Makefile                                     |  2 +-
+ .../arm/boot/dts/{r8a7791-henninger.dts => r8a7791-porter.dts} | 10 +++++-----
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+ rename arch/arm/boot/dts/{r8a7791-henninger.dts => r8a7791-porter.dts} (96%)
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 59e79e9..3cc8ba5 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -419,8 +419,8 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += eme
+ 	r8a7740-armadillo800eva.dtb \
+ 	r8a7779-marzen.dtb \
+ 	r8a7790-lager.dtb \
+-	r8a7791-henninger.dtb \
+ 	r8a7791-koelsch.dtb \
++	r8a7791-porter.dtb \
+ 	r8a7794-alt.dtb \
+ 	sh73a0-kzm9g.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
+diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-porter.dts
+similarity index 96%
+rename from arch/arm/boot/dts/r8a7791-henninger.dts
+rename to arch/arm/boot/dts/r8a7791-porter.dts
+index d2ebf11..4a616dc 100644
+--- a/arch/arm/boot/dts/r8a7791-henninger.dts
++++ b/arch/arm/boot/dts/r8a7791-porter.dts
+@@ -1,8 +1,8 @@
+ /*
+- * Device Tree Source for the Henninger board
++ * Device Tree Source for the Porter board
+  *
+- * Copyright (C) 2014 Renesas Solutions Corp.
+- * Copyright (C) 2014 Cogent Embedded, Inc.
++ * Copyright (C) 2014-2015 Renesas Solutions Corp.
++ * Copyright (C) 2014-2015 Cogent Embedded, Inc.
+  *
+  * This file is licensed under the terms of the GNU General Public License
+  * version 2.  This program is licensed "as is" without any warranty of any
+@@ -14,8 +14,8 @@
+ #include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+-	model = "Henninger";
+-	compatible = "renesas,henninger", "renesas,r8a7791";
++	model = "Porter";
++	compatible = "renesas,porter", "renesas,r8a7791";
+ 
+ 	aliases {
+ 		serial0 = &scif0;
+
