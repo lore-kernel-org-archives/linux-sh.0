@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 23 Jan 2015 14:18:11 +0000
+From: Mark Rutland <mark.rutland@arm.com>
+Date: Fri, 23 Jan 2015 14:34:59 +0000
 Subject: Re: [PATCH v3/resend 3/4] drivers: bus: Add Simple Power-Managed Bus DT Bindings
-Message-Id: <CAMuHMdVC_BoKgSXytYtc9CnGdTPezc8BcJ_ZrDP=3ZN1Kf6bJA@mail.gmail.com>
+Message-Id: <20150123143459.GN23493@leverpostej>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1421919253-4784-1-git-send-email-geert+renesas@glider.be>
  <7hvbjy30an.fsf@deeprootsystems.com>
@@ -13,102 +13,104 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Arnd,
-
-On Fri, Jan 23, 2015 at 2:46 PM, Arnd Bergmann <arnd@arndb.de> wrote:
+On Fri, Jan 23, 2015 at 01:46:35PM +0000, Arnd Bergmann wrote:
 > On Friday 23 January 2015 09:56:51 Geert Uytterhoeven wrote:
->> >> diff --git a/Documentation/devicetree/bindings/bus/simple-pm-bus.txt b/Documentation/devicetree/bindings/bus/simple-pm-bus.txt
->> >> new file mode 100644
->> >> index 0000000000000000..d03abf7fd8e3997a
->> >> --- /dev/null
->> >> +++ b/Documentation/devicetree/bindings/bus/simple-pm-bus.txt
->> >> @@ -0,0 +1,52 @@
->> >> +Simple Power-Managed Bus
->> >> +============
->> >> +
->> >> +A Simple Power-Managed Bus is a transparent bus that doesn't need a real
->> >> +driver, as it's typically initialized by the boot loader.
->> >> +
->> >> +However, its bus controller is part of a PM domain, or under the control of a
->> >> +functional clock.  Hence, the bus controller's PM domain and/or clock must be
->> >> +enabled for child devices connected to the bus (either on-SoC or externally)
->> >> +to function.
->> >> +
->> >> +
->> >> +Generic compatible values and properties
->> >> +----------------------------------------
->> >> +
->> >> +Required properties:
->> >> +  - compatible: Must be at least one of the vendor-specific compatible values
->> >> +             from a vendor-specific section below, and "simple-bus" as a
->> >> +             fallback.
->> >
->> > What happened to the idea of using something like "simple-pm-bus"?
->>
->> I think that's a decision to make by the (successor of the) ePAPR committee.
->> At least it would be nice to get some feedback from the DT review team
->> about this.
->>
->> If we go that road, the vendor-specific compatible value should still be
->> documented, else checkpatch will complain when encountering it in a DTS.
->> Then, should it become
->>
->>     compatible = "renesas,bsc-sh73a0", "renesas,bsc", "simple-pm-bus",
->> "simple-bus";
->>
->> or should "simple-bus" just be added to of_default_bus_match_table[], so we
-
-Sorry, FTR, I meant "simple-pm-bus" here.
-
->> can drop "simple-bus" from the list in the DTS:
->>
->>     compatible = "renesas,bsc-sh73a0", "renesas,bsc", "simple-pm-bus";
->
+> > >> diff --git a/Documentation/devicetree/bindings/bus/simple-pm-bus.txt b/Documentation/devicetree/bindings/bus/simple-pm-bus.txt
+> > >> new file mode 100644
+> > >> index 0000000000000000..d03abf7fd8e3997a
+> > >> --- /dev/null
+> > >> +++ b/Documentation/devicetree/bindings/bus/simple-pm-bus.txt
+> > >> @@ -0,0 +1,52 @@
+> > >> +Simple Power-Managed Bus
+> > >> +============
+> > >> +
+> > >> +A Simple Power-Managed Bus is a transparent bus that doesn't need a real
+> > >> +driver, as it's typically initialized by the boot loader.
+> > >> +
+> > >> +However, its bus controller is part of a PM domain, or under the control of a
+> > >> +functional clock.  Hence, the bus controller's PM domain and/or clock must be
+> > >> +enabled for child devices connected to the bus (either on-SoC or externally)
+> > >> +to function.
+> > >> +
+> > >> +
+> > >> +Generic compatible values and properties
+> > >> +----------------------------------------
+> > >> +
+> > >> +Required properties:
+> > >> +  - compatible: Must be at least one of the vendor-specific compatible values
+> > >> +             from a vendor-specific section below, and "simple-bus" as a
+> > >> +             fallback.
+> > >
+> > > What happened to the idea of using something like "simple-pm-bus"?
+> > 
+> > I think that's a decision to make by the (successor of the) ePAPR committee.
+> > At least it would be nice to get some feedback from the DT review team
+> > about this.
+> > 
+> > If we go that road, the vendor-specific compatible value should still be
+> > documented, else checkpatch will complain when encountering it in a DTS.
+> > Then, should it become
+> > 
+> >     compatible = "renesas,bsc-sh73a0", "renesas,bsc", "simple-pm-bus",
+> > "simple-bus";
+> > 
+> > or should "simple-bus" just be added to of_default_bus_match_table[], so we
+> > can drop "simple-bus" from the list in the DTS:
+> > 
+> >     compatible = "renesas,bsc-sh73a0", "renesas,bsc", "simple-pm-bus";
+> 
 > I was thinking of the reverse: drop "simple-bus" bus from the list here,
 > but not add "simple-pm-bus" to of_default_bus_match_table. This will
 > cause child devices to no longer be probed automatically, and you will
 > have to call of_platform_populate() from simple_pm_bus_probe(), after
-> pm_runtime_enable(). This seems like a cleaner model to me, for two
-> reasons:
->
+> pm_runtime_enable().
+
+I am in complete agreement.
+
+> This seems like a cleaner model to me, for two reasons:
+> 
 > - In the binding, claiming compatibility with "simple-bus" feels
 >   wrong to me, because you have a bus that is not as simple as others
->
+
+Well, it depends. If you _can_ handle it as a "simple-bus" (i.e. it's in
+a sane state by default and you can ignore the bus details entirely),
+then "simple-bus" is appropriate. However, I don't think that we can
+always rely on this, because the state is highly dependent on the FW,
+bootloader, and the rest of the kernel.
+
+We have clock/regulator/whatever controller drivers which disable unused
+outputs (for power saving and/or flushing out FW bugs). The dtb has no
+idea about all of these in-kernel details. If the kernel probes the bus
+as a "simple-bus" (with no pm at all), then the bus may have been
+inadvertently disabled already (or may become so later).
+
+If the kernel is in control of the providers of inputs, then the kernel
+_must_ explicitly handle those inputs (which requires the bus to be
+probed as "simple-pm-bus" and not "simple-bus").
+
 > - The ordering between pm_runtime_enable() and the probing of the
 >   child devices is guaranteed, which I think it is not with your
 >   current code.
 
-The ordering is indeed a good argument. Will update.
+There's also kexec to consider. You'd need to ensure that the bus is
+re-initialised prior to exit from the kernel to keep the bus
+"simple-bus" compatible for the next user. I imagine that enabling a
+device prior to exit from the kernel is the opposite of what the PM code
+does.
 
-Hence:
-  - The DTS will claim a compatibility with
-    "renesas,bsc-sh73a0", "renesas,bsc", "simple-pm-bus".
-  - The driver will match against "simple-pm-bus".
-
-Note that if we ever have a real driver for "renesas,bsc", we'll have to
-be careful about binding ordering. "simple-bus" is handled by core code,
- and doesn't prevent a more specific driver to take precedence.
-"simple-pm-bus" is handled by a driver, so if it binds first, a more specific
-driver cannot take over.
+Just having "simple-pm-bus" (and requiring the simple-pm-bus driver to
+do sub-node probing _after_ initialisation of the PM'd bus) is much more
+robust. That way if the OS can't acquire all the necessary resources
+(and guarantee the bus will work), it won't start trying to probe the
+children and hang/explode.
 
 > Does this make sense, or am I missing an important reason why there
 > has to be a "simple-bus" compatible string here?
 
-Yes, it makes sense. I had the "simple-bus" compatible entry there because of
-the "most generic first", "least generic last" rule. If you don't use the
-extra features (i.e. don't touch the clocks or PM domains in the SoC), it is
-compatible with "simple-bus". That's more or less how it was in
-r8a73a4-ape6evm-reference.dts before the advent of CCF and PM domains.
+The only reason to have it would be to enable an old kernel to use a new
+DT. However, for the reasons above I believe that would be broken
+anyway, so I do not think that "simple-bus" is an appropriate compatible
+fallback.
 
-Thanks!
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Thanks,
+Mark.
