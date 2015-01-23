@@ -1,40 +1,64 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 21 Jan 2015 04:15:33 +0000
-Subject: [PATCH 6/8 v3] spi: sh-msiof: remove slave_id settings for DMAEngine
-Message-Id: <877fwgojj7.wl%kuninori.morimoto.gx@renesas.com>
+From: Jiang Liu <jiang.liu@linux.intel.com>
+Date: Fri, 23 Jan 2015 05:36:47 +0000
+Subject: [Resend Patch v4 08/16] smp, sh: Kill SMP single function call interrupt
+Message-Id: <1421991416-20297-9-git-send-email-jiang.liu@linux.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1421991416-20297-1-git-send-email-jiang.liu@linux.intel.com>
+In-Reply-To: <1421991416-20297-1-git-send-email-jiang.liu@linux.intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Thomas Gleixner <tglx@linutronix.de>, Jiang Liu <jiang.liu@linux.intel.com>
+Cc: Borislav Petkov <bp@alien8.de>, Tony Luck <tony.luck@intel.com>, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
 
-From: Arnd Bergmann <arnd@arndb.de>
+Commit 9a46ad6d6df3b54 "smp: make smp_call_function_many() use logic
+similar to smp_call_function_single()" has unified the way to handle
+single and multiple cross-CPU function calls. Now only one interrupt
+is needed for architecture specific code to support generic SMP function
+call interfaces, so kill the redundant single function call interrupt.
 
-Current sh-msiof sets dma_slave_config :: slave_id field for DMAEngine,
-but it is no longer needed. Let's remove it.
-
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Signed-off-by: Jiang Liu <jiang.liu@linux.intel.com>
 ---
-v2 -> v3
+ arch/sh/include/asm/smp.h |    1 -
+ arch/sh/kernel/smp.c      |    5 +----
+ 2 files changed, 1 insertion(+), 5 deletions(-)
 
- - no change
-
- drivers/spi/spi-sh-msiof.c |    1 -
- 1 file changed, 1 deletion(-)
-
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 9a884e6..fcf6984 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -1036,7 +1036,6 @@ static struct dma_chan *sh_msiof_request_dma_chan(struct device *dev,
- 	}
+diff --git a/arch/sh/include/asm/smp.h b/arch/sh/include/asm/smp.h
+index 78b0d0f4b24b..93ce87b3a18d 100644
+--- a/arch/sh/include/asm/smp.h
++++ b/arch/sh/include/asm/smp.h
+@@ -25,7 +25,6 @@ extern int __cpu_logical_map[NR_CPUS];
+ enum {
+ 	SMP_MSG_FUNCTION,
+ 	SMP_MSG_RESCHEDULE,
+-	SMP_MSG_FUNCTION_SINGLE,
+ 	SMP_MSG_TIMER,
  
- 	memset(&cfg, 0, sizeof(cfg));
--	cfg.slave_id = id;
- 	cfg.direction = dir;
- 	if (dir = DMA_MEM_TO_DEV) {
- 		cfg.dst_addr = port_addr;
+ 	SMP_MSG_NR,	/* must be last */
+diff --git a/arch/sh/kernel/smp.c b/arch/sh/kernel/smp.c
+index fc5acfc93c92..fc03baf8b661 100644
+--- a/arch/sh/kernel/smp.c
++++ b/arch/sh/kernel/smp.c
+@@ -282,7 +282,7 @@ void arch_send_call_function_ipi_mask(const struct cpumask *mask)
+ 
+ void arch_send_call_function_single_ipi(int cpu)
+ {
+-	mp_ops->send_ipi(cpu, SMP_MSG_FUNCTION_SINGLE);
++	mp_ops->send_ipi(cpu, SMP_MSG_FUNCTION);
+ }
+ 
+ void smp_timer_broadcast(const struct cpumask *mask)
+@@ -309,9 +309,6 @@ void smp_message_recv(unsigned int msg)
+ 	case SMP_MSG_RESCHEDULE:
+ 		scheduler_ipi();
+ 		break;
+-	case SMP_MSG_FUNCTION_SINGLE:
+-		generic_smp_call_function_single_interrupt();
+-		break;
+ 	case SMP_MSG_TIMER:
+ 		ipi_timer();
+ 		break;
 -- 
-1.7.9.5
+1.7.10.4
 
