@@ -1,66 +1,101 @@
-From: Kevin Hilman <khilman@kernel.org>
-Date: Thu, 22 Jan 2015 22:42:08 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 23 Jan 2015 08:56:51 +0000
 Subject: Re: [PATCH v3/resend 3/4] drivers: bus: Add Simple Power-Managed Bus DT Bindings
-Message-Id: <7hvbjy30an.fsf@deeprootsystems.com>
+Message-Id: <CAMuHMdUMcyXdgv+xdd8Zo67rYnfh6JaSWfr1H3c6NrQs=JsNLg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1421919253-4784-1-git-send-email-geert+renesas@glider.be>
  <1421919253-4784-4-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1421919253-4784-4-git-send-email-geert+renesas@glider.be> (Geert
- Uytterhoeven's message of "Thu, 22 Jan 2015 10:34:12 +0100")
+ <7hvbjy30an.fsf@deeprootsystems.com>
+In-Reply-To: <7hvbjy30an.fsf@deeprootsystems.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Geert Uytterhoeven <geert+renesas@glider.be> writes:
+Hi Kevin,
 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> ---
-> v3:
->   - Add Tested-by,
->   - Document required properties inherited from "simple-bus",
->   - Document required "reg" property for "renesas,bsc",
->   - Move "ranges" before "reg" in the example,
+On Thu, Jan 22, 2015 at 11:42 PM, Kevin Hilman <khilman@kernel.org> wrote:
+> Geert Uytterhoeven <geert+renesas@glider.be> writes:
 >
-> v2:
->   - New.
-> ---
->  .../devicetree/bindings/bus/simple-pm-bus.txt      | 52 ++++++++++++++++++++++
->  1 file changed, 52 insertions(+)
->  create mode 100644 Documentation/devicetree/bindings/bus/simple-pm-bus.txt
+>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>> Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+>> ---
+>> v3:
+>>   - Add Tested-by,
+>>   - Document required properties inherited from "simple-bus",
+>>   - Document required "reg" property for "renesas,bsc",
+>>   - Move "ranges" before "reg" in the example,
+>>
+>> v2:
+>>   - New.
+>> ---
+>>  .../devicetree/bindings/bus/simple-pm-bus.txt      | 52 ++++++++++++++++++++++
+>>  1 file changed, 52 insertions(+)
+>>  create mode 100644 Documentation/devicetree/bindings/bus/simple-pm-bus.txt
+>>
+>> diff --git a/Documentation/devicetree/bindings/bus/simple-pm-bus.txt b/Documentation/devicetree/bindings/bus/simple-pm-bus.txt
+>> new file mode 100644
+>> index 0000000000000000..d03abf7fd8e3997a
+>> --- /dev/null
+>> +++ b/Documentation/devicetree/bindings/bus/simple-pm-bus.txt
+>> @@ -0,0 +1,52 @@
+>> +Simple Power-Managed Bus
+>> +============
+>> +
+>> +A Simple Power-Managed Bus is a transparent bus that doesn't need a real
+>> +driver, as it's typically initialized by the boot loader.
+>> +
+>> +However, its bus controller is part of a PM domain, or under the control of a
+>> +functional clock.  Hence, the bus controller's PM domain and/or clock must be
+>> +enabled for child devices connected to the bus (either on-SoC or externally)
+>> +to function.
+>> +
+>> +
+>> +Generic compatible values and properties
+>> +----------------------------------------
+>> +
+>> +Required properties:
+>> +  - compatible: Must be at least one of the vendor-specific compatible values
+>> +             from a vendor-specific section below, and "simple-bus" as a
+>> +             fallback.
 >
-> diff --git a/Documentation/devicetree/bindings/bus/simple-pm-bus.txt b/Documentation/devicetree/bindings/bus/simple-pm-bus.txt
-> new file mode 100644
-> index 0000000000000000..d03abf7fd8e3997a
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/bus/simple-pm-bus.txt
-> @@ -0,0 +1,52 @@
-> +Simple Power-Managed Bus
-> +============
-> +
-> +A Simple Power-Managed Bus is a transparent bus that doesn't need a real
-> +driver, as it's typically initialized by the boot loader.
-> +
-> +However, its bus controller is part of a PM domain, or under the control of a
-> +functional clock.  Hence, the bus controller's PM domain and/or clock must be
-> +enabled for child devices connected to the bus (either on-SoC or externally)
-> +to function.
-> +
-> +
-> +Generic compatible values and properties
-> +----------------------------------------
-> +
-> +Required properties:
-> +  - compatible: Must be at least one of the vendor-specific compatible values
-> +		from a vendor-specific section below, and "simple-bus" as a
-> +		fallback.
+> What happened to the idea of using something like "simple-pm-bus"?
 
-What happened to the idea of using something like "simple-pm-bus"?
+I think that's a decision to make by the (successor of the) ePAPR committee.
+At least it would be nice to get some feedback from the DT review team
+about this.
 
-There's nothing vendor-specific in the driver at all, so the
-vendor-specific binding seem like clutter to me and will result in
-continuing to add vendor-specific compatibles without any
-vendor-specific code.
+If we go that road, the vendor-specific compatible value should still be
+documented, else checkpatch will complain when encountering it in a DTS.
+Then, should it become
 
-Kevin
+    compatible = "renesas,bsc-sh73a0", "renesas,bsc", "simple-pm-bus",
+"simple-bus";
+
+or should "simple-bus" just be added to of_default_bus_match_table[], so we
+can drop "simple-bus" from the list in the DTS:
+
+    compatible = "renesas,bsc-sh73a0", "renesas,bsc", "simple-pm-bus";
+
+> There's nothing vendor-specific in the driver at all, so the
+> vendor-specific binding seem like clutter to me and will result in
+> continuing to add vendor-specific compatibles without any
+> vendor-specific code.
+
+So far not many users or other interested parties chimed in, so that's
+still to be seen. If/when this happens, we can remove the vendor-specific
+matching from the driver, and add a quirk, to add a "simple-pm-bus"
+compatible value where needed, to platform code, right?
+
+Thanks!
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
