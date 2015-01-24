@@ -1,52 +1,133 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 22 Jan 2015 14:23:49 +0000
-Subject: Re: [PATCH] i2c: slave-eeprom: fix boundary check when using sysfs
-Message-Id: <20150122142349.GC3413@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="2/5bycvrmDh4d1IB"
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 24 Jan 2015 21:13:50 +0000
+Subject: [PATCH] iommu/ipmmu-vmsa: Fix IOMMU lookup when multiple IOMMUs are registered
+Message-Id: <1422134030-11121-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421684575-6679-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1421684575-6679-1-git-send-email-wsa@the-dreams.de>
-To: linux-sh@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: iommu@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org
 
+When adding a new device the driver loops over all registered IOMMUs and
+calls the ipmmu_find_utlbs() function to parse the DT iommus attribute.
+The function returns an error when the IOMMU referenced in DT doesn't
+match the current IOMMU. The caller incorrectly breaks from the loop
+immediately when the error is reported, resulting in only the first
+IOMMU being considered.
 
---2/5bycvrmDh4d1IB
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Fix this, and while at it move code that isn't specific to an IOMMU
+instance out of the loop.
 
-On Mon, Jan 19, 2015 at 05:22:55PM +0100, Wolfram Sang wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
->=20
-> Due to a copy&paste error, the last byte of the shared memory was not
-> accessible via sysfs.
->=20
-> Reported-by: Debora Grosse <debora@mds.com>
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/iommu/ipmmu-vmsa.c | 49 ++++++++++++++++++++--------------------------
+ 1 file changed, 21 insertions(+), 28 deletions(-)
 
-Applied to for-current, thanks!
+diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
+index 791c3daec7c0..407324132587 100644
+--- a/drivers/iommu/ipmmu-vmsa.c
++++ b/drivers/iommu/ipmmu-vmsa.c
+@@ -1007,45 +1007,28 @@ static phys_addr_t ipmmu_iova_to_phys(struct iommu_domain *io_domain,
+ }
+ 
+ static int ipmmu_find_utlbs(struct ipmmu_vmsa_device *mmu, struct device *dev,
+-			    unsigned int **_utlbs)
++			    unsigned int *utlbs, unsigned int num_utlbs)
+ {
+-	unsigned int *utlbs;
+ 	unsigned int i;
+-	int count;
+-
+-	count = of_count_phandle_with_args(dev->of_node, "iommus",
+-					   "#iommu-cells");
+-	if (count < 0)
+-		return -EINVAL;
+-
+-	utlbs = kcalloc(count, sizeof(*utlbs), GFP_KERNEL);
+-	if (!utlbs)
+-		return -ENOMEM;
+ 
+-	for (i = 0; i < count; ++i) {
++	for (i = 0; i < num_utlbs; ++i) {
+ 		struct of_phandle_args args;
+ 		int ret;
+ 
+ 		ret = of_parse_phandle_with_args(dev->of_node, "iommus",
+ 						 "#iommu-cells", i, &args);
+ 		if (ret < 0)
+-			goto error;
++			return ret;
+ 
+ 		of_node_put(args.np);
+ 
+ 		if (args.np != mmu->dev->of_node || args.args_count != 1)
+-			goto error;
++			return -EINVAL;
+ 
+ 		utlbs[i] = args.args[0];
+ 	}
+ 
+-	*_utlbs = utlbs;
+-
+-	return count;
+-
+-error:
+-	kfree(utlbs);
+-	return -EINVAL;
++	return 0;
+ }
+ 
+ static int ipmmu_add_device(struct device *dev)
+@@ -1053,10 +1036,10 @@ static int ipmmu_add_device(struct device *dev)
+ 	struct ipmmu_vmsa_archdata *archdata;
+ 	struct ipmmu_vmsa_device *mmu;
+ 	struct iommu_group *group = NULL;
+-	unsigned int *utlbs = NULL;
++	unsigned int *utlbs;
+ 	unsigned int i;
+-	int num_utlbs = 0;
+-	int ret;
++	int num_utlbs;
++	int ret = -ENODEV;
+ 
+ 	if (dev->archdata.iommu) {
+ 		dev_warn(dev, "IOMMU driver already assigned to device %s\n",
+@@ -1065,11 +1048,21 @@ static int ipmmu_add_device(struct device *dev)
+ 	}
+ 
+ 	/* Find the master corresponding to the device. */
++
++	num_utlbs = of_count_phandle_with_args(dev->of_node, "iommus",
++					       "#iommu-cells");
++	if (num_utlbs < 0)
++		return -ENODEV;
++
++	utlbs = kcalloc(num_utlbs, sizeof(*utlbs), GFP_KERNEL);
++	if (!utlbs)
++		return -ENOMEM;
++
+ 	spin_lock(&ipmmu_devices_lock);
+ 
+ 	list_for_each_entry(mmu, &ipmmu_devices, list) {
+-		num_utlbs = ipmmu_find_utlbs(mmu, dev, &utlbs);
+-		if (num_utlbs) {
++		ret = ipmmu_find_utlbs(mmu, dev, utlbs, num_utlbs);
++		if (!ret) {
+ 			/*
+ 			 * TODO Take a reference to the MMU to protect
+ 			 * against device removal.
+@@ -1080,7 +1073,7 @@ static int ipmmu_add_device(struct device *dev)
+ 
+ 	spin_unlock(&ipmmu_devices_lock);
+ 
+-	if (num_utlbs <= 0)
++	if (ret < 0)
+ 		return -ENODEV;
+ 
+ 	for (i = 0; i < num_utlbs; ++i) {
+-- 
+Regards,
 
+Laurent Pinchart
 
---2/5bycvrmDh4d1IB
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJUwQf0AAoJEBQN5MwUoCm2Y2sQALAnL0i8Eq8SwgWHTG2FNHKB
-Oz2HaTcw/g+xPMxIjJccxZrhPMQ/2y1LwbkMk8Df+jCNwpKWXJu3kKuubH2xqbFN
-zb+LNho9bdAT2uhgSBLOQKkZMs1b3Pkxyh3gNFRACgICjRRjPyETRSaZrOhfYWR9
-KO8Ly6H6EeCf4lUzgh3Z4gDwj/xuaFJ81Cd0bdIqjPYe81B2feG6HKROP/c/4OKh
-a10L05nFqpBCUAHsERTag1qi6BdgivVzp/V6SbkuwNzABgNVF2PUYhX/sQTSRB8u
-+c9MUmQSz2eO4wGDBvo8o/83GzbqpaMleiyFRO4qEOI2tE5FXI/qbXAXSnYPzLBs
-U6lkADl6NVAr0o6EE9oQ96mMUwhnzq6077ph4q0ifwufQDBtiygvUanmht+co4Qo
-6LfZVRTswawgVDsLKUOdiNPgA6rCMVjtJRE4pwhAAX00/Wtktl1MYncTp9NqGKSn
-s+notoWzg8Ujno2hrT8vjhwJ0CsCmMdEPJ7Z8sxXU6PQ55VeTFBxVkUHnCk8q5jC
-a7lel8ow1FIFVMQz/ZIgodxMzzvg6Sricozv/IUKJkpSz10AzV2Z3dM5IriQwZef
-/w9D8GqRyQPqyqLuFGoTjc9dwkF9we3g7uXv9JFQ0uduUunUK89CXMX1PlQTg/hS
-GnKndcGjmY+ppJE0zM+e
-=SyrN
------END PGP SIGNATURE-----
-
---2/5bycvrmDh4d1IB--
