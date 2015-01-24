@@ -1,34 +1,18 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 26 Jan 2015 09:13:30 +0000
-Subject: Re: [PATCH 00/13] ARM: shmobile: Remove sh7372/Mackerel and ZBOOT MMC/SDHI support
-Message-Id: <CANqRtoRi05hNqjBj4Mu0tCJxqOrGBnKPg8V5LZ9tXQr4GzXnDA@mail.gmail.com>
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Sat, 24 Jan 2015 17:51:56 +0000
+Subject: Re: [PATCH V4 01/14] sh: Eliminate unused irq_reg_{readl,writel} accessors
+Message-Id: <alpine.DEB.2.11.1501241851090.5526@nanos>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150121045256.7648.7451.sendpatchset@little-apple>
- <87twzkn1rd.wl%kuninori.morimoto.gx@renesas.com>
- <CAMuHMdWoi1TDq-XQO6-EjVzQPyYyeG4e0U+chseQ9MXuO3Lhgg@mail.gmail.com>
- <CANqRtoRj0Ssyc6ONkw05pUadzA8G5agqi3uWi7o_-hhYEs64Eg@mail.gmail.com>
- <CAMuHMdWax_yWKVn-j2UF1ZUB-LvFEFmo-KJ+kQ0Qr2gTHro8gw@mail.gmail.com>
-In-Reply-To: <CAMuHMdWax_yWKVn-j2UF1ZUB-LvFEFmo-KJ+kQ0Qr2gTHro8gw@mail.gmail.com>
+References: <1415342669-30640-1-git-send-email-cernekee@gmail.com> <1415342669-30640-2-git-send-email-cernekee@gmail.com> <CAMuHMdW+L8YbE8Z8jrtnm8xWk63sRGaFdM7TPM6MmrDg9XwHuQ@mail.gmail.com> <20141114163843.GH29662@linux-mips.org> <20141114170525.GL3698@titan.lakedaemon.net>
+ <CAMuHMdXMsxhcD9C079YPc6Toxdo0e23oqM_9KeSG=NrFa4auRQ@mail.gmail.com> <CAMuHMdUpxURV4ztpa3x0TORsSWtxiKxe6_EDO5QsO_vhedip0A@mail.gmail.com>
+In-Reply-To: <CAMuHMdUpxURV4ztpa3x0TORsSWtxiKxe6_EDO5QsO_vhedip0A@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Jason Cooper <jason@lakedaemon.net>, Ralf Baechle <ralf@linux-mips.org>, Kevin Cernekee <cernekee@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, Arnd Bergmann <arnd@arndb.de>, Florian Fainelli <f.fainelli@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Maxime Bizon <mbizon@freebox.fr>, Jonas Gorski <jogo@openwrt.org>, Linux MIPS Mailing List <linux-mips@linux-mips.org>
 
-On Mon, Jan 26, 2015 at 5:20 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> On Mon, Jan 26, 2015 at 7:47 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
->>> It seems arch/sh still supports Linux running on the SH core in sh7372?
->>
->> I don't think we have any support upstream for that, but I recall
->> cooking up some prototype running two linux instances in separate
->> memory spaces and using virtio as mailbox interface in between. I also
->> recall that SH4AL-DSP CPU core tend to be a PITA to handle
->> toolchain-wise, but SH4 with FPU is much easier with current (or
->> yesteryear) toolchain. Exactly which SH core that is included in
->> sh7372 I'm not so sure about. =)
->
-> JFTR, SH4AL-DSP.
+On Mon, 19 Jan 2015, Geert Uytterhoeven wrote:
+> Will you still do so, or shall I forward the patch to Andrew Morton?
 
-Good luck with that. =)
-
-/ magnus
+akpm please.
