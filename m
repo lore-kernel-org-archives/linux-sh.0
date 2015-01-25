@@ -1,31 +1,76 @@
-From: Joerg Roedel <joro@8bytes.org>
-Date: Fri, 30 Jan 2015 12:48:23 +0000
-Subject: Re: [PATCH] iommu/ipmmu-vmsa: Fix IOMMU lookup when multiple IOMMUs are registered
-Message-Id: <20150130124822.GA14551@8bytes.org>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Sun, 25 Jan 2015 15:38:01 +0000
+Subject: [PATCH] serial: sh-sci: Fix R-Car SCIF and HSCIF overrun handling
+Message-Id: <1422200281-22518-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1422134030-11121-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1422134030-11121-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: iommu@lists.linux-foundation.org, linux-sh@vger.kernel.org
+To: linux-serial@vger.kernel.org
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Sat, Jan 24, 2015 at 11:13:50PM +0200, Laurent Pinchart wrote:
-> When adding a new device the driver loops over all registered IOMMUs and
-> calls the ipmmu_find_utlbs() function to parse the DT iommus attribute.
-> The function returns an error when the IOMMU referenced in DT doesn't
-> match the current IOMMU. The caller incorrectly breaks from the loop
-> immediately when the error is reported, resulting in only the first
-> IOMMU being considered.
-> 
-> Fix this, and while at it move code that isn't specific to an IOMMU
-> instance out of the loop.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->  drivers/iommu/ipmmu-vmsa.c | 49 ++++++++++++++++++++--------------------------
->  1 file changed, 21 insertions(+), 28 deletions(-)
+From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
 
-Applied, thanks.
+When fifo overrun happened, the interrupt status refers to
+SCLSR register in R-Car SCIF and HSCIF.
+Thus, overrun handling takes SCLSR register into account.
+
+Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
+
+This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
+tree.
+
+ drivers/tty/serial/sh-sci.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 8204306..69f6bf3 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1003,12 +1003,15 @@ static inline unsigned long port_rx_irq_mask(struct uart_port *port)
+ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
+ {
+ 	unsigned short ssr_status, scr_status, err_enabled;
++	unsigned short slr_status = 0;
+ 	struct uart_port *port = ptr;
+ 	struct sci_port *s = to_sci_port(port);
+ 	irqreturn_t ret = IRQ_NONE;
+ 
+ 	ssr_status = serial_port_in(port, SCxSR);
+ 	scr_status = serial_port_in(port, SCSCR);
++	if (port->type = PORT_SCIF || port->type = PORT_HSCIF)
++		slr_status = serial_port_in(port, SCLSR);
+ 	err_enabled = scr_status & port_rx_irq_mask(port);
+ 
+ 	/* Tx Interrupt */
+@@ -1021,8 +1024,11 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
+ 	 * DR flags
+ 	 */
+ 	if (((ssr_status & SCxSR_RDxF(port)) || s->chan_rx) &&
+-	    (scr_status & SCSCR_RIE))
++	    (scr_status & SCSCR_RIE)) {
++		if (port->type = PORT_SCIF || port->type = PORT_HSCIF)
++			sci_handle_fifo_overrun(port);
+ 		ret = sci_rx_interrupt(irq, ptr);
++	}
+ 
+ 	/* Error Interrupt */
+ 	if ((ssr_status & SCxSR_ERRORS(port)) && err_enabled)
+@@ -1032,6 +1038,12 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
+ 	if ((ssr_status & SCxSR_BRK(port)) && err_enabled)
+ 		ret = sci_br_interrupt(irq, ptr);
+ 
++	/* Overrun Interrupt */
++	if (port->type = PORT_SCIF || port->type = PORT_HSCIF) {
++		if ((slr_status & 0x01))
++			sci_handle_fifo_overrun(port);
++	}
++
+ 	return ret;
+ }
+ 
+-- 
+1.9.1
 
