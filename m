@@ -1,79 +1,86 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Mon, 26 Jan 2015 12:25:48 +0000
-Subject: [PATCH v2] serial: sh-sci: Fix R-Car SCIF and HSCIF overrun handling
-Message-Id: <1422275148-20507-1-git-send-email-ykaneko0929@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Sun, 25 Jan 2015 10:11:51 +0000
+Subject: [PATCH] sh: Eliminate unused irq_reg_{readl,writel} accessors
+Message-Id: <1422180711-18976-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-serial@vger.kernel.org
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Kevin Cernekee <cernekee@gmail.com>, Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+From: Kevin Cernekee <cernekee@gmail.com>
 
-When fifo overrun happened, the interrupt status refers to
-SCLSR register in R-Car SCIF and HSCIF.
-Thus, overrun handling takes SCLSR register into account.
+Defining these macros way down in arch/sh/.../irq.c doesn't cause
+kernel/irq/generic-chip.c to use them.  As far as I can tell this code
+has no effect.
 
-Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
+Tested-by: Geert Uytterhoeven <geert+renesas@glider.be> (cpp/asm comparison)
+
+As of commit 332fd7c4fef5f3b1 ("genirq: Generic chip: Change
+irq_reg_{readl,writel} arguments") they cause build errors in
+se7722_defconfig:
+
+    In file included from arch/sh/boards/mach-se/7722/irq.c:18:0:
+    include/linux/irq.h:847:91: error: conflicting types for 'iowrite16'
+    include/asm-generic/iomap.h:35:13: note: previous declaration of 'iowrite16' was here
+    include/linux/irq.h:856:90: error: conflicting types for 'ioread16'
+    include/asm-generic/iomap.h:29:21: note: previous declaration of 'ioread16' was here
+    arch/sh/boards/mach-se/7722/irq.c: In function 'se7722_irq_demux':
+    arch/sh/boards/mach-se/7722/irq.c:43:2: error: too few arguments to function 'ioread16'
+    include/linux/irq.h:856:90: note: declared here
+
+and se7343_defconfig:
+
+    In file included from arch/sh/boards/mach-se/7343/irq.c:21:0:
+    include/linux/irq.h:847:91: error: conflicting types for 'iowrite16'
+    include/asm-generic/iomap.h:35:13: note: previous declaration of 'iowrite16' was here
+    include/linux/irq.h:856:90: error: conflicting types for 'ioread16'
+    include/asm-generic/iomap.h:29:21: note: previous declaration of 'ioread16' was here
+    arch/sh/boards/mach-se/7343/irq.c: In function 'se7343_irq_demux':
+    arch/sh/boards/mach-se/7343/irq.c:44:2: error: too few arguments to function 'ioread16'
+    include/linux/irq.h:856:90: note: declared here
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Fixes: 332fd7c4fef5f3b1 ("genirq: Generic chip: Change irq_reg_{readl,writel} arguments")
 ---
+Fixes se7722_defconfig and se7343_defconfig
+http://kisskb.ellerman.id.au/kisskb/buildresult/12350978/
+http://kisskb.ellerman.id.au/kisskb/buildresult/12350973/
+---
+ arch/sh/boards/mach-se/7343/irq.c | 3 ---
+ arch/sh/boards/mach-se/7722/irq.c | 3 ---
+ 2 files changed, 6 deletions(-)
 
-This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
-tree.
-
-v2 [Yoshihiro Kaneko]
-* Fix coding-style
-
- drivers/tty/serial/sh-sci.c | 14 +++++++++++++-
- 1 file changed, 13 insertions(+), 1 deletion(-)
-
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 8204306..a34958f 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1003,12 +1003,15 @@ static inline unsigned long port_rx_irq_mask(struct uart_port *port)
- static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
- {
- 	unsigned short ssr_status, scr_status, err_enabled;
-+	unsigned short slr_status = 0;
- 	struct uart_port *port = ptr;
- 	struct sci_port *s = to_sci_port(port);
- 	irqreturn_t ret = IRQ_NONE;
+diff --git a/arch/sh/boards/mach-se/7343/irq.c b/arch/sh/boards/mach-se/7343/irq.c
+index 7646bf0486c2c9b1..1087dba9b0152317 100644
+--- a/arch/sh/boards/mach-se/7343/irq.c
++++ b/arch/sh/boards/mach-se/7343/irq.c
+@@ -14,9 +14,6 @@
+ #define DRV_NAME "SE7343-FPGA"
+ #define pr_fmt(fmt) DRV_NAME ": " fmt
  
- 	ssr_status = serial_port_in(port, SCxSR);
- 	scr_status = serial_port_in(port, SCSCR);
-+	if (port->type = PORT_SCIF || port->type = PORT_HSCIF)
-+		slr_status = serial_port_in(port, SCLSR);
- 	err_enabled = scr_status & port_rx_irq_mask(port);
+-#define irq_reg_readl	ioread16
+-#define irq_reg_writel	iowrite16
+-
+ #include <linux/init.h>
+ #include <linux/irq.h>
+ #include <linux/interrupt.h>
+diff --git a/arch/sh/boards/mach-se/7722/irq.c b/arch/sh/boards/mach-se/7722/irq.c
+index f5e2af1bf040ff93..00e699232621dccf 100644
+--- a/arch/sh/boards/mach-se/7722/irq.c
++++ b/arch/sh/boards/mach-se/7722/irq.c
+@@ -11,9 +11,6 @@
+ #define DRV_NAME "SE7722-FPGA"
+ #define pr_fmt(fmt) DRV_NAME ": " fmt
  
- 	/* Tx Interrupt */
-@@ -1021,8 +1024,11 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
- 	 * DR flags
- 	 */
- 	if (((ssr_status & SCxSR_RDxF(port)) || s->chan_rx) &&
--	    (scr_status & SCSCR_RIE))
-+	    (scr_status & SCSCR_RIE)) {
-+		if (port->type = PORT_SCIF || port->type = PORT_HSCIF)
-+			sci_handle_fifo_overrun(port);
- 		ret = sci_rx_interrupt(irq, ptr);
-+	}
- 
- 	/* Error Interrupt */
- 	if ((ssr_status & SCxSR_ERRORS(port)) && err_enabled)
-@@ -1032,6 +1038,12 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
- 	if ((ssr_status & SCxSR_BRK(port)) && err_enabled)
- 		ret = sci_br_interrupt(irq, ptr);
- 
-+	/* Overrun Interrupt */
-+	if (port->type = PORT_SCIF || port->type = PORT_HSCIF) {
-+		if (slr_status & 0x01)
-+			sci_handle_fifo_overrun(port);
-+	}
-+
- 	return ret;
- }
- 
+-#define irq_reg_readl	ioread16
+-#define irq_reg_writel	iowrite16
+-
+ #include <linux/init.h>
+ #include <linux/irq.h>
+ #include <linux/interrupt.h>
 -- 
 1.9.1
 
