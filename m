@@ -1,69 +1,44 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 23 Jan 2015 20:37:05 +0000
-Subject: [PATCH] ARM: shmobile: henninger: rename board to Porter
-Message-Id: <2481726.lh33apx2TG@wasted.cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 25 Jan 2015 19:30:33 +0000
+Subject: Re: [PATCH] ARM: shmobile: henninger: rename board to Porter
+Message-Id: <CAMuHMdW3NmzGxGa9DOHpk4Evjg=+bduUPiMoRZT9Ko7+jNp-Nw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <2481726.lh33apx2TG@wasted.cogentembedded.com>
+In-Reply-To: <2481726.lh33apx2TG@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Renesas has made some changes to the Henninger low cost board hardware and at
-the same time decided to  rename the board  to Porter.
+Hi Sergei,
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+On Fri, Jan 23, 2015 at 9:37 PM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+> Renesas has made some changes to the Henninger low cost board hardware and at
+> the same time decided to  rename the board  to Porter.
 
----
-This patch is against 'renesas-devel-20150123-v3.19-rc5' tag of Simon Horman's
-'renesas.git' repo.
+Which changes? They're not reflected in the new DTS?
 
- arch/arm/boot/dts/Makefile                                     |  2 +-
- .../arm/boot/dts/{r8a7791-henninger.dts => r8a7791-porter.dts} | 10 +++++-----
- 2 files changed, 6 insertions(+), 6 deletions(-)
- rename arch/arm/boot/dts/{r8a7791-henninger.dts => r8a7791-porter.dts} (96%)
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+>
+> ---
+> This patch is against 'renesas-devel-20150123-v3.19-rc5' tag of Simon Horman's
+> 'renesas.git' repo.
+>
+>  arch/arm/boot/dts/Makefile                                     |  2 +-
+>  .../arm/boot/dts/{r8a7791-henninger.dts => r8a7791-porter.dts} | 10 +++++-----
+>  2 files changed, 6 insertions(+), 6 deletions(-)
+>  rename arch/arm/boot/dts/{r8a7791-henninger.dts => r8a7791-porter.dts} (96%)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 59e79e9..3cc8ba5 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -419,8 +419,8 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += eme
- 	r8a7740-armadillo800eva.dtb \
- 	r8a7779-marzen.dtb \
- 	r8a7790-lager.dtb \
--	r8a7791-henninger.dtb \
- 	r8a7791-koelsch.dtb \
-+	r8a7791-porter.dtb \
- 	r8a7794-alt.dtb \
- 	sh73a0-kzm9g.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
-diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-porter.dts
-similarity index 96%
-rename from arch/arm/boot/dts/r8a7791-henninger.dts
-rename to arch/arm/boot/dts/r8a7791-porter.dts
-index d2ebf11..4a616dc 100644
---- a/arch/arm/boot/dts/r8a7791-henninger.dts
-+++ b/arch/arm/boot/dts/r8a7791-porter.dts
-@@ -1,8 +1,8 @@
- /*
-- * Device Tree Source for the Henninger board
-+ * Device Tree Source for the Porter board
-  *
-- * Copyright (C) 2014 Renesas Solutions Corp.
-- * Copyright (C) 2014 Cogent Embedded, Inc.
-+ * Copyright (C) 2014-2015 Renesas Solutions Corp.
-+ * Copyright (C) 2014-2015 Cogent Embedded, Inc.
-  *
-  * This file is licensed under the terms of the GNU General Public License
-  * version 2.  This program is licensed "as is" without any warranty of any
-@@ -14,8 +14,8 @@
- #include <dt-bindings/gpio/gpio.h>
- 
- / {
--	model = "Henninger";
--	compatible = "renesas,henninger", "renesas,r8a7791";
-+	model = "Porter";
-+	compatible = "renesas,porter", "renesas,r8a7791";
- 
- 	aliases {
- 		serial0 = &scif0;
+You forgot to update Documentation/devicetree/bindings/arm/shmobile.txt
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
