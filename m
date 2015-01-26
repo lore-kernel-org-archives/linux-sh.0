@@ -1,53 +1,66 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 06 Jan 2015 19:42:05 +0000
-Subject: [PATCH 2/6] ARM: shmobile: kzm9g-reference dts: Sort i2c0 children by unit address
-Message-Id: <1420573329-12762-3-git-send-email-geert+renesas@glider.be>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 26 Jan 2015 06:18:19 +0000
+Subject: [PATCH 03/14 v2] ARM: shmobile: mackerel dts: Remove Legacy DTS file
+Message-Id: <20150126061819.6848.91352.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20150126061747.6848.9708.sendpatchset@little-apple>
+In-Reply-To: <20150126061747.6848.9708.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-While at it rename the ak4648 node to "codec" to describe the device's
-function instead of its model, and move its device-specific property
-after its generic properties.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Remove the DTS file for the no longer supported Mackerel board.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 13 +++++++------
- 1 file changed, 7 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index b6c292f839584343..02fc265332e8fb84 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -188,6 +188,13 @@
- 
- &i2c0 {
- 	status = "okay";
-+
-+	ak4648: codec@12 {
-+		compatible = "asahi-kasei,ak4648";
-+		reg = <0x12>;
-+		#sound-dai-cells = <0>;
-+	};
-+
- 	as3711@40 {
- 		compatible = "ams,as3711";
- 		reg = <0x40>;
-@@ -258,12 +265,6 @@
- 			};
- 		};
- 	};
+ Changes since V1:
+ - Rebased and resolved conflicts
+
+ arch/arm/boot/dts/Makefile            |    1 -
+ arch/arm/boot/dts/sh7372-mackerel.dts |   26 --------------------------
+ 2 files changed, 27 deletions(-)
+
+--- 0001/arch/arm/boot/dts/Makefile
++++ work/arch/arm/boot/dts/Makefile	2015-01-26 13:30:37.155992584 +0900
+@@ -410,7 +410,6 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += \
+ 	r8a7778-bockw.dtb \
+ 	r8a7778-bockw-reference.dtb \
+ 	r8a7779-marzen.dtb \
+-	sh7372-mackerel.dtb \
+ 	sh73a0-kzm9g.dtb \
+ 	sh73a0-kzm9g-reference.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
+--- 0001/arch/arm/boot/dts/sh7372-mackerel.dts
++++ /dev/null	2015-01-13 15:44:39.280208949 +0900
+@@ -1,26 +0,0 @@
+-/*
+- * Device Tree Source for the mackerel board
+- *
+- * Copyright (C) 2012 Renesas Solutions Corp.
+- *
+- * This file is licensed under the terms of the GNU General Public License
+- * version 2.  This program is licensed "as is" without any warranty of any
+- * kind, whether express or implied.
+- */
 -
--	ak4648: ak4648@12 {
--		#sound-dai-cells = <0>;
--		compatible = "asahi-kasei,ak4648";
--		reg = <0x12>;
+-/dts-v1/;
+-#include "sh7372.dtsi"
+-
+-/ {
+-	model = "Mackerel (AP4 EVM 2nd)";
+-	compatible = "renesas,mackerel";
+-
+-	chosen {
+-		bootargs = "console=tty0, console=ttySC0,115200 earlyprintk=sh-sci.0,115200 root=/dev/nfs nfsroot=,tcp,v3 ip=dhcp mem$0m rw";
 -	};
- };
- 
- &i2c3 {
--- 
-1.9.1
-
+-
+-	memory {
+-		device_type = "memory";
+-		reg = <0x40000000 0x10000000>;
+-	};
+-};
