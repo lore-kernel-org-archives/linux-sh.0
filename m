@@ -1,40 +1,35 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 21 Jan 2015 04:27:15 +0000
-Subject: [PATCH 2/4 v2] ARM: shmobile: r8a7791: tidyup SDHI register size on DTSI
-Message-Id: <87zj9cn4f9.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 26 Jan 2015 06:19:00 +0000
+Subject: [PATCH 07/14 v2] ARM: shmobile: mackerel: Remove from MAINTAINERS
+Message-Id: <20150126061900.6848.23603.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20150126061747.6848.9708.sendpatchset@little-apple>
+In-Reply-To: <20150126061747.6848.9708.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-r8a7791 SDHI ch0/ch1 has SD_DMACR which is located in 0x324.
-This patch updates register size
+Remove the mackerel_defconfig from the MAINTAINERS file.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
-v1 -> v2
 
- - lacated -> located
+ Changes since V1:
+ - New patch
 
- arch/arm/boot/dts/r8a7791.dtsi |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ MAINTAINERS |    1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index e35812a..e6d89d6 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -482,7 +482,7 @@
- 
- 	sdhi0: sd@ee100000 {
- 		compatible = "renesas,sdhi-r8a7791";
--		reg = <0 0xee100000 0 0x200>;
-+		reg = <0 0xee100000 0 0x328>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7791_CLK_SDHI0>;
- 		status = "disabled";
--- 
-1.7.9.5
-
+--- 0001/MAINTAINERS
++++ work/MAINTAINERS	2015-01-26 13:31:58.265992293 +0900
+@@ -1395,7 +1395,6 @@ F:	arch/arm/configs/ape6evm_defconfig
+ F:	arch/arm/configs/armadillo800eva_defconfig
+ F:	arch/arm/configs/bockw_defconfig
+ F:	arch/arm/configs/kzm9g_defconfig
+-F:	arch/arm/configs/mackerel_defconfig
+ F:	arch/arm/configs/marzen_defconfig
+ F:	arch/arm/configs/shmobile_defconfig
+ F:	arch/arm/include/debug/renesas-scif.S
