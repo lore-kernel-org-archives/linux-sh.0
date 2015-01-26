@@ -1,40 +1,42 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 05 Jan 2015 13:30:04 +0000
-Subject: Re: [PATCH v4 1/3] ARM: shmobile: r8a7791: add CAN clocks
-Message-Id: <CAMuHMdUFrOeuR8N67pcp6kPEE1G94DUgU7iDLX2QRL3GbvkXtA@mail.gmail.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Mon, 26 Jan 2015 11:53:29 +0000
+Subject: [PATCH] serial: sh-sci: Use dev_dbg() to log an error message
+Message-Id: <1422273209-3473-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <6830301.90YaDPuTpx@wasted.cogentembedded.com>
- <2098987.LzjA3c0AUx@wasted.cogentembedded.com>
- <CAMuHMdXmKV2_npgjaC+t4wDD6we8VCBFSzHFfkRHwELO30BMmQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdXmKV2_npgjaC+t4wDD6we8VCBFSzHFfkRHwELO30BMmQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-serial@vger.kernel.org
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Mon, Jan 5, 2015 at 2:29 PM, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
-> On Sat, Dec 27, 2014 at 12:18 AM, Sergei Shtylyov
-> <sergei.shtylyov@cogentembedded.com> wrote:
->> The R-Car CAN controllers can derive the CAN bus clock not only from their
->> peripheral clock input (clkp1) but also from the other internal clock (clkp2)
->> and external clock fed on CAN_CLK pin.  Describe those clocks in the device
->> tree,  along with  the USB_EXTAL clock  from which clkp2 is derived.
->>
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->
-> Acked-by: arch/arm/boot/dts/r8a7790.dtsi
+Since the driver cannot return from overrun error if characters
+are output during overrun process, use dev_dbg() instead of
+dev_notice() to log the error message of overrun in syslog.
 
-Bummer...
+Based on a patch by Hisashi Nakamura.
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
 
-Gr{oetje,eeting}s,
+This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
+tree.
 
-                        Geert
+ drivers/tty/serial/sh-sci.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 69f6bf3..9688e74 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -864,7 +864,7 @@ static int sci_handle_fifo_overrun(struct uart_port *port)
+ 		tty_insert_flip_char(tport, 0, TTY_OVERRUN);
+ 		tty_flip_buffer_push(tport);
+ 
+-		dev_notice(port->dev, "overrun error\n");
++		dev_dbg(port->dev, "overrun error\n");
+ 		copied++;
+ 	}
+ 
+-- 
+1.9.1
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
