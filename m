@@ -1,79 +1,150 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 05 Jan 2015 09:58:27 +0000
-Subject: Re: Building sh4 without CONFIG_EXPERT.
-Message-Id: <CAMuHMdVnUqc+gyqok_OAUWT++K-O=9kRQkyUkHduPGxQUQ20oA@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 26 Jan 2015 16:16:17 +0000
+Subject: [PATCH v4 5/5] drivers: bus: Add Simple Power-Managed Bus Driver
+Message-Id: <1422288977-20353-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <53700D71.1090201@landley.net>
-	<53767FB9.5040508@infradead.org>
-In-Reply-To: <53767FB9.5040508@infradead.org>
+References: <1422288977-20353-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1422288977-20353-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rob Landley <rob@landley.net>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Randy Dunlap <rdunlap@infradead.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, May 16, 2014 at 11:14 PM, Randy Dunlap <rdunlap@infradead.org> wrote:
-> On 05/11/2014 04:53 PM, Rob Landley wrote:
->> I got sh4 to work under QEMU years ago as part of my aboriginal linux
->> project, which builds the smallest Linux system capable of rebuilding
->> itself natively from source code. (You can download and run the system
->> images from http://landley.net/aboriginal/bin if you're curious.)
->>
->> One of the goals of Aboriginal is to make different architectures behave
->> the same way, and one of the ways I do that is by having a basic kernel
->> miniconfig file defining the config symbols common across platforms:
->>
->>   http://landley.net/hg/aboriginal/file/1651/sources/baseconfig-linux
->>
->> And then append target-specific chunks, ala the LINUX_CONFIG sections
->> from each of:
->>
->>   http://landley.net/hg/aboriginal/file/1651/sources/targets
->>
->> The problem is, the sh4 target's target-specific chunk is an INSANE 45
->> config symbols (armv5l needs 15 symbols, powerpc needs 16, i686 needs 7,
->> mips needs 6...) and the reason for the verbosity is that sh4 forces on
->> CONFIG_EXPERT.
->>
->> As far as I can tell, the only reason sh4 is forcing on CONFIG_EXPERT is
->> to get CONFIG_PATA_PLATFORM. The patch to make sh4 _not_ force on
->> CONFIG_EXPERT is just:
->>
->> diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
->> index 834b67c..7d0d44d 100644
->> --- a/arch/sh/Kconfig
->> +++ b/arch/sh/Kconfig
->> @@ -1,7 +1,7 @@
->>  config SUPERH
->>       def_bool y
->>       select ARCH_MIGHT_HAVE_PC_PARPORT
->> -     select EXPERT
->> +     select HAVE_PATA_PLATFORM
->>       select CLKDEV_LOOKUP
->>       select HAVE_IDE if HAS_IOPORT_MAP
->>       select HAVE_MEMBLOCK
->
-> Since PATA_PLATFORM is:
->
-> config PATA_PLATFORM
->         tristate "Generic platform device PATA support"
->         depends on EXPERT || PPC || HAVE_PATA_PLATFORM
->
-> then any of EXPERT, PPC, or HAVE_PATA_PLATFORM should be sufficient.
-> and using HAVE_PATA_PLATFORM is more direct and obvious.
->
-> Acked-by: Randy Dunlap <rdunlap@infradead.org>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Add a driver for transparent busses that don't need a real driver, but
+where the bus controller is part of a PM domain, or under the control of
+a functional clock.  Typically, the bus controller's PM domain and/or
+clock must be enabled for child devices connected to the bus (either
+on-SoC or externally) to function.
 
-Note that you have to resent to akpm to get sh-patches applied.
+Hence the sole purpose of this driver is to enable its clock and PM
+domain (if exist(s)), which are specified in the DT and managed from
+platform and PM domain code, and to probe for child devices.
 
-Gr{oetje,eeting}s,
+Due to the child-parent relationship with devices connected to the bus,
+PM domain and clock state transitions are handled in the correct order.
 
-                        Geert
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+v4:
+  - Bind against the generic "simple-pm-bus" instead of "renesas,bsc",
+  - Explicitly call of_platform_populate() after pm_runtime_enable() to
+    enforce ordering, instead of depending on claimed compatibility with
+    "simple-bus",
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+v3:
+  - Add Tested-by,
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+v2:
+  - Rename from "Renesas Bus State Controller Driver" (renesas-bsc) to
+    "Simple Power-Managed Bus Driver" (simple-pm-bus),
+  - Change module license to GPL v2,
+  - Change email address to geert+renesas@glider.be.
+---
+ drivers/bus/Kconfig         | 13 ++++++++++
+ drivers/bus/Makefile        |  1 +
+ drivers/bus/simple-pm-bus.c | 58 +++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 72 insertions(+)
+ create mode 100644 drivers/bus/simple-pm-bus.c
+
+diff --git a/drivers/bus/Kconfig b/drivers/bus/Kconfig
+index 626960819e6df16c..7e9c2674af81d6e9 100644
+--- a/drivers/bus/Kconfig
++++ b/drivers/bus/Kconfig
+@@ -58,6 +58,19 @@ config OMAP_OCP2SCP
+ 	  OCP2SCP and in OMAP5, both USB PHY and SATA PHY is connected via
+ 	  OCP2SCP.
+ 
++config SIMPLE_PM_BUS
++	bool "Simple Power-Managed Bus Driver"
++	depends on OF && PM
++	depends on ARCH_SHMOBILE || COMPILE_TEST
++	help
++	  Driver for transparent busses that don't need a real driver, but
++	  where the bus controller is part of a PM domain, or under the control
++	  of a functional clock, and thus relies on runtime PM for managing
++	  this PM domain and/or clock.
++	  An example of such a bus controller is the Renesas Bus State
++	  Controller (BSC, sometimes called "LBSC within Bus Bridge", or
++	  "External Bus Interface") as found on several Renesas ARM SoCs.
++
+ config VEXPRESS_CONFIG
+ 	bool "Versatile Express configuration bus"
+ 	default y if ARCH_VEXPRESS
+diff --git a/drivers/bus/Makefile b/drivers/bus/Makefile
+index 3cfaf2c7f25ac4f0..e023a2bec664d900 100644
+--- a/drivers/bus/Makefile
++++ b/drivers/bus/Makefile
+@@ -14,4 +14,5 @@ obj-$(CONFIG_MVEBU_MBUS) 	+= mvebu-mbus.o
+ obj-$(CONFIG_OMAP_INTERCONNECT)	+= omap_l3_smx.o omap_l3_noc.o
+ 
+ obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
++obj-$(CONFIG_SIMPLE_PM_BUS)	+= simple-pm-bus.o
+ obj-$(CONFIG_VEXPRESS_CONFIG)	+= vexpress-config.o
+diff --git a/drivers/bus/simple-pm-bus.c b/drivers/bus/simple-pm-bus.c
+new file mode 100644
+index 0000000000000000..c5eb46cbf388b507
+--- /dev/null
++++ b/drivers/bus/simple-pm-bus.c
+@@ -0,0 +1,58 @@
++/*
++ * Simple Power-Managed Bus Driver
++ *
++ * Copyright (C) 2014-2015 Glider bvba
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++
++#include <linux/module.h>
++#include <linux/of_platform.h>
++#include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
++
++
++static int simple_pm_bus_probe(struct platform_device *pdev)
++{
++	struct device_node *np = pdev->dev.of_node;
++
++	dev_dbg(&pdev->dev, "%s\n", __func__);
++
++	pm_runtime_enable(&pdev->dev);
++
++	if (np)
++		of_platform_populate(np, NULL, NULL, &pdev->dev);
++
++	return 0;
++}
++
++static int simple_pm_bus_remove(struct platform_device *pdev)
++{
++	dev_dbg(&pdev->dev, "%s\n", __func__);
++
++	pm_runtime_disable(&pdev->dev);
++	return 0;
++}
++
++static const struct of_device_id simple_pm_bus_of_match[] = {
++	{ .compatible = "simple-pm-bus", },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, simple_pm_bus_of_match);
++
++static struct platform_driver simple_pm_bus_driver = {
++	.probe = simple_pm_bus_probe,
++	.remove = simple_pm_bus_remove,
++	.driver = {
++		.name = "simple-pm-bus",
++		.of_match_table = simple_pm_bus_of_match,
++	},
++};
++
++module_platform_driver(simple_pm_bus_driver);
++
++MODULE_DESCRIPTION("Simple Power-Managed Bus Driver");
++MODULE_AUTHOR("Geert Uytterhoeven <geert+renesas@glider.be>");
++MODULE_LICENSE("GPL v2");
+-- 
+1.9.1
+
