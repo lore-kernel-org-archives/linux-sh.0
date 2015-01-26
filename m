@@ -1,63 +1,123 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 30 Jan 2015 09:20:03 +0000
-Subject: Re: [PATCH 2/3 v2][RFC] ARM: shmobile: r8a7790: add SSIU/DTCP/MLM/SCU reg for Audio DMAC peri peri
-Message-Id: <CAMuHMdWzRA69SG_tzopv1Fdm5M6GwsswA_A6vUFnZnxmkqSkBw@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 26 Jan 2015 16:16:12 +0000
+Subject: [PATCH v4 0/5] drivers: bus: Add Simple Power-Managed Bus
+Message-Id: <1422288977-20353-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87h9v9f13n.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87h9v9f13n.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Morimoto-san,
+        Hi all,
 
-On Fri, Jan 30, 2015 at 3:33 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
-> New Audio DMAC peri peri driver requests SSIU/DTCP/MLM/SCU
-> register address.
+The Renesas Bus State Controller (BSC) provides an external bus for
+connecting multiple external devices to an SoC, driving several chip
+select lines, for e.g. NOR FLASH, Ethernet and USB.
+On the kzm9g and ape6evm development boards, an smsc9220 Ethernet
+controller is connnected to the BSC of an SH-Mobile AG5 (sh73a0) resp.
+R-Mobile APE6 (r8a73a4) SoC.
 
-Thanks, that's the missing piece I was looking for yesterday ;-)
+The BSC is a fairly simple memory-mapped bus, hence a "simple-bus"
+compatibility seems suitable.  However, the BSC is special in two
+ways:
+  1. It is part of a PM domain (A4S on sh73a0),
+  2. It has a gateable functional clock (ZB).
+Before a device connected to the BSC can be accessed, the PM domain
+containing the BSC must be powered on, and the functional clock
+driving the BSC must be enabled.
 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> v1 -> v2
->
->  - new patch
->
->  arch/arm/boot/dts/r8a7790.dtsi |    6 +++++-
->  1 file changed, 5 insertions(+), 1 deletion(-)
->
-> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-> index ca22009..9f05f19 100644
-> --- a/arch/arm/boot/dts/r8a7790.dtsi
-> +++ b/arch/arm/boot/dts/r8a7790.dtsi
-> @@ -373,7 +373,11 @@
->                 compatible = "renesas,rcar-audmapp";
->                 #dma-cells = <1>;
->
-> -               reg = <0 0xec740000 0 0x200>;
-> +               reg = <0 0xec740000 0 0x200>,
-> +                       <0 0xec400000 0 0x10000>, /* SSIU */
-> +                       <0 0xec420000 0 0x4800>,  /* DTCP */
-> +                       <0 0xec320000 0 0x2000>,  /* MLM */
-> +                       <0 0xec300000 0 0x8800>;  /* SCU */
+Both special properties can be described in DT in a standardized way
+("power-domains = <&pd_a4s>" and "clocks = <&zb_clk>", cfr. the
+example in the DT binding documentation).  Externally connected
+devices are described as children of the BSC node.
 
-Please use "reg-names".
-Can we still make the name mandatory for the first range, or do we have
-to support an anonymous first range for backwards compatibility?
+Unfortunately this doesn't mean everything will work out-of-the-box.
+There are two problems:
+  1. Without a device driver bound to the bus device, this device is
+     not attached to the PM domain. And although a child device is
+     present and active, the PM domain may be powered down, as it's
+     considered unused by the PM domain core.
+  2. Without a device driver calling pm_runtime_enable(), its
+     functional clock is not enabled. Once runtime PM is enabled, the
+     R-Mobile PM domain platform driver manages the functional clock
+     using runtime PM.
 
->         };
->
->         i2c0: i2c@e6508000 {
+As none of the above is really bus hardware-specific (PM domains and
+functional clocks in clock domains are handled from genpd and platform
+code), this series adds a Simple Power-Managed Bus driver for
+transparent busses, which matches against "simple-pm-bus", enables
+runtime PM for the bus device, and calls of_platform_populate() to
+probe for child devices.
+Due to the child-parent relationship of devices connected to the bus,
+as long as the device drivers for the child devices are runtime PM
+enabled, the bus's PM domain will be powered, and the bus's clock will
+be enabled automatically when needed, for both runtime PM and s2ram.
+
+This was tested on sh73a0/kzm9g-multiplatform (by me), and (v3) on
+r8a73a4/ape6evm-multiplatform (by Ulrich Hecht). Without this,
+Ethernet doesn't work, as the ZB clock is disabled by
+clk_disable_unused().
+
+Felipe: It looks like drivers/usb/musb/musb_am335x.c can be removed, if
+"ti,am33xx-usb" claims compatibility with "simple-pm-bus"?
+
+As drivers/bus doesn't have a maintainer, and this driver is needed to
+move two shmobile platforms away from legacy to multiplatform, I think
+this can go in through Simon's shmobile tree.
+
+Changes compared to v3:
+  - Replace "simple-bus" by "simple-pm-bus" in the bindings,
+  - Move the "renesas,bsc" bindings to a separate document,
+  - Bind against the generic "simple-pm-bus" instead of "renesas,bsc",
+  - Explicitly call of_platform_populate() after pm_runtime_enable() to
+    enforce ordering, instead of depending on claimed compatibility with
+    "simple-bus".
+
+Changes compared to v2:
+  - Document required properties inherited from "simple-bus",
+  - Document required "reg" property for "renesas,bsc",
+  - Move "ranges" before "reg" in the example,
+  - Add Tested-by,
+  - Split-off sh73a0/kzm9g and r8a73a4/ape6evm DTS updates.
+
+Changes compared to v1 (more detailed change logs in the individual
+patches):
+  - Added sorting of drivers/bus Kconfig and Makefile entries,
+  - Added DT binding documentation,
+  - Rename from "Renesas Bus State Controller Driver" (renesas-bsc) to
+    "Simple Power-Managed Bus Driver" (simple-pm-bus),
+  - Postponed adding power-domains properties to the dtsi,
+  - Added updates for r8a73a4/ape6evm.
+
+Thanks for your comments!
+
+Geert Uytterhoeven (5):
+  drivers: bus: Sort Kconfig entries alphabetically
+  drivers: bus: Sort Makefile entries alphabetically
+  drivers: bus: Add Simple Power-Managed Bus DT Bindings
+  drivers: bus: Add Renesas Bus State Controller (BSC) DT Bindings
+  drivers: bus: Add Simple Power-Managed Bus Driver
+
+ .../devicetree/bindings/bus/renesas,bsc.txt        | 46 +++++++++++++++++
+ .../devicetree/bindings/bus/simple-pm-bus.txt      | 41 +++++++++++++++
+ drivers/bus/Kconfig                                | 53 ++++++++++++--------
+ drivers/bus/Makefile                               | 15 +++---
+ drivers/bus/simple-pm-bus.c                        | 58 ++++++++++++++++++++++
+ 5 files changed, 186 insertions(+), 27 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/bus/renesas,bsc.txt
+ create mode 100644 Documentation/devicetree/bindings/bus/simple-pm-bus.txt
+ create mode 100644 drivers/bus/simple-pm-bus.c
+
+-- 
+1.9.1
 
 Gr{oetje,eeting}s,
 
-                        Geert
+						Geert
 
 --
 Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
 In personal conversations with technical people, I call myself a hacker. But
 when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+							    -- Linus Torvalds
