@@ -1,49 +1,36 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Tue, 06 Jan 2015 15:44:14 +0000
-Subject: [PATCH v2 13/40] sh/uaccess: fix sparse errors
-Message-Id: <1420558883-10131-14-git-send-email-mst@redhat.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 26 Jan 2015 06:18:39 +0000
+Subject: [PATCH 05/14 v2] ARM: shmobile: mackerel: Remove mach-type entry
+Message-Id: <20150126061839.6848.18297.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420558883-10131-1-git-send-email-mst@redhat.com>
-In-Reply-To: <1420558883-10131-1-git-send-email-mst@redhat.com>
+References: <20150126061747.6848.9708.sendpatchset@little-apple>
+In-Reply-To: <20150126061747.6848.9708.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-virtio wants to read bitwise types from userspace using get_user.  At the
-moment this triggers sparse errors, since the value is passed through an
-integer.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Fix that up using __force.
+Remove the mackerel entry from the mach-types file.
 
-Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/sh/include/asm/uaccess.h | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/sh/include/asm/uaccess.h b/arch/sh/include/asm/uaccess.h
-index 9486376..a49635c 100644
---- a/arch/sh/include/asm/uaccess.h
-+++ b/arch/sh/include/asm/uaccess.h
-@@ -60,7 +60,7 @@ struct __large_struct { unsigned long buf[100]; };
- 	const __typeof__(*(ptr)) __user *__gu_addr = (ptr);	\
- 	__chk_user_ptr(ptr);					\
- 	__get_user_size(__gu_val, __gu_addr, (size), __gu_err);	\
--	(x) = (__typeof__(*(ptr)))__gu_val;			\
-+	(x) = (__force __typeof__(*(ptr)))__gu_val;		\
- 	__gu_err;						\
- })
- 
-@@ -71,7 +71,7 @@ struct __large_struct { unsigned long buf[100]; };
- 	const __typeof__(*(ptr)) *__gu_addr = (ptr);			\
- 	if (likely(access_ok(VERIFY_READ, __gu_addr, (size))))		\
- 		__get_user_size(__gu_val, __gu_addr, (size), __gu_err);	\
--	(x) = (__typeof__(*(ptr)))__gu_val;				\
-+	(x) = (__force __typeof__(*(ptr)))__gu_val;			\
- 	__gu_err;							\
- })
- 
--- 
-MST
+ Changes since V1:
+ - None
 
+ arch/arm/tools/mach-types |    1 -
+ 1 file changed, 1 deletion(-)
+
+--- 0001/arch/arm/tools/mach-types
++++ work/arch/arm/tools/mach-types	2015-01-21 12:21:27.377559927 +0900
+@@ -526,7 +526,6 @@ ag5evm			MACH_AG5EVM		AG5EVM			3189
+ ics_if_voip		MACH_ICS_IF_VOIP	ICS_IF_VOIP		3206
+ wlf_cragg_6410		MACH_WLF_CRAGG_6410	WLF_CRAGG_6410		3207
+ trimslice		MACH_TRIMSLICE		TRIMSLICE		3209
+-mackerel		MACH_MACKEREL		MACKEREL		3211
+ kaen			MACH_KAEN		KAEN			3217
+ nokia_rm680		MACH_NOKIA_RM680	NOKIA_RM680		3220
+ msm8960_sim		MACH_MSM8960_SIM	MSM8960_SIM		3230
