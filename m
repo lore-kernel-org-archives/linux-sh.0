@@ -1,36 +1,79 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 30 Jan 2015 02:32:15 +0000
-Subject: [PATCH 0/3 v2][RFC] dmaengine: rcar-audmapp: calculate chcr via src/dst addr
-Message-Id: <87k305f15e.wl%kuninori.morimoto.gx@renesas.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Mon, 26 Jan 2015 12:25:48 +0000
+Subject: [PATCH v2] serial: sh-sci: Fix R-Car SCIF and HSCIF overrun handling
+Message-Id: <1422275148-20507-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-serial@vger.kernel.org
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
+From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
 
-Hi all
+When fifo overrun happened, the interrupt status refers to
+SCLSR register in R-Car SCIF and HSCIF.
+Thus, overrun handling takes SCLSR register into account.
 
-These are v2 of rcar-audmapp driver as [RFC].
-We can reduce Audio DMAC peri peri DT entry 220 -> 22 node by these patches.
-
-Actually, sound driver side needs update for this rcar-audmapp update,
-but it doesn't include these patches at this point.
-These are focuing about rcar-audmapp only at this point.
-
-Kuninori Morimoto (3):
-      dmaengine: rcar-audmapp: calculate chcr via src/dst addr
-      ARM: shmobile: r8a7790: add SSIU/DTCP/MLM/SCU reg for Audio DMAC peri peri
-      ARM: shmobile: r8a7790: enables Audio DMAC peri peri entry on DTSI
-
- arch/arm/boot/dts/r8a7790.dtsi |   26 ++++++-
- drivers/dma/sh/rcar-audmapp.c  |  164 +++++++++++++++++++++++++++++++++++++---
- 2 files changed, 175 insertions(+), 15 deletions(-)
-
-Best regards
+Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 ---
-Kuninori Morimoto
-_______________________________________________
-Alsa-devel mailing list
-Alsa-devel@alsa-project.org
-http://mailman.alsa-project.org/mailman/listinfo/alsa-devel
+
+This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
+tree.
+
+v2 [Yoshihiro Kaneko]
+* Fix coding-style
+
+ drivers/tty/serial/sh-sci.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 8204306..a34958f 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1003,12 +1003,15 @@ static inline unsigned long port_rx_irq_mask(struct uart_port *port)
+ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
+ {
+ 	unsigned short ssr_status, scr_status, err_enabled;
++	unsigned short slr_status = 0;
+ 	struct uart_port *port = ptr;
+ 	struct sci_port *s = to_sci_port(port);
+ 	irqreturn_t ret = IRQ_NONE;
+ 
+ 	ssr_status = serial_port_in(port, SCxSR);
+ 	scr_status = serial_port_in(port, SCSCR);
++	if (port->type = PORT_SCIF || port->type = PORT_HSCIF)
++		slr_status = serial_port_in(port, SCLSR);
+ 	err_enabled = scr_status & port_rx_irq_mask(port);
+ 
+ 	/* Tx Interrupt */
+@@ -1021,8 +1024,11 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
+ 	 * DR flags
+ 	 */
+ 	if (((ssr_status & SCxSR_RDxF(port)) || s->chan_rx) &&
+-	    (scr_status & SCSCR_RIE))
++	    (scr_status & SCSCR_RIE)) {
++		if (port->type = PORT_SCIF || port->type = PORT_HSCIF)
++			sci_handle_fifo_overrun(port);
+ 		ret = sci_rx_interrupt(irq, ptr);
++	}
+ 
+ 	/* Error Interrupt */
+ 	if ((ssr_status & SCxSR_ERRORS(port)) && err_enabled)
+@@ -1032,6 +1038,12 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
+ 	if ((ssr_status & SCxSR_BRK(port)) && err_enabled)
+ 		ret = sci_br_interrupt(irq, ptr);
+ 
++	/* Overrun Interrupt */
++	if (port->type = PORT_SCIF || port->type = PORT_HSCIF) {
++		if (slr_status & 0x01)
++			sci_handle_fifo_overrun(port);
++	}
++
+ 	return ret;
+ }
+ 
+-- 
+1.9.1
+
