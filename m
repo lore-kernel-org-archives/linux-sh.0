@@ -1,7 +1,7 @@
 From: Vinod Koul <vinod.koul@intel.com>
-Date: Mon, 26 Jan 2015 06:32:24 +0000
+Date: Mon, 26 Jan 2015 06:39:12 +0000
 Subject: Re: [PATCH 0/2] dmaengine: shdmac/rcar-hpbdma: fixup WARNING of slave caps retrieval
-Message-Id: <20150126063224.GH28763@intel.com>
+Message-Id: <20150126063912.GJ28763@intel.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <878ugvmtoa.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <878ugvmtoa.wl%kuninori.morimoto.gx@renesas.com>
@@ -28,23 +28,14 @@ On Thu, Jan 22, 2015 at 02:31:42AM +0000, Kuninori Morimoto wrote:
 > 
 > But, could you please replace it to 1) if possible ?
 > I found shdmac has same issue (= 2).
-I will just apply this patch, so should be okay..
-
--- 
-~Vinod
-
 > 
 > Kuninori Morimoto (2):
 >       1) dmaengine: rcar-hpbdma: fixup WARNING of slave caps retrieval
 >       2) dmaengine: shdmac: fixup WARNING of slave caps retrieval
-> 
->  drivers/dma/sh/rcar-hpbdma.c |    6 ++++++
->  drivers/dma/sh/shdmac.c      |    9 +++++++++
->  2 files changed, 15 insertions(+)
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe dmaengine" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I tried applying, got conflict on 1st one, applied second one, please rebase
+and resnd 1st.
+
+Thanks
 
 -- 
+~Vinod
