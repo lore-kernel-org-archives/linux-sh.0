@@ -1,25 +1,20 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 26 Jan 2015 06:49:51 +0000
+Date: Mon, 26 Jan 2015 06:51:06 +0000
 Subject: Re: [PATCH 00/13] ARM: shmobile: Remove sh7372/Mackerel and ZBOOT MMC/SDHI support
-Message-Id: <CANqRtoQOB7NHf8PSUxidX+Q0KAHidJOAq1bp-h3ftAWf4LJF_w@mail.gmail.com>
+Message-Id: <CANqRtoR+=xkMQFC61ak36=OTBi-TEjvHOhESdKo7w=bo7aVUvA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20150121045256.7648.7451.sendpatchset@little-apple>
- <3040234.j4M7Dsju9X@avalon>
-In-Reply-To: <3040234.j4M7Dsju9X@avalon>
+ <20150126002215.GB4477@verge.net.au>
+In-Reply-To: <20150126002215.GB4477@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Laurent,
+Hi Simon,
 
-On Wed, Jan 21, 2015 at 9:42 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> Hi Magnus,
->
-> Thank you for the patches.
->
-> On Wednesday 21 January 2015 13:52:56 Magnus Damm wrote:
+On Mon, Jan 26, 2015 at 9:22 AM, Simon Horman <horms@verge.net.au> wrote:
+> On Wed, Jan 21, 2015 at 01:52:56PM +0900, Magnus Damm wrote:
 >> ARM: shmobile: Remove sh7372/Mackerel and ZBOOT MMC/SDHI support
 >>
 >> [PATCH 01/13] ARM: shmobile: mackerel: Remove ZBOOT code
@@ -51,19 +46,15 @@ On Wed, Jan 21, 2015 at 9:42 PM, Laurent Pinchart
 >>
 >> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 >
-> For patches 01 to 05, 07 to 10, and 13,
+> Hi Magnus,
 >
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> thanks for putting this together. There seem to have been few comments
+> made on it. Could you consider respinning accordingly?
 
-Great, thanks, I have included your ack in V2 for the patches above.
+Done! V2 is now out.
 
-> 'git grep -i sh7372' reports 25 mentions of the SoC in the kernel sources.
-> Please let me know if you would like to me submit patches to remove them, or
-> if you want to do so yourself.
+Please let me know if you need to to rework something.
 
-Thanks. I prefer not to touch those myself, so if you or someone else
-could do it step-by-step then that would be excellent.
-
-Best,
+Cheers,
 
 / magnus
