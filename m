@@ -1,59 +1,118 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 20 Jan 2015 12:51:46 +0000
-Subject: [PATCH 9/9] ARM: shmobile: r8a73a4: Remove legacy code
-Message-Id: <1421758306-24838-10-git-send-email-geert+renesas@glider.be>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 26 Jan 2015 06:19:20 +0000
+Subject: [PATCH 09/14 v2] ARM: shmobile: sh7372: Remove Legacy C SoC code
+Message-Id: <20150126061920.6848.22644.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421758306-24838-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1421758306-24838-1-git-send-email-geert+renesas@glider.be>
+References: <20150126061747.6848.9708.sendpatchset@little-apple>
+In-Reply-To: <20150126061747.6848.9708.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-All r8a73a4 boards are now used with multiplatform kernels only. We can
-remove all the unused r8a73a4 legacy device and clock registration code.
+Remove support for the legacy Cortex-A8 based sh7372 SoC.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+The Linux kernel still lacks DT bindings for the sh7372 INTC
+interrupt controller so DT multiplatform support is not possibile.
+
+Also, the sh7372 SoC never went into mass production anyway so to
+aid migration to DT multiplatform simply get rid of sh7372 support.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/Makefile        |   1 -
- arch/arm/mach-shmobile/clock-r8a73a4.c | 659 ---------------------------------
- arch/arm/mach-shmobile/r8a73a4.h       |  17 -
- arch/arm/mach-shmobile/setup-r8a73a4.c | 273 +-------------
- 4 files changed, 2 insertions(+), 948 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/clock-r8a73a4.c
- delete mode 100644 arch/arm/mach-shmobile/r8a73a4.h
 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 33147191c2d0ed36..67be548bbce1e9e9 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -23,7 +23,6 @@ ifndef CONFIG_COMMON_CLK
+ Changes since V1:
+ - None
+
+ arch/arm/Kconfig.debug                |    7 
+ arch/arm/mach-shmobile/Kconfig        |    7 
+ arch/arm/mach-shmobile/Makefile       |    5 
+ arch/arm/mach-shmobile/clock-sh7372.c |  620 --------------------
+ arch/arm/mach-shmobile/common.h       |    1 
+ arch/arm/mach-shmobile/entry-intc.S   |   54 -
+ arch/arm/mach-shmobile/intc-sh7372.c  |  672 ---------------------
+ arch/arm/mach-shmobile/pm-sh7372.c    |  549 -----------------
+ arch/arm/mach-shmobile/setup-sh7372.c | 1016 ---------------------------------
+ arch/arm/mach-shmobile/sh7372.h       |   84 --
+ arch/arm/mach-shmobile/sleep-sh7372.S |   98 ---
+ 11 files changed, 3 insertions(+), 3110 deletions(-)
+
+--- 0001/arch/arm/Kconfig.debug
++++ work/arch/arm/Kconfig.debug	2015-01-21 12:24:25.967559285 +0900
+@@ -722,12 +722,11 @@ choice
+ 		  via SCIF2 on Renesas R-Car E2 (R8A7794).
+ 
+ 	config DEBUG_RMOBILE_SCIFA0
+-		bool "Kernel low-level debugging messages via SCIFA0 on R8A73A4/SH7372"
+-		depends on ARCH_R8A73A4 || ARCH_SH7372
++		bool "Kernel low-level debugging messages via SCIFA0 on R8A73A4"
++		depends on ARCH_R8A73A4
+ 		help
+ 		  Say Y here if you want kernel low-level debugging support
+-		  via SCIFA0 on Renesas R-Mobile APE6 (R8A73A4) or SH-Mobile
+-		  AP4 (SH7372).
++		  via SCIFA0 on Renesas R-Mobile APE6 (R8A73A4).
+ 
+ 	config DEBUG_RMOBILE_SCIFA1
+ 		bool "Kernel low-level debugging messages via SCIFA1 on R8A7740"
+--- 0003/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2015-01-21 12:23:41.817559444 +0900
+@@ -97,13 +97,6 @@ if ARCH_SHMOBILE_LEGACY
+ 
+ comment "Renesas ARM SoCs System Type"
+ 
+-config ARCH_SH7372
+-	bool "SH-Mobile AP4 (SH7372)"
+-	select ARCH_RMOBILE
+-	select ARCH_WANT_OPTIONAL_GPIOLIB
+-	select ARM_CPU_SUSPEND if PM || CPU_IDLE
+-	select SH_INTC
+-
+ config ARCH_SH73A0
+ 	bool "SH-Mobile AG5 (R8A73A00)"
+ 	select ARCH_RMOBILE
+--- 0003/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2015-01-21 12:23:41.817559444 +0900
+@@ -6,7 +6,6 @@
+ obj-y				:= timer.o console.o
+ 
+ # CPU objects
+-obj-$(CONFIG_ARCH_SH7372)	+= setup-sh7372.o intc-sh7372.o pm-sh7372.o
+ obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o pm-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A73A4)	+= setup-r8a73a4.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o pm-r8a7740.o
+@@ -21,7 +20,6 @@ obj-$(CONFIG_ARCH_R7S72100)	+= setup-r7s
+ # Clock objects
+ ifndef CONFIG_COMMON_CLK
  obj-y				+= clock.o
- obj-$(CONFIG_ARCH_SH7372)	+= clock-sh7372.o
+-obj-$(CONFIG_ARCH_SH7372)	+= clock-sh7372.o
  obj-$(CONFIG_ARCH_SH73A0)	+= clock-sh73a0.o
--obj-$(CONFIG_ARCH_R8A73A4)	+= clock-r8a73a4.o
  obj-$(CONFIG_ARCH_R8A7740)	+= clock-r8a7740.o
  obj-$(CONFIG_ARCH_R8A7778)	+= clock-r8a7778.o
- obj-$(CONFIG_ARCH_R8A7779)	+= clock-r8a7779.o
-diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
-deleted file mode 100644
-index 1cf44dc6d718bcc0..0000000000000000
---- a/arch/arm/mach-shmobile/clock-r8a73a4.c
-+++ /dev/null
-@@ -1,659 +0,0 @@
+@@ -50,9 +48,6 @@ obj-$(CONFIG_CPU_FREQ)		+= cpufreq.o
+ obj-$(CONFIG_PM_RCAR)		+= pm-rcar.o
+ obj-$(CONFIG_PM_RMOBILE)	+= pm-rmobile.o
+ 
+-# special sh7372 handling for IRQ objects and low level sleep code
+-obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o sleep-sh7372.o
+-
+ # Board objects
+ ifdef CONFIG_ARCH_SHMOBILE_MULTI
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen-reference.o
+--- 0001/arch/arm/mach-shmobile/clock-sh7372.c
++++ /dev/null	2015-01-13 15:44:39.280208949 +0900
+@@ -1,620 +0,0 @@
 -/*
-- * r8a73a4 clock framework support
+- * SH7372 clock framework support
 - *
-- * Copyright (C) 2013  Renesas Solutions Corp.
-- * Copyright (C) 2013  Magnus Damm
+- * Copyright (C) 2010 Magnus Damm
 - *
 - * This program is free software; you can redistribute it and/or modify
 - * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; version 2 of the License.
+- * the Free Software Foundation; either version 2 of the License
 - *
 - * This program is distributed in the hope that it will be useful,
 - * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -61,125 +120,210 @@ index 1cf44dc6d718bcc0..0000000000000000
 - * GNU General Public License for more details.
 - */
 -#include <linux/init.h>
--#include <linux/io.h>
 -#include <linux/kernel.h>
+-#include <linux/io.h>
 -#include <linux/sh_clk.h>
 -#include <linux/clkdev.h>
--#include "common.h"
 -#include "clock.h"
+-#include "common.h"
 -
--#define CPG_BASE 0xe6150000
--#define CPG_LEN 0x270
+-/* SH7372 registers */
+-#define FRQCRA		IOMEM(0xe6150000)
+-#define FRQCRB		IOMEM(0xe6150004)
+-#define FRQCRC		IOMEM(0xe61500e0)
+-#define FRQCRD		IOMEM(0xe61500e4)
+-#define VCLKCR1		IOMEM(0xe6150008)
+-#define VCLKCR2		IOMEM(0xe615000c)
+-#define VCLKCR3		IOMEM(0xe615001c)
+-#define FMSICKCR	IOMEM(0xe6150010)
+-#define FMSOCKCR	IOMEM(0xe6150014)
+-#define FSIACKCR	IOMEM(0xe6150018)
+-#define FSIBCKCR	IOMEM(0xe6150090)
+-#define SUBCKCR		IOMEM(0xe6150080)
+-#define SPUCKCR		IOMEM(0xe6150084)
+-#define VOUCKCR		IOMEM(0xe6150088)
+-#define HDMICKCR	IOMEM(0xe6150094)
+-#define DSITCKCR	IOMEM(0xe6150060)
+-#define DSI0PCKCR	IOMEM(0xe6150064)
+-#define DSI1PCKCR	IOMEM(0xe6150098)
+-#define PLLC01CR	IOMEM(0xe6150028)
+-#define PLLC2CR		IOMEM(0xe615002c)
+-#define RMSTPCR0	IOMEM(0xe6150110)
+-#define RMSTPCR1	IOMEM(0xe6150114)
+-#define RMSTPCR2	IOMEM(0xe6150118)
+-#define RMSTPCR3	IOMEM(0xe615011c)
+-#define RMSTPCR4	IOMEM(0xe6150120)
+-#define SMSTPCR0	IOMEM(0xe6150130)
+-#define SMSTPCR1	IOMEM(0xe6150134)
+-#define SMSTPCR2	IOMEM(0xe6150138)
+-#define SMSTPCR3	IOMEM(0xe615013c)
+-#define SMSTPCR4	IOMEM(0xe6150140)
 -
--#define SMSTPCR2 0xe6150138
--#define SMSTPCR3 0xe615013c
--#define SMSTPCR4 0xe6150140
--#define SMSTPCR5 0xe6150144
+-#define FSIDIVA		0xFE1F8000
+-#define FSIDIVB		0xFE1F8008
 -
--#define FRQCRA		0xE6150000
--#define FRQCRB		0xE6150004
--#define FRQCRC		0xE61500E0
--#define VCLKCR1		0xE6150008
--#define VCLKCR2		0xE615000C
--#define VCLKCR3		0xE615001C
--#define VCLKCR4		0xE6150014
--#define VCLKCR5		0xE6150034
--#define ZBCKCR		0xE6150010
--#define SD0CKCR		0xE6150074
--#define SD1CKCR		0xE6150078
--#define SD2CKCR		0xE615007C
--#define MMC0CKCR	0xE6150240
--#define MMC1CKCR	0xE6150244
--#define FSIACKCR	0xE6150018
--#define FSIBCKCR	0xE6150090
--#define MPCKCR		0xe6150080
--#define SPUVCKCR	0xE6150094
--#define HSICKCR		0xE615026C
--#define M4CKCR		0xE6150098
--#define PLLECR		0xE61500D0
--#define PLL0CR		0xE61500D8
--#define PLL1CR		0xE6150028
--#define PLL2CR		0xE615002C
--#define PLL2SCR		0xE61501F4
--#define PLL2HCR		0xE61501E4
--#define CKSCR		0xE61500C0
--
--#define CPG_MAP(o) ((o - CPG_BASE) + cpg_mapping.base)
--
--static struct clk_mapping cpg_mapping = {
--	.phys   = CPG_BASE,
--	.len    = CPG_LEN,
+-/* Platforms must set frequency on their DV_CLKI pin */
+-struct clk sh7372_dv_clki_clk = {
 -};
 -
--static struct clk extalr_clk = {
--	.rate	= 32768,
--	.mapping	= &cpg_mapping,
--};
--
--static struct clk extal1_clk = {
--	.rate	= 26000000,
--	.mapping	= &cpg_mapping,
--};
--
--static struct clk extal2_clk = {
--	.rate	= 48000000,
--	.mapping	= &cpg_mapping,
--};
--
--static struct sh_clk_ops followparent_clk_ops = {
--	.recalc	= followparent_recalc,
--};
--
--static struct clk main_clk = {
--	/* .parent will be set r8a73a4_clock_init */
--	.ops	= &followparent_clk_ops,
--};
--
--SH_CLK_RATIO(div2,	1, 2);
--SH_CLK_RATIO(div4,	1, 4);
--
--SH_FIXED_RATIO_CLK(main_div2_clk,	main_clk,		div2);
--SH_FIXED_RATIO_CLK(extal1_div2_clk,	extal1_clk,		div2);
--SH_FIXED_RATIO_CLK(extal2_div2_clk,	extal2_clk,		div2);
--SH_FIXED_RATIO_CLK(extal2_div4_clk,	extal2_clk,		div4);
--
--/* External FSIACK/FSIBCK clock */
--static struct clk fsiack_clk = {
--};
--
--static struct clk fsibck_clk = {
+-/* Fixed 32 KHz root clock from EXTALR pin */
+-static struct clk r_clk = {
+-	.rate           = 32768,
 -};
 -
 -/*
-- *		PLL clocks
+- * 26MHz default rate for the EXTAL1 root input clock.
+- * If needed, reset this with clk_set_rate() from the platform code.
 - */
--static struct clk *pll_parent_main[] = {
--	[0] = &main_clk,
--	[1] = &main_div2_clk
+-struct clk sh7372_extal1_clk = {
+-	.rate		= 26000000,
 -};
 -
--static struct clk *pll_parent_main_extal[8] = {
--	[0] = &main_div2_clk,
--	[1] = &extal2_div2_clk,
--	[3] = &extal2_div4_clk,
--	[4] = &main_clk,
--	[5] = &extal2_clk,
+-/*
+- * 48MHz default rate for the EXTAL2 root input clock.
+- * If needed, reset this with clk_set_rate() from the platform code.
+- */
+-struct clk sh7372_extal2_clk = {
+-	.rate		= 48000000,
 -};
 -
--static unsigned long pll_recalc(struct clk *clk)
+-SH_CLK_RATIO(div2, 1, 2);
+-
+-SH_FIXED_RATIO_CLKg(sh7372_dv_clki_div2_clk,	sh7372_dv_clki_clk,	div2);
+-SH_FIXED_RATIO_CLK(extal1_div2_clk,		sh7372_extal1_clk,	div2);
+-SH_FIXED_RATIO_CLK(extal2_div2_clk,		sh7372_extal2_clk,	div2);
+-SH_FIXED_RATIO_CLK(extal2_div4_clk,		extal2_div2_clk,	div2);
+-
+-/* PLLC0 and PLLC1 */
+-static unsigned long pllc01_recalc(struct clk *clk)
 -{
 -	unsigned long mult = 1;
 -
--	if (ioread32(CPG_MAP(PLLECR)) & (1 << clk->enable_bit))
--		mult = (((ioread32(clk->mapped_reg) >> 24) & 0x7f) + 1);
+-	if (__raw_readl(PLLC01CR) & (1 << 14))
+-		mult = (((__raw_readl(clk->enable_reg) >> 24) & 0x3f) + 1) * 2;
 -
 -	return clk->parent->rate * mult;
 -}
 -
--static int pll_set_parent(struct clk *clk, struct clk *parent)
+-static struct sh_clk_ops pllc01_clk_ops = {
+-	.recalc		= pllc01_recalc,
+-};
+-
+-static struct clk pllc0_clk = {
+-	.ops		= &pllc01_clk_ops,
+-	.flags		= CLK_ENABLE_ON_INIT,
+-	.parent		= &extal1_div2_clk,
+-	.enable_reg	= (void __iomem *)FRQCRC,
+-};
+-
+-static struct clk pllc1_clk = {
+-	.ops		= &pllc01_clk_ops,
+-	.flags		= CLK_ENABLE_ON_INIT,
+-	.parent		= &extal1_div2_clk,
+-	.enable_reg	= (void __iomem *)FRQCRA,
+-};
+-
+-/* Divide PLLC1 by two */
+-SH_FIXED_RATIO_CLK(pllc1_div2_clk,	pllc1_clk,	div2);
+-
+-/* PLLC2 */
+-
+-/* Indices are important - they are the actual src selecting values */
+-static struct clk *pllc2_parent[] = {
+-	[0] = &extal1_div2_clk,
+-	[1] = &extal2_div2_clk,
+-	[2] = &sh7372_dv_clki_div2_clk,
+-};
+-
+-/* Only multipliers 20 * 2 to 46 * 2 are valid, last entry for CPUFREQ_TABLE_END */
+-static struct cpufreq_frequency_table pllc2_freq_table[29];
+-
+-static void pllc2_table_rebuild(struct clk *clk)
 -{
--	u32 val;
--	int i, ret;
+-	int i;
+-
+-	/* Initialise PLLC2 frequency table */
+-	for (i = 0; i < ARRAY_SIZE(pllc2_freq_table) - 2; i++) {
+-		pllc2_freq_table[i].frequency = clk->parent->rate * (i + 20) * 2;
+-		pllc2_freq_table[i].driver_data = i;
+-	}
+-
+-	/* This is a special entry - switching PLL off makes it a repeater */
+-	pllc2_freq_table[i].frequency = clk->parent->rate;
+-	pllc2_freq_table[i].driver_data = i;
+-
+-	pllc2_freq_table[++i].frequency = CPUFREQ_TABLE_END;
+-	pllc2_freq_table[i].driver_data = i;
+-}
+-
+-static unsigned long pllc2_recalc(struct clk *clk)
+-{
+-	unsigned long mult = 1;
+-
+-	pllc2_table_rebuild(clk);
+-
+-	/*
+-	 * If the PLL is off, mult = 1, clk->rate will be updated in
+-	 * pllc2_enable().
+-	 */
+-	if (__raw_readl(PLLC2CR) & (1 << 31))
+-		mult = (((__raw_readl(PLLC2CR) >> 24) & 0x3f) + 1) * 2;
+-
+-	return clk->parent->rate * mult;
+-}
+-
+-static long pllc2_round_rate(struct clk *clk, unsigned long rate)
+-{
+-	return clk_rate_table_round(clk, clk->freq_table, rate);
+-}
+-
+-static int pllc2_enable(struct clk *clk)
+-{
+-	int i;
+-
+-	__raw_writel(__raw_readl(PLLC2CR) | 0x80000000, PLLC2CR);
+-
+-	for (i = 0; i < 100; i++)
+-		if (__raw_readl(PLLC2CR) & 0x80000000) {
+-			clk->rate = pllc2_recalc(clk);
+-			return 0;
+-		}
+-
+-	pr_err("%s(): timeout!\n", __func__);
+-
+-	return -ETIMEDOUT;
+-}
+-
+-static void pllc2_disable(struct clk *clk)
+-{
+-	__raw_writel(__raw_readl(PLLC2CR) & ~0x80000000, PLLC2CR);
+-}
+-
+-static int pllc2_set_rate(struct clk *clk, unsigned long rate)
+-{
+-	unsigned long value;
+-	int idx;
+-
+-	idx = clk_rate_table_find(clk, clk->freq_table, rate);
+-	if (idx < 0)
+-		return idx;
+-
+-	if (rate = clk->parent->rate)
+-		return -EINVAL;
+-
+-	value = __raw_readl(PLLC2CR) & ~(0x3f << 24);
+-
+-	__raw_writel(value | ((idx + 19) << 24), PLLC2CR);
+-
+-	clk->rate = clk->freq_table[idx].frequency;
+-
+-	return 0;
+-}
+-
+-static int pllc2_set_parent(struct clk *clk, struct clk *parent)
+-{
+-	u32 value;
+-	int ret, i;
 -
 -	if (!clk->parent_table || !clk->parent_num)
 -		return -EINVAL;
@@ -196,494 +340,365 @@ index 1cf44dc6d718bcc0..0000000000000000
 -	if (ret < 0)
 -		return ret;
 -
--	val = ioread32(clk->mapped_reg) &
--		~(((1 << clk->src_width) - 1) << clk->src_shift);
+-	value = __raw_readl(PLLC2CR) & ~(3 << 6);
 -
--	iowrite32(val | i << clk->src_shift, clk->mapped_reg);
+-	__raw_writel(value | (i << 6), PLLC2CR);
+-
+-	/* Rebiuld the frequency table */
+-	pllc2_table_rebuild(clk);
 -
 -	return 0;
 -}
 -
--static struct sh_clk_ops pll_clk_ops = {
--	.recalc		= pll_recalc,
--	.set_parent	= pll_set_parent,
+-static struct sh_clk_ops pllc2_clk_ops = {
+-	.recalc		= pllc2_recalc,
+-	.round_rate	= pllc2_round_rate,
+-	.set_rate	= pllc2_set_rate,
+-	.enable		= pllc2_enable,
+-	.disable	= pllc2_disable,
+-	.set_parent	= pllc2_set_parent,
 -};
 -
--#define PLL_CLOCK(name, p, pt, w, s, reg, e)		\
--	static struct clk name = {			\
--		.ops		= &pll_clk_ops,		\
--		.flags		= CLK_ENABLE_ON_INIT,	\
--		.parent		= p,			\
--		.parent_table	= pt,			\
--		.parent_num	= ARRAY_SIZE(pt),	\
--		.src_width	= w,			\
--		.src_shift	= s,			\
--		.enable_reg	= (void __iomem *)reg,	\
--		.enable_bit	= e,			\
--		.mapping	= &cpg_mapping,		\
--	}
--
--PLL_CLOCK(pll0_clk,  &main_clk,      pll_parent_main,      1, 20, PLL0CR,  0);
--PLL_CLOCK(pll1_clk,  &main_clk,      pll_parent_main,       1, 7, PLL1CR,  1);
--PLL_CLOCK(pll2_clk,  &main_div2_clk, pll_parent_main_extal, 3, 5, PLL2CR,  2);
--PLL_CLOCK(pll2s_clk, &main_div2_clk, pll_parent_main_extal, 3, 5, PLL2SCR, 4);
--PLL_CLOCK(pll2h_clk, &main_div2_clk, pll_parent_main_extal, 3, 5, PLL2HCR, 5);
--
--SH_FIXED_RATIO_CLK(pll1_div2_clk,	pll1_clk,	div2);
--
--static atomic_t frqcr_lock;
--
--/* Several clocks need to access FRQCRB, have to lock */
--static bool frqcr_kick_check(struct clk *clk)
--{
--	return !(ioread32(CPG_MAP(FRQCRB)) & BIT(31));
--}
--
--static int frqcr_kick_do(struct clk *clk)
--{
--	int i;
--
--	/* set KICK bit in FRQCRB to update hardware setting, check success */
--	iowrite32(ioread32(CPG_MAP(FRQCRB)) | BIT(31), CPG_MAP(FRQCRB));
--	for (i = 1000; i; i--)
--		if (ioread32(CPG_MAP(FRQCRB)) & BIT(31))
--			cpu_relax();
--		else
--			return 0;
--
--	return -ETIMEDOUT;
--}
--
--static int zclk_set_rate(struct clk *clk, unsigned long rate)
--{
--	void __iomem *frqcrc;
--	int ret;
--	unsigned long step, p_rate;
--	u32 val;
--
--	if (!clk->parent || !__clk_get(clk->parent))
--		return -ENODEV;
--
--	if (!atomic_inc_and_test(&frqcr_lock) || !frqcr_kick_check(clk)) {
--		ret = -EBUSY;
--		goto done;
--	}
--
--	/*
--	 * Users are supposed to first call clk_set_rate() only with
--	 * clk_round_rate() results. So, we don't fix wrong rates here, but
--	 * guard against them anyway
--	 */
--
--	p_rate = clk_get_rate(clk->parent);
--	if (rate = p_rate) {
--		val = 0;
--	} else {
--		step = DIV_ROUND_CLOSEST(p_rate, 32);
--
--		if (rate > p_rate || rate < step) {
--			ret = -EINVAL;
--			goto done;
--		}
--
--		val = 32 - rate / step;
--	}
--
--	frqcrc = clk->mapped_reg + (FRQCRC - (u32)clk->enable_reg);
--
--	iowrite32((ioread32(frqcrc) & ~(clk->div_mask << clk->enable_bit)) |
--		  (val << clk->enable_bit), frqcrc);
--
--	ret = frqcr_kick_do(clk);
--
--done:
--	atomic_dec(&frqcr_lock);
--	__clk_put(clk->parent);
--	return ret;
--}
--
--static long zclk_round_rate(struct clk *clk, unsigned long rate)
--{
--	/*
--	 * theoretical rate = parent rate * multiplier / 32,
--	 * where 1 <= multiplier <= 32. Therefore we should do
--	 * multiplier = rate * 32 / parent rate
--	 * rounded rate = parent rate * multiplier / 32.
--	 * However, multiplication before division won't fit in 32 bits, so
--	 * we sacrifice some precision by first dividing and then multiplying.
--	 * To find the nearest divisor we calculate both and pick up the best
--	 * one. This avoids 64-bit arithmetics.
--	 */
--	unsigned long step, mul_min, mul_max, rate_min, rate_max;
--
--	rate_max = clk_get_rate(clk->parent);
--
--	/* output freq <= parent */
--	if (rate >= rate_max)
--		return rate_max;
--
--	step = DIV_ROUND_CLOSEST(rate_max, 32);
--	/* output freq >= parent / 32 */
--	if (step >= rate)
--		return step;
--
--	mul_min = rate / step;
--	mul_max = DIV_ROUND_UP(rate, step);
--	rate_min = step * mul_min;
--	if (mul_max = mul_min)
--		return rate_min;
--
--	rate_max = step * mul_max;
--
--	if (rate_max - rate <  rate - rate_min)
--		return rate_max;
--
--	return rate_min;
--}
--
--static unsigned long zclk_recalc(struct clk *clk)
--{
--	void __iomem *frqcrc = FRQCRC - (u32)clk->enable_reg + clk->mapped_reg;
--	unsigned int max = clk->div_mask + 1;
--	unsigned long val = ((ioread32(frqcrc) >> clk->enable_bit) &
--			     clk->div_mask);
--
--	return DIV_ROUND_CLOSEST(clk_get_rate(clk->parent), max) *
--		(max - val);
--}
--
--static struct sh_clk_ops zclk_ops = {
--	.recalc = zclk_recalc,
--	.set_rate = zclk_set_rate,
--	.round_rate = zclk_round_rate,
+-struct clk sh7372_pllc2_clk = {
+-	.ops		= &pllc2_clk_ops,
+-	.parent		= &extal1_div2_clk,
+-	.freq_table	= pllc2_freq_table,
+-	.nr_freqs	= ARRAY_SIZE(pllc2_freq_table) - 1,
+-	.parent_table	= pllc2_parent,
+-	.parent_num	= ARRAY_SIZE(pllc2_parent),
 -};
 -
--static struct clk z_clk = {
--	.parent = &pll0_clk,
--	.div_mask = 0x1f,
--	.enable_bit = 8,
--	/* We'll need to access FRQCRB and FRQCRC */
--	.enable_reg = (void __iomem *)FRQCRB,
--	.ops = &zclk_ops,
+-/* External input clock (pin name: FSIACK/FSIBCK ) */
+-static struct clk fsiack_clk = {
 -};
 -
--/*
-- * It seems only 1/2 divider is usable in manual mode. 1/2 / 2/3
-- * switching is only available in auto-DVFS mode
-- */
--SH_FIXED_RATIO_CLK(pll0_div2_clk,	pll0_clk,		div2);
--
--static struct clk z2_clk = {
--	.parent = &pll0_div2_clk,
--	.div_mask = 0x1f,
--	.enable_bit = 0,
--	/* We'll need to access FRQCRB and FRQCRC */
--	.enable_reg = (void __iomem *)FRQCRB,
--	.ops = &zclk_ops,
+-static struct clk fsibck_clk = {
 -};
 -
 -static struct clk *main_clks[] = {
--	&extalr_clk,
--	&extal1_clk,
+-	&sh7372_dv_clki_clk,
+-	&r_clk,
+-	&sh7372_extal1_clk,
+-	&sh7372_extal2_clk,
+-	&sh7372_dv_clki_div2_clk,
 -	&extal1_div2_clk,
--	&extal2_clk,
 -	&extal2_div2_clk,
 -	&extal2_div4_clk,
--	&main_clk,
--	&main_div2_clk,
+-	&pllc0_clk,
+-	&pllc1_clk,
+-	&pllc1_div2_clk,
+-	&sh7372_pllc2_clk,
 -	&fsiack_clk,
 -	&fsibck_clk,
--	&pll0_clk,
--	&pll1_clk,
--	&pll1_div2_clk,
--	&pll2_clk,
--	&pll2s_clk,
--	&pll2h_clk,
--	&z_clk,
--	&pll0_div2_clk,
--	&z2_clk,
 -};
 -
--/* DIV4 */
 -static void div4_kick(struct clk *clk)
 -{
--	if (!WARN(!atomic_inc_and_test(&frqcr_lock), "FRQCR* lock broken!\n"))
--		frqcr_kick_do(clk);
--	atomic_dec(&frqcr_lock);
+-	unsigned long value;
+-
+-	/* set KICK bit in FRQCRB to update hardware setting */
+-	value = __raw_readl(FRQCRB);
+-	value |= (1 << 31);
+-	__raw_writel(value, FRQCRB);
 -}
 -
--static int divisors[] = { 2, 3, 4, 6, 8, 12, 16, 18, 24, 0, 36, 48, 10};
+-static int divisors[] = { 2, 3, 4, 6, 8, 12, 16, 18,
+-			  24, 32, 36, 48, 0, 72, 96, 0 };
 -
 -static struct clk_div_mult_table div4_div_mult_table = {
--	.divisors	= divisors,
--	.nr_divisors	= ARRAY_SIZE(divisors),
+-	.divisors = divisors,
+-	.nr_divisors = ARRAY_SIZE(divisors),
 -};
 -
 -static struct clk_div4_table div4_table = {
--	.div_mult_table	= &div4_div_mult_table,
--	.kick		= div4_kick,
+-	.div_mult_table = &div4_div_mult_table,
+-	.kick = div4_kick,
 -};
 -
--enum {
--	DIV4_I, DIV4_M3, DIV4_B, DIV4_M1, DIV4_M2,
--	DIV4_ZX, DIV4_ZS, DIV4_HP,
--	DIV4_NR };
+-enum { DIV4_I, DIV4_ZG, DIV4_B, DIV4_M1, DIV4_CSIR,
+-       DIV4_ZX, DIV4_HP,
+-       DIV4_ISPB, DIV4_S, DIV4_ZB, DIV4_ZB3, DIV4_CP,
+-       DIV4_DDRP, DIV4_NR };
+-
+-#define DIV4(_reg, _bit, _mask, _flags) \
+-  SH_CLK_DIV4(&pllc1_clk, _reg, _bit, _mask, _flags)
 -
 -static struct clk div4_clks[DIV4_NR] = {
--	[DIV4_I]	= SH_CLK_DIV4(&pll1_clk, FRQCRA, 20, 0x0dff, CLK_ENABLE_ON_INIT),
--	[DIV4_M3]	= SH_CLK_DIV4(&pll1_clk, FRQCRA, 12, 0x1dff, CLK_ENABLE_ON_INIT),
--	[DIV4_B]	= SH_CLK_DIV4(&pll1_clk, FRQCRA,  8, 0x0dff, CLK_ENABLE_ON_INIT),
--	[DIV4_M1]	= SH_CLK_DIV4(&pll1_clk, FRQCRA,  4, 0x1dff, 0),
--	[DIV4_M2]	= SH_CLK_DIV4(&pll1_clk, FRQCRA,  0, 0x1dff, 0),
--	[DIV4_ZX]	= SH_CLK_DIV4(&pll1_clk, FRQCRB, 12, 0x0dff, 0),
--	[DIV4_ZS]	= SH_CLK_DIV4(&pll1_clk, FRQCRB,  8, 0x0dff, 0),
--	[DIV4_HP]	= SH_CLK_DIV4(&pll1_clk, FRQCRB,  4, 0x0dff, 0),
+-	[DIV4_I] = DIV4(FRQCRA, 20, 0x6fff, CLK_ENABLE_ON_INIT),
+-	[DIV4_ZG] = DIV4(FRQCRA, 16, 0x6fff, CLK_ENABLE_ON_INIT),
+-	[DIV4_B] = DIV4(FRQCRA, 8, 0x6fff, CLK_ENABLE_ON_INIT),
+-	[DIV4_M1] = DIV4(FRQCRA, 4, 0x6fff, CLK_ENABLE_ON_INIT),
+-	[DIV4_CSIR] = DIV4(FRQCRA, 0, 0x6fff, 0),
+-	[DIV4_ZX] = DIV4(FRQCRB, 12, 0x6fff, 0),
+-	[DIV4_HP] = DIV4(FRQCRB, 4, 0x6fff, 0),
+-	[DIV4_ISPB] = DIV4(FRQCRC, 20, 0x6fff, 0),
+-	[DIV4_S] = DIV4(FRQCRC, 12, 0x6fff, 0),
+-	[DIV4_ZB] = DIV4(FRQCRC, 8, 0x6fff, 0),
+-	[DIV4_ZB3] = DIV4(FRQCRC, 4, 0x6fff, 0),
+-	[DIV4_CP] = DIV4(FRQCRC, 0, 0x6fff, 0),
+-	[DIV4_DDRP] = DIV4(FRQCRD, 0, 0x677c, 0),
 -};
 -
--enum {
--	DIV6_ZB,
--	DIV6_SDHI0, DIV6_SDHI1, DIV6_SDHI2,
--	DIV6_MMC0, DIV6_MMC1,
--	DIV6_VCK1, DIV6_VCK2, DIV6_VCK3, DIV6_VCK4, DIV6_VCK5,
--	DIV6_FSIA, DIV6_FSIB,
--	DIV6_MP, DIV6_M4, DIV6_HSI, DIV6_SPUV,
--	DIV6_NR };
--
--static struct clk *div6_parents[8] = {
--	[0] = &pll1_div2_clk,
--	[1] = &pll2s_clk,
--	[3] = &extal2_clk,
--	[4] = &main_div2_clk,
--	[6] = &extalr_clk,
--};
--
--static struct clk *fsia_parents[4] = {
--	[0] = &pll1_div2_clk,
--	[1] = &pll2s_clk,
--	[2] = &fsiack_clk,
--};
--
--static struct clk *fsib_parents[4] = {
--	[0] = &pll1_div2_clk,
--	[1] = &pll2s_clk,
--	[2] = &fsibck_clk,
--};
--
--static struct clk *mp_parents[4] = {
--	[0] = &pll1_div2_clk,
--	[1] = &pll2s_clk,
--	[2] = &extal2_clk,
--	[3] = &extal2_clk,
--};
--
--static struct clk *m4_parents[2] = {
--	[0] = &pll2s_clk,
--};
--
--static struct clk *hsi_parents[4] = {
--	[0] = &pll2h_clk,
--	[1] = &pll1_div2_clk,
--	[3] = &pll2s_clk,
--};
--
--/*** FIXME ***
-- * SH_CLK_DIV6_EXT() macro doesn't care .mapping
-- * but, it is necessary on R-Car (= ioremap() base CPG)
-- * The difference between
-- * SH_CLK_DIV6_EXT() <--> SH_CLK_MAP_DIV6_EXT()
-- * is only .mapping
-- */
--#define SH_CLK_MAP_DIV6_EXT(_reg, _flags, _parents,			\
--			    _num_parents, _src_shift, _src_width)	\
--{									\
--	.enable_reg	= (void __iomem *)_reg,				\
--	.enable_bit	= 0, /* unused */				\
--	.flags		= _flags | CLK_MASK_DIV_ON_DISABLE,		\
--	.div_mask	= SH_CLK_DIV6_MSK,				\
--	.parent_table	= _parents,					\
--	.parent_num	= _num_parents,					\
--	.src_shift	= _src_shift,					\
--	.src_width	= _src_width,					\
--	.mapping	= &cpg_mapping,					\
--}
+-enum { DIV6_VCK1, DIV6_VCK2, DIV6_VCK3, DIV6_FMSI, DIV6_FMSO,
+-       DIV6_SUB, DIV6_SPU,
+-       DIV6_VOU, DIV6_DSIT, DIV6_DSI0P, DIV6_DSI1P,
+-       DIV6_NR };
 -
 -static struct clk div6_clks[DIV6_NR] = {
--	[DIV6_ZB] = SH_CLK_MAP_DIV6_EXT(ZBCKCR, CLK_ENABLE_ON_INIT,
--				div6_parents, 2, 7, 1),
--	[DIV6_SDHI0] = SH_CLK_MAP_DIV6_EXT(SD0CKCR, 0,
--				div6_parents, 2, 6, 2),
--	[DIV6_SDHI1] = SH_CLK_MAP_DIV6_EXT(SD1CKCR, 0,
--				div6_parents, 2, 6, 2),
--	[DIV6_SDHI2] = SH_CLK_MAP_DIV6_EXT(SD2CKCR, 0,
--				div6_parents, 2, 6, 2),
--	[DIV6_MMC0] = SH_CLK_MAP_DIV6_EXT(MMC0CKCR, 0,
--				div6_parents, 2, 6, 2),
--	[DIV6_MMC1] = SH_CLK_MAP_DIV6_EXT(MMC1CKCR, 0,
--				div6_parents, 2, 6, 2),
--	[DIV6_VCK1] = SH_CLK_MAP_DIV6_EXT(VCLKCR1, 0, /* didn't care bit[6-7] */
--				div6_parents, ARRAY_SIZE(div6_parents), 12, 3),
--	[DIV6_VCK2] = SH_CLK_MAP_DIV6_EXT(VCLKCR2, 0, /* didn't care bit[6-7] */
--				div6_parents, ARRAY_SIZE(div6_parents), 12, 3),
--	[DIV6_VCK3] = SH_CLK_MAP_DIV6_EXT(VCLKCR3, 0, /* didn't care bit[6-7] */
--				div6_parents, ARRAY_SIZE(div6_parents), 12, 3),
--	[DIV6_VCK4] = SH_CLK_MAP_DIV6_EXT(VCLKCR4, 0, /* didn't care bit[6-7] */
--				div6_parents, ARRAY_SIZE(div6_parents), 12, 3),
--	[DIV6_VCK5] = SH_CLK_MAP_DIV6_EXT(VCLKCR5, 0, /* didn't care bit[6-7] */
--				div6_parents, ARRAY_SIZE(div6_parents), 12, 3),
--	[DIV6_FSIA] = SH_CLK_MAP_DIV6_EXT(FSIACKCR, 0,
--				fsia_parents, ARRAY_SIZE(fsia_parents), 6, 2),
--	[DIV6_FSIB] = SH_CLK_MAP_DIV6_EXT(FSIBCKCR, 0,
--				fsib_parents, ARRAY_SIZE(fsib_parents), 6, 2),
--	[DIV6_MP] = SH_CLK_MAP_DIV6_EXT(MPCKCR, 0, /* it needs bit[9-11] control */
--				mp_parents, ARRAY_SIZE(mp_parents), 6, 2),
--	/* pll2s will be selected always for M4 */
--	[DIV6_M4] = SH_CLK_MAP_DIV6_EXT(M4CKCR, 0, /* it needs bit[9] control */
--				m4_parents, ARRAY_SIZE(m4_parents), 6, 1),
--	[DIV6_HSI] = SH_CLK_MAP_DIV6_EXT(HSICKCR, 0, /* it needs bit[9] control */
--				hsi_parents, ARRAY_SIZE(hsi_parents), 6, 2),
--	[DIV6_SPUV] = SH_CLK_MAP_DIV6_EXT(SPUVCKCR, 0,
--				mp_parents, ARRAY_SIZE(mp_parents), 6, 2),
+-	[DIV6_VCK1] = SH_CLK_DIV6(&pllc1_div2_clk, VCLKCR1, 0),
+-	[DIV6_VCK2] = SH_CLK_DIV6(&pllc1_div2_clk, VCLKCR2, 0),
+-	[DIV6_VCK3] = SH_CLK_DIV6(&pllc1_div2_clk, VCLKCR3, 0),
+-	[DIV6_FMSI] = SH_CLK_DIV6(&pllc1_div2_clk, FMSICKCR, 0),
+-	[DIV6_FMSO] = SH_CLK_DIV6(&pllc1_div2_clk, FMSOCKCR, 0),
+-	[DIV6_SUB] = SH_CLK_DIV6(&sh7372_extal2_clk, SUBCKCR, 0),
+-	[DIV6_SPU] = SH_CLK_DIV6(&pllc1_div2_clk, SPUCKCR, 0),
+-	[DIV6_VOU] = SH_CLK_DIV6(&pllc1_div2_clk, VOUCKCR, 0),
+-	[DIV6_DSIT] = SH_CLK_DIV6(&pllc1_div2_clk, DSITCKCR, 0),
+-	[DIV6_DSI0P] = SH_CLK_DIV6(&pllc1_div2_clk, DSI0PCKCR, 0),
+-	[DIV6_DSI1P] = SH_CLK_DIV6(&pllc1_div2_clk, DSI1PCKCR, 0),
 -};
 -
--/* MSTP */
--enum {
--	MSTP218, MSTP217, MSTP216, MSTP207, MSTP206, MSTP204, MSTP203,
--	MSTP329, MSTP323, MSTP318, MSTP317, MSTP316,
--	MSTP315, MSTP314, MSTP313, MSTP312, MSTP305, MSTP300,
--	MSTP411, MSTP410, MSTP409,
--	MSTP522, MSTP515,
--	MSTP_NR
+-enum { DIV6_HDMI, DIV6_FSIA, DIV6_FSIB, DIV6_REPARENT_NR };
+-
+-/* Indices are important - they are the actual src selecting values */
+-static struct clk *hdmi_parent[] = {
+-	[0] = &pllc1_div2_clk,
+-	[1] = &sh7372_pllc2_clk,
+-	[2] = &sh7372_dv_clki_clk,
+-	[3] = NULL,	/* pllc2_div4 not implemented yet */
 -};
+-
+-static struct clk *fsiackcr_parent[] = {
+-	[0] = &pllc1_div2_clk,
+-	[1] = &sh7372_pllc2_clk,
+-	[2] = &fsiack_clk, /* external input for FSI A */
+-	[3] = NULL,	/* setting prohibited */
+-};
+-
+-static struct clk *fsibckcr_parent[] = {
+-	[0] = &pllc1_div2_clk,
+-	[1] = &sh7372_pllc2_clk,
+-	[2] = &fsibck_clk, /* external input for FSI B */
+-	[3] = NULL,	/* setting prohibited */
+-};
+-
+-static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
+-	[DIV6_HDMI] = SH_CLK_DIV6_EXT(HDMICKCR, 0,
+-				      hdmi_parent, ARRAY_SIZE(hdmi_parent), 6, 2),
+-	[DIV6_FSIA] = SH_CLK_DIV6_EXT(FSIACKCR, 0,
+-				      fsiackcr_parent, ARRAY_SIZE(fsiackcr_parent), 6, 2),
+-	[DIV6_FSIB] = SH_CLK_DIV6_EXT(FSIBCKCR, 0,
+-				      fsibckcr_parent, ARRAY_SIZE(fsibckcr_parent), 6, 2),
+-};
+-
+-/* FSI DIV */
+-enum { FSIDIV_A, FSIDIV_B, FSIDIV_REPARENT_NR };
+-
+-static struct clk fsidivs[] = {
+-	[FSIDIV_A] = SH_CLK_FSIDIV(FSIDIVA, &div6_reparent_clks[DIV6_FSIA]),
+-	[FSIDIV_B] = SH_CLK_FSIDIV(FSIDIVB, &div6_reparent_clks[DIV6_FSIB]),
+-};
+-
+-enum { MSTP001, MSTP000,
+-       MSTP131, MSTP130,
+-       MSTP129, MSTP128, MSTP127, MSTP126, MSTP125,
+-       MSTP118, MSTP117, MSTP116, MSTP113,
+-       MSTP106, MSTP101, MSTP100,
+-       MSTP223,
+-       MSTP218, MSTP217, MSTP216, MSTP214, MSTP208, MSTP207,
+-       MSTP206, MSTP205, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
+-	MSTP328, MSTP323, MSTP322, MSTP315, MSTP314, MSTP313, MSTP312,
+-       MSTP423, MSTP415, MSTP413, MSTP411, MSTP410, MSTP407, MSTP406,
+-       MSTP405, MSTP404, MSTP403, MSTP400,
+-       MSTP_NR };
+-
+-#define MSTP(_parent, _reg, _bit, _flags) \
+-  SH_CLK_MSTP32(_parent, _reg, _bit, _flags)
 -
 -static struct clk mstp_clks[MSTP_NR] = {
--	[MSTP204] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 4, 0), /* SCIFA0 */
--	[MSTP203] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 3, 0), /* SCIFA1 */
--	[MSTP206] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 6, 0), /* SCIFB0 */
--	[MSTP207] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 7, 0), /* SCIFB1 */
--	[MSTP216] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 16, 0), /* SCIFB2 */
--	[MSTP217] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 17, 0), /* SCIFB3 */
--	[MSTP218] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR2, 18, 0), /* DMAC */
--	[MSTP300] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 0, 0), /* IIC2 */
--	[MSTP305] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC1],SMSTPCR3, 5, 0), /* MMCIF1 */
--	[MSTP312] = SH_CLK_MSTP32(&div6_clks[DIV6_SDHI2],SMSTPCR3, 12, 0), /* SDHI2 */
--	[MSTP313] = SH_CLK_MSTP32(&div6_clks[DIV6_SDHI1],SMSTPCR3, 13, 0), /* SDHI1 */
--	[MSTP314] = SH_CLK_MSTP32(&div6_clks[DIV6_SDHI0],SMSTPCR3, 14, 0), /* SDHI0 */
--	[MSTP315] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC0],SMSTPCR3, 15, 0), /* MMCIF0 */
--	[MSTP316] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 16, 0), /* IIC6 */
--	[MSTP317] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 17, 0), /* IIC7 */
--	[MSTP318] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 18, 0), /* IIC0 */
--	[MSTP323] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 23, 0), /* IIC1 */
--	[MSTP329] = SH_CLK_MSTP32(&extalr_clk, SMSTPCR3, 29, 0), /* CMT10 */
--	[MSTP409] = SH_CLK_MSTP32(&main_div2_clk,	SMSTPCR4, 9, 0), /* IIC5 */
--	[MSTP410] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR4, 10, 0), /* IIC4 */
--	[MSTP411] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR4, 11, 0), /* IIC3 */
--	[MSTP522] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR5, 22, 0), /* Thermal */
--	[MSTP515] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR5, 15, 0), /* IIC8 */
+-	[MSTP001] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR0, 1, 0), /* IIC2 */
+-	[MSTP000] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR0, 0, 0), /* MSIOF0 */
+-	[MSTP131] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 31, 0), /* VEU3 */
+-	[MSTP130] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 30, 0), /* VEU2 */
+-	[MSTP129] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 29, 0), /* VEU1 */
+-	[MSTP128] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 28, 0), /* VEU0 */
+-	[MSTP127] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 27, 0), /* CEU */
+-	[MSTP126] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 26, 0), /* CSI2 */
+-	[MSTP125] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR1, 25, 0), /* TMU0 */
+-	[MSTP118] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 18, 0), /* DSITX */
+-	[MSTP117] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 17, 0), /* LCDC1 */
+-	[MSTP116] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR1, 16, 0), /* IIC0 */
+-	[MSTP113] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR1, 13, 0), /* MERAM */
+-	[MSTP106] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 6, 0), /* JPU */
+-	[MSTP101] = MSTP(&div4_clks[DIV4_M1], SMSTPCR1, 1, 0), /* VPU */
+-	[MSTP100] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 0, 0), /* LCDC0 */
+-	[MSTP223] = MSTP(&div6_clks[DIV6_SPU], SMSTPCR2, 23, 0), /* SPU2 */
+-	[MSTP218] = MSTP(&div4_clks[DIV4_HP], SMSTPCR2, 18, 0), /* DMAC1 */
+-	[MSTP217] = MSTP(&div4_clks[DIV4_HP], SMSTPCR2, 17, 0), /* DMAC2 */
+-	[MSTP216] = MSTP(&div4_clks[DIV4_HP], SMSTPCR2, 16, 0), /* DMAC3 */
+-	[MSTP214] = MSTP(&div4_clks[DIV4_HP], SMSTPCR2, 14, 0), /* USBDMAC */
+-	[MSTP208] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 8, 0), /* MSIOF1 */
+-	[MSTP207] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 7, 0), /* SCIFA5 */
+-	[MSTP206] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 6, 0), /* SCIFB */
+-	[MSTP205] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 5, 0), /* MSIOF2 */
+-	[MSTP204] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 4, 0), /* SCIFA0 */
+-	[MSTP203] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 3, 0), /* SCIFA1 */
+-	[MSTP202] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 2, 0), /* SCIFA2 */
+-	[MSTP201] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 1, 0), /* SCIFA3 */
+-	[MSTP200] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 0, 0), /* SCIFA4 */
+-	[MSTP328] = MSTP(&div6_clks[DIV6_SPU], SMSTPCR3, 28, 0), /* FSI2 */
+-	[MSTP323] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR3, 23, 0), /* IIC1 */
+-	[MSTP322] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR3, 22, 0), /* USB0 */
+-	[MSTP315] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 15, 0), /* FLCTL*/
+-	[MSTP314] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 14, 0), /* SDHI0 */
+-	[MSTP313] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 13, 0), /* SDHI1 */
+-	[MSTP312] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 12, 0), /* MMC */
+-	[MSTP423] = MSTP(&div4_clks[DIV4_B], SMSTPCR4, 23, 0), /* DSITX1 */
+-	[MSTP415] = MSTP(&div4_clks[DIV4_HP], SMSTPCR4, 15, 0), /* SDHI2 */
+-	[MSTP413] = MSTP(&pllc1_div2_clk, SMSTPCR4, 13, 0), /* HDMI */
+-	[MSTP411] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR4, 11, 0), /* IIC3 */
+-	[MSTP410] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR4, 10, 0), /* IIC4 */
+-	[MSTP407] = MSTP(&div4_clks[DIV4_HP], SMSTPCR4, 7, 0), /* USB-DMAC1 */
+-	[MSTP406] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR4, 6, 0), /* USB1 */
+-	[MSTP405] = MSTP(&r_clk, SMSTPCR4, 5, 0), /* CMT4 */
+-	[MSTP404] = MSTP(&r_clk, SMSTPCR4, 4, 0), /* CMT3 */
+-	[MSTP403] = MSTP(&r_clk, SMSTPCR4, 3, 0), /* KEYSC */
+-	[MSTP400] = MSTP(&r_clk, SMSTPCR4, 0, 0), /* CMT2 */
 -};
 -
 -static struct clk_lookup lookups[] = {
--	/* main clock */
--	CLKDEV_CON_ID("extal1",			&extal1_clk),
--	CLKDEV_CON_ID("extal1_div2",		&extal1_div2_clk),
--	CLKDEV_CON_ID("extal2",			&extal2_clk),
--	CLKDEV_CON_ID("extal2_div2",		&extal2_div2_clk),
--	CLKDEV_CON_ID("extal2_div4",		&extal2_div4_clk),
--	CLKDEV_CON_ID("fsiack",			&fsiack_clk),
--	CLKDEV_CON_ID("fsibck",			&fsibck_clk),
+-	/* main clocks */
+-	CLKDEV_CON_ID("dv_clki_div2_clk", &sh7372_dv_clki_div2_clk),
+-	CLKDEV_CON_ID("r_clk", &r_clk),
+-	CLKDEV_CON_ID("extal1", &sh7372_extal1_clk),
+-	CLKDEV_CON_ID("extal2", &sh7372_extal2_clk),
+-	CLKDEV_CON_ID("extal1_div2_clk", &extal1_div2_clk),
+-	CLKDEV_CON_ID("extal2_div2_clk", &extal2_div2_clk),
+-	CLKDEV_CON_ID("extal2_div4_clk", &extal2_div4_clk),
+-	CLKDEV_CON_ID("pllc0_clk", &pllc0_clk),
+-	CLKDEV_CON_ID("pllc1_clk", &pllc1_clk),
+-	CLKDEV_CON_ID("pllc1_div2_clk", &pllc1_div2_clk),
+-	CLKDEV_CON_ID("pllc2_clk", &sh7372_pllc2_clk),
+-	CLKDEV_CON_ID("fsiack", &fsiack_clk),
+-	CLKDEV_CON_ID("fsibck", &fsibck_clk),
 -
--	/* pll clock */
--	CLKDEV_CON_ID("pll1",			&pll1_clk),
--	CLKDEV_CON_ID("pll1_div2",		&pll1_div2_clk),
--	CLKDEV_CON_ID("pll2",			&pll2_clk),
--	CLKDEV_CON_ID("pll2s",			&pll2s_clk),
--	CLKDEV_CON_ID("pll2h",			&pll2h_clk),
+-	/* DIV4 clocks */
+-	CLKDEV_CON_ID("i_clk", &div4_clks[DIV4_I]),
+-	CLKDEV_CON_ID("zg_clk", &div4_clks[DIV4_ZG]),
+-	CLKDEV_CON_ID("b_clk", &div4_clks[DIV4_B]),
+-	CLKDEV_CON_ID("m1_clk", &div4_clks[DIV4_M1]),
+-	CLKDEV_CON_ID("csir_clk", &div4_clks[DIV4_CSIR]),
+-	CLKDEV_CON_ID("zx_clk", &div4_clks[DIV4_ZX]),
+-	CLKDEV_CON_ID("hp_clk", &div4_clks[DIV4_HP]),
+-	CLKDEV_CON_ID("ispb_clk", &div4_clks[DIV4_ISPB]),
+-	CLKDEV_CON_ID("s_clk", &div4_clks[DIV4_S]),
+-	CLKDEV_CON_ID("zb_clk", &div4_clks[DIV4_ZB]),
+-	CLKDEV_CON_ID("zb3_clk", &div4_clks[DIV4_ZB3]),
+-	CLKDEV_CON_ID("cp_clk", &div4_clks[DIV4_CP]),
+-	CLKDEV_CON_ID("ddrp_clk", &div4_clks[DIV4_DDRP]),
 -
--	/* CPU clock */
--	CLKDEV_DEV_ID("cpu0",			&z_clk),
+-	/* DIV6 clocks */
+-	CLKDEV_CON_ID("vck1_clk", &div6_clks[DIV6_VCK1]),
+-	CLKDEV_CON_ID("vck2_clk", &div6_clks[DIV6_VCK2]),
+-	CLKDEV_CON_ID("vck3_clk", &div6_clks[DIV6_VCK3]),
+-	CLKDEV_CON_ID("fmsi_clk", &div6_clks[DIV6_FMSI]),
+-	CLKDEV_CON_ID("fmso_clk", &div6_clks[DIV6_FMSO]),
+-	CLKDEV_CON_ID("sub_clk", &div6_clks[DIV6_SUB]),
+-	CLKDEV_CON_ID("spu_clk", &div6_clks[DIV6_SPU]),
+-	CLKDEV_CON_ID("vou_clk", &div6_clks[DIV6_VOU]),
+-	CLKDEV_CON_ID("hdmi_clk", &div6_reparent_clks[DIV6_HDMI]),
 -
--	/* DIV6 */
--	CLKDEV_CON_ID("zb",			&div6_clks[DIV6_ZB]),
--	CLKDEV_CON_ID("vck1",			&div6_clks[DIV6_VCK1]),
--	CLKDEV_CON_ID("vck2",			&div6_clks[DIV6_VCK2]),
--	CLKDEV_CON_ID("vck3",			&div6_clks[DIV6_VCK3]),
--	CLKDEV_CON_ID("vck4",			&div6_clks[DIV6_VCK4]),
--	CLKDEV_CON_ID("vck5",			&div6_clks[DIV6_VCK5]),
--	CLKDEV_CON_ID("fsia",			&div6_clks[DIV6_FSIA]),
--	CLKDEV_CON_ID("fsib",			&div6_clks[DIV6_FSIB]),
--	CLKDEV_CON_ID("mp",			&div6_clks[DIV6_MP]),
--	CLKDEV_CON_ID("m4",			&div6_clks[DIV6_M4]),
--	CLKDEV_CON_ID("hsi",			&div6_clks[DIV6_HSI]),
--	CLKDEV_CON_ID("spuv",			&div6_clks[DIV6_SPUV]),
+-	/* MSTP32 clocks */
+-	CLKDEV_DEV_ID("i2c-sh_mobile.2", &mstp_clks[MSTP001]), /* IIC2 */
+-	CLKDEV_DEV_ID("fff30000.i2c", &mstp_clks[MSTP001]), /* IIC2 */
+-	CLKDEV_DEV_ID("spi_sh_msiof.0", &mstp_clks[MSTP000]), /* MSIOF0 */
+-	CLKDEV_DEV_ID("uio_pdrv_genirq.4", &mstp_clks[MSTP131]), /* VEU3 */
+-	CLKDEV_DEV_ID("uio_pdrv_genirq.3", &mstp_clks[MSTP130]), /* VEU2 */
+-	CLKDEV_DEV_ID("uio_pdrv_genirq.2", &mstp_clks[MSTP129]), /* VEU1 */
+-	CLKDEV_DEV_ID("uio_pdrv_genirq.1", &mstp_clks[MSTP128]), /* VEU0 */
+-	CLKDEV_DEV_ID("sh_mobile_ceu.0", &mstp_clks[MSTP127]), /* CEU */
+-	CLKDEV_DEV_ID("sh-mobile-csi2.0", &mstp_clks[MSTP126]), /* CSI2 */
+-	CLKDEV_DEV_ID("sh-mipi-dsi.0", &mstp_clks[MSTP118]), /* DSITX0 */
+-	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.1", &mstp_clks[MSTP117]), /* LCDC1 */
+-	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[MSTP116]), /* IIC0 */
+-	CLKDEV_DEV_ID("fff20000.i2c", &mstp_clks[MSTP116]), /* IIC0 */
+-	CLKDEV_DEV_ID("sh_mobile_meram.0", &mstp_clks[MSTP113]), /* MERAM */
+-	CLKDEV_DEV_ID("uio_pdrv_genirq.5", &mstp_clks[MSTP106]), /* JPU */
+-	CLKDEV_DEV_ID("uio_pdrv_genirq.0", &mstp_clks[MSTP101]), /* VPU */
+-	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.0", &mstp_clks[MSTP100]), /* LCDC0 */
+-	CLKDEV_DEV_ID("uio_pdrv_genirq.6", &mstp_clks[MSTP223]), /* SPU2DSP0 */
+-	CLKDEV_DEV_ID("uio_pdrv_genirq.7", &mstp_clks[MSTP223]), /* SPU2DSP1 */
+-	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP218]), /* DMAC1 */
+-	CLKDEV_DEV_ID("sh-dma-engine.1", &mstp_clks[MSTP217]), /* DMAC2 */
+-	CLKDEV_DEV_ID("sh-dma-engine.2", &mstp_clks[MSTP216]), /* DMAC3 */
+-	CLKDEV_DEV_ID("sh-dma-engine.3", &mstp_clks[MSTP214]), /* USB-DMAC0 */
+-	CLKDEV_DEV_ID("spi_sh_msiof.1", &mstp_clks[MSTP208]), /* MSIOF1 */
+-	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP207]), /* SCIFA5 */
+-	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP206]), /* SCIFB */
+-	CLKDEV_DEV_ID("spi_sh_msiof.2", &mstp_clks[MSTP205]), /* MSIOF2 */
+-	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]), /* SCIFA0 */
+-	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]), /* SCIFA1 */
+-	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP202]), /* SCIFA2 */
+-	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP201]), /* SCIFA3 */
+-	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP200]), /* SCIFA4 */
+-	CLKDEV_DEV_ID("sh_fsi2", &mstp_clks[MSTP328]), /* FSI2 */
+-	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[MSTP323]), /* IIC1 */
+-	CLKDEV_DEV_ID("e6c20000.i2c", &mstp_clks[MSTP323]), /* IIC1 */
+-	CLKDEV_DEV_ID("r8a66597_hcd.0", &mstp_clks[MSTP322]), /* USB0 */
+-	CLKDEV_DEV_ID("r8a66597_udc.0", &mstp_clks[MSTP322]), /* USB0 */
+-	CLKDEV_DEV_ID("renesas_usbhs.0", &mstp_clks[MSTP322]), /* USB0 */
+-	CLKDEV_DEV_ID("sh_flctl.0", &mstp_clks[MSTP315]), /* FLCTL */
+-	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]), /* SDHI0 */
+-	CLKDEV_DEV_ID("e6850000.sdhi", &mstp_clks[MSTP314]), /* SDHI0 */
+-	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]), /* SDHI1 */
+-	CLKDEV_DEV_ID("e6860000.sdhi", &mstp_clks[MSTP313]), /* SDHI1 */
+-	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP312]), /* MMC */
+-	CLKDEV_DEV_ID("e6bd0000.mmcif", &mstp_clks[MSTP312]), /* MMC */
+-	CLKDEV_DEV_ID("sh-mipi-dsi.1", &mstp_clks[MSTP423]), /* DSITX1 */
+-	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP415]), /* SDHI2 */
+-	CLKDEV_DEV_ID("e6870000.sdhi", &mstp_clks[MSTP415]), /* SDHI2 */
+-	CLKDEV_DEV_ID("sh-mobile-hdmi", &mstp_clks[MSTP413]), /* HDMI */
+-	CLKDEV_DEV_ID("i2c-sh_mobile.3", &mstp_clks[MSTP411]), /* IIC3 */
+-	CLKDEV_DEV_ID("e6d20000.i2c", &mstp_clks[MSTP411]), /* IIC3 */
+-	CLKDEV_DEV_ID("i2c-sh_mobile.4", &mstp_clks[MSTP410]), /* IIC4 */
+-	CLKDEV_DEV_ID("e6d30000.i2c", &mstp_clks[MSTP410]), /* IIC4 */
+-	CLKDEV_DEV_ID("sh-dma-engine.4", &mstp_clks[MSTP407]), /* USB-DMAC1 */
+-	CLKDEV_DEV_ID("r8a66597_hcd.1", &mstp_clks[MSTP406]), /* USB1 */
+-	CLKDEV_DEV_ID("r8a66597_udc.1", &mstp_clks[MSTP406]), /* USB1 */
+-	CLKDEV_DEV_ID("renesas_usbhs.1", &mstp_clks[MSTP406]), /* USB1 */
+-	CLKDEV_DEV_ID("sh_keysc.0", &mstp_clks[MSTP403]), /* KEYSC */
 -
--	/* MSTP */
--	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
--	CLKDEV_DEV_ID("e6c40000.serial", &mstp_clks[MSTP204]),
--	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
--	CLKDEV_DEV_ID("e6c50000.serial", &mstp_clks[MSTP203]),
--	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]),
--	CLKDEV_DEV_ID("e6c20000.serial", &mstp_clks[MSTP206]),
--	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP207]),
--	CLKDEV_DEV_ID("e6c30000.serial", &mstp_clks[MSTP207]),
--	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP216]),
--	CLKDEV_DEV_ID("e6ce0000.serial", &mstp_clks[MSTP216]),
--	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP217]),
--	CLKDEV_DEV_ID("e6cf0000.serial", &mstp_clks[MSTP217]),
--	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP218]),
--	CLKDEV_DEV_ID("e6700020.dma-controller", &mstp_clks[MSTP218]),
--	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
--	CLKDEV_DEV_ID("e6520000.i2c", &mstp_clks[MSTP300]),
--	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
--	CLKDEV_DEV_ID("ee220000.mmc", &mstp_clks[MSTP305]),
--	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP312]),
--	CLKDEV_DEV_ID("ee140000.sd", &mstp_clks[MSTP312]),
--	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]),
--	CLKDEV_DEV_ID("ee120000.sd", &mstp_clks[MSTP313]),
--	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
--	CLKDEV_DEV_ID("ee100000.sd", &mstp_clks[MSTP314]),
--	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
--	CLKDEV_DEV_ID("ee200000.mmc", &mstp_clks[MSTP315]),
--	CLKDEV_DEV_ID("e6550000.i2c", &mstp_clks[MSTP316]),
--	CLKDEV_DEV_ID("e6560000.i2c", &mstp_clks[MSTP317]),
--	CLKDEV_DEV_ID("e6500000.i2c", &mstp_clks[MSTP318]),
--	CLKDEV_DEV_ID("e6510000.i2c", &mstp_clks[MSTP323]),
--	CLKDEV_ICK_ID("fck", "sh-cmt-48-gen2.1", &mstp_clks[MSTP329]),
--	CLKDEV_ICK_ID("fck", "e6130000.timer", &mstp_clks[MSTP329]),
--	CLKDEV_DEV_ID("e60b0000.i2c", &mstp_clks[MSTP409]),
--	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP410]),
--	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP411]),
--	CLKDEV_DEV_ID("e6570000.i2c", &mstp_clks[MSTP515]),
--
--	/* for DT */
--	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
+-	/* ICK */
+-	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSIT]),
+-	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSIT]),
+-	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSI0P]),
+-	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSI1P]),
+-	CLKDEV_ICK_ID("hdmi", "sh_mobile_lcdc_fb.1",
+-		      &div6_reparent_clks[DIV6_HDMI]),
+-	CLKDEV_ICK_ID("ick", "sh-mobile-hdmi", &div6_reparent_clks[DIV6_HDMI]),
+-	CLKDEV_ICK_ID("icka", "sh_fsi2", &div6_reparent_clks[DIV6_FSIA]),
+-	CLKDEV_ICK_ID("ickb", "sh_fsi2", &div6_reparent_clks[DIV6_FSIB]),
+-	CLKDEV_ICK_ID("fck", "sh-tmu.0", &mstp_clks[MSTP125]), /* TMU0 */
+-	CLKDEV_ICK_ID("spu2", "sh_fsi2", &mstp_clks[MSTP223]),
+-	CLKDEV_ICK_ID("fck", "sh-cmt-32-fast.4", &mstp_clks[MSTP405]), /* CMT4 */
+-	CLKDEV_ICK_ID("fck", "sh-cmt-32-fast.3", &mstp_clks[MSTP404]), /* CMT3 */
+-	CLKDEV_ICK_ID("fck", "sh-cmt-32-fast.2", &mstp_clks[MSTP400]), /* CMT2 */
+-	CLKDEV_ICK_ID("diva", "sh_fsi2", &fsidivs[FSIDIV_A]),
+-	CLKDEV_ICK_ID("divb", "sh_fsi2", &fsidivs[FSIDIV_B]),
+-	CLKDEV_ICK_ID("xcka", "sh_fsi2", &fsiack_clk),
+-	CLKDEV_ICK_ID("xckb", "sh_fsi2", &fsibck_clk),
 -};
 -
--void __init r8a73a4_clock_init(void)
+-void __init sh7372_clock_init(void)
 -{
--	void __iomem *reg;
 -	int k, ret = 0;
--	u32 ckscr;
 -
--	atomic_set(&frqcr_lock, -1);
--
--	reg = ioremap_nocache(CKSCR, PAGE_SIZE);
--	BUG_ON(!reg);
--	ckscr = ioread32(reg);
--	iounmap(reg);
--
--	switch ((ckscr >> 28) & 0x3) {
--	case 0:
--		main_clk.parent = &extal1_clk;
--		break;
--	case 1:
--		main_clk.parent = &extal1_div2_clk;
--		break;
--	case 2:
--		main_clk.parent = &extal2_clk;
--		break;
--	case 3:
--		main_clk.parent = &extal2_div2_clk;
--		break;
--	}
+-	/* make sure MSTP bits on the RT/SH4AL-DSP side are off */
+-	__raw_writel(0xe4ef8087, RMSTPCR0);
+-	__raw_writel(0xffffffff, RMSTPCR1);
+-	__raw_writel(0x37c7f7ff, RMSTPCR2);
+-	__raw_writel(0xffffffff, RMSTPCR3);
+-	__raw_writel(0xffe0fffd, RMSTPCR4);
 -
 -	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
 -		ret = clk_register(main_clks[k]);
@@ -692,333 +707,2522 @@ index 1cf44dc6d718bcc0..0000000000000000
 -		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
 -
 -	if (!ret)
--		ret = sh_clk_div6_reparent_register(div6_clks, DIV6_NR);
+-		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
+-
+-	if (!ret)
+-		ret = sh_clk_div6_reparent_register(div6_reparent_clks, DIV6_REPARENT_NR);
 -
 -	if (!ret)
 -		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+-
+-	if (!ret)
+-		ret = sh_clk_fsidiv_register(fsidivs, FSIDIV_REPARENT_NR);
 -
 -	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
 -
 -	if (!ret)
 -		shmobile_clk_init();
 -	else
--		panic("failed to setup r8a73a4 clocks\n");
+-		panic("failed to setup sh7372 clocks\n");
 -}
-diff --git a/arch/arm/mach-shmobile/r8a73a4.h b/arch/arm/mach-shmobile/r8a73a4.h
-deleted file mode 100644
-index 70dcd847a86ea360..0000000000000000
---- a/arch/arm/mach-shmobile/r8a73a4.h
-+++ /dev/null
-@@ -1,17 +0,0 @@
--#ifndef __ASM_R8A73A4_H__
--#define __ASM_R8A73A4_H__
+--- 0001/arch/arm/mach-shmobile/common.h
++++ work/arch/arm/mach-shmobile/common.h	2015-01-21 12:23:41.827559444 +0900
+@@ -21,7 +21,6 @@ extern void shmobile_smp_scu_cpu_die(uns
+ extern int shmobile_smp_scu_cpu_kill(unsigned int cpu);
+ struct clk;
+ extern int shmobile_clk_init(void);
+-extern void shmobile_handle_irq_intc(struct pt_regs *);
+ extern struct platform_suspend_ops shmobile_suspend_ops;
+ struct cpuidle_driver;
+ extern void shmobile_cpuidle_set_driver(struct cpuidle_driver *drv);
+--- 0001/arch/arm/mach-shmobile/entry-intc.S
++++ /dev/null	2015-01-13 15:44:39.280208949 +0900
+@@ -1,54 +0,0 @@
+-/*
+- * ARM Interrupt demux handler using INTC
+- *
+- * Copyright (C) 2010 Magnus Damm
+- * Copyright (C) 2008 Renesas Solutions Corp.
+- *
+- * This file is licensed under  the terms of the GNU General Public
+- * License version 2. This program is licensed "as is" without any
+- * warranty of any kind, whether express or implied.
+- */
 -
--/* DMA slave IDs */
+-#include <asm/entry-macro-multi.S>
+-
+-#define INTCA_BASE	0xe6980000
+-#define INTFLGA_OFFS	0x00000018 /* accept pending interrupt */
+-#define INTEVTA_OFFS	0x00000020 /* vector number of accepted interrupt */
+-#define INTLVLA_OFFS	0x00000030 /* priority level of accepted interrupt */
+-#define INTLVLB_OFFS	0x00000034 /* previous priority level */
+-
+-	.macro  get_irqnr_preamble, base, tmp
+-	ldr     \base, =INTCA_BASE
+-	.endm
+-
+-	.macro  get_irqnr_and_base, irqnr, irqstat, base, tmp
+-	/* The single INTFLGA read access below results in the following:
+-	 *
+-	 * 1. INTLVLB is updated with old priority value from INTLVLA
+-	 * 2. Highest priority interrupt is accepted
+-	 * 3. INTLVLA is updated to contain priority of accepted interrupt
+-	 * 4. Accepted interrupt vector is stored in INTFLGA and INTEVTA
+-	 */
+-	ldr     \irqnr, [\base, #INTFLGA_OFFS]
+-
+-	/* Restore INTLVLA with the value saved in INTLVLB.
+-	 * This is required to support interrupt priorities properly.
+-	 */
+-	ldrb	\tmp, [\base, #INTLVLB_OFFS]
+-	strb    \tmp, [\base, #INTLVLA_OFFS]
+-
+-	/* Handle invalid vector number case */
+-	cmp	\irqnr, #0
+-	beq	1000f
+-
+-	/* Convert vector to irq number, same as the evt2irq() macro */
+-	lsr	\irqnr, \irqnr, #0x5
+-	subs	\irqnr, \irqnr, #16
+-
+-1000:
+-	.endm
+-
+-	.macro  test_for_ipi, irqnr, irqstat, base, tmp
+-	.endm
+-
+-	arch_irq_handler shmobile_handle_irq_intc
+--- 0001/arch/arm/mach-shmobile/intc-sh7372.c
++++ /dev/null	2015-01-13 15:44:39.280208949 +0900
+@@ -1,672 +0,0 @@
+-/*
+- * sh7372 processor support - INTC hardware block
+- *
+- * Copyright (C) 2010  Magnus Damm
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; version 2 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- */
+-#include <linux/kernel.h>
+-#include <linux/init.h>
+-#include <linux/interrupt.h>
+-#include <linux/module.h>
+-#include <linux/irq.h>
+-#include <linux/io.h>
+-#include <asm/mach-types.h>
+-#include <asm/mach/arch.h>
+-#include "intc.h"
+-#include "irqs.h"
+-
 -enum {
--	SHDMA_SLAVE_INVALID,
--	SHDMA_SLAVE_MMCIF0_TX,
--	SHDMA_SLAVE_MMCIF0_RX,
--	SHDMA_SLAVE_MMCIF1_TX,
--	SHDMA_SLAVE_MMCIF1_RX,
+-	UNUSED_INTCA = 0,
+-
+-	/* interrupt sources INTCA */
+-	DIRC,
+-	CRYPT_STD,
+-	IIC1_ALI1, IIC1_TACKI1, IIC1_WAITI1, IIC1_DTEI1,
+-	AP_ARM_IRQPMU, AP_ARM_COMMTX, AP_ARM_COMMRX,
+-	MFI_MFIM, MFI_MFIS,
+-	BBIF1, BBIF2,
+-	USBHSDMAC0_USHDMI,
+-	_3DG_SGX540,
+-	CMT1_CMT10, CMT1_CMT11, CMT1_CMT12, CMT1_CMT13, CMT2, CMT3,
+-	KEYSC_KEY,
+-	SCIFA0, SCIFA1, SCIFA2, SCIFA3,
+-	MSIOF2, MSIOF1,
+-	SCIFA4, SCIFA5, SCIFB,
+-	FLCTL_FLSTEI, FLCTL_FLTENDI, FLCTL_FLTREQ0I, FLCTL_FLTREQ1I,
+-	SDHI0_SDHI0I0, SDHI0_SDHI0I1, SDHI0_SDHI0I2, SDHI0_SDHI0I3,
+-	SDHI1_SDHI1I0, SDHI1_SDHI1I1, SDHI1_SDHI1I2,
+-	IRREM,
+-	IRDA,
+-	TPU0,
+-	TTI20,
+-	DDM,
+-	SDHI2_SDHI2I0, SDHI2_SDHI2I1, SDHI2_SDHI2I2, SDHI2_SDHI2I3,
+-	RWDT0,
+-	DMAC1_1_DEI0, DMAC1_1_DEI1, DMAC1_1_DEI2, DMAC1_1_DEI3,
+-	DMAC1_2_DEI4, DMAC1_2_DEI5, DMAC1_2_DADERR,
+-	DMAC2_1_DEI0, DMAC2_1_DEI1, DMAC2_1_DEI2, DMAC2_1_DEI3,
+-	DMAC2_2_DEI4, DMAC2_2_DEI5, DMAC2_2_DADERR,
+-	DMAC3_1_DEI0, DMAC3_1_DEI1, DMAC3_1_DEI2, DMAC3_1_DEI3,
+-	DMAC3_2_DEI4, DMAC3_2_DEI5, DMAC3_2_DADERR,
+-	SHWYSTAT_RT, SHWYSTAT_HS, SHWYSTAT_COM,
+-	HDMI,
+-	SPU2_SPU0, SPU2_SPU1,
+-	FSI, FMSI,
+-	MIPI_HSI,
+-	IPMMU_IPMMUD,
+-	CEC_1, CEC_2,
+-	AP_ARM_CTIIRQ, AP_ARM_DMAEXTERRIRQ, AP_ARM_DMAIRQ, AP_ARM_DMASIRQ,
+-	MFIS2,
+-	CPORTR2S,
+-	CMT14, CMT15,
+-	MMC_MMC_ERR, MMC_MMC_NOR,
+-	IIC4_ALI4, IIC4_TACKI4, IIC4_WAITI4, IIC4_DTEI4,
+-	IIC3_ALI3, IIC3_TACKI3, IIC3_WAITI3, IIC3_DTEI3,
+-	USB0_USB0I1, USB0_USB0I0,
+-	USB1_USB1I1, USB1_USB1I0,
+-	USBHSDMAC1_USHDMI,
+-
+-	/* interrupt groups INTCA */
+-	DMAC1_1, DMAC1_2, DMAC2_1, DMAC2_2, DMAC3_1, DMAC3_2, SHWYSTAT,
+-	AP_ARM1, AP_ARM2, SPU2, FLCTL, IIC1, SDHI0, SDHI1, SDHI2
 -};
 -
--void r8a73a4_add_standard_devices(void);
--void r8a73a4_clock_init(void);
--void r8a73a4_pinmux_init(void);
+-static struct intc_vect intca_vectors[] __initdata = {
+-	INTC_VECT(DIRC, 0x0560),
+-	INTC_VECT(CRYPT_STD, 0x0700),
+-	INTC_VECT(IIC1_ALI1, 0x0780), INTC_VECT(IIC1_TACKI1, 0x07a0),
+-	INTC_VECT(IIC1_WAITI1, 0x07c0), INTC_VECT(IIC1_DTEI1, 0x07e0),
+-	INTC_VECT(AP_ARM_IRQPMU, 0x0800), INTC_VECT(AP_ARM_COMMTX, 0x0840),
+-	INTC_VECT(AP_ARM_COMMRX, 0x0860),
+-	INTC_VECT(MFI_MFIM, 0x0900), INTC_VECT(MFI_MFIS, 0x0920),
+-	INTC_VECT(BBIF1, 0x0940), INTC_VECT(BBIF2, 0x0960),
+-	INTC_VECT(USBHSDMAC0_USHDMI, 0x0a00),
+-	INTC_VECT(_3DG_SGX540, 0x0a60),
+-	INTC_VECT(CMT1_CMT10, 0x0b00), INTC_VECT(CMT1_CMT11, 0x0b20),
+-	INTC_VECT(CMT1_CMT12, 0x0b40), INTC_VECT(CMT1_CMT13, 0x0b60),
+-	INTC_VECT(CMT2, 0x0b80), INTC_VECT(CMT3, 0x0ba0),
+-	INTC_VECT(KEYSC_KEY, 0x0be0),
+-	INTC_VECT(SCIFA0, 0x0c00), INTC_VECT(SCIFA1, 0x0c20),
+-	INTC_VECT(SCIFA2, 0x0c40), INTC_VECT(SCIFA3, 0x0c60),
+-	INTC_VECT(MSIOF2, 0x0c80), INTC_VECT(MSIOF1, 0x0d00),
+-	INTC_VECT(SCIFA4, 0x0d20), INTC_VECT(SCIFA5, 0x0d40),
+-	INTC_VECT(SCIFB, 0x0d60),
+-	INTC_VECT(FLCTL_FLSTEI, 0x0d80), INTC_VECT(FLCTL_FLTENDI, 0x0da0),
+-	INTC_VECT(FLCTL_FLTREQ0I, 0x0dc0), INTC_VECT(FLCTL_FLTREQ1I, 0x0de0),
+-	INTC_VECT(SDHI0_SDHI0I0, 0x0e00), INTC_VECT(SDHI0_SDHI0I1, 0x0e20),
+-	INTC_VECT(SDHI0_SDHI0I2, 0x0e40), INTC_VECT(SDHI0_SDHI0I3, 0x0e60),
+-	INTC_VECT(SDHI1_SDHI1I0, 0x0e80), INTC_VECT(SDHI1_SDHI1I1, 0x0ea0),
+-	INTC_VECT(SDHI1_SDHI1I2, 0x0ec0),
+-	INTC_VECT(IRREM, 0x0f60),
+-	INTC_VECT(IRDA, 0x0480),
+-	INTC_VECT(TPU0, 0x04a0),
+-	INTC_VECT(TTI20, 0x1100),
+-	INTC_VECT(DDM, 0x1140),
+-	INTC_VECT(SDHI2_SDHI2I0, 0x1200), INTC_VECT(SDHI2_SDHI2I1, 0x1220),
+-	INTC_VECT(SDHI2_SDHI2I2, 0x1240), INTC_VECT(SDHI2_SDHI2I3, 0x1260),
+-	INTC_VECT(RWDT0, 0x1280),
+-	INTC_VECT(DMAC1_1_DEI0, 0x2000), INTC_VECT(DMAC1_1_DEI1, 0x2020),
+-	INTC_VECT(DMAC1_1_DEI2, 0x2040), INTC_VECT(DMAC1_1_DEI3, 0x2060),
+-	INTC_VECT(DMAC1_2_DEI4, 0x2080), INTC_VECT(DMAC1_2_DEI5, 0x20a0),
+-	INTC_VECT(DMAC1_2_DADERR, 0x20c0),
+-	INTC_VECT(DMAC2_1_DEI0, 0x2100), INTC_VECT(DMAC2_1_DEI1, 0x2120),
+-	INTC_VECT(DMAC2_1_DEI2, 0x2140), INTC_VECT(DMAC2_1_DEI3, 0x2160),
+-	INTC_VECT(DMAC2_2_DEI4, 0x2180), INTC_VECT(DMAC2_2_DEI5, 0x21a0),
+-	INTC_VECT(DMAC2_2_DADERR, 0x21c0),
+-	INTC_VECT(DMAC3_1_DEI0, 0x2200), INTC_VECT(DMAC3_1_DEI1, 0x2220),
+-	INTC_VECT(DMAC3_1_DEI2, 0x2240), INTC_VECT(DMAC3_1_DEI3, 0x2260),
+-	INTC_VECT(DMAC3_2_DEI4, 0x2280), INTC_VECT(DMAC3_2_DEI5, 0x22a0),
+-	INTC_VECT(DMAC3_2_DADERR, 0x22c0),
+-	INTC_VECT(SHWYSTAT_RT, 0x1300), INTC_VECT(SHWYSTAT_HS, 0x1320),
+-	INTC_VECT(SHWYSTAT_COM, 0x1340),
+-	INTC_VECT(HDMI, 0x17e0),
+-	INTC_VECT(SPU2_SPU0, 0x1800), INTC_VECT(SPU2_SPU1, 0x1820),
+-	INTC_VECT(FSI, 0x1840),
+-	INTC_VECT(FMSI, 0x1860),
+-	INTC_VECT(MIPI_HSI, 0x18e0),
+-	INTC_VECT(IPMMU_IPMMUD, 0x1920),
+-	INTC_VECT(CEC_1, 0x1940), INTC_VECT(CEC_2, 0x1960),
+-	INTC_VECT(AP_ARM_CTIIRQ, 0x1980),
+-	INTC_VECT(AP_ARM_DMAEXTERRIRQ, 0x19a0),
+-	INTC_VECT(AP_ARM_DMAIRQ, 0x19c0),
+-	INTC_VECT(AP_ARM_DMASIRQ, 0x19e0),
+-	INTC_VECT(MFIS2, 0x1a00),
+-	INTC_VECT(CPORTR2S, 0x1a20),
+-	INTC_VECT(CMT14, 0x1a40), INTC_VECT(CMT15, 0x1a60),
+-	INTC_VECT(MMC_MMC_ERR, 0x1ac0), INTC_VECT(MMC_MMC_NOR, 0x1ae0),
+-	INTC_VECT(IIC4_ALI4, 0x1b00), INTC_VECT(IIC4_TACKI4, 0x1b20),
+-	INTC_VECT(IIC4_WAITI4, 0x1b40), INTC_VECT(IIC4_DTEI4, 0x1b60),
+-	INTC_VECT(IIC3_ALI3, 0x1b80), INTC_VECT(IIC3_TACKI3, 0x1ba0),
+-	INTC_VECT(IIC3_WAITI3, 0x1bc0), INTC_VECT(IIC3_DTEI3, 0x1be0),
+-	INTC_VECT(USB0_USB0I1, 0x1c80), INTC_VECT(USB0_USB0I0, 0x1ca0),
+-	INTC_VECT(USB1_USB1I1, 0x1cc0), INTC_VECT(USB1_USB1I0, 0x1ce0),
+-	INTC_VECT(USBHSDMAC1_USHDMI, 0x1d00),
+-};
 -
--#endif /* __ASM_R8A73A4_H__ */
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index c27682291cbf032c..446cee6119026f20 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -13,280 +13,12 @@
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU General Public License for more details.
-  */
+-static struct intc_group intca_groups[] __initdata = {
+-	INTC_GROUP(DMAC1_1, DMAC1_1_DEI0,
+-		   DMAC1_1_DEI1, DMAC1_1_DEI2, DMAC1_1_DEI3),
+-	INTC_GROUP(DMAC1_2, DMAC1_2_DEI4,
+-		   DMAC1_2_DEI5, DMAC1_2_DADERR),
+-	INTC_GROUP(DMAC2_1, DMAC2_1_DEI0,
+-		   DMAC2_1_DEI1, DMAC2_1_DEI2, DMAC2_1_DEI3),
+-	INTC_GROUP(DMAC2_2, DMAC2_2_DEI4,
+-		   DMAC2_2_DEI5, DMAC2_2_DADERR),
+-	INTC_GROUP(DMAC3_1, DMAC3_1_DEI0,
+-		   DMAC3_1_DEI1, DMAC3_1_DEI2, DMAC3_1_DEI3),
+-	INTC_GROUP(DMAC3_2, DMAC3_2_DEI4,
+-		   DMAC3_2_DEI5, DMAC3_2_DADERR),
+-	INTC_GROUP(AP_ARM1, AP_ARM_IRQPMU, AP_ARM_COMMTX, AP_ARM_COMMRX),
+-	INTC_GROUP(AP_ARM2, AP_ARM_CTIIRQ, AP_ARM_DMAEXTERRIRQ,
+-		   AP_ARM_DMAIRQ, AP_ARM_DMASIRQ),
+-	INTC_GROUP(SPU2, SPU2_SPU0, SPU2_SPU1),
+-	INTC_GROUP(FLCTL, FLCTL_FLSTEI, FLCTL_FLTENDI,
+-		   FLCTL_FLTREQ0I, FLCTL_FLTREQ1I),
+-	INTC_GROUP(IIC1, IIC1_ALI1, IIC1_TACKI1, IIC1_WAITI1, IIC1_DTEI1),
+-	INTC_GROUP(SDHI0, SDHI0_SDHI0I0, SDHI0_SDHI0I1,
+-		   SDHI0_SDHI0I2, SDHI0_SDHI0I3),
+-	INTC_GROUP(SDHI1, SDHI1_SDHI1I0, SDHI1_SDHI1I1,
+-		   SDHI1_SDHI1I2),
+-	INTC_GROUP(SDHI2, SDHI2_SDHI2I0, SDHI2_SDHI2I1,
+-		   SDHI2_SDHI2I2, SDHI2_SDHI2I3),
+-	INTC_GROUP(SHWYSTAT, SHWYSTAT_RT, SHWYSTAT_HS, SHWYSTAT_COM),
+-};
+-
+-static struct intc_mask_reg intca_mask_registers[] __initdata = {
+-	{ 0xe6940080, 0xe69400c0, 8, /* IMR0A / IMCR0A */
+-	  { DMAC2_1_DEI3, DMAC2_1_DEI2, DMAC2_1_DEI1, DMAC2_1_DEI0,
+-	    AP_ARM_IRQPMU, 0, AP_ARM_COMMTX, AP_ARM_COMMRX } },
+-	{ 0xe6940084, 0xe69400c4, 8, /* IMR1A / IMCR1A */
+-	  { 0, CRYPT_STD, DIRC, 0,
+-	    DMAC1_1_DEI3, DMAC1_1_DEI2, DMAC1_1_DEI1, DMAC1_1_DEI0 } },
+-	{ 0xe6940088, 0xe69400c8, 8, /* IMR2A / IMCR2A */
+-	  { 0, 0, 0, 0,
+-	    BBIF1, BBIF2, MFI_MFIS, MFI_MFIM } },
+-	{ 0xe694008c, 0xe69400cc, 8, /* IMR3A / IMCR3A */
+-	  { DMAC3_1_DEI3, DMAC3_1_DEI2, DMAC3_1_DEI1, DMAC3_1_DEI0,
+-	    DMAC3_2_DADERR, DMAC3_2_DEI5, DMAC3_2_DEI4, IRDA } },
+-	{ 0xe6940090, 0xe69400d0, 8, /* IMR4A / IMCR4A */
+-	  { DDM, 0, 0, 0,
+-	    0, 0, 0, 0 } },
+-	{ 0xe6940094, 0xe69400d4, 8, /* IMR5A / IMCR5A */
+-	  { KEYSC_KEY, DMAC1_2_DADERR, DMAC1_2_DEI5, DMAC1_2_DEI4,
+-	    SCIFA3, SCIFA2, SCIFA1, SCIFA0 } },
+-	{ 0xe6940098, 0xe69400d8, 8, /* IMR6A / IMCR6A */
+-	  { SCIFB, SCIFA5, SCIFA4, MSIOF1,
+-	    0, 0, MSIOF2, 0 } },
+-	{ 0xe694009c, 0xe69400dc, 8, /* IMR7A / IMCR7A */
+-	  { SDHI0_SDHI0I3, SDHI0_SDHI0I2, SDHI0_SDHI0I1, SDHI0_SDHI0I0,
+-	    FLCTL_FLTREQ1I, FLCTL_FLTREQ0I, FLCTL_FLTENDI, FLCTL_FLSTEI } },
+-	{ 0xe69400a0, 0xe69400e0, 8, /* IMR8A / IMCR8A */
+-	  { 0, SDHI1_SDHI1I2, SDHI1_SDHI1I1, SDHI1_SDHI1I0,
+-	    TTI20, USBHSDMAC0_USHDMI, 0, 0 } },
+-	{ 0xe69400a4, 0xe69400e4, 8, /* IMR9A / IMCR9A */
+-	  { CMT1_CMT13, CMT1_CMT12, CMT1_CMT11, CMT1_CMT10,
+-	    CMT2, 0, 0, _3DG_SGX540 } },
+-	{ 0xe69400a8, 0xe69400e8, 8, /* IMR10A / IMCR10A */
+-	  { 0, DMAC2_2_DADERR, DMAC2_2_DEI5, DMAC2_2_DEI4,
+-	    0, 0, 0, 0 } },
+-	{ 0xe69400ac, 0xe69400ec, 8, /* IMR11A / IMCR11A */
+-	  { IIC1_DTEI1, IIC1_WAITI1, IIC1_TACKI1, IIC1_ALI1,
+-	    0, 0, IRREM, 0 } },
+-	{ 0xe69400b0, 0xe69400f0, 8, /* IMR12A / IMCR12A */
+-	  { 0, 0, TPU0, 0,
+-	    0, 0, 0, 0 } },
+-	{ 0xe69400b4, 0xe69400f4, 8, /* IMR13A / IMCR13A */
+-	  { SDHI2_SDHI2I3, SDHI2_SDHI2I2, SDHI2_SDHI2I1, SDHI2_SDHI2I0,
+-	    0, CMT3, 0, RWDT0 } },
+-	{ 0xe6950080, 0xe69500c0, 8, /* IMR0A3 / IMCR0A3 */
+-	  { SHWYSTAT_RT, SHWYSTAT_HS, SHWYSTAT_COM, 0,
+-	    0, 0, 0, 0 } },
+-	{ 0xe6950090, 0xe69500d0, 8, /* IMR4A3 / IMCR4A3 */
+-	  { 0, 0, 0, 0,
+-	    0, 0, 0, HDMI } },
+-	{ 0xe6950094, 0xe69500d4, 8, /* IMR5A3 / IMCR5A3 */
+-	  { SPU2_SPU0, SPU2_SPU1, FSI, FMSI,
+-	    0, 0, 0, MIPI_HSI } },
+-	{ 0xe6950098, 0xe69500d8, 8, /* IMR6A3 / IMCR6A3 */
+-	  { 0, IPMMU_IPMMUD, CEC_1, CEC_2,
+-	    AP_ARM_CTIIRQ, AP_ARM_DMAEXTERRIRQ,
+-	    AP_ARM_DMAIRQ, AP_ARM_DMASIRQ } },
+-	{ 0xe695009c, 0xe69500dc, 8, /* IMR7A3 / IMCR7A3 */
+-	  { MFIS2, CPORTR2S, CMT14, CMT15,
+-	    0, 0, MMC_MMC_ERR, MMC_MMC_NOR } },
+-	{ 0xe69500a0, 0xe69500e0, 8, /* IMR8A3 / IMCR8A3 */
+-	  { IIC4_ALI4, IIC4_TACKI4, IIC4_WAITI4, IIC4_DTEI4,
+-	    IIC3_ALI3, IIC3_TACKI3, IIC3_WAITI3, IIC3_DTEI3 } },
+-	{ 0xe69500a4, 0xe69500e4, 8, /* IMR9A3 / IMCR9A3 */
+-	  { 0, 0, 0, 0,
+-	    USB0_USB0I1, USB0_USB0I0, USB1_USB1I1, USB1_USB1I0 } },
+-	{ 0xe69500a8, 0xe69500e8, 8, /* IMR10A3 / IMCR10A3 */
+-	  { USBHSDMAC1_USHDMI, 0, 0, 0,
+-	    0, 0, 0, 0 } },
+-};
+-
+-static struct intc_prio_reg intca_prio_registers[] __initdata = {
+-	{ 0xe6940000, 0, 16, 4, /* IPRAA */ { DMAC3_1, DMAC3_2, CMT2, 0 } },
+-	{ 0xe6940004, 0, 16, 4, /* IPRBA */ { IRDA, 0, BBIF1, BBIF2 } },
+-	{ 0xe6940008, 0, 16, 4, /* IPRCA */ { 0, CRYPT_STD,
+-					      CMT1_CMT11, AP_ARM1 } },
+-	{ 0xe694000c, 0, 16, 4, /* IPRDA */ { 0, 0,
+-					      CMT1_CMT12, 0 } },
+-	{ 0xe6940010, 0, 16, 4, /* IPREA */ { DMAC1_1, MFI_MFIS,
+-					      MFI_MFIM, 0 } },
+-	{ 0xe6940014, 0, 16, 4, /* IPRFA */ { KEYSC_KEY, DMAC1_2,
+-					      _3DG_SGX540, CMT1_CMT10 } },
+-	{ 0xe6940018, 0, 16, 4, /* IPRGA */ { SCIFA0, SCIFA1,
+-					      SCIFA2, SCIFA3 } },
+-	{ 0xe694001c, 0, 16, 4, /* IPRGH */ { MSIOF2, USBHSDMAC0_USHDMI,
+-					      FLCTL, SDHI0 } },
+-	{ 0xe6940020, 0, 16, 4, /* IPRIA */ { MSIOF1, SCIFA4,
+-					      0/* MSU */, IIC1 } },
+-	{ 0xe6940024, 0, 16, 4, /* IPRJA */ { DMAC2_1, DMAC2_2,
+-					      0/* MSUG */, TTI20 } },
+-	{ 0xe6940028, 0, 16, 4, /* IPRKA */ { 0, CMT1_CMT13, IRREM, SDHI1 } },
+-	{ 0xe694002c, 0, 16, 4, /* IPRLA */ { TPU0, 0, 0, 0 } },
+-	{ 0xe6940030, 0, 16, 4, /* IPRMA */ { 0, CMT3, 0, RWDT0 } },
+-	{ 0xe6940034, 0, 16, 4, /* IPRNA */ { SCIFB, SCIFA5, 0, DDM } },
+-	{ 0xe6940038, 0, 16, 4, /* IPROA */ { 0, 0, DIRC, SDHI2 } },
+-	{ 0xe6950000, 0, 16, 4, /* IPRAA3 */ { SHWYSTAT, 0, 0, 0 } },
+-	{ 0xe6950024, 0, 16, 4, /* IPRJA3 */ { 0, 0, 0, HDMI } },
+-	{ 0xe6950028, 0, 16, 4, /* IPRKA3 */ { SPU2, 0, FSI, FMSI } },
+-	{ 0xe695002c, 0, 16, 4, /* IPRLA3 */ { 0, 0, 0, MIPI_HSI } },
+-	{ 0xe6950030, 0, 16, 4, /* IPRMA3 */ { IPMMU_IPMMUD, 0,
+-					       CEC_1, CEC_2 } },
+-	{ 0xe6950034, 0, 16, 4, /* IPRNA3 */ { AP_ARM2, 0, 0, 0 } },
+-	{ 0xe6950038, 0, 16, 4, /* IPROA3 */ { MFIS2, CPORTR2S,
+-					       CMT14, CMT15 } },
+-	{ 0xe695003c, 0, 16, 4, /* IPRPA3 */ { 0, 0,
+-					       MMC_MMC_ERR, MMC_MMC_NOR } },
+-	{ 0xe6950040, 0, 16, 4, /* IPRQA3 */ { IIC4_ALI4, IIC4_TACKI4,
+-					       IIC4_WAITI4, IIC4_DTEI4 } },
+-	{ 0xe6950044, 0, 16, 4, /* IPRRA3 */ { IIC3_ALI3, IIC3_TACKI3,
+-					       IIC3_WAITI3, IIC3_DTEI3 } },
+-	{ 0xe6950048, 0, 16, 4, /* IPRSA3 */ { 0/*ERI*/, 0/*RXI*/,
+-					       0/*TXI*/, 0/*TEI*/} },
+-	{ 0xe695004c, 0, 16, 4, /* IPRTA3 */ { USB0_USB0I1, USB0_USB0I0,
+-					       USB1_USB1I1, USB1_USB1I0 } },
+-	{ 0xe6950050, 0, 16, 4, /* IPRUA3 */ { USBHSDMAC1_USHDMI, 0, 0, 0 } },
+-};
+-
+-static DECLARE_INTC_DESC(intca_desc, "sh7372-intca",
+-			 intca_vectors, intca_groups,
+-			 intca_mask_registers, intca_prio_registers,
+-			 NULL);
+-
+-INTC_IRQ_PINS_16(intca_irq_pins_lo, 0xe6900000,
+-		 INTC_VECT, "sh7372-intca-irq-lo");
+-
+-INTC_IRQ_PINS_16H(intca_irq_pins_hi, 0xe6900000,
+-		 INTC_VECT, "sh7372-intca-irq-hi");
+-
+-enum {
+-	UNUSED_INTCS = 0,
+-	ENABLED_INTCS,
+-
+-	/* interrupt sources INTCS */
+-
+-	/* IRQ0S - IRQ31S */
+-	VEU_VEU0, VEU_VEU1, VEU_VEU2, VEU_VEU3,
+-	RTDMAC_1_DEI0, RTDMAC_1_DEI1, RTDMAC_1_DEI2, RTDMAC_1_DEI3,
+-	CEU, BEU_BEU0, BEU_BEU1, BEU_BEU2,
+-	/* MFI */
+-	/* BBIF2 */
+-	VPU,
+-	TSIF1,
+-	/* 3DG */
+-	_2DDMAC,
+-	IIC2_ALI2, IIC2_TACKI2, IIC2_WAITI2, IIC2_DTEI2,
+-	IPMMU_IPMMUR, IPMMU_IPMMUR2,
+-	RTDMAC_2_DEI4, RTDMAC_2_DEI5, RTDMAC_2_DADERR,
+-	/* KEYSC */
+-	/* TTI20 */
+-	MSIOF,
+-	IIC0_ALI0, IIC0_TACKI0, IIC0_WAITI0, IIC0_DTEI0,
+-	TMU_TUNI0, TMU_TUNI1, TMU_TUNI2,
+-	CMT0,
+-	TSIF0,
+-	/* CMT2 */
+-	LMB,
+-	CTI,
+-	/* RWDT0 */
+-	ICB,
+-	JPU_JPEG,
+-	LCDC,
+-	LCRC,
+-	RTDMAC2_1_DEI0, RTDMAC2_1_DEI1, RTDMAC2_1_DEI2, RTDMAC2_1_DEI3,
+-	RTDMAC2_2_DEI4, RTDMAC2_2_DEI5, RTDMAC2_2_DADERR,
+-	ISP,
+-	LCDC1,
+-	CSIRX,
+-	DSITX_DSITX0,
+-	DSITX_DSITX1,
+-	/* SPU2 */
+-	/* FSI */
+-	/* FMSI */
+-	/* HDMI */
+-	TMU1_TUNI0, TMU1_TUNI1, TMU1_TUNI2,
+-	CMT4,
+-	DSITX1_DSITX1_0,
+-	DSITX1_DSITX1_1,
+-	MFIS2_INTCS, /* Priority always enabled using ENABLED_INTCS */
+-	CPORTS2R,
+-	/* CEC */
+-	JPU6E,
+-
+-	/* interrupt groups INTCS */
+-	RTDMAC_1, RTDMAC_2, VEU, BEU, IIC0, IPMMU, IIC2,
+-	RTDMAC2_1, RTDMAC2_2, TMU1, DSITX,
+-};
+-
+-static struct intc_vect intcs_vectors[] = {
+-	/* IRQ0S - IRQ31S */
+-	INTCS_VECT(VEU_VEU0, 0x700), INTCS_VECT(VEU_VEU1, 0x720),
+-	INTCS_VECT(VEU_VEU2, 0x740), INTCS_VECT(VEU_VEU3, 0x760),
+-	INTCS_VECT(RTDMAC_1_DEI0, 0x800), INTCS_VECT(RTDMAC_1_DEI1, 0x820),
+-	INTCS_VECT(RTDMAC_1_DEI2, 0x840), INTCS_VECT(RTDMAC_1_DEI3, 0x860),
+-	INTCS_VECT(CEU, 0x880), INTCS_VECT(BEU_BEU0, 0x8a0),
+-	INTCS_VECT(BEU_BEU1, 0x8c0), INTCS_VECT(BEU_BEU2, 0x8e0),
+-	/* MFI */
+-	/* BBIF2 */
+-	INTCS_VECT(VPU, 0x980),
+-	INTCS_VECT(TSIF1, 0x9a0),
+-	/* 3DG */
+-	INTCS_VECT(_2DDMAC, 0xa00),
+-	INTCS_VECT(IIC2_ALI2, 0xa80), INTCS_VECT(IIC2_TACKI2, 0xaa0),
+-	INTCS_VECT(IIC2_WAITI2, 0xac0), INTCS_VECT(IIC2_DTEI2, 0xae0),
+-	INTCS_VECT(IPMMU_IPMMUR, 0xb00), INTCS_VECT(IPMMU_IPMMUR2, 0xb20),
+-	INTCS_VECT(RTDMAC_2_DEI4, 0xb80), INTCS_VECT(RTDMAC_2_DEI5, 0xba0),
+-	INTCS_VECT(RTDMAC_2_DADERR, 0xbc0),
+-	/* KEYSC */
+-	/* TTI20 */
+-	INTCS_VECT(MSIOF, 0x0d20),
+-	INTCS_VECT(IIC0_ALI0, 0xe00), INTCS_VECT(IIC0_TACKI0, 0xe20),
+-	INTCS_VECT(IIC0_WAITI0, 0xe40), INTCS_VECT(IIC0_DTEI0, 0xe60),
+-	INTCS_VECT(TMU_TUNI0, 0xe80), INTCS_VECT(TMU_TUNI1, 0xea0),
+-	INTCS_VECT(TMU_TUNI2, 0xec0),
+-	INTCS_VECT(CMT0, 0xf00),
+-	INTCS_VECT(TSIF0, 0xf20),
+-	/* CMT2 */
+-	INTCS_VECT(LMB, 0xf60),
+-	INTCS_VECT(CTI, 0x400),
+-	/* RWDT0 */
+-	INTCS_VECT(ICB, 0x480),
+-	INTCS_VECT(JPU_JPEG, 0x560),
+-	INTCS_VECT(LCDC, 0x580),
+-	INTCS_VECT(LCRC, 0x5a0),
+-	INTCS_VECT(RTDMAC2_1_DEI0, 0x1300), INTCS_VECT(RTDMAC2_1_DEI1, 0x1320),
+-	INTCS_VECT(RTDMAC2_1_DEI2, 0x1340), INTCS_VECT(RTDMAC2_1_DEI3, 0x1360),
+-	INTCS_VECT(RTDMAC2_2_DEI4, 0x1380), INTCS_VECT(RTDMAC2_2_DEI5, 0x13a0),
+-	INTCS_VECT(RTDMAC2_2_DADERR, 0x13c0),
+-	INTCS_VECT(ISP, 0x1720),
+-	INTCS_VECT(LCDC1, 0x1780),
+-	INTCS_VECT(CSIRX, 0x17a0),
+-	INTCS_VECT(DSITX_DSITX0, 0x17c0),
+-	INTCS_VECT(DSITX_DSITX1, 0x17e0),
+-	/* SPU2 */
+-	/* FSI */
+-	/* FMSI */
+-	/* HDMI */
+-	INTCS_VECT(TMU1_TUNI0, 0x1900), INTCS_VECT(TMU1_TUNI1, 0x1920),
+-	INTCS_VECT(TMU1_TUNI2, 0x1940),
+-	INTCS_VECT(CMT4, 0x1980),
+-	INTCS_VECT(DSITX1_DSITX1_0, 0x19a0),
+-	INTCS_VECT(DSITX1_DSITX1_1, 0x19c0),
+-	INTCS_VECT(MFIS2_INTCS, 0x1a00),
+-	INTCS_VECT(CPORTS2R, 0x1a20),
+-	/* CEC */
+-	INTCS_VECT(JPU6E, 0x1a80),
+-};
+-
+-static struct intc_group intcs_groups[] __initdata = {
+-	INTC_GROUP(RTDMAC_1, RTDMAC_1_DEI0, RTDMAC_1_DEI1,
+-		   RTDMAC_1_DEI2, RTDMAC_1_DEI3),
+-	INTC_GROUP(RTDMAC_2, RTDMAC_2_DEI4, RTDMAC_2_DEI5, RTDMAC_2_DADERR),
+-	INTC_GROUP(VEU, VEU_VEU0, VEU_VEU1, VEU_VEU2, VEU_VEU3),
+-	INTC_GROUP(BEU, BEU_BEU0, BEU_BEU1, BEU_BEU2),
+-	INTC_GROUP(IIC0, IIC0_ALI0, IIC0_TACKI0, IIC0_WAITI0, IIC0_DTEI0),
+-	INTC_GROUP(IPMMU, IPMMU_IPMMUR, IPMMU_IPMMUR2),
+-	INTC_GROUP(IIC2, IIC2_ALI2, IIC2_TACKI2, IIC2_WAITI2, IIC2_DTEI2),
+-	INTC_GROUP(RTDMAC2_1, RTDMAC2_1_DEI0, RTDMAC2_1_DEI1,
+-		   RTDMAC2_1_DEI2, RTDMAC2_1_DEI3),
+-	INTC_GROUP(RTDMAC2_2, RTDMAC2_2_DEI4,
+-		   RTDMAC2_2_DEI5, RTDMAC2_2_DADERR),
+-	INTC_GROUP(TMU1, TMU1_TUNI2, TMU1_TUNI1, TMU1_TUNI0),
+-	INTC_GROUP(DSITX, DSITX_DSITX0, DSITX_DSITX1),
+-};
+-
+-static struct intc_mask_reg intcs_mask_registers[] = {
+-	{ 0xffd20184, 0xffd201c4, 8, /* IMR1SA / IMCR1SA */
+-	  { BEU_BEU2, BEU_BEU1, BEU_BEU0, CEU,
+-	    VEU_VEU3, VEU_VEU2, VEU_VEU1, VEU_VEU0 } },
+-	{ 0xffd20188, 0xffd201c8, 8, /* IMR2SA / IMCR2SA */
+-	  { 0, 0, 0, VPU,
+-	    0, 0, 0, 0 } },
+-	{ 0xffd2018c, 0xffd201cc, 8, /* IMR3SA / IMCR3SA */
+-	  { 0, 0, 0, _2DDMAC,
+-	    0, 0, 0, ICB } },
+-	{ 0xffd20190, 0xffd201d0, 8, /* IMR4SA / IMCR4SA */
+-	  { 0, 0, 0, CTI,
+-	    JPU_JPEG, 0, LCRC, LCDC } },
+-	{ 0xffd20194, 0xffd201d4, 8, /* IMR5SA / IMCR5SA */
+-	  { 0, RTDMAC_2_DADERR, RTDMAC_2_DEI5, RTDMAC_2_DEI4,
+-	    RTDMAC_1_DEI3, RTDMAC_1_DEI2, RTDMAC_1_DEI1, RTDMAC_1_DEI0 } },
+-	{ 0xffd20198, 0xffd201d8, 8, /* IMR6SA / IMCR6SA */
+-	  { 0, 0, MSIOF, 0,
+-	    0, 0, 0, 0 } },
+-	{ 0xffd2019c, 0xffd201dc, 8, /* IMR7SA / IMCR7SA */
+-	  { 0, TMU_TUNI2, TMU_TUNI1, TMU_TUNI0,
+-	    0, 0, 0, 0 } },
+-	{ 0xffd201a4, 0xffd201e4, 8, /* IMR9SA / IMCR9SA */
+-	  { 0, 0, 0, CMT0,
+-	    IIC2_DTEI2, IIC2_WAITI2, IIC2_TACKI2, IIC2_ALI2 } },
+-	{ 0xffd201a8, 0xffd201e8, 8, /* IMR10SA / IMCR10SA */
+-	  { 0, 0, IPMMU_IPMMUR2, IPMMU_IPMMUR,
+-	    0, 0, 0, 0 } },
+-	{ 0xffd201ac, 0xffd201ec, 8, /* IMR11SA / IMCR11SA */
+-	  { IIC0_DTEI0, IIC0_WAITI0, IIC0_TACKI0, IIC0_ALI0,
+-	    0, TSIF1, LMB, TSIF0 } },
+-	{ 0xffd50180, 0xffd501c0, 8, /* IMR0SA3 / IMCR0SA3 */
+-	  { 0, RTDMAC2_2_DADERR, RTDMAC2_2_DEI5, RTDMAC2_2_DEI4,
+-	    RTDMAC2_1_DEI3, RTDMAC2_1_DEI2, RTDMAC2_1_DEI1, RTDMAC2_1_DEI0 } },
+-	{ 0xffd50190, 0xffd501d0, 8, /* IMR4SA3 / IMCR4SA3 */
+-	  { 0, ISP, 0, 0,
+-	    LCDC1, CSIRX, DSITX_DSITX0, DSITX_DSITX1 } },
+-	{ 0xffd50198, 0xffd501d8, 8, /* IMR6SA3 / IMCR6SA3 */
+-	  { 0, TMU1_TUNI2, TMU1_TUNI1, TMU1_TUNI0,
+-	    CMT4, DSITX1_DSITX1_0, DSITX1_DSITX1_1, 0 } },
+-	{ 0xffd5019c, 0xffd501dc, 8, /* IMR7SA3 / IMCR7SA3 */
+-	  { MFIS2_INTCS, CPORTS2R, 0, 0,
+-	    JPU6E, 0, 0, 0 } },
+-};
+-
+-/* Priority is needed for INTCA to receive the INTCS interrupt */
+-static struct intc_prio_reg intcs_prio_registers[] = {
+-	{ 0xffd20000, 0, 16, 4, /* IPRAS */ { CTI, 0, _2DDMAC, ICB } },
+-	{ 0xffd20004, 0, 16, 4, /* IPRBS */ { JPU_JPEG, LCDC, 0, LCRC } },
+-	{ 0xffd20010, 0, 16, 4, /* IPRES */ { RTDMAC_1, CEU, 0, VPU } },
+-	{ 0xffd20014, 0, 16, 4, /* IPRFS */ { 0, RTDMAC_2, 0, CMT0 } },
+-	{ 0xffd20018, 0, 16, 4, /* IPRGS */ { TMU_TUNI0, TMU_TUNI1,
+-					      TMU_TUNI2, TSIF1 } },
+-	{ 0xffd2001c, 0, 16, 4, /* IPRHS */ { 0, 0, VEU, BEU } },
+-	{ 0xffd20020, 0, 16, 4, /* IPRIS */ { 0, MSIOF, TSIF0, IIC0 } },
+-	{ 0xffd20028, 0, 16, 4, /* IPRKS */ { 0, 0, LMB, 0 } },
+-	{ 0xffd2002c, 0, 16, 4, /* IPRLS */ { IPMMU, 0, 0, 0 } },
+-	{ 0xffd20030, 0, 16, 4, /* IPRMS */ { IIC2, 0, 0, 0 } },
+-	{ 0xffd50000, 0, 16, 4, /* IPRAS3 */ { RTDMAC2_1, 0, 0, 0 } },
+-	{ 0xffd50004, 0, 16, 4, /* IPRBS3 */ { RTDMAC2_2, 0, 0, 0 } },
+-	{ 0xffd50020, 0, 16, 4, /* IPRIS3 */ { 0, ISP, 0, 0 } },
+-	{ 0xffd50024, 0, 16, 4, /* IPRJS3 */ { LCDC1, CSIRX, DSITX, 0 } },
+-	{ 0xffd50030, 0, 16, 4, /* IPRMS3 */ { TMU1, 0, 0, 0 } },
+-	{ 0xffd50034, 0, 16, 4, /* IPRNS3 */ { CMT4, DSITX1_DSITX1_0,
+-					       DSITX1_DSITX1_1, 0 } },
+-	{ 0xffd50038, 0, 16, 4, /* IPROS3 */ { ENABLED_INTCS, CPORTS2R,
+-					       0, 0 } },
+-	{ 0xffd5003c, 0, 16, 4, /* IPRPS3 */ { JPU6E, 0, 0, 0 } },
+-};
+-
+-static struct resource intcs_resources[] __initdata = {
+-	[0] = {
+-		.start	= 0xffd20000,
+-		.end	= 0xffd201ff,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 0xffd50000,
+-		.end	= 0xffd501ff,
+-		.flags	= IORESOURCE_MEM,
+-	}
+-};
+-
+-static struct intc_desc intcs_desc __initdata = {
+-	.name = "sh7372-intcs",
+-	.force_enable = ENABLED_INTCS,
+-	.skip_syscore_suspend = true,
+-	.resource = intcs_resources,
+-	.num_resources = ARRAY_SIZE(intcs_resources),
+-	.hw = INTC_HW_DESC(intcs_vectors, intcs_groups, intcs_mask_registers,
+-			   intcs_prio_registers, NULL, NULL),
+-};
+-
+-static void intcs_demux(unsigned int irq, struct irq_desc *desc)
+-{
+-	void __iomem *reg = (void *)irq_get_handler_data(irq);
+-	unsigned int evtcodeas = ioread32(reg);
+-
+-	generic_handle_irq(intcs_evt2irq(evtcodeas));
+-}
+-
+-static void __iomem *intcs_ffd2;
+-static void __iomem *intcs_ffd5;
+-
+-void __init sh7372_init_irq(void)
+-{
+-	void __iomem *intevtsa;
+-	int n;
+-
+-	intcs_ffd2 = ioremap_nocache(0xffd20000, PAGE_SIZE);
+-	intevtsa = intcs_ffd2 + 0x100;
+-	intcs_ffd5 = ioremap_nocache(0xffd50000, PAGE_SIZE);
+-
+-	register_intc_controller(&intca_desc);
+-	register_intc_controller(&intca_irq_pins_lo_desc);
+-	register_intc_controller(&intca_irq_pins_hi_desc);
+-	register_intc_controller(&intcs_desc);
+-
+-	/* setup dummy cascade chip for INTCS */
+-	n = evt2irq(0xf80);
+-	irq_alloc_desc_at(n, numa_node_id());
+-	irq_set_chip_and_handler_name(n, &dummy_irq_chip,
+-				      handle_level_irq, "level");
+-	set_irq_flags(n, IRQF_VALID); /* yuck */
+-
+-	/* demux using INTEVTSA */
+-	irq_set_handler_data(n, (void *)intevtsa);
+-	irq_set_chained_handler(n, intcs_demux);
+-
+-	/* unmask INTCS in INTAMASK */
+-	iowrite16(0, intcs_ffd2 + 0x104);
+-}
+-
+-static unsigned short ffd2[0x200];
+-static unsigned short ffd5[0x100];
+-
+-void sh7372_intcs_suspend(void)
+-{
+-	int k;
+-
+-	for (k = 0x00; k <= 0x30; k += 4)
+-		ffd2[k] = __raw_readw(intcs_ffd2 + k);
+-
+-	for (k = 0x80; k <= 0xb0; k += 4)
+-		ffd2[k] = __raw_readb(intcs_ffd2 + k);
+-
+-	for (k = 0x180; k <= 0x188; k += 4)
+-		ffd2[k] = __raw_readb(intcs_ffd2 + k);
+-
+-	for (k = 0x00; k <= 0x3c; k += 4)
+-		ffd5[k] = __raw_readw(intcs_ffd5 + k);
+-
+-	for (k = 0x80; k <= 0x9c; k += 4)
+-		ffd5[k] = __raw_readb(intcs_ffd5 + k);
+-}
+-
+-void sh7372_intcs_resume(void)
+-{
+-	int k;
+-
+-	for (k = 0x00; k <= 0x30; k += 4)
+-		__raw_writew(ffd2[k], intcs_ffd2 + k);
+-
+-	for (k = 0x80; k <= 0xb0; k += 4)
+-		__raw_writeb(ffd2[k], intcs_ffd2 + k);
+-
+-	for (k = 0x180; k <= 0x188; k += 4)
+-		__raw_writeb(ffd2[k], intcs_ffd2 + k);
+-
+-	for (k = 0x00; k <= 0x3c; k += 4)
+-		__raw_writew(ffd5[k], intcs_ffd5 + k);
+-
+-	for (k = 0x80; k <= 0x9c; k += 4)
+-		__raw_writeb(ffd5[k], intcs_ffd5 + k);
+-}
+-
+-#define E694_BASE IOMEM(0xe6940000)
+-#define E695_BASE IOMEM(0xe6950000)
+-
+-static unsigned short e694[0x200];
+-static unsigned short e695[0x200];
+-
+-void sh7372_intca_suspend(void)
+-{
+-	int k;
+-
+-	for (k = 0x00; k <= 0x38; k += 4)
+-		e694[k] = __raw_readw(E694_BASE + k);
+-
+-	for (k = 0x80; k <= 0xb4; k += 4)
+-		e694[k] = __raw_readb(E694_BASE + k);
+-
+-	for (k = 0x180; k <= 0x1b4; k += 4)
+-		e694[k] = __raw_readb(E694_BASE + k);
+-
+-	for (k = 0x00; k <= 0x50; k += 4)
+-		e695[k] = __raw_readw(E695_BASE + k);
+-
+-	for (k = 0x80; k <= 0xa8; k += 4)
+-		e695[k] = __raw_readb(E695_BASE + k);
+-
+-	for (k = 0x180; k <= 0x1a8; k += 4)
+-		e695[k] = __raw_readb(E695_BASE + k);
+-}
+-
+-void sh7372_intca_resume(void)
+-{
+-	int k;
+-
+-	for (k = 0x00; k <= 0x38; k += 4)
+-		__raw_writew(e694[k], E694_BASE + k);
+-
+-	for (k = 0x80; k <= 0xb4; k += 4)
+-		__raw_writeb(e694[k], E694_BASE + k);
+-
+-	for (k = 0x180; k <= 0x1b4; k += 4)
+-		__raw_writeb(e694[k], E694_BASE + k);
+-
+-	for (k = 0x00; k <= 0x50; k += 4)
+-		__raw_writew(e695[k], E695_BASE + k);
+-
+-	for (k = 0x80; k <= 0xa8; k += 4)
+-		__raw_writeb(e695[k], E695_BASE + k);
+-
+-	for (k = 0x180; k <= 0x1a8; k += 4)
+-		__raw_writeb(e695[k], E695_BASE + k);
+-}
+--- 0001/arch/arm/mach-shmobile/pm-sh7372.c
++++ /dev/null	2015-01-13 15:44:39.280208949 +0900
+@@ -1,549 +0,0 @@
+-/*
+- * sh7372 Power management support
+- *
+- *  Copyright (C) 2011 Magnus Damm
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+- */
+-
+-#include <linux/pm.h>
+-#include <linux/suspend.h>
+-#include <linux/cpuidle.h>
+-#include <linux/module.h>
+-#include <linux/list.h>
+-#include <linux/err.h>
+-#include <linux/slab.h>
+-#include <linux/pm_clock.h>
+-#include <linux/platform_device.h>
+-#include <linux/delay.h>
 -#include <linux/irq.h>
+-#include <linux/bitrev.h>
+-#include <linux/console.h>
+-
+-#include <asm/cpuidle.h>
+-#include <asm/io.h>
+-#include <asm/tlbflush.h>
+-#include <asm/suspend.h>
+-
+-#include "common.h"
+-#include "pm-rmobile.h"
+-#include "sh7372.h"
+-
+-/* DBG */
+-#define DBGREG1 IOMEM(0xe6100020)
+-#define DBGREG9 IOMEM(0xe6100040)
+-
+-/* CPGA */
+-#define SYSTBCR IOMEM(0xe6150024)
+-#define MSTPSR0 IOMEM(0xe6150030)
+-#define MSTPSR1 IOMEM(0xe6150038)
+-#define MSTPSR2 IOMEM(0xe6150040)
+-#define MSTPSR3 IOMEM(0xe6150048)
+-#define MSTPSR4 IOMEM(0xe615004c)
+-#define PLLC01STPCR IOMEM(0xe61500c8)
+-
+-/* SYSC */
+-#define SYSC_BASE IOMEM(0xe6180000)
+-
+-#define SBAR IOMEM(0xe6180020)
+-#define WUPRMSK IOMEM(0xe6180028)
+-#define WUPSMSK IOMEM(0xe618002c)
+-#define WUPSMSK2 IOMEM(0xe6180048)
+-#define WUPSFAC IOMEM(0xe6180098)
+-#define IRQCR IOMEM(0xe618022c)
+-#define IRQCR2 IOMEM(0xe6180238)
+-#define IRQCR3 IOMEM(0xe6180244)
+-#define IRQCR4 IOMEM(0xe6180248)
+-#define PDNSEL IOMEM(0xe6180254)
+-
+-/* INTC */
+-#define ICR1A IOMEM(0xe6900000)
+-#define ICR2A IOMEM(0xe6900004)
+-#define ICR3A IOMEM(0xe6900008)
+-#define ICR4A IOMEM(0xe690000c)
+-#define INTMSK00A IOMEM(0xe6900040)
+-#define INTMSK10A IOMEM(0xe6900044)
+-#define INTMSK20A IOMEM(0xe6900048)
+-#define INTMSK30A IOMEM(0xe690004c)
+-
+-/* MFIS */
+-/* FIXME: pointing where? */
+-#define SMFRAM 0xe6a70000
+-
+-/* AP-System Core */
+-#define APARMBAREA IOMEM(0xe6f10020)
+-
+-#ifdef CONFIG_PM
+-
+-#define PM_DOMAIN_ON_OFF_LATENCY_NS	250000
+-
+-static int sh7372_a4r_pd_suspend(void)
+-{
+-	sh7372_intcs_suspend();
+-	__raw_writel(0x300fffff, WUPRMSK); /* avoid wakeup */
+-	return 0;
+-}
+-
+-static bool a4s_suspend_ready;
+-
+-static int sh7372_a4s_pd_suspend(void)
+-{
+-	/*
+-	 * The A4S domain contains the CPU core and therefore it should
+-	 * only be turned off if the CPU is not in use.  This may happen
+-	 * during system suspend, when SYSC is going to be used for generating
+-	 * resume signals and a4s_suspend_ready is set to let
+-	 * sh7372_enter_suspend() know that it can turn A4S off.
+-	 */
+-	a4s_suspend_ready = true;
+-	return -EBUSY;
+-}
+-
+-static void sh7372_a4s_pd_resume(void)
+-{
+-	a4s_suspend_ready = false;
+-}
+-
+-static int sh7372_a3sp_pd_suspend(void)
+-{
+-	/*
+-	 * Serial consoles make use of SCIF hardware located in A3SP,
+-	 * keep such power domain on if "no_console_suspend" is set.
+-	 */
+-	return console_suspend_enabled ? 0 : -EBUSY;
+-}
+-
+-static struct rmobile_pm_domain sh7372_pm_domains[] = {
+-	{
+-		.genpd.name = "A4LC",
+-		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+-		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+-		.base = SYSC_BASE,
+-		.bit_shift = 1,
+-	},
+-	{
+-		.genpd.name = "A4MP",
+-		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+-		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+-		.base = SYSC_BASE,
+-		.bit_shift = 2,
+-	},
+-	{
+-		.genpd.name = "D4",
+-		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+-		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+-		.base = SYSC_BASE,
+-		.bit_shift = 3,
+-	},
+-	{
+-		.genpd.name = "A4R",
+-		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+-		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+-		.base = SYSC_BASE,
+-		.bit_shift = 5,
+-		.suspend = sh7372_a4r_pd_suspend,
+-		.resume = sh7372_intcs_resume,
+-	},
+-	{
+-		.genpd.name = "A3RV",
+-		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+-		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+-		.base = SYSC_BASE,
+-		.bit_shift = 6,
+-	},
+-	{
+-		.genpd.name = "A3RI",
+-		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+-		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+-		.base = SYSC_BASE,
+-		.bit_shift = 8,
+-	},
+-	{
+-		.genpd.name = "A4S",
+-		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+-		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+-		.base = SYSC_BASE,
+-		.bit_shift = 10,
+-		.gov = &pm_domain_always_on_gov,
+-		.no_debug = true,
+-		.suspend = sh7372_a4s_pd_suspend,
+-		.resume = sh7372_a4s_pd_resume,
+-	},
+-	{
+-		.genpd.name = "A3SP",
+-		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+-		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+-		.base = SYSC_BASE,
+-		.bit_shift = 11,
+-		.gov = &pm_domain_always_on_gov,
+-		.no_debug = true,
+-		.suspend = sh7372_a3sp_pd_suspend,
+-	},
+-	{
+-		.genpd.name = "A3SG",
+-		.genpd.power_on_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+-		.genpd.power_off_latency_ns = PM_DOMAIN_ON_OFF_LATENCY_NS,
+-		.base = SYSC_BASE,
+-		.bit_shift = 13,
+-	},
+-};
+-
+-void __init sh7372_init_pm_domains(void)
+-{
+-	rmobile_init_domains(sh7372_pm_domains, ARRAY_SIZE(sh7372_pm_domains));
+-	pm_genpd_add_subdomain_names("A4LC", "A3RV");
+-	pm_genpd_add_subdomain_names("A4R", "A4LC");
+-	pm_genpd_add_subdomain_names("A4S", "A3SG");
+-	pm_genpd_add_subdomain_names("A4S", "A3SP");
+-}
+-
+-#endif /* CONFIG_PM */
+-
+-#if defined(CONFIG_SUSPEND) || defined(CONFIG_CPU_IDLE)
+-static void sh7372_set_reset_vector(unsigned long address)
+-{
+-	/* set reset vector, translate 4k */
+-	__raw_writel(address, SBAR);
+-	__raw_writel(0, APARMBAREA);
+-}
+-
+-static void sh7372_enter_sysc(int pllc0_on, unsigned long sleep_mode)
+-{
+-	if (pllc0_on)
+-		__raw_writel(0, PLLC01STPCR);
+-	else
+-		__raw_writel(1 << 28, PLLC01STPCR);
+-
+-	__raw_readl(WUPSFAC); /* read wakeup int. factor before sleep */
+-	cpu_suspend(sleep_mode, sh7372_do_idle_sysc);
+-	__raw_readl(WUPSFAC); /* read wakeup int. factor after wakeup */
+-
+-	 /* disable reset vector translation */
+-	__raw_writel(0, SBAR);
+-}
+-
+-static int sh7372_sysc_valid(unsigned long *mskp, unsigned long *msk2p)
+-{
+-	unsigned long mstpsr0, mstpsr1, mstpsr2, mstpsr3, mstpsr4;
+-	unsigned long msk, msk2;
+-
+-	/* check active clocks to determine potential wakeup sources */
+-
+-	mstpsr0 = __raw_readl(MSTPSR0);
+-	if ((mstpsr0 & 0x00000003) != 0x00000003) {
+-		pr_debug("sh7372 mstpsr0 0x%08lx\n", mstpsr0);
+-		return 0;
+-	}
+-
+-	mstpsr1 = __raw_readl(MSTPSR1);
+-	if ((mstpsr1 & 0xff079b7f) != 0xff079b7f) {
+-		pr_debug("sh7372 mstpsr1 0x%08lx\n", mstpsr1);
+-		return 0;
+-	}
+-
+-	mstpsr2 = __raw_readl(MSTPSR2);
+-	if ((mstpsr2 & 0x000741ff) != 0x000741ff) {
+-		pr_debug("sh7372 mstpsr2 0x%08lx\n", mstpsr2);
+-		return 0;
+-	}
+-
+-	mstpsr3 = __raw_readl(MSTPSR3);
+-	if ((mstpsr3 & 0x1a60f010) != 0x1a60f010) {
+-		pr_debug("sh7372 mstpsr3 0x%08lx\n", mstpsr3);
+-		return 0;
+-	}
+-
+-	mstpsr4 = __raw_readl(MSTPSR4);
+-	if ((mstpsr4 & 0x00008cf0) != 0x00008cf0) {
+-		pr_debug("sh7372 mstpsr4 0x%08lx\n", mstpsr4);
+-		return 0;
+-	}
+-
+-	msk = 0;
+-	msk2 = 0;
+-
+-	/* make bitmaps of limited number of wakeup sources */
+-
+-	if ((mstpsr2 & (1 << 23)) = 0) /* SPU2 */
+-		msk |= 1 << 31;
+-
+-	if ((mstpsr2 & (1 << 12)) = 0) /* MFI_MFIM */
+-		msk |= 1 << 21;
+-
+-	if ((mstpsr4 & (1 << 3)) = 0) /* KEYSC */
+-		msk |= 1 << 2;
+-
+-	if ((mstpsr1 & (1 << 24)) = 0) /* CMT0 */
+-		msk |= 1 << 1;
+-
+-	if ((mstpsr3 & (1 << 29)) = 0) /* CMT1 */
+-		msk |= 1 << 1;
+-
+-	if ((mstpsr4 & (1 << 0)) = 0) /* CMT2 */
+-		msk |= 1 << 1;
+-
+-	if ((mstpsr2 & (1 << 13)) = 0) /* MFI_MFIS */
+-		msk2 |= 1 << 17;
+-
+-	*mskp = msk;
+-	*msk2p = msk2;
+-
+-	return 1;
+-}
+-
+-static void sh7372_icr_to_irqcr(unsigned long icr, u16 *irqcr1p, u16 *irqcr2p)
+-{
+-	u16 tmp, irqcr1, irqcr2;
+-	int k;
+-
+-	irqcr1 = 0;
+-	irqcr2 = 0;
+-
+-	/* convert INTCA ICR register layout to SYSC IRQCR+IRQCR2 */
+-	for (k = 0; k <= 7; k++) {
+-		tmp = (icr >> ((7 - k) * 4)) & 0xf;
+-		irqcr1 |= (tmp & 0x03) << (k * 2);
+-		irqcr2 |= (tmp >> 2) << (k * 2);
+-	}
+-
+-	*irqcr1p = irqcr1;
+-	*irqcr2p = irqcr2;
+-}
+-
+-static void sh7372_setup_sysc(unsigned long msk, unsigned long msk2)
+-{
+-	u16 irqcrx_low, irqcrx_high, irqcry_low, irqcry_high;
+-	unsigned long tmp;
+-
+-	/* read IRQ0A -> IRQ15A mask */
+-	tmp = bitrev8(__raw_readb(INTMSK00A));
+-	tmp |= bitrev8(__raw_readb(INTMSK10A)) << 8;
+-
+-	/* setup WUPSMSK from clocks and external IRQ mask */
+-	msk = (~msk & 0xc030000f) | (tmp << 4);
+-	__raw_writel(msk, WUPSMSK);
+-
+-	/* propage level/edge trigger for external IRQ 0->15 */
+-	sh7372_icr_to_irqcr(__raw_readl(ICR1A), &irqcrx_low, &irqcry_low);
+-	sh7372_icr_to_irqcr(__raw_readl(ICR2A), &irqcrx_high, &irqcry_high);
+-	__raw_writel((irqcrx_high << 16) | irqcrx_low, IRQCR);
+-	__raw_writel((irqcry_high << 16) | irqcry_low, IRQCR2);
+-
+-	/* read IRQ16A -> IRQ31A mask */
+-	tmp = bitrev8(__raw_readb(INTMSK20A));
+-	tmp |= bitrev8(__raw_readb(INTMSK30A)) << 8;
+-
+-	/* setup WUPSMSK2 from clocks and external IRQ mask */
+-	msk2 = (~msk2 & 0x00030000) | tmp;
+-	__raw_writel(msk2, WUPSMSK2);
+-
+-	/* propage level/edge trigger for external IRQ 16->31 */
+-	sh7372_icr_to_irqcr(__raw_readl(ICR3A), &irqcrx_low, &irqcry_low);
+-	sh7372_icr_to_irqcr(__raw_readl(ICR4A), &irqcrx_high, &irqcry_high);
+-	__raw_writel((irqcrx_high << 16) | irqcrx_low, IRQCR3);
+-	__raw_writel((irqcry_high << 16) | irqcry_low, IRQCR4);
+-}
+-
+-static void sh7372_enter_a3sm_common(int pllc0_on)
+-{
+-	/* use INTCA together with SYSC for wakeup */
+-	sh7372_setup_sysc(1 << 0, 0);
+-	sh7372_set_reset_vector(__pa(sh7372_resume_core_standby_sysc));
+-	sh7372_enter_sysc(pllc0_on, 1 << 12);
+-}
+-
+-static void sh7372_enter_a4s_common(int pllc0_on)
+-{
+-	sh7372_intca_suspend();
+-	sh7372_set_reset_vector(SMFRAM);
+-	sh7372_enter_sysc(pllc0_on, 1 << 10);
+-	sh7372_intca_resume();
+-}
+-
+-static void sh7372_pm_setup_smfram(void)
+-{
+-	/* pass physical address of cpu_resume() to assembly resume code */
+-	sh7372_cpu_resume = virt_to_phys(cpu_resume);
+-
+-	memcpy((void *)SMFRAM, sh7372_resume_core_standby_sysc, 0x100);
+-}
+-#else
+-static inline void sh7372_pm_setup_smfram(void) {}
+-#endif /* CONFIG_SUSPEND || CONFIG_CPU_IDLE */
+-
+-#ifdef CONFIG_CPU_IDLE
+-static int sh7372_do_idle_core_standby(unsigned long unused)
+-{
+-	cpu_do_idle(); /* WFI when SYSTBCR = 0x10 -> Core Standby */
+-	return 0;
+-}
+-
+-static int sh7372_enter_core_standby(struct cpuidle_device *dev,
+-				     struct cpuidle_driver *drv, int index)
+-{
+-	sh7372_set_reset_vector(__pa(sh7372_resume_core_standby_sysc));
+-
+-	/* enter sleep mode with SYSTBCR to 0x10 */
+-	__raw_writel(0x10, SYSTBCR);
+-	cpu_suspend(0, sh7372_do_idle_core_standby);
+-	__raw_writel(0, SYSTBCR);
+-
+-	 /* disable reset vector translation */
+-	__raw_writel(0, SBAR);
+-
+-	return 1;
+-}
+-
+-static int sh7372_enter_a3sm_pll_on(struct cpuidle_device *dev,
+-				    struct cpuidle_driver *drv, int index)
+-{
+-	sh7372_enter_a3sm_common(1);
+-	return 2;
+-}
+-
+-static int sh7372_enter_a3sm_pll_off(struct cpuidle_device *dev,
+-				     struct cpuidle_driver *drv, int index)
+-{
+-	sh7372_enter_a3sm_common(0);
+-	return 3;
+-}
+-
+-static int sh7372_enter_a4s(struct cpuidle_device *dev,
+-			    struct cpuidle_driver *drv, int index)
+-{
+-	unsigned long msk, msk2;
+-
+-	if (!sh7372_sysc_valid(&msk, &msk2))
+-		return sh7372_enter_a3sm_pll_off(dev, drv, index);
+-
+-	sh7372_setup_sysc(msk, msk2);
+-	sh7372_enter_a4s_common(0);
+-	return 4;
+-}
+-
+-static struct cpuidle_driver sh7372_cpuidle_driver = {
+-	.name			= "sh7372_cpuidle",
+-	.owner			= THIS_MODULE,
+-	.state_count		= 5,
+-	.safe_state_index	= 0, /* C1 */
+-	.states[0] = ARM_CPUIDLE_WFI_STATE,
+-	.states[1] = {
+-		.name = "C2",
+-		.desc = "Core Standby Mode",
+-		.exit_latency = 10,
+-		.target_residency = 20 + 10,
+-		.enter = sh7372_enter_core_standby,
+-	},
+-	.states[2] = {
+-		.name = "C3",
+-		.desc = "A3SM PLL ON",
+-		.exit_latency = 20,
+-		.target_residency = 30 + 20,
+-		.enter = sh7372_enter_a3sm_pll_on,
+-	},
+-	.states[3] = {
+-		.name = "C4",
+-		.desc = "A3SM PLL OFF",
+-		.exit_latency = 120,
+-		.target_residency = 30 + 120,
+-		.enter = sh7372_enter_a3sm_pll_off,
+-	},
+-	.states[4] = {
+-		.name = "C5",
+-		.desc = "A4S PLL OFF",
+-		.exit_latency = 240,
+-		.target_residency = 30 + 240,
+-		.enter = sh7372_enter_a4s,
+-		.disabled = true,
+-	},
+-};
+-
+-static void __init sh7372_cpuidle_init(void)
+-{
+-	shmobile_cpuidle_set_driver(&sh7372_cpuidle_driver);
+-}
+-#else
+-static void __init sh7372_cpuidle_init(void) {}
+-#endif
+-
+-#ifdef CONFIG_SUSPEND
+-static int sh7372_enter_suspend(suspend_state_t suspend_state)
+-{
+-	unsigned long msk, msk2;
+-
+-	/* check active clocks to determine potential wakeup sources */
+-	if (sh7372_sysc_valid(&msk, &msk2) && a4s_suspend_ready) {
+-		/* convert INTC mask/sense to SYSC mask/sense */
+-		sh7372_setup_sysc(msk, msk2);
+-
+-		/* enter A4S sleep with PLLC0 off */
+-		pr_debug("entering A4S\n");
+-		sh7372_enter_a4s_common(0);
+-		return 0;
+-	}
+-
+-	/* default to enter A3SM sleep with PLLC0 off */
+-	pr_debug("entering A3SM\n");
+-	sh7372_enter_a3sm_common(0);
+-	return 0;
+-}
+-
+-/**
+- * sh7372_pm_notifier_fn - SH7372 PM notifier routine.
+- * @notifier: Unused.
+- * @pm_event: Event being handled.
+- * @unused: Unused.
+- */
+-static int sh7372_pm_notifier_fn(struct notifier_block *notifier,
+-				 unsigned long pm_event, void *unused)
+-{
+-	switch (pm_event) {
+-	case PM_SUSPEND_PREPARE:
+-		/*
+-		 * This is necessary, because the A4R domain has to be "on"
+-		 * when suspend_device_irqs() and resume_device_irqs() are
+-		 * executed during system suspend and resume, respectively, so
+-		 * that those functions don't crash while accessing the INTCS.
+-		 */
+-		pm_genpd_name_poweron("A4R");
+-		break;
+-	case PM_POST_SUSPEND:
+-		pm_genpd_poweroff_unused();
+-		break;
+-	}
+-
+-	return NOTIFY_DONE;
+-}
+-
+-static void sh7372_suspend_init(void)
+-{
+-	shmobile_suspend_ops.enter = sh7372_enter_suspend;
+-	pm_notifier(sh7372_pm_notifier_fn, 0);
+-}
+-#else
+-static void sh7372_suspend_init(void) {}
+-#endif
+-
+-void __init sh7372_pm_init(void)
+-{
+-	/* enable DBG hardware block to kick SYSC */
+-	__raw_writel(0x0000a500, DBGREG9);
+-	__raw_writel(0x0000a501, DBGREG9);
+-	__raw_writel(0x00000000, DBGREG1);
+-
+-	/* do not convert A3SM, A3SP, A3SG, A4R power down into A4S */
+-	__raw_writel(0, PDNSEL);
+-
+-	sh7372_pm_setup_smfram();
+-
+-	sh7372_suspend_init();
+-	sh7372_cpuidle_init();
+-}
+-
+-void __init sh7372_pm_init_late(void)
+-{
+-	shmobile_init_late();
+-	pm_genpd_name_attach_cpuidle("A4S", 4);
+-}
+--- 0001/arch/arm/mach-shmobile/setup-sh7372.c
++++ /dev/null	2015-01-13 15:44:39.280208949 +0900
+@@ -1,1016 +0,0 @@
+-/*
+- * sh7372 processor support
+- *
+- * Copyright (C) 2010  Magnus Damm
+- * Copyright (C) 2008  Yoshihiro Shimoda
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; version 2 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- */
 -#include <linux/kernel.h>
+-#include <linux/init.h>
+-#include <linux/interrupt.h>
+-#include <linux/irq.h>
+-#include <linux/platform_device.h>
 -#include <linux/of_platform.h>
--#include <linux/platform_data/irq-renesas-irqc.h>
+-#include <linux/uio_driver.h>
+-#include <linux/delay.h>
+-#include <linux/input.h>
+-#include <linux/io.h>
 -#include <linux/serial_sci.h>
 -#include <linux/sh_dma.h>
 -#include <linux/sh_timer.h>
-+
-+#include <linux/init.h>
- 
- #include <asm/mach/arch.h>
- 
- #include "common.h"
--#include "dma-register.h"
--#include "irqs.h"
--#include "r8a73a4.h"
+-#include <linux/pm_domain.h>
+-#include <linux/dma-mapping.h>
+-#include <linux/platform_data/sh_ipmmu.h>
 -
--static const struct resource pfc_resources[] = {
--	DEFINE_RES_MEM(0xe6050000, 0x9000),
+-#include <asm/mach/map.h>
+-#include <asm/mach-types.h>
+-#include <asm/mach/arch.h>
+-#include <asm/mach/time.h>
+-
+-#include "common.h"
+-#include "dma-register.h"
+-#include "intc.h"
+-#include "irqs.h"
+-#include "pm-rmobile.h"
+-#include "sh7372.h"
+-
+-static struct map_desc sh7372_io_desc[] __initdata = {
+-	/* create a 1:1 identity mapping for 0xe6xxxxxx
+-	 * used by CPGA, INTC and PFC.
+-	 */
+-	{
+-		.virtual	= 0xe6000000,
+-		.pfn		= __phys_to_pfn(0xe6000000),
+-		.length		= 256 << 20,
+-		.type		= MT_DEVICE_NONSHARED
+-	},
 -};
 -
--void __init r8a73a4_pinmux_init(void)
+-void __init sh7372_map_io(void)
 -{
--	platform_device_register_simple("pfc-r8a73a4", -1, pfc_resources,
--					ARRAY_SIZE(pfc_resources));
+-	debug_ll_io_init();
+-	iotable_init(sh7372_io_desc, ARRAY_SIZE(sh7372_io_desc));
 -}
 -
--#define R8A73A4_SCIF(scif_type, _scscr, index, baseaddr, irq)	\
+-/* PFC */
+-static struct resource sh7372_pfc_resources[] = {
+-	[0] = {
+-		.start	= 0xe6050000,
+-		.end	= 0xe6057fff,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 0xe605800c,
+-		.end	= 0xe6058027,
+-		.flags	= IORESOURCE_MEM,
+-	}
+-};
+-
+-static struct platform_device sh7372_pfc_device = {
+-	.name		= "pfc-sh7372",
+-	.id		= -1,
+-	.resource	= sh7372_pfc_resources,
+-	.num_resources	= ARRAY_SIZE(sh7372_pfc_resources),
+-};
+-
+-void __init sh7372_pinmux_init(void)
+-{
+-	platform_device_register(&sh7372_pfc_device);
+-}
+-
+-/* SCIF */
+-#define SH7372_SCIF(scif_type, index, baseaddr, irq)		\
 -static struct plat_sci_port scif##index##_platform_data = {	\
 -	.type		= scif_type,				\
--	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
--	.scscr		= _scscr,				\
+-	.flags		= UPF_BOOT_AUTOCONF,			\
+-	.scscr		= SCSCR_RE | SCSCR_TE,			\
 -};								\
 -								\
 -static struct resource scif##index##_resources[] = {		\
 -	DEFINE_RES_MEM(baseaddr, 0x100),			\
 -	DEFINE_RES_IRQ(irq),					\
+-};								\
+-								\
+-static struct platform_device scif##index##_device = {		\
+-	.name		= "sh-sci",				\
+-	.id		= index,				\
+-	.resource	= scif##index##_resources,		\
+-	.num_resources	= ARRAY_SIZE(scif##index##_resources),	\
+-	.dev		= {					\
+-		.platform_data	= &scif##index##_platform_data,	\
+-	},							\
 -}
 -
--#define R8A73A4_SCIFA(index, baseaddr, irq)	\
--	R8A73A4_SCIF(PORT_SCIFA, SCSCR_RE | SCSCR_TE | SCSCR_CKE0, \
--		     index, baseaddr, irq)
+-SH7372_SCIF(PORT_SCIFA, 0, 0xe6c40000, evt2irq(0x0c00));
+-SH7372_SCIF(PORT_SCIFA, 1, 0xe6c50000, evt2irq(0x0c20));
+-SH7372_SCIF(PORT_SCIFA, 2, 0xe6c60000, evt2irq(0x0c40));
+-SH7372_SCIF(PORT_SCIFA, 3, 0xe6c70000, evt2irq(0x0c60));
+-SH7372_SCIF(PORT_SCIFA, 4, 0xe6c80000, evt2irq(0x0d20));
+-SH7372_SCIF(PORT_SCIFA, 5, 0xe6cb0000, evt2irq(0x0d40));
+-SH7372_SCIF(PORT_SCIFB, 6, 0xe6c30000, evt2irq(0x0d60));
 -
--#define R8A73A4_SCIFB(index, baseaddr, irq)	\
--	R8A73A4_SCIF(PORT_SCIFB, SCSCR_RE | SCSCR_TE, \
--		     index, baseaddr, irq)
--
--R8A73A4_SCIFA(0, 0xe6c40000, gic_spi(144)); /* SCIFA0 */
--R8A73A4_SCIFA(1, 0xe6c50000, gic_spi(145)); /* SCIFA1 */
--R8A73A4_SCIFB(2, 0xe6c20000, gic_spi(148)); /* SCIFB0 */
--R8A73A4_SCIFB(3, 0xe6c30000, gic_spi(149)); /* SCIFB1 */
--R8A73A4_SCIFB(4, 0xe6ce0000, gic_spi(150)); /* SCIFB2 */
--R8A73A4_SCIFB(5, 0xe6cf0000, gic_spi(151)); /* SCIFB3 */
--
--#define r8a73a4_register_scif(index)					       \
--	platform_device_register_resndata(NULL, "sh-sci", index,	       \
--					  scif##index##_resources,	       \
--					  ARRAY_SIZE(scif##index##_resources), \
--					  &scif##index##_platform_data,	       \
--					  sizeof(scif##index##_platform_data))
--
--static const struct renesas_irqc_config irqc0_data = {
--	.irq_base = irq_pin(0), /* IRQ0 -> IRQ31 */
+-/* CMT */
+-static struct sh_timer_config cmt2_platform_data = {
+-	.channels_mask = 0x20,
 -};
 -
--static const struct resource irqc0_resources[] = {
--	DEFINE_RES_MEM(0xe61c0000, 0x200), /* IRQC Event Detector Block_0 */
--	DEFINE_RES_IRQ(gic_spi(0)), /* IRQ0 */
--	DEFINE_RES_IRQ(gic_spi(1)), /* IRQ1 */
--	DEFINE_RES_IRQ(gic_spi(2)), /* IRQ2 */
--	DEFINE_RES_IRQ(gic_spi(3)), /* IRQ3 */
--	DEFINE_RES_IRQ(gic_spi(4)), /* IRQ4 */
--	DEFINE_RES_IRQ(gic_spi(5)), /* IRQ5 */
--	DEFINE_RES_IRQ(gic_spi(6)), /* IRQ6 */
--	DEFINE_RES_IRQ(gic_spi(7)), /* IRQ7 */
--	DEFINE_RES_IRQ(gic_spi(8)), /* IRQ8 */
--	DEFINE_RES_IRQ(gic_spi(9)), /* IRQ9 */
--	DEFINE_RES_IRQ(gic_spi(10)), /* IRQ10 */
--	DEFINE_RES_IRQ(gic_spi(11)), /* IRQ11 */
--	DEFINE_RES_IRQ(gic_spi(12)), /* IRQ12 */
--	DEFINE_RES_IRQ(gic_spi(13)), /* IRQ13 */
--	DEFINE_RES_IRQ(gic_spi(14)), /* IRQ14 */
--	DEFINE_RES_IRQ(gic_spi(15)), /* IRQ15 */
--	DEFINE_RES_IRQ(gic_spi(16)), /* IRQ16 */
--	DEFINE_RES_IRQ(gic_spi(17)), /* IRQ17 */
--	DEFINE_RES_IRQ(gic_spi(18)), /* IRQ18 */
--	DEFINE_RES_IRQ(gic_spi(19)), /* IRQ19 */
--	DEFINE_RES_IRQ(gic_spi(20)), /* IRQ20 */
--	DEFINE_RES_IRQ(gic_spi(21)), /* IRQ21 */
--	DEFINE_RES_IRQ(gic_spi(22)), /* IRQ22 */
--	DEFINE_RES_IRQ(gic_spi(23)), /* IRQ23 */
--	DEFINE_RES_IRQ(gic_spi(24)), /* IRQ24 */
--	DEFINE_RES_IRQ(gic_spi(25)), /* IRQ25 */
--	DEFINE_RES_IRQ(gic_spi(26)), /* IRQ26 */
--	DEFINE_RES_IRQ(gic_spi(27)), /* IRQ27 */
--	DEFINE_RES_IRQ(gic_spi(28)), /* IRQ28 */
--	DEFINE_RES_IRQ(gic_spi(29)), /* IRQ29 */
--	DEFINE_RES_IRQ(gic_spi(30)), /* IRQ30 */
--	DEFINE_RES_IRQ(gic_spi(31)), /* IRQ31 */
+-static struct resource cmt2_resources[] = {
+-	DEFINE_RES_MEM(0xe6130000, 0x50),
+-	DEFINE_RES_IRQ(evt2irq(0x0b80)),
 -};
 -
--static const struct renesas_irqc_config irqc1_data = {
--	.irq_base = irq_pin(32), /* IRQ32 -> IRQ57 */
+-static struct platform_device cmt2_device = {
+-	.name		= "sh-cmt-32-fast",
+-	.id		= 2,
+-	.dev = {
+-		.platform_data	= &cmt2_platform_data,
+-	},
+-	.resource	= cmt2_resources,
+-	.num_resources	= ARRAY_SIZE(cmt2_resources),
 -};
 -
--static const struct resource irqc1_resources[] = {
--	DEFINE_RES_MEM(0xe61c0200, 0x200), /* IRQC Event Detector Block_1 */
--	DEFINE_RES_IRQ(gic_spi(32)), /* IRQ32 */
--	DEFINE_RES_IRQ(gic_spi(33)), /* IRQ33 */
--	DEFINE_RES_IRQ(gic_spi(34)), /* IRQ34 */
--	DEFINE_RES_IRQ(gic_spi(35)), /* IRQ35 */
--	DEFINE_RES_IRQ(gic_spi(36)), /* IRQ36 */
--	DEFINE_RES_IRQ(gic_spi(37)), /* IRQ37 */
--	DEFINE_RES_IRQ(gic_spi(38)), /* IRQ38 */
--	DEFINE_RES_IRQ(gic_spi(39)), /* IRQ39 */
--	DEFINE_RES_IRQ(gic_spi(40)), /* IRQ40 */
--	DEFINE_RES_IRQ(gic_spi(41)), /* IRQ41 */
--	DEFINE_RES_IRQ(gic_spi(42)), /* IRQ42 */
--	DEFINE_RES_IRQ(gic_spi(43)), /* IRQ43 */
--	DEFINE_RES_IRQ(gic_spi(44)), /* IRQ44 */
--	DEFINE_RES_IRQ(gic_spi(45)), /* IRQ45 */
--	DEFINE_RES_IRQ(gic_spi(46)), /* IRQ46 */
--	DEFINE_RES_IRQ(gic_spi(47)), /* IRQ47 */
--	DEFINE_RES_IRQ(gic_spi(48)), /* IRQ48 */
--	DEFINE_RES_IRQ(gic_spi(49)), /* IRQ49 */
--	DEFINE_RES_IRQ(gic_spi(50)), /* IRQ50 */
--	DEFINE_RES_IRQ(gic_spi(51)), /* IRQ51 */
--	DEFINE_RES_IRQ(gic_spi(52)), /* IRQ52 */
--	DEFINE_RES_IRQ(gic_spi(53)), /* IRQ53 */
--	DEFINE_RES_IRQ(gic_spi(54)), /* IRQ54 */
--	DEFINE_RES_IRQ(gic_spi(55)), /* IRQ55 */
--	DEFINE_RES_IRQ(gic_spi(56)), /* IRQ56 */
--	DEFINE_RES_IRQ(gic_spi(57)), /* IRQ57 */
+-/* TMU */
+-static struct sh_timer_config tmu0_platform_data = {
+-	.channels_mask = 7,
 -};
 -
--#define r8a73a4_register_irqc(idx)					\
--	platform_device_register_resndata(NULL, "renesas_irqc", 	\
--					  idx, irqc##idx##_resources,	\
--					  ARRAY_SIZE(irqc##idx##_resources), \
--					  &irqc##idx##_data,		\
--					  sizeof(struct renesas_irqc_config))
--
--/* Thermal0 -> Thermal2 */
--static const struct resource thermal0_resources[] = {
--	DEFINE_RES_MEM(0xe61f0000, 0x14),
--	DEFINE_RES_MEM(0xe61f0100, 0x38),
--	DEFINE_RES_MEM(0xe61f0200, 0x38),
--	DEFINE_RES_MEM(0xe61f0300, 0x38),
--	DEFINE_RES_IRQ(gic_spi(69)),
+-static struct resource tmu0_resources[] = {
+-	DEFINE_RES_MEM(0xfff60000, 0x2c),
+-	DEFINE_RES_IRQ(intcs_evt2irq(0xe80)),
+-	DEFINE_RES_IRQ(intcs_evt2irq(0xea0)),
+-	DEFINE_RES_IRQ(intcs_evt2irq(0xec0)),
 -};
 -
--#define r8a73a4_register_thermal()					\
--	platform_device_register_simple("rcar_thermal", -1,		\
--					thermal0_resources,		\
--					ARRAY_SIZE(thermal0_resources))
--
--static struct sh_timer_config cmt1_platform_data = {
--	.channels_mask = 0xff,
+-static struct platform_device tmu0_device = {
+-	.name		= "sh-tmu",
+-	.id		= 0,
+-	.dev = {
+-		.platform_data	= &tmu0_platform_data,
+-	},
+-	.resource	= tmu0_resources,
+-	.num_resources	= ARRAY_SIZE(tmu0_resources),
 -};
 -
--static struct resource cmt1_resources[] = {
--	DEFINE_RES_MEM(0xe6130000, 0x1004),
--	DEFINE_RES_IRQ(gic_spi(120)),
--};
--
--#define r8a73a4_register_cmt(idx)					\
--	platform_device_register_resndata(NULL, "sh-cmt-48-gen2",	\
--					  idx, cmt##idx##_resources,	\
--					  ARRAY_SIZE(cmt##idx##_resources), \
--					  &cmt##idx##_platform_data,	\
--					  sizeof(struct sh_timer_config))
--
--/* DMA */
--static const struct sh_dmae_slave_config dma_slaves[] = {
--	{
--		.slave_id	= SHDMA_SLAVE_MMCIF0_TX,
--		.addr		= 0xee200034,
--		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
--		.mid_rid	= 0xd1,
--	}, {
--		.slave_id	= SHDMA_SLAVE_MMCIF0_RX,
--		.addr		= 0xee200034,
--		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
--		.mid_rid	= 0xd2,
--	}, {
--		.slave_id	= SHDMA_SLAVE_MMCIF1_TX,
--		.addr		= 0xee220034,
--		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
--		.mid_rid	= 0xe1,
--	}, {
--		.slave_id	= SHDMA_SLAVE_MMCIF1_RX,
--		.addr		= 0xee220034,
--		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
--		.mid_rid	= 0xe2,
+-/* I2C */
+-static struct resource iic0_resources[] = {
+-	[0] = {
+-		.name	= "IIC0",
+-		.start  = 0xFFF20000,
+-		.end    = 0xFFF20425 - 1,
+-		.flags  = IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start  = intcs_evt2irq(0xe00), /* IIC0_ALI0 */
+-		.end    = intcs_evt2irq(0xe60), /* IIC0_DTEI0 */
+-		.flags  = IORESOURCE_IRQ,
 -	},
 -};
 -
--#define DMAE_CHANNEL(a, b)				\
--	{						\
--		.offset         = (a) - 0x20,		\
--		.dmars          = (a) - 0x20 + 0x40,	\
--		.chclr_bit	= (b),			\
--		.chclr_offset	= 0x80 - 0x20,		\
--	}
--
--static const struct sh_dmae_channel dma_channels[] = {
--	DMAE_CHANNEL(0x8000, 0),
--	DMAE_CHANNEL(0x8080, 1),
--	DMAE_CHANNEL(0x8100, 2),
--	DMAE_CHANNEL(0x8180, 3),
--	DMAE_CHANNEL(0x8200, 4),
--	DMAE_CHANNEL(0x8280, 5),
--	DMAE_CHANNEL(0x8300, 6),
--	DMAE_CHANNEL(0x8380, 7),
--	DMAE_CHANNEL(0x8400, 8),
--	DMAE_CHANNEL(0x8480, 9),
--	DMAE_CHANNEL(0x8500, 10),
--	DMAE_CHANNEL(0x8580, 11),
--	DMAE_CHANNEL(0x8600, 12),
--	DMAE_CHANNEL(0x8680, 13),
--	DMAE_CHANNEL(0x8700, 14),
--	DMAE_CHANNEL(0x8780, 15),
--	DMAE_CHANNEL(0x8800, 16),
--	DMAE_CHANNEL(0x8880, 17),
--	DMAE_CHANNEL(0x8900, 18),
--	DMAE_CHANNEL(0x8980, 19),
+-static struct platform_device iic0_device = {
+-	.name           = "i2c-sh_mobile",
+-	.id             = 0, /* "i2c0" clock */
+-	.num_resources  = ARRAY_SIZE(iic0_resources),
+-	.resource       = iic0_resources,
 -};
 -
--static const struct sh_dmae_pdata dma_pdata = {
--	.slave		= dma_slaves,
--	.slave_num	= ARRAY_SIZE(dma_slaves),
--	.channel	= dma_channels,
--	.channel_num	= ARRAY_SIZE(dma_channels),
+-static struct resource iic1_resources[] = {
+-	[0] = {
+-		.name	= "IIC1",
+-		.start  = 0xE6C20000,
+-		.end    = 0xE6C20425 - 1,
+-		.flags  = IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start  = evt2irq(0x780), /* IIC1_ALI1 */
+-		.end    = evt2irq(0x7e0), /* IIC1_DTEI1 */
+-		.flags  = IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device iic1_device = {
+-	.name           = "i2c-sh_mobile",
+-	.id             = 1, /* "i2c1" clock */
+-	.num_resources  = ARRAY_SIZE(iic1_resources),
+-	.resource       = iic1_resources,
+-};
+-
+-/* DMA */
+-static const struct sh_dmae_slave_config sh7372_dmae_slaves[] = {
+-	{
+-		.slave_id	= SHDMA_SLAVE_SCIF0_TX,
+-		.addr		= 0xe6c40020,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x21,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF0_RX,
+-		.addr		= 0xe6c40024,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x22,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF1_TX,
+-		.addr		= 0xe6c50020,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x25,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF1_RX,
+-		.addr		= 0xe6c50024,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x26,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF2_TX,
+-		.addr		= 0xe6c60020,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x29,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF2_RX,
+-		.addr		= 0xe6c60024,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x2a,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF3_TX,
+-		.addr		= 0xe6c70020,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x2d,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF3_RX,
+-		.addr		= 0xe6c70024,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x2e,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF4_TX,
+-		.addr		= 0xe6c80020,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x39,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF4_RX,
+-		.addr		= 0xe6c80024,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x3a,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF5_TX,
+-		.addr		= 0xe6cb0020,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x35,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF5_RX,
+-		.addr		= 0xe6cb0024,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x36,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF6_TX,
+-		.addr		= 0xe6c30040,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x3d,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF6_RX,
+-		.addr		= 0xe6c30060,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x3e,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_FLCTL0_TX,
+-		.addr		= 0xe6a30050,
+-		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
+-		.mid_rid	= 0x83,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_FLCTL0_RX,
+-		.addr		= 0xe6a30050,
+-		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
+-		.mid_rid	= 0x83,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_FLCTL1_TX,
+-		.addr		= 0xe6a30060,
+-		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
+-		.mid_rid	= 0x87,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_FLCTL1_RX,
+-		.addr		= 0xe6a30060,
+-		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
+-		.mid_rid	= 0x87,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
+-		.addr		= 0xe6850030,
+-		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
+-		.mid_rid	= 0xc1,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SDHI0_RX,
+-		.addr		= 0xe6850030,
+-		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
+-		.mid_rid	= 0xc2,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SDHI1_TX,
+-		.addr		= 0xe6860030,
+-		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
+-		.mid_rid	= 0xc9,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SDHI1_RX,
+-		.addr		= 0xe6860030,
+-		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
+-		.mid_rid	= 0xca,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SDHI2_TX,
+-		.addr		= 0xe6870030,
+-		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
+-		.mid_rid	= 0xcd,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SDHI2_RX,
+-		.addr		= 0xe6870030,
+-		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
+-		.mid_rid	= 0xce,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_FSIA_TX,
+-		.addr		= 0xfe1f0024,
+-		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
+-		.mid_rid	= 0xb1,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_FSIA_RX,
+-		.addr		= 0xfe1f0020,
+-		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
+-		.mid_rid	= 0xb2,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_MMCIF_TX,
+-		.addr		= 0xe6bd0034,
+-		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
+-		.mid_rid	= 0xd1,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_MMCIF_RX,
+-		.addr		= 0xe6bd0034,
+-		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
+-		.mid_rid	= 0xd2,
+-	},
+-};
+-
+-#define SH7372_CHCLR (0x220 - 0x20)
+-
+-static const struct sh_dmae_channel sh7372_dmae_channels[] = {
+-	{
+-		.offset = 0,
+-		.dmars = 0,
+-		.dmars_bit = 0,
+-		.chclr_offset = SH7372_CHCLR + 0,
+-	}, {
+-		.offset = 0x10,
+-		.dmars = 0,
+-		.dmars_bit = 8,
+-		.chclr_offset = SH7372_CHCLR + 0x10,
+-	}, {
+-		.offset = 0x20,
+-		.dmars = 4,
+-		.dmars_bit = 0,
+-		.chclr_offset = SH7372_CHCLR + 0x20,
+-	}, {
+-		.offset = 0x30,
+-		.dmars = 4,
+-		.dmars_bit = 8,
+-		.chclr_offset = SH7372_CHCLR + 0x30,
+-	}, {
+-		.offset = 0x50,
+-		.dmars = 8,
+-		.dmars_bit = 0,
+-		.chclr_offset = SH7372_CHCLR + 0x50,
+-	}, {
+-		.offset = 0x60,
+-		.dmars = 8,
+-		.dmars_bit = 8,
+-		.chclr_offset = SH7372_CHCLR + 0x60,
+-	}
+-};
+-
+-static struct sh_dmae_pdata dma_platform_data = {
+-	.slave		= sh7372_dmae_slaves,
+-	.slave_num	= ARRAY_SIZE(sh7372_dmae_slaves),
+-	.channel	= sh7372_dmae_channels,
+-	.channel_num	= ARRAY_SIZE(sh7372_dmae_channels),
 -	.ts_low_shift	= TS_LOW_SHIFT,
 -	.ts_low_mask	= TS_LOW_BIT << TS_LOW_SHIFT,
 -	.ts_high_shift	= TS_HI_SHIFT,
 -	.ts_high_mask	= TS_HI_BIT << TS_HI_SHIFT,
 -	.ts_shift	= dma_ts_shift,
 -	.ts_shift_num	= ARRAY_SIZE(dma_ts_shift),
--	.dmaor_init     = DMAOR_DME,
+-	.dmaor_init	= DMAOR_DME,
 -	.chclr_present	= 1,
--	.chclr_bitwise	= 1,
 -};
 -
--static struct resource dma_resources[] = {
--	DEFINE_RES_MEM(0xe6700020, 0x89e0),
--	DEFINE_RES_IRQ(gic_spi(220)),
+-/* Resource order important! */
+-static struct resource sh7372_dmae0_resources[] = {
 -	{
--		/* IRQ for channels 0-19 */
--		.start  = gic_spi(200),
--		.end    = gic_spi(219),
--		.flags  = IORESOURCE_IRQ,
+-		/* Channel registers and DMAOR */
+-		.start	= 0xfe008020,
+-		.end	= 0xfe00828f,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	{
+-		/* DMARSx */
+-		.start	= 0xfe009000,
+-		.end	= 0xfe00900b,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	{
+-		.name	= "error_irq",
+-		.start	= evt2irq(0x20c0),
+-		.end	= evt2irq(0x20c0),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-	{
+-		/* IRQ for channels 0-5 */
+-		.start	= evt2irq(0x2000),
+-		.end	= evt2irq(0x20a0),
+-		.flags	= IORESOURCE_IRQ,
 -	},
 -};
 -
--#define r8a73a4_register_dmac()							\
--	platform_device_register_resndata(NULL, "sh-dma-engine", 0,		\
--				dma_resources, ARRAY_SIZE(dma_resources),	\
--				&dma_pdata, sizeof(dma_pdata))
+-/* Resource order important! */
+-static struct resource sh7372_dmae1_resources[] = {
+-	{
+-		/* Channel registers and DMAOR */
+-		.start	= 0xfe018020,
+-		.end	= 0xfe01828f,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	{
+-		/* DMARSx */
+-		.start	= 0xfe019000,
+-		.end	= 0xfe01900b,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	{
+-		.name	= "error_irq",
+-		.start	= evt2irq(0x21c0),
+-		.end	= evt2irq(0x21c0),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-	{
+-		/* IRQ for channels 0-5 */
+-		.start	= evt2irq(0x2100),
+-		.end	= evt2irq(0x21a0),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
 -
--void __init r8a73a4_add_standard_devices(void)
+-/* Resource order important! */
+-static struct resource sh7372_dmae2_resources[] = {
+-	{
+-		/* Channel registers and DMAOR */
+-		.start	= 0xfe028020,
+-		.end	= 0xfe02828f,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	{
+-		/* DMARSx */
+-		.start	= 0xfe029000,
+-		.end	= 0xfe02900b,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	{
+-		.name	= "error_irq",
+-		.start	= evt2irq(0x22c0),
+-		.end	= evt2irq(0x22c0),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-	{
+-		/* IRQ for channels 0-5 */
+-		.start	= evt2irq(0x2200),
+-		.end	= evt2irq(0x22a0),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device dma0_device = {
+-	.name		= "sh-dma-engine",
+-	.id		= 0,
+-	.resource	= sh7372_dmae0_resources,
+-	.num_resources	= ARRAY_SIZE(sh7372_dmae0_resources),
+-	.dev		= {
+-		.platform_data	= &dma_platform_data,
+-	},
+-};
+-
+-static struct platform_device dma1_device = {
+-	.name		= "sh-dma-engine",
+-	.id		= 1,
+-	.resource	= sh7372_dmae1_resources,
+-	.num_resources	= ARRAY_SIZE(sh7372_dmae1_resources),
+-	.dev		= {
+-		.platform_data	= &dma_platform_data,
+-	},
+-};
+-
+-static struct platform_device dma2_device = {
+-	.name		= "sh-dma-engine",
+-	.id		= 2,
+-	.resource	= sh7372_dmae2_resources,
+-	.num_resources	= ARRAY_SIZE(sh7372_dmae2_resources),
+-	.dev		= {
+-		.platform_data	= &dma_platform_data,
+-	},
+-};
+-
+-/*
+- * USB-DMAC
+- */
+-static const struct sh_dmae_channel sh7372_usb_dmae_channels[] = {
+-	{
+-		.offset = 0,
+-	}, {
+-		.offset = 0x20,
+-	},
+-};
+-
+-/* USB DMAC0 */
+-static const struct sh_dmae_slave_config sh7372_usb_dmae0_slaves[] = {
+-	{
+-		.slave_id	= SHDMA_SLAVE_USB0_TX,
+-		.chcr		= USBTS_INDEX2VAL(USBTS_XMIT_SZ_8BYTE),
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_USB0_RX,
+-		.chcr		= USBTS_INDEX2VAL(USBTS_XMIT_SZ_8BYTE),
+-	},
+-};
+-
+-static struct sh_dmae_pdata usb_dma0_platform_data = {
+-	.slave		= sh7372_usb_dmae0_slaves,
+-	.slave_num	= ARRAY_SIZE(sh7372_usb_dmae0_slaves),
+-	.channel	= sh7372_usb_dmae_channels,
+-	.channel_num	= ARRAY_SIZE(sh7372_usb_dmae_channels),
+-	.ts_low_shift	= USBTS_LOW_SHIFT,
+-	.ts_low_mask	= USBTS_LOW_BIT << USBTS_LOW_SHIFT,
+-	.ts_high_shift	= USBTS_HI_SHIFT,
+-	.ts_high_mask	= USBTS_HI_BIT << USBTS_HI_SHIFT,
+-	.ts_shift	= dma_usbts_shift,
+-	.ts_shift_num	= ARRAY_SIZE(dma_usbts_shift),
+-	.dmaor_init	= DMAOR_DME,
+-	.chcr_offset	= 0x14,
+-	.chcr_ie_bit	= 1 << 5,
+-	.dmaor_is_32bit	= 1,
+-	.needs_tend_set	= 1,
+-	.no_dmars	= 1,
+-	.slave_only	= 1,
+-};
+-
+-static struct resource sh7372_usb_dmae0_resources[] = {
+-	{
+-		/* Channel registers and DMAOR */
+-		.start	= 0xe68a0020,
+-		.end	= 0xe68a0064 - 1,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	{
+-		/* VCR/SWR/DMICR */
+-		.start	= 0xe68a0000,
+-		.end	= 0xe68a0014 - 1,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	{
+-		/* IRQ for channels */
+-		.start	= evt2irq(0x0a00),
+-		.end	= evt2irq(0x0a00),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device usb_dma0_device = {
+-	.name		= "sh-dma-engine",
+-	.id		= 3,
+-	.resource	= sh7372_usb_dmae0_resources,
+-	.num_resources	= ARRAY_SIZE(sh7372_usb_dmae0_resources),
+-	.dev		= {
+-		.platform_data	= &usb_dma0_platform_data,
+-	},
+-};
+-
+-/* USB DMAC1 */
+-static const struct sh_dmae_slave_config sh7372_usb_dmae1_slaves[] = {
+-	{
+-		.slave_id	= SHDMA_SLAVE_USB1_TX,
+-		.chcr		= USBTS_INDEX2VAL(USBTS_XMIT_SZ_8BYTE),
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_USB1_RX,
+-		.chcr		= USBTS_INDEX2VAL(USBTS_XMIT_SZ_8BYTE),
+-	},
+-};
+-
+-static struct sh_dmae_pdata usb_dma1_platform_data = {
+-	.slave		= sh7372_usb_dmae1_slaves,
+-	.slave_num	= ARRAY_SIZE(sh7372_usb_dmae1_slaves),
+-	.channel	= sh7372_usb_dmae_channels,
+-	.channel_num	= ARRAY_SIZE(sh7372_usb_dmae_channels),
+-	.ts_low_shift	= USBTS_LOW_SHIFT,
+-	.ts_low_mask	= USBTS_LOW_BIT << USBTS_LOW_SHIFT,
+-	.ts_high_shift	= USBTS_HI_SHIFT,
+-	.ts_high_mask	= USBTS_HI_BIT << USBTS_HI_SHIFT,
+-	.ts_shift	= dma_usbts_shift,
+-	.ts_shift_num	= ARRAY_SIZE(dma_usbts_shift),
+-	.dmaor_init	= DMAOR_DME,
+-	.chcr_offset	= 0x14,
+-	.chcr_ie_bit	= 1 << 5,
+-	.dmaor_is_32bit	= 1,
+-	.needs_tend_set	= 1,
+-	.no_dmars	= 1,
+-	.slave_only	= 1,
+-};
+-
+-static struct resource sh7372_usb_dmae1_resources[] = {
+-	{
+-		/* Channel registers and DMAOR */
+-		.start	= 0xe68c0020,
+-		.end	= 0xe68c0064 - 1,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	{
+-		/* VCR/SWR/DMICR */
+-		.start	= 0xe68c0000,
+-		.end	= 0xe68c0014 - 1,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	{
+-		/* IRQ for channels */
+-		.start	= evt2irq(0x1d00),
+-		.end	= evt2irq(0x1d00),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device usb_dma1_device = {
+-	.name		= "sh-dma-engine",
+-	.id		= 4,
+-	.resource	= sh7372_usb_dmae1_resources,
+-	.num_resources	= ARRAY_SIZE(sh7372_usb_dmae1_resources),
+-	.dev		= {
+-		.platform_data	= &usb_dma1_platform_data,
+-	},
+-};
+-
+-/* VPU */
+-static struct uio_info vpu_platform_data = {
+-	.name = "VPU5HG",
+-	.version = "0",
+-	.irq = intcs_evt2irq(0x980),
+-};
+-
+-static struct resource vpu_resources[] = {
+-	[0] = {
+-		.name	= "VPU",
+-		.start	= 0xfe900000,
+-		.end	= 0xfe900157,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-};
+-
+-static struct platform_device vpu_device = {
+-	.name		= "uio_pdrv_genirq",
+-	.id		= 0,
+-	.dev = {
+-		.platform_data	= &vpu_platform_data,
+-	},
+-	.resource	= vpu_resources,
+-	.num_resources	= ARRAY_SIZE(vpu_resources),
+-};
+-
+-/* VEU0 */
+-static struct uio_info veu0_platform_data = {
+-	.name = "VEU0",
+-	.version = "0",
+-	.irq = intcs_evt2irq(0x700),
+-};
+-
+-static struct resource veu0_resources[] = {
+-	[0] = {
+-		.name	= "VEU0",
+-		.start	= 0xfe920000,
+-		.end	= 0xfe9200cb,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-};
+-
+-static struct platform_device veu0_device = {
+-	.name		= "uio_pdrv_genirq",
+-	.id		= 1,
+-	.dev = {
+-		.platform_data	= &veu0_platform_data,
+-	},
+-	.resource	= veu0_resources,
+-	.num_resources	= ARRAY_SIZE(veu0_resources),
+-};
+-
+-/* VEU1 */
+-static struct uio_info veu1_platform_data = {
+-	.name = "VEU1",
+-	.version = "0",
+-	.irq = intcs_evt2irq(0x720),
+-};
+-
+-static struct resource veu1_resources[] = {
+-	[0] = {
+-		.name	= "VEU1",
+-		.start	= 0xfe924000,
+-		.end	= 0xfe9240cb,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-};
+-
+-static struct platform_device veu1_device = {
+-	.name		= "uio_pdrv_genirq",
+-	.id		= 2,
+-	.dev = {
+-		.platform_data	= &veu1_platform_data,
+-	},
+-	.resource	= veu1_resources,
+-	.num_resources	= ARRAY_SIZE(veu1_resources),
+-};
+-
+-/* VEU2 */
+-static struct uio_info veu2_platform_data = {
+-	.name = "VEU2",
+-	.version = "0",
+-	.irq = intcs_evt2irq(0x740),
+-};
+-
+-static struct resource veu2_resources[] = {
+-	[0] = {
+-		.name	= "VEU2",
+-		.start	= 0xfe928000,
+-		.end	= 0xfe928307,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-};
+-
+-static struct platform_device veu2_device = {
+-	.name		= "uio_pdrv_genirq",
+-	.id		= 3,
+-	.dev = {
+-		.platform_data	= &veu2_platform_data,
+-	},
+-	.resource	= veu2_resources,
+-	.num_resources	= ARRAY_SIZE(veu2_resources),
+-};
+-
+-/* VEU3 */
+-static struct uio_info veu3_platform_data = {
+-	.name = "VEU3",
+-	.version = "0",
+-	.irq = intcs_evt2irq(0x760),
+-};
+-
+-static struct resource veu3_resources[] = {
+-	[0] = {
+-		.name	= "VEU3",
+-		.start	= 0xfe92c000,
+-		.end	= 0xfe92c307,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-};
+-
+-static struct platform_device veu3_device = {
+-	.name		= "uio_pdrv_genirq",
+-	.id		= 4,
+-	.dev = {
+-		.platform_data	= &veu3_platform_data,
+-	},
+-	.resource	= veu3_resources,
+-	.num_resources	= ARRAY_SIZE(veu3_resources),
+-};
+-
+-/* JPU */
+-static struct uio_info jpu_platform_data = {
+-	.name = "JPU",
+-	.version = "0",
+-	.irq = intcs_evt2irq(0x560),
+-};
+-
+-static struct resource jpu_resources[] = {
+-	[0] = {
+-		.name	= "JPU",
+-		.start	= 0xfe980000,
+-		.end	= 0xfe9902d3,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-};
+-
+-static struct platform_device jpu_device = {
+-	.name		= "uio_pdrv_genirq",
+-	.id		= 5,
+-	.dev = {
+-		.platform_data	= &jpu_platform_data,
+-	},
+-	.resource	= jpu_resources,
+-	.num_resources	= ARRAY_SIZE(jpu_resources),
+-};
+-
+-/* SPU2DSP0 */
+-static struct uio_info spu0_platform_data = {
+-	.name = "SPU2DSP0",
+-	.version = "0",
+-	.irq = evt2irq(0x1800),
+-};
+-
+-static struct resource spu0_resources[] = {
+-	[0] = {
+-		.name	= "SPU2DSP0",
+-		.start	= 0xfe200000,
+-		.end	= 0xfe2fffff,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-};
+-
+-static struct platform_device spu0_device = {
+-	.name		= "uio_pdrv_genirq",
+-	.id		= 6,
+-	.dev = {
+-		.platform_data	= &spu0_platform_data,
+-	},
+-	.resource	= spu0_resources,
+-	.num_resources	= ARRAY_SIZE(spu0_resources),
+-};
+-
+-/* SPU2DSP1 */
+-static struct uio_info spu1_platform_data = {
+-	.name = "SPU2DSP1",
+-	.version = "0",
+-	.irq = evt2irq(0x1820),
+-};
+-
+-static struct resource spu1_resources[] = {
+-	[0] = {
+-		.name	= "SPU2DSP1",
+-		.start	= 0xfe300000,
+-		.end	= 0xfe3fffff,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-};
+-
+-static struct platform_device spu1_device = {
+-	.name		= "uio_pdrv_genirq",
+-	.id		= 7,
+-	.dev = {
+-		.platform_data	= &spu1_platform_data,
+-	},
+-	.resource	= spu1_resources,
+-	.num_resources	= ARRAY_SIZE(spu1_resources),
+-};
+-
+-/* IPMMUI (an IPMMU module for ICB/LMB) */
+-static struct resource ipmmu_resources[] = {
+-	[0] = {
+-		.name	= "IPMMUI",
+-		.start	= 0xfe951000,
+-		.end	= 0xfe9510ff,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-};
+-
+-static const char * const ipmmu_dev_names[] = {
+-	"sh_mobile_lcdc_fb.0",
+-	"sh_mobile_lcdc_fb.1",
+-	"sh_mobile_ceu.0",
+-	"uio_pdrv_genirq.0",
+-	"uio_pdrv_genirq.1",
+-	"uio_pdrv_genirq.2",
+-	"uio_pdrv_genirq.3",
+-	"uio_pdrv_genirq.4",
+-	"uio_pdrv_genirq.5",
+-};
+-
+-static struct shmobile_ipmmu_platform_data ipmmu_platform_data = {
+-	.dev_names = ipmmu_dev_names,
+-	.num_dev_names = ARRAY_SIZE(ipmmu_dev_names),
+-};
+-
+-static struct platform_device ipmmu_device = {
+-	.name           = "ipmmu",
+-	.id             = -1,
+-	.dev = {
+-		.platform_data = &ipmmu_platform_data,
+-	},
+-	.resource       = ipmmu_resources,
+-	.num_resources  = ARRAY_SIZE(ipmmu_resources),
+-};
+-
+-static struct platform_device *sh7372_early_devices[] __initdata = {
+-	&scif0_device,
+-	&scif1_device,
+-	&scif2_device,
+-	&scif3_device,
+-	&scif4_device,
+-	&scif5_device,
+-	&scif6_device,
+-	&cmt2_device,
+-	&tmu0_device,
+-	&ipmmu_device,
+-};
+-
+-static struct platform_device *sh7372_late_devices[] __initdata = {
+-	&iic0_device,
+-	&iic1_device,
+-	&dma0_device,
+-	&dma1_device,
+-	&dma2_device,
+-	&usb_dma0_device,
+-	&usb_dma1_device,
+-	&vpu_device,
+-	&veu0_device,
+-	&veu1_device,
+-	&veu2_device,
+-	&veu3_device,
+-	&jpu_device,
+-	&spu0_device,
+-	&spu1_device,
+-};
+-
+-void __init sh7372_add_standard_devices(void)
 -{
--	r8a73a4_register_cmt(1);
--	r8a73a4_register_scif(0);
--	r8a73a4_register_scif(1);
--	r8a73a4_register_scif(2);
--	r8a73a4_register_scif(3);
--	r8a73a4_register_scif(4);
--	r8a73a4_register_scif(5);
--	r8a73a4_register_irqc(0);
--	r8a73a4_register_irqc(1);
--	r8a73a4_register_thermal();
--	r8a73a4_register_dmac();
+-	static struct pm_domain_device domain_devices[] __initdata = {
+-		{ "A3RV", &vpu_device, },
+-		{ "A4MP", &spu0_device, },
+-		{ "A4MP", &spu1_device, },
+-		{ "A3SP", &scif0_device, },
+-		{ "A3SP", &scif1_device, },
+-		{ "A3SP", &scif2_device, },
+-		{ "A3SP", &scif3_device, },
+-		{ "A3SP", &scif4_device, },
+-		{ "A3SP", &scif5_device, },
+-		{ "A3SP", &scif6_device, },
+-		{ "A3SP", &iic1_device, },
+-		{ "A3SP", &dma0_device, },
+-		{ "A3SP", &dma1_device, },
+-		{ "A3SP", &dma2_device, },
+-		{ "A3SP", &usb_dma0_device, },
+-		{ "A3SP", &usb_dma1_device, },
+-		{ "A4R", &iic0_device, },
+-		{ "A4R", &veu0_device, },
+-		{ "A4R", &veu1_device, },
+-		{ "A4R", &veu2_device, },
+-		{ "A4R", &veu3_device, },
+-		{ "A4R", &jpu_device, },
+-		{ "A4R", &tmu0_device, },
+-	};
+-
+-	sh7372_init_pm_domains();
+-
+-	platform_add_devices(sh7372_early_devices,
+-			    ARRAY_SIZE(sh7372_early_devices));
+-
+-	platform_add_devices(sh7372_late_devices,
+-			    ARRAY_SIZE(sh7372_late_devices));
+-
+-	rmobile_add_devices_to_domains(domain_devices,
+-				       ARRAY_SIZE(domain_devices));
+-}
+-
+-void __init sh7372_earlytimer_init(void)
+-{
+-	sh7372_clock_init();
+-	shmobile_earlytimer_init();
+-}
+-
+-void __init sh7372_add_early_devices(void)
+-{
+-	early_platform_add_devices(sh7372_early_devices,
+-				   ARRAY_SIZE(sh7372_early_devices));
+-
+-	/* setup early console here as well */
+-	shmobile_setup_console();
 -}
 -
 -#ifdef CONFIG_USE_OF
- 
- static const char *r8a73a4_boards_compat_dt[] __initdata = {
- 	"renesas,r8a73a4",
-@@ -298,4 +30,3 @@ DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
- 	.init_late	= shmobile_init_late,
- 	.dt_compat	= r8a73a4_boards_compat_dt,
- MACHINE_END
+-
+-void __init sh7372_add_early_devices_dt(void)
+-{
+-	shmobile_init_delay();
+-
+-	sh7372_add_early_devices();
+-}
+-
+-void __init sh7372_add_standard_devices_dt(void)
+-{
+-	/* clocks are setup late during boot in the case of DT */
+-	sh7372_clock_init();
+-
+-	platform_add_devices(sh7372_early_devices,
+-			    ARRAY_SIZE(sh7372_early_devices));
+-
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-}
+-
+-static const char *sh7372_boards_compat_dt[] __initdata = {
+-	"renesas,sh7372",
+-	NULL,
+-};
+-
+-DT_MACHINE_START(SH7372_DT, "Generic SH7372 (Flattened Device Tree)")
+-	.map_io		= sh7372_map_io,
+-	.init_early	= sh7372_add_early_devices_dt,
+-	.init_irq	= sh7372_init_irq,
+-	.handle_irq	= shmobile_handle_irq_intc,
+-	.init_machine	= sh7372_add_standard_devices_dt,
+-	.init_late	= shmobile_init_late,
+-	.dt_compat	= sh7372_boards_compat_dt,
+-MACHINE_END
+-
 -#endif /* CONFIG_USE_OF */
--- 
-1.9.1
-
+--- 0001/arch/arm/mach-shmobile/sh7372.h
++++ /dev/null	2015-01-13 15:44:39.280208949 +0900
+@@ -1,84 +0,0 @@
+-/*
+- * Copyright (C) 2010 Renesas Solutions Corp.
+- *
+- * Kuninori Morimoto <morimoto.kuninori@renesas.com>
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+- */
+-
+-#ifndef __ASM_SH7372_H__
+-#define __ASM_SH7372_H__
+-
+-/* DMA slave IDs */
+-enum {
+-	SHDMA_SLAVE_INVALID,
+-	SHDMA_SLAVE_SCIF0_TX,
+-	SHDMA_SLAVE_SCIF0_RX,
+-	SHDMA_SLAVE_SCIF1_TX,
+-	SHDMA_SLAVE_SCIF1_RX,
+-	SHDMA_SLAVE_SCIF2_TX,
+-	SHDMA_SLAVE_SCIF2_RX,
+-	SHDMA_SLAVE_SCIF3_TX,
+-	SHDMA_SLAVE_SCIF3_RX,
+-	SHDMA_SLAVE_SCIF4_TX,
+-	SHDMA_SLAVE_SCIF4_RX,
+-	SHDMA_SLAVE_SCIF5_TX,
+-	SHDMA_SLAVE_SCIF5_RX,
+-	SHDMA_SLAVE_SCIF6_TX,
+-	SHDMA_SLAVE_SCIF6_RX,
+-	SHDMA_SLAVE_FLCTL0_TX,
+-	SHDMA_SLAVE_FLCTL0_RX,
+-	SHDMA_SLAVE_FLCTL1_TX,
+-	SHDMA_SLAVE_FLCTL1_RX,
+-	SHDMA_SLAVE_SDHI0_RX,
+-	SHDMA_SLAVE_SDHI0_TX,
+-	SHDMA_SLAVE_SDHI1_RX,
+-	SHDMA_SLAVE_SDHI1_TX,
+-	SHDMA_SLAVE_SDHI2_RX,
+-	SHDMA_SLAVE_SDHI2_TX,
+-	SHDMA_SLAVE_FSIA_RX,
+-	SHDMA_SLAVE_FSIA_TX,
+-	SHDMA_SLAVE_MMCIF_RX,
+-	SHDMA_SLAVE_MMCIF_TX,
+-	SHDMA_SLAVE_USB0_TX,
+-	SHDMA_SLAVE_USB0_RX,
+-	SHDMA_SLAVE_USB1_TX,
+-	SHDMA_SLAVE_USB1_RX,
+-};
+-
+-extern struct clk sh7372_extal1_clk;
+-extern struct clk sh7372_extal2_clk;
+-extern struct clk sh7372_dv_clki_clk;
+-extern struct clk sh7372_dv_clki_div2_clk;
+-extern struct clk sh7372_pllc2_clk;
+-
+-extern void sh7372_init_irq(void);
+-extern void sh7372_map_io(void);
+-extern void sh7372_earlytimer_init(void);
+-extern void sh7372_add_early_devices(void);
+-extern void sh7372_add_standard_devices(void);
+-extern void sh7372_add_early_devices_dt(void);
+-extern void sh7372_add_standard_devices_dt(void);
+-extern void sh7372_clock_init(void);
+-extern void sh7372_pinmux_init(void);
+-extern void sh7372_pm_init(void);
+-extern void sh7372_resume_core_standby_sysc(void);
+-extern int  sh7372_do_idle_sysc(unsigned long sleep_mode);
+-extern void sh7372_intcs_suspend(void);
+-extern void sh7372_intcs_resume(void);
+-extern void sh7372_intca_suspend(void);
+-extern void sh7372_intca_resume(void);
+-
+-extern unsigned long sh7372_cpu_resume;
+-
+-#ifdef CONFIG_PM
+-extern void __init sh7372_init_pm_domains(void);
+-#else
+-static inline void sh7372_init_pm_domains(void) {}
+-#endif
+-
+-extern void __init sh7372_pm_init_late(void);
+-
+-#endif /* __ASM_SH7372_H__ */
+--- 0001/arch/arm/mach-shmobile/sleep-sh7372.S
++++ /dev/null	2015-01-13 15:44:39.280208949 +0900
+@@ -1,98 +0,0 @@
+-/*
+- * sh7372 lowlevel sleep code for "Core Standby Mode"
+- *
+- * Copyright (C) 2011 Magnus Damm
+- *
+- * In "Core Standby Mode" the ARM core is off, but L2 cache is still on
+- *
+- * Based on mach-omap2/sleep34xx.S
+- *
+- * (C) Copyright 2007 Texas Instruments
+- * Karthik Dasu <karthik-dp@ti.com>
+- *
+- * (C) Copyright 2004 Texas Instruments, <www.ti.com>
+- * Richard Woodruff <r-woodruff2@ti.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR /PURPOSE.  See the
+- * GNU General Public License for more details.
+- */
+-
+-#include <linux/linkage.h>
+-#include <linux/init.h>
+-#include <asm/memory.h>
+-#include <asm/assembler.h>
+-
+-#if defined(CONFIG_SUSPEND) || defined(CONFIG_CPU_IDLE)
+-	.align	12
+-	.text
+-	.global sh7372_resume_core_standby_sysc
+-sh7372_resume_core_standby_sysc:
+-	ldr     pc, 1f
+-
+-	.align	2
+-	.globl	sh7372_cpu_resume
+-sh7372_cpu_resume:
+-1:	.space	4
+-
+-#define SPDCR 0xe6180008
+-
+-	/* A3SM & A4S power down */
+-	.global	sh7372_do_idle_sysc
+-sh7372_do_idle_sysc:
+-	mov	r8, r0 /* sleep mode passed in r0 */
+-
+-	/*
+-	 * Clear the SCTLR.C bit to prevent further data cache
+-	 * allocation. Clearing SCTLR.C would make all the data accesses
+-	 * strongly ordered and would not hit the cache.
+-	 */
+-	mrc	p15, 0, r0, c1, c0, 0
+-	bic	r0, r0, #(1 << 2)	@ Disable the C bit
+-	mcr	p15, 0, r0, c1, c0, 0
+-	isb
+-
+-	/*
+-	 * Clean and invalidate data cache again.
+-	 */
+-	ldr	r1, kernel_flush
+-	blx	r1
+-
+-	/* disable L2 cache in the aux control register */
+-	mrc     p15, 0, r10, c1, c0, 1
+-	bic     r10, r10, #2
+-	mcr     p15, 0, r10, c1, c0, 1
+-	isb
+-
+-	/*
+-	 * The kernel doesn't interwork: v7_flush_dcache_all in particluar will
+-	 * always return in Thumb state when CONFIG_THUMB2_KERNEL is enabled.
+-	 * This sequence switches back to ARM.  Note that .align may insert a
+-	 * nop: bx pc needs to be word-aligned in order to work.
+-	 */
+- THUMB(	.thumb		)
+- THUMB(	.align		)
+- THUMB(	bx	pc	)
+- THUMB(	nop		)
+-	.arm
+-
+-	/* Data memory barrier and Data sync barrier */
+-	dsb
+-	dmb
+-
+-	/* SYSC power down */
+-	ldr     r0, =SPDCR
+-	str     r8, [r0]
+-1:
+-	b      1b
+-
+-	.align	2
+-kernel_flush:
+-	.word v7_flush_dcache_all
+-#endif
