@@ -1,167 +1,46 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Fri, 30 Jan 2015 09:34:39 +0000
-Subject: Re: [PATCH v4 5/5] drivers: bus: Add Simple Power-Managed Bus Driver
-Message-Id: <CAPDyKFpf74Mxova+QsYfhSVPc26-NhC7A4vFJfywPzP9oHkVhw@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 26 Jan 2015 02:26:16 +0000
+Subject: [PATCH] ARM: shmobile: Select CONFIG_REGULATOR in defconfig once again
+Message-Id: <1422239176-978-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1422288977-20353-1-git-send-email-geert+renesas@glider.be>
- <1422288977-20353-6-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1422288977-20353-6-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 26 January 2015 at 17:16, Geert Uytterhoeven <geert+renesas@glider.be> wrote:
-> Add a driver for transparent busses that don't need a real driver, but
-> where the bus controller is part of a PM domain, or under the control of
-> a functional clock.  Typically, the bus controller's PM domain and/or
-> clock must be enabled for child devices connected to the bus (either
-> on-SoC or externally) to function.
->
-> Hence the sole purpose of this driver is to enable its clock and PM
-> domain (if exist(s)), which are specified in the DT and managed from
-> platform and PM domain code, and to probe for child devices.
->
-> Due to the child-parent relationship with devices connected to the bus,
-> PM domain and clock state transitions are handled in the correct order.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> ---
-> v4:
->   - Bind against the generic "simple-pm-bus" instead of "renesas,bsc",
->   - Explicitly call of_platform_populate() after pm_runtime_enable() to
->     enforce ordering, instead of depending on claimed compatibility with
->     "simple-bus",
->
-> v3:
->   - Add Tested-by,
->
-> v2:
->   - Rename from "Renesas Bus State Controller Driver" (renesas-bsc) to
->     "Simple Power-Managed Bus Driver" (simple-pm-bus),
->   - Change module license to GPL v2,
->   - Change email address to geert+renesas@glider.be.
-> ---
->  drivers/bus/Kconfig         | 13 ++++++++++
->  drivers/bus/Makefile        |  1 +
->  drivers/bus/simple-pm-bus.c | 58 +++++++++++++++++++++++++++++++++++++++++++++
->  3 files changed, 72 insertions(+)
->  create mode 100644 drivers/bus/simple-pm-bus.c
->
-> diff --git a/drivers/bus/Kconfig b/drivers/bus/Kconfig
-> index 626960819e6df16c..7e9c2674af81d6e9 100644
-> --- a/drivers/bus/Kconfig
-> +++ b/drivers/bus/Kconfig
-> @@ -58,6 +58,19 @@ config OMAP_OCP2SCP
->           OCP2SCP and in OMAP5, both USB PHY and SATA PHY is connected via
->           OCP2SCP.
->
-> +config SIMPLE_PM_BUS
-> +       bool "Simple Power-Managed Bus Driver"
-> +       depends on OF && PM
-> +       depends on ARCH_SHMOBILE || COMPILE_TEST
-> +       help
-> +         Driver for transparent busses that don't need a real driver, but
-> +         where the bus controller is part of a PM domain, or under the control
-> +         of a functional clock, and thus relies on runtime PM for managing
-> +         this PM domain and/or clock.
-> +         An example of such a bus controller is the Renesas Bus State
-> +         Controller (BSC, sometimes called "LBSC within Bus Bridge", or
-> +         "External Bus Interface") as found on several Renesas ARM SoCs.
-> +
->  config VEXPRESS_CONFIG
->         bool "Versatile Express configuration bus"
->         default y if ARCH_VEXPRESS
-> diff --git a/drivers/bus/Makefile b/drivers/bus/Makefile
-> index 3cfaf2c7f25ac4f0..e023a2bec664d900 100644
-> --- a/drivers/bus/Makefile
-> +++ b/drivers/bus/Makefile
-> @@ -14,4 +14,5 @@ obj-$(CONFIG_MVEBU_MBUS)      += mvebu-mbus.o
->  obj-$(CONFIG_OMAP_INTERCONNECT)        += omap_l3_smx.o omap_l3_noc.o
->
->  obj-$(CONFIG_OMAP_OCP2SCP)     += omap-ocp2scp.o
-> +obj-$(CONFIG_SIMPLE_PM_BUS)    += simple-pm-bus.o
->  obj-$(CONFIG_VEXPRESS_CONFIG)  += vexpress-config.o
-> diff --git a/drivers/bus/simple-pm-bus.c b/drivers/bus/simple-pm-bus.c
-> new file mode 100644
-> index 0000000000000000..c5eb46cbf388b507
-> --- /dev/null
-> +++ b/drivers/bus/simple-pm-bus.c
-> @@ -0,0 +1,58 @@
-> +/*
-> + * Simple Power-Managed Bus Driver
-> + *
-> + * Copyright (C) 2014-2015 Glider bvba
-> + *
-> + * This file is subject to the terms and conditions of the GNU General Public
-> + * License.  See the file "COPYING" in the main directory of this archive
-> + * for more details.
-> + */
-> +
-> +#include <linux/module.h>
-> +#include <linux/of_platform.h>
-> +#include <linux/platform_device.h>
-> +#include <linux/pm_runtime.h>
-> +
-> +
-> +static int simple_pm_bus_probe(struct platform_device *pdev)
-> +{
-> +       struct device_node *np = pdev->dev.of_node;
-> +
-> +       dev_dbg(&pdev->dev, "%s\n", __func__);
-> +
-> +       pm_runtime_enable(&pdev->dev);
-> +
-> +       if (np)
-> +               of_platform_populate(np, NULL, NULL, &pdev->dev);
-> +
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-I am not sure my comments is valid in this initial step. Yet, you
-state in the DT documentation, that this driver supports clocks and PM
-domains.
+eb4513482d1c4882e3633528ccc48d77581b7bb1
+(ARM: shmobile: Enable kzm9g board in multiplatform defconfig)
+dropped CONFIG_REGULATOR from shmobile_defconfig as it was
+generated using a tree where CONFIG_REGULATOR is indirectly
+selected by ARCH_SH73A0.
 
-How you are going add that support it quite interesting. :-) I also
-especially interested how the interaction (child to parents) through
-runtime PM will look like.
+ARCH_SH73A0 is not queued up for v3.20 and thus, baring unforeseen
+changes, CONFIG_REGULATOR will not be selected by shmobile_defconfig
+in that release. This causes at least SDHI to stop working on
+R-Car Gen2 SoCs.
 
-Overall, I like the idea in patchset, but I would like to understand a
-bit more around the above.
+Reported-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+[horms: minimal patch targeted as a fix]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/configs/shmobile_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-Kind regards
-Uffe
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 4f9868d..b553e2c 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -118,6 +118,7 @@ CONFIG_WATCHDOG=y
+ CONFIG_DA9063_WATCHDOG=y
+ CONFIG_MFD_AS3711=y
+ CONFIG_MFD_DA9063=y
++CONFIG_REGULATOR=y
+ CONFIG_REGULATOR_AS3711=y
+ CONFIG_REGULATOR_DA9210=y
+ CONFIG_REGULATOR_GPIO=y
+-- 
+2.1.4
 
-> +       return 0;
-> +}
-> +
-> +static int simple_pm_bus_remove(struct platform_device *pdev)
-> +{
-> +       dev_dbg(&pdev->dev, "%s\n", __func__);
-> +
-> +       pm_runtime_disable(&pdev->dev);
-> +       return 0;
-> +}
-> +
-> +static const struct of_device_id simple_pm_bus_of_match[] = {
-> +       { .compatible = "simple-pm-bus", },
-> +       { /* sentinel */ }
-> +};
-> +MODULE_DEVICE_TABLE(of, simple_pm_bus_of_match);
-> +
-> +static struct platform_driver simple_pm_bus_driver = {
-> +       .probe = simple_pm_bus_probe,
-> +       .remove = simple_pm_bus_remove,
-> +       .driver = {
-> +               .name = "simple-pm-bus",
-> +               .of_match_table = simple_pm_bus_of_match,
-> +       },
-> +};
-> +
-> +module_platform_driver(simple_pm_bus_driver);
-> +
-> +MODULE_DESCRIPTION("Simple Power-Managed Bus Driver");
-> +MODULE_AUTHOR("Geert Uytterhoeven <geert+renesas@glider.be>");
-> +MODULE_LICENSE("GPL v2");
-> --
-> 1.9.1
->
