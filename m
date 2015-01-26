@@ -1,49 +1,62 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 26 Jan 2015 00:22:16 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 26 Jan 2015 06:47:38 +0000
 Subject: Re: [PATCH 00/13] ARM: shmobile: Remove sh7372/Mackerel and ZBOOT MMC/SDHI support
-Message-Id: <20150126002215.GB4477@verge.net.au>
+Message-Id: <CANqRtoRj0Ssyc6ONkw05pUadzA8G5agqi3uWi7o_-hhYEs64Eg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20150121045256.7648.7451.sendpatchset@little-apple>
-In-Reply-To: <20150121045256.7648.7451.sendpatchset@little-apple>
+ <87twzkn1rd.wl%kuninori.morimoto.gx@renesas.com>
+ <CAMuHMdWoi1TDq-XQO6-EjVzQPyYyeG4e0U+chseQ9MXuO3Lhgg@mail.gmail.com>
+In-Reply-To: <CAMuHMdWoi1TDq-XQO6-EjVzQPyYyeG4e0U+chseQ9MXuO3Lhgg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jan 21, 2015 at 01:52:56PM +0900, Magnus Damm wrote:
-> ARM: shmobile: Remove sh7372/Mackerel and ZBOOT MMC/SDHI support
-> 
-> [PATCH 01/13] ARM: shmobile: mackerel: Remove ZBOOT code
-> [PATCH 02/13] ARM: shmobile: mackerel: Remove Legacy C board code
-> [PATCH 03/13] ARM: shmobile: mackerel dts: Remove Legacy DTS file
-> [PATCH 04/13] ARM: shmobile: mackerel: Remove DT binding documentation
-> [PATCH 05/13] ARM: shmobile: mackerel: Remove mach-type entry
-> [PATCH 06/13] ARM: shmobile: mackerel: Remove defconfig
-> [PATCH 07/13] ARM: shmobile: sh7372: Remove ZBOOT MMC/SDHI support
-> [PATCH 08/13] ARM: shmobile: sh7372: Remove Legacy C SoC code
-> [PATCH 09/13] ARM: shmobile: sh7372: Remove DT binding documentation
-> [PATCH 10/13] ARM: shmobile: sh7372 dtsi: Remove Legacy DTSI file
-> [PATCH 11/13] Documentation: Remove ZBOOT MMC/SDHI utility and docs
-> [PATCH 12/13] pinctrl: sh-pfc: sh7372: Remove PFC support
-> [PATCH 13/13] pinctrl: sh-pfc: sh7372: Remove DT binding documentation
-> 
-> Remove legacy board and SoC support for Mackerel and sh7372. Both the
-> ARM mach-shmobile code base and the PINCTRL subsystem is affected.
-> 
-> Also get rid of the remaining ZBOOT MMC/SDHI code, documentation and
-> utility that has no user once sh7372 is gone.
-> 
-> The Cortex-A8 based sh7372 SoC is rather old and never went into mass
-> production anyway, so these patches that remove SoC and board support
-> will only affect a few selected developers.
-> 
-> I wish we had some way to make use of the ZBOOT MMC/SDHI code, but
-> without any board or SoC code it makes little sense to keep it.
-> 
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Hi Geert,
 
-Hi Magnus,
+On Wed, Jan 21, 2015 at 7:47 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> Hi Magnus, Morimoto-san,
+>
+> On Wed, Jan 21, 2015 at 6:25 AM, Kuninori Morimoto
+> <kuninori.morimoto.gx@renesas.com> wrote:
+>>> ARM: shmobile: Remove sh7372/Mackerel and ZBOOT MMC/SDHI support
+>>>
+>>> [PATCH 01/13] ARM: shmobile: mackerel: Remove ZBOOT code
+>>> [PATCH 02/13] ARM: shmobile: mackerel: Remove Legacy C board code
+>>> [PATCH 03/13] ARM: shmobile: mackerel dts: Remove Legacy DTS file
+>>> [PATCH 04/13] ARM: shmobile: mackerel: Remove DT binding documentation
+>>> [PATCH 05/13] ARM: shmobile: mackerel: Remove mach-type entry
+>>> [PATCH 06/13] ARM: shmobile: mackerel: Remove defconfig
+>>> [PATCH 07/13] ARM: shmobile: sh7372: Remove ZBOOT MMC/SDHI support
+>>> [PATCH 08/13] ARM: shmobile: sh7372: Remove Legacy C SoC code
+>>> [PATCH 09/13] ARM: shmobile: sh7372: Remove DT binding documentation
+>>> [PATCH 10/13] ARM: shmobile: sh7372 dtsi: Remove Legacy DTSI file
+>>> [PATCH 11/13] Documentation: Remove ZBOOT MMC/SDHI utility and docs
+>>> [PATCH 12/13] pinctrl: sh-pfc: sh7372: Remove PFC support
+>>> [PATCH 13/13] pinctrl: sh-pfc: sh7372: Remove DT binding documentation
+>>
+>> We spent much time for these.
+>> Good-bye sh7372...  Good-bye mackerel...
+>
+> Amen...
+>
+> Still to be removed: a few compatible entries in code and DT binding
+> documentation; "git grep -i sh7372" is your friend ;-)
 
-thanks for putting this together. There seem to have been few comments
-made on it. Could you consider respinning accordingly?
+Right, there are a couple of entries across the place. My feeling is
+that we can handle them independently for each driver.
 
+> It seems arch/sh still supports Linux running on the SH core in sh7372?
+
+I don't think we have any support upstream for that, but I recall
+cooking up some prototype running two linux instances in separate
+memory spaces and using virtio as mailbox interface in between. I also
+recall that SH4AL-DSP CPU core tend to be a PITA to handle
+toolchain-wise, but SH4 with FPU is much easier with current (or
+yesteryear) toolchain. Exactly which SH core that is included in
+sh7372 I'm not so sure about. =)
+
+Cheers,
+
+/ magnus
