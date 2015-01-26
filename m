@@ -1,111 +1,78 @@
-From: Soren Brinkmann <soren.brinkmann@xilinx.com>
-Date: Fri, 09 Jan 2015 15:43:45 +0000
-Subject: [PATCH v4 1/7] pinctrl: pinconf-generic: Infer map type from DT property
-Message-Id: <1420818231-13451-2-git-send-email-soren.brinkmann@xilinx.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 26 Jan 2015 16:16:16 +0000
+Subject: [PATCH v4 4/5] drivers: bus: Add Renesas Bus State Controller (BSC) DT Bindings
+Message-Id: <1422288977-20353-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420818231-13451-1-git-send-email-soren.brinkmann@xilinx.com>
-In-Reply-To: <1420818231-13451-1-git-send-email-soren.brinkmann@xilinx.com>
+References: <1422288977-20353-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1422288977-20353-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-With the new 'groups' property, the DT parser can infer the map type
-from the fact whether 'pins' or 'groups' is used to specify the pin
-group to work on.
-To maintain backwards compatibitliy with current usage of the DT
-binding, this is only done when PIN_MAP_TYPE_INVALID is passed to the
-parsing function as type.
-Also, a new helper 'pinconf_generic_dt_node_to_map_all()' is introduced,
-which can be used by drivers as generic callback for dt_node_to_map() to
-leverage the new feature.
+The bindings for the BSC extend the bindings for "simple-pm-bus".
 
-Signed-off-by: Soren Brinkmann <soren.brinkmann@xilinx.com>
-Tested-by: Andreas F=C3=A4rber <afaerber@suse.de>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-Changes since v2:
- - rename dt_pin_specifier to subnode_target_type
- - add additional comment in header file explaining passing an invalid
-   map type
- - mention map_all() helper in commit message
-Changes since RFC v2:
- - none
+v4:
+  - New, extracted from simple-pm-bus.txt in v3.
 ---
- drivers/pinctrl/pinconf-generic.c       | 17 ++++++++++++++---
- include/linux/pinctrl/pinconf-generic.h | 11 +++++++++++
- 2 files changed, 25 insertions(+), 3 deletions(-)
+ .../devicetree/bindings/bus/renesas,bsc.txt        | 46 ++++++++++++++++++++++
+ 1 file changed, 46 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/bus/renesas,bsc.txt
 
-diff --git a/drivers/pinctrl/pinconf-generic.c b/drivers/pinctrl/pinconf-ge=
-neric.c
-index f78b416d7984..21b3d90ebb2d 100644
---- a/drivers/pinctrl/pinconf-generic.c
-+++ b/drivers/pinctrl/pinconf-generic.c
-@@ -264,6 +264,7 @@ int pinconf_generic_dt_subnode_to_map(struct pinctrl_de=
-v *pctldev,
- 	unsigned reserve;
- 	struct property *prop;
- 	const char *group;
-+	const char *subnode_target_type =3D "pins";
-=20
- 	ret =3D of_property_read_string(np, "function", &function);
- 	if (ret < 0) {
-@@ -284,10 +285,20 @@ int pinconf_generic_dt_subnode_to_map(struct pinctrl_=
-dev *pctldev,
- 		reserve++;
- 	if (num_configs)
- 		reserve++;
+diff --git a/Documentation/devicetree/bindings/bus/renesas,bsc.txt b/Documentation/devicetree/bindings/bus/renesas,bsc.txt
+new file mode 100644
+index 0000000000000000..90e94726943772c4
+--- /dev/null
++++ b/Documentation/devicetree/bindings/bus/renesas,bsc.txt
+@@ -0,0 +1,46 @@
++Renesas Bus State Controller (BSC)
++=================
 +
- 	ret =3D of_property_count_strings(np, "pins");
- 	if (ret < 0) {
--		dev_err(dev, "could not parse property pins\n");
--		goto exit;
-+		ret =3D of_property_count_strings(np, "groups");
-+		if (ret < 0) {
-+			dev_err(dev, "could not parse property pins/groups\n");
-+			goto exit;
-+		}
-+		if (type =3D PIN_MAP_TYPE_INVALID)
-+			type =3D PIN_MAP_TYPE_CONFIGS_GROUP;
-+		subnode_target_type =3D "groups";
-+	} else {
-+		if (type =3D PIN_MAP_TYPE_INVALID)
-+			type =3D PIN_MAP_TYPE_CONFIGS_PIN;
- 	}
- 	reserve *=3D ret;
-=20
-@@ -296,7 +307,7 @@ int pinconf_generic_dt_subnode_to_map(struct pinctrl_de=
-v *pctldev,
- 	if (ret < 0)
- 		goto exit;
-=20
--	of_property_for_each_string(np, "pins", prop, group) {
-+	of_property_for_each_string(np, subnode_target_type, prop, group) {
- 		if (function) {
- 			ret =3D pinctrl_utils_add_map_mux(pctldev, map,
- 					reserved_maps, num_maps, group,
-diff --git a/include/linux/pinctrl/pinconf-generic.h b/include/linux/pinctr=
-l/pinconf-generic.h
-index d578a60eff23..83c89f5ab705 100644
---- a/include/linux/pinctrl/pinconf-generic.h
-+++ b/include/linux/pinctrl/pinconf-generic.h
-@@ -174,6 +174,17 @@ static inline int pinconf_generic_dt_node_to_map_pin(
- 			PIN_MAP_TYPE_CONFIGS_PIN);
- }
-=20
-+static inline int pinconf_generic_dt_node_to_map_all(
-+		struct pinctrl_dev *pctldev, struct device_node *np_config,
-+		struct pinctrl_map **map, unsigned *num_maps)
-+{
-+	/*
-+	 * passing the type as PIN_MAP_TYPE_INVALID causes the underlying parser
-+	 * to infer the map type from the DT properties used.
-+	 */
-+	return pinconf_generic_dt_node_to_map(pctldev, np_config, map, num_maps,
-+			PIN_MAP_TYPE_INVALID);
-+}
- #endif
-=20
- #endif /* CONFIG_GENERIC_PINCONF */
---=20
-2.2.1.1.gb42cc81
++The Renesas Bus State Controller (BSC, sometimes called "LBSC within Bus
++Bridge", or "External Bus Interface") can be found in several Renesas ARM SoCs.
++It provides an external bus for connecting multiple external devices to the
++SoC, driving several chip select lines, for e.g. NOR FLASH, Ethernet and USB.
++
++While the BSC is a fairly simple memory-mapped bus, it may be part of a PM
++domain, and may have a gateable functional clock.
++Before a device connected to the BSC can be accessed, the PM domain
++containing the BSC must be powered on, and the functional clock
++driving the BSC must be enabled.
++
++The bindings for the BSC extend the bindings for "simple-pm-bus".
++
++
++Required properties
++  - compatible: Must contain an SoC-specific value, and "renesas,bsc" and
++		"simple-pm-bus" as fallbacks.
++                SoC-specific values can be:
++		"renesas,bsc-r8a73a4" for R-Mobile APE6 (r8a73a4)
++		"renesas,bsc-sh73a0" for SH-Mobile AG5 (sh73a0)
++  - #address-cells, #size-cells, ranges: Must describe the mapping between
++		parent address and child address spaces.
++  - reg: Must contain the base address and length to access the bus controller.
++
++Optional properties:
++  - interrupts: Must contain a reference to the BSC interrupt, if available.
++  - clocks: Must contain a reference to the functional clock, if available.
++  - power-domains: Must contain a reference to the PM domain, if available.
++
++
++Example:
++
++	bsc: bus@fec10000 {
++		compatible = "renesas,bsc-sh73a0", "renesas,bsc",
++			     "simple-pm-bus";
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges = <0 0 0x20000000>;
++		reg = <0xfec10000 0x400>;
++		interrupts = <0 39 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&zb_clk>;
++		power-domains = <&pd_a4s>;
++	};
+-- 
+1.9.1
 
