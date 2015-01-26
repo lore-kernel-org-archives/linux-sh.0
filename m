@@ -1,86 +1,185 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Sun, 25 Jan 2015 10:11:51 +0000
-Subject: [PATCH] sh: Eliminate unused irq_reg_{readl,writel} accessors
-Message-Id: <1422180711-18976-1-git-send-email-geert+renesas@glider.be>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 26 Jan 2015 06:18:49 +0000
+Subject: [PATCH 06/14 v2] ARM: shmobile: mackerel: Remove defconfig
+Message-Id: <20150126061849.6848.31613.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20150126061747.6848.9708.sendpatchset@little-apple>
+In-Reply-To: <20150126061747.6848.9708.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Kevin Cernekee <cernekee@gmail.com>, Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kevin Cernekee <cernekee@gmail.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Defining these macros way down in arch/sh/.../irq.c doesn't cause
-kernel/irq/generic-chip.c to use them.  As far as I can tell this code
-has no effect.
+Remove the defconfig for the no longer supported mackerel board.
 
-Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
-Tested-by: Geert Uytterhoeven <geert+renesas@glider.be> (cpp/asm comparison)
-
-As of commit 332fd7c4fef5f3b1 ("genirq: Generic chip: Change
-irq_reg_{readl,writel} arguments") they cause build errors in
-se7722_defconfig:
-
-    In file included from arch/sh/boards/mach-se/7722/irq.c:18:0:
-    include/linux/irq.h:847:91: error: conflicting types for 'iowrite16'
-    include/asm-generic/iomap.h:35:13: note: previous declaration of 'iowrite16' was here
-    include/linux/irq.h:856:90: error: conflicting types for 'ioread16'
-    include/asm-generic/iomap.h:29:21: note: previous declaration of 'ioread16' was here
-    arch/sh/boards/mach-se/7722/irq.c: In function 'se7722_irq_demux':
-    arch/sh/boards/mach-se/7722/irq.c:43:2: error: too few arguments to function 'ioread16'
-    include/linux/irq.h:856:90: note: declared here
-
-and se7343_defconfig:
-
-    In file included from arch/sh/boards/mach-se/7343/irq.c:21:0:
-    include/linux/irq.h:847:91: error: conflicting types for 'iowrite16'
-    include/asm-generic/iomap.h:35:13: note: previous declaration of 'iowrite16' was here
-    include/linux/irq.h:856:90: error: conflicting types for 'ioread16'
-    include/asm-generic/iomap.h:29:21: note: previous declaration of 'ioread16' was here
-    arch/sh/boards/mach-se/7343/irq.c: In function 'se7343_irq_demux':
-    arch/sh/boards/mach-se/7343/irq.c:44:2: error: too few arguments to function 'ioread16'
-    include/linux/irq.h:856:90: note: declared here
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Fixes: 332fd7c4fef5f3b1 ("genirq: Generic chip: Change irq_reg_{readl,writel} arguments")
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
-Fixes se7722_defconfig and se7343_defconfig
-http://kisskb.ellerman.id.au/kisskb/buildresult/12350978/
-http://kisskb.ellerman.id.au/kisskb/buildresult/12350973/
----
- arch/sh/boards/mach-se/7343/irq.c | 3 ---
- arch/sh/boards/mach-se/7722/irq.c | 3 ---
- 2 files changed, 6 deletions(-)
 
-diff --git a/arch/sh/boards/mach-se/7343/irq.c b/arch/sh/boards/mach-se/7343/irq.c
-index 7646bf0486c2c9b1..1087dba9b0152317 100644
---- a/arch/sh/boards/mach-se/7343/irq.c
-+++ b/arch/sh/boards/mach-se/7343/irq.c
-@@ -14,9 +14,6 @@
- #define DRV_NAME "SE7343-FPGA"
- #define pr_fmt(fmt) DRV_NAME ": " fmt
- 
--#define irq_reg_readl	ioread16
--#define irq_reg_writel	iowrite16
--
- #include <linux/init.h>
- #include <linux/irq.h>
- #include <linux/interrupt.h>
-diff --git a/arch/sh/boards/mach-se/7722/irq.c b/arch/sh/boards/mach-se/7722/irq.c
-index f5e2af1bf040ff93..00e699232621dccf 100644
---- a/arch/sh/boards/mach-se/7722/irq.c
-+++ b/arch/sh/boards/mach-se/7722/irq.c
-@@ -11,9 +11,6 @@
- #define DRV_NAME "SE7722-FPGA"
- #define pr_fmt(fmt) DRV_NAME ": " fmt
- 
--#define irq_reg_readl	ioread16
--#define irq_reg_writel	iowrite16
--
- #include <linux/init.h>
- #include <linux/irq.h>
- #include <linux/interrupt.h>
--- 
-1.9.1
+ Changes since V1:
+ - None (Suggested MAINTAINER change by Geert is in separate patch)
 
+ arch/arm/configs/mackerel_defconfig |  157 -----------------------------------
+ 1 file changed, 157 deletions(-)
+
+--- 0001/arch/arm/configs/mackerel_defconfig
++++ /dev/null	2015-01-13 15:44:39.280208949 +0900
+@@ -1,157 +0,0 @@
+-CONFIG_EXPERIMENTAL=y
+-CONFIG_SYSVIPC=y
+-CONFIG_IKCONFIG=y
+-CONFIG_IKCONFIG_PROC=y
+-CONFIG_LOG_BUF_SHIFT
+-# CONFIG_UTS_NS is not set
+-# CONFIG_IPC_NS is not set
+-# CONFIG_USER_NS is not set
+-# CONFIG_PID_NS is not set
+-# CONFIG_NET_NS is not set
+-CONFIG_SLAB=y
+-CONFIG_MODULES=y
+-CONFIG_MODULE_UNLOAD=y
+-# CONFIG_BLK_DEV_BSG is not set
+-# CONFIG_IOSCHED_DEADLINE is not set
+-# CONFIG_IOSCHED_CFQ is not set
+-CONFIG_ARCH_SHMOBILE_LEGACY=y
+-CONFIG_ARCH_SH7372=y
+-CONFIG_MACH_MACKEREL=y
+-CONFIG_MEMORY_SIZE=0x10000000
+-CONFIG_AEABI=y
+-# CONFIG_OABI_COMPAT is not set
+-CONFIG_FORCE_MAX_ZONEORDER
+-CONFIG_ZBOOT_ROM_TEXT=0x0
+-CONFIG_ZBOOT_ROM_BSS=0x0
+-CONFIG_ARM_APPENDED_DTB=y
+-CONFIG_KEXEC=y
+-CONFIG_VFP=y
+-# CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+-CONFIG_PM=y
+-CONFIG_NET=y
+-CONFIG_PACKET=y
+-CONFIG_UNIX=y
+-CONFIG_INET=y
+-CONFIG_IP_MULTICAST=y
+-CONFIG_IP_PNP=y
+-CONFIG_IP_PNP_DHCP=y
+-# CONFIG_INET_XFRM_MODE_TRANSPORT is not set
+-# CONFIG_INET_XFRM_MODE_TUNNEL is not set
+-# CONFIG_INET_XFRM_MODE_BEET is not set
+-# CONFIG_IPV6 is not set
+-# CONFIG_WIRELESS is not set
+-CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+-CONFIG_DEVTMPFS=y
+-CONFIG_DEVTMPFS_MOUNT=y
+-# CONFIG_FIRMWARE_IN_KERNEL is not set
+-CONFIG_MTD=y
+-CONFIG_MTD_CONCAT=y
+-CONFIG_MTD_PARTITIONS=y
+-CONFIG_MTD_CHAR=y
+-CONFIG_MTD_BLOCK=y
+-CONFIG_MTD_CFI=y
+-CONFIG_MTD_CFI_ADV_OPTIONS=y
+-CONFIG_MTD_CFI_INTELEXT=y
+-CONFIG_MTD_PHYSMAP=y
+-CONFIG_MTD_ARM_INTEGRATOR=y
+-CONFIG_MTD_BLOCK2MTD=y
+-CONFIG_SCSI=y
+-CONFIG_BLK_DEV_SD=y
+-# CONFIG_SCSI_LOWLEVEL is not set
+-CONFIG_NETDEVICES=y
+-CONFIG_NET_ETHERNET=y
+-CONFIG_SMSC911X=y
+-# CONFIG_NETDEV_1000 is not set
+-# CONFIG_NETDEV_10000 is not set
+-# CONFIG_WLAN is not set
+-# CONFIG_INPUT_MOUSEDEV_PSAUX is not set
+-# CONFIG_INPUT_KEYBOARD is not set
+-# CONFIG_INPUT_MOUSE is not set
+-CONFIG_SERIAL_SH_SCI=y
+-CONFIG_SERIAL_SH_SCI_NR_UARTS=8
+-CONFIG_SERIAL_SH_SCI_CONSOLE=y
+-# CONFIG_LEGACY_PTYS is not set
+-# CONFIG_HW_RANDOM is not set
+-CONFIG_I2C=y
+-CONFIG_I2C_SH_MOBILE=y
+-# CONFIG_HWMON is not set
+-# CONFIG_MFD_SUPPORT is not set
+-CONFIG_REGULATOR=y
+-CONFIG_FB=y
+-CONFIG_FB_MODE_HELPERS=y
+-CONFIG_FB_SH_MOBILE_LCDC=y
+-CONFIG_FB_SH_MOBILE_HDMI=y
+-CONFIG_FRAMEBUFFER_CONSOLE=y
+-CONFIG_LOGO=y
+-# CONFIG_LOGO_LINUX_MONO is not set
+-# CONFIG_LOGO_LINUX_CLUT224 is not set
+-# CONFIG_SND_SUPPORT_OLD_API is not set
+-# CONFIG_SND_VERBOSE_PROCFS is not set
+-# CONFIG_SND_DRIVERS is not set
+-# CONFIG_SND_ARM is not set
+-CONFIG_SND_SOC_SH4_FSI=y
+-CONFIG_USB=y
+-CONFIG_USB_RENESAS_USBHS_HCD=y
+-CONFIG_USB_RENESAS_USBHS=y
+-CONFIG_USB_STORAGE=y
+-CONFIG_USB_GADGET=y
+-CONFIG_USB_RENESAS_USBHS_UDC=y
+-CONFIG_MMC=y
+-CONFIG_MMC_SDHI=y
+-CONFIG_MMC_SH_MMCIF=y
+-CONFIG_DMADEVICES=y
+-CONFIG_SH_DMAE=y
+-CONFIG_EXT2_FS=y
+-CONFIG_EXT2_FS_XATTR=y
+-CONFIG_EXT2_FS_POSIX_ACL=y
+-CONFIG_EXT2_FS_SECURITY=y
+-CONFIG_EXT2_FS_XIP=y
+-CONFIG_EXT3_FS=y
+-# CONFIG_EXT3_DEFAULTS_TO_ORDERED is not set
+-CONFIG_EXT3_FS_POSIX_ACL=y
+-CONFIG_EXT3_FS_SECURITY=y
+-# CONFIG_DNOTIFY is not set
+-CONFIG_MSDOS_FS=y
+-CONFIG_VFAT_FS=y
+-CONFIG_TMPFS=y
+-# CONFIG_MISC_FILESYSTEMS is not set
+-CONFIG_NFS_FS=y
+-CONFIG_NFS_V3=y
+-CONFIG_NFS_V3_ACL=y
+-CONFIG_NFS_V4=y
+-CONFIG_NFS_V4_1=y
+-CONFIG_ROOT_NFS=y
+-CONFIG_NLS_CODEPAGE_437=y
+-CONFIG_NLS_CODEPAGE_737=y
+-CONFIG_NLS_CODEPAGE_775=y
+-CONFIG_NLS_CODEPAGE_850=y
+-CONFIG_NLS_CODEPAGE_852=y
+-CONFIG_NLS_CODEPAGE_855=y
+-CONFIG_NLS_CODEPAGE_857=y
+-CONFIG_NLS_CODEPAGE_860=y
+-CONFIG_NLS_CODEPAGE_861=y
+-CONFIG_NLS_CODEPAGE_862=y
+-CONFIG_NLS_CODEPAGE_863=y
+-CONFIG_NLS_CODEPAGE_864=y
+-CONFIG_NLS_CODEPAGE_865=y
+-CONFIG_NLS_CODEPAGE_866=y
+-CONFIG_NLS_CODEPAGE_869=y
+-CONFIG_NLS_ISO8859_1=y
+-CONFIG_NLS_ISO8859_2=y
+-CONFIG_NLS_ISO8859_3=y
+-CONFIG_NLS_ISO8859_4=y
+-CONFIG_NLS_ISO8859_5=y
+-CONFIG_NLS_ISO8859_6=y
+-CONFIG_NLS_ISO8859_7=y
+-CONFIG_NLS_ISO8859_9=y
+-CONFIG_NLS_ISO8859_13=y
+-CONFIG_NLS_ISO8859_14=y
+-CONFIG_NLS_ISO8859_15=y
+-CONFIG_NLS_KOI8_R=y
+-CONFIG_NLS_KOI8_U=y
+-CONFIG_NLS_UTF8=y
+-# CONFIG_ENABLE_WARN_DEPRECATED is not set
+-# CONFIG_ENABLE_MUST_CHECK is not set
+-# CONFIG_ARM_UNWIND is not set
+-CONFIG_CRYPTO=y
+-CONFIG_CRYPTO_ANSI_CPRNG=y
