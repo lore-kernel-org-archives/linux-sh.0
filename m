@@ -1,63 +1,56 @@
-From: Eduardo Valentin <edubezval@gmail.com>
-Date: Wed, 07 Jan 2015 13:30:15 +0000
-Subject: Re: [PATCH v2 0/2] thermal: rcar: minor fixes
-Message-Id: <20150107133013.GA9484@developer>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="fdj2RfSjLxBAspz7"
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 26 Jan 2015 06:20:12 +0000
+Subject: [PATCH 14/14 v2] pinctrl: sh-pfc: sh7372: Remove DT binding documentation
+Message-Id: <20150126062012.6848.20501.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420593191-3736-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1420593191-3736-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Cc: rui.zhang@intel.com, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org
+References: <20150126061747.6848.9708.sendpatchset@little-apple>
+In-Reply-To: <20150126061747.6848.9708.sendpatchset@little-apple>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+From: Magnus Damm <damm+renesas@opensource.se>
 
---fdj2RfSjLxBAspz7
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Remove the DT compatible string entry for the now unsupported sh7372 SoC.
 
-On Wed, Jan 07, 2015 at 10:13:09AM +0900, Yoshihiro Shimoda wrote:
-> This patch series is based on linux-soc-thermal.git / fixes branch.
-> (commit id =3D 5a723e81923410f0d3ae4c38974607b13befdda9)
->=20
-> Changes from v1:
->  - The driver calculate the ENR value using IO resource sets in patch 1.
->  - Update description about the helper variables 'old' and 'new' in patch=
- 2.
->  - Add "Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>" in patch =
-2.
->=20
-> Yoshihiro Shimoda (2):
->   thermal: rcar: fix ENR register value
->   thermal: rcar: change type of ctemp in rcar_thermal_update_temp()
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
 
-Applied to my -fixes branch.
+ Changes since V1:
+ - None
 
+ Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt |    8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
 
-Thanks
-
->=20
->  drivers/thermal/rcar_thermal.c |   15 ++++++++++-----
->  1 file changed, 10 insertions(+), 5 deletions(-)
->=20
-> --=20
-> 1.7.9.5
->=20
-
---fdj2RfSjLxBAspz7
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQEcBAEBAgAGBQJUrTTFAAoJEMLUO4d9pOJW20gIAJTpQlix/dDIrfzA3F5uPiZH
-e38+vL3e7dBZGztbnviZNB76REU+lO3TPB9eZi/p0S884CM7r67j/w0o8zLbN8Vs
-1GlAlRJiGnbt6BjfTxnR+VwmuSHjjb1i3Si4bJGYOT4Y6QiBRT6O6p0zax1oe7K8
-j2lKhD9tMgiv10MpXiaaulSmYbHDqxJUyiZrbjB+7TnXhDTQrOAim8f3Mo/pl8tC
-ORvoR0UzzRl/+zyj/eEQKnxvY8vEZiqhRxK3Rf9TBpcAmtBgMOmcvjt8ILbMg9cR
-whOKc02QwQYyspQcHZ97n1kUHTF6jDTArXRhRXoAzjnEjNoKEHqUuDbwG6eqBnU=
-=lBbn
------END PGP SIGNATURE-----
-
---fdj2RfSjLxBAspz7--
+--- 0001/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
++++ work/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt	2015-01-21 12:12:15.357561911 +0900
+@@ -1,7 +1,7 @@
+ * Renesas Pin Function Controller (GPIO and Pin Mux/Config)
+ 
+-The Pin Function Controller (PFC) is a Pin Mux/Config controller. On SH7372,
+-SH73A0, R8A73A4 and R8A7740 it also acts as a GPIO controller.
++The Pin Function Controller (PFC) is a Pin Mux/Config controller. On SH73A0,
++R8A73A4 and R8A7740 it also acts as a GPIO controller.
+ 
+ 
+ Pin Control
+@@ -16,7 +16,6 @@ Required Properties:
+     - "renesas,pfc-r8a7779": for R8A7779 (R-Car H1) compatible pin-controller.
+     - "renesas,pfc-r8a7790": for R8A7790 (R-Car H2) compatible pin-controller.
+     - "renesas,pfc-r8a7791": for R8A7791 (R-Car M2) compatible pin-controller.
+-    - "renesas,pfc-sh7372": for SH7372 (SH-Mobile AP4) compatible pin-controller.
+     - "renesas,pfc-sh73a0": for SH73A0 (SH-Mobile AG5) compatible pin-controller.
+ 
+   - reg: Base address and length of each memory resource used by the pin
+@@ -75,8 +74,7 @@ bias-disable, bias-pull-up and bias-pull
+ GPIO
+ ----
+ 
+-On SH7372, SH73A0, R8A73A4 and R8A7740 the PFC node is also a GPIO controller
+-node.
++On SH73A0, R8A73A4 and R8A7740 the PFC node is also a GPIO controller node.
+ 
+ Required Properties:
+ 
