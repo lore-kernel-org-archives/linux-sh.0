@@ -1,41 +1,55 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 09 Jan 2015 13:32:32 +0000
-Subject: [SERIES 0/3] ARM: shmobile: sh73a0/kzm9g multiplatform
-Message-Id: <CAMuHMdWDsqYOPKqPmZ8oDuf28YrAtu+zcnikOhmehKFQNXfekQ@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Jan 2015 17:25:15 +0000
+Subject: [PATCH 5/6] dmaengine: rcar-dmac: Work around descriptor mode IOMMU errata
+Message-Id: <1422379516-1633-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Simon, Magnus,
+When descriptor memory is accessed through an IOMMU the DMADAR register
+isn't initialized automatically from the first descriptor at beginning
+of transfer by the DMAC like it should. Initialize it manually with the
+destination address of the first chunk.
 
-This is a meta cover letter for the three patch series I've just  sent:
-   - [PATCH 0/4] ARM: shmobile: sh73a0/kzm9g: Introduce multiplatform
-                 support
-   - [PATCH v3 0/4] drivers: bus: Add Simple Power-Managed Bus
-   - [PATCH 0/4] ARM: shmobile: sh73a0/kzm9g: Complete multiplatform
-                 support
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/dma/sh/rcar-dmac.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
-After applying these series, kzm9g-multiplatform has the same feature
-set as current kzm9g-reference, and the latter is removed.
+diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
+index 9daa7f59e7b0..d345d3d81813 100644
+--- a/drivers/dma/sh/rcar-dmac.c
++++ b/drivers/dma/sh/rcar-dmac.c
+@@ -325,6 +325,8 @@ static void rcar_dmac_chan_start_xfer(struct rcar_dmac_chan *chan)
+ 		rcar_dmac_chan_write(chan, RCAR_DMARS, chan->mid_rid);
+ 
+ 	if (desc->hwdescs.use) {
++		struct rcar_dmac_xfer_chunk *chunk;
++
+ 		dev_dbg(chan->chan.device->dev,
+ 			"chan%u: queue desc %p: %u@%pad\n",
+ 			chan->index, desc, desc->nchunks, &desc->hwdescs.dma);
+@@ -341,6 +343,18 @@ static void rcar_dmac_chan_start_xfer(struct rcar_dmac_chan *chan)
+ 				     RCAR_DMACHCRB_DRST);
+ 
+ 		/*
++		 * Errata: When descriptor memory is accessed through an IOMMU
++		 * the DMADAR register isn't initialized automatically from the
++		 * first descriptor at beginning of transfer by the DMAC like it
++		 * should. Initialize it manually with the destination address
++		 * of the first chunk.
++		 */
++		chunk = list_first_entry(&desc->chunks,
++					 struct rcar_dmac_xfer_chunk, node);
++		rcar_dmac_chan_write(chan, RCAR_DMADAR,
++				     chunk->dst_addr & 0xffffffff);
++
++		/*
+ 		 * Program the descriptor stage interrupt to occur after the end
+ 		 * of the first stage.
+ 		 */
+-- 
+2.0.5
 
-Note that the third series depends functionally on the second. Without
-the second series, Ethernet will not work (this also applies to a future
-r8a73a4/ape6evm-multiplatform).
-
-It would be great if you could apply all three series, as I have more patches
-queued that depend on them.
-
-Thanks!
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
