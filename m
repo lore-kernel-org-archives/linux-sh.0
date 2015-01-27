@@ -1,52 +1,42 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Thu, 22 Jan 2015 06:36:31 +0000
-Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC sh73a0 Multiplatform Updates for v3.20
-Message-Id: <CAOesGMjAbn5DLuy12HiuWZr58WK0s4y8u09wLGHMgsmE6735YQ@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Jan 2015 08:45:55 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7794: Add ethernet controller to device tree
+Message-Id: <1422348356-18675-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421716945.git.horms+renesas@verge.net.au>
- <20150122013426.GD31815@quad.lixom.net>
- <20150122020144.GA29564@verge.net.au>
-In-Reply-To: <20150122020144.GA29564@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Jan 21, 2015 at 6:01 PM, Simon Horman <horms@verge.net.au> wrote:
-> On Wed, Jan 21, 2015 at 05:34:26PM -0800, Olof Johansson wrote:
->> On Tue, Jan 20, 2015 at 10:27:32AM +0900, Simon Horman wrote:
->> > Hi Olof, Hi Kevin, Hi Arnd,
->> >
->> > Please consider these second round of Renesas ARM based SoC sh73a0 multiplatform updates for v3.20.
->> >
->> > This pull request is based on the previous round of
->> > such requests, tagged as renesas-sh73a0-multiplatform-for-v3.20,
->> > which I have already sent a pull-request for.
->> >
->> > My understanding from Geert Uytterhoeven is that the above dependency
->> > is required to avoid a lock-up.
->> >
->> >
->> > The following changes since commit 93c9f0228a3d0a14640f86b3e8aeaf3c9b449bb7:
->> >
->> >   ARM: shmobile: kzm9g-reference: Remove board C code and DT file (2015-01-14 09:46:48 +0900)
->> >
->> > are available in the git repository at:
->> >
->> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh73a0-multiplatform2-for-v3.20
->> >
->> > for you to fetch changes up to e42c8385cfec0579a103b365d61748f199bfe239:
->> >
->> >   ARM: shmobile: sh73a0 dtsi: Add Cortex-A9 TWD node (2015-01-17 09:36:35 +0900)
->>
->>
->> Not pulled based on earlier feedback on preceding branch. Seems like you
->> removed the tag already as well. ;)
->
-> Yes, I think our emails crossed in flight.
+Add a DT node for the on-SoC ethernet controller device.
 
-Yep, I often work with an offlineimap-synced mailbox that might be a
-few hours out of date when I do merges. :)
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7794.dtsi | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 8f78da5ef10b..68143c7ff89a 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -269,6 +269,17 @@
+ 		status = "disabled";
+ 	};
+ 
++	ether: ethernet@ee700000 {
++		compatible = "renesas,ether-r8a7794";
++		reg = <0 0xee700000 0 0x400>;
++		interrupts = <0 162 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp8_clks R8A7794_CLK_ETHER>;
++		phy-mode = "rmii";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
+-- 
+2.0.5
 
--Olof
