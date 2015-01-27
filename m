@@ -1,94 +1,93 @@
-From: Lee Jones <lee.jones@linaro.org>
-Date: Tue, 20 Jan 2015 09:33:15 +0000
-Subject: Re: [PATCH 17/17] mmc: tmio: remove TMIO_MMC_HAVE_CTL_DMA_REG flag
-Message-Id: <20150120093315.GB5767@x1>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Jan 2015 17:12:17 +0000
+Subject: [PATCH] ARM: shmobile: r8a7794: Add DMAC devices to DT
+Message-Id: <1422378737-1211-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87twzvuvl1.wl%kuninori.morimoto.gx@renesas.com>
- <8761cbuvdt.wl%kuninori.morimoto.gx@renesas.com>
- <CAPDyKFp9NUs3FCHkOJe9dEdOdHzi1MiCB0RsD_V=7RiYL3OGzA@mail.gmail.com>
-In-Reply-To: <CAPDyKFp9NUs3FCHkOJe9dEdOdHzi1MiCB0RsD_V=7RiYL3OGzA@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: Arnd Bergmann <arnd@arndb.de>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-On Tue, 20 Jan 2015, Ulf Hansson wrote:
+Instantiate the two system DMA controllers in the r8a7794 device tree.
 
-> + MFD maintainer
->=20
-> On 13 January 2015 at 06:00, Kuninori Morimoto
-> <kuninori.morimoto.gx@renesas.com> wrote:
-> > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> >
-> > tmio_mmc_host has .enable_dma callback now.
-> > We don't need TMIO_MMC_HAVE_CTL_DMA_REG anymore.
-> > Let's remove it
-> >
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > ---
-> >  drivers/mmc/host/sh_mobile_sdhi.c |    5 -----
-> >  drivers/mmc/host/tmio_mmc_dma.c   |    3 ---
-> >  include/linux/mfd/tmio.h          |    5 -----
-> >  3 files changed, 13 deletions(-)
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7794.dtsi | 60 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 60 insertions(+)
 
-Acked-by: Lee Jones <lee.jones@linaro.org>
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 8f78da5ef10b..74745356afe2 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -107,6 +107,66 @@
+ 			     <0 17 IRQ_TYPE_LEVEL_HIGH>;
+ 	};
+ 
++	dmac0: dma-controller@e6700000 {
++		compatible = "renesas,rcar-dmac";
++		reg = <0 0xe6700000 0 0x20000>;
++		interrupts = <0 197 IRQ_TYPE_LEVEL_HIGH
++			      0 200 IRQ_TYPE_LEVEL_HIGH
++			      0 201 IRQ_TYPE_LEVEL_HIGH
++			      0 202 IRQ_TYPE_LEVEL_HIGH
++			      0 203 IRQ_TYPE_LEVEL_HIGH
++			      0 204 IRQ_TYPE_LEVEL_HIGH
++			      0 205 IRQ_TYPE_LEVEL_HIGH
++			      0 206 IRQ_TYPE_LEVEL_HIGH
++			      0 207 IRQ_TYPE_LEVEL_HIGH
++			      0 208 IRQ_TYPE_LEVEL_HIGH
++			      0 209 IRQ_TYPE_LEVEL_HIGH
++			      0 210 IRQ_TYPE_LEVEL_HIGH
++			      0 211 IRQ_TYPE_LEVEL_HIGH
++			      0 212 IRQ_TYPE_LEVEL_HIGH
++			      0 213 IRQ_TYPE_LEVEL_HIGH
++			      0 214 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error",
++				"ch0", "ch1", "ch2", "ch3",
++				"ch4", "ch5", "ch6", "ch7",
++				"ch8", "ch9", "ch10", "ch11",
++				"ch12", "ch13", "ch14";
++		clocks = <&mstp2_clks R8A7794_CLK_SYS_DMAC0>;
++		clock-names = "fck";
++		#dma-cells = <1>;
++		dma-channels = <15>;
++	};
++
++	dmac1: dma-controller@e6720000 {
++		compatible = "renesas,rcar-dmac";
++		reg = <0 0xe6720000 0 0x20000>;
++		interrupts = <0 220 IRQ_TYPE_LEVEL_HIGH
++			      0 216 IRQ_TYPE_LEVEL_HIGH
++			      0 217 IRQ_TYPE_LEVEL_HIGH
++			      0 218 IRQ_TYPE_LEVEL_HIGH
++			      0 219 IRQ_TYPE_LEVEL_HIGH
++			      0 308 IRQ_TYPE_LEVEL_HIGH
++			      0 309 IRQ_TYPE_LEVEL_HIGH
++			      0 310 IRQ_TYPE_LEVEL_HIGH
++			      0 311 IRQ_TYPE_LEVEL_HIGH
++			      0 312 IRQ_TYPE_LEVEL_HIGH
++			      0 313 IRQ_TYPE_LEVEL_HIGH
++			      0 314 IRQ_TYPE_LEVEL_HIGH
++			      0 315 IRQ_TYPE_LEVEL_HIGH
++			      0 316 IRQ_TYPE_LEVEL_HIGH
++			      0 317 IRQ_TYPE_LEVEL_HIGH
++			      0 318 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error",
++				"ch0", "ch1", "ch2", "ch3",
++				"ch4", "ch5", "ch6", "ch7",
++				"ch8", "ch9", "ch10", "ch11",
++				"ch12", "ch13", "ch14";
++		clocks = <&mstp2_clks R8A7794_CLK_SYS_DMAC1>;
++		clock-names = "fck";
++		#dma-cells = <1>;
++		dma-channels = <15>;
++	};
++
+ 	scifa0: serial@e6c40000 {
+ 		compatible = "renesas,scifa-r8a7794", "renesas,scifa";
+ 		reg = <0 0xe6c40000 0 64>;
+-- 
+Regards,
 
-> > diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mo=
-bile_sdhi.c
-> > index 7dbcb57..6906a90 100644
-> > --- a/drivers/mmc/host/sh_mobile_sdhi.c
-> > +++ b/drivers/mmc/host/sh_mobile_sdhi.c
-> > @@ -291,11 +291,6 @@ static int sh_mobile_sdhi_probe(struct platform_de=
-vice *pdev)
-> >          */
-> >         mmc_data->flags |=3D TMIO_MMC_SDIO_STATUS_QUIRK;
-> >
-> > -       /*
-> > -        * All SDHI have DMA control register
-> > -        */
-> > -       mmc_data->flags |=3D TMIO_MMC_HAVE_CTL_DMA_REG;
-> > -
-> >         if (of_id && of_id->data) {
-> >                 const struct sh_mobile_sdhi_of_data *of_data =3D of_id-=
->data;
-> >                 mmc_data->flags |=3D of_data->tmio_flags;
-> > diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mm=
-c_dma.c
-> > index aa5f4b6..331bb61 100644
-> > --- a/drivers/mmc/host/tmio_mmc_dma.c
-> > +++ b/drivers/mmc/host/tmio_mmc_dma.c
-> > @@ -28,9 +28,6 @@ void tmio_mmc_enable_dma(struct tmio_mmc_host *host, =
-bool enable)
-> >         if (!host->chan_tx || !host->chan_rx)
-> >                 return;
-> >
-> > -       if (host->pdata->flags & TMIO_MMC_HAVE_CTL_DMA_REG)
-> > -               sd_ctrl_write16(host, CTL_DMA_ENABLE, enable ? 2 : 0);
-> > -
-> >         if (host->dma->enable)
-> >                 host->dma->enable(host, enable);
-> >  }
-> > diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-> > index 807ecfb..6058128 100644
-> > --- a/include/linux/mfd/tmio.h
-> > +++ b/include/linux/mfd/tmio.h
-> > @@ -96,11 +96,6 @@
-> >  #define TMIO_MMC_SDIO_STATUS_QUIRK     (1 << 8)
-> >
-> >  /*
-> > - * Some controllers have DMA enable/disable register
-> > - */
-> > -#define TMIO_MMC_HAVE_CTL_DMA_REG      (1 << 9)
-> > -
-> > -/*
-> >   * Some controllers allows to set SDx actual clock
-> >   */
-> >  #define TMIO_MMC_CLK_ACTUAL            (1 << 10)
-> >
+Laurent Pinchart
 
---=20
-Lee Jones
-Linaro STMicroelectronics Landing Team Lead
-Linaro.org =E2=94=82 Open source software for ARM SoCs
-Follow Linaro: Facebook | Twitter | Blog
