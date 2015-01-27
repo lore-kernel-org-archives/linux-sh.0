@@ -1,64 +1,77 @@
-From: Jiang Liu <jiang.liu@linux.intel.com>
-Date: Fri, 23 Jan 2015 05:36:47 +0000
-Subject: [Resend Patch v4 08/16] smp, sh: Kill SMP single function call interrupt
-Message-Id: <1421991416-20297-9-git-send-email-jiang.liu@linux.intel.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Jan 2015 17:25:16 +0000
+Subject: [PATCH 6/6] dmaengine: rcar-dmac: Disable channel 0 when using IOMMU
+Message-Id: <1422379516-1633-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421991416-20297-1-git-send-email-jiang.liu@linux.intel.com>
-In-Reply-To: <1421991416-20297-1-git-send-email-jiang.liu@linux.intel.com>
+References: <1422379516-1633-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1422379516-1633-1-git-send-email-laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>, Jiang Liu <jiang.liu@linux.intel.com>
-Cc: Borislav Petkov <bp@alien8.de>, Tony Luck <tony.luck@intel.com>, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
+To: dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Commit 9a46ad6d6df3b54 "smp: make smp_call_function_many() use logic
-similar to smp_call_function_single()" has unified the way to handle
-single and multiple cross-CPU function calls. Now only one interrupt
-is needed for architecture specific code to support generic SMP function
-call interfaces, so kill the redundant single function call interrupt.
+A still unconfirmed hardware bug prevents the IPMMU microTLB 0 to be
+flushed correctly, resulting in memory corruption. DMAC 0 channel 0 is
+connected to microTLB 0 on currently supported platforms, so we can't
+use it with the IPMMU. As the IOMMU API operates at the device level we
+can't disable it selectively, so ignore channel 0 for now if the device
+is part of an IOMMU group.
 
-Cc: Paul Mundt <lethal@linux-sh.org>
-Signed-off-by: Jiang Liu <jiang.liu@linux.intel.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/sh/include/asm/smp.h |    1 -
- arch/sh/kernel/smp.c      |    5 +----
- 2 files changed, 1 insertion(+), 5 deletions(-)
+ drivers/dma/sh/rcar-dmac.c | 17 ++++++++++++++++-
+ 1 file changed, 16 insertions(+), 1 deletion(-)
 
-diff --git a/arch/sh/include/asm/smp.h b/arch/sh/include/asm/smp.h
-index 78b0d0f4b24b..93ce87b3a18d 100644
---- a/arch/sh/include/asm/smp.h
-+++ b/arch/sh/include/asm/smp.h
-@@ -25,7 +25,6 @@ extern int __cpu_logical_map[NR_CPUS];
- enum {
- 	SMP_MSG_FUNCTION,
- 	SMP_MSG_RESCHEDULE,
--	SMP_MSG_FUNCTION_SINGLE,
- 	SMP_MSG_TIMER,
+As this patch works around an IOMMU bug in a DMA engine driver it would
+benefit from review from IOMMU developers.
+
+Cc: iommu@lists.linux-foundation.org
+Cc: Joerg Roedel <joro@8bytes.org>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+
+diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
+index d345d3d81813..e0bf38a7284e 100644
+--- a/drivers/dma/sh/rcar-dmac.c
++++ b/drivers/dma/sh/rcar-dmac.c
+@@ -1595,6 +1595,7 @@ static int rcar_dmac_probe(struct platform_device *pdev)
+ 		DMA_SLAVE_BUSWIDTH_2_BYTES | DMA_SLAVE_BUSWIDTH_4_BYTES |
+ 		DMA_SLAVE_BUSWIDTH_8_BYTES | DMA_SLAVE_BUSWIDTH_16_BYTES |
+ 		DMA_SLAVE_BUSWIDTH_32_BYTES | DMA_SLAVE_BUSWIDTH_64_BYTES;
++	unsigned int channels_offset = 0;
+ 	struct dma_device *engine;
+ 	struct rcar_dmac *dmac;
+ 	struct resource *mem;
+@@ -1614,6 +1615,19 @@ static int rcar_dmac_probe(struct platform_device *pdev)
+ 	if (ret < 0)
+ 		return ret;
  
- 	SMP_MSG_NR,	/* must be last */
-diff --git a/arch/sh/kernel/smp.c b/arch/sh/kernel/smp.c
-index fc5acfc93c92..fc03baf8b661 100644
---- a/arch/sh/kernel/smp.c
-+++ b/arch/sh/kernel/smp.c
-@@ -282,7 +282,7 @@ void arch_send_call_function_ipi_mask(const struct cpumask *mask)
++	/*
++	 * A still unconfirmed hardware bug prevents the IPMMU microTLB 0 to be
++	 * flushed correctly, resulting in memory corruption. DMAC 0 channel 0
++	 * is connected to microTLB 0 on currently supported platforms, so we
++	 * can't use it with the IPMMU. As the IOMMU API operates at the device
++	 * level we can't disable it selectively, so ignore channel 0 for now if
++	 * the device is part of an IOMMU group.
++	 */
++	if (pdev->dev.iommu_group) {
++		dmac->n_channels--;
++		channels_offset = 1;
++	}
++
+ 	dmac->channels = devm_kcalloc(&pdev->dev, dmac->n_channels,
+ 				      sizeof(*dmac->channels), GFP_KERNEL);
+ 	if (!dmac->channels)
+@@ -1664,7 +1678,8 @@ static int rcar_dmac_probe(struct platform_device *pdev)
+ 	INIT_LIST_HEAD(&dmac->engine.channels);
  
- void arch_send_call_function_single_ipi(int cpu)
- {
--	mp_ops->send_ipi(cpu, SMP_MSG_FUNCTION_SINGLE);
-+	mp_ops->send_ipi(cpu, SMP_MSG_FUNCTION);
- }
- 
- void smp_timer_broadcast(const struct cpumask *mask)
-@@ -309,9 +309,6 @@ void smp_message_recv(unsigned int msg)
- 	case SMP_MSG_RESCHEDULE:
- 		scheduler_ipi();
- 		break;
--	case SMP_MSG_FUNCTION_SINGLE:
--		generic_smp_call_function_single_interrupt();
--		break;
- 	case SMP_MSG_TIMER:
- 		ipi_timer();
- 		break;
+ 	for (i = 0; i < dmac->n_channels; ++i) {
+-		ret = rcar_dmac_chan_probe(dmac, &dmac->channels[i], i);
++		ret = rcar_dmac_chan_probe(dmac, &dmac->channels[i],
++					   i + channels_offset);
+ 		if (ret < 0)
+ 			goto error;
+ 	}
 -- 
-1.7.10.4
+2.0.5
 
