@@ -1,35 +1,95 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 05 Jan 2015 20:40:25 +0000
-Subject: Re: [PATCH v3] clk-rcar-gen2: RCAN clock support
-Message-Id: <54AAF6B9.6050703@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Jan 2015 09:13:24 +0000
+Subject: [PATCH 2/3] ARM: shmobile: r8a7791: Add IPMMU DT nodes
+Message-Id: <1422350005-20573-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1678262.gW7XrkflEf@wasted.cogentembedded.com>
-In-Reply-To: <1678262.gW7XrkflEf@wasted.cogentembedded.com>
+References: <1387998730-6012-3-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1387998730-6012-3-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: mturquette@linaro.org, linux-kernel@vger.kernel.org, sboyd@codeaurora.org
-Cc: linux-sh@vger.kernel.org, vksavl@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, devicetree@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+Add the seven IPMMU instances found in the r8a7791 to DT with a disabled
+status.
 
-On 01/05/2015 11:10 PM, Sergei Shtylyov wrote:
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 60 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 60 insertions(+)
 
-> Add the RCAN clock support to the R-Car generation 2 CPG driver.  This clock
-> gets derived from  the USB_EXTAL clock, dividing  it by 6.  The layout of the
-> RCANCKCR register is similar to those of the clocks supported by the 'clk-div6'
-> driver but has no divider field, and so can't be supported by that driver...
-
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
-[...]
-
-> Index: renesas/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
-> =================================> --- renesas.orig/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
-> +++ renesas/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
-
-    It should have been against Mike's tree. And forgot to add Geert's ACK. 
-Ignore this one, I'll repost.
-
-WBR, Sergei
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 8a2fc56dfaf4..6b0cd1b12098 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1390,6 +1390,66 @@
+ 		status = "disabled";
+ 	};
+ 
++	ipmmu_sy0: mmu@e6280000 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xe6280000 0 0x1000>;
++		interrupts = <0 223 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 224 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_sy1: mmu@e6290000 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xe6290000 0 0x1000>;
++		interrupts = <0 225 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_ds: mmu@e6740000 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xe6740000 0 0x1000>;
++		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 199 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_mp: mmu@ec680000 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xec680000 0 0x1000>;
++		interrupts = <0 226 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_mx: mmu@fe951000 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xfe951000 0 0x1000>;
++		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 221 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_rt: mmu@ffc80000 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xffc80000 0 0x1000>;
++		interrupts = <0 307 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_gp: mmu@e62a0000 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xe62a0000 0 0x1000>;
++		interrupts = <0 260 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 261 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
+ 	rcar_sound: rcar_sound@ec500000 {
+ 		/*
+ 		 * #sound-dai-cells is required
+-- 
+2.0.5
 
