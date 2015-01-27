@@ -1,112 +1,112 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 05 Jan 2015 08:25:56 +0000
-Subject: Re: [PATCH 01/05] serial: sh-sci: Break out default CTS/RTS pin setup
-Message-Id: <2156158.vJVakP2u8e@avalon>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Jan 2015 17:25:11 +0000
+Subject: [PATCH 1/6] dmaengine: rcar-dmac: Fix uninitialized variable usage
+Message-Id: <1422379516-1633-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20141217125236.14480.78833.sendpatchset@w520> <20141217125246.14480.41876.sendpatchset@w520>
-In-Reply-To: <20141217125246.14480.41876.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, gregkh@linuxfoundation.org, jslaby@suse.cz, linux-serial@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Magnus,
+The desc variable is used uninitialized in the rcar_dmac_desc_get() and
+rcar_dmac_xfer_chunk_get() functions if descriptors need to be
+allocated. Fix it.
 
-Thank you for the patch.
+Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/dma/sh/rcar-dmac.c | 69 +++++++++++++++++++++-------------------------
+ 1 file changed, 31 insertions(+), 38 deletions(-)
 
-On Wednesday 17 December 2014 21:52:46 Magnus Damm wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
-> 
-> Break out CTS/RTS pin setup for the default case. We only
-> care about those pins in case SCIx_HAVE_RTSCTS is set.
-> 
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> ---
-> 
->  drivers/tty/serial/sh-sci.c |   45 +++++++++++++++++++++++++++-------------
->  1 file changed, 31 insertions(+), 14 deletions(-)
-> 
-> --- 0001/drivers/tty/serial/sh-sci.c
-> +++ work/drivers/tty/serial/sh-sci.c	2014-12-16 14:40:31.000000000 +0900
-> @@ -509,10 +509,29 @@ static void sci_poll_put_char(struct uar
->  }
->  #endif /* CONFIG_CONSOLE_POLL || CONFIG_SERIAL_SH_SCI_CONSOLE */
-> 
-> -static void sci_init_pins(struct uart_port *port, unsigned int cflag)
-> +static void sci_init_pins_default(struct uart_port *port, bool
-> hwflow_enabled) {
-
-What would you think about renaming the function to sci_init_ctsrts_default ? 
-I find having both sci_init_pins and sci_init_pins_default a bit confusing.
-
->  	struct sci_port *s = to_sci_port(port);
->  	struct plat_sci_reg *reg = sci_regmap[s->cfg->regtype] + SCSPTR;
-> +	unsigned short status;
-> +
-> +	/* If no SCSPTR register exists then skip. Same if hardware flow
-> +	 * control has been enabled, in such case SCFCR.MCE will be set
-> +	 * and the SCSPTR configuration is assumed to be overridden.
-> +	 */
-> +	if (!reg->size || hwflow_enabled)
-> +		return;
-> +
-> +	status = serial_port_in(port, SCSPTR);
-> +	status &= ~SCSPTR_CTSIO;
-> +	status |= SCSPTR_RTSIO;
-> +	serial_port_out(port, SCSPTR, status); /* Set RTS = 1 */
-> +}
-> +
-> +static void sci_init_pins(struct uart_port *port, unsigned int cflag)
-> +{
-> +	struct sci_port *s = to_sci_port(port);
-> +	bool hwflow_enabled = cflag & CRTSCTS;
-> 
->  	/*
->  	 * Use port-specific handler if provided.
-> @@ -522,22 +541,20 @@ static void sci_init_pins(struct uart_po
->  		return;
->  	}
-> 
-> -	/*
-> -	 * For the generic path SCSPTR is necessary. Bail out if that's
-> -	 * unavailable, too.
-> +	/* SCIF hardware with RTS/CTS support needs special setup below.
-> +	 *
-> +	 * Please note that if RTS/CTS is available for the hardware
-> +	 * platform depends on the particular SCIF channel on a certain
-> +	 * SoC, and how this channel has been hooked up on the actual board.
-
-How do you plan to convey that information to the driver in the DT case ? If 
-I'm not mistaken the SCIx_HAVE_RTSCTS flag is only set through platform data 
-at the moment. Do you have a list of which SCIF channels support RTS/CTS on 
-which SoC ?
-
-> +	 *
-> +	 * If the RTS/CTS signals will be used or not depends on what user
-> +	 * space requests. In case RTS/CTS is available but not requested
-> +	 * by user space we still need to configure the pins somehow.
->  	 */
-> -	if (!reg->size)
-> +	if (!(s->cfg->capabilities & SCIx_HAVE_RTSCTS))
->  		return;
-> 
-> -	if ((s->cfg->capabilities & SCIx_HAVE_RTSCTS) &&
-> -	    ((!(cflag & CRTSCTS)))) {
-> -		unsigned short status;
-> -
-> -		status = serial_port_in(port, SCSPTR);
-> -		status &= ~SCSPTR_CTSIO;
-> -		status |= SCSPTR_RTSIO;
-> -		serial_port_out(port, SCSPTR, status); /* Set RTS = 1 */
-> -	}
-> +	sci_init_pins_default(port, hwflow_enabled);
->  }
-> 
->  static int sci_txfill(struct uart_port *port)
-
+diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
+index 29dd09ad41ff..8367578bac63 100644
+--- a/drivers/dma/sh/rcar-dmac.c
++++ b/drivers/dma/sh/rcar-dmac.c
+@@ -549,26 +549,22 @@ static struct rcar_dmac_desc *rcar_dmac_desc_get(struct rcar_dmac_chan *chan)
+ 
+ 	spin_lock_irq(&chan->lock);
+ 
+-	do {
+-		if (list_empty(&chan->desc.free)) {
+-			/*
+-			 * No free descriptors, allocate a page worth of them
+-			 * and try again, as someone else could race us to get
+-			 * the newly allocated descriptors. If the allocation
+-			 * fails return an error.
+-			 */
+-			spin_unlock_irq(&chan->lock);
+-			ret = rcar_dmac_desc_alloc(chan, GFP_NOWAIT);
+-			if (ret < 0)
+-				return NULL;
+-			spin_lock_irq(&chan->lock);
+-			continue;
+-		}
++	while (list_empty(&chan->desc.free)) {
++		/*
++		 * No free descriptors, allocate a page worth of them and try
++		 * again, as someone else could race us to get the newly
++		 * allocated descriptors. If the allocation fails return an
++		 * error.
++		 */
++		spin_unlock_irq(&chan->lock);
++		ret = rcar_dmac_desc_alloc(chan, GFP_NOWAIT);
++		if (ret < 0)
++			return NULL;
++		spin_lock_irq(&chan->lock);
++	}
+ 
+-		desc = list_first_entry(&chan->desc.free, struct rcar_dmac_desc,
+-					node);
+-		list_del(&desc->node);
+-	} while (!desc);
++	desc = list_first_entry(&chan->desc.free, struct rcar_dmac_desc, node);
++	list_del(&desc->node);
+ 
+ 	spin_unlock_irq(&chan->lock);
+ 
+@@ -621,26 +617,23 @@ rcar_dmac_xfer_chunk_get(struct rcar_dmac_chan *chan)
+ 
+ 	spin_lock_irq(&chan->lock);
+ 
+-	do {
+-		if (list_empty(&chan->desc.chunks_free)) {
+-			/*
+-			 * No free descriptors, allocate a page worth of them
+-			 * and try again, as someone else could race us to get
+-			 * the newly allocated descriptors. If the allocation
+-			 * fails return an error.
+-			 */
+-			spin_unlock_irq(&chan->lock);
+-			ret = rcar_dmac_xfer_chunk_alloc(chan, GFP_NOWAIT);
+-			if (ret < 0)
+-				return NULL;
+-			spin_lock_irq(&chan->lock);
+-			continue;
+-		}
++	while (list_empty(&chan->desc.chunks_free)) {
++		/*
++		 * No free descriptors, allocate a page worth of them and try
++		 * again, as someone else could race us to get the newly
++		 * allocated descriptors. If the allocation fails return an
++		 * error.
++		 */
++		spin_unlock_irq(&chan->lock);
++		ret = rcar_dmac_xfer_chunk_alloc(chan, GFP_NOWAIT);
++		if (ret < 0)
++			return NULL;
++		spin_lock_irq(&chan->lock);
++	}
+ 
+-		chunk = list_first_entry(&chan->desc.chunks_free,
+-					  struct rcar_dmac_xfer_chunk, node);
+-		list_del(&chunk->node);
+-	} while (!chunk);
++	chunk = list_first_entry(&chan->desc.chunks_free,
++				 struct rcar_dmac_xfer_chunk, node);
++	list_del(&chunk->node);
+ 
+ 	spin_unlock_irq(&chan->lock);
+ 
 -- 
-Regards,
-
-Laurent Pinchart
+2.0.5
 
