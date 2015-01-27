@@ -1,39 +1,37 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 21 Jan 2015 01:59:39 +0000
-Subject: Re: [PATCH 00/03] ARM: shmobile: Minor header cleanup
-Message-Id: <20150121015937.GD30598@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Jan 2015 17:25:10 +0000
+Subject: [PATCH 0/6] Renesas R-Car DMAC fixes
+Message-Id: <1422379516-1633-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150120115750.11479.95109.sendpatchset@little-apple>
-In-Reply-To: <20150120115750.11479.95109.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Jan 20, 2015 at 08:57:50PM +0900, Magnus Damm wrote:
-> ARM: shmobile: Minor header cleanup
-> 
-> [PATCH 01/03] ARM: shmobile: Remove mach/system.h
-> [PATCH 02/03] ARM: shmobile: Remove mach/clkdev.h
-> [PATCH 03/03] ARM: shmobile: Remove mach/uncompress.h
-> 
-> Rework the mach-shmobile code a bit more to allow
-> removing the files system.h, clkdev.h and uncompress.h
-> from arch/arm/mach-shmobile/include/mach/
-> 
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Hello,
 
-Thanks, I have queued this up for v3.21 with Laurent and Geert's Acks.
+Here are a couple of fixes for the rcar-dmac driver. They're based on the next
+branch of the dmaengine tree.
 
-> ---
-> 
->  Built on top of renesas-devel-20150119-v3.19-rc5
-> 
->  arch/arm/Kconfig                                 |    1 -
->  arch/arm/Kconfig.debug                           |    3 ++-
->  arch/arm/mach-shmobile/clock.c                   |   11 -----------
->  arch/arm/mach-shmobile/include/mach/clkdev.h     |    7 -------
->  arch/arm/mach-shmobile/include/mach/system.h     |   11 -----------
->  arch/arm/mach-shmobile/include/mach/uncompress.h |   19 -------------------
->  6 files changed, 2 insertions(+), 50 deletions(-)
-> 
+The first four patches fix driver bugs, while the last two work around two
+hardware issues. Patch 5 works around a documented errata, while patch 6
+handles a data corruption issue that was noticed during test but not yet
+confirmed to be a hardware bug by Renesas. When more information about the
+issue will be available a better fix could possibly be developed.
+
+Laurent Pinchart (6):
+  dmaengine: rcar-dmac: Fix uninitialized variable usage
+  dmaengine: rcar-dmac: Fix spinlock issues in interrupt
+  dmaengine: rcar-dmac: Fix oops due to unintialized list in error ISR
+  dmaengine: rcar-dmac: Allocate hardware descriptors with DMAC device
+  dmaengine: rcar-dmac: Work around descriptor mode IOMMU errata
+  dmaengine: rcar-dmac: Disable channel 0 when using IOMMU
+
+ drivers/dma/sh/rcar-dmac.c | 147 ++++++++++++++++++++++++++-------------------
+ 1 file changed, 86 insertions(+), 61 deletions(-)
+
+-- 
+Regards,
+
+Laurent Pinchart
+
