@@ -1,7 +1,7 @@
 From: =?utf-8?B?U8O2cmVu?= Brinkmann <soren.brinkmann@xilinx.com>
-Date: Tue, 27 Jan 2015 00:32:55 +0000
+Date: Tue, 27 Jan 2015 02:05:23 +0000
 Subject: Re: [PATCH v4 6/7] ARM: zynq: DT: Add pinctrl information
-Message-Id: <db3077a2f9d8410f95cfd71f7e167494@BY2FFO11FD034.protection.gbl>
+Message-Id: <95fcb833572949c9aa2f406c0b147d1f@BL2FFO11FD060.protection.gbl>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1420818231-13451-1-git-send-email-soren.brinkmann@xilinx.com>
  <1420818231-13451-7-git-send-email-soren.brinkmann@xilinx.com>
@@ -62,8 +62,11 @@ On Tue, 2015-01-27 at 12:57AM +0100, Andreas Färber wrote:
 > If I move these two properties to the leds node (for which I am
 > configuring gpio 7) then I get a heartbeat as before.
 
-Moving this away from the gpio node seems wrong. IMHO, it should be
-where it is. I guess, there might be some issues with probe
-ordering/deferral that we may have to sort out.
+I think for USB I have a fix (see other email with patch), but LEDs seem
+to be broken too. On my zc702 I get:
+   of_get_named_gpiod_flags: parsed 'gpios' property of node '/leds/ds23[0]' - status (-517)
+
+517 is probe deferral. Looks like the LED driver needs to learn to defer
+probing when the GPIO driver isn't available yet.
 
 	Sören
