@@ -1,59 +1,50 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Mon, 12 Jan 2015 22:24:57 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC DT Cleanups for v3.20
-Message-Id: <20150112222457.GH22090@quad.lixom.net>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Jan 2015 17:25:14 +0000
+Subject: [PATCH 4/6] dmaengine: rcar-dmac: Allocate hardware descriptors with DMAC device
+Message-Id: <1422379516-1633-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1419809027.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1419809027.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Dec 29, 2014 at 10:43:39AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these Renesas ARM based SoC DT cleanups for v3.20.
-> 
-> 
-> The following changes since commit 97bf6af1f928216fd6c5a66e8a57bfa95a659672:
-> 
->   Linux 3.19-rc1 (2014-12-20 17:08:50 -0800)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-cleanups-for-v3.20
-> 
-> for you to fetch changes up to 338d1f0b5e877eae51c885da81d86b0efd6373e7:
-> 
->   ARM: shmobile: kzm9g-reference dts: Replace status value "ok" by "okay" (2014-12-21 16:55:32 +0900)
-> 
-> ----------------------------------------------------------------
-> Renesas ARM Based SoC DT Cleanups for v3.20
-> 
-> * Replace status value "ok" with "okay"
-> 
-> ----------------------------------------------------------------
-> Geert Uytterhoeven (7):
->       ARM: shmobile: genmai dts: Replace status value "ok" by "okay"
->       ARM: shmobile: armadillo800eva dts: Replace status value "ok" by "okay"
->       ARM: shmobile: lager dts: Replace status value "ok" by "okay"
->       ARM: shmobile: henninger dts: Replace status value "ok" by "okay"
->       ARM: shmobile: koelsch dts: Replace status value "ok" by "okay"
->       ARM: shmobile: alt dts: Replace status value "ok" by "okay"
->       ARM: shmobile: kzm9g-reference dts: Replace status value "ok" by "okay"
-> 
->  arch/arm/boot/dts/r7s72100-genmai.dts         |  2 +-
->  arch/arm/boot/dts/r8a7740-armadillo800eva.dts |  4 ++--
->  arch/arm/boot/dts/r8a7790-lager.dts           | 12 ++++++------
->  arch/arm/boot/dts/r8a7791-henninger.dts       |  4 ++--
->  arch/arm/boot/dts/r8a7791-koelsch.dts         |  6 +++---
->  arch/arm/boot/dts/r8a7794-alt.dts             |  4 ++--
->  arch/arm/boot/dts/sh73a0-kzm9g-reference.dts  |  2 +-
->  7 files changed, 17 insertions(+), 17 deletions(-)
+When wired to an IOMMU to access data, the DMAC accesses the hardware
+descriptors through the IOMMU as well. We're using the DMA mapping API
+to allocate the descriptors, but with a NULL device at the moment, which
+prevents IOMMU mappings from being created. Fix this by passing the DMAC
+device instead.
 
-Thanks. This would normally go into a next/cleanup branch but I'm suspecting
-that'll just be conflict prone so I merged this into next/dt this time.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/dma/sh/rcar-dmac.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
+diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
+index e76f5e21f666..9daa7f59e7b0 100644
+--- a/drivers/dma/sh/rcar-dmac.c
++++ b/drivers/dma/sh/rcar-dmac.c
+@@ -655,8 +655,8 @@ static void rcar_dmac_realloc_hwdesc(struct rcar_dmac_chan *chan,
+ 		return;
+ 
+ 	if (desc->hwdescs.mem) {
+-		dma_free_coherent(NULL, desc->hwdescs.size, desc->hwdescs.mem,
+-				   desc->hwdescs.dma);
++		dma_free_coherent(chan->chan.device->dev, desc->hwdescs.size,
++				  desc->hwdescs.mem, desc->hwdescs.dma);
+ 		desc->hwdescs.mem = NULL;
+ 		desc->hwdescs.size = 0;
+ 	}
+@@ -664,8 +664,8 @@ static void rcar_dmac_realloc_hwdesc(struct rcar_dmac_chan *chan,
+ 	if (!size)
+ 		return;
+ 
+-	desc->hwdescs.mem = dma_alloc_coherent(NULL, size, &desc->hwdescs.dma,
+-					       GFP_NOWAIT);
++	desc->hwdescs.mem = dma_alloc_coherent(chan->chan.device->dev, size,
++					       &desc->hwdescs.dma, GFP_NOWAIT);
+ 	if (!desc->hwdescs.mem)
+ 		return;
+ 
+-- 
+2.0.5
 
--Olof
