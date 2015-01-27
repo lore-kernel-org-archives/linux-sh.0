@@ -1,27 +1,35 @@
-From: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 16 Jan 2015 10:10:27 +0000
-Subject: RE: [PATCH] usb: renesas_usbhs: Add access control for INTSTS1 and INTENB1 register
-Message-Id: <HKNPR06MB3229CE07FCD85BFC8247C93D84F0@HKNPR06MB322.apcprd06.prod.outlook.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Jan 2015 09:13:22 +0000
+Subject: [PATCH 0/3] Renesas IPMMU DT nodes for R-Car H2, M2 and E2
+Message-Id: <1422350005-20573-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420763321-4868-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
-In-Reply-To: <1420763321-4868-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Iwamatsu-san,
+Hello,
 
-> INTSTS1 and INTENB1 register of renesas_usbhs can access only Host mode.
-> This adds process of accessing INTSTS1 and INTENB1 only when renesas_usbhs
-> is Host mode.
-> 
-> Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+This patch set adds DT nodes for the IPMMU instances found in the R-Car H2, M2
+and E2 SoCs. The nodes are currently all disabled until the first users show
+up.
 
-Thank you for the patch.
+The IPMMU DT bindings have been applied to the IOMMU tree and are scheduled to
+hit mainline in v3.20-rc1. This set depends on the DT bindings but has no
+compile-time or runtime dependency on any of the queued IPMMU patches.
 
-Acked-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Laurent Pinchart (3):
+  ARM: shmobile: r8a7790: Add IPMMU DT nodes
+  ARM: shmobile: r8a7791: Add IPMMU DT nodes
+  ARM: shmobile: r8a7794: Add IPMMU DT nodes
 
-Best regards,
-Yoshihiro Shimoda
+ arch/arm/boot/dts/r8a7790.dtsi | 51 +++++++++++++++++++++++++++++++++++
+ arch/arm/boot/dts/r8a7791.dtsi | 60 ++++++++++++++++++++++++++++++++++++++++++
+ arch/arm/boot/dts/r8a7794.dtsi | 50 +++++++++++++++++++++++++++++++++++
+ 3 files changed, 161 insertions(+)
+
+-- 
+Regards,
+
+Laurent Pinchart
 
