@@ -1,72 +1,65 @@
-From: =?utf-8?B?U8O2cmVu?= Brinkmann <soren.brinkmann@xilinx.com>
-Date: Tue, 27 Jan 2015 02:05:23 +0000
+From: Michal Simek <michal.simek@xilinx.com>
+Date: Wed, 28 Jan 2015 14:22:55 +0000
 Subject: Re: [PATCH v4 6/7] ARM: zynq: DT: Add pinctrl information
-Message-Id: <95fcb833572949c9aa2f406c0b147d1f@BL2FFO11FD060.protection.gbl>
+Message-Id: <41babf16a78d4d48855d80d61262e39a@BL2FFO11FD033.protection.gbl>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="g11hhdKa1kOVO1p0GTnEo7Gkr3KLNnS9k"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1420818231-13451-1-git-send-email-soren.brinkmann@xilinx.com>
  <1420818231-13451-7-git-send-email-soren.brinkmann@xilinx.com>
- <54C6D44C.4060106@suse.de>
-In-Reply-To: <54C6D44C.4060106@suse.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+ <CACRpkdZ1jfTUqfLKonJxar2Jn25+4wTF-D4XUXOszSsoJrA07w@mail.gmail.com>
+ <1a749692196d406a8229d4891f3563f4@BN1BFFO11FD016.protection.gbl>
+ <54C6D510.6090105@suse.de>
+In-Reply-To: <54C6D510.6090105@suse.de>
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, 2015-01-27 at 12:57AM +0100, Andreas Färber wrote:
-> Am 09.01.2015 um 16:43 schrieb Soren Brinkmann:
-> > Add pinctrl descriptions to the zc702 and zc706 device trees.
-> > 
-> > Signed-off-by: Soren Brinkmann <soren.brinkmann@xilinx.com>
-> > Tested-by: Andreas Färber <afaerber@suse.de>
-> > ---
-> > Changes since v1:
-> >  - remove 'pinctrl-' prefix for pinctrl sub-nodes
-> >  - separate config and mux nodes
-> > 
-> > Changes since RFC v2:
-> >  - add pinconf properties to zc702 mdio node
-> >  - remove arguments from bias-related props
-> > 
-> > Changes since RFC v1:
-> >  - separate DT changes into their own patch
-> > ---
-> >  arch/arm/boot/dts/zynq-7000.dtsi |   8 +-
-> >  arch/arm/boot/dts/zynq-zc702.dts | 181 +++++++++++++++++++++++++++++++++++++++
-> >  arch/arm/boot/dts/zynq-zc706.dts | 152 ++++++++++++++++++++++++++++++++
-> >  3 files changed, 340 insertions(+), 1 deletion(-)
-> [...]
-> > diff --git a/arch/arm/boot/dts/zynq-zc702.dts b/arch/arm/boot/dts/zynq-zc702.dts
-> > index 280f02dd4ddc..4995412f116f 100644
-> > --- a/arch/arm/boot/dts/zynq-zc702.dts
-> > +++ b/arch/arm/boot/dts/zynq-zc702.dts
-> [...]
-> > @@ -50,15 +52,24 @@
-> >  	status = "okay";
-> >  	phy-mode = "rgmii-id";
-> >  	phy-handle = <&ethernet_phy>;
-> > +	pinctrl-names = "default";
-> > +	pinctrl-0 = <&pinctrl_gem0_default>;
-> >  
-> >  	ethernet_phy: ethernet-phy@7 {
-> >  		reg = <7>;
-> >  	};
-> >  };
-> >  
-> > +&gpio0 {
-> > +	pinctrl-names = "default";
-> > +	pinctrl-0 = <&pinctrl_gpio0_default>;
-> 
-> On linux-next the equivalent no longer works for the Parallella, with
-> gpio failing to probe.
-> 
-> If I move these two properties to the leds node (for which I am
-> configuring gpio 7) then I get a heartbeat as before.
+--g11hhdKa1kOVO1p0GTnEo7Gkr3KLNnS9k
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-I think for USB I have a fix (see other email with patch), but LEDs seem
-to be broken too. On my zc702 I get:
-   of_get_named_gpiod_flags: parsed 'gpios' property of node '/leds/ds23[0]' - status (-517)
+On 01/27/2015 01:00 AM, Andreas F=C3=A4rber wrote:
+> Am 12.01.2015 um 08:27 schrieb Michal Simek:
+>> On 01/11/2015 10:38 PM, Linus Walleij wrote:
+>>> On Fri, Jan 9, 2015 at 4:43 PM, Soren Brinkmann
+>>> <soren.brinkmann@xilinx.com> wrote:
+>>>
+>>>> Add pinctrl descriptions to the zc702 and zc706 device trees.
+>>>>
+>>>> Signed-off-by: Soren Brinkmann <soren.brinkmann@xilinx.com>
+>>>> Tested-by: Andreas F=C3=A4rber <afaerber@suse.de>
+>>>
+>>> Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
+>>>
+>>> Beautiful and in line with how I want things to look.
+>>>
+>>> Yours,
+>>> Linus Walleij
+>>>
+>>
+>> Applied to zynq/dt.
+>=20
+> Did you maybe forget to push?
+>=20
+> https://github.com/Xilinx/linux-xlnx/commits/zynq/dt doesn't have it.
 
-517 is probe deferral. Looks like the LED driver needs to learn to defer
-probing when the GPIO driver isn't available yet.
+Ah sorry - I have pushed it now.
 
-	Sören
+Thanks,
+Michal
+
+
+
+--g11hhdKa1kOVO1p0GTnEo7Gkr3KLNnS9k
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iEYEARECAAYFAlTI8L8ACgkQykllyylKDCF0DQCdHsx8Riz6BWAsBfKkzbn+Qats
+QuIAoJrLL3ZvczibjyujdweDn64rBb7w
+=0WFN
+-----END PGP SIGNATURE-----
+
+--g11hhdKa1kOVO1p0GTnEo7Gkr3KLNnS9k--
