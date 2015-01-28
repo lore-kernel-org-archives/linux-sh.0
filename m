@@ -1,132 +1,100 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 28 Jan 2015 00:55:33 +0000
-Subject: Re: [PATCH repost] ARM: shmobile: r8a7794: Correct SDHI base address, clock labels and output-names
-Message-Id: <20150128005533.GB21981@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 28 Jan 2015 12:46:45 +0000
+Subject: [PATCH v2] ARM: shmobile: r8a73a4: Instantiate GIC from C board code in legacy builds
+Message-Id: <20150128124645.21199.99590.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150122022559.GC31170@verge.net.au>
- <20150127005859.GC29710@verge.net.au>
- <CAMuHMdXMuJzJ6C-Wv4fGj4mXaU8jkJpS6Vf22y6uNMXOJpss3g@mail.gmail.com>
-In-Reply-To: <CAMuHMdXMuJzJ6C-Wv4fGj4mXaU8jkJpS6Vf22y6uNMXOJpss3g@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Jan 27, 2015 at 09:48:09AM +0100, Geert Uytterhoeven wrote:
-> Hi Simon,
-> 
-> On Tue, Jan 27, 2015 at 1:59 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Thu, Jan 22, 2015 at 11:25:59AM +0900, Simon Horman wrote:
-> >> * Correct base address of SD3 div6 clk.
-> >> * Update div6 labels and MSTP output names
-> >>   There appears to have been some inconsistency and confusion here as on
-> >>   the r8a7790 these clocks are referred to as SD(HI)1 and SD(HI)2 while on
-> >>   the r8a7791 and r8a7794 they are referred to as SD(HI)2 and SD(HI)3.
-> >>
-> >> This has no run-time affect as the clock nodes are not currently used.
-> >>
-> >> Fixes: 8e181633e6ca96049 ("ARM: shmobile: r8a7794: Add SDHI clocks to device tree")
-> >> Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> >> Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
-> >> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >
-> > Geert,
-> >
-> > could you find a moment to look over this.
-> > Its a follow-up to an earlier patch which you gave me some
-> > feedback on.
-> 
-> Sorry, it fell through the cracks.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-No problem, its a low priority item.
+As of commit 9a1091ef0017c40a ("irqchip: gic: Support hierarchy irq
+domain."), the APE6EVM legacy board support is known to be broken.
 
-Thanks for pointing out all the problems with my patch.
-I've attempted to address them in "ARM: shmobile: r8a7794: Correct SDHI
-clock base address, labels and output-names".
+The IRQ numbers of the GIC are now virtual, and no longer match the
+hardcoded hardware IRQ numbers in the legacy platform board code.
 
-> 
-> >> ---
-> >> * A similar change to update the div6 clock node names and labels,
-> >>   and the MSTP clock output-names is required for the r8a7791.
-> >>   The base addresses appear to be correct there.
-> >> ---
-> >>  arch/arm/boot/dts/r8a7794.dtsi | 10 +++++-----
-> >>  1 file changed, 5 insertions(+), 5 deletions(-)
-> >>
-> >> diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-> >> index 8f78da5..b98534e 100644
-> >> --- a/arch/arm/boot/dts/r8a7794.dtsi
-> >> +++ b/arch/arm/boot/dts/r8a7794.dtsi
-> >> @@ -294,16 +294,16 @@
-> >>                                            "lb", "qspi", "sdh", "sd0", "z";
-> >>               };
-> >>               /* Variable factor clocks */
-> >> -             sd1_clk: sd2_clk@e6150078 {
-> >> +             sd2_clk: sd2_clk@e6150078 {
-> >>                       compatible = "renesas,r8a7794-div6-clock", "renesas,cpg-div6-clock";
-> >>                       reg = <0 0xe6150078 0 4>;
-> >>                       clocks = <&pll1_div2_clk>;
-> >>                       #clock-cells = <0>;
-> >>                       clock-output-names = "sd1";
-> 
-> I think these should be "sd2"...
-> 
-> >>               };
-> >> -             sd2_clk: sd3_clk@e615007c {
-> >> +             sd3_clk: sd3_clk@e615026c {
-> >>                       compatible = "renesas,r8a7794-div6-clock", "renesas,cpg-div6-clock";
-> >> -                     reg = <0 0xe615007c 0 4>;
-> >> +                     reg = <0 0xe615026c 0 4>;
-> >>                       clocks = <&pll1_div2_clk>;
-> >>                       #clock-cells = <0>;
-> >>                       clock-output-names = "sd2";
-> 
-> ... and "sd3", as they refer to the clock signals from the clock generator,
-> and thus should match the register and label names.
-> 
-> (Note: The (old) R-Car E2 v0.1 datasheet does call them SD1 and SD2 :-(
-> 
-> >> @@ -518,7 +518,7 @@
-> >>               mstp3_clks: mstp3_clks@e615013c {
-> >>                       compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
-> >>                       reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
-> >> -                     clocks = <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7794_CLK_SD0>,
-> >> +                     clocks = <&sd3_clk>, <&sd2_clk>, <&cpg_clocks R8A7794_CLK_SD0>,
-> >>                                <&mmc0_clk>, <&rclk_clk>, <&hp_clk>, <&hp_clk>;
-> >>                       #clock-cells = <1>;
-> >>                       clock-indices = <
-> >> @@ -527,7 +527,7 @@
-> >>                               R8A7794_CLK_USBDMAC0 R8A7794_CLK_USBDMAC1
-> >>                       >;
-> >>                       clock-output-names > >> -                             "sdhi2", "sdhi1", "sdhi0",
-> >> +                             "sdhi3", "sdhi2", "sdhi0",
-> 
-> These are disputable: the MSTP docs indeed call them SDHI3, SDHI2, and
-> SDHI0 (in the latest R-Car Gen2 family datasheet revision).
-> But for all(?) other MSTP clocks they match the actual module instances
-> that are driven by the clocks.
-> So I think these should stay "sdhi2", "sdhi1", and "sdhi0", as they refer to
-> the SDHI instances, not the parent clocks.
-> 
-> At least we should be consistent with the R8A7794_CLK_SDHIx indices,
-> which are 2, 1, and 0, not 3, 2, 0.
-> 
-> >>                               "mmcif0", "cmt1", "usbdmac0", "usbdmac1";
-> >>               };
-> >>               mstp7_clks: mstp7_clks@e615014c {
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+To fix this issue specific to non-muliplatform r8a73a4 and APE6EVM:
+ 1) Instantiate the GIC from platform board code and also
+ 2) Skip over the DT arch timer as well as
+ 3) Force delay setup based on DT CPU frequency
+
+With these 3 fixes in place interrupts on APE6EVM are now unbroken.
+
+Partially based on legacy GIC fix by Geert Uytterhoeven, thanks to
+him for the initial work.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ Suitable as a fix for v3.19-rc6.
+
+ Initially developed on top of v3.19-rc6 but also seems to apply cleanly
+ to the renesas git repo with tag renesas-devel-20150128-v3.19-rc6.
+
+ arch/arm/mach-shmobile/board-ape6evm.c |   20 ++++++++++++++++++++
+ arch/arm/mach-shmobile/timer.c         |    7 +++++++
+ 2 files changed, 27 insertions(+)
+
+--- 0001/arch/arm/mach-shmobile/board-ape6evm.c
++++ work/arch/arm/mach-shmobile/board-ape6evm.c	2015-01-28 21:31:40.635267889 +0900
+@@ -18,6 +18,8 @@
+ #include <linux/gpio_keys.h>
+ #include <linux/input.h>
+ #include <linux/interrupt.h>
++#include <linux/irqchip.h>
++#include <linux/irqchip/arm-gic.h>
+ #include <linux/kernel.h>
+ #include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
+@@ -273,6 +275,22 @@ static void __init ape6evm_add_standard_
+ 				      sizeof(ape6evm_leds_pdata));
+ }
+ 
++static void __init ape6evm_legacy_init_time(void)
++{
++	/* Do not invoke DT-based timers via clocksource_of_init() */
++}
++
++static void __init ape6evm_legacy_init_irq(void)
++{
++	void __iomem *gic_dist_base = ioremap_nocache(0xf1001000, 0x1000);
++	void __iomem *gic_cpu_base = ioremap_nocache(0xf1002000, 0x1000);
++
++	gic_init(0, 29, gic_dist_base, gic_cpu_base);
++
++	/* Do not invoke DT-based interrupt code via irqchip_init() */
++}
++
++
+ static const char *ape6evm_boards_compat_dt[] __initdata = {
+ 	"renesas,ape6evm",
+ 	NULL,
+@@ -280,7 +298,9 @@ static const char *ape6evm_boards_compat
+ 
+ DT_MACHINE_START(APE6EVM_DT, "ape6evm")
+ 	.init_early	= shmobile_init_delay,
++	.init_irq       = ape6evm_legacy_init_irq,
+ 	.init_machine	= ape6evm_add_standard_devices,
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= ape6evm_boards_compat_dt,
++	.init_time	= ape6evm_legacy_init_time,
+ MACHINE_END
+--- 0001/arch/arm/mach-shmobile/timer.c
++++ work/arch/arm/mach-shmobile/timer.c	2015-01-28 21:19:39.455270480 +0900
+@@ -70,6 +70,13 @@ void __init shmobile_init_delay(void)
+ 	if (!max_freq)
+ 		return;
+ 
++#ifdef CONFIG_ARCH_SHMOBILE_LEGACY
++	/* Non-multiplatform r8a73a4 SoC cannot use arch timer due
++	 * to GIC being initialized from C and arch timer via DT */
++	if (of_machine_is_compatible("renesas,r8a73a4"))
++		has_arch_timer = false;
++#endif
++
+ 	if (!has_arch_timer || !IS_ENABLED(CONFIG_ARM_ARCH_TIMER)) {
+ 		if (is_a7_a8_a9)
+ 			shmobile_setup_delay_hz(max_freq, 1, 3);
