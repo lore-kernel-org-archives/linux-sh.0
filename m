@@ -1,45 +1,42 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 29 Jan 2015 01:03:42 +0000
-Subject: [PATCH 8/9 v4] ASoC: fsi: remove slave_id settings for DMAEngine
-Message-Id: <87a912tn13.wl%kuninori.morimoto.gx@renesas.com>
+From: Mark Brown <broonie@kernel.org>
+Date: Thu, 29 Jan 2015 11:35:27 +0000
+Subject: Re: [PATCH 8/9 v4] ASoC: fsi: remove slave_id settings for DMAEngine
+Message-Id: <20150129113527.GA21293@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="F/AP0Ej8g8TT69LF"
 List-Id: <linux-sh.vger.kernel.org>
 References: <87sif3lbi7.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87sif3lbi7.wl%kuninori.morimoto.gx@renesas.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Current fsi sets dma_slave_config :: slave_id field for DMAEngine,
-but it is no longer needed. Let's remove it.
+--F/AP0Ej8g8TT69LF
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v3 -> v4
+On Thu, Jan 29, 2015 at 01:03:42AM +0000, Kuninori Morimoto wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>=20
+> Current fsi sets dma_slave_config :: slave_id field for DMAEngine,
+> but it is no longer needed. Let's remove it.
 
- - no change
+Acked-by: Mark Brown <broonie@kernel.org>
 
- sound/soc/sh/fsi.c |    3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+--F/AP0Ej8g8TT69LF
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-diff --git a/sound/soc/sh/fsi.c b/sound/soc/sh/fsi.c
-index 8869971..c4eb234 100644
---- a/sound/soc/sh/fsi.c
-+++ b/sound/soc/sh/fsi.c
-@@ -1374,10 +1374,9 @@ static int fsi_dma_probe(struct fsi_priv *fsi, struct fsi_stream *io, struct dev
- 				shdma_chan_filter, (void *)io->dma_id,
- 				dev, is_play ? "tx" : "rx");
- 	if (io->chan) {
--		struct dma_slave_config cfg;
-+		struct dma_slave_config cfg = {};
- 		int ret;
- 
--		cfg.slave_id	= io->dma_id;
- 		cfg.dst_addr	= 0; /* use default addr */
- 		cfg.src_addr	= 0; /* use default addr */
- 		cfg.direction	= is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
--- 
-1.7.9.5
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
 
+iQEcBAEBCAAGBQJUyhr+AAoJECTWi3JdVIfQV9MH/j3RIzKO9qRYh5dGvRjMv5xi
+d9QyoT/GDB9AVWhHg7q4thPV0llRxSX67UwqKQH2fH3tQPm2Z1EJQ77uaBGQ78Xo
+OtMX7ZvsDv63sWKi0kDaqoNuL/PpT/oqT1v6oz99ck0qdEQQ8mvYpGecs3HzlDUa
+62nuLoAigfzYpd5t0u1XWfVuHtPLZoBeH5V4vYVrzlDORcJ87vU0T/vAkHMWZOhb
+defV2BNYwIIb8cXL35CUQuKnZOoM+PyDSRf9QQdyUiuKk+/P6ISGe4NJMJgTOp60
++vq19Tm82+z+XU6tBuPXts+GFNIXhKDavVNM6JyEFMZZdKoxpHYte173bfxiexA=
+=WxqW
+-----END PGP SIGNATURE-----
+
+--F/AP0Ej8g8TT69LF--
