@@ -1,8 +1,10 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 22 Jan 2015 03:48:48 +0000
+Date: Thu, 29 Jan 2015 01:02:59 +0000
 Subject: [PATCH 6/9 v4] spi: sh-msiof: remove slave_id settings for DMAEngine
-Message-Id: <87vbjzlbjb.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <87d25ytn2a.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87vbjzlbjb.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87vbjzlbjb.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -24,10 +26,10 @@ v3 -> v4
  1 file changed, 1 deletion(-)
 
 diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 9a884e6..fcf6984 100644
+index 96a5fc0..4c7ff62 100644
 --- a/drivers/spi/spi-sh-msiof.c
 +++ b/drivers/spi/spi-sh-msiof.c
-@@ -1036,7 +1036,6 @@ static struct dma_chan *sh_msiof_request_dma_chan(struct device *dev,
+@@ -989,7 +989,6 @@ static struct dma_chan *sh_msiof_request_dma_chan(struct device *dev,
  	}
  
  	memset(&cfg, 0, sizeof(cfg));
