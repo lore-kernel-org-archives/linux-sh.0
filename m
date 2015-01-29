@@ -1,41 +1,49 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Wed, 14 Jan 2015 17:18:38 +0000
-Subject: Re: [PATCH] ASoC: simple-card: Fix crash in asoc_simple_card_unref()
-Message-Id: <20150114171838.GY4160@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="2+IDmuKgu0wSQZlt"
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 29 Jan 2015 23:59:36 +0000
+Subject: [PATCH v2 0/6] Renesas R-Car DMAC fixes
+Message-Id: <1422576013-7846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421179417-23698-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1421179417-23698-1-git-send-email-geert+renesas@glider.be>
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Liam Girdwood <lgirdwood@gmail.com>, Jean-Francois Moine <moinejf@free.fr>, alsa-devel@alsa-project.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+Hello,
 
---2+IDmuKgu0wSQZlt
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Here are a couple of fixes for the rcar-dmac driver. They're based on the next
+branch of the dmaengine tree.
 
-On Tue, Jan 13, 2015 at 09:03:37PM +0100, Geert Uytterhoeven wrote:
-> If asoc_simple_card_probe() fails, asoc_simple_card_unref() may be
-> called before dev_set_drvdata(), causing a NULL pointer dereference in
-> asoc_simple_card_unref():
+The first four patches fix driver bugs, while the last two work around two
+hardware issues. Patch 5 works around a documented errata, while patch 6
+handles a data corruption issue that was noticed during test but not yet
+confirmed to be a hardware bug by Renesas. When more information about the
+issue will be available a better fix could possibly be developed.
 
-Applied, thanks.
+The patches are available at
 
---2+IDmuKgu0wSQZlt
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+	git://linuxtv.org/pinchartl/fbdev.git dma/upstream
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
+Vinod, is there still time for a v3.20 pull request ?
 
-iQEcBAEBCAAGBQJUtqTuAAoJECTWi3JdVIfQSpEH/1dq2UiGyLtXhJQMMso1FSBf
-SnjsqSpspcbV7bjMPJJWI/f92411NgMYKxcix0W9dTlma9qYYfqdNgaBIPYyq+T9
-YHAqOCyLm44qJlnucGF+LCqPbrxUFo81y1LZjGGQDEHgSajqmmvA0CkxVzHEzCqH
-QAbeAQkpDDShpbeDNlecZSx0YF4I1/hdnHGvthXNKIenT2NL+Zk9SOkSsFf0m2LP
-s+PF8DbhyRbSR7o3I2IHIh7gWE+D/WhjqfrhQ9uSHY2T72PJOR6P1d+2SUER9wru
-mANqDmJXZsk93Jm7b2wiHHyWiyKNxDQHNoVT4K+w1Nvo+0pRUsjFAyEpW8VFpms=
-=gqwy
------END PGP SIGNATURE-----
+Changes since v1:
 
---2+IDmuKgu0wSQZlt--
+- Don't needlessly replace spin_lock by spin_lock_irqsave in IRQ handlers
+
+Cc: Vinod Koul <vinod.koul@intel.com>
+
+Laurent Pinchart (6):
+  dmaengine: rcar-dmac: Fix uninitialized variable usage
+  dmaengine: rcar-dmac: Fix spinlock issues in interrupt
+  dmaengine: rcar-dmac: Fix oops due to unintialized list in error ISR
+  dmaengine: rcar-dmac: Allocate hardware descriptors with DMAC device
+  dmaengine: rcar-dmac: Work around descriptor mode IOMMU errata
+  dmaengine: rcar-dmac: Disable channel 0 when using IOMMU
+
+ drivers/dma/sh/rcar-dmac.c | 137 ++++++++++++++++++++++++++-------------------
+ 1 file changed, 80 insertions(+), 57 deletions(-)
+
+-- 
+Regards,
+
+Laurent Pinchart
+
