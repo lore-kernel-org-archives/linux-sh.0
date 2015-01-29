@@ -1,42 +1,35 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Mon, 26 Jan 2015 11:53:29 +0000
-Subject: [PATCH] serial: sh-sci: Use dev_dbg() to log an error message
-Message-Id: <1422273209-3473-1-git-send-email-ykaneko0929@gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 29 Jan 2015 16:14:28 +0000
+Subject: Re: [PATCH] serial: sh-sci: Use dev_dbg() to log an error message
+Message-Id: <CAMuHMdXQN4=sRZBA4NY0dg8m_eqF56q8SSOQdvNxU5uQ46tcEQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1422273209-3473-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1422273209-3473-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-serial@vger.kernel.org
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Cc: "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Since the driver cannot return from overrun error if characters
-are output during overrun process, use dev_dbg() instead of
-dev_notice() to log the error message of overrun in syslog.
+On Mon, Jan 26, 2015 at 12:53 PM, Yoshihiro Kaneko
+<ykaneko0929@gmail.com> wrote:
+> Since the driver cannot return from overrun error if characters
+> are output during overrun process, use dev_dbg() instead of
+> dev_notice() to log the error message of overrun in syslog.
+>
+> Based on a patch by Hisashi Nakamura.
+>
+> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 
-Based on a patch by Hisashi Nakamura.
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
----
+Gr{oetje,eeting}s,
 
-This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
-tree.
+                        Geert
 
- drivers/tty/serial/sh-sci.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 69f6bf3..9688e74 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -864,7 +864,7 @@ static int sci_handle_fifo_overrun(struct uart_port *port)
- 		tty_insert_flip_char(tport, 0, TTY_OVERRUN);
- 		tty_flip_buffer_push(tport);
- 
--		dev_notice(port->dev, "overrun error\n");
-+		dev_dbg(port->dev, "overrun error\n");
- 		copied++;
- 	}
- 
--- 
-1.9.1
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
