@@ -1,51 +1,76 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 05 Jan 2015 13:39:47 +0000
-Subject: Re: [PATCH v4 2/3] ARM: shmobile: r8a7791: add CAN DT support
-Message-Id: <CAMuHMdU-teLD-xLq4au=v-jNJoJ+kVxAxXZ0YjekS_HCQRiMQQ@mail.gmail.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 29 Jan 2015 17:33:16 +0000
+Subject: [PATCH] i2c: sh_mobile: terminate DMA reads properly
+Message-Id: <1422552796-11315-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <6830301.90YaDPuTpx@wasted.cogentembedded.com>
- <2080620.GIKTJkNfbk@wasted.cogentembedded.com>
- <CAMuHMdVuabRxKdpynaX0zaB-CvW8+dRb4TBtm7byT7znk6hxYQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdVuabRxKdpynaX0zaB-CvW8+dRb4TBtm7byT7znk6hxYQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>
 
-On Mon, Jan 5, 2015 at 2:36 PM, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
->> +               clocks = <&mstp9_clks R8A7791_CLK_RCAN0>,
->> +                        <&cpg_clocks R8A7791_CLK_RCAN>, <&can_clk>;
->
-> .git/rebase-apply/patch:18: space before tab in indent.
->       <&cpg_clocks R8A7790_CLK_RCAN>, <&can_clk>;
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Sorry, my copy-'n-paste-foo has deteriorated over the holidays...
+DMA read requests could miss proper termination, so two more bytes would
+have been read via PIO overwriting the end of the buffer with wrong
+data. Make DMA stop handling more readable while we are here.
 
-s/7790/7791/
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/busses/i2c-sh_mobile.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
 
->> +               clock-names = "clkp1", "clkp2", "can_clk";
->> +               status = "disabled";
->> +       };
->> +
->> +       can1: can@e6e88000 {
->> +               compatible = "renesas,can-r8a7791";
->> +               reg = <0 0xe6e88000 0 0x1000>;
->> +               interrupts = <0 187 IRQ_TYPE_LEVEL_HIGH>;
->> +               clocks = <&mstp9_clks R8A7791_CLK_RCAN1>,
->> +                        <&cpg_clocks R8A7791_CLK_RCAN>, <&can_clk>;
->
-> .git/rebase-apply/patch:28: space before tab in indent.
->       <&cpg_clocks R8A7790_CLK_RCAN>, <&can_clk>;
+diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
+index 440d5dbc8b5f..007818b3e174 100644
+--- a/drivers/i2c/busses/i2c-sh_mobile.c
++++ b/drivers/i2c/busses/i2c-sh_mobile.c
+@@ -139,6 +139,7 @@ struct sh_mobile_i2c_data {
+ 	int pos;
+ 	int sr;
+ 	bool send_stop;
++	bool stop_after_dma;
+ 
+ 	struct resource *res;
+ 	struct dma_chan *dma_tx;
+@@ -407,7 +408,7 @@ static int sh_mobile_i2c_isr_tx(struct sh_mobile_i2c_data *pd)
+ 
+ 	if (pd->pos = pd->msg->len) {
+ 		/* Send stop if we haven't yet (DMA case) */
+-		if (pd->send_stop && (iic_rd(pd, ICCR) & ICCR_BBSY))
++		if (pd->send_stop && pd->stop_after_dma)
+ 			i2c_op(pd, OP_TX_STOP, 0);
+ 		return 1;
+ 	}
+@@ -449,6 +450,13 @@ static int sh_mobile_i2c_isr_rx(struct sh_mobile_i2c_data *pd)
+ 		real_pos = pd->pos - 2;
+ 
+ 		if (pd->pos = pd->msg->len) {
++			if (pd->stop_after_dma) {
++				/* Simulate PIO end condition after DMA transfer */
++				i2c_op(pd, OP_RX_STOP, 0);
++				pd->pos++;
++				break;
++			}
++
+ 			if (real_pos < 0) {
+ 				i2c_op(pd, OP_RX_STOP, 0);
+ 				break;
+@@ -536,6 +544,7 @@ static void sh_mobile_i2c_dma_callback(void *data)
+ 
+ 	sh_mobile_i2c_dma_unmap(pd);
+ 	pd->pos = pd->msg->len;
++	pd->stop_after_dma = true;
+ 
+ 	iic_set_clr(pd, ICIC, 0, ICIC_TDMAE | ICIC_RDMAE);
+ }
+@@ -726,6 +735,7 @@ static int sh_mobile_i2c_xfer(struct i2c_adapter *adapter,
+ 		bool do_start = pd->send_stop || !i;
+ 		msg = &msgs[i];
+ 		pd->send_stop = i = num - 1 || msg->flags & I2C_M_STOP;
++		pd->stop_after_dma = false;
+ 
+ 		err = start_ch(pd, msg, do_start);
+ 		if (err)
+-- 
+2.1.4
 
-s/7790/7791/
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
