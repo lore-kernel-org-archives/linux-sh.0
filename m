@@ -1,56 +1,26 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 26 Jan 2015 06:20:12 +0000
-Subject: [PATCH 14/14 v2] pinctrl: sh-pfc: sh7372: Remove DT binding documentation
-Message-Id: <20150126062012.6848.20501.sendpatchset@little-apple>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Thu, 29 Jan 2015 09:44:24 +0000
+Subject: Re: [PATCH 14/14 v2] pinctrl: sh-pfc: sh7372: Remove DT binding documentation
+Message-Id: <CACRpkdYMRttcAqSPkK7fHk7r48cYqyi1DyMCn3K9vOLeAz79XQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20150126061747.6848.9708.sendpatchset@little-apple>
-In-Reply-To: <20150126061747.6848.9708.sendpatchset@little-apple>
+ <20150126062012.6848.20501.sendpatchset@little-apple>
+In-Reply-To: <20150126062012.6848.20501.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+On Mon, Jan 26, 2015 at 7:20 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
 
-Remove the DT compatible string entry for the now unsupported sh7372 SoC.
+> From: Magnus Damm <damm+renesas@opensource.se>
+>
+> Remove the DT compatible string entry for the now unsupported sh7372 SoC.
+>
+> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
----
+Patch applied.
 
- Changes since V1:
- - None
-
- Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt |    8 +++-----
- 1 file changed, 3 insertions(+), 5 deletions(-)
-
---- 0001/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
-+++ work/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt	2015-01-21 12:12:15.357561911 +0900
-@@ -1,7 +1,7 @@
- * Renesas Pin Function Controller (GPIO and Pin Mux/Config)
- 
--The Pin Function Controller (PFC) is a Pin Mux/Config controller. On SH7372,
--SH73A0, R8A73A4 and R8A7740 it also acts as a GPIO controller.
-+The Pin Function Controller (PFC) is a Pin Mux/Config controller. On SH73A0,
-+R8A73A4 and R8A7740 it also acts as a GPIO controller.
- 
- 
- Pin Control
-@@ -16,7 +16,6 @@ Required Properties:
-     - "renesas,pfc-r8a7779": for R8A7779 (R-Car H1) compatible pin-controller.
-     - "renesas,pfc-r8a7790": for R8A7790 (R-Car H2) compatible pin-controller.
-     - "renesas,pfc-r8a7791": for R8A7791 (R-Car M2) compatible pin-controller.
--    - "renesas,pfc-sh7372": for SH7372 (SH-Mobile AP4) compatible pin-controller.
-     - "renesas,pfc-sh73a0": for SH73A0 (SH-Mobile AG5) compatible pin-controller.
- 
-   - reg: Base address and length of each memory resource used by the pin
-@@ -75,8 +74,7 @@ bias-disable, bias-pull-up and bias-pull
- GPIO
- ----
- 
--On SH7372, SH73A0, R8A73A4 and R8A7740 the PFC node is also a GPIO controller
--node.
-+On SH73A0, R8A73A4 and R8A7740 the PFC node is also a GPIO controller node.
- 
- Required Properties:
- 
+Yours,
+Linus Walleij
