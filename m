@@ -1,8 +1,10 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 22 Jan 2015 03:48:00 +0000
+Date: Thu, 29 Jan 2015 01:01:53 +0000
 Subject: [PATCH 3/9 v4] mmc: tmio_mmc: remove slave_id settings for DMAEngine
-Message-Id: <87zj9blbkr.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <87h9vatn41.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87zj9blbkr.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87zj9blbkr.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
