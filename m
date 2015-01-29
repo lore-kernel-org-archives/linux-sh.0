@@ -1,8 +1,10 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 22 Jan 2015 03:49:10 +0000
+Date: Thu, 29 Jan 2015 01:03:20 +0000
 Subject: [PATCH 7/9 v4] ASoC: rsnd: remove slave_id settings for DMAEngine
-Message-Id: <87twzjlbiv.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <87bnlitn1o.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87twzjlbiv.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87twzjlbiv.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -24,7 +26,7 @@ v3 -> v4
  1 file changed, 1 insertion(+), 2 deletions(-)
 
 diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
-index f0bb137..1f7ff2a 100644
+index 75308bb..61473d9 100644
 --- a/sound/soc/sh/rcar/core.c
 +++ b/sound/soc/sh/rcar/core.c
 @@ -316,7 +316,7 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma,
