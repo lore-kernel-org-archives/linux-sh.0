@@ -1,52 +1,68 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 Jan 2015 02:35:15 +0000
-Subject: [PATCH 03/17] ARM: shmobile: kzm9g-reference dts: Add ak8975 magnetometer node
-Message-Id: <578e52ea954d169d0da085f29d4f0d63ee8f9eb7.1421371996.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 29 Jan 2015 23:59:39 +0000
+Subject: [PATCH v2 6/6] dmaengine: rcar-dmac: Disable channel 0 when using IOMMU
+Message-Id: <1422576013-7846-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421371996.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421371996.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Add a DT node for the AK8975 magnetometer sensor, which is connected to
-i2c0.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Specify the device interrupt to avoid polling for end of conversion.
-
-While at it rename the DT node to compass@c to describe the device's
-function instead of its model.
+A still unconfirmed hardware bug prevents the IPMMU microTLB 0 to be
+flushed correctly, resulting in memory corruption. DMAC 0 channel 0 is
+connected to microTLB 0 on currently supported platforms, so we can't
+use it with the IPMMU. As the IOMMU API operates at the device level we
+can't disable it selectively, so ignore channel 0 for now if the device
+is part of an IOMMU group.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 7 +++++++
- 1 file changed, 7 insertions(+)
+ drivers/dma/sh/rcar-dmac.c | 17 ++++++++++++++++-
+ 1 file changed, 16 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index 8cbff4c..dd82ce6 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -189,6 +189,13 @@
- &i2c0 {
- 	status = "okay";
+diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
+index 711da01a200b..a18d16cc4795 100644
+--- a/drivers/dma/sh/rcar-dmac.c
++++ b/drivers/dma/sh/rcar-dmac.c
+@@ -1593,6 +1593,7 @@ static int rcar_dmac_probe(struct platform_device *pdev)
+ 		DMA_SLAVE_BUSWIDTH_2_BYTES | DMA_SLAVE_BUSWIDTH_4_BYTES |
+ 		DMA_SLAVE_BUSWIDTH_8_BYTES | DMA_SLAVE_BUSWIDTH_16_BYTES |
+ 		DMA_SLAVE_BUSWIDTH_32_BYTES | DMA_SLAVE_BUSWIDTH_64_BYTES;
++	unsigned int channels_offset = 0;
+ 	struct dma_device *engine;
+ 	struct rcar_dmac *dmac;
+ 	struct resource *mem;
+@@ -1612,6 +1613,19 @@ static int rcar_dmac_probe(struct platform_device *pdev)
+ 	if (ret < 0)
+ 		return ret;
  
-+	compass@c {
-+		compatible = "asahi-kasei,ak8975";
-+		reg = <0x0c>;
-+		interrupt-parent = <&irqpin3>;
-+		interrupts = <4 IRQ_TYPE_EDGE_FALLING>;
-+	};
++	/*
++	 * A still unconfirmed hardware bug prevents the IPMMU microTLB 0 to be
++	 * flushed correctly, resulting in memory corruption. DMAC 0 channel 0
++	 * is connected to microTLB 0 on currently supported platforms, so we
++	 * can't use it with the IPMMU. As the IOMMU API operates at the device
++	 * level we can't disable it selectively, so ignore channel 0 for now if
++	 * the device is part of an IOMMU group.
++	 */
++	if (pdev->dev.iommu_group) {
++		dmac->n_channels--;
++		channels_offset = 1;
++	}
 +
- 	ak4648: codec@12 {
- 		compatible = "asahi-kasei,ak4648";
- 		reg = <0x12>;
+ 	dmac->channels = devm_kcalloc(&pdev->dev, dmac->n_channels,
+ 				      sizeof(*dmac->channels), GFP_KERNEL);
+ 	if (!dmac->channels)
+@@ -1662,7 +1676,8 @@ static int rcar_dmac_probe(struct platform_device *pdev)
+ 	INIT_LIST_HEAD(&dmac->engine.channels);
+ 
+ 	for (i = 0; i < dmac->n_channels; ++i) {
+-		ret = rcar_dmac_chan_probe(dmac, &dmac->channels[i], i);
++		ret = rcar_dmac_chan_probe(dmac, &dmac->channels[i],
++					   i + channels_offset);
+ 		if (ret < 0)
+ 			goto error;
+ 	}
 -- 
-2.1.4
+2.0.5
 
