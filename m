@@ -1,42 +1,113 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 17 Jan 2015 00:58:37 +0000
-Subject: [PATCH 04/11] ARM: shmobile: r8a7791: fix MSTP8 input clocks
-Message-Id: <2fd4e094bbe6de0dc98355c4c387c433f6de525c.1421380713.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 29 Jan 2015 23:59:36 +0000
+Subject: [PATCH v2 1/6] dmaengine: rcar-dmac: Fix uninitialized variable usage
+Message-Id: <1422576013-7846-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421380713.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1421380713.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+The desc variable is used uninitialized in the rcar_dmac_desc_get() and
+rcar_dmac_xfer_chunk_get() functions if descriptors need to be
+allocated. Fix it.
 
-I made  a mistake when rebasing Andrey Gusakov's patch adding MLB+ clock to the
-R8A7791 device  tree, inserting <&hp_clk> into the "clocks"  property of the
-MSTP8 node at a wrong position, so that the input clocks for MLB+ and IPMMU-SGX
-got swapped...
-
-Fixes: 7408d3061d2f ("ARM: shmobile: r8a7791: add MLB+ clock")
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/dma/sh/rcar-dmac.c | 69 +++++++++++++++++++++-------------------------
+ 1 file changed, 31 insertions(+), 38 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 2810226..946cd3a 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1154,7 +1154,7 @@
- 		mstp8_clks: mstp8_clks@e6150990 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
--			clocks = <&hp_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>,
-+			clocks = <&zg_clk>, <&hp_clk>, <&zg_clk>, <&zg_clk>,
- 			         <&zg_clk>, <&p_clk>, <&zs_clk>, <&zs_clk>;
- 			#clock-cells = <1>;
- 			clock-indices = <
+diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
+index 29dd09ad41ff..8367578bac63 100644
+--- a/drivers/dma/sh/rcar-dmac.c
++++ b/drivers/dma/sh/rcar-dmac.c
+@@ -549,26 +549,22 @@ static struct rcar_dmac_desc *rcar_dmac_desc_get(struct rcar_dmac_chan *chan)
+ 
+ 	spin_lock_irq(&chan->lock);
+ 
+-	do {
+-		if (list_empty(&chan->desc.free)) {
+-			/*
+-			 * No free descriptors, allocate a page worth of them
+-			 * and try again, as someone else could race us to get
+-			 * the newly allocated descriptors. If the allocation
+-			 * fails return an error.
+-			 */
+-			spin_unlock_irq(&chan->lock);
+-			ret = rcar_dmac_desc_alloc(chan, GFP_NOWAIT);
+-			if (ret < 0)
+-				return NULL;
+-			spin_lock_irq(&chan->lock);
+-			continue;
+-		}
++	while (list_empty(&chan->desc.free)) {
++		/*
++		 * No free descriptors, allocate a page worth of them and try
++		 * again, as someone else could race us to get the newly
++		 * allocated descriptors. If the allocation fails return an
++		 * error.
++		 */
++		spin_unlock_irq(&chan->lock);
++		ret = rcar_dmac_desc_alloc(chan, GFP_NOWAIT);
++		if (ret < 0)
++			return NULL;
++		spin_lock_irq(&chan->lock);
++	}
+ 
+-		desc = list_first_entry(&chan->desc.free, struct rcar_dmac_desc,
+-					node);
+-		list_del(&desc->node);
+-	} while (!desc);
++	desc = list_first_entry(&chan->desc.free, struct rcar_dmac_desc, node);
++	list_del(&desc->node);
+ 
+ 	spin_unlock_irq(&chan->lock);
+ 
+@@ -621,26 +617,23 @@ rcar_dmac_xfer_chunk_get(struct rcar_dmac_chan *chan)
+ 
+ 	spin_lock_irq(&chan->lock);
+ 
+-	do {
+-		if (list_empty(&chan->desc.chunks_free)) {
+-			/*
+-			 * No free descriptors, allocate a page worth of them
+-			 * and try again, as someone else could race us to get
+-			 * the newly allocated descriptors. If the allocation
+-			 * fails return an error.
+-			 */
+-			spin_unlock_irq(&chan->lock);
+-			ret = rcar_dmac_xfer_chunk_alloc(chan, GFP_NOWAIT);
+-			if (ret < 0)
+-				return NULL;
+-			spin_lock_irq(&chan->lock);
+-			continue;
+-		}
++	while (list_empty(&chan->desc.chunks_free)) {
++		/*
++		 * No free descriptors, allocate a page worth of them and try
++		 * again, as someone else could race us to get the newly
++		 * allocated descriptors. If the allocation fails return an
++		 * error.
++		 */
++		spin_unlock_irq(&chan->lock);
++		ret = rcar_dmac_xfer_chunk_alloc(chan, GFP_NOWAIT);
++		if (ret < 0)
++			return NULL;
++		spin_lock_irq(&chan->lock);
++	}
+ 
+-		chunk = list_first_entry(&chan->desc.chunks_free,
+-					  struct rcar_dmac_xfer_chunk, node);
+-		list_del(&chunk->node);
+-	} while (!chunk);
++	chunk = list_first_entry(&chan->desc.chunks_free,
++				 struct rcar_dmac_xfer_chunk, node);
++	list_del(&chunk->node);
+ 
+ 	spin_unlock_irq(&chan->lock);
+ 
 -- 
-2.1.4
+2.0.5
 
