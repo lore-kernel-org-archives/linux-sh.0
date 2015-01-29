@@ -1,31 +1,68 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 27 Jan 2015 19:06:57 +0000
-Subject: Re: [PATCH 0/2] sh_eth: massage PM code
-Message-Id: <54C7E1D1.9050707@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 29 Jan 2015 01:47:18 +0000
+Subject: [PATCH] ARM: shmobile: r8a7791: Correct SDHI clock labels and output-names
+Message-Id: <1422496038-3915-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5608250.lrFkJTjgSf@wasted.cogentembedded.com>
-In-Reply-To: <5608250.lrFkJTjgSf@wasted.cogentembedded.com>
+References: <1399920573-30947-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1399920573-30947-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org, David Miller <davem@davemloft.net>
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+There appears to have been some inconsistency and confusion here as on
+the r8a7790 these clocks are referred to as SD(HI)1 and SD(HI)2 while on
+the r8a7791 and r8a7794 they are referred to as SD(HI)2 and SD(HI)3.
 
-On 01/22/2015 01:16 AM, Sergei Shtylyov wrote:
+Fixes: 59e79895b95892863 ("ARM: shmobile: r8a7791: Add clocks")
+Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
->     Here's a set of 2 patches against DaveM's 'net-next.git' repo. We're adding
-> the support for suspend/hibernation as well as somewhat changing the existing
-> code. There are still MDIO-related issue with suspend (kernel exception), we've
-> been working on it and shall address it with a separate patch...
+---
 
-    It turned out that Florian Fainelli's recent series was the best approach 
-to fixing this issue. We were only looking at our driver while it was a common 
-MDIO problem...
+This follows the naming pattern of "ARM: shmobile: r8a7794: Correct SDHI
+clock base address, labels and output-names".
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-> [1/2] sh_eth: use SET_RUNTIME_PM_OPS()
-> [2/2] sh_eth: add more PM methods
-
-WBR, Sergei
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 6b0cd1b..86862a5 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -880,19 +880,19 @@
+ 		};
+ 
+ 		/* Variable factor clocks */
+-		sd1_clk: sd2_clk@e6150078 {
++		sd2_clk: sd2_clk@e6150078 {
+ 			compatible = "renesas,r8a7791-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0 0xe6150078 0 4>;
+ 			clocks = <&pll1_div2_clk>;
+ 			#clock-cells = <0>;
+-			clock-output-names = "sd1";
++			clock-output-names = "sd2";
+ 		};
+-		sd2_clk: sd3_clk@e615026c {
++		sd3_clk: sd3_clk@e615026c {
+ 			compatible = "renesas,r8a7791-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0 0xe615026c 0 4>;
+ 			clocks = <&pll1_div2_clk>;
+ 			#clock-cells = <0>;
+-			clock-output-names = "sd2";
++			clock-output-names = "sd3";
+ 		};
+ 		mmc0_clk: mmc0_clk@e6150240 {
+ 			compatible = "renesas,r8a7791-div6-clock", "renesas,cpg-div6-clock";
+@@ -1113,7 +1113,7 @@
+ 		mstp3_clks: mstp3_clks@e615013c {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+-			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7791_CLK_SD0>,
++			clocks = <&cp_clk>, <&sd3_clk>, <&sd2_clk>, <&cpg_clocks R8A7791_CLK_SD0>,
+ 				 <&mmc0_clk>, <&hp_clk>, <&mp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>,
+ 				 <&hp_clk>, <&hp_clk>;
+ 			#clock-cells = <1>;
+-- 
+2.1.4
 
