@@ -1,51 +1,42 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 29 Jan 2015 01:03:20 +0000
-Subject: [PATCH 7/9 v4] ASoC: rsnd: remove slave_id settings for DMAEngine
-Message-Id: <87bnlitn1o.wl%kuninori.morimoto.gx@renesas.com>
+From: Mark Brown <broonie@kernel.org>
+Date: Thu, 29 Jan 2015 11:32:35 +0000
+Subject: Re: [PATCH 7/9 v4] ASoC: rsnd: remove slave_id settings for DMAEngine
+Message-Id: <20150129113235.GZ21293@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="xNfoxAF6BY6VsG0y"
 List-Id: <linux-sh.vger.kernel.org>
 References: <87twzjlbiv.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87twzjlbiv.wl%kuninori.morimoto.gx@renesas.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Current rsnd sets dma_slave_config :: slave_id field for DMAEngine,
-but it is no longer needed. Let's remove it.
+--xNfoxAF6BY6VsG0y
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
----
-v3 -> v4
+On Thu, Jan 29, 2015 at 01:03:20AM +0000, Kuninori Morimoto wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>=20
+> Current rsnd sets dma_slave_config :: slave_id field for DMAEngine,
+> but it is no longer needed. Let's remove it.
 
- - no change
+Acked-by: Mark Brown <broonie@kernel.org>
 
- sound/soc/sh/rcar/core.c |    3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+--xNfoxAF6BY6VsG0y
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
-index 75308bb..61473d9 100644
---- a/sound/soc/sh/rcar/core.c
-+++ b/sound/soc/sh/rcar/core.c
-@@ -316,7 +316,7 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma,
- 		  int is_play, int id)
- {
- 	struct device *dev = rsnd_priv_to_dev(priv);
--	struct dma_slave_config cfg;
-+	struct dma_slave_config cfg = {};
- 	struct rsnd_mod *mod_from;
- 	struct rsnd_mod *mod_to;
- 	char dma_name[DMA_NAME_SIZE];
-@@ -334,7 +334,6 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma,
- 	rsnd_dma_of_path(dma, is_play, &mod_from, &mod_to);
- 	rsnd_dma_of_name(mod_from, mod_to, dma_name);
- 
--	cfg.slave_id	= id;
- 	cfg.direction	= is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
- 	cfg.src_addr	= rsnd_gen_dma_addr(priv, mod_from, is_play, 1);
- 	cfg.dst_addr	= rsnd_gen_dma_addr(priv, mod_to,   is_play, 0);
--- 
-1.7.9.5
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
 
+iQEcBAEBCAAGBQJUyhpTAAoJECTWi3JdVIfQA50H/02O7f63ahqmNDVcloUtVGBb
+tWi6TvFW+c/1HyWJ5Md/fBnqQkimgtBtAxAwN5xn/xqDKl511rulDbBguP2fYw6M
+Q/TGrcBOcXXe2x3pSVIOKCy2mOs5eZKQ2FkyacXqEXSnegwi1d+3292d8gepqUuT
+6b3nE8gFfazgAQB620ulGp9YufuVhZEHTfsdsqKg3+Ui3RrsegQl63pS4qcIC3oB
+8RWdW+GIHoKXE1e3LS2o5SGwd6mEu2XK9Gtvu9iUudSqnR+RTbY6OZ/ZwMPIT2bi
+kQ2w4J5xxw31AhyKt00x3yYszuGxfRLmL6yxdlbPGmF2lAdbpHJliAgBj3j/MfA=
+=e+FL
+-----END PGP SIGNATURE-----
+
+--xNfoxAF6BY6VsG0y--
