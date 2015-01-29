@@ -1,60 +1,70 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 21 Jan 2015 04:54:37 +0000
-Subject: [PATCH 10/13] ARM: shmobile: sh7372 dtsi: Remove Legacy DTSI file
-Message-Id: <20150121045437.7648.13202.sendpatchset@little-apple>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 29 Jan 2015 23:59:37 +0000
+Subject: [PATCH v2 3/6] dmaengine: rcar-dmac: Fix oops due to unintialized list in error ISR
+Message-Id: <1422576013-7846-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150121045256.7648.7451.sendpatchset@little-apple>
-In-Reply-To: <20150121045256.7648.7451.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+The error interrupt handler stops and reinitializes all channels. This
+causes a crash for channels that have never been used, as their
+descriptor lists are uninitialized. Fix it by initializing the
+descriptor lists at probe time.
 
-Remove the sh7372 DTSI file for the now unsupported sh7372 SoC.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+ drivers/dma/sh/rcar-dmac.c | 21 +++++++++++----------
+ 1 file changed, 11 insertions(+), 10 deletions(-)
 
- arch/arm/boot/dts/sh7372.dtsi |   35 -----------------------------------
- 1 file changed, 35 deletions(-)
+diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
+index 5a6b85527107..2eb65e1bf938 100644
+--- a/drivers/dma/sh/rcar-dmac.c
++++ b/drivers/dma/sh/rcar-dmac.c
+@@ -929,11 +929,6 @@ static int rcar_dmac_alloc_chan_resources(struct dma_chan *chan)
+ 	struct rcar_dmac_chan *rchan = to_rcar_dmac_chan(chan);
+ 	int ret;
+ 
+-	INIT_LIST_HEAD(&rchan->desc.free);
+-	INIT_LIST_HEAD(&rchan->desc.pending);
+-	INIT_LIST_HEAD(&rchan->desc.active);
+-	INIT_LIST_HEAD(&rchan->desc.done);
+-	INIT_LIST_HEAD(&rchan->desc.wait);
+ 	INIT_LIST_HEAD(&rchan->desc.chunks_free);
+ 	INIT_LIST_HEAD(&rchan->desc.pages);
+ 
+@@ -970,11 +965,11 @@ static void rcar_dmac_free_chan_resources(struct dma_chan *chan)
+ 		rchan->mid_rid = -EINVAL;
+ 	}
+ 
+-	list_splice(&rchan->desc.free, &list);
+-	list_splice(&rchan->desc.pending, &list);
+-	list_splice(&rchan->desc.active, &list);
+-	list_splice(&rchan->desc.done, &list);
+-	list_splice(&rchan->desc.wait, &list);
++	list_splice_init(&rchan->desc.free, &list);
++	list_splice_init(&rchan->desc.pending, &list);
++	list_splice_init(&rchan->desc.active, &list);
++	list_splice_init(&rchan->desc.done, &list);
++	list_splice_init(&rchan->desc.wait, &list);
+ 
+ 	list_for_each_entry(desc, &list, node)
+ 		rcar_dmac_realloc_hwdesc(rchan, desc, 0);
+@@ -1519,6 +1514,12 @@ static int rcar_dmac_chan_probe(struct rcar_dmac *dmac,
+ 
+ 	spin_lock_init(&rchan->lock);
+ 
++	INIT_LIST_HEAD(&rchan->desc.free);
++	INIT_LIST_HEAD(&rchan->desc.pending);
++	INIT_LIST_HEAD(&rchan->desc.active);
++	INIT_LIST_HEAD(&rchan->desc.done);
++	INIT_LIST_HEAD(&rchan->desc.wait);
++
+ 	/* Request the channel interrupt. */
+ 	sprintf(pdev_irqname, "ch%u", index);
+ 	irq = platform_get_irq_byname(pdev, pdev_irqname);
+-- 
+2.0.5
 
---- 0001/arch/arm/boot/dts/sh7372.dtsi
-+++ /dev/null	2015-01-13 15:44:39.280208949 +0900
-@@ -1,35 +0,0 @@
--/*
-- * Device Tree Source for the sh7372 SoC
-- *
-- * Copyright (C) 2012 Renesas Solutions Corp.
-- *
-- * This file is licensed under the terms of the GNU General Public License
-- * version 2.  This program is licensed "as is" without any warranty of any
-- * kind, whether express or implied.
-- */
--
--/include/ "skeleton.dtsi"
--
--/ {
--	compatible = "renesas,sh7372";
--
--	cpus {
--		#address-cells = <1>;
--		#size-cells = <0>;
--
--		cpu@0 {
--			compatible = "arm,cortex-a8";
--			device_type = "cpu";
--			reg = <0x0>;
--			clock-frequency = <800000000>;
--		};
--	};
--
--	pfc: pfc@e6050000 {
--		compatible = "renesas,pfc-sh7372";
--		reg = <0xe6050000 0x8000>,
--		      <0xe605801c 0x1c>;
--		gpio-controller;
--		#gpio-cells = <2>;
--	};
--};
