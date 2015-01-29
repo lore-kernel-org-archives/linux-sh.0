@@ -1,75 +1,101 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Sun, 25 Jan 2015 11:10:09 +0000
-Subject: Re: [PATCH/RFC] serial: sh-sci: Fix R-Car SCIF and HSCIF overrun handling
-Message-Id: <CAH1o70+upGsSNHOsausd91GLQ-sf_Sjyv3_ghN_W9Uo54sTxLg@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 29 Jan 2015 07:25:32 +0000
+Subject: [PATCH] ARM: shmobile: r8a7790: Instantiate GIC from C board code in legacy builds
+Message-Id: <20150129072532.25107.17303.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418652883-6884-1-git-send-email-ykaneko0929@gmail.com>
-	<CABMQnV+Oh8Ctd9jM-7qaW4ZfuQJ_++fZkHYuKBL2ftQkrzAOjw@mail.gmail.com>
-In-Reply-To: <CABMQnV+Oh8Ctd9jM-7qaW4ZfuQJ_++fZkHYuKBL2ftQkrzAOjw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Cc: "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Hi,
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Thanks for your review.
+As of commit 9a1091ef0017c40a ("irqchip: gic: Support hierarchy irq
+domain."), the Lager legacy board support is known to be broken.
 
-2015-01-22 13:51 GMT+09:00 Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>:
-> Hi,
->
-> 2014-12-15 23:14 GMT+09:00 Yoshihiro Kaneko <ykaneko0929@gmail.com>:
->> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
->>
->> When fifo overrun happened, the interrupt status refers to
->> SCLSR register in R-Car SCIF and HSCIF.
->> Thus, overrun handling takes SCLSR register into account.
->>
->> Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
->> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->> ---
->>
->> This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
->> tree.
->>
->>  drivers/tty/serial/sh-sci.c | 18 +++++++++++++-----
->>  1 file changed, 13 insertions(+), 5 deletions(-)
->>
->> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
->> index 1110523..ff549a8 100644
->> --- a/drivers/tty/serial/sh-sci.c
->> +++ b/drivers/tty/serial/sh-sci.c
->> @@ -793,8 +793,6 @@ static int sci_handle_errors(struct uart_port *port)
->>                 /* overrun error */
->>                 if (tty_insert_flip_char(tport, 0, TTY_OVERRUN))
->>                         copied++;
->> -
->> -               dev_notice(port->dev, "overrun error\n");
->>         }
->>
->>         if (status & SCxSR_FER(port)) {
->> @@ -835,8 +833,6 @@ static int sci_handle_errors(struct uart_port *port)
->>
->>                 if (tty_insert_flip_char(tport, 0, TTY_PARITY))
->>                         copied++;
->> -
->> -               dev_notice(port->dev, "parity error\n");
->>         }
->
-> I think that these fixis unrelated to support of HSCIF.
-> Please split patch.
+The IRQ numbers of the GIC are now virtual, and no longer match the
+hardcoded hardware IRQ numbers in the legacy platform board code.
 
-I got it.
-I'll update this patch.
+To fix this issue specific to non-multiplatform r8a7790 and Lager:
+ 1) Instantiate the GIC from platform board code and also
+ 2) Skip over the DT arch timer as well as
+ 3) Force delay setup based on DT CPU frequency
 
-Thanks,
-Kaneko
+With these 3 fixes in place interrupts on Lager are now unbroken.
 
->
-> Best regards,
->   Nobuhiro
->
->
-> --
-> Nobuhiro Iwamatsu
+Partially based on legacy GIC fix by Geert Uytterhoeven, thanks to
+him for the initial work.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ Suitable as a fix for v3.19-rc6. Depends on [PATCH v2]
+ ARM: shmobile: r8a73a4: Instantiate GIC from C board code in legacy builds
+
+ arch/arm/mach-shmobile/board-lager.c     |   13 +++++++++++++
+ arch/arm/mach-shmobile/setup-rcar-gen2.c |    2 ++
+ arch/arm/mach-shmobile/timer.c           |    5 +++++
+ 3 files changed, 20 insertions(+)
+
+--- 0001/arch/arm/mach-shmobile/board-lager.c
++++ work/arch/arm/mach-shmobile/board-lager.c	2015-01-29 16:16:32.065025352 +0900
+@@ -21,6 +21,8 @@
+ #include <linux/input.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
++#include <linux/irqchip.h>
++#include <linux/irqchip/arm-gic.h>
+ #include <linux/kernel.h>
+ #include <linux/leds.h>
+ #include <linux/mfd/tmio.h>
+@@ -811,6 +813,16 @@ static void __init lager_init(void)
+ 					  lager_ksz8041_fixup);
+ }
+ 
++static void __init lager_legacy_init_irq(void)
++{
++	void __iomem *gic_dist_base = ioremap_nocache(0xf1001000, 0x1000);
++	void __iomem *gic_cpu_base = ioremap_nocache(0xf1002000, 0x1000);
++
++	gic_init(0, 29, gic_dist_base, gic_cpu_base);
++
++	/* Do not invoke DT-based interrupt code via irqchip_init() */
++}
++
+ static const char * const lager_boards_compat_dt[] __initconst = {
+ 	"renesas,lager",
+ 	NULL,
+@@ -819,6 +831,7 @@ static const char * const lager_boards_c
+ DT_MACHINE_START(LAGER_DT, "lager")
+ 	.smp		= smp_ops(r8a7790_smp_ops),
+ 	.init_early	= shmobile_init_delay,
++	.init_irq	= lager_legacy_init_irq,
+ 	.init_time	= rcar_gen2_timer_init,
+ 	.init_machine	= lager_init,
+ 	.init_late	= shmobile_init_late,
+--- 0001/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ work/arch/arm/mach-shmobile/setup-rcar-gen2.c	2015-01-29 16:16:32.065025352 +0900
+@@ -133,7 +133,9 @@ void __init rcar_gen2_timer_init(void)
+ #ifdef CONFIG_COMMON_CLK
+ 	rcar_gen2_clocks_init(mode);
+ #endif
++#ifdef CONFIG_ARCH_SHMOBILE_MULTI
+ 	clocksource_of_init();
++#endif
+ }
+ 
+ struct memory_reserve_config {
+--- 0002/arch/arm/mach-shmobile/timer.c
++++ work/arch/arm/mach-shmobile/timer.c	2015-01-29 16:17:04.915025234 +0900
+@@ -75,6 +75,11 @@ void __init shmobile_init_delay(void)
+ 	 * to GIC being initialized from C and arch timer via DT */
+ 	if (of_machine_is_compatible("renesas,r8a73a4"))
+ 		has_arch_timer = false;
++
++	/* Non-multiplatform r8a7790 SoC cannot use arch timer due
++	 * to GIC being initialized from C and arch timer via DT */
++	if (of_machine_is_compatible("renesas,r8a7790"))
++		has_arch_timer = false;
+ #endif
+ 
+ 	if (!has_arch_timer || !IS_ENABLED(CONFIG_ARM_ARCH_TIMER)) {
