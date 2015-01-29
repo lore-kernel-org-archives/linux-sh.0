@@ -1,42 +1,42 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 29 Jan 2015 01:02:36 +0000
-Subject: [PATCH 5/9 v4] spi: rspi: remove slave_id settings for DMAEngine
-Message-Id: <87egqetn2w.wl%kuninori.morimoto.gx@renesas.com>
+From: Mark Brown <broonie@kernel.org>
+Date: Thu, 29 Jan 2015 11:29:59 +0000
+Subject: Re: [PATCH 5/9 v4] spi: rspi: remove slave_id settings for DMAEngine
+Message-Id: <20150129112959.GX21293@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="1dghmwL1sQeIkGYD"
 List-Id: <linux-sh.vger.kernel.org>
 References: <87wq4flbjq.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87wq4flbjq.wl%kuninori.morimoto.gx@renesas.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Arnd Bergmann <arnd@arndb.de>
 
-Current rspi sets dma_slave_config :: slave_id field for DMAEngine,
-but it is no longer needed. Let's remove it.
+--1dghmwL1sQeIkGYD
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v3 -> v4
+On Thu, Jan 29, 2015 at 01:02:36AM +0000, Kuninori Morimoto wrote:
+> From: Arnd Bergmann <arnd@arndb.de>
+>=20
+> Current rspi sets dma_slave_config :: slave_id field for DMAEngine,
+> but it is no longer needed. Let's remove it.
 
- - no change
+Acked-by: Mark Brown <broonie@kernel.org>
 
- drivers/spi/spi-rspi.c |    1 -
- 1 file changed, 1 deletion(-)
+--1dghmwL1sQeIkGYD
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 2071f78..6cbcdc0 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -918,7 +918,6 @@ static struct dma_chan *rspi_request_dma_chan(struct device *dev,
- 	}
- 
- 	memset(&cfg, 0, sizeof(cfg));
--	cfg.slave_id = id;
- 	cfg.direction = dir;
- 	if (dir = DMA_MEM_TO_DEV) {
- 		cfg.dst_addr = port_addr;
--- 
-1.7.9.5
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
 
+iQEcBAEBCAAGBQJUyhm3AAoJECTWi3JdVIfQ/M8H/j02Ip9TF5UwBx4a67IkfvoR
+oqo7TRUCqSphKztfO5lMQpZu1JQH3dqiqs2yg5dODh0PW5je8TZ0jwvAkDz9cGy8
+MMSadahOuYiapwLt6DQH2DKm4fMbogN02vKKRU3zDk70fPZq3aixt/DoTJYf+x5a
+shd5yT3PrFcJdk3PFQErmB9ZjZOjK0TPqa8FU/pS1yl12VNjnfoGh6i0BqRSy8LL
+ZJ3p49zspxGQySzErlEPPTAcwx9dl9BbvkNgkaqYlBnQJgPZrak3WgdLZcBeClF2
+gOpDKQKBqO7UBlcCzkv6vJsi1YCqpEoNeCL8G58kg3K5yN9oauk4bRVQU6+F5E0=
+=KGtU
+-----END PGP SIGNATURE-----
+
+--1dghmwL1sQeIkGYD--
