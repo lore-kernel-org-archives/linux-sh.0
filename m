@@ -1,8 +1,10 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 22 Jan 2015 03:48:35 +0000
+Date: Thu, 29 Jan 2015 01:02:36 +0000
 Subject: [PATCH 5/9 v4] spi: rspi: remove slave_id settings for DMAEngine
-Message-Id: <87wq4flbjq.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <87egqetn2w.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87wq4flbjq.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87wq4flbjq.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -24,10 +26,10 @@ v3 -> v4
  1 file changed, 1 deletion(-)
 
 diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 46ce470..3f41106 100644
+index 2071f78..6cbcdc0 100644
 --- a/drivers/spi/spi-rspi.c
 +++ b/drivers/spi/spi-rspi.c
-@@ -913,7 +913,6 @@ static struct dma_chan *rspi_request_dma_chan(struct device *dev,
+@@ -918,7 +918,6 @@ static struct dma_chan *rspi_request_dma_chan(struct device *dev,
  	}
  
  	memset(&cfg, 0, sizeof(cfg));
