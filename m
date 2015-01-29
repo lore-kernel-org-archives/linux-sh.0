@@ -1,81 +1,105 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 09 Jan 2015 13:13:54 +0000
-Subject: [PATCH 2/4] ARM: shmobile: kzm9g dts: Move Ethernet node to BSC
-Message-Id: <1420809236-4105-2-git-send-email-geert+renesas@glider.be>
+Date: Thu, 29 Jan 2015 14:26:05 +0000
+Subject: [PATCH v2] watchdog: da9063: Add restart handler support
+Message-Id: <1422541565-19792-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420809236-4105-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1420809236-4105-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Support Opensource <support.opensource@diasemi.com>, Wim Van Sebroeck <wim@iguana.be>
+Cc: linux-watchdog@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Move the Ethernet node from the root of the device tree to the BSC node,
-as it's connected to the Bus State Controller.  This allows the system
-to know the right position of the Ethernet node in the clock and PM
-domain hierarchy, and manage the clock and PM domain appropriately.
+Register a restart handler for the da9063 watchdog.  System restart is
+triggered by sending the shutdown command to the PMIC.
+As more-suitable restart handlers may exist, the priority of the
+watchdog restart handler is set to 128.
 
-Also rename the node's name from "lan9220" to "ethernet", to conform to
-ePAPR generic name recomendations.
+The actual restart method was inspired by a platform-specific patch from
+the BSP by Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Steve Twiss <stwiss.opensource@diasemi.com>
+Reviewed-by: Guenter Roeck <linux@roeck-us.net>
 ---
-v3:
-  - No changes,
+Tested on r8a7791/koelsch
 
 v2:
-  - s/confirm/conform/,
-  - Moved from kzm9g-reference to kzm9g.
+  - Add Acked-by, Reviewed-by
 ---
- arch/arm/boot/dts/sh73a0-kzm9g.dts | 28 +++++++++++++++-------------
- 1 file changed, 15 insertions(+), 13 deletions(-)
+ drivers/watchdog/da9063_wdt.c | 32 +++++++++++++++++++++++++++++++-
+ 1 file changed, 31 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-index 6f00e6b680e8e0fa..022ba505f57339a9 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-@@ -84,19 +84,6 @@
- 		enable-active-high;
- 	};
+diff --git a/drivers/watchdog/da9063_wdt.c b/drivers/watchdog/da9063_wdt.c
+index 2cd6b2c2dd2a6980..e2fe2ebdebd4d6bb 100644
+--- a/drivers/watchdog/da9063_wdt.c
++++ b/drivers/watchdog/da9063_wdt.c
+@@ -20,6 +20,7 @@
+ #include <linux/delay.h>
+ #include <linux/mfd/da9063/registers.h>
+ #include <linux/mfd/da9063/core.h>
++#include <linux/reboot.h>
+ #include <linux/regmap.h>
  
--	lan9220@10000000 {
--		compatible = "smsc,lan9220", "smsc,lan9115";
--		reg = <0x10000000 0x100>;
--		phy-mode = "mii";
--		interrupt-parent = <&irqpin0>;
--		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
--		reg-io-width = <4>;
--		smsc,irq-push-pull;
--		smsc,save-mac-address;
--		vddvario-supply = <&reg_1p8v>;
--		vdd33a-supply = <&reg_3p3v>;
--	};
--
- 	leds {
- 		compatible = "gpio-leds";
- 		led1 {
-@@ -178,6 +165,21 @@
- 	};
+ /*
+@@ -38,6 +39,7 @@ static const unsigned int wdt_timeout[] = { 0, 2, 4, 8, 16, 32, 65, 131 };
+ struct da9063_watchdog {
+ 	struct da9063 *da9063;
+ 	struct watchdog_device wdtdev;
++	struct notifier_block restart_handler;
  };
  
-+&bsc {
-+	ethernet@10000000 {
-+		compatible = "smsc,lan9220", "smsc,lan9115";
-+		reg = <0x10000000 0x100>;
-+		phy-mode = "mii";
-+		interrupt-parent = <&irqpin0>;
-+		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
-+		reg-io-width = <4>;
-+		smsc,irq-push-pull;
-+		smsc,save-mac-address;
-+		vddvario-supply = <&reg_1p8v>;
-+		vdd33a-supply = <&reg_3p3v>;
-+	};
-+};
+ static unsigned int da9063_wdt_timeout_to_sel(unsigned int secs)
+@@ -119,6 +121,23 @@ static int da9063_wdt_set_timeout(struct watchdog_device *wdd,
+ 	return ret;
+ }
+ 
++static int da9063_wdt_restart_handler(struct notifier_block *this,
++				      unsigned long mode, void *cmd)
++{
++	struct da9063_watchdog *wdt = container_of(this,
++						   struct da9063_watchdog,
++						   restart_handler);
++	int ret;
 +
- &cmt1 {
- 	status = "okay";
- };
++	ret = regmap_write(wdt->da9063->regmap, DA9063_REG_CONTROL_F,
++			   DA9063_SHUTDOWN);
++	if (ret)
++		dev_alert(wdt->da9063->dev, "Failed to shutdown (err = %d)\n",
++			  ret);
++
++	return NOTIFY_DONE;
++}
++
+ static const struct watchdog_info da9063_watchdog_info = {
+ 	.options = WDIOF_SETTIMEOUT | WDIOF_KEEPALIVEPING,
+ 	.identity = "DA9063 Watchdog",
+@@ -163,14 +182,25 @@ static int da9063_wdt_probe(struct platform_device *pdev)
+ 	dev_set_drvdata(&pdev->dev, wdt);
+ 
+ 	ret = watchdog_register_device(&wdt->wdtdev);
++	if (ret)
++		return ret;
+ 
+-	return ret;
++	wdt->restart_handler.notifier_call = da9063_wdt_restart_handler;
++	wdt->restart_handler.priority = 128;
++	ret = register_restart_handler(&wdt->restart_handler);
++	if (ret)
++		dev_err(wdt->da9063->dev,
++			"Failed to register restart handler (err = %d)\n", ret);
++
++	return 0;
+ }
+ 
+ static int da9063_wdt_remove(struct platform_device *pdev)
+ {
+ 	struct da9063_watchdog *wdt = dev_get_drvdata(&pdev->dev);
+ 
++	unregister_restart_handler(&wdt->restart_handler);
++
+ 	watchdog_unregister_device(&wdt->wdtdev);
+ 
+ 	return 0;
 -- 
 1.9.1
 
