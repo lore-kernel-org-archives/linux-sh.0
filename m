@@ -1,8 +1,10 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 22 Jan 2015 03:48:17 +0000
+Date: Thu, 29 Jan 2015 01:02:16 +0000
 Subject: [PATCH 4/9 v4] mtd: sh_flctl: remove slave_id settings for DMAEngine
-Message-Id: <87y4ovlbk7.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <87fvautn3g.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87y4ovlbk7.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87y4ovlbk7.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
