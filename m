@@ -1,50 +1,56 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 06 Jan 2015 19:17:38 +0000
-Subject: [PATCH v2 1/2] ARM: shmobile: kzm9g dts: Declare the full 512 MiB of RAM
-Message-Id: <1420571859-11655-2-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 29 Jan 2015 23:59:39 +0000
+Subject: [PATCH v2 5/6] dmaengine: rcar-dmac: Work around descriptor mode IOMMU errata
+Message-Id: <1422576013-7846-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420571859-11655-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1420571859-11655-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Traditionally, the first 16 MiB of RAM was reserved for the RT
-processor.  However, this is incompatible with CONFIG_AUTO_ZRELADDR=y,
-which requires that the start address of physical memory is a multiple
-of 128 MiB.
+When descriptor memory is accessed through an IOMMU the DMADAR register
+isn't initialized automatically from the first descriptor at beginning
+of transfer by the DMAC like it should. Initialize it manually with the
+destination address of the first chunk.
 
-As CONFIG_AUTO_ZRELADDR=y is enabled for multi-platform kernels, declare
-RAM to start at 0x40000000.
-
-While at it, reclaim the last 8 MiB of RAM, too, so the full 512 MiB is
-available. Note that kzm9g_defconfig still has
-CONFIG_MEMORY_START=0x41000000 and CONFIG_MEMORY_SIZE=0x1f000000, so
-before the advent of DT we scribbled over the last 8 MiB, too.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v2:
-  - Drop RFC status,
-  - We now know the last 8 MiB of RAM is _not_ used for a U-Boot
-    splash screen.
----
- arch/arm/boot/dts/sh73a0-kzm9g.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/dma/sh/rcar-dmac.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-index 27c5f426d172f03d..e7dae01933a575f1 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-@@ -21,6 +21,6 @@
+diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
+index bb93038c48b9..711da01a200b 100644
+--- a/drivers/dma/sh/rcar-dmac.c
++++ b/drivers/dma/sh/rcar-dmac.c
+@@ -325,6 +325,8 @@ static void rcar_dmac_chan_start_xfer(struct rcar_dmac_chan *chan)
+ 		rcar_dmac_chan_write(chan, RCAR_DMARS, chan->mid_rid);
  
- 	memory {
- 		device_type = "memory";
--		reg = <0x41000000 0x1e800000>;
-+		reg = <0x40000000 0x20000000>;
- 	};
- };
+ 	if (desc->hwdescs.use) {
++		struct rcar_dmac_xfer_chunk *chunk;
++
+ 		dev_dbg(chan->chan.device->dev,
+ 			"chan%u: queue desc %p: %u@%pad\n",
+ 			chan->index, desc, desc->nchunks, &desc->hwdescs.dma);
+@@ -341,6 +343,18 @@ static void rcar_dmac_chan_start_xfer(struct rcar_dmac_chan *chan)
+ 				     RCAR_DMACHCRB_DRST);
+ 
+ 		/*
++		 * Errata: When descriptor memory is accessed through an IOMMU
++		 * the DMADAR register isn't initialized automatically from the
++		 * first descriptor at beginning of transfer by the DMAC like it
++		 * should. Initialize it manually with the destination address
++		 * of the first chunk.
++		 */
++		chunk = list_first_entry(&desc->chunks,
++					 struct rcar_dmac_xfer_chunk, node);
++		rcar_dmac_chan_write(chan, RCAR_DMADAR,
++				     chunk->dst_addr & 0xffffffff);
++
++		/*
+ 		 * Program the descriptor stage interrupt to occur after the end
+ 		 * of the first stage.
+ 		 */
 -- 
-1.9.1
+2.0.5
 
