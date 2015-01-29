@@ -1,68 +1,34 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 29 Jan 2015 01:47:18 +0000
-Subject: [PATCH] ARM: shmobile: r8a7791: Correct SDHI clock labels and output-names
-Message-Id: <1422496038-3915-1-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 29 Jan 2015 08:05:15 +0000
+Subject: Re: [PATCH] ARM: shmobile: r8a7791: Correct SDHI clock labels and output-names
+Message-Id: <CAMuHMdXktWqe_+HhORN0iWEMLm=y2fS52PFtPK4RzAHQMHLYXw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1399920573-30947-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1399920573-30947-1-git-send-email-geert+renesas@glider.be>
+References: <1422496038-3915-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1422496038-3915-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-There appears to have been some inconsistency and confusion here as on
-the r8a7790 these clocks are referred to as SD(HI)1 and SD(HI)2 while on
-the r8a7791 and r8a7794 they are referred to as SD(HI)2 and SD(HI)3.
+On Thu, Jan 29, 2015 at 2:47 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> There appears to have been some inconsistency and confusion here as on
+> the r8a7790 these clocks are referred to as SD(HI)1 and SD(HI)2 while on
+> the r8a7791 and r8a7794 they are referred to as SD(HI)2 and SD(HI)3.
+>
+> Fixes: 59e79895b95892863 ("ARM: shmobile: r8a7791: Add clocks")
+> Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Fixes: 59e79895b95892863 ("ARM: shmobile: r8a7791: Add clocks")
-Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
----
+Gr{oetje,eeting}s,
 
-This follows the naming pattern of "ARM: shmobile: r8a7794: Correct SDHI
-clock base address, labels and output-names".
----
- arch/arm/boot/dts/r8a7791.dtsi | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+                        Geert
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 6b0cd1b..86862a5 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -880,19 +880,19 @@
- 		};
- 
- 		/* Variable factor clocks */
--		sd1_clk: sd2_clk@e6150078 {
-+		sd2_clk: sd2_clk@e6150078 {
- 			compatible = "renesas,r8a7791-div6-clock", "renesas,cpg-div6-clock";
- 			reg = <0 0xe6150078 0 4>;
- 			clocks = <&pll1_div2_clk>;
- 			#clock-cells = <0>;
--			clock-output-names = "sd1";
-+			clock-output-names = "sd2";
- 		};
--		sd2_clk: sd3_clk@e615026c {
-+		sd3_clk: sd3_clk@e615026c {
- 			compatible = "renesas,r8a7791-div6-clock", "renesas,cpg-div6-clock";
- 			reg = <0 0xe615026c 0 4>;
- 			clocks = <&pll1_div2_clk>;
- 			#clock-cells = <0>;
--			clock-output-names = "sd2";
-+			clock-output-names = "sd3";
- 		};
- 		mmc0_clk: mmc0_clk@e6150240 {
- 			compatible = "renesas,r8a7791-div6-clock", "renesas,cpg-div6-clock";
-@@ -1113,7 +1113,7 @@
- 		mstp3_clks: mstp3_clks@e615013c {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
--			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7791_CLK_SD0>,
-+			clocks = <&cp_clk>, <&sd3_clk>, <&sd2_clk>, <&cpg_clocks R8A7791_CLK_SD0>,
- 				 <&mmc0_clk>, <&hp_clk>, <&mp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>,
- 				 <&hp_clk>, <&hp_clk>;
- 			#clock-cells = <1>;
--- 
-2.1.4
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
