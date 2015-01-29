@@ -1,8 +1,10 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 22 Jan 2015 03:47:22 +0000
+Date: Thu, 29 Jan 2015 01:00:47 +0000
 Subject: [PATCH 1/9 v4] dmaengine: shdma: use normal interface for passing slave id
-Message-Id: <873873mq68.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <87k306tn5w.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <873873mq68.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <873873mq68.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
