@@ -1,54 +1,61 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Mon, 12 Jan 2015 22:22:06 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Defconfig Updates for v3.20
-Message-Id: <20150112222206.GF22090@quad.lixom.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 29 Jan 2015 01:31:22 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Defconfig Fixes for v3.20
+Message-Id: <cover.1422492899.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1419808942.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1419808942.git.horms+renesas@verge.net.au>
+References: <1364877094-1508-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364877094-1508-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Dec 29, 2014 at 10:43:21AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these Renesas ARM based SoC defconfig updates for v3.20.
-> 
-> 
-> The following changes since commit 97bf6af1f928216fd6c5a66e8a57bfa95a659672:
-> 
->   Linux 3.19-rc1 (2014-12-20 17:08:50 -0800)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig-for-v3.20
-> 
-> for you to fetch changes up to db54d850b686c2ca81c10dd3582e98ee089a0e3a:
-> 
->   ARM: shmobile: Enable DA9063 watchdog in multiplatform defconfig (2014-12-21 16:53:36 +0900)
-> 
-> ----------------------------------------------------------------
-> Renesas ARM Based SoC Defconfig Updates for v3.20
-> 
-> * Enable DA9063, MICREL_PHY and MTD_BLOCK watchdog in multiplatform defconfig
-> * Update AK8975 config option in kzm9g defconfig
-> 
-> ----------------------------------------------------------------
-> Geert Uytterhoeven (3):
->       ARM: shmobile: kzm9g_defconfig: Update AK8975 config option
->       ARM: shmobile: Enable MICREL_PHY in shmobile_defconfig
->       ARM: shmobile: Enable DA9063 watchdog in multiplatform defconfig
-> 
-> Kuninori Morimoto (2):
->       ARM: shmobile: defconfig: cleanup by savedefconfig
->       ARM: shmobile: defconfig: add MTD_BLOCK
-> 
->  arch/arm/configs/kzm9g_defconfig    |  2 +-
->  arch/arm/configs/shmobile_defconfig | 30 ++++++++++++++----------------
->  2 files changed, 15 insertions(+), 17 deletions(-)
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Merged into next/defconfig, thanks.
+Please consider these Renesas ARM based SoC defconfig fixes for v3.20.
+
+This pull request is based on "Second Round of Renesas ARM Based SoC
+Defconfig Updates for v3.20", tagged as renesas-defconfig2-for-v3.20, which
+you have previously pulled.
 
 
--Olof
+That pull-request was comprised of a single patch "ARM: shmobile: Enable
+kzm9g board in multiplatform defconfig" which updated the mach_shmobile
+based on the output of make savedefconfig run on a tree with sh73a0/kzm9g
+multiplatform support present. And due to REGULATOR being indirectly
+selected by Kconfig with that support prsent it was not present in the
+resulting shmobile_defconfig.
+
+However, sh73a0/kzm9g multiplatform supportsupport is no longer queued up
+for v3.20 and thus is not enabled by make shmobile_defconfig resulting at
+least in SDHI not working on boards based on R-Car Gen2 SoCs.
+
+It may have been better if I had held off on the patch in question
+until sh73a0/kzm9g multiplatform support was merged, something I expected
+to occur for v3.20. But things being as they are this pull-request
+provides a simple fix for the fallout.
+
+
+The following changes since commit eb4513482d1c4882e3633528ccc48d77581b7bb1:
+
+  ARM: shmobile: Enable kzm9g board in multiplatform defconfig (2015-01-14 09:51:08 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig-fixes-for-v3.20
+
+for you to fetch changes up to 30aca3c84bd79b48154908b6c1592347f4df3d53:
+
+  ARM: shmobile: Select CONFIG_REGULATOR in defconfig once again (2015-01-26 16:14:04 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC Defconfig Fixes for v3.20
+
+* Select CONFIG_REGULATOR in mach_shmobile defconfig once again
+
+----------------------------------------------------------------
+Kuninori Morimoto (1):
+      ARM: shmobile: Select CONFIG_REGULATOR in defconfig once again
+
+ arch/arm/configs/shmobile_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
