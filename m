@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 29 Jan 2015 14:46:11 +0000
+From: Krzysztof Kozlowski <k.kozlowski@samsung.com>
+Date: Fri, 30 Jan 2015 09:46:39 +0000
 Subject: Re: [PATCH v2] dmaengine: shdma: Runtime-resume device in .shutdown()
-Message-Id: <CAMuHMdVE1dDn4qp+aVtrLFCc=9U+WnwTW++1JSqca0UeHFVMLg@mail.gmail.com>
+Message-Id: <CAJKOXPfaH0sZmEqKydbKkKND3QB3-caVeLt4fVC1h=gfH3xw5w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1420454789-11547-1-git-send-email-geert+renesas@glider.be>
 In-Reply-To: <1420454789-11547-1-git-send-email-geert+renesas@glider.be>
@@ -9,12 +9,9 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Vinod Koul <vinod.koul@intel.com>, Dan Williams <dan.j.williams@intel.com>, dmaengine@vger.kernel.org, Linux PM list <linux-pm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+Cc: Vinod Koul <vinod.koul@intel.com>, Dan Williams <dan.j.williams@intel.com>, dmaengine@vger.kernel.org, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org
 
-Ping?
-
-On Mon, Jan 5, 2015 at 11:46 AM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
+2015-01-05 11:46 GMT+01:00 Geert Uytterhoeven <geert+renesas@glider.be>:
 > During system reboot, the sh-dma-engine device may be runtime-suspended,
 > causing a crash:
 >
@@ -50,6 +47,14 @@ On Mon, Jan 5, 2015 at 11:46 AM, Geert Uytterhoeven
 >         struct sh_dmae_device *shdev = platform_get_drvdata(pdev);
 > +
 > +       if (pm_runtime_suspended(&pdev->dev))
+
+This still looks a little racy. What if runtime resume happens exactly
+here? I think safer would be disabling runtime PM before checking for
+suspend state.
+
+Best regards,
+Krzysztof
+
 > +               return;
 > +
 > +       pm_runtime_get_sync(&pdev->dev);
@@ -60,14 +65,8 @@ On Mon, Jan 5, 2015 at 11:46 AM, Geert Uytterhoeven
 >  static int sh_dmae_runtime_suspend(struct device *dev)
 > --
 > 1.9.1
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-pm" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
