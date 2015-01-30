@@ -1,37 +1,40 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 14 Jan 2015 12:11:19 +0000
-Subject: [PATCH v2 1/6] PM / Domains: R-Mobile SYSC: Document SH-Mobile AG5 (sh73a0) binding
-Message-Id: <1421237484-16847-2-git-send-email-geert+renesas@glider.be>
+From: "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
+Date: Fri, 30 Jan 2015 14:43:22 +0000
+Subject: [PATCH 13/19] sh: expose number of page table levels
+Message-Id: <1422629008-13689-14-git-send-email-kirill.shutemov@linux.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421237484-16847-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1421237484-16847-1-git-send-email-geert+renesas@glider.be>
+References: <1422629008-13689-1-git-send-email-kirill.shutemov@linux.intel.com>
+In-Reply-To: <1422629008-13689-1-git-send-email-kirill.shutemov@linux.intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-mm@kvack.org, linux-kernel@vger.kernel.org, Guenter Roeck <linux@roeck-us.net>, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, linux-sh@vger.kernel.org
 
-SH-Mobile AG5 (sh73a0) can be handled by the existing bindings.
+We would want to use number of page table level to define mm_struct.
+Let's expose it as CONFIG_PGTABLE_LEVELS.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>
+Cc: linux-sh@vger.kernel.org
 ---
-v2:
-  - No changes
----
- Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt | 1 +
- 1 file changed, 1 insertion(+)
+ arch/sh/Kconfig | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-index 2460476808e9333e..cc3b1f0a9b1a2b75 100644
---- a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-+++ b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-@@ -12,6 +12,7 @@ Required properties:
- 	      fallback.
- 	      Examples with soctypes are:
- 		- "renesas,sysc-r8a7740" (R-Mobile A1)
-+		- "renesas,sysc-sh73a0" (SH-Mobile AG5)
- - reg: Two address start and address range blocks for the device:
-          - The first block refers to the normally accessible registers,
-          - the second block refers to the registers protected by the HPB
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index eb4ef274ae9b..50057fed819d 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -162,6 +162,10 @@ config NEED_DMA_MAP_STATE
+ config NEED_SG_DMA_LENGTH
+ 	def_bool y
+ 
++config PGTABLE_LEVELS
++	default 3 if X2TLB
++	default 2
++
+ source "init/Kconfig"
+ 
+ source "kernel/Kconfig.freezer"
 -- 
-1.9.1
+2.1.4
 
