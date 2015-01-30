@@ -1,54 +1,63 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 22 Jan 2015 02:04:16 +0000
-Subject: Re: [GIT PULL] Third Round of Renesas ARM Based SoC Updates for v3.20
-Message-Id: <20150122020416.GB29564@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 30 Jan 2015 00:45:16 +0000
+Subject: [GIT PULL] Third Round of Renesas ARM Based SoC Fixes for v3.19
+Message-Id: <cover.1422577690.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1421715134.git.horms+renesas@verge.net.au>
- <20150122013301.GC31815@quad.lixom.net>
-In-Reply-To: <20150122013301.GC31815@quad.lixom.net>
+References: <cover.1378362045.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1378362045.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jan 21, 2015 at 05:33:01PM -0800, Olof Johansson wrote:
-> On Tue, Jan 20, 2015 at 10:27:08AM +0900, Simon Horman wrote:
-> > Hi Olof, Hi Kevin, Hi Arnd,
-> > 
-> > Please consider these third round of Renesas ARM based SoC updates for v3.20.
-> > 
-> > This pull request is based on the previous round of
-> > such requests, tagged as renesas-soc2-for-v3.20,
-> > which I have already sent a pull-request for.
-> > 
-> > 
-> > The following changes since commit 2173fc7cb681c38b9e5bc526211045caecf96e44:
-> > 
-> >   ARM: shmobile: R-Mobile: Add DT support for PM domains (2015-01-15 08:38:14 +0900)
-> > 
-> > are available in the git repository at:
-> > 
-> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc3-for-v3.20
-> > 
-> > for you to fetch changes up to 1632ff162f305f38667632c465e4bfaab8ef87a2:
-> > 
-> >   ARM: shmobile: R-Mobile: Special-case PM domains with memory-controllers (2015-01-16 11:02:42 +0900)
-> 
-> Simon,
-> 
-> Doing each merge of a pull request is an amount of work from us. You sent
-> a preceding pull request for the soc branch just three days before this one.
-> 
-> Can you try to reduce the frequency of how often you drain the queue
-> of pending patches, perhaps? I know there's a balance to be had between
-> merge early-merge often and getting more aggregated, but I wonder if it
-> can be tuned back a bit to avoid flooding us.
-> 
-> Maybe a good balance would be wait to send the next pull request of a
-> branch until the previous one has been taken care of.
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Thanks, I will try to find a better balance.
+Please consider these third round of Renesas ARM based SoC fixes for v3.19.
 
-> That being said: Merged.
+This pull request is based on the previous round of
+such requests, tagged as renesas-soc-fixes2-for-v3.19,
+which I have already sent a pull-request for.
 
-Thanks.
+
+This fixes a regression in the r8a7790 and r8a73a4 SoCs due to
+9a1091ef0017c40a ("irqchip: gic: Support hierarchy irq domain.")
+which was included in v3.19-rc1.
+
+This pull-request is targeted at v3.19. r8a7790 patch in this pull-request
+conflicts with the patch "ARM: shmobile: lager: Remove legacy board
+support" which was included in the pull request "Renesas ARM Based SoC
+Lager Board Removal for v3.20" which you have pulled for v3.20. The
+conflict occurs because board-lager.c is removed in that patch whereas
+this series updates that file.
+
+In other words, this series fixes board code for the lager/r8a7790 for v3.19
+which is scheduled for removal in v3.20.
+
+
+The following changes since commit f469cde20a7ee342070b4a459b6fce469a3186db:
+
+  ARM: shmobile: r8a7779: Instantiate GIC from C board code in legacy builds (2015-01-17 09:28:41 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-fixes3-for-v3.19
+
+for you to fetch changes up to 77cf5166f21c3b73b04571311dc89a327424f594:
+
+  ARM: shmobile: r8a7790: Instantiate GIC from C board code in legacy builds (2015-01-29 17:52:38 +0900)
+
+----------------------------------------------------------------
+Third Round of Renesas ARM Based SoC Fixes for v3.19
+
+* Instantiate GIC from C board code in legacy builds on r8a7790 and r8a73a4
+
+----------------------------------------------------------------
+Magnus Damm (2):
+      ARM: shmobile: r8a73a4: Instantiate GIC from C board code in legacy builds
+      ARM: shmobile: r8a7790: Instantiate GIC from C board code in legacy builds
+
+ arch/arm/mach-shmobile/board-ape6evm.c   | 20 ++++++++++++++++++++
+ arch/arm/mach-shmobile/board-lager.c     | 13 +++++++++++++
+ arch/arm/mach-shmobile/setup-rcar-gen2.c |  2 ++
+ arch/arm/mach-shmobile/timer.c           | 12 ++++++++++++
+ 4 files changed, 47 insertions(+)
