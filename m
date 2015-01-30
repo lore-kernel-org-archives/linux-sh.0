@@ -1,66 +1,52 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 20 Jan 2015 13:04:02 +0000
-Subject: Re: [PATCH 5/9] ARM: shmobile: r8a73a4 dtsi: Add Bus State Controller node
-Message-Id: <1582375.9mB5WXp2Yh@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 30 Jan 2015 21:49:23 +0000
+Subject: Re: [PATCH] ARM: shmobile: alt dts: Drop console= bootargs parameter
+Message-Id: <54CBFC63.4070808@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421758306-24838-1-git-send-email-geert+renesas@glider.be>
- <1421758306-24838-6-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1421758306-24838-6-git-send-email-geert+renesas@glider.be>
+References: <1415075018-27529-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1415075018-27529-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+Hello.
 
-Thank you for the patch.
+On 11/04/2014 07:23 AM, Simon Horman wrote:
 
-On Tuesday 20 January 2015 13:51:42 Geert Uytterhoeven wrote:
-> Add a node for the Bus State Controller (BSC) on r8a73a4, to which
-> multiple external devices can be connected.
-> 
-> The BSC is driven by the ZB clock, and located in PM domain C4.
-> A reference to the latter will be added later.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+> Alt is booted from DT, so chosen/stdout-path is
+> always used, and we can drop the "console=" parameter from chosen/bootargs.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> This change has a side-effect of changing the console speed from 38400
+> to 115200. This is intentional as 115200 is consistently used on
+> all other shmobile boards.
 
+    I'd say it's not very practical to change the console's baud rate from 
+U-Boot's default (AFAIR changing baud rate in U-Boot didn't work)...
+
+> Cc: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+> Cc: Geert Uytterhoeven <geert+renesas@glider.be>
+> Cc: devicetree@vger.kernel.org
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 > ---
-> v3:
->   - Add Tested-by,
->   - Move "ranges" before "reg",
-> 
-> v2:
->   - New.
-> ---
->  arch/arm/boot/dts/r8a73a4.dtsi | 9 +++++++++
->  1 file changed, 9 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-> index fdcca5d0fb61f0bc..6e59602307e14d8b 100644
-> --- a/arch/arm/boot/dts/r8a73a4.dtsi
-> +++ b/arch/arm/boot/dts/r8a73a4.dtsi
-> @@ -409,6 +409,15 @@
->  		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
->  	};
-> 
-> +	bsc: bus@fec10000 {
-> +		compatible = "renesas,bsc-r8a73a4", "renesas,bsc", "simple-bus";
-> +		#address-cells = <1>;
-> +		#size-cells = <1>;
-> +		ranges = <0 0 0 0x20000000>;
-> +		reg = <0 0xfec10000 0 0x400>;
-> +		clocks = <&zb_clk>;
-> +	};
-> +
->  	clocks {
->  		#address-cells = <2>;
->  		#size-cells = <2>;
+>   arch/arm/boot/dts/r8a7794-alt.dts | 2 +-
+>   1 file changed, 1 insertion(+), 1 deletion(-)
+>
+> diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
+> index 8aec512..f2cf757 100644
+> --- a/arch/arm/boot/dts/r8a7794-alt.dts
+> +++ b/arch/arm/boot/dts/r8a7794-alt.dts
+> @@ -20,7 +20,7 @@
+>   	};
+>
+>   	chosen {
+> -		bootargs = "console=ttySC0,38400 ignore_loglevel rw root=/dev/nfs ip=dhcp";
+> +		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
 
--- 
-Regards,
+    Hm, does this even work as intended? I've tried to boot another R8A7794 
+based board and I couldn't get any output with alike command line. Booting 
+with 'earlyprintk=serial' has shown that tty0 was enabled as a console which 
+is not what we wanted.
 
-Laurent Pinchart
+WBR, Sergei
 
