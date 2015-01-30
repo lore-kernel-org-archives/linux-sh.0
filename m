@@ -1,34 +1,42 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 20 Jan 2015 19:41:44 +0000
-Subject: Re: [PATCH 2/2] shdmac: extend PM methods
-Message-Id: <54BEAF78.8060906@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 30 Jan 2015 02:33:19 +0000
+Subject: [PATCH 2/3 v2][RFC] ARM: shmobile: r8a7790: add SSIU/DTCP/MLM/SCU reg for Audio DMAC peri peri
+Message-Id: <87h9v9f13n.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <7124495.gOhk31Ctg5@wasted.cogentembedded.com>
-In-Reply-To: <7124495.gOhk31Ctg5@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello.
+New Audio DMAC peri peri driver requests SSIU/DTCP/MLM/SCU
+register address.
 
-On 01/20/2015 02:07 AM, Sergei Shtylyov wrote:
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-> In order to make it possible to restore from hibernation not only in Linux but
-> also in e.g. U-Boot, we have to use sh_dmae_{suspend|resume}() for the {freeze|
-> thaw|restore}() PM methods. It's handy to achieve this with SIMPLE_DEV_PM_OPS()
-> macro; since  that macro doesn't do anything when CONFIG_PM_SLEEP  is undefined,
-> we don't need to #define sh_dmae_{suspend|resume} NULL anymore; it seems safe to
-> leave the #ifdef CONFIG_PM alone  as this option  is selected by CONFIG_PM_SLEEP
-> anyway...
+ - new patch
 
-    However, when CONFIG_PM is defined and CONFIG_PM_SLEEP is not, we'll still 
-get the function unused warnings... so I'm going to recast this patch 
-(actually, my first variant was correct).
+ arch/arm/boot/dts/r8a7790.dtsi |    6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
-> Based on orignal patch by Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>.
-
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
-WBR, Sergei
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index ca22009..9f05f19 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -373,7 +373,11 @@
+ 		compatible = "renesas,rcar-audmapp";
+ 		#dma-cells = <1>;
+ 
+-		reg = <0 0xec740000 0 0x200>;
++		reg = <0 0xec740000 0 0x200>,
++			<0 0xec400000 0 0x10000>, /* SSIU */
++			<0 0xec420000 0 0x4800>,  /* DTCP */
++			<0 0xec320000 0 0x2000>,  /* MLM */
++			<0 0xec300000 0 0x8800>;  /* SCU */
+ 	};
+ 
+ 	i2c0: i2c@e6508000 {
+-- 
+1.7.9.5
 
