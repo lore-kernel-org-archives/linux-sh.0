@@ -1,56 +1,32 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 17 Feb 2015 14:52:39 +0000
-Subject: [PATCH v4 4/5] ARM: shmobile: sh73a0 dtsi: Add Cortex-A9 TWD node
-Message-Id: <1424184760-1671-5-git-send-email-geert+renesas@glider.be>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sun, 01 Feb 2015 14:47:52 +0000
+Subject: [RFC 3/5] ARM: shmobile: r8a7790: lager: enable rwdt
+Message-Id: <1422802074-1921-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424184760-1671-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1424184760-1671-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add a node for the Private Timer and Watchdog, as found in the Cortex-A9
-MPCore.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Without this, there's no clocksource available during early kernel
-initialization, before cmt1 is initialized, leading to a lock-up if
-CONFIG_CPU_IDLE=y.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
-v4:
-  - New, but this patch has been sent before as a separate patch.
----
- arch/arm/boot/dts/sh73a0.dtsi | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ arch/arm/boot/dts/r8a7790-lager.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 70b694f09fd5ef9e..0b933e254d19faa4 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -11,6 +11,7 @@
- /include/ "skeleton.dtsi"
- 
- #include <dt-bindings/clock/sh73a0-clock.h>
-+#include <dt-bindings/interrupt-controller/arm-gic.h>
- #include <dt-bindings/interrupt-controller/irq.h>
- 
- / {
-@@ -35,6 +36,13 @@
- 		};
- 	};
- 
-+	timer@f0000600 {
-+		compatible = "arm,cortex-a9-twd-timer";
-+		reg = <0xf0000600 0x20>;
-+		interrupts = <GIC_PPI 13 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_HIGH)>;
-+		clocks = <&twd_clk>;
-+	};
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 02408dece45d..40cea3abeed9 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -596,3 +596,7 @@
+ &ssi1 {
+ 	shared-pin;
+ };
 +
- 	gic: interrupt-controller@f0001000 {
- 		compatible = "arm,cortex-a9-gic";
- 		#interrupt-cells = <3>;
++&wdt0 {
++	status = "okay";
++};
 -- 
-1.9.1
+2.1.4
 
