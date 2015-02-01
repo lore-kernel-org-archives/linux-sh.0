@@ -1,31 +1,83 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 09 Feb 2015 08:59:46 +0000
-Subject: Re: [PATCH 0/2] Add VSP1 devices to DT for r8a7790 and r8a7791
-Message-Id: <3008098.CoKsWlASo9@avalon>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 01 Feb 2015 09:36:54 +0000
+Subject: Re: [PATCH v4 5/5] drivers: bus: Add Simple Power-Managed Bus Driver
+Message-Id: <CAMuHMdVCHYSo-OWDqHWQ+0YHa_gn8o_7-vUSOiRKO-r-c6+Rcw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1410651385-13090-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1410651385-13090-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1422288977-20353-1-git-send-email-geert+renesas@glider.be>
+ <1422288977-20353-6-git-send-email-geert+renesas@glider.be>
+ <CAPDyKFpf74Mxova+QsYfhSVPc26-NhC7A4vFJfywPzP9oHkVhw@mail.gmail.com>
+In-Reply-To: <CAPDyKFpf74Mxova+QsYfhSVPc26-NhC7A4vFJfywPzP9oHkVhw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello Devendra,
+Hi Ulf,
 
-On Thursday 05 February 2015 00:28:26 Devendra Talegaonkar wrote:
-> Thanks Laurent for your reply.
-> The problem we are facing is, we are planning to assign overlay planes to
-> different modules in the system (processes) & depending on the system
-> context we want to decide which overlay plane needs to bring forward and
-> which overlay plane needs to hide. As you suggested in the previous mail, 
-> handling XXSetPlane API would not be a desired option.
-> 
-> Can you please suggest any suitable mechanism for the same?
+On Fri, Jan 30, 2015 at 10:34 AM, Ulf Hansson <ulf.hansson@linaro.org> wrote:
+> On 26 January 2015 at 17:16, Geert Uytterhoeven <geert+renesas@glider.be> wrote:
+>> Add a driver for transparent busses that don't need a real driver, but
+>> where the bus controller is part of a PM domain, or under the control of
+>> a functional clock.  Typically, the bus controller's PM domain and/or
+>> clock must be enabled for child devices connected to the bus (either
+>> on-SoC or externally) to function.
+>>
+>> Hence the sole purpose of this driver is to enable its clock and PM
+>> domain (if exist(s)), which are specified in the DT and managed from
+>> platform and PM domain code, and to probe for child devices.
+>>
+>> Due to the child-parent relationship with devices connected to the bus,
+>> PM domain and clock state transitions are handled in the correct order.
+>>
+>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>> Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-This is something usually handled by the display server, i.e. X11 or Wayland.
+>> --- /dev/null
+>> +++ b/drivers/bus/simple-pm-bus.c
 
--- 
-Regards,
+>> +static int simple_pm_bus_probe(struct platform_device *pdev)
+>> +{
+>> +       struct device_node *np = pdev->dev.of_node;
+>> +
+>> +       dev_dbg(&pdev->dev, "%s\n", __func__);
+>> +
+>> +       pm_runtime_enable(&pdev->dev);
+>> +
+>> +       if (np)
+>> +               of_platform_populate(np, NULL, NULL, &pdev->dev);
+>> +
+>
+> I am not sure my comments is valid in this initial step. Yet, you
+> state in the DT documentation, that this driver supports clocks and PM
+> domains.
+>
+> How you are going add that support it quite interesting. :-) I also
 
-Laurent Pinchart
+The clock can be controlled through e.g. pm_clk domain (pm_clk_notifier
+and pm_clk_{suspend,resume}()) or genpd (GENPD_FLAG_PM_CLK,
+which you have added yourself ;-)
 
+> especially interested how the interaction (child to parents) through
+> runtime PM will look like.
+
+When a child is to be runtime-resumed, the core make sure the parent is
+runtime-resumed. When all children have been runtime-suspended, the parent
+is runtime-suspended. This is already working. This patch series is the
+only missing piece: without a driver that calls pm_runtime_enable(), the
+parent is not runtime-managed.
+
+> Overall, I like the idea in patchset, but I would like to understand a
+> bit more around the above.
+
+Thanks!
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
