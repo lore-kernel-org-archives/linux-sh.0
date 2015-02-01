@@ -1,69 +1,56 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 27 Feb 2015 01:49:42 +0000
-Subject: Re: [PATCH] ARM: shmobile: ape6evm dts: Fix polarity of LEDs
-Message-Id: <20150227014940.GJ31738@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sun, 01 Feb 2015 14:47:50 +0000
+Subject: [RFC 1/5] ARM: shmobile: r8a7790: add mstp4 and rwdt clock
+Message-Id: <1422802074-1921-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424947589-8303-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1424947589-8303-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Feb 26, 2015 at 11:46:29AM +0100, Geert Uytterhoeven wrote:
-> While the LEDs on r8a73a4/ape6evm are tied to VSUPPLY, they're driven by
-> an N-channel MOSFET. Hence the GPIO signal should be active high.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
->  arch/arm/boot/dts/r8a73a4-ape6evm.dts | 12 ++++++------
->  1 file changed, 6 insertions(+), 6 deletions(-)
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Thanks, I have queued this up.
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi            | 10 ++++++++++
+ include/dt-bindings/clock/r8a7790-clock.h |  3 +++
+ 2 files changed, 13 insertions(+)
 
-> diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> index f9e81512201a2ec4..b355fafc32f188dc 100644
-> --- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> +++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> @@ -75,27 +75,27 @@
->  	leds {
->  		compatible = "gpio-leds";
->  		led1 {
-> -			gpios = <&pfc 28 GPIO_ACTIVE_LOW>;
-> +			gpios = <&pfc 28 GPIO_ACTIVE_HIGH>;
->  			label = "GNSS_EN";
->  		};
->  		led2 {
-> -			gpios = <&pfc 126 GPIO_ACTIVE_LOW>;
-> +			gpios = <&pfc 126 GPIO_ACTIVE_HIGH>;
->  			label = "NFC_NRST";
->  		};
->  		led3 {
-> -			gpios = <&pfc 132 GPIO_ACTIVE_LOW>;
-> +			gpios = <&pfc 132 GPIO_ACTIVE_HIGH>;
->  			label = "GNSS_NRST";
->  		};
->  		led4 {
-> -			gpios = <&pfc 232 GPIO_ACTIVE_LOW>;
-> +			gpios = <&pfc 232 GPIO_ACTIVE_HIGH>;
->  			label = "BT_WAKEUP";
->  		};
->  		led5 {
-> -			gpios = <&pfc 250 GPIO_ACTIVE_LOW>;
-> +			gpios = <&pfc 250 GPIO_ACTIVE_HIGH>;
->  			label = "STROBE";
->  		};
->  		led6 {
-> -			gpios = <&pfc 288 GPIO_ACTIVE_LOW>;
-> +			gpios = <&pfc 288 GPIO_ACTIVE_HIGH>;
->  			label = "BBRESETOUT";
->  		};
->  	};
-> -- 
-> 1.9.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 56847bf09c3b..999d437496de 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1126,6 +1126,16 @@
+ 				"iic0", "pciec", "iic1", "ssusb", "cmt1",
+ 				"usbdmac0", "usbdmac1";
+ 		};
++		mstp4_clks: mstp4_clks@e6150140 {
++			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150140 0 4>, <0 0xe615004c 0 4>;
++			clocks = <&rclk_clk>;
++			#clock-cells = <1>;
++			clock-indices = <
++				R8A7790_CLK_RWDT
++			>;
++			clock-output-names = "rwdt";
++		};
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index 91940271cf83..34e4c12e3f6e 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -77,6 +77,9 @@
+ #define R8A7790_CLK_USBDMAC0		30
+ #define R8A7790_CLK_USBDMAC1		31
+ 
++/* MSTP4 */
++#define R8A7790_CLK_RWDT		2
++
+ /* MSTP5 */
+ #define R8A7790_CLK_AUDIO_DMAC1		1
+ #define R8A7790_CLK_AUDIO_DMAC0		2
+-- 
+2.1.4
+
