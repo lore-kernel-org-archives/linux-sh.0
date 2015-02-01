@@ -1,39 +1,38 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 10 Feb 2015 18:49:18 +0000
-Subject: Re: [PATCH v2 14/15] ARM: shmobile: bockw dts: Move Ethernet node to BSC
-Message-Id: <2138824.q8uNlgd31t@avalon>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sun, 01 Feb 2015 14:47:51 +0000
+Subject: [RFC 2/5] ARM: shmobile: r8a7790: add node for rwdt
+Message-Id: <1422802074-1921-3-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1423497763-3450-15-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1423497763-3450-15-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello,
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-On Tuesday 10 February 2015 12:14:14 Geert Uytterhoeven wrote:
-> On Mon, Feb 9, 2015 at 5:02 PM, Ulrich Hecht
-> 
-> <ulrich.hecht+renesas@gmail.com> wrote:
-> > +&bsc {
-> > +       ethernet@18300000 {
-> > +               compatible = "smsc,lan9220", "smsc,lan9115",
-> > "smsc,lan89218";
->
-> The most specific (89218) compatible name should be listed first.
-> I think the 9220 entry is not required, so I'd use just
-> 
->         compatible = "smsc,lan89218", "smsc,lan9115"
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-The 9220 entry isn't required by the Linux driver as it detects the chip 
-version at runtime. It could be useful for other operating systems (assuming, 
-of course, that the 89218 implements features found in the 9220 but not in the 
-9115), but I don't think we need to care too much about that as this is a .dts 
-part of the Linux kernel sources and not a binding specification.
-
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 999d437496de..1fea7cb6dcd8 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -123,6 +123,13 @@
+ 		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
+ 	};
+ 
++	wdt0: wdt@e6020000 {
++		compatible = "renesas,rwdt-r8a7790", "renesas,rwdt-rcar";
++		reg = <0 0xe6020000 0 0x0c>;
++		clocks = <&mstp4_clks R8A7790_CLK_RWDT>;
++		status = "disabled";
++	};
++
+ 	gpio0: gpio@e6050000 {
+ 		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
+ 		reg = <0 0xe6050000 0 0x50>;
 -- 
-Regards,
-
-Laurent Pinchart
+2.1.4
 
