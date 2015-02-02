@@ -1,7 +1,7 @@
 From: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 02 Feb 2015 05:40:16 +0000
+Date: Mon, 02 Feb 2015 06:03:05 +0000
 Subject: RE: [PATCH] usb: renesas_usbhs: fix NULL pointer dereference in dma_release_channel()
-Message-Id: <HKNPR06MB3221EE436A3965440F88E29D83C0@HKNPR06MB322.apcprd06.prod.outlook.com>
+Message-Id: <HKNPR06MB322F834B103583F4846BEFED83C0@HKNPR06MB322.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1422601103-1144-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 In-Reply-To: <1422601103-1144-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
@@ -10,56 +10,57 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-SGkgR2VlcnQtc2FuLA0KDQo+IEhpIFNoaW1vZGEtc2FuLA0KPiANCj4gT24gRnJpLCBKYW4gMzAs
-IDIwMTUgYXQgNzo1OCBBTSwgWW9zaGloaXJvIFNoaW1vZGENCj4gPHlvc2hpaGlyby5zaGltb2Rh
-LnVoQHJlbmVzYXMuY29tPiB3cm90ZToNCj4gPiBUaGlzIHBhdGNoIGZpeGVzIGFuIGlzc3VlIHRo
-YXQgdGhlIGZvbGxvd2luZyBjb21taXQgY2F1c2VzIE5VTEwNCj4gPiBwb2ludGVyIGRlcmVmZXJl
-bmNlIGluIGRtYV9yZWxlYXNlX2NoYW5uZWwoKS4NCj4gPiAgInVzYjogcmVuZXNhc191c2Joczog
-YWRkIHN1cHBvcnQgZm9yIHJlcXVlc3RpbmcgRFQgRE1BIg0KPiA+ICAoY29tbWl0IGlkIGFiZDJk
-YmY2YmIxYjVmM2EwM2E4Yzc2YjFhODg3OWRhMWRkMzBjYWEpDQo+IA0KPiBUaGFua3MgZm9yIHlv
-dXIgcGF0Y2ghDQo+IA0KPiA+IFRoZSB1c2Joc2ZfZG1hX2luaXRfZHQoKSBzaG91bGQgc2V0IGZp
-Zm8tPnt0LHJ9eF9jaGFuIHRvIE5VTEwgaWYNCj4gPiBkbWFfcmVxdWVzdF9zbGF2ZV9jaGFubmVs
-X3JlYXNvbigpIHJldHVybnMgSVNfRVJSIHZhbHVlLg0KPiA+IE90aGVyd2lzZSwgdXNiaHNmX2Rt
-YV9xdWl0KCkgd2lsbCBjYWxsIGRtYV9yZWxlYXNlX2NoYW5uZWwoKSwgYW5kIHRoZW4NCj4gPiBO
-VUxMIHBvaW50ZXIgZGVyZWZlcmVuY2UgaGFwcGVucy4NCj4gDQo+IEkgZ3Vlc3MgaXQgYWxzbyBj
-YXVzZXMgb3RoZXIgcHJvYmxlbXM/DQo+IFRoZSByZXR1cm4gdmFsdWUgb2YgdXNiaHNmX2RtYV9j
-aGFuX2dldCgpIGlzIG5vdCBjaGVja2VkIGZvciBhbiBlcnJvcg0KPiBjb2RlIGluIG1hbnkgY2Fs
-bHNpdGVzLg0KDQpZZXMsIHlvdSBhcmUgY29ycmVjdC4gU28sIEkgYWxzbyBzaG91bGQgaGF2ZSB0
-ZXN0ZWQgdGhpcyBwYXRjaCBvbiBQSU8gZW52aXJvbm1lbnQuDQoNCj4gPiBSZXBvcnRlZC1ieTog
-U2ltb24gSG9ybWFuIDxob3Jtc0B2ZXJnZS5uZXQuYXU+DQo+ID4gU2lnbmVkLW9mZi1ieTogWW9z
-aGloaXJvIFNoaW1vZGEgPHlvc2hpaGlyby5zaGltb2RhLnVoQHJlbmVzYXMuY29tPg0KPiANCj4g
-QWNrZWQtYnk6IEdlZXJ0IFV5dHRlcmhvZXZlbiA8Z2VlcnRAbGludXgtbTY4ay5vcmc+DQoNClRo
-YW5rIHlvdSEgVGhpcyBwYXRjaCB3YXMgYWxyZWFkeSBtZXJnZWQgaW4gRmVsaXBlJ3MgcmVwb3Np
-dG9yeS4NCg0KQmVzdCByZWdhcmRzLA0KWW9zaGloaXJvIFNoaW1vZGENCg0KPiA+IC0tLQ0KPiA+
-IFRoaXMgcGF0Y2ggaXMgYmFzZWQgb24gRmVsaXBlJ3MgdXNiLmdpdCAvIHRlc3RpbmcvbmV4dCBi
-cmFuY2guDQo+ID4gKGNvbW1pdCBpZCA9N2RiMzk5MGNiNzA3ZmY5MWNkNjUwN2Q1M2EwYTczMGFm
-ZTk3KQ0KPiA+DQo+ID4gIGRyaXZlcnMvdXNiL3JlbmVzYXNfdXNiaHMvZmlmby5jIHwgICAgNCAr
-KysrDQo+ID4gIDEgZmlsZSBjaGFuZ2VkLCA0IGluc2VydGlvbnMoKykNCj4gPg0KPiA+IGRpZmYg
-LS1naXQgYS9kcml2ZXJzL3VzYi9yZW5lc2FzX3VzYmhzL2ZpZm8uYyBiL2RyaXZlcnMvdXNiL3Jl
-bmVzYXNfdXNiaHMvZmlmby5jDQo+ID4gaW5kZXggNGMwODZiMS4uZDg5MWJmZiAxMDA2NDQNCj4g
-PiAtLS0gYS9kcml2ZXJzL3VzYi9yZW5lc2FzX3VzYmhzL2ZpZm8uYw0KPiA+ICsrKyBiL2RyaXZl
-cnMvdXNiL3JlbmVzYXNfdXNiaHMvZmlmby5jDQo+ID4gQEAgLTEwNzIsNyArMTA3MiwxMSBAQCBz
-dGF0aWMgdm9pZCB1c2Joc2ZfZG1hX2luaXRfcGRldihzdHJ1Y3QgdXNiaHNfZmlmbyAqZmlmbykN
-Cj4gPiAgc3RhdGljIHZvaWQgdXNiaHNmX2RtYV9pbml0X2R0KHN0cnVjdCBkZXZpY2UgKmRldiwg
-c3RydWN0IHVzYmhzX2ZpZm8gKmZpZm8pDQo+ID4gIHsNCj4gPiAgICAgICAgIGZpZm8tPnR4X2No
-YW4gPSBkbWFfcmVxdWVzdF9zbGF2ZV9jaGFubmVsX3JlYXNvbihkZXYsICJ0eCIpOw0KPiA+ICsg
-ICAgICAgaWYgKElTX0VSUihmaWZvLT50eF9jaGFuKSkNCj4gPiArICAgICAgICAgICAgICAgZmlm
-by0+dHhfY2hhbiA9IE5VTEw7DQo+ID4gICAgICAgICBmaWZvLT5yeF9jaGFuID0gZG1hX3JlcXVl
-c3Rfc2xhdmVfY2hhbm5lbF9yZWFzb24oZGV2LCAicngiKTsNCj4gPiArICAgICAgIGlmIChJU19F
-UlIoZmlmby0+cnhfY2hhbikpDQo+ID4gKyAgICAgICAgICAgICAgIGZpZm8tPnJ4X2NoYW4gPSBO
-VUxMOw0KPiA+ICB9DQo+IA0KPiBNeSBmaXJzdCB0aG91Z2h0IHdhczogc2hvdWxkbid0IGl0IGJl
-IGhhbmRsZWQgaW4gdXNiaHNmX2RtYV9pbml0KCkgaW5zdGVhZCwNCj4gc28gaXQgYXBwbGllcyB0
-byBib3RoIHRoZSBsZWdhY3kgcGxhdGZvcm0gZGF0YSBhbmQgdGhlIERUIGNhc2U/DQo+IA0KPiBC
-dXQgYXBwYXJlbnRseSBkbWFfcmVxdWVzdF9jaGFubmVsKCkgcmV0dXJucyBOVUxMIG9uIGZhaWx1
-cmUsIHdoaWxlDQo+IGRtYV9yZXF1ZXN0X3NsYXZlX2NoYW5uZWxfcmVhc29uKCkgcmV0dXJucyBh
-biBlcnJvciBjb2RlLiBPaCB3ZWxsLi4uDQo+IA0KPiBSZW1hcHBpbmcgdGhlIGVycm9yIHRvIE5V
-TEwgZG9lcyBtZWFuIHRoZSBkcml2ZXIgZG9lc24ndCBoYW5kbGUNCj4gLUVQUk9CRV9ERUZFUiwg
-YnV0IHRoYXQncyB0cmlja3kgd2l0aCBETUEgZW5naW5lcyBhbnl3YXksIGNmci4gY29tbWl0DQo+
-IDU1ZjVmOTg2MmEzMWUyYWMgKCJpMmM6IHNoX21vYmlsZTogcmV3b3JrIGRlZmVycmVkIHByb2Jp
-bmciKQ0KPiANCj4gR3J7b2V0amUsZWV0aW5nfXMsDQo+IA0KPiAgICAgICAgICAgICAgICAgICAg
-ICAgICBHZWVydA0KPiANCj4gLS0NCj4gR2VlcnQgVXl0dGVyaG9ldmVuIC0tIFRoZXJlJ3MgbG90
-cyBvZiBMaW51eCBiZXlvbmQgaWEzMiAtLSBnZWVydEBsaW51eC1tNjhrLm9yZw0KPiANCj4gSW4g
-cGVyc29uYWwgY29udmVyc2F0aW9ucyB3aXRoIHRlY2huaWNhbCBwZW9wbGUsIEkgY2FsbCBteXNl
-bGYgYSBoYWNrZXIuIEJ1dA0KPiB3aGVuIEknbSB0YWxraW5nIHRvIGpvdXJuYWxpc3RzIEkganVz
-dCBzYXkgInByb2dyYW1tZXIiIG9yIHNvbWV0aGluZyBsaWtlIHRoYXQuDQo+ICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgLS0gTGludXMgVG9ydmFsZHMNCg=
+Hi Simon-san,
+
+> 
+> On Fri, Jan 30, 2015 at 03:58:23PM +0900, Yoshihiro Shimoda wrote:
+> > This patch fixes an issue that the following commit causes NULL
+> > pointer dereference in dma_release_channel().
+> >  "usb: renesas_usbhs: add support for requesting DT DMA"
+> >  (commit id abd2dbf6bb1b5f3a03a8c76b1a8879da1dd30caa)
+> >
+> > The usbhsf_dma_init_dt() should set fifo->{t,r}x_chan to NULL if
+> > dma_request_slave_channel_reason() returns IS_ERR value.
+> > Otherwise, usbhsf_dma_quit() will call dma_release_channel(), and then
+> > NULL pointer dereference happens.
+> >
+> > Reported-by: Simon Horman <horms@verge.net.au>
+> > Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> 
+> I have tested this on the lager and koelsch boards using
+> shmobile_defconfig and next-20150129 as a base. The environment
+> where I originally observed the problem.
+> 
+> Tested-by: Simon Horman <horms+renesas@verge.net.au>
+
+Thank you for the test!
+
+Best regards,
+Yoshihiro Shimoda
+
+> > ---
+> > This patch is based on Felipe's usb.git / testing/next branch.
+> > (commit id }b3990cb707ff91cd6507d53a0a730afe97)
+> >
+> >  drivers/usb/renesas_usbhs/fifo.c |    4 ++++
+> >  1 file changed, 4 insertions(+)
+> >
+> > diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
+> > index 4c086b1..d891bff 100644
+> > --- a/drivers/usb/renesas_usbhs/fifo.c
+> > +++ b/drivers/usb/renesas_usbhs/fifo.c
+> > @@ -1072,7 +1072,11 @@ static void usbhsf_dma_init_pdev(struct usbhs_fifo *fifo)
+> >  static void usbhsf_dma_init_dt(struct device *dev, struct usbhs_fifo *fifo)
+> >  {
+> >  	fifo->tx_chan = dma_request_slave_channel_reason(dev, "tx");
+> > +	if (IS_ERR(fifo->tx_chan))
+> > +		fifo->tx_chan = NULL;
+> >  	fifo->rx_chan = dma_request_slave_channel_reason(dev, "rx");
+> > +	if (IS_ERR(fifo->rx_chan))
+> > +		fifo->rx_chan = NULL;
+> >  }
+> >
+> >  static void usbhsf_dma_init(struct usbhs_priv *priv,
+> > --
+> > 1.7.9.5
+> >
