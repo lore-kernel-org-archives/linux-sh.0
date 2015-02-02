@@ -1,47 +1,41 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Mon, 02 Feb 2015 10:06:20 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Mon, 02 Feb 2015 10:09:59 +0000
 Subject: Re: [RFC 5/5] watchdog: sh_mobile: add driver
-Message-Id: <20150202100620.GE1058@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="9crTWz/Z+Zyzu20v"
+Message-Id: <1741717.r8MbnsiXNB@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1422802074-1921-6-git-send-email-wsa@the-dreams.de>
 In-Reply-To: <1422802074-1921-6-git-send-email-wsa@the-dreams.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+Hi Geert,
 
---9crTWz/Z+Zyzu20v
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+On Monday 02 February 2015 11:01:54 Geert Uytterhoeven wrote:
+> On Mon, Feb 2, 2015 at 10:54 AM, Laurent Pinchart wrote:
+> > How about PM (system and runtime) support ? How does the watchdog behave
+> > during system suspend ? You could then replace the clk_prepare_enable()
+> > and
+> > clk_disable_unprepare() calls with pm_runtime_get_sync() and
+> > pm_runtime_put().
+>
+> That's a good question.
+> 
+> If the RWDT MSTP clock is disabled, it can't count, and thus can't trigger.
 
+I'd still like to test that. MSTP stands for module stop. While this is 
+probably implemented as clock gates in most cases, there is no guarantee that 
+it will always be the case. All MSTP guarantees is that the module is stopped, 
+but the definition of "stopped" isn't explained. The watchdog counter might 
+behave in a special way.
 
 > But I don't know what's the maximum time interval you can have in the system
-> between enabling the MSTP clock during system resume, and the first call
-> of watchdog_ops.sh_wdt_ping.
+> between enabling the MSTP clock during system resume, and the first call of
+> watchdog_ops.sh_wdt_ping.
 
-Most watchdog drivers seem to restart (or at least ping) the timer when resuming.
+-- 
+Regards,
 
+Laurent Pinchart
 
---9crTWz/Z+Zyzu20v
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJUz0wcAAoJEBQN5MwUoCm2TV4P/Ro95UXp+RSxlgAL8sQx60j2
-KpDE2NCckLV3TxdhHpQZYLI50s9xJJnjqRxa6TrGo58CS/R0Y8sL3NZVAso3PM+z
-KhPVpR71j0yfGMfyybhMl1srw4cMTbHCTJcoYwvoYWSGqKfGqXDKzNLRvUuwaMKZ
-sQagbrqLpxpTcR4v4CD9siIwXnutyZrAtBu6eLcBuqHqk2XS6/T1dQ2gec7wk9xR
-VlTbEVLxtcdkR/AKct6bFdidlvtl3Mr2EHaAIODTPtakO3ovvhvbPdKhXBpIufyq
-DwBZYgCm++VAucNKwhNnLrqdSN1BTRLX3sshx/4XzT2rpPy/CE/Wsy3z6G12HiLN
-1DcAYBJ3yPcmtbn9+Xt83u/aYXpQ9sq8w8vGKjNqLERWiQj/ymhXA5yV8quDlO7Z
-4rehrDceEbuVHHFIXRqMT3NiLli32ZwcxpZknD0r0FXc2Qul/8vjf6IrmMby8Srq
-bcLUhC81tsucC7Lyk2/xVzR+Gf8qr93k3etHySXjx0rQGSrfo8Bxg1gleL+9G6hk
-ySpfCTAr8R0k4dr3CworYtoXufc0t9Y7bG5dHejh5lv7dPjUElZfFhxUKEzjI6L3
-+j23DTdADWiAPMG/gbEFdpg/BgKo9Yisz5V45reeCOiIc1wltHcmOZZ6He/vjrlv
-5c61DFf668iGXo3KZaao
-=FHSK
------END PGP SIGNATURE-----
-
---9crTWz/Z+Zyzu20v--
