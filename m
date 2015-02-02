@@ -1,44 +1,77 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Fri, 27 Feb 2015 01:49:11 +0000
-Subject: Re: [PATCH v4 3/9] DT: i2c: add trivial binding for OKI ML86V7667 video decoder
-Message-Id: <20150227014911.GB31738@verge.net.au>
+Date: Mon, 02 Feb 2015 00:19:12 +0000
+Subject: Re: [PATCH] ARM: shmobile: silk: initial device tree
+Message-Id: <20150202001910.GA29383@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424968934-30577-4-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1424968934-30577-4-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
+ <1608366.HtA9yBksdO@wasted.cogentembedded.com>
+ <20150131042143.GB7605@verge.net.au>
+ <54CD1E79.6090700@cogentembedded.com>
+In-Reply-To: <54CD1E79.6090700@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-[CC Wolfram]
+Hi Sergei,
 
-On Thu, Feb 26, 2015 at 05:42:08PM +0100, Ulrich Hecht wrote:
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-
-Thanks, I have queued this up with Wolfram's ack which he provided
-for an older patch which included this change.
-
-> ---
->  Documentation/devicetree/bindings/i2c/trivial-devices.txt | 1 +
->  1 file changed, 1 insertion(+)
+On Sat, Jan 31, 2015 at 09:27:05PM +0300, Sergei Shtylyov wrote:
+> Hello.
 > 
-> diff --git a/Documentation/devicetree/bindings/i2c/trivial-devices.txt b/Documentation/devicetree/bindings/i2c/trivial-devices.txt
-> index aaa8325..7cbd62b 100644
-> --- a/Documentation/devicetree/bindings/i2c/trivial-devices.txt
-> +++ b/Documentation/devicetree/bindings/i2c/trivial-devices.txt
-> @@ -77,6 +77,7 @@ nxp,pca9556		Octal SMBus and I2C registered interface
->  nxp,pca9557		8-bit I2C-bus and SMBus I/O port with reset
->  nxp,pcf8563		Real-time clock/calendar
->  nxp,pcf85063		Tiny Real-Time Clock
-> +oki,ml86v7667		OKI ML86V7667 video decoder
->  ovti,ov5642		OV5642: Color CMOS QSXGA (5-megapixel) Image Sensor with OmniBSI and Embedded TrueFocus
->  pericom,pt7c4338	Real-time Clock Module
->  plx,pex8648		48-Lane, 12-Port PCI Express Gen 2 (5.0 GT/s) Switch
-> -- 
-> 2.2.2
+> On 1/31/2015 7:21 AM, Simon Horman wrote:
 > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> >>Add the initial device tree for the R8A7794 SoC based SILK low cost board.
+> >>SCIF2 serial port support is included, so that the serial console can work.
 > 
+> >>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> 
+> >>---
+> >>This patch is against the 'renesas-devel-20150129-v3.19-rc6' tag of Simon
+> >>Horman's 'renesas.git' repo.
+> 
+> >>  arch/arm/boot/dts/Makefile         |    1
+> >>  arch/arm/boot/dts/r8a7794-silk.dts |   41 +++++++++++++++++++++++++++++++++++++
+> >>  2 files changed, 42 insertions(+)
+> 
+> [...]
+> >>Index: renesas/arch/arm/boot/dts/r8a7794-silk.dts
+> >>=================================> >>--- /dev/null
+> >>+++ renesas/arch/arm/boot/dts/r8a7794-silk.dts
+> >>@@ -0,0 +1,41 @@
+> >>+/*
+> >>+ * Device Tree Source for the SILK board
+> >>+ *
+> >>+ * Copyright (C) 2014 Renesas Electronics Corporation
+> >>+ * Copyright (C) 2014-2015 Renesas Solutions Corp.
+> >>+ * Copyright (C) 2014-2015 Cogent Embedded, Inc.
+> >>+ *
+> >>+ * This file is licensed under the terms of the GNU General Public License
+> >>+ * version 2.  This program is licensed "as is" without any warranty of any
+> >>+ * kind, whether express or implied.
+> >>+ */
+> >>+
+> >>+/dts-v1/;
+> >>+#include "r8a7794.dtsi"
+> >>+
+> >>+/ {
+> >>+	model = "SILK";
+> >>+	compatible = "renesas,silk", "renesas,r8a7794";
+> >>+
+> >>+	aliases {
+> >>+		serial0 = &scif2;
+> >>+	};
+> >>+
+> >>+	chosen {
+> >>+		bootargs = "console=ttySC0,38400 ignore_loglevel";
+> 
+> >Please remove console= for consistency with other boards
+> >based on Renesas SoCs.
+> 
+>    I can't, there will be no console at all.
+
+Its not clear to me why that should be the case when you also have:
+
+		stdout-path = &scif2;
+
+Is this a baud issue? If so is it possible to set uboot to 115200 bps?
+This would be consistent with the way other boards are handled in mainline.
