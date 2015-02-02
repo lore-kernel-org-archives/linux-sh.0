@@ -1,7 +1,7 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 01 Feb 2015 15:50:29 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 02 Feb 2015 09:07:36 +0000
 Subject: Re: [RFC 1/5] ARM: shmobile: r8a7790: add mstp4 and rwdt clock
-Message-Id: <1550892.kyonzY5rIZ@avalon>
+Message-Id: <CAMuHMdXW15eksi8QU+8A=+dhU90r0K29DgnyHwos=s61AKW4jQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1422802074-1921-2-git-send-email-wsa@the-dreams.de>
 In-Reply-To: <1422802074-1921-2-git-send-email-wsa@the-dreams.de>
@@ -10,63 +10,20 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Wolfram,
-
-Thank you for the patch.
-
-On Sunday 01 February 2015 15:47:50 Wolfram Sang wrote:
+On Sun, Feb 1, 2015 at 3:47 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
 > From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> 
+>
 > Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-> ---
->  arch/arm/boot/dts/r8a7790.dtsi            | 10 ++++++++++
->  include/dt-bindings/clock/r8a7790-clock.h |  3 +++
->  2 files changed, 13 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-> index 56847bf09c3b..999d437496de 100644
-> --- a/arch/arm/boot/dts/r8a7790.dtsi
-> +++ b/arch/arm/boot/dts/r8a7790.dtsi
-> @@ -1126,6 +1126,16 @@
->  				"iic0", "pciec", "iic1", "ssusb", "cmt1",
->  				"usbdmac0", "usbdmac1";
->  		};
-> +		mstp4_clks: mstp4_clks@e6150140 {
-> +			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-
-clocks";
-> +			reg = <0 0xe6150140 0 4>, <0 0xe615004c 0 4>;
-> +			clocks = <&rclk_clk>;
-> +			#clock-cells = <1>;
-> +			clock-indices = <
-> +				R8A7790_CLK_RWDT
-> +			>;
-> +			clock-output-names = "rwdt";
-> +		};
->  		mstp5_clks: mstp5_clks@e6150144 {
->  			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-
-clocks";
->  			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
-> diff --git a/include/dt-bindings/clock/r8a7790-clock.h
-> b/include/dt-bindings/clock/r8a7790-clock.h index
-> 91940271cf83..34e4c12e3f6e 100644
-> --- a/include/dt-bindings/clock/r8a7790-clock.h
-> +++ b/include/dt-bindings/clock/r8a7790-clock.h
-> @@ -77,6 +77,9 @@
->  #define R8A7790_CLK_USBDMAC0		30
->  #define R8A7790_CLK_USBDMAC1		31
-> 
-> +/* MSTP4 */
-> +#define R8A7790_CLK_RWDT		2
-> +
->  /* MSTP5 */
->  #define R8A7790_CLK_AUDIO_DMAC1		1
->  #define R8A7790_CLK_AUDIO_DMAC0		2
+Gr{oetje,eeting}s,
 
--- 
-Regards,
+                        Geert
 
-Laurent Pinchart
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
