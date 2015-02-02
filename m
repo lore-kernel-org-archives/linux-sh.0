@@ -1,42 +1,42 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 27 Feb 2015 08:08:22 +0000
-Subject: Re: [PATCH v4 6/9] ARM: shmobile: r8a7778: add sound to DT
-Message-Id: <CAMuHMdUcnBjPxciHbrSTc78thsmst4r7a4D5pdQ7+2Jx_mQmLQ@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 02 Feb 2015 04:25:10 +0000
+Subject: [PATCH 0/3 v3][RFC] dmaengine: rcar-audmapp: calculate chcr via src/dst addr
+Message-Id: <87mw4xey70.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424968934-30577-7-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1424968934-30577-7-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Feb 26, 2015 at 5:42 PM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> --- a/arch/arm/boot/dts/r8a7778.dtsi
-> +++ b/arch/arm/boot/dts/r8a7778.dtsi
-> @@ -227,6 +227,61 @@
->                 status = "disabled";
->         };
->
-> +       rcar_sound: sound@ffd90000 {
-> +               #sound-dai-cells = <1>;
-> +               compatible = "renesas,rcar_sound-r8a7778", "renesas,rcar_sound-gen1", "renesas,rcar_sound";
 
-Please drop the "renesas,rcar_sound" compatible value, as it was never
-processed nor documented.
+Hi all
 
-Cfr. e.g. commit f49cd2b3d2caf075d7 ("ARM: shmobile: r8a7791 dtsi:
-Drop "renesas,rcar_sound" compatible value").
+These are v3 of rcar-audmapp driver as [RFC].
+We can reduce Audio DMAC peri peri DT entry 220 -> 22 node by these patches.
 
-Sorry for not noticing before.
+Actually, sound driver side needs update for this rcar-audmapp update,
+but it doesn't include these patches at this point.
+These are focuing about rcar-audmapp only at this point.
 
-Gr{oetje,eeting}s,
+Main change on this version is that audmapp driver assumes DTS has reg-names
 
-                        Geert
+Kuninori Morimoto (3):
+      dmaengine: rcar-audmapp: calculate chcr via src/dst addr
+      ARM: shmobile: r8a7790: add SSIU/DTCP/MLM/SCU reg for Audio DMAC peri peri
+      ARM: shmobile: r8a7790: enables Audio DMAC peri peri entry on DTSI
 
+ arch/arm/boot/dts/r8a7790.dtsi |   26 ++++++-
+ drivers/dma/sh/rcar-audmapp.c  |  164 +++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 175 insertions(+), 15 deletions(-)
+
+Best regards
+---
+Kuninori Morimoto
+_______________________________________________
+Alsa-devel mailing list
+Alsa-devel@alsa-project.org
+http://mailman.alsa-project.org/mailman/listinfo/alsa-devel
 --
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
