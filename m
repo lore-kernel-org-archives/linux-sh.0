@@ -1,28 +1,43 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 27 Feb 2015 08:01:30 +0000
-Subject: Re: [PATCH v4 1/9] clk: shmobile: Add r8a7778 SoC to MSTP bindings
-Message-Id: <CAMuHMdWthrXzoCfraE_hQtK4Q1LjuZ-sM89tVuEnpohqcrzvdA@mail.gmail.com>
+From: Mark Brown <broonie@kernel.org>
+Date: Mon, 02 Feb 2015 20:03:56 +0000
+Subject: Re: [PATCH] spi: sh-msiof: Update calculation of frequency dividing
+Message-Id: <20150202200356.GE21293@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="F99ASOl9IwBV9fq7"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424968934-30577-2-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1424968934-30577-2-git-send-email-ulrich.hecht+renesas@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+References: <1422598314-6889-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+In-Reply-To: <1422598314-6889-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+To: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, sergei.shtylyov@cogentembedded.com, geert@glider.be
 
-On Thu, Feb 26, 2015 at 5:42 PM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+--F99ASOl9IwBV9fq7
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Gr{oetje,eeting}s,
+On Fri, Jan 30, 2015 at 03:11:54PM +0900, Nobuhiro Iwamatsu wrote:
+> sh-msiof of frequency dividing does not perform the calculation, driver have
+> to manage setting value in the table. It is not possible to set frequency
+> dividing value close to the actual data in this way. This changes from
+> frequency dividing of table management to setting by calculation.
+> This driver is able to set a value close to the actual data.
 
-                        Geert
+Applied, thanks.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+--F99ASOl9IwBV9fq7
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQEcBAEBCAAGBQJUz9gsAAoJECTWi3JdVIfQkdcH/A64aprG4ZaToI39iLV13qca
+JD2vffAlCV+ZpJQ8Xb1//0CYVRkE6c+OBO8iZIAN52blESZAVPLHrafnz9feLozI
+dNVF6XnF6vt1Lgo3QBy+lfUZ3M7LUBOgBqq1DXfCaurG8pO8RFvDo/QoAo1rdYum
+FspSHeHBasWYB7veZHJTgM/sd8bDnMmAjBmYh30i0k8Pv7zl8VicerpW+Ai8KpiG
+uScNgwerVJ/XHarZX0WRe/tfy8Gx0SLMCZdGPpd/X9i/HBBJKZbfGZVgBoWzOE6b
+CFSliVXn/XfZNGxJAmIOCAwJTg37Tme3SybsaxFF4tpzzTWmoHhnZV5OJRAZk68=
+=nQN0
+-----END PGP SIGNATURE-----
+
+--F99ASOl9IwBV9fq7--
