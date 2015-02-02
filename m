@@ -1,64 +1,55 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 18 Feb 2015 21:21:07 +0000
-Subject: Re: [PATCH v3 0/2] ARM: shmobile: sh73a0: Enable DT PM domain support
-Message-Id: <20150218212106.GF12754@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 02 Feb 2015 00:58:53 +0000
+Subject: Re: [PATCH 2/3 v2][RFC] ARM: shmobile: r8a7790: add SSIU/DTCP/MLM/SCU reg for Audio DMAC peri peri
+Message-Id: <87zj8xf7qu.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424187099-5628-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1424187099-5628-1-git-send-email-geert+renesas@glider.be>
+References: <87h9v9f13n.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87h9v9f13n.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Feb 17, 2015 at 04:31:37PM +0100, Geert Uytterhoeven wrote:
-> 	Hi Simon, Magnus,
-> 
-> This patch series contains the missing pieces to enable DT PM domain
-> support on the Renesas SH-Mobile AG5 (sh73a0) SoC. As a bonus, it also
-> allows the use of the R-Mobile Reset driver to restart the system.
-> 
-> root@kzm9g:~# cat /sys/kernel/debug/pm_genpd/pm_genpd_summary
->     domain                      status         slaves
->            /device                                      runtime status
-> ----------------------------------------------------------------------
-> a2sl                            on
-> a3sm                            on               a2sl
-> a3sg                            off
-> a3sp                            on
->     /devices/platform/e6820000.i2c                      suspended
->     /devices/platform/e6822000.i2c                      suspended
->     /devices/platform/e6826000.i2c                      suspended
->     /devices/platform/e6c80000.serial                   active
->     /devices/platform/ee100000.sd                       active
->     /devices/platform/ee140000.sd                       active
->     /devices/platform/e6bd0000.mmc                      active
-> a4s                             on               a3sp, a3sg, a3sm
->     /devices/platform/e6900000.irqpin                   active
->     /devices/platform/e6900004.irqpin                   active
->     /devices/platform/e6900008.irqpin                   active
->     /devices/platform/e690000c.irqpin                   active
->     /devices/platform/fec10000.bus                      active
-> a2rv                            off
-> a3r                             off              a2rv
-> a4rm                            off              a3r
-> a3vc                            off
-> a3mp                            off
-> a4mp                            off              a3mp, a3vc
->     /devices/platform/ec230000.sound                    suspended
-> a4lc1                           off
-> a4lc0                           off
-> a4bc1                           on
-> a4bc0                           on
-> d4                              off
-> c4                              off
-> c5                              on               c4, d4, a4bc0, a4bc1, a4lc0, a4lc1, a4mp, a4rm, a4s
->     /devices/platform/e6050000.pfc                      unsupported
->     /devices/platform/e6138000.timer                    active
-> root@kzm9g:~#
-> 
-> This depends on the series "[PATCH v4 0/5] ARM: shmobile: sh73a0/kzm9g:
-> Complete multiplatform support".
-> 
-> Thanks for applying!
 
-Thanks, done.
+Hi Geert
+
+> > New Audio DMAC peri peri driver requests SSIU/DTCP/MLM/SCU
+> > register address.
+> 
+> Thanks, that's the missing piece I was looking for yesterday ;-)
+> 
+> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> > ---
+> > v1 -> v2
+> >
+> >  - new patch
+> >
+> >  arch/arm/boot/dts/r8a7790.dtsi |    6 +++++-
+> >  1 file changed, 5 insertions(+), 1 deletion(-)
+> >
+> > diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+> > index ca22009..9f05f19 100644
+> > --- a/arch/arm/boot/dts/r8a7790.dtsi
+> > +++ b/arch/arm/boot/dts/r8a7790.dtsi
+> > @@ -373,7 +373,11 @@
+> >                 compatible = "renesas,rcar-audmapp";
+> >                 #dma-cells = <1>;
+> >
+> > -               reg = <0 0xec740000 0 0x200>;
+> > +               reg = <0 0xec740000 0 0x200>,
+> > +                       <0 0xec400000 0 0x10000>, /* SSIU */
+> > +                       <0 0xec420000 0 0x4800>,  /* DTCP */
+> > +                       <0 0xec320000 0 0x2000>,  /* MLM */
+> > +                       <0 0xec300000 0 0x8800>;  /* SCU */
+> 
+> Please use "reg-names".
+> Can we still make the name mandatory for the first range, or do we have
+> to support an anonymous first range for backwards compatibility?
+
+If we use "reg-names" for SSIU/DTCP/MLM/SCU, we need to add reg-name for 1st one.
+This rcar-audmapp is registered on DTSI, but, noone is using it (because of sound driver).
+So, I think we don't need to keep compatibility :P
+
+Best regards
+---
+Kuninori Morimoto
