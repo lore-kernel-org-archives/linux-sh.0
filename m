@@ -1,147 +1,65 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 27 Feb 2015 17:38:05 +0000
-Subject: [PATCH 4/4] pinctrl: sh-pfc: Use unsigned int for register/field widths and offsets
-Message-Id: <1425058685-12956-5-git-send-email-geert+renesas@glider.be>
+From: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 02 Feb 2015 05:40:16 +0000
+Subject: RE: [PATCH] usb: renesas_usbhs: fix NULL pointer dereference in dma_release_channel()
+Message-Id: <HKNPR06MB3221EE436A3965440F88E29D83C0@HKNPR06MB322.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425058685-12956-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1425058685-12956-1-git-send-email-geert+renesas@glider.be>
+References: <1422601103-1144-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1422601103-1144-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-As register and field widths and offsets are in the range 0..32, use
-unsigned int (mostly replacing unsigned long) to store them in local
-variables and for passing them around.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- drivers/pinctrl/sh-pfc/core.c | 25 ++++++++++++-------------
- drivers/pinctrl/sh-pfc/core.h |  4 ++--
- drivers/pinctrl/sh-pfc/gpio.c |  6 ++----
- 3 files changed, 16 insertions(+), 19 deletions(-)
-
-diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index 1758043cfcec253b..0350c64229ea0734 100644
---- a/drivers/pinctrl/sh-pfc/core.c
-+++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -144,7 +144,7 @@ static int sh_pfc_enum_in_range(u16 enum_id, const struct pinmux_range *r)
- 	return 1;
- }
- 
--u32 sh_pfc_read_raw_reg(void __iomem *mapped_reg, unsigned long reg_width)
-+u32 sh_pfc_read_raw_reg(void __iomem *mapped_reg, unsigned int reg_width)
- {
- 	switch (reg_width) {
- 	case 8:
-@@ -159,7 +159,7 @@ u32 sh_pfc_read_raw_reg(void __iomem *mapped_reg, unsigned long reg_width)
- 	return 0;
- }
- 
--void sh_pfc_write_raw_reg(void __iomem *mapped_reg, unsigned long reg_width,
-+void sh_pfc_write_raw_reg(void __iomem *mapped_reg, unsigned int reg_width,
- 			  u32 data)
- {
- 	switch (reg_width) {
-@@ -179,9 +179,9 @@ void sh_pfc_write_raw_reg(void __iomem *mapped_reg, unsigned long reg_width,
- 
- static void sh_pfc_config_reg_helper(struct sh_pfc *pfc,
- 				     const struct pinmux_cfg_reg *crp,
--				     unsigned long in_pos,
-+				     unsigned int in_pos,
- 				     void __iomem **mapped_regp, u32 *maskp,
--				     unsigned long *posp)
-+				     unsigned int *posp)
- {
- 	unsigned int k;
- 
-@@ -200,15 +200,15 @@ static void sh_pfc_config_reg_helper(struct sh_pfc *pfc,
- 
- static void sh_pfc_write_config_reg(struct sh_pfc *pfc,
- 				    const struct pinmux_cfg_reg *crp,
--				    unsigned long field, u32 value)
-+				    unsigned int field, u32 value)
- {
- 	void __iomem *mapped_reg;
--	unsigned long pos;
-+	unsigned int pos;
- 	u32 mask, data;
- 
- 	sh_pfc_config_reg_helper(pfc, crp, field, &mapped_reg, &mask, &pos);
- 
--	dev_dbg(pfc->dev, "write_reg addr = %lx, value = 0x%x, field = %ld, "
-+	dev_dbg(pfc->dev, "write_reg addr = %lx, value = 0x%x, field = %u, "
- 		"r_width = %u, f_width = %u\n",
- 		crp->reg, value, field, crp->reg_width, crp->field_width);
- 
-@@ -228,12 +228,11 @@ static void sh_pfc_write_config_reg(struct sh_pfc *pfc,
- }
- 
- static int sh_pfc_get_config_reg(struct sh_pfc *pfc, u16 enum_id,
--				 const struct pinmux_cfg_reg **crp, int *fieldp,
--				 u32 *valuep)
-+				 const struct pinmux_cfg_reg **crp,
-+				 unsigned int *fieldp, u32 *valuep)
- {
- 	const struct pinmux_cfg_reg *config_reg;
--	unsigned long r_width, f_width, curr_width;
--	unsigned int k, m, pos, bit_pos;
-+	unsigned int r_width, f_width, curr_width, k, m, pos, bit_pos;
- 	u32 ncomb, n;
- 
- 	k = 0;
-@@ -300,9 +299,9 @@ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type)
- 	const struct pinmux_cfg_reg *cr = NULL;
- 	u16 enum_id;
- 	const struct pinmux_range *range;
--	int in_range, pos, field;
-+	int in_range, pos, ret;
-+	unsigned int field;
- 	u32 value;
--	int ret;
- 
- 	switch (pinmux_type) {
- 	case PINMUX_TYPE_GPIO:
-diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
-index 8a10dd50ccdd2e0c..6dc8a6fc27468b39 100644
---- a/drivers/pinctrl/sh-pfc/core.h
-+++ b/drivers/pinctrl/sh-pfc/core.h
-@@ -57,8 +57,8 @@ int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc);
- int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
- int sh_pfc_unregister_pinctrl(struct sh_pfc *pfc);
- 
--u32 sh_pfc_read_raw_reg(void __iomem *mapped_reg, unsigned long reg_width);
--void sh_pfc_write_raw_reg(void __iomem *mapped_reg, unsigned long reg_width,
-+u32 sh_pfc_read_raw_reg(void __iomem *mapped_reg, unsigned int reg_width);
-+void sh_pfc_write_raw_reg(void __iomem *mapped_reg, unsigned int reg_width,
- 			  u32 data);
- 
- int sh_pfc_get_pin_index(struct sh_pfc *pfc, unsigned int pin);
-diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
-index f2bb7d7398cdfc24..b68d24099593d3b8 100644
---- a/drivers/pinctrl/sh-pfc/gpio.c
-+++ b/drivers/pinctrl/sh-pfc/gpio.c
-@@ -153,8 +153,7 @@ static void gpio_pin_set_value(struct sh_pfc_chip *chip, unsigned offset,
- 			       int value)
- {
- 	struct sh_pfc_gpio_data_reg *reg;
--	unsigned long pos;
--	unsigned int bit;
-+	unsigned int pos, bit;
- 
- 	gpio_get_data_reg(chip, offset, &reg, &bit);
- 
-@@ -185,8 +184,7 @@ static int gpio_pin_get(struct gpio_chip *gc, unsigned offset)
- {
- 	struct sh_pfc_chip *chip = gpio_to_pfc_chip(gc);
- 	struct sh_pfc_gpio_data_reg *reg;
--	unsigned long pos;
--	unsigned int bit;
-+	unsigned int pos, bit;
- 
- 	gpio_get_data_reg(chip, offset, &reg, &bit);
- 
--- 
-1.9.1
-
+SGkgR2VlcnQtc2FuLA0KDQo+IEhpIFNoaW1vZGEtc2FuLA0KPiANCj4gT24gRnJpLCBKYW4gMzAs
+IDIwMTUgYXQgNzo1OCBBTSwgWW9zaGloaXJvIFNoaW1vZGENCj4gPHlvc2hpaGlyby5zaGltb2Rh
+LnVoQHJlbmVzYXMuY29tPiB3cm90ZToNCj4gPiBUaGlzIHBhdGNoIGZpeGVzIGFuIGlzc3VlIHRo
+YXQgdGhlIGZvbGxvd2luZyBjb21taXQgY2F1c2VzIE5VTEwNCj4gPiBwb2ludGVyIGRlcmVmZXJl
+bmNlIGluIGRtYV9yZWxlYXNlX2NoYW5uZWwoKS4NCj4gPiAgInVzYjogcmVuZXNhc191c2Joczog
+YWRkIHN1cHBvcnQgZm9yIHJlcXVlc3RpbmcgRFQgRE1BIg0KPiA+ICAoY29tbWl0IGlkIGFiZDJk
+YmY2YmIxYjVmM2EwM2E4Yzc2YjFhODg3OWRhMWRkMzBjYWEpDQo+IA0KPiBUaGFua3MgZm9yIHlv
+dXIgcGF0Y2ghDQo+IA0KPiA+IFRoZSB1c2Joc2ZfZG1hX2luaXRfZHQoKSBzaG91bGQgc2V0IGZp
+Zm8tPnt0LHJ9eF9jaGFuIHRvIE5VTEwgaWYNCj4gPiBkbWFfcmVxdWVzdF9zbGF2ZV9jaGFubmVs
+X3JlYXNvbigpIHJldHVybnMgSVNfRVJSIHZhbHVlLg0KPiA+IE90aGVyd2lzZSwgdXNiaHNmX2Rt
+YV9xdWl0KCkgd2lsbCBjYWxsIGRtYV9yZWxlYXNlX2NoYW5uZWwoKSwgYW5kIHRoZW4NCj4gPiBO
+VUxMIHBvaW50ZXIgZGVyZWZlcmVuY2UgaGFwcGVucy4NCj4gDQo+IEkgZ3Vlc3MgaXQgYWxzbyBj
+YXVzZXMgb3RoZXIgcHJvYmxlbXM/DQo+IFRoZSByZXR1cm4gdmFsdWUgb2YgdXNiaHNmX2RtYV9j
+aGFuX2dldCgpIGlzIG5vdCBjaGVja2VkIGZvciBhbiBlcnJvcg0KPiBjb2RlIGluIG1hbnkgY2Fs
+bHNpdGVzLg0KDQpZZXMsIHlvdSBhcmUgY29ycmVjdC4gU28sIEkgYWxzbyBzaG91bGQgaGF2ZSB0
+ZXN0ZWQgdGhpcyBwYXRjaCBvbiBQSU8gZW52aXJvbm1lbnQuDQoNCj4gPiBSZXBvcnRlZC1ieTog
+U2ltb24gSG9ybWFuIDxob3Jtc0B2ZXJnZS5uZXQuYXU+DQo+ID4gU2lnbmVkLW9mZi1ieTogWW9z
+aGloaXJvIFNoaW1vZGEgPHlvc2hpaGlyby5zaGltb2RhLnVoQHJlbmVzYXMuY29tPg0KPiANCj4g
+QWNrZWQtYnk6IEdlZXJ0IFV5dHRlcmhvZXZlbiA8Z2VlcnRAbGludXgtbTY4ay5vcmc+DQoNClRo
+YW5rIHlvdSEgVGhpcyBwYXRjaCB3YXMgYWxyZWFkeSBtZXJnZWQgaW4gRmVsaXBlJ3MgcmVwb3Np
+dG9yeS4NCg0KQmVzdCByZWdhcmRzLA0KWW9zaGloaXJvIFNoaW1vZGENCg0KPiA+IC0tLQ0KPiA+
+IFRoaXMgcGF0Y2ggaXMgYmFzZWQgb24gRmVsaXBlJ3MgdXNiLmdpdCAvIHRlc3RpbmcvbmV4dCBi
+cmFuY2guDQo+ID4gKGNvbW1pdCBpZCA9N2RiMzk5MGNiNzA3ZmY5MWNkNjUwN2Q1M2EwYTczMGFm
+ZTk3KQ0KPiA+DQo+ID4gIGRyaXZlcnMvdXNiL3JlbmVzYXNfdXNiaHMvZmlmby5jIHwgICAgNCAr
+KysrDQo+ID4gIDEgZmlsZSBjaGFuZ2VkLCA0IGluc2VydGlvbnMoKykNCj4gPg0KPiA+IGRpZmYg
+LS1naXQgYS9kcml2ZXJzL3VzYi9yZW5lc2FzX3VzYmhzL2ZpZm8uYyBiL2RyaXZlcnMvdXNiL3Jl
+bmVzYXNfdXNiaHMvZmlmby5jDQo+ID4gaW5kZXggNGMwODZiMS4uZDg5MWJmZiAxMDA2NDQNCj4g
+PiAtLS0gYS9kcml2ZXJzL3VzYi9yZW5lc2FzX3VzYmhzL2ZpZm8uYw0KPiA+ICsrKyBiL2RyaXZl
+cnMvdXNiL3JlbmVzYXNfdXNiaHMvZmlmby5jDQo+ID4gQEAgLTEwNzIsNyArMTA3MiwxMSBAQCBz
+dGF0aWMgdm9pZCB1c2Joc2ZfZG1hX2luaXRfcGRldihzdHJ1Y3QgdXNiaHNfZmlmbyAqZmlmbykN
+Cj4gPiAgc3RhdGljIHZvaWQgdXNiaHNmX2RtYV9pbml0X2R0KHN0cnVjdCBkZXZpY2UgKmRldiwg
+c3RydWN0IHVzYmhzX2ZpZm8gKmZpZm8pDQo+ID4gIHsNCj4gPiAgICAgICAgIGZpZm8tPnR4X2No
+YW4gPSBkbWFfcmVxdWVzdF9zbGF2ZV9jaGFubmVsX3JlYXNvbihkZXYsICJ0eCIpOw0KPiA+ICsg
+ICAgICAgaWYgKElTX0VSUihmaWZvLT50eF9jaGFuKSkNCj4gPiArICAgICAgICAgICAgICAgZmlm
+by0+dHhfY2hhbiA9IE5VTEw7DQo+ID4gICAgICAgICBmaWZvLT5yeF9jaGFuID0gZG1hX3JlcXVl
+c3Rfc2xhdmVfY2hhbm5lbF9yZWFzb24oZGV2LCAicngiKTsNCj4gPiArICAgICAgIGlmIChJU19F
+UlIoZmlmby0+cnhfY2hhbikpDQo+ID4gKyAgICAgICAgICAgICAgIGZpZm8tPnJ4X2NoYW4gPSBO
+VUxMOw0KPiA+ICB9DQo+IA0KPiBNeSBmaXJzdCB0aG91Z2h0IHdhczogc2hvdWxkbid0IGl0IGJl
+IGhhbmRsZWQgaW4gdXNiaHNmX2RtYV9pbml0KCkgaW5zdGVhZCwNCj4gc28gaXQgYXBwbGllcyB0
+byBib3RoIHRoZSBsZWdhY3kgcGxhdGZvcm0gZGF0YSBhbmQgdGhlIERUIGNhc2U/DQo+IA0KPiBC
+dXQgYXBwYXJlbnRseSBkbWFfcmVxdWVzdF9jaGFubmVsKCkgcmV0dXJucyBOVUxMIG9uIGZhaWx1
+cmUsIHdoaWxlDQo+IGRtYV9yZXF1ZXN0X3NsYXZlX2NoYW5uZWxfcmVhc29uKCkgcmV0dXJucyBh
+biBlcnJvciBjb2RlLiBPaCB3ZWxsLi4uDQo+IA0KPiBSZW1hcHBpbmcgdGhlIGVycm9yIHRvIE5V
+TEwgZG9lcyBtZWFuIHRoZSBkcml2ZXIgZG9lc24ndCBoYW5kbGUNCj4gLUVQUk9CRV9ERUZFUiwg
+YnV0IHRoYXQncyB0cmlja3kgd2l0aCBETUEgZW5naW5lcyBhbnl3YXksIGNmci4gY29tbWl0DQo+
+IDU1ZjVmOTg2MmEzMWUyYWMgKCJpMmM6IHNoX21vYmlsZTogcmV3b3JrIGRlZmVycmVkIHByb2Jp
+bmciKQ0KPiANCj4gR3J7b2V0amUsZWV0aW5nfXMsDQo+IA0KPiAgICAgICAgICAgICAgICAgICAg
+ICAgICBHZWVydA0KPiANCj4gLS0NCj4gR2VlcnQgVXl0dGVyaG9ldmVuIC0tIFRoZXJlJ3MgbG90
+cyBvZiBMaW51eCBiZXlvbmQgaWEzMiAtLSBnZWVydEBsaW51eC1tNjhrLm9yZw0KPiANCj4gSW4g
+cGVyc29uYWwgY29udmVyc2F0aW9ucyB3aXRoIHRlY2huaWNhbCBwZW9wbGUsIEkgY2FsbCBteXNl
+bGYgYSBoYWNrZXIuIEJ1dA0KPiB3aGVuIEknbSB0YWxraW5nIHRvIGpvdXJuYWxpc3RzIEkganVz
+dCBzYXkgInByb2dyYW1tZXIiIG9yIHNvbWV0aGluZyBsaWtlIHRoYXQuDQo+ICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgLS0gTGludXMgVG9ydmFsZHMNCg=
