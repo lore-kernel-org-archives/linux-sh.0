@@ -1,74 +1,87 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Wed, 25 Feb 2015 13:21:54 +0000
-Subject: Re: [PATCH/RFC] mmc: sh_mmcif: Add exclusion between cmd and interrupt
-Message-Id: <CAH1o70K0O7kcQEzNqsHqKzUhuhxLnVsf7vgVjW-2rhY-7xhjkg@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 02 Feb 2015 22:10:57 +0000
+Subject: Re: [PATCH] ARM: shmobile: alt dts: Drop console= bootargs parameter
+Message-Id: <54CFF5F1.2040007@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424011607-3682-1-git-send-email-ykaneko0929@gmail.com>
-	<54E0C2FF.3040401@cogentembedded.com>
-In-Reply-To: <54E0C2FF.3040401@cogentembedded.com>
+References: <1415075018-27529-1-git-send-email-horms+renesas@verge.net.au>
+ <54CBFC63.4070808@cogentembedded.com> <20150131041731.GA7605@verge.net.au>
+In-Reply-To: <20150131041731.GA7605@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: linux-mmc@vger.kernel.org, Chris Ball <chris@printf.net>, Ulf Hansson <ulf.hansson@linaro.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hello Sergei,
+Hello.
 
-2015-02-16 1:02 GMT+09:00 Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>:
-> Hello.
->
-> On 02/15/2015 05:46 PM, Yoshihiro Kaneko wrote:
->
->> From: Kouichi Tomita <kouichi.tomita.yn@renesas.com>
->
->
->> A command end interrupt should not be processed between command issue
->> and setting of wait_for flag. It expects already the flag to be set.
->> Therefore the exclusive control was added.
->
->
->> Signed-off-by: Kouichi Tomita <kouichi.tomita.yn@renesas.com>
->> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->> ---
->
->
->> This patch is based on next branch of Chris Ball's mmc tree.
->
->
->>   drivers/mmc/host/sh_mmcif.c | 11 ++++++++++-
->>   1 file changed, 10 insertions(+), 1 deletion(-)
->
->
->> diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
->> index 7d9d6a3..e5d0b42 100644
->> --- a/drivers/mmc/host/sh_mmcif.c
->> +++ b/drivers/mmc/host/sh_mmcif.c
->
-> [...]
->>
->> @@ -1171,6 +1174,12 @@ static irqreturn_t sh_mmcif_irqt(int irq, void
->> *dev_id)
->>         struct sh_mmcif_host *host = dev_id;
->>         struct mmc_request *mrq;
->>         bool wait = false;
->> +       unsigned long flags;
->> +       int wait_work;
->> +
->> +       spin_lock_irqsave(&host->lock, flags);
->> +       wait_work = host->wait_for;
->> +       spin_unlock_irqrestore(&host->lock, flags);
->
->
->    Locking don't seem to have much sense here, as the read is already
-> atomic.
+On 01/31/2015 07:17 AM, Simon Horman wrote:
 
-Thank you for your review.
-I agree with you and I will remove this locking.
+>>> Alt is booted from DT, so chosen/stdout-path is
+>>> always used, and we can drop the "console=" parameter from chosen/bootargs.
 
+>>> This change has a side-effect of changing the console speed from 38400
+>>> to 115200. This is intentional as 115200 is consistently used on
+>>> all other shmobile boards.
 
-Thanks,
-Kaneko
+>>     I'd say it's not very practical to change the console's baud rate from
+>> U-Boot's default
 
->
-> WBR, Sergei
->
+> It is consistent with the handling of all other boards with
+> renesas SoCs that are present in mainline.
+
+    Well, not quite: Henninger/Porter is still using 38400.
+
+>> (AFAIR changing baud rate in U-Boot didn't work)...
+
+    That was a recollection from the other board though, I haven't yet tried 
+to do it on the SILK board (and I'm unable to currently as the power supply 
+seems dead).
+
+> Perhaps that relates to the version of built of uboot.
+> On the board I have access to I see:
+
+> ver=U-Boot 2013.01.01-g5df9446 (Oct 01 2014 - 14:59:23)
+
+U-Boot 2013.01.01 (Oct 17 2014 - 20:59:18)
+
+> And the following setting altered the baud rate of u-boot (IIRC).
+
+> baudrate5200
+
+    I was going to try that but the board just didn't power up.
+
+>>> Cc: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+>>> Cc: Geert Uytterhoeven <geert+renesas@glider.be>
+>>> Cc: devicetree@vger.kernel.org
+>>> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+>>> ---
+>>>   arch/arm/boot/dts/r8a7794-alt.dts | 2 +-
+>>>   1 file changed, 1 insertion(+), 1 deletion(-)
+
+>>> diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
+>>> index 8aec512..f2cf757 100644
+>>> --- a/arch/arm/boot/dts/r8a7794-alt.dts
+>>> +++ b/arch/arm/boot/dts/r8a7794-alt.dts
+>>> @@ -20,7 +20,7 @@
+>>>   	};
+>>>
+>>>   	chosen {
+>>> -		bootargs = "console=ttySC0,38400 ignore_loglevel rw root=/dev/nfs ip=dhcp";
+>>> +		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
+
+>>     Hm, does this even work as intended? I've tried to boot another R8A7794
+>> based board and I couldn't get any output with alike command line. Booting
+>> with 'earlyprintk=serial' has shown that tty0 was enabled as a console which
+>> is not what we wanted.
+
+> If you are backporting this change then I believe it has some dependencies
+> that I can follow up on if it is useful to you.
+
+    Contrariwise, I'm forward-porting.
+
+> If you are using mainline (e.g. next or renesas-next) then yes,
+> it works. I have tested it numerous times since the patch was merged.
+
+    I'm traditionally using the 'renesas-devel-*' tags.
+
+WBR, Sergei
+
