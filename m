@@ -1,62 +1,43 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 05 Feb 2015 10:11:25 +0000
-Subject: [PATCH v5 2/5] drivers: bus: Sort Makefile entries alphabetically
-Message-Id: <1423131088-7835-3-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 02 Feb 2015 04:26:38 +0000
+Subject: [PATCH 2/3 v3][RFC] ARM: shmobile: r8a7790: add SSIU/DTCP/MLM/SCU reg for Audio DMAC peri peri
+Message-Id: <87k301ey4i.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1423131088-7835-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1423131088-7835-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Reviewed-by: Kevin Hilman <khilman@linaro.org>
+New Audio DMAC peri peri driver requests SSIU/DTCP/MLM/SCU
+register address.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v5:
-  - Add Reviewed-by,
+v2 -> v3
 
-v4:
-  - No changes,
+ - add reg-names
 
-v3:
-  - Add Tested-by,
+ arch/arm/boot/dts/r8a7790.dtsi |    7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
-v2:
-  - New.
----
- drivers/bus/Makefile | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
-
-diff --git a/drivers/bus/Makefile b/drivers/bus/Makefile
-index 2973c18cbcc27816..3cfaf2c7f25ac4f0 100644
---- a/drivers/bus/Makefile
-+++ b/drivers/bus/Makefile
-@@ -2,16 +2,16 @@
- # Makefile for the bus drivers.
- #
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index a290452..6595980 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -373,7 +373,12 @@
+ 		compatible = "renesas,rcar-audmapp-r8a7790", "renesas,rcar-audmapp";
+ 		#dma-cells = <1>;
  
-+# Interconnect bus drivers for ARM platforms
-+obj-$(CONFIG_ARM_CCI)		+= arm-cci.o
-+obj-$(CONFIG_ARM_CCN)		+= arm-ccn.o
-+
- obj-$(CONFIG_BRCMSTB_GISB_ARB)	+= brcmstb_gisb.o
--obj-$(CONFIG_IMX_WEIM)	+= imx-weim.o
--obj-$(CONFIG_MVEBU_MBUS) += mvebu-mbus.o
--obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
-+obj-$(CONFIG_IMX_WEIM)		+= imx-weim.o
-+obj-$(CONFIG_MVEBU_MBUS) 	+= mvebu-mbus.o
+-		reg = <0 0xec740000 0 0x200>;
++		reg = <0 0xec740000 0 0x200>,
++			<0 0xec400000 0 0x10000>, /* SSIU */
++			<0 0xec420000 0 0x4800>,  /* DTCP */
++			<0 0xec320000 0 0x2000>,  /* MLM */
++			<0 0xec300000 0 0x8800>;  /* SCU */
++		reg-names = "audmapp", "ssiu", "dtcp", "mlm", "scu";
+ 	};
  
- # Interconnect bus driver for OMAP SoCs.
- obj-$(CONFIG_OMAP_INTERCONNECT)	+= omap_l3_smx.o omap_l3_noc.o
- 
--# Interconnect bus drivers for ARM platforms
--obj-$(CONFIG_ARM_CCI)		+= arm-cci.o
--obj-$(CONFIG_ARM_CCN)		+= arm-ccn.o
--
-+obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
- obj-$(CONFIG_VEXPRESS_CONFIG)	+= vexpress-config.o
+ 	i2c0: i2c@e6508000 {
 -- 
-1.9.1
+1.7.9.5
 
