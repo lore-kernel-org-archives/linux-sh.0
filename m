@@ -1,541 +1,283 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 17 Feb 2015 15:04:45 +0000
-Subject: [PATCH v4 5/6] ARM: shmobile: r8a73a4: ape6evm: Remove legacy platform
-Message-Id: <1424185486-3017-6-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 02 Feb 2015 04:26:23 +0000
+Subject: [PATCH 1/3 v3][RFC] dmaengine: rcar-audmapp: calculate chcr via src/dst addr
+Message-Id: <87lhkhey4x.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424185486-3017-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1424185486-3017-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Current rcar-audmapp is assuming that CHCR value are specified
+from platform data or DTS bindings. but, it is possible to
+calculate CHCR settings from src/dst address.
+DTS bindings node can be reduced by this patch.
 
-This removes the remains of the legacy ape6evm platform.
+For this update, new rcar-audmapp assumes DT has SSIU/DTCP/MLM/SCU
+register entry.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v4:
-  - No changes,
+v2 -> v3
 
-v3:
-  - New.
----
- MAINTAINERS                            |   1 -
- arch/arm/boot/dts/Makefile             |   1 -
- arch/arm/configs/ape6evm_defconfig     | 109 ------------
- arch/arm/mach-shmobile/Kconfig         |  13 --
- arch/arm/mach-shmobile/Makefile        |   1 -
- arch/arm/mach-shmobile/Makefile.boot   |   1 -
- arch/arm/mach-shmobile/board-ape6evm.c | 306 ---------------------------------
- 7 files changed, 432 deletions(-)
- delete mode 100644 arch/arm/configs/ape6evm_defconfig
- delete mode 100644 arch/arm/mach-shmobile/board-ape6evm.c
+ - it assume DTS has reg-names
+ - tidyup audmapp_addr_to_id() calculate method
 
-diff --git a/MAINTAINERS b/MAINTAINERS
-index bfd88e2de5f1de8e..c2d2cb4930eda68f 100644
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -1413,7 +1413,6 @@ F:	arch/arm/boot/dts/emev2*
- F:	arch/arm/boot/dts/r7s*
- F:	arch/arm/boot/dts/r8a*
- F:	arch/arm/boot/dts/sh*
--F:	arch/arm/configs/ape6evm_defconfig
- F:	arch/arm/configs/armadillo800eva_defconfig
- F:	arch/arm/configs/bockw_defconfig
- F:	arch/arm/configs/kzm9g_defconfig
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 30a9579a4572f22b..65c13eb3f7de28e1 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -464,7 +464,6 @@ dtb-$(CONFIG_ARCH_S5PV210) += \
- 	s5pv210-smdkv210.dtb \
- 	s5pv210-torbreck.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += \
--	r8a73a4-ape6evm.dtb \
- 	r8a7740-armadillo800eva.dtb \
- 	r8a7778-bockw.dtb \
- 	r8a7778-bockw-reference.dtb \
-diff --git a/arch/arm/configs/ape6evm_defconfig b/arch/arm/configs/ape6evm_defconfig
-deleted file mode 100644
-index 9e9a72e3d30faddb..0000000000000000
---- a/arch/arm/configs/ape6evm_defconfig
-+++ /dev/null
-@@ -1,109 +0,0 @@
--CONFIG_SYSVIPC=y
--CONFIG_POSIX_MQUEUE=y
--CONFIG_NO_HZ=y
--CONFIG_HIGH_RES_TIMERS=y
--CONFIG_BSD_PROCESS_ACCT=y
--CONFIG_IKCONFIG=y
--CONFIG_IKCONFIG_PROC=y
--CONFIG_LOG_BUF_SHIFT
--CONFIG_CGROUPS=y
--CONFIG_CGROUP_SCHED=y
--CONFIG_KALLSYMS_ALL=y
--CONFIG_EMBEDDED=y
--CONFIG_PERF_EVENTS=y
--CONFIG_SLAB=y
--CONFIG_ARCH_SHMOBILE_LEGACY=y
--CONFIG_ARCH_R8A73A4=y
--CONFIG_MACH_APE6EVM=y
--# CONFIG_ARM_THUMB is not set
--CONFIG_CPU_BPREDICT_DISABLE=y
--CONFIG_PL310_ERRATA_588369=y
--CONFIG_ARM_ERRATA_754322=y
--CONFIG_SMP=y
--CONFIG_SCHED_MC=y
--CONFIG_HAVE_ARM_ARCH_TIMER=y
--CONFIG_NR_CPUS=8
--CONFIG_AEABI=y
--CONFIG_HIGHMEM=y
--CONFIG_HIGHPTE=y
--# CONFIG_HW_PERF_EVENTS is not set
--# CONFIG_COMPACTION is not set
--# CONFIG_CROSS_MEMORY_ATTACH is not set
--CONFIG_ARM_APPENDED_DTB=y
--CONFIG_VFP=y
--CONFIG_NEON=y
--CONFIG_BINFMT_MISC=y
--CONFIG_PM=y
--CONFIG_NET=y
--CONFIG_PACKET=y
--CONFIG_UNIX=y
--CONFIG_XFRM_USER=y
--CONFIG_NET_KEY=y
--CONFIG_NET_KEY_MIGRATE=y
--CONFIG_INET=y
--CONFIG_IP_MULTICAST=y
--CONFIG_IP_PNP=y
--CONFIG_IP_PNP_DHCP=y
--# CONFIG_INET_LRO is not set
--# CONFIG_IPV6_SIT is not set
--CONFIG_NETFILTER=y
--CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
--CONFIG_DEVTMPFS=y
--CONFIG_DEVTMPFS_MOUNT=y
--# CONFIG_FW_LOADER_USER_HELPER is not set
--CONFIG_NETDEVICES=y
--# CONFIG_NET_CADENCE is not set
--CONFIG_SMC91X=y
--CONFIG_SMSC911X=y
--# CONFIG_INPUT_MOUSEDEV is not set
--CONFIG_INPUT_EVDEV=y
--CONFIG_KEYBOARD_GPIO=y
--# CONFIG_INPUT_MOUSE is not set
--# CONFIG_SERIO is not set
--CONFIG_SERIAL_NONSTANDARD=y
--CONFIG_SERIAL_SH_SCI=y
--CONFIG_SERIAL_SH_SCI_NR_UARTS
--CONFIG_SERIAL_SH_SCI_CONSOLE=y
--CONFIG_I2C=y
--CONFIG_I2C_SH_MOBILE=y
--CONFIG_GPIO_SH_PFC=y
--CONFIG_GPIOLIB=y
--# CONFIG_HWMON is not set
--CONFIG_THERMAL=y
--CONFIG_RCAR_THERMAL=y
--CONFIG_REGULATOR=y
--CONFIG_REGULATOR_FIXED_VOLTAGE=y
--CONFIG_REGULATOR_GPIO=y
--CONFIG_REGULATOR_MAX8973=y
--# CONFIG_HID is not set
--# CONFIG_USB_SUPPORT is not set
--CONFIG_MMC=y
--CONFIG_MMC_SDHI=y
--CONFIG_MMC_SH_MMCIF=y
--CONFIG_NEW_LEDS=y
--CONFIG_LEDS_CLASS=y
--CONFIG_LEDS_GPIO=y
--CONFIG_DMADEVICES=y
--CONFIG_SH_DMAE=y
--# CONFIG_IOMMU_SUPPORT is not set
--# CONFIG_DNOTIFY is not set
--CONFIG_TMPFS=y
--# CONFIG_MISC_FILESYSTEMS is not set
--CONFIG_NFS_FS=y
--CONFIG_NFS_V3_ACL=y
--CONFIG_NFS_V4=y
--CONFIG_NFS_V4_1=y
--CONFIG_ROOT_NFS=y
--CONFIG_MAGIC_SYSRQ=y
--CONFIG_ENABLE_DEFAULT_TRACERS=y
--CONFIG_CRYPTO_CBC=y
--CONFIG_CRYPTO_ECB=y
--CONFIG_CRYPTO_MD5=y
--CONFIG_CRYPTO_MICHAEL_MIC=y
--CONFIG_CRYPTO_TWOFISH=y
--CONFIG_CRC_CCITT=y
--CONFIG_CRC16=y
--CONFIG_CRC_T10DIF=y
--CONFIG_CRC_ITU_T=y
--CONFIG_CRC7=y
--CONFIG_LIBCRC32C=y
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index a1a7919c72bb1bd8..0cbe84a7cd68c45f 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -107,13 +107,6 @@ config ARCH_SH73A0
- 	select SH_INTC
- 	select RENESAS_INTC_IRQPIN
+ drivers/dma/sh/rcar-audmapp.c |  149 +++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 137 insertions(+), 12 deletions(-)
+
+diff --git a/drivers/dma/sh/rcar-audmapp.c b/drivers/dma/sh/rcar-audmapp.c
+index d95bbdd..29fe0c5 100644
+--- a/drivers/dma/sh/rcar-audmapp.c
++++ b/drivers/dma/sh/rcar-audmapp.c
+@@ -44,11 +44,22 @@
+ #define AUDMAPP_SLAVE_NUMBER	256
+ #define AUDMAPP_LEN_MAX		(16 * 1024 * 1024)
  
--config ARCH_R8A73A4
--	bool "R-Mobile APE6 (R8A73A40)"
--	select ARCH_RMOBILE
--	select ARCH_WANT_OPTIONAL_GPIOLIB
--	select ARM_GIC
--	select RENESAS_IRQC
--
- config ARCH_R8A7740
- 	bool "R-Mobile A1 (R8A77400)"
- 	select ARCH_RMOBILE
-@@ -135,12 +128,6 @@ config ARCH_R8A7779
++struct id_addr_table {
++	u8  id;
++	u16 addr;
++};
++
++struct id_addr_table_entry {
++	char* name;
++	resource_size_t base_addr;
++	const struct id_addr_table *table;
++	int size;
++};
++
+ struct audmapp_chan {
+ 	struct shdma_chan shdma_chan;
+ 	void __iomem *base;
+ 	dma_addr_t slave_addr;
+-	u32 chcr;
+ };
  
- comment "Renesas ARM SoCs Board Type"
+ struct audmapp_device {
+@@ -64,6 +75,81 @@ struct audmapp_desc {
+ 	dma_addr_t dst;
+ };
  
--config MACH_APE6EVM
--	bool "APE6EVM board"
--	depends on ARCH_R8A73A4
--	select SMSC_PHY if SMSC911X
--	select USE_OF
--
- config MACH_ARMADILLO800EVA
- 	bool "Armadillo-800 EVA board"
- 	depends on ARCH_R8A7740
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 8ceeac59cfbb5774..94890b62ab8cc514 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -53,7 +53,6 @@ obj-$(CONFIG_PM_RMOBILE)	+= pm-rmobile.o
- ifdef CONFIG_ARCH_SHMOBILE_MULTI
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen-reference.o
- else
--obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
- obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
- obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
-diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
-index f9cc8a8f1d6c9256..e1ef19cef89c7f34 100644
---- a/arch/arm/mach-shmobile/Makefile.boot
-+++ b/arch/arm/mach-shmobile/Makefile.boot
-@@ -1,6 +1,5 @@
- # per-board load address for uImage
- loadaddr-y	:-loadaddr-$(CONFIG_MACH_APE6EVM) += 0x40008000
- loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
- loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
- loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
-diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-deleted file mode 100644
-index 444f22d370f0ef7a..0000000000000000
---- a/arch/arm/mach-shmobile/board-ape6evm.c
-+++ /dev/null
-@@ -1,306 +0,0 @@
--/*
-- * APE6EVM board support
-- *
-- * Copyright (C) 2013  Renesas Solutions Corp.
-- * Copyright (C) 2013  Magnus Damm
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; version 2 of the License.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- */
--
--#include <linux/gpio.h>
--#include <linux/gpio_keys.h>
--#include <linux/input.h>
--#include <linux/interrupt.h>
--#include <linux/irqchip.h>
--#include <linux/irqchip/arm-gic.h>
--#include <linux/kernel.h>
--#include <linux/mfd/tmio.h>
--#include <linux/mmc/host.h>
--#include <linux/mmc/sh_mmcif.h>
--#include <linux/mmc/sh_mobile_sdhi.h>
--#include <linux/pinctrl/machine.h>
--#include <linux/platform_device.h>
--#include <linux/regulator/fixed.h>
--#include <linux/regulator/machine.h>
--#include <linux/sh_clk.h>
--#include <linux/smsc911x.h>
--
--#include <asm/mach-types.h>
--#include <asm/mach/arch.h>
--
--#include "common.h"
--#include "irqs.h"
--#include "r8a73a4.h"
--
--/* LEDS */
--static struct gpio_led ape6evm_leds[] = {
--	{
--		.name		= "gnss-en",
--		.gpio		= 28,
--		.default_state	= LEDS_GPIO_DEFSTATE_OFF,
--	}, {
--		.name		= "nfc-nrst",
--		.gpio		= 126,
--		.default_state	= LEDS_GPIO_DEFSTATE_OFF,
--	}, {
--		.name		= "gnss-nrst",
--		.gpio		= 132,
--		.default_state	= LEDS_GPIO_DEFSTATE_OFF,
--	}, {
--		.name		= "bt-wakeup",
--		.gpio		= 232,
--		.default_state	= LEDS_GPIO_DEFSTATE_OFF,
--	}, {
--		.name		= "strobe",
--		.gpio		= 250,
--		.default_state	= LEDS_GPIO_DEFSTATE_OFF,
--	}, {
--		.name		= "bbresetout",
--		.gpio		= 288,
--		.default_state	= LEDS_GPIO_DEFSTATE_OFF,
--	},
--};
--
--static __initdata struct gpio_led_platform_data ape6evm_leds_pdata = {
--	.leds		= ape6evm_leds,
--	.num_leds	= ARRAY_SIZE(ape6evm_leds),
--};
--
--/* GPIO KEY */
--#define GPIO_KEY(c, g, d, ...) \
--	{ .code = c, .gpio = g, .desc = d, .active_low = 1 }
--
--static struct gpio_keys_button gpio_buttons[] = {
--	GPIO_KEY(KEY_0,			324,	"S16"),
--	GPIO_KEY(KEY_MENU,		325,	"S17"),
--	GPIO_KEY(KEY_HOME,		326,	"S18"),
--	GPIO_KEY(KEY_BACK,		327,	"S19"),
--	GPIO_KEY(KEY_VOLUMEUP,		328,	"S20"),
--	GPIO_KEY(KEY_VOLUMEDOWN,	329,	"S21"),
--};
--
--static struct gpio_keys_platform_data ape6evm_keys_pdata __initdata = {
--	.buttons	= gpio_buttons,
--	.nbuttons	= ARRAY_SIZE(gpio_buttons),
--};
--
--/* Dummy supplies, where voltage doesn't matter */
--static struct regulator_consumer_supply dummy_supplies[] = {
--	REGULATOR_SUPPLY("vddvario", "smsc911x"),
--	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
--};
--
--/* SMSC LAN9220 */
--static const struct resource lan9220_res[] __initconst = {
--	DEFINE_RES_MEM(0x08000000, 0x1000),
--	{
--		.start	= irq_pin(40), /* IRQ40 */
--		.flags	= IORESOURCE_IRQ | IRQF_TRIGGER_HIGH,
--	},
--};
--
--static const struct smsc911x_platform_config lan9220_data __initconst = {
--	.flags		= SMSC911X_USE_32BIT,
--	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
--	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_HIGH,
--};
--
--/*
-- * MMC0 power supplies:
-- * Both Vcc and VccQ to eMMC on APE6EVM are supplied by a tps80032 voltage
-- * regulator. Until support for it is added to this file we simulate the
-- * Vcc supply by a fixed always-on regulator
-- */
--static struct regulator_consumer_supply vcc_mmc0_consumers[] -{
--	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
--};
--
--/*
-- * SDHI0 power supplies:
-- * Vcc to SDHI0 on APE6EVM is supplied by a GPIO-switchable regulator. VccQ is
-- * provided by the same tps80032 regulator as both MMC0 voltages - see comment
-- * above
-- */
--static struct regulator_consumer_supply vcc_sdhi0_consumers[] -{
--	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
--};
--
--static struct regulator_init_data vcc_sdhi0_init_data = {
--	.constraints = {
--		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
--	},
--	.num_consumer_supplies  = ARRAY_SIZE(vcc_sdhi0_consumers),
--	.consumer_supplies      = vcc_sdhi0_consumers,
--};
--
--static const struct fixed_voltage_config vcc_sdhi0_info __initconst = {
--	.supply_name = "SDHI0 Vcc",
--	.microvolts = 3300000,
--	.gpio = 76,
--	.enable_high = 1,
--	.init_data = &vcc_sdhi0_init_data,
--};
--
--/*
-- * SDHI1 power supplies:
-- * Vcc and VccQ to SDHI1 on APE6EVM are both fixed at 3.3V
-- */
--static struct regulator_consumer_supply vcc_sdhi1_consumers[] -{
--	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
--};
--
--/* MMCIF */
--static const struct sh_mmcif_plat_data mmcif0_pdata __initconst = {
--	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
--	.slave_id_tx	= SHDMA_SLAVE_MMCIF0_TX,
--	.slave_id_rx	= SHDMA_SLAVE_MMCIF0_RX,
--	.ccs_unsupported = true,
--};
--
--static const struct resource mmcif0_resources[] __initconst = {
--	DEFINE_RES_MEM(0xee200000, 0x100),
--	DEFINE_RES_IRQ(gic_spi(169)),
--};
--
--/* SDHI0 */
--static const struct sh_mobile_sdhi_info sdhi0_pdata __initconst = {
--	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
--	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
--};
--
--static const struct resource sdhi0_resources[] __initconst = {
--	DEFINE_RES_MEM(0xee100000, 0x100),
--	DEFINE_RES_IRQ(gic_spi(165)),
--};
--
--/* SDHI1 */
--static const struct sh_mobile_sdhi_info sdhi1_pdata __initconst = {
--	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
--	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
--			  MMC_CAP_NEEDS_POLL,
--};
--
--static const struct resource sdhi1_resources[] __initconst = {
--	DEFINE_RES_MEM(0xee120000, 0x100),
--	DEFINE_RES_IRQ(gic_spi(166)),
--};
--
--static const struct pinctrl_map ape6evm_pinctrl_map[] __initconst = {
--	/* SCIFA0 console */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a73a4",
--				  "scifa0_data", "scifa0"),
--	/* SMSC */
--	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a73a4",
--				  "irqc_irq40", "irqc"),
--	/* MMCIF0 */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-r8a73a4",
--				  "mmc0_data8", "mmc0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-r8a73a4",
--				  "mmc0_ctrl", "mmc0"),
--	/* SDHI0: uSD: no WP */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a73a4",
--				  "sdhi0_data4", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a73a4",
--				  "sdhi0_ctrl", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a73a4",
--				  "sdhi0_cd", "sdhi0"),
--	/* SDHI1 */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-r8a73a4",
--				  "sdhi1_data4", "sdhi1"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-r8a73a4",
--				  "sdhi1_ctrl", "sdhi1"),
--};
--
--static void __init ape6evm_add_standard_devices(void)
--{
--
--	struct clk *parent;
--	struct clk *mp;
--
--	r8a73a4_clock_init();
--
--	/* MP clock parent = extal2 */
--	parent      = clk_get(NULL, "extal2");
--	mp          = clk_get(NULL, "mp");
--	BUG_ON(IS_ERR(parent) || IS_ERR(mp));
--
--	clk_set_parent(mp, parent);
--	clk_put(parent);
--	clk_put(mp);
--
--	pinctrl_register_mappings(ape6evm_pinctrl_map,
--				  ARRAY_SIZE(ape6evm_pinctrl_map));
--	r8a73a4_pinmux_init();
--	r8a73a4_add_standard_devices();
--
--	/* LAN9220 ethernet */
--	gpio_request_one(270, GPIOF_OUT_INIT_HIGH, NULL); /* smsc9220 RESET */
--
--	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
--
--	platform_device_register_resndata(NULL, "smsc911x", -1,
--					  lan9220_res, ARRAY_SIZE(lan9220_res),
--					  &lan9220_data, sizeof(lan9220_data));
--
--	regulator_register_always_on(1, "MMC0 Vcc", vcc_mmc0_consumers,
--				     ARRAY_SIZE(vcc_mmc0_consumers), 2800000);
--	platform_device_register_resndata(NULL, "sh_mmcif", 0,
--					  mmcif0_resources, ARRAY_SIZE(mmcif0_resources),
--					  &mmcif0_pdata, sizeof(mmcif0_pdata));
--	platform_device_register_data(NULL, "reg-fixed-voltage", 2,
--				      &vcc_sdhi0_info, sizeof(vcc_sdhi0_info));
--	platform_device_register_resndata(NULL, "sh_mobile_sdhi", 0,
--					  sdhi0_resources, ARRAY_SIZE(sdhi0_resources),
--					  &sdhi0_pdata, sizeof(sdhi0_pdata));
--	regulator_register_always_on(3, "SDHI1 Vcc", vcc_sdhi1_consumers,
--				     ARRAY_SIZE(vcc_sdhi1_consumers), 3300000);
--	platform_device_register_resndata(NULL, "sh_mobile_sdhi", 1,
--					  sdhi1_resources, ARRAY_SIZE(sdhi1_resources),
--					  &sdhi1_pdata, sizeof(sdhi1_pdata));
--	platform_device_register_data(NULL, "gpio-keys", -1,
--				      &ape6evm_keys_pdata,
--				      sizeof(ape6evm_keys_pdata));
--	platform_device_register_data(NULL, "leds-gpio", -1,
--				      &ape6evm_leds_pdata,
--				      sizeof(ape6evm_leds_pdata));
--}
--
--static void __init ape6evm_legacy_init_time(void)
--{
--	/* Do not invoke DT-based timers via clocksource_of_init() */
--}
--
--static void __init ape6evm_legacy_init_irq(void)
--{
--	void __iomem *gic_dist_base = ioremap_nocache(0xf1001000, 0x1000);
--	void __iomem *gic_cpu_base = ioremap_nocache(0xf1002000, 0x1000);
--
--	gic_init(0, 29, gic_dist_base, gic_cpu_base);
--
--	/* Do not invoke DT-based interrupt code via irqchip_init() */
--}
--
--
--static const char *ape6evm_boards_compat_dt[] __initdata = {
--	"renesas,ape6evm",
--	NULL,
--};
--
--DT_MACHINE_START(APE6EVM_DT, "ape6evm")
--	.init_early	= shmobile_init_delay,
--	.init_irq       = ape6evm_legacy_init_irq,
--	.init_machine	= ape6evm_add_standard_devices,
--	.init_late	= shmobile_init_late,
--	.dt_compat	= ape6evm_boards_compat_dt,
--	.init_time	= ape6evm_legacy_init_time,
--MACHINE_END
++/*
++ *	Gen2 SSIU/DTCP/MLM/SCU
++ */
++static const struct id_addr_table gen2_ssiu_id_table[] = {
++	{0x00, 0x0000}, /* SSI00 */
++	{0x01, 0x0400}, /* SSI01 */
++	{0x02, 0x0800}, /* SSI02 */
++	{0x03, 0x0C00}, /* SSI03 */
++	{0x04, 0x1000}, /* SSI10 */
++	{0x05, 0x1400}, /* SSI11 */
++	{0x06, 0x1800}, /* SSI12 */
++	{0x07, 0x1C00}, /* SSI13 */
++	{0x08, 0x2000}, /* SSI20 */
++	{0x09, 0x2400}, /* SSI21 */
++	{0x0a, 0x2800}, /* SSI22 */
++	{0x0b, 0x2C00}, /* SSI23 */
++	{0x0c, 0x3000}, /* SSI3  */
++	{0x0d, 0x4000}, /* SSI4  */
++	{0x0e, 0x5000}, /* SSI5  */
++	{0x0f, 0x6000}, /* SSI6  */
++	{0x10, 0x7000}, /* SSI7  */
++	{0x11, 0x8000}, /* SSI8  */
++	{0x12, 0x9000}, /* SSI90 */
++	{0x13, 0x9400}, /* SSI91 */
++	{0x14, 0x9800}, /* SSI92 */
++	{0x15, 0x9C00}, /* SSI93 */
++};
++static const struct id_addr_table gen2_dtcp_id_tabel[] = {
++	{0x16, 0x0000}, /* DTCPPP0 */
++	{0x17, 0x0400}, /* DTCPPP1 */
++	{0x18, 0x4000}, /* DTCPCP0 */
++	{0x19, 0x4400}, /* DTCPCP1 */
++};
++static const struct id_addr_table gen2_mlm_id_table[] = {
++	{0x25, 0x0000}, /* MLM0 */
++	{0x26, 0x0400}, /* MLM1 */
++	{0x27, 0x0800}, /* MLM2 */
++	{0x28, 0x0C00}, /* MLM3 */
++	{0x29, 0x1000}, /* MLM4 */
++	{0x2a, 0x1400}, /* MLM5 */
++	{0x2b, 0x1800}, /* MLM6 */
++	{0x2c, 0x1C00}, /* MLM7 */
++};
++static const struct id_addr_table gen2_scu_id_table[] = {
++	{0x2d, 0x0000}, /* SCU_SRCI0 */
++	{0x2e, 0x0400}, /* SCU_SRCI1 */
++	{0x2f, 0x0800}, /* SCU_SRCI2 */
++	{0x30, 0x0C00}, /* SCU_SRCI3 */
++	{0x31, 0x1000}, /* SCU_SRCI4 */
++	{0x32, 0x1400}, /* SCU_SRCI5 */
++	{0x33, 0x1800}, /* SCU_SRCI6 */
++	{0x34, 0x1C00}, /* SCU_SRCI7 */
++	{0x35, 0x2000}, /* SCU_SRCI8 */
++	{0x36, 0x2400}, /* SCU_SRCI9 */
++
++	{0x2d, 0x4000}, /* SCU_SRCO0 */
++	{0x2e, 0x4400}, /* SCU_SRCO1 */
++	{0x2f, 0x4800}, /* SCU_SRCO2 */
++	{0x30, 0x4C00}, /* SCU_SRCO3 */
++	{0x31, 0x5000}, /* SCU_SRCO4 */
++	{0x32, 0x5400}, /* SCU_SRCO5 */
++	{0x33, 0x5800}, /* SCU_SRCO6 */
++	{0x34, 0x5C00}, /* SCU_SRCO7 */
++	{0x35, 0x6000}, /* SCU_SRCO8 */
++	{0x36, 0x6400}, /* SCU_SRCO9 */
++	{0x37, 0x8000}, /* SCU_CMD0 */
++	{0x38, 0x8400}, /* SCU_CMD1 */
++};
++static struct id_addr_table_entry gen2_entry[] = {
++	{ "ssiu", 0, gen2_ssiu_id_table, ARRAY_SIZE(gen2_ssiu_id_table) },
++	{ "dtcp", 0, gen2_dtcp_id_tabel, ARRAY_SIZE(gen2_dtcp_id_tabel) },
++	{ "mlm",  0, gen2_mlm_id_table,  ARRAY_SIZE(gen2_mlm_id_table) },
++	{ "scu",  0, gen2_scu_id_table,  ARRAY_SIZE(gen2_scu_id_table) },
++};
++
+ #define to_shdma_chan(c) container_of(c, struct shdma_chan, dma_chan)
+ 
+ #define to_chan(chan) container_of(chan, struct audmapp_chan, shdma_chan)
+@@ -100,6 +186,36 @@ static void audmapp_halt(struct shdma_chan *schan)
+ 	}
+ }
+ 
++static u32 audmapp_addr_to_id(struct audmapp_device *audev, u32 addr)
++{
++	struct id_addr_table_entry *entry;
++	struct device *dev = audev->dev;
++	int i, j;
++
++	for (i = 0; i < ARRAY_SIZE(gen2_entry); i++) {
++		entry = gen2_entry + i;
++		if ((addr & 0xFFFF0000) = entry->base_addr) {
++			for (j = 0; j < entry->size; j++) {
++				if (entry->table[j].addr = (addr & 0xFFFF))
++					return entry->table[j].id;
++			}
++		}
++	}
++
++	dev_err(dev, "unknown addr (%x)\n", addr);
++	return 0xFF;
++}
++
++static u32 audmapp_get_chcr(struct audmapp_device *audev, struct audmapp_desc *desc)
++{
++	u32 src_id, dst_id;
++
++	src_id = audmapp_addr_to_id(audev, desc->src);
++	dst_id = audmapp_addr_to_id(audev, desc->dst);
++
++	return src_id << 24 | dst_id << 16;
++}
++
+ static void audmapp_start_xfer(struct shdma_chan *schan,
+ 			       struct shdma_desc *sdesc)
+ {
+@@ -107,7 +223,7 @@ static void audmapp_start_xfer(struct shdma_chan *schan,
+ 	struct audmapp_device *audev = to_dev(auchan);
+ 	struct audmapp_desc *desc = to_desc(sdesc);
+ 	struct device *dev = audev->dev;
+-	u32 chcr = auchan->chcr | PDMACHCR_DE;
++	u32 chcr = audmapp_get_chcr(audev, desc) | PDMACHCR_DE;
+ 
+ 	dev_dbg(dev, "src/dst/chcr = %pad/%pad/%08x\n",
+ 		&desc->src, &desc->dst, chcr);
+@@ -118,19 +234,17 @@ static void audmapp_start_xfer(struct shdma_chan *schan,
+ }
+ 
+ static int audmapp_get_config(struct audmapp_chan *auchan, int slave_id,
+-			      u32 *chcr, dma_addr_t *dst)
++			      dma_addr_t *dst)
+ {
+ 	struct audmapp_device *audev = to_dev(auchan);
+ 	struct audmapp_pdata *pdata = audev->pdata;
+ 	struct audmapp_slave_config *cfg;
+ 	int i;
+ 
+-	*chcr	= 0;
+ 	*dst	= 0;
+ 
+ 	if (!pdata) { /* DT */
+-		*chcr = ((u32)slave_id) << 16;
+-		auchan->shdma_chan.slave_id = (slave_id) >> 8;
++		auchan->shdma_chan.slave_id = slave_id;
+ 		return 0;
+ 	}
+ 
+@@ -141,7 +255,6 @@ static int audmapp_get_config(struct audmapp_chan *auchan, int slave_id,
+ 
+ 	for (i = 0, cfg = pdata->slave; i < pdata->slave_num; i++, cfg++)
+ 		if (cfg->slave_id = slave_id) {
+-			*chcr	= cfg->chcr;
+ 			*dst	= cfg->dst;
+ 			return 0;
+ 		}
+@@ -153,18 +266,16 @@ static int audmapp_set_slave(struct shdma_chan *schan, int slave_id,
+ 			     dma_addr_t slave_addr, bool try)
+ {
+ 	struct audmapp_chan *auchan = to_chan(schan);
+-	u32 chcr;
+ 	dma_addr_t dst;
+ 	int ret;
+ 
+-	ret = audmapp_get_config(auchan, slave_id, &chcr, &dst);
++	ret = audmapp_get_config(auchan, slave_id, &dst);
+ 	if (ret < 0)
+ 		return ret;
+ 
+ 	if (try)
+ 		return 0;
+ 
+-	auchan->chcr		= chcr;
+ 	auchan->slave_addr	= slave_addr ? : dst;
+ 
+ 	return 0;
+@@ -267,7 +378,7 @@ static struct dma_chan *audmapp_of_xlate(struct of_phandle_args *dma_spec,
+ {
+ 	dma_cap_mask_t mask;
+ 	struct dma_chan *chan;
+-	u32 chcr = dma_spec->args[0];
++	u32 id = dma_spec->args[0];
+ 
+ 	if (dma_spec->args_count != 1)
+ 		return NULL;
+@@ -277,7 +388,7 @@ static struct dma_chan *audmapp_of_xlate(struct of_phandle_args *dma_spec,
+ 
+ 	chan = dma_request_channel(mask, shdma_chan_filter, NULL);
+ 	if (chan)
+-		to_shdma_chan(chan)->hw_req = chcr;
++		to_shdma_chan(chan)->hw_req = id;
+ 
+ 	return chan;
+ }
+@@ -290,6 +401,7 @@ static int audmapp_probe(struct platform_device *pdev)
+ 	struct shdma_dev *sdev;
+ 	struct dma_device *dma_dev;
+ 	struct resource *res;
++	struct device *dev = &pdev->dev;
+ 	int err, i;
+ 
+ 	if (np)
+@@ -309,6 +421,19 @@ static int audmapp_probe(struct platform_device *pdev)
+ 	if (IS_ERR(audev->chan_reg))
+ 		return PTR_ERR(audev->chan_reg);
+ 
++	for (i = 0; i < ARRAY_SIZE(gen2_entry); i++) {
++		res = platform_get_resource_byname(pdev, IORESOURCE_MEM,
++						   gen2_entry[i].name);
++		if (!res)
++			return -ENODEV;
++
++		if (!devm_request_mem_region(dev, res->start, resource_size(res),
++					dev_name(dev)))
++			return -EIO;
++
++		gen2_entry[i].base_addr = res->start;
++	}
++
+ 	sdev		= &audev->shdma_dev;
+ 	sdev->ops	= &audmapp_shdma_ops;
+ 	sdev->desc_size	= sizeof(struct audmapp_desc);
 -- 
-1.9.1
+1.7.9.5
 
