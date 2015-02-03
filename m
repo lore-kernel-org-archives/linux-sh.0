@@ -1,44 +1,42 @@
-From: Mark Rutland <mark.rutland@arm.com>
-Date: Mon, 16 Feb 2015 15:29:48 +0000
-Subject: Re: [PATCH v2] ARM: smp: Only expose /sys/.../cpuX/online if hotpluggable
-Message-Id: <20150216152948.GH8994@leverpostej>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 03 Feb 2015 14:57:41 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7790: smp: remap whole apmu region
+Message-Id: <1422975462-6037-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1423850799-4028-1-git-send-email-sboyd@codeaurora.org>
- <20150213202002.GB29727@verge.net.au>
- <54DE5D3A.5070104@codeaurora.org>
- <CANqRtoSOBf3ZCKdKYta-P2q==ZMHk=VZgfEztPJ+uaKQtkBWjg@mail.gmail.com>
- <54DE65C6.8000304@codeaurora.org>
- <CANqRtoQsKVNMWrj1LZdinHs_iZmsCwWxtqmMWv7SENS3-QXk1A@mail.gmail.com>
- <20150213230137.GH8656@n2100.arm.linux.org.uk>
-In-Reply-To: <20150213230137.GH8656@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Feb 13, 2015 at 11:01:37PM +0000, Russell King - ARM Linux wrote:
-> On Fri, Feb 13, 2015 at 09:44:50PM +0000, Magnus Damm wrote:
-> > Also, based on the comment in mcpm_cpu_can_disable() it looks like the
-> > PSCI hook may be executed once only with your change in place?
-> > Hopefully PSCI is OK not being invoked for every CPU shutdown.
-> 
-> This is why I've said (in the parent thread) that I'm not happy to
-> apply this patch.  Mark Rutland has indicated that he has MCPM cases
-> where the CPUs which can be disabled changes dynamically according
-> to the secure firmware requirements, and ripping out todays
-> infrastructure in light of that, only to have to add it back again
-> later makes no sense.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-To clarify, PSCI and MCPM are unrelated. It was originally conceived
-that MCPM would use PSCI as a backend, but it turns out that they're
-effectively mutually exclusive, and are handled separately. I still want
-to add support for MIGRATE in the PSCI client code, but this is
-independent of MCPM.
+Documentation says the last register is at 0x184 (CAxCPUCMCR), so use
+proper length. Current APMU code accesses CAxCPUnCR which is currently
+outside of the remapped area.
 
-In some cases it's possible to determine at boot time that a CPU cannot
-be hotplugged (e.g. in PSCI if the TOS is non-migrateable), so having
-separate hooks for determining that static and dynamic ability to
-hotplug a CPU sounds reasonable to me.
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ arch/arm/mach-shmobile/smp-r8a7790.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-Thanks,
-Mark.
+diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
+index 9c3da1345b8b..a5bef873d37e 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7790.c
++++ b/arch/arm/mach-shmobile/smp-r8a7790.c
+@@ -37,11 +37,11 @@ static struct rcar_sysc_ch r8a7790_ca7_scu = {
+ 
+ static struct rcar_apmu_config r8a7790_apmu_config[] = {
+ 	{
+-		.iomem = DEFINE_RES_MEM(0xe6152000, 0x88),
++		.iomem = DEFINE_RES_MEM(0xe6152000, 0x188),
+ 		.cpus = { 0, 1, 2, 3 },
+ 	},
+ 	{
+-		.iomem = DEFINE_RES_MEM(0xe6151000, 0x88),
++		.iomem = DEFINE_RES_MEM(0xe6151000, 0x188),
+ 		.cpus = { 0x100, 0x0101, 0x102, 0x103 },
+ 	}
+ };
+-- 
+2.1.4
+
