@@ -1,51 +1,37 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 19 Feb 2015 03:50:48 +0000
-Subject: [PATCH 01/19] ASoC: rsnd: remove SH-DMA-BASE specific implementation
-Message-Id: <87twyi1rtk.wl%kuninori.morimoto.gx@renesas.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 03 Feb 2015 14:57:42 +0000
+Subject: [PATCH 2/2] ARM: shmobile: r8a7791: smp: remap whole apmu region
+Message-Id: <1422975462-6037-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
-Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Laurent <laurent.pinchart@ideasonboard.com>
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Renesas R-Car sound had SH-DMA-BASE specific implementation before,
-but, now, it is no longer needed. Let's remove it.
+Documentation says the last register is at 0x184 (CAxCPUCMCR), so use
+proper length. Current APMU code accesses CAxCPUnCR which is currently
+outside of the remapped area.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- sound/soc/sh/rcar/core.c |    1 -
- sound/soc/sh/rcar/rsnd.h |    1 -
- 2 files changed, 2 deletions(-)
+ arch/arm/mach-shmobile/smp-r8a7791.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
-index 1b53605..0b14d37 100644
---- a/sound/soc/sh/rcar/core.c
-+++ b/sound/soc/sh/rcar/core.c
-@@ -94,7 +94,6 @@
-  *
-  */
- #include <linux/pm_runtime.h>
--#include <linux/shdma-base.h>
- #include "rsnd.h"
+diff --git a/arch/arm/mach-shmobile/smp-r8a7791.c b/arch/arm/mach-shmobile/smp-r8a7791.c
+index 7e49e0a52e32..de1d92dc1323 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7791.c
++++ b/arch/arm/mach-shmobile/smp-r8a7791.c
+@@ -27,7 +27,7 @@
  
- #define RSND_RATES SNDRV_PCM_RATE_8000_96000
-diff --git a/sound/soc/sh/rcar/rsnd.h b/sound/soc/sh/rcar/rsnd.h
-index e7914bd..5ffde9b 100644
---- a/sound/soc/sh/rcar/rsnd.h
-+++ b/sound/soc/sh/rcar/rsnd.h
-@@ -171,7 +171,6 @@ u32 rsnd_get_adinr(struct rsnd_mod *mod);
-  *	R-Car DMA
-  */
- struct rsnd_dma {
--	struct sh_dmae_slave	slave;
- 	struct dma_chan		*chan;
- 	enum dma_transfer_direction dir;
- 	dma_addr_t		addr;
+ static struct rcar_apmu_config r8a7791_apmu_config[] = {
+ 	{
+-		.iomem = DEFINE_RES_MEM(0xe6152000, 0x88),
++		.iomem = DEFINE_RES_MEM(0xe6152000, 0x188),
+ 		.cpus = { 0, 1 },
+ 	}
+ };
 -- 
-1.7.9.5
+2.1.4
 
