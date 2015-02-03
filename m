@@ -1,44 +1,67 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 02 Feb 2015 11:50:24 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 03 Feb 2015 19:04:42 +0000
 Subject: Re: [RFC 0/5] r8a7790: lager: add support for RCLK watchdog
-Message-Id: <CAMuHMdWUhok3TNzrMF8BiK7mS=RgkdBgMm3K-N5m6CQ3UHyfhw@mail.gmail.com>
+Message-Id: <20150203190442.GA32699@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="9amGYk9869ThD9tj"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1422802074-1921-1-git-send-email-wsa@the-dreams.de>
 In-Reply-To: <1422802074-1921-1-git-send-email-wsa@the-dreams.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Wolfram,
 
-On Mon, Feb 2, 2015 at 12:24 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
->> I've just tried your series on Koelsch, and it suffers from the same problem.
->> Does it work on Lager for both CONFIG_SMP=y and CONFIG_SMP=n?
->
-> I didn't. And what a surprise, it fails with SMP=y :( I'll having a
-> look...
+--9amGYk9869ThD9tj
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Good luck!
+On Mon, Feb 02, 2015 at 12:50:24PM +0100, Geert Uytterhoeven wrote:
+> Hi Wolfram,
+>=20
+> On Mon, Feb 2, 2015 at 12:24 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
+> >> I've just tried your series on Koelsch, and it suffers from the same p=
+roblem.
+> >> Does it work on Lager for both CONFIG_SMP=3Dy and CONFIG_SMP=3Dn?
+> >
+> > I didn't. And what a surprise, it fails with SMP=3Dy :( I'll having a
+> > look...
+>=20
+> Good luck!
 
->> The differences are small: the variant with 8-bit registers has a smaller
->> maximum timeout, and no magic value to be stored in the upper bits.
->
-> Do they also have 32kHz as input clock? Then they do need a ping every
-> 8ms! Those should use the shwdt driver then which pings the device
-> frequently and runs a software watchdog on top to cope with the usual
-> watchdog granularity which is in the second range.
+Weelllll....
 
-Yes, 32 kHz. But you still have the Clock Select and Expanded Clock Select
-bits to increase the timeout.
+I think there are multiple issues and they mostly come from the fact
+that a watchdog reset does not initialize the RST module. Rebooting even
+fails when I only use CPU0 with SMP=3Dy. I could fix this very hackish by
+resetting the A15 boot address (CA15BAR) to the default value in the
+watchdog probe function. That alone sadly doesn't help. Once I activate
+the other CPUs, it will still lock up.
 
-Gr{oetje,eeting}s,
+Pity, but before I get too side-tracked from what I originally wanted to
+do, it seems that I simply have to run my tests with SMP=3Dn. I guess this
+also renders the watchdog driver pretty useless for upstream now :(
 
-                        Geert
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+--9amGYk9869ThD9tj
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJU0RvKAAoJEBQN5MwUoCm2KPcP/iahFNYW0NqetHL4CXKUs9O2
+MU3ad6KK8aRbucXf+IfOAjYC6cGjV3m7Xw53LgbN80qApIoDlFBhujcE45m1UL6S
+cDEMcQc+zedXlyo5yuaPw41cyXA7Xpxa8NajUvYmsBTbPlCc9p6/4SGDEhjtwtdJ
+WolkM7rUSOxEc/j9PRZsk796+2iTTGDBROIboDh58xdDvW8uJ4UoDRtXz/Hz/tRA
+/qYPjjYiOb7uIvGYd5Wpam1q39zOCbCixpwlVySz3HTEaSyIX4Pld9cBQHyHaH16
+boQwNqLLN8pZrRNMO3FyeIsUE3/bMR5GdwTP9ZWnqegMF0xtgcjCkrDZPfalR/g9
+fI/SkUNU8aPL4bp3Yeelj5AIJVmf3AzePhMnmn7d9hZPim2CtYgWMDRtO+wZ+uVa
+eu3zTuQ465OSPwzpdAC3DKbhx3LB5sigxF9UWnoXh6XrWn0XY4bNBYaIWrJn/bXW
+vQy8UE7GR1ZbW6I6e8orL62Dynw6mAx31QDwu0LuYR/zyDAE2qTXfPo9PSBV70vn
+4KX3u+cXN8ELo7KmhRVxo2qEPKNwowWXVrqUxjLQmWhCZFJyuiap61B4DdPmH+3j
+3DuupCOdLrrfvJv+8yejotbckfOxTf/6IbrRYM6btPATg5hJv8po/UNi8uLzUvAK
+9oESTuudLUPSUwPZGDuP
+=vIVq
+-----END PGP SIGNATURE-----
+
+--9amGYk9869ThD9tj--
