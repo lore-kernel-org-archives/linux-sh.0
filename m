@@ -1,53 +1,45 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 03 Feb 2015 19:49:54 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 03 Feb 2015 20:11:08 +0000
 Subject: Re: [RFC 0/5] r8a7790: lager: add support for RCLK watchdog
-Message-Id: <CAMuHMdXCYyrbUg9mi=7zDghG457dzFUCjPBUBZkooCQegdwp+g@mail.gmail.com>
+Message-Id: <20150203201108.GA5725@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="Qxx1br4bt0+wmkIi"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1422802074-1921-1-git-send-email-wsa@the-dreams.de>
 In-Reply-To: <1422802074-1921-1-git-send-email-wsa@the-dreams.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Wolfram,
 
-On Tue, Feb 3, 2015 at 8:04 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> On Mon, Feb 02, 2015 at 12:50:24PM +0100, Geert Uytterhoeven wrote:
->> Hi Wolfram,
->>
->> On Mon, Feb 2, 2015 at 12:24 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
->> >> I've just tried your series on Koelsch, and it suffers from the same problem.
->> >> Does it work on Lager for both CONFIG_SMP=y and CONFIG_SMP=n?
->> >
->> > I didn't. And what a surprise, it fails with SMP=y :( I'll having a
->> > look...
->>
->> Good luck!
->
-> Weelllll....
->
-> I think there are multiple issues and they mostly come from the fact
-> that a watchdog reset does not initialize the RST module. Rebooting even
-> fails when I only use CPU0 with SMP=y. I could fix this very hackish by
-> resetting the A15 boot address (CA15BAR) to the default value in the
-> watchdog probe function. That alone sadly doesn't help. Once I activate
-> the other CPUs, it will still lock up.
->
-> Pity, but before I get too side-tracked from what I originally wanted to
-> do, it seems that I simply have to run my tests with SMP=n. I guess this
-> also renders the watchdog driver pretty useless for upstream now :(
+--Qxx1br4bt0+wmkIi
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Indeed. Unfortunately your findings are 100% in-line with mine.
-Thanks for confirming!
 
-Gr{oetje,eeting}s,
+> Indeed. Unfortunately your findings are 100% in-line with mine.
 
-                        Geert
+Were your findings available somewhere? I missed them :(
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+--Qxx1br4bt0+wmkIi
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJU0StcAAoJEBQN5MwUoCm2pWgQAIrY6cmlo4/jiJXsjfiQTNSU
+pcWu5VR0OixyOlyKuoJcUAHlDomhJ2k513X7ofDxVQ0VGTTzWEP0EDYAjDsLzXRq
+rDYEd+4W5AJJPJ8rEohaNl6e80gUTrbzgTDlME5lJjEN2ZSBiB8zWZu2GfiIQwVx
+JL+E8PuAhmpvW7VA44QBg/FSTuaENRaEbFUz6kfN1Y6L0Ty1HKnV9lN03K4frnpO
+9H/dpTszkReWIKWDBUPTPH+uXC3Xk1yUu651epnJ4vVQrpQbrVGJu16H72QEu05N
+j2MBINgW+6AKzi/2R7+ntlZkZypO9flphisrc+vjS2x/Vnb0EHcgNEOCEbCoWOkY
+9D7GmxOkGCk5najU+E1BUu5PiII0tZPoE9CogWlAEpbCMtrG7pcjxlBLfTK6vLS6
+AP9P6KhvIVuXVSKKiUp4FINRd7cRWpaym0GuvjgapuMOG4b/Ts5ceGwRWUFemsFi
+SoJXu7nTXgM03T1QcbSQChKmwnDkOqNzuqS3aljZzX1IZNd81TV4wKDehufEF35d
+BPbKT2w91wtZAeA8OGLaMvV7dUqQ/ANuoaaOCu/XWAUskMULLGaKAyPyclI3zYsD
+PRpQyMKirGql1uDad74Kb2/2pmhnbPcJRhZ1m8IklUnCuaB/1PBEdxXdy04CJBec
+YAtWfJaa7Gh4qFxvxZu0
+=IVE2
+-----END PGP SIGNATURE-----
+
+--Qxx1br4bt0+wmkIi--
