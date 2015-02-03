@@ -1,75 +1,57 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 03 Feb 2015 00:36:10 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 03 Feb 2015 09:53:01 +0000
 Subject: Re: [PATCH] ARM: shmobile: silk: initial device tree
-Message-Id: <20150203003610.GA17629@verge.net.au>
+Message-Id: <CAMuHMdV1U9XV7diKYPwpxAqdzD7tst6e0k=bLgJQ27=YDndn=Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
  <1608366.HtA9yBksdO@wasted.cogentembedded.com>
  <20150202110557.GC7459@leverpostej>
  <54CFE4CE.5090406@cogentembedded.com>
-In-Reply-To: <54CFE4CE.5090406@cogentembedded.com>
+ <20150203003610.GA17629@verge.net.au>
+In-Reply-To: <20150203003610.GA17629@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Feb 02, 2015 at 11:57:50PM +0300, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 02/02/2015 02:05 PM, Mark Rutland wrote:
-> 
-> >>Add the initial device tree for the R8A7794 SoC based SILK low cost board.
-> >>SCIF2 serial port support is included, so that the serial console can work.
-> 
-> >>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> [...]
-> 
-> >>Index: renesas/arch/arm/boot/dts/r8a7794-silk.dts
-> >>=================================> >>--- /dev/null
-> >>+++ renesas/arch/arm/boot/dts/r8a7794-silk.dts
-> >>@@ -0,0 +1,41 @@
-> >>+/*
-> >>+ * Device Tree Source for the SILK board
-> >>+ *
-> >>+ * Copyright (C) 2014 Renesas Electronics Corporation
-> >>+ * Copyright (C) 2014-2015 Renesas Solutions Corp.
-> >>+ * Copyright (C) 2014-2015 Cogent Embedded, Inc.
-> >>+ *
-> >>+ * This file is licensed under the terms of the GNU General Public License
-> >>+ * version 2.  This program is licensed "as is" without any warranty of any
-> >>+ * kind, whether express or implied.
-> >>+ */
-> >>+
-> >>+/dts-v1/;
-> >>+#include "r8a7794.dtsi"
-> >>+
-> >>+/ {
-> >>+	model = "SILK";
-> 
-> >Shouldn't that have a "Renesas" prefix or something like that?
-> 
->    Historically. no SH-Mobile .dts has used the vendor name in the "model"
-> prop. I defer the decision to Simon but I think we should be at least
-> consistent.
+On Tue, Feb 3, 2015 at 1:36 AM, Simon Horman <horms@verge.net.au> wrote:
+> The only thing that stood out to me about "SILK" was that unlike
+> other renesas boards names in .dtsi files it is all-capitals.
+> Its not a bit deal but as we are on the topic: is that intentional?
 
-They are also my thoughts (except the bit about deferring to myself).
+Seems like we can use some consistency:
 
-If there is a good motivation for a Renesas prefix then that is fine by me.
-But in that case it seems that it would be appropriate to update
-the existing renesas boards too.
+$ git grep -w model -- $(git grep -l renesas, -- arch/arm/boot/dts)
+arch/arm/boot/dts/emev2-kzm9d.dts:      model = "EMEV2 KZM9D Board";
+arch/arm/boot/dts/r7s72100-genmai.dts:  model = "Genmai";
+arch/arm/boot/dts/r8a73a4-ape6evm.dts:  model = "APE6EVM";
+arch/arm/boot/dts/r8a7740-armadillo800eva.dts:  model = "armadillo 800 eva";
+arch/arm/boot/dts/r8a7778-bockw-reference.dts:  model = "bockw";
+arch/arm/boot/dts/r8a7778-bockw.dts:    model = "bockw";
+arch/arm/boot/dts/r8a7779-marzen.dts:   model = "marzen";
+arch/arm/boot/dts/r8a7790-lager.dts:    model = "Lager";
+arch/arm/boot/dts/r8a7791-henninger.dts:        model = "Henninger";
+arch/arm/boot/dts/r8a7791-koelsch.dts:  model = "Koelsch";
+arch/arm/boot/dts/r8a7794-alt.dts:      model = "Alt";
+arch/arm/boot/dts/sh73a0-kzm9g.dts:     model = "KZM-A9-GT";
+$
 
-The only thing that stood out to me about "SILK" was that unlike
-other renesas boards names in .dtsi files it is all-capitals.
-Its not a bit deal but as we are on the topic: is that intentional?
+ePAPR says:
 
-> >It's unlikely that there will be another board called "SILK", but it
-> >does make it hard for someone to get an idea of what the board is from
-> >the model string alone.
-> 
->    Tend to agree here.
-> 
-> >Mark.
-> 
-> WBR, Sergei
-> 
+"The recommended format is: “manufacturer,model”, where manufacturer is a
+ string describing the name of the manufacturer (such as a stock ticker symbol),
+ and model specifies the model number.
+
+ Example:
+         model = “fsl,MPC8349EMITX”;"
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
