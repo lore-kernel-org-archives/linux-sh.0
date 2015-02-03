@@ -1,72 +1,32 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 20 Feb 2015 10:29:41 +0000
-Subject: [PATCH 16/24 v2] ASoC: rsnd: enable rsnd_ssi_use_busif() for DMA
-Message-Id: <87sie0naca.wl%kuninori.morimoto.gx@renesas.com>
+From: Wim Van Sebroeck <wim@iguana.be>
+Date: Tue, 03 Feb 2015 00:08:11 +0000
+Subject: Re: [PATCH v2] watchdog: da9063: Add restart handler support
+Message-Id: <20150203000810.GA18245@spo001.leaseweb.nl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
+References: <1422541565-19792-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1422541565-19792-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
-Cc: Linux-ALSA <alsa-devel@alsa-project.org>, Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Liam Girdwood <lgirdwood@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, dmaengine@vger.kernel.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Support Opensource <support.opensource@diasemi.com>, linux-watchdog@vger.kernel.org, linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hello Geert,
 
-Renesas R-Car sound driver uses SSI, but the DMA interfaces are
-SSI/SSIU. This interface is based on SSI/SRC/DVC connection.
-And DMA function needs to know which interface is used somehow.
-This patch enables rsnd_ssi_use_busif() for DMA.
+> Register a restart handler for the da9063 watchdog.  System restart is
+> triggered by sending the shutdown command to the PMIC.
+> As more-suitable restart handlers may exist, the priority of the
+> watchdog restart handler is set to 128.
+> 
+> The actual restart method was inspired by a platform-specific patch from
+> the BSP by Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>.
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> Acked-by: Steve Twiss <stwiss.opensource@diasemi.com>
+> Reviewed-by: Guenter Roeck <linux@roeck-us.net>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v1 -> v2
+Added to linux-watchdog-next.
 
- - new patch
-
- sound/soc/sh/rcar/dma.c  |    2 +-
- sound/soc/sh/rcar/rsnd.h |    1 +
- sound/soc/sh/rcar/ssi.c  |    2 +-
- 3 files changed, 3 insertions(+), 2 deletions(-)
-
-diff --git a/sound/soc/sh/rcar/dma.c b/sound/soc/sh/rcar/dma.c
-index b449763..3f34461 100644
---- a/sound/soc/sh/rcar/dma.c
-+++ b/sound/soc/sh/rcar/dma.c
-@@ -427,7 +427,7 @@ rsnd_gen2_dma_addr(struct rsnd_priv *priv,
- 		dev_err(dev, "DVC is selected without SRC\n");
- 
- 	/* use SSIU or SSI ? */
--	if (is_ssi && (0 = strcmp(rsnd_mod_dma_name(mod), "ssiu")))
-+	if (is_ssi && rsnd_ssi_use_busif(mod))
- 		is_ssi++;
- 
- 	return (is_from) ?
-diff --git a/sound/soc/sh/rcar/rsnd.h b/sound/soc/sh/rcar/rsnd.h
-index 0d36e38..68bc3f4 100644
---- a/sound/soc/sh/rcar/rsnd.h
-+++ b/sound/soc/sh/rcar/rsnd.h
-@@ -514,6 +514,7 @@ int rsnd_ssi_probe(struct platform_device *pdev,
- struct rsnd_mod *rsnd_ssi_mod_get(struct rsnd_priv *priv, int id);
- int rsnd_ssi_is_pin_sharing(struct rsnd_mod *mod);
- int rsnd_ssi_is_dma_mode(struct rsnd_mod *mod);
-+int rsnd_ssi_use_busif(struct rsnd_mod *mod);
- 
- /*
-  *	R-Car DVC
-diff --git a/sound/soc/sh/rcar/ssi.c b/sound/soc/sh/rcar/ssi.c
-index a0d902a..7e48d56 100644
---- a/sound/soc/sh/rcar/ssi.c
-+++ b/sound/soc/sh/rcar/ssi.c
-@@ -84,7 +84,7 @@ struct rsnd_ssi {
- #define rsnd_ssi_mode_flags(p) ((p)->info->flags)
- #define rsnd_ssi_dai_id(ssi) ((ssi)->info->dai_id)
- 
--static int rsnd_ssi_use_busif(struct rsnd_mod *mod)
-+int rsnd_ssi_use_busif(struct rsnd_mod *mod)
- {
- 	struct rsnd_ssi *ssi = rsnd_mod_to_ssi(mod);
- 	struct rsnd_dai_stream *io = rsnd_mod_to_io(mod);
--- 
-1.7.9.5
+Kind regards,
+Wim.
 
