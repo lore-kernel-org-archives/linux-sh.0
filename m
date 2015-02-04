@@ -1,46 +1,40 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 04 Feb 2015 17:04:57 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 04 Feb 2015 18:33:31 +0000
 Subject: Re: [PATCH v2 2/5] ARM: shmobile: r8a7740: Migrate to generic l2c OF initialization
-Message-Id: <CAMuHMdU-GahSaQj6v2Yhmxsj8gmt1sbwrPfqm=ydMCc=uDcenA@mail.gmail.com>
+Message-Id: <2328848.sGW6KXzxun@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1423059315-28519-1-git-send-email-geert+renesas@glider.be>
- <7800327.b3sMA1XGtZ@wuerfel>
- <CAMuHMdVi3kq2p30cNFYW2WCM-OvMSFC1W0r5nYkaN5Np=zW4_Q@mail.gmail.com>
  <3598552.qKIyokxIlF@wuerfel>
-In-Reply-To: <3598552.qKIyokxIlF@wuerfel>
+ <CAMuHMdU-GahSaQj6v2Yhmxsj8gmt1sbwrPfqm=ydMCc=uDcenA@mail.gmail.com>
+In-Reply-To: <CAMuHMdU-GahSaQj6v2Yhmxsj8gmt1sbwrPfqm=ydMCc=uDcenA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Arnd,
+On Wednesday 04 February 2015 18:04:57 Geert Uytterhoeven wrote:
+> On Wed, Feb 4, 2015 at 5:36 PM, Arnd Bergmann <arnd@arndb.de> wrote:
+> > On Wednesday 04 February 2015 15:43:43 Geert Uytterhoeven wrote:
+> >>
+> >> Indeed. Note that I only try to preserve the register value before and after
+> >> migrating to generic l2c OF initialization. I did read (part of) the pl310
+> >> documentation, but it's still not clear to me if we really need
+> >> L2C_AUX_CTRL_SHARED_OVERRIDE. Perhaps this was just copied from
+> >> somewhere else without much afterthought?
+> >
+> > Have you checked what the hardware/bootloader actually sets in that bit?
+> 
+> Yes, it boots with 0x02040000, i.e. L2C_AUX_CTRL_SHARED_OVERRIDE
+> (bit 22) is not set.
+> 
+> After the l2c driver is finished with it, it contains 0x46440001.
 
-On Wed, Feb 4, 2015 at 5:36 PM, Arnd Bergmann <arnd@arndb.de> wrote:
-> On Wednesday 04 February 2015 15:43:43 Geert Uytterhoeven wrote:
->>
->> Indeed. Note that I only try to preserve the register value before and after
->> migrating to generic l2c OF initialization. I did read (part of) the pl310
->> documentation, but it's still not clear to me if we really need
->> L2C_AUX_CTRL_SHARED_OVERRIDE. Perhaps this was just copied from
->> somewhere else without much afterthought?
->
-> Have you checked what the hardware/bootloader actually sets in that bit?
+I see. I guess someone understand the effect of this flag.
+Does it make a difference on the machine you are looking at?
 
-Yes, it boots with 0x02040000, i.e. L2C_AUX_CTRL_SHARED_OVERRIDE
-(bit 22) is not set.
+I've read the spec at http://infocenter.arm.com/help/topic/com.arm.doc.ddi0246a/DDI0246A_l2cc_pl310_r0p0_trm.pdf
+on the topic but couldn't make sense of it to understand whether a
+particular setting might be required for specific hardware or might
+be a performance optimization.
 
-After the l2c driver is finished with it, it contains 0x46440001.
-
-> Maybe you can remove that override completely and the initial Linux
-> default was just set to the same that is already set on powerup?
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+	Arnd
