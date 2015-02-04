@@ -1,48 +1,57 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:21:04 +0000
-Subject: [PATCH 07/32] ARM: shmobile: kzm9g-reference dts: Add st1232 touchscreen node
-Message-Id: <8ac627fa8ef0f98f914690515aa3bf376d7a880d.1424849129.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 04 Feb 2015 13:52:43 +0000
+Subject: [PATCH 0/3] ARM: shmobile: r8a73a4: DT PM domain support
+Message-Id: <1423057966-23321-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1424849129.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+	Hi Simon, Magnus,
 
-Enable the kzm9g touchscreen controller in the board's DT file.
+This patch series enables DT support for PM domains on the Renesas
+R-Mobile APE6 (r8a73a4) SoC.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 11 +++++++++++
- 1 file changed, 11 insertions(+)
+This series builds further upon the DT PM Domain support for R-Mobile
+A1 (r8a7740) and SH-Mobile AG5 (sh73a0).  Due to the similarity of the
+SYSC System-Controller on the various SH-Mobile/R-Mobile SoCs, and the
+abstraction of PM domains in DT, the same driver can handle r8a73a4,
+without any additional modifications, and without changing the DT
+bindings.
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index e3723be..0156fc8 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -287,6 +287,17 @@
- 	};
- };
- 
-+&i2c1 {
-+	status = "okay";
-+
-+	touchscreen@55 {
-+		compatible = "sitronix,st1232";
-+		reg = <0x55>;
-+		interrupt-parent = <&irqpin1>;
-+		interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
-+	};
-+};
-+
- &i2c3 {
- 	pinctrl-0 = <&i2c3_pins>;
- 	pinctrl-names = "default";
+Dependencies:
+  1. Patch 1 (DT binding doc) depends on the R-Mobile DT PM Domain
+     work for sh73a0, which depends on the multiplatform work for
+     sh73a0, which is blocked on simple-pm-bus,
+  2. Patch 2 (dtsi) depends on the multiplatform work for r8a73a4,
+     which is blocked on simple-pm-bus,
+  3. Patch 3 (drivers/sh) depends on all of the above.
+
+This was tested on ape6evm-multiplatform.
+
+Thanks for your comments!
+
+Geert Uytterhoeven (3):
+  PM / Domains: R-Mobile SYSC: Document R-Mobile APE6 (r8a73a4) binding
+  ARM: shmobile: r8a73a4 dtsi: Add PM domain support
+  drivers: sh: Disable PM runtime for multi-platform r8a73a4 with genpd
+
+ .../bindings/power/renesas,sysc-rmobile.txt        |   1 +
+ arch/arm/boot/dts/r8a73a4.dtsi                     | 177 +++++++++++++++++++++
+ drivers/sh/pm_runtime.c                            |   2 +-
+ 3 files changed, 179 insertions(+), 1 deletion(-)
+
 -- 
-2.1.4
+1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
